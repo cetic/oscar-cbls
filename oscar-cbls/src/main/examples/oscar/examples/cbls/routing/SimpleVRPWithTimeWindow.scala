@@ -15,12 +15,12 @@ import scala.collection.immutable.HashMap
 
 object SimpleVRPWithTimeWindow extends App{
   val m = new Store(noCycle = false/*, checker = Some(new ErrorChecker)*/)
-  val v = 5
-  val n = 200
+  val v = 10
+  val n = 500
   val penaltyForUnrouted = 10000
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
   val travelDurationMatrix = RoutingMatrixGenerator.generateLinearTravelTimeFunction(n,symmetricDistance)
-  val (listOfChains,precedences) = RoutingMatrixGenerator.generateChainsPrecedence(n,v,(n-v)/2)
+  val (listOfChains,precedences) = RoutingMatrixGenerator.generateChainsPrecedence(n,v,((n-v)/3)*2,4)
   val (earliestArrivalTimes, latestLeavingTimes, taskDurations, maxWaitingDurations) = RoutingMatrixGenerator.generateFeasibleTimeWindows(n,v,travelDurationMatrix,listOfChains)
 
   val myVRP =  new VRP(m,n,v)
@@ -189,10 +189,51 @@ object SimpleVRPWithTimeWindow extends App{
 
   }
 
+
+  // REMOVING
+
+  val nextRemoveGenerator = {
+    (exploredMoves:List[RemovePointMove], t:Option[List[Long]]) => {
+      val chainTail: List[Long] = t match {
+        case None =>
+          val removedNode = exploredMoves.head.pointToRemove
+          chainsExtension.nextNodesInChain(chainsExtension.firstNodeInChainOfNode(removedNode))
+        case Some(tail: List[Long]) => tail
+      }
+
+      chainTail match {
+        case Nil => None
+        case head :: Nil => None
+        case nextNodeToRemove :: newTail =>
+          val insertNeighborhood = removePoint(() => Some(nextNodeToRemove), myVRP)
+          Some(insertNeighborhood, Some(newTail))
+      }
+    }
+  }
+
+  val firstNodeOfChainRemoval = removePoint(() => myVRP.unrouted.value.filter(chainsExtension.isHead), myVRP,neighborhoodName = "RemovePoint")
+
+  def lastNodeOfChainRemoval(lastNode:Long) = removePoint(
+    () => List(lastNode),
+    myVRP,
+    neighborhoodName = "RemovePoint")
+
+  val oneChainRemove = {
+    profile(dynAndThen(firstNodeOfChainRemoval,
+      (removalMove: RemovePointMove) => {
+        mu[RemovePointMove,Option[List[Long]]](
+          lastNodeOfChainRemoval(chainsExtension.lastNodeInChainOfNode(removalMove.pointToRemove)),
+          nextRemoveGenerator,
+          None,
+          Long.MaxValue,
+          false)
+      })name "OneChainInsert")
+  }
+
   //val routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "InsertUF"))
 
 
-  val search = bestSlopeFirst(List(oneChainInsert,oneChainMove,segExchangeOnSegments(5),onePtMove(20)))
+  val search = bestSlopeFirst(List(oneChainInsert,oneChainMove,segExchangeOnSegments(5),onePtMove(20)))onExhaustRestartAfter(atomic(oneChainRemove.acceptAll(), _ > 1),3, obj)
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 
