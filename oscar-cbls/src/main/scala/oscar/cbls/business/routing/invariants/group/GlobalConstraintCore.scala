@@ -15,6 +15,7 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
 
   private var managedConstraints: QList[GlobalConstraintDefinition] = null
   private var invariantAreInitiated = false
+  private var useGlobalConstraintPositionCache = false
 
   private var checkpointLevel: Int = -1
   private var checkpointAtLevel0: IntSequence = _
@@ -30,7 +31,7 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
   //    - vehiclesValueAtCheckpoint
   //    - vehicleSearcher
   //    - positionToValueCache
-  private var savedDataAtCheckPointLevel: QList[(QList[Int], VehicleLocation, Array[Int], Array[ListSegments])] = null
+  private var savedDataAtCheckpointLevel: QList[(QList[Int], VehicleLocation, Array[Int], Array[ListSegments])] = null
   // Store the position value of a node for a given checkpoint level. -1 == position not computed
   private var positionToValueCache: Array[Int] = Array.fill(n)(-1)
 
@@ -56,15 +57,15 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
     QList.qForeach(managedConstraints, (c: GlobalConstraintDefinition) => c.computeVehicleValueFromScratch(vehicle, routes))
   }
 
-  private def rollBackVehicleValuesToCheckPoint(changedVehicleAtFromCheckpoint: QList[Int], changedVehicleAtToCheckpoint: QList[Int]): Unit ={
-    managedConstraints.foreach(c => c.rollBackToCheckPoint(changedVehicleAtFromCheckpoint, changedVehicleAtToCheckpoint))
+  private def rollBackVehicleValuesToCheckPoint(vehiclesToRollBack: QList[Int]): Unit ={
+    managedConstraints.foreach(c => c.rollBackToCheckpoint(vehiclesToRollBack))
   }
 
   private def setCheckpointLevel0Values(vehicle: Int): Unit ={
     QList.qForeach(managedConstraints, (c: GlobalConstraintDefinition) => c.setCheckpointLevel0Value(vehicle))
   }
 
-  private def initializeVehicleValues(): Unit ={
+  private def initializeInvariants(): Unit ={
     invariantAreInitiated = true
     QList.qForeach(managedConstraints, (c: GlobalConstraintDefinition) => c.init(routes.newValue))
   }
@@ -74,7 +75,7 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
   }
 
   override def notifySeqChanges(r: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
-    if(!invariantAreInitiated) initializeVehicleValues()
+    if(!invariantAreInitiated) initializeInvariants()
 
     val newRoute = routes.newValue
 
@@ -91,7 +92,7 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
 
   private def digestUpdates(changes:SeqUpdate): Boolean = {
     changes match {
-      case SeqUpdateDefineCheckpoint(prev: SeqUpdate,isStarMode: Boolean,checkpointLevel: Int) =>
+      case SeqUpdateDefineCheckpoint(prev: SeqUpdate, isStarMode: Boolean, checkpointLevel: Int) =>
         val newRoute = changes.newValue
         val prevUpdate = digestUpdates(prev)
 
@@ -115,17 +116,17 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
           })
 
           // Resetting the savedData QList.
-          savedDataAtCheckPointLevel = null
+          savedDataAtCheckpointLevel = null
 
           changedVehiclesSinceCheckpoint0.all = false
 
           // Defining another checkpoint. We must keep current segments state
         } else {
           // Saving position of nodes of the previous checkpoint level to avoid excessive calls to positionAtAnyOccurence(...) when roll-backing
-          val previousCheckpointSaveData = savedDataAtCheckPointLevel.head
-          savedDataAtCheckPointLevel = QList(
+          val previousCheckpointSaveData = savedDataAtCheckpointLevel.head
+          savedDataAtCheckpointLevel = QList(
             (previousCheckpointSaveData._1, previousCheckpointSaveData._2, positionToValueCache, previousCheckpointSaveData._4),
-            savedDataAtCheckPointLevel.tail)
+            savedDataAtCheckpointLevel.tail)
         }
 
         // Persisting recent updates of the vehicleSearcher
@@ -133,10 +134,12 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
 
         // Common manipulations
         this.checkpointLevel = checkpointLevel
-        positionToValueCache = Array.fill(n)(-1)
-        savedDataAtCheckPointLevel =
-          QList((changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList, vehicleSearcher, positionToValueCache, segmentsOfVehicle),savedDataAtCheckPointLevel)
-        segmentsOfVehicle = segmentsOfVehicle.clone()
+        if (savedDataAtCheckpointLevel == null || savedDataAtCheckpointLevel.size == checkpointLevel) {
+          positionToValueCache = Array.fill(n)(-1)
+          savedDataAtCheckpointLevel =
+            QList((changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList, vehicleSearcher, positionToValueCache, segmentsOfVehicle), savedDataAtCheckpointLevel)
+          segmentsOfVehicle = savedDataAtCheckpointLevel.head._4.clone()
+        }
         true
 
       case r@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Int) =>
@@ -145,43 +148,44 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
         }
 
         // Restore the saved data corresponding to the required checkpoint
-        savedDataAtCheckPointLevel = QList.qDrop(savedDataAtCheckPointLevel, this.checkpointLevel - checkpointLevel)
+        savedDataAtCheckpointLevel = QList.qDrop(savedDataAtCheckpointLevel, this.checkpointLevel - checkpointLevel)
 
         // Restoring the vehicle values if it has changed since checkpoint 0 (using current changedVehiclesSinceCheckpoint0 value)
-        rollBackVehicleValuesToCheckPoint(changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList, savedDataAtCheckPointLevel.head._1)
+        QList.qForeach(savedDataAtCheckpointLevel.head._1, (value: Int) => changedVehiclesSinceCheckpoint0(value) = false)
+        rollBackVehicleValuesToCheckPoint(changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList)
 
         // Restoring all other values
         this.changedVehiclesSinceCheckpoint0.all = false
-        QList.qForeach(savedDataAtCheckPointLevel.head._1, (vehicle: Int) =>  this.changedVehiclesSinceCheckpoint0(vehicle) = true)
-        vehicleSearcher = savedDataAtCheckPointLevel.head._2
-        positionToValueCache = savedDataAtCheckPointLevel.head._3
-        segmentsOfVehicle = savedDataAtCheckPointLevel.head._4.clone()
+        QList.qForeach(savedDataAtCheckpointLevel.head._1, (vehicle: Int) =>  this.changedVehiclesSinceCheckpoint0(vehicle) = true)
+        vehicleSearcher = savedDataAtCheckpointLevel.head._2
+        positionToValueCache = savedDataAtCheckpointLevel.head._3
+        segmentsOfVehicle = savedDataAtCheckpointLevel.head._4.clone()
 
         this.checkpointLevel = checkpointLevel
         true
 
       case sui@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         if(digestUpdates(prev)){
-            keepOrResetPositionValueCache(prev)
+          useGlobalConstraintPositionCache(prev)
 
-            val prevRoutes = prev.newValue
+          val prevRoutes = prev.newValue
 
-            val impactedVehicle = vehicleSearcher.vehicleReachingPosition(pos-1)
-            val impactedSegment = segmentsOfVehicle(impactedVehicle)
+          val impactedVehicle = vehicleSearcher.vehicleReachingPosition(pos-1)
+          val impactedSegment = segmentsOfVehicle(impactedVehicle)
 
-            // InsertSegment insert a segment AFTER a defined position and SeqUpdateInsert at a position => we must withdraw 1
-            segmentsOfVehicle(impactedVehicle) = impactedSegment.insertSegments(QList[Segment](NewNode(value).asInstanceOf[Segment]),pos-1,prevRoutes)
+          // InsertSegment insert a segment AFTER a defined position and SeqUpdateInsert at a position => we must withdraw 1
+          segmentsOfVehicle(impactedVehicle) = impactedSegment.insertSegments(QList[Segment](NewNode(value).asInstanceOf[Segment]),pos-1,prevRoutes)
 
-            vehicleSearcher = vehicleSearcher.push(sui.oldPosToNewPos)
-            changedVehiclesSinceCheckpoint0(impactedVehicle) = true
-            true
+          vehicleSearcher = vehicleSearcher.push(sui.oldPosToNewPos)
+          changedVehiclesSinceCheckpoint0(impactedVehicle) = true
+          true
         } else {
           false
         }
 
       case sum@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         if(digestUpdates(prev)) {
-          keepOrResetPositionValueCache(prev)
+          useGlobalConstraintPositionCache(prev)
 
           val prevRoutes = prev.newValue
 
@@ -222,7 +226,7 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
 
       case sur@SeqUpdateRemove(position : Int, prev : SeqUpdate) =>
         if(digestUpdates(prev)) {
-          keepOrResetPositionValueCache(prev)
+          useGlobalConstraintPositionCache(prev)
 
           val prevRoutes = prev.newValue
 
@@ -250,16 +254,17 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
   }
 
   /**
-    * Reset the positionToValueCache if the prev movement was an insert/move/remove.
-    * The value at position may have change.
+    * Determine if we can use the cache or not.
+    * We can use it only if the current insert/move/remove update is right after a defineCheckPoint or a rollbackToCheckpoint
+    * Otherwise, Some changes have occurred and the positions may not be correct anymore.
     */
-  // TODO : Maybe try to reset only changed vehicle
-  private def keepOrResetPositionValueCache(prev: SeqUpdate): Unit ={
+  private def useGlobalConstraintPositionCache(prev: SeqUpdate): Unit ={
     prev match {
-      case _:SeqUpdateInsert => positionToValueCache = Array.fill(n)(-1)
-      case _:SeqUpdateMove => positionToValueCache = Array.fill(n)(-1)
-      case _:SeqUpdateRemove => positionToValueCache = Array.fill(n)(-1)
-      case _ =>
+      case _:SeqUpdateInsert => useGlobalConstraintPositionCache = false
+      case _:SeqUpdateMove => useGlobalConstraintPositionCache = false
+      case _:SeqUpdateRemove => useGlobalConstraintPositionCache = false
+      case _:SeqUpdateLastNotified => useGlobalConstraintPositionCache = false
+      case _ => useGlobalConstraintPositionCache = true
     }
   }
 
@@ -299,7 +304,7 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
   override def checkInternals(c : Checker): Unit = {
     for (c <- managedConstraints) {
       for (v <- vehicles) {
-        c.checkInternals(v, routes)
+        c.checkInternals(v, routes, segmentsOfVehicle(v).segments.toList)
       }
     }
   }
@@ -313,11 +318,21 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
 
   class ListSegments(val segments: QList[Segment], val vehicle: Int){
 
-    // If the node value at a given position isn't known for this checkpoint, we compute and save it
-    private def updatePositionToValueAtPosition(pos: Int, routes: IntSequence): Unit ={
-      if(pos < n && positionToValueCache(pos) == -1) {
+    private def getValueAtPosition(pos: Int, routes: IntSequence): Int ={
+      if(pos >= n) -1
+      else if(!useGlobalConstraintPositionCache){   // If we can't use the cache we use the explorer
         val explorer = routes.explorerAtPosition(pos)
-        positionToValueCache(pos) = if (explorer.isDefined) explorer.get.value else -1
+        if (explorer.isDefined)
+          explorer.get.value
+        else
+          -1
+      } else {  // Else we use the memorized value or the explorer if not defined
+        if (pos < n && positionToValueCache(pos) == -1) {
+          val explorer = routes.explorerAtPosition(pos)
+          if (explorer.isDefined)
+            positionToValueCache(pos) = explorer.get.value
+        }
+        positionToValueCache(pos)
       }
     }
 
@@ -341,15 +356,10 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
       val segmentsBetweenFromAndTo = QList.qDrop(tempSegmentsBetweenFromAndTo,1)
 
       // nodeBeforeFrom is always defined because it's at worst a vehicle node
-      // Update positionToValueCache and then use the updated value
-      updatePositionToValueAtPosition(from-1, routes)
-      updatePositionToValueAtPosition(from, routes)
-      updatePositionToValueAtPosition(to, routes)
-      updatePositionToValueAtPosition(to+1, routes)
-      val nodeBeforeFrom = positionToValueCache(from-1)
-      val fromNode = positionToValueCache(from)
-      val toNode = positionToValueCache(to)
-      val nodeAfterTo = if(to+1 < n)positionToValueCache(to+1) else -1
+      val nodeBeforeFrom = getValueAtPosition(from-1, routes)
+      val fromNode = getValueAtPosition(from, routes)
+      val toNode = getValueAtPosition(to, routes)
+      val nodeAfterTo = if(to+1 < n)getValueAtPosition(to+1, routes) else -1
 
       val lengthUntilFromImpactedSegment = QList.qFold[Segment,Long](segmentsBeforeFromImpactedSegment, (acc,item) => acc + item.length(),0)
 
@@ -414,11 +424,8 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
 
       val (impactedSegment, segmentsBeforeImpactedSegment, segmentsAfterImpactedSegment,_) = findImpactedSegment(afterPosition - delta, vehicle, vehiclePos-1)
 
-      // Update positionToValueCache and then use the updated value
-      updatePositionToValueAtPosition(afterPosition, routes)
-      updatePositionToValueAtPosition(afterPosition+1, routes)
-      val insertAfterNode = positionToValueCache(afterPosition)
-      val insertBeforeNode = if(afterPosition+1 < n) positionToValueCache(afterPosition+1) else -1
+      val insertAfterNode = getValueAtPosition(afterPosition, routes)
+      val insertBeforeNode: Int = if(afterPosition+1 < n) getValueAtPosition(afterPosition+1, routes) else -1
 
       // We split the impacted segment in two parts (leftResidue and rightResidue)
       // 1° => Compute parts' length
@@ -533,7 +540,7 @@ case class FlippedPreComputedSubSequence(startNode:Long,
                                                          endNode:Long,
                                                          length: Long) extends Segment{
   override def toString: String = {
-    "FlippedPreComputedSubSequence (StartNode : " + startNode + " EndNode : " + endNode + ")"
+    "FlippedPreComputedSubSequence (StartNode : " + startNode + " EndNode : " + endNode + " Length : " + length + ")"
   }
 
   override def splitAtNode(beforeSplitNode: Long, splitNode: Long, leftLength: Long, rightLength: Long): (Segment,Segment) = {

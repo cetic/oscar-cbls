@@ -36,15 +36,10 @@ abstract class GlobalConstraintDefinition(gc: GlobalConstraintCore, v: Int) {
     vehiclesValueAtCheckpoint0(vehicle) = currentVehiclesValue(vehicle)
   }
 
-  def rollBackToCheckPoint(changedVehicleAtFromCheckpoint: QList[Int], changedVehicleAtToCheckpoint: QList[Int]): Unit ={
-    var tempChangedVehicle = changedVehicleAtToCheckpoint
-    QList.qForeach(changedVehicleAtFromCheckpoint, (vehicle: Int) => {
-      if(tempChangedVehicle == null || tempChangedVehicle.head != vehicle) {
-        currentVehiclesValue(vehicle) = vehiclesValueAtCheckpoint0(vehicle)
-        assignVehicleValue(vehicle)
-      } else {
-        tempChangedVehicle = tempChangedVehicle.tail
-      }
+  def rollBackToCheckpoint(vehiclesToRollBack: QList[Int]): Unit ={
+    QList.qForeach(vehiclesToRollBack, (vehicle: Int) => {
+      currentVehiclesValue(vehicle) = vehiclesValueAtCheckpoint0(vehicle)
+      assignVehicleValue(vehicle)
     })
   }
 
@@ -68,6 +63,7 @@ abstract class GlobalConstraintDefinition(gc: GlobalConstraintCore, v: Int) {
 
   /**
     * this method is called by the framework when the value of a vehicle must be computed.
+    * When implementing this method, DON'T FORGET to call saveVehicleValue at the end.
     *
     * @param vehicle the vehicle that we are focusing on
     * @param segments the segments that constitute the route.
@@ -94,11 +90,11 @@ abstract class GlobalConstraintDefinition(gc: GlobalConstraintCore, v: Int) {
   def computeVehicleValueFromScratch(vehicle : Long, routes : IntSequence, save: Boolean = true): U
 
 
-  def checkInternals(vehicle: Long, routes: ChangingSeqValue): Unit ={
+  def checkInternals(vehicle: Long, routes: ChangingSeqValue, segments: List[Segment]): Unit ={
     val fromScratch = computeVehicleValueFromScratch(vehicle, routes.value, false)
     require(fromScratch.equals(currentVehiclesValue(vehicle)), "Constraint " + this.getClass.getName + " failed " +
     "For Vehicle " + vehicle + " : should be " + fromScratch + " got " +
-      currentVehiclesValue(vehicle) + " " + routes + "\n")
+      currentVehiclesValue(vehicle) + " " + routes + "\nAfter receiving segments : " + segments.mkString("\n    "))
   }
 
 }

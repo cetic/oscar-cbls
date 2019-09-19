@@ -107,7 +107,7 @@ class IterableMagicBoolArray(override val length:Int,initVal:Boolean = false)
         QList.nonReversedBuildFromIterable(indices)
       }
     }else{
-      if(anyIndividualSetToFalse){
+      if(anyIndividualSetToFalse && positionsAtTrueOverApproximated != null){
         positionsAtTrueOverApproximated.qFilter(this(_))
       }else{
         positionsAtTrueOverApproximated
