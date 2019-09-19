@@ -139,11 +139,11 @@ object RoutingMatrixGenerator {
     def reduceCurrentSizeBy = Math.max(currentMaxSize - maxSize, (currentMaxSize-2)/2 - (usedNodes/precedencesToGenerate))
     def randomSize = Math.max(2L,1L + intToLong(random.nextInt(longToInt(currentMaxSize))))
 
-    while(precedencesToGenerate > 0){
+    while(precedencesToGenerate > 0 && randomizedNodes.nonEmpty){
       currentMaxSize = currentMaxSize - reduceCurrentSizeBy
       precedencesToGenerate -= 1
 
-      val chain: List[Long] = List.tabulate(longToInt(randomSize))(_ => {
+      val chain: List[Long] = List.tabulate(Math.min(Math.min(n-v-usedNodes, maxSize), randomSize))(_ => {
         usedNodes += 1
         randomizedNodes.next()
       })
