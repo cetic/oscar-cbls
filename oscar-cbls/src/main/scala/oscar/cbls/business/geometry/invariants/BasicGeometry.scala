@@ -187,7 +187,7 @@ class DistanceBetweenCentroids(store:Store,pointA:AtomicValue[GeometryValue],poi
   }
 }
 
-class ResizableCircle(store:Store, size: CBLSIntVar, givenName: String = null)
+class ResizableCircle(store:Store, size: IntValue, givenName: String = null)
   extends CBLSGeometryInvariant(store, {
     val circle = geometry.createCircle(size.value, nbEdges = 30)
     circle
@@ -206,7 +206,7 @@ class ResizableCircle(store:Store, size: CBLSIntVar, givenName: String = null)
 }
 
 
-class ResizableSquare(store:Store, size: CBLSIntVar, givenName: String = null)
+class ResizableSquare(store:Store, size: IntValue, givenName: String = null)
   extends CBLSGeometryInvariant(store, {
     val square = geometry.createRectangle(size.value, size.value)
     square
@@ -225,7 +225,7 @@ class ResizableSquare(store:Store, size: CBLSIntVar, givenName: String = null)
 }
 
 
-class ResizableRectangle(store:Store, height: CBLSIntVar, width: CBLSIntVar, givenName: String = null)
+class ResizableRectangle(store:Store, height: IntValue, width: IntValue, givenName: String = null)
   extends CBLSGeometryInvariant(store, {
     val square = geometry.createRectangle(height.value, width.value)
     square
