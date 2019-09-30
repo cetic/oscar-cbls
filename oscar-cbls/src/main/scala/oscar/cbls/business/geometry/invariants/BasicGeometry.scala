@@ -187,3 +187,59 @@ class DistanceBetweenCentroids(store:Store,pointA:AtomicValue[GeometryValue],poi
   }
 }
 
+class ResizableCircle(store:Store, size: CBLSIntVar, givenName: String = null)
+  extends CBLSGeometryInvariant(store, {
+    val circle = geometry.createCircle(size.value, nbEdges = 30)
+    circle
+  }) with IntNotificationTarget {
+
+  this.registerStaticAndDynamicDependency(size)
+  finishInitialization(store)
+
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, oldVal: Long, newVal: Long): Unit = {
+    require(newVal > 0, "The size of a circle has a positive value")
+    if(oldVal != newVal)
+      this := geometry.createCircle(newVal, nbEdges = 30)
+  }
+
+  override def toString: String = if (givenName == null) value.toString else givenName
+}
+
+
+class ResizableSquare(store:Store, size: CBLSIntVar, givenName: String = null)
+  extends CBLSGeometryInvariant(store, {
+    val square = geometry.createRectangle(size.value, size.value)
+    square
+  }) with IntNotificationTarget {
+
+  this.registerStaticAndDynamicDependency(size)
+  finishInitialization(store)
+
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, oldVal: Long, newVal: Long): Unit = {
+    require(newVal > 0, "The size of a square has a positive value")
+    if(oldVal != newVal)
+      this := geometry.createRectangle(newVal, newVal)
+  }
+
+  override def toString: String = if (givenName == null) value.toString else givenName
+}
+
+
+class ResizableRectangle(store:Store, height: CBLSIntVar, width: CBLSIntVar, givenName: String = null)
+  extends CBLSGeometryInvariant(store, {
+    val square = geometry.createRectangle(height.value, width.value)
+    square
+  }) with IntNotificationTarget {
+
+  this.registerStaticAndDynamicDependency(height)
+  this.registerStaticAndDynamicDependency(width)
+  finishInitialization(store)
+
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, oldVal: Long, newVal: Long): Unit = {
+    require(newVal > 0, "The height and width of a rectangle have a positive value")
+    if(oldVal != newVal)
+      this := geometry.createRectangle(height.value, width.value)
+  }
+
+  override def toString: String = if (givenName == null) value.toString else givenName
+}
