@@ -15,6 +15,7 @@ package oscar.cbls.business.geometry.invariants
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+import org.locationtech.jts.operation.buffer.BufferOp
 import oscar.cbls._
 import oscar.cbls.business.geometry
 import oscar.cbls.business.geometry.model._
@@ -242,4 +243,20 @@ class ResizableRectangle(store:Store, height: IntValue, width: IntValue, givenNa
   }
 
   override def toString: String = if (givenName == null) value.toString else givenName
+}
+
+class Buffer(store: Store, shape: AtomicValue[GeometryValue], distance: Long, givenName: String = null)
+  extends CBLSGeometryInvariant(store, {
+    val bufferedGeometry = BufferOp.bufferOp(shape.value.geometry, distance)
+    GeometryValue(bufferedGeometry)
+  }) with GeometryNotificationTarget {
+
+  this.registerStaticAndDynamicDependency(shape)
+
+  override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue], id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
+    val bufferedGeometry = BufferOp.bufferOp(newVal.geometry, distance)
+    this := GeometryValue(bufferedGeometry)
+  }
+
+  override def toString: String = if(givenName == null) value.toString else givenName
 }
