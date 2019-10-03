@@ -13,7 +13,7 @@ import oscar.cbls.lib.search.combinators.Atomic
   * @param innerShape
   * @param outerShape
   */
-class StrictInclusion(innerShape:AtomicValue[GeometryValue], outerShape:CBLSGeometryConst, violationIsDistanceBetweenCenters:Boolean)
+class StrictInclusion(innerShape:AtomicValue[GeometryValue], outerShape:AtomicValue[GeometryValue], violationIsDistanceBetweenCenters:Boolean)
   extends IntInvariant
     with GeometryNotificationTarget{
 
