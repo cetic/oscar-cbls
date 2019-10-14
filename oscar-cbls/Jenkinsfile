@@ -3,7 +3,7 @@ node {
     env.PATH="${env.JAVA_HOME}/bin:${env.PATH}"
     env.SBT_HOME = "${tool 'sbt-1.0.0-M4'}"
     
-    def MERCURIAL_REVISION = sh script: 'hg id -i', returnStdout: true
+    def GIT_REVISION = sh script: "git rev-parse ${env.BRANCH_NAME}@{upstream}", returnStdout: true
     
     email_to = "oscar.cbls-cetic@lists.cetic.be"
     projects=['oscar-cbls']
@@ -26,7 +26,7 @@ node {
     }
      
     try {
-        env.PARAMS = "-Dcetic -DBRANCH_NAME='${env.BRANCH_NAME}' -DREVISION_ID='${MERCURIAL_REVISION}' -DBUILD_ID='${env.BUILD_ID}'"
+        env.PARAMS = "-Dcetic -DBRANCH_NAME='${env.BRANCH_NAME}' -DREVISION_ID='${GIT_REVISION}' -DBUILD_ID='${env.BUILD_ID}'"
         env.SBT_CMD = "${env.SBT_HOME}/bin/sbt -Dsbt.log.noformat=true ${env.PARAMS}"
         
         stage('Build') {
