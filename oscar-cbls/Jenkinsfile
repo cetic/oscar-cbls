@@ -12,7 +12,7 @@ node {
         stage('scm') {
             checkout([
                 $class: 'GitSCM',
-                branches: [[name: '*/CBLS']],
+                branches: [[name: "*/${env.BRANCH_NAME}"]],
                 doGenerateSubmoduleConfigurations: false,
                 extensions: [],
                 submoduleCfg: [],
