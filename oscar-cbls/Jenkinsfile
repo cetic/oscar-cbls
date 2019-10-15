@@ -2,22 +2,21 @@ node {
     env.JAVA_HOME="${tool 'jdk-1.8.121'}"
     env.PATH="${env.JAVA_HOME}/bin:${env.PATH}"
     env.SBT_HOME = "${tool 'sbt-1.0.0-M4'}"
-    
-    def MERCURIAL_REVISION = sh script: 'hg id -i', returnStdout: true
-    
+
+    def GIT_REVISION = sh script: "git rev-parse ${env.BRANCH_NAME}@{upstream}", returnStdout: true
+
     email_to = "oscar.cbls-cetic@lists.cetic.be"
-    projects=['oscar-visual', 'oscar-util', 'oscar-cbls']
-    
+    projects=['oscar-cbls']
+
     try{
         stage('scm') {
-            checkout_result = checkout scm: [
-                $class: 'MercurialSCM',
-                source: 'https://bitbucket.org/oscarlib/oscar',
-                revision: env.BRANCH_NAME,
-                revisionType: 'BRANCH',
-                clean: true
-            ],
-            poll: false
+            checkout([
+                $class: 'GitSCM',
+                branches: [[name: "*/${env.BRANCH_NAME}"]],
+                doGenerateSubmoduleConfigurations: false,
+                extensions: [],
+                submoduleCfg: [],
+                userRemoteConfigs: [[url: 'https://bitbucket.org/oscarlib/oscar.git']]])
         }
     }
     catch (err) {
@@ -25,43 +24,43 @@ node {
         send_mail(email_to)
         throw err
     }
-     
-    try{
-        env.PARAMS = "-Dcetic -DBRANCH_NAME='${env.BRANCH_NAME}' -DREVISION_ID='${MERCURIAL_REVISION}' -DBUILD_ID='${env.BUILD_ID}'"
+
+    try {
+        env.PARAMS = "-Dcetic -DBRANCH_NAME='${env.BRANCH_NAME}' -DREVISION_ID='${GIT_REVISION}' -DBUILD_ID='${env.BUILD_ID}'"
         env.SBT_CMD = "${env.SBT_HOME}/bin/sbt -Dsbt.log.noformat=true ${env.PARAMS}"
-        
+
         stage('Build') {
-            projects.each { project -> 
+            projects.each { project ->
                 sh "${env.SBT_CMD} \'project "+project+"\' compile"
             }
         }
         stage('Test') {
-            projects.each { project -> 
+            projects.each { project ->
                 sh "${env.SBT_CMD} \'project "+project+"\' test"
             }
         }
-        
+
     }
     catch (err) {
         currentBuild.result = "FAILURE"
         send_mail(email_to)
         throw err
     }
-    
+
     try{
         stage('Package') {
-            projects.each { project -> 
+            projects.each { project ->
                 sh "${env.SBT_CMD} \'project "+project+"\' clean package package-doc -Xdisable-assertions"
             }
         }
         stage('ScalaDoc') {
-            projects.each { project -> 
+            projects.each { project ->
                 sh "${env.SBT_CMD} \'project "+project+"\' doc"
             }
         }
-        
+
         stage('Publish') {
-            projects.each { project -> 
+            projects.each { project ->
                 sh "${env.SBT_CMD} \'project "+project+"\' publish"
             }
         }
