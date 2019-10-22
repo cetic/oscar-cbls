@@ -8,15 +8,15 @@ import oscar.cbls.visual.obj.ObjectiveFunctionDisplay
 
 trait UtilityCombinators{
   /**
-    * collects statistics about the run time and progress achieved by neighborhood a
-    * they can be obtained by querying this object with method toString
-    * or globally on the whole neighborhood using the method statistics
-    * WARNING: do not use this inside an AndThen,
-    *          since the objective function is instrumented by this combinator, so the statistics will be counter-intuitive
-    *
-    * @param a
-    * @param ignoreInitialObj
-    */
+   * collects statistics about the run time and progress achieved by neighborhood a
+   * they can be obtained by querying this object with method toString
+   * or globally on the whole neighborhood using the method statistics
+   * WARNING: do not use this inside an AndThen,
+   *          since the objective function is instrumented by this combinator, so the statistics will be counter-intuitive
+   *
+   * @param a
+   * @param ignoreInitialObj
+   */
   def profile(a:Neighborhood,ignoreInitialObj:Boolean = false) = Profile(a,ignoreInitialObj)
 }
 
@@ -162,9 +162,9 @@ class OverrideObjective(a: Neighborhood, overridingObjective: Objective) extends
  */
 case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends NeighborhoodCombinator(a){
 
-  var nbCalls = 0L
-  var nbFound = 0L
-  var totalGain:Double = 0L
+  var nbCalls:Long = 0L
+  var nbFound:Long = 0L
+  var totalGain:Long = 0L
   var totalTimeSpentMoveFound:Long = 0L
   var totalTimeSpentNoMoveFound:Long = 0L
 
@@ -209,36 +209,28 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
     }
   }
 
-  def gainPerCall:String = if(nbCalls ==0L) "NA" else "" + (totalGain / nbCalls).toInt
-  def callDuration:String = if(nbCalls == 0L ) "NA" else "" + (totalTimeSpent / nbCalls).toInt
+  def gainPerCall:String = if(nbCalls ==0L) "NA" else "" + (totalGain / nbCalls).toLong
+  def callDuration:String = if(nbCalls == 0L ) "NA" else "" + (totalTimeSpent / nbCalls).toLong
   //gain in obj/s
-  def slope:String = if(totalTimeSpent == 0L) "NA" else "" + (1000L * totalGain.toDouble / totalTimeSpent.toDouble).toInt
+  def slope:String = if(totalTimeSpent == 0L) "NA" else "" + (1000L * totalGain.toDouble / totalTimeSpent.toDouble).toLong
 
   def avgTimeSpendNoMove:String = if(nbCalls - nbFound == 0L) "NA" else "" + (totalTimeSpentNoMoveFound / (nbCalls - nbFound))
   def avgTimeSpendMove:String = if(nbFound == 0L) "NA" else "" + (totalTimeSpentMoveFound / nbFound)
   def waistedTime:String = if(nbCalls - nbFound == 0L) "NA" else "" + (totalTimeSpentNoMoveFound / (nbCalls - nbFound))
 
-  override def collectProfilingStatistics: List[String] =
+  override def collectProfilingStatistics: List[Array[String]] =
     collectThisProfileStatistics :: super.collectProfilingStatistics
 
-  def collectThisProfileStatistics:String =
-    padToLength("" + a,31L) + " " +
-      padToLength("" + nbCalls,6L) + " " +
-      padToLength("" + nbFound,6L) + " " +
-      padToLength("" + totalGain.toInt,8L) + " " +
-      padToLength("" + totalTimeSpent,12L) + " " +
-      padToLength("" + gainPerCall,8L) + " " +
-      padToLength("" + callDuration,12L)+ " " +
-      padToLength("" + slope,11L)+ " " +
-      padToLength("" + avgTimeSpendNoMove,13L)+ " " +
-      padToLength("" + avgTimeSpendMove,12L)+ " " +
-      totalTimeSpentNoMoveFound
+  def collectThisProfileStatistics:Array[String] =
+    Array[String]("" + a,"" + nbCalls,"" + nbFound,"" + totalGain,
+      "" + totalTimeSpent,"" + gainPerCall,"" + callDuration,"" + slope,
+      "" + avgTimeSpendNoMove,"" + avgTimeSpendMove, "" + totalTimeSpentNoMoveFound)
 
   private def padToLength(s: String, l: Long) = {
     val extended = s + nStrings(l+1L, " ")
     val nextchar = extended.substring(l+1L, l+1L)
     if(nextchar equals " "){
-      extended.substring(0L, l-1L) + "§"
+      extended.substring(0L, l-1L) + "ยง"
     }else{
       extended.substring(0L, l)
     }
@@ -254,9 +246,31 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
 }
 
 object Profile{
-  private def padToLength(s: String, l: Long) = (s + nStrings(l, " ")).substring(0L, l)
+  private def padToLength(s: String, l: Int) = (s + nStrings(l, " ")).substring(0, l)
+  private def prePadToLength(s: String, l: Int) = (nStrings(l-s.length, " ") + s).substring(0, l)
+
   private def nStrings(n: Long, s: String): String = if (n <= 0L) "" else s + nStrings(n - 1L, s)
-  def statisticsHeader: String = padToLength("Neighborhood",30L) + "  calls  found  sumGain  sumTime(ms)  avgGain  avgTime(ms)  slope(-/s)  avgTimeNoMove avgTimeMove  wastedTime"
+
+  def justifyLeft(l:List[(String,String)], sep:String = " "):List[String] = {
+    val length:Int = l.map(_._1.size).max
+    l.map(a => padToLength(a._1,length) + sep + a._2)
+  }
+
+  def justifyLeftArray(l:List[Array[String]], sep:String = " "):List[String] = {
+    val nbCol = l.head.length
+    val lengths:Array[Int] = Array.tabulate(nbCol)(i => l.map(line => line(i).size).max)
+    l.map(line => Array.tabulate(nbCol)(col => padToLength(line(col),lengths(col)+2)).mkString(""))
+  }
+
+  def justifyRightArray(l:List[Array[String]], sep:String = " "):List[String] = {
+    val nbCol = l.head.length
+    val lengths:Array[Int] = Array.tabulate(nbCol)(i => l.map(line => line(i).size).max)
+    l.map(line => Array.tabulate(nbCol)(col => prePadToLength(line(col),lengths(col))).mkString("  "))
+  }
+
+  def statisticsHeader: Array[String] = Array("Neighborhood","calls", "found", "sumGain", "sumTime(ms)", "avgGain",
+    "avgTime(ms)", "slope(-/s)", "avgTimeNoMove", "avgTimeMove", "wastedTime")
+
   def selectedStatisticInfo(i:Iterable[Profile]) = {
     (statisticsHeader :: i.toList.map(_.collectThisProfileStatistics)).mkString("\n")
   }
@@ -288,12 +302,12 @@ class ResetOnExhausted(a: Neighborhood) extends NeighborhoodCombinator(a) {
 
 
 /**
-  * sets a timeout for a search procedure.
-  * notice that hte timeout itself is a bit lax, because the combinator has no possibility to interrupt a neighborhood during its exploration.
-  * this combinator will therefore just prevent any new exploration past the end of the timeout.
-  * @param a a neighborhood
-  * @param maxDuration the maximal duration, in milliseconds
-  */
+ * sets a timeout for a search procedure.
+ * notice that hte timeout itself is a bit lax, because the combinator has no possibility to interrupt a neighborhood during its exploration.
+ * this combinator will therefore just prevent any new exploration past the end of the timeout.
+ * @param a a neighborhood
+ * @param maxDuration the maximal duration, in milliseconds
+ */
 class Timeout(a:Neighborhood, maxDuration:Long) extends NeighborhoodCombinator(a) {
   private var deadline: Long = -1
 
@@ -312,21 +326,21 @@ class Timeout(a:Neighborhood, maxDuration:Long) extends NeighborhoodCombinator(a
 }
 
 /**
-  * This combinator will interrupt the search when it becomes too flat.
-  * use it to cut the tail of long, undesired searches
-  * it works by time period.
-  * at the end of every time period, as set by timePeriodInMilliSecond,
-  * it will compute the relative improvement of obj of this latest time period over hte best so far
-  * if the relative improvement is smaller than minRelativeImprovementByCut, it is considered too flat, and search is stopped
-  *
-  * NOTICE that if your base neighborhood has a search time that is bigger then the time period,
-  * it will not be interrupted during its exploration.
-  * this combinator only decides if a new neighborhood exploration is to be started
-  *
-  * @param a the base neighborhood
-  * @param timePeriodInMilliSecond defines teh time period for the cut
-  * @param minRelativeImprovementByCut the relative improvement over obj
-  */
+ * This combinator will interrupt the search when it becomes too flat.
+ * use it to cut the tail of long, undesired searches
+ * it works by time period.
+ * at the end of every time period, as set by timePeriodInMilliSecond,
+ * it will compute the relative improvement of obj of this latest time period over hte best so far
+ * if the relative improvement is smaller than minRelativeImprovementByCut, it is considered too flat, and search is stopped
+ *
+ * NOTICE that if your base neighborhood has a search time that is bigger then the time period,
+ * it will not be interrupted during its exploration.
+ * this combinator only decides if a new neighborhood exploration is to be started
+ *
+ * @param a the base neighborhood
+ * @param timePeriodInMilliSecond defines teh time period for the cut
+ * @param minRelativeImprovementByCut the relative improvement over obj
+ */
 class CutTail(a:Neighborhood, timePeriodInMilliSecond:Long,minRelativeImprovementByCut:Double,minTimeBeforeFirstCutInMilliSecond:Long)
   extends NeighborhoodCombinator(a){
 
@@ -378,7 +392,7 @@ class CutTail(a:Neighborhood, timePeriodInMilliSecond:Long,minRelativeImprovemen
     a.getMove(obj,initialObj,acceptanceCriterion) match{
       case NoMoveFound => NoMoveFound
       case f:MoveFound =>
-//        println("update best in cut")
+        //        println("update best in cut")
         bestSoFar = bestSoFar min f.objAfter
         f
     }

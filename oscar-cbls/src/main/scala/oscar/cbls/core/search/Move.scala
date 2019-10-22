@@ -239,8 +239,8 @@ class MoveWithOtherObj(initMove:Move,objAfter:Long, neighborhoodName:String = nu
   extends Move(objAfter = objAfter, neighborhoodName = if(neighborhoodName != null) neighborhoodName else initMove.neighborhoodName){
 
   override def commit(): Unit = initMove.commit()
-
-  override def toString: String = initMove.toString
+  
+  override def toString: String = "MoveWithOtherObj(initMove:"+ initMove.toString + objToString + ")"
 }
 
 

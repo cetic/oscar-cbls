@@ -20,6 +20,12 @@ class ParetoTable(val variables:Array[IntValue],
   registerStaticAndDynamicDependencyArrayIndex(variables)
   this.finishInitialization()
 
+  override def toString: String = {
+    "ParetoTable(\n\tvariables:" + variables.map(_.value).mkString(",") + "\n\t" +
+      "tables:\n\t\t" + tables.map(_.mkString(",")).zipWithIndex.map(x => if(x._2 == this.value) x._1 + "<--" else x._1).mkString("\n\t\t") +
+      "\n\tdefaultIfNoDominate:" + defaultIfNoDominate + ")"
+  }
+
   val smallestAmongAllRows = Array.tabulate(d)(i => tables.map(row => row(i)).min)
   val dimensionList = QList.buildFromIterable(0 until d)
 
@@ -29,7 +35,7 @@ class ParetoTable(val variables:Array[IntValue],
     //restart
     //something was increased, but still fits the current line, => no propagate
     //something has increased and does not fit anymore on the current line => schedule,start from old
-    //someting has decreased: start from scratch
+    //something has decreased: start from scratch
 
     //startFromScratch is represented by exploreFrom set to -1
     //otherwise it is the line where we start from, excluded
@@ -39,14 +45,14 @@ class ParetoTable(val variables:Array[IntValue],
     if(newVal > oldVal && exploreFrom != -1){
       //it has increased and there is a chance to set a starting point
       if(tables(this.newValue.toInt)(id) >= newVal) {
-        //current line can still accomodate this new value, so nothing to do
+        //current line can still accommodate this new value, so nothing to do
       }else{
-        //curent line cannot accomodate this change, so we schyedle for propagation,
-        // but still, we can start at the current line forhte exploration
+        //current line cannot accommodate this change, so we schedule for propagation,
+        // but still, we can start at the current line for the exploration
         this.scheduleForPropagation()
       }
     }else{
-      //it decreases, so we schedule and forget the startFroom
+      //it decreases, so we schedule and forget the startFrom
       this.scheduleForPropagation()
       exploreFrom = -1
     }
@@ -58,8 +64,8 @@ class ParetoTable(val variables:Array[IntValue],
     exploreFrom = a
   }
 
-  def searchFromScratchLin(v:Array[Long],staAt:Int):Int = {
-    var i = staAt
+  def searchFromScratchLin(v:Array[Long], staAt:Int):Int = {
+    var i:Int = (if(staAt == -1) 0 else staAt)
     //if the smallest is bigger or equal to the value, we do not need to check it.
     //this is a speedup when there are many dimensions, with many zero's as we expect here.
     val relevantDimensions:QList[Int] = QList.qFilter(dimensionList,i => smallestAmongAllRows(i) < v(i))
@@ -68,10 +74,11 @@ class ParetoTable(val variables:Array[IntValue],
       if(dominates(tables(i),v,relevantDimensions)) return i
       i = i+1
     }
+
     -1
   }
 
-  def dominates(x:Array[Long],y:Array[Long],relevantDimensions:QList[Int]):Boolean = {
+  def dominates(x:Array[Long], y:Array[Long], relevantDimensions:QList[Int]):Boolean = {
     var d = relevantDimensions
     while(d != null){
       val i = d.head

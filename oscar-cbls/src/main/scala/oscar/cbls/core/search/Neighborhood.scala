@@ -103,8 +103,8 @@ abstract class Neighborhood(name:String = null) {
    *
    * @return
    */
-  final def profilingStatistics:String = Profile.statisticsHeader + "\n" + collectProfilingStatistics.mkString("\n")
-  def collectProfilingStatistics:List[String] = List.empty
+  final def profilingStatistics:String = Profile.justifyRightArray(Profile.statisticsHeader :: collectProfilingStatistics/*.map(a => ("" :: a.toList).toArray)*/).mkString("\n")
+  def collectProfilingStatistics:List[Array[String]] = List.empty
 
   /**
    * the method that returns a move from the neighborhood.

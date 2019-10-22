@@ -63,7 +63,9 @@ class Edge(val id:Int,
            val nodeB:Node,
            val length:Long,
            val conditionID:Option[Int]){
-  require(length > 0)
+
+  //TODO: remove this limitation; check if OK in all algo working on it.
+  require(length > 0, "length should be >0; got " + length)
   require(nodeA != nodeB)
 
   val nodeIDA:Int = nodeA.id
