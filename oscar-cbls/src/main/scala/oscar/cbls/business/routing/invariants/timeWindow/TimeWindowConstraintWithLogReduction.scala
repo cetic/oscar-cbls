@@ -11,7 +11,7 @@ object TimeWindowConstraintWithLogReduction {
 
   /**
     * This method instantiate a TimeWindow constraint given the following input
-    * @param routes The route of the problem (ChangingSeqValue created in the VRP class)
+    * @param gc The GlobalConstraint linked to this constraint
     * @param n The number of nodes of the problem (including vehicle)
     * @param v The number of vehicles of the problem
     * @param earliestArrivalTime An array representing the earliest arrival time at a node (or vehicle's depot)
@@ -20,7 +20,7 @@ object TimeWindowConstraintWithLogReduction {
     * @param violations An array of CBLSIntVar maintaining the violation of each vehicle
     * @return a time window constraint
     */
-  def apply(routes: ChangingSeqValue,
+  def apply(gc: GlobalConstraintCore,
             n: Int,
             v: Int,
             earliestArrivalTime: Array[Long],
@@ -28,7 +28,7 @@ object TimeWindowConstraintWithLogReduction {
             travelTimeMatrix: Array[Array[Long]],
             violations: Array[CBLSIntVar]): TimeWindowConstraintWithLogReduction ={
 
-    new TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue, n, v,
+    new TimeWindowConstraintWithLogReduction(gc, n, v,
       earliestArrivalTime,
       latestLeavingTime,
       earliestArrivalTime,
@@ -43,7 +43,7 @@ object TimeWindowConstraintWithLogReduction {
 
   /**
     * This method instantiate a TimeWindow constraint given the following input.
-    * @param routes The route of the problem (ChangingSeqValue created in the VRP class)
+    * @param gc The GlobalConstraint linked to this constraint
     * @param n The number of nodes of the problem (including vehicle)
     * @param v The number of vehicles of the problem
     * @param earliestArrivalTime An array (size n) representing the earliest arrival time at a node (or vehicle's depot)
@@ -53,7 +53,7 @@ object TimeWindowConstraintWithLogReduction {
     * @param violations An array of CBLSIntVar maintaining the violation of each vehicle
     * @return a time window constraint
     */
-  def apply(routes: ChangingSeqValue,
+  def apply(gc: GlobalConstraintCore,
             n: Int,
             v: Int,
             earliestArrivalTime: Array[Long],
@@ -62,7 +62,7 @@ object TimeWindowConstraintWithLogReduction {
             travelTimeMatrix: Array[Array[Long]],
             violations: Array[CBLSIntVar]): TimeWindowConstraintWithLogReduction ={
 
-    new TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue, n, v,
+    new TimeWindowConstraintWithLogReduction(gc, n, v,
       earliestArrivalTime,
       (latestLeavingTime, taskDurations).zipped.map(_ - _),
       (earliestArrivalTime, taskDurations).zipped.map(_ + _),
@@ -71,7 +71,7 @@ object TimeWindowConstraintWithLogReduction {
   }
 }
 
-class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
+class TimeWindowConstraintWithLogReduction(gc: GlobalConstraintCore,
                                            n: Int,
                                            v: Int,
                                            earliestArrivalTime: Array[Long],
@@ -79,7 +79,27 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
                                            earliestLeavingTime: Array[Long],
                                            latestLeavingTime: Array[Long],
                                            travelTimeMatrix: Array[Array[Long]],
-                                           violations: Array[CBLSIntVar]) extends LogReducedGlobalConstraintWithExtremes [TransferFunction, Boolean](routes,v){
+                                           val violations: Array[CBLSIntVar]) extends LogReducedGlobalConstraintWithExtremes [TransferFunction](gc,n,v){
+
+  type U = Boolean
+
+  var assignTime = 0L
+  var assignCount = 0
+
+  //val preComputedValues: Array[Array[TransferFunction]] = Array.fill(n)(Array.fill(n)(EmptyTransferFunction))
+
+  // Initialize the vehicles value, the precomputation value and link these invariant to the GlobalConstraintCore
+  gc.register(this)
+  vehiclesValueAtCheckpoint0 = Array.fill(v)(false)
+  currentVehiclesValue = Array.fill(v)(false)
+  for(outputVariable <- violations)outputVariable.setDefiningInvariant(gc)
+
+  override def init(routes: IntSequence): Unit = {
+    for (vehicle <- 0 until v) {
+      computeVehicleValueFromScratch(vehicle, routes)
+      assignVehicleValue(vehicle)
+    }
+  }
 
   private val transferFunctionOfNode: Array[TransferFunction] = Array.tabulate(n)(
     node =>
@@ -178,7 +198,7 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
     *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
     * @return the value associated with the vehicle. This value should only be computed based on the provided segments
     */
-  override def computeVehicleValueComposed(vehicle: Long, segments: QList[LogReducedSegment[TransferFunction]]): Boolean = {
+  override def computeVehicleValueComposed(vehicle: Long, segments: QList[LogReducedSegment[TransferFunction]]): Unit = {
 
     def composeTransferFunctions(transferFunctions: QList[TransferFunction], previousLeavingTime: Long, lastNode: Long): Long ={
       val currentTransferFunction = transferFunctions.head
@@ -213,7 +233,7 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
           newLeavingTime
       }
     }
-    composeLogReduceSegments(segments) < 0L
+    saveVehicleValue(vehicle,composeLogReduceSegments(segments) < 0L)
   }
 
   /**
@@ -222,10 +242,12 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
     * and is able to restore old value without the need to re-compute them, so it only will call this assignVehicleValue method
     *
     * @param vehicle the vehicle number
-    * @param value   the value of the vehicle
     */
-  override def assignVehicleValue(vehicle: Long, value: Boolean): Unit = {
-    if(value) violations(vehicle) := 1L else violations(vehicle) := 0L
+  override def assignVehicleValue(vehicle: Long): Unit = {
+    val start = System.nanoTime()
+    if(currentVehiclesValue(vehicle)) violations(vehicle) := 1L else violations(vehicle) := 0L
+    assignTime += System.nanoTime() - start
+    assignCount += 1
   }
 
   /**
@@ -235,7 +257,7 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
     * @param routes  the sequence representing the route of all vehicle
     * @return the value of the constraint for the given vehicle
     */
-  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence): Boolean = {
+  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence, save: Boolean = true): Boolean = {
     var arrivalTimeAtFromNode = earliestArrivalTime(vehicle)
     var leaveTimeAtFromNode = earliestLeavingTime(vehicle)
     var fromNode = vehicle
@@ -263,10 +285,10 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
     // Check travel back to depot
     val travelBackToDepot = travelTimeMatrix(fromNode)(vehicle)
     val arrivalTimeAtDepot = leaveTimeAtFromNode + travelBackToDepot
-    violationFound || arrivalTimeAtDepot >= latestLeavingTime(vehicle)
+    val result = violationFound || arrivalTimeAtDepot >= latestLeavingTime(vehicle)
+    if(save) saveVehicleValue(vehicle, result)
+    result
   }
-
-  override def outputVariables: Iterable[Variable] = violations
 
   /**
     * this method delivers the value of the node

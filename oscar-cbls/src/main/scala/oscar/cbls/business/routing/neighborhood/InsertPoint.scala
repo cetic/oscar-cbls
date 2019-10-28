@@ -45,6 +45,7 @@ abstract class InsertPoint(vrp: VRP,
   def doMove(insertedPoint: Long, insertAtPosition:Long) {
     seq.insertAtPosition(insertedPoint, insertAtPosition)
   }
+
   def doMovePositionIndependent(insertedPoint:Long, insertAfterPointForInstantiation:Long): Unit ={
     seq.newValue.positionOfAnyOccurrence(insertAfterPointForInstantiation) match{
       case Some(p) => seq.insertAtPosition(insertedPoint, p+1L)

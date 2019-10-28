@@ -161,7 +161,7 @@ class GCCNeighborhood(val variables: Array[CBLSIntVar], val vals: Array[Int], va
                       cs: ConstraintSystem) extends Neighbourhood(variables) {
   val variableViolation: Array[IntValue] = variables.map(cs.violation(_)).toArray
 
-  val clusters = Cluster.makeSparse(variables.map(c => c), vals).Clusters
+  val clusters = Cluster.makeSparse(variables.map(c => c), vals).clusters
   val counts = clusters.foldLeft(Map.empty[Int, IntValue])((map, ic) => map + (ic._1 -> Cardinality(ic._2)))
   //foldLeft(Map.empty[Int,CBLSIntVar])((map,ic) => map + (ic._1 -> Cardinality(ic._2).output))
   val lows = vals.toList.zip(low).foldLeft(Map.empty[Int, Int])((map, vl) => map + (vl._1 -> vl._2))

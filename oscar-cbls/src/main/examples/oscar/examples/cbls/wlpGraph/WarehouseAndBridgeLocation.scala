@@ -27,6 +27,7 @@ import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.invariant.set.Cardinality
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu, Profile}
 import oscar.cbls.lib.search.neighborhoods._
+import oscar.cbls.test.graph.RandomGraphGenerator
 import oscar.cbls.util.StopWatch
 import oscar.cbls.visual.graph.GraphViewer
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
@@ -74,9 +75,15 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   val deliveryNodeList = QList.buildFromIterable(deliveryToNode)
 
-  println("start floyd")
-  val underApproximatingDistanceInGraphAllCondtionsOpen:Array[Array[Long]] = FloydWarshall.buildDistanceMatrixAllConditionalEdgesSame(graph, true)
-  println("end floyd")
+  //println("start floyd")
+  //startWatch()
+  //val underApproximatingDistanceInGraphAllCondtionsOpen:Array[Array[Long]] = FloydWarshall.buildDistanceMatrixAllConditionalEdgesSame(graph, true)
+  //println("end floyd:" + getWatch)
+
+  println("start dijkstra")
+  startWatch()
+  val underApproximatingDistanceInGraphAllCondtionsOpen:Array[Array[Long]] = DijkstraDistanceMatrix.buildDistanceMatrix(graph, _ => true)
+  println("start dijkstra" + getWatch)
 
   /*
   val anyConditionalEdgeOnShortestPath = FloydWarshall.anyConditionalEdgeOnShortestPath(graph,underApproximatingDistanceInGraphAllCondtionsOpen)
@@ -247,7 +254,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
         Profile(swapsK(20)
           dynAndThen((s:SwapMove) => AssignNeighborhood(edgeConditionArray, searchZone = ()=>warehousesPairToTwiceApartBridges(s.idI min s.idJ)(s.idI max s.idJ), name ="FastSwitchConditionsCombined"))
           guard(() => openWarehouses.value.size >= 5)
-          name "fastCombined"),
+          name "fastCombined")
         //Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
       ),refresh = W/10)
 
@@ -257,7 +264,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize1"), 4, obj, restartFromBest = true)
 
       //we set it after the restart because it is really slow; it subsumes the fast search, but it does not often find anything anyway, so better gain time
-      exhaust Profile((swapsK(20) andThen AssignNeighborhood(edgeConditionArray, "SwitchConditionsCombined")) guard(() => openWarehouses.value.size >= 5) name "combined"), //we set a minimal size because the KNearest is very expensive if the size is small
+      exhaust Profile((swapsK(20) andThen AssignNeighborhood(edgeConditionArray, "SwitchConditionsCombined")) guard(() => openWarehouses.value.size >= 5) name "combined") //we set a minimal size because the KNearest is very expensive if the size is small
 
     ) afterMove(
     if(lastDisplay + displayDelay <= this.getWatch){ //} && obj.value < bestDisplayedObj) {
@@ -271,7 +278,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
         hideRegularEdges = true,
         hideOpenEdges = false,
         emphasizeEdges = vor.spanningTree(deliveryNodeList),
-        List(distanceMinMax.getPath) // :: selectedDistances.map(_.getPath).toList
+        List(distanceMinMax.getPath) ::: selectedDistances.map(_.getPath).toList
       )
 
       lastDisplay = this.getWatch
@@ -293,7 +300,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
     hideClosedEdges = true,
     hideRegularEdges = false,
     hideOpenEdges=false,
-    extraPath = List(distanceMinMax.getPath)) // :: selectedDistances.map(_.getPath).toList)
+    extraPath = List(distanceMinMax.getPath) ::: selectedDistances.map(_.getPath).toList)
 
   println(neighborhood.profilingStatistics)
 

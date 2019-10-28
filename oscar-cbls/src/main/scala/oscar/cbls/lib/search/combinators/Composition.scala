@@ -260,7 +260,7 @@ case class SnapShotOnEntry(a: Neighborhood, valuesToSave:Iterable[AbstractVariab
   */
 case class AtomicJump(a: Neighborhood, bound: Int = Int.MaxValue) extends NeighborhoodCombinator(a) {
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
-    CallBackMove(() => a.doAllMoves(_ > bound, obj, acceptanceCriterion), Int.MaxValue, this.getClass.getSimpleName, () => "Atomic(" + a + ")")
+    CallBackMove(() => a.doAllMoves(_ > bound, obj, acceptanceCriterion), Int.MaxValue, this.getClass.getSimpleName)
   }
 }
 

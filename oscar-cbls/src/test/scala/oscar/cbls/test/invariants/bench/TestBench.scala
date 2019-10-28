@@ -16,7 +16,8 @@ package oscar.cbls.test.invariants.bench
   ******************************************************************************/
 
 import org.scalacheck.{Gen, Prop}
-import org.scalatest.prop.Checkers
+import org.scalatest.prop.{Checkers, GeneratorDrivenPropertyChecks}
+import org.scalatest.{AppendedClues, FunSuite, Matchers}
 import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
 
@@ -97,11 +98,11 @@ object InvGen {
    * A sorted set is made of the list of values, and the generated variable
    * is added to the given model.
    */
-  def randomFixedIntSetVar(nbVars: Int, range: Range, model: Store) = for {
+  def randomFixedIntSetVar(nbVars: Int, range: Range, model: Store, name: String) = for {
     c <- Gen.alphaChar
     v <- Gen.containerOfN[List, Long](nbVars, Gen.choose(range.min, range.max))
   } yield RandomIntSetVar(new CBLSSetVar(model, SortedSet[Long](v: _*), range,
-      c.toString.toUpperCase))
+    name))
 
   /**
    * Method to generate a random IntSetVar of size less or equal to the given
@@ -630,29 +631,32 @@ case class RouteOfNodesForCheckPoint(intSeqVar: CBLSSeqVar, v:Int, checker:Invar
   *
   * @author yoann.guyot@cetic.be
  */
-class InvBench(verbose: Int = 0, moves:List[Move]) {
+class InvBench(verbose: Int = 0, moves:List[Move]) extends FunSuite with GeneratorDrivenPropertyChecks with Matchers with Checkers with AppendedClues{
   var property: Prop = false
   val checker = new InvariantChecker(verbose)
   val model = new Store(false, Some(checker), true, false, false)
 
-  val move = Gen.oneOf(moves)
-
   var inputVars: List[RandomVar] = List()
   var outputVars: List[RandomVar] = List()
+
+
+  val moveAndVar = for {
+    m <- Gen.oneOf(moves)
+    v <- Gen.oneOf(inputVars)
+  } yield(m,v)
 
   /**
    * These methods add variables to the bench.
    * input is true if the variable is an input variable, and false if it is an
    * output variable.
    */
-  def addVar(input: Boolean, v: RandomVar) {
-    addVar(input, List(v))
+  def addVar(v: RandomVar) {
+    addVar(List(v))
   }
 
-  def addVar(input: Boolean, vars: Iterable[RandomVar]) {
+  def addVar(vars: Iterable[RandomVar]) {
     for (v <- vars) {
-      if (input) inputVars = v :: inputVars
-      else outputVars = v :: outputVars
+      inputVars = v :: inputVars
     }
   }
 
@@ -665,7 +669,7 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
                  isInput: Boolean = true,
                  constraint: Int => Boolean = (v: Int) => true): CBLSIntVar = {
     val riVar = InvGen.randomIntVar(range, model, constraint).sample.get
-    addVar(isInput, riVar)
+    addVar(riVar)
     riVar.randomVar
   }
 
@@ -676,10 +680,9 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
   def genIntVars(
                   nbVars: Int = 4,
                   range: Range = 0 to 100,
-                  isInput: Boolean = true,
                   constraint: Int => Boolean = (v: Int) => true): List[CBLSIntVar] = {
     val riVars = InvGen.randomIntVars(nbVars, range, model, constraint).sample.get
-    addVar(isInput, riVars)
+    addVar(riVars)
     riVars.map((riv: RandomIntVar) => {
       riv.randomVar
     })
@@ -688,9 +691,8 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
   def genIntVarsArray(
                        nbVars: Int = 4,
                        range: Range = 0 to 100,
-                       isInput: Boolean = true,
                        constraint: Int => Boolean = (v: Int) => true): Array[IntValue] = {
-    genIntVars(nbVars, range, isInput, constraint).toArray
+    genIntVars(nbVars, range, constraint).toArray
   }
 
   /**
@@ -700,10 +702,9 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
   def genSortedIntVars(
                         nbVars: Int,
                         range: Range,
-                        isInput: Boolean = true,
                         constraint: Int => Boolean = (v: Int) => true): SortedSet[IntValue] = {
     val riVars = InvGen.randomIntVars(nbVars, range, model, constraint).sample.get
-    addVar(isInput, riVars)
+    addVar(riVars)
     val iVars = riVars.map((riv: RandomIntVar) => { riv.randomVar })
     SortedSet(iVars: _*)
   }
@@ -712,9 +713,8 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
                         nbVars: Int,
                         rangeValue: Range,
                         rangeBound: Range,
-                        isInput: Boolean = true,
                         constraint: Int => Boolean = (v: Int) => true): SortedMap[Int, IntValue] = {
-    val boundVars = genIntVars(nbVars, rangeBound, isInput, constraint)
+    val boundVars = genIntVars(nbVars, rangeBound, constraint)
     val map = boundVars.map((boundVar: CBLSIntVar) =>
       (Gen.choose(rangeValue.min, rangeValue.max).sample.get, boundVar))
     SortedMap(map: _*)
@@ -726,24 +726,22 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
    */
   def genIntSetVar(
                     nbVars: Int = 5,
-                    range: Range = 0 to 100,
-                    isInput: Boolean = true) = {
-    val risVar = InvGen.randomFixedIntSetVar(nbVars, range, model).sample.get
-    addVar(isInput, risVar)
+                    range: Range = 0 to 100, name :String = "setVar"): CBLSSetVar = {
+    val risVar = InvGen.randomFixedIntSetVar(nbVars, range, model,name).sample.get
+    addVar(risVar)
     risVar.randomVar
   }
 
   /**
-   * Method for generating an array of random IntSetVar to add to the bench
-   * and to its model.
-   */
+    * Method for generating an array of random IntSetVar to add to the bench
+    * and to its model.
+    */
   def genIntSetVars(
                      nbVars: Int = 4,
                      upToSize: Int = 20,
-                     range: Range = 0 to 100,
-                     isInput: Boolean = true): Array[CBLSSetVar] = {
+                     range: Range = 0 to 100): Array[CBLSSetVar] = {
     val risVars = InvGen.randomIntSetVars(nbVars, upToSize, range, model).sample.get
-    addVar(isInput, risVars)
+    addVar(risVars)
     risVars.map((risv: RandomIntSetVar) => {
       risv.randomVar
     }).toArray
@@ -756,10 +754,9 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
     */
   def genIntSeqVar(
                   maxLength: Int = 5,
-                  range: Range = 0 to 100,
-                  isInput:Boolean = true) = {
+                  range: Range = 0 to 100) = {
     val risVar = InvGen.randomIntSeqVar(maxLength, range, model).sample.get
-    addVar(isInput, risVar)
+    addVar(risVar)
     risVar.randomVar
   }
 
@@ -770,10 +767,9 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
   def genIntSeqVars(
                    nbVars: Int = 4,
                    upToSize: Int = 20,
-                   range: Range = 0 to 100,
-                   isInput: Boolean = true): Array[CBLSSeqVar] = {
+                   range: Range = 0 to 100): Array[CBLSSeqVar] = {
     val risVars = InvGen.randomIntSeqVars(nbVars, upToSize, range, model).sample.get
-    addVar(isInput, risVars)
+    addVar(risVars)
     risVars.map((risv: RandomIntSeqVar) => {
       risv.randomVar
     }).toArray
@@ -783,16 +779,15 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
                             upToSize: Int = 20,
                             isInput: Boolean = true) = {
     val risVar = InvGen.notRandomIntSeqVar(upToSize,model).sample.get
-    addVar(isInput,risVar)
+    addVar(risVar)
     risVar.randomVar
   }
 
   def genRouteOfNodes(
                        upToSize: Int = 20,
-                       v: Int = 5,
-                       isInput: Boolean = true) = {
+                       v: Int = 5) = {
     val risVar = InvGen.routeOfNodes(upToSize,v,model).sample.get
-    addVar(isInput,risVar)
+    addVar(risVar)
     risVar.randomVar
   }
 
@@ -801,7 +796,7 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
                        v: Int = 5,
                        isInput: Boolean = true) = {
     val risVar = InvGen.routeOfNodesForCheckPoint(upToSize,v,model,checker).sample.get
-    addVar(isInput,risVar)
+    addVar(risVar)
     risVar.randomVar
   }
 
@@ -817,34 +812,70 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
   }
 
   /**
-   * This method runs the bench.
-   */
-  def run() = {
+    * This method runs the bench
+    * @param c Some constraints (that are not inserted in the propagation graph) but that will have to have their
+    *          internals checked after the propagation.
+    * @return
+    */
+  def run(c :Constraint*) = {
     model.close()
-    //println("Model closed")
-    model.propagate()
 
-    try {
-      property = org.scalacheck.Prop.forAll(move) {
-        randomMove: Move =>
-          if (verbose > 0) {
-            println("---------------------------------------------------")
-            printVars("Input", inputVars)
-            printVars("Output", outputVars)
-            print(randomMove.toString + " ")
-          }
-          val randomVar = Gen.oneOf(inputVars).sample.get
-          if (verbose > 0) print(randomVar.toString() + " => ")
+    var clue = ""
+    var caughtStacktrace :Array[StackTraceElement] = null
+
+    val prop = org.scalacheck.Prop.forAll(moveAndVar) {
+      moveAndVar: (Move,RandomVar) =>
+
+        val randomMove = moveAndVar._1
+        val randomVar = moveAndVar._2
+        val randomVarBefore = randomVar.toString
+        var hasCaught = false
+        var hasPropagated = false
+
+        try{
           randomVar.move(randomMove)
-          if (verbose > 0) println(randomVar.toString() + "\n")
-          model.propagate()
-          if (verbose > 0) println
-          checker.isChecked()
-      }
-    } catch {
-      case e: Exception =>
-        println("Exception caught: " + e)
+          model.propagate()                       //Will check the propagation elements
+          hasPropagated = true
+          c.foreach(_.checkInternals(checker))    //Will check the constraints
+
+          if(!checker.isChecked()){
+            clue = s"\nTest failed during checker.check(), the assertion was false."
+          }
+        }
+        catch{
+          case e:Throwable => {
+            hasCaught = true
+            caughtStacktrace = e.getStackTrace
+
+            if(!hasPropagated)
+              clue = s"\nTest failed during propagation, the internal error was : \n\t=>${e.getMessage}"
+            else
+              clue = s"\nTest failed while checkInternals() on constraints, the internal error was : \n\t=>${e.getMessage}"
+
+            clue = clue.concat(s"\nOccured after executing move $randomMove")
+            clue = clue.concat(s"\nOn variable ${randomVar.getClass}")
+            clue = clue.concat(s"\nVariable before move $randomVarBefore")
+            clue = clue.concat(s"\nVariable after move $randomVar\n")
+          }
+        }
+        !hasCaught
     }
-    Checkers.check(property)
+
+    try{
+      Checkers.check(prop)
+    }catch{
+
+      // Catch both Errors and Exceptions
+      case e :Throwable => {
+
+        if(caughtStacktrace != null){
+          val ex = new Exception(clue)
+          ex.setStackTrace(caughtStacktrace)
+          throw ex
+        }
+
+        throw e
+      }
+    }
   }
 }

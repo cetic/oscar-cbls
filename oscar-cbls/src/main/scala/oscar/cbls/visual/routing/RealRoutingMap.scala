@@ -32,7 +32,7 @@ class RealRoutingMap(vrp: VRP,
                      geoCoords: Array[(scala.Double,scala.Double)],
                      colorValues: Array[Color],
                      refreshRate: Long,
-                     toolTipInfo: Option[Int => Option[String]]) extends VisualMap() with StopWatch with RoutingMapTrait {
+                     toolTipInfo: Option[Int => Option[() => String]]) extends VisualMap() with StopWatch with RoutingMapTrait {
 
   private var lastRefresh = 0L
 
@@ -158,8 +158,8 @@ class RealRoutingMap(vrp: VRP,
         val mousePosition = e.getPoint
         val node = geoCoords.toList.zipWithIndex.find(p => {
           val nodePixelPosition = tf.geoToPixel(new GeoPosition(p._1._1,p._1._2),viewer.getZoom)
-          Math.abs(nodePixelPosition.getX - xLowerViewportBound - mousePosition.getX) <= 2 &&
-            Math.abs(nodePixelPosition.getY - yLowerViewportBound - mousePosition.getY) <= 2
+          Math.abs(nodePixelPosition.getX - xLowerViewportBound - mousePosition.getX) <= 4 &&
+            Math.abs(nodePixelPosition.getY - yLowerViewportBound - mousePosition.getY) <= 4
         })
         if(node.isDefined)
           viewer.setToolTipText(toolTips(node.get._2))
@@ -171,16 +171,17 @@ class RealRoutingMap(vrp: VRP,
   }
 
   private def generateToolTipInfo(node: Int, vehicle: Int = vrp.n, position: Int = vrp.n): String ={
-    val defaultString =
+    val defaultString = "<html>" + (
       if(node < vrp.v)
-        "Depot of vehicle " + vehicle + "\n"
+        "Depot of vehicle " + vehicle
       else if(vehicle == vrp.n)
-        "Unrouted node " + node + "\n"
+        "Unrouted node " + node
       else
-        "Node " + node + " at the " + position + "th position of the vehicle " + vehicle + "\n"
+        "Node " + node + " at the " + position + "th position of the vehicle " + vehicle) +
+      "<br>"
 
     defaultString +
-      (if(toolTipInfo.isDefined) toolTipInfo.get(node).getOrElse("") else "")
+      (if(toolTipInfo.isDefined) toolTipInfo.get(node).getOrElse(() => "")() else "") + "</html>"
   }
 
 }

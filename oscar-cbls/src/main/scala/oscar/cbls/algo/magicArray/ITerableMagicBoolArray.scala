@@ -21,10 +21,10 @@ import scala.language.postfixOps
 
 object IterableMagicBoolArray{
   /**
-   * create a Magical Array Of Boolean of given length
-   * @param n the length
-   * @return a Magical Array Of Boolean or null if length is less than zero
-   */
+    * create a Magical Array Of Boolean of given length
+    * @param n the length
+    * @return a Magical Array Of Boolean or null if length is less than zero
+    */
   def apply(n:Int,initVal:Boolean = false):IterableMagicBoolArray ={
     require(n >= 0, "cannot create magic array of negative size")
     new IterableMagicBoolArray(n,initVal)
@@ -46,9 +46,9 @@ class IterableMagicBoolArray(override val length:Int,initVal:Boolean = false)
   val nbIndicesAtTrue:Int = nbTrue
 
   /**
-   * Sets the value of each element to "value"
-   * @note complexity is O(1L)
-   */
+    * Sets the value of each element to "value"
+    * @note complexity is O(1)
+    */
   override def all_= (value : Boolean) : Unit = {
     super.all_=(value)
     if(value){
@@ -95,6 +95,22 @@ class IterableMagicBoolArray(override val length:Int,initVal:Boolean = false)
         positionsAtTrueOverApproximated.filter(this(_)).toIterator
       }else{
         positionsAtTrueOverApproximated.toIterator
+      }
+    }
+  }
+
+  override def indicesAtTrueAsQList: QList[Int] = {
+    if(overApproximationIsComplete){
+      if(anyIndividualSetToFalse){
+        super.indicesAtTrueAsQList
+      }else{
+        QList.nonReversedBuildFromIterable(indices)
+      }
+    }else{
+      if(anyIndividualSetToFalse && positionsAtTrueOverApproximated != null){
+        positionsAtTrueOverApproximated.qFilter(this(_))
+      }else{
+        positionsAtTrueOverApproximated
       }
     }
   }

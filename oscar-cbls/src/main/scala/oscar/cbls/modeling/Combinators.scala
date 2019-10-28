@@ -1,7 +1,7 @@
 package oscar.cbls.modeling
 
 import oscar.cbls._
-import oscar.cbls.core.search.{Move, Neighborhood, NoMoveNeighborhood, SupportForAndThenChaining}
+import oscar.cbls.core.search.{JumpNeighborhood, Move, Neighborhood, NoMoveNeighborhood, SupportForAndThenChaining}
 import oscar.cbls.lib.search.combinators._
 import oscar.cbls.util.StopWatch
 
@@ -399,6 +399,12 @@ class NeighborhoodOps(n:Neighborhood){
     Restart(n,randomizationNeighborhood,maxRestartWithoutImprovement,obj,restartFromBest)
   }
 
+  def onExhaustRestartAfterJump(randomizationProcedure: =>Unit, maxRestartWithoutImprovement:Long, obj:Objective, restartFromBest:Boolean = false, randomizationName:String = "Randomization") = {
+    val jumpNeighborhood = new JumpNeighborhood(randomizationName){
+      override def doIt(): Unit = randomizationProcedure
+    }
+    onExhaustRestartAfter(jumpNeighborhood, maxRestartWithoutImprovement, obj, restartFromBest)
+  }
 
   /**
     * alias for (this maxMoves 1L) exhaust b
@@ -487,9 +493,9 @@ class NeighborhoodOps(n:Neighborhood){
     */
   def once = new MaxMoves(n, 1L)
 
-  def onExhaust(proc:()=>Unit) = DoOnExhaust(n,proc,false)
+  def onExhaust(proc: =>Unit) = DoOnExhaust(n,() => proc,false)
 
-  def onFirstExhaust(proc:()=>Unit) = DoOnExhaust(n,proc,true)
+  def onFirstExhaust(proc: =>Unit) = DoOnExhaust(n,() => proc,true)
 
   /**
     * bounds the number of tolerated moves without improvements over the best value
@@ -556,14 +562,14 @@ class NeighborhoodOps(n:Neighborhood){
   def afterMoveOnMove(procOnMove: Move => Unit) = DoOnMove(n, procAfterMove = procOnMove)
 
   /**
-   * This combinator create a frame that draw the evolution curve of the objective function.
-   * The drawn curve possess a scrollbar on the right that allow the user to decrease or
-   * increase the number of value displayed.
-   *
-   * @param obj the objective function
-   * @author fabian.germeau@student.vinci.be
-   */
-  def showObjectiveFunction(obj: Objective) = new ShowObjectiveFunction(n,obj)
+    * This combinator create a frame that draw the evolution curve of the objective function.
+    * The drawn curve possess a scrollbar on the right that allow the user to decrease or
+    * increase the number of value displayed.
+    *
+    * @param obj the objective function
+    * @author fabian.germeau@student.vinci.be
+    */
+  def showObjectiveFunction(obj: Objective, title: String = "Objective function vs. time[s]") = new ShowObjectiveFunction(n,obj, title)
 
   /**
     * this combinator attaches a custom code to a given neighborhood.

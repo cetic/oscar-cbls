@@ -117,7 +117,7 @@ class VLSNGraph(val nodes:Array[Node],val edges:Array[Edge],val nbLabels:Long, v
       "\tlegend[shape=rectangle,style=filled,fillcolor=pink,color=black,label = \"" + this.statistics + "\"] ; \n" +
       "\toverlap=false\n" +
       //      "\tlabel=\"" + this.statistics + "\";\n" +
-      "\tfontsize=12L;\n" +
+      "\tfontsize=12;\n" +
       "}"
   }
 

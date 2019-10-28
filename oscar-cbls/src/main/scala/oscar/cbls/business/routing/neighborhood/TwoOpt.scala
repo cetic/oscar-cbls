@@ -51,6 +51,7 @@ case class TwoOpt(segmentStartValues:()=>Iterable[Long],
   val seq = vrp.routes
 
   def doMove(fromPositionIncluded:Long,toPositionIncluded:Long) {
+    println(s"fromPosition : $fromPositionIncluded\t toPosition : $toPositionIncluded\t seq = ${seq.value}")
     seq.flip(fromPositionIncluded,toPositionIncluded)
   }
 

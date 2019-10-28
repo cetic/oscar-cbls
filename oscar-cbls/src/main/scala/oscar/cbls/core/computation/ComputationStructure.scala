@@ -20,6 +20,7 @@
 
 package oscar.cbls.core.computation
 
+import oscar.cbls
 import oscar.cbls.algo.distributedStorage.{DistributedStorageUtility, StorageUtilityManager}
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.core.propagation._
@@ -55,7 +56,9 @@ case class Store(override val verbose:Boolean = false,
   with Bulker with StorageUtilityManager{
 
   assert({System.err.println("You are using a CBLS store with asserts activated. It makes the engine slower. Recompile it with -Xdisable-assertions"); true})
-  if(checker.nonEmpty) System.err.println("OscaR.cbls is running in debug mode. It makes the engine slower.")
+
+  cbls.warning(checker.isEmpty, "OscaR.cbls is running in debug mode. It makes the engine slower.")
+
 
   private[this] var variables:QList[AbstractVariable] = null
   private var propagationElements:QList[PropagationElement] = null
@@ -158,7 +161,7 @@ case class Store(override val verbose:Boolean = false,
   /**this checks that invariant i is one that is supposed to do something now
     * used to check that invariants have declared all their controling links to the model
     * */
-  def checkExecutingInvariantOK(i:Invariant):Boolean = {
+  def   checkExecutingInvariantOK(i:Invariant):Boolean = {
     if(i != null){
       if (notifiedInvariant != null && notifiedInvariant != i){
         return false

@@ -37,8 +37,9 @@ trait RoutingExtensions {
     * @param refreshRate The refresh rate (be carefull if the refresh rate is to high you may have greate performance issues
     * @param routingMapType The type of map you want to generate
     * @param toolTipInfo A function node => String used to display some information concerning the node.
+    *                    WARNING : Using html syntax => breakline = < br >
     *                    NOTE : Basic information is already given :
-    *                        "Node " + node + " at the " + position + "th position of the vehicle " + vehicle + "\n"
+    *                        "Node " + node + " at the " + position + "th position of the vehicle " + vehicle + "< br >"
     * @return A display object
     */
   def display(vrp: VRP,
@@ -46,7 +47,7 @@ trait RoutingExtensions {
               sizeOfMap: Option[Long] = None,
               refreshRate: Long = 100L,
               routingMapType: RoutingMapTypes.Value = RoutingMapTypes.BasicRoutingMap,
-              toolTipInfo: Option[Int => Option[String]] = None,
+              toolTipInfo: Option[Int => Option[() => String]] = None,
               title:String = "VRP with OscaR.cbls"
              ) =
     new Display(vrp,nodePositions,sizeOfMap,refreshRate,toolTipInfo, routingMapType,title)

@@ -191,7 +191,7 @@ trait FilterInvariants{
     * @param cond is a function that selects values to be includes in the output set.
     * This ''cond'' function cannot depend on any IntVar, as updates to these IntVars will not trigger propagation of this invariant.
     */
-  def filter(values:Array[IntValue], cond:(Long=>Boolean) = _ != 0L) = Filter(values:Array[IntValue], cond:(Long=>Boolean))
+  def filter(values:Array[IntValue], cond:(Long=>Boolean) = _ != 0L) =  Filter(values:Array[IntValue], cond:(Long=>Boolean))
 }
 
 

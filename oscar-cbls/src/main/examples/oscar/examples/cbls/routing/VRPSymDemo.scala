@@ -120,7 +120,7 @@ class VRPDemo(n:Long, v:Long, maxPivotPerValuePercent:Long, verbose:Long, displa
   graphicExtension.drawRoutes()
 
   //le problème du hérisson apparaît lorsuqe routeUnroutedPoint3 & routeUnroutedPoint3 sont actifs
-  val search = (bestSlopeFirst(List(routeUnroutedPoint,  routeUnroutedPoint2,  /*routeUnroutedPoint3, */ vlsn1pt, onePtMove(10),customTwoOpt, customThreeOpt(10,true),segExchange(10)))
+  val search = (bestSlopeFirst(List(routeUnroutedPoint,  routeUnroutedPoint2,  vlsn1pt, onePtMove(10),customTwoOpt, customThreeOpt(10,true),segExchange(10)))
     exhaust bestSlopeFirst(List(customThreeOpt(30,true),vlsn1pt))).afterMove(graphicExtension.drawRoutes())// showObjectiveFunction(obj)
 
   search.verbose = verbose

@@ -69,7 +69,7 @@ case class SubSequence(v: SeqValue,index:Long, length: Long,
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     if (!digestChanges(changes)) {
-      this := computeFromScratch(v.value)
+      this := computeFromScratch(changes.newValue)
     }
   }
 
@@ -146,7 +146,7 @@ case class SubSequence(v: SeqValue,index:Long, length: Long,
   }
 
   override def checkInternals(c: Checker) {
-    c.check(this.newValue.toList equals computeFromScratch(v.value).toList, Some("this.newValue(=" + this.newValue.toList + ") == v.value.subSequence(=" + v.value.toList.reverse + ")"))
+    require(this.newValue.toList equals computeFromScratch(v.value).toList, Some("this.newValue(=" + this.newValue.toList + ") == v.value.subSequence(=" + v.value.toList.reverse + ")"))
    }
 }
 
@@ -300,7 +300,7 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
   }
 
   override def checkInternals(c: Checker) {
-    c.check(this.newValue.toList equals computeFromScratch(originalSeq.value,index.value).toList, Some("this.newValue(=" + this.newValue.toList + ") == v.value.subSequence(=" + originalSeq.value.toList.reverse + ")"))
+    require(this.newValue.toList equals computeFromScratch(originalSeq.value,index.value).toList, Some("this.newValue(=" + this.newValue.toList + ") == v.value.subSequence(=" + originalSeq.value.toList.reverse + ")"))
   }
 }
 

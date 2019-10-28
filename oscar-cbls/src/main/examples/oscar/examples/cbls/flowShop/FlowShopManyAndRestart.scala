@@ -20,7 +20,7 @@ import oscar.cbls.lib.search.combinators.BestSlopeFirst
 import oscar.cbls.lib.search.neighborhoods.{WideningFlipNeighborhood, SwapsNeighborhood}
 import oscar.cbls.modeling.CBLSModel
 
-object flowShopManyAndRestart  extends CBLSModel with App {
+object FlowShopManyAndRestart extends CBLSModel with App {
 
   val machineToJobToDuration:Array[Array[Long]] =
     Array(

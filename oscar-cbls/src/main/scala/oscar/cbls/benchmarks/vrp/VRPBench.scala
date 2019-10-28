@@ -19,7 +19,6 @@ import java.io.{File, PrintWriter}
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
-import oscar.cbls.core.computation.ChangingIntValue
 import oscar.cbls.core.search.First
 import oscar.cbls.util.StopWatch
 

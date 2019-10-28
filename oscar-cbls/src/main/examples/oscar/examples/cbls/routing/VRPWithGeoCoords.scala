@@ -14,7 +14,7 @@ object VRPWithGeoCoords extends App{
   val minLong = 3.440849
   val maxLong = 5.452595
 
-  new VRPWithWeightedNodes(n,v,minLat,maxLat,minLong,maxLong)
+  new VRPWithGeoCoords(n,v,minLat,maxLat,minLong,maxLong)
 }
 
 /**

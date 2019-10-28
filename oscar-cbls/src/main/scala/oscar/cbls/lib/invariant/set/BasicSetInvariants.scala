@@ -501,8 +501,8 @@ case class Singleton(v: IntValue)
   finishInitialization()
 
   override def checkInternals(c: Checker) {
-    assert(this.value.size == 1L)
-    assert(this.value.head == v.value)
+    c.check(this.value.size == 1L)
+    c.check(this.value.head == v.value)
   }
 
   override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
@@ -573,7 +573,7 @@ case class TakeAnyToSet(from: SetValue)
  * @author renaud.delandtsheer@cetic.be
  */
 case class BelongsTo(v: IntValue, set: SetValue)
-  extends IntInvariant(0L,Domain(0L , 1L))
+  extends IntInvariant(if (set.value.contains(v.value)) 1L else 0L,Domain(0L , 1L))
   with IntNotificationTarget
   with SetNotificationTarget{
 

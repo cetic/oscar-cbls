@@ -25,14 +25,15 @@ import scala.collection.Iterator
  ******************************************************************************/
 
 /**This class is a faster version of a heap, where several items stored in it have same index.
- * The heap is actually made of an array, storing lists containing items with same position.
+ * The heap is actually made of an array,
+ * storing lists containing items with same position.
  * A binomial heap is maintained to record the lowest position in the heap.
  * This is more efficient if it often occurs that elements have the same position.
  * keys is assumed to start at zero.
   *
   * @author renaud.delandtsheer@cetic.be
  */
-class AggregatedBinomialHeapQList[@specialized T](GetKey:T => Int,val maxPosition:Int) extends AbstractHeap[T] {
+class AggregatedBinomialHeapQList[T](GetKey:T => Int,val maxPosition:Int) extends AbstractHeap[T] {
 
   private[this] val b = new BinomialHeap[Int](a => a, maxPosition)
 
@@ -82,7 +83,7 @@ class AggregatedBinomialHeapQList[@specialized T](GetKey:T => Int,val maxPositio
   }
 
   override def iterator: Iterator[T] = {
-    var acc:List[T] = null
+    var acc:List[T] = List()
     for (position <- b){
       var curr = a(position)
         while(curr != null){
@@ -103,7 +104,7 @@ class AggregatedBinomialHeapQList[@specialized T](GetKey:T => Int,val maxPositio
   *
   * @author renaud.delandtsheer@cetic.be
   */
-class AggregatedBinomialHeapArrayList[@specialized T](GetKey:T => Int,val maxPosition:Int, initialSizeForArrayList:Int = 10)(implicit val X:Manifest[T]) extends AbstractHeap[T] {
+class AggregatedBinomialHeapArrayList[T](GetKey:T => Int,val maxPosition:Int, initialSizeForArrayList:Int = 10)(implicit val X:Manifest[T]) extends AbstractHeap[T] {
 
   private[this] val b = new BinomialHeap[Int](a => a, maxPosition)
 

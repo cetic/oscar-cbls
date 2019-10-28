@@ -1,26 +1,26 @@
 /**
- * *****************************************************************************
- * OscaR is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 2.1 of the License, or
- * (at your option) any later version.
- *
- * OscaR is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License  for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License along with OscaR.
- * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
- * ****************************************************************************
- */
+  * *****************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  * ****************************************************************************
+  */
 /**
- * *****************************************************************************
- * Contributors:
- *     This code has been initially developed by Ghilain Florent.
- *     Refactored (in respect with the new architecture) by Yoann Guyot.
- * ****************************************************************************
- */
+  * *****************************************************************************
+  * Contributors:
+  *     This code has been initially developed by Ghilain Florent.
+  *     Refactored (in respect with the new architecture) by Yoann Guyot.
+  * ****************************************************************************
+  */
 
 package oscar.cbls.business.routing.neighborhood
 
@@ -45,17 +45,17 @@ import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, 
 import oscar.cbls._
 
 /**
- * Removes a point of route.
- * The search complexity is O(n).
- * @param relevantPointsToRemove: the predecessors ofthe points that we will try to remove
- * @param vrp the routing problem
- * @param neighborhoodName the name of the neighborhood, for verbosities
- * @param selectNodeBehavior how to select node to remove
- * @param hotRestart true if hotRestart is needed, false otherwise
- * @author renaud.delandtsheer@cetic.be
- * @author yoann.guyot@cetic.be
- * @author Florent Ghilain (UMONS)
- */
+  * Removes a point of route.
+  * The search complexity is O(n).
+  * @param relevantPointsToRemove: the points that we will try to remove; tolerates non routed points
+  * @param vrp the routing problem
+  * @param neighborhoodName the name of the neighborhood, for verbosities
+  * @param selectNodeBehavior how to select node to remove
+  * @param hotRestart true if hotRestart is needed, false otherwise
+  * @author renaud.delandtsheer@cetic.be
+  * @author yoann.guyot@cetic.be
+  * @author Florent Ghilain (UMONS)
+  */
 case class RemovePoint(relevantPointsToRemove:()=>Iterable[Long],
                        vrp: VRP,
                        neighborhoodName:String = "RemovePoint",
@@ -91,14 +91,16 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Long],
     while (it.hasNext) {
       pointToRemove = it.next()
 
-      seq.value.positionOfAnyOccurrence(pointToRemove) match{
-        case None => ;
-        case Some(p) =>
-          positionOfPointToRemove = p
-          doMove(positionOfPointToRemove)
-          if (evaluateCurrentMoveObjTrueIfSomethingFound(evalObjAndRollBack())) {
-            notifyFound()
-          }
+      if(pointToRemove >= v){ //otherwise, it is a vehicle start, and we do not try to remove it.
+        seq.value.positionOfAnyOccurrence(pointToRemove) match {
+          case None => ;
+          case Some(p) =>
+            positionOfPointToRemove = p
+            doMove(positionOfPointToRemove)
+            if (evaluateCurrentMoveObjTrueIfSomethingFound(evalObjAndRollBack())) {
+              notifyFound()
+            }
+        }
       }
     }
     seq.releaseTopCheckpoint()
@@ -106,7 +108,14 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Long],
   }
 
   override def instantiateCurrentMove(newObj: Long) =
-    RemovePointMove(positionOfPointToRemove, pointToRemove, positionIndependentMoves,vrp, newObj, this, neighborhoodNameToString)
+    RemovePointMove(
+      positionOfPointToRemove,
+      pointToRemove,
+      positionIndependentMoves,
+      vrp,
+      newObj,
+      this,
+      neighborhoodNameToString)
 
   def doMove(positionOfPointToRemove: Long) {
     seq.remove(positionOfPointToRemove)
@@ -122,14 +131,14 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Long],
 }
 
 /**
- * Models a remove-point operator of a given VRP problem.
- * @param positionOfPointToRemove the predecessor of the point that will be removed.
- * @param objAfter the objective value if we performed this remove-point operator.
- * @param neighborhood the originating neighborhood
- * @author renaud.delandtsheer@cetic.be
- * @author yoann.guyot@cetic.be
- * @author Florent Ghilain (UMONS)
- */
+  * Models a remove-point operator of a given VRP problem.
+  * @param positionOfPointToRemove the predecessor of the point that will be removed.
+  * @param objAfter the objective value if we performed this remove-point operator.
+  * @param neighborhood the originating neighborhood
+  * @author renaud.delandtsheer@cetic.be
+  * @author yoann.guyot@cetic.be
+  * @author Florent Ghilain (UMONS)
+  */
 case class RemovePointMove(positionOfPointToRemove: Long,
                            pointToRemove:Long,
                            positionIndependentMoves:Boolean,

@@ -23,15 +23,15 @@ import oscar.examples.cbls.routing.RoutingMatrixGenerator
 /**
   * Created by f.germeau on 07/09/2016.
   */
-class MyVRP(n:Int,v:Int,model:Store,symmetricDistanceMatrix:Array[Array[Int]]) extends VRP(model,n,v){
+class MyVRP(n:Int,v:Int,model:Store,symmetricDistanceMatrix:Array[Array[Long]]) extends VRP(model,n,v){
 
-  val routingDistance = constantRoutingDistance(routes,n,v,false,symmetricDistanceMatrix,true,false,false)
+  val routingDistance = routeLength(routes,n,v,false,symmetricDistanceMatrix,true,false,false)
 
   val penaltyForUnrouted = 10000
 
   val obj = Objective(routingDistance(0) + (penaltyForUnrouted*(n - length(routes))))
 
-  val closestNeighborsForward = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistanceMatrix, (_) => nodes))
+  val closestNeighborsForward = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistanceMatrix, (_) => nodes)(_))
 }
 
 object TestCheckPoint extends App{
@@ -52,37 +52,37 @@ object TestCheckPoint extends App{
 
   val insertPoint = profile(insertPointUnroutedFirst(
     unroutedNodesToInsert = () => myVRP.unroutedNodes,
-    relevantPredecessor = () => myVRP.kFirst(n/10,myVRP.closestNeighborsForward,(_) => myVRP.isRouted),
+    relevantPredecessor = () => myVRP.kFirst(n/10,myVRP.closestNeighborsForward(_),(_) => myVRP.isRouted),
     vrp = myVRP
   ))
 
   val customOnePointMove = profile(onePointMove(
     nodesToMove = myVRP.routed,
-    relevantNewPredecessors = () => myVRP.kFirst(n/10, myVRP.closestNeighborsForward,(_) => myVRP.isRouted),
+    relevantNewPredecessors = () => myVRP.kFirst(n/10, myVRP.closestNeighborsForward(_),(_) => myVRP.isRouted),
     vrp = myVRP
   ))
 
   val customTwoOpt = profile(twoOpt(
     segmentStartValues = myVRP.routed,
-    relevantNewSuccessors = () => myVRP.kFirst(n/10, myVRP.closestNeighborsForward,(_) => myVRP.isRouted),
+    relevantNewSuccessors = () => myVRP.kFirst(n/10, myVRP.closestNeighborsForward(_),(_) => myVRP.isRouted),
     vrp = myVRP
   ))
 
   val customThreeOpt = profile(threeOpt(
     potentialInsertionPoints = myVRP.routed,
-    relevantNeighbors = () => myVRP.kFirst(20, myVRP.closestNeighborsForward,(_) => myVRP.isRouted),
+    relevantNeighbors = () => myVRP.kFirst(20, myVRP.closestNeighborsForward(_),(_) => myVRP.isRouted),
     vrp = myVRP
   ))
 
   val doubleInsert = profile(dynAndThen(
     insertPointUnroutedFirst(
       unroutedNodesToInsert = () => myVRP.unroutedNodes,
-      relevantPredecessor = () => myVRP.kFirst(n/10,myVRP.closestNeighborsForward,(_) => myVRP.isRouted),
+      relevantPredecessor = () => myVRP.kFirst(n/10,myVRP.closestNeighborsForward(_),(_) => myVRP.isRouted),
       vrp= myVRP
     ), (moveResult:InsertPointMove)=>
       insertPointUnroutedFirst(
         unroutedNodesToInsert = () => myVRP.unroutedNodes,
-        relevantPredecessor = () => myVRP.kFirst(n/10,myVRP.closestNeighborsForward,(_) => myVRP.isRouted),
+        relevantPredecessor = () => myVRP.kFirst(n/10,myVRP.closestNeighborsForward(_),(_) => myVRP.isRouted),
         vrp= myVRP
       )
   ))

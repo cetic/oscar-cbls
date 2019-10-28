@@ -32,7 +32,7 @@ import scala.collection.immutable.SortedMap
  * @tparam T the type of elements included in the heap
  * @author renaud.delandtsheer@cetic.be
  */
-class BinomialHeap[@specialized T](initialGetKey:T => Long,val maxsize:Int)(implicit val X:Manifest[T]) extends AbstractHeap[T] {
+class BinomialHeap[T](initialGetKey:T => Long,val maxsize:Int)(implicit val X:Manifest[T]) extends AbstractHeap[T] {
   val heapArray:Array[T] = new Array[T](maxsize)
   private var msize:Int=0
 
@@ -339,17 +339,7 @@ class BinomialHeapWithMove[T](getKey:T => Long,val maxsize:Int)(implicit val A:O
     position.get(elem) match{
       case None => false
       case Some(startposition) =>
-        if (startposition == size-1){
-          size -=1
-          position -= elem
-          heapArray(size)=null.asInstanceOf[T]
-        }else{
-          swapPositions(startposition,size-1)
-          size -=1
-          position -= elem
-          heapArray(size)=null.asInstanceOf[T]
-          pushDown(pushUp(startposition))
-        }
+        delete(elem)
         true
     }
   }
@@ -745,6 +735,8 @@ class BinomialHeapWithMoveLong(getKey:Int => Long,val maxsize:Int, val maxKey:In
     heapArray.toList.toString()
   }
 
+
+  // TODO Should add warning in case of duplicated value. This heap **cannot** contain duplicated values.
   def insert(elem:Int){
     //insert en derniere position, puis bubble up
     heapArray(size)=elem
@@ -848,6 +840,7 @@ class BinomialHeapWithMoveLong(getKey:Int => Long,val maxsize:Int, val maxKey:In
   }
 
   def delete(elem:Int){
+    require(size > 0, "Attempt to delete on empty heap")
     val startposition:Int = position(elem)
     if (startposition == size-1){
       size -=1

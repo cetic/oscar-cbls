@@ -20,11 +20,11 @@ import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.NodeVehicleRestrictions
 import oscar.examples.cbls.routing.RoutingMatrixGenerator
 
-class VRPWithNodeVehicleRestriction(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int, nodeVehicleRestriction:Iterable[(Int,Int)])
+class VRPWithNodeVehicleRestriction(n:Int,v:Int,symmetricDistance:Array[Array[Long]],m:Store, maxPivot:Int, nodeVehicleRestriction:Iterable[(Long,Long)])
   extends VRP(m,n,v,maxPivot){
   
   private val cloneOfRoute = routes.createClone()
-  val routingDistance = constantRoutingDistance(routes,n,v,false,symmetricDistance,true,false,false)
+  val routingDistance = routeLength(routes,n,v,false,symmetricDistance,true,false,false)
 
   //this is useless, but it makes some fun.
   val positionOf48 = positionsOf(cloneOfRoute, 48)
@@ -50,7 +50,7 @@ class VRPWithNodeVehicleRestriction(n:Int,v:Int,symmetricDistance:Array[Array[In
 
   val nodesThatShouldBeMovedToOtherVehicle =  NodeVehicleRestrictions.violatedNodes(vehicleOfNode,v,nodeVehicleRestriction)
 
-  val closestNeighboursForward = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance, (_) => nodes))
+  val closestNeighboursForward = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance, (_) => nodes)(_))
 }
 
 object RoutingWithNodeVehicleRestriction extends App{
@@ -76,27 +76,24 @@ object RoutingWithNodeVehicleRestriction extends App{
 
   println(myVRP)
 
-  val onePtMove = profile(onePointMove(() => nodes, ()=>myVRP.kFirst(40,myVRP.closestNeighboursForward), myVRP))
+  val onePtMove = profile(onePointMove(() => nodes, ()=>myVRP.kFirst(40,myVRP.closestNeighboursForward(_)), myVRP))
 
   val onePtMoveSolvingRestrictions = profile(
-    (onePointMove(myVRP.nodesThatShouldBeMovedToOtherVehicle, ()=>myVRP.kFirst(20,myVRP.closestNeighboursForward), myVRP)
-      exhaust onePointMove(myVRP.nodesThatShouldBeMovedToOtherVehicle, ()=>myVRP.kFirst(100,myVRP.closestNeighboursForward), myVRP))
+    (onePointMove(myVRP.nodesThatShouldBeMovedToOtherVehicle, ()=>myVRP.kFirst(20,myVRP.closestNeighboursForward(_)), myVRP)
+      exhaust onePointMove(myVRP.nodesThatShouldBeMovedToOtherVehicle, ()=>myVRP.kFirst(100,myVRP.closestNeighboursForward(_)), myVRP))
       guard(() => myVRP.totalViolationOnRestriction.value >0)
       name "MoveForRestr")
 
-  val customTwoOpt = profile(twoOpt(() => nodes, ()=>myVRP.kFirst(40,myVRP.closestNeighboursForward), myVRP))
+  val customTwoOpt = profile(twoOpt(() => nodes, ()=>myVRP.kFirst(40,myVRP.closestNeighboursForward(_)), myVRP))
 
-  def customThreeOpt(k:Int, breakSym:Boolean) = profile(threeOpt(() => nodes, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
+  def customThreeOpt(k:Int, breakSym:Boolean) = profile(threeOpt(() => nodes, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward(_)), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
   //This neighborhood is useless given the other one, and for this kind of routing problem, yet we leave it for doc purpose
   val segExchange = segmentExchange(myVRP,
-    ()=>myVRP.kFirst(40,myVRP.closestNeighboursForward), //must be routed
+    ()=>myVRP.kFirst(40,myVRP.closestNeighboursForward(_)), //must be routed
     vehicles=() => myVRP.vehicles)
 
   val search = bestSlopeFirst(List(onePtMove,customTwoOpt, customThreeOpt(10,true),onePtMoveSolvingRestrictions)) exhaust customThreeOpt(20,true)
-
-  search.verbose = 1
-  //  search.verboseWithExtraInfo(4,()=>myVRP.toString)
 
   search.doAllMoves(obj=myVRP.obj)
 

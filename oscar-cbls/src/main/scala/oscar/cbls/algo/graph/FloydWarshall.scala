@@ -27,6 +27,7 @@ object FloydWarshall{
   }
 
 
+  @deprecated("Use halfMatrix instead")
   def buildAdjacencyMatrix(g:ConditionalGraph,
                            isConditionalEdgeOpen:Int => Boolean):Array[Array[Long]] = {
 

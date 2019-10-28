@@ -67,7 +67,9 @@ abstract class ChangingSetValue(initialValue:SortedSet[Long], initialDomain:Doma
     domainSizeDiv10 = privatedomain.size/10L
   }
 
-  override def toString:String = name + ":={" + (if(model.propagateOnToString) value else m_NewValue).mkString(",") + "}"
+  override def toString:String = name + ":={" +
+    (if(model == null || model.propagateOnToString) value
+    else m_NewValue).mkString(",") + "}"
 
   /** this method is a toString that does not trigger a propagation.
     * use this when debugging your software.

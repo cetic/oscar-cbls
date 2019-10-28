@@ -1,10 +1,30 @@
 package oscar.cbls.test.invariants
 
+import org.scalatest.{FunSuite, Matchers}
+
 /**
   * This object's purpose is to test composition function for the TimeWindows Constraint.
   * It won't be on the official release.
   */
-object TestComposeFunction extends App{
+class ComposeFunctionTestSuite extends FunSuite with Matchers {
+
+  test("Batch tests on TransferFunction (keep expected values)"){
+    val earliestArrivalTimes = Array(6, 13)
+    val taskDurations = Array(6,3)
+    val latestArrivalTimes = Array(6, 15)
+    val timeMatrix = Array(Array.fill(2)(2), Array.fill(2)(2))
+
+    val n = earliestArrivalTimes.length
+    val transferFunctions = Array.tabulate(n)(x =>
+      DefinedTransferFunction(earliestArrivalTimes(x),latestArrivalTimes(x), earliestArrivalTimes(x) + taskDurations(x)))
+
+    for (x <- 0 until n-1) {
+      test(transferFunctions(x),
+        transferFunctions(x+1),
+        timeMatrix(x)(x+1),
+        (0 until latestArrivalTimes.max*2/100).toArray.map(_*100))
+    }
+  }
 
   // The compose function that we are testing
   private def composeFunction (f1: TransferFunction, f2: TransferFunction, m: Int): TransferFunction ={
@@ -15,9 +35,6 @@ object TestComposeFunction extends App{
 
     val earliestArrivalTimeAt2 = f1.el + m
     val latestArrivalTimeAt2 = f1.la + f1.el - f1.ea + m
-
-    println(earliestArrivalTimeAt2)
-    println(latestArrivalTimeAt2)
 
     val earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 = earliestArrivalTimeAt2 <= f2.ea
     val earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 = earliestArrivalTimeAt2 <= f2.la
@@ -122,27 +139,6 @@ object TestComposeFunction extends App{
     }
   }
 
-  /**
-    * This method allows us to test custom problem that doesn't work
-    */
-  private def customTest() {
-    val earliestArrivalTimes = Array(6, 13)
-    val taskDurations = Array(6,3)
-    val latestArrivalTimes = Array(6, 15)
-    val timeMatrix = Array(Array.fill(2)(2), Array.fill(2)(2))
-
-    val n = earliestArrivalTimes.length
-    val transferFunctions = Array.tabulate(n)(x =>
-      DefinedTransferFunction(earliestArrivalTimes(x),latestArrivalTimes(x), earliestArrivalTimes(x) + taskDurations(x)))
-
-    for (x <- 0 until n-1) {
-      test(transferFunctions(x),
-        transferFunctions(x+1),
-        timeMatrix(x)(x+1),
-        (0 until latestArrivalTimes.max*2/100).toArray.map(_*100))
-    }
-  }
-
   private def test(f1: TransferFunction, f2: TransferFunction, travelDuration: Int, ts: Array[Int]): Unit ={
     val composedFunction = composeFunction(f1, f2, travelDuration)
     println(composedFunction)
@@ -153,18 +149,10 @@ object TestComposeFunction extends App{
         f1.apply(ts(i)).getOrElse(Int.MaxValue - travelDuration) + travelDuration).
         getOrElse(Int.MaxValue)
 
-      require(composedRes == trueRes,
-        "ComposedRes : " + composedRes + " is equal to trueRes : " + trueRes +
-          "\n t : " + ts(i) +
-          "\n m : " + travelDuration +
-          " \n " + composedFunction.toString +
-          "\n " + f1.toString + "\n " + f2.toString)
-
+      composedRes should be(trueRes)
       t2s(i) = trueRes
     }
   }
-
-  customTest()
 }
 
 abstract class TransferFunction(val ea: Int, val la: Int, val el: Int){

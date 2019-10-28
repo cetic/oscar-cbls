@@ -37,7 +37,7 @@ class BasicRoutingMap(vrp: VRP,
                       colorValues: Array[Color],
                       mapSize: Option[Long],
                       refreshRate: Long,
-                      toolTipInfo: Option[Int => Option[String]]) extends VisualDrawing(false,false) with StopWatch with RoutingMapTrait {
+                      toolTipInfo: Option[Int => Option[() => String]]) extends VisualDrawing(false,false) with StopWatch with RoutingMapTrait {
 
   private lazy val pixelPositionOfNodes: Array[((scala.Double,scala.Double),Int)] = positionsToPixels()
   private lazy val points:Array[VisualCircle] = buildPoints()

@@ -105,7 +105,7 @@ object GraphPartition extends CBLSModel with App {
           searchZone2 = () => (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).newValue != itsPartition),
           hotRestart = true,
           symmetryCanBeBrokenOnIndices = false,
-          name = "swap1ViolAdj")),
+          name = "swap1ViolAdj"))
 
         //profile(swapsNeighborhood(nodeToPartition,
         //  searchZone1 = swappableNodes,

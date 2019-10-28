@@ -7,6 +7,7 @@ abstract sealed class ClosestCentroidLabeling{
   def min(that:ClosestCentroidLabeling):ClosestCentroidLabeling = {
     if(this < that) this else that
   }
+  def isUnreachabe:Boolean
 }
 
 case class VoronoiZone(centroid:Node,distance:Long) extends ClosestCentroidLabeling{
@@ -24,6 +25,8 @@ case class VoronoiZone(centroid:Node,distance:Long) extends ClosestCentroidLabel
   def + (length:Long):VoronoiZone = VoronoiZone(centroid,distance+length)
 
   override def toString: String = "VoronoiZone(centroid:" + centroid.id + " distance:" + distance + ")"
+
+  override def isUnreachabe: Boolean = false
 }
 
 case object Unreachable extends ClosestCentroidLabeling{
@@ -33,4 +36,6 @@ case object Unreachable extends ClosestCentroidLabeling{
     case Unreachable => true
     case that:VoronoiZone => false
   }
+
+  override def isUnreachabe: Boolean = true
 }

@@ -1,14 +1,13 @@
 package oscar.cbls.visual.graph
 
+import java.awt.Color
 import java.awt.geom.Line2D.Double
 import java.awt.geom.Rectangle2D
-import java.awt.{BorderLayout, Color, Polygon}
 
-import javax.swing.JFrame
 import oscar.cbls
 import oscar.cbls.algo.graph._
-import oscar.visual.shapes.{VisualCircle, VisualLine, VisualRectangle, VisualShape}
-import oscar.visual.{VisualDrawing, VisualToolBar}
+import oscar.visual.VisualDrawing
+import oscar.visual.shapes._
 
 import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.swing.Color

@@ -60,7 +60,9 @@ case class SumConstants(vars: Array[Long], cond: SetValue)
   * @author renaud.delandtsheer@cetic.be
   * */
 case class SumElements(vars: Array[IntValue], cond: SetValue)
-  extends IntInvariant(initialValue=cond.value.foldLeft(0L)((acc, i) => acc + vars(i).value))
+  extends IntInvariant(initialValue=cond.value.foldLeft(0L)((acc, i) => acc + vars(i).value),
+    initialDomain = Domain(vars.foldLeft(0L)((acc, v) => DomainHelper.safeAdd(acc,v.min min 0)), vars.foldLeft(0L)((acc, v) => DomainHelper.safeAdd(acc,v.max)))
+  )
   with Bulked[IntValue, Unit]
   with VaryingDependencies
   with IntNotificationTarget

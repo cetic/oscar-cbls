@@ -28,12 +28,12 @@ import scala.util.Random
 /**
  * Created by rdl on 29L-01L-1L6.
  */
-object carSequencerBench  extends CBLSModel with App {
+object CarSequencerBench extends CBLSModel with App {
 
-  val orderedCarsByType:SortedMap[Long,Long] = SortedMap(0L -> 110L, 1L -> 60L, 2L -> 110L , 3L -> 120L, 4L -> 40L, 5L -> 30L)
+  val orderedCarsByType: SortedMap[Long,Long] = SortedMap(0L -> 110L, 1L -> 60L, 2L -> 110L , 3L -> 120L, 4L -> 40L, 5L -> 30L)
 
   val nbCarTypes = 6
-  val carTypes:Domain = ((0,nbCarTypes-1))
+  val carTypes: Domain = (0,nbCarTypes-1)
 
   println("carSequencing")
   println("orderedCarTypes:" + orderedCarsByType)
@@ -108,5 +108,5 @@ object carSequencerBench  extends CBLSModel with App {
 
   println("car sequence:" + carSequence.map(_.value).mkString(","))
 
-  println(if(c.violation.value == 0L) "problem solved" else "PROBLEM COULD NOT BE SOLVED: " + c.violation)
+  println(if (c.violation.value == 0L) "problem solved" else "PROBLEM COULD NOT BE SOLVED: " + c.violation)
 }

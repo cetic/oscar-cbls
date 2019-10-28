@@ -63,10 +63,12 @@ object WarehouseLocationSimulatedAnnealing extends App{
     "SwitchWarehouse",
     hotRestart = false,
     selectIndiceBehavior = First(randomized = true))
+
     cauchyAnnealing(initialTemperature = 5, base = 10)
     //the two stop criterion here below can be used, although they are useless for small size example.
     //maxMoves W*50 withoutImprovementOver obj
     cutTail(timePeriodInMilliSecond = 500,minRelativeImprovementByCut = 0.00001,minTimeBeforeFirstCutInMilliSecond=1000)
+
     saveBestAndRestoreOnExhaust obj
     showObjectiveFunction obj)
 

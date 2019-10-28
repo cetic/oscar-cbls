@@ -25,7 +25,7 @@ class Display(vrp: VRP,
               nodePositions: Array[(Double,Double)],
               sizeOfMap: Option[Long] = None,
               refreshRate: Long = 100L,
-              toolTipInfo: Option[Int => Option[String]] = None,
+              toolTipInfo: Option[Int => Option[() => String]] = None,
               routingMapType: RoutingMapTypes.Value = RoutingMapTypes.BasicRoutingMap,
               title:String = "VRP with OscaR.cbls"
              ) {

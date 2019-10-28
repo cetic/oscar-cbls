@@ -74,7 +74,7 @@ class ConcreteFunctionForPreCompute(val fun: PiecewiseLinearFun,
     }
 
     if (pivotOfFromIncluded.fromValue == pivotOfToIncluded.fromValue) {
-      kindOfComputationOnSegment(pivotOfFromIncluded, fromPosIncluded, toPosIncluded)
+      kindOfComputationOnSegment(pivotOfFromIncluded, fromPosIncluded, toPosIncluded).reverse
     }
     else {
       var computationSteps:List[ComputationStep] = List.empty
@@ -83,18 +83,19 @@ class ConcreteFunctionForPreCompute(val fun: PiecewiseLinearFun,
       if(pivotExplorer.value.fromValue == prevPivot.fromValue)
         pivotExplorer = pivotExplorer.next.get
 
+      // The List of computationStep is build backward ==> much faster ==> need to reverse it at the end
       while({
         val prevPivotValue = prevPivot.fromValue
         val currentPivotValue = pivotExplorer.value.fromValue
 
         if(prevPivotValue == pivotOfFromIncluded.fromValue)
-          computationSteps = computationSteps ++ kindOfComputationOnSegment(prevPivot, fromPosIncluded, currentPivotValue - 1)
+          computationSteps = kindOfComputationOnSegment(prevPivot, fromPosIncluded, currentPivotValue - 1) ::: computationSteps
         else
-          computationSteps = computationSteps ++ kindOfComputationOnSegment(prevPivot, prevPivotValue, currentPivotValue - 1)
+          computationSteps = kindOfComputationOnSegment(prevPivot, prevPivotValue, currentPivotValue - 1) ::: computationSteps
 
 
         if (currentPivotValue == pivotOfToIncluded.fromValue) {
-          computationSteps = computationSteps ++ kindOfComputationOnSegment(pivotExplorer.value, currentPivotValue, toPosIncluded)
+          computationSteps = kindOfComputationOnSegment(pivotExplorer.value, currentPivotValue, toPosIncluded) ::: computationSteps
           false
         }
         else {
@@ -103,10 +104,14 @@ class ConcreteFunctionForPreCompute(val fun: PiecewiseLinearFun,
           true
         }
       }) {}
-      computationSteps
+      computationSteps.reverse
     }
   }
 
+  /**
+    * !!!! WARNING !!!!
+    * The returned list is build backward (much faster) you need to reverse it if needed
+    */
   private def kindOfComputationOnSegment(pivot: Pivot, fromPosIncluded: Int, toPosIncluded: Int): List[ComputationStep] = {
     require(0L <= fromPosIncluded && fromPosIncluded <= externalPositionOfLastRoutedNode,
       "fromPositionInclude(= " + fromPosIncluded + ") should be in [0L, externalPositionOfLastRoutedNode(= " + externalPositionOfLastRoutedNode + ")]")
@@ -122,24 +127,24 @@ class ConcreteFunctionForPreCompute(val fun: PiecewiseLinearFun,
     val toValue  = fun(toPosIncluded)
     if (!pivot.f.minus) {
       if (toValue <= maxValueWithPreCompute)
-        computationsSteps = computationsSteps :+ FetchFromPreCompute(fromPosIncluded, toPosIncluded,false)
+        computationsSteps = FetchFromPreCompute(fromPosIncluded, toPosIncluded,false) :: computationsSteps
       else if (fromValue > maxValueWithPreCompute)
-        computationsSteps = computationsSteps :+ FromScratch(fromPosIncluded, toPosIncluded)
+        computationsSteps = FromScratch(fromPosIncluded, toPosIncluded) :: computationsSteps
       else {
         val posMaxValueWithPreCompute = fromPosIncluded + (maxValueWithPreCompute - fromValue)
-        computationsSteps = computationsSteps :+ FetchFromPreCompute(fromPosIncluded, posMaxValueWithPreCompute, false)
-        computationsSteps = computationsSteps :+ FromScratch(posMaxValueWithPreCompute + 1, toPosIncluded)
+        computationsSteps = FetchFromPreCompute(fromPosIncluded, posMaxValueWithPreCompute, false) :: computationsSteps
+        computationsSteps = FromScratch(posMaxValueWithPreCompute + 1, toPosIncluded) :: computationsSteps
       }
     }
     else {
       if (fromValue <= maxValueWithPreCompute)
-        computationsSteps = computationsSteps :+ FetchFromPreCompute(fromPosIncluded, toPosIncluded, true)
+        computationsSteps = FetchFromPreCompute(fromPosIncluded, toPosIncluded, true) :: computationsSteps
       else if (toValue > maxValueWithPreCompute)
-        computationsSteps = computationsSteps :+ FromScratch(fromPosIncluded, toPosIncluded)
+        computationsSteps = FromScratch(fromPosIncluded, toPosIncluded) :: computationsSteps
       else {
         val posMaxValueWithPreCompute = toPosIncluded - (maxValueWithPreCompute - toPosIncluded)
-        computationsSteps = computationsSteps :+ FromScratch(fromPosIncluded, posMaxValueWithPreCompute - 1)
-        computationsSteps = computationsSteps :+ FetchFromPreCompute(posMaxValueWithPreCompute, toPosIncluded, true)
+        computationsSteps = FromScratch(fromPosIncluded, posMaxValueWithPreCompute - 1) :: computationsSteps
+        computationsSteps = FetchFromPreCompute(posMaxValueWithPreCompute, toPosIncluded, true) :: computationsSteps
       }
     }
     computationsSteps
@@ -193,7 +198,7 @@ class InsertStackedFunction(base: ConcreteFunctionForPreCompute, value: Long, po
       val stepAfterInsert =
         if (toPosIncluded == pos) List[ComputationStep]()
         else base.kindOfComputation(pos, toPosBeforeInsert)
-      (stepBeforePos :+ FromScratch(pos, pos, topOfStack = true)) ++ stepAfterInsert
+      (stepBeforePos :+ FromScratch(pos, pos, topOfStack = true)) ::: stepAfterInsert
     }
     else
       base.kindOfComputation(fromPosBeforeInsert, toPosBeforeInsert)
@@ -245,7 +250,7 @@ class DeleteStackedFunction(base: ConcreteFunctionForPreCompute, pos: Int) exten
         if (toPosBeforeDelete == pos) List[ComputationStep]()
         else base.kindOfComputation(pos+1, toPosBeforeDelete)
 
-      stepsBeforePos ++ stepsAfterPos
+      stepsBeforePos ::: stepsAfterPos
     }
     else
       base.kindOfComputation(fromPosBeforeDelete, toPosBeforeDelete)
@@ -358,7 +363,7 @@ class MoveStackedFunction(base: ConcreteFunctionForPreCompute,
           val stepsAfterFlip = if (toPosIncluded == endPositionIncluded) List[ComputationStep]()
           else base.kindOfComputation(endPositionIncluded + 1, toPosIncluded)
 
-          stepsBeforeFlip ++ flippedSteps ++ stepsAfterFlip
+          stepsBeforeFlip ::: flippedSteps ::: stepsAfterFlip
         }
         else
         // we are looking for another a vehicle
@@ -393,7 +398,7 @@ class MoveStackedFunction(base: ConcreteFunctionForPreCompute,
             if(toPosIncluded == moveAfterPosition) List[ComputationStep]()
             else base.kindOfComputation(moveAfterPosition+1, toPosIncluded)
 
-          stepBeforeMove ++ stepOnSegOfAfterPos ++ stepOnMovedSegment ++ stepAfterMove
+          stepBeforeMove ::: stepOnSegOfAfterPos ::: stepOnMovedSegment ::: stepAfterMove
         }
         else if (movedSegSize + fromPosIncluded <= moveAfterPosition && toPosIncluded >= moveAfterPosition){
           // move on different vehicles. We are at the target vehicle
@@ -406,7 +411,7 @@ class MoveStackedFunction(base: ConcreteFunctionForPreCompute,
             if(toPosIncluded != moveAfterPosition) base.kindOfComputation(moveAfterPosition+1, toPosIncluded)
             else List[ComputationStep]()
 
-          stepBeforeMove ++ movedStep ++ stepAfterMove
+          stepBeforeMove ::: movedStep ::: stepAfterMove
         }
         else if (fromPosIncluded < startPositionIncluded && toPosIncluded + movedSegSize >= endPositionIncluded){
           // move on different vehicles. We are at the source vehicle
@@ -414,7 +419,7 @@ class MoveStackedFunction(base: ConcreteFunctionForPreCompute,
           val stepBeforeMove = base.kindOfComputation(fromPosIncluded, startPositionIncluded -1)
           val stepAfterMove = base.kindOfComputation(endPositionIncluded+1, toPosIncluded + movedSegSize)
 
-          stepBeforeMove ++ stepAfterMove
+          stepBeforeMove ::: stepAfterMove
         }
         else
           // move on different vehicles. We are on a vehicle positioning between the source vehicle and the target vehicle
@@ -437,7 +442,7 @@ class MoveStackedFunction(base: ConcreteFunctionForPreCompute,
             if(toPosIncluded == endPositionIncluded) List[ComputationStep]()
             else base.kindOfComputation(endPositionIncluded+1, toPosIncluded)
 
-          stepBeforeMove ++ stepOnMovedSegment ++ stepOnSegmentOfAfter ++ stepAfterMove
+          stepBeforeMove ::: stepOnMovedSegment ::: stepOnSegmentOfAfter ::: stepAfterMove
         }
         else if (fromPosIncluded <= moveAfterPosition && toPosIncluded - movedSegSize  >= moveAfterPosition){
           // move on different vehicles. We are at the target vehicle
@@ -451,7 +456,7 @@ class MoveStackedFunction(base: ConcreteFunctionForPreCompute,
             if(toPosIncluded - movedSegSize == moveAfterPosition) List[ComputationStep]()
             else base.kindOfComputation(moveAfterPosition+1, toPosIncluded - movedSegSize)
 
-          stepBeforeMove ++ stepOnMovedSegment ++ stepAfterMove
+          stepBeforeMove ::: stepOnMovedSegment ::: stepAfterMove
         }
         else if (fromPosIncluded - movedSegSize < startPositionIncluded && toPosIncluded >= endPositionIncluded){
           // move on different vehicle. We are at the source vehicle
@@ -461,7 +466,7 @@ class MoveStackedFunction(base: ConcreteFunctionForPreCompute,
             if(toPosIncluded == endPositionIncluded) List[ComputationStep]()
             else base.kindOfComputation(endPositionIncluded + 1, toPosIncluded)
 
-          stepBeforeMove ++ stepAfterMove
+          stepBeforeMove ::: stepAfterMove
         }
         else
         // move on different vehicle. We are on vehicle positioning between the target vehicle and the source vehicle

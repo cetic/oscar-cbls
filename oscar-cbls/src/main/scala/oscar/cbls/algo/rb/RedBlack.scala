@@ -518,13 +518,24 @@ object RedBlackTreeMap {
     }else if (fromIncluded + 1 == toIncluded) {
       val(keyL,valueL) = args(fromIncluded)
       val(keyH,valueH) = args(toIncluded)
-      T(targetIsRed, T(!targetIsRed, L(),  keyL, Some(valueL), L()),  keyH, Some(valueH), L())
+
+      assert(keyH > keyL, "Unsorted array")
+
+      T(targetIsRed,
+        T(!targetIsRed, L(),  keyL, Some(valueL), L()),
+        keyH,
+        Some(valueH),
+        L())
     }else{
       //there is a middle point
       val middlePoint = (fromIncluded + toIncluded)/2
       val left = myMakeFromSorted(args,fromIncluded,middlePoint-1,!targetIsRed)
       val right = myMakeFromSorted(args,middlePoint+1,toIncluded,!targetIsRed)
       val(key,value) = args(middlePoint)
+
+      assert(left.asInstanceOf[T[V]].pk < key, "Unsorted array")
+      assert(right.asInstanceOf[T[V]].pk > key, "Unsorted array")
+
       T(targetIsRed, left,  key, Some(value), right)
     }
   }

@@ -24,7 +24,12 @@ abstract class TransferFunction(val ea: Long, val la: Long, val el: Long, val fr
   }
 }
 
-case class DefinedTransferFunction(override val ea: Long, override val la: Long, override val el: Long,
+object DefinedTransferFunction{
+  def apply(ea: Long, la: Long, el: Long, from: Long, to: Long): DefinedTransferFunction =
+    new DefinedTransferFunction(ea: Long, la: Long, el: Long, from: Long, to: Long)
+}
+
+class DefinedTransferFunction(override val ea: Long, override val la: Long, override val el: Long,
                                    override val from: Long, override val to: Long) extends TransferFunction(ea,la,el,from,to){
   require(la >= ea && el >= ea, "earliest arrival time : " + ea + ", latest arrival time : " + la + ", earliest leaving time : " + el)
   override def apply(t: Long): Long = {

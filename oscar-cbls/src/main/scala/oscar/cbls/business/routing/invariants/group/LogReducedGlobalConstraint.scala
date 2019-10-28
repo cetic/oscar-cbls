@@ -166,13 +166,13 @@ object LogReducedFlippedPreComputedSubSequence {
     * associated with it. These values are queried from the pre-computation.
     * The assembly includes O(log(n)) of these pre-computations.
     *
-    * @param routes the route of vehicles
+    * @param gc the GlobalConstraint linked to this constraint
+    * @param n the number of nodes
     * @param v the number of vehicles
     * @tparam T the type of pre-computation, which is on subsequences (not on nodes)
-    * @tparam U the output type of the algorithms, that you need to assign to the output variables
     */
-  abstract class LogReducedGlobalConstraint[T:Manifest,U:Manifest](routes:ChangingSeqValue,v :Long)
-    extends GlobalConstraintDefinition[VehicleAndPosition,U](routes,v){
+  abstract class LogReducedGlobalConstraint[T:Manifest](gc: GlobalConstraintCore, n: Long, v :Long)
+    extends GlobalConstraintDefinition(gc,v){
 
     /**
       * this method delivers the value of the node
@@ -206,7 +206,7 @@ object LogReducedFlippedPreComputedSubSequence {
       * @return the value associated with the vehicle. This value should only be computed based on the provided segments
       */
     def computeVehicleValueComposed(vehicle: Long,
-                                    segments: QList[LogReducedSegment[T]]): U
+                                    segments: QList[LogReducedSegment[T]]): Unit
 
     class NodeAndPreComputes(val node:Long,
                              var precomputes:Array[T] = null){
@@ -217,13 +217,14 @@ object LogReducedFlippedPreComputedSubSequence {
 
     private val vehicleToPrecomputes:Array[Array[NodeAndPreComputes]] = Array.fill(v)(null)
 
+    val preComputedVals:Array[VehicleAndPosition] = Array.fill(n)(null)
+
     def printVehicleToPrecomputes(vehicle:Long): Unit ={
       val precomputes = vehicleToPrecomputes(vehicle)
       println(precomputes.map(_.toString).mkString("\n"))
     }
     override def performPreCompute(vehicle:Long,
-                                   routes:IntSequence,
-                                   preComputedVals:Array[VehicleAndPosition]): Unit ={
+                                   routes:IntSequence): Unit ={
 
       //println("performPreCompute(vehicle:" + vehicle + " v:" + v + " routes:" + routes)
 
@@ -323,14 +324,13 @@ object LogReducedFlippedPreComputedSubSequence {
     }
 
     override def computeVehicleValue(vehicle:Long,
-                                     segments:List[Segment[VehicleAndPosition]],
-                                     routes:IntSequence,
-                                     preComputedVals:Array[VehicleAndPosition]):U = {
+                                     segments:QList[Segment],
+                                     routes:IntSequence):Unit = {
       // println("routes:" + routes)
       computeVehicleValueComposed(vehicle, decorateSegments(vehicle, segments))
     }
 
-    def decorateSegments(vehicle:Long,segments:List[Segment[VehicleAndPosition]]):QList[LogReducedSegment[T]] = {
+    def decorateSegments(vehicle:Long,segments:Iterable[Segment]):QList[LogReducedSegment[T]] = {
 
       segments match{
         case Nil =>
@@ -342,9 +342,9 @@ object LogReducedFlippedPreComputedSubSequence {
         case head :: tail =>
           head match {
             case PreComputedSubSequence
-              (startNode: Long, startNodeValue: VehicleAndPosition,
-              endNode: Long, endNodeValue: VehicleAndPosition) =>
-
+              (startNode: Long, endNode: Long, length) =>
+              val startNodeValue = preComputedVals(startNode)
+              val endNodeValue = preComputedVals(endNode)
               if(tail.isEmpty
                 && startNodeValue.vehicle == vehicle
                 && endNodeValue.positionInVehicleRoute == vehicleToPrecomputes(vehicle).length-2L){
@@ -363,10 +363,9 @@ object LogReducedFlippedPreComputedSubSequence {
                     startNodeValue.vehicle, startNodeValue.positionInVehicleRoute,
                     endNodeValue.positionInVehicleRoute, flipped = false)), decorateSegments(vehicle, tail))
               }
-            case FlippedPreComputedSubSequence(
-            startNode: Long, startNodeValue: VehicleAndPosition,
-            endNode: Long, endNodeValue: VehicleAndPosition) =>
-
+            case FlippedPreComputedSubSequence(startNode: Long, endNode: Long, length) =>
+              val startNodeValue = preComputedVals(startNode)
+              val endNodeValue = preComputedVals(endNode)
               QList(LogReducedFlippedPreComputedSubSequence[T](
                 startNode: Long, endNode: Long,
                 stepGenerator = () => extractSequenceOfT(

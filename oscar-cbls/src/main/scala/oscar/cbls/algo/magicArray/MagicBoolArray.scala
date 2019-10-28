@@ -34,15 +34,16 @@ object MagicBoolArray {
 
 
 /**
- * This represents an array of boolean with O(1L) setAll and O(1L) clearAll
- * @author Jannou Brohée on 3L/10L/1L6.
+ * This represents an array of boolean with O(1) setAll and O(1) clearAll
+ * @author Jannou Brohée on 3/10/16.
  * @param length Maximum length of magical array
  */
 class MagicBoolArray(val length:Int,initVal:Boolean = false){
 
   private[this] val threshold:Long = Long.MaxValue-10L
 
-  private[this] var global:Long = 1L
+  // Made public for testing purposes
+  var global:Long = 1L
 
   private[this] val internalArray:Array[Long] = Array.fill[Long](length)(if(initVal) 1L else 0L)
 
@@ -53,7 +54,7 @@ class MagicBoolArray(val length:Int,initVal:Boolean = false){
    * @param id the index of the element
    * @param value the new element's value (true/false)
    * @return the old value
-   * @note in O(1L) // trivial
+   * @note in O(1) // trivial
    */
   def update(id:Int, value:Boolean):Boolean = {
     assert(id<length && 0L<=id)
@@ -67,7 +68,7 @@ class MagicBoolArray(val length:Int,initVal:Boolean = false){
    * Return the value of the element at specific index
    * @param id the index of the element
    * @return true or false
-   * @note complexity is O(1L)
+   * @note complexity is O(1)
    */
   def apply(id:Int): Boolean ={
     require(0L<=id && id<length, "got id:" + id + "length:" + length)
@@ -76,7 +77,7 @@ class MagicBoolArray(val length:Int,initVal:Boolean = false){
 
   /**
    * Sets the value of each element to "value"
-   * @note complexity is O(1L)
+   * @note complexity is O(1)
    */
   def all_= (value:Boolean): Unit ={
     if(value) {
@@ -96,8 +97,6 @@ class MagicBoolArray(val length:Int,initVal:Boolean = false){
     }
   }
 
-  def all:Boolean = ???
-
   @inline
   private [this] def resetArray(){
     var i = internalArray.length
@@ -106,6 +105,8 @@ class MagicBoolArray(val length:Int,initVal:Boolean = false){
       internalArray(i) = 0L
     }
   }
+
+  def all:Boolean = ???
 
   /**
    * Creates a new iterator over the indexes of elements which value is true.
@@ -120,6 +121,16 @@ class MagicBoolArray(val length:Int,initVal:Boolean = false){
       }
     }
     toReturn.toIterator
+  }
+
+  def indicesAtTrueAsQList:QList[Int] ={
+    var toReturn:QList[Int]=null
+    for(n <-0 until length){
+      if(internalArray(n)>=global){
+        toReturn = QList(n,toReturn)
+      }
+    }
+    toReturn
   }
 
   override def toString: String = "["+indicesAtTrue.mkString(",")+"]"

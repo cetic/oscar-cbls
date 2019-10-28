@@ -4,9 +4,11 @@ import java.io.File
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
+import oscar.cbls.business.routing.invariants.WeightedNodesPerVehicle
+import oscar.cbls.business.routing.invariants.group.{GlobalConstraintCore, RouteLength}
 import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TimeWindowConstraintWithLogReduction}
 import oscar.cbls.business.routing.model.extensions.TimeWindows
-import oscar.cbls.business.routing.neighborhood.{RemovePoint, SegmentExchangeOnSegments}
+import oscar.cbls.business.routing.neighborhood.{InsertPointUnroutedFirst, RemovePoint}
 import oscar.cbls.core.search.Best
 
 import scala.io.Source
@@ -24,35 +26,29 @@ object Gehring_Homberger_benchmark extends App {
   }
 
   private def adjustDataToOscaR(oldN: Long, v: Long, c: Long, oldCoords: Array[(Long,Long)], oldTimeWindows: TimeWindows, oldDemands: Array[Long]): (Long, Long, Long, Array[Array[Long]], TimeWindows, Array[Long]) ={
-    val n = oldN*2 + v - 2 // we need to add one source of demand for each nodes
+    val n = oldN + v - 1 // oldN contains only one instance of a depot
 
     val vehiclesCoords: Array[(Long,Long)] = Array.fill(v)(oldCoords(0))
-    val nodesCoords: Array[(Long,Long)] = oldCoords.drop(1).foldLeft(List[(Long,Long)]())((acc, item) => acc :+ oldCoords(0) :+ item).toArray
+    val nodesCoords: Array[(Long,Long)] = oldCoords.drop(1)
     val coords = vehiclesCoords ++ nodesCoords
-    require(coords.length == (2*size)+v-2)
+    require(coords.length == oldN+v-1, "coords length should be equal to " + (n+v-1) + " instead " + coords.length)
 
     val vehiclesEas = Array.fill(v)(oldTimeWindows.earliestArrivalTimes(0))
-    val nodesEas: Array[Long] = oldTimeWindows.earliestArrivalTimes.drop(1).foldLeft(List[Long]())(
-      (acc, item) => acc :+ oldTimeWindows.earliestArrivalTimes(0) :+ item).toArray
+    val nodesEas: Array[Long] = oldTimeWindows.earliestArrivalTimes.drop(1)
     val eas = vehiclesEas ++ nodesEas
 
     val vehiclesLas = Array.fill(v)(oldTimeWindows.latestArrivalTimes(0))
-    val nodesLas: Array[Long] = oldTimeWindows.latestArrivalTimes.drop(1).foldLeft(List[Long]())(
-      (acc, item) => acc :+ oldTimeWindows.latestArrivalTimes(0) :+ item).toArray
+    val nodesLas: Array[Long] = oldTimeWindows.latestArrivalTimes.drop(1)
     val las = vehiclesLas ++ nodesLas
 
     val vehiclesTs = Array.fill(v)(oldTimeWindows.taskDurations(0))
-    val nodesTs: Array[Long] = oldTimeWindows.taskDurations.drop(1).foldLeft(List[Long]())(
-      (acc, item) => acc :+ oldTimeWindows.taskDurations(0) :+ item).toArray
-    require(nodesTs.length == (2*size)-2)
+    val nodesTs: Array[Long] = oldTimeWindows.taskDurations.drop(1)
     val ts = vehiclesTs ++ nodesTs
 
     val timeWindows = TimeWindows(earliestArrivalTimes = Some(eas), latestArrivalTimes = Some(las), taskDurations = ts)
 
     val vehiclesDemands = Array.fill(v)(0L)
-    val nodesDemands: Array[Long] = oldDemands.drop(1).foldLeft(List[Long]())(
-      (acc, item) => acc :+ item :+ (-item)).toArray
-    require(nodesTs.length == (2*size)-2)
+    val nodesDemands: Array[Long] = oldDemands.drop(1)
     val demands = vehiclesDemands ++ nodesDemands
 
 
@@ -100,174 +96,66 @@ object Gehring_Homberger_benchmark extends App {
 class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Int, distanceMatrix: Array[Array[Long]], timeWindows: TimeWindows, demands: Array[Long]){
   val m = new Store(noCycle = false)
   val myVRP = new VRP(m,n,v)
-  val penaltyForUnrouted = 100000
+  val penaltyForUnrouted = 1000000
   val penaltyForMovingVehicle = 10000
 
-  println("\nVehicules : " + v)
-  println("Noeuds totals : " + n)
-  println("Capacité max : " + c + "\n")
+  val gc = GlobalConstraintCore(myVRP.routes, v)
 
   val travelDurationMatrix = RoutingMatrixGenerator.generateLinearTravelTimeFunction(n,distanceMatrix)
-  val (listOfChains,precedences): (List[List[Long]], List[(Long,Long)]) =
-    (List.tabulate(Gehring_Homberger_benchmark.size-1)(x => List(v+(2*x),v+(2*x)+1)),
-      List.tabulate(Gehring_Homberger_benchmark.size-1)(x => (v+(2*x),v+(2*x)+1)))
-  val contentsFlow = demands
+  val nodeWeight = demands
 
   // Distance
-  val totalRouteLength = routeLength(myVRP.routes,n,v,false,distanceMatrix,true,true,false)(0)
+  val routeLengths = Array.fill(v)(CBLSIntVar(m,0))
+  val routeLength = new RouteLength(gc,n,v,routeLengths,(from: Long, to: Long) => distanceMatrix(from)(to))
   val movingVehiclesNow = movingVehicles(myVRP.routes,v)
 
-  //Chains
-  val precedenceRoute = myVRP.routes.createClone()
-  val precedenceInvariant = precedence(precedenceRoute,precedences)
-  val vehicleOfNodesNow = vehicleOfNodes(precedenceRoute,v)
-  val precedencesConstraints = new ConstraintSystem(m)
-  for(start <- precedenceInvariant.nodesStartingAPrecedence)
-    precedencesConstraints.add(vehicleOfNodesNow(start) === vehicleOfNodesNow(precedenceInvariant.nodesEndingAPrecedenceStartedAt(start).head))
-  precedencesConstraints.add(0 === precedenceInvariant)
-  val chainsExtension = chains(myVRP,listOfChains)
-
-
   //Time window constraints
-  val timeWindowRoute = precedenceRoute.createClone()
+  val timeWindowRoute = myVRP.routes.createClone()
   val timeWindowViolations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
-  val timeWindowConstraint = TimeWindowConstraint(myVRP.routes,n,v,timeWindows.earliestArrivalTimes, timeWindows.latestLeavingTimes, timeWindows.taskDurations, distanceMatrix, timeWindowViolations)
 
+  val timeWindowConstraint = TimeWindowConstraint(gc,n,v,timeWindows.earliestArrivalTimes, timeWindows.latestLeavingTimes, timeWindows.taskDurations, distanceMatrix, timeWindowViolations)
 
-  // Vehicle content
-  val contentRoute = timeWindowRoute.createClone()
-  val violationOfContentAtNode = new CBLSIntVar(myVRP.routes.model, 0, 0 to Int.MaxValue, "violation of capacity " + "Content at node")
-  val capacityInvariant = forwardCumulativeConstraintOnVehicle(myVRP.routes,n,v,
-    (from,to,fromContent) => fromContent + contentsFlow(to),
-    c,
-    Array.fill(v)(0),
-    violationOfContentAtNode,
-    4,
-    "Content at node")
+  // Weighted nodes
+  // The sum of node's weight can't excess the capacity of a vehicle
+  val weightPerVehicle = Array.tabulate(v)(_ => CBLSIntVar(m))
+  // This invariant maintains the total node's weight encountered by each vehicle
+  val weightedNodesConstraint = WeightedNodesPerVehicle(gc, n, v, nodeWeight, weightPerVehicle)
+  // This invariant maintains the capacity violation of each vehicle (le means lesser or equals)
+  val vehicleCapacityViolation = Array.tabulate(v)(vehicle => weightPerVehicle(vehicle) le c)
+  val constraintSystem = new ConstraintSystem(m)
+  vehicleCapacityViolation.foreach(constraintSystem.post(_))
 
   //Constraints & objective
-  val obj = new CascadingObjective(precedencesConstraints,
-    new CascadingObjective(sum(timeWindowViolations),
-      new CascadingObjective(capacityInvariant.violation,
-        totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes)) + penaltyForMovingVehicle*setSum(movingVehiclesNow, x => 1)))))
+  val obj = new CascadingObjective(sum(timeWindowViolations),
+      new CascadingObjective(constraintSystem,
+        sum(routeLengths) + (penaltyForUnrouted*(n - length(myVRP.routes)) + penaltyForMovingVehicle*setSum(movingVehiclesNow, x => 1))))
 
   m.close()
 
-  val relevantToTime = TimeWindowHelper.relevantPredecessorsOfNodes(myVRP, timeWindows, travelDurationMatrix)
-  val relevantToCapacity = CapacityHelper.relevantPredecessorsOfNodes(myVRP, c, Array.fill(v)(c), contentsFlow)
+  val relevantPredecessorsOfNodes = TimeWindowHelper.relevantPredecessorsOfNodes(myVRP, timeWindows, travelDurationMatrix)
 
-  val relevantPredecessorsOfNodes = relevantToTime.map(x => x._1 -> x._2.filter(relevantToCapacity(x._1)))
   val relevantSuccessorsOfNodes = TimeWindowHelper.relevantSuccessorsOfNodes(myVRP, timeWindows, travelDurationMatrix)
   val closestRelevantNeighborsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(distanceMatrix,relevantPredecessorsOfNodes)(_))
-
-  def relevantPredecessorsForLastNode(lastNode: Long) = ChainsHelper.relevantNeighborsForLastNodeAfterHead(myVRP,chainsExtension,Some(relevantPredecessorsOfNodes(lastNode)))(lastNode)
-  val relevantPredecessorsForInternalNodes = ChainsHelper.computeRelevantNeighborsForInternalNodes(myVRP, chainsExtension)_
-
-  var enoughSpaceAfterNeighborNow: (Long,Long,Array[Long]) => Boolean =
-    CapacityHelper.enoughSpaceAfterNeighbor(n,capacityInvariant)
 
   def postFilter(node:Long): (Long) => Boolean = {
     (neighbor: Long) => {
       val successor = myVRP.nextNodeOf(neighbor)
       myVRP.isRouted(neighbor) &&
-        (successor.isEmpty || relevantSuccessorsOfNodes(node).contains(successor.get)) &&
-        enoughSpaceAfterNeighborNow(node,neighbor,contentsFlow)
+        (successor.isEmpty || relevantSuccessorsOfNodes(node).contains(successor.get))
     }
-  }
-
-
-  // MOVING
-
-
-  val nextMoveGenerator = {
-    (exploredMoves:List[OnePointMoveMove], t:Option[List[Long]]) => {
-      val chainTail: List[Long] = t match {
-        case None =>
-          val movedNode = exploredMoves.head.movedPoint
-          chainsExtension.nextNodesInChain(chainsExtension.firstNodeInChainOfNode(movedNode))
-        case Some(tail: List[Long]) => tail
-      }
-
-      chainTail match {
-        case Nil => None
-        case head :: Nil => None
-        case nextNodeToMove :: newTail =>
-          val moveNeighborhood = onePointMove(() => Some(nextNodeToMove),
-            () => relevantPredecessorsForInternalNodes, myVRP)
-          Some(moveNeighborhood, Some(newTail))
-      }
-    }
-  }
-
-  val firstNodeOfChainMove = onePointMove(() => myVRP.routed.value.filter(chainsExtension.isHead),()=> myVRP.kFirst(v*2,closestRelevantNeighborsByDistance(_),postFilter), myVRP,neighborhoodName = "MoveHeadOfChain")
-
-  def lastNodeOfChainMove(lastNode:Long) = onePointMove(() => List(lastNode),()=> myVRP.kFirst(v*2,relevantPredecessorsForLastNode,postFilter), myVRP,neighborhoodName = "MoveLastOfChain")
-
-  val oneChainMove = {
-    dynAndThen(firstNodeOfChainMove,
-      (moveMove: OnePointMoveMove) => {
-        mu[OnePointMoveMove, Option[List[Long]]](
-          lastNodeOfChainMove(chainsExtension.lastNodeInChainOfNode(moveMove.movedPoint)),
-          nextMoveGenerator,
-          None,
-          Long.MaxValue,
-          false)
-      }
-    ) name "One Chain Move"
-
   }
 
   def onePtMove(k:Long) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance(_),postFilter), myVRP)) name "One Point Move"
 
-  // INSERTING
-
-  val nextInsertGenerator = {
-    (exploredMoves:List[InsertPointMove], t:Option[List[Long]]) => {
-      val chainTail: List[Long] = t match {
-        case None =>
-          val insertedNode = exploredMoves.head.insertedPoint
-          chainsExtension.nextNodesInChain(chainsExtension.firstNodeInChainOfNode(insertedNode))
-        case Some(tail: List[Long]) => tail
-      }
-
-      chainTail match {
-        case Nil => None
-        case head :: Nil => None
-        case nextNodeToInsert :: newTail =>
-          val insertNeighborhood = insertPointUnroutedFirst(() => Some(nextNodeToInsert),
-            () => relevantPredecessorsForInternalNodes, myVRP)
-          Some(insertNeighborhood, Some(newTail))
-      }
-    }
-  }
-
-  val firstNodeOfChainInsertion = insertPointUnroutedFirst(
-    () => chainsExtension.heads.filter(n => !myVRP.isRouted(n)),
-    ()=> myVRP.kFirst(v*2,closestRelevantNeighborsByDistance(_), postFilter),
-    myVRP,
-    neighborhoodName = "InsertUF")
-
-  def lastNodeOfChainInsertion(lastNode:Long) = insertPointUnroutedFirst(() => List(lastNode),()=> myVRP.kFirst(v*2,relevantPredecessorsForLastNode,postFilter), myVRP,
-    neighborhoodName = "InsertUF")
-
-  val oneChainInsert = {
-    dynAndThen(firstNodeOfChainInsertion,
-      (insertMove: InsertPointMove) => {
-        mu[InsertPointMove,Option[List[Long]]](
-          lastNodeOfChainInsertion(chainsExtension.lastNodeInChainOfNode(insertMove.insertedPoint)),
-          nextInsertGenerator,
-          None,
-          Long.MaxValue,
-          false)
-      }) name "One Chain Insert"
-
-  }
-
+  private var removingRoute: List[Long] = List.empty
 
   private object RemoveNode {
-    def apply(nodeToRemove: Option[List[Long]] = None): RemovePoint = {
+    def apply(): RemovePoint = {
       RemovePoint(
-        relevantPointsToRemove = () => nodeToRemove.getOrElse(Random.shuffle(listOfChains.map(_.head))).filter(myVRP.isRouted),
+        relevantPointsToRemove = () => {
+          removingRoute = Random.shuffle(movingVehiclesNow.value).map(myVRP.getRouteOfVehicle(_).drop(1)).head
+          removingRoute.take(1)
+        },
         vrp = myVRP)
     }
   }
@@ -276,8 +164,7 @@ class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Int, distanceMatrix: 
     def apply() ={
       (exploredMoves:List[RemovePointMove], t:Option[List[Long]]) => {
         val chainTail: List[Long] = t match {
-          case None => val removedNode = exploredMoves.head.pointToRemove
-            chainsExtension.nextNodesInChain(removedNode)
+          case None => removingRoute.drop(1)
           case Some(tail:List[Long]) => tail
         }
 
@@ -291,48 +178,32 @@ class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Int, distanceMatrix: 
     }
   }
 
-  object OneChainRemove {
-    def apply(nodeToRemove: Option[List[Long]] = None) = {
-      mu[RemovePointMove, Option[List[Long]]](
-        RemoveNode(nodeToRemove),
+  object EmptyVehicle {
+    def apply() = {
+      profile(atomic(mu[RemovePointMove, Option[List[Long]]](
+        RemoveNode(),
         NextRemoveGenerator(),
         None,
         Long.MaxValue,
         false
-      )
+      ).acceptAll(), _ > 1).guard(() => {
+          movingVehiclesNow.value.nonEmpty
+        }))
     }
   }
 
-  object ProfiledMultiChainRemove {
-    def apply(nbToRemove: Int, nodesToRemove: Option[List[Long]] = None) ={
-      profile(atomic(OneChainRemove(nodesToRemove).acceptAll(), _ > nbToRemove).guard(() => nbToRemove > 0)) name ("Multi Chain Remove " + nbToRemove)
-    }
-  }
-
-  //val routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "InsertUF"))
+  val routeUnroutedPoint =  profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(n,closestRelevantNeighborsByDistance(_)), myVRP,selectInsertionPointBehavior = Best(),neighborhoodName = "InsertUF"))
 
 
-  val search = bestSlopeFirst(List(oneChainMove,onePtMove(20)), refresh = 10) exhaust
-    bestSlopeFirst(List(oneChainInsert,oneChainMove,onePtMove(20)), refresh = 10).afterMove(
-    {enoughSpaceAfterNeighborNow = CapacityHelper.enoughSpaceAfterNeighbor(n,capacityInvariant)}).
-    onExhaustRestartAfter(ProfiledMultiChainRemove(listOfChains.size/10),3, obj)
-  //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
-
-
-  //search.verbose = 1
-  //search.verboseWithExtraInfo(4, ()=> "" + myVRP)
-
-
+  val search = (routeUnroutedPoint exhaust onePtMove(n/2)).
+    onExhaustRestartAfter(EmptyVehicle(),3, obj)
 
   search.doAllMoves(obj=obj)
 
   println("Unrouted nodes : " + myVRP.unroutedNodes.size)
-  println("Distance totale parcourue :" + totalRouteLength.value/100.0)
+  println("Distance totale parcourue :" + routeLengths.map(_.value).sum/100.0)
   println("Nombre de véhicules utilisés :" + movingVehiclesNow.value.size)
   println("\n\n###########################################################################################\n\n")
 
-  search.profilingStatistics
+
 }
-
-
-

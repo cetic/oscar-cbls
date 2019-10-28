@@ -2,7 +2,7 @@ package oscar.cbls.lib.search.combinators
 
 import oscar.cbls._
 import oscar.cbls.core.objective.{CascadingObjective, FunctionObjective, Objective}
-import oscar.cbls.core.search._
+import oscar.cbls.core.search.{NoMoveFound, _}
 
 import scala.language.postfixOps
 
@@ -95,80 +95,105 @@ class Metropolis(a: Neighborhood, iterationToTemperature: Long => Double = _ => 
   */
 class GeneralizedLocalSearch(a: Neighborhood,
                              additionalConstraint:Objective,
-                             iterationToWeigth:Int => Int,
-                             switchToStrongAsap:Boolean) extends NeighborhoodCombinator(a) {
+                             iterationToWeight:Int => Int,
+                             allowSwitchToStrongAfterIt:Int) extends NeighborhoodCombinator(a) {
 
-  var it:Int = 0
-  val maxValueForWeighting:Int = iterationToWeigth(0)
-  var currentWeightOfObj:Int = maxValueForWeighting
+  val maxValueForWeighting: Int = iterationToWeight(0)
+
+  var it: Int = 0
+  var currentWeightOfObj: Int = maxValueForWeighting
 
   val store = additionalConstraint.model
 
   override def reset(): Unit = {
-    currentWeightOfObj = iterationToWeigth(0)
+    it = 0
+    currentWeightOfObj = maxValueForWeighting
     super.reset()
+    println("resetting GLS currentWeightOfObj=" + currentWeightOfObj)
   }
 
   override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
 
-    if(currentWeightOfObj > 0) {
+    //println("GLS getMove currentWeightOfObj:" + currentWeightOfObj)
+    if (currentWeightOfObj > 0) {
       //it is still a soft constraint
-
       val initValueOFConstaint = additionalConstraint.value
-      if(switchToStrongAsap && initValueOFConstaint == 0){
+      if (initValueOFConstaint == 0 && it >= allowSwitchToStrongAfterIt) {
         //we are going GeneralizedLocalSearch, but the strong constraint is fine,
         //we can swith to a string constraint
-        currentWeightOfObj = -1
+        currentWeightOfObj = 0
+        //println("GLS getMove, strong constraints are fine, so switching to Strong (it:" + it + ")")
         return getMove(obj, initialObj, acceptanceCriterion)
       }
+
+      //println("GLS getMove, soft constraint currentWeightOfObj:" + currentWeightOfObj + " initValueOFConstaint:" + initValueOFConstaint)
 
       a.getMove(
         new FunctionObjective(() => {
           val objValue = obj.value
-          if(objValue == Long.MaxValue) objValue
+          if (objValue == Long.MaxValue) objValue
           else (maxValueForWeighting * additionalConstraint.value) + (currentWeightOfObj * objValue)
         }, store),
-
         (maxValueForWeighting * initValueOFConstaint) + (currentWeightOfObj * initialObj),
         acceptanceCriterion) match {
         case NoMoveFound =>
-          //it's time to change the weighting
-          if(currentWeightOfObj == 1){
-            //we cannot go below this, so now, time for a sprint towards satisfiability
+          //println("NoMoveFound")
+
+          //it's time to change the weighting?
+          if (initValueOFConstaint == 0 || currentWeightOfObj == 1) {
+            //srong constraints are fine, or weighting is close to strong constraints
+            // so we switch to strong constraints
             currentWeightOfObj = 0
             this.getMove(obj, initialObj, acceptanceCriterion)
           } else {
-            currentWeightOfObj = currentWeightOfObj / 2
-
+            //assume 100 iterations, and continue
             it += 100
-            currentWeightOfObj = iterationToWeigth(it)
+            currentWeightOfObj = 0 max iterationToWeight(it)
 
             this.getMove(obj, initialObj, acceptanceCriterion)
           }
         case m: MoveFound =>
+          //println("MoveFound " + m)
           //a move was found,
           //we decrease the weighting anyway, s othe next iteration will be more directed towards target
 
           it += 1
-          currentWeightOfObj = iterationToWeigth(it)
+          currentWeightOfObj = 0 max iterationToWeight(it)
 
           MoveFound(new MoveWithOtherObj(m.m, Long.MaxValue))
       }
-    }else if(currentWeightOfObj == 0){
+    } else if (currentWeightOfObj == 0) {
+      //strong constraint
 
       val constraintViolation = additionalConstraint.value
+      //println("GLS getMove, strong constraint; violation should be zero: is:" + constraintViolation)
+      if (constraintViolation != 0) {
+        //println("violation is not zero, so we only optimize on the violation")
 
-      if(constraintViolation == 0){
-        //great, we can just post it as a strong constraint
-        currentWeightOfObj = -1
-        this.getMove(obj, initialObj, acceptanceCriterion)
-      }else{
+        //System.err.println("GLS getMove, error stuff")
+        //there is a problem; we are supposed to deal with enforced constraints here, so we reset the counter
         //we have a problem; there is a violation and we cannot go smaller, so temporarily, we forget the obj at all
-        this.getMove(additionalConstraint, constraintViolation, acceptanceCriterion)
+        a.getMove(additionalConstraint, constraintViolation, acceptanceCriterion) match{
+          case NoMoveFound => NoMoveFound
+          case m: MoveFound =>
+            //println("MoveFound " + m)
+            MoveFound(new MoveWithOtherObj(m.m, Long.MaxValue))
+        }
+
+      } else {
+        //great, we can just post it as a strong constraint
+        a.getMove(new CascadingObjective(additionalConstraint, obj), initialObj, acceptanceCriterion) match{
+          case NoMoveFound => NoMoveFound
+          case m: MoveFound =>
+            //println("MoveFound " + m)
+            MoveFound(new MoveWithOtherObj(m.m, Long.MaxValue))
+        }
       }
-    }else{
-      //currentWeightOfObj <0,; just for the symbol of the thing
-      a.getMove(new CascadingObjective(additionalConstraint,obj),initialObj,acceptanceCriterion)
+    } else {
+      //solving violation, forget about obj
+
+      require(false, "should not happen")
+      null
     }
   }
 }

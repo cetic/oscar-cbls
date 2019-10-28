@@ -5,20 +5,32 @@ import oscar.cbls.algo.quick.QList
 import scala.collection.immutable.SortedSet
 
 abstract sealed class RevisableDistance(from:Node,
-                                        to:Node)
+                                        to:Node){
+  def conditionsForRevisions:Iterable[Int]
+  def requiredConditions:SortedSet[Int]
+}
 
 case class Distance(from:Node,
                     to:Node,
                     distance:Long,
                     requiredConditions:SortedSet[Int],
                     unlockingConditions:SortedSet[Int],
-                    path:Option[List[Edge]]) extends RevisableDistance(from,to)
+                    path:Option[List[Edge]]) extends RevisableDistance(from,to){
+  override def conditionsForRevisions: Iterable[Int] = requiredConditions ++ unlockingConditions
+}
 
-case class NeverConnected(from:Node,to:Node) extends RevisableDistance(from,to)
+case class NeverConnected(from:Node,to:Node) extends RevisableDistance(from,to){
+  override def conditionsForRevisions: Iterable[Int] = Nil
+
+  override def requiredConditions: SortedSet[Int] = SortedSet.empty
+}
 
 case class NotConnected(from:Node,
                         to:Node,
-                        unlockingConditions:SortedSet[Int]) extends RevisableDistance(from,to)
+                        unlockingConditions:SortedSet[Int]) extends RevisableDistance(from,to){
+  override def conditionsForRevisions: Iterable[Int] = unlockingConditions
+  override def requiredConditions: SortedSet[Int] = SortedSet.empty
+}
 
 /**
   *
@@ -28,11 +40,22 @@ case class NotConnected(from:Node,
 class RevisableAStar(graph:ConditionalGraph,
                      underApproximatingDistance:(Int,Int) => Long){
 
-  //TODO: speed up if we know, beside the under approximating distance, that the approximation is exact (ie: no conditional edge on the shortest path)
-  //then either the search can be stopped andthe distance is just added and returned
-  //or the path can be computed faster, given that we know the approximation is exact.
+  //TODO: speed up if we know, beside the under approximating distance,
+  // that the approximation is exact (ie: no conditional edge on the shortest path)
+  // then either the search can be stopped andthe distance is just added and returned
+  // or the path can be computed faster, given that we know the approximation is exact.
 
   private val nodeToDistance = Array.fill[Long](graph.nodes.length)(Long.MaxValue)
+
+  def getPath(from:Node,to:Node,isConditionalEdgeOpen:Int => Boolean):Option[List[Edge]] = {
+    search(from,
+      to,
+      isConditionalEdgeOpen,
+      includePath = true) match {
+      case d: Distance => Some(d.path.get)
+      case _ => None
+    }
+  }
 
   def search(from:Node,
              to:Node,
@@ -49,8 +72,6 @@ class RevisableAStar(graph:ConditionalGraph,
     if (underApproximatingDistance(from.id, to.id) == Long.MaxValue) {
       return NeverConnected(from, to)
     }
-
-    //TODO: this array might be time-consuming to allocate; store it permanently in the class for faster query time?
 
     var reachedClosedConditions: SortedSet[Int] = SortedSet.empty
 
@@ -72,7 +93,7 @@ class RevisableAStar(graph:ConditionalGraph,
       val currentNodeId: Int = if (toDevelopHeap.isEmpty) -1
       else toDevelopHeap.removeFirst()
 
-      if (currentNodeId == -1 || (nodeToDistance(currentNodeId) > nodeToDistance(to.id))) {
+      if (currentNodeId == -1 || (nodeToDistance(currentNodeId) >= nodeToDistance(to.id))) {
         //this is the exit code
         val toReturn = extractAnswerFromFinishedSearch(
           from:Node,
@@ -100,7 +121,7 @@ class RevisableAStar(graph:ConditionalGraph,
           if (newDistance < oldDistance) {
             nodeToDistance(otherNodeID) = newDistance
 
-            if(otherNode.transitAllowed) {
+            if(otherNode.transitAllowed || otherNode == to) {
               if (toDevelopHeap.contains(otherNodeID)) {
                 //Already to explore
                 toDevelopHeap.notifyChange(otherNodeID)
@@ -128,7 +149,7 @@ class RevisableAStar(graph:ConditionalGraph,
   }
 
 
-  def pruneReachedClosedConditions(reachedClosedConditions:SortedSet[Int],to:Int,distance:Long):SortedSet[Int] = {
+  private def pruneReachedClosedConditions(reachedClosedConditions:SortedSet[Int],to:Int,distance:Long):SortedSet[Int] = {
     reachedClosedConditions.filter((conditionID:Int) => {
       val edge = graph.conditionToConditionalEdges(conditionID)
 
@@ -200,7 +221,9 @@ class RevisableAStar(graph:ConditionalGraph,
         val newNode = incomingEdge.otherNode(currentNode)
         val newDistance = nodeToDistance(newNode.id)
 
-        if (newDistance != Long.MaxValue && newDistance + incomingEdge.length == currentDistance) {
+        if (newDistance != Long.MaxValue
+          && newDistance + incomingEdge.length == currentDistance
+          && newNode.transitAllowed || newNode == from) {
 
           currentDistance = newDistance
           currentNode = newNode
@@ -212,6 +235,7 @@ class RevisableAStar(graph:ConditionalGraph,
         }
       }
     }
+    require(currentDistance == 0)
     toReturn
   }
 
@@ -229,7 +253,9 @@ class RevisableAStar(graph:ConditionalGraph,
         val newNode = incomingEdge.otherNode(currentNode)
         val newDistance = nodeToDistance(newNode.id)
 
-        if (newDistance != Long.MaxValue && newDistance + incomingEdge.length == currentDistance) {
+        if (newDistance != Long.MaxValue
+          && newDistance + incomingEdge.length == currentDistance
+          && newNode.transitAllowed || newNode == from) {
 
           currentDistance = newDistance
           currentNode = newNode

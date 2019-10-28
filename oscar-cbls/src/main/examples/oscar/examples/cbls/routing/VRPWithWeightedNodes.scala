@@ -3,6 +3,7 @@ package oscar.examples.cbls.routing
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.WeightedNodesPerVehicle
+import oscar.cbls.business.routing.invariants.group.GlobalConstraintCore
 import oscar.cbls.core.search.{Best, First}
 import oscar.cbls.visual.routing.RoutingMapTypes
 
@@ -57,7 +58,8 @@ class VRPWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, minLo
   // The sum of node's weight can't excess the capacity of a vehicle
   val weightPerVehicle = Array.tabulate(v)(_ => CBLSIntVar(store))
   // This invariant maintains the total node's weight encountered by each vehicle
-  val weightedNodesConstraint = WeightedNodesPerVehicle(myVRP.routes, v, nodeWeight, weightPerVehicle)
+  val gc = GlobalConstraintCore(myVRP.routes,v)
+  val weightedNodesConstraint = WeightedNodesPerVehicle(gc, n, v, nodeWeight, weightPerVehicle)
   // This invariant maintains the capacity violation of each vehicle (le means lesser or equals)
   val vehicleCapacityViolation = Array.tabulate(v)(vehicle => (weightPerVehicle(vehicle) le vehicleCapacity(vehicle)))
   val constraintSystem = new ConstraintSystem(store)

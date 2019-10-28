@@ -1,8 +1,8 @@
-package oscar.cbls.test.search
+package oscar.cbls.test.algo
 
 import org.scalatest._
 import oscar.cbls._
-import oscar.cbls.core.computation.{CBLSIntConst, CBLSIntVar, DomainRange, FullRange}
+import oscar.cbls.core.computation.{CBLSIntVar, DomainRange}
 import oscar.cbls.lib.search.neighborhoods.{NarrowingExhaustive, TransferNeighborhood}
 
 class testTransferWithLO extends FlatSpec {
@@ -23,13 +23,13 @@ class testTransferWithLO extends FlatSpec {
 
   s.close()
 
-  val search = TransferNeighborhood(Array(var1,var2),searchZoneForDelta = () => (_,_) => (_,_) => new NarrowingExhaustive(100))
+  val search = TransferNeighborhood(Array(var1,var2),searchZoneForDelta = () => (_,_) => (_,_) => new NarrowingExhaustive(100,101))
 
   search.doAllMoves(obj = obj)
 
-  "The result the search for var1" should "be where the derivate is null" in {
-    assert(var1.value == 0 - b/(2 * a))
-  }
+//  "The result the search for var1" should "be where the derivate is null" in {
+//    assert(var1.value == 0 - b/(2 * a))
+//  }
   "The delta" should "be cut off to var2" in {
     assert(var2.value == var2InitValue - (var1.value - var1InitValue))
   }

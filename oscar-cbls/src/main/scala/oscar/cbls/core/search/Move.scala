@@ -341,8 +341,8 @@ case class InstrumentedMove(initialMove:Move, callBack: () => Unit = null, after
 }
 
 object CallBackMove{
-  def apply(callBack: () => Unit, objAfter:Long, neighborhoodName:String, shortDescription:() => String)=
-    new CallBackMove[Null](_ => {callBack()}, objAfter, neighborhoodName, shortDescription)
+  def apply(callBack: () => Unit, objAfter:Long, neighborhoodName:String)=
+    new CallBackMove[Null](_ => {callBack()}, objAfter, neighborhoodName)
 }
 
 /** a callBackMove when committed calls some method
@@ -361,12 +361,12 @@ object CallBackMove{
   * @param param            the parameter that is passed to the callBack method when the move is committed
   * @tparam T
   */
-case class CallBackMove[T](callBack: T => Unit, override val objAfter:Long, override val neighborhoodName:String, shortDescription:() => String, param:T = null) extends Move{
+case class CallBackMove[T](callBack: T => Unit, override val objAfter:Long, override val neighborhoodName:String, param:T = null) extends Move{
   def commit(){
     callBack(param)
   }
 
   override def toString: String = {
-    neighborhoodNameToString + (if (shortDescription != null) shortDescription() else "")
+    neighborhoodNameToString
   }
 }

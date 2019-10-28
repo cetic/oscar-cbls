@@ -3,16 +3,16 @@
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 2.1 of the License, or
  * (at your option) any later version.
- *   
+ *
  * OscaR is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License  for more details.
- *   
+ *
  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  ******************************************************************************/
-package oscar.cbls.test
+package oscar.cbls.test.invariants
 
 import org.scalatest.{FunSuite, Matchers}
 import oscar.cbls.core.computation.{CBLSIntVar, Domain, Store}
@@ -40,7 +40,16 @@ class TestIntVar extends FunSuite with Matchers {
   
   test("test create IntVar using invalid ranges"){
 	  val solver = new Store
+    val x = CBLSIntVar(solver, 1, 0 to -1, "x")
+    val y = CBLSIntVar(solver, 0, 0 until 0, "y")
+    // Behaviour changed: not valid ranges become
+    // empty domains
 
+    x.domain should be(Domain.empty)
+    y.domain should be(Domain.empty)
+
+    // In case of behaviour changes again, I let the old tests
+    /*
     an [NoSuchElementException] should be thrownBy {
       val x = CBLSIntVar(solver, 1, 0 to -1, "x")
     }
@@ -48,13 +57,14 @@ class TestIntVar extends FunSuite with Matchers {
     an [NoSuchElementException] should be thrownBy {
       val x = CBLSIntVar(solver, 0, 0 until 0, "x") // until makes an empty range
     }
+     */
 
   }
   
   test("test inDomain of IntVar 1..10"){
     val solver = new Store
     val x = CBLSIntVar(solver, 1, 1 to 10, "x")
-   // solver.close()
+    solver.close()
     (1 to 10).foreach(x.domain.contains(_) should be(true))
     x.domain.contains(0) should be(false)
     x.domain.contains(11) should be(false)

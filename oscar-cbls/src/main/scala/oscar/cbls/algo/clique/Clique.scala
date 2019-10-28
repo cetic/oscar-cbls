@@ -70,18 +70,3 @@ object Clique {
     allCliques
   }
 }
-
-/**
- * Testing object
- */
-object TestCliques extends App{
-
-  val nbNodes = 10L
-  val adjacencyList:List[(Long,Long)] = List((0L,2L),(2L,8L),(3L,1L),(1L,4L),(3L,4L),(7L,5L),(3L,6L))
-
-  val adjacencyDico = SortedSet.empty ++ adjacencyList ++ adjacencyList.map{case (a,b) => (b,a)}
-  def isNeighbor(a:Long,b:Long) = adjacencyDico.contains((a,b))
-
-  val cliques = Clique.bronKerbosch2(nbNodes,isNeighbor:(Long,Long)=>Boolean)
-  println(cliques.map(_.toList))
-}

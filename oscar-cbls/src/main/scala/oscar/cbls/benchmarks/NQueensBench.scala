@@ -105,7 +105,8 @@ object NQueensBench extends LinearSelectorClass(true) with StopWatch{
 
     val c = ConstraintSystem(m)
 
-    //c.post(AllDiff(Queens)) //enforced because we swap queens and they are always alldiff
+    // c.post(AllDiff(Queens))
+    // enforced because we swap queens and they are always alldiff
     c.post(AllDiff(queensRange.map(q => queens(q) + q)))
     c.post(AllDiff(queensRange.map(q => q - queens(q))))
 

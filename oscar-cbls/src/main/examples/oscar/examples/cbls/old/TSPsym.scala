@@ -14,25 +14,26 @@ package oscar.cbls.test.routing
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+
 /*
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.examples.cbls.routing.RoutingMatrixGenerator
 
-class MySimpleRouting(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int)
+class MySimpleRouting(n:Int,v:Int,symmetricDistance:Array[Array[Long]],m:Store, maxPivot:Int)
   extends VRP(m,n,v,maxPivot) {
 
   //initializes to something simple; vehicle v-1 does all nodes (but other vehicles)
   //initialization must be done ASAP, to ensure that invariants will initialize straight based on this value
   setCircuit(nodes)
 
-  val totalDistance = constantRoutingDistance(routes, n, v ,false, symmetricDistance, true)(0)
+  val totalDistance = routeLength(routes, n, v ,false, symmetricDistance, true)(0)
   
   val obj = Objective(totalDistance)
 
   override def toString : String = super.toString + "objective: " + obj.value + "\n"
 
-  val closestNeighboursForward = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance, (_) => nodes))
+  val closestNeighboursForward = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance, (_) => nodes)(_))
 }
 
 object TSPsym extends App{
@@ -56,11 +57,11 @@ object TSPsym extends App{
 
   println(myVRP)
 
-  val onePtMove = profile(onePointMove(() => nodes, ()=>myVRP.kFirst(40,myVRP.closestNeighboursForward), myVRP))
+  val onePtMove = profile(onePointMove(() => nodes, ()=>myVRP.kFirst(40,myVRP.closestNeighboursForward(_)), myVRP))
 
-  val customTwoOpt = profile(twoOpt(() => nodes, ()=>myVRP.kFirst(40,myVRP.closestNeighboursForward), myVRP))
+  val customTwoOpt = profile(twoOpt(() => nodes, ()=>myVRP.kFirst(40,myVRP.closestNeighboursForward(_)), myVRP))
 
-  def customThreeOpt(k:Int, breakSym:Boolean) = profile(threeOpt(() => nodes, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
+  def customThreeOpt(k:Int, breakSym:Boolean) = profile(threeOpt(() => nodes, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward(_)), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
   val search = bestSlopeFirst(List(onePtMove,customTwoOpt, customThreeOpt(10,true))) exhaust customThreeOpt(20,true)
 

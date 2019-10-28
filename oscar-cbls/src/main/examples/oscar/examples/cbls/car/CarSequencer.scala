@@ -25,7 +25,7 @@ import scala.collection.immutable.SortedMap
 import scala.language.postfixOps
 import scala.util.Random
 
-object CarSequencer  extends CBLSModel with App {
+object CarSequencer extends CBLSModel with App {
 
   val orderedCarsByType:SortedMap[Int,Int] = SortedMap(0 -> 110, 1 -> 60, 2 -> 110 , 3 -> 120, 4 -> 40, 5 -> 30)
   val carTypes = 0 to 5

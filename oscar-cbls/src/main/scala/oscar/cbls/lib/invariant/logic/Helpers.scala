@@ -124,3 +124,37 @@ class LazyIntInt2Int(a:IntValue, b:IntValue, fun:((Long, Long) => Long), domain:
     c.check(this.value == fun(a.value,b.value), Some("checking output of LazyIntVarIntVar2IntVarFun"))
   }
 }
+
+object IntInt2IntInt{
+  def apply(aIn:IntValue,bIn:IntValue,f:(Long,Long) => (Long,Long)):(IntValue,IntValue) = {
+    val store = InvariantHelper.findModel(aIn,bIn)
+    val aOut = CBLSIntVar(store,0,aIn.domain,"aOut")
+    val bOut = CBLSIntVar(store,0,bIn.domain,"bOut")
+
+    new IntInt2IntInt(aIn,bIn,aOut,bOut,f)
+
+    (aOut,bOut)
+  }
+}
+
+class IntInt2IntInt(aIn:IntValue,bIn:IntValue,aOut:CBLSIntVar,bOut:CBLSIntVar,f:(Long,Long) => (Long,Long))
+  extends Invariant with IntNotificationTarget{
+
+  registerStaticAndDynamicDependency(aIn)
+  registerStaticAndDynamicDependency(bIn)
+  finishInitialization()
+  aOut.setDefiningInvariant(this)
+  bOut.setDefiningInvariant(this)
+
+  scheduleForPropagation()
+
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, oldVal: Long, newVal: Long): Unit = {
+    scheduleForPropagation()
+  }
+
+  override def performInvariantPropagation(): Unit = {
+    val (ao,bo) = f(aIn.value,bIn.value)
+    aOut := ao
+    bOut := bo
+  }
+}

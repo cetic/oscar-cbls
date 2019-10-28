@@ -86,9 +86,9 @@ class CachedExplorations(oldGraph:VLSNGraph,
 
   def isDirtyNode(node: Long): Boolean = dirtyNodes.contains(node)
 
-  //TODO: use arrays for O(1L) access?
+  //TODO: use arrays for O(1) access?
   var cachedInsertNoEject: SortedMap[(Long, Long), CachedAtomicMove] = SortedMap.empty //unroute,targetVehicle
-  var cachedInsertWithEject: SortedMap[(Long, Long), CachedAtomicMove] = SortedMap.empty //
+  var cachedInsertWithEject: SortedMap[(Long, Long), CachedAtomicMove] = SortedMap.empty //movedNode, ejectedNode
   var cachedMoveNoEject: SortedMap[(Long, Long), CachedAtomicMove] = SortedMap.empty //node,vehicle
   var cachedMoveWithEject: SortedMap[(Long, Long), CachedAtomicMove] = SortedMap.empty
   var cachedRemove: SortedMap[(Long), CachedAtomicMove] = SortedMap.empty

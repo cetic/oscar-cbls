@@ -250,4 +250,22 @@ package object cbls extends ModelingAPI{
   implicit def minMaxCoupleIntLongToDomain(minMaxCouple:((Int,Long))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
   implicit def minMaxCoupleLongIntToDomain(minMaxCouple:((Long,Int))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
 
+
+
+
+  /** Tests an expression, prints a warning message on the console if false
+    *  This method is similar to `require`, but does not stop the execution
+    *
+    *  @param requirement   the expression to test
+    *  @param message       a String to print to he error console
+    *  @group assertions
+    */
+  @inline final def warning(requirement: Boolean, message: => Any) {
+    if (!requirement)
+      System.err.println("WARNING: " + message)
+  }
+
+  @inline final def warning(message: => Any) {
+      System.err.println("WARNING: " + message)
+  }
 }

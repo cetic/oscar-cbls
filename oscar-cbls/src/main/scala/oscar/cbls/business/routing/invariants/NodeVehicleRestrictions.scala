@@ -47,11 +47,11 @@ object NodeVehicleRestrictions{
     violationPerVehicle
   }
 
-  def violatedNodes(routes:ChangingSeqValue,v:Int,nodeVehicleRestrictions:Iterable[(Int,Int)]):SetValue = {
+  def violatedNodes(routes:ChangingSeqValue,v:Int,nodeVehicleRestrictions:Iterable[(Long,Long)]):SetValue = {
     violatedNodes(VehicleOfNodes(routes,v).asInstanceOf[Array[IntValue]],v,nodeVehicleRestrictions)
   }
 
-  def violatedNodes(vehicleOfNode:Array[IntValue],v:Int,nodeVehicleRestrictions:Iterable[(Int,Int)]):SetValue = {
+  def violatedNodes(vehicleOfNode:Array[IntValue],v:Int,nodeVehicleRestrictions:Iterable[(Long,Long)]):SetValue = {
 
     val n = vehicleOfNode.length
 

@@ -36,7 +36,7 @@ case class MinConstArray(varss: Array[Long], ccond: SetValue, default: Long = Lo
 
   override def checkInternals(c: Checker): Unit = {
     if(ccond.value.isEmpty) c.check(value == default)
-    else  c.check(value == ccond.value.minBy(varss(_)))
+    else c.check(value == varss(ccond.value.minBy(varss(_))))
   }
 }
 
@@ -55,7 +55,7 @@ case class MaxConstArray(varss: Array[Long], ccond: SetValue, default: Long = Lo
 
   override def checkInternals(c: Checker): Unit = {
     if(ccond.value.isEmpty) c.check(value == default)
-    else  c.check(value == ccond.value.maxBy(varss(_)))
+    else c.check(value == varss(ccond.value.maxBy(varss(_))))
   }
 }
 
