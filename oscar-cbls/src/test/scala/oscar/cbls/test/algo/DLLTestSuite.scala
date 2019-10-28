@@ -97,8 +97,8 @@ class DLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matc
     val storageElem = dll.enqueue(1)
     dll.enqueue(2)
     dll.enqueue(3)
-    val storageElem3 = dll.enqueue(4)
-    val storageElem2 = dll.enqueue(5)
+    dll.enqueue(4)
+    dll.enqueue(5)
     dll.enqueue(6)
 
     storageElem.delete()

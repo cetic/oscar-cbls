@@ -122,7 +122,7 @@ class PFDLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Ma
 
       for (i <- list) {
         if (i == 0) {
-          listPFDElem = listPFDElem ::: List(dll.addElem(new CustomObject(i, "a")))
+          listPFDElem = listPFDElem ::: List(dll.addElem(CustomObject(i, "a")))
           size += 1
         }
         else {
@@ -143,9 +143,7 @@ class PFDLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Ma
     forAll (Gen.listOf(customGen)) {objList => {
 
       val dll = new DelayedPermaFilteredDoublyLinkedList[CustomObject]()
-      var size = 0
       var listPFDElem = List[DPFDLLStorageElement[CustomObject]]()
-
 
       // Append the element at the head, since dll.addElem adds at the head
       for (i <- objList) {
@@ -166,7 +164,6 @@ class PFDLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Ma
     forAll (Gen.listOf(customGen)) {objList => {
 
       val dll = new DelayedPermaFilteredDoublyLinkedList[CustomObject]()
-      var size = 0
       var listPFDElem = List[DPFDLLStorageElement[CustomObject]]()
 
       for (i <- objList) {
@@ -181,7 +178,6 @@ class PFDLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Ma
     forAll (Gen.listOf(customGen)) {objList => {
 
       val dll = new DelayedPermaFilteredDoublyLinkedList[CustomObject]()
-      var size = 0
       var listPFDElem = List[DPFDLLStorageElement[CustomObject]]()
 
       for (i <- objList) {
