@@ -65,6 +65,8 @@ class VisualMap extends JPanel(new BorderLayout()) {
 
   }
 
+  System.setProperty("http.agent", "Mozilla/5.0 ")
+
   val tf = new DefaultTileFactory(info)
   viewer.setTileFactory(tf)
   viewer.setZoom(11)
@@ -166,14 +168,6 @@ object VisualMap {
       */
       val l = map.createLine((50.294603, 4.800819), (50.844972, 4.357246))
       l.color = Color.blue
-      for(i <- 0 to 100){
-        Thread.sleep(1000)
-        l.dest = (50.294603, 4.357246)
-        map.viewer.setZoom(32)
-        Thread.sleep(1000)
-        l.dest = (50.844972, 4.357246)
-        map.viewer.setZoom(16)
-      }
 
       //val pa = map.createPath((50.294603, 4.800819), (50.844972, 4.357246))
 
