@@ -200,7 +200,7 @@ class BinomialHeapTestSuite extends FunSuite with GeneratorDrivenPropertyChecks 
         }
 
         var list: List[Int] = List()
-        var listIterator = heap.iterator.toList
+        val listIterator = heap.iterator.toList
 
         while (!heap.isEmpty) {
           list = heap.popFirst() :: list
