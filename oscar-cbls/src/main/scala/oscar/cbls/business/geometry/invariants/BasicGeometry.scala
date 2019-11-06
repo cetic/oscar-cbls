@@ -190,7 +190,7 @@ class DistanceBetweenCentroids(store:Store,pointA:AtomicValue[GeometryValue],poi
 
 class ResizableCircle(store:Store, size: IntValue, givenName: String = null)
   extends CBLSGeometryInvariant(store, {
-    val circle = geometry.createCircle(size.value, nbEdges = 7)
+    val circle = geometry.createCircle(size.value, nbEdges = 36)
     circle
   }) with IntNotificationTarget {
 
@@ -200,7 +200,7 @@ class ResizableCircle(store:Store, size: IntValue, givenName: String = null)
   override def notifyIntChanged(v: ChangingIntValue, id: Int, oldVal: Long, newVal: Long): Unit = {
     require(newVal > 0, "The size of a circle has a positive value")
     if(oldVal != newVal)
-      this := geometry.createCircle(newVal, nbEdges = 7)
+      this := geometry.createCircle(newVal, nbEdges = 36)
   }
 
   override def toString: String = if (givenName == null) value.toString else givenName
