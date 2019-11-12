@@ -9,12 +9,19 @@ import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 object SwDevResources {
   // Model
   // Activities
-  val (analysis, design, coding, testing, qc, pm) = (5, 4, 3, 2, 1, 0)
-  val durations = Array(60L, 50L, 25L, 15L, 10L, 10L)
+  val (analysis, design, coding, testing, qc, pm) = (50, 40, 30, 20, 10, 0)
+  val activities = List(
+    ActivityData(analysis, 10L, 0L, Mandatory),
+    ActivityData(design, 10L, 0L, Mandatory),
+    ActivityData(coding, 15L, 0L, Mandatory),
+    ActivityData(testing, 25L, 0L, Mandatory),
+    ActivityData(qc, 50L, 0L, Mandatory),
+    ActivityData(pm, 60L, 0L, Mandatory)
+  )
   val precPairs = List((analysis, design), (analysis, qc), (design, coding), (coding, testing))
   // Resources
-  val (analyst_mode, qapm) = (0, 1)
-  val (dev, test) = (0, 1)
+  val (analyst_mode, qapm) = (20, 21)
+  val (dev, test) = (30, 31)
   val analyst_st = SetupTimes(analyst_mode,
     Map(analysis->analyst_mode, design->analyst_mode, qc->qapm, pm->qapm),
     Map((analyst_mode, qapm)->1L, (qapm, analyst_mode)->1L))
@@ -30,7 +37,7 @@ object SwDevResources {
 
   def main(args: Array[String]): Unit = {
     val m = new Store()
-    val schedule = new Schedule(m, durations, precPairs, Map(), 0 to 5, Array(analyst, senior_dev_test))
+    val schedule = new Schedule(m, activities, precPairs, List(analyst, senior_dev_test))
     val objFunc = Objective(schedule.makeSpan)
     m.close()
     println("Model closed.")
@@ -44,7 +51,7 @@ object SwDevResources {
     println(combinedNH.profilingStatistics)
     println(s"*************** RESULTS ***********************************")
     println(s"Schedule makespan = ${schedule.makeSpan.value}")
-    println(s"Scheduling sequence = ${schedule.activitiesPriorList.value}")
+    println(s"Scheduling sequence = ${schedule.activityPriorityList.value}")
     println("Scheduling start times = [  ")
     schedule.startTimes.foreach(v => println(s"    $v"))
     println("]")

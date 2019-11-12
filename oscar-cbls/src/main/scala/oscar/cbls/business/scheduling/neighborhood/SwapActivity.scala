@@ -23,7 +23,9 @@ class SwapActivity(schedule: Schedule,
   override def exploreNeighborhood(initialObj: Long): Unit = {
     // Iteration zone on activities indices
     // Checking the Hot Restart
-    val iterationZone1: () => Iterable[Long] = searchIndices.getOrElse(() => 0L until schedule.activitiesPriorList.value.size.toLong)
+    val iterationZone1: () => Iterable[Long] = searchIndices.getOrElse(() =>
+      0L until schedule.activityPriorityList.value.size.toLong
+    )
     val hotRestart = true
     val iterationZone: Iterable[Long] =
       if (hotRestart) HotRestart(iterationZone1(), currentIndex.toLong)
@@ -31,7 +33,7 @@ class SwapActivity(schedule: Schedule,
     // iterating over the indices in the activity list
     val (indicesIterator, notifyIndexFound) = selectIndexBehavior.toIterator(iterationZone)
     // Define checkpoint on sequence (activities list)
-    val seqValueCheckPoint = schedule.activitiesPriorList.defineCurrentValueAsCheckpoint(true)
+    val seqValueCheckPoint = schedule.activityPriorityList.defineCurrentValueAsCheckpoint(true)
     // Main loop
     while (indicesIterator.hasNext) {
       currentIndex = indicesIterator.next().toInt
@@ -44,7 +46,7 @@ class SwapActivity(schedule: Schedule,
         performMove(currentIndex, swappingIndex)
         val newObj = obj.value
         // Rollback to checkpoint
-        schedule.activitiesPriorList.rollbackToTopCheckpoint(seqValueCheckPoint)
+        schedule.activityPriorityList.rollbackToTopCheckpoint(seqValueCheckPoint)
         // Notification of finding indices
         if (evaluateCurrentMoveObjTrueIfSomethingFound(newObj)) {
           notifyIndexFound()
@@ -52,7 +54,7 @@ class SwapActivity(schedule: Schedule,
         }
       }
     }
-    schedule.activitiesPriorList.releaseTopCheckpoint()
+    schedule.activityPriorityList.releaseTopCheckpoint()
   }
 
   override def instantiateCurrentMove(newObj: Long): SwapActivityMove =
@@ -60,7 +62,7 @@ class SwapActivity(schedule: Schedule,
 
   def performMove(currentIndex: Int, swappingIndex: Int): Unit = {
     // Swap 1-segments in sequence
-    schedule.activitiesPriorList.swapSegments(currentIndex, currentIndex, false,
+    schedule.activityPriorityList.swapSegments(currentIndex, currentIndex, false,
       swappingIndex, swappingIndex, false)
   }
 }

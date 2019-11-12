@@ -1,14 +1,10 @@
 package oscar.cbls.test.scheduling
 
-
-import oscar.cbls.{ErrorChecker, Store}
+import oscar.cbls._
 import oscar.cbls.business.scheduling.model._
 import oscar.cbls.business.scheduling.neighborhood._
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
-//import oscar.cbls.core.constraint.ConstraintSystem
-import oscar.cbls.core.objective.CascadingObjective
-import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.invariant.seq.SeqSum
 
 import scala.util.Random
@@ -23,55 +19,41 @@ object MinStartTimesExample extends App {
   val nAct = 10 //nbre d'activités
   val minDuration = 10  //nombre minimum de minutes pour une activité
   val maxDuration = 30  //nombre maximum de minutes pour une activité
+  val penaltyForUnscheduled = 10000L  //penalité d'une tâche pour ne pas être dans le schedule
 
   //créations des variables pour le modèle
 
   //1) durations(i) = durée de l'activité i
-  val durations: Array[Long] = Array.tabulate(nAct)(_ => randomInterval(minDuration, maxDuration))
+  val activities: List[ActivityData] = Array
+    .tabulate(nAct) { i =>
+      ActivityData(i, randomInterval(minDuration, maxDuration), if (i==0) 30L else 0L, Optional)
+    }
+    .toList
 
-  for { i <- durations.indices} { println(s"Duration ($i) = ${durations(i)}") }
+  println("Activities:")
+  activities.foreach(println(_))
 
   //2) les contraintes de précédences (on peut mettre une liste vide)
   val precPairs = List((0, 3), (2, 1)) //(a,b) l'activité numéro 0 doit se dérouler avant l'activité numéro 3
 
-  //3) Activités initiales ???
-  val initialActs = 0 until 5 //nAct on les met toutes ??
-
-  //4) Temps de départ mimimum pour les tâches
-  val minStarts = Map(0 -> 30L)
-
-  //5) Création des resources
+  //3) Création des resources
 
   val resource1 = new DisjunctiveResource(List(0,2,5,7,8,9))
   val resource2 = new CumulativeResource(5L,Map(1-> 2L , 3 -> 1L , 4 -> 1L , 6 -> 1L , 7 -> 1L))
 
-  val resources = Array[ResourceConstraint](resource1,resource2)
+  val resources = List(resource1,resource2)
 
   //la contrainte de scheduling
-  val scheduling = new Schedule(s, durations, precPairs, minStarts, initialActs, resources)
+  val scheduling = new Schedule(s, activities, precPairs, resources)
 
-  //début des activités
-  val minBegin = 30
-  val maxBegin = 200
-  //val timeActBegin = Array.tabulate(nAct)( _ => randomInterval(minBegin, maxBegin))
+  // Pred and succ maps
+  scheduling.precedencesData.predMap.foreach(pi => println(s"Pred ${pi._1} => ${pi._2}"))
+  scheduling.precedencesData.succMap.foreach(si => println(s"Succ ${si._1} => ${si._2}"))
 
-  val timeActBegin = Array.tabulate(nAct)( _ => 0)
-  timeActBegin(0) = 30
-
-  //contraintes sur le début des activités ?
-  //val constraintTimeActBegin = Array.tabulate(nAct)(i =>
-  //  scheduling.startTimes(i) ge timeActBegin(i))
-
-  //val constraintSystem = new ConstraintSystem(s)
-  //constraintTimeActBegin.foreach(constraintSystem.post(_))
-
-  //val objFunc = new CascadingObjective(constraintSystem,scheduling.makeSpan)
-  //val func = Array.tabulate(nAct)(i => 2*(nAct-i))
-  val sumScheduled = SeqSum(scheduling.activitiesPriorList, i => { nAct - i }) //, i => func(i.toInt))
-  //val objFunc = new CascadingObjective(scheduling.makeSpan, sumScheduled)
+  val sumScheduled = SeqSum(scheduling.activityPriorityList, i => { nAct - i }) //, i => func(i.toInt))
 
   //la fonction objective
-  val objFunc = Objective(sumScheduled)
+  val objFunc = Objective(scheduling.makeSpan + (penaltyForUnscheduled * (nAct - length(scheduling.activityPriorityList))))
   //val objFunc = Objective(scheduling.makeSpan)
 
   //fermer le modèle
@@ -94,18 +76,16 @@ object MinStartTimesExample extends App {
   val removeNH = new RemoveActivity(scheduling, "Remove")
   val replaceNHcomb = removeNH dynAndThen (_ => addNH)
   val replaceNH = new ReplaceActivity(scheduling, "Replace")
-  val combinedNH = Profile(replaceNHcomb)
-  //val combinedNH = Profile(replaceNH)
-
-    //BestSlopeFirst(List(Profile(reinsertNH), Profile(swapNH), Profile(replaceNHcomb))) //, Profile(replaceNH)
+  //val combinedNH = Profile(replaceNHcomb)
+  val combinedNH = BestSlopeFirst(List(Profile(addNH), Profile(reinsertNH), Profile(swapNH), Profile(replaceNH)))
   //Profile c'est pour les stats : à enlever
 
   //lancement de la recherche
-  combinedNH.verbose = 4
+  combinedNH.verbose = 1
   combinedNH.doAllMoves(obj = objFunc)
 
   println(combinedNH.profilingStatistics)
-  println(s"Activities = ${scheduling.activitiesPriorList.value.toList}")
+  println(s"Activities = ${scheduling.activityPriorityList.value.toList}")
 
   println("------------------------")
 
@@ -114,11 +94,6 @@ object MinStartTimesExample extends App {
   println("]")
 
   println(s"Objective Function = $objFunc")
-
-  println(resource2.activitiesConsumption) //mapping
-  println(resource2.usingActivities)
-
-  //println(constraintSystem.violation)
 
   /**
    * Rend un nombre aléatoire entre inf et sup

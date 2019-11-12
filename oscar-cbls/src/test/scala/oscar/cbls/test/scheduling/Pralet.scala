@@ -13,18 +13,25 @@ import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 object Pralet {
   // Model
   // Activities
-  val (a, b, c, d, e) = (0, 1, 2, 3, 4)
-  val durations = Array(4L, 1L, 3L, 4L, 2L)
+  val (a, b, c, d, e) = (0, 10, 20, 30, 40)
+  val (m0, m1) = (0, 1)
+  val activities = List(
+    ActivityData(a, 4L, 0L, Mandatory),
+    ActivityData(b, 1L, 0L, Mandatory),
+    ActivityData(c, 3L, 0L, Mandatory),
+    ActivityData(d, 4L, 0L, Mandatory),
+    ActivityData(e, 2L, 0L, Mandatory)
+  )
   val precPairs = List((a, c), (c, e))
   // Resources
-  val setupTimesR = SetupTimes(1, Map(a->1, b->1, c->1, d->1, e->0), Map((0,1)->1L, (1,0)->1L))
+  val setupTimesR = SetupTimes(m1, Map(a->m1, b->m1, c->m1, d->m1, e->m0), Map((m0,m1)->1L, (m1,m0)->1L))
   val r = new CumulativeResourceWithSetupTimes(3L, Map(a->2L, b->1L, c->1L, d->2L, e->2L), setupTimesR)
-  val setupTimesR1 = SetupTimes(0, Map(b->0, c->1, e->0), Map((0,1)-> 1L, (1,0)->4L))
+  val setupTimesR1 = SetupTimes(m0, Map(b->m0, c->m1, e->m0), Map((m0,m1)-> 1L, (m1,m0)->4L))
   val r1 = new DisjunctiveResourceWithSetupTimes(List(b, c, e), setupTimesR1)
 
   def main(args: Array[String]): Unit = {
     val m = new Store(checker = Some(ErrorChecker()))
-    val schedule = new Schedule(m, durations, precPairs, Map(), 0 to 4, Array(r, r1))
+    val schedule = new Schedule(m, activities, precPairs, List(r, r1))
     val objFunc = Objective(schedule.makeSpan)
     m.close()
     println("Model closed.")
@@ -33,12 +40,13 @@ object Pralet {
     val reinsertNH = new ReinsertActivity(schedule, "Reinsert")
     val combinedNH = BestSlopeFirst(List(Profile(reinsertNH), Profile(swapNH)))
     // This is the search strategy
+    combinedNH.verbose = 1
     combinedNH.doAllMoves(obj = objFunc)
     // And here, the results
     println(combinedNH.profilingStatistics)
     println(s"*************** RESULTS ***********************************")
     println(s"Schedule makespan = ${schedule.makeSpan.value}")
-    println(s"Scheduling sequence = ${schedule.activitiesPriorList.value.toList}")
+    println(s"Scheduling sequence = ${schedule.activityPriorityList.value.toList}")
     println("Scheduling start times = [  ")
     schedule.startTimes.foreach(v => println(s"    $v"))
     println("]")

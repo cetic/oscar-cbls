@@ -9,10 +9,12 @@ import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 import scala.util.Random
 
 object BigExample {
-  val nbAct = 50
-  val nbRes = 50
+  val nbAct = 100
+  val nbRes = 100
   val minDuration = 1L
   val maxDuration = 25L
+  val minStartTime = 0L
+  val maxStartTime = 10L
   val minCapacity = 1L
   val maxCapacity = 25L
   val minRMRes = 0
@@ -47,9 +49,11 @@ object BigExample {
     // Activities
     //val nAct = randomInterval(1, nbAct)
     val nAct = nbAct
-    val durations: Array[Long] = Array.tabulate(nAct)(_ => randomInterval(minDuration, maxDuration))
-    // initial activities
-    val initialActs = for {i <- 0 until nAct if randomBoolean(densityInitialActs)} yield i
+    val activities = for {i <- 0 until nAct} yield ActivityData(i,
+      randomInterval(minDuration, maxDuration),
+      randomInterval(minStartTime, maxStartTime),
+      if (randomBoolean(densityInitialActs)) Mandatory else Optional
+    )
     // Precedencies
     val seqPairs =  for {i <- 0 until nAct
                          j <- 0 until i
@@ -58,7 +62,7 @@ object BigExample {
     // Resources
     //val nRes = randomInterval(0, nbRes)
     val nRes = nbRes
-    val resources: Array[ResourceConstraint] = Array.tabulate(nRes) { ind =>
+    val resources: Array[Resource] = Array.tabulate(nRes) { ind =>
       // Capacity for resource i
       val resCap = randomInterval(minCapacity, maxCapacity)
       // Setup Times
@@ -84,7 +88,7 @@ object BigExample {
         new CumulativeResourceWithSetupTimes(resCap, mapUsedCaps, setupTimes)
       }
     }
-    new Schedule(m, durations, precPairs, Map(), initialActs, resources)
+    new Schedule(m, activities.toList, precPairs, resources.toList)
   }
 
   def main(args: Array[String]): Unit = {
@@ -104,7 +108,7 @@ object BigExample {
     val replaceNH = new ReplaceActivity(scProblem, "Replace")
     val combinedNH = BestSlopeFirst(List(Profile(reinsertNH), Profile(swapNH), Profile(replaceNH), Profile(replaceNHcomb)))
     // This is the search strategy
-    println(s"Initial list (size: ${scProblem.activitiesPriorList.value.size}) = ${scProblem.activitiesPriorList.value.toList}")
+    println(s"Initial list (size: ${scProblem.activityPriorityList.value.size}) = ${scProblem.activityPriorityList.value.toList}")
     println("Computing solution...")
     val t0 = System.nanoTime()
     combinedNH.verbose = 1
@@ -112,11 +116,11 @@ object BigExample {
     val t1 = System.nanoTime()
     println(combinedNH.profilingStatistics)
     // And here, the results
-    val actPriorList = scProblem.activitiesPriorList.value.toList
+    val actPriorList = scProblem.activityPriorityList.value.toList
     println(s"*************** RESULTS ***********************************")
     println(s"Elapsed time : ${t1-t0} ns")
     println(s"Schedule makespan = ${scProblem.makeSpan.value}")
-    println(s"Scheduling sequence = ${scProblem.activitiesPriorList.value.toList}")
+    println(s"Scheduling sequence = ${scProblem.activityPriorityList.value.toList}")
     println("Scheduling start times = [  ")
     for {a <- actPriorList} {
       println(s"    ${scProblem.startTimes(a.toInt)}")

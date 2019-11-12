@@ -1,32 +1,34 @@
 package oscar.cbls.business.scheduling.model
 
-abstract class Activity(index: Int, name: String) {
-  def duration: Long
-}
+import oscar.cbls.business.scheduling.Activity
 
-case class NormalActivity(index: Int, name: String, duration: Long) extends  Activity(index, name)
+import scala.collection.BitSet
+
+abstract class ActivityType
+case object Mandatory extends ActivityType
+case object Flexible extends ActivityType
+case object Optional extends ActivityType
+
+case class ActivityData(activity: Activity,
+                        duration: Long,
+                        minStartTime: Long,
+                        `type`: ActivityType)
 
 // Precedences
-
 /**
   * This class is a container for the precedence constraints between activity indices
-  *
-  * @param numActivities the number of activities
   */
-class Precedences(numActivities: Int, beforeAfterPairs: List [(Int, Int)]) {
-  // Precedents array
-  val precArray: Array[List[Int]] = Array.tabulate(numActivities)(_ => Nil)
-  // Successors array
-  val succArray: Array[List[Int]] = Array.tabulate(numActivities)(_ => Nil)
-
-  for {(indA, indB) <- beforeAfterPairs} {
-    // Check preconditions
-    require(0 <= indA && indA < numActivities)
-    require(0 <= indB && indB < numActivities)
-    require(!descendants(indB).contains(indA))
-    /////
-    precArray(indB) ::= indA
-    succArray(indA) ::= indB
+class PrecedencesData(beforeAfterPairs: List [(Activity, Activity)]) {
+  // Predecessors map
+  var predMap: Map[Activity, BitSet] = Map()
+  // Successors map
+  var succMap: Map[Activity, BitSet] = Map()
+  // Filling maps from precedences pairs
+  for {(actA, actB) <- beforeAfterPairs} {
+    val predB = predMap.getOrElse(actB, BitSet.empty)
+    val succA = succMap.getOrElse(actA, BitSet.empty)
+    predMap += (actB -> (predB + actA))
+    succMap += (actA -> (succA + actB))
   }
 
   /**
@@ -35,12 +37,12 @@ class Precedences(numActivities: Int, beforeAfterPairs: List [(Int, Int)]) {
     * @return a list containing a permutation of [0..numActivity) corresponding
     *         to a consistent priority list (if A->B, index of A is before index of B in the list)
     */
-  def getPriorityList(activitiesOnList: Iterable[Int]): List[Long] = {
-    def insertList(i: Int, succI: List[Int], accList: List[Long]): List[Long] = {
+  def getPriorityList(activitiesOnList: Iterable[Activity]): List[Long] = {
+    def insertList(i: Activity, succI: BitSet, accList: List[Long]): List[Long] = {
       accList match {
         case Nil => List(i)
         case x::xs =>
-          if (succI.contains(x))
+          if (succI.contains(x.toInt))
             i::accList
           else
             x::insertList(i, succI, xs)
@@ -49,7 +51,7 @@ class Precedences(numActivities: Int, beforeAfterPairs: List [(Int, Int)]) {
     /////
     var result: List[Long] = Nil
     for {i <- activitiesOnList} {
-      result = insertList(i, succArray(i), result)
+      result = insertList(i, succMap.getOrElse(i, BitSet.empty), result)
     }
     result
   }
@@ -57,12 +59,13 @@ class Precedences(numActivities: Int, beforeAfterPairs: List [(Int, Int)]) {
   /**
     * Checks whether a list of activity indexes is consistent with the precedences
     *
-    * @param seq a sequence of activity indices
+    * @param seq a sequence of activities
     * @return true iff all indices in seq respect the precedences relation
     */
-  def consistentSeq(seq: List[Int]): Boolean = {
+  def consistentSeq(seq: List[Activity]): Boolean = {
     // Auxiliary function
-    def consistentSeq(postfix: List[Int], revPrefix: List[Int]): Boolean = postfix match {
+    def consistentSeq(postfix: List[Activity],
+                      revPrefix: List[Activity]): Boolean = postfix match {
       case Nil => true
       case act::acts =>
         val notPrecPref = !revPrefix.exists(descendants(act).contains(_))
@@ -80,10 +83,10 @@ class Precedences(numActivities: Int, beforeAfterPairs: List [(Int, Int)]) {
     *
     * @return a list of pairs (a, b) where a->b according to the precedence relation
     */
-  def toPairsList: List[(Int, Int)] = {
-    var pairsList: List[(Int, Int)] = Nil
-    for {i <- precArray.indices} {
-      val indPairs = precArray(i).map((i,_)).toList
+  def toPairsList: List[(Activity, Activity)] = {
+  var pairsList: List[(Activity, Activity)] = Nil
+    for {i <- predMap.keys} {
+      val indPairs = predMap(i).map((i,_)).toList
       pairsList :::= indPairs
     }
     pairsList
@@ -92,24 +95,25 @@ class Precedences(numActivities: Int, beforeAfterPairs: List [(Int, Int)]) {
   /**
     * Determine the "descendants" of an activity in the precedence constraints
     *
-    * @param indAct the index of the activity
+    * @param act the index of the activity
     * @return a list of the indices for activities in the transitive closure of
     *         the precedence relation
     */
-  private def descendants(indAct: Int): List[Int] = {
+  private def descendants(act: Activity): List[Activity] = {
     // Auxiliary function
-    def descendants(lstActs: List[Int], visitedActs: List[Int]): List[Int] = lstActs match {
+    def descendants(lstActs: List[Activity],
+                    visitedActs: List[Activity]): List[Activity] = lstActs match {
       case Nil => visitedActs
       case act::acts =>
         if (visitedActs.contains(act)) {
           descendants(acts, visitedActs)
         }
         else {
-          descendants(succArray(act).toList:::acts, act::visitedActs)
+          descendants(succMap.getOrElse(act, Set()).toList:::acts, act::visitedActs)
         }
     }
     /////
-    descendants(List(indAct), Nil)
+    descendants(List(act), Nil)
   }
 
   /**
@@ -118,13 +122,13 @@ class Precedences(numActivities: Int, beforeAfterPairs: List [(Int, Int)]) {
     * @return a readable string for this precedence relation
     */
   override def toString: String = {
-    val strPrec = precArray.foldLeft("[")((str, s) => s"$str{$s} ")
-    val strSucc = succArray.foldLeft("[")((str, s) => s"$str{$s} ")
+    val strPrec = predMap.foldLeft("[")((str, s) => s"$str{$s} ")
+    val strSucc = succMap.foldLeft("[")((str, s) => s"$str{$s} ")
     s"Precedences:\n** Direct Precedences : $strPrec\n** Direct Successors : $strSucc"
   }
 }
 
-object Precedences {
-  def apply(numActivities: Int, beforeAfterPairs: List[(Int, Int)]): Precedences =
-    new Precedences(numActivities, beforeAfterPairs)
+object PrecedencesData {
+  def apply(beforeAfterPairs: List[(Activity, Activity)]): PrecedencesData =
+    new PrecedencesData(beforeAfterPairs)
 }

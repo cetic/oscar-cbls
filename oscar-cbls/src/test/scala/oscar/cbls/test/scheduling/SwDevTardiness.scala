@@ -1,26 +1,34 @@
 package oscar.cbls.test.scheduling
 
 import oscar.cbls.{Objective, Store}
-import oscar.cbls.business.scheduling.model.{DisjunctiveResource, Schedule}
+import oscar.cbls.business.scheduling.model.{ActivityData, DisjunctiveResource, Mandatory, Schedule}
 import oscar.cbls.business.scheduling.neighborhood.{ReinsertActivity, SwapActivity}
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 
 object SwDevTardiness {
   // Model
-  val (a1, a2, a3, a4, a5) = (0, 1, 2, 3, 4)
-  val durations = Array.tabulate(5)(_ => 10L)
+  val (a1, a2, a3, a4, a5) = (10, 11, 12, 13, 14)
+  val activities = List(
+    ActivityData(a1, 10L, 0L, Mandatory),
+    ActivityData(a2, 10L, 0L, Mandatory),
+    ActivityData(a3, 10L, 0L, Mandatory),
+    ActivityData(a4, 10L, 0L, Mandatory),
+    ActivityData(a5, 10L, 0L, Mandatory)
+  )
   // Resource
   val analyst = new DisjunctiveResource(List(a1, a2, a3, a4, a5))
 
   def main(args: Array[String]): Unit = {
     // CBLS Store
     val m = new Store()
-    val schedule = new Schedule(m, durations, Nil, Map(), 0 to 4, Array(analyst))
+    val schedule = new Schedule(m, activities, Nil, List(analyst))
     // Tardiness variables
     val tardinessPenalty = 100L
-    val activitiesTardiness = Array.tabulate(5) { i =>
-      schedule.startTimes(i) * tardinessPenalty * i
+    val numAct = activities.length
+    val activitiesTardiness = Array.tabulate(numAct) { i =>
+      val act = activities(i).activity
+      schedule.startTimes(act) * tardinessPenalty * (numAct-i)
     }
     val globalTardiness: Objective = Sum(activitiesTardiness)
     // Model closed
@@ -35,7 +43,7 @@ object SwDevTardiness {
     println(combinedNH.profilingStatistics)
     println(s"*************** RESULTS ***********************************")
     println(s"Schedule makespan = ${schedule.makeSpan.value}")
-    println(s"Scheduling sequence = ${schedule.activitiesPriorList.value}")
+    println(s"Scheduling sequence = ${schedule.activityPriorityList.value}")
     println("Scheduling start times = [  ")
     schedule.startTimes.foreach(v => println(s"    $v"))
     println("]")

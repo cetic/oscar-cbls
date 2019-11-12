@@ -20,15 +20,21 @@
 package oscar.cbls.business
 
 import oscar.cbls.Store
-import oscar.cbls.business.scheduling.model.ResourceConstraint
+import oscar.cbls.business.scheduling.model.{ActivityData, Resource}
 import oscar.cbls.business.scheduling.modeling.SchedulingInvariants
 
 package object scheduling extends SchedulingInvariants {
+  type Activity = Int
+
+  type Mode = Int
+
   type Schedule = oscar.cbls.business.scheduling.model.Schedule
 
-  def schedule(m: Store, durations: Array[Long], precPairs: List[(Int, Int)], minStartTimes: Map[Int, Long],
-               initialActs: Iterable[Int], resConstraints: Array[ResourceConstraint]): Schedule =
-    new Schedule(m, durations, precPairs, minStartTimes, initialActs, resConstraints)
+  def schedule(m: Store,
+               activities: List[ActivityData],
+               precedences: List[(Activity, Activity)],
+               resources: List[Resource]): Schedule =
+    new Schedule(m, activities, precedences, resources)
 }
 /*
 package oscar.cbls.business
