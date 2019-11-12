@@ -112,8 +112,8 @@ class TimeWindowConstraint (gc: GlobalConstraintCore,
 
   // Initialize the vehicles value, the precomputation value and link these invariant to the GlobalConstraintCore
   gc.register(this)
-  vehiclesValueAtCheckpoint0 = Array.fill(v)(false)
-  currentVehiclesValue = Array.fill(v)(false)
+  //vehiclesValueAtCheckpoint0.map(vValues => false)
+  //currentVehiclesValue.map(vValues => false)
   for(outputVariable <- violations)outputVariable.setDefiningInvariant(gc)
 
   private val transferFunctionOfNode: Array[TransferFunction] = Array.tabulate(n)(
@@ -227,6 +227,17 @@ class TimeWindowConstraint (gc: GlobalConstraintCore,
       case seg: NewNode => transferFunctionOfNode(seg.node)
     }
   }
+
+  /**
+    * This method's only purpose is to instantiate the vehiclesValuesAtCheckpoint and currentVehiclesValue variable.
+    * The initial values will be changed at the very beginning of the problem resolution so the value aren't very crucial.
+    *
+    * WARNING : The two arrays MUST BE of length v
+    *
+    * @return to array of type U and length 'v'
+    */
+  override def initVehiclesValue(): (AU, AU) = (Array.fill(v)(false), Array.fill(v)(false))
+
 
   /**
     * This method is called by the framework when a pre-computation must be performed.

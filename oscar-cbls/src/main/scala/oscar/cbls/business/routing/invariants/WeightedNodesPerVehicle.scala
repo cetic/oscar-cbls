@@ -36,6 +36,16 @@ class WeightedNodesPerVehicle(gc: GlobalConstraintCore, n: Long, v : Int, nodeWe
   val preComputedVals: Array[Long] = Array.fill(n)(0L)
 
   /**
+    * This method's only purpose is to instantiate the vehiclesValuesAtCheckpoint and currentVehiclesValue variable.
+    * The initial values will be changed at the very beginning of the problem resolution so the value aren't very crucial.
+    *
+    * WARNING : The two arrays MUST BE of length v
+    *
+    * @return to array of type U and length 'v'
+    */
+  override def initVehiclesValue(): (AU, AU) = (Array.fill(v)(0L), Array.fill(v)(0L))
+
+  /**
     * tis method is called by the framework when a pre-computation must be performed.
     * you are expected to assign a value of type T to each node of the vehicle "vehicle" through the method "setNodeValue"
     *

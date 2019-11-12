@@ -52,9 +52,17 @@ class NbNodes(gc: GlobalConstraintCore, n: Long, v : Int, nbNodesPerVehicle : Ar
 
   // Initialize the vehicles value, the precomputation value and link these invariant to the GlobalConstraintCore
   gc.register(this)
-  vehiclesValueAtCheckpoint0 = Array.fill(v)(0)
-  currentVehiclesValue = Array.fill(v)(0)
   for(outputVariable <- nbNodesPerVehicle)outputVariable.setDefiningInvariant(gc)
+
+  /**
+    * This method's only purpose is to instantiate the vehiclesValuesAtCheckpoint and currentVehiclesValue variable.
+    * The initial values will be changed at the very beginning of the problem resolution so the value aren't very crucial.
+    *
+    * WARNING : The two arrays MUST BE of length v
+    *
+    * @return to array of type U and length 'v'
+    */
+  override def initVehiclesValue(): (AU, AU) = (Array.fill(v)(0L), Array.fill(v)(0L))
 
   /**
     * tis method is called by the framework when a pre-computation must be performed.
@@ -159,8 +167,6 @@ class LogReducedNumberOfNodes(gc: GlobalConstraintCore, n:Long, v:Int, nbNodesPe
 
   // Initialize the vehicles value, the precomputation value and link these invariant to the GlobalConstraintCore
   gc.register(this)
-  vehiclesValueAtCheckpoint0 = Array.fill(v)(0)
-  currentVehiclesValue = Array.fill(v)(0)
   for(outputVariable <- nbNodesPerRoute)outputVariable.setDefiningInvariant(gc)
 
   /**
@@ -195,6 +201,16 @@ class LogReducedNumberOfNodes(gc: GlobalConstraintCore, n:Long, v:Int, nbNodesPe
     require(firstStep.level == secondStep.level)
     NodesOnSubsequence(firstStep.nbNodes + secondStep.nbNodes, firstStep.level + 1L,firstStep.firstNode,secondStep.lastNode)
   }
+
+  /**
+    * This method's only purpose is to instantiate the vehiclesValuesAtCheckpoint and currentVehiclesValue variable.
+    * The initial values will be changed at the very beginning of the problem resolution so the value aren't very crucial.
+    *
+    * WARNING : The two arrays MUST BE of length v
+    *
+    * @return to array of type U and length 'v'
+    */
+  override def initVehiclesValue(): (AU, AU) = (Array.fill(v)(0L), Array.fill(v)(0L))
 
   /**
     * this method is called by the framework when the value of a vehicle must be computed.
@@ -253,8 +269,6 @@ class LogReducedNumberOfNodesWithExtremes(gc: GlobalConstraintCore, n: Long, v:I
 
   // Initialize the vehicles value, the precomputation value and link these invariant to the GlobalConstraintCore
   gc.register(this)
-  vehiclesValueAtCheckpoint0 = Array.fill(v)(0)
-  currentVehiclesValue = Array.fill(v)(0)
   for(outputVariable <- nbNodesPerRoute)outputVariable.setDefiningInvariant(gc)
 
   /**
@@ -288,6 +302,16 @@ class LogReducedNumberOfNodesWithExtremes(gc: GlobalConstraintCore, n: Long, v:I
   override def composeSteps(firstStep: NodesOnSubsequence, secondStep: NodesOnSubsequence): NodesOnSubsequence = {
     NodesOnSubsequence(firstStep.nbNodes + secondStep.nbNodes, firstStep.level + 1L,firstStep.firstNode,secondStep.lastNode)
   }
+
+  /**
+    * This method's only purpose is to instantiate the vehiclesValuesAtCheckpoint and currentVehiclesValue variable.
+    * The initial values will be changed at the very beginning of the problem resolution so the value aren't very crucial.
+    *
+    * WARNING : The two arrays MUST BE of length v
+    *
+    * @return to array of type U and length 'v'
+    */
+  override def initVehiclesValue(): (AU, AU) = (Array.fill(v)(0L), Array.fill(v)(0L))
 
 
   /**

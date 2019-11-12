@@ -1,5 +1,6 @@
 package oscar.cbls.business.routing.invariants.group
 
+import com.sun.istack.internal.Nullable
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core.computation.ChangingSeqValue
@@ -25,18 +26,17 @@ abstract class GlobalConstraintDefinition(gc: GlobalConstraintCore, v: Int) {
   type AU = Array[U]
 
   // You must initialize those variable when initiating your invariant
-  var vehiclesValueAtCheckpoint0: AU = _
-  var currentVehiclesValue: AU = _
+  protected[group] val (vehiclesValueAtCheckpoint0: AU, currentVehiclesValue: AU) = initVehiclesValue()
 
-  def saveVehicleValue(vehicle: Long, value: U): Unit ={
+  protected[group] def saveVehicleValue(vehicle: Long, value: U): Unit ={
     currentVehiclesValue(vehicle) = value
   }
 
-  def setCheckpointLevel0Value(vehicle: Int): Unit ={
+  private[group] def setCheckpointLevel0Value(vehicle: Int): Unit ={
     vehiclesValueAtCheckpoint0(vehicle) = currentVehiclesValue(vehicle)
   }
 
-  def rollBackToCheckpoint(vehiclesToRollBack: QList[Int]): Unit ={
+  private[group] def rollBackToCheckpoint(vehiclesToRollBack: QList[Int]): Unit ={
     QList.qForeach(vehiclesToRollBack, (vehicle: Int) => {
       currentVehiclesValue(vehicle) = vehiclesValueAtCheckpoint0(vehicle)
       assignVehicleValue(vehicle)
@@ -44,12 +44,22 @@ abstract class GlobalConstraintDefinition(gc: GlobalConstraintCore, v: Int) {
   }
 
   // Initialize the invariant variable using the initial route of the problem
-  def computeSaveAndAssignVehicleValuesFromScratch(routes: IntSequence): Unit = {
+  private[group] def computeSaveAndAssignVehicleValuesFromScratch(routes: IntSequence): Unit = {
     for (vehicle <- 0 until v) {
       saveVehicleValue(vehicle, computeVehicleValueFromScratch(vehicle, routes))
       assignVehicleValue(vehicle)
     }
   }
+
+  /**
+    * This method's only purpose is to instantiate the vehiclesValuesAtCheckpoint and currentVehiclesValue variable.
+    * The initial values will be changed at the very beginning of the problem resolution so the value aren't very crucial.
+    *
+    * WARNING : The two arrays MUST BE of length v
+    *
+    * @return to array of type U and length 'v'
+    */
+  protected[group] def initVehiclesValue(): (AU, AU)
 
   /**
     * this method is called by the framework when a pre-computation must be performed.
@@ -58,7 +68,7 @@ abstract class GlobalConstraintDefinition(gc: GlobalConstraintCore, v: Int) {
     * @param routes the sequence representing the route of all vehicle
     *               BEWARE,other vehicles are also present in this sequence; you must only work on the given vehicle
     */
-  def performPreCompute(vehicle:Long,
+  protected[group] def performPreCompute(vehicle:Long,
                         routes:IntSequence)
 
   /**
@@ -70,7 +80,7 @@ abstract class GlobalConstraintDefinition(gc: GlobalConstraintCore, v: Int) {
     *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
     * @param routes the sequence representing the route of all vehicle
     */
-  def computeVehicleValue(vehicle:Long,
+  protected[group] def computeVehicleValue(vehicle:Long,
                           segments:QList[Segment],
                           routes:IntSequence)
 
@@ -79,7 +89,7 @@ abstract class GlobalConstraintDefinition(gc: GlobalConstraintCore, v: Int) {
     * It has been dissociated from the method computeVehicleValue because the system should be able to restore a previously computed value without re-computing it.
     * @param vehicle the vehicle number
     */
-  def assignVehicleValue(vehicle:Long): Unit
+  protected[group] def assignVehicleValue(vehicle:Long): Unit
 
   /**
     * this method is defined for verification purpose. It computes the value of the vehicle from scratch.
@@ -87,10 +97,10 @@ abstract class GlobalConstraintDefinition(gc: GlobalConstraintCore, v: Int) {
     * @param vehicle the vehicle on which the value is computed
     * @param routes the sequence representing the route of all vehicle
     */
-  def computeVehicleValueFromScratch(vehicle : Long, routes : IntSequence): U
+  protected[group] def computeVehicleValueFromScratch(vehicle : Long, routes : IntSequence): U
 
 
-  def checkInternals(vehicle: Long, routes: ChangingSeqValue, segments: List[Segment]): Unit ={
+  protected[group] def checkInternals(vehicle: Long, routes: ChangingSeqValue, segments: List[Segment]): Unit ={
     val fromScratch = computeVehicleValueFromScratch(vehicle, routes.value)
     require(fromScratch.equals(currentVehiclesValue(vehicle)), "Constraint " + this.getClass.getName + " failed " +
     "For Vehicle " + vehicle + " : should be " + fromScratch + " got " +
