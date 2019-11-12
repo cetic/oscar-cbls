@@ -96,7 +96,7 @@ class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:
   }
 
 
-  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence, save: Boolean = true): Long = {
+  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence): Long = {
     var previousNode = vehicle
     var toReturn:Long = 0
 
@@ -120,8 +120,6 @@ class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:
         }
     }){}
 
-    val result = toReturn + assymetricDistance(previousNode,vehicle) //return
-    if(save) saveVehicleValue(vehicle, result)
-    result
+    toReturn + assymetricDistance(previousNode,vehicle) //return
   }
 }

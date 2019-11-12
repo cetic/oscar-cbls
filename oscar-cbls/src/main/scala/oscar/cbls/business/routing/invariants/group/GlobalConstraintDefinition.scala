@@ -44,9 +44,9 @@ abstract class GlobalConstraintDefinition(gc: GlobalConstraintCore, v: Int) {
   }
 
   // Initialize the invariant variable using the initial route of the problem
-  def init(routes: IntSequence): Unit = {
+  def computeSaveAndAssignVehicleValuesFromScratch(routes: IntSequence): Unit = {
     for (vehicle <- 0 until v) {
-      computeVehicleValueFromScratch(vehicle, routes)
+      saveVehicleValue(vehicle, computeVehicleValueFromScratch(vehicle, routes))
       assignVehicleValue(vehicle)
     }
   }
@@ -87,11 +87,11 @@ abstract class GlobalConstraintDefinition(gc: GlobalConstraintCore, v: Int) {
     * @param vehicle the vehicle on which the value is computed
     * @param routes the sequence representing the route of all vehicle
     */
-  def computeVehicleValueFromScratch(vehicle : Long, routes : IntSequence, save: Boolean = true): U
+  def computeVehicleValueFromScratch(vehicle : Long, routes : IntSequence): U
 
 
   def checkInternals(vehicle: Long, routes: ChangingSeqValue, segments: List[Segment]): Unit ={
-    val fromScratch = computeVehicleValueFromScratch(vehicle, routes.value, false)
+    val fromScratch = computeVehicleValueFromScratch(vehicle, routes.value)
     require(fromScratch.equals(currentVehiclesValue(vehicle)), "Constraint " + this.getClass.getName + " failed " +
     "For Vehicle " + vehicle + " : should be " + fromScratch + " got " +
       currentVehiclesValue(vehicle) + " " + routes + "\nAfter receiving segments : " + segments.mkString("\n    "))

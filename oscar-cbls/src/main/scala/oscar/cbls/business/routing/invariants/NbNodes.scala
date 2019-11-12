@@ -134,10 +134,8 @@ class NbNodes(gc: GlobalConstraintCore, n: Long, v : Int, nbNodesPerVehicle : Ar
     * @param routes
     * @return
     */
-  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence, save: Boolean = true): Long = {
-    val result = 1 + countVehicleNode(vehicle,routes.explorerAtAnyOccurrence(vehicle).get.next)
-    if(save)saveVehicleValue(vehicle, result)
-    result
+  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence): Long = {
+    1 + countVehicleNode(vehicle,routes.explorerAtAnyOccurrence(vehicle).get.next)
   }
 }
 
@@ -238,14 +236,12 @@ class LogReducedNumberOfNodes(gc: GlobalConstraintCore, n:Long, v:Int, nbNodesPe
     * @param routes
     * @return
     */
-  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence, save: Boolean = true): Long = {
-    val result = if(vehicle == v-1L){
+  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence): Long = {
+    if(vehicle == v-1L){
       routes.size - routes.positionOfAnyOccurrence(vehicle).get
     }else{
       routes.positionOfAnyOccurrence(vehicle+1L).get - routes.positionOfAnyOccurrence(vehicle).get
     }
-    if(save) saveVehicleValue(vehicle, result)
-    result
   }
 }
 
@@ -334,14 +330,12 @@ class LogReducedNumberOfNodesWithExtremes(gc: GlobalConstraintCore, n: Long, v:I
     * @param routes
     * @return
     */
-  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence, save: Boolean = true): Long = {
-    val result = if(vehicle == v-1L){
+  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence): Long = {
+    if(vehicle == v-1L){
       routes.size - routes.positionOfAnyOccurrence(vehicle).get
     }else{
       routes.positionOfAnyOccurrence(vehicle+1L).get - routes.positionOfAnyOccurrence(vehicle).get
     }
-    if(save) saveVehicleValue(vehicle,result)
-    result
   }
 }
 

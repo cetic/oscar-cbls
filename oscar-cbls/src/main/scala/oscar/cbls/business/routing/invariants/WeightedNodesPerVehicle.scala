@@ -111,9 +111,7 @@ class WeightedNodesPerVehicle(gc: GlobalConstraintCore, n: Long, v : Int, nodeWe
     * @param routes
     * @return
     */
-  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence, save: Boolean = true): Long = {
-    val result = nodeWeight(vehicle) + computeRouteWeight(vehicle,routes.explorerAtAnyOccurrence(vehicle).get.next)
-    if(save) saveVehicleValue(vehicle, result)
-    result
+  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence): Long = {
+    nodeWeight(vehicle) + computeRouteWeight(vehicle,routes.explorerAtAnyOccurrence(vehicle).get.next)
   }
 }

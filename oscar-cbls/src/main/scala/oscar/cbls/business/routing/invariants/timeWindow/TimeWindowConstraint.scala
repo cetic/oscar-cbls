@@ -328,7 +328,7 @@ class TimeWindowConstraint (gc: GlobalConstraintCore,
     * @param routes  the sequence representing the route of all vehicle
     * @return the value of the constraint for the given vehicle
     */
-  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence, save: Boolean = true): Boolean = {
+  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence): Boolean = {
     var arrivalTimeAtFromNode = earliestArrivalTime(vehicle)
     var leaveTimeAtFromNode = earliestLeavingTime(vehicle)
     var fromNode = vehicle
@@ -356,9 +356,7 @@ class TimeWindowConstraint (gc: GlobalConstraintCore,
     // Check travel back to depot
     val travelBackToDepot = travelTimeMatrix(fromNode)(vehicle)
     val arrivalTimeAtDepot = leaveTimeAtFromNode + travelBackToDepot
-    val result = violationFound || arrivalTimeAtDepot > latestLeavingTime(vehicle)
-    if(save) saveVehicleValue(vehicle, result)
-    result
+    violationFound || arrivalTimeAtDepot > latestLeavingTime(vehicle)
   }
 
   /**
