@@ -11,25 +11,13 @@ case class PreComputedDistances(distanceFromStart:Long,
 
 @deprecated("needs testing","")
 class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:Array[CBLSIntVar], assymetricDistance:(Long,Long)=>Long)
-  extends GlobalConstraintDefinition(gc,v){
-
-  type U = Long
+  extends GlobalConstraintDefinition[Long](gc,v){
 
   val preComputedVals: Array[PreComputedDistances] = Array.fill(n)(PreComputedDistances(0,0))
 
   // Initialize the vehicles value, the precomputation value and link these invariant to the GlobalConstraintCore
   gc.register(this)
   for(outputVariable <- vehicleToRouteLength)outputVariable.setDefiningInvariant(gc)
-
-  /**
-    * This method's only purpose is to instantiate the vehiclesValuesAtCheckpoint and currentVehiclesValue variable.
-    * The initial values will be changed at the very beginning of the problem resolution so the value aren't very crucial.
-    *
-    * WARNING : The two arrays MUST BE of length v
-    *
-    * @return to array of type U and length 'v'
-    */
-  override def initVehiclesValue(): (AU, AU) = (Array.fill(v)(0L), Array.fill(v)(0L))
 
   override def performPreCompute(vehicle: Long, routes: IntSequence): Unit = {
 
@@ -67,7 +55,7 @@ class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:
 
   override def computeVehicleValue(vehicle: Long,
                                    segments: QList[Segment],
-                                   routes: IntSequence): Unit = {
+                                   routes: IntSequence): Long = {
     def digestListOfSegments(segments: QList[Segment], prevNode: Long): Long = {
       segments match {
         case null =>
@@ -95,12 +83,11 @@ class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:
           }
       }
     }
-
-    saveVehicleValue(vehicle, digestListOfSegments(segments,-1))
+    digestListOfSegments(segments,-1)
   }
 
-  override def assignVehicleValue(vehicle: Long): Unit = {
-    vehicleToRouteLength(vehicle) := currentVehiclesValue(vehicle)
+  override def assignVehicleValue(vehicle: Long, value: Long): Unit = {
+    vehicleToRouteLength(vehicle) := value
   }
 
 

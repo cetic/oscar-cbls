@@ -79,9 +79,7 @@ class TimeWindowConstraintWithLogReduction(gc: GlobalConstraintCore,
                                            earliestLeavingTime: Array[Long],
                                            latestLeavingTime: Array[Long],
                                            travelTimeMatrix: Array[Array[Long]],
-                                           val violations: Array[CBLSIntVar]) extends LogReducedGlobalConstraintWithExtremes [TransferFunction](gc,n,v){
-
-  type U = Boolean
+                                           val violations: Array[CBLSIntVar]) extends LogReducedGlobalConstraintWithExtremes [TransferFunction,Boolean](gc,n,v){
 
   var assignTime = 0L
   var assignCount = 0
@@ -91,13 +89,6 @@ class TimeWindowConstraintWithLogReduction(gc: GlobalConstraintCore,
   // Initialize the vehicles value, the precomputation value and link these invariant to the GlobalConstraintCore
   gc.register(this)
   for(outputVariable <- violations)outputVariable.setDefiningInvariant(gc)
-
-  override def computeSaveAndAssignVehicleValuesFromScratch(routes: IntSequence): Unit = {
-    for (vehicle <- 0 until v) {
-      computeVehicleValueFromScratch(vehicle, routes)
-      assignVehicleValue(vehicle)
-    }
-  }
 
   private val transferFunctionOfNode: Array[TransferFunction] = Array.tabulate(n)(
     node =>
@@ -170,16 +161,6 @@ class TimeWindowConstraintWithLogReduction(gc: GlobalConstraintCore,
   }
 
   /**
-    * This method's only purpose is to instantiate the vehiclesValuesAtCheckpoint and currentVehiclesValue variable.
-    * The initial values will be changed at the very beginning of the problem resolution so the value aren't very crucial.
-    *
-    * WARNING : The two arrays MUST BE of length v
-    *
-    * @return to array of type U and length 'v'
-    */
-  override def initVehiclesValue(): (AU, AU) = (Array.fill(v)(false), Array.fill(v)(false))
-
-  /**
     * this method is for composing steps into bigger steps.
     *
     * @param firstStep  the type T associated with stepping over a sequence of nodes (which can be minial two)
@@ -206,7 +187,7 @@ class TimeWindowConstraintWithLogReduction(gc: GlobalConstraintCore,
     *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
     * @return the value associated with the vehicle. This value should only be computed based on the provided segments
     */
-  override def computeVehicleValueComposed(vehicle: Long, segments: QList[LogReducedSegment[TransferFunction]]): Unit = {
+  override def computeVehicleValueComposed(vehicle: Long, segments: QList[LogReducedSegment[TransferFunction]]): Boolean = {
 
     def composeTransferFunctions(transferFunctions: QList[TransferFunction], previousLeavingTime: Long, lastNode: Long): Long ={
       val currentTransferFunction = transferFunctions.head
@@ -241,7 +222,7 @@ class TimeWindowConstraintWithLogReduction(gc: GlobalConstraintCore,
           newLeavingTime
       }
     }
-    saveVehicleValue(vehicle,composeLogReduceSegments(segments) < 0L)
+    composeLogReduceSegments(segments) < 0L
   }
 
   /**
@@ -251,11 +232,8 @@ class TimeWindowConstraintWithLogReduction(gc: GlobalConstraintCore,
     *
     * @param vehicle the vehicle number
     */
-  override def assignVehicleValue(vehicle: Long): Unit = {
-    val start = System.nanoTime()
-    if(currentVehiclesValue(vehicle)) violations(vehicle) := 1L else violations(vehicle) := 0L
-    assignTime += System.nanoTime() - start
-    assignCount += 1
+  override def assignVehicleValue(vehicle: Long, value: Boolean): Unit = {
+    if(value) violations(vehicle) := 1L else violations(vehicle) := 0L
   }
 
   /**

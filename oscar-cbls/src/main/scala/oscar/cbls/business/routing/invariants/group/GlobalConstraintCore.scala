@@ -13,7 +13,7 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
   val n = routes.maxValue+1L
   val vehicles = 0L until v
 
-  private var managedConstraints: QList[GlobalConstraintDefinition] = null
+  private var managedConstraints: QList[GlobalConstraintDefinition[_]] = null
   private var invariantAreInitiated = false
   private var useGlobalConstraintPositionCache = false
 
@@ -41,16 +41,12 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
 
   finishInitialization()
 
-  private def computeVehicleValues(vehicle: Long, segmentsOfVehicle: QList[Segment], newRoute: IntSequence): Unit ={
-    QList.qForeach(managedConstraints, (c: GlobalConstraintDefinition) => c.computeVehicleValue(vehicle, segmentsOfVehicle, newRoute))
-  }
-
-  private def assignVehicleValues(vehicle: Long): Unit ={
-    QList.qForeach(managedConstraints, (c: GlobalConstraintDefinition) => c.assignVehicleValue(vehicle))
+  private def computeAndAssignVehicleValues(vehicle: Long, segmentsOfVehicle: QList[Segment], newRoute: IntSequence): Unit ={
+    QList.qForeach(managedConstraints, (c: GlobalConstraintDefinition[_]) => c.computeSaveAndAssingVehicleValue(vehicle, segmentsOfVehicle, newRoute))
   }
 
   private def performPreComputes(vehicle: Long, routes: IntSequence): Unit ={
-    QList.qForeach(managedConstraints, (c: GlobalConstraintDefinition) => c.performPreCompute(vehicle, routes))
+    QList.qForeach(managedConstraints, (c: GlobalConstraintDefinition[_]) => c.performPreCompute(vehicle, routes))
   }
 
   private def rollBackVehicleValuesToCheckPoint(vehiclesToRollBack: QList[Int]): Unit ={
@@ -58,15 +54,15 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
   }
 
   private def setCheckpointLevel0Values(vehicle: Int): Unit ={
-    QList.qForeach(managedConstraints, (c: GlobalConstraintDefinition) => c.setCheckpointLevel0Value(vehicle))
+    QList.qForeach(managedConstraints, (c: GlobalConstraintDefinition[_]) => c.setCheckpointLevel0Value(vehicle))
   }
 
   private def computeSaveAndAssignVehicleValuesFromScratch(routes: IntSequence): Unit ={
     invariantAreInitiated = true
-    QList.qForeach(managedConstraints, (c: GlobalConstraintDefinition) => c.computeSaveAndAssignVehicleValuesFromScratch(routes))
+    QList.qForeach(managedConstraints, (c: GlobalConstraintDefinition[_]) => c.computeSaveAndAssignVehicleValuesFromScratch(routes))
   }
 
-  def register(invariant: GlobalConstraintDefinition): Unit ={
+  def register(invariant: GlobalConstraintDefinition[_]): Unit ={
     managedConstraints = QList(invariant, managedConstraints)
   }
 
@@ -77,8 +73,7 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
     if(digestUpdates(changes) && !(this.checkpointLevel == -1)){
       QList.qForeach(changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList,(vehicle: Int) => {
         // Compute new vehicle value based on last segment changes
-        computeVehicleValues(vehicle, segmentsOfVehicle(vehicle).segments, newRoute)
-        assignVehicleValues(vehicle)
+        computeAndAssignVehicleValues(vehicle, segmentsOfVehicle(vehicle).segments, newRoute)
       })
     } else {
       computeSaveAndAssignVehicleValuesFromScratch(newRoute)

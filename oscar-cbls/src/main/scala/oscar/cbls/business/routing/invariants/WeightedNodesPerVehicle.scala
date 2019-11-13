@@ -29,21 +29,9 @@ object WeightedNodesPerVehicle{
   * @param weightPerVehicle an array telling how many nodes are reached per vehicle
   */
 class WeightedNodesPerVehicle(gc: GlobalConstraintCore, n: Long, v : Int, nodeWeight:Array[Long], weightPerVehicle : Array[CBLSIntVar])
-  extends GlobalConstraintDefinition(gc,v){
-
-  type U = Long
+  extends GlobalConstraintDefinition[Long](gc,v){
 
   val preComputedVals: Array[Long] = Array.fill(n)(0L)
-
-  /**
-    * This method's only purpose is to instantiate the vehiclesValuesAtCheckpoint and currentVehiclesValue variable.
-    * The initial values will be changed at the very beginning of the problem resolution so the value aren't very crucial.
-    *
-    * WARNING : The two arrays MUST BE of length v
-    *
-    * @return to array of type U and length 'v'
-    */
-  override def initVehiclesValue(): (AU, AU) = (Array.fill(v)(0L), Array.fill(v)(0L))
 
   /**
     * tis method is called by the framework when a pre-computation must be performed.
@@ -81,8 +69,8 @@ class WeightedNodesPerVehicle(gc: GlobalConstraintCore, n: Long, v : Int, nodeWe
     * @param routes    the sequence representing the route of all vehicle
     * @return the value associated with the vehicle
     */
-  override def computeVehicleValue(vehicle: Long, segments: QList[Segment], routes: IntSequence): Unit = {
-    saveVehicleValue(vehicle,QList.qMap(segments, (s: Segment) =>
+  override def computeVehicleValue(vehicle: Long, segments: QList[Segment], routes: IntSequence): Long = {
+    QList.qMap(segments, (s: Segment) =>
       s match {
         case PreComputedSubSequence (fstNode, lstNode, _) =>
           preComputedVals(lstNode) - preComputedVals(fstNode) + nodeWeight(fstNode)
@@ -90,7 +78,7 @@ class WeightedNodesPerVehicle(gc: GlobalConstraintCore, n: Long, v : Int, nodeWe
           preComputedVals(lstNode) - preComputedVals(fstNode) + nodeWeight(fstNode)
         case NewNode(node) =>
           nodeWeight(node)
-      }).sum)
+      }).sum
     //println("Vehicle : " + vehicle + "--" + segments.mkString(","))
   }
 
@@ -102,8 +90,8 @@ class WeightedNodesPerVehicle(gc: GlobalConstraintCore, n: Long, v : Int, nodeWe
     *
     * @param vehicle the vehicle number
     */
-  override def assignVehicleValue(vehicle: Long): Unit = {
-    weightPerVehicle(vehicle) := currentVehiclesValue(vehicle)
+  override def assignVehicleValue(vehicle: Long, value: Long): Unit = {
+    weightPerVehicle(vehicle) := value
   }
 
   def computeRouteWeight(vehicle : Long,vExplorer : Option[IntSequenceExplorer]) : Long = {

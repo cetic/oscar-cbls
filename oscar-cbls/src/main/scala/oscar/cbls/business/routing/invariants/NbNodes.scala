@@ -44,25 +44,13 @@ object NbNodes{
   * @param nbNodesPerVehicle an array telling how many nodes are reached per vehicle
   */
 class NbNodes(gc: GlobalConstraintCore, n: Long, v : Int, nbNodesPerVehicle : Array[CBLSIntVar])
-  extends GlobalConstraintDefinition(gc,v){
-
-  type U = Long
+  extends GlobalConstraintDefinition[Long](gc,v){
 
   val preComputedVals: Array[Option[Long]] = Array.fill(n)(None)
 
   // Initialize the vehicles value, the precomputation value and link these invariant to the GlobalConstraintCore
   gc.register(this)
   for(outputVariable <- nbNodesPerVehicle)outputVariable.setDefiningInvariant(gc)
-
-  /**
-    * This method's only purpose is to instantiate the vehiclesValuesAtCheckpoint and currentVehiclesValue variable.
-    * The initial values will be changed at the very beginning of the problem resolution so the value aren't very crucial.
-    *
-    * WARNING : The two arrays MUST BE of length v
-    *
-    * @return to array of type U and length 'v'
-    */
-  override def initVehiclesValue(): (AU, AU) = (Array.fill(v)(0L), Array.fill(v)(0L))
 
   /**
     * tis method is called by the framework when a pre-computation must be performed.
@@ -100,8 +88,8 @@ class NbNodes(gc: GlobalConstraintCore, n: Long, v : Int, nbNodesPerVehicle : Ar
     * @param routes    the sequence representing the route of all vehicle
     * @return the value associated with the vehicle
     */
-  override def computeVehicleValue(vehicle: Long, segments: QList[Segment], routes: IntSequence): Unit = {
-    val tmp = QList.qMap(segments, (s: Segment) =>
+  override def computeVehicleValue(vehicle: Long, segments: QList[Segment], routes: IntSequence): Long = {
+    QList.qMap(segments, (s: Segment) =>
       s match {
         case PreComputedSubSequence (fstNode, lstNode, length) =>
           preComputedVals(lstNode).get - preComputedVals(fstNode).get + 1
@@ -110,8 +98,6 @@ class NbNodes(gc: GlobalConstraintCore, n: Long, v : Int, nbNodesPerVehicle : Ar
         case NewNode(_) =>
           1
       }).sum
-    //println("Vehicle : " + vehicle + "--" + segments.mkString(","))
-    saveVehicleValue(vehicle,tmp)
   }
 
 
@@ -123,8 +109,8 @@ class NbNodes(gc: GlobalConstraintCore, n: Long, v : Int, nbNodesPerVehicle : Ar
     *
     * @param vehicle the vehicle number
     */
-  override def assignVehicleValue(vehicle: Long): Unit = {
-    nbNodesPerVehicle(vehicle) := currentVehiclesValue(vehicle)
+  override def assignVehicleValue(vehicle: Long, value: Long): Unit = {
+    nbNodesPerVehicle(vehicle) := value
   }
 
 
@@ -161,7 +147,7 @@ case class NodesOnSubsequence(nbNodes:Long,
 
 @deprecated("This is for example only, do not use this version","")
 class LogReducedNumberOfNodes(gc: GlobalConstraintCore, n:Long, v:Int, nbNodesPerRoute:Array[CBLSIntVar])
-  extends LogReducedGlobalConstraint[NodesOnSubsequence](gc,n,v){
+  extends LogReducedGlobalConstraint[NodesOnSubsequence,Long](gc,n,v){
 
   type U = Long
 
@@ -203,16 +189,6 @@ class LogReducedNumberOfNodes(gc: GlobalConstraintCore, n:Long, v:Int, nbNodesPe
   }
 
   /**
-    * This method's only purpose is to instantiate the vehiclesValuesAtCheckpoint and currentVehiclesValue variable.
-    * The initial values will be changed at the very beginning of the problem resolution so the value aren't very crucial.
-    *
-    * WARNING : The two arrays MUST BE of length v
-    *
-    * @return to array of type U and length 'v'
-    */
-  override def initVehiclesValue(): (AU, AU) = (Array.fill(v)(0L), Array.fill(v)(0L))
-
-  /**
     * this method is called by the framework when the value of a vehicle must be computed.
     *
     * @param vehicle  the vehicle that we are focusing on
@@ -220,8 +196,8 @@ class LogReducedNumberOfNodes(gc: GlobalConstraintCore, n:Long, v:Int, nbNodesPe
     *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
     * @return the value associated with the vehicle. this value should only be computed based on the provided segments
     */
-  override def computeVehicleValueComposed(vehicle: Long, segments: QList[LogReducedSegment[NodesOnSubsequence]]): Unit = {
-    saveVehicleValue(vehicle, segments.qMap({
+  override def computeVehicleValueComposed(vehicle: Long, segments: QList[LogReducedSegment[NodesOnSubsequence]]): Long = {
+    segments.qMap({
       case s@LogReducedPreComputedSubSequence(startNode, endNode, steps)=>
         //require(steps.isEmpty || steps.head.firstNode == startNode)
         //require(steps.isEmpty || steps.last.lastNode == endNode)
@@ -232,7 +208,7 @@ class LogReducedNumberOfNodes(gc: GlobalConstraintCore, n:Long, v:Int, nbNodesPe
         QList.qFold[NodesOnSubsequence,Long](steps,(a,b) => a + b.nbNodes,0L)
       case s@LogReducedNewNode(_, _) =>
         1L
-    }).sum)
+    }).sum
   }
 
   /**
@@ -242,8 +218,8 @@ class LogReducedNumberOfNodes(gc: GlobalConstraintCore, n:Long, v:Int, nbNodesPe
     *
     * @param vehicle the vehicle number
     */
-  override def assignVehicleValue(vehicle: Long): Unit = {
-    nbNodesPerRoute(vehicle) := currentVehiclesValue(vehicle)
+  override def assignVehicleValue(vehicle: Long, value: Long): Unit = {
+    nbNodesPerRoute(vehicle) := value
   }
 
   /**
@@ -263,9 +239,7 @@ class LogReducedNumberOfNodes(gc: GlobalConstraintCore, n:Long, v:Int, nbNodesPe
 
 @deprecated("This is for example only, do not use this version","")
 class LogReducedNumberOfNodesWithExtremes(gc: GlobalConstraintCore, n: Long, v:Int, nbNodesPerRoute:Array[CBLSIntVar])
-  extends LogReducedGlobalConstraintWithExtremes[NodesOnSubsequence](gc,n,v){
-
-  type U = Long
+  extends LogReducedGlobalConstraintWithExtremes[NodesOnSubsequence,Long](gc,n,v){
 
   // Initialize the vehicles value, the precomputation value and link these invariant to the GlobalConstraintCore
   gc.register(this)
@@ -303,16 +277,6 @@ class LogReducedNumberOfNodesWithExtremes(gc: GlobalConstraintCore, n: Long, v:I
     NodesOnSubsequence(firstStep.nbNodes + secondStep.nbNodes, firstStep.level + 1L,firstStep.firstNode,secondStep.lastNode)
   }
 
-  /**
-    * This method's only purpose is to instantiate the vehiclesValuesAtCheckpoint and currentVehiclesValue variable.
-    * The initial values will be changed at the very beginning of the problem resolution so the value aren't very crucial.
-    *
-    * WARNING : The two arrays MUST BE of length v
-    *
-    * @return to array of type U and length 'v'
-    */
-  override def initVehiclesValue(): (AU, AU) = (Array.fill(v)(0L), Array.fill(v)(0L))
-
 
   /**
     * this method is called by the framework when the value of a vehicle must be computed.
@@ -322,8 +286,8 @@ class LogReducedNumberOfNodesWithExtremes(gc: GlobalConstraintCore, n: Long, v:I
     *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
     * @return the value associated with the vehicle. this value should only be computed based on the provided segments
     */
-  override def computeVehicleValueComposed(vehicle: Long, segments: QList[LogReducedSegment[NodesOnSubsequence]]): Unit = {
-    saveVehicleValue(vehicle, segments.qMap({
+  override def computeVehicleValueComposed(vehicle: Long, segments: QList[LogReducedSegment[NodesOnSubsequence]]): Long = {
+    segments.qMap({
       case s@LogReducedPreComputedSubSequence(startNode, endNode, steps)=>
         //require(steps.isEmpty || steps.head.firstNode == startNode)
         //require(steps.isEmpty || steps.last.lastNode == endNode)
@@ -334,7 +298,7 @@ class LogReducedNumberOfNodesWithExtremes(gc: GlobalConstraintCore, n: Long, v:I
         QList.qFold[NodesOnSubsequence,Long](steps,(a,b) => a + b.nbNodes,0L)
       case s@LogReducedNewNode(_, _) =>
         1L
-    }).sum)
+    }).sum
   }
 
   /**
@@ -344,8 +308,8 @@ class LogReducedNumberOfNodesWithExtremes(gc: GlobalConstraintCore, n: Long, v:I
     *
     * @param vehicle the vehicle number
     */
-  override def assignVehicleValue(vehicle: Long): Unit = {
-    nbNodesPerRoute(vehicle) := currentVehiclesValue(vehicle)
+  override def assignVehicleValue(vehicle: Long, value: Long): Unit = {
+    nbNodesPerRoute(vehicle) := value
   }
 
   /**

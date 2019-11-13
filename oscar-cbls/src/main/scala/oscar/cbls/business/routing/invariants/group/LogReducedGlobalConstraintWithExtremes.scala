@@ -5,8 +5,8 @@ import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.ChangingSeqValue
 import oscar.cbls._
 
-abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest](gc: GlobalConstraintCore, n: Long, v: Long)
-  extends LogReducedGlobalConstraint[T](gc,n,v){
+abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest, @specialized(Int, Long, Boolean) U:Manifest](gc: GlobalConstraintCore, n: Long, v: Long)
+  extends LogReducedGlobalConstraint[T, U](gc,n,v){
   var preComputeTime = 0L
   var preComputeCount = 0
   var computeValueTime = 0L
@@ -89,7 +89,7 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest](gc: GlobalCons
 
   override def computeVehicleValue(vehicle:Long,
                                    segments:QList[Segment],
-                                   routes:IntSequence): Unit = {
+                                   routes:IntSequence): U = {
     computeValueCount += 1
     val start = System.nanoTime()
     val res = computeVehicleValueComposed(

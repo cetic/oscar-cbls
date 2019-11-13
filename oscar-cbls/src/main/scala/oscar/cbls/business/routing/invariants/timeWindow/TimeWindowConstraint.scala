@@ -104,9 +104,7 @@ class TimeWindowConstraint (gc: GlobalConstraintCore,
                             latestLeavingTime: Array[Long],
                             travelTimeMatrix: Array[Array[Long]],
                             val violations: Array[CBLSIntVar]
-                           ) extends GlobalConstraintDefinition(gc,v) {
-
-  type U = Boolean
+                           ) extends GlobalConstraintDefinition[Boolean](gc,v) {
 
   val preComputedValues: Array[Array[TransferFunction]] = Array.fill(n)(Array.fill(n)(EmptyTransferFunction))
 
@@ -228,16 +226,6 @@ class TimeWindowConstraint (gc: GlobalConstraintCore,
     }
   }
 
-  /**
-    * This method's only purpose is to instantiate the vehiclesValuesAtCheckpoint and currentVehiclesValue variable.
-    * The initial values will be changed at the very beginning of the problem resolution so the value aren't very crucial.
-    *
-    * WARNING : The two arrays MUST BE of length v
-    *
-    * @return to array of type U and length 'v'
-    */
-  override def initVehiclesValue(): (AU, AU) = (Array.fill(v)(false), Array.fill(v)(false))
-
 
   /**
     * This method is called by the framework when a pre-computation must be performed.
@@ -297,7 +285,7 @@ class TimeWindowConstraint (gc: GlobalConstraintCore,
     * @param routes          the sequence representing the route of all vehicle
     * @return the value associated with the vehicle
     */
-  override def computeVehicleValue(vehicle: Long, segments: QList[Segment], routes: IntSequence): Unit = {
+  override def computeVehicleValue(vehicle: Long, segments: QList[Segment], routes: IntSequence): Boolean = {
     /**
       * @param segments The list of segment
       * @param prevLeavingTime The leave time at previous segment (0L if first one)
@@ -317,7 +305,7 @@ class TimeWindowConstraint (gc: GlobalConstraintCore,
       else leaveTimeAtSegment
     }
     val arrivalTimeAtDepot = arrivalAtDepot(segments)
-    saveVehicleValue(vehicle, arrivalTimeAtDepot < 0L || arrivalTimeAtDepot > latestLeavingTime(vehicle))
+    arrivalTimeAtDepot < 0L || arrivalTimeAtDepot > latestLeavingTime(vehicle)
   }
 
   /**
@@ -327,8 +315,8 @@ class TimeWindowConstraint (gc: GlobalConstraintCore,
     *
     * @param vehicle the vehicle number
     */
-  override def assignVehicleValue(vehicle: Long): Unit = {
-    if(currentVehiclesValue(vehicle)) violations(vehicle) := 1L else violations(vehicle) := 0L
+  override def assignVehicleValue(vehicle: Long, value: Boolean): Unit = {
+    if(value) violations(vehicle) := 1L else violations(vehicle) := 0L
   }
 
   /**
