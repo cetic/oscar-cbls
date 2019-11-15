@@ -55,3 +55,29 @@ case object EmptyTransferFunction extends TransferFunction(1L,-1L,-1L,-1L,-1L){
 
   override def toString: String = "Empty transfert function"
 }
+
+case class TwoWaysTransferFunction(nonFlippedTF: TransferFunction, flippedTF: TransferFunction){
+  def from(flipped: Boolean): Long ={
+    if(flipped)flippedTF.from
+    else nonFlippedTF.from
+  }
+
+  def to(flipped: Boolean): Long ={
+    if(flipped)flippedTF.to
+    else nonFlippedTF.to
+  }
+
+  def apply(t: Long, flipped: Boolean): Long ={
+    if(flipped) flippedTF(t)
+    else nonFlippedTF(t)
+  }
+
+  def isEmpty(flipped: Boolean): Boolean ={
+    if(flipped) flippedTF.isEmpty
+    else nonFlippedTF.isEmpty
+  }
+
+  override def toString: String = {
+    "Two ways transfert function : \nNon-flipped : " + nonFlippedTF.toString + "\nFlipped : " + flippedTF.toString
+  }
+}
