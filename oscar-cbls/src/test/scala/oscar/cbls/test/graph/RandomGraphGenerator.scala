@@ -101,7 +101,7 @@ object RandomGraphGenerator {
     (1,CompositeMove(List(),0L)),
     (1,DoNothingMove(0L)),
     (1,FlipMove(0L,1L,bench.genIntVars().toArray,0L)),
-    (1,GradientMove(List(),0L,0L)),
+    (1,GradientMove(List(),0L,Nil,0L)),
     (1,InsertPointMove(0L,0L,0L,true,0L,null,null)),
     (1,InstrumentedMove(new DoNothingMove(0L))),
     (1,LoadSolutionMove(null,0L)),

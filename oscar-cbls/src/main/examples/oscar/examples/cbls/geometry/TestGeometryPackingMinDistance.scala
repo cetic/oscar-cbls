@@ -73,7 +73,7 @@ object TestGeometryPackingMinDistance extends App{
   val overlapPerShape:Array[IntValue] = Array.tabulate(nbShapes)(shape1 =>
     Sum(Array.tabulate[IntValue](nbShapes)(shape2 =>
       if(shape1 == shape2) 0
-      else overlapAreasHalfMatrix(shape1 max shape2)(shape1 min shape2))).setName("overlapArea(shape_" + shape1 + ")")
+      else overlapAreasHalfMatrix(shape1 max shape2)(shape1 min shape2)))
   )
 
   //bout the distances between centers of shapes

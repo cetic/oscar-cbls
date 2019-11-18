@@ -39,8 +39,10 @@ case class GradientComponent(variable:CBLSIntVar,
       "minStep:" + minStep + ")"
 
   def takeStep(step:Long): Unit ={
-    variable := initValue + (step / slope).toLong
+    variable := valueAfterStep(step)
   }
+
+  def valueAfterStep(step:Long):Long = initValue + (step / slope).toLong
 
   def rollBack(): Unit ={
     variable := initValue
@@ -62,22 +64,28 @@ case class GradientComponent(variable:CBLSIntVar,
  * @param maxNbVars
  * @param selectVars
  * @param variableIndiceToDeltaForGradientDefinition
- * @param linearSearch
+ * @param linearSearchForGradientDescent
  * @param gradientSearchBehavior
  * @param trySubgradient
  */
 case class GradientDescentRotating(vars:Array[CBLSIntVar],
                                    name:String = "GradientDescent",
                                    maxNbVars:Int = Integer.MAX_VALUE,
+                                   minNbVar:Int = 1,
                                    selectVars:Iterable[Long],
                                    variableIndiceToDeltaForGradientDefinition:Long => Long,
-                                   linearSearch:LinearOptimizer,
+                                   linearSearchForGradientDescent:LinearOptimizer,
                                    gradientSearchBehavior:LoopBehavior = Best(),
                                    trySubgradient:Boolean = false)
   extends AbstractGradientDescent(vars:Array[CBLSIntVar],
     name:String,
-    linearSearch,
+    linearSearchForGradientDescent,
     trySubgradient)  {
+
+  //TODO: il faut pouvoir spécifier des co-variance entre les variables d'input.
+  //typiquement on va dire, sachant un gradient déjà sélectionné, doit-on examiner les co-variances +, - ou les deux ou aucune?
+
+
 
   override def findGradient(initialObj: Long): List[GradientComponent] = {
 
@@ -86,9 +94,10 @@ case class GradientDescentRotating(vars:Array[CBLSIntVar],
     var bestObj = initialObj
     var bestGradient:List[GradientComponent]= Nil
 
-    def testCurrentGradient(currentGradient:List[GradientComponent]):Boolean = {
-      if(currentGradient.isEmpty) return false
+    def testCurrentGradientTrueIfExplorationMustContinue(currentGradient:List[GradientComponent]):Boolean = {
+      if(currentGradient.isEmpty) return true
 
+      //TODO: set here the global vars to instantiate the move in case a crossproduct is used
       val newObj = obj.value
 
       if(newObj < bestObj){
@@ -115,18 +124,21 @@ case class GradientDescentRotating(vars:Array[CBLSIntVar],
     def exploreVars(varsToTest:List[Int],
                     maxNbVarsToTest:Int,
                     currentGradient:List[GradientComponent]): Boolean ={
-      if(testCurrentGradient(currentGradient)) return true
 
-      if(maxNbVarsToTest == 0) return false
+      if(maxNbVarsToTest == 0) {
+        if(!testCurrentGradientTrueIfExplorationMustContinue(currentGradient)) return true
+        else return false
+      }
+
       if(varsToTest.isEmpty) return false
 
       val currentVarID::tail = varsToTest
 
+      //first: no change on this var
+      if(exploreVars(tail, maxNbVarsToTest, currentGradient)) return true
+
       val initVal = vars(currentVarID).newValue
       val delta = variableIndiceToDeltaForGradientDefinition(currentVarID)
-
-      //first: no change on this var
-      exploreVars(tail, maxNbVarsToTest, currentGradient)
 
       //2: +delta
       if(initVal + delta < vars(currentVarID).max){
@@ -165,8 +177,8 @@ case class GradientDescentRotating(vars:Array[CBLSIntVar],
       false
     }
 
-    for(nbVar <- 1 to (maxNbVars min vars.length-1)){
-      //il y a donc l'ensemble des sous-ensembles = 3^nbVars posibilités
+    for(nbVar <- minNbVar to (maxNbVars min vars.length-1)){
+      //il y a donc l'ensemble des sous-ensembles = 3^nbVars possibilités
 
       if(exploreVars(
         varsToTest = selectVars.toList.map(v => v.toInt),
@@ -233,10 +245,14 @@ case class GradientDescent(vars:Array[CBLSIntVar],
           if (valueAbove >= currentVar.max) {
             //no point of increasing it; thy decreasing?
             val valueBelow = (oldVal - deltaForVar) max currentVar.min
+            samplePoint = List(AssignMove(currentVar,valueBelow,-1,Long.MaxValue,"exploreGradient"))
             val objBelow = obj.assignVal(currentVar, valueBelow)
+            samplePoint = Nil
             (objBelow - initialObj).toDouble / (valueBelow - oldVal).toDouble
           } else {
+            samplePoint = List(AssignMove(currentVar,valueAbove,-1,Long.MaxValue,"exploreGradient"))
             val objAbove = obj.assignVal(currentVar, valueAbove)
+            samplePoint = Nil
             (objAbove - initialObj).toDouble / (valueAbove - oldVal).toDouble
           }
         }
@@ -274,6 +290,7 @@ abstract class AbstractGradientDescent(vars:Array[CBLSIntVar],
 
   private var gradientDefinition:List[GradientComponent] = List.empty
   private var currentStep:Long = 0
+  protected var samplePoint:List[AssignMove] = List.empty
 
   def findGradient(initialObj: Long):List[GradientComponent]
 
@@ -284,8 +301,9 @@ abstract class AbstractGradientDescent(vars:Array[CBLSIntVar],
     */
   override def exploreNeighborhood(initialObj: Long): Unit = {
     //step1: interroger le gradient dans toutes les directions de selectedVars
-
+    this.gradientDefinition = List.empty
     val gradientDefinition:List[GradientComponent] = findGradient(initialObj: Long)
+    samplePoint = List.empty
     performDescent(initialObj: Long, gradientDefinition)
   }
 
@@ -340,17 +358,45 @@ abstract class AbstractGradientDescent(vars:Array[CBLSIntVar],
   }
 
   override def instantiateCurrentMove(newObj: Long): GradientMove = {
-    GradientMove(gradientDefinition, currentStep, newObj, name)
+    GradientMove(gradientDefinition, currentStep, samplePoint, newObj, name)
   }
 }
 
 
-case class GradientMove(gradientDefinition : List[GradientComponent], step:Long, override val objAfter:Long, override val neighborhoodName:String = null)
+case class GradientMove(gradientDefinition : List[GradientComponent], step:Long, simpleAffectMoves:List[AssignMove], override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
   override def commit() {
-    for(component <- gradientDefinition){
-      component.takeStep(step)
+    if(gradientDefinition.isEmpty){
+      //still is the expore phase
+      for(affect <- simpleAffectMoves){
+        affect.commit()
+      }
+    }else{
+      require(simpleAffectMoves.isEmpty)
+      for(component <- gradientDefinition){
+        component.takeStep(step)
+      }
+    }
+  }
+
+  def valueAfterOn(variable:CBLSIntVar):Option[Long] = {
+    if(gradientDefinition.isEmpty){
+      //still is the expore phase
+      for(affect <- simpleAffectMoves){
+        if (affect.i == variable){
+          return Some(affect.v)
+        }
+      }
+      None
+    }else{
+      require(simpleAffectMoves.isEmpty, "moves and gradient?:" + simpleAffectMoves)
+      for(component <- gradientDefinition){
+        if (component.variable == variable){
+          return Some(component.valueAfterStep(step))
+        }
+      }
+      None
     }
   }
 

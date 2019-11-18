@@ -445,7 +445,7 @@ object TestRN extends App{
 
 }
 
-object Paraboloide extends App{
+object ParaboloideTest extends App{
 
   val m = new Store()
 
@@ -465,10 +465,10 @@ object Paraboloide extends App{
     println(y)
     println("f:" + f)
   }
-  val search = GradientDescent(Array(x,y),
+  val search = GradientDescentRotating(Array(x,y),
     selectVars = 0L to 1L,
     variableIndiceToDeltaForGradientDefinition = _ => 10L,
-    linearSearch = new NarrowingStepSlide(3L, minStep = 1L),
+    linearSearchForGradientDescent = new NarrowingStepSlide(3L, minStep = 1L),
     trySubgradient = true)
 
   search.verbose = 2

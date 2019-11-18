@@ -157,12 +157,12 @@ class PriorityObjective(objective1: Objective, objective2:Objective, maxObjectiv
           nSpace(indent + 2L) + "objective2:" + objective2.detailedString(true, indent + 2L) + "\n" +
           nSpace(indent) + ")"
       } else {
-        nSpace(indent) + "CascadingObjective(\n" +
+        nSpace(indent) + "PriorityObjective(\n" +
           nSpace(indent + 2L) + "objective1:" + objective1.detailedString(true, indent + 4L) + "\n" +
           nSpace(indent) + ")"
       }
     }else {
-      nSpace(indent) + "CascadingObjective(\n" +
+      nSpace(indent) + "PriorityObjective(\n" +
         nSpace(indent + 2L) + "objective1:" + objective1.detailedString(true, indent + 4L) + "\n" +
         nSpace(indent + 2L) + "objective2:" + objective2.detailedString(true, indent + 4L) + "\n" +
         nSpace(indent) + ")"

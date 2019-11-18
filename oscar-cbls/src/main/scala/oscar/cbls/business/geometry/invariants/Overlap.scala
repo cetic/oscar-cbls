@@ -293,7 +293,7 @@ class NoOverlapPenetration(shapes:Array[AtomicValue[GeometryValue]],preComputeAl
   * @param preComputeAll forces pre-computation of indexes for all shapes. use this if there are constant shapes that will never move/change
   */
 
-//wehn margin is given, we only consider the centre of the shape, not he shape itself.
+//when margin is given, we only consider the centre of the shape, not he shape itself.
 class NoOverlapPenetrationMargins(shapes:Array[AtomicValue[GeometryValue]],
                                   overrideShapeWithMargins:Array[Option[IntValue]],
                                   preComputeAll:Boolean = true)
