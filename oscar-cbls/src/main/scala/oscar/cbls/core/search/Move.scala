@@ -94,7 +94,8 @@ class CodedMove(code: => Unit, override val objAfter: Long, override val neighbo
   * */
 class EvaluableCodedMove(doAndUndo: () => (() => Unit),
                          override val objAfter: Long = Long.MaxValue,
-                         override val neighborhoodName: String = "EvaluableCodedMove")
+                         override val neighborhoodName: String = "EvaluableCodedMove",
+                         val moveName:String = "EvaluableCodedMove")
   extends Move(objAfter, neighborhoodName){
 
   override def commit() {doAndUndo()}
@@ -106,7 +107,7 @@ class EvaluableCodedMove(doAndUndo: () => (() => Unit),
     toReturn
   }
 
-  override def toString: String = neighborhoodNameToString + "EvaluableCodedMove"
+  override def toString: String = neighborhoodNameToString + ":" + moveName
 }
 
 
