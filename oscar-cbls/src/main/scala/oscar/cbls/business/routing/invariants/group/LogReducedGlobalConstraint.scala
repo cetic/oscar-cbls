@@ -171,8 +171,8 @@ object LogReducedFlippedPreComputedSubSequence {
     * @param v the number of vehicles
     * @tparam T the type of pre-computation, which is on subsequences (not on nodes)
     */
-  abstract class LogReducedGlobalConstraint[T:Manifest](gc: GlobalConstraintCore, n: Long, v :Long)
-    extends GlobalConstraintDefinition(gc,v){
+  abstract class LogReducedGlobalConstraint[T:Manifest, @specialized(Int, Long, Boolean) U:Manifest](gc: GlobalConstraintCore, n: Long, v :Long)
+    extends GlobalConstraintDefinition[U](gc,v){
 
     /**
       * this method delivers the value of the node
@@ -206,7 +206,7 @@ object LogReducedFlippedPreComputedSubSequence {
       * @return the value associated with the vehicle. This value should only be computed based on the provided segments
       */
     def computeVehicleValueComposed(vehicle: Long,
-                                    segments: QList[LogReducedSegment[T]]): Unit
+                                    segments: QList[LogReducedSegment[T]]): U
 
     class NodeAndPreComputes(val node:Long,
                              var precomputes:Array[T] = null){
@@ -325,7 +325,7 @@ object LogReducedFlippedPreComputedSubSequence {
 
     override def computeVehicleValue(vehicle:Long,
                                      segments:QList[Segment],
-                                     routes:IntSequence):Unit = {
+                                     routes:IntSequence):U = {
       // println("routes:" + routes)
       computeVehicleValueComposed(vehicle, decorateSegments(vehicle, segments))
     }

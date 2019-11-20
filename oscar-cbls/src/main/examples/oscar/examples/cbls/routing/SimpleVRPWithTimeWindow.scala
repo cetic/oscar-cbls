@@ -211,7 +211,7 @@ object SimpleVRPWithTimeWindow extends App{
     }
   }
 
-  val firstNodeOfChainRemoval = removePoint(() => myVRP.unrouted.value.filter(chainsExtension.isHead), myVRP,neighborhoodName = "RemovePoint")
+  val firstNodeOfChainRemoval = removePoint(() => myVRP.routed.value.filter(chainsExtension.isHead), myVRP,neighborhoodName = "RemovePoint")
 
   def lastNodeOfChainRemoval(lastNode:Long) = removePoint(
     () => List(lastNode),
@@ -227,17 +227,17 @@ object SimpleVRPWithTimeWindow extends App{
           None,
           Long.MaxValue,
           false)
-      })name "OneChainInsert")
+      })name "OneChainRemove")
   }
 
   //val routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "InsertUF"))
 
 
-  val search = bestSlopeFirst(List(oneChainInsert,oneChainMove,segExchangeOnSegments(5),onePtMove(20)))onExhaustRestartAfter(atomic(oneChainRemove.acceptAll(), _ > 1),3, obj)
+  val search = bestSlopeFirst(List(oneChainInsert,oneChainMove,segExchangeOnSegments(5),onePtMove(20)))onExhaustRestartAfter(atomic(oneChainRemove.acceptAll(), _ > 5),3, obj)
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 
-  search.verbose = 2
+  search.verbose = 1
   //search.verboseWithExtraInfo(2, ()=> "" + myVRP)
 
 

@@ -6,95 +6,157 @@ import oscar.cbls.core.computation.ChangingSeqValue
 import oscar.cbls._
 
 /**
-  * In order to mutualise the computation of the global constraint segments between several invariants,
-  * those invariants should hold and manipulate their own values : precomputation and vehicle values.
-  * The precomputation is perform only at checkpoint 0 and the vehicleComputation at each checkpointLevel (to have a effective roll-back)
+  * This abstract class must be extends in order to define a new global constraint.
   *
-  * The GlobalConstraint mechanism then simply call the adequate method to :
-  *   - perform precomputation
-  *   - compute vehicle value for a given checkpoint level (!! store the result in vehiclesValuesAtCheckpoint
-  *   - assign the vehicle value at a given checkpoint level
+  * It uses a parameterized type U that represents the output type of your constraint
+  * (for instance for RouteLength output value is of type Long (the total distance))
+  *
+  * It's associated to a GlobalConstraintCore (gc) by adding gc.register(this) at the beginning of your constraint.
+  *
+  * The following methods must be implemented :
+  *     - performPreCompute
+  *         --> A method that computes some stuff in order to evaluate the value of a vehicle the fastest possible
+  *         --> Can be slow (only performed after a move is accepted)
+  *     - computeVehicleValue
+  *         --> A method that computes the value of a vehicle given a an explored movement (as a List of Segment)
+  *         --> Must be as fast as possible (using your precomputed values)
+  *     - assignVehicleValue
+  *         --> Update your output variable (ex: routeLength(vehicle) := value)
+  *     - computeVehicleValueFromScratch
+  *         --> A naive method that computes the value of a vehicle given the route of the problem (IntSequence)
+  *         --> Must be correct for it's used for debugging purpose (as the good value)
+  *
+  * How does it works ?
+  *     The GlobalConstraintCore (gc) associated with this global constraint manages all the process of the global constraint :
+  *       - Converting route's moves into segment
+  *       - Calling the right method at the right time
+  *       - ...
+  *     When you implement a new global constraint you just need to implements the four methods above and
+  *     associate this constraint to the GlobalConstraintCore (gc.register(this)) it does the rest.
+  *
+  * @param gc The GlobalConstraintCore you want to associate this constraint to
+  * @param v The number of vehicle
   */
-abstract class GlobalConstraintDefinition(gc: GlobalConstraintCore, v: Int) {
+abstract class GlobalConstraintDefinition[@specialized(Int, Long, Boolean) U <: Any :Manifest](gc: GlobalConstraintCore, v: Int) {
+
+  // This variable holds the vehicles value at checkpoint 0.
+  // It's used to effectively roll-back to this checkpoint 0 when exploring neighborhood
+  private var vehiclesValueAtCheckpoint0: Array[U] = Array.empty[U]
+
+  // This variable purpose is to keep the latest computed value of each vehicle
+  // So that we can easily update the checkpoint0 value when the movement is accepted
+  private var lastComputedVehiclesValue: Array[U] = Array.empty[U]
 
   /**
-    * T is the type of the precomputed value associated to each node of the problem.
-    * U is the type of the violation value associated to each vehicle of the problem.
+    * Update the checkpoint level 0 value of the given vehicle.
+    * Used when the tested movement is accepted or at the beginning of the search
+    * @param vehicle the vehicle whose checkpoint level 0 value needs to be updated
     */
-  type U
-  type AU = Array[U]
-
-  // You must initialize those variable when initiating your invariant
-  var vehiclesValueAtCheckpoint0: AU = _
-  var currentVehiclesValue: AU = _
-
-  def saveVehicleValue(vehicle: Long, value: U): Unit ={
-    currentVehiclesValue(vehicle) = value
+  private[group] def setCheckpointLevel0Value(vehicle: Int): Unit ={
+    if(vehiclesValueAtCheckpoint0.isEmpty)
+      vehiclesValueAtCheckpoint0 = Array.tabulate(v)(_vehicle => lastComputedVehiclesValue(_vehicle))
+    else
+      vehiclesValueAtCheckpoint0(vehicle) = lastComputedVehiclesValue(vehicle)
   }
 
-  def setCheckpointLevel0Value(vehicle: Int): Unit ={
-    vehiclesValueAtCheckpoint0(vehicle) = currentVehiclesValue(vehicle)
-  }
-
-  def rollBackToCheckpoint(vehiclesToRollBack: QList[Int]): Unit ={
+  /**
+    * Roll-back the current value of the specified vehicle to their checkpoint level 0 value.
+    * It's used after evaluating a movement.
+    * @param vehiclesToRollBack the vehicles whose current value needs to be roll-backed
+    */
+  private[group] def rollBackToCheckpoint(vehiclesToRollBack: QList[Int]): Unit ={
     QList.qForeach(vehiclesToRollBack, (vehicle: Int) => {
-      currentVehiclesValue(vehicle) = vehiclesValueAtCheckpoint0(vehicle)
-      assignVehicleValue(vehicle)
+      lastComputedVehiclesValue(vehicle) = vehiclesValueAtCheckpoint0(vehicle)
+      assignVehicleValue(vehicle, lastComputedVehiclesValue(vehicle))
     })
   }
 
-  // Initialize the invariant variable using the initial route of the problem
-  def init(routes: IntSequence): Unit = {
-    for (vehicle <- 0 until v) {
-      computeVehicleValueFromScratch(vehicle, routes)
-      assignVehicleValue(vehicle)
-    }
+  /**
+    * This method computes the new value of a vehicle from scratch (by calling computeVehicleValueFromScratch),
+    * saves it in the lastComputedVehiclesValues variable and
+    * finally assign this value to the output CBLS var (using assignVehicleValue method)
+    *
+    * This method is used at the beginning of the search to set the initial value of the constraint or
+    * when we assign the value of the route (not incremental ==> we need to compute from scratch)
+    * @param routes The IntSequence representing the route
+    */
+  private[group] def computeSaveAndAssignVehicleValuesFromScratch(routes: IntSequence): Unit = {
+    if(lastComputedVehiclesValue.isEmpty)
+      lastComputedVehiclesValue = Array.tabulate(v)(vehicle => computeVehicleValueFromScratch(vehicle, routes))
+    else
+      for (vehicle <- 0 until v) {
+        lastComputedVehiclesValue(vehicle) = computeVehicleValueFromScratch(vehicle, routes)
+        assignVehicleValue(vehicle, lastComputedVehiclesValue(vehicle))
+      }
   }
 
   /**
-    * this method is called by the framework when a pre-computation must be performed.
-    * you are expected to assign a value of type T to each node of the vehicle "vehicle" through the method "setNodeValue"
-    * @param vehicle the vehicle where pre-computation must be performed
+    * This method computes the new value of a vehicle (by calling computeVehicleValue),
+    * saves it in the lastComputedVehiclesValues variable and
+    * finally assign this value to the output CBLS var (using assignVehicleValue method)
+    *
+    * This method is used during the exploration of the neighborhood
+    * @param routes The IntSequence representing the route
+    */
+  private[group] def computeSaveAndAssingVehicleValue(vehicle:Long,
+                                                segments:QList[Segment],
+                                                routes:IntSequence): Unit ={
+    lastComputedVehiclesValue(vehicle) = computeVehicleValue(vehicle, segments, routes)
+    assignVehicleValue(vehicle, lastComputedVehiclesValue(vehicle))
+  }
+
+  /**
+    * This method is called by the framework when a pre-computation must be performed.
+    * @param vehicle the vehicle for which a pre-computation must be performed
     * @param routes the sequence representing the route of all vehicle
     *               BEWARE,other vehicles are also present in this sequence; you must only work on the given vehicle
     */
-  def performPreCompute(vehicle:Long,
-                        routes:IntSequence)
+  protected[group] def performPreCompute(vehicle:Long, routes:IntSequence)
 
   /**
-    * this method is called by the framework when the value of a vehicle must be computed.
-    * When implementing this method, DON'T FORGET to call saveVehicleValue at the end.
+    * This method is called by the framework when the value of a vehicle must be computed.
     *
-    * @param vehicle the vehicle that we are focusing on
+    * @param vehicle the vehicle for which we must compute the value
     * @param segments the segments that constitute the route.
-    *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
+    *                 The route of the vehicle is equal to the concatenation of all given segments in the order they appear in this list
     * @param routes the sequence representing the route of all vehicle
     */
-  def computeVehicleValue(vehicle:Long,
+  protected def computeVehicleValue(vehicle:Long,
                           segments:QList[Segment],
-                          routes:IntSequence)
+                          routes:IntSequence): U
 
   /**
     * The framework calls this method to assign the value U corresponding to a specific checkpointLevel to the output variable of your invariant.
     * It has been dissociated from the method computeVehicleValue because the system should be able to restore a previously computed value without re-computing it.
     * @param vehicle the vehicle number
+    * @param value The value to assign to the output variable
     */
-  def assignVehicleValue(vehicle:Long): Unit
+  protected def assignVehicleValue(vehicle:Long, value: U): Unit
 
   /**
-    * this method is defined for verification purpose. It computes the value of the vehicle from scratch.
+    * This method is mainly defined for verification purpose.
+    * But it's also used when we can't compute the vehicle value incrementally
+    * (at the beginning of the search or when we assign the value of the route)
+    * It computes the value of the vehicle from scratch.
     *
     * @param vehicle the vehicle on which the value is computed
     * @param routes the sequence representing the route of all vehicle
     */
-  def computeVehicleValueFromScratch(vehicle : Long, routes : IntSequence, save: Boolean = true): U
+  protected[group] def computeVehicleValueFromScratch(vehicle : Long, routes : IntSequence): U
 
-
-  def checkInternals(vehicle: Long, routes: ChangingSeqValue, segments: List[Segment]): Unit ={
-    val fromScratch = computeVehicleValueFromScratch(vehicle, routes.value, false)
-    require(fromScratch.equals(currentVehiclesValue(vehicle)), "Constraint " + this.getClass.getName + " failed " +
+  /**
+    * This method is used for debugging purpose. (See Checker class)
+    * It compares the lastComputedvalue of each vehicle to the value from scratch of the same vehicle.
+    * Usually the from scratch algorithm is much more easier to implement therefore it's considered as correct
+    * @param vehicle The vehicle whose current value must be checked
+    * @param routes The sequence representing the route of all vehicle
+    * @param segments The list of segments used to compute the current value fo the vehicle
+    */
+  protected[group] def checkInternals(vehicle: Long, routes: ChangingSeqValue, segments: List[Segment]): Unit ={
+    val fromScratch = computeVehicleValueFromScratch(vehicle, routes.value)
+    require(fromScratch.equals(lastComputedVehiclesValue(vehicle)), "Constraint " + this.getClass.getName + " failed " +
     "For Vehicle " + vehicle + " : should be " + fromScratch + " got " +
-      currentVehiclesValue(vehicle) + " " + routes + "\nAfter receiving segments : " + segments.mkString("\n    "))
+      lastComputedVehiclesValue(vehicle) + " " + routes + "\nAfter receiving segments : " + segments.mkString("\n    "))
   }
 
 }
