@@ -52,7 +52,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int, Long, Boolean) U <: 
     * Used when the tested movement is accepted or at the beginning of the search
     * @param vehicle the vehicle whose checkpoint level 0 value needs to be updated
     */
-  private[group] def setCheckpointLevel0Value(vehicle: Int): Unit ={
+  private[global] def setCheckpointLevel0Value(vehicle: Int): Unit ={
     if(vehiclesValueAtCheckpoint0.isEmpty)
       vehiclesValueAtCheckpoint0 = Array.tabulate(v)(_vehicle => lastComputedVehiclesValue(_vehicle))
     else
@@ -64,7 +64,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int, Long, Boolean) U <: 
     * It's used after evaluating a movement.
     * @param vehiclesToRollBack the vehicles whose current value needs to be roll-backed
     */
-  private[group] def rollBackToCheckpoint(vehiclesToRollBack: QList[Int]): Unit ={
+  private[global] def rollBackToCheckpoint(vehiclesToRollBack: QList[Int]): Unit ={
     QList.qForeach(vehiclesToRollBack, (vehicle: Int) => {
       lastComputedVehiclesValue(vehicle) = vehiclesValueAtCheckpoint0(vehicle)
       assignVehicleValue(vehicle, lastComputedVehiclesValue(vehicle))
@@ -80,7 +80,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int, Long, Boolean) U <: 
     * when we assign the value of the route (not incremental ==> we need to compute from scratch)
     * @param routes The IntSequence representing the route
     */
-  private[group] def computeSaveAndAssignVehicleValuesFromScratch(routes: IntSequence): Unit = {
+  private[global] def computeSaveAndAssignVehicleValuesFromScratch(routes: IntSequence): Unit = {
     if(lastComputedVehiclesValue.isEmpty)
       lastComputedVehiclesValue = Array.tabulate(v)(vehicle => computeVehicleValueFromScratch(vehicle, routes))
     else
@@ -98,7 +98,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int, Long, Boolean) U <: 
     * This method is used during the exploration of the neighborhood
     * @param routes The IntSequence representing the route
     */
-  private[group] def computeSaveAndAssingVehicleValue(vehicle:Long,
+  private[global] def computeSaveAndAssingVehicleValue(vehicle:Long,
                                                 segments:QList[Segment],
                                                 routes:IntSequence): Unit ={
     lastComputedVehiclesValue(vehicle) = computeVehicleValue(vehicle, segments, routes)
@@ -111,7 +111,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int, Long, Boolean) U <: 
     * @param routes the sequence representing the route of all vehicle
     *               BEWARE,other vehicles are also present in this sequence; you must only work on the given vehicle
     */
-  protected[group] def performPreCompute(vehicle:Long, routes:IntSequence)
+  protected[global] def performPreCompute(vehicle:Long, routes:IntSequence)
 
   /**
     * This method is called by the framework when the value of a vehicle must be computed.
@@ -142,7 +142,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int, Long, Boolean) U <: 
     * @param vehicle the vehicle on which the value is computed
     * @param routes the sequence representing the route of all vehicle
     */
-  protected[group] def computeVehicleValueFromScratch(vehicle : Long, routes : IntSequence): U
+  protected[global] def computeVehicleValueFromScratch(vehicle : Long, routes : IntSequence): U
 
   /**
     * This method is used for debugging purpose. (See Checker class)
@@ -152,7 +152,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int, Long, Boolean) U <: 
     * @param routes The sequence representing the route of all vehicle
     * @param segments The list of segments used to compute the current value fo the vehicle
     */
-  protected[group] def checkInternals(vehicle: Long, routes: ChangingSeqValue, segments: List[Segment]): Unit ={
+  protected[global] def checkInternals(vehicle: Long, routes: ChangingSeqValue, segments: List[Segment]): Unit ={
     val fromScratch = computeVehicleValueFromScratch(vehicle, routes.value)
     require(fromScratch.equals(lastComputedVehiclesValue(vehicle)), "Constraint " + this.getClass.getName + " failed " +
     "For Vehicle " + vehicle + " : should be " + fromScratch + " got " +
