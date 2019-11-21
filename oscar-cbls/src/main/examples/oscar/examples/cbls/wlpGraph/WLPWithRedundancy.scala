@@ -1,11 +1,10 @@
 package oscar.examples.cbls
 
-import java.awt.Color
 import java.io.PrintWriter
 
 import oscar.cbls._
 import oscar.cbls.algo.graph.ConditionalGraphWithIntegerNodeCoordinates
-import oscar.cbls.core.computation.{ChangingIntValue, IntInvariant}
+import oscar.cbls.core.computation.ChangingIntValue
 import oscar.cbls.lib.invariant.graph.KVoronoiZones
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.set.Cardinality
@@ -51,8 +50,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
     nbConditionalEdges=nbConditionalEdges,
     nbNonConditionalEdges=nbNonConditionalEdges,
     nbTransitNodes = W+D,
-    mapSide = 200,
-    seed = Some(1))
+    mapSide = 200)
 
 //
  // println(graph.nodes.mkString("\n"))
