@@ -2,7 +2,7 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
-import oscar.cbls.business.routing.invariants.group.{GlobalConstraintCore, RouteLength}
+import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
 import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TimeWindowConstraintWithLogReduction}
 import oscar.cbls.core.computation.FullRange
 import oscar.cbls.core.objective.CascadingObjective

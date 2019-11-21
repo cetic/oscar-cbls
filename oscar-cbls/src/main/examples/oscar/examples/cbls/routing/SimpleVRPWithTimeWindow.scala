@@ -2,7 +2,7 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing.{routeLength, _}
-import oscar.cbls.business.routing.invariants.group.{GlobalConstraintCore, RouteLength}
+import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
 import oscar.cbls.business.routing.invariants.timeWindow.TimeWindowConstraint
 import oscar.cbls.core.search.Best
 import oscar.cbls.lib.constraint.EQ

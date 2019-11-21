@@ -5,7 +5,7 @@ import java.io.File
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.WeightedNodesPerVehicle
-import oscar.cbls.business.routing.invariants.group.{GlobalConstraintCore, RouteLength}
+import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
 import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TimeWindowConstraintWithLogReduction}
 import oscar.cbls.business.routing.model.extensions.TimeWindows
 import oscar.cbls.business.routing.neighborhood.{InsertPointUnroutedFirst, RemovePoint}

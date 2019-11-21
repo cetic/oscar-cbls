@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.invariants.group
+package oscar.cbls.business.routing.invariants.global
 
 import oscar.cbls._
 import oscar.cbls.algo.quick.QList

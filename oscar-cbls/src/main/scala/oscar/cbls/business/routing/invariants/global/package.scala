@@ -22,6 +22,6 @@ package oscar.cbls.business.routing.invariants
   * and give some operators on, this pre-computation.
   *
   */
-package object group {
+package object global {
 
 }

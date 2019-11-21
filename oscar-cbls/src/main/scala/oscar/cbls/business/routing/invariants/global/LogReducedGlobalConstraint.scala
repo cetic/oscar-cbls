@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.invariants.group
+package oscar.cbls.business.routing.invariants.global
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify

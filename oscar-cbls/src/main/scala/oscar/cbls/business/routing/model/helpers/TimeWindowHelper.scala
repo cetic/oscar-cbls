@@ -16,8 +16,6 @@ object TimeWindowHelper{
     * This method is used to precompute the relevant predecessors of all the nodes of the problem.
     * Using this you can filter a lot of useless predecessors.
     *
-    * (call it only once ;) )
-    *
     * A node x is a relevant predecessor of another node y if
     *   earliestArrivalTimes(x) +
     *   taskDurations(x) +
@@ -46,18 +44,18 @@ object TimeWindowHelper{
     val latestLeavingTimes = timeWindows.latestLeavingTimes
     val taskDurations = timeWindows.taskDurations
 
-    def areNodesParallelisable(predecessor: Long, node: Long): Boolean = {
+    def areNodesParallelizable(predecessor: Long, node: Long): Boolean = {
       parallelizeNodes &&
       latestLeavingTimes(predecessor) > earliestArrivalTimes(node) &&
       timeMatrix.getTravelDuration(predecessor, earliestArrivalTimes(predecessor) + taskDurations(predecessor), node) == 0L
     }
 
     Array.tabulate(vrp.n)(node => intToLong(node) -> HashSet(vrp.nodes.collect {
-      case predecessor if areNodesParallelisable(predecessor,node) &&
+      case predecessor if areNodesParallelizable(predecessor,node) &&
         (Math.max(earliestLeavingTimes(predecessor), earliestLeavingTimes(node)) <= latestLeavingTimes(node)) &&
         predecessor != node =>
         intToLong(predecessor)
-      case predecessor if !areNodesParallelisable(predecessor,node) &&
+      case predecessor if !areNodesParallelizable(predecessor,node) &&
         (earliestLeavingTimes(predecessor) +
           timeMatrix.getTravelDuration(predecessor, earliestLeavingTimes(predecessor), node) + taskDurations(node)) <=
           latestLeavingTimes(node) &&

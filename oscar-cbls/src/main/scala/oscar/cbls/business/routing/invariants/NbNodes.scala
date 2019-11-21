@@ -20,7 +20,7 @@ import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation.ChangingSeqValue
 import oscar.cbls._
-import oscar.cbls.business.routing.invariants.group.{FlippedPreComputedSubSequence, GlobalConstraintCore, GlobalConstraintDefinition, LogReducedFlippedPreComputedSubSequence, LogReducedGlobalConstraint, LogReducedGlobalConstraintWithExtremes, LogReducedNewNode, LogReducedPreComputedSubSequence, LogReducedSegment, NewNode, PreComputedSubSequence, Segment}
+import oscar.cbls.business.routing.invariants.global.{FlippedPreComputedSubSequence, GlobalConstraintCore, GlobalConstraintDefinition, LogReducedFlippedPreComputedSubSequence, LogReducedGlobalConstraint, LogReducedGlobalConstraintWithExtremes, LogReducedNewNode, LogReducedPreComputedSubSequence, LogReducedSegment, NewNode, PreComputedSubSequence, Segment}
 
 
 object NbNodes{

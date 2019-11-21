@@ -1,7 +1,7 @@
 package oscar.cbls.business.routing.invariants.timeWindow
 
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.business.routing.invariants.group._
+import oscar.cbls.business.routing.invariants.global._
 import oscar.cbls._
 import oscar.cbls.algo.quick.QList
 

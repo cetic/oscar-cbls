@@ -4,7 +4,7 @@ import oscar.cbls._
 import oscar.cbls.algo.seq._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.NbNodes
-import oscar.cbls.business.routing.invariants.group._
+import oscar.cbls.business.routing.invariants.global._
 import oscar.cbls.business.routing.neighborhood.{ThreeOpt, ThreeOptMove, TwoOpt}
 import oscar.cbls.core.computation.ChangingSeqValue
 import oscar.cbls.core.search.Best
