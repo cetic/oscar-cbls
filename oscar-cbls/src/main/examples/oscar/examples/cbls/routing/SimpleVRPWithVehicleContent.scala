@@ -2,6 +2,7 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
+import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, GlobalVehicleCapacityConstraint, RouteLength}
 
 /**
   * Created by fg on 12/05/17.
@@ -21,8 +22,12 @@ object SimpleVRPWithVehicleContent extends App{
 
   val myVRP =  new VRP(m,n,v)
 
+  // GC
+  val gc = GlobalConstraintCore(myVRP.routes, v)
+
   // Distance
-  val totalRouteLength = routeLength(myVRP.routes,n,v,false,symmetricDistance,true,true,false)(0)
+  val vehiclesRouteLength = Array.tabulate(v)(vehicle => CBLSIntVar(m, name = "Route length of vehicle " + vehicle))
+  val routeLengthInvariant = new RouteLength(gc,n,v,vehiclesRouteLength,(from: Long, to: Long) => symmetricDistance(from)(to))
 
   //Chains
   val precedenceRoute = myVRP.routes.createClone()
@@ -35,31 +40,25 @@ object SimpleVRPWithVehicleContent extends App{
   val chainsExtension = chains(myVRP,listOfChains)
 
   // Vehicle content
-  val contentRoute = precedenceRoute.createClone()
-  val violationOfContentAtNode = new CBLSIntVar(myVRP.routes.model, 0, 0 to Int.MaxValue, "violation of capacity " + "Content at node")
-  val capacityInvariant = forwardCumulativeConstraintOnVehicle(myVRP.routes,n,v,
-    (from,to,fromContent) => fromContent + contentsFlow(to),
-    maxVehicleCapacity,
-    vehiclesCapacity.map(maxVehicleCapacity-_),
-    violationOfContentAtNode,
-    4,
-    "Content at node")
+  val violationOfContentOfVehicle = Array.tabulate(v)(vehicle =>
+    CBLSIntVar(myVRP.routes.model, name = "Violation of capacity of vehicle " + vehicle))
+  val capacityInvariant = GlobalVehicleCapacityConstraint(gc, n, v, vehiclesCapacity, contentsFlow, violationOfContentOfVehicle)
 
   //Objective function
   val obj = new CascadingObjective(precedencesConstraints,
-    new CascadingObjective(capacityInvariant.violation,
-      totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes)))))
+    new CascadingObjective(sum(violationOfContentOfVehicle),
+      sum(vehiclesRouteLength) + (penaltyForUnrouted*(n - length(myVRP.routes)))))
 
   m.close()
 
-  def postFilter(node:Long): (Long) => Boolean = {
+  /*def postFilter(node:Long): (Long) => Boolean = {
     val enoughSpaceAfterNeighborNow: (Long,Long,Array[Long]) => Boolean =
       CapacityHelper.enoughSpaceAfterNeighbor(n,capacityInvariant)
     (neighbor: Long) => {
       myVRP.isRouted(neighbor) &&
         enoughSpaceAfterNeighborNow(node,neighbor,contentsFlow)
     }
-  }
+  }*/
 
   val relevantPredecessors = CapacityHelper.relevantPredecessorsOfNodes(myVRP, maxVehicleCapacity, vehiclesCapacity, contentsFlow)
 
@@ -89,7 +88,7 @@ object SimpleVRPWithVehicleContent extends App{
 
   val firstNodeOfChainMove = onePointMove(
     () => myVRP.routed.value.filter(chainsExtension.isHead),
-    ()=> myVRP.kFirst(v*2,closestRelevantPredecessorsByDistance(_),postFilter), myVRP,neighborhoodName = "MoveHeadOfChain")
+    ()=> myVRP.kFirst(v*2,closestRelevantPredecessorsByDistance(_)), myVRP,neighborhoodName = "MoveHeadOfChain")
 
   def lastNodeOfChainMove(lastNode:Long) = onePointMove(
     () => List(lastNode),
@@ -97,8 +96,7 @@ object SimpleVRPWithVehicleContent extends App{
       ChainsHelper.relevantNeighborsForLastNodeAfterHead(
         myVRP,
         chainsExtension,
-        Some(relevantPredecessors(lastNode))),
-      postFilter),
+        Some(relevantPredecessors(lastNode)))),
     myVRP,
     neighborhoodName = "MoveLastOfChain")
 
@@ -114,7 +112,7 @@ object SimpleVRPWithVehicleContent extends App{
       }) name "OneChainMove"
   }
 
-  def onePtMove(k:Long) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantPredecessorsByDistance(_),postFilter), myVRP))
+  def onePtMove(k:Long) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantPredecessorsByDistance(_)), myVRP))
 
   // INSERTING
 
@@ -139,7 +137,7 @@ object SimpleVRPWithVehicleContent extends App{
   }
 
   val firstNodeOfChainInsertion = insertPointUnroutedFirst(() => myVRP.unrouted.value.filter(chainsExtension.isHead),()=> {
-    myVRP.kFirst(v*2,closestRelevantPredecessorsByDistance(_), postFilter)
+    myVRP.kFirst(v*2,closestRelevantPredecessorsByDistance(_))
   }, myVRP,neighborhoodName = "InsertUF")
 
   def lastNodeOfChainInsertion(lastNode:Long) = insertPointUnroutedFirst(
@@ -148,8 +146,7 @@ object SimpleVRPWithVehicleContent extends App{
       v*2,
       ChainsHelper.relevantNeighborsForLastNodeAfterHead(
         myVRP,
-        chainsExtension),
-      postFilter),
+        chainsExtension)),
     myVRP,
     neighborhoodName = "InsertUF")
 
