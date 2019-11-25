@@ -4,11 +4,14 @@ import java.awt.Color
 import java.io.PrintWriter
 
 import oscar.cbls._
-import oscar.cbls.algo.graph.ConditionalGraphWithIntegerNodeCoordinates
+import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, DijkstraDistanceMatrix}
+import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.core.computation.{ChangingIntValue, IntInvariant}
+import oscar.cbls.core.search.{Best, MoveFound}
 import oscar.cbls.lib.invariant.graph.KVoronoiZones
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.set.Cardinality
+import oscar.cbls.lib.search.combinators
 import oscar.cbls.lib.search.combinators._
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.test.graph.RandomGraphGenerator
@@ -19,22 +22,21 @@ import oscar.cbls.visual.graph.GraphViewer
 import scala.collection.immutable.SortedMap
 import scala.swing.Color
 
-object WarehouseAndBridgeLocation extends App with StopWatch{
+object WLPWithRedundancy extends App with StopWatch{
   //the number of warehouses
-  val W:Int = 4
+  val W:Int = 500
 
   //the number of delivery points
-  val D:Int = 20
+  val D:Int = 1000
 
   // the number of per delivery points
-  val k:Int = 2
+  val k:Int = 3
 
   //nb conditional edges
   val nbConditionalEdges:Int =  (W + D) / 5
 
   //nb non conditional edges
-  val nbNonConditionalEdges =  (W+D)*3
-
+  val nbNonConditionalEdges =  (W+D)*5
   val displayDelay = 1000
 
   println("WarehouseAndBridgeLocation(W:" + W + " D:" + D + " B:" + nbConditionalEdges + ")")
@@ -51,31 +53,23 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
     nbConditionalEdges=nbConditionalEdges,
     nbNonConditionalEdges=nbNonConditionalEdges,
     nbTransitNodes = W+D,
-    mapSide = 200,
-    seed = Some(1))
+    mapSide = 800,
+    seed = Some(2))
 
-//
- // println(graph.nodes.mkString("\n"))
-//  println(graph.nodes(875).incidentEdges.mkString(";"))
-//  println(graph.nodes(698).incidentEdges.mkString(";"))
-//  println(graph.nodes(31).incidentEdges.mkString(";"))
-//  println(graph.edges.mkString("\n"))
 
-  val m = new Store(checker = Some(new ErrorChecker))
+  val m = new Store()//checker = Some(new ErrorChecker))
 
   val deliveryToNode = Array.tabulate(D)(i => graph.nodes(i + W))
   val warehouseToNode =  Array.tabulate(W)(w => graph.nodes(w))
 
   val warehouseOpenArray = Array.tabulate(W)(i => new CBLSIntVar(m,0,0 to 1,"warehouse " + i + " open"))
   val openWarehouses : SetValue = Filter(warehouseOpenArray).setName("open warehouses")
+  val closedWarehouses : SetValue = Filter(warehouseOpenArray,_ == 0).setName("closed warehouses")
 
   val conditionalEdgesOpenArray = Array.tabulate(nbConditionalEdges)(i => new CBLSIntVar(m,0,0 to 1,"conditional edge " + i + "open"))
   val openEdges = Filter(conditionalEdgesOpenArray).setName("conditional Edges Open")
 
-
-
   val centroid2Nodes = SortedMap[Long,Long]() ++ Array.tabulate(W)(i => i.toLong -> i.toLong).toMap
-
 
   val x = Cardinality(openEdges)
 
@@ -94,20 +88,17 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   println("End Init VZone")
 
-  val distanceToClothestCentroidMap = kvor.trackedNodeToDistanceAndCentroidMap
+  val distanceToClosestCentroidMap = kvor.trackedNodeToDistanceAndCentroidMap
 
-  val distanceToClothestCentroid = Array.tabulate(D)((i : Int) => distanceToClothestCentroidMap(deliveryToNode(i).id))
+  val distanceToClosestCentroid = Array.tabulate(D)((i : Int) => distanceToClosestCentroidMap(deliveryToNode(i).id))
 
-  //println(Array.tabulate(D)(i => deliveryToNode(i).id + " : " + distanceToClothestCentroid(i).map(c => c._2).mkString(";")).mkString("\n"))
-
-  val totalDistancePerNode = distanceToClothestCentroid.map(n => sum(n.map(i => i._2)))
+  val totalDistancePerNode = distanceToClosestCentroid.map(n => sum(n.map(i => i._2)))
 
   val totalDistance = sum(totalDistancePerNode)
 
   val nbWarehousesOpen : ChangingIntValue = Cardinality(openWarehouses)
 
   val obj = Objective(totalDistance + sum(costForOpeningWarehouse, openWarehouses) + (x*costOfBridgesPerBridge))
-  m.registerForPartialPropagation(nbWarehousesOpen)
 
   m.close()
 
@@ -117,136 +108,114 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
   val visual = new GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
     centroidColor = SortedMap.empty[Int,Color] ++ warehouseToNode.toList.map(node => (node.id,centroidColors(node.id))))
 
-  SingleFrameWindow.show(visual,title = "Warehouse and bridge location", 1025, 1105)
+  SingleFrameWindow.show(visual,title = "Warehouse and bridge location", 2125, 2125)
 
-  println(Array.tabulate(graph.nbNodes)(i => i + " : " + graph.coordinates(i)).mkString("\n"))
-
-
-  visual.redraw(
+  visual.redrawMultipleNodes(
     openEdges.value,
     openWarehouses.value,
-    distanceToClothestCentroidMap.mapValues(t => t(0)._1.value),
+    distanceToClosestCentroidMap.mapValues(tab => tab.map(centroidAndDistance => centroidAndDistance._1.value)),
+    k,
     extraPath = List()
   )
 
-  val centroidList = List(0,1,2,3)
-  centroidList.foreach(i=> warehouseOpenArray(i) := 1)
 
-//  val centroidList = List(0,1,2,3,4,5,6)
-//  centroidList.foreach(i => warehouseOpenArray(i) := 1)
-  println(Array.tabulate(D)(i => deliveryToNode(i).id + " : " + distanceToClothestCentroid(i).map(c => c._1.toString + " - " + c._2).mkString(";")).mkString("\n"))
-//
-//  warehouseOpenArray(7) := 1
-//  println(kvor.nodeLabeling(7).centroidList.mkString(";"))
-//  println("Total Warehouses Open : " + nbWarehousesOpen.value)
-//  println(kvor.nodeLabeling(7).centroidList.mkString(";"))
-//
-//  warehouseOpenArray(5) := 0
-//  println(Array.tabulate(D)(i => deliveryToNode(i).id + " : " + distanceToClothestCentroid(i).map(c => c._1.toString + " - " + c._2).mkString(";")).mkString("\n"))
-//
-//  println(kvor.nodeLabeling(7).centroidList.mkString(";"))
+  /**********************************************************************************************************************
+    *
+    *             Search Model
+    *
+    *
+    *********************************************************************************************************************/
 
-//
-//
-//  conditionalEdgesOpenArray(0) := 1
-//////  warehouseOpenArray(4) := 1
-//  println(Array.tabulate(D)(i => deliveryToNode(i).id + " : " + distanceToClothestCentroid(i).map(c => c._1.toString + " - " + c._2).mkString(";")).mkString("\n"))
-////
-// conditionalEdgesOpenArray(0) := 0
-//  ////  warehouseOpenArray(4) := 1
-//  println(Array.tabulate(D)(i => deliveryToNode(i).id + " : " + distanceToClothestCentroid(i).map(c => c._1.toString + " - " + c._2).mkString(";")).mkString("\n"))
+    val timeStartingModel = System.currentTimeMillis()
+  val distanceMatrixAllEdgeOpen = DijkstraDistanceMatrix.buildDistanceMatrix(graph,_ => true)
+  println("Time to compute matrix: " + (System.currentTimeMillis() - timeStartingModel))
 
-//
-//  warehouseOpenArray(26) := 1
-//  warehouseOpenArray(25) := 0
-//
-//
-//  println(Array.tabulate(D)(i => deliveryToNode(i).id + " : " + distanceToClothestCentroid(i).map(c => c._1.toString + " - " + c._2).mkString(";")).mkString("\n"))
+  val warehouseToWarehouseDistance = Array.tabulate(W)(w1 => Array.tabulate(W)(w2 => w2.toLong).sortWith((w2_1 : Long,w2_2 : Long) => distanceMatrixAllEdgeOpen(w1)(w2_1) < distanceMatrixAllEdgeOpen(w1)(w2_2)))
 
+  def kNearestOpenWarehouse(k : Int,w : Int) = KSmallest.kFirst(k,warehouseToWarehouseDistance(w),warehouseOpenArray(_).value == 1)
+  def kNearestClosedWarehouse(k : Int,w : Int) = KSmallest.kFirst(k,warehouseToWarehouseDistance(w),warehouseOpenArray(_).value == 0)
+  def kNearestWarehouse(k : Int,w : Int) = KSmallest.kFirst(k,warehouseToWarehouseDistance(w))
 
-/*  def redraw(openConditions:SortedSet[Long],
-             centroids:SortedSet[Long],
-             nodeToCentroid:SortedMap[Long,Long],
-             hideClosedEdges:Boolean = false,
-             hideRegularEdges:Boolean = false,
-             hideOpenEdges:Boolean=false,
-             emphasizeEdges:Iterable[Edge] = List.empty,
-             extraPath:Iterable[RevisableDistance])*/
+  def swapClosest(k : Int) =
+    SwapsNeighborhood(warehouseOpenArray,
+      name = "SwapWarehouse with " + k + " Closest",
+      searchZone1 = () => openWarehouses.value,
+      searchZone2 = () => (w : Long,_ : Long) => kNearestClosedWarehouse(k,w))
 
+  def makeAssignClose(assign: AssignMove,k : Int) = {
+    AssignNeighborhood(warehouseOpenArray,name = "assign Close",searchZone = () => kNearestClosedWarehouse(k,assign.id))
 
+  }
 
-  //SingleFrameWindow.show(visual,title = "Warehouse and bridge location", 1025, 1105)
-//
-//  println("toto 22")
-//
+  def open3Warehouses =
+    profile(AssignNeighborhood(warehouseOpenArray,name = "Open 3 close Warehouses",searchZone = () => closedWarehouses.value) dynAndThen ((move : AssignMove) => makeAssignClose(move,10) andThen makeAssignClose(move,10)))
 
+  val warehouseToEdgesDistance =
+    Array.tabulate(W)(w1 => Array.tabulate(nbConditionalEdges)(c => c.toLong).sortWith((c1 : Long, c2 : Long) =>
+      (distanceMatrixAllEdgeOpen(w1)(graph.conditionToConditionalEdges(c1).nodeA.id) min distanceMatrixAllEdgeOpen(w1)(graph.conditionToConditionalEdges(c1).nodeB.id)) < (distanceMatrixAllEdgeOpen(w1)(graph.conditionToConditionalEdges(c1).nodeA.id) min distanceMatrixAllEdgeOpen(w1)(graph.conditionToConditionalEdges(c1).nodeB.id))))
 
+  def kNearestEdges(k : Int,w : Int) = KSmallest.kFirst(k,warehouseToEdgesDistance(w))
+
+  def AssignCloseEdge(assign : AssignMove,k : Int) = {
+    AssignNeighborhood(conditionalEdgesOpenArray,"assignEdgeClose",searchZone = () => kNearestEdges(k,assign.id))
+  }
+
+  val assignWarehouseAndEdge = profile(AssignNeighborhood(warehouseOpenArray,"SwitchWarehouseAndEdgeClose") dynAndThen(AssignCloseEdge(_,10)))
+
+  val swapWarehouseThenAssignEdge =
+    profile(swapClosest(5) dynAndThen((swap : SwapMove) => AssignNeighborhood(conditionalEdgesOpenArray,"SwitchCloseEdge",searchZone = () => KSmallest.kFirst(10,warehouseToEdgesDistance(swap.idI)))))
+
+  var lastDisplay = this.getWatch
+  println("Time to prepare: " + (System.currentTimeMillis() - timeStartingModel))
   val search =
-    BestSlopeFirst(
+    (bestSlopeFirst(
       List(
-        Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse") andThen AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
-        Profile(AssignNeighborhood(conditionalEdgesOpenArray,"Open Edge") andThen AssignNeighborhood(conditionalEdgesOpenArray,"Open Edge")),
-        Profile(AssignNeighborhood(conditionalEdgesOpenArray,"Open Edge") andThen AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
-        Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse") andThen AssignNeighborhood(conditionalEdgesOpenArray,"Open Edge"))
+        profile(AssignNeighborhood(warehouseOpenArray,"Assign Warehouse")),
+        profile(AssignNeighborhood(warehouseOpenArray,"OpenWarehouses",searchZone = () => openWarehouses.value)),
+        profile(AssignNeighborhood(conditionalEdgesOpenArray,"Assign Edge")),
+//        Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse And Warehouse") andThen AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
+//        Profile(AssignNeighborhood(conditionalEdgesOpenArray,"Open Edge And Edge") andThen AssignNeighborhood(conditionalEdgesOpenArray,"Open Edge")),
+//        Profile(AssignNeighborhood(conditionalEdgesOpenArray,"Open Edge And Warehouse") andThen AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
+//        Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse And Edge") andThen AssignNeighborhood(conditionalEdgesOpenArray,"Open Edge")),
+       // open3Warehouses,
+        //profile(swapClosest(20)),
+        assignWarehouseAndEdge,
+        swapWarehouseThenAssignEdge,
+        profile(swapClosest(20))
       )
     )
-
-
-        /*),
-        Profile(AssignNeighborhood(conditionalEdgesOpenArray, "SwitchConditions")))) afterMove (
+      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize1"), 4, obj)) afterMove (
       if(lastDisplay + displayDelay <= this.getWatch){ //} && obj.value < bestDisplayedObj) {
-        bestDisplayedObj = obj.value
 
-        visual.redraw(
+        visual.redrawMultipleNodes(
           openEdges.value,
           openWarehouses.value,
-          trackedNodeToDistanceAndCentroid.mapValues({case (v1, v2) => v2.value}),
-          hideClosedEdges = false,
-          hideRegularEdges = true,
-          hideOpenEdges = false,
-          emphasizeEdges = vor.spanningTree(deliveryNodeList),
-          List(distanceMinMax.getPath) ::: selectedDistances.map(_.getPath).toList
-        )
-
+          distanceToClosestCentroidMap.mapValues(tab => tab.map(centroidAndDistance => centroidAndDistance._1.value)),
+          k,
+          extraPath = List())
         lastDisplay = this.getWatch
-      }) showObjectiveFunction(obj)*/
+      })
 
 
   search.verbose = 2
 //
 
   val start = System.currentTimeMillis()
-  //search.doAllMoves(obj = obj)
-  println("fini en " + ((System.currentTimeMillis() - start)/60000) + "m")
+  search.doAllMoves(obj = obj)
 
-  visual.redraw(
+
+
+
+  println("fini en " + ((System.currentTimeMillis() - start)/60000) + "m")
+  println(search.profilingStatistics)
+  println(obj)
+
+  visual.redrawMultipleNodes(
     openEdges.value,
     openWarehouses.value,
-    distanceToClothestCentroidMap.mapValues(t => t(0)._1.value),
+    distanceToClosestCentroidMap.mapValues(tab => tab.map(centroidAndDistance => {centroidAndDistance._1.value})),
+    k,
     extraPath = List()
   )
 
-
-  conditionalEdgesOpenArray(0) := 1
-  conditionalEdgesOpenArray(1) := 1
-  conditionalEdgesOpenArray(2) := 1
-  conditionalEdgesOpenArray(3) := 1
-  println(distanceToClothestCentroidMap.get(5).get(0)._1.value)
-
-  conditionalEdgesOpenArray(0) := 0
-  conditionalEdgesOpenArray(1) := 1
-  conditionalEdgesOpenArray(2) := 1
-  conditionalEdgesOpenArray(3) := 1
-
-  val nodesTikz = Array.tabulate(graph.nbNodes)(i => "\\coordinate (node_" + i + ") at (" + graph.coordinates(i)._1.toFloat/25 + "," + graph.coordinates(i)._2.toFloat/25 + ");").mkString("\n")
-  val edgeTikz = graph.edges.map(e => "\\draw[edge" + (if (e.conditionID == None) "" else {if (openEdges.value.contains(e.conditionID.get)) ",red" else ",dashed"}) + "] (node_" + e.nodeA.id + ") -- (node_" + e.nodeB.id + ");").mkString("\n");
-  val centroidDraw = Array.tabulate(W)(i => if (openWarehouses.value.contains(i)) "\\node[centroid,draw=colorCentroid" + i + ",fill=colorCentroid" + i + "!50] at (node_" + i + ") {};" else "").mkString("\n")
-  val nodeDrawfst = Array.tabulate(D)(i => "\\node[normalFst" + (if (distanceToClothestCentroidMap.get(i+W).get(0)._1.value != -1) ",draw=colorCentroid" + distanceToClothestCentroidMap.get(i+W).get(0)._1.value + ",fill=colorCentroid"+  distanceToClothestCentroidMap.get(i+W).get(0)._1.value + "!50" else "") + "] at (node_" + (i + W) + ") {};").mkString("\n")
-  val nodeDrawsnd = Array.tabulate(D)(i => "\\node[normalSnd" + (if (distanceToClothestCentroidMap.get(i+W).get(1)._1.value != -1) ",draw=colorCentroid" + distanceToClothestCentroidMap.get(i+W).get(1)._1.value + ",fill=colorCentroid"+  distanceToClothestCentroidMap.get(i+W).get(1)._1.value + "!50" else "") + "] at (node_" + (i + W) + ") {};").mkString("\n")
-
-  val tikzfile = new PrintWriter("graph4.tex")
-  tikzfile.write(nodeDrawsnd + "\n\n" + edgeTikz + "\n\n" + centroidDraw + "\n\n" + nodeDrawfst)
-  tikzfile.close()
-
-  println(graph.edges.filter(p => p.conditionID != None).mkString("\n"))
 }

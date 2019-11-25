@@ -4,7 +4,7 @@ import java.io.PrintWriter
 
 import oscar.cbls._
 import oscar.cbls.algo.graph._
-import oscar.cbls.algo.heap.BinomialHeapWithMove
+import oscar.cbls.algo.heap.{BinomialHeapWithMove, BinomialHeapWithMoveExtMem}
 import oscar.cbls.core.computation.{ChangingSetValue, Invariant, SetNotificationTarget}
 import oscar.cbls.core.propagation.Checker
 
@@ -25,7 +25,7 @@ object KVoronoiZones {
       (nodeId: Long) => {
         nodeId ->
           Array.tabulate(k)((centroidI: Int) => {
-            (new CBLSIntVar(m, defaultCentroidForUnreachableNode, Domain(0L, defaultCentroidForUnreachableNode max Long.MaxValue), "clothest centroid number " + centroidI + " for node " + nodeId),
+            (new CBLSIntVar(m, defaultCentroidForUnreachableNode, Domain(0L, defaultCentroidForUnreachableNode max Long.MaxValue), "closest centroid number " + centroidI + " for node " + nodeId),
               new CBLSIntVar(m, defaultDistanceForUnreachableNode, Domain(0L, defaultDistanceForUnreachableNode max Long.MaxValue), "distance to centroid number " + centroidI + " for node " + nodeId))
           })
       })
@@ -141,7 +141,7 @@ class KVoronoiZones(graph:ConditionalGraph,
     //println("After : " + trackedNodeToDistanceAndCentroid(nodeID).map(e => "(" + e._1.name + ":=" + e._1.newValue + "," + e._2.name + ":=" + e._2.newValue).mkString(";"))
   }
 
-  case class NodeLabeling(node : Node,centroid : Node,var distance : Long,var position : Long,var isInHeap : Boolean) {
+  case class NodeLabeling(node : Node,centroid : Node,var distance : Long,var positionInHeapMap : Int,var isInHeap : Boolean) {
     override def toString() = "NodeLabeling(" + node.id + "," + centroid.id + "," + distance + "," + position + "," + isInHeap + ")"
   }
 
@@ -183,10 +183,8 @@ class KVoronoiZones(graph:ConditionalGraph,
             insertLabelInCentroidList(l,tail,1,i)
           else {
             if (l.distance < head.distance || (l.distance == head.distance && l.centroid.id < head.centroid.id)) {
-              head.position += shift
               head :: insertLabelInCentroidList(l, tail,shift , i - 1)
             } else {
-              l.position = i
               l :: head :: tail
             }
           }
@@ -222,7 +220,6 @@ class KVoronoiZones(graph:ConditionalGraph,
           case Some(label) =>
             if (distance < label.distance) {
               label.distance = distance
-              label.position = 0
               centroidList = insertLabelInCentroidList(label,centroidList,0)
               Some(label)
             } else
@@ -276,7 +273,6 @@ class KVoronoiZones(graph:ConditionalGraph,
           if (head.centroid.id == label.centroid.id)
             tail
           else {
-            head.position -= 1
             head :: removeLabelFromList(label, tail)
           }
       }
@@ -295,7 +291,34 @@ class KVoronoiZones(graph:ConditionalGraph,
     }
   }
 
-  private val nodeHeapToTreate = new BinomialHeapWithMove[NodeLabeling](totreate => totreate.distance,graph.nbNodes * centroids.domain.iterator.length)
+  private val nodeHeapToTreateToto = new BinomialHeapWithMove[NodeLabeling](totreate => totreate.distance,graph.nbNodes * centroids.domain.iterator.length)
+
+  class NodeLabelingMap extends scala.collection.mutable.Map[NodeLabeling,Int] {
+    def get(k : NodeLabeling):Option[Int] = {
+      if (k.positionInHeapMap == -1)
+        None
+      else
+        Some(k.positionInHeapMap)
+    }
+
+    def iterator: Iterator[(NodeLabeling, Int)] = {throw new Exception("enumeration not supported"); null}
+
+    def +=(nodeLabelingAndPos : (NodeLabeling,Int)) = {
+      nodeLabelingAndPos._1.positionInHeapMap = nodeLabelingAndPos._2
+      this
+    }
+
+    def -=(nodeLabeling: NodeLabeling) = {
+      nodeLabeling.positionInHeapMap = -1
+      this
+    }
+  }
+
+  val nodeLabelingMap : scala.collection.mutable.Map[NodeLabeling,Int]= new NodeLabelingMap
+
+  //private val nodeHeapToTreate = new BinomialHeapWithMoveExtMem[NodeLabeling](totreate => totreate.distance,graph.nbNodes * centroids.domain.size,nodeLabelingMap)
+
+  private val nodeHeapToTreate = new BinomialHeapWithMove[NodeLabeling](totreate => totreate.distance,graph.nbNodes * centroids.domain.size)
 
   val nodeLabeling = Array.tabulate(graph.nbNodes)(nodeIndex => KClosestCentroidLabeling(graph.nodes(nodeIndex)))
   centroids.value.foreach(index =>
@@ -304,7 +327,12 @@ class KVoronoiZones(graph:ConditionalGraph,
     })
 
 
-  centroids.value.foreach(c => nodeHeapToTreate.insert(NodeLabeling(graph.nodes(c),graph.nodes(c),0,0,true)))
+  centroids.value.foreach(c => nodeHeapToTreate.insert(NodeLabeling(graph.nodes(c),graph.nodes(c),-1,0,true)))
+
+  var isConditionalEdgeOpen : Array[Boolean] = Array.fill(graph.nbConditions)(false)
+
+  openConditions.value.foreach(e => isConditionalEdgeOpen(e) = true)
+
   treateNodeInHeap()
 
   private def insertOrCorrectNodeIntoHeap(label: NodeLabeling,loadNoTransitNode : Boolean = false) = {
@@ -352,9 +380,7 @@ class KVoronoiZones(graph:ConditionalGraph,
     }
   }
 
-  var isConditionalEdgeOpen : Array[Boolean] = Array.fill(graph.nbConditions)(false)
 
-  openConditions.value.foreach(e => isConditionalEdgeOpen(e) = true)
 
   private def isEdgeOpen(e : Edge) = {
     e.conditionID match {
@@ -423,41 +449,30 @@ class KVoronoiZones(graph:ConditionalGraph,
   }
 
 
-  case class HoleCreation(node : Node,antecedentPosition : Long)
+  //case class HoleCreation(node : Node,antecedentPosition : Long)
 
   private def createHoleAndLoadBoundaryIntoHeap(centroid: Node,node : Node,startingPosition : Long = 0): Unit = {
     //println(node + " - " + centroid)
     val nodeIsInQueue = Array.fill(graph.nbNodes)(false)
-    var toTreateNodes = List(HoleCreation(node,0))
+    var toTreateNodes = List(node)
     while (toTreateNodes != Nil) {
-      //println("Before : " + toTreateNodes.mkString(";"))
       val toTreate = toTreateNodes.head
       toTreateNodes = toTreateNodes.tail
-//      println("-------------   " + toTreate.node + "   -------------")
-//      println(nodeLabeling(toTreate.node.id).centroidList.mkString(";"))
-//      println(centroid)
-      removeCentroid(centroid,toTreate.node) match {
+      removeCentroid(centroid,toTreate) match {
         case None =>
-          nodeLabeling(toTreate.node.id).centroidList.foreach(l => insertOrCorrectNodeIntoHeap(l))
+          nodeLabeling(toTreate.id).centroidList.foreach(l => insertOrCorrectNodeIntoHeap(l))
         case Some(label) =>
-
-//            println(nodeLabeling(toTreateNode.id).centroidList.mkString(";"))
-           // println("Changing Position")
-//            println(label)
-//            println("Heap Before: " + nodeHeapToTreate.getElements.mkString(";"))
-          insertNodeInHeapUntilPosition(nodeLabeling(toTreate.node.id).centroidList, nodeLabeling(toTreate.node.id).nbOfLabeledCentroid)// - label.position)
-//            println("Heap After: " + nodeHeapToTreate.getElements.mkString(";"))
-          for (edge <- toTreate.node.incidentEdges) {
+          insertNodeInHeapUntilPosition(nodeLabeling(toTreate.id).centroidList, nodeLabeling(toTreate.id).nbOfLabeledCentroid)
+          for (edge <- toTreate.incidentEdges) {
             if (isEdgeOpen(edge)) {
-              val otherNode = edge.otherNode(toTreate.node)
+              val otherNode = edge.otherNode(toTreate)
               if (!nodeIsInQueue(otherNode.id)) {
                 nodeIsInQueue(otherNode.id)
-                toTreateNodes = HoleCreation(otherNode, label.position) :: toTreateNodes
+                toTreateNodes = otherNode :: toTreateNodes
               }
             }
           }
       }
-      //println("After : " + toTreateNodes.mkString(";"))
     }
 
   }
@@ -478,13 +493,13 @@ class KVoronoiZones(graph:ConditionalGraph,
       val nodeToTreate = nodeQueue.head
       nodeQueue = nodeQueue.tail
 
-      println("------------ " + nodeToTreate + " -------------")
+      //println("------------ " + nodeToTreate + " -------------")
       //println("      " + nodeLabeling(nodeToTreate.id).centroidList.mkString(";"))
       removeCentroid(centroid,nodeToTreate) match {
         case None => throw new Error("Only node that have the centroid should be inserted")
         case Some(labelNodeToTreate) =>
-          if (trackedNodeToDistanceAndCentroid(nodeToTreate.id) != null)
-            println(trackedNodeToDistanceAndCentroid(nodeToTreate.id).map(p => p._1).mkString("\n"))
+          //if (trackedNodeToDistanceAndCentroid(nodeToTreate.id) != null)
+            //println(trackedNodeToDistanceAndCentroid(nodeToTreate.id).map(p => p._1).mkString("\n"))
           for (edge <- nodeToTreate.incidentEdges) {
             if (isEdgeOpen(edge)) {
               val otherNode = edge.otherNode(nodeToTreate)
@@ -541,17 +556,17 @@ class KVoronoiZones(graph:ConditionalGraph,
                                 removedValues: Iterable[Long],
                                 oldValue: SortedSet[Long],
                                 newValue: SortedSet[Long]): Unit = {
-    val printtikz = true
+    val printtikz = false
     i = i + 1
     //println(Array.tabulate(graph.nbNodes)(i => i + " : " + nodeLabeling(i).centroidList.mkString(",")).mkString("\n"))
-    println("Centroids : " + centroids.value.mkString(","))
-    println("Conditions : " + openConditions.value.mkString(","))
-    println("notify")
+    //println("Centroids : " + centroids.value.mkString(","))
+    //println("Conditions : " + openConditions.value.mkString(","))
+    //println("notify")
     if (v == centroids) {
-      println("centroid")
+      //println("centroid")
 
       for (added <- addedValues) {
-        println("added : " + added)
+        //println("added : " + added)
         //TODO  Ajouter les voisins dans le tas pour se couvrir en cas de suppression d'un centroid
         tryLabelNode(graph.nodes(added), 0, graph.nodes(added))
       }
@@ -560,7 +575,7 @@ class KVoronoiZones(graph:ConditionalGraph,
 //      println(nodeLabeling(9).centroidList.mkString(";"))
 //      println(graph.nodes(9).incidentEdges.map(e => e.otherNode(graph.nodes(9)).id.toString + " : " + nodeLabeling(e.otherNode(graph.nodes(9)).id).centroidList.mkString(";")).mkString("\n"))
       for (removed <- removedValues) {
-        println("removed : " + removed)
+        //println("removed : " + removed)
         createHoleAndLoadBoundaryIntoHeap(graph.nodes(removed), graph.nodes(removed))
       }
       //println(nodeHeapToTreate.getElements.mkString("\n"))
@@ -573,16 +588,16 @@ class KVoronoiZones(graph:ConditionalGraph,
 
     }
     if (v == openConditions) {
-      println("conditions")
+      //println("conditions")
 
       for (removed <- removedValues) {
-        println("removed : " + removed)
+        //println("removed : " + removed)
         isConditionalEdgeOpen(removed) = false
         createHoleOnEdgeExtremitiesIfNecessary(graph.conditionToConditionalEdges(removed))
       }
 
       for (added <- addedValues) {
-        println("added : " + added)
+        //println("added : " + added)
         isConditionalEdgeOpen(added) = true
         loadHedgeExtremitiesIntoHeap(graph.conditionToConditionalEdges(added))
       }
@@ -652,9 +667,8 @@ class KVoronoiZones(graph:ConditionalGraph,
             val labelFS = cLFromScratch.head
             require(labelInc.centroid == labelFS.centroid,"Node " + node.id + " - position " + (fromScratchNodeLabeling.nbOfLabeledCentroid - i - 1) + " - Centroid Incremental: " + labelInc.centroid + " - Centroid From Scratch: " + labelFS.centroid)
             require(labelInc.distance == labelFS.distance,"Node " + node.id + " - position " + (fromScratchNodeLabeling.nbOfLabeledCentroid - i - 1) + " - Centroid Distance Incremental: " + labelInc.distance + " - Centroid Distance From Scratch: " + labelFS.distance)
-            require(labelInc.position == nodeLabeling(node.id).nbOfLabeledCentroid - i - 1,"Node " + node.id + " - Centroid is marked in position " + labelInc.position + " instead of position " + (nodeLabeling(node.id).nbOfLabeledCentroid - i - 1))
-            if (trackedNodeToDistanceAndCentroid(node.id) != null) {
-              val index = labelInc.position
+           if (trackedNodeToDistanceAndCentroid(node.id) != null) {
+              val index = nodeLabeling(node.id).nbOfLabeledCentroid - i - 1
               require(trackedNodeToDistanceAndCentroid(node.id)(index)._1.newValue == labelFS.centroid.id,"Node " + node.id + " tracked centroid - incremental : " + trackedNodeToDistanceAndCentroid(node.id)(index)._1.newValue + " != from scratch : " + labelFS.centroid.id)
               require(trackedNodeToDistanceAndCentroid(node.id)(index)._2.newValue == labelFS.distance,"Node " + node.id + " tracked distance - incremental : " + trackedNodeToDistanceAndCentroid(node.id)(index)._2.newValue + " != from scratch : " + labelFS.distance)
             }
