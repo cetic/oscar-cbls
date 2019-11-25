@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.invariants.group
+package oscar.cbls.business.routing.invariants.global
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -171,8 +171,8 @@ object LogReducedFlippedPreComputedSubSequence {
     * @param v the number of vehicles
     * @tparam T the type of pre-computation, which is on subsequences (not on nodes)
     */
-  abstract class LogReducedGlobalConstraint[T:Manifest](gc: GlobalConstraintCore, n: Long, v :Long)
-    extends GlobalConstraintDefinition(gc,v){
+  abstract class LogReducedGlobalConstraint[T:Manifest, @specialized(Int, Long, Boolean) U:Manifest](gc: GlobalConstraintCore, n: Long, v :Long)
+    extends GlobalConstraintDefinition[U](gc,v){
 
     /**
       * this method delivers the value of the node
@@ -206,7 +206,7 @@ object LogReducedFlippedPreComputedSubSequence {
       * @return the value associated with the vehicle. This value should only be computed based on the provided segments
       */
     def computeVehicleValueComposed(vehicle: Long,
-                                    segments: QList[LogReducedSegment[T]]): Unit
+                                    segments: QList[LogReducedSegment[T]]): U
 
     class NodeAndPreComputes(val node:Long,
                              var precomputes:Array[T] = null){
@@ -325,27 +325,27 @@ object LogReducedFlippedPreComputedSubSequence {
 
     override def computeVehicleValue(vehicle:Long,
                                      segments:QList[Segment],
-                                     routes:IntSequence):Unit = {
+                                     routes:IntSequence):U = {
       // println("routes:" + routes)
       computeVehicleValueComposed(vehicle, decorateSegments(vehicle, segments))
     }
 
-    def decorateSegments(vehicle:Long,segments:Iterable[Segment]):QList[LogReducedSegment[T]] = {
+    def decorateSegments(vehicle:Long,segments:QList[Segment]):QList[LogReducedSegment[T]] = {
 
       segments match{
-        case Nil =>
+        case null =>
           //back to start; we add a single node (this will seldom be used, actually, since back to start is included in PreComputedSubSequence that was not flipped
           QList(LogReducedPreComputedSubSequenceGiven[T](
             vehicle: Long, vehicle: Long,
             QList(endNodeValue(vehicle))))
 
-        case head :: tail =>
-          head match {
+        case qList =>
+          qList.head match {
             case PreComputedSubSequence
               (startNode: Long, endNode: Long, length) =>
               val startNodeValue = preComputedVals(startNode)
               val endNodeValue = preComputedVals(endNode)
-              if(tail.isEmpty
+              if(qList.tail.isEmpty
                 && startNodeValue.vehicle == vehicle
                 && endNodeValue.positionInVehicleRoute == vehicleToPrecomputes(vehicle).length-2L){
 
@@ -361,7 +361,7 @@ object LogReducedFlippedPreComputedSubSequence {
                   startNode: Long, endNode: Long,
                   stepGenerator = () => extractSequenceOfT(
                     startNodeValue.vehicle, startNodeValue.positionInVehicleRoute,
-                    endNodeValue.positionInVehicleRoute, flipped = false)), decorateSegments(vehicle, tail))
+                    endNodeValue.positionInVehicleRoute, flipped = false)), decorateSegments(vehicle, qList.tail))
               }
             case FlippedPreComputedSubSequence(startNode: Long, endNode: Long, length) =>
               val startNodeValue = preComputedVals(startNode)
@@ -370,10 +370,10 @@ object LogReducedFlippedPreComputedSubSequence {
                 startNode: Long, endNode: Long,
                 stepGenerator = () => extractSequenceOfT(
                   startNodeValue.vehicle, startNodeValue.positionInVehicleRoute,
-                  endNodeValue.positionInVehicleRoute, flipped = true)), decorateSegments(vehicle, tail))
+                  endNodeValue.positionInVehicleRoute, flipped = true)), decorateSegments(vehicle, qList.tail))
 
             case NewNode(node: Long) =>
-              QList(LogReducedNewNode[T](node: Long, value = nodeValue(vehicle)), decorateSegments(vehicle, tail))
+              QList(LogReducedNewNode[T](node: Long, value = nodeValue(node)), decorateSegments(vehicle, qList.tail))
           }
       }
     }

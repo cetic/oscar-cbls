@@ -3,7 +3,7 @@ package oscar.examples.cbls.routing
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.WeightedNodesPerVehicle
-import oscar.cbls.business.routing.invariants.group.GlobalConstraintCore
+import oscar.cbls.business.routing.invariants.global.GlobalConstraintCore
 import oscar.cbls.core.search.{Best, First}
 import oscar.cbls.visual.routing.RoutingMapTypes
 

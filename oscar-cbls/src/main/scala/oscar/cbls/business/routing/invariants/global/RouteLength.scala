@@ -1,4 +1,4 @@
-package oscar.cbls.business.routing.invariants.group
+package oscar.cbls.business.routing.invariants.global
 
 import oscar.cbls._
 import oscar.cbls.algo.quick.QList
@@ -11,16 +11,12 @@ case class PreComputedDistances(distanceFromStart:Long,
 
 @deprecated("needs testing","")
 class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:Array[CBLSIntVar], assymetricDistance:(Long,Long)=>Long)
-  extends GlobalConstraintDefinition(gc,v){
-
-  type U = Long
+  extends GlobalConstraintDefinition[Long](gc,v){
 
   val preComputedVals: Array[PreComputedDistances] = Array.fill(n)(PreComputedDistances(0,0))
 
   // Initialize the vehicles value, the precomputation value and link these invariant to the GlobalConstraintCore
   gc.register(this)
-  vehiclesValueAtCheckpoint0 = Array.fill(v)(0)
-  currentVehiclesValue = Array.fill(v)(0)
   for(outputVariable <- vehicleToRouteLength)outputVariable.setDefiningInvariant(gc)
 
   override def performPreCompute(vehicle: Long, routes: IntSequence): Unit = {
@@ -59,7 +55,7 @@ class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:
 
   override def computeVehicleValue(vehicle: Long,
                                    segments: QList[Segment],
-                                   routes: IntSequence): Unit = {
+                                   routes: IntSequence): Long = {
     def digestListOfSegments(segments: QList[Segment], prevNode: Long): Long = {
       segments match {
         case null =>
@@ -87,16 +83,15 @@ class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:
           }
       }
     }
-
-    saveVehicleValue(vehicle, digestListOfSegments(segments,-1))
+    digestListOfSegments(segments,-1)
   }
 
-  override def assignVehicleValue(vehicle: Long): Unit = {
-    vehicleToRouteLength(vehicle) := currentVehiclesValue(vehicle)
+  override def assignVehicleValue(vehicle: Long, value: Long): Unit = {
+    vehicleToRouteLength(vehicle) := value
   }
 
 
-  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence, save: Boolean = true): Long = {
+  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence): Long = {
     var previousNode = vehicle
     var toReturn:Long = 0
 
@@ -120,8 +115,6 @@ class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:
         }
     }){}
 
-    val result = toReturn + assymetricDistance(previousNode,vehicle) //return
-    if(save) saveVehicleValue(vehicle, result)
-    result
+    toReturn + assymetricDistance(previousNode,vehicle) //return
   }
 }

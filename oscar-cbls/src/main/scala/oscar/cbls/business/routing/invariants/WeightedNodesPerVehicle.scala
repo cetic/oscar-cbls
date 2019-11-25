@@ -3,7 +3,7 @@ package oscar.cbls.business.routing.invariants
 import oscar.cbls._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
-import oscar.cbls.business.routing.invariants.group._
+import oscar.cbls.business.routing.invariants.global._
 import oscar.cbls.core.computation.ChangingSeqValue
 import oscar.cbls.{CBLSIntVar, Variable}
 
@@ -29,9 +29,7 @@ object WeightedNodesPerVehicle{
   * @param weightPerVehicle an array telling how many nodes are reached per vehicle
   */
 class WeightedNodesPerVehicle(gc: GlobalConstraintCore, n: Long, v : Int, nodeWeight:Array[Long], weightPerVehicle : Array[CBLSIntVar])
-  extends GlobalConstraintDefinition(gc,v){
-
-  type U = Long
+  extends GlobalConstraintDefinition[Long](gc,v){
 
   val preComputedVals: Array[Long] = Array.fill(n)(0L)
 
@@ -71,8 +69,8 @@ class WeightedNodesPerVehicle(gc: GlobalConstraintCore, n: Long, v : Int, nodeWe
     * @param routes    the sequence representing the route of all vehicle
     * @return the value associated with the vehicle
     */
-  override def computeVehicleValue(vehicle: Long, segments: QList[Segment], routes: IntSequence): Unit = {
-    saveVehicleValue(vehicle,QList.qMap(segments, (s: Segment) =>
+  override def computeVehicleValue(vehicle: Long, segments: QList[Segment], routes: IntSequence): Long = {
+    QList.qMap(segments, (s: Segment) =>
       s match {
         case PreComputedSubSequence (fstNode, lstNode, _) =>
           preComputedVals(lstNode) - preComputedVals(fstNode) + nodeWeight(fstNode)
@@ -80,7 +78,7 @@ class WeightedNodesPerVehicle(gc: GlobalConstraintCore, n: Long, v : Int, nodeWe
           preComputedVals(lstNode) - preComputedVals(fstNode) + nodeWeight(fstNode)
         case NewNode(node) =>
           nodeWeight(node)
-      }).sum)
+      }).sum
     //println("Vehicle : " + vehicle + "--" + segments.mkString(","))
   }
 
@@ -92,8 +90,8 @@ class WeightedNodesPerVehicle(gc: GlobalConstraintCore, n: Long, v : Int, nodeWe
     *
     * @param vehicle the vehicle number
     */
-  override def assignVehicleValue(vehicle: Long): Unit = {
-    weightPerVehicle(vehicle) := currentVehiclesValue(vehicle)
+  override def assignVehicleValue(vehicle: Long, value: Long): Unit = {
+    weightPerVehicle(vehicle) := value
   }
 
   def computeRouteWeight(vehicle : Long,vExplorer : Option[IntSequenceExplorer]) : Long = {
@@ -111,9 +109,7 @@ class WeightedNodesPerVehicle(gc: GlobalConstraintCore, n: Long, v : Int, nodeWe
     * @param routes
     * @return
     */
-  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence, save: Boolean = true): Long = {
-    val result = nodeWeight(vehicle) + computeRouteWeight(vehicle,routes.explorerAtAnyOccurrence(vehicle).get.next)
-    if(save) saveVehicleValue(vehicle, result)
-    result
+  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence): Long = {
+    nodeWeight(vehicle) + computeRouteWeight(vehicle,routes.explorerAtAnyOccurrence(vehicle).get.next)
   }
 }

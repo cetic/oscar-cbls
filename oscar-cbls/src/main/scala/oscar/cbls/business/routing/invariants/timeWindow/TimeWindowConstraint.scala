@@ -1,7 +1,7 @@
 package oscar.cbls.business.routing.invariants.timeWindow
 
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.business.routing.invariants.group._
+import oscar.cbls.business.routing.invariants.global._
 import oscar.cbls._
 import oscar.cbls.algo.quick.QList
 
@@ -104,16 +104,14 @@ class TimeWindowConstraint (gc: GlobalConstraintCore,
                             latestLeavingTime: Array[Long],
                             travelTimeMatrix: Array[Array[Long]],
                             val violations: Array[CBLSIntVar]
-                           ) extends GlobalConstraintDefinition(gc,v) {
-
-  type U = Boolean
+                           ) extends GlobalConstraintDefinition[Boolean](gc,v) {
 
   val preComputedValues: Array[Array[TransferFunction]] = Array.fill(n)(Array.fill(n)(EmptyTransferFunction))
 
   // Initialize the vehicles value, the precomputation value and link these invariant to the GlobalConstraintCore
   gc.register(this)
-  vehiclesValueAtCheckpoint0 = Array.fill(v)(false)
-  currentVehiclesValue = Array.fill(v)(false)
+  //vehiclesValueAtCheckpoint0.map(vValues => false)
+  //currentVehiclesValue.map(vValues => false)
   for(outputVariable <- violations)outputVariable.setDefiningInvariant(gc)
 
   private val transferFunctionOfNode: Array[TransferFunction] = Array.tabulate(n)(
@@ -228,6 +226,7 @@ class TimeWindowConstraint (gc: GlobalConstraintCore,
     }
   }
 
+
   /**
     * This method is called by the framework when a pre-computation must be performed.
     * you are expected to assign a value of type T to each node of the vehicle "vehicle" through the method "setNodeValue"
@@ -286,7 +285,7 @@ class TimeWindowConstraint (gc: GlobalConstraintCore,
     * @param routes          the sequence representing the route of all vehicle
     * @return the value associated with the vehicle
     */
-  override def computeVehicleValue(vehicle: Long, segments: QList[Segment], routes: IntSequence): Unit = {
+  override def computeVehicleValue(vehicle: Long, segments: QList[Segment], routes: IntSequence): Boolean = {
     /**
       * @param segments The list of segment
       * @param prevLeavingTime The leave time at previous segment (0L if first one)
@@ -306,7 +305,7 @@ class TimeWindowConstraint (gc: GlobalConstraintCore,
       else leaveTimeAtSegment
     }
     val arrivalTimeAtDepot = arrivalAtDepot(segments)
-    saveVehicleValue(vehicle, arrivalTimeAtDepot < 0L || arrivalTimeAtDepot > latestLeavingTime(vehicle))
+    arrivalTimeAtDepot < 0L || arrivalTimeAtDepot > latestLeavingTime(vehicle)
   }
 
   /**
@@ -316,8 +315,8 @@ class TimeWindowConstraint (gc: GlobalConstraintCore,
     *
     * @param vehicle the vehicle number
     */
-  override def assignVehicleValue(vehicle: Long): Unit = {
-    if(currentVehiclesValue(vehicle)) violations(vehicle) := 1L else violations(vehicle) := 0L
+  override def assignVehicleValue(vehicle: Long, value: Boolean): Unit = {
+    if(value) violations(vehicle) := 1L else violations(vehicle) := 0L
   }
 
   /**
@@ -328,7 +327,7 @@ class TimeWindowConstraint (gc: GlobalConstraintCore,
     * @param routes  the sequence representing the route of all vehicle
     * @return the value of the constraint for the given vehicle
     */
-  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence, save: Boolean = true): Boolean = {
+  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence): Boolean = {
     var arrivalTimeAtFromNode = earliestArrivalTime(vehicle)
     var leaveTimeAtFromNode = earliestLeavingTime(vehicle)
     var fromNode = vehicle
@@ -356,9 +355,7 @@ class TimeWindowConstraint (gc: GlobalConstraintCore,
     // Check travel back to depot
     val travelBackToDepot = travelTimeMatrix(fromNode)(vehicle)
     val arrivalTimeAtDepot = leaveTimeAtFromNode + travelBackToDepot
-    val result = violationFound || arrivalTimeAtDepot > latestLeavingTime(vehicle)
-    if(save) saveVehicleValue(vehicle, result)
-    result
+    violationFound || arrivalTimeAtDepot > latestLeavingTime(vehicle)
   }
 
   /**

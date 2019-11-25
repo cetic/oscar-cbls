@@ -9,6 +9,7 @@ import scala.collection.immutable.{HashSet, List}
   * Created by fg on 12L/09L/1L7.
   */
 object ChainsHelper {
+  // TODO move this dans l'objet Chains
 
   def relevantNeighborsForLastNodeAfterHead(vrp: VRP, chainsExtension: Chains, potentialRelevantPredecessorOfLastNode: Option[HashSet[Long]] = None)(lastNode: Long): Iterable[Long] = {
     require(chainsExtension.isLast(lastNode), "The referenced node has to be the last node of a chain.")
@@ -62,27 +63,27 @@ object ChainsHelper {
       * Each value of segmentsArray represent a possible complete segment.
       * The List[Long] value represents the segment
       */
-    var pickupInc = 0L
+    var firstNodeInc = 0L
     val segmentsArray:Array[(Long,List[Long])] = Array.tabulate(chainsExtension.heads.length)(_ => (0L,List.empty))
     var completeSegments: List[(Long, Long)] = List.empty
 
     for(node <- route) {
-      if(chainsExtension.isHead(node)) pickupInc += 1L
-      for (j <- 0L until pickupInc if segmentsArray(j) != null){
+      if(chainsExtension.isHead(node)) firstNodeInc += 1L
+      for (j <- 0L until firstNodeInc if segmentsArray(j) != null){
         if (chainsExtension.isHead(node)) {
-          //If the node is a pickup one, we add the node to all the active segment and the one at position route(i)
+          //If the node is the first one, we add the node to all the active segment and the one at position route(i)
           segmentsArray(j) = (segmentsArray(j)._1+1L, node :: segmentsArray(j)._2)
         }
         else if (chainsExtension.isLast(node)) {
           /**
-            * If the segment doesn't contain the related pickup node it means that the related pickup node is before
+            * If the segment doesn't contain the related first node it means that the related first node is before
             * the beginning of the segment and thus this is not possible to create a complete segment beginning
             * at this position.
             */
           if (!segmentsArray(j)._2.contains(chainsExtension.firstNodeInChainOfNode(node)))
             segmentsArray(j) = null
           /**
-            * Else we decrement the number of single pickup
+            * Else we decrement the number of single first node
             */
           else {
             segmentsArray(j) = (segmentsArray(j)._1-1L, node :: segmentsArray(j)._2)
