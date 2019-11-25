@@ -251,7 +251,12 @@ class VLSN(v:Int,
 
       initialSolution.restoreDecisionVariables()
 
-      MoveFound(LoadSolutionMove(finalSolution, finalObj, name))
+      if(acceptanceCriterion(initialObj,finalObj)){
+        MoveFound(LoadSolutionMove(finalSolution, finalObj, name))
+      }else{
+        NoMoveFound
+      }
+
     } else {
       NoMoveFound
     }

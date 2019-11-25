@@ -330,22 +330,22 @@ object LogReducedFlippedPreComputedSubSequence {
       computeVehicleValueComposed(vehicle, decorateSegments(vehicle, segments))
     }
 
-    def decorateSegments(vehicle:Long,segments:Iterable[Segment]):QList[LogReducedSegment[T]] = {
+    def decorateSegments(vehicle:Long,segments:QList[Segment]):QList[LogReducedSegment[T]] = {
 
       segments match{
-        case Nil =>
+        case null =>
           //back to start; we add a single node (this will seldom be used, actually, since back to start is included in PreComputedSubSequence that was not flipped
           QList(LogReducedPreComputedSubSequenceGiven[T](
             vehicle: Long, vehicle: Long,
             QList(endNodeValue(vehicle))))
 
-        case head :: tail =>
-          head match {
+        case qList =>
+          qList.head match {
             case PreComputedSubSequence
               (startNode: Long, endNode: Long, length) =>
               val startNodeValue = preComputedVals(startNode)
               val endNodeValue = preComputedVals(endNode)
-              if(tail.isEmpty
+              if(qList.tail.isEmpty
                 && startNodeValue.vehicle == vehicle
                 && endNodeValue.positionInVehicleRoute == vehicleToPrecomputes(vehicle).length-2L){
 
@@ -361,7 +361,7 @@ object LogReducedFlippedPreComputedSubSequence {
                   startNode: Long, endNode: Long,
                   stepGenerator = () => extractSequenceOfT(
                     startNodeValue.vehicle, startNodeValue.positionInVehicleRoute,
-                    endNodeValue.positionInVehicleRoute, flipped = false)), decorateSegments(vehicle, tail))
+                    endNodeValue.positionInVehicleRoute, flipped = false)), decorateSegments(vehicle, qList.tail))
               }
             case FlippedPreComputedSubSequence(startNode: Long, endNode: Long, length) =>
               val startNodeValue = preComputedVals(startNode)
@@ -370,10 +370,10 @@ object LogReducedFlippedPreComputedSubSequence {
                 startNode: Long, endNode: Long,
                 stepGenerator = () => extractSequenceOfT(
                   startNodeValue.vehicle, startNodeValue.positionInVehicleRoute,
-                  endNodeValue.positionInVehicleRoute, flipped = true)), decorateSegments(vehicle, tail))
+                  endNodeValue.positionInVehicleRoute, flipped = true)), decorateSegments(vehicle, qList.tail))
 
             case NewNode(node: Long) =>
-              QList(LogReducedNewNode[T](node: Long, value = nodeValue(vehicle)), decorateSegments(vehicle, tail))
+              QList(LogReducedNewNode[T](node: Long, value = nodeValue(node)), decorateSegments(vehicle, qList.tail))
           }
       }
     }
