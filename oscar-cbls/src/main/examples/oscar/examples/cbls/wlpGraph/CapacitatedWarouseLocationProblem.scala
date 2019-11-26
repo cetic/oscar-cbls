@@ -1,26 +1,21 @@
 package oscar.examples.cbls.wlpGraph
 
-import java.awt.Color
-import java.util
-
 import oscar.cbls._
-import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, DijkstraDistanceMatrix}
+import oscar.cbls.algo.graph.DijkstraDistanceMatrix
 import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.business.routing.neighborhood.vlsn.{CycleFinderAlgoType, VLSN}
 import oscar.cbls.core.computation.IntNotificationTarget
-import oscar.cbls.core.{ChangingIntValue, Invariant}
 import oscar.cbls.core.propagation.Checker
-import oscar.cbls.core.search.{Best, ConstantMoveNeighborhood, EvaluableCodedMove, JumpNeighborhood}
+import oscar.cbls.core.search.{ConstantMoveNeighborhood, EvaluableCodedMove}
+import oscar.cbls.core.{ChangingIntValue, Invariant}
 import oscar.cbls.lib.invariant.graph.KVoronoiZones
 import oscar.cbls.lib.invariant.logic.{Cluster, Filter, IntElement}
-import oscar.cbls.lib.invariant.numeric.{Sum, SumElements}
-import oscar.cbls.lib.invariant.set.{Cardinality, SetSum}
-import oscar.cbls.lib.search.neighborhoods.{AssignMove, AssignNeighborhood, RandomizeNeighborhood, SwapMove, SwapsNeighborhood}
-import oscar.cbls.modeling.ClusterInvariants
+import oscar.cbls.lib.invariant.numeric.SumElements
+import oscar.cbls.lib.invariant.set.Cardinality
+import oscar.cbls.lib.search.neighborhoods.vlsn.{CycleFinderAlgoType, VLSN}
+import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.test.graph.RandomGraphGenerator
 import oscar.cbls.util._
-import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
-import oscar.cbls.visual.graph.GraphViewer
+import oscar.cbls.visual.ColorGenerator
 
 import scala.collection.immutable.{SortedMap, SortedSet}
 
