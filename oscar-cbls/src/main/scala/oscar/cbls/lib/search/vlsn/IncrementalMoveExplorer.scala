@@ -15,7 +15,7 @@
   * ****************************************************************************
   */
 
-package oscar.cbls.business.routing.neighborhood.vlsn
+package oscar.cbls.lib.search.vlsn
 
 import oscar.cbls.Objective
 import oscar.cbls._
@@ -30,7 +30,7 @@ object CachedAtomicMove{
   def apply(edge:Edge) = new CachedAtomicMove(edge.move,edge.deltaObj)
 }
 
-import oscar.cbls.business.routing.neighborhood.vlsn.VLSNMoveType._
+import oscar.cbls.lib.search.vlsn.VLSNMoveType._
 
 import scala.collection.immutable.{SortedMap, SortedSet}
 

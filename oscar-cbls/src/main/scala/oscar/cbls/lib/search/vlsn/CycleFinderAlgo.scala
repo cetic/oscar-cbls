@@ -15,7 +15,7 @@
   * ****************************************************************************
   */
 
-package oscar.cbls.business.routing.neighborhood.vlsn
+package oscar.cbls.lib.search.vlsn
 
 
 
@@ -32,7 +32,7 @@ object CycleFinderAlgoType extends Enumeration{
   val Mouthuy, DFS, DFSPruned, MouthuyAndThenDFS = Value
 }
 
-import oscar.cbls.business.routing.neighborhood.vlsn.CycleFinderAlgoType._
+import oscar.cbls.lib.search.vlsn.CycleFinderAlgoType._
 
 abstract class CycleFinderAlgo{
   def findCycle(liveNodes:Array[Boolean]):Option[List[Edge]]

@@ -3,8 +3,8 @@ package oscar.cbls.test.vlsn
 import org.scalacheck.Gen
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
-import oscar.cbls.business.routing.neighborhood.vlsn.CycleFinderAlgoType._
-import oscar.cbls.business.routing.neighborhood.vlsn._
+import oscar.cbls.lib.search.vlsn.CycleFinderAlgoType._
+import oscar.cbls.lib.search.vlsn._
 import oscar.cbls.test.graph.RandomGraphGenerator._
 
 class MouthuyTestSuite extends FunSuite with Matchers with GeneratorDrivenPropertyChecks {

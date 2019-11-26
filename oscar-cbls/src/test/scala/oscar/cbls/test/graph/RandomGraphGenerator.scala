@@ -3,7 +3,7 @@ package oscar.cbls.test.graph
 import org.scalacheck.Gen
 import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, Edge, Node}
 import oscar.cbls.business.routing.neighborhood.InsertPointMove
-import oscar.cbls.business.routing.neighborhood.vlsn._
+import oscar.cbls.lib.search.vlsn._
 import oscar.cbls.core.search._
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.test.invariants.bench.{InvBench, ToMax}
@@ -119,9 +119,9 @@ object RandomGraphGenerator {
     val tempGraph = generatePseudoPlanarConditionalGraph(nbNodes, 0, nbEdges, 0)
 
     val nodes = Array.tabulate(nbNodes)(nodeID =>
-      new oscar.cbls.business.routing.neighborhood.vlsn.Node(nodeID, nbNodes + nodeID, nodeTypeGen.sample.get, nodeID, nodeID))
+      new oscar.cbls.lib.search.vlsn.Node(nodeID, nbNodes + nodeID, nodeTypeGen.sample.get, nodeID, nodeID))
 
-    val builder = new VLSNEdgeBuilder(nodes: Array[oscar.cbls.business.routing.neighborhood.vlsn.Node], nbNodes, 2) //nbLAbel is set here to nbNodes
+    val builder = new VLSNEdgeBuilder(nodes: Array[oscar.cbls.lib.search.vlsn.Node], nbNodes, 2) //nbLAbel is set here to nbNodes
 
     for (tempEdge <- tempGraph.edges) {
 
