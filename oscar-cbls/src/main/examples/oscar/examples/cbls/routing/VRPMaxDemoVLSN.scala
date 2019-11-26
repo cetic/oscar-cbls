@@ -17,7 +17,7 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
-import oscar.cbls.lib.search.vlsn.{CycleFinderAlgoType, VLSN}
+import oscar.cbls.lib.search.neighborhoods.vlsn.{CycleFinderAlgoType, VLSN}
 import oscar.cbls.core.search._
 import oscar.cbls.util.StopWatch
 
