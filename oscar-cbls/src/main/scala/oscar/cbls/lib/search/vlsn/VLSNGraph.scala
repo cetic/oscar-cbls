@@ -15,7 +15,7 @@
   * ****************************************************************************
   */
 
-package oscar.cbls.business.routing.neighborhood.vlsn
+package oscar.cbls.lib.search.vlsn
 
 import oscar.cbls.core.search.{DoNothingMove, Move}
 import oscar.cbls._
@@ -26,14 +26,14 @@ object VLSNMoveType extends Enumeration{
   val InsertNoEject, InsertWithEject, MoveNoEject, MoveWithEject, Remove, SymbolicTrashToInsert,SymbolicVehicleToTrash,SymbolicTrashToNodeForEject = Value
 }
 
-import oscar.cbls.business.routing.neighborhood.vlsn.VLSNMoveType._
+import oscar.cbls.lib.search.vlsn.VLSNMoveType._
 
 object VLSNSNodeType extends Enumeration {
   type VLSNSNodeType = Value
   val RegularNode, VehicleNode, UnroutedNode, FictiveNode = Value
 }
 
-import oscar.cbls.business.routing.neighborhood.vlsn.VLSNSNodeType._
+import oscar.cbls.lib.search.vlsn.VLSNSNodeType._
 
 
 class VLSNNodeBuilder(var nbLabels:Long) {

@@ -55,7 +55,7 @@ case class Filter(values:Array[IntValue], cond:(Long=>Boolean)=_>0L)
       c.check(!cond(values(i).value) || this.value.contains(i),
           Some("!cond(values(i).value) || this.value.contains(i)"))
       c.check(cond(values(i).value) || !this.value.contains(i),
-          Some("cond(values(i).value) || !this.value.contains(i)"))
+          Some("cond(values(" + i + ").value) || !this.value.contains(" + i + ")" + "-" + values.mkString(";") + "-" + this.value.mkString(";") + "-" + this.name))
     }
   }
 }

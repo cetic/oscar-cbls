@@ -15,11 +15,11 @@
   * ****************************************************************************
   */
 
-package oscar.cbls.business.routing.neighborhood.vlsn
+package oscar.cbls.lib.search.vlsn
 
 import oscar.cbls.Objective
-import oscar.cbls.business.routing.neighborhood.vlsn.CycleFinderAlgoType.CycleFinderAlgoType
-import oscar.cbls.business.routing.neighborhood.vlsn.VLSNMoveType._
+import oscar.cbls.lib.search.vlsn.CycleFinderAlgoType.CycleFinderAlgoType
+import oscar.cbls.lib.search.vlsn.VLSNMoveType._
 import oscar.cbls.core.search._
 import oscar.cbls._
 import scala.collection.immutable.{SortedMap, SortedSet}
@@ -148,6 +148,11 @@ import scala.collection.immutable.{SortedMap, SortedSet}
   *   name="VLSN(" + l + ")"
   * )
   *}}}
+  *
+  * WARNING :
+  * Despite the fact that the variable are expressed using routing convention naming,
+  * the VLSN is usable for any constraint based local search problems.
+  * It's the used neighborhood that matters.
   *
   * VLSN is a saturating neighborhood, that is: it will run until no more moves can be found, and at this point,
   * it wil return a single move that actually reloads the solution that was reached step-by-step by the VLSN.

@@ -112,12 +112,45 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
     super.addShape(shape,false)
   }
 
+  def redrawMultipleNodes(openConditions:SortedSet[Long],
+                          centroids:SortedSet[Long],
+                          nodeToCentroids:SortedMap[Long,Array[Long]],
+                          k : Int,
+                          hideClosedEdges:Boolean = false,
+                          hideRegularEdges:Boolean = false,
+                          hideOpenEdges:Boolean=false,
+                          extraCentroids:Array[Long] = Array.empty,
+                          emphasizeEdges:Iterable[Edge] = List.empty,
+                          extraPath:Iterable[RevisableDistance]): Unit ={
+    super.clear(false)
+
+    xMultiplier = this.getWidth.toDouble / maxX.toDouble
+    yMultiplier = this.getHeight.toDouble / maxY.toDouble
+
+    for(path <- extraPath){
+      drawPath(path,emphNodes = true:Boolean,emphEdges=true)
+    }
+
+    drawEdges(openConditions:SortedSet[Long],hideClosedEdges,hideRegularEdges, hideOpenEdges,emphasizeEdges)
+
+    val baseRadius = 4
+
+    for (i <- ((k - 1) to 0).by(-1)) {
+      val radius = baseRadius + 4 * i
+      drawNodes(centroids,nodeToCentroids.mapValues(cTab => cTab(i)),extraCentroids,radius)
+    }
+
+    super.repaint()
+
+  }
+
   def redraw(openConditions:SortedSet[Long],
              centroids:SortedSet[Long],
              nodeToCentroid:SortedMap[Long,Long],
              hideClosedEdges:Boolean = false,
              hideRegularEdges:Boolean = false,
              hideOpenEdges:Boolean=false,
+             extraCentroids:Array[Long]=Array.empty,
              emphasizeEdges:Iterable[Edge] = List.empty,
              extraPath:Iterable[RevisableDistance]) {
 
@@ -133,19 +166,21 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
     drawEdges(openConditions:SortedSet[Long],hideClosedEdges,hideRegularEdges, hideOpenEdges,emphasizeEdges)
 
     drawNodes(centroids:SortedSet[Long],
-      nodeToCentroid:SortedMap[Long,Long])
+      nodeToCentroid:SortedMap[Long,Long],extraCentroids)
 
     //double buffering still does not work!
     super.repaint()
   }
 
   def drawNodes(centroids:SortedSet[Long],
-                nodeToCentroid:SortedMap[Long,Long]): Unit ={
+                nodeToCentroid:SortedMap[Long,Long],
+                extraCentroids:Array[Long],
+                radius : Int = 3): Unit ={
 
     for(nodeId <- graph.nodeRange){
       if(centroids contains nodeId){
         //this is a centroid
-        drawNode(nodeId,centroidColor(nodeId),true,graph.nodes(nodeId).transitAllowed)
+        drawNode(nodeId,centroidColor(nodeId),true,graph.nodes(nodeId).transitAllowed,radius)
       }else{
         //this is not a centroid, check for a marked node
         nodeToCentroid.get(nodeId) match{
@@ -153,12 +188,14 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
             //a folowed node
             if(centroidID == -1){
               //not reacheable
-              drawNode(nodeId,colorForUnreachableNodes,false,graph.nodes(nodeId).transitAllowed)
+              drawNode(nodeId,colorForUnreachableNodes,false,graph.nodes(nodeId).transitAllowed,radius)
             }else{
               //reachable by centroidID
-              drawNode(nodeId,centroidColor(cbls.longToInt(centroidID)),false,graph.nodes(nodeId).transitAllowed)
+              drawNode(nodeId,centroidColor(cbls.longToInt(centroidID)),false,graph.nodes(nodeId).transitAllowed,radius)
             }
           case None =>
+            if (extraCentroids contains nodeId)
+              drawNode(nodeId,Color.white,true,graph.nodes(nodeId).transitAllowed,radius)
           //not a followed node, set default black color, small dot
           //drawNode(node:NodeWithIntegerCoordinates,colorForUnreachableNodes,false)
         }
@@ -166,7 +203,7 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
     }
   }
 
-  def drawNode(nodeId:Int,color:Color,isCentroid:Boolean,isTransitAllowed:Boolean) = {
+  def drawNode(nodeId:Int,color:Color,isCentroid:Boolean,isTransitAllowed:Boolean,radius : Int) = {
     val nodeCoordinates = graph.coordinates(nodeId)
     if(isCentroid){
       //rectangle
@@ -181,7 +218,6 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
     }else {
       if(isTransitAllowed) {
         //circle
-        val radius = 3
         val tempPoint = new VisualCircle(this,
           nodeCoordinates._1 * xMultiplier,
           nodeCoordinates._2 * yMultiplier,
@@ -192,7 +228,6 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
 
       }else {
         //cross
-        val radius = 3
         val lineV = new VisualLine(this, new Double(
           nodeCoordinates._1 * xMultiplier,
           nodeCoordinates._2 * yMultiplier + radius,

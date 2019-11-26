@@ -15,7 +15,7 @@
   * ****************************************************************************
   */
 
-package oscar.cbls.business.routing.neighborhood.vlsn
+package oscar.cbls.lib.search.vlsn
 
 import oscar.cbls.Objective
 import oscar.cbls.core.search.{Neighborhood, _}
