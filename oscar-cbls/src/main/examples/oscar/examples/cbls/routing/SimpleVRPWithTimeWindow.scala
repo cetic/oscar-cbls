@@ -42,7 +42,6 @@ object SimpleVRPWithTimeWindow extends App{
   val chainsExtension = chains(myVRP,listOfChains)
 
   //TimeWindow
-  val timeWindowRoute = precedenceRoute.createClone()
   val timeWindowExtension = timeWindows(Some(earliestArrivalTimes), None, None, Some(latestLeavingTimes), taskDurations, None)
   val timeWindowViolations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
   val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
