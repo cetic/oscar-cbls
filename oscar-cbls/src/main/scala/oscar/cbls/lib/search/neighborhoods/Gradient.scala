@@ -55,9 +55,19 @@ case class GradientComponent(variable:CBLSIntVar,
 }
 
 /**
- * this neighborhood performs a gradient descent.
- * it first sense each dimension independently,
- * and then performs a linear descent on the steepest identified gradient.
+*this gradient descent finds a direction by explicitely probing variables together, and not imdpendently as done in classic gradient descent.
+ * for instance, let be (x,y), the neighborhood will esplore
+ * (x,y+dy), (x,y-dy), (x+dx,y),(x+dx,y+dy),(x+dx,y-dy),(x-dx,y),(x-dx,y+dy),(x-dx,y-dy)
+ * this makes it possible to circumvent situations where x and y
+ * have non-negligible mixed term derivative wrt. the objective function.
+ * The gradient descent selects the direction based on the best neighbors among he explored points,
+ * and preforms a descent in this direction by applying the provided linear optimizer.
+ * The directions that can be explored by the gradient descent are therefore discrete.
+ *
+ * The huge downside is that it creates a combinatorial combination;
+ * if there are n dimensions, 3^n neighbors wil be probed
+ * to mitigate this; some mechanisms are provided
+ * such as the min and max number of variables to change in the probed neigbors.
  *
  * @param vars
  * @param name
@@ -68,31 +78,30 @@ case class GradientComponent(variable:CBLSIntVar,
  * @param gradientSearchBehavior
  * @param trySubgradient
  */
-case class GradientDescentRotating(vars:Array[CBLSIntVar],
-                                   name:String = "GradientDescent",
-                                   maxNbVars:Int = Integer.MAX_VALUE,
-                                   minNbVar:Int = 1,
-                                   selectVars:Iterable[Long],
-                                   variableIndiceToDeltaForGradientDefinition:Long => Long,
-                                   linearSearchForGradientDescent:LinearOptimizer,
-                                   gradientSearchBehavior:LoopBehavior = Best(),
-                                   trySubgradient:Boolean = false)
+case class DiscretizedDirectionGradient(vars:Array[CBLSIntVar],
+                                        name:String = "GradientDescent",
+                                        maxNbVars:Int = Integer.MAX_VALUE,
+                                        minNbVar:Int = 1,
+                                        selectVars:Iterable[Long],
+                                        variableIndiceToDeltaForGradientDefinition:Long => Long,
+                                        linearSearchForGradientDescent:LinearOptimizer,
+                                        gradientSearchBehavior:LoopBehavior = Best(),
+                                        trySubgradient:Boolean = false)
   extends AbstractGradientDescent(vars:Array[CBLSIntVar],
     name:String,
     linearSearchForGradientDescent,
     trySubgradient)  {
 
   //TODO: il faut pouvoir spécifier des co-variance entre les variables d'input.
-  //typiquement on va dire, sachant un gradient déjà sélectionné, doit-on examiner les co-variances +, - ou les deux ou aucune?
-
-
+  //typiquement on va dire, sachant un gradient déjà sélectionné,
+  // doit-on examiner les co-variances +, - ou les deux ou aucune?
 
   override def findGradient(initialObj: Long): List[GradientComponent] = {
 
     val (iterator,notifyFound) = gradientSearchBehavior.toIterator(0 until Int.MaxValue)
 
     var bestObj = initialObj
-    var bestGradient:List[GradientComponent]= Nil
+    var bestGradient:List[GradientComponent] = Nil
 
     def testCurrentGradientTrueIfExplorationMustContinue(currentGradient:List[GradientComponent]):Boolean = {
       if(currentGradient.isEmpty) return true

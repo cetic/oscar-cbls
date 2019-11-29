@@ -465,7 +465,7 @@ object ParaboloideTest extends App{
     println(y)
     println("f:" + f)
   }
-  val search = GradientDescentRotating(Array(x,y),
+  val search = DiscretizedDirectionGradient(Array(x,y),
     selectVars = 0L to 1L,
     variableIndiceToDeltaForGradientDefinition = _ => 10L,
     linearSearchForGradientDescent = new NarrowingStepSlide(3L, minStep = 1L),
