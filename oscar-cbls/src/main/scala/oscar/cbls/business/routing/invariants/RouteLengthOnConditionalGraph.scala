@@ -20,7 +20,8 @@ object RouteLengthOnConditionalGraph{
             nodeInRoutingToNodeInGraph:Int => Int,
             graph:ConditionalGraph,
             underApproximatingDistance:(Int,Int) => Long,
-            distanceIfNotConnected:Int):RouteLengthOnConditionalGraph ={
+            distanceIfNotConnected:Int,
+            freeReturn:Boolean = false):RouteLengthOnConditionalGraph ={
 
     val store:Store = InvariantHelper.findModel(routes,openConditions)
     val vehicleToRouteLength = Array.tabulate(v)(vehicle => CBLSIntVar(store,0,name = "route_length_of_vehicle_" + vehicle))
@@ -33,7 +34,8 @@ object RouteLengthOnConditionalGraph{
       graph:ConditionalGraph,
       underApproximatingDistance:(Int,Int) => Long,
       distanceIfNotConnected:Int, //do not put anything too big, or it will trigger some overflow
-      vehicleToRouteLength)
+      vehicleToRouteLength,
+      freeReturn)
   }
 }
 
@@ -49,9 +51,11 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
                                     graph:ConditionalGraph,
                                     underApproximatingDistance:(Int,Int) => Long,
                                     distanceIfNotConnected:Long, //do not put anything too big, or it will trigger some overflow
-                                    val distancePerVehicle:Array[CBLSIntVar])
+                                    val distancePerVehicle:Array[CBLSIntVar],
+                                    freeReturn:Boolean = false)
   extends Invariant() with SeqNotificationTarget with SetNotificationTarget {
 
+  require(freeReturn, "sorry free return is not implemented yet. ")
   require(v == distancePerVehicle.length)
 
   warning(
