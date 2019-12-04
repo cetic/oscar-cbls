@@ -55,7 +55,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
                                     freeReturn:Boolean = false)
   extends Invariant() with SeqNotificationTarget with SetNotificationTarget {
 
-  require(freeReturn, "sorry free return is not implemented yet. ")
+  require(!freeReturn, "sorry free return is not implemented yet. ")
   require(v == distancePerVehicle.length)
 
   warning(
@@ -360,7 +360,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
         //we do not manage checkpoints at all
         digestUpdates(r.howToRollBack)
 
-        //we update teh vehicle searcher, since many queries might be done on it.
+        //we update the vehicle searcher, since many queries might be done on it.
         vehicleSearcher =
           if(v == 1L) (_,_) => 0L
           else RoutingConventionMethods.cachedVehicleReachingPosition(changes.newValue, v)
@@ -586,7 +586,6 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
         currentPosition = nextPosition
         true
     }){}
-
   }
 }
 

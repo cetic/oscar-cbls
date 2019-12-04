@@ -46,6 +46,7 @@ class RevisableAStar(graph:ConditionalGraph,
   // or the path can be computed faster, given that we know the approximation is exact.
 
   private val nodeToDistance = Array.fill[Long](graph.nodes.length)(Long.MaxValue)
+  private val nodeToIncomingNodeArray = Array.fill[Int](graph.nodes.length)(-1)
 
   def getPath(from:Node,to:Node,isConditionalEdgeOpen:Int => Boolean):Option[List[Edge]] = {
     search(from,
@@ -85,6 +86,7 @@ class RevisableAStar(graph:ConditionalGraph,
 
     val fromNodeID = from.id
     nodeToDistance(fromNodeID) = 0
+    nodeToIncomingNodeArray(fromNodeID) = -1
     reachedNodeIDs = QList(fromNodeID)
     toDevelopHeap.insert(fromNodeID)
 
@@ -103,6 +105,7 @@ class RevisableAStar(graph:ConditionalGraph,
             case Some(c) => isConditionalEdgeOpen(c)
           },
           nodeToDistance:Array[Long],
+          nodeToIncomingNodeArray:Array[Int],
           pruneReachedClosedConditions(reachedClosedConditions:SortedSet[Int],to.id,nodeToDistance(to.id)),
           includePath)
         resetReachedNodes(reachedNodeIDs)
@@ -120,6 +123,7 @@ class RevisableAStar(graph:ConditionalGraph,
           val newDistance = currentNodeDistance + outgoingEdge.length
           if (newDistance < oldDistance) {
             nodeToDistance(otherNodeID) = newDistance
+            nodeToIncomingNodeArray(otherNodeID) = currentNode.id
 
             if(otherNode.transitAllowed || otherNode == to) {
               if (toDevelopHeap.contains(otherNodeID)) {
@@ -169,6 +173,7 @@ class RevisableAStar(graph:ConditionalGraph,
     var remainingNodeIDs = reachedNodes
     while(remainingNodeIDs != null){
       nodeToDistance(remainingNodeIDs.head) = Long.MaxValue
+      nodeToIncomingNodeArray(remainingNodeIDs.head) = -1
       remainingNodeIDs = remainingNodeIDs.tail
     }
   }
@@ -177,6 +182,7 @@ class RevisableAStar(graph:ConditionalGraph,
                                               to:Node,
                                               isConditionalEdgeOpen:Option[Int] => Boolean,
                                               nodeToDistance:Array[Long],
+                                              nodeToIncomingNode:Array[Int],
                                               reachedClosedEdges: SortedSet[Int],
                                               includePath:Boolean):RevisableDistance = {
 
@@ -197,12 +203,14 @@ class RevisableAStar(graph:ConditionalGraph,
             from:Node,
             to:Node,
             isConditionalEdgeOpen:Option[Int] => Boolean,
-            nodeToDistance:Array[Long]),
+            nodeToDistance:Array[Long],
+            nodeToIncomingNode:Array[Int]),
         unlockingConditions = reachedClosedEdges,
         path = if(includePath) Some(extractPath(from:Node,
           to:Node,
           isConditionalEdgeOpen:Option[Int] => Boolean,
-          nodeToDistance:Array[Long])) else None
+          nodeToDistance:Array[Long],
+          nodeToIncomingNode:Array[Int])) else None
       )
     }
   }
@@ -210,7 +218,8 @@ class RevisableAStar(graph:ConditionalGraph,
   private def extractRequiredConditions(from:Node,
                                         to:Node,
                                         isConditionalEdgeOpen:Option[Int] => Boolean,
-                                        nodeToDistance:Array[Long]):SortedSet[Int] = {
+                                        nodeToDistance:Array[Long],
+                                        nodeToIncomingNode:Array[Int]):SortedSet[Int] = {
     //we extract the set of conditions found on the actual path
     var toReturn: SortedSet[Int] = SortedSet.empty
     var currentNode: Node = to
@@ -223,7 +232,8 @@ class RevisableAStar(graph:ConditionalGraph,
 
         if (newDistance != Long.MaxValue
           && newDistance + incomingEdge.length == currentDistance
-          && newNode.transitAllowed || newNode == from) {
+          && (nodeToIncomingNode(currentNode.id) == newNode.id)
+          && (newNode.transitAllowed || newNode == from)) {
 
           currentDistance = newDistance
           currentNode = newNode
@@ -242,7 +252,8 @@ class RevisableAStar(graph:ConditionalGraph,
   def extractPath(from:Node,
                   to:Node,
                   isConditionalEdgeOpen:Option[Int] => Boolean,
-                  nodeToDistance:Array[Long]):List[Edge] = {
+                  nodeToDistance:Array[Long],
+                  nodeToIncomingNode:Array[Int]):List[Edge] = {
     //we extract the set of conditions found on the actual path
     var toReturn: List[Edge] = List.empty
     var currentNode: Node = to
@@ -255,7 +266,8 @@ class RevisableAStar(graph:ConditionalGraph,
 
         if (newDistance != Long.MaxValue
           && newDistance + incomingEdge.length == currentDistance
-          && newNode.transitAllowed || newNode == from) {
+          && (nodeToIncomingNode(currentNode.id) == newNode.id)
+          && (newNode.transitAllowed || newNode == from)) {
 
           currentDistance = newDistance
           currentNode = newNode

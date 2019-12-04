@@ -134,12 +134,12 @@ class VoronoiZones(graph:ConditionalGraph,
       }
     }
 
-    def setUnreachable(): Unit ={
+    def setUnreachable(): Unit = {
       this.centroid := defaultCentroidForUnreachableNodes
       this.distance := defaultDistanceForUnreachableNodes
     }
 
-    def checkEqual(l:ClosestCentroidLabeling): Unit ={
+    def checkEqual(l:ClosestCentroidLabeling): Unit = {
       l match{
         case Unreachable =>
           require(this.centroid.value == defaultCentroidForUnreachableNodes)
@@ -208,7 +208,7 @@ class VoronoiZones(graph:ConditionalGraph,
           val otherNode = edge.otherNode(node)
           nodeLabeling(otherNode.id) match {
             case z@VoronoiZone(centroid: Node, distance: Long) =>
-              if (centroid == zone.centroid && distance + edge.length == zone.distance) {
+              if (centroid == zone.centroid && distance + edge.length == zone.distance) {   //TODO: what if length is zero!!!
                 //step backward
                 return QList(edge,pathToExistingCentroid(otherNode, z))
               }
@@ -365,7 +365,7 @@ class VoronoiZones(graph:ConditionalGraph,
     * @param closedEdge
     */
   private def loadExternalBoundaryIntoHeapMarkImpactedZone(closedEdge:Edge): Unit ={
-    require(closedEdge.length > 0)
+    require(closedEdge.length > 0)   //TODO: what if length is zero!!!
 
     val nodeA = closedEdge.nodeA
     val markingA = nodeLabeling(nodeA.id)
@@ -374,10 +374,10 @@ class VoronoiZones(graph:ConditionalGraph,
 
     val orphanNodeOpt = (markingA,markingB) match{
       case (VoronoiZone(centroidA,dA),VoronoiZone(centroidB,dB)) if centroidA == centroidB =>
-        if (dA + closedEdge.length == dB){
+        if (dA + closedEdge.length == dB){     //TODO: what if length is zero!!!
           //nodeB is orphan
           Some(nodeB)
-        } else if (dB + closedEdge.length == dA){
+        } else if (dB + closedEdge.length == dA){     //TODO: what if length is zero!!!
           //nodeA is orphan
           Some(nodeA)
         }else{
