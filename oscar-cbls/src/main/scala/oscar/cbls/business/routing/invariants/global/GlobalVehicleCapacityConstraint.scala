@@ -3,6 +3,9 @@ import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core.computation.CBLSIntVar
 import oscar.cbls._
+import oscar.cbls.business.routing.model.VRP
+
+import scala.collection.immutable.HashSet
 
 object GlobalVehicleCapacityConstraint{
   def apply(gc: GlobalConstraintCore, n: Long, v: Long,
@@ -14,11 +17,26 @@ object GlobalVehicleCapacityConstraint{
       vehiclesCapacity,
       contentVariationAtNode,
       violationPerVehicle)
+
+  /**
+   * This method returns for each node an iterable of nodes that could be his neighbor
+   *  In clear ==>  given A the node and B a relevant neighbor :
+   *                capacity variation of node A + capacity variation of node B < max capacity of all vehicles
+   * @param capacityConstraint A capacity constraint
+   * @return A map : Node -> relevant neighbors
+   */
+  def relevantPredecessorsOfNodes(capacityConstraint: GlobalVehicleCapacityConstraint): Map[Long,Iterable[Long]] ={
+    val allNodes = (0L until capacityConstraint.n).toList
+    val vehicleMaxCapacity = capacityConstraint.vehiclesCapacity.max
+    Array.tabulate(capacityConstraint.n)(node =>
+      node.toLong -> allNodes.filter(neighbor =>
+        capacityConstraint.contentVariationAtNode(node) + capacityConstraint.contentVariationAtNode(neighbor) <= vehicleMaxCapacity)).toMap
+  }
 }
 
-class GlobalVehicleCapacityConstraint(gc: GlobalConstraintCore, n: Long, v: Long,
-                                      vehiclesCapacity: Array[Long],
-                                      contentVariationAtNode: Array[Long],
+class GlobalVehicleCapacityConstraint(gc: GlobalConstraintCore, val n: Long, val v: Long,
+                                      val vehiclesCapacity: Array[Long],
+                                      val contentVariationAtNode: Array[Long],
                                       violationPerVehicle: Array[CBLSIntVar]) extends LogReducedGlobalConstraint[TwoWaysVehicleContentFunction, Boolean](gc, n, v) {
   violationPerVehicle.foreach(violation => violation.setDefiningInvariant(gc))
   gc.register(this)

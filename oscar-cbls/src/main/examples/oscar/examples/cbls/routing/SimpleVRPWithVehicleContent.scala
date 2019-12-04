@@ -4,6 +4,8 @@ import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, GlobalVehicleCapacityConstraint, RouteLength}
 
+import scala.collection.immutable.HashSet
+
 /**
   * Created by fg on 12/05/17.
   */
@@ -60,7 +62,7 @@ object SimpleVRPWithVehicleContent extends App{
     }
   }*/
 
-  val relevantPredecessors = CapacityHelper.relevantPredecessorsOfNodes(myVRP, maxVehicleCapacity, vehiclesCapacity, contentsFlow)
+  val relevantPredecessors = GlobalVehicleCapacityConstraint.relevantPredecessorsOfNodes(capacityInvariant)
 
   val closestRelevantPredecessorsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance,relevantPredecessors)(_))
 
@@ -96,7 +98,7 @@ object SimpleVRPWithVehicleContent extends App{
       ChainsHelper.relevantNeighborsForLastNodeAfterHead(
         myVRP,
         chainsExtension,
-        Some(relevantPredecessors(lastNode)))),
+        Some(HashSet() ++ relevantPredecessors(lastNode)))),
     myVRP,
     neighborhoodName = "MoveLastOfChain")
 

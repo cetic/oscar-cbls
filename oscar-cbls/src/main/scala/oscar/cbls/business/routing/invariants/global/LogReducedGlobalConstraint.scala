@@ -345,7 +345,7 @@ object LogReducedFlippedPreComputedSubSequence {
               (startNode: Long, endNode: Long, length) =>
               val startNodeValue = preComputedVals(startNode)
               val endNodeValue = preComputedVals(endNode)
-              if(qList.tail.isEmpty
+              if(qList.isEmpty
                 && startNodeValue.vehicle == vehicle
                 && endNodeValue.positionInVehicleRoute == vehicleToPrecomputes(vehicle).length-2L){
 
