@@ -128,7 +128,7 @@ class VoronoiZones(graph:ConditionalGraph,
         case Unreachable =>
           setUnreachable()
 
-        case VoronoiZone(centroid,distance) =>
+        case VoronoiZone(centroid,distance,_) =>
           this.centroid := centroid.id
           this.distance := distance
       }
@@ -145,7 +145,7 @@ class VoronoiZones(graph:ConditionalGraph,
           require(this.centroid.value == defaultCentroidForUnreachableNodes)
           require(this.distance.value == defaultDistanceForUnreachableNodes)
 
-        case VoronoiZone(centroid,distance) =>
+        case VoronoiZone(centroid,distance,_) =>
           require(this.centroid.value == centroid.id)
           require(this.distance.value == distance)
       }
@@ -199,23 +199,24 @@ class VoronoiZones(graph:ConditionalGraph,
   }
 
   def pathToCentroid(node:Node):Option[QList[Edge]] = {
-    require(!isScheduled,"cannot invoke path to centroid when Voronoi is not up to date!")
-    def pathToExistingCentroid(node:Node,zone:VoronoiZone):QList[Edge] = {
-      if(node == zone.centroid){
-        null
-      }else{
-        for (edge <- node.incidentEdges if isEdgeOpen(edge)) {
-          val otherNode = edge.otherNode(node)
-          nodeLabeling(otherNode.id) match {
-            case z@VoronoiZone(centroid: Node, distance: Long) =>
-              if (centroid == zone.centroid && distance + edge.length == zone.distance) {   //TODO: what if length is zero!!!
-                //step backward
-                return QList(edge,pathToExistingCentroid(otherNode, z))
-              }
-            case _ => ;
+    require(!isScheduled,"cannot invoke path to centroid when Voronoï is not up to date!")
+    def pathToExistingCentroid(node:Node, targetCentroid:Node):QList[Edge] = {
+      nodeLabeling(node.id) match {
+        case VoronoiZone(centroid: Node, distance: Long, edge) =>
+          //note that we cannot specify the type on edge because it make the match fail when edge == null
+          require(centroid == targetCentroid)
+          if (edge == null) {
+            //z is its own centroïd
+            require(distance == 0)
+            require(node == targetCentroid)
+            null
+          } else {
+            val otherNode = edge.otherNode(node)
+            require(isEdgeOpen(edge))
+            QList(edge, pathToExistingCentroid(otherNode, targetCentroid))
           }
-        }
-        throw new Error("should not happen")
+        case Unreachable =>
+          throw new Error("should not happen:" + nodeLabeling(node.id))
       }
     }
 
@@ -223,7 +224,7 @@ class VoronoiZones(graph:ConditionalGraph,
       case Unreachable =>
         None
       case z:VoronoiZone =>
-        Some(pathToExistingCentroid(node,z))
+        Some(pathToExistingCentroid(node,z.centroid))
     }
   }
 
@@ -243,7 +244,7 @@ class VoronoiZones(graph:ConditionalGraph,
 
       for (added <- addedValues) {
         val addedInt = cbls.longToInt(added)
-        labelNode(addedInt,VoronoiZone(graph.nodes(addedInt),0))
+        labelNode(addedInt,VoronoiZone(graph.nodes(addedInt),0,null))
         loadOrCorrectNodeIDIntoHeap(addedInt,true) //centroids are force inserted
       }
 
@@ -295,7 +296,7 @@ class VoronoiZones(graph:ConditionalGraph,
         if (isEdgeOpen(edge)){
           val otherNode = edge.otherNode(currentNode)
           val otherNodeID = otherNode.id
-          val newLabelingForOtherNode = currentNodeLabeling + edge.length
+          val newLabelingForOtherNode = currentNodeLabeling + edge
 
           if (newLabelingForOtherNode.distance <= maxDistanceToCentroid
             && newLabelingForOtherNode < nodeLabeling(otherNodeID)) { //this performs a tie break on centroid ID
@@ -327,7 +328,7 @@ class VoronoiZones(graph:ConditionalGraph,
     //we also mark them as centroids, actually
     for (centroid <- centroids) {
       val centroidInt = cbls.longToInt(centroid)
-      labelNode(centroidInt,VoronoiZone(graph.nodes(centroidInt),0))
+      labelNode(centroidInt,VoronoiZone(graph.nodes(centroidInt),0,null))
       loadOrCorrectNodeIDIntoHeap(centroidInt,true) //Centroids are force inserted
     }
   }
@@ -365,7 +366,6 @@ class VoronoiZones(graph:ConditionalGraph,
     * @param closedEdge
     */
   private def loadExternalBoundaryIntoHeapMarkImpactedZone(closedEdge:Edge): Unit ={
-    require(closedEdge.length > 0)   //TODO: what if length is zero!!!
 
     val nodeA = closedEdge.nodeA
     val markingA = nodeLabeling(nodeA.id)
@@ -373,12 +373,14 @@ class VoronoiZones(graph:ConditionalGraph,
     val markingB = nodeLabeling(nodeB.id)
 
     val orphanNodeOpt = (markingA,markingB) match{
-      case (VoronoiZone(centroidA,dA),VoronoiZone(centroidB,dB)) if centroidA == centroidB =>
-        if (dA + closedEdge.length == dB){     //TODO: what if length is zero!!!
+      case (VoronoiZone(centroidA,dA,edgeA),VoronoiZone(centroidB,dB,edgeB)) if centroidA == centroidB =>
+        if (edgeB == closedEdge){
           //nodeB is orphan
+          require(edgeA != closedEdge)
           Some(nodeB)
-        } else if (dB + closedEdge.length == dA){     //TODO: what if length is zero!!!
+        } else if (edgeA == closedEdge){
           //nodeA is orphan
+          require(edgeB != closedEdge)
           Some(nodeA)
         }else{
           None
@@ -411,7 +413,8 @@ class VoronoiZones(graph:ConditionalGraph,
             val otherNodeID = otherNode.id
 
             nodeLabeling(otherNodeID) match {
-              case VoronoiZone(centroid: Node, distance: Long) =>
+              case VoronoiZone(centroid: Node, distance: Long, incomingEdge) =>
+                //TODO: this might be improved, we are unmarking too many nodes
                 if (centroid == centroidThrough && distance >= minDistance) {
                   //still marking
                   markNodeUnreachableAndRemoveFromHeapIfPresent(otherNode)
@@ -449,7 +452,8 @@ class VoronoiZones(graph:ConditionalGraph,
         val otherNodeID = otherNode.id
 
         nodeLabeling(otherNodeID) match{
-          case VoronoiZone(centroid:Node,distance:Long) =>
+          case VoronoiZone(centroid:Node,distance:Long, incomingEdge) =>
+            //TODO: we are unmarking too many nodes; could prune on incoming edge
             if (centroid == removedCentroid) {
 
               markNodeUnreachableAndRemoveFromHeapIfPresent(otherNode)

@@ -21,7 +21,7 @@ class DijkstraMT(g:ConditionalGraph){
     }
 
     if(isTarget(from.id)){
-      return VoronoiZone(from, 0)
+      return VoronoiZone(from, 0, null)
     }
     //we can only put node with an existing under-approximated distance to the target, this only needs to be checked on the source node, actually
     val toDevelopHeap = new oscar.cbls.algo.heap.BinomialHeapWithMoveLong(
@@ -67,7 +67,7 @@ class DijkstraMT(g:ConditionalGraph){
           if (isTarget(otherNodeID)) {
             //must be <= because there is also an order on centroid captured in voronoiZones
             if (newDistance <= maxDistance) {
-              val newMark = VoronoiZone(otherNode, newDistance)
+              val newMark = VoronoiZone(otherNode, newDistance, outgoingEdge)
               if (newMark < toReturn) toReturn = newMark
               maxDistance = newDistance
             }
