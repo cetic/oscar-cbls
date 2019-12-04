@@ -97,10 +97,10 @@ class VoronoiZones(graph:ConditionalGraph,
                    val defaultCentroidForUnreachableNodes:Long = -1)
   extends Invariant with SetNotificationTarget {
 
-  require(openConditions != centroids, "something absurd in the voronoi zone declaration")
+  require(openConditions != centroids, "something absurd in the Voronoï zone declaration")
 
   //this condition is needed because we use the distance to unmark the voronoi zones whe na conditional edge is closed
-  require(graph.conditionToConditionalEdges.forall(_.length >0),"all conditional edges should have length >0")
+  require(graph.conditionToConditionalEdges.forall(_.length >= 0),"all conditional edges should have length >= 0")
 
   require(maxDistanceToCentroid > 0)
 
