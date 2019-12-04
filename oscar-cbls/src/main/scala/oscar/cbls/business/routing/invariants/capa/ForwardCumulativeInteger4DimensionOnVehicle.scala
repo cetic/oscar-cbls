@@ -70,7 +70,8 @@ object ForwardCumulativeInteger4DimensionOnVehicle {
       content1AtEnd,content2AtEnd,content3AtEnd,content4AtEnd,
       lastPointOfVehicle,
       default1ForUnroutedNodes,default2ForUnroutedNodes,default3ForUnroutedNodes,default4ForUnroutedNodes)
-    (content1AtNode,content2AtNode,content1AtEnd,content2AtEnd,lastPointOfVehicle)
+    (content1AtNode,content2AtNode,content3AtNode,content4AtNode,
+      content1AtEnd,content2AtEnd,content3AtEnd,content4AtEnd,lastPointOfVehicle)
   }
 }
 
