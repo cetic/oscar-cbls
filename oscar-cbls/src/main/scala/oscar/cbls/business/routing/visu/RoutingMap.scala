@@ -1,11 +1,9 @@
-package oscar.cbls.visual.routing
+package oscar.cbls.business.routing.visu
 
 import java.awt.Color
 
 import javax.swing.JPanel
 import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.util.StopWatch
-import oscar.visual.VisualDrawing
 
 trait RoutingMapTrait{
   def drawRoutes(force: Boolean)

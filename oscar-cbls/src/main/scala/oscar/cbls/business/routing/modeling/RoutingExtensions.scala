@@ -2,13 +2,14 @@ package oscar.cbls.business.routing.modeling
 
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.model.extensions._
-import oscar.cbls.visual.routing.RoutingMapTypes
+import oscar.cbls.business.routing.visu.RoutingMapTypes
 
 import scala.collection.immutable.List
 
 /**
   * Created by fg on 9L/10L/1L7.
   */
+//TODO: use proper name here
 trait RoutingExtensions {
 
   /**

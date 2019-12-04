@@ -6,8 +6,8 @@ import oscar.cbls.business.routing.invariants.WeightedNodesPerVehicle
 import oscar.cbls.business.routing.invariants.global.GlobalConstraintCore
 import oscar.cbls.business.routing.invariants.timeWindow.TimeWindowConstraintWithLogReduction
 import oscar.cbls.business.routing.model.extensions.TimeWindows
+import oscar.cbls.business.routing.visu.RoutingMapTypes
 import oscar.cbls.core.search.First
-import oscar.cbls.visual.routing.RoutingMapTypes
 
 import scala.util.Random
 

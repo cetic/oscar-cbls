@@ -11,6 +11,7 @@ object TimeWindows{
     * @param maxWaitingDurations For each node the maximum among of time we can wait before starting the task.
     *                            e.g.: You can stay at a parking for a limited among of time.
     */
+    @deprecated("this is over packaging and should be deleted","")
   def apply(earliestArrivalTimes: Option[Array[Long]] = None,
             latestArrivalTimes: Option[Array[Long]] = None,
             earliestLeavingTimes: Option[Array[Long]] = None,
@@ -52,6 +53,7 @@ object TimeWindows{
   * @param maxWaitingDurations For each node the maximum among of time we can wait before starting the task.
   *                            e.g.: You can stay at a parking for a limited among of time.
   */
+@deprecated("this is over packaging and should be deleted","")
 class TimeWindows(val earliestArrivalTimes: Array[Long],
                   val latestArrivalTimes: Array[Long],
                   val earliestLeavingTimes: Array[Long],

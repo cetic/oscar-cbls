@@ -1,13 +1,13 @@
-package oscar.cbls.visual.routing
+package oscar.cbls.business.routing.visu
 
 import java.awt.Color
 import java.awt.event.{MouseEvent, MouseMotionListener}
 
 import org.jdesktop.swingx.mapviewer.{DefaultTileFactory, GeoPosition}
+import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.util.StopWatch
 import oscar.visual.map._
-import oscar.cbls._
 
 import scala.swing.Color
 

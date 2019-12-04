@@ -8,6 +8,7 @@ import scala.collection.immutable.HashSet
 /**
   * Created by fg on 12L/09L/1L7.
   */
+//TODO: move to proper place, as standard
 object CapacityHelper{
 
   /**
