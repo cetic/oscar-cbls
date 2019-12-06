@@ -2,15 +2,28 @@ package oscar.cbls.algo.graph
 
 import scala.collection.immutable.{SortedMap, SortedSet}
 
-
 object Connexity {
   def components(graph:ConditionalGraph,isConditionOpen:Int => Boolean):(Array[List[Node]]) = {
-    var consideredEdges = graph.edges.filter(e =>
+    val consideredEdges = graph.edges.toList.filter(e =>
       e.conditionID match {
         case None => true
         case Some(condition) => isConditionOpen(condition)
       })
+    performMerge(graph,consideredEdges).map(_._1)
+  }
 
+  def kruskal(graph:ConditionalGraph,isConditionOpen:Int => Boolean):Array[(List[Node],List[Edge])] = {
+    val consideredEdges = graph.edges.toList.filter(e =>
+      e.conditionID match {
+        case None => true
+        case Some(condition) => isConditionOpen(condition)
+      }).sortBy(_.length)
+
+    performMerge(graph,consideredEdges)
+  }
+
+  private def performMerge(graph:ConditionalGraph,edgesToConsider:List[Edge]):Array[(List[Node],List[Edge])] = {
+    var remainingEdges:List[Edge] = edgesToConsider
     val nodeToComponentHead = Array.tabulate(graph.nbNodes)(nodeID => nodeID) //nodes are their own master at startup
 
     def getMasterIdUpdateIfNeeded(nodeID: Int): Int = {
@@ -33,9 +46,11 @@ object Connexity {
 
     var nbComponents = graph.nbNodes
 
-    while (consideredEdges nonEmpty) {
-      val currentEdge = consideredEdges.head
-      consideredEdges = consideredEdges.tail
+    var connexityEdges:List[Edge] = Nil
+
+    while (remainingEdges nonEmpty) {
+      val currentEdge = remainingEdges.head
+      remainingEdges = remainingEdges.tail
 
       val nodeAMasterId = getMasterIdUpdateIfNeeded(currentEdge.nodeA.id)
       val nodeBMasterId = getMasterIdUpdateIfNeeded(currentEdge.nodeB.id)
@@ -43,10 +58,11 @@ object Connexity {
         //merge
         setMaster(nodeAMasterId, nodeBMasterId)
         nbComponents -= 1
+        connexityEdges = currentEdge :: connexityEdges
       }
     }
 
-    //ensuring they are all ontheir master
+    //ensuring they are all on their master
     for(nodeID <- 0 until graph.nbNodes){
       getMasterIdUpdateIfNeeded(nodeID)
     }
@@ -57,16 +73,20 @@ object Connexity {
 
     val masterToComponentID = SortedMap.empty[Int, Int] ++ keys.toList.zipWithIndex
 
-    val components=Array.fill(nbComponents)(List.empty[Node])
+    val componentsNode=Array.fill(nbComponents)(List.empty[Node])
+    val componentsEdges=Array.fill(nbComponents)(List.empty[Edge])
     for(node <- graph.nodes){
       val masterID = getMasterIdUpdateIfNeeded(node.id)
       val componentID = masterToComponentID(masterID)
-      components(componentID) = node :: components(componentID)
+      componentsNode(componentID) = node :: componentsNode(componentID)
     }
-    components
+    for(edge <- connexityEdges){
+      val masterID = getMasterIdUpdateIfNeeded(edge.nodeA.id)
+      val componentID = masterToComponentID(masterID)
+      componentsEdges(componentID) = edge :: componentsEdges(componentID)
+    }
+
+    Array.tabulate(nbComponents)(component => (componentsNode(component), componentsEdges(component)))
   }
-
-
-  def kruskal(graph:ConditionalGraph,isConditionOIpen:Int => Boolean):(List[Edge],List[Set[Node]]) = ???
 
 }
