@@ -68,6 +68,8 @@ abstract class TransferFunction(val ea: Long, val la: Long, val el: Long, val fr
   // and that apply() return always None
   def isEmpty: Boolean
 
+  def latestLeavingTime: Long = la + el - ea
+
   override def toString: String = {
     "earliest arrival time : " + ea + "\n latest arrival time : " + la + "\n earliest leaving time : " + el
   }

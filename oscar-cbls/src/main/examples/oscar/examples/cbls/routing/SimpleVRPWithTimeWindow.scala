@@ -3,7 +3,7 @@ package oscar.examples.cbls.routing
 import oscar.cbls._
 import oscar.cbls.business.routing.{routeLength, _}
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
-import oscar.cbls.business.routing.invariants.timeWindow.TimeWindowConstraint
+import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TransferFunction}
 import oscar.cbls.core.search.Best
 import oscar.cbls.lib.constraint.EQ
 
@@ -43,15 +43,16 @@ object SimpleVRPWithTimeWindow extends App{
 
   //TimeWindow
   val timeWindowExtension = timeWindows(Some(earliestArrivalTimes), None, None, Some(latestLeavingTimes), taskDurations, None)
+  val singleNodeTransferFunctions = Array.tabulate(n)(node =>
+    TransferFunction.createFromEarliestAndLatestArrivalTime(node, earliestArrivalTimes(node), latestLeavingTimes(node) - taskDurations(node), taskDurations(node))
+  )
   val timeWindowViolations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
   val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
   //println("travel durations: \n" + timeMatrix.zipWithIndex.map(from => from._2 -> from._1.zipWithIndex.map(to => "" + to._2 + " : " + to._1).mkString(", ")).mkString("\n"))
 
   val smartTimeWindowInvariant =
     TimeWindowConstraint(gc, n, v,
-      earliestArrivalTimes,
-      latestLeavingTimes,
-      taskDurations,
+      singleNodeTransferFunctions,
       timeMatrix, timeWindowViolations)
 
   //Objective function

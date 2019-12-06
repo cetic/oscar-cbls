@@ -6,7 +6,7 @@ import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.WeightedNodesPerVehicle
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
-import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TimeWindowConstraintWithLogReduction}
+import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TimeWindowConstraintWithLogReduction, TransferFunction}
 import oscar.cbls.business.routing.model.extensions.TimeWindows
 import oscar.cbls.business.routing.neighborhood.{InsertPointUnroutedFirst, RemovePoint}
 import oscar.cbls.core.search.Best
@@ -16,7 +16,7 @@ import scala.util.Random
 
 object Gehring_Homberger_benchmark extends App {
   val size = 100
-  val files = new File("/home/fg/Documents/OscaR/Solomon/"+size+"/").listFiles().toList.sorted
+  val files = new File("c://Users/fg/Documents/OscaR/Solomon/"+size+"/").listFiles().toList.sorted
 
   for(file <- files) {
     println(file.getName)
@@ -112,8 +112,11 @@ class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Int, distanceMatrix: 
   //Time window constraints
   val timeWindowRoute = myVRP.routes.createClone()
   val timeWindowViolations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
+  val singleNodeTransferFunctions = Array.tabulate(n)(node =>
+    TransferFunction.createFromEarliestAndLatestArrivalTime(node, timeWindows.earliestArrivalTimes(node), timeWindows.latestArrivalTimes(node), timeWindows.taskDurations(node))
+  )
 
-  val timeWindowConstraint = TimeWindowConstraint(gc,n,v,timeWindows.earliestArrivalTimes, timeWindows.latestLeavingTimes, timeWindows.taskDurations, distanceMatrix, timeWindowViolations)
+  val timeWindowConstraint = TimeWindowConstraint(gc,n,v,singleNodeTransferFunctions, distanceMatrix, timeWindowViolations)
 
   // Weighted nodes
   // The sum of node's weight can't excess the capacity of a vehicle

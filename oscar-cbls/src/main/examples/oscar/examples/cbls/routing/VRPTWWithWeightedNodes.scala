@@ -4,7 +4,7 @@ import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.WeightedNodesPerVehicle
 import oscar.cbls.business.routing.invariants.global.GlobalConstraintCore
-import oscar.cbls.business.routing.invariants.timeWindow.TimeWindowConstraintWithLogReduction
+import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraintWithLogReduction, TransferFunction}
 import oscar.cbls.business.routing.model.extensions.TimeWindows
 import oscar.cbls.business.routing.visu.RoutingMapTypes
 import oscar.cbls.core.search.First
@@ -71,13 +71,14 @@ class VRPTWWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, min
   // The STRONG timeWindow constraint (vehicleTimeWindowViolations contains the violation of each vehicle)
   val vehicleTimeWindowViolations = Array.fill(v)(new CBLSIntVar(store, 0L, Domain(0L, n)))
   val gc = GlobalConstraintCore(myVRP.routes, v)
+  val singleNodeTransferFunctions = Array.tabulate(n)(node =>
+    TransferFunction.createFromEarliestAndLatestArrivalTime(node, strongEarlylines(node), strongDeadlines(node) - taskDurations(node), taskDurations(node))
+  )
   val timeWindowStrongConstraint =
     TimeWindowConstraintWithLogReduction(
       gc,
       n, v,
-      strongTimeWindows.earliestArrivalTimes,
-      strongTimeWindows.latestLeavingTimes,
-      strongTimeWindows.taskDurations,
+      singleNodeTransferFunctions,
       Array.tabulate(n)(from => Array.tabulate(n)(to => timeMatrix.getTravelDuration(from, 0L, to))),
       vehicleTimeWindowViolations
     )

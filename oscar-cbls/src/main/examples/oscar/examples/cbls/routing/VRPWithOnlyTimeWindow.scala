@@ -3,7 +3,7 @@ package oscar.examples.cbls.routing
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
-import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TimeWindowConstraintWithLogReduction}
+import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TimeWindowConstraintWithLogReduction, TransferFunction}
 import oscar.cbls.core.computation.FullRange
 import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.{Best, First}
@@ -145,11 +145,12 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
       // Global constraint
       val violations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
       val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
+      val singleNodeTransferFunctions = Array.tabulate(n)(node =>
+        TransferFunction.createFromEarliestAndLatestArrivalTime(node, timeWindowExtension.earliestArrivalTimes(node), timeWindowExtension.latestArrivalTimes(node), taskDurations(node))
+      )
       val smartTimeWindowInvariant =
         TimeWindowConstraint(gc, n, v,
-          timeWindowExtension.earliestArrivalTimes,
-          timeWindowExtension.latestLeavingTimes,
-          timeWindowExtension.taskDurations,
+          singleNodeTransferFunctions,
           timeMatrix, violations)
       globalConstraint = Some(smartTimeWindowInvariant)
       cascadingObjective = new CascadingObjective(sum(violations),
@@ -162,11 +163,12 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
       // Global constraint with log reduction
       val violations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
       val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
+      val singleNodeTransferFunctions = Array.tabulate(n)(node =>
+        TransferFunction.createFromEarliestAndLatestArrivalTime(node, timeWindowExtension.earliestArrivalTimes(node), timeWindowExtension.latestArrivalTimes(node), taskDurations(node))
+      )
       val smartTimeWindowInvariant =
         TimeWindowConstraintWithLogReduction(gc, n, v,
-          timeWindowExtension.earliestArrivalTimes,
-          timeWindowExtension.latestLeavingTimes,
-          timeWindowExtension.taskDurations,
+          singleNodeTransferFunctions,
           timeMatrix, violations)
       globalConstraintWithLogReduc = Some(smartTimeWindowInvariant)
       cascadingObjective = new CascadingObjective(sum(violations),

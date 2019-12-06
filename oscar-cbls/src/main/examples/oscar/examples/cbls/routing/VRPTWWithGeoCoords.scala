@@ -3,7 +3,7 @@ package oscar.examples.cbls.routing
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.GlobalConstraintCore
-import oscar.cbls.business.routing.invariants.timeWindow.TimeWindowConstraintWithLogReduction
+import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraintWithLogReduction, TransferFunction}
 import oscar.cbls.business.routing.model.extensions.TimeWindows
 import oscar.cbls.business.routing.visu.RoutingMapTypes
 import oscar.cbls.core.search.First
@@ -48,6 +48,9 @@ class VRPTWWithGeoCoords (n: Int, v: Int, minLat: Double, maxLat: Double, minLon
   //Strong time windows
   val (strongEarlylines, strongDeadlines, taskDurations, maxWaitingDuration) =
     RoutingMatrixGenerator.generateFeasibleTimeWindows(n,v,timeMatrix)
+  val singleNodeTransferFunctions = Array.tabulate(n)(node =>
+    TransferFunction.createFromEarliestAndLatestArrivalTime(node, strongEarlylines(node), strongDeadlines(node) - taskDurations(node), taskDurations(node))
+  )
   val strongTimeWindows = TimeWindows(earliestArrivalTimes = Some(strongEarlylines), latestLeavingTimes = Some(strongDeadlines), taskDurations = taskDurations)
   //Weak time windows
   val weakEarlylines = Array.tabulate(n)(index => if(index < v) strongEarlylines(index) else strongEarlylines(index) + ((strongDeadlines(index)-strongEarlylines(index))/5))
@@ -63,9 +66,7 @@ class VRPTWWithGeoCoords (n: Int, v: Int, minLat: Double, maxLat: Double, minLon
     TimeWindowConstraintWithLogReduction(
       gc,
       n,v,
-      strongTimeWindows.earliestArrivalTimes,
-      strongTimeWindows.latestLeavingTimes,
-      strongTimeWindows.taskDurations,
+      singleNodeTransferFunctions,
       Array.tabulate(n)(from => Array.tabulate(n)(to => timeMatrix.getTravelDuration(from,0L,to))),
       vehicleTimeWindowViolations
     )
