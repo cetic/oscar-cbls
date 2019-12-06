@@ -2,7 +2,8 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
-import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, GlobalVehicleCapacityConstraint, RouteLength}
+import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
+import oscar.cbls.business.routing.invariants.vehicleCapacity.{GlobalVehicleCapacityConstraint, GlobalVehicleCapacityConstraintWithLogReduction}
 
 import scala.collection.immutable.HashSet
 

@@ -2,7 +2,8 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
-import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, GlobalVehicleCapacityConstraint, RouteLength}
+import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
+import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleCapacityConstraintWithLogReduction
 
 /**
   * Created by fg on 12/05/17.
@@ -45,7 +46,7 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
 
   // Vehicle content
   val violationOfContentAtVehicle = Array.tabulate(v)(vehicle => new CBLSIntVar(myVRP.routes.model, 0, 0 to Int.MaxValue, "violation of capacity of vehicle " + vehicle))
-  val capacityInvariant = GlobalVehicleCapacityConstraint(gc, n, v, vehiclesSize, contentsFlow, violationOfContentAtVehicle)
+  val capacityInvariant = GlobalVehicleCapacityConstraintWithLogReduction(gc, n, v, vehiclesSize, contentsFlow, violationOfContentAtVehicle)
 
   //TimeWindow
   val timeWindowRoute = precedenceRoute.createClone()

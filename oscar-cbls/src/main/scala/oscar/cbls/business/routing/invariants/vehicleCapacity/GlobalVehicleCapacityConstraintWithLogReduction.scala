@@ -1,18 +1,17 @@
-package oscar.cbls.business.routing.invariants.global
+package oscar.cbls.business.routing.invariants.vehicleCapacity
+
+import oscar.cbls._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
+import oscar.cbls.business.routing.invariants.global._
 import oscar.cbls.core.computation.CBLSIntVar
-import oscar.cbls._
-import oscar.cbls.business.routing.model.VRP
 
-import scala.collection.immutable.HashSet
-
-object GlobalVehicleCapacityConstraint{
+object GlobalVehicleCapacityConstraintWithLogReduction{
   def apply(gc: GlobalConstraintCore, n: Long, v: Long,
             vehiclesCapacity: Array[Long],
             contentVariationAtNode: Array[Long],
-            violationPerVehicle: Array[CBLSIntVar]): GlobalVehicleCapacityConstraint =
-    new GlobalVehicleCapacityConstraint(
+            violationPerVehicle: Array[CBLSIntVar]): GlobalVehicleCapacityConstraintWithLogReduction =
+    new GlobalVehicleCapacityConstraintWithLogReduction(
       gc, n, v,
       vehiclesCapacity,
       contentVariationAtNode,
@@ -25,7 +24,7 @@ object GlobalVehicleCapacityConstraint{
    * @param capacityConstraint A capacity constraint
    * @return A map : Node -> relevant neighbors
    */
-  def relevantPredecessorsOfNodes(capacityConstraint: GlobalVehicleCapacityConstraint): Map[Long,Iterable[Long]] ={
+  def relevantPredecessorsOfNodes(capacityConstraint: GlobalVehicleCapacityConstraintWithLogReduction): Map[Long,Iterable[Long]] ={
     val allNodes = (0L until capacityConstraint.n).toList
     val vehicleMaxCapacity = capacityConstraint.vehiclesCapacity.max
     Array.tabulate(capacityConstraint.n)(node =>
@@ -34,10 +33,13 @@ object GlobalVehicleCapacityConstraint{
   }
 }
 
-class GlobalVehicleCapacityConstraint(gc: GlobalConstraintCore, val n: Long, val v: Long,
-                                      val vehiclesCapacity: Array[Long],
-                                      val contentVariationAtNode: Array[Long],
-                                      violationPerVehicle: Array[CBLSIntVar]) extends LogReducedGlobalConstraint[TwoWaysVehicleContentFunction, Boolean](gc, n, v) {
+
+
+
+class GlobalVehicleCapacityConstraintWithLogReduction(gc: GlobalConstraintCore, val n: Long, val v: Long,
+                                                      val vehiclesCapacity: Array[Long],
+                                                      val contentVariationAtNode: Array[Long],
+                                                      violationPerVehicle: Array[CBLSIntVar]) extends LogReducedGlobalConstraint[TwoWaysVehicleContentFunction, Boolean](gc, n, v) {
   violationPerVehicle.foreach(violation => violation.setDefiningInvariant(gc))
   gc.register(this)
 
@@ -176,77 +178,5 @@ class GlobalVehicleCapacityConstraint(gc: GlobalConstraintCore, val n: Long, val
       explorer = currentNode.next
     }
     false
-  }
-}
-
-
-protected abstract class VehicleContentFunction(val maxContentIfStartAt0: Long,
-                                                val minContentIfStartAt0: Long,
-                                                val contentAtEndIfStartAt0: Long,
-                                                val from: Long, val to: Long){
-  def isEmpty: Boolean
-  def max(startContent: Long): Long
-  def min(startContent: Long): Long
-}
-
-protected case class DefinedContentFunction(override val maxContentIfStartAt0: Long,
-                                            override val minContentIfStartAt0: Long,
-                                            override val contentAtEndIfStartAt0: Long,
-                                            override val from: Long,
-                                            override val to: Long) extends
-  VehicleContentFunction(maxContentIfStartAt0, minContentIfStartAt0, contentAtEndIfStartAt0, from, to) {
-  override def isEmpty: Boolean = false
-
-  override def toString: String =
-    "From : " + from + ", To : " + to +
-      "\nVehicle content at end : " + contentAtEndIfStartAt0 +
-      "\nMax if start content is zero : " + maxContentIfStartAt0 +
-      "\nMin if start content is zero : " + minContentIfStartAt0
-
-  override def max(startContent: Long): Long = {
-    maxContentIfStartAt0 + startContent
-  }
-
-  override def min(startContent: Long): Long = {
-    minContentIfStartAt0 + startContent
-  }
-}
-
-protected case object EmptyContentFunction extends
-  VehicleContentFunction(-1, -1, -1, -1, -1){
-  override def isEmpty: Boolean = true
-
-  override def toString: String = "Empty vehicle content"
-
-  override def max(startContent: Long): Long = Long.MaxValue
-
-  override def min(startContent: Long): Long = Long.MinValue
-}
-
-protected case class TwoWaysVehicleContentFunction(nonFlippedFunction: VehicleContentFunction, flippedFunction: VehicleContentFunction){
-
-  def from(flipped: Boolean): Long =
-    if(flipped)flippedFunction.from
-    else nonFlippedFunction.from
-
-  def to(flipped: Boolean): Long =
-    if(flipped)flippedFunction.to
-    else nonFlippedFunction.to
-
-  def contentAtEndIfStartAt0(flipped: Boolean): Long =
-    if(flipped) flippedFunction.contentAtEndIfStartAt0
-    else nonFlippedFunction.contentAtEndIfStartAt0
-
-  def apply(startContent: Long, maxVehicleContent: Long, flipped: Boolean): Boolean ={
-    val vehicleContentFunction = if(flipped)flippedFunction else nonFlippedFunction
-    vehicleContentFunction.max(startContent) > maxVehicleContent || vehicleContentFunction.min(startContent) < 0
-  }
-
-  def isEmpty(flipped: Boolean): Boolean =
-    if(flipped)flippedFunction.isEmpty
-    else nonFlippedFunction.isEmpty
-
-  override def toString: String = {
-    "Two ways vehicle content function : \nNon-flipped : " + nonFlippedFunction.toString + "\nFlipped : " + flippedFunction.toString
   }
 }
