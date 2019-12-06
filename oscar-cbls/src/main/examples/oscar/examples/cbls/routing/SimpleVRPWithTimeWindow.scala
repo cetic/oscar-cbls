@@ -7,7 +7,7 @@ import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, 
 import oscar.cbls.core.search.Best
 import oscar.cbls.lib.constraint.EQ
 
-import scala.collection.immutable.HashMap
+import scala.collection.immutable.{HashMap, HashSet}
 
 /**
   * Created by fg on 12/05/17.
@@ -62,7 +62,7 @@ object SimpleVRPWithTimeWindow extends App{
 
   m.close()
 
-  val relevantPredecessorsOfNodes = TimeWindowHelper.relevantPredecessorsOfNodes(myVRP, timeWindowExtension, travelDurationMatrix)
+  val relevantPredecessorsOfNodes = TransferFunction.relevantPredecessorsOfNodes(n,v,singleNodeTransferFunctions,timeMatrix)
   val relevantSuccessorsOfNodes = TimeWindowHelper.relevantSuccessorsOfNodes(myVRP, timeWindowExtension, travelDurationMatrix)
 
   def postFilter(node:Long): (Long) => Boolean = {
@@ -108,7 +108,7 @@ object SimpleVRPWithTimeWindow extends App{
       ChainsHelper.relevantNeighborsForLastNodeAfterHead(
         myVRP,
         chainsExtension,
-        Some(relevantPredecessorsOfNodes(lastNode))),
+        Some(HashSet() ++ relevantPredecessorsOfNodes(lastNode))),
       postFilter),
     myVRP,
     neighborhoodName = "MoveLastOfChain")
@@ -171,7 +171,7 @@ object SimpleVRPWithTimeWindow extends App{
       ChainsHelper.relevantNeighborsForLastNodeAfterHead(
         myVRP,
         chainsExtension,
-        Some(relevantPredecessorsOfNodes(lastNode))),
+        Some(HashSet() ++ relevantPredecessorsOfNodes(lastNode))),
       postFilter),
     myVRP,
     neighborhoodName = "InsertUF")

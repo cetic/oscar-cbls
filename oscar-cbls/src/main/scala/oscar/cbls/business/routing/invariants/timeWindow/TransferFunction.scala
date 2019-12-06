@@ -47,6 +47,25 @@ object TransferFunction{
     val earliestLeavingTime = earliestArrivalTime + taskDuration
     DefinedTransferFunction(earliestArrivalTime, latestArrivalTime, earliestLeavingTime, node, node)
   }
+
+  /**
+   * Computes the relevant predecessors of each node.
+   * A neighbor is a relevant predecessors of a node if :
+   *      - The earliest leaving time of the neighbor + the travel duration to the node
+   *      is lesser than the latest arrival time of the node. Otherwise we will arrive too late at the node.
+   * @param n The number of nodes of the problem
+   * @param v The number of vehicles of the problem
+   * @param singleNodesTransferFunctions The array containing the TransferFunction of each nodes of the problem
+   * @param timeMatrix The matrix containing the travel duration between each nodes of the problem
+   * @return A map (node -> relevant neighbors)
+   */
+  def relevantPredecessorsOfNodes(n: Int, v: Int, singleNodesTransferFunctions: Array[TransferFunction], timeMatrix: Array[Array[Long]]): Map[Long,Iterable[Long]] ={
+    val allNodes = (0L until n).toList
+    List.tabulate(n)(node => node.toLong -> allNodes.collect({
+      case neighbor: Long if singleNodesTransferFunctions(neighbor.toInt).el + timeMatrix(neighbor.toInt)(node) <= singleNodesTransferFunctions(node).la => neighbor
+    })
+    ).toMap
+  }
 }
 
 /**

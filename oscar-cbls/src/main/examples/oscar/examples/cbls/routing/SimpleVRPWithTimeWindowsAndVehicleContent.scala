@@ -1,8 +1,10 @@
 package oscar.examples.cbls.routing
 
+import javax.swing.TransferHandler.TransferSupport
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
+import oscar.cbls.business.routing.invariants.timeWindow.TransferFunction
 import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleCapacityConstraintWithLogReduction
 
 import scala.collection.immutable.HashSet
@@ -96,14 +98,17 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
 
   m.close()
 
-  val relevantToTime = TimeWindowHelper.relevantPredecessorsOfNodes(myVRP, timeWindowExtension, travelDurationMatrix)
+  val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
+  val singleNodesTransferFunctions = Array.tabulate(n)(node =>
+    TransferFunction.createFromEarliestAndLatestArrivalTime(node, timeWindowExtension.earliestArrivalTimes(node), timeWindowExtension.latestArrivalTimes(node), timeWindowExtension.taskDurations(node)))
+  val relevantToTime = TransferFunction.relevantPredecessorsOfNodes(n,v,singleNodesTransferFunctions,timeMatrix)
   val relevantToCapacity = GlobalVehicleCapacityConstraintWithLogReduction.relevantPredecessorsOfNodes(capacityInvariant)
 
-  val relevantPredecessorsOfNodes = relevantToTime.map(x => x._1 -> x._2.filter(HashSet() ++ relevantToCapacity(x._1)))
+  val relevantPredecessorsOfNodes = relevantToTime.map(x => x._1 -> x._2.toList.intersect(relevantToCapacity(x._1).toList))
   val relevantSuccessorsOfNodes = TimeWindowHelper.relevantSuccessorsOfNodes(myVRP, timeWindowExtension, travelDurationMatrix)
   val closestRelevantNeighborsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance,relevantPredecessorsOfNodes)(_))
 
-  def relevantPredecessorsForLastNode(lastNode: Long) = ChainsHelper.relevantNeighborsForLastNodeAfterHead(myVRP,chainsExtension,Some(relevantPredecessorsOfNodes(lastNode)))(lastNode)
+  def relevantPredecessorsForLastNode(lastNode: Long) = ChainsHelper.relevantNeighborsForLastNodeAfterHead(myVRP,chainsExtension,Some(HashSet() ++ relevantPredecessorsOfNodes(lastNode)))(lastNode)
   val relevantPredecessorsForInternalNodes = ChainsHelper.computeRelevantNeighborsForInternalNodes(myVRP, chainsExtension)_
 
 

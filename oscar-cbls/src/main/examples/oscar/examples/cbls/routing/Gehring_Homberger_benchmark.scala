@@ -135,7 +135,7 @@ class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Int, distanceMatrix: 
 
   m.close()
 
-  val relevantPredecessorsOfNodes = TimeWindowHelper.relevantPredecessorsOfNodes(myVRP, timeWindows, travelDurationMatrix)
+  val relevantPredecessorsOfNodes = TransferFunction.relevantPredecessorsOfNodes(n,v,singleNodeTransferFunctions,distanceMatrix)
 
   val relevantSuccessorsOfNodes = TimeWindowHelper.relevantSuccessorsOfNodes(myVRP, timeWindows, travelDurationMatrix)
   val closestRelevantNeighborsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(distanceMatrix,relevantPredecessorsOfNodes)(_))

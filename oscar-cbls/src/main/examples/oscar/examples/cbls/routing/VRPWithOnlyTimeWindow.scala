@@ -96,6 +96,10 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
   // This class isn't meant to last but given the time left I don't want to modify it.
   // It uses an old representation of time windows with earliestArrivalTimes and latestLeavingTimes.
   val timeWindowExtension = timeWindows(Some(earliestArrivalTimes), None, None, Some(latestLeavingTimes), taskDurations, None)
+  val singleNodeTransferFunctions = Array.tabulate(n)(node =>
+    TransferFunction.createFromEarliestAndLatestArrivalTime(node, timeWindowExtension.earliestArrivalTimes(node), timeWindowExtension.latestArrivalTimes(node), taskDurations(node))
+  )
+  val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
 
   // Defintion of the objective function using naive constraint or global contraint
   val obj: CascadingObjective =
@@ -144,10 +148,6 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
       routeLengthInvariant = Some(new RouteLength(gc,n,v,vehicleToRouteLength,(from,to) => symmetricDistance(from)(to)))
       // Global constraint
       val violations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
-      val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
-      val singleNodeTransferFunctions = Array.tabulate(n)(node =>
-        TransferFunction.createFromEarliestAndLatestArrivalTime(node, timeWindowExtension.earliestArrivalTimes(node), timeWindowExtension.latestArrivalTimes(node), taskDurations(node))
-      )
       val smartTimeWindowInvariant =
         TimeWindowConstraint(gc, n, v,
           singleNodeTransferFunctions,
@@ -162,10 +162,6 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
       routeLengthInvariant = Some(new RouteLength(gc,n,v,vehicleToRouteLength,(from,to) => symmetricDistance(from)(to)))
       // Global constraint with log reduction
       val violations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
-      val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
-      val singleNodeTransferFunctions = Array.tabulate(n)(node =>
-        TransferFunction.createFromEarliestAndLatestArrivalTime(node, timeWindowExtension.earliestArrivalTimes(node), timeWindowExtension.latestArrivalTimes(node), taskDurations(node))
-      )
       val smartTimeWindowInvariant =
         TimeWindowConstraintWithLogReduction(gc, n, v,
           singleNodeTransferFunctions,
@@ -178,7 +174,7 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
   m.close()
 
   // Building the relevant predecessors of each node based on time window
-  val relevantPredecessorsOfNodes: Map[Long,Set[Long]] = TimeWindowHelper.relevantPredecessorsOfNodes(myVRP, timeWindowExtension, travelDurationMatrix)
+  val relevantPredecessorsOfNodes: Map[Long,Iterable[Long]] = TransferFunction.relevantPredecessorsOfNodes(n,v, singleNodeTransferFunctions, timeMatrix)
 
   // A post filter that prevents insertion after unrouted nodes
   def postFilter(node:Long): (Long) => Boolean = {

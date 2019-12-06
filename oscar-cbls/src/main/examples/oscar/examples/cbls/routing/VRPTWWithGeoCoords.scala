@@ -44,10 +44,11 @@ class VRPTWWithGeoCoords (n: Int, v: Int, minLat: Double, maxLat: Double, minLon
     })})
 
   // Generating timeMatrix and a time window for each node of the problem
-  val timeMatrix = RoutingMatrixGenerator.generateLinearTravelTimeFunction(n,symmetricDistanceMatrix)
+  val ttfMatrix = RoutingMatrixGenerator.generateLinearTravelTimeFunction(n,symmetricDistanceMatrix)
+  val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => ttfMatrix.getTravelDuration(from,0L,to)))
   //Strong time windows
   val (strongEarlylines, strongDeadlines, taskDurations, maxWaitingDuration) =
-    RoutingMatrixGenerator.generateFeasibleTimeWindows(n,v,timeMatrix)
+    RoutingMatrixGenerator.generateFeasibleTimeWindows(n,v,ttfMatrix)
   val singleNodeTransferFunctions = Array.tabulate(n)(node =>
     TransferFunction.createFromEarliestAndLatestArrivalTime(node, strongEarlylines(node), strongDeadlines(node) - taskDurations(node), taskDurations(node))
   )
@@ -67,7 +68,7 @@ class VRPTWWithGeoCoords (n: Int, v: Int, minLat: Double, maxLat: Double, minLon
       gc,
       n,v,
       singleNodeTransferFunctions,
-      Array.tabulate(n)(from => Array.tabulate(n)(to => timeMatrix.getTravelDuration(from,0L,to))),
+      timeMatrix,
       vehicleTimeWindowViolations
     )
 
@@ -78,7 +79,7 @@ class VRPTWWithGeoCoords (n: Int, v: Int, minLat: Double, maxLat: Double, minLon
     myVRP.routes,n,v,
     (fromNode,toNode,leaveTimeAtFromNode,totalExcessDurationAtFromNode)=> {
       // Still need to compute the arrival time and leave time based on STRONG time windows
-      val arrivalTimeAtToNode = leaveTimeAtFromNode + timeMatrix.getTravelDuration(fromNode,0,toNode)
+      val arrivalTimeAtToNode = leaveTimeAtFromNode + ttfMatrix.getTravelDuration(fromNode,0,toNode)
       val leaveTimeAtToNode =
         if(toNode < v) 0
         else Math.max(arrivalTimeAtToNode,strongEarlylines(toNode)) + taskDurations(toNode)
@@ -115,7 +116,7 @@ class VRPTWWithGeoCoords (n: Int, v: Int, minLat: Double, maxLat: Double, minLon
   ////////// Static Pruning (done once before starting the resolution) //////////
 
   // Relevant predecessors definition for each node (here any node can be the precessor of another node)
-  val relevantPredecessorsOfNodes = TimeWindowHelper.relevantPredecessorsOfNodes(myVRP, weakTimeWindows, timeMatrix)
+  val relevantPredecessorsOfNodes = TransferFunction.relevantPredecessorsOfNodes(n,v,singleNodeTransferFunctions,timeMatrix)
   // Sort them lazily by distance
   val closestRelevantNeighborsByDistance =
     Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistanceMatrix,relevantPredecessorsOfNodes)(_))
