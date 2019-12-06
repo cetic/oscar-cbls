@@ -226,17 +226,6 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
       "" + totalTimeSpent,"" + gainPerCall,"" + callDuration,"" + slope,
       "" + avgTimeSpendNoMove,"" + avgTimeSpendMove, "" + totalTimeSpentNoMoveFound)
 
-  private def padToLength(s: String, l: Long) = {
-    val extended = s + nStrings(l+1L, " ")
-    val nextchar = extended.substring(l+1L, l+1L)
-    if(nextchar equals " "){
-      extended.substring(0L, l-1L) + "ยง"
-    }else{
-      extended.substring(0L, l)
-    }
-  }
-  private def nStrings(n: Long, s: String): String = if (n <= 0L) "" else s + nStrings(n - 1L, s)
-
   //  override def toString: String = "Statistics(" + a + " nbCalls:" + nbCalls + " nbFound:" + nbFound + " totalGain:" + totalGain + " totalTimeSpent " + totalTimeSpent + " ms timeSpendWithMove:" + totalTimeSpentMoveFound + " ms totalTimeSpentNoMoveFound " + totalTimeSpentNoMoveFound + " ms)"
   override def toString: String = "Profile(" + a + ")"
 
@@ -246,28 +235,6 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
 }
 
 object Profile{
-  private def padToLength(s: String, l: Int) = (s + nStrings(l, " ")).substring(0, l)
-  private def prePadToLength(s: String, l: Int) = (nStrings(l-s.length, " ") + s).substring(0, l)
-
-  private def nStrings(n: Long, s: String): String = if (n <= 0L) "" else s + nStrings(n - 1L, s)
-
-  def justifyLeft(l:List[(String,String)], sep:String = " "):List[String] = {
-    val length:Int = l.map(_._1.size).max
-    l.map(a => padToLength(a._1,length) + sep + a._2)
-  }
-
-  def justifyLeftArray(l:List[Array[String]], sep:String = " "):List[String] = {
-    val nbCol = l.head.length
-    val lengths:Array[Int] = Array.tabulate(nbCol)(i => l.map(line => line(i).size).max)
-    l.map(line => Array.tabulate(nbCol)(col => padToLength(line(col),lengths(col)+2)).mkString(""))
-  }
-
-  def justifyRightArray(l:List[Array[String]], sep:String = " "):List[String] = {
-    val nbCol = l.head.length
-    val lengths:Array[Int] = Array.tabulate(nbCol)(i => l.map(line => line(i).size).max)
-    l.map(line => Array.tabulate(nbCol)(col => prePadToLength(line(col),lengths(col))).mkString("  "))
-  }
-
   def statisticsHeader: Array[String] = Array("Neighborhood","calls", "found", "sumGain", "sumTime(ms)", "avgGain",
     "avgTime(ms)", "slope(-/s)", "avgTimeNoMove", "avgTimeMove", "wastedTime")
 
@@ -275,6 +242,10 @@ object Profile{
     (statisticsHeader :: i.toList.map(_.collectThisProfileStatistics)).mkString("\n")
   }
 }
+
+
+
+
 
 
 case class NoReset(a: Neighborhood) extends NeighborhoodCombinator(a) {

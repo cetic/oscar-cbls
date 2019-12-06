@@ -21,6 +21,7 @@ import oscar.cbls._
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.objective.{LoggingObjective, Objective}
 import oscar.cbls.lib.search.combinators._
+import oscar.cbls.util.Properties
 
 import scala.collection.immutable.SortedMap
 import scala.language.{implicitConversions, postfixOps}
@@ -103,7 +104,7 @@ abstract class Neighborhood(name:String = null) {
    *
    * @return
    */
-  final def profilingStatistics:String = Profile.justifyRightArray(Profile.statisticsHeader :: collectProfilingStatistics/*.map(a => ("" :: a.toList).toArray)*/).mkString("\n")
+  final def profilingStatistics:String = Properties.justifyRightArray(Profile.statisticsHeader :: collectProfilingStatistics/*.map(a => ("" :: a.toList).toArray)*/).mkString("\n")
   def collectProfilingStatistics:List[Array[String]] = List.empty
 
   /**
