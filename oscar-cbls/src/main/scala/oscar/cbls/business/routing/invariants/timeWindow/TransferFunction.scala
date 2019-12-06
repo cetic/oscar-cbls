@@ -1,5 +1,54 @@
 package oscar.cbls.business.routing.invariants.timeWindow
 
+object TransferFunction{
+  /**
+   * Conditions :
+   *    "I must perform a task at this location that lasts taskDuration unit of time."
+   *    "I can't start this task sooner than earliestArrivalTime."
+   *    "I'll leave this location at earliestArrivalTime + taskDuration at earliest"
+   * @param node The node representing the location
+   * @param earliestArrivalTime The earliest start of this location's task
+   * @param taskDuration The duration of this location's task
+   */
+  def createFromEarliestArrivalTime(node: Long, earliestArrivalTime: Long, taskDuration: Long = 0L): TransferFunction ={
+    val latestArrivalTime = Long.MaxValue - taskDuration
+    val earliestLeavingTime = earliestArrivalTime+taskDuration
+    DefinedTransferFunction(earliestArrivalTime, latestArrivalTime, earliestLeavingTime, node, node)
+  }
+
+  /**
+   * Conditions :
+   *    "I must perform a task at this location that lasts taskDuration unit of time."
+   *    "I can't start this task later than latestArrivalTime."
+   *    "I'll leave this location at latestArrivalTime + taskDuration at latest"
+   * @param node The node representing the location
+   * @param latestArrivalTime The latest start of this location's task
+   * @param taskDuration The duration of this location's task
+   */
+  def createFromLatestArrivalTime(node: Long, latestArrivalTime: Long, taskDuration: Long = 0L): TransferFunction ={
+    val earliestArrivalTime = 0
+    val earliestLeavingTime = taskDuration
+    DefinedTransferFunction(earliestArrivalTime, latestArrivalTime, earliestLeavingTime, node, node)
+  }
+
+  /**
+   * Conditions :
+   *    "I must perform a task at this location that lasts taskDuration unit of time."
+   *    "I can't start this task sooner than earliestArrivalTime."
+   *    "I can't start this task later than latestArrivalTime."
+   *    "I'll leave this location at earliestArrivalTime + taskDuration at earliest"
+   *    "I'll leave this location at latestArrivalTime + taskDuration at latest"
+   * @param node The node representing the location
+   * @param earliestArrivalTime The earliest start of this location's task
+   * @param latestArrivalTime The latest start of this location's task
+   * @param taskDuration The duration of this location's task
+   */
+  def createFromEarliestAndLatestArrivalTime(node: Long, earliestArrivalTime: Long,  latestArrivalTime: Long, taskDuration: Long = 0L): TransferFunction ={
+    val earliestLeavingTime = earliestArrivalTime + taskDuration
+    DefinedTransferFunction(earliestArrivalTime, latestArrivalTime, earliestLeavingTime, node, node)
+  }
+}
+
 /**
   * This abstract class defines a TransferFunction.
   * The TransferFunction's main purpose is to compute
