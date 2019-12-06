@@ -5,6 +5,8 @@ import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
 import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleCapacityConstraintWithLogReduction
 
+import scala.collection.immutable.HashSet
+
 /**
   * Created by fg on 12/05/17.
   */
@@ -95,9 +97,9 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
   m.close()
 
   val relevantToTime = TimeWindowHelper.relevantPredecessorsOfNodes(myVRP, timeWindowExtension, travelDurationMatrix)
-  val relevantToCapacity = CapacityHelper.relevantPredecessorsOfNodes(myVRP, maxVehicleContent, vehiclesSize, contentsFlow)
+  val relevantToCapacity = GlobalVehicleCapacityConstraintWithLogReduction.relevantPredecessorsOfNodes(capacityInvariant)
 
-  val relevantPredecessorsOfNodes = relevantToTime.map(x => x._1 -> x._2.filter(relevantToCapacity(x._1)))
+  val relevantPredecessorsOfNodes = relevantToTime.map(x => x._1 -> x._2.filter(HashSet() ++ relevantToCapacity(x._1)))
   val relevantSuccessorsOfNodes = TimeWindowHelper.relevantSuccessorsOfNodes(myVRP, timeWindowExtension, travelDurationMatrix)
   val closestRelevantNeighborsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance,relevantPredecessorsOfNodes)(_))
 
