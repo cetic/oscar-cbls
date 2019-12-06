@@ -29,7 +29,7 @@ import oscar.visual.shapes.{VisualCircle, VisualLine, VisualShape}
 
 
 /**
-  * @author fabian.germeau@student.vinci.be
+  * @author fabian.germeau@cetic.be
   */
 
 class BasicRoutingMap(vrp: VRP,

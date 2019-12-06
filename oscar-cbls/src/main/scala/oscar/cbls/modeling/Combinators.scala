@@ -567,7 +567,7 @@ class NeighborhoodOps(n:Neighborhood){
     * increase the number of value displayed.
     *
     * @param obj the objective function
-    * @author fabian.germeau@student.vinci.be
+    * @author fabian.germeau@cetic.be
     */
   def showObjectiveFunction(obj: Objective, title: String = "Objective function vs. time[s]") = new ShowObjectiveFunction(n,obj, title)
 

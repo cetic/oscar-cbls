@@ -25,7 +25,7 @@ import scala.util.Random
   * The utility of this object is to generate a pseudo-random array of color.
   * For the same amount of color needed, the returned array will always contain the same colors
   * but in a different order.
-  * @author fabian.germeau@student.vinci.be
+  * @author fabian.germeau@cetic.be
   */
 object ColorGenerator {
   def generateRandomColors(number:Int,alpha:Int = 255): Array[Color] ={

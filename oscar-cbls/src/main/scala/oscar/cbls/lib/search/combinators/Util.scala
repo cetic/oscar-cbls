@@ -28,7 +28,7 @@ trait UtilityCombinators{
  *
  * @param a a neighborhood
  * @param obj the objective function
- * @author fabian.germeau@student.vinci.be
+ * @author fabian.germeau@cetic.be
  */
 class ShowObjectiveFunction(a: Neighborhood, obj: () => Long, title: String = "Objective function vs. time[s]") extends NeighborhoodCombinator(a){
   //objGraphic is an internal frame that contains the curve itself and visualFrame is a basic frame that contains objGraphic
