@@ -66,6 +66,41 @@ object TransferFunction{
     })
     ).toMap
   }
+
+  /**
+   * This method is meant to precompute the relevant successors of all node.
+   *
+   * A node z is an relevant successor of another node y if
+   *   earliestArrivalTimes(y) +
+   *   taskDurations(y) +
+   *   timeMatrix.getTravelDuration(y, earliestArrivalTimes(y) + taskDurations(y), z) +
+   *   taskDurations(z) <= latestLeavingTimes(z)
+   *
+   * e.g : You have a list of relevant predecessor for a node y but inserting this node y
+   * could delayed the arrival time to the current next node of the relevant predecessor.
+   *
+   *
+   * Meaning if we can start the task at node y, finish it, travel to z,
+   * and finish the task at z before the latestLeavingTimes of z, then x is an open relevant neighbor of y.
+   *
+   * All these informations are used to define the problem, therefore they are static.
+   * The only information that's not static is the current next of the relevant predecessor we want to insert after.
+   * But we can precompute all the relevant successor of the node we want to insert
+   *
+   * @param n The number of nodes of the problem
+   * @param v The number of vehicles of the problem
+   * @param singleNodesTransferFunctions The array containing the TransferFunction of each nodes of the problem
+   * @param timeMatrix The matrix containing the travel duration between each nodes of the problem
+   * @return A map (node -> relevant neighbors)
+   */
+  def relevantSuccessorsOfNodes(n: Int, v: Int, singleNodesTransferFunctions: Array[TransferFunction], timeMatrix: Array[Array[Long]]): Map[Long,Iterable[Long]] ={
+    val allNodes = (0L until n).toList
+    List.tabulate(n)(to => {
+      val toTF = singleNodesTransferFunctions(to)
+      to.toLong -> allNodes.collect{
+        case from: Long if singleNodesTransferFunctions(from.toInt).latestLeavingTime + timeMatrix(from.toInt)(to) <= toTF.la => from
+      }}).toMap
+  }
 }
 
 /**

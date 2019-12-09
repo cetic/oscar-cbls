@@ -63,13 +63,13 @@ object SimpleVRPWithTimeWindow extends App{
   m.close()
 
   val relevantPredecessorsOfNodes = TransferFunction.relevantPredecessorsOfNodes(n,v,singleNodeTransferFunctions,timeMatrix)
-  val relevantSuccessorsOfNodes = TimeWindowHelper.relevantSuccessorsOfNodes(myVRP, timeWindowExtension, travelDurationMatrix)
+  val relevantSuccessorsOfNodes = TransferFunction.relevantSuccessorsOfNodes(myVRP, timeWindowExtension, travelDurationMatrix)
 
   def postFilter(node:Long): (Long) => Boolean = {
     (neighbor: Long) => {
       val successor = myVRP.nextNodeOf(neighbor)
       myVRP.isRouted(neighbor) &&
-        (successor.isEmpty || relevantSuccessorsOfNodes(node).contains(successor.get))
+        (successor.isEmpty || relevantSuccessorsOfNodes(node).exists(_ == successor.get))
     }
   }
 
