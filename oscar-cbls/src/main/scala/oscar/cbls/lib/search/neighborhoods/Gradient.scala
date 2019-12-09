@@ -1,17 +1,17 @@
 /*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
+ * OscaR is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * OscaR is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License  for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+ * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+ ******************************************************************************/
 
 package oscar.cbls.lib.search.neighborhoods
 
@@ -55,7 +55,7 @@ case class GradientComponent(variable:CBLSIntVar,
 }
 
 /**
-*this gradient descent finds a direction by explicitely probing variables together, and not imdpendently as done in classic gradient descent.
+ *this gradient descent finds a direction by explicitely probing variables together, and not imdpendently as done in classic gradient descent.
  * for instance, let be (x,y), the neighborhood will esplore
  * (x,y+dy), (x,y-dy), (x+dx,y),(x+dx,y+dy),(x+dx,y-dy),(x-dx,y),(x-dx,y+dy),(x-dx,y-dy)
  * this makes it possible to circumvent situations where x and y
@@ -86,16 +86,22 @@ case class DiscretizedDirectionGradient(vars:Array[CBLSIntVar],
                                         variableIndiceToDeltaForGradientDefinition:Long => Long,
                                         linearSearchForGradientDescent:LinearOptimizer,
                                         gradientSearchBehavior:LoopBehavior = Best(),
-                                        trySubgradient:Boolean = false)
+                                        trySubgradient:Boolean = false,
+                                        hotRestartOnVariableSelection:Boolean = true)
   extends AbstractGradientDescent(vars:Array[CBLSIntVar],
     name:String,
     linearSearchForGradientDescent,
     trySubgradient)  {
 
+  var firstIndiceInPreviousCall:Int = 0
+
   //TODO: il faut pouvoir spécifier des co-variance entre les variables d'input.
   //typiquement on va dire, sachant un gradient déjà sélectionné,
   // doit-on examiner les co-variances +, - ou les deux ou aucune?
 
+  //TODO: il faut du hotRestart sur le gradient!!!
+  //comment faire?
+  //sur base de l'indice de la première variable sélectionnée, on doit shifter tout le range du tableau.
   override def findGradient(initialObj: Long): List[GradientComponent] = {
 
     val (iterator,notifyFound) = gradientSearchBehavior.toIterator(0 until Int.MaxValue)
@@ -190,28 +196,37 @@ case class DiscretizedDirectionGradient(vars:Array[CBLSIntVar],
       //il y a donc l'ensemble des sous-ensembles = 3^nbVars possibilités
 
       if(exploreVars(
-        varsToTest = selectVars.toList.map(v => v.toInt),
+        varsToTest = (if(hotRestartOnVariableSelection)
+          HotRestart(selectVars.toList,firstIndiceInPreviousCall).map(_.toInt).toList
+        else
+          selectVars.toList.map(v => v.toInt)),
         nbVar,
-        currentGradient = Nil)) return bestGradient
-    }
+        currentGradient = Nil)) {
 
+        firstIndiceInPreviousCall = bestGradient.last.indice
+        return bestGradient
+      }
+    }
+    if(bestGradient.nonEmpty) {
+      firstIndiceInPreviousCall = bestGradient.last.indice
+    }
     bestGradient
   }
 }
 
 /**
-  * this neighborhood performs a gradient descent.
-  * it first sense each dimension independently, and then performs
-  * a linear descent on the steepest identified gradient.
-  * @param vars
-  * @param name
-  * @param maxNbVars
-  * @param selectVars
-  * @param variableIndiceToDeltaForGradientDefinition
-  * @param hotRestart
-  * @param linearSearch
-  * @param trySubgradient
-  */
+ * this neighborhood performs a gradient descent.
+ * it first sense each dimension independently, and then performs
+ * a linear descent on the steepest identified gradient.
+ * @param vars
+ * @param name
+ * @param maxNbVars
+ * @param selectVars
+ * @param variableIndiceToDeltaForGradientDefinition
+ * @param hotRestart
+ * @param linearSearch
+ * @param trySubgradient
+ */
 case class GradientDescent(vars:Array[CBLSIntVar],
                            name:String = "GradientDescent",
                            maxNbVars:Int = Integer.MAX_VALUE,
@@ -304,10 +319,10 @@ abstract class AbstractGradientDescent(vars:Array[CBLSIntVar],
   def findGradient(initialObj: Long):List[GradientComponent]
 
   /**
-    * This is the method you must implement and that performs the search of your neighborhood.
-    * every time you explore a neighbor, you must perform the calls to notifyMoveExplored or moveRequested(newObj) && submitFoundMove(myMove)){
-    * as explained in the documentation of this class
-    */
+   * This is the method you must implement and that performs the search of your neighborhood.
+   * every time you explore a neighbor, you must perform the calls to notifyMoveExplored or moveRequested(newObj) && submitFoundMove(myMove)){
+   * as explained in the documentation of this class
+   */
   override def exploreNeighborhood(initialObj: Long): Unit = {
     //step1: interroger le gradient dans toutes les directions de selectedVars
     this.gradientDefinition = List.empty
@@ -410,7 +425,7 @@ case class GradientMove(gradientDefinition : List[GradientComponent], step:Long,
   }
 
   override def toString: String = {
-    neighborhoodNameToString + "GradientMove(" + gradientDefinition.map(component => component.variable.name + "(slope:" + component.slope + "):=" + (component.initValue + (step / component.slope).toLong)).mkString(";")  + objToString + ")"
+    neighborhoodNameToString + "GradientMove(" + gradientDefinition.map(component => component.variable.name + "(slope:" + component.slope + "):+=" + ((step / component.slope).toLong)).mkString(";")  + objToString + ")"
   }
 
   override def touchedVariables: List[Variable] = gradientDefinition.map(_.variable)
