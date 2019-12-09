@@ -186,7 +186,7 @@ case class DiscretizedDirectionGradient(vars:Array[CBLSIntVar],
       false
     }
 
-    for(nbVar <- minNbVar to (maxNbVars min vars.length-1)){
+    for(nbVar <- minNbVar to (maxNbVars min (vars.length-1))){
       //il y a donc l'ensemble des sous-ensembles = 3^nbVars possibilités
 
       if(exploreVars(
@@ -410,7 +410,7 @@ case class GradientMove(gradientDefinition : List[GradientComponent], step:Long,
   }
 
   override def toString: String = {
-    neighborhoodNameToString + "GradientMove(" + gradientDefinition.map(component => component.variable.toString + ":=" + (component.initValue + (step / component.slope).toLong)).mkString(";")  + objToString + ")"
+    neighborhoodNameToString + "GradientMove(" + gradientDefinition.map(component => component.variable.name + "(slope:" + component.slope + "):=" + (component.initValue + (step / component.slope).toLong)).mkString(";")  + objToString + ")"
   }
 
   override def touchedVariables: List[Variable] = gradientDefinition.map(_.variable)
