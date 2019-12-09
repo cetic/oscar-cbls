@@ -3,6 +3,8 @@ package oscar.cbls.algo.graph
 import scala.collection.immutable.{SortedMap, SortedSet}
 
 object Connexity {
+  //TODO: these algo do not consider non transit nodes that constitute a boundary between different components!!!
+
   def components(graph:ConditionalGraph,isConditionOpen:Int => Boolean):(Array[List[Node]]) = {
     val consideredEdges = graph.edges.toList.filter(e =>
       e.conditionID match {
