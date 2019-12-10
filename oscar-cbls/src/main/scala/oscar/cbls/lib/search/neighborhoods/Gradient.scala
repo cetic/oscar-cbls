@@ -425,7 +425,11 @@ case class GradientMove(gradientDefinition : List[GradientComponent], step:Long,
   }
 
   override def toString: String = {
-    neighborhoodNameToString + "GradientMove(" + gradientDefinition.map(component => component.variable.name + "(slope:" + component.slope + "):+=" + ((step / component.slope).toLong)).mkString(";")  + objToString + ")"
+
+    neighborhoodNameToString + "GradientMove(" + gradientDefinition.map(component => {
+      val delta = ((step / component.slope).toLong)
+      component.variable.name + ":+=" + delta + " (slope:" + component.slope + ")"
+    } ).mkString("; ")  + objToString + ")"
   }
 
   override def touchedVariables: List[Variable] = gradientDefinition.map(_.variable)
