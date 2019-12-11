@@ -53,8 +53,8 @@ object Gehring_Homberger_benchmark extends App {
     val las = Array.tabulate(datas.length)(x => datas(x)._5.toLong*100)
     val ts = Array.tabulate(datas.length)(x => datas(x)._6.toLong*100)
     val singleNodeTransferFunctions = Array.tabulate(n)(node =>
-      if(node < v) TransferFunction.createFromEarliestAndLatestArrivalTime(eas(0), las(0), ts(0))
-      else TransferFunction.createFromEarliestAndLatestArrivalTime(eas(node - v + 1), las(node - v + 1), ts(node - v + 1)))
+      if(node < v) TransferFunction.createFromEarliestAndLatestArrivalTime(node, eas(0), las(0), ts(0))
+      else TransferFunction.createFromEarliestAndLatestArrivalTime(node, eas(node - v + 1), las(node - v + 1), ts(node - v + 1)))
 
     // Client demands
     val demands = Array.tabulate(n)(node => if(node < v) 0L else datas(node - v + 1)._3.toLong)

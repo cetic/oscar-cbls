@@ -62,7 +62,7 @@ object TransferFunction{
   def relevantPredecessorsOfNodes(n: Int, v: Int, singleNodesTransferFunctions: Array[TransferFunction], timeMatrix: Array[Array[Long]]): Map[Long,Iterable[Long]] ={
     val allNodes = (0L until n).toList
     List.tabulate(n)(node => node.toLong -> allNodes.collect({
-      case neighbor: Long if singleNodesTransferFunctions(neighbor.toInt).el + timeMatrix(neighbor.toInt)(node) <= singleNodesTransferFunctions(node).la => neighbor
+      case neighbor: Long if node != neighbor && singleNodesTransferFunctions(neighbor.toInt).el + timeMatrix(neighbor.toInt)(node) <= singleNodesTransferFunctions(node).la => neighbor
     })
     ).toMap
   }
@@ -98,7 +98,7 @@ object TransferFunction{
     List.tabulate(n)(to => {
       val toTF = singleNodesTransferFunctions(to)
       to.toLong -> allNodes.collect{
-        case from: Long if singleNodesTransferFunctions(from.toInt).latestLeavingTime + timeMatrix(from.toInt)(to) <= toTF.la => from
+        case from: Long if from != to && singleNodesTransferFunctions(from.toInt).latestLeavingTime + timeMatrix(from.toInt)(to) <= toTF.la => from
       }}).toMap
   }
 }
@@ -122,7 +122,9 @@ abstract class TransferFunction(val ea: Long, val la: Long, val el: Long, val fr
   // and that apply() return always None
   def isEmpty: Boolean
 
-  def latestLeavingTime: Long = la + el - ea
+  lazy val latestLeavingTime: Long = la + el - ea
+
+  lazy val taskDuration: Long = el - ea
 
   override def toString: String = {
     "earliest arrival time : " + ea + "\n latest arrival time : " + la + "\n earliest leaving time : " + el

@@ -19,9 +19,9 @@ object SimpleVRPWithTimeWindow extends App{
   val n = 500
   val penaltyForUnrouted = 10000
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
-  val travelDurationMatrix = RoutingMatrixGenerator.generateLinearTravelTimeFunction(n,symmetricDistance)
+  val timeMatrix = symmetricDistance
   val (listOfChains,precedences) = RoutingMatrixGenerator.generateChainsPrecedence(n,v,((n-v)/3)*2,4)
-  val (earliestArrivalTimes, latestLeavingTimes, taskDurations, maxWaitingDurations) = RoutingMatrixGenerator.generateFeasibleTimeWindows(n,v,travelDurationMatrix,listOfChains)
+  val singleNodeTransferFunctions = RoutingMatrixGenerator.generateFeasibleTransferFunctions(n,v,timeMatrix,listOfChains)
 
   val myVRP =  new VRP(m,n,v)
   val gc = GlobalConstraintCore(myVRP.routes,v)
@@ -42,13 +42,7 @@ object SimpleVRPWithTimeWindow extends App{
   val chainsExtension = chains(myVRP,listOfChains)
 
   //TimeWindow
-  val timeWindowExtension = timeWindows(Some(earliestArrivalTimes), None, None, Some(latestLeavingTimes), taskDurations, None)
-  val singleNodeTransferFunctions = Array.tabulate(n)(node =>
-    TransferFunction.createFromEarliestAndLatestArrivalTime(node, earliestArrivalTimes(node), latestLeavingTimes(node) - taskDurations(node), taskDurations(node))
-  )
   val timeWindowViolations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
-  val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
-  //println("travel durations: \n" + timeMatrix.zipWithIndex.map(from => from._2 -> from._1.zipWithIndex.map(to => "" + to._2 + " : " + to._1).mkString(", ")).mkString("\n"))
 
   val smartTimeWindowInvariant =
     TimeWindowConstraint(gc, n, v,
@@ -63,7 +57,7 @@ object SimpleVRPWithTimeWindow extends App{
   m.close()
 
   val relevantPredecessorsOfNodes = TransferFunction.relevantPredecessorsOfNodes(n,v,singleNodeTransferFunctions,timeMatrix)
-  val relevantSuccessorsOfNodes = TransferFunction.relevantSuccessorsOfNodes(myVRP, timeWindowExtension, travelDurationMatrix)
+  val relevantSuccessorsOfNodes = TransferFunction.relevantSuccessorsOfNodes(n,v, singleNodeTransferFunctions, timeMatrix)
 
   def postFilter(node:Long): (Long) => Boolean = {
     (neighbor: Long) => {

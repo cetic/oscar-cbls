@@ -9,7 +9,6 @@ import oscar.cbls.core.ChangingSeqValue
 case class PreComputedDistances(distanceFromStart:Long,
                                 distanceToStart:Long)
 
-@deprecated("needs testing","")
 class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:Array[CBLSIntVar], assymetricDistance:(Long,Long)=>Long)
   extends GlobalConstraintDefinition[Long](gc,v){
 

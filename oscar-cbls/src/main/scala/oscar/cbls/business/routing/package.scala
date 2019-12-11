@@ -65,7 +65,6 @@ package object routing
 
   val ChainsHelper = oscar.cbls.business.routing.model.helpers.ChainsHelper
   val DistanceHelper = oscar.cbls.business.routing.model.helpers.DistanceHelper
-  val TimeWindowHelper = oscar.cbls.business.routing.model.helpers.TimeWindowHelper
 
 }
 
