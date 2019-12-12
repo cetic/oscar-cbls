@@ -245,16 +245,16 @@ class ResizableRectangle(store:Store, height: IntValue, width: IntValue, givenNa
   override def toString: String = if (givenName == null) value.toString else givenName
 }
 
-class Buffer(store: Store, shape: AtomicValue[GeometryValue], distance: Long, givenName: String = null)
+class Buffer(store: Store, shape: AtomicValue[GeometryValue], distance: Long, givenName: String = null, nbSegments:Int = 8)
   extends CBLSGeometryInvariant(store, {
-    val bufferedGeometry = BufferOp.bufferOp(shape.value.geometry, distance)
+    val bufferedGeometry = BufferOp.bufferOp(shape.value.geometry, distance, nbSegments)
     GeometryValue(bufferedGeometry)
   }) with GeometryNotificationTarget {
 
   this.registerStaticAndDynamicDependency(shape)
 
   override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue], id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
-    val bufferedGeometry = BufferOp.bufferOp(newVal.geometry, distance)
+    val bufferedGeometry = BufferOp.bufferOp(newVal.geometry, distance, nbSegments)
     this := GeometryValue(bufferedGeometry)
   }
 
