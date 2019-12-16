@@ -26,7 +26,7 @@ object VRPDemo extends App {
 
   println("usage: VRPDemo n v")
   //val n:Long=args(0).toLong
-  val n = 100L
+  val n = 500L
   //val v = args(1).toLong
   val v = 4L
 

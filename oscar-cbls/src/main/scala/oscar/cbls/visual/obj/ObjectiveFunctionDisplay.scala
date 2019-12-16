@@ -15,7 +15,7 @@ class ObjectiveFunctionDisplay(title: String)
   xDom = 0 to 1
   yDom = 0 to 100
 
-  private val startinAt = getWatch
+  private var startTime = -1
   private var best = Long.MaxValue
   panel.setMouseWheelEnabled(true)
   panel.setMouseZoomable(true)
@@ -45,7 +45,12 @@ class ObjectiveFunctionDisplay(title: String)
 
   def drawFunction(value: Long) ={
 
-    val at = (getWatch - startinAt).toDouble/1000
+    val at = if(startTime == -1){
+      startTime = getWatch
+      0
+    }else{
+      (getWatch - startTime).toDouble/1000
+    }
 
     //TODO: this is a bit slow isnt'it?
     if(yDom.getUpperBound < value.toDouble)

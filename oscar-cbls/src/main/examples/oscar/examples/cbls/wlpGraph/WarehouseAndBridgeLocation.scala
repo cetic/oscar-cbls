@@ -129,20 +129,25 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
   val costOfBridgesPerBridge = 7
 
 
+  /* for some additional path in the graph, fixed ends
   val selectedDistances = Array.tabulate(20)(w =>
     new DistanceInConditionalGraph(graph,0,w,openConditions,10000)(underApproximatingDistanceInGraphAllCondtionsOpen(_)(_)))
   val totalDistanceToWs = sum(selectedDistances)
-  val x = Cardinality(openConditions)
 
+  */
 
+  val numberOfOpenBridges = Cardinality(openConditions)
+
+  /* an additionnal path ion the graph dynamic ends
   val smallestCentroïd = minSet(openWarehouses,-1)
   val biggestCentroïd = maxSet(openWarehouses,-1)
   val distanceMinMax = new DistanceInConditionalGraph(graph,
     from = smallestCentroïd,
     to = biggestCentroïd,
     openConditions,Int.MaxValue)(underApproximatingDistanceInGraphAllCondtionsOpen(_)(_))
+*/
 
-  val obj = Objective(Sum(distanceToNearestOpenWarehouseLazy) + Sum(costForOpeningWarehouse, openWarehouses) + (x*costOfBridgesPerBridge) + totalDistanceToWs)// + distanceMinMax)
+  val obj = Objective(Sum(distanceToNearestOpenWarehouseLazy) + Sum(costForOpeningWarehouse, openWarehouses) + (numberOfOpenBridges*costOfBridgesPerBridge)) //+ totalDistanceToWs)// + distanceMinMax)
 
   m.close()
 
@@ -203,8 +208,6 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   var lastDisplay = this.getWatch
 
-  println("\t" + selectedDistances.mkString("\n\t"))
-
   def getFactorApartBridges(w1:Int,w2:Int,factor:Int):Iterable[Long] = {
     val nodeW1 = warehouseToNode(w1)
     val nodeW2 = warehouseToNode(w2)
@@ -258,7 +261,6 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
         //Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
       ),refresh = W/10)
 
-      
       //cauchyAnnealing (10,2) cutTail (10000,0.00001,1000) saveBestAndRestoreOnExhaust obj
 
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize1"), 4, obj, restartFromBest = true)
@@ -278,7 +280,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
         hideRegularEdges = true,
         hideOpenEdges = false,
         emphasizeEdges = vor.spanningTree(deliveryNodeList),
-        extraPath=List(distanceMinMax.getPath) ::: selectedDistances.map(_.getPath).toList
+        extraPath=Nil /*List(distanceMinMax.getPath) ::: selectedDistances.map(_.getPath).toList*/
       )
 
       lastDisplay = this.getWatch
@@ -300,12 +302,12 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
     hideClosedEdges = true,
     hideRegularEdges = false,
     hideOpenEdges=false,
-    extraPath = List(distanceMinMax.getPath) ::: selectedDistances.map(_.getPath).toList)
+    extraPath = Nil /* List(distanceMinMax.getPath) ::: selectedDistances.map(_.getPath).toList)*/)
 
   println(neighborhood.profilingStatistics)
 
   println(openWarehouses)
   println(openConditions)
-  println("\t" + selectedDistances.mkString("\n\t"))
+  //println("\t" + selectedDistances.mkString("\n\t"))
 }
 

@@ -1,4 +1,4 @@
-package oscar.cbls.visual.routing
+package oscar.cbls.business.routing.visu
 
 /**
   * *****************************************************************************
@@ -17,8 +17,8 @@ package oscar.cbls.visual.routing
   * ****************************************************************************
   */
 
-import java.awt.geom.Line2D.Double
 import java.awt.Color
+import java.awt.geom.Line2D.Double
 import java.awt.geom.Point2D
 
 import oscar.cbls._
@@ -29,7 +29,7 @@ import oscar.visual.shapes.{VisualCircle, VisualLine, VisualShape}
 
 
 /**
-  * @author fabian.germeau@student.vinci.be
+  * @author fabian.germeau@cetic.be
   */
 
 class BasicRoutingMap(vrp: VRP,

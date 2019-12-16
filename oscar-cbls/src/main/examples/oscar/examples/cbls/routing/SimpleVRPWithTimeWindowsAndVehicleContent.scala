@@ -1,33 +1,42 @@
 package oscar.examples.cbls.routing
 
+import javax.swing.TransferHandler.TransferSupport
 import oscar.cbls._
 import oscar.cbls.business.routing._
+import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
+import oscar.cbls.business.routing.invariants.timeWindow.{NaiveTimeWindowConstraint, TransferFunction}
+import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleCapacityConstraintWithLogReduction
+
+import scala.collection.immutable.HashSet
 
 /**
   * Created by fg on 12/05/17.
   */
 
 object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
-  val m = new Store(noCycle = false/*, checker = Some(new ErrorChecker)*/)
+  val m = new Store(noCycle = false, checker = Some(new ErrorChecker))
   val v = 10
-  val n = 1000
+  val n = 100
   val penaltyForUnrouted = 10000
   val maxVehicleContent = 8
   val minVehicleContent = 4
 
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
-  val travelDurationMatrix = RoutingMatrixGenerator.generateLinearTravelTimeFunction(n,symmetricDistance)
+  val travelDurationMatrix = symmetricDistance
   val (listOfChains,precedences) = RoutingMatrixGenerator.generateChainsPrecedence(n,v,(n-v)/2)
-  val (earliestArrivalTimes, latestLeavingTimes, taskDurations, maxWaitingDurations) = RoutingMatrixGenerator.generateFeasibleTimeWindows(n,v,travelDurationMatrix,listOfChains)
-  val maxTravelDurations = RoutingMatrixGenerator.generateMaxTravelDurations(listOfChains,earliestArrivalTimes,travelDurationMatrix)
+  val singleNodeTransferFunctions = RoutingMatrixGenerator.generateFeasibleTransferFunctions(n,v,travelDurationMatrix,listOfChains)
+  val maxTravelDurations = RoutingMatrixGenerator.generateMaxTravelDurations(listOfChains,singleNodeTransferFunctions.map(_.ea),travelDurationMatrix)
   val contentsFlow = RoutingMatrixGenerator.generateContentFlow(n,listOfChains,maxVehicleContent)
   val vehiclesSize = RoutingMatrixGenerator.generateVehiclesSize(v,maxVehicleContent,minVehicleContent)
 
   val myVRP =  new VRP(m,n,v)
-  TimeWindowHelper.reduceTimeWindows(myVRP,travelDurationMatrix,maxTravelDurations,earliestArrivalTimes,latestLeavingTimes,taskDurations)
+  NaiveTimeWindowConstraint.maxTransferFunctionWithTravelDurationRestriction(n,v,singleNodeTransferFunctions,maxTravelDurations,listOfChains, travelDurationMatrix)
+
+  val gc = GlobalConstraintCore(myVRP.routes, v)
 
   // Distance
-  val totalRouteLength = routeLength(myVRP.routes,n,v,false,symmetricDistance,true,true,false)(0)
+  val routeLengthPerVehicles = Array.tabulate(v)(vehicle => CBLSIntVar(m,name = "Length of route " + vehicle))
+  val routeLengthInvariant = new RouteLength(gc,n,v,routeLengthPerVehicles,(from: Long, to: Long) => symmetricDistance(from)(to))
 
   //Chains
   val precedenceRoute = myVRP.routes.createClone()
@@ -40,74 +49,32 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
   val chainsExtension = chains(myVRP,listOfChains)
 
   // Vehicle content
-  val contentRoute = precedenceRoute.createClone()
-  val violationOfContentAtNode = new CBLSIntVar(myVRP.routes.model, 0, 0 to Int.MaxValue, "violation of capacity " + "Content at node")
-  val capacityInvariant = forwardCumulativeConstraintOnVehicle(myVRP.routes,n,v,
-    (from,to,fromContent) => fromContent + contentsFlow(to),
-    maxVehicleContent,
-    vehiclesSize.map(maxVehicleContent-_),
-    violationOfContentAtNode,
-    4,
-    "Content at node")
+  val violationOfContentAtVehicle = Array.tabulate(v)(vehicle => new CBLSIntVar(myVRP.routes.model, 0, 0 to Int.MaxValue, "violation of capacity of vehicle " + vehicle))
+  val capacityInvariant = GlobalVehicleCapacityConstraintWithLogReduction(gc, n, v, vehiclesSize, contentsFlow, violationOfContentAtVehicle)
 
   //TimeWindow
-  val timeWindowRoute = contentRoute.createClone()
-  val timeWindowExtension = timeWindows(Some(earliestArrivalTimes), None, None, Some(latestLeavingTimes), taskDurations, None)
-  val timeWindowConstraints = new ConstraintSystem(m)
-  val timeWindowInvariant = forwardCumulativeIntegerIntegerDimensionOnVehicle(
-    myVRP.routes,n,v,
-    (fromNode,toNode,arrivalTimeAtFromNode,leaveTimeAtFromNode)=> {
-      val arrivalTimeAtToNode = leaveTimeAtFromNode + travelDurationMatrix.getTravelDuration(fromNode,0,toNode)
-      val leaveTimeAtToNode =
-        if(toNode < v) 0
-        else Math.max(arrivalTimeAtToNode,earliestArrivalTimes(toNode)) + taskDurations(toNode)
-      (arrivalTimeAtToNode,leaveTimeAtToNode)
-    },
-    Array.tabulate(v)(x => new CBLSIntConst(0)),
-    Array.tabulate(v)(x => new CBLSIntConst(earliestArrivalTimes(x)+taskDurations(x))),
-    0,
-    0,
-    contentName = "Time at node"
-  )
-  val arrivalTimes = timeWindowInvariant.content1AtNode
-  val leaveTimes = timeWindowInvariant.content2AtNode
-  // TravelDuration constraint
-  for(maxDetour <- maxTravelDurations){
-    timeWindowConstraints.post(arrivalTimes(maxDetour._1.last) - leaveTimes(maxDetour._1.head) le maxDetour._2)
-  }
+  val timeWindowRoute = precedenceRoute.createClone()
+  val timeWindowInvariant = NaiveTimeWindowConstraint(myVRP.routes, n, v, singleNodeTransferFunctions, travelDurationMatrix)
+  timeWindowInvariant.addMaxTravelDurationConstraint(maxTravelDurations)
+  val timeWindowConstraint = timeWindowInvariant.violation
 
-  //Time window constraints
-  val arrivalTimesAtEnd = timeWindowInvariant.content1AtEnd
-  for(i <- 0 until n){
-    if(i < v && latestLeavingTimes(i) != Long.MaxValue) {
-      timeWindowConstraints.post((arrivalTimesAtEnd(i) le latestLeavingTimes(i)).nameConstraint("end of time for vehicle " + i))
-    } else {
-      if(latestLeavingTimes(i) != Long.MaxValue)
-        timeWindowConstraints.post((leaveTimes(i) le latestLeavingTimes(i)).nameConstraint("end of time window on node " + i))
-      if(maxWaitingDurations(i) != Long.MaxValue)
-        timeWindowConstraints.post((arrivalTimes(i) ge earliestArrivalTimes(i)).nameConstraint("start of time window on node (with duration)" + i))
-    }
-  }
   //Constraints & objective
   val obj = new CascadingObjective(precedencesConstraints,
-    new CascadingObjective(capacityInvariant.violation,
-      new CascadingObjective(timeWindowConstraints,
-        totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes))))))
-
+    new CascadingObjective(timeWindowConstraint,
+      new CascadingObjective(sum(violationOfContentAtVehicle),
+        sum(routeLengthPerVehicles) + (penaltyForUnrouted*(n - length(myVRP.routes))))))
   m.close()
 
-  val relevantToTime = TimeWindowHelper.relevantPredecessorsOfNodes(myVRP, timeWindowExtension, travelDurationMatrix)
-  val relevantToCapacity = CapacityHelper.relevantPredecessorsOfNodes(myVRP, maxVehicleContent, vehiclesSize, contentsFlow)
+  val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix(from)(to)))
+  val relevantToTime = TransferFunction.relevantPredecessorsOfNodes(n,v,singleNodeTransferFunctions,timeMatrix)
+  val relevantToCapacity = GlobalVehicleCapacityConstraintWithLogReduction.relevantPredecessorsOfNodes(capacityInvariant)
 
-  val relevantPredecessorsOfNodes = relevantToTime.map(x => x._1 -> x._2.filter(relevantToCapacity(x._1)))
-  val relevantSuccessorsOfNodes = TimeWindowHelper.relevantSuccessorsOfNodes(myVRP, timeWindowExtension, travelDurationMatrix)
+  val relevantPredecessorsOfNodes = relevantToTime.map(x => x._1 -> x._2.toList.intersect(relevantToCapacity(x._1).toList))
+  val relevantSuccessorsOfNodes = TransferFunction.relevantSuccessorsOfNodes(n,v,singleNodeTransferFunctions,timeMatrix)
   val closestRelevantNeighborsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance,relevantPredecessorsOfNodes)(_))
 
-  def relevantPredecessorsForLastNode(lastNode: Long) = ChainsHelper.relevantNeighborsForLastNodeAfterHead(myVRP,chainsExtension,Some(relevantPredecessorsOfNodes(lastNode)))(lastNode)
+  def relevantPredecessorsForLastNode(lastNode: Long) = ChainsHelper.relevantNeighborsForLastNodeAfterHead(myVRP,chainsExtension,Some(HashSet() ++ relevantPredecessorsOfNodes(lastNode)))(lastNode)
   val relevantPredecessorsForInternalNodes = ChainsHelper.computeRelevantNeighborsForInternalNodes(myVRP, chainsExtension)_
-
-  var enoughSpaceAfterNeighborNow: (Long,Long,Array[Long]) => Boolean =
-    CapacityHelper.enoughSpaceAfterNeighbor(n,capacityInvariant)
 
 
 
@@ -197,8 +164,7 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
   //val routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "InsertUF"))
 
 
-  val search = bestSlopeFirst(List(oneChainInsert,oneChainMove,onePtMove(20)))afterMove({
-    enoughSpaceAfterNeighborNow = CapacityHelper.enoughSpaceAfterNeighbor(n,capacityInvariant)})
+  val search = bestSlopeFirst(List(oneChainInsert,oneChainMove,onePtMove(20)))
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 

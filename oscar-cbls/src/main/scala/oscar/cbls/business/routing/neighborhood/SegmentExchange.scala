@@ -250,6 +250,7 @@ case class SegmentExchangeOnSegments(vrp: VRP,
     val segmentsToExchangeGroupedByVehiclesNow = segmentsToExchangeGroupedByVehicle()
     val vehiclesNow = vehicles().toList.sorted
     val relevantNeighborsNow = relevantNeighbors()
+    // TODO find a way to avoid building a n² matrix each time we explore the segment exchange neighborhood, it's very time consuming
     val isNodeInRelevantNeighborsOfNodes = Array.tabulate(n)(node => {
       val isNodesRelevant = Array.fill(n)(false)
       for (neighbor <- relevantNeighborsNow(node))

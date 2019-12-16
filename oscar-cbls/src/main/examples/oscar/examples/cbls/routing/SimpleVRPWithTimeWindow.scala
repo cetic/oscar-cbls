@@ -3,11 +3,11 @@ package oscar.examples.cbls.routing
 import oscar.cbls._
 import oscar.cbls.business.routing.{routeLength, _}
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
-import oscar.cbls.business.routing.invariants.timeWindow.TimeWindowConstraint
+import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TransferFunction}
 import oscar.cbls.core.search.Best
 import oscar.cbls.lib.constraint.EQ
 
-import scala.collection.immutable.HashMap
+import scala.collection.immutable.{HashMap, HashSet}
 
 /**
   * Created by fg on 12/05/17.
@@ -19,9 +19,9 @@ object SimpleVRPWithTimeWindow extends App{
   val n = 500
   val penaltyForUnrouted = 10000
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
-  val travelDurationMatrix = RoutingMatrixGenerator.generateLinearTravelTimeFunction(n,symmetricDistance)
+  val timeMatrix = symmetricDistance
   val (listOfChains,precedences) = RoutingMatrixGenerator.generateChainsPrecedence(n,v,((n-v)/3)*2,4)
-  val (earliestArrivalTimes, latestLeavingTimes, taskDurations, maxWaitingDurations) = RoutingMatrixGenerator.generateFeasibleTimeWindows(n,v,travelDurationMatrix,listOfChains)
+  val singleNodeTransferFunctions = RoutingMatrixGenerator.generateFeasibleTransferFunctions(n,v,timeMatrix,listOfChains)
 
   val myVRP =  new VRP(m,n,v)
   val gc = GlobalConstraintCore(myVRP.routes,v)
@@ -42,17 +42,11 @@ object SimpleVRPWithTimeWindow extends App{
   val chainsExtension = chains(myVRP,listOfChains)
 
   //TimeWindow
-  val timeWindowRoute = precedenceRoute.createClone()
-  val timeWindowExtension = timeWindows(Some(earliestArrivalTimes), None, None, Some(latestLeavingTimes), taskDurations, None)
   val timeWindowViolations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
-  val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
-  //println("travel durations: \n" + timeMatrix.zipWithIndex.map(from => from._2 -> from._1.zipWithIndex.map(to => "" + to._2 + " : " + to._1).mkString(", ")).mkString("\n"))
 
   val smartTimeWindowInvariant =
     TimeWindowConstraint(gc, n, v,
-      earliestArrivalTimes,
-      latestLeavingTimes,
-      taskDurations,
+      singleNodeTransferFunctions,
       timeMatrix, timeWindowViolations)
 
   //Objective function
@@ -62,14 +56,14 @@ object SimpleVRPWithTimeWindow extends App{
 
   m.close()
 
-  val relevantPredecessorsOfNodes = TimeWindowHelper.relevantPredecessorsOfNodes(myVRP, timeWindowExtension, travelDurationMatrix)
-  val relevantSuccessorsOfNodes = TimeWindowHelper.relevantSuccessorsOfNodes(myVRP, timeWindowExtension, travelDurationMatrix)
+  val relevantPredecessorsOfNodes = TransferFunction.relevantPredecessorsOfNodes(n,v,singleNodeTransferFunctions,timeMatrix)
+  val relevantSuccessorsOfNodes = TransferFunction.relevantSuccessorsOfNodes(n,v, singleNodeTransferFunctions, timeMatrix)
 
   def postFilter(node:Long): (Long) => Boolean = {
     (neighbor: Long) => {
       val successor = myVRP.nextNodeOf(neighbor)
       myVRP.isRouted(neighbor) &&
-        (successor.isEmpty || relevantSuccessorsOfNodes(node).contains(successor.get))
+        (successor.isEmpty || relevantSuccessorsOfNodes(node).exists(_ == successor.get))
     }
   }
 
@@ -108,7 +102,7 @@ object SimpleVRPWithTimeWindow extends App{
       ChainsHelper.relevantNeighborsForLastNodeAfterHead(
         myVRP,
         chainsExtension,
-        Some(relevantPredecessorsOfNodes(lastNode))),
+        Some(HashSet() ++ relevantPredecessorsOfNodes(lastNode))),
       postFilter),
     myVRP,
     neighborhoodName = "MoveLastOfChain")
@@ -171,7 +165,7 @@ object SimpleVRPWithTimeWindow extends App{
       ChainsHelper.relevantNeighborsForLastNodeAfterHead(
         myVRP,
         chainsExtension,
-        Some(relevantPredecessorsOfNodes(lastNode))),
+        Some(HashSet() ++ relevantPredecessorsOfNodes(lastNode))),
       postFilter),
     myVRP,
     neighborhoodName = "InsertUF")

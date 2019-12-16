@@ -1,29 +1,26 @@
 package oscar.examples.cbls.wlpGraph
 
-import java.awt.Color
-import java.util
-
 import oscar.cbls._
 import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, DijkstraDistanceMatrix}
 import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.business.routing.neighborhood.vlsn.{CycleFinderAlgoType, VLSN}
 import oscar.cbls.core.computation.IntNotificationTarget
-import oscar.cbls.core.{ChangingIntValue, Invariant}
 import oscar.cbls.core.propagation.Checker
-import oscar.cbls.core.search.{Best, ConstantMoveNeighborhood, EvaluableCodedMove, JumpNeighborhood}
+import oscar.cbls.core.search.{ConstantMoveNeighborhood, EvaluableCodedMove}
+import oscar.cbls.core.{ChangingIntValue, Invariant}
 import oscar.cbls.lib.invariant.graph.KVoronoiZones
 import oscar.cbls.lib.invariant.logic.{Cluster, Filter, IntElement}
-import oscar.cbls.lib.invariant.numeric.{Sum, SumElements}
-import oscar.cbls.lib.invariant.set.{Cardinality, SetSum}
-import oscar.cbls.lib.search.neighborhoods.{AssignMove, AssignNeighborhood, RandomizeNeighborhood, SwapMove, SwapsNeighborhood}
-import oscar.cbls.modeling.ClusterInvariants
+import oscar.cbls.lib.invariant.numeric.SumElements
+import oscar.cbls.lib.invariant.set.Cardinality
+import oscar.cbls.lib.search.neighborhoods.vlsn.{CycleFinderAlgoType, VLSN}
+import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.test.graph.RandomGraphGenerator
 import oscar.cbls.util._
-import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
+import oscar.cbls.visual.SingleFrameWindow
 import oscar.cbls.visual.graph.GraphViewer
-import oscar.examples.cbls.WLPWithRedundancy.toto
+import oscar.cbls.visual.ColorGenerator
 
 import scala.collection.immutable.{SortedMap, SortedSet}
+import scala.swing.Color
 
 
 class StoreToWarehouseDistance(warehouseTab : Array[CBLSIntVar],distanceTab : Array[CBLSIntVar],storeWarehouseDistance : Array[CBLSIntVar],defaultDistance : Int = 10000)
@@ -400,10 +397,7 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
 
   val search = bestSlopeFirst(List(profile(AssignNeighborhood(deliveryToWarehouse,"SwitchAssignedWarehouse",domain = (_,i) => distanceToClosestCentroid(i).map(c => c._1.value))),
     profile(AssignNeighborhood(warehouseOpenArray,"OpenWarehouseAndLink") dynAndThen(assignHalfTheClosestStores)),
-    //profile(SwapsNeighborhood(deliveryToWarehouse,"SwapWarehouse")),
     profile(AssignNeighborhood(conditionalEdgesOpenArray,"SwitchEdge")),
-    //profile(AssignNeighborhood(warehouseOpenArray,"OpenAndVLSN") dynAndThen(vlsnForAssignAndThen) name "OpenAndVLSN"),
-    //profile(swapWarehouses dynAndThen vlsnForSwapAndThen),
     profile(vlsn),
     profile(swapWarehouses dynAndThen transferStores name "swapAndReassign"),
     profile(AssignNeighborhood(deliveryToWarehouse,"SwitchAssignedWarehouse",domain = (_,i) => distanceToClosestCentroid(i).map(c => c._1.value)) dynAndThen assignDelivery),
@@ -419,17 +413,11 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
     lastDisplay = this.getWatch
   })
 
-  val prompt = "Pour continuer, appuyer sur Entrée"
-  scala.io.StdIn.readLine(prompt)
-
   search.verbose = 2
   search.doAllMoves(obj = obj)
 
-
-//  println(deliveryToWarehouse.mkString("\n"))
   println(deliveryToWarehouse.foldLeft(true)((b : Boolean,d : CBLSIntVar) => openWarehouses.value.contains(d.value) && b))
-//  println(openWarehouses.value)
-//  println(deliveryToWarehouse.filter(p => !(openWarehouses.value contains p.value)).mkString("\n"))
+
 
   println(unServedDelivery.value.map(v => v + " - " + graph.coordinates(v)))
 
@@ -445,7 +433,6 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
 
   println(Array.tabulate(deliveryServedByWarehouse.length - 1)(i => deliveryServedByWarehouse(i).toString  + "-" + (objPerWarehouse(i).value + costForOpeningWarehouse * warehouseOpenArray(i).value) + "-" + ((objPerWarehouse(i).value + costForOpeningWarehouse * warehouseOpenArray(i).value) / (deliveryServedByWarehouse(i).value.toIterator.length max 1))).mkString("\n"))
 
-  //println(deliveryServedByWarehouse.map(c => c.toString + c.uniqueID).mkString("\n"))
 
   println(obj)
 

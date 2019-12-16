@@ -1,23 +1,17 @@
 package oscar.examples.cbls
 
-import java.awt.Color
-import java.io.PrintWriter
-
 import oscar.cbls._
 import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, DijkstraDistanceMatrix}
 import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.core.computation.{ChangingIntValue, IntInvariant}
-import oscar.cbls.core.search.{Best, MoveFound}
+import oscar.cbls.core.computation.ChangingIntValue
 import oscar.cbls.lib.invariant.graph.KVoronoiZones
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.set.Cardinality
-import oscar.cbls.lib.search.combinators
-import oscar.cbls.lib.search.combinators._
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.test.graph.RandomGraphGenerator
 import oscar.cbls.util.StopWatch
-import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 import oscar.cbls.visual.graph.GraphViewer
+import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 
 import scala.collection.immutable.SortedMap
 import scala.swing.Color
@@ -40,7 +34,7 @@ object WLPWithRedundancy extends App with StopWatch{
   val nbNonConditionalEdges =  (W+D)*5
   val displayDelay = 200
 
-  println("WarehouseAndBridgeLocation(W:" + W + " D:" + D + " B:" + nbConditionalEdges + ")")
+  println("RedundantWarehouseAndBridgeLocation(W:" + W + " D:" + D + " B:" + nbConditionalEdges + ")")
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
@@ -109,12 +103,7 @@ object WLPWithRedundancy extends App with StopWatch{
   val visual = new GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
     centroidColor = SortedMap.empty[Int,Color] ++ warehouseToNode.toList.map(node => (node.id,centroidColors(node.id))),nbNodesPerNode = k)
 
-  val toto = "Pour démarrer, appuyez sur Entrée"
-
-  SingleFrameWindow.show(visual,title = "Warehouse and bridge location", 2125, 1500)
-
-  visual.resize()
-
+  SingleFrameWindow.show(visual,title = "Redundant Warehouse and bridge location", 2125, 2125)
 
   visual.redrawMultipleNodes(
     openEdges.value,
@@ -180,12 +169,6 @@ object WLPWithRedundancy extends App with StopWatch{
         profile(AssignNeighborhood(warehouseOpenArray,"Assign Warehouse")),
         profile(AssignNeighborhood(warehouseOpenArray,"OpenWarehouses",searchZone = () => openWarehouses.value)),
         profile(AssignNeighborhood(conditionalEdgesOpenArray,"Assign Edge")),
-//        Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse And Warehouse") andThen AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
-//        Profile(AssignNeighborhood(conditionalEdgesOpenArray,"Open Edge And Edge") andThen AssignNeighborhood(conditionalEdgesOpenArray,"Open Edge")),
-//        Profile(AssignNeighborhood(conditionalEdgesOpenArray,"Open Edge And Warehouse") andThen AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
-//        Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse And Edge") andThen AssignNeighborhood(conditionalEdgesOpenArray,"Open Edge")),
-       // open3Warehouses,
-        //profile(swapClosest(20)),
         assignWarehouseAndEdge,
         swapWarehouseThenAssignEdge,
         profile(swapClosest(20))
@@ -205,10 +188,6 @@ object WLPWithRedundancy extends App with StopWatch{
 
 
   search.verbose = 2
-
-
-  scala.io.StdIn.readLine(toto)
-//
 
   val start = System.currentTimeMillis()
   search.doAllMoves(obj = obj)
