@@ -39,7 +39,8 @@ object RandomGraphGenerator {
     val totalEdges = nbConditionalEdges + nbNonConditionalEdges
 
     def randomXY: Int = rand.nextInt(mapSide)
-    val pointPosition: Array[(Int, Int)] = Array.tabulate(nbNodes)(w => (randomXY, randomXY))
+    val pointPosition: Array[(Int, Int)] = Array.tabulate(nbNodes)(w => (randomXY + 5, randomXY + 10
+    ))
 
     val nodes = 0 until nbNodes
 

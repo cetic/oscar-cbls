@@ -217,6 +217,8 @@ class VLSN(v:Int,
            unroutedPenalty:Objective,
            globalObjective:Objective,
            cycleFinderAlgoSelection:CycleFinderAlgoType = CycleFinderAlgoType.Mouthuy,
+           maxIt : Int = Int.MaxValue,
+           doAfterCycle : Option[() => Unit] = None,
            name:String = "VLSN") extends Neighborhood {
 
   override def getMove(obj: Objective,
@@ -232,17 +234,24 @@ class VLSN(v:Int,
       initUnroutedNodesToInsert(),
       None)
 
+    var remainingIt = maxIt
+
     //we restart with incremental restart as much as posible
-    while(dataForRestartOpt match {
-      case None => false
-      case Some(dataForRestart) =>
-        somethingDone = true
-        dataForRestartOpt = restartVLSNIncrementally(oldGraph = dataForRestart.oldGraph,
-          performedMoves = dataForRestart.performedMoves,
-          oldVehicleToRoutedNodesToMove = dataForRestart.oldVehicleToRoutedNodesToMove,
-          oldUnroutedNodesToInsert = dataForRestart.oldUnroutedNodesToInsert)
-        true
-    })()
+    while (dataForRestartOpt != None && remainingIt > 0) {
+      remainingIt = remainingIt - 1
+      val dataForRestart = dataForRestartOpt.get
+      somethingDone = true
+      dataForRestartOpt = restartVLSNIncrementally(oldGraph = dataForRestart.oldGraph,
+        performedMoves = dataForRestart.performedMoves,
+        oldVehicleToRoutedNodesToMove = dataForRestart.oldVehicleToRoutedNodesToMove,
+        oldUnroutedNodesToInsert = dataForRestart.oldUnroutedNodesToInsert)
+      doAfterCycle match {
+        case Some(toDo) => toDo()
+        case None => ()
+      }
+    }
+
+
 
 
     if (somethingDone) {

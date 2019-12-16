@@ -24,10 +24,11 @@ import scala.swing.Color
 
 object WLPWithRedundancy extends App with StopWatch{
   //the number of warehouses
-  val W:Int = 500
+  val W:Int = 250
+
 
   //the number of delivery points
-  val D:Int = 1000
+  val D:Int = 500
 
   // the number of per delivery points
   val k:Int = 3
@@ -37,7 +38,7 @@ object WLPWithRedundancy extends App with StopWatch{
 
   //nb non conditional edges
   val nbNonConditionalEdges =  (W+D)*5
-  val displayDelay = 1000
+  val displayDelay = 200
 
   println("WarehouseAndBridgeLocation(W:" + W + " D:" + D + " B:" + nbConditionalEdges + ")")
   //the cost per delivery point if no location is open
@@ -106,15 +107,21 @@ object WLPWithRedundancy extends App with StopWatch{
 
   println("Visual Creation")
   val visual = new GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
-    centroidColor = SortedMap.empty[Int,Color] ++ warehouseToNode.toList.map(node => (node.id,centroidColors(node.id))))
+    centroidColor = SortedMap.empty[Int,Color] ++ warehouseToNode.toList.map(node => (node.id,centroidColors(node.id))),nbNodesPerNode = k)
 
-  SingleFrameWindow.show(visual,title = "Warehouse and bridge location", 2125, 2125)
+  val toto = "Pour démarrer, appuyez sur Entrée"
+
+  SingleFrameWindow.show(visual,title = "Warehouse and bridge location", 2125, 1500)
+
+  visual.resize()
+
 
   visual.redrawMultipleNodes(
     openEdges.value,
     openWarehouses.value,
     distanceToClosestCentroidMap.mapValues(tab => tab.map(centroidAndDistance => centroidAndDistance._1.value)),
     k,
+    extraCentroids = (0L until W).toArray,
     extraPath = List()
   )
 
@@ -183,8 +190,7 @@ object WLPWithRedundancy extends App with StopWatch{
         swapWarehouseThenAssignEdge,
         profile(swapClosest(20))
       )
-    )
-      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize1"), 4, obj)) afterMove (
+    ) onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize1"), 4, obj)) afterMove (
       if(lastDisplay + displayDelay <= this.getWatch){ //} && obj.value < bestDisplayedObj) {
 
         visual.redrawMultipleNodes(
@@ -192,12 +198,16 @@ object WLPWithRedundancy extends App with StopWatch{
           openWarehouses.value,
           distanceToClosestCentroidMap.mapValues(tab => tab.map(centroidAndDistance => centroidAndDistance._1.value)),
           k,
-          extraPath = List())
+          extraPath = List(),
+          extraCentroids = (0L until W).toArray)
         lastDisplay = this.getWatch
       })
 
 
   search.verbose = 2
+
+
+  scala.io.StdIn.readLine(toto)
 //
 
   val start = System.currentTimeMillis()
@@ -215,7 +225,10 @@ object WLPWithRedundancy extends App with StopWatch{
     openWarehouses.value,
     distanceToClosestCentroidMap.mapValues(tab => tab.map(centroidAndDistance => {centroidAndDistance._1.value})),
     k,
+    extraCentroids = (0L until W).toArray,
     extraPath = List()
   )
+
+  println((0 until centroidColors.length).map(i => i + " : " + centroidColors(i).toString()).mkString("\n"))
 
 }

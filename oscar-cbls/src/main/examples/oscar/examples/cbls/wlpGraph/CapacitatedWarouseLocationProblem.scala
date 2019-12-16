@@ -21,6 +21,7 @@ import oscar.cbls.test.graph.RandomGraphGenerator
 import oscar.cbls.util._
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 import oscar.cbls.visual.graph.GraphViewer
+import oscar.examples.cbls.WLPWithRedundancy.toto
 
 import scala.collection.immutable.{SortedMap, SortedSet}
 
@@ -116,14 +117,14 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
   val D:Int = 1000
 
   // the number of per delivery points
-  val k:Int = 3
+  val k:Int = 5
 
   //nb conditional edges
   val nbConditionalEdges:Int =  (W + D) / 5
 
   //nb non conditional edges
   val nbNonConditionalEdges =  (W+D)*5
-  val displayDelay = 1000
+  val displayDelay = 100
 
   val defaultCostForNoOpenWarehouse = 10000
   val defaultDistanceForWarehouse = 10000
@@ -235,25 +236,16 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
 
   val centroidColors = ColorGenerator.generateRandomColors(W)
 
-//  val visual = new GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
-//    centroidColor = SortedMap.empty[Int,Color] ++ warehouseToNode.toList.map(node => (node.id,centroidColors(node.id))))
-//
-//  SingleFrameWindow.show(visual,title = "Warehouse and bridge location", 1025, 1105)
+  val visual = new GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
+    centroidColor = SortedMap.empty[Int,Color] ++ warehouseToNode.toList.map(node => (node.id,centroidColors(node.id))))
 
-//  def redraw(openConditions:SortedSet[Long],
-//             centroids:SortedSet[Long],
-//             nodeToCentroid:SortedMap[Long,Long],
-//             hideClosedEdges:Boolean = false,
-//             hideRegularEdges:Boolean = false,
-//             hideOpenEdges:Boolean=false,
-//             emphasizeEdges:Iterable[Edge] = List.empty,
-//             extraPath:Iterable[RevisableDistance])
-//
-//  visual.redraw(openEdges.value,
-//    openWarehouses.value,
-//    deliveryToWarhouseMap.mapValues(e => if (e.value == W) -1 else e.value),
-//    extraPath = List()
-//  )
+  SingleFrameWindow.show(visual,title = "Warehouse and bridge location", 1025, 1105)
+
+  visual.redraw(openEdges.value,
+    openWarehouses.value,
+    deliveryToWarhouseMap.mapValues(e => if (e.value == W) -1 else e.value),
+    extraPath = List()
+  )
 
   val distanceMatrixAllEdgesOpen = DijkstraDistanceMatrix.buildDistanceMatrix(graph,_ => true)
 
@@ -331,13 +323,22 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
     unroutedPenalty= constantObjective,//:Objective,
     globalObjective= obj,//:Objective,
     cycleFinderAlgoSelection= CycleFinderAlgoType.Mouthuy,//:CycleFinderAlgoType = CycleFinderAlgoType.Mouthuy,
+    doAfterCycle = Some(() => if(lastDisplay + displayDelay <= this.getWatch){ //} && obj.value < bestDisplayedObj) {
+
+      visual.redraw(openEdges.value,
+        openWarehouses.value,
+        deliveryToWarhouseMap.mapValues(e => if (e.value == W) -1 else e.value),
+        extraPath = List(),
+        extraCentroids = (0L until W).toArray
+      )
+      lastDisplay = this.getWatch
+    }),
   name ="VLSN")
 
   def closeWarehouseToNodeMap(w : Int,k : Int) = SortedMap.empty[Long,SortedSet[Long]]  ++ (0L until W).map(w => w -> SortedSet[Long]()) ++ kNearestOpenWarehouseToWarehouse(k,w).map(w1 => w1 -> deliveryServedByWarehouse(w1).value.map(_ + W))
 
-
   def closeOfTwoWarehousesToNodeMap(w1 : Int,w2 : Int,k : Int) = {
-    SortedMap.empty[Long,SortedSet[Long]]  ++ (0L until W).map(w => w -> SortedSet[Long]()) ++ kNearestOpenWarehouseToWarehouse(k,w1).map(w => w -> deliveryServedByWarehouse(w).value) ++ kNearestOpenWarehouseToWarehouse(k,w2).map(w => w -> deliveryServedByWarehouse(w).value)
+    SortedMap.empty[Long,SortedSet[Long]]  ++ (0L until W).map(w => w -> SortedSet[Long]()) ++ kNearestOpenWarehouseToWarehouse(k,w1).map(w => w -> deliveryServedByWarehouse(w).value.map(_ + W)) ++ kNearestOpenWarehouseToWarehouse(k,w2).map(w => w -> deliveryServedByWarehouse(w).value.map(_ + W))
   }
 
   def vlsnForAssignAndThen(m : AssignMove) = new VLSN(W:Int,
@@ -362,8 +363,9 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
     vehicleToObjective= objPerWarehouse, //:Array[Objective],
     unroutedPenalty= constantObjective,//:Objective,
     globalObjective= obj,//:Objective,
+    maxIt = 10,
     cycleFinderAlgoSelection= CycleFinderAlgoType.Mouthuy,//:CycleFinderAlgoType = CycleFinderAlgoType.Mouthuy,
-    name ="VLSN")
+    name ="VLSNForAssignAndThen")
 
   def vlsnForSwapAndThen(m : SwapMove) = {
     new VLSN(W: Int,
@@ -394,16 +396,31 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
 
   def assignDelivery(m : AssignMove) = AssignNeighborhood(deliveryToWarehouse,searchZone = () => kClosestStoresByStore(m.id),domain = (_,i) => distanceToClosestCentroid(i).map(c => c._1.value))
 
+  var lastDisplay = this.getWatch
+
   val search = bestSlopeFirst(List(profile(AssignNeighborhood(deliveryToWarehouse,"SwitchAssignedWarehouse",domain = (_,i) => distanceToClosestCentroid(i).map(c => c._1.value))),
     profile(AssignNeighborhood(warehouseOpenArray,"OpenWarehouseAndLink") dynAndThen(assignHalfTheClosestStores)),
     //profile(SwapsNeighborhood(deliveryToWarehouse,"SwapWarehouse")),
     profile(AssignNeighborhood(conditionalEdgesOpenArray,"SwitchEdge")),
-    profile(AssignNeighborhood(warehouseOpenArray,"OpenAndVLSN") dynAndThen(vlsnForAssignAndThen) name "OpenAndVLSN"),
+    //profile(AssignNeighborhood(warehouseOpenArray,"OpenAndVLSN") dynAndThen(vlsnForAssignAndThen) name "OpenAndVLSN"),
     //profile(swapWarehouses dynAndThen vlsnForSwapAndThen),
-    //profile(vlsn),
+    profile(vlsn),
     profile(swapWarehouses dynAndThen transferStores name "swapAndReassign"),
     profile(AssignNeighborhood(deliveryToWarehouse,"SwitchAssignedWarehouse",domain = (_,i) => distanceToClosestCentroid(i).map(c => c._1.value)) dynAndThen assignDelivery),
-    profile(swapStore))) onExhaustRestartAfter (RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize1"), 4, obj, restartFromBest = true)
+    profile(swapStore))) onExhaustRestartAfter (RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize1"), 2, obj, restartFromBest = true) afterMove(
+    if(lastDisplay + displayDelay <= this.getWatch){ //} && obj.value < bestDisplayedObj) {
+
+    visual.redraw(openEdges.value,
+      openWarehouses.value,
+      deliveryToWarhouseMap.mapValues(e => if (e.value == W) -1 else e.value),
+      extraPath = List(),
+      extraCentroids = (0L until W).toArray
+    )
+    lastDisplay = this.getWatch
+  })
+
+  val prompt = "Pour continuer, appuyer sur Entrée"
+  scala.io.StdIn.readLine(prompt)
 
   search.verbose = 2
   search.doAllMoves(obj = obj)
@@ -419,12 +436,16 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
   println(openWarehouses)
   println(openWarehouses.value.toArray.length)
 
-//  visual.redraw(openEdges.value,
-//    openWarehouses.value,
-//    deliveryToWarhouseMap.mapValues(e => if (e.value == W) -1 else e.value),
-//    extraPath = List(),
-//    extraCentroids = (0L until W).toArray
-//  )
+  visual.redraw(openEdges.value,
+    openWarehouses.value,
+    deliveryToWarhouseMap.mapValues(e => if (e.value == W) -1 else e.value),
+    extraPath = List(),
+    extraCentroids = (0L until W).toArray
+  )
+
+  println(Array.tabulate(deliveryServedByWarehouse.length - 1)(i => deliveryServedByWarehouse(i).toString  + "-" + (objPerWarehouse(i).value + costForOpeningWarehouse * warehouseOpenArray(i).value) + "-" + ((objPerWarehouse(i).value + costForOpeningWarehouse * warehouseOpenArray(i).value) / (deliveryServedByWarehouse(i).value.toIterator.length max 1))).mkString("\n"))
+
+  //println(deliveryServedByWarehouse.map(c => c.toString + c.uniqueID).mkString("\n"))
 
   println(obj)
 
