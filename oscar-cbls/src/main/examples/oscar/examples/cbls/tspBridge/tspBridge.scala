@@ -19,11 +19,11 @@ import scala.language.implicitConversions
 
 object TspBridge extends App {
 
-  val n = 100
-  val v = 1
-  val nbNodes = 1000
-  val nbConditionalEdges = 500
-  val nbNonConditionalEdges = 3000
+  val n = 500
+  val v = 5
+  val nbNodes = 5000
+  val nbConditionalEdges = 2500
+  val nbNonConditionalEdges = 15000
   val nbTransitNodes = nbNodes
 
   println("generate random graph")
@@ -39,7 +39,7 @@ object TspBridge extends App {
   val underApproximatingDistanceInGraphAllBridgesOpen:Array[Array[Long]] = DijkstraDistanceMatrix.buildDistanceMatrix(graph, _ => true)
   println("end dijkstra")
 
-  val m = Store() //checker = Some(new ErrorChecker()))
+  val m = Store(checker = Some(new ErrorChecker()))
 
   //initially all bridges open
   val bridgeConditionArray = Array.tabulate(nbConditionalEdges)(c => CBLSIntVar(m, 1, 0 to 1, "bridge_" + c + "_open"))
@@ -49,7 +49,7 @@ object TspBridge extends App {
   val costPerBridge = 20
 
   val bridgeCost:IntValue = cardinality(openBridges) * costPerBridge
-  val myVRP = new VRP(m,n,1)
+  val myVRP = new VRP(m,n,v)
 
   val routeLengthInvar = RouteLengthOnConditionalGraph(
     myVRP.routes,
@@ -75,7 +75,7 @@ object TspBridge extends App {
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // visu
 
-  val visu = new TspBridgeVisu(graph, v = 1, n,(a,b) => underApproximatingDistanceInGraphAllBridgesOpen(a)(b))
+  val visu = new TspBridgeVisu(graph, v = v, n,(a,b) => underApproximatingDistanceInGraphAllBridgesOpen(a)(b))
   SingleFrameWindow.show(visu,"TspBridge(tspN:" + n + " tspV:" + v + " graphN:" + nbNodes + " graphE:" + (nbNonConditionalEdges + nbConditionalEdges) + " graphNCE:" + nbNonConditionalEdges + " graphCE:" + nbConditionalEdges + ")")
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
