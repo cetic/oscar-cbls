@@ -263,6 +263,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
     require(v == openConditions)
 
+
     var aStarToRecompute: List[AStarInfo] = Nil
 
     def recordTouchedCondition(closedCondition: Int){
@@ -566,13 +567,13 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
       case None => //at the end of the current vehicle, which is the last one
         //compute the last hop
         currentLength += checkHop(currentPosition.value,v-1)
-        require(distancePerVehicle(v-1).value == currentLength)
+        require(distancePerVehicle(v-1).value == currentLength, "Distance Incremental " + distancePerVehicle(v-1) + " != Distance From Scratch " + currentLength)
         false
       case Some(nextPosition) if nextPosition.value < v =>
         //at the end of the current vehicle; starting a new one
         val lastHopToComeBack = checkHop(currentPosition.value,currentVehicle)
         currentLength += lastHopToComeBack
-        require(distancePerVehicle(currentVehicle).value == currentLength)
+        require(distancePerVehicle(currentVehicle).value == currentLength, "Distance Incremental " + distancePerVehicle(currentVehicle) + " != Distance From Scratch " + currentLength)
 
         currentPosition = nextPosition
         currentVehicle += 1

@@ -15,11 +15,14 @@ object RandomGraphGenerator {
                                            nbConditionalEdges:Int,
                                            nbNonConditionalEdges:Int,
                                            nbTransitNodes:Int,
-                                           mapSide:Int = 1000) : ConditionalGraphWithIntegerNodeCoordinates = {
+                                           mapSide:Int = 1000,
+                                           seed : Option[Long] = None) : ConditionalGraphWithIntegerNodeCoordinates = {
     //closest edges first
     val totalEdges = nbConditionalEdges + nbNonConditionalEdges
 
-    def randomXY: Int = (math.random * mapSide).toInt
+    val rand = new Random(seed match {case None => System.currentTimeMillis();case Some(s) => s})
+
+    def randomXY: Int = rand.nextInt(mapSide)
     val pointPosition: Array[(Int, Int)] = Array.tabulate(nbNodes)(w => (randomXY, randomXY))
 
     val nodes = 0 until nbNodes
@@ -35,9 +38,9 @@ object RandomGraphGenerator {
     val sortedDistances = allDistances.sortBy(_._3).toList
 
     val subDistance = sortedDistances.take(totalEdges)
-    val scrambled = Random.shuffle(subDistance).iterator
+    val scrambled = rand.shuffle(subDistance).iterator
 
-    val isTransitAllowed = Random.shuffle(nodes.toList.map(i => i < nbTransitNodes)).toArray
+    val isTransitAllowed = rand.shuffle(nodes.toList.map(i => i < nbTransitNodes)).toArray
 
     val nodeArray = Array.tabulate(nbNodes)(nodeId => new Node(nodeId,isTransitAllowed(nodeId)))
 

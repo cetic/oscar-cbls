@@ -19,11 +19,11 @@ import scala.language.implicitConversions
 
 object TspBridge extends App {
 
-  val n = 500
+  val n = 50
   val v = 5
-  val nbNodes = 5000
-  val nbConditionalEdges = 2500
-  val nbNonConditionalEdges = 15000
+  val nbNodes = 500
+  val nbConditionalEdges = 350
+  val nbNonConditionalEdges = 1600
   val nbTransitNodes = nbNodes
 
   println("generate random graph")
@@ -32,7 +32,8 @@ object TspBridge extends App {
     nbConditionalEdges = nbConditionalEdges,
     nbNonConditionalEdges = nbNonConditionalEdges,
     nbTransitNodes = nbTransitNodes,
-    mapSide = 1000)
+    mapSide = 1000,
+    seed = Some(1))
   println("end generate random graph")
 
   println("start dijkstra")
