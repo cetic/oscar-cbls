@@ -52,7 +52,7 @@ class DijkstraMTTestSuite extends FunSuite with GeneratorDrivenPropertyChecks wi
           case Unreachable => aStarResults.foreach(_ should (be (a[NeverConnected]) or be (a[NotConnected])))
 
           // If dijkstraResult is a VoronoiZone, the minimum distance of aStar should match dijkstraResult
-          case VoronoiZone(_,distance) =>
+          case VoronoiZone(_,distance,_) =>
             aStarResults
               .filter(r => r.isInstanceOf[Distance])
               .minBy(_.asInstanceOf[Distance].distance)
