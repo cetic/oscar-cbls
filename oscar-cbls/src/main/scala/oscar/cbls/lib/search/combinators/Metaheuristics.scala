@@ -85,14 +85,6 @@ class Metropolis(a: Neighborhood, iterationToTemperature: Long => Double = _ => 
 }
 
 
-/*système de transition:
-* trouvé =>
-* pas trouvé
-* contrainte forte
-*
-* */
-
-
 /**
  * This is a combination of a constraint with an objective function.
  * the idea is to consider the constraint as a weak constraint, and sum this violation to the objective function with weighting.
@@ -240,45 +232,79 @@ class GuidedLocalSearch(a: Neighborhood,
 }
 
 
-object GuidedLocalSearch3{
-
+object GuidedLocalSearch3 {
+  def progressive(startWeightForBase: Long, minimumIterationsBeforeStrong: Long):WeightCorrectionStrategy =
+    new Progressive(startWeightForBase: Long, minimumIterationsBeforeStrong: Long)
 }
 
-/**
- *
- * @param a
- * @param additionalConstraint
- * @param startWeightForBase
- * @param constantWeightForAdditionalConstraint
- * @param foundAndOldWeightAndConstraintEnforcedToNewWeight
- */
+abstract class WeightCorrectionStrategy{
+  /**
+   * this method is called before exploration takes place
+   * weight < 0 => stop the search. unless there is a reset
+   * weight = 0 => additionalConstraint (forget about obj)
+   * weight = 1 =>  cascading(constraint,obj)
+   * weight > 1 =>  weight*obj + constantWeightForConstraint*constraint
+   *
+   * @param found
+   * @param weight
+   * @param sCViolation
+   * @return new neight
+   */
+  def getNewWeight(found:Boolean, weight:Long, sCViolation:Long):Long
+}
+
+class Progressive(startWeightForBase: Long, minimumIterationsBeforeStrong: Long) extends WeightCorrectionStrategy {
+  override def getNewWeight(found: Boolean, weight: Long, sCViolation: Long): Long = {
+    //this method is called before exploration takes place
+    //weight < 0 => stop the search. unless there is a reset
+    //weight = 0 => additionalConstraint (forget about obj)
+    //weight = 1 =>  cascading(constraint,obj)
+    //weight > 1 =>  weight*obj + constantWeightForConstraint*constraint
+    if (found) {
+      if (weight == 1) {
+        //we are working with strong constraints, that's fine.
+        require(sCViolation == 0)
+        1
+      } else {
+        if (sCViolation == 0 && weight < startWeightForBase - minimumIterationsBeforeStrong) {
+          //we made a good slow progression to constraints, so we can jump on strong constraints now
+          1
+        } else {
+          //slightly increase pressure on constraints
+          weight - 1
+        }
+      }
+    } else { //not found
+      if (weight == 1) {
+        //w were dealing with strong constraints; we stop here.
+        -1
+      } else {
+        //we are not dealing with strong constraints
+        //we increase pressure on the obj a litle bit
+        weight - 1
+      }
+    }
+  }
+}
+
+//TODO: this is the good proto that I am working on; to finish
 class GuidedLocalSearch3(a: Neighborhood,
                          additionalConstraint:Objective,
                          startWeightForBase:Long,
                          constantWeightForAdditionalConstraint:Long,
-                         foundAndOldWeightAndConstraintEnforcedToNewWeight:(Boolean,Long,Boolean) => Long =
-                         {
-                           //this method is to be called before exploration takes place
-                           //weight = 0 => usedOBj = additionalConstraint (forget about obj)
-                           //weight = 1 => usedOBj = cascading(constraint,obj)
-                           //weight > 1 => usedOBj = weight*obj + constantWeightForConstraint*constraint
-                           case (true, weight, false) if weight != 0 => weight //keep the same weight
-                           case (true, weight, false) if weight == 0 => 10 // try to reconsider obj, a little bit
-                           case (false, weight, false) if weight > 1 => 1L max (weight/2) //we push more on obj
-                           case (false, weight, false) if weight == 1 => 0 //forget about obj, only constraints for now
-                           case (false, weight, false) if weight == 0 => 0 //we are really desperate
-                           case (true, weight, true) => weight //we push more on obj
-                           case (false, weight, true) => weight //we did not find do not change yet to strong constraints
-                         }) extends NeighborhoodCombinator(a) {
+                         weightCorrectionStrategy:WeightCorrectionStrategy,
+                         maxAttemptsBeforeStop:Int = 10
+                        ) extends NeighborhoodCombinator(a) {
 
+  //call this before any neigborhood exploration to define the obj etc to use for this exploration.
   def compositeObjectiveAndOriginalOBjConverter(baseObj:Objective,
                                                 initValForBase:Long,
-                                                weightForBaseOBj:Long,
+                                                changingWeightForBaseObj:Long,
                                                 additionalConstraint:Objective,
                                                 initValForAdditional:Long,
-                                                weightForAdditionalConstraint:Long):(Objective,Long,Long=>Long) = {
+                                                constantWeightForAdditionalConstraint:Long):(Objective,Long,Long=>Long) = {
 
-    val initCompositeObj = (initValForBase * weightForBaseOBj) + (initValForAdditional * weightForAdditionalConstraint)
+    val initCompositeObj = (initValForBase * changingWeightForBaseObj) + (initValForAdditional * constantWeightForAdditionalConstraint)
     var bestCompositeObj:Long = initCompositeObj
     var baseOBjAtBestCompositeObj:Long = initValForBase
 
@@ -298,7 +324,7 @@ class GuidedLocalSearch3(a: Neighborhood,
     def foundCompositeObjToBaseObj(foundObj:Long):Long =
       if(foundObj == bestCompositeObj) baseOBjAtBestCompositeObj else Long.MaxValue
 
-    val (fun,initObj) = weightForBaseOBj match{
+    val (fun,initObj) = changingWeightForBaseObj match{
       case 0 => //neglect the primary objective, only the additional one is considered;
         // the primary does not need to be evaluated, so we put a dedicated code here to do that.
         //the bestBaseOBj in this case is not logged
@@ -308,10 +334,10 @@ class GuidedLocalSearch3(a: Neighborhood,
           if (objValue == Long.MaxValue) {
             objValue
           } else {
-            weightForAdditionalConstraint * additionalConstraint.value
+            constantWeightForAdditionalConstraint * additionalConstraint.value
           }
         },
-          weightForAdditionalConstraint * initValForAdditional)
+          constantWeightForAdditionalConstraint * initValForAdditional)
       case 1 => //flag telling that the additional constraints are strong, so cascading objective
         require(initValForAdditional==0, "cannot go for hard constraint while additional constraints are still violated")
         (() => {
@@ -330,7 +356,7 @@ class GuidedLocalSearch3(a: Neighborhood,
           val toReturn = if (baseObjValue == Long.MaxValue) {
             baseObjValue
           } else {
-            (weightForAdditionalConstraint * additionalConstraint.value) + (weightForBaseOBj * baseObjValue)
+            (constantWeightForAdditionalConstraint * additionalConstraint.value) + (changingWeightForBaseObj * baseObjValue)
           }
           logObj(baseObjValue,toReturn)
           toReturn
@@ -338,7 +364,7 @@ class GuidedLocalSearch3(a: Neighborhood,
           if (initValForBase == Long.MaxValue) {
             Long.MaxValue
           } else {
-            (weightForAdditionalConstraint * initValForAdditional) + (weightForBaseOBj * initValForBase)
+            (constantWeightForAdditionalConstraint * initValForAdditional) + (changingWeightForBaseObj * initValForBase)
           })
     }
 
@@ -358,6 +384,17 @@ class GuidedLocalSearch3(a: Neighborhood,
   override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
 
     val initValForAdditional = additionalConstraint.value
+    weightForBase = weightCorrectionStrategy.getNewWeight(true,weightForBase,initValForAdditional)
+    getMoveNoUpdateWeight(obj, initialObj, acceptanceCriterion, initValForAdditional, maxAttemptsBeforeStop)
+  }
+
+
+  def getMoveNoUpdateWeight(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean, initValForAdditional:Long, remainingAttemptsBeforeStop:Int): SearchResult = {
+
+    if(remainingAttemptsBeforeStop == 0) return NoMoveFound
+    if(weightForBase <0) return NoMoveFound
+
+    val initValForAdditional = additionalConstraint.value
 
     val (compositeObj,initCompositeObj,compositeObjToBaseOBj) = compositeObjectiveAndOriginalOBjConverter(
       obj:Objective,
@@ -373,20 +410,15 @@ class GuidedLocalSearch3(a: Neighborhood,
 
         //we try and update the weight
         val oldWeightForBase = weightForBase
-        weightForBase = foundAndOldWeightAndConstraintEnforcedToNewWeight(false,weightForBase,initValForAdditional == 0)
+        weightForBase = weightCorrectionStrategy.getNewWeight(false,weightForBase,initValForAdditional)
+        require(oldWeightForBase != weightForBase,"new weight unchanged although no move found:" + oldWeightForBase)
 
-        if(oldWeightForBase == weightForBase){
-          //nothing changed, so we fail
-          NoMoveFound
-        }else {
-          //policy has changed,so we try again (infinite looop danger here!!
-          getMove(obj, initialObj, acceptanceCriterion)
-        }
+        //policy has changed,so we try again
+        getMoveNoUpdateWeight(obj, initialObj, acceptanceCriterion,initValForAdditional,remainingAttemptsBeforeStop-1)
+
       case m: MoveFound =>
         println("MoveFound " + m)
         //a move was found, good
-
-        weightForBase = foundAndOldWeightAndConstraintEnforcedToNewWeight(true,weightForBase,initValForAdditional == 0)
         val correctedObj = compositeObjToBaseOBj(m.objAfter)
         if(m.objAfter == correctedObj){
           m
@@ -397,197 +429,3 @@ class GuidedLocalSearch3(a: Neighborhood,
   }
 }
 
-
-
-
-
-
-/**
- * This is a combination of a constraint with an objective function.
- * the idea is to consider the constraint as a weak constraint, and sum this violation to the objective function with weighting.
- * throughout the search, the relative weighing of the constraint is increased until it gets to a strong constraint.
- *
- * @param a the neighborhood to consider
- * @param additionalConstraint an additional constraint, considered as a weak constraint at startup, and gradually, as a strong constraint.
- * @maxValueForObj the maximal value for the objective function and for the constraint (do not exceed MaxInt)
- */
-class GuidedLocalSearch2(a: Neighborhood,
-                         additionalConstraint:Objective,
-                         weightVariableForExtraObjective:CBLSIntVar,
-                         iterationToWeight:Int => Int,
-                         allowSwitchToStrongAfterIt:Int,
-                         emulateOriginalObj:Boolean = false) extends NeighborhoodCombinator(a) {
-
-  val maxValueForWeighting: Int = iterationToWeight(0)
-  weightVariableForExtraObjective := maxValueForWeighting
-
-
-  def compositeObjective(obj:Objective):Objective = { //the one that we expect to receive and that we will send to the listening constraints.
-    new FunctionObjective(() => {
-      val currentWeightOfObj = weightVariableForExtraObjective.value
-      currentWeightOfObj match{
-        case 0 => //neglect the primary objective, only the additional one is considered;
-          // this does not need a particular code to be correct, bu the primary does not need to be evaluated
-          val objValue = obj.value
-          if (objValue == Long.MaxValue){
-            objValue
-          } else {
-            maxValueForWeighting * additionalConstraint.value
-          }
-        case 1 => //flag telling that the additional constraints are strong, so cascading objective
-          if (additionalConstraint.value == 0) {
-            obj.value //we do not need multiply because currentWeightOfObj == 1
-          }else{
-            Long.MaxValue
-          }
-        case x => //otherwise use the linear combination, as usual
-          val objValue = obj.value
-          if (objValue == Long.MaxValue){
-            objValue
-          } else {
-            (maxValueForWeighting * additionalConstraint.value) + (currentWeightOfObj * objValue)
-          }
-      }
-    })
-  }
-
-
-  var it: Int = 0
-  var currentWeightOfObj: Int = maxValueForWeighting
-
-  val store = additionalConstraint.model
-
-  override def reset(): Unit = {
-    it = 0
-    currentWeightOfObj = maxValueForWeighting
-    super.reset()
-    println("resetting GLS currentWeightOfObj=" + currentWeightOfObj)
-  }
-
-  override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
-
-    println(" GLS2 currentWeightOfObj" + currentWeightOfObj)
-    //we expect obj to be our composite!!
-
-    //println("GLS getMove currentWeightOfObj:" + currentWeightOfObj)
-    if (currentWeightOfObj > 0) {
-      //it is still a soft constraint
-      val initValueOfConstraint = additionalConstraint.value
-      if (initValueOfConstraint == 0 && it >= allowSwitchToStrongAfterIt) {
-        //we are going GeneralizedLocalSearch, but the strong constraint is fine,
-        //we can switch to a strong constraint
-        currentWeightOfObj = 0
-        println("GLS getMove, strong constraints are fine, so switching to Strong (it:" + it + ")")
-        return getMove(obj, initialObj, acceptanceCriterion) //recursive call
-      }
-
-      //println("GLS getMove, soft constraint currentWeightOfObj:" + currentWeightOfObj + " initValueOFConstraint:" + initValueOFConstraint)
-      val initCompositeObj = (maxValueForWeighting * initValueOfConstraint) + (currentWeightOfObj * initialObj)
-      var bestCompositeObj:Long = initCompositeObj
-      var baseOBjAtBestCompositeObj:Long = initialObj
-
-      a.getMove(
-        new FunctionObjective(() => { //= compositeObj?? non parce qu'on reçoit déjà un composite en fait.
-          val objValue = obj.value
-          if (objValue == Long.MaxValue) objValue
-          else {
-            val compositeObj = (maxValueForWeighting * additionalConstraint.value) + (currentWeightOfObj * objValue)
-            if(compositeObj < bestCompositeObj){
-              baseOBjAtBestCompositeObj = objValue
-              bestCompositeObj = compositeObj
-            }else if(compositeObj == bestCompositeObj){
-              //in this case there is potentially an ambiguity on the composite vs the base
-              if(objValue != baseOBjAtBestCompositeObj){
-                baseOBjAtBestCompositeObj = Long.MaxValue
-              }
-            }
-            compositeObj
-          }
-        }, store),
-        initCompositeObj,
-        acceptanceCriterion) match {
-        case NoMoveFound =>
-          //println("NoMoveFound")
-          println("no move found recur currentWeightOfObj:" + currentWeightOfObj)
-
-          //it's time to change the weighting?
-          if (initValueOfConstraint == 0 || currentWeightOfObj == 1) {
-            //srong constraints are fine, or weighting is close to strong constraints
-            // so we switch to strong constraints
-            currentWeightOfObj = 0
-            this.getMove(obj, initialObj, acceptanceCriterion)
-          } else {
-            //assume 100 iterations, and continue
-            it += 100
-            currentWeightOfObj = 0 max iterationToWeight(it)
-
-            this.getMove(obj, initialObj, acceptanceCriterion)
-          }
-        case m: MoveFound =>
-          //println("MoveFound " + m)
-          //a move was found,
-          //we decrease the weighting anyway, so the next iteration will be more directed towards target
-
-          it += 1
-          currentWeightOfObj = 0 max iterationToWeight(it)
-
-          val replacementOBjValue = if(emulateOriginalObj && bestCompositeObj == m.objAfter){
-            baseOBjAtBestCompositeObj
-          }else{
-            if(emulateOriginalObj && bestCompositeObj != m.objAfter){
-              bestCompositeObj != m.objAfter
-            }
-            System.err.println("could not emulate bestCompositeObj:" + bestCompositeObj + "!= m.objAfter:" + m.objAfter)
-            Long.MaxValue
-          }
-          println("standard currentWeightOfObj:" + currentWeightOfObj)
-          MoveFound(new MoveWithOtherObj(m.m, replacementOBjValue))
-
-        //TODO: here, the obj should be re-interpreted otherwise meta-heuristics cannot be added.
-        //alternative is to decompose obj from the composite; is it feasible?
-        // we can record the best obj and its related base obj, but we have no proof that it will be the returned one or the proper combination
-        //so let's put it as an option.
-        //also in case of VLSN, this just does not work at all
-
-      }
-    } else if (currentWeightOfObj == 0) {
-      //strong constraint
-
-      val constraintViolation = additionalConstraint.value
-      //println("GLS getMove, strong constraint; violation should be zero: is:" + constraintViolation)
-      if (constraintViolation != 0) {
-        //println("violation is not zero, so we only optimize on the violation")
-
-        println("lost!!")
-
-        //System.err.println("GLS getMove, error stuff")
-        //there is a problem; we are supposed to deal with enforced constraints here, so we reset the counter
-        //we have a problem; there is a violation and we cannot go smaller, so temporarily, we forget the obj at all
-        a.getMove(additionalConstraint, constraintViolation, acceptanceCriterion) match{
-          case NoMoveFound => NoMoveFound
-          case m: MoveFound =>
-            //println("MoveFound " + m)
-            MoveFound(new MoveWithOtherObj(m.m, Long.MaxValue))
-        }
-
-      } else {
-        println("strong constraint")
-
-        //great, we can just post it as a strong constraint
-        a.getMove(new CascadingObjective(additionalConstraint, obj), initialObj, acceptanceCriterion) match{
-          case NoMoveFound => NoMoveFound
-          case m: MoveFound =>
-            //println("MoveFound " + m)
-            println("strong constraint!")
-            m
-          //MoveFound(new MoveWithOtherObj(m.m, Long.MaxValue))
-        }
-      }
-    } else {
-      //solving violation, forget about obj
-
-      require(false, "should not happen")
-      null
-    }
-  }
-}

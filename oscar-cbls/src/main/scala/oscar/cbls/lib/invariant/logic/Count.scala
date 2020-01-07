@@ -102,7 +102,6 @@ case class DenseCount(values: Array[IntValue], counts: Array[CBLSIntVar], offset
   *
   * @author gustav.bjordal@it.uu.se
   * */
-
 case class ConstCount(values: Array[IntValue], c: Long)
   extends IntInvariant(values.count(v => v.value == c), DomainRange(0L,values.length))
     with IntNotificationTarget{
@@ -124,6 +123,32 @@ case class ConstCount(values: Array[IntValue], c: Long)
   }
 }
 
+/**
+ * Maintains the number of values in the array that are acceptad by the condition
+ *
+ * @author renaud.delandtsheeer@cetic.be
+ * */
+case class Count(values: Array[IntValue], condition:Long=>Boolean = _!=0)
+  extends IntInvariant(values.count(v => condition(v.value)), DomainRange(0L,values.length))
+    with IntNotificationTarget{
+
+  registerStaticAndDynamicDependencyArrayIndex(values)
+
+  finishInitialization()
+
+  @inline
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
+    if(condition(NewVal) && !condition(OldVal)) {
+      this :+= 1L
+    }else if(!condition(NewVal) && condition(OldVal)){
+      this :-= 1L
+    }
+  }
+
+  override def checkInternals(c: Checker): Unit = {
+    require(values.count(v => condition(v.value)) == this.value)
+  }
+}
 
 object DenseCount{
   def makeDenseCount(vars: Array[IntValue]):DenseCount = {
