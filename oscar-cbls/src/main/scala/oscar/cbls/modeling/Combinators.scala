@@ -569,7 +569,8 @@ class NeighborhoodOps(n:Neighborhood){
     * @param obj the objective function
     * @author fabian.germeau@student.vinci.be
     */
-  def showObjectiveFunction(obj: Objective, title: String = "Objective function vs. time[s]", cap:Long = Long.MaxValue) = new ShowObjectiveFunction(n,obj, title,cap)
+  def showObjectiveFunction(obj: Objective, title: String = "Objective function vs. time[s]", cap:Long = Long.MaxValue, percentile: Option[Double] = None) =
+    new ShowObjectiveFunction(n,obj, title,cap, percentile)
 
   /**
     * this combinator attaches a custom code to a given neighborhood.

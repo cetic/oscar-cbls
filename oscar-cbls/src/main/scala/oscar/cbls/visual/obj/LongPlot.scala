@@ -72,12 +72,12 @@ abstract class LongPlot(title: String, xlab: String, ylab: String, nbSeries: Int
     plot.removeRangeMarker(yMarker)
   }
 
-  def addPoint(x: Double, y: Double, ser: Int = 0) = {
-    series(ser).add(x, y);
-    series(ser).fireSeriesChanged()
+  def addPoint(x: Long, y: Long, ser: Int): Unit ={
+    series(ser).add(x,y,true)
+  }
 
-    //xyDataset.ss
-    //chart.fireChartChanged();
+  def addPoint(x: Double, y: Long, ser: Int): Unit ={
+    series(ser).add(x,y,true)
   }
 
   def removeAllPoints(ser: Int = 0) {

@@ -30,9 +30,9 @@ trait UtilityCombinators{
  * @param obj the objective function
  * @author fabian.germeau@student.vinci.be
  */
-class ShowObjectiveFunction(a: Neighborhood, obj: () => Long, title: String = "Objective function vs. time[s]", cap:Long = Long.MaxValue) extends NeighborhoodCombinator(a){
+class ShowObjectiveFunction(a: Neighborhood, obj: () => Long, title: String = "Objective function vs. time[s]", cap:Long = Long.MaxValue, percentile:Option[Double] = None) extends NeighborhoodCombinator(a){
   //objGraphic is an internal frame that contains the curve itself and visualFrame is a basic frame that contains objGraphic
-  val objGraphic = ObjectiveFunctionDisplay(title, cap)
+  val objGraphic = ObjectiveFunctionDisplay(title, cap, percentile)
   SingleFrameWindow.show(objGraphic,title)
 
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult ={

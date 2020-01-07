@@ -6,16 +6,19 @@ import org.jfree.chart.ChartFactory
 import org.jfree.chart.plot.PlotOrientation
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer
 import oscar.cbls._
+import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.util.StopWatch
 import oscar.visual.plot.Plot
 
-class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue)
+class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue, percentile: Option[Double] = None)
   extends LongPlot(title,"Time","Objective function value", 2) with StopWatch {
 
   xDom = new org.jfree.data.Range(0,1)
   yDom = new org.jfree.data.Range(0,100)
 
-  private val startinAt = getWatch
+  var allValues: Array[Long] = Array.empty
+
+  private lazy val startingAt = getWatch
   private var best = Long.MaxValue
   panel.setMouseWheelEnabled(true)
   panel.setMouseZoomable(true)
@@ -45,31 +48,41 @@ class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue)
 
   def drawFunction(value: Long) ={
 
-    val at = (getWatch - startinAt).toDouble/1000
+    val at = (getWatch - startingAt)/1000.0
+    allValues = allValues :+ value
 
-    if(yDom.getUpperBound < value.toDouble)
-      yDom = new org.jfree.data.Range(0,upper(value,cap))
+    // Update Y axis height
+    yDom = new org.jfree.data.Range(0,upper(
+      if(percentile.isDefined) percentileBound() else value,
+      cap))
+
+    // Update X axis length
     if(xDom.getUpperBound < at)
-      xDom = new org.jfree.data.Range(0,upper(at))
+      xDom = new org.jfree.data.Range(0,upper(at.toLong))
 
-    addPoint(at,value.toDouble,0)
+    addPoint(at,value,0)
 
     if(value <= best) {
       best = value
     }
-    addPoint(at, best.toDouble, 1)
+    addPoint(at, best, 1)
 
   }
 
-  private def upper(value: Double, cap:Long = Long.MaxValue): Long ={
-    //TODO why not just make an integer or long division?
+  private def percentileBound(): Long ={
+    val nbValues = allValues.size
+    val valuesToConsider = KSmallest.kFirst((nbValues/100.0*percentile.get).ceil.toLong, KSmallest.lazySort(allValues, key = x => x))
+    valuesToConsider.last
+  }
+
+  private def upper(value: Long, cap:Long = Long.MaxValue): Long ={
     var resExp:Long = 10
     while(value/resExp > 1) {
       resExp = resExp * 10
     }
     resExp = resExp/10
     var res = resExp
-    while(value/res > 1){
+    while(value/res >= 1){
       res += resExp
     }
     res min cap
@@ -78,5 +91,6 @@ class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue)
 }
 
 object ObjectiveFunctionDisplay{
-  def apply(title: String, cap:Long = Long.MaxValue): ObjectiveFunctionDisplay = new ObjectiveFunctionDisplay(title,cap)
+  def apply(title: String, cap:Long = Long.MaxValue, percentile: Option[Double] = None): ObjectiveFunctionDisplay =
+    new ObjectiveFunctionDisplay(title,cap, percentile)
 }
