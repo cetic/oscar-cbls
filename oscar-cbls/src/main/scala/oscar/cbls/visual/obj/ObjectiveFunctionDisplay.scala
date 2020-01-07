@@ -16,7 +16,8 @@ class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue, percenti
   xDom = new org.jfree.data.Range(0,1)
   yDom = new org.jfree.data.Range(0,100)
 
-  var allValues: Array[Long] = Array.empty
+  private var allValues: Array[(Double,Long)] = Array.empty
+  private val considerPercentile = percentile.isDefined
 
   private lazy val startingAt = getWatch
   private var best = Long.MaxValue
@@ -49,43 +50,82 @@ class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue, percenti
   def drawFunction(value: Long) ={
 
     val at = (getWatch - startingAt)/1000.0
-    allValues = allValues :+ value
+    val percentileBoundsValue =
+      if(considerPercentile) {
+        allValues = allValues :+ (at,value)
+        percentileBounds()
+      } else {
+        (0L, 0.0)
+      }
 
-    // Update Y axis height
-    yDom = new org.jfree.data.Range(0,upper(
-      if(percentile.isDefined) percentileBound() else value,
-      cap))
-
-    // Update X axis length
-    if(xDom.getUpperBound < at)
-      xDom = new org.jfree.data.Range(0,upper(at.toLong))
-
-    addPoint(at,value,0)
 
     if(value <= best) {
       best = value
     }
+
+
+
+    // Update Y axis height
+    yDom = new org.jfree.data.Range(lower(best),upper(
+      if(considerPercentile) percentileBoundsValue._1  else value,
+      cap))
+
+    // Update X axis length
+    if(xDom.getUpperBound < at)
+      xDom = new org.jfree.data.Range(
+        if(considerPercentile)percentileBoundsValue._2.toLong else 0,
+        at.toLong + 1)
+
+    addPoint(at,value,0)
+
+
     addPoint(at, best, 1)
 
   }
 
-  private def percentileBound(): Long ={
+  private def percentileBounds(): (Long, Double) ={
     val nbValues = allValues.size
-    val valuesToConsider = KSmallest.kFirst((nbValues/100.0*percentile.get).ceil.toLong, KSmallest.lazySort(allValues, key = x => x))
-    valuesToConsider.last
+    val array = Array.tabulate(nbValues)(x => x.toLong)
+    val valuesToConsider = KSmallest.kFirst(
+      (nbValues/100.0*percentile.get).ceil.toLong,
+      KSmallest.lazySort(array, key = i => {
+        allValues(i)._2
+      }))
+    val last = valuesToConsider.last
+    (allValues(last)._2, allValues(last)._1)
   }
 
+  /**
+   * Ex :
+   * 38427 ==> 39000
+   * 38000 ==> 39000
+   * 20 ==> 19
+   * 5 ==> 0
+   */
   private def upper(value: Long, cap:Long = Long.MaxValue): Long ={
     var resExp:Long = 10
     while(value/resExp > 1) {
       resExp = resExp * 10
     }
-    resExp = resExp/10
-    var res = resExp
-    while(value/res >= 1){
-      res += resExp
-    }
+    resExp = if(resExp <= 100) resExp/10 else resExp/100
+    val res = ((value/resExp)+1)*resExp
     res min cap
+  }
+
+  /**
+   * Ex :
+   * 38427 ==> 38000
+   * 38000 ==> 37000
+   * 20 ==> 19
+   * 5 ==> 0
+   */
+  private def lower(value: Long): Long ={
+    var resExp: Long = 1
+    while(value/resExp > 0) resExp = resExp * 10
+    resExp = resExp/100
+    if(resExp <= 0) return 0
+    if(value%resExp > 0) (value/resExp)*resExp
+    else ((value/resExp)+1)*resExp
   }
 
 }
