@@ -28,8 +28,18 @@ import scala.util.Random
   * @author fabian.germeau@student.vinci.be
   */
 object ColorGenerator {
+
+  private val randomValueGenerator = Random
+
+  def setSeed(seed: Long): Unit = randomValueGenerator.setSeed(seed)
+
   def generateRandomColors(number:Int,alpha:Int = 255): Array[Color] = {
-    Array.fill(number)(new Color(Random.nextInt(256),Random.nextInt(256),Random.nextInt(256),alpha))
+    Array.fill(number)(
+      new Color(
+        randomValueGenerator.nextInt(256),
+        randomValueGenerator.nextInt(256),
+        randomValueGenerator.nextInt(256),
+        alpha))
   }
 
   /**
