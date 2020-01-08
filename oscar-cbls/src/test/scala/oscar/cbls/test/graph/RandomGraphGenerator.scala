@@ -20,7 +20,10 @@ object RandomGraphGenerator {
     //closest edges first
     val totalEdges = nbConditionalEdges + nbNonConditionalEdges
 
-    val rand = new Random(seed match {case None => System.currentTimeMillis();case Some(s) => s})
+    val rand = new Random(seed match {
+      case None => System.currentTimeMillis()
+      case Some(s) => s
+    })
 
     def randomXY: Int = rand.nextInt(mapSide)
     val pointPosition: Array[(Int, Int)] = Array.tabulate(nbNodes)(w => (randomXY, randomXY))
