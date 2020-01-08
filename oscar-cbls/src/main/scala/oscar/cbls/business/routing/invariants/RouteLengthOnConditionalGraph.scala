@@ -55,7 +55,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
                                     freeReturn:Boolean = false)
   extends Invariant() with SeqNotificationTarget with SetNotificationTarget {
 
-  require(!freeReturn, "sorry free return is not implemented yet. ")
+  //require(!freeReturn, "sorry free return is not implemented yet. ")
   require(v == distancePerVehicle.length)
 
   warning(
@@ -77,6 +77,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
   //it was developed to be quickly restarteable
   private val aStarEngine = new RevisableAStar(graph: ConditionalGraph, underApproximatingDistance)
 
+  //println(routes.toString() + v)
   private var vehicleSearcher:((IntSequence,Long)=>Long) = if(v == 1L) ((_,_) => 0L) else
     RoutingConventionMethods.cachedVehicleReachingPosition(routes.value, v)
 
@@ -263,7 +264,6 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
     require(v == openConditions)
 
-
     var aStarToRecompute: List[AStarInfo] = Nil
 
     def recordTouchedCondition(closedCondition: Int){
@@ -282,11 +282,17 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
       isConditionalEdgeOpen(openCondition) = true
     }
 
+    //println("Astar To Recompute " + aStarToRecompute.mkString(";"))
+
     //now we have to recompute the hops, and update the corresponding vehicles
     for(aStar:AStarInfo <- aStarToRecompute){
-
+      //println("Recomputing " + aStar)
+     // println(routes.value.mkString(";"))
+      //println(aStar.minNode)
       //find the vehicle
-      val vehicle = vehicleSearcher(routes.value,aStar.minNode)
+      val vehicle = vehicleSearcher(routes.value,routes.value.positionOfAnyOccurrence(aStar.minNode).get)
+
+      //println("Impacted Vehicle " + vehicle)
 
       //recompute the hop, and save the AstarInfo for later notifications
       val newAStarInfo = computeDistanceAndSaveItAll(aStar.minNode,aStar.maxNode)
@@ -315,13 +321,13 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
     while(currentPosition.next match{
       case None => //at the end of the current vehicle, which is the last one
         //compute the last hop
-        val lastHopToComeBack = computeDistanceAndSaveItAll(currentPosition.value,v-1).distance
+        val lastHopToComeBack = if (freeReturn) 0 else computeDistanceAndSaveItAll(currentPosition.value,v-1).distance
         currentLength += lastHopToComeBack
         distancePerVehicle(v-1) := currentLength
         false
       case Some(nextPosition) if nextPosition.value < v =>
         //at the end of the current vehicle; starting a new one
-        val lastHopToComeBack = computeDistanceAndSaveItAll(currentPosition.value,currentVehicle).distance
+        val lastHopToComeBack = if (freeReturn) 0 else computeDistanceAndSaveItAll(currentPosition.value,currentVehicle).distance
         currentLength += lastHopToComeBack
         distancePerVehicle(currentVehicle) := currentLength
 
@@ -349,6 +355,8 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
   private def digestUpdates(changes:SeqUpdate):Unit = {
     changes match {
       case SeqUpdateDefineCheckpoint(prev,isStarMode,checkpointLevel) =>
+       // println("Define Checkpoint")
+        //println(minNodeToAStarInfos(0).toList.mkString(";"))
         //we do not manage checkpoints at all
         digestUpdates(prev)
 
@@ -358,6 +366,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
           else RoutingConventionMethods.cachedVehicleReachingPosition(changes.newValue, v)
 
       case r@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Int) =>
+        //println("RollBack")
         //we do not manage checkpoints at all
         digestUpdates(r.howToRollBack)
 
@@ -367,6 +376,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
           else RoutingConventionMethods.cachedVehicleReachingPosition(changes.newValue, v)
 
       case x@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
+        //println("Move")
         //on which vehicle did we move?
         //also from --> to cannot include a vehicle start.
         digestUpdates(prev)
@@ -383,21 +393,20 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
           //we do not care about order:-)
           val oldAStarBeforeMovedSegment = getAStarInfo(oldPrevFromValue,fromValue)
-          oldAStarBeforeMovedSegment.invalidate()
 
-          val oldAStarAfterMovedSegment = getAStarInfo(toValue,oldSuccToValue)
-          oldAStarAfterMovedSegment.invalidate()
+          val oldAStarAfterMovedSegmentDistance = if (freeReturn && oldSuccToValue < v) 0 else getAStarInfo(toValue,oldSuccToValue).distance
 
           val newAStarBeforeMovedSegment = computeDistanceAndSaveItAll(oldPrevFromValue,toValue)
-          val newAStarAfterMovedSegment = computeDistanceAndSaveItAll(fromValue,oldSuccToValue)
+          val newAStarAfterMovedSegmentOption = if (freeReturn && oldSuccToValue < v) None else Some(computeDistanceAndSaveItAll(fromValue,oldSuccToValue))
+          val newAStarAfterMovedSegmentDistance = newAStarAfterMovedSegmentOption match {case None => 0; case Some(aStarInfo) => aStarInfo.distance}
 
           //for simple flip, there is no node cost to consider
 
           val vehicleOfMovedSegment = vehicleSearcher(prev.newValue, fromIncluded)
 
           distancePerVehicle(vehicleOfMovedSegment) :+= (
-            newAStarBeforeMovedSegment.distance + newAStarAfterMovedSegment.distance
-              - (oldAStarBeforeMovedSegment.distance + oldAStarAfterMovedSegment.distance))
+            newAStarBeforeMovedSegment.distance + newAStarAfterMovedSegmentDistance
+              - (oldAStarBeforeMovedSegment.distance + oldAStarAfterMovedSegmentDistance))
 
         }else {
           //actually moving, not simple flip
@@ -417,28 +426,47 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
           val oldAStarBeforeMovedSegment = getAStarInfo(oldPrevFromValue,fromValue)
           oldAStarBeforeMovedSegment.invalidate()
 
-          val oldAStarAfterMovedSegment = getAStarInfo(toValue,oldSuccToValue)
-          oldAStarAfterMovedSegment.invalidate()
+          val oldAStarAfterMovedSegmentDistance =
+            if (freeReturn && oldSuccToValue < v)
+              0
+            else {
+              val oldAStarAfterMovedSegment = getAStarInfo(toValue,oldSuccToValue)
+              oldAStarAfterMovedSegment.invalidate()
+              oldAStarAfterMovedSegment.distance
+            }
 
-          val oldAStarAfterAfter = getAStarInfo(afterValue,oldSuccAfterValue)
-          oldAStarAfterAfter.invalidate()
+
+          val oldAStarAfterAfterDistance =
+            if (oldSuccAfterValue < v && freeReturn)
+              0 else {
+              val oldAStarAfterAfter = getAStarInfo(afterValue,oldSuccAfterValue)
+              oldAStarAfterAfter.invalidate()
+              oldAStarAfterAfter.distance
+            }
+
 
           val newAStarBeforeMovedSegment = computeDistanceAndSaveItAll(afterValue,if(flip) toValue else fromValue)
-          val newAStarAfterMovedSegment = computeDistanceAndSaveItAll(if(flip) fromValue else toValue,oldSuccAfterValue)
-          val newAStarReplacingSegment = computeDistanceAndSaveItAll(oldPrevFromValue,oldSuccToValue)
+
+          val newAStarAfterMovedSegmentOption = if (freeReturn && oldSuccAfterValue < v) None else Some(computeDistanceAndSaveItAll(if(flip) fromValue else toValue,oldSuccAfterValue))
+          val newAStarAfterMovedSegmentDistance = newAStarAfterMovedSegmentOption match {case None => 0; case Some(aStarInfo) => aStarInfo.distance}
+          val newAStarReplacingSegmentOption = if (freeReturn && oldSuccToValue < v) None else Some(computeDistanceAndSaveItAll(oldPrevFromValue,oldSuccToValue))
+          val newAStarReplacingSegmentDistance = newAStarReplacingSegmentOption match {case None => 0; case Some(aStarInfo) => aStarInfo.distance}
+
 
 
           //per vehicle, there might be some node cost to consider
           val vehicleOfMovedSegment = vehicleSearcher(prev.newValue, fromIncluded)
           val targetVehicleOfMove = vehicleSearcher(prev.newValue, after)
           assert(vehicleOfMovedSegment == vehicleSearcher(prev.newValue,toIncluded))
-
+          //println(oldSuccAfterValue + " -- " + oldSuccToValue + " -- " + oldPrevFromValue + " -- " + distancePerVehicle(vehicleOfMovedSegment))
+          //println(newAStarReplacingSegmentDistance + " + " + newAStarBeforeMovedSegment.distance + " + " +  newAStarAfterMovedSegmentDistance
+           // +  " - (" + (oldAStarBeforeMovedSegment.distance + " + " +  oldAStarAfterMovedSegmentDistance + " + " +  oldAStarAfterAfterDistance +")"))
           if (vehicleOfMovedSegment == targetVehicleOfMove) {
             //the segment is moved to the same vehicle, so we do not consider node cost here
 
             distancePerVehicle(vehicleOfMovedSegment) :+= (
-              newAStarReplacingSegment.distance + newAStarBeforeMovedSegment.distance + newAStarAfterMovedSegment.distance
-                - (oldAStarBeforeMovedSegment.distance + oldAStarAfterMovedSegment.distance + oldAStarAfterAfter.distance))
+              newAStarReplacingSegmentDistance + newAStarBeforeMovedSegment.distance + newAStarAfterMovedSegmentDistance
+                - (oldAStarBeforeMovedSegment.distance + oldAStarAfterMovedSegmentDistance + oldAStarAfterAfterDistance))
 
           } else {
             //moving a segment to another vehicle, and per vehicle required.
@@ -450,14 +478,15 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
               toIncluded,toValue)
 
             distancePerVehicle(vehicleOfMovedSegment) :+= (
-              newAStarReplacingSegment.distance - (oldAStarBeforeMovedSegment.distance + oldAStarAfterMovedSegment.distance + segmentLength))
+              newAStarReplacingSegmentDistance - (oldAStarBeforeMovedSegment.distance + oldAStarAfterMovedSegmentDistance + segmentLength))
 
             distancePerVehicle(targetVehicleOfMove) :+= (
-              newAStarBeforeMovedSegment.distance + segmentLength + newAStarAfterMovedSegment.distance - oldAStarAfterAfter.distance)
+              newAStarBeforeMovedSegment.distance + segmentLength + newAStarAfterMovedSegmentDistance - oldAStarAfterAfterDistance)
           }
         }
 
       case SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
+        //println("Insert")
         digestUpdates(prev)
 
         val newSeq = changes.newValue
@@ -469,16 +498,31 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
           case Some(oldSuccIfNoLoop) =>  if(oldSuccIfNoLoop < v) oldSuccIfNoLoop-1L else oldSuccIfNoLoop
         }
 
-        val oldAStar = getAStarInfo(oldPrev,oldSucc)
-        oldAStar.invalidate()
+        val oldAStarDistance =
+          if (freeReturn && oldSucc < v)
+            0
+          else {
+            val oldAStar = getAStarInfo(oldPrev, oldSucc)
+            oldAStar.invalidate()
+            oldAStar.distance
+          }
 
         val newDistanceBefore = computeDistanceAndSaveItAll(oldPrev,value).distance
-        val newDistanceAfter = computeDistanceAndSaveItAll(oldSucc,value).distance
+
+
+
+        val newAStarAfterOption = if (freeReturn && oldSucc < v) None else Some(computeDistanceAndSaveItAll(value,oldSucc))
+        val newDistanceAfter = newAStarAfterOption match {case None => 0; case Some(aStarInfo) => aStarInfo.distance}
+
+        //println(oldPrev + " -- " + oldSucc + " -- " + value + " -- " + newDistanceBefore + " -- " + newDistanceAfter)
+
+        //val newDistanceAfter = computeDistanceAndSaveItAll(oldSucc,value).distance
 
         val vehicle = vehicleSearcher(newSeq, pos)
-        distancePerVehicle(vehicle) :+= (newDistanceBefore + newDistanceAfter - oldAStar.distance)
+        distancePerVehicle(vehicle) :+= (newDistanceBefore + newDistanceAfter - oldAStarDistance)
 
       case x@SeqUpdateRemove(positionOfDelete : Int, prev : SeqUpdate) =>
+        //println("Remove")
         digestUpdates(prev)
 
         val removedValue = x.removedValue
@@ -490,14 +534,23 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
         val oldAStarBefore = getAStarInfo(oldPrevValue,removedValue)
         oldAStarBefore.invalidate()
 
-        val oldAStarAfter = getAStarInfo(oldSuccValue,removedValue)
-        oldAStarAfter.invalidate()
+        val oldAStarAfterDistance =
+          if (freeReturn && oldSuccValue < v)
+            0
+          else {
+            val oldAStarAfter = getAStarInfo(oldSuccValue,removedValue)
+            oldAStarAfter.invalidate()
+            oldAStarAfter.distance
+          }
 
-        val newDistance = computeDistanceAndSaveItAll(oldPrevValue,oldSuccValue).distance
+
+        val newDistance = if (freeReturn && oldSuccValue < v) 0 else computeDistanceAndSaveItAll(oldPrevValue,oldSuccValue).distance
 
         val vehicle = vehicleSearcher(prev.newValue,positionOfDelete)
 
-        distancePerVehicle(vehicle) :+= (newDistance - (oldAStarBefore.distance + oldAStarAfter.distance))
+        //println(oldPrevValue + " -- " + oldSuccValue + " -- " + oldAStarBefore.distance + " -- " + oldAStarAfterDistance + " -- " + distancePerVehicle(vehicle))
+
+        distancePerVehicle(vehicle) :+= (newDistance - (oldAStarBefore.distance + oldAStarAfterDistance))
 
 
       case SeqUpdateLastNotified(value:IntSequence) =>
@@ -534,7 +587,8 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
   }
 
   private def check(c : Checker,s:IntSequence) {
-    require(allAStarInfo.nonEmpty)
+    //require(allAStarInfo.nonEmpty)
+    println("--------- Check ---------")
     var currentPosition = routes.value.explorerAtAnyOccurrence(0).get
     var currentVehicle:Int = 0
     var currentLength:Long = 0
@@ -562,18 +616,21 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
       distance1
     }
+    println(routes)
+    println(distancePerVehicle.map(d => d.value).mkString(";"))
 
     while(currentPosition.next match{
       case None => //at the end of the current vehicle, which is the last one
         //compute the last hop
-        currentLength += checkHop(currentPosition.value,v-1)
-        require(distancePerVehicle(v-1).value == currentLength, "Distance Incremental " + distancePerVehicle(v-1) + " != Distance From Scratch " + currentLength)
+        currentLength += (if (freeReturn) 0 else checkHop(currentPosition.value,v-1))
+        require(distancePerVehicle(v-1).value == currentLength,"Incremental Distance " + distancePerVehicle(v-1).value + " -- From Scratch Distance " + currentLength)
         false
       case Some(nextPosition) if nextPosition.value < v =>
         //at the end of the current vehicle; starting a new one
-        val lastHopToComeBack = checkHop(currentPosition.value,currentVehicle)
+        val lastHopToComeBack = if (freeReturn) 0 else checkHop(currentPosition.value,currentVehicle)
         currentLength += lastHopToComeBack
-        require(distancePerVehicle(currentVehicle).value == currentLength, "Distance Incremental " + distancePerVehicle(currentVehicle) + " != Distance From Scratch " + currentLength)
+        println("Distance of Vehicle :" + distancePerVehicle(currentVehicle).value)
+        require(distancePerVehicle(currentVehicle).value == currentLength,"vehicle " + currentVehicle + " Incremental Distance " + distancePerVehicle(currentVehicle).value + " != From Scratch Distance " + currentLength)
 
         currentPosition = nextPosition
         currentVehicle += 1
@@ -587,6 +644,8 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
         currentPosition = nextPosition
         true
     }){}
+
+    println("------- End Check -------")
   }
 }
 
