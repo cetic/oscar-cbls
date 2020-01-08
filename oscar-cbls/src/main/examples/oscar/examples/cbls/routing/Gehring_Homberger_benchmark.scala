@@ -14,8 +14,8 @@ import scala.io.Source
 import scala.util.Random
 
 object Gehring_Homberger_benchmark extends App {
-  val size = 100
-  val files = new File("c://Users/fg/Documents/OscaR/Solomon/"+size+"/").listFiles().toList.sorted
+  val size = args(1).toInt
+  val files = new File(args(0)).listFiles().toList.sorted
 
   for(file <- files) {
     println(file.getName)
