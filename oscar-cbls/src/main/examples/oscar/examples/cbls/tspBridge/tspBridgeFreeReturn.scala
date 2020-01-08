@@ -40,14 +40,14 @@ object TspBridgeFreeReturn extends App {
   val underApproximatingDistanceInGraphAllBridgesOpen:Array[Array[Long]] = DijkstraDistanceMatrix.buildDistanceMatrix(graph, _ => true)
   println("end dijkstra")
 
-  val m = Store(checker = Some(new ErrorChecker()))
+  val m = Store()//checker = Some(new ErrorChecker()))
 
   //initially all bridges open
   val bridgeConditionArray = Array.tabulate(nbConditionalEdges)(c => CBLSIntVar(m, 1, 0 to 1, "bridge_" + c + "_open"))
 
   val openBridges = filter(bridgeConditionArray).setName("openBridges")
 
-  val costPerBridge = 20
+  val costPerBridge = 40
 
   val bridgeCost:IntValue = cardinality(openBridges) * costPerBridge
   val myVRP = new VRP(m,n,v)
@@ -65,7 +65,7 @@ object TspBridgeFreeReturn extends App {
 
   val neededConditions = routeLengthInvar.neededConditions
 
-  val routeLength:IntValue = routeLengthInvar.distancePerVehicle(0)
+  val routeLength:IntValue = sum(routeLengthInvar.distancePerVehicle)
 
   val penaltyForUnrouted  = 1000L
 
@@ -152,7 +152,7 @@ object TspBridgeFreeReturn extends App {
       obj,
       randomizationName = "OpenAllBridges"))
     afterMove{
-    println(openBridges.value.mkString(";"))
+    //println(openBridges.value.mkString(";"))
     visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList.map(_.toInt), myVRP.routes.value)
   }) showObjectiveFunction obj
 

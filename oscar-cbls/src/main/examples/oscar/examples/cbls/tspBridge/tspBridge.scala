@@ -26,6 +26,8 @@ object TspBridge extends App {
   val nbNonConditionalEdges = 1600
   val nbTransitNodes = nbNodes
 
+  println(Long.MaxValue)
+
   println("generate random graph")
   val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(
     nbNodes=nbNodes,
@@ -39,7 +41,7 @@ object TspBridge extends App {
   val underApproximatingDistanceInGraphAllBridgesOpen:Array[Array[Long]] = DijkstraDistanceMatrix.buildDistanceMatrix(graph, _ => true)
   println("end dijkstra")
 
-  val m = Store(checker = Some(new ErrorChecker()))
+  val m = Store()//checker = Some(new ErrorChecker()))
 
   //initially all bridges open
   val bridgeConditionArray = Array.tabulate(nbConditionalEdges)(c => CBLSIntVar(m, 1, 0 to 1, "bridge_" + c + "_open"))
@@ -64,7 +66,7 @@ object TspBridge extends App {
 
   val neededConditions = routeLengthInvar.neededConditions
 
-  val routeLength:IntValue = routeLengthInvar.distancePerVehicle(0)
+  val routeLength:IntValue = sum(routeLengthInvar.distancePerVehicle)
 
   val penaltyForUnrouted  = 1000L
 
@@ -191,9 +193,9 @@ class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
     for(condition <- 0 until graph.nbConditions){
       val conditionalEdge = graph.conditionToConditionalEdges(condition)
       if(openBridges contains condition){
-        drawEdge(conditionalEdge, 5, if(conditionalEdge.id == 5) Color.pink else Color.green)
+        drawEdge(conditionalEdge, 5,Color.green)
       }else{
-        drawEdge(conditionalEdge, 2, if(conditionalEdge.id == 5) Color.green else Color.pink, dashed = true)
+        drawEdge(conditionalEdge, 2, Color.pink, dashed = true)
       }
     }
 
@@ -211,7 +213,7 @@ class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
       }
     }
 
-    println(routes)
+    //println(routes)
 
     //path in the routing problem
     var currentExplorer = routes.explorerAtAnyOccurrence(0).get
@@ -259,8 +261,8 @@ class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
   private val aStarEngine = new RevisableAStar(graph: ConditionalGraph, underApproximatingDistance)
 
   def drawPath(fromNode:Node, toNode:Node, openConditions:SortedSet[Int]): Unit ={
-    println(fromNode + " -- " + toNode)
-    println(graph.coordinates(fromNode.id) + " -- " + graph.coordinates(toNode.id))
+    //println(fromNode + " -- " + toNode)
+    //println(graph.coordinates(fromNode.id) + " -- " + graph.coordinates(toNode.id))
 
     drawEdges(aStarEngine.getPath(fromNode,toNode,openConditions).get, 2, Color.BLUE)
   }
