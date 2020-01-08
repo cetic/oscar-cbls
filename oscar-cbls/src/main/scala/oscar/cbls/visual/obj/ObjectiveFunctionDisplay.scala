@@ -3,12 +3,11 @@ package oscar.cbls.visual.obj
 import java.awt.Color
 
 import org.jfree.chart.ChartFactory
-import org.jfree.chart.plot.PlotOrientation
+import org.jfree.chart.plot.{PlotOrientation, ValueMarker}
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer
 import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.util.StopWatch
-import oscar.visual.plot.Plot
 
 class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue, percentile: Option[Double] = None)
   extends LongPlot(title,"Time","Objective function value", 2) with StopWatch {
@@ -21,6 +20,7 @@ class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue, percenti
 
   private lazy val startingAt = getWatch
   private var best = Long.MaxValue
+  private var decreasing = false
   panel.setMouseWheelEnabled(true)
   panel.setMouseZoomable(true)
   panel.setHorizontalAxisTrace(true)
@@ -50,30 +50,35 @@ class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue, percenti
   def drawFunction(value: Long) ={
 
     val at = (getWatch - startingAt)/1000.0
-    val percentileBoundsValue =
+    val boundsValue =
       if(considerPercentile) {
         allValues = allValues :+ (at,value)
         percentileBounds()
       } else {
-        (0L, 0.0)
+        (value, 0.0)
       }
 
 
     if(value <= best) {
+      if(!decreasing) {
+        addStartDecreasingMark(at)
+        decreasing = true
+      }
       best = value
+    } else {
+      decreasing = false
     }
 
 
 
     // Update Y axis height
-    yDom = new org.jfree.data.Range(lower(best),upper(
-      if(considerPercentile) percentileBoundsValue._1  else value,
-      cap))
+    yDom = new org.jfree.data.Range(lower(best),
+      upper(boundsValue._1, cap))
 
     // Update X axis length
     if(xDom.getUpperBound < at)
       xDom = new org.jfree.data.Range(
-        if(considerPercentile)percentileBoundsValue._2.toLong else 0,
+        boundsValue._2.toLong,
         at.toLong + 1)
 
     addPoint(at,value,0)
@@ -81,6 +86,12 @@ class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue, percenti
 
     addPoint(at, best, 1)
 
+  }
+
+  private def addStartDecreasingMark(at: Double): Unit ={
+    val marker = new ValueMarker(at)
+    marker.setPaint(Color.GREEN)
+    plot.addDomainMarker(marker)
   }
 
   private def percentileBounds(): (Long, Double) ={

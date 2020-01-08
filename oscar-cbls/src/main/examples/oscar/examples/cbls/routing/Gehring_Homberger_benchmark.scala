@@ -13,8 +13,8 @@ import scala.io.Source
 import scala.util.Random
 
 object Gehring_Homberger_benchmark extends App {
-  val size = 100
-  val files = new File("/home/fg/Documents/OscaR/Solomon/"+size+"/").listFiles().toList.sorted
+  val size = args(1).toInt
+  val files = new File(args(0)).listFiles().toList.sorted
 
   for(file <- files) {
     println(file.getName)
@@ -293,13 +293,13 @@ class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Int, distanceMatrix: 
 
   object OneChainRemove {
     def apply(nodeToRemove: Option[List[Long]] = None) = {
-      mu[RemovePointMove, Option[List[Long]]](
+      profile(mu[RemovePointMove, Option[List[Long]]](
         RemoveNode(nodeToRemove),
         NextRemoveGenerator(),
         None,
         Long.MaxValue,
         false
-      )
+      ) name ("One Chain Remove"))
     }
   }
 
@@ -331,7 +331,7 @@ class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Int, distanceMatrix: 
   println("Nombre de véhicules utilisés :" + movingVehiclesNow.value.size)
   println("\n\n###########################################################################################\n\n")
 
-  search.profilingStatistics
+  println(search.profilingStatistics)
 }
 
 
