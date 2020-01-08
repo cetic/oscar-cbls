@@ -5,6 +5,8 @@ import java.io.File
 import javax.swing.JPanel
 import org.locationtech.jts.geom.Geometry
 
+//TODO: c'est vraiment trop compliqué
+
 trait GeometryDrawingTrait{
   def drawShapes(boundingBoxOn:Option[Geometry] = None,
                  shapes:List[(Geometry,Option[Color],Option[Color],String)],
@@ -24,8 +26,7 @@ object GeometryDrawing {
             geometryDrawingType: GeometryDrawingTypes.Value = GeometryDrawingTypes.Simple,
             area: Option[List[(Int,Int)]] = None,
             pointOfOrigin: Option[(Double, Double)] = None,
-            pointShift: Option[() => (Double,Double)] = None,
-            savingFile: Option[File] = None): JPanel with GeometryDrawingTrait ={
+            pointShift: Option[() => (Double,Double)] = None): JPanel with GeometryDrawingTrait ={
     geometryDrawingType match{
       case GeometryDrawingTypes.Simple=>
         new SimpleGeometryDrawing(relevantDistances, pointShift = pointShift)
