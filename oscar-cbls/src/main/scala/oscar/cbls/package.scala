@@ -262,10 +262,10 @@ package object cbls extends ModelingAPI{
     */
   @inline final def warning(requirement: Boolean, message: => Any) {
     if (!requirement)
-      println(Console.RED + "WARNING: " + message + Console.BLACK)
+      println(Console.RED + "WARNING: " + message + Console.RESET)
   }
 
   @inline final def warning(message: => Any) {
-      println(Console.RED + "WARNING: " + message + Console.BLACK)
+      println(Console.RED + "WARNING: " + message + Console.RESET)
   }
 }

@@ -3,13 +3,15 @@ package oscar.cbls.algo.graph
 import scala.collection.immutable.{SortedMap, SortedSet}
 
 object Connexity {
+  //TODO: these algo do not consider non transit nodes that constitute a boundary between different components; so far, we consider transit at all nodes.
+
   def components(graph:ConditionalGraph,isConditionOpen:Int => Boolean):(Array[List[Node]]) = {
     val consideredEdges = graph.edges.toList.filter(e =>
       e.conditionID match {
         case None => true
         case Some(condition) => isConditionOpen(condition)
       })
-    performMerge(graph,consideredEdges).map(_._1)
+    performMerges(graph,consideredEdges).map(_._1)
   }
 
   def kruskal(graph:ConditionalGraph,isConditionOpen:Int => Boolean):Array[(List[Node],List[Edge])] = {
@@ -19,10 +21,10 @@ object Connexity {
         case Some(condition) => isConditionOpen(condition)
       }).sortBy(_.length)
 
-    performMerge(graph,consideredEdges)
+    performMerges(graph,consideredEdges)
   }
 
-  private def performMerge(graph:ConditionalGraph,edgesToConsider:List[Edge]):Array[(List[Node],List[Edge])] = {
+  private def performMerges(graph:ConditionalGraph,edgesToConsider:List[Edge]):Array[(List[Node],List[Edge])] = {
     var remainingEdges:List[Edge] = edgesToConsider
     val nodeToComponentHead = Array.tabulate(graph.nbNodes)(nodeID => nodeID) //nodes are their own master at startup
 
