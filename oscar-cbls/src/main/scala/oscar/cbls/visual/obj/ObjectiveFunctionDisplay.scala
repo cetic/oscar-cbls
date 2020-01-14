@@ -1,6 +1,7 @@
 package oscar.cbls.visual.obj
 
 import java.awt.Color
+import java.awt.event.{MouseWheelEvent, MouseWheelListener}
 
 import org.jfree.chart.{ChartFactory, JFreeChart}
 import org.jfree.chart.plot.{PlotOrientation, ValueMarker}
@@ -9,17 +10,20 @@ import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.util.StopWatch
 
-class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue, percentile: Int)
+class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue, defaultPercentile: Int)
   extends LongPlot(title,"Time","Objective function value", 2) with StopWatch {
+
+  private lazy val startingAt = getWatch
+  private var lastValueAt = 0.0
+
+  private var allValues: Array[(Double,Long)] = Array.empty
+  private var best = Long.MaxValue
+  private var decreasing = false
+  private var percentile = defaultPercentile
 
   xDom = new org.jfree.data.Range(0,1)
   yDom = new org.jfree.data.Range(0,100)
 
-  private var allValues: Array[(Double,Long)] = Array.empty
-
-  private lazy val startingAt = getWatch
-  private var best = Long.MaxValue
-  private var decreasing = false
   panel.setMouseWheelEnabled(true)
   panel.setMouseZoomable(true)
   panel.setHorizontalAxisTrace(true)
@@ -35,6 +39,18 @@ class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue, percenti
 
   this.setDoubleBuffered(true)
   panel.setDoubleBuffered(true)
+  // Custom Mouse wheel listener (increasing / decreasing percentile)
+  panel.getMouseWheelListeners.foreach(mwl => panel.removeMouseWheelListener(mwl))
+  panel.addMouseWheelListener(new MouseWheelListener {
+    override def mouseWheelMoved(e: MouseWheelEvent): Unit = {
+      if(e.getWheelRotation < 0){
+        percentile = Math.max(1, percentile-1)
+      } else {
+        percentile = Math.min(100, percentile+1)
+      }
+      reDrawFunction()
+    }
+  })
 
   def createChart(): JFreeChart =
     ChartFactory.createXYLineChart(
@@ -46,33 +62,36 @@ class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue, percenti
       false,
       false)
 
-  def drawFunction(value: Long): Unit ={
-
-    val at = (getWatch - startingAt)/1000.0
-    allValues = allValues :+ (at,value)
+  def reDrawFunction(): Unit ={
     val (maxY, minX) = percentileBounds()
-
-    // Update best value
-    if(value <= best) {
-      if(!decreasing) addStartDecreasingMark(at)
-      decreasing = true
-      best = value
-    } else {
-      decreasing = false
-    }
-
     val minY = lower(best)
-    val maxX = Math.max(xDom.getUpperBound, at.toLong + 1)
+    val maxX = Math.max(xDom.getUpperBound, lastValueAt.toLong + 1)
 
     // Update Y axis height
     yDom = new org.jfree.data.Range(minY,upper(maxY, cap))
 
     // Update X axis length
     xDom = new org.jfree.data.Range(minX,maxX)
+  }
 
-    addPoint(at,value,0)
+  def drawFunction(value: Long): Unit ={
 
-    addPoint(at, best, 1)
+    lastValueAt = (getWatch - startingAt)/1000.0
+    allValues = allValues :+ (lastValueAt,value)
+
+    // Update best value
+    if(value <= best) {
+      if(!decreasing) addStartDecreasingMark(lastValueAt)
+      decreasing = true
+      best = value
+    } else {
+      decreasing = false
+    }
+
+    addPoint(lastValueAt,value,0)
+    addPoint(lastValueAt, best, 1)
+
+    reDrawFunction()
   }
 
   private def addStartDecreasingMark(at: Double): Unit ={
@@ -139,7 +158,6 @@ class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue, percenti
     if(value%resExp > 0) (value/resExp)*resExp
     else ((value/resExp)+1)*resExp
   }
-
 }
 
 object ObjectiveFunctionDisplay{
