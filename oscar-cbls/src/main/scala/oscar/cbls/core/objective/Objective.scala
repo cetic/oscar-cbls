@@ -20,6 +20,7 @@ package oscar.cbls.core.objective
  *         by Renaud De Landtsheer
  ******************************************************************************/
 
+import oscar.cbls
 import oscar.cbls.core.computation._
 
 import scala.language.implicitConversions
@@ -142,9 +143,14 @@ class PriorityObjective(objective1: Objective, objective2:Objective, maxObjectiv
    */
   override def value = {
     val firstObjectiveValue = objective1.value
-    if (firstObjectiveValue==0) objective2.value
-    else if(product) (firstObjectiveValue * (maxObjective2+1))
-    else (firstObjectiveValue + (maxObjective2+1))
+    if (firstObjectiveValue==0) {
+      val obj2Value = objective2.value
+      cbls.warning(obj2Value <= maxObjective2,"PriorityObjective:obj2Value(" + obj2Value + ") should be < maxObjective2(" + maxObjective2 + ")")
+      obj2Value
+    }else{
+      if(product) (firstObjectiveValue * (maxObjective2+1))
+      else (firstObjectiveValue + (maxObjective2+1))
+    }
   }
 
   override def model: Store = objective1.model

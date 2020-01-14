@@ -26,7 +26,7 @@ trait BasicCombinators{
     *
     * @author renaud.delandtsheer@cetic.be
     */
-  def best(a: Neighborhood, b: Neighborhood) = new Best(a, b)
+  def best(n: Neighborhood*) = new BestMove(n:_*)
 
   /**
     * this combinator sequentially tries all neighborhoods until one move is found
@@ -423,7 +423,7 @@ class NeighborhoodOps(n:Neighborhood){
     *
     * @author renaud.delandtsheer@cetic.be
     */
-  def best(b: Neighborhood): Neighborhood = new oscar.cbls.lib.search.combinators.Best(n, b)
+  def best(b: Neighborhood): Neighborhood = new oscar.cbls.lib.search.combinators.BestMove(n, b)
 
   /**
     * this combinator is stateful.

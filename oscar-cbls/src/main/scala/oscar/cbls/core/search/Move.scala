@@ -91,6 +91,7 @@ class CodedMove(code: => Unit, override val objAfter: Long, override val neighbo
 /**
   * this class does not provide an implementation for touchedVariables,
   * since we are only inputting source code for executing the move
+  * you must incorporate the obj into the move name in order to display it
   * */
 class EvaluableCodedMove(doAndUndo: () => (() => Unit),
                          override val objAfter: Long = Long.MaxValue,
@@ -107,7 +108,7 @@ class EvaluableCodedMove(doAndUndo: () => (() => Unit),
     toReturn
   }
 
-  override def toString: String = neighborhoodNameToString + ":" + moveName
+  override def toString: String = neighborhoodNameToString + ":" + moveName //this does not include obj. obj is to be displayed by the moveName
 }
 
 

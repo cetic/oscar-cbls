@@ -59,7 +59,7 @@ class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue, percenti
       }
 
 
-    if(value <= best) {
+    if(value < best) {
       if(!decreasing) {
         addStartDecreasingMark(at)
         decreasing = true
