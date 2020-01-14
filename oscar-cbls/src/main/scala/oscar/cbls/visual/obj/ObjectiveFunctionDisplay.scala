@@ -80,7 +80,7 @@ class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue, defaultP
     allValues = allValues :+ (lastValueAt,value)
 
     // Update best value
-    if(value <= best) {
+    if(value < best) {
       if(!decreasing) addStartDecreasingMark(lastValueAt)
       decreasing = true
       best = value
