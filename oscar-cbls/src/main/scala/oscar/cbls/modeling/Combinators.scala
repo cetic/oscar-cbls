@@ -569,7 +569,7 @@ class NeighborhoodOps(n:Neighborhood){
     * @param obj the objective function
     * @author fabian.germeau@student.vinci.be
     */
-  def showObjectiveFunction(obj: Objective, title: String = "Objective function vs. time[s]", cap:Long = Long.MaxValue, percentile: Option[Double] = None) =
+  def showObjectiveFunction(obj: Objective, title: String = "Objective function vs. time[s]", cap:Long = Long.MaxValue, percentile: Int = 100) =
     new ShowObjectiveFunction(n,obj, title,cap, percentile)
 
   /**
