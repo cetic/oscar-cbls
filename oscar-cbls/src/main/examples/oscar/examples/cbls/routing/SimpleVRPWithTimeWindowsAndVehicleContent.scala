@@ -206,7 +206,7 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
 
 
   val search = bestSlopeFirst(List(oneChainInsert,oneChainMove,onePtMove(20)))afterMove({
-    enoughSpaceAfterNeighborNow = CapacityHelper.enoughSpaceAfterNeighbor(n,capacityInvariant)}) showObjectiveFunction(obj, percentile = Some(30))
+    enoughSpaceAfterNeighborNow = CapacityHelper.enoughSpaceAfterNeighbor(n,capacityInvariant)}) showObjectiveFunction(obj, percentile = 30)
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 
