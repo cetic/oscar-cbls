@@ -232,9 +232,11 @@ class GuidedLocalSearch(a: Neighborhood,
 }
 
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 object GuidedLocalSearch3 {
-  def progressive(startWeightForBase: Long, minimumIterationsBeforeStrong: Long):WeightCorrectionStrategy =
-    new Progressive(startWeightForBase: Long, minimumIterationsBeforeStrong: Long)
+  def progressive(startWeightForBase: Long, constantWeightForAdditionalConstraint:Long, minimumIterationsBeforeStrong: Long):WeightCorrectionStrategy =
+    new Progressive(startWeightForBase: Long, constantWeightForAdditionalConstraint:Long, minimumIterationsBeforeStrong: Long)
 }
 
 abstract class WeightCorrectionStrategy{
@@ -251,9 +253,17 @@ abstract class WeightCorrectionStrategy{
    * @return new neight
    */
   def getNewWeight(found:Boolean, weight:Long, sCViolation:Long):Long
+
+  def startWeightForBase:Long
+  def constantWeightForAdditionalConstraint:Long
+
+  def weightForBaseReset():Unit = {}
 }
 
-class Progressive(startWeightForBase: Long, minimumIterationsBeforeStrong: Long) extends WeightCorrectionStrategy {
+class Progressive(override val startWeightForBase: Long,
+                  override val constantWeightForAdditionalConstraint:Long,
+                  minimumIterationsBeforeStrong: Long) extends WeightCorrectionStrategy {
+
   override def getNewWeight(found: Boolean, weight: Long, sCViolation: Long): Long = {
     //this method is called before exploration takes place
     //weight < 0 => stop the search. unless there is a reset
@@ -287,11 +297,8 @@ class Progressive(startWeightForBase: Long, minimumIterationsBeforeStrong: Long)
   }
 }
 
-//TODO: this is the good proto that I am working on; to finish
 class GuidedLocalSearch3(a: Neighborhood,
                          additionalConstraint:Objective,
-                         startWeightForBase:Long,
-                         constantWeightForAdditionalConstraint:Long,
                          weightCorrectionStrategy:WeightCorrectionStrategy,
                          maxAttemptsBeforeStop:Int = 10
                         ) extends NeighborhoodCombinator(a) {
@@ -373,10 +380,13 @@ class GuidedLocalSearch3(a: Neighborhood,
 
   val store = additionalConstraint.model
 
-  var weightForBase: Long = startWeightForBase
+  var weightForBase: Long = weightCorrectionStrategy.startWeightForBase
+  weightCorrectionStrategy.weightForBaseReset()
 
   override def reset(): Unit = {
-    weightForBase = startWeightForBase
+    weightForBase = weightCorrectionStrategy.startWeightForBase
+    weightCorrectionStrategy.weightForBaseReset()
+
     super.reset()
     println("resetting GLS")
   }
@@ -390,9 +400,12 @@ class GuidedLocalSearch3(a: Neighborhood,
 
 
   def getMoveNoUpdateWeight(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean, initValForAdditional:Long, remainingAttemptsBeforeStop:Int): SearchResult = {
+    if(remainingAttemptsBeforeStop == 0 || weightForBase <0) {
+      println("GLS stop ")
+      return NoMoveFound
+    }
 
-    if(remainingAttemptsBeforeStop == 0) return NoMoveFound
-    if(weightForBase <0) return NoMoveFound
+    println("GLS trying; weightForBase:" + weightForBase)
 
     val initValForAdditional = additionalConstraint.value
 
@@ -402,11 +415,11 @@ class GuidedLocalSearch3(a: Neighborhood,
       weightForBase,
       additionalConstraint,
       initValForAdditional,
-      constantWeightForAdditionalConstraint)
+      weightCorrectionStrategy.constantWeightForAdditionalConstraint)
 
     a.getMove(compositeObj,initCompositeObj, acceptanceCriterion) match {
       case NoMoveFound =>
-        println("NoMoveFound")
+        println("GLS got NoMoveFound")
 
         //we try and update the weight
         val oldWeightForBase = weightForBase
@@ -417,7 +430,7 @@ class GuidedLocalSearch3(a: Neighborhood,
         getMoveNoUpdateWeight(obj, initialObj, acceptanceCriterion,initValForAdditional,remainingAttemptsBeforeStop-1)
 
       case m: MoveFound =>
-        println("MoveFound " + m)
+        println("GLS got MoveFound " + m)
         //a move was found, good
         val correctedObj = compositeObjToBaseOBj(m.objAfter)
         if(m.objAfter == correctedObj){
