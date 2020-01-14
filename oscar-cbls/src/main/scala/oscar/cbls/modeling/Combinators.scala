@@ -562,15 +562,19 @@ class NeighborhoodOps(n:Neighborhood){
   def afterMoveOnMove(procOnMove: Move => Unit) = DoOnMove(n, procAfterMove = procOnMove)
 
   /**
-    * This combinator create a frame that draw the evolution curve of the objective function.
-    * The drawn curve possess a scrollbar on the right that allow the user to decrease or
-    * increase the number of value displayed.
-    *
-    * @param obj the objective function
-    * @author fabian.germeau@student.vinci.be
-    */
-  def showObjectiveFunction(obj: Objective, title: String = "Objective function vs. time[s]", cap:Long = Long.MaxValue, percentile: Int = 100) =
-    new ShowObjectiveFunction(n,obj, title,cap, percentile)
+   * This combinator create a frame that draw the evolution curve of the objective function.
+   * You can also display other information on the curve, but the main curve will always be the obj function.
+   *
+   * @param obj the objective function
+   * @param title The title of the frame
+   * @param minCap The minimum displayed value
+   * @param maxCap The maximum displayed value
+   * @param percentile The percentile (1 to 100) of the best displayed value
+   * @param otherValues A list of other value you want to be displayed (as () => Long)
+   * @author fabian.germeau@cetic.be
+   */
+  def showObjectiveFunction(obj: Objective, title: String = "Objective function vs. time[s]", minCap: Long = 0L, maxCap:Long = Long.MaxValue, percentile: Int = 100, otherValues: Array[() => Long] = Array.empty) =
+    new ShowObjectiveFunction(n,obj, title, minCap, maxCap, percentile, otherValues)
 
   /**
     * this combinator attaches a custom code to a given neighborhood.

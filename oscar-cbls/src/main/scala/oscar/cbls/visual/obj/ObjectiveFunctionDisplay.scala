@@ -9,17 +9,20 @@ import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer
 import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.util.StopWatch
+import oscar.cbls.visual.ColorGenerator
 
-class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue, defaultPercentile: Int)
-  extends LongPlot(title,"Time","Objective function value", 2) with StopWatch {
+class ObjectiveFunctionDisplay(title: String, minCap:Long, maxCap:Long, basePercentile: Int, nbOtherValues: Int)
+  extends LongPlot(title,"Time","Objective function value", nbOtherValues + 2) with StopWatch {
+
+  require(minCap < maxCap, "Min cap should be lesser thant max cap. Got minCap : " + minCap + ", maxCap : " + maxCap)
 
   private lazy val startingAt = getWatch
   private var lastValueAt = 0.0
 
-  private var allValues: Array[(Double,Long)] = Array.empty
+  private var allValues: Array[(Double,Long,List[Long])] = Array.empty
   private var best = Long.MaxValue
   private var decreasing = false
-  private var percentile = defaultPercentile
+  private var percentile = basePercentile
 
   xDom = new org.jfree.data.Range(0,1)
   yDom = new org.jfree.data.Range(0,100)
@@ -29,11 +32,17 @@ class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue, defaultP
   panel.setHorizontalAxisTrace(true)
   panel.setVerticalAxisTrace(true)
 
+  ColorGenerator.setSeed(0)
+  val otherSeriesColors: Array[Color] = ColorGenerator.generateRandomColors(nbOtherValues)
   val r1 = new XYLineAndShapeRenderer
   r1.setSeriesPaint(1, Color.GREEN)
   r1.setSeriesPaint(0, Color.RED)
   r1.setSeriesShapesVisible(0, false)
   r1.setSeriesShapesVisible(1, false)
+  (0 until nbOtherValues).foreach( i => {
+    r1.setSeriesPaint(i+2, otherSeriesColors(i))
+    r1.setSeriesShapesVisible(i+2, false)
+  })
 
   plot.setRenderer(r1)
 
@@ -63,21 +72,20 @@ class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue, defaultP
       false)
 
   def reDrawFunction(): Unit ={
-    val (maxY, minX) = percentileBounds()
-    val minY = lower(best)
-    val maxX = Math.max(xDom.getUpperBound, lastValueAt.toLong + 1)
+    val (minX, maxX, minY, maxY) = percentileBounds()
 
     // Update Y axis height
-    yDom = new org.jfree.data.Range(minY,upper(maxY, cap))
+    // It's the lowest
+    yDom = new org.jfree.data.Range(lower(minY),upper(maxY))
 
     // Update X axis length
-    xDom = new org.jfree.data.Range(minX,maxX)
+    xDom = new org.jfree.data.Range(minX,Math.max(xDom.getUpperBound, maxX))
   }
 
-  def drawFunction(value: Long): Unit ={
+  def drawFunction(value: Long, otherValues: Array[() => Long]): Unit ={
 
     lastValueAt = (getWatch - startingAt)/1000.0
-    allValues = allValues :+ (lastValueAt,value)
+    allValues = allValues :+ (lastValueAt,value,otherValues.map(_.apply()).toList)
 
     // Update best value
     if(value < best) {
@@ -90,6 +98,7 @@ class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue, defaultP
 
     addPoint(lastValueAt,value,0)
     addPoint(lastValueAt, best, 1)
+    otherValues.indices.foreach(i => addPoint(lastValueAt,otherValues(i).apply(),i+2))
 
     reDrawFunction()
   }
@@ -101,18 +110,21 @@ class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue, defaultP
   }
 
   /**
-   * This method return the minX and maxY bounds based on the percentile value.
+   * This method return the bounds based on the percentile value.
    * The lower bounds are determined like this :
-   *  - minX = The earliest acceptable value (taking his time information)
-   *  - minY = The best value (taking his value)
-   *  - maxX = The last encountered value (taking his time information)
-   *  - maxY = The worst acceptable value (taking his value)
+   *  First we determine the x Axis :
+   *    - minX = The earliest acceptable value (taking his time information)
+   *    - maxX = The last encountered value (taking his time information)
+   *
+   *  Then considering only the values between minX and maxX :
+   *    - minY = The lowest value (considering all the values (obj and others))
+   *    - maxY = The highest value (considering all the values (obj and others))
    *
    * If percentile >= 100 ==> it means that we display all the data.
-   * If percentile == 50 ==> it means that we display 50% of the data.
+   * If percentile == 30 ==> it means that we display the 30% best data (based on obj value)
    * If percentile == 0 ==> it means that we display 0% of the data.
    */
-  private def percentileBounds(): (Long, Double) ={
+  private def percentileBounds(): (Double, Double, Long, Long) ={
     val nbValues = allValues.length
     val array = Array.tabulate(nbValues)(x => x.toLong)
     val valuesToConsider = KSmallest.kFirst(
@@ -123,7 +135,13 @@ class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue, defaultP
     val worstAcceptableValue = valuesToConsider.last
     // The first (in time) acceptable value could be before the worstAcceptableValue
     val earliestAcceptableValue = valuesToConsider.minBy(allValues(_)._1)
-    (allValues(worstAcceptableValue)._2, allValues(earliestAcceptableValue)._1)
+    val latestAcceptableValue = valuesToConsider.maxBy(allValues(_)._1)
+    val minX = allValues(earliestAcceptableValue)._1
+    val maxX = allValues(latestAcceptableValue)._1
+    val displayedValues = allValues.splitAt(earliestAcceptableValue)._2.flatMap(x => x._2 :: x._3)
+    val minY = displayedValues.min
+    val maxY = displayedValues.max
+    (minX, maxX, minY, maxY)
   }
 
   /**
@@ -133,14 +151,14 @@ class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue, defaultP
    * 20 ==> 19
    * 5 ==> 0
    */
-  private def upper(value: Long, cap:Long = Long.MaxValue): Long ={
+  private def upper(value: Long): Long ={
     var resExp:Long = 10
     while(value/resExp > 1) {
       resExp = resExp * 10
     }
     resExp = if(resExp <= 100) resExp/10 else resExp/100
-    val res = ((value/resExp)+1)*resExp
-    res min cap
+    val maxValue = ((value/resExp)+1)*resExp
+    (maxValue min maxCap) max (minCap + 1)
   }
 
   /**
@@ -154,13 +172,17 @@ class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue, defaultP
     var resExp: Long = 1
     while(value/resExp > 0) resExp = resExp * 10
     resExp = resExp/100
-    if(resExp <= 0) return 0
-    if(value%resExp > 0) (value/resExp)*resExp
-    else ((value/resExp)+1)*resExp
+    val minValue = {
+      if(resExp <= 0) 0
+      else if(value%resExp > 0) (value/resExp)*resExp
+      else ((value/resExp)-1)*resExp
+    }
+
+    (minValue max minCap) min (maxCap - 1)
   }
 }
 
 object ObjectiveFunctionDisplay{
-  def apply(title: String, cap:Long = Long.MaxValue, percentile: Int = 100): ObjectiveFunctionDisplay =
-    new ObjectiveFunctionDisplay(title,cap, percentile)
+  def apply(title: String, minCap: Long, maxCap:Long, percentile: Int, nbOtherValues: Int): ObjectiveFunctionDisplay =
+    new ObjectiveFunctionDisplay(title, minCap, maxCap, percentile, nbOtherValues)
 }

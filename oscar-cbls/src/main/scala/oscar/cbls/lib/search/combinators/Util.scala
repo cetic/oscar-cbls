@@ -23,16 +23,24 @@ trait UtilityCombinators{
 
 /**
  * This combinator create a frame that draw the evolution curve of the objective function.
- * The drawn curve possess a scrollbar on the right that allow the user to decrease or
- * increase the number of value displayed.
+ * You can also display other information on the curve, but the main curve will always be the obj function.
  *
  * @param a a neighborhood
  * @param obj the objective function
- * @author fabian.germeau@student.vinci.be
+ * @param title The title of the frame
+ * @param minCap The minimum displayed value
+ * @param maxCap The maximum displayed value
+ * @param percentile The percentile (1 to 100) of the best displayed value
+ * @param otherValues A list of other value you want to be displayed (as () => Long)
+ * @author fabian.germeau@cetic.be
  */
-class ShowObjectiveFunction(a: Neighborhood, obj: () => Long, title: String = "Objective function vs. time[s]", cap:Long = Long.MaxValue, percentile:Int = 100) extends NeighborhoodCombinator(a){
+class ShowObjectiveFunction(a: Neighborhood, obj: () => Long, title: String = "Objective function vs. time[s]",
+                            minCap: Long = 0L,
+                            maxCap:Long = Long.MaxValue,
+                            percentile:Int = 100,
+                            otherValues: Array[() => Long] = Array.empty) extends NeighborhoodCombinator(a){
   //objGraphic is an internal frame that contains the curve itself and visualFrame is a basic frame that contains objGraphic
-  val objGraphic = ObjectiveFunctionDisplay(title, cap, percentile)
+  val objGraphic = ObjectiveFunctionDisplay(title, minCap, maxCap, percentile, otherValues.length)
   SingleFrameWindow.show(objGraphic,title)
 
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult ={
@@ -48,7 +56,7 @@ class ShowObjectiveFunction(a: Neighborhood, obj: () => Long, title: String = "O
     and then we write the curve
    */
   def notifyNewObjValue(m:Move): Unit ={
-    objGraphic.drawFunction(obj())
+    objGraphic.drawFunction(obj(), otherValues)
   }
 }
 
