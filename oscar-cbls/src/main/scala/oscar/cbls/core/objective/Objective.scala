@@ -117,6 +117,30 @@ class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objecti
   override def model: Store = mustBeZeroObjective.model
 }
 
+
+object PriorityObjective{
+  def apply(objective1: Objective, objective2:Objective, maxObjective2:Long) = new PriorityObjective(objective1: Objective, objective2:Objective, maxObjective2:Long)
+
+  def apply(firstObj:Objective,moreObjAndTheirMaxValue:List[(Objective,Long)]):Objective = {
+    if(moreObjAndTheirMaxValue.isEmpty) firstObj
+    else applyRecur(firstObj,moreObjAndTheirMaxValue)._1
+  }
+
+  private def applyRecur(objective1:Objective,moreObjAndTheirMaxValue:List[(Objective,Long)]):(PriorityObjective,Long) = {
+    moreObjAndTheirMaxValue match {
+      case List((objective2, maxObjective2)) =>
+        val p = new PriorityObjective(objective1, objective2, maxObjective2)
+        (p, maxObjective2)
+      case (secondObj, maxSecondObj) :: tail =>
+        val (tailOBj, max2Tail) = applyRecur(secondObj, tail)
+        val newMAx2 = max2Tail + maxSecondObj
+        val p = new PriorityObjective(objective1, tailOBj, newMAx2)
+        (p, newMAx2)
+    }
+  }
+}
+
+
 /**
  * if (objective1.value == 0) objective2.value
  * else objective1.value * (maxObjective2+1)
@@ -130,11 +154,10 @@ class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objecti
  * and we want to treat objective1 as a weak objective (opposite to the [[CascadingObjective]])
  *
  * @param objective1 the first objective to minimize
- * @param objective2 the one to inimize when the first one is zero
+ * @param objective2 the one to minimize when the first one is zero
  * @param maxObjective2 the maximal value that objective2 will ever have when objective1 is zero.
- * @param product uses a product operator (if false, uses a sum operator
  */
-class PriorityObjective(objective1: Objective, objective2:Objective, maxObjective2:Long, product:Boolean = true) extends Objective {
+class PriorityObjective(val objective1: Objective, val objective2:Objective, val maxObjective2:Long) extends Objective {
 
   /**
    * This method returns the actual objective value.
@@ -148,8 +171,7 @@ class PriorityObjective(objective1: Objective, objective2:Objective, maxObjectiv
       cbls.warning(obj2Value <= maxObjective2,"PriorityObjective:obj2Value(" + obj2Value + ") should be < maxObjective2(" + maxObjective2 + ")")
       obj2Value
     }else{
-      if(product) (firstObjectiveValue * (maxObjective2+1))
-      else (firstObjectiveValue + (maxObjective2+1))
+      firstObjectiveValue + maxObjective2 + 1
     }
   }
 
