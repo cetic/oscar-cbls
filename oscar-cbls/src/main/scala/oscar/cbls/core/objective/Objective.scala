@@ -180,17 +180,17 @@ class PriorityObjective(val objective1: Objective, val objective2:Objective, val
   override def detailedString(short: Boolean, indent:Long = 0L): String =
     (if(short) {
       if (objective1.value == 0) {
-        nSpace(indent) + "PriorityObjective(\n" +
+        "PriorityObjective(value: " + this.value + "\n" +
           nSpace(indent + 2L) + "objective1 :=0 \n" +
           nSpace(indent + 2L) + "objective2:" + objective2.detailedString(true, indent + 2L) + "\n" +
           nSpace(indent) + ")"
       } else {
-        nSpace(indent) + "PriorityObjective(\n" +
+        "PriorityObjective(value:" + this.value + "\n" +
           nSpace(indent + 2L) + "objective1:" + objective1.detailedString(true, indent + 4L) + "\n" +
           nSpace(indent) + ")"
       }
     }else {
-      nSpace(indent) + "PriorityObjective(\n" +
+      "PriorityObjective(value:" + this.value + "\n" +
         nSpace(indent + 2L) + "objective1:" + objective1.detailedString(true, indent + 4L) + "\n" +
         nSpace(indent + 2L) + "objective2:" + objective2.detailedString(true, indent + 4L) + "\n" +
         nSpace(indent) + ")"
