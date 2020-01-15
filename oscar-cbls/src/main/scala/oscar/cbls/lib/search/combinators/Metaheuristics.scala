@@ -286,12 +286,12 @@ class Progressive(override val startWeightForBase: Long,
       }
     } else { //not found
       if (weight == 1) {
-        //w were dealing with strong constraints; we stop here.
+        //were dealing with strong constraints; we stop here.
         -1
       } else {
         //we are not dealing with strong constraints
         //we increase pressure on the obj a litle bit
-        weight - 1
+        2L max (weight - 1)
       }
     }
   }
@@ -424,7 +424,11 @@ class GuidedLocalSearch3(a: Neighborhood,
         //we try and update the weight
         val oldWeightForBase = weightForBase
         weightForBase = weightCorrectionStrategy.getNewWeight(false,weightForBase,initValForAdditional)
-        require(oldWeightForBase != weightForBase,"new weight unchanged although no move found:" + oldWeightForBase)
+
+        if(oldWeightForBase == weightForBase) {
+          println("GLS stop ")
+          return NoMoveFound
+        }
 
         //policy has changed,so we try again
         getMoveNoUpdateWeight(obj, initialObj, acceptanceCriterion,initValForAdditional,remainingAttemptsBeforeStop-1)
