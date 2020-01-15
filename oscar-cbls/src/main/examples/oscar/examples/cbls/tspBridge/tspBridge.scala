@@ -19,12 +19,14 @@ import scala.language.implicitConversions
 
 object TspBridge extends App {
 
-  val n = 100
-  val v = 1
-  val nbNodes = 1000
-  val nbConditionalEdges = 500
-  val nbNonConditionalEdges = 3000
+  val n = 50
+  val v = 5
+  val nbNodes = 500
+  val nbConditionalEdges = 350
+  val nbNonConditionalEdges = 1600
   val nbTransitNodes = nbNodes
+
+  println(Long.MaxValue)
 
   println("generate random graph")
   val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(
@@ -32,14 +34,14 @@ object TspBridge extends App {
     nbConditionalEdges = nbConditionalEdges,
     nbNonConditionalEdges = nbNonConditionalEdges,
     nbTransitNodes = nbTransitNodes,
-    mapSide = 1000)
+    seed = Some(1))
   println("end generate random graph")
 
   println("start dijkstra")
   val underApproximatingDistanceInGraphAllBridgesOpen:Array[Array[Long]] = DijkstraDistanceMatrix.buildDistanceMatrix(graph, _ => true)
   println("end dijkstra")
 
-  val m = Store() //checker = Some(new ErrorChecker()))
+  val m = Store(checker = Some(new ErrorChecker()))
 
   //initially all bridges open
   val bridgeConditionArray = Array.tabulate(nbConditionalEdges)(c => CBLSIntVar(m, 1, 0 to 1, "bridge_" + c + "_open"))
@@ -49,7 +51,7 @@ object TspBridge extends App {
   val costPerBridge = 20
 
   val bridgeCost:IntValue = cardinality(openBridges) * costPerBridge
-  val myVRP = new VRP(m,n,1)
+  val myVRP = new VRP(m,n,v)
 
   val routeLengthInvar = RouteLengthOnConditionalGraph(
     myVRP.routes,
@@ -59,11 +61,12 @@ object TspBridge extends App {
     nodeInRoutingToNodeInGraph = identity, //we keep it simple for this random example
     graph = graph,
     underApproximatingDistance = (a,b) => underApproximatingDistanceInGraphAllBridgesOpen(a)(b),
-    distanceIfNotConnected = Int.MaxValue/10)
+    distanceIfNotConnected = Int.MaxValue/10,
+    freeReturn = true)
 
   val neededConditions = routeLengthInvar.neededConditions
 
-  val routeLength:IntValue = routeLengthInvar.distancePerVehicle(0)
+  val routeLength:IntValue = sum(routeLengthInvar.distancePerVehicle)
 
   val penaltyForUnrouted  = 1000L
 
@@ -75,7 +78,7 @@ object TspBridge extends App {
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // visu
 
-  val visu = new TspBridgeVisu(graph, v = 1, n,(a,b) => underApproximatingDistanceInGraphAllBridgesOpen(a)(b))
+  val visu = new TspBridgeVisu(graph, v = v, n,(a,b) => underApproximatingDistanceInGraphAllBridgesOpen(a)(b))
   SingleFrameWindow.show(visu,"TspBridge(tspN:" + n + " tspV:" + v + " graphN:" + nbNodes + " graphE:" + (nbNonConditionalEdges + nbConditionalEdges) + " graphNCE:" + nbNonConditionalEdges + " graphCE:" + nbConditionalEdges + ")")
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -164,6 +167,8 @@ object TspBridge extends App {
   println("neededBridges:" + routeLengthInvar.neededConditions)
   visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList.map(_.toInt), myVRP.routes.value)
 
+  println("Route Length :" + routeLength)
+
   //TODO: we should actually substract the open & not used bridges from the objective function, and never try to switch them.
 }
 
@@ -171,7 +176,8 @@ object TspBridge extends App {
 class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
                     v:Int,
                     n:Int,
-                    underApproximatingDistance:(Int,Int) => Long)
+                    underApproximatingDistance:(Int,Int) => Long,
+                    freeReturn: Boolean = false)
   extends SimpleGraphViewer(graph){
 
   def redraw(openBridges:SortedSet[Int], routes:IntSequence): Unit ={
@@ -187,18 +193,40 @@ class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
     for(condition <- 0 until graph.nbConditions){
       val conditionalEdge = graph.conditionToConditionalEdges(condition)
       if(openBridges contains condition){
-        drawEdge(conditionalEdge, 5, Color.green)
+        drawEdge(conditionalEdge, 5,Color.green)
       }else{
         drawEdge(conditionalEdge, 2, Color.pink, dashed = true)
       }
     }
 
+    for(nodeId <- 0 until n){
+      val node = graph.nodes(nodeId)
+      val color = if(routes contains nodeId) {
+        Color.BLUE
+      }else {
+        Color.RED
+      }
+      if(node.transitAllowed) {
+        drawRoundNode(node, color , radius = 3, toolTip = "routing" + node)
+      }else{
+        drawCrossNode(node ,color, side = 3, toolTip = "routing" + node)
+      }
+    }
+
+    //println(routes)
+
     //path in the routing problem
     var currentExplorer = routes.explorerAtAnyOccurrence(0).get
     while(currentExplorer.next match{
       case None => //return
-        drawPath(graph.nodes(currentExplorer.value), graph.nodes(0), openBridges)
+        if (!freeReturn)
+          drawPath(graph.nodes(currentExplorer.value), graph.nodes(v-1L), openBridges)
         false
+      case Some(expl) if expl.value < v =>
+        if (!freeReturn)
+          drawPath(graph.nodes(currentExplorer.value), graph.nodes(expl.value - 1), openBridges)
+        currentExplorer = expl
+        true
       case Some(expl) =>
         drawPath(graph.nodes(currentExplorer.value), graph.nodes(expl.value), openBridges)
         currentExplorer = expl
@@ -215,19 +243,7 @@ class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
     }
 
     //routing nodes
-    for(nodeId <- 0 until n){
-      val node = graph.nodes(nodeId)
-      val color = if(routes contains nodeId) {
-        Color.BLUE
-      }else {
-        Color.RED
-      }
-      if(node.transitAllowed) {
-        drawRoundNode(node, color , radius = 3, toolTip = "routing" + node)
-      }else{
-        drawCrossNode(node ,color, side = 3, toolTip = "routing" + node)
-      }
-    }
+
 
     //start points
     for(vehicle <- 0 until v){
@@ -245,6 +261,9 @@ class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
   private val aStarEngine = new RevisableAStar(graph: ConditionalGraph, underApproximatingDistance)
 
   def drawPath(fromNode:Node, toNode:Node, openConditions:SortedSet[Int]): Unit ={
+    //println(fromNode + " -- " + toNode)
+    //println(graph.coordinates(fromNode.id) + " -- " + graph.coordinates(toNode.id))
+
     drawEdges(aStarEngine.getPath(fromNode,toNode,openConditions).get, 2, Color.BLUE)
   }
 }
