@@ -132,7 +132,7 @@ object GraphPartitionGLS extends CBLSModel with App {
 
     (searchNeighborhood
       guidedLocalSearch (sameSizeObj,
-      GuidedLocalSearch3.progressive(100,100,5,5,consecutiveFailsBeforeDivByTwo = 5)
+      GuidedLocalSearch3.progressive(100,100,5,5,consecutiveFailsBeforeDivByTwo = 3)
       , 10)
       onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/100, name = "randomize" + nbNodes/100), 3, noCrossingObj)
       showObjectiveFunction(noCrossingObj,"noCrossingObj") showObjectiveFunction(sameSizeObj,"sameSizeObj"))
