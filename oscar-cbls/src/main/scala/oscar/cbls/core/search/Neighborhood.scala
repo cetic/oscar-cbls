@@ -277,7 +277,7 @@ abstract class Neighborhood(name:String = null) {
 
             m.commit()
             //TODO: additionalString should be handled with synthesis!
-            if (printSynthesis && additionalStringGenerator != null) println("after move is committed: " + additionalStringGenerator())
+            if (printSynthesis && additionalStringGenerator != null) println(additionalStringGenerator())
             if (obj.value == Long.MaxValue) println("Warning : objective == MaxInt, maybe you have some strong constraint violated?")
             require(m.objAfter == Long.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
 
@@ -303,13 +303,13 @@ abstract class Neighborhood(name:String = null) {
             }
 
             m.commit()
-            if (additionalStringGenerator != null) println("after move is committed: " + additionalStringGenerator())
+            if (additionalStringGenerator != null) println(additionalStringGenerator())
             if (obj.value == Long.MaxValue) println("Warning : objective == MaxInt, maybe you have some strong constraint violated?")
             require(m.objAfter == Long.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
 
           }else{
             m.commit()
-            if (additionalStringGenerator != null) println("after move is committed: " + additionalStringGenerator())
+            if (additionalStringGenerator != null) println(additionalStringGenerator())
             if (obj.value == Long.MaxValue) println("Warning : objective == MaxInt, maybe you have some strong constraint violated?")
             require(m.objAfter == Long.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
           }
