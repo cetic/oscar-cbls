@@ -297,6 +297,17 @@ class Progressive(override val startWeightForBase: Long,
   }
 }
 
+
+/**
+ * This is a combination of a constraint with an objective function.
+ * the idea is to consider the constraint as a weak constraint, and sum this violation to the objective function with weighting.
+ * throughout the search, the relative weighing of the constraint is increased until it gets to a strong constraint.
+ *
+ * @param a the neighborhood to consider
+ * @param additionalConstraint an additional constraint, considered as a weak constraint at startup, and gradually, as a strong constraint.
+ * @param weightCorrectionStrategy how the relative weight of obj and additional constraint evolve
+ * @param maxAttemptsBeforeStop tolerated number of consecutive calls to weight correction without any move found. if exceded returns noMoveFound
+ */
 class GuidedLocalSearch3(a: Neighborhood,
                          additionalConstraint:Objective,
                          weightCorrectionStrategy:WeightCorrectionStrategy,
