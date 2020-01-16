@@ -131,7 +131,7 @@ object GraphPartitionGLS extends CBLSModel with App {
   val metaHeuristicSearch =
 
     (searchNeighborhood
-      guidedLocalSearch (sameSizeObj, GuidedLocalSearch3.progressive(100,100,5), 20)
+      guidedLocalSearch (sameSizeObj, GuidedLocalSearch3.progressive(100,100,5,5), 20)
       onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/100, name = "randomize" + nbNodes/100), 3, noCrossingObj)
       showObjectiveFunction(noCrossingObj,"noCrossingObj") showObjectiveFunction(sameSizeObj,"sameSizeObj"))
   //exhaust profile(swapsNeighborhood(nodeToPartition, //this one is the most complete of swaps, but highly inefficient compared tpo the others,and I think that it does not bring in more connexity than others (althrough I am not so suer...)
@@ -139,7 +139,7 @@ object GraphPartitionGLS extends CBLSModel with App {
   //  searchZone2 = () => {val v = violatedNodes.value; (_,_) => v}, //we should filter on nodes with a violation higher than the gain on swapping the violation of the first node
   //  name = "swapAny1Viol"))) //
 
-  metaHeuristicSearch.verboseWithExtraInfo(2, () => Console.GREEN + "sameSizeObj:" + sameSizeObj.value + " noCrossingObj:" + noCrossingObj.value + Console.RESET)
+  metaHeuristicSearch.verboseWithExtraInfo(3, () => Console.GREEN + "sameSizeObj:" + sameSizeObj.value + " noCrossingObj:" + noCrossingObj.value + Console.RESET)
   metaHeuristicSearch.doAllMoves(_ >= nbNodes + nbEdges, noCrossingObj)
 
   println(metaHeuristicSearch.profilingStatistics)
