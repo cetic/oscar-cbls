@@ -46,7 +46,7 @@ object TestGLS extends App{
     linearSearch = new NarrowingStepSlide(3L, minStep = 1L),
     trySubgradient = true),
       obj2,
-      GuidedLocalSearch3.progressive(10,10,40,10)
+      GuidedLocalSearch3.progressive(10,10,40,10,10)
     )
 
 

@@ -3,6 +3,7 @@ package oscar.cbls.lib.search.combinators
 
 import oscar.cbls._
 import oscar.cbls.core.search._
+import oscar.cbls.util.Properties
 import oscar.cbls.visual.SingleFrameWindow
 import oscar.cbls.visual.obj.ObjectiveFunctionDisplay
 
@@ -238,15 +239,10 @@ object Profile{
   def statisticsHeader: Array[String] = Array("Neighborhood","calls", "found", "sumGain", "sumTime(ms)", "avgGain",
     "avgTime(ms)", "slope(-/s)", "avgTimeNoMove", "avgTimeMove", "wastedTime")
 
-  def selectedStatisticInfo(i:Iterable[Profile]) = {
-    (statisticsHeader :: i.toList.map(_.collectThisProfileStatistics)).mkString("\n")
+  def selectedStatisticInfo(i:Iterable[Profile]):String = {
+    Properties.justifyRightArray(Profile.statisticsHeader :: i.toList.map(_.collectThisProfileStatistics)).mkString("\n")
   }
 }
-
-
-
-
-
 
 case class NoReset(a: Neighborhood) extends NeighborhoodCombinator(a) {
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean) =
@@ -255,7 +251,6 @@ case class NoReset(a: Neighborhood) extends NeighborhoodCombinator(a) {
   //this resets the internal state of the move combinators
   override def reset() {}
 }
-
 
 /**
  * @author renaud.delandtsheer@cetic.be

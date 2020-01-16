@@ -235,8 +235,16 @@ class GuidedLocalSearch(a: Neighborhood,
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 object GuidedLocalSearch3 {
-  def progressive(startWeightForBase: Long, constantWeightForAdditionalConstraint:Long, minimumIterationsBeforeStrong: Long,nbConsecutiveIterationWithConstraintTrueBeforeStrong:Long):WeightCorrectionStrategy =
-    new Progressive(startWeightForBase: Long, constantWeightForAdditionalConstraint:Long, minimumIterationsBeforeStrong: Long,nbConsecutiveIterationWithConstraintTrueBeforeStrong:Long)
+  def progressive(startWeightForBase: Long,
+                  constantWeightForAdditionalConstraint:Long,
+                  minimumIterationsBeforeStrong: Long,
+                  nbConsecutiveIterationWithConstraintTrueBeforeStrong:Long,
+                  consecutiveFailsBeforeDivByTwo:Long):WeightCorrectionStrategy =
+    new Progressive(startWeightForBase: Long,
+      constantWeightForAdditionalConstraint:Long,
+      minimumIterationsBeforeStrong: Long,
+      nbConsecutiveIterationWithConstraintTrueBeforeStrong:Long,
+      consecutiveFailsBeforeDivByTwo:Long)
 }
 
 abstract class WeightCorrectionStrategy{
@@ -263,10 +271,11 @@ abstract class WeightCorrectionStrategy{
 class Progressive(override val startWeightForBase: Long,
                   override val constantWeightForAdditionalConstraint:Long,
                   minimumIterationsBeforeStrong: Long,
-                  nbConsecutiveIterationWithConstraintTrueBeforeStrong:Long) extends WeightCorrectionStrategy {
+                  nbConsecutiveIterationWithConstraintTrueBeforeStrong:Long,
+                  consecutiveFailsBeforeDivByTwo:Long) extends WeightCorrectionStrategy {
 
   var remainingConsecutiveIterationWithConstraintTrueBeforeStrong = nbConsecutiveIterationWithConstraintTrueBeforeStrong
-
+  var remainingConsecutiveFailsBeforeDivByTwo = consecutiveFailsBeforeDivByTwo
 
   override def weightForBaseReset(): Unit = {
     remainingConsecutiveIterationWithConstraintTrueBeforeStrong = nbConsecutiveIterationWithConstraintTrueBeforeStrong
@@ -286,6 +295,7 @@ class Progressive(override val startWeightForBase: Long,
     }
 
     if (found) {
+      remainingConsecutiveFailsBeforeDivByTwo = consecutiveFailsBeforeDivByTwo
       if (weight == 1) {
         //we are working with strong constraints, that's fine.
         require(sCViolation == 0)
@@ -302,13 +312,21 @@ class Progressive(override val startWeightForBase: Long,
         }
       }
     } else { //not found
+
+      remainingConsecutiveFailsBeforeDivByTwo -= 1
+      if(remainingConsecutiveFailsBeforeDivByTwo < 0) remainingConsecutiveFailsBeforeDivByTwo = 0
       if (weight == 1) {
         //were dealing with strong constraints; we stop here.
         -1
       } else {
         //we are not dealing with strong constraints
-        //we increase pressure on the obj a litle bit
-        2L max (weight - 1)
+        //we increase pressure on the obj a little bit
+        if(remainingConsecutiveFailsBeforeDivByTwo == 0){
+          remainingConsecutiveFailsBeforeDivByTwo = consecutiveFailsBeforeDivByTwo
+          2L max (weight /2)
+        }else{
+          2L max (weight - 1)
+        }
       }
     }
   }
@@ -429,7 +447,7 @@ class GuidedLocalSearch3(a: Neighborhood,
   def weightString(weightForBase:Int):String =  weightForBase match{
     case 0 => "forget obj, focus on additional constraints"
     case 1 => "additional are strong Constraints"
-    case x if x > 1 =>  "weightForBase:" + x
+    case x if x > 1 =>  "relativeWeight:" + x + "/" + weightCorrectionStrategy.constantWeightForAdditionalConstraint
     case x if x < 0 => "interrupted"
   }
 

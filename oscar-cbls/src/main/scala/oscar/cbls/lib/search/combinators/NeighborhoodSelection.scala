@@ -94,6 +94,7 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
     if((it > 0) && ((it % refresh) == 0)){
 
       if(printExploredNeighborhoods){
+        //TODO: this is called again if the first explored neighbor after a refresh returns NoMoveFound
         println("refreshing knowledge on neighborhood; statistics since last refresh: ")
         printStatus()
       }
