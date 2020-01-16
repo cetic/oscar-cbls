@@ -131,7 +131,9 @@ object GraphPartitionGLS extends CBLSModel with App {
   val metaHeuristicSearch =
 
     (searchNeighborhood
-      guidedLocalSearch (sameSizeObj, GuidedLocalSearch3.progressive(100,100,5,5,consecutiveFailsBeforeDivByTwo = 5), 10)
+      guidedLocalSearch (sameSizeObj,
+      GuidedLocalSearch3.progressive(100,100,5,5,consecutiveFailsBeforeDivByTwo = 5)
+      , 10)
       onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/100, name = "randomize" + nbNodes/100), 3, noCrossingObj)
       showObjectiveFunction(noCrossingObj,"noCrossingObj") showObjectiveFunction(sameSizeObj,"sameSizeObj"))
   //exhaust profile(swapsNeighborhood(nodeToPartition, //this one is the most complete of swaps, but highly inefficient compared tpo the others,and I think that it does not bring in more connexity than others (althrough I am not so suer...)

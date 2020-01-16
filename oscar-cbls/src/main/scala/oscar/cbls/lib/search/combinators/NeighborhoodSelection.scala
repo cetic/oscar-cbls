@@ -91,7 +91,7 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
     * @return
     */
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
-    if((it > 0) && ((it % refresh) == 0)){
+    if((it > 0) && ((it % refresh) == 0) && neighborhoodArray.exists(_.nbCalls!=0)){
 
       if(printExploredNeighborhoods){
         //TODO: this is called again if the first explored neighbor after a refresh returns NoMoveFound

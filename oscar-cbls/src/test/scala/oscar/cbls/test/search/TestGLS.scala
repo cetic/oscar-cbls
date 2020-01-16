@@ -33,12 +33,6 @@ object TestGLS extends App{
   }
 
 
-/*  class GuidedLocalSearch3(a: Neighborhood,
-                           additionalConstraint:Objective,
-                           weightCorrectionStrategy:WeightCorrectionStrategy,
-                           maxAttemptsBeforeStop:Int = 10
-                          ) */
-
     val search = new GuidedLocalSearch3(
     GradientDescent(Array(x,y),
     selectVars = 0L to 1L,
@@ -46,7 +40,12 @@ object TestGLS extends App{
     linearSearch = new NarrowingStepSlide(3L, minStep = 1L),
     trySubgradient = true),
       obj2,
-      GuidedLocalSearch3.progressive(10,10,40,10,10)
+      GuidedLocalSearch3.progressive(
+        10,
+        10,
+        40,
+        10,
+        10)
     )
 
 
