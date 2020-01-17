@@ -268,6 +268,15 @@ abstract class WeightCorrectionStrategy{
   def weightForBaseReset():Unit = {}
 }
 
+/**
+ * This strategy is very progressive:
+ * the objective function is weightForBase*obj + weightForAdditionalConstraint*constraint
+ * @param startWeightForBase
+ * @param constantWeightForAdditionalConstraint
+ * @param minimumIterationsBeforeStrong
+ * @param nbConsecutiveIterationWithConstraintTrueBeforeStrong
+ * @param consecutiveFailsBeforeDivByTwo
+ */
 class Progressive(override val startWeightForBase: Long,
                   override val constantWeightForAdditionalConstraint:Long,
                   minimumIterationsBeforeStrong: Long,

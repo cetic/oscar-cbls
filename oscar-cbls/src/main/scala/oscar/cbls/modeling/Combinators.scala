@@ -604,7 +604,7 @@ class NeighborhoodOps(n:Neighborhood){
    * You might also consider saveBestAndRestoreOnExhaust
    * @param o the objective function
    */
-  def saveBest(o: Objective) = new SaveBest(n, o)
+  def saveBest(obj: Objective,when:() => Boolean = null) = if(when == null) new SaveBest(n, obj) else new SaveBestWhen(n,obj,when)
 
   /**
    * saves the model for the best (smallest) value of obj
@@ -612,7 +612,7 @@ class NeighborhoodOps(n:Neighborhood){
    * to restore it, it will return a move that loads the best solution.
    * @param obj
    */
-  def saveBestAndRestoreOnExhaust(obj: Objective) = new SaveBest(n, obj) restoreBestOnExhaust
+  def saveBestAndRestoreOnExhaust(obj: Objective,when:() => Boolean = null) = saveBest(obj,when) restoreBestOnExhaust
 
   /**
    * saves the model for the best (smallest) value of obj
