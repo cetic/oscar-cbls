@@ -45,7 +45,9 @@ object TestGLS extends App{
         10,
         40,
         10,
-        10)
+        10,
+        5,
+        tryWeight2WhenNoMoveFound=true)
     )
 
 

@@ -120,9 +120,16 @@ object GraphPartitionGLS extends CBLSModel with App {
   val metaHeuristicSearch =
     (searchNeighborhood
       guidedLocalSearch (sameSizeObj,
-      GuidedLocalSearch3.progressive(100,100,5,10,consecutiveFailsBeforeDivByTwo = 3)
-      , 10)
-      onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/100, name = "randomize" + nbNodes/100), 5, noCrossingObj)
+      GuidedLocalSearch3.progressive(
+        200,
+        100,
+        5,
+        10,
+        consecutiveFailsBeforeDivByTwo = 1,
+        maxAttemptsBeforeStop = 1,
+        tryWeight2WhenNoMoveFound=false))
+      onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/100, name = "randomize" + nbNodes/100), 3, noCrossingObj)
+      onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/100, name = "randomize" + nbNodes/10), 3, noCrossingObj)
       saveBestAndRestoreOnExhaust(noCrossingObj,() => sameSizeObj.isZero) //conditional saveBest because there is a condition for the solution to be acceptable.
       showObjectiveFunction(noCrossingObj,"noCrossingObj") showObjectiveFunction(sameSizeObj,"sameSizeObj"))
 

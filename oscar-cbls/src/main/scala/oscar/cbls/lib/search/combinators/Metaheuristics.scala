@@ -184,7 +184,7 @@ class GuidedLocalSearch(a: Neighborhood,
             System.err.println("could not emulate bestCompositeObj:" + bestCompositeObj + "!= m.objAfter:" + m.objAfter)
             Long.MaxValue
           }
-          MoveFound(new MoveWithOtherObj(m.m, replacementOBjValue))
+          MoveFound(new OverrideObj(m.m, replacementOBjValue))
         //TODO: here, the obj should be re-interpreted otherwise meta-heuristics cannot be added.
         //alternative is to decompose obj from the composite; is it feasible?
         // we can record the best obj and its related base obj, but we have no proof that it will be the returned one or the proper combination
@@ -209,7 +209,7 @@ class GuidedLocalSearch(a: Neighborhood,
           case NoMoveFound => NoMoveFound
           case m: MoveFound =>
             //println("MoveFound " + m)
-            MoveFound(new MoveWithOtherObj(m.m, Long.MaxValue))
+            MoveFound(new OverrideObj(m.m, Long.MaxValue))
         }
 
       } else {
@@ -239,12 +239,16 @@ object GuidedLocalSearch3 {
                   constantWeightForAdditionalConstraint:Long,
                   minimumIterationsBeforeStrong: Long,
                   nbConsecutiveIterationWithConstraintTrueBeforeStrong:Long,
-                  consecutiveFailsBeforeDivByTwo:Long):WeightCorrectionStrategy =
+                  consecutiveFailsBeforeDivByTwo:Long,
+                  maxAttemptsBeforeStop:Int,
+                  tryWeight2WhenNoMoveFound:Boolean):WeightCorrectionStrategy =
     new Progressive(startWeightForBase: Long,
       constantWeightForAdditionalConstraint:Long,
       minimumIterationsBeforeStrong: Long,
       nbConsecutiveIterationWithConstraintTrueBeforeStrong:Long,
-      consecutiveFailsBeforeDivByTwo:Long)
+      consecutiveFailsBeforeDivByTwo:Long,
+      maxAttemptsBeforeStop:Int,
+      tryWeight2WhenNoMoveFound:Boolean)
 }
 
 abstract class WeightCorrectionStrategy{
@@ -281,10 +285,13 @@ class Progressive(override val startWeightForBase: Long,
                   override val constantWeightForAdditionalConstraint:Long,
                   minimumIterationsBeforeStrong: Long,
                   nbConsecutiveIterationWithConstraintTrueBeforeStrong:Long,
-                  consecutiveFailsBeforeDivByTwo:Long) extends WeightCorrectionStrategy {
+                  consecutiveFailsBeforeDivByTwo:Long,
+                  maxAttemptsBeforeStop:Int,
+                  tryWeight2WhenNomoveFound:Boolean) extends WeightCorrectionStrategy {
 
   var remainingConsecutiveIterationWithConstraintTrueBeforeStrong = nbConsecutiveIterationWithConstraintTrueBeforeStrong
   var remainingConsecutiveFailsBeforeDivByTwo = consecutiveFailsBeforeDivByTwo
+  var remainingFailsBeforeStop = maxAttemptsBeforeStop
 
   override def weightForBaseReset(): Unit = {
     remainingConsecutiveIterationWithConstraintTrueBeforeStrong = nbConsecutiveIterationWithConstraintTrueBeforeStrong
@@ -305,6 +312,7 @@ class Progressive(override val startWeightForBase: Long,
 
     if (found) {
       remainingConsecutiveFailsBeforeDivByTwo = consecutiveFailsBeforeDivByTwo
+      remainingFailsBeforeStop = maxAttemptsBeforeStop
       if (weight == 1) {
         //we are working with strong constraints, that's fine.
         require(sCViolation == 0)
@@ -324,6 +332,14 @@ class Progressive(override val startWeightForBase: Long,
 
       remainingConsecutiveFailsBeforeDivByTwo -= 1
       if(remainingConsecutiveFailsBeforeDivByTwo < 0) remainingConsecutiveFailsBeforeDivByTwo = 0
+      remainingFailsBeforeStop -= 1
+      if(remainingFailsBeforeStop < 0) remainingFailsBeforeStop = 0
+
+      if(remainingFailsBeforeStop==0) {
+        if (weight <= 2 || !tryWeight2WhenNomoveFound) return -1 //Stop
+        else return 2
+      }
+
       if (weight == 1) {
         //were dealing with strong constraints; we stop here.
         -1
@@ -350,7 +366,9 @@ class Progressive(override val startWeightForBase: Long,
  * @param a the neighborhood to consider
  * @param additionalConstraint an additional constraint, considered as a weak constraint at startup, and gradually, as a strong constraint.
  * @param weightCorrectionStrategy how the relative weight of obj and additional constraint evolve
- * @param maxAttemptsBeforeStop tolerated number of consecutive calls to weight correction without any move found. if exceded returns noMoveFound
+ * @param maxAttemptsBeforeStop tolerated number of consecutive calls to weight correction without any move found.
+ *                              if exceded returns noMoveFound.
+ *                              The weightCorrectionStrategy might propoze teh same parameter. The parameter here can be set to someting large in that case.
  */
 class GuidedLocalSearch3(a: Neighborhood,
                          additionalConstraint:Objective,
@@ -515,7 +533,7 @@ class GuidedLocalSearch3(a: Neighborhood,
         if(m.objAfter == correctedObj){
           m
         }else{
-          MoveFound(new MoveWithOtherObj(m.m, correctedObj))
+          MoveFound(new OverrideObj(m.m, correctedObj))
         }
     }
   }
