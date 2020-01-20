@@ -240,7 +240,7 @@ object GuidedLocalSearch3 {
    * the idea is to consider the constraint as a weak constraint, and sum this violation to the objective function with weighting.
    *
    * It overrides the objective function and uses CompositeObj, which is declared as follows:
-   * compositeObj = weightForBase*obj + weightForAdditionalConstraint*constraint
+   * compositeObj = obj*weightForBase + constraint*weightForAdditionalConstraint
    ** weightForAdditionalConstraint is a constant value set by the weightCorrectionStrategy
    ** weightForBase is a value that is controlled is a progressive way and decreases throughout the search.
    *
@@ -349,7 +349,7 @@ abstract class WeightCorrectionStrategy{
  * This is a weightCorrectionStrategy for the GLS heuristics.
  *
  * The GLS overrides the objective function and uses CompositeObj, which is declared as follows:
- * compositeObj = weightForBase*obj + weightForAdditionalConstraint*constraint
+ * compositeObj = obj*weightForBase + constraint*weightForAdditionalConstraint
  ** weightForAdditionalConstraint is a constant value set by the weightCorrectionStrategy
  ** weightForBase is a value that is controlled by the weightCorrectionStrategy. It must decrease throughout the search.
  *
@@ -492,7 +492,7 @@ class Progressive(override val startWeightForBase: Long,
  * the idea is to consider the constraint as a weak constraint, and sum this violation to the objective function with weighting.
  *
  * This combinator overrides the objective function and uses CompositeObj, which is declared as follows:
- * compositeObj = weightForBase*obj + weightForAdditionalConstraint*constraint
+ * compositeObj = obj*weightForBase + constraint*weightForAdditionalConstraint
  ** weightForAdditionalConstraint is a constant value set by the weightCorrectionStrategy
  ** weightForBase is a value that is controlled by the weightCorrectionStrategy. It must decrease throughout the search.
  *
