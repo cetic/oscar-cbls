@@ -25,7 +25,7 @@ class AddActivity(schedule: Schedule,
     // Checking the Hot Restart
     val iterationZone1: () => Iterable[Long] = searchValues.getOrElse(() =>
       schedule
-        .optionalActivities
+        .activities
         .filterNot(schedule.activityPriorityList.value.contains(_))
         .map(_.toLong)
     )

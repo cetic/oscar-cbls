@@ -14,13 +14,15 @@ object Pralet {
   // Model
   // Activities
   val (a, b, c, d, e) = (0, 10, 20, 30, 40)
+  val activities = List(a, b, c, d, e)
+  val initialActs = List(e, d, c, b, a)
   val (m0, m1) = (0, 1)
-  val activities = List(
-    ActivityData(a, 4L, 0L, Mandatory),
-    ActivityData(b, 1L, 0L, Mandatory),
-    ActivityData(c, 3L, 0L, Mandatory),
-    ActivityData(d, 4L, 0L, Mandatory),
-    ActivityData(e, 2L, 0L, Mandatory)
+  val durations = Map(
+    a -> 4L,
+    b -> 1L,
+    c -> 3L,
+    d -> 4L,
+    e -> 2L
   )
   val precPairs = List((a, c), (c, e))
   // Resources
@@ -31,7 +33,7 @@ object Pralet {
 
   def main(args: Array[String]): Unit = {
     val m = new Store(checker = Some(ErrorChecker()))
-    val schedule = new Schedule(m, activities, precPairs, List(r, r1))
+    val schedule = new Schedule(m, activities, initialActs, durations, Map(), precPairs, List(r, r1))
     val objFunc = Objective(schedule.makeSpan)
     m.close()
     println("Model closed.")

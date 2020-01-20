@@ -1,30 +1,30 @@
 package oscar.cbls.business.scheduling.model
 
 import oscar.cbls.algo.rb.RedBlackTreeMap
-import oscar.cbls.business.scheduling.{Activity, Mode}
+import oscar.cbls.business.scheduling.{ActivityId, Mode}
 
 // Resource constraints
 // Model the resources
 
 abstract class Resource {
-  def usingActivities: Iterable[Activity]
+  def usingActivities: Iterable[ActivityId]
   def initialState: ResourceState
 }
 
-class DisjunctiveResource(val usingActivities: Iterable[Activity]) extends Resource {
+class DisjunctiveResource(val usingActivities: Iterable[ActivityId]) extends Resource {
   override def initialState: ResourceState = new DisjunctiveResourceState(this, 0L)
 }
 
-class DisjunctiveResourceWithSetupTimes(val usingActivities: Iterable[Activity],
+class DisjunctiveResourceWithSetupTimes(val usingActivities: Iterable[ActivityId],
                                         setupTimes: SetupTimes) extends Resource {
   override def initialState: ResourceState =
     new DisjunctiveResourceWithSetupTimesState(this, 0L, setupTimes, setupTimes.initialMode)
 }
 
 class CumulativeResource(capacity: Long,
-                         val activitiesConsumption: Map[Activity, Long])
+                         val activitiesConsumption: Map[ActivityId, Long])
   extends Resource {
-  override def usingActivities: Iterable[Activity] = activitiesConsumption.keys
+  override def usingActivities: Iterable[ActivityId] = activitiesConsumption.keys
 
   override def initialState: ResourceState = {
     val rbTreeMap: RedBlackTreeMap[Long] = RedBlackTreeMap.empty
@@ -33,10 +33,10 @@ class CumulativeResource(capacity: Long,
 }
 
 class CumulativeResourceWithSetupTimes(val capacity: Long,
-                                       val activitiesConsumption: Map[Activity, Long],
+                                       val activitiesConsumption: Map[ActivityId, Long],
                                        setupTimes: SetupTimes)
   extends Resource {
-  override def usingActivities: Iterable[Activity] = activitiesConsumption.keys
+  override def usingActivities: Iterable[ActivityId] = activitiesConsumption.keys
 
   override def initialState: ResourceState = {
     val rbTreeMap: RedBlackTreeMap[Long] = RedBlackTreeMap.empty
@@ -45,10 +45,10 @@ class CumulativeResourceWithSetupTimes(val capacity: Long,
 }
 
 class CumulativeMultiResourceWithSetupTimes(val capacity: Long,
-                                            val activitiesConsumption: Map[Activity, Long],
+                                            val activitiesConsumption: Map[ActivityId, Long],
                                             setupTimes: SetupTimes)
   extends Resource {
-  override def usingActivities: Iterable[Activity] = activitiesConsumption.keys
+  override def usingActivities: Iterable[ActivityId] = activitiesConsumption.keys
 
   override def initialState: ResourceState = {
     val rbTreeMap: RedBlackTreeMap[(Int, Long)] = RedBlackTreeMap.empty
@@ -60,18 +60,18 @@ class CumulativeMultiResourceWithSetupTimes(val capacity: Long,
 }
 
 class ConsumableResource(capacity: Long,
-                         val activitiesConsumption: Map[Activity, Long]) extends Resource {
-  override def usingActivities: Iterable[Activity] = activitiesConsumption.keys
+                         val activitiesConsumption: Map[ActivityId, Long]) extends Resource {
+  override def usingActivities: Iterable[ActivityId] = activitiesConsumption.keys
 
   override def initialState: ResourceState =
     new ConsumableResourceState(this, 0L, capacity)
 }
 
 class ConsumableResourceWithSetupTimes(capacity: Long,
-                                       val activitiesConsumption: Map[Activity, Long],
+                                       val activitiesConsumption: Map[ActivityId, Long],
                                        setupTimes: SetupTimes)
   extends Resource {
-  override def usingActivities: Iterable[Activity] = activitiesConsumption.keys
+  override def usingActivities: Iterable[ActivityId] = activitiesConsumption.keys
 
   override def initialState: ResourceState =
     new ConsumableResourceWithSetupTimesState(this, 0L, capacity, setupTimes, setupTimes.initialMode)
@@ -81,20 +81,20 @@ class ConsumableResourceWithSetupTimes(capacity: Long,
 // These classes model the evolution of a resource through the schedule
 
 abstract class ResourceState {
-  def earliestStartTime(activity: Activity, earliestStart: Long): Long
-  def nextState(activity: Activity, taskDuration: Long, startTime: Long): ResourceState
+  def earliestStartTime(activity: ActivityId, earliestStart: Long): Long
+  def nextState(activity: ActivityId, taskDuration: Long, startTime: Long): ResourceState
 }
 
 class DisjunctiveResourceState(base: DisjunctiveResource,
                                availableTime: Long)
   extends ResourceState {
-  override def earliestStartTime(activity: Activity, earliestStart: Long): Long = {
+  override def earliestStartTime(activity: ActivityId, earliestStart: Long): Long = {
     assert(base.usingActivities.exists(_ == activity))
     //////////
     availableTime max earliestStart
   }
 
-  override def nextState(activity: Activity, taskDuration: Long, startTime: Long): ResourceState = {
+  override def nextState(activity: ActivityId, taskDuration: Long, startTime: Long): ResourceState = {
     assert(base.usingActivities.exists(_ == activity))
     require(startTime >= availableTime)
     //////////
@@ -107,7 +107,7 @@ class DisjunctiveResourceWithSetupTimesState(base: DisjunctiveResourceWithSetupT
                                              setupTimes: SetupTimes,
                                              currentMode: Int)
   extends ResourceState {
-  override def earliestStartTime(activity: Activity, earliestStart: Long): Long = {
+  override def earliestStartTime(activity: ActivityId, earliestStart: Long): Long = {
     assert(base.usingActivities.exists(_ == activity))
     //////////
     // Check whether there is a mode change
@@ -120,7 +120,7 @@ class DisjunctiveResourceWithSetupTimesState(base: DisjunctiveResourceWithSetupT
     }
   }
 
-  override def nextState(activity: Activity, taskDuration: Long, startTime: Long): ResourceState = {
+  override def nextState(activity: ActivityId, taskDuration: Long, startTime: Long): ResourceState = {
     assert(base.usingActivities.exists(_ == activity))
     require(startTime >= availableTime)
     //////////
@@ -132,7 +132,7 @@ class DisjunctiveResourceWithSetupTimesState(base: DisjunctiveResourceWithSetupT
 class CumulativeResourceState(base: CumulativeResource,
                               releaseTimes: RedBlackTreeMap[Long])
   extends ResourceState {
-  override def earliestStartTime(activity: Activity, earliestStart: Long): Long = {
+  override def earliestStartTime(activity: ActivityId, earliestStart: Long): Long = {
     val qtyResourceToConsume = base.activitiesConsumption(activity)
     // Explore the RB Tree to obtain the release time of enough resources
     var rbExplorerOpt = releaseTimes.smallestPosition
@@ -146,7 +146,7 @@ class CumulativeResourceState(base: CumulativeResource,
     releasedTime max earliestStart
   }
 
-  override def nextState(activity: Activity, taskDuration: Long, startTime: Long): ResourceState = {
+  override def nextState(activity: ActivityId, taskDuration: Long, startTime: Long): ResourceState = {
     val qtyResourceConsumed = base.activitiesConsumption(activity)
     // Explore the RB Tree to have the keys to delete
     var rbExplorerOpt = releaseTimes.smallestPosition
@@ -182,7 +182,7 @@ class CumulativeResourceWithSetupTimesState(base: CumulativeResourceWithSetupTim
                                             setupTimes: SetupTimes,
                                             currentMode: Mode)
   extends ResourceState {
-  override def earliestStartTime(activity: Activity, earliestStart: Long): Long = {
+  override def earliestStartTime(activity: ActivityId, earliestStart: Long): Long = {
     val qtyResourceToConsume = base.activitiesConsumption(activity)
     // Explore the RB Tree to obtain the release time of enough resources
     var rbExplorerOpt = releaseTimes.smallestPosition
@@ -203,7 +203,7 @@ class CumulativeResourceWithSetupTimesState(base: CumulativeResourceWithSetupTim
     }
   }
 
-  override def nextState(activity: Activity, taskDuration: Long, startTime: Long): ResourceState = {
+  override def nextState(activity: ActivityId, taskDuration: Long, startTime: Long): ResourceState = {
     val qtyResourceConsumed = base.activitiesConsumption(activity)
     // Check whether there is a mode change
     val actMode = setupTimes.activityModes.getOrElse(activity, currentMode)
@@ -253,7 +253,7 @@ class CumulativeMultiResourceWithSetupTimesState(base: CumulativeMultiResourceWi
                                                  setupTimes: SetupTimes,
                                                  currentMode: Mode)
   extends ResourceState {
-  override def earliestStartTime(activity: Activity, earliestStart: Long): Long = {
+  override def earliestStartTime(activity: ActivityId, earliestStart: Long): Long = {
     val qtyResourceToConsume = base.activitiesConsumption(activity)
     val actMode = setupTimes.activityModes.getOrElse(activity, currentMode)
     val releaseTimesAfterChanging = releaseTimesAfterChangingMode(actMode)
@@ -270,7 +270,7 @@ class CumulativeMultiResourceWithSetupTimesState(base: CumulativeMultiResourceWi
     releasedTime max earliestStart
   }
 
-  override def nextState(activity: Activity, taskDuration: Long, startTime: Long): ResourceState = {
+  override def nextState(activity: ActivityId, taskDuration: Long, startTime: Long): ResourceState = {
     val qtyResourceConsumed = base.activitiesConsumption(activity)
     val actMode = setupTimes.activityModes.getOrElse(activity, currentMode)
     val releaseTimesAfterChanging = releaseTimesAfterChangingMode(actMode)
@@ -324,7 +324,7 @@ class ConsumableResourceState(base: ConsumableResource,
                               availableTime: Long,
                               availableCapacity: Long) extends ResourceState {
 
-  override def earliestStartTime(activity: Activity, earliestStart: Long): Long = {
+  override def earliestStartTime(activity: ActivityId, earliestStart: Long): Long = {
     assert(base.usingActivities.exists(_ == activity))
     //////////
     val qtyResourceToConsume = base.activitiesConsumption(activity)
@@ -336,7 +336,7 @@ class ConsumableResourceState(base: ConsumableResource,
     }
   }
 
-  override def nextState(activity: Activity, taskDuration: Long, startTime: Long): ResourceState = {
+  override def nextState(activity: ActivityId, taskDuration: Long, startTime: Long): ResourceState = {
     assert(base.usingActivities.exists(_ == activity))
     require(startTime >= availableTime)
     //////////
@@ -355,7 +355,7 @@ class ConsumableResourceWithSetupTimesState(base: ConsumableResourceWithSetupTim
                                             setupTimes: SetupTimes,
                                             currentMode: Mode) extends ResourceState {
 
-  override def earliestStartTime(activity: Activity, earliestStart: Long): Long = {
+  override def earliestStartTime(activity: ActivityId, earliestStart: Long): Long = {
     assert(base.usingActivities.exists(_ == activity))
     //////////
     val qtyResourceToConsume = base.activitiesConsumption(activity)
@@ -374,7 +374,7 @@ class ConsumableResourceWithSetupTimesState(base: ConsumableResourceWithSetupTim
     }
   }
 
-  override def nextState(activity: Activity, taskDuration: Long, startTime: Long): ResourceState = {
+  override def nextState(activity: ActivityId, taskDuration: Long, startTime: Long): ResourceState = {
     assert(base.usingActivities.exists(_ == activity))
     require(startTime >= availableTime)
     //////////
@@ -394,12 +394,12 @@ class ConsumableResourceWithSetupTimesState(base: ConsumableResourceWithSetupTim
 }
 
 class ErrorResourceState(base: Resource) extends ResourceState {
-  override def earliestStartTime(activity: Activity, earliestStart: Long): Long = Long.MaxValue
+  override def earliestStartTime(activity: ActivityId, earliestStart: Long): Long = Long.MaxValue
 
-  override def nextState(activity: Activity, taskDuration: Long, startTime: Long): ResourceState = this
+  override def nextState(activity: ActivityId, taskDuration: Long, startTime: Long): ResourceState = this
 }
 
 // Case class that models Setup Times
 case class SetupTimes(initialMode: Mode,
-                      activityModes: Map[Activity, Mode],
+                      activityModes: Map[ActivityId, Mode],
                       setupTimes: Map[(Mode, Mode), Long])

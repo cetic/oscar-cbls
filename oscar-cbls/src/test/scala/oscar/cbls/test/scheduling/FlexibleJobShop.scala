@@ -1,7 +1,9 @@
 package oscar.cbls.test.scheduling
+/*
+TODO Redo this example
 
 import oscar.cbls.Store
-import oscar.cbls.business.scheduling.model.{ActivityData, Flexible, Mandatory, Schedule}
+import oscar.cbls.business.scheduling.model.{Activity, Flexible, Mandatory, Schedule}
 import oscar.cbls.business.scheduling.neighborhood.{ReinsertActivity, ReplaceActivity, SwapActivity}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
@@ -25,21 +27,21 @@ object FlexibleJobShop {
   val j = 900
   val k = 1000
   val activities = List(
-    ActivityData(a, 5L, 0L, Mandatory),
-    ActivityData(b, 8L, 0L, Mandatory),
-    ActivityData(c1, 3L, 0L, Flexible),
-    ActivityData(c2, 4L, 0L, Flexible),
-    ActivityData(d1, 9L, 0L, Flexible),
-    ActivityData(d2, 7L, 0L, Flexible),
-    ActivityData(d3, 4L, 0L, Flexible),
-    ActivityData(d4, 6L, 0L, Flexible),
-    ActivityData(e, 10L, 0L, Mandatory),
-    ActivityData(f, 12L, 0L, Mandatory),
-    ActivityData(g, 9L, 0L, Mandatory),
-    ActivityData(h, 11L, 0L, Mandatory),
-    ActivityData(i, 8L, 0L, Mandatory),
-    ActivityData(j, 4L, 0L, Mandatory),
-    ActivityData(k, 13L, 0L, Mandatory)
+    Activity(a, 5L, 0L, Mandatory),
+    Activity(b, 8L, 0L, Mandatory),
+    Activity(c1, 3L, 0L, Flexible),
+    Activity(c2, 4L, 0L, Flexible),
+    Activity(d1, 9L, 0L, Flexible),
+    Activity(d2, 7L, 0L, Flexible),
+    Activity(d3, 4L, 0L, Flexible),
+    Activity(d4, 6L, 0L, Flexible),
+    Activity(e, 10L, 0L, Mandatory),
+    Activity(f, 12L, 0L, Mandatory),
+    Activity(g, 9L, 0L, Mandatory),
+    Activity(h, 11L, 0L, Mandatory),
+    Activity(i, 8L, 0L, Mandatory),
+    Activity(j, 4L, 0L, Mandatory),
+    Activity(k, 13L, 0L, Mandatory)
   )
   val precedencePairs = List(
     (a, b),
@@ -92,3 +94,6 @@ object FlexibleJobShop {
     println("]")
   }
 }
+
+
+ */

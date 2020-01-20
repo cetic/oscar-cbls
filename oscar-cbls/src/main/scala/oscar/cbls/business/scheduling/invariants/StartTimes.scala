@@ -2,8 +2,8 @@ package oscar.cbls.business.scheduling.invariants
 
 import oscar.cbls.CBLSIntVar
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.business.scheduling.Activity
-import oscar.cbls.business.scheduling.model.{PrecedencesData, Resource, ResourceState}
+import oscar.cbls.business.scheduling.ActivityId
+import oscar.cbls.business.scheduling.model.{Precedences, Resource, ResourceState}
 import oscar.cbls.core.computation.SeqUpdate
 import oscar.cbls.core.propagation.Checker
 import oscar.cbls.core.{ChangingSeqValue, Invariant, SeqNotificationTarget}
@@ -11,12 +11,12 @@ import oscar.cbls.core.{ChangingSeqValue, Invariant, SeqNotificationTarget}
 import scala.collection.BitSet
 
 class StartTimes(actPriorityList: ChangingSeqValue,
-                 actDurations: Map[Activity, Long],
-                 actPrecedences: PrecedencesData,
-                 actMinStartTimes: Map[Activity, Long],
+                 actDurations: Map[ActivityId, Long],
+                 actPrecedences: Precedences,
+                 actMinStartTimes: Map[ActivityId, Long],
                  resources: List[Resource],
                  makeSpan: CBLSIntVar,
-                 startTimes: Map[Activity, CBLSIntVar])
+                 startTimes: Map[ActivityId, CBLSIntVar])
   extends Invariant with SeqNotificationTarget {
   // Invariant initialization
   registerStaticAndDynamicDependency(actPriorityList)
@@ -25,7 +25,7 @@ class StartTimes(actPriorityList: ChangingSeqValue,
   makeSpan.setDefiningInvariant(this)
   for {st <- startTimes.values} st.setDefiningInvariant(this)
   // Compute resources used by tasks
-  var activityUsedResourceIndices: Map[Activity, Set[Int]] = Map()
+  var activityUsedResourceIndices: Map[ActivityId, Set[Int]] = Map()
   for {rcInd <- resources.indices} {
     resources(rcInd).usingActivities.foreach { act =>
       val actUsedResInd = activityUsedResourceIndices.getOrElse(act, Set())
@@ -53,11 +53,11 @@ class StartTimes(actPriorityList: ChangingSeqValue,
     //TODO Implement this
   }
 
-  // Compute the start times
+  // Compute the start times from scratch
   def computeStartTimes(actPriorityList: IntSequence): Unit = {
     val resourceStates: Array[ResourceState] = resources.map(_.initialState).toArray
     var makeSpanValue = 0L
-    var startTimesVals: Map[Activity, Long] = Map()
+    var startTimesVals: Map[ActivityId, Long] = Map()
     for {actInd <- actPriorityList} {
       val actIndI = actInd.toInt
       // Compute maximum ending time for preceding activities
@@ -97,13 +97,13 @@ class StartTimes(actPriorityList: ChangingSeqValue,
 
 object StartTimes {
   def apply(actPriorityList: ChangingSeqValue,
-            actDurations: Map[Activity, Long],
-            actPrecedences: PrecedencesData,
-            actMinStartTimes: Map[Activity, Long] = Map(),
-            resources: List[Resource]): (CBLSIntVar, Map[Activity, CBLSIntVar]) = {
+            actDurations: Map[ActivityId, Long],
+            actPrecedences: Precedences,
+            actMinStartTimes: Map[ActivityId, Long] = Map(),
+            resources: List[Resource]): (CBLSIntVar, Map[ActivityId, CBLSIntVar]) = {
     val model = actPriorityList.model
     val makeSpan = CBLSIntVar(model, 0L, name="Schedule Makespan")
-    val startTimes: Map[Activity, CBLSIntVar] = actDurations.map { mapActDur =>
+    val startTimes: Map[ActivityId, CBLSIntVar] = actDurations.map { mapActDur =>
       val act = mapActDur._1
       act -> CBLSIntVar(model, 0L, name=s"Start Time of Activity($act)")
     }

@@ -10,13 +10,15 @@ object SwDevResources {
   // Model
   // Activities
   val (analysis, design, coding, testing, qc, pm) = (50, 40, 30, 20, 10, 0)
-  val activities = List(
-    ActivityData(analysis, 10L, 0L, Mandatory),
-    ActivityData(design, 10L, 0L, Mandatory),
-    ActivityData(coding, 15L, 0L, Mandatory),
-    ActivityData(testing, 25L, 0L, Mandatory),
-    ActivityData(qc, 50L, 0L, Mandatory),
-    ActivityData(pm, 60L, 0L, Mandatory)
+  val activities = List(analysis, design, coding, testing, qc, pm)
+  val initials = List(pm, qc, testing, coding, design, analysis)
+  val durations = Map(
+    analysis -> 10L,
+    design -> 10L,
+    coding -> 15L,
+    testing -> 25L,
+    qc -> 50L,
+    pm -> 60L
   )
   val precPairs = List((analysis, design), (analysis, qc), (design, coding), (coding, testing))
   // Resources
@@ -37,7 +39,7 @@ object SwDevResources {
 
   def main(args: Array[String]): Unit = {
     val m = new Store()
-    val schedule = new Schedule(m, activities, precPairs, List(analyst, senior_dev_test))
+    val schedule = new Schedule(m, activities, initials, durations, Map(), precPairs, List(analyst, senior_dev_test))
     val objFunc = Objective(schedule.makeSpan)
     m.close()
     println("Model closed.")

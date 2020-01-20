@@ -24,7 +24,7 @@ class ReinsertActivity(schedule: Schedule,
     // Iteration zone on activities indices
     // Checking the Hot Restart
     val iterationZone1: () => Iterable[Long] = searchIndices.getOrElse(() =>
-      0L until schedule.activityPriorityList.value.size.toLong
+      0L until schedule.activityPriorityList.value.size
     )
     val hotRestart = true
     val iterationZone: Iterable[Long] =

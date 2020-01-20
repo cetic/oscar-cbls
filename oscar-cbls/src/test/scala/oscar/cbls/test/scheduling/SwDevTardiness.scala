@@ -1,7 +1,7 @@
 package oscar.cbls.test.scheduling
 
 import oscar.cbls.{Objective, Store}
-import oscar.cbls.business.scheduling.model.{ActivityData, DisjunctiveResource, Mandatory, Schedule}
+import oscar.cbls.business.scheduling.model.{DisjunctiveResource, Schedule}
 import oscar.cbls.business.scheduling.neighborhood.{ReinsertActivity, SwapActivity}
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
@@ -9,12 +9,13 @@ import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 object SwDevTardiness {
   // Model
   val (a1, a2, a3, a4, a5) = (10, 11, 12, 13, 14)
-  val activities = List(
-    ActivityData(a1, 10L, 0L, Mandatory),
-    ActivityData(a2, 10L, 0L, Mandatory),
-    ActivityData(a3, 10L, 0L, Mandatory),
-    ActivityData(a4, 10L, 0L, Mandatory),
-    ActivityData(a5, 10L, 0L, Mandatory)
+  val activities = List(a1, a2, a3, a4, a5)
+  val durations = Map(
+    a1 -> 10L,
+    a2 -> 10L,
+    a3 -> 10L,
+    a4 -> 10L,
+    a5 -> 10L
   )
   // Resource
   val analyst = new DisjunctiveResource(List(a1, a2, a3, a4, a5))
@@ -22,12 +23,12 @@ object SwDevTardiness {
   def main(args: Array[String]): Unit = {
     // CBLS Store
     val m = new Store()
-    val schedule = new Schedule(m, activities, Nil, List(analyst))
+    val schedule = new Schedule(m, activities, activities, durations, Map(), Nil, List(analyst))
     // Tardiness variables
     val tardinessPenalty = 100L
     val numAct = activities.length
     val activitiesTardiness = Array.tabulate(numAct) { i =>
-      val act = activities(i).activity
+      val act = activities(i)
       schedule.startTimes(act) * tardinessPenalty * (numAct-i)
     }
     val globalTardiness: Objective = Sum(activitiesTardiness)

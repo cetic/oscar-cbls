@@ -1,6 +1,7 @@
 package oscar.cbls.test.scheduling
 
 import oscar.cbls.Store
+import oscar.cbls.business.scheduling.ActivityId
 import oscar.cbls.business.scheduling.model._
 import oscar.cbls.business.scheduling.neighborhood._
 import oscar.cbls.core.objective.Objective
@@ -49,11 +50,18 @@ object BigExample {
     // Activities
     //val nAct = randomInterval(1, nbAct)
     val nAct = nbAct
-    val activities = for {i <- 0 until nAct} yield ActivityData(i,
-      randomInterval(minDuration, maxDuration),
-      randomInterval(minStartTime, maxStartTime),
-      if (randomBoolean(densityInitialActs)) Mandatory else Optional
-    )
+    val activities = (0 until nAct).toList
+    // Durations
+    var durations: Map[ActivityId, Long] = Map()
+    var minStartTimes: Map[ActivityId, Long] = Map()
+    var initials: List[ActivityId] = List()
+    for {i <- 0 until nAct} {
+      durations += (i -> randomInterval(minDuration, maxDuration))
+      minStartTimes += (i -> randomInterval(minStartTime, maxStartTime))
+      if (randomBoolean(densityInitialActs)) {
+        initials ::= i
+      }
+    }
     // Precedencies
     val seqPairs =  for {i <- 0 until nAct
                          j <- 0 until i
@@ -62,7 +70,7 @@ object BigExample {
     // Resources
     //val nRes = randomInterval(0, nbRes)
     val nRes = nbRes
-    val resources: Array[Resource] = Array.tabulate(nRes) { ind =>
+    val resources: Array[Resource] = Array.tabulate(nRes) { _ =>
       // Capacity for resource i
       val resCap = randomInterval(minCapacity, maxCapacity)
       // Setup Times
@@ -88,7 +96,7 @@ object BigExample {
         new CumulativeResourceWithSetupTimes(resCap, mapUsedCaps, setupTimes)
       }
     }
-    new Schedule(m, activities.toList, precPairs, resources.toList)
+    new Schedule(m, activities, initials, durations, minStartTimes, precPairs, resources.toList)
   }
 
   def main(args: Array[String]): Unit = {

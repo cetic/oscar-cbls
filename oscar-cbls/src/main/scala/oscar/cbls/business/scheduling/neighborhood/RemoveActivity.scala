@@ -22,21 +22,20 @@ class RemoveActivity(schedule: Schedule,
     // Iteration zone on indices to remove (optional activities)
     // Checking the Hot Restart
     val iterationZone1: () => Iterable[Long] = searchIndices.getOrElse(() =>
-      schedule
-        .optionalActivities
-        .filter(schedule.activityPriorityList.value.contains(_))
-        .map(schedule.activityPriorityList.value.toSeq.indexOf(_).toLong)
+      0L until schedule.activityPriorityList.value.size
     )
     val hotRestart = true
     val iterationZone: Iterable[Long] =
       if (hotRestart) HotRestart(iterationZone1(), currentIndex)
       else iterationZone1()
     // iterating over the values in the activity list
-    val (indexIterator, notifyIndexFound) = selectIndexBehavior.toIterator(iterationZone)
+    val (indicesIterator, notifyIndexFound) = selectIndexBehavior.toIterator(iterationZone)
     // Define checkpoint on sequence (activities list)
-    val seqValueCheckPoint = schedule.activityPriorityList.defineCurrentValueAsCheckpoint(true)
-    while (indexIterator.hasNext) {
-      currentIndex = indexIterator.next().toInt
+    val seqValueCheckPoint = schedule
+      .activityPriorityList
+      .defineCurrentValueAsCheckpoint(true)
+    while (indicesIterator.hasNext) {
+      currentIndex = indicesIterator.next().toInt
       // perform move
       performMove(currentIndex)
       val newObj = obj.value
@@ -51,7 +50,8 @@ class RemoveActivity(schedule: Schedule,
   }
 
   override def instantiateCurrentMove(newObj: Long): RemoveActivityMove =
-    RemoveActivityMove(currentIndex, schedule.activityPriorityList.value.size, this, neighborhoodNameToString, newObj)
+    RemoveActivityMove(currentIndex, schedule.activityPriorityList.value.size,
+      this, neighborhoodNameToString, newObj)
 
   def performMove(indAct: Int): Unit = {
     schedule.activityPriorityList.remove(indAct)

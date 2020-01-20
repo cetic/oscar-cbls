@@ -15,7 +15,7 @@
 package oscar.cbls.test.scheduling
 
 import oscar.cbls.Store
-import oscar.cbls.business.scheduling.model.{ActivityData, CumulativeResource, Mandatory, Schedule}
+import oscar.cbls.business.scheduling.model.{CumulativeResource, Schedule}
 import oscar.cbls.business.scheduling.neighborhood.{ReinsertActivity, SwapActivity}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
@@ -40,21 +40,25 @@ import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 object Reagan {
   // Reagan model
   val (eat, sleep, think, chew, speak, drink) = (0, 1, 2, 3, 4, 5)
-  val activities = List(
-    ActivityData(eat, 2L, 0L, Mandatory),
-    ActivityData(sleep, 8L, 0L, Mandatory),
-    ActivityData(think, 12L, 0L, Mandatory),
-    ActivityData(chew, 3L, 0L, Mandatory),
-    ActivityData(speak, 3L, 0L, Mandatory),
-    ActivityData(drink, 3L, 0L, Mandatory)
+
+  val durations = Map(
+    eat -> 2L,
+    sleep -> 8L,
+    think -> 12L,
+    chew -> 3L,
+    speak -> 3L,
+    drink -> 3L
   )
+
   val precPairs = List((think, drink), (eat, sleep), (chew, speak))
   val reagan = new CumulativeResource(3L,
     Map(eat -> 2L, sleep -> 1L, think -> 1L, chew -> 3L, speak -> 3L, drink -> 3L))
 
   def main(args: Array[String]): Unit = {
     val m = new Store()
-    val schedule = new Schedule(m, activities, precPairs, List(reagan))
+    val schedule = new Schedule(m, List(eat, sleep, think, chew, speak, drink),
+      List(eat, sleep, think, chew, speak, drink), durations, Map(),
+      precPairs, List(reagan))
     val objFunc = Objective(schedule.makeSpan)
     m.close()
     // Neighborhoods

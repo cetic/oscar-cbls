@@ -22,16 +22,17 @@ object MinStartTimesExample extends App {
   val penaltyForUnscheduled = 10000L  //penalité d'une tâche pour ne pas être dans le schedule
 
   //créations des variables pour le modèle
+  val activities = (0 until nAct).toList
 
   //1) durations(i) = durée de l'activité i
-  val activities: List[ActivityData] = Array
-    .tabulate(nAct) { i =>
-      ActivityData(i, randomInterval(minDuration, maxDuration), if (i==0) 30L else 0L, Optional)
-    }
-    .toList
+  val durations = activities.map { i =>
+    (i, randomInterval(minDuration, maxDuration))
+  }.toMap
+
+  val minStartTimes = Map(0 -> 30L)
 
   println("Activities:")
-  activities.foreach(println(_))
+  activities.foreach(act => println(s"Activity $act"))
 
   //2) les contraintes de précédences (on peut mettre une liste vide)
   val precPairs = List((0, 3), (2, 1)) //(a,b) l'activité numéro 0 doit se dérouler avant l'activité numéro 3
@@ -44,7 +45,7 @@ object MinStartTimesExample extends App {
   val resources = List(resource1,resource2)
 
   //la contrainte de scheduling
-  val scheduling = new Schedule(s, activities, precPairs, resources)
+  val scheduling = new Schedule(s, activities, Nil, durations, minStartTimes, precPairs, resources)
 
   // Pred and succ maps
   scheduling.precedencesData.predMap.foreach(pi => println(s"Pred ${pi._1} => ${pi._2}"))
@@ -74,7 +75,7 @@ object MinStartTimesExample extends App {
   val reinsertNH = new ReinsertActivity(scheduling, "Reinsert")
   val addNH = new AddActivity(scheduling, "Add")
   val removeNH = new RemoveActivity(scheduling, "Remove")
-  val replaceNHcomb = removeNH dynAndThen (_ => addNH)
+  //val replaceNHcomb = removeNH dynAndThen (_ => addNH)
   val replaceNH = new ReplaceActivity(scheduling, "Replace")
   //val combinedNH = Profile(replaceNHcomb)
   val combinedNH = BestSlopeFirst(List(Profile(addNH), Profile(reinsertNH), Profile(swapNH), Profile(replaceNH)))
