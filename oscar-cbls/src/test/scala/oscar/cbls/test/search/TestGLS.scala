@@ -33,23 +33,20 @@ object TestGLS extends App{
   }
 
 
-    val search = new GuidedLocalSearch3(
+  val search = GuidedLocalSearch3.progressiveGuidedLocalSearch(
     GradientDescent(Array(x,y),
-    selectVars = 0L to 1L,
-    variableIndiceToDeltaForGradientDefinition = _ => 10L,
-    linearSearch = new NarrowingStepSlide(3L, minStep = 1L),
-    trySubgradient = true),
-      obj2,
-      GuidedLocalSearch3.progressive(
-        10,
-        10,
-        40,
-        10,
-        10,
-        5,
-        tryWeight2WhenNoMoveFound=true)
-    )
-
+      selectVars = 0L to 1L,
+      variableIndiceToDeltaForGradientDefinition = _ => 10L,
+      linearSearch = new NarrowingStepSlide(3L, minStep = 1L),
+      trySubgradient = true),
+    obj2,
+    10,
+    10,
+    40,
+    10,
+    10,
+    5,
+    tryWeight2WhenNoMoveFound=true)
 
   search.verbose = 2
 
