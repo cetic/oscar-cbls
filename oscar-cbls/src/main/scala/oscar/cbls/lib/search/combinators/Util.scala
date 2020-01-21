@@ -310,22 +310,27 @@ class ResetOnExhausted(a: Neighborhood) extends NeighborhoodCombinator(a) {
   * notice that hte timeout itself is a bit lax, because the combinator has no possibility to interrupt a neighborhood during its exploration.
   * this combinator will therefore just prevent any new exploration past the end of the timeout.
   * @param a a neighborhood
-  * @param maxDuration the maximal duration, in milliseconds
+  * @param maxDurationMilliSeconds the maximal duration, in milliseconds
   */
-class Timeout(a:Neighborhood, maxDuration:Long) extends NeighborhoodCombinator(a) {
+class Timeout(a:Neighborhood, maxDurationMilliSeconds:Long) extends NeighborhoodCombinator(a) {
   private var deadline: Long = -1
 
   override def getMove(obj: Objective, initialObj: Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
     if (deadline == -1) {
-      deadline = System.currentTimeMillis() + maxDuration
+      deadline = System.currentTimeMillis() + maxDurationMilliSeconds
     }
 
     if (System.currentTimeMillis() >= deadline) {
-      if(printExploredNeighborhoods) println("Timeout reached")
+      println("Timeout of " + maxDurationMilliSeconds + " milliseconds")
       NoMoveFound
     } else {
       a.getMove(obj, initialObj: Long, acceptanceCriteria)
     }
+  }
+
+  override def reset(): Unit = {
+    deadline = -1
+    a.reset
   }
 }
 
@@ -381,11 +386,10 @@ class CutTail(a:Neighborhood, timePeriodInMilliSecond:Long,minRelativeImprovemen
 
       if(relativeImprovementSincePreviousCut < minRelativeImprovementByCut){
         //we have to stop it
-        println("check for cut, cut")
+        println("tail cut; relativeImprovement:" + relativeImprovementSincePreviousCut + " periodDurationMilliSecond:" + timePeriodInMilliSecond)
         stopped = true
         return NoMoveFound
       }else{
-        println("check for cut, no cut")
         //we can carry on
         nextCutTime = currentTime + timePeriodInMilliSecond
         bestSoFar = bestSoFar min bestSoFarAtPreviousCut
@@ -396,7 +400,6 @@ class CutTail(a:Neighborhood, timePeriodInMilliSecond:Long,minRelativeImprovemen
     a.getMove(obj,initialObj,acceptanceCriterion) match{
       case NoMoveFound => NoMoveFound
       case f:MoveFound =>
-//        println("update best in cut")
         bestSoFar = bestSoFar min f.objAfter
         f
     }
