@@ -138,6 +138,20 @@ object PriorityObjective{
         (p, newMAx2)
     }
   }
+
+  def prettyPrintObjectiveSequence(prioritizedNameAndValue:Iterable[(String,Long)]):String = {
+    var allZeroSoFar:Boolean = true
+    val coloredText = prioritizedNameAndValue.map({ case (name,value) =>
+      val text = name + value
+      if (value!=0 && allZeroSoFar){
+        allZeroSoFar = false
+        Console.BLUE + text + Console.GREEN
+      }else{
+        text
+      }
+    })
+    Console.GREEN + coloredText.mkString(" ") + Console.RESET
+  }
 }
 
 
@@ -191,8 +205,8 @@ class PriorityObjective(val objective1: Objective, val objective2:Objective, val
       }
     }else {
       "PriorityObjective(value:" + this.value + "\n" +
-        nSpace(indent + 2L) + "objective1:" + objective1.detailedString(true, indent + 4L) + "\n" +
-        nSpace(indent + 2L) + "objective2:" + objective2.detailedString(true, indent + 4L) + "\n" +
+        nSpace(indent + 2L) + "objective1:" + objective1.detailedString(false, indent + 4L) + "\n" +
+        nSpace(indent + 2L) + "objective2:" + objective2.detailedString(false, indent + 4L) + "\n" +
         nSpace(indent) + ")"
     })
 }
