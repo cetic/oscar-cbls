@@ -3,6 +3,7 @@ package oscar.cbls.lib.invariant.logic
 import oscar.cbls.IntValue
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.core.computation.ChangingIntValue
+import oscar.cbls.core.propagation.Checker
 import oscar.cbls.core.{IntInvariant, IntNotificationTarget}
 
 
@@ -86,6 +87,15 @@ class ParetoTable(val variables:Array[IntValue],
       d = d.tail
     }
     true
+  }
+
+  /** To override whenever possible to spot errors in invariants.
+   * this will be called for each invariant after propagation is performed.
+   * It requires that the Model is instantiated with the variable debug set to true.
+   */
+  override def checkInternals(c: Checker): Unit ={
+    val a = searchFromScratchLin(variables.map(_.value),-1)
+    require(this.value == (if (a == -1) defaultIfNoDominate else a))
   }
 }
 
