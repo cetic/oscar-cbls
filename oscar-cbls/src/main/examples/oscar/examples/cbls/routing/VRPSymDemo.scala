@@ -46,7 +46,7 @@ class VRPDemo(n:Long, v:Long, maxPivotPerValuePercent:Long, verbose:Long, displa
   val model = new Store()
 
   val myVRP = new VRP(model,n,v)
-  val routingDistance = routeLength(myVRP.routes,n,v,false,symmetricDistanceMatrix,true,true,false)(0)
+  val routingDistance = routeLength(myVRP.routes,n,v,false,symmetricDistanceMatrix,true)(0)
   val graphicExtension = display(myVRP,nodesPositions.map(np => (np._1.toDouble,np._2.toDouble)),sizeOfMap = Some(mapSide), refreshRate = displayDelay, title = "symmetric TSP (n=" + n + " v=" + v + ")")
   val penaltyForUnrouted  = 10000
 

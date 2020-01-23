@@ -4,7 +4,7 @@ import java.io.PrintWriter
 
 import oscar.cbls._
 import oscar.cbls.algo.graph._
-import oscar.cbls.algo.heap.{BinomialHeapWithMove, BinomialHeapWithMoveExtMem}
+import oscar.cbls.algo.heap.BinomialHeapWithMove
 import oscar.cbls.core.computation.{ChangingSetValue, Invariant, SetNotificationTarget}
 import oscar.cbls.core.propagation.Checker
 
