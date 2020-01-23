@@ -27,18 +27,18 @@ import org.jfree.chart.plot.{PlotOrientation, ValueMarker, XYPlot}
 import javax.swing.SwingUtilities
 
 
-class LongPlotLine(title: String, xlab: String, ylab: String, nbSeries: Int = 1) extends LongPlot(title,xlab,ylab, nbSeries) {
+class LongPlotLine(title: String, xlab: String, ylab: String, series: List[String] = List("default")) extends LongPlot(title,xlab,ylab, series) {
 
   def createChart = ChartFactory.createXYLineChart(title,xlab,ylab,xyDataset,PlotOrientation.VERTICAL,false,false, false);
 }
 
 
-abstract class LongPlot(title: String, xlab: String, ylab: String, nbSeries: Int = 1) extends JPanel(new BorderLayout()) {
+abstract class LongPlot(title: String, xlab: String, ylab: String, series: List[String]) extends JPanel(new BorderLayout()) {
 
-  var series: Array[XYSeries] = Array.tabulate(nbSeries)(i => new XYSeries(i))
+  var xySeries: List[XYSeries] = series.map(new XYSeries(_))
 
   val xyDataset: XYSeriesCollection = new XYSeriesCollection();
-  for (s <- series) {xyDataset.addSeries(s)}
+  for (s <- xySeries) {xyDataset.addSeries(s)}
   val chart: JFreeChart = createChart()
   chart.getPlot().setBackgroundPaint(Color.white);
   val panel: ChartPanel = new ChartPanel(chart);
@@ -73,18 +73,18 @@ abstract class LongPlot(title: String, xlab: String, ylab: String, nbSeries: Int
   }
 
   def addPoint(x: Long, y: Long, ser: Int): Unit ={
-    series(ser).add(x,y,true)
+    xySeries(ser).add(x,y,true)
   }
 
   def addPoint(x: Double, y: Long, ser: Int): Unit ={
-    series(ser).add(x,y,true)
+    xySeries(ser).add(x,y,true)
   }
 
   def removeAllPoints(ser: Int = 0) {
-    series(ser).clear();
+    xySeries(ser).clear();
   }
 
-  def getPoints(ser: Int = 0): XYSeries = series(ser)
+  def getPoints(ser: Int = 0): XYSeries = xySeries(ser)
 
   def minMax(dom: org.jfree.data.Range): (Double,Double) = {
     val min = dom.getLowerBound

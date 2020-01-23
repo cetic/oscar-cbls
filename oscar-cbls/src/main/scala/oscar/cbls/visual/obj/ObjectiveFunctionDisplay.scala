@@ -11,8 +11,8 @@ import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.util.StopWatch
 import oscar.cbls.visual.ColorGenerator
 
-class ObjectiveFunctionDisplay(title: String, minCap:Long, maxCap:Long, basePercentile: Int, nbOtherValues: Int)
-  extends LongPlot(title,"Time","Objective function value", nbOtherValues + 2) with StopWatch {
+class ObjectiveFunctionDisplay(title: String, minCap:Long, maxCap:Long, basePercentile: Int, otherValues: List[String])
+  extends LongPlot(title,"Time","Objective function value", List("Objective", "Best") ::: otherValues) with StopWatch {
 
   require(minCap < maxCap, "Min cap should be lesser thant max cap. Got minCap : " + minCap + ", maxCap : " + maxCap)
 
@@ -33,13 +33,13 @@ class ObjectiveFunctionDisplay(title: String, minCap:Long, maxCap:Long, basePerc
   panel.setVerticalAxisTrace(true)
 
   ColorGenerator.setSeed(0)
-  val otherSeriesColors: Array[Color] = ColorGenerator.generateRandomColors(nbOtherValues)
+  val otherSeriesColors: Array[Color] = ColorGenerator.generateRandomColors(otherValues.size)
   val r1 = new XYLineAndShapeRenderer
   r1.setSeriesPaint(1, Color.GREEN)
   r1.setSeriesPaint(0, Color.RED)
   r1.setSeriesShapesVisible(0, false)
   r1.setSeriesShapesVisible(1, false)
-  (0 until nbOtherValues).foreach( i => {
+  (otherValues.indices).foreach( i => {
     r1.setSeriesPaint(i+2, otherSeriesColors(i))
     r1.setSeriesShapesVisible(i+2, false)
   })
@@ -53,9 +53,9 @@ class ObjectiveFunctionDisplay(title: String, minCap:Long, maxCap:Long, basePerc
   panel.addMouseWheelListener(new MouseWheelListener {
     override def mouseWheelMoved(e: MouseWheelEvent): Unit = {
       if(e.getWheelRotation < 0){
-        percentile = Math.max(1, percentile-1)
+        percentile = Math.max(1, percentile+e.getWheelRotation)
       } else {
-        percentile = Math.min(100, percentile+1)
+        percentile = Math.min(100, percentile+e.getWheelRotation)
       }
       reDrawFunction()
     }
@@ -63,12 +63,12 @@ class ObjectiveFunctionDisplay(title: String, minCap:Long, maxCap:Long, basePerc
 
   def createChart(): JFreeChart =
     ChartFactory.createXYLineChart(
-      null,
-      null,
-      null,
+      "Objective function evolution",
+      "Time (s)",
+      "Objective values",
       xyDataset,PlotOrientation.VERTICAL,
-      false,
-      false,
+      true,
+      true,
       false)
 
   def reDrawFunction(): Unit ={
@@ -183,6 +183,6 @@ class ObjectiveFunctionDisplay(title: String, minCap:Long, maxCap:Long, basePerc
 }
 
 object ObjectiveFunctionDisplay{
-  def apply(title: String, minCap: Long, maxCap:Long, percentile: Int, nbOtherValues: Int): ObjectiveFunctionDisplay =
-    new ObjectiveFunctionDisplay(title, minCap, maxCap, percentile, nbOtherValues)
+  def apply(title: String, minCap: Long, maxCap:Long, percentile: Int, otherValues: List[String]): ObjectiveFunctionDisplay =
+    new ObjectiveFunctionDisplay(title, minCap, maxCap, percentile, otherValues)
 }

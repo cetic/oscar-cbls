@@ -31,16 +31,17 @@ trait UtilityCombinators{
  * @param minCap The minimum displayed value
  * @param maxCap The maximum displayed value
  * @param percentile The percentile (1 to 100) of the best displayed value
- * @param otherValues A list of other value you want to be displayed (as () => Long)
+ * @param otherValues An array of other value you want to be displayed (as a tuple (String, () => Long))
  * @author fabian.germeau@cetic.be
  */
 class ShowObjectiveFunction(a: Neighborhood, obj: () => Long, title: String = "Objective function vs. time[s]",
                             minCap: Long = 0L,
                             maxCap:Long = Long.MaxValue,
                             percentile:Int = 100,
-                            otherValues: Array[() => Long] = Array.empty) extends NeighborhoodCombinator(a){
+                            otherValues: Array[(String, () => Long)] = Array.empty) extends NeighborhoodCombinator(a){
   //objGraphic is an internal frame that contains the curve itself and visualFrame is a basic frame that contains objGraphic
-  val objGraphic = ObjectiveFunctionDisplay(title, minCap, maxCap, percentile, otherValues.length)
+  private val objGraphic = ObjectiveFunctionDisplay(title, minCap, maxCap, percentile, otherValues.map(_._1).toList)
+  private val otherValuesFunctions = otherValues.map(_._2)
   SingleFrameWindow.show(objGraphic,title)
 
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult ={
@@ -56,7 +57,7 @@ class ShowObjectiveFunction(a: Neighborhood, obj: () => Long, title: String = "O
     and then we write the curve
    */
   def notifyNewObjValue(m:Move): Unit ={
-    objGraphic.drawFunction(obj(), otherValues)
+    objGraphic.drawFunction(obj(), otherValuesFunctions)
   }
 }
 

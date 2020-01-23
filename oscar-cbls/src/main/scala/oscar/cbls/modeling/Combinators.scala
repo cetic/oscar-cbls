@@ -570,10 +570,10 @@ class NeighborhoodOps(n:Neighborhood){
    * @param minCap The minimum displayed value
    * @param maxCap The maximum displayed value
    * @param percentile The percentile (1 to 100) of the best displayed value
-   * @param otherValues A list of other value you want to be displayed (as () => Long)
+   * @param otherValues An array of other value you want to be displayed (as a tuple (name, () => Long))
    * @author fabian.germeau@cetic.be
    */
-  def showObjectiveFunction(obj: Objective, title: String = "Objective function vs. time[s]", minCap: Long = 0L, maxCap:Long = Long.MaxValue, percentile: Int = 100, otherValues: Array[() => Long] = Array.empty) =
+  def showObjectiveFunction(obj: Objective, title: String = "Objective function vs. time[s]", minCap: Long = 0L, maxCap:Long = Long.MaxValue, percentile: Int = 100, otherValues: Array[(String, () => Long)] = Array.empty) =
     new ShowObjectiveFunction(n,obj, title, minCap, maxCap, percentile, otherValues)
 
   /**
