@@ -53,9 +53,9 @@ class ObjectiveFunctionDisplay(title: String, minCap:Long, maxCap:Long, basePerc
   panel.addMouseWheelListener(new MouseWheelListener {
     override def mouseWheelMoved(e: MouseWheelEvent): Unit = {
       if(e.getWheelRotation < 0){
-        percentile = Math.max(1, percentile+e.getWheelRotation)
+        percentile = Math.max(1, percentile-2)
       } else {
-        percentile = Math.min(100, percentile+e.getWheelRotation)
+        percentile = Math.min(100, percentile+2)
       }
       reDrawFunction()
     }
@@ -96,11 +96,11 @@ class ObjectiveFunctionDisplay(title: String, minCap:Long, maxCap:Long, basePerc
       decreasing = false
     }
 
+    reDrawFunction()
+
     addPoint(lastValueAt,value,0)
     addPoint(lastValueAt, best, 1)
     otherValues.indices.foreach(i => addPoint(lastValueAt,otherValues(i).apply(),i+2))
-
-    reDrawFunction()
   }
 
   private def addStartDecreasingMark(at: Double): Unit ={
@@ -136,8 +136,8 @@ class ObjectiveFunctionDisplay(title: String, minCap:Long, maxCap:Long, basePerc
     // The first (in time) acceptable value could be before the worstAcceptableValue
     val earliestAcceptableValue = valuesToConsider.minBy(allValues(_)._1)
     val latestAcceptableValue = valuesToConsider.maxBy(allValues(_)._1)
-    val minX = allValues(earliestAcceptableValue)._1
     val maxX = allValues(latestAcceptableValue)._1
+    val minX = Math.min(maxX - 1, allValues(earliestAcceptableValue)._1)
     val displayedValues = allValues.splitAt(earliestAcceptableValue)._2.flatMap(x => x._2 :: x._3)
     val minY = displayedValues.min
     val maxY = displayedValues.max
