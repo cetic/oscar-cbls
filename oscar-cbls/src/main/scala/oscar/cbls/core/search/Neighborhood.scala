@@ -207,12 +207,12 @@ abstract class Neighborhood(name:String = null) {
           }
           if (printTakenMoves || printMoveSythesis) {
 
-            val runDurationMs = (System.nanoTime() - startSearchNanotime) / 1000000
-            val hours = (runDurationMs / (1000 * 60 * 60)).floor.toInt
-            val minutes = (runDurationMs / (1000 * 60)).floor.toInt % 60
-            val seconds: Double = (runDurationMs / 1000.0) % 60
+            val runDurationMs:Long = ((System.nanoTime() - startSearchNanotime) / 1000000).ceil.toLong
+            val hours = (runDurationMs / (1000.0 * 60 * 60)).floor.toInt
+            val minutes = (runDurationMs / (1000.0 * 60)).floor.toInt % 60
+            val seconds: Double = ((runDurationMs / 1000.0) % 60)
 
-            println("no more move found after " + toReturn + " it, duration:" +  hours + ":" + minutes + ":" + seconds)
+            println("no more move found after " + toReturn + " it, duration:" +  hours + ":" + minutes + ":" + f"$seconds%1.3f" )
           }
 
           return toReturn;

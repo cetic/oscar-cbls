@@ -78,7 +78,8 @@ class VisualDrawing(flipped: Boolean, scalable: Boolean) extends JPanel(new Bord
       }
     }catch{
       case _:java.lang.IllegalArgumentException => ;
-      case _:java.util.NoSuchElementException =>
+      case _:java.util.NoSuchElementException =>;
+      case _:java.lang.NullPointerException => ;
     }
 
     (minX, maxX, minY, maxY)

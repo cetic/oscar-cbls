@@ -293,7 +293,7 @@ class NoOverlapPenetration(shapes:Array[AtomicValue[GeometryValue]],preComputeAl
   * @param preComputeAll forces pre-computation of indexes for all shapes. use this if there are constant shapes that will never move/change
   */
 
-//when margin is given, we only consider the centre of the shape, not he shape itself.
+//when margin is given, we only consider the centre of the shape, not the shape itself.
 class NoOverlapPenetrationMargins(shapes:Array[AtomicValue[GeometryValue]],
                                   overrideShapeWithMargins:Array[Option[IntValue]],
                                   preComputeAll:Boolean = true)
@@ -336,7 +336,7 @@ class NoOverlapPenetrationMargins(shapes:Array[AtomicValue[GeometryValue]],
 
   //we initialize as zero overlap, but all shcpes are notes as having moved, and we schedule ourself for propagation.
   private val overlapByShape:Array[CBLSIntVar] = Array.tabulate(shapes.size)(id => {
-    val v = CBLSIntVar(model,name="violation of overlap of shape " + id)
+    val v = CBLSIntVar(model,value=0,name="violation of overlap of shape " + id)
     v.setDefiningInvariant(this)
     v
   })
