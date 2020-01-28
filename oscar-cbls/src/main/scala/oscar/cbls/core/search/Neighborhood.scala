@@ -205,8 +205,15 @@ abstract class Neighborhood(name:String = null) {
             moveSynthesis = SortedMap.empty[String,Int]
             nanoTimeAtNextSynthesis = System.nanoTime() + (1000*1000*100) //100ms
           }
-          if (printTakenMoves || printMoveSythesis) println("no more move found after " + toReturn + " it, " + ((System.nanoTime() - startSearchNanotime)/1000000).toInt + " ms ")
+          if (printTakenMoves || printMoveSythesis) {
 
+            val runDurationMs = (System.nanoTime() - startSearchNanotime) / 1000000
+            val hours = (runDurationMs / (1000 * 60 * 60)).floor.toInt
+            val minutes = (runDurationMs / (1000 * 60)).floor.toInt % 60
+            val seconds: Double = (runDurationMs / 1000.0) % 60
+
+            println("no more move found after " + toReturn + " it, duration:" +  hours + ":" + minutes + ":" + seconds)
+          }
 
           return toReturn;
         case m: MoveFound =>

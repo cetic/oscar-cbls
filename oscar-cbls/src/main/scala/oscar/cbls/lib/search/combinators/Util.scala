@@ -322,7 +322,11 @@ class Timeout(a:Neighborhood, maxDurationMilliSeconds:Long) extends Neighborhood
     }
 
     if (System.currentTimeMillis() >= deadline) {
-      println("Timeout of " + maxDurationMilliSeconds + " milliseconds")
+
+      val hours = (maxDurationMilliSeconds / (1000*60*60)).floor.toInt
+      val minutes = (maxDurationMilliSeconds / (1000 * 60)).floor.toInt % 60
+      val seconds:Double = (maxDurationMilliSeconds / 1000.0) % 60
+      println("Timeout of " + hours + ":" + minutes + ":" + seconds)
       NoMoveFound
     } else {
       a.getMove(obj, initialObj: Long, acceptanceCriteria)
