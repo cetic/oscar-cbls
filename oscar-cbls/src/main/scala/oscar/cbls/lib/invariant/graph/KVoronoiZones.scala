@@ -1,3 +1,18 @@
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+
 package oscar.cbls.lib.invariant.graph
 
 import java.io.PrintWriter
@@ -10,7 +25,34 @@ import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.{SortedMap, SortedSet}
 
+/**
+  * Factory for [[oscar.cbls.invariant.graph.KVoronoiZones]] 
+  * 
+  */
+
 object KVoronoiZones {
+
+  /*****************************************************************************
+   * Construct an instance of the KVoronoiZone Invariant
+   * 
+   * Given
+   * - a Graph
+   * - a Set of edges that are open on the graph
+   * - a set of centroids
+   * This invariant computes for each node of the graph the k centroids that are closest to the node and the associated distance.
+   * 
+   * See [[oscar.cbls.invariant.graph.KVoronoiZones]] for more informations
+   * 
+   * @param graph The conditional Graph
+   * @param openConditions The oscar set variable that contains the edges that are open
+   * @param centroids  The oscar set variable that contains the active centroids
+   * @param k The number of centroids we want to compute for all the nodes
+   * @param trackedNodes The nodes for which we want an output
+   * @param m The oscar.cbls store for the variable
+   * @param defaultDistanceForUnreachableNode The default distance if no centroid is reachable
+   * @param defaultCentroidForUnreachableNode The default centroid if no centroid is reachable
+   * 
+   * ***/
   def apply(graph: ConditionalGraph,
             openConditions: SetValue,
             centroids: SetValue,
@@ -43,12 +85,45 @@ object KVoronoiZones {
 }
 
 
+/**
+  * Given
+  * - a Graph
+  * - a Set of edges that are open on the graph
+  * - a set of centroids
+  * This invariant computes for each node of the graph the k centroids that are closest to the node and the associated distance.
+  * 
+  * 
+  * For one node means that:
+  * - The first centroid is closer than any other centroid
+  * - The second centroid is closer than any other centroid *except* the first one
+  * - ...
+  * - The kth centroid is closer than any other centroid *except* the (k-1)th, ..., the second one and the first one
+  * 
+  * 
+  * In practical, the k closest centroids are not interesting for all the nodes. It is possible to give the interesting centroids
+  *  we are considering through trackedNodeToDistanceAndCentroidMap parameter
+  * 
+  * 
+  * @param graph a graph, this is a constant. it is a conditional graph, so some edges have
+  *              a Boolean proposition associated to them
+  * @param openConditions the set of condition indexes that are open at a given moment of the search. This is one of the input variables of the constraint
+  * @param centroids the set of centroids we are considering at a givent moment of the search. This is one of the input variables of the constraint
+  * @param trackedNodeToDistaxnceAndCentroidMap This is the output of the constraint
+  *                                               For each node that requires it, the output is a table with k couples
+  *                                               The couple in position i \in 1..k contains the ith closest centroid and the distance to the centroid
+  * @param defaultCentroidForUnreachbleNode The default value for the variable that contains the centroid if no centroid is reachable
+  * @param defaultDistanceForUnReachableNode The default distance for the variable that contains the distance to the centroid if no centroid is reachable
+  * 
+  * @author tfayolle@cetic.be
+  * 
+  * **/
+
 class KVoronoiZones(graph:ConditionalGraph,
                     openConditions:SetValue,
                     val centroids:SetValue,
                     val trackedNodeToDistanceAndCentroidMap:SortedMap[Long,Array[(CBLSIntVar,CBLSIntVar)]],
                     k : Int,
-                    defaultCentroidForUnreachableNode : Long,
+                    defaultCentroidForUnreachableNode : Long = -1,
                     defaultDistanceForUnreachableNode : Long)
   extends Invariant with SetNotificationTarget{
 
@@ -327,7 +402,7 @@ class KVoronoiZones(graph:ConditionalGraph,
     })
 
 
-  centroids.value.foreach(c => nodeHeapToTreate.insert(NodeLabeling(graph.nodes(c),graph.nodes(c),-1,0,true)))
+  //centroids.value.foreach(c => nodeHeapToTreate.insert(NodeLabeling(graph.nodes(c),graph.nodes(c),-1,0,true)))
 
   var isConditionalEdgeOpen : Array[Boolean] = Array.fill(graph.nbConditions)(false)
 
