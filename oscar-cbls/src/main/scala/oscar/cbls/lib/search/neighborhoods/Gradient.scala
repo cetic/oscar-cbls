@@ -99,7 +99,6 @@ case class DiscretizedDirectionGradient(vars:Array[CBLSIntVar],
   //typiquement on va dire, sachant un gradient déjà sélectionné,
   // doit-on examiner les co-variances +, - ou les deux ou aucune?
 
-  //TODO: il faut du hotRestart sur le gradient!!!
   //comment faire?
   //sur base de l'indice de la première variable sélectionnée, on doit shifter tout le range du tableau.
   override def findGradient(initialObj: Long): List[GradientComponent] = {
@@ -196,14 +195,18 @@ case class DiscretizedDirectionGradient(vars:Array[CBLSIntVar],
       //il y a donc l'ensemble des sous-ensembles = 3^nbVars possibilités
 
       if(exploreVars(
-        varsToTest = (if(hotRestartOnVariableSelection)
-          HotRestart(selectVars.toList,firstIndiceInPreviousCall).map(_.toInt).toList
-        else
-          selectVars.toList.map(v => v.toInt)),
+        varsToTest =
+          (if(hotRestartOnVariableSelection)
+            HotRestart(selectVars.toList,firstIndiceInPreviousCall).map(_.toInt).toList
+          else
+            selectVars.toList.map(v => v.toInt)
+            ),
         nbVar,
         currentGradient = Nil)) {
 
-        firstIndiceInPreviousCall = bestGradient.last.indice
+        if(bestGradient.nonEmpty) {
+          firstIndiceInPreviousCall = bestGradient.last.indice
+        }
         return bestGradient
       }
     }
