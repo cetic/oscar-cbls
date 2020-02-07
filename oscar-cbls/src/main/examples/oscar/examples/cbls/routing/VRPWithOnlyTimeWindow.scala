@@ -103,7 +103,7 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
   // Definition of the objective function using naive constraint or global contraint
   val obj: CascadingObjective =
     if(version == 0){
-      val totalRouteLength = routeLength(myVRP.routes,n,v,false,symmetricDistance,true,true,false)(0)
+      val totalRouteLength = routeLength(myVRP.routes,n,v,false,symmetricDistance,true)(0)
       // Naive constraint
       val oldTimeWindowInvariant = NaiveTimeWindowConstraint(myVRP.routes, n, v, singleNodeTransferFunctions, timeMatrix)
 

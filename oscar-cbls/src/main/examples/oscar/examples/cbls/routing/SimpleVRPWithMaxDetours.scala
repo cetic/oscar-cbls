@@ -23,7 +23,7 @@ object SimpleVRPWithMaxDetours extends App{
   NaiveTimeWindowConstraint.maxTransferFunctionWithTravelDurationRestriction(n,v,singleNodeTransferFunctions,maxTravelDurations, listOfChains, travelDurationMatrix)
 
   // Distance
-  val totalRouteLength = routeLength(myVRP.routes,n,v,false,symmetricDistance,true,true,false)(0)
+  val totalRouteLength = routeLength(myVRP.routes,n,v,false,symmetricDistance,true)(0)
 
   //Chains
   val precedenceRoute = myVRP.routes.createClone()
