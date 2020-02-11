@@ -53,6 +53,7 @@ class ObjectiveFunctionDisplay(title: String)
     }
 
     //TODO: this is a bit slow isnt'it?
+    //TODO: this fails if the value is Long.MaxValue
     if(yDom.getUpperBound < value.toDouble)
       yDom = Range.inclusive(0L,upper(value))
     if(xDom.getUpperBound < at)

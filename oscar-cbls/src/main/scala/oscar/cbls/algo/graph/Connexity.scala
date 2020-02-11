@@ -1,109 +1,94 @@
 package oscar.cbls.algo.graph
 
-import oscar.cbls.algo.graph.DijkstraDistanceMatrix.computeAllDistancesFomNode
+import scala.collection.immutable.{SortedMap, SortedSet}
 
 object Connexity {
+  //TODO: these algo do not consider non transit nodes that constitute a boundary between different components; so far, we consider transit at all nodes.
 
-  def isGraphConnex(graph:ConditionalGraph,isConditionOpen:Int => Boolean):Boolean = {
-    val distanceFromZero = computeAllDistancesFomNode(graph.nodes(0),
-      graph,
-      isConditionOpen)
-
-    for(node <- graph.nodes.indices){
-      if(distanceFromZero(node) == Long.MaxValue){
-        println(graph.nodes(node))
-        return false
-      }
-    }
-    true
-  }
-
-  def getComponents(graph:ConditionalGraph,isConditionOpen:Int => Boolean):List[List[Node]] = {
-
-    val isNodeReached:Array[Boolean] = Array.fill(graph.nbNodes)(false)
-    var currentComponent:List[Node] = Nil
-
-    def unmarkNoTransitNodesFromComponent(): Unit ={
-      for(node <- currentComponent if !node.transitAllowed){
-        isNodeReached(node.id) = false
-      }
-    }
-
-    def isEdgeOpen(edge:Edge):Boolean = {
-      edge.conditionID match{
+  def components(graph:ConditionalGraph,isConditionOpen:Int => Boolean):(Array[List[Node]]) = {
+    val consideredEdges = graph.edges.toList.filter(e =>
+      e.conditionID match {
         case None => true
-        case Some(c) => isConditionOpen(c)
-      }
-    }
-
-    def markComponentAt(node:Node):Unit = {
-      for(edge <- node.incidentEdges if isEdgeOpen(edge)){
-        val otherNode = edge.otherNode(node)
-        if(!isNodeReached(otherNode.id)){
-          isNodeReached(otherNode.id) = true
-          currentComponent = otherNode :: currentComponent
-          if(otherNode.transitAllowed) {
-            markComponentAt(otherNode)
-          }
-        }
-      }
-    }
-
-    def getComponentAt(node:Node):List[Node] = {
-      currentComponent = List(node)
-      isNodeReached(node.id) = true
-      markComponentAt(node)
-      currentComponent
-    }
-
-    var components:List[List[Node]] = Nil
-
-    var nodesToExploreForComponent = graph.nodes.toList
-    while(true){
-
-      while(nodesToExploreForComponent match {
-        case Nil => false
-        case h :: t =>
-          if (isNodeReached(h.id) || !h.transitAllowed) {
-            nodesToExploreForComponent = t // we ignore it
-            true
-          } else {
-            false
-          }
-      }){}
-
-      nodesToExploreForComponent match{
-        case node::t =>
-          require(!isNodeReached(node.id))
-          nodesToExploreForComponent = t
-          components = getComponentAt(node) :: components
-          unmarkNoTransitNodesFromComponent()
-        case Nil =>
-          //we conclude the algo
-
-          //we look for orphan noTransitNodes
-          for(nodeID <- graph.nodes.indices) isNodeReached(nodeID) = false
-          for(component <- components){
-            for(node <- component){
-              isNodeReached(node.id) = true
-            }
-          }
-          for(nodeID <- graph.nodes.indices) {
-            if(!isNodeReached(nodeID)){
-              //this must be a non transit node
-              val node = graph.nodes(nodeID)
-              require(!node.transitAllowed)
-              components = List(node) :: components
-            }
-          }
-
-          return components
-      }
-    }
-
-
-    throw new Exception("should not be reached")
+        case Some(condition) => isConditionOpen(condition)
+      })
+    performMerges(graph,consideredEdges).map(_._1)
   }
+
+  def kruskal(graph:ConditionalGraph,isConditionOpen:Int => Boolean):Array[(List[Node],List[Edge])] = {
+    val consideredEdges = graph.edges.toList.filter(e =>
+      e.conditionID match {
+        case None => true
+        case Some(condition) => isConditionOpen(condition)
+      }).sortBy(_.length)
+
+    performMerges(graph,consideredEdges)
+  }
+
+  private def performMerges(graph:ConditionalGraph,edgesToConsider:List[Edge]):Array[(List[Node],List[Edge])] = {
+    var remainingEdges:List[Edge] = edgesToConsider
+    val nodeToComponentHead = Array.tabulate(graph.nbNodes)(nodeID => nodeID) //nodes are their own master at startup
+
+    def getMasterIdUpdateIfNeeded(nodeID: Int): Int = {
+      val master = nodeToComponentHead(nodeID)
+      if (nodeToComponentHead(master) == master) {
+        //no update needed for him
+        master
+      } else {
+        val newMaster = getMasterIdUpdateIfNeeded(master)
+        nodeToComponentHead(nodeID) = newMaster
+        newMaster
+      }
+    }
+
+    def setMaster(nodeID: Int, newMaster: Int) {
+      require(nodeToComponentHead(nodeID) == nodeID)
+      require(nodeToComponentHead(newMaster) == newMaster)
+      nodeToComponentHead(nodeID) = newMaster
+    }
+
+    var nbComponents = graph.nbNodes
+
+    var connexityEdges:List[Edge] = Nil
+
+    while (remainingEdges nonEmpty) {
+      val currentEdge = remainingEdges.head
+      remainingEdges = remainingEdges.tail
+
+      val nodeAMasterId = getMasterIdUpdateIfNeeded(currentEdge.nodeA.id)
+      val nodeBMasterId = getMasterIdUpdateIfNeeded(currentEdge.nodeB.id)
+      if (nodeAMasterId != nodeBMasterId) {
+        //merge
+        setMaster(nodeAMasterId, nodeBMasterId)
+        nbComponents -= 1
+        connexityEdges = currentEdge :: connexityEdges
+      }
+    }
+
+    //ensuring they are all on their master
+    for(nodeID <- 0 until graph.nbNodes){
+      getMasterIdUpdateIfNeeded(nodeID)
+    }
+
+    val keys = SortedSet.empty[Int] ++ nodeToComponentHead
+
+    require(keys.size == nbComponents)
+
+    val masterToComponentID = SortedMap.empty[Int, Int] ++ keys.toList.zipWithIndex
+
+    val componentsNode=Array.fill(nbComponents)(List.empty[Node])
+    val componentsEdges=Array.fill(nbComponents)(List.empty[Edge])
+    for(node <- graph.nodes){
+      val masterID = getMasterIdUpdateIfNeeded(node.id)
+      val componentID = masterToComponentID(masterID)
+      componentsNode(componentID) = node :: componentsNode(componentID)
+    }
+    for(edge <- connexityEdges){
+      val masterID = getMasterIdUpdateIfNeeded(edge.nodeA.id)
+      val componentID = masterToComponentID(masterID)
+      componentsEdges(componentID) = edge :: componentsEdges(componentID)
+    }
+
+    Array.tabulate(nbComponents)(component => (componentsNode(component), componentsEdges(component)))
+  }
+
 }
-
-

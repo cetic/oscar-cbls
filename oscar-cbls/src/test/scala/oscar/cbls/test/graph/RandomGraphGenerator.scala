@@ -18,29 +18,17 @@ object RandomGraphGenerator {
                                            nbTransitNodes:Int,
                                            mapSide:Int = 1000,
                                            seed : Option[Long] = None) : ConditionalGraphWithIntegerNodeCoordinates = {
-
-
-
-    val rand = new Random(
-      {
-        val realSeed = seed match {
-          case None => System.currentTimeMillis
-          case Some(i) => i
-        }
-        val pw = new PrintWriter(new File("toto.txt" ))
-        pw.write("Seed : " + realSeed)
-        pw.close
-        println("Seed : " + realSeed)
-        realSeed
-      }
-    )
-
     //closest edges first
     val totalEdges = nbConditionalEdges + nbNonConditionalEdges
 
+    val rand = new Random(seed match {
+      case None => System.currentTimeMillis()
+      case Some(s) => s
+    })
+
     def randomXY: Int = rand.nextInt(mapSide)
-    val pointPosition: Array[(Int, Int)] = Array.tabulate(nbNodes)(w => (randomXY + 5, randomXY + 10
-    ))
+    val pointPosition: Array[(Int, Int)] = Array.tabulate(nbNodes)(w => (randomXY, randomXY))
+
 
     val nodes = 0 until nbNodes
 

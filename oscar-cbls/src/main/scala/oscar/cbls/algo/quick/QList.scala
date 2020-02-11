@@ -25,12 +25,12 @@ import scala.language.implicitConversions
 //    Probably more function to add. If we do this we must adapt the all the code using a QList
 
 class QList[@specialized T](val head:T, val tail:QList[T] = null){
-  def size:Long = {
+  def size:Int = {
     var curr = this.tail
-    var toReturn = 1L
+    var toReturn = 1
     while(curr != null){
       curr = curr.tail
-      toReturn += 1L
+      toReturn += 1
     }
     toReturn
   }
@@ -114,6 +114,23 @@ object QList{
     else reversed.reverse
   }
 
+  def qFilterNoFlip[T](q:QList[T],fun:T => Boolean):QList[T] = {
+    if(q == null) null
+    else if(fun(q.head)) QList(q.head,qFilterNoFlip(q.tail,fun))
+    else qFilterNoFlip(q.tail,fun)
+  }
+
+  def qFilter[T](q:QList[T],fun:T => Boolean):QList[T] = {
+    var toReturn:QList[T] = null
+    var toEat = q
+    while(toEat != null){
+      val i = toEat.head
+      toEat = toEat.tail
+      if(fun(i)) toReturn = QList(i,toReturn)
+    }
+    toReturn
+  }
+
   def qMap[@specialized T,@specialized X](q:QList[T],fun:T => X):QList[X] = {
     if(q == null) null
     else q.qMap(fun)
@@ -128,6 +145,7 @@ object QList{
     }
     acc
   }
+
 
   def qForeach[@specialized T](qList: QList[T], fun:T => Unit): Unit ={
     var tempList = qList
@@ -145,6 +163,12 @@ object QList{
       toDrop -= 1
     }
     tempList
+  }
+
+  def size[T](l:QList[T]):Int = {
+    if(l == null) 0
+    else l.size
+
   }
 }
 

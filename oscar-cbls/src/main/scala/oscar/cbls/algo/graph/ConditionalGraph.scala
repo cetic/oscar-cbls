@@ -3,14 +3,14 @@ package oscar.cbls.algo.graph
 import oscar.cbls.algo.quick.QList
 
 /**
-  *
-  * @param edges edges. Some of them are conditional, a condition can only appear in one edge,
-  *              and all conditions in the declared range must appear in one edge.
-  * @param nodes
-  * @param nbConditions the number of conditions.
-  *                     Conditions are labeled from 0 to nbCondition-1 inclusive.
-  *                     all conditions mut appear in one edge.
-  */
+ *
+ * @param edges edges. Some of them are conditional, a condition can only appear in one edge,
+ *              and all conditions in the declared range must appear in one edge.
+ * @param nodes
+ * @param nbConditions the number of conditions.
+ *                     Conditions are labeled from 0 to nbCondition-1 inclusive.
+ *                     all conditions mut appear in one edge.
+ */
 class ConditionalGraph(val nodes:Array[Node],
                        val edges:Array[Edge],
                        val nbConditions:Int){
@@ -33,6 +33,24 @@ class ConditionalGraph(val nodes:Array[Node],
     "ConditionalGraph(nbNodes:" + nbNodes + " nbEdges:" + nbEdges + " nbConditions:" + nbConditions+ "\n\t" +
       "nodes:[\n\t\t" + nodes.mkString("\n\t\t") + "\n\t]" +
       "edges:[\n\t\t" + edges.mkString("\n\t\t") + "\n\t]" + "\n\t)"
+
+  def features:List[(String,String)] = {
+    val ccClosed = Connexity.components(this,_ => false)
+    val ccOpen = Connexity.components(this,_ => true)
+    List(
+      ("nbNodes",nbNodes),
+      ("nbEdges",nbEdges),
+      ("nbConditions",nbConditions),
+      ("nbEdges with .length==0",edges.count(_.length==0)),
+      ("nbConditionalEdges with .length==0",edges.count(e => (e.length==0 && e.conditionID.isDefined))),
+      ("nbNoTransit Nodes",nodes.count(!_.transitAllowed)),
+      ("degree->nbNode",nodes.groupBy(_.degree).mapValues(_.length).toList.sortBy(_._1).map(x => "" + x._1 + " -> " + x._2).mkString("; ")),
+      ("nbComponent conditions=false" , ccClosed.size),
+      ("component size to nbInstance conditions=false" , ccClosed.map(_.size).groupBy(x => x).mapValues(_.size).toList.sortBy(_._1).map(x => "" + x._1 + " -> " + x._2).mkString("; ")),
+      ("nbComponent conditions=true" , ccOpen.size),
+      ("component size to nbInstance conditions=true" , ccOpen.map(_.size).groupBy(x => x).mapValues(_.size).toList.sortBy(_._1).map(x => "" + x._1 + " -> " + x._2).mkString("; "))
+    ).map(x => (x._1,""+x._2))
+  }
 
 
 
@@ -63,7 +81,8 @@ class Edge(val id:Int,
            val nodeB:Node,
            val length:Long,
            val conditionID:Option[Int]){
-  require(length > 0)
+
+  require(length >= 0, "length should be >= 0; got " + length)
   require(nodeA != nodeB)
 
   val nodeIDA:Int = nodeA.id
@@ -92,6 +111,7 @@ class Edge(val id:Int,
 
 class Node(val id:Int, val transitAllowed:Boolean = true){
   var incidentEdges:List[Edge] = Nil
+  def degree = incidentEdges.size
   def registerEdge(edge:Edge) {incidentEdges = edge::incidentEdges}
 
   override def toString: String = "Node(nodeId:" + id + " transitAllowed:" + transitAllowed + ")"

@@ -80,10 +80,10 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
   //val underApproximatingDistanceInGraphAllCondtionsOpen:Array[Array[Long]] = FloydWarshall.buildDistanceMatrixAllConditionalEdgesSame(graph, true)
   //println("end floyd:" + getWatch)
 
-  println("start dijkstra")
+  println("start dijkstra's")
   startWatch()
   val underApproximatingDistanceInGraphAllCondtionsOpen:Array[Array[Long]] = DijkstraDistanceMatrix.buildDistanceMatrix(graph, _ => true)
-  println("start dijkstra" + getWatch)
+  println("end dijkstra's " + getWatch + "ms")
 
   /*
   val anyConditionalEdgeOnShortestPath = FloydWarshall.anyConditionalEdgeOnShortestPath(graph,underApproximatingDistanceInGraphAllCondtionsOpen)

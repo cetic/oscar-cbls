@@ -21,6 +21,7 @@ import oscar.cbls._
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.objective.{LoggingObjective, Objective}
 import oscar.cbls.lib.search.combinators._
+import oscar.cbls.util.Properties
 
 import scala.collection.immutable.SortedMap
 import scala.language.{implicitConversions, postfixOps}
@@ -103,8 +104,8 @@ abstract class Neighborhood(name:String = null) {
    *
    * @return
    */
-  final def profilingStatistics:String = Profile.statisticsHeader + "\n" + collectProfilingStatistics.mkString("\n")
-  def collectProfilingStatistics:List[String] = List.empty
+  final def profilingStatistics:String = Properties.justifyRightArray(Profile.statisticsHeader :: collectProfilingStatistics/*.map(a => ("" :: a.toList).toArray)*/).mkString("\n")
+  def collectProfilingStatistics:List[Array[String]] = List.empty
 
   /**
    * the method that returns a move from the neighborhood.
@@ -276,8 +277,9 @@ abstract class Neighborhood(name:String = null) {
 
             m.commit()
             //TODO: additionalString should be handled with synthesis!
-
+            if (printSynthesis && additionalStringGenerator != null) println(additionalStringGenerator())
             if (obj.value == Long.MaxValue) println("Warning : objective == MaxLong, maybe you have some strong constraint violated?")
+
             require(m.objAfter == Long.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
 
           }else if (printTakenMoves) {
@@ -302,14 +304,16 @@ abstract class Neighborhood(name:String = null) {
             }
 
             m.commit()
-            if (additionalStringGenerator != null) println("after move is committed: " + additionalStringGenerator())
+            if (additionalStringGenerator != null) println(additionalStringGenerator())
             if (obj.value == Long.MaxValue) println("Warning : objective == MaxLong, maybe you have some strong constraint violated?")
+
             require(m.objAfter == Long.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
 
           }else{
             m.commit()
-            if (additionalStringGenerator != null) println("after move is committed: " + additionalStringGenerator())
+            if (additionalStringGenerator != null) println(additionalStringGenerator())
             if (obj.value == Long.MaxValue) println("Warning : objective == MaxLong, maybe you have some strong constraint violated?")
+
             require(m.objAfter == Long.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
           }
       }

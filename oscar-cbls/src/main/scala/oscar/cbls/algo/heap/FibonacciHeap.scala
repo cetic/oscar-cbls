@@ -1,6 +1,6 @@
 package oscar.cbls.algo.heap
 
-import scala.collection.Iterator
+
 
 /**
   *

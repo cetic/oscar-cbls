@@ -719,7 +719,7 @@ class KVoronoiZones(graph:ConditionalGraph,
         val fromScratch = new DijkstraMT(graph).search(node, centroidListCopy, (edgeId: Int) => this.openConditions.value.contains(edgeId))
         fromScratch match {
           case Unreachable =>
-          case VoronoiZone(c, d) =>
+          case VoronoiZone(c, d,_) =>
             fromScratchNodeLabeling.insertOrCorrect(c, d)
             centroidListCopy = removeCentroidFromList(centroidListCopy, c)
         }

@@ -193,7 +193,7 @@ case class ConstantMoveNeighborhood(m: Move,
     } else {
       val newObj: Long = m.evaluate(obj)
       if (acceptanceCriterion(initialObj, newObj)) {
-        MoveFound(new MoveWithOtherObj(m, newObj))
+        MoveFound(new OverrideObj(m, newObj))
       } else {
         NoMoveFound
       }
@@ -201,7 +201,7 @@ case class ConstantMoveNeighborhood(m: Move,
   }
 
   override def instantiateCurrentMove(newObj: Long): Move =
-    new MoveWithOtherObj(m, newObj,neighborhoodName)
+    new OverrideObj(m, newObj,neighborhoodName)
 }
 
 case class ConstantMovesNeighborhood[MoveType<:Move](ms:() => Iterable[Long => MoveType],
@@ -235,12 +235,12 @@ case class ConstantMovesNeighborhood[MoveType<:Move](ms:() => Iterable[Long => M
 }
 
 
-class MoveWithOtherObj(initMove:Move,objAfter:Long, neighborhoodName:String = null)
+class OverrideObj(initMove:Move, objAfter:Long, neighborhoodName:String = null)
   extends Move(objAfter = objAfter, neighborhoodName = if(neighborhoodName != null) neighborhoodName else initMove.neighborhoodName){
 
   override def commit(): Unit = initMove.commit()
-
-  override def toString: String = initMove.toString
+  
+  override def toString: String = "OverrideObj(initMove:"+ initMove.toString + objToString + ")"
 }
 
 
