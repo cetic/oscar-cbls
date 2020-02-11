@@ -92,6 +92,9 @@ case class RestrictSlide(a:LinearOptimizer, maxIncrease:Long, maxDecrease:Long) 
 }
 
 class Exhaustive(step:Long = 1L,skipInitial:Boolean = false, maxIt: Long) extends LinearOptimizer{
+
+  require(step != 0,"Exhaustive Linear Optimizer with a step equal to 0 will make an endless loop")
+
   override def search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long): (Long, Long) = {
 
     var it = maxIt
@@ -101,6 +104,7 @@ class Exhaustive(step:Long = 1L,skipInitial:Boolean = false, maxIt: Long) extend
     //this is a bit dirty, but ranges do not work when there are more than MaxInt elements
     var value = minValue
     while(value <= maxValue){
+      
       if(it > 0L && (!skipInitial || value != startPos)){
         val newF = obj(value)
 
@@ -137,6 +141,8 @@ class NarrowingStepSlide(dividingRatio:Long, minStep: Long)  extends LinearOptim
 
 class NarrowingExhaustive(dividingRatio:Long, minStep: Long = 1,isLazy : Boolean = false)  extends LinearOptimizer{
 
+  require(minStep != 0,"Narrowing Exhaustive Linear Optimizer with a step equal to 0 will make an endless loop")
+
   override def toString: String = "NarrowingExhaustive(dividingRatio:" + dividingRatio + " minStep:" + minStep + ")"
 
   override def search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long): (Long, Long) = {
@@ -171,7 +177,7 @@ class NarrowingExhaustive(dividingRatio:Long, minStep: Long = 1,isLazy : Boolean
 class TryExtremes() extends LinearOptimizer {
   override def search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long): (Long, Long) = {
     //println("TryExtremes.search(startPos:" + startPos + " startObj:" + startObj +  " minValue:" + minValue + " maxValue:" + maxValue + ")")
-    val tries:List[(Long,Long)] = List((startPos,startObj),(minValue,obj(minValue)),(maxValue,obj(maxValue)))
+    val tries:List[(Long,Long)] = List((startPos,obj(startPos)),(minValue,obj(minValue)),(maxValue,obj(maxValue)))
     //println("found: " + tries)
     tries.minBy(_._2)
   }

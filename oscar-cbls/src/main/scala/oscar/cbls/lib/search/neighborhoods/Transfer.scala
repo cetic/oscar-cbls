@@ -141,7 +141,7 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
 
           this.delta = bestDelta
 
-          if (evaluateCurrentMoveObjTrueIfSomethingFound(objForDelta)) {
+          if (bestDelta != 0 && evaluateCurrentMoveObjTrueIfSomethingFound(objForDelta)) {
             notifyFound1()
             notifyFound2()
           }
