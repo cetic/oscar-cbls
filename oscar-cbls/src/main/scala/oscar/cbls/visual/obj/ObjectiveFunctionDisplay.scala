@@ -1,6 +1,6 @@
 package oscar.cbls.visual.obj
 
-import java.awt.Color
+import java.awt.{BasicStroke, Color}
 import java.awt.event.{MouseWheelEvent, MouseWheelListener}
 
 import org.jfree.chart.{ChartFactory, JFreeChart}
@@ -37,6 +37,7 @@ class ObjectiveFunctionDisplay(title: String, minCap:Long, maxCap:Long, basePerc
   val r1 = new XYLineAndShapeRenderer
   r1.setSeriesPaint(1, Color.GREEN)
   r1.setSeriesPaint(0, Color.RED)
+  r1.setSeriesStroke(0, new BasicStroke(2.0f))
   r1.setSeriesShapesVisible(0, false)
   r1.setSeriesShapesVisible(1, false)
   (otherValues.indices).foreach( i => {
