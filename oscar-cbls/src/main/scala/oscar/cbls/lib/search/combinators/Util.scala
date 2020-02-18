@@ -34,7 +34,7 @@ trait UtilityCombinators{
 class ShowObjectiveFunction(a: Neighborhood, obj: () => Long, title: String = "Objective function vs. time[s]") extends NeighborhoodCombinator(a){
   //objGraphic is an internal frame that contains the curve itself and visualFrame is a basic frame that contains objGraphic
   val objGraphic = ObjectiveFunctionDisplay(title)
-  SingleFrameWindow.show(objGraphic,title)
+  val frame = SingleFrameWindow.show(objGraphic,title)
 
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult ={
     a.getMove(obj, initialObj, acceptanceCriteria) match {

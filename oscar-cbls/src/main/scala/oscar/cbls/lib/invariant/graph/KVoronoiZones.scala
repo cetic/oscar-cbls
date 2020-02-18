@@ -725,12 +725,12 @@ class KVoronoiZones(graph:ConditionalGraph,
         }
       }
       require(fromScratchNodeLabeling.node == nodeLabeling(node.id).node)
-      println(" -------- Node " + node.id + " -------- ")
-      println("Found Centroids from scratch : " + fromScratchNodeLabeling.centroidMap.iterator.map(e => e._2).mkString(";"))
-      println("Found Centroids iteratif map : " + nodeLabeling(node.id).centroidMap.iterator.map(e => e._2).mkString(";"))
-      println("Found Centroids iteratif List : " + nodeLabeling(node.id).centroidList.mkString(";"))
+      // println(" -------- Node " + node.id + " -------- ")
+      // println("Found Centroids from scratch : " + fromScratchNodeLabeling.centroidMap.iterator.map(e => e._2).mkString(";"))
+      // println("Found Centroids iteratif map : " + nodeLabeling(node.id).centroidMap.iterator.map(e => e._2).mkString(";"))
+      // println("Found Centroids iteratif List : " + nodeLabeling(node.id).centroidList.mkString(";"))
       if (trackedNodeToDistanceAndCentroid(node.id) != null)
-        println("Tracked Centroid and distance : " + trackedNodeToDistanceAndCentroid(node.id).map(e => e._1.toString + "-" + e._2).mkString(";"))
+//        println("Tracked Centroid and distance : " + trackedNodeToDistanceAndCentroid(node.id).map(e => e._1.toString + "-" + e._2).mkString(";"))
       require(fromScratchNodeLabeling.nbOfLabeledCentroid == nodeLabeling(node.id).nbOfLabeledCentroid,"node " + node.id + " : Nb of Centroid - From Scratch : " + fromScratchNodeLabeling.nbOfLabeledCentroid + " != Incremental : " + nodeLabeling(node.id).nbOfLabeledCentroid)
       require(nodeLabeling(node.id).centroidList.length == nodeLabeling(node.id).nbOfLabeledCentroid)
       require(nodeLabeling(node.id).centroidMap.iterator.toList.length == nodeLabeling(node.id).nbOfLabeledCentroid,"Node " + node.id + " : Nb of Centroid: " + nodeLabeling(node.id).nbOfLabeledCentroid + " -- Length of centroid list: " + nodeLabeling(node.id).centroidMap.iterator.toList.length)
@@ -754,7 +754,7 @@ class KVoronoiZones(graph:ConditionalGraph,
       var i = nodeLabeling(node.id).nbOfLabeledCentroid max 0
       while (i < k) {
         if (trackedNodeToDistanceAndCentroid(node.id) != null) {
-          println(node.id + " : " + i + " : " + trackedNodeToDistanceAndCentroid(node.id)(i)._1)
+  //        println(node.id + " : " + i + " : " + trackedNodeToDistanceAndCentroid(node.id)(i)._1)
           require(trackedNodeToDistanceAndCentroid(node.id)(i)._1.value == defaultCentroidForUnreachableNode,"Node " + node.id + " - Centroid " + trackedNodeToDistanceAndCentroid(node.id)(i)._1.value + " should be DefaultCentroidForUnreachableNode : " + defaultCentroidForUnreachableNode)
           require(trackedNodeToDistanceAndCentroid(node.id)(i)._2.value == defaultDistanceForUnreachableNode,"Node " + node.id + " - Distance " + trackedNodeToDistanceAndCentroid(node.id)(i)._2.value + " should be DefaultDistanceForUnreachableNode : " + defaultDistanceForUnreachableNode)
         }
@@ -762,7 +762,7 @@ class KVoronoiZones(graph:ConditionalGraph,
       }
     }
 
-    println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Check Internal OK !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    // println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Check Internal OK !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
   }
 
 }
