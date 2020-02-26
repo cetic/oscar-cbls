@@ -767,7 +767,11 @@ et cette stack doit être mise à jour au moment de la notification.
     require(firstSegmentStartPosition <= firstSegmentEndPosition)
     require(secondSegmentStartPosition <= secondSegmentEndPosition)
 
-    if(firstSegmentEndPosition < secondSegmentStartPosition){
+    if (firstSegmentEndPosition == secondSegmentStartPosition - 1) {
+      // segments are contiguous, we only need to move the second segment
+      move(secondSegmentStartPosition,secondSegmentEndPosition,firstSegmentStartPosition-1,flipSecondSegment)
+
+    }else if(firstSegmentEndPosition < secondSegmentStartPosition){
       //do it
 
       //move lowest segment upward just before the second one (so that its indices do not change)
