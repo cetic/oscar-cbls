@@ -10,8 +10,8 @@ import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 import scala.util.Random
 
 object BigExample {
-  val nbAct = 100
-  val nbRes = 100
+  val nbAct = 250
+  val nbRes = 25
   val minDuration = 1L
   val maxDuration = 25L
   val minStartTime = 0L
@@ -19,12 +19,12 @@ object BigExample {
   val minCapacity = 1L
   val maxCapacity = 25L
   val minRMRes = 0
-  val maxRMRes = 50
-  val densityUsageRes = 25
+  val maxRMRes = 25
+  val densityUsageRes = 75
   val minSetupTimeRM = 0L
   val maxSetupTimeRM = 25L
-  val densityPrecedencies = 5
-  val densityMultiResources = 50
+  val densityPrecedencies = 50
+  val densityMultiResources = 25
   val densityInitialActs = 75
   // Random Generator
   val randomGen = new Random()
