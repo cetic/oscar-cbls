@@ -29,7 +29,7 @@ import oscar.cbls.core.computation.{IntInvariant,IntNotificationTarget}
 import oscar.cbls.core.computation.ChangingIntValue
 
 
-class SparseArrayIntElement(indexAndValues : Array[(IntValue,IntValue)],
+class SparseArrayIntElement(val indexAndValues : Array[(IntValue,IntValue)],
   index : IntValue,
   val defaultValue : Long = Long.MaxValue) extends IntInvariant with IntNotificationTarget{
 
@@ -128,11 +128,11 @@ object SparseArrayIntElement {
     val maxOfMax = indexAndValues.map(_._1.max).max
     indexAndValues.foreach(v => {
       require(v._1.max == maxOfMax,"All the index variables shall have the same maximum value (the length of the sparse table)")
-      require(v._1.min == -1,"The min value shall be -1 (if no value is set) (Currently " + v._1.min + ")")
+      require(v._1.min == -1,"The min value for the indexes of the sparse array shall be -1 (if no value is set) (Currently, for " + v ._1 + ":  " + v._1.domain.min + ")")
     })
 
-    require(index.max <= maxOfMax,"The maximum value of the index shall be smaller than the max value of the indexes")
-    require(index.min >= 0,"The min value for the index shall be greater than 0")
+    require(index.max <= maxOfMax,"The maximum value of the index (" + index.max + ") shall be smaller than the max value of the indexes (" + maxOfMax + ")")
+    require(index.min >= -1,"The min value for the index shall be greater than 0")
 
     new SparseArrayIntElement(indexAndValues,index,defaultValue)
   }
