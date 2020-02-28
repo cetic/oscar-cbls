@@ -53,7 +53,7 @@ object Event{
     * @param v the variable whose change will trigger the execution of action
     */
   def apply(v:Variable, w:Variable,
-            intaction:Long=>Unit):Event = {
+            intaction:Int=>Unit):Event = {
     val toreturn = new Event(v,w,null)
     if (intaction != null) toreturn.setIntAction(intaction)
     toreturn
@@ -66,7 +66,7 @@ object Event{
     * @param ModifiedVars the variables that could be modified by the Event
     */
   def apply(v:Variable, w:Variable,
-            intaction:Long=>Unit,
+            intaction:Int=>Unit,
             ModifiedVars:Iterable[Variable]):Event = {
     val toreturn = new Event(v,w,ModifiedVars)
     if (intaction != null) toreturn.setIntAction(intaction)
@@ -74,7 +74,7 @@ object Event{
   }
 
   def apply(v:Variable,
-            intaction:Long=>Unit,
+            intaction:Int=>Unit,
             ModifiedVars:Iterable[Variable]):Event = {
     val toreturn = new Event(v,null,ModifiedVars)
     if (intaction != null) toreturn.setIntAction(intaction)
@@ -82,7 +82,7 @@ object Event{
   }
 
   def apply(v:IntValue,
-            intaction:Long=>Unit):Event = {
+            intaction:Int=>Unit):Event = {
     val toreturn = new Event(v,null,null)
     if (intaction != null) toreturn.setIntAction(intaction)
     toreturn
@@ -117,52 +117,52 @@ class Event(v:Value, w:Variable, ModifiedVars:Iterable[Variable])
   //unfortunately, it is not possible to pass a type "=>Unit" as parameter to a case class.
 
   private var action: (()=>Unit)=null
-  private var actionIntParam: (Long=>Unit) = null
-  private var actionIntSetParam: (SortedSet[Long] => Unit) = null
+  private var actionIntParam: (Int=>Unit) = null
+  private var actionIntSetParam: (SortedSet[Int] => Unit) = null
 
-  private var oldIntv = 0L
-  private var oldIntSetv:SortedSet[Long] = SortedSet.empty
-  private var oldIntw = 0L
-  private var oldIntSetw:SortedSet[Long] = SortedSet.empty
+  private var oldIntv = 0
+  private var oldIntSetv:SortedSet[Int] = SortedSet.empty
+  private var oldIntw = 0
+  private var oldIntSetw:SortedSet[Int] = SortedSet.empty
 
-  private var intintaction: ((Long,Long) => Unit) = null
-  private var intsetintsetaction:((SortedSet[Long],SortedSet[Long]) => Unit) = null
-  private var intsetintaction:((SortedSet[Long],Long) => Unit) = null
-  private var intintsetaction:((Long,SortedSet[Long]) => Unit) = null
+  private var intintaction: ((Int,Int) => Unit) = null
+  private var intsetintsetaction:((SortedSet[Int],SortedSet[Int]) => Unit) = null
+  private var intsetintaction:((SortedSet[Int],Int) => Unit) = null
+  private var intintsetaction:((Int,SortedSet[Int]) => Unit) = null
 
   def setAction(action: ()=>Unit){
     this.action = action
   }
-  def setIntAction(action: Long=>Unit){
+  def setIntAction(action: Int=>Unit){
     this.actionIntParam = action
-    oldIntv = v.asInstanceOf[IntValue].value
+    oldIntv = v.asInstanceOf[IntValue].valueInt
   }
-  def setIntSetAction(action: SortedSet[Long] => Unit){
+  def setIntSetAction(action: SortedSet[Int] => Unit){
     this.actionIntSetParam = action
     oldIntSetv = v.asInstanceOf[CBLSSetVar].value
   }
 
-  def setintintaction(intintaction: (Long,Long)=>Unit){
+  def setintintaction(intintaction: (Int,Int)=>Unit){
     this.intintaction = intintaction
-    this.oldIntv = v.asInstanceOf[CBLSIntVar].value
-    this.oldIntw = w.asInstanceOf[CBLSIntVar].value
+    this.oldIntv = v.asInstanceOf[CBLSIntVar].valueInt
+    this.oldIntw = w.asInstanceOf[CBLSIntVar].valueInt
   }
 
-  def setintsetintsetaction(intsetintsetaction:(SortedSet[Long],SortedSet[Long]) => Unit){
+  def setintsetintsetaction(intsetintsetaction:(SortedSet[Int],SortedSet[Int]) => Unit){
     this.intsetintsetaction = intsetintsetaction
     this.oldIntSetv = v.asInstanceOf[CBLSSetVar].value
     this.oldIntSetw = w.asInstanceOf[CBLSSetVar].value
   }
 
-  def setintsetintaction(intsetintaction:(SortedSet[Long],Long) => Unit){
+  def setintsetintaction(intsetintaction:(SortedSet[Int],Int) => Unit){
     this.intsetintaction = intsetintaction
     this.oldIntSetv = v.asInstanceOf[CBLSSetVar].value
-    this.oldIntw = w.asInstanceOf[CBLSIntVar].value
+    this.oldIntw = w.asInstanceOf[CBLSIntVar].valueInt
   }
 
-  def setintintsetaction(intintsetaction:(Long,SortedSet[Long]) => Unit){
+  def setintintsetaction(intintsetaction:(Int,SortedSet[Int]) => Unit){
     this.intintsetaction = intintsetaction
-    this.oldIntv = v.asInstanceOf[CBLSIntVar].value
+    this.oldIntv = v.asInstanceOf[CBLSIntVar].valueInt
     this.oldIntSetw = w.asInstanceOf[CBLSSetVar].value
   }
 
@@ -176,7 +176,7 @@ class Event(v:Value, w:Variable, ModifiedVars:Iterable[Variable])
     scheduleForPropagation()
   }
 
-  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
     scheduleForPropagation()
   }
 
@@ -205,14 +205,14 @@ class Event(v:Value, w:Variable, ModifiedVars:Iterable[Variable])
     //updating internal vars
 
     if (actionIntParam!= null){
-      oldIntv = v.asInstanceOf[IntValue].value
+      oldIntv = v.asInstanceOf[IntValue].valueInt
     }
     if (actionIntSetParam != null){
       oldIntSetv = v.asInstanceOf[CBLSSetVar].value
     }
     if(intintaction!=null){
-      oldIntv = v.asInstanceOf[CBLSIntVar].value
-      oldIntw = w.asInstanceOf[CBLSIntVar].value
+      oldIntv = v.asInstanceOf[CBLSIntVar].valueInt
+      oldIntw = w.asInstanceOf[CBLSIntVar].valueInt
     }
     if (intsetintsetaction!=null){
       oldIntSetv = v.asInstanceOf[CBLSSetVar].value
@@ -220,10 +220,10 @@ class Event(v:Value, w:Variable, ModifiedVars:Iterable[Variable])
     }
     if (intsetintaction!=null){
       oldIntSetv = v.asInstanceOf[CBLSSetVar].value
-      oldIntw = w.asInstanceOf[CBLSIntVar].value
+      oldIntw = w.asInstanceOf[CBLSIntVar].valueInt
     }
     if (intintsetaction != null){
-      oldIntv = v.asInstanceOf[CBLSIntVar].value
+      oldIntv = v.asInstanceOf[CBLSIntVar].valueInt
       oldIntSetw = w.asInstanceOf[CBLSSetVar].value
     }
   }
