@@ -388,7 +388,7 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
   def delete(pos : Int, fast : Boolean, autoRework : Boolean) : IntSequence = {
     //println(this + ".delete(pos:" + pos + ")")
     require(pos < size, "deleting past the end of the sequence (size:" + size + " pos:" + pos + ")")
-    require(pos >= 0L, "deleting at negative pos:" + pos)
+    require(pos >= 0, "deleting at negative pos:" + pos)
 
     if (fast) return new RemovedIntSequence(this, pos)
 
@@ -438,9 +438,9 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
 
   def moveAfter(startPositionIncluded : Int, endPositionIncluded : Int, moveAfterPosition : Int, flip : Boolean, fast : Boolean, autoRework : Boolean) : IntSequence = {
     //println(this + ".moveAfter(startPositionIncluded:" + startPositionIncluded + " endPositionIncluded:" + endPositionIncluded + " moveAfterPosition:" + moveAfterPosition + " flip:" + flip + ")")
-    require(startPositionIncluded >= 0 && startPositionIncluded < size, "startPositionIncluded should be in [0L,size[ in UniqueIntSequence.moveAfter")
-    require(endPositionIncluded >= 0 && endPositionIncluded < size, "endPositionIncluded(=" + endPositionIncluded+ ") should be in [0L,size(="+size+")[ in UniqueIntSequence.moveAfter")
-    require(moveAfterPosition >= -1 && moveAfterPosition < size, "moveAfterPosition=" + moveAfterPosition + " should be in [-1L,size=" + size+"[ in UniqueIntSequence.moveAfter")
+    require(startPositionIncluded >= 0 && startPositionIncluded < size, "startPositionIncluded should be in [0,size[ in UniqueIntSequence.moveAfter")
+    require(endPositionIncluded >= 0 && endPositionIncluded < size, "endPositionIncluded(=" + endPositionIncluded+ ") should be in [0,size(="+size+")[ in UniqueIntSequence.moveAfter")
+    require(moveAfterPosition >= -1 && moveAfterPosition < size, "moveAfterPosition=" + moveAfterPosition + " should be in [-1,size=" + size+"[ in UniqueIntSequence.moveAfter")
 
     require(
       moveAfterPosition < startPositionIncluded || moveAfterPosition > endPositionIncluded,
@@ -641,7 +641,7 @@ class ConcreteIntSequenceExplorer(sequence:ConcreteIntSequence,
   private[seq] def internalPos = positionInRB.key.toInt
 
   override def next : Option[IntSequenceExplorer] = {
-    if(position == sequence.size-1L) return None
+    if(position == sequence.size-1) return None
     if(position == limitAboveForCurrentPivot){
       //change pivot, we are also sure that there is a next, so use .head
       val newPivotAbovePosition = pivotAbovePosition.head.next
@@ -675,7 +675,7 @@ class ConcreteIntSequenceExplorer(sequence:ConcreteIntSequence,
   }
 
   override def prev : Option[IntSequenceExplorer] = {
-    if (position == 0L) None
+    if (position == 0) None
     else if (position  == limitBelowForCurrentPivot) {
       //change pivot
 
@@ -707,21 +707,21 @@ class ConcreteIntSequenceExplorer(sequence:ConcreteIntSequence,
 
 abstract class StackedUpdateIntSequence extends IntSequence(){
   override def delete(pos : Int, fast:Boolean,autoRework:Boolean) : IntSequence = {
-    require(pos >= 0L, "pos=" + pos + " for delete on UniqueIntSequence should be >= 0L")
+    require(pos >= 0, "pos=" + pos + " for delete on UniqueIntSequence should be >= 0")
     require(pos < size, "cannot delete past end of sequence in UniqueIntSequence")
     new RemovedIntSequence(this,pos)
   }
 
   override def moveAfter(startPositionIncluded : Int, endPositionIncluded : Int, moveAfterPosition : Int, flip : Boolean, fast:Boolean,autoRework:Boolean) : IntSequence = {
-    require(startPositionIncluded >= 0L && startPositionIncluded < size , "startPositionIncluded=" + startPositionIncluded + " should be in [0L,size" + size + "[ in UniqueIntSequence.moveAfter")
-    require(endPositionIncluded >= 0L && endPositionIncluded < size , "endPositionIncluded=" + endPositionIncluded +" should be in [0L,size"+size+"[ in UniqueIntSequence.moveAfter")
-    require(moveAfterPosition >= -1L && moveAfterPosition < size , "moveAfterPosition=" + moveAfterPosition + " should be in [-1L,size="+size+"[ in UniqueIntSequence.moveAfter")
+    require(startPositionIncluded >= 0 && startPositionIncluded < size , "startPositionIncluded=" + startPositionIncluded + " should be in [0,size" + size + "[ in UniqueIntSequence.moveAfter")
+    require(endPositionIncluded >= 0 && endPositionIncluded < size , "endPositionIncluded=" + endPositionIncluded +" should be in [0,size"+size+"[ in UniqueIntSequence.moveAfter")
+    require(moveAfterPosition >= -1 && moveAfterPosition < size , "moveAfterPosition=" + moveAfterPosition + " should be in [-1,size="+size+"[ in UniqueIntSequence.moveAfter")
 
     new MovedIntSequence(this,startPositionIncluded,endPositionIncluded,moveAfterPosition,flip)
   }
 
   override def insertAtPosition(value : Int, pos : Int, fast:Boolean,autoRework:Boolean) : IntSequence = {
-    require(pos >= 0L && pos <= size , "pos=" + pos + " should be in [0L,size="+size+"] in IntSequence.insertAt")
+    require(pos >= 0 && pos <= size , "pos=" + pos + " should be in [0,size="+size+"] in IntSequence.insertAt")
     new InsertedIntSequence(this,value:Int,pos:Int)
   }
 
@@ -745,11 +745,11 @@ object MovedIntSequence{
         //just flipping
         if (startPositionIncluded == 0) {
           PiecewiseLinearBijectionNaive(new PiecewiseLinearFun(RedBlackTreeMap.makeFromSortedArray(Array(
-            (0L, new Pivot(0, new LinearTransform(endPositionIncluded, true))),
+            (0, new Pivot(0, new LinearTransform(endPositionIncluded, true))),
             (endPositionIncluded + 1, new Pivot(endPositionIncluded + 1, LinearTransform.identity))))))
         } else {
           PiecewiseLinearBijectionNaive(new PiecewiseLinearFun(RedBlackTreeMap.makeFromSortedArray(Array(
-            (0L, new Pivot(0, LinearTransform.identity)),
+            (0, new Pivot(0, LinearTransform.identity)),
             (startPositionIncluded, new Pivot(startPositionIncluded, new LinearTransform(endPositionIncluded + startPositionIncluded, true))),
             (endPositionIncluded + 1, new Pivot(endPositionIncluded + 1, LinearTransform.identity))))))
         }
@@ -765,7 +765,7 @@ object MovedIntSequence{
           (startPositionIncluded, new Pivot(startPositionIncluded, LinearTransform(endPositionIncluded + 1 - startPositionIncluded, false))),
           (moveAfterPosition + startPositionIncluded - endPositionIncluded, new Pivot(moveAfterPosition + startPositionIncluded - endPositionIncluded,
             LinearTransform(if (flip) startPositionIncluded + moveAfterPosition else endPositionIncluded - moveAfterPosition, flip))),
-          (moveAfterPosition + 1L, new Pivot(moveAfterPosition + 1, LinearTransform.identity))))))
+          (moveAfterPosition + 1, new Pivot(moveAfterPosition + 1, LinearTransform.identity))))))
       } else {
         //move downwards
         PiecewiseLinearBijectionNaive(new PiecewiseLinearFun(RedBlackTreeMap.makeFromSortedArray(Array(
@@ -775,7 +775,7 @@ object MovedIntSequence{
           (moveAfterPosition + endPositionIncluded - startPositionIncluded + 2,
             new Pivot(moveAfterPosition + endPositionIncluded - startPositionIncluded + 2,
               LinearTransform(startPositionIncluded - endPositionIncluded - 1, false))),
-          (endPositionIncluded +1L,
+          (endPositionIncluded +1,
             new Pivot(endPositionIncluded +1, LinearTransform.identity))
         ))))
       }
@@ -888,11 +888,11 @@ class MovedIntSequenceExplorer(sequence:MovedIntSequence,
                                positionInBasicSequence:IntSequenceExplorer,
                                currentPivotPosition:Option[RedBlackTreeMapExplorer[Pivot]],
                                pivotAbovePosition:Option[RedBlackTreeMapExplorer[Pivot]])(
-                                limitAboveForCurrentPivot:Long = pivotAbovePosition match{
-                                  case None => Long.MaxValue
-                                  case Some(p) => p.value.fromValue-1L},
-                                limitBelowForCurrentPivot:Long = currentPivotPosition match{
-                                  case None => Long.MinValue
+                                limitAboveForCurrentPivot:Int = pivotAbovePosition match{
+                                  case None => Int.MaxValue
+                                  case Some(p) => p.value.fromValue-1},
+                                limitBelowForCurrentPivot:Int = currentPivotPosition match{
+                                  case None => Int.MinValue
                                   case Some(p) => p.value.fromValue},
                                 slopeIsPositive:Boolean = currentPivotPosition match{
                                   case None => true
@@ -949,7 +949,7 @@ class MovedIntSequenceExplorer(sequence:MovedIntSequence,
         newPosition,
         sequence.seq.explorerAtPosition(newInternalPosition).head,
         newCurrentPivotPosition,
-        currentPivotPosition)(limitAboveForCurrentPivot = limitBelowForCurrentPivot-1L
+        currentPivotPosition)(limitAboveForCurrentPivot = limitBelowForCurrentPivot-1
       ))
     }else{
       //do not change pivot
@@ -978,7 +978,7 @@ class InsertedIntSequence(seq:IntSequence,
 
   override def descriptorString : String = seq.descriptorString + ".inserted(val:" + insertedValue + " pos:" + pos + ")"
 
-  override def unorderedContentNoDuplicate : List[Int] = if(seq.nbOccurrence(insertedValue) == 0L) insertedValue :: seq.unorderedContentNoDuplicate else seq.unorderedContentNoDuplicate
+  override def unorderedContentNoDuplicate : List[Int] = if(seq.nbOccurrence(insertedValue) == 0) insertedValue :: seq.unorderedContentNoDuplicate else seq.unorderedContentNoDuplicate
 
   override def positionsOfValueQ(value : Int) : QList[Int] = {
     var positionsBefore = seq.positionsOfValueQ(value)
@@ -1054,7 +1054,7 @@ class InsertedIntSequenceExplorer(seq:InsertedIntSequence,
           }
       }
     }else {
-      val nextPosition = position + 1L
+      val nextPosition = position + 1
       if (nextPosition == seq.pos) {
         //we are getting into the inserted position
         Some(new InsertedIntSequenceExplorer(seq, position + 1, explorerInOriginalSeq, atInsertedValue = true, originalExplorerIsAbove = false))
@@ -1083,7 +1083,7 @@ class InsertedIntSequenceExplorer(seq:InsertedIntSequence,
           }
       }
     } else {
-      val prevPosition = position - 1L
+      val prevPosition = position - 1
       if (prevPosition == seq.pos) {
         //we are getting into the inserted position
         Some(new InsertedIntSequenceExplorer(seq, position - 1, explorerInOriginalSeq, atInsertedValue = true, originalExplorerIsAbove = true))
@@ -1108,7 +1108,7 @@ class RemovedIntSequence(val seq:IntSequence,
   override def nbOccurrence(value : Int) : Int = if(value == this.removedValue) seq.nbOccurrence(value) - 1 else seq.nbOccurrence(value)
 
   override def unorderedContentNoDuplicate : List[Int] =
-    if(seq.nbOccurrence(removedValue) > 1L) seq.unorderedContentNoDuplicate
+    if(seq.nbOccurrence(removedValue) > 1) seq.unorderedContentNoDuplicate
     else seq.unorderedContentNoDuplicate.filter(_ != removedValue)
 
   override def unorderedContentNoDuplicateWithNBOccurences : List[(Int, Int)] =
@@ -1142,12 +1142,12 @@ class RemovedIntSequence(val seq:IntSequence,
     toReturn
   }
 
-  def oldPos2NewPos(oldPos:Long) = {
-    if (oldPos < this.positionOfDelete) oldPos else oldPos - 1L
+  def oldPos2NewPos(oldPos:Int) = {
+    if (oldPos < this.positionOfDelete) oldPos else oldPos - 1
   }
 
   override def contains(value : Int) : Boolean = {
-    if(value == removedValue) seq.nbOccurrence(value)>1L
+    if(value == removedValue) seq.nbOccurrence(value)>1
     else seq.contains(value)
   }
 
