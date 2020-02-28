@@ -245,12 +245,12 @@ package object cbls extends ModelingAPI{
   implicit def instrumentRange(r: NumericRange[Long]): InstrumentedRange = new InstrumentedRange(r)
 
   //this one has been added followingthe 32 to 64 bits port of oscar.cbls
-  implicit def longToInt(value:Long):Int = {
+/*  implicit def longToInt(value:Long):Int = {
     val i = value.toInt
     if (i != value) throw new ArithmeticException("integer overflow:" + value)
     return i
   }
-  implicit def intToLong(i:Int):Long = i
+  implicit def intToLong(i:Int):Long = i*/
 
   implicit def minMaxCoupleLongLongToDomain(minMaxCouple:((Long,Long))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
   implicit def minMaxCoupleIntIntToDomain(minMaxCouple:((Int,Int))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
