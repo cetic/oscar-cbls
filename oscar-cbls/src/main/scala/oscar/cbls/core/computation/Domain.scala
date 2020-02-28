@@ -36,10 +36,6 @@ object Domain{
     else DomainRange(r.start,r.last)
   }
 
-  implicit def setToDomain(s:Set[Long]):Domain = {
-    DomainSet(s)
-  }
-
   implicit def coupleToDomain(i:(Long,Long)):Domain = {
     if(i._1 == i._2) SingleValueDomain(i._1)
     else DomainRange(i._1,i._2)
@@ -95,13 +91,15 @@ case class DomainRange(override val min: Long, override val max: Long) extends D
     else if(max==Long.MaxValue && min==Long.MinValue) Long.MaxValue
     else math.max(max-min+1L,0L)
   override def values: Iterable[Long] = min to max
-  override def randomValue(): Long = (min to max)(Random.nextInt(max-min+1L))
+  override def randomValue(): Long = {
+    require(max - min < Int.MaxValue, "Range size must be < Int.MaxValue.")
+    (min to max)(Random.nextInt((max - min + 1).toInt))
+  }
   override def intersect(d: Domain): Domain = {
     val newDomain:Domain = d match{
       case r:DomainRange => (math.max(r.min,min), math.min(r.max,max))
       case FullRange => this
       case d:SingleValueDomain => d.intersect(this)
-      case s:DomainSet =>  s.intersect(this)
     }
     if (newDomain.isEmpty) throw new EmptyDomainException
     newDomain
@@ -116,7 +114,6 @@ case class DomainRange(override val min: Long, override val max: Long) extends D
         if(v < min) (v , max)
         else if (max < v) (min , v)
         else this
-      case d:DomainSet =>  d.union(this)
     }
     if (newDomain.isEmpty)
       throw new EmptyDomainException
@@ -128,44 +125,6 @@ case class DomainRange(override val min: Long, override val max: Long) extends D
   override def toString(): String = "DomainRange(min:" + min + ", max:" +  max + ")"
 }
 
-case class DomainSet(val s:Set[Long]) extends Domain {
-  override def min: Long = s.min
-  override def max: Long = s.max
-  override def size: Long = s.size
-  if (min > max) throw new EmptyDomainException
-
-  def contains(v:Long): Boolean = s.contains(v)
-  override def values: Iterable[Long] = s
-  override def randomValue(): Long = s.toList.apply(Random.nextInt(size))
-  override def intersect(d: Domain): Domain = {
-    val newDomain:Domain = d match{
-      case r:DomainRange =>
-        (r.toRange.toSet) intersect s
-      case FullRange => this
-      case d:SingleValueDomain => d.intersect(this)
-      case ds:DomainSet =>  ds.s intersect s
-    }
-    if (newDomain.isEmpty) throw new EmptyDomainException
-    newDomain
-  }
-
-  override def union(d: Domain): Domain = {
-    val newDomain:Domain = d match{
-      case r:DomainRange => r.toRange.toSet union s
-      case FullRange => FullRange
-      case SingleValueDomain(v) => if(contains(v)){
-        this
-      }else{
-        Set(v) union s
-      }
-      case d:DomainSet =>  d.s union s
-    }
-    if (newDomain.isEmpty) throw new EmptyDomainException
-    newDomain
-  }
-
-  override def toString(): String = "DomainSet(" + s.mkString(", ") + ")"
-}
 
 case object FullRange extends Domain{
   override def min: Long = Long.MinValue
@@ -197,8 +156,7 @@ case class SingleValueDomain(value:Long) extends Domain{
     d match {
       case SingleValueDomain(v) =>
         if(v == value) this
-        else if(math.abs(v-value) == 1L) (math.min(v,value) , math.max(v,value))
-        else Set(v) union Set(value)
+        else (math.min(v,value) , math.max(v,value))
       case _ => d.union(this)
     }
   }
