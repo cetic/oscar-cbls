@@ -34,6 +34,7 @@ import scala.util.Random
   */
 sealed trait IntValue extends Value{
   def value: Long
+  def valueInt: Int
   def domain:Domain
   def min = domain.min
   def max = domain.max
@@ -129,6 +130,12 @@ abstract class ChangingIntValue(initialValue:Long, initialDomain:Domain)
     if (definingInvariant == null && !propagating) return mNewValue //the new value, actually!
     if(!propagating) model.propagate(this)
     mOldValue
+  }
+
+  override def valueInt: Int = {
+    val value = this.value
+    require(value <= Int.MaxValue, "The value must be <= Int.MaxValue")
+    value.toInt
   }
 
   def newValue:Long = {
@@ -274,8 +281,10 @@ class CBLSIntVar(givenModel: Store, initialValue: Long, initialDomain:Domain, n:
   def <==(i: IntValue) {IdentityInt(this,i)}
 
   def randomize(): Unit ={
-    if(this.max != this.min)
-      this := this.min + RandomGenerator.nextInt(this.max - this.min)
+    if(this.max != this.min) {
+      require(this.max - this.min < Int.MaxValue, "The domain is too wide to take a random value")
+      this := this.min + RandomGenerator.nextInt((this.max - this.min).toInt)
+    }
   }
 }
 
@@ -298,6 +307,10 @@ object CBLSIntVar{
 */
 class CBLSIntConst(override val value:Long)
   extends IntValue{
+  override def valueInt: Int = {
+    require(value <= Int.MaxValue, "The constant value is higher than Int.MaxValue")
+    value.toInt
+  }
   override def toString:String = "" + value
   override def domain: SingleValueDomain = new SingleValueDomain(value)
   override def min: Long = value
