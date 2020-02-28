@@ -97,7 +97,7 @@ abstract class ChangingAtomicValue[T](initialValue:T)
     }
   }
 
-  def performNotificationToListeningInv(inv:PropagationElement,id:Long,oldVal:T,newVal:T)
+  def performNotificationToListeningInv(inv:PropagationElement,id:Int,oldVal:T,newVal:T)
 
   override def checkInternals(c:Checker){
     c.check(mOldValue == mNewValue)

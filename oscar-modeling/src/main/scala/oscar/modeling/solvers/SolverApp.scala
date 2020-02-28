@@ -15,13 +15,9 @@
 
 package oscar.modeling.solvers
 
-import org.rogach.scallop.{Scallop, ScallopConf, Subcommand}
-import oscar.modeling.constraints.AllDifferent
+import org.rogach.scallop.{ScallopConf, Subcommand}
 import oscar.modeling.misc.ScallopConfProxy
 import oscar.modeling.models.{ModelDeclaration, ModelDeclarationProxy}
-import oscar.modeling.solvers.cp._
-import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
-import oscar.modeling.vars.IntVar
 
 
 /**
@@ -54,7 +50,7 @@ class SolverApp[RetVal] extends SolveHolder[RetVal] with App with SolverAppModul
 
   // Module configuration
   private val moduleConfig = completeConfig.subcommand.get
-  config.setProxyTo(moduleConfig)
+  config.setProxyTo(moduleConfig.asInstanceOf[Subcommand])
   private val solverAppModule = modules(completeConfig.subcommand.get.asInstanceOf[Subcommand])
 
   solverAppModule.onSelect()

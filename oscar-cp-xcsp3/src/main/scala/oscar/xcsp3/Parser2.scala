@@ -7,8 +7,8 @@ import org.xcsp.common.{Condition, IVar}
 import org.xcsp.common.Condition.{ConditionIntvl, ConditionRel, ConditionVal, ConditionVar}
 import org.xcsp.common.Types._
 import org.xcsp.common.predicates.{XNode, XNodeLeaf, XNodeParent}
-import org.xcsp.parser.XCallbacks
-import org.xcsp.parser.XCallbacks.{Implem, XCallbacksParameters}
+import org.xcsp.parser.callbacks.XCallbacks
+import org.xcsp.parser.callbacks.XCallbacks.{Implem, XCallbacksParameters}
 import org.xcsp.parser.entries.XVariables.XVarInteger
 import oscar.cp.constraints.Automaton
 import oscar.modeling.algebra.bool._
@@ -54,9 +54,9 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   impl.currParameters.put(XCallbacksParameters.RECOGNIZE_BINARY_PRIMITIVES,  new Object)
   impl.currParameters.put(XCallbacksParameters.RECOGNIZE_TERNARY_PRIMITIVES,  new Object)
   impl.currParameters.put(XCallbacksParameters.RECOGNIZE_NVALUES_CASES,  new Object)
-  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_ARITY_LIMIT, 1000:java.lang.Integer) // included
-  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_SPACE_LIMIT, 1000000:java.lang.Integer)
-  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, java.lang.Boolean.FALSE)
+  impl.currParameters.put(XCallbacksParameters.CONVERT_INTENSION_TO_EXTENSION_ARITY_LIMIT, 1000:java.lang.Integer) // included
+  impl.currParameters.put(XCallbacksParameters.CONVERT_INTENSION_TO_EXTENSION_SPACE_LIMIT, 1000000:java.lang.Integer)
+  //impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, java.lang.Boolean.FALSE)
 
 
   loadInstance(filename)

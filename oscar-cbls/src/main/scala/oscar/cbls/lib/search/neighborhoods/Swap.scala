@@ -124,17 +124,20 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
             val adjustedValueToSecondVar:Long = secondVar.domain.adjust(oldValOfFirstVar)
             val adjustedValueToFirstVar:Long = firstVar.domain.adjust(oldValOfSecondVar)
 
-            if (evaluateCurrentMoveObjTrueIfSomethingFound(obj.assignVal(
-              List(
-                (firstVar, adjustedValueToFirstVar),
-                (secondVar, adjustedValueToSecondVar))))) {
-              notifyFound1()
-              notifyFound2()
+            if(adjustedValueToSecondVar != adjustedValueToFirstVar) {
+              if (evaluateCurrentMoveObjTrueIfSomethingFound(obj.assignVal(
+                List(
+                  (firstVar, adjustedValueToFirstVar),
+                  (secondVar, adjustedValueToSecondVar))))) {
+                notifyFound1()
+                notifyFound2()
+              }
             }
 
           } else {
             if (secondVar.domain.contains(oldValOfFirstVar)
-              && firstVar.domain.contains(oldValOfSecondVar)) {
+              && firstVar.domain.contains(oldValOfSecondVar)
+              && oldValOfFirstVar != oldValOfSecondVar) {
               if (evaluateCurrentMoveObjTrueIfSomethingFound(obj.swapVal(firstVar, secondVar))) {
                 notifyFound1()
                 notifyFound2()
@@ -147,7 +150,8 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
     firstVarIndice = firstVarIndice +1L
   }
 
-  override def instantiateCurrentMove(newObj: Long) = SwapMove(firstVar, secondVar, firstVarIndice,secondVarIndice,newObj, name)
+  override def instantiateCurrentMove(newObj: Long) =
+    SwapMove(firstVar, secondVar, firstVarIndice, secondVarIndice, adjustIfNotInProperDomain, newObj, name)
 
   //this resets the internal state of the Neighborhood
   override def reset(): Unit = {
@@ -164,13 +168,22 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
   * @param neighborhoodName a string describing the neighborhood hat found the move (for debug purposes)
   * @author renaud.delandtsheer@cetic.be
   */
-case class SwapMove(i:CBLSIntVar,j:CBLSIntVar, idI:Int, idJ:Int, override val objAfter:Long, override val neighborhoodName:String = null)
+case class SwapMove(i:CBLSIntVar,j:CBLSIntVar, idI:Int, idJ:Int, adjustIfNotInProperDomain:Boolean, override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
-  override def commit() {i :=: j}
+  override def commit() {
+    if(adjustIfNotInProperDomain) {      val adjustedJValue:Long = i.domain.adjust(j.value)
+      val adjustedIValue:Long = j.domain.adjust(i.value)
+      i := adjustedJValue
+      j := adjustedIValue
+
+    }else{
+      i :=: j
+    }
+  }
 
   override def toString: String  = {
-    neighborhoodNameToString + "SwapMove(" + i + " swapped with " + j + objToString + ")"
+    neighborhoodNameToString + "SwapMove(" + i + " swapped with " + j + ( if (adjustIfNotInProperDomain) " with adjust" else "") + objToString + ")"
   }
 
   override def touchedVariables: List[Variable] = List(i,j)

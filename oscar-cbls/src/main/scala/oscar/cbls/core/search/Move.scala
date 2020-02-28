@@ -91,10 +91,12 @@ class CodedMove(code: => Unit, override val objAfter: Long, override val neighbo
 /**
   * this class does not provide an implementation for touchedVariables,
   * since we are only inputting source code for executing the move
+  * you must incorporate the obj into the move name in order to display it
   * */
 class EvaluableCodedMove(doAndUndo: () => (() => Unit),
                          override val objAfter: Long = Long.MaxValue,
-                         override val neighborhoodName: String = "EvaluableCodedMove")
+                         override val neighborhoodName: String = "EvaluableCodedMove",
+                         val moveName:String = "EvaluableCodedMove")
   extends Move(objAfter, neighborhoodName){
 
   override def commit() {doAndUndo()}
@@ -106,7 +108,7 @@ class EvaluableCodedMove(doAndUndo: () => (() => Unit),
     toReturn
   }
 
-  override def toString: String = neighborhoodNameToString + "EvaluableCodedMove"
+  override def toString: String = neighborhoodNameToString + ":" + moveName //this does not include obj. obj is to be displayed by the moveName
 }
 
 
@@ -357,7 +359,6 @@ object CallBackMove{
   *                         Many combinators actually rely on this value to take decisions (eg: [[oscar.cbls.lib.search.combinators.SaveBest]] and [[Best]]
   * @param neighborhoodName the name of the neighborhood that generated this move, used for pretty printing purpose.
   *                         Notice that the name is not the type of the neighborhood.
-  * @param shortDescription a description of whet the move does (since it cannot be inferred from the name of the neighborhood as for [[oscar.cbls.lib.search.neighborhoods.AssignMove]] for instance)
   * @param param            the parameter that is passed to the callBack method when the move is committed
   * @tparam T
   */

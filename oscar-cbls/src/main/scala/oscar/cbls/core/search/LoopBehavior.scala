@@ -23,6 +23,7 @@ import scala.util.Random
 object LoopBehavior{
   def first(maxNeighbors:() => Long = () => Long.MaxValue) = First(maxNeighbors)
   def best(maxNeighbors:() => Long = () => Long.MaxValue) = Best(maxNeighbors)
+  def timeout(enclosedBehavior:LoopBehavior,timeOutMilliSeconds:Long) = Timeout(enclosedBehavior,timeOutMilliSeconds)
 }
 
 sealed abstract class LoopBehavior(){
@@ -42,6 +43,36 @@ trait BoundedIterable[T] extends Iterable[T]{
   override def iterator : BoundedIterator[T]
 }
 
+case class Timeout(enclosedBehavior:LoopBehavior,timeOutMilliSeconds:Long) extends LoopBehavior(){
+  override def toIterable[T](baseIterable: Iterable[T]): (BoundedIterable[T], () => Unit) = {
+    val (enclosedBoundedIterable,enclosedNotifyFound) = enclosedBehavior.toIterable(baseIterable)
+
+    val timeOutedIterable = new BoundedIterable[T]{
+      override def iterator : BoundedIterator[T] = new BoundedIterator[T]{
+        val startTimeMS = System.nanoTime()/(1000*1000)
+        val baseIterator = enclosedBoundedIterable.iterator
+
+        override def hasUnboundedNext(): Boolean = baseIterator.hasUnboundedNext()
+
+        override def unboundedNext(): T = baseIterator.unboundedNext()
+
+        override def hasNext: Boolean = {
+          val currentTimeMs = System.nanoTime()/(1000*1000)
+          if(startTimeMS + timeOutMilliSeconds < currentTimeMs){
+            //println("timeout")
+            false
+          }
+          else {
+            baseIterator.hasNext
+          }
+        }
+
+        override def next(): T = baseIterator.next() //we do not check timing here because it might have changed since next was tested
+      }
+    }
+    (timeOutedIterable,enclosedNotifyFound)
+  }
+}
 //TODO: randomized
 //TODO: best, cap after xxx sucessive not better neighbors
 

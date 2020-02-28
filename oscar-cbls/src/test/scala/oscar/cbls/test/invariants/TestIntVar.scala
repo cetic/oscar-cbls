@@ -58,7 +58,6 @@ class TestIntVar extends FunSuite with Matchers {
       val x = CBLSIntVar(solver, 0, 0 until 0, "x") // until makes an empty range
     }
      */
-
   }
   
   test("test inDomain of IntVar 1..10"){

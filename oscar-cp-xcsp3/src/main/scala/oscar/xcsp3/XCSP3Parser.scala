@@ -6,9 +6,9 @@ import org.xcsp.common.Condition
 import org.xcsp.common.Condition.{ConditionIntvl, ConditionRel, ConditionVal, ConditionVar}
 import org.xcsp.common.Types._
 import org.xcsp.common.predicates.XNodeParent
-import org.xcsp.parser.XCallbacks.{Implem, XCallbacksParameters}
-import org.xcsp.parser._
-import org.xcsp.parser.entries.AnyEntry.{CEntry, OEntry, VEntry}
+import org.xcsp.parser.callbacks.XCallbacks
+import org.xcsp.parser.callbacks.XCallbacks.{Implem, XCallbacksParameters}
+import org.xcsp.parser.entries.ParsingEntry.{CEntry, OEntry, VEntry}
 import org.xcsp.parser.entries.XConstraints.{XBlock, XGroup, XSlide}
 import org.xcsp.parser.entries.XVariables.{XArray, XVarInteger}
 import oscar.cp._
@@ -41,9 +41,9 @@ class XCSP3Parser(filename: String) extends XCallbacksDecomp {
   impl.currParameters.put(XCallbacksParameters.RECOGNIZE_BINARY_PRIMITIVES, new Object)
   impl.currParameters.put(XCallbacksParameters.RECOGNIZE_TERNARY_PRIMITIVES, new Object)
   impl.currParameters.put(XCallbacksParameters.RECOGNIZE_NVALUES_CASES, new Object)
-  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_ARITY_LIMIT, 1000: java.lang.Integer) // included
-  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_SPACE_LIMIT, 1000000: java.lang.Integer)
-  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, java.lang.Boolean.FALSE)
+  impl.currParameters.put(XCallbacksParameters.CONVERT_INTENSION_TO_EXTENSION_ARITY_LIMIT, 1000: java.lang.Integer) // included
+  impl.currParameters.put(XCallbacksParameters.CONVERT_INTENSION_TO_EXTENSION_SPACE_LIMIT, 1000000: java.lang.Integer)
+  //impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, java.lang.Boolean.FALSE)
 
 
   override def implem(): XCallbacks.Implem = {

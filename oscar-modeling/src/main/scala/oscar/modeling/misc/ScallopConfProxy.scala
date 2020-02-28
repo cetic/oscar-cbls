@@ -21,18 +21,18 @@ import org.rogach.scallop.{ScallopConf, ScallopOption, ValueConverter}
   * A proxy to a ScallopConf (allowing to define "custom" commands with default values)
   */
 abstract class ScallopConfProxy {
-  private val options = collection.mutable.ArrayBuffer[(ScallopConf) => Unit]()
+  private val options = collection.mutable.ArrayBuffer[ScallopConf => Unit]()
   private val optionInstance = collection.mutable.HashMap[(ScallopConf, String), AnyRef]()
   private var proxyTo: ScallopConf = null
 
-  private def shortcut[A](name: String, generateOpt: (ScallopConf) => ScallopOption[A]): ScallopOption[A] = {
+  private def shortcut[A](name: String, generateOpt: ScallopConf => ScallopOption[A]): ScallopOption[A] = {
     options += (x => {
       val opt = generateOpt(x)
       optionInstance += ((x, name) -> opt)
     })
 
     new ScallopOption[A](name) {
-      override lazy val fn = { (name: String) =>
+      override lazy val fn = { name: String =>
         optionInstance((proxyTo, name)).asInstanceOf[ScallopOption[A]].fn(name)
       }
       override lazy val supplied = {
@@ -55,7 +55,7 @@ abstract class ScallopConfProxy {
               hidden: Boolean = false,
               noshort: Boolean = false)
             (implicit conv:ValueConverter[A]): ScallopOption[A] =
-    shortcut(name, (x) => x.opt(name, short, descr, default, validate, required, argName, hidden, noshort)(conv))
+    shortcut(name, x => x.opt(name, short, descr, default, validate, required, argName, hidden, noshort)(conv))
 
   def tally(
              name: String,
@@ -63,7 +63,7 @@ abstract class ScallopConfProxy {
              descr: String = "",
              hidden: Boolean = false,
              noshort: Boolean = false): ScallopOption[Int] =
-    shortcut(name, (x) => x.tally(name, short, descr, hidden, noshort))
+    shortcut(name, x => x.tally(name, short, descr, hidden, noshort))
 
   def trailArg[A](
                    name: String,
@@ -73,7 +73,7 @@ abstract class ScallopConfProxy {
                    default: => Option[A] = None,
                    hidden: Boolean = false)
                  (implicit conv:ValueConverter[A]) =
-    shortcut(name, (x) => x.trailArg(name, descr, validate, required, default, hidden)(conv))
+    shortcut(name, x => x.trailArg(name, descr, validate, required, default, hidden)(conv))
 
   def number(
               name: String,
@@ -94,5 +94,5 @@ abstract class ScallopConfProxy {
               descrYes: String = "",
               descrNo: String = "",
               hidden: Boolean = false): ScallopOption[Boolean] =
-    shortcut(name, (x) => x.toggle(name, default, short, noshort, prefix, descrYes, descrNo, hidden))
+    shortcut(name, x => x.toggle(name, default, short, noshort, prefix, descrYes, descrNo, hidden))
 }

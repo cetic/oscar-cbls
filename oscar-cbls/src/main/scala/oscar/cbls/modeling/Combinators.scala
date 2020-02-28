@@ -20,14 +20,14 @@ trait CombinatorsAPI
 trait BasicCombinators{
 
   /**
-   * this combinator always selects the best move between the two parameters
-   * notice that this combinator makes more sense
-   * if the two neighborhood return their best found move,
-   * and not their first found move, as usually done.
-   *
-   * @author renaud.delandtsheer@cetic.be
-   */
-  def best(a: Neighborhood, b: Neighborhood) = new Best(a, b)
+    * this combinator always selects the best move between the two parameters
+    * notice that this combinator makes more sense
+    * if the two neighborhood return their best found move,
+    * and not their first found move, as usually done.
+    *
+    * @author renaud.delandtsheer@cetic.be
+    */
+  def best(n: Neighborhood*) = new BestMove(n:_*)
 
   /**
    * this combinator sequentially tries all neighborhoods until one move is found
@@ -431,14 +431,14 @@ class NeighborhoodOps(n:Neighborhood){
   def sequence(b: Neighborhood): Neighborhood = n maxMoves 1L exhaust b
 
   /**
-   * this combinator always selects the best move between the two parameters
-   * notice that this combinator makes more sense
-   * if the two neighborhood return their best found move,
-   * and not their first found move, as usually done.
-   *
-   * @author renaud.delandtsheer@cetic.be
-   */
-  def best(b: Neighborhood): Neighborhood = new oscar.cbls.lib.search.combinators.Best(n, b)
+    * this combinator always selects the best move between the two parameters
+    * notice that this combinator makes more sense
+    * if the two neighborhood return their best found move,
+    * and not their first found move, as usually done.
+    *
+    * @author renaud.delandtsheer@cetic.be
+    */
+  def best(b: Neighborhood): Neighborhood = new oscar.cbls.lib.search.combinators.BestMove(n, b)
 
   /**
    * this combinator is stateful.
@@ -577,15 +577,19 @@ class NeighborhoodOps(n:Neighborhood){
   def afterMoveOnMove(procOnMove: Move => Unit) = DoOnMove(n, procAfterMove = procOnMove)
 
   /**
-
-    * This combinator create a frame that draw the evolution curve of the objective function.
-    * The drawn curve possess a scrollbar on the right that allow the user to decrease or
-    * increase the number of value displayed.
-    *
-    * @param obj the objective function
-    * @author fabian.germeau@cetic.be
-    */
-  def showObjectiveFunction(obj: Objective, title: String = "Objective function vs. time[s]") = new ShowObjectiveFunction(n,obj, title)
+   * This combinator create a frame that draw the evolution curve of the objective function.
+   * You can also display other information on the curve, but the main curve will always be the obj function.
+   *
+   * @param obj the objective function
+   * @param title The title of the frame
+   * @param minCap The minimum displayed value
+   * @param maxCap The maximum displayed value
+   * @param percentile The percentile (1 to 100) of the best displayed value
+   * @param otherValues An array of other value you want to be displayed (as a tuple (name, () => Long))
+   * @author fabian.germeau@cetic.be
+   */
+  def showObjectiveFunction(obj: Objective, title: String = "Objective function vs. time[s]", minCap: Long = 0L, maxCap:Long = Long.MaxValue, percentile: Int = 100, otherValues: Array[(String, () => Long)] = Array.empty) =
+    new ShowObjectiveFunction(n,obj, title, minCap, maxCap, percentile, otherValues)
 
   /**
    * this combinator attaches a custom code to a given neighborhood.

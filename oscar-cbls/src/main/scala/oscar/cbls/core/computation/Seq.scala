@@ -177,6 +177,7 @@ class SeqUpdateMove(val fromIncluded:Int,val toIncluded:Int,val after:Int, val f
 
   def isSimpleFlip:Boolean = after+1 == fromIncluded && flip
   def isNop = after+1 == fromIncluded && !flip
+  //TODO: find someting faster.
   def fromValue:Long = prev.newValue.valueAtPosition(fromIncluded).head
   def toValue:Long = prev.newValue.valueAtPosition(toIncluded).head
   def afterValue:Long = prev.newValue.valueAtPosition(after).head
@@ -767,7 +768,11 @@ et cette stack doit être mise à jour au moment de la notification.
     require(firstSegmentStartPosition <= firstSegmentEndPosition)
     require(secondSegmentStartPosition <= secondSegmentEndPosition)
 
-    if(firstSegmentEndPosition < secondSegmentStartPosition){
+    if (firstSegmentEndPosition == secondSegmentStartPosition - 1) {
+      // segments are contiguous, we only need to move the second segment
+      move(secondSegmentStartPosition,secondSegmentEndPosition,firstSegmentStartPosition-1,flipSecondSegment)
+
+    }else if(firstSegmentEndPosition < secondSegmentStartPosition){
       //do it
 
       //move lowest segment upward just before the second one (so that its indices do not change)
