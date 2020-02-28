@@ -17,7 +17,7 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
-import oscar.cbls.business.routing.neighborhood.vlsn.{CycleFinderAlgoType, VLSN}
+import oscar.cbls.lib.search.neighborhoods.vlsn.{CycleFinderAlgoType, VLSN}
 import oscar.cbls.core.search._
 import oscar.cbls.util.StopWatch
 
@@ -63,7 +63,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
   val model = new Store() //checker = Some(new ErrorChecker()))
 
   val myVRP = new VRP(model,n,v)
-  val routeLengthPerVehicle = routeLength(myVRP.routes,n,v,perVehicle = true,symmetricDistanceMatrix,true,true,false)
+  val routeLengthPerVehicle = routeLength(myVRP.routes,n,v,perVehicle = true,symmetricDistanceMatrix,true)
   val totalRouteLength = sum(routeLengthPerVehicle)
   val nodesPerVehicle = nodesOfVehicle(myVRP.routes,v)
 

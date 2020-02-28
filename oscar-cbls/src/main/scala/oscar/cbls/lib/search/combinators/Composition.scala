@@ -4,7 +4,7 @@ import oscar.cbls._
 import oscar.cbls.core.search._
 
 abstract class NeighborhoodCombinatorNoProfile(a: Neighborhood*) extends NeighborhoodCombinator(a:_*){
-  override def collectProfilingStatistics: List[String] = List.empty
+  override def collectProfilingStatistics: List[Array[String]] = List.empty
   override def resetStatistics(){}
 }
 

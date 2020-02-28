@@ -30,8 +30,6 @@ object RouteLength {
    * @param perVehicle
    * @param distanceMatrix
    * @param distanceIsSymmetric
-   * @param precomputeFW performs forward pre-computation, only useful if multiple vehicle and per vehicle disatnce or asymetric matrix
-   * @param precomputeBW performs backward pre-computation, only useful if assymetric matrix
    * @return
    */
   def apply(routes : ChangingSeqValue,
@@ -39,30 +37,19 @@ object RouteLength {
             v : Long,
             perVehicle:Boolean,
             distanceMatrix : Array[Array[Long]],
-            distanceIsSymmetric : Boolean,
-            precomputeFW:Boolean = false,
-            precomputeBW:Boolean = false):Array[CBLSIntVar] = {
+            distanceIsSymmetric : Boolean):Array[CBLSIntVar] = {
 
     val distance:Array[CBLSIntVar] =
       if(perVehicle) Array.tabulate(v)(v => CBLSIntVar(routes.model,name="distanceOfVehicle" + v))
       else Array.fill(1L)(CBLSIntVar(routes.model,name="overallDistance"))
 
-    if(precomputeFW || precomputeBW){
-      new RouteLengthPrecompute(routes,
-        n,
-        v,
-        distanceMatrix,
-        distance,
-        distanceIsSymmetric,
-        precomputeFW,precomputeBW)
-    }else{
       new RouteLength(routes,
         n,
         v,
         distanceMatrix,
         distance,
         distanceIsSymmetric)
-    }
+
     distance
   }
 
@@ -525,170 +512,5 @@ class RouteLength(routes:ChangingSeqValue,
         c.check(savedValues(0L) == computeValueFromScratch(checkpoint)(0L))
       }
     }
-  }
-}
-
-
-/**
- * @param routes the routes of all the vehicles
- * @param v the number of vehicles in the model
- * @param distanceMatrix the matrix of distance, which is expected to be symmetric
- * @param distance it is either an array of one value, in which case it is the total distance run by all vehicle
- *                 or it can also be an array of size v. in this case it is the distance run by each vehicle, respectively.
- *                 the second option is computationally more expensive
- * @param distanceIsSymmetric true if you swear that the distance matrix is symmetric, false and it will be considered as asymmetric (slower!)
- *
- * The distance computed by this invariant considers the values o the diagonal as part of the cost (node cost are added to the distance)
- *
- * This invariant relies on the vehicle model assumption:
- * there are v vehicles
- * They are supposed to start from point of values 0L to v-1L
- * These values must always be present in the sequence in increasing order
- * they cannot be included within a moved segment
- */
-class RouteLengthPrecompute(routes:ChangingSeqValue,
-                            n:Int,
-                            v:Int,
-                            distanceMatrix:Array[Array[Long]],
-                            distance:Array[CBLSIntVar],
-                            distanceIsSymmetric:Boolean,
-                            precomputeFW:Boolean,
-                            precomputeBW:Boolean)
-  extends RouteLength(routes:ChangingSeqValue,
-    n,
-    v:Int,
-    distanceMatrix:Array[Array[Long]],
-    distance:Array[CBLSIntVar],
-    distanceIsSymmetric:Boolean) {
-
-  //TODO: for stacked updates, we will use someting like magic arrays here, indiced by level of checkpoints, with constant limit on the stack, so that all arrays can be allocated at startups
-  val isFWPrecomputeUpToDate:Array[Boolean] = Array.fill(v)(false)
-  val isBWPrecomputeUpToDate:Array[Boolean] = Array.fill(v)(false)
-  private val precomputedForwardCumulatedCostAtCheckpoint : Array[Long] = if(precomputeFW) Array.fill(n)(0L) else null
-  private val precomputedBackwardCumulatedCostAtCheckpont : Array[Long] = if(precomputeBW) Array.fill(n)(0L) else null
-
-
-  /* forward pour commencer
-  * node => distance
-  *
-  * is vehicle pre-computed: array v->bool
-  * is vehicle changed:
-  * push --> reset array at this level, all out of date
-  *
-  *
-  *
-  * */
-
-  def computePrecomputedForwardCumulatedCostAtCheckpoint(vehicle : Long, seq : IntSequence) {
-    var explorerOPt = seq.explorerAtAnyOccurrence(vehicle).get.next
-    var prevValue = vehicle
-    while(explorerOPt match{
-      case None => false //we finished the last vehicle
-      case Some(explorer) =>
-        val value = explorer.value
-        if(value != vehicle+1L){
-          precomputedForwardCumulatedCostAtCheckpoint(value) =
-            precomputedForwardCumulatedCostAtCheckpoint(prevValue) +
-              distanceMatrixOnNode(prevValue)(value) +
-              distanceMatrixOnNode(prevValue)(prevValue)
-          explorerOPt = explorer.next
-          prevValue = value
-          true
-        } else false
-    }){}
-  }
-
-  def computePrecomputedBackwardCumulatedCostAtCheckpoint(vehicle : Long, seq : IntSequence) {
-    var explorerOPt = seq.explorerAtAnyOccurrence(vehicle).get.next
-    var prevValue = vehicle
-    while(explorerOPt match{
-      case None => false
-      case Some(explorer) =>
-        val value = explorer.value
-        if(value != vehicle+1L) {
-          precomputedBackwardCumulatedCostAtCheckpont(value) =
-            precomputedBackwardCumulatedCostAtCheckpont(prevValue) +
-              distanceMatrixOnNode(value)(prevValue) +
-              distanceMatrixOnNode(value)(value)
-          explorerOPt = explorer.next
-          prevValue = value
-          true
-        } else false
-    }){}
-  }
-
-  override protected def computeValueBetween(s : IntSequence, vehicle:Long,
-                                             fromPosIncluded : Long, fromValueIncluded:Long,
-                                             toPosIncluded : Long, toValueIncluded:Long) : Long = {
-    val atCheckpoint = s quickEquals checkpoint
-    val forwardRequired = fromPosIncluded < toPosIncluded
-
-    if(fromPosIncluded == toPosIncluded) {
-      distanceMatrixOnNode(fromValueIncluded)(fromValueIncluded)
-    } else if(((atCheckpoint && !perVehicle)|| (perVehicle && !isVehicleChangedSinceCheckpoint(vehicle)))&& precomputeFW && forwardRequired){
-      //we need the or here above because we could be in single vehicle mode, where isVehicleChanged is always true
-      //Forward
-      doFWPrecomputeForVehicle(vehicle)
-      val toReturn = (precomputedForwardCumulatedCostAtCheckpoint(toValueIncluded)
-        + distanceMatrixOnNode(fromValueIncluded)(fromValueIncluded)
-        - precomputedForwardCumulatedCostAtCheckpoint(fromValueIncluded))
-      assert(toReturn == super.computeValueBetween(s, vehicle, fromPosIncluded, fromValueIncluded,toPosIncluded,toValueIncluded))
-      toReturn
-    }else if(atCheckpoint && precomputeBW && !forwardRequired) {
-      //backward
-      doBWPrecomputeForVehicle(vehicle)
-      val toReturn = (precomputedBackwardCumulatedCostAtCheckpont(fromValueIncluded)
-        + distanceMatrixOnNode(toValueIncluded)(toValueIncluded)
-        - precomputedBackwardCumulatedCostAtCheckpont(toValueIncluded))
-      assert(toReturn == super.computeValueBetween(s, vehicle, fromPosIncluded, fromValueIncluded, toPosIncluded, toValueIncluded))
-      toReturn
-    }else if(((atCheckpoint && !perVehicle) || (perVehicle && !isVehicleChangedSinceCheckpoint(vehicle))) && (precomputeFW || precomputeBW) && distanceIsSymmetric){
-      //gt the other distance from the available pre-compute
-      if(precomputeFW){
-        //getting a BW distance from a FW precompute
-        doFWPrecomputeForVehicle(vehicle)
-        val toReturn = (precomputedForwardCumulatedCostAtCheckpoint(fromValueIncluded)
-          + distanceMatrixOnNode(toValueIncluded)(toValueIncluded)
-          - precomputedForwardCumulatedCostAtCheckpoint(toValueIncluded))
-        assert(toReturn == super.computeValueBetween(s, vehicle, fromPosIncluded, fromValueIncluded,toPosIncluded,toValueIncluded))
-        toReturn
-      }else{
-        //getting a FW distance from a BW precompute
-        doBWPrecomputeForVehicle(vehicle)
-        val toReturn = (precomputedBackwardCumulatedCostAtCheckpont(toValueIncluded)
-          + distanceMatrixOnNode(fromValueIncluded)(fromValueIncluded)
-          - precomputedBackwardCumulatedCostAtCheckpont(fromValueIncluded))
-        assert(toReturn == super.computeValueBetween(s, vehicle, fromPosIncluded, fromValueIncluded, toPosIncluded, toValueIncluded))
-        toReturn
-      }
-    }else{
-      super.computeValueBetween(s, vehicle:Long, fromPosIncluded, fromValueIncluded,toPosIncluded,toValueIncluded)
-    }
-  }
-
-  def doFWPrecomputeForVehicle(vehicle:Long){
-    if(isFWPrecomputeUpToDate(vehicle)) return
-    computePrecomputedForwardCumulatedCostAtCheckpoint(vehicle,checkpoint)
-    isFWPrecomputeUpToDate(vehicle) = true
-  }
-
-  def doBWPrecomputeForVehicle(vehicle:Long){
-    if(isBWPrecomputeUpToDate(vehicle)) return
-    computePrecomputedBackwardCumulatedCostAtCheckpoint(vehicle,checkpoint)
-    isBWPrecomputeUpToDate(vehicle) = true
-  }
-
-  override protected def saveCurrentCheckpoint(s : IntSequence) : Unit = {
-    //records what has changed since last checkpoint, to update only these pre-computations, lazily
-
-    var routesToPrecompute = changedVehiclesSinceCheckpoint
-    while(routesToPrecompute != null){
-      val currentRoute=routesToPrecompute.head
-      routesToPrecompute = routesToPrecompute.tail
-      isFWPrecomputeUpToDate(currentRoute) = false
-      isBWPrecomputeUpToDate(currentRoute) = false
-    }
-
-    super.saveCurrentCheckpoint(s)
   }
 }

@@ -1,8 +1,8 @@
 package oscar.cbls.business.routing.model.extensions
 
 import oscar.cbls.business.routing.model.VRP
+import oscar.cbls.business.routing.visu.{RoutingMap, RoutingMapTypes}
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
-import oscar.cbls.visual.routing.{RoutingMap, RoutingMapTypes}
 
 /**
   * This class is used to display your routing problem on a map.
@@ -21,11 +21,12 @@ import oscar.cbls.visual.routing.{RoutingMap, RoutingMapTypes}
   *                        "Node " + node + " at the " + position + "th position of the vehicle " + vehicle + "\n"
   * @return A display object
   */
+//TODO move this pto proper location: business.routing.visu
 class Display(vrp: VRP,
               nodePositions: Array[(Double,Double)],
               sizeOfMap: Option[Long] = None,
               refreshRate: Long = 100L,
-              toolTipInfo: Option[Int => Option[String]] = None,
+              toolTipInfo: Option[Int => Option[() => String]] = None,
               routingMapType: RoutingMapTypes.Value = RoutingMapTypes.BasicRoutingMap,
               title:String = "VRP with OscaR.cbls"
              ) {

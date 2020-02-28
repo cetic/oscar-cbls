@@ -39,7 +39,7 @@ class TestIntVar extends FunSuite with Matchers {
   }
   
   test("test create IntVar using invalid ranges"){
-    val solver = new Store
+	  val solver = new Store
     val x = CBLSIntVar(solver, 1, 0 to -1, "x")
     val y = CBLSIntVar(solver, 0, 0 until 0, "y")
     // Behaviour changed: not valid ranges become

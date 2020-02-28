@@ -123,6 +123,16 @@ class MagicBoolArray(val length:Int,initVal:Boolean = false){
     toReturn.toIterator
   }
 
+  def indicesAtTrueAsQList:QList[Int] ={
+    var toReturn:QList[Int]=null
+    for(n <-0 until length){
+      if(internalArray(n)>=global){
+        toReturn = QList(n,toReturn)
+      }
+    }
+    toReturn
+  }
+
   override def toString: String = "["+indicesAtTrue.mkString(",")+"]"
 }
 

@@ -187,6 +187,7 @@ case class NumericAssignNeighborhood(vars:Array[CBLSIntVar],
 
     //iterating over the variables to consider
     val (indicesIterator,notifyFound1) = selectIndiceBehavior.toIterator(iterationSchemeOnSymmetryFreeZone)
+
     while(indicesIterator.hasNext){
       currentIndice = indicesIterator.next()
       currentVar = vars(currentIndice)
@@ -209,11 +210,11 @@ case class NumericAssignNeighborhood(vars:Array[CBLSIntVar],
 
         val (newBestVal, bestObj) = searchZoneForThisVar.search(oldVal, initialObj, domainIterationScheme.min, domainIterationScheme.max, eval)
         this.newVal = newBestVal
-
-        if (evaluateCurrentMoveObjTrueIfSomethingFound(bestObj)) {
+        if (newBestVal != oldVal && evaluateCurrentMoveObjTrueIfSomethingFound(bestObj)) {
           notifyFound1()
         }
       }
+
     }
 
     startIndice = currentIndice + 1L

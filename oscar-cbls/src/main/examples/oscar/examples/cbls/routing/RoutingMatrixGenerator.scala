@@ -16,6 +16,7 @@ package oscar.examples.cbls.routing
   ******************************************************************************/
 
 import oscar.cbls._
+import oscar.cbls.business.routing.invariants.timeWindow.{DefinedTransferFunction, TransferFunction}
 import oscar.cbls.business.routing.model.{TTFConst, TTFMatrix}
 
 import scala.util.Random
@@ -81,7 +82,7 @@ object RoutingMatrixGenerator {
       (R * c).toDouble //meters
     }
 
-    val pointPosition: Array[(Double,Double)] = Array.tabulate(n)(w => (randomLat, randomLong))
+    val pointPosition: Array[(Double,Double)] = Array.fill(n)((randomLat, randomLong))
 
     //for each delivery point, the distance to each warehouse
     (Array.tabulate(n)(
@@ -139,11 +140,11 @@ object RoutingMatrixGenerator {
     def reduceCurrentSizeBy = Math.max(currentMaxSize - maxSize, (currentMaxSize-2)/2 - (usedNodes/precedencesToGenerate))
     def randomSize = Math.max(2L,1L + intToLong(random.nextInt(longToInt(currentMaxSize))))
 
-    while(precedencesToGenerate > 0){
+    while(precedencesToGenerate > 0 && randomizedNodes.nonEmpty){
       currentMaxSize = currentMaxSize - reduceCurrentSizeBy
       precedencesToGenerate -= 1
 
-      val chain: List[Long] = List.tabulate(longToInt(randomSize))(_ => {
+      val chain: List[Long] = List.tabulate(Math.min(Math.min(n-v-usedNodes, maxSize), randomSize))(_ => {
         usedNodes += 1
         randomizedNodes.next()
       })
@@ -194,12 +195,12 @@ object RoutingMatrixGenerator {
     * @param maxTaskDurationInSec The maximum duration of a task
     * @return The time window for each node
     */
-  def generateFeasibleTimeWindows(n: Int, v: Int,
-                                  timeMatrix: TTFMatrix,
+  def generateFeasibleTransferFunctions(n: Int, v: Int,
+                                  timeMatrix: Array[Array[Long]],
                                   precedences: List[List[Long]] = List.empty,
                                   maxIdlingTimeInSec: Long = 1800L,
                                   maxExtraTravelTimeInSec: Long = 900L,
-                                  maxTaskDurationInSec: Long = 300L): (Array[Long],Array[Long],Array[Long],Array[Long]) ={
+                                  maxTaskDurationInSec: Long = 300L): Array[TransferFunction] ={
 
     def randomVehicleSelection = random.nextInt(v)
     def randomIdleTime = intToLong(random.nextInt(longToInt(maxIdlingTimeInSec)))
@@ -213,7 +214,6 @@ object RoutingMatrixGenerator {
     val earlyLines = Array.fill[Long](n)(0L)
     val deadLines = Array.fill[Long](n)(Long.MaxValue)
     val taskDurations = Array.tabulate[Long](n)(node => if(node < v) 0L else randomTaskDuration)
-    val maxWaitingDuration = Array.fill[Long](n)(Long.MaxValue)
 
     /**
       * This method generate a time window for a given node on a given vehicle
@@ -229,7 +229,7 @@ object RoutingMatrixGenerator {
       */
     def generateTimeWindowForNode(node: Long, onVehicle: Long): Unit ={
       val previousNode = lastNodeVisitedOfVehicles(longToInt(onVehicle))
-      val travelFromPreviousNode = timeMatrix.getTravelDuration(previousNode,endOfLastActionOfVehicles(longToInt(onVehicle)),node)
+      val travelFromPreviousNode = timeMatrix(previousNode)(node)
       endOfLastActionOfVehicles(longToInt(onVehicle)) += travelFromPreviousNode
 
       earlyLines(longToInt(node)) = endOfLastActionOfVehicles(longToInt(onVehicle))
@@ -246,7 +246,11 @@ object RoutingMatrixGenerator {
         generateTimeWindowForNode(node,vehicle)
       }
     }
-    (earlyLines,deadLines,taskDurations,maxWaitingDuration)
+    Array.tabulate(n)(node =>
+      TransferFunction.createFromEarliestAndLatestArrivalTime(node,
+        earlyLines(node),
+        deadLines(node) - taskDurations(node),
+        taskDurations(node)))
   }
 
   /**
@@ -269,16 +273,16 @@ object RoutingMatrixGenerator {
     */
   def generateMaxTravelDurations(precedences: List[List[Long]],
                                  earliestArrivalTimes: Array[Long],
-                                 travelDurationMatrix: TTFMatrix): Map[List[Long],Long] ={
-    def maxTravelDurationOfPrecedence(from: Long, toProceed: List[Long], maxTravelDurations: List[(List[Long],Long)]): List[(List[Long],Long)] ={
+                                 travelDurationMatrix: Array[Array[Long]]): List[(Long, Long, Long)] ={
+    def maxTravelDurationOfPrecedence(from: Long, toProceed: List[Long], maxTravelDurations: List[(Long,Long,Long)]): List[(Long,Long,Long)] ={
       toProceed match{
         case Nil => maxTravelDurations
-        case to::Nil => (List(from,to),(travelDurationMatrix.getTravelDuration(from,earliestArrivalTimes(longToInt(from)),to)*1.5).toLong) :: maxTravelDurations
-        case to::tail => maxTravelDurationOfPrecedence(to, tail,(List(from,to),(travelDurationMatrix.getTravelDuration(from,earliestArrivalTimes(longToInt(from)),to)*1.5).toLong) :: maxTravelDurations)
+        case to::Nil => List((from, to,(travelDurationMatrix(from)(to)*1.5).toLong)) ::: maxTravelDurations
+        case to::tail => maxTravelDurationOfPrecedence(to, tail,List((from, to,(travelDurationMatrix(from)(to)*1.5).toLong)) ::: maxTravelDurations)
       }
     }
 
-    precedences.flatMap(p => maxTravelDurationOfPrecedence(p.head,p.tail,List.empty)).toMap
+    precedences.flatMap(p => maxTravelDurationOfPrecedence(p.head,p.tail,List.empty))
   }
 
   /**
@@ -289,11 +293,11 @@ object RoutingMatrixGenerator {
     * @param distanceMatrix The distance matrix (of size n*n)
     * @return A TTFMatrix object that represent the travel time matrix.
     */
-  def generateLinearTravelTimeFunction(n: Int,distanceMatrix: Array[Array[Long]]): TTFMatrix = {
+  def generateLinearTravelTimeFunction(n: Int,distanceMatrix: Array[Array[Long]], multiplier: Double = 1.0): TTFMatrix = {
     val ttf = new TTFMatrix(n, new TTFConst(500))
     for (i <- 0L until n)
       for (j <- 0L until n)
-        ttf.setTTF(i, j, new TTFConst(distanceMatrix(longToInt(i))(longToInt(j))))
+        ttf.setTTF(i, j, new TTFConst((distanceMatrix(longToInt(i))(longToInt(j))*multiplier).toInt))
     ttf
   }
 

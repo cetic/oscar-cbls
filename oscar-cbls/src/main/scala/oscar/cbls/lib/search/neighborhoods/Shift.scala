@@ -37,7 +37,7 @@ import oscar.cbls._
  *                    even if you specify a searchZone that is: the exploration starts again
  *                    at the position where it stopped, and consider the indices in increasing order
  *                    if false, consider the exploration range in natural order from the first position.
- * @author fabian.germeau@student.vinci.be
+ * @author fabian.germeau@cetic.be
  **/
 case class ShiftNeighborhood(vars:Array[CBLSIntVar],
                              name:String = "ShiftNeighborhood",
@@ -158,7 +158,7 @@ case class ShiftNeighborhood(vars:Array[CBLSIntVar],
   * @param objAfter the objective after this assignation will be performed
   * @param neighborhoodName the name of the neighborhood that generated this move, used for pretty printing purpose.
   *                         Notice that the name is not the type of the neighborhood.
-  * @author fabian.germeau@student.vinci.be
+  * @author fabian.germeau@cetic.be
   * */
 case class ShiftMove(startIndice:Long,length:Long,offset:Long,variables:Array[CBLSIntVar], override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter,neighborhoodName){

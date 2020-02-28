@@ -177,6 +177,34 @@ case class RemoveFromSetMove(s:CBLSSetVar,v:Long, override val objAfter:Long, ov
 
   override def touchedVariables: List[Variable] = List(s)
 }
+/**
+  * This neighborhood always returns the same move, given in the constructor
+  * it checks the objctive function before returning it, and adds the objective funtion value to the move
+  *
+  * this one canot be chained because there is no UNDO operation defined
+  *
+  * @param m the move to return when the neighborhood is queried for a move
+  */
+case class ConstantMoveNeighborhood(m: Move,
+                                    skipAcceptanceCriterion:Boolean = false,
+                                    neighborhoodName:String = null)
+  extends Neighborhood with SupportForAndThenChaining[Move] {
+  override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+    if (skipAcceptanceCriterion) {
+      MoveFound(m)
+    } else {
+      val newObj: Long = m.evaluate(obj)
+      if (acceptanceCriterion(initialObj, newObj)) {
+        MoveFound(new OverrideObj(m, newObj))
+      } else {
+        NoMoveFound
+      }
+    }
+  }
+
+  override def instantiateCurrentMove(newObj: Long): Move =
+    new OverrideObj(m, newObj,neighborhoodName)
+}
 
 case class ConstantMovesNeighborhood[MoveType<:Move](ms:() => Iterable[Long => MoveType],
                                                      selectMoveBehavior:LoopBehavior = First(),
@@ -209,12 +237,12 @@ case class ConstantMovesNeighborhood[MoveType<:Move](ms:() => Iterable[Long => M
 }
 
 
-class MoveWithOtherObj(initMove:Move,objAfter:Long, neighborhoodName:String = null)
+class OverrideObj(initMove:Move, objAfter:Long, neighborhoodName:String = null)
   extends Move(objAfter = objAfter, neighborhoodName = if(neighborhoodName != null) neighborhoodName else initMove.neighborhoodName){
 
   override def commit(): Unit = initMove.commit()
-
-  override def toString: String = initMove.toString
+  
+  override def toString: String = "OverrideObj(initMove:"+ initMove.toString + objToString + ")"
 }
 
 

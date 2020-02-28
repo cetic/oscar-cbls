@@ -3,96 +3,77 @@ package oscar.cbls.business.routing.invariants.timeWindow
 import oscar.cbls._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.business.routing.invariants.group._
+import oscar.cbls.business.routing.invariants.global._
 import oscar.cbls.core._
 import oscar.cbls.core.computation.{CBLSIntVar, ChangingSeqValue}
 
 object TimeWindowConstraintWithLogReduction {
 
   /**
-    * This method instantiate a TimeWindow constraint given the following input
-    * @param routes The route of the problem (ChangingSeqValue created in the VRP class)
-    * @param n The number of nodes of the problem (including vehicle)
-    * @param v The number of vehicles of the problem
-    * @param earliestArrivalTime An array representing the earliest arrival time at a node (or vehicle's depot)
-    * @param latestLeavingTime An array representing the latest leave time at a node (or vehicle's depot)
-    * @param travelTimeMatrix A matrix representing the different travel time between the nodes
-    * @param violations An array of CBLSIntVar maintaining the violation of each vehicle
-    * @return a time window constraint
-    */
-  def apply(routes: ChangingSeqValue,
-            n: Int,
-            v: Int,
-            earliestArrivalTime: Array[Long],
-            latestLeavingTime: Array[Long],
+   * This method instantiate a TimeWindow constraint given the following input
+   * @param gc The GlobalConstraint to which this invariant is linked
+   * @param n The number of nodes of the problem (including vehicle)
+   * @param v The number of vehicles of the problem
+   * @param singleNodeTransferFunctions An array containing the single TransferFunction of each node
+   * @param travelTimeMatrix A matrix representing the different travel time between the nodes
+   * @param violations An array of CBLSIntVar maintaining the violation of each vehicle
+   * @return a time window constraint
+   */
+  def apply(gc: GlobalConstraintCore,
+            n: Long,
+            v: Long,
+            singleNodeTransferFunctions: Array[TransferFunction],
             travelTimeMatrix: Array[Array[Long]],
             violations: Array[CBLSIntVar]): TimeWindowConstraintWithLogReduction ={
 
-    new TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue, n, v,
-      earliestArrivalTime,
-      latestLeavingTime,
-      earliestArrivalTime,
-      latestLeavingTime,
-      travelTimeMatrix, violations)
-  }
-
-  //TODO: generate the violation variable in the apply method
-  //TODO: avoid duplicate apply like that; just use earlyLine,duration,deadline for all tasks.
-  //TODO: violation variables should be a property of the invariant, defined wit ha val, so it can be accesed by the user.
-  //TODO: the apply should return the invariant itself.
-
-  /**
-    * This method instantiate a TimeWindow constraint given the following input.
-    * @param routes The route of the problem (ChangingSeqValue created in the VRP class)
-    * @param n The number of nodes of the problem (including vehicle)
-    * @param v The number of vehicles of the problem
-    * @param earliestArrivalTime An array (size n) representing the earliest arrival time at a node (or vehicle's depot)
-    * @param latestLeavingTime An array (size n) representing the latest leaving time at a node (or vehicle's depot)
-    * @param taskDurations An array (size n) representing the task duration at a node (or vehicle's depot)
-    * @param travelTimeMatrix A matrix representing the different travel time between the nodes
-    * @param violations An array of CBLSIntVar maintaining the violation of each vehicle
-    * @return a time window constraint
-    */
-  def apply(routes: ChangingSeqValue,
-            n: Int,
-            v: Int,
-            earliestArrivalTime: Array[Long],
-            latestLeavingTime: Array[Long],
-            taskDurations: Array[Long],
-            travelTimeMatrix: Array[Array[Long]],
-            violations: Array[CBLSIntVar]): TimeWindowConstraintWithLogReduction ={
-
-    new TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue, n, v,
-      earliestArrivalTime,
-      (latestLeavingTime, taskDurations).zipped.map(_ - _),
-      (earliestArrivalTime, taskDurations).zipped.map(_ + _),
-      latestLeavingTime,
+    new TimeWindowConstraintWithLogReduction(gc, n, v,
+      singleNodeTransferFunctions,
       travelTimeMatrix, violations)
   }
 }
 
-class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
-                                           n: Int,
-                                           v: Int,
-                                           earliestArrivalTime: Array[Long],
-                                           latestArrivalTime: Array[Long],
-                                           earliestLeavingTime: Array[Long],
-                                           latestLeavingTime: Array[Long],
-                                           travelTimeMatrix: Array[Array[Long]],
-                                           violations: Array[CBLSIntVar]) extends LogReducedGlobalConstraintWithExtremes [TransferFunction, Boolean](routes,v){
+/**
+ * This class represent a time window constraint with a logarithmic reduction
+ *       --> reducing the preComputation duration but increasing the value computation duration .
+ * Given parameters, it maintains the violation value of each vehicle (in violations var)
+ * @param gc The GlobalConstraint to which this invariant is linked
+ * @param n The number of nodes of the problem (including vehicle)
+ * @param v The number of vehicles of the problem
+ * @param singleNodeTransferFunctions An array containing the single TransferFunction of each node
+ * @param travelTimeMatrix A matrix representing the different travel time between the nodes
+ * @param violations An array of CBLSIntVar maintaining the violation of each vehicle
+ */
+class TimeWindowConstraintWithLogReduction (gc: GlobalConstraintCore,
+                            n: Long,
+                            v: Long,
+                            singleNodeTransferFunctions: Array[TransferFunction],
+                            travelTimeMatrix: Array[Array[Long]],
+                            val violations: Array[CBLSIntVar]) extends LogReducedGlobalConstraintWithExtremes [TwoWaysTransferFunction,Boolean](gc,n,v){
 
-  private val transferFunctionOfNode: Array[TransferFunction] = Array.tabulate(n)(
+  var assignTime = 0L
+  var assignCount = 0
+
+  //val preComputedValues: Array[Array[TransferFunction]] = Array.fill(n)(Array.fill(n)(EmptyTransferFunction))
+
+  // Initialize the vehicles value, the precomputation value and link these invariant to the GlobalConstraintCore
+  gc.register(this)
+  for(outputVariable <- violations)outputVariable.setDefiningInvariant(gc)
+
+  private val twoWaysTransferFunctionOfNode: Array[TwoWaysTransferFunction] = Array.tabulate(n)(
     node =>
-      DefinedTransferFunction(
-        earliestArrivalTime(node),
-        latestArrivalTime(node),
-        earliestLeavingTime(node),node,node))
+      TwoWaysTransferFunction(singleNodeTransferFunctions(node), singleNodeTransferFunctions(node)))
 
-  private def computeLeavingTime(previousLeavingTime: Long, fromNode: Long, nextTransferFunction: TransferFunction): Long ={
-    if(nextTransferFunction.isEmpty) return -1L
-    val toNode = nextTransferFunction.from
+  private def computeLeavingTime(previousLeavingTime: Long, fromNode: Long, nextTransferFunction: TwoWaysTransferFunction, flipped: Boolean): Long ={
+    if(nextTransferFunction.isEmpty(flipped)) return -1L
+    val toNode = nextTransferFunction.from(flipped)
     val travelDuration = travelTimeMatrix(fromNode)(toNode)
-    nextTransferFunction(previousLeavingTime + travelDuration)
+    nextTransferFunction(previousLeavingTime + travelDuration, flipped)
+  }
+
+  private def composeTwoWaysFunctions(f1: TwoWaysTransferFunction, f2: TwoWaysTransferFunction, nonFlippedM: Long, flippedM: Long): TwoWaysTransferFunction ={
+    val nonFlippedTF = if(nonFlippedM == -1) EmptyTransferFunction else composeFunction(f1.nonFlippedTF, f2.nonFlippedTF, nonFlippedM)
+    val flippedTF = if(flippedM == -1) EmptyTransferFunction else composeFunction(f2.flippedTF, f1.flippedTF, flippedM)
+    TwoWaysTransferFunction(nonFlippedTF, flippedTF)
   }
 
   /**
@@ -158,16 +139,16 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
     * @param secondStep the type T associated with stepping over a sequence of nodes (which can be minial two)
     * @return the type T associated wit hthe first step followed by the second step
     */
-  override def composeSteps(firstStep: TransferFunction, secondStep: TransferFunction): TransferFunction = {
-    val firstStepEndsAt = firstStep.to
-    val secondStepStartsAt = secondStep.from
-    if(firstStepEndsAt == -1L || secondStepStartsAt == -1L) EmptyTransferFunction
-    else if(firstStepEndsAt == secondStepStartsAt)
-      DefinedTransferFunction(firstStep.ea,firstStep.la,secondStep.el,firstStep.from,secondStep.to)
-    else {
-      val travelDuration = travelTimeMatrix(firstStepEndsAt)(secondStepStartsAt)
-      composeFunction(firstStep, secondStep, travelDuration)
+  override def composeSteps(firstStep: TwoWaysTransferFunction, secondStep: TwoWaysTransferFunction): TwoWaysTransferFunction = {
+
+    def travelTimeBetweenTF(flipped: Boolean): Long ={
+      val firstStepEndsAt = if(!flipped)firstStep.to(flipped) else secondStep.to(flipped)
+      val secondStepStartsAt = if(!flipped)secondStep.from(flipped) else firstStep.from(flipped)
+      if(firstStepEndsAt == -1 || secondStepStartsAt == -1) return -1
+      travelTimeMatrix(firstStepEndsAt)(secondStepStartsAt)
     }
+
+    composeTwoWaysFunctions(firstStep, secondStep, travelTimeBetweenTF(false), travelTimeBetweenTF(true))
   }
 
   /**
@@ -178,34 +159,34 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
     *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
     * @return the value associated with the vehicle. This value should only be computed based on the provided segments
     */
-  override def computeVehicleValueComposed(vehicle: Long, segments: QList[LogReducedSegment[TransferFunction]]): Boolean = {
+  override def computeVehicleValueComposed(vehicle: Long, segments: QList[LogReducedSegment[TwoWaysTransferFunction]]): Boolean = {
 
-    def composeTransferFunctions(transferFunctions: QList[TransferFunction], previousLeavingTime: Long, lastNode: Long): Long ={
+    def composeTransferFunctions(transferFunctions: QList[TwoWaysTransferFunction], previousLeavingTime: Long, lastNode: Long, flipped: Boolean): Long ={
       val currentTransferFunction = transferFunctions.head
-      if(currentTransferFunction.isEmpty) -1L
+      if(currentTransferFunction.isEmpty(flipped)) -1L
       else {
-        val newLeavingTime = computeLeavingTime(previousLeavingTime, lastNode, currentTransferFunction)
+        val newLeavingTime = computeLeavingTime(previousLeavingTime, lastNode, currentTransferFunction, flipped)
         if (transferFunctions.tail == null || newLeavingTime < 0L)
           newLeavingTime
         else
-          composeTransferFunctions(transferFunctions.tail, newLeavingTime, currentTransferFunction.to)
+          composeTransferFunctions(transferFunctions.tail, newLeavingTime, currentTransferFunction.to(flipped), flipped)
       }
     }
 
-    def composeLogReduceSegments(logReducedSegments: QList[LogReducedSegment[TransferFunction]],
+    def composeLogReduceSegments(logReducedSegments: QList[LogReducedSegment[TwoWaysTransferFunction]],
                                  lastNode: Long = vehicle,
                                  previousLeavingTime: Long = 0L): Long ={
       if(logReducedSegments == null) previousLeavingTime
       else {
         val (newLastNode, newLeavingTime): (Long, Long) = logReducedSegments.head match {
           case s@LogReducedPreComputedSubSequence(_, endNode, steps) =>
-            (endNode, composeTransferFunctions(steps, previousLeavingTime, lastNode))
+            (endNode, composeTransferFunctions(steps, previousLeavingTime, lastNode, false))
 
           case s@LogReducedFlippedPreComputedSubSequence(_, endNode, steps) =>
-            (endNode, composeTransferFunctions(steps, previousLeavingTime, lastNode))
+            (endNode, composeTransferFunctions(steps.reverse, previousLeavingTime, lastNode, true))
 
           case s@LogReducedNewNode(node, transferFunctionOfNode) =>
-            (node, computeLeavingTime(previousLeavingTime, lastNode, transferFunctionOfNode))
+            (node, computeLeavingTime(previousLeavingTime, lastNode, transferFunctionOfNode, false))
         }
         if (newLeavingTime >= 0L)
           composeLogReduceSegments(logReducedSegments.tail, newLastNode, newLeavingTime)
@@ -222,7 +203,6 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
     * and is able to restore old value without the need to re-compute them, so it only will call this assignVehicleValue method
     *
     * @param vehicle the vehicle number
-    * @param value   the value of the vehicle
     */
   override def assignVehicleValue(vehicle: Long, value: Boolean): Unit = {
     if(value) violations(vehicle) := 1L else violations(vehicle) := 0L
@@ -236,8 +216,8 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
     * @return the value of the constraint for the given vehicle
     */
   override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence): Boolean = {
-    var arrivalTimeAtFromNode = earliestArrivalTime(vehicle)
-    var leaveTimeAtFromNode = earliestLeavingTime(vehicle)
+    var arrivalTimeAtFromNode = singleNodeTransferFunctions(vehicle).ea
+    var leaveTimeAtFromNode = singleNodeTransferFunctions(vehicle).el
     var fromNode = vehicle
     val explorerAtVehicleStart = routes.explorerAtAnyOccurrence(vehicle).head
     var explorerAtCurrentNode = explorerAtVehicleStart.next
@@ -247,10 +227,10 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
       val toNode = explorerAtCurrentNode.get.value
       val travelDuration = travelTimeMatrix(fromNode)(toNode)
       val arrivalTimeAtToNode = leaveTimeAtFromNode + travelDuration
-      val leaveTimeAtToNode = Math.max(earliestArrivalTime(toNode), arrivalTimeAtToNode) + earliestLeavingTime(toNode) - earliestArrivalTime(toNode)
+      val leaveTimeAtToNode = Math.max(singleNodeTransferFunctions(toNode).ea, arrivalTimeAtToNode) + singleNodeTransferFunctions(toNode).el - singleNodeTransferFunctions(toNode).ea
 
       // Check violation
-      if(leaveTimeAtToNode > latestLeavingTime(toNode))
+      if(leaveTimeAtToNode > singleNodeTransferFunctions(toNode).latestLeavingTime)
         violationFound = true
 
       // Update values
@@ -263,17 +243,15 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
     // Check travel back to depot
     val travelBackToDepot = travelTimeMatrix(fromNode)(vehicle)
     val arrivalTimeAtDepot = leaveTimeAtFromNode + travelBackToDepot
-    violationFound || arrivalTimeAtDepot >= latestLeavingTime(vehicle)
+    violationFound || arrivalTimeAtDepot > singleNodeTransferFunctions(vehicle).latestLeavingTime
   }
-
-  override def outputVariables: Iterable[Variable] = violations
 
   /**
     * this method delivers the value of the node
     *
     * @return the type T associated with the node "node"
     */
-  override def nodeValue(node: Long): TransferFunction = transferFunctionOfNode(node)
+  override def nodeValue(node: Long): TwoWaysTransferFunction = twoWaysTransferFunctionOfNode(node)
 
   /**
     * this one is similar to the nodeValue except that it only is applied on vehicle,
@@ -282,7 +260,7 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
     * @param vehicle
     * @return
     */
-  override def endNodeValue(vehicle: Long): TransferFunction = transferFunctionOfNode(vehicle)
+  override def endNodeValue(vehicle: Long): TwoWaysTransferFunction = twoWaysTransferFunctionOfNode(vehicle)
 }
 
 

@@ -1,0 +1,34 @@
+##Command to produce the output: "neato -Tpng thisfile > thisfile.png"
+digraph VLSNGraph {
+	"4L" [shape=circle,style=filled,fillcolor=green,color=blue, label = "vehicle:4L"] ;
+	"5L" [shape=circle,style=filled,fillcolor=green,color=blue, label = "vehicle:5L"] ;
+	"7L" [shape=circle,style=filled,fillcolor=green,color=blue, label = "vehicle:7L"] ;
+	"10L" [shape=circle,style=filled,fillcolor=gold,color=blue, label = trashNode] ;
+	"13L" [shape=circle,style=filled,fillcolor=aquamarine,color=blue, label = "node:68L\nvehicle:0L"] ;
+	"43L" [shape=circle,style=filled,fillcolor=aquamarine,color=blue, label = "node:120L\nvehicle:2L"] ;
+	"54L" [shape=circle,style=filled,fillcolor=aquamarine,color=blue, label = "node:65L\nvehicle:3L"] ;
+	"80L" [shape=circle,style=filled,fillcolor=aquamarine,color=blue, label = "node:118L\nvehicle:6L"] ;
+	"109L" [shape=circle,style=filled,fillcolor=aquamarine,color=blue, label = "node:74L\nvehicle:8L"] ;
+	"122L" [shape=circle,style=filled,fillcolor=aquamarine,color=blue, label = "node:66L\nvehicle:9L"] ;
+	"132L" [shape=circle,style=filled,fillcolor=crimson,color=blue, label = "node:114L"] ;
+	"136L" [shape=circle,style=filled,fillcolor=crimson,color=blue, label = "node:133L"] ;
+	"138L" [shape=circle,style=filled,fillcolor=crimson,color=blue, label = "node:137L"] ;
+	"Edge52" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-9891L\nInsertPoint(point:137L after 43L pi)" color=blue] ; 138L -> "Edge52"[color=blue];"Edge52" -> 5L[color=blue];
+	"Edge161" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-9936L\nInsertPoint(point:133L after 47L pi)" color=blue] ; 136L -> "Edge161"[color=blue];"Edge161" -> 43L[color=blue];
+	"Edge165" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-9993L\nInsertPoint(point:114L after 92L pi)" color=blue] ; 132L -> "Edge165"[color=blue];"Edge165" -> 7L[color=blue];
+	"Edge404" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-51L\nOnePointMove(moved 66L after 41L pi)" color=blue] ; 122L -> "Edge404"[color=blue];"Edge404" -> 13L[color=blue];
+	"Edge836" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-14L\nOnePointMove(moved 120L after 117L pi)" color=blue] ; 43L -> "Edge836"[color=blue];"Edge836" -> 80L[color=blue];
+	"Edge892" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-32L\nOnePointMove(moved 68L after 75L pi)" color=blue] ; 13L -> "Edge892"[color=blue];"Edge892" -> 122L[color=blue];
+	"Edge1213" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:26L\nOnePointMove(moved 74L after 3L pi)" color=blue] ; 109L -> "Edge1213"[color=blue];"Edge1213" -> 54L[color=blue];
+	"Edge1294" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:-34L\nOnePointMove(moved 65L after 124L pi)" color=blue] ; 54L -> "Edge1294"[color=blue];"Edge1294" -> 109L[color=blue];
+	"Edge1367" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:10L\nOnePointMove(moved 118L after 67L pi)" color=blue] ; 80L -> "Edge1367"[color=blue];"Edge1367" -> 4L[color=blue];
+	"Edge1591" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:0L\nnull" color=blue] ; 4L -> "Edge1591"[color=blue];"Edge1591" -> 10L[color=blue];
+	"Edge1592" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:0L\nnull" color=blue] ; 5L -> "Edge1592"[color=blue];"Edge1592" -> 10L[color=blue];
+	"Edge1594" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:0L\nnull" color=blue] ; 7L -> "Edge1594"[color=blue];"Edge1594" -> 10L[color=blue];
+	"Edge1602" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:0L\nnull" color=blue] ; 10L -> "Edge1602"[color=blue];"Edge1602" -> 132L[color=blue];
+	"Edge1606" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:0L\nnull" color=blue] ; 10L -> "Edge1606"[color=blue];"Edge1606" -> 136L[color=blue];
+	"Edge1608" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:0L\nnull" color=blue] ; 10L -> "Edge1608"[color=blue];"Edge1608" -> 138L[color=blue];
+	legend[shape=rectangle,style=filled,fillcolor=pink,color=black,label = "VLSNGraph(nbNodes:141L nbEdges:1611L)"] ;
+	overlap=false
+	fontsize=12L;
+}

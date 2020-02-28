@@ -63,10 +63,8 @@ package object routing
 
   type PrimitiveTravelTimeFunction = oscar.cbls.business.routing.model.PrimitiveTravelTimeFunction
 
-  val CapacityHelper = oscar.cbls.business.routing.model.helpers.CapacityHelper
   val ChainsHelper = oscar.cbls.business.routing.model.helpers.ChainsHelper
   val DistanceHelper = oscar.cbls.business.routing.model.helpers.DistanceHelper
-  val TimeWindowHelper = oscar.cbls.business.routing.model.helpers.TimeWindowHelper
 
 }
 

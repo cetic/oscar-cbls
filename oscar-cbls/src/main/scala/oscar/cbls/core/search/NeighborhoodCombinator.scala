@@ -38,6 +38,6 @@ abstract class NeighborhoodCombinator(a: Neighborhood*) extends Neighborhood {
 
   override def toString: String = this.getClass.getSimpleName + "(" + a.mkString(",") + ")"
 
-  override def collectProfilingStatistics: List[String] = a.flatMap(_.collectProfilingStatistics).toList
+  override def collectProfilingStatistics: List[Array[String]] = a.flatMap(_.collectProfilingStatistics).toList
 }
 

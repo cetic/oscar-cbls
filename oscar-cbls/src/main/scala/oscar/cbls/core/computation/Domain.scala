@@ -32,7 +32,7 @@ object Domain{
   def empty:Domain = Domain(0L to 0L)
 
   implicit def rangeToDomain(r:Range):Domain = {
-    if (r.isEmpty) DomainRange(0,0) //we put something or it crashes.
+    if (r.isEmpty) Domain(0, 0) //we put something or it crashes.
     else DomainRange(r.start,r.last)
   }
 

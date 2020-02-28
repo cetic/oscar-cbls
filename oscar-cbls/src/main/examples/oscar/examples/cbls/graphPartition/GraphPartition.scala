@@ -9,7 +9,7 @@ import scala.util.Random
 
 object GraphPartition extends CBLSModel with App {
 
-  val nbNodes:Int = 5000
+  val nbNodes:Int = 50000
   val nbEdges:Int = nbNodes * 3 // 500000 //nbNodes * nbNodes / 1000
 
   //try with nbNodes = 50000 nbEdges = nbNodes*3
@@ -29,8 +29,11 @@ object GraphPartition extends CBLSModel with App {
     })
     (allEdges,adjacencyLists)
   }
+  println("generating random graph")
 
   val (edges,adjacencyLists) = generateRandomEdges(nbNodes,nbEdges)
+
+  println("generating model")
 
   val degree = adjacencyLists.map(_.length)
 
@@ -55,7 +58,9 @@ object GraphPartition extends CBLSModel with App {
 
   //TODO: use GeneralizedLocalSearch here.
 
+  println("closing")
   c.close()
+  println("closed")
 
   val obj = Objective(c.violation)
 
@@ -105,7 +110,7 @@ object GraphPartition extends CBLSModel with App {
           searchZone2 = () => (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).newValue != itsPartition),
           hotRestart = true,
           symmetryCanBeBrokenOnIndices = false,
-          name = "swap1ViolAdj")),
+          name = "swap1ViolAdj"))
 
         //profile(swapsNeighborhood(nodeToPartition,
         //  searchZone1 = swappableNodes,
@@ -120,7 +125,8 @@ object GraphPartition extends CBLSModel with App {
         //  searchZone2 = (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).value != itsPartition),
         //  name = "swapAdjacent"))
       ),refresh = nbNodes/10)
-      onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/100, name = "randomize" + nbNodes/100), 3, obj))
+      onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/100, name = "randomize" + nbNodes/100), 3, obj)
+    showObjectiveFunction(obj))
   //exhaust profile(swapsNeighborhood(nodeToPartition, //this one is the most complete of swaps, but highly inefficient compared tpo the others,and I think that it does not bring in more connexity than others (althrough I am not so suer...)
   //  symmetryCanBeBrokenOnIndices = true,
   //  searchZone2 = () => {val v = violatedNodes.value; (_,_) => v}, //we should filter on nodes with a violation higher than the gain on swapping the violation of the first node

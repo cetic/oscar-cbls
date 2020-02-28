@@ -50,7 +50,8 @@ object ForwardCumulativeInteger4DimensionOnVehicle {
             default4ForUnroutedNodes:Long,
             minContent:Long = 0L,
             maxContent:Long = Long.MaxValue,
-            contentName:String = "content"):(Array[CBLSIntVar],Array[CBLSIntVar],Array[CBLSIntVar],Array[CBLSIntVar],Array[CBLSIntVar]) ={
+            contentName:String = "content"):(Array[CBLSIntVar],Array[CBLSIntVar],Array[CBLSIntVar],Array[CBLSIntVar],
+    Array[CBLSIntVar],Array[CBLSIntVar],Array[CBLSIntVar],Array[CBLSIntVar],Array[CBLSIntVar]) ={
 
     val content1AtNode = Array.tabulate[CBLSIntVar](n)((node: Int) => CBLSIntVar(routes.model, default1ForUnroutedNodes, Domain.coupleToDomain(minContent,maxContent).union(default1ForUnroutedNodes), contentName + "1L at node "+node))
     val content2AtNode = Array.tabulate[CBLSIntVar](n)((node: Int) => CBLSIntVar(routes.model, default2ForUnroutedNodes, Domain.coupleToDomain(minContent,maxContent).union(default2ForUnroutedNodes), contentName + "2L at node "+node))
@@ -70,7 +71,8 @@ object ForwardCumulativeInteger4DimensionOnVehicle {
       content1AtEnd,content2AtEnd,content3AtEnd,content4AtEnd,
       lastPointOfVehicle,
       default1ForUnroutedNodes,default2ForUnroutedNodes,default3ForUnroutedNodes,default4ForUnroutedNodes)
-    (content1AtNode,content2AtNode,content1AtEnd,content2AtEnd,lastPointOfVehicle)
+    (content1AtNode,content2AtNode,content3AtNode,content4AtNode,
+      content1AtEnd,content2AtEnd,content3AtEnd,content4AtEnd,lastPointOfVehicle)
   }
 }
 

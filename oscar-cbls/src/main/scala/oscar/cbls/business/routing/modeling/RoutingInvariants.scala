@@ -43,9 +43,7 @@ trait RoutingInvariants {
       v,
       perVehicle,
       distanceMatrix,
-      distanceIsSymmetric,
-      precomputeFW,
-      precomputeBW)
+      distanceIsSymmetric)
 
   /**
    * maintains the set of vehicle that have at least one point to visit (beyond their start point)

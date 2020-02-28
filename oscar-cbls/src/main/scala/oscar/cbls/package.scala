@@ -224,7 +224,7 @@ package object cbls extends ModelingAPI{
   }
 
   implicit class IntArrayOps(intArray: Array[Long]) {
-    def element(index:CBLSIntVar) = ConstantIntElement(index, intArray)
+    def element(index:IntValue) = ConstantIntElement(index, intArray)
 
     def elements(index:SetValue) = Elements(index, intArray.map(CBLSIntConst.apply))
   }
@@ -269,10 +269,10 @@ package object cbls extends ModelingAPI{
     */
   @inline final def warning(requirement: Boolean, message: => Any) {
     if (!requirement)
-      System.err.println("WARNING: " + message)
+      println(Console.RED + "WARNING: " + message + Console.RESET)
   }
 
   @inline final def warning(message: => Any) {
-      System.err.println("WARNING: " + message)
+      println(Console.RED + "WARNING: " + message + Console.RESET)
   }
 }

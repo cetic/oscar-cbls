@@ -2,10 +2,10 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
-import oscar.cbls.business.routing.invariants.timeWindow.TimeWindowConstraintWithLogReduction
-import oscar.cbls.business.routing.model.extensions.TimeWindows
+import oscar.cbls.business.routing.invariants.global.GlobalConstraintCore
+import oscar.cbls.business.routing.invariants.timeWindow.{DefinedTransferFunction, NaiveTimeWindowConstraint, TimeWindowConstraintWithLogReduction, TransferFunction}
+import oscar.cbls.business.routing.visu.RoutingMapTypes
 import oscar.cbls.core.search.First
-import oscar.cbls.visual.routing.RoutingMapTypes
 
 object VRPTWWithGeoCoords extends App{
   val n = 1000
@@ -43,55 +43,40 @@ class VRPTWWithGeoCoords (n: Int, v: Int, minLat: Double, maxLat: Double, minLon
     })})
 
   // Generating timeMatrix and a time window for each node of the problem
-  val timeMatrix = RoutingMatrixGenerator.generateLinearTravelTimeFunction(n,symmetricDistanceMatrix)
+  val timeMatrix = symmetricDistanceMatrix
   //Strong time windows
-  val (strongEarlylines, strongDeadlines, taskDurations, maxWaitingDuration) =
-    RoutingMatrixGenerator.generateFeasibleTimeWindows(n,v,timeMatrix)
-  val strongTimeWindows = TimeWindows(earliestArrivalTimes = Some(strongEarlylines), latestLeavingTimes = Some(strongDeadlines), taskDurations = taskDurations)
+  val strongSingleNodeTransferFunctions = RoutingMatrixGenerator.generateFeasibleTransferFunctions(n,v,timeMatrix)
+
   //Weak time windows
-  val weakEarlylines = Array.tabulate(n)(index => if(index < v) strongEarlylines(index) else strongEarlylines(index) + ((strongDeadlines(index)-strongEarlylines(index))/5))
-  val weakDeadlines = Array.tabulate(n)(index => if(index < v) strongDeadlines(index) else strongDeadlines(index) - ((strongDeadlines(index)-strongEarlylines(index))/5))
-  val weakTimeWindows = TimeWindows(earliestArrivalTimes = Some(strongEarlylines), latestLeavingTimes = Some(weakDeadlines), taskDurations = taskDurations)
+  val weakSingleNodeTransferFunctions = Array.tabulate(n)(node =>
+    if(node < v) strongSingleNodeTransferFunctions(node)
+    else {
+      val delta = (strongSingleNodeTransferFunctions(node).la - strongSingleNodeTransferFunctions(node).ea)/5
+      DefinedTransferFunction(strongSingleNodeTransferFunctions(node).ea + delta,
+        strongSingleNodeTransferFunctions(node).la - delta,
+        strongSingleNodeTransferFunctions(node).el + delta, node, node)
+    })
+
 
   // An invariant that store the total distance travelled by the cars
   val totalDistance = sum(routeLength(myVRP.routes, n, v, false, symmetricDistanceMatrix, true))
   // The STRONG timeWindow constraint (vehicleTimeWindowViolations contains the violation of each vehicle)
   val vehicleTimeWindowViolations = Array.fill(v)(new CBLSIntVar(store,0L,Domain(0L,n)))
+  val gc = GlobalConstraintCore(myVRP.routes, v)
   val timeWindowStrongConstraint =
     TimeWindowConstraintWithLogReduction(
-      myVRP.routes,
+      gc,
       n,v,
-      strongTimeWindows.earliestArrivalTimes,
-      strongTimeWindows.latestLeavingTimes,
-      strongTimeWindows.taskDurations,
-      Array.tabulate(n)(from => Array.tabulate(n)(to => timeMatrix.getTravelDuration(from,0L,to))),
+      strongSingleNodeTransferFunctions,
+      timeMatrix,
       vehicleTimeWindowViolations
     )
 
   // The WEAK timeWindow constraint (vehicle can violate the timeWindow constraint but we must minimize this value)
   // If the strong earlyline == weak earlyline ==> no need to define weak earlyline
   // If the strong deadline == weak deadline ==> no need to define weak deadline
-  val timeWindowWeakConstraint = forwardCumulativeIntegerIntegerDimensionOnVehicle(
-    myVRP.routes,n,v,
-    (fromNode,toNode,leaveTimeAtFromNode,totalExcessDurationAtFromNode)=> {
-      // Still need to compute the arrival time and leave time based on STRONG time windows
-      val arrivalTimeAtToNode = leaveTimeAtFromNode + timeMatrix.getTravelDuration(fromNode,0,toNode)
-      val leaveTimeAtToNode =
-        if(toNode < v) 0
-        else Math.max(arrivalTimeAtToNode,strongEarlylines(toNode)) + taskDurations(toNode)
-
-      val totalExcessDurationAtToNode = totalExcessDurationAtFromNode +
-        Math.max(0,leaveTimeAtToNode-weakDeadlines(toNode)) +           // If weakDeadline < leaveTimeAtTo < strongDeadline
-      Math.max(0, weakEarlylines(toNode)-arrivalTimeAtToNode)           // If strongEarlyline < arrivalTimeAtTo < weakEarlyline
-      (leaveTimeAtToNode,totalExcessDurationAtToNode)
-    },
-    Array.tabulate(v)(x => new CBLSIntConst(strongEarlylines(x)+taskDurations(x))),
-    Array.tabulate(v)(x => new CBLSIntConst(0)),
-    0,
-    0,
-    contentName = "Time excess at node"
-  )
-  val totalExcessTimeForWeakConstraint = sum(timeWindowWeakConstraint.content2AtEnd)
+  val timeWindowWeakConstraint = NaiveTimeWindowConstraint(myVRP.routes, n, v, weakSingleNodeTransferFunctions, timeMatrix)
+  val totalExcessTimeForWeakConstraint = timeWindowWeakConstraint.violation
 
   // A penalty given to all unrouted nodes to force the optimisation to route them
   val unroutedPenalty = 1000000
@@ -111,8 +96,8 @@ class VRPTWWithGeoCoords (n: Int, v: Int, minLat: Double, maxLat: Double, minLon
 
   ////////// Static Pruning (done once before starting the resolution) //////////
 
-  // Relevant predecessors definition for each node (here any node can be the precessor of another node)
-  val relevantPredecessorsOfNodes = TimeWindowHelper.relevantPredecessorsOfNodes(myVRP, weakTimeWindows, timeMatrix)
+  // Relevant predecessors definition for each node (here any node can be the predecessor of another node)
+  val relevantPredecessorsOfNodes = TransferFunction.relevantPredecessorsOfNodes(n,v,strongSingleNodeTransferFunctions,timeMatrix)
   // Sort them lazily by distance
   val closestRelevantNeighborsByDistance =
     Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistanceMatrix,relevantPredecessorsOfNodes)(_))

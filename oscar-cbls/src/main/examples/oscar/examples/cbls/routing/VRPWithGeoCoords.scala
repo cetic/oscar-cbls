@@ -2,8 +2,8 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
+import oscar.cbls.business.routing.visu.RoutingMapTypes
 import oscar.cbls.core.search.{Best, First}
-import oscar.cbls.visual.routing.RoutingMapTypes
 
 object VRPWithGeoCoords extends App{
   val n = 1000
@@ -14,7 +14,7 @@ object VRPWithGeoCoords extends App{
   val minLong = 3.440849
   val maxLong = 5.452595
 
-  new VRPWithWeightedNodes(n,v,minLat,maxLat,minLong,maxLong)
+  new VRPWithGeoCoords(n,v,minLat,maxLat,minLong,maxLong)
 }
 
 /**

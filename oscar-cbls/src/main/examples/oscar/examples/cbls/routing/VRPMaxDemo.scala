@@ -17,9 +17,9 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
+import oscar.cbls.business.routing.visu.RoutingMapTypes
 import oscar.cbls.core.search.{Best, First}
 import oscar.cbls.util.StopWatch
-import oscar.cbls.visual.routing.RoutingMapTypes
 
 //50.404631, 4.452595
 //50.415162, 4.440849
@@ -70,7 +70,7 @@ class VRPMaxDemo(n:Long, v:Long, maxPivotPerValuePercent:Long, verbose:Long, dis
   val model = new Store()
 
   val myVRP = new VRP(model,n,v)
-  val routeLengthPerVehicle = routeLength(myVRP.routes,n,v,perVehicle = true,symmetricDistanceMatrix,true,true,false)
+  val routeLengthPerVehicle = routeLength(myVRP.routes,n,v,perVehicle = true,symmetricDistanceMatrix,true)
   val totalRouteLength = sum(routeLengthPerVehicle)
   val nodesPerVehicle = nodesOfVehicle(myVRP.routes,v)
 

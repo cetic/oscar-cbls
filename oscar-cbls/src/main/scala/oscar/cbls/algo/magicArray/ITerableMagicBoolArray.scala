@@ -98,4 +98,20 @@ class IterableMagicBoolArray(override val length:Int,initVal:Boolean = false)
       }
     }
   }
+
+  override def indicesAtTrueAsQList: QList[Int] = {
+    if(overApproximationIsComplete){
+      if(anyIndividualSetToFalse){
+        super.indicesAtTrueAsQList
+      }else{
+        QList.nonReversedBuildFromIterable(indices)
+      }
+    }else{
+      if(anyIndividualSetToFalse && positionsAtTrueOverApproximated != null){
+        positionsAtTrueOverApproximated.qFilter(this(_))
+      }else{
+        positionsAtTrueOverApproximated
+      }
+    }
+  }
 }

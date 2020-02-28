@@ -278,7 +278,6 @@ trait Objective {
     newObj
   }
 
-
   /**returns the value of the objective variable if i is inserted to a
    * this process is efficiently performed as the objective Variable is registered for partial propagation
    * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
@@ -346,3 +345,4 @@ class LoggingObjective(baseObjective:Objective) extends Objective{
     toReturn
   }
 }
+
