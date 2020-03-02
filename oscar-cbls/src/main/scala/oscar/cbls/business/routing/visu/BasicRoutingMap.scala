@@ -35,7 +35,7 @@ import oscar.visual.shapes.{VisualCircle, VisualLine, VisualShape}
 class BasicRoutingMap(vrp: VRP,
                       nodesPositions: Array[(scala.Double,scala.Double)],
                       colorValues: Array[Color],
-                      mapSize: Option[Long],
+                      mapSize: Option[Int],
                       refreshRate: Long,
                       toolTipInfo: Option[Int => Option[() => String]]) extends VisualDrawing(false,false) with StopWatch with RoutingMapTrait {
 
@@ -123,19 +123,19 @@ class BasicRoutingMap(vrp: VRP,
         var previousPoint = routes(r).head
         var positionCounter = 1
         for (p <- routes(r).drop(1)) {
-          lines(longToInt(previousPoint)).outerCol_$eq(color)
-          lines(longToInt(previousPoint)).dest = (points(p).getX, points(p).getY)
+          lines(previousPoint).outerCol_$eq(color)
+          lines(previousPoint).dest = (points(p).getX, points(p).getY)
           toolTips(p) = generateToolTipInfo(p,r,positionCounter)
           previousPoint = p
           positionCounter += 1
         }
-        lines(longToInt(previousPoint)).outerCol_$eq(color)
-        lines(longToInt(previousPoint)).dest = (points(r).getX, points(r).getY)
+        lines(previousPoint).outerCol_$eq(color)
+        lines(previousPoint).dest = (points(r).getX, points(r).getY)
       }
 
       for(unroutedNode <- vrp.unroutedNodes){
-        lines(longToInt(unroutedNode)).outerCol_$eq(Color.black)
-        lines(longToInt(unroutedNode)).dest = (points(unroutedNode).getX,points(unroutedNode).getY)
+        lines(unroutedNode).outerCol_$eq(Color.black)
+        lines(unroutedNode).dest = (points(unroutedNode).getX,points(unroutedNode).getY)
         toolTips(unroutedNode) = generateToolTipInfo(unroutedNode)
       }
 
