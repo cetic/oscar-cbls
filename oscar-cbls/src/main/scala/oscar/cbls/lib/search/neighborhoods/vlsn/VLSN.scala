@@ -309,11 +309,11 @@ class VLSN(v:Int,
       l
     })
 
-    var acc: List[Edge] = List.empty
+    var acc: List[List[Edge]] = List.empty
     var computedNewObj: Long = globalObjective.value
 
     def performEdgesAndKillCycles(edges:List[Edge]): Unit ={
-      acc = edges ::: acc
+      acc = edges :: acc
       val delta = edges.map(edge => edge.deltaObj).sum
       require(delta < 0L, "delta should be negative, got " + delta)
       computedNewObj += delta
@@ -344,8 +344,12 @@ class VLSN(v:Int,
           else {
             //We have exhausted the graph, and VLSN can be restarted
             if(printTakenMoves) {
-              val newMove = CompositeMove(acc.flatMap(edge => Option(edge.move)), computedNewObj, name)
-              println("   - ?  " + newMove.objAfter + "   " + newMove.toString)
+              println("   - ?  " + computedNewObj + "   " + name)
+              for(cycle <- acc){
+                val moves = cycle.flatMap(edge => Option(edge.move))
+                println("                size:" + moves.length + " [" + moves.mkString(",") + "]")
+
+              }
             }
 
             //println(vlsnGraph.toDOT(acc,false,true))
@@ -355,7 +359,7 @@ class VLSN(v:Int,
               case None => ;
               case Some(reOptimizeNeighborhoodGenerator) =>
                 //re-optimizing impacted vehicles (optional)
-                for(vehicle <- impactedVehicles(acc)){
+                for(vehicle <- impactedVehicles(acc.flatten)){
 
                   val oldObjVehicle = vehicleToObjective(vehicle).value
                   val oldGlobalObjective = globalObjective.value
@@ -384,7 +388,7 @@ class VLSN(v:Int,
             //now returns data for incremental restart of VLSN
             return Some(DataForVLSNRestart(
               vlsnGraph,
-              acc,
+              acc.flatten,
               vehicleToRoutedNodesToMove: SortedMap[Long, SortedSet[Long]],
               unroutedNodesToInsert: SortedSet[Long]))
           }

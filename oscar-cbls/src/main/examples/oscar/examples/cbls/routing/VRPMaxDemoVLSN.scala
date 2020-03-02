@@ -105,9 +105,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
   def result: String =
     myVRP.toString +
-      vehicles.map(vehicle => "workload_vehicle_" + vehicle + ":" + vehicletoWorkload(vehicle).value).mkString("\n") + "\n" +
-      "maxWorkloadPerVehicle:" + maxWorkloadPerVehicle + "\n" + "serviceTimePerNode:" + serviceTimePerNode + "\n" + obj
-
+      vehicles.map(vehicle => "workload_vehicle_" + vehicle + ": " + (100*vehicletoWorkload(vehicle).value.toDouble / maxWorkloadPerVehicle).ceil.toInt + " %" ).mkString("\n") + "\n" +obj
 
   val relevantPredecessorsOfNodes = (node:Long) => myVRP.nodes
   val closestRelevantNeighborsByDistance = Array.tabulate(n)((node:Int) => DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistanceMatrix,relevantPredecessorsOfNodes)(node))
@@ -256,12 +254,12 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
     refreshRate = displayDelay,
     title = "VRPMaxDemoVLSN(n=" + n + " v=" + v + ")")
 
-  val search = profile(bestSlopeFirst(List(
+  val search = (bestSlopeFirst(List(
     profile(routeUnroutedPoint),
     profile(onePtMove(10)),
     profile(customTwoOpt(20)),
     profile(customThreeOpt(20,true))
-  )) exhaust (profile(vlsn(80)) maxMoves 1 exhaustBack bestSlopeFirst(List(segExchange(40),customTwoOpt(30))))) .afterMove(graphical.drawRoutes())
+  )) exhaust (profile(vlsn(80)) maxMoves 1 exhaustBack bestSlopeFirst(List(segExchange(40),customTwoOpt(30))))) .afterMove(graphical.drawRoutes()).showObjectiveFunction(obj)
 
   search.verbose = 2
   //search.verboseWithExtraInfo(2, () => result)
