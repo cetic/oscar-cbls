@@ -126,13 +126,6 @@ abstract class Neighborhood(name:String = null) {
 
   override def toString: String = (if(name == null) this.getClass.getSimpleName else name)
 
-  //TODO: ajouter un niveau qui montre les exhausted
-  /**
-   * verbosity: 0L: none
-   * 1L: moves
-   * 2L: moves + failed searches
-   * 3L: moves + explored neighbors
-   */
   var _verbose: Int = 0
   def verbose: Int = _verbose
   def verbose_=(i: Int) {
@@ -213,8 +206,15 @@ abstract class Neighborhood(name:String = null) {
             moveSynthesis = SortedMap.empty[String,Int]
             nanoTimeAtNextSynthesis = System.nanoTime() + (1000*1000*100) //100ms
           }
-          if (printTakenMoves || printMoveSythesis) println("no more move found after " + toReturn + " it, " + ((System.nanoTime() - startSearchNanotime)/1000000).toInt + " ms ")
+          if (printTakenMoves || printMoveSythesis) {
 
+            val runDurationMs:Long = ((System.nanoTime() - startSearchNanotime) / 1000000).ceil.toLong
+            val hours = (runDurationMs / (1000.0 * 60 * 60)).floor.toInt
+            val minutes = (runDurationMs / (1000.0 * 60)).floor.toInt % 60
+            val seconds: Double = ((runDurationMs / 1000.0) % 60)
+
+            println("no more move found after " + toReturn + " it, duration:" +  hours + ":" + minutes + ":" + f"$seconds%1.3f" )
+          }
 
           return toReturn;
         case m: MoveFound =>
@@ -542,7 +542,7 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
     oldObj = initialObj
     this.acceptanceCriterion = acceptanceCriterion
     toReturnMove = null
-    bestNewObj = Long.MaxValue //initialObj //because we do not want "no move" to be considered as an actual move.
+    bestNewObj = initialObj //Long.MaxValue // //because we do not want "no move" to be considered as an actual move.
     this.obj = if (printExploredNeighbors) new LoggingObjective(obj) else obj
     if (printExploredNeighborhoods)
       println(neighborhoodNameToString + ": start exploration")

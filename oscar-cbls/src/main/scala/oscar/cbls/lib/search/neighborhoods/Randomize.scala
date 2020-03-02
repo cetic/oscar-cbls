@@ -97,7 +97,7 @@ case class RandomSwapNeighborhood(vars:Array[CBLSIntVar],
       touchedVars = touchedVars + i
       val j = selectFrom(vars.indices,(j:Int) => (searchZone == null || searchZone().contains(j)) && !touchedVars.contains(j))
       touchedVars = touchedVars + j
-      toReturn = SwapMove(vars(i), vars(j), i,j,Long.MaxValue) :: toReturn
+      toReturn = SwapMove(vars(i), vars(j), i,j,false, Long.MaxValue) :: toReturn
     }
 
     if(printExploredNeighborhoods) println(name + ": move found")

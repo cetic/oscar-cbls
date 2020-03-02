@@ -18,6 +18,7 @@ package oscar
 
 import oscar.cbls.algo.search.InstrumentedRange
 import oscar.cbls.core.computation._
+import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.lib.constraint.{EQ, GE, LE, NE}
 import oscar.cbls.lib.invariant.logic._
@@ -115,6 +116,8 @@ package object cbls extends ModelingAPI{
   type AbstractVariable= oscar.cbls.core.computation.AbstractVariable
 
   type CascadingObjective = oscar.cbls.core.objective.CascadingObjective
+
+  type PriorityObjective = oscar.cbls.core.objective.PriorityObjective
 
   type IntVarObjective = oscar.cbls.core.objective.IntVarObjective
 
@@ -242,7 +245,11 @@ package object cbls extends ModelingAPI{
   implicit def instrumentRange(r: NumericRange[Long]): InstrumentedRange = new InstrumentedRange(r)
 
   //this one has been added followingthe 32 to 64 bits port of oscar.cbls
-  implicit def longToInt(l:Long):Int = Math.toIntExact(l)
+  implicit def longToInt(value:Long):Int = {
+    val i = value.toInt
+    if (i != value) throw new ArithmeticException("integer overflow:" + value)
+    return i
+  }
   implicit def intToLong(i:Int):Long = i
 
   implicit def minMaxCoupleLongLongToDomain(minMaxCouple:((Long,Long))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)

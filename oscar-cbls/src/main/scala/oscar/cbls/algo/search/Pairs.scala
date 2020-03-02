@@ -97,4 +97,12 @@ object Pairs {
         zipIntoAllPossiblePairs(tl,t,filter,myAggregate(hl,t,List.empty) ::: toReturn)
     }
   }
+
+  def pairOfNexts[T](l:List[T]):List[(T,T)] = {
+    l match{
+      case a::b::t => (a,b) :: pairOfNexts((b::t))
+      case List(a) => Nil
+      case Nil => Nil
+    }
+  }
 }

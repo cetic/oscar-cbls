@@ -177,6 +177,7 @@ class SeqUpdateMove(val fromIncluded:Int,val toIncluded:Int,val after:Int, val f
 
   def isSimpleFlip:Boolean = after+1 == fromIncluded && flip
   def isNop = after+1 == fromIncluded && !flip
+  //TODO: find someting faster.
   def fromValue:Long = prev.newValue.valueAtPosition(fromIncluded).head
   def toValue:Long = prev.newValue.valueAtPosition(toIncluded).head
   def afterValue:Long = prev.newValue.valueAtPosition(after).head

@@ -85,6 +85,8 @@ class IntInt2Int(a:IntValue, b:IntValue, fun:((Long, Long) => Long), domain:Doma
   registerStaticAndDynamicDependenciesNoID(a,b)
   finishInitialization()
 
+  this := fun(a.value,b.value)
+
   @inline
   override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     this := fun(a.value,b.value)

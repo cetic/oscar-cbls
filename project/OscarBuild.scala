@@ -13,10 +13,9 @@ object OscarBuild extends Build {
 
   object BuildSettings {
     val buildOrganization = "oscar"
-    val buildVersion = "4.0.0-SNAPSHOT"
+    val buildVersion = "4.1.0-CBLS-GEOM-SNAPSHOT"
     val buildScalaVersion = "2.12.8"
     val buildSbtVersion= "0.13.18"
-
 
     lazy val commonSettings = Defaults.defaultSettings ++  jacoco.settings ++ Seq(
       organization := buildOrganization,
@@ -100,7 +99,7 @@ object OscarBuild extends Build {
   import Dependencies._
   import Resolvers._
   import UnidocKeys._
-  
+
   def ceticSpecificSettings = {
     if(Option(System.getProperty("cetic")).isDefined) Seq(
       publishTo := {
@@ -244,7 +243,7 @@ object OscarBuild extends Build {
     base = file("oscar-fzn-cbls"),
     settings =
       commonSettings ++
-      Seq(libraryDependencies ++= testDeps),
+        Seq(libraryDependencies ++= testDeps),
     dependencies = Seq(oscarCbls,oscarFzn,oscarFznCp)
   )
 
@@ -253,7 +252,7 @@ object OscarBuild extends Build {
     base = file("oscar-fzn-cp"),
     settings =
       commonSettings ++
-      Seq(libraryDependencies ++= testDeps),
+        Seq(libraryDependencies ++= testDeps),
     dependencies = Seq(oscarCp,oscarFzn)
   )
 

@@ -76,7 +76,7 @@ case class AtMost(variables:Iterable[IntValue], bounds:SortedMap[Long, IntValue]
     * the number of variable in excess is the max between zero and
     * (the number of variable that have the value of the bound minus the bound).
     */
-  val violation = Sum(bounds.keys.map(bound => violationByVal(bound+offset))).setName("ViolationsOfAtMost")
+  val violation = Sum(bounds.keys.map(bound => violationByVal(bound+offset)))
 
   /**The violation of a variable is zero if its value is not the one of a bound.
     * If the variable has the value of a bound, its violation is the number of variable in excess for that bound.

@@ -12,14 +12,17 @@ import oscar.cbls.core.search._
  *
  * @author renaud.delandtsheer@cetic.be
  */
-class Best(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinator(a, b) {
+class BestMove(n:Neighborhood*) extends NeighborhoodCombinator(n:_*) {
 
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
-    (a.getMove(obj, initialObj:Long, acceptanceCriteria), b.getMove(obj, initialObj:Long, acceptanceCriteria)) match {
-      case (NoMoveFound, x) => x
-      case (x, NoMoveFound) => x
-      case (x: MoveFound, y: MoveFound) => if (x.objAfter < y.objAfter) x else y
-    }
+
+    val moves = n.flatMap(_.getMove(obj, initialObj:Long, acceptanceCriteria) match {
+      case NoMoveFound => None
+      case m: MoveFound => Some(m)
+    })
+
+    if (moves.isEmpty) NoMoveFound
+    else moves.minBy(_.objAfter)
   }
 }
 

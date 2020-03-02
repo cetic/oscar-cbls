@@ -1,9 +1,5 @@
 package oscar.xcsp3.competition
 
-import java.io.ByteArrayInputStream
-
-import org.xcsp.checker.SolutionChecker
-
 import scala.util.Random
 
 class CompetitionConf(args: Seq[String]){

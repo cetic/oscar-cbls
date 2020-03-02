@@ -52,7 +52,6 @@ case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Long, IntVal
 
   private val Violation =
     Sum(bounds.toList.map((value_bound) => Max2(noViolation,value_bound._2 - valueCount(value_bound._1+offset))))
-    .setName("ViolationsOfAtLeast")
 
   private val violationByVal:Array[IntValue]=Array.tabulate(valueCount.length)(value => {
     if(bounds.contains(value + offset))

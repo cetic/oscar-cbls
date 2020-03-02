@@ -22,6 +22,7 @@ package oscar.cbls.core.computation
 
 import oscar.cbls._
 import oscar.cbls.core.propagation.Checker
+import oscar.util.RandomGenerator
 
 import scala.collection.mutable.{Map => MMap}
 import scala.language.implicitConversions
@@ -111,6 +112,15 @@ abstract class ChangingIntValue(initialValue:Long, initialDomain:Domain)
       mNewValue = v
       notifyChanged()
     }
+  }
+
+  def adjustToDomain(v:Long):Long = {
+    (v max this.min) min this.max
+  }
+  def adjustToDomainModulo(v:Long):Long = {
+    val modVal = Math.max(domain.max - domain.min,1)
+    val adjusted = (v - domain.min) % modVal
+    adjusted + domain.min
   }
 
   override def value: Long = {
@@ -219,6 +229,18 @@ class CBLSIntVar(givenModel: Store, initialValue: Long, initialDomain:Domain, n:
     setValue(v)
   }
 
+  def assignWithAdjust (v: Long) {
+    setValue(adjustToDomain(v))
+  }
+
+  def incrementWithAdjust (v: Long) {
+    setValue(adjustToDomain(v+newValue))
+  }
+
+  def assignWithModuloAdjust (v: Long) {
+    setValue(adjustToDomainModulo(v))
+  }
+
   override def :+=(v: Long) {
     setValue(v + newValue)
   }
@@ -250,6 +272,11 @@ class CBLSIntVar(givenModel: Store, initialValue: Long, initialDomain:Domain, n:
   }
 
   def <==(i: IntValue) {IdentityInt(this,i)}
+
+  def randomize(): Unit ={
+    if(this.max != this.min)
+      this := this.min + RandomGenerator.nextInt(this.max - this.min)
+  }
 }
 
 object CBLSIntVar{

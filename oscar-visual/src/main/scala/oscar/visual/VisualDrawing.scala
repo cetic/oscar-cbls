@@ -62,13 +62,26 @@ class VisualDrawing(flipped: Boolean, scalable: Boolean) extends JPanel(new Bord
     var maxX = Double.MinValue
     var minY = Double.MaxValue
     var maxY = Double.MinValue
-    for (shape <- shapes) {
-      val bounds = shape.getBounds
-      if (bounds._1 < minX) minX = bounds._1
-      if (bounds._2 > maxX) maxX = bounds._2
-      if (bounds._3 < minY) minY = bounds._3
-      if (bounds._4 > maxY) maxY = bounds._4
+
+    //RDL: added the try catch because there iss a race condition on shapes, which is a mutable data structure
+    //and this paint method is called in a thread that is not hte one that adds the figures.
+    //I do not know how to fix this issue,
+    // but I am a bit bored by the big red exception messages I get on the console,
+    //so I fix the symptom with this try catch
+    try {
+      for (shape <- shapes) {
+        val bounds = shape.getBounds
+        if (bounds._1 < minX) minX = bounds._1
+        if (bounds._2 > maxX) maxX = bounds._2
+        if (bounds._3 < minY) minY = bounds._3
+        if (bounds._4 > maxY) maxY = bounds._4
+      }
+    }catch{
+      case _:java.lang.IllegalArgumentException => ;
+      case _:java.util.NoSuchElementException =>;
+      case _:java.lang.NullPointerException => ;
     }
+
     (minX, maxX, minY, maxY)
   }
   var transform = new AffineTransform()
@@ -113,8 +126,19 @@ class VisualDrawing(flipped: Boolean, scalable: Boolean) extends JPanel(new Bord
         transform.translate(translateX,translateY)
       }
       g2d.transform(transform)
-      for (s <- shapes) {
-        s.draw(g2d)
+
+      //RDL: added the try catch because there iss a race condition on shapes, which is a mutable data structure
+      //and this paint method is called in a thread that is not hte one that adds the figures.
+      //I do not know how to fix this issue,
+      // but I am a bit bored by the big red exception messages I get on the console,
+      //so I fix the symptom with this try catch
+      try {
+        for (s <- shapes) {
+          s.draw(g2d)
+        }
+      }catch{
+        case _:java.lang.IllegalArgumentException => ;
+        case _:java.util.NoSuchElementException =>
       }
     }
   }

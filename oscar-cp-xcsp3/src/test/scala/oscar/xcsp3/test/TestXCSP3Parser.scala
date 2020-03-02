@@ -1,10 +1,7 @@
 package oscar.xcsp3.test
 
-import org.xcsp.parser.XCallbacks
-import org.xcsp.parser.XCallbacks.XCallbacksParameters
 import oscar.xcsp3._
 import oscar.cp._
-import oscar.xcsp3.RunXCSP3.{parser, vars}
 import oscar.xcsp3.testUtils.TestSuite
 
 import scala.collection.mutable.ArrayBuffer
@@ -47,7 +44,7 @@ class TestXCSP3Parser extends TestSuite {
 
     parser.cp.start(nSol)
 
-    assert(solutions.size > 0) // feasible problem
+    assert(solutions.nonEmpty) // feasible problem
     solutions.forall(sol => testSolution(instancePath, sol))
   }
 

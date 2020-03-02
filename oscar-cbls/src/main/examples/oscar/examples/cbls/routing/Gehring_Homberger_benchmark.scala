@@ -183,5 +183,4 @@ class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Int, distanceMatrix: 
   println("Nombre de véhicules utilisés :" + movingVehiclesNow.value.size)
   println("\n\n###########################################################################################\n\n")
 
-
 }

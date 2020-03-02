@@ -28,8 +28,18 @@ import scala.util.Random
   * @author fabian.germeau@cetic.be
   */
 object ColorGenerator {
-  def generateRandomColors(number:Int,alpha:Int = 255): Array[Color] ={
-    Array.fill(number)(new Color(Random.nextInt(256),Random.nextInt(256),Random.nextInt(256)))
+
+  private val randomValueGenerator = Random
+
+  def setSeed(seed: Long): Unit = randomValueGenerator.setSeed(seed)
+
+  def generateRandomColors(number:Int,alpha:Int = 255): Array[Color] = {
+    Array.fill(number)(
+      new Color(
+        randomValueGenerator.nextInt(256),
+        randomValueGenerator.nextInt(256),
+        randomValueGenerator.nextInt(256),
+        alpha))
   }
 
   /**
@@ -57,7 +67,6 @@ object ColorGenerator {
     val b = ((absHash/255L)/255)%255
     new Color(r,g,b)
   }
-
 
   def getAverageColor(colors:List[Color]): Color = {
     var (r,g,b) = (0,0,0)
