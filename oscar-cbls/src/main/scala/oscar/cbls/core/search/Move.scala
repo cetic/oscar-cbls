@@ -146,7 +146,7 @@ case class LoadSolutionMove(s:Solution,override val objAfter:Long, override val 
   * @param neighborhoodName a string describing the neighborhood hat found the move (for debug purposes)
   * @author renaud.delandtsheer@cetic.be
   */
-case class AddToSetMove(s:CBLSSetVar,v:Long, override val objAfter:Long, override val neighborhoodName:String = null)
+case class AddToSetMove(s:CBLSSetVar,v:Int, override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
   override def commit() {s :+= v}
@@ -166,7 +166,7 @@ case class AddToSetMove(s:CBLSSetVar,v:Long, override val objAfter:Long, overrid
   * @param neighborhoodName a string describing the neighborhood hat found the move (for debug purposes)
   * @author renaud.delandtsheer@cetic.be
   */
-case class RemoveFromSetMove(s:CBLSSetVar,v:Long, override val objAfter:Long, override val neighborhoodName:String = null)
+case class RemoveFromSetMove(s:CBLSSetVar,v:Int, override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
   override def commit() {s :-= v}
