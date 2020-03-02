@@ -18,8 +18,8 @@ package oscar.cbls.algo.tarjan
 import oscar.cbls.algo.quick.QList
 
 class TarjanNodeData{
-  var Index:Long = -1L
-  var LowLink:Long = -1L
+  var Index:Int = -1
+  var LowLink:Int = -1
   var OnStack:Boolean = false
 }
 
@@ -31,7 +31,7 @@ class TarjanNodeData{
 object TarjanWithExternalStorage{
 
   def getStronglyConnexComponents[T](Nodes:Iterable[T], GetSucceedingNodes:T => Iterable[T], getNodeStorage:T=>TarjanNodeData):List[QList[T]] = {
-    var index:Long=0L
+    var index:Int=0
     var Stack:QList[T]=null
     var Components:List[QList[T]]= List.empty
 
@@ -39,14 +39,14 @@ object TarjanWithExternalStorage{
       val storageForV = getNodeStorage(v)
       storageForV.Index = index
       storageForV.LowLink = index
-      index +=1L
+      index +=1
       Stack = QList(v,Stack)
       storageForV.OnStack = true
 
       // Consider successors of v
       for(w <- GetSucceedingNodes(v)){
         val storageForW = getNodeStorage(w)
-        if(storageForW.Index == -1L){
+        if(storageForW.Index == -1){
           // Successor w has not yet been visited; recurse on it
           visit(w)
           storageForV.LowLink = storageForV.LowLink.min(storageForW.LowLink)
@@ -73,7 +73,7 @@ object TarjanWithExternalStorage{
       }
     }
 
-    for(n <- Nodes) {if(getNodeStorage(n).Index == -1L) visit(n)}
+    for(n <- Nodes) {if(getNodeStorage(n).Index == -1) visit(n)}
 
     Components
   }

@@ -39,24 +39,24 @@ object IdenticalAggregator{
   /**
    * @param l a list of items such that we want to discard items of identical class
    * @param itemClass a function that gives a class for a given item.
-   *                  Class Long.MinValue is considered as different from itself
+   *                  Class Int.MinValue is considered as different from itself
    * @tparam T
    * @return a maximal subset of l such that
    *         all items are of different class according to itemClass (with Long.MinValue exception)
    */
-  def removeIdenticalClasses[T](l:Iterable[T], itemClass:T => Long):List[T] = {
-    val a: Set[Long] = SortedSet.empty
+  def removeIdenticalClasses[T](l:Iterable[T], itemClass:T => Int):List[T] = {
+    val a: Set[Int] = SortedSet.empty
     removeIdenticalClasses[T](l.toIterator, itemClass, Nil, a)
   }
 
   private def removeIdenticalClasses[T](l:Iterator[T],
-                                        itemClass:T => Long,
+                                        itemClass:T => Int,
                                         canonicals:List[T],
-                                        classes:Set[Long]):List[T] = {
+                                        classes:Set[Int]):List[T] = {
     if (l.hasNext) {
       val h = l.next()
-      val classOfH:Long = itemClass(h)
-      if(classOfH != Long.MinValue && classes.contains(classOfH))
+      val classOfH:Int = itemClass(h)
+      if(classOfH != Int.MinValue && classes.contains(classOfH))
         removeIdenticalClasses(l, itemClass, canonicals,classes)
       else removeIdenticalClasses(l, itemClass, h::canonicals, classes+classOfH)
     }else {
@@ -64,7 +64,7 @@ object IdenticalAggregator{
     }
   }
 
-  /** class Long.MinValue is considered different from itself
+  /** class Int.MinValue is considered different from itself
     *
     * @param it
     * @param itemClass
