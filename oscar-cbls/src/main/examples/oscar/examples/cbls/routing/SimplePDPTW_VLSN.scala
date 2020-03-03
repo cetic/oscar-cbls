@@ -30,8 +30,8 @@ object SimplePDPTW_VLSN extends App{
   val myVRP =  new VRP(m,n,v)
   val vehicles = 0L until v
 
-  val k = 10
-  val l = 20
+  val k = 20
+  val l = 30
 
   // GC
   val gc = GlobalConstraintCore(myVRP.routes, v)
@@ -52,6 +52,11 @@ object SimplePDPTW_VLSN extends App{
   precedencesConstraints.add(0 === precedenceInvariant)
   val chainsExtension = chains(myVRP,listOfChains)
 
+  val maxLengthConstraints = new ConstraintSystem(m)
+  for(vehicle <- 0 until v){
+    maxLengthConstraints.add(vehiclesRouteLength(vehicle) le 20000)
+  }
+
   // Vehicle content
   val violationOfContentOfVehicle = Array.tabulate(v)(vehicle =>
     CBLSIntVar(myVRP.routes.model, name = "Violation of capacity of vehicle " + vehicle))
@@ -60,13 +65,13 @@ object SimplePDPTW_VLSN extends App{
   //Objective function
   val unroutedPenalty = penaltyForUnrouted*(n - length(myVRP.routes))
 
-  val obj = new CascadingObjective(precedencesConstraints,
+  val obj = new CascadingObjective(new CascadingObjective(maxLengthConstraints,precedencesConstraints),
     new CascadingObjective(sum(violationOfContentOfVehicle),
       sum(vehiclesRouteLength) + unroutedPenalty))
 
   val objPerVehicle = Array.tabulate[Objective](v)(vehicle =>
     new CascadingObjective(
-      new CascadingObjective(precedencesConstraints,violationOfContentOfVehicle(vehicle)),
+      new CascadingObjective(new CascadingObjective(maxLengthConstraints,precedencesConstraints),violationOfContentOfVehicle(vehicle)),
       Objective(vehiclesRouteLength(vehicle)))
   )
   val unroutedPenaltyOBj = Objective(unroutedPenalty)
@@ -406,5 +411,11 @@ object SimplePDPTW_VLSN extends App{
   search.doAllMoves(obj=obj)
 
   println(myVRP)
+
+  for(vehicle <- 0 until v){
+    val l = vehiclesRouteLength(vehicle).value
+    if(l !=0) println("vehicle(" + vehicle + ").length:" + l)
+  }
+
 
 }

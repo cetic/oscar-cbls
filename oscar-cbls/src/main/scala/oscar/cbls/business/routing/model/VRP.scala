@@ -250,4 +250,13 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Long = 4
     "" + notMoving.size + " not used vehicles:{" + notMoving.reverse.mkString(",") + "}\n" +
       toReturn
   }
+
+  def stringOfVehicle(vehicle:Long):Option[String] = {
+    val routeOfV = getRouteOfVehicle(vehicle)
+    if(routeOfV.length == 1L){
+      None
+    }else{
+      Some("" + routeOfV.mkString("->") + "->" + vehicle)
+    }
+  }
 }
