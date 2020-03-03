@@ -11,7 +11,7 @@ import scala.collection.immutable.HashSet
   * Created by fg on 12/05/17.
   */
 
-object SimpleVRPWithVehicleContent extends App{
+object SimplePDPTW extends App{
   val m = new Store(noCycle = false)
   val v = 10
   val n = 500

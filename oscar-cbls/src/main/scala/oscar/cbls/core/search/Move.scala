@@ -69,6 +69,8 @@ abstract class Move(val objAfter:Long = Long.MaxValue, val neighborhoodName:Stri
   }
 
   def shortString:String = toString
+
+  def decomposeMove:List[String] = List(this.shortString)
 }
 
 object Move{
@@ -243,6 +245,8 @@ class OverrideObj(initMove:Move, objAfter:Long, neighborhoodName:String = null)
   override def commit(): Unit = initMove.commit()
   
   override def toString: String = "OverrideObj(initMove:"+ initMove.toString + objToString + ")"
+
+  override def decomposeMove:List[String] = initMove.decomposeMove
 }
 
 
@@ -262,6 +266,8 @@ case class DoNothingNeighborhood() extends Neighborhood with SupportForAndThenCh
 
 case class DoNothingMove(override val objAfter:Long,override val neighborhoodName:String = null) extends Move(objAfter,neighborhoodName){
   override def commit() : Unit = {}
+
+  override def decomposeMove:List[String] = List.empty
 }
 
 
@@ -284,25 +290,15 @@ case class CompositeMove(ml:List[Move], override val objAfter:Long, override val
   }
 
   override def toString: String  = {
-    neighborhoodNameToString + "CompositeMove(size:" + globalSize + " " + simpleMLString + objToString + ")"
+    val parts = decomposeMove
+    neighborhoodNameToString + "CompositeMove(size:" + parts.size + " [" + parts.mkString(",") + "]" + objToString + ")"
   }
 
   override def touchedVariables: List[Variable] = ml.flatMap(_.touchedVariables)
 
-  def globalSize:Long = {
-    ml.map(
-    {case c:CompositeMove => c.globalSize
-    case d:DoNothingMove => 0L
-    case m:Move => 1L}).sum
-  }
-
-  def simpleMLString:String = {
-    "[" + ml.map(
-    {case c:CompositeMove => c.simpleMLString
-    case m:Move => m.shortString}).mkString(",") + "]"
-  }
-
   override def shortString: String = "CompositeMove(" + ml.map(_.shortString).mkString(",")+ ")"
+
+  override def decomposeMove:List[String] = this.ml.flatMap(_.decomposeMove)
 }
 
 case class NamedMove(m:Move, override val neighborhoodName:String = null)
@@ -320,6 +316,8 @@ case class NamedMove(m:Move, override val neighborhoodName:String = null)
   override def touchedVariables: Iterable[Variable] = m.touchedVariables
 
   override def evaluate(obj: Objective): Long = m.evaluate(obj)
+
+  override def decomposeMove:List[String] = m.decomposeMove
 }
 
 
@@ -340,6 +338,8 @@ case class InstrumentedMove(initialMove:Move, callBack: () => Unit = null, after
   override def toString: String = initialMove.toString
 
   override def touchedVariables: Iterable[Variable] = initialMove.touchedVariables
+
+  override def decomposeMove:List[String] = initialMove.decomposeMove
 }
 
 object CallBackMove{

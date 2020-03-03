@@ -398,6 +398,13 @@ trait SupportForAndThenChaining[MoveType<:Move] extends Neighborhood{
    * @author renaud.delandtsheer@cetic.be
    */
   def andThen(b: Neighborhood) = new AndThen(this, b)
+
+  /**
+   * This combinator supports a filter on moves, you can post any function to forbid some moves from being explored
+   * beware: it is more efficient to filter upfront by appropriately tuning the parameters of the neighborhood a, so this is really some sort of DIY solution.
+   * @param filter the filter function through which you can accept/reject moves from a
+   */
+  def filter(filter:MoveType => Boolean):Neighborhood = new Filter[MoveType](this, filter)
 }
 
 
