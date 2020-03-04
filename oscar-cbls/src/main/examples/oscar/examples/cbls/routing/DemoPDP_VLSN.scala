@@ -31,7 +31,7 @@ object DemoPDP_VLSN extends App{
   val myVRP =  new VRP(m,n,v)
   val vehicles = 0L until v
 
-  val k = 20
+  val k = 40
   val l = 40
 
   // GC
@@ -84,7 +84,7 @@ object DemoPDP_VLSN extends App{
 
   m.close()
 
-  val relevantPredecessors = GlobalVehicleCapacityConstraint.relevantPredecessorsOfNodes(capacityInvariant)
+  val relevantPredecessors = GlobalVehicleCapacityConstraint.relevantPredecessorsOfNodes(capacityInvariant).mapValues(v => SortedSet.empty[Long] ++ v)
 
   val closestRelevantPredecessorsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance,relevantPredecessors)(_))
 
@@ -127,13 +127,16 @@ object DemoPDP_VLSN extends App{
   val oneChainMove = {
     dynAndThen(firstNodeOfChainMove,
       (moveMove: OnePointMoveMove) => {
-        mu[OnePointMoveMove, Option[List[Long]]](
-          lastNodeOfChainMove(chainsExtension.lastNodeInChainOfNode(moveMove.movedPoint)),
-          nextMoveGenerator,
-          None,
-          Long.MaxValue,
-          false)
-      }) name "OneChainMove"
+        if(maxLengthConstraints.Violation.value != 0){
+          NoMoveNeighborhood
+        }else{
+          mu[OnePointMoveMove, Option[List[Long]]](
+            lastNodeOfChainMove(chainsExtension.lastNodeInChainOfNode(moveMove.movedPoint)),
+            nextMoveGenerator,
+            None,
+            Long.MaxValue,
+            false)
+        }}) name "OneChainMove"
   }
 
   def onePtMove(k:Long) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantPredecessorsByDistance(_)), myVRP))
@@ -177,13 +180,16 @@ object DemoPDP_VLSN extends App{
   val oneChainInsert = {
     dynAndThen(firstNodeOfChainInsertion,
       (insertMove: InsertPointMove) => {
-        mu[InsertPointMove,Option[List[Long]]](
-          lastNodeOfChainInsertion(chainsExtension.lastNodeInChainOfNode(insertMove.insertedPoint)),
-          nextInsertGenerator,
-          None,
-          Long.MaxValue,
-          false)
-      }) name "OneChainInsert"
+        if(maxLengthConstraints.Violation.value != 0){
+          NoMoveNeighborhood
+        }else{
+          mu[InsertPointMove,Option[List[Long]]](
+            lastNodeOfChainInsertion(chainsExtension.lastNodeInChainOfNode(insertMove.insertedPoint)),
+            nextInsertGenerator,
+            None,
+            Long.MaxValue,
+            false)
+        }}) name "OneChainInsert"
   }
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -261,7 +267,7 @@ object DemoPDP_VLSN extends App{
   }
 
   def moveChainVLSN(targetVehicle: Long)(chainHeadToMove:Long): Neighborhood = {
-    val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(targetVehicle)
+    val nodesOfTargetVehicle = (SortedSet.empty ++ myVRP.getRouteOfVehicle(targetVehicle)) intersect (relevantPredecessors(chainHeadToMove))
     val lNearestNodesOfTargetVehicle = nodesOfTargetVehicle.filter(x => lClosestNeighborsByDistance(chainHeadToMove) contains x)
 
     val nextMoveGenerator = {
@@ -316,13 +322,13 @@ object DemoPDP_VLSN extends App{
         if(maxLengthConstraintPerVehicle(targetVehicle).value != 0){
           NoMoveNeighborhood
         }else{
-        mu[OnePointMoveMove, Option[List[Long]]](
-          lastNodeOfChainMove(chainsExtension.lastNodeInChainOfNode(moveMove.movedPoint)),
-          nextMoveGenerator,
-          None,
-          Long.MaxValue,
-          false)
-      }}) name "OneChainMove"
+          mu[OnePointMoveMove, Option[List[Long]]](
+            lastNodeOfChainMove(chainsExtension.lastNodeInChainOfNode(moveMove.movedPoint)),
+            nextMoveGenerator,
+            None,
+            Long.MaxValue,
+            false)
+        }}) name "OneChainMove"
   }
 
   def removeNode(node:Long) = removePoint(
@@ -365,26 +371,23 @@ object DemoPDP_VLSN extends App{
     restoreAndRelease
   }
 
-  def vlsn(l:Int = Int.MaxValue) = {
+  //TODO: speedup this 3-opt; it eats most of the run time because Precedence is SSLLOOWWW
+  //for re-optimization
+  def threeOptOnVehicle(vehicle:Int) = {
+    val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(vehicle)
+    //insertions points are position where we perform the insert,
+    // basically the segment will start in place of the insertion point and the insertion point will be moved upward
+    val nodesOfTargetVehicleButVehicle = nodesOfTargetVehicle.filter(_ != vehicle)
 
+    threeOpt(() => nodesOfTargetVehicle,
+      () => _ => nodesOfTargetVehicleButVehicle,
+      myVRP,
+      breakSymmetry = false) filter((t:ThreeOptMove) => if(t.flipSegment) t.segmentEndPosition - t.segmentStartPosition < 3 else math.abs(t.insertionPoint - t.segmentStartPosition) < 10)
+  }
+
+  def vlsn(l:Int = Int.MaxValue) = {
     //VLSN neighborhood
     val nodeToAllVehicles = SortedMap.empty[Long, Iterable[Long]] ++ chainsExtension.heads.map(node => (node:Long, vehicles))
-
-    //TODO: speedup this 3-opt; it eats most of the run time because Precedence is SSLLOOWWW
-
-    //for re-optimization
-    def threeOptOnVehicle(vehicle:Int) = {
-      val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(vehicle)
-      //insertions points are position where we perform the insert,
-      // basically the segment will start in place of the insertion point and the insertion point will be moved upward
-      val nodesOfTargetVehicleButVehicle = nodesOfTargetVehicle.filter(_ != vehicle)
-
-      threeOpt(() => nodesOfTargetVehicle,
-        () => _ => nodesOfTargetVehicleButVehicle,
-        myVRP,
-        breakSymmetry = false) filter((t:ThreeOptMove) => if(t.flipSegment) t.segmentEndPosition - t.segmentStartPosition < 3 else math.abs(t.insertionPoint - t.segmentStartPosition) < 10)
-    }
-
     new VLSN(
       v,
       () => SortedMap.empty[Long, SortedSet[Long]] ++
