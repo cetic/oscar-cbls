@@ -4,6 +4,7 @@ import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
 import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleCapacityConstraint
+import oscar.cbls.core.ChangingIntValue
 import oscar.cbls.core.search.{Best, Neighborhood, NoMoveNeighborhood}
 import oscar.cbls.lib.search.neighborhoods.vlsn.{CycleFinderAlgoType, VLSN}
 
@@ -13,7 +14,7 @@ import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
  * Created by fg on 12/05/17.
  */
 
-object SimplePDPTW_VLSN extends App{
+object DemoPDP_VLSN extends App{
   val m = new Store(noCycle = false)
   val v = 10
   val n = 500
@@ -31,7 +32,7 @@ object SimplePDPTW_VLSN extends App{
   val vehicles = 0L until v
 
   val k = 20
-  val l = 30
+  val l = 40
 
   // GC
   val gc = GlobalConstraintCore(myVRP.routes, v)
@@ -53,9 +54,14 @@ object SimplePDPTW_VLSN extends App{
   val chainsExtension = chains(myVRP,listOfChains)
 
   val maxLengthConstraints = new ConstraintSystem(m)
+  val maxLengthConstraintPerVehicle:Array[ChangingIntValue] = Array.fill(v)(null)
   for(vehicle <- 0 until v){
-    maxLengthConstraints.add(vehiclesRouteLength(vehicle) le 20000)
+    val c = vehiclesRouteLength(vehicle) le 20000
+    maxLengthConstraintPerVehicle(vehicle) = c.violation
+    maxLengthConstraints.add(c)
   }
+
+  m.registerForPartialPropagation(maxLengthConstraintPerVehicle:_*)
 
   // Vehicle content
   val violationOfContentOfVehicle = Array.tabulate(v)(vehicle =>
@@ -242,13 +248,16 @@ object SimplePDPTW_VLSN extends App{
 
     dynAndThen(firstNodeOfChainInsertion,
       (insertMove: InsertPointMove) => {
-        mu[InsertPointMove,Option[List[Long]]](
-          lastNodeOfChainInsertion(chainsExtension.lastNodeInChainOfNode(insertMove.insertedPoint)),
-          nextInsertGenerator,
-          None,
-          Long.MaxValue,
-          false)
-      }) name "insertChainVLSN"
+        if(maxLengthConstraintPerVehicle(targetVehicle).value != 0){
+          NoMoveNeighborhood
+        }else{
+          mu[InsertPointMove,Option[List[Long]]](
+            lastNodeOfChainInsertion(chainsExtension.lastNodeInChainOfNode(insertMove.insertedPoint)),
+            nextInsertGenerator,
+            None,
+            Long.MaxValue,
+            false)
+        }}) name "insertChainVLSN"
   }
 
   def moveChainVLSN(targetVehicle: Long)(chainHeadToMove:Long): Neighborhood = {
@@ -304,13 +313,16 @@ object SimplePDPTW_VLSN extends App{
 
     dynAndThen(firstNodeOfChainMove,
       (moveMove: OnePointMoveMove) => {
+        if(maxLengthConstraintPerVehicle(targetVehicle).value != 0){
+          NoMoveNeighborhood
+        }else{
         mu[OnePointMoveMove, Option[List[Long]]](
           lastNodeOfChainMove(chainsExtension.lastNodeInChainOfNode(moveMove.movedPoint)),
           nextMoveGenerator,
           None,
           Long.MaxValue,
           false)
-      }) name "OneChainMove"
+      }}) name "OneChainMove"
   }
 
   def removeNode(node:Long) = removePoint(
