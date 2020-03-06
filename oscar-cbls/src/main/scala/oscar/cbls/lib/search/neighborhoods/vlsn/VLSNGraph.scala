@@ -67,7 +67,7 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Long,v:Int){
   var nextEdgeID:Long = 0L
 
   def addEdge(from:Node, to:Node, deltaObj:Long, move:Move, vLSNMoveType: VLSNMoveType):Edge = {
-    require(edges(from.nodeID)(to.nodeID) == null)
+    require(edges(from.nodeID)(to.nodeID) == null,edges(from.nodeID)(to.nodeID))
     val edge = new Edge(from:Node,to:Node, move:Move,deltaObj:Long, nextEdgeID, vLSNMoveType)
     edges(from.nodeID)(to.nodeID) = edge
     nextEdgeID += 1L

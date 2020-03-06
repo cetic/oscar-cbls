@@ -118,7 +118,7 @@ class MoveExplorerAlgo(v:Int,
     for ((vehicle, routedNodesOnVehicle) <- vehicleToRoutedNodes) {
       require(vehicle < v)
       for (nodeID <- routedNodesOnVehicle) {
-        require(nodeID >= v, "cannot put vehicle to move :" + nodeID)
+        //require(nodeID >= v, "cannot put vehicle to move :" + nodeID)
         nodeIDToNode += ((nodeID, builder.addNode(nodeID, vehicle, vehicle, VLSNSNodeType.RegularNode)))
       }
     }

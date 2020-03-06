@@ -115,10 +115,11 @@ trait RoutingInvariants {
    * this invariant ensures that nodesOfVehicle(p) is maintained to the nodes reached vy vehicle p according to the sequence routes.
    * @param routes a sequence value representing routes
    * @param v the number of vehicles
+   * @param includeVehicleNode flag that is true if the set has to contain the node of the vehicle
    * @return an array nodesOfVehicle maintained to the nodes reached y each vehicle
    */
-  def nodesOfVehicle(routes:ChangingSeqValue,v:Int):Array[CBLSSetVar] =
-    NodesOfVehicle(routes:ChangingSeqValue,v:Int):Array[CBLSSetVar]
+  def nodesOfVehicle(routes:ChangingSeqValue,v:Int,includeVehicleNode:Boolean = true):Array[CBLSSetVar] =
+    NodesOfVehicle(routes:ChangingSeqValue,v:Int,includeVehicleNode:Boolean):Array[CBLSSetVar]
 
 
 
