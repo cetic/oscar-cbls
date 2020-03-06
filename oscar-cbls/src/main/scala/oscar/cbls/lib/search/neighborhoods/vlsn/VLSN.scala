@@ -220,7 +220,8 @@ class VLSN(v:Int,
            maxIt : Int = Int.MaxValue,
            doAfterCycle : Option[() => Unit] = None,
            name:String = "VLSN",
-           reoptimizeAtStartUp:Boolean = false) extends Neighborhood {
+           reoptimizeAtStartUp:Boolean = false,
+           checkObjCoherence:Boolean = false) extends Neighborhood {
 
   def doReoptimize(vehicle:Long) {
     val reOptimizeNeighborhoodGenerator = reOptimizeVehicle match{
@@ -258,11 +259,16 @@ class VLSN(v:Int,
 
     var somethingDone: Boolean = false
 
-
     if(reoptimizeAtStartUp){
       for(vehicle <- 0 until v){
        doReoptimize(vehicle)
       }
+    }
+
+    if(checkObjCoherence){
+      require(globalObjective.value == obj.value, "global objective given to VLSN(" + globalObjective.value + ") not equal to Obj of search procedure (" + obj.value + ")")
+      val summedPartialObjective = vehicleToObjective.map(_.value).sum + unroutedPenalty.value
+      require(summedPartialObjective == globalObjective.value, "summed partial objectives with unrouted (" + summedPartialObjective + ") not equal to global objective (" + globalObjective.value + ")")
     }
 
     var dataForRestartOpt =  doVLSNSearch(
@@ -380,7 +386,9 @@ class VLSN(v:Int,
               println("   - ?  " + computedNewObj + "   " + name)
               for(cycle <- acc){
                 val moves = cycle.flatMap(edge => Option(edge.move))
-                println("                size:" + moves.length + " [" + moves.mkString(",") + "]")
+                val vehicles = impactedVehicles(cycle)
+                val moveTypes = "[" + cycle.flatMap(edge => if(edge.deltaObj==0) None else Some(edge.moveType)).groupBy((a:VLSNMoveType) => a).toList.map({case (moveType,l) => (""  + moveType + "->" + l.size)}).mkString(",") + "]"
+                println("                size:" + moves.length + " vehicles:{" + vehicles.mkString(",") + "} moveTypes:" + moveTypes + " moves:{" + moves.mkString(",") + "}")
               }
             }
 

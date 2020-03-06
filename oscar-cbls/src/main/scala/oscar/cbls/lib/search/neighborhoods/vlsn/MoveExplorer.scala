@@ -95,7 +95,7 @@ class MoveExplorerAlgo(v:Int,
   private def buildNodes() {
     //label of nodes are:
     // for each routed node and vehicle node: the vehicle of the node
-    // For each unrouted node: a diffeent label
+    // For each unrouted node: a different label
     // a different label for the trashNode
 
     //as labels, we take the vehicles, plus one label per non-routed node
@@ -106,9 +106,9 @@ class MoveExplorerAlgo(v:Int,
     relevantVehicles = SortedSet.empty[Long] ++ nodeToRelevantVehicles.flatMap(_._2)
 
     for (vehicle <- relevantVehicles) {
-      val node = builder.addNode(vehicle, vehicle, vehicle, VLSNSNodeType.VehicleNode)
+      val node = builder.addNode(-vehicle, vehicle, vehicle, VLSNSNodeType.VehicleNode)
       vehicleToNode(vehicle) = node
-      nodeIDToNode += ((vehicle, node))
+      nodeIDToNode += ((-vehicle, node))
     }
 
     //noeud cible pour l'unroutage, label is v
@@ -226,7 +226,7 @@ class MoveExplorerAlgo(v:Int,
             case null => ;
             case (move, delta) =>
               val symbolicNodeToInsert = nodeIDToNode(unroutedNodeToInsert)
-              val edge = edgeBuilder.addEdge(symbolicNodeToInsert, nodeIDToNode(targetVehicleForInsertion), delta, move, VLSNMoveType.InsertNoEject)
+              val edge = edgeBuilder.addEdge(symbolicNodeToInsert, vehicleToNode(targetVehicleForInsertion), delta, move, VLSNMoveType.InsertNoEject)
               if (delta < 0L) {
                 //there is a direct insert
                 registerDirectInsert(unroutedNodeToInsert, targetVehicleForInsertion,edge)
@@ -339,7 +339,7 @@ class MoveExplorerAlgo(v:Int,
   private def exploreNodeMoveNoRemove(vehicleToNodeToMoveThere:Map[Long,Iterable[Long]]): Unit = {
 
     for ((targetVehicleID, routedNodesToMoveThere) <- vehicleToNodeToMoveThere if !vehicleHasDirectInsertOrMove(targetVehicleID)) {
-      val symbolicNodeOfVehicle = nodeIDToNode(targetVehicleID)
+      val symbolicNodeOfVehicle = vehicleToNode(targetVehicleID)
 
       //moves without removes
       for (routingNodeToMove <- routedNodesToMoveThere) {

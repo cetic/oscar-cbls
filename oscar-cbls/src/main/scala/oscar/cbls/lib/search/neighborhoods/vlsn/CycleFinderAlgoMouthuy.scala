@@ -20,7 +20,9 @@ package oscar.cbls.lib.search.neighborhoods.vlsn
 
 import oscar.cbls.algo.magicArray.MagicBoolArray
 import oscar.cbls._
+
 import scala.collection.mutable
+import scala.util.Random
 
 
 class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
@@ -183,7 +185,8 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
 
   override def findCycle(liveNodes:Array[Boolean]):Option[List[Edge]] = {
     isLiveNode = liveNodes
-    for(rootNode <- nodes if liveNodes(rootNode.nodeID)){
+    //TODO: i've put a random because I do not want nodes with smaller ID to be better optimized and create over-optimized hotspot. Maybe a HotRestart would be more efficient.
+    for(rootNode <- Random.shuffle(nodes.toList)  if liveNodes(rootNode.nodeID)){
       searchRootedCycle(rootNode) match{
         case None => ;
         case Some(c)  => return Some(c.cycle)
