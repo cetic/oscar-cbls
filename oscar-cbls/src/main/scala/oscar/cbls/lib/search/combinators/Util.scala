@@ -46,7 +46,7 @@ class ShowObjectiveFunction(a: Neighborhood, obj: () => Long, title: String = "O
   //objGraphic is an internal frame that contains the curve itself and visualFrame is a basic frame that contains objGraphic
   private val objGraphic = ObjectiveFunctionDisplayV2(title, minCap, maxCap, percentile, otherValues.map(_._1).toList)
   private val otherValuesFunctions = otherValues.map(_._2)
-  SingleFrameWindow.show(objGraphic,title)
+  val window = SingleFrameWindow.show(objGraphic,title)
 
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult ={
     a.getMove(obj, initialObj, acceptanceCriteria) match {

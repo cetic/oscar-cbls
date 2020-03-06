@@ -12,13 +12,28 @@ class RoutingTestSuite extends FunSuite with Checkers{
 
   val verbose = 0
 
-  test("Node of vehicle"){
-    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff(),Shuffle()))
-    val n = 100
-    val v = 5
-    val route = bench.genRouteOfNodes(n,v)
-    NodesOfVehicle(route,v)
-    bench.run()
+  test("Node of vehicle including node of Vehicle"){
+    val nbTest = 100
+    for (i <- (0 until nbTest)) {
+      val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff(),Shuffle()))
+      val n = 100
+      val v = 5
+      val route = bench.genRouteOfNodes(n,v)
+      NodesOfVehicle(route,v,true)
+      bench.run()
+    }
+  }
+
+  test("Node of vehicle NOT including node of Vehicle"){
+    val nbTest = 100
+    for (i <- (0 until nbTest)) {
+      val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff(),Shuffle()))
+      val n = 100
+      val v = 5
+      val route = bench.genRouteOfNodes(n,v)
+      NodesOfVehicle(route,v,false)
+      bench.run()
+    }
   }
 
   test("Constant routing distance - global distance - symmetric"){
