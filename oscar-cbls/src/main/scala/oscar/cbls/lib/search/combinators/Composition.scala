@@ -15,14 +15,14 @@ object Mu {
                               maxDepth : Long,
                               intermediaryStops : Boolean): Neighborhood  with SupportForAndThenChaining[CompositeMove] = {
     Mu[MoveType,Any](
-    firstNeighborhood,
-    (l,_) => neighborhoodGenerator(l) match{
-    case None => None
-    case Some(n) => Some((n,Unit))
-    },
-    Unit,
-    maxDepth,
-    intermediaryStops)
+      firstNeighborhood,
+      (l,_) => neighborhoodGenerator(l) match{
+        case None => None
+        case Some(n) => Some((n,Unit))
+      },
+      Unit,
+      maxDepth,
+      intermediaryStops)
   }
 
   /**
@@ -251,14 +251,47 @@ case class SnapShotOnEntry(a: Neighborhood, valuesToSave:Iterable[AbstractVariab
   }
 }
 
+/**
+ * This combinator supports a filter on moves, you can post any function to forbid some moves from being explored
+ * beware: it is more efficient to filter upfront by appropriately tuning the parameters of the neighborhood a, so this is really some sort of DIY solution.
+ * @param a the base neighborhood that we will restrain
+ * @param filter the filter function through which you can accept/reject moves from a
+ * @tparam T the type of moves that a explores
+ */
+case class Filter[MoveType<:Move](a:Neighborhood with SupportForAndThenChaining[MoveType], filter:MoveType => Boolean) extends NeighborhoodCombinator(a) {
+
+  override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+
+    val obj2 = new Objective{
+      override def detailedString(short: Boolean, indent: Long = 0L): String =
+        obj.detailedString(short: Boolean, indent)
+
+      override def model = obj.model
+
+      override def value: Long = {
+        if(filter(a.instantiateCurrentMove(Long.MaxValue))){
+          obj.value
+        }else{
+          Long.MaxValue
+        }
+      }
+    }
+
+    a.getMove(obj2,initialObj, acceptanceCriterion)
+
+  }
+}
+
+
+
 
 /**
-  * This is an atomic combinator, it represent that the neighborhood below should be considered as a single piece.
-  * When you commit a move from this neighborhood, "a" is reset, and exhausted in a single move from Atomic(a)
-  * Also, Atomic is a jump neighborhood as it cannot evaluate any objective function before the move is committed.
-  *
-  * @param a
-  */
+ * This is an atomic combinator, it represent that the neighborhood below should be considered as a single piece.
+ * When you commit a move from this neighborhood, "a" is reset, and exhausted in a single move from Atomic(a)
+ * Also, Atomic is a jump neighborhood as it cannot evaluate any objective function before the move is committed.
+ *
+ * @param a
+ */
 case class AtomicJump(a: Neighborhood, bound: Int = Int.MaxValue) extends NeighborhoodCombinator(a) {
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
     CallBackMove(() => a.doAllMoves(_ > bound, obj, acceptanceCriterion), Int.MaxValue, this.getClass.getSimpleName)
@@ -266,12 +299,12 @@ case class AtomicJump(a: Neighborhood, bound: Int = Int.MaxValue) extends Neighb
 }
 
 /**
-  * This is an atomic combinator, it represent that the neighborhood below should be considered as a single piece.
-  * When you commit a move from this neighborhood, "a" is reset, and exhausted in a single move from Atomic(a)
-  * Also, Atomic is a jump neighborhood as it cannot evaluate any objective function before the move is committed.
-  *
-  * @param a
-  */
+ * This is an atomic combinator, it represent that the neighborhood below should be considered as a single piece.
+ * When you commit a move from this neighborhood, "a" is reset, and exhausted in a single move from Atomic(a)
+ * Also, Atomic is a jump neighborhood as it cannot evaluate any objective function before the move is committed.
+ *
+ * @param a
+ */
 case class Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAcceptableMoves:Boolean = false) extends NeighborhoodCombinator(a) {
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
 

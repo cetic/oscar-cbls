@@ -114,14 +114,14 @@ class VLSNGraph(val nodes:Array[Node],val edges:Array[Edge],val nbLabels:Long, v
       edges.flatMap(edge => {val ofInterest = setOfEdgesToBold.contains(edge.edgeID)
         if(onlyCycles && !ofInterest) None
         else Some(edge.toDOT(ofInterest,light))}).mkString("\t", "\n\t", "\n") +
-      "\tlegend[shape=rectangle,style=filled,fillcolor=pink,color=black,label = \"" + this.statistics + "\"] ; \n" +
+      "\tlegend[shape=rectangle,style=filled,fillcolor=pink,color=black,label = \"" + this.statisticsString + "\"] ; \n" +
       "\toverlap=false\n" +
       //      "\tlabel=\"" + this.statistics + "\";\n" +
       "\tfontsize=12;\n" +
       "}"
   }
 
-  def statistics:String = "VLSNGraph(nbNodes:" + nodes.length + " nbEdges:" + edges.length + ")"
+  def statisticsString:String = "VLSNGraph(nbNodes:" + nodes.length + " nbEdges:" + edges.length + ")"
 }
 
 
