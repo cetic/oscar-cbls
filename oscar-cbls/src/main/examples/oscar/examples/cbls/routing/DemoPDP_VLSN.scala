@@ -6,6 +6,7 @@ import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, Rout
 import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleCapacityConstraint
 import oscar.cbls.core.ChangingIntValue
 import oscar.cbls.core.search.{Best, Neighborhood, NoMoveNeighborhood}
+import oscar.cbls.lib.search.neighborhoods.vlsn.CycleFinderAlgoType.CycleFinderAlgoType
 import oscar.cbls.lib.search.neighborhoods.vlsn.{CycleFinderAlgoType, VLSN}
 
 import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
@@ -22,17 +23,17 @@ object DemoPDP_VLSN extends App{
   println("VLSN(PDPTW) v:" + v +" n:" + n)
   val penaltyForUnrouted = 10000
   val maxVehicleCapacity = 8
-  val minVehicleCapacity = 4
+  val minVehicleCapacity = 6
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
   val (listOfChains,precedences) = RoutingMatrixGenerator.generateChainsPrecedence(n,v,(n-v)/2)
-  val contentsFlow = RoutingMatrixGenerator.generateContentFlow(n,listOfChains,maxVehicleCapacity)
+  val contentsFlow = RoutingMatrixGenerator.generateContentFlow(n,listOfChains,minVehicleCapacity)
   val vehiclesCapacity = RoutingMatrixGenerator.generateVehiclesSize(v,maxVehicleCapacity,minVehicleCapacity)
 
   val myVRP =  new VRP(m,n,v)
   val vehicles = 0L until v
 
   val k = 40
-  val l = 40
+  val l = 50
 
   // GC
   val gc = GlobalConstraintCore(myVRP.routes, v)
@@ -84,7 +85,9 @@ object DemoPDP_VLSN extends App{
 
   m.close()
 
-  val relevantPredecessors = GlobalVehicleCapacityConstraint.relevantPredecessorsOfNodes(capacityInvariant).mapValues(v => SortedSet.empty[Long] ++ v)
+  val relevantPredecessorsTmp:Map[Long,Iterable[Long]] = GlobalVehicleCapacityConstraint.relevantPredecessorsOfNodes(capacityInvariant)
+
+  val relevantPredecessors = SortedMap.empty[Long,SortedSet[Long]] ++ (relevantPredecessorsTmp.map({case (node,v) => (node,SortedSet.empty[Long] ++ v)}))
 
   val closestRelevantPredecessorsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance,relevantPredecessors)(_))
 
@@ -119,8 +122,9 @@ object DemoPDP_VLSN extends App{
     ()=> myVRP.kFirst(k,
       ChainsHelper.relevantNeighborsForLastNodeAfterHead(
         myVRP,
-        chainsExtension,
-        Some(HashSet() ++ relevantPredecessors(lastNode)))),
+        chainsExtension
+        ,Some(HashSet() ++ relevantPredecessors(lastNode))
+    )),
     myVRP,
     neighborhoodName = "MoveLastOfChain")
 
@@ -311,8 +315,9 @@ object DemoPDP_VLSN extends App{
       ()=> myVRP.kFirst(l,
         ChainsHelper.relevantNeighborsForLastNodeAfterHead(
           myVRP,
-          chainsExtension,
-          Some(HashSet() ++ relevantPredecessors(lastNode)))),
+          chainsExtension
+          //,Some(HashSet() ++ relevantPredecessors(lastNode))
+        )),  //TODO: takes a long time
       myVRP,
       positionIndependentMoves = true,
       neighborhoodName = "MoveChainLast")
@@ -381,8 +386,9 @@ object DemoPDP_VLSN extends App{
 
     threeOpt(() => nodesOfTargetVehicle,
       () => _ => nodesOfTargetVehicleButVehicle,
-      myVRP,
-      breakSymmetry = false) filter((t:ThreeOptMove) => if(t.flipSegment) t.segmentEndPosition - t.segmentStartPosition < 3 else math.abs(t.insertionPoint - t.segmentStartPosition) < 10)
+      myVRP, breakSymmetry = false) filter((t:ThreeOptMove) =>
+      if(t.flipSegment) t.segmentEndPosition - t.segmentStartPosition < 4
+      else math.min(math.abs(t.insertionPoint - t.segmentStartPosition),math.abs(t.insertionPoint - t.segmentEndPosition)) < 6)
   }
 
   def vlsn(l:Int = Int.MaxValue) = {
@@ -412,7 +418,8 @@ object DemoPDP_VLSN extends App{
       cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy,
 
       name="VLSN(" + l + ")",
-      reoptimizeAtStartUp = true
+      reoptimizeAtStartUp = true,
+      checkObjCoherence = true
     )
   }
   // ///////////////////////////////////////////////////////////////////////////////////////////////////
