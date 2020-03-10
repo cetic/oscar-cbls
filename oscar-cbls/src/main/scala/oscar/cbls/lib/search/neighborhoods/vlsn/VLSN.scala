@@ -388,7 +388,8 @@ class VLSN(v:Int,
                 val moves = cycle.flatMap(edge => Option(edge.move))
                 val vehicles = impactedVehicles(cycle)
                 val moveTypes = "[" + cycle.flatMap(edge => if(edge.deltaObj==0) None else Some(edge.moveType)).groupBy((a:VLSNMoveType) => a).toList.map({case (moveType,l) => (""  + moveType + "->" + l.size)}).mkString(",") + "]"
-                println("                size:" + moves.length + " vehicles:{" + vehicles.mkString(",") + "} moveTypes:" + moveTypes + " moves:{" + moves.mkString(",") + "}")
+                val deltaObj = cycle.map(edge => edge.deltaObj).sum
+                println("                deltaObj:" + deltaObj+ " size:" + moves.length + " vehicles:{" + vehicles.mkString(",") + "} moveTypes:" + moveTypes + " moves:{" + moves.mkString(",") + "}")
               }
             }
 

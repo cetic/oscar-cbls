@@ -42,7 +42,8 @@ class VLSNNodeBuilder(var nbLabels:Long) {
   var nextNodeID: Long = 0L
 
   def addNode(representedNode:Long, vehicle:Long, label:Long,nodeType:VLSNSNodeType):Node = {
-    require(label >=0L && label < nbLabels)
+    require(label >=0 && label < nbLabels, "inserting a node targeting label " + label)
+    require(nodeType != VehicleNode || representedNode == -vehicle)
     val n = new Node(nextNodeID, representedNode:Long, nodeType, vehicle:Long, label)
     nextNodeID += 1L
     nodes = n :: nodes
