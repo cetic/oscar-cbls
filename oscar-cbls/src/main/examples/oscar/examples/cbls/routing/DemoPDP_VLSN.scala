@@ -35,7 +35,7 @@ object DemoPDP_VLSN extends App{
 
   val k = 30
   val l = 40
-  val xNearestVehicles = 6
+  val xNearestVehicles = 7
 
   // GC
   val gc = GlobalConstraintCore(myVRP.routes, v)
@@ -279,7 +279,7 @@ object DemoPDP_VLSN extends App{
   }
 
   def moveChainVLSN(targetVehicle: Long):(Long=>Neighborhood) = {
-    val nodesOfTargetVehicle = (SortedSet.empty ++ myVRP.getRouteOfVehicle(targetVehicle))
+    val nodesOfTargetVehicle = (SortedSet.empty[Long] ++ myVRP.getRouteOfVehicle(targetVehicle))
 
     def a(chainHeadToMove: Long): Neighborhood = {
       val relevantNodesOfTargetVehicle = nodesOfTargetVehicle intersect (relevantPredecessors(chainHeadToMove))
@@ -357,7 +357,7 @@ object DemoPDP_VLSN extends App{
    */
 
   def moveChainWithinVehicle(vehicle: Long):Neighborhood = {
-    val nodesOfTargetVehicle = (SortedSet.empty ++ myVRP.getRouteOfVehicle(vehicle))
+    val nodesOfTargetVehicle = (SortedSet.empty[Long] ++ myVRP.getRouteOfVehicle(vehicle))
     val chainsHeadInVehicle = nodesOfTargetVehicle.filter(chainsExtension.isHead)
 
     val nextMoveGenerator = {
@@ -509,6 +509,7 @@ object DemoPDP_VLSN extends App{
       checkObjCoherence = true
     )
   }
+
   // ///////////////////////////////////////////////////////////////////////////////////////////////////
 
   val vlsnNeighborhood = vlsn(l)
@@ -526,5 +527,7 @@ object DemoPDP_VLSN extends App{
     if(l !=0) println("vehicle(" + vehicle + ").length:" + l)
   }
 
+  println("obj:" + obj.value)
 
 }
+
