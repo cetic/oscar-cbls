@@ -4,7 +4,7 @@ import oscar.cbls._
 import oscar.cbls.core._
 
 /**
- * Created by rdl on 20L-09L-1L7.
+ * Created by rdl on 20-09-17.
  */
 object NodeVehicleObligation{
   /**
@@ -20,12 +20,12 @@ object NodeVehicleObligation{
    * @return an array telling the violation per vehicle
    * @note this is a preliminary naive version of the constraint. a faster one is to be developed!
    */
-  def apply(routes:ChangingSeqValue,v:Int,n:Int, nodeVehicleObligation:Map[Long,Set[Long]]):Array[CBLSIntVar] = {
+  def apply(routes:ChangingSeqValue,v:Int,n:Int, nodeVehicleObligation:Map[Int,Set[Int]]):Array[CBLSIntVar] = {
     val violationPerVehicle =  Array.tabulate(v)(vehicle => CBLSIntVar(routes.model,name="violation of NodeVehicleObligation for vehicle" + vehicle))
 
-    val vehicles = 0L until v
+    val vehicles = 0 until v
 
-    var nodeVehicleRestrictions:List[(Long,Long)] = List.empty
+    var nodeVehicleRestrictions:List[(Int,Int)] = List.empty
 
     for((node,vehicleObligations) <- nodeVehicleObligation){
       if(vehicleObligations.size < v){

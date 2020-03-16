@@ -17,26 +17,26 @@ class StartPointOfVehicles(routes:ChangingSeqValue,
   private val vehicleStartStack = new SeqCheckpointedValueStack[VehicleLocation]()
   private var currentVehicleLocation : VehicleLocation = VehicleLocation(v, routes.value.positionOfAnyOccurrence(_).get)
 
-  def startPosOfVehicle(vehicle : Long) : Long = {
+  def startPosOfVehicle(vehicle : Int) : Int = {
     currentVehicleLocation.startPosOfVehicle(vehicle)
   }
 
-  def vehicleReachingPosition(position : Long) : Long = {
+  def vehicleReachingPosition(position : Int) : Int = {
     currentVehicleLocation.vehicleReachingPosition(position)
   }
 
-  def vehicleReachingNode(node: Long) : Option[Long] = {
+  def vehicleReachingNode(node: Int) : Option[Int] = {
     routes.value.positionOfAnyOccurrence(node) match{
       case Some(nodePosition) => Some(vehicleReachingPosition(nodePosition))
       case None => None
     }
   }
 
-  def onSameVehicleOrBothUnrouted(node1:Long,node2:Long): Boolean={
+  def onSameVehicleOrBothUnrouted(node1:Int,node2:Int): Boolean={
     vehicleReachingNode(node1) == vehicleReachingNode(node2)
   }
 
-  def onVehicle(vehicle:Long,node:Long): Boolean = {
+  def onVehicle(vehicle: Int,node: Int): Boolean = {
     vehicleReachingNode(node) contains vehicle
   }
 
@@ -46,7 +46,7 @@ class StartPointOfVehicles(routes:ChangingSeqValue,
 
   def digestUpdates(changes : SeqUpdate) : VehicleLocation = {
     changes match {
-      case s@SeqUpdateInsert(value : Long, posOfInsert : Int, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Int, posOfInsert : Int, prev : SeqUpdate) =>
         digestUpdates(prev).push(s.oldPosToNewPos)
 
       case r@SeqUpdateRemove(pos : Int, prev : SeqUpdate) =>
@@ -62,7 +62,7 @@ class StartPointOfVehicles(routes:ChangingSeqValue,
         currentVehicleLocation
 
       case s@SeqUpdateDefineCheckpoint(prev : SeqUpdate, isStarMode : Boolean, checkpointLevel : Int) =>
-        val previousVehicleStart = if (checkpointLevel == 0L) digestUpdates(prev).regularize else digestUpdates(prev)
+        val previousVehicleStart = if (checkpointLevel == 0) digestUpdates(prev).regularize else digestUpdates(prev)
         vehicleStartStack.defineCheckpoint(prev.newValue, checkpointLevel, previousVehicleStart)
         previousVehicleStart
 
