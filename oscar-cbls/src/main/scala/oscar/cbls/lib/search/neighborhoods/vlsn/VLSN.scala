@@ -221,7 +221,7 @@ class VLSN(v:Int,
            doAfterCycle : Option[() => Unit] = None,
            name:String = "VLSN",
            reoptimizeAtStartUp:Boolean = false,
-           checkObjCoherence:Boolean = false) extends Neighborhood {
+           debugNeighborhoodExploration:Boolean = false) extends Neighborhood {
 
   def doReoptimize(vehicle:Int) {
     val reOptimizeNeighborhoodGenerator = reOptimizeVehicle match{
@@ -265,7 +265,7 @@ class VLSN(v:Int,
       }
     }
 
-    if(checkObjCoherence){
+    if(debugNeighborhoodExploration){
       require(globalObjective.value == obj.value, "global objective given to VLSN(" + globalObjective.value + ") not equal to Obj of search procedure (" + obj.value + ")")
       val summedPartialObjective = vehicleToObjective.map(_.value).sum + unroutedPenalty.value
       require(summedPartialObjective == globalObjective.value, "summed partial objectives with unrouted (" + summedPartialObjective + ") not equal to global objective (" + globalObjective.value + ")")
@@ -545,7 +545,8 @@ class VLSN(v:Int,
 
           vehicleToObjective,
           unroutedPenalty,
-          globalObjective).buildGraph()
+          globalObjective,
+          debugNeighborhoodExploration).buildGraph()
       case Some(cache) =>
         new IncrementalMoveExplorerAlgo(
           v: Int,
@@ -562,7 +563,8 @@ class VLSN(v:Int,
           vehicleToObjective,
           unroutedPenalty,
           globalObjective,
-          cache).buildGraph()
+          cache,
+          debugNeighborhoodExploration).buildGraph()
     }
     if(printExploredNeighborhoods) println("     " + vlsnGraph.statisticsString)
 

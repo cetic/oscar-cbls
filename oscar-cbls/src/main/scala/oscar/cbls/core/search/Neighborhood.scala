@@ -136,7 +136,7 @@ abstract class Neighborhood(name:String = null) {
   var additionalStringGenerator: () => String = null
 
   /**
-   * sets the verbosity level with an additiojnal string generator that ins called eieher on eahc move (level = 1L)
+   * sets the verbosity level with an additional string generator that ins called eieher on eahc move (level = 1L)
    *   or for each explored neighbor (level = 2L)
    */
   def verboseWithExtraInfo(verbosity: Int, additionalString: () => String) {

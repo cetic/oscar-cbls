@@ -1,19 +1,19 @@
 /**
-  * *****************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  * ****************************************************************************
-  */
+ * *****************************************************************************
+ * OscaR is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * OscaR is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License  for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+ * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+ * ****************************************************************************
+ */
 
 package oscar.cbls.lib.search.neighborhoods.vlsn
 
@@ -38,12 +38,52 @@ class MoveExplorerAlgo(v:Int,
 
                        vehicleToObjectives:Array[Objective],
                        unroutedNodesPenalty:Objective,
-                       globalObjective:Objective) {
+                       globalObjective:Objective,
+                       debug:Boolean) {
 
 
   val initialVehicleToObjectives = vehicleToObjectives.map(_.value)
   val initialUnroutedNodesPenalty = unroutedNodesPenalty.value
   val initialGlobalObjective = globalObjective.value
+
+
+
+  //This is for debug purposes. Through this class we can check that other Obj have not moved
+  // when exploring a given move from a givnen vehicel to a given other one.
+  class CheckIngObjective(baseObjective:Objective, check:()=>Unit) extends Objective{
+    override def detailedString(short: Boolean, indent: Long): String =
+      baseObjective.detailedString(short: Boolean, indent: Long)
+
+    override def model: Store = baseObjective.model
+
+    override def value: Long = {
+      check()
+      baseObjective.value
+    }
+  }
+
+  def generateCheckerObjForVehicles(evaluatedObj:Objective, changedVehicles:Set[Int], penaltyChanged:Boolean):Objective = {
+    new CheckIngObjective(evaluatedObj, () => {
+      println("checking changedVehicles:" + changedVehicles.mkString(","))
+      if (!penaltyChanged){
+        require(initialUnroutedNodesPenalty == unroutedNodesPenalty.value,
+          "Penaly impacted by current move and should not, can only impact " + changedVehicles.mkString(")"))
+      }
+      for (vehicle <- 0 until v){
+        if(!(changedVehicles contains vehicle)) {
+          require(vehicleToObjectives(vehicle).value == initialVehicleToObjectives(vehicle),
+            "vehicle " + vehicle + " impacted by current move and should not; it can only impact {" + changedVehicles.mkString(",") +"}" + (if (penaltyChanged) " and penalty " else ""))
+        }
+      }
+
+      val global = globalObjective.value
+      if(global != Long.MaxValue){
+        require(global == vehicleToObjectives.map(_.value).sum + unroutedNodesPenalty.value, "global objective not coherent with sum of partial objectives")
+      }
+    })
+  }
+
+
 
   //TODO: find best loop nesting WRT. checkpoint calculation.
   //maybe we should unroute all nodes before doing move exploration since we do not want to waste time on evaluation obj on non targeted vehicle?
@@ -153,8 +193,15 @@ class MoveExplorerAlgo(v:Int,
         n
     }
 
+    val obj = if(debug) {
+      println("coucou evaluateInsertOnVehicleNoRemove")
+      generateCheckerObjForVehicles(globalObjective:Objective, Set(targetVehicleForInsertion), penaltyChanged = true)
+    }else {
+      globalObjective
+    }
+
     nodeToInsertNeighborhood(unroutedNodeToInsert).
-      getMove(globalObjective, initialGlobalObjective, acceptanceCriterion = acceptAllButMaxInt) match {
+      getMove(obj, initialGlobalObjective, acceptanceCriterion = acceptAllButMaxInt) match {
       case NoMoveFound => null
       case MoveFound(move) =>
         val delta = move.objAfter - initialGlobalObjective
@@ -181,8 +228,15 @@ class MoveExplorerAlgo(v:Int,
         n
     }
 
+    val obj = if(debug) {
+      println("coucou evaluateInsertOnVehicleWithRemove")
+      generateCheckerObjForVehicles(globalObjective, Set(targetVehicleForInsertion), penaltyChanged = true)
+    }else {
+      globalObjective
+    }
+
     nodeToInsertToNeighborhood(unroutedNodeToInsert).
-      getMove(globalObjective, correctedGlobalInit, acceptanceCriterion = acceptAllButMaxInt) match {
+      getMove(obj, correctedGlobalInit, acceptanceCriterion = acceptAllButMaxInt) match {
       case NoMoveFound => null
       case MoveFound(move) =>
         val delta = move.objAfter - correctedGlobalInit
@@ -301,9 +355,18 @@ class MoveExplorerAlgo(v:Int,
         n
     }
 
-    nodeToMoveToNeighborhood(routingNodeToMove)
-      .getMove(
-        vehicleToObjectives(targetVehicleForInsertion),
+    val obj = if(debug) {
+      println("coucou")
+      generateCheckerObjForVehicles(globalObjective, Set(fromVehicle, targetVehicleForInsertion), penaltyChanged = false) //we did not remove eny other node
+    }else {
+      vehicleToObjectives(targetVehicleForInsertion)
+    }
+
+
+    val neighborhood = nodeToMoveToNeighborhood(routingNodeToMove)
+    neighborhood.verbose = 5
+    neighborhood.getMove(
+        obj,
         initialVehicleToObjectives(targetVehicleForInsertion),
         acceptanceCriterion = acceptAllButMaxInt) match {
       case NoMoveFound => null
@@ -327,8 +390,15 @@ class MoveExplorerAlgo(v:Int,
         n
     }
 
+    val obj = if(debug) {
+      println("coucou")
+      generateCheckerObjForVehicles(globalObjective, Set(fromVehicle, targetVehicleForInsertion), penaltyChanged = true) //because node is temporarily removed
+    }else {
+      vehicleToObjectives(targetVehicleForInsertion)
+    }
+
     nodeToMoveToNeighborhood(routingNodeToMove)
-      .getMove(vehicleToObjectives(targetVehicleForInsertion), initialVehicleToObjectives(targetVehicleForInsertion), acceptanceCriterion = acceptAllButMaxInt) match {
+      .getMove(obj, initialVehicleToObjectives(targetVehicleForInsertion), acceptanceCriterion = acceptAllButMaxInt) match {
       case NoMoveFound => null
       case MoveFound(move) =>
         val delta = move.objAfter - initialVehicleToObjectives(targetVehicleForInsertion)
@@ -402,9 +472,17 @@ class MoveExplorerAlgo(v:Int,
   }
 
 
-  def evaluateRemove(routingNodeToRemove:Int,fromVehicle:Int):(Move, Long) = {
+  def evaluateRemove(routingNodeToRemove:Int,fromVehicle:Int):(Move,Long) = {
+
+    val obj = if(debug) {
+      println("coucou")
+      generateCheckerObjForVehicles(globalObjective, Set(fromVehicle), penaltyChanged = true)
+    }else {
+      unroutedNodesPenalty
+    }
+
     nodeToRemoveNeighborhood(routingNodeToRemove)
-      .getMove(unroutedNodesPenalty, initialUnroutedNodesPenalty, acceptanceCriterion = (_,newObj) => newObj != Int.MaxValue) match{
+      .getMove(obj, initialUnroutedNodesPenalty, acceptanceCriterion = (_,newObj) => newObj != Int.MaxValue) match{
       case NoMoveFound => null
       case MoveFound(move) =>
         val delta = move.objAfter - initialUnroutedNodesPenalty
@@ -412,8 +490,8 @@ class MoveExplorerAlgo(v:Int,
     }
   }
   /**
-    * deletions are from deleted node to trashNode
-    */
+   * deletions are from deleted node to trashNode
+   */
   private def exploreDeletions(): Unit = {
     for ((vehicleID, routingNodesToRemove) <- vehicleToRoutedNodes if !vehicleHasDirectInsertOrMove(vehicleID)) {
       for (routingNodeToRemove <- routingNodesToRemove) {
@@ -467,3 +545,5 @@ class MoveExplorerAlgo(v:Int,
     }
   }
 }
+
+
