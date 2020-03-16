@@ -206,7 +206,8 @@ class IncrementalMoveExplorerAlgo(v:Int,
                                   unroutedNodesPenalty:Objective,
                                   globalObjective:Objective,
 
-                                  cached:CachedExplorations
+                                  cached:CachedExplorations,
+                                  debug:Boolean
                                  )
   extends MoveExplorerAlgo(v:Int,
     vehicleToRoutedNodes:SortedMap[Long,Iterable[Long]],
@@ -222,7 +223,8 @@ class IncrementalMoveExplorerAlgo(v:Int,
 
     vehicleToObjectives:Array[Objective],
     unroutedNodesPenalty:Objective,
-    globalObjective:Objective){
+    globalObjective:Objective,
+    debug){
 
 
   override def evaluateInsertOnVehicleNoRemove(unroutedNodeToInsert: Long, targetVehicleForInsertion: Long, nCached:Boolean): (Move, Long) = {

@@ -9,7 +9,7 @@ import oscar.cbls.core.ChangingSeqValue
 case class PreComputedDistances(distanceFromStart:Long,
                                 distanceToStart:Long)
 
-class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:Array[CBLSIntVar], assymetricDistance:(Long,Long)=>Long)
+class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:Array[CBLSIntVar], aSymmetricDistance:(Long,Long)=>Long)
   extends GlobalConstraintDefinition[Long](gc,v){
 
   val preComputedVals: Array[PreComputedDistances] = Array.fill(n)(PreComputedDistances(0,0))
@@ -20,8 +20,9 @@ class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:
 
   override def performPreCompute(vehicle: Long, routes: IntSequence): Unit = {
 
+    println("performPreCompute routes: " + routes.mkString(","))
     var previousNode = vehicle
-    var prevPreComputedValue =PreComputedDistances(0,0)
+    var prevPreComputedValue = PreComputedDistances(0,0)
     preComputedVals(vehicle) = prevPreComputedValue
 
     var currentExplorerOPt:Option[IntSequenceExplorer] = routes.explorerAtAnyOccurrence(vehicle).get.next
@@ -40,8 +41,8 @@ class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:
           //We tag the current node with the proper value accumulatin on gthe previous node
 
           prevPreComputedValue = PreComputedDistances(
-            distanceFromStart = prevPreComputedValue.distanceFromStart + assymetricDistance(previousNode,explorer.value),
-            distanceToStart = prevPreComputedValue.distanceToStart + assymetricDistance(explorer.value,previousNode))
+            distanceFromStart = prevPreComputedValue.distanceFromStart + aSymmetricDistance(previousNode,explorer.value),
+            distanceToStart = prevPreComputedValue.distanceToStart + aSymmetricDistance(explorer.value,previousNode))
 
           previousNode = explorer.value
           preComputedVals(explorer.value) = prevPreComputedValue
@@ -59,25 +60,25 @@ class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:
       segments match {
         case null =>
           //return home
-          assymetricDistance(prevNode,vehicle)
+          aSymmetricDistance(prevNode,vehicle)
         case segmentQList =>
           val head = segmentQList.head
           val tail = segmentQList.tail
           head match {
             case PreComputedSubSequence(startNode, endNode, _) =>
-              val distanceToEnterThisSegment = if (prevNode == -1) 0 else assymetricDistance(prevNode,startNode)
+              val distanceToEnterThisSegment = if (prevNode == -1) 0 else aSymmetricDistance(prevNode,startNode)
               val lengthOfThisSegment = preComputedVals(endNode).distanceFromStart - preComputedVals(startNode).distanceFromStart
-              require(lengthOfThisSegment >= 0)
+              require(lengthOfThisSegment >= 0, "lengthOfThisSegment:" + lengthOfThisSegment + " segment: " + head + "\n preComputedVals:" + preComputedVals.zipWithIndex.mkString("\n") + "routes: " + routes.mkString(","))
               distanceToEnterThisSegment + lengthOfThisSegment + digestListOfSegments(tail, endNode)
 
             case FlippedPreComputedSubSequence(startNode, endNode, _) =>
-              val distanceToEnterThisSegment = if (prevNode == -1) 0 else assymetricDistance(prevNode,startNode)
+              val distanceToEnterThisSegment = if (prevNode == -1) 0 else aSymmetricDistance(prevNode,startNode)
               val lengthOfThisSegment = preComputedVals(startNode).distanceToStart - preComputedVals(endNode).distanceToStart
               require(lengthOfThisSegment >= 0)
               distanceToEnterThisSegment + lengthOfThisSegment + digestListOfSegments(tail, endNode)
 
             case NewNode(node) =>
-              val distanceToEnterThisSegment = if (prevNode == -1) 0 else assymetricDistance(prevNode,node)
+              val distanceToEnterThisSegment = if (prevNode == -1) 0 else aSymmetricDistance(prevNode,node)
               distanceToEnterThisSegment + digestListOfSegments(tail, node)
           }
       }
@@ -107,13 +108,13 @@ class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:
           false
         }else{
           //we are not starting the next vehicle, just continue on the current one
-          toReturn += assymetricDistance(previousNode,explorer.value)
+          toReturn += aSymmetricDistance(previousNode,explorer.value)
           previousNode = explorer.value
           currentExplorerOPt = explorer.next
           true
         }
     }){}
 
-    toReturn + assymetricDistance(previousNode,vehicle) //return
+    toReturn + aSymmetricDistance(previousNode,vehicle) //return
   }
 }

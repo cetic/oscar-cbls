@@ -18,8 +18,11 @@ import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
 
 object DemoPDP_VLSN extends App{
   val m = new Store(noCycle = false)
-  val v = 10
-  val n = 500
+
+  val v = 3
+  val n = 50
+//  val v = 10
+//  val n = 500
 
   println("VLSN(PDPTW) v:" + v +" n:" + n)
   val penaltyForUnrouted = 10000
@@ -33,7 +36,7 @@ object DemoPDP_VLSN extends App{
   val myVRP =  new VRP(m,n,v)
   val vehicles = 0L until v
 
-  val k = 30
+  val k = 10
   val l = 40
   val xNearestVehicles = 7
 
@@ -483,9 +486,9 @@ object DemoPDP_VLSN extends App{
     val nodeToAllVehicles = SortedMap.empty[Long, Iterable[Long]] ++ chainsExtension.heads.map(node => (node:Long, vehicles))
     new VLSN(
       v,
-      () => SortedMap.empty[Long, SortedSet[Long]] ++
+      () => {println(myVRP); SortedMap.empty[Long, SortedSet[Long]] ++
         vehicles.map((vehicle: Long) =>
-          (vehicle:Long, SortedSet.empty[Long] ++ myVRP.getRouteOfVehicle(vehicle).filter(node => chainsExtension.isHead(node)))),
+          (vehicle:Long, SortedSet.empty[Long] ++ myVRP.getRouteOfVehicle(vehicle).filter(node => chainsExtension.isHead(node))))},
       () => SortedSet.empty[Long] ++ myVRP.unroutedNodes.filter(node => chainsExtension.isHead(node)),
       nodeToRelevantVehicles = () => chainHeadToxNearestVehicles,
 
@@ -495,8 +498,8 @@ object DemoPDP_VLSN extends App{
 
       removeNodeAndReInsert = removeAndReInsertVLSN,
 
-      reOptimizeVehicle = Some(vehicle => Some(threeOptOnVehicle(vehicle) exhaustBack moveChainWithinVehicle(vehicle))),
-      useDirectInsert = true,
+      reOptimizeVehicle = None, //Some(vehicle => Some(threeOptOnVehicle(vehicle) exhaustBack moveChainWithinVehicle(vehicle))),
+      useDirectInsert = false,
 
       objPerVehicle,
       unroutedPenaltyOBj,
@@ -506,7 +509,7 @@ object DemoPDP_VLSN extends App{
 
       name="VLSN(" + l + ")",
       reoptimizeAtStartUp = true,
-      checkObjCoherence = true
+      debugNeighborhoodExploration = true
     )
   }
 
