@@ -40,6 +40,7 @@ object DemoPDP_VLSN extends App{
   val l = 40
   val xNearestVehicles = 7
 
+  println("listOfChains: \n" + listOfChains.mkString("\n"))
   // GC
   val gc = GlobalConstraintCore(myVRP.routes, v)
 
