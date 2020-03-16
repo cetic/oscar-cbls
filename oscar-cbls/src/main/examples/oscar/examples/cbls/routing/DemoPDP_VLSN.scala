@@ -40,6 +40,7 @@ object DemoPDP_VLSN extends App{
   val l = 40
   val xNearestVehicles = 7
 
+  println("listOfChains: \n" + listOfChains.mkString("\n"))
   // GC
   val gc = GlobalConstraintCore(myVRP.routes, v)
 
@@ -182,6 +183,7 @@ object DemoPDP_VLSN extends App{
     myVRP.kFirst(k,closestRelevantPredecessorsByDistance(_))
   }, myVRP,neighborhoodName = "InsertUF")
 
+  il y a un problème si on a un noeud tout seul. 
   def lastNodeOfChainInsertion(lastNode:Long) = insertPointUnroutedFirst(
     () => List(lastNode),
     ()=> myVRP.kFirst(
