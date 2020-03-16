@@ -21,8 +21,8 @@
 package oscar.cbls.algo.tarjan
 
 trait TarjanNode{
-  var Index:Long = -1
-  var LowLink:Long = -1
+  var Index:Int = -1
+  var LowLink:Int = -1
   var OnStack:Boolean = false
 }
 
@@ -41,7 +41,7 @@ object TarjanWithBigNodes1{
     def visit(v:T){
       v.Index = index
       v.LowLink = index
-      index +=1L
+      index +=1
       Stack = v::Stack
       v.OnStack = true
 
@@ -73,7 +73,7 @@ object TarjanWithBigNodes1{
       }
     }
 
-    for(n <- Nodes) {if(n.Index == -1L) visit(n)}
+    for(n <- Nodes) {if(n.Index == -1) visit(n)}
 
     Components
   }
