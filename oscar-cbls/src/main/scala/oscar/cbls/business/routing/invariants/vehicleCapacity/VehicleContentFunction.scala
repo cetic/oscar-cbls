@@ -3,7 +3,7 @@ package oscar.cbls.business.routing.invariants.vehicleCapacity
 protected abstract class VehicleContentFunction(val maxContentIfStartAt0: Long,
                                                 val minContentIfStartAt0: Long,
                                                 val contentAtEndIfStartAt0: Long,
-                                                val from: Long, val to: Long){
+                                                val from: Int, val to: Int){
   def isEmpty: Boolean
   def max(startContent: Long): Long
   def min(startContent: Long): Long
@@ -12,8 +12,8 @@ protected abstract class VehicleContentFunction(val maxContentIfStartAt0: Long,
 protected case class DefinedContentFunction(override val maxContentIfStartAt0: Long,
                                             override val minContentIfStartAt0: Long,
                                             override val contentAtEndIfStartAt0: Long,
-                                            override val from: Long,
-                                            override val to: Long) extends
+                                            override val from: Int,
+                                            override val to: Int) extends
   VehicleContentFunction(maxContentIfStartAt0, minContentIfStartAt0, contentAtEndIfStartAt0, from, to) {
   override def isEmpty: Boolean = false
 
@@ -45,11 +45,11 @@ protected case object EmptyContentFunction extends
 
 protected case class TwoWaysVehicleContentFunction(nonFlippedFunction: VehicleContentFunction, flippedFunction: VehicleContentFunction){
 
-  def from(flipped: Boolean): Long =
+  def from(flipped: Boolean): Int =
     if(flipped)flippedFunction.from
     else nonFlippedFunction.from
 
-  def to(flipped: Boolean): Long =
+  def to(flipped: Boolean): Int =
     if(flipped)flippedFunction.to
     else nonFlippedFunction.to
 

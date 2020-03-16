@@ -78,7 +78,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
   private val aStarEngine = new RevisableAStar(graph: ConditionalGraph, underApproximatingDistance)
 
   //println(routes.toString() + v)
-  private var vehicleSearcher:((IntSequence,Long)=>Long) = if(v == 1L) ((_,_) => 0L) else
+  private var vehicleSearcher:((IntSequence,Int)=>Int) = if(v == 1) ((_,_) => 0) else
     RoutingConventionMethods.cachedVehicleReachingPosition(routes.value, v)
 
   //fast query for the AStar algo.
@@ -111,7 +111,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
     myNeededConditions match{
       case Some(variable) => variable
       case None =>
-        var neededConditionsAcc:Set[Long] = SortedSet.empty
+        var neededConditionsAcc:Set[Int] = SortedSet.empty
         for(aStarInfo:AStarInfo <- allAStarInfo) {
           for (c <- aStarInfo.requiredConditions){
             neededConditionsAcc = neededConditionsAcc + c
@@ -127,7 +127,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
     myRelevantConditions match{
       case Some(variable) => variable
       case None =>
-        var relevantConditionsAcc:Set[Long] = SortedSet.empty
+        var relevantConditionsAcc:Set[Int] = SortedSet.empty
         for(aStarInfo:AStarInfo <- allAStarInfo){
           for(c <- aStarInfo.conditionsForRevision) {
             relevantConditionsAcc = relevantConditionsAcc + c
@@ -141,7 +141,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  private def getAStarInfo(node1: Long, node2: Long): AStarInfo = {
+  private def getAStarInfo(node1: Int, node2: Int): AStarInfo = {
     val (minNode, maxNode) = if (node1 < node2) (node1, node2) else (node2, node1)
 
     val allInfoOnMinNode = minNodeToAStarInfos(minNode) // at most two
@@ -257,8 +257,8 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
   override def notifySetChanges(v: ChangingSetValue,
                                 id: Int,
-                                addedValues: Iterable[Long],
-                                removedValues: Iterable[Long],
+                                addedValues: Iterable[Int],
+                                removedValues: Iterable[Int],
                                 oldValue: SortedSet[Long],
                                 newValue: SortedSet[Long]): Unit = {
 
@@ -362,7 +362,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
         //we update teh vehicle searcher, since many queries might be done on it.
         vehicleSearcher =
-          if(v == 1L) (_,_) => 0L
+          if(v == 1) (_,_) => 0
           else RoutingConventionMethods.cachedVehicleReachingPosition(changes.newValue, v)
 
       case r@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Int) =>
@@ -372,7 +372,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
         //we update the vehicle searcher, since many queries might be done on it.
         vehicleSearcher =
-          if(v == 1L) (_,_) => 0L
+          if(v == 1) (_,_) => 0
           else RoutingConventionMethods.cachedVehicleReachingPosition(changes.newValue, v)
 
       case x@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
@@ -385,7 +385,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
         if(x.isSimpleFlip){
           //this is a simple flip
 
-          val oldPrevFromValue = prev.newValue.valueAtPosition(fromIncluded - 1L).get
+          val oldPrevFromValue = prev.newValue.valueAtPosition(fromIncluded - 1).get
           val oldSuccToValue = RoutingConventionMethods.routingSuccPos2Val(toIncluded,prev.newValue,v)
 
           val fromValue = x.fromValue
@@ -410,11 +410,11 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
         }else {
           //actually moving, not simple flip
-          val oldPrevFromValue = prev.newValue.valueAtPosition(fromIncluded - 1L).get
-          val oldSuccToIfNoLoopOpt = prev.newValue.valueAtPosition(toIncluded + 1L)
+          val oldPrevFromValue = prev.newValue.valueAtPosition(fromIncluded - 1).get
+          val oldSuccToIfNoLoopOpt = prev.newValue.valueAtPosition(toIncluded + 1)
           val oldSuccToValue = oldSuccToIfNoLoopOpt match {
-            case None => v - 1L
-            case Some(value) => if (value < v) value - 1L else value
+            case None => v - 1
+            case Some(value) => if (value < v) value - 1 else value
           }
 
           val fromValue = x.fromValue
@@ -485,17 +485,17 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
           }
         }
 
-      case SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
+      case SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
         //println("Insert")
         digestUpdates(prev)
 
         val newSeq = changes.newValue
 
-        val oldPrev = prev.newValue.valueAtPosition(pos-1L).get
+        val oldPrev = prev.newValue.valueAtPosition(pos-1).get
 
         val oldSucc =prev.newValue.valueAtPosition(pos) match{
-          case None => v-1L //at the end
-          case Some(oldSuccIfNoLoop) =>  if(oldSuccIfNoLoop < v) oldSuccIfNoLoop-1L else oldSuccIfNoLoop
+          case None => v-1 //at the end
+          case Some(oldSuccIfNoLoop) =>  if(oldSuccIfNoLoop < v) oldSuccIfNoLoop-1 else oldSuccIfNoLoop
         }
 
         val oldAStarDistance =
@@ -564,7 +564,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
   }
 
 
-  private def computeValueBetween(s:IntSequence, vehicle:Long, fromPosIncluded:Long, fromValueIncluded:Long, toPosIncluded:Long, toValueIncluded:Long):Long = {
+  private def computeValueBetween(s:IntSequence, vehicle: Int, fromPosIncluded:Int, fromValueIncluded:Int, toPosIncluded:Int, toValueIncluded:Int):Long = {
     if(fromPosIncluded == toPosIncluded) 0L
     else if(fromPosIncluded < toPosIncluded) {
       var e = s.explorerAtPosition(fromPosIncluded).get
@@ -578,7 +578,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
       toReturn
     }else{
       //this is symmetric
-      computeValueBetween(s:IntSequence, vehicle:Long, toPosIncluded:Long, toValueIncluded:Long, fromPosIncluded:Long, fromValueIncluded:Long)
+      computeValueBetween(s:IntSequence, vehicle: Int, toPosIncluded:Int, toValueIncluded:Int, fromPosIncluded:Int, fromValueIncluded:Int)
     }
   }
 
