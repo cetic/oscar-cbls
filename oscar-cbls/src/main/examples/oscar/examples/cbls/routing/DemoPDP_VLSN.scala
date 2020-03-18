@@ -183,6 +183,7 @@ object DemoPDP_VLSN extends App{
     myVRP.kFirst(k,closestRelevantPredecessorsByDistance(_))
   }, myVRP,neighborhoodName = "InsertUF")
 
+  //il y a un problème si on a un noeud tout seul.
   def lastNodeOfChainInsertion(lastNode:Int) = insertPointUnroutedFirst(
     () => List(lastNode),
     ()=> myVRP.kFirst(
