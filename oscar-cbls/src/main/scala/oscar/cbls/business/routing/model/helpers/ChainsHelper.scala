@@ -6,7 +6,7 @@ import oscar.cbls._
 import scala.collection.immutable.{HashSet, List}
 
 /**
-  * Created by fg on 12L/09L/1L7.
+  * Created by fg on 12/09/17.
   */
 object ChainsHelper {
   // TODO move this dans l'objet Chains
