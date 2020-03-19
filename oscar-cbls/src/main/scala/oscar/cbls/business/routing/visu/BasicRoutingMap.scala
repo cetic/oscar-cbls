@@ -36,7 +36,7 @@ class BasicRoutingMap(vrp: VRP,
                       nodesPositions: Array[(scala.Double,scala.Double)],
                       colorValues: Array[Color],
                       mapSize: Option[Int],
-                      refreshRate: Long,
+                      refreshRate: Int,
                       toolTipInfo: Option[Int => Option[() => String]]) extends VisualDrawing(false,false) with StopWatch with RoutingMapTrait {
 
   private lazy val pixelPositionOfNodes: Array[((scala.Double,scala.Double),Int)] = positionsToPixels()
@@ -153,7 +153,7 @@ class BasicRoutingMap(vrp: VRP,
     })
   }
 
-  private def computeSize(nodesPositions: Array[(scala.Double,scala.Double)]): Long ={
+  private def computeSize(nodesPositions: Array[(scala.Double,scala.Double)]): Int ={
     val distanceBetweenNodes = Array.tabulate(vrp.n)(x =>
       Array.tabulate(vrp.n)(y =>
         List(nodesPositions(x)._1 - nodesPositions(y)._1,nodesPositions(x)._2 - nodesPositions(y)._2))).

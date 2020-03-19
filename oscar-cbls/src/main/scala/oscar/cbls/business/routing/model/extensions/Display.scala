@@ -25,7 +25,7 @@ import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 class Display(vrp: VRP,
               nodePositions: Array[(Double,Double)],
               sizeOfMap: Option[Int] = None,
-              refreshRate: Long = 100L,
+              refreshRate: Int = 100,
               toolTipInfo: Option[Int => Option[() => String]] = None,
               routingMapType: RoutingMapTypes.Value = RoutingMapTypes.BasicRoutingMap,
               title:String = "VRP with OscaR.cbls"
