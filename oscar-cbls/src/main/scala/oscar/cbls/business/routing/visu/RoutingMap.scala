@@ -19,7 +19,7 @@ object RoutingMap{
             nodesPositions: Array[(scala.Double,scala.Double)],
             vehiclesToColor: Array[Color],
             size: Option[Int],
-            resfreshRate: Long,
+            resfreshRate: Int,
             toolTipInfo: Option[Int => Option[() => String]],
             routingMapType: RoutingMapTypes.Value): JPanel with RoutingMapTrait ={
     routingMapType match{

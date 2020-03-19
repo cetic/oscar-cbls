@@ -31,7 +31,7 @@ import scala.swing.Color
 class RealRoutingMap(vrp: VRP,
                      geoCoords: Array[(scala.Double,scala.Double)],
                      colorValues: Array[Color],
-                     refreshRate: Long,
+                     refreshRate: Int,
                      toolTipInfo: Option[Int => Option[() => String]]) extends VisualMap() with StopWatch with RoutingMapTrait {
 
   private var lastRefresh = 0L

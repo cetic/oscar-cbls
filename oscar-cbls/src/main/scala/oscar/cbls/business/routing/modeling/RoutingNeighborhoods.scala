@@ -46,18 +46,18 @@ trait InsertPointAPI{
    * @param hotRestart hot restart on the insertion point
    * @param insertedPointsSymetryClass a function that input the ID of an unrouted node and returns a symmetry class;
    *                      ony one of the unrouted node in each class will be considered for insert
-   *                      Long.MinValue is considered different to itself
+   *                      Int.MinValue is considered different to itself
    *                      if you set to None this will not be used at all
    * @author renaud.delandtsheer@cetic.be
    */
-  def insertPointRoutedFirst(insertionPoints:()=>Iterable[Long],
-                             relevantSuccessorsToInsert: () => Long => Iterable[Long],
+  def insertPointRoutedFirst(insertionPoints:()=>Iterable[Int],
+                             relevantSuccessorsToInsert: () => Int => Iterable[Int],
                              vrp: VRP,
                              neighborhoodName: String = "InsertPointRoutedFirst",
                              selectInsertionPointBehavior:LoopBehavior = First(),
                              selectInsertedNodeBehavior:LoopBehavior = First(),
                              hotRestart: Boolean = true,
-                             insertedPointsSymetryClass:Option[Long => Long] = None) =
+                             insertedPointsSymetryClass:Option[Int => Int] = None) =
     InsertPointRoutedFirst(insertionPoints,
       relevantSuccessorsToInsert,
       vrp,
@@ -81,7 +81,7 @@ trait InsertPointAPI{
    * @param hotRestart set to true fo a hot restart fearture on the node to insert
    * @param nodeSymmetryClass a function that input the ID of an unrouted node and returns a symmetry class;
    *                      ony one of the unrouted node in each class will be considered for insert
-   *                      Long.MinValue is considered different to itself
+   *                      Int.MinValue is considered different to itself
    *                      if you set to None this will not be used at all
    * @param hotRestartOnNextSymmetryClass when you have symmetries among points to insert and hotRestart,
    *                                  this option will try to have the hotRestart starting
@@ -90,14 +90,14 @@ trait InsertPointAPI{
    * @author Florent Ghilain (UMONS)
    * @author yoann.guyot@cetic.be
    */
-  def insertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Long],
-                               relevantPredecessor: () => Long => Iterable[Long],
+  def insertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
+                               relevantPredecessor: () => Int => Iterable[Int],
                                vrp: VRP,
                                neighborhoodName: String = "InsertPointUnroutedFirst",
                                hotRestart: Boolean = true,
                                selectNodeBehavior:LoopBehavior = First(),
                                selectInsertionPointBehavior:LoopBehavior = First(),
-                               nodeSymmetryClass:Option[Long => Long] = None,
+                               nodeSymmetryClass:Option[Int => Int] = None,
                                hotRestartOnNextSymmetryClass:Boolean = false,
                                positionIndependentMoves:Boolean = false) =
     InsertPointUnroutedFirst(unroutedNodesToInsert,
@@ -125,8 +125,8 @@ trait OnePointMoveAPI{
    * @author yoann.guyot@cetic.be
    * @author Florent Ghilain (UMONS)
    */
-  def onePointMove(nodesToMove: () => Iterable[Long],
-                   relevantNewPredecessors: () => Long => Iterable[Long],
+  def onePointMove(nodesToMove: () => Iterable[Int],
+                   relevantNewPredecessors: () => Int => Iterable[Int],
                    vrp:VRP,
                    neighborhoodName: String = "OnePointMove",
                    selectPointToMoveBehavior:LoopBehavior = First(),
@@ -165,7 +165,7 @@ trait RemovePointAPI{
    * @author yoann.guyot@cetic.be
    * @author Florent Ghilain (UMONS)
    */
-  def removePoint(relevantPointsToRemove:()=>Iterable[Long],
+  def removePoint(relevantPointsToRemove:()=>Iterable[Int],
                   vrp: VRP,
                   neighborhoodName:String = "RemovePoint",
                   selectNodeBehavior:LoopBehavior = First(),
@@ -190,8 +190,8 @@ trait RouteExchangeAPI{
    * It does not modifies the routes themselves. It just exchanges the vehicles
    * @author renaud.delandtsheer@cetic.be
    */
-  def routeExchange(firstVehicles:()=>Iterable[Long],
-                    secondVehicles:()=>Long=>Iterable[Long],
+  def routeExchange(firstVehicles:()=>Iterable[Int],
+                    secondVehicles:()=>Int=>Iterable[Int],
                     vrp:VRP,
                     neighborhoodName: String = "RouteExchange",
                     selectFirstVehicleBehavior:LoopBehavior = First(),
@@ -229,8 +229,8 @@ trait SegmentExchangeAPI{
    * @param tryFlip if false, will not flip any segment (maybe you do not want flipping if using time windows?)
    */
   def segmentExchange(vrp: VRP,
-                      relevantNeighbors:()=>Long=>Iterable[Long], //must be routed
-                      vehicles:() => Iterable[Long],
+                      relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
+                      vehicles:() => Iterable[Int],
                       neighborhoodName:String = "SegmentExchange",
                       hotRestart:Boolean = true,
                       selectFirstVehicleBehavior:LoopBehavior = First(),
@@ -263,9 +263,9 @@ trait SegmentExchangeAPI{
     * @param tryFlip if false, will not flip any segment (maybe you do not want flipping if using time windows?)
     */
   def segmentExchangeOnSegments(vrp: VRP,
-                                segmentsToExchangeGroupedByVehicles: () => Map[Long,(List[(Long,Long)])],
-                                relevantNeighbors:()=>Long=>Iterable[Long], //must be routed
-                                vehicles:() => Iterable[Long],
+                                segmentsToExchangeGroupedByVehicles: () => Map[Int,(List[(Int,Int)])],
+                                relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
+                                vehicles:() => Iterable[Int],
                                 neighborhoodName:String = "SegmentExchange",
                                 hotRestart:Boolean = true,
 
@@ -303,8 +303,8 @@ trait ThreeOptAPI{
    * @author yoann.guyot@cetic.be
    * @author Florent Ghilain (UMONS)
    */
-  def threeOpt(potentialInsertionPoints:()=>Iterable[Long], //must be routed
-               relevantNeighbors:()=>Long=>Iterable[Long], //must be routed
+  def threeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
+               relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
                vrp: VRP,
                neighborhoodName:String = "ThreeOpt",
                selectInsertionPointBehavior:LoopBehavior = First(),
@@ -343,8 +343,8 @@ trait TwoOptAPI{
    * @author yoann.guyot@cetic.be
    * @author Florent Ghilain (UMONS)
    * */
-  def twoOpt(segmentStartValues:()=>Iterable[Long],
-             relevantNewSuccessors:()=>Long=>Iterable[Long],
+  def twoOpt(segmentStartValues:()=>Iterable[Int],
+             relevantNewSuccessors:()=>Int=>Iterable[Int],
              vrp: VRP,
              neighborhoodName:String = "TwoOpt",
              selectSegmentStartBehavior:LoopBehavior = First(),
