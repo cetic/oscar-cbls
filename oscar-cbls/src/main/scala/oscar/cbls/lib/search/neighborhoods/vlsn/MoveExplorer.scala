@@ -64,7 +64,6 @@ class MoveExplorerAlgo(v:Int,
 
   def generateCheckerObjForVehicles(evaluatedObj:Objective, changedVehicles:Set[Int], penaltyChanged:Boolean):Objective = {
     new CheckIngObjective(evaluatedObj, () => {
-      println("checking changedVehicles:" + changedVehicles.mkString(","))
       if (!penaltyChanged){
         val newValue = unroutedNodesPenalty.value
         require(newValue == Long.MaxValue || newValue == initialUnroutedNodesPenalty,
@@ -196,7 +195,6 @@ class MoveExplorerAlgo(v:Int,
     }
 
     val obj = if(debug) {
-      println("coucou evaluateInsertOnVehicleNoRemove unroutedNodeToInsert:" + unroutedNodeToInsert + " targetVehicleForInsertion:" + targetVehicleForInsertion)
       generateCheckerObjForVehicles(globalObjective:Objective, Set(targetVehicleForInsertion), penaltyChanged = true)
     }else {
       globalObjective
@@ -233,7 +231,6 @@ class MoveExplorerAlgo(v:Int,
     }
 
     val obj = if(debug) {
-      println("coucou evaluateInsertOnVehicleWithRemove")
       generateCheckerObjForVehicles(globalObjective, Set(targetVehicleForInsertion), penaltyChanged = true)
     }else {
       globalObjective
@@ -360,8 +357,7 @@ class MoveExplorerAlgo(v:Int,
     }
 
     val obj = if(debug) {
-      println("coucou")
-      generateCheckerObjForVehicles(globalObjective, Set(fromVehicle, targetVehicleForInsertion), penaltyChanged = false) //we did not remove eny other node
+      generateCheckerObjForVehicles(globalObjective, Set(fromVehicle, targetVehicleForInsertion), penaltyChanged = false)
     }else {
       vehicleToObjectives(targetVehicleForInsertion)
     }
@@ -395,7 +391,6 @@ class MoveExplorerAlgo(v:Int,
     }
 
     val obj = if(debug) {
-      println("coucou")
       generateCheckerObjForVehicles(globalObjective, Set(fromVehicle, targetVehicleForInsertion), penaltyChanged = true) //because node is temporarily removed
     }else {
       vehicleToObjectives(targetVehicleForInsertion)
@@ -479,7 +474,6 @@ class MoveExplorerAlgo(v:Int,
   def evaluateRemove(routingNodeToRemove:Int,fromVehicle:Int):(Move,Long) = {
 
     val obj = if(debug) {
-      println("coucou")
       generateCheckerObjForVehicles(globalObjective, Set(fromVehicle), penaltyChanged = true)
     }else {
       unroutedNodesPenalty
