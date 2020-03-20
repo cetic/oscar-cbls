@@ -127,7 +127,7 @@ object RandomGraphGenerator {
     }
     builder.finish()
   }
-
+/*
   val bench = new InvBench(0,List(ToMax()))
   val moveTypeEnumGen :Gen[VLSNMoveType.Value] = Gen.frequency(
     (10, VLSNMoveType.InsertNoEject),
@@ -157,7 +157,7 @@ object RandomGraphGenerator {
     (1,ShiftMove(0L,0L,0L,null,0L)),
     (1,SwapMove(null,null,0,0,false,0))
   )
-
+*/
   val nodeTypeGen :Gen[VLSNSNodeType.Value] = Gen.frequency(
     (10,VLSNSNodeType.RegularNode),
     (10,VLSNSNodeType.VehicleNode),

@@ -139,6 +139,7 @@ object WareHouseLocationVisu extends App with StopWatch{
 
   neighborhood.verbose = 2
 
+  /*
   println("DEMO: engine on pause; press ENTER to resume execution")
   scala.io.StdIn.readLine()
   println("DEMO: start in 3 seconds")
@@ -147,6 +148,7 @@ object WareHouseLocationVisu extends App with StopWatch{
   Thread.sleep(1000)
   println("DEMO: start in 1 second")
   Thread.sleep(1000)
+*/
 
   neighborhood.doAllMoves(obj=obj)
 

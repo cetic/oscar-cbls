@@ -185,7 +185,7 @@ object TestGeometryPackingMinDistance extends App{
     () => {
       val allShapes = placedShapes.map(_.value)
 
-      val holes:Iterable[(Int,Int)] = Overlap.centroidsOfFreeSpacesIn(allShapes.map(_.geometry),outerFrame)
+      val holes:Iterable[(Long,Long)] = Overlap.centroidsOfFreeSpacesIn(allShapes.map(_.geometry),outerFrame)
 
       allShapes.indices.flatMap(circleID => {
 
@@ -200,7 +200,7 @@ object TestGeometryPackingMinDistance extends App{
     neighborhoodName = "toHole"
   )
 
-  class MoveShapeTo(val shapeID:Int, targetX:Int, targetY:Int, oldX:Int, oldY:Int, newObj:Int)
+  class MoveShapeTo(val shapeID:Int, targetX:Long, targetY:Long, oldX:Long, oldY:Long, newObj:Long)
     extends EvaluableCodedMove(() => {
       coordArray(shapeID)._1 := (targetX max radiusArray(shapeID)) min (maxX - radiusArray(shapeID))
       coordArray(shapeID)._2 := (targetY max radiusArray(shapeID)) min (maxY - radiusArray(shapeID))
