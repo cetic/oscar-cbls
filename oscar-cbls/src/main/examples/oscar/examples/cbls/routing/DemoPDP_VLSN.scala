@@ -19,8 +19,8 @@ import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
 object DemoPDP_VLSN extends App{
   val m = new Store(noCycle = false)
 
-  val v = 3
-  val n = 50
+  val v = 10
+  val n = 500
 //  val v = 10
 //  val n = 500
 
@@ -183,7 +183,7 @@ object DemoPDP_VLSN extends App{
     myVRP.kFirst(k,closestRelevantPredecessorsByDistance(_))
   }, myVRP,neighborhoodName = "InsertUF")
 
-  //il y a un problème si on a un noeud tout seul.
+  //TODO: il y a un problème si on a un noeud tout seul.
   def lastNodeOfChainInsertion(lastNode:Int) = insertPointUnroutedFirst(
     () => List(lastNode),
     ()=> myVRP.kFirst(
@@ -261,7 +261,7 @@ object DemoPDP_VLSN extends App{
       () => List(lastNode),
       ()=> myVRP.kFirst(
         l,
-        ChainsHelper.relevantNeighborsForLastNodeAfterHead(
+        ChainsHelper.relevantNeighborsForLastNodeAfterHead(  //TODO: filter in the target vehicle!!
           myVRP,
           chainsExtension)),
       myVRP,
@@ -271,6 +271,7 @@ object DemoPDP_VLSN extends App{
 
     dynAndThen(firstNodeOfChainInsertion,
       (insertMove: InsertPointMove) => {
+        println("insert head:" + insertMove)
         if(maxLengthConstraintPerVehicle(targetVehicle).value != 0){
           NoMoveNeighborhood
         }else{

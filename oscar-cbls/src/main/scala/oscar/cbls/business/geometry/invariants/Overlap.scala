@@ -53,10 +53,10 @@ object Overlap {
 
   // ///////////////////////////////////////////////////////
 
-  def centroidsOfFreeSpacesIn(s:Iterable[Geometry], outer:Geometry):Iterable[(Int,Int)] = {
+  def centroidsOfFreeSpacesIn(s:Iterable[Geometry], outer:Geometry):Iterable[(Long,Long)] = {
     val frees = freeSpacesIn(s:Iterable[Geometry], outer:Geometry):Iterable[Geometry]
     val centroids = frees.map(_.getCentroid)
-    centroids.map(centroid => (centroid.getX.toInt,centroid.getY.toInt))
+    centroids.map(centroid => (centroid.getX.toLong,centroid.getY.toLong))
   }
 
   def freeSpacesIn(s:Iterable[Geometry], outer:Geometry):Iterable[Geometry] = {
@@ -108,7 +108,7 @@ object Overlap {
     val ys = Array.tabulate(nbSteps1D+1)(yid => minY + stepY * yid)
 
     val distancesArray:Array[Array[Double]] = Array.tabulate(nbSteps1D+1)(_ => Array.fill(nbSteps1D+1)(0))
-    val allValidPointsHeap = new BinomialHeap[(Int,Int)]({case (xId,yId) => distancesArray(xId)(yId).abs.toInt}, xs.length * ys.length)
+    val allValidPointsHeap = new BinomialHeap[(Int,Int)]({case (xId,yId) => distancesArray(xId)(yId).abs.toLong}, xs.length * ys.length)
 
     for(xId <- 0 to nbSteps1D){
       for(yId <- 0 to nbSteps1D){

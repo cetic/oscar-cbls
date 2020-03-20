@@ -66,12 +66,14 @@ class MoveExplorerAlgo(v:Int,
     new CheckIngObjective(evaluatedObj, () => {
       println("checking changedVehicles:" + changedVehicles.mkString(","))
       if (!penaltyChanged){
-        require(initialUnroutedNodesPenalty == unroutedNodesPenalty.value,
+        val newValue = unroutedNodesPenalty.value
+        require(newValue == Long.MaxValue || newValue == initialUnroutedNodesPenalty,
           "Penaly impacted by current move and should not, can only impact " + changedVehicles.mkString(")"))
       }
       for (vehicle <- 0 until v){
         if(!(changedVehicles contains vehicle)) {
-          require(vehicleToObjectives(vehicle).value == initialVehicleToObjectives(vehicle),
+          val newValue = vehicleToObjectives(vehicle).value
+          require(newValue == Long.MaxValue || newValue == initialVehicleToObjectives(vehicle),
             "vehicle " + vehicle + " impacted by current move and should not; it can only impact {" + changedVehicles.mkString(",") +"}" + (if (penaltyChanged) " and penalty " else ""))
         }
       }
@@ -194,14 +196,16 @@ class MoveExplorerAlgo(v:Int,
     }
 
     val obj = if(debug) {
-      println("coucou evaluateInsertOnVehicleNoRemove")
+      println("coucou evaluateInsertOnVehicleNoRemove unroutedNodeToInsert:" + unroutedNodeToInsert + " targetVehicleForInsertion:" + targetVehicleForInsertion)
       generateCheckerObjForVehicles(globalObjective:Objective, Set(targetVehicleForInsertion), penaltyChanged = true)
     }else {
       globalObjective
     }
 
-    nodeToInsertNeighborhood(unroutedNodeToInsert).
-      getMove(obj, initialGlobalObjective, acceptanceCriterion = acceptAllButMaxInt) match {
+    val proc = nodeToInsertNeighborhood(unroutedNodeToInsert)
+    proc.verbose = 4
+
+    proc.getMove(obj, initialGlobalObjective, acceptanceCriterion = acceptAllButMaxInt) match {
       case NoMoveFound => null
       case MoveFound(move) =>
         val delta = move.objAfter - initialGlobalObjective
@@ -366,9 +370,9 @@ class MoveExplorerAlgo(v:Int,
     val neighborhood = nodeToMoveToNeighborhood(routingNodeToMove)
     neighborhood.verbose = 5
     neighborhood.getMove(
-        obj,
-        initialVehicleToObjectives(targetVehicleForInsertion),
-        acceptanceCriterion = acceptAllButMaxInt) match {
+      obj,
+      initialVehicleToObjectives(targetVehicleForInsertion),
+      acceptanceCriterion = acceptAllButMaxInt) match {
       case NoMoveFound => null
       case MoveFound(move) =>
         val delta = move.objAfter - initialVehicleToObjectives(targetVehicleForInsertion)

@@ -25,10 +25,12 @@ import oscar.cbls.util.StopWatch
 object VRPDemo extends App {
 
   println("usage: VRPDemo n v")
-  //val n:Int=args(0)
-  val n = 500
-  //val v = args(1)
-  val v = 4
+  //val n:Long=args(0).toLong
+  val n = 5000
+  //val v = args(1).toLong
+  val v = 10
+
+  println("VRPDemo n:" + n + " v:" + v)
 
   val displayDelay = 100 //ms
   val verbose = 1
