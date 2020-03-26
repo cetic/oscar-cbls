@@ -315,8 +315,6 @@ class VLSN(v:Int,
                            unroutedNodesToInsert: SortedSet[Long],
                            cachedExplorations: Option[CachedExplorations]): Option[DataForVLSNRestart] = {
 
-    require(globalObjective.value == unroutedPenalty.value + vehicleToObjective.map(_.value).sum,"The objective are incoherent before the search. The global objective (" + globalObjective.value + ") shall be the unroutedPenalty (" + unroutedPenalty.value + ") +  the sum of vehicle objective (" + vehicleToObjective.map(_.value).sum + ")")
-
 
     //TODO: this is the time consuming part of the VLSN; a smart approach would really help here.
     //first, explore the atomic moves, and build VLSN graph

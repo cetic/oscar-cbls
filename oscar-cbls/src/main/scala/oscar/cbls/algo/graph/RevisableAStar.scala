@@ -89,14 +89,19 @@ class RevisableAStar(graph:ConditionalGraph,
     nodeToIncomingNodeArray(fromNodeID) = -1
     reachedNodeIDs = QList(fromNodeID)
     toDevelopHeap.insert(fromNodeID)
+    // println("From: " + from)
+    // println("To: " + to)
 
     while (true) {
 
+      //println("toto1")
       val currentNodeId: Int = if (toDevelopHeap.isEmpty) -1
       else toDevelopHeap.removeFirst()
+      //println("toto2")
 
       if (currentNodeId == -1 || (nodeToDistance(currentNodeId) >= nodeToDistance(to.id))) {
         //this is the exit code
+        //println("tata1")
         val toReturn = extractAnswerFromFinishedSearch(
           from:Node,
           to:Node,
@@ -108,22 +113,37 @@ class RevisableAStar(graph:ConditionalGraph,
           nodeToIncomingNodeArray:Array[Int],
           pruneReachedClosedConditions(reachedClosedConditions:SortedSet[Int],to.id,nodeToDistance(to.id)),
           includePath)
+        //println("tata2")
         resetReachedNodes(reachedNodeIDs)
         return toReturn
       }
+      //println("toto3")
 
       val currentNode = graph.nodes(currentNodeId)
       val currentNodeDistance = nodeToDistance(currentNodeId)
+      // println("Current Node:" + currentNode)
+      // println("Heap:" + toDevelopHeap)
+      // println(nodeToDistance(24).toString() + " + " + underApproximatingDistance(24,to.id))
+      // println(nodeToDistance(53).toString() + " + " + underApproximatingDistance(53,to.id))
+
+      //println(Array.tabulate(nodeToDistance.length)(i => (i,nodeToDistance(i))).filter(_._2 != Long.MaxValue).map(i => i._1 + "->" + i._2).mkString("\n"))
       for (outgoingEdge <- currentNode.incidentEdges) {
+        // println(outgoingEdge)
+        //println("toto4")
+
         if (isEdgeOpen(outgoingEdge)) {
           val otherNode = outgoingEdge.otherNode(currentNode)
           val otherNodeID = otherNode.id
 
           val oldDistance = nodeToDistance(otherNodeID)
           val newDistance = currentNodeDistance + outgoingEdge.length
+          //println("toto5")
+
+
           if (newDistance < oldDistance) {
             nodeToDistance(otherNodeID) = newDistance
             nodeToIncomingNodeArray(otherNodeID) = currentNode.id
+            //println("toto6")
 
             if(otherNode.transitAllowed || otherNode == to) {
               if (toDevelopHeap.contains(otherNodeID)) {
@@ -148,6 +168,8 @@ class RevisableAStar(graph:ConditionalGraph,
           reachedClosedConditions = reachedClosedConditions + outgoingEdge.conditionID.get
         }
       }
+      //println(Array.tabulate(nodeToDistance.length)(i => (i,nodeToDistance(i))).filter(_._2 != Long.MaxValue).map(i => i._1 + "->" + i._2).mkString("\n"))
+
     }
     throw new Error("should not be reached")
   }
@@ -221,12 +243,23 @@ class RevisableAStar(graph:ConditionalGraph,
                                         nodeToDistance:Array[Long],
                                         nodeToIncomingNode:Array[Int]):SortedSet[Int] = {
     //we extract the set of conditions found on the actual path
+    //println("RequiredCondition")
     var toReturn: SortedSet[Int] = SortedSet.empty
     var currentNode: Node = to
     var currentDistance: Long = nodeToDistance(to.id)
+    // println(from)
+    // println(to)
+    var toPrint = true
     while (currentNode != from) {
-      for (incomingEdge <- currentNode.incidentEdges if isConditionalEdgeOpen(incomingEdge.conditionID)) {
+      // if (toPrint)
+      //   println(currentNode)
 
+      for (incomingEdge <- currentNode.incidentEdges if isConditionalEdgeOpen(incomingEdge.conditionID)) {
+        // if (toPrint) {
+        //   println(incomingEdge)
+        //   println(currentDistance)
+        //   println(Array.tabulate(nodeToDistance.length)(i => i + " -> " + nodeToDistance(i) + " - " + nodeToIncomingNode(i)).mkString("\n"))
+        // }
         val newNode = incomingEdge.otherNode(currentNode)
         val newDistance = nodeToDistance(newNode.id)
 
@@ -244,7 +277,9 @@ class RevisableAStar(graph:ConditionalGraph,
           }
         }
       }
+      toPrint = false
     }
+    //println("End RequiredCondition")
     require(currentDistance == 0)
     toReturn
   }
@@ -255,6 +290,7 @@ class RevisableAStar(graph:ConditionalGraph,
                   nodeToDistance:Array[Long],
                   nodeToIncomingNode:Array[Int]):List[Edge] = {
     //we extract the set of conditions found on the actual path
+    //println("Extract path")
     var toReturn: List[Edge] = List.empty
     var currentNode: Node = to
     var currentDistance: Long = nodeToDistance(to.id)
@@ -276,6 +312,7 @@ class RevisableAStar(graph:ConditionalGraph,
         }
       }
     }
+    //println("Extracted")
     toReturn
   }
 }

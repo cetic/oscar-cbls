@@ -271,7 +271,7 @@ object DemoPDP_VLSN extends App{
   }
 
   def moveChainVLSN(targetVehicle: Long)(chainHeadToMove:Long): Neighborhood = {
-    val nodesOfTargetVehicle = (SortedSet.empty ++ myVRP.getRouteOfVehicle(targetVehicle)) intersect (relevantPredecessors(chainHeadToMove))
+    val nodesOfTargetVehicle = (SortedSet.empty[Long] ++ myVRP.getRouteOfVehicle(targetVehicle)) intersect (relevantPredecessors(chainHeadToMove))
     val lNearestNodesOfTargetVehicle = nodesOfTargetVehicle.filter(x => lClosestNeighborsByDistance(chainHeadToMove) contains x)
 
     val nextMoveGenerator = {
