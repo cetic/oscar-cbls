@@ -378,7 +378,7 @@ class MoveExplorerAlgo(v:Int,
 
           if (symbolicNodeOfNodeToMove.vehicle != targetVehicleID) {
             //Evaluating all moves on this remove
-            evaluateMoveToVehicleWithRemove(routingNodeToMove, fromVehicle,targetVehicleID, nodeIDToEject, true) match{
+            evaluateMoveToVehicleWithRemove(routingNodeToMove, fromVehicle, targetVehicleID, nodeIDToEject, true) match{
               case null => ;
               case (move,delta) =>
                 edgeBuilder.addEdge(symbolicNodeOfNodeToMove, symbolicNodeToEject, delta, move, VLSNMoveType.MoveWithEject)
@@ -404,7 +404,7 @@ class MoveExplorerAlgo(v:Int,
 
   def evaluateRemove(routingNodeToRemove:Long,fromVehicle:Long):(Move,Long) = {
     nodeToRemoveNeighborhood(routingNodeToRemove)
-      .getMove(unroutedNodesPenalty,initialUnroutedNodesPenalty,acceptanceCriterion = (_,newObj) => newObj != Long.MaxValue) match{
+      .getMove(unroutedNodesPenalty, initialUnroutedNodesPenalty, acceptanceCriterion = (_,newObj) => newObj != Long.MaxValue) match{
       case NoMoveFound => null
       case MoveFound(move) =>
         val delta = move.objAfter - initialUnroutedNodesPenalty

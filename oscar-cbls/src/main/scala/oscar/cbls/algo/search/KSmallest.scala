@@ -34,11 +34,11 @@ object KSmallest {
    * @param key
    * @return
    */
-  def doSort(a:Array[Long],k:Int, key:Long => Long):List[Long] = {
+  def getkSmallests(a:Array[Long], k:Int, key:Long => Long):List[Long] = {
     val heap = new BinomialHeap[Int](indice => -key(a(indice)),2*k)
     for(i <- a.indices){
       heap.insert(i)
-      if(i >= k)heap.popFirst()
+      if(i >= k)heap.popFirst() //we pop the biggest one, so only the smallest remain
     }
     heap.toList.map(a(_))
   }
@@ -100,7 +100,7 @@ object testQuickSort extends App with StopWatch{
   val randomValues = Array.tabulate(n)(_ => (math.random * Long.MaxValue).toLong)
 
   startWatch()
-  val s = KSmallest.doSort(randomValues,k,x => x)
+  val s = KSmallest.getkSmallests(randomValues,k, x => x)
   val watch1 = getWatch
 
   startWatch()
