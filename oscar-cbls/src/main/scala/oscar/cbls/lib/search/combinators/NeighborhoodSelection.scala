@@ -19,9 +19,9 @@ import oscar.cbls.core.search._
   * @param refresh a refresh of the slopee measuring must be perfored every refresh iterations
   */
 case class BestSlopeFirst(l:List[Neighborhood],
-                          tabuLength:Long = 10,
+                          tabuLength:Int = 10,
                           overrideTabuOnFullExhaust:Long = 9,
-                          refresh:Long = 100)
+                          refresh:Int = 100)
   extends BestNeighborhoodFirst(l, tabuLength, overrideTabuOnFullExhaust, refresh){
   override protected def bestKey(p:Profile):Long = -p.slopeForCombinators()
 }
@@ -38,33 +38,33 @@ case class BestSlopeFirst(l:List[Neighborhood],
   * @param refresh a refresh of the slopee measuring must be perfored every refresh iterations
   */
 case class FastestFirst(l:List[Neighborhood],
-                        tabuLength:Long = 10,
+                        tabuLength:Int = 10,
                         overrideTabuOnFullExhaust:Long = 9,
-                        refresh:Long = 100)
+                        refresh:Int = 100)
   extends BestNeighborhoodFirst(l, tabuLength, overrideTabuOnFullExhaust, refresh){
   override protected def bestKey(p:Profile):Long = - (p.totalTimeSpentMoveFound / p.nbFound).toInt
 }
 
 abstract class BestNeighborhoodFirst(l:List[Neighborhood],
-                                     tabuLength:Long,
+                                     tabuLength:Int,
                                      overrideTabuOnFullExhaust:Long,
-                                     refresh:Long)
+                                     refresh:Int)
   extends NeighborhoodCombinator(l:_*) {
   require(overrideTabuOnFullExhaust < tabuLength, "overrideTabuOnFullExhaust should be < tabuLength")
 
-  protected var it:Long = 0
+  protected var it:Int = 0
   protected def bestKey(p:Profile):Long
 
   protected val neighborhoodArray: Array[Profile] = l.map(Profile(_)).toArray
-  protected val tabu:Array[Long] = Array.fill(neighborhoodArray.length)(0)
-  protected var tabuNeighborhoods = new BinomialHeap[Long](tabu(_),tabu.length)
+  protected val tabu:Array[Int] = Array.fill(neighborhoodArray.length)(0)
+  protected var tabuNeighborhoods = new BinomialHeap[Int](tabu(_),tabu.length)
 
-  protected val neighborhoodHeap = new BinomialHeapWithMove[Long]((neighborhoodID:Long) => bestKey(neighborhoodArray(neighborhoodID)), neighborhoodArray.length)
+  protected val neighborhoodHeap = new BinomialHeapWithMove[Int]((neighborhoodID:Int) => bestKey(neighborhoodArray(neighborhoodID)), neighborhoodArray.length)
   neighborhoodArray.indices.foreach((i : Int) => neighborhoodHeap.insert(i))
 
   private def getBestNeighborhooID:Long = neighborhoodHeap.getFirst
-  private def updateNeighborhodPerformances(neighborhooID:Long){
-    neighborhoodHeap.notifyChange(neighborhooID)
+  private def updateNeighborhodPerformances(neighborhoodID:Int){
+    neighborhoodHeap.notifyChange(neighborhoodID)
   }
   private def updateTabu(): Unit ={
     it +=1
@@ -75,10 +75,10 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
     }
   }
 
-  protected def makeTabu(neighborhooID:Long): Unit ={
-    neighborhoodHeap.delete(neighborhooID)
-    tabu(neighborhooID) = it + tabuLength
-    tabuNeighborhoods.insert(neighborhooID)
+  protected def makeTabu(neighborhoodID:Int): Unit ={
+    neighborhoodHeap.delete(neighborhoodID)
+    tabu(neighborhoodID) = it + tabuLength
+    tabuNeighborhoods.insert(neighborhoodID)
   }
 
   /**
@@ -158,17 +158,17 @@ abstract class BestNeighborhoodFirstWithRestrictions(l:List[RestrictedNeighborho
 
   protected val neighborhoodArray: Array[(Profile,Long)] = l.map(r => (Profile(r.n),r.minimalSpaceBetweenExplorations)).toArray
   protected val tabu:Array[Long] = Array.fill(neighborhoodArray.length)(0L)
-  protected val tabuExhaustedNeighborhoods = new BinomialHeap[Long](tabu(_),tabu.length)
-  protected val tabuRestrictedNeighborhoods = new BinomialHeap[Long](tabu(_),tabu.length)
+  protected val tabuExhaustedNeighborhoods = new BinomialHeap[Int](tabu(_),tabu.length)
+  protected val tabuRestrictedNeighborhoods = new BinomialHeap[Int](tabu(_),tabu.length)
 
-  protected val neighborhoodHeap = new BinomialHeapWithMove[Long]((neighborhoodID:Long) =>
+  protected val neighborhoodHeap = new BinomialHeapWithMove[Int]((neighborhoodID:Int) =>
     bestKey(neighborhoodArray(neighborhoodID)._1), neighborhoodArray.length)
 
   neighborhoodArray.indices.foreach((i : Int) => neighborhoodHeap.insert(i))
 
   private def getBestNeighborhoodID:Long = neighborhoodHeap.getFirst
-  private def updateNeighborhodPerformances(neighborhooID:Long){
-    neighborhoodHeap.notifyChange(neighborhooID)
+  private def updateNeighborhodPerformances(neighborhoodID:Int){
+    neighborhoodHeap.notifyChange(neighborhoodID)
   }
   private def updateTabus(): Unit ={
     it +=1L
@@ -185,13 +185,13 @@ abstract class BestNeighborhoodFirstWithRestrictions(l:List[RestrictedNeighborho
     }
   }
 
-  protected def makeTabuExhausted(neighborhoodID:Long): Unit ={
+  protected def makeTabuExhausted(neighborhoodID:Int): Unit ={
     neighborhoodHeap.delete(neighborhoodID)
     tabu(neighborhoodID) = it + tabuLength
     tabuExhaustedNeighborhoods.insert(neighborhoodID)
   }
 
-  protected def makeTabuRestricted(neighborhoodID:Long): Unit ={
+  protected def makeTabuRestricted(neighborhoodID:Int): Unit ={
     neighborhoodHeap.delete(neighborhoodID)
     tabu(neighborhoodID) = it + neighborhoodArray(neighborhoodID)._2
     tabuExhaustedNeighborhoods.insert(neighborhoodID)
@@ -326,9 +326,9 @@ class RoundRobin(l: List[Neighborhood], steps: Long = 1L)
     */
   def step(b: Neighborhood): RoundRobin = new RoundRobin(l ::: List(b))
 
-  def repeat(i: Long): RoundRobin = {
+  def repeat(i: Int): RoundRobin = {
     val last = l.last
-    new RoundRobin(l ::: List.fill(i - 1L)(last))
+    new RoundRobin(l ::: List.fill(i - 1)(last))
   }
 }
 

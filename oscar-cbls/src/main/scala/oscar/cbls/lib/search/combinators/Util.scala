@@ -5,7 +5,7 @@ import oscar.cbls._
 import oscar.cbls.core.search._
 import oscar.cbls.util.Properties
 import oscar.cbls.visual.SingleFrameWindow
-import oscar.cbls.visual.obj.{ObjectiveFunctionDisplay, ObjectiveFunctionDisplayV2}
+import oscar.cbls.visual.obj.ObjectiveFunctionDisplay
 
 trait UtilityCombinators{
   /**
@@ -44,7 +44,7 @@ class ShowObjectiveFunction(a: Neighborhood, obj: () => Long, title: String = "O
                             percentile:Int = 100,
                             otherValues: Array[(String, () => Long)] = Array.empty) extends NeighborhoodCombinator(a){
   //objGraphic is an internal frame that contains the curve itself and visualFrame is a basic frame that contains objGraphic
-  private val objGraphic = ObjectiveFunctionDisplayV2(title, minCap, maxCap, percentile, otherValues.map(_._1).toList)
+  private val objGraphic = ObjectiveFunctionDisplay(title, minCap, maxCap, percentile, otherValues.map(_._1).toList)
   private val otherValuesFunctions = otherValues.map(_._2)
   SingleFrameWindow.show(objGraphic,title)
 

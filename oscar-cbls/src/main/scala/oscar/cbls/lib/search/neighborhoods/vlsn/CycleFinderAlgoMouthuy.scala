@@ -27,7 +27,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
   private val nodes:Array[Node] = graph.nodes
   private val edges:Array[Edge] = graph.edges
   private val nbNodes = nodes.length
-  private val nodeRange = 0L until nbNodes
+  private val nodeRange = 0 until nbNodes
 
   private val isLabelOnPath = MagicBoolArray(graph.nbLabels,false)
   private val isNodeOnPath = MagicBoolArray(nbNodes,false)
@@ -38,8 +38,8 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
   var isLiveNode:Array[Boolean] = null
 
   val isInQueue:Array[Boolean]= Array.fill(nbNodes)(false)
-  val queue = new mutable.Queue[Long]()
-  def enqueue(nodeID:Long): Unit ={
+  val queue = new mutable.Queue[Int]()
+  def enqueue(nodeID:Int): Unit ={
     if(isLiveNode(nodeID)) {
       if (!isInQueue(nodeID)) {
         queue.enqueue(nodeID)
@@ -48,7 +48,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
     }
   }
 
-  def dequeue():Option[Long] = {
+  def dequeue():Option[Int] = {
     if(queue.isEmpty){
       None
     }else{

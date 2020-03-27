@@ -13,7 +13,7 @@ object OscarBuild extends Build {
 
   object BuildSettings {
     val buildOrganization = "oscar"
-    val buildVersion = "4.1.0-CBLS-GEOM-SNAPSHOT"
+    val buildVersion = "4.0.0-SNAPSHOT"
     val buildScalaVersion = "2.12.8"
     val buildSbtVersion= "0.13.18"
 

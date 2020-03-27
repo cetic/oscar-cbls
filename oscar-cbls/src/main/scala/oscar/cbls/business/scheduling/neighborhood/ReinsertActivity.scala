@@ -9,7 +9,7 @@ class ReinsertActivity(schedule: Schedule,
                        neighborhoodName: String,
                        selectIndexBehavior:LoopBehavior = First(),
                        selectReinsertBehavior:LoopBehavior = Best(),
-                       searchIndices: Option[() => Iterable[Long]] = None)
+                       searchIndices: Option[() => Iterable[Int]] = None)
   extends EasyNeighborhoodMultiLevel[ReinsertActivityMove](neighborhoodName) {
 
   var currentIndex: Int = -1
@@ -23,12 +23,12 @@ class ReinsertActivity(schedule: Schedule,
   override def exploreNeighborhood(initialObj: Long): Unit = {
     // Iteration zone on activities indices
     // Checking the Hot Restart
-    val iterationZone1: () => Iterable[Long] = searchIndices.getOrElse(() =>
-      0L until schedule.activityPriorityList.value.size
+    val iterationZone1: () => Iterable[Int] = searchIndices.getOrElse(() =>
+      0 until schedule.activityPriorityList.value.size
     )
     val hotRestart = true
-    val iterationZone: Iterable[Long] =
-      if (hotRestart) HotRestart(iterationZone1(), currentIndex.toLong)
+    val iterationZone: Iterable[Int] =
+      if (hotRestart) HotRestart(iterationZone1(), currentIndex)
       else iterationZone1()
     // iterating over the indices in the activity list
     val (indicesIterator, notifyIndexFound) = selectIndexBehavior.toIterator(iterationZone)

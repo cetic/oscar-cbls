@@ -38,15 +38,15 @@ import scala.collection.mutable.Queue
  * @author renaud.delandtsheer@cetic.be
  * */
 case class SelectLEHeapHeap(values: Array[IntValue], boundary: IntValue)
-  extends SetInvariant(SortedSet.empty[Long], values.indices.start to values.indices.end)
+  extends SetInvariant(SortedSet.empty[Int], values.indices.start to values.indices.end)
   with IntNotificationTarget{
 
   for (v <- values.indices) registerStaticAndDynamicDependency(values(v), v)
   registerStaticAndDynamicDependency(boundary)
   finishInitialization()
 
-  val HeapAbove: BinomialHeapWithMove[Long] = new BinomialHeapWithMove((i: Long) => values(i).value, values.size)
-  val HeapBelowOrEqual: BinomialHeapWithMove[Long] = new BinomialHeapWithMove((i: Long) => -values(i).value, values.size)
+  val HeapAbove: BinomialHeapWithMove[Int] = new BinomialHeapWithMove((i: Int) => values(i).value, values.size)
+  val HeapBelowOrEqual: BinomialHeapWithMove[Int] = new BinomialHeapWithMove((i: Int) => -values(i).value, values.size)
 
   for(v <- values.indices){
     if(values(v).value <= boundary.value){
@@ -135,10 +135,10 @@ case class SelectLESetQueue[X<:IntValue](values: Array[X], boundary: IntValue)
   registerStaticAndDynamicDependency(boundary)
   finishInitialization()
 
-  val QueueAbove: Queue[Long] = new Queue[Long]
+  val QueueAbove: Queue[Int] = new Queue[Int]
 
-  this := SortedSet.empty[Long]
-  val HeapAbove: BinomialHeap[Long] = new BinomialHeap((i: Long) => values(i).value, values.size)
+  this := SortedSet.empty[Int]
+  val HeapAbove: BinomialHeap[Int] = new BinomialHeap((i: Int) => values(i).value, values.size)
   for (v <- values.indices) {
     if (values(v).value <= boundary.value) {
       this.insertValue(v)

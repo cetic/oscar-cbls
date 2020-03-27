@@ -42,13 +42,13 @@ abstract class MiaxSet(v: SetValue)
 
   var wasEmpty:Boolean = v.value.isEmpty
 
-  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
 
   @inline
-  def notifyInsertOn(v: ChangingSetValue, value: Long) {
+  def notifyInsertOn(v: ChangingSetValue, value: Int) {
     if (wasEmpty){
       this := value
     }else if(!this.isScheduled && Better(value,this.newValue)){
@@ -58,7 +58,7 @@ abstract class MiaxSet(v: SetValue)
   }
 
   @inline
-  def notifyDeleteOn(v: ChangingSetValue, value: Long) {
+  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
     if (v.value.isEmpty){ //TODO: avoid querying this directly on the intsetvar!
       wasEmpty = true
       this := Default

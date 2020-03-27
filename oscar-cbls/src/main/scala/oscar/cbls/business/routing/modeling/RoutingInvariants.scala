@@ -14,7 +14,7 @@ trait RoutingInvariants {
    *
    * This invariant relies on the vehicle model assumption:
    * there are v vehicles
-   * They are supposed to start from point of values 0L to v-1L
+   * They are supposed to start from point of values 0 to v-1L
    * These values must always be present in the sequence in increasing order
    * they cannot be included within a moved segment
    *

@@ -10,7 +10,7 @@ import oscar.cbls.core.search.{Best, First}
 
 object VRPWithOnlyTimeWindow extends App {
 
-  def runConfiguration(ns: List[Long], vs: List[Long],
+  def runConfiguration(ns: List[Int], vs: List[Int],
                        timeWindowConstraints: List[Int],
                        bests: List[Boolean], procedures: List[Int],
                        iterations: Int): Unit ={
@@ -62,11 +62,11 @@ object VRPWithOnlyTimeWindow extends App {
   // Add the procedures you want (see at the end of this files for more informations)
   val procedures = List(1,2)
   // The variations of n values
-  val ns_1 = List(100L, 200L, 300L, 400L, 500L, 600L, 700L, 800L, 900L, 1000L)
-  val ns_2 = List(1000L)
+  val ns_1 = List(100, 200, 300, 400, 500, 600, 700, 800, 900, 1000)
+  val ns_2 = List(1000)
   // The variations of v values
-  val vs_1 = List(10L)
-  val vs_2 = List(10L, 20L, 30L, 40L, 50L, 60L, 70L, 80L, 90L, 100L)
+  val vs_1 = List(10)
+  val vs_2 = List(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
   //val vs_2 = List(10)
   // The number of iterations of each configuration
   val iterations = 50
@@ -75,7 +75,7 @@ object VRPWithOnlyTimeWindow extends App {
   runConfiguration(ns_2,vs_2,timeWindowConstraints,bests, procedures,iterations)
 }
 
-class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo: Boolean = false, iteration: Int = 0){
+class VRPWithOnlyTimeWindow(version: Int, n: Int = 100, v: Int = 10, fullInfo: Boolean = false, iteration: Int = 0){
   val m = new Store(noCycle = false, propagateOnToString = false/*, checker = Some(new ErrorChecker())*/)
   val penaltyForUnrouted = 10000
   RoutingMatrixGenerator.random.setSeed(iteration)
@@ -147,11 +147,11 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
   m.close()
 
   // Building the relevant predecessors of each node based on time window
-  val relevantPredecessorsOfNodes: Map[Long,Iterable[Long]] = TransferFunction.relevantPredecessorsOfNodes(n,v, singleNodeTransferFunctions, timeMatrix)
+  val relevantPredecessorsOfNodes: Map[Int,Iterable[Int]] = TransferFunction.relevantPredecessorsOfNodes(n,v, singleNodeTransferFunctions, timeMatrix)
 
   // A post filter that prevents insertion after unrouted nodes
-  def postFilter(node:Long): (Long) => Boolean = {
-    (neighbor: Long) => {
+  def postFilter(node:Int): (Int) => Boolean = {
+    (neighbor: Int) => {
       myVRP.isRouted(neighbor)
     }
   }

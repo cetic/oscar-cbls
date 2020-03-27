@@ -29,7 +29,7 @@ import scala.util.Random
 
 object Domain{
 
-  def empty:Domain = Domain(0L to 0L)
+  def empty:Domain = Domain(0 to 0)
 
   implicit def rangeToDomain(r:Range):Domain = {
     if (r.isEmpty) Domain(0, 0) //we put something or it crashes.
@@ -64,6 +64,12 @@ sealed abstract class Domain{
   def min: Long
   def max: Long
   def size: Long
+  def sizeInt: Int ={
+    val sizeLong = size
+    val sizeInt = sizeLong.toInt
+    if (sizeInt != sizeLong) throw new ArithmeticException("integer overflow:" + sizeLong)
+    return sizeInt
+  }
   def contains(v:Long): Boolean
   //  def intersect(d:Domain):Domain
 

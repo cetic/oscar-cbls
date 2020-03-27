@@ -37,11 +37,19 @@ sealed trait IntValue extends Value{
   def valueInt: Int
   def domain:Domain
   def min = domain.min
+  def minInt = longToInt(min)
   def max = domain.max
+  def maxInt = longToInt(max)
 
   def name:String
   override def valueString: String = "" + value
   def restrictDomain(d:Domain): Unit
+
+  def longToInt(value:Long):Int = {
+    val i = value.toInt
+    if (i != value) throw new ArithmeticException("integer overflow:" + value)
+    return i
+  }
 
 }
 
@@ -65,6 +73,10 @@ object IntValue {
 
 trait IntNotificationTarget{
   def notifyIntChanged(v: ChangingIntValue, id: Int, oldVal: Long, newVal: Long): Unit
+}
+
+trait ShortIntNotificationTarget{
+  def notifyIntChanged(v: ChangingIntValue, id: Int, oldVal: Int, newVal: Int): Unit
 }
 
 /**An IntVar is a variable managed by the [[oscar.cbls.core.computation.Store]] whose type is integer.
@@ -133,15 +145,17 @@ abstract class ChangingIntValue(initialValue:Long, initialDomain:Domain)
   }
 
   override def valueInt: Int = {
-    val value = this.value
-    require(value <= Int.MaxValue, "The value must be <= Int.MaxValue")
-    value.toInt
+    longToInt(value)
   }
 
   def newValue:Long = {
     assert(model.checkExecutingInvariantOK(definingInvariant),"variable [" + this
       + "] queried for latest val by non-controlling invariant")
     mNewValue
+  }
+
+  def newValueInt:Int = {
+    longToInt(newValue)
   }
 
   override def performPropagation(){performIntPropagation()}
@@ -156,10 +170,19 @@ abstract class ChangingIntValue(initialValue:Long, initialDomain:Domain)
       var currentElement = headPhantom.next
       while(currentElement != headPhantom){
         val e = currentElement.elem
-        val inv:IntNotificationTarget = e._1.asInstanceOf[IntNotificationTarget]
-        assert({this.model.notifiedInvariant=inv.asInstanceOf[Invariant]; true})
-        inv.notifyIntChanged(this, e._2, old, mNewValue)
-        assert({this.model.notifiedInvariant=null; true})
+        e._1 match {
+          case intInvariant: IntNotificationTarget => {
+            assert({this.model.notifiedInvariant=intInvariant.asInstanceOf[Invariant]; true})
+            intInvariant.notifyIntChanged(this, e._2, old, mNewValue)
+            assert({this.model.notifiedInvariant=null; true})
+          }
+          case shortIntInvariant: ShortIntNotificationTarget => {
+            assert({this.model.notifiedInvariant=shortIntInvariant.asInstanceOf[Invariant]; true})
+            shortIntInvariant.notifyIntChanged(this, e._2, longToInt(old), longToInt(mNewValue))
+            assert({this.model.notifiedInvariant=null; true})
+          }
+        }
+        
         //we go to the next to be robust against invariant that change their dependencies when notified
         //this might cause crash because dynamicallyListenedInvariants is a mutable data structure
         currentElement = currentElement.next

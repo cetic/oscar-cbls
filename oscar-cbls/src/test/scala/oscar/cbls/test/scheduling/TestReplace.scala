@@ -14,20 +14,20 @@ object TestReplace {
   val activities = List(a, b, c, d, e, f)
   val initialActivities = List(f, c, e)
   val actDurations = Map(
-    a -> 2L,
-    b -> 1L,
-    c -> 8L,
-    d -> 4L,
-    e -> 7L,
-    f -> 6L
+    a -> 2,
+    b -> 1,
+    c -> 8,
+    d -> 4,
+    e -> 7,
+    f -> 6
   )
   val actMinStartTimes = Map(
-    a -> 0L,
-    b -> 0L,
-    c -> 0L,
-    d -> 0L,
-    e -> 0L,
-    f -> 0L
+    a -> 0,
+    b -> 0,
+    c -> 0,
+    d -> 0,
+    e -> 0,
+    f -> 0
   )
   val precPairs = List((a,b), (c,d), (e,f))
   val penaltyForUnscheduled = 10000L

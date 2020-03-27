@@ -9,10 +9,10 @@ class AddActivity(schedule: Schedule,
                   neighborhoodName: String,
                   selectValueBehavior:LoopBehavior = First(),
                   selectIndexBehavior:LoopBehavior = Best(),
-                  searchValues: Option[() => Iterable[Long]] = None)
+                  searchValues: Option[() => Iterable[Int]] = None)
   extends EasyNeighborhoodMultiLevel[AddActivityMove](neighborhoodName) {
 
-  var currentValue: Long = -1L
+  var currentValue: Int = -1
   var insertIndex: Int = -1
 
   /**
@@ -23,14 +23,13 @@ class AddActivity(schedule: Schedule,
   override def exploreNeighborhood(initialObj: Long): Unit = {
     // Iteration zone on values to add (optional activities)
     // Checking the Hot Restart
-    val iterationZone1: () => Iterable[Long] = searchValues.getOrElse(() =>
+    val iterationZone1: () => Iterable[Int] = searchValues.getOrElse(() =>
       schedule
         .activities
         .filterNot(schedule.activityPriorityList.value.contains(_))
-        .map(_.toLong)
     )
     val hotRestart = true
-    val iterationZone: Iterable[Long] =
+    val iterationZone: Iterable[Int] =
       if (hotRestart) HotRestart(iterationZone1(), currentValue)
       else iterationZone1()
     // iterating over the values in the activity list
@@ -63,12 +62,12 @@ class AddActivity(schedule: Schedule,
   override def instantiateCurrentMove(newObj: Long): AddActivityMove =
     AddActivityMove(currentValue, insertIndex, schedule.activityPriorityList.value.size, this, neighborhoodNameToString, newObj)
 
-  def performMove(actValue: Long, addIndex: Int): Unit = {
+  def performMove(actValue: Int, addIndex: Int): Unit = {
     schedule.activityPriorityList.insertAtPosition(actValue, addIndex)
   }
 }
 
-case class AddActivityMove(actValue: Long,
+case class AddActivityMove(actValue: Int,
                            addIndex: Int,
                            numActiveActivities: Int,
                            override val neighborhood: AddActivity,

@@ -259,8 +259,8 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
                                 id: Int,
                                 addedValues: Iterable[Int],
                                 removedValues: Iterable[Int],
-                                oldValue: SortedSet[Long],
-                                newValue: SortedSet[Long]): Unit = {
+                                oldValue: SortedSet[Int],
+                                newValue: SortedSet[Int]): Unit = {
 
     require(v == openConditions)
 

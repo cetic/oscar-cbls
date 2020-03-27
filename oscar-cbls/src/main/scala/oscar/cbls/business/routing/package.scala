@@ -23,7 +23,7 @@ import oscar.cbls.business.routing.modeling._
  *
  * it represents the routes as a single sequence and everyting in this pacage relies on the routing assumption, which is stated as follows:
  * - there are v vehicles
- * - They are supposed to start from point of values 0L to v-1L
+ * - They are supposed to start from point of values 0 to v-1L
  * - These values must always be present in the sequence in increasing order
  * - They cannot be included within a moved segment
  *

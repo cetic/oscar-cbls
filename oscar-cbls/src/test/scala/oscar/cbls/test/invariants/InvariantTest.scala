@@ -121,7 +121,7 @@ class InvariantTests extends FunSuite with Checkers {
   test("Sparse Cluster maintains a cluster of the indexes of an array.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     Cluster.makeSparse(bench.genIntVarsArray(50),
-      Gen.containerOfN[List, Long](100, Gen.choose(0, 100)).sample.get)
+      Gen.containerOfN[List, Int](100, Gen.choose(0, 100)).sample.get)
     bench.run()
   }
 
@@ -338,7 +338,7 @@ class InvariantTests extends FunSuite with Checkers {
   test ("Map"){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     val seqVar = bench.genIntSeqVar(range = 0 to 100)
-    oscar.cbls.lib.invariant.seq.Map(seqVar, Array.tabulate(101)(n => 2L*n))
+    oscar.cbls.lib.invariant.seq.Map(seqVar, Array.tabulate(101)(n => 2*n))
     bench.run()
   }
 

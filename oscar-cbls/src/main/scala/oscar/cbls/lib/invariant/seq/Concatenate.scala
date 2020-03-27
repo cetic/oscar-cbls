@@ -35,7 +35,7 @@ object Concatenate {
    * @param maxHistorySize
    * @return
    */
-  def apply(a : SeqValue, b : SeqValue, maxPivotPerValuePercent : Long = 4L, maxHistorySize : Long = 20L) : SeqValue = {
+  def apply(a : SeqValue, b : SeqValue, maxPivotPerValuePercent : Int = 4, maxHistorySize : Int = 20) : SeqValue = {
     (a,b) match {
       case (ac : CBLSSeqConst,bc : CBLSSeqConst) =>
         CBLSSeqConst(IntSequence(ac.value ++ bc.value))
@@ -49,20 +49,20 @@ object Concatenate {
   }
 }
 
-class Concatenate(a:ChangingSeqValue,b:ChangingSeqValue,maxPivotPerValuePercent: Long, maxHistorySize:Long)
+class Concatenate(a:ChangingSeqValue,b:ChangingSeqValue,maxPivotPerValuePercent: Int, maxHistorySize:Int)
   extends SeqInvariant(IntSequence(a.value ++ b.value), math.max(a.max,b.max), maxPivotPerValuePercent, maxHistorySize)
   with SeqNotificationTarget {
 
   require(a != b)
 
-  registerStaticAndDynamicDependency(a, 0L)
-  registerStaticAndDynamicDependency(b, 1L)
+  registerStaticAndDynamicDependency(a, 0)
+  registerStaticAndDynamicDependency(b, 1)
   finishInitialization()
 
   var outputToRecompute:Boolean = false
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
-    val isFirst = (d == 0L)
+    val isFirst = (d == 0)
     if(!outputToRecompute && !digestChanges(isFirst, changes)) {
       outputToRecompute = true
       scheduleForPropagation()
@@ -78,7 +78,7 @@ class Concatenate(a:ChangingSeqValue,b:ChangingSeqValue,maxPivotPerValuePercent:
 
   def digestChanges(isFirst : Boolean, changes : SeqUpdate) : Boolean = {
     changes match {
-      case SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
+      case SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
         if (!digestChanges(isFirst, prev)) return false
         this.insertAtPosition(value, if (isFirst) pos else pos + a.value.size)
         true
@@ -119,7 +119,7 @@ class Concatenate(a:ChangingSeqValue,b:ChangingSeqValue,maxPivotPerValuePercent:
 
 
 
-class ConcatenateFirstConstant(a:List[Long],b:ChangingSeqValue,maxPivotPerValuePercent: Long, maxHistorySize:Long)
+class ConcatenateFirstConstant(a:List[Int],b:ChangingSeqValue,maxPivotPerValuePercent: Int, maxHistorySize:Int)
   extends SeqInvariant(IntSequence(a ++ b.value), math.max(a.max,b.max), maxPivotPerValuePercent, maxHistorySize)
   with SeqNotificationTarget {
 
@@ -139,7 +139,7 @@ class ConcatenateFirstConstant(a:List[Long],b:ChangingSeqValue,maxPivotPerValueP
 
   def digestChanges(changes : SeqUpdate) : Boolean = {
     changes match {
-      case s@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         this.insertAtPosition(value, pos + offsetForSecond)
         true
@@ -185,7 +185,7 @@ class ConcatenateFirstConstant(a:List[Long],b:ChangingSeqValue,maxPivotPerValueP
 }
 
 
-class ConcatenateSecondConstant(a:ChangingSeqValue,b:List[Long],maxPivotPerValuePercent: Long, maxHistorySize:Long)
+class ConcatenateSecondConstant(a:ChangingSeqValue,b:List[Int],maxPivotPerValuePercent: Int, maxHistorySize:Int)
   extends SeqInvariant(IntSequence(a.value ++ b), math.max(a.max,b.max), maxPivotPerValuePercent, maxHistorySize)
   with SeqNotificationTarget {
 
@@ -202,7 +202,7 @@ class ConcatenateSecondConstant(a:ChangingSeqValue,b:List[Long],maxPivotPerValue
 
   def digestChanges(changes : SeqUpdate) : Boolean = {
     changes match {
-      case s@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         this.insertAtPosition(value, pos)
         true

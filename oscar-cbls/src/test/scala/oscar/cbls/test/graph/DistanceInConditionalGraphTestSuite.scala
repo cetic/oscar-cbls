@@ -140,7 +140,7 @@ class DistanceInConditionalGraphTestSuite extends FunSuite with GeneratorDrivenP
     val nbNodes = 10
     val nbConditionalEdges = 15
     val nbNonConditionalEdges = 0
-    val openConditions:CBLSSetVar = new CBLSSetVar(bench.model,SortedSet[Long](), 0 to 0, "openConditions")
+    val openConditions:CBLSSetVar = new CBLSSetVar(bench.model,SortedSet[Int](), 0 to 0, "openConditions")
     val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(nbNodes,
       nbConditionalEdges,
       nbNonConditionalEdges,

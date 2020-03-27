@@ -7,7 +7,7 @@ import oscar.cbls.{CBLSIntVar, SetValue}
 
 import scala.collection.immutable.SortedSet
 
-class MapCount(set:SetValue, map:Long=>Int,counts:Array[CBLSIntVar])
+class MapCount(set:SetValue, map:Int=>Int,counts:Array[CBLSIntVar])
   extends Invariant with SetNotificationTarget{
 
   registerStaticAndDynamicDependency(set)
@@ -23,10 +23,10 @@ class MapCount(set:SetValue, map:Long=>Int,counts:Array[CBLSIntVar])
 
   override def notifySetChanges(v: ChangingSetValue,
                                 id: Int,
-                                addedValues: Iterable[Long],
-                                removedValues: Iterable[Long],
-                                oldValue: SortedSet[Long],
-                                newValue: SortedSet[Long]): Unit = {
+                                addedValues: Iterable[Int],
+                                removedValues: Iterable[Int],
+                                oldValue: SortedSet[Int],
+                                newValue: SortedSet[Int]): Unit = {
 
     for(a <- addedValues){
       counts(map(a):Int) :+= 1

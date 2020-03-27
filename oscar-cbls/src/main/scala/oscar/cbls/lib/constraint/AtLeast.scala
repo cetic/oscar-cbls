@@ -39,13 +39,13 @@ import scala.collection.immutable.SortedMap
  *                We use a map to ensure that there is no two bounds on the same value.
  * @author renaud.delandtsheer@cetic.be
  */
-case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Long, IntValue]) extends Constraint {
+case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Int, IntValue]) extends Constraint {
 
   registerConstrainedVariables(variables)
   registerConstrainedVariables(bounds.values)
 
   private val countInvariant = DenseCount.makeDenseCount(variables.toArray)
-  private val offset:Long = countInvariant.offset
+  private val offset:Int = countInvariant.offset
   private val valueCount = countInvariant.counts //v => #occurrence of v+offset in variables
 
   private val noViolation:IntValue = 0L
@@ -88,7 +88,7 @@ case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Long, IntVal
   override def violation(v: Value) = Violations(v.asInstanceOf[IntValue])
 
   override def checkInternals(c: Checker) {
-    val (minMin,maxMax) = InvariantHelper.getMinMaxBounds(variables)
+    val (minMin,maxMax) = InvariantHelper.getMinMaxBoundsShort(variables)
     var MyValueCount: SortedMap[Long,Long] = SortedMap.empty
     for(v <- variables){
       val oldCount = MyValueCount.getOrElse(v.value,0L)
@@ -115,7 +115,7 @@ case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Long, IntVal
       Some("Violation.value (" + Violation.value + ") == MyViol (" + MyViol + ")"))
 
     for (v <- variables) {
-      if (bounds.contains(v.value) && (MyValueCount(v.value + offset) <= bounds(v.value).value)) {
+      if (bounds.contains(v.valueInt) && (MyValueCount(v.value + offset) <= bounds(v.valueInt).value)) {
         c.check(violation(v).value == 0L,
             Some("violation(" + v.name + ").value (" + violation(v).value + ") == 0L"))
       } else {

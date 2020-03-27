@@ -11,11 +11,11 @@ object SwDevTardiness {
   val (a1, a2, a3, a4, a5) = (10, 11, 12, 13, 14)
   val activities = List(a1, a2, a3, a4, a5)
   val durations = Map(
-    a1 -> 10L,
-    a2 -> 10L,
-    a3 -> 10L,
-    a4 -> 10L,
-    a5 -> 10L
+    a1 -> 10,
+    a2 -> 10,
+    a3 -> 10,
+    a4 -> 10,
+    a5 -> 10
   )
   // Resource
   val analyst = new DisjunctiveResource(List(a1, a2, a3, a4, a5))

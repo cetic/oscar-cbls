@@ -42,7 +42,7 @@ class RBTreeExplorerTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
   test("Bottom-up iteration of explorer "){
     forAll(sequentialTuplesList){list =>{
 
-      var explorationList = List[(Long,Int)]()
+      var explorationList = List[(Int,Int)]()
       var tree = RedBlackTreeMap.makeFromSorted(list)
       var explorer = tree.smallestPosition
       while(explorer.isDefined){
@@ -57,7 +57,7 @@ class RBTreeExplorerTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
   test("Top-down iteration of explorer "){
     forAll(sequentialTuplesList){list =>{
 
-      var explorationList = List[(Long,Int)]()
+      var explorationList = List[(Int,Int)]()
       var tree = RedBlackTreeMap.makeFromSorted(list)
       var explorer = tree.biggestPosition
       while(explorer.isDefined){
@@ -72,8 +72,8 @@ class RBTreeExplorerTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
   val intGenerator: Gen[Int] = for (n <- Gen.choose(10, 1000)) yield n
 
   // Generates a list of key-value tuples with incremental key (in order) and random values
-  val sequentialTuplesList: Gen[List[(Long, Int)]] =  for {
+  val sequentialTuplesList: Gen[List[(Int, Int)]] =  for {
     numElems <- Gen.choose(1, 500)
     valuesList <- Gen.listOfN(numElems,intGenerator)
-  } yield valuesList.zipWithIndex.map(tuple => (tuple._2 :Long,tuple._1 :Int))
+  } yield valuesList.zipWithIndex.map(tuple => (tuple._2,tuple._1))
 }

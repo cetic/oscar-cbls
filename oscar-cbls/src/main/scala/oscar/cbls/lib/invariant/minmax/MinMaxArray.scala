@@ -37,7 +37,7 @@ import scala.collection.immutable.SortedSet
 case class MaxArray(varss: Array[IntValue], cond: SetValue = null, default: Long = Long.MinValue)
   extends MiaxArray(varss, cond, varss.map(_.min).min) {
 
-  override def Ord(v: IntValue): Long = -v.value
+  override def Ord(v: IntValue): Int = -v.valueInt
 
   override def ExtremumName: String = "Max"
 
@@ -66,7 +66,7 @@ case class MaxArray(varss: Array[IntValue], cond: SetValue = null, default: Long
 case class MinArray(varss: Array[IntValue], cond: SetValue = null, default: Long = Long.MaxValue)
   extends MiaxArray(varss, cond, varss.map(_.max).max) {
 
-  override def Ord(v: IntValue): Long = v.value
+  override def Ord(v: IntValue): Int = v.valueInt
 
   override def ExtremumName: String = "Min"
 
@@ -131,7 +131,7 @@ with SetNotificationTarget{
     InvariantHelper.getMinMaxBounds(bulkedVar)
 
   def ExtremumName: String
-  def Ord(v: IntValue): Long
+  def Ord(v: IntValue): Int
 
   if (h.isEmpty) {
     this := default
@@ -146,12 +146,12 @@ with SetNotificationTarget{
     this := vars(h.getFirst).value
   }
 
-  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
 
-  def notifyInsertOn(v: ChangingSetValue, value: Long) {
+  def notifyInsertOn(v: ChangingSetValue, value: Int) {
     assert(v == cond)
     keyForRemoval(value) = registerDynamicDependency(vars(value), value)
 
@@ -160,7 +160,7 @@ with SetNotificationTarget{
     this := vars(h.getFirst).value
   }
 
-  def notifyDeleteOn(v: ChangingSetValue, value: Long) {
+  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
     assert(v == cond)
 
     keyForRemoval(value).performRemove()

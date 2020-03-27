@@ -616,11 +616,11 @@ class GuidedLocalSearch3(a: Neighborhood,
     getMoveNoUpdateWeight(obj, initialObj, acceptanceCriterion, initValForAdditional, maxAttemptsBeforeStop)
   }
 
-  def weightString(weightForBase:Int):String =  weightForBase match{
-    case 0 => "forget obj, focus on additional constraints"
-    case 1 => "additional are strong Constraints"
-    case x if x > 1 =>  "relativeWeight:" + x + "/" + weightCorrectionStrategy.constantWeightForAdditionalConstraint
-    case x if x < 0 => "interrupted"
+  def weightString(weightForBase:Long):String =  weightForBase match{
+    case 0L => "forget obj, focus on additional constraints"
+    case 1L => "additional are strong Constraints"
+    case x if x > 1L =>  "relativeWeight:" + x + "/" + weightCorrectionStrategy.constantWeightForAdditionalConstraint
+    case x if x < 0L => "interrupted"
   }
 
   def getMoveNoUpdateWeight(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean, initValForAdditional:Long, remainingAttemptsBeforeStop:Int): SearchResult = {

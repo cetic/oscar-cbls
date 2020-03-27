@@ -88,7 +88,7 @@ object TestRoundUpModulo extends App {
 
   m.close()
 
-  for (i <- 0L to 20L) {
+  for (i <- 0 to 20) {
     from := i
     println(n2day(from.value) + " " + from.value + " " + duration + " " + n2day(r.value) + " " + r.value)
 
@@ -164,18 +164,18 @@ case class RoundUpCustom(from: IntValue, duration: IntValue, forbiddenZones: Lis
     var newStart: Long = from.value
     var lastZoneBeforeNewStart = findLastStartBefore(from.value)
     while (true) {
-      if (lastZoneBeforeNewStart != -1L
+      if (lastZoneBeforeNewStart != -1
         && forbiddenEnds(lastZoneBeforeNewStart) >= newStart) {
         //we cannot start here, we are in a forbidden zone
         //the zone before start does not change,
         //we just need to wait for the end of this zone
         newStart = forbiddenEnds(lastZoneBeforeNewStart) + 1L
-      } else if ((lastZoneBeforeNewStart + 1L < forbiddenStarts.size)
-        && (forbiddenStarts(lastZoneBeforeNewStart + 1L) <= newStart + duration.value - 1L)) {
+      } else if ((lastZoneBeforeNewStart + 1 < forbiddenStarts.size)
+        && (forbiddenStarts(lastZoneBeforeNewStart + 1) <= newStart + duration.value - 1L)) {
         //we can start here, but we end up in a forbidden zone
         //we have to start after the next zone
-        newStart = forbiddenEnds(lastZoneBeforeNewStart + 1L) + 1L
-        lastZoneBeforeNewStart += 1L
+        newStart = forbiddenEnds(lastZoneBeforeNewStart + 1) + 1L
+        lastZoneBeforeNewStart += 1
       } else {
         return newStart
       }
@@ -183,11 +183,11 @@ case class RoundUpCustom(from: IntValue, duration: IntValue, forbiddenZones: Lis
     1L
   }
 
-  private def findLastStartBefore(d: Long): Long = {
-    var up = forbiddenStarts.size - 1L
-    var down = -1L
-    while (down + 1L < up) {
-      val mid = (up + down) / 2L
+  private def findLastStartBefore(d: Long): Int = {
+    var up = forbiddenStarts.size - 1
+    var down = -1
+    while (down + 1 < up) {
+      val mid = (up + down) / 2
       if (forbiddenStarts(mid) == d) {
         return mid
       } else if (forbiddenStarts(mid) < d) {
@@ -240,7 +240,7 @@ object TestRoundUpCustom extends App {
 
   m.close()
 
-  for (i <- 0L to 20L) {
+  for (i <- 0 to 20) {
     from := i
     println(n2day(from.value) + " " + from.value + " " + duration + " " + n2day(r.value) + " " + r.value)
   }

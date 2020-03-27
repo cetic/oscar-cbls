@@ -35,7 +35,7 @@ import scala.collection.immutable.SortedMap
  * @author renaud.delandtsheer@cetic.be
  */
 case class AllDiff(variables: Iterable[IntValue])
-  extends Invariant with Constraint with IntNotificationTarget{
+  extends Invariant with Constraint with ShortIntNotificationTarget{
   //TODO: use bulking here
 
   val n = variables.size
@@ -44,27 +44,28 @@ case class AllDiff(variables: Iterable[IntValue])
   registerConstrainedVariables(variables)
   finishInitialization()
   val (minValueOfVars,maxValueOfVars) = InvariantHelper.getMinMaxBounds(variables)
+  require(minValueOfVars >= Int.MinValue && maxValueOfVars <= Int.MaxValue, "All diff constraints support only integer values. Got min bounds : " + minValueOfVars + " maxBounds : " + maxValueOfVars)
 
   //le degré global de violation est la somme des tailles -1L des ensembles de var ayant meme value
   // et on ne prend que les ensembles de cardinalite > 1L
   private val violationVariable: CBLSIntVar = new CBLSIntVar(model, 0L, Domain(0L ,n), "ViolationsOfAllDiff")
   violationVariable.setDefiningInvariant(this)
 
-  private val N0: Long = maxValueOfVars
+  private val N0: Int = maxValueOfVars.toInt
 
-  private val offset: Long = -minValueOfVars
+  private val offset: Int = -minValueOfVars.toInt
 
   private val N = N0 + offset
-  private val range = 0L to N
+  private val range = 0 to N
 
-  private val valueMinusOffsetToNbOccurrence: Array[CBLSIntVar] = Array.tabulate[CBLSIntVar](N + 1L)((i: Int) => {
-    val tmp = new CBLSIntVar(model,0L, Domain(0L ,n), "alldiff_count_of_value_" + (i - offset))
+  private val valueMinusOffsetToNbOccurrence: Array[CBLSIntVar] = Array.tabulate[CBLSIntVar](N + 1)((i: Int) => {
+    val tmp = new CBLSIntVar(model,0L, Domain(0 ,n), "alldiff_count_of_value_" + (i - offset))
     tmp.setDefiningInvariant(this)
     tmp
   })
 
   for (v <- variables) {
-    valueMinusOffsetToNbOccurrence(v.value + offset) :+= 1L
+    valueMinusOffsetToNbOccurrence(v.valueInt + offset) :+= 1L
   }
 
   for (i <- range) {
@@ -88,7 +89,7 @@ case class AllDiff(variables: Iterable[IntValue])
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int) {
     valueMinusOffsetToNbOccurrence(OldVal + offset) :-= 1L
     valueMinusOffsetToNbOccurrence(NewVal + offset) :+= 1L
 
@@ -115,8 +116,8 @@ case class AllDiff(variables: Iterable[IntValue])
   }
 
   override def checkInternals(c: Checker) {
-    val myValueCount: Array[Long] = (for (i <- 0L to N) yield 0L).toArray
-    for (v <- variables) myValueCount(v.value + offset) += 1L
+    val myValueCount: Array[Long] = (for (i <- 0 to N) yield 0L).toArray
+    for (v <- variables) myValueCount(v.valueInt + offset) += 1L
     for (v <- range) {
       c.check(valueMinusOffsetToNbOccurrence(v).newValue == myValueCount(v),
         Some("valueMinusOffsetToNbOccurrence(" + v + ").newValue (" + valueMinusOffsetToNbOccurrence(v).newValue
@@ -124,10 +125,10 @@ case class AllDiff(variables: Iterable[IntValue])
     }
 
     for (v <- variables) {
-      c.check(violation(v).value == myValueCount(v.value + offset) - 1L,
+      c.check(violation(v).value == myValueCount(v.valueInt + offset) - 1L,
         Some("violation(" + v.name + ").value (" + violation(v).value
           + ") != myValueCount(" + v.name + ".value + offset) - 1L ("
-          + (myValueCount(v.value + offset) - 1L) + ")"))
+          + (myValueCount(v.valueInt + offset) - 1L) + ")"))
     }
 
     var MyViol: Long = 0L

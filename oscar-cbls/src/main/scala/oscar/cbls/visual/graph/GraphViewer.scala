@@ -178,14 +178,14 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
     super.addShape(shape,false)
   }
 
-  def redrawMultipleNodes(openConditions:SortedSet[Long],
-                          centroids:SortedSet[Long],
-                          nodeToCentroids:SortedMap[Long,Array[Long]],
+  def redrawMultipleNodes(openConditions:SortedSet[Int],
+                          centroids:SortedSet[Int],
+                          nodeToCentroids:SortedMap[Int,Array[Int]],
                           k : Int,
                           hideClosedEdges:Boolean = false,
                           hideRegularEdges:Boolean = false,
                           hideOpenEdges:Boolean=false,
-                          extraCentroids:Array[Long] = Array.empty,
+                          extraCentroids:Array[Int] = Array.empty,
                           emphasizeEdges:Iterable[Edge] = List.empty,
                           extraPath:Iterable[RevisableDistance]): Unit ={
 
@@ -199,19 +199,19 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
       drawPath(path,emphNodes = true:Boolean,emphEdges=true)
     }
 
-    drawEdges(openConditions:SortedSet[Long],hideClosedEdges,hideRegularEdges, hideOpenEdges,emphasizeEdges)
+    drawEdges(openConditions:SortedSet[Int],hideClosedEdges,hideRegularEdges, hideOpenEdges,emphasizeEdges)
 
 
     drawNodes(centroids,nodeToCentroids,extraCentroids)
   }
 
-  def redraw(openConditions:SortedSet[Long],
-             centroids:SortedSet[Long],
-             nodeToCentroid:SortedMap[Long,Long],
+  def redraw(openConditions:SortedSet[Int],
+             centroids:SortedSet[Int],
+             nodeToCentroid:SortedMap[Int,Int],
              hideClosedEdges:Boolean = false,
              hideRegularEdges:Boolean = false,
              hideOpenEdges:Boolean=false,
-             extraCentroids:Array[Long]=Array.empty,
+             extraCentroids:Array[Int]=Array.empty,
              emphasizeEdges:Iterable[Edge] = List.empty,
              extraPath:Iterable[RevisableDistance]) {
 
@@ -224,18 +224,18 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
       drawPath(path,emphNodes = true:Boolean,emphEdges=true)
     }
 
-    drawEdges(openConditions:SortedSet[Long],hideClosedEdges,hideRegularEdges, hideOpenEdges,emphasizeEdges)
+    drawEdges(openConditions:SortedSet[Int],hideClosedEdges,hideRegularEdges, hideOpenEdges,emphasizeEdges)
 
-    drawNodes(centroids:SortedSet[Long],
-      nodeToCentroid.mapValues(Array(_)):SortedMap[Long,Array[Long]],extraCentroids)
+    drawNodes(centroids:SortedSet[Int],
+      nodeToCentroid.mapValues(Array(_)):SortedMap[Int,Array[Int]],extraCentroids)
 
     //double buffering still does not work!
     super.repaint()
   }
 
-  def drawNodes(centroids:SortedSet[Long],
-                nodeToCentroid:SortedMap[Long,Array[Long]],
-                extraCentroids:Array[Long],
+  def drawNodes(centroids:SortedSet[Int],
+                nodeToCentroid:SortedMap[Int,Array[Int]],
+                extraCentroids:Array[Int],
                 radius : Int = 3): Unit ={
 
     for(nodeId <- graph.nodeRange){
@@ -255,7 +255,7 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
                 drawNode(nodeId, colorForUnreachableNodes, false, graph.nodes(nodeId).transitAllowed, radius,index)
               } else {
                 //reachable by centroidID
-                drawNode(nodeId, centroidColor(cbls.longToInt(centroidID)), false, graph.nodes(nodeId).transitAllowed, radius,index)
+                drawNode(nodeId, centroidColor(centroidID), false, graph.nodes(nodeId).transitAllowed, radius,index)
               }
             })
           case None =>
@@ -336,7 +336,7 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
     tempPoint.innerCol_$eq(color)
   }
 
-  def drawEdges(openConditions:SortedSet[Long],
+  def drawEdges(openConditions:SortedSet[Int],
                 hideClosedEdges:Boolean,
                 hideRegularEdges:Boolean = false,
                 hideOpenEdges:Boolean=false,
