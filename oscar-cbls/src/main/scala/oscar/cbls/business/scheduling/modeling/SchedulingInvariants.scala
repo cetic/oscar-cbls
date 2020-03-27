@@ -8,9 +8,9 @@ import oscar.cbls.core.ChangingSeqValue
 
 trait SchedulingInvariants {
   def startTimes(actPriorityList: ChangingSeqValue,
-                 actDurations: Map[ActivityId, Long],
+                 actDurations: Map[ActivityId, Int],
                  actPrecedences: Precedences,
-                 actMinStartTimes: Map[ActivityId, Long],
+                 actMinStartTimes: Map[ActivityId, Int],
                  resourceConstraints: List[Resource]): (CBLSIntVar, Map[ActivityId, CBLSIntVar]) = {
     StartTimes(actPriorityList, actDurations, actPrecedences, actMinStartTimes, resourceConstraints)
   }

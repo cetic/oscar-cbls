@@ -13,7 +13,7 @@ import oscar.cbls.lib.search.combinators.{Atomic, BestSlopeFirst, Profile}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.visual.geometry.GeometryDrawing
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
-import oscar.cbls.{CBLSIntVar, Objective, Store, longToInt}
+import oscar.cbls.{CBLSIntVar, Objective, Store}
 
 /**
   * This demo tries to monimize the distance between centers of shapes plus the overlap distance
@@ -123,20 +123,20 @@ object TestGeometryPackingMinDistance extends App{
   //declare a collection of neighborhoods
 
   def moveOneCoordNumeric = NumericAssignNeighborhood(flattenedCoordArray,"moveByOneCoord",
-    domainExplorer = () => (dXForDetivativeEvalution: Long, maxIt: Long) => new NewtonRaphsonMinimize(20, 10)
+    domainExplorer = () => (dXForDetivativeEvalution: Int, maxIt: Long) => new NewtonRaphsonMinimize(20, 10)
     //these are alternative methods for the numerical optimization
     //new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
 
   def moveXNumeric = NumericAssignNeighborhood(coordArray.map(_._1),"moveX",
-    domainExplorer = () => (dividingRatio: Long, minStep: Long) => new NarrowingExhaustive(dividingRatio = 10, minStep = 1)
+    domainExplorer = () => (dividingRatio: Int, minStep: Long) => new NarrowingExhaustive(dividingRatio = 10, minStep = 1)
     //these are alternative methods for the numerical optimization
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
 
   def smallSlideY(shapeID:Int) = NumericAssignNeighborhood(Array(coordArray(shapeID)._2),"moveYSlave",
-    domainExplorer = () => (step: Long, maxIt: Long) => new Slide(step=1,maxIt=20)
+    domainExplorer = () => (step: Int, maxIt: Long) => new Slide(step=1,maxIt=20)
     //these are alternative methods for the numerical optimization
     // new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
     // new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
@@ -144,12 +144,12 @@ object TestGeometryPackingMinDistance extends App{
 
   def moveYNumeric = NumericAssignNeighborhood(coordArray.map(_._2),"moveY",
     //these are alternative methods for the numerical optimization
-    domainExplorer = () => (dividingRatio: Long, minStep: Long) => new NarrowingExhaustive(dividingRatio = 10, minStep = 1)
+    domainExplorer = () => (dividingRatio: Int, minStep: Long) => new NarrowingExhaustive(dividingRatio = 10, minStep = 1)
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
 
   def smallSlideX(circleID:Int) = NumericAssignNeighborhood(Array(coordArray(circleID)._1),"moveXSlave",
-    domainExplorer = () => (step: Long, maxIt: Long) => new Slide(step=1,maxIt=20)
+    domainExplorer = () => (step: Int, maxIt: Long) => new Slide(step=1,maxIt=20)
     //these are alternative methods for the numerical optimization
     // new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
@@ -189,8 +189,8 @@ object TestGeometryPackingMinDistance extends App{
 
       allShapes.indices.flatMap(circleID => {
 
-        val oldX = coordArray(circleID)._1.value
-        val oldY = coordArray(circleID)._2.value
+        val oldX = coordArray(circleID)._1.valueInt
+        val oldY = coordArray(circleID)._2.valueInt
 
         holes.map(hole => {
           (newObj:Long) => new MoveShapeTo(circleID,hole._1,hole._2,oldX,oldY,newObj)
@@ -200,7 +200,7 @@ object TestGeometryPackingMinDistance extends App{
     neighborhoodName = "toHole"
   )
 
-  class MoveShapeTo(val shapeID:Int, targetX:Int, targetY:Int, oldX:Int, oldY:Int, newObj:Int)
+  class MoveShapeTo(val shapeID:Int, targetX:Int, targetY:Int, oldX:Int, oldY:Int, newObj:Long)
     extends EvaluableCodedMove(() => {
       coordArray(shapeID)._1 := (targetX max radiusArray(shapeID)) min (maxX - radiusArray(shapeID))
       coordArray(shapeID)._2 := (targetY max radiusArray(shapeID)) min (maxY - radiusArray(shapeID))

@@ -29,7 +29,7 @@ object MinStartTimesExample extends App {
     (i, randomInterval(minDuration, maxDuration))
   }.toMap
 
-  val minStartTimes = Map(0 -> 30L)
+  val minStartTimes = Map(0 -> 30)
 
   println("Activities:")
   activities.foreach(act => println(s"Activity $act"))
@@ -100,9 +100,9 @@ object MinStartTimesExample extends App {
    * Rend un nombre aléatoire entre inf et sup
    */
 
-  def randomInterval(inf: Long, sup: Long): Long = {
+  def randomInterval(inf: Int, sup: Int): Int = {
     require(inf <= sup)
-    val rdVal = if (inf == sup) 0L else Math.abs(randomGen.nextLong()) % (sup - inf)
+    val rdVal = if (inf == sup) 0 else Math.abs(randomGen.nextInt()) % (sup - inf)
     inf + rdVal
   }
 }

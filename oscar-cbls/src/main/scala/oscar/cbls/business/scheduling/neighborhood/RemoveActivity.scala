@@ -8,7 +8,7 @@ import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First}
 class RemoveActivity(schedule: Schedule,
                      neighborhoodName: String,
                      selectIndexBehavior:LoopBehavior = First(),
-                     searchIndices: Option[() => Iterable[Long]] = None)
+                     searchIndices: Option[() => Iterable[Int]] = None)
   extends EasyNeighborhoodMultiLevel[RemoveActivityMove](neighborhoodName) {
 
   var currentIndex: Int = -1
@@ -21,11 +21,11 @@ class RemoveActivity(schedule: Schedule,
   override def exploreNeighborhood(initialObj: Long): Unit = {
     // Iteration zone on indices to remove (optional activities)
     // Checking the Hot Restart
-    val iterationZone1: () => Iterable[Long] = searchIndices.getOrElse(() =>
-      0L until schedule.activityPriorityList.value.size
+    val iterationZone1: () => Iterable[Int] = searchIndices.getOrElse(() =>
+      0 until schedule.activityPriorityList.value.size
     )
     val hotRestart = true
-    val iterationZone: Iterable[Long] =
+    val iterationZone: Iterable[Int] =
       if (hotRestart) HotRestart(iterationZone1(), currentIndex)
       else iterationZone1()
     // iterating over the values in the activity list

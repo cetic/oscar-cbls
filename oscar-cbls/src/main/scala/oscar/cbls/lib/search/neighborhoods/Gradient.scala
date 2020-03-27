@@ -82,7 +82,7 @@ case class DiscretizedDirectionGradient(vars:Array[CBLSIntVar],
                                         name:String = "GradientDescent",
                                         maxNbVars:Int = Integer.MAX_VALUE,
                                         minNbVar:Int = 1,
-                                        selectVars:Iterable[Long],
+                                        selectVars:Iterable[Int],
                                         variableIndiceToDeltaForGradientDefinition:Long => Long,
                                         linearSearchForGradientDescent:LinearOptimizer,
                                         gradientSearchBehavior:LoopBehavior = Best(),
@@ -233,7 +233,7 @@ case class DiscretizedDirectionGradient(vars:Array[CBLSIntVar],
 case class GradientDescent(vars:Array[CBLSIntVar],
                            name:String = "GradientDescent",
                            maxNbVars:Int = Integer.MAX_VALUE,
-                           selectVars:Iterable[Long],
+                           selectVars:Iterable[Int],
                            variableIndiceToDeltaForGradientDefinition:Long => Long,
                            hotRestart:Boolean = true,
                            linearSearch:LinearOptimizer,
@@ -243,7 +243,7 @@ case class GradientDescent(vars:Array[CBLSIntVar],
     linearSearch,
     trySubgradient) {
 
-  var startIndiceForHotRestart: Long = 0
+  var startIndiceForHotRestart: Int = 0
 
   override def findGradient(initialObj: Long):List[GradientComponent] = {
 
@@ -412,7 +412,7 @@ case class GradientMove(gradientDefinition : List[GradientComponent], step:Long,
       //still is the expore phase
       for(affect <- simpleAffectMoves){
         if (affect.i == variable){
-          return Some(affect.v)
+          return Some(affect.i.value)
         }
       }
       None

@@ -19,7 +19,7 @@ import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.core.search.{Best, First}
 
-class SimpleVRPSymModelWithUnroutedPoints(n:Long,v:Long,symmetricDistance:Array[Array[Long]],m:Store, maxPivot:Long)
+class SimpleVRPSymModelWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Array[Long]],m:Store, maxPivot:Int)
   extends VRP(m,n,v,maxPivot){
 
   val penaltyForUnrouted  = 10000
@@ -41,13 +41,13 @@ class SimpleVRPSymModelWithUnroutedPoints(n:Long,v:Long,symmetricDistance:Array[
 }
 
 object VRPSymExample extends App {
-  val n = 1000L
-  val v = 10L
+  val n = 1000
+  val v = 10
   val verbose = 1
   new SimpleVRPSymSolver(n,v,4,verbose)
 }
 
-class SimpleVRPSymSolver(n:Long,v:Long,maxPivotPerValuePercent:Long, verbose:Long){
+class SimpleVRPSymSolver(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int){
   val routingMatrix = RoutingMatrixGenerator(n,side=1000)
   val symmetricDistanceMatrix = routingMatrix._1
   val pointsPositions = routingMatrix._2
@@ -76,7 +76,7 @@ class SimpleVRPSymSolver(n:Long,v:Long,maxPivotPerValuePercent:Long, verbose:Lon
     neighborhoodName = "InsertRF")
     guard(() => myVRP.nbRouted < n/2))
 
-  def onePtMove(k:Long) = profile(onePointMove(
+  def onePtMove(k:Int) = profile(onePointMove(
     myVRP.routed,
     () => myVRP.kFirst(k,myVRP.closestNeighboursForward(_),(_) => myVRP.isRouted),
     myVRP,
@@ -84,7 +84,7 @@ class SimpleVRPSymSolver(n:Long,v:Long,maxPivotPerValuePercent:Long, verbose:Lon
 
   val customTwoOpt = profile(twoOpt(myVRP.routed, ()=>myVRP.kFirst(20,myVRP.closestNeighboursForward(_),(_) => myVRP.isRouted), myVRP))
 
-  def customThreeOpt(k:Long, breakSym:Boolean) =
+  def customThreeOpt(k:Int, breakSym:Boolean) =
     profile(threeOpt(myVRP.routed, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward(_),(_) => myVRP.isRouted), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
   val vlsn1pt = mu[OnePointMoveMove](
@@ -93,7 +93,7 @@ class SimpleVRPSymSolver(n:Long,v:Long,maxPivotPerValuePercent:Long, verbose:Lon
     intermediaryStops = true,
     maxDepth = 6)
 
-  def segExchange(k:Long) = segmentExchange(myVRP,()=>myVRP.kFirst(k,myVRP.closestNeighboursForward(_),(_) => myVRP.isRouted),() => myVRP.vehicles)
+  def segExchange(k:Int) = segmentExchange(myVRP,()=>myVRP.kFirst(k,myVRP.closestNeighboursForward(_),(_) => myVRP.isRouted),() => myVRP.vehicles)
 
   val search =
     (bestSlopeFirst(

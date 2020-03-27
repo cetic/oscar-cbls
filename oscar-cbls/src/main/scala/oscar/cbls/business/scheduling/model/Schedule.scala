@@ -10,15 +10,15 @@ import scala.collection.BitSet
 class Schedule(model: Store,
                val activities: List[ActivityId],
                val initialActivities: List[ActivityId],
-               durations: Map[ActivityId, Long],
-               minStartTimes: Map[ActivityId, Long],
+               durations: Map[ActivityId, Int],
+               minStartTimes: Map[ActivityId, Int],
                precedencePairs: List[(ActivityId, ActivityId)],
                resources: List[Resource]) {
 
   // Precedences
   val precedencesData = new Precedences(precedencePairs)
   // Initial priority list
-  val initialPriorityList: List[Long] = precedencesData.getPriorityList(initialActivities)
+  val initialPriorityList: List[Int] = precedencesData.getPriorityList(initialActivities)
 
   println(s"Initial Activities: $initialActivities")
   println(s"Initial Priority List: $initialPriorityList")
@@ -40,7 +40,7 @@ class Schedule(model: Store,
     */
   def swappableIndices(indAct: Int): Iterable[Int] = {
     val prioritySequence = activityPriorityList.value
-    val currentActivity = prioritySequence.valueAtPosition(indAct).get.toInt
+    val currentActivity = prioritySequence.valueAtPosition(indAct).get
     val predActIndices = precedencesData.predMap.getOrElse(currentActivity, BitSet.empty)
     val succActIndices = precedencesData.succMap.getOrElse(currentActivity, BitSet.empty)
     var swappableIndices: List[Int] = List()
@@ -54,7 +54,7 @@ class Schedule(model: Store,
       if (optExplorer.isDefined) {
         val actExplorer = optExplorer.get
         val pos = actExplorer.position
-        val activityAtPos = actExplorer.value.toInt
+        val activityAtPos = actExplorer.value
         exploredActs ::= activityAtPos
         if (predActIndices.contains(activityAtPos)) {
           inLoop = false

@@ -59,14 +59,14 @@ class VRPWithGeoCoords(n: Int, v: Int, minLat: Double, maxLat: Double, minLong: 
   ////////// Static Pruning (done once before starting the resolution) //////////
 
   // Relevant predecessors definition for each node (here any node can be the precessor of another node)
-  val relevantPredecessorsOfNodes = (node:Long) => myVRP.nodes
+  val relevantPredecessorsOfNodes = (node:Int) => myVRP.nodes
   // Sort them lazily by distance
   val closestRelevantNeighborsByDistance =
     Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistanceMatrix,relevantPredecessorsOfNodes)(_))
 
   ////////// Dynamic pruning (done each time before evaluation a move) //////////
   // Only condition the new neighbor must be routed
-  val routedPostFilter = (node:Long) => (neighbor:Long) => myVRP.isRouted(neighbor)
+  val routedPostFilter = (node:Int) => (neighbor:Int) => myVRP.isRouted(neighbor)
 
   //////////////////// Search Procedure ////////////////////
   ////////// Neighborhood definition //////////
@@ -81,7 +81,7 @@ class VRPWithGeoCoords(n: Int, v: Int, minLat: Double, maxLat: Double, minLong: 
     selectInsertionPointBehavior = Best())) // Inserting after the best node in myVRP.kFirst(10,...)
 
   // Moves a routed node to a better place (best neighbor within the 10 closest nodes)
-  def onePtMove(k:Long) = profile(onePointMove(
+  def onePtMove(k:Int) = profile(onePointMove(
     myVRP.routed,
     () => myVRP.kFirst(k,closestRelevantNeighborsByDistance(_),routedPostFilter),
     myVRP,

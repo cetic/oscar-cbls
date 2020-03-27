@@ -34,7 +34,7 @@ object KSmallest {
    * @param key
    * @return
    */
-  def getkSmallests(a:Array[Long], k:Int, key:Long => Long):List[Long] = {
+  def getkSmallests(a:Array[Int], k:Int, key:Int => Long):List[Int] = {
     val heap = new BinomialHeap[Int](indice => -key(a(indice)),2*k)
     for(i <- a.indices){
       heap.insert(i)
@@ -43,9 +43,9 @@ object KSmallest {
     heap.toList.map(a(_))
   }
 
-  def doSortGetLater(a:Array[Int],key:Int => Int):KSmallest = new KSmallest(a,key)
+  def doSortGetLater(a:Array[Int],key:Int => Long):KSmallest = new KSmallest(a,key)
 
-  def lazySort(a:Array[Int], key:Int=>Int):Iterable[Int] = new LazyQuicksort(a,key)
+  def lazySort(a:Array[Int], key:Int=>Long):Iterable[Int] = new LazyQuicksort(a,key)
 
 
   def kFirst(k: Int, values:Iterable[Int], filter: (Int => Boolean) = _ => true): Iterable[Int] = {
@@ -72,7 +72,7 @@ object KSmallest {
   * @param a array of values
   * @param key value from a to key
   */
-class KSmallest(a:Array[Int],key:Int => Int = a => a){
+class KSmallest(a:Array[Int],key:Int => Long = a => a){
   //zipWithIndex puts index in second position of the couple
   val sortedPositions:List[Int] = a.toList.zipWithIndex.sortBy(couple => key(couple._1)).map(_._2)
 
@@ -120,7 +120,7 @@ object testQuickSort extends App with StopWatch{
  * it will sort on demand, as required by the iterator, or by an explicit call to sortUntil
  * @param array an array containing the values to sort. the array will be modified by this procedure, to clone it if you need it somewhere else!
  */
-class LazyQuicksort(val array:Array[Int], key:Int => Int = a => a) extends Iterable[Int] {
+class LazyQuicksort(val array:Array[Int], key:Int => Long = a => a) extends Iterable[Int] {
 
   class QList(val left:Int, val right:Int, val tail:QList)
   private[this] var toDo: QList = new QList(0, array.length - 1,null)

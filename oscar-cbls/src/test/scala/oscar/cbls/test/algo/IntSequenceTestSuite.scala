@@ -181,10 +181,10 @@ class IntSequenceTestSuite extends FunSuite with GeneratorDrivenPropertyChecks w
   }
 
 
-  val elem: Gen[Long] = for (n <- Gen.choose(0, 100)) yield n * 4L // Sparse elements
+  val elem: Gen[Int] = for (n <- Gen.choose(0, 100)) yield n * 4 // Sparse elements
   val gen: Gen[Operation] = Gen.oneOf(List(MoveAfter(),Insert(),Delete(),Flip(),Regularize(),Commit()))
 
-  val testBenchGen: Gen[(List[Long], List[Operation])] = for{
+  val testBenchGen: Gen[(List[Int], List[Operation])] = for{
     numElems <- Gen.choose(20, 200)
     numActions <- Gen.choose(20, 100)
     elems <- Gen.listOfN(numElems, elem)
@@ -212,9 +212,9 @@ object SequenceTestUtils{
     * @param destination The index where the subsequence must be re-inserted (equivalent to moveAfter parameter)
     * @return A new sequence with the proper transformation
     */
-  def flipListManually(list :List[Long], indexFrom :Int, indexTo :Int, destination :Int) : List[Long] = {
+  def flipListManually(list :List[Int], indexFrom :Int, indexTo :Int, destination :Int) : List[Int] = {
 
-    var flippedList = List[Long]()
+    var flippedList = List[Int]()
     val flip = list.slice(indexFrom,indexTo+1).reverse
     val start =  list.take(indexFrom)
     val end = if(indexTo < list.size - 1) list.takeRight(list.size - indexTo - 1) else List()
@@ -239,7 +239,7 @@ object SequenceTestUtils{
     flippedList
   }
 
-  def getRandomParametersForMoveAfter(list :List[Long]): (Int, Int, Int) = {
+  def getRandomParametersForMoveAfter(list :List[Int]): (Int, Int, Int) = {
     val indexFrom = Random.nextInt(list.size - 1)
     val indexTo = indexFrom + Random.nextInt(list.size - indexFrom)
     var destination = -1
@@ -259,13 +259,13 @@ object SequenceTestUtils{
     (indexFrom,indexTo,destination)
   }
 
-  def getRandomParametersForInsert(list :List[Long]) : (Long,Int) = {
+  def getRandomParametersForInsert(list :List[Int]) : (Int,Int) = {
     val value = Random.nextInt(1000)
     val position = Random.nextInt(list.size)
     (value,position)
   }
 
-  def compareAllAttributes(intSeq :IntSequence, list :List[Long]): Unit = myTestUtils.compare(intSeq,list)
+  def compareAllAttributes(intSeq :IntSequence, list :List[Int]): Unit = myTestUtils.compare(intSeq,list)
 }
 
 class SequenceTestUtils extends FunSuite with Matchers {
@@ -275,7 +275,7 @@ class SequenceTestUtils extends FunSuite with Matchers {
     * @param intSeq
     * @param list
     */
-  def compare(intSeq :IntSequence, list: List[Long]): Unit ={
+  def compare(intSeq :IntSequence, list: List[Int]): Unit ={
     intSeq.size             should be (list.size)
     intSeq.isEmpty          should be (list.isEmpty)
     intSeq.nonEmpty         should be (list.nonEmpty)

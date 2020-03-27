@@ -81,9 +81,9 @@ case class MultiKnapsack(items: Array[IntValue], itemsizes: Array[IntValue], bin
     tmp
   }
 
-  def violationOfBin(binNumber:Long) = binviolations(binNumber)
-  def itemsInBin(binNumber:Long) = bincontents(binNumber)
-  def fillingOfBin(binNumber:Long) = binfilling(binNumber)
+  def violationOfBin(binNumber:Int) = binviolations(binNumber)
+  def itemsInBin(binNumber:Int) = bincontents(binNumber)
+  def fillingOfBin(binNumber:Int) = binfilling(binNumber)
 
   /** To override whenever possible to spot errors in invariants.
     * this will be called for each invariant after propagation is performed.
@@ -149,9 +149,9 @@ case class MultiKnapsackLoad(items: Array[IntValue], itemsizes: Array[IntValue],
     tmp
   }
 
-  def violationOfBin(binNumber:Long) = binviolations(binNumber)
-  def itemsInBin(binNumber:Long) = bincontents(binNumber)
-  def fillingOfBin(binNumber:Long) = binfilling(binNumber)
+  def violationOfBin(binNumber:Int) = binviolations(binNumber)
+  def itemsInBin(binNumber:Int) = bincontents(binNumber)
+  def fillingOfBin(binNumber:Int) = binfilling(binNumber)
 
   /** To override whenever possible to spot errors in invariants.
     * this will be called for each invariant after propagation is performed.

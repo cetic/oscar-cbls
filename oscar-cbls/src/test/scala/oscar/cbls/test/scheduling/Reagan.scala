@@ -42,12 +42,12 @@ object Reagan {
   val (eat, sleep, think, chew, speak, drink) = (0, 1, 2, 3, 4, 5)
 
   val durations = Map(
-    eat -> 2L,
-    sleep -> 8L,
-    think -> 12L,
-    chew -> 3L,
-    speak -> 3L,
-    drink -> 3L
+    eat -> 2,
+    sleep -> 8,
+    think -> 12,
+    chew -> 3,
+    speak -> 3,
+    drink -> 3
   )
 
   val precPairs = List((think, drink), (eat, sleep), (chew, speak))

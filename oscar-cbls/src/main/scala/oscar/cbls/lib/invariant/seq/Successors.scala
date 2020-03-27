@@ -35,7 +35,7 @@ object Successors {
   def apply(seq : ChangingSeqValue) : Array[CBLSSetVar] = {
 
     val succ: Array[CBLSSetVar] =
-      Array.tabulate(seq.max+1L)(v => CBLSSetVar(seq.model, name = "next Value of" + v))
+      Array.tabulate(seq.max+1)(v => CBLSSetVar(seq.model, name = "next Value of" + v))
 
     new Successors(seq, succ)
 
@@ -76,9 +76,9 @@ class Successors(sequence:ChangingSeqValue, successorValues:Array[CBLSSetVar])
     }
   }
 
-  def computeImpactedValues(changes:SeqUpdate):Option[SortedSet[Long]] = {
+  def computeImpactedValues(changes:SeqUpdate):Option[SortedSet[Int]] = {
     changes match {
-      case s@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
         //removing next val from pred
 
         computeImpactedValues(prev) match{
@@ -123,24 +123,24 @@ class Successors(sequence:ChangingSeqValue, successorValues:Array[CBLSSetVar])
 
       case SeqUpdateLastNotified(value) =>
         require(value quickEquals sequence.value)
-        Some(SortedSet.empty[Long]) //we are starting from the previous value
+        Some(SortedSet.empty[Int]) //we are starting from the previous value
 
       case SeqUpdateAssign(value : IntSequence) =>
         None //impossible to go incremental
     }
   }
 
-  def computeForValues(seq:IntSequence, values:SortedSet[Long]){
+  def computeForValues(seq:IntSequence, values:SortedSet[Int]){
     for(value <- values){
-      successorValues(value) := SortedSet.empty[Long] ++ seq.positionsOfValue(value).flatMap(position => seq.successorPos2Val(position))
+      successorValues(value) := SortedSet.empty[Int] ++ seq.positionsOfValue(value).flatMap(position => seq.successorPos2Val(position))
     }
   }
 
   def computeAllFromScratch(seq:IntSequence){
-    val emptySet = SortedSet.empty[Long]
+    val emptySet = SortedSet.empty[Int]
     successorValues.foreach(node => node := emptySet)
 
-    var explorer = seq.explorerAtPosition(0L).head
+    var explorer = seq.explorerAtPosition(0).head
     while(explorer.next match{
       case None =>
         false
@@ -152,12 +152,12 @@ class Successors(sequence:ChangingSeqValue, successorValues:Array[CBLSSetVar])
   }
 
 
-  def computeAllFromScratchNoAffect(seq:IntSequence):Array[SortedSet[Long]] = {
-    val emptySet = SortedSet.empty[Long]
-    val successorValues = Array.tabulate(sequence.max+1L)(v => emptySet)
+  def computeAllFromScratchNoAffect(seq:IntSequence):Array[SortedSet[Int]] = {
+    val emptySet = SortedSet.empty[Int]
+    val successorValues = Array.tabulate(sequence.max+1)(v => emptySet)
 
     try{
-    var explorer = seq.explorerAtPosition(0L).head
+    var explorer = seq.explorerAtPosition(0).head
     while(explorer.next match{
       case None =>
         false
@@ -175,7 +175,7 @@ class Successors(sequence:ChangingSeqValue, successorValues:Array[CBLSSetVar])
 
   override def checkInternals(c : Checker){
     val fromScratch = computeAllFromScratchNoAffect(sequence.value)
-    for(node <- 0L to sequence.maxValue){  //TODO: sequence .value.size, and we can have redundant values in the equence!!!
+    for(node <- 0 to sequence.maxValue){  //TODO: sequence .value.size, and we can have redundant values in the equence!!!
       c.check(
         successorValues(node).value
           ==

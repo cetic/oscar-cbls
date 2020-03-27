@@ -28,7 +28,7 @@ object VRPTestingGlobalConstraint extends App {
   val gc = GlobalConstraintCore(problem.routes, nbVehicle)
 
   val routeLengths : Array[CBLSIntVar] = Array.tabulate(nbVehicle)({_ => CBLSIntVar(model,0)})
-  val routeLengthPerVehicle = new RouteLength(gc,nbNode,nbVehicle,routeLengths, (from: Long, to: Long) => symetricDistanceMatrix(from)(to))
+  val routeLengthPerVehicle = new RouteLength(gc,nbNode,nbVehicle,routeLengths, (from: Int, to: Int) => symetricDistanceMatrix(from)(to))
 
   val totalRouteLength = sum(routeLengths)
 

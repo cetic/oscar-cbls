@@ -33,7 +33,7 @@ object HotRestart {
     * @param pivot
     * @return
     */
-  def apply(it:Iterable[Long], pivot:Int):Iterable[Int] = {
+  def apply(it:Iterable[Int], pivot:Int):Iterable[Int] = {
     it match{
       case r:NumericRange[Int] => if (r contains pivot) new InstrumentedRange(r) startBy pivot else r
       case s:SortedSet[Int] => new ShiftedSet(s,pivot)
@@ -43,9 +43,9 @@ object HotRestart {
 
   def hotRestartPreserveSequence(it:Iterable[Int],pivot:Int) = new ShiftedIterable(it,pivot,true)
 
-  def apply(r:NumericRange[Long], pivot:Int):Iterable[Int] =  if (r contains pivot) new InstrumentedRange(r) startBy pivot else r
+  def apply(r:NumericRange[Int], pivot:Int):Iterable[Int] =  if (r contains pivot) new InstrumentedRange(r) startBy pivot else r
 
-  def apply(s:SortedSet[Long], pivot:Int):Iterable[Int] =  new ShiftedSet(s,pivot)
+  def apply(s:SortedSet[Int], pivot:Int):Iterable[Int] =  new ShiftedSet(s,pivot)
 }
 
 class ShiftedIterable(it:Iterable[Int], pivot:Int, sequence:Boolean = false) extends Iterable[Int] {

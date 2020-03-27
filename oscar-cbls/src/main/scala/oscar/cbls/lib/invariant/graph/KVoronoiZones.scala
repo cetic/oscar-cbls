@@ -57,17 +57,16 @@ object KVoronoiZones {
             openConditions: SetValue,
             centroids: SetValue,
             k: Int,
-            trackedNodes: Iterable[Long],
+            trackedNodes: Iterable[Int],
             m: Store,
             defaultDistanceForUnreachableNode: Long,
-            defaultCentroidForUnreachableNode: Long = -1
+            defaultCentroidForUnreachableNode: Int = -1
             ) : KVoronoiZones = {
-
 
     val maxCentroid = defaultCentroidForUnreachableNode max centroids.domain.max
 
-    val trackedNodesMap = SortedMap.empty[Long,Array[(CBLSIntVar,CBLSIntVar)]] ++ trackedNodes.map(
-      (nodeId: Long) => {
+    val trackedNodesMap = SortedMap.empty[Int,Array[(CBLSIntVar,CBLSIntVar)]] ++ trackedNodes.map(
+      (nodeId: Int) => {
         nodeId ->
           Array.tabulate(k)((centroidI: Int) => {
             (new CBLSIntVar(m, defaultCentroidForUnreachableNode, Domain(-1L, maxCentroid), "closest centroid number " + centroidI + " for node " + nodeId),
@@ -126,9 +125,9 @@ object KVoronoiZones {
 class KVoronoiZones(graph:ConditionalGraph,
                     openConditions:SetValue,
                     val centroids:SetValue,
-                    val trackedNodeToDistanceAndCentroidMap:SortedMap[Long,Array[(CBLSIntVar,CBLSIntVar)]],
+                    val trackedNodeToDistanceAndCentroidMap:SortedMap[Int,Array[(CBLSIntVar,CBLSIntVar)]],
                     k : Int,
-                    defaultCentroidForUnreachableNode : Long = -1,
+                    defaultCentroidForUnreachableNode : Int = -1,
                     defaultDistanceForUnreachableNode : Long)
   extends Invariant with SetNotificationTarget{
 
@@ -167,7 +166,7 @@ class KVoronoiZones(graph:ConditionalGraph,
           index = k
         } else {
           if (distance < trackedNodeToDistanceAndCentroid(nodeID)(index)._2.newValue || (distance == trackedNodeToDistanceAndCentroid(nodeID)(index)._2.newValue && centroidID < trackedNodeToDistanceAndCentroid(nodeID)(index)._1.newValue)) {
-            val savedCentroid = trackedNodeToDistanceAndCentroid(nodeID)(index)._1.newValue
+            val savedCentroid = trackedNodeToDistanceAndCentroid(nodeID)(index)._1.newValueInt
             val savedDistance = trackedNodeToDistanceAndCentroid(nodeID)(index)._2.newValue
             trackedNodeToDistanceAndCentroid(nodeID)(index)._1 := centroidToInsert
             trackedNodeToDistanceAndCentroid(nodeID)(index)._2 := distanceToInsert
@@ -255,7 +254,7 @@ class KVoronoiZones(graph:ConditionalGraph,
         true
     }
 
-    private def insertLabelInCentroidList(l : NodeLabeling,listOfCentroid : List[NodeLabeling],shift : Long,i : Long = nbOfLabeledCentroid - 1) : List[NodeLabeling] = {
+    private def insertLabelInCentroidList(l : NodeLabeling,listOfCentroid : List[NodeLabeling],shift : Long,i : Int = nbOfLabeledCentroid - 1) : List[NodeLabeling] = {
       listOfCentroid match {
         case Nil => l::Nil
         case head::tail =>
@@ -630,10 +629,10 @@ class KVoronoiZones(graph:ConditionalGraph,
 
   override def notifySetChanges(v: ChangingSetValue,
                                 id: Int,
-                                addedValues: Iterable[Long],
-                                removedValues: Iterable[Long],
-                                oldValue: SortedSet[Long],
-                                newValue: SortedSet[Long]): Unit = {
+                                addedValues: Iterable[Int],
+                                removedValues: Iterable[Int],
+                                oldValue: SortedSet[Int],
+                                newValue: SortedSet[Int]): Unit = {
     val printtikz = false
     i = i + 1
     //println(Array.tabulate(graph.nbNodes)(i => i + " : " + nodeLabeling(i).centroidList.mkString(",")).mkString("\n"))
@@ -752,7 +751,7 @@ class KVoronoiZones(graph:ConditionalGraph,
       require(nodeLabeling(node.id).centroidList.length == nodeLabeling(node.id).nbOfLabeledCentroid)
       require(nodeLabeling(node.id).centroidMap.iterator.toList.length == nodeLabeling(node.id).nbOfLabeledCentroid,"Node " + node.id + " : Nb of Centroid: " + nodeLabeling(node.id).nbOfLabeledCentroid + " -- Length of centroid list: " + nodeLabeling(node.id).centroidMap.iterator.toList.length)
 
-      def checkCentroidLists(cLIncrementale : List[NodeLabeling],cLFromScratch : List[NodeLabeling], i : Long = 0) : Unit = {
+      def checkCentroidLists(cLIncrementale : List[NodeLabeling],cLFromScratch : List[NodeLabeling], i : Int = 0) : Unit = {
         cLIncrementale match {
           case Nil => require(cLFromScratch == Nil,"centroid list incrementale is empty while centroid list from scratch still has centroids: " + cLFromScratch.mkString(";"))
           case labelInc :: tailInc => require(cLFromScratch != Nil,"centroid list from scratch is empty while centroid list incremental still has centroids: " + cLIncrementale.mkString(";"))

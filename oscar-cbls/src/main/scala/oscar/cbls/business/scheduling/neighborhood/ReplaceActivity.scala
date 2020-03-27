@@ -11,7 +11,7 @@ class ReplaceActivity(schedule: Schedule,
                       selectRemoveBehavior:LoopBehavior = First(),
                       selectActToAddBehavior:LoopBehavior = First(),
                       selectReinsertBehavior:LoopBehavior = Best(),
-                      searchValues: Option[() => Iterable[Long]] = None)
+                      searchValues: Option[() => Iterable[Int]] = None)
   extends EasyNeighborhoodMultiLevel[ReplaceActivityMove](neighborhoodName) {
 
   var indActToRemove: Int = -1
@@ -26,11 +26,11 @@ class ReplaceActivity(schedule: Schedule,
   override def exploreNeighborhood(initialObj: Long): Unit = {
     // Iteration zone on activities indices to remove
     // Checking the Hot Restart
-    val iterationZone1: () => Iterable[Long] = searchValues.getOrElse(() =>
-      0L until schedule.activityPriorityList.value.size
+    val iterationZone1: () => Iterable[Int] = searchValues.getOrElse(() =>
+      0 until schedule.activityPriorityList.value.size
     )
     val hotRestart = true
-    val iterationZone: Iterable[Long] =
+    val iterationZone: Iterable[Int] =
       if (hotRestart) HotRestart(iterationZone1(), indActToRemove)
       else iterationZone1()
     // iterating over the values in the activity list
@@ -40,13 +40,12 @@ class ReplaceActivity(schedule: Schedule,
     while (indicesIterator.hasNext) {
       indActToRemove = indicesIterator.next().toInt
       // iterating over the possible activities to add after
-      val iterationZone2: () => Iterable[Long] = () => {
+      val iterationZone2: () => Iterable[Int] = () => {
         schedule
           .activities
           .filterNot(schedule.activityPriorityList.value.contains(_))
-          .map(_.toLong)
       }
-      val iterationZoneAdding: Iterable[Long] =
+      val iterationZoneAdding: Iterable[Int] =
         if (hotRestart) HotRestart(iterationZone2(), actToAdd)
         else iterationZone2()
       // iterating over the activities to add
@@ -81,14 +80,14 @@ class ReplaceActivity(schedule: Schedule,
   override def instantiateCurrentMove(newObj: Long): ReplaceActivityMove =
     ReplaceActivityMove(indActToRemove, actToAdd, indActToAdd, this, neighborhoodNameToString, newObj)
 
-  def performMove(indActToRm: Int, actToAd: Long, indActToAd: Int): Unit = {
+  def performMove(indActToRm: Int, actToAd: Int, indActToAd: Int): Unit = {
     schedule.activityPriorityList.remove(indActToRm)
     schedule.activityPriorityList.insertAtPosition(actToAd, indActToAd)
   }
 }
 
 case class ReplaceActivityMove(removeIndex: Int,
-                               actToAdd: Long,
+                               actToAdd: Int,
                                addIndex: Int,
                                override val neighborhood: ReplaceActivity,
                                override val neighborhoodName: String = "ReplaceActivityMove",

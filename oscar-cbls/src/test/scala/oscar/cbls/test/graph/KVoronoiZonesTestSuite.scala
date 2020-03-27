@@ -19,7 +19,7 @@ class KVoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
       val bench = new InvBench(verbose,List(Random(),Shuffle(),MultipleMove()))
 
       val nbNodes = 1000
-      val nbCentroids = 200L
+      val nbCentroids = 200
 
       val nbConditionalEdges = (nbNodes + nbCentroids) * 3
       val nbNonConditionalEdges = (nbNodes + nbCentroids) * 3
@@ -57,7 +57,7 @@ class KVoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
       val bench = new InvBench(verbose,List(Random(),Shuffle(),MultipleMove()))
 
       val nbNodes = 50
-      val nbCentroids = 10L
+      val nbCentroids = 10
 
       val nbConditionalEdges = (nbNodes + nbCentroids) * 3
       val nbNonConditionalEdges = (nbNodes + nbCentroids) * 3

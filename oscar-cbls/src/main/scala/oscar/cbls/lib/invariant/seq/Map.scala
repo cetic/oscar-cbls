@@ -26,8 +26,8 @@ object Map {
    * @param mapArray an array that is taken as a function (it cannot be modified after this call)
    * @return a sequence where the value at any position p is equal to mapArray(seq(p))
    */
-  def apply(seq:ChangingSeqValue,mapArray:Array[Long]):MapConstantFun = {
-    new MapConstantFun(seq,(i => mapArray(i)),InvariantHelper.getMinMaxBoundsInt(mapArray)._2)
+  def apply(seq:ChangingSeqValue,mapArray:Array[Int]):MapConstantFun = {
+    new MapConstantFun(seq,(i => mapArray(i)),InvariantHelper.getMinMaxBoundsShortInt(mapArray)._2)
   }
 
   /**
@@ -35,8 +35,8 @@ object Map {
    * @param transform a function to apply to each value occuring in the sequence (it cannot be modified after this call)
    * @return a sequence where the value at any position p is equal to transform(seq(p))
    */
-  def apply(seq:ChangingSeqValue, transform:Long=>Long,maxTransform:Long) =
-    new MapConstantFun(seq:ChangingSeqValue, transform:Long=>Long,maxTransform:Long)
+  def apply(seq:ChangingSeqValue, transform:Int=>Int,maxTransform:Int) =
+    new MapConstantFun(seq:ChangingSeqValue, transform:Int=>Int,maxTransform:Int)
 
   /**
    * @param seq a sequence of integers
@@ -49,7 +49,7 @@ object Map {
 
 
 class MapConstantFun(seq:ChangingSeqValue,
-          transform:Long=>Long,maxTransform:Long)
+          transform:Int=>Int,maxTransform:Int)
   extends SeqInvariant(seq.value.map(transform),maxTransform,
     seq.maxPivotPerValuePercent,seq.maxHistorySize)
 with SeqNotificationTarget{
@@ -107,10 +107,10 @@ with SeqNotificationTarget{
 
 class MapThroughArray(seq:ChangingSeqValue,
                      transform:Array[IntValue])
-  extends SeqInvariant(seq.value.map(v => transform(v).value),
-    InvariantHelper.getMinMaxBounds(transform)._2,
+  extends SeqInvariant(seq.value.map(v => transform(v).valueInt),
+    InvariantHelper.getMinMaxBoundsShort(transform)._2,
     seq.maxPivotPerValuePercent,seq.maxHistorySize)
-  with SeqNotificationTarget with IntNotificationTarget{
+  with SeqNotificationTarget with ShortIntNotificationTarget{
 
   setName("Map(" + seq.name + ")")
 
@@ -122,7 +122,7 @@ class MapThroughArray(seq:ChangingSeqValue,
     digestUdpate(changes : SeqUpdate)
   }
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int): Unit = {
     val impactedValue = id
     for(impactedPosition <- seq.value.positionsOfValue(impactedValue)){
       remove(impactedPosition)
@@ -136,7 +136,7 @@ class MapThroughArray(seq:ChangingSeqValue,
         digestUdpate(prev)
        case SeqUpdateInsert(value, position, prev) =>
         digestUdpate(prev)
-        insertAtPosition(transform(value).value, position)
+        insertAtPosition(transform(value).valueInt, position)
       case SeqUpdateLastNotified(seq) => ;
       case SeqUpdateMove(fromIncluded, toIncluded, after, flip, prev) =>
         digestUdpate(prev)
@@ -147,7 +147,7 @@ class MapThroughArray(seq:ChangingSeqValue,
       case x@SeqUpdateRollBackToCheckpoint(checkpoint,chechpointLevel) =>
         digestUdpate(x.howToRollBack)
       case SeqUpdateAssign(seq) =>
-        this := seq.map(v => transform(v).value)
+        this := seq.map(v => transform(v).valueInt)
     }
   }
 

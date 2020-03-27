@@ -24,7 +24,7 @@ import oscar.cbls.core._
  * @param a is the value that is to locate in the sequence
  */
 case class OccurrencesOf(v: SeqValue, a:IntValue)
-  extends IntInvariant(v.value.nbOccurrence(a.value), Domain(0L , Int.MaxValue))
+  extends IntInvariant(v.value.nbOccurrence(a.valueInt), Domain(0 , Int.MaxValue))
   with SeqNotificationTarget with IntNotificationTarget{
 
   setName("OccurrencesOf(" + a.name + " in " + v.name + ")")
@@ -43,11 +43,11 @@ case class OccurrencesOf(v: SeqValue, a:IntValue)
   }
 
   override def performInvariantPropagation() {
-    this := v.value.nbOccurrence(a.value)
+    this := v.value.nbOccurrence(a.valueInt)
   }
 
   override def checkInternals(c: Checker) {
-    require(this.value == v.value.positionsOfValue(a.value).size, "this.value:" + this.value + " v.value.positionsOfValue(a.value).size:" + v.value.positionsOfValue(a.value).size + " v.value.nbOccurrence(a.value):" + v.value.nbOccurrence(a.value))
+    require(this.value == v.value.positionsOfValue(a.valueInt).size, "this.value:" + this.value + " v.value.positionsOfValue(a.value).size:" + v.value.positionsOfValue(a.valueInt).size + " v.value.nbOccurrence(a.value):" + v.value.nbOccurrence(a.valueInt))
   }
 }
 

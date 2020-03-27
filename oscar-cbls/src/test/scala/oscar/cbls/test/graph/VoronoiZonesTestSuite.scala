@@ -60,6 +60,10 @@ class VoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
       val nbConditionalEdges = (nbNodes + nbCentroids) * 3
       val nbNonConditionalEdges = (nbNodes + nbCentroids) * 3
 
+<<<<<<< HEAD
+=======
+    val nbCentroids = 10
+>>>>>>> Finish the modification so that everything compiles.
 
 
       val openConditions:CBLSSetVar = bench.genIntSetVar(nbVars = nbConditionalEdges, range = 0 until nbConditionalEdges, name="openConditions")
@@ -186,7 +190,7 @@ class VoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
     val nbNodes = 30
     val nbConditionalEdges = 0
     val nbNonConditionalEdges = 40
-    val nbCentroids = 3L
+    val nbCentroids = 3
 
     val openConditions: CBLSSetVar = bench.genIntSetVar(nbVars = nbConditionalEdges, range = 0 until nbConditionalEdges, name = "openConditions")
     val centroids: CBLSSetVar = bench.genIntSetVar(nbVars = nbCentroids, range = 0 until nbCentroids, name = "Centroids")

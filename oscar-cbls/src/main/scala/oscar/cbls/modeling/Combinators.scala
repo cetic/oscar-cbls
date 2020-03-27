@@ -306,8 +306,8 @@ trait NeighborhoodSelectionCombinators{
    * @param refresh a refresh of the slopee measuring must be perfored every refresh iterations
    */
   def bestSlopeFirst(l:List[Neighborhood],
-                     tabuLength:Long = 10L,
-                     overrideTabuOnFullExhaust:Long = 9L, refresh:Long = 100L) =
+                     tabuLength:Int = 10,
+                     overrideTabuOnFullExhaust:Long = 9L, refresh:Int = 100) =
     BestSlopeFirst(l,tabuLength,overrideTabuOnFullExhaust,refresh)
 
 
@@ -323,8 +323,8 @@ trait NeighborhoodSelectionCombinators{
    * @param refresh a refresh of the slopee measuring must be perfored every refresh iterations
    */
   def fastestFirst(l:List[Neighborhood],
-                   tabuLength:Long = 10L,
-                   overrideTabuOnFullExhaust:Long = 9L,  refresh:Long = 100L) =
+                   tabuLength:Int = 10,
+                   overrideTabuOnFullExhaust:Long = 9L,  refresh:Int = 100) =
     FastestFirst(l,tabuLength,overrideTabuOnFullExhaust,refresh)
 
   /**

@@ -35,7 +35,7 @@ import scala.collection.immutable.SortedSet
   * @author renaud.delandtsheer@cetic.be
   * */
 case class Filter(values:Array[IntValue], cond:(Long=>Boolean)=_>0L)
-  extends SetInvariant(values.indices.foldLeft(SortedSet.empty[Long])((acc:SortedSet[Long],indice:Int) => if(cond(values(indice).value)){acc+indice}else acc),
+  extends SetInvariant(values.indices.foldLeft(SortedSet.empty[Int])((acc:SortedSet[Int],indice:Int) => if(cond(values(indice).value)){acc+indice}else acc),
     0 until values.length)
   with IntNotificationTarget{
 

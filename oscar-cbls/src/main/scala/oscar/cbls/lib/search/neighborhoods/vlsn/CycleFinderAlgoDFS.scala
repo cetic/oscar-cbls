@@ -37,7 +37,7 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends Cy
     val isLabelReached = Array.fill(nbLabels)(false)
     val isNodeFullyExplored = Array.fill(nbNodes)(false)
     var rootNode:Node = null
-    var rooNodeID:Long = -1L
+    var rooNodeID:Int = -1
 
     def dfsExplore(node:Node,summedDelta:Long):Option[List[Edge]] ={
       var outgoingEdges = node.outgoing
@@ -104,7 +104,7 @@ class ReacheabilityFloydWarshall(graph:VLSNGraph){
   private val nodes:Array[Node] = graph.nodes
   private val edges:Array[Edge] = graph.edges
   private val nbNodes = nodes.length
-  private val nodeRange = 0L until nbNodes
+  private val nodeRange = 0 until nbNodes
 
 
   def buildRechabilityMatrix():Array[Array[Boolean]] = {

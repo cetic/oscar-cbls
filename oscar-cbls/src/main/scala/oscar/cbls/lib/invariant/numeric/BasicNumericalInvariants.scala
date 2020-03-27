@@ -110,51 +110,51 @@ class Linear(vars: Iterable[IntValue], coeffs: IndexedSeq[Long])
  * @author juropolach@gmail.com
  * */
 class Nvalue(x: Iterable[IntValue]) extends
-  IntInvariant(1L,DomainRange(1L,x.map(_.max).max - x.map(_.min).min + 1L)) with IntNotificationTarget{
+  IntInvariant(1,DomainRange(1,x.map(_.maxInt).max - x.map(_.minInt).min + 1)) with ShortIntNotificationTarget{
 
   registerStaticAndDynamicDependencyAllNoID(x)
   finishInitialization()
 
-  private val (minValueOfX,maxValueOfX) = InvariantHelper.getMinMaxBounds(x)
+  private val (minValueOfX,maxValueOfX) = InvariantHelper.getMinMaxBoundsShort(x)
 
-  private val offset: Long = -minValueOfX
+  private val offset: Int = -minValueOfX
 
   private val N = maxValueOfX + offset
-  private val range = 0L to N
+  private val range = 0 to N
 
-  private val ValueCount: Array[Long] = (for (i <- 0L to N) yield 0L).toArray
+  private val ValueCount: Array[Int] = (for (i <- 0 to N) yield 0).toArray
 
-  this := 0L
+  this := 0
 
   for (element <- x){
-    ValueCount(element.value + offset) += 1L
-    if (ValueCount(element.value + offset) == 1L) {this :+= 1L}
+    ValueCount(element.valueInt + offset) += 1
+    if (ValueCount(element.valueInt + offset) == 1) {this :+= 1}
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
-    ValueCount(OldVal + offset) -= 1L
-    ValueCount(NewVal + offset) += 1L
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int) {
+    ValueCount(OldVal + offset) -= 1
+    ValueCount(NewVal + offset) += 1
 
-    if (ValueCount(OldVal + offset) == 0L) {this :-= 1L}
-    if (ValueCount(NewVal + offset) == 1L) {this :+= 1L}
+    if (ValueCount(OldVal + offset) == 0) {this :-= 1}
+    if (ValueCount(NewVal + offset) == 1) {this :+= 1}
   }
 
   override def checkInternals(c: Checker) {
-    var MyValueCount: Array[Long] = (for (i <- 0L to N) yield 0L).toArray
-    var Distinct: Long = 0L
+    var MyValueCount: Array[Int] = (for (i <- 0 to N) yield 0).toArray
+    var Distinct: Int = 0
     for (element <- x){
-      MyValueCount(element.value + offset) += 1L
-      if (MyValueCount(element.value + offset) == 1L) {this :+= 1L}
+      MyValueCount(element.valueInt + offset) += 1
+      if (MyValueCount(element.valueInt + offset) == 1) {this :+= 1}
     }
     for (v <- range) {
       c.check(ValueCount(v) == MyValueCount(v),
         Some("ValueCount(" + v + ") (" + ValueCount(v)
           + ") == MyValueCount(" + v + ") (" + MyValueCount(v)))
     }
-    c.check(Distinct == this.value,
+    c.check(Distinct == this.valueInt,
       Some("Count of distinct values in " + x + " (" + Distinct
-        + ") == output.value (" + this.value))
+        + ") == output.value (" + this.valueInt))
   }
 }
 
@@ -302,7 +302,7 @@ case class Dist(left: IntValue, right: IntValue)
 
 /**
  * Invariant to maintain the violation of a reified constraint.
- * Assumes b takes values 0L to 1L
+ * Assumes b takes values 0 to 1L
  * @author jean-noel.monette@it.uu.se
  * */
 case class ReifViol(b: IntValue, v:IntValue) extends IntInt2Int(b,v, (b,v) => {if(v!=0L) b else 1L-b},Domain(0L , 1L)){

@@ -24,7 +24,7 @@ object Clique {
 
   /**
    * from https://en.wikipedia.org/wiki/Bron%E2%80L%93LKerbosch_algorithm
-   * @param nbNodes nodes are from 0L to nbNodes-1L
+   * @param nbNodes nodes are from 0 to nbNodes-1L
    * @param isNeighbor true if the two nodes are adjacent
    * @return a list of all the maximal cliques of the graph represented by the nodes
    *         (0..nbNodes-1L) and the adjacency (isNeighbor function)

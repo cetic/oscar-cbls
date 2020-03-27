@@ -441,10 +441,10 @@ class T[@specialized(Int) V](private[this]val c : Boolean,
 object RedBlackTreeMap {
 
   // empty: Converts an orderable type into an empty RBMap.
-  def empty[@specialized(Int,Int) V] : RedBlackTreeMap[V] = L[V]()
+  def empty[@specialized(Int) V] : RedBlackTreeMap[V] = L[V]()
 
   // apply: Assumes an implicit conversion.
-  def apply[@specialized(Int,Int) V](args : Iterable[(Int,V)]) : RedBlackTreeMap[V] = {
+  def apply[@specialized(Int) V](args : Iterable[(Int,V)]) : RedBlackTreeMap[V] = {
     var currentMap : RedBlackTreeMap[V] = L()
     for ((k,v) <- args) {
       currentMap = currentMap.insert(k,v)
@@ -462,7 +462,7 @@ object RedBlackTreeMap {
    * @tparam V
    * @return
    */
-  def makeFromSorted[@specialized(Int,Int) V](args:Iterable [(Int,V)]): RedBlackTreeMap[V] = {
+  def makeFromSorted[@specialized(Int) V](args:Iterable [(Int,V)]): RedBlackTreeMap[V] = {
     //root is to be black, beside alternate red and black
     val a = args.toArray
     if(args.size <=3) this.apply(args)
@@ -474,7 +474,7 @@ object RedBlackTreeMap {
     else myMakeFromContinuousSorted(args, 0, args.length - 1, false)
   }
 
-  private def myMakeFromContinuousSorted[@specialized(Int,Int) V](args:Array[V],fromIncluded:Int,toIncluded:Int,targetIsRed:Boolean): RedBlackTreeMap[V] = {
+  private def myMakeFromContinuousSorted[@specialized(Int) V](args:Array[V],fromIncluded:Int,toIncluded:Int,targetIsRed:Boolean): RedBlackTreeMap[V] = {
     //root is to be black, beside alternate red and black
     if(fromIncluded == toIncluded){
       val value = args(fromIncluded)
@@ -503,14 +503,14 @@ object RedBlackTreeMap {
    * @tparam V
    * @return
    */
-  def makeFromSortedArray[@specialized(Int,Int) V](args:Array[(Int,V)]): RedBlackTreeMap[V] = {
+  def makeFromSortedArray[@specialized(Int) V](args:Array[(Int,V)]): RedBlackTreeMap[V] = {
     //root is to be black, beside alternate red and black
     if(args.length <=1) this.apply(args)
     else myMakeFromSorted(args,0,args.length-1,false)
   }
 
 
-  private def myMakeFromSorted[@specialized(Int,Int) V](args:Array[(Int,V)],fromIncluded:Int,toIncluded:Int,targetIsRed:Boolean): RedBlackTreeMap[V] = {
+  private def myMakeFromSorted[@specialized(Int) V](args:Array[(Int,V)],fromIncluded:Int,toIncluded:Int,targetIsRed:Boolean): RedBlackTreeMap[V] = {
     //root is to be black, beside alternate red and black
     if(fromIncluded == toIncluded){
       val(key,value) = args(fromIncluded)
@@ -542,7 +542,7 @@ object RedBlackTreeMap {
 }
 
 //le booléen: true le noeud a déjà été montré (dans un parcour gauche à droite)
-class RedBlackTreeMapExplorer[@specialized(Int,Int) V](position:QList[(T[V],Boolean)]){
+class RedBlackTreeMapExplorer[@specialized(Int) V](position:QList[(T[V],Boolean)]){
   def key:Int = position.head._1.pk
   def value:V = position.head._1.pv.get
 
