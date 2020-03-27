@@ -248,11 +248,8 @@ class ObjectiveFunctionDisplay(title: String, minCap:Long, maxCap:Long, basePerc
   private def percentileBounds(): (Double, Double, Long, Long) ={
     val nbValues = allValues.length
     val array = Array.tabulate(nbValues)(x => x)
-    val valuesIdToConsider = KSmallest.kFirst(
-      (nbValues/100.0*percentile).ceil.toInt,
-      KSmallest.lazySort(array, key = i => {
-        allValues(i.toInt)._2
-      }))
+    val sortedValues = allValues.zipWithIndex.sortBy(_._1._2)
+    val valuesIdToConsider = sortedValues.take((nbValues/100.0*percentile).ceil.toInt).map(_._2)
     // The first (in time) acceptable value could be before the worstAcceptableValue
     val earliestAcceptableValue = valuesIdToConsider.minBy(allValues(_)._1)
     val latestAcceptableValue = valuesIdToConsider.maxBy(allValues(_)._1)
