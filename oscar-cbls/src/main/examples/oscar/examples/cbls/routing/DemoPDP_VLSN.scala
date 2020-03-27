@@ -360,6 +360,7 @@ object DemoPDP_VLSN extends App{
     val nodesOfTargetVehicle = (SortedSet.empty[Long] ++ myVRP.getRouteOfVehicle(vehicle))
     val chainsHeadInVehicle = nodesOfTargetVehicle.filter(chainsExtension.isHead)
 
+
     val nextMoveGenerator = {
       (exploredMoves: List[OnePointMoveMove], t: Option[List[Long]]) => {
         val chainTail: List[Long] = t match {

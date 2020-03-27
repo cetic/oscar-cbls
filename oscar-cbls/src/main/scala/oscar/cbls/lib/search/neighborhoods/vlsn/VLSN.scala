@@ -315,6 +315,7 @@ class VLSN(v:Int,
                            unroutedNodesToInsert: SortedSet[Long],
                            cachedExplorations: Option[CachedExplorations]): Option[DataForVLSNRestart] = {
 
+
     //TODO: this is the time consuming part of the VLSN; a smart approach would really help here.
     //first, explore the atomic moves, and build VLSN graph
     val (vlsnGraph,directEdges) = buildGraph(vehicleToRoutedNodesToMove,
@@ -364,7 +365,7 @@ class VLSN(v:Int,
       }
       killNodesImpactedByCycle(edges)
 
-      require(globalObjective.value == computedNewObj, "new global objective differs from computed newObj:" + globalObjective + "!=" + computedNewObj + "edges:" + edges )
+      require(globalObjective.value == computedNewObj, "new global objective differs from computed newObj:" + globalObjective + "!=" + computedNewObj + "edges:" + edges + " - Unrouted Penlaty:" +  unroutedPenalty.value + " - Obj Per Vehicle:" + vehicleToObjective.mkString(";"))
     }
 
     //first, kill the direct edges
