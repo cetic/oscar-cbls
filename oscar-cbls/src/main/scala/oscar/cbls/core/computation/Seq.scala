@@ -571,8 +571,15 @@ object CBLSSeqVar{
 }
 
 class ChangingSeqValueSnapShot(val variable:ChangingSeqValue,val savedValue:IntSequence) extends AbstractVariableSnapShot(variable){
-  override protected def doRestore() : Unit = {variable.asInstanceOf[CBLSSeqVar] := savedValue}
+  override protected def doRestore() : Unit = {
+    val seqVar = variable.asInstanceOf[CBLSSeqVar]
+    val currentValue =  seqVar.value
+    if(! (currentValue quickEquals savedValue)){
+      seqVar := savedValue
+    }
+  }
 }
+
 
 /**
   * this is an abstract implementation with placeholders for checkpoint management stuff
