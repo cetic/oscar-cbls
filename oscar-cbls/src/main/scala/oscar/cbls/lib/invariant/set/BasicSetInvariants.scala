@@ -188,7 +188,7 @@ case class Inter(left: SetValue, right: SetValue)
 }
 
 case class SetMap(a: SetValue, fun: Int => Int,
-                  initialDomain: Domain = fullRange)
+                  initialDomain: Domain = fullIntRange)
   extends SetInvariant(SortedSet.empty, initialDomain)
   with SetNotificationTarget{
 

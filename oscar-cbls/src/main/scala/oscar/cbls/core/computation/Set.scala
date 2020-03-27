@@ -433,7 +433,7 @@ object CBLSSetVar{
   //this conversion is forbidden because we inserted the new grammar.
   //implicit def toIntSet(v:IntSetVar):SortedSet[Int] = v.value
 
-  def apply(s:Store, v:Iterable[Int] = List.empty, d:Domain=FullRange, name:String="") = {
+  def apply(s:Store, v:Iterable[Int] = List.empty, d:Domain=FullIntRange, name:String="") = {
     val emptySet:SortedSet[Int] = SortedSet.empty
     new CBLSSetVar(s, emptySet ++ v, d, name)
   }

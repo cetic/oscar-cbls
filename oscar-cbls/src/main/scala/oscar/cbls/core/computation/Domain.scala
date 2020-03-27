@@ -136,12 +136,24 @@ case object FullRange extends Domain{
   override def min: Long = Long.MinValue
   override def max: Long = Long.MaxValue
   override def size: Long = Long.MaxValue
-  override def randomValue(): Long = Random.nextInt()
+  override def randomValue(): Long = Random.nextLong()
   override def contains(v: Long): Boolean = true
   override def values: Iterable[Long] =  min to max
   override def intersect(d: Domain): Domain = d
   override def union(d: Domain): Domain = this
   override def toString(): String = "FullRange"
+}
+
+case object FullIntRange extends Domain{
+  override def min: Long = Int.MinValue
+  override def max: Long = Int.MaxValue
+  override def size: Long = Int.MaxValue
+  override def randomValue(): Long = Random.nextInt()
+  override def contains(v: Long): Boolean = if(v <= max && v >= min) true else false
+  override def values: Iterable[Long] = min to max
+  override def intersect(d: Domain): Domain = Domain(Math.max(min, d.min), Math.min(max, d.max))
+  override def union(d: Domain): Domain = Domain(Math.min(min, d.min), Math.max(max, d.max))
+  override def toString(): String = "FullIntRange"
 }
 
 object PositiveOrNullRange extends DomainRange(0L, Long.MaxValue)
@@ -187,6 +199,14 @@ object DomainHelper{
     else tmp
   }
 
+  def safeAdd(a: Int, b: Int):Int = {
+    val tmp = a + b
+
+    if (a > 0 && b > 0 && tmp < 0) Int.MaxValue
+    else if (a <0 && b <0 && tmp > 0) Int.MinValue
+    else tmp
+  }
+
   def safeMul(a:Long, b:Long):Long = {
     val tmp = a.toLong * b.toLong
 
@@ -194,6 +214,16 @@ object DomainHelper{
     else if (a < 0 && b < 0 && tmp > 0) Long.MaxValue
     else if (a < 0 && b > 0 && tmp > 0) Long.MinValue
     else if (a > 0 && b < 0 && tmp > 0) Long.MinValue
+    else tmp
+  }
+
+  def safeMul(a:Int, b:Int):Int = {
+    val tmp = a * b
+
+    if (a > 0 && b > 0 && tmp < 0) Int.MaxValue
+    else if (a < 0 && b < 0 && tmp > 0) Int.MaxValue
+    else if (a < 0 && b > 0 && tmp > 0) Int.MinValue
+    else if (a > 0 && b < 0 && tmp > 0) Int.MinValue
     else tmp
   }
 }

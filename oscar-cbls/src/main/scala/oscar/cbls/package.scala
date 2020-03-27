@@ -105,6 +105,7 @@ package object cbls extends ModelingAPI{
   final val Domain = oscar.cbls.core.computation.Domain
 
   final val fullRange = oscar.cbls.core.computation.FullRange
+  final val fullIntRange = oscar.cbls.core.computation.FullIntRange
   final val positiveOrNullRange = oscar.cbls.core.computation.PositiveOrNullRange
 
   type Value = oscar.cbls.core.computation.Value
