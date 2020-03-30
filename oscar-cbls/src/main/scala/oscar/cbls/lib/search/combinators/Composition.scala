@@ -282,9 +282,6 @@ case class Filter[MoveType<:Move](a:Neighborhood with SupportForAndThenChaining[
   }
 }
 
-
-
-
 /**
  * This is an atomic combinator, it represent that the neighborhood below should be considered as a single piece.
  * When you commit a move from this neighborhood, "a" is reset, and exhausted in a single move from Atomic(a)
