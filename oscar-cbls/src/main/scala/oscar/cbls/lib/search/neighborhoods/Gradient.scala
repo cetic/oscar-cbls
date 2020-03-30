@@ -197,9 +197,9 @@ case class DiscretizedDirectionGradient(vars:Array[CBLSIntVar],
       if(exploreVars(
         varsToTest =
           (if(hotRestartOnVariableSelection)
-            HotRestart(selectVars.toList,firstIndiceInPreviousCall).map(_.toInt).toList
+            HotRestart(selectVars.toList,firstIndiceInPreviousCall).toList
           else
-            selectVars.toList.map(v => v.toInt)
+            selectVars.toList.map(v => v)
             ),
         nbVar,
         currentGradient = Nil)) {
@@ -412,7 +412,7 @@ case class GradientMove(gradientDefinition : List[GradientComponent], step:Long,
       //still is the expore phase
       for(affect <- simpleAffectMoves){
         if (affect.i == variable){
-          return Some(affect.i.value)
+          return Some(affect.value)
         }
       }
       None
