@@ -32,6 +32,8 @@ case class GradientComponent(variable:CBLSIntVar,
 
   override def toString: String =
     "GradientComponent(variable:" + variable + "," +
+      "var.max:" + variable.max + "," +
+      "var.min:" + variable.min + "," +
       "initValue:" + initValue + "," +
       "indice:" + indice + "," +
       "slope:" + slope + ","+
@@ -52,6 +54,8 @@ case class GradientComponent(variable:CBLSIntVar,
   val bound2 = ((variable.min - initValue) * slope).toLong
 
   val (minStep, maxStep) = if (bound1 < bound2) (bound1, bound2) else (bound2, bound1)
+  require(maxStep >=0, "maxStep should be >=0, got:" + maxStep + " " + this)
+  require(minStep <=0, "minStep hould be <=0, got:" + minStep + " " + this)
 }
 
 /**
@@ -338,8 +342,6 @@ abstract class AbstractGradientDescent(vars:Array[CBLSIntVar],
     this.gradientDefinition = initGradientDefinition
     currentStep = 0
     while (gradientDefinition.nonEmpty) {
-
-      // println("\t" + gradientDefinition.mkString("\n\t"))
 
       val minStep = gradientDefinition.map(_.minStep).max
       val maxStep = gradientDefinition.map(_.maxStep).min
