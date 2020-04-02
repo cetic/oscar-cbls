@@ -223,7 +223,7 @@ class VLSN(v:Int,
            reoptimizeAtStartUp:Boolean = false,
            checkObjCoherence:Boolean = false) extends Neighborhood {
 
-  def doReoptimize(vehicle:Long) {
+  def doReoptimize(vehicle:Int) {
     val reOptimizeNeighborhoodGenerator = reOptimizeVehicle match{
       case None => return
       case Some(reOptimizeNeighborhoodGenerator) => reOptimizeNeighborhoodGenerator

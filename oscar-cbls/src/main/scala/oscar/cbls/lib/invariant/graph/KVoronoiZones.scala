@@ -136,7 +136,7 @@ class KVoronoiZones(graph:ConditionalGraph,
   registerStaticAndDynamicDependency(openConditions)
   finishInitialization()
 
-  private val maxNbOfCentroids = centroids.domain.max - centroids.domain.min
+  private val maxNbOfCentroids = centroids.domain.sizeInt
 
   val trackedNodeToDistanceAndCentroid : Array[Array[(CBLSIntVar,CBLSIntVar)]] =
     Array.tabulate(graph.nbNodes)((nodeID : Int) => {

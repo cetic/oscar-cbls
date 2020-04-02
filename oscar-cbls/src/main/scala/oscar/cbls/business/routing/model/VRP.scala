@@ -241,9 +241,9 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4)
       toReturn
   }
 
-  def stringOfVehicle(vehicle:Long):Option[String] = {
+  def stringOfVehicle(vehicle:Int):Option[String] = {
     val routeOfV = getRouteOfVehicle(vehicle)
-    if(routeOfV.length == 1L){
+    if(routeOfV.length == 1){
       None
     }else{
       Some("" + routeOfV.mkString("->") + "->" + vehicle)
