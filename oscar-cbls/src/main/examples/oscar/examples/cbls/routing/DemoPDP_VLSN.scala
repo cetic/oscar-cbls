@@ -271,7 +271,6 @@ object DemoPDP_VLSN extends App{
 
     dynAndThen(firstNodeOfChainInsertion,
       (insertMove: InsertPointMove) => {
-        println("insert head:" + insertMove)
         if(maxLengthConstraintPerVehicle(targetVehicle).value != 0){
           NoMoveNeighborhood
         }else{
@@ -490,9 +489,9 @@ object DemoPDP_VLSN extends App{
     val nodeToAllVehicles = SortedMap.empty[Int, Iterable[Int]] ++ chainsExtension.heads.map(node => (node:Int, vehicles))
     new VLSN(
       v,
-      () => {println(myVRP); SortedMap.empty[Int, SortedSet[Int]] ++
+      () => SortedMap.empty[Int, SortedSet[Int]] ++
         vehicles.map((vehicle: Int) =>
-          (vehicle:Int, SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(vehicle).filter(node => chainsExtension.isHead(node))))},
+          (vehicle:Int, SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(vehicle).filter(node => chainsExtension.isHead(node)))),
       () => SortedSet.empty[Int] ++ myVRP.unroutedNodes.filter(node => chainsExtension.isHead(node)),
       nodeToRelevantVehicles = () => chainHeadToxNearestVehicles,
 
@@ -502,7 +501,7 @@ object DemoPDP_VLSN extends App{
 
       removeNodeAndReInsert = removeAndReInsertVLSN,
 
-      reOptimizeVehicle = None, //Some(vehicle => Some(threeOptOnVehicle(vehicle) exhaustBack moveChainWithinVehicle(vehicle))),
+      reOptimizeVehicle = Some(vehicle => Some(threeOptOnVehicle(vehicle) exhaustBack moveChainWithinVehicle(vehicle))),
       useDirectInsert = false,
 
       objPerVehicle,
@@ -513,7 +512,7 @@ object DemoPDP_VLSN extends App{
 
       name="VLSN(" + l + ")",
       reoptimizeAtStartUp = true,
-      debugNeighborhoodExploration = true
+      debugNeighborhoodExploration = false
     )
   }
 
@@ -522,8 +521,8 @@ object DemoPDP_VLSN extends App{
   val vlsnNeighborhood = vlsn(l)
   val search = bestSlopeFirst(List(oneChainInsert,oneChainMove, onePtMove(20))) exhaustBack (vlsnNeighborhood maxMoves 1)
 
-  search.verbose = 2
-  vlsnNeighborhood.verbose = 3
+  search.verbose = 1
+  vlsnNeighborhood.verbose = 2
 
   search.doAllMoves(obj=obj)
 

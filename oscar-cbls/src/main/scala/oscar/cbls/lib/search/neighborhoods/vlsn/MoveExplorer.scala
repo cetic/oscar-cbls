@@ -201,7 +201,7 @@ class MoveExplorerAlgo(v:Int,
     }
 
     val proc = nodeToInsertNeighborhood(unroutedNodeToInsert)
-    proc.verbose = 4
+//    proc.verbose = 4
 
     proc.getMove(obj, initialGlobalObjective, acceptanceCriterion = acceptAllButMaxInt) match {
       case NoMoveFound => null
@@ -364,7 +364,7 @@ class MoveExplorerAlgo(v:Int,
 
 
     val neighborhood = nodeToMoveToNeighborhood(routingNodeToMove)
-    neighborhood.verbose = 5
+//    neighborhood.verbose = 5
     neighborhood.getMove(
       obj,
       initialVehicleToObjectives(targetVehicleForInsertion),
