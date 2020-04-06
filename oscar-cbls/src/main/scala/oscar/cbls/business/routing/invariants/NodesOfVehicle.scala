@@ -25,12 +25,12 @@ import scala.collection.immutable.SortedSet
 
 object NodesOfVehicle{
   /**
-   * this invariant ensures that nodesOfVehicle(p) is maintained to the nodes reached vy vehicle p according to the sequence routes.
+   * this invariant ensures that nodesOfVehicle(p) is maintained to the nodes reached by vehicle p according to the sequence routes.
    * @param routes a sequence value representing routes
    * @param v the number of vehicles
    * @return an array nodesOfVehicle maintained to the nodes reached y each vehicle
    */
-  def apply(routes:ChangingSeqValue,v:Int):Array[CBLSSetVar] = {
+  def apply(routes:ChangingSeqValue,v:Int,includeVehicleNode : Boolean = true):Array[CBLSSetVar] = {
     val model = routes.model
     val emptySet = SortedSet.empty[Int]
     val domain = routes.domain
@@ -39,22 +39,23 @@ object NodesOfVehicle{
       CBLSSetVar(model,
         emptySet,
         domain,
-        if(vehicle== v) "unrouted nodes" else "nodes_o_vehicle_" + vehicle))
+        if(vehicle== v) "unrouted nodes" else "nodes_of_vehicle_" + vehicle))
 
-    new NodesOfVehicle(routes, nodesOfVehicle)
+    new NodesOfVehicle(routes, nodesOfVehicle,includeVehicleNode)
 
     nodesOfVehicle
   }
 }
 
 /**
- * this invariant ensures that nodesOfVehicleOrUnrouted(p) is maintained to the ndes reached vy vehicle p according to the sequence routes.
+ * this invariant ensures that nodesOfVehicleOrUnrouted(p) is maintained to the ndes reached vy vehicle p according to the sequence routes.p
  * the size of the array is supposed to equal to v
  * @param routes a sequence value representing routes
  * @param nodesOfVehicleOrUnrouted an array of v CBLSSetVar
  */
 class NodesOfVehicle(routes:ChangingSeqValue,
-                    nodesOfVehicleOrUnrouted:Array[CBLSSetVar])  //there is actually one more vehicle, for unrouted nodes.
+  nodesOfVehicleOrUnrouted:Array[CBLSSetVar],
+  includeVehicleNode : Boolean = true)  //there is actually one more vehicle, for unrouted nodes.
   extends Invariant() with SeqNotificationTarget{
 
   val v = nodesOfVehicleOrUnrouted.length-1
@@ -205,7 +206,9 @@ class NodesOfVehicle(routes:ChangingSeqValue,
     val it = s.iterator
     var currentVehicle:Int = it.next()
     require(currentVehicle == 0)
-    toReturn(0) = toReturn(0) + (0)
+    if (includeVehicleNode) {
+      toReturn(0) = toReturn(0) + (0)
+    }
 
     while(it.hasNext){
       val node = it.next()
@@ -214,7 +217,9 @@ class NodesOfVehicle(routes:ChangingSeqValue,
         currentVehicle = node
       }
       //continuing on the same vehicle
-      toReturn(currentVehicle) = toReturn(currentVehicle) + node
+      if (node >= v || includeVehicleNode) {
+        toReturn(currentVehicle) = toReturn(currentVehicle) + node
+      }
       toReturn(v) = toReturn(v) - node
     }
     toReturn
