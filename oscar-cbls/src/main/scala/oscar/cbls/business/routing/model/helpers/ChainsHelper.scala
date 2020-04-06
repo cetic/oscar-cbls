@@ -6,16 +6,16 @@ import oscar.cbls._
 import scala.collection.immutable.{HashSet, List}
 
 /**
-  * Created by fg on 12L/09L/1L7.
+  * Created by fg on 12/09/17.
   */
 object ChainsHelper {
   // TODO move this dans l'objet Chains
 
-  def relevantNeighborsForLastNodeAfterHead(vrp: VRP, chainsExtension: Chains, potentialRelevantPredecessorOfLastNode: Option[HashSet[Long]] = None)(lastNode: Long): Iterable[Long] = {
+  def relevantNeighborsForLastNodeAfterHead(vrp: VRP, chainsExtension: Chains, potentialRelevantPredecessorOfLastNode: Option[HashSet[Int]] = None)(lastNode: Int): Iterable[Int] = {
     require(chainsExtension.isLast(lastNode), "The referenced node has to be the last node of a chain.")
     val potentialRelevantPredecessorOfLastNodeNow = potentialRelevantPredecessorOfLastNode.getOrElse(HashSet(vrp.routed.value.toList: _*))
     var nextOfHeadExplorer = vrp.routes.value.explorerAtAnyOccurrence(chainsExtension.chainOfNode(lastNode).head)
-    var relevantNeighborsOfLastNode: List[Long] = List.empty
+    var relevantNeighborsOfLastNode: List[Int] = List.empty
     while (nextOfHeadExplorer match{
       case Some(x) if x.value < vrp.v =>
         false
@@ -28,7 +28,7 @@ object ChainsHelper {
     relevantNeighborsOfLastNode
   }
 
-  def computeRelevantNeighborsForInternalNodes(vrp: VRP, chainsExtension: Chains)(node: Long): Iterable[Long] ={
+  def computeRelevantNeighborsForInternalNodes(vrp: VRP, chainsExtension: Chains)(node: Int): Iterable[Int] ={
     val firstNode = chainsExtension.prevNodeInChain(node)
     val lastNode = chainsExtension.chainOfNode(node).last
     require(firstNode.isDefined && lastNode == chainsExtension.chainOfNode(node).last && lastNode != node,
@@ -36,7 +36,7 @@ object ChainsHelper {
     require(vrp.isRouted(firstNode.get) && vrp.isRouted(lastNode),
       "The beginning node and last node of the chain must be routed")
     var nextOfHeadExplorer = vrp.routes.value.explorerAtAnyOccurrence(firstNode.get)
-    var relevantNeighbors: List[Long] = List.empty
+    var relevantNeighbors: List[Int] = List.empty
     while (nextOfHeadExplorer match{
       case Some(x) if x.value != lastNode =>
         relevantNeighbors = x.value :: relevantNeighbors
@@ -57,22 +57,22 @@ object ChainsHelper {
     * @param routeNumber the number of the route
     * @return the list of all the complete segment present in the route
     */
-  def computeCompleteSegments(vrp: VRP, routeNumber: Long, chainsExtension: Chains): List[(Long,Long)] ={
-    val route = vrp.getRouteOfVehicle(routeNumber).drop(1L)
+  def computeCompleteSegments(vrp: VRP, routeNumber: Int, chainsExtension: Chains): List[(Int,Int)] ={
+    val route = vrp.getRouteOfVehicle(routeNumber).drop(1)
     /**
       * Each value of segmentsArray represent a possible complete segment.
       * The List[Long] value represents the segment
       */
-    var firstNodeInc = 0L
-    val segmentsArray:Array[(Long,List[Long])] = Array.tabulate(chainsExtension.heads.length)(_ => (0L,List.empty))
-    var completeSegments: List[(Long, Long)] = List.empty
+    var firstNodeInc = 0
+    val segmentsArray:Array[(Int,List[Int])] = Array.tabulate(chainsExtension.heads.length)(_ => (0,List.empty))
+    var completeSegments: List[(Int, Int)] = List.empty
 
     for(node <- route) {
-      if(chainsExtension.isHead(node)) firstNodeInc += 1L
-      for (j <- 0L until firstNodeInc if segmentsArray(j) != null){
+      if(chainsExtension.isHead(node)) firstNodeInc += 1
+      for (j <- 0 until firstNodeInc if segmentsArray(j) != null){
         if (chainsExtension.isHead(node)) {
           //If the node is the first one, we add the node to all the active segment and the one at position route(i)
-          segmentsArray(j) = (segmentsArray(j)._1+1L, node :: segmentsArray(j)._2)
+          segmentsArray(j) = (segmentsArray(j)._1 + 1, node :: segmentsArray(j)._2)
         }
         else if (chainsExtension.isLast(node)) {
           /**
@@ -86,8 +86,8 @@ object ChainsHelper {
             * Else we decrement the number of single first node
             */
           else {
-            segmentsArray(j) = (segmentsArray(j)._1-1L, node :: segmentsArray(j)._2)
-            if (segmentsArray(j)._1 == 0L)
+            segmentsArray(j) = (segmentsArray(j)._1-1, node :: segmentsArray(j)._2)
+            if (segmentsArray(j)._1 == 0)
               completeSegments = (segmentsArray(j)._2.last, segmentsArray(j)._2.head) :: completeSegments
           }
         }

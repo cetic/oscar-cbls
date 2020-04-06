@@ -28,7 +28,7 @@ import scala.collection.immutable.SortedSet
  * @author renaud.delandtsheer@cetic.be
  */
 case class Content(v:SeqValue)
-  extends SetInvariant(SortedSet.empty[Long] ++ v.value.unorderedContentNoDuplicate,v.domain)
+  extends SetInvariant(SortedSet.empty[Int] ++ v.value.unorderedContentNoDuplicate,v.domain)
   with SeqNotificationTarget{
 
   registerStaticAndDynamicDependency(v)
@@ -41,13 +41,13 @@ case class Content(v:SeqValue)
   }
 
   private def updateFromScratch(u:IntSequence){
-    this := (SortedSet.empty[Long] ++ u.unorderedContentNoDuplicate)
+    this := (SortedSet.empty[Int] ++ u.unorderedContentNoDuplicate)
   }
 
   //true if could be incremental, false otherwise
   def digestUpdates(changes : SeqUpdate):Boolean = {
     changes match {
-      case SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
+      case SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
         if (!digestUpdates(prev)) return false
         this :+= value
         true
@@ -56,7 +56,7 @@ case class Content(v:SeqValue)
       case r@SeqUpdateRemove(position : Int, prev : SeqUpdate) =>
         if (!digestUpdates(prev)) return false
         val value = r.removedValue
-        if (changes.newValue.nbOccurrence(value) == 0L){
+        if (changes.newValue.nbOccurrence(value) == 0){
           this :-= value
         }
         true

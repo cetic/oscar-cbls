@@ -10,7 +10,7 @@ object TransferFunction{
    * @param earliestArrivalTime The earliest start of this location's task
    * @param taskDuration The duration of this location's task
    */
-  def createFromEarliestArrivalTime(node: Long, earliestArrivalTime: Long, taskDuration: Long = 0L): TransferFunction ={
+  def createFromEarliestArrivalTime(node: Int, earliestArrivalTime: Long, taskDuration: Long = 0L): TransferFunction ={
     val latestArrivalTime = Long.MaxValue - taskDuration
     val earliestLeavingTime = earliestArrivalTime+taskDuration
     DefinedTransferFunction(earliestArrivalTime, latestArrivalTime, earliestLeavingTime, node, node)
@@ -25,7 +25,7 @@ object TransferFunction{
    * @param latestArrivalTime The latest start of this location's task
    * @param taskDuration The duration of this location's task
    */
-  def createFromLatestArrivalTime(node: Long, latestArrivalTime: Long, taskDuration: Long = 0L): TransferFunction ={
+  def createFromLatestArrivalTime(node: Int, latestArrivalTime: Long, taskDuration: Long = 0L): TransferFunction ={
     val earliestArrivalTime = 0
     val earliestLeavingTime = taskDuration
     DefinedTransferFunction(earliestArrivalTime, latestArrivalTime, earliestLeavingTime, node, node)
@@ -43,7 +43,7 @@ object TransferFunction{
    * @param latestArrivalTime The latest start of this location's task
    * @param taskDuration The duration of this location's task
    */
-  def createFromEarliestAndLatestArrivalTime(node: Long, earliestArrivalTime: Long,  latestArrivalTime: Long, taskDuration: Long = 0L): TransferFunction ={
+  def createFromEarliestAndLatestArrivalTime(node: Int, earliestArrivalTime: Long,  latestArrivalTime: Long, taskDuration: Long = 0L): TransferFunction ={
     val earliestLeavingTime = earliestArrivalTime + taskDuration
     DefinedTransferFunction(earliestArrivalTime, latestArrivalTime, earliestLeavingTime, node, node)
   }
@@ -59,10 +59,10 @@ object TransferFunction{
    * @param timeMatrix The matrix containing the travel duration between each nodes of the problem
    * @return A map (node -> relevant neighbors)
    */
-  def relevantPredecessorsOfNodes(n: Int, v: Int, singleNodesTransferFunctions: Array[TransferFunction], timeMatrix: Array[Array[Long]]): Map[Long,Iterable[Long]] ={
-    val allNodes = (0L until n).toList
-    List.tabulate(n)(node => node.toLong -> allNodes.collect({
-      case neighbor: Long if node != neighbor && singleNodesTransferFunctions(neighbor.toInt).el + timeMatrix(neighbor.toInt)(node) <= singleNodesTransferFunctions(node).la => neighbor
+  def relevantPredecessorsOfNodes(n: Int, v: Int, singleNodesTransferFunctions: Array[TransferFunction], timeMatrix: Array[Array[Long]]): Map[Int,Iterable[Int]] ={
+    val allNodes = (0 until n).toList
+    List.tabulate(n)(node => node -> allNodes.collect({
+      case neighbor: Int if node != neighbor && singleNodesTransferFunctions(neighbor.toInt).el + timeMatrix(neighbor.toInt)(node) <= singleNodesTransferFunctions(node).la => neighbor
     })
     ).toMap
   }
@@ -93,12 +93,12 @@ object TransferFunction{
    * @param timeMatrix The matrix containing the travel duration between each nodes of the problem
    * @return A map (node -> relevant neighbors)
    */
-  def relevantSuccessorsOfNodes(n: Int, v: Int, singleNodesTransferFunctions: Array[TransferFunction], timeMatrix: Array[Array[Long]]): Map[Long,Iterable[Long]] ={
-    val allNodes = (0L until n).toList
+  def relevantSuccessorsOfNodes(n: Int, v: Int, singleNodesTransferFunctions: Array[TransferFunction], timeMatrix: Array[Array[Long]]): Map[Int,Iterable[Int]] ={
+    val allNodes = (0 until n).toList
     List.tabulate(n)(to => {
       val toTF = singleNodesTransferFunctions(to)
-      to.toLong -> allNodes.collect{
-        case from: Long if from != to && singleNodesTransferFunctions(from.toInt).latestLeavingTime + timeMatrix(from.toInt)(to) <= toTF.la => from
+      to -> allNodes.collect{
+        case from: Int if from != to && singleNodesTransferFunctions(from.toInt).latestLeavingTime + timeMatrix(from.toInt)(to) <= toTF.la => from
       }}).toMap
   }
 }
@@ -113,7 +113,7 @@ object TransferFunction{
   * @param la the latest arrival time at the node or segment's start
   * @param el the earliest leaving time from node or segment's end
   */
-abstract class TransferFunction(val ea: Long, val la: Long, val el: Long, val from: Long, val to: Long){
+abstract class TransferFunction(val ea: Long, val la: Long, val el: Long, val from: Int, val to: Int){
 
   // This method is used to compute the leaving time
   def apply(t: Long): Long
@@ -132,12 +132,12 @@ abstract class TransferFunction(val ea: Long, val la: Long, val el: Long, val fr
 }
 
 object DefinedTransferFunction{
-  def apply(ea: Long, la: Long, el: Long, from: Long, to: Long): DefinedTransferFunction =
-    new DefinedTransferFunction(ea: Long, la: Long, el: Long, from: Long, to: Long)
+  def apply(ea: Long, la: Long, el: Long, from: Int, to: Int): DefinedTransferFunction =
+    new DefinedTransferFunction(ea: Long, la: Long, el: Long, from: Int, to: Int)
 }
 
 class DefinedTransferFunction(override val ea: Long, override val la: Long, override val el: Long,
-                                   override val from: Long, override val to: Long) extends TransferFunction(ea,la,el,from,to){
+                                   override val from: Int, override val to: Int) extends TransferFunction(ea,la,el,from,to){
   require(la >= ea && el >= ea, "earliest arrival time : " + ea + ", latest arrival time : " + la + ", earliest leaving time : " + el)
   override def apply(t: Long): Long = {
     if(t <= ea)
@@ -155,7 +155,7 @@ class DefinedTransferFunction(override val ea: Long, override val la: Long, over
   }
 }
 
-case object EmptyTransferFunction extends TransferFunction(1L,-1L,-1L,-1L,-1L){
+case object EmptyTransferFunction extends TransferFunction(1L,-1L,-1L,-1,-1){
   override def apply(t: Long): Long = -1L
 
   override def isEmpty: Boolean = true
@@ -164,12 +164,12 @@ case object EmptyTransferFunction extends TransferFunction(1L,-1L,-1L,-1L,-1L){
 }
 
 case class TwoWaysTransferFunction(nonFlippedTF: TransferFunction, flippedTF: TransferFunction){
-  def from(flipped: Boolean): Long ={
+  def from(flipped: Boolean): Int ={
     if(flipped)flippedTF.from
     else nonFlippedTF.from
   }
 
-  def to(flipped: Boolean): Long ={
+  def to(flipped: Boolean): Int ={
     if(flipped)flippedTF.to
     else nonFlippedTF.to
   }

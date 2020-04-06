@@ -31,7 +31,7 @@ import scala.swing.Color
 class RealRoutingMap(vrp: VRP,
                      geoCoords: Array[(scala.Double,scala.Double)],
                      colorValues: Array[Color],
-                     refreshRate: Long,
+                     refreshRate: Int,
                      toolTipInfo: Option[Int => Option[() => String]]) extends VisualMap() with StopWatch with RoutingMapTrait {
 
   private var lastRefresh = 0L
@@ -130,19 +130,19 @@ class RealRoutingMap(vrp: VRP,
         var previousPoint = routes(r).head
         var positionCounter = 1
         for (p <- routes(r).drop(1)) {
-          roads(longToInt(previousPoint)).color = color
-          roads(longToInt(previousPoint)).dest = (customers(longToInt(p-vrp.v)).lat, customers(longToInt(p-vrp.v)).long)
+          roads(previousPoint).color = color
+          roads(previousPoint).dest = (customers(p-vrp.v).lat, customers(p-vrp.v).long)
           toolTips(p) = generateToolTipInfo(p,r,positionCounter)
           previousPoint = p
           positionCounter += 1
         }
-        roads(longToInt(previousPoint)).color = color
-        roads(longToInt(previousPoint)).dest = (depots(r).lat, depots(r).long)
+        roads(previousPoint).color = color
+        roads(previousPoint).dest = (depots(r).lat, depots(r).long)
       }
 
       for(unroutedNode <- vrp.unroutedNodes){
-        roads(longToInt(unroutedNode)).color = Color.black
-        roads(longToInt(unroutedNode)).dest = (customers(longToInt(unroutedNode-vrp.v)).lat, customers(longToInt(unroutedNode-vrp.v)).long)
+        roads(unroutedNode).color = Color.black
+        roads(unroutedNode).dest = (customers(unroutedNode-vrp.v).lat, customers(unroutedNode-vrp.v).long)
         toolTips(unroutedNode) = generateToolTipInfo(unroutedNode)
       }
 

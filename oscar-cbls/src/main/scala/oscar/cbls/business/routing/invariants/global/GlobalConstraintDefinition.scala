@@ -98,7 +98,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int, Long, Boolean) U <: 
     * This method is used during the exploration of the neighborhood
     * @param routes The IntSequence representing the route
     */
-  private[global] def computeSaveAndAssingVehicleValue(vehicle:Long,
+  private[global] def computeSaveAndAssingVehicleValue(vehicle:Int,
                                                 segments:QList[Segment],
                                                 routes:IntSequence): Unit ={
     lastComputedVehiclesValue(vehicle) = computeVehicleValue(vehicle, segments, routes)
@@ -111,7 +111,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int, Long, Boolean) U <: 
     * @param routes the sequence representing the route of all vehicle
     *               BEWARE,other vehicles are also present in this sequence; you must only work on the given vehicle
     */
-  protected[global] def performPreCompute(vehicle:Long, routes:IntSequence)
+  protected[global] def performPreCompute(vehicle:Int, routes:IntSequence)
 
   /**
     * This method is called by the framework when the value of a vehicle must be computed.
@@ -121,7 +121,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int, Long, Boolean) U <: 
     *                 The route of the vehicle is equal to the concatenation of all given segments in the order they appear in this list
     * @param routes the sequence representing the route of all vehicle
     */
-  protected def computeVehicleValue(vehicle:Long,
+  protected def computeVehicleValue(vehicle:Int,
                           segments:QList[Segment],
                           routes:IntSequence): U
 
@@ -131,7 +131,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int, Long, Boolean) U <: 
     * @param vehicle the vehicle number
     * @param value The value to assign to the output variable
     */
-  protected def assignVehicleValue(vehicle:Long, value: U): Unit
+  protected def assignVehicleValue(vehicle:Int, value: U): Unit
 
   /**
     * This method is mainly defined for verification purpose.
@@ -142,7 +142,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int, Long, Boolean) U <: 
     * @param vehicle the vehicle on which the value is computed
     * @param routes the sequence representing the route of all vehicle
     */
-  protected[global] def computeVehicleValueFromScratch(vehicle : Long, routes : IntSequence): U
+  protected[global] def computeVehicleValueFromScratch(vehicle : Int, routes : IntSequence): U
 
   /**
     * This method is used for debugging purpose. (See Checker class)
@@ -152,7 +152,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int, Long, Boolean) U <: 
     * @param routes The sequence representing the route of all vehicle
     * @param segments The list of segments used to compute the current value fo the vehicle
     */
-  protected[global] def checkInternals(vehicle: Long, routes: ChangingSeqValue, segments: List[Segment]): Unit ={
+  protected[global] def checkInternals(vehicle: Int, routes: ChangingSeqValue, segments: List[Segment]): Unit ={
     val fromScratch = computeVehicleValueFromScratch(vehicle, routes.value)
     require(fromScratch.equals(lastComputedVehiclesValue(vehicle)), "Constraint " + this.getClass.getName + " failed " +
     "For Vehicle " + vehicle + " : should be " + fromScratch + " got " +

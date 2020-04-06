@@ -59,17 +59,17 @@ object SymmetricVRPBench extends App {
 
   println()
   print("n\tv\tpercent")
-  for ( _ <- 1L to nbTrials) {
+  for ( _ <- 1 to nbTrials) {
     print("\ttime")
   }
   println
 
 
-  for(n <- 1000L to 5000L by 2000L){
+  for(n <- 1000 to 5000L by 2000L){
     for(v <- List(100L)){
       for (maxPivotPerValuePercent <- List(0L,1L,2L,3L,4L,5L,20L)) {
         print(n + "\t" + v + "\t" + maxPivotPerValuePercent + "\t")
-        for ( _ <- 1L to nbTrials){
+        for ( _ <- 1 to nbTrials){
           new TSPRoutePointsS(n, v, maxPivotPerValuePercent, verbose)
           print("\t")
           System.gc()

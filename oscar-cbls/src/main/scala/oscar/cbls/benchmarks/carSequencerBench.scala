@@ -26,11 +26,11 @@ import scala.language.postfixOps
 import scala.util.Random
 
 /**
- * Created by rdl on 29L-01L-1L6.
+ * Created by rdl on 29-01-16.
  */
 object CarSequencerBench extends CBLSModel with App {
 
-  val orderedCarsByType: SortedMap[Long,Long] = SortedMap(0L -> 110L, 1L -> 60L, 2L -> 110L , 3L -> 120L, 4L -> 40L, 5L -> 30L)
+  val orderedCarsByType: SortedMap[Int,Int] = SortedMap(0 -> 110, 1 -> 60, 2 -> 110 , 3 -> 120, 4 -> 40, 5 -> 30)
 
   val nbCarTypes = 6
   val carTypes: Domain = (0,nbCarTypes-1)
@@ -40,25 +40,25 @@ object CarSequencerBench extends CBLSModel with App {
 
   //option types
   //   A   G   D   E  (airConditionner, automaticGearBox, diesel, esp)
-  //0L  T   T   T   F
-  //1L  F   T   T   F
-  //2L  T   F   T   F
-  //3L  F   F   F   T
-  //4L  T   T   F   T
-  //5L  F   T   F   T
+  //0  T   T   T   F
+  //1  F   T   T   F
+  //2  T   F   T   F
+  //3  F   F   F   T
+  //4  T   T   F   T
+  //5  F   T   F   T
 
-  def makeBoolArray(values:Long*):Array[Boolean] = {
+  def makeBoolArray(values:Int*):Array[Boolean] = {
     val toReturn = Array.fill(nbCarTypes)(false)
     values.foreach(toReturn(_) = true)
     toReturn
   }
 
-  val airCoCarTypes = makeBoolArray(0L,2L,4L)
-  val automaticGearBoxCarTypes = makeBoolArray(0L,1L,4L,5L)
-  val dieselCarTypes = makeBoolArray(0L,1L,2L)
-  val espCarTypes = makeBoolArray(3L,4L,5L)
+  val airCoCarTypes = makeBoolArray(0,2,4)
+  val automaticGearBoxCarTypes = makeBoolArray(0,1,4,5)
+  val dieselCarTypes = makeBoolArray(0,1,2)
+  val espCarTypes = makeBoolArray(3,4,5)
 
-  def prependItems(acc:List[Long],n:Long,item:Long):List[Long] = if(n == 0L) acc else prependItems(item :: acc,n-1L,item)
+  def prependItems(acc:List[Long],n:Long,item:Long):List[Long] = if(n == 0) acc else prependItems(item :: acc,n-1,item)
   val orderedCarTypes:List[Long] = orderedCarsByType.foldLeft(List.empty[Long])({case (accList,(carType,nbItems)) => prependItems(accList,nbItems,carType)})
   val nbCars = orderedCarTypes.size
 
@@ -68,17 +68,17 @@ object CarSequencerBench extends CBLSModel with App {
   val orderedCarTypesIterator = Random.shuffle(orderedCarTypes).toIterator
   val carSequence:Array[CBLSIntVar] = Array.tabulate(nbCars)(p => CBLSIntVar(orderedCarTypesIterator.next(),carTypes,"carClassAtPosition" + p))
 
-  //airConditionner: max 2L out of 3L
-  c.post(sequence(carSequence,3L,2L,airCoCarTypes))
+  //airConditionner: max 2 out of 3
+  c.post(sequence(carSequence,3,2,airCoCarTypes))
 
-  //automaticGearBox: max 3L out of 5L
-  c.post(sequence(carSequence,5L,3L,automaticGearBoxCarTypes))
+  //automaticGearBox: max 3 out of 5
+  c.post(sequence(carSequence,5,3,automaticGearBoxCarTypes))
 
-  //diesel: max 3L out of 5L
-  c.post(sequence(carSequence,5L,3L,dieselCarTypes))
+  //diesel: max 3 out of 5
+  c.post(sequence(carSequence,5,3,dieselCarTypes))
 
-  //esp: max 2L ouf of 3L
-  c.post(sequence(carSequence,3L,2L,espCarTypes))
+  //esp: max 2 ouf of 3
+  c.post(sequence(carSequence,3,2,espCarTypes))
 
   val varViolation = c.violations(carSequence)
   val violatedCars = filter(varViolation)
@@ -95,10 +95,10 @@ object CarSequencerBench extends CBLSModel with App {
   val search =
     (Profile(swapsNeighborhood(carSequence,"mostViolatedSwap", searchZone2 = () => (_,_) => mostViolatedCars.value, symmetryCanBeBrokenOnIndices = false))
       exhaust Profile(WideningFlipNeighborhood(carSequence)) //it seems useless to try swaps once flip is exhausted, so simple exhaust is used here
-      onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars")) guard(() => mostViolatedCars.value.size > 2L), 2L, obj)
-      onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => 5L max (violatedCars.value.size/2L))), 2L, obj)
-      onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, name = "shuffleMostCars", numberOfShuffledPositions = () => nbCars/2L)), 2L, obj)
-      orElse (Profile(shuffleNeighborhood(carSequence, name = "shuffleAllCars")) maxMoves 4L)
+      onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars")) guard(() => mostViolatedCars.value.size > 2), 2, obj)
+      onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => 5 max (violatedCars.value.size/2))), 2, obj)
+      onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, name = "shuffleMostCars", numberOfShuffledPositions = () => nbCars/2)), 2, obj)
+      orElse (Profile(shuffleNeighborhood(carSequence, name = "shuffleAllCars")) maxMoves 4)
       saveBestAndRestoreOnExhaust obj) //in case we do not solve it, we want to restore the best solution anyway
 
   search.verbose = 1
@@ -108,5 +108,5 @@ object CarSequencerBench extends CBLSModel with App {
 
   println("car sequence:" + carSequence.map(_.value).mkString(","))
 
-  println(if (c.violation.value == 0L) "problem solved" else "PROBLEM COULD NOT BE SOLVED: " + c.violation)
+  println(if (c.violation.value == 0) "problem solved" else "PROBLEM COULD NOT BE SOLVED: " + c.violation)
 }

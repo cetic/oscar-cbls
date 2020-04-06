@@ -27,8 +27,8 @@ class Precedences(beforeAfterPairs: List [(ActivityId, ActivityId)]) {
     * @return a list containing a permutation of [0..numActivity) corresponding
     *         to a consistent priority list (if A->B, index of A is before index of B in the list)
     */
-  def getPriorityList(activitiesOnList: Iterable[ActivityId]): List[Long] = {
-    def insertList(i: ActivityId, succI: BitSet, accList: List[Long]): List[Long] = {
+  def getPriorityList(activitiesOnList: Iterable[ActivityId]): List[Int] = {
+    def insertList(i: ActivityId, succI: BitSet, accList: List[Int]): List[Int] = {
       accList match {
         case Nil => List(i)
         case x::xs =>
@@ -39,7 +39,7 @@ class Precedences(beforeAfterPairs: List [(ActivityId, ActivityId)]) {
       }
     }
     /////
-    var result: List[Long] = Nil
+    var result: List[Int] = Nil
     for {i <- activitiesOnList} {
       result = insertList(i, succMap.getOrElse(i, BitSet.empty), result)
     }

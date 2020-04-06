@@ -40,7 +40,7 @@ class ImmutableArray[T:ClassTag](baseValueNeverModified:Array[T],
     if(id >= size) throw new ArrayIndexOutOfBoundsException
     else updates.getOrElse(id,baseValueNeverModified(id))
 
-  def update(id: Long, value: T, fast: Boolean): ImmutableArray[T] = {
+  def update(id: Int, value: T, fast: Boolean): ImmutableArray[T] = {
     val tmp = if(id == size) new ImmutableArray[T](baseValueNeverModified,size+1,updates.insert(id,value))
     else if (id < size) new ImmutableArray[T](baseValueNeverModified,size,updates.insert(id,value))
     else throw new ArrayIndexOutOfBoundsException

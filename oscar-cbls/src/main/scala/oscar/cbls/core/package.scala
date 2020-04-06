@@ -21,6 +21,7 @@ package object core {
   type IntInvariant = oscar.cbls.core.computation.IntInvariant
   type ChangingIntValue = oscar.cbls.core.computation.ChangingIntValue
   type IntNotificationTarget = oscar.cbls.core.computation.IntNotificationTarget
+  type ShortIntNotificationTarget = oscar.cbls.core.computation.ShortIntNotificationTarget
 
   //set types
   type SetInvariant = oscar.cbls.core.computation.SetInvariant

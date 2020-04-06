@@ -12,17 +12,17 @@ import scala.util.Random
 object BigExample {
   val nbAct = 250
   val nbRes = 25
-  val minDuration = 1L
-  val maxDuration = 25L
-  val minStartTime = 0L
-  val maxStartTime = 10L
+  val minDuration = 1
+  val maxDuration = 25
+  val minStartTime = 0
+  val maxStartTime = 10
   val minCapacity = 1L
   val maxCapacity = 25L
   val minRMRes = 0
   val maxRMRes = 25
   val densityUsageRes = 75
-  val minSetupTimeRM = 0L
-  val maxSetupTimeRM = 25L
+  val minSetupTimeRM = 0
+  val maxSetupTimeRM = 25
   val densityPrecedencies = 50
   val densityMultiResources = 25
   val densityInitialActs = 75
@@ -52,8 +52,8 @@ object BigExample {
     val nAct = nbAct
     val activities = (0 until nAct).toList
     // Durations
-    var durations: Map[ActivityId, Long] = Map()
-    var minStartTimes: Map[ActivityId, Long] = Map()
+    var durations: Map[ActivityId, Int] = Map()
+    var minStartTimes: Map[ActivityId, Int] = Map()
     var initials: List[ActivityId] = List()
     for {i <- 0 until nAct} {
       durations += (i -> randomInterval(minDuration, maxDuration))

@@ -34,13 +34,22 @@ import scala.util.Random
   */
 sealed trait IntValue extends Value{
   def value: Long
+  def valueInt: Int
   def domain:Domain
   def min = domain.min
+  def minInt = longToInt(min)
   def max = domain.max
+  def maxInt = longToInt(max)
 
   def name:String
   override def valueString: String = "" + value
   def restrictDomain(d:Domain): Unit
+
+  def longToInt(value:Long):Int = {
+    val i = value.toInt
+    if (i != value) throw new ArithmeticException("integer overflow:" + value)
+    return i
+  }
 
 }
 
@@ -64,6 +73,10 @@ object IntValue {
 
 trait IntNotificationTarget{
   def notifyIntChanged(v: ChangingIntValue, id: Int, oldVal: Long, newVal: Long): Unit
+}
+
+trait ShortIntNotificationTarget{
+  def notifyIntChanged(v: ChangingIntValue, id: Int, oldVal: Int, newVal: Int): Unit
 }
 
 /**An IntVar is a variable managed by the [[oscar.cbls.core.computation.Store]] whose type is integer.
@@ -131,10 +144,18 @@ abstract class ChangingIntValue(initialValue:Long, initialDomain:Domain)
     mOldValue
   }
 
+  override def valueInt: Int = {
+    longToInt(value)
+  }
+
   def newValue:Long = {
     assert(model.checkExecutingInvariantOK(definingInvariant),"variable [" + this
       + "] queried for latest val by non-controlling invariant")
     mNewValue
+  }
+
+  def newValueInt:Int = {
+    longToInt(newValue)
   }
 
   override def performPropagation(){performIntPropagation()}
@@ -149,10 +170,19 @@ abstract class ChangingIntValue(initialValue:Long, initialDomain:Domain)
       var currentElement = headPhantom.next
       while(currentElement != headPhantom){
         val e = currentElement.elem
-        val inv:IntNotificationTarget = e._1.asInstanceOf[IntNotificationTarget]
-        assert({this.model.notifiedInvariant=inv.asInstanceOf[Invariant]; true})
-        inv.notifyIntChanged(this, e._2, old, mNewValue)
-        assert({this.model.notifiedInvariant=null; true})
+        e._1 match {
+          case intInvariant: IntNotificationTarget => {
+            assert({this.model.notifiedInvariant=intInvariant.asInstanceOf[Invariant]; true})
+            intInvariant.notifyIntChanged(this, e._2, old, mNewValue)
+            assert({this.model.notifiedInvariant=null; true})
+          }
+          case shortIntInvariant: ShortIntNotificationTarget => {
+            assert({this.model.notifiedInvariant=shortIntInvariant.asInstanceOf[Invariant]; true})
+            shortIntInvariant.notifyIntChanged(this, e._2, longToInt(old), longToInt(mNewValue))
+            assert({this.model.notifiedInvariant=null; true})
+          }
+        }
+        
         //we go to the next to be robust against invariant that change their dependencies when notified
         //this might cause crash because dynamicallyListenedInvariants is a mutable data structure
         currentElement = currentElement.next
@@ -274,8 +304,10 @@ class CBLSIntVar(givenModel: Store, initialValue: Long, initialDomain:Domain, n:
   def <==(i: IntValue) {IdentityInt(this,i)}
 
   def randomize(): Unit ={
-    if(this.max != this.min)
-      this := this.min + RandomGenerator.nextInt(this.max - this.min)
+    if(this.max != this.min) {
+      require(this.max - this.min < Int.MaxValue, "The domain is too wide to take a random value")
+      this := this.min + RandomGenerator.nextInt((this.max - this.min).toInt)
+    }
   }
 }
 
@@ -298,6 +330,10 @@ object CBLSIntVar{
 */
 class CBLSIntConst(override val value:Long)
   extends IntValue{
+  override def valueInt: Int = {
+    require(value <= Int.MaxValue, "The constant value is higher than Int.MaxValue")
+    value.toInt
+  }
   override def toString:String = "" + value
   override def domain: SingleValueDomain = new SingleValueDomain(value)
   override def min: Long = value

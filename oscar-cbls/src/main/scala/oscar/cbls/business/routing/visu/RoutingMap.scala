@@ -18,8 +18,8 @@ object RoutingMap{
   def apply(vrp: VRP,
             nodesPositions: Array[(scala.Double,scala.Double)],
             vehiclesToColor: Array[Color],
-            size: Option[Long],
-            resfreshRate: Long,
+            size: Option[Int],
+            resfreshRate: Int,
             toolTipInfo: Option[Int => Option[() => String]],
             routingMapType: RoutingMapTypes.Value): JPanel with RoutingMapTrait ={
     routingMapType match{

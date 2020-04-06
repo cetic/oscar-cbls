@@ -37,7 +37,7 @@ case class DisjunctiveConstDuration(start: Array[IntValue],
 
   private val sumdur = duration.sum
 
-  private val Violation: CBLSIntVar = new CBLSIntVar(model, 0L, 0 to sumdur*start.length, "ViolationOfDisjunctive")
+  private val Violation: CBLSIntVar = new CBLSIntVar(model, 0L, Domain(0, sumdur*start.length), "ViolationOfDisjunctive")
   Violation.setDefiningInvariant(this)
 
 
@@ -45,7 +45,7 @@ case class DisjunctiveConstDuration(start: Array[IntValue],
   private val Violations: SortedMap[IntValue, CBLSIntVar] = start.foldLeft(
     SortedMap.empty[IntValue, CBLSIntVar])(
     (acc, intvar) => {
-      val newvar = new CBLSIntVar(model, 0L, 0 to sumdur, "Violation_Disjunctive_" + intvar.name)
+      val newvar = new CBLSIntVar(model, 0L, Domain(0, sumdur), "Violation_Disjunctive_" + intvar.name)
       acc + ((intvar, newvar))
     })
 
@@ -53,7 +53,7 @@ case class DisjunctiveConstDuration(start: Array[IntValue],
     val curstart = start(i).value
     val curduration = duration(i)
     val curend = curstart+curduration
-    for(j <- i+1L until start.length){
+    for(j <- i+1 until start.length){
       val nextstart = start(j).value
       val nextduration = duration(j)
       val nextend = nextstart + nextduration
@@ -174,7 +174,7 @@ case class Disjunctive(start: Array[IntValue],
     }
   }
 
-  private def notifyStartChanged(taskID:Long,oldStart:Long,newStart:Long) {
+  private def notifyStartChanged(taskID:Int,oldStart:Long,newStart:Long) {
     val dur = duration(taskID).value
     if (dur == 0L) return
 
@@ -184,7 +184,7 @@ case class Disjunctive(start: Array[IntValue],
     updateTask(taskID,oldStart,newStart,oldEnd,newEnd)
   }
 
-  private def notifyDurChanged(taskID:Long,oldDur:Long,newDur:Long){
+  private def notifyDurChanged(taskID:Int,oldDur:Long,newDur:Long){
     if(oldDur == 0L && newDur !=0L){
       nonZeroTasks = nonZeroTasks + taskID
     }else if (oldDur !=0L && newDur == 0L){
@@ -198,7 +198,7 @@ case class Disjunctive(start: Array[IntValue],
     updateTask(taskID,startTask,startTask,oldEnd,newEnd)
   }
 
-  def updateTask(taskID:Long,oldStart:Long,newStart:Long,oldEnd:Long,newEnd:Long){
+  def updateTask(taskID:Int,oldStart:Long,newStart:Long,oldEnd:Long,newEnd:Long){
     //TODO: This is not completely incremental (but still linear instead of quadratic)!
     //We cannot break symmetries here because they are already broken since this method is called with one task set
     for(otherTaskID <- nonZeroTasks if taskID != otherTaskID){
@@ -289,11 +289,11 @@ case class DisjunctiveWithTransitions(start: Array[IntValue],
 
   private val sumMaxDur = duration.foldLeft(0L)((acc,v) => acc + v.max)
 
-  private val violationVar: CBLSIntVar = new CBLSIntVar(model, 0L, 0 to sumMaxDur*start.length, "ViolationOfDisjunctive")
+  private val violationVar: CBLSIntVar = new CBLSIntVar(model, 0L, Domain(0, sumMaxDur*start.length), "ViolationOfDisjunctive")
   violationVar.setDefiningInvariant(this)
 
   private val violationVarsArray = Array.tabulate(start.length)(i => {
-    val newVar = new CBLSIntVar(model, 0L, 0 to sumMaxDur, "Violation_Disjunctive_" + start(i).name + "_and_" + duration(i).name)
+    val newVar = new CBLSIntVar(model, 0L, Domain(0, sumMaxDur), "Violation_Disjunctive_" + start(i).name + "_and_" + duration(i).name)
     newVar.setDefiningInvariant(this)
     newVar}
   )
@@ -345,7 +345,7 @@ case class DisjunctiveWithTransitions(start: Array[IntValue],
     }
   }
 
-  private def notifyStartChanged(taskID:Long,oldStart:Long,newStart:Long) {
+  private def notifyStartChanged(taskID:Int,oldStart:Long,newStart:Long) {
     val dur = duration(taskID).value
     if (dur == 0L) return
 
@@ -355,7 +355,7 @@ case class DisjunctiveWithTransitions(start: Array[IntValue],
     updateTask(taskID,oldStart,newStart,oldEnd,newEnd)
   }
 
-  private def notifyDurChanged(taskID:Long,oldDur:Long,newDur:Long){
+  private def notifyDurChanged(taskID:Int,oldDur:Long,newDur:Long){
     if(oldDur == 0L && newDur !=0L){
       nonZeroTasks = nonZeroTasks + taskID
     }else if (oldDur !=0L && newDur == 0L){
@@ -369,7 +369,7 @@ case class DisjunctiveWithTransitions(start: Array[IntValue],
     updateTask(taskID,startTask,startTask,oldEnd,newEnd)
   }
 
-  def updateTask(taskID:Long,oldStart:Long,newStart:Long,oldEnd:Long,newEnd:Long){
+  def updateTask(taskID:Int,oldStart:Long,newStart:Long,oldEnd:Long,newEnd:Long){
     //TODO: This is not completely incremental (but still linear instead of quadratic)!
     //We cannot break symmetries here because they are already broken since this method is called with one task set
     for(otherTaskID <- nonZeroTasks if taskID != otherTaskID){

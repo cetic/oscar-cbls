@@ -59,7 +59,7 @@ import scala.language.implicitConversions
   *
   *  //creating variables, one queen par column,
   *  //initialized on a permutation of the diagolal (all on different rows)
-  *  val queens = Array.tabulate(N)((q:Long) => CBLSIntVar(init.next(),0L until N, "queen" + q))
+  *  val queens = Array.tabulate(N)((q:Long) => CBLSIntVar(init.next(),0 until N, "queen" + q))
   *
   *  c.post(allDiff( for (q <- range) yield queens(q) + q) )
   *  c.post(allDiff( for (q <- range) yield q - queens(q)) )
@@ -105,6 +105,7 @@ package object cbls extends ModelingAPI{
   final val Domain = oscar.cbls.core.computation.Domain
 
   final val fullRange = oscar.cbls.core.computation.FullRange
+  final val fullIntRange = oscar.cbls.core.computation.FullIntRange
   final val positiveOrNullRange = oscar.cbls.core.computation.PositiveOrNullRange
 
   type Value = oscar.cbls.core.computation.Value
@@ -210,7 +211,7 @@ package object cbls extends ModelingAPI{
 
     def minus(v: SetValue): SetInvariant = Diff(x, v)
 
-    def map(fun: Long => Long,outputDomain:Domain) = SetMap(x, fun, outputDomain)
+    def map(fun: Int => Int,outputDomain:Domain) = SetMap(x, fun, outputDomain)
   }
 
   implicit class IntValueArrayOps(intValueArray: Array[IntValue]) {
@@ -242,15 +243,15 @@ package object cbls extends ModelingAPI{
   }
 
   // implicit conversion of Range towards a RangeHotRestart, to use the StartBy keyword
-  implicit def instrumentRange(r: NumericRange[Long]): InstrumentedRange = new InstrumentedRange(r)
+  implicit def instrumentRange(r: NumericRange[Int]): InstrumentedRange = new InstrumentedRange(r)
 
   //this one has been added followingthe 32 to 64 bits port of oscar.cbls
-  implicit def longToInt(value:Long):Int = {
+/*  implicit def longToInt(value:Long):Int = {
     val i = value.toInt
     if (i != value) throw new ArithmeticException("integer overflow:" + value)
     return i
   }
-  implicit def intToLong(i:Int):Long = i
+  implicit def intToLong(i:Int):Long = i*/
 
   implicit def minMaxCoupleLongLongToDomain(minMaxCouple:((Long,Long))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
   implicit def minMaxCoupleIntIntToDomain(minMaxCouple:((Int,Int))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)

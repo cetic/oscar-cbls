@@ -58,7 +58,7 @@ object WareHouseLocationVisu extends App with StopWatch{
   //  MinConstArrayLazy(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse))
 
   val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
-    new MinConstArrayValueWise(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse,maxDiameter = 2))
+    new MinConstArrayValueWise(distanceCost(d).map(_.toInt), openWarehouses, defaultCostForNoOpenWarehouse,maxDiameter = 2))
 
   val obj = Objective(Sum(distanceToNearestOpenWarehouseLazy) + Sum(costForOpeningWarehouse, openWarehouses))
 
@@ -88,7 +88,7 @@ object WareHouseLocationVisu extends App with StopWatch{
   (assignList:List[AssignMove]) =>
   {
   val lastChangedWarehouse = assignList.head.id
-  val setTo = assignList.head.v
+  val setTo = assignList.head.value
   val otherWarehouses = if(setTo == 0) kNearestClosedWarehouses(lastChangedWarehouse,kClosed) else kNearestOpenWarehouses(lastChangedWarehouse,kOpen)
   Some(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse",searchZone = () => otherWarehouses,hotRestart = false))
   },
@@ -101,14 +101,14 @@ object WareHouseLocationVisu extends App with StopWatch{
   (assignList:List[AssignMove]) =>
   {
   val lastChangedWarehouse = assignList.last.id
-  val setTo = assignList.head.v
+  val setTo = assignList.head.value
   val otherWarehouses = if(setTo == 0) kNearestClosedWarehouses(lastChangedWarehouse,kClosed) else kNearestOpenWarehouses(lastChangedWarehouse,kOpen)
   Some(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse",searchZone = () => otherWarehouses,hotRestart = false))
   },
   maxDepth = width,
   intermediaryStops = true)
 
-  def swapsK(k:Int,openWarehoueseTocConsider:()=>Iterable[Long] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
+  def swapsK(k:Int,openWarehoueseTocConsider:()=>Iterable[Int] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
     searchZone1 = openWarehoueseTocConsider,
     searchZone2 = () => (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
     name = "Swap" + k + "Nearest",

@@ -136,10 +136,10 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
 
   override def notifySetChanges(v: ChangingSetValue,
                                 d: Int,
-                                addedValues: Iterable[Long],
-                                removedValues: Iterable[Long],
-                                oldValue: SortedSet[Long],
-                                newValue: SortedSet[Long]): Unit = {
+                                addedValues: Iterable[Int],
+                                removedValues: Iterable[Int],
+                                oldValue: SortedSet[Int],
+                                newValue: SortedSet[Int]): Unit = {
 
     //this looks a bit drastic,
     // however, we are in a value-wise context;

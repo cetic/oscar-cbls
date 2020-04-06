@@ -134,11 +134,11 @@ case class CumulativePrototype(start: Array[IntValue], duration: Array[IntValue]
   override def checkInternals(c: Checker) {c.check(false, Some("TODO: Implement checkinternal for CumulativeSparse"))}
 }
 
-class CumulativeProfile(m:Store, val nTasks:Long, val horizon:Long, val maxHeight:Long, var limit:IntValue){
-  val blocks:Array[ProfileBlock] = Array.tabulate(2L*nTasks+4L)( i => new ProfileBlock(0L,0L,CBLSIntVar(m,0L,Domain(0L ,maxHeight)),limit,horizon))
+class CumulativeProfile(m:Store, val nTasks:Int, val horizon:Long, val maxHeight:Long, var limit:IntValue){
+  val blocks:Array[ProfileBlock] = Array.tabulate(2*nTasks+4)( i => new ProfileBlock(0L,0L,CBLSIntVar(m,0L,Domain(0L ,maxHeight)),limit,horizon))
 
-  val freeBlocks = blocks(0L)
-  for( i <- 1L until blocks.length)
+  val freeBlocks = blocks(0)
+  for( i <- 1 until blocks.length)
     freeBlocks.insertBlock(blocks(i))
 
   val endBlock = new ProfileBlock(-1L,-2L,CBLSIntVar(m,-1L,Domain(-2L,-1L),"DummyBlock"),limit,horizon)
@@ -154,7 +154,7 @@ class CumulativeProfile(m:Store, val nTasks:Long, val horizon:Long, val maxHeigh
     var current = profile
     while(current != endBlock){
       for(i <- current.start to current.end) {
-        val p = Array.tabulate(current.height.newValue)(n => "#")
+        val p = Array.tabulate(current.height.newValueInt)(n => "#")
         println(idx+"|"+i + " " +current.start+" to "+ current.end +" \t |" +/*p.mkString +*/ current.height.newValue)
       }
       if(current.start > current.end){

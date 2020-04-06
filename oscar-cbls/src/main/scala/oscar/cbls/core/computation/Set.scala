@@ -31,40 +31,41 @@ import scala.collection.immutable.SortedSet
 import scala.language.implicitConversions
 
 sealed trait SetValue extends Value{
-  def value: SortedSet[Long]
+  def value: SortedSet[Int]
   def domain:Domain
-  def min = domain.min
-  def max = domain.max
+  def min = domain.min.toInt
+  def max = domain.max.toInt
   def name:String
   override final def valueString: String = "{" + value.mkString(",") + "}"
 }
 
 object SetValue{
-  implicit def intSet2IntSetVar(a:SortedSet[Long]):SetValue = CBLSSetConst(a)
-  implicit def toFunction(i:SetValue):()=>SortedSet[Long] = () => i.value
+  implicit def intSet2IntSetVar(a:SortedSet[Int]):SetValue = CBLSSetConst(a)
+  implicit def toFunction(i:SetValue):()=>SortedSet[Int] = () => i.value
 }
 
-class ChangingSetValueSnapShot(val variable:ChangingSetValue,val savedValue:SortedSet[Long]) extends AbstractVariableSnapShot(variable){
+class ChangingSetValueSnapShot(val variable:ChangingSetValue,val savedValue:SortedSet[Int]) extends AbstractVariableSnapShot(variable){
   override protected def doRestore() : Unit = {variable.asInstanceOf[CBLSSetVar] := savedValue}
 }
 
 class ValueWisePropagationWaveIdentifier()
-abstract class ChangingSetValue(initialValue:SortedSet[Long], initialDomain:Domain)
+abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domain)
   extends AbstractVariable with SetValue{
+  require(initialDomain.max <= Int.MaxValue, "The max value of the domain is lesser or equal to Int.MaxValue. Got : " + initialDomain.max)
   private var privatedomain:Domain = initialDomain
-  private var m_NewValue: SortedSet[Long] = initialValue
-  private var OldValue:SortedSet[Long] = m_NewValue
-  private[this] var domainSizeDiv10 = privatedomain.size/10L
+  private var m_NewValue: SortedSet[Int] = initialValue
+  private var OldValue:SortedSet[Int] = m_NewValue
+  private[this] var domainSizeDiv10 = privatedomain.size/10
   def domain:Domain = privatedomain
 
   override def snapshot : ChangingSetValueSnapShot = new ChangingSetValueSnapShot(this,this.value)
-  def valueAtSnapShot(s:Snapshot):SortedSet[Long] = s(this) match{case s:ChangingSetValueSnapShot => s.savedValue case _ => throw new Error("cannot find value of " + this + " in snapshot")}
+  def valueAtSnapShot(s:Snapshot):SortedSet[Int] = s(this) match{case s:ChangingSetValueSnapShot => s.savedValue case _ => throw new Error("cannot find value of " + this + " in snapshot")}
 
   /**this must be protected because invariants might rework this after isntanciation
     * for CBLSVars, no problems*/
   protected def restrictDomain(d:Domain): Unit ={
     privatedomain = privatedomain.intersect(d)
-    domainSizeDiv10 = privatedomain.size/10L
+    domainSizeDiv10 = privatedomain.size/10
   }
 
   override def toString:String = name + ":={" +
@@ -94,42 +95,42 @@ abstract class ChangingSetValue(initialValue:SortedSet[Long], initialDomain:Doma
   /**The values that have bee impacted since last propagation was performed.
     * null if set was assigned
     */
-  private[this] var addedValues:QList[Long] = null
-  private[this] var removedValues:QList[Long] = null
-  private[this] var nbTouched:Long = 0L
+  private[this] var addedValues:QList[Int] = null
+  private[this] var removedValues:QList[Int] = null
+  private[this] var nbTouched:Int = 0
 
-  protected def insertValue(v:Long){
+  protected def insertValue(v:Int){
     if (!m_NewValue.contains(v)) insertValueNotPreviouslyIn(v)
   }
 
-  protected def insertValueNotPreviouslyIn(v:Long){
-    if (nbTouched != -1L){
+  protected def insertValueNotPreviouslyIn(v:Int){
+    if (nbTouched != -1){
       addedValues = QList(v,addedValues)
-      nbTouched += 1L
-      if(nbTouched > domainSizeDiv10) nbTouched = -1L
+      nbTouched += 1
+      if(nbTouched > domainSizeDiv10) nbTouched = -1
     }
     m_NewValue +=v
     notifyChanged()
   }
 
 
-  protected def deleteValue(v:Long){
+  protected def deleteValue(v:Int){
     if (m_NewValue.contains(v)) deleteValuePreviouslyIn(v)
   }
 
-  protected def deleteValues(values:Iterable[Long]){
+  protected def deleteValues(values:Iterable[Int]){
     values.map(deleteValue)
   }
 
-  protected def insertValues(values:Iterable[Long]){
+  protected def insertValues(values:Iterable[Int]){
     values.map(insertValue)
   }
 
-  protected def deleteValuePreviouslyIn(v:Long){
-    if (nbTouched != -1L){
+  protected def deleteValuePreviouslyIn(v:Int){
+    if (nbTouched != -1){
       removedValues = QList(v,removedValues)
-      nbTouched += 1L
-      if(nbTouched > domainSizeDiv10) nbTouched = -1L
+      nbTouched += 1
+      if(nbTouched > domainSizeDiv10) nbTouched = -1
     }
     m_NewValue -=v
     notifyChanged()
@@ -139,10 +140,10 @@ abstract class ChangingSetValue(initialValue:SortedSet[Long], initialDomain:Doma
     * otherwise, there is a huge waste of time.
     * @param v the new value to set to the variable
     */
-  protected def setValue(v:SortedSet[Long]){
+  protected def setValue(v:SortedSet[Int]){
     removedValues = null
     addedValues = null
-    nbTouched = -1L
+    nbTouched = -1
     m_NewValue = v
     notifyChanged()
   }
@@ -151,11 +152,11 @@ abstract class ChangingSetValue(initialValue:SortedSet[Long], initialDomain:Doma
     if(valueToValueWiseKeys == null){
       require(Int.MinValue <= domain.min, "when using valueWise mechanism, the domain of sets should have a min >= Int.MinValue")
 
-      offsetForValueWiseKey = cbls.longToInt(domain.min)
-      val nbValues = this.domain.max - this.domain.min + 1L
+      offsetForValueWiseKey = domain.min.toInt
+      val nbValues = this.domain.max.toInt - this.domain.min.toInt + 1
       require(Int.MinValue <= nbValues, "when using valueWise mechanism, the domain of sets should be reasonably small")
 
-      valueToValueWiseKeys = Array.tabulate(cbls.longToInt(nbValues))(_ => new DoublyLinkedList[ValueWiseKey]())
+      valueToValueWiseKeys = Array.tabulate(nbValues)(_ => new DoublyLinkedList[ValueWiseKey]())
     }
   }
   private[this] var valueToValueWiseKeys:Array[DoublyLinkedList[ValueWiseKey]] = null
@@ -167,7 +168,7 @@ abstract class ChangingSetValue(initialValue:SortedSet[Long], initialDomain:Doma
   }
 
   @inline
-  private def valueWiseKeysAtValue(value:Long):DoublyLinkedList[ValueWiseKey] = valueToValueWiseKeys(cbls.longToInt(value - offsetForValueWiseKey))
+  private def valueWiseKeysAtValue(value:Int):DoublyLinkedList[ValueWiseKey] = valueToValueWiseKeys(value - offsetForValueWiseKey)
 
   override def performPropagation(){performSetPropagation()}
 
@@ -177,7 +178,7 @@ abstract class ChangingSetValue(initialValue:SortedSet[Long], initialDomain:Doma
       //no need to do it gradually
       OldValue=m_NewValue
     }else{
-      val (addedValues,deletedValues):(Iterable[Long],Iterable[Long]) = if (nbTouched == -1L) {
+      val (addedValues,deletedValues):(Iterable[Int],Iterable[Int]) = if (nbTouched == -1) {
         //need to call every listening one, so gradual approach required
         if(m_NewValue == OldValue) (List.empty,List.empty) else (m_NewValue.diff(OldValue),OldValue.diff(m_NewValue))
 
@@ -185,8 +186,8 @@ abstract class ChangingSetValue(initialValue:SortedSet[Long], initialDomain:Doma
         //TODO: this is slow, and it delives TreeSet. TreeSet are slow fo valueWise notifications
         //we have the set of values that have been touched (added or deleted)
         //but we need to check for each opf them if they have been both added and deleted
-        var addedUnique = SortedSet.empty[Long] ++ this.addedValues
-        var removedUnique = SortedSet.empty[Long] ++ this.removedValues
+        var addedUnique = SortedSet.empty[Int] ++ this.addedValues
+        var removedUnique = SortedSet.empty[Int] ++ this.removedValues
         for(inter <- addedUnique.intersect(removedUnique)){
           val inNew = m_NewValue.contains(inter)
           val inOld = OldValue.contains(inter)
@@ -235,11 +236,11 @@ abstract class ChangingSetValue(initialValue:SortedSet[Long], initialDomain:Doma
     }
     this.addedValues = null
     this.removedValues = null
-    nbTouched = 0L
+    nbTouched = 0
   }
 
   @inline  //This method is awfully slow, ad we do not know why
-  private def notifyForValues(values : Iterable[Long],addedValues:Iterable[Long], deletedValues:Iterable[Long], currentValueWisePropagationWaveIdentifier:ValueWisePropagationWaveIdentifier) {
+  private def notifyForValues(values : Iterable[Int],addedValues:Iterable[Int], deletedValues:Iterable[Int], currentValueWisePropagationWaveIdentifier:ValueWisePropagationWaveIdentifier) {
     val valuesIt = values.iterator
     while(valuesIt.hasNext){
       val value = valuesIt.next()
@@ -271,11 +272,11 @@ abstract class ChangingSetValue(initialValue:SortedSet[Long], initialDomain:Doma
 
 
 
-  def value:SortedSet[Long] = getValue(false)
+  def value:SortedSet[Int] = getValue(false)
 
-  protected def newValue:SortedSet[Long] = getValue(true)
+  protected def newValue:SortedSet[Int] = getValue(true)
 
-  private def getValue(NewValue:Boolean=false):SortedSet[Long] = {
+  private def getValue(NewValue:Boolean=false):SortedSet[Int] = {
     if (NewValue){
       assert(model.checkExecutingInvariantOK(definingInvariant),
         "variable [" + this + "] queried for latest val by non-controlling invariant")
@@ -292,10 +293,10 @@ abstract class ChangingSetValue(initialValue:SortedSet[Long], initialDomain:Doma
     * otherwise, there is a huge waste of time.
     * @param v the new value to set to the variable
     */
-  protected def :=(v:SortedSet[Long]) {setValue(v)}
+  protected def :=(v:SortedSet[Int]) {setValue(v)}
 
-  protected def :+=(i:Long) {this.insertValue(i)}
-  protected def :-=(i:Long) {this.deleteValue(i)}
+  protected def :+=(i:Int) {this.insertValue(i)}
+  protected def :-=(i:Int) {this.deleteValue(i)}
 
   def createClone:CBLSSetVar = {
     val clone = new CBLSSetVar(model, this.value, this.domain, "clone of " + this.name)
@@ -319,7 +320,7 @@ trait SetNotificationTarget extends PropagationElement{
    * @param oldValue
    * @param newValue
    */
-  def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit
+  def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit
 
   def registerDynamicValueWiseDependency(s:SetValue):ValueWiseKey = {
     s match{
@@ -336,8 +337,8 @@ trait SetNotificationTarget extends PropagationElement{
 
 class ValueWiseKey(originalKey:KeyForElementRemoval,setValue:ChangingSetValue,var target:SetNotificationTarget){
 
-  val sizeOfSet:Int = cbls.longToInt(setValue.max - setValue.min + 1L)
-  val offset:Int = cbls.longToInt(setValue.min)
+  val sizeOfSet:Int = setValue.max - setValue.min + 1
+  val offset:Int = setValue.min
   var currentValueWisePropagationWaveIdentifier:ValueWisePropagationWaveIdentifier = null
 
   def performRemove(){
@@ -348,22 +349,22 @@ class ValueWiseKey(originalKey:KeyForElementRemoval,setValue:ChangingSetValue,va
     originalKey.performRemove()
   }
 
-  val minValue:Long = setValue.min
-  val maxValue:Long = setValue.max
+  val minValue:Int = setValue.min
+  val maxValue:Int = setValue.max
 
   var valueToKey:RedBlackTreeMap[DLLStorageElement[ValueWiseKey]] = RedBlackTreeMap.empty
   //val valueToKeyArray = Array.fill[DLLStorageElement[ValueWiseKey]](sizeOfSet)(null)
 
-  def addToKey(value:Long) {
+  def addToKey(value:Int) {
     if(!(minValue <= value  && value <= maxValue)) return
-    val intValue = cbls.longToInt(value)
+    val intValue = value
     require(!valueToKey.contains(intValue))
     valueToKey = valueToKey.insert(intValue,setValue.addToValueWiseKeys(this,intValue))
   }
 
-  def removeFromKey(value:Long){
+  def removeFromKey(value:Int){
     if(!(minValue <= value  && value <= maxValue)) return
-    val intValue = cbls.longToInt(value)
+    val intValue = value
     val k = valueToKey.get(intValue).get
     k.delete()
     valueToKey = valueToKey.remove(intValue)
@@ -371,9 +372,9 @@ class ValueWiseKey(originalKey:KeyForElementRemoval,setValue:ChangingSetValue,va
 }
 
 case object DoNothingValueWiseKey extends ValueWiseKey(DummyKeyForElementRemoval,null,null){
-  override def addToKey(value : Long){}
+  override def addToKey(value : Int){}
 
-  override def removeFromKey(value : Long){}
+  override def removeFromKey(value : Int){}
 }
 
 
@@ -389,7 +390,7 @@ object ChangingSetValue{
   * @param initialValue is the initial value of the variable
   * @param n is the name of the variable, used for pretty printing only. if not set, a default will be used, based on the variable number
   * */
-class CBLSSetVar(givenModel: Store, initialValue: SortedSet[Long], initialDomain:Domain, n: String = null)
+class CBLSSetVar(givenModel: Store, initialValue: SortedSet[Int], initialDomain:Domain, n: String = null)
   extends ChangingSetValue(initialValue, initialDomain) with Variable{
 
   require(givenModel != null)
@@ -400,40 +401,40 @@ class CBLSSetVar(givenModel: Store, initialValue: SortedSet[Long], initialDomain
 
   override def name: String = if (n == null) defaultName else n
 
-  override def :=(v:SortedSet[Long]) {setValue(v)}
+  override def :=(v:SortedSet[Int]) {setValue(v)}
 
-  override def :+=(i:Long) {this.insertValue(i)}
-  override def :-=(i:Long) {this.deleteValue(i)}
+  override def :+=(i:Int) {this.insertValue(i)}
+  override def :-=(i:Int) {this.deleteValue(i)}
 
   def <==(i: SetValue) {IdentitySet(this,i)}
 
-  override def insertValue(v : Long) : Unit = super.insertValue(v)
+  override def insertValue(v : Int) : Unit = super.insertValue(v)
 
-  override def insertValueNotPreviouslyIn(v : Long) : Unit = super.insertValueNotPreviouslyIn(v)
+  override def insertValueNotPreviouslyIn(v : Int) : Unit = super.insertValueNotPreviouslyIn(v)
 
-  override def deleteValue(v : Long) : Unit = super.deleteValue(v)
+  override def deleteValue(v : Int) : Unit = super.deleteValue(v)
 
-  override def deleteValues(values : Iterable[Long]) : Unit = super.deleteValues(values)
+  override def deleteValues(values : Iterable[Int]) : Unit = super.deleteValues(values)
 
-  override def insertValues(values : Iterable[Long]) : Unit = super.insertValues(values)
+  override def insertValues(values : Iterable[Int]) : Unit = super.insertValues(values)
 
-  override def deleteValuePreviouslyIn(v : Long) : Unit = super.deleteValuePreviouslyIn(v)
+  override def deleteValuePreviouslyIn(v : Int) : Unit = super.deleteValuePreviouslyIn(v)
 
   /** We suppose that the new value is not the same as the actual value.
     * otherwise, there is a huge waste of time.
     * @param v the new value to set to the variable
     */
-  override def setValue(v : SortedSet[Long]) : Unit = super.setValue(v)
+  override def setValue(v : SortedSet[Int]) : Unit = super.setValue(v)
 
-  override def value : SortedSet[Long] = super.value
+  override def value : SortedSet[Int] = super.value
 }
 
 object CBLSSetVar{
   //this conversion is forbidden because we inserted the new grammar.
-  //implicit def toIntSet(v:IntSetVar):SortedSet[Long] = v.value
+  //implicit def toIntSet(v:IntSetVar):SortedSet[Int] = v.value
 
-  def apply(s:Store, v:Iterable[Long] = List.empty, d:Domain=FullRange, name:String="") = {
-    val emptySet:SortedSet[Long] = SortedSet.empty
+  def apply(s:Store, v:Iterable[Int] = List.empty, d:Domain=FullIntRange, name:String="") = {
+    val emptySet:SortedSet[Int] = SortedSet.empty
     new CBLSSetVar(s, emptySet ++ v, d, name)
   }
 
@@ -443,7 +444,7 @@ object CBLSSetVar{
 }
 
 object CBLSSetConst {
-  def apply(value : SortedSet[Long]) = new CBLSSetConst(value)
+  def apply(value : SortedSet[Int]) = new CBLSSetConst(value)
 }
 
 /**
@@ -452,20 +453,20 @@ object CBLSSetConst {
  * @param value: the value of the constant
  * @author renaud.delandtsheer@cetic.be
  * */
-class CBLSSetConst(override val value:SortedSet[Long])
+class CBLSSetConst(override val value:SortedSet[Int])
   extends SetValue{
   override def toString:String = "Set{" + value.mkString(",") + "}"
   override def domain:Domain = DomainRange(value.min,value.max)
-  override val min: Long = if (value.isEmpty) Long.MaxValue else value.min
-  override val max: Long = if(value.isEmpty) Long.MinValue else value.max
+  override val min: Int = if (value.isEmpty) Int.MaxValue else value.min
+  override val max: Int = if(value.isEmpty) Int.MinValue else value.max
   override def name: String = toString
 }
 
 /*
 * @author renaud.delandtsheer@cetic.be
  */
-abstract class SetInvariant(initialValue:SortedSet[Long] = SortedSet.empty,
-                            initialDomain:Domain = FullRange)
+abstract class SetInvariant(initialValue:SortedSet[Int] = SortedSet.empty,
+                            initialDomain:Domain = DomainRange(0, Int.MaxValue))
   extends ChangingSetValue(initialValue, initialDomain)
   with Invariant {
 
@@ -513,7 +514,7 @@ class IdentitySet(toValue:CBLSSetVar, fromValue:ChangingSetValue)
 
   toValue := fromValue.value
 
-  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
     assert(v == this.fromValue)
     for(added <- addedValues)toValue.insertValueNotPreviouslyIn(added)
     for(deleted <- removedValues) toValue.deleteValuePreviouslyIn(deleted)

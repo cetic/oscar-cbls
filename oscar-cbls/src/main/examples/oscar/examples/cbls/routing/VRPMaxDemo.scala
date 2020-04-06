@@ -44,7 +44,7 @@ object VRPMaxDemo extends App {
   new VRPMaxDemo(n,v,maxPivotPerValuePercent,verbose,displayDelay, mapSide)
 }
 
-class VRPMaxDemo(n:Long, v:Long, maxPivotPerValuePercent:Long, verbose:Long, displayDelay:Long, mapSide:Long) extends StopWatch{
+class VRPMaxDemo(n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, displayDelay:Int, mapSide:Int) extends StopWatch{
 
 
   val minLat = 50.404631
@@ -95,11 +95,11 @@ class VRPMaxDemo(n:Long, v:Long, maxPivotPerValuePercent:Long, verbose:Long, dis
 
   model.close()
 
-  val relevantPredecessorsOfNodes = (node:Long) => myVRP.nodes
+  val relevantPredecessorsOfNodes = (node:Int) => myVRP.nodes
   val closestRelevantNeighborsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistanceMatrix,relevantPredecessorsOfNodes)(_))
 
-  val routedPostFilter = (node:Long) => (neighbor:Long) => myVRP.isRouted(neighbor)
-  val unRoutedPostFilter = (node:Long) => (neighbor:Long) => !myVRP.isRouted(neighbor)
+  val routedPostFilter = (node:Int) => (neighbor:Int) => myVRP.isRouted(neighbor)
+  val unRoutedPostFilter = (node:Int) => (neighbor:Int) => !myVRP.isRouted(neighbor)
 
   val routeUnroutedPoint =  profile(insertPointUnroutedFirst(myVRP.unrouted,
     ()=>myVRP.kFirst(10,closestRelevantNeighborsByDistance(_),routedPostFilter),
@@ -125,7 +125,7 @@ class VRPMaxDemo(n:Long, v:Long, maxPivotPerValuePercent:Long, verbose:Long, dis
     neighborhoodName = "InsertRF")
     guard(() => myVRP.routed.value.size < n/2))
 
-  def onePtMove(k:Long) = profile(onePointMove(
+  def onePtMove(k:Int) = profile(onePointMove(
     myVRP.routed,
     () => myVRP.kFirst(k,closestRelevantNeighborsByDistance(_),routedPostFilter),
     myVRP,
@@ -133,7 +133,7 @@ class VRPMaxDemo(n:Long, v:Long, maxPivotPerValuePercent:Long, verbose:Long, dis
 
   val customTwoOpt = profile(twoOpt(myVRP.routed, ()=>myVRP.kFirst(40,closestRelevantNeighborsByDistance(_),routedPostFilter), myVRP))
 
-  def customThreeOpt(k:Long, breakSym:Boolean) =
+  def customThreeOpt(k:Int, breakSym:Boolean) =
     profile(threeOpt(myVRP.routed, ()=>myVRP.kFirst(k,closestRelevantNeighborsByDistance(_),routedPostFilter), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
   val vlsn1pt = mu[OnePointMoveMove](
@@ -142,7 +142,7 @@ class VRPMaxDemo(n:Long, v:Long, maxPivotPerValuePercent:Long, verbose:Long, dis
     intermediaryStops = true,
     maxDepth = 6)
 
-  def segExchange(k:Long) = segmentExchange(myVRP,()=>myVRP.kFirst(k,closestRelevantNeighborsByDistance(_),routedPostFilter), () => myVRP.vehicles)
+  def segExchange(k:Int) = segmentExchange(myVRP,()=>myVRP.kFirst(k,closestRelevantNeighborsByDistance(_),routedPostFilter), () => myVRP.vehicles)
 
   val search = (
     bestSlopeFirst(List(

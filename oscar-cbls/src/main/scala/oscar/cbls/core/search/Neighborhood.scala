@@ -630,7 +630,7 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
 
 class ObjWithStringGenerator(obj: Objective, additionalStringGenerator: () => String) extends Objective {
   override def detailedString(short: Boolean, indent: Long): String = {
-    obj.detailedString(short,indent)+ "\n" + nSpace(indent) + additionalStringGenerator().split("\\R",-1L).mkString("\n" + nSpace(indent)) + "\n"
+    obj.detailedString(short,indent)+ "\n" + nSpace(indent) + additionalStringGenerator().split("\\R",-1).mkString("\n" + nSpace(indent)) + "\n"
   }
 
   override def model: Store = obj.model

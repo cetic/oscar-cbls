@@ -46,8 +46,8 @@ import oscar.cbls._
  * @author yoann.guyot@cetic.be
  * @author Florent Ghilain (UMONS)
  */
-case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Long], //must be routed
-                    relevantNeighbors:()=>Long=>Iterable[Long], //must be routed
+case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
+                    relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
                     vrp: VRP,
                     neighborhoodName:String = "ThreeOpt",
                     selectInsertionPointBehavior:LoopBehavior = First(),
@@ -60,7 +60,7 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Long], //must be route
   extends EasyNeighborhoodMultiLevel[ThreeOptMove](neighborhoodName) {
 
   //the indice to start with for the exploration
-  var startIndice: Long = 0
+  var startIndice: Int = 0
 
   val v = vrp.v
   val seq = vrp.routes
@@ -82,7 +82,7 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Long], //must be route
 
     val nodeToVehicle = vrp.vehicleOfNode.map(_.value)
 
-    var insertionPoint = -1L
+    var insertionPoint = -1
     for (insertionPointTmp <- iterationSchemeOnZone){
       insertionPoint = insertionPointTmp
 
@@ -93,9 +93,9 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Long], //must be route
           val vehicleForInsertion = nodeToVehicle(insertionPoint)
 
           val relevantNeighbors = relevantNeighborsNow(insertionPoint)
-          val routedRelevantNeighbors = relevantNeighbors.filter((neighbor : Long) => nodeToVehicle(neighbor) != -1L && neighbor != insertionPoint && neighbor > v)
+          val routedRelevantNeighbors = relevantNeighbors.filter((neighbor : Int) => nodeToVehicle(neighbor) != -1L && neighbor != insertionPoint && neighbor > v)
 
-          val (routedRelevantNeighborsByVehicle,notifyFound2) = selectMovedSegmentBehavior.toIterable(routedRelevantNeighbors.groupBy((i : Long) => nodeToVehicle(i)).toList)
+          val (routedRelevantNeighborsByVehicle,notifyFound2) = selectMovedSegmentBehavior.toIterable(routedRelevantNeighbors.groupBy((i : Int) => nodeToVehicle(i)).toList)
 
           for((vehicleOfMovedSegment,relevantNodes) <- routedRelevantNeighborsByVehicle if vehicleOfMovedSegment != v){
             val pairsOfNodesWithPosition = Pairs.makeAllSortedPairs(relevantNodes.map(node => (node,seqValue.positionOfAnyOccurrence(node).head)).toList)
@@ -141,14 +141,14 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Long], //must be route
       }
     }
     seq.releaseTopCheckpoint()
-    startIndice = insertionPoint + 1L
-    segmentStartPositionForInstantiation = -1L
+    startIndice = insertionPoint + 1
+    segmentStartPositionForInstantiation = -1
   }
 
-  var segmentStartPositionForInstantiation:Long = -1L
-  var segmentEndPositionForInstantiation:Long = -1L
-  var insertionPointPositionForInstantiation:Long = -1L
-  var insertionPointForInstantiation:Long = -1L
+  var segmentStartPositionForInstantiation:Int = -1
+  var segmentEndPositionForInstantiation:Int = -1
+  var insertionPointPositionForInstantiation:Int = -1
+  var insertionPointForInstantiation:Int = -1
   var flipForInstantiation:Boolean = false
 
   override def instantiateCurrentMove(newObj: Long) =
@@ -163,26 +163,26 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Long], //must be route
 
   //this resets the internal state of the Neighborhood
   override def reset(){
-    startIndice = 0L
+    startIndice = 0
   }
 
-  def doMove(insertionPosition: Long, segmentStartPosition: Long, segmentEndPosition: Long, flip: Boolean) {
+  def doMove(insertionPosition: Int, segmentStartPosition: Int, segmentEndPosition: Int, flip: Boolean) {
     seq.move(segmentStartPosition,segmentEndPosition,insertionPosition,flip)
   }
 }
 
 
-case class ThreeOptMove(segmentStartPosition:Long,
-                        segmentEndPosition:Long,
-                        insertionPointPosition: Long,
-                        insertionPoint:Long,
+case class ThreeOptMove(segmentStartPosition:Int,
+                        segmentEndPosition:Int,
+                        insertionPointPosition: Int,
+                        insertionPoint:Int,
                         flipSegment: Boolean,
                         override val objAfter: Long,
                         override val neighborhood:ThreeOpt,
                         override val neighborhoodName:String = "ThreeOptMove")
   extends VRPSMove(objAfter, neighborhood, neighborhoodName,neighborhood.vrp){
 
-  override def impactedPoints: Iterable[Long] = QList(insertionPoint,neighborhood.vrp.routes.value.valuesBetweenPositionsQList(segmentStartPosition,segmentEndPosition))
+  override def impactedPoints: Iterable[Int] = QList(insertionPoint,neighborhood.vrp.routes.value.valuesBetweenPositionsQList(segmentStartPosition,segmentEndPosition))
 
   // overriding methods
   override def commit() {

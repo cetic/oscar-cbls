@@ -26,7 +26,7 @@ import oscar.cbls.core.propagation.Checker
 import scala.collection.immutable.{SortedMap, SortedSet}
 
 /**
-  * Factory for [[oscar.cbls.lib.invariant.graph.KVoronoiZones]] 
+  * Factory for [[oscar.cbls.invariant.graph.KVoronoiZones]] 
   * 
   */
 
@@ -41,7 +41,7 @@ object KVoronoiZones {
    * - a set of centroids
    * This invariant computes for each node of the graph the k centroids that are closest to the node and the associated distance.
    * 
-   * See [[oscar.cbls.lib.invariant.graph.KVoronoiZones]] for more informations
+   * See [[oscar.cbls.invariant.graph.KVoronoiZones]] for more informations
    * 
    * @param graph The conditional Graph
    * @param openConditions The oscar set variable that contains the edges that are open
@@ -57,21 +57,18 @@ object KVoronoiZones {
             openConditions: SetValue,
             centroids: SetValue,
             k: Int,
-            trackedNodes: Iterable[Long],
+            trackedNodes: Iterable[Int],
             m: Store,
             defaultDistanceForUnreachableNode: Long,
-            defaultCentroidForUnreachableNode: Long = -1
+            defaultCentroidForUnreachableNode: Int = -1
             ) : KVoronoiZones = {
 
-
-    val maxCentroid = defaultCentroidForUnreachableNode max centroids.domain.max
-
-    val trackedNodesMap = SortedMap.empty[Long,Array[(CBLSIntVar,CBLSIntVar)]] ++ trackedNodes.map(
-      (nodeId: Long) => {
+    val trackedNodesMap = SortedMap.empty[Int,Array[(CBLSIntVar,CBLSIntVar)]] ++ trackedNodes.map(
+      (nodeId: Int) => {
         nodeId ->
           Array.tabulate(k)((centroidI: Int) => {
-            (new CBLSIntVar(m, defaultCentroidForUnreachableNode, Domain(-1L, maxCentroid), "closest centroid number " + centroidI + " for node " + nodeId),
-              new CBLSIntVar(m, defaultDistanceForUnreachableNode, Domain(-1L, defaultDistanceForUnreachableNode), "distance to centroid number " + centroidI + " for node " + nodeId))
+            (new CBLSIntVar(m, defaultCentroidForUnreachableNode, Domain(0L, defaultCentroidForUnreachableNode max Long.MaxValue), "closest centroid number " + centroidI + " for node " + nodeId),
+              new CBLSIntVar(m, defaultDistanceForUnreachableNode, Domain(0L, defaultDistanceForUnreachableNode max Long.MaxValue), "distance to centroid number " + centroidI + " for node " + nodeId))
           })
       })
 
@@ -85,8 +82,6 @@ object KVoronoiZones {
 
 
   }
-
-
 }
 
 
@@ -126,9 +121,9 @@ object KVoronoiZones {
 class KVoronoiZones(graph:ConditionalGraph,
                     openConditions:SetValue,
                     val centroids:SetValue,
-                    val trackedNodeToDistanceAndCentroidMap:SortedMap[Long,Array[(CBLSIntVar,CBLSIntVar)]],
+                    val trackedNodeToDistanceAndCentroidMap:SortedMap[Int,Array[(CBLSIntVar,CBLSIntVar)]],
                     k : Int,
-                    defaultCentroidForUnreachableNode : Long = -1,
+                    defaultCentroidForUnreachableNode : Int = -1,
                     defaultDistanceForUnreachableNode : Long)
   extends Invariant with SetNotificationTarget{
 
@@ -137,7 +132,7 @@ class KVoronoiZones(graph:ConditionalGraph,
   registerStaticAndDynamicDependency(openConditions)
   finishInitialization()
 
-  private val maxNbOfCentroids = centroids.domain.max - centroids.domain.min
+
 
   val trackedNodeToDistanceAndCentroid : Array[Array[(CBLSIntVar,CBLSIntVar)]] =
     Array.tabulate(graph.nbNodes)((nodeID : Int) => {
@@ -167,7 +162,7 @@ class KVoronoiZones(graph:ConditionalGraph,
           index = k
         } else {
           if (distance < trackedNodeToDistanceAndCentroid(nodeID)(index)._2.newValue || (distance == trackedNodeToDistanceAndCentroid(nodeID)(index)._2.newValue && centroidID < trackedNodeToDistanceAndCentroid(nodeID)(index)._1.newValue)) {
-            val savedCentroid = trackedNodeToDistanceAndCentroid(nodeID)(index)._1.newValue
+            val savedCentroid = trackedNodeToDistanceAndCentroid(nodeID)(index)._1.newValueInt
             val savedDistance = trackedNodeToDistanceAndCentroid(nodeID)(index)._2.newValue
             trackedNodeToDistanceAndCentroid(nodeID)(index)._1 := centroidToInsert
             trackedNodeToDistanceAndCentroid(nodeID)(index)._2 := distanceToInsert
@@ -255,7 +250,7 @@ class KVoronoiZones(graph:ConditionalGraph,
         true
     }
 
-    private def insertLabelInCentroidList(l : NodeLabeling,listOfCentroid : List[NodeLabeling],shift : Long,i : Long = nbOfLabeledCentroid - 1) : List[NodeLabeling] = {
+    private def insertLabelInCentroidList(l : NodeLabeling,listOfCentroid : List[NodeLabeling],shift : Long,i : Int = nbOfLabeledCentroid - 1) : List[NodeLabeling] = {
       listOfCentroid match {
         case Nil => l::Nil
         case head::tail =>
@@ -371,6 +366,8 @@ class KVoronoiZones(graph:ConditionalGraph,
     }
   }
 
+  private val nodeHeapToTreateToto = new BinomialHeapWithMove[NodeLabeling](totreate => totreate.distance,graph.nbNodes * centroids.domain.iterator.length)
+
   class NodeLabelingMap extends scala.collection.mutable.Map[NodeLabeling,Int] {
     def get(k : NodeLabeling):Option[Int] = {
       if (k.positionInHeapMap == -1)
@@ -396,7 +393,7 @@ class KVoronoiZones(graph:ConditionalGraph,
 
   //private val nodeHeapToTreate = new BinomialHeapWithMoveExtMem[NodeLabeling](totreate => totreate.distance,graph.nbNodes * centroids.domain.size,nodeLabelingMap)
 
-  private val nodeHeapToTreate = new BinomialHeapWithMove[NodeLabeling](totreate => totreate.distance,graph.nbNodes * maxNbOfCentroids)
+  private val nodeHeapToTreate = new BinomialHeapWithMove[NodeLabeling](totreate => totreate.distance,graph.nbNodes * centroids.domain.sizeInt)
 
   val nodeLabeling = Array.tabulate(graph.nbNodes)(nodeIndex => KClosestCentroidLabeling(graph.nodes(nodeIndex)))
   centroids.value.foreach(index =>
@@ -630,46 +627,32 @@ class KVoronoiZones(graph:ConditionalGraph,
 
   override def notifySetChanges(v: ChangingSetValue,
                                 id: Int,
-                                addedValues: Iterable[Long],
-                                removedValues: Iterable[Long],
-                                oldValue: SortedSet[Long],
-                                newValue: SortedSet[Long]): Unit = {
+                                addedValues: Iterable[Int],
+                                removedValues: Iterable[Int],
+                                oldValue: SortedSet[Int],
+                                newValue: SortedSet[Int]): Unit = {
     val printtikz = false
     i = i + 1
     //println(Array.tabulate(graph.nbNodes)(i => i + " : " + nodeLabeling(i).centroidList.mkString(",")).mkString("\n"))
-    // println("Centroids : " + centroids.value.mkString(","))
-    // println("Conditions : " + openConditions.value.mkString(","))
+    //println("Centroids : " + centroids.value.mkString(","))
+    //println("Conditions : " + openConditions.value.mkString(","))
     //println("notify")
     if (v == centroids) {
-      // println("centroid")
-
-//      println("Centroids : " + centroids.value.mkString(","))
-//      println(nodeLabeling(9).centroidList.mkString(";"))
-//      println(graph.nodes(9).incidentEdges.map(e => e.otherNode(graph.nodes(9)).id.toString + " : " + nodeLabeling(e.otherNode(graph.nodes(9)).id).centroidList.mkString(";")).mkString("\n"))
-
-      /// BEWARE : The order for the two following matters :
-      ///          Example : imagine the node 10, which is a potential centroid, labelled with (0,9,8) (k = 3)
-      ///                    imagine we add 10 and remove 9 :
-      ///                       - When we add 10, we will eject the last centroid if the set of centroid (it will become (10,0,9)
-      ///                       - When we remove 9, it will become (10,0,-)
-      ///                    but remove 9 and then add 10 :
-      ///                       - When we remove 9, it will become (0,8,-)
-      ///                       - When we add 10, it becomes (10,0,8)
-      ///          The idea is that, when we add a node, it can eject nodes that will not "come back" when removing other node.
-      ///          But if we remove first, it will make the exact place available
-      for (removed <- removedValues) {
-        // println("removed : " + removed)
-        createHoleAndLoadBoundaryIntoHeap(graph.nodes(removed), graph.nodes(removed))
-      }
+      //println("centroid")
 
       for (added <- addedValues) {
-        // println("added : " + added)
+        //println("added : " + added)
         //TODO  Ajouter les voisins dans le tas pour se couvrir en cas de suppression d'un centroid
         tryLabelNode(graph.nodes(added), 0, graph.nodes(added))
       }
 
-
-
+//      println("Centroids : " + centroids.value.mkString(","))
+//      println(nodeLabeling(9).centroidList.mkString(";"))
+//      println(graph.nodes(9).incidentEdges.map(e => e.otherNode(graph.nodes(9)).id.toString + " : " + nodeLabeling(e.otherNode(graph.nodes(9)).id).centroidList.mkString(";")).mkString("\n"))
+      for (removed <- removedValues) {
+        //println("removed : " + removed)
+        createHoleAndLoadBoundaryIntoHeap(graph.nodes(removed), graph.nodes(removed))
+      }
       //println(nodeHeapToTreate.getElements.mkString("\n"))
       ///println(nodeHeapToTreate.getElements.filter(e => e.centroid.id == 4))
       //println(Array.tabulate(graph.nbNodes)(i => i + " : " + nodeLabeling(i).centroidHeap.getElements.mkString(";")).mkString("\n"))
@@ -747,12 +730,12 @@ class KVoronoiZones(graph:ConditionalGraph,
       // println("Found Centroids iteratif map : " + nodeLabeling(node.id).centroidMap.iterator.map(e => e._2).mkString(";"))
       // println("Found Centroids iteratif List : " + nodeLabeling(node.id).centroidList.mkString(";"))
       if (trackedNodeToDistanceAndCentroid(node.id) != null)
-       // println("Tracked Centroid and distance : " + trackedNodeToDistanceAndCentroid(node.id).map(e => e._1.toString + "-" + e._2).mkString(";"))
+//        println("Tracked Centroid and distance : " + trackedNodeToDistanceAndCentroid(node.id).map(e => e._1.toString + "-" + e._2).mkString(";"))
       require(fromScratchNodeLabeling.nbOfLabeledCentroid == nodeLabeling(node.id).nbOfLabeledCentroid,"node " + node.id + " : Nb of Centroid - From Scratch : " + fromScratchNodeLabeling.nbOfLabeledCentroid + " != Incremental : " + nodeLabeling(node.id).nbOfLabeledCentroid)
       require(nodeLabeling(node.id).centroidList.length == nodeLabeling(node.id).nbOfLabeledCentroid)
       require(nodeLabeling(node.id).centroidMap.iterator.toList.length == nodeLabeling(node.id).nbOfLabeledCentroid,"Node " + node.id + " : Nb of Centroid: " + nodeLabeling(node.id).nbOfLabeledCentroid + " -- Length of centroid list: " + nodeLabeling(node.id).centroidMap.iterator.toList.length)
 
-      def checkCentroidLists(cLIncrementale : List[NodeLabeling],cLFromScratch : List[NodeLabeling], i : Long = 0) : Unit = {
+      def checkCentroidLists(cLIncrementale : List[NodeLabeling],cLFromScratch : List[NodeLabeling], i : Int = 0) : Unit = {
         cLIncrementale match {
           case Nil => require(cLFromScratch == Nil,"centroid list incrementale is empty while centroid list from scratch still has centroids: " + cLFromScratch.mkString(";"))
           case labelInc :: tailInc => require(cLFromScratch != Nil,"centroid list from scratch is empty while centroid list incremental still has centroids: " + cLIncrementale.mkString(";"))

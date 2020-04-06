@@ -470,6 +470,16 @@ object InvariantHelper{
     (MyMin, MyMax)
   }
 
+  def getMinMaxBoundsShort(variables:Iterable[IntValue]):(Int,Int) = {
+    var MyMax = Int.MinValue
+    var MyMin = Int.MaxValue
+    for (v <- variables) {
+      if (MyMax < v.max) MyMax = v.longToInt(v.max)
+      if (MyMin > v.min) MyMin = v.longToInt(v.min)
+    }
+    (MyMin, MyMax)
+  }
+
   def getMinMaxBoundsInt(variables:Iterable[Long]):(Long,Long) = {
     var MyMax = Long.MinValue
     var MyMin = Long.MaxValue
@@ -480,9 +490,19 @@ object InvariantHelper{
     (MyMin, MyMax)
   }
 
-  def getMinMaxBoundsSet(variables:Iterable[SetValue]):(Long,Long) = {
-    var myMax = Long.MinValue
-    var myMin = Long.MaxValue
+  def getMinMaxBoundsShortInt(variables: Iterable[Int]):(Int,Int)={
+    var MyMax = Int.MinValue
+    var MyMin = Int.MaxValue
+    for (v <- variables) {
+      if (MyMax < v) MyMax = v
+      if (MyMin > v) MyMin = v
+    }
+    (MyMin, MyMax)
+  }
+
+  def getMinMaxBoundsSet(variables:Iterable[SetValue]):(Int,Int) = {
+    var myMax = Int.MinValue
+    var myMin = Int.MaxValue
     for (v <- variables) {
       if (myMax < v.max) myMax = v.max
       if (myMin > v.min) myMin = v.min

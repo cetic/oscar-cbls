@@ -76,7 +76,7 @@ object WLPWithRedundancy extends App with StopWatch{
     openEdges,
     openWarehouses,
     k,
-    deliveryToNode.map(_.id.toLong),
+    deliveryToNode.map(_.id),
     m,
     defaultDistanceForUnreachableNode = 1000
   )
@@ -108,9 +108,9 @@ object WLPWithRedundancy extends App with StopWatch{
   visual.redrawMultipleNodes(
     openEdges.value,
     openWarehouses.value,
-    distanceToClosestCentroidMap.mapValues(tab => tab.map(centroidAndDistance => centroidAndDistance._1.value)),
+    distanceToClosestCentroidMap.mapValues(tab => tab.map(centroidAndDistance => centroidAndDistance._1.valueInt)),
     k,
-    extraCentroids = (0L until W).toArray,
+    extraCentroids = (0 until W).toArray,
     extraPath = List()
   )
 
@@ -126,7 +126,7 @@ object WLPWithRedundancy extends App with StopWatch{
   val distanceMatrixAllEdgeOpen = DijkstraDistanceMatrix.buildDistanceMatrix(graph,_ => true)
   println("Time to compute matrix: " + (System.currentTimeMillis() - timeStartingModel))
 
-  val warehouseToWarehouseDistance = Array.tabulate(W)(w1 => Array.tabulate(W)(w2 => w2.toLong).sortWith((w2_1 : Long,w2_2 : Long) => distanceMatrixAllEdgeOpen(w1)(w2_1) < distanceMatrixAllEdgeOpen(w1)(w2_2)))
+  val warehouseToWarehouseDistance = Array.tabulate(W)(w1 => Array.tabulate(W)(w2 => w2).sortWith((w2_1 : Int,w2_2 : Int) => distanceMatrixAllEdgeOpen(w1)(w2_1) < distanceMatrixAllEdgeOpen(w1)(w2_2)))
 
   def kNearestOpenWarehouse(k : Int,w : Int) = KSmallest.kFirst(k,warehouseToWarehouseDistance(w),warehouseOpenArray(_).value == 1)
   def kNearestClosedWarehouse(k : Int,w : Int) = KSmallest.kFirst(k,warehouseToWarehouseDistance(w),warehouseOpenArray(_).value == 0)
@@ -136,7 +136,7 @@ object WLPWithRedundancy extends App with StopWatch{
     SwapsNeighborhood(warehouseOpenArray,
       name = "SwapWarehouse with " + k + " Closest",
       searchZone1 = () => openWarehouses.value,
-      searchZone2 = () => (w : Long,_ : Long) => kNearestClosedWarehouse(k,w))
+      searchZone2 = () => (w : Int,_ : Int) => kNearestClosedWarehouse(k,w))
 
   def makeAssignClose(assign: AssignMove,k : Int) = {
     AssignNeighborhood(warehouseOpenArray,name = "assign Close",searchZone = () => kNearestClosedWarehouse(k,assign.id))
@@ -147,7 +147,7 @@ object WLPWithRedundancy extends App with StopWatch{
     profile(AssignNeighborhood(warehouseOpenArray,name = "Open 3 close Warehouses",searchZone = () => closedWarehouses.value) dynAndThen ((move : AssignMove) => makeAssignClose(move,10) andThen makeAssignClose(move,10)))
 
   val warehouseToEdgesDistance =
-    Array.tabulate(W)(w1 => Array.tabulate(nbConditionalEdges)(c => c.toLong).sortWith((c1 : Long, c2 : Long) =>
+    Array.tabulate(W)(w1 => Array.tabulate(nbConditionalEdges)(c => c).sortWith((c1 : Int, c2 : Int) =>
       (distanceMatrixAllEdgeOpen(w1)(graph.conditionToConditionalEdges(c1).nodeA.id) min distanceMatrixAllEdgeOpen(w1)(graph.conditionToConditionalEdges(c1).nodeB.id)) < (distanceMatrixAllEdgeOpen(w1)(graph.conditionToConditionalEdges(c1).nodeA.id) min distanceMatrixAllEdgeOpen(w1)(graph.conditionToConditionalEdges(c1).nodeB.id))))
 
   def kNearestEdges(k : Int,w : Int) = KSmallest.kFirst(k,warehouseToEdgesDistance(w))
@@ -179,10 +179,10 @@ object WLPWithRedundancy extends App with StopWatch{
         visual.redrawMultipleNodes(
           openEdges.value,
           openWarehouses.value,
-          distanceToClosestCentroidMap.mapValues(tab => tab.map(centroidAndDistance => centroidAndDistance._1.value)),
+          distanceToClosestCentroidMap.mapValues(tab => tab.map(centroidAndDistance => centroidAndDistance._1.valueInt)),
           k,
           extraPath = List(),
-          extraCentroids = (0L until W).toArray)
+          extraCentroids = (0 until W).toArray)
         lastDisplay = this.getWatch
       })
 
@@ -202,9 +202,9 @@ object WLPWithRedundancy extends App with StopWatch{
   visual.redrawMultipleNodes(
     openEdges.value,
     openWarehouses.value,
-    distanceToClosestCentroidMap.mapValues(tab => tab.map(centroidAndDistance => {centroidAndDistance._1.value})),
+    distanceToClosestCentroidMap.mapValues(tab => tab.map(centroidAndDistance => {centroidAndDistance._1.valueInt})),
     k,
-    extraCentroids = (0L until W).toArray,
+    extraCentroids = (0 until W).toArray,
     extraPath = List()
   )
 

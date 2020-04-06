@@ -13,14 +13,14 @@ object NeighborhoodTestBench {
   var obj :Objective = _
   var problem :MockedVRP = null
 
-  def initTest(check :(Long,Long,IntSequence,IntSequence) => Unit) :(Store, MockedVRP,Objective,Array[Iterable[Long]],Long => Long => Boolean) = {
+  def initTest(check :(Long,Long,IntSequence,IntSequence) => Unit) :(Store, MockedVRP,Objective,Array[Iterable[Int]],Int => Int => Boolean) = {
     val nbNode = 30
     val nbVehicle = 15
     val model = Store()
     problem = new MockedVRP(check,model,nbNode,nbVehicle)
-    val relevantPredecessorsOfNodes = (node:Long) => problem.nodes
+    val relevantPredecessorsOfNodes = (node:Int) => problem.nodes
     val (symetricDistanceMatrix,_) = RoutingMatrixGenerator(nbNode)
-    val routedPostFilter = (node:Long) => (neighbor:Long) => problem.isRouted(neighbor)
+    val routedPostFilter = (node:Int) => (neighbor:Int) => problem.isRouted(neighbor)
     val closestRelevantNeighbors =
       Array.tabulate(nbNode)(DistanceHelper.lazyClosestPredecessorsOfNode(symetricDistanceMatrix,relevantPredecessorsOfNodes)(_))
 
@@ -31,14 +31,14 @@ object NeighborhoodTestBench {
     (model, problem, obj, closestRelevantNeighbors, routedPostFilter)
   }
 
-  class MockedVRP(check :(Long,Long,IntSequence,IntSequence) => Unit, m: Store, n: Int, v: Int, maxPivotPerValuePercent:Long = 4L) extends {
-    override val routes = new MockedCBLSSeqVar(check, m, IntSequence(0L until v), n-1L, "routes", maxPivotPerValuePercent=maxPivotPerValuePercent)
+  class MockedVRP(check :(Long,Long,IntSequence,IntSequence) => Unit, m: Store, n: Int, v: Int, maxPivotPerValuePercent:Int = 4) extends {
+    override val routes = new MockedCBLSSeqVar(check, m, IntSequence(0 until v), n-1, "routes", maxPivotPerValuePercent=maxPivotPerValuePercent)
   } with VRP(m,n,v,maxPivotPerValuePercent)
 
   class MockedCBLSSeqVar(val check :(Long,Long,IntSequence,IntSequence) => Unit,
                          givenModel:Store,
                          initialValue:IntSequence,
-                         maxVal:Long = Long.MaxValue,
+                         maxVal:Int = Int.MaxValue,
                          n: String = null,
                          maxPivotPerValuePercent:Int = 4,
                          maxHistorySize:Int = 50)
@@ -48,7 +48,7 @@ object NeighborhoodTestBench {
     var previousObj :Long = _
     var previousSeq :IntSequence = _
 
-    override def insertAtPosition(value:Long,pos:Int): Unit ={
+    override def insertAtPosition(value:Int,pos:Int): Unit ={
       super.insertAtPosition(value,pos)
 
       if(!firstRun)

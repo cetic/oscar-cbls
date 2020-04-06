@@ -54,7 +54,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
   val maxWorkloadPerVehicle = 2500
   val serviceTimePerNode = 100
-  val vehicles = 0L until v
+  val vehicles = 0 until v
 
   //val maxWorkloadPerVehicle = 4000
   //val serviceTimePerNode = 100
@@ -107,27 +107,27 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
     myVRP.toString +
       vehicles.map(vehicle => "workload_vehicle_" + vehicle + ": " + (100*vehicletoWorkload(vehicle).value.toDouble / maxWorkloadPerVehicle).ceil.toInt + " %" ).mkString("\n") + "\n" +obj
 
-  val relevantPredecessorsOfNodes = (node:Long) => myVRP.nodes
+  val relevantPredecessorsOfNodes = (node:Int) => myVRP.nodes
   val closestRelevantNeighborsByDistance = Array.tabulate(n)((node:Int) => DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistanceMatrix,relevantPredecessorsOfNodes)(node))
 
-  val routedPostFilter = (node:Long) => (neighbor:Long) => myVRP.isRouted(neighbor)
-  val unRoutedPostFilter = (node:Long) => (neighbor:Long) => !myVRP.isRouted(neighbor)
+  val routedPostFilter = (node:Int) => (neighbor:Int) => myVRP.isRouted(neighbor)
+  val unRoutedPostFilter = (node:Int) => (neighbor:Int) => !myVRP.isRouted(neighbor)
 
   def vlsn(l:Int = Int.MaxValue) = {
 
-    val lClosestNeighborsByDistance: Array[SortedSet[Long]] = Array.tabulate(n)(node =>
-      SortedSet.empty[Long] ++ myVRP.kFirst(l, (node:Long) => closestRelevantNeighborsByDistance(node))(node))
+    val lClosestNeighborsByDistance: Array[SortedSet[Int]] = Array.tabulate(n)(node =>
+      SortedSet.empty[Int] ++ myVRP.kFirst(l, (node:Int) => closestRelevantNeighborsByDistance(node))(node))
 
     //VLSN neighborhood
-    val nodeToAllVehicles = SortedMap.empty[Long, Iterable[Long]] ++ (v until n).map(node => (node:Long, vehicles))
+    val nodeToAllVehicles = SortedMap.empty[Int, Iterable[Int]] ++ (v until n).map(node => (node:Int, vehicles))
 
-    def routeUnroutedPointVLSN(targetVehicle: Long):(Long => Neighborhood) = {
+    def routeUnroutedPointVLSN(targetVehicle: Int):(Int => Neighborhood) = {
       if(vehicletoWorkload(targetVehicle).value + serviceTimePerNode > maxWorkloadPerVehicle){
         (_ => NoMoveNeighborhood)
       }else {
         val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(targetVehicle)
 
-        unroutedNodeToInsert:Long => {
+        unroutedNodeToInsert:Int => {
           val lNearestNodesOfTargetVehicle = nodesOfTargetVehicle.filter(x => lClosestNeighborsByDistance(unroutedNodeToInsert) contains x)
           insertPointUnroutedFirst(
             () => List(unroutedNodeToInsert),
@@ -142,13 +142,13 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
     }
 
     //targetVehicleNodeToMoveNeighborhood:Int => Int => Neighborhood,
-    def movePointVLSN(targetVehicle: Long):(Long => Neighborhood) = {
+    def movePointVLSN(targetVehicle: Int):(Int => Neighborhood) = {
       if(vehicletoWorkload(targetVehicle).value + serviceTimePerNode > maxWorkloadPerVehicle){
         (_ => NoMoveNeighborhood)
       }else {
         val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(targetVehicle)
 
-        nodeToMove:Long => {
+        nodeToMove:Int => {
           val lNearestNodesOfTargetVehicle = nodesOfTargetVehicle.filter(x => lClosestNeighborsByDistance(nodeToMove) contains x)
           onePointMove(
             () => List(nodeToMove),
@@ -162,7 +162,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
       }
     }
 
-    def removePointVLSN(node: Long) =
+    def removePointVLSN(node: Int) =
       removePoint(
         () => List(node),
         myVRP,
@@ -182,7 +182,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
         breakSymmetry = false).afterMove(graphical.drawRoutes())
     }
 
-    def removeAndReInsertVLSN(pointToRemove: Long): (() => Unit) = {
+    def removeAndReInsertVLSN(pointToRemove: Int): (() => Unit) = {
       val checkpointBeforeRemove = myVRP.routes.defineCurrentValueAsCheckpoint(true)
       require(pointToRemove >= v, "cannot remove vehicle point: " + v)
 
@@ -202,10 +202,10 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
     new VLSN(
       v,
-      () => SortedMap.empty[Long, SortedSet[Long]] ++
-        vehicles.map((vehicle: Long) =>
-          (vehicle:Long, SortedSet.empty[Long] ++ myVRP.getRouteOfVehicle(vehicle).filter(_ >= v))),
-      () => SortedSet.empty[Long] ++ myVRP.unroutedNodes,
+      () => SortedMap.empty[Int, SortedSet[Int]] ++
+        vehicles.map((vehicle: Int) =>
+          (vehicle:Int, SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(vehicle).filter(_ >= v))),
+      () => SortedSet.empty[Int] ++ myVRP.unroutedNodes,
       nodeToRelevantVehicles = () => nodeToAllVehicles,
 
       targetVehicleNodeToInsertNeighborhood = routeUnroutedPointVLSN,

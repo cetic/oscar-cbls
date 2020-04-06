@@ -13,7 +13,7 @@ import oscar.cbls.lib.search.combinators.{Atomic, BestSlopeFirst, Profile}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.visual.geometry.{GeometryDrawing, GeometryDrawingTypes}
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
-import oscar.cbls.{CBLSIntVar, Objective, Store, atomic, longToInt}
+import oscar.cbls.{CBLSIntVar, Objective, Store, atomic}
 
 import scala.util.Random
 
@@ -149,20 +149,20 @@ object TestGeometryPackingRot extends App with LinearSelectors{
   //declare a collection of neighborhoods
 
   def moveOneCoordNumeric = NumericAssignNeighborhood(flattenedCoordArray,"moveByOneCoord",
-    domainExplorer = () => (dXForDetivativeEvalution: Long, maxIt: Long) => new NewtonRaphsonMinimize(20, 10)
+    domainExplorer = () => (dXForDetivativeEvalution: Int, maxIt: Long) => new NewtonRaphsonMinimize(20, 10)
     //these are alternative methods for the numerical optimization
     //new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
 
   def moveXNumeric = NumericAssignNeighborhood(coordArray.map(_._1),"moveX",
-    domainExplorer = () => (dividingRatio: Long, minStep: Long) => new NarrowingExhaustive(dividingRatio = 10, minStep = 1)
+    domainExplorer = () => (dividingRatio: Int, minStep: Long) => new NarrowingExhaustive(dividingRatio = 10, minStep = 1)
     //these are alternative methods for the numerical optimization
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
 
   def smallSlideY(shapeID:Int) = NumericAssignNeighborhood(Array(coordArray(shapeID)._2),"moveYSlave",
-    domainExplorer = () => (step: Long, maxIt: Long) => new Slide(step=1,maxIt=20)
+    domainExplorer = () => (step: Int, maxIt: Long) => new Slide(step=1,maxIt=20)
     //these are alternative methods for the numerical optimization
     // new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
     // new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
@@ -170,19 +170,19 @@ object TestGeometryPackingRot extends App with LinearSelectors{
 
   def moveYNumeric = NumericAssignNeighborhood(coordArray.map(_._2),"moveY",
     //these are alternative methods for the numerical optimization
-    domainExplorer = () => (dividingRatio: Long, minStep: Long) => new NarrowingExhaustive(dividingRatio = 10, minStep = 1)
+    domainExplorer = () => (dividingRatio: Int, minStep: Long) => new NarrowingExhaustive(dividingRatio = 10, minStep = 1)
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
 
   def smallSlideX(circleID:Int) = NumericAssignNeighborhood(Array(coordArray(circleID)._1),"moveXSlave",
-    domainExplorer = () => (step: Long, maxIt: Long) => new Slide(step=1,maxIt=20)
+    domainExplorer = () => (step: Int, maxIt: Long) => new Slide(step=1,maxIt=20)
     //these are alternative methods for the numerical optimization
     // new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
 
   def rotate(i:Int) = NumericAssignNeighborhood(Array(rotationArray(i)),"rotate_" + i,
-    domainExplorer = () => (step: Long, maxIt: Long) => new NarrowingExhaustive(dividingRatio = 5) modulo(180)
+    domainExplorer = () => (step: Int, maxIt: Long) => new NarrowingExhaustive(dividingRatio = 5) modulo(180)
     //these are alternative methods for the numerical optimization
     // new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)

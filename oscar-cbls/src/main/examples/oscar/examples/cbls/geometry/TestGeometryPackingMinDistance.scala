@@ -13,7 +13,7 @@ import oscar.cbls.lib.search.combinators.{Atomic, BestSlopeFirst, Profile}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.visual.geometry.GeometryDrawing
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
-import oscar.cbls.{CBLSIntVar, Objective, Store, longToInt}
+import oscar.cbls.{CBLSIntVar, Objective, Store}
 
 /**
   * This demo tries to monimize the distance between centers of shapes plus the overlap distance
@@ -200,7 +200,7 @@ object TestGeometryPackingMinDistance extends App{
     neighborhoodName = "toHole"
   )
 
-  class MoveShapeTo(val shapeID:Int, targetX:Long, targetY:Long, oldX:Long, oldY:Long, newObj:Long)
+  class MoveShapeTo(val shapeID:Int, targetX:Long, targetY:Lo,ng, oldX:Long, oldY:Long, newObj:Long)
     extends EvaluableCodedMove(() => {
       coordArray(shapeID)._1 := (targetX max radiusArray(shapeID)) min (maxX - radiusArray(shapeID))
       coordArray(shapeID)._2 := (targetY max radiusArray(shapeID)) min (maxY - radiusArray(shapeID))

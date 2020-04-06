@@ -34,7 +34,7 @@ import scala.collection.immutable.SortedMap
   * @param bounds map(value,bound) the bounds on the variables. We use a map to ensure that there is no two bounds on the same value.
   * @author gael.thouvenin@student.umons.ac.be
   */
-case class Exactly(variables:Iterable[IntValue], bounds:SortedMap[Long, IntValue]) extends Constraint {
+case class Exactly(variables:Iterable[IntValue], bounds:SortedMap[Int, IntValue]) extends Constraint {
 
   registerConstrainedVariables(variables)
   registerConstrainedVariables(bounds.values)

@@ -10,7 +10,7 @@ import scala.util.Random
 class SequenceExplorerTestSuite extends FunSuite with  GeneratorDrivenPropertyChecks with Matchers{
 
   test("ConcreteIntSequenceExplorer is coherent"){
-    forAll((referenceList: List[Long]) => {
+    forAll((referenceList: List[Int]) => {
       whenever(referenceList.size > 5){
         val seq = IntSequence(referenceList)
 
@@ -25,7 +25,7 @@ class SequenceExplorerTestSuite extends FunSuite with  GeneratorDrivenPropertyCh
   }
 
   test("MovedIntSequenceExplorer is coherent"){
-    forAll((referenceList: List[Long]) => {
+    forAll((referenceList: List[Int]) => {
       whenever(referenceList.size > 5){
         val (indexFrom, indexTo, destination) = getRandomParametersForMoveAfter(referenceList)
         val seq = new MovedIntSequence(IntSequence(referenceList),indexFrom,indexTo,destination,true)
@@ -42,7 +42,7 @@ class SequenceExplorerTestSuite extends FunSuite with  GeneratorDrivenPropertyCh
   }
 
   test("RemovedIntSequenceExplorer is coherent"){
-    forAll((referenceList: List[Long]) => {
+    forAll((referenceList: List[Int]) => {
       whenever(referenceList.size > 5){
 
         val i = Random.nextInt(referenceList.size)
@@ -62,7 +62,7 @@ class SequenceExplorerTestSuite extends FunSuite with  GeneratorDrivenPropertyCh
 
 object ExplorerTestUtils{
   private val myTestUtils = new ExplorerTestUtils()
-  def compareAllAttributes(exp :Option[IntSequenceExplorer], pos: Int,list: List[Long]): Unit = myTestUtils.compareExplorer(exp,pos,list)
+  def compareAllAttributes(exp :Option[IntSequenceExplorer], pos: Int,list: List[Int]): Unit = myTestUtils.compareExplorer(exp,pos,list)
 }
 
 class ExplorerTestUtils extends FunSuite with Matchers {
@@ -73,7 +73,7 @@ class ExplorerTestUtils extends FunSuite with Matchers {
     * @param pos The position of the explorer in the list
     * @param list The original list
     */
-  def compareExplorer(exp :Option[IntSequenceExplorer], pos: Int,list: List[Long]): Unit ={
+  def compareExplorer(exp :Option[IntSequenceExplorer], pos: Int,list: List[Int]): Unit ={
 
     var explorer = exp
 

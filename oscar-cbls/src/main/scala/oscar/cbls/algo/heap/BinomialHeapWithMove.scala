@@ -651,7 +651,7 @@ class BinomialHeapWithMoveInt(getKey:Int => Int,val maxsize:Int, val maxKey:Int)
     else ExploreFirsts(getKey(heapArray(0)),0,List.empty)
   }
 
-  def getFirst:Long=heapArray(0)
+  def getFirst:Int=heapArray(0)
 
   /**
     *

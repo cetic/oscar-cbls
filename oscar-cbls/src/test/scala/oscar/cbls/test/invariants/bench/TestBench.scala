@@ -52,18 +52,18 @@ object InvGen {
   /**
    * Function to generate a random move.
    */
-  def randomTuples(nbVal: Int, range: Range): List[(Long, Long)] = {
-    val valList = Gen.containerOfN[List, Long](nbVal,
-      Gen.choose(range.min:Long, range.max:Long).sample.get).sample.get
-    valList.map((value: Long) => (
-      value, Gen.choose(range.min:Long, range.max:Long).sample.get))
+  def randomTuples(nbVal: Int, range: Range): List[(Int, Int)] = {
+    val valList = Gen.containerOfN[List, Int](nbVal,
+      Gen.choose(range.min:Int, range.max:Int).sample.get).sample.get
+    valList.map((value: Int) => (
+      value, Gen.choose(range.min:Int, range.max:Int).sample.get))
   }
 
-  def randomIntSortedMap(nbVal: Int, valRange: Range, boundRange: Range): SortedMap[Long, Long] = {
-    val valList = Gen.containerOfN[List, Long](nbVal,
-      Gen.choose(valRange.min:Long, valRange.max:Long).sample.get).sample.get
-    val map = valList.map((value: Long) => (
-      value, Gen.choose(boundRange.min:Long, boundRange.max:Long).sample.get))
+  def randomIntSortedMap(nbVal: Int, valRange: Range, boundRange: Range): SortedMap[Int, Int] = {
+    val valList = Gen.containerOfN[List, Int](nbVal,
+      Gen.choose(valRange.min:Int, valRange.max:Int).sample.get).sample.get
+    val map = valList.map((value: Int) => (
+      value, Gen.choose(boundRange.min:Int, boundRange.max:Int).sample.get))
     SortedMap(map: _*)
   }
 
@@ -100,8 +100,8 @@ object InvGen {
    */
   def randomFixedIntSetVar(nbVars: Int, range: Range, model: Store, name: String) = for {
     c <- Gen.alphaChar
-    v <- Gen.containerOfN[List, Long](nbVars, Gen.choose(range.min, range.max))
-  } yield RandomIntSetVar(new CBLSSetVar(model, SortedSet[Long](v: _*), range,
+    v <- Gen.containerOfN[List, Int](nbVars, Gen.choose(range.min, range.max))
+  } yield RandomIntSetVar(new CBLSSetVar(model, SortedSet[Int](v: _*), range,
     name))
 
   /**
@@ -111,7 +111,7 @@ object InvGen {
   def randomIntSetVar(upToSize: Int, range: Range, model: Store) = for {
     c <- Gen.alphaChar
     s <- Gen.choose(1, upToSize)
-    v <- Gen.containerOfN[List, Long](s, Gen.choose(range.min, range.max))
+    v <- Gen.containerOfN[List, Int](s, Gen.choose(range.min, range.max))
   } yield RandomIntSetVar(new CBLSSetVar(model, SortedSet(v: _*), range,
       c.toString.toUpperCase))
 
@@ -133,7 +133,7 @@ object InvGen {
     */
   def randomFixedIntSeqVar(nbVars: Int, range: Range, model: Store) = for {
     c <- Gen.alphaChar
-    v <- Gen.containerOfN[List, Long](nbVars, Gen.choose(range.min, range.max))
+    v <- Gen.containerOfN[List, Int](nbVars, Gen.choose(range.min, range.max))
   } yield RandomIntSeqVar(new CBLSSeqVar(model, IntSequence(v), range.max,
       c.toString.toUpperCase))
 
@@ -144,7 +144,7 @@ object InvGen {
   def randomIntSeqVar(upToSize: Int, range: Range, model: Store) = for {
     c <- Gen.alphaChar
     s <- Gen.choose(1, upToSize)
-    v <- Gen.containerOfN[List, Long](s, Gen.choose(range.min, range.max))
+    v <- Gen.containerOfN[List, Int](s, Gen.choose(range.min, range.max))
   } yield RandomIntSeqVar(new CBLSSeqVar(model, IntSequence(v), range.max,
       c.toString.toUpperCase))
 
@@ -178,7 +178,7 @@ object InvGen {
     */
   def routeOfNodes(upToSize: Int, v: Int, model: Store) = for {
     c <- Gen.alphaChar
-  } yield RouteOfNodes(new CBLSSeqVar(model, IntSequence(0L until v), upToSize,
+  } yield RouteOfNodes(new CBLSSeqVar(model, IntSequence(0 until v), upToSize,
       c.toString.toUpperCase),v)
 
   /**
@@ -186,7 +186,7 @@ object InvGen {
     */
   def routeOfNodesForCheckPoint(upToSize: Int, v: Int, model: Store, checker:InvariantChecker) = for {
     c <- Gen.alphaChar
-  } yield RouteOfNodesForCheckPoint(new CBLSSeqVar(model, IntSequence(0L until v),
+  } yield RouteOfNodesForCheckPoint(new CBLSSeqVar(model, IntSequence(0 until v),
       upToSize, c.toString.toUpperCase),v,checker)
 }
 
@@ -228,29 +228,29 @@ case class RandomIntVar(intVar: CBLSIntVar,
   override def move(move: Move) = {
     move match {
       case PlusOne() => {
-        val newVal = randomVar.value + 1
+        val newVal = randomVar.valueInt + 1
         if (randomVar.domain.contains(newVal)) applyConstraint(newVal)
-        else applyConstraint(randomVar.min)
+        else applyConstraint(randomVar.minInt)
       }
       case MinusOne() => {
-        val newVal = randomVar.value - 1
+        val newVal = randomVar.valueInt - 1
         if (randomVar.domain.contains(newVal)) applyConstraint(newVal)
-        else applyConstraint(randomVar.max)
+        else applyConstraint(randomVar.maxInt)
       }
       case ToZero() => {
         if (randomVar.domain.contains(0)) applyConstraint(0)
       }
       case ToMax() => {
-        applyConstraint(randomVar.max)
+        applyConstraint(randomVar.maxInt)
       }
       case ToMin() => {
-        applyConstraint(randomVar.min)
+        applyConstraint(randomVar.minInt)
       }
       case Random() | Shuffle() | MultipleMove() => {
-        applyConstraint(Gen.choose(randomVar.min, randomVar.max).sample.get)
+        applyConstraint(Gen.choose(randomVar.minInt, randomVar.maxInt).sample.get)
       }
       case RandomDiff() => {
-        val randomOpt = (Gen.choose(randomVar.min, randomVar.max)
+        val randomOpt = (Gen.choose(randomVar.minInt, randomVar.maxInt)
           suchThat (_ != randomVar.value)).sample
         if (randomOpt.isDefined) applyConstraint(randomOpt.get)
       }
@@ -296,7 +296,7 @@ case class RandomIntSetVar(intSetVar: CBLSSetVar) extends RandomVar {
       }
       case Random() | Shuffle() | MultipleMove() => { // Replaces the set with a randomly generated one
       val newSize = Gen.choose(1, randomVar.value.size + 1).sample.get
-        val newVal = Gen.containerOfN[List, Long](newSize,
+        val newVal = Gen.containerOfN[List, Int](newSize,
           Gen.choose(randomVar.min, randomVar.max)).sample.get
         randomVar := SortedSet(newVal: _*)
       }
@@ -304,7 +304,7 @@ case class RandomIntSetVar(intSetVar: CBLSSetVar) extends RandomVar {
         // Replaces the set with a randomly generated one
         // with which intersection is empty
         val newSize = Gen.choose(1, randomVar.value.size + 1).sample.get
-        val newValOpt = Gen.containerOfN[List, Long](newSize,
+        val newValOpt = Gen.containerOfN[List, Int](newSize,
           Gen.choose(randomVar.min, randomVar.max)
             suchThat (!randomVar.value.contains(_))).sample
         if (newValOpt.isDefined) randomVar := SortedSet(newValOpt.get: _*)
@@ -349,12 +349,12 @@ case class RandomIntSeqVar(intSeqVar: CBLSSeqVar) extends RandomVar{
         randomVar.insertAtPosition(Gen.choose(randomVar.min,randomVar.max).sample.get,0)
       case Random() | Shuffle() =>
         val newSize = Gen.choose(1, Math.min(randomVar.newValue.size + 1,randomVar.max)).sample.get
-        val newVal = Gen.containerOfN[Iterable, Long](newSize,
+        val newVal = Gen.containerOfN[Iterable, Int](newSize,
           Gen.choose(randomVar.min, randomVar.max)).sample.get
         randomVar := IntSequence(newVal)
       case RandomDiff() =>
         val newSize = Gen.choose(1, Math.min(randomVar.newValue.size + 1,randomVar.max)).sample.get
-        val newValOpt = Gen.containerOfN[Iterable, Long](newSize,
+        val newValOpt = Gen.containerOfN[Iterable, Int](newSize,
           Gen.choose(randomVar.min, randomVar.max)
             suchThat (!randomVar.newValue.contains(_))).sample
         if (newValOpt.isDefined) randomVar := IntSequence(newValOpt.get)
@@ -388,7 +388,7 @@ case class NotRandomIntSeqVar(intSeqVar: CBLSSeqVar) extends RandomVar{
     */
   override def move(move: Move)= {
     val inSeq = randomVar.newValue.unorderedContentNoDuplicate
-    val notInSeq:List[Long] = List.tabulate(randomVar.max)(i => i:Long).filterNot(inSeq.contains(_))
+    val notInSeq:List[Int] = List.tabulate(randomVar.max)(i => i:Int).filterNot(inSeq.contains(_))
     move match{
       case PlusOne() =>
         if(notInSeq.nonEmpty)
@@ -406,12 +406,12 @@ case class NotRandomIntSeqVar(intSeqVar: CBLSSeqVar) extends RandomVar{
         randomVar.insertAtPosition(Gen.choose(randomVar.min,randomVar.max).sample.get,0)
       case Random() | MultipleMove() =>
         val newSize = Gen.choose(1, Math.min(randomVar.newValue.size + 1,randomVar.max)).sample.get
-        val fullList:List[Long] = scala.util.Random.shuffle(List.tabulate(randomVar.max)(n => n:Long))
+        val fullList:List[Int] = scala.util.Random.shuffle(List.tabulate(randomVar.max)(n => n:Int))
         val newVal = List.tabulate(newSize)(n => fullList(n))
         randomVar := IntSequence(newVal)
       case RandomDiff() =>
         val newSize = Gen.choose(0, Math.max(randomVar.min,randomVar.max - randomVar.newValue.size)).sample.get
-        val fullList:List[Long] = scala.util.Random.shuffle(notInSeq)
+        val fullList:List[Int] = scala.util.Random.shuffle(notInSeq)
         val newVal = List.tabulate(newSize)(n => fullList(n))
 
         if (newVal != null) randomVar := IntSequence(newVal)
@@ -483,14 +483,14 @@ case class RouteOfNodes(intSeqVar: CBLSSeqVar, v:Int) extends RandomVar{
       case Random() =>
         val nbOfValueToAdd = Gen.choose(0, Math.min(randomVar.newValue.size + 1,randomVar.max)-v).sample.get
         val fullList = scala.util.Random.shuffle(List.tabulate(randomVar.max-v)(n => n+v))
-        val newVal = List.tabulate(v)(n => n:Long)
+        val newVal = List.tabulate(v)(n => n:Int)
         randomVar := IntSequence(newVal)
         for(i <- 0 until nbOfValueToAdd)
           randomVar.insertAtPosition(fullList(i),Gen.choose(1,randomVar.newValue.size-1).sample.get)
       case RandomDiff() =>
         val nbOfValueToAdd = Gen.choose(0, Math.max(randomVar.min,notInSeq.size)).sample.get
         val fullList = scala.util.Random.shuffle(notInSeq)
-        val newVal = List.tabulate(v)(n => n:Long)
+        val newVal = List.tabulate(v)(n => n:Int)
         randomVar := IntSequence(newVal)
         for(i <- 0 until nbOfValueToAdd)
           randomVar.insertAtPosition(fullList(i),Gen.choose(1,randomVar.newValue.size-1).sample.get)

@@ -7,7 +7,6 @@ import org.locationtech.jts.geom.Geometry
 import oscar.cbls.visual.SingleFrameWindow
 import oscar.cbls.visual.geometry.{GeometryDrawing, GeometryDrawingOnRealMap, GeometryDrawingTypes}
 
-//TODO: c'est quoi ce savingFile?!!! il faut qu'il soit passé en apramèter de la méthode poru sauver, pas en paramètre du constructeur!!
 class Drawing (title: String,
                relevantDistances: List[(Int,Int)],
                geometryDrawingType: GeometryDrawingTypes.Value,
