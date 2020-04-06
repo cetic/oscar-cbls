@@ -12,7 +12,7 @@ class KVoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
   val verbose = 0
 
   test("Voronoi Zones in conditional graph"){
-    val nbTests = 100
+    val nbTests = 5
 
     for (v <- (0 until nbTests)) {
 
@@ -26,7 +26,7 @@ class KVoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
 
       val k = 5
 
-      val openConditions:CBLSSetVar = bench.genIntSetVar(nbVars = 50, range = 0 until nbConditionalEdges,"openConditions")
+      val openConditions:CBLSSetVar = bench.genIntSetVar(nbVars = nbConditionalEdges, range = 0 until nbConditionalEdges,"openConditions")
       val centroids:CBLSSetVar = bench.genIntSetVar(nbVars = nbCentroids, range = 0 until nbCentroids,"centroids")
 
       val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(nbNodes,
@@ -50,7 +50,7 @@ class KVoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
     }
 
     test("Voronoi Zones in conditional graph with non transit nodes"){
-    val nbTests = 100
+    val nbTests = 5
 
     for (v <- (0 until nbTests)) {
 
@@ -64,7 +64,7 @@ class KVoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
 
       val k = 5
 
-      val openConditions:CBLSSetVar = bench.genIntSetVar(nbVars = 50, range = 0 until nbConditionalEdges, name="openConditions")
+      val openConditions:CBLSSetVar = bench.genIntSetVar(nbVars = nbConditionalEdges, range = 0 until nbConditionalEdges, name="openConditions")
       val centroids:CBLSSetVar = bench.genIntSetVar(nbVars = nbCentroids, range = 0 until nbCentroids, name = "Centroids")
 
       val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(nbNodes,

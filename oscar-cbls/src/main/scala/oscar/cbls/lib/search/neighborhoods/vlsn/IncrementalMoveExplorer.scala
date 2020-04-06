@@ -74,15 +74,13 @@ object CachedExplorations{
     if(isDirtyVehicle.forall(p => p)) None
     else Some(new CachedExplorations(oldGraph: VLSNGraph,
       dirtyNodes:SortedSet[Int],
-      isDirtyVehicle: Array[Boolean],
-      v: Int))
+      isDirtyVehicle: Array[Boolean]))
   }
 }
 
 class CachedExplorations(oldGraph:VLSNGraph,
                          dirtyNodes:SortedSet[Int], //only for unrouted nodes that were inserted of newly removed
-                         isDirtyVehicle:Array[Boolean],
-                         v:Int) {
+                         isDirtyVehicle:Array[Boolean]) {
 
   def isDirtyNode(node: Int): Boolean = dirtyNodes.contains(node)
 

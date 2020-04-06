@@ -587,8 +587,10 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
   }
 
   private def check(c : Checker,s:IntSequence) {
+    val debug = false
     //require(allAStarInfo.nonEmpty)
-    println("--------- Check ---------")
+    if (debug)
+      println("--------- Check ---------")
     var currentPosition = routes.value.explorerAtAnyOccurrence(0).get
     var currentVehicle:Int = 0
     var currentLength:Long = 0
@@ -616,8 +618,10 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
       distance1
     }
-    println(routes)
-    println(distancePerVehicle.map(d => d.value).mkString(";"))
+    if (debug) {
+      println(routes)
+      println(distancePerVehicle.map(d => d.value).mkString(";"))
+    }
 
     while(currentPosition.next match{
       case None => //at the end of the current vehicle, which is the last one
@@ -629,7 +633,8 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
         //at the end of the current vehicle; starting a new one
         val lastHopToComeBack = if (freeReturn) 0 else checkHop(currentPosition.value,currentVehicle)
         currentLength += lastHopToComeBack
-        println("Distance of Vehicle :" + distancePerVehicle(currentVehicle).value)
+        if (debug)
+          println("Distance of Vehicle :" + distancePerVehicle(currentVehicle).value)
         require(distancePerVehicle(currentVehicle).value == currentLength,"vehicle " + currentVehicle + " Incremental Distance " + distancePerVehicle(currentVehicle).value + " != From Scratch Distance " + currentLength)
 
         currentPosition = nextPosition
@@ -644,8 +649,8 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
         currentPosition = nextPosition
         true
     }){}
-
-    println("------- End Check -------")
+    if (debug)
+      println("------- End Check -------")
   }
 }
 

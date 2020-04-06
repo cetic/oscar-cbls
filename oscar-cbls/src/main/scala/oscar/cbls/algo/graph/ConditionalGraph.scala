@@ -27,7 +27,8 @@ class ConditionalGraph(val nodes:Array[Node],
         conditionToConditionalEdges(c) = edge
     }
   }
-  require(conditionToConditionalEdges.forall(_ != null))
+  
+  require(conditionToConditionalEdges.forall(_ != null),Array.tabulate(conditionToConditionalEdges.length)(i => i + " -> " + conditionToConditionalEdges(i)).mkString("\n") + "\n" + nbConditions)
 
   override def toString: String =
     "ConditionalGraph(nbNodes:" + nbNodes + " nbEdges:" + nbEdges + " nbConditions:" + nbConditions+ "\n\t" +
