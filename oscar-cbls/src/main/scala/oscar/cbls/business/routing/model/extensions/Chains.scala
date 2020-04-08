@@ -39,7 +39,6 @@ class Chains(vrp: VRP, chains: List[List[Int]]){
     (chainOfNode,nextNodeInChain,prevNodeInChain,nextNodesInChain,prevNodesInChain)
   }
 
-  //TODO: make this a set.
   val heads = chains.map(_.head)
 
   def firstNodeInChainOfNode(node: Int): Int = chainOfNode(node).head

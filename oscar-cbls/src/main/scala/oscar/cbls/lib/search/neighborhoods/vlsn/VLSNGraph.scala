@@ -42,7 +42,7 @@ class VLSNNodeBuilder(var nbLabels:Int) {
   var nextNodeID: Int = 0
 
   def addNode(representedNode:Int, vehicle:Int, label:Int,nodeType:VLSNSNodeType):Node = {
-    require(label >=0 && label < nbLabels, "inserting a node targeting label " + label)
+    require(label >=0L && label < nbLabels, "inserting a node targeting label " + label)
     require(nodeType != VehicleNode || representedNode == -vehicle)
     val n = new Node(nextNodeID, representedNode:Int, nodeType, vehicle:Int, label)
     nextNodeID += 1
@@ -68,7 +68,7 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
   var nextEdgeID:Int = 0
 
   def addEdge(from:Node, to:Node, deltaObj:Long, move:Move, vLSNMoveType: VLSNMoveType):Edge = {
-    require(edges(from.nodeID)(to.nodeID) == null,"Trying to add an edge between " + from + " and " + to + "(move " + move + "), but " + edges(from.nodeID)(to.nodeID) + " already exists")
+    require(edges(from.nodeID)(to.nodeID) == null,edges(from.nodeID)(to.nodeID))
     val edge = new Edge(from:Node,to:Node, move:Move,deltaObj:Long, nextEdgeID, vLSNMoveType)
     edges(from.nodeID)(to.nodeID) = edge
     nextEdgeID += 1

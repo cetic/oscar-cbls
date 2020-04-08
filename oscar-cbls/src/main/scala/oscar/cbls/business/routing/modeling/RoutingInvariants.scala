@@ -118,8 +118,8 @@ trait RoutingInvariants {
    * @param includeVehicleNode flag that is true if the set has to contain the node of the vehicle
    * @return an array nodesOfVehicle maintained to the nodes reached y each vehicle
    */
-  def nodesOfVehicle(routes:ChangingSeqValue,v:Int,includeVehicleNode:Boolean = true):Array[CBLSSetVar] =
-    NodesOfVehicle(routes:ChangingSeqValue,v:Int,includeVehicleNode:Boolean):Array[CBLSSetVar]
+  def nodesOfVehicle(routes:ChangingSeqValue,v:Int, includeVehicleNode:Boolean = true):Array[CBLSSetVar] =
+    NodesOfVehicle(routes:ChangingSeqValue,v:Int, includeVehicleNode:Boolean):Array[CBLSSetVar]
 
 
 

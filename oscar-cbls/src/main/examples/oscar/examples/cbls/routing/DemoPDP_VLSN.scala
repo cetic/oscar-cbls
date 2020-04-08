@@ -18,8 +18,11 @@ import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
 
 object DemoPDP_VLSN extends App{
   val m = new Store(noCycle = false)
+
   val v = 10
   val n = 500
+//  val v = 10
+//  val n = 500
 
   println("VLSN(PDPTW) v:" + v +" n:" + n)
   val penaltyForUnrouted = 10000
@@ -33,10 +36,11 @@ object DemoPDP_VLSN extends App{
   val myVRP =  new VRP(m,n,v)
   val vehicles = 0 until v
 
-  val k = 30
+  val k = 10
   val l = 40
   val xNearestVehicles = 7
 
+  println("listOfChains: \n" + listOfChains.mkString("\n"))
   // GC
   val gc = GlobalConstraintCore(myVRP.routes, v)
 
@@ -146,7 +150,7 @@ object DemoPDP_VLSN extends App{
             lastNodeOfChainMove(chainsExtension.lastNodeInChainOfNode(moveMove.movedPoint)),
             nextMoveGenerator,
             None,
-            Long.MaxValue,
+            Int.MaxValue,
             false)
         }}) name "OneChainMove"
   }
@@ -179,6 +183,7 @@ object DemoPDP_VLSN extends App{
     myVRP.kFirst(k,closestRelevantPredecessorsByDistance(_))
   }, myVRP,neighborhoodName = "InsertUF")
 
+  //TODO: il y a un problème si on a un noeud tout seul.
   def lastNodeOfChainInsertion(lastNode:Int) = insertPointUnroutedFirst(
     () => List(lastNode),
     ()=> myVRP.kFirst(
@@ -199,7 +204,7 @@ object DemoPDP_VLSN extends App{
             lastNodeOfChainInsertion(chainsExtension.lastNodeInChainOfNode(insertMove.insertedPoint)),
             nextInsertGenerator,
             None,
-            Long.MaxValue,
+            Int.MaxValue,
             false)
         }}) name "OneChainInsert"
   }
@@ -210,80 +215,84 @@ object DemoPDP_VLSN extends App{
   val lClosestNeighborsByDistance: Array[SortedSet[Int]] = Array.tabulate(n)(node =>
     SortedSet.empty[Int] ++ myVRP.kFirst(l, (node:Int) => closestRelevantPredecessorsByDistance(node))(node))
 
-  def routeUnroutedChainVLSN(targetVehicle:Int)(firstNodeOfUnroutedChain:Int): Neighborhood = {
-    val nextInsertGenerator = {
-      (exploredMoves:List[InsertPointMove], t:Option[List[Int]]) => {
-        val chainTail: List[Int] = t match {
-          case None =>
-            val insertedNode = exploredMoves.head.insertedPoint
-            chainsExtension.nextNodesInChain(chainsExtension.firstNodeInChainOfNode(insertedNode))
-          case Some(tail: List[Int]) => tail
-        }
-
-        chainTail match {
-          case Nil => None
-          case head :: Nil => None
-          case nextNodeToInsert :: newTail =>
-            val insertNeighborhood = insertPointUnroutedFirst(
-              () => Some(nextNodeToInsert),
-              () => ChainsHelper.computeRelevantNeighborsForInternalNodes(myVRP,chainsExtension),
-              myVRP,
-              selectInsertionPointBehavior = Best(),
-              positionIndependentMoves = true, //compulsory because we are in VLSN
-              neighborhoodName = "insertChainMiddle"
-            )
-            Some(insertNeighborhood, Some(newTail))
-        }
-      }
-    }
+  def routeUnroutedChainVLSN(targetVehicle:Int):(Int => Neighborhood) = {
 
     val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(targetVehicle)
 
-    val lNearestNodesOfTargetVehicle = nodesOfTargetVehicle.filter(x => lClosestNeighborsByDistance(firstNodeOfUnroutedChain) contains x)
+    (firstNodeOfUnroutedChain:Int) => {
+      val lNearestNodesOfTargetVehicle = nodesOfTargetVehicle.filter(x => lClosestNeighborsByDistance(firstNodeOfUnroutedChain) contains x)
 
-    val firstNodeOfChainInsertion =
-      insertPointUnroutedFirst(
-        () => List(firstNodeOfUnroutedChain),
-        () => _ => lNearestNodesOfTargetVehicle,
+      val nextInsertGenerator = {
+        (exploredMoves: List[InsertPointMove], t: Option[List[Int]]) => {
+          val chainTail: List[Int] = t match {
+            case None =>
+              val insertedNode = exploredMoves.head.insertedPoint
+              chainsExtension.nextNodesInChain(chainsExtension.firstNodeInChainOfNode(insertedNode))
+            case Some(tail: List[Int]) => tail
+          }
+
+          chainTail match {
+            case Nil => None
+            case head :: Nil => None
+            case nextNodeToInsert :: newTail =>
+              val insertNeighborhood = insertPointUnroutedFirst(
+                () => Some(nextNodeToInsert),
+                () => ChainsHelper.computeRelevantNeighborsForInternalNodes(myVRP, chainsExtension),
+                myVRP,
+                selectInsertionPointBehavior = Best(),
+                positionIndependentMoves = true, //compulsory because we are in VLSN
+                neighborhoodName = "insertChainMiddle"
+              )
+              Some(insertNeighborhood, Some(newTail))
+          }
+        }
+      }
+
+      val firstNodeOfChainInsertion =
+        insertPointUnroutedFirst(
+          () => List(firstNodeOfUnroutedChain),
+          () => _ => lNearestNodesOfTargetVehicle,
+          myVRP,
+          hotRestart = false,
+          selectInsertionPointBehavior = Best(),
+          positionIndependentMoves = true, //compulsory because we are in VLSN
+          neighborhoodName = "insertChainHead"
+        )
+
+      def lastNodeOfChainInsertion(lastNode: Int) = insertPointUnroutedFirst(
+        () => List(lastNode),
+        () => myVRP.kFirst(
+          l,
+          ChainsHelper.relevantNeighborsForLastNodeAfterHead( //TODO: filter in the target vehicle!!
+            myVRP,
+            chainsExtension)),
         myVRP,
-        hotRestart = false,
         selectInsertionPointBehavior = Best(),
         positionIndependentMoves = true, //compulsory because we are in VLSN
-        neighborhoodName = "insertChainHead"
-      )
+        neighborhoodName = "insertChainLast")
 
-    def lastNodeOfChainInsertion(lastNode:Int) = insertPointUnroutedFirst(
-      () => List(lastNode),
-      ()=> myVRP.kFirst(
-        l,
-        ChainsHelper.relevantNeighborsForLastNodeAfterHead(
-          myVRP,
-          chainsExtension)),
-      myVRP,
-      selectInsertionPointBehavior = Best(),
-      positionIndependentMoves = true, //compulsory because we are in VLSN
-      neighborhoodName = "insertChainLast")
-
-    dynAndThen(firstNodeOfChainInsertion,
-      (insertMove: InsertPointMove) => {
-        if(maxLengthConstraintPerVehicle(targetVehicle).value != 0){
-          NoMoveNeighborhood
-        }else{
-          mu[InsertPointMove,Option[List[Int]]](
-            lastNodeOfChainInsertion(chainsExtension.lastNodeInChainOfNode(insertMove.insertedPoint)),
-            nextInsertGenerator,
-            None,
-            Long.MaxValue,
-            false)
-        }}) name "insertChainVLSN"
+      dynAndThen(firstNodeOfChainInsertion,
+        (insertMove: InsertPointMove) => {
+          if (maxLengthConstraintPerVehicle(targetVehicle).value != 0) {
+            NoMoveNeighborhood
+          } else {
+            mu[InsertPointMove, Option[List[Int]]](
+              lastNodeOfChainInsertion(chainsExtension.lastNodeInChainOfNode(insertMove.insertedPoint)),
+              nextInsertGenerator,
+              None,
+              Int.MaxValue,
+              false)
+          }
+        }) name "insertChainVLSN"
+    }
   }
 
   def moveChainVLSN(targetVehicle: Int):(Int=>Neighborhood) = {
     val nodesOfTargetVehicle = (SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(targetVehicle))
 
-    def a(chainHeadToMove: Int): Neighborhood = {
+    (chainHeadToMove: Int)=> {
       val relevantNodesOfTargetVehicle = nodesOfTargetVehicle intersect (relevantPredecessors(chainHeadToMove))
-      val lNearestNodesOfTargetVehicle = relevantNodesOfTargetVehicle.filter(x => lClosestNeighborsByDistance(chainHeadToMove) contains x)
+      val lNearestNodesOfTargetVehicle = relevantNodesOfTargetVehicle.intersect(lClosestNeighborsByDistance(chainHeadToMove))
 
       val nextMoveGenerator = {
         (exploredMoves: List[OnePointMoveMove], t: Option[List[Int]]) => {
@@ -342,12 +351,11 @@ object DemoPDP_VLSN extends App{
               lastNodeOfChainMove(chainsExtension.lastNodeInChainOfNode(moveMove.movedPoint)),
               nextMoveGenerator,
               None,
-              Long.MaxValue,
+              Int.MaxValue,
               false)
           }
         }) name "OneChainMove"
     }
-    a
   }
 
   /*
@@ -418,7 +426,7 @@ object DemoPDP_VLSN extends App{
             lastNodeOfChainMove(chainsExtension.lastNodeInChainOfNode(moveMove.movedPoint)),
             nextMoveGenerator,
             None,
-            Long.MaxValue,
+            Int.MaxValue,
             false)
         }
       }) name "OneChainMove"
@@ -439,7 +447,7 @@ object DemoPDP_VLSN extends App{
         case h::t => Some((removeNode(h),t))
       },
       chainsExtension.chainOfNode(chainHead).tail,
-      Long.MaxValue,
+      Int.MaxValue,
       false)
   }
 
@@ -497,7 +505,7 @@ object DemoPDP_VLSN extends App{
       removeNodeAndReInsert = removeAndReInsertVLSN,
 
       reOptimizeVehicle = Some(vehicle => Some(threeOptOnVehicle(vehicle) exhaustBack moveChainWithinVehicle(vehicle))),
-      useDirectInsert = true,
+      useDirectInsert = false,
 
       objPerVehicle,
       unroutedPenaltyOBj,
@@ -507,7 +515,7 @@ object DemoPDP_VLSN extends App{
 
       name="VLSN(" + l + ")",
       reoptimizeAtStartUp = true,
-      checkObjCoherence = true
+      debugNeighborhoodExploration = false
     )
   }
 
@@ -516,8 +524,8 @@ object DemoPDP_VLSN extends App{
   val vlsnNeighborhood = vlsn(l)
   val search = bestSlopeFirst(List(oneChainInsert,oneChainMove, onePtMove(20))) exhaustBack (vlsnNeighborhood maxMoves 1)
 
-  search.verbose = 2
-  vlsnNeighborhood.verbose = 3
+  search.verbose = 1
+  vlsnNeighborhood.verbose = 2
 
   search.doAllMoves(obj=obj)
 
