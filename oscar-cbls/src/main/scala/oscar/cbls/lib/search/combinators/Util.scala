@@ -28,14 +28,11 @@ trait UtilityCombinators{
  *
  * @param a a neighborhood
  * @param obj the objective function
-<<<<<<< HEAD
  * @param title The title of the frame
  * @param minCap The minimum displayed value
  * @param maxCap The maximum displayed value
  * @param percentile The percentile (1 to 100) of the best displayed value
  * @param otherValues An array of other value you want to be displayed (as a tuple (String, () => Long))
-=======
->>>>>>> CBLS
  * @author fabian.germeau@cetic.be
  */
 class ShowObjectiveFunction(a: Neighborhood, obj: () => Long, title: String = "Objective function vs. time[s]",
