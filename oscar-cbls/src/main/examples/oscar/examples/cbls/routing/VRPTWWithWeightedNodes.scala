@@ -61,9 +61,9 @@ class VRPTWWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, min
     })
 
   // Generating node weight (0 for depot and 10 to 20 for nodes)
-  val nodeWeight = Array.tabulate(n)(node => if(node < v)0L else intToLong(Random.nextInt(11)+10))
+  val nodeWeight = Array.tabulate(n)(node => if(node < v)0L else Random.nextInt(11)+10)
   // Vehicles have capacity varying from (n-v)/(2*v) to (2*(n-v))/v
-  val vehicleCapacity = Array.fill(v)(intToLong(15*(Random.nextInt((2*(n-v)/v)-((n-v)/(2*v))+1)+(n-v)/(2*v))))
+  val vehicleCapacity = Array.fill(v)(15*(Random.nextInt((2*(n-v)/v)-((n-v)/(2*v))+1)+(n-v)/(2*v)))
 
 
   ////////// INVARIANTS //////////
@@ -127,7 +127,7 @@ class VRPTWWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, min
 
   ////////// Dynamic pruning (done each time before evaluation a move) //////////
   // Only condition the new neighbor must be routed
-  val routedPostFilter = (node: Long) => (neighbor: Long) => myVRP.isRouted(neighbor)
+  val routedPostFilter = (node: Int) => (neighbor: Int) => myVRP.isRouted(neighbor)
 
   //////////////////// Search Procedure ////////////////////
   ////////// Neighborhood definition //////////
@@ -142,7 +142,7 @@ class VRPTWWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, min
     selectInsertionPointBehavior = First())) // Inserting after the first node in myVRP.kFirst(10,...)
 
   // Moves a routed node to a better place (best neighbor within the 10 closest nodes)
-  def onePtMove(k: Long) = profile(onePointMove(
+  def onePtMove(k: Int) = profile(onePointMove(
     myVRP.routed,
     () => myVRP.kFirst(k, closestRelevantNeighborsByDistance(_), routedPostFilter),
     myVRP))

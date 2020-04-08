@@ -9,7 +9,7 @@ import oscar.cbls.core.ChangingSeqValue
 case class PreComputedDistances(distanceFromStart:Long,
                                 distanceToStart:Long)
 
-class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:Array[CBLSIntVar], assymetricDistance:(Long,Long)=>Long)
+class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:Array[CBLSIntVar], assymetricDistance:(Int,Int)=>Long)
   extends GlobalConstraintDefinition[Long](gc,v){
 
   val preComputedVals: Array[PreComputedDistances] = Array.fill(n)(PreComputedDistances(0,0))
@@ -18,7 +18,7 @@ class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:
   gc.register(this)
   for(outputVariable <- vehicleToRouteLength)outputVariable.setDefiningInvariant(gc)
 
-  override def performPreCompute(vehicle: Long, routes: IntSequence): Unit = {
+  override def performPreCompute(vehicle: Int, routes: IntSequence): Unit = {
 
     var previousNode = vehicle
     var prevPreComputedValue =PreComputedDistances(0,0)
@@ -52,10 +52,10 @@ class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:
 
   }
 
-  override def computeVehicleValue(vehicle: Long,
+  override def computeVehicleValue(vehicle: Int,
                                    segments: QList[Segment],
                                    routes: IntSequence): Long = {
-    def digestListOfSegments(segments: QList[Segment], prevNode: Long): Long = {
+    def digestListOfSegments(segments: QList[Segment], prevNode: Int): Long = {
       segments match {
         case null =>
           //return home
@@ -85,12 +85,12 @@ class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:
     digestListOfSegments(segments,-1)
   }
 
-  override def assignVehicleValue(vehicle: Long, value: Long): Unit = {
+  override def assignVehicleValue(vehicle: Int, value: Long): Unit = {
     vehicleToRouteLength(vehicle) := value
   }
 
 
-  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence): Long = {
+  override def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Long = {
     var previousNode = vehicle
     var toReturn:Long = 0
 

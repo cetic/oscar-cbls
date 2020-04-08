@@ -71,31 +71,31 @@ class Sort(var values:Array[IntValue], ReversePerm:Array[CBLSIntVar])
   }
 
   @inline
-  private def BubbleUp(v: ChangingIntValue, PositionInInitialArray: Long) {
+  private def BubbleUp(v: ChangingIntValue, PositionInInitialArray: Int) {
     while (true) {
-      val PositionInSorting: Long = ForwardPerm(PositionInInitialArray).newValue
+      val PositionInSorting: Int = ForwardPerm(PositionInInitialArray).newValueInt
       if (PositionInSorting == values.indices.last) return //last position
-      val ValueAbove: Long = values(ReversePerm(PositionInSorting + 1L).newValue).value //this shit returns the new value!!
-      if (ValueAbove < v.value) swap(PositionInSorting, PositionInSorting + 1L)
+      val ValueAbove: Long = values(ReversePerm(PositionInSorting + 1).newValueInt).value //this shit returns the new value!!
+      if (ValueAbove < v.value) swap(PositionInSorting, PositionInSorting + 1)
       else return
     }
   }
 
   @inline
-  private def BubbleDown(v: ChangingIntValue, PositionInInitialArray: Long) {
+  private def BubbleDown(v: ChangingIntValue, PositionInInitialArray: Int) {
     while (true) {
-      val PositionInSorting: Long = ForwardPerm(PositionInInitialArray).newValue
-      if (PositionInSorting == 0L) return //first position
-      val ValueBelow: Long = values(ReversePerm(PositionInSorting - 1L).newValue).value
-      if (ValueBelow > v.value) swap(PositionInSorting, PositionInSorting - 1L)
+      val PositionInSorting: Int = ForwardPerm(PositionInInitialArray).newValueInt
+      if (PositionInSorting == 0) return //first position
+      val ValueBelow: Long = values(ReversePerm(PositionInSorting - 1).newValueInt).value
+      if (ValueBelow > v.value) swap(PositionInSorting, PositionInSorting - 1)
       else  return
     }
   }
 
   @inline
-  private def swap(PositionInSorting1: Long, PositionInSorting2: Long) {
-    val PositionInInitialArray1: Long = ReversePerm(PositionInSorting1).newValue
-    val PositionInInitialArray2: Long = ReversePerm(PositionInSorting2).newValue
+  private def swap(PositionInSorting1: Int, PositionInSorting2: Int) {
+    val PositionInInitialArray1: Int = ReversePerm(PositionInSorting1).newValueInt
+    val PositionInInitialArray2: Int = ReversePerm(PositionInSorting2).newValueInt
 
     ReversePerm(PositionInSorting1) := PositionInInitialArray2
     ReversePerm(PositionInSorting2) := PositionInInitialArray1
@@ -107,20 +107,20 @@ class Sort(var values:Array[IntValue], ReversePerm:Array[CBLSIntVar])
   override def checkInternals(c: Checker) {
     val range = values.indices
     for (i <- range) {
-      c.check(ReversePerm(ForwardPerm(i).value).value == i,
+      c.check(ReversePerm(ForwardPerm(i).valueInt).value == i,
         Some("ReversePerm(ForwardPerm(" + i
-          + ").value ("+ForwardPerm(i).value+")).value  ("+ ReversePerm(ForwardPerm(i).value).value+") == " + i))
-      c.check(ForwardPerm(ReversePerm(i).value).value == i,
+          + ").valueInt ("+ForwardPerm(i).value+")).value  ("+ ReversePerm(ForwardPerm(i).valueInt).value+") == " + i))
+      c.check(ForwardPerm(ReversePerm(i).valueInt).value == i,
         Some("ForwardPerm(ReversePerm(" + i
-          + ").value ("+ReversePerm(i).value+")).value ("+ ForwardPerm(ReversePerm(i).value).value+ ") == " + i))
+          + ").valueInt ("+ReversePerm(i).value+")).value ("+ ForwardPerm(ReversePerm(i).valueInt).value+ ") == " + i))
     }
     for (i <- range) {
       for (j <- range if i < j) {
-        c.check((values(ReversePerm(i).newValue).value <= values(ReversePerm(j).newValue).value),
-          Some("(values(ReversePerm(" + i + ").newValue).value ("
-            + values(ReversePerm(i).newValue).value
-            + ") <= values(ReversePerm(" + j + ").newValue).value "
-            + values(ReversePerm(j).newValue).value + ")"))
+        c.check((values(ReversePerm(i).newValueInt).value <= values(ReversePerm(j).newValueInt).value),
+          Some("(values(ReversePerm(" + i + ").newValueInt).value ("
+            + values(ReversePerm(i).newValueInt).value
+            + ") <= values(ReversePerm(" + j + ").newValueInt).value "
+            + values(ReversePerm(j).newValueInt).value + ")"))
       }
     }
   }

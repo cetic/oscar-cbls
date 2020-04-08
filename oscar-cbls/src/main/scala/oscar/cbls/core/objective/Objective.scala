@@ -282,7 +282,7 @@ trait Objective {
    * this process is efficiently performed as the objective Variable is registered for partial propagation
    * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
    */
-  def insertValAssumeNotAlreadyIn(a: CBLSSetVar, i:Long): Long = {
+  def insertValAssumeNotAlreadyIn(a: CBLSSetVar, i:Int): Long = {
     a :+= i
     val newVal = value
     a :-= i
@@ -293,7 +293,7 @@ trait Objective {
    * this process is efficiently performed as the objective Variable is registered for partial propagation
    * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
    */
-  def insertVal(a: CBLSSetVar, i:Long): Long = {
+  def insertVal(a: CBLSSetVar, i:Int): Long = {
     if(a.value.contains(i)) return value
     insertValAssumeNotAlreadyIn(a, i)
   }
@@ -302,7 +302,7 @@ trait Objective {
    * this process is efficiently performed as the objective Variable is registered for partial propagation
    * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
    */
-  def removeValAssumeIn(a: CBLSSetVar, i:Long): Long = {
+  def removeValAssumeIn(a: CBLSSetVar, i:Int): Long = {
     a :-= i
     val newVal = value
     a :+= i
@@ -313,7 +313,7 @@ trait Objective {
    * this process is efficiently performed as the objective Variable is registered for partial propagation
    * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
    */
-  def removeVal(a: CBLSSetVar, i:Long): Long = {
+  def removeVal(a: CBLSSetVar, i:Int): Long = {
     if(!a.value.contains(i)) return value
     removeValAssumeIn(a, i)
   }

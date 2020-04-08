@@ -67,6 +67,6 @@ class CBLSModel(val verbose:Boolean = false,
   def assignVal(a: CBLSIntVar, v: Long)(implicit o:Objective) = o.assignVal(a, v)
 
   def CBLSIntVar(value:Long = 0L, domain:Domain = fullRange, name:String = null)(implicit s:Store) = new CBLSIntVar(s,value, domain,name)
-  def CBLSSetVar(value:SortedSet[Long] = SortedSet.empty, domain:Domain = fullRange, name:String = null)(implicit s:Store) = new CBLSSetVar(s,value, domain,name)
+  def CBLSSetVar(value:SortedSet[Int] = SortedSet.empty, domain:Domain = fullIntRange, name:String = null)(implicit s:Store) = new CBLSSetVar(s,value, domain,name)
 //  def CBLSSeqVar(value:Iterable[Long] = List.empty, d:Domain = fullRange, name:String = null)(implicit s:Store) = new CBLSSeqVar(s,IntSequence(value), d, name)
 }

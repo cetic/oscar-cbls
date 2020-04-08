@@ -32,6 +32,8 @@ case class GradientComponent(variable:CBLSIntVar,
 
   override def toString: String =
     "GradientComponent(variable:" + variable + "," +
+      "var.max:" + variable.max + "," +
+      "var.min:" + variable.min + "," +
       "initValue:" + initValue + "," +
       "indice:" + indice + "," +
       "slope:" + slope + ","+
@@ -52,6 +54,8 @@ case class GradientComponent(variable:CBLSIntVar,
   val bound2 = ((variable.min - initValue) * slope).toLong
 
   val (minStep, maxStep) = if (bound1 < bound2) (bound1, bound2) else (bound2, bound1)
+  require(maxStep >=0, "maxStep should be >=0, got:" + maxStep + " " + this)
+  require(minStep <=0, "minStep hould be <=0, got:" + minStep + " " + this)
 }
 
 /**
@@ -82,7 +86,7 @@ case class DiscretizedDirectionGradient(vars:Array[CBLSIntVar],
                                         name:String = "GradientDescent",
                                         maxNbVars:Int = Integer.MAX_VALUE,
                                         minNbVar:Int = 1,
-                                        selectVars:Iterable[Long],
+                                        selectVars:Iterable[Int],
                                         variableIndiceToDeltaForGradientDefinition:Long => Long,
                                         linearSearchForGradientDescent:LinearOptimizer,
                                         gradientSearchBehavior:LoopBehavior = Best(),
@@ -197,9 +201,9 @@ case class DiscretizedDirectionGradient(vars:Array[CBLSIntVar],
       if(exploreVars(
         varsToTest =
           (if(hotRestartOnVariableSelection)
-            HotRestart(selectVars.toList,firstIndiceInPreviousCall).map(_.toInt).toList
+            HotRestart(selectVars.toList,firstIndiceInPreviousCall).toList
           else
-            selectVars.toList.map(v => v.toInt)
+            selectVars.toList.map(v => v)
             ),
         nbVar,
         currentGradient = Nil)) {
@@ -233,7 +237,7 @@ case class DiscretizedDirectionGradient(vars:Array[CBLSIntVar],
 case class GradientDescent(vars:Array[CBLSIntVar],
                            name:String = "GradientDescent",
                            maxNbVars:Int = Integer.MAX_VALUE,
-                           selectVars:Iterable[Long],
+                           selectVars:Iterable[Int],
                            variableIndiceToDeltaForGradientDefinition:Long => Long,
                            hotRestart:Boolean = true,
                            linearSearch:LinearOptimizer,
@@ -243,7 +247,7 @@ case class GradientDescent(vars:Array[CBLSIntVar],
     linearSearch,
     trySubgradient) {
 
-  var startIndiceForHotRestart: Long = 0
+  var startIndiceForHotRestart: Int = 0
 
   override def findGradient(initialObj: Long):List[GradientComponent] = {
 
@@ -339,8 +343,6 @@ abstract class AbstractGradientDescent(vars:Array[CBLSIntVar],
     currentStep = 0
     while (gradientDefinition.nonEmpty) {
 
-      // println("\t" + gradientDefinition.mkString("\n\t"))
-
       val minStep = gradientDefinition.map(_.minStep).max
       val maxStep = gradientDefinition.map(_.maxStep).min
 
@@ -412,7 +414,7 @@ case class GradientMove(gradientDefinition : List[GradientComponent], step:Long,
       //still is the expore phase
       for(affect <- simpleAffectMoves){
         if (affect.i == variable){
-          return Some(affect.v)
+          return Some(affect.value)
         }
       }
       None

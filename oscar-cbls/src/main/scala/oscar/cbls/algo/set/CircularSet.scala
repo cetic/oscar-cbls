@@ -26,7 +26,7 @@ import scala.collection.Iterator
 
 /**Circular set is a dedicated data structure to represent set of integers in an efficient way
  * although the memory footprint will not be efficient at all
- * stores elements from 0L to size-1L
+ * stores elements from 0 to size-1L
  * ensure that the maxsize is not so big because it consumes O(maxsize) memory.
   * @author renaud.delandtsheer@cetic.be
   * @author gael.thouvenin@student.umons.ac.be

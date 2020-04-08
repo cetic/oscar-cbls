@@ -24,8 +24,8 @@ import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 //TODO move this pto proper location: business.routing.visu
 class Display(vrp: VRP,
               nodePositions: Array[(Double,Double)],
-              sizeOfMap: Option[Long] = None,
-              refreshRate: Long = 100L,
+              sizeOfMap: Option[Int] = None,
+              refreshRate: Int = 100,
               toolTipInfo: Option[Int => Option[() => String]] = None,
               routingMapType: RoutingMapTypes.Value = RoutingMapTypes.BasicRoutingMap,
               title:String = "VRP with OscaR.cbls"

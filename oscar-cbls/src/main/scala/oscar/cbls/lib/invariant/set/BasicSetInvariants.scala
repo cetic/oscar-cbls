@@ -46,19 +46,19 @@ case class Union(left: SetValue, right: SetValue)
   finishInitialization()
 
   //TODO: not obvious at all, if left == right!!
-  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for (deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
 
   @inline
-  def notifyInsertOn(v: ChangingSetValue, value: Long) {
+  def notifyInsertOn(v: ChangingSetValue, value: Int) {
     assert(left == v || right == v)
     this.insertValue(value)
   }
 
   @inline
-  def notifyDeleteOn(v: ChangingSetValue, value: Long) {
+  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
     assert(left == v || right == v)
     if (v == left) {
       if (!right.value.contains(value)) {
@@ -80,7 +80,7 @@ case class Union(left: SetValue, right: SetValue)
 }
 
 /**
- * UNION(sets(0L), sets(1L), ..., sets(n))
+ * UNION(sets(0), sets(1), ..., sets(n))
  * @param sets is an iterable of SetValue
  * @author yoann.guyot@cetic.be
  */
@@ -88,53 +88,53 @@ case class UnionAll(sets: Iterable[SetValue])
   extends SetInvariant(initialDomain = InvariantHelper.getMinMaxBoundsSet(sets))
   with SetNotificationTarget{
 
-  val count: Array[Long] = Array.fill(this.max - this.min + 1L)(0L)
+  val count: Array[Int] = Array.fill(this.max - this.min + 1)(0)
   val offset = -this.min
 
   sets foreach {
     _.value foreach { value =>
       val i = value + offset
-      count(i) = count(i) + 1L
-      if(count(i) == 1L) this :+= value
+      count(i) = count(i) + 1
+      if(count(i) == 1) this :+= value
     }
   }
 
   sets foreach (registerStaticAndDynamicDependency(_))
   finishInitialization()
 
-  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for (deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
 
   @inline
-  def notifyInsertOn(v: ChangingSetValue, value: Long) {
+  def notifyInsertOn(v: ChangingSetValue, value: Int) {
     assert(sets.exists(_ == v))
 
     val i = value + offset
 
-    if (count(i) == 0L) {
+    if (count(i) == 0) {
       this.insertValue(value)
     }
-    count(i) = count(i) + 1L
+    count(i) = count(i) + 1
   }
 
   @inline
-  def notifyDeleteOn(v: ChangingSetValue, value: Long) {
+  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
     assert(sets.exists(_ == v))
 
     val i = value + offset
-    assert(count(i) >= 1L)
+    assert(count(i) >= 1)
 
-    if (count(i) == 1L) this.deleteValue(value)
-    count(i) = count(i) - 1L
+    if (count(i) == 1) this.deleteValue(value)
+    count(i) = count(i) - 1
   }
 
   override def checkInternals(c: Checker) {
     this.min to this.max foreach {
       value =>
-        c.check(this.value.iterator.contains(value) == (count(value - offset) > 0L),
-          Some("this.value.iterator.contains(value) == (count(value (" + value + ") - offset (" + offset + ")) > 0L)"))
+        c.check(this.value.iterator.contains(value) == (count(value - offset) > 0),
+          Some("this.value.iterator.contains(value) == (count(value (" + value + ") - offset (" + offset + ")) > 0)"))
     }
   }
 }
@@ -155,13 +155,13 @@ case class Inter(left: SetValue, right: SetValue)
   finishInitialization()
 
   //TODO: handle left == right!
-  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for (deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
 
   @inline
-  def notifyInsertOn(v: ChangingSetValue, value: Long) {
+  def notifyInsertOn(v: ChangingSetValue, value: Int) {
     if (v == left) {
       if (right.value.contains(value)) {
         this.insertValue(value)
@@ -176,7 +176,7 @@ case class Inter(left: SetValue, right: SetValue)
   }
 
   @inline
-  def notifyDeleteOn(v: ChangingSetValue, value: Long) {
+  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
     assert(left == v || right == v)
     this.deleteValue(value)
   }
@@ -187,48 +187,48 @@ case class Inter(left: SetValue, right: SetValue)
   }
 }
 
-case class SetMap(a: SetValue, fun: Long => Long,
-                  initialDomain: Domain = fullRange)
+case class SetMap(a: SetValue, fun: Int => Int,
+                  initialDomain: Domain = fullIntRange)
   extends SetInvariant(SortedSet.empty, initialDomain)
   with SetNotificationTarget{
 
   registerStaticAndDynamicDependency(a)
   finishInitialization()
 
-  var outputCount: SortedMap[Long, Long] = SortedMap.empty
+  var outputCount: SortedMap[Int, Int] = SortedMap.empty
 
   for (v <- a.value) {
     val mappedV = fun(v)
-    val oldCount = outputCount.getOrElse(mappedV, 0L)
-    if (oldCount == 0L) {
+    val oldCount = outputCount.getOrElse(mappedV, 0)
+    if (oldCount == 0) {
       this :+= mappedV
     }
-    outputCount += ((mappedV, oldCount + 1L))
+    outputCount += ((mappedV, oldCount + 1))
   }
 
-  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for (deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
 
   @inline
-  def notifyInsertOn(v: ChangingSetValue, value: Long) {
+  def notifyInsertOn(v: ChangingSetValue, value: Int) {
     val mappedV = fun(value)
-    val oldCount = outputCount.getOrElse(mappedV, 0L)
-    if (oldCount == 0L) {
+    val oldCount = outputCount.getOrElse(mappedV, 0)
+    if (oldCount == 0) {
       this :+= mappedV
     }
-    outputCount += ((mappedV, oldCount + 1L))
+    outputCount += ((mappedV, oldCount + 1))
   }
 
   @inline
-  def notifyDeleteOn(v: ChangingSetValue, value: Long) {
+  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
     val mappedV = fun(value)
-    val oldCount = outputCount.getOrElse(mappedV, 0L)
-    if (oldCount == 1L) {
+    val oldCount = outputCount.getOrElse(mappedV, 0)
+    if (oldCount == 1) {
       this :-= mappedV
     }
-    outputCount += ((mappedV, oldCount - 1L))
+    outputCount += ((mappedV, oldCount - 1))
   }
 
   override def checkInternals(c: Checker) {
@@ -253,7 +253,7 @@ case class Diff(left: SetValue, right: SetValue)
   registerStaticAndDynamicDependency(right)
   finishInitialization()
 
-  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
     assert(((oldValue ++ addedValues) -- removedValues).toList equals newValue.toList,"oldValue:" + oldValue + " addedValues:" + addedValues + " removedValues:" + removedValues + " newValue:" + newValue)
 
     val addedIt = addedValues.iterator
@@ -268,7 +268,7 @@ case class Diff(left: SetValue, right: SetValue)
   }
 
   @inline
-  private def notifyInsertOn(v: ChangingSetValue, value: Long) {
+  private def notifyInsertOn(v: ChangingSetValue, value: Int) {
     if (v == left) {
       if (!right.value.contains(value)) {
         this.insertValue(value)
@@ -283,7 +283,7 @@ case class Diff(left: SetValue, right: SetValue)
   }
 
   @inline
-  private def notifyDeleteOn(v: ChangingSetValue, value: Long) {
+  private def notifyDeleteOn(v: ChangingSetValue, value: Int) {
     if (v == left) {
       if (!right.value.contains(value)) {
         this.deleteValue(value)
@@ -309,13 +309,13 @@ case class Diff(left: SetValue, right: SetValue)
  * @author renaud.delandtsheer@cetic.be
  */
 case class Cardinality(v: SetValue)
-  extends IntInvariant(v.value.size, Domain(0L , (v.max - v.min +1L)))
+  extends IntInvariant(v.value.size, Domain(0 , (v.max - v.min +1)))
   with SetNotificationTarget{
 
   registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
     this := newValue.size
   }
 
@@ -331,32 +331,32 @@ case class Cardinality(v: SetValue)
  */
 case class MakeSet(on: SortedSet[IntValue])
   extends SetInvariant
-  with IntNotificationTarget{
+  with ShortIntNotificationTarget{
 
-  var counts: SortedMap[Long, Long] = on.foldLeft(SortedMap.empty[Long, Long])((acc: SortedMap[Long, Long], intvar: IntValue) => acc + ((intvar.value, acc.getOrElse(intvar.value, 0L) + 1L)))
+  var counts: SortedMap[Int, Int] = on.foldLeft(SortedMap.empty[Int, Int])((acc: SortedMap[Int, Int], intvar: IntValue) => acc + ((intvar.valueInt, acc.getOrElse(intvar.valueInt, 0) + 1)))
 
   for (v <- on) registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  this := SortedSet.empty[Long] ++ counts.keySet
+  this := SortedSet.empty[Int] ++ counts.keySet
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int) {
     assert(on.contains(v), "MakeSet notified for non interesting var :" + on.toList.exists(_ == v) + " " + on.toList)
 
     assert(OldVal != NewVal)
-    if (counts(OldVal) == 1L) {
+    if (counts(OldVal) == 1) {
       //on va en supprimer un
       counts = counts - OldVal
       this.deleteValue(OldVal)
     } else {
       //on en supprime pas un
-      counts = counts + ((OldVal, counts(OldVal) - 1L))
+      counts = counts + ((OldVal, counts(OldVal) - 1))
     }
     if (counts.contains(NewVal)) {
-      counts = counts + ((NewVal, counts(NewVal) + 1L))
+      counts = counts + ((NewVal, counts(NewVal) + 1))
     } else {
-      counts = counts + ((NewVal, 1L))
+      counts = counts + ((NewVal, 1))
       this.insertValue(NewVal)
     }
   }
@@ -365,7 +365,7 @@ case class MakeSet(on: SortedSet[IntValue])
     c.check(this.value.size <= on.size,
       Some("this.value.size (" + this.value.size
         + ") <= on.size (" + on.size + ")"))
-    for (v <- on) c.check(this.value.contains(v.value),
+    for (v <- on) c.check(this.value.contains(v.valueInt),
       Some("this.value.contains(v.value (" + v.value + "))"))
 
     for (v <- this.value) c.check(on.exists(i => i.value == v),
@@ -387,7 +387,7 @@ case class MakeSet(on: SortedSet[IntValue])
  */
 case class Interval(lb: IntValue, ub: IntValue)
   extends SetInvariant(initialDomain = Domain(lb.min , ub.max))
-  with IntNotificationTarget{
+  with ShortIntNotificationTarget{
   assert(ub != lb)
 
   registerStaticAndDynamicDependency(lb)
@@ -395,41 +395,41 @@ case class Interval(lb: IntValue, ub: IntValue)
   finishInitialization()
 
   if (lb.value <= ub.value)
-    for (i <- lb.value to ub.value) this.insertValue(i)
+    for (i <- lb.valueInt to ub.valueInt) this.insertValue(i)
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int) {
     if (v == lb) {
       if (OldVal < NewVal) {
         //intervale reduit
         if (OldVal <= ub.value)
-          for (i <- OldVal to (ub.value min (NewVal - 1L))) this.deleteValue(i)
+          for (i <- OldVal to (ub.valueInt min (NewVal - 1))) this.deleteValue(i)
       } else {
         //intervale plus grand
         if (NewVal <= ub.value)
-          for (i <- NewVal to (ub.value min (OldVal - 1L))) this.insertValue(i)
+          for (i <- NewVal to (ub.valueInt min (OldVal - 1))) this.insertValue(i)
       }
     } else {
       if (OldVal > NewVal) {
         //intervale reduit
-        if (lb.value <= OldVal)
-          for (i <- (NewVal + 1L) max lb.value to OldVal) this.deleteValue(i)
+        if (lb.valueInt <= OldVal)
+          for (i <- (NewVal + 1) max lb.valueInt to OldVal) this.deleteValue(i)
       } else {
         //intervale plus grand
-        if (lb.value <= NewVal)
-          for (i <- (OldVal + 1L) max lb.value to NewVal) this.insertValue(i)
+        if (lb.valueInt <= NewVal)
+          for (i <- (OldVal + 1) max lb.valueInt to NewVal) this.insertValue(i)
       }
     }
   }
 
   override def checkInternals(c: Checker) {
-    c.check(this.value.size == 0L.max(ub.value - lb.value + 1L),
+    c.check(this.value.size == 0.max(ub.valueInt - lb.valueInt + 1),
       Some("this.value.size (" + this.value.size
-        + ") == 0L.max(ub.value (" + ub.value
-        + ") - lb.value (" + lb.value + ") + 1L) ("
-        + 0L.max(ub.value - lb.value + 1L) + ")"))
-    if (ub.value >= lb.value) {
-      for (i <- lb.value to ub.value)
+        + ") == 0.max(ub.valueInt (" + ub.value
+        + ") - lb.valueInt (" + lb.valueInt + ") + 1) ("
+        + 0.max(ub.valueInt - lb.valueInt + 1) + ")"))
+    if (ub.valueInt >= lb.value) {
+      for (i <- lb.valueInt to ub.valueInt)
         c.check(this.value.contains(i),
           Some("this.value.contains(" + i + ")"))
     }
@@ -443,7 +443,7 @@ case class Interval(lb: IntValue, ub: IntValue)
  * @param default the default value in case from is empty
  * @author renaud.delandtsheer@cetic.be
  */
-case class TakeAny(from: SetValue, default: Long)
+case class TakeAny(from: SetValue, default: Int)
   extends IntInvariant(default, Domain(from.min , from.max))
   with SetNotificationTarget{
 
@@ -459,7 +459,7 @@ case class TakeAny(from: SetValue, default: Long)
     this := from.value.head
   }
 
-  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
     if (wasEmpty) {
       if(newValue.nonEmpty){
         wasEmpty = false
@@ -470,7 +470,7 @@ case class TakeAny(from: SetValue, default: Long)
         this := default
         wasEmpty = true
       }else{
-        if (!newValue.contains(this.newValue)){
+        if (!newValue.contains(this.newValueInt)){
           this := newValue.head
         }
       }
@@ -479,33 +479,33 @@ case class TakeAny(from: SetValue, default: Long)
 
   override def checkInternals(c: Checker) {
     if (from.value.isEmpty) {
-      c.check(this.value == default,
-        Some("this.value (" + this.value
+      c.check(this.valueInt == default,
+        Some("this.valueInt (" + this.value
           + ") == default (" + default + ")"))
     } else {
-      c.check(from.value.contains(this.value),
-        Some("from.value.contains(this.value (" + this.value + "))"))
+      c.check(from.value.contains(this.valueInt),
+        Some("from.value.contains(this.valueInt (" + this.valueInt + "))"))
     }
   }
 }
 
 /**
- * an invariant that defines a singleton set out of a single Long var.
+ * an invariant that defines a singleton set out of a single Int var.
  * @author renaud.delandtsheer@cetic.be
  */
 case class Singleton(v: IntValue)
-  extends SetInvariant(SortedSet(v.value), v.domain)
-  with IntNotificationTarget{
+  extends SetInvariant(SortedSet(v.valueInt), v.domain)
+  with ShortIntNotificationTarget{
 
   registerStaticAndDynamicDependency(v)
   finishInitialization()
 
   override def checkInternals(c: Checker) {
-    c.check(this.value.size == 1L)
+    c.check(this.value.size == 1)
     c.check(this.value.head == v.value)
   }
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int) {
     assert(v == this.v)
     //ici, on propage tout de suite, c'est les variables qui font le stop and go.
     this.deleteValue(OldVal)
@@ -535,7 +535,7 @@ case class TakeAnyToSet(from: SetValue)
     this := SortedSet(from.value.head)
   }
 
-  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
     if (wasEmpty) {
       if(newValue.nonEmpty){
         wasEmpty = false
@@ -556,12 +556,12 @@ case class TakeAnyToSet(from: SetValue)
   override def checkInternals(c: Checker) {
     if (from.value.isEmpty) {
       c.check(this.value.isEmpty,
-        Some("output.value (" + this.value
+        Some("output.valueInt (" + this.value
           + ") is empty set"))
     } else {
       c.check(from.value.contains(this.value.head),
-        Some("from.value.contains(output.value (" + this.value.head + "))"))
-      c.check(this.value.size == 1L,
+        Some("from.value.contains(output.valueInt (" + this.value.head + "))"))
+      c.check(this.value.size == 1,
         Some("output is a singleton"))
     }
   }
@@ -573,25 +573,25 @@ case class TakeAnyToSet(from: SetValue)
  * @author renaud.delandtsheer@cetic.be
  */
 case class BelongsTo(v: IntValue, set: SetValue)
-  extends IntInvariant(if (set.value.contains(v.value)) 1L else 0L,Domain(0L , 1L))
-  with IntNotificationTarget
+  extends IntInvariant(if (set.value.contains(v.valueInt)) 1 else 0,Domain(0 , 1))
+  with ShortIntNotificationTarget
   with SetNotificationTarget{
 
   registerStaticAndDynamicDependenciesNoID(v, set)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
-    this := (if (set.value.contains(NewVal)) 1L else 0L)
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int) {
+    this := (if (set.value.contains(NewVal)) 1 else 0)
   }
 
-  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
-    if((removedValues.nonEmpty && this.newValue == 1L) || (addedValues.nonEmpty && this.newValue == 0L)){
-      this := (if (newValue.contains(this.v.value)) 1L else 0L)
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
+    if((removedValues.nonEmpty && this.newValue == 1) || (addedValues.nonEmpty && this.newValue == 0)){
+      this := (if (newValue.contains(this.v.valueInt)) 1 else 0)
     }
   }
 
   override def checkInternals(c: Checker) {
-    c.check(this.value == (if (set.value.contains(v.value)) 1L else 0L))
+    c.check(this.valueInt == (if (set.value.contains(v.valueInt)) 1 else 0))
   }
 }
 

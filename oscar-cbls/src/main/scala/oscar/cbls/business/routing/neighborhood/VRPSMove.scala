@@ -26,6 +26,6 @@ abstract class VRPSMove(override val objAfter: Long,
 
   override def touchedVariables: List[Variable] = List(vrp.routes)
 
-  def impactedPoints:Iterable[Long]
+  def impactedPoints:Iterable[Int]
 
 }

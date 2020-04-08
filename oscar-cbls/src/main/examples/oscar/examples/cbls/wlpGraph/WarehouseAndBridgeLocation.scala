@@ -115,11 +115,11 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
     graphDiameterOverApprox = Int.MaxValue,
     openConditions = openConditions,
     centroids = openWarehouses,
-    trackedNodes = deliveryToNode.map(_.id:Long),
+    trackedNodes = deliveryToNode.map(_.id),
     m,
     defaultDistanceForUnreachableNodes = 10000)
 
-  val trackedNodeToDistanceAndCentroid: SortedMap[Long,(CBLSIntVar,CBLSIntVar)] = vor.trackedNodeToDistanceAndCentroidMap
+  val trackedNodeToDistanceAndCentroid: SortedMap[Int,(CBLSIntVar,CBLSIntVar)] = vor.trackedNodeToDistanceAndCentroidMap
 
   println("done init voronoï zones")
 
@@ -178,7 +178,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
     (assignList:List[AssignMove]) =>
     {
       val lastChangedWarehouse = assignList.head.id
-      val setTo = assignList.head.v
+      val setTo = assignList.head.value
       val otherWarehouses = if(setTo == 0) kNearestClosedWarehouses(lastChangedWarehouse,kClosed) else kNearestOpenWarehouses(lastChangedWarehouse,kOpen)
       Some(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse",searchZone = () => otherWarehouses,hotRestart = false))
     },
@@ -191,14 +191,14 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
     (assignList:List[AssignMove]) =>
     {
       val lastChangedWarehouse = assignList.last.id
-      val setTo = assignList.head.v
+      val setTo = assignList.head.value
       val otherWarehouses = if(setTo == 0) kNearestClosedWarehouses(lastChangedWarehouse,kClosed) else kNearestOpenWarehouses(lastChangedWarehouse,kOpen)
       Some(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse",searchZone = () => otherWarehouses,hotRestart = false))
     },
     maxDepth = width,
     intermediaryStops = true)
 
-  def swapsK(k:Int, openWarehousesToConsider:()=>Iterable[Long] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
+  def swapsK(k:Int, openWarehousesToConsider:()=>Iterable[Int] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
     searchZone1 = openWarehousesToConsider,
     searchZone2 = () => (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
     name = "Swap" + k + "Nearest",
@@ -208,14 +208,14 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   var lastDisplay = this.getWatch
 
-  def getFactorApartBridges(w1:Int,w2:Int,factor:Int):Iterable[Long] = {
+  def getFactorApartBridges(w1:Int,w2:Int,factor:Int):Iterable[Int] = {
     val nodeW1 = warehouseToNode(w1)
     val nodeW2 = warehouseToNode(w2)
 
     val distanceW1W2:Long = underApproximatingDistanceInGraphAllCondtionsOpen(nodeW1.id)(nodeW2.id)
 
-    (0L until nbConditionalEdges).filter(c => {
-      val conditionalEdge = graph.conditionToConditionalEdges(c)
+    (0 until nbConditionalEdges).filter(c => {
+      val conditionalEdge = graph.conditionToConditionalEdges(c.toInt)
       val distA1 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeIDA)(nodeW1.id)
       val distA2 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeIDA)(nodeW2.id)
       val distB1 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeIDB)(nodeW1.id)
@@ -231,7 +231,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
   println("start warehousesPairToTwiceApartBridges")
   //we only fill half of the matrix; it is symmetric anyway, so just use the upper part
   //Also we use a for below to enable parallelism, since this is brutal computation
-  val warehousesPairToTwiceApartBridges:Array[Array[Iterable[Long]]] = Array.fill(W)(null)
+  val warehousesPairToTwiceApartBridges:Array[Array[Iterable[Int]]] = Array.fill(W)(null)
 
   val l = 40
   val isAmongLNearestWarehouses:Array[Array[Boolean]] = Array.tabulate(W)(_ => Array.fill(W)(false))
@@ -275,7 +275,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
       visual.redraw(
         openConditions.value,
         openWarehouses.value,
-        trackedNodeToDistanceAndCentroid.mapValues({case (v1, v2) => v2.value}),
+        trackedNodeToDistanceAndCentroid.mapValues({case (v1, v2) => v2.valueInt}),
         hideClosedEdges = false,
         hideRegularEdges = true,
         hideOpenEdges = false,
@@ -297,7 +297,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
   visual.redraw(
     openConditions.value,
     openWarehouses.value,
-    trackedNodeToDistanceAndCentroid.mapValues({case (v1,v2) => v2.value}),
+    trackedNodeToDistanceAndCentroid.mapValues({case (v1,v2) => v2.valueInt}),
     emphasizeEdges = vor.spanningTree(deliveryNodeList),
     hideClosedEdges = true,
     hideRegularEdges = false,

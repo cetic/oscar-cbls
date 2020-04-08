@@ -21,7 +21,7 @@ trait RoutingExtensions {
     * @param chains The list of chains => List of List of nodes
     * @return A Chains object
     */
-  def chains(vrp: VRP, chains: List[List[Long]]) =
+  def chains(vrp: VRP, chains: List[List[Int]]) =
     new Chains(vrp, chains)
   type Chains = oscar.cbls.business.routing.model.extensions.Chains
 
@@ -45,8 +45,8 @@ trait RoutingExtensions {
     */
   def display(vrp: VRP,
               nodePositions: Array[(Double,Double)],
-              sizeOfMap: Option[Long] = None,
-              refreshRate: Long = 100L,
+              sizeOfMap: Option[Int] = None,
+              refreshRate: Int = 100,
               routingMapType: RoutingMapTypes.Value = RoutingMapTypes.BasicRoutingMap,
               toolTipInfo: Option[Int => Option[() => String]] = None,
               title:String = "VRP with OscaR.cbls"

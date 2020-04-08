@@ -38,17 +38,17 @@ import scala.collection.immutable.SortedMap
   *               We use a map to ensure that there is no two bounds on the same value.
   * @author renaud.delandtsheer@cetic.be
   */
-case class AtMost(variables:Iterable[IntValue], bounds:SortedMap[Long, IntValue]) extends Constraint {
+case class AtMost(variables:Iterable[IntValue], bounds:SortedMap[Int, IntValue]) extends Constraint {
    assert(variables.size < Long.MaxValue)
 
   registerConstrainedVariables(variables)
   registerConstrainedVariables(bounds.values)
 
   private val countInvariant = DenseCount.makeDenseCount(variables.toArray)
-  private val offset:Long = countInvariant.offset
+  private val offset:Int = countInvariant.offset
   private val valueCount = countInvariant.counts //v => #occurrence of v+offset in variables
 
-  private val noViolation:IntValue = 0L
+  private val noViolation:IntValue = 0
   private val violationByVal:Array[IntValue] = Array.tabulate(valueCount.length)(_ => noViolation)
 
   for((value,bound) <- bounds){
@@ -96,7 +96,7 @@ case class AtMost(variables:Iterable[IntValue], bounds:SortedMap[Long, IntValue]
         */
       val violationOfV = violation(v)
       val expectedViolation =
-        if (checkBounds.isDefinedAt(v.value)) 0L.max(checkBounds(v.value) - bounds(v.value).value)
+        if (checkBounds.isDefinedAt(v.value)) 0.max(checkBounds(v.value) - bounds(v.valueInt).value)
         else 0L
       c.check(violationOfV.value == expectedViolation, Some("" + violationOfV + " == expectedViolation (" + expectedViolation + ")"))
     }

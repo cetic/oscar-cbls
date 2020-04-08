@@ -14,7 +14,7 @@ trait RoutingInvariants {
    *
    * This invariant relies on the vehicle model assumption:
    * there are v vehicles
-   * They are supposed to start from point of values 0L to v-1L
+   * They are supposed to start from point of values 0 to v-1L
    * These values must always be present in the sequence in increasing order
    * they cannot be included within a moved segment
    *
@@ -31,8 +31,8 @@ trait RoutingInvariants {
    *         if the distance is global, it is a array with a single variable that is equal to the sum of all drive distance
    */
   def routeLength(routes : ChangingSeqValue,
-                  n : Long,
-                  v : Long,
+                  n : Int,
+                  v : Int,
                   perVehicle : Boolean,
                   distanceMatrix : Array[Array[Long]],
                   distanceIsSymmetric : Boolean,
@@ -51,7 +51,7 @@ trait RoutingInvariants {
    * @param routes the routes
    * @param v the number of vehicle
    */
-  def movingVehicles(routes : ChangingSeqValue, v : Long) =
+  def movingVehicles(routes : ChangingSeqValue, v : Int) =
     MovingVehicles(routes, v)
 
   /**
@@ -67,7 +67,7 @@ trait RoutingInvariants {
    * @return an array telling the violation per vehicle
    * @note this is a preliminary naive version of the constraint. a faster one is to be developed!
    */
-  def nodeVehicleObligation(routes : ChangingSeqValue, v : Long, n : Long, nodeVehicleObligation : Map[Long, Set[Long]]) : Array[CBLSIntVar] =
+  def nodeVehicleObligation(routes : ChangingSeqValue, v : Int, n : Int, nodeVehicleObligation : Map[Int, Set[Int]]) : Array[CBLSIntVar] =
     NodeVehicleObligation(routes, v, n, nodeVehicleObligation)
 
   /**
@@ -80,7 +80,7 @@ trait RoutingInvariants {
    * @param nodeVehicleRestrictions the restrictions that we are monitoring
    * @return an array telling the violation per vehicle
    */
-  def nodeVehicleRestrictions(routes : ChangingSeqValue, v : Long, nodeVehicleRestrictions : Iterable[(Long, Long)]) =
+  def nodeVehicleRestrictions(routes : ChangingSeqValue, v : Int, nodeVehicleRestrictions : Iterable[(Int, Int)]) =
     NodeVehicleRestrictions(routes, v, nodeVehicleRestrictions)
 
 
@@ -95,12 +95,12 @@ trait RoutingInvariants {
    */
   def routeSuccessorAndPredecessors(routes:ChangingSeqValue,
                                     v:Int,
-                                    defaultWhenNotInSequence:Long)(
+                                    defaultWhenNotInSequence:Int)(
     successorValues:Array[CBLSIntVar] =
-    Array.tabulate(routes.maxValue + 1L)(node =>
+    Array.tabulate(routes.maxValue + 1)(node =>
       CBLSIntVar(routes.model,defaultWhenNotInSequence,name="successor of node" + node)),
     predecessorValues:Array[CBLSIntVar] =
-    Array.tabulate(routes.maxValue + 1L)(node =>
+    Array.tabulate(routes.maxValue + 1)(node =>
       CBLSIntVar(routes.model,defaultWhenNotInSequence,name="predecessor of node" + node))
   ) = {
     new RouteSuccessorAndPredecessors(routes,

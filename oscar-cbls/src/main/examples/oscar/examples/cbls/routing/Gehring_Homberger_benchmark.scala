@@ -23,7 +23,7 @@ object Gehring_Homberger_benchmark extends App {
     new Gehring_Homberger_benchmark_VRPTW(problem._1, problem._2, problem._3, problem._4, problem._5, problem._6)
   }
 
-  private def generateProblem(file: File): (Long, Long, Long, Array[Array[Long]], Array[TransferFunction], Array[Long]) ={
+  private def generateProblem(file: File): (Int, Int, Long, Array[Array[Long]], Array[TransferFunction], Array[Long]) ={
     // Retrieve data from file
     val lines = Source.fromFile(file).getLines
     lines.next()        // NAME
@@ -31,7 +31,7 @@ object Gehring_Homberger_benchmark extends App {
     lines.next()        // VEHICLE
     lines.next()        // NUMBER CAPACITY
     val vehicleInfo = lines.next().split("\\s+").drop(1)
-    val (v,vehicleMaxCapacity) = (vehicleInfo.head.toLong, vehicleInfo.last.toLong)
+    val (v,vehicleMaxCapacity) = (vehicleInfo.head.toInt, vehicleInfo.last.toLong)
     lines.next()        // blank space
     lines.next()        // CUSTOMER
     lines.next()        // COLUMN NAME
@@ -72,7 +72,7 @@ object Gehring_Homberger_benchmark extends App {
   }
 }
 
-class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Int, distanceMatrix: Array[Array[Long]], singleNodeTransferFunctions: Array[TransferFunction], demands: Array[Long]){
+class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Long, distanceMatrix: Array[Array[Long]], singleNodeTransferFunctions: Array[TransferFunction], demands: Array[Long]){
   val m = new Store(noCycle = false)
   val myVRP = new VRP(m,n,v)
   val penaltyForUnrouted = 1000000
@@ -84,7 +84,7 @@ class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Int, distanceMatrix: 
 
   // Distance
   val routeLengths = Array.fill(v)(CBLSIntVar(m,0))
-  val routeLength = new RouteLength(gc,n,v,routeLengths,(from: Long, to: Long) => distanceMatrix(from)(to))
+  val routeLength = new RouteLength(gc,n,v,routeLengths,(from: Int, to: Int) => distanceMatrix(from)(to))
   val movingVehiclesNow = movingVehicles(myVRP.routes,v)
 
   //Time window constraints
@@ -115,17 +115,17 @@ class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Int, distanceMatrix: 
   val relevantSuccessorsOfNodes = TransferFunction.relevantSuccessorsOfNodes(n,v,singleNodeTransferFunctions, distanceMatrix)
   val closestRelevantNeighborsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(distanceMatrix,relevantPredecessorsOfNodes)(_))
 
-  def postFilter(node:Long): (Long) => Boolean = {
-    (neighbor: Long) => {
+  def postFilter(node:Int): (Int) => Boolean = {
+    (neighbor: Int) => {
       val successor = myVRP.nextNodeOf(neighbor)
       myVRP.isRouted(neighbor) &&
         (successor.isEmpty || relevantSuccessorsOfNodes(node).exists(_ == successor.get))
     }
   }
 
-  def onePtMove(k:Long) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance(_),postFilter), myVRP)) name "One Point Move"
+  def onePtMove(k:Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance(_),postFilter), myVRP)) name "One Point Move"
 
-  private var removingRoute: List[Long] = List.empty
+  private var removingRoute: List[Int] = List.empty
 
   private object RemoveNode {
     def apply(): RemovePoint = {
@@ -140,10 +140,10 @@ class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Int, distanceMatrix: 
 
   private object NextRemoveGenerator {
     def apply() ={
-      (exploredMoves:List[RemovePointMove], t:Option[List[Long]]) => {
-        val chainTail: List[Long] = t match {
+      (exploredMoves:List[RemovePointMove], t:Option[List[Int]]) => {
+        val chainTail: List[Int] = t match {
           case None => removingRoute.drop(1)
-          case Some(tail:List[Long]) => tail
+          case Some(tail:List[Int]) => tail
         }
 
         chainTail match {
@@ -158,7 +158,7 @@ class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Int, distanceMatrix: 
 
   object EmptyVehicle {
     def apply() = {
-      profile(atomic(mu[RemovePointMove, Option[List[Long]]](
+      profile(atomic(mu[RemovePointMove, Option[List[Int]]](
         RemoveNode(),
         NextRemoveGenerator(),
         None,

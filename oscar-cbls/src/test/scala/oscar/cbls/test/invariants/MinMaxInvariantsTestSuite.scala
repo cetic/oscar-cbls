@@ -9,7 +9,7 @@ class MinMaxInvariantsTestSuite extends FunSuite with Checkers{
 
   val verbose = 0
 
-  def randomArray(size:Int,values:Range):Array[Long] = {
+  def randomArray(size:Int,values:Range):Array[Int] = {
     def randomValue(r:Range):Int = {
       r.start + (r.length * scala.math.random).toInt
     }

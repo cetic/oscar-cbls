@@ -7,7 +7,7 @@ import oscar.cbls.business.routing.invariants.global._
 import oscar.cbls.core.computation.CBLSIntVar
 
 object GlobalVehicleCapacityConstraintWithLogReduction{
-  def apply(gc: GlobalConstraintCore, n: Long, v: Long,
+  def apply(gc: GlobalConstraintCore, n: Int, v: Int,
             vehiclesCapacity: Array[Long],
             contentVariationAtNode: Array[Long],
             violationPerVehicle: Array[CBLSIntVar]): GlobalVehicleCapacityConstraintWithLogReduction =
@@ -24,11 +24,11 @@ object GlobalVehicleCapacityConstraintWithLogReduction{
    * @param capacityConstraint A capacity constraint
    * @return A map : Node -> relevant neighbors
    */
-  def relevantPredecessorsOfNodes(capacityConstraint: GlobalVehicleCapacityConstraintWithLogReduction): Map[Long,Iterable[Long]] ={
-    val allNodes = (0L until capacityConstraint.n).toList
+  def relevantPredecessorsOfNodes(capacityConstraint: GlobalVehicleCapacityConstraintWithLogReduction): Map[Int,Iterable[Int]] ={
+    val allNodes = (0 until capacityConstraint.n).toList
     val vehicleMaxCapacity = capacityConstraint.vehiclesCapacity.max
     Array.tabulate(capacityConstraint.n)(node =>
-      node.toLong -> allNodes.filter(neighbor =>
+      node -> allNodes.filter(neighbor =>
         capacityConstraint.contentVariationAtNode(node) + capacityConstraint.contentVariationAtNode(neighbor) <= vehicleMaxCapacity)).toMap
   }
 }
@@ -36,7 +36,7 @@ object GlobalVehicleCapacityConstraintWithLogReduction{
 
 
 
-class GlobalVehicleCapacityConstraintWithLogReduction(gc: GlobalConstraintCore, val n: Long, val v: Long,
+class GlobalVehicleCapacityConstraintWithLogReduction(gc: GlobalConstraintCore, val n: Int, val v: Int,
                                                       val vehiclesCapacity: Array[Long],
                                                       val contentVariationAtNode: Array[Long],
                                                       violationPerVehicle: Array[CBLSIntVar]) extends LogReducedGlobalConstraint[TwoWaysVehicleContentFunction, Boolean](gc, n, v) {
@@ -59,7 +59,7 @@ class GlobalVehicleCapacityConstraintWithLogReduction(gc: GlobalConstraintCore, 
     *
     * @return the type T associated with the node "node"
     */
-  override def nodeValue(node: Long): TwoWaysVehicleContentFunction = contentFunctionAtNode(node)
+  override def nodeValue(node: Int): TwoWaysVehicleContentFunction = contentFunctionAtNode(node)
 
   /**
     * this one is similar to the nodeValue except that it only is applied on vehicle,
@@ -68,7 +68,7 @@ class GlobalVehicleCapacityConstraintWithLogReduction(gc: GlobalConstraintCore, 
     * @param vehicle
     * @return
     */
-  override def endNodeValue(vehicle: Long): TwoWaysVehicleContentFunction = contentFunctionForVehicleReturn(vehicle)
+  override def endNodeValue(vehicle: Int): TwoWaysVehicleContentFunction = contentFunctionForVehicleReturn(vehicle)
 
   /**
     * this method is for composing steps into bigger steps.
@@ -101,7 +101,7 @@ class GlobalVehicleCapacityConstraintWithLogReduction(gc: GlobalConstraintCore, 
     *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
     * @return the value associated with the vehicle. This value should only be computed based on the provided segments
     */
-  override def computeVehicleValueComposed(vehicle: Long, segments: QList[LogReducedSegment[TwoWaysVehicleContentFunction]]): Boolean = {
+  override def computeVehicleValueComposed(vehicle: Int, segments: QList[LogReducedSegment[TwoWaysVehicleContentFunction]]): Boolean = {
 
     def composeSubSegments(vehicleContentFunctions: QList[TwoWaysVehicleContentFunction], previousOutCapa: Long, flipped: Boolean): Long ={
       val twoWaysVehicleContentFunction = vehicleContentFunctions.head
@@ -143,7 +143,7 @@ class GlobalVehicleCapacityConstraintWithLogReduction(gc: GlobalConstraintCore, 
     * @param vehicle the vehicle number
     * @param value   The value to assign to the output variable
     */
-  override def assignVehicleValue(vehicle: Long, value: Boolean): Unit = {
+  override def assignVehicleValue(vehicle: Int, value: Boolean): Unit = {
     if(value) violationPerVehicle(vehicle) := 1 else violationPerVehicle(vehicle) := 0
   }
 
@@ -156,7 +156,7 @@ class GlobalVehicleCapacityConstraintWithLogReduction(gc: GlobalConstraintCore, 
     * @param vehicle the vehicle on which the value is computed
     * @param routes  the sequence representing the route of all vehicle
     */
-  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence): Boolean = {
+  override def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Boolean = {
     var explorer = routes.explorerAtAnyOccurrence(vehicle)
     var currentContent = contentVariationAtNode(vehicle)
     val maxCapacity = vehiclesCapacity(vehicle)

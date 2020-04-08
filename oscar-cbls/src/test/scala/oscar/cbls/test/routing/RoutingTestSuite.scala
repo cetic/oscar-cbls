@@ -116,10 +116,10 @@ class RoutingTestSuite extends FunSuite with Checkers{
     }
 
     val oper = genOperation(n)
-    def op(n1:Long,n2:Long,c:Long): Long= {
+    def op(n1:Int,n2:Int,c:Long): Long= {
       oper(n1)(n2) match {
         case 0 => c + matrix(n1)(n2)
-        case 1 => 0L max c - matrix(n1)(n2)
+        case 1 => 0 max c - matrix(n1)(n2)
         case 2 => c * matrix(n1)(n2)
         case 3 => c % matrix(n1)(n2)
       }
@@ -171,10 +171,10 @@ class RoutingTestSuite extends FunSuite with Checkers{
     }
 
     val oper = genOperation(n)
-    def op(n1:Long,n2:Long,c:Long): Int= {
+    def op(n1:Int,n2:Int,c:Long): Long= {
       oper(n1)(n2) match {
         case 0 => c + matrix(n1)(n2)
-        case 1 => 0L max c - matrix(n1)(n2)
+        case 1 => 0 max c - matrix(n1)(n2)
         case 2 => c * matrix(n1)(n2)
         case 3 => c % matrix(n1)(n2)
       }
@@ -225,10 +225,10 @@ class RoutingTestSuite extends FunSuite with Checkers{
     }
 
     val oper = genOperation(n)
-    def op(n1:Long,n2:Long,c:Long): Int= {
+    def op(n1:Int,n2:Int,c:Long): Long= {
       oper(n1)(n2) match {
         case 0 => c + matrix(n1)(n2)
-        case 1 => 0L max c - matrix(n1)(n2)
+        case 1 => 0 max c - matrix(n1)(n2)
         case 2 => c * matrix(n1)(n2)
         case 3 => c % matrix(n1)(n2)
       }

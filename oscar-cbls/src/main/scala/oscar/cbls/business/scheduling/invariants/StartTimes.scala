@@ -11,9 +11,9 @@ import oscar.cbls.core.{ChangingSeqValue, Invariant, SeqNotificationTarget}
 import scala.collection.BitSet
 
 class StartTimes(actPriorityList: ChangingSeqValue,
-                 actDurations: Map[ActivityId, Long],
+                 actDurations: Map[ActivityId, Int],
                  actPrecedences: Precedences,
-                 actMinStartTimes: Map[ActivityId, Long],
+                 actMinStartTimes: Map[ActivityId, Int],
                  resources: List[Resource],
                  makeSpan: CBLSIntVar,
                  startTimes: Map[ActivityId, CBLSIntVar])
@@ -57,24 +57,24 @@ class StartTimes(actPriorityList: ChangingSeqValue,
   def computeStartTimes(actPriorityList: IntSequence): Unit = {
     val resourceStates: Array[ResourceState] = resources.map(_.initialState).toArray
     var makeSpanValue = 0L
-    var startTimesVals: Map[ActivityId, Long] = Map()
+    var startTimesVals: Map[ActivityId, Int] = Map()
     for {actInd <- actPriorityList} {
       val actIndI = actInd.toInt
       // Compute maximum ending time for preceding activities
       val maxEndTimePrecs = actPrecedences
         .predMap.getOrElse(actIndI, BitSet.empty)
         .filter(actPriorityList.contains(_))
-        .foldLeft(0L) { (acc, precInd) =>
+        .foldLeft(0) { (acc, precInd) =>
           acc max (startTimesVals(precInd) + actDurations(precInd))
         }
       // Compute maximum of earliest release time for all needed resources
       val maxReleaseResources = activityUsedResourceIndices
         .getOrElse(actIndI, Set())
-        .foldLeft(0L) { (acc, resInd) =>
-          acc max resourceStates(resInd).earliestStartTime(actIndI, 0L)
+        .foldLeft(0) { (acc, resInd) =>
+          acc max resourceStates(resInd).earliestStartTime(actIndI, 0)
         }
       // Getting the minimum start time for this task
-      val minStartTime = actMinStartTimes.getOrElse(actIndI, 0L)
+      val minStartTime = actMinStartTimes.getOrElse(actIndI, 0)
       val earliestStartTime = maxEndTimePrecs max maxReleaseResources max minStartTime
       // Update resource states
       activityUsedResourceIndices
@@ -97,9 +97,9 @@ class StartTimes(actPriorityList: ChangingSeqValue,
 
 object StartTimes {
   def apply(actPriorityList: ChangingSeqValue,
-            actDurations: Map[ActivityId, Long],
+            actDurations: Map[ActivityId, Int],
             actPrecedences: Precedences,
-            actMinStartTimes: Map[ActivityId, Long] = Map(),
+            actMinStartTimes: Map[ActivityId, Int] = Map(),
             resources: List[Resource]): (CBLSIntVar, Map[ActivityId, CBLSIntVar]) = {
     val model = actPriorityList.model
     val makeSpan = CBLSIntVar(model, 0L, name="Schedule Makespan")

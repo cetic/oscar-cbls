@@ -56,7 +56,7 @@ import oscar.cbls._
   * @author yoann.guyot@cetic.be
   * @author Florent Ghilain (UMONS)
   */
-case class RemovePoint(relevantPointsToRemove:()=>Iterable[Long],
+case class RemovePoint(relevantPointsToRemove:()=>Iterable[Int],
                        vrp: VRP,
                        neighborhoodName:String = "RemovePoint",
                        selectNodeBehavior:LoopBehavior = First(),
@@ -65,10 +65,10 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Long],
   extends EasyNeighborhoodMultiLevel[RemovePointMove](neighborhoodName){
 
   //the indice to start with for the exploration
-  var startIndice: Long = 0
+  var startIndice: Int = 0
 
-  var pointToRemove:Long = -1L
-  var positionOfPointToRemove:Long = -1L
+  var pointToRemove:Int = -1
+  var positionOfPointToRemove:Int = -1
 
   val v = vrp.v
   val seq = vrp.routes
@@ -104,7 +104,7 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Long],
       }
     }
     seq.releaseTopCheckpoint()
-    startIndice = pointToRemove + 1L
+    startIndice = pointToRemove + 1
   }
 
   override def instantiateCurrentMove(newObj: Long) =
@@ -117,17 +117,17 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Long],
       this,
       neighborhoodNameToString)
 
-  def doMove(positionOfPointToRemove: Long) {
+  def doMove(positionOfPointToRemove: Int) {
     seq.remove(positionOfPointToRemove)
   }
 
-  def doMovePositionIndependent(valueToRemove: Long) {
+  def doMovePositionIndependent(valueToRemove: Int) {
     val s = seq.newValue
     seq.remove(s.positionOfAnyOccurrence(valueToRemove).get)
   }
 
   //this resets the internal state of the Neighborhood
-  override def reset(){startIndice = 0L}
+  override def reset(){startIndice = 0}
 }
 
 /**
@@ -139,8 +139,8 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Long],
   * @author yoann.guyot@cetic.be
   * @author Florent Ghilain (UMONS)
   */
-case class RemovePointMove(positionOfPointToRemove: Long,
-                           pointToRemove:Long,
+case class RemovePointMove(positionOfPointToRemove: Int,
+                           pointToRemove:Int,
                            positionIndependentMoves:Boolean,
                            vrp:VRP,
                            override val objAfter:Long,
@@ -148,7 +148,7 @@ case class RemovePointMove(positionOfPointToRemove: Long,
                            override val neighborhoodName:String = null)
   extends VRPSMove(objAfter, neighborhood, neighborhoodName, vrp){
 
-  override def impactedPoints: List[Long] = List(pointToRemove)
+  override def impactedPoints: List[Int] = List(pointToRemove)
 
   override def commit() {
     if(positionIndependentMoves){

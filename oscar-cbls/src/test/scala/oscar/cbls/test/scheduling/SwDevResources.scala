@@ -13,12 +13,12 @@ object SwDevResources {
   val activities = List(analysis, design, coding, testing, qc, pm)
   val initials = List(pm, qc, testing, coding, design, analysis)
   val durations = Map(
-    analysis -> 10L,
-    design -> 10L,
-    coding -> 15L,
-    testing -> 25L,
-    qc -> 50L,
-    pm -> 60L
+    analysis -> 10,
+    design -> 10,
+    coding -> 15,
+    testing -> 25,
+    qc -> 50,
+    pm -> 60
   )
   val precPairs = List((analysis, design), (analysis, qc), (design, coding), (coding, testing))
   // Resources
@@ -26,13 +26,13 @@ object SwDevResources {
   val (dev, test) = (30, 31)
   val analyst_st = SetupTimes(analyst_mode,
     Map(analysis->analyst_mode, design->analyst_mode, qc->qapm, pm->qapm),
-    Map((analyst_mode, qapm)->1L, (qapm, analyst_mode)->1L))
+    Map((analyst_mode, qapm)->1, (qapm, analyst_mode)->1))
   val analyst = new CumulativeMultiResourceWithSetupTimes(5,
     Map(analysis->2L, design->1L, qc->1L, pm->2L),
     analyst_st)
   val senior_dev_test_st = SetupTimes(dev,
     Map(coding->dev, testing->test),
-    Map((dev, test)->2L, (test, dev)->2L))
+    Map((dev, test)->2, (test, dev)->2))
   val senior_dev_test = new CumulativeMultiResourceWithSetupTimes(2,
     Map(coding->2L, testing->1L),
     senior_dev_test_st)

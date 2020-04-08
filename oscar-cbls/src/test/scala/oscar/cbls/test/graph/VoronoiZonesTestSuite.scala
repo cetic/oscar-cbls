@@ -13,7 +13,7 @@ class VoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
 
   val verbose = 0
 
-  val nbTest = 100
+  val nbTest = 5
   test("Voronoi Zones in conditional graph"){
 
 
@@ -23,7 +23,7 @@ class VoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
       val bench = new InvBench(verbose,List(PlusOne(),Random(),Shuffle(),MultipleMove()))
 
       val nbNodes = 1000
-      val nbCentroids = 200L
+      val nbCentroids = 200
       val nbConditionalEdges = (nbNodes + nbCentroids) * 3
       val nbNonConditionalEdges = (nbNodes + nbCentroids) * 3
 
@@ -56,11 +56,9 @@ class VoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
       val bench = new InvBench(verbose,List(PlusOne(),Random(),Shuffle(),MultipleMove()))
 
       val nbNodes = 1000
-      val nbCentroids = 200L
+      val nbCentroids = 200
       val nbConditionalEdges = (nbNodes + nbCentroids) * 3
       val nbNonConditionalEdges = (nbNodes + nbCentroids) * 3
-
-
 
       val openConditions:CBLSSetVar = bench.genIntSetVar(nbVars = nbConditionalEdges, range = 0 until nbConditionalEdges, name="openConditions")
       val centroids:CBLSSetVar = bench.genIntSetVar(nbVars = nbCentroids, range = 0 until nbCentroids, name = "Centroids")
@@ -90,7 +88,7 @@ class VoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
 
 
       val nbNodes = 1000
-      val nbCentroids = 200L
+      val nbCentroids = 200
       val nbConditionalEdges = (nbNodes + nbCentroids) * 3
       val nbNonConditionalEdges = (nbNodes + nbCentroids) * 3
 
@@ -184,9 +182,9 @@ class VoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
     val bench = new InvBench(verbose, List(PlusOne()))
 
     val nbNodes = 30
-    val nbConditionalEdges = 0
+    val nbConditionalEdges = 40
     val nbNonConditionalEdges = 40
-    val nbCentroids = 3L
+    val nbCentroids = 3
 
     val openConditions: CBLSSetVar = bench.genIntSetVar(nbVars = nbConditionalEdges, range = 0 until nbConditionalEdges, name = "openConditions")
     val centroids: CBLSSetVar = bench.genIntSetVar(nbVars = nbCentroids, range = 0 until nbCentroids, name = "Centroids")

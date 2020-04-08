@@ -12,19 +12,19 @@ class CliqueTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with M
   //First test with madeup results
   test("Reported clique is expected"){
     val nbNodes = 10
-    val adjacencyList:List[(Long,Long)] = List((1,2),(1,3),(4,2),(3,4),(3,6),(6,5),(4,5),(3,5),(4,6),(6,8),(8,5),(5,7))
+    val adjacencyList:List[(Int,Int)] = List((1,2),(1,3),(4,2),(3,4),(3,6),(6,5),(4,5),(3,5),(4,6),(6,8),(8,5),(5,7))
 
     val adjacencyDico = adjacencyList ++ adjacencyList.map{case (a,b) => (b,a)}
-    def isNeighbor(a:Long,b:Long) = adjacencyDico.contains((a,b))
+    def isNeighbor(a:Int,b:Int) = adjacencyDico.contains((a,b))
 
-    val cliques = Clique.bronKerbosch2(nbNodes,isNeighbor:(Long,Long)=>Boolean)
+    val cliques = Clique.bronKerbosch2(nbNodes,isNeighbor:(Int,Int)=>Boolean)
 
     // Should be only one clique of size 4
     cliques.count(set => set.size == 4) should be (1)
 
     // This clique should be (3,6,4,5)
     val maxclique = cliques.filter(set => set.size == 4).head
-    List(3L,6,4,5).forall(maxclique.contains) should be (true)
+    List(3,6,4,5).forall(maxclique.contains) should be (true)
   }
 
   test("Empty graph of N nodes has N cliques each of size 1"){
@@ -48,9 +48,9 @@ class CliqueTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with M
       val nbNodes = gen._1
 
       val adjacencyDico = graph ++ graph.map{case (a,b) => (b,a)}
-      def isNeighbor(a:Long,b:Long) = adjacencyDico.contains((a,b))
+      def isNeighbor(a:Int,b:Int) = adjacencyDico.contains((a,b))
 
-      val cliques = Clique.bronKerbosch2(nbNodes,isNeighbor:(Long,Long)=>Boolean)
+      val cliques = Clique.bronKerbosch2(nbNodes,isNeighbor:(Int,Int)=>Boolean)
 
       for(clique <- cliques){
         // All vertexes of the clique are neighbor with eachother (or are equal to themselves)

@@ -38,13 +38,13 @@ trait StandardNeighborhoods {
    *                   If none is provided, all the array will be considered each time
    * @param symmetryClassOfVariables a function that input the ID of a variable and returns a symmetry class;
    *                      ony one of the variable in each class will be considered to make search faster
-   *                      Long.MinValue is considered different to itself
+   *                      Int.MinValue is considered different to itself
    *                      if you set to None this will not be used at all
    *                      variables of the same class with different values will not be considered as symmetrical
    * @param symmetryClassOfValues a function that inputs the ID of a variable and a possible value for this variable,
    *                              and returns a symmetry class for this variable and value
    *                              only values belonging to different symmetry classes will be tested
-   *                             Long.MinValue is considered different to itself
+   *                             Int.MinValue is considered different to itself
    *                             (this is only useful if your model is awfully expensive to evaluate)
    * @param domain a function that receives a variable and its Id in the vars array
    *               and returns the domain that is searched for the variable
@@ -58,10 +58,10 @@ trait StandardNeighborhoods {
                          name:String = "AssignNeighborhood",
                          selectIndiceBehavior:LoopBehavior = First(),
                          selectValueBehavior:LoopBehavior = First(),
-                         searchZone:() => Iterable[Long] = null,
-                         symmetryClassOfVariables:Option[Long => Long] = None,
-                         symmetryClassOfValues:Option[Long => Long => Long] = None,
-                         domain:(CBLSIntVar,Long) => Iterable[Long] = (v,i) => v.domain.values,
+                         searchZone:() => Iterable[Int] = null,
+                         symmetryClassOfVariables:Option[Int => Int] = None,
+                         symmetryClassOfValues:Option[Int => Int => Int] = None,
+                         domain:(CBLSIntVar,Int) => Iterable[Int] = (v,i) => v.minInt to v.maxInt,
                          hotRestart:Boolean = true)
   = AssignNeighborhood(vars,name,selectIndiceBehavior,selectValueBehavior,searchZone,symmetryClassOfVariables,symmetryClassOfValues,domain,hotRestart)
 
@@ -77,10 +77,10 @@ trait StandardNeighborhoods {
    * @param name the name of the neighborhood
    */
   def randomizeNeighborhood(vars:Array[CBLSIntVar],
-                            degree:() => Long = () => 1L,
+                            degree:() => Int = () => 1,
                             name:String = "RandomizeNeighborhood",
-                            searchZone:() => SortedSet[Long] = null,
-                            valuesToConsider:(CBLSIntVar,Long) => Iterable[Long] = (variable,_) => variable.domain.values)
+                            searchZone:() => SortedSet[Int] = null,
+                            valuesToConsider:(CBLSIntVar,Long) => Iterable[Long] = (variable,_) => variable.value.domain.values)
   = RandomizeNeighborhood(vars,degree,name,searchZone,valuesToConsider)
 
 
@@ -94,9 +94,9 @@ trait StandardNeighborhoods {
    * @param name the name of the neighborhood
    */
   def randomSwapNeighborhood(vars:Array[CBLSIntVar],
-                             degree:Long = 1L,
+                             degree:Int = 1,
                              name:String = "RandomSwapNeighborhood",
-                             searchZone:() => SortedSet[Long] = null)
+                             searchZone:() => SortedSet[Int] = null)
   = RandomSwapNeighborhood(vars,degree,name,searchZone)
 
   /**
@@ -120,12 +120,12 @@ trait StandardNeighborhoods {
    * @param symmetryClassOfVariables1 a function that input the ID of a variable and returns a symmetry class;
    *                      for each role of the move, ony one of the variable in each class will be considered for the vars in searchZone1
    *                      this makes search faster
-   *                      Long.MinValue is considered different to itself
+   *                      Int.MinValue is considered different to itself
    *                      if you set to None this will not be used at all
    * @param symmetryClassOfVariables2 a function that input the ID of a variable and returns a symmetry class;
    *                      for each role of the move, ony one of the variable in each class will be considered for the vars in searchZone2
    *                      this makes search faster
-   *                      Long.MinValue is considered different to itself
+   *                      Int.MinValue is considered different to itself
    *                      if you set to None this will not be used at all
    * @param hotRestart  if true, the exploration order in case you ar not going for the best
    *                    is a hotRestart for the first swapped variable
@@ -135,14 +135,14 @@ trait StandardNeighborhoods {
    **/
   def swapsNeighborhood(vars:Array[CBLSIntVar],
                         name:String = "SwapsNeighborhood",
-                        searchZone1:()=>Iterable[Long] = null,
-                        searchZone2:() => (Long,Long)=>Iterable[Long] = null,
+                        searchZone1:()=>Iterable[Int] = null,
+                        searchZone2:() => (Int,Int)=>Iterable[Int] = null,
                         symmetryCanBeBrokenOnIndices:Boolean = true,
                         symmetryCanBeBrokenOnValue:Boolean = false,
                         selectFirstVariableBehavior:LoopBehavior = First(),
                         selectSecondVariableBehavior:LoopBehavior = First(),
-                        symmetryClassOfVariables1:Option[Long => Long] = None,
-                        symmetryClassOfVariables2:Option[Long => Long] = None,
+                        symmetryClassOfVariables1:Option[Int => Int] = None,
+                        symmetryClassOfVariables2:Option[Int => Int] = None,
                         hotRestart:Boolean = true)
   = SwapsNeighborhood(vars,name,searchZone1,searchZone2,
     symmetryCanBeBrokenOnIndices,symmetryCanBeBrokenOnValue,
@@ -159,8 +159,8 @@ trait StandardNeighborhoods {
    * @param checkNoMoveFound checks that the variables to shuffle have different values, return NoMoveFound if this is not the case
    */
   def shuffleNeighborhood(vars:Array[CBLSIntVar],
-                          indicesToConsider:()=>Iterable[Long] = null,
-                          numberOfShuffledPositions:() => Long = () => Long.MaxValue,
+                          indicesToConsider:()=>Iterable[Int] = null,
+                          numberOfShuffledPositions:() => Int = () => Int.MaxValue,
                           name:String = "ShuffleNeighborhood",
                           checkNoMoveFound:Boolean = true) =
     ShuffleNeighborhood(vars, indicesToConsider, numberOfShuffledPositions, name, checkNoMoveFound)
@@ -184,9 +184,9 @@ trait StandardNeighborhoods {
    */
   def shiftNeighborhood(vars:Array[CBLSIntVar],
                         name:String = "ShiftNeighborhood",
-                        searchZone1:()=>Iterable[Long] = null,
-                        maxShiftSize:Long = Long.MaxValue,
-                        maxOffsetLength:Long = Long.MaxValue,
+                        searchZone1:()=>Iterable[Int] = null,
+                        maxShiftSize:Int = Int.MaxValue,
+                        maxOffsetLength:Int = Int.MaxValue,
                         best:Boolean = false,
                         hotRestart:Boolean = true) =
     ShiftNeighborhood(vars, name, searchZone1, maxShiftSize, maxOffsetLength, best, hotRestart)
@@ -214,9 +214,9 @@ trait StandardNeighborhoods {
    **/
   def rollNeighborhood(vars:Array[CBLSIntVar],
                        name:String = "RollNeighborhood",
-                       searchZone:()=>Set[Long] = null,
+                       searchZone:()=>Set[Int] = null,
                        bridgeOverFrozenVariables:Boolean = false,
-                       maxShiftSize:Long=>Long = _ => Long.MaxValue, //the max size of the roll, given the ID of the first variable
+                       maxShiftSize:Int=>Int = _ => Int.MaxValue, //the max size of the roll, given the ID of the first variable
                        checkForDifferentValues:Boolean = false,
                        best:Boolean = false,
                        hotRestart:Boolean = true)
@@ -243,9 +243,9 @@ trait StandardNeighborhoods {
    */
   def wideningFlipNeighborhood(vars:Array[CBLSIntVar],
                                name:String = "WideningFlipNeighborhood",
-                               allowedPositions:()=>Iterable[Long] = null,
-                               maxFlipSize:Long = Long.MaxValue,
-                               minFlipSize:Long = 2L,
+                               allowedPositions:()=>Iterable[Int] = null,
+                               maxFlipSize:Int = Int.MaxValue,
+                               minFlipSize:Int = 2,
                                exploreLargerOpportunitiesFirst:Boolean = true,
                                best:Boolean = false,
                                hotRestart:Boolean = true) =

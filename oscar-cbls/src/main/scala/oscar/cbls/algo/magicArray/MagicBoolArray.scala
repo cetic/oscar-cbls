@@ -57,7 +57,7 @@ class MagicBoolArray(val length:Int,initVal:Boolean = false){
    * @note in O(1) // trivial
    */
   def update(id:Int, value:Boolean):Boolean = {
-    assert(id<length && 0L<=id)
+    assert(id<length && 0<=id)
     val oldInternalArray = internalArray(id)
     if(value) internalArray(id)=global
     else internalArray(id)=global-1L
@@ -71,7 +71,7 @@ class MagicBoolArray(val length:Int,initVal:Boolean = false){
    * @note complexity is O(1)
    */
   def apply(id:Int): Boolean ={
-    require(0L<=id && id<length, "got id:" + id + "length:" + length)
+    require(0<=id && id<length, "got id:" + id + "length:" + length)
     internalArray(id)>=global
   }
 

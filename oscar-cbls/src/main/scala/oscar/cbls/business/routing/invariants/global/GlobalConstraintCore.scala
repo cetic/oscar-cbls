@@ -7,11 +7,11 @@ import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.VehicleLocation
 import oscar.cbls.core._
 
-case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
+case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
   extends Invariant with SeqNotificationTarget{
 
-  val n = routes.maxValue+1L
-  val vehicles = 0L until v
+  val n = routes.maxValue+1
+  val vehicles = 0 until v
 
   private var managedConstraints: QList[GlobalConstraintDefinition[_]] = null
   private var invariantAreInitiated = false
@@ -41,11 +41,11 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
 
   finishInitialization()
 
-  private def computeAndAssignVehicleValues(vehicle: Long, segmentsOfVehicle: QList[Segment], newRoute: IntSequence): Unit ={
+  private def computeAndAssignVehicleValues(vehicle: Int, segmentsOfVehicle: QList[Segment], newRoute: IntSequence): Unit ={
     QList.qForeach(managedConstraints, (c: GlobalConstraintDefinition[_]) => c.computeSaveAndAssingVehicleValue(vehicle, segmentsOfVehicle, newRoute))
   }
 
-  private def performPreComputes(vehicle: Long, routes: IntSequence): Unit ={
+  private def performPreComputes(vehicle: Int, routes: IntSequence): Unit ={
     QList.qForeach(managedConstraints, (c: GlobalConstraintDefinition[_]) => c.performPreCompute(vehicle, routes))
   }
 
@@ -133,7 +133,7 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
         true
 
       case r@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Int) =>
-        if(checkpointLevel == 0L) {
+        if(checkpointLevel == 0) {
           require(checkpoint quickEquals this.checkpointAtLevel0)
         }
 
@@ -154,7 +154,7 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
         this.checkpointLevel = checkpointLevel
         true
 
-      case sui@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
+      case sui@SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
         if(digestUpdates(prev)){
           useGlobalConstraintPositionCache(prev)
 
@@ -343,7 +343,7 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
       val toNode = getValueAtPosition(to, routes)
       val nodeAfterTo = if(to+1 < n)getValueAtPosition(to+1, routes) else -1
 
-      val lengthUntilFromImpactedSegment = QList.qFold[Segment,Long](segmentsBeforeFromImpactedSegment, (acc,item) => acc + item.length(),0)
+      val lengthUntilFromImpactedSegment = QList.qFold[Segment,Int](segmentsBeforeFromImpactedSegment, (acc,item) => acc + item.length(),0)
 
       // We split the fromImpactedSegment in two part fromLeftResidue and toLeftResidue
       val fromLeftResidueLength = from - lengthUntilFromImpactedSegment - vehiclePos    // From is not part of the left residue
@@ -368,7 +368,7 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
           var removedSegments = QList(fromRightResidue,segmentsBetweenFromAndTo)
           val lengthUntilToImpactedSegment =
             lengthUntilFromImpactedSegment + fromImpactedSegment.length() +
-              QList.qFold[Segment,Long](segmentsBetweenFromAndTo, (acc,item) => acc + item.length(),0)
+              QList.qFold[Segment,Int](segmentsBetweenFromAndTo, (acc,item) => acc + item.length(),0)
 
           // Diff segment => We split the toImpactedSegment in two parts toLeftResidue and toRightResidue
           val toLeftAndRightResidue =
@@ -401,7 +401,7 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
       * @param afterPosition
       * @return
       */
-    def insertSegments(segmentsToInsert: QList[Segment], afterPosition: Int, routes: IntSequence, delta: Long = 0): ListSegments ={
+    def insertSegments(segmentsToInsert: QList[Segment], afterPosition: Int, routes: IntSequence, delta: Int = 0): ListSegments ={
       val vehiclePos = vehicleSearcher.startPosOfVehicle(vehicle)
 
       val (impactedSegment, segmentsBeforeImpactedSegment, segmentsAfterImpactedSegment,_) = findImpactedSegment(afterPosition - delta, vehicle, vehiclePos-1)
@@ -412,7 +412,7 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
       // We split the impacted segment in two parts (leftResidue and rightResidue)
       // 1° => Compute parts' length
       // 2° => Split the impacted segment
-      val segmentsLengthBeforeImpactedSegment = QList.qFold[Segment,Long](segmentsBeforeImpactedSegment, (acc,item) => acc + item.length(),0)
+      val segmentsLengthBeforeImpactedSegment = QList.qFold[Segment,Int](segmentsBeforeImpactedSegment, (acc,item) => acc + item.length(),0)
       val leftRightResidue = if(insertBeforeNode < v){
         (impactedSegment, null)
       } else {
@@ -442,8 +442,8 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
       * @param vehicle the vehicle in which we want to add a node
       * @return a tuple (impactedSegment: Segment, exploredSegments: Option[QList[Segment ] ], unexploredSegments: Option[QList[Segment ] ])
       */
-    private def findImpactedSegment(pos: Long, vehicle: Int, initCounter: Long, segmentsToExplore: QList[Segment] = segments): (Segment, QList[Segment], QList[Segment], Long) ={
-      def checkSegment(segmentsToExplore: QList[Segment], counter: Long = initCounter, exploredSegments: QList[Segment] = null): (Segment, QList[Segment], QList[Segment], Long) ={
+    private def findImpactedSegment(pos: Int, vehicle: Int, initCounter: Int, segmentsToExplore: QList[Segment] = segments): (Segment, QList[Segment], QList[Segment], Int) ={
+      def checkSegment(segmentsToExplore: QList[Segment], counter: Int = initCounter, exploredSegments: QList[Segment] = null): (Segment, QList[Segment], QList[Segment], Int) ={
         require(segmentsToExplore != null, "Shouldn't happen, it means that the desired position is not within this vehicle route")
         val segment = segmentsToExplore.head
         val newCounter = counter + segment.length
@@ -456,8 +456,8 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Long)
       checkSegment(segmentsToExplore)
     }
 
-    def length(): Long ={
-      QList.qFold[Segment, Long](segments, (acc, item) => acc + item.length, 0L)
+    def length(): Int ={
+      QList.qFold[Segment, Int](segments, (acc, item) => acc + item.length, 0)
     }
 
     override def toString: String ={
@@ -473,15 +473,15 @@ trait Segment{
     * If split node == start node, there will only be one Segment, the Segment itself
     * @return the left part of the splitted Segment (if exist) and the right part (starting at splitNode)
     */
-  def splitAtNode(beforeSplitNode: Long, splitNode: Long, leftLength: Long, rightLength: Long): (Segment,Segment)
+  def splitAtNode(beforeSplitNode: Int, splitNode: Int, leftLength: Int, rightLength: Int): (Segment,Segment)
 
   def flip(): Segment
 
-  def length(): Long
+  def length(): Int
 
-  def startNode(): Long
+  def startNode(): Int
 
-  def endNode(): Long
+  def endNode(): Int
 }
 
 /**
@@ -490,14 +490,14 @@ trait Segment{
   * @param startNode the first node of the subsequence
   * @param endNode the last node of the subsequence
   */
-case class PreComputedSubSequence(startNode:Long,
-                                                  endNode:Long,
-                                                  length: Long) extends Segment{
+case class PreComputedSubSequence(startNode:Int,
+                                                  endNode:Int,
+                                                  length: Int) extends Segment{
   override def toString: String = {
     "PreComputedSubSequence (StartNode : " + startNode + " EndNode : " + endNode + " Length : " + length + ")"
   }
 
-  override def splitAtNode(beforeSplitNode: Long, splitNode: Long, leftLength: Long, rightLength: Long): (Segment,Segment) = {
+  override def splitAtNode(beforeSplitNode: Int, splitNode: Int, leftLength: Int, rightLength: Int): (Segment,Segment) = {
     if(splitNode == startNode) (null,this)
     else if(beforeSplitNode == endNode) (this,null)
     else {
@@ -518,14 +518,14 @@ case class PreComputedSubSequence(startNode:Long,
   * @param startNode the first node of the subsequence (it was after the endNode when pre-computation ws performed)
   * @param endNode the last node of the subsequence (it was before the endNode when pre-computation ws performed)
   */
-case class FlippedPreComputedSubSequence(startNode:Long,
-                                                         endNode:Long,
-                                                         length: Long) extends Segment{
+case class FlippedPreComputedSubSequence(startNode:Int,
+                                                         endNode:Int,
+                                                         length: Int) extends Segment{
   override def toString: String = {
     "FlippedPreComputedSubSequence (StartNode : " + startNode + " EndNode : " + endNode + " Length : " + length + ")"
   }
 
-  override def splitAtNode(beforeSplitNode: Long, splitNode: Long, leftLength: Long, rightLength: Long): (Segment,Segment) = {
+  override def splitAtNode(beforeSplitNode: Int, splitNode: Int, leftLength: Int, rightLength: Int): (Segment,Segment) = {
     if(splitNode == startNode) (null,this)
     else if(beforeSplitNode == endNode) (this,null)
     else {
@@ -543,12 +543,12 @@ case class FlippedPreComputedSubSequence(startNode:Long,
   * This represent that a node that was not present in the initial sequence when pre-computation was performed.
   * @param node
   */
-case class NewNode(node:Long) extends Segment{
+case class NewNode(node:Int) extends Segment{
   override def toString: String = {
     "NewNode - Node : " + node
   }
 
-  override def splitAtNode(beforeSplitNode: Long, splitNode: Long, leftLength: Long, rightLength: Long): (Segment,Segment) = {
+  override def splitAtNode(beforeSplitNode: Int, splitNode: Int, leftLength: Int, rightLength: Int): (Segment,Segment) = {
     require(beforeSplitNode == node)
     (this, null)
   }
@@ -557,9 +557,9 @@ case class NewNode(node:Long) extends Segment{
     this
   }
 
-  override def length(): Long = 1L
+  override def length(): Int = 1
 
-  override def startNode(): Long = node
+  override def startNode(): Int = node
 
-  override def endNode(): Long = node
+  override def endNode(): Int = node
 }

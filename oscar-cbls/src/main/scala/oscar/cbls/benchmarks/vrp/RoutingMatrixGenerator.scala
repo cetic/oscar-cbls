@@ -21,16 +21,16 @@ import oscar.cbls._
 import scala.util.Random
 
 object RoutingMatrixGenerator {
-  val random = new Random(0L)
+  val random = new Random(0)
 
-  def apply(n: Int, side: Long = 1000L): (Array[Array[Long]],Array[(Long,Long)]) = {
+  def apply(n: Int, side: Int = 1000): (Array[Array[Long]],Array[(Int,Int)]) = {
 
     //we generate te cost distance matrix
-    def randomXY: Long = (random.nextFloat() * side).toInt
-    val pointPosition: Array[(Long, Long)] = Array.tabulate(n)(_ => (randomXY, randomXY))
+    def randomXY: Int = (random.nextFloat() * side).toInt
+    val pointPosition: Array[(Int, Int)] = Array.tabulate(n)(_ => (randomXY, randomXY))
 
-    def distance(from: (Long, Long), to: (Long, Long)) =
-      math.sqrt(math.pow(from._1 - to._1, 2L) + math.pow(from._2 - to._2, 2L)).toInt
+    def distance(from: (Int, Int), to: (Int, Int)) =
+      math.sqrt(math.pow(from._1 - to._1, 2) + math.pow(from._2 - to._2, 2)).toLong
 
     //for each delivery point, the distance to each warehouse
     (Array.tabulate(n)(
@@ -38,28 +38,28 @@ object RoutingMatrixGenerator {
         n2 => distance(pointPosition(n1), pointPosition(n2)))),pointPosition)
   }
 
-  def generateRestrictions(n:Int,v:Int,nbRestrictions:Int):Iterable[(Long,Long)] = {
-    var toReturn = List.empty[(Long,Long)]
+  def generateRestrictions(n:Int,v:Int,nbRestrictions:Int):Iterable[(Int,Int)] = {
+    var toReturn = List.empty[(Int,Int)]
 
     var toGenerate = nbRestrictions
     while(toGenerate !=0){
       val vehicle = (random.nextFloat()*v).toInt
       val node = ((random.nextFloat()*(n-v))+v).toInt
-      toReturn = (node:Long,vehicle:Long) :: toReturn
+      toReturn = (node:Int,vehicle:Int) :: toReturn
       toGenerate -= 1
     }
     toReturn
   }
 
-  def generatePrecedence(n:Long,v:Long,nbPRecedences:Long):List[(Long,Long)] = {
+  def generatePrecedence(n:Int,v:Int,nbPRecedences:Int):List[(Int,Int)] = {
     val allNodes = v until n
 
     val randomizedNodes = random.shuffle(allNodes.toList).toIterator
     var precedencesToGenerate = nbPRecedences
-    var toReturn:List[(Long,Long)] = List.empty
+    var toReturn:List[(Int,Int)] = List.empty
 
-    while(precedencesToGenerate > 0L){
-      precedencesToGenerate -= 1L
+    while(precedencesToGenerate > 0){
+      precedencesToGenerate -= 1
       toReturn = (randomizedNodes.next(),randomizedNodes.next()) :: toReturn
     }
 
@@ -77,23 +77,23 @@ object RoutingMatrixGenerator {
   def generateFeasibleTimeWindows(n:Int, v:Int,
                                   timeMatrix: TTFMatrix,
                                   precedences: List[List[Int]] = List.empty,
-                                  maxIdlingTimeInSec: Long = 1800L,
-                                  maxExtraTravelTimeInSec: Long = 900L,
-                                  maxTaskDurationInSec: Long = 300L): (Array[Long],Array[Long],Array[Long],Array[Long]) ={
+                                  maxIdlingTimeInSec: Int = 1800,
+                                  maxExtraTravelTimeInSec: Int = 900,
+                                  maxTaskDurationInSec: Int = 300): (Array[Int],Array[Int],Array[Int],Array[Int]) ={
 
     def randomVehicleSelection = random.nextInt(v)
-    def randomIdleTime = random.nextLong() % maxIdlingTimeInSec
+    def randomIdleTime = random.nextInt() % maxIdlingTimeInSec
     def randomExtraTravelTime = random.nextInt() % maxExtraTravelTimeInSec
-    def randomTaskDuration = random.nextLong() % maxTaskDurationInSec
+    def randomTaskDuration = random.nextInt() % maxTaskDurationInSec
 
     val precedencesWithLonelyNodes = addLonelyNodesToPrecedences(n, precedences)
-    val endOfLastActionOfVehicles = Array.fill(v)(0L)
+    val endOfLastActionOfVehicles = Array.fill(v)(0)
     val lastNodeVisitedOfVehicles = Array.tabulate(v)(x => x)
-    val extraTravelTimeOfNodes = Array.tabulate(n)(node => if(node < v)0L else randomExtraTravelTime)
-    val earlyLines = Array.fill(n)(0L)
-    val deadLines = Array.fill(n)(Long.MaxValue)
-    val taskDurations = Array.tabulate(n)(node => if(node < v) 0L else randomTaskDuration)
-    val maxWaitingDuration = Array.fill(n)(Long.MaxValue)
+    val extraTravelTimeOfNodes = Array.tabulate(n)(node => if(node < v)0 else randomExtraTravelTime)
+    val earlyLines = Array.fill(n)(0)
+    val deadLines = Array.fill(n)(Int.MaxValue)
+    val taskDurations = Array.tabulate(n)(node => if(node < v) 0 else randomTaskDuration)
+    val maxWaitingDuration = Array.fill(n)(Int.MaxValue)
 
     /**
       * This method generate a time window for a given node on a given vehicle
@@ -107,7 +107,7 @@ object RoutingMatrixGenerator {
       * @param node
       * @param onVehicle
       */
-    def generateTimeWindowForNode(node: Long, onVehicle: Long): Unit ={
+    def generateTimeWindowForNode(node: Int, onVehicle: Int): Unit ={
       val previousNode = lastNodeVisitedOfVehicles(onVehicle)
       val travelFromPreviousNode = timeMatrix.getTravelDuration(previousNode,endOfLastActionOfVehicles(onVehicle),node)
       endOfLastActionOfVehicles(onVehicle) += travelFromPreviousNode
@@ -129,10 +129,10 @@ object RoutingMatrixGenerator {
     (earlyLines,deadLines,taskDurations,maxWaitingDuration)
   }
 
-  def generateLinearTravelTimeFunction(n:Long,distanceMatrix: Array[Array[Long]]): TTFMatrix = {
-    val ttf = new TTFMatrix(n, new TTFConst(500L))
-    for (i <- 0L until n)
-      for (j <- 0L until n)
+  def generateLinearTravelTimeFunction(n:Int,distanceMatrix: Array[Array[Int]]): TTFMatrix = {
+    val ttf = new TTFMatrix(n, new TTFConst(500))
+    for (i <- 0 until n)
+      for (j <- 0 until n)
         ttf.setTTF(i, j, new TTFConst(distanceMatrix(i)(j)))
     ttf
   }

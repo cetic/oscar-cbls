@@ -21,8 +21,8 @@
 package oscar.cbls.algo.tarjan
 
 trait TarjanNode{
-  var Index:Long = -1L
-  var LowLink:Long = -1L
+  var Index:Int = -1
+  var LowLink:Int = -1
   var OnStack:Boolean = false
 }
 
@@ -34,20 +34,20 @@ trait TarjanNode{
 object TarjanWithBigNodes1{
 
   def getStronglyConnexComponents[T <: TarjanNode](Nodes:Iterable[T], GetSucceedingNodes:(T => Iterable[T])):List[List[T]] = {
-    var index:Long=0L
+    var index:Int=0
     var Stack:List[T]=List.empty
     var Components:List[List[T]]= List.empty
 
     def visit(v:T){
       v.Index = index
       v.LowLink = index
-      index +=1L
+      index +=1
       Stack = v::Stack
       v.OnStack = true
 
       // Consider successors of v
       for(w <- GetSucceedingNodes(v)){
-        if(w.Index == -1L){
+        if(w.Index == -1){
           // Successor w has not yet been visited; recurse on it
           visit(w)
           v.LowLink = v.LowLink.min(w.LowLink)
@@ -73,7 +73,7 @@ object TarjanWithBigNodes1{
       }
     }
 
-    for(n <- Nodes) {if(n.Index == -1L) visit(n)}
+    for(n <- Nodes) {if(n.Index == -1) visit(n)}
 
     Components
   }

@@ -82,19 +82,19 @@ object TspBridgeFreeReturn extends App {
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-  val routedPostFilter = (node:Long) => (neighbor:Long) => myVRP.isRouted(neighbor)
+  val routedPostFilter = (node:Int) => (neighbor:Int) => myVRP.isRouted(neighbor)
 
   //this is an array, that, for each node in the routing problem,
   // keeps the sorted closest other point in the routing problem
-  val closestRoutingPoint:Array[Iterable[Long]] = Array.tabulate(n)((nodeInGraph:Int) =>
+  val closestRoutingPoint:Array[Iterable[Int]] = Array.tabulate(n)((nodeInGraph:Int) =>
     KSmallest.lazySort(
       Array.tabulate(n)(i => i),
-      (otherNode:Long) => underApproximatingDistanceInGraphAllBridgesOpen(nodeInGraph)(otherNode.toInt)
+      (otherNode:Int) => underApproximatingDistanceInGraphAllBridgesOpen(nodeInGraph)(otherNode.toInt)
     ))
 
   // Takes an unrouted node and insert it at the best position within the 10 closest nodes (inserting it after this node)
   def routeUnroutedPoint(k:Int) = profile(insertPointUnroutedFirst(myVRP.unrouted,
-    ()=>myVRP.kFirst(k,(x:Long) =>closestRoutingPoint(x.toInt),routedPostFilter),
+    ()=>myVRP.kFirst(k,(x:Int) =>closestRoutingPoint(x),routedPostFilter),
     myVRP,
     neighborhoodName = "InsertUF",
     hotRestart = false,
@@ -102,15 +102,15 @@ object TspBridgeFreeReturn extends App {
     selectInsertionPointBehavior = First())) // Inserting after the first node in myVRP.kFirst(10,...)
 
   // Moves a routed node to a better place (best neighbor within the 10 closest nodes)
-  def onePtMove(k:Long) = onePointMove(
+  def onePtMove(k:Int) = onePointMove(
     myVRP.routed,
-    ()=>myVRP.kFirst(20,(x:Long) =>closestRoutingPoint( x.toInt),routedPostFilter),
+    ()=>myVRP.kFirst(20,(x:Int) =>closestRoutingPoint(x),routedPostFilter),
     myVRP)
 
 
   def myThreeOpt(k:Int) = profile(
     threeOpt(potentialInsertionPoints = myVRP.routed,
-      relevantNeighbors =()=>myVRP.kFirst(k,(x:Long) =>closestRoutingPoint(x.toInt),routedPostFilter),
+      relevantNeighbors =()=>myVRP.kFirst(k,(x:Int) =>closestRoutingPoint(x),routedPostFilter),
       vrp = myVRP))
 
   def switchBridge = assignNeighborhood(bridgeConditionArray,"switchBridge")

@@ -12,12 +12,12 @@ object SwDevelopment {
   val activities = List(analysis, design, coding, testing, qc, pm)
   val initials = List(pm, qc, testing, coding, design, analysis)
   val durations = Map(
-    analysis -> 10L,
-    design -> 10L,
-    coding -> 15L,
-    testing -> 25L,
-    qc -> 50L,
-    pm -> 60L
+    analysis -> 10,
+    design -> 10,
+    coding -> 15,
+    testing -> 25,
+    qc -> 50,
+    pm -> 60
   )
   val precPairs = List((analysis, design), (analysis, qc), (design, coding), (coding, testing))
 

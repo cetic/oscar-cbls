@@ -21,7 +21,7 @@ object DistanceHelper{
     * @param node The node
     * @param neighbors An array of filtered neighbors
     */
-  def lazyClosestSuccessorsOfNode(distanceMatrix: Array[Array[Long]], neighbors: (Long) => Iterable[Long])(node:Long): Iterable[Long] ={
+  def lazyClosestSuccessorsOfNode(distanceMatrix: Array[Array[Long]], neighbors: (Int) => Iterable[Int])(node:Int): Iterable[Int] ={
     KSmallest.lazySort(neighbors(node).toArray,
       neighbor => distanceMatrix(node)(neighbor)
     )
@@ -37,7 +37,7 @@ object DistanceHelper{
     * @param node The node
     * @param neighbors An array of filtered neighbors
     */
-  def lazyClosestPredecessorsOfNode(distanceMatrix: Array[Array[Long]], neighbors: (Long) => Iterable[Long])(node: Long): Iterable[Long] ={
+  def lazyClosestPredecessorsOfNode(distanceMatrix: Array[Array[Long]], neighbors: (Int) => Iterable[Int])(node: Int): Iterable[Int] ={
     KSmallest.lazySort(neighbors(node).toArray,
       neighbor => distanceMatrix(neighbor)(node)
     )

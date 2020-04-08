@@ -37,11 +37,11 @@ trait CapacityInvariants {
   def forwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
                                            n:Int,
                                            v:Int,
-                                           op :(Long,Long,Long)=>Long,
+                                           op :(Int,Int,Long)=>Long,
                                            cMax:Long,
                                            contentAtVehicleStart:Array[Long],
                                            violation:CBLSIntVar,
-                                           maxCheckpointLevel:Long,
+                                           maxCheckpointLevel:Int,
                                            capacityName:String = "capacity",
                                            fullDebug:Boolean = false):ForwardCumulativeConstraintOnVehicle =
     new ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
@@ -62,7 +62,7 @@ trait CapacityInvariants {
    * @param v The number of vehicles
    * @param op A function which returns the capacity change between two nodes : (fromNode,toNode,contentAtFromNode)=> contentAtToNode
    * @param contentAtStart Array of lenght = v where initValue(car) = content at start pos of vehicle #car
-   * @param contentAtNode output: the content of the vehicle at each node (content at node 0L to v-1L is equal to contentAtStart)
+   * @param contentAtNode output: the content of the vehicle at each node (content at node 0 to v-1L is equal to contentAtStart)
    * @param contentAtEnd output: the content at the end of the route of each vehicle (that is whent hey come back to their departure point)
    * @param lastPointOfVehicle output: the last point of the vehicle before coming back to its departure point
    * @param defaultVehicleContentForUnroutedNodes is the content of a node that is not routed
@@ -71,7 +71,7 @@ trait CapacityInvariants {
   def forwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
                                                  n:Int,
                                                  v:Int,
-                                                 op:(Long,Long,Long)=>Long,
+                                                 op:(Int,Int,Long)=>Long,
                                                  contentAtStart:Array[IntValue],
                                                  contentAtNode:Array[CBLSIntVar],
                                                  contentAtEnd:Array[CBLSIntVar],
@@ -108,7 +108,7 @@ trait CapacityInvariants {
   def forwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
                                                         n:Int,
                                                         v:Int,
-                                                        op:(Long,Long,Long,Long)=>(Long,Long),
+                                                        op:(Int,Int,Long,Long)=>(Long,Long),
                                                         content1AtStart:Array[IntValue],
                                                         content2AtStart:Array[IntValue],
                                                         default1ForUnroutedNodes:Long,
