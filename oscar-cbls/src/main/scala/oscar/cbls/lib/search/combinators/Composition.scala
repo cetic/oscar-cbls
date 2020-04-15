@@ -257,7 +257,7 @@ case class SnapShotOnEntry(a: Neighborhood, valuesToSave:Iterable[AbstractVariab
  * beware: it is more efficient to filter upfront by appropriately tuning the parameters of the neighborhood a, so this is really some sort of DIY solution.
  * @param a the base neighborhood that we will restrain
  * @param filter the filter function through which you can accept/reject moves from a
- * @tparam T the type of moves that a explores
+ * @tparam MoveType the type of moves that a explores
  */
 case class Filter[MoveType<:Move](a:Neighborhood with SupportForAndThenChaining[MoveType], filter:MoveType => Boolean) extends NeighborhoodCombinator(a) {
 
