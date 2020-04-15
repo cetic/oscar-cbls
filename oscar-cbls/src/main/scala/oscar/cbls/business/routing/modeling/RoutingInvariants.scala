@@ -133,5 +133,20 @@ trait RoutingInvariants {
   def vehicleOfNodes(routes:ChangingSeqValue,v:Int):Array[CBLSIntVar] =
     VehicleOfNodes(routes:ChangingSeqValue,v:Int):Array[CBLSIntVar]
 
+  /**
+    * This class purpose is to test if the search procedure doesn't try unauthorized movement, meaning movement that doesn't respect the OscaR's routing convention.
+    * For instance it's not authorized to insert/move/remove vehicle, insert already inserted node ...
+    *
+    * By doing so we avoid to have to do this verification for every constraint based on routing.
+    *
+    * This class is automatically called by setting 'debug' parameter of class VRP at 'true'
+    *
+    * @param routes the route of the VRP problem
+    * @param n the total amount of node
+    * @param v the total amount of vehicle
+    */
+  def routingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) =
+    RoutingConventionConstraint(routes, n, v)
+
 
 }

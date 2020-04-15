@@ -39,9 +39,11 @@ import scala.collection.immutable.{List, SortedSet}
  * @author renaud.delandtsheer@cetic.be
  * @author Florent Ghilain (UMONS)
  */
-class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4) {
+class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4, debug: Boolean = false) {
 
   val routes = new CBLSSeqVar(m, IntSequence(0 until v), n-1, "routes", maxPivotPerValuePercent=maxPivotPerValuePercent)
+
+  private val routingConventionConstraintInv = if(debug) routingConventionConstraint(routes, n, v) else null
 
   /**
    * the range of nodes (customers and deposits including) of the problem.
