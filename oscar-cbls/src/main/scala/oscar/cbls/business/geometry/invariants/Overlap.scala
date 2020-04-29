@@ -53,10 +53,10 @@ object Overlap {
 
   // ///////////////////////////////////////////////////////
 
-  def centroidsOfFreeSpacesIn(s:Iterable[Geometry], outer:Geometry):Iterable[(Long,Long)] = {
+  def centroidsOfFreeSpacesIn(s:Iterable[Geometry], outer:Geometry):Iterable[(Int,Int)] = {
     val frees = freeSpacesIn(s:Iterable[Geometry], outer:Geometry):Iterable[Geometry]
     val centroids = frees.map(_.getCentroid)
-    centroids.map(centroid => (centroid.getX.toLong,centroid.getY.toLong))
+    centroids.map(centroid => (centroid.getX.toInt,centroid.getY.toInt))
   }
 
   def freeSpacesIn(s:Iterable[Geometry], outer:Geometry):Iterable[Geometry] = {

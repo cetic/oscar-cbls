@@ -185,7 +185,7 @@ object TestGeometryPackingMinDistance extends App{
     () => {
       val allShapes = placedShapes.map(_.value)
 
-      val holes:Iterable[(Long,Long)] = Overlap.centroidsOfFreeSpacesIn(allShapes.map(_.geometry),outerFrame)
+      val holes:Iterable[(Int,Int)] = Overlap.centroidsOfFreeSpacesIn(allShapes.map(_.geometry),outerFrame)
 
       allShapes.indices.flatMap(circleID => {
 
