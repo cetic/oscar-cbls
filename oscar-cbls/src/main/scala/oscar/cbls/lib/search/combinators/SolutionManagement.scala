@@ -36,7 +36,7 @@ class BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = t
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
 
     //we record the obj before move to prevent an additional useless propagation
-    require(initialObj == o.value)
+    require(initialObj == o.value, "initialObj:" + initialObj + "!= o.value:" + o.value)
 
     a.getMove(obj, initialObj, acceptanceCriteria) match {
       case NoMoveFound =>

@@ -52,10 +52,11 @@ object WarehouseLocation extends App{
       List(
         assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
         swapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),refresh = W/10)
-    onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/10), 2, obj))
+      onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/10, name="smallRandomize"), 2, obj)
+      onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/2, name="bigRandomize"), 2, obj))
 
   neighborhood.verbose = 1
-  
+
   neighborhood.doAllMoves(obj=obj)
 
   println(openWarehouses)

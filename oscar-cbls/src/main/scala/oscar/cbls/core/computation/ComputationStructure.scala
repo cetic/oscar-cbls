@@ -239,7 +239,7 @@ case class Solution(saves:Iterable[AbstractVariableSnapShot],model:Store){
 
   /**converts the solution to a human-readable string*/
   override def toString:String = {
-    "Solution(\n" + saves.mkString(",\n\t") + "\n)"
+    "Solution(\n\t" + saves.mkString(",\n\t") + "\n)"
   }
 
   def restoreDecisionVariables() {
@@ -538,7 +538,7 @@ abstract class AbstractVariableSnapShot(val a:AbstractVariable){
 
   // Added by GO for pretty printing of some benchmarks:
   // to change if this affects the printing of other benchmarks
-  override def toString: String = s"Variable[name:${a.name}, value:${a.valueString}]"
+  override def toString: String = s"${a.name} = ${a.valueString}"
 
   final def restore() {
     a match {

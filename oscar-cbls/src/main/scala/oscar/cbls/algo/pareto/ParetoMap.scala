@@ -1,6 +1,6 @@
 package oscar.cbls.algo.pareto
 
-//smaller is better!!
+//smaller is better
 object ParetoOrder extends Enumeration {
   type ParetoOrder = Value
 

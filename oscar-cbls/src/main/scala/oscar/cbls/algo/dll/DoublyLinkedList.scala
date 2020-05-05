@@ -52,6 +52,15 @@ class DoublyLinkedList[T] extends Iterable[T]{
     d
   }
 
+  //inserts toInsert after the position specified by afterPosition.
+  //if afterPosition is the phantom position, it is inserted as the first element (since start and end phantom are the same)
+  def insertAfter(toInsert:T,afterPosition:DLLStorageElement[T]):DLLStorageElement[T] = {
+    val successor = afterPosition.next
+    val d = new DLLStorageElement[T](toInsert)
+    d.setNext(successor)
+    afterPosition.setNext(d)
+    d
+  }
 
   /**adds the element at the end of the DLL*/
   def enqueue(elem:T):DLLStorageElement[T] = {
@@ -61,6 +70,7 @@ class DoublyLinkedList[T] extends Iterable[T]{
     d
   }
 
+  //removes the first element in the list and returns it; throws exception if empty
   def dequeue():T = {
     val d = phantom.next
     assert(d != phantom)

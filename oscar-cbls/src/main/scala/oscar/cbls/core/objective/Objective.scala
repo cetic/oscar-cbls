@@ -29,6 +29,7 @@ object Objective{
   implicit def objToChangingIntValue(o:IntVarObjective):ChangingIntValue = o.objective
   implicit def objToFun(o:Objective):()=>Long = ()=>o.value
   implicit def funToObj(f:()=>Long) = new FunctionObjective(f)
+  implicit def boolFunToObj(f:()=>Boolean) = new FunctionObjective(() => if(f()) 1L else 0L)
 
   def apply(f:()=>Long,model:Store = null) = new FunctionObjective(f,model)
 
