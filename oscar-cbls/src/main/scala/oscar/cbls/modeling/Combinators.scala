@@ -668,6 +668,12 @@ class NeighborhoodOps(n:Neighborhood){
   def acceptAll() = new WithAcceptanceCriterion(n, (_: Long, _: Long) => true)
 
   /**
+   * this combinator overrides accepts all moves (this is the withAcceptanceCriteria, given the fully acceptant criterion
+   */
+  def acceptAllButStrongViolation() = new WithAcceptanceCriterion(n, (_: Long, n: Long) => n!=Long.MaxValue)
+
+
+  /**
    * proposes a round-robin with that.
    * notice that you can chain steps; this will build a round-robin on the whole sequence (although this operation is not associative, so better not use parentheses)
    *

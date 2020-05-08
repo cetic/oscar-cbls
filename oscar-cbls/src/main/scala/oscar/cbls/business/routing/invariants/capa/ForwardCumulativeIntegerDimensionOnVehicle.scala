@@ -31,12 +31,12 @@ object ForwardCumulativeIntegerDimensionOnVehicle {
    * @param n The maximum number of nodes
    * @param v The number of vehicles
    * @param op A function which returns the capacity change between two nodes : (fromNode,toNode,contentAtFromNode)=> contentAtToNode
-   * @param contentAtStart Array of lenght = v where initValue(car) = content at start pos of vehicle #car
+   * @param contentAtStart Array of length = v where initValue(car) = content at start pos of vehicle #car
    * @param defaultForUnroutedNodes is the content of a node that is not routed
    * @param minContent Min content of a node (used for creating the output variable, but not considered as a constraint)
    * @param maxContent Max content of a node (used for creating the output variable, but not considered as a constraint)
-   * @param contentName the name of this content, for debug purpose. it is atributed to all variales created by this invariant
-   * @return (contentAtNode,contentAtEnd,lastPointOfVehicle) content at node, of vehice nodes (0..v-1) is the content on vehicle start. content on vehicle end is in contentAtEnd.
+   * @param contentName the name of this content, for debug purpose. it is attributed to all variables created by this invariant
+   * @return (contentAtNode,contentAtEnd,lastPointOfVehicle) content at node, of vehicle nodes (0..v-1) is the content on vehicle start. content on vehicle end is in contentAtEnd.
    */
   def apply(routes:ChangingSeqValue,
             n:Int,

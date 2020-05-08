@@ -80,8 +80,9 @@ trait StandardNeighborhoods {
                             degree:() => Int = () => 1,
                             name:String = "RandomizeNeighborhood",
                             searchZone:() => SortedSet[Int] = null,
-                            valuesToConsider:(CBLSIntVar,Long) => Iterable[Long] = (variable,_) => variable.value.domain.values)
-  = RandomizeNeighborhood(vars,degree,name,searchZone,valuesToConsider)
+                            valuesToConsider:(CBLSIntVar,Long) => Iterable[Long] = (variable,_) => variable.domain.values,
+                            acceptanceChecking:Option[Int] = None)
+  = RandomizeNeighborhood(vars,degree,name,searchZone,valuesToConsider,acceptanceChecking)
 
 
   /**

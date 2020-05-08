@@ -1,16 +1,28 @@
-package oscar.cbls.lib.search
+package oscar.cbls.lib.search.multiObjective
 
 import oscar.cbls.Solution
 import oscar.cbls.algo.dll.{DLLStorageElement, DoublyLinkedList}
 import oscar.cbls.algo.heap.BinomialHeapWithMove
+import oscar.cbls.visual.SingleFrameWindow
 
 class BiObjectiveSearch(globalMaxObj1:Long,
                         globalMinObj2:Long,
                         solutionAtMax1Mn2:Solution,
-                        optimize:(Long,Solution) /*maxObj2*/ => Option[(Long,Long,Solution)],
+                        optimize:(Long/*maxObj2*/,Solution)  => Option[(Long,Long,Solution)],
                         stopSurface:Long = 1000,
                         maxPoints:Int = 1000,
-                        verbose:Boolean = false) {
+                        verbose:Boolean = false,
+                        visu:Boolean = true,
+                        title: String = "Pareto",
+                        obj1Name: String = "obj1",
+                        obj2Name: String = "obj2"
+                       ) {
+
+  val plot = if(visu) {
+    val p = new PlotPareto(null,obj1Name,obj2Name)
+    SingleFrameWindow.show(p,title)
+    p
+  }else null
 
   var nextSquareUid:Int = 0
   //a square, anchored at a solution
@@ -38,6 +50,8 @@ class BiObjectiveSearch(globalMaxObj1:Long,
     )
 
     override def toString: String = "Square(" + obj1 + "," + maxObj1 + "," + obj2 + "," + minObj2 + "surf:" + surface + ")"
+
+    def objString:String = "(" + obj1Name + ":" + obj1 + ";" + obj2Name + ":" + obj2 + ")"
   }
 
   implicit val A = new Ordering[Square]{
@@ -57,11 +71,18 @@ class BiObjectiveSearch(globalMaxObj1:Long,
 
   var remainingSurface:Long = 0
   var nbSquare:Int = 0
-  def storeSquare(squareToStore:Square, after: DLLStorageElement[Square]): Unit ={
+  def storeSquare(squareToStore:Square, after: DLLStorageElement[Square],isNew:Boolean = false): Unit ={
+    if(verbose && isNew) println("storing new Pareto point " + squareToStore.objString)
+
     squareToStore.elemInFront = squareList.insertAfter(squareToStore, after)
     if(squareToStore.surface!=0) squaresToDevelop.insert(squareToStore)
     remainingSurface += squareToStore.surface
     nbSquare += 1
+
+
+    if(plot != null){
+      plot.reDrawPareto(squareList.map(square => (square.obj1,square.obj2)))
+    }
   }
 
   def removeSquare(square:Square): Unit ={
@@ -77,6 +98,9 @@ class BiObjectiveSearch(globalMaxObj1:Long,
     square
   }
 
+  def notifyDeleted(square:Square): Unit ={
+    if(verbose) println("removed dominated point  " + square.objString)
+  }
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   def pruneLeftSquares(currentSquare:Square, obj1:Long): Unit = {
@@ -94,6 +118,7 @@ class BiObjectiveSearch(globalMaxObj1:Long,
           storeSquare(trimmedSquare, predecessor)
         case None => ;
           //this one was completely deleted, so we carry on to the next
+          notifyDeleted(currentSquare)
           if (squareList.phantom != predecessor) {
             pruneLeftSquares(predecessor.elem, obj1: Long)
           }
@@ -106,20 +131,19 @@ class BiObjectiveSearch(globalMaxObj1:Long,
 
     if(currentSquareForPruning == null){
       //insert at last position
-      if(verbose) println("inserting new square")
-      storeSquare(squareToInsert,squareList.phantom.prev)
+      storeSquare(squareToInsert,squareList.phantom.prev,isNew = true)
     }else{
 
       if (currentSquareForPruning.obj1 <= squareToInsert.obj1
         && currentSquareForPruning.obj2 <= squareToInsert.obj2) {
         //on oublie squareToInsert, elle est au mieux équivalente, au pire, dominée
-        if(verbose) println("new square is dominated")
+        if(verbose) println("new point is dominated")
       }else if (currentSquareForPruning.obj1 >= squareToInsert.obj1
         && currentSquareForPruning.obj2 >= squareToInsert.obj2) {
         //currentSquareForPruning est au meux équivalent, au pire, dominé.
         // on supprime currentSquareForPruning et on hérite de ses valeurs dans currentSquare
-        if(verbose) println("old square is dominated")
 
+        notifyDeleted(currentSquareForPruning)
         val nextSquare = currentSquareForPruning.elemInFront.next.elem
         val enlargedSquareToInsert = squareToInsert.enlargeBounds(currentSquareForPruning)
         removeSquare(currentSquareForPruning)
@@ -131,8 +155,7 @@ class BiObjectiveSearch(globalMaxObj1:Long,
         require(squareToInsert.obj1 <= currentSquareForPruning.obj1)
         require(squareToInsert.obj2 >= currentSquareForPruning.obj2)
 
-        if(verbose) println("inserting new square")
-        storeSquare(squareToInsert,currentSquareForPruning.elemInFront.prev)
+        storeSquare(squareToInsert,currentSquareForPruning.elemInFront.prev,isNew = true)
       }
     }
   }
@@ -145,7 +168,8 @@ class BiObjectiveSearch(globalMaxObj1:Long,
       globalMaxObj1, globalMaxObj1,
       globalMinObj2, globalMinObj2,
       solutionAtMax1Mn2)
-    storeSquare(square1,squareList.phantom)
+
+    storeSquare(square1,squareList.phantom,isNew=true)
 
     //initialization, search for other extreme of he spectre
     val startSol = optimize(Long.MaxValue,solutionAtMax1Mn2).get
@@ -153,8 +177,7 @@ class BiObjectiveSearch(globalMaxObj1:Long,
       startSol._1, globalMaxObj1,
       startSol._2, globalMinObj2,
       startSol._3)
-
-    storeSquare(square,squareList.phantom)
+    storeSquare(square,squareList.phantom,isNew=true)
 
     if(verbose) println("start")
 
@@ -162,10 +185,11 @@ class BiObjectiveSearch(globalMaxObj1:Long,
       if(verbose) {
         println("loop")
         println("remainingSurface:" + remainingSurface)
-        println("nbSquare:" + nbSquare)
+        println("nbPoints:" + nbSquare)
       }
 
       require(remainingSurface == squareList.toList.map(square => square.surface).sum)
+      require(nbSquare == squareList.size, "nbSquare:" + nbSquare + " != squareList.size:" + squareList.size)
       val currentSquareToSplit = popFirstSquare()
 
       val c = ((currentSquareToSplit.obj2 + currentSquareToSplit.minObj2) / 2.0).ceil.toLong
@@ -202,9 +226,8 @@ class BiObjectiveSearch(globalMaxObj1:Long,
     }
     if(verbose) {
       println("finished")
+      println("nbPoints:" + nbSquare)
       println("remainingSurface:" + remainingSurface)
-      println("nbSquare:" + nbSquare)
-      println("squaresToDevelop.isEmpty:" + squaresToDevelop.isEmpty)
     }
     squareList.toList.map(square => (square.obj1,square.obj2,square.solution))
   }

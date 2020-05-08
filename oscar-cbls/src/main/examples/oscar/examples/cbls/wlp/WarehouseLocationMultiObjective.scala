@@ -18,8 +18,10 @@
 package oscar.examples.cbls.wlp
 
 import oscar.cbls._
-import oscar.cbls.core.search.{Best, Neighborhood}
-import oscar.cbls.lib.search.BiObjectiveSearch
+import oscar.cbls.algo.search.KSmallest
+import oscar.cbls.core.search.Best
+import oscar.cbls.lib.search.multiObjective.BiObjectiveSearch
+import oscar.cbls.lib.search.neighborhoods.SwapsNeighborhood
 
 import scala.language.postfixOps
 
@@ -29,14 +31,17 @@ object WarehouseLocationMultiObjective extends App {
   val W: Int = 100
 
   //the number of delivery points
-  val D: Int = 300
+  val D: Int = 100
 
-  println("WarehouseLocation(W:" + W + ", D:" + D + ")")
+  val problemName = "BiObjective UncapacitatedWarehouseLocation(W:" + W + ", D:" + D + ")"
+  println(problemName)
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
-  val (costForOpeningWarehouse, distanceCost) = WarehouseLocationGenerator.apply(W, D, 0, 100, 3)
+  val (costForOpeningWarehouse,distanceCost,_,_,warehouseToWarehouseDistances) =
+    WarehouseLocationGenerator.problemWithPositions(W,D,0,1000,3)
 
+  costForOpeningWarehouse(0) = 0 //This is for demo purpose; to have a curve that is more readable on the output.
   val m = Store()
 
   val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + l + "_open"))
@@ -52,15 +57,21 @@ object WarehouseLocationMultiObjective extends App {
 
   m.close()
 
-  def neighborhood = {
-    (
-      bestSlopeFirst(
-        List(
-          assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
-          swapsNeighborhood(warehouseOpenArray, "SwapWarehouses")), refresh = W / 10)
-        onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W / 10, name = "smallRandomize"), 1, operationCost)
-        onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W / 2, name = "bigRandomize"), 1, operationCost))
-  }
+  val closestWarehouses = Array.tabulate(W)(warehouse =>
+    KSmallest.lazySort(
+      Array.tabulate(W)(warehouse => warehouse),
+      otherwarehouse => warehouseToWarehouseDistances(warehouse)(otherwarehouse)
+    ))
+
+  //this procedure returns the k closest closed warehouses
+  def kNearestClosedWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).newValue == 0)
+
+  def swapsK(k:Int,openWarehousesToConsider:()=>Iterable[Int] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
+    searchZone1 = openWarehousesToConsider,
+    searchZone2 = () => (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
+    name = "Swap" + k + "Nearest",
+    symmetryCanBeBrokenOnIndices = false)
+
 
   println("extreme solution search")
   //minimize constructionCost only for initial solution
@@ -86,19 +97,30 @@ object WarehouseLocationMultiObjective extends App {
         require(constructionCost.value < maxConstructionCost, "initial solution not acceptable")
 
         val obj2 = new CascadingObjective(() => (constructionCost.value >= maxConstructionCost), operationCost)
-        neighborhood.doAllMoves(obj = obj2)
 
-        //println("operationCost:" + operationCost.value)
-        //println("constructionCost:" + constructionCost.value)
-        //println("openWarehouses:" + openWarehouses.value)
+        //TODO: the restart probably fails because of the cascadingObjective; we have no assurance that we do not violate the cascade.
+        //TODO: we should either use a GLS with some form of very fast convergence, or use another restart that does not violate the cascade
+        val neighborhood = (bestSlopeFirst(
+          List(
+            assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
+            swapsK(10) exhaust swapsK(20)))
+          onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => (W / 10) max 3, name = "smallRandomize", acceptanceChecking = Some(5)) acceptAllButStrongViolation, 3, operationCost)
+          onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/2, name = "bigRandomize", acceptanceChecking = Some(5)) acceptAllButStrongViolation, 10, operationCost))
+        neighborhood.verbose = 0
+        neighborhood.doAllMoves(obj = obj2)
 
         Some((operationCost.value, constructionCost.value,m.solution()))
       }
     },
-    stopSurface = 10000,
-    maxPoints = 100,
-    verbose = true
+    stopSurface = 5000,
+    maxPoints = 2000,
+    verbose = true,
+    visu = true,
+    title = problemName,
+    obj1Name = "operationCost",
+    obj2Name = "constructionCost"
   )
+
 
   val allSolutions = paretoSearch.paretoOptimize()
 
