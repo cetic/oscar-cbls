@@ -19,7 +19,6 @@ package oscar.examples.cbls.wlp
 
 import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.core.search.Best
 import oscar.cbls.lib.search.multiObjective.BiObjectiveSearch
 import oscar.cbls.lib.search.neighborhoods.SwapsNeighborhood
 
@@ -28,7 +27,7 @@ import scala.language.postfixOps
 object WarehouseLocationMultiObjective extends App {
 
   //the number of warehouses
-  val W: Int = 100
+  val W: Int = 300
 
   //the number of delivery points
   val D: Int = 100
@@ -74,15 +73,18 @@ object WarehouseLocationMultiObjective extends App {
 
 
   println("extreme solution search")
-  //minimize constructionCost only for initial solution
-  assignNeighborhood(warehouseOpenArray, selectIndiceBehavior = Best(), name = "SwitchWarehouse").doImprovingMove(constructionCost)
+  assignNeighborhood(warehouseOpenArray, name = "SwitchWarehouse").doAllMoves(obj = constructionCost)
+  val firstConstructionCost = constructionCost.value
+  assignNeighborhood(warehouseOpenArray, name = "SwitchWarehouse").doAllMoves(
+    obj = new CascadingObjective(() => (constructionCost.value != firstConstructionCost), operationCost))
+  println(openWarehouses)
   println("done")
 
   println("operationCost:" + operationCost.value)
   println("constructionCost:" + constructionCost.value)
   println("openWarehouses:" + openWarehouses.value)
 
-  val globalMaxObj1: Long = operationCost.value*100
+  val globalMaxObj1: Long = operationCost.value
   val globalMinObj2: Long = constructionCost.value
   val solutionAtMax1Mn2: Solution = m.solution()
 
@@ -104,8 +106,8 @@ object WarehouseLocationMultiObjective extends App {
           List(
             assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
             swapsK(10) exhaust swapsK(20)))
-          onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => (W / 10) max 3, name = "smallRandomize", acceptanceChecking = Some(5)) acceptAllButStrongViolation, 3, operationCost)
-          onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/2, name = "bigRandomize", acceptanceChecking = Some(5)) acceptAllButStrongViolation, 10, operationCost))
+          onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => (W / 10) max 3, name = "smallRandomize", acceptanceChecking = Some(5)) acceptAllButStrongViolation, 5, operationCost)
+          onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/2, name = "bigRandomize", acceptanceChecking = Some(5)) acceptAllButStrongViolation, 2, operationCost))
         neighborhood.verbose = 0
         neighborhood.doAllMoves(obj = obj2)
 

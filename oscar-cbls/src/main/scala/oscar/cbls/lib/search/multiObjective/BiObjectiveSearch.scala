@@ -24,6 +24,8 @@ class BiObjectiveSearch(globalMaxObj1:Long,
     p
   }else null
 
+  var oldParetoPoints:List[(Long,Long)] = Nil
+
   var nextSquareUid:Int = 0
   //a square, anchored at a solution
   case class Square(obj1:Long,maxObj1:Long,
@@ -81,7 +83,7 @@ class BiObjectiveSearch(globalMaxObj1:Long,
 
 
     if(plot != null){
-      plot.reDrawPareto(squareList.map(square => (square.obj1,square.obj2)))
+      plot.reDrawPareto(squareList.map(square => (square.obj1,square.obj2)), Some(oldParetoPoints))
     }
   }
 
@@ -99,6 +101,7 @@ class BiObjectiveSearch(globalMaxObj1:Long,
   }
 
   def notifyDeleted(square:Square): Unit ={
+    oldParetoPoints = (square.obj1,square.obj2) :: oldParetoPoints
     if(verbose) println("removed dominated point  " + square.objString)
   }
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -229,6 +232,8 @@ class BiObjectiveSearch(globalMaxObj1:Long,
       println("nbPoints:" + nbSquare)
       println("remainingSurface:" + remainingSurface)
     }
+    plot.reDrawPareto(squareList.map(square => (square.obj1,square.obj2)), None)
+
     squareList.toList.map(square => (square.obj1,square.obj2,square.solution))
   }
 }
