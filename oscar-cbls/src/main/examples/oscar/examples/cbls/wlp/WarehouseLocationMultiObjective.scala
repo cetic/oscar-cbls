@@ -19,6 +19,7 @@ package oscar.examples.cbls.wlp
 
 import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
+import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.lib.search.multiObjective.BiObjectiveSearch
 import oscar.cbls.lib.search.neighborhoods.SwapsNeighborhood
 
@@ -27,10 +28,10 @@ import scala.language.postfixOps
 object WarehouseLocationMultiObjective extends App {
 
   //the number of warehouses
-  val W: Int = 300
+  val W: Int = 1000
 
   //the number of delivery points
-  val D: Int = 100
+  val D: Int = 1000
 
   val problemName = "BiObjective UncapacitatedWarehouseLocation(W:" + W + ", D:" + D + ")"
   println(problemName)
@@ -100,18 +101,26 @@ object WarehouseLocationMultiObjective extends App {
 
         val obj2 = new CascadingObjective(() => (constructionCost.value >= maxConstructionCost), operationCost)
 
-        //TODO: the restart probably fails because of the cascadingObjective; we have no assurance that we do not violate the cascade.
-        //TODO: we should either use a GLS with some form of very fast convergence, or use another restart that does not violate the cascade
-        val neighborhood = (bestSlopeFirst(
+        def neighborhood = bestSlopeFirst(
           List(
             assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
             swapsK(10) exhaust swapsK(20)))
+        
+        val search1 = (neighborhood
           onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => (W / 10) max 3, name = "smallRandomize", acceptanceChecking = Some(5)) acceptAllButStrongViolation, 5, operationCost)
           onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/2, name = "bigRandomize", acceptanceChecking = Some(5)) acceptAllButStrongViolation, 2, operationCost))
-        neighborhood.verbose = 0
-        neighborhood.doAllMoves(obj = obj2)
+        search1.verbose = 0
+        search1.doAllMoves(obj = obj2)
 
-        Some((operationCost.value, constructionCost.value,m.solution()))
+        val foundOperationCost = operationCost.value
+
+        val search2:Neighborhood = neighborhood
+
+        val obj3 = new CascadingObjective(() => (operationCost.value > foundOperationCost), constructionCost)
+        search2.verbose = 0
+        search2.doAllMoves(obj = obj3)
+
+        Some((foundOperationCost, constructionCost.value,m.solution()))
       }
     },
     stopSurface = 5000,
