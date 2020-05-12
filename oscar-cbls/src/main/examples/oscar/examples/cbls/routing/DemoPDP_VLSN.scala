@@ -21,8 +21,6 @@ object DemoPDP_VLSN extends App{
 
   val v = 10
   val n = 500
-//  val v = 10
-//  val n = 500
 
   println("VLSN(PDPTW) v:" + v +" n:" + n)
   val penaltyForUnrouted = 10000
@@ -33,14 +31,13 @@ object DemoPDP_VLSN extends App{
   val contentsFlow = RoutingMatrixGenerator.generateContentFlow(n,listOfChains,minVehicleCapacity)
   val vehiclesCapacity = RoutingMatrixGenerator.generateVehiclesSize(v,maxVehicleCapacity,minVehicleCapacity)
 
-  val myVRP =  new VRP(m,n,v)
+  val myVRP =  new VRP(m,n,v,debug = true)
   val vehicles = 0 until v
 
   val k = 10
   val l = 40
   val xNearestVehicles = 7
 
-  println("listOfChains: \n" + listOfChains.mkString("\n"))
   // GC
   val gc = GlobalConstraintCore(myVRP.routes, v)
 
