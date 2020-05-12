@@ -31,7 +31,7 @@ object DemoPDP_VLSN extends App{
   val contentsFlow = RoutingMatrixGenerator.generateContentFlow(n,listOfChains,minVehicleCapacity)
   val vehiclesCapacity = RoutingMatrixGenerator.generateVehiclesSize(v,maxVehicleCapacity,minVehicleCapacity)
 
-  val myVRP =  new VRP(m,n,v,debug = true)
+  val myVRP =  new VRP(m,n,v)
   val vehicles = 0 until v
 
   val k = 10
