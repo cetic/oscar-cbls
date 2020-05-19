@@ -28,12 +28,12 @@ import scala.language.postfixOps
 object WarehouseLocationMultiObjective extends App {
 
   //the number of warehouses
-  val W: Int = 1000
+  val W: Int = 100
 
   //the number of delivery points
-  val D: Int = 1000
+  val D: Int = 100
 
-  val problemName = "BiObjective UncapacitatedWarehouseLocation(W:" + W + ", D:" + D + ")"
+  val problemName = "BiObjective WLP(W:" + W + ", D:" + D + ")"
   println(problemName)
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
@@ -41,6 +41,7 @@ object WarehouseLocationMultiObjective extends App {
   val (costForOpeningWarehouse,distanceCost,_,_,warehouseToWarehouseDistances) =
     WarehouseLocationGenerator.problemWithPositions(W,D,0,1000,3)
 
+  for(w <- 0 until W) costForOpeningWarehouse(w) = 100
   costForOpeningWarehouse(0) = 0 //This is for demo purpose; to have a curve that is more readable on the output.
   val m = Store()
 
@@ -65,13 +66,13 @@ object WarehouseLocationMultiObjective extends App {
 
   //this procedure returns the k closest closed warehouses
   def kNearestClosedWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).newValue == 0)
+  def kNearestOpenWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).newValue != 0)
 
   def swapsK(k:Int,openWarehousesToConsider:()=>Iterable[Int] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
     searchZone1 = openWarehousesToConsider,
     searchZone2 = () => (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
     name = "Swap" + k + "Nearest",
     symmetryCanBeBrokenOnIndices = false)
-
 
   println("extreme solution search")
   assignNeighborhood(warehouseOpenArray, name = "SwitchWarehouse").doAllMoves(obj = constructionCost)
@@ -104,11 +105,13 @@ object WarehouseLocationMultiObjective extends App {
         def neighborhood = bestSlopeFirst(
           List(
             assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
-            swapsK(10) exhaust swapsK(20)))
-        
+            swapsK(10) exhaust swapsK(20),
+            swapsK(5) dynAndThen (swapMove => swapsK(5,() => kNearestOpenWarehouses(swapMove.idI,4).filter(_ >= swapMove.idI)))
+          ))
+
         val search1 = (neighborhood
-          onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => (W / 10) max 3, name = "smallRandomize", acceptanceChecking = Some(5)) acceptAllButStrongViolation, 5, operationCost)
-          onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/2, name = "bigRandomize", acceptanceChecking = Some(5)) acceptAllButStrongViolation, 2, operationCost))
+          onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => (W / 10) max 5, name = "smallRandomize", acceptanceChecking = Some(5)) acceptAllButStrongViolation, 5, operationCost)
+          onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/2, name = "bigRandomize", acceptanceChecking = Some(20)) acceptAllButStrongViolation, 2, operationCost))
         search1.verbose = 0
         search1.doAllMoves(obj = obj2)
 
@@ -123,16 +126,16 @@ object WarehouseLocationMultiObjective extends App {
         Some((foundOperationCost, constructionCost.value,m.solution()))
       }
     },
-    stopSurface = 5000,
+    stopSurface = 2000,
     maxPoints = 2000,
     verbose = true,
     visu = true,
     title = problemName,
     obj1Name = "operationCost",
-    obj2Name = "constructionCost"
+    obj2Name = "constructionCost",
+    filterSquare = {case (obj1,maxOBj1,obj2,minOBj2) => minOBj2 < obj2 - 50}
   )
-
-
+  
   val allSolutions = paretoSearch.paretoOptimize()
 
   println(allSolutions.map({case (obj1,obj2,sol) => {

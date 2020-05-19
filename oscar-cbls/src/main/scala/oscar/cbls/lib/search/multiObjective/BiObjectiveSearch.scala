@@ -15,12 +15,13 @@ class BiObjectiveSearch(globalMaxObj1:Long,
                         visu:Boolean = true,
                         title: String = "Pareto",
                         obj1Name: String = "obj1",
-                        obj2Name: String = "obj2"
+                        obj2Name: String = "obj2",
+                        filterSquare:(Long,Long,Long,Long) => Boolean = (_:Long,_:Long,_:Long,_:Long) =>true
                        ) {
 
   val plot = if(visu) {
     val p = new PlotPareto(null,obj1Name,obj2Name)
-    SingleFrameWindow.show(p,title)
+    SingleFrameWindow.show(p,title, width = 2000, height = 2000)
     p
   }else null
 
@@ -77,10 +78,12 @@ class BiObjectiveSearch(globalMaxObj1:Long,
     if(verbose && isNew) println("storing new Pareto point " + squareToStore.objString)
 
     squareToStore.elemInFront = squareList.insertAfter(squareToStore, after)
-    if(squareToStore.surface!=0) squaresToDevelop.insert(squareToStore)
-    remainingSurface += squareToStore.surface
-    nbSquare += 1
+    if(squareToStore.surface!=0 && filterSquare(squareToStore.obj1,squareToStore.maxObj1,squareToStore.obj2,squareToStore.minObj2)) {
+      squaresToDevelop.insert(squareToStore)
+      remainingSurface += squareToStore.surface
+     }
 
+    nbSquare += 1
 
     if(plot != null){
       plot.reDrawPareto(squareList.map(square => (square.obj1,square.obj2)), Some(oldParetoPoints))
@@ -88,9 +91,10 @@ class BiObjectiveSearch(globalMaxObj1:Long,
   }
 
   def removeSquare(square:Square): Unit ={
-    squaresToDevelop.deleteIfPresent(square)
+    if(squaresToDevelop.deleteIfPresent(square)){
+      remainingSurface -= square.surface
+    }
     square.elemInFront.delete()
-    remainingSurface -= square.surface
     nbSquare -= 1
   }
 
@@ -166,6 +170,8 @@ class BiObjectiveSearch(globalMaxObj1:Long,
 
   def paretoOptimize():List[(Long,Long,Solution)] = {
 
+    val startSearchNanotime = System.nanoTime()
+
     //Store initial given solution
     val square1 = Square(
       globalMaxObj1, globalMaxObj1,
@@ -184,6 +190,8 @@ class BiObjectiveSearch(globalMaxObj1:Long,
 
     if(verbose) println("start")
 
+    var foundPoints = 2
+
     while ((!squaresToDevelop.isEmpty) && (remainingSurface > stopSurface) && (nbSquare < maxPoints)) {
       if(verbose) {
         println("loop")
@@ -191,7 +199,7 @@ class BiObjectiveSearch(globalMaxObj1:Long,
         println("nbPoints:" + nbSquare)
       }
 
-      require(remainingSurface == squareList.toList.map(square => square.surface).sum)
+      require(remainingSurface == squaresToDevelop.getElements.toList.map(square => square.surface).sum)
       require(nbSquare == squareList.size, "nbSquare:" + nbSquare + " != squareList.size:" + squareList.size)
       val currentSquareToSplit = popFirstSquare()
 
@@ -214,6 +222,7 @@ class BiObjectiveSearch(globalMaxObj1:Long,
         case Some((obj1, obj2, sol)) =>
           //we have a solution.
           //correct the front
+          foundPoints +=1
 
           val squareOnTheRight = prev.next
           pruneLeftSquares(remainingUpperSquare, obj1) //this will correct the maxObj1 of the split square
@@ -229,10 +238,15 @@ class BiObjectiveSearch(globalMaxObj1:Long,
     }
     if(verbose) {
       println("finished")
-      println("nbPoints:" + nbSquare)
+      println("nbFoundSolutions:" + foundPoints)
+      println("nbNonDominatedPoints:" + nbSquare)
       println("remainingSurface:" + remainingSurface)
+      println("completed:" + squaresToDevelop.isEmpty)
+      println("nbSquaresToDevelop:" + squaresToDevelop.size)
+      println("elapsed:" + ((System.nanoTime() - startSearchNanotime)/1000000).toInt + " ms")
+
     }
-    plot.reDrawPareto(squareList.map(square => (square.obj1,square.obj2)), None)
+    //plot.reDrawPareto(squareList.map(square => (square.obj1,square.obj2)), None)
 
     squareList.toList.map(square => (square.obj1,square.obj2,square.solution))
   }
