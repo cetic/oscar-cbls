@@ -4,12 +4,11 @@ import oscar.cbls.CBLSIntVar
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.scheduling.ActivityId
 import oscar.cbls.business.scheduling.model.{Precedences, Resource, ResourceState}
-import oscar.cbls.core.computation.{SeqUpdate, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint}
+import oscar.cbls.core.computation.{SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint}
 import oscar.cbls.core.propagation.Checker
 import oscar.cbls.core.{ChangingSeqValue, Invariant, SeqNotificationTarget}
 
-import scala.annotation.tailrec
-import scala.collection.BitSet
+import scala.collection.{BitSet, mutable}
 
 class StartTimes(actPriorityList: ChangingSeqValue,
                  actDurations: Map[ActivityId, Int],
@@ -26,84 +25,74 @@ class StartTimes(actPriorityList: ChangingSeqValue,
   makeSpan.setDefiningInvariant(this)
   for {st <- startTimes.values} st.setDefiningInvariant(this)
   // Compute resources used by tasks
-  var activityUsedResourceIndices: Map[ActivityId, Set[Int]] = Map()
-  for {rcInd <- resources.indices} {
-    resources(rcInd).usingActivities.foreach { act =>
-      val actUsedResInd = activityUsedResourceIndices.getOrElse(act, Set())
-      activityUsedResourceIndices += (act -> (actUsedResInd + rcInd))
+  var activityUsedResources: Map[ActivityId, Set[Resource]] = Map()
+  val initialResourceStates: mutable.Map[Resource, ResourceState] = new mutable.HashMap[Resource, ResourceState]()
+  for {res <- resources} {
+    res.usingActivities.foreach { act =>
+      val actUsedRes = activityUsedResources.getOrElse(act, Set())
+      activityUsedResources += (act -> (actUsedRes + res))
     }
+    initialResourceStates += (res -> res.initialState)
   }
-  val resourceStates: Array[ResourceState] = new Array[ResourceState](resources.size)
   // Checkpoint data
-  protected var checkpoint: IntSequence = actPriorityList.value
-  var startTimeStates: Array[StartTimesData] = Array.tabulate(actDurations.size+1)(_ => StartTimesData.initial(resourceStates.length))
-  startTimeStates(0).initResourceStates(0, resources)
-  protected var startTimeStatesAtCheck: Array[StartTimesData] = _
-  protected var currentPosition: Int = 0
-  protected var positionAtCheck: Int = 0
+  val initialSTState: StartTimesState = StartTimesState(initialResourceStates, 0, StartTimes.NO_ACTIVITY, 0)
+  var forwardStatesSequence: Map[String, Array[StartTimesState]] = Map()
+  val numActivities: Int = actDurations.size
   // Compute first start times
   computeStartTimesFrom(actPriorityList.value, 0)
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
-    if (!digestUpdates(changes)) {
-      computeStartTimesFrom(v.value, 0)
+    val boundsOpt = digestUpdates(changes)
+    if (boundsOpt.isDefined) {
+      val bounds = boundsOpt.get
+      val prevSeq = bounds._3
+      computeStartTimesFrom(prevSeq, bounds._1)
     }
-    scheduleForPropagation()
   }
 
-  private def digestUpdates(changes: SeqUpdate): Boolean = {
-    //TODO Incremental computation
+  private def digestUpdates(changes: SeqUpdate): Option[(Int, Int, IntSequence, Option[IntSequence])] = {
+    //TODO Test and improve
+    val changesValue = changes.newValue
+    val lastValuePos = changesValue.size - 1
     changes match {
-      case SeqUpdateDefineCheckpoint(prev, _, checkpointLevel) =>
-        // We only consider level 0; other are not managed.
-        if (checkpointLevel == 0) {
-          if (!digestUpdates(prev)) {
-            computeStartTimesFrom(changes.newValue, 0)
-          }
-          checkpoint = changes.newValue
-          positionAtCheck = currentPosition
-          startTimeStatesAtCheck = startTimeStates.clone()
-          true
-        } else {
-          digestUpdates(prev)
-        }
-      case SeqUpdateRollBackToCheckpoint(sequence, i) =>
-        //require(sequence quickEquals this.checkpoint)
-        startTimeStates = startTimeStatesAtCheck
-        computeStartTimesFrom(sequence, positionAtCheck)
-        true
+      case SeqUpdateDefineCheckpoint(_, _, _) =>
+        Some(0, lastValuePos, changesValue, None)
+      case r@SeqUpdateRollBackToCheckpoint(_, _) =>
+        val rbkValue = r.howToRollBack.newValue // checkpoint value
+        Some(0, rbkValue.size-1, rbkValue, None)
       case SeqUpdateInsert(_, pos, prev) =>
-        if (!digestUpdates(prev))
-          false
+        val boundsPrevOpt = digestUpdates(prev)
+        if (boundsPrevOpt.isEmpty)
+          Some(0, lastValuePos, changesValue, None)
         else {
-          computeStartTimesFrom(changes.newValue, pos)
-          true
+          val prevSeq = prev.newValue
+          Some(pos, pos + 1, changesValue, Some(prevSeq))
         }
       case SeqUpdateMove(fromIncluded, toIncluded, after, _, prev) =>
-        if (!digestUpdates(prev))
-          false
+        val boundsPrevOpt = digestUpdates(prev)
+        if (boundsPrevOpt.isEmpty)
+          Some(0, lastValuePos, changesValue, None)
         else {
-          val pos = (after + 1) min fromIncluded min toIncluded
-          computeStartTimesFrom(changes.newValue, pos)
-          true
+          val prevSeq = prev.newValue
+          val posMin = (after + 1) min fromIncluded min toIncluded
+          val posMax = (after + 1) max fromIncluded max toIncluded
+          Some(posMin, posMax, changesValue, Some(prevSeq))
         }
       case SeqUpdateRemove(pos, prev) =>
-        if (!digestUpdates(prev))
-          false
+        val boundsPrevOpt = digestUpdates(prev)
+        if (boundsPrevOpt.isEmpty)
+          Some(0, lastValuePos, changesValue, None)
         else {
-          computeStartTimesFrom(changes.newValue, pos)
-          true
+          val prevSeq = prev.newValue
+          Some(pos, pos + 1, changesValue, Some(prevSeq))
         }
       case SeqUpdateLastNotified(value) =>
-        false
+        Some(0, value.size-1, value, None)
+      case SeqUpdateAssign(value) =>
+        Some(0, value.size-1, value, None)
       case _ =>
-        false
+        None
     }
-  }
-
-  //TODO recompute when another dimension changes
-  override def performInvariantPropagation(): Unit = {
-    computeStartTimesFrom(actPriorityList.value, 0)
   }
 
   /** To override whenever possible to spot errors in invariants.
@@ -115,127 +104,90 @@ class StartTimes(actPriorityList: ChangingSeqValue,
   }
 
   // Compute the start times from a given position
-  def computeStartTimesFrom(actPriorityList: IntSequence, pos: Int): Unit = {
-    currentPosition = pos
-    // Initialize explorer
-    var seqExplorerOpt = actPriorityList.explorerAtPosition(pos)
-    var makeSpanValue = 0L
-    while (seqExplorerOpt.isDefined) {
-      val seqExplorer = seqExplorerOpt.get
-      val position = seqExplorer.position
-      val actInd = seqExplorer.value
-      val startTimesStateAtPos = startTimeStates(position)
-      val startTimesValsAtPos = startTimesStateAtPos.startTimesVals
-      val resourceStatesAtPos = startTimesStateAtPos.resourceStates
-      val makeSpanValueAtPos = startTimesStateAtPos.makeSpanValue
-      // Compute maximum ending time for preceding activities
-      val maxEndTimePrecs = actPrecedences
-        .predMap.getOrElse(actInd, BitSet.empty)
-        .foldLeft(0) { (acc, precInd) =>
-          if (actPriorityList.contains(precInd)) {
-            acc max (startTimesValsAtPos(precInd) + actDurations(precInd))
-          } else {
-            acc
-          }
-        }
-      // Compute maximum of earliest release time for all needed resources
-      val maxReleaseResources = activityUsedResourceIndices
-        .getOrElse(actInd, Set())
-        .foldLeft(0) { (acc, resInd) =>
-          acc max resourceStatesAtPos(resInd).earliestStartTime(actInd, 0)
-        }
-      // Getting the minimum start time for this task
-      val minStartTime = actMinStartTimes.getOrElse(actInd, 0)
-      val earliestStartTime = maxEndTimePrecs max maxReleaseResources max minStartTime
-      val actEndTime = earliestStartTime + actDurations(actInd)
-      makeSpanValue = if (actEndTime > makeSpanValueAtPos) {
-        actEndTime
-      } else {
-        makeSpanValueAtPos
+  def computeStartTimesFrom(actPriorityList: IntSequence,
+                            pos: Int,
+                            prevList: Option[IntSequence] = None): Unit = {
+    val keyMap = actPriorityList.mkString(",")
+    if (forwardStatesSequence.contains(keyMap)) {
+      // If there already exists the value for this sequence
+      val arrStates = forwardStatesSequence(keyMap)
+      for {i <- arrStates.indices} {
+        val stateI = arrStates(i)
+        startTimes(stateI.activityId) := stateI.activityStartTime
       }
-      // Update resource states for next position (if it exists)
-      seqExplorerOpt = seqExplorer.next
-      if (seqExplorerOpt.isDefined) {
-        val nextPos = seqExplorerOpt.get.position
-        val startTimesStateAtNext = startTimeStates(nextPos)
-        val resourceStatesAtNext = startTimesStateAtNext.resourceStates
-        val actUsedResIndices = activityUsedResourceIndices.getOrElse(actInd, Set())
-        // Update resource states for next position
-        for {i <- resourceStatesAtPos.indices} {
-          if (actUsedResIndices.contains(i)) {
-            resourceStatesAtNext(i) = resourceStatesAtPos(i).nextState(actInd,
-              actDurations(actInd),
-              earliestStartTime)
-          } else {
-            resourceStatesAtNext(i) = resourceStatesAtPos(i)
+      makeSpan := arrStates(arrStates.length-1).makeSpanValue
+    } else {
+      var makeSpanValue = 0
+      var startTimesVals: Map[ActivityId, Int] = Map()
+      val nextArrayStates: Array[StartTimesState] = new Array[StartTimesState](actPriorityList.size)
+      val startPos = if (prevList.isDefined) {
+        val keyMapPrev = prevList.get.mkString(",")
+        val prevArrayStates: Array[StartTimesState] = forwardStatesSequence(keyMapPrev)
+        // Put the values for CBLS variables in prefix from previous sequence
+        for {i <- 0 until pos} {
+          val stateI = prevArrayStates(i)
+          nextArrayStates(i) = stateI
+          startTimesVals += stateI.activityId -> stateI.activityStartTime
+          startTimes(stateI.activityId) := stateI.activityStartTime
+          makeSpanValue = stateI.makeSpanValue
+        }
+        pos
+      } else 0
+      // Initialize explorer from startPos
+      var seqExplorerOpt = actPriorityList.explorerAtPosition(startPos)
+      while (seqExplorerOpt.isDefined) {
+        val seqExplorer = seqExplorerOpt.get
+        val position = seqExplorer.position
+        val actInd = seqExplorer.value
+        val stStateBeforePos = if (position == 0) initialSTState else nextArrayStates(position-1)
+        var nextResState = stStateBeforePos.resourceStates.clone()
+        // Compute maximum ending time for preceding activities
+        val maxEndTimePrecs = actPrecedences
+          .predMap.getOrElse(actInd, BitSet.empty)
+          .foldLeft(0) { (acc, precInd) =>
+            if (actPriorityList.contains(precInd)) {
+              acc max (startTimesVals(precInd) + actDurations(precInd))
+            } else {
+              acc
+            }
           }
-        }
-        // Update start times for next position
-        val startTimesValsAtNext= startTimesValsAtPos + (actInd -> earliestStartTime)
-        // Update start time state for next position
-        startTimeStates(nextPos) = StartTimesData(resourceStatesAtNext, makeSpanValue, startTimesValsAtNext)
-      }
-      // Update CBLS variable
-      startTimes(actInd) := earliestStartTime
-    }
-    makeSpan := makeSpanValue
-  }
-
-  //TODO delete this when incrementality is stable
-  // Compute the start times from scratch
-  def computeStartTimes(actPriorityList: IntSequence): Unit = {
-    @tailrec
-    def initResourceStates(i: Int, resLs: List[Resource]): Unit = resLs match {
-      case Nil => ()
-      case r::rs =>
-        resourceStates(i) = r.initialState
-        initResourceStates(i+1, rs)
-    }
-    /////
-    initResourceStates(0, resources)
-    var makeSpanValue = 0L
-    var startTimesVals: Map[ActivityId, Int] = Map()
-    for {actInd <- actPriorityList} {
-      val actIndI = actInd.toInt
-      // Compute maximum ending time for preceding activities
-      val maxEndTimePrecs = actPrecedences
-        .predMap.getOrElse(actIndI, BitSet.empty)
-        .foldLeft(0) { (acc, precInd) =>
-          if (actPriorityList.contains(precInd)) {
-            acc max (startTimesVals(precInd) + actDurations(precInd))
-          } else {
-            acc
+        // Compute maximum of earliest release time for all needed resources
+        val actUsedResources = activityUsedResources.getOrElse(actInd, Set())
+        val maxReleaseResources = actUsedResources.foldLeft(0) { (acc, res) =>
+            acc max stStateBeforePos.resourceStates(res).earliestStartTime(actInd, 0)
           }
+        // Getting the minimum start time for this task
+        val minStartTime = actMinStartTimes.getOrElse(actInd, 0)
+        val earliestStartTime = maxEndTimePrecs max maxReleaseResources max minStartTime
+        val actEndTime = earliestStartTime + actDurations(actInd)
+        makeSpanValue = if (actEndTime > stStateBeforePos.makeSpanValue) {
+          actEndTime
+        } else {
+          stStateBeforePos.makeSpanValue
         }
-      // Compute maximum of earliest release time for all needed resources
-      val maxReleaseResources = activityUsedResourceIndices
-        .getOrElse(actIndI, Set())
-        .foldLeft(0) { (acc, resInd) =>
-          acc max resourceStates(resInd).earliestStartTime(actIndI, 0)
+        // Update resource states
+        actUsedResources.foreach { res =>
+          nextResState += (res ->
+            stStateBeforePos.resourceStates(res).nextState(actInd, actDurations(actInd), earliestStartTime))
         }
-      // Getting the minimum start time for this task
-      val minStartTime = actMinStartTimes.getOrElse(actIndI, 0)
-      val earliestStartTime = maxEndTimePrecs max maxReleaseResources max minStartTime
-      // Update resource states
-      activityUsedResourceIndices
-        .getOrElse(actIndI, Set())
-        .foreach { resInd =>
-          resourceStates(resInd) = resourceStates(resInd).nextState(actIndI,
-            actDurations(actIndI),
-            earliestStartTime)
-        }
-      val actEndTime = earliestStartTime + actDurations(actIndI)
-      if (actEndTime > makeSpanValue) {
-        makeSpanValue = actEndTime
+        val stStateAtPos = StartTimesState(nextResState, makeSpanValue, actInd, earliestStartTime)
+        nextArrayStates(position) = stStateAtPos
+        // Update CBLS variable
+        startTimesVals += actInd -> earliestStartTime
+        startTimes(actInd) := earliestStartTime
+        seqExplorerOpt = seqExplorer.next
       }
-      startTimesVals += (actIndI -> earliestStartTime)
-      startTimes(actIndI) := startTimesVals(actIndI)
+      // Update makeSpan variable
+      makeSpan := makeSpanValue
+      // Update map
+      forwardStatesSequence += (keyMap -> nextArrayStates)
     }
-    makeSpan := makeSpanValue
   }
 }
 
 object StartTimes {
+  final val NO_ACTIVITY = -1
+
   def apply(actPriorityList: ChangingSeqValue,
             actDurations: Map[ActivityId, Int],
             actPrecedences: Precedences,

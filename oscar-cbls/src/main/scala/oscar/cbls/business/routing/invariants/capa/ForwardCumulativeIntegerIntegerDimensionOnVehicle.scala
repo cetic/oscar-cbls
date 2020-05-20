@@ -206,7 +206,7 @@ class ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
     toUpdateZonesAndVehicleStartAfter match {
       case None => ;
       case Some((toUpdateZones,vehicleLocation)) =>
-        toUpdateZonesAndVehicleStartAfter = Some((toUpdateZones.insert(id, smartPrepend(0,0,toUpdateZones.getOrElse(id,List.empty[(Int,Int)]))),vehicleLocation))
+        toUpdateZonesAndVehicleStartAfter = Some((toUpdateZones.insert(id, smartPrepend(0,0,toUpdateZones.getOrElse(id, List.empty[(Int,Int)]))),vehicleLocation))
     }
     scheduleForPropagation()
   }
