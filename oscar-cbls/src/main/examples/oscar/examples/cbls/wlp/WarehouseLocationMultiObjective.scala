@@ -127,7 +127,7 @@ object WarehouseLocationMultiObjective extends App {
       }
     },
     stopSurface = 2000,
-    maxPoints = 2000,
+    maxPoints = 200,
     verbose = true,
     visu = true,
     title = problemName,
@@ -135,7 +135,7 @@ object WarehouseLocationMultiObjective extends App {
     obj2Name = "constructionCost",
     filterSquare = {case (obj1,maxOBj1,obj2,minOBj2) => minOBj2 < obj2 - 50}
   )
-  
+
   val allSolutions = paretoSearch.paretoOptimize()
 
   println(allSolutions.map({case (obj1,obj2,sol) => {
