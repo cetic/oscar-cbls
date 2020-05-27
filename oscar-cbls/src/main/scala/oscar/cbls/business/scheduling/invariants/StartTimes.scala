@@ -8,7 +8,7 @@ import oscar.cbls.core.computation.{SeqUpdate, SeqUpdateAssign, SeqUpdateDefineC
 import oscar.cbls.core.propagation.Checker
 import oscar.cbls.core.{ChangingSeqValue, Invariant, SeqNotificationTarget}
 
-import scala.collection.{BitSet, mutable}
+import scala.collection.BitSet
 
 class StartTimes(actPriorityList: ChangingSeqValue,
                  actDurations: Map[ActivityId, Int],
@@ -25,21 +25,39 @@ class StartTimes(actPriorityList: ChangingSeqValue,
   makeSpan.setDefiningInvariant(this)
   for {st <- startTimes.values} st.setDefiningInvariant(this)
   // Compute resources used by tasks
-  var activityUsedResources: Map[ActivityId, Set[Resource]] = Map()
-  val initialResourceStates: mutable.Map[Resource, ResourceState] = new mutable.HashMap[Resource, ResourceState]()
-  for {res <- resources} {
-    res.usingActivities.foreach { act =>
-      val actUsedRes = activityUsedResources.getOrElse(act, Set())
-      activityUsedResources += (act -> (actUsedRes + res))
+  val (activityUsedResources, initialResourceStates): (Map[ActivityId, Set[Resource]], Map[Resource, ResourceState]) =
+    resources.foldLeft(Map(): Map[ActivityId, Set[Resource]], Map(): Map[Resource, ResourceState]) { (accTup, res) =>
+      val accAUR = accTup._1
+      val accIRS = accTup._2
+      val newAccAUR = res.usingActivities.foldLeft(accAUR) { (accAUR1, act) =>
+        val actUsedRes = accAUR1.getOrElse(act, Set())
+        accAUR1 + (act -> (actUsedRes + res))
+      }
+      val newAccIRS = accIRS + (res -> res.initialState)
+      (newAccAUR, newAccIRS)
     }
-    initialResourceStates += (res -> res.initialState)
-  }
   // Checkpoint data
-  val initialSTState: StartTimesState = StartTimesState(initialResourceStates, 0, StartTimes.NO_ACTIVITY, 0)
-  var forwardStatesSequence: Map[String, Array[StartTimesState]] = Map()
   val numActivities: Int = actDurations.size
+  val initialSTState: StartTimesState = StartTimesState(initialResourceStates, 0, StartTimes.NO_ACTIVITY, 0)
+  val forwardStatesSequence: Array[(String, Array[StartTimesState])] = new Array[(String, Array[StartTimesState])](numActivities)
+  var nextIndex: Int = 0
   // Compute first start times
   computeStartTimesFrom(actPriorityList.value, 0)
+
+  private def findIndex(index: String): Option[(String, Array[StartTimesState])] = {
+    var notFound = true
+    var i = 0
+    var res: Option[(String, Array[StartTimesState])] = None
+    while (notFound && (i < numActivities)) {
+      val seqI = forwardStatesSequence(i)
+      if ((seqI != null) && (seqI._1 == index)) {
+        notFound = false
+        res = Some(seqI)
+      }
+      i += 1
+    }
+    res
+  }
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     val boundsOpt = digestUpdates(changes)
@@ -108,9 +126,10 @@ class StartTimes(actPriorityList: ChangingSeqValue,
                             pos: Int,
                             prevList: Option[IntSequence] = None): Unit = {
     val keyMap = actPriorityList.mkString(",")
-    if (forwardStatesSequence.contains(keyMap)) {
+    val optSeq = findIndex(keyMap)
+    if (optSeq.isDefined) {
       // If there already exists the value for this sequence
-      val arrStates = forwardStatesSequence(keyMap)
+      val arrStates = optSeq.get._2
       for {i <- arrStates.indices} {
         val stateI = arrStates(i)
         startTimes(stateI.activityId) := stateI.activityStartTime
@@ -122,16 +141,19 @@ class StartTimes(actPriorityList: ChangingSeqValue,
       val nextArrayStates: Array[StartTimesState] = new Array[StartTimesState](actPriorityList.size)
       val startPos = if (prevList.isDefined) {
         val keyMapPrev = prevList.get.mkString(",")
-        val prevArrayStates: Array[StartTimesState] = forwardStatesSequence(keyMapPrev)
-        // Put the values for CBLS variables in prefix from previous sequence
-        for {i <- 0 until pos} {
-          val stateI = prevArrayStates(i)
-          nextArrayStates(i) = stateI
-          startTimesVals += stateI.activityId -> stateI.activityStartTime
-          startTimes(stateI.activityId) := stateI.activityStartTime
-          makeSpanValue = stateI.makeSpanValue
-        }
-        pos
+        val optSeqPrev = findIndex(keyMapPrev)
+        if (optSeqPrev.isDefined) {
+          val prevArrayStates: Array[StartTimesState] = optSeqPrev.get._2
+          // Put the values for CBLS variables in prefix from previous sequence
+          for {i <- 0 until pos} {
+            val stateI = prevArrayStates(i)
+            nextArrayStates(i) = stateI
+            startTimesVals += stateI.activityId -> stateI.activityStartTime
+            startTimes(stateI.activityId) := stateI.activityStartTime
+            makeSpanValue = stateI.makeSpanValue
+          }
+          pos
+        } else 0
       } else 0
       // Initialize explorer from startPos
       var seqExplorerOpt = actPriorityList.explorerAtPosition(startPos)
@@ -140,7 +162,6 @@ class StartTimes(actPriorityList: ChangingSeqValue,
         val position = seqExplorer.position
         val actInd = seqExplorer.value
         val stStateBeforePos = if (position == 0) initialSTState else nextArrayStates(position-1)
-        var nextResState = stStateBeforePos.resourceStates.clone()
         // Compute maximum ending time for preceding activities
         val maxEndTimePrecs = actPrecedences
           .predMap.getOrElse(actInd, BitSet.empty)
@@ -166,8 +187,9 @@ class StartTimes(actPriorityList: ChangingSeqValue,
           stStateBeforePos.makeSpanValue
         }
         // Update resource states
-        actUsedResources.foreach { res =>
-          nextResState += (res ->
+        val nextResState = actUsedResources
+          .foldLeft(stStateBeforePos.resourceStates) { (accM, res) =>
+          accM + (res ->
             stStateBeforePos.resourceStates(res).nextState(actInd, actDurations(actInd), earliestStartTime))
         }
         val stStateAtPos = StartTimesState(nextResState, makeSpanValue, actInd, earliestStartTime)
@@ -180,7 +202,8 @@ class StartTimes(actPriorityList: ChangingSeqValue,
       // Update makeSpan variable
       makeSpan := makeSpanValue
       // Update map
-      forwardStatesSequence += (keyMap -> nextArrayStates)
+      forwardStatesSequence(nextIndex) = (keyMap, nextArrayStates)
+      nextIndex = (nextIndex+1)%numActivities
     }
   }
 }

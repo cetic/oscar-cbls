@@ -10,8 +10,8 @@ import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 import scala.util.Random
 
 object BigExample {
-  val nbAct = 100
-  val nbRes = 10
+  val nbAct = 200
+  val nbRes = 20
   val minDuration = 1
   val maxDuration = 25
   val minStartTime = 0
@@ -91,7 +91,7 @@ object BigExample {
       if (resCap == 1L) {
         new DisjunctiveResourceWithSetupTimes(mapUsedCaps.keys, setupTimes)
       } else if (randomBoolean(densityMultiResources)) {
-        new CumulativeMultiResourceWithSetupTimes(resCap, mapUsedCaps, setupTimes)
+        new CumulativeResourceWithSetupTimesMultiMode(resCap, mapUsedCaps, setupTimes)
       } else {
         new CumulativeResourceWithSetupTimes(resCap, mapUsedCaps, setupTimes)
       }
