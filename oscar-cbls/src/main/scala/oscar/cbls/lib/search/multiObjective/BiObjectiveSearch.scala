@@ -140,6 +140,7 @@ class BiObjectiveSearch(globalMaxObj1:Long,
     oldParetoPoints = (square.obj1,square.obj2) :: oldParetoPoints
     if(verbose) println("BiObjectiveSearch: removed dominated point  " + square.objString)
   }
+
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   def pruneLeftSquares(currentSquare:Square, obj1:Long): Unit = {
@@ -152,6 +153,7 @@ class BiObjectiveSearch(globalMaxObj1:Long,
 
       removeSquare(currentSquare)
 
+      //TODO: maybe we should extend the first remaining square in case some were removed?
       currentSquare.rectifyOnNewObj1(obj1) match {
         case Some(trimmedSquare) =>
           storeSquare(trimmedSquare, predecessor)
@@ -226,13 +228,12 @@ class BiObjectiveSearch(globalMaxObj1:Long,
 
     while ((!squaresToDevelop.isEmpty) && (remainingSurface > stopSurface) && (nbSquare < maxPoints)) {
       if(verbose) {
-        //println("loop")
         println("BiObjectiveSearch: remainingSurface:" + remainingSurface)
         println("BiObjectiveSearch: nbPoints:" + nbSquare)
       }
 
-      require(remainingSurface == squaresToDevelop.getElements.toList.map(square => square.surface).sum)
-      require(nbSquare == squareList.size, "nbSquare:" + nbSquare + " != squareList.size:" + squareList.size)
+      assert(remainingSurface == squaresToDevelop.getElements.toList.map(square => square.surface).sum)
+      assert(nbSquare == squareList.size, "nbSquare:" + nbSquare + " != squareList.size:" + squareList.size)
       val currentSquareToSplit = popFirstSquare()
 
       val c = ((currentSquareToSplit.obj2 + currentSquareToSplit.minObj2) / 2.0).ceil.toLong
