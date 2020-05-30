@@ -75,8 +75,7 @@ object ParetoOrder extends Enumeration {
   }
 }
 
-import ParetoOrder._
-import oscar.cbls.algo.quick.QList
+import oscar.cbls.algo.pareto.ParetoOrder._
 import oscar.util.RandomGenerator
 
 

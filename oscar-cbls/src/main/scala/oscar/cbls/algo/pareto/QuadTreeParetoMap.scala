@@ -1,39 +1,37 @@
 package oscar.cbls.algo.pareto
 
-import oscar.util.RandomGenerator
-
 class QuadTreeParetoMap[T](nbDimensions:Int)
   extends ParetoMap[T](nbDimensions) {
 
-  val nSuccessors: Int = 1 << nbDimensions
-  val Successors: Range = 0 until nSuccessors
-  val NonDomSuccessors: Range = 1 until nSuccessors - 1
-  val bestSuccessor: Int = Successors.max
-  val worstSuccessor: Int = Successors.min
+  private val nSuccessors: Int = 1 << nbDimensions
+  private val Successors: Range = 0 until nSuccessors
+  private val NonDomSuccessors: Range = 1 until nSuccessors - 1
+  private val bestSuccessor: Int = Successors.max
+  private val worstSuccessor: Int = Successors.min
 
   /** Successor functions */
 
-  def opposite(kSucc: Int): Int = kSucc ^ bestSuccessor
+  private def opposite(kSucc: Int): Int = kSucc ^ bestSuccessor
 
-  def asStrong(kSucc: Int): IndexedSeq[Int] = {
+  private def asStrong(kSucc: Int): IndexedSeq[Int] = {
     (kSucc to NonDomSuccessors.max).filter(s => (s - (s ^ kSucc)) == kSucc)
   }
 
-  def stronger(kSucc: Int): IndexedSeq[Int] = {
+  private def stronger(kSucc: Int): IndexedSeq[Int] = {
     (kSucc + 1 to NonDomSuccessors.max).filter(s => (s - (s ^ kSucc)) == kSucc)
   }
 
-  def asWeak(kSucc: Int): IndexedSeq[Int] = {
+  private def asWeak(kSucc: Int): IndexedSeq[Int] = {
     val dim = opposite(kSucc)
     (NonDomSuccessors.min to kSucc).filter(s => ((s ^ dim) - s) == dim)
   }
 
-  def weaker(kSucc: Int): IndexedSeq[Int] = {
+  private def weaker(kSucc: Int): IndexedSeq[Int] = {
     val dim = opposite(kSucc)
     (NonDomSuccessors.min until kSucc).filter(s => ((s ^ dim) - s) == dim)
   }
 
-  class QuadTreeNode(val key:Array[Long], val value:T) {
+  private class QuadTreeNode(val key:Array[Long], val value:T) {
 
     def toCouple:(Array[Long],T) = (key,value)
 
@@ -74,7 +72,7 @@ class QuadTreeParetoMap[T](nbDimensions:Int)
    * @param subR
    * @return true if it was inserted, false otherwise
    */
-  def process(cand: QuadTreeNode, subR: QuadTreeNode) :Boolean = {
+  private def process(cand: QuadTreeNode, subR: QuadTreeNode) :Boolean = {
 
     val kSucc = subR.successorship(cand.key)
 
@@ -111,7 +109,7 @@ class QuadTreeParetoMap[T](nbDimensions:Int)
   }
 
   /** Insert the candidate node without checking for dominance */
-  def insertNoCheck(cand: QuadTreeNode) {
+  private def insertNoCheck(cand: QuadTreeNode) {
     if (root.isDefined) insert0NoCheck(cand, root.get)
     else root = Some(cand)
   }
@@ -132,7 +130,7 @@ class QuadTreeParetoMap[T](nbDimensions:Int)
 
   /** Check if the candidate node is dominated by some node in the tree rooted at root */
 
-  def checkDominance(cand: QuadTreeNode, root: QuadTreeNode): Boolean = {
+  private def checkDominance(cand: QuadTreeNode, root: QuadTreeNode): Boolean = {
     val kSucc = root.successorship(cand.key)
     // Is the candidate node dominated by the root ?
     if (kSucc == worstSuccessor) true
@@ -148,7 +146,7 @@ class QuadTreeParetoMap[T](nbDimensions:Int)
 
   /** Replace the root */
 
-  def replace(cand: QuadTreeNode, root: QuadTreeNode) {
+  private def replace(cand: QuadTreeNode, root: QuadTreeNode) {
     // Transplant
     if (root == this.root.get) {
       this.root = Some(cand)
@@ -166,7 +164,7 @@ class QuadTreeParetoMap[T](nbDimensions:Int)
 
   /** Reinsert without dominance check all the subtree rooted at root in inNode */
 
-  def reinsertIn(root: QuadTreeNode, inNode: QuadTreeNode) {
+  private def reinsertIn(root: QuadTreeNode, inNode: QuadTreeNode) {
     root.detach()
     for (son <- NonDomSuccessors if root.successors(son).isDefined) {
       reinsertIn(root.successors(son).get, inNode)
@@ -176,7 +174,7 @@ class QuadTreeParetoMap[T](nbDimensions:Int)
 
   /** Remove nodes that are dominated by the candidate node */
 
-  def clean(cand: QuadTreeNode, root: QuadTreeNode) {
+  private def clean(cand: QuadTreeNode, root: QuadTreeNode) {
     val kSucc = root.successorship(cand.key)
     // Is the root dominated by the candidate node ?
     if (kSucc == bestSuccessor) {
@@ -193,7 +191,7 @@ class QuadTreeParetoMap[T](nbDimensions:Int)
     }
   }
 
-  def deleteAndRepair(root: QuadTreeNode): Option[QuadTreeNode] = {
+  private def deleteAndRepair(root: QuadTreeNode): Option[QuadTreeNode] = {
 
     // Search first son
     var son = 1
@@ -264,8 +262,6 @@ class QuadTreeParetoMap[T](nbDimensions:Int)
     }
     if (root.isDefined) forEach0(root.get)
   }
-
-
 }
 
 
