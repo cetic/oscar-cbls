@@ -14,14 +14,16 @@
  ******************************************************************************/
 package oscar.util
 
+import scala.util.Random
+
 /** A quasi-random sequence generator.
   *
   * @constructor Create a new quasi-random sequence genrator using random numbers generated
   *              with the random number generator passed as argument
   * @param rand The random number generator */
-class QuasiRandomSequence(rand: scala.util.Random) {
+class QuasiRandomSequence(rand: Random) {
   /** Array containing the 500 first prime numbers (needed for the Halton sequence) */
-  val primeNumbers = Array(2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71,
+  val primeNumbers: Array[Int] = Array(2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71,
       179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281,
       283, 293, 307, 311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409,
       419, 421, 431, 433, 439, 443, 449, 457, 461, 463, 467, 479, 487, 491, 499, 503, 509, 521, 523, 541,
@@ -64,10 +66,10 @@ class QuasiRandomSequence(rand: scala.util.Random) {
     *         elements of the array specified as parameter */
   def randomPermutation(arr: Array[Double]): Array[Double] = {
     var l = List[Double]()
-    for (i <- 0 until arr.length)
+    for (i <- arr.indices)
       l = l ::: List(arr(i))
     val newArr = Array.fill(arr.length){Double.MaxValue}
-    for (i <- 0 until newArr.length) {
+    for (i <- newArr.indices) {
       val randIndex = rand.nextInt(l.length)
       newArr(i) = l(randIndex)
       l = l.take(randIndex) ::: l.drop(randIndex + 1)
@@ -131,8 +133,8 @@ class QuasiRandomSequence(rand: scala.util.Random) {
     *         Halton sequence with bases different from each other */
   def scrambledHaltonSequence(size: Int, dom: Array[Interval]): Array[Array[Double]] = {
     val bases = Array.tabulate(dom.length)(i => primeNumbers(i))
-    var halt1D = Array.tabulate(dom.length)(i => halton1D(bases(i), dom(i), size))
-    for(i <- 0 until halt1D.length)
+    val halt1D = Array.tabulate(dom.length)(i => halton1D(bases(i), dom(i), size))
+    for(i <- halt1D.indices)
       halt1D(i) = randomPermutation(halt1D(i))
     Array.tabulate(size)(i => Array.tabulate(dom.length)(j => halt1D(j)(i)))
   }

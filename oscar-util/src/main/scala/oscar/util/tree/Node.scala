@@ -16,8 +16,12 @@ package oscar.util.tree
 
 import java.awt.Color
 
-class Node[T](val label: T, val sons: List[Node[T]], val edgeLabels: List[T], val col: Color= Color.white, val action: () => Unit = () => Unit) {
-	override def toString = {
+class Node[T](val label: T,
+              val sons: List[Node[T]],
+              val edgeLabels: List[T],
+              val col: Color= Color.white,
+              val action: () => Unit = () => ()) {
+	override def toString: String = {
 	  label.toString + (sons match {
 	    case Nil => ""
 	    case e => e.mkString("(",",",")")
@@ -27,13 +31,13 @@ class Node[T](val label: T, val sons: List[Node[T]], val edgeLabels: List[T], va
 
 object Node {
   def apply[T](label: T, sons: List[Node[T]], edgeLabels: List[T], col: Color, action: () => Unit) = new Node(label, sons, edgeLabels,col,action)
-  def apply[T](label: T, sons: List[Node[T]], edgeLabels: List[T], col: Color) = new Node(label, sons, edgeLabels,col,() => Unit)
-  def apply[T](label: T, sons: List[Node[T]], edgeLabels: List[T]) = new Node(label, sons, edgeLabels,Color.WHITE,() => Unit)
+  def apply[T](label: T, sons: List[Node[T]], edgeLabels: List[T], col: Color) = new Node(label, sons, edgeLabels,col,() => ())
+  def apply[T](label: T, sons: List[Node[T]], edgeLabels: List[T]) = new Node(label, sons, edgeLabels,Color.WHITE,() => ())
   def apply[T](label: T, col: Color, action: () => Unit) = new Node(label, List[Node[T]](), List[T](),col,action)
   def apply[T](label: T, action: () => Unit) = new Node(label, List[Node[T]](), List[T](),Color.WHITE,action)
   
-  def apply[T](label: T, col: Color) = new Node(label, List[Node[T]](), List[T](),col,() => Unit)
-  def apply[T](label: T) = new Node(label, List[Node[T]](), List[T](),Color.white,() => Unit)
+  def apply[T](label: T, col: Color) = new Node(label, List[Node[T]](), List[T](),col,() => ())
+  def apply[T](label: T) = new Node(label, List[Node[T]](), List[T](),Color.white,() => ())
   
   def design[T](tree: Node[T], minDist: Double = 2): PositionedNode[T] = {
     val formerMinDist = Extent.minDist

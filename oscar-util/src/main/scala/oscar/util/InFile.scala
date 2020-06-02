@@ -14,26 +14,21 @@
  ******************************************************************************/
 package oscar.util
 
-import java.io.IOException
-import java.io.FileWriter
-import java.io.BufferedWriter
-import scala.io.Source
+import scala.io.{BufferedSource, Source}
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
  */
 class InFile(filepath: String) {
-
-    val lines = Source.fromFile(filepath).getLines.reduceLeft(_ + " " + _)
-    val vals = lines.split("[ ,\t]").toList.filterNot(_ == "").map(_.toInt)
-    var index = 0
+  val bufSource: BufferedSource = Source.fromFile(filepath)
+  val lines: String = bufSource.getLines.reduceLeft(_ + " " + _)
+  val vals: Seq[Int] = lines.split("[ ,\t]").toList.filterNot(_ == "").map(_.toInt)
+  var index = 0
     
-    def nextInt() = {
-      index += 1
-      vals(index - 1)
-    }
-  
-
+  def nextInt(): Int = {
+    index += 1
+    vals(index - 1)
+  }
 }
 
 object InFile {

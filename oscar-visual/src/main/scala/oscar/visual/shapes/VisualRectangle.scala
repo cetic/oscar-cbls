@@ -17,13 +17,9 @@
 
 package oscar.visual.shapes
 
-import java.awt.Color
-import java.awt.geom.Line2D
 import java.awt.geom.Rectangle2D
-import javax.swing.JInternalFrame
 import oscar.visual.VisualDrawing
 import oscar.visual.VisualFrame
-import oscar.visual.VisualUtil
 
 /**
  *
@@ -33,12 +29,11 @@ import oscar.visual.VisualUtil
 class VisualRectangle(d: VisualDrawing, s: Rectangle2D.Double) extends VisualShape(d) {
 
   type S = Rectangle2D.Double
-  protected val shape = s
+  protected val shape: Rectangle2D.Double = s
 
   def rect: Rectangle2D.Double = shape
 
-  def this(d: VisualDrawing, x: Double, y: Double, w: Double, h: Double) {
-
+  def this(d: VisualDrawing, x: Double, y: Double, w: Double, h: Double) = {
     this(d, new Rectangle2D.Double(x, y, w, h))
   }
 
@@ -46,19 +41,20 @@ class VisualRectangle(d: VisualDrawing, s: Rectangle2D.Double) extends VisualSha
    * X coordinates of bottom left corner
    * @return
    */
-  def x = rect.getX()
+  def x: Double = rect.getX
 
   /**
    * Y coordinates of bottom left corner
    * @return
    */
-  def y = rect.getY()
+  def y: Double = rect.getY
 
   /**
    * Move the specified left corner
-   * @param x
+   * @param x X coordinate
+   * @param y Y coordinate
    */
-  def move(x: Double, y: Double) {
+  def move(x: Double, y: Double): Unit = {
     rect.setRect(x, y, width, height)
     drawing.repaint()
   }
@@ -67,28 +63,28 @@ class VisualRectangle(d: VisualDrawing, s: Rectangle2D.Double) extends VisualSha
    * width of the rectangle
    * @return
    */
-  def width = rect.getWidth()
+  def width: Double = rect.getWidth
 
   /**
    * height of the rectangle
    * @return
    */
-  def height = rect.getHeight()
+  def height: Double = rect.getHeight
 
   /**
    * Set width
-   * @param w
+   * @param w value of new width
    */
-  def width_=(w: Double) {
+  def width_=(w: Double): Unit = {
     rect.setRect(x, y, w, height)
     drawing.repaint()
   }
 
   /**
    * Set height
-   * @param w
+   * @param h value of new height
    */
-  def height_=(h: Double) {
+  def height_=(h: Double): Unit = {
     rect.setRect(x, y, width, h)
     drawing.repaint()
   }
@@ -96,21 +92,15 @@ class VisualRectangle(d: VisualDrawing, s: Rectangle2D.Double) extends VisualSha
 }
 
 object VisualRectangle {
+  def main(args: Array[String]): Unit = {
+    val f = VisualFrame("toto")
+    val d = VisualDrawing(flipped = false)
+    val inf = f.createFrame("Drawing")
+    val _ = f.createToolBar()
+    inf.add(d)
+    f.pack()
 
-  def main(args: Array[String]) {
-
-
-    val f = VisualFrame("toto");
-    val d = VisualDrawing(false);
-    val inf = f.createFrame("Drawing");
-    val toolBar = f.createToolBar()
-    inf.add(d);
-    f.pack();
-
-    val rect = new VisualRectangle(d, 50, 50, 100, 50);
-    rect.toolTip = "Hello";
-
-
-
+    val rect = new VisualRectangle(d, 50, 50, 100, 50)
+    rect.toolTip = "Hello"
   }
 }
