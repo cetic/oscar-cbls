@@ -41,7 +41,7 @@ object TspBridge extends App {
   val underApproximatingDistanceInGraphAllBridgesOpen:Array[Array[Long]] = DijkstraDistanceMatrix.buildDistanceMatrix(graph, _ => true)
   println("end dijkstra")
 
-  val m = Store(checker = Some(new ErrorChecker()))
+  val m = Store()
 
   //initially all bridges open
   val bridgeConditionArray = Array.tabulate(nbConditionalEdges)(c => CBLSIntVar(m, 1, 0 to 1, "bridge_" + c + "_open"))

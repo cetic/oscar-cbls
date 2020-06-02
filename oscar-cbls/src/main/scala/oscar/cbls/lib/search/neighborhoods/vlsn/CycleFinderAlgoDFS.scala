@@ -18,8 +18,6 @@
 
 package oscar.cbls.lib.search.neighborhoods.vlsn
 
-import oscar.cbls._
-
 class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends CycleFinderAlgo{
   private val nodes:Array[Node] = graph.nodes
   private val nbNodes = nodes.length
@@ -131,7 +129,7 @@ class ReacheabilityFloydWarshall(graph:VLSNGraph){
     for (k <- nodeRange) {
       for (i <- nodeRange) {
         for (j <- nodeRange) {
-          adjacencyMatrix(i)(j) = adjacencyMatrix (i)(j) || adjacencyMatrix (i)(k) ||  adjacencyMatrix(k)(j)
+          adjacencyMatrix(i)(j) = adjacencyMatrix (i)(j) || (adjacencyMatrix (i)(k) &&  adjacencyMatrix(k)(j))
         }
       }
     }

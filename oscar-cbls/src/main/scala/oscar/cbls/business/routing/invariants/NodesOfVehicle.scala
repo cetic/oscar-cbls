@@ -28,7 +28,6 @@ object NodesOfVehicle{
    * this invariant ensures that nodesOfVehicle(p) is maintained to the nodes reached by vehicle p according to the sequence routes.
    * @param routes a sequence value representing routes
    * @param v the number of vehicles
-   * @param showVehicleNode Boolean parameter. If true, the set of node will contain the vehicle node. If false, it will not
    * @return an array nodesOfVehicle maintained to the nodes reached y each vehicle
    */
   def apply(routes:ChangingSeqValue,v:Int,includeVehicleNode : Boolean = true):Array[CBLSSetVar] = {
@@ -207,8 +206,9 @@ class NodesOfVehicle(routes:ChangingSeqValue,
     val it = s.iterator
     var currentVehicle:Int = it.next()
     require(currentVehicle == 0)
-    if (includeVehicleNode)
+    if (includeVehicleNode) {
       toReturn(0) = toReturn(0) + (0)
+    }
 
     while(it.hasNext){
       val node = it.next()
@@ -217,8 +217,9 @@ class NodesOfVehicle(routes:ChangingSeqValue,
         currentVehicle = node
       }
       //continuing on the same vehicle
-      if (node >= v || includeVehicleNode)
+      if (node >= v || includeVehicleNode) {
         toReturn(currentVehicle) = toReturn(currentVehicle) + node
+      }
       toReturn(v) = toReturn(v) - node
     }
     toReturn
@@ -227,7 +228,7 @@ class NodesOfVehicle(routes:ChangingSeqValue,
   override def checkInternals(c : Checker) : Unit = {
     val values = computeValueFromScratch(routes.value)
     for (vehicle <- 0 to v){
-      require(nodesOfVehicleOrUnrouted(vehicle).value equals values(vehicle), Some("error on vehicle " + v + " output-incremental:" + (nodesOfVehicleOrUnrouted(vehicle).value.diff(values(vehicle))) + " correct-output:" + (values(vehicle).diff(nodesOfVehicleOrUnrouted(vehicle).value))))
+      require(nodesOfVehicleOrUnrouted(vehicle).value equals values(vehicle), Some("error on vehicle " + v + " output-correct:" + (nodesOfVehicleOrUnrouted(vehicle).value.diff(values(vehicle))) + " correct-output:" + (values(vehicle).diff(nodesOfVehicleOrUnrouted(vehicle).value))))
     }
 
     if(savedCheckpoint != null) {

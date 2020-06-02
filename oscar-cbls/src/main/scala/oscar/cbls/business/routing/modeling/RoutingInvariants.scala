@@ -118,8 +118,8 @@ trait RoutingInvariants {
    * @param includeVehicleNode flag that is true if the set has to contain the node of the vehicle
    * @return an array nodesOfVehicle maintained to the nodes reached y each vehicle
    */
-  def nodesOfVehicle(routes:ChangingSeqValue,v:Int,includeVehicleNode:Boolean = true):Array[CBLSSetVar] =
-    NodesOfVehicle(routes:ChangingSeqValue,v:Int,includeVehicleNode:Boolean):Array[CBLSSetVar]
+  def nodesOfVehicle(routes:ChangingSeqValue,v:Int, includeVehicleNode:Boolean = true):Array[CBLSSetVar] =
+    NodesOfVehicle(routes:ChangingSeqValue,v:Int, includeVehicleNode:Boolean):Array[CBLSSetVar]
 
 
 
@@ -132,6 +132,21 @@ trait RoutingInvariants {
    */
   def vehicleOfNodes(routes:ChangingSeqValue,v:Int):Array[CBLSIntVar] =
     VehicleOfNodes(routes:ChangingSeqValue,v:Int):Array[CBLSIntVar]
+
+  /**
+    * This class purpose is to test if the search procedure doesn't try unauthorized movement, meaning movement that doesn't respect the OscaR's routing convention.
+    * For instance it's not authorized to insert/move/remove vehicle, insert already inserted node ...
+    *
+    * By doing so we avoid to have to do this verification for every constraint based on routing.
+    *
+    * This class is automatically called by setting 'debug' parameter of class VRP at 'true'
+    *
+    * @param routes the route of the VRP problem
+    * @param n the total amount of node
+    * @param v the total amount of vehicle
+    */
+  def routingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) =
+    RoutingConventionConstraint(routes, n, v)
 
 
 }

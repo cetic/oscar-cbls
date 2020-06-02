@@ -93,7 +93,7 @@ case class DomainRange(override val min: Long, override val max: Long) extends D
   require(min <= max, "domain should not be empty, got min:" + min + " max: " + max)
   def contains(v:Long): Boolean = min <= v && max >= v
   override def size: Long =
-    if(min + Long.MaxValue <= max) Long.MaxValue
+    if(min < 0 && min + Long.MaxValue <= max) Long.MaxValue
     else if(max==Long.MaxValue && min==Long.MinValue) Long.MaxValue
     else math.max(max-min+1L,0L)
   override def values: Iterable[Long] = min to max

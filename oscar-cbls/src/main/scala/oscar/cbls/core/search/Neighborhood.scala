@@ -127,7 +127,24 @@ abstract class Neighborhood(name:String = null) {
   override def toString: String = (if(name == null) this.getClass.getSimpleName else name)
 
   var _verbose: Int = 0
+
+  /**
+   * possible verbosity levels:
+   * 0: no verbosities
+   * 1: every 10th of a second, summarise all performed moves, by neighbourhoods
+   * 2: print every move
+   * 3: print every search
+   * 4: print every explored neighbour
+   * */
   def verbose: Int = _verbose
+  /**
+   * possible verbosity levels:
+   * 0: no verbosities
+   * 1: every 10th of a second, summarise all performed moves, by neighbourhoods
+   * 2: print every move
+   * 3: print every search
+   * 4: print every explored neighbour
+   * */
   def verbose_=(i: Int) {
     _verbose = i
     additionalStringGenerator = null
@@ -136,7 +153,7 @@ abstract class Neighborhood(name:String = null) {
   var additionalStringGenerator: () => String = null
 
   /**
-   * sets the verbosity level with an additiojnal string generator that ins called eieher on eahc move (level = 1L)
+   * sets the verbosity level with an additional string generator that ins called eieher on eahc move (level = 1L)
    *   or for each explored neighbor (level = 2L)
    */
   def verboseWithExtraInfo(verbosity: Int, additionalString: () => String) {

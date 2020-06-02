@@ -70,8 +70,8 @@ object VoronoiZones{
     val domainsOfTrackedNodeIDs = Domain(minTrackedNodeID,maxTrackedNodeID)
     val centroidsToTmpNodes:SortedMap[Int,CBLSSetVar] = Cluster.makeSparse(localIDtoToClusterID, centroids).clusters
 
-    //mapValues on SortedMap is actually a lazy stuff, so avoid at all cost here!
-    SortedMap.empty[Int,SetValue] ++ centroidsToTmpNodes.toList.map({case (a,setOfTmpNodes) => (a,SetMap(setOfTmpNodes,(l:Int) => localIDtoNodeID(l),domainsOfTrackedNodeIDs))})
+    //SortedMap is actuall ya lazy stuff, so aboid at all cost here!
+    SortedMap.empty[Int,SetValue] ++ centroidsToTmpNodes.toList.map({case (a,setOfTmpNodes) => (a,SetMap(setOfTmpNodes,(l:Int) => localIDtoNodeID(l.toInt),domainsOfTrackedNodeIDs))})
   }
 }
 
@@ -236,7 +236,7 @@ class VoronoiZones(graph:ConditionalGraph,
                                 newValue: SortedSet[Int]): Unit = {
 
     if (v == centroids) {
-      //println("change on centroids(addedValues:" + addedValues + " removedValues:" + removedValues + " oldValue:" + oldValue + " newValue:" + newValue)
+      //println("change on centroids(addedValues:" + addedValues + " removedValues:" + removedValues)
       //We ned to do the remove before the insert because
       for (removed <- removedValues) {
         loadExternalBoundaryIntoHeapMarkInnerZone(graph.nodes(removed))
@@ -294,6 +294,7 @@ class VoronoiZones(graph:ConditionalGraph,
           val otherNode = edge.otherNode(currentNode)
           val otherNodeID = otherNode.id
           val newLabelingForOtherNode = currentNodeLabeling + edge
+
           if (newLabelingForOtherNode.distance <= maxDistanceToCentroid
             && newLabelingForOtherNode < nodeLabeling(otherNodeID)) { //this performs a tie break on centroid ID
             labelNode(otherNodeID,newLabelingForOtherNode)
@@ -410,11 +411,11 @@ class VoronoiZones(graph:ConditionalGraph,
             nodeLabeling(otherNodeID) match {
               case VoronoiZone(centroid: Node, distance: Long, incomingEdge) =>
                 //TODO: this might be improved, we are unmarking too many nodes
-                if (centroid == centroidThrough && incomingEdge == edge) {
+                if (centroid == centroidThrough && distance >= minDistance) {
                   //still marking
                   markNodeUnreachableAndRemoveFromHeapIfPresent(otherNode)
                   toDevelop = QList(otherNode, toDevelop)
-                }else if(centroid != centroidThrough && otherNodeID == centroid.id && !otherReachedCentroid.contains(centroid.id)){
+                }else if(centroid != centroidThrough && distance == 0 && !otherReachedCentroid.contains(centroid.id)){
                   //We are at another centroid.
                   //this one might  be a new centroid, added by another event, so we must pass over it and continue marking
                   otherReachedCentroid = otherReachedCentroid + centroid.id
@@ -454,7 +455,7 @@ class VoronoiZones(graph:ConditionalGraph,
               markNodeUnreachableAndRemoveFromHeapIfPresent(otherNode)
 
               explore(otherNode)
-            }else if(centroid != removedCentroid && centroid.id == otherNodeID && !reachedNewCentroids.contains(centroid.id)){
+            }else if(centroid != removedCentroid && distance == 0 && !reachedNewCentroids.contains(centroid.id)){
               //this node was just inserted as a centroid, so we must pass over it and continue unmarking
               //but only one pass over is allowed otherwise, there is an infinite loop
               reachedNewCentroids = reachedNewCentroids + centroid.id
