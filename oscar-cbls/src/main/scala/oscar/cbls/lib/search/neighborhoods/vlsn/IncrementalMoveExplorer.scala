@@ -190,26 +190,26 @@ class CachedExplorations(oldGraph:VLSNGraph,
   }
 }
 
-class IncrementalMoveExplorerAlgo(v:Int,
-                                  vehicleToRoutedNodes:SortedMap[Int,Iterable[Int]],
-                                  unroutedNodesToInsert:Iterable[Int],
-                                  nodeToRelevantVehicles:Map[Int,Iterable[Int]],
+class IncrementalMoveExplorer(v:Int,
+                              vehicleToRoutedNodes:SortedMap[Int,Iterable[Int]],
+                              unroutedNodesToInsert:Iterable[Int],
+                              nodeToRelevantVehicles:Map[Int,Iterable[Int]],
 
-                                  targetVehicleNodeToInsertNeighborhood:Int => Int => Neighborhood,
-                                  targetVehicleNodeToMoveNeighborhood:Int => Int => Neighborhood,
-                                  nodeToRemoveNeighborhood:Int => Neighborhood,
+                              targetVehicleNodeToInsertNeighborhood:Int => Int => Neighborhood,
+                              targetVehicleNodeToMoveNeighborhood:Int => Int => Neighborhood,
+                              nodeToRemoveNeighborhood:Int => Neighborhood,
 
-                                  removeAndReInsert:Int => () => Unit,
-                                  useDirectInsert:Boolean,
+                              removeAndReInsert:Int => () => Unit,
+                              useDirectInsert:Boolean,
 
-                                  vehicleToObjectives:Array[Objective],
-                                  unroutedNodesPenalty:Objective,
-                                  globalObjective:Objective,
+                              vehicleToObjectives:Array[Objective],
+                              unroutedNodesPenalty:Objective,
+                              globalObjective:Objective,
 
-                                  cached:CachedExplorations,
-                                  debug:Boolean
+                              cached:CachedExplorations,
+                              debug:Boolean
                                  )
-  extends MoveExplorerAlgo(v:Int,
+  extends MoveExplorer(v:Int,
     vehicleToRoutedNodes:SortedMap[Int,Iterable[Int]],
     unroutedNodesToInsert:Iterable[Int],
     nodeToRelevantVehicles:Map[Int,Iterable[Int]],

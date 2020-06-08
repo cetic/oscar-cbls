@@ -1,19 +1,19 @@
 /**
-  * *****************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  * ****************************************************************************
-  */
+ * *****************************************************************************
+ * OscaR is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * OscaR is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License  for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+ * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+ * ****************************************************************************
+ */
 
 package oscar.cbls.lib.search.neighborhoods.vlsn
 
@@ -71,17 +71,21 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
     require(edges(from.nodeID)(to.nodeID) == null,edges(from.nodeID)(to.nodeID))
     val edge = new Edge(from:Node,to:Node, move:Move,deltaObj:Long, nextEdgeID, vLSNMoveType)
     edges(from.nodeID)(to.nodeID) = edge
+
     nextEdgeID += 1
     fromToWithEdge = (from.nodeID,to.nodeID) :: fromToWithEdge
     edge
   }
 
-  def finish():VLSNGraph = {
+  /**
+   * this will only generate a VLSNGraph; you can still add more edge afterwards, and generate more edges (not nodes of course)
+   * @return
+   */
+  def buildGraph():VLSNGraph = {
     val edgeArray:Array[Edge] = Array.fill(nextEdgeID)(null)
 
     for((from,to) <- fromToWithEdge){
       val edge = edges(from)(to)
-      edge.registerToNodes()
       edgeArray(edge.edgeID) = edge
     }
 
@@ -92,10 +96,10 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
 }
 
 /**
-  * @param nodes
-  * @param edges
-  * @param nbLabels labels range from 0 to nbLabels-1L
-  */
+ * @param nodes
+ * @param edges
+ * @param nbLabels labels range from 0 to nbLabels-1L
+ */
 class VLSNGraph(val nodes:Array[Node],val edges:Array[Edge],val nbLabels:Int, v:Int){
   val nbNodes = nodes.length
   val nbEdges = edges.length
@@ -155,10 +159,10 @@ class Node(val nodeID:Int, val representedNode:Int, val nodeType:VLSNSNodeType, 
 }
 
 class Edge(val from:Node, val to:Node, val move:Move, val deltaObj:Long, val edgeID:Int, val moveType:VLSNMoveType){
-  def registerToNodes(): Unit ={
-    from.outgoing = this :: from.outgoing
-    to.incoming = this :: to.incoming
-  }
+
+  //we immediately perform the registration
+  from.outgoing = this :: from.outgoing
+  to.incoming = this :: to.incoming
 
   override def toString: String = "Edge(from:" + from.nodeID + ",to:"+to.nodeID + ",deltaObj:" + deltaObj + ",type:" + moveType+ ")" + move
 
@@ -200,7 +204,7 @@ object VLSNGraphTest extends App{
     edge(2, 5, -1)
     edge(5, 0, 1)
     edge(4, 2, -1)
-    builder.finish()
+    builder.buildGraph()
   }
   println(buildGraph())
 }

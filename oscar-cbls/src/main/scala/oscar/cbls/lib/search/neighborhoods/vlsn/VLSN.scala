@@ -534,7 +534,7 @@ class VLSN(v:Int,
 
     val (vlsnGraph:VLSNGraph,edges) = cachedExplorations match {
       case None =>
-        new MoveExplorerAlgo(
+        new MoveExplorer(
           v: Int,
           vehicleToRoutedNodesToMove,
           unroutedNodesToInsert,
@@ -551,7 +551,7 @@ class VLSN(v:Int,
           globalObjective,
           debugNeighborhoodExploration).buildGraph()
       case Some(cache) =>
-        new IncrementalMoveExplorerAlgo(
+        new IncrementalMoveExplorer(
           v: Int,
           vehicleToRoutedNodesToMove,
           unroutedNodesToInsert,
