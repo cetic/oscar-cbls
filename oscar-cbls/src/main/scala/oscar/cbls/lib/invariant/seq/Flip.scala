@@ -1,5 +1,3 @@
-package oscar.cbls.lib.invariant.seq
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,10 +12,11 @@ package oscar.cbls.lib.invariant.seq
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.lib.invariant.seq
 
-import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{ChangingSeqValue, SeqCheckpointedValueStack, SeqInvariant, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint, SeqValue}
+import oscar.cbls.core.propagation.Checker
 
 /**
  * maintains this as the flipped value of v
@@ -29,7 +28,7 @@ case class Flip(v: SeqValue,override val maxPivotPerValuePercent:Int = 10, overr
   extends SeqInvariant(v.value.flip(true,true), v.max, maxPivotPerValuePercent, maxHistorySize)
   with SeqNotificationTarget{
 
-  setName("Flip(" + v.name + ")")
+  setName(s"Flip(${v.name})")
 
   registerStaticAndDynamicDependency(v)
   finishInitialization()
@@ -112,9 +111,8 @@ case class Flip(v: SeqValue,override val maxPivotPerValuePercent:Int = 10, overr
     }
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.newValue.toList equals v.value.toList.reverse, Some("this.newValue(=" + this.newValue.toList + ") == v.value.flip(=" + v.value.toList.reverse + ")"))
-    c.check(this.newValue.toList.reverse equals v.value.toList, Some("this.newValue.flip(="+ this.newValue.toList.reverse +") == v.value(="+ v.value.toList+ ")"))
+  override def checkInternals(c: Checker): Unit = {
+    c.check(this.newValue.toList equals v.value.toList.reverse, Some(s"this.newValue(=${this.newValue.toList}) == v.value.flip(=${v.value.toList.reverse})"))
+    c.check(this.newValue.toList.reverse equals v.value.toList, Some(s"this.newValue.flip(=${this.newValue.toList.reverse}) == v.value(=${v.value.toList})"))
   }
 }
-

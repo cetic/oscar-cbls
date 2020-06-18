@@ -1,10 +1,9 @@
 package oscar.cbls.business.routing.invariants
 
-import oscar.cbls._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.VehicleLocation
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{ChangingSeqValue, Invariant, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint}
 
 import scala.collection.immutable.HashMap
 
@@ -42,7 +41,7 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
 
   private var checkpointAtLevel0 = routes.newValue
 
-  override def notifySeqChanges(routes: ChangingSeqValue, d: Int, changes: SeqUpdate){
+  override def notifySeqChanges(routes: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit ={
     digestUpdates(changes)
   }
 
@@ -51,12 +50,14 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
   }
 
   private def checkRequirement(requirement: Boolean, errorMsg: String, prevUpdates: SeqUpdate): Unit ={
-    require(requirement, errorMsg + "\nPrevious movements : " + prevUpdates.toString)
+    require(requirement,
+      s"""$errorMsg
+      |Previous movements : $prevUpdates""".stripMargin)
   }
 
   private def checkIfPosWithinRoute(poss: List[Int], routesNow:  IntSequence, prev: SeqUpdate, errorDataMsg: String): Unit ={
     checkRequirement(!poss.exists(pos => pos < 0 || pos >= routesNow.size),
-      "One of the used position is outside of the route !" + errorDataMsg, prev)
+      s"One of the used positions is outside of the route !$errorDataMsg", prev)
   }
 
   /**
@@ -101,13 +102,16 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
       }
       case sui@SeqUpdateInsert(value: Int, pos: Int, prev: SeqUpdate) => {
         if(!digestUpdates(prev)) return false
-        val errorDataMsg = "\nGot : \n    Insert value -> " + value + "\n    Insert pos -> " + pos
+        val errorDataMsg = s"""
+             |Got:
+             |    Insert value -> $value
+             |    Insert pos -> $pos""".stripMargin
 
         //The pos of the value will be at this position so we need to check if the previous position is within the sequence
         //(otherwise we'll have problem in case we insert at the end of the sequence)
         checkIfPosWithinRoute(List(pos-1), prev.newValue, prev, errorDataMsg)
-        checkRequirement(value >= v, "Trying to insert a vehicle !" + errorDataMsg, prev)
-        checkRequirement(!isRouted(value), "Node already inserted !" + errorDataMsg, prev)
+        checkRequirement(value >= v, s"Trying to insert a vehicle !$errorDataMsg", prev)
+        checkRequirement(!isRouted(value), s"Node already inserted !$errorDataMsg", prev)
 
         currentChanges = currentChanges + ((value, true))
         vehicleSearcher = vehicleSearcher.push(sui.oldPosToNewPos)
@@ -116,25 +120,30 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
       case sum@SeqUpdateMove(fromPos: Int, toPos: Int, afterPos: Int, flip: Boolean, prev: SeqUpdate) => {
         if(!digestUpdates(prev)) return false
         val fromVehicle = vehicleSearcher.vehicleReachingPosition(fromPos)
-        val errorDataMsg = "\nGot : \n    From position -> " + fromPos + "\n    To position -> " + toPos + "\n    After position -> " + afterPos
-
+        val errorDataMsg = s"""
+             |Got:
+             |    Insert value -> $fromPos
+             |    Insert pos -> $toPos
+             |    After position -> $afterPos""".stripMargin
         checkIfPosWithinRoute(List(fromPos, toPos, afterPos), prev.newValue, prev, errorDataMsg)
         checkRequirement(fromVehicle == vehicleSearcher.vehicleReachingPosition(toPos) &&
           vehicleSearcher.startPosOfVehicle(fromVehicle) != fromPos,
-          "Trying to move a segment including a vehicle !" + errorDataMsg, prev)
-        checkRequirement(fromPos <= toPos, "The segment's end must be after the segment's start !" + errorDataMsg , prev)
-        checkRequirement(afterPos < fromPos || afterPos >= toPos, "Position of insertion is within the segment !" + errorDataMsg, prev)
+          s"Trying to move a segment including a vehicle !$errorDataMsg", prev)
+        checkRequirement(fromPos <= toPos, s"The segment's end must be after the segment's start !$errorDataMsg" , prev)
+        checkRequirement(afterPos < fromPos || afterPos >= toPos, s"Position of insertion is within the segment !$errorDataMsg", prev)
 
         vehicleSearcher = vehicleSearcher.push(sum.oldPosToNewPos)
         true
       }
       case sur@SeqUpdateRemove(pos: Int, prev: SeqUpdate) => {
         if(!digestUpdates(prev)) return false
-        val errorDataMsg = "\nGot : \n    Remove pos -> " + pos
+        val errorDataMsg = s"""
+             |Got:
+             |    Remove pos -> $pos""".stripMargin
         val impactedVehicle = vehicleSearcher.vehicleReachingPosition(pos)
 
         checkIfPosWithinRoute(List(pos), prev.newValue, prev, errorDataMsg)
-        checkRequirement(vehicleSearcher.startPosOfVehicle(impactedVehicle) != pos, "Trying to remove a vehicle !" + errorDataMsg, prev)
+        checkRequirement(vehicleSearcher.startPosOfVehicle(impactedVehicle) != pos, s"Trying to remove a vehicle !$errorDataMsg", prev)
 
         val value = prev.newValue.valueAtPosition(pos).get
         currentChanges = currentChanges + ((value, false))
@@ -155,7 +164,6 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
 
         true
 
-
       case _@SeqUpdateLastNotified(value: IntSequence) =>
         require(value quickEquals routes.value)
         true
@@ -163,5 +171,4 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
       case _@SeqUpdateAssign(value: IntSequence) => false
     }
   }
-
 }

@@ -1,9 +1,10 @@
 package oscar.cbls.test.graph
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, FloydWarshall, Node}
 
-class FloydWarshallTestSuite extends FunSuite with Matchers{
+class FloydWarshallTestSuite extends AnyFunSuite with Matchers {
 
   test("diagonal of matrix from Floyd Warshall should be 0"){
     val nbNodes = 10

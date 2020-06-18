@@ -21,6 +21,7 @@ import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
   *                        "Node " + node + " at the " + position + "th position of the vehicle " + vehicle + "\n"
   * @return A display object
   */
+
 //TODO move this to proper location: business.routing.visu
 class Display(vrp: VRP,
               nodePositions: Array[(Double,Double)],

@@ -24,16 +24,12 @@
  *     Refactored with respect to the new architecture by Yoann Guyot
  * ****************************************************************************
  */
-
-
 package oscar.cbls.business.routing.neighborhood
 
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.search.{HotRestart, Pairs}
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search._
-import oscar.cbls._
-
 
 /**
  * Removes three edges of routes, and rebuilds routes from the segments.
@@ -122,7 +118,6 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
                   val (flipValuesToTest,notifyFound4) =
                     selectFlipBehavior.toIterable(if(tryFlip) List(false,true) else List(false))
 
-
                   for(flipForInstantiationTmp <- flipValuesToTest){
                     flipForInstantiation = flipForInstantiationTmp
                     doMove(insertionPosition, segmentStartPosition, segmentEndPosition, flipForInstantiation)
@@ -151,7 +146,7 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
   var insertionPointForInstantiation:Int = -1
   var flipForInstantiation:Boolean = false
 
-  override def instantiateCurrentMove(newObj: Long) =
+  override def instantiateCurrentMove(newObj: Long): ThreeOptMove =
     ThreeOptMove(segmentStartPositionForInstantiation,
       segmentEndPositionForInstantiation,
       insertionPointPositionForInstantiation,
@@ -162,15 +157,14 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
       neighborhoodName)
 
   //this resets the internal state of the Neighborhood
-  override def reset(){
+  override def reset(): Unit ={
     startIndice = 0
   }
 
-  def doMove(insertionPosition: Int, segmentStartPosition: Int, segmentEndPosition: Int, flip: Boolean) {
+  def doMove(insertionPosition: Int, segmentStartPosition: Int, segmentEndPosition: Int, flip: Boolean): Unit ={
     seq.move(segmentStartPosition,segmentEndPosition,insertionPosition,flip)
   }
 }
-
 
 case class ThreeOptMove(segmentStartPosition:Int,
                         segmentEndPosition:Int,
@@ -185,14 +179,10 @@ case class ThreeOptMove(segmentStartPosition:Int,
   override def impactedPoints: Iterable[Int] = QList(insertionPoint,neighborhood.vrp.routes.value.valuesBetweenPositionsQList(segmentStartPosition,segmentEndPosition))
 
   // overriding methods
-  override def commit() {
+  override def commit(): Unit ={
     neighborhood.doMove(insertionPointPosition, segmentStartPosition, segmentEndPosition, flipSegment)
   }
 
   override def toString: String =
-    neighborhoodNameToString + "TreeOpt(segmentStartPosition:" + segmentStartPosition +
-      " segmentEndPosition:" + segmentEndPosition +
-      " insertionPointPosition:" + insertionPointPosition +
-      " insertionPoint:" + insertionPoint +
-      (if(flipSegment) " flip" else " noFlip") + objToString + ")"
+    s"${neighborhoodNameToString}TreeOpt(segmentStartPosition:$segmentStartPosition segmentEndPosition:$segmentEndPosition insertionPointPosition:$insertionPointPosition insertionPoint:$insertionPoint${if(flipSegment) " flip" else " noFlip"}$objToString)"
 }

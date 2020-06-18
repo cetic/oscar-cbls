@@ -1,10 +1,11 @@
 package oscar.cbls.business.routing.invariants.vehicleCapacity
 
-import oscar.cbls._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.invariants.global._
 import oscar.cbls.core.computation.CBLSIntVar
+
+import scala.annotation.tailrec
 
 object GlobalVehicleCapacityConstraint {
   def apply(gc: GlobalConstraintCore, n: Int, v: Int,
@@ -32,8 +33,6 @@ object GlobalVehicleCapacityConstraint {
         capacityConstraint.contentVariationAtNode(node) + capacityConstraint.contentVariationAtNode(neighbor) <= vehicleMaxCapacity)).toMap
   }
 }
-
-
 
 class GlobalVehicleCapacityConstraint(gc: GlobalConstraintCore, val n: Int, val v: Int,
                                       val vehiclesCapacity: Array[Long],
@@ -69,6 +68,7 @@ class GlobalVehicleCapacityConstraint(gc: GlobalConstraintCore, val n: Int, val 
    */
   override def performPreCompute(vehicle: Int, routes: IntSequence): Unit = {
 
+    @tailrec
     def performPreComputeForNode(node: Int, prevNode: Int, route: QList[Int], lastVCF: VehicleContentFunction): Unit ={
       if(route != null) {
         val curNode = route.head.toInt
@@ -78,6 +78,7 @@ class GlobalVehicleCapacityConstraint(gc: GlobalConstraintCore, val n: Int, val 
       }
     }
 
+    @tailrec
     def performPreComputeOnRoute(route: QList[Int]): Unit ={
       val node = route.head
       val lastVCF = preComputedValues(node)(node)
@@ -133,6 +134,7 @@ class GlobalVehicleCapacityConstraint(gc: GlobalConstraintCore, val n: Int, val 
    * @param routes   the sequence representing the route of all vehicle
    */
   override protected def computeVehicleValue(vehicle: Int, segments: QList[Segment], routes: IntSequence): Boolean = {
+    @tailrec
     def contentAtDepot(segments: QList[Segment], previousSegmentOutputContent: Long = preComputedValues(vehicle)(vehicle).contentAtEndIfStartAt0): Long ={
       val (segment, tail) = (segments.head, segments.tail)
       val vehicleContentFunction = segmentsVehicleContentFunction(segment)
@@ -181,8 +183,6 @@ class GlobalVehicleCapacityConstraint(gc: GlobalConstraintCore, val n: Int, val 
     // No node in this vehicle route
     if(vehicle == v-1 && explorer.isEmpty) return false
     else if(vehicle < v-1 && explorer.get.value < v) return false
-
-
 
     while(explorer.isDefined && explorer.get.value >= v){
       val currentNode = explorer.get

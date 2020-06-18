@@ -83,7 +83,6 @@ trait StandardNeighborhoods {
                             valuesToConsider:(CBLSIntVar,Long) => Iterable[Long] = (variable,_) => variable.value.domain.values)
   = RandomizeNeighborhood(vars,degree,name,searchZone,valuesToConsider)
 
-
   /**
    * will randomize the array, by performing swaps only.
    *
@@ -191,8 +190,6 @@ trait StandardNeighborhoods {
                         hotRestart:Boolean = true) =
     ShiftNeighborhood(vars, name, searchZone1, maxShiftSize, maxOffsetLength, best, hotRestart)
 
-
-
   /**
    * This neighborhood will consider roll moves that roll the value of contiguous CBLSIntVar in the given array
    *
@@ -219,16 +216,9 @@ trait StandardNeighborhoods {
                        maxShiftSize:Int=>Int = _ => Int.MaxValue, //the max size of the roll, given the ID of the first variable
                        checkForDifferentValues:Boolean = false,
                        best:Boolean = false,
-                       hotRestart:Boolean = true)
-  = RollNeighborhood(
-    vars,
-    name,
-    searchZone,
-    bridgeOverFrozenVariables,
-    maxShiftSize,
-    checkForDifferentValues,
-    best,
-    hotRestart)
+                       hotRestart:Boolean = true) =
+    RollNeighborhood(vars, name, searchZone, bridgeOverFrozenVariables,
+      maxShiftSize, checkForDifferentValues, best, hotRestart)
 
   /**
    * flips a section of the array, only contiguous zones are searched
@@ -249,12 +239,6 @@ trait StandardNeighborhoods {
                                exploreLargerOpportunitiesFirst:Boolean = true,
                                best:Boolean = false,
                                hotRestart:Boolean = true) =
-    WideningFlipNeighborhood(vars,
-      name,
-      allowedPositions,
-      maxFlipSize,
-      minFlipSize,
-      exploreLargerOpportunitiesFirst,
-      best,
-      hotRestart)
+    WideningFlipNeighborhood(vars, name, allowedPositions, maxFlipSize,
+      minFlipSize,exploreLargerOpportunitiesFirst, best, hotRestart)
 }

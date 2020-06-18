@@ -1,5 +1,3 @@
-package oscar.cbls.algo.quick
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,7 +12,7 @@ package oscar.cbls.algo.quick
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
+package oscar.cbls.algo.quick
 
 class QArrayList[@specialized T](initialLength:Int)(implicit val X:Manifest[T]) {
   private[this] var internalArray:Array[T] = new Array[T](initialLength)
@@ -53,7 +51,7 @@ class QArrayList[@specialized T](initialLength:Int)(implicit val X:Manifest[T]) 
 
   def isEmpty:Boolean = size == 0
 
-  def setEmpty(){
+  def setEmpty(): Unit ={
     size = 0
   }
 }

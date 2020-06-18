@@ -16,12 +16,12 @@ package oscar.examples.cbls.wlp
   ******************************************************************************/
 
 import oscar.cbls._
+import oscar.cbls.core.computation.{CBLSIntVar, Store}
+import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Best
 import oscar.cbls.lib.invariant.logic.{Filter, SelectLESetQueue}
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.search.neighborhoods.{AssignMove, AssignNeighborhood}
-
-import scala.language.postfixOps
 
 /**
   * this is a WarehouseLocation problem with a Tabu.

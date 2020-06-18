@@ -14,14 +14,13 @@
   ******************************************************************************/
 package oscar.cbls.business
 
-import oscar.cbls._
 import oscar.cbls.business.routing.modeling._
-
+import oscar.cbls.core.computation.Store
 
 /**
  * This package proposes dedicated routing neighborhoods and invariants.
  *
- * it represents the routes as a single sequence and everyting in this pacage relies on the routing assumption, which is stated as follows:
+ * it represents the routes as a single sequence and everything in this package relies on the routing assumption, which is stated as follows:
  * - there are v vehicles
  * - They are supposed to start from point of values 0 to v-1L
  * - These values must always be present in the sequence in increasing order
@@ -62,9 +61,6 @@ package object routing
     new TTFSegments(nbPoints, overallDuration)
 
   type PrimitiveTravelTimeFunction = oscar.cbls.business.routing.model.PrimitiveTravelTimeFunction
-
-  val ChainsHelper = oscar.cbls.business.routing.model.helpers.ChainsHelper
-  val DistanceHelper = oscar.cbls.business.routing.model.helpers.DistanceHelper
 
 }
 

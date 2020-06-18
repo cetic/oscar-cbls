@@ -1,5 +1,3 @@
-package oscar.cbls.business.routing.neighborhood
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,14 +12,11 @@ package oscar.cbls.business.routing.neighborhood
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.business.routing.neighborhood
 
 import oscar.cbls.algo.search.{HotRestart, IdenticalAggregator}
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search.{First, EasyNeighborhoodMultiLevel, LoopBehavior}
-import oscar.cbls._
-
-
-
 
 /**
   * base class for point insertion moves
@@ -39,10 +34,10 @@ abstract class InsertPoint(vrp: VRP,
   var insertedPointForInstantiation:Int = -2
   var pointWhereToInsertAfter:Int = -3
 
-  override def instantiateCurrentMove(newObj: Long) =
+  override def instantiateCurrentMove(newObj: Long): InsertPointMove =
     InsertPointMove(insertedPointForInstantiation, insertAtPositionForInstantiation, pointWhereToInsertAfter, positionIndependentMoves, newObj, this, vrp, neighborhoodNameToString)
 
-  def doMove(insertedPoint: Int, insertAtPosition:Int) {
+  def doMove(insertedPoint: Int, insertAtPosition:Int): Unit = {
     seq.insertAtPosition(insertedPoint, insertAtPosition)
   }
 
@@ -67,7 +62,7 @@ case class InsertPointMove(insertedPoint: Int,
   //TODO
   override def impactedPoints: List[Int] = List(insertedPoint)
 
-  override def commit() {
+  override def commit(): Unit = {
     if(positionIndependentMoves){
       neighborhood.doMovePositionIndependent(insertedPoint, insertAfterPointForInstantiation)
     }else{
@@ -76,14 +71,10 @@ case class InsertPointMove(insertedPoint: Int,
   }
 
   override def toString: String =
-    neighborhoodName + ":InsertPoint(insertedPoint:" + insertedPoint +
-      (if(positionIndependentMoves) " afterPoint " + insertAfterPointForInstantiation + " positionIndependent"
-      else " atPosition:" + insertAtPosition) + objToString + ")"
+    s"$neighborhoodName:InsertPoint(insertedPoint:$insertedPoint${if(positionIndependentMoves) s" afterPoint $insertAfterPointForInstantiation positionIndependent" else s" atPosition:$insertAtPosition"}$objToString)"
 
   override def shortString:String =
-    "InsertPoint(" + insertedPoint +
-      (if(positionIndependentMoves) " after " + insertAfterPointForInstantiation + " pi"
-      else " atPos:" + insertAtPosition) + ")"
+    s"InsertPoint($insertedPoint${if(positionIndependentMoves) s" after $insertAfterPointForInstantiation pi" else s" atPos:$insertAtPosition"})"
 }
 
 
@@ -180,7 +171,6 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
         nodeToInsertIterator.unboundedNext()
       else iterationScheme.head
     } else{insertedPointForInstantiation + 1}
-
   }
 
   //this resets the internal state of the Neighborhood

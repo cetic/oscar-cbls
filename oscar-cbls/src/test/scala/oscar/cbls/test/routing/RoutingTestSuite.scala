@@ -1,37 +1,37 @@
 package oscar.cbls.test.routing
 
-import org.scalatest.FunSuite
-import org.scalatest.prop.Checkers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.Checkers
 import oscar.cbls._
 import oscar.cbls.benchmarks.vrp.RoutingMatrixGenerator
 import oscar.cbls.business.routing.invariants._
 import oscar.cbls.business.routing.invariants.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle}
 import oscar.cbls.test.invariants.bench._
 
-class RoutingTestSuite extends FunSuite with Checkers{
+class RoutingTestSuite extends AnyFunSuite with Checkers{
 
   val verbose = 0
 
   test("Node of vehicle including node of Vehicle"){
     val nbTest = 100
-    for (i <- (0 until nbTest)) {
+    for (_ <- 0 until nbTest) {
       val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff(),Shuffle()))
       val n = 100
       val v = 5
       val route = bench.genRouteOfNodes(n,v)
-      NodesOfVehicle(route,v,true)
+      NodesOfVehicle(route,v)
       bench.run()
     }
   }
 
   test("Node of vehicle NOT including node of Vehicle"){
     val nbTest = 100
-    for (i <- (0 until nbTest)) {
+    for (_ <- 0 until nbTest) {
       val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff(),Shuffle()))
       val n = 100
       val v = 5
       val route = bench.genRouteOfNodes(n,v)
-      NodesOfVehicle(route,v,false)
+      NodesOfVehicle(route,v,includeVehicleNode = false)
       bench.run()
     }
   }
@@ -42,7 +42,7 @@ class RoutingTestSuite extends FunSuite with Checkers{
     val v = 5
     val route = bench.genRouteOfNodes(n-1,v)
     val distanceMatrix = RoutingMatrixGenerator(n)._1
-    RouteLength(route,n,v,false,distanceMatrix,true)
+    RouteLength(route,n,v,perVehicle = false,distanceMatrix,distanceIsSymmetric = true)
     bench.run()
   }
 
@@ -52,7 +52,7 @@ class RoutingTestSuite extends FunSuite with Checkers{
     val v = 5
     val route = bench.genRouteOfNodes(n-1,v)
     val distanceMatrix = RoutingMatrixGenerator(n)._1
-    RouteLength(route,n,v,true,distanceMatrix,true)
+    RouteLength(route,n,v,perVehicle = true,distanceMatrix,distanceIsSymmetric = true)
     bench.run()
   }
 
@@ -126,17 +126,15 @@ class RoutingTestSuite extends FunSuite with Checkers{
     }
 
     def start() : Array[IntValue]= { Array.tabulate(v)((car:Int)=> scala.util.Random.nextInt(limite))}
-    val  s = start()
+    val s = start()
     val inv = ForwardCumulativeIntegerDimensionOnVehicle(routes=route,
       n=n,
       v=v,
       op=op,
       contentAtStart = s,
       defaultForUnroutedNodes = 0,
-      minContent = 0,
       maxContent = Int.MaxValue - 2
     )
-
     bench.run()
   }
 
@@ -244,14 +242,13 @@ class RoutingTestSuite extends FunSuite with Checkers{
     print("GenericCumulativeIntegerDimensionOnVehicleWithVar(n ="+n+" v ="+v+") : "+((System.nanoTime()-go)/Math.pow(10,9))+" s")
   }
 
-
   test("Star exploration"){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), Shuffle(), MultipleMove()))
     val n = 100
     val v = 4
     val route = bench.genRouteOfNodesForCheckPoint(n-1,v)
     val distanceMatrix = RoutingMatrixGenerator(n)._1
-    RouteLength(route,n,v,true,distanceMatrix,true)
+    RouteLength(route,n,v,perVehicle = true,distanceMatrix,distanceIsSymmetric = true)
     bench.run()
   }
 }

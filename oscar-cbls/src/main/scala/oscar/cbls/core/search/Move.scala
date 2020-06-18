@@ -12,10 +12,9 @@
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
 package oscar.cbls.core.search
 
-import oscar.cbls.core.computation.{CBLSIntVar, CBLSSetVar, Solution, Variable}
+import oscar.cbls.core.computation.{CBLSSetVar, Solution, Variable}
 import oscar.cbls.core.objective.Objective
 
 /** standard move template
@@ -32,7 +31,7 @@ import oscar.cbls.core.objective.Objective
  */
 abstract class Move(val objAfter:Long = Long.MaxValue, val neighborhoodName:String = null){
   /**to actually take the move*/
-  def commit()
+  def commit(): Unit
 
   /**
    * to get the list of variables that are modified by the move.
@@ -84,7 +83,7 @@ object Move{
 class CodedMove(code: => Unit, override val objAfter: Long, override val neighborhoodName: String = null)
   extends Move(objAfter, neighborhoodName){
 
-  override def commit() {code}
+  override def commit(): Unit = {code}
 
 
   override def toString: String = neighborhoodNameToString + "CodedMove"
@@ -101,7 +100,7 @@ class EvaluableCodedMove(doAndUndo: () => (() => Unit),
                          val moveName:String = "EvaluableCodedMove")
   extends Move(objAfter, neighborhoodName){
 
-  override def commit() {doAndUndo()}
+  override def commit(): Unit = {doAndUndo()}
 
   override def evaluate(obj: Objective): Long = {
     val undoOp = doAndUndo()
@@ -113,11 +112,10 @@ class EvaluableCodedMove(doAndUndo: () => (() => Unit),
   override def toString: String = neighborhoodNameToString + ":" + moveName //this does not include obj. obj is to be displayed by the moveName
 }
 
-
 /**
  * this move loads solution s
-  *
-  * @param s the solution that is loaded when the move is comitted
+ *
+ * @param s the solution that is loaded when the move is comitted
  * @param objAfter         the objective after this assignation will be performed
  *                         in case you degrade the objective because you make a jump, and you do not want to compute it,
  *                         you must set it to Long.MaxValue or just do not specify it, as it is the default value
@@ -131,14 +129,8 @@ case class LoadSolutionMove(s:Solution,override val objAfter:Long, override val 
   /** to actually take the move */
   override def commit(): Unit = s.model.restoreSolution(s)
 
-  override def toString : String = neighborhoodNameToString + "LoadSolutionMove(objAfter:" + objAfter + ")"
+  override def toString : String = s"${neighborhoodNameToString}LoadSolutionMove(objAfter:$objAfter)"
 }
-
-
-
-
-
-
 
 /** standard move that adds a value to a CBLSSetVar
   *
@@ -151,10 +143,10 @@ case class LoadSolutionMove(s:Solution,override val objAfter:Long, override val 
 case class AddToSetMove(s:CBLSSetVar,v:Int, override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
-  override def commit() {s :+= v}
+  override def commit(): Unit = {s :+= v}
 
   override def toString: String = {
-    neighborhoodNameToString + "AddToSetMove(" + s + " :+= " + v + objToString + ")"
+    s"${neighborhoodNameToString}AddToSetMove($s :+= $v$objToString)"
   }
 
   override def touchedVariables: List[Variable] = List(s)
@@ -171,14 +163,15 @@ case class AddToSetMove(s:CBLSSetVar,v:Int, override val objAfter:Long, override
 case class RemoveFromSetMove(s:CBLSSetVar,v:Int, override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
-  override def commit() {s :-= v}
+  override def commit(): Unit = {s :-= v}
 
   override def toString: String = {
-    neighborhoodNameToString + "RemoveFromSetMove(" + s + " :-= " + v + objToString + ")"
+    s"${neighborhoodNameToString}RemoveFromSetMove($s :-= $v$objToString)"
   }
 
   override def touchedVariables: List[Variable] = List(s)
 }
+
 /**
   * This neighborhood always returns the same move, given in the constructor
   * it checks the objctive function before returning it, and adds the objective funtion value to the move
@@ -238,18 +231,15 @@ case class ConstantMovesNeighborhood[MoveType<:Move](ms:() => Iterable[Long => M
     currentMove(newObj)
 }
 
-
 class OverrideObj(initMove:Move, objAfter:Long, neighborhoodName:String = null)
   extends Move(objAfter = objAfter, neighborhoodName = if(neighborhoodName != null) neighborhoodName else initMove.neighborhoodName){
 
   override def commit(): Unit = initMove.commit()
   
-  override def toString: String = "OverrideObj(initMove:"+ initMove.toString + objToString + ")"
+  override def toString: String = s"OverrideObj(initMove:$initMove$objToString)"
 
   override def decomposeMove:List[String] = initMove.decomposeMove
 }
-
-
 
 case class DoNothingNeighborhood() extends Neighborhood with SupportForAndThenChaining[DoNothingMove]{
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
@@ -270,7 +260,6 @@ case class DoNothingMove(override val objAfter:Long,override val neighborhoodNam
   override def decomposeMove:List[String] = List.empty
 }
 
-
 /** a composition of a list of moves; the move will be taken in the order given by the list
   *
   * @param ml the list of moves constituting this one
@@ -285,18 +274,18 @@ case class CompositeMove(ml:List[Move], override val objAfter:Long, override val
     this(ml, ml.last.objAfter)
   }
 
-  override def commit() {
+  override def commit(): Unit = {
     for(m <- ml) m.commit()
   }
 
   override def toString: String  = {
     val parts = decomposeMove
-    neighborhoodNameToString + "CompositeMove(size:" + parts.size + " [" + parts.mkString(",") + "]" + objToString + ")"
+    s"${neighborhoodNameToString}CompositeMove(size:${parts.size} [${parts.mkString(",")}]$objToString)"
   }
 
   override def touchedVariables: List[Variable] = ml.flatMap(_.touchedVariables)
 
-  override def shortString: String = "CompositeMove(" + ml.map(_.shortString).mkString(",")+ ")"
+  override def shortString: String = s"CompositeMove(${ml.map(_.shortString).mkString(",")})"
 
   override def decomposeMove:List[String] = this.ml.flatMap(_.decomposeMove)
 }
@@ -304,13 +293,12 @@ case class CompositeMove(ml:List[Move], override val objAfter:Long, override val
 case class NamedMove(m:Move, override val neighborhoodName:String = null)
   extends Move(m.objAfter, neighborhoodName){
 
-
   override def commit(): Unit = {
     m.commit()
   }
 
   override def toString: String  = {
-    neighborhoodNameToString + m.toString
+    s"$neighborhoodNameToString$m"
   }
 
   override def touchedVariables: Iterable[Variable] = m.touchedVariables
@@ -320,7 +308,6 @@ case class NamedMove(m:Move, override val neighborhoodName:String = null)
   override def decomposeMove:List[String] = m.decomposeMove
 }
 
-
 /** an instrumented move that performs a callBack before being taken
   * the move itself is given in parameter.
   *
@@ -329,7 +316,7 @@ case class NamedMove(m:Move, override val neighborhoodName:String = null)
   * @author renaud.delandtsheer@cetic.be
   */
 case class InstrumentedMove(initialMove:Move, callBack: () => Unit = null, afterMove: () => Unit = null) extends Move(initialMove.objAfter, initialMove.neighborhoodName){
-  def commit(){
+  def commit(): Unit ={
     if(callBack != null) callBack()
     initialMove.commit()
     if(afterMove != null) afterMove()
@@ -363,7 +350,7 @@ object CallBackMove{
   * @tparam T
   */
 case class CallBackMove[T](callBack: T => Unit, override val objAfter:Long, override val neighborhoodName:String, param:T = null) extends Move{
-  def commit(){
+  def commit(): Unit = {
     callBack(param)
   }
 

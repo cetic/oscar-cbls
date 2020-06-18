@@ -1,30 +1,4 @@
-/**
-  * *****************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  * ****************************************************************************
-  */
-/**
-  * *****************************************************************************
-  * Contributors:
-  *     This code has been initially developed by Ghilain Florent.
-  *     Refactored (in respect with the new architecture) by Yoann Guyot.
-  * ****************************************************************************
-  */
-
-package oscar.cbls.business.routing.neighborhood
-
-/*******************************************************************************
+/*****************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
   * the Free Software Foundation, either version 2.1 of the License, or
@@ -38,11 +12,18 @@ package oscar.cbls.business.routing.neighborhood
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+/**
+  * *****************************************************************************
+  * Contributors:
+  *     This code has been initially developed by Ghilain Florent.
+  *     Refactored (in respect with the new architecture) by Yoann Guyot.
+  * ****************************************************************************
+  */
+package oscar.cbls.business.routing.neighborhood
 
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, EasyNeighborhood}
-import oscar.cbls._
+import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
 /**
   * Removes a point of route.
@@ -107,7 +88,7 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Int],
     startIndice = pointToRemove + 1
   }
 
-  override def instantiateCurrentMove(newObj: Long) =
+  override def instantiateCurrentMove(newObj: Long): RemovePointMove =
     RemovePointMove(
       positionOfPointToRemove,
       pointToRemove,
@@ -117,17 +98,17 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Int],
       this,
       neighborhoodNameToString)
 
-  def doMove(positionOfPointToRemove: Int) {
+  def doMove(positionOfPointToRemove: Int): Unit = {
     seq.remove(positionOfPointToRemove)
   }
 
-  def doMovePositionIndependent(valueToRemove: Int) {
+  def doMovePositionIndependent(valueToRemove: Int): Unit = {
     val s = seq.newValue
     seq.remove(s.positionOfAnyOccurrence(valueToRemove).get)
   }
 
   //this resets the internal state of the Neighborhood
-  override def reset(){startIndice = 0}
+  override def reset(): Unit ={startIndice = 0}
 }
 
 /**
@@ -150,7 +131,7 @@ case class RemovePointMove(positionOfPointToRemove: Int,
 
   override def impactedPoints: List[Int] = List(pointToRemove)
 
-  override def commit() {
+  override def commit(): Unit = {
     if(positionIndependentMoves){
       neighborhood.doMovePositionIndependent(pointToRemove)
     }else{
@@ -158,7 +139,7 @@ case class RemovePointMove(positionOfPointToRemove: Int,
     }
   }
 
-  override def toString: String = "RemovePoint(point:" + pointToRemove + objToString + ")"
+  override def toString: String = s"RemovePoint(point:$pointToRemove$objToString)"
 
-  override def shortString: String = "RemovePoint(" + pointToRemove + (if (positionIndependentMoves) " pi" else "") + ")"
+  override def shortString: String = s"RemovePoint($pointToRemove${if (positionIndependentMoves) " pi" else ""})"
 }

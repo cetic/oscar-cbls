@@ -1,12 +1,14 @@
 package oscar.cbls.test
 
+
+
+/*
+
 import oscar.cbls.core.computation.{CBLSIntVar, IntValue}
 import oscar.cbls.invariants.lib.logic.BinPackingLoad
 import oscar.cbls.lib.invariant.numeric.Sum2
 import oscar.cbls.modeling.CBLSModel
 import oscar.cbls.util.StopWatch
-
-/*
 
 /**
   * Created by gustavbjordal on 27/05/16.

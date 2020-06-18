@@ -1,5 +1,3 @@
-package oscar.cbls.lib.invariant.seq
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,10 +12,11 @@ package oscar.cbls.lib.invariant.seq
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.lib.invariant.seq
 
-import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{ChangingIntValue, ChangingSeqValue, IntValue, InvariantHelper, SeqCheckpointedValueStack, SeqInvariant, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint, ShortIntNotificationTarget}
+import oscar.cbls.core.propagation.Checker
 
 object Map {
 
@@ -52,9 +51,9 @@ class MapConstantFun(seq:ChangingSeqValue,
           transform:Int=>Int,maxTransform:Int)
   extends SeqInvariant(seq.value.map(transform),maxTransform,
     seq.maxPivotPerValuePercent,seq.maxHistorySize)
-with SeqNotificationTarget{
+    with SeqNotificationTarget{
 
-  setName("Map(" + seq.name + ")")
+  setName(s"Map(${seq.name})")
 
   registerStaticAndDynamicDependency(seq)
   finishInitialization()
@@ -65,7 +64,7 @@ with SeqNotificationTarget{
 
   var checkpointStack = new SeqCheckpointedValueStack[IntSequence]()
 
-  def digestUdpate(changes : SeqUpdate) {
+  def digestUdpate(changes : SeqUpdate): Unit = {
     changes match {
       case SeqUpdateDefineCheckpoint(prev, isActive, checkpointLevel) =>
         digestUdpate(prev)
@@ -94,7 +93,6 @@ with SeqNotificationTarget{
         rollbackToTopCheckpoint(checkpointStack.rollBackAndOutputValue(checkpoint,checkpointLevel))
         require(checkpointStack.topCheckpoint quickEquals checkpoint)
 
-
       case SeqUpdateAssign(seq) =>
         this := seq.map(transform)
     }
@@ -112,7 +110,7 @@ class MapThroughArray(seq:ChangingSeqValue,
     seq.maxPivotPerValuePercent,seq.maxHistorySize)
   with SeqNotificationTarget with ShortIntNotificationTarget{
 
-  setName("Map(" + seq.name + ")")
+  setName(s"Map(${seq.name})")
 
   registerStaticAndDynamicDependency(seq)
   registerStaticAndDynamicDependencyArrayIndex(transform)
@@ -130,9 +128,9 @@ class MapThroughArray(seq:ChangingSeqValue,
     }
   }
 
-  def digestUdpate(changes : SeqUpdate) {
+  def digestUdpate(changes : SeqUpdate): Unit = {
     changes match {
-      case SeqUpdateDefineCheckpoint(prev, isActive,chechpointLevel) =>
+      case SeqUpdateDefineCheckpoint(prev, isActive, checkpointLevel) =>
         digestUdpate(prev)
        case SeqUpdateInsert(value, position, prev) =>
         digestUdpate(prev)
@@ -155,4 +153,3 @@ class MapThroughArray(seq:ChangingSeqValue,
     c.check(this.value.toList equals seq.value.toList.map(x => transform(x).value))
   }
 }
-

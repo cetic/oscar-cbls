@@ -3,8 +3,6 @@ package oscar.cbls.business.routing.neighborhood
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
-import oscar.cbls._
-
 
 /**
  * a neighborhood that exchanges the route of two vehicles.
@@ -38,7 +36,7 @@ case class RouteExchange(firstVehicles:()=>Iterable[Int],
   var positionOfVehicleNextToSecond:Int = -1
   var secondVehicleIsEmpty:Boolean = false
 
-  override def exploreNeighborhood(initialObj: Long){
+  override def exploreNeighborhood(initialObj: Long): Unit = {
 
     val iterationSchemeOnZone =
       if (hotRestart) HotRestart(firstVehicles(), startFirstVehicle)
@@ -58,7 +56,7 @@ case class RouteExchange(firstVehicles:()=>Iterable[Int],
     while (firstVehicleIt.hasNext) {
       firstVehicle = firstVehicleIt.next()
 
-      require(firstVehicle < v,"first vehicle is not <v:" + firstVehicle)
+      require(firstVehicle < v, s"first vehicle is not <v:$firstVehicle")
 
       positionOfFirstVehicle = startValue.positionOfAnyOccurrence(firstVehicle).get
       positionOfVehicleNextToFirst = if(firstVehicle == v-1L) startValue.size else startValue.positionOfAnyOccurrence(firstVehicle+1).get
@@ -70,7 +68,7 @@ case class RouteExchange(firstVehicles:()=>Iterable[Int],
         val (secondVehicleIt,notifyFound2) = selectSecondVehicleBehavior.toIterator(secondVehiclesZone)
         while (secondVehicleIt.hasNext) {
           secondVehicle = secondVehicleIt.next()
-          require(firstVehicle < v,"first vehicle is not <v:" + firstVehicle)
+          require(firstVehicle < v,s"first vehicle is not <v:$firstVehicle")
 
           if(!breakSymmetriesAmongVehicles || secondVehicle > firstVehicle){
 
@@ -105,8 +103,7 @@ case class RouteExchange(firstVehicles:()=>Iterable[Int],
     positionOfVehicleNextToSecond = -1
   }
 
-
-  override def instantiateCurrentMove(newObj: Long) =
+  override def instantiateCurrentMove(newObj: Long): RouteExchangeMove =
     RouteExchangeMove(firstVehicle:Int,
       positionOfFirstVehicle:Int,
       positionOfVehicleNextToFirst:Int,
@@ -126,7 +123,7 @@ case class RouteExchange(firstVehicles:()=>Iterable[Int],
              firstVehicleIsEmpty:Boolean,
              positionOfSecondVehicle:Int,
              positionOfVehicleNextToSecond:Int,
-             secondVehicleIsEmpty:Boolean) {
+             secondVehicleIsEmpty:Boolean): Unit ={
     if (firstVehicleIsEmpty) {
       if (secondVehicleIsEmpty) {
         System.err.println("doing Route exchange with two empty routes")
@@ -163,7 +160,7 @@ case class RouteExchangeMove(firstVehicle:Int,
   //TODO: Implement this
   override def impactedPoints: Iterable[Int] = ???
 
-  override def commit() {
+  override def commit(): Unit = {
     neighborhood.doMove(positionOfFirstVehicle,
       positionOfVehicleNextToFirst,
       firstVehicleIsEmpty,
@@ -173,6 +170,5 @@ case class RouteExchangeMove(firstVehicle:Int,
   }
 
   override def toString: String =
-    neighborhoodNameToString + "RouteExchangeMove(vehicle:" + firstVehicle + " other vehicle:" + secondVehicle + objToString + ")"
+    s"${neighborhoodNameToString}RouteExchangeMove(vehicle:$firstVehicle other vehicle:$secondVehicle$objToString)"
 }
-

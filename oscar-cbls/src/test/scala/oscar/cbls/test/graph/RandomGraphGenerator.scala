@@ -7,7 +7,6 @@ import oscar.cbls.lib.search.neighborhoods.vlsn._
 import oscar.cbls.core.search._
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.test.invariants.bench.{InvBench, ToMax}
-import java.io._
 
 import scala.util.Random
 
@@ -27,7 +26,7 @@ object RandomGraphGenerator {
     })
 
     def randomXY: Int = rand.nextInt(mapSide)
-    val pointPosition: Array[(Int, Int)] = Array.tabulate(nbNodes)(w => (randomXY, randomXY))
+    val pointPosition: Array[(Int, Int)] = Array.tabulate(nbNodes)(_ => (randomXY, randomXY))
 
 
     val nodes = 0 until nbNodes
@@ -88,14 +87,14 @@ object RandomGraphGenerator {
       (1, DoNothingMove(0L)),
       (1, FlipMove(0, 1, bench.genIntVars().toArray, 0L)),
       (1, GradientMove(List(), 0L, Nil, 0L)),
-      (1, InsertPointMove(0, 0, 0, true, 0L, null, null)),
-      (1, InstrumentedMove(new DoNothingMove(0L))),
+      (1, InsertPointMove(0, 0, 0, positionIndependentMoves = true, 0L, null, null)),
+      (1, InstrumentedMove(DoNothingMove(0L))),
       (1, LoadSolutionMove(null, 0L)),
-      (1, NamedMove(new DoNothingMove(0L))),
+      (1, NamedMove(DoNothingMove(0L))),
       (1, RemoveFromSetMove(bench.genIntSetVar(), 0, 0L)),
       (1, RollMove(bench.genIntVars(), 0, 0L)),
       (1, ShiftMove(0, 0, 0, null, 0L)),
-      (1, SwapMove(null, null, 0, 0, false, 0))
+      (1, SwapMove(null, null, 0, 0, adjustIfNotInProperDomain = false, 0))
     )
 
     val nodeTypeGen: Gen[VLSNSNodeType.Value] = Gen.frequency(

@@ -13,6 +13,8 @@
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  ******************************************************************************/
 package oscar.cbls.test.scheduling
+
+
   /*
 import oscar.cbls.core.computation.Store
 import oscar.cbls.business.scheduling.model.Activity

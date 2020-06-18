@@ -12,12 +12,10 @@
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
 package oscar.cbls.business.routing.modeling
 
-import oscar.cbls._
 import oscar.cbls.business.routing.invariants.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle, ForwardCumulativeIntegerIntegerDimensionOnVehicle}
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingSeqValue, IntValue}
 
 trait CapacityInvariants {
 
@@ -97,8 +95,8 @@ trait CapacityInvariants {
     * @param n The maximum number of nodes
     * @param v The number of vehicles
     * @param op A function which returns the capacity change between two nodes : (fromNode,toNode,content1AtFromNode,content2AtFromNode)=> (content1AtToNode,content2AtToNode)
-    * @param content1AtStart Array of lenght = v where initValue(car) = content at start pos of vehicle #car
-    * @param content2AtStart Array of lenght = v where initValue(car) = content at start pos of vehicle #car
+    * @param content1AtStart Array of length = v where initValue(car) = content at start pos of vehicle #car
+    * @param content2AtStart Array of length = v where initValue(car) = content at start pos of vehicle #car
     * @param default1ForUnroutedNodes is the content1 of a node that is not routed
     * @param default2ForUnroutedNodes is the content2 of a node that is not routed
     * @param minContent Min content of a node (used for creating the output variable, but not considered as a constraint)
@@ -128,5 +126,4 @@ trait CapacityInvariants {
     minContent,
     maxContent,
     contentName)
-
 }

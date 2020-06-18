@@ -1,5 +1,7 @@
 package oscar.cbls.algo.graph
 
+import scala.collection.parallel.immutable.ParVector
+
 object DijkstraDistanceMatrix {
 
   def buildDistanceMatrix(g:ConditionalGraph,
@@ -9,7 +11,8 @@ object DijkstraDistanceMatrix {
     val distanceMatrix:Array[Array[Long]] =
       Array.fill(g.nbNodes)(null)
 
-    for(fromNodeID <- (0 until g.nbNodes).par){
+    val parNodes = ParVector.tabulate(g.nbNodes){x => x}
+    for(fromNodeID <- parNodes) {
       distanceMatrix(fromNodeID) = computeAllDistancesFomNode(g.nodes(fromNodeID),
         g:ConditionalGraph,
         isConditionalEdgeOpen:Int => Boolean)

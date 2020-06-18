@@ -1,13 +1,14 @@
 package oscar.cbls.test.algo
 
 import org.scalacheck.Gen
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.algo.dll.{DPFDLLStorageElement, DelayedPermaFilteredDoublyLinkedList}
 
 import scala.util.Random
 
-class PFDLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matchers {
+class PFDLLTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
 
   case class CustomObject(int: Int, str: String)
   val customGen: Gen[CustomObject] = for {
@@ -33,7 +34,6 @@ class PFDLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Ma
   test("isEmpty returns true after deleting all elements"){
     forAll (Gen.listOf(customGen)) {objList => {
       val dll = new DelayedPermaFilteredDoublyLinkedList[CustomObject]()
-      val filteredList = dll.permaFilter(obj => obj.int % 2 == 0)
       var storageElemList = List[DPFDLLStorageElement[CustomObject]]()
 
       objList.foreach(obj => {
@@ -52,7 +52,7 @@ class PFDLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Ma
 
       var callbackList = List[() => Unit]()
 
-      val filteredList = dll.delayedPermaFilter((obj,insertFunc,queryFunc) => {
+      val filteredList = dll.delayedPermaFilter((obj,insertFunc,_) => {
         if(obj.int % 2 == 0)
           callbackList = callbackList ::: List(insertFunc)
       })
@@ -71,13 +71,13 @@ class PFDLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Ma
   }
 
   test("StillValid reports false when injector has not been called yet"){
-    forAll (Gen.listOf(customGen)) {objList => {
+    forAll (Gen.listOf(customGen)) {_ => {
 
       val dll = new DelayedPermaFilteredDoublyLinkedList[CustomObject]()
       var callbackList = List[() => Unit]()
       var validList = List[() => Boolean]()
 
-      val filteredList = dll.delayedPermaFilter((obj,insertFunc,queryFunc) => {
+      val _ = dll.delayedPermaFilter((obj,insertFunc,queryFunc) => {
         if(obj.int % 2 == 0)
           callbackList = callbackList ::: List(insertFunc)
         validList = validList::: List(queryFunc)
@@ -88,13 +88,13 @@ class PFDLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Ma
   }
 
   test("StillValid reports true after injector has been called"){
-    forAll (Gen.listOf(customGen)) {objList => {
+    forAll (Gen.listOf(customGen)) {_ => {
 
       val dll = new DelayedPermaFilteredDoublyLinkedList[CustomObject]()
       var callbackList = List[() => Unit]()
       var validList = List[() => Boolean]()
 
-      val filteredList = dll.delayedPermaFilter((obj,insertFunc,queryFunc) => {
+      val _ = dll.delayedPermaFilter((obj,insertFunc,queryFunc) => {
         if(obj.int % 2 == 0)
           callbackList = callbackList ::: List(insertFunc)
         validList = validList::: List(queryFunc)

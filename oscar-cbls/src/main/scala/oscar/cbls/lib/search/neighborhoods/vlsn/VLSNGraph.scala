@@ -14,11 +14,9 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   * ****************************************************************************
   */
-
 package oscar.cbls.lib.search.neighborhoods.vlsn
 
 import oscar.cbls.core.search.{DoNothingMove, Move}
-import oscar.cbls._
 import scala.collection.immutable.SortedSet
 
 object VLSNMoveType extends Enumeration{
@@ -41,8 +39,11 @@ class VLSNNodeBuilder(var nbLabels:Int) {
   var nodes: List[Node] = List.empty
   var nextNodeID: Int = 0
 
-  def addNode(representedNode:Int, vehicle:Int, label:Int,nodeType:VLSNSNodeType):Node = {
-    require(label >=0L && label < nbLabels, "inserting a node targeting label " + label)
+  def addNode(representedNode:Int,
+              vehicle:Int,
+              label:Int,
+              nodeType:VLSNSNodeType):Node = {
+    require(label >=0L && label < nbLabels, s"inserting a node targeting label $label")
     require(nodeType != VehicleNode || representedNode == -vehicle)
     val n = new Node(nextNodeID, representedNode:Int, nodeType, vehicle:Int, label)
     nextNodeID += 1
@@ -67,7 +68,11 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
   var fromToWithEdge:List[(Int,Int)] = List.empty
   var nextEdgeID:Int = 0
 
-  def addEdge(from:Node, to:Node, deltaObj:Long, move:Move, vLSNMoveType: VLSNMoveType):Edge = {
+  def addEdge(from:Node,
+              to:Node,
+              deltaObj:Long,
+              move:Move,
+              vLSNMoveType: VLSNMoveType):Edge = {
     require(edges(from.nodeID)(to.nodeID) == null,edges(from.nodeID)(to.nodeID))
     val edge = new Edge(from:Node,to:Node, move:Move,deltaObj:Long, nextEdgeID, vLSNMoveType)
     edges(from.nodeID)(to.nodeID) = edge
@@ -88,7 +93,7 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
     new VLSNGraph(nodes,edgeArray,nbLabels,v)
   }
 
-  override def toString: String = "EdgeBuilder( nbNodes:" + nbNodes + " nbEdges:" + nextEdgeID + ")"
+  override def toString: String = s"EdgeBuilder( nbNodes:$nbNodes nbEdges:$nextEdgeID)"
 }
 
 /**
@@ -100,7 +105,7 @@ class VLSNGraph(val nodes:Array[Node],val edges:Array[Edge],val nbLabels:Int, v:
   val nbNodes = nodes.length
   val nbEdges = edges.length
 
-  override def toString: String = "VLSNGraph(nbNodes:" + nbNodes + ",nbEdges:" + nbEdges +
+  override def toString: String = s"VLSNGraph(nbNodes:$nbNodes,nbEdges:$nbEdges" +
     "\n\tnodes{\n\t\t"+ nodes.mkString("\n\t\t") + "\n\t}" +
     "\n\tedges{\n\t\t" + edges.mkString("\n\t\t") + "\n\t}" + "\n}" + "\n\n\n\n" + toDOT(List(1,2,4).map(edges(_)))
 
@@ -163,19 +168,16 @@ class Edge(val from:Node, val to:Node, val move:Move, val deltaObj:Long, val edg
   override def toString: String = "Edge(from:" + from.nodeID + ",to:"+to.nodeID + ",deltaObj:" + deltaObj + ",type:" + moveType+ ")" + move
 
   def toDOTHeavy(bold:Boolean = false):String =
-    "\"Edge" + edgeID + "\" [shape=rectangle,style=filled,fillcolor=gray, label=\"deltaObj:" + deltaObj +
-      "\\n" + moveType +
-      "\\n" + (if (move == null) "null" else move.shortString) + "\"" + (if(bold) " color=blue" else "") +"] ; " +
-      from.nodeID + " -> " + "\"Edge" + edgeID + "\"" + (if(bold) "[color=blue]" else "") + ";" +
-      "\"Edge" + edgeID + "\" -> " + to.nodeID + (if(bold) "[color=blue]" else "") + ";"
+    s""""Edge $edgeID" [shape=rectangle,style=filled,fillcolor=gray, label="deltaObj:$deltaObj
+       |$moveType
+       |${if (move == null) "null" else move.shortString}"${if(bold) " color=blue" else ""}] ; ${from.nodeID} -> "Edge $edgeID" ${if(bold) "[color=blue]" else ""};"Edge $edgeID" -> ${to.nodeID} ${if(bold) "[color=blue]" else ""};""".stripMargin
 
   def toDOTLight(bold:Boolean = false):String =
-    from.nodeID + " -> " + to.nodeID + (if(bold) "[color=blue]" else "") + ";"
+    s"${from.nodeID} -> ${to.nodeID}${if(bold) "[color=blue]" else ""};"
 
   def toDOT(bold:Boolean = false,light:Boolean):String =
     if(light){ toDOTLight(bold) }else toDOTHeavy(bold)
 }
-
 
 object VLSNGraphTest extends App{
 
@@ -187,7 +189,7 @@ object VLSNGraphTest extends App{
     val builder = new VLSNEdgeBuilder(nodes: Array[Node], nbNodes,2) //nbLAbel is set here to nbNodes
 
     def edge(from: Int, to: Int, gain: Long): Unit = {
-      builder.addEdge(nodes(from), nodes(to), gain,  new DoNothingMove(Long.MaxValue),VLSNMoveType.SymbolicTrashToInsert)
+      builder.addEdge(nodes(from), nodes(to), gain, DoNothingMove(Long.MaxValue),VLSNMoveType.SymbolicTrashToInsert)
     }
 
     edge(0, 1, 10)

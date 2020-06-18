@@ -1,8 +1,3 @@
-package oscar.cbls.business.routing.model
-
-import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls._
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -17,12 +12,16 @@ import oscar.cbls._
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
 /**
  * @author Jannou Brohée
  * @author renaud.delandtsheer@cetic.be
  */
-object VehicleLocation{
+
+package oscar.cbls.business.routing.model
+
+import oscar.cbls.algo.seq.IntSequence
+
+object VehicleLocation {
   def apply(v:Int,nodeToPosition:Int=>Int): ConcreteVehicleLocation = new ConcreteVehicleLocation(Array.tabulate(v)(nodeToPosition))
   def apply(startPositionOfVehicleThatIWillNeverModify:Array[Int]) = new ConcreteVehicleLocation(startPositionOfVehicleThatIWillNeverModify)
 }
@@ -33,7 +32,7 @@ object VehicleLocation{
  */
 abstract class VehicleLocation(val v : Int, val level:Int){
 
-  def checkOnSequence(s:IntSequence){
+  def checkOnSequence(s:IntSequence): Unit ={
     for(vehicle <- 0 until v){
       require(s.positionOfAnyOccurrence(vehicle).get == startPosOfVehicle(vehicle),vehicle)
     }
@@ -89,7 +88,7 @@ class ConcreteVehicleLocation(private val startPositionOfVehicle:Array[Int]) ext
 
   def startPosOfVehicle(vehicle: Int): Int = startPositionOfVehicle(vehicle)
 
-  override def toString: String = "ConcreteVehicleLocation(" + startPositionOfVehicle.mkString(",") + ")"
+  override def toString: String = s"ConcreteVehicleLocation(${startPositionOfVehicle.mkString(",")})"
 }
 
 /**
@@ -100,5 +99,5 @@ class StackedVehicleLocation(val oldPosToNewPos:Int=> Option[Int], val prev: Veh
 
   def startPosOfVehicle(vehicle: Int): Int = oldPosToNewPos(prev.startPosOfVehicle(vehicle)).get
 
-  override def toString: String = "StackedVehicleLocation([" + (0 until v).map(startPosOfVehicle).mkString(",") + "] depth:" + level + " prev:" + prev + ")"
+  override def toString: String = s"StackedVehicleLocation([${(0 until v).map(startPosOfVehicle).mkString(",")}] depth:$level prev:$prev)"
 }

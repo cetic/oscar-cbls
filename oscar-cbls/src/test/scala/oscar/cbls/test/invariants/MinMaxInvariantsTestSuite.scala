@@ -1,11 +1,11 @@
 package oscar.cbls.test.invariants
 
-import org.scalatest.FunSuite
-import org.scalatest.prop.Checkers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.Checkers
 import oscar.cbls.lib.invariant.minmax._
 import oscar.cbls.test.invariants.bench._
 
-class MinMaxInvariantsTestSuite extends FunSuite with Checkers{
+class MinMaxInvariantsTestSuite extends AnyFunSuite with Checkers{
 
   val verbose = 0
 
@@ -80,13 +80,13 @@ class MinMaxInvariantsTestSuite extends FunSuite with Checkers{
 
   test("MinArrayLazy maintains the minimum from an array of variables.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new MinConstArrayLazy(randomArray(30,0 to 100),bench.genIntSetVar(range = 0 until 30))
+    MinConstArrayLazy(randomArray(30,0 to 100),bench.genIntSetVar(range = 0 until 30))
     bench.run()
   }
 
   test("MaxArrayLazy maintains the maximum from an array of variables.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-    new MaxConstArrayLazy(randomArray(30,0 to 100),bench.genIntSetVar(range = 0 until 30))
+    MaxConstArrayLazy(randomArray(30,0 to 100),bench.genIntSetVar(range = 0 until 30))
     bench.run()
   }
 
@@ -111,14 +111,14 @@ class MinMaxInvariantsTestSuite extends FunSuite with Checkers{
   test("NthSmallest (true) maintains the nth smallest element of a set"){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     val array = bench.genIntVarsArray()
-    NthSmallest(array,scala.util.Random.nextInt(array.length),true)
+    NthSmallest(array,scala.util.Random.nextInt(array.length))
     bench.run()
   }
 
   test("NthSmallest (false) maintains the nth biggest element of a set"){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     val array = bench.genIntVarsArray()
-    NthSmallest(array,scala.util.Random.nextInt(array.length),false)
+    NthSmallest(array,scala.util.Random.nextInt(array.length),smallest = false)
     bench.run()
   }
 

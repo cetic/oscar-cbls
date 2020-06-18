@@ -39,7 +39,7 @@ object GraphContractor {
         }
       }
       var keysFoDeletion:List[DLLStorageElement[TempEdge]] = Nil
-      def addKey(k:DLLStorageElement[TempEdge]){
+      def addKey(k:DLLStorageElement[TempEdge]): Unit ={
         keysFoDeletion = k :: keysFoDeletion
       }
     }
@@ -55,10 +55,10 @@ object GraphContractor {
     class TmpNode(val origin:Node,
                   val shouldBeKeptNode:Boolean,
                   val incidentEdges:DoublyLinkedList[TempEdge]){
-      def degree = incidentEdges.size
-      def shouldBeKep = shouldBeKeptNode || incidentEdges.toList.exists(_.shouldBeKept)
+      def degree: Int = incidentEdges.size
+      def shouldBeKep: Boolean = shouldBeKeptNode || incidentEdges.toList.exists(_.shouldBeKept)
 
-      var keyForDeletion:DLLStorageElement[TmpNode] = null
+      var keyForDeletion:DLLStorageElement[TmpNode] = _
 
       def delete(): Unit ={
         for(e <- incidentEdges) e.delete()
@@ -93,8 +93,7 @@ object GraphContractor {
       }
     }
 
-
-    def checkOtherNode(otherNode:TmpNode,prevDegree:Int){
+    def checkOtherNode(otherNode:TmpNode,prevDegree:Int): Unit = {
       if(otherNode.degree <= 2
         && prevDegree >2
         && !otherNode.shouldBeKeptNode){ //en fait c'est idiot, les transit fobidden on peut les supprimer out de suite.
@@ -231,8 +230,9 @@ class ContractedConditionalGraph(originalGraph:ConditionalGraph,
   extends ConditionalGraph(nodes,edges,originalGraph.nbConditions) {
 
   override def toString: String = {
-    "Contracted" + super.toString + "\n" +
-      "edgeToPathInOriginalGraph:\n\t" + edgeToPathInOriginalGraph.mkString("\n\t")
+    s"""Contracted ${super.toString}
+       |edgeToPathInOriginalGraph:
+       |  ${edgeToPathInOriginalGraph.mkString("\n\t")}""".stripMargin
   }
 
   def decontractPath(fromNodeInContractedGraph:Node,

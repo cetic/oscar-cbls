@@ -1,5 +1,3 @@
-package oscar.cbls.business.routing.invariants
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,12 +12,13 @@ package oscar.cbls.business.routing.invariants
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.business.routing.invariants
 
-import oscar.cbls._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.RoutingConventionMethods
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingSeqValue, Invariant, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint}
+import oscar.cbls.core.propagation.Checker
 
 object VehicleOfNodes{
 
@@ -38,7 +37,7 @@ object VehicleOfNodes{
       CBLSIntVar(model,
         v,
         domain,
-        "vehicle_or_unrouted_of_node_" + node))
+        s"vehicle_or_unrouted_of_node_$node"))
 
     new VehicleOfNodes(routes, v, vehicleOrUnroutedOfNode)
 
@@ -144,10 +143,11 @@ class VehicleOfNodes(routes:ChangingSeqValue,
     }
   }
 
-  private def dropCheckpoint(){
+  private def dropCheckpoint(): Unit ={
     saveCurrentCheckpoint(null)
   }
-  private def saveCurrentCheckpoint(s:IntSequence){
+
+  private def saveCurrentCheckpoint(s:IntSequence): Unit ={
     savedCheckpoint = s
     while (movedNodesSinceCheckpointList!= null) {
       movedNodesSinceCheckpointArray(movedNodesSinceCheckpointList.head) = false
@@ -155,7 +155,7 @@ class VehicleOfNodes(routes:ChangingSeqValue,
     }
   }
 
-  private def restoreCheckpoint(){
+  private def restoreCheckpoint(): Unit ={
     while (movedNodesSinceCheckpointList!= null) {
       val node= movedNodesSinceCheckpointList.head
       movedNodesSinceCheckpointArray(movedNodesSinceCheckpointList.head) = false
@@ -164,7 +164,7 @@ class VehicleOfNodes(routes:ChangingSeqValue,
     }
   }
 
-  private def recordMovedPoint(node: Int, oldVehicle:Int){
+  private def recordMovedPoint(node: Int, oldVehicle:Int): Unit ={
     if(savedCheckpoint!= null) {
       if (!movedNodesSinceCheckpointArray(node)) {
         movedNodesSinceCheckpointList = QList(node, movedNodesSinceCheckpointList)
@@ -174,7 +174,7 @@ class VehicleOfNodes(routes:ChangingSeqValue,
     }
   }
 
-  private def computeAndAffectValueFromScratch(s:IntSequence){
+  private def computeAndAffectValueFromScratch(s:IntSequence): Unit ={
     vehicleOrUnroutedOfNode.foreach(_:=v) //unrouted
 
     val it = s.iterator
@@ -217,7 +217,8 @@ class VehicleOfNodes(routes:ChangingSeqValue,
   override def checkInternals(c : Checker) : Unit = {
     val values = computeValueFromScratch(routes.value)
     for (node <- 0 until n){
-      c.check(vehicleOrUnroutedOfNode(node).value == values(node), Some("vehicleOrUnroutedOfNode(node).value=" +vehicleOrUnroutedOfNode(node).value + " should== valuesFromScratch(node)=" + values(node) + " node:" + node))
+      c.check(vehicleOrUnroutedOfNode(node).value == values(node),
+        Some(s"vehicleOrUnroutedOfNode(node).value=${vehicleOrUnroutedOfNode(node).value} should== valuesFromScratch(node)=${values(node)} node:$node"))
     }
 
     if(savedCheckpoint != null) {
@@ -225,8 +226,7 @@ class VehicleOfNodes(routes:ChangingSeqValue,
       for (node <- 0 until n) {
         if(movedNodesSinceCheckpointArray(node)) {
           c.check(vehicleOfNodeFromScratch(node) == vehicleOfNodeAtCheckpointForMovedPoints(node),
-            Some("vehicleOfNodeAtCheckpointForMovedPoints(node)=" + vehicleOfNodeAtCheckpointForMovedPoints(node) +
-              " should== vehicleOfNodeFromScratch(node)=" + vehicleOfNodeFromScratch(node)))
+            Some(s"vehicleOfNodeAtCheckpointForMovedPoints(node)=${vehicleOfNodeAtCheckpointForMovedPoints(node)} should== vehicleOfNodeFromScratch(node)=${vehicleOfNodeFromScratch(node)}"))
         }
       }
     }

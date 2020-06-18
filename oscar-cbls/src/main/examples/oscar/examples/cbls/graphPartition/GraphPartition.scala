@@ -1,8 +1,7 @@
 package oscar.examples.cbls.graphPatrition
 
-import oscar.cbls
-import oscar.cbls._
-import oscar.cbls.lib.invariant.logic.{DenseCount, Int2Int}
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.lib.invariant.logic.DenseCount
 import oscar.cbls.modeling._
 
 import scala.util.Random

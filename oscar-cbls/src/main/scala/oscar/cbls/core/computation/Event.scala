@@ -17,7 +17,6 @@
   *     This code has been initially developed by CETIC www.cetic.be
   *         by Renaud De Landtsheer
   ******************************************************************************/
-
 package oscar.cbls.core.computation
 
 import oscar.cbls.core.propagation.Checker
@@ -116,51 +115,53 @@ class Event(v:Value, w:Variable, ModifiedVars:Iterable[Variable])
 
   //unfortunately, it is not possible to pass a type "=>Unit" as parameter to a case class.
 
-  private var action: (()=>Unit)=null
-  private var actionIntParam: (Int=>Unit) = null
-  private var actionIntSetParam: (SortedSet[Int] => Unit) = null
+  private var action: ()=>Unit=null
+  private var actionIntParam: Int=>Unit = null
+  private var actionIntSetParam: SortedSet[Int] => Unit = null
 
   private var oldIntv = 0
   private var oldIntSetv:SortedSet[Int] = SortedSet.empty
   private var oldIntw = 0
   private var oldIntSetw:SortedSet[Int] = SortedSet.empty
 
-  private var intintaction: ((Int,Int) => Unit) = null
-  private var intsetintsetaction:((SortedSet[Int],SortedSet[Int]) => Unit) = null
-  private var intsetintaction:((SortedSet[Int],Int) => Unit) = null
-  private var intintsetaction:((Int,SortedSet[Int]) => Unit) = null
+  private var intintaction: (Int,Int) => Unit = null
+  private var intsetintsetaction:(SortedSet[Int],SortedSet[Int]) => Unit = null
+  private var intsetintaction:(SortedSet[Int],Int) => Unit = null
+  private var intintsetaction:(Int,SortedSet[Int]) => Unit = null
 
-  def setAction(action: ()=>Unit){
+  def setAction(action: ()=>Unit): Unit ={
     this.action = action
   }
-  def setIntAction(action: Int=>Unit){
+
+  def setIntAction(action: Int=>Unit): Unit ={
     this.actionIntParam = action
     oldIntv = v.asInstanceOf[IntValue].valueInt
   }
-  def setIntSetAction(action: SortedSet[Int] => Unit){
+
+  def setIntSetAction(action: SortedSet[Int] => Unit): Unit ={
     this.actionIntSetParam = action
     oldIntSetv = v.asInstanceOf[CBLSSetVar].value
   }
 
-  def setintintaction(intintaction: (Int,Int)=>Unit){
+  def setintintaction(intintaction: (Int,Int)=>Unit): Unit ={
     this.intintaction = intintaction
     this.oldIntv = v.asInstanceOf[CBLSIntVar].valueInt
     this.oldIntw = w.asInstanceOf[CBLSIntVar].valueInt
   }
 
-  def setintsetintsetaction(intsetintsetaction:(SortedSet[Int],SortedSet[Int]) => Unit){
+  def setintsetintsetaction(intsetintsetaction:(SortedSet[Int],SortedSet[Int]) => Unit): Unit ={
     this.intsetintsetaction = intsetintsetaction
     this.oldIntSetv = v.asInstanceOf[CBLSSetVar].value
     this.oldIntSetw = w.asInstanceOf[CBLSSetVar].value
   }
 
-  def setintsetintaction(intsetintaction:(SortedSet[Int],Int) => Unit){
+  def setintsetintaction(intsetintaction:(SortedSet[Int],Int) => Unit): Unit ={
     this.intsetintaction = intsetintaction
     this.oldIntSetv = v.asInstanceOf[CBLSSetVar].value
     this.oldIntw = w.asInstanceOf[CBLSIntVar].valueInt
   }
 
-  def setintintsetaction(intintsetaction:(Int,SortedSet[Int]) => Unit){
+  def setintintsetaction(intintsetaction:(Int,SortedSet[Int]) => Unit): Unit ={
     this.intintsetaction = intintsetaction
     this.oldIntv = v.asInstanceOf[CBLSIntVar].valueInt
     this.oldIntSetw = w.asInstanceOf[CBLSSetVar].value
@@ -172,7 +173,7 @@ class Event(v:Value, w:Variable, ModifiedVars:Iterable[Variable])
   if (ModifiedVars != null)
     for(variable <- ModifiedVars){variable.setDefiningInvariant(this)}
 
-  override def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Long, NewVal: Long): Unit ={
     scheduleForPropagation()
   }
 
@@ -180,7 +181,7 @@ class Event(v:Value, w:Variable, ModifiedVars:Iterable[Variable])
     scheduleForPropagation()
   }
 
-  override def performInvariantPropagation(){
+  override def performInvariantPropagation(): Unit ={
     if (action != null) action()
 
     if (actionIntParam!= null){
@@ -228,7 +229,6 @@ class Event(v:Value, w:Variable, ModifiedVars:Iterable[Variable])
     }
   }
 
-  override def checkInternals(c: Checker) = c.check(true, Some("Event.checkInternals"))
+  override def checkInternals(c: Checker): Unit = c.check(true, Some("Event.checkInternals"))
 
 }
-

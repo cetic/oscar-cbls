@@ -1,10 +1,11 @@
 package oscar.cbls.business.routing.invariants.vehicleCapacity
 
-import oscar.cbls._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.invariants.global._
 import oscar.cbls.core.computation.CBLSIntVar
+
+import scala.annotation.tailrec
 
 object GlobalVehicleCapacityConstraintWithLogReduction{
   def apply(gc: GlobalConstraintCore, n: Int, v: Int,
@@ -32,9 +33,6 @@ object GlobalVehicleCapacityConstraintWithLogReduction{
         capacityConstraint.contentVariationAtNode(node) + capacityConstraint.contentVariationAtNode(neighbor) <= vehicleMaxCapacity)).toMap
   }
 }
-
-
-
 
 class GlobalVehicleCapacityConstraintWithLogReduction(gc: GlobalConstraintCore, val n: Int, val v: Int,
                                                       val vehiclesCapacity: Array[Long],
@@ -103,6 +101,7 @@ class GlobalVehicleCapacityConstraintWithLogReduction(gc: GlobalConstraintCore, 
     */
   override def computeVehicleValueComposed(vehicle: Int, segments: QList[LogReducedSegment[TwoWaysVehicleContentFunction]]): Boolean = {
 
+    @tailrec
     def composeSubSegments(vehicleContentFunctions: QList[TwoWaysVehicleContentFunction], previousOutCapa: Long, flipped: Boolean): Long ={
       val twoWaysVehicleContentFunction = vehicleContentFunctions.head
       val newOutCapa = previousOutCapa + twoWaysVehicleContentFunction.contentAtEndIfStartAt0(flipped)
@@ -112,8 +111,9 @@ class GlobalVehicleCapacityConstraintWithLogReduction(gc: GlobalConstraintCore, 
       else composeSubSegments(vehicleContentFunctions.tail, newOutCapa, flipped)
     }
 
+    @tailrec
     def isVehicleCapacityViolated(logReducedSegments: QList[LogReducedSegment[TwoWaysVehicleContentFunction]],
-                                 previousOutCapa: Long = 0L): Boolean ={
+                                  previousOutCapa: Long = 0L): Boolean ={
       if(logReducedSegments == null) false
       else {
         val newOutCapa: Long = logReducedSegments.head match {
@@ -168,8 +168,6 @@ class GlobalVehicleCapacityConstraintWithLogReduction(gc: GlobalConstraintCore, 
     // No node in this vehicle route
     if(vehicle == v-1 && explorer.isEmpty) return false
     else if(vehicle < v-1 && explorer.get.value < v) return false
-
-
 
     while(explorer.isDefined && explorer.get.value >= v){
       val currentNode = explorer.get

@@ -3,7 +3,7 @@ package oscar.cbls.business.scheduling.model
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.scheduling.ActivityId
 import oscar.cbls.business.scheduling.invariants.StartTimes
-import oscar.cbls.{CBLSSeqVar, Store}
+import oscar.cbls.core.computation.{CBLSSeqVar, Store}
 
 import scala.collection.BitSet
 
@@ -113,7 +113,7 @@ class Schedule(model: Store,
     */
   def reinsertableIndices(indAct: Int): Iterable[Int] = {
     val prioritySequence = activityPriorityList.value
-    val currentActivity = prioritySequence.valueAtPosition(indAct).get.toInt
+    val currentActivity = prioritySequence.valueAtPosition(indAct).get
     val predActIndices = precedencesData.predMap.getOrElse(currentActivity, BitSet.empty)
     val succActIndices = precedencesData.succMap.getOrElse(currentActivity, BitSet.empty)
     var reinsertableIndices: List[Int] = List()

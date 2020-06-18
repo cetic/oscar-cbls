@@ -16,18 +16,15 @@
   * @author Gustav Björdal
   *
   **/
-
 package oscar.cbls.lib.constraint
 
-import oscar.cbls.core.{ChangingIntValue, IntNotificationTarget, Invariant}
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingIntValue, IntNotificationTarget, IntValue, Invariant, Value}
 import oscar.cbls.core.constraint.Constraint
 import oscar.cbls.core.propagation.Checker
 import oscar.cbls.lib.invariant.logic.{IntElement, IntElementNoVar}
 import oscar.cbls.lib.invariant.minmax.ArgMin
 import oscar.cbls.lib.invariant.numeric.{Dist, Step}
 import oscar.cbls.lib.invariant.set.TakeAny
-import oscar.cbls._
-
 
 /**
   * Implementation of the table constraint. For each row, the violation of the row is the
@@ -47,12 +44,11 @@ case class Table(variables: Array[IntValue], table:Array[Array[Long]])
 
   finishInitialization()
 
-
-  val rowViolation:Array[CBLSIntVar] = Array.tabulate(table.size)( i => {
+  val rowViolation:Array[CBLSIntVar] = Array.tabulate(table.length)(i => {
     val tmp = CBLSIntVar(this.model,
                          table(i).zip(variables).foldLeft(0L)((acc, p) => acc + (if (p._1 == p._2.value) 0L else 1L)),
                          //table(i).zip(variables).foldLeft(0L)((acc, p) => acc + Math.abs(p._1 - p._2.value)),
-                         0 to table.size)
+                         0 to table.length)
     tmp.setDefiningInvariant(this)
     tmp
   }
@@ -71,7 +67,7 @@ case class Table(variables: Array[IntValue], table:Array[Array[Long]])
     * because they can only be created before the model is closed.
     * */
   override def violation(v: Value): IntValue = {
-    val variablesIndex = variables.indexOf(v)
+    val variablesIndex = variables.indexOf(v.asInstanceOf[IntValue])
     if(variablesIndex >= 0L){
       variableViolation(variablesIndex)
     }else{
@@ -87,7 +83,7 @@ case class Table(variables: Array[IntValue], table:Array[Array[Long]])
     */
   override def violation: IntValue = minViolation
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
     c.check(minViolation.value == rowViolation.map(_.value).min, Some("Min violation is not min"))
     c.check(rowViolation(aMinViolatingRow.valueInt).value == minViolation.value,Some("Min row is wrong"))
     for(i <- variables.indices){
@@ -95,7 +91,7 @@ case class Table(variables: Array[IntValue], table:Array[Array[Long]])
     }
   }
 
- @inline
+  @inline
   override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long): Unit = {
    assert(OldVal != NewVal)
    for(r <- table.indices) {

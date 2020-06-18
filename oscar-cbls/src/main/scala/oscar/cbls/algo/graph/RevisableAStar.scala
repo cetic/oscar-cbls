@@ -174,7 +174,6 @@ class RevisableAStar(graph:ConditionalGraph,
     throw new Error("should not be reached")
   }
 
-
   private def pruneReachedClosedConditions(reachedClosedConditions:SortedSet[Int],to:Int,distance:Long):SortedSet[Int] = {
     reachedClosedConditions.filter((conditionID:Int) => {
       val edge = graph.conditionToConditionalEdges(conditionID)
@@ -189,7 +188,6 @@ class RevisableAStar(graph:ConditionalGraph,
       minDistance + edge.length + underApproximatingDistance(farNodeID,to) <= distance
     })
   }
-
 
   private def resetReachedNodes(reachedNodes:QList[Int]): Unit ={
     var remainingNodeIDs = reachedNodes
@@ -316,6 +314,3 @@ class RevisableAStar(graph:ConditionalGraph,
     toReturn
   }
 }
-
-
-

@@ -17,13 +17,12 @@
  *     This code has been initially developed by CETIC www.cetic.be
  *         by Renaud De Landtsheer
  ******************************************************************************/
-
-
 package oscar.cbls.lib.constraint
 
 import oscar.cbls._
-import oscar.cbls.core._
-import language.postfixOps
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingIntValue, Domain, IntValue, Invariant, InvariantHelper, ShortIntNotificationTarget, Value}
+import oscar.cbls.core.constraint.Constraint
+import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.SortedMap
 
@@ -44,7 +43,8 @@ case class AllDiff(variables: Iterable[IntValue])
   registerConstrainedVariables(variables)
   finishInitialization()
   val (minValueOfVars,maxValueOfVars) = InvariantHelper.getMinMaxBounds(variables)
-  require(minValueOfVars >= Int.MinValue && maxValueOfVars <= Int.MaxValue, "All diff constraints support only integer values. Got min bounds : " + minValueOfVars + " maxBounds : " + maxValueOfVars)
+  require(minValueOfVars >= Int.MinValue && maxValueOfVars <= Int.MaxValue,
+    s"All diff constraints support only integer values. Got min bounds : $minValueOfVars maxBounds : $maxValueOfVars")
 
   //le degré global de violation est la somme des tailles -1L des ensembles de var ayant meme value
   // et on ne prend que les ensembles de cardinalite > 1L
@@ -89,7 +89,7 @@ case class AllDiff(variables: Iterable[IntValue])
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int): Unit = {
     valueMinusOffsetToNbOccurrence(OldVal + offset) :-= 1L
     valueMinusOffsetToNbOccurrence(NewVal + offset) :+= 1L
 
@@ -115,25 +115,22 @@ case class AllDiff(variables: Iterable[IntValue])
     tmp
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
     val myValueCount: Array[Long] = (for (i <- 0 to N) yield 0L).toArray
     for (v <- variables) myValueCount(v.valueInt + offset) += 1L
     for (v <- range) {
       c.check(valueMinusOffsetToNbOccurrence(v).newValue == myValueCount(v),
-        Some("valueMinusOffsetToNbOccurrence(" + v + ").newValue (" + valueMinusOffsetToNbOccurrence(v).newValue
-          + ") == myValueCount(" + v + ") (" + myValueCount(v)))
+        Some(s"valueMinusOffsetToNbOccurrence($v).newValue (${valueMinusOffsetToNbOccurrence(v).newValue}) == myValueCount($v) (${myValueCount(v)}"))
     }
 
     for (v <- variables) {
       c.check(violation(v).value == myValueCount(v.valueInt + offset) - 1L,
-        Some("violation(" + v.name + ").value (" + violation(v).value
-          + ") != myValueCount(" + v.name + ".value + offset) - 1L ("
-          + (myValueCount(v.valueInt + offset) - 1L) + ")"))
+        Some(s"violation(${v.name}).value (${violation(v).value}) != myValueCount(${v.name}.value + offset) - 1L (${myValueCount(v.valueInt + offset) - 1L})"))
     }
 
     var MyViol: Long = 0L
     for (v <- range) MyViol += (0L.max(myValueCount(v) - 1L))
-    c.check(MyViol == violationVariable.value, Some("MyViol (" + MyViol
-        + ") == violationVariable.value (" + violationVariable.value + ")"))
+    c.check(MyViol == violationVariable.value,
+      Some(s"MyViol ($MyViol) == violationVariable.value (${violationVariable.value})"))
   }
 }

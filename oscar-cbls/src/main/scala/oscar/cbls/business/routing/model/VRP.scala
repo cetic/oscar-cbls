@@ -1,5 +1,3 @@
-package oscar.cbls.business.routing.model
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,14 +12,16 @@ package oscar.cbls.business.routing.model
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.business.routing.model
 
-import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing._
+import oscar.cbls.core.computation.{CBLSSeqVar, CBLSSetConst, Store}
 import oscar.cbls.lib.invariant.seq.Content
 import oscar.cbls.lib.invariant.set.Diff
 
+import scala.annotation.tailrec
 import scala.collection.immutable.{List, SortedSet}
 
 /**
@@ -69,7 +69,7 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4,
    */
   def isADepot(n:Int): Boolean = { n < v }
 
-  def kFirst(k: Int, values:(Int) => Iterable[Int], filter: Int => Int => Boolean = _ => _ => true)(node: Int): Iterable[Int] = {
+  def kFirst(k: Int, values:Int => Iterable[Int], filter: Int => Int => Boolean = _ => _ => true)(node: Int): Iterable[Int] = {
     if (k >= n - 1) return values(node).filter(filter(node))
 
     KSmallest.kFirst(k: Int, values(node), filter(node))
@@ -130,7 +130,7 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4,
       else
         return None
     }
-    return Some(n)
+    Some(n)
   }
 
   /**
@@ -193,7 +193,8 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4,
   }
 
   def getRoutePositionOfAllNode:Array[Int] = {
-    def buildRoutePositionOfAllNode(it: Iterator[Int],currentPosition: Int, nodeToPosition: List[Int]): Array[Int] = {
+    @tailrec
+    def buildRoutePositionOfAllNode(it: Iterator[Int], currentPosition: Int, nodeToPosition: List[Int]): Array[Int] = {
       if(!it.hasNext)
         nodeToPosition.toArray
       else{
@@ -202,7 +203,6 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4,
           buildRoutePositionOfAllNode(it,0,nodeToPosition ++ List(0))
         else
           buildRoutePositionOfAllNode(it,currentPosition+1,nodeToPosition ++ List(currentPosition))
-
       }
     }
     val it = routes.value.iterator
@@ -233,14 +233,15 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4,
       if(routeOfV.length == 1){
         notMoving  = vehicle :: notMoving
       }else{
-        toReturn +=  "vehicle " + vehicle + ": " +  routeOfV.mkString("->") + "->" + vehicle + "\n"
+        toReturn += s"vehicle $vehicle: ${routeOfV.mkString("->")}->$vehicle"
       }
     }
     val u = unroutedNodes
-    "Vehicle routing n:" + n + " v:" + v + "\n" +
-    "" + u.size + " unrouted nodes:{" + u.toList.mkString(",") + "}\n" +
-    "" + notMoving.size + " not used vehicles:{" + notMoving.reverse.mkString(",") + "}\n" +
-      toReturn
+    s"""Vehicle routing n: $n v: $v
+       |${u.size} unrouted nodes:{${u.toList.mkString(",")}}
+       |${notMoving.size} not used vehicles:{${notMoving.reverse.mkString(",")}}
+       |$toReturn
+       |""".stripMargin
   }
 
   def stringOfVehicle(vehicle:Int):Option[String] = {
@@ -248,7 +249,7 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4,
     if(routeOfV.length == 1){
       None
     }else{
-      Some("" + routeOfV.mkString("->") + "->" + vehicle)
+      Some(s"${routeOfV.mkString("->")}->$vehicle")
     }
   }
 }

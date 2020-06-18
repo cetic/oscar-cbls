@@ -14,7 +14,7 @@ object OscarBuild extends Build {
   object BuildSettings {
     val buildOrganization = "oscar"
     val buildVersion = "4.1.0-SNAPSHOT"
-    val buildScalaVersion = "2.13.2"
+    val buildScalaVersion = "2.12.11"
     val buildSbtVersion= "0.13.18"
 
     lazy val commonSettings = Defaults.defaultSettings ++  jacoco.settings ++ Seq(
@@ -87,12 +87,14 @@ object OscarBuild extends Build {
     val junit = "junit" % "junit" % "4.13" % Test
     val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.14.3" % Test
     val scalaTest = "org.scalatest" %% "scalatest" % "3.1.2" % Test
+    val scalaTestPlus = "org.scalatestplus" %% "scalacheck-1-14" % "3.1.0.0" % Test
 
     val junit2 = "junit" % "junit" % "4.13" % PerfTest
     val scalaCheck2 = "org.scalacheck" %% "scalacheck" % "1.14.3" % PerfTest
     val scalaTest2 = "org.scalatest" %% "scalatest" % "3.1.2" % PerfTest
+    val scalaTestPlus2 = "org.scalatestplus" %% "scalacheck-1-14" % "3.1.0.0" % PerfTest
 
-    val testDeps = Seq(junit, scalaCheck, scalaTest)
+    val testDeps = Seq(junit, scalaCheck, scalaTest, scalaTestPlus)
   }
 
   import BuildSettings._

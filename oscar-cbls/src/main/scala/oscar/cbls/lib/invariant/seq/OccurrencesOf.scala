@@ -1,5 +1,8 @@
 package oscar.cbls.lib.invariant.seq
 
+import oscar.cbls.core.computation.{ChangingIntValue, ChangingSeqValue, Domain, IntInvariant, IntNotificationTarget, IntValue, SeqNotificationTarget, SeqUpdate, SeqValue}
+import oscar.cbls.core.propagation.Checker
+
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -15,9 +18,6 @@ package oscar.cbls.lib.invariant.seq
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls._
-import oscar.cbls.core._
-
 /**
  * the number of occurrences of value a in sequence v; default if not in the sequence
  * @param v is a SeqValue
@@ -27,7 +27,7 @@ case class OccurrencesOf(v: SeqValue, a:IntValue)
   extends IntInvariant(v.value.nbOccurrence(a.valueInt), Domain(0 , Int.MaxValue))
   with SeqNotificationTarget with IntNotificationTarget{
 
-  setName("OccurrencesOf(" + a.name + " in " + v.name + ")")
+  setName(s"OccurrencesOf(${a.name} in ${v.name})")
 
   registerStaticAndDynamicDependency(v)
   registerStaticAndDynamicDependency(a)
@@ -38,16 +38,15 @@ case class OccurrencesOf(v: SeqValue, a:IntValue)
     scheduleForPropagation()
   }
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
     scheduleForPropagation()
   }
 
-  override def performInvariantPropagation() {
+  override def performInvariantPropagation(): Unit = {
     this := v.value.nbOccurrence(a.valueInt)
   }
 
-  override def checkInternals(c: Checker) {
-    require(this.value == v.value.positionsOfValue(a.valueInt).size, "this.value:" + this.value + " v.value.positionsOfValue(a.value).size:" + v.value.positionsOfValue(a.valueInt).size + " v.value.nbOccurrence(a.value):" + v.value.nbOccurrence(a.valueInt))
+  override def checkInternals(c: Checker): Unit = {
+    require(this.value == v.value.positionsOfValue(a.valueInt).size, s"this.value:${this.value} v.value.positionsOfValue(a.value).size:${v.value.positionsOfValue(a.valueInt).size} v.value.nbOccurrence(a.value):${v.value.nbOccurrence(a.valueInt)}")
   }
 }
-

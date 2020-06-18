@@ -6,7 +6,7 @@ import javax.swing.JPanel
 import oscar.cbls.business.routing.model.VRP
 
 trait RoutingMapTrait{
-  def drawRoutes(force: Boolean)
+  def drawRoutes(force: Boolean): Unit
 }
 
 object RoutingMapTypes extends Enumeration{

@@ -1,5 +1,3 @@
-package oscar.cbls.business.routing.invariants
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,12 +12,13 @@ package oscar.cbls.business.routing.invariants
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.business.routing.invariants
 
-import oscar.cbls._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.RoutingConventionMethods
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{CBLSSetVar, ChangingSeqValue, Invariant, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint}
+import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.SortedSet
 
@@ -39,7 +38,7 @@ object NodesOfVehicle{
       CBLSSetVar(model,
         emptySet,
         domain,
-        if(vehicle== v) "unrouted nodes" else "nodes_of_vehicle_" + vehicle))
+        if(vehicle== v) "unrouted nodes" else s"nodes_of_vehicle_$vehicle"))
 
     new NodesOfVehicle(routes, nodesOfVehicle,includeVehicleNode)
 
@@ -158,11 +157,11 @@ class NodesOfVehicle(routes:ChangingSeqValue,
     }
   }
 
-  private def dropCheckpoint(){
+  private def dropCheckpoint(): Unit ={
     saveCurrentCheckpoint(null)
   }
 
-  private def saveCurrentCheckpoint(s:IntSequence){
+  private def saveCurrentCheckpoint(s:IntSequence): Unit ={
     savedCheckpoint = s
     while (movedNodesSinceCheckpointList!= null) {
       movedNodesSinceCheckpointArray(movedNodesSinceCheckpointList.head) = false
@@ -170,7 +169,7 @@ class NodesOfVehicle(routes:ChangingSeqValue,
     }
   }
 
-  private def restoreCheckpoint(){
+  private def restoreCheckpoint(): Unit ={
     while (movedNodesSinceCheckpointList!= null) {
       val node= movedNodesSinceCheckpointList.head
       movedNodesSinceCheckpointArray(movedNodesSinceCheckpointList.head) = false
@@ -180,7 +179,7 @@ class NodesOfVehicle(routes:ChangingSeqValue,
     }
   }
 
-  private def recordMovedPoint(node:Int, oldVehicle:Int, newVehicle:Int){
+  private def recordMovedPoint(node:Int, oldVehicle:Int, newVehicle:Int): Unit ={
     require(oldVehicle != newVehicle)
     if(savedCheckpoint!= null) {
       if (!movedNodesSinceCheckpointArray(node)) {
@@ -192,7 +191,7 @@ class NodesOfVehicle(routes:ChangingSeqValue,
     }
   }
 
-  private def affect(value:Array[SortedSet[Int]]){
+  private def affect(value:Array[SortedSet[Int]]): Unit ={
     var currentV = 0
     while(currentV <= v){
       nodesOfVehicleOrUnrouted(currentV) := value(currentV)
@@ -202,7 +201,7 @@ class NodesOfVehicle(routes:ChangingSeqValue,
 
   private def computeValueFromScratch(s:IntSequence):Array[SortedSet[Int]] = {
     val toReturn = Array.fill(v+1)(SortedSet.empty[Int])
-    toReturn(v) = toReturn(v) ++ (v to n-1)
+    toReturn(v) = toReturn(v) ++ (v until n)
     val it = s.iterator
     var currentVehicle:Int = it.next()
     require(currentVehicle == 0)

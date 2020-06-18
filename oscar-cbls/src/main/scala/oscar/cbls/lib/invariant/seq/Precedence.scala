@@ -1,5 +1,3 @@
-package oscar.cbls.lib.invariant.seq
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,13 +12,14 @@ package oscar.cbls.lib.invariant.seq
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.lib.invariant.seq
 
 import oscar.cbls.algo.magicArray.MagicBoolArray
 import oscar.cbls.algo.quick.QList
-import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.CachedPositionOf
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{ChangingSeqValue, IntInvariant, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint}
+import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.SortedSet
 
@@ -96,9 +95,9 @@ class Precedence(seq:ChangingSeqValue,
   computeAndAffectViolationsFromScratch(seq.value)
 
   def nodesStartingAPrecedence:SortedSet[Int] = SortedSet.empty[Int] ++ beforeAfter.map(_._1)
-  def nodesEndingAPrecedenceStartedAt:(Int => Iterable[Int]) = (before:Int) => beforesToPrecedences(before).map(p => precedencesArray(p)._2)
+  def nodesEndingAPrecedenceStartedAt:Int => Iterable[Int] = (before:Int) => beforesToPrecedences(before).map(p => precedencesArray(p)._2)
 
-  def saveViolationForCheckpoint(precedence:Int){
+  def saveViolationForCheckpoint(precedence:Int): Unit ={
     if(!isViolationChangedSinceCheckpoint(precedence)){
       isViolationChangedSinceCheckpoint(precedence) = true
       changedPrecedenceViolationsSinceCheckpoint = QList(precedence,changedPrecedenceViolationsSinceCheckpoint)
@@ -106,7 +105,7 @@ class Precedence(seq:ChangingSeqValue,
     }
   }
 
-  def reloadViolationsAtCheckpoint(){
+  def reloadViolationsAtCheckpoint(): Unit ={
     //TODO: pas moyen de faire du O(1) ici, avec un tableau magique par exemple?
     for(precedence <- changedPrecedenceViolationsSinceCheckpoint){
       isViolationChangedSinceCheckpoint(precedence) = false
@@ -116,7 +115,7 @@ class Precedence(seq:ChangingSeqValue,
     this := violationAtCheckpoint
   }
 
-  def defineCheckpoint(i:IntSequence){
+  def defineCheckpoint(i:IntSequence): Unit ={
     for(precedence <- changedPrecedenceViolationsSinceCheckpoint) {
       isViolationChangedSinceCheckpoint(precedence) = false
     }
@@ -126,14 +125,14 @@ class Precedence(seq:ChangingSeqValue,
     cachedPositionFinderAtCheckpoint.updateToCheckpoint(i)
   }
 
-  def clearAllViolatedPrecedences(){
+  def clearAllViolatedPrecedences(): Unit ={
     for (precedence <- precedences) {
       saveViolationForCheckpoint(precedence)
       isPrecedenceViolated(precedence) = false
     }
   }
 
-  def computeAndAffectViolationsFromScratch(seq : IntSequence) {
+  def computeAndAffectViolationsFromScratch(seq : IntSequence): Unit ={
     //this assumes that we have lots of precedence constraints, so that we can afford crawling through the sequence (instead of iterating through the precedences)
     var totalViolation = 0
     val hasValueBeenSeen = Array.fill(this.seq.maxValue + 1)(false)
@@ -448,15 +447,12 @@ class Precedence(seq:ChangingSeqValue,
               c.check(!isPrecedenceViolated(precedenceID))
             case Some(positionOfEndValue) =>
               c.check(isPrecedenceViolated(precedenceID) == (positionOfStartValue > positionOfEndValue),
-                Some("error on violation of precedence " + precedenceID + " considered as violated:" + isPrecedenceViolated(precedenceID)
-                  + ":(" + precedencesArray(precedenceID) + ")"))
+                Some(s"error on violation of precedence $precedenceID considered as violated:${isPrecedenceViolated(precedenceID)}:(${precedencesArray(precedenceID)})"))
               if(isPrecedenceViolated(precedenceID)) nbViol += 1
           }
       }
     }
     c.check(this.value == nbViol,
-      Some("this.value=" + this.newValue
-        + " should== nbViol=" + nbViol))
+      Some(s"this.value=${this.newValue} should== nbViol=$nbViol"))
   }
 }
-

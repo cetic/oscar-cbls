@@ -1,5 +1,6 @@
 package oscar.cbls.algo.heap
 
+import scala.annotation.tailrec
 
 
 /**
@@ -28,7 +29,7 @@ package oscar.cbls.algo.heap
 class FibonacciHeap[T] {
 
   type Node = FibonacciHeap.Node[T]
-  def isEmpty: Boolean = (min == null)
+  def isEmpty: Boolean = min == null
   private[heap] var min = null: Node
 
   /** The minimum node in the heap. */
@@ -42,7 +43,7 @@ class FibonacciHeap[T] {
   /**
     * Removes all elements from this heap.
     */
-  def dropAll() {
+  def dropAll(): Unit = {
     min = null
     n = 0
   }
@@ -55,7 +56,7 @@ class FibonacciHeap[T] {
     * @param  x  node to decrease the key of
     * @param  k  new key value for node x
     */
-  def decreaseKey(x: Node, k: Long) {
+  def decreaseKey(x: Node, k: Long): Unit = {
 
     require(!isEmpty, "Attempt to decrease key on empty heap")
     require(k < x.privateKey, s"New key is bigger than old key ($k >= ${x.privateKey})")
@@ -76,7 +77,7 @@ class FibonacciHeap[T] {
     *
     * @param  x  node to remove from heap.
     */
-  def delete(x: Node){
+  def delete(x: Node): Unit = {
     decreaseKey(x,Long.MinValue)
     popMin()
   }
@@ -144,7 +145,7 @@ class FibonacciHeap[T] {
     }
   }
 
-  private[this] def consolidate() {
+  private[this] def consolidate(): Unit = {
     val A = new Array[Node](n)
 
     var start = min
@@ -209,7 +210,6 @@ object FibonacciHeap {
   /** Implements a node of the Fibonacci heap. */
   class Node[T](val value: T, originalKey: Long) {
 
-
     private[heap] var privateKey = originalKey
     private[heap] var parent = null: Node[T]
     private[heap] var child = null: Node[T]
@@ -221,7 +221,7 @@ object FibonacciHeap {
 
     def key: Long = privateKey
 
-    private[heap] def cascadingCut(min: Node[T]) {
+    private[heap] def cascadingCut(min: Node[T]): Unit = {
       val z = parent
       if (z != null) {
         if (mark) {
@@ -233,7 +233,7 @@ object FibonacciHeap {
       }
     }
 
-    private[heap] def cut(x: Node[T], min: Node[T]) {
+    private[heap] def cut(x: Node[T], min: Node[T]): Unit = {
       x.left.right = x.right
       x.right.left = x.left
       degree -= 1
@@ -250,7 +250,7 @@ object FibonacciHeap {
       x.mark = false
     }
 
-    private[heap] def link(prt: Node[T]) {
+    private[heap] def link(prt: Node[T]): Unit = {
       left.right = right
       right.left = left
       parent = prt
@@ -297,4 +297,3 @@ object FibonacciHeap {
     H
   }
 }
-

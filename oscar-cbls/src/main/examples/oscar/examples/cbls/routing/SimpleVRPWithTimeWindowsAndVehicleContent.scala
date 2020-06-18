@@ -1,6 +1,7 @@
 package oscar.examples.cbls.routing
 
-import javax.swing.TransferHandler.TransferSupport
+/*
+
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
@@ -179,3 +180,5 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
 
   search.profilingStatistics
 }
+
+ */

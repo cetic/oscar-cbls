@@ -15,8 +15,7 @@ package oscar.examples.cbls.routing
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls._
-import oscar.cbls.business.routing.invariants.timeWindow.{DefinedTransferFunction, TransferFunction}
+import oscar.cbls.business.routing.invariants.timeWindow.TransferFunction
 import oscar.cbls.business.routing.model.{TTFConst, TTFMatrix}
 
 import scala.util.Random
@@ -122,7 +121,7 @@ object RoutingMatrixGenerator {
     *
     * @param n The number of nodes (considering depots)
     * @param v The number of vehicles/depots
-    * @param nbPRecedences The number wanted precedences
+    * @param nbPrecedences The number wanted precedences
     * @param maxSize The max length of precedence you want to generate
     * @return A list of tuple (precedences)
     */

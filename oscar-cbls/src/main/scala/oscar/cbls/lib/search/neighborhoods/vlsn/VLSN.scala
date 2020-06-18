@@ -14,14 +14,14 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   * ****************************************************************************
   */
-
 package oscar.cbls.lib.search.neighborhoods.vlsn
 
-import oscar.cbls.Objective
+import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.search.neighborhoods.vlsn.CycleFinderAlgoType.CycleFinderAlgoType
 import oscar.cbls.lib.search.neighborhoods.vlsn.VLSNMoveType._
 import oscar.cbls.core.search._
-import oscar.cbls._
+
+import scala.annotation.tailrec
 import scala.collection.immutable.{SortedMap, SortedSet}
 
 /**
@@ -223,7 +223,7 @@ class VLSN(v:Int,
            reoptimizeAtStartUp:Boolean = false,
            debugNeighborhoodExploration:Boolean = false) extends Neighborhood {
 
-  def doReoptimize(vehicle:Int) {
+  def doReoptimize(vehicle:Int): Unit = {
     val reOptimizeNeighborhoodGenerator = reOptimizeVehicle match{
       case None => return
       case Some(reOptimizeNeighborhoodGenerator) => reOptimizeNeighborhoodGenerator
@@ -238,15 +238,14 @@ class VLSN(v:Int,
         n.verbose = 0
         val nbPerformedMoves = n.doAllMoves(obj = globalObjective)
         if ((printTakenMoves && nbPerformedMoves > 0L) || (printExploredNeighborhoods && nbPerformedMoves == 0L)) {
-          println(s"   - ?  " + globalObjective.value + s"   $name:ReOptimizeVehicle(vehicle:$vehicle, neighborhood:$n nbMoves:$nbPerformedMoves)")
+          println(s"   - ?  ${globalObjective.value}   $name:ReOptimizeVehicle(vehicle:$vehicle, neighborhood:$n nbMoves:$nbPerformedMoves)")
         }
 
         val vehicleObjDelta = vehicleToObjective(vehicle).value - oldObjVehicle
         val globalObjDelta = globalObjective.value - oldGlobalObjective
 
         require(vehicleObjDelta == globalObjDelta,
-          "re-optimization of vehicle " + vehicle + " wih" + n + " did impact other vehicle, vehicleObjDelta:" + vehicleObjDelta + " globalObjDelta:" + globalObjDelta)
-
+          s"re-optimization of vehicle $vehicle wih$n did impact other vehicle, vehicleObjDelta:$vehicleObjDelta globalObjDelta:$globalObjDelta")
     }
   }
 
@@ -268,7 +267,8 @@ class VLSN(v:Int,
     if(debugNeighborhoodExploration){
       require(globalObjective.value == obj.value, "global objective given to VLSN(" + globalObjective.value + ") not equal to Obj of search procedure (" + obj.value + ")")
       val summedPartialObjective = vehicleToObjective.map(_.value).sum + unroutedPenalty.value
-      require(summedPartialObjective == globalObjective.value, "summed partial objectives with unrouted (" + summedPartialObjective + ") not equal to global objective (" + globalObjective.value + ")")
+      require(summedPartialObjective == globalObjective.value,
+        s"summed partial objectives with unrouted ($summedPartialObjective) not equal to global objective (${globalObjective.value})")
     }
 
     var dataForRestartOpt =  doVLSNSearch(
@@ -279,7 +279,7 @@ class VLSN(v:Int,
     var remainingIt = maxIt
 
     //we restart with incremental restart as much as posible
-    while (dataForRestartOpt != None && remainingIt > 0) {
+    while (dataForRestartOpt.isDefined && remainingIt > 0) {
       remainingIt = remainingIt - 1
       val dataForRestart = dataForRestartOpt.get
       somethingDone = true
@@ -292,9 +292,6 @@ class VLSN(v:Int,
         case None => ()
       }
     }
-
-
-
 
     if (somethingDone) {
       val finalSolution = obj.model.solution(true)
@@ -423,7 +420,6 @@ class VLSN(v:Int,
     throw new Error("should not reach this")
   }
 
-
   case class DataForVLSNRestart(oldGraph: VLSNGraph,
                                 performedMoves: List[Edge],
                                 oldVehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
@@ -450,6 +446,7 @@ class VLSN(v:Int,
       cachedExplorations)
   }
 
+  @tailrec
   private def updateZones(performedMoves: List[Edge],
                           vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
                           unroutedNodesToInsert: SortedSet[Int]): (SortedMap[Int, SortedSet[Int]], SortedSet[Int]) = {
@@ -569,7 +566,7 @@ class VLSN(v:Int,
           cache,
           debugNeighborhoodExploration).buildGraph()
     }
-    if(printExploredNeighborhoods) println("     " + vlsnGraph.statisticsString)
+    if(printExploredNeighborhoods) println(s"     ${vlsnGraph.statisticsString}")
 
     (vlsnGraph,edges)
 

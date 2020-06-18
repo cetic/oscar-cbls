@@ -1,13 +1,15 @@
 package oscar.examples.cbls.routing
-
+/*
 import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
 import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleCapacityConstraint
-import oscar.cbls.core.ChangingIntValue
+import oscar.cbls.business.routing.model.helpers.DistanceHelper
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingIntValue, Store}
+import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.core.search.{Best, Neighborhood, NoMoveNeighborhood}
-import oscar.cbls.lib.search.neighborhoods.vlsn.CycleFinderAlgoType.CycleFinderAlgoType
 import oscar.cbls.lib.search.neighborhoods.vlsn.{CycleFinderAlgoType, VLSN}
 
 import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
@@ -540,3 +542,4 @@ object DemoPDP_VLSN extends App{
 
 }
 
+*/

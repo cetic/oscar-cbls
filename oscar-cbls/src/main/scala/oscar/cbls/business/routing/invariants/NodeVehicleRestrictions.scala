@@ -1,5 +1,3 @@
-package oscar.cbls.business.routing.invariants
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,19 +12,17 @@ package oscar.cbls.business.routing.invariants
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
+package oscar.cbls.business.routing.invariants
 
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.RoutingConventionMethods
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{CBLSIntConst, CBLSIntVar, ChangingSeqValue, IntValue, Invariant, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint, SetValue}
 import oscar.cbls.core.propagation.Checker
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.set.BelongsTo
-import oscar.cbls._
 
 import scala.collection.immutable.SortedSet
-
 
 object NodeVehicleRestrictions{
   /**
@@ -121,12 +117,12 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
     nodeToVehiclesRestriction(node) != null
   }
 
-  def isAllowed(node : Int, vehicle : Int) = {
+  def isAllowed(node : Int, vehicle : Int): Boolean = {
     val nodeRestrictions = nodeToVehiclesRestriction(node)
     nodeRestrictions == null || !nodeRestrictions._1(vehicle)
   }
 
-  def isForbidden(node : Int, vehicle : Int) = {
+  def isForbidden(node : Int, vehicle : Int): Boolean = {
     val nodeRestrictions = nodeToVehiclesRestriction(node)
     nodeRestrictions != null && nodeRestrictions._1(vehicle)
   }
@@ -148,20 +144,20 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
   val vehicleChangedSinceCheckpoint:Array[Boolean] = Array.fill(v)(true)
   var changedVehicleSinceCheckpoint:QList[Int] = vehicles.foldLeft[QList[Int]](null)((acc,v) => QList(v,acc))
 
-  def setVehicleChangedSinceCheckpoint(vehicle:Int) {
+  def setVehicleChangedSinceCheckpoint(vehicle:Int): Unit ={
     if(!vehicleChangedSinceCheckpoint(vehicle)){
       vehicleChangedSinceCheckpoint(vehicle) = true
       changedVehicleSinceCheckpoint = QList(vehicle,changedVehicleSinceCheckpoint)
     }
   }
 
-  def setAllVehicleChangedSinceCheckpoint(){
+  def setAllVehicleChangedSinceCheckpoint(): Unit ={
     for (vehicle <- vehicles) {
       setVehicleChangedSinceCheckpoint(vehicle)
     }
   }
 
-  def updateAllInvalidPrecomputationsToCheckpointAndSaveCheckpoint(){
+  def updateAllInvalidPrecomputationsToCheckpointAndSaveCheckpoint(): Unit ={
     while(changedVehicleSinceCheckpoint != null){
       val vehicle = changedVehicleSinceCheckpoint.head
       changedVehicleSinceCheckpoint = changedVehicleSinceCheckpoint.tail
@@ -169,7 +165,7 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
     }
   }
 
-  def doUpdateAllPrecomputationsToCheckpointAndSaveCheckpoint(){
+  def doUpdateAllPrecomputationsToCheckpointAndSaveCheckpoint(): Unit ={
     for (vehicle <- vehicles) {
       violationAtCheckpoint(vehicle) = doUpdatePrecomputationToCheckpointAndSaveCheckpoint(vehicle)
     }
@@ -408,15 +404,13 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
     val seq = routes.value
     for(vehicle <- vehicles){
       c.check(violationPerVehicle(vehicle).value == violationOnVehicle(vehicle,seq),
-        Some("violationPerVehicle(vehicle).value=" + violationPerVehicle(vehicle).value
-          + " should == violationOnVehicle(vehicle,seq)="+  violationOnVehicle(vehicle,seq) + " vehicle:" + vehicle + " route:" + seq))
+        Some(s"violationPerVehicle(vehicle).value=${violationPerVehicle(vehicle).value} should == violationOnVehicle(vehicle,seq)=${violationOnVehicle(vehicle,seq)} vehicle:$vehicle route:$seq"))
 
       val oldUpToDate = vehicleChangedSinceCheckpoint(vehicle)
       vehicleChangedSinceCheckpoint(vehicle) = true
       c.check(violationPerVehicle(vehicle).value == violationOnVehicle(vehicle,seq))
       vehicleChangedSinceCheckpoint(vehicle) = oldUpToDate
     }
-
     if(checkpoint != null){
       for(vehicle <- vehicles){
         val oldUpToDate = vehicleChangedSinceCheckpoint(vehicle)

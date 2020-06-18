@@ -1,5 +1,3 @@
-package oscar.cbls.lib.constraint
-
 /**
  * *****************************************************************************
  * OscaR is free software: you can redistribute it and/or modify
@@ -16,8 +14,10 @@ package oscar.cbls.lib.constraint
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  * ****************************************************************************
  */
+package oscar.cbls.lib.constraint
 
-import oscar.cbls._
+import oscar.cbls.core.computation.{IntValue, SetValue, Value}
+import oscar.cbls.core.constraint.Constraint
 import oscar.cbls.lib.invariant.set.Cardinality
 
 /**

@@ -4,7 +4,11 @@ import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.WeightedNodesPerVehicle
 import oscar.cbls.business.routing.invariants.global.GlobalConstraintCore
+import oscar.cbls.business.routing.model.helpers.DistanceHelper
 import oscar.cbls.business.routing.visu.RoutingMapTypes
+import oscar.cbls.core.computation.{CBLSIntVar, Store}
+import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.{Best, First}
 
 import scala.util.Random
