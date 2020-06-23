@@ -239,6 +239,10 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
         true
 
       case SeqUpdateAssign(value : IntSequence) =>
+        vehicleSearcher = VehicleLocation(Array.tabulate(v)(vehicle => {
+          value.positionOfAnyOccurrence(vehicle).get
+        }))
+        for(vehicle <- 0 until v) initSegmentsOfVehicle(vehicle, value)
         false //impossible to go incremental
     }
   }
