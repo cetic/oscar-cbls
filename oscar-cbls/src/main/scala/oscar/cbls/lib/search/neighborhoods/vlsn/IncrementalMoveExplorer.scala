@@ -200,7 +200,6 @@ class IncrementalMoveExplorer(v:Int,
                               nodeToRemoveNeighborhood:Int => Neighborhood,
 
                               removeAndReInsert:Int => () => Unit,
-                              useDirectInsert:Boolean,
 
                               vehicleToObjectives:Array[Objective],
                               unroutedNodesPenalty:Objective,
@@ -219,14 +218,14 @@ class IncrementalMoveExplorer(v:Int,
     nodeToRemoveNeighborhood:Int => Neighborhood,
 
     removeAndReInsert:Int => () => Unit,
-    useDirectInsert,
 
     vehicleToObjectives:Array[Objective],
     unroutedNodesPenalty:Objective,
     globalObjective:Objective,
-    debug:Boolean){
+    debug:Boolean,
+    gradualEnrichmentScheme){
 
-
+  
   override def evaluateInsertOnVehicleNoRemove(unroutedNodeToInsert: Int, targetVehicleForInsertion: Int, nCached:Boolean): ((Move, Long)) = {
     cached.getInsertOnVehicleNoRemove(unroutedNodeToInsert,targetVehicleForInsertion) match{
       case CachedAtomicMove(move:Move,delta:Long) =>

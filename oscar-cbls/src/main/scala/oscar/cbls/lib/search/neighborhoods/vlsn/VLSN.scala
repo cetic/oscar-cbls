@@ -544,12 +544,11 @@ class VLSN(v:Int,
           targetVehicleNodeToMoveNeighborhood,
           nodeToRemoveNeighborhood,
           removeNodeAndReInsert,
-          useDirectInsert,
 
           vehicleToObjective,
           unroutedPenalty,
           globalObjective,
-          debugNeighborhoodExploration).buildGraph()
+          debugNeighborhoodExploration,).buildGraph()
       case Some(cache) =>
         new IncrementalMoveExplorer(
           v: Int,
@@ -561,7 +560,6 @@ class VLSN(v:Int,
           targetVehicleNodeToMoveNeighborhood,
           nodeToRemoveNeighborhood,
           removeNodeAndReInsert,
-          useDirectInsert,
 
           vehicleToObjective,
           unroutedPenalty,

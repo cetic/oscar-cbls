@@ -39,7 +39,7 @@ class MoveExplorer(v:Int,
                    unroutedNodesPenalty:Objective,
                    globalObjective:Objective,
                    debug:Boolean,
-                   partitionRuleN1V1N2V2P:(Int,Int,Int,Int) => Int) {
+                   gradualEnrichmentSchemeN1V1N2V2P:(Int,Int,Int,Int) => Int) {
 
 
   //nodes are all the nodes to consider, ll the vehicles, and a trashNode
@@ -165,7 +165,7 @@ class MoveExplorer(v:Int,
       || (toVehicle != -1 && vehicleIsDirty(toVehicle))
       || (toNode!= -1 && nodeIsDirty(toNode))) return false
 
-    val partitionLevel = partitionRuleN1V1N2V2P(fromNode, fromVehicle, toNode, toVehicle)
+    val partitionLevel = gradualEnrichmentSchemeN1V1N2V2P(fromNode, fromVehicle, toNode, toVehicle)
     partitionLevelDone <= partitionLevel && partitionLevel <= currentPartitionLevel
   }
 
@@ -174,7 +174,7 @@ class MoveExplorer(v:Int,
       || vehicleIsDirty(toVehicle)
       || (removedNode!= -1 && nodeIsDirty(removedNode))) return false
 
-    val partitionLevel = partitionRuleN1V1N2V2P(unroutedNode, -1, removedNode, toVehicle)
+    val partitionLevel = gradualEnrichmentSchemeN1V1N2V2P(unroutedNode, -1, removedNode, toVehicle)
     partitionLevelDone <= partitionLevel && partitionLevel <= currentPartitionLevel
   }
 
