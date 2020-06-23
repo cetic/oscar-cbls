@@ -164,4 +164,6 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
     }
   }
 
+  override def checkInternals(c: Checker): Unit = {}
+
 }
