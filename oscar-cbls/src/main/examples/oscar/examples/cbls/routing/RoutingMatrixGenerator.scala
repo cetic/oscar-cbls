@@ -1,5 +1,3 @@
-package oscar.examples.cbls.routing
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,6 +12,7 @@ package oscar.examples.cbls.routing
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.examples.cbls.routing
 
 import oscar.cbls.business.routing.invariants.timeWindow.TransferFunction
 import oscar.cbls.business.routing.model.{TTFConst, TTFMatrix}
@@ -150,6 +149,7 @@ object RoutingMatrixGenerator {
 
       def toTuple(chain: List[Int], tuples: List[(Int,Int)]): List[(Int,Int)] ={
         chain match {
+          case Nil => throw new IllegalArgumentException("Invalid Nil chain")
           case head :: Nil => tuples
           case head :: tail => toTuple(tail, (head, tail.head) :: tuples)
         }

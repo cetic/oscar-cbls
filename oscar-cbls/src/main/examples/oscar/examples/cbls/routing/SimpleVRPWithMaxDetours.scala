@@ -1,7 +1,5 @@
 package oscar.examples.cbls.routing
 
-/*
-
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.timeWindow.{NaiveTimeWindowConstraint, TransferFunction}
@@ -42,8 +40,6 @@ object SimpleVRPWithMaxDetours extends App{
   val timeWindowRoute = precedenceRoute.createClone()
   val timeWindowConstraint = NaiveTimeWindowConstraint(timeWindowRoute, n, v, singleNodeTransferFunctions, travelDurationMatrix)
   val timeWindowViolation = timeWindowConstraint.violation
-
-
 
   //Objective function
   val obj = new CascadingObjective(precedencesConstraints,
@@ -158,5 +154,3 @@ object SimpleVRPWithMaxDetours extends App{
 
   search.profilingStatistics
 }
-
- */

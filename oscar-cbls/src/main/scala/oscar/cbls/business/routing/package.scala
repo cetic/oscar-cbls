@@ -17,10 +17,11 @@ package oscar.cbls.business
 import oscar.cbls.business.routing.modeling._
 import oscar.cbls.core.computation.Store
 
+
 /**
  * This package proposes dedicated routing neighborhoods and invariants.
  *
- * it represents the routes as a single sequence and everything in this package relies on the routing assumption, which is stated as follows:
+ * it represents the routes as a single sequence and everyting in this pacage relies on the routing assumption, which is stated as follows:
  * - there are v vehicles
  * - They are supposed to start from point of values 0 to v-1L
  * - These values must always be present in the sequence in increasing order
@@ -30,15 +31,15 @@ import oscar.cbls.core.computation.Store
  */
 package object routing
   extends RoutingInvariants
-  with CapacityInvariants
-  with RoutingExtensions
-  with InsertPointAPI
-  with OnePointMoveAPI
-  with RemovePointAPI
-  with RouteExchangeAPI
-  with SegmentExchangeAPI
-  with ThreeOptAPI
-  with TwoOptAPI {
+    with CapacityInvariants
+    with RoutingExtensions
+    with InsertPointAPI
+    with OnePointMoveAPI
+    with RemovePointAPI
+    with RouteExchangeAPI
+    with SegmentExchangeAPI
+    with ThreeOptAPI
+    with TwoOptAPI {
 
   type VRP = oscar.cbls.business.routing.model.VRP
   def vrp(m: Store,n:Int, v: Int, maxPivotPerValuePercent: Int = 4): VRP =
@@ -62,6 +63,7 @@ package object routing
 
   type PrimitiveTravelTimeFunction = oscar.cbls.business.routing.model.PrimitiveTravelTimeFunction
 
+  val ChainsHelper = oscar.cbls.business.routing.model.helpers.ChainsHelper
+  val DistanceHelper = oscar.cbls.business.routing.model.helpers.DistanceHelper
+
 }
-
-

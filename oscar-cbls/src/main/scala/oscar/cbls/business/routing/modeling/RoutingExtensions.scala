@@ -8,6 +8,18 @@ import oscar.cbls.business.routing.visu.RoutingMapTypes
   */
 //TODO: use proper name here
 trait RoutingExtensions {
+  /**
+   * This class is used to represent the concept of chains.
+   * A chain is a list of nodes within which each node is the predecessor of the next node in the list.
+   * This class offers a list of methods and values usefull if you want to implement custom methods for your routing problem.
+   *
+   * @param vrp The basic vehicle routing problem
+   * @param chains The list of chains => List of List of nodes
+   * @return A Chains object
+   */
+  def chains(vrp: VRP, chains: List[List[Int]]) =
+    new Chains(vrp, chains)
+  type Chains = oscar.cbls.business.routing.model.extensions.Chains
 
   /**
     * This class is used to display your routing problem on a map.

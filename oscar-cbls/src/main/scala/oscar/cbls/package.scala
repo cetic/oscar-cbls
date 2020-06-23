@@ -1,5 +1,3 @@
-package oscar
-
 /*******************************************************************************
  * OscaR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -14,6 +12,7 @@ package oscar
  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  ******************************************************************************/
+package oscar
 
 import oscar.cbls.algo.search.InstrumentedRange
 import oscar.cbls.core.computation._
@@ -192,11 +191,11 @@ package object cbls extends ModelingAPI{
 
     def %(v: IntValue): IntInvariant = Mod(x, v)
 
-    def le(b:IntValue): Constraint = LE(x,b)
-    def ge(b:IntValue): Constraint = GE(x,b)
+    def le(b:IntValue) = LE(x,b)
+    def ge(b:IntValue) = GE(x,b)
 
-    def ===(b:IntValue): Constraint = EQ(x,b)
-    def !==(b:IntValue): Constraint = NE(x,b)
+    def ===(b:IntValue) = EQ(x,b)
+    def !==(b:IntValue) = NE(x,b)
     //we do not use the infix notation for comparison operators
     // because they are ambiguous with the <== operation of CBLS that is the "follows" operator)
   }
@@ -208,13 +207,13 @@ package object cbls extends ModelingAPI{
 
     def minus(v: SetValue): SetInvariant = Diff(x, v)
 
-    def map(fun: Int => Int,outputDomain:Domain): SetInvariant = SetMap(x, fun, outputDomain)
+    def map(fun: Int => Int,outputDomain:Domain) = SetMap(x, fun, outputDomain)
   }
 
   implicit class IntValueArrayOps(intValueArray: Array[IntValue]) {
-    def element(index:IntValue): IntInvariant = IntElement(index, intValueArray)
+    def element(index:IntValue) = IntElement(index, intValueArray)
 
-    def elements(index:SetValue): SetInvariant = Elements(index, intValueArray)
+    def elements(index:SetValue) = Elements(index, intValueArray)
   }
 
   implicit class SetValueOps[X<:SetValue](setArray: Array[X]) {
@@ -222,9 +221,9 @@ package object cbls extends ModelingAPI{
   }
 
   implicit class IntArrayOps(intArray: Array[Long]) {
-    def element(index:IntValue): IntInvariant = ConstantIntElement(index, intArray)
+    def element(index:IntValue) = ConstantIntElement(index, intArray)
 
-    def elements(index:SetValue): SetInvariant = Elements(index, intArray.map(CBLSIntConst.apply))
+    def elements(index:SetValue) = Elements(index, intArray.map(CBLSIntConst.apply))
   }
 
   implicit def cBLSIntVarArrayToCBLSIntValueArray(a:Array[CBLSIntVar]):Array[IntValue] = {

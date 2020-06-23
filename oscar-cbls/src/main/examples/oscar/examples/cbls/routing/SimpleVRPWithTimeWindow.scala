@@ -1,7 +1,5 @@
 package oscar.examples.cbls.routing
 
-/*
-
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
@@ -245,5 +243,3 @@ object SimpleVRPWithTimeWindow extends App{
 
   println(search.profilingStatistics)
 }
-
- */

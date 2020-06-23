@@ -1,11 +1,11 @@
 package oscar.examples.cbls.routing
-/*
+
 import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
 import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleCapacityConstraint
-import oscar.cbls.business.routing.model.helpers.DistanceHelper
+import oscar.cbls.business.routing.model.helpers.{ChainsHelper, DistanceHelper}
 import oscar.cbls.core.computation.{CBLSIntVar, ChangingIntValue, Store}
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.{CascadingObjective, Objective}
@@ -80,7 +80,7 @@ object DemoPDP_VLSN extends App{
 
   // Vehicle content
   val violationOfContentOfVehicle = Array.tabulate(v)(vehicle =>
-    CBLSIntVar(myVRP.routes.model, name = "Violation of capacity of vehicle " + vehicle))
+    CBLSIntVar(myVRP.routes.model, name = s"Violation of capacity of vehicle $vehicle"))
   val capacityInvariant = GlobalVehicleCapacityConstraint(gc, n, v, vehiclesCapacity, contentsFlow, violationOfContentOfVehicle)
 
   //Objective function
@@ -541,5 +541,3 @@ object DemoPDP_VLSN extends App{
   println("obj:" + obj.value)
 
 }
-
-*/
