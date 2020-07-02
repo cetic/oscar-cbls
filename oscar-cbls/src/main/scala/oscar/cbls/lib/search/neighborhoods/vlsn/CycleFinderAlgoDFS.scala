@@ -26,7 +26,7 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends Cy
   override def findCycle(isLiveNode:Array[Boolean]):Option[List[Edge]] = {
 
     val reachabilityMatrix = if(pruneOnReachability){
-      new ReacheabilityFloydWarshall(graph:VLSNGraph).buildRechabilityMatrix()
+      new ReachabilityFloydWarshall(graph:VLSNGraph).buildRechabilityMatrix()
     }else null
 
     //MatrixTools.printBoolMatrix(reachabilityMatrix)
@@ -98,7 +98,7 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends Cy
 }
 
 
-class ReacheabilityFloydWarshall(graph:VLSNGraph){
+class ReachabilityFloydWarshall(graph:VLSNGraph){
   private val nodes:Array[Node] = graph.nodes
   private val edges:Array[Edge] = graph.edges
   private val nbNodes = nodes.length

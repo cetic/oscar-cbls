@@ -19,10 +19,10 @@ import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
 object DemoPDP_VLSN extends App{
   val m = new Store(noCycle = false)
 
-  val v = 10
-  val n = 500
-//  val v = 10
-//  val n = 500
+  val v = 6
+  val n = 200
+  //  val v = 10
+  //  val n = 500
 
   println("VLSN(PDPTW) v:" + v +" n:" + n)
   val penaltyForUnrouted = 10000
@@ -40,7 +40,7 @@ object DemoPDP_VLSN extends App{
   val l = 40
   val xNearestVehicles = 7
 
-  println("listOfChains: \n" + listOfChains.mkString("\n"))
+  //println("listOfChains: \n" + listOfChains.mkString("\n"))
   // GC
   val gc = GlobalConstraintCore(myVRP.routes, v)
 
@@ -487,42 +487,38 @@ object DemoPDP_VLSN extends App{
       else math.min(math.abs(t.insertionPoint - t.segmentStartPosition),math.abs(t.insertionPoint - t.segmentEndPosition)) < 6)
   }
 
-  def vlsn(l:Int = Int.MaxValue) = {
-    //VLSN neighborhood
-    val nodeToAllVehicles = SortedMap.empty[Int, Iterable[Int]] ++ chainsExtension.heads.map(node => (node:Int, vehicles))
-    new VLSN(
-      v,
-      () => SortedMap.empty[Int, SortedSet[Int]] ++
-        vehicles.map((vehicle: Int) =>
-          (vehicle:Int, SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(vehicle).filter(node => chainsExtension.isHead(node)))),
-      () => SortedSet.empty[Int] ++ myVRP.unroutedNodes.filter(node => chainsExtension.isHead(node)),
-      nodeToRelevantVehicles = () => chainHeadToxNearestVehicles,
+  def vlsn(l:Int = Int.MaxValue) = new VLSN(
+    v,
+    () => SortedMap.empty[Int, SortedSet[Int]] ++
+      vehicles.map((vehicle: Int) =>
+        (vehicle:Int, SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(vehicle).filter(node => chainsExtension.isHead(node)))),
+    () => SortedSet.empty[Int] ++ myVRP.unroutedNodes.filter(node => chainsExtension.isHead(node)),
+    nodeToRelevantVehicles = () => chainHeadToxNearestVehicles,
 
-      targetVehicleNodeToInsertNeighborhood = routeUnroutedChainVLSN,
-      targetVehicleNodeToMoveNeighborhood = moveChainVLSN,
-      removeChainVLSN,
+    targetVehicleNodeToInsertNeighborhood = routeUnroutedChainVLSN,
+    targetVehicleNodeToMoveNeighborhood = moveChainVLSN,
+    removeChainVLSN,
 
-      removeNodeAndReInsert = removeAndReInsertVLSN,
+    removeNodeAndReInsert = removeAndReInsertVLSN,
 
-      reOptimizeVehicle = Some(vehicle => Some(threeOptOnVehicle(vehicle) exhaustBack moveChainWithinVehicle(vehicle))),
-      useDirectInsert = false,
+    reOptimizeVehicle = Some(vehicle => Some(threeOptOnVehicle(vehicle) exhaustBack moveChainWithinVehicle(vehicle))),
+    useDirectInsert = false,
 
-      objPerVehicle,
-      unroutedPenaltyOBj,
-      obj,
+    objPerVehicle,
+    unroutedPenaltyOBj,
+    obj,
 
-      cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy,
+    cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy,
 
-      name="VLSN(" + l + ")",
-      reoptimizeAtStartUp = true,
-      debugNeighborhoodExploration = false
-    )
-  }
+    name="VLSN(" + l + ")",
+    reoptimizeAtStartUp = true,
+    debugNeighborhoodExploration = false
+  )
 
   // ///////////////////////////////////////////////////////////////////////////////////////////////////
 
   val vlsnNeighborhood = vlsn(l)
-  val search = bestSlopeFirst(List(oneChainInsert,oneChainMove, onePtMove(20))) exhaustBack (vlsnNeighborhood maxMoves 1)
+  val search = bestSlopeFirst(List(oneChainInsert,oneChainMove, onePtMove(10))) exhaust (vlsnNeighborhood maxMoves 1)
 
   search.verbose = 1
   vlsnNeighborhood.verbose = 2
