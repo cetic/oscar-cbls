@@ -1,7 +1,7 @@
 package oscar.cp.testUtils
 
 import org.scalatest.FunSuite
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.Assertions
 import oscar.cp.{CPStore, Constraint, isInconsistent}
 
