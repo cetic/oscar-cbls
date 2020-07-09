@@ -14,7 +14,7 @@ import oscar.ml.pm.utils.Dataset
 object globalFimRunner extends App {
 
   case class Config(
-                     filename: String = "oscar-ml/src/main/scala/oscar/ml/pm/data/mushroom.txt",
+                     filename: String = "oscar-ml/src/main/scala/oscar/ml/pm/data/fim/mushroom.txt",
                      minsup: Double = 0.10,
                      verbose: Boolean = false,
                      timeLimit: Int = 1000

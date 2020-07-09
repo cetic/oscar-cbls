@@ -10,7 +10,7 @@ import scala.io.Source
 class CoverSizeTest extends TestSuite {
   test("Coversize vs FIM with pure CP") {
     case class Config(
-                       filename: String = "oscar-ml/src/main/scala/oscar/ml/pm/data/mushroom.txt",
+                       filename: String = "oscar-ml/src/main/scala/oscar/ml/pm/data/fim/mushroom.txt",
                        minsup: Double = 0.40,
                        verbose: Boolean = false,
                        timeLimit: Int = 1000
@@ -68,7 +68,7 @@ class CoverSizeTest extends TestSuite {
 
   test("FIM check solution") {
     case class Config(
-                       path: String = "oscar-ml/src/main/scala/oscar/ml/pm/data/test/",
+                       path: String = "oscar-ml/src/main/scala/oscar/ml/pm/data/fim/test/",
                        filename: String = "input/contextPasquier99.txt",
                        solsFilename: String = "output/contextPasquier99-eclat-2.txt",
                        minsup: Double = 0.40,

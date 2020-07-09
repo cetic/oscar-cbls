@@ -10,7 +10,7 @@ import scala.io.Source
 class CoverClosureTest extends TestSuite {
   test("CoverClosure vs Closed FIM with pure CP") {
     case class Config(
-                       filename: String = "oscar-ml/src/main/scala/oscar/ml/pm/data/mushroom.txt",
+                       filename: String = "oscar-ml/src/main/scala/oscar/ml/pm/data/fim/mushroom.txt",
                        minsup: Double = 0.40,
                        verbose: Boolean = false,
                        timeLimit: Int = 1000
@@ -18,7 +18,7 @@ class CoverClosureTest extends TestSuite {
 
     val config = Config()
     val db = Dataset(config.filename)
-    val tdbHorizontal = db.getData()
+    val tdbHorizontal = db.getData
     val tdbVertical = db.intoVertical()
     val nTrans = db.nbTrans
     val nItems = db.nbItem
@@ -77,7 +77,7 @@ class CoverClosureTest extends TestSuite {
 
   test("Closed FIM check solution") {
     case class Config(
-                       path: String = "oscar-ml/src/main/scala/oscar/ml/pm/data/test/",
+                       path: String = "oscar-ml/src/main/scala/oscar/ml/pm/data/fim/test/",
                        filename: String = "input/contextPasquier99.txt",
                        solsFilename: String = "output/contextPasquier99-lcm-2.txt",
                        minsup: Double = 0.40,

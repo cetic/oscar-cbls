@@ -16,7 +16,7 @@ object pureFimRunner extends App {
 
   case class Config(
                      //"oscar-ml/src/main/scala/oscar/ml/pm/data/mushroom.txt",
-                     filename: String = "oscar-ml/src/main/scala/oscar/ml/pm/data/test.txt",
+                     filename: String = "oscar-ml/src/main/scala/oscar/ml/pm/data/fim/test.txt",
                      minsup: Double = 0.40,
                      verbose: Boolean = true,
                      timeLimit: Int = -1

@@ -53,6 +53,8 @@ abstract class FileFormat {
   def writeTransaction(transaction: Transaction, nbItem: Int): String
 }
 
+class FunctionNotUsedForThisFileFormatException(s:String) extends Exception(s){}
+
 /**
  * Format sparse with/without class label
  * 1 2 3 4
@@ -72,9 +74,9 @@ class SparseFormat extends FileFormat {
     val data = line.split(separator).map(_.toInt)
 
     if (withLabel) {
-      Transaction(data.dropRight(1).sorted, data.last)
+      Transaction(data = data.dropRight(1).sorted, label = data.last)
     } else {
-      Transaction(data, -1)
+      Transaction(data = data)
     }
   }
 
@@ -88,87 +90,155 @@ class SparseFormat extends FileFormat {
 
 }
 
-object Tdb extends SparseFormat
+object TdbFormat extends SparseFormat
 
-object TdbWithLabel extends SparseFormat {
+object TdbWithLabelFormat extends SparseFormat {
   this.withLabel = true
 }
 
 /**
- * Sequence dataset
- * T 0 1 0 1 0 1
- * T 1 0 1 0 0 0
- * used by DL8
+ * Sequence dataset with time SPADE format
+ * The sequence dataset (item, time)
+ * (1, 2)(2, 5)(4, 6)(3, 10)(2, 11)
+ * (3, 1)(2, 2)
+ *
+ * becomes
+ *sid time  size  item
+ *  1    2     1     1
+ *  1    5     1     2
+ *  1    6     1     4
+ *  1   10     1     3
+ *  1   11     1     2
+ *  2    1     1     3
+ *  2    2     1     2
  */
+object SpadeFormat extends FileFormat {
+  override val extension: String = ".sp"
+  override val separator: String = "\\s+"
 
-/*object BinaryPreFormat extends FileFormat {
-  val extension: String = ".txt"
+  val POS_SID = 0
+  val POS_EID = 1
+  val POS_SIZ = 2
+  val POS_ITM = 3
 
-  def checkFormatLine(line: String): Unit = {
-    val data = line.split(" ")
-    val pattern = "[0-1]*"
+  override def checkFormatLine(line: String): Unit = {
+    val data = line.split(separator)
+    val pattern = "[0-9]*"
     assert(data.forall(str => str.matches(pattern)))
   }
 
-  def readLine(line: String): (Array[Int], Int) = {
-    val data = line.split(" ").map(_.toInt)
-    val buffer = new scala.collection.mutable.ArrayBuffer[Int]()
-    var i = 1
-    while (i < data.length) {
-      if (data(i) == 1)
-        buffer += i
-      i += 1
-    }
-    (buffer.toArray, data.head)
+  override def readLine(line: String): Transaction = {
+    throw new FunctionNotUsedForThisFileFormatException("This function is not used for this file format")
   }
 
-  def writeTransaction(transaction: (Array[Int], Int), nbItem: Int): String = {
-    val arr = Array.fill(nbItem - 1)(0)
-    for (id <- transaction._1)
-      arr(id - 1) = 1
-    transaction._2 + " " + arr.mkString(" ")
+  override def readLines(lines: Array[String]): Array[Transaction] = {
+    lines.foreach(e => checkFormatLine(e))
+    val data = lines.map(_.split(separator).map(_.toInt))
+
+    def buildTransaction(sid:Int): Transaction = {
+      val trans =  data.filter(_(POS_SID) == sid)
+      Transaction(data = trans.map(_(POS_ITM)), time = trans.map(_(POS_EID)))
+    }
+
+    (1 to data.last(0)).map(t => buildTransaction(t)).toArray
+
   }
+
+  override def writeTransaction(transaction: Transaction, nbItem: Int): String = {
+    var str = ""
+    for (item <- transaction.data)
+      str += (item - 1) + " "
+    if (withLabel) str + transaction.label
+    str
+  }
+
 }
 
 /**
- * Format Binaire Pre Target
- * 0;1;0;1;0;1;T
- * 1;0;1;0;0;0;T
- * used by BinOCT
+ * Long Sequence dataset format
+ * The long sequence is
+ * 1 2 2 2 1 2 1 2 1
+ *
+ * but can be represented (with or without spaces)
+ * 1 2 2 2
+ * 1 2
+ * 1 2 1
  */
-object BinaryPostFormat extends FileFormat {
-  val extension: String = ".csv"
+class LongSequenceFormat extends FileFormat {
+  override val extension: String = ".txt"
+  override val separator: String = "\\s+"
 
-  def checkFormatLine(line: String): Unit = {
-    val data = line.split(";")
-    val pattern = "[0-1]*"
+  val POS_ITM = 0
+  val POS_EID = 1
+
+  override def checkFormatLine(line: String): Unit = {
+    val data = line.split(separator)
+    val pattern = "[0-9]*"
     assert(data.forall(str => str.matches(pattern)))
   }
 
-  override def readLines(lines: Array[String]): Array[(Array[Int], Int)] =
-    lines.drop(1).map(readLine(_))
-
-  def readLine(line: String): (Array[Int], Int) = {
-    val data = line.split(";").map(_.toInt)
-    val buffer = new scala.collection.mutable.ArrayBuffer[Int]()
-    var i = 0
-    while (i < data.length - 1) {
-      if (data(i) == 1)
-        buffer += (i + 1)
-      i += 1
-    }
-    (buffer.toArray, data.last)
+  override def readLine(line: String): Transaction = {
+    throw new FunctionNotUsedForThisFileFormatException("This function is not used for this file format")
   }
 
-  override def writeTransactions(printer: PrintWriter, data: Dataset): Unit = {
-    printer.println((0 until data.nbItem - 1).map("Feat_" + _).mkString(";") + ";target")
-    super.writeTransactions(printer, data)
+  override def readLines(lines: Array[String]): Array[Transaction] = {
+    lines.foreach(e => checkFormatLine(e))
+    Array(Transaction(data = lines.map(_.split(separator).map(_.toInt)).flatten))
   }
 
-  def writeTransaction(transaction: (Array[Int], Int), nbItem: Int): String = {
-    val arr = Array.fill(nbItem - 1)(0)
-    for (id <- transaction._1)
-      arr(id - 1) = 1
-    arr.mkString(";") + ";" + transaction._2
+  override def writeTransaction(transaction: Transaction, nbItem: Int): String = {
+    var str = ""
+    for (item <- transaction.data)
+      str += (item - 1) + " "
+    if (withLabel) str + transaction.label
+    str
   }
-}*/
+
+}
+
+/**
+ * Long Sequence dataset with time format
+ * The sequence dataset
+ * item time
+ *  1    1
+ *  2    3
+ *  1    5
+ *  3    6
+ *  2    7
+ *  1    8
+ *  2   14
+ *  This is the format used by trade market and ubiqlog datasets
+ */
+object LongSequenceTimeFormat extends FileFormat {
+  override val extension: String = ".txt"
+  override val separator: String = "\\s+"
+
+  val POS_ITM = 0
+  val POS_EID = 1
+
+  override def checkFormatLine(line: String): Unit = {
+    val data = line.split(separator)
+    val pattern = "[0-9]*"
+    assert(data.forall(str => str.matches(pattern)))
+  }
+
+  override def readLine(line: String): Transaction = {
+    throw new FunctionNotUsedForThisFileFormatException("This function is not used for this file format")
+  }
+
+  override def readLines(lines: Array[String]): Array[Transaction] = {
+    lines.foreach(checkFormatLine(_))
+    val data = lines.map(_.split(separator).map(_.toInt))
+
+    Array(Transaction(data = data.map(_(POS_ITM)), time = data.map(_(POS_EID))))
+  }
+
+  override def writeTransaction(transaction: Transaction, nbItem: Int): String = {
+    var str = ""
+    for (item <- transaction.data)
+      str += (item - 1) + " "
+    if (withLabel) str + transaction.label
+    str
+  }
+
+}

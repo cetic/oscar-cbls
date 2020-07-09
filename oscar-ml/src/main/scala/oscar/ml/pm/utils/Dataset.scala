@@ -33,8 +33,11 @@ import scala.io.Source.fromFile
  */
 
 case class Transaction(data: Array[Int] = Array(),
-                       label: Int)
+                       label: Int = 1,
+                       time: Array[Int] = Array())
 
+
+class InvalidOperationException(s:String) extends Exception(s){}
 
 /**
  *
@@ -55,18 +58,28 @@ object Dataset {
    *               - single long sequence,...
    * @return
    */
-  def apply(filename: String, format: FileFormat = Tdb) = {
+  def apply(filename: String, format: FileFormat = TdbFormat) = {
     val reader = fromFile(filename)
     val result = reader.getLines().toArray
     reader.close()
     val resultDatas = format.readLines(result)
-    new Dataset(filename.slice(filename.lastIndexOf('/') + 1, filename.lastIndexOf('.')), resultDatas)
+    val data = new Dataset(filename.slice(filename.lastIndexOf('/') + 1, filename.lastIndexOf('.')), resultDatas)
+    data.usedFormat = format
+    data
   }
 
   def apply(benchmarkName: String, rawDatas: Array[Transaction], nItem: Int) = {
     val data = new Dataset(benchmarkName, rawDatas)
     data.nbItem = nItem
     data
+  }
+
+  def apply(rawDatas: Array[Array[Int]]): Dataset = {
+    new Dataset("Dataset", rawDatas.map(e => Transaction(data = e)))
+  }
+
+  def apply(data:Array[Array[Int]], time:Array[Array[Int]]): Dataset = {
+    new Dataset("Dataset", data.zip(time).map(e => Transaction(data = e._1, time = e._2)))
   }
 
 }
@@ -83,6 +96,7 @@ class Dataset(val benchmarkName: String, val rawDatas: Array[Transaction]) {
 
   val nbTrans: Int = rawDatas.length
   var nbItem: Int = rawDatas.map(trans => if (trans.data.isEmpty) 0 else trans.data.max).max + 1
+  var usedFormat:FileFormat = TdbFormat
 
   def density(): Double =
     rawDatas.map(_.data.length).sum * 1.0 / (nbTrans * (nbItem - 1))
@@ -97,8 +111,16 @@ class Dataset(val benchmarkName: String, val rawDatas: Array[Transaction]) {
   def splitDatasetByTwo(): (Dataset, Dataset) =
     (getDataset(1), getDataset(0))
 
-  def getData(): Array[Array[Int]] =
+  def getData: Array[Array[Int]] =
     rawDatas.map(_.data)
+
+  def getTime: Array[Array[Int]] = {
+    // create a time dataset, if no time dataset is provided the array indices are used
+    rawDatas.map(elt => if(elt.time.isEmpty && !elt.data.isEmpty) (1 to elt.data.length).toArray else elt.time)
+  }
+
+  def getLabels: Array[Int] =
+    rawDatas.map(_.label)
 
   def printInfo(file: String, separator: String = "\t"): Unit = {
     val pw = new PrintWriter(new File(file))
@@ -119,3 +141,68 @@ class Dataset(val benchmarkName: String, val rawDatas: Array[Transaction]) {
   def printTo(outputName: String, format: FileFormat): Unit =
     format.writeFile(outputName, this)
 }
+
+object DatasetUtils {
+  def getNItemMaxPerSeq(data: Dataset): Int = {
+    data.rawDatas.map(_.data.distinct.length).max
+  }
+
+
+  def cleanDataset(data:Dataset, minsup: Int) : Dataset = {
+    val sups = getSDBSupport(data)
+
+    val out = data.rawDatas.map( t =>
+      if(t.time.isEmpty)
+        t.copy(data = t.data.filter(i => sups(i-1) >= minsup))
+      else
+        t.copy(data = t.data.filter(i => sups(i-1) >= minsup), time = t.time.zipWithIndex.filter(i => sups(t.data(i._2)-1) >= minsup ).map(_._1))
+    )
+
+    new Dataset(data.benchmarkName, out)
+  }
+
+  def getSDBSupport(data:Dataset) :  Array[Int] = {
+    (0 until (data.nbItem-1) ).map(i => data.rawDatas.count(_.data.contains(i+1))).toArray
+  }
+
+  def getSDBLastPos(data:Dataset): Array[Array[Int]] ={
+    data.rawDatas.map( t => t.data.map(i => t.data.lastIndexOf(i) + 1) )
+  }
+
+  def getItemLastPosBySequence(data:Dataset) : Array[Array[Int]] = {
+    //data.rawDatas.map( t => (0 to data.nbItem).toArray.map(i => t.data.lastIndexOf(i) + 1) )
+    (0 until data.nbItem).toArray.map(i => data.rawDatas.map(t => t.data.lastIndexOf(i) + 1))
+  }
+
+  def getItemFirstPosBySequence(data: Dataset): Array[Array[Int]] = {
+    (0 until data.nbItem).toArray.map(i => data.rawDatas.map(t => t.data.indexOf(i) + 1))
+  }
+
+  def getSDBNextPosGap(data:Dataset, minimumGap:Int): Array[Array[Int]] ={
+    if (data.rawDatas(0).time.isEmpty) throw new InvalidOperationException("Time dataset is not provided!")
+
+    def posWhere(tab:Array[Int], comp:(Int, Int)): Int ={
+      val res = tab.indexWhere(_ >= (comp._1 + minimumGap), from = comp._2)
+      if (res == -1) tab.length + 1 else res
+    }
+    data.rawDatas.map( t => t.time.zipWithIndex.map(e => posWhere(t.time, e) ) )
+  }
+
+
+  def getLSNextPosGap(data:Dataset, maximumGap:Int): Array[Array[Int]] ={
+    if (data.rawDatas(0).time.isEmpty) throw new InvalidOperationException("Time dataset is not provided!")
+    val lsData = data.rawDatas(0)
+
+    def getRightPos(sid:Int, item:Int): Int = {
+      val res = lsData.data.lastIndexOf(item, lsData.time.count(_ <= lsData.time(sid) + maximumGap)-1)
+
+      if( res < sid ) -1 else res
+    }
+    lsData.data.indices.map( t => (0 until data.nbItem).toArray.map(i => getRightPos(t, i)) ).toArray
+  }
+
+
+
+}
+
+

@@ -14,7 +14,7 @@ class ClosedFIMTest extends oscar.cp.testUtils.TestSuite {
 
   test("Closed FIM check solution") {
     case class Config(
-                       path: String = "oscar-ml/src/main/scala/oscar/ml/pm/data/test/",
+                       path: String = "oscar-ml/src/main/scala/oscar/ml/pm/data/fim/test/",
                        filename: String = "input/contextPasquier99.txt",
                        solsFilename: String = "output/contextPasquier99-lcm-2.txt",
                        minsup: Double = 0.40,

@@ -11,13 +11,13 @@ package oscar.ml.pm.examples.fim
 
 import oscar.cp._
 import oscar.ml.pm.Constraints.fim.{CoverSize, ZDC}
-import oscar.ml.pm.utils.{Dataset, TdbWithLabel, ZDCScaled}
+import oscar.ml.pm.utils.{Dataset, TdbWithLabelFormat, ZDCScaled}
 
 object DiscriminativeCoverSizeZDCRunner extends App {
 
   case class Config(
-                     //"oscar-ml/src/main/scala/oscar/ml/pm/data/test.txt",
-                     filename: String = "oscar-ml/src/main/scala/oscar/ml/pm/data/withlabels/mushroom.txt",
+                     //"oscar-ml/src/main/scala/oscar/ml/pm/data/fim/test.txt",
+                     filename: String = "oscar-ml/src/main/scala/oscar/ml/pm/data/fim/withlabels/mushroom.txt",
                      verbose: Boolean = true,
                      timeLimit: Int = -1
                    )
@@ -25,7 +25,7 @@ object DiscriminativeCoverSizeZDCRunner extends App {
   printHead()
 
   val config = Config()
-  val db = Dataset(config.filename, TdbWithLabel)
+  val db = Dataset(config.filename, TdbWithLabelFormat)
   val vTdb = db.intoVertical()
   val (dbP, dbN) = db.splitDatasetByTwo()
   val nTrans = db.nbTrans
