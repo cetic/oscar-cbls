@@ -21,6 +21,12 @@ import oscar.ml.pm.utils.{Dataset, DatasetUtils}
  *               s4 bcd
  * @param minsup is a threshold support, item must appear in at least minsup sequences $support(item)>=minsup$
  * @author John Aoga (johnaoga@gmail.com) and Pierre Schaus (pschaus@gmail.com)
+ *
+ * AOGA, John OR, GUNS, Tias, et SCHAUS, Pierre. An efficient algorithm for mining frequent sequence with constraint programming.
+ * In : Joint European Conference on Machine Learning and Knowledge Discovery in Databases. Springer, Cham, 2016. p. 315-330.
+ *
+ * The main difference with PPIC is how the support is counted.
+ * You can find a further explanation in my dissertation (page 102) - http://hdl.handle.net/2078.1/218062
  */
 
 class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends Constraint(P(0).store, "PPDC") {
@@ -31,10 +37,11 @@ class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
   private[this] val SDB: Array[Array[Int]] = data.getData
 
   private[this] val epsilon = 0 //this is for empty item
-  private[this] val lenSDB = SDB.size
+  private[this] val lenSDB = SDB.length
   private[this] val nItems: Int = data.nbItem
   private[this] val patternSeq = P.clone()
   private[this] val lenPatternSeq = P.length
+  private[this] val dom = Array.ofDim[Int](nItems)
 
   // precomputed data structures
   private[this] val SdbOfLastPos: Array[Array[Int]] = DatasetUtils.getSDBLastPos(data)
@@ -80,24 +87,18 @@ class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
   ///current position in P $P_i = P[curPosInP.value]$
   private[this] val curPosInP = new ReversibleInt(s, 0)
 
-  ///check if pruning is done successfully
-  private[this] var pruneSuccess = true
-
   /**
    * Entry in constraint, function for all init
    *
-   * @param l
-   * @return The outcome of the first propagation and consistency check
+   * @param l, represents the strength of the propagation
    */
   final override def setup(l: CPPropagStrength): Unit = {
     propagate()
-
     var i = patternSeq.length
     while (i > 0) {
       i -= 1
       patternSeq(i).callPropagateWhenBind(this)
     }
-
   }
 
   /**
@@ -107,15 +108,12 @@ class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
    */
   final override def propagate(): Unit = {
     var v = curPosInP.value
-
     if (P(v).isBoundTo(epsilon)) {
-      if (!P(v - 1).isBoundTo(epsilon)) enforceEpsilonFrom(v)
+      if (!P(v - 1).isBoundTo(epsilon))
+        enforceEpsilonFrom(v)
     } else {
-
       while (v < P.length && P(v).isBound && P(v).min != epsilon) {
-
         if (!filterPrefixProjection(P(v).getMin)) throw Inconsistency
-
         curPosInP.incr()
         v = curPosInP.value
       }
@@ -152,47 +150,34 @@ class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
    */
   private def filterPrefixProjection(prefix: Int): Boolean = {
     val i = curPosInP.value + 1
-
     if (i >= 2 && prefix == epsilon) {
       true
     } else {
       val sup = projectSDB(prefix)
-
       if (sup < minsup) {
         false
       } else {
-        pruneSuccess = true
-        ///Prune next position pattern P domain if it exists unfrequent items
         prune(i)
-        pruneSuccess
+        true
       }
     }
-
   }
 
-  ///initialisation of domain
-  val dom = Array.ofDim[Int](nItems)
-
   /**
-   * pruning strategy
+   * Pruning strategy
+   * Prune next position pattern P domain if it exists infrequent items
    *
    * @param i current position in P
    */
   private def prune(i: Int): Unit = {
-    val j = i
-
-    if (j >= lenPatternSeq) return
-
+    if (i >= lenPatternSeq) return
     var k = 0
-    val len = P(j).fillArray(dom)
-
+    val len = P(i).fillArray(dom)
     while (k < len) {
       val item = dom(k)
-
       if (item != epsilon && supportCounter(item) < minsup) {
-        P(j).removeValue(item)
+        P(i).removeValue(item)
       }
-
       k += 1
     }
   }
@@ -208,7 +193,7 @@ class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
     val startInit = psdbStart.value
     val sizeInit = psdbSize.value
 
-    //Count sequences validated for next step
+    // Count sequences validated for next step
     curPrefixSupport = 0
 
     var i = startInit
@@ -217,31 +202,30 @@ class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
     while (i < startInit + sizeInit) {
 
       val sid = psdbSeqId(i)
-
       val ti = SDB(sid)
       val lti = ti.length
       val start = psdbPosInSeq(i)
-
       var pos = start
 
-      if (lastPosOfItemBySequence(prefix)(sid) != 0) {
-        // here we know at least that prefix is present in sequence sid
+      if (lastPosOfItemBySequence(sid)(prefix) != 0) {
+        // We know at least that prefix is present in sequence sid
 
-        // search for next value "prefix" in the sequence starting from
-        if (lastPosOfItemBySequence(prefix)(sid) - 1 >= pos) {
-          // we are sure prefix next position is available
+        // Search for next value "prefix" in the sequence starting from
+        if (lastPosOfItemBySequence(sid)(prefix) - 1 >= pos) {
+          // Prefix next position is available,
+          // we can thus add the sequence in the new projected data base
 
-          // find next position of prefix
+          // Find next position of prefix
           while (pos < lti && prefix != ti(pos)) {
             val item = ti(pos)
             updateSupportCounter(item, sid, pos)
             pos += 1
           }
 
-          //check if this prefix will still available
+          // Check if this prefix will still available
           updateSupportCounter(prefix, sid, pos)
 
-          //update pseudo projected database and support
+          // Update pseudo projected database and support
           psdbSeqId(j) = sid
           psdbPosInSeq(j) = pos + 1
           j += 1
@@ -268,17 +252,17 @@ class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
   }
 
   /**
-   * decrease value of support if we leave item
+   * Decrease the support of an item if it is removed
    *
    * @param item
    * @param sid
    * @param pos
    */
   private def updateSupportCounter(item: Int, sid: Int, pos: Int): Unit = {
-    if (lastPosOfItemBySequence(item)(sid) - 1 <= pos) {
-      // no need to have the exact value of the support if already below minsup
-      // all what matters is to know we are below. This can save some useless trailing operations
-      ////if (supportCounter(item) >= minsup)
+    if (lastPosOfItemBySequence(sid)(item) - 1 <= pos) {
+      // The the support of an item doesn't need to be exact when it is below the threshold
+      // because at that point this item is not interesting anymore.
+      // (This optimization can save some useless trailing operations)
       supportCounter(item).decr()
     }
   }
@@ -302,7 +286,6 @@ class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
 
     while (!break && pos < lenOfSequence) {
       val last = tiLast(pos)
-
       if (last == 0) {
         break = true
       } else {
@@ -310,7 +293,6 @@ class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
         supportCounter(item).decr()
         pos = last - 1
       }
-
     }
   }
 

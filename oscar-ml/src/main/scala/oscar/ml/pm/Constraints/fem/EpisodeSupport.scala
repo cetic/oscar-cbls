@@ -47,10 +47,12 @@ final class EpisodeSupport(val P: Array[CPIntVar], val minsup: Int, val data: Da
   /// Initializing other inputs variables namely precomputed data structures
   val LS: Array[Int] = data.getData(0)
   val nItems: Int = data.nbItem
-  val lastPosOfItem: Array[Int] = DatasetUtils.getItemLastPosBySequence(data)(0)
 
-  /// lastPosOfItem is the last real position of a symbol in a sequence, if 0 it is not present
-  ///  e.g. : {a : 4, b : 6, c : 5} (index from 0)
+  /**
+   * lastPosOfItem is the last real position of a symbol in a sequence, if 0 it is not present
+   * e.g. : {a : 4, b : 6, c : 5} (index from 0)
+   */
+  val lastPosOfItem: Array[Int] = DatasetUtils.getItemLastPosBySequence(data)(0)
 
   idempotent = true
 
@@ -63,14 +65,14 @@ final class EpisodeSupport(val P: Array[CPIntVar], val minsup: Int, val data: Da
   private[this] val patternSeq = P.clone()
   private[this] val lenPatternSeq = P.length
 
-  ///representation of pseudo-projected-database
+  /// Representation of pseudo-projected-database
   private[this] var innerTrailSize = lenLS * 5
   private[this] var psdbPosInSeq = Array.tabulate(innerTrailSize)(i => i) //position of prefix in this sid
 
   private[this] val psdbStart = new ReversibleInt(s, 0) //current size of trail
   private[this] val psdbSize = new ReversibleInt(s, lenLS) //current position in trail
 
-  ///when InnerTrail is full, it allows to double size of trail
+  /// When InnerTrail is full, it allows to double size of trail
   @inline private def growInnerTrail(): Unit = {
     val newPsdbPosInSeq = new Array[Int](innerTrailSize * 2)
     System.arraycopy(psdbPosInSeq, 0, newPsdbPosInSeq, 0, innerTrailSize)
@@ -78,25 +80,22 @@ final class EpisodeSupport(val P: Array[CPIntVar], val minsup: Int, val data: Da
     innerTrailSize *= 2
   }
 
-  ///support counter contain support for each item, it is reversible for efficient backtrack
+  /// Support counter contain support for each item, it is reversible for efficient backtrack
   private[this] val supportCounter = Array.ofDim[Int](nItems + 1)
   var curPrefixSupport: Int = 0
 
-  ///current position in P $P_i = P[curPosInP.value]$
+  /// Current position in P $P_i = P[curPosInP.value]$
   private[this] val curPosInP = new ReversibleInt(s, 0)
 
   private[this] val matchedPos = new ArrayStackInt()
 
-  ///check if pruning is done successfully
+  /// Check if pruning is done successfully
   private[this] var pruneSuccess = true
-
-  //override def associatedVars(): Iterable[CPVar] = P
 
   /**
    * Entry in constraint, function for all init
    *
-   * @param l
-   * @return The outcome of the first propagation and consistency check
+   * @param l, represents the strength of the propagation
    */
   final override def setup(l: CPPropagStrength): Unit = {
     assert(minsup > 0)
@@ -109,9 +108,7 @@ final class EpisodeSupport(val P: Array[CPIntVar], val minsup: Int, val data: Da
   }
 
   /**
-   * propagate
-   *
-   * @return the outcome i.e. Failure, Success or Suspend
+   * Propagate
    */
   final override def propagate(): Unit = {
     var v = curPosInP.value

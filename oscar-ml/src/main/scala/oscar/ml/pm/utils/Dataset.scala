@@ -170,12 +170,13 @@ object DatasetUtils {
   }
 
   def getItemLastPosBySequence(data:Dataset) : Array[Array[Int]] = {
-    //data.rawDatas.map( t => (0 to data.nbItem).toArray.map(i => t.data.lastIndexOf(i) + 1) )
-    (0 until data.nbItem).toArray.map(i => data.rawDatas.map(t => t.data.lastIndexOf(i) + 1))
+    //(0 until data.nbItem).toArray.map(i => data.rawDatas.map(t => t.data.lastIndexOf(i) + 1))
+    data.rawDatas.map( t => (0 to data.nbItem).toArray.map(i => t.data.lastIndexOf(i) + 1) )
   }
 
   def getItemFirstPosBySequence(data: Dataset): Array[Array[Int]] = {
-    (0 until data.nbItem).toArray.map(i => data.rawDatas.map(t => t.data.indexOf(i) + 1))
+    //(0 until data.nbItem).toArray.map(i => data.rawDatas.map(t => t.data.indexOf(i) + 1))
+    data.rawDatas.map( t => (0 to data.nbItem).toArray.map(i => t.data.indexOf(i) + 1) )
   }
 
   def getSDBNextPosGap(data:Dataset, minimumGap:Int): Array[Array[Int]] ={
