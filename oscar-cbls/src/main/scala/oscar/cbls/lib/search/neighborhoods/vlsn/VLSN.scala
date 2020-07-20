@@ -195,6 +195,8 @@ import scala.collection.immutable.{SortedMap, SortedSet}
   *                        (you can of course re-factor so that he strong constraints appear only once)
   * @param cycleFinderAlgoSelection the cycle finder algo to use. Mouthy is the fastest. In some rara case, you might experiment with MouthuyAndThenDFS.
   *                                 DFS is complete, but slower than Mouthuy
+  * @param doAfterCycle an additional method that will be regularly called by the VLSN. you can use it to perform some rendering of the search progress,
+ *                     but do not modify the current solution; this can only be done through the reOptimizeVehicle method.
   * @param name a name toat will be used in pretty printing.
   * @author renaud.delandtsheer@cetic.be
   */
@@ -271,15 +273,20 @@ class VLSN(v:Int,
       require(summedPartialObjective == globalObjective.value, "summed partial objectives with unrouted (" + summedPartialObjective + ") not equal to global objective (" + globalObjective.value + ")")
     }
 
-    var dataForRestartOpt =  doVLSNSearch(
+    var dataForRestartOpt = doVLSNSearch(
       initVehicleToRoutedNodesToMove(),
       initUnroutedNodesToInsert(),
       None)
 
+    doAfterCycle match {
+      case Some(toDo) => toDo()
+      case None => ()
+    }
+
     var remainingIt = maxIt
 
     //we restart with incremental restart as much as posible
-    while (dataForRestartOpt != None && remainingIt > 0) {
+    while (dataForRestartOpt.isDefined && remainingIt > 0) {
       remainingIt = remainingIt - 1
       val dataForRestart = dataForRestartOpt.get
       somethingDone = true
@@ -292,9 +299,6 @@ class VLSN(v:Int,
         case None => ()
       }
     }
-
-
-
 
     if (somethingDone) {
       val finalSolution = obj.model.solution(true)
@@ -317,7 +321,6 @@ class VLSN(v:Int,
   private def doVLSNSearch(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
                            unroutedNodesToInsert: SortedSet[Int],
                            cachedExplorations: Option[CachedExplorations]): Option[DataForVLSNRestart] = {
-
 
     //TODO: this is the time consuming part of the VLSN; a smart approach would really help here.
     //first, explore the atomic moves, and build VLSN graph
@@ -548,7 +551,7 @@ class VLSN(v:Int,
           vehicleToObjective,
           unroutedPenalty,
           globalObjective,
-          debugNeighborhoodExploration,).buildGraph()
+          debugNeighborhoodExploration,???).buildGraph()
       case Some(cache) =>
         new IncrementalMoveExplorer(
           v: Int,
