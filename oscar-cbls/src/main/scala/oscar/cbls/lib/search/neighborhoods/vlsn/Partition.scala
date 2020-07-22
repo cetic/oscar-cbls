@@ -10,6 +10,7 @@ class EnrichmentScheme(base: BasePartitionScheme,
       base.nodeToPartitionId(fromNode,fromVehicle))(
       base.nodeToPartitionId(toNode,toVehicle))
   }
+  def maxLevel:Int = enrich.maxLevel
 }
 
 abstract class BasePartitionScheme(){
@@ -17,7 +18,7 @@ abstract class BasePartitionScheme(){
   def nbPartition:Int
 }
 
-class SameSizePartitions(allNodes:List[Int], override val nbPartition:Int)
+class SameSizeRandomPartitions(allNodes:List[Int], override val nbPartition:Int)
   extends BasePartitionScheme() {
 
   val nodeToPartitionId: Array[Int] = {
@@ -40,13 +41,13 @@ class SameSizePartitions(allNodes:List[Int], override val nbPartition:Int)
   }
 }
 
-class VehiclePartition(vehicleToNodeToMove:SortedMap[Int,List[Int]],
-                       unroutedNodeToInsert:List[Int])
+class VehiclePartition(vehicleToNodeToMove:SortedMap[Int,Iterable[Int]],
+                       unroutedNodeToInsert:Iterable[Int])
   extends BasePartitionScheme() {
   //TODO: we might consider ventilating unrouted nodes onto partitions of some vehicles as well?
 
   val (myNodeToPartitionId,nbPartition): (Array[Int],Int) = {
-    val allNodes = unroutedNodeToInsert ::: vehicleToNodeToMove.values.flatten.toList
+    val allNodes = unroutedNodeToInsert.toList ::: vehicleToNodeToMove.values.flatten.toList
     val maxId = allNodes.max
     require(allNodes.min >= 0)
     val toReturn = Array.fill(maxId)(-1)
@@ -107,21 +108,21 @@ class DivideAndConquerScheme(nbPartition:Int)
       }
     }
 
-    labelAndReturnLevel(Random.shuffle((0 until nbPartition).toList))
+    val maxLevel = labelAndReturnLevel(Random.shuffle((0 until nbPartition).toList))
 
-    toReturn
+    (toReturn,maxLevel)
   }
 }
 
 
-class RandomScheme(nbPartition:Int, nbSteps:Int)
+case class RandomScheme(nbPartition:Int, nbSteps:Int)
   extends VLSNEnrichmentScheme() {
   override val maxLevel: Int = nbSteps
 
   override val partitionToLevel: Array[Array[Int]] = {
     val toReturn = Array.tabulate(nbPartition)(_ => Array.fill(nbPartition)(-1))
 
-    val partitionCoupleList:List[(Int,Int)] = (0 to nbPartition).toList.flatMap(i => (0 until i).toList.map(j => (i,j)))
+    val partitionCoupleList:List[(Int,Int)] = (0 until nbPartition).toList.flatMap(i => (0 until i).toList.map(j => (i,j)))
 
     var randomizedpartitionCoupleList = Random.shuffle(partitionCoupleList)
     val nbCouplePerIt:Int = randomizedpartitionCoupleList.size / nbSteps
@@ -129,11 +130,12 @@ class RandomScheme(nbPartition:Int, nbSteps:Int)
     var level = 0
     while(randomizedpartitionCoupleList.nonEmpty){
       var nbCouplesToDo = nbCouplePerIt
-      while(nbCouplePerIt >0 && randomizedpartitionCoupleList.nonEmpty){
+      while(nbCouplesToDo > 0 && randomizedpartitionCoupleList.nonEmpty){
         val (i,j) = randomizedpartitionCoupleList.head
         randomizedpartitionCoupleList = randomizedpartitionCoupleList.tail
         toReturn(i)(j) = level
-        toReturn(i)(i) = level
+        toReturn(j)(i) = level
+        nbCouplesToDo -= 1
       }
       level += 1
     }
@@ -141,8 +143,13 @@ class RandomScheme(nbPartition:Int, nbSteps:Int)
       val (i,j) = randomizedpartitionCoupleList.head
       randomizedpartitionCoupleList = randomizedpartitionCoupleList.tail
       toReturn(i)(j) = maxLevel
-      toReturn(i)(i) = maxLevel
+      toReturn(j)(i) = maxLevel
     }
+
+    for(i <- toReturn.indices){
+      toReturn(i)(i) = 0
+    }
+
     toReturn
   }
 

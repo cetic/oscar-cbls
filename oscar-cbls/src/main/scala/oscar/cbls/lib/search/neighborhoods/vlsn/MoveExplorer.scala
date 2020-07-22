@@ -149,6 +149,8 @@ class MoveExplorer(v:Int,
 
   val edgeBuilder: VLSNEdgeBuilder = new VLSNEdgeBuilder(nodes, nbLabels, v)
 
+  val nbNodesInVLSNGraph = nodes.size
+
   // /////////////////////////////////////////////////////////////
   //the partitioning data
 
