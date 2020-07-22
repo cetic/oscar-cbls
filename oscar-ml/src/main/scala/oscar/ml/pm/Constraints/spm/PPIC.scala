@@ -4,7 +4,7 @@ import oscar.algo.Inconsistency
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp.core._
 import oscar.cp.core.variables._
-import oscar.ml.pm.utils.{Dataset, DatasetUtils}
+import oscar.ml.pm.utils.{Dataset, DatasetUtils, TestHelpers}
 
 /**
  * PPIC [Constraint Programming & Sequential Pattern Mining with Prefix projection method]
@@ -28,6 +28,8 @@ import oscar.ml.pm.utils.{Dataset, DatasetUtils}
 
 class PPIC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends Constraint(P(0).store, "PPIC") {
 
+  //--//println("O1") //--//
+
   idempotent = true
 
   /// Initializing the other input variables (precomputed data structures)
@@ -41,24 +43,37 @@ class PPIC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
   private[this] val dom = Array.ofDim[Int](nItems)
 
   // precomputed data structures
-  private[this] val SdbOfLastPos: Array[Array[Int]] = DatasetUtils.getSDBLastPos(data)
   private[this] val firstPosOfItemBySequence: Array[Array[Int]] = DatasetUtils.getItemFirstPosBySequence(data)
 
   /**
-   * lastPosOfItemBySequence: is the last real position of an item in a sequence, if 0 it is not present
-   * s1  s2  s3  s4
-   * a  1   2   1   0
-   * b  4   3   2   1
-   * c  5   4   0   2
-   * d  0   0   0   3
+   * lastPosOfItemBySequence is the last real position of an item in a sequence, if 0 it is not present
+   * 0, 1, 4, 5, 0
+   * 0, 2, 3, 4, 0
+   * 0, 1, 2, 0, 0
+   * 0, 0, 1, 2, 0
    */
   private[this] val lastPosOfItemBySequence: Array[Array[Int]] = DatasetUtils.getItemLastPosBySequence(data)
+  //--//TestHelpers.printMat(lastPosOfItemBySequence)
+  //--//println()
+
+  /**
+   * SdbOfLastPos
+   *    p1,p2,p3,p4,p5
+   * s1: 1, 4, 5, 4, 5
+   * s2: 3, 2, 3, 4
+   * s3: 1, 2
+   * s4: 1, 2
+   */
+  private[this] val SdbOfLastPos: Array[Array[Int]] = DatasetUtils.getSDBLastPos(data, lastPosOfItemBySequence)
+  //--//TestHelpers.printMat(SdbOfLastPos)
 
   /**
    * itemsSupport: is the initial support (number of sequences where a item is appeared) of all items
    * a : 3, b : 4, c : 3, d : 1
    */
-  private[this] val itemsSupport: Array[Int] = DatasetUtils.getSDBSupport(data)
+  private[this] val itemsSupport: Array[Int] = lenSDB +: DatasetUtils.getSDBSupport(data)
+
+  //--//println(">>>>>>>>>"+nItems+" "+itemsSupport.length+" "+itemsSupport.mkString(", "))
 
   ///representation of pseudo-projected-database
   private[this] var innerTrailSize = lenSDB * 5
@@ -79,11 +94,13 @@ class PPIC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
   }
 
   ///support counter contain support for each item, it is reversible for efficient backtrack
-  private[this] var supportCounter = itemsSupport
+  private[this] var supportCounter = lenSDB +: itemsSupport
   var curPrefixSupport: Int = 0
 
   ///current position in P $P_i = P[curPosInP.value]$
   private[this] val curPosInP = new ReversibleInt(s, 0)
+
+  //--//println("O2") //--//
 
   /**
    * Entry in constraint, function for all init
@@ -185,7 +202,7 @@ class PPIC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
    * @param prefix
    * @return
    */
-  private def projectSDB(prefix: Int): Int = {
+  def projectSDB(prefix: Int): Int = {
     val startInit = psdbStart.value
     val sizeInit = psdbSize.value
 
@@ -210,6 +227,8 @@ class PPIC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
       val lti = ti.length
       val start = psdbPosInSeq(i)
       var pos = start
+
+      //--//println(">>>>>>>>>>>>>>>"+prefix+", "+sid+", "+lastPosOfItemBySequence(sid)(prefix)) //--//
 
       if (lastPosOfItemBySequence(sid)(prefix) != 0) {
         // We know at least that prefix is present in sequence sid
@@ -239,10 +258,19 @@ class PPIC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
           curPrefixSupport += 1
 
           // Recompute support
-          var break = false
           val tiLast = SdbOfLastPos(sid)
 
+          //--//println(tiLast.mkString("-")+" pos = "+pos)
+          var c = 0
+          while ( c < tiLast.length && tiLast(c)-1 > pos ) {
+            //////print(tiLast(c)+" ")
+            supportCounter ( ti(tiLast(c)-1) )+= 1
+            c += 1
+          }
+
+          /*println(tiLast.mkString(", "))
           while (!break && pos < lti) {
+            //--//println(pos)
             val last = tiLast(pos)
             if (last == 0) {
               break = true
@@ -251,7 +279,7 @@ class PPIC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
               supportCounter(item) += 1
               pos = last - 1
             }
-          }
+          }*/
         }
       }
       i += 1

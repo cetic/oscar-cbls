@@ -345,7 +345,7 @@ final class EpisodeSupportT(val P: Array[CPIntVar], val minsup: Int, val data: D
    * @param prefix
    * @return
    */
-  private def projectSDB(prefix: Int): Int = {
+  def projectSDB(prefix: Int): Int = {
 
     val phi = rPhi.value
     var varphi = rVarphi.value

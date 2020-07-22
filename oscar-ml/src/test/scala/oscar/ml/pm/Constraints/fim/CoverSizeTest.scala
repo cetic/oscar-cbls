@@ -3,7 +3,7 @@ package oscar.ml.pm.Constraints.fim
 import oscar.cp.constraints.OrReif
 import oscar.cp.testUtils.TestSuite
 import oscar.cp.{CPBoolVar, CPIntVar, CPSolver, binaryStatic}
-import oscar.ml.pm.utils.Dataset
+import oscar.ml.pm.utils.{Dataset, TestHelpers}
 
 import scala.io.Source
 
@@ -60,11 +60,6 @@ class CoverSizeTest extends TestSuite {
     assert(statsActual.nSols == statsExpected.nSols)
   }
 
-  def readSols(filename: String): Map[String, Int] =
-    Source.fromFile(filename).getLines
-      .map(line => line.split(" #SUP: "))
-      .map { case Array(itemset, support) => itemset -> support.toInt }
-      .toMap
 
   test("FIM check solution") {
     case class Config(
@@ -82,7 +77,7 @@ class CoverSizeTest extends TestSuite {
     val nTrans = db.nbTrans
     val nItems = db.nbItem
     var frequency = config.minsup.intValue()
-    val output = readSols(config.path + config.solsFilename) + ("<>" -> nTrans)
+    val output = TestHelpers.readSols(config.path + config.solsFilename) + ("<>" -> nTrans)
 
     if (config.minsup > 0 && config.minsup < 1) frequency = (config.minsup * nTrans).ceil.toInt //floor is another way around for the support
 

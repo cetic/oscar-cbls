@@ -15,6 +15,9 @@ class ZDCFunctionTest extends TestSuite {
 
     assert(Chi2.eval(0, Y, X, Y) == (X+Y))
     assert(Chi2.eval(X, 0, X, Y) == (X+Y))
+    Chi2.eval(X, 0, X, Y) should be(X+Y)
+
+    Array(1, 3, 5).zipWithIndex.filter(_._1 >= 3)
 
     val fun:Array[ZDCFunction] = Array(InfGain, Chi2, Gini)
 

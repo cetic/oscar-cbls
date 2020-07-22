@@ -1,5 +1,7 @@
 package oscar.ml.pm.utils
 
+import scala.io.Source
+
 object TestHelpers {
   def printMat(mat: Array[Array[Int]]): Unit =
     println(mat.map(_.mkString(", ")).mkString("\n"))
@@ -16,6 +18,12 @@ object TestHelpers {
 
     true
   }
+
+  def readSols(filename: String): Map[String, Int] =
+    Source.fromFile(filename).getLines
+      .map(line => line.split(" #SUP: "))
+      .map { case Array(itemset, support) => itemset -> support.toInt }
+      .toMap
 
   def chi2(a: Int, b: Int, A: Int, B: Int): Double = {
 
@@ -56,5 +64,40 @@ object TestHelpers {
       if ((x + y) != 0) x * 1.0 / (x + y) else 0.0
 
     G(f(A, B)) - ((a + b) * 1.0 / (A + B)) * G(f(a, b)) - ((A + B - a - b) * 1.0 / (A + B)) * G(f(A - a, B - b))
+  }
+
+  // Testing precomputed data structures
+  def testPrecomputedDatastructures(data: Dataset): (Array[Int], Array[Array[Int]], Array[Array[Int]], Array[Array[Int]]) = {
+    val nSeq = data.nbTrans
+    val nItems = data.nbItem
+
+    val lastPosMap = Array.ofDim[Int](nSeq,nItems+1)
+    val firstPosMap = Array.ofDim[Int](nSeq,nItems+1)
+    val itemsSupport = Array.ofDim[Int](nItems)
+
+    var sid = 0
+    while (sid < data.nbTrans) {
+      var j = 0
+      val sequence = data.rawDatas(sid).data
+      val len = sequence.length
+      val visitedItem = Array.ofDim[Boolean](nItems + 1)
+      while (j < len) {
+        val item = sequence(j)
+        if (lastPosMap(sid)(item) < j + 1) {
+          lastPosMap(sid)(item) = j + 1
+        }
+        j += 1
+        if (!visitedItem(item)) {
+          firstPosMap(sid)(item) = j //+ 1
+          itemsSupport(item) += 1
+          visitedItem(item) = true
+        }
+      }
+      sid += 1
+    }
+
+    val lastPosList = lastPosMap.map(_.filter(_ > 0).sortWith(_ > _))
+
+    (itemsSupport, firstPosMap, lastPosMap, lastPosList)
   }
 }

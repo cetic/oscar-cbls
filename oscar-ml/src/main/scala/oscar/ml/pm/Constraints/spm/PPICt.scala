@@ -133,7 +133,7 @@ class PPICt(val P: Array[CPIntVar], val minsup: Int, val data: Dataset, val time
    * @param prefix the item bound at current position
    * @return the support of the current prefix
    */
-  private def projectSDB(prefix: Int): Int = {
+  def projectSDB(prefix: Int): Int = {
 
     val startInit = psdbStart.value
     val sizeInit = psdbSize.value
@@ -303,7 +303,7 @@ class PPICt(val P: Array[CPIntVar], val minsup: Int, val data: Dataset, val time
    * @param lastExtensionEnd
    * @return
    */
-  private def updateSupport(firstPatternPos: Int, endPatternPos: Int, sid: Int, lSeqs: Int, seqs: Array[Int], lastExtensionEnd: Int): Int = {
+  def updateSupport(firstPatternPos: Int, endPatternPos: Int, sid: Int, lSeqs: Int, seqs: Array[Int], lastExtensionEnd: Int): Int = {
     var u = Math.max(nextPosGap(sid)(endPatternPos), lastExtensionEnd)
     val maxTime = Math.min(SDBtime(sid)(endPatternPos) + maxgap, SDBtime(sid)(firstPatternPos) + maxspan)
 

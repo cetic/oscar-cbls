@@ -35,7 +35,7 @@ import scala.io.Source.fromFile
 case class Transaction(data: Array[Int] = Array(),
                        label: Int = 1,
                        time: Array[Int] = Array())
-
+//We don't take into account sequence of itemsets in which case data should be Array[Set[Int]] instead of Array[Int]
 
 class InvalidOperationException(s:String) extends Exception(s){}
 
@@ -63,8 +63,10 @@ object Dataset {
     val result = reader.getLines().toArray
     reader.close()
     val resultDatas = format.readLines(result)
+
     val data = new Dataset(filename.slice(filename.lastIndexOf('/') + 1, filename.lastIndexOf('.')), resultDatas)
     data.usedFormat = format
+    if (format.withItemNamesHeader) data.itemsStringsMap = format.readHeader(result, data.nbItem)
     data
   }
 
@@ -97,6 +99,7 @@ class Dataset(val benchmarkName: String, val rawDatas: Array[Transaction]) {
   val nbTrans: Int = rawDatas.length
   var nbItem: Int = rawDatas.map(trans => if (trans.data.isEmpty) 0 else trans.data.max).max + 1
   var usedFormat:FileFormat = TdbFormat
+  var itemsStringsMap: Array[String] = (0 to nbItem).map(_.toString).toArray
 
   def density(): Double =
     rawDatas.map(_.data.length).sum * 1.0 / (nbTrans * (nbItem - 1))
@@ -128,8 +131,12 @@ class Dataset(val benchmarkName: String, val rawDatas: Array[Transaction]) {
     pw.close()
   }
 
+  def patternToString(pattern: Array[Int], sep:String = " "): String = {
+    pattern.map(i => itemsStringsMap(i)).mkString(sep)
+  }
+
   override def toString: String = {
-    rawDatas.map(_.data.mkString(", ")).mkString("\n")
+    rawDatas.map(trans => patternToString(trans.data) ).mkString("\n")
   }
 
   def stringInfo(separateur: String = "\t"): String =
@@ -143,12 +150,27 @@ class Dataset(val benchmarkName: String, val rawDatas: Array[Transaction]) {
 }
 
 object DatasetUtils {
+
+  def prepareForSPM(filename: String, minsup:Double, format: FileFormat = TdbFormat): (Dataset, Int, Int, Int, Int, Array[Int]) = {
+    val primedb = Dataset(filename, format)
+    var frequency = minsup.intValue()
+    if (minsup > 0 && minsup < 1) frequency = (minsup * primedb.nbTrans).ceil.toInt //floor is another way around for the support
+
+    val db = DatasetUtils.cleanDataset(primedb, frequency)
+
+    (db, frequency, db.nbTrans, db.nbItem, DatasetUtils.getLenSeqMax(db), DatasetUtils.getFrequentItems(db, frequency))
+  }
+
   def getNItemMaxPerSeq(data: Dataset): Int = {
     data.rawDatas.map(_.data.distinct.length).max
   }
 
+  def getLenSeqMax(data: Dataset): Int = {
+    data.rawDatas.map(_.data.length).max
+  }
 
-  def cleanDataset(data:Dataset, minsup: Int) : Dataset = {
+
+  def cleanDataset(data:Dataset, minsup: Int, lmin:Int = 1) : Dataset = {
     val sups = getSDBSupport(data)
 
     val out = data.rawDatas.map( t =>
@@ -156,17 +178,47 @@ object DatasetUtils {
         t.copy(data = t.data.filter(i => sups(i-1) >= minsup))
       else
         t.copy(data = t.data.filter(i => sups(i-1) >= minsup), time = t.time.zipWithIndex.filter(i => sups(t.data(i._2)-1) >= minsup ).map(_._1))
-    )
+    ).filter(_.data.length >= lmin)
 
-    new Dataset(data.benchmarkName, out)
+    val newData: Dataset = new Dataset(data.benchmarkName, out)
+    newData.itemsStringsMap = data.itemsStringsMap
+    newData.usedFormat = data.usedFormat
+
+    newData
   }
 
   def getSDBSupport(data:Dataset) :  Array[Int] = {
     (0 until (data.nbItem-1) ).map(i => data.rawDatas.count(_.data.contains(i+1))).toArray
   }
 
-  def getSDBLastPos(data:Dataset): Array[Array[Int]] ={
-    data.rawDatas.map( t => t.data.map(i => t.data.lastIndexOf(i) + 1) )
+  def getFrequentItems(data: Dataset, minsup: Int) : Array[Int] = {
+     getSDBSupport(data).zipWithIndex.filter(_._1 >= minsup).map(_._2 + 1)
+  }
+
+  def getSDBLastPos(data:Dataset, lastPosMap: Array[Array[Int]]): Array[Array[Int]] ={
+    //data.rawDatas.map( t => t.data.map(i => t.data.lastIndexOf(i) + 1) )
+
+    /*val lastPosList = Array.ofDim[Array[Int]](data.nbTrans)
+    var sid = 0
+
+    while (sid < data.nbTrans) {
+      var j = 0
+      val len = data.rawDatas(sid).data.length
+      val tempLastNext = Array.ofDim[Int](len)
+      while (j < len) {
+        val tab = lastPosMap(sid).filter(p => p != 0 && p > j + 1)
+        if (!tab.isEmpty) {
+          tempLastNext(j) = tab.min
+        }
+        j += 1
+      }
+      lastPosList(sid) = tempLastNext
+      sid += 1
+    }
+
+    lastPosList*/
+    data.rawDatas.indices.map(sid => data.rawDatas(sid).data.reverse.distinct.map(i => lastPosMap(sid)(i) ) ).toArray
+
   }
 
   def getItemLastPosBySequence(data:Dataset) : Array[Array[Int]] = {
@@ -203,6 +255,13 @@ object DatasetUtils {
   }
 
 
+  def precomputedDatastructures(data: Dataset): (Array[Int], Array[Array[Int]], Array[Array[Int]], Array[Array[Int]]) = {
+    val lastPosMap = getItemLastPosBySequence(data)
+    (getSDBSupport(data),
+      getItemFirstPosBySequence(data),
+      lastPosMap,
+      getSDBLastPos(data, lastPosMap))
+  }
 
 }
 

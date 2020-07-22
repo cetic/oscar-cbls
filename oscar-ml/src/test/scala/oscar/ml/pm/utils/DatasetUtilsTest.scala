@@ -21,28 +21,31 @@ class DatasetUtilsTest extends TestSuite {
   }
 
   test( "test sdblastpost"){
-    val db = Dataset("oscar-ml/src/main/scala/oscar/ml/pm/data/spm/test.txt.sp", SpadeFormat)
+    var db = Dataset("oscar-ml/src/main/scala/oscar/ml/pm/data/spm/test2.data")
+    db = DatasetUtils.cleanDataset(db, 2)
 
     val expectedDb = Array(
-      Array(1, 5, 3, 4, 5),
-      Array(7, 6, 6, 4, 5, 6, 7),
-      Array(1, 5, 4, 4, 5, 6, 7),
-      Array(1, 3, 3, 4)
+      Array(5, 4, 1),
+      Array(4, 3, 2),
+      Array(2, 1),
+      Array(2, 1)
     )
 
-    assert(TestHelpers.checkArray(DatasetUtils.getSDBLastPos(db), expectedDb))
+    //TestHelpers.printMat(DatasetUtils.getSDBLastPos(db, DatasetUtils.getItemLastPosBySequence(db)))
+
+    assert(TestHelpers.checkArray(DatasetUtils.getSDBLastPos(db, DatasetUtils.getItemLastPosBySequence(db)), expectedDb))
   }
 
   test( "test lastpostitem"){
-    val db = Dataset("oscar-ml/src/main/scala/oscar/ml/pm/data/spm/test.txt.sp", SpadeFormat)
+    var db = Dataset("oscar-ml/src/main/scala/oscar/ml/pm/data/spm/test2.data")
+    db = DatasetUtils.cleanDataset(db, 2)
+
 
     val expectedDb = Array(
-      Array(0, 0, 0, 0),
-      Array(1, 6, 1, 1),
-      Array(5, 7, 5, 4),
-      Array(4, 5, 7, 3),
-      Array(3, 4, 4, 0),
-      Array(0, 0, 6, 0)
+      Array(0, 1, 4, 5, 0),
+      Array(0, 2, 3, 4, 0),
+      Array(0, 1, 2, 0, 0),
+      Array(0, 0, 1, 2, 0)
     )
 
     assert(TestHelpers.checkArray(DatasetUtils.getItemLastPosBySequence(db), expectedDb))
@@ -71,7 +74,6 @@ class DatasetUtilsTest extends TestSuite {
     assert(TestHelpers.checkArray(actual, expected))
   }
 
-
   test("test LS nextPostGap") {
     val db = Dataset("oscar-ml/src/main/scala/oscar/ml/pm/data/fem/papertestT.txt", LongSequenceTimeFormat)
 
@@ -88,6 +90,23 @@ class DatasetUtilsTest extends TestSuite {
     val actual = DatasetUtils.getLSNextPosGap(db, 10)
 
     assert(TestHelpers.checkArray(actual, expected))
+  }
+
+  test( "test global data structures computation -  real dataset"){
+    //var db = Dataset("oscar-ml/src/main/scala/oscar/ml/pm/data/spm/fifa.dat.sdb")
+    //var db = Dataset("oscar-ml/src/main/scala/oscar/ml/pm/data/spm/Kosarak.txt.sdb")
+    var db = Dataset("oscar-ml/src/main/scala/oscar/ml/pm/data/spm/test1.data")
+
+    db = DatasetUtils.cleanDataset(db, 2) //40%
+
+    var (a, b, c , d) = DatasetUtils.precomputedDatastructures(db)
+    var (w, x, y, z) = TestHelpers.testPrecomputedDatastructures(db)
+    a = 0 +: a
+
+    assert(a sameElements w)
+    assert(TestHelpers.checkArray(b, x))
+    assert(TestHelpers.checkArray(c, y))
+    assert(TestHelpers.checkArray(d, z))
   }
 
 }

@@ -26,15 +26,21 @@ abstract class FileFormat {
   val extension: String
   val separator: String
   var withLabel: Boolean = false
+  var withItemNamesHeader: Boolean = false
+  var nSkip = 0
 
   def readLines(lines: Array[String]): Array[Transaction] = {
-    lines.foreach(checkFormatLine(_))
-    lines.map(readLine(_))
+    if (!withItemNamesHeader) lines.foreach(checkFormatLine(_))
+    lines.drop(nSkip).map(readLine(_))
   }
 
   def checkFormatLine(line: String): Unit
 
   def readLine(line: String): Transaction
+
+  def readHeader(lines: Array[String], nItems:Int) : Array[String] = {
+    Array()
+  }
 
   def writeFile(outputName: String, data: Dataset): Unit = {
     val pw = new PrintWriter(new File(outputName + extension))
@@ -85,7 +91,7 @@ class SparseFormat extends FileFormat {
     for (item <- transaction.data)
       str += (item - 1) + " "
     if (withLabel) str + transaction.label
-    str
+    else str
   }
 
 }
@@ -149,7 +155,208 @@ object SpadeFormat extends FileFormat {
     for (item <- transaction.data)
       str += (item - 1) + " "
     if (withLabel) str + transaction.label
-    str
+    else str
+  }
+
+}
+
+/**
+ * Sequence dataset with time b-SPADE format
+ * The sequence dataset (item, time)
+ * (A, 2)(B, 5)(D, 6)(C, 10)(B, 11)
+ * (C, 1)(B, 2)
+ *
+ * becomes
+ * nseq seqlenmax item
+ * [0, A, B, C, D]
+ *sid time  size  item  support
+ *  1    2     1     1        1
+ *  1    5     1     2        2
+ *  1    6     1     4        1
+ *  1   10     1     3        2
+ *  1   11     1     2        2
+ *  2    1     1     3        2
+ *  2    2     1     2        2
+ */
+object BSpadeFormat extends FileFormat {
+  override val extension: String = ".b"
+  override val separator: String = "\\s+"
+  this.withItemNamesHeader = true
+  this.nSkip = 2
+
+  val POS_SID = 0
+  val POS_EID = 1
+  val POS_SIZ = 2
+  val POS_ITM = 3
+  val POS_SUP = 4
+
+  override def checkFormatLine(line: String): Unit = {
+    val data = line.split(separator)
+    val pattern = "[0-9]*"
+    assert(data.forall(str => str.matches(pattern)))
+  }
+
+  override def readLine(line: String): Transaction = {
+    throw new FunctionNotUsedForThisFileFormatException("This function is not used for this file format")
+  }
+
+  override def readLines(lines: Array[String]): Array[Transaction] = {
+    lines.drop(nSkip).foreach(e => checkFormatLine(e))
+    val data = lines.drop(nSkip).map(_.split(separator).map(_.toInt))
+
+    def buildTransaction(sid:Int): Transaction = {
+      val trans =  data.filter(_(POS_SID) == sid)
+      Transaction(data = trans.map(_(POS_ITM)), time = trans.map(_(POS_EID)))
+    }
+
+    (1 to data.last(0)).map(t => buildTransaction(t)).toArray
+
+  }
+
+  override def readHeader(lines: Array[String], nItems: Int): Array[String] = {
+    val out = lines(1).drop(1).dropRight(1).split(", ")
+    assert(out.length == nItems)
+    out
+  }
+
+  override def writeTransaction(transaction: Transaction, nbItem: Int): String = {
+    var str = ""
+    for (item <- transaction.data)
+      str += (item - 1) + " "
+    if (withLabel) str + transaction.label
+    else str
+  }
+
+}
+
+/**
+ * Sequence dataset SPMF format
+ * The sequence dataset
+ * 1 -1 2 -1 4 -1 3 -1 2 -1 -2
+ * 3 -1 2 -1 -2
+ */
+object SpmfFormat extends FileFormat {
+  override val extension: String = ".spmf"
+  override val separator: String = " -1 "
+
+  override def checkFormatLine(line: String): Unit = {
+    val data = line.trim.stripSuffix(" -1 -2").split(separator)
+    val pattern = "[0-9]*"
+    assert(data.forall(str => str.matches(pattern)))
+  }
+
+  override def readLine(line: String): Transaction = {
+    val data = line.trim.stripSuffix(" -1 -2").split(separator).map(_.toInt)
+    Transaction(data = data)
+  }
+
+  override def writeTransaction(transaction: Transaction, nbItem: Int): String = {
+    var str = ""
+    for (item <- transaction.data)
+      str += (item - 1) + " "
+    if (withLabel) str + transaction.label
+    else str
+  }
+
+}
+
+
+/**
+ * Sequence dataset SPMF with header format
+ * The sequence dataset
+ *
+ * @ CONVERTED_FROM_TEXT
+ * @ ITEM=1=A
+ * @ ITEM=2=B
+ * @ ITEM=3=C
+ * @ ITEM=4=D
+ * @ ITEM=-1=|
+ * 1 -1 2 -1 4 -1 3 -1 2 -1 -2
+ * 3 -1 2 -1 -2
+ */
+object SpmfWithHeaderFormat extends FileFormat {
+  override val extension: String = ".spmf"
+  override val separator: String = " -1 "
+  this.withItemNamesHeader = true
+  this.nSkip = 1
+
+  override def checkFormatLine(line: String): Unit = {
+    val data = line.trim.stripSuffix(" -1 -2").split(separator)
+    val pattern = "[0-9]*"
+    assert(data.forall(str => str.matches(pattern)))
+  }
+
+  override def readLine(line: String): Transaction = {
+    throw new FunctionNotUsedForThisFileFormatException("This function is not used for this file format")
+  }
+
+  override def readLines(lines: Array[String]): Array[Transaction] = {
+    nSkip = lines.count(_.trim.startsWith("@"))
+    val realLines = lines.filterNot(_.trim.startsWith("@"))
+
+    realLines.foreach(e => checkFormatLine(e))
+    val data = realLines.map(line => line.trim.stripSuffix(" -1 -2").split(separator).map(e => ("""\d+""".r findAllIn e).toList))
+
+    data.indices.map(t => Transaction(data = data(t).map(_.last.toInt), time = data(t).map(_.head.toInt) ) ).toArray
+  }
+
+  override def readHeader(lines: Array[String], nItems: Int): Array[String] = {
+    val tab = lines.filter(_.trim.startsWith("@ITEM")).map( e => e.trim.split("=") ) //@ITEM=4=D
+
+    val out: Array[String] = Array.fill(nItems+1)("0")
+
+    var i = 0
+    while ( i < tab.length) {
+      out(tab(i)(1).toInt) = tab(i)(2)
+      i+= 1
+    }
+
+    out
+  }
+
+  override def writeTransaction(transaction: Transaction, nbItem: Int): String = {
+    var str = ""
+    for (item <- transaction.data)
+      str += (item - 1) + " "
+    if (withLabel) str + transaction.label
+    else str
+  }
+
+}
+
+/**
+ * Sequence dataset SPMF format
+ * The sequence dataset < time > item
+ * <2> 1 -1 <5> 2 -1 <6> 4 -1 <10> 3 -1 <11> 2 -1 -2
+ * <1> 3 -1 <2> 2 -1 -2
+ */
+object SpmfWithTimeFormat extends FileFormat {
+  override val extension: String = ".spmf"
+  override val separator: String = " -1 "
+
+  override def checkFormatLine(line: String): Unit = {
+    val data = line.trim.stripSuffix(" -1 -2").split(separator)
+    val pattern = "[0-9]*"
+    assert(data.forall(str => str.matches(pattern)))
+  }
+
+  override def readLine(line: String): Transaction = {
+    throw new FunctionNotUsedForThisFileFormatException("This function is not used for this file format")
+  }
+
+  override def readLines(lines: Array[String]): Array[Transaction] = {
+    lines.drop(nSkip).foreach(e => checkFormatLine(e))
+    val data = lines.drop(nSkip).map(line => line.trim.stripSuffix(" -1 -2").split(separator).map(e => ("""\d+""".r findAllIn e).toList))
+
+    data.indices.map(t => Transaction(data = data(t).map(_(1).toInt), time = data(t).map(_(0).toInt) ) ).toArray
+  }
+
+  override def writeTransaction(transaction: Transaction, nbItem: Int): String = {
+    var str = ""
+    for (item <- transaction.data)
+      str += (item - 1) + " "
+    if (withLabel) str + transaction.label
+    else str
   }
 
 }

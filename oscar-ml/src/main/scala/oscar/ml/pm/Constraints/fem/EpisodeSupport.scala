@@ -201,7 +201,7 @@ final class EpisodeSupport(val P: Array[CPIntVar], val minsup: Int, val data: Da
    * @param prefix
    * @return
    */
-  private def projectSDB(prefix: Int): Int = {
+  def projectSDB(prefix: Int): Int = {
     matchedPos.clear()
     val startInit = psdbStart.value
     val sizeInit = psdbSize.value
@@ -262,7 +262,7 @@ final class EpisodeSupport(val P: Array[CPIntVar], val minsup: Int, val data: Da
     // update trail
     psdbStart.value = startInit + sizeInit
     psdbSize.value = curPrefixSupport
-    return curPrefixSupport
+    curPrefixSupport
   }
 
   override def associatedVars(): Iterable[CPVar] = P

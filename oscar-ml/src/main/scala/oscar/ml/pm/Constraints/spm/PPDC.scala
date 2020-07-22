@@ -4,7 +4,7 @@ import oscar.algo.Inconsistency
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp.core._
 import oscar.cp.core.variables._
-import oscar.ml.pm.utils.{Dataset, DatasetUtils}
+import oscar.ml.pm.utils.{Dataset, DatasetUtils, TestHelpers}
 
 /**
  * PPDC [Constraint Programming & Sequential Pattern Mining with Prefix projection method]
@@ -44,7 +44,6 @@ class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
   private[this] val dom = Array.ofDim[Int](nItems)
 
   // precomputed data structures
-  private[this] val SdbOfLastPos: Array[Array[Int]] = DatasetUtils.getSDBLastPos(data)
 
   /**
    * lastPosOfItemBySequence: is the last real position of an item in a sequence, if 0 it is not present
@@ -57,10 +56,21 @@ class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
   private[this] val lastPosOfItemBySequence: Array[Array[Int]] = DatasetUtils.getItemLastPosBySequence(data)
 
   /**
+   * SdbOfLastPos
+   *    p1,p2,p3,p4,p5
+   * s1: 1, 4, 5, 4, 5
+   * s2: 3, 2, 3, 4
+   * s3: 1, 2
+   * s4: 1, 2
+   */
+  private[this] val SdbOfLastPos: Array[Array[Int]] = DatasetUtils.getSDBLastPos(data, lastPosOfItemBySequence)
+  //--//TestHelpers.printMat(SdbOfLastPos)
+
+  /**
    * itemsSupport: is the initial support (number of sequences where a item is appeared) of all items
    * a : 3, b : 4, c : 3, d : 1
    */
-  private[this] val itemsSupport: Array[Int] = DatasetUtils.getSDBSupport(data)
+  private[this] val itemsSupport: Array[Int] = lenSDB +: DatasetUtils.getSDBSupport(data)
 
   ///representation of pseudo-projected-database
   private[this] var innerTrailSize = lenSDB * 5
@@ -189,7 +199,7 @@ class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
    * @param prefix
    * @return
    */
-  private def projectSDB(prefix: Int): Int = {
+  def projectSDB(prefix: Int): Int = {
     val startInit = psdbStart.value
     val sizeInit = psdbSize.value
 
@@ -258,7 +268,7 @@ class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
    * @param sid
    * @param pos
    */
-  private def updateSupportCounter(item: Int, sid: Int, pos: Int): Unit = {
+  def updateSupportCounter(item: Int, sid: Int, pos: Int): Unit = {
     if (lastPosOfItemBySequence(sid)(item) - 1 <= pos) {
       // The the support of an item doesn't need to be exact when it is below the threshold
       // because at that point this item is not interesting anymore.
@@ -275,7 +285,7 @@ class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
    * @param lenOfSequence
    * @param sequence
    */
-  private def removeAllItemsInSid(sid: Int, initPos: Int, lenOfSequence: Int, sequence: Array[Int]): Unit = {
+  def removeAllItemsInSid(sid: Int, initPos: Int, lenOfSequence: Int, sequence: Array[Int]): Unit = {
     var pos = initPos
     if (pos < lenOfSequence) {
       updateSupportCounter(sequence(pos), sid, pos)

@@ -4,7 +4,7 @@ import oscar.algo.Inconsistency
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp.core._
 import oscar.cp.core.variables._
-import oscar.ml.pm.utils.{Dataset, DatasetUtils}
+import oscar.ml.pm.utils.{Dataset, DatasetUtils, TestHelpers}
 
 /**
  * PPmixed [Constraint Programming & Sequential Pattern Mining with Prefix projection method]
@@ -41,7 +41,6 @@ class PPmixed(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extend
   private[this] val dom = Array.ofDim[Int](nItems)
 
   // precomputed data structures
-  private[this] val SdbOfLastPos: Array[Array[Int]] = DatasetUtils.getSDBLastPos(data)
   private[this] val firstPosOfItemBySequence: Array[Array[Int]] = DatasetUtils.getItemFirstPosBySequence(data)
 
   /**
@@ -53,6 +52,17 @@ class PPmixed(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extend
    * d  0   0   0   3
    */
   private[this] val lastPosOfItemBySequence: Array[Array[Int]] = DatasetUtils.getItemLastPosBySequence(data)
+
+  /**
+   * SdbOfLastPos
+   *    p1,p2,p3,p4,p5
+   * s1: 1, 4, 5, 4, 5
+   * s2: 3, 2, 3, 4
+   * s3: 1, 2
+   * s4: 1, 2
+   */
+  private[this] val SdbOfLastPos: Array[Array[Int]] = DatasetUtils.getSDBLastPos(data, lastPosOfItemBySequence)
+  TestHelpers.printMat(SdbOfLastPos)
 
   /**
    * itemsSupport: is the initial support (number of sequences where a item is appeared) of all items
@@ -186,7 +196,7 @@ class PPmixed(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extend
    * @param prefix
    * @return
    */
-  private def projectSDB(prefix: Int): Int = {
+  def projectSDB(prefix: Int): Int = {
     val startInit = psdbStart.value
     val sizeInit = psdbSize.value
 
@@ -333,7 +343,7 @@ class PPmixed(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extend
    * @param sid
    * @param pos
    */
-  private def updateSupportCounter(item: Int, sid: Int, pos: Int): Unit = {
+  def updateSupportCounter(item: Int, sid: Int, pos: Int): Unit = {
     if (lastPosOfItemBySequence(item)(sid) - 1 <= pos) {
       // The the support of an item doesn't need to be exact when it is below the threshold
       // because at that point this item is not interesting anymore.
@@ -350,7 +360,7 @@ class PPmixed(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extend
    * @param lenOfSequence
    * @param sequence
    */
-  private def removeAllItemsInSid(sid: Int, initPos: Int, lenOfSequence: Int, sequence: Array[Int]): Unit = {
+  def removeAllItemsInSid(sid: Int, initPos: Int, lenOfSequence: Int, sequence: Array[Int]): Unit = {
     var pos = initPos
     if (pos < lenOfSequence) {
       updateSupportCounter(sequence(pos), sid, pos)
