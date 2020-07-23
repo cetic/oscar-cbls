@@ -41,34 +41,35 @@ class PPmixed(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extend
   private[this] val dom = Array.ofDim[Int](nItems)
 
   // precomputed data structures
-  private[this] val firstPosOfItemBySequence: Array[Array[Int]] = DatasetUtils.getItemFirstPosBySequence(data)
+  private[this] val firstPositionMap: Array[Array[Int]] = DatasetUtils.getItemFirstPosBySequence(data)
 
   /**
-   * lastPosOfItemBySequence: is the last real position of an item in a sequence, if 0 it is not present
-   * s1  s2  s3  s4
-   * a  1   2   1   0
-   * b  4   3   2   1
-   * c  5   4   0   2
-   * d  0   0   0   3
+   * lastPositionMap is the last real position of an item in a sequence, if 0 it is not present
+   * 0, 1, 4, 5, 0
+   * 0, 2, 3, 4, 0
+   * 0, 1, 2, 0, 0
+   * 0, 0, 1, 2, 0
    */
-  private[this] val lastPosOfItemBySequence: Array[Array[Int]] = DatasetUtils.getItemLastPosBySequence(data)
+  private[this] val lastPositionMap: Array[Array[Int]] = DatasetUtils.getItemLastPosBySequence(data)
+  //--//TestHelpers.printMat(lastPositionMap)
+  //--//println()
 
   /**
-   * SdbOfLastPos
+   * lastPositionList
    *    p1,p2,p3,p4,p5
-   * s1: 1, 4, 5, 4, 5
-   * s2: 3, 2, 3, 4
-   * s3: 1, 2
-   * s4: 1, 2
+   * s1: 5, 4, 1
+   * s2: 4, 3, 2
+   * s3: 2, 1
+   * s4: 2, 1
    */
-  private[this] val SdbOfLastPos: Array[Array[Int]] = DatasetUtils.getSDBLastPos(data, lastPosOfItemBySequence)
-  TestHelpers.printMat(SdbOfLastPos)
+  private[this] val lastPositionList: Array[Array[Int]] = DatasetUtils.getSDBLastPos(data, lastPositionMap)
+  //--//TestHelpers.printMat(lastPositionList)
 
   /**
    * itemsSupport: is the initial support (number of sequences where a item is appeared) of all items
-   * a : 3, b : 4, c : 3, d : 1
+   * a : 3, b : 4, c : 3
    */
-  private[this] val itemsSupport: Array[Int] = DatasetUtils.getSDBSupport(data)
+  private[this] val itemsSupport: Array[Int] = lenSDB +: DatasetUtils.getSDBSupport(data)
 
   ///representation of pseudo-projected-database
   private[this] var innerTrailSize = lenSDB * 5
@@ -224,11 +225,11 @@ class PPmixed(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extend
         val start = psdbPosInSeq(i)
         var pos = start
 
-        if (lastPosOfItemBySequence(sid)(prefix) != 0) {
+        if (lastPositionMap(sid)(prefix) != 0) {
           // We know at least that prefix is present in sequence sid
 
           // Search for next value "prefix" in the sequence starting from
-          if (lastPosOfItemBySequence(sid)(prefix) - 1 >= pos) {
+          if (lastPositionMap(sid)(prefix) - 1 >= pos) {
             // Prefix next position is available,
             // we can thus add the sequence in the new projected data base
 
@@ -236,7 +237,7 @@ class PPmixed(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extend
 
             // Find next position of prefix
             if (start == -1) {
-              pos = firstPosOfItemBySequence(sid)(prefix) - 1
+              pos = firstPositionMap(sid)(prefix) - 1
             } else {
               while (pos < lti && prefix != ti(pos)) {
                 pos += 1
@@ -252,8 +253,8 @@ class PPmixed(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extend
             curPrefixSupport += 1
 
             // Recompute support
-            var break = false
-            val tiLast = SdbOfLastPos(sid)
+            /*var break = false
+            val tiLast = lastPositionList(sid)
 
             while (!break && pos < lti) {
               val last = tiLast(pos)
@@ -264,6 +265,17 @@ class PPmixed(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extend
                 supportCounter(item) += 1
                 pos = last - 1
               }
+            }*/
+
+            // Recompute support
+            val tiLast = lastPositionList(sid)
+
+            //--//println(tiLast.mkString("-")+" pos = "+pos)
+            var c = 0
+            while ( c < tiLast.length && tiLast(c)-1 > pos ) {
+              //////print(tiLast(c)+" ")
+              supportCounter ( ti(tiLast(c)-1) )+= 1
+              c += 1
             }
           }
         }
@@ -286,11 +298,11 @@ class PPmixed(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extend
         if (psdbPosInSeq(i) != -1) start = psdbPosInSeq(i)
         var pos = start
 
-        if (lastPosOfItemBySequence(prefix)(sid) != 0) {
+        if (lastPositionMap(sid)(prefix) != 0) {
           // here we know at least that prefix is present in sequence sid
 
           // search for next value "prefix" in the sequence starting from
-          if (lastPosOfItemBySequence(prefix)(sid) - 1 >= pos) {
+          if (lastPositionMap(sid)(prefix) - 1 >= pos) {
             // Prefix next position is available,
             // we can thus add the sequence in the new projected data base
 
@@ -344,7 +356,7 @@ class PPmixed(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extend
    * @param pos
    */
   def updateSupportCounter(item: Int, sid: Int, pos: Int): Unit = {
-    if (lastPosOfItemBySequence(item)(sid) - 1 <= pos) {
+    if (lastPositionMap(sid)(item) - 1 <= pos) {
       // The the support of an item doesn't need to be exact when it is below the threshold
       // because at that point this item is not interesting anymore.
       // (This optimization can save some useless trailing operations)
@@ -367,9 +379,16 @@ class PPmixed(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extend
     }
 
     var break = false
-    val tiLast = SdbOfLastPos(sid)
+    val tiLast = lastPositionList(sid)
 
-    while (!break && pos < lenOfSequence) {
+    var c = 0
+    while ( c < tiLast.length && tiLast(c)-1 > pos ) {
+      //////print(tiLast(c)+" ")
+      internSupportCounter( sequence(tiLast(c)-1) ).decr()
+      c += 1
+    }
+
+    /*while (!break && pos < lenOfSequence) {
       val last = tiLast(pos)
 
       if (last == 0) {
@@ -380,7 +399,7 @@ class PPmixed(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extend
         pos = last - 1
       }
 
-    }
+    }*/
   }
 
   override def associatedVars(): Iterable[CPVar] = P

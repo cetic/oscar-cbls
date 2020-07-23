@@ -8,15 +8,14 @@
 package oscar.ml.pm.examples.spm
 
 import oscar.cp._
-import oscar.ml.pm.Constraints.fim.CoverSize
-import oscar.ml.pm.Constraints.spm.PPIC
-import oscar.ml.pm.utils.{Dataset, DatasetUtils}
+import oscar.ml.pm.Constraints.spm.{PPIC, PPICt}
+import oscar.ml.pm.utils.{DatasetUtils, SpmfWithTimeFormat, TimeOption}
 
-object PPICRunner extends App {
+object SPMtimeRunner extends App {
 
   case class Config(
-                     filename: String = "oscar-ml/src/main/scala/oscar/ml/pm/data/spm/test2.data",
-                     minsup: Double = 0.75,
+                     filename: String = "oscar-ml/src/main/scala/oscar/ml/pm/data/spm/test/input/test.time.spmf",
+                     minsup: Double = 0.5,
                      verbose: Boolean = true,
                      timeLimit: Int = 5
                    )
@@ -25,7 +24,7 @@ object PPICRunner extends App {
 
   val config = Config()
   val epsilon: Int = 0
-  val (db, frequency, nTrans, nItems, lenSeqMax, freqentItems) =  DatasetUtils.prepareForSPM(config.filename, config.minsup)
+  val (db, frequency, nTrans, nItems, lenSeqMax, freqentItems, maxtime) =  DatasetUtils.prepareForSPMTime(config.filename, config.minsup, SpmfWithTimeFormat)
   val domS = epsilon +: freqentItems
 
   System.err.println(config + s"\nSup: $frequency\nnItems: $nItems\nnTrans: $nTrans")
@@ -40,7 +39,8 @@ object PPICRunner extends App {
     // Posting constraints
     cp.add(P(0) > epsilon)
 
-    val constraint = new PPIC(P, frequency, db)
+    val constraint = new PPICt(P, frequency, db, TimeOption(0, maxtime+1, 3, 7))
+
     cp.add(constraint)
 
     // Searching for solutions
@@ -65,9 +65,35 @@ object PPICRunner extends App {
   def printHead(): Unit = {
     System.err.println(
       """
-    /** SPM with a global constraint - PPIC v1.0
+    /** SPM TIME with a global constraint - PPICt v1.0
     Bugs reports : johnaoga@gmail.com , pschaus@gmail.com
     */
       """)
   }
 }
+
+/**
+Config(oscar-ml/src/main/scala/oscar/ml/pm/data/spm/test/input/test.time.spmf,0.5,true,5)
+Sup: 2
+nItems: 6
+nTrans: 4
+
+1 #SUP: 4
+1 2 #SUP: 3
+1 4 #SUP: 3
+1 4 3 #SUP: 3
+2 #SUP: 4
+2 2 #SUP: 2
+2 3 #SUP: 2
+3 #SUP: 4
+4 #SUP: 3
+4 2 #SUP: 2
+4 3 #SUP: 3
+
+nNodes: 94
+nFails: 48
+time(ms): 12
+completed: true
+timeInTrail: 0
+nSols: 11
+ */

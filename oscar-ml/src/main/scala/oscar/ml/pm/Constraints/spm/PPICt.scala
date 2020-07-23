@@ -4,16 +4,29 @@ import oscar.algo.Inconsistency
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp.core._
 import oscar.cp.core.variables._
-import oscar.ml.pm.utils.{Dataset, DatasetUtils, TimeOption}
+import oscar.ml.pm.utils.{Dataset, DatasetUtils, TestHelpers, TimeOption}
 
 
 /**
+ * PPICt [Constraint Programming & Sequential Pattern Mining with Prefix projection method and time constraints]
+ * is the CP version of PPIC constraint supporting time constraints.
  *
- * @param P
- * @param minsup
- * @param data
- * @param timeThresold
+ * This constraint generate all available solution given such parameters
+ *
+ * @param P            , is pattern where $P_i$ is the item in position $i$ in $P$
+ * @param data         , [sequence database] it is a set of sequences. Each line $SDB_i$ or $t_i$ represent a sequence: (item, time)
+ *                     s1 (a, 2)(b, 5)(d, 6)(c, 10)(b, 11)
+ *                     s2 (b, 1)(a, 2)(a, 9)(d, 12)(c, 15)(a, 18)(b, 24)
+ *                     s3 (a, 2)(b, 4)(d, 6)(d, 8)(b, 10)(e, 12)(c, 14)
+ *                     s4 (a, 1)(c, 2)(c, 3)(b, 4)
+ * @param minsup       is a threshold support, item must appear in at least minsup sequences $support(item)>=minsup$
+ * @param timeThresold (minspan: Int, maxspan: Int, mingap: Int, maxgap: Int) represents time constraints
+ * @author John Aoga (johnaoga@gmail.com) and Pierre Schaus (pschaus@gmail.com)
+ *
+ *         Aoga, J.O.R., Guns, T. & Schaus, P. Mining Time-constrained Sequential Patterns with Constraint Programming.
+ *         Constraints 22, 548–570 (2017). https://doi.org/10.1007/s10601-017-9272-3
  */
+
 class PPICt(val P: Array[CPIntVar], val minsup: Int, val data: Dataset, val timeThresold: TimeOption) extends Constraint(P(0).store, "PPICt") {
 
   idempotent = true
@@ -27,17 +40,51 @@ class PPICt(val P: Array[CPIntVar], val minsup: Int, val data: Dataset, val time
   private[this] val nItems: Int = data.nbItem
   private[this] val minspan: Int = timeThresold.minspan
   private[this] val maxspan: Int = timeThresold.maxspan
-  private[this] val mingap: Int = timeThresold.mingap
+  private[this] val mingap: Int = if (timeThresold.mingap == 0) 1 else timeThresold.mingap
   private[this] val maxgap: Int = timeThresold.maxgap
   private[this] val patternSeq = P.clone()
   private[this] val lenPatternSeq = P.length
 
   // Precomputed data structures
-  private[this] val lastPosOfItem: Array[Array[Int]] = DatasetUtils.getItemLastPosBySequence(data)
+  /**
+   * lastPositionMap is the last real position of an item in a sequence, if 0 it is not present
+   *
+   * a, b, c, d, e,
+   * s1: 0, 1, 5, 4, 3, 0, 0
+   * s2: 0, 6, 7, 5, 4, 0, 0
+   * s3: 0, 1, 5, 7, 4, 6, 0
+   * s4: 0, 1, 4, 3, 0, 0, 0
+   */
+  private[this] val lastPositionMap: Array[Array[Int]] = DatasetUtils.getItemLastPosBySequence(data)
+
+  /**
+   * nextPosGap is the first possible position of an item in a sequence taking into account the mingap, if > the sequence length it is not present
+   *
+   * s1: 1, 3, 3, 6, 6
+   * s2: 2, 2, 3, 4, 5, 6, 8
+   * s3: 2, 3, 4, 5, 6, 8, 8
+   * s4: 3, 5, 5, 5
+   */
   private[this] val nextPosGap: Array[Array[Int]] = DatasetUtils.getSDBNextPosGap(data, mingap)
-  private[this] val itemsSupport: Array[Int] = DatasetUtils.getSDBSupport(data)
+
+  /**
+   * itemsSupport: is the initial support (number of sequences where a item is appeared) of all items
+   *
+   * a : 4, b : 4, c : 4, d : 3, e : 1
+   */
+  private[this] val itemsSupport: Array[Int] = lenSDB +: DatasetUtils.getSDBSupport(data)
+
+  /**
+   * nItemMaxPerSeq the longuest itemset: 5 ( <= nItems)
+   */
   private[this] val nItemMaxPerSeq: Int = DatasetUtils.getNItemMaxPerSeq(data)
 
+  // Initialisation of domain
+  private[this] val dom = Array.ofDim[Int](nItems + 1)
+
+  /**
+   * Building the backtracking-aware data structure
+   */
   // Pointer to backtracking-aware data structure (phi and varphi)
   private[this] val psdbStart = new ReversibleInt(s, 0)
   private[this] val psdbSize = new ReversibleInt(s, 0)
@@ -49,23 +96,22 @@ class PPICt(val P: Array[CPIntVar], val minsup: Int, val data: Dataset, val time
   // Current size of the trail
   private[this] var innerTrailSize = lenSDB * 5
 
-  // Initialisation of domain
-  private[this] val dom = Array.ofDim[Int](nItems + 1)
-
-
   // Current position in trail
   private[this] var sids = Array.tabulate(innerTrailSize)(i => i)
   private[this] var embSize = Array.tabulate(innerTrailSize)(i => 1)
   private[this] var embsEnd = Array.tabulate(innerTrailSize)(i => Array.ofDim[Int](nItemMaxPerSeq))
   private[this] var embsFirst = Array.tabulate(innerTrailSize)(i => Array.ofDim[Int](nItemMaxPerSeq))
 
-  // N° of Sequence (sid)
+
+  /**
+   * Extra init
+   */
+  // Number of Sequence (sid)
   private[this] val realNItem = itemsSupport.length
   private[this] val supportCounter: Array[Int] = itemsSupport
 
   /// Visited Item variable
   private[this] val visitedItem = Array.fill[Boolean](realNItem)(false)
-
 
   ///
   var curPrefixSupport: Int = 0
@@ -73,7 +119,7 @@ class PPICt(val P: Array[CPIntVar], val minsup: Int, val data: Dataset, val time
   /**
    * Entry in constraint, function for all init
    *
-   * @param l, represents the strength of the propagation
+   * @param l , represents the strength of the propagation
    */
   final override def setup(l: CPPropagStrength): Unit = {
     propagate()
@@ -160,7 +206,7 @@ class PPICt(val P: Array[CPIntVar], val minsup: Int, val data: Dataset, val time
         var break = false
         var curPosInSid = 0
         var pos = 0
-        val pLast = lastPosOfItem(prefix)(sid)
+        val pLast = lastPositionMap(sid)(prefix)
 
         // Find prefix positions in all sequences
         while (!break && pos < pLast) {
@@ -192,7 +238,7 @@ class PPICt(val P: Array[CPIntVar], val minsup: Int, val data: Dataset, val time
       while (c < startInit + sizeInit) {
 
         val sid = sids(c)
-        val pLast = lastPosOfItem(prefix)(sid)
+        val pLast = lastPositionMap(sid)(prefix)
 
         if (embsEnd(c)(0) < pLast) {
           // Initialization
@@ -246,7 +292,7 @@ class PPICt(val P: Array[CPIntVar], val minsup: Int, val data: Dataset, val time
 
     psdbStart.value = startInit + sizeInit
     psdbSize.value = sup
-    print(sup)
+    //print(sup)
     curPrefixSupport = sup
     sup
 

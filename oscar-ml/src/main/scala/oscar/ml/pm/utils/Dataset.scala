@@ -161,6 +161,14 @@ object DatasetUtils {
     (db, frequency, db.nbTrans, db.nbItem, DatasetUtils.getLenSeqMax(db), DatasetUtils.getFrequentItems(db, frequency))
   }
 
+  def prepareForSPMTime(filename: String, minsup:Double, format: FileFormat = SpadeFormat): (Dataset, Int, Int, Int, Int, Array[Int], Int) = {
+    val db = Dataset(filename, format)
+    var frequency = minsup.intValue()
+    if (minsup > 0 && minsup < 1) frequency = (minsup * db.nbTrans).ceil.toInt //floor is another way around for the support
+
+    (db, frequency, db.nbTrans, db.nbItem, DatasetUtils.getLenSeqMax(db), DatasetUtils.getFrequentItems(db, frequency), db.getTime.map(_.max).max)
+  }
+
   def getNItemMaxPerSeq(data: Dataset): Int = {
     data.rawDatas.map(_.data.distinct.length).max
   }

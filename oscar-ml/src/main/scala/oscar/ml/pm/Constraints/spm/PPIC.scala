@@ -43,33 +43,36 @@ class PPIC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
   private[this] val dom = Array.ofDim[Int](nItems)
 
   // precomputed data structures
-  private[this] val firstPosOfItemBySequence: Array[Array[Int]] = DatasetUtils.getItemFirstPosBySequence(data)
+  /**
+   * firstPositionMap is the first real position of an item in a sequence, if 0 it is not present
+   */
+  private[this] val firstPositionMap: Array[Array[Int]] = DatasetUtils.getItemFirstPosBySequence(data)
 
   /**
-   * lastPosOfItemBySequence is the last real position of an item in a sequence, if 0 it is not present
+   * lastPositionMap is the last real position of an item in a sequence, if 0 it is not present
    * 0, 1, 4, 5, 0
    * 0, 2, 3, 4, 0
    * 0, 1, 2, 0, 0
    * 0, 0, 1, 2, 0
    */
-  private[this] val lastPosOfItemBySequence: Array[Array[Int]] = DatasetUtils.getItemLastPosBySequence(data)
-  //--//TestHelpers.printMat(lastPosOfItemBySequence)
+  private[this] val lastPositionMap: Array[Array[Int]] = DatasetUtils.getItemLastPosBySequence(data)
+  //--//TestHelpers.printMat(lastPositionMap)
   //--//println()
 
   /**
-   * SdbOfLastPos
+   * lastPositionList is an ordered list of last postions of items in a given sequence
    *    p1,p2,p3,p4,p5
-   * s1: 1, 4, 5, 4, 5
-   * s2: 3, 2, 3, 4
-   * s3: 1, 2
-   * s4: 1, 2
+   * s1: 5, 4, 1
+   * s2: 4, 3, 2
+   * s3: 2, 1
+   * s4: 2, 1
    */
-  private[this] val SdbOfLastPos: Array[Array[Int]] = DatasetUtils.getSDBLastPos(data, lastPosOfItemBySequence)
-  //--//TestHelpers.printMat(SdbOfLastPos)
+  private[this] val lastPositionList: Array[Array[Int]] = DatasetUtils.getSDBLastPos(data, lastPositionMap)
+  //--//TestHelpers.printMat(lastPositionList)
 
   /**
    * itemsSupport: is the initial support (number of sequences where a item is appeared) of all items
-   * a : 3, b : 4, c : 3, d : 1
+   * a : 3, b : 4, c : 3
    */
   private[this] val itemsSupport: Array[Int] = lenSDB +: DatasetUtils.getSDBSupport(data)
 
@@ -94,7 +97,7 @@ class PPIC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
   }
 
   ///support counter contain support for each item, it is reversible for efficient backtrack
-  private[this] var supportCounter = lenSDB +: itemsSupport
+  private[this] var supportCounter = /*lenSDB +:*/ itemsSupport
   var curPrefixSupport: Int = 0
 
   ///current position in P $P_i = P[curPosInP.value]$
@@ -228,13 +231,13 @@ class PPIC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
       val start = psdbPosInSeq(i)
       var pos = start
 
-      //--//println(">>>>>>>>>>>>>>>"+prefix+", "+sid+", "+lastPosOfItemBySequence(sid)(prefix)) //--//
+      //--//println(">>>>>>>>>>>>>>>"+prefix+", "+sid+", "+lastPositionMap(sid)(prefix)) //--//
 
-      if (lastPosOfItemBySequence(sid)(prefix) != 0) {
+      if (lastPositionMap(sid)(prefix) != 0) {
         // We know at least that prefix is present in sequence sid
 
         // Search for next value "prefix" in the sequence starting from
-        if (lastPosOfItemBySequence(sid)(prefix) - 1 >= pos) {
+        if (lastPositionMap(sid)(prefix) - 1 >= pos) {
           // Prefix next position is available,
           // we can thus add the sequence in the new projected data base
 
@@ -242,7 +245,7 @@ class PPIC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
 
           // Find next position of prefix
           if (start == -1) {
-            pos = firstPosOfItemBySequence(sid)(prefix) - 1
+            pos = firstPositionMap(sid)(prefix) - 1
           } else {
             while (pos < lti && prefix != ti(pos)) {
               pos += 1
@@ -258,7 +261,7 @@ class PPIC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
           curPrefixSupport += 1
 
           // Recompute support
-          val tiLast = SdbOfLastPos(sid)
+          val tiLast = lastPositionList(sid)
 
           //--//println(tiLast.mkString("-")+" pos = "+pos)
           var c = 0

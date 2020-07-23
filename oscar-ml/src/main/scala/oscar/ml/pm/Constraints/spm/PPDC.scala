@@ -31,6 +31,8 @@ import oscar.ml.pm.utils.{Dataset, DatasetUtils, TestHelpers}
 
 class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends Constraint(P(0).store, "PPDC") {
 
+  System.err.println("PPDC!")
+
   idempotent = true
 
   /// Initializing the other input variables (precomputed data structures)
@@ -46,29 +48,29 @@ class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
   // precomputed data structures
 
   /**
-   * lastPosOfItemBySequence: is the last real position of an item in a sequence, if 0 it is not present
+   * lastPositionMap: is the last real position of an item in a sequence, if 0 it is not present
    * s1  s2  s3  s4
    * a  1   2   1   0
    * b  4   3   2   1
    * c  5   4   0   2
    * d  0   0   0   3
    */
-  private[this] val lastPosOfItemBySequence: Array[Array[Int]] = DatasetUtils.getItemLastPosBySequence(data)
+  private[this] val lastPositionMap: Array[Array[Int]] = DatasetUtils.getItemLastPosBySequence(data)
 
   /**
-   * SdbOfLastPos
+   * lastPositionList
    *    p1,p2,p3,p4,p5
    * s1: 1, 4, 5, 4, 5
    * s2: 3, 2, 3, 4
    * s3: 1, 2
    * s4: 1, 2
    */
-  private[this] val SdbOfLastPos: Array[Array[Int]] = DatasetUtils.getSDBLastPos(data, lastPosOfItemBySequence)
-  //--//TestHelpers.printMat(SdbOfLastPos)
+  private[this] val lastPositionList: Array[Array[Int]] = DatasetUtils.getSDBLastPos(data, lastPositionMap)
+  //--//TestHelpers.printMat(lastPositionList)
 
   /**
    * itemsSupport: is the initial support (number of sequences where a item is appeared) of all items
-   * a : 3, b : 4, c : 3, d : 1
+   * a : 3, b : 4, c : 3
    */
   private[this] val itemsSupport: Array[Int] = lenSDB +: DatasetUtils.getSDBSupport(data)
 
@@ -117,6 +119,7 @@ class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
    * @return the outcome i.e. Failure, Success or Suspend
    */
   final override def propagate(): Unit = {
+
     var v = curPosInP.value
     if (P(v).isBoundTo(epsilon)) {
       if (!P(v - 1).isBoundTo(epsilon))
@@ -200,6 +203,7 @@ class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
    * @return
    */
   def projectSDB(prefix: Int): Int = {
+
     val startInit = psdbStart.value
     val sizeInit = psdbSize.value
 
@@ -217,11 +221,11 @@ class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
       val start = psdbPosInSeq(i)
       var pos = start
 
-      if (lastPosOfItemBySequence(sid)(prefix) != 0) {
+      if (lastPositionMap(sid)(prefix) != 0) {
         // We know at least that prefix is present in sequence sid
 
         // Search for next value "prefix" in the sequence starting from
-        if (lastPosOfItemBySequence(sid)(prefix) - 1 >= pos) {
+        if (lastPositionMap(sid)(prefix) - 1 >= pos) {
           // Prefix next position is available,
           // we can thus add the sequence in the new projected data base
 
@@ -269,7 +273,7 @@ class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
    * @param pos
    */
   def updateSupportCounter(item: Int, sid: Int, pos: Int): Unit = {
-    if (lastPosOfItemBySequence(sid)(item) - 1 <= pos) {
+    if (lastPositionMap(sid)(item) - 1 <= pos) {
       // The the support of an item doesn't need to be exact when it is below the threshold
       // because at that point this item is not interesting anymore.
       // (This optimization can save some useless trailing operations)
@@ -291,10 +295,17 @@ class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
       updateSupportCounter(sequence(pos), sid, pos)
     }
 
-    var break = false
-    val tiLast = SdbOfLastPos(sid)
+    val tiLast = lastPositionList(sid)
 
-    while (!break && pos < lenOfSequence) {
+    //--//println(tiLast.mkString("-")+" pos = "+pos)
+    var c = 0
+    while ( c < tiLast.length && tiLast(c)-1 > pos ) {
+      //////print(tiLast(c)+" ")
+      supportCounter ( sequence(tiLast(c)-1) ).decr()
+      c += 1
+    }
+
+    /*while (!break && pos < lenOfSequence) {
       val last = tiLast(pos)
       if (last == 0) {
         break = true
@@ -303,7 +314,7 @@ class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
         supportCounter(item).decr()
         pos = last - 1
       }
-    }
+    }*/
   }
 
   override def associatedVars(): Iterable[CPVar] = P

@@ -43,7 +43,7 @@ class PPDCTest extends TestSuite {
 
     cp.onSolution {
       val actualSolKey = db.patternToString(P.map(_.min).filter(_ > 0))
-      println(actualSolKey)
+      //println(actualSolKey)
       assert(output(actualSolKey) == constraint.curPrefixSupport)
     }
 
