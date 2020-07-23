@@ -50,7 +50,7 @@ class VehiclePartition(vehicleToNodeToMove:SortedMap[Int,Iterable[Int]],
     val allNodes = unroutedNodeToInsert.toList ::: vehicleToNodeToMove.values.flatten.toList
     val maxId = allNodes.max
     require(allNodes.min >= 0)
-    val toReturn = Array.fill(maxId)(-1)
+    val toReturn = Array.fill(maxId+1)(-1)
 
     var nextPartitionId = 0
     for ((_, nodes) <- vehicleToNodeToMove) {

@@ -262,7 +262,7 @@ class VLSN(v:Int,
            name:String = "VLSN",
            reoptimizeAtStartUp:Boolean = false,
            debugNeighborhoodExploration:Boolean = false,
-           enrichmentSchemeSpec:EnrichmentSchemeSpec = CompositeEnrichmentSchemeSpec(VehiclePartitionSpec(),RandomScheme(nbPartition=20, nbSteps=20))) extends Neighborhood {
+           enrichmentSchemeSpec:EnrichmentSchemeSpec = CompositeEnrichmentSchemeSpec(VehiclePartitionSpec(),RandomScheme(nbPartition=10, nbSteps=10))) extends Neighborhood {
 
   def doReoptimize(vehicle:Int) {
     val reOptimizeNeighborhoodGenerator = reOptimizeVehicle match{
@@ -474,9 +474,9 @@ class VLSN(v:Int,
                            unroutedNodesToInsert: SortedSet[Int],
                            cachedExplorations: Option[CachedExplorations]): Option[DataForVLSNRestart] = {
 
-    val moveExplorer:MoveExplorer = getMoveExplorer(vehicleToRoutedNodesToMove, unroutedNodesToInsert, ???, cachedExplorations)
-
     val enrichmentScheme = enrichmentSchemeSpec.instantiate(vehicleToRoutedNodesToMove, unroutedNodesToInsert)
+
+    val moveExplorer:MoveExplorer = getMoveExplorer(vehicleToRoutedNodesToMove, unroutedNodesToInsert, enrichmentScheme.moveToLevel, cachedExplorations)
 
     var currentEnrichmentLevel = -1
     val maxEnrichmentLevel = enrichmentScheme.maxLevel
@@ -548,6 +548,9 @@ class VLSN(v:Int,
       }
 
       vlsnGraph = moveExplorer.enrichGraph(currentEnrichmentLevel, dirtyNodes, dirtyVehicles)
+      if(printTakenMoves) {
+        println("            " + vlsnGraph.statisticsString)
+      }
 
       var cycleFound: Boolean = true
       //now, we search for every cycles in this graph

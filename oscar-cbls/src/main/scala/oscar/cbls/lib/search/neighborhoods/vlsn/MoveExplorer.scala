@@ -107,7 +107,6 @@ class MoveExplorer(v:Int,
   //maybe we should unroute all nodes before doing move exploration since we do not want to waste time on evaluation obj on non targeted vehicle?
   val nodesToMove: Iterable[Int] = vehicleToRoutedNodes.flatMap(_._2)
 
-  val n = nodesToMove.max - 1
   require(nodesToMove.min >=0, "VLSN cannot handle nodes with negative ID's; got" + nodesToMove.min)
   // /////////////////////////////////////////////////////////////
   //building the nodes
@@ -154,12 +153,11 @@ class MoveExplorer(v:Int,
   // /////////////////////////////////////////////////////////////
   //the partitioning data
 
-  var partitionLevelDone:Int = 0
-  var currentPartitionLevel:Int = 1
+  var partitionLevelDone:Int = -1
+  var currentPartitionLevel:Int = 0
 
   def vehicleIsDirty:Array[Boolean] = Array.fill(v)(false)
-
-  def nodeIsDirty:Array[Boolean] = Array.fill(n)(false)
+  def nodeIsDirty:Array[Boolean] = Array.fill((nodesToMove.max max unroutedNodesToInsert.max)+1)(false)
 
   def isMoveToExplore(fromNode:Int, fromVehicle:Int, toVehicle:Int, toNode:Int = -1):Boolean = {
     if(nodeIsDirty(fromNode)
@@ -168,7 +166,8 @@ class MoveExplorer(v:Int,
       || (toNode!= -1 && nodeIsDirty(toNode))) return false
 
     val partitionLevel = gradualEnrichmentSchemeN1V1N2V2P(fromNode, fromVehicle, toNode, toVehicle)
-    partitionLevelDone <= partitionLevel && partitionLevel <= currentPartitionLevel
+
+    partitionLevelDone < partitionLevel && partitionLevel <= currentPartitionLevel
   }
 
   def isInsertToExplore(unroutedNode:Int, toVehicle:Int, removedNode:Int = -1):Boolean = {
@@ -177,7 +176,7 @@ class MoveExplorer(v:Int,
       || (removedNode!= -1 && nodeIsDirty(removedNode))) return false
 
     val partitionLevel = gradualEnrichmentSchemeN1V1N2V2P(unroutedNode, -1, removedNode, toVehicle)
-    partitionLevelDone <= partitionLevel && partitionLevel <= currentPartitionLevel
+    partitionLevelDone < partitionLevel && partitionLevel <= currentPartitionLevel
   }
 
 
@@ -188,22 +187,26 @@ class MoveExplorer(v:Int,
   //par contre, on a le choix quand on trouve un cycle, on continue à construire le modèle avec ce qu ireste?
   //oui, mais du coup il faut avoir une notion de dirtyNode et dirtyVehicle ici.
 
-
+  addNoMoveEdgesVehiclesToTrashNode()
+  addTrashNodeToUnroutedNodes()
+  exploreEjections()
   // /////////////////////////////////////////////////////////////
   def enrichGraph(partitioningLevel:Int, dirtyNodes:Set[Int],dirtyVehicles:Set[Int]): VLSNGraph = {
 
     for(node <- dirtyNodes) nodeIsDirty(node) = true
     for(vehicle <- dirtyVehicles) vehicleIsDirty(vehicle) = true
 
-    require(currentPartitionLevel > partitionLevelDone)
+    require(partitioningLevel > partitionLevelDone)
     currentPartitionLevel = partitioningLevel
 
     exploreInsertions()
     exploreNodeMove()
     exploreDeletions() //should be called after insertions
-    addNoMoveEdgesVehiclesToTrashNode()
-    addTrashNodeToUnroutedNodes()
-    exploreEjections() // about moving one node away from a vehicle, without associated insert or move
+
+    //these ones are done once and forall at init time of this class
+    //exploreEjections() // about moving one node away from a vehicle, without associated insert or move
+    //addNoMoveEdgesVehiclesToTrashNode()
+    //addTrashNodeToUnroutedNodes()
 
     partitionLevelDone = currentPartitionLevel
     //println("direct inserts:" + directInsertsNodeVehicle)
@@ -302,6 +305,7 @@ class MoveExplorer(v:Int,
 
       //insertion with remove, we remove, and then insert
       //insertion with remove
+
       for (routingNodeToRemove <- vehicleToRoutedNodes(targetVehicleForInsertion)) {
         val symbolicNodeToRemove = nodeIDToNode(routingNodeToRemove)
 
@@ -312,7 +316,7 @@ class MoveExplorer(v:Int,
         val correctedGlobalInit = initialGlobalObjective - initialUnroutedNodesPenalty + unroutedObjAfterRemove
 
         for (unroutedNodeToInsert <- unroutedNodesToInsert
-             if isInsertToExplore(
+             if (!nodeIsDirty(unroutedNodeToInsert)) && isInsertToExplore(
                unroutedNode = unroutedNodeToInsert,
                toVehicle = targetVehicleForInsertion,
                removedNode = routingNodeToRemove)) {
