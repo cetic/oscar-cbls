@@ -25,7 +25,7 @@ class SameSizeRandomPartitions(allNodes:List[Int], override val nbPartition:Int)
     val nodes = Random.shuffle(allNodes)
     val maxId = allNodes.max
     require(allNodes.min >= 0)
-    val toReturn = Array.fill(maxId)(-1)
+    val toReturn = Array.fill(maxId+1)(-1)
     var currentPartition = nbPartition - 1
     for (node <- nodes) {
       toReturn(node) = currentPartition

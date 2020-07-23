@@ -69,7 +69,7 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
 
   def addEdge(from:Node, to:Node, deltaObj:Long, move:Move, vLSNMoveType: VLSNMoveType):Edge = {
     val edge = new Edge(from:Node,to:Node, move:Move,deltaObj:Long, nextEdgeID, vLSNMoveType)
-
+ //   println("add edge (vehicles: vehicle" + from.vehicle + ", vehicle" + to.vehicle + " : " + edge)
     require(edges(from.nodeID)(to.nodeID) == null, "\nalready existing edge:       " + edges(from.nodeID)(to.nodeID) + "\nan edge that we want to add: " + edge)
     edges(from.nodeID)(to.nodeID) = edge
 

@@ -273,7 +273,7 @@ class VLSN(v:Int,
            name:String = "VLSN",
            reoptimizeAtStartUp:Boolean = false,
            debugNeighborhoodExploration:Boolean = false,
-           enrichmentSchemeSpec:VLSNEnrichmentSchemeSpec = CompositeEnrichmentSchemeSpec(VehiclePartitionSpec(),RandomSchemeSpec(nbSteps=10))) extends Neighborhood {
+           enrichmentSchemeSpec:VLSNEnrichmentSchemeSpec = CompositeEnrichmentSchemeSpec(SameSizeRandomPartitionsSpec(nbPartitions = 20),RandomSchemeSpec(nbSteps=100))) extends Neighborhood {
 
   def doReoptimize(vehicle:Int) {
     val reOptimizeNeighborhoodGenerator = reOptimizeVehicle match{
