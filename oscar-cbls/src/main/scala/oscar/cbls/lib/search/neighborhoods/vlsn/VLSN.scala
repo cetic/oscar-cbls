@@ -24,19 +24,19 @@ import oscar.cbls.core.search._
 import oscar.cbls._
 import scala.collection.immutable.{SortedMap, SortedSet}
 
-abstract class EnrichmentSchemeSpec(){
+abstract class VLSNEnrichmentSchemeSpec(){
   def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
                   unroutedNodesToInsert: SortedSet[Int]):EnrichmentScheme
 
 }
 
 case class CompositeEnrichmentSchemeSpec(base: BasePartitionSchemeSpec,
-                                         enrich: VLSNEnrichmentScheme) extends EnrichmentSchemeSpec(){
+                                         enrich: EnrichmentSchemeSpec) extends VLSNEnrichmentSchemeSpec(){
   override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
                            unroutedNodesToInsert: SortedSet[Int]): EnrichmentScheme = {
+    val baseInst = base.instantiate(vehicleToRoutedNodesToMove,unroutedNodesToInsert)
     new EnrichmentScheme(
-      base.instantiate(vehicleToRoutedNodesToMove,unroutedNodesToInsert),
-      enrich
+      baseInst,enrich.instantiate(baseInst.nbPartition)
     )
   }
 }
@@ -61,6 +61,17 @@ case class VehiclePartitionSpec() extends BasePartitionSchemeSpec(){
   }
 }
 
+abstract class EnrichmentSchemeSpec(){
+  def instantiate(nbPartitions:Int):VLSNEnrichmentScheme
+}
+
+case class RandomSchemeSpec(nbSteps:Int) extends EnrichmentSchemeSpec(){
+  override def instantiate(nbPartitions: Int): VLSNEnrichmentScheme = {
+    val realNbSteps = nbSteps min (nbPartitions*(nbPartitions-1)/2)
+    warning("Random VLSN enrichment scheme;nbSteps reduced from " + nbSteps + " to " + realNbSteps)
+    RandomScheme(nbPartitions,realNbSteps)
+  }
+}
 
 /**
  * Very Large Scale Neighborhood
@@ -262,7 +273,7 @@ class VLSN(v:Int,
            name:String = "VLSN",
            reoptimizeAtStartUp:Boolean = false,
            debugNeighborhoodExploration:Boolean = false,
-           enrichmentSchemeSpec:EnrichmentSchemeSpec = CompositeEnrichmentSchemeSpec(VehiclePartitionSpec(),RandomScheme(nbPartition=10, nbSteps=10))) extends Neighborhood {
+           enrichmentSchemeSpec:VLSNEnrichmentSchemeSpec = CompositeEnrichmentSchemeSpec(VehiclePartitionSpec(),RandomSchemeSpec(nbSteps=10))) extends Neighborhood {
 
   def doReoptimize(vehicle:Int) {
     val reOptimizeNeighborhoodGenerator = reOptimizeVehicle match{
@@ -503,6 +514,7 @@ class VLSN(v:Int,
         val node = edge.from.representedNode; if (node >= 0) Some(node) else None
       })
 
+      dirtyVehicles = dirtyVehicles ++ theImpactedVehicles
       for (vlsnNode <- vlsnGraph.nodes) {
         if ((impactedRoutingNodes contains vlsnNode.representedNode) || (theImpactedVehicles contains vlsnNode.vehicle)) {
           liveNodes(vlsnNode.nodeID) = false
@@ -545,6 +557,9 @@ class VLSN(v:Int,
 
       if(printTakenMoves) {
         println("            enriching VLSN gaph to level " + currentEnrichmentLevel + " of " + enrichmentSchemeSpec)
+        println("            dirtyVehicles:" + dirtyVehicles)
+        println("            dirtyNodes:" + dirtyNodes)
+
       }
 
       vlsnGraph = moveExplorer.enrichGraph(currentEnrichmentLevel, dirtyNodes, dirtyVehicles)

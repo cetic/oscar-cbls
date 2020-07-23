@@ -150,6 +150,7 @@ case class RandomScheme(nbPartition:Int, nbSteps:Int)
       toReturn(i)(i) = 0
     }
 
+    println("Random:\n" + toReturn.map(_.mkString(",")).mkString(" \n"))
     toReturn
   }
 

@@ -157,7 +157,8 @@ class MoveExplorer(v:Int,
   var currentPartitionLevel:Int = 0
 
   def vehicleIsDirty:Array[Boolean] = Array.fill(v)(false)
-  def nodeIsDirty:Array[Boolean] = Array.fill((nodesToMove.max max unroutedNodesToInsert.max)+1)(false)
+
+  def nodeIsDirty:Array[Boolean] = Array.fill(((nodesToMove ++ unroutedNodesToInsert).max)+1)(false)
 
   def isMoveToExplore(fromNode:Int, fromVehicle:Int, toVehicle:Int, toNode:Int = -1):Boolean = {
     if(nodeIsDirty(fromNode)
@@ -236,6 +237,7 @@ class MoveExplorer(v:Int,
 
     for ((targetVehicleForInsertion, unroutedNodesToInsert) <- vehicleToUnroutedNodeToInsert) {
 
+      require(!vehicleIsDirty(targetVehicleForInsertion))
       var currentVehicleHasDirectInsert: Boolean = false
 
       //try inserts without removes
@@ -302,7 +304,7 @@ class MoveExplorer(v:Int,
   private def exploreInsertionsWithRemove(vehicleToUnroutedNodeToInsert: Map[Int, Iterable[Int]]): Unit = {
 
     for ((targetVehicleForInsertion, unroutedNodesToInsert) <- vehicleToUnroutedNodeToInsert){
-
+      require(!vehicleIsDirty(targetVehicleForInsertion))
       //insertion with remove, we remove, and then insert
       //insertion with remove
 
@@ -348,7 +350,7 @@ class MoveExplorer(v:Int,
                                         removedNode: Int,
                                         correctedGlobalInit: Long,
                                         cached:Boolean): (Move, Long) = {
-
+    require(!vehicleIsDirty(targetVehicleForInsertion))
     val nodeToInsertToNeighborhood = cachedInsertNeighborhoodWithRemove match {
       case Some((cachedTarget, cachedRemoved, cachedNeighborhood))
         if cached && cachedTarget == targetVehicleForInsertion && cachedRemoved == removedNode =>
@@ -394,7 +396,7 @@ class MoveExplorer(v:Int,
 
     for ((targetVehicleID, routedNodesToMoveThere) <- vehicleToNodeToMoveThere) {
       val symbolicNodeOfVehicle = vehicleToNode(targetVehicleID)
-
+      require(!vehicleIsDirty(targetVehicleID))
       //moves without removes
       for (routingNodeToMove <- routedNodesToMoveThere) {
         val symbolicNodeOfNodeToMove = nodeIDToNode(routingNodeToMove)
@@ -423,6 +425,9 @@ class MoveExplorer(v:Int,
   private var cachedNodeMoveNeighborhoodNoRemove:Option[(Int,Int => Neighborhood)] = None //targetVehicle,node=>Neighborhood
 
   def evaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle: Int, targetVehicleForInsertion: Int, cached:Boolean): (Move, Long) = {
+
+    require(!vehicleIsDirty(fromVehicle))
+    require(!vehicleIsDirty(targetVehicleForInsertion))
 
     val nodeToMoveToNeighborhood = cachedNodeMoveNeighborhoodNoRemove match {
       case Some((cachedTarget, cachedNeighborhood)) if cachedTarget == targetVehicleForInsertion && cached =>
@@ -455,7 +460,7 @@ class MoveExplorer(v:Int,
 
   private def exploreNodeMoveWithRemove(vehicleToNodeToMoveThere:Map[Int,Iterable[Int]]): Unit = {
     for((targetVehicleID,routedNodesToMoveThere) <- vehicleToNodeToMoveThere) {
-
+      require(!vehicleIsDirty(targetVehicleID))
       //moves with removes
       for(nodeIDToEject <- vehicleToRoutedNodes(targetVehicleID)){
         val symbolicNodeToEject = nodeIDToNode(nodeIDToEject)
@@ -467,7 +472,7 @@ class MoveExplorer(v:Int,
         for(routingNodeToMove <- routedNodesToMoveThere) {
           val symbolicNodeOfNodeToMove = nodeIDToNode(routingNodeToMove)
           val fromVehicle =  symbolicNodeOfNodeToMove.vehicle
-
+          require(!vehicleIsDirty(fromVehicle))
           if (symbolicNodeOfNodeToMove.vehicle != targetVehicleID &&
             isMoveToExplore(
               fromNode = routingNodeToMove,
