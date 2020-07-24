@@ -273,7 +273,7 @@ class VLSN(v:Int,
            name:String = "VLSN",
            reoptimizeAtStartUp:Boolean = false,
            debugNeighborhoodExploration:Boolean = false,
-           enrichmentSchemeSpec:VLSNEnrichmentSchemeSpec = CompositeEnrichmentSchemeSpec(SameSizeRandomPartitionsSpec(nbPartitions = 20),RandomSchemeSpec(nbSteps=100))) extends Neighborhood {
+           enrichmentSchemeSpec:VLSNEnrichmentSchemeSpec = CompositeEnrichmentSchemeSpec(SameSizeRandomPartitionsSpec(nbPartitions = 20),RandomSchemeSpec(nbSteps=10))) extends Neighborhood {
 
   def doReoptimize(vehicle:Int) {
     val reOptimizeNeighborhoodGenerator = reOptimizeVehicle match{
@@ -515,6 +515,8 @@ class VLSN(v:Int,
       })
 
       dirtyVehicles = dirtyVehicles ++ theImpactedVehicles
+      dirtyNodes = dirtyNodes ++ cycle.flatMap(edge => List(edge.from.representedNode,edge.to.representedNode).filter(_ > v))
+
       for (vlsnNode <- vlsnGraph.nodes) {
         if ((impactedRoutingNodes contains vlsnNode.representedNode) || (theImpactedVehicles contains vlsnNode.vehicle)) {
           liveNodes(vlsnNode.nodeID) = false
@@ -538,7 +540,7 @@ class VLSN(v:Int,
       }
       killNodesImpactedByCycle(edges,vlsnGraph)
 
-      require(globalObjective.value == computedNewObj, "new global objective differs from computed newObj:" + globalObjective + "!=" + computedNewObj + "edges:" + edges + " - Unrouted Penlaty:" +  unroutedPenalty.value + " - Obj Per Vehicle:" + vehicleToObjective.mkString(";"))
+      require(globalObjective.value == computedNewObj, "new global objective differs from computed newObj:" + globalObjective + "!=" + computedNewObj + "\nedges:\n" + edges.mkString("\n\t") + "\nUnrouted Penlaty:" +  unroutedPenalty.value + " - Obj Per Vehicle:\n" + vehicleToObjective.mkString("\n"))
     }
 
     def printCycle(cycle:List[Edge]){
@@ -552,32 +554,41 @@ class VLSN(v:Int,
     var vlsnGraph:VLSNGraph = null
     //We need this graph after completion of the loop to build the cache of not used moves.
 
+    var nbEdgesAtPreviousIteration:Int = 0
+
     while (currentEnrichmentLevel < maxEnrichmentLevel && dirtyVehicles.size < v) {
       currentEnrichmentLevel += 1
 
+      println("dirtyVehicles:" + dirtyVehicles)
+      println("dirtyNodes:" + dirtyNodes)
+
       if(printTakenMoves) {
         println("            enriching VLSN gaph to level " + currentEnrichmentLevel + " of " + enrichmentSchemeSpec)
-        println("            dirtyVehicles:" + dirtyVehicles)
-        println("            dirtyNodes:" + dirtyNodes)
-
       }
-
       vlsnGraph = moveExplorer.enrichGraph(currentEnrichmentLevel, dirtyNodes, dirtyVehicles)
       if(printTakenMoves) {
         println("            " + vlsnGraph.statisticsString)
       }
 
-      var cycleFound: Boolean = true
-      //now, we search for every cycles in this graph
-      while (cycleFound) {
-        CycleFinderAlgo(vlsnGraph, cycleFinderAlgoSelection).findCycle(liveNodes) match {
-          case Some(listOfEdge) =>
-            performEdgesAndKillCycles(listOfEdge,vlsnGraph)
-            if(printTakenMoves) printCycle(listOfEdge)
-            cycleFound = true
-          case None =>
-            //we did not find any move at all on the graph, so it can be enriched now
-            cycleFound = false
+      if(vlsnGraph.nbEdges == nbEdgesAtPreviousIteration){
+        if(printTakenMoves) {
+          println("            skip cycle search")
+        }
+      }else {
+        nbEdgesAtPreviousIteration = vlsnGraph.nbEdges
+        var cycleFound: Boolean = true
+        //now, we search for every cycles in this graph
+        while (cycleFound) {
+          CycleFinderAlgo(vlsnGraph, cycleFinderAlgoSelection).findCycle(liveNodes) match {
+            case Some(listOfEdge) =>
+              if (printTakenMoves) printCycle(listOfEdge)
+              performEdgesAndKillCycles(listOfEdge, vlsnGraph)
+
+              cycleFound = true
+            case None =>
+              //we did not find any move at all on the graph, so it can be enriched now
+              cycleFound = false
+          }
         }
       }
     }
@@ -599,7 +610,6 @@ class VLSN(v:Int,
         }
     }
 
-    throw new Error("end of existing code. ")
     //there is no possible incremental restart for VLSN
     if (acc.isEmpty) {
       None

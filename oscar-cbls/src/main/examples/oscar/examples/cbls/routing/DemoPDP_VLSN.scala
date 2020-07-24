@@ -515,7 +515,7 @@ object DemoPDP_VLSN extends App{
 
       name="VLSN(" + l + ")",
       reoptimizeAtStartUp = true,
-      debugNeighborhoodExploration = false
+      debugNeighborhoodExploration = true
     )
   }
 

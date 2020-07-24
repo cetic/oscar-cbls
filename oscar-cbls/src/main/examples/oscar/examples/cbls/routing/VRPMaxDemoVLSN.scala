@@ -223,6 +223,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
       cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy,
 
+      //debugNeighborhoodExploration = true,
       name="VLSN(" + l + ")"
     )
   }

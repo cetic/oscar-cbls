@@ -64,8 +64,8 @@ class MoveExplorer(v:Int,
 
 
   val initialVehicleToObjectives = vehicleToObjectives.map(_.value)
-  val initialUnroutedNodesPenalty = unroutedNodesPenalty.value
-  val initialGlobalObjective = globalObjective.value
+  var initialUnroutedNodesPenalty = unroutedNodesPenalty.value
+  var initialGlobalObjective = globalObjective.value
 
   //This is for debug purposes. Through this class we can check that other Obj have not moved
   // when exploring a given move from a givnen vehicel to a given other one.
@@ -86,7 +86,7 @@ class MoveExplorer(v:Int,
       if (!penaltyChanged){
         val newValue = unroutedNodesPenalty.value
         require(newValue == Long.MaxValue || newValue == initialUnroutedNodesPenalty,
-          "Penaly impacted by current move and should not, can only impact " + changedVehicles.mkString(")"))
+          "Penaly impacted by current move and should not, can only impact " + changedVehicles.mkString(","))
       }
       for (vehicle <- 0 until v){
         if(!(changedVehicles contains vehicle)) {
@@ -191,11 +191,21 @@ class MoveExplorer(v:Int,
   addNoMoveEdgesVehiclesToTrashNode()
   addTrashNodeToUnroutedNodes()
   exploreEjections()
+
+
+
   // /////////////////////////////////////////////////////////////
   def enrichGraph(partitioningLevel:Int, dirtyNodes:Set[Int],dirtyVehicles:Set[Int]): VLSNGraph = {
 
     for(node <- dirtyNodes) nodeIsDirty(node) = true
-    for(vehicle <- dirtyVehicles) vehicleIsDirty(vehicle) = true
+    for(vehicle <- dirtyVehicles) {
+      vehicleIsDirty(vehicle) = true
+      //initialVehicleToObjectives(vehicle) = vehicleToObjectives(vehicle).value
+    }
+
+    //initialUnroutedNodesPenalty = unroutedNodesPenalty.value
+    //initialGlobalObjective = globalObjective.value
+
 
     require(partitioningLevel > partitionLevelDone)
     currentPartitionLevel = partitioningLevel
