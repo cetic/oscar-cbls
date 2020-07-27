@@ -489,7 +489,6 @@ object DemoPDP_VLSN extends App{
 
   def vlsn(l:Int = Int.MaxValue) = {
     //VLSN neighborhood
-    val nodeToAllVehicles = SortedMap.empty[Int, Iterable[Int]] ++ chainsExtension.heads.map(node => (node:Int, vehicles))
     new VLSN(
       v,
       () => SortedMap.empty[Int, SortedSet[Int]] ++
@@ -505,7 +504,6 @@ object DemoPDP_VLSN extends App{
       removeNodeAndReInsert = removeAndReInsertVLSN,
 
       reOptimizeVehicle = Some(vehicle => Some(threeOptOnVehicle(vehicle) exhaustBack moveChainWithinVehicle(vehicle))),
-      useDirectInsert = false,
 
       objPerVehicle,
       unroutedPenaltyOBj,
@@ -515,14 +513,14 @@ object DemoPDP_VLSN extends App{
 
       name="VLSN(" + l + ")",
       reoptimizeAtStartUp = true,
-      debugNeighborhoodExploration = true
+      debugNeighborhoodExploration = false
     )
   }
 
   // ///////////////////////////////////////////////////////////////////////////////////////////////////
 
   val vlsnNeighborhood = vlsn(l)
-  val search = bestSlopeFirst(List(oneChainInsert,oneChainMove, onePtMove(20))) exhaustBack (vlsnNeighborhood maxMoves 1)
+  val search = bestSlopeFirst(List(oneChainInsert,oneChainMove, onePtMove(20))) exhaust (vlsnNeighborhood maxMoves 1)
 
   search.verbose = 1
   vlsnNeighborhood.verbose = 2

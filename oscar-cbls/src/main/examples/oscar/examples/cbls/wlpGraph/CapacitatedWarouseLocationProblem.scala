@@ -314,7 +314,6 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
     },//:Long => () => Unit,
 
     reOptimizeVehicle= None,//:Option[Long => Option[Neighborhood]],
-    useDirectInsert=false, //:Boolean,
 
     vehicleToObjective= objPerWarehouse, //:Array[Objective],
     unroutedPenalty= constantObjective,//:Objective,
@@ -355,7 +354,6 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
     },//:Long => () => Unit,
 
     reOptimizeVehicle= None,//:Option[Long => Option[Neighborhood]],
-    useDirectInsert=false, //:Boolean,
 
     vehicleToObjective= objPerWarehouse, //:Array[Objective],
     unroutedPenalty= constantObjective,//:Objective,
@@ -382,7 +380,6 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
       }, //:Long => () => Unit,
 
       reOptimizeVehicle = None, //:Option[Long => Option[Neighborhood]],
-      useDirectInsert = false, //:Boolean,
 
       vehicleToObjective = objPerWarehouse, //:Array[Objective],
       unroutedPenalty = constantObjective, //:Objective,

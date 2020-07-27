@@ -62,10 +62,12 @@ class VLSNNodeBuilder(var nbLabels:Int) {
 }
 
 class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
-  val nbNodes = nodes.length
-  val edges:Array[Array[Edge]] = Array.tabulate(nbNodes)(_ => Array.fill(nbNodes)(null))
-  var fromToWithEdge:List[(Int,Int)] = List.empty
-  var nextEdgeID:Int = 0
+  private val nbNodes = nodes.length
+  private val edges:Array[Array[Edge]] = Array.tabulate(nbNodes)(_ => Array.fill(nbNodes)(null))
+  private var fromToWithEdge:List[(Int,Int)] = List.empty
+  private var nextEdgeID:Int = 0
+
+  def nbEdges:Int = nextEdgeID
 
   def addEdge(from:Node, to:Node, deltaObj:Long, move:Move, vLSNMoveType: VLSNMoveType):Edge = {
     val edge = new Edge(from:Node,to:Node, move:Move,deltaObj:Long, nextEdgeID, vLSNMoveType)

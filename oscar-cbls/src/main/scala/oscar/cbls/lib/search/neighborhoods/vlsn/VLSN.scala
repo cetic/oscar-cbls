@@ -234,10 +234,6 @@ case class RandomSchemeSpec(nbSteps:Int) extends EnrichmentSchemeSpec(){
  *                          improved by performing some exchange with another vehicle or other atomic move of the VLSN
  *                          given a vehicle,it is expected to return an (optional again) neighborhood that is then exhausted
  *                          the returned neighborhood cannot modify the route of any other vehicle thn the one specified
- * @param useDirectInsert an optional argument. The VLSN will use a shortcut to perform simple inserts
- *                        and bypass the machinery that performs the graph analysis and (that's where time is spared)
- *                        avoid construct part of the VLSN graph.
- *                        Set to true, wut please use a name for this parameter because it is going to disappear in future versions.
  * @param vehicleToObjective an array of size v that gives the objective function per vehicle. it must incorporate the strong constraint as well.
  * @param unroutedPenalty the penalty for unrouted nodes
  * @param globalObjective the global objective, which must be a sum of the above objective functions
@@ -254,7 +250,7 @@ class VLSN(v:Int,
            initUnroutedNodesToInsert:() => SortedSet[Int],
            nodeToRelevantVehicles:() => Map[Int,Iterable[Int]],
 
-           // puisqu'on fait pleuiseurs inserts de nodes différents sur le même véhicule.
+           // puisqu'on fait plusieurs inserts de nodes différents sur le même véhicule.
            targetVehicleNodeToInsertNeighborhood:Int => Int => Neighborhood,
            targetVehicleNodeToMoveNeighborhood:Int => Int => Neighborhood,
            nodeToRemoveNeighborhood:Int => Neighborhood,
@@ -262,7 +258,6 @@ class VLSN(v:Int,
            removeNodeAndReInsert:Int => () => Unit,
 
            reOptimizeVehicle:Option[Int => Option[Neighborhood]],
-           useDirectInsert:Boolean,
 
            vehicleToObjective:Array[Objective],
            unroutedPenalty:Objective,
@@ -489,7 +484,7 @@ class VLSN(v:Int,
 
     val moveExplorer:MoveExplorer = getMoveExplorer(vehicleToRoutedNodesToMove, unroutedNodesToInsert, enrichmentScheme.moveToLevel, cachedExplorations)
 
-    var currentEnrichmentLevel = -1
+
     val maxEnrichmentLevel = enrichmentScheme.maxLevel
 
     var dirtyNodes:SortedSet[Int] = SortedSet.empty
@@ -507,23 +502,6 @@ class VLSN(v:Int,
       l
     })
 
-    def killNodesImpactedByCycle(cycle: List[Edge],vlsnGraph:VLSNGraph): Unit = {
-      val theImpactedVehicles = impactedVehicles(cycle)
-
-      val impactedRoutingNodes = SortedSet.empty[Int] ++ cycle.flatMap(edge => {
-        val node = edge.from.representedNode; if (node >= 0) Some(node) else None
-      })
-
-      dirtyVehicles = dirtyVehicles ++ theImpactedVehicles
-      dirtyNodes = dirtyNodes ++ cycle.flatMap(edge => List(edge.from.representedNode,edge.to.representedNode).filter(_ > v))
-
-      for (vlsnNode <- vlsnGraph.nodes) {
-        if ((impactedRoutingNodes contains vlsnNode.representedNode) || (theImpactedVehicles contains vlsnNode.vehicle)) {
-          liveNodes(vlsnNode.nodeID) = false
-        }
-      }
-    }
-
     var acc: List[List[Edge]] = List.empty
     var computedNewObj: Long = globalObjective.value
 
@@ -538,7 +516,21 @@ class VLSN(v:Int,
           edge.move.commit()
         }
       }
-      killNodesImpactedByCycle(edges,vlsnGraph)
+
+      val theImpactedVehicles = impactedVehicles(edges)
+
+      val impactedRoutingNodes = SortedSet.empty[Int] ++ edges.flatMap(edge => {
+        val node = edge.from.representedNode; if (node >= 0) Some(node) else None
+      })
+
+      dirtyVehicles = dirtyVehicles ++ theImpactedVehicles
+      dirtyNodes = dirtyNodes ++ edges.flatMap(edge => List(edge.from.representedNode,edge.to.representedNode).filter(_ > v))
+
+      for (vlsnNode <- vlsnGraph.nodes) {
+        if ((impactedRoutingNodes contains vlsnNode.representedNode) || (theImpactedVehicles contains vlsnNode.vehicle)) {
+          liveNodes(vlsnNode.nodeID) = false
+        }
+      }
 
       require(globalObjective.value == computedNewObj, "new global objective differs from computed newObj:" + globalObjective + "!=" + computedNewObj + "\nedges:\n" + edges.mkString("\n\t") + "\nUnrouted Penlaty:" +  unroutedPenalty.value + " - Obj Per Vehicle:\n" + vehicleToObjective.mkString("\n"))
     }
@@ -554,8 +546,8 @@ class VLSN(v:Int,
     var vlsnGraph:VLSNGraph = null
     //We need this graph after completion of the loop to build the cache of not used moves.
 
-    var nbEdgesAtPreviousIteration:Int = 0
-
+    var nbEdgesAtPreviousIteration = moveExplorer.nbEdgesInGraph
+    var currentEnrichmentLevel = -1
     while (currentEnrichmentLevel < maxEnrichmentLevel && dirtyVehicles.size < v) {
       currentEnrichmentLevel += 1
 
@@ -563,14 +555,16 @@ class VLSN(v:Int,
       println("dirtyNodes:" + dirtyNodes)
 
       if(printTakenMoves) {
-        println("            enriching VLSN gaph to level " + currentEnrichmentLevel + " of " + enrichmentSchemeSpec)
+        println("            enriching VLSN gaph to level " + currentEnrichmentLevel + "/" + maxEnrichmentLevel + " of " + enrichmentSchemeSpec)
       }
       vlsnGraph = moveExplorer.enrichGraph(currentEnrichmentLevel, dirtyNodes, dirtyVehicles)
+
+
       if(printTakenMoves) {
-        println("            " + vlsnGraph.statisticsString)
+        println("            " + vlsnGraph.statisticsString + " added " + (vlsnGraph.nbEdges - nbEdgesAtPreviousIteration) + " edges")
       }
 
-      if(vlsnGraph.nbEdges == nbEdgesAtPreviousIteration){
+      if(vlsnGraph.nbEdges == nbEdgesAtPreviousIteration && currentEnrichmentLevel !=0){
         if(printTakenMoves) {
           println("            skip cycle search")
         }
@@ -593,6 +587,9 @@ class VLSN(v:Int,
       }
     }
 
+    if(currentEnrichmentLevel < maxEnrichmentLevel && dirtyVehicles.size == v && printTakenMoves){
+      println("       " + "skipped remaining levels because all vehicles are dirty")
+    }
     // Now, all vehicles are dirty or have been fully developed through the graph is exhausted,
     // it might not be complete but all vehicles are dirty
     if(printTakenMoves) {

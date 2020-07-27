@@ -149,6 +149,7 @@ class MoveExplorer(v:Int,
   val edgeBuilder: VLSNEdgeBuilder = new VLSNEdgeBuilder(nodes, nbLabels, v)
 
   val nbNodesInVLSNGraph = nodes.size
+  def nbEdgesInGraph:Int = edgeBuilder.nbEdges
 
   // /////////////////////////////////////////////////////////////
   //the partitioning data
@@ -192,19 +193,17 @@ class MoveExplorer(v:Int,
   addTrashNodeToUnroutedNodes()
   exploreEjections()
 
-
-
   // /////////////////////////////////////////////////////////////
   def enrichGraph(partitioningLevel:Int, dirtyNodes:Set[Int],dirtyVehicles:Set[Int]): VLSNGraph = {
 
     for(node <- dirtyNodes) nodeIsDirty(node) = true
     for(vehicle <- dirtyVehicles) {
       vehicleIsDirty(vehicle) = true
-      //initialVehicleToObjectives(vehicle) = vehicleToObjectives(vehicle).value
+      initialVehicleToObjectives(vehicle) = vehicleToObjectives(vehicle).value
     }
 
-    //initialUnroutedNodesPenalty = unroutedNodesPenalty.value
-    //initialGlobalObjective = globalObjective.value
+    initialUnroutedNodesPenalty = unroutedNodesPenalty.value
+    initialGlobalObjective = globalObjective.value
 
 
     require(partitioningLevel > partitionLevelDone)
@@ -629,5 +628,4 @@ class MoveExplorer(v:Int,
         (move,delta) //will very likely always be negative because of triangular inequality
     }
   }
-
 }
