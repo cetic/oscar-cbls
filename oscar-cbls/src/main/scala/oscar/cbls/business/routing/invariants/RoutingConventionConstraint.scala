@@ -56,7 +56,7 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
   }
 
   private def isRouted(node: Int): Boolean ={
-    checkpointsChanges.head.getOrElse(node, routedNodes(node))
+    currentChanges.getOrElse(node, routedNodes(node))
   }
 
   private def checkRequirement(requirement: Boolean, errorMsg: String, prevUpdates: SeqUpdate): Unit ={
