@@ -268,7 +268,8 @@ class VLSN(v:Int,
            name:String = "VLSN",
            reoptimizeAtStartUp:Boolean = false,
            debugNeighborhoodExploration:Boolean = false,
-           enrichmentSchemeSpec:VLSNEnrichmentSchemeSpec = CompositeEnrichmentSchemeSpec(SameSizeRandomPartitionsSpec(nbPartitions = 20),RandomSchemeSpec(nbSteps=10))) extends Neighborhood {
+           enrichmentSchemeSpec:VLSNEnrichmentSchemeSpec = CompositeEnrichmentSchemeSpec(SameSizeRandomPartitionsSpec(nbPartitions = 20),RandomSchemeSpec(nbSteps=10)),
+           injectAllCacheBeforeEnriching:Boolean = false) extends Neighborhood {
 
   def doReoptimize(vehicle:Int) {
     val reOptimizeNeighborhoodGenerator = reOptimizeVehicle match{
@@ -538,24 +539,30 @@ class VLSN(v:Int,
     def printCycle(cycle:List[Edge]){
       val moves = cycle.flatMap(edge => Option(edge.move))
       val vehicles = impactedVehicles(cycle)
-      val moveTypes = "[" + cycle.flatMap(edge => if(edge.deltaObj==0) None else Some(edge.moveType)).groupBy((a:VLSNMoveType) => a).toList.map({case (moveType,l) => (""  + moveType + "->" + l.size)}).mkString(",") + "]"
+      val moveTypes = "[" + cycle.flatMap(edge => if(edge.move == null) None else Some(edge.moveType)).groupBy((a:VLSNMoveType) => a).toList.map({case (moveType,l) => (""  + moveType + "->" + l.size)}).mkString(",") + "]"
       val deltaObj = cycle.map(edge => edge.deltaObj).sum
       println("                deltaObj:" + deltaObj+ " size:" + moves.length + " vehicles:{" + vehicles.mkString(",") + "} moveTypes:" + moveTypes + " moves:{" + moves.mkString(",") + "}")
     }
 
     var vlsnGraph:VLSNGraph = null
     //We need this graph after completion of the loop to build the cache of not used moves.
-
     var nbEdgesAtPreviousIteration = moveExplorer.nbEdgesInGraph
+
+    if(injectAllCacheBeforeEnriching) {
+
+      moveExplorer.injectAllCache()
+      if (printTakenMoves) {
+        println("            " + " loaded " + (moveExplorer.nbEdgesInGraph - nbEdgesAtPreviousIteration) + " edges from cache")
+      }
+      nbEdgesAtPreviousIteration = moveExplorer.nbEdgesInGraph
+    }
+
     var currentEnrichmentLevel = -1
     while (currentEnrichmentLevel < maxEnrichmentLevel && dirtyVehicles.size < v) {
       currentEnrichmentLevel += 1
 
-      println("dirtyVehicles:" + dirtyVehicles)
-      println("dirtyNodes:" + dirtyNodes)
-
       if(printTakenMoves) {
-        println("            enriching VLSN gaph to level " + currentEnrichmentLevel + "/" + maxEnrichmentLevel + " of " + enrichmentSchemeSpec)
+        println("            enriching VLSN graph to level " + currentEnrichmentLevel + "/" + maxEnrichmentLevel + " of " + enrichmentSchemeSpec)
       }
       vlsnGraph = moveExplorer.enrichGraph(currentEnrichmentLevel, dirtyNodes, dirtyVehicles)
 

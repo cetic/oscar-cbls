@@ -67,7 +67,7 @@ class VehiclePartition(vehicleToNodeToMove:SortedMap[Int,Iterable[Int]],
   }
 
   override def nodeToPartitionId(node:Int,vehicle:Int):Int = {
-    if(node == -1) (nbPartition-1) //that's the urouted partition
+    if(node == -1) 0
     else myNodeToPartitionId(node)
   }
 }
@@ -129,7 +129,7 @@ case class RandomScheme(nbPartition:Int, nbSteps:Int)
 
     var level = 0
     while(randomizedpartitionCoupleList.nonEmpty){
-      var nbCouplesToDo = nbCouplePerIt
+      var nbCouplesToDo = if(level ==0) nbCouplePerIt - toReturn.length else nbCouplePerIt
       while(nbCouplesToDo > 0 && randomizedpartitionCoupleList.nonEmpty){
         val (i,j) = randomizedpartitionCoupleList.head
         randomizedpartitionCoupleList = randomizedpartitionCoupleList.tail

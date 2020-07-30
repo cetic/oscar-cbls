@@ -193,6 +193,8 @@ class MoveExplorer(v:Int,
   addTrashNodeToUnroutedNodes()
   exploreEjections()
 
+  def injectAllCache(){}
+
   // /////////////////////////////////////////////////////////////
   def enrichGraph(partitioningLevel:Int, dirtyNodes:Set[Int],dirtyVehicles:Set[Int]): VLSNGraph = {
 
@@ -204,7 +206,6 @@ class MoveExplorer(v:Int,
 
     initialUnroutedNodesPenalty = unroutedNodesPenalty.value
     initialGlobalObjective = globalObjective.value
-
 
     require(partitioningLevel > partitionLevelDone)
     currentPartitionLevel = partitioningLevel
