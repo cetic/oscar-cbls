@@ -38,7 +38,7 @@ class ImmutableArray[T:ClassTag](baseValueNeverModified:Array[T],
                         updates:RedBlackTreeMap[T]) extends Iterable[T]{
   def apply(id: Int): T =
     if(id >= size) throw new ArrayIndexOutOfBoundsException
-    else updates.getOrElse(id,baseValueNeverModified(id))
+    else updates.getOrElse(id, baseValueNeverModified(id))
 
   def update(id: Int, value: T, fast: Boolean): ImmutableArray[T] = {
     val tmp = if(id == size) new ImmutableArray[T](baseValueNeverModified,size+1,updates.insert(id,value))

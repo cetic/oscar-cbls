@@ -14,6 +14,13 @@ object Pralet {
   // Model
   // Activities
   val (a, b, c, d, e) = (0, 10, 20, 30, 40)
+  val names = Map(
+    a -> "a",
+    b -> "b",
+    c -> "c",
+    d -> "d",
+    e -> "e"
+  )
   val activities = List(a, b, c, d, e)
   val initialActs = List(e, d, c, b, a)
   val (m0, m1) = (0, 1)
@@ -48,9 +55,9 @@ object Pralet {
     println(combinedNH.profilingStatistics)
     println(s"*************** RESULTS ***********************************")
     println(s"Schedule makespan = ${schedule.makeSpan.value}")
-    println(s"Scheduling sequence = ${schedule.activityPriorityList.value.toList}")
+    println(s"Scheduling sequence = ${schedule.activityPriorityList.value.toList.map(names(_))}")
     println("Scheduling start times = [  ")
-    schedule.startTimes.foreach(v => println(s"    $v"))
+    schedule.startTimes.foreach(v => println(s"    Starting time of ${names(v._1)} = ${v._2.value}"))
     println("]")
   }
 }
