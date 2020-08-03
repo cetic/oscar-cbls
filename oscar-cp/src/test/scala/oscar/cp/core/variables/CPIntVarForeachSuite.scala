@@ -326,4 +326,13 @@ class CPIntVarForeachSuite extends TestSuite {
 
     assert(p.isEmpty)
   }
+
+  test("Bug 1") {
+    val solver = CPSolver()
+    val v = CPIntVar(0 to 1)(solver)
+    v.foreach { p =>
+      if (p == 1)
+        v.removeValue(p)
+    }
+  }
 }

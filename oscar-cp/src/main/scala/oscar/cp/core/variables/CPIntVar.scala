@@ -237,15 +237,9 @@ abstract class CPIntVar extends CPVar with IntVarLike {
           if(origSize != va._size) {
             if(va.hasValue(lastSeen) || origSize - 1 != va._size)
               throw new ConcurrentModificationException()
-            if(va._continuous) {
-              if (va._min != lastSeen + 1)
-                  throw new ConcurrentModificationException()
-              origSize = va._size
-            }
-            else {
+            if(!va._continuous)
               needSparse = true
-              origSize = va._size
-            }
+            origSize = va._size
           }
 
           i += 1
