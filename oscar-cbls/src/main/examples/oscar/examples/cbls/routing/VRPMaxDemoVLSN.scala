@@ -274,7 +274,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
     profile(onePtMove(10)),
     profile(customTwoOpt(20)),
     profile(customThreeOpt(20,true))
-  )) exhaust (profile(vlsn(80)) maxMoves 1 exhaustBack bestSlopeFirst(List(segExchange(40),customTwoOpt(30))))).afterMove(graphical.drawRoutes()).showObjectiveFunction(obj)
+  )) maxMoves 4 exhaust (profile(vlsn(80)) maxMoves 1 exhaustBack bestSlopeFirst(List(segExchange(40),customTwoOpt(30))))).afterMove(graphical.drawRoutes()).showObjectiveFunction(obj)
 
   search.verbose = 2
   //search.verboseWithExtraInfo(2, () => result)

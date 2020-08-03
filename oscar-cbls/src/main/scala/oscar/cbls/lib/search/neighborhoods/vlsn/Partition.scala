@@ -4,14 +4,17 @@ import scala.collection.immutable.SortedMap
 import scala.util.Random
 
 class EnrichmentScheme(base: BasePartitionScheme,
-                       enrich: VLSNEnrichmentScheme){
+                       enrich: VLSNEnrichmentScheme,
+                       shiftInsert:Int = 0){
   def moveToLevel(fromNode:Int, fromVehicle:Int, toNode:Int, toVehicle:Int):Int = {
-    enrich.partitionToLevel(
+    val baseLevel = enrich.partitionToLevel(
       base.nodeToPartitionId(fromNode,fromVehicle))(
       base.nodeToPartitionId(toNode,toVehicle))
+    if(fromVehicle == -1) baseLevel + shiftInsert else baseLevel
   }
-  def maxLevel:Int = enrich.maxLevel
+  def maxLevel:Int = enrich.maxLevel + shiftInsert
 }
+
 
 abstract class BasePartitionScheme(){
   def nodeToPartitionId(node:Int,vehicle:Int):Int
@@ -72,6 +75,80 @@ class VehiclePartition(vehicleToNodeToMove:SortedMap[Int,Iterable[Int]],
   }
 }
 
+
+case class VehicleStructuredSameSizePartitionsSpreadUnrouted(vehicleToNodeToMove:SortedMap[Int,Iterable[Int]],
+                                                             unroutedNodeToInsert:Iterable[Int],
+                                                             nbPartitionUpper:Int)
+  extends BasePartitionScheme() {
+
+  override def nodeToPartitionId(node:Int,vehicle:Int):Int = {
+    if(node == -1) 0
+    else myNodeToPartitionId(node)
+  }
+
+  val (myNodeToPartitionId,nbPartition): (Array[Int],Int) = {
+    val routedNodesList:List[Int] = vehicleToNodeToMove.flatMap({case (vehicle:Int,nodes:Iterable[Int]) => nodes}).toList
+    val nbRoutedNodes = routedNodesList.size
+    val nbUnroutedNodeToInsert = unroutedNodeToInsert.size
+    val unroutedNodeToInsertList = unroutedNodeToInsert.toList
+
+    val ratio:Float = nbUnroutedNodeToInsert.toFloat / nbRoutedNodes.toFloat
+
+    def randomMerge(size1:Int,list1:List[Int],size2:Int,list2:List[Int]):List[Int] = {
+      (list1,list2) match{
+        case (Nil,x) => x
+        case (x,Nil) => x
+        case (h1::t1,h2::t2) =>
+          val ratioNow:Float = size1.toFloat / size2.toFloat
+          if(ratioNow<ratio){
+            h1::randomMerge(size1-1,t1,size2,list2)
+          }else{
+            h2::randomMerge(size1,list1,size2-1,t2)
+          }
+      }
+    }
+
+    val sortedNodes = randomMerge(nbRoutedNodes:Int,routedNodesList,nbUnroutedNodeToInsert,unroutedNodeToInsertList)
+
+    val maxId = sortedNodes.max
+    val toReturn = Array.fill(maxId+1)(-1)
+
+    val nodesPerPartition:Int = ((nbRoutedNodes.toFloat + nbUnroutedNodeToInsert.toFloat) / nbPartitionUpper.toFloat).ceil.toInt
+    var toReturnNbPartition:Int = -1
+
+    def labelPartitions(list:List[Int],currentPartition:Int):Unit = {
+      if(list.nonEmpty){
+        labelCurrentPartition(nodesPerPartition,list,currentPartition)
+      }
+    }
+
+    def labelCurrentPartition(nbNodesToLabel:Int,list:List[Int],currentPartition:Int):Unit = {
+      if(nbNodesToLabel == 0) {
+        if(list.nonEmpty){
+          labelCurrentPartition(nodesPerPartition,list,currentPartition+1)
+        }else{
+          toReturnNbPartition = currentPartition
+        }
+      } else {
+        list match {
+          case Nil =>
+            toReturnNbPartition = currentPartition
+          case h :: t =>
+            toReturn(h) = currentPartition
+            labelCurrentPartition(nbNodesToLabel-1,t,currentPartition)
+        }
+      }
+    }
+
+    labelPartitions(sortedNodes,0)
+
+    println("nodeToPartition:" + toReturn.mkString(","))
+    (toReturn,toReturnNbPartition)
+
+  }
+}
+
+
 abstract class VLSNEnrichmentScheme() {
   val partitionToLevel : Array[Array[Int]]
   val maxLevel:Int
@@ -115,6 +192,11 @@ class DivideAndConquerScheme(nbPartition:Int)
 }
 
 
+case class SinglePassScheme(nbPartition:Int) extends VLSNEnrichmentScheme(){
+  override val partitionToLevel: Array[Array[Int]] = Array.tabulate(nbPartition)(_ => Array.fill(nbPartition)(0))
+  override val maxLevel: Int = 0
+}
+
 case class RandomScheme(nbPartition:Int, nbSteps:Int)
   extends VLSNEnrichmentScheme() {
   override val maxLevel: Int = nbSteps
@@ -150,11 +232,12 @@ case class RandomScheme(nbPartition:Int, nbSteps:Int)
       toReturn(i)(i) = 0
     }
 
-    println("Random:\n" + toReturn.map(_.mkString(",")).mkString(" \n"))
     toReturn
   }
-
 }
+
+
+
 
 /*
 class CaterpillarScheme(nbPartition:Int)

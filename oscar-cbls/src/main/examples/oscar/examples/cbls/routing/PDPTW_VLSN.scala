@@ -8,7 +8,7 @@ import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleCapac
 import oscar.cbls.core.ChangingIntValue
 import oscar.cbls.core.search.{Best, Neighborhood, NoMoveNeighborhood}
 import oscar.cbls.lib.search.neighborhoods.vlsn.CycleFinderAlgoType.CycleFinderAlgoType
-import oscar.cbls.lib.search.neighborhoods.vlsn.{CycleFinderAlgoType, VLSN}
+import oscar.cbls.lib.search.neighborhoods.vlsn.{CompositeEnrichmentSchemeSpec, CycleFinderAlgoType, DivideAndConquerSchemeSpec, LinearRandomSchemeSpec, SameSizeRandomPartitionsSpec, VLSN, VLSNEnrichmentSchemeSpec, VehicleStructuredSameSizePartitionsSpreadUnroutedSpec}
 
 import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
 
@@ -16,13 +16,13 @@ import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
  * Created by fg on 12/05/17.
  */
 
-object DemoPDP_VLSN extends App{
+object PDPTW_VLSN extends App{
   val m = new Store(noCycle = false)
 
   val v = 10
   val n = 500
-//  val v = 10
-//  val n = 500
+  //  val v = 10
+  //  val n = 500
 
   println("VLSN(PDPTW) v:" + v +" n:" + n)
   val penaltyForUnrouted = 10000
@@ -510,6 +510,13 @@ object DemoPDP_VLSN extends App{
       obj,
 
       cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy,
+
+
+      enrichmentSchemeSpec = CompositeEnrichmentSchemeSpec(
+        /*SameSizeRandomPartitionsSpec(nbPartitions = 20)*/ VehicleStructuredSameSizePartitionsSpreadUnroutedSpec(20),
+        /*DivideAndConquerSchemeSpec()*/ LinearRandomSchemeSpec(nbSteps=10)
+        ,shiftInsert = 1
+      ),
 
       name="VLSN(" + l + ")",
       reoptimizeAtStartUp = true,

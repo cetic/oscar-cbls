@@ -31,15 +31,28 @@ abstract class VLSNEnrichmentSchemeSpec(){
 }
 
 case class CompositeEnrichmentSchemeSpec(base: BasePartitionSchemeSpec,
-                                         enrich: EnrichmentSchemeSpec) extends VLSNEnrichmentSchemeSpec(){
+                                         enrich: EnrichmentSchemeSpec, shiftInsert:Int = 0) extends VLSNEnrichmentSchemeSpec(){
   override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
                            unroutedNodesToInsert: SortedSet[Int]): EnrichmentScheme = {
     val baseInst = base.instantiate(vehicleToRoutedNodesToMove,unroutedNodesToInsert)
     new EnrichmentScheme(
-      baseInst,enrich.instantiate(baseInst.nbPartition)
+      baseInst,
+      enrich.instantiate(baseInst.nbPartition + shiftInsert),
+      shiftInsert
     )
   }
 }
+
+
+case class NoEnrichment() extends VLSNEnrichmentSchemeSpec(){
+  override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
+                           unroutedNodesToInsert: SortedSet[Int]): EnrichmentScheme = {
+    new EnrichmentScheme(
+      SameSizeRandomPartitionsSpec(1).instantiate(vehicleToRoutedNodesToMove,unroutedNodesToInsert),
+      SinglePassScheme(1))
+  }
+}
+
 
 abstract class BasePartitionSchemeSpec(){
   def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
@@ -54,6 +67,15 @@ case class SameSizeRandomPartitionsSpec(nbPartitions:Int) extends BasePartitionS
   }
 }
 
+case class VehicleStructuredSameSizePartitionsSpreadUnroutedSpec(nbPartitions:Int) extends BasePartitionSchemeSpec(){
+  override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
+                           unroutedNodesToInsert: SortedSet[Int]): BasePartitionScheme = {
+    VehicleStructuredSameSizePartitionsSpreadUnrouted(vehicleToRoutedNodesToMove,
+      unroutedNodesToInsert,
+      nbPartitions:Int)
+  }
+}
+
 case class VehiclePartitionSpec() extends BasePartitionSchemeSpec(){
   override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
                            unroutedNodesToInsert: SortedSet[Int]): BasePartitionScheme = {
@@ -65,13 +87,29 @@ abstract class EnrichmentSchemeSpec(){
   def instantiate(nbPartitions:Int):VLSNEnrichmentScheme
 }
 
-case class RandomSchemeSpec(nbSteps:Int) extends EnrichmentSchemeSpec(){
+case class LinearRandomSchemeSpec(nbSteps:Int) extends EnrichmentSchemeSpec(){
   override def instantiate(nbPartitions: Int): VLSNEnrichmentScheme = {
     val realNbSteps = nbSteps min (nbPartitions*(nbPartitions-1)/2)
-    warning("Random VLSN enrichment scheme;nbSteps reduced from " + nbSteps + " to " + realNbSteps)
-    RandomScheme(nbPartitions,realNbSteps)
+    println("nbPartitions:" + nbPartitions)
+    println("realNbSteps:" + realNbSteps)
+    if(realNbSteps == 1)  SinglePassScheme(nbPartitions)
+    else RandomScheme(nbPartitions,realNbSteps)
   }
 }
+
+case class DivideAndConquerSchemeSpec() extends EnrichmentSchemeSpec(){
+  override def instantiate(nbPartitions: Int): VLSNEnrichmentScheme = {
+    new DivideAndConquerScheme(nbPartitions)
+  }
+}
+
+case class SinglePassSchemeSpec() extends EnrichmentSchemeSpec(){
+  override def instantiate(nbPartitions: Int): VLSNEnrichmentScheme = {
+    SinglePassScheme(nbPartitions)
+  }
+}
+
+
 
 /**
  * Very Large Scale Neighborhood
@@ -268,7 +306,9 @@ class VLSN(v:Int,
            name:String = "VLSN",
            reoptimizeAtStartUp:Boolean = false,
            debugNeighborhoodExploration:Boolean = false,
-           enrichmentSchemeSpec:VLSNEnrichmentSchemeSpec = CompositeEnrichmentSchemeSpec(SameSizeRandomPartitionsSpec(nbPartitions = 20),RandomSchemeSpec(nbSteps=10)),
+           enrichmentSchemeSpec:VLSNEnrichmentSchemeSpec = CompositeEnrichmentSchemeSpec(
+             SameSizeRandomPartitionsSpec(nbPartitions = 20)
+             /*VehicleStructuredSameSizePartitionsSpreadUnroutedSpec(20)*/,LinearRandomSchemeSpec(nbSteps=10)),
            injectAllCacheBeforeEnriching:Boolean = false) extends Neighborhood {
 
   def doReoptimize(vehicle:Int) {
@@ -566,7 +606,6 @@ class VLSN(v:Int,
       }
       vlsnGraph = moveExplorer.enrichGraph(currentEnrichmentLevel, dirtyNodes, dirtyVehicles)
 
-
       if(printTakenMoves) {
         println("            " + vlsnGraph.statisticsString + " added " + (vlsnGraph.nbEdges - nbEdgesAtPreviousIteration) + " edges")
       }
@@ -593,6 +632,8 @@ class VLSN(v:Int,
         }
       }
     }
+
+    //println(vlsnGraph.toDOT(light = true))
 
     if(currentEnrichmentLevel < maxEnrichmentLevel && dirtyVehicles.size == v && printTakenMoves){
       println("       " + "skipped remaining levels because all vehicles are dirty")
