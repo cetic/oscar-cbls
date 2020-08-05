@@ -1,10 +1,8 @@
 package oscar.cbls.business.routing.invariants.global
 
-import oscar.cbls._
+import oscar.cbls.CBLSIntVar
 import oscar.cbls.algo.quick.QList
-import oscar.cbls.{CBLSIntVar, Variable}
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
-import oscar.cbls.core.ChangingSeqValue
 
 case class PreComputedDistances(distanceFromStart:Long,
                                 distanceToStart:Long)

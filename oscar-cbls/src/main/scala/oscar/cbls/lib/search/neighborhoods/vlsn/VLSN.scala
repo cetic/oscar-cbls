@@ -43,7 +43,6 @@ case class CompositeEnrichmentSchemeSpec(base: BasePartitionSchemeSpec,
   }
 }
 
-
 case class NoEnrichment() extends VLSNEnrichmentSchemeSpec(){
   override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
                            unroutedNodesToInsert: SortedSet[Int]): EnrichmentScheme = {
@@ -52,7 +51,6 @@ case class NoEnrichment() extends VLSNEnrichmentSchemeSpec(){
       SinglePassScheme(1))
   }
 }
-
 
 abstract class BasePartitionSchemeSpec(){
   def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
@@ -92,7 +90,7 @@ case class LinearRandomSchemeSpec(nbSteps:Int) extends EnrichmentSchemeSpec(){
     val realNbSteps = nbSteps min (nbPartitions*(nbPartitions-1)/2)
     println("nbPartitions:" + nbPartitions)
     println("realNbSteps:" + realNbSteps)
-    if(realNbSteps == 1)  SinglePassScheme(nbPartitions)
+    if(realNbSteps == 0)  SinglePassScheme(nbPartitions)
     else RandomScheme(nbPartitions,realNbSteps)
   }
 }

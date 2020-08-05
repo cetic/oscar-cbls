@@ -35,6 +35,9 @@ class SameSizeRandomPartitions(allNodes:List[Int], override val nbPartition:Int)
       if (currentPartition == 0) currentPartition = nbPartition
       currentPartition = currentPartition - 1
     }
+    println("partitions:" + toReturn.mkString)
+    println("nbPartition:" + nbPartition)
+
     toReturn
   }
 
@@ -142,7 +145,8 @@ case class VehicleStructuredSameSizePartitionsSpreadUnrouted(vehicleToNodeToMove
 
     labelPartitions(sortedNodes,0)
 
-    println("nodeToPartition:" + toReturn.mkString(","))
+    //println("nodeToPartition:" + toReturn.mkString(","))
+
     (toReturn,toReturnNbPartition)
 
   }
@@ -231,6 +235,9 @@ case class RandomScheme(nbPartition:Int, nbSteps:Int)
     for(i <- toReturn.indices){
       toReturn(i)(i) = 0
     }
+
+    //println("enrichment scheme")
+    //println(toReturn.map(_.mkString(",")).mkString("\n"))
 
     toReturn
   }

@@ -7,8 +7,7 @@ import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, Rout
 import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleCapacityConstraint
 import oscar.cbls.core.ChangingIntValue
 import oscar.cbls.core.search.{Best, Neighborhood, NoMoveNeighborhood}
-import oscar.cbls.lib.search.neighborhoods.vlsn.CycleFinderAlgoType.CycleFinderAlgoType
-import oscar.cbls.lib.search.neighborhoods.vlsn.{CompositeEnrichmentSchemeSpec, CycleFinderAlgoType, DivideAndConquerSchemeSpec, LinearRandomSchemeSpec, SameSizeRandomPartitionsSpec, VLSN, VLSNEnrichmentSchemeSpec, VehicleStructuredSameSizePartitionsSpreadUnroutedSpec}
+import oscar.cbls.lib.search.neighborhoods.vlsn._
 
 import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
 
@@ -18,6 +17,12 @@ import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
 
 object PDPTW_VLSN extends App{
   val m = new Store(noCycle = false)
+
+  println("usage: This enrichment partition enrichmentSpec shiftInsert")
+  val enrichment:Int=args(0).toInt
+  val partition:Int = args(1).toInt
+  val enrichmentSpec:Int = args(2).toInt
+  val shiftInsert:Int = args(3).toInt
 
   val v = 10
   val n = 500
@@ -510,13 +515,36 @@ object PDPTW_VLSN extends App{
       obj,
 
       cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy,
+//1
+      enrichmentSchemeSpec = {
+        val toReturn = enrichment match {
+          case 0 =>
+            println("BENCHMARK: NoEnrichment")
+            NoEnrichment()
+          case 1 =>
 
-
-      enrichmentSchemeSpec = CompositeEnrichmentSchemeSpec(
-        /*SameSizeRandomPartitionsSpec(nbPartitions = 20)*/ VehicleStructuredSameSizePartitionsSpreadUnroutedSpec(20),
-        /*DivideAndConquerSchemeSpec()*/ LinearRandomSchemeSpec(nbSteps=10)
-        ,shiftInsert = 1
-      ),
+            CompositeEnrichmentSchemeSpec(
+              partition match {
+                case 0 => SameSizeRandomPartitionsSpec(nbPartitions = 2)
+                case 1 => SameSizeRandomPartitionsSpec(nbPartitions = 5)
+                case 2 => SameSizeRandomPartitionsSpec(nbPartitions = 10)
+                case 3 => SameSizeRandomPartitionsSpec(nbPartitions = 15)
+                case 4 => SameSizeRandomPartitionsSpec(nbPartitions = 20)
+                case 5 => VehicleStructuredSameSizePartitionsSpreadUnroutedSpec(20)
+                case 6 => VehiclePartitionSpec()
+              },
+              enrichmentSpec match {
+                case 0 => LinearRandomSchemeSpec(nbSteps = 5)
+                case 1 => LinearRandomSchemeSpec(nbSteps = 10)
+                case 2 => LinearRandomSchemeSpec(nbSteps = 15)
+                case 3 => LinearRandomSchemeSpec(nbSteps = 20)
+                case 4 => DivideAndConquerSchemeSpec()
+              },
+              shiftInsert)
+        }
+        println("BENCHMARK:" + toReturn)
+        toReturn
+      },
 
       name="VLSN(" + l + ")",
       reoptimizeAtStartUp = true,
