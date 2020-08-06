@@ -1,6 +1,3 @@
-package oscar.cbls.business.geometry.invariants
-
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -15,7 +12,7 @@ package oscar.cbls.business.geometry.invariants
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
+package oscar.cbls.business.geometry.invariants
 
 import org.locationtech.jts.algorithm.distance.{DistanceToPoint, PointPairDistance}
 import org.locationtech.jts.geom.prep.{PreparedGeometry, PreparedGeometryFactory}
@@ -25,8 +22,7 @@ import oscar.cbls.{CBLSIntVar, IntValue}
 import oscar.cbls.algo.magicArray.IterableMagicBoolArray
 import oscar.cbls.business.geometry
 import oscar.cbls.business.geometry.model._
-import oscar.cbls.core.{IntInvariant, IntNotificationTarget, Invariant}
-import oscar.cbls.core.computation.{AtomicValue, ChangingAtomicValue, ChangingIntValue}
+import oscar.cbls.core.computation.{AtomicValue, ChangingAtomicValue, ChangingIntValue, IntNotificationTarget, Invariant}
 
 object Overlap {
 
@@ -51,7 +47,7 @@ object Overlap {
     }
   }
 
-  // ///////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////
 
   def centroidsOfFreeSpacesIn(s:Iterable[Geometry], outer:Geometry):Iterable[(Int,Int)] = {
     val frees = freeSpacesIn(s:Iterable[Geometry], outer:Geometry):Iterable[Geometry]
@@ -70,6 +66,7 @@ object Overlap {
 
     extractShapes(acc)
   }
+
   private def extractShapes(g:Geometry):List[Geometry] = {
     g match {
       case poly: Polygon =>
@@ -99,7 +96,6 @@ object Overlap {
     val minY = coordinates(0).y.toLong
     val maxX = coordinates(2).x.toLong
     val maxY = coordinates(2).y.toLong
-
 
     val stepX = (maxX - minX) / nbSteps1D
     val stepY = (maxY - minY) / nbSteps1D
@@ -161,7 +157,6 @@ object Overlap {
   }
 }
 
-
 /**
   * @param shapes
   * @param preComputeAll forces pre-computation of indexes for all shapes. use this if there are constant shapes that will never move/change
@@ -176,13 +171,13 @@ class NoOverlapPenetration(shapes:Array[AtomicValue[GeometryValue]],preComputeAl
   output.setDefiningInvariant(this)
 
   //index in array => index in geometry, for fast overlap computation
-  private var geometryIndexes:Array[PreparedGeometry] = Array.fill(shapes.size)(null)
+  private var geometryIndexes:Array[PreparedGeometry] = Array.fill(shapes.length)(null)
 
   if(preComputeAll){
     for(id <- shapes.indices) computeAndReturnIndex(id)
   }
 
-  private var changedShapesToCheck = IterableMagicBoolArray(shapes.size,initVal = true)
+  private val changedShapesToCheck = IterableMagicBoolArray(shapes.length,initVal = true)
 
   private def computeAndReturnIndex(id:Int):PreparedGeometry = {
     geometryIndexes(id) = PreparedGeometryFactory.prepare(shapes(id).value.geometry)
@@ -195,13 +190,12 @@ class NoOverlapPenetration(shapes:Array[AtomicValue[GeometryValue]],preComputeAl
   }
 
   //we initialize as zero overlap, but all shapes are notes as having moved, and we schedule ourself for propagation.
-  private val recordedOverlap = Array.tabulate(shapes.size)(id => Array.fill(id)(0L))
+  private val recordedOverlap = Array.tabulate(shapes.length)(id => Array.fill(id)(0L))
   output := 0
 
-
   //we initialize as zero overlap, but all shcpes are notes as having moved, and we schedule ourself for propagation.
-  private val overlapByShape:Array[CBLSIntVar] = Array.tabulate(shapes.size)(id => {
-    val v = CBLSIntVar(model,name="violation of overlap of shape " + id)
+  private val overlapByShape:Array[CBLSIntVar] = Array.tabulate(shapes.length)(id => {
+    val v = CBLSIntVar(model,name=s"violation of overlap of shape $id")
     v.setDefiningInvariant(this)
     v
   })
@@ -286,8 +280,6 @@ class NoOverlapPenetration(shapes:Array[AtomicValue[GeometryValue]],preComputeAl
   }
 }
 
-
-
 /**
   * @param shapes
   * @param preComputeAll forces pre-computation of indexes for all shapes. use this if there are constant shapes that will never move/change
@@ -312,13 +304,13 @@ class NoOverlapPenetrationMargins(shapes:Array[AtomicValue[GeometryValue]],
   output.setDefiningInvariant(this)
 
   //index in array => index in geometry, for fast overlap computation
-  private var geometryIndexes:Array[PreparedGeometry] = Array.fill(shapes.size)(null)
+  private val geometryIndexes:Array[PreparedGeometry] = Array.fill(shapes.length)(null)
 
   if(preComputeAll){
     for(id <- shapes.indices) computeAndReturnIndex(id)
   }
 
-  private var changedShapesToCheck = IterableMagicBoolArray(shapes.size,initVal = true)
+  private val changedShapesToCheck = IterableMagicBoolArray(shapes.length,initVal = true)
 
   private def computeAndReturnIndex(id:Int):PreparedGeometry = {
     geometryIndexes(id) = PreparedGeometryFactory.prepare(shapes(id).value.geometry)
@@ -331,11 +323,11 @@ class NoOverlapPenetrationMargins(shapes:Array[AtomicValue[GeometryValue]],
   }
 
   //we initialize as zero overlap, but all shapes are notes as having moved, and we schedule ourself for propagation.
-  private val recordedOverlap = Array.tabulate(shapes.size)(id => Array.fill(id)(0L))
+  private val recordedOverlap = Array.tabulate(shapes.length)(id => Array.fill(id)(0L))
   output := 0
 
   //we initialize as zero overlap, but all shcpes are notes as having moved, and we schedule ourself for propagation.
-  private val overlapByShape:Array[CBLSIntVar] = Array.tabulate(shapes.size)(id => {
+  private val overlapByShape:Array[CBLSIntVar] = Array.tabulate(shapes.length)(id => {
     val v = CBLSIntVar(model,value=0,name="violation of overlap of shape " + id)
     v.setDefiningInvariant(this)
     v
@@ -353,7 +345,6 @@ class NoOverlapPenetrationMargins(shapes:Array[AtomicValue[GeometryValue]],
     geometryIndexes(id) = null
     scheduleForPropagation()
   }
-
 
   override def notifyIntChanged(v: ChangingIntValue,
                                 id: Int,
@@ -473,7 +464,6 @@ class NoOverlapPenetrationMargins(shapes:Array[AtomicValue[GeometryValue]],
   }
 
   private def computeDistanceNegIfInside(shape1:Geometry,id1:Int,point:Point):Double = {
-
     val containsPt = if(geometryIndexes(id1) == null){
       shape1.contains(point)
     }else{
@@ -491,5 +481,3 @@ class NoOverlapPenetrationMargins(shapes:Array[AtomicValue[GeometryValue]],
     ptDist.getDistance()
   }
 }
-
-

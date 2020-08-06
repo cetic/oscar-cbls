@@ -38,7 +38,10 @@ object ConflictSearch {
    * @param isConflict the procedure to check whether or not the S is in conflict
    * @return a minimal subset of toInject such that, when injected into init, they cause a conflict
    */
-  def apply[S,C](init:S, toInject:List[C], inject:(S, C)=>S, isConflict:S=>Boolean):List[C] = {
+  def apply[S,C](init:S,
+                 toInject:List[C],
+                 inject:(S, C)=>S,
+                 isConflict:S=>Boolean):List[C] = {
     search[S,C](init,  List.empty, toInject, inject, isConflict)
   }
 
@@ -96,7 +99,11 @@ object ConflictSearch {
    * @param isConflict the procedure to check whether or not the S is in conflict
    * @return a minimal subset of toInject such that, when injected into init, they cause a conflict
    */
-  def apply[S,C](init:S, toInject:List[C], inject:(S, C)=>S, remove:(S,C) => S,  isConflict:S=>Boolean):List[C] = {
+  def apply[S,C](init:S,
+                 toInject:List[C],
+                 inject:(S,C)=>S,
+                 remove:(S,C) => S,
+                 isConflict:S=>Boolean):List[C] = {
     if (isConflict(init)) return List.empty
 
     var accumulatorList:List[C] = List.empty
@@ -123,4 +130,3 @@ object ConflictSearch {
     toreturn
   }
 }
-

@@ -26,7 +26,6 @@ import oscar.cbls.modeling._
 /**
  * Local Search for NQueens
  * Moves are operated by swapping variables
- *
  */
 object NQueensEasy1 extends CBLSModel with App{
   startWatch()

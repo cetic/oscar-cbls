@@ -29,18 +29,18 @@ import java.awt.Font
  * @author Pierre Schaus
  */
 class MapPainter(map : VisualMap) extends Painter[JXMapViewer] {
-	var mymap = map
+	var mymap: VisualMap = map
 	
-	
-	private val renderer = new DefaultWaypointRenderer();
+	private val renderer = new DefaultWaypointRenderer()
 
-	
-
-	def paint(gin : Graphics2D ,  map : JXMapViewer,  w : Int, h : Int) {
-		var g =  gin.create().asInstanceOf[Graphics2D]
+	def paint(gin: Graphics2D,
+						map: JXMapViewer,
+						w: Int,
+						h: Int): Unit = {
+		val g =  gin.create().asInstanceOf[Graphics2D]
 		
 		//convert from viewport to world bitmap
-		val rect = mymap.viewer.getViewportBounds()
+		val rect = mymap.viewer.getViewportBounds
 		g.translate(-rect.x, -rect.y)
 
 		/*
@@ -50,68 +50,44 @@ class MapPainter(map : VisualMap) extends Painter[JXMapViewer] {
 		g.setColor(Color.RED)
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
 		g.setStroke(new BasicStroke(2))
-		
 
 		for ( l <- mymap.lines) {
-
 			//convert geo to world bitmap pixel 
-			val pt1 = mymap.viewer.getTileFactory().geoToPixel(new GeoPosition(l.orig._1, l.orig._2), mymap.viewer.getZoom())
-			val pt2 = mymap.viewer.getTileFactory().geoToPixel(new GeoPosition(l.dest._1, l.dest._2), mymap.viewer.getZoom())
-			
+			val pt1 = mymap.viewer.getTileFactory.geoToPixel(new GeoPosition(l.orig._1, l.orig._2), mymap.viewer.getZoom)
+			val pt2 = mymap.viewer.getTileFactory.geoToPixel(new GeoPosition(l.dest._1, l.dest._2), mymap.viewer.getZoom)
 			g.setColor(l.color)
-
-			g.drawLine( pt1.getX().toInt, pt1.getY().toInt,  pt2.getX().toInt,  pt2.getY().toInt) 
-
+			g.drawLine( pt1.getX.toInt, pt1.getY.toInt, pt2.getX.toInt, pt2.getY.toInt)
 		}
-		
 		//paths
 		g.setColor(Color.BLACK)
-		
-
-		for ( l <- mymap.paths.map(_.lines).flatten) {
-
+		for ( l <- mymap.paths.flatMap(_.lines)) {
 			//convert geo to world bitmap pixel 
-			val pt1 = mymap.viewer.getTileFactory().geoToPixel(new GeoPosition(l.orig._1, l.orig._2), mymap.viewer.getZoom())
-			val pt2 = mymap.viewer.getTileFactory().geoToPixel(new GeoPosition(l.dest._1, l.dest._2), mymap.viewer.getZoom())
-			
+			val pt1 = mymap.viewer.getTileFactory.geoToPixel(new GeoPosition(l.orig._1, l.orig._2), mymap.viewer.getZoom)
+			val pt2 = mymap.viewer.getTileFactory.geoToPixel(new GeoPosition(l.dest._1, l.dest._2), mymap.viewer.getZoom)
 			g.setColor(l.color)
-
-			g.drawLine( pt1.getX().toInt, pt1.getY().toInt,  pt2.getX().toInt,  pt2.getY().toInt) 
-
+			g.drawLine(pt1.getX.toInt, pt1.getY.toInt, pt2.getX.toInt, pt2.getY.toInt)
 		}
-		
 		//waypoints
 		g.setColor(Color.BLUE)
 		for (wp <- mymap.waypoints) {
-            val pt1 = map.getTileFactory().geoToPixel(new GeoPosition(wp.lat, wp.long), map.getZoom())
-            val x =  pt1.getX().toInt
-            val y = pt1.getY().toInt
-                        
-            g.setColor(wp.color)
-            
-            g.setStroke(new BasicStroke(2f))
-            g.drawOval(x-10,y-10,20,20)
-            g.setStroke(new BasicStroke(1f))
-            g.drawLine(x-10,y-0,x+10,y+0)
-            g.drawLine(x-0,y-10,x+0,y+10)
-            
-            if(wp.label != null)
-            {
-              g.setFont(new Font("Arial", Font.BOLD, 16));  
-              g.drawString(wp.label, x+15 , y); 
-            }
-            
-            
-            
+			val pt1 = map.getTileFactory.geoToPixel(new GeoPosition(wp.lat, wp.long), map.getZoom)
+			val x =  pt1.getX.toInt
+			val y = pt1.getY.toInt
+			g.setColor(wp.color)
+			g.setStroke(new BasicStroke(2f))
+			g.drawOval(x-10,y-10,20,20)
+			g.setStroke(new BasicStroke(1f))
+			g.drawLine(x-10,y-0,x+10,y+0)
+			g.drawLine(x-0,y-10,x+0,y+10)
+			if (wp.label != null) {
+				g.setFont(new Font("Arial", Font.BOLD, 16))
+				g.drawString(wp.label, x+15 , y)
+			}
 		}
-
-		
-
 		g.dispose()
 	}
 	
-	protected def paintWaypoint(w : Waypoint, g :  Graphics2D) {
-        renderer.paintWaypoint(g, mymap.viewer, w)
-    }
+	protected def paintWaypoint(w: Waypoint, g:  Graphics2D): Unit = {
+		renderer.paintWaypoint(g, mymap.viewer, w)
+	}
 }
-

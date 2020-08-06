@@ -1,39 +1,43 @@
 package oscar.cbls.test.neighborhood
 
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.business.routing.{DistanceHelper, VRP, routeLength}
+import oscar.cbls.business.routing.{VRP, routeLength}
 import oscar.cbls.core.computation.Store
 import oscar.cbls.{CBLSSeqVar, Objective, length, sum}
 import oscar.cbls._
-import oscar.cbls.core.search.Neighborhood
-import oscar.examples.cbls.routing.RoutingMatrixGenerator
+import oscar.cbls.benchmarks.vrp.RoutingMatrixGenerator
+import oscar.cbls.business.routing.model.helpers.DistanceHelper
 
 object NeighborhoodTestBench {
 
   var obj :Objective = _
-  var problem :MockedVRP = null
+  var problem :MockedVRP = _
 
   def initTest(check :(Long,Long,IntSequence,IntSequence) => Unit) :(Store, MockedVRP,Objective,Array[Iterable[Int]],Int => Int => Boolean) = {
     val nbNode = 30
     val nbVehicle = 15
     val model = Store()
     problem = new MockedVRP(check,model,nbNode,nbVehicle)
-    val relevantPredecessorsOfNodes = (node:Int) => problem.nodes
+    val relevantPredecessorsOfNodes = (_:Int) => problem.nodes
     val (symetricDistanceMatrix,_) = RoutingMatrixGenerator(nbNode)
-    val routedPostFilter = (node:Int) => (neighbor:Int) => problem.isRouted(neighbor)
+    val routedPostFilter = (_:Int) => (neighbor:Int) => problem.isRouted(neighbor)
     val closestRelevantNeighbors =
       Array.tabulate(nbNode)(DistanceHelper.lazyClosestPredecessorsOfNode(symetricDistanceMatrix,relevantPredecessorsOfNodes)(_))
 
-    val totalDistance = sum(routeLength(problem.routes, nbNode, nbVehicle, false, symetricDistanceMatrix, true))
+    val totalDistance = sum(routeLength(problem.routes, nbNode, nbVehicle, perVehicle = false, symetricDistanceMatrix, distanceIsSymmetric = true))
     val unroutedPenalty = 1000000
     obj = Objective((nbNode - length(problem.routes)) * unroutedPenalty + totalDistance)
 
     (model, problem, obj, closestRelevantNeighbors, routedPostFilter)
   }
 
-  class MockedVRP(check :(Long,Long,IntSequence,IntSequence) => Unit, m: Store, n: Int, v: Int, maxPivotPerValuePercent:Int = 4) extends {
+  class MockedVRP(check :(Long,Long,IntSequence,IntSequence) => Unit,
+                  m: Store,
+                  n: Int,
+                  v: Int,
+                  maxPivotPerValuePercent:Int = 4) extends VRP(m,n,v,maxPivotPerValuePercent) {
     override val routes = new MockedCBLSSeqVar(check, m, IntSequence(0 until v), n-1, "routes", maxPivotPerValuePercent=maxPivotPerValuePercent)
-  } with VRP(m,n,v,maxPivotPerValuePercent)
+  }
 
   class MockedCBLSSeqVar(val check :(Long,Long,IntSequence,IntSequence) => Unit,
                          givenModel:Store,

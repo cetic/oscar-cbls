@@ -1,9 +1,10 @@
 package oscar.cbls.test.algo
 
-import org.scalacheck.Gen
 import org.scalactic.anyvals.PosInt
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalacheck.Gen
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.CBLSSetVar
 import oscar.cbls.algo.graph._
 import oscar.cbls.test.graph.RandomGraphGenerator
@@ -11,7 +12,7 @@ import oscar.cbls.test.invariants.bench.{InvBench, ToZero}
 
 import scala.util.Random
 
-class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matchers {
+class RevisableAStarTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
 
   val verbose = 0
 
@@ -38,6 +39,7 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
         result match{
           case Distance(_, _, distance1, _, _, _) =>
             distance1 should be (0)
+          case _ => // Unreachable
         }
     }
   }
@@ -230,6 +232,7 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
               tempResult match{
                 case Distance(_, _, distanceAfter,_,_, _) =>
                   distanceAfter should be (distanceBefore) // The distance should not have changed
+                case _ => // Unreachable
               }
             }
 
@@ -280,6 +283,7 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
               tempResult match{
                 case Distance(_, _, distanceAfter,_,_, _) =>
                   distanceAfter should be <= distanceBefore
+                case _ => //Unreachable
               }
             }
 

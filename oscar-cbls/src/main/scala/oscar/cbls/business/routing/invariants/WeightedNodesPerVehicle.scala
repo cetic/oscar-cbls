@@ -1,12 +1,9 @@
 package oscar.cbls.business.routing.invariants
 
-import oscar.cbls._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.business.routing.invariants.global._
-import oscar.cbls.core.computation.ChangingSeqValue
-import oscar.cbls.{CBLSIntVar, Variable}
-
+import oscar.cbls.core.computation.CBLSIntVar
 
 object WeightedNodesPerVehicle{
   /**
@@ -19,7 +16,6 @@ object WeightedNodesPerVehicle{
   def apply(gc: GlobalConstraintCore, n: Int, v : Int, nodeWeight:Array[Long], weightPerVehicle : Array[CBLSIntVar]) =
     new WeightedNodesPerVehicle(gc, n, v, nodeWeight, weightPerVehicle)
 }
-
 
 /**
   * this constraints maintains the number of node per vehicle.
@@ -81,7 +77,6 @@ class WeightedNodesPerVehicle(gc: GlobalConstraintCore, n: Int, v : Int, nodeWei
       }).sum
     //println("Vehicle : " + vehicle + "--" + segments.mkString(","))
   }
-
 
   /**
     * the framework calls this method to assign the value U to he output variable of your invariant.

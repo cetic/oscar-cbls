@@ -17,13 +17,10 @@
  *     This code has been initially developed by CETIC www.cetic.be
  *         by Renaud De Landtsheer
  ******************************************************************************/
-
-
 package oscar.cbls.lib.invariant.logic
 
-import oscar.cbls._
-import oscar.cbls.core._
-import oscar.cbls.core.computation.{CBLSSetVar, SetValue}
+import oscar.cbls.core.computation.{CBLSSetVar, ChangingSetValue, Invariant, InvariantHelper, SetNotificationTarget, SetValue, Store}
+import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.SortedSet
 
@@ -55,7 +52,7 @@ case class DenseRef(references:Array[SetValue], referencing:Array[CBLSSetVar])
     * this will be called for each invariant after propagation is performed.
     * It requires that the Model is instantiated with the variable debug set to true.
     */
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
   //Referencing(i) = {j | Reference(j) includes i}
     for (referencesId <- references.indices){
       for (referencingId <- referencing.indices){
@@ -68,7 +65,7 @@ case class DenseRef(references:Array[SetValue], referencing:Array[CBLSSetVar])
 }
 
 object DenseRef{
-  def makeDenseRef(references:Array[SetValue]) = {
+  def makeDenseRef(references:Array[SetValue]): DenseRef = {
     val (minMin,maxMax) = InvariantHelper.getMinMaxBoundsSet(references)
     val m:Store = InvariantHelper.findModel(references)
     assert(minMin == 0L)

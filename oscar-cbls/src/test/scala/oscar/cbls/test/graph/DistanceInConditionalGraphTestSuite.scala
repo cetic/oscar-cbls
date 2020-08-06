@@ -1,7 +1,8 @@
 package oscar.cbls.test.graph
 
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.CBLSSetVar
 import oscar.cbls.algo.graph._
 import oscar.cbls.lib.invariant.graph.DistanceInConditionalGraph
@@ -9,7 +10,7 @@ import oscar.cbls.test.invariants.bench._
 
 import scala.collection.immutable.SortedSet
 
-class DistanceInConditionalGraphTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matchers{
+class DistanceInConditionalGraphTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers{
 
   val verbose = 0
 

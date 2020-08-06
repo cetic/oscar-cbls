@@ -14,13 +14,14 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   * ****************************************************************************
   */
-
 package oscar.examples.cbls.wlpGraph
 
 import oscar.cbls._
 import oscar.cbls.algo.graph._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.search.KSmallest
+import oscar.cbls.core.computation.{CBLSIntVar, Store}
+import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.invariant.graph._
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.numeric.Sum

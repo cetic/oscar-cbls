@@ -18,67 +18,69 @@ package oscar.visual.plot
 
 import javax.swing.JPanel
 import java.awt.BorderLayout
+
 import org.jfree.data.xy.XYSeries
 import org.jfree.chart.JFreeChart
 import org.jfree.chart.ChartPanel
 import org.jfree.data.xy.XYSeriesCollection
 import java.awt.Color
+
 import org.jfree.chart.plot.XYPlot
 import org.jfree.chart.plot.ValueMarker
 import javax.swing.SwingUtilities
+import org.jfree.data
 
 /**
  * @author Pierre Schaus
  */
-abstract class Plot(title: String, xlab: String, ylab: String, nbSeries: Int = 1) extends JPanel(new BorderLayout()) {
+abstract class Plot(title: String,
+                    xlab: String,
+                    ylab: String,
+                    nbSeries: Int = 1) extends JPanel(new BorderLayout()) {
 
-  var series: Array[XYSeries] = Array.tabulate(nbSeries)(i => new XYSeries(i.toInt))
-
-  val xyDataset: XYSeriesCollection = new XYSeriesCollection();
+  var series: Array[XYSeries] = Array.tabulate(nbSeries)(i => new XYSeries(i))
+  val xyDataset: XYSeriesCollection = new XYSeriesCollection()
   for (s <- series) {xyDataset.addSeries(s)}
   val chart: JFreeChart = createChart()
-  chart.getPlot().setBackgroundPaint(Color.white);
-  val panel: ChartPanel = new ChartPanel(chart);
-  panel.setVisible(true);
-  add(panel);
+  chart.getPlot.setBackgroundPaint(Color.white)
+  val panel: ChartPanel = new ChartPanel(chart)
+  panel.setVisible(true)
+  add(panel)
 
-  val plot = chart.getPlot().asInstanceOf[XYPlot];
+  val plot: XYPlot = chart.getPlot.asInstanceOf[XYPlot]
 
   val xMarker = new ValueMarker(0.5)
   val yMarker = new ValueMarker(0.5)
 
   hideHighlight()
 
-  def highlight(x: Double, y: Double, col: Color = Color.LIGHT_GRAY) = {
-    SwingUtilities.invokeLater(new Runnable() {
-      def run() {
-        xMarker.setPaint(col);
-        yMarker.setPaint(col);
-        plot.addDomainMarker(xMarker)
-        plot.addRangeMarker(yMarker)
-        xMarker.setValue(x)
-        yMarker.setValue(y)
-        chart.fireChartChanged()
-
-      }
+  def highlight(x: Double, y: Double, col: Color = Color.LIGHT_GRAY): Unit = {
+    SwingUtilities.invokeLater(() => {
+      xMarker.setPaint(col)
+      yMarker.setPaint(col)
+      plot.addDomainMarker(xMarker)
+      plot.addRangeMarker(yMarker)
+      xMarker.setValue(x)
+      yMarker.setValue(y)
+      chart.fireChartChanged()
     })
   }
 
-  def hideHighlight() = {
+  def hideHighlight(): Boolean = {
     plot.removeDomainMarker(xMarker)
     plot.removeRangeMarker(yMarker)
   }
 
-  def addPoint(x: Double, y: Double, ser: Int = 0) = {
-    series(ser).add(x, y);
+  def addPoint(x: Double, y: Double, ser: Int = 0): Unit = {
+    series(ser).add(x, y)
     series(ser).fireSeriesChanged()
 
     //xyDataset.ss
     //chart.fireChartChanged();
   }
 
-  def removeAllPoints(ser: Int = 0) {
-    series(ser).clear();
+  def removeAllPoints(ser: Int = 0): Unit = {
+    series(ser).clear()
   }
 
   def getPoints(ser: Int = 0): XYSeries = series(ser)
@@ -89,20 +91,20 @@ abstract class Plot(title: String, xlab: String, ylab: String, nbSeries: Int = 1
     (min, max)
   }
 
-  def xDom = chart.getPlot().asInstanceOf[XYPlot].getDomainAxis().getRange()
+  def xDom: data.Range = chart.getPlot.asInstanceOf[XYPlot].getDomainAxis.getRange
 
-  def yDom = chart.getPlot().asInstanceOf[XYPlot].getRangeAxis().getRange()
+  def yDom: data.Range = chart.getPlot.asInstanceOf[XYPlot].getRangeAxis.getRange
 
   def xDom_=(dom: Range): Unit = {
     val (min, max) = minMax(dom)
-    val xyPlot = chart.getPlot().asInstanceOf[XYPlot];
-    xyPlot.getDomainAxis().setRange(min, max);
+    val xyPlot = chart.getPlot.asInstanceOf[XYPlot]
+    xyPlot.getDomainAxis().setRange(min, max)
   }
 
   def yDom_=(dom: Range): Unit = {
     val (min, max) = minMax(dom)
-    val xyPlot = chart.getPlot().asInstanceOf[XYPlot];
-    xyPlot.getRangeAxis().setRange(min, max);
+    val xyPlot = chart.getPlot.asInstanceOf[XYPlot]
+    xyPlot.getRangeAxis().setRange(min, max)
   }
 
   def createChart(): JFreeChart

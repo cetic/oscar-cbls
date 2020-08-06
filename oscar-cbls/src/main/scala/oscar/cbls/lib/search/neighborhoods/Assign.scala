@@ -12,14 +12,11 @@
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
 package oscar.cbls.lib.search.neighborhoods
 
-import oscar.cbls._
 import oscar.cbls.algo.search.{HotRestart, IdenticalAggregator}
-import oscar.cbls.core.computation.Variable
+import oscar.cbls.core.computation.{CBLSIntVar, Variable}
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, Move}
-
 
 /**
   * will find a variable in the array, and find a value from its range that improves the objective function
@@ -65,10 +62,10 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
   var currentIndice:Int = 0
   var newVal:Long = 0L
 
-  override def exploreNeighborhood(initialObj: Long){
+  override def exploreNeighborhood(initialObj: Long): Unit ={
 
     val iterationZone : Iterable[Int] =
-      if (searchZone == null) 0 until vars.length
+      if (searchZone == null) vars.indices
       else searchZone()
 
     val iterationSchemeOnZone =
@@ -168,10 +165,9 @@ case class NumericAssignNeighborhood(vars:Array[CBLSIntVar],
   var currentIndice:Int = 0
   var newVal:Long = 0L
 
-  override def exploreNeighborhood(initialObj: Long){
-
+  override def exploreNeighborhood(initialObj: Long): Unit ={
     val iterationZone =
-      if (searchZone == null) 0 until vars.length
+      if (searchZone == null) vars.indices
       else searchZone()
 
     val iterationSchemeOnZone =
@@ -214,7 +210,6 @@ case class NumericAssignNeighborhood(vars:Array[CBLSIntVar],
           notifyFound1()
         }
       }
-
     }
 
     startIndice = currentIndice + 1
@@ -241,10 +236,10 @@ case class NumericAssignNeighborhood(vars:Array[CBLSIntVar],
 case class AssignMove(i:CBLSIntVar,value:Long, id:Int, override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
-  override def commit() {i := value}
+  override def commit(): Unit = {i := value}
 
   override def toString: String = {
-    neighborhoodNameToString + "AssignMove(" + i + " set to " + value + objToString + ")"
+    s"${neighborhoodNameToString}AssignMove($i set to $value$objToString)"
   }
 
   override def touchedVariables: List[Variable] = List(i)

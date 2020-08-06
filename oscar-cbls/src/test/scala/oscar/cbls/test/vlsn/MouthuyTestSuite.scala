@@ -1,17 +1,20 @@
 package oscar.cbls.test.vlsn
 
 import org.scalacheck.Gen
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.lib.search.neighborhoods.vlsn.CycleFinderAlgoType._
 import oscar.cbls.lib.search.neighborhoods.vlsn._
 import oscar.cbls.test.graph.RandomGraphGenerator._
 
-class MouthuyTestSuite extends FunSuite with Matchers with GeneratorDrivenPropertyChecks {
-
-
+class MouthuyTestSuite extends AnyFunSuite with Matchers with ScalaCheckDrivenPropertyChecks {
+  val genVlsn: Gen[VLSNGraph] = for{
+    nbNodes <- Gen.choose(10,20)
+    nbEdges <- Gen.choose(nbNodes * 2,nbNodes * 3)
+  } yield generateVLSN(nbNodes,nbEdges)
   /**
-    * Will test wether a negative weight cycle is found in the graph.
+    * Will test whether a negative weight cycle is found in the graph.
     * If Mouthuy finds one, DFS must yield a cycle as well.
     * However, a cycle may not be found by Mouthuy, yet DFS finds one.
     */
@@ -100,11 +103,6 @@ class MouthuyTestSuite extends FunSuite with Matchers with GeneratorDrivenProper
   }
 
 */
-
-  val genVlsn: Gen[VLSNGraph] = for{
-    nbNodes <- Gen.choose(10,20)
-    nbEdges <- Gen.choose(nbNodes * 2,nbNodes * 3)
-  } yield generateVLSN(nbNodes,nbEdges)
 }
 
 

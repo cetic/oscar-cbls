@@ -1,15 +1,14 @@
 package oscar.cbls.test.graph
 
-import org.scalatest.prop.Checkers
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.scalacheck.Checkers
 import oscar.cbls._
-import oscar.cbls.algo.graph._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.lib.invariant.graph.VoronoiZones
 import oscar.cbls.test.invariants.bench._
 
-
-class VoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
+class VoronoiZonesTestSuite extends AnyFunSuite with Matchers with Checkers {
 
   val verbose = 0
 
@@ -20,7 +19,6 @@ class VoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
     val nbNodes = 50
     val nbConditionalEdges = 50
     val nbNonConditionalEdges = 50
-    val nbTarget = 10
 
     val nbCentroids = 10
 

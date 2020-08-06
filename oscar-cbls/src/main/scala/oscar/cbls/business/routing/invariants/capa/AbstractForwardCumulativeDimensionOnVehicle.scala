@@ -3,10 +3,9 @@ package oscar.cbls.business.routing.invariants.capa
 import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.VehicleLocation
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{ChangingSeqValue, SeqCheckpointedValueStack, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint}
 
 import scala.collection.immutable.SortedSet
-
 
 /**
  * creates a GenericCumulativeIntegerDimensionOnVehicle Invariant
@@ -56,7 +55,7 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
   }
 */
 
-  override def performPropagation(){
+  override def performPropagation(): Unit ={
     setNodesUnrouted(potentiallyRemovedNodes)
 
     toUpdateZonesAndVehicleStartAfter match{
@@ -74,7 +73,6 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
 
     potentiallyRemovedNodes = SortedSet.empty
   }
-
 
   def digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(changes:SeqUpdate,
                                                                        toUpdateZonesAndVehicleStartOpt:Option[(RedBlackTreeMap[List[(Int,Int)]],VehicleLocation)],
@@ -144,7 +142,6 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
             vehicleLocationAndCheckpointStack.defineCheckpoint(prev.newValue,checkpointLevel,vehicleLocationToSave)
             (Some((zonesAfterPrev, vehicleLocationToSave)), removedPointsAfterPrev)
           case (None,potentiallyRemovedPointsAfterPrev) =>
-
             val vehicleLocationToSave = VehicleLocation.apply(v,node => prev.newValue.positionOfAnyOccurrence(node).get)
             vehicleLocationAndCheckpointStack.defineCheckpoint(prev.newValue,checkpointLevel,vehicleLocationToSave)
 

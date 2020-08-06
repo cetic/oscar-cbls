@@ -1,11 +1,11 @@
 package oscar.cbls.test.algo
 
-import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
 import oscar.cbls._
 import oscar.cbls.core.computation.{CBLSIntVar, DomainRange}
 import oscar.cbls.lib.search.neighborhoods.{NarrowingExhaustive, TransferNeighborhood}
 
-class testTransferWithLO extends FlatSpec {
+class testTransferWithLO extends AnyFlatSpec {
 
   val s = new Store()
   val a = 1
@@ -33,6 +33,5 @@ class testTransferWithLO extends FlatSpec {
   "The delta" should "be cut off to var2" in {
     assert(var2.value == var2InitValue - (var1.value - var1InitValue))
   }
-
 
 }

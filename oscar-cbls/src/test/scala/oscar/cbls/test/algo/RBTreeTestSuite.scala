@@ -1,13 +1,36 @@
 package oscar.cbls.test.algo
 
 import org.scalacheck.{Gen, Shrink}
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.algo.rb.RedBlackTreeMap
 
 import scala.util.Random
 
-class RBTreeTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matchers {
+class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
+  // Generators
+  val genOperations: Gen[Operation] = Gen.oneOf(List(Insert(),Update(),Delete()))
+
+  val operationGenerator: Gen[List[Operation]] = for {
+    size <- Gen.choose(1,100)
+    list <- Gen.listOfN(size,genOperations)
+  } yield list
+
+  val intGenerator: Gen[Int] = for (n <- Gen.choose(10, 1000)) yield n
+
+  // Generates a list of key-value tuples with incremental key (in order) and random values
+  val sequentialTuplesList: Gen[List[(Int, Int)]] =  for {
+    numElems <- Gen.choose(0, 500)
+    valuesList <- Gen.listOfN(numElems,intGenerator)
+  } yield valuesList.zipWithIndex.map(tuple => (tuple._2 :Int,tuple._1 :Int))
+
+  // Generates a list of key-value tuples with sparse unique keys (in order) and random values
+  val nonSequentialTuplesList: Gen[List[(Int, Int)]] =  for {
+    numElems <- Gen.choose(0, 500)
+    valuesList <- Gen.listOfN(numElems,intGenerator)
+    keysList <- Gen.listOfN(numElems,intGenerator)
+  } yield keysList.distinct.zip(valuesList).map(tuple => (tuple._1 :Int,tuple._2 :Int)).sortWith(_._1 < _._1)
 
   test("empty tree has size 0 and no values"){
     val tree = RedBlackTreeMap.empty[Int]
@@ -233,28 +256,6 @@ class RBTreeTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with M
       }
     }}
   }
-
-  val genOperations: Gen[Operation] = Gen.oneOf(List(Insert(),Update(),Delete()))
-
-  val operationGenerator: Gen[List[Operation]] = for {
-    size <- Gen.choose(1,100)
-    list <- Gen.listOfN(size,genOperations)
-  } yield list
-
-  val intGenerator: Gen[Int] = for (n <- Gen.choose(10, 1000)) yield n
-
-  // Generates a list of key-value tuples with incremental key (in order) and random values
-  val sequentialTuplesList: Gen[List[(Int, Int)]] =  for {
-    numElems <- Gen.choose(0, 500)
-    valuesList <- Gen.listOfN(numElems,intGenerator)
-  } yield valuesList.zipWithIndex.map(tuple => (tuple._2 :Int,tuple._1 :Int))
-
-  // Generates a list of key-value tuples with sparse unique keys (in order) and random values
-  val nonSequentialTuplesList: Gen[List[(Int, Int)]] =  for {
-    numElems <- Gen.choose(0, 500)
-    valuesList <- Gen.listOfN(numElems,intGenerator)
-    keysList <- Gen.listOfN(numElems,intGenerator)
-  } yield keysList.distinct.zip(valuesList).map(tuple => (tuple._1 :Int,tuple._2 :Int)).sortWith(_._1 < _._1)
 
   abstract sealed class Operation()
   case class Insert() extends Operation

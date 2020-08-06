@@ -18,10 +18,10 @@ protected case class DefinedContentFunction(override val maxContentIfStartAt0: L
   override def isEmpty: Boolean = false
 
   override def toString: String =
-    "From : " + from + ", To : " + to +
-      "\nVehicle content at end : " + contentAtEndIfStartAt0 +
-      "\nMax if start content is zero : " + maxContentIfStartAt0 +
-      "\nMin if start content is zero : " + minContentIfStartAt0
+    s"""From : $from, To = $to
+       |Vehicle content at end : $contentAtEndIfStartAt0
+       |Max if start content is zero : $maxContentIfStartAt0
+       |Min if start content is zero : $minContentIfStartAt0""".stripMargin
 
   override def max(startContent: Long): Long = {
     maxContentIfStartAt0 + startContent
@@ -67,6 +67,9 @@ protected case class TwoWaysVehicleContentFunction(nonFlippedFunction: VehicleCo
     else nonFlippedFunction.isEmpty
 
   override def toString: String = {
-    "Two ways vehicle content function : \nNon-flipped : " + nonFlippedFunction.toString + "\nFlipped : " + flippedFunction.toString
+    s"""Two ways vehicle content function :
+       |Non-flipped : $nonFlippedFunction
+       |Flipped : $flippedFunction
+       |""".stripMargin
   }
 }

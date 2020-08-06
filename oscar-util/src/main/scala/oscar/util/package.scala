@@ -15,7 +15,9 @@
 
 package oscar
 
+import scala.reflect.ClassTag
 import scala.util.Random
+
 package object util {
   val rand = new scala.util.Random(0)
 
@@ -24,7 +26,8 @@ package object util {
    * @return some randomly selected value i in r satisfying st(i)
    * @author pschaus
    */
-  def select[R](r: Iterable[R])(st: (R => Boolean) = ((r: R) => true)): Option[R] = {
+  def select[R](r: Iterable[R])
+               (st: R => Boolean = (_:R) => true): Option[R] = {
     var cpt = 1
     var result: Option[R] = None
     for (o <- r; if st(o)) {
@@ -42,9 +45,12 @@ package object util {
    * @return some randomly selected value i in r, minimizing f(i) and satisfying st(i)
    * @author pschaus
    */
-  def selectMin[R, T](r: Iterable[R])(st: (R => Boolean) = ((r: R) => true))(f: R => T)(implicit orderer: T => Ordered[T]): Option[R] = {
+  def selectMin[R, T](r: Iterable[R])
+                     (st: R => Boolean = (_:R) => true)
+                     (f: R => T)
+                     (implicit orderer: T => Ordered[T]): Option[R] = {
     r.find(st) match {
-      case Some(v) => {
+      case Some(v) =>
         var cpt = 1
         var result = v
         var best: T = f(v)
@@ -63,7 +69,6 @@ package object util {
           }
         }
         Some(result)
-      }
       case None => None
     }
   }
@@ -74,7 +79,9 @@ package object util {
    * @return some randomly selected value i in r, minimizing f(i) and satisfying st(i)
    * @author pschaus
    */
-  def selectMinDeterministic[R, T](r: Iterable[R])(f: R => T)(implicit orderer: T => Ordered[T]): R = {
+  def selectMinDeterministic[R, T](r: Iterable[R])
+                                  (f: R => T)
+                                  (implicit orderer: T => Ordered[T]): R = {
     var best = r.head
     var fbest = f(best)
     val it = r.iterator
@@ -89,11 +96,12 @@ package object util {
     best
   }
   
-  def selectMinDeterministicInt[R](r: Array[R])(f: R => Int): R = {
+  def selectMinDeterministicInt[R](r: Array[R])
+                                  (f: R => Int): R = {
     var best = r.head
     var fbest = f(best)
     var i = 0
-    while (i < r.size) {
+    while (i < r.length) {
       val fi = f(r(i))
       if (fi < fbest) {
         best = r(i)
@@ -109,7 +117,10 @@ package object util {
    * @return the k value i in r minimizing f(i) and satisfying st(i). In case of tie, those are broken randomly.
    * @author pschaus
    */
-  def selectMinK[R, T](r: Iterable[R], k: Int)(st: (R => Boolean) = ((r: R) => true))(f: R => T)(implicit orderer: T => Ordered[T]): Iterable[R] = {
+  def selectMinK[R:ClassTag, T](r: Iterable[R], k: Int)
+                      (st: R => Boolean = (_: R) => true)
+                      (f: R => T)
+                      (implicit orderer: T => Ordered[T]): Iterable[R] = {
     val potentials = r.filter(st(_))
     if (potentials.size <= k) potentials
     else {
@@ -125,9 +136,9 @@ package object util {
    * @return the time (ms) to execute the block
    */
   def time(block: => Unit): Long = {
-    val t0 = System.currentTimeMillis();
+    val t0 = System.currentTimeMillis()
     block
-    System.currentTimeMillis - t0;
+    System.currentTimeMillis - t0
   }
 
   class Crossable[E1](es1: Iterable[E1]) {
@@ -157,7 +168,8 @@ package object util {
       elem
     }
 
-    def weightedSelect[@specialized(Int) B](col: Traversable[B])(prob: B => Int): B = {
+    def weightedSelect[@specialized(Int) B](col: Iterable[B])
+                                           (prob: B => Int): B = {
       var acc = prob(col.head)
       var elem = col.head
       col.tail.foreach(e => {
@@ -167,7 +179,5 @@ package object util {
       })
       elem
     }
-  }  
-  
-
+  }
 }

@@ -1,11 +1,11 @@
 package oscar.cbls.business.routing.invariants.timeWindow
 
-import oscar.cbls._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.invariants.global._
-import oscar.cbls.core._
-import oscar.cbls.core.computation.{CBLSIntVar, ChangingSeqValue}
+import oscar.cbls.core.computation.CBLSIntVar
+
+import scala.annotation.tailrec
 
 object TimeWindowConstraintWithLogReduction {
 
@@ -115,10 +115,10 @@ class TimeWindowConstraintWithLogReduction (gc: GlobalConstraintCore,
         case (false,false,false,false) =>
           (1L, -1L, -1L)
         case _ =>
-          throw new Error("Unhandled case : " + (earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2,
+          throw new Error(s"Unhandled case : ${(earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2,
             earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2,
             latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2,
-            latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2))
+            latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2)}")
       }
 
     if(ea3 > la3)
@@ -155,7 +155,7 @@ class TimeWindowConstraintWithLogReduction (gc: GlobalConstraintCore,
     * @return the value associated with the vehicle. This value should only be computed based on the provided segments
     */
   override def computeVehicleValueComposed(vehicle: Int, segments: QList[LogReducedSegment[TwoWaysTransferFunction]]): Boolean = {
-
+    @tailrec
     def composeTransferFunctions(transferFunctions: QList[TwoWaysTransferFunction], previousLeavingTime: Long, lastNode: Int, flipped: Boolean): Long ={
       val currentTransferFunction = transferFunctions.head
       if(currentTransferFunction.isEmpty(flipped)) -1L
@@ -168,6 +168,7 @@ class TimeWindowConstraintWithLogReduction (gc: GlobalConstraintCore,
       }
     }
 
+    @tailrec
     def composeLogReduceSegments(logReducedSegments: QList[LogReducedSegment[TwoWaysTransferFunction]],
                                  lastNode: Int = vehicle,
                                  previousLeavingTime: Long = 0L): Long ={
@@ -257,5 +258,3 @@ class TimeWindowConstraintWithLogReduction (gc: GlobalConstraintCore,
     */
   override def endNodeValue(vehicle: Int): TwoWaysTransferFunction = twoWaysTransferFunctionOfNode(vehicle)
 }
-
-

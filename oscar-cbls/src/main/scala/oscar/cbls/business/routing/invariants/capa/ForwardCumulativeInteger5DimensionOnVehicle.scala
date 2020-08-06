@@ -1,5 +1,3 @@
-package oscar.cbls.business.routing.invariants.capa
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,10 +12,11 @@ package oscar.cbls.business.routing.invariants.capa
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.business.routing.invariants.capa
 
-import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingIntValue, ChangingSeqValue, Domain, IntNotificationTarget, IntValue}
+import oscar.cbls.core.propagation.Checker
 
 object ForwardCumulativeInteger5DimensionOnVehicle {
   /**
@@ -134,7 +133,6 @@ class ForwardCumulativeInteger5DimensionOnVehicle(routes:ChangingSeqValue,
   for(i <- content4AtNode) i.setDefiningInvariant(this)
   for(i <- content5AtNode) i.setDefiningInvariant(this)
 
-
   for(i <- content1AtEnd) i.setDefiningInvariant(this)
   for(i <- content2AtEnd) i.setDefiningInvariant(this)
   for(i <- content3AtEnd) i.setDefiningInvariant(this)
@@ -143,7 +141,7 @@ class ForwardCumulativeInteger5DimensionOnVehicle(routes:ChangingSeqValue,
 
   for(i <- lastPointOfVehicle) i.setDefiningInvariant(this)
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
     toUpdateZonesAndVehicleStartAfter match {
       case None => ;
       case Some((toUpdateZones,vehicleLocation)) =>
@@ -214,7 +212,7 @@ class ForwardCumulativeInteger5DimensionOnVehicle(routes:ChangingSeqValue,
     }
   }
 
-  override def setVehicleContentAtEnd(vehicle : Int, lastNode : Int){
+  override def setVehicleContentAtEnd(vehicle : Int, lastNode : Int): Unit ={
     lastPointOfVehicle(vehicle) := lastNode
     //(fromNode,toNode,content1AtFromNode,content2AtFromNode)=> (content1AtToNode,content2AtToNode)
     val (newValue1,newValue2,newValue3,newValue4,newValue5) = op(lastNode,vehicle,
@@ -231,7 +229,7 @@ class ForwardCumulativeInteger5DimensionOnVehicle(routes:ChangingSeqValue,
     content5AtEnd(vehicle) := newValue5
   }
 
-  override def setNodesUnrouted(unroutedNodes : Iterable[Int]){
+  override def setNodesUnrouted(unroutedNodes : Iterable[Int]): Unit ={
     for(node <- unroutedNodes) {
       content1AtNode(node) := defaultVehicleContent1ForUnroutedNodes
       content2AtNode(node) := defaultVehicleContent2ForUnroutedNodes
@@ -244,8 +242,8 @@ class ForwardCumulativeInteger5DimensionOnVehicle(routes:ChangingSeqValue,
   override def checkInternals(c:Checker): Unit = {
     check(routes.value,c)
   }
-  def check(s:IntSequence,c:Checker){
 
+  def check(s:IntSequence,c:Checker): Unit ={
     //(fromNode,toNode,content1AtFromNode,content2AtFromNode)=> (content1AtToNode,content2AtToNode)
     def op5(fromNode:Int,toNode:Int,content:(Long,Long,Long,Long,Long)) = op(fromNode,toNode,content._1,content._2,content._3,content._4,content._5)
 
@@ -262,22 +260,18 @@ class ForwardCumulativeInteger5DimensionOnVehicle(routes:ChangingSeqValue,
 
     for(vehicle <- 0 until v){
       c.check(vehicleLocation.startPosOfVehicle(vehicle) == s.positionOfAnyOccurrence(vehicle).get,
-        Some("Found start of vehicle(" + vehicle + "):=" + vehicleLocation.startPosOfVehicle(vehicle) +
-          " should be :=" + s.positionOfAnyOccurrence(vehicle) +" seq :"+ s.mkString(",")))
+        Some(s"Found start of vehicle($vehicle):=${vehicleLocation.startPosOfVehicle(vehicle)} should be :=${s.positionOfAnyOccurrence(vehicle)} seq :${s.mkString(",")}"))
       c.check(currentVehicleLocation.startPosOfVehicle(vehicle) == vehicleLocation.startPosOfVehicle(vehicle),Some("x"))
     }
 
     for(node <- 0 until n){
       c.check(nodeToContent(node) == (content1AtNode(node).newValue,content2AtNode(node).newValue,content3AtNode(node).newValue,content4AtNode(node).newValue,content5AtNode(node).newValue),
-        Some("Vehicle content at node(" + node + ") at pos : "+ s.positionsOfValue(node)+ " := " +
-          (content1AtNode(node).newValue,content2AtNode(node).newValue,content3AtNode(node).newValue,content4AtNode(node).newValue,content5AtNode(node).newValue) +
-          " should be :=" + nodeToContent(node)+ " routes:" + s.mkString(",")))
+        Some(s"Vehicle content at node($node) at pos : ${s.positionsOfValue(node)} := ${(content1AtNode(node).newValue,content2AtNode(node).newValue,content3AtNode(node).newValue,content4AtNode(node).newValue,content5AtNode(node).newValue)} should be :=${nodeToContent(node)} routes:${s.mkString(",")}"))
     }
 
     for(vehicle <- 0 until v){
       c.check((content1AtEnd(vehicle).newValue,content2AtEnd(vehicle).newValue,content3AtEnd(vehicle).newValue,content4AtEnd(vehicle).newValue,content5AtEnd(vehicle).newValue) == vehicleToContentAtEnd(vehicle),
-        Some("Error on vehicle content at end vehicle:" + vehicle + " contentAtEnd(vehicle).newValue:" +
-          (content1AtEnd(vehicle).newValue,content2AtEnd(vehicle).newValue,content3AtEnd(vehicle).newValue,content4AtEnd(vehicle).newValue,content5AtEnd(vehicle).newValue) + " should be:" +  vehicleToContentAtEnd(vehicle)))
+        Some(s"Error on vehicle content at end vehicle:$vehicle contentAtEnd(vehicle).newValue:${(content1AtEnd(vehicle).newValue,content2AtEnd(vehicle).newValue,content3AtEnd(vehicle).newValue,content4AtEnd(vehicle).newValue,content5AtEnd(vehicle).newValue)} should be:${vehicleToContentAtEnd(vehicle)}"))
     }
   }
 }

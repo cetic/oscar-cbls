@@ -17,12 +17,10 @@
  *     This code has been initially developed by CETIC www.cetic.be
  *         by Renaud De Landtsheer
  ******************************************************************************/
-
 package oscar.cbls.lib.invariant.logic
 
-import oscar.cbls._
-import oscar.cbls.core._
-import oscar.cbls.core.computation.IntValue
+import oscar.cbls.core.computation.{ChangingIntValue, IntNotificationTarget, IntValue, SetInvariant}
+import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.SortedSet
 
@@ -36,26 +34,26 @@ import scala.collection.immutable.SortedSet
   * */
 case class Filter(values:Array[IntValue], cond:(Long=>Boolean)=_>0L)
   extends SetInvariant(values.indices.foldLeft(SortedSet.empty[Int])((acc:SortedSet[Int],indice:Int) => if(cond(values(indice).value)){acc+indice}else acc),
-    0 until values.length)
+    values.indices)
   with IntNotificationTarget{
 
   for (v <- values.indices) registerStaticAndDynamicDependency(values(v),v)
   finishInitialization()
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long): Unit = {
     val OldCond = cond(OldVal)
     val NewCond = cond(NewVal)
     if(OldCond  && !NewCond) this.deleteValue(index)
     else if(NewCond && !OldCond) this.insertValue(index)
   }
 
-  override def checkInternals(c:Checker){
+  override def checkInternals(c:Checker): Unit ={
     for(i <- values.indices){
       c.check(!cond(values(i).value) || this.value.contains(i),
           Some("!cond(values(i).value) || this.value.contains(i)"))
       c.check(cond(values(i).value) || !this.value.contains(i),
-          Some("cond(values(" + i + ").value) || !this.value.contains(" + i + ")" + "-" + values.mkString(";") + "-" + this.value.mkString(";") + "-" + this.name))
+          Some(s"cond(values($i).value) || !this.value.contains($i)-${values.mkString(";")}-${this.value.mkString(";")}-${this.name}"))
     }
   }
 }

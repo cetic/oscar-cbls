@@ -14,8 +14,6 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   * ****************************************************************************
   */
-
-
 package oscar.cbls.lib.search.neighborhoods.vlsn
 
 class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends CycleFinderAlgo{
@@ -103,7 +101,6 @@ class ReachabilityFloydWarshall(graph:VLSNGraph){
   private val edges:Array[Edge] = graph.edges
   private val nbNodes = nodes.length
   private val nodeRange = 0 until nbNodes
-
 
   def buildRechabilityMatrix():Array[Array[Boolean]] = {
     val adjacencyMatrix = buildFloydMatrices()

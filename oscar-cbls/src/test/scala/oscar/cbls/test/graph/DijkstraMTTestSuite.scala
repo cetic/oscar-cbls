@@ -1,14 +1,15 @@
 package oscar.cbls.test.graph
 
-import org.scalacheck.Gen
 import org.scalactic.anyvals.PosInt
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalacheck.Gen
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.algo.graph._
 
 import scala.util.Random
 
-class DijkstraMTTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matchers{
+class DijkstraMTTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers{
 
   test("Astar confirms the result from DijkstraMT is the closest terminal"){
 

@@ -17,17 +17,14 @@
   *     This code has been initially developed by CETIC www.cetic.be
   *         by Renaud De Landtsheer
   ******************************************************************************/
-
-
 package oscar.cbls.lib.invariant.logic
 
-/**This package proposes a set of logic invariants, which are used to define the structure of the problem*/
-
-import oscar.cbls._
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{CBLSSetVar, ChangingIntValue, Domain, IntValue, Invariant, InvariantHelper, ShortIntNotificationTarget, Store}
+import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.{SortedMap, SortedSet}
 
+/**This package proposes a set of logic invariants, which are used to define the structure of the problem*/
 
 /**maintains a cluster of the indexes of array:  cluster(j) = {i in index of values | values[i] == j}
   * This is considered as a sparse cluster because Cluster is a map and must not cover all possibles values of the values in the array ''values''
@@ -49,24 +46,24 @@ case class SparseCluster(values:Array[IntValue], clusters:SortedMap[Int,CBLSSetV
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int): Unit = {
     val x:CBLSSetVar = clusters.getOrElse(OldVal,null)
     if(x != null) x.deleteValue(index)
     val y:CBLSSetVar = clusters.getOrElse(NewVal,null)
     if(y != null) y.insertValue(index)
   }
 
-  override def checkInternals(c:Checker){
+  override def checkInternals(c:Checker): Unit ={
     for(v <- values.indices){
       if (clusters.isDefinedAt(values(v).valueInt)) {
         c.check(clusters(values(v).valueInt).value.contains(v),
-          Some("Clusters(values(v (" + v + ")).value (" + values(v).value + ")).value.contains(v)"))
+          Some(s"Clusters(values(v ($v)).value (${values(v).value})).value.contains(v)"))
       }
     }
     for(value <- clusters.keys){
       for (indices <- clusters(value).value){
         c.check(values(indices).value == value,
-          Some("values(indices).value (" + values(indices).value + ") == value (" + value + ")"))
+          Some(s"values(indices).value (${values(indices).value}) == value ($value)"))
       }
     }
   }
@@ -101,7 +98,7 @@ case class DenseCluster(values:Array[IntValue], clusters:Array[CBLSSetVar]) exte
 
   //This method is called by each IntVar that is registered to the dynamic dependency graph.
   //We update the output variables incrementally based on this update.
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int): Unit = {
     assert(values(index) == v)
     clusters(OldVal).deleteValue(index)
     clusters(NewVal).insertValue(index)
@@ -109,20 +106,19 @@ case class DenseCluster(values:Array[IntValue], clusters:Array[CBLSSetVar]) exte
 
   //This method is optional, it is called by the model when its debug mode is activated (see the constructor of model)
   //In this method, we check that the outputs are correct, based on non-incremental code
-  override def checkInternals(c:Checker){
+  override def checkInternals(c:Checker): Unit ={
     for(v <- values.indices){
       c.check(clusters(values(v).valueInt).value.contains(v),
-        Some("clusters(values(v (" + v + ")).value (" + values(v).value + ")).value.contains(v)"))
+        Some(s"clusters(values(v ($v)).value (${values(v).value})).value.contains(v)"))
     }
     for(value <- clusters.indices){
       for (indices <- clusters(value).value){
         c.check(values(indices).value == value,
-          Some("values(indices).value (" + values(indices).value + ") == value (" + value + ")"))
+          Some(s"values(indices).value (${values(indices).value}) == value ($value)"))
       }
     }
   }
 }
-
 
 /**Maintains a cluster of the indexes of array: cluster(j) = {i in index of values | values[i] == j}
   * This is considered as a dense cluster because Cluster is an array and must cover all the possibles values of the values in the array ''values''
@@ -153,7 +149,7 @@ case class TranslatedDenseCluster(values:Array[IntValue],  indicesArray:Array[In
 
   //This method is called by each IntVar that is registered to the dynamic dependency graph.
   //We update the output variables incrementally based on this update.
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int): Unit = {
     assert(values(index) == v)
     clusters(OldVal).deleteValue(indicesArray(index))
     clusters(NewVal).insertValue(indicesArray(index))
@@ -161,15 +157,15 @@ case class TranslatedDenseCluster(values:Array[IntValue],  indicesArray:Array[In
 
   //This method is optional, it is called by the model when its debug mode is activated (see the constructor of model)
   //In this method, we check that the outputs are correct, based on non-incremental code
-  override def checkInternals(c:Checker){
+  override def checkInternals(c:Checker): Unit ={
     for(v <- values.indices){
       c.check(clusters(values(v).valueInt).value.contains(indicesArray(v)),
-        Some("clusters(values(v (" + v + ")).value (" + values(v).value + ")).value.contains(v)"))
+        Some(s"clusters(values(v ($v)).value (${values(v).value})).value.contains(v)"))
     }
     for(value <- clusters.indices){
       for (indices1 <- clusters(value).value; indices = indicesArray(indices1)){
         c.check(values(indices).value == value,
-          Some("values(indices).value (" + values(indices).value + ") == value (" + value + ")"))
+          Some(s"values(indices).value (${values(indices).value}) == value ($value)"))
       }
     }
   }
@@ -203,5 +199,3 @@ object Cluster{
     DenseCluster(values,Clusters)
   }
 }
-
-

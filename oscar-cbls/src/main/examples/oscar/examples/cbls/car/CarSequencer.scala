@@ -20,7 +20,6 @@ import oscar.cbls.lib.search.neighborhoods.WideningFlipNeighborhood
 import oscar.cbls.modeling.CBLSModel
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.search.combinators.Profile
-import oscar.cbls._
 import scala.collection.immutable.SortedMap
 import scala.language.postfixOps
 import scala.util.Random

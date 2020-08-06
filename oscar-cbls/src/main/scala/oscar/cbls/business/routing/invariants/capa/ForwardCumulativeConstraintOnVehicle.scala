@@ -12,17 +12,15 @@
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
-
 package oscar.cbls.business.routing.invariants.capa
 
+import oscar.cbls._
 import oscar.cbls.algo.magicArray.MagicIntArrayStacked
 import oscar.cbls.algo.rb.RedBlackTreeMap
-import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.VehicleLocation
-import oscar.cbls.core._
-
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingIntValue, ChangingSeqValue, SeqCheckpointedValueStack, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint}
+import oscar.cbls.core.propagation.Checker
 
 object ForwardCumulativeConstraintOnVehicle {
   /**
@@ -46,7 +44,7 @@ object ForwardCumulativeConstraintOnVehicle {
              maxCheckpointLevel:Int,
              capacityName:String):ChangingIntValue = {
 
-    val violation = new CBLSIntVar(routes.model,0L,(0L,Long.MaxValue), "violation of capacity " + capacityName)
+    val violation = new CBLSIntVar(routes.model,0L,(0L,Long.MaxValue), s"violation of capacity $capacityName")
 
     new ForwardCumulativeConstraintOnVehicle(
       routes,
@@ -100,7 +98,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
   private val violationAndVehicleStartStack = new SeqCheckpointedValueStack[(Long,VehicleLocation)]()
 
   def contentAtNodes:Array[Long] = Array.tabulate(n)(contentAtNode(_))
-  def freeSpaceAtNodes: (Int) => Long = {
+  def freeSpaceAtNodes: Int => Long = {
     val contentAtNodesNow = contentAtNodes
     (node:Int) => cMax - contentAtNodesNow(node)
   }
@@ -126,14 +124,14 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
     true
   }
 
-  override def setNodesUnrouted(unroutedNodes : Iterable[Int]){
+  override def setNodesUnrouted(unroutedNodes : Iterable[Int]): Unit ={
     for(node <- unroutedNodes){
       violation :-= contentToViolation(contentAtNode(node))
       contentAtNode(node) = 0L
     }
   }
 
-  override def setVehicleContentAtEnd(vehicle : Int, lastNode : Int){}
+  override def setVehicleContentAtEnd(vehicle : Int, lastNode : Int): Unit = {}
 
   /**
    * @param vehicle
@@ -156,7 +154,6 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
   }
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
-
     val (toUpdateZonesAndVehicleStartAfter,potentiallyRemovedNodes) =
       digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(changes,Some(RedBlackTreeMap.empty[List[(Int,Int)]],currentVehicleLocation),List.empty,v.value)
 
@@ -249,7 +246,6 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
           digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints, previousSequence) match {
             //checkpoints are managed about the vehicleLocation exclusively
             case (Some((zonesAfterPrev, vehicleLocationAfterPrev)), removedPointsAfterPrev) =>
-
               while (contentAtNode.level >= checkpointLevel) {
                 //we save the changes, so they are comitted to the lower level
                 contentAtNode.popLevel(false)
@@ -262,7 +258,8 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
                 zonesAfterPrev,
                 fastVehicleLocationAfterPrev)
               contentAtNode.pushLevel()
-              require(contentAtNode.level == checkpointLevel, "contentAtNode.level:" + contentAtNode.level  + " checkpointLevel:" + checkpointLevel)
+              require(contentAtNode.level == checkpointLevel,
+                s"contentAtNode.level:${contentAtNode.level} checkpointLevel:$checkpointLevel")
 
               violationAndVehicleStartStack.defineCheckpoint(prev.newValue, checkpointLevel, (violation.newValue, fastVehicleLocationAfterPrev))
               currentVehicleLocation = fastVehicleLocationAfterPrev
@@ -310,27 +307,26 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
   }
 
   override def toString : String = {
-    //this will trigger a propagation because of violation.value
-    "ForwardCumulativeConstraintOnVehicle(routes:" + routes.name + " n:" + n + " v:" + v + " cMax:" + cMax + " capacityName:" + capacityName + " violation:=" + violation.value +"){\n" +
-      (0 until v).toList.map((vehicle:Int) =>
-      {
-        val header = "\tvehicle" + vehicle + " contentAtVehicleStart:" + contentAtVehicleStart(vehicle) + "\n"
-        var explorerOpt = routes.value.explorerAtAnyOccurrence(vehicle).get.next
-        var acc:String = ""
+    s"""ForwardCumulativeConstraintOnVehicle(routes:${routes.name} n:$n v:$v cMax:$cMax capacityName:$capacityName violation:=${violation.value}){
+       |${(0 until v).toList.map((vehicle:Int) =>
+    {
+      val header = s"\tvehicle$vehicle contentAtVehicleStart:${contentAtVehicleStart(vehicle)}\n"
+      var explorerOpt = routes.value.explorerAtAnyOccurrence(vehicle).get.next
+      var acc:String = ""
 
-        while(explorerOpt match{
-          case None => //at end of last vehicle
-            false
-          case Some(explorer) if explorer.value < v =>
-            //reached another vehicle
-            false
-          case Some(explorer) if explorer.value >= v =>
-            val node = explorer.value
-            acc += "\t\tnode:" + node + "\t" + " content:" + contentAtNode(node) + (if (contentAtNode(node) > cMax) " violation:" + (contentAtNode(node) - cMax) else "") + "\n"
-            explorerOpt = explorer.next
-            true
-        }){}
-        header+acc}).mkString("")
+      while(explorerOpt match{
+        case None => //at end of last vehicle
+          false
+        case Some(explorer) if explorer.value < v =>
+          //reached another vehicle
+          false
+        case Some(explorer) if explorer.value >= v =>
+          val node = explorer.value
+          acc += s"\t\tnode:$node\t content:${contentAtNode(node)}${if (contentAtNode(node) > cMax) " violation:" + (contentAtNode(node) - cMax) else ""}\n"
+          explorerOpt = explorer.next
+          true
+      }){}
+      header+acc}).mkString("")}""".stripMargin
   }
 
   override def checkInternals(c: Checker): Unit = {

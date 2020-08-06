@@ -14,8 +14,8 @@
   ******************************************************************************/
 package oscar.cbls.business
 
-import oscar.cbls._
 import oscar.cbls.business.routing.modeling._
+import oscar.cbls.core.computation.Store
 
 
 /**
@@ -31,15 +31,15 @@ import oscar.cbls.business.routing.modeling._
  */
 package object routing
   extends RoutingInvariants
-  with CapacityInvariants
-  with RoutingExtensions
-  with InsertPointAPI
-  with OnePointMoveAPI
-  with RemovePointAPI
-  with RouteExchangeAPI
-  with SegmentExchangeAPI
-  with ThreeOptAPI
-  with TwoOptAPI {
+    with CapacityInvariants
+    with RoutingExtensions
+    with InsertPointAPI
+    with OnePointMoveAPI
+    with RemovePointAPI
+    with RouteExchangeAPI
+    with SegmentExchangeAPI
+    with ThreeOptAPI
+    with TwoOptAPI {
 
   type VRP = oscar.cbls.business.routing.model.VRP
   def vrp(m: Store,n:Int, v: Int, maxPivotPerValuePercent: Int = 4): VRP =
@@ -67,5 +67,3 @@ package object routing
   val DistanceHelper = oscar.cbls.business.routing.model.helpers.DistanceHelper
 
 }
-
-

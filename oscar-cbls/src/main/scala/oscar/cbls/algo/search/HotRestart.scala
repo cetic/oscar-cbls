@@ -1,5 +1,3 @@
-package oscar.cbls.algo.search
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,10 +12,10 @@ package oscar.cbls.algo.search
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.algo.search
 
 import scala.collection.Iterator
 import scala.collection.immutable.{NumericRange, SortedSet}
-import oscar.cbls._
 
 /**
  * this proposes a set of methods to enable hot restart on iteration over an iterable.
@@ -71,12 +69,12 @@ class ShiftedIterable(it:Iterable[Int], pivot:Int, sequence:Boolean = false) ext
   class ShiftedIterator[@specialized(Int,Long) T](first:Iterable[T], var second:Iterable[T]) extends Iterator[T]{
     //TODO: this is awful: maybe the stuff is already sorted
     //TODO: we should perform a lazy sort since all the first might not be covered anyway
-    var it:Iterator[T] = first.toList.toIterator
+    var it:Iterator[T] = first.toList.iterator
     override def hasNext: Boolean = {
       if(it.hasNext) true
       else if (second == null) false
       else{
-        it = second.toList.toIterator
+        it = second.toList.iterator
         second = null
         it.hasNext
       }
@@ -90,7 +88,6 @@ class InstrumentedRange(r:NumericRange[Int]){
   def startBy (pivot:Int) = if (r contains pivot) new ShiftedRange(r.head, r.last,pivot, r.step) else r
 }
 
-
 /**
  * this is an inclusive range.
  * @param start
@@ -102,7 +99,7 @@ class ShiftedRange(val start:Int, val end:Int, val startBy:Int, val step:Int = 1
   if((start > startBy) || (startBy > end)) throw new Exception("ShiftedRange must contain startBy value ")
   if(step != 1) throw new Exception("only step of 1L is supported in ShiftedRange")
 
-  def getNextValue(a:Int) = {
+  def getNextValue(a:Int): Int = {
     if(a == end) start
     else a+1
   }
@@ -115,7 +112,7 @@ class ShiftedRange(val start:Int, val end:Int, val startBy:Int, val step:Int = 1
 
 
   class ShiftedRangeIterator(val s:ShiftedRange) extends Iterator[Int]{
-    var currentValue = s.startBy
+    var currentValue: Int = s.startBy
     var hasNext = true
 
     def next(): Int = {
@@ -151,7 +148,7 @@ class ShiftedSet(s:SortedSet[Int], pivot:Int) extends Iterable[Int] {
           return true
         }else{
           //start the second iterator
-          it = s.toIterator
+          it = s.iterator
           first = false
           //and continue the execution flow
         }

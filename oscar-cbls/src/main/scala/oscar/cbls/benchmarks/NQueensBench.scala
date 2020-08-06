@@ -28,7 +28,6 @@ import oscar.cbls.lib.invariant.minmax._
 import oscar.cbls.lib.search.LinearSelectorClass
 import oscar.cbls.util.StopWatch
 
-import scala.language.postfixOps
 import scala.util.Random
 
 //Beware: this requires a lot of memory, so I use to put this in the command line.
@@ -48,7 +47,7 @@ import scala.util.Random
  */
 object NQueensBench extends LinearSelectorClass(true) with StopWatch{
 
-  def nStrings(N: Long, C: String): String = if (N <= 0) "" else "" + C + nStrings(N - 1, C)
+  def nStrings(N: Long, C: String): String = if (N <= 0) "" else s"$C${nStrings(N - 1, C)}"
   def padToLength(s: String, l: Int) = (s + nStrings(l, " ")).substring(0, l)
 
   val help = "Benchmarking NQueen \n" +
@@ -62,7 +61,7 @@ object NQueensBench extends LinearSelectorClass(true) with StopWatch{
     "dryRun: 0 for no dry run, 1 for a dry run\n"+
     "random 1 for a real random, 0 for a pseudo-random. pseudo-random it will exhibit the same trajectory every time you call the bench\n"
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit ={
 
     println(help)
     if (args.length<1) {
@@ -92,7 +91,7 @@ object NQueensBench extends LinearSelectorClass(true) with StopWatch{
     }
   }
 
-  def SolveNQueen(N:Int, r:Random){
+  def SolveNQueen(N:Int, r:Random): Unit ={
     print(padToLength("" + N, 15))
 
     startWatch()

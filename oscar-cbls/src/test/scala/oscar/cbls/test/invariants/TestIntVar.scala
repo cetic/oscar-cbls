@@ -14,12 +14,13 @@
  ******************************************************************************/
 package oscar.cbls.test.invariants
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import oscar.cbls.core.computation.{CBLSIntVar, Domain, Store}
 
 import scala.language.postfixOps
 
-class TestIntVar extends FunSuite with Matchers {
+class TestIntVar extends AnyFunSuite with Matchers {
   
   test("test create IntVar 1..10"){
     val solver = new Store

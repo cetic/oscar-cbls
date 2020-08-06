@@ -1,5 +1,3 @@
-package oscar.cbls.lib.invariant.numeric
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,6 +12,7 @@ package oscar.cbls.lib.invariant.numeric
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.lib.invariant.numeric
 
 import oscar.cbls.core.computation.{IntValue, SetValue}
 
@@ -59,7 +58,6 @@ trait NumericInvariants{
   def abs(v:IntValue) = Abs(v:IntValue)
 
   def pow(a:IntValue, b:IntValue) = Pow(a,b)
-
 
   /**
    * This invariant implements the identity function within the min-max range.

@@ -1,5 +1,3 @@
-package oscar.cbls.lib.invariant.seq
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,13 +12,13 @@ package oscar.cbls.lib.invariant.seq
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.lib.invariant.seq
 
-import oscar.cbls.{core, _}
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{ChangingSeqValue, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint, SeqValue, SetInvariant}
+import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.SortedSet
-
 
 /**
  * content of v
@@ -40,7 +38,7 @@ case class Content(v:SeqValue)
     }
   }
 
-  private def updateFromScratch(u:IntSequence){
+  private def updateFromScratch(u:IntSequence): Unit ={
     this := (SortedSet.empty[Int] ++ u.unorderedContentNoDuplicate)
   }
 
@@ -75,8 +73,8 @@ case class Content(v:SeqValue)
     }
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
     c.check(this.value.toList.sorted equals v.value.unorderedContentNoDuplicate.sorted,
-      Some("this.value.toList:" + this.value.toList + " == v.value.toList:" + v.value.unorderedContentNoDuplicate.sorted + " v.value.unorderedContentNoDuplicate:" + v))
+      Some(s"this.value.toList:${this.value.toList} == v.value.toList:${v.value.unorderedContentNoDuplicate.sorted} v.value.unorderedContentNoDuplicate:$v"))
   }
 }

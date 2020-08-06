@@ -1,4 +1,3 @@
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -13,16 +12,14 @@
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
 package oscar.cbls.lib.search.neighborhoods
 
-import oscar.cbls._
 import oscar.cbls.core.computation.CBLSIntVar
-import oscar.cbls.core.search.{CompositeMove, Move, SearchResult, Neighborhood}
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.core.search.{CompositeMove, Move, Neighborhood, SearchResult}
 import oscar.cbls.lib.search.LinearSelectors
 
 import scala.collection.immutable.SortedSet
-
 
 /**
  * Will randomize the array, typically to get out of a local minimal
@@ -42,7 +39,9 @@ case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
                                  valuesToConsider:(CBLSIntVar,Long) => Iterable[Long] = (variable,_) => variable.domain.values)
   extends Neighborhood(name) with LinearSelectors{
 
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean = null): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj:Long,
+                       acceptanceCriteria: (Long, Long) => Boolean = null): SearchResult = {
     if(printExploredNeighborhoods) println("applying " + name)
 
     var toReturn:List[Move] = List.empty
@@ -85,7 +84,9 @@ case class RandomSwapNeighborhood(vars:Array[CBLSIntVar],
                                   searchZone:() => SortedSet[Int] = null)  //TODO: search zone does not work!
   extends Neighborhood(name) with LinearSelectors{
 
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean = null): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj:Long,
+                       acceptanceCriteria: (Long, Long) => Boolean = null): SearchResult = {
     if(printExploredNeighborhoods) println("applying " + name)
 
     var toReturn:List[Move] = List.empty

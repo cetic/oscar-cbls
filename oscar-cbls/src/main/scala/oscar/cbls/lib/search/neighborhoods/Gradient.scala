@@ -17,8 +17,7 @@ package oscar.cbls.lib.search.neighborhoods
 
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.core.computation.{CBLSIntVar, Variable}
-import oscar.cbls.core.search.{Best, EasyNeighborhoodMultiLevel, Move}
-import oscar.cbls._
+import oscar.cbls.core.search.{Best, EasyNeighborhoodMultiLevel, LoopBehavior, Move}
 
 import scala.collection.immutable.SortedSet
 
@@ -31,14 +30,7 @@ case class GradientComponent(variable:CBLSIntVar,
   require(!slope.isNaN,"NAN slope")
 
   override def toString: String =
-    "GradientComponent(variable:" + variable + "," +
-      "var.max:" + variable.max + "," +
-      "var.min:" + variable.min + "," +
-      "initValue:" + initValue + "," +
-      "indice:" + indice + "," +
-      "slope:" + slope + ","+
-      "maxStep:" + maxStep + "," +
-      "minStep:" + minStep + ")"
+    s"GradientComponent(variable:$variable,var.max:${variable.max},var.min:${variable.min},initValue:$initValue,indice:$indice,slope:$slope,maxStep:$maxStep,minStep:$minStep)"
 
   def takeStep(step:Long): Unit ={
     variable := valueAfterStep(step)
@@ -54,8 +46,8 @@ case class GradientComponent(variable:CBLSIntVar,
   val bound2 = ((variable.min - initValue) * slope).toLong
 
   val (minStep, maxStep) = if (bound1 < bound2) (bound1, bound2) else (bound2, bound1)
-  require(maxStep >=0, "maxStep should be >=0, got:" + maxStep + " " + this)
-  require(minStep <=0, "minStep hould be <=0, got:" + minStep + " " + this)
+  require(maxStep >=0, s"maxStep should be >=0, got:$maxStep $this")
+  require(minStep <=0, s"minStep hould be <=0, got:$minStep $this")
 }
 
 /**
@@ -338,7 +330,8 @@ abstract class AbstractGradientDescent(vars:Array[CBLSIntVar],
     performDescent(initialObj: Long, gradientDefinition)
   }
 
-  def performDescent(initialObj: Long, initGradientDefinition:List[GradientComponent]) {
+  def performDescent(initialObj: Long,
+                     initGradientDefinition:List[GradientComponent]): Unit ={
     this.gradientDefinition = initGradientDefinition
     currentStep = 0
     while (gradientDefinition.nonEmpty) {
@@ -346,7 +339,7 @@ abstract class AbstractGradientDescent(vars:Array[CBLSIntVar],
       val minStep = gradientDefinition.map(_.minStep).max
       val maxStep = gradientDefinition.map(_.maxStep).min
 
-      require(minStep < maxStep, "minStep:" + minStep + " should be < maxStep:" + maxStep)
+      require(minStep < maxStep, s"minStep:$minStep should be < maxStep:$maxStep")
 
       def evaluateStep(step: Long): Long = {
         this.currentStep = step
@@ -395,7 +388,7 @@ abstract class AbstractGradientDescent(vars:Array[CBLSIntVar],
 case class GradientMove(gradientDefinition : List[GradientComponent], step:Long, simpleAffectMoves:List[AssignMove], override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
-  override def commit() {
+  override def commit(): Unit = {
     if(gradientDefinition.isEmpty){
       //still is the expore phase
       for(affect <- simpleAffectMoves){
@@ -419,7 +412,7 @@ case class GradientMove(gradientDefinition : List[GradientComponent], step:Long,
       }
       None
     }else{
-      require(simpleAffectMoves.isEmpty, "moves and gradient?:" + simpleAffectMoves)
+      require(simpleAffectMoves.isEmpty, s"moves and gradient?:$simpleAffectMoves")
       for(component <- gradientDefinition){
         if (component.variable == variable){
           return Some(component.valueAfterStep(step))
@@ -430,11 +423,10 @@ case class GradientMove(gradientDefinition : List[GradientComponent], step:Long,
   }
 
   override def toString: String = {
-
     neighborhoodNameToString + "GradientMove(" + gradientDefinition.map(component => {
-      val delta = ((step / component.slope).toLong)
-      component.variable.name + ":+=" + delta + " (slope:" + component.slope + ")"
-    } ).mkString("; ")  + objToString + ")"
+      val delta = (step / component.slope).toLong
+      s"${component.variable.name}:+=$delta (slope:${component.slope})"
+    } ).mkString("; ") + objToString + ")"
   }
 
   override def touchedVariables: List[Variable] = gradientDefinition.map(_.variable)

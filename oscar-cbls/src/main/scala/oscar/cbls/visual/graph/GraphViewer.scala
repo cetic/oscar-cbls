@@ -4,92 +4,12 @@ import java.awt.Color
 import java.awt.geom.Line2D.Double
 import java.awt.geom.Rectangle2D
 
-import oscar.cbls
 import oscar.cbls.algo.graph._
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes._
 
 import scala.collection.immutable.{SortedMap, SortedSet}
-import scala.swing.Color
 
-/*
-class InteractiveGraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
-                             centroidColor:SortedMap[Int,Color],
-                             colorForUnreachableNodes:Color  = Color.black,
-                             colorForPermanentEdges:Color =Color.black,
-                             colorForOpenEdges:Color = Color.green,
-                             colorForClosedEdges:Color = Color.red,
-                             colorForEmphasizedEdges:Color = Color.blue,
-                             colorForEmphasizedEdges2:Color = Color.orange)
-  extends JFrame(){
-
-  val graphDrawing = new GraphViewer(graph,
-    centroidColor,
-    colorForUnreachableNodes,
-    colorForPermanentEdges,
-    colorForOpenEdges,
-    colorForClosedEdges,
-    colorForEmphasizedEdges,
-    colorForEmphasizedEdges2)
-
-  val toolbar = new VisualToolBar()
-  toolbar.setFloatable(false)
-  toolbar.addButton("toggleClosedEdges",toggleClosedEdges)
-  toolbar.addButton("toggleRegularEdges",toggleRegularEdges)
-  toolbar.addButton("toggleOpenEdges",toggleOpenEdges)
-  this.add(toolbar, BorderLayout.NORTH)
-  this.add(graphDrawing)
-
-  graphDrawing.setPreferredSize(new java.awt.Dimension(1000,1000))
-  this.pack()
-
-  def toggleClosedEdges(): Unit ={
-    hideClosedEdges = !hideClosedEdges
-  }
-
-  def toggleRegularEdges(): Unit ={
-    hideRegularEdges = !hideRegularEdges
-  }
-  def toggleOpenEdges(): Unit ={
-    hideOpenEdges = !hideOpenEdges
-  }
-
-  var hideClosedEdges:Boolean = false
-  var hideRegularEdges:Boolean = false
-  var hideOpenEdges:Boolean=false
-  var openConditions:SortedSet[Long] = SortedSet.empty
-  var centroids:SortedSet[Long] = SortedSet.empty
-  var nodeToCentroid:SortedMap[Long,Long] = SortedMap.empty
-  var emphasizeEdges:Iterable[Edge] = None
-  var extraPath:Iterable[RevisableDistance] = None
-
-  def updateAndRedraw(openConditions:SortedSet[Long],
-                      centroids:SortedSet[Long],
-                      nodeToCentroid:SortedMap[Long,Long],
-                      emphasizeEdges:Iterable[Edge] = List.empty,
-                      extraPath:Iterable[RevisableDistance]): Unit ={
-    this.openConditions = openConditions
-    this.centroids =centroids
-    this.nodeToCentroid = nodeToCentroid
-    this.emphasizeEdges = emphasizeEdges
-    this.extraPath =extraPath
-    redraw()
-  }
-
-  private def redraw(): Unit ={
-    graphDrawing.redraw(
-      openConditions = openConditions,
-      centroids = centroids,
-      nodeToCentroid = nodeToCentroid,
-      hideClosedEdges = hideClosedEdges,
-      hideRegularEdges,
-      hideOpenEdges,
-      emphasizeEdges,
-      extraPath)
-  }
-}
-
-*/
 class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
                   centroidColor:SortedMap[Int,Color],
                   colorForUnreachableNodes:Color  = Color.black,
@@ -152,7 +72,7 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
 
 
 
-  def resize() = {
+  def resize(): Unit = {
     xMultiplier = this.getWidth.toDouble / maxX.toDouble
     yMultiplier = this.getHeight.toDouble / maxY.toDouble
 
@@ -165,7 +85,7 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
       rectangleShapes(id).move(coord._1 * xMultiplier - side / 2,coord._2 * yMultiplier - side / 2)
       circleShape(id).foreach(_.move(coord._1 * xMultiplier,coord._2 * yMultiplier))
     })
-    (0 until graph.edges.length).foreach(id => {
+    graph.edges.indices.foreach(id => {
       val coordA = graph.coordinates(graph.edges(id).nodeA.id)
       val coordB = graph.coordinates(graph.edges(id).nodeB.id)
       edgesShape(id).orig_=(coordA._1 * xMultiplier,coordA._2 * yMultiplier)
@@ -174,7 +94,8 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
   }
 
 
-  override def addShape(shape: VisualShape, repaintAfter: Boolean = true){
+  override def addShape(shape: VisualShape,
+                        repaintAfter: Boolean = true): Unit = {
     super.addShape(shape,false)
   }
 
@@ -194,7 +115,6 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
     xMultiplier = this.getWidth.toDouble / maxX.toDouble
     yMultiplier = this.getHeight.toDouble / maxY.toDouble
 
-
     for(path <- extraPath){
       drawPath(path,emphNodes = true:Boolean,emphEdges=true)
     }
@@ -213,7 +133,7 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
              hideOpenEdges:Boolean=false,
              extraCentroids:Array[Int]=Array.empty,
              emphasizeEdges:Iterable[Edge] = List.empty,
-             extraPath:Iterable[RevisableDistance]) {
+             extraPath:Iterable[RevisableDistance]): Unit ={
 
     //super.clear(false)
 
@@ -224,10 +144,10 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
       drawPath(path,emphNodes = true:Boolean,emphEdges=true)
     }
 
-    drawEdges(openConditions:SortedSet[Int],hideClosedEdges,hideRegularEdges, hideOpenEdges,emphasizeEdges)
+    drawEdges(openConditions,hideClosedEdges,hideRegularEdges, hideOpenEdges,emphasizeEdges)
 
-    drawNodes(centroids:SortedSet[Int],
-      nodeToCentroid.mapValues(Array(_)):SortedMap[Int,Array[Int]],extraCentroids)
+    drawNodes(centroids,
+      nodeToCentroid.map {tup => tup._1 -> Array(tup._2)} ,extraCentroids)
 
     //double buffering still does not work!
     super.repaint()
@@ -247,7 +167,7 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
         nodeToCentroid.get(nodeId) match{
           case Some(centroidIDArray) =>
 
-            (0 until centroidIDArray.length).foreach(index => {
+            centroidIDArray.indices.foreach(index => {
               val centroidID = centroidIDArray(index)
               //a folowed node
               if (centroidID == -1) {
@@ -268,7 +188,12 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
     }
   }
 
-  def drawNode(nodeId:Int,color:Color,isCentroid:Boolean,isTransitAllowed:Boolean,radius : Int,index : Int = 0) = {
+  def drawNode(nodeId:Int,
+               color:Color,
+               isCentroid:Boolean,
+               isTransitAllowed:Boolean,
+               radius : Int,
+               index : Int = 0): Unit = {
     val nodeCoordinates = graph.coordinates(nodeId)
     if(isCentroid){
       //rectangle
@@ -278,7 +203,7 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
         nodeCoordinates._2 * yMultiplier - side/2)
       tempPoint.visible_=(true)
       tempPoint.innerCol_$eq(color)
-      tempPoint.toolTip = "Centroid" + "(id:" + nodeId + " transit:"  +isTransitAllowed + ")"
+      tempPoint.toolTip = s"Centroid(id:$nodeId transit:$isTransitAllowed)"
     }else {
       if(isTransitAllowed) {
         //circle
@@ -288,7 +213,7 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
           nodeCoordinates._2 * yMultiplier)
         circle.visible_=(true)
         circle.innerCol_$eq(color)
-        circle.toolTip = "Node" + "(id:" + nodeId + " transit:true)"
+        circle.toolTip = s"Node(id:$nodeId transit:true)"
 
 
       }else {
@@ -311,22 +236,20 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
         lineH.borderWidth = 3
         lineH.outerCol = color
 
-        lineV.toolTip = "Node" + "(id:" + nodeId + " transit:false)"
-        lineH.toolTip = "Node" + "(id:" + nodeId + " transit:false)"
+        lineV.toolTip = s"Node(id:$nodeId transit:false)"
+        lineH.toolTip = s"Node(id:$nodeId transit:false)"
         val circle = circleShape(nodeId)(index)
         circle.move(nodeCoordinates._1 * xMultiplier,nodeCoordinates._2 * yMultiplier)
         circle.visible_=(true)
         circle.border = false
         circle.innerCol_=(color)
-        circle.toolTip = "Node" + "(id:" + nodeId + " transit:true)"
-
-
+        circle.toolTip = s"Node(id:$nodeId transit:true)"
       }
     }
   }
 
   def emphNode(nodeCoordinates:(Int,Int),
-               color:Color) = {
+               color:Color): Unit = {
     //circle
     val radius = 6
     val tempPoint = new VisualCircle(this,
@@ -404,6 +327,8 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
 
 
   def drawPath(d:RevisableDistance,emphNodes:Boolean,emphEdges:Boolean): Unit ={
+    implicit val ev: Ordering[Edge] = EdgeOrdering
+
     d match {
       case Distance(
       from: Node,

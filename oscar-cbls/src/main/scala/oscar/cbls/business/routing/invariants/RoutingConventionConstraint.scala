@@ -1,10 +1,9 @@
 package oscar.cbls.business.routing.invariants
 
-import oscar.cbls._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.VehicleLocation
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{ChangingSeqValue, Invariant, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint}
 
 import scala.collection.immutable.HashMap
 
@@ -51,7 +50,7 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
 
   private var checkpointAtLevel0 = routes.newValue
 
-  override def notifySeqChanges(routes: ChangingSeqValue, d: Int, changes: SeqUpdate){
+  override def notifySeqChanges(routes: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit ={
     digestUpdates(changes)
   }
 
@@ -60,7 +59,9 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
   }
 
   private def checkRequirement(requirement: Boolean, errorMsg: String, prevUpdates: SeqUpdate): Unit ={
-    require(requirement, errorMsg + "\nPrevious movements : " + prevUpdates.toString)
+    require(requirement,
+      s"""$errorMsg
+      |Previous movements : $prevUpdates""".stripMargin)
   }
 
   /**
@@ -104,7 +105,10 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
       }
       case sui@SeqUpdateInsert(value: Int, pos: Int, prev: SeqUpdate) => {
         if(!digestUpdates(prev)) return false
-        val errorDataMsg = "\nGot : \n    Insert value -> " + value + "\n    Insert pos -> " + pos
+        val errorDataMsg = s"""
+             |Got:
+             |    Insert value -> $value
+             |    Insert pos -> $pos""".stripMargin
 
         //The pos of the value will be at this position so we need to check if the previous position is within the sequence
         //(otherwise we'll have problem in case we insert at the end of the sequence)
@@ -126,6 +130,9 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
       case sur@SeqUpdateRemove(pos: Int, prev: SeqUpdate) => {
         if(!digestUpdates(prev)) return false
         val errorDataMsg = "\nGot : \n    Remove pos -> " + pos
+        val errorDataMsg = s"""
+             |Got:
+             |    Remove pos -> $pos""".stripMargin
 
         checkRequirement(sur.removedValue >= v, "Trying to remove a vehicle !" + errorDataMsg, prev)
 
@@ -145,7 +152,6 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
         this.checkpointLevel = checkpointLevel
 
         true
-
 
       case _@SeqUpdateLastNotified(value: IntSequence) =>
         require(value quickEquals routes.value)

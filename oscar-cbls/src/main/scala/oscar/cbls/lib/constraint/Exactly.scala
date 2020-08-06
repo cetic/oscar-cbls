@@ -17,11 +17,11 @@
   *     This code has been initially developed by CETIC www.cetic.be
   *         by Gaël Thouvenin
   ******************************************************************************/
-
 package oscar.cbls.lib.constraint
 
-import oscar.cbls._
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{IntValue, Value}
+import oscar.cbls.core.constraint.Constraint
+import oscar.cbls.core.propagation.Checker
 import oscar.cbls.lib.invariant.numeric.Sum2
 
 import scala.collection.immutable.SortedMap
@@ -46,7 +46,6 @@ case class Exactly(variables:Iterable[IntValue], bounds:SortedMap[Int, IntValue]
     Map[IntValue, IntValue]() ++
       (for(v <- variables) yield v -> Sum2(least.violation(v), most.violation(v)))
 
-
   /** returns the violation associated with variable v in this constraint
     * all variables that are declared as constraint should have an associated violation degree. */
   override def violation(v: Value): IntValue = violationsByVal(v.asInstanceOf[IntValue])
@@ -54,7 +53,7 @@ case class Exactly(variables:Iterable[IntValue], bounds:SortedMap[Int, IntValue]
   /** returns the degree of violation of the constraint */
   override val violation: IntValue =  Sum2(least.violation, most.violation)
 
-  override def checkInternals(c: Checker) { least.checkInternals(c); most.checkInternals(c)}
+  override def checkInternals(c: Checker): Unit = { least.checkInternals(c); most.checkInternals(c)}
 }
 
 

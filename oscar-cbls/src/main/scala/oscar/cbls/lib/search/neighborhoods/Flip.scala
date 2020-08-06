@@ -12,15 +12,12 @@
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
 package oscar.cbls.lib.search.neighborhoods
 
-import oscar.cbls._
 import oscar.cbls.algo.lazyIt.LazyMap
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.core.computation.CBLSIntVar
 import oscar.cbls.core.search.{Move, EasyNeighborhood}
-
 
 /**
  * flips a section of the array, only contiguous zones are searched
@@ -56,7 +53,7 @@ case class WideningFlipNeighborhood(vars:Array[CBLSIntVar],
   var currentFromPosition = 0
   var currentToPosition = 0
 
-  def computeDistanceFromFirstUnauthorizedPosition(isAllowed: Array[Boolean]) = {
+  def computeDistanceFromFirstUnauthorizedPosition(isAllowed: Array[Boolean]): Array[Int] = {
     val distanceFromFirstUnauthorizedPosition: Array[Int] = Array.fill(varSize)(0)
     var lastUnauthorizedPosition = -1
     var currentPOsition = 0
@@ -72,7 +69,7 @@ case class WideningFlipNeighborhood(vars:Array[CBLSIntVar],
     distanceFromFirstUnauthorizedPosition
   }
 
-  def computeDistanceToFirstUnauthorizedPosition(isAllowed: Array[Boolean]) = {
+  def computeDistanceToFirstUnauthorizedPosition(isAllowed: Array[Boolean]): Array[Int] = {
     val distanceToFirstUnauthorizedPosition = Array.fill(varSize)(0)
     var currentPosition = lastPosition
     var lastUnahtorizedPOsition = varSize
@@ -170,7 +167,6 @@ case class WideningFlipNeighborhood(vars:Array[CBLSIntVar],
     new LazyMap(KSmallest.lazySort(referenceArray,id => -(allCentersInArray(id)._1 * flipCenterCount + allCentersInArray(id)._2)),id => allCentersInArray(id))
   }
 
-
   /**
    *  fromPosition and toPosition are different
    *  these positions have not been swapped yet
@@ -218,16 +214,17 @@ case class WideningFlipNeighborhood(vars:Array[CBLSIntVar],
     } else {
       //exploration is over, no interrupting move found
       FlipMove.doFlip(fromPosition+1,toPosition-1,vars)
-      return false
+      false
     }
   }
 
   override def instantiateCurrentMove(newObj: Long): FlipMove = FlipMove(currentFromPosition,currentToPosition,vars,newObj,name)
 }
 
-
 object FlipMove{
-  def doFlip(fromPosition:Int,toPosition:Int,variables:Array[CBLSIntVar]){
+  def doFlip(fromPosition:Int,
+             toPosition:Int,
+             variables:Array[CBLSIntVar]): Unit = {
     if(fromPosition < toPosition){
       variables(fromPosition) :=: variables(toPosition)
       doFlip(fromPosition+1,toPosition-1,variables)

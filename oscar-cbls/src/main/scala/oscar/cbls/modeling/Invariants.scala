@@ -17,14 +17,14 @@ package oscar.cbls.modeling
 
 import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{CBLSIntVar, CBLSSeqConst, CBLSSetVar, ChangingSeqValue, Domain, IntValue, SeqValue, SetValue}
 import oscar.cbls.lib.invariant.logic._
 import oscar.cbls.lib.invariant.minmax._
 import oscar.cbls.lib.invariant.numeric._
 import oscar.cbls.lib.invariant.seq._
 import oscar.cbls.lib.invariant.set._
 
-import scala.collection.immutable.{SortedSet, SortedMap}
+import scala.collection.immutable.{SortedMap, SortedSet}
 
 /**
  * modeling interface presenting the element invariants
@@ -84,7 +84,6 @@ trait ClusterInvariants {
 
 }
 
-
 trait RefInvariants{
   /**
    * Maintains the reverse references. Referencing(i) = {j | Reference(j) includes i}
@@ -93,7 +92,6 @@ trait RefInvariants{
 
   def makeDenseRef(references:Array[SetValue]) = DenseRef.makeDenseRef(references)
 }
-
 
 /**
  * modeling interface presenting the set invariants
@@ -153,9 +151,7 @@ trait SetInvariants{
   def setProd(on:SetValue) = SetProd(on)
 }
 
-
 trait CumulativeInvariants{
-
   /**
    * Maintains a resource usage profile.
    * @param indices the indices of tasks
@@ -184,7 +180,6 @@ trait CumulativeInvariants{
   = CumulativeNoSet(start, duration, amount, profile)
 }
 
-
 trait FilterInvariants{
   /** { i in index(values) | cond(values[i] }
     * @param values is an array of IntVar
@@ -193,7 +188,6 @@ trait FilterInvariants{
     */
   def filter(values:Array[IntValue], cond:(Long=>Boolean) = _ != 0L) =  Filter(values:Array[IntValue], cond:(Long=>Boolean))
 }
-
 
 trait HelperInvariants{
   /** This is a helper to define an invariant from an Long -> Long function.
@@ -242,7 +236,6 @@ trait PivotInvariants{
     */
   def selectLEHeapHeap(values:Array[IntValue], boundary: IntValue) = SelectLEHeapHeap(values:Array[IntValue], boundary: IntValue)
 
-
   /**{i \in index of values | values[i] <= boundary}
     * It is based on a queue for the values above the boundary, hence all updates must be accepted by this scheme:
      - SelectLESetQueue does not allow boundary to decrease
@@ -254,13 +247,11 @@ trait PivotInvariants{
   def selectLESetQueue(values:Array[IntValue], boundary: IntValue) = SelectLESetQueue(values, boundary)
 }
 
-
 /**
  * modeling interface presenting the complex logic invariants
  * @author renaud.delandtsheer@cetic.be
  */
 trait SortInvariants{
-
   /**maintains a sorting of the ''values'' array:
     * @param ReversePerm   i < j => values(ReversePerm(i)) < values(ReversePerm(j))
     * see method GetForwardPerm() for the forward permutation: ReversePerm(ForwardPerm(i)) == i
@@ -405,7 +396,6 @@ trait SeqInvariants {
   def precedence(seq : ChangingSeqValue, beforeAfter : List[(Int, Int)]) =
     Precedence(seq, beforeAfter)
 
-
   /**
    * sum(f(v))
    * the sum of all element in v after passing through f;
@@ -429,7 +419,6 @@ trait SeqInvariants {
   def sortSequence(v : SeqValue, sortValue : Int => Int, orderName : String = "order")
   = SortSequence(v, sortValue, orderName)
 
-
   /**
    * Maintains and array telling, for each value (indice of the array) the set of value that can succeed it in the sequence.
    * There are multiple successors although we only consider the next value
@@ -442,7 +431,6 @@ trait SeqInvariants {
   def successors(seq : ChangingSeqValue) : Array[CBLSSetVar] = Successors(seq : ChangingSeqValue)
 }
 
-
 /**
  * modeling interface presenting the numeric invariants
  * @author renaud.delandtsheer@cetic.be
@@ -450,8 +438,6 @@ trait SeqInvariants {
 trait NumericInvariants{
 
   /** sum(i in cond) vars(i)
-    * @param vars is an array of IntVars
-    * @param cond is the condition for selecting variables in the array of summed ones, cannot be null
     * @author renaud.delandtsheer@cetic.be
     * */
   //def sumConstants(vars: Array[Long], cond: SetValue) = SumConstants(vars, cond)
@@ -488,7 +474,6 @@ trait NumericInvariants{
   /**abs(v) (absolute value)
     * where output and v are IntVar*/
   def abs(v:IntValue) = Abs(v:IntValue)
-
 
   /**
    * This invariant implements the identity function within the min-max range.

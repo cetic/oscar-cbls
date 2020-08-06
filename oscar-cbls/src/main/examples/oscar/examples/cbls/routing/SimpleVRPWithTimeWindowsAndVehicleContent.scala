@@ -1,11 +1,14 @@
 package oscar.examples.cbls.routing
 
-import javax.swing.TransferHandler.TransferSupport
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
 import oscar.cbls.business.routing.invariants.timeWindow.{NaiveTimeWindowConstraint, TransferFunction}
 import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleCapacityConstraintWithLogReduction
+import oscar.cbls.core.computation.{CBLSIntVar, Store}
+import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls.core.objective.CascadingObjective
+import oscar.cbls.core.propagation.ErrorChecker
 
 import scala.collection.immutable.HashSet
 
@@ -75,8 +78,6 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
 
   def relevantPredecessorsForLastNode(lastNode: Int) = ChainsHelper.relevantNeighborsForLastNodeAfterHead(myVRP,chainsExtension,Some(HashSet() ++ relevantPredecessorsOfNodes(lastNode)))(lastNode)
   val relevantPredecessorsForInternalNodes = ChainsHelper.computeRelevantNeighborsForInternalNodes(myVRP, chainsExtension)_
-
-
 
 
   // MOVING

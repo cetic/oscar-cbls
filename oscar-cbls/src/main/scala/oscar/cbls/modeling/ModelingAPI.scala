@@ -3,7 +3,7 @@ package oscar.cbls.modeling
 import oscar.cbls.lib.search.combinators._
 
 /**
- * Created by rdl on 11L-09L-1L7.
+ * Created by rdl on 11-09-17.
  */
 trait ModelingAPI
   extends Constraints

@@ -35,7 +35,7 @@ object TarjanWithExternalStorage{
     var Stack:QList[T]=null
     var Components:List[QList[T]]= List.empty
 
-    def visit(v:T){
+    def visit(v:T): Unit = {
       val storageForV = getNodeStorage(v)
       storageForV.Index = index
       storageForV.LowLink = index

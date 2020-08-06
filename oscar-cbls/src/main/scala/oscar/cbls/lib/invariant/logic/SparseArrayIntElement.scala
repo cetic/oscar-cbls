@@ -17,17 +17,10 @@
   *     This code has been initially developed by CETIC www.cetic.be
   *         by Thomas Fayolle
   ******************************************************************************/
-
-
-
 package oscar.cbls.lib.invariant.logic
 
-
-import oscar.cbls._
 import oscar.cbls.core.propagation.Checker
-import oscar.cbls.core.computation.{IntInvariant,IntNotificationTarget}
-import oscar.cbls.core.computation.ChangingIntValue
-
+import oscar.cbls.core.computation.{ChangingIntValue, IntInvariant, IntNotificationTarget, IntValue, Store}
 
 class SparseArrayIntElement(val indexAndValues : Array[(IntValue,IntValue)],
   index : IntValue,
@@ -55,7 +48,6 @@ class SparseArrayIntElement(val indexAndValues : Array[(IntValue,IntValue)],
 
   finishInitialization()
 
-
   override def notifyIntChanged(v : ChangingIntValue,id : Int,oldValue : Long,newValue : Long) : Unit = {
     if (id == 2 * nbIndex) {
       shallPropagate = true
@@ -71,9 +63,7 @@ class SparseArrayIntElement(val indexAndValues : Array[(IntValue,IntValue)],
       }
     }
     scheduleForPropagation()
-
   }
-
 
   override def performInvariantPropagation(): Unit = {
     if (shallPropagate) {
@@ -86,13 +76,11 @@ class SparseArrayIntElement(val indexAndValues : Array[(IntValue,IntValue)],
           this := v._2.value
         }
       }
-
     }
     shallPropagate = false
-
   }
 
-  override def checkInternals(c : Checker) {
+  override def checkInternals(c : Checker): Unit = {
     val values = indexAndValues.map(_._2.value)
     val indexes = indexAndValues.map(_._1.value)
     // println("------ CHECK INTERNALS ------")
@@ -107,9 +95,11 @@ class SparseArrayIntElement(val indexAndValues : Array[(IntValue,IntValue)],
     // println("Values with index: " + valuesOfIndex.mkString(";"))
 
     if (valuesOfIndex.map(_._2.value).isEmpty)
-      require(this.newValue == defaultValue,"Since the index is not in the sparse table, the value shall be the default value (Currently "+ this.newValue + ")")
+      require(this.newValue == defaultValue,
+        s"Since the index is not in the sparse table, the value shall be the default value (Currently ${this.newValue})")
     else
-      require(valuesOfIndex.map(_._2.value).contains(this.newValue),"The value shall be one of the values associated to the index in the sparse array")
+      require(valuesOfIndex.map(_._2.value).contains(this.newValue),
+        "The value shall be one of the values associated to the index in the sparse array")
 
     // println("------ CHECK OK        ------")
 
@@ -117,9 +107,7 @@ class SparseArrayIntElement(val indexAndValues : Array[(IntValue,IntValue)],
 
 }
 
-
 object SparseArrayIntElement {
-
   def apply (indexAndValues : Array[(IntValue,IntValue)],
     index : IntValue,
     m : Store,
@@ -127,11 +115,14 @@ object SparseArrayIntElement {
 
     val maxOfMax = indexAndValues.map(_._1.max).max
     indexAndValues.foreach(v => {
-      require(v._1.max == maxOfMax,"All the index variables shall have the same maximum value (the length of the sparse table)")
-      require(v._1.min == -1,"The min value for the indexes of the sparse array shall be -1 (if no value is set) (Currently, for " + v ._1 + ":  " + v._1.domain.min + ")")
+      require(v._1.max == maxOfMax,
+        "All the index variables shall have the same maximum value (the length of the sparse table)")
+      require(v._1.min == -1,
+        s"The min value for the indexes of the sparse array shall be -1 (if no value is set) (Currently, for ${v._1}: ${v._1.domain.min})")
     })
 
-    require(index.max <= maxOfMax,"The maximum value of the index (" + index.max + ") shall be smaller than the max value of the indexes (" + maxOfMax + ")")
+    require(index.max <= maxOfMax,
+      s"The maximum value of the index (${index.max}) shall be smaller than the max value of the indexes ($maxOfMax)")
     require(index.min >= -1,"The min value for the index shall be greater than 0")
 
     new SparseArrayIntElement(indexAndValues,index,defaultValue)

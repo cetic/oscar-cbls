@@ -15,10 +15,9 @@ package oscar.cbls.lib.invariant.seq
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls._
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
-import oscar.cbls.core._
-
+import oscar.cbls.core.computation.{ChangingSeqValue, SeqCheckpointedValueStack, SeqInvariant, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint, SeqValue}
+import oscar.cbls.core.propagation.Checker
 
 /**
  * maintains a sorted sequence out of a non-sorted one.
@@ -37,7 +36,7 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
   //TODO: this invariant is rather slow for updating on inserts and on its get method because it ues dichotomy.
   // possible to maintain a set of represented values, update log(n) query log(n)
 
-  setName("SortSequence(" + v.name + " by:" + orderName + ")")
+  setName(s"SortSequence(${v.name} by:$orderName)")
 
   registerStaticAndDynamicDependency(v)
   finishInitialization()
@@ -134,7 +133,7 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
     var upperPositionOfInsert = seq.size-1
 
     while(lowerPositionOfInsert + 1 < upperPositionOfInsert) {
-      assert(isSmaller(seq.valueAtPosition(lowerPositionOfInsert).get,value)(),"expected "+ seq.valueAtPosition(lowerPositionOfInsert).get + " l "+ value)
+      assert(isSmaller(seq.valueAtPosition(lowerPositionOfInsert).get,value)(),s"expected ${seq.valueAtPosition(lowerPositionOfInsert).get} l $value")
       assert(isSmaller(value, seq.valueAtPosition(upperPositionOfInsert).get)(),"A")
 
       val midPosition = (lowerPositionOfInsert + upperPositionOfInsert) / 2
@@ -149,7 +148,6 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
     upperPositionOfInsert
   }
 
-
   private val checkpointStack = new SeqCheckpointedValueStack[IntSequence]()
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
@@ -157,7 +155,7 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
     //check(new ErrorChecker(),v.newValue,this.newValue)
   }
 
-  private def digestChanges(changes : SeqUpdate){
+  private def digestChanges(changes : SeqUpdate): Unit ={
     changes match {
       case s@SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
         digestChanges(prev)
@@ -198,12 +196,14 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
 
   private def sortSequenceBy(i:IntSequence,by:Int => Int):IntSequence = IntSequence(i.toList.sortBy(i => (by(i),i)))
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
     check(c, v.value,this.value)
   }
-  def check(c:Checker,in:IntSequence,out:IntSequence){
+
+  def check(c:Checker,in:IntSequence,out:IntSequence): Unit ={
     require(out quickEquals this.value)
-    c.check(out.toList equals sortSequenceBy(in,sortValue).toList, Some("this.out=" + out.toList + " should be " +sortSequenceBy(in,sortValue).toList))
+    c.check(out.toList equals sortSequenceBy(in,sortValue).toList,
+      Some(s"this.out=${out.toList} should be ${sortSequenceBy(in,sortValue).toList}"))
     /*
     for (value <-  if(in.nonEmpty) {in.min to in.max} else List(0,1,10)) {
       val optPositionOfSMallestGE = positionOfSmallestGreaterOrEqual(value)()

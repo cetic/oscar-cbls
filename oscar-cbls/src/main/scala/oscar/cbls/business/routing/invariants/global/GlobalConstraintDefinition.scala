@@ -3,7 +3,6 @@ package oscar.cbls.business.routing.invariants.global
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core.computation.ChangingSeqValue
-import oscar.cbls._
 
 /**
   * This abstract class must be extends in order to define a new global constraint.
@@ -37,7 +36,7 @@ import oscar.cbls._
   * @param gc The GlobalConstraintCore you want to associate this constraint to
   * @param v The number of vehicle
   */
-abstract class GlobalConstraintDefinition[@specialized(Int, Long, Boolean) U <: Any :Manifest](gc: GlobalConstraintCore, v: Int) {
+abstract class GlobalConstraintDefinition[U <: Any :Manifest](gc: GlobalConstraintCore, v: Int) {
 
   // This variable holds the vehicles value at checkpoint 0.
   // It's used to effectively roll-back to this checkpoint 0 when exploring neighborhood
@@ -111,7 +110,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int, Long, Boolean) U <: 
     * @param routes the sequence representing the route of all vehicle
     *               BEWARE,other vehicles are also present in this sequence; you must only work on the given vehicle
     */
-  protected[global] def performPreCompute(vehicle:Int, routes:IntSequence)
+  protected[global] def performPreCompute(vehicle:Int, routes:IntSequence): Unit
 
   /**
     * This method is called by the framework when the value of a vehicle must be computed.
@@ -154,9 +153,10 @@ abstract class GlobalConstraintDefinition[@specialized(Int, Long, Boolean) U <: 
     */
   protected[global] def checkInternals(vehicle: Int, routes: ChangingSeqValue, segments: List[Segment]): Unit ={
     val fromScratch = computeVehicleValueFromScratch(vehicle, routes.value)
-    require(fromScratch.equals(lastComputedVehiclesValue(vehicle)), "Constraint " + this.getClass.getName + " failed " +
-    "For Vehicle " + vehicle + " : should be " + fromScratch + " got " +
-      lastComputedVehiclesValue(vehicle) + " " + routes + "\nAfter receiving segments : " + segments.mkString("\n    "))
+    require(fromScratch.equals(lastComputedVehiclesValue(vehicle)),
+      s"""Constraint ${this.getClass.getName} failed.
+         |For Vehicle $vehicle should be $fromScratch got ${lastComputedVehiclesValue(vehicle)} $routes
+         |After receiving segments : ${segments.mkString("\n    ")}""".stripMargin)
   }
 
 }

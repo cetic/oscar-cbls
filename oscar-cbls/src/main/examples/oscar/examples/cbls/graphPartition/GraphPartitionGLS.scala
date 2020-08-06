@@ -1,7 +1,7 @@
 package oscar.examples.cbls.graphPartition
 
-import oscar.cbls
-import oscar.cbls._
+import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.invariant.logic.DenseCount
 import oscar.cbls.lib.search.combinators.GuidedLocalSearch3
 import oscar.cbls.modeling._

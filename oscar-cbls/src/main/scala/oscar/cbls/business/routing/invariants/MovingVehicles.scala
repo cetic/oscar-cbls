@@ -1,8 +1,8 @@
 package oscar.cbls.business.routing.invariants
 
-import oscar.cbls._
-import oscar.cbls.core._
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
+import oscar.cbls.core.computation.{ChangingSeqValue, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint, SetInvariant}
+import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.SortedSet
 
@@ -15,7 +15,7 @@ import scala.collection.immutable.SortedSet
 case class MovingVehicles(routes:ChangingSeqValue, v:Int)
   extends SetInvariant(initialDomain = 0 until v) with SeqNotificationTarget{
 
-  setName("MovingVehicles in route" + routes.name)
+  setName(s"MovingVehicles in route${routes.name}")
 
   registerStaticAndDynamicDependency(routes)
   finishInitialization()
@@ -148,6 +148,6 @@ case class MovingVehicles(routes:ChangingSeqValue, v:Int)
   override def checkInternals(c : Checker) : Unit = {
     val valuesFromScratch = computeValueFromScratch(routes.value)
     c.check(valuesFromScratch equals this.newValue,
-      Some("error on moving vehicle, got " + this.newValue.toList + " should be " + valuesFromScratch.toList + " routes: " + routes.value))
+      Some(s"error on moving vehicle, got ${this.newValue.toList} should be ${valuesFromScratch.toList} routes: ${routes.value}"))
   }
 }

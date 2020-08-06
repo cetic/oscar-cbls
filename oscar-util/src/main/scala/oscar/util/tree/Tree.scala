@@ -14,7 +14,6 @@
  ******************************************************************************/
 package oscar.util.tree
 
-import oscar.util.tree._
 import java.awt.Color
 
 /**
@@ -26,20 +25,28 @@ class Tree(var record: Boolean = true) {
   
   private[this] var succ: List[Int] = Nil
   
-  def addBranch(parentId: Int, id: Int, nodeName: String="", branchName: String="") {
+  def addBranch(parentId: Int,
+                id: Int,
+                nodeName: String = "",
+                branchName: String = ""): Unit = {
 	  createBranch(parentId,id,nodeName,branchName){}
   }
   
-  def createBranch(parentId: Int, id: Int, nodeName: String="", branchName: String="")(action: => Unit) {
+  def createBranch(parentId: Int,
+                   id: Int,
+                   nodeName: String = "",
+                   branchName: String= "")
+                  (action: => Unit): Unit = {
 	//<try id="1" parent="0" name="a" size="2" value="1"/>
-    if (record) branches = (parentId,id,nodeName,branchName,() => action) :: branches
+    val chainAction = () => action
+    if (record) branches = (parentId,id,nodeName,branchName,chainAction) :: branches
   }
   
-  def addSuccess(id: Int) {
+  def addSuccess(id: Int): Unit = {
     if (record) succ = id :: succ
   }
   
-  def clear() = {
+  def clear(): Unit = {
     branches = Nil
     succ = Nil
   }
@@ -47,14 +54,14 @@ class Tree(var record: Boolean = true) {
   /**
    * returns branches with n as parent
    */
-  def children(n: Int) = {
+  def children(n: Int): List[(Int,Int,String,String,() => Unit)] = {
     branches.filter(b => b._1 == n)
   }
   
-  private def action(n: Int):() => Unit = {
-    branches.find{case(parentId,id,nodeName,branchName,action) => id == n}.map(_._5) match {
+  private def action(n: Int): () => Unit = {
+    branches.find{case(_,id,_,_,_) => id == n}.map(_._5) match {
       case Some(action) => action
-      case None => () => Unit
+      case None => () => ()
     }
   }
   
@@ -76,10 +83,10 @@ class Tree(var record: Boolean = true) {
 
     val childsAndPos = children(root).reverse.zipWithIndex
     val style = "style={font=\\sffamily\\huge}"
-    var res = s"\\node [circle,draw,$style]  ($root){$root} ${ childsAndPos.map{case(child,pos) => toTikz(child._2,child._4,pos)}.mkString(" ")} ;"
+    val res = s"\\node [circle,draw,$style]  ($root){$root} ${ childsAndPos.map{case(child,pos) => toTikz(child._2,child._4,pos)}.mkString(" ")} ;"
 
-    println("sucessnodes:"+succ.mkString((",")))
-    return res;
+    println("sucessnodes:"+succ.mkString(","))
+    res
   }
 
   def toTikz(i: Int,label: String,position: Int): String = {
@@ -124,12 +131,12 @@ class Tree(var record: Boolean = true) {
 }
 
 object Tree {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
 	  val t = new Tree(true)
 	  t.addBranch(0, 1)
 	  t.addBranch(0,4)
 	  //println(t.children(0))
 	  //t.toNode(0)
-	  println(t.toNode(0))
+	  println(t.toNode())
   }
 }

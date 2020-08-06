@@ -1,5 +1,3 @@
-package oscar.cbls.lib.invariant.seq
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,9 +12,10 @@ package oscar.cbls.lib.invariant.seq
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.lib.invariant.seq
 
-import oscar.cbls._
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{ChangingIntValue, ChangingSeqValue, ChangingSetValue, Domain, DomainHelper, IntNotificationTarget, IntValue, SeqNotificationTarget, SeqUpdate, SeqValue, SetInvariant}
+import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.SortedSet
 
@@ -50,7 +49,7 @@ class PositionsOf(v: SeqValue, a:IntValue)
   extends SetInvariant(v.value.positionsOfValue(a.valueInt).foldLeft(SortedSet.empty[Int])((acc:SortedSet[Int],i:Int) => acc + i) , Domain(0 , DomainHelper.safeAdd(v.max,1)))
   with SeqNotificationTarget with IntNotificationTarget{
 
-  setName("PositionOf(" + a.name + " in " + v.name + ")")
+  setName(s"PositionOf(${a.name} in ${v.name})")
 
   registerStaticAndDynamicDependency(v)
   registerStaticAndDynamicDependency(a)
@@ -61,17 +60,17 @@ class PositionsOf(v: SeqValue, a:IntValue)
     scheduleForPropagation()
   }
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
     scheduleForPropagation()
   }
 
-  override def performInvariantPropagation() {
+  override def performInvariantPropagation(): Unit = {
     //this is not incremental, but if we assume a small set of value,
     // like 0 or one; there is nothing better we can do
     this := v.value.positionsOfValue(a.valueInt).foldLeft(SortedSet.empty[Int])((acc:SortedSet[Int],i:Int) => acc + i)
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
     c.check(this.value equals v.value.positionsOfValue(a.valueInt).foldLeft(SortedSet.empty[Int])((acc:SortedSet[Int],i:Int) => acc + i))
   }
 }
@@ -85,7 +84,7 @@ class PositionsOfConst(v: SeqValue, a:Int)
   extends SetInvariant(v.value.positionsOfValue(a).foldLeft(SortedSet.empty[Int])((acc:SortedSet[Int],i:Int) => acc + i), Domain(0 , DomainHelper.safeAdd(v.max,1)))
   with SeqNotificationTarget{
 
-  setName("PositionOf(" + a + " in " + v.name + ")")
+  setName(s"PositionOf($a in ${v.name})")
 
   registerStaticAndDynamicDependency(v)
   finishInitialization()
@@ -94,12 +93,11 @@ class PositionsOfConst(v: SeqValue, a:Int)
     scheduleForPropagation()
   }
 
-  override def performInvariantPropagation() {
+  override def performInvariantPropagation(): Unit = {
     this := v.value.positionsOfValue(a).foldLeft(SortedSet.empty[Int])((acc:SortedSet[Int],i:Int) => acc + i)
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
     c.check(this.value equals v.value.positionsOfValue(a).foldLeft(SortedSet.empty[Int])((acc:SortedSet[Int],i:Int) => acc + i))
   }
 }
-

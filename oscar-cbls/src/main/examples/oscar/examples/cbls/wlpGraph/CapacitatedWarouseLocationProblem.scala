@@ -3,10 +3,11 @@ package oscar.examples.cbls.wlpGraph
 import oscar.cbls._
 import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, DijkstraDistanceMatrix}
 import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.core.computation.ShortIntNotificationTarget
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingIntValue, IntValue, Invariant, ShortIntNotificationTarget, Store}
+import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.core.propagation.Checker
 import oscar.cbls.core.search.{ConstantMoveNeighborhood, EvaluableCodedMove}
-import oscar.cbls.core.{ChangingIntValue, Invariant}
 import oscar.cbls.lib.invariant.graph.KVoronoiZones
 import oscar.cbls.lib.invariant.logic.{Cluster, Filter, IntElement}
 import oscar.cbls.lib.invariant.numeric.SumElements

@@ -1,7 +1,7 @@
 package oscar.cbls
 
 /**
- * Created by rdl on 11L-09L-1L7.
+ * Created by rdl on 11-09-17.
  */
 package object core {
 
@@ -59,4 +59,3 @@ package object core {
   type SeqUpdateRollBackToCheckpoint = oscar.cbls.core.computation.SeqUpdateRollBackToCheckpoint
   val SeqUpdateRollBackToCheckpoint = oscar.cbls.core.computation.SeqUpdateRollBackToCheckpoint
 }
-

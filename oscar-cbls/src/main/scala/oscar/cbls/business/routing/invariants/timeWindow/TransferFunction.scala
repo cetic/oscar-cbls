@@ -126,9 +126,10 @@ abstract class TransferFunction(val ea: Long, val la: Long, val el: Long, val fr
 
   lazy val taskDuration: Long = el - ea
 
-  override def toString: String = {
-    "earliest arrival time : " + ea + "\n latest arrival time : " + la + "\n earliest leaving time : " + el
-  }
+  override def toString: String =
+    s"""earliest arrival time : $ea
+       |latest arrival time : $la
+       |earliest leaving time : $el""".stripMargin
 }
 
 object DefinedTransferFunction{
@@ -138,7 +139,7 @@ object DefinedTransferFunction{
 
 class DefinedTransferFunction(override val ea: Long, override val la: Long, override val el: Long,
                                    override val from: Int, override val to: Int) extends TransferFunction(ea,la,el,from,to){
-  require(la >= ea && el >= ea, "earliest arrival time : " + ea + ", latest arrival time : " + la + ", earliest leaving time : " + el)
+  require(la >= ea && el >= ea, s"earliest arrival time : $ea, latest arrival time : $la, earliest leaving time : $el")
   override def apply(t: Long): Long = {
     if(t <= ea)
       el
@@ -150,9 +151,11 @@ class DefinedTransferFunction(override val ea: Long, override val la: Long, over
 
   override def isEmpty: Boolean = false
 
-  override def toString: String = {
-    "Defined transfert function : \nFrom " + from + "   To " + to + "\n" + super.toString
-  }
+  override def toString: String =
+    s"""Defined transfer function :
+       |From $from
+       |To $to
+       |${super.toString}""".stripMargin
 }
 
 case object EmptyTransferFunction extends TransferFunction(1L,-1L,-1L,-1,-1){
@@ -184,7 +187,8 @@ case class TwoWaysTransferFunction(nonFlippedTF: TransferFunction, flippedTF: Tr
     else nonFlippedTF.isEmpty
   }
 
-  override def toString: String = {
-    "Two ways transfert function : \nNon-flipped : " + nonFlippedTF.toString + "\nFlipped : " + flippedTF.toString
-  }
+  override def toString: String =
+    s"""Two ways transfert function :
+       |Non-flipped : $nonFlippedTF
+       |Flipped : $flippedTF""".stripMargin
 }

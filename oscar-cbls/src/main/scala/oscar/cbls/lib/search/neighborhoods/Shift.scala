@@ -18,8 +18,6 @@ package oscar.cbls.lib.search.neighborhoods
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.core.computation.CBLSIntVar
 import oscar.cbls.core.search.{Move, EasyNeighborhood}
-import oscar.cbls._
-
 
 /**
  * will shift a block of value to the right(doing it also to the left is redundant)
@@ -58,9 +56,9 @@ case class ShiftNeighborhood(vars:Array[CBLSIntVar],
   var currentShiftSize:Int = 1
   var currentStart:Int = 0
 
-  override def exploreNeighborhood(){
+  override def exploreNeighborhood(): Unit ={
     val searchZoneObject = if(searchZone1 == null)null else searchZone1()
-    val currentSearchZone = if(searchZone1 == null) 0 until vars.length else searchZoneObject
+    val currentSearchZone = if(searchZone1 == null) vars.indices else searchZoneObject
 
     val firstIndices =
       if(hotRestart && !best)HotRestart(currentSearchZone, startIndice)
@@ -149,7 +147,6 @@ case class ShiftNeighborhood(vars:Array[CBLSIntVar],
   }
 }
 
-
 /** standard move that switch a block of value to the right
   *
   * @param startIndice the indice of the item beginning the block to switch
@@ -163,13 +160,13 @@ case class ShiftNeighborhood(vars:Array[CBLSIntVar],
 case class ShiftMove(startIndice:Int,length:Int,offset:Int,variables:Array[CBLSIntVar], override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter,neighborhoodName){
 
-  def shiftedElements = startIndice to startIndice + length
+  def shiftedElements: Range = startIndice to startIndice + length
   override def toString: String = {
-    neighborhoodNameToString + "ShiftMove(startIndice:" + startIndice + "; length:" + length + "; offset:" + offset + objToString + ")"
+    s"${neighborhoodNameToString}ShiftMove(startIndice:$startIndice; length:$length; offset:$offset$objToString)"
   }
 
   /** to actually take the move */
-  override def commit() {
+  override def commit(): Unit = {
     val initialValues: Array[Long] = Array.tabulate(variables.length)(variables(_).value)
     //If the block is moved on the right
     if(offset > 0){

@@ -33,12 +33,12 @@ trait TarjanNode{
   */
 object TarjanWithBigNodes1{
 
-  def getStronglyConnexComponents[T <: TarjanNode](Nodes:Iterable[T], GetSucceedingNodes:(T => Iterable[T])):List[List[T]] = {
+  def getStronglyConnexComponents[T <: TarjanNode](Nodes:Iterable[T], GetSucceedingNodes:T => Iterable[T]):List[List[T]] = {
     var index:Int=0
     var Stack:List[T]=List.empty
     var Components:List[List[T]]= List.empty
 
-    def visit(v:T){
+    def visit(v:T): Unit = {
       v.Index = index
       v.LowLink = index
       index +=1

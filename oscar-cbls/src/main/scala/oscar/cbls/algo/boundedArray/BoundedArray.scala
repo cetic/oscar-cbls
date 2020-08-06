@@ -1,3 +1,17 @@
+/*******************************************************************************
+ * OscaR is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * OscaR is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License  for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+ * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+ ******************************************************************************/
 package oscar.cbls.algo.boundedArray
 
 import scala.reflect.ClassTag
@@ -9,7 +23,8 @@ import scala.reflect.ClassTag
   * @param postInserting a function to be executed after an element is inserted
   * @tparam T The type of the elements in the array
   */
-class BoundedArray[T: ClassTag](maxElements: Int, postInserting: (T, Int) => Unit = (_:T, _:Int) => {}) {
+class BoundedArray[T: ClassTag](maxElements: Int,
+                                postInserting: (T, Int) => Unit = (_:T, _:Int) => {}) {
   // The actual array
   private val actualArray: Array[T] = new Array[T](maxElements)
   // the actual number of elements in the array
