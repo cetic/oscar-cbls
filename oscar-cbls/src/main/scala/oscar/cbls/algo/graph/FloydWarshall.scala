@@ -4,7 +4,7 @@ import scala.collection.parallel.immutable.ParVector
 
 /**
   * this is a FloydWarshall algorithm for the [[ConditionalGraph]] data structure.
-  * this data structure is non-directed graph, the FloydWarshall is tehrefore tuned accordignly
+  * this data structure is non-directed graph, the FloydWarshall is therefore tuned accordingly
   */
 object FloydWarshall{
   def buildDistanceMatrix(g:ConditionalGraph,
@@ -85,17 +85,16 @@ object FloydWarshall{
   def saturateAdjacencyMatrixToDistanceMatrix(w:Array[Array[Long]], graph:ConditionalGraph): Unit ={
     val n = w.length
     val parRange = ParVector.tabulate(n){x => x}
-
-    for (k <- 0 until n) {
-      for (i <- parRange) {
-        for (j <- i + 1 until n) {
-
-          if(w(i)(k) != Long.MaxValue && w(k)(j)!= Long.MaxValue &&graph.nodes(k).transitAllowed) {
-            val newDistance = w(i)(k) + w(k)(j)
-            if (newDistance < w(i)(j)) {
-              w(i)(j) = newDistance
-              w(j)(i) = newDistance
-            }
+    for {
+      i <- parRange
+      j <- 0 until i
+      k <- 0 until n
+    } {
+      if ((k < i) && (j < k)) {
+        if(w(i)(k) != Long.MaxValue && w(k)(j)!= Long.MaxValue && graph.nodes(k).transitAllowed) {
+          val newDistance = w(i)(k) + w(k)(j)
+          if (newDistance < w(i)(j)) {
+            w(i)(j) = newDistance
           }
         }
       }

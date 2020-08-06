@@ -65,7 +65,7 @@ class RevisableAStarTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyC
       nbConditions = graphTemp.nbConditions)
 
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
-    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b))
+    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => if (a > b) underApproxDistanceMatrix(a)(b) else underApproxDistanceMatrix(b)(a))
     val gen = Gen.oneOf(graphTemp.nodes)
 
     forAll(gen){
@@ -96,7 +96,7 @@ class RevisableAStarTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyC
       nbConditions = graphTemp.nbConditions+1)
 
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => false)
-    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b))
+    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => if (a > b) underApproxDistanceMatrix(a)(b) else underApproxDistanceMatrix(b)(a))
     val gen = Gen.oneOf(graphTemp.nodes)
 
 
@@ -120,7 +120,7 @@ class RevisableAStarTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyC
 
     val openConditions = Random.shuffle(List(0,0,0,0,1,1,1,1,1))
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
-    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b))
+    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => if (a > b) underApproxDistanceMatrix(a)(b) else underApproxDistanceMatrix(b)(a))
     val gen = Gen.listOfN(2,Gen.oneOf(graph.nodes))
 
     forAll(gen){
@@ -159,7 +159,7 @@ class RevisableAStarTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyC
     val openConditions = Random.shuffle(open ::: closed)
 
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph, _ => true)
-    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a: Int, b: Int) => underApproxDistanceMatrix(a)(b))
+    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a: Int, b: Int) => if (a > b) underApproxDistanceMatrix(a)(b) else underApproxDistanceMatrix(b)(a))
 
     for (nodeFrom <- graph.nodes) {
       for (nodeTo <- graph.nodes){
@@ -205,7 +205,7 @@ class RevisableAStarTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyC
     val openConditions = Random.shuffle(open ::: closed)
 
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
-    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b))
+    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => if (a > b) underApproxDistanceMatrix(a)(b) else underApproxDistanceMatrix(b)(a))
     val gen = for{
       n1 <- Gen.oneOf(graph.nodes)
       n2 <- Gen.oneOf(graph.nodes)
@@ -256,8 +256,8 @@ class RevisableAStarTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyC
     val openConditions = Random.shuffle(open ::: closed)
 
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
-    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b))
-    val gen = for{
+    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => if (a > b) underApproxDistanceMatrix(a)(b) else underApproxDistanceMatrix(b)(a))
+    val gen = for {
       n1 <- Gen.oneOf(graph.nodes)
       n2 <- Gen.oneOf(graph.nodes)
     } yield(n1,n2)
@@ -307,7 +307,7 @@ class RevisableAStarTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyC
     val openConditions = Random.shuffle(open ::: closed)
 
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
-    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b))
+    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => if (a > b) underApproxDistanceMatrix(a)(b) else underApproxDistanceMatrix(b)(a))
     val gen = for{
       n1 <- Gen.oneOf(graph.nodes)
       n2 <- Gen.oneOf(graph.nodes)
@@ -359,7 +359,7 @@ class RevisableAStarTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyC
       val openConditions = Random.shuffle(open ::: closed)
 
       val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph, _ => true)
-      val aStar = new RevisableAStar(graph, underApproximatingDistance = (a: Int, b: Int) => underApproxDistanceMatrix(a)(b))
+      val aStar = new RevisableAStar(graph, underApproximatingDistance = (a: Int, b: Int) => if (a > b) underApproxDistanceMatrix(a)(b) else underApproxDistanceMatrix(b)(a))
 
       for (nodeFrom <- graph.nodes) {
         for (nodeTo <- graph.nodes){

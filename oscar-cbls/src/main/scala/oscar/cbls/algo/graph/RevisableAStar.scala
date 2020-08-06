@@ -154,7 +154,7 @@ class RevisableAStar(graph:ConditionalGraph,
                 toDevelopHeap.insert(otherNodeID)
               }
             }else{
-              // transit is not allowed, so we'v already updated the distance,
+              // transit is not allowed, so we've already updated the distance,
               // ensure the node is to be cleaned upon next call.
               // the only node where this is relevant is the target node.
               if(oldDistance == Long.MaxValue) {
