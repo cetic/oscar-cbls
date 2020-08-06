@@ -95,4 +95,26 @@ class FileFormatTest extends TestSuite {
 
   }
 
+
+  test(" test: protein format"){
+    val db = Dataset("oscar-ml/src/main/scala/oscar/ml/pm/data/fem/test/input/test.txt", ProteinLongSequence)
+
+    val (expectedDb, expectedDbTime) = dataset()
+
+    assert(TestHelpers.checkArray(db.getData, Array(expectedDb.flatten)))
+
+  }
+
+  test(" test: Named long sequence with time"){
+    val db = Dataset("oscar-ml/src/main/scala/oscar/ml/pm/data/fem/test/input/test.time.name.txt", LongSequenceWithNameAndTime)
+
+    val itemsMap = "eps." +: Array("A", "B", "C", "D", "E")
+
+    val (expectedDb, expectedDbTime) = dataset()
+
+    assert(TestHelpers.checkArray( db.getDataWithName, Array(expectedDb.flatten.map(i => itemsMap(i))) ))
+    assert(TestHelpers.checkArray(db.getTime, Array(expectedDbTime.flatten)))
+
+  }
+
 }

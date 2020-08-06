@@ -117,6 +117,9 @@ class Dataset(val benchmarkName: String, val rawDatas: Array[Transaction]) {
   def getData: Array[Array[Int]] =
     rawDatas.map(_.data)
 
+  def getDataWithName: Array[Array[String]] =
+    rawDatas.map(_.data.map(i => itemsStringsMap(i)))
+
   def getTime: Array[Array[Int]] = {
     // create a time dataset, if no time dataset is provided the array indices are used
     rawDatas.map(elt => if(elt.time.isEmpty && !elt.data.isEmpty) (1 to elt.data.length).toArray else elt.time)

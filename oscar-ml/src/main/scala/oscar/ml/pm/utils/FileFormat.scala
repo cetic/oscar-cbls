@@ -38,7 +38,7 @@ abstract class FileFormat {
 
   def readLine(line: String): Transaction
 
-  def readHeader(lines: Array[String], nItems:Int) : Array[String] = {
+  def readHeader(lines: Array[String], nItems: Int): Array[String] = {
     Array()
   }
 
@@ -59,7 +59,7 @@ abstract class FileFormat {
   def writeTransaction(transaction: Transaction, nbItem: Int): String
 }
 
-class FunctionNotUsedForThisFileFormatException(s:String) extends Exception(s){}
+class FunctionNotUsedForThisFileFormatException(s: String) extends Exception(s) {}
 
 /**
  * Format sparse with/without class label
@@ -109,14 +109,14 @@ object TdbWithLabelFormat extends SparseFormat {
  * (3, 1)(2, 2)
  *
  * becomes
- *sid time  size  item
- *  1    2     1     1
- *  1    5     1     2
- *  1    6     1     4
- *  1   10     1     3
- *  1   11     1     2
- *  2    1     1     3
- *  2    2     1     2
+ * sid time  size  item
+ * 1    2     1     1
+ * 1    5     1     2
+ * 1    6     1     4
+ * 1   10     1     3
+ * 1   11     1     2
+ * 2    1     1     3
+ * 2    2     1     2
  */
 object SpadeFormat extends FileFormat {
   override val extension: String = ".sp"
@@ -141,9 +141,9 @@ object SpadeFormat extends FileFormat {
     lines.foreach(e => checkFormatLine(e))
     val data = lines.map(_.split(separator).map(_.toInt))
 
-    def buildTransaction(sid:Int): Transaction = {
-      val trans =  data.filter(_(POS_SID) == sid)
-      Transaction(data = trans.map(_(POS_ITM)), time = trans.map(_(POS_EID)))
+    def buildTransaction(sid: Int): Transaction = {
+      val trans = data.filter(_ (POS_SID) == sid)
+      Transaction(data = trans.map(_ (POS_ITM)), time = trans.map(_ (POS_EID)))
     }
 
     (1 to data.last(0)).map(t => buildTransaction(t)).toArray
@@ -169,14 +169,14 @@ object SpadeFormat extends FileFormat {
  * becomes
  * nseq seqlenmax item
  * [0, A, B, C, D]
- *sid time  size  item  support
- *  1    2     1     1        1
- *  1    5     1     2        2
- *  1    6     1     4        1
- *  1   10     1     3        2
- *  1   11     1     2        2
- *  2    1     1     3        2
- *  2    2     1     2        2
+ * sid time  size  item  support
+ * 1    2     1     1        1
+ * 1    5     1     2        2
+ * 1    6     1     4        1
+ * 1   10     1     3        2
+ * 1   11     1     2        2
+ * 2    1     1     3        2
+ * 2    2     1     2        2
  */
 object BSpadeFormat extends FileFormat {
   override val extension: String = ".b"
@@ -204,9 +204,9 @@ object BSpadeFormat extends FileFormat {
     lines.drop(nSkip).foreach(e => checkFormatLine(e))
     val data = lines.drop(nSkip).map(_.split(separator).map(_.toInt))
 
-    def buildTransaction(sid:Int): Transaction = {
-      val trans =  data.filter(_(POS_SID) == sid)
-      Transaction(data = trans.map(_(POS_ITM)), time = trans.map(_(POS_EID)))
+    def buildTransaction(sid: Int): Transaction = {
+      val trans = data.filter(_ (POS_SID) == sid)
+      Transaction(data = trans.map(_ (POS_ITM)), time = trans.map(_ (POS_EID)))
     }
 
     (1 to data.last(0)).map(t => buildTransaction(t)).toArray
@@ -297,18 +297,18 @@ object SpmfWithHeaderFormat extends FileFormat {
     realLines.foreach(e => checkFormatLine(e))
     val data = realLines.map(line => line.trim.stripSuffix(" -1 -2").split(separator).map(e => ("""\d+""".r findAllIn e).toList))
 
-    data.indices.map(t => Transaction(data = data(t).map(_.last.toInt), time = data(t).map(_.head.toInt) ) ).toArray
+    data.indices.map(t => Transaction(data = data(t).map(_.last.toInt), time = data(t).map(_.head.toInt))).toArray
   }
 
   override def readHeader(lines: Array[String], nItems: Int): Array[String] = {
-    val tab = lines.filter(_.trim.startsWith("@ITEM")).map( e => e.trim.split("=") ) //@ITEM=4=D
+    val tab = lines.filter(_.trim.startsWith("@ITEM")).map(e => e.trim.split("=")) //@ITEM=4=D
 
-    val out: Array[String] = Array.fill(nItems+1)("0")
+    val out: Array[String] = Array.fill(nItems + 1)("0")
 
     var i = 0
-    while ( i < tab.length) {
+    while (i < tab.length) {
       out(tab(i)(1).toInt) = tab(i)(2)
-      i+= 1
+      i += 1
     }
 
     out
@@ -348,7 +348,7 @@ object SpmfWithTimeFormat extends FileFormat {
     lines.drop(nSkip).foreach(e => checkFormatLine(e))
     val data = lines.drop(nSkip).map(line => line.trim.stripSuffix(" -1 -2").split(separator).map(e => ("""\d+""".r findAllIn e).toList))
 
-    data.indices.map(t => Transaction(data = data(t).map(_(1).toInt), time = data(t).map(_(0).toInt) ) ).toArray
+    data.indices.map(t => Transaction(data = data(t).map(_ (1).toInt), time = data(t).map(_ (0).toInt))).toArray
   }
 
   override def writeTransaction(transaction: Transaction, nbItem: Int): String = {
@@ -390,7 +390,7 @@ class LongSequenceFormat extends FileFormat {
 
   override def readLines(lines: Array[String]): Array[Transaction] = {
     lines.foreach(e => checkFormatLine(e))
-    Array(Transaction(data = lines.map(_.split(separator).map(_.toInt)).flatten))
+    Array(Transaction(data = lines.flatMap(_.split(separator).map(_.toInt))))
   }
 
   override def writeTransaction(transaction: Transaction, nbItem: Int): String = {
@@ -407,14 +407,14 @@ class LongSequenceFormat extends FileFormat {
  * Long Sequence dataset with time format
  * The sequence dataset
  * item time
- *  1    1
- *  2    3
- *  1    5
- *  3    6
- *  2    7
- *  1    8
- *  2   14
- *  This is the format used by trade market and ubiqlog datasets
+ * 1    1
+ * 2    3
+ * 1    5
+ * 3    6
+ * 2    7
+ * 1    8
+ * 2   14
+ * This is the format used by trade market and ubiqlog datasets
  */
 object LongSequenceTimeFormat extends FileFormat {
   override val extension: String = ".txt"
@@ -437,7 +437,7 @@ object LongSequenceTimeFormat extends FileFormat {
     lines.foreach(checkFormatLine(_))
     val data = lines.map(_.split(separator).map(_.toInt))
 
-    Array(Transaction(data = data.map(_(POS_ITM)), time = data.map(_(POS_EID))))
+    Array(Transaction(data = data.map(_ (POS_ITM)), time = data.map(_ (POS_EID))))
   }
 
   override def writeTransaction(transaction: Transaction, nbItem: Int): String = {
@@ -446,6 +446,111 @@ object LongSequenceTimeFormat extends FileFormat {
       str += (item - 1) + " "
     if (withLabel) str + transaction.label
     str
+  }
+
+}
+
+/**
+ * Sequence dataset Protein format
+ * The sequence dataset
+ *
+ * ABCDEA
+ * ABC
+ */
+object ProteinLongSequence extends FileFormat {
+  override val extension: String = ".txt"
+  override val separator: String = " -1 "
+  this.withItemNamesHeader = true
+  this.nSkip = 1
+
+  override def checkFormatLine(line: String): Unit = {
+    throw new FunctionNotUsedForThisFileFormatException("This function is not used for this file format")
+  }
+
+  override def readLine(line: String): Transaction = {
+    throw new FunctionNotUsedForThisFileFormatException("This function is not used for this file format")
+  }
+
+  override def readLines(lines: Array[String]): Array[Transaction] = {
+    Array(Transaction(data = lines.flatMap(line => line.trim.toCharArray.map(e => e - 'A' + 1))))
+  }
+
+  override def readHeader(lines: Array[String], nItems: Int): Array[String] = {
+    "eps." +: ('A' to 'Z').map(_.toString).toArray
+  }
+
+  override def writeTransaction(transaction: Transaction, nbItem: Int): String = {
+    var str = ""
+    for (item <- transaction.data)
+      str += (item - 1) + " "
+    if (withLabel) str + transaction.label
+    else str
+  }
+
+}
+
+
+/**
+ * Sequence dataset Protein format
+ * The sequence dataset
+ *
+ * A 1
+ * B 2
+ * C 5
+ */
+object LongSequenceWithNameAndTime extends FileFormat {
+  override val extension: String = ".txt"
+  override val separator: String = " "
+  this.withItemNamesHeader = true
+  this.nSkip = 1
+  private[this] val revMap = collection.mutable.Map.empty[String, Int]
+
+  override def checkFormatLine(line: String): Unit = {
+    val data = line.trim.split(separator)
+    val pattern = "[0-9]*"
+    assert(data(1).matches(pattern))
+  }
+
+  override def readLine(line: String): Transaction = {
+    throw new FunctionNotUsedForThisFileFormatException("This function is not used for this file format")
+  }
+
+  override def readLines(lines: Array[String]): Array[Transaction] = {
+    var count = 1
+    val seqs: Array[Int] = Array.ofDim(lines.length)
+    val timestamps: Array[Int] = Array.ofDim(lines.length)
+
+    var i = 0
+    while (i < lines.length) {
+      val line = lines(i).split(separator)
+      val symbol = line(0)
+      val timestamp = line(1).toInt
+
+      if (revMap.contains(symbol)) {
+        seqs(i) = revMap(symbol)
+        timestamps(i) = timestamp
+      } else {
+        seqs(i) = count
+        timestamps(i) = timestamp
+        revMap(symbol) = count
+        count += 1
+      }
+      i += 1
+    }
+
+    Array(Transaction(data = seqs, time = timestamps))
+  }
+
+  override def readHeader(lines: Array[String], nItems: Int): Array[String] = {
+    "eps." +: revMap.map(_.swap).values.toArray
+  }
+
+  override def writeTransaction(transaction: Transaction, nbItem: Int): String = {
+    var str = ""
+    for (item <- transaction.data)
+      str += (item - 1) + " "
+    if (withLabel) str + transaction.label
+    else str
   }
 
 }

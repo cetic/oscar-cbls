@@ -19,6 +19,19 @@ object TestHelpers {
     true
   }
 
+  def checkArray(input: Array[Array[String]], output: Array[Array[String]]): Boolean = {
+    if (input.length != output.length) return false
+
+    var i = 0
+    while (i < input.length) {
+      if (!(input(i) sameElements output(i)))
+        return false
+      i += 1
+    }
+
+    true
+  }
+
   def readSols(filename: String): Map[String, Int] =
     Source.fromFile(filename).getLines
       .map(line => line.split(" #SUP: "))
