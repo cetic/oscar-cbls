@@ -48,8 +48,8 @@ class PPICt(val P: Array[CPIntVar], val minsup: Int, val data: Dataset, val time
   // Precomputed data structures
   /**
    * lastPositionMap is the last real position of an item in a sequence, if 0 it is not present
-   *
-   * a, b, c, d, e,
+   * (index from 1)
+   *        a, b, c, d, e,
    * s1: 0, 1, 5, 4, 3, 0, 0
    * s2: 0, 6, 7, 5, 4, 0, 0
    * s3: 0, 1, 5, 7, 4, 6, 0
@@ -59,7 +59,8 @@ class PPICt(val P: Array[CPIntVar], val minsup: Int, val data: Dataset, val time
 
   /**
    * nextPosGap is the first possible position of an item in a sequence taking into account the mingap, if > the sequence length it is not present
-   *
+   * (index from 1)
+   *    p1,p2,p3,p4,p5,p6,p7
    * s1: 1, 3, 3, 6, 6
    * s2: 2, 2, 3, 4, 5, 6, 8
    * s3: 2, 3, 4, 5, 6, 8, 8
@@ -69,8 +70,7 @@ class PPICt(val P: Array[CPIntVar], val minsup: Int, val data: Dataset, val time
 
   /**
    * itemsSupport: is the initial support (number of sequences where a item is appeared) of all items
-   *
-   * a : 4, b : 4, c : 4, d : 3, e : 1
+   * (eps.: 4 +:) a : 4, b : 4, c : 4, d : 3, e : 1
    */
   private[this] val itemsSupport: Array[Int] = lenSDB +: DatasetUtils.getSDBSupport(data)
 

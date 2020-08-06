@@ -21,7 +21,7 @@ import oscar.algo.Inconsistency
 import oscar.algo.reversible.ReversibleInt
 import oscar.cp.core.variables.{CPIntVar, CPVar}
 import oscar.cp.core.{CPPropagStrength, Constraint}
-import oscar.ml.pm.utils.{Dataset, DatasetUtils, TimeOption}
+import oscar.ml.pm.utils.{Dataset, DatasetUtils, TestHelpers, TimeOption}
 
 /**
  *
@@ -47,7 +47,6 @@ final class EpisodeSupportT(val P: Array[CPIntVar], val minsup: Int, val data: D
 
   /// Initializing other input variables
   private[this] val epsilon = 0 //this is for empty item
-  private[this] val lenSeq = data.nbTrans
   private[this] val nItems: Int = data.nbItem
   private[this] val minspan: Int = timeThresold.minspan
   private[this] val maxspan: Int = timeThresold.maxspan
@@ -59,7 +58,8 @@ final class EpisodeSupportT(val P: Array[CPIntVar], val minsup: Int, val data: D
   /* Array of symbols and array of timestamp */
   private[this] val seq_symb: Array[Int] = data.getData(0)
   private[this] val seq_time: Array[Int] = data.getTime(0)
-  private[this] val lastPosOfItem: Array[Array[Int]] = DatasetUtils.getLSNextPosGap(data, maxgap)
+  private[this] val lenSeq = seq_symb.length
+  private[this] val lastPosOfItem: Array[Array[Int]] = DatasetUtils.getLSNextPosGap(data, maxspan)
 
   private[this] val lastPosLists: Array[Array[(Int, Int)]] = lastPosOfItem.map(x => x.zipWithIndex.sortBy(-_._1))
   private[this] val lastPosListsPos: Array[Array[Int]] = Array.ofDim[Array[Int]](lenSeq)
@@ -117,7 +117,7 @@ final class EpisodeSupportT(val P: Array[CPIntVar], val minsup: Int, val data: D
 
   ///support counter contain support for each item, it is reversible for efficient backtrack
   private[this] val freq = Array.ofDim[Int](nItems + 1)
-  private[this] val projFreq = Array.ofDim[Int](nItems + 1)
+  //-r//private[this] val projFreq = Array.ofDim[Int](nItems + 1)
   var curPrefixSupport: Int = 0
   var curMinSpanSupport: Int = 0
 
@@ -164,27 +164,20 @@ final class EpisodeSupportT(val P: Array[CPIntVar], val minsup: Int, val data: D
   //precomputed all sups at each pos
   private[this] val allSups: Array[Array[Int]] = Array.ofDim(lenSeq, nItems)
   i1 = 0
-  private[this] var mylim = rValidItems.value
+  //-r//private[this] var mylim = rValidItems.value
   while (i1 < lenSeq) {
     i2 = 1
     while (i2 < nItems) {
       if (seq_symb(i1) == i2) allSups(i1)(i2) = if (i1 <= 0) 1 else allSups(i1 - 1)(i2) + 1
       else allSups(i1)(i2) = if (i1 == 0) 0 else allSups(i1 - 1)(i2)
 
-      /*if (i1 == lenSeq-1 && allSups(i1)(i2) < minsup) {
-        P(0).removeValue(i2)
-        mylim = removeItem(i2,mylim)
-      }*/
-
       i2 += 1
     }
     i1 += 1
   }
-  rValidItems.value = mylim
+  //-r//rValidItems.value = mylim
 
-  private[this] val isVisited = Array.fill[Boolean](nItems)(false)
-
-  //override def associatedVars(): Iterable[CPVar] = P
+  //-r//private[this] val isVisited = Array.fill[Boolean](nItems)(false)
 
   /**
    * Entry in constraint, function for all init
@@ -230,7 +223,6 @@ final class EpisodeSupportT(val P: Array[CPIntVar], val minsup: Int, val data: D
       enforceEpsilonFrom(v)
       //??// checkSpan()//forspan
     }
-
 
     if (P.last.isBound) {
       checkSpan() //forspan

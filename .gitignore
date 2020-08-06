@@ -22,3 +22,5 @@ syntax: regexp
 \.jardesc$
 syntax: regexp
 ^MANIFEST\.MF$
+
+*.iml

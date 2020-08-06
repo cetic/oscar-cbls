@@ -458,8 +458,8 @@ object LongSequenceTimeFormat extends FileFormat {
  * ABC
  */
 object ProteinLongSequence extends FileFormat {
-  override val extension: String = ".txt"
-  override val separator: String = " -1 "
+  override val extension: String = ".fasta"
+  override val separator: String = ""
   this.withItemNamesHeader = true
   this.nSkip = 1
 

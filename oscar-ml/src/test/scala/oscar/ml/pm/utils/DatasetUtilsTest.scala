@@ -5,7 +5,7 @@ import oscar.cp.testUtils.TestSuite
 class DatasetUtilsTest extends TestSuite {
 
   test( "clean Dataset"){
-    val db = Dataset("oscar-ml/src/main/scala/oscar/ml/pm/data/spm/test.txt.sp", SpadeFormat)
+    val db = Dataset("oscar-ml/src/main/scala/oscar/ml/pm/data/spm/test/input/test.txt.sp", SpadeFormat)
     assert(TestHelpers.checkArray(DatasetUtils.cleanDataset(db, 1).getData, db.getData))
 
     val expectedDb = Array(Array(1, 2, 3, 2), Array(2, 1, 1, 3, 1, 2), Array(1, 2, 2, 3), Array(1, 3, 3, 2))
@@ -13,7 +13,7 @@ class DatasetUtilsTest extends TestSuite {
   }
 
   test( "test support"){
-    val db = Dataset("oscar-ml/src/main/scala/oscar/ml/pm/data/spm/test.txt.sp", SpadeFormat)
+    val db = Dataset("oscar-ml/src/main/scala/oscar/ml/pm/data/spm/test/input/test.txt.sp", SpadeFormat)
 
     val expectedDb = Array(4, 4, 4, 3, 1)
 
@@ -52,7 +52,7 @@ class DatasetUtilsTest extends TestSuite {
   }
 
   test( "test supports"){
-    val db = Dataset("oscar-ml/src/main/scala/oscar/ml/pm/data/spm/test.txt.sp", SpadeFormat)
+    val db = Dataset("oscar-ml/src/main/scala/oscar/ml/pm/data/spm/test/input/test.txt.sp", SpadeFormat)
 
     val expectedDb = Array(4, 4, 4, 3, 1)
 
@@ -60,7 +60,7 @@ class DatasetUtilsTest extends TestSuite {
   }
 
   test("test nextPostGap") {
-    val db = Dataset("oscar-ml/src/main/scala/oscar/ml/pm/data/spm/test.txt.sp", SpadeFormat)
+    val db = Dataset("oscar-ml/src/main/scala/oscar/ml/pm/data/spm/test/input/test.txt.sp", SpadeFormat)
 
     val expected = Array(
       Array(1, 3, 3, 6, 6),
@@ -75,7 +75,7 @@ class DatasetUtilsTest extends TestSuite {
   }
 
   test("test LS nextPostGap") {
-    val db = Dataset("oscar-ml/src/main/scala/oscar/ml/pm/data/fem/papertestT.txt", LongSequenceTimeFormat)
+    val db = Dataset("oscar-ml/src/main/scala/oscar/ml/pm/data/fem/test/input/test.time.txt", LongSequenceTimeFormat)
 
     val expected = Array(
       Array(-1, 5, 4, 3),
@@ -107,6 +107,23 @@ class DatasetUtilsTest extends TestSuite {
     assert(TestHelpers.checkArray(b, x))
     assert(TestHelpers.checkArray(c, y))
     assert(TestHelpers.checkArray(d, z))
+  }
+
+
+  test( "test LS support"){
+    val db = Dataset("oscar-ml/src/main/scala/oscar/ml/pm/data/fem/test/input/test.fasta", ProteinLongSequence)
+
+    val expectedDb = Array(3, 2, 1)
+
+    assert(DatasetUtils.getLSSupport(db) sameElements expectedDb)
+  }
+
+  test( "test LS frequent items"){
+    val db = Dataset("oscar-ml/src/main/scala/oscar/ml/pm/data/fem/test/input/test.fasta", ProteinLongSequence)
+
+    val expectedDb = Array(1, 2)
+
+    assert(DatasetUtils.getLSFrequentItems(db, 2) sameElements expectedDb)
   }
 
 }

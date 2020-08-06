@@ -154,6 +154,7 @@ class Dataset(val benchmarkName: String, val rawDatas: Array[Transaction]) {
 
 object DatasetUtils {
 
+  /// Helpers
   def prepareForSPM(filename: String, minsup:Double, format: FileFormat = TdbFormat): (Dataset, Int, Int, Int, Int, Array[Int]) = {
     val primedb = Dataset(filename, format)
     var frequency = minsup.intValue()
@@ -172,15 +173,31 @@ object DatasetUtils {
     (db, frequency, db.nbTrans, db.nbItem, DatasetUtils.getLenSeqMax(db), DatasetUtils.getFrequentItems(db, frequency), db.getTime.map(_.max).max)
   }
 
-  def getNItemMaxPerSeq(data: Dataset): Int = {
-    data.rawDatas.map(_.data.distinct.length).max
+  def prepareForFEM(filename: String, minsup:Double, format: FileFormat = ProteinLongSequence): (Dataset, Int, Int, Int, Int, Array[Int]) = {
+    val db = Dataset(filename, format)
+    var frequency = minsup.intValue()
+    if (minsup > 0 && minsup < 1) frequency = (minsup * db.rawDatas(0).data.length).ceil.toInt //floor is another way around for the support
+
+    (db, frequency, db.rawDatas(0).data.length, db.nbItem, DatasetUtils.getLenSeqMax(db), DatasetUtils.getLSFrequentItems(db, frequency))
   }
 
-  def getLenSeqMax(data: Dataset): Int = {
-    data.rawDatas.map(_.data.length).max
+  def prepareForFEMTime(filename: String, minsup:Double, format: FileFormat = LongSequenceTimeFormat): (Dataset, Int, Int, Int, Int, Array[Int]) = {
+    val db = Dataset(filename, format)
+    var frequency = minsup.intValue()
+    if (minsup > 0 && minsup < 1) frequency = (minsup * db.rawDatas(0).data.length).ceil.toInt //floor is another way around for the support
+
+    (db, frequency, db.rawDatas(0).data.length, db.nbItem, DatasetUtils.getLenSeqMax(db), DatasetUtils.getLSFrequentItems(db, frequency))
   }
 
+  def precomputedDatastructures(data: Dataset): (Array[Int], Array[Array[Int]], Array[Array[Int]], Array[Array[Int]]) = {
+    val lastPosMap = getItemLastPosBySequence(data)
+    (getSDBSupport(data),
+      getItemFirstPosBySequence(data),
+      lastPosMap,
+      getSDBLastPos(data, lastPosMap))
+  }
 
+  /// Generic Dataset
   def cleanDataset(data:Dataset, minsup: Int, lmin:Int = 1) : Dataset = {
     val sups = getSDBSupport(data)
 
@@ -196,6 +213,15 @@ object DatasetUtils {
     newData.usedFormat = data.usedFormat
 
     newData
+  }
+
+  /// SPM dataset
+  def getNItemMaxPerSeq(data: Dataset): Int = {
+    data.rawDatas.map(_.data.distinct.length).max
+  }
+
+  def getLenSeqMax(data: Dataset): Int = {
+    data.rawDatas.map(_.data.length).max
   }
 
   def getSDBSupport(data:Dataset) :  Array[Int] = {
@@ -253,25 +279,39 @@ object DatasetUtils {
   }
 
 
-  def getLSNextPosGap(data:Dataset, maximumGap:Int): Array[Array[Int]] ={
+  /// FEM
+
+  def getLSNextPosGap(data:Dataset, maximumSpan:Int): Array[Array[Int]] ={
     if (data.rawDatas(0).time.isEmpty) throw new InvalidOperationException("Time dataset is not provided!")
     val lsData = data.rawDatas(0)
+    val seqLen = lsData.data.length
 
-    def getRightPos(sid:Int, item:Int): Int = {
-      val res = lsData.data.lastIndexOf(item, lsData.time.count(_ <= lsData.time(sid) + maximumGap)-1)
+    /**/def getRightPos(sid:Int, item:Int): Int = {
+      val res = lsData.data.lastIndexOf(item, lsData.time.count(_ <= lsData.time(sid) + maximumSpan)-1)
 
       if( res < sid ) -1 else res
     }
-    lsData.data.indices.map( t => (0 until data.nbItem).toArray.map(i => getRightPos(t, i)) ).toArray
+    lsData.data.indices.map( t => (0 until data.nbItem).toArray.map(i => getRightPos(t, i)) ).toArray/**/
+
+    /*val lastPos = Array.fill(seqLen, data.nbItem)(-1)
+    var i = 0
+    while (i < seqLen ) {
+      var j = i
+      while(j < seqLen && lsData.time(j) <= (lsData.time(i) + maximumSpan) ) {
+        lastPos(i)(lsData.data(j)) = j
+        j += 1
+      }
+      i += 1
+    }
+    lastPos*/
   }
 
+  def getLSSupport(data:Dataset) :  Array[Int] = {
+    (0 until (data.nbItem-1) ).map(i => data.rawDatas(0).data.count(_ == (i+1))).toArray
+  }
 
-  def precomputedDatastructures(data: Dataset): (Array[Int], Array[Array[Int]], Array[Array[Int]], Array[Array[Int]]) = {
-    val lastPosMap = getItemLastPosBySequence(data)
-    (getSDBSupport(data),
-      getItemFirstPosBySequence(data),
-      lastPosMap,
-      getSDBLastPos(data, lastPosMap))
+  def getLSFrequentItems(data: Dataset, minsup: Int) : Array[Int] = {
+    getLSSupport(data).zipWithIndex.filter(_._1 >= minsup).map(_._2 + 1)
   }
 
 }

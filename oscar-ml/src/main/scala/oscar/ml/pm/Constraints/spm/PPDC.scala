@@ -48,29 +48,31 @@ class PPDC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
   // precomputed data structures
 
   /**
-   * lastPositionMap: is the last real position of an item in a sequence, if 0 it is not present
-   * s1  s2  s3  s4
-   * a  1   2   1   0
-   * b  4   3   2   1
-   * c  5   4   0   2
-   * d  0   0   0   3
+   * lastPositionMap is the last real position of an item in a sequence, if 0 it is not present
+   * (index from 1)
+   *        a, b, c,
+   * s1: 0, 1, 4, 5, 0
+   * s2: 0, 2, 3, 4, 0
+   * s3: 0, 1, 2, 0, 0
+   * s4: 0, 0, 1, 2, 0
    */
   private[this] val lastPositionMap: Array[Array[Int]] = DatasetUtils.getItemLastPosBySequence(data)
 
   /**
-   * lastPositionList
-   *    p1,p2,p3,p4,p5
-   * s1: 1, 4, 5, 4, 5
-   * s2: 3, 2, 3, 4
-   * s3: 1, 2
-   * s4: 1, 2
+   * lastPositionList is an ordered list of last postions of items in a given sequence
+   * (index from 1)
+   *    p1,p2,p3,
+   * s1: 5, 4, 1
+   * s2: 4, 3, 2
+   * s3: 2, 1
+   * s4: 2, 1
    */
   private[this] val lastPositionList: Array[Array[Int]] = DatasetUtils.getSDBLastPos(data, lastPositionMap)
   //--//TestHelpers.printMat(lastPositionList)
 
   /**
    * itemsSupport: is the initial support (number of sequences where a item is appeared) of all items
-   * a : 3, b : 4, c : 3
+   * (eps.: 4 +:) a : 3, b : 4, c : 3
    */
   private[this] val itemsSupport: Array[Int] = lenSDB +: DatasetUtils.getSDBSupport(data)
 

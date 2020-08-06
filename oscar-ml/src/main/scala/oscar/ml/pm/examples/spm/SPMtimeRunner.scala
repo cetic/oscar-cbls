@@ -17,7 +17,8 @@ object SPMtimeRunner extends App {
                      filename: String = "oscar-ml/src/main/scala/oscar/ml/pm/data/spm/test/input/test.time.spmf",
                      minsup: Double = 0.5,
                      verbose: Boolean = true,
-                     timeLimit: Int = 5
+                     timeLimit: Int = 5,
+                     timeOption: TimeOption = TimeOption(minspan = 0, maxspan = 10, mingap = 3, maxgap = 7)
                    )
 
   printHead()
@@ -39,7 +40,7 @@ object SPMtimeRunner extends App {
     // Posting constraints
     cp.add(P(0) > epsilon)
 
-    val constraint = new PPICt(P, frequency, db, TimeOption(0, maxtime+1, 3, 7))
+    val constraint = new PPICt(P, frequency, db, config.timeOption.copy(maxspan = maxtime+1))
 
     cp.add(constraint)
 

@@ -50,10 +50,12 @@ class PPIC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
 
   /**
    * lastPositionMap is the last real position of an item in a sequence, if 0 it is not present
-   * 0, 1, 4, 5, 0
-   * 0, 2, 3, 4, 0
-   * 0, 1, 2, 0, 0
-   * 0, 0, 1, 2, 0
+   * (index from 1)
+   *        a, b, c,
+   * s1: 0, 1, 4, 5, 0
+   * s2: 0, 2, 3, 4, 0
+   * s3: 0, 1, 2, 0, 0
+   * s4: 0, 0, 1, 2, 0
    */
   private[this] val lastPositionMap: Array[Array[Int]] = DatasetUtils.getItemLastPosBySequence(data)
   //--//TestHelpers.printMat(lastPositionMap)
@@ -61,7 +63,8 @@ class PPIC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
 
   /**
    * lastPositionList is an ordered list of last postions of items in a given sequence
-   *    p1,p2,p3,p4,p5
+   * (index from 1)
+   *    p1,p2,p3,
    * s1: 5, 4, 1
    * s2: 4, 3, 2
    * s3: 2, 1
@@ -72,7 +75,7 @@ class PPIC(val P: Array[CPIntVar], val minsup: Int, val data: Dataset) extends C
 
   /**
    * itemsSupport: is the initial support (number of sequences where a item is appeared) of all items
-   * a : 3, b : 4, c : 3
+   * (eps.: 4 +:) a : 3, b : 4, c : 3
    */
   private[this] val itemsSupport: Array[Int] = lenSDB +: DatasetUtils.getSDBSupport(data)
 

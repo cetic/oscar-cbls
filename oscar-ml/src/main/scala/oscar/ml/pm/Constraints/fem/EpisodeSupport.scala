@@ -36,7 +36,7 @@ import oscar.ml.pm.utils.{Dataset, DatasetUtils}
  *         PART OF SOLVER OSCAR (https://bitbucket.org/oscarlib/oscar/wiki/Home)
  * @param P      , is an episode pattern where $P_i$ is the item in position $i$ in $P$
  * @param data   [Long Sequence], is the sequence that will be mined.
- *               EX : [a b b c a c b]
+ *               EX : [a b c a a b]
  * @param minsup is a threshold support, item must appear in at least minsup sequences $support(item)>=minsup$
  *
  */
@@ -50,9 +50,9 @@ final class EpisodeSupport(val P: Array[CPIntVar], val minsup: Int, val data: Da
 
   /**
    * lastPosOfItem is the last real position of a symbol in a sequence, if 0 it is not present
-   * e.g. : {a : 4, b : 6, c : 5} (index from 0)
+   * e.g. : {a : 4, b : 5, c : 2} (index from 0)
    */
-  val lastPosOfItem: Array[Int] = DatasetUtils.getItemLastPosBySequence(data)(0)
+  val lastPosOfItem: Array[Int] = DatasetUtils.getItemLastPosBySequence(data)(0).map(_ - 1)
 
   idempotent = true
 
