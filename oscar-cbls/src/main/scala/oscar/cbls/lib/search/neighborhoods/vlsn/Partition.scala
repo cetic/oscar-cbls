@@ -35,8 +35,6 @@ class SameSizeRandomPartitions(allNodes:List[Int], override val nbPartition:Int)
       if (currentPartition == 0) currentPartition = nbPartition
       currentPartition = currentPartition - 1
     }
-    println("partitions:" + toReturn.mkString)
-    println("nbPartition:" + nbPartition)
 
     toReturn
   }

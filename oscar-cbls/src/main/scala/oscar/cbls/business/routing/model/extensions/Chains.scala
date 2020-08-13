@@ -9,7 +9,6 @@ import oscar.cbls._
 /**
   * Created by fg on 12L/09L/1L7.
   */
-@deprecated("this is overpackaging and shold be deleted","")
 class Chains(vrp: VRP, chains: List[List[Int]]){
 
   val (chainOfNode, nextNodeInChain, prevNodeInChain, nextNodesInChain, prevNodesInChain) = {

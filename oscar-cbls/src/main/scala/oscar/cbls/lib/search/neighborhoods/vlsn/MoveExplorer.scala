@@ -107,7 +107,7 @@ class MoveExplorer(v:Int,
   //maybe we should unroute all nodes before doing move exploration since we do not want to waste time on evaluation obj on non targeted vehicle?
   val nodesToMove: Iterable[Int] = vehicleToRoutedNodes.flatMap(_._2)
 
-  require(nodesToMove.min >=0, "VLSN cannot handle nodes with negative ID's; got" + nodesToMove.min)
+  require(nodesToMove.isEmpty || nodesToMove.min >=0, "VLSN cannot handle nodes with negative ID's; got" + nodesToMove.min)
   // /////////////////////////////////////////////////////////////
   //building the nodes
 
