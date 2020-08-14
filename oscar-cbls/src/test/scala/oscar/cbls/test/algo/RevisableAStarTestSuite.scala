@@ -163,11 +163,16 @@ class RevisableAStarTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyC
 
     for (nodeFrom <- graph.nodes) {
       for (nodeTo <- graph.nodes){
+        (underApproxDistanceMatrix(nodeFrom.id)(nodeTo.id)) should be (underApproxDistanceMatrix(nodeTo.id)(nodeFrom.id))
 
         val res1 = aStar.search(nodeFrom, nodeTo, openConditions(_) == 1, includePath = true)
         val res2 = aStar.search(nodeTo, nodeFrom, openConditions(_) == 1, includePath = true)
+
         (res1, res2) match {
           case (Distance(_, _, dist1, conditions1, _, path1), Distance(_, _, dist2, conditions2, _, path2)) =>
+            dist1 should be >= underApproxDistanceMatrix(nodeFrom.id)(nodeTo.id)
+            dist2 should be >= underApproxDistanceMatrix(nodeFrom.id)(nodeTo.id)
+
             dist1 should be(dist2)
             if (path1.isDefined) {
 

@@ -117,7 +117,7 @@ class RevisableAStar(graph:ConditionalGraph,
         resetReachedNodes(reachedNodeIDs)
         return toReturn
       }
-      //println("toto3")
+
 
       val currentNode = graph.nodes(currentNodeId)
       val currentNodeDistance = nodeToDistance(currentNodeId)

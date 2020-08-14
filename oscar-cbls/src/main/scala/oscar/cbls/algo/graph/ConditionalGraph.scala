@@ -55,7 +55,7 @@ class ConditionalGraph(val nodes:Array[Node],
   //"C:\Program Files (x86)\Graphviz2.38\bin\neato" -Tpng  vlsnGraph.dot > a.png
   def toDOT:String = {
     s"""##Command to produce the output: "neato -Tpng thisfile > thisfile.png"
-       |graph WiringGraph {
+       |graph ConditionalGraph {
        |${nodes.map(node => node.toDOT).mkString("\t", "\n\t", "\n")}
        |${edges.map(edge => edge.toDOT(this)).mkString("\t", "\n\t", "\n")}
        |  overlap=false
