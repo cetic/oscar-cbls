@@ -2,13 +2,10 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
 import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TransferFunction}
 import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleCapacityConstraint
-import oscar.cbls.business.routing.model.RoutingConventionMethods
-import oscar.cbls.core.ChangingIntValue
 import oscar.cbls.core.search.{Best, Neighborhood, NoMoveNeighborhood}
 import oscar.cbls.lib.search.neighborhoods.vlsn._
 

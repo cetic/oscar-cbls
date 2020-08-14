@@ -53,6 +53,8 @@ object PDPTW_VLSN extends App{
   val vehiclesRouteLength = Array.tabulate(v)(vehicle => CBLSIntVar(m, name = "Route length of vehicle " + vehicle))
   val routeLengthInvariant = new RouteLength(gc,n,v,vehiclesRouteLength,(from: Int, to: Int) => symmetricDistance(from)(to))
 
+  //Time
+
   //Chains
   val precedenceRoute = myVRP.routes.createClone()
 
