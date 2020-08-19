@@ -14,6 +14,7 @@
  ******************************************************************************/
 package oscar.cbls.business.routing.invariants
 
+import oscar.cbls.Domain
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.RoutingConventionMethods

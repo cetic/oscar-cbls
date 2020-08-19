@@ -448,11 +448,10 @@ case class DivideAndConquerSchemeSpec() extends EnrichmentSchemeSpec(){
  *                             this can provide great speedup when facing weakly constrained problems, with many possible moves WRT. strong constraints,
  *                             or when the basic moves are significantly time consuming to explore.
  *                             Check the VLSN object for all possible parameters here.
- *
  *                             a good example is{{{
- *                             CompositeEnrichmentSchemeSpec(
- *                                  SameSizeRandomPartitionsSpec(nbPartitions = 20),
- *                                  LinearRandomSchemeSpec(maxEnrichmentLevel=10))
+ *                             VLSN.compositeEnrichmentSchemeSpec(
+ *                                  VLSN.sameSizeRandomPartitionsSpec(nbPartitions = 20),
+ *                                  VLSN.linearRandomSchemeSpec(maxEnrichmentLevel=10))
  *                             }}}
  *                             THIS IS EXPERIMENTAL
  * @param injectAllCacheBeforeEnriching forces the VLSN to insect all edges cached from one iteration before starting the exploration of the VLSN graph.

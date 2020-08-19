@@ -512,9 +512,9 @@ object PDPTW_VLSN extends App{
       obj,
 
       enrichmentSchemeSpec =
-        CompositeEnrichmentSchemeSpec(
-          SameSizeRandomPartitionsSpec(nbPartitions = 20),
-          LinearRandomSchemeSpec(maxEnrichmentLevel=10)),
+        VLSN.compositeEnrichmentSchemeSpec(
+          VLSN.sameSizeRandomPartitionsSpec(nbPartitions = 20),
+          VLSN.linearRandomSchemeSpec(maxEnrichmentLevel = 10)),
 
       name="VLSN(" + l + ")",
       reoptimizeAtStartUp = true,
