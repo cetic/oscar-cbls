@@ -1,11 +1,10 @@
 package oscar.cbls.lib.search.combinators
 
-import oscar.cbls._
 import oscar.cbls.algo.heap.{BinomialHeap, BinomialHeapWithMove}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search._
 
-
+import scala.annotation.tailrec
 
 /**
   * At each invocation, this combinator explores one of the neighborhoods in l (and repeat if it is exhausted)
@@ -63,9 +62,11 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
   neighborhoodArray.indices.foreach((i : Int) => neighborhoodHeap.insert(i))
 
   private def getBestNeighborhooID:Long = neighborhoodHeap.getFirst
-  private def updateNeighborhodPerformances(neighborhoodID:Int){
+
+  private def updateNeighborhodPerformances(neighborhoodID:Int): Unit ={
     neighborhoodHeap.notifyChange(neighborhoodID)
   }
+
   private def updateTabu(): Unit ={
     it +=1
     while(tabuNeighborhoods.nonEmpty && tabu(tabuNeighborhoods.getFirst) <= it){
@@ -130,7 +131,7 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
   /**
     * prints the profile info for the neighborhoods, for verbosity purposes
     */
-  def printStatus(){
+  def printStatus(): Unit ={
     println(Profile.selectedStatisticInfo(neighborhoodArray))
   }
 }
@@ -167,9 +168,11 @@ abstract class BestNeighborhoodFirstWithRestrictions(l:List[RestrictedNeighborho
   neighborhoodArray.indices.foreach((i : Int) => neighborhoodHeap.insert(i))
 
   private def getBestNeighborhoodID:Long = neighborhoodHeap.getFirst
-  private def updateNeighborhodPerformances(neighborhoodID:Int){
+
+  private def updateNeighborhodPerformances(neighborhoodID:Int): Unit ={
     neighborhoodHeap.notifyChange(neighborhoodID)
   }
+
   private def updateTabus(): Unit ={
     it +=1L
 
@@ -180,7 +183,7 @@ abstract class BestNeighborhoodFirstWithRestrictions(l:List[RestrictedNeighborho
     }
     while(tabuRestrictedNeighborhoods.nonEmpty && tabu(tabuRestrictedNeighborhoods.getFirst) <= it){
       val newNonTabu = tabuRestrictedNeighborhoods.popFirst()
-      //thgere is no reset here because this tabu is noramlly for too efficient neighborhoods that must be slowed down
+      //there is no reset here because this tabu is normally for too efficient neighborhoods that must be slowed down
       neighborhoodHeap.insert(newNonTabu)
     }
   }
@@ -196,7 +199,6 @@ abstract class BestNeighborhoodFirstWithRestrictions(l:List[RestrictedNeighborho
     tabu(neighborhoodID) = it + neighborhoodArray(neighborhoodID)._2
     tabuExhaustedNeighborhoods.insert(neighborhoodID)
   }
-
 
   /**
     * the method that returns a move from the neighborhood.
@@ -261,7 +263,7 @@ abstract class BestNeighborhoodFirstWithRestrictions(l:List[RestrictedNeighborho
   /**
     * prints the profile info for the neighborhoods, for verbosity purposes
     */
-  def printStatus(){
+  def printStatus(): Unit ={
     println(Profile.selectedStatisticInfo(neighborhoodArray.map(_._1)))
   }
 }
@@ -301,7 +303,7 @@ class RoundRobin(l: List[Neighborhood], steps: Long = 1L)
     }
   }
 
-  private def moveToNextRobin() {
+  private def moveToNextRobin(): Unit ={
     if (tail.tail.isEmpty) {
       tail = l
     } else {
@@ -311,7 +313,7 @@ class RoundRobin(l: List[Neighborhood], steps: Long = 1L)
   }
 
   //this resets the internal state of the move combinators
-  override def reset() {
+  override def reset(): Unit ={
     remainingSteps = steps
     tail = l
     super.reset()
@@ -336,8 +338,6 @@ class RoundRobinNoParam(val a: Neighborhood, val b: Neighborhood) {
   def step(s: Long): Neighborhood = new RoundRobin(List(a, b), s)
 }
 
-
-
 /**
   * this combinator randomly tries one neighborhood.
   * it tries the other if the first did not find any move
@@ -349,7 +349,7 @@ class RandomCombinator(a: Neighborhood*) extends NeighborhoodCombinator(a:_*) {
   private val r = new scala.util.Random()
 
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
-    val neighborhoods = r.shuffle(a).toIterator
+    val neighborhoods = r.shuffle(a).iterator
     while (neighborhoods.hasNext) {
       val current = neighborhoods.next
       current.getMove(obj, initialObj, acceptanceCriteria) match {
@@ -484,6 +484,7 @@ class ExhaustAndContinueIfMovesFound(a: Neighborhood, b: Neighborhood) extends N
   var currentIsA = true
   var movesFoundWithCurrent = false
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+    @tailrec
     def search(): SearchResult = {
       val current = if (currentIsA) a else b
       current.getMove(obj, initialObj:Long, acceptanceCriteria) match {
@@ -502,7 +503,7 @@ class ExhaustAndContinueIfMovesFound(a: Neighborhood, b: Neighborhood) extends N
   }
 
   //this resets the internal state of the move combinators
-  override def reset() {
+  override def reset(): Unit ={
     currentIsA = true
     movesFoundWithCurrent = false
     super.reset()

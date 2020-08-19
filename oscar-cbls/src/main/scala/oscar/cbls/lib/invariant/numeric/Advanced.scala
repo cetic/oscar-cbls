@@ -17,15 +17,12 @@
  *     This code has been initially developed by CETIC www.cetic.be
  *         by Renaud De Landtsheer
  ******************************************************************************/
-
 package oscar.cbls.lib.invariant.numeric
 
-import oscar.cbls._
-import oscar.cbls.core._
-import oscar.cbls.core.computation.DomainRange
+import oscar.cbls.core.computation.{Bulked, CBLSIntVar, ChangingIntValue, ChangingSetValue, Domain, DomainHelper, DomainRange, IntInvariant, IntNotificationTarget, IntValue, SetNotificationTarget, SetValue, Store, VaryingDependencies}
+import oscar.cbls.core.propagation.{Checker, ErrorChecker, KeyForElementRemoval}
 
 import scala.collection.immutable.SortedSet
-
 
 /** sum(i in cond) vars(i)
   * @param vars is an array of IntVars
@@ -48,7 +45,7 @@ case class SumConstants(vars: Array[Long], cond: SetValue)
     * this will be called for each invariant after propagation is performed.
     * It requires that the Model is instantiated with the variable debug set to true.
     */
-  override def checkInternals(c: Checker){
+  override def checkInternals(c: Checker): Unit ={
     c.check(this.value == cond.value.foldLeft(0L)((acc, i) => acc + vars(i)),
       Some("output.value == cond.value.foldLeft(0L)((acc, i) => acc + vars(i).value)"))
   }
@@ -68,7 +65,7 @@ case class SumElements(vars: Array[IntValue], cond: SetValue)
   with IntNotificationTarget
   with SetNotificationTarget{
 
-  assert(vars.size > 0L, "Invariant SumElements declared with zero vars to max")
+  assert(vars.length > 0L, "Invariant SumElements declared with zero vars to max")
   assert(cond != null, "cond cannot be null for SumElements")
 
   val keyForRemoval: Array[KeyForElementRemoval] =  Array.fill(vars.length) {null}
@@ -84,7 +81,7 @@ case class SumElements(vars: Array[IntValue], cond: SetValue)
   finishInitialization()
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long): Unit = {
     //it is always a listened one, but we could check this here
     assert(vars(index)==v)
     assert(keyForRemoval(index)!=null)
@@ -97,7 +94,7 @@ case class SumElements(vars: Array[IntValue], cond: SetValue)
   }
 
   @inline
-  def notifyInsertOn(v: ChangingSetValue, value: Int) {
+  def notifyInsertOn(v: ChangingSetValue, value: Int): Unit = {
     assert(v == cond)
     assert(keyForRemoval(value) == null)
     keyForRemoval(value) = registerDynamicDependency(vars(value),value)
@@ -106,7 +103,7 @@ case class SumElements(vars: Array[IntValue], cond: SetValue)
   }
 
   @inline
-  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
+  def notifyDeleteOn(v: ChangingSetValue, value: Int): Unit = {
     assert(v == cond)
     assert(keyForRemoval(value) != null)
     keyForRemoval(value).performRemove()
@@ -115,12 +112,11 @@ case class SumElements(vars: Array[IntValue], cond: SetValue)
     this :-= vars(value).value
   }
 
-  override def checkInternals(c:Checker) {
+  override def checkInternals(c:Checker): Unit = {
     c.check(this.value == cond.value.foldLeft(0L)((acc, i) => acc + vars(i).value),
         Some("output.value == cond.value.foldLeft(0L)((acc, i) => acc + vars(i).value)"))
   }
 }
-
 
 /** sum(i in cond) vars(i)
   * @param vars is an array of IntVars
@@ -139,7 +135,7 @@ case class ProdConstants(vars: Array[Long], cond: SetValue)
   affectOutput()
 
   @inline
-  private def affectOutput(){
+  private def affectOutput(): Unit ={
     if (NullVarCount == 0L){
       this := NonNullProd
     }else{
@@ -153,7 +149,7 @@ case class ProdConstants(vars: Array[Long], cond: SetValue)
   }
 
   @inline
-  def notifyInsertOn(v: ChangingSetValue, value: Int) {
+  def notifyInsertOn(v: ChangingSetValue, value: Int): Unit = {
     assert(v == cond)
 
     if(vars(value) == 0L){
@@ -165,8 +161,7 @@ case class ProdConstants(vars: Array[Long], cond: SetValue)
   }
 
   @inline
-  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
-
+  def notifyDeleteOn(v: ChangingSetValue, value: Int): Unit = {
     if(vars(value) == 0L){
       NullVarCount -= 1
     }else{
@@ -175,14 +170,11 @@ case class ProdConstants(vars: Array[Long], cond: SetValue)
     affectOutput()
   }
 
-  override def checkInternals(c:Checker) {
+  override def checkInternals(c:Checker): Unit = {
     c.check(this.value == cond.value.foldLeft(1L)((acc, i) => acc * vars(i)),
-      Some("output.value (" + this.value
-        + ") == cond.value.foldLeft(1L)((acc, i) => acc * vars(i).value) ("
-        + cond.value.foldLeft(1L)((acc, i) => acc * vars(i)) + ")"))
+      Some(s"output.value (${this.value}) == cond.value.foldLeft(1L)((acc, i) => acc * vars(i).value) (${cond.value.foldLeft(1L)((acc, i) => acc * vars(i))})"))
   }
 }
-
 
 /** prod(i in cond) vars(i)
  * This invariant might modify vars array by cloning some variables to ensure that each variable only appears once.
@@ -216,7 +208,7 @@ case class ProdElements(vars: Array[IntValue], cond: SetValue)
   affectOutput()
 
   @inline
-  private def affectOutput(){
+  private def affectOutput(): Unit ={
     if (NullVarCount == 0L){
       this := NonNullProd
     }else{
@@ -225,7 +217,7 @@ case class ProdElements(vars: Array[IntValue], cond: SetValue)
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long): Unit ={
     //it is always a listened one, but we could check this here
     assert(vars(index) == v)
     assert(keyForRemoval(index)!=null)
@@ -248,7 +240,7 @@ case class ProdElements(vars: Array[IntValue], cond: SetValue)
   }
 
   @inline
-  def notifyInsertOn(v: ChangingSetValue, value: Int) {
+  def notifyInsertOn(v: ChangingSetValue, value: Int): Unit = {
     assert(v == cond)
     assert(keyForRemoval(value) == null)
     keyForRemoval(value) = registerDynamicDependency(vars(value),value)
@@ -262,7 +254,7 @@ case class ProdElements(vars: Array[IntValue], cond: SetValue)
   }
 
   @inline
-  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
+  def notifyDeleteOn(v: ChangingSetValue, value: Int): Unit = {
     assert(v == cond)
     assert(keyForRemoval(value) != null)
 
@@ -277,11 +269,9 @@ case class ProdElements(vars: Array[IntValue], cond: SetValue)
     affectOutput()
   }
 
-  override def checkInternals(c:Checker) {
+  override def checkInternals(c:Checker): Unit = {
     c.check(this.value == cond.value.foldLeft(1L)((acc, i) => acc * vars(i).value),
-        Some("output.value (" + this.value
-            + ") == cond.value.foldLeft(1L)((acc, i) => acc * vars(i).value) ("
-            + cond.value.foldLeft(1L)((acc, i) => acc * vars(i).value) + ")"))
+        Some(s"output.value (${this.value}) == cond.value.foldLeft(1L)((acc, i) => acc * vars(i).value) (${cond.value.foldLeft(1L)((acc, i) => acc * vars(i).value)})"))
   }
 }
 
@@ -290,7 +280,7 @@ case class ProdElements(vars: Array[IntValue], cond: SetValue)
   * @param vars
   * @param costs
   * @param capacity1
-  * @param capacity2
+
   */
 
 case class CostOfPackInTwoBins(vars : Array[IntValue],costs : Array[(Long,Long)],capacity1 : Long) extends IntInvariant
@@ -312,7 +302,6 @@ case class CostOfPackInTwoBins(vars : Array[IntValue],costs : Array[(Long,Long)]
 
   private var elementInBin1FIFO = Nil
   private var elementInBin2LIFO = Nil
-
 
   private var occupiedSpaceInBin1 = 0L
   private var occupiedSpaceInBin2 = 0L
@@ -363,7 +352,6 @@ case class CostOfPackInTwoBins(vars : Array[IntValue],costs : Array[(Long,Long)]
     }
   }
 
-
   private def processChanges(elementToProcess : List[ElementToProcess]) : Long = {
     elementToProcess match {
       case Nil => 0
@@ -394,7 +382,6 @@ case class CostOfPackInTwoBins(vars : Array[IntValue],costs : Array[(Long,Long)]
           binOfElement(h.index) = 0
           processChanges(t)
         }
-
     }
   }
 
@@ -411,27 +398,24 @@ case class CostOfPackInTwoBins(vars : Array[IntValue],costs : Array[(Long,Long)]
   }
 
   override def checkInternals(c: Checker): Unit = {
-
     val occupationBin1FromScratch = occupationBin1.fold(0L)(_ + _)
     val occupationBin2FromScratch = occupationBin2.fold(0L)(_ + _)
 
-    require(occupiedSpaceInBin2 == occupationBin2.fold(0L)(_ + _),"Occupation Bin 2 wrong : From scratch " + occupationBin2FromScratch + " saved : " + occupiedSpaceInBin2)
-    require(occupiedSpaceInBin1 == occupationBin1.fold(0L)(_ + _),"Occupation Bin 2 wrong : From scratch " + occupationBin1FromScratch + " saved : " + occupiedSpaceInBin1)
+    require(occupiedSpaceInBin2 == occupationBin2.fold(0L)(_ + _), s"Occupation Bin 2 wrong : From scratch $occupationBin2FromScratch saved : $occupiedSpaceInBin2")
+    require(occupiedSpaceInBin1 == occupationBin1.fold(0L)(_ + _), s"Occupation Bin 2 wrong : From scratch $occupationBin1FromScratch saved : $occupiedSpaceInBin1")
 
-    for (i <- 0 until vars.length) {
+    for (i <- vars.indices) {
       if (occupationBin1(i) == 0){
         if (occupationBin2(i) == 0)
-          require(binOfElement(i) == 0,"Element " + vars(i) + " is neither in bin1 nor in bin2 but binOfElement is bin" + binOfElement(i))
+          require(binOfElement(i) == 0, s"Element ${vars(i)} is neither in bin1 nor in bin2 but binOfElement is bin${binOfElement(i)}")
         else
-          require(binOfElement(i) == 2,"Element " + vars(i) + " is in bin2 but binOfElement is bin" + binOfElement(i))
+          require(binOfElement(i) == 2, s"Element ${vars(i)} is in bin2 but binOfElement is bin${binOfElement(i)}")
       } else {
         if (occupationBin2(i) == 0)
-          require(binOfElement(i) == 1,"Element " + vars(i) + " is in bin1 but binOfElement is bin" + binOfElement(i))
+          require(binOfElement(i) == 1, s"Element ${vars(i)} is in bin1 but binOfElement is bin${binOfElement(i)}")
         else
-          require(binOfElement(i) == 3,"Element " + vars(i) + " is in bin1 and in bin2 but binOfElement is bin" + binOfElement(i))
-
+          require(binOfElement(i) == 3, s"Element ${vars(i)} is in bin1 and in bin2 but binOfElement is bin${binOfElement(i)}")
       }
-
     }
 
     def computeFromScratch(index : Int) : Long = {
@@ -441,7 +425,7 @@ case class CostOfPackInTwoBins(vars : Array[IntValue],costs : Array[(Long,Long)]
       }
     }
     val fromScratch = computeFromScratch(vars.length - 1)
-    require(fromScratch == this.value,"Cost Incremental : " + this.value + " -- From Scratch : " + fromScratch)
+    require(fromScratch == this.value, s"Cost Incremental : ${this.value} -- From Scratch : $fromScratch")
   }
 
 }
@@ -451,11 +435,9 @@ case class ElementToProcess(costBin1 : Long,
                             index : Int,
                             size : IntValue)
 
-
 object testCostOfBinPacking extends App{
-  val m = new Store(checker = Some(new ErrorChecker()))
+  val m = Store(checker = Some(ErrorChecker()))
   //val m = new Store()
-
 
   val domain = DomainRange(0,Long.MaxValue)
 
@@ -472,10 +454,7 @@ object testCostOfBinPacking extends App{
   println(binPack.occupationBin1.mkString(";"))
   println(binPack.occupationBin2.mkString(";"))
 
-
   production(1) := 3
-
-
 
   println(binPack.value)
   println(binPack.occupationBin1.mkString(";"))
@@ -491,7 +470,6 @@ object testCostOfBinPacking extends App{
 
   production(2) := 1
 
-
   println(binPack.value)
   println(binPack.occupationBin1.mkString(";"))
   println(binPack.occupationBin2.mkString(";"))
@@ -502,6 +480,5 @@ object testCostOfBinPacking extends App{
   println(binPack.value)
   println(binPack.occupationBin1.mkString(";"))
   println(binPack.occupationBin2.mkString(";"))
-
 
 }

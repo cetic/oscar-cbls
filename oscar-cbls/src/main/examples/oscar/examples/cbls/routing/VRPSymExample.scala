@@ -17,6 +17,9 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
+import oscar.cbls.business.routing.model.helpers.DistanceHelper
+import oscar.cbls.core.computation.Store
+import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{Best, First}
 
 class SimpleVRPSymModelWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Array[Long]],m:Store, maxPivot:Int)

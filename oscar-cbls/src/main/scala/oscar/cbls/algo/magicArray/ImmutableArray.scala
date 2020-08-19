@@ -1,5 +1,3 @@
-package oscar.cbls.algo.magicArray
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,11 +12,11 @@ package oscar.cbls.algo.magicArray
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.algo.magicArray
 
 import oscar.cbls.algo.rb.RedBlackTreeMap
 
 import scala.reflect.ClassTag
-import scala.util.Random
 
 object ImmutableArray{
   def createFromBaseArrayNeverModified[T:ClassTag](baseValueNeverModified:Array[T]):ImmutableArray[T] = {
@@ -38,7 +36,7 @@ class ImmutableArray[T:ClassTag](baseValueNeverModified:Array[T],
                         updates:RedBlackTreeMap[T]) extends Iterable[T]{
   def apply(id: Int): T =
     if(id >= size) throw new ArrayIndexOutOfBoundsException
-    else updates.getOrElse(id,baseValueNeverModified(id))
+    else updates.getOrElse(id, baseValueNeverModified(id))
 
   def update(id: Int, value: T, fast: Boolean): ImmutableArray[T] = {
     val tmp = if(id == size) new ImmutableArray[T](baseValueNeverModified,size+1,updates.insert(id,value))

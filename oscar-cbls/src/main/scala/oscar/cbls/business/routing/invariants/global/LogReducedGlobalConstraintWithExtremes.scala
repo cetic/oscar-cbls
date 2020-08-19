@@ -2,8 +2,6 @@ package oscar.cbls.business.routing.invariants.global
 
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
-import oscar.cbls.core.ChangingSeqValue
-import oscar.cbls._
 
 abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest, @specialized(Int, Long, Boolean) U:Manifest](gc: GlobalConstraintCore, n: Int, v: Int)
   extends LogReducedGlobalConstraint[T, U](gc,n,v){
@@ -16,12 +14,11 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest, @specialized(I
                                   var fromStart:T = null.asInstanceOf[T],
                                   var toEnd:T = null.asInstanceOf[T]){
     override def toString: String = {
-      "NodeAndExtremePreComputes(node:" + node + " fromStart:" + fromStart + " toEnd:" + toEnd + ")"
+      s"NodeAndExtremePreComputes(node:$node fromStart:$fromStart toEnd:$toEnd)"
     }
   }
 
   private val vehicleToExtremePrecomputes:Array[Array[NodeAndExtremePreComputes]] = Array.fill(v)(null)
-
 
   private def identifyNodesAndAllocateExtremePrecomputes(e:Option[IntSequenceExplorer],
                                                          vehicle:Int,positionInVehicleRoute:Int,

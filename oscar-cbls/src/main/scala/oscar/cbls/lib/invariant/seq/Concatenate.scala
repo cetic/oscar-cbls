@@ -1,9 +1,3 @@
-package oscar.cbls.lib.invariant.seq
-
-import oscar.cbls._
-import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.core._
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +12,11 @@ import oscar.cbls.core._
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.lib.invariant.seq
 
+import oscar.cbls.algo.seq.IntSequence
+import oscar.cbls.core.computation.{CBLSSeqConst, ChangingSeqValue, SeqCheckpointedValueStack, SeqInvariant, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint, SeqValue}
+import oscar.cbls.core.propagation.Checker
 
 /**
  * helper object for concatenation invariant between sequences of integers
@@ -113,11 +111,10 @@ class Concatenate(a:ChangingSeqValue,b:ChangingSeqValue,maxPivotPerValuePercent:
   }
 
   override def checkInternals(c : Checker) : Unit = {
-    c.check((a.value.toList ++ b.value.toList) equals this.value.toList,Some("a.value.toList:" + a.value.toList + " b.value.toList:" + b.value.toList + " should== this.value.toList" + this.value.toList))
+    c.check((a.value.toList ++ b.value.toList) equals this.value.toList,
+      Some(s"a.value.toList:${a.value.toList} b.value.toList:${b.value.toList} should== this.value.toList${this.value.toList}"))
   }
 }
-
-
 
 class ConcatenateFirstConstant(a:List[Int],b:ChangingSeqValue,maxPivotPerValuePercent: Int, maxHistorySize:Int)
   extends SeqInvariant(IntSequence(a ++ b.value), math.max(a.max,b.max), maxPivotPerValuePercent, maxHistorySize)
@@ -179,11 +176,9 @@ class ConcatenateFirstConstant(a:List[Int],b:ChangingSeqValue,maxPivotPerValuePe
 
   override def checkInternals(c : Checker) : Unit = {
     c.check((a ++ b.value.toList) equals this.value.toList,
-      Some("a.value.toList:" + a + " b.value.toList:" +
-        b.value.toList + " should== this.value.toList" + this.value.toList))
+      Some(s"a.value.toList:$a b.value.toList:${b.value.toList} should== this.value.toList${this.value.toList}"))
   }
 }
-
 
 class ConcatenateSecondConstant(a:ChangingSeqValue,b:List[Int],maxPivotPerValuePercent: Int, maxHistorySize:Int)
   extends SeqInvariant(IntSequence(a.value ++ b), math.max(a.max,b.max), maxPivotPerValuePercent, maxHistorySize)
@@ -241,6 +236,7 @@ class ConcatenateSecondConstant(a:ChangingSeqValue,b:List[Int],maxPivotPerValueP
   }
 
   override def checkInternals(c : Checker) : Unit = {
-    c.check((a.value.toList ++ b) equals this.value.toList,Some("a.value.toList:" + a.value.toList + " b.value.toList:" + b + " should== this.value.toList" + this.value.toList))
+    c.check((a.value.toList ++ b) equals this.value.toList,
+      Some(s"a.value.toList:${a.value.toList} b.value.toList:$b should== this.value.toList${this.value.toList}"))
   }
 }

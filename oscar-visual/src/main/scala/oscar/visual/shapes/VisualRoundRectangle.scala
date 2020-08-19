@@ -6,16 +6,16 @@ import oscar.visual.VisualDrawing
 class VisualRoundRectangle(d: VisualDrawing, s: RoundRectangle2D.Double) extends VisualShape(d) {
 
   type S = RoundRectangle2D.Double
-  protected val shape = s
+  protected val shape: RoundRectangle2D.Double = s
   
-  def x: Double = shape.getX()
-  def y: Double = shape.getY()
+  def x: Double = shape.getX
+  def y: Double = shape.getY
   
-  def width: Double = shape.getWidth()
-  def height: Double = shape.getHeight()
+  def width: Double = shape.getWidth
+  def height: Double = shape.getHeight
   
-  def arcWidth: Double = shape.getArcWidth()
-  def arcHeight: Double = shape.getArcHeight()
+  def arcWidth: Double = shape.getArcWidth
+  def arcHeight: Double = shape.getArcHeight
   
   def arcWidth_= (w: Double): Unit = { 
     shape.setRoundRect(x, y, width, height, w, arcHeight)
@@ -27,7 +27,7 @@ class VisualRoundRectangle(d: VisualDrawing, s: RoundRectangle2D.Double) extends
     drawing.repaint()
   }
   
-  def move(x: Double, y: Double) {
+  def move(x: Double, y: Double): Unit = {
     shape.setRoundRect(x, y, width, height, arcWidth, arcHeight)
   }
 }

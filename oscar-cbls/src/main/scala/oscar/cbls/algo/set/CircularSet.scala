@@ -19,7 +19,6 @@
   *           Gaël Thouvenin
  ******************************************************************************/
 
-
 package oscar.cbls.algo.set
 
 import scala.collection.Iterator
@@ -82,7 +81,7 @@ class CircularIntSet(val maxsize:Int) extends scala.collection.mutable.SortedSet
   this
   }
 
-  private def insertAfter(elem:Int, newElem:Int){
+  private def insertAfter(elem:Int, newElem:Int): Unit ={
     val elemAfter:Int = next(elem)
     next(elem) = newElem
     next(newElem) = elemAfter
@@ -151,7 +150,7 @@ class CircularIntSet(val maxsize:Int) extends scala.collection.mutable.SortedSet
 }
 
 class CircularIntSetIterator(handle:Int, on:CircularIntSet) extends Iterator[Int]{
-  var current = handle
+  var current: Int = handle
   var initposition:Boolean = true
 
   def hasNext: Boolean = on.size > 0 & ( initposition || current != handle )
@@ -162,4 +161,3 @@ class CircularIntSetIterator(handle:Int, on:CircularIntSet) extends Iterator[Int
     on.prev(current)
   }
 }
-

@@ -1,6 +1,3 @@
-package oscar.cbls.business.geometry.invariants
-
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -15,6 +12,7 @@ package oscar.cbls.business.geometry.invariants
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.business.geometry.invariants
 
 import org.locationtech.jts.geom.Point
 import org.locationtech.jts.geom.util.AffineTransformation
@@ -134,7 +132,7 @@ class Apply(store:Store,a:AtomicValue[AffineTransformationValue],b:AtomicValue[G
       }
     }) with GeometryNotificationTarget with AffineTransformNotificationTarget {
 
-  setName(a + "(" + b + ")")
+  setName(s"$a($b)")
 
   this.registerStaticAndDynamicDependency(a)
   this.registerStaticAndDynamicDependency(b)
@@ -176,7 +174,3 @@ class Apply(store:Store,a:AtomicValue[AffineTransformationValue],b:AtomicValue[G
     }
   }
 }
-
-
-
-

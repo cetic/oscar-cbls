@@ -15,11 +15,9 @@
 
 package oscar.cbls.lib.search.neighborhoods
 
-import oscar.cbls._
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.core.computation.{CBLSIntVar, Variable}
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, Move}
-
 
 /**
   * This neighborhood searches for moves of the form
@@ -79,14 +77,14 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
   var factor1:Long = 1L
   var factor2:Long = 1L
 
-  override def exploreNeighborhood(initialObj: Long){
+  override def exploreNeighborhood(initialObj: Long): Unit ={
 
     val firstIterationSchemeZone =
       if (searchZone1 == null) {
         if (hotRestart) {
           if (firstVarIndice >= vars.length) firstVarIndice = 0
-          HotRestart(0 until vars.length, firstVarIndice)
-        } else 0 until vars.length
+          HotRestart(vars.indices, firstVarIndice)
+        } else vars.indices
       } else if (hotRestart) HotRestart(searchZone1(), firstVarIndice) else searchZone1()
 
     val searchZone2ForThisSearch = if (searchZone2 == null) null else searchZone2()
@@ -100,7 +98,7 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
       firstVar = vars(firstVarIndice)
       oldValOfFirstVar = firstVar.newValueInt
 
-      val secondIterationSchemeZone = if (searchZone2ForThisSearch == null) 0 until vars.length else searchZone2ForThisSearch(firstVarIndice,oldValOfFirstVar)
+      val secondIterationSchemeZone = if (searchZone2ForThisSearch == null) vars.indices else searchZone2ForThisSearch(firstVarIndice,oldValOfFirstVar)
       val searchZoneForDeltaL2 = searchZoneForDeltaL1(firstVarIndice,oldValOfFirstVar)
 
       val (jIterator,notifyFound2) = selectSecondVariableBehavior.toIterator(secondIterationSchemeZone)
@@ -161,7 +159,6 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
     secondVar = null
   }
 
-
   override def instantiateCurrentMove(newObj: Long) =
     TransferMove(
       firstVar, oldValOfFirstVar, firstVarIndice,
@@ -193,13 +190,13 @@ case class TransferMove(firstVar:CBLSIntVar, oldValOfFirstVar:Long, firstVarIndi
   val newValOfFirstVar = oldValOfFirstVar + delta
   val newValOfSecondVar = oldValOfSecondVar - ((delta * factor2) / factor1)
 
-  override def commit() {
+  override def commit(): Unit = {
     firstVar := newValOfFirstVar
     secondVar := newValOfSecondVar
   }
 
   override def toString: String  = {
-    neighborhoodNameToString + "Transfer(" + firstVar + " := " +newValOfFirstVar + " "  + secondVar + ":=" + newValOfSecondVar + objToString + ")"
+    s"${neighborhoodNameToString}Transfer($firstVar := $newValOfFirstVar $secondVar:=$newValOfSecondVar$objToString)"
   }
 
   override def touchedVariables: List[Variable] = List(firstVar,secondVar)

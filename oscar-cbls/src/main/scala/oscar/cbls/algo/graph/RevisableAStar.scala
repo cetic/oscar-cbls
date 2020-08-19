@@ -117,7 +117,7 @@ class RevisableAStar(graph:ConditionalGraph,
         resetReachedNodes(reachedNodeIDs)
         return toReturn
       }
-      //println("toto3")
+
 
       val currentNode = graph.nodes(currentNodeId)
       val currentNodeDistance = nodeToDistance(currentNodeId)
@@ -154,7 +154,7 @@ class RevisableAStar(graph:ConditionalGraph,
                 toDevelopHeap.insert(otherNodeID)
               }
             }else{
-              // transit is not allowed, so we'v already updated the distance,
+              // transit is not allowed, so we've already updated the distance,
               // ensure the node is to be cleaned upon next call.
               // the only node where this is relevant is the target node.
               if(oldDistance == Long.MaxValue) {
@@ -174,7 +174,6 @@ class RevisableAStar(graph:ConditionalGraph,
     throw new Error("should not be reached")
   }
 
-
   private def pruneReachedClosedConditions(reachedClosedConditions:SortedSet[Int],to:Int,distance:Long):SortedSet[Int] = {
     reachedClosedConditions.filter((conditionID:Int) => {
       val edge = graph.conditionToConditionalEdges(conditionID)
@@ -189,7 +188,6 @@ class RevisableAStar(graph:ConditionalGraph,
       minDistance + edge.length + underApproximatingDistance(farNodeID,to) <= distance
     })
   }
-
 
   private def resetReachedNodes(reachedNodes:QList[Int]): Unit ={
     var remainingNodeIDs = reachedNodes
@@ -316,6 +314,3 @@ class RevisableAStar(graph:ConditionalGraph,
     toReturn
   }
 }
-
-
-

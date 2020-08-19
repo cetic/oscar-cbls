@@ -3,10 +3,8 @@ package oscar.cbls.business.geometry.invariants
 import org.locationtech.jts.algorithm.distance.{DistanceToPoint, PointPairDistance}
 import org.locationtech.jts.geom.prep.PreparedGeometryFactory
 import oscar.cbls.business.geometry.algo.MaxDistance
-import oscar.cbls.business.geometry.model.{CBLSGeometryConst, CBLSGeometryVar, GeometryNotificationTarget, GeometryValue}
-import oscar.cbls.core.IntInvariant
-import oscar.cbls.core.computation.{AtomicValue, ChangingAtomicValue}
-import oscar.cbls.lib.search.combinators.Atomic
+import oscar.cbls.business.geometry.model.{GeometryNotificationTarget, GeometryValue}
+import oscar.cbls.core.computation.{AtomicValue, ChangingAtomicValue, IntInvariant}
 
 /**
   *
@@ -64,6 +62,3 @@ class StrictInclusion(innerShape:AtomicValue[GeometryValue], outerShape:AtomicVa
     }
   }
 }
-
-
-

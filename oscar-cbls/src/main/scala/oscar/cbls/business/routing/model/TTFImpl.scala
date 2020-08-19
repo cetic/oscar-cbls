@@ -1,5 +1,3 @@
-package oscar.cbls.business.routing.model
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,9 +12,7 @@ package oscar.cbls.business.routing.model
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
-
-import oscar.cbls._
+package oscar.cbls.business.routing.model
 
 abstract class TravelTimeFunction {
   def getTravelDuration(from: Int, leaveTime: Int, to: Int): Int
@@ -40,7 +36,7 @@ class TTFMatrix(nodeCount: Int, defaultTTF: PrimitiveTravelTimeFunction) extends
 
   private val matrix: Array[Array[PrimitiveTravelTimeFunction]] = Array.fill(nodeCount, nodeCount)(defaultTTF)
 
-  def setTTF(from: Int, to: Int, ttf: PrimitiveTravelTimeFunction) {
+  def setTTF(from: Int, to: Int, ttf: PrimitiveTravelTimeFunction): Unit = {
     matrix(from)(to) = ttf
   }
 
@@ -101,8 +97,8 @@ abstract class PrimitiveTravelTimeFunction {
   */
 class TTFConst(travelDuration: Int) extends PrimitiveTravelTimeFunction {
 
-  override def toString() = {
-    "TTFConst(" + travelDuration + ")"
+  override def toString: String = {
+    s"TTFConst($travelDuration)"
   }
 
   override def getTravelDuration(leaveTime: Int): Int = travelDuration
@@ -132,17 +128,17 @@ class TTFHistogram(val nbSlots: Int, val overallDuration: Int) extends Primitive
   private var min: Int = 0
   private var max: Int = 0
 
-  override def toString() = {
-    "TTFHistogram(nbSlots " + nbSlots + ", " + { var strSlots = ""; for (slot <- slots) { strSlots += slot + "; " }; strSlots } + ")"
+  override def toString: String = {
+    s"TTFHistogram(nbSlots $nbSlots, ${ var strSlots = ""; for (slot <- slots) { strSlots += slot + "; " }; strSlots })"
   }
 
-  def setTravelDurationAtSlot(slotNumber: Int, duration: Int) {
+  def setTravelDurationAtSlot(slotNumber: Int, duration: Int): Unit = {
     slots(slotNumber) = duration
     nimMaxAccurate = false
   }
   def getTravelDurationAtSlot(slotNumber: Int): Int = slots(rectifySlot(slotNumber))
 
-  private def updateMinMax() {
+  private def updateMinMax(): Unit = {
     if (!nimMaxAccurate) {
       nimMaxAccurate = true
       min = Int.MaxValue
@@ -229,7 +225,7 @@ class TTFSegments(val NbPoints: Int, val overallDuration: Int) extends Primitive
   private var max: Int = 0
 
   /**throws an error if the X is smaller than the predecessor's X, or if the slope is too steep*/
-  def setPoint(pointNr: Int, pointX: Int, pointY: Int) {
+  def setPoint(pointNr: Int, pointX: Int, pointY: Int): Unit = {
     this.pointX(pointNr) = pointX
     this.pointY(pointNr) = pointY
     nimMaxAccurate = false
@@ -260,7 +256,7 @@ class TTFSegments(val NbPoints: Int, val overallDuration: Int) extends Primitive
     (pointX(rectifiedPoint) + shifting, pointY(rectifiedPoint))
   }
 
-  private def updateMinMax() {
+  private def updateMinMax(): Unit = {
     if (!nimMaxAccurate) {
       nimMaxAccurate = true
       min = Int.MaxValue
@@ -362,11 +358,10 @@ class TTFSegments(val NbPoints: Int, val overallDuration: Int) extends Primitive
     ((Y + p * Y1 - X1) / (p + 1.0)).toFloat
   }
 
-  override def toString = ("TTFSegments(NbPoints: " + NbPoints + " overallDuration: " + overallDuration + " points: ["
-    + ((0 until NbPoints) map (i => "(" + pointX(i) + ";" + pointY(i) + ")") mkString ",") + "])")
-
+  override def toString: String = s"TTFSegments(NbPoints: $NbPoints overallDuration: $overallDuration points: [${(0 until NbPoints) map (i => "(" + pointX(i) + ";" + pointY(i) + ")") mkString ","}])"
 }
-
+//TODO Move these tests
+/*
 object TTFTest extends App {
 
   val t = new TTFSegments(7, 24 * 60)
@@ -386,6 +381,7 @@ object TTFTest extends App {
   }
   println("min: " + t.getMinTravelDuration + " max: " + t.getMaxTravelDuration)
 }
+
 object TTFHistoTest extends App{
   val t = new TTFHistogram(7, 24*60)
 
@@ -403,3 +399,4 @@ object TTFHistoTest extends App{
     println(i + "\t" + t.getTravelDuration(i) + "\t" + t.getBackwardTravelDuration(t.getTravelDuration(i) + i))
   }
 }
+*/

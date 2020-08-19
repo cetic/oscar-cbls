@@ -1,12 +1,13 @@
 package oscar.cbls.lib.search.combinators
 
 import oscar.cbls._
-import oscar.cbls.core.search._
+import oscar.cbls.core.computation.{AbstractVariable, Snapshot, Store}
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.core.search.{CallBackMove, CompositeMove, DoNothingNeighborhood, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult, SupportForAndThenChaining}
 
 abstract class NeighborhoodCombinatorNoProfile(a: Neighborhood*) extends NeighborhoodCombinator(a:_*){
   override def collectProfilingStatistics: List[Array[String]] = List.empty
-  override def resetStatistics(){}
-
+  override def resetStatistics(): Unit ={}
 }
 
 object Mu {
@@ -98,7 +99,7 @@ object Mu {
 case class AndThen[FirstMoveType<:Move](a: Neighborhood with SupportForAndThenChaining[FirstMoveType],
                                         b: Neighborhood,
                                         maximalIntermediaryDegradation: Long = Long.MaxValue)
-  extends DynAndThen[FirstMoveType](a,(_) => b, maximalIntermediaryDegradation){
+  extends DynAndThen[FirstMoveType](a, _ => b, maximalIntermediaryDegradation){
 }
 
 /**
@@ -155,7 +156,7 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
 
       override def detailedString(short: Boolean, indent: Long = 0L): String = nSpace(indent) + "AndThenInstrumentedObjective(initialObjective:" + obj.detailedString(short) + ")"
 
-      override def model = obj.model
+      override def model: Store = obj.model
 
       override def value: Long = {
 
@@ -214,7 +215,7 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
         val moveFromB = s.instantiateCurrentMove(Long.MaxValue)
         val moveFromA = a.instantiateCurrentMove(Long.MaxValue)
         CompositeMove(List(moveFromA,moveFromB),newObj,"DynAndThen(" + moveFromA + "," + moveFromB + ")")
-      case _ => throw new Error("DynAndThen: Neighborhood on the right cannot be chained")
+      case _ => throw new Error("DynAndThen: You are willing to use a DynAndThen 'a' as a left-hand side of another DynAndThen 'b'. This is ok, but the neighborhood on the right of the DynAndThen 'a' should support chaining, and it does not")
     }
   }
 }
@@ -267,7 +268,7 @@ case class Filter[MoveType<:Move](a:Neighborhood with SupportForAndThenChaining[
       override def detailedString(short: Boolean, indent: Long = 0L): String =
         obj.detailedString(short: Boolean, indent)
 
-      override def model = obj.model
+      override def model: Store = obj.model
 
       override def value: Long = {
         if(filter(a.instantiateCurrentMove(Long.MaxValue))){
@@ -323,7 +324,7 @@ case class Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAccept
     if(allMoves.isEmpty){
       NoMoveFound
     } else {
-      CompositeMove(allMoves,endObj,"Atomic(" + a + ")")
+      CompositeMove(allMoves,endObj, s"Atomic($a)")
     }
   }
 

@@ -1,16 +1,12 @@
-package oscar.cbls.constraints.lib.global
+package oscar.cbls.lib.constraint
 
 import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.Constraint
 import oscar.cbls.core.propagation.Checker
 import oscar.cbls.lib.invariant.minmax.MaxArray
 import oscar.cbls.lib.invariant.numeric.MinusOffsetPos
-import oscar.cbls._
 
 case class CumulativeSparse(start: Array[IntValue], duration: Array[IntValue], amount:Array[IntValue], limit:IntValue) extends Invariant with Constraint with ShortIntNotificationTarget{
-  
-  
-  
   for (v <- start.indices) registerStaticAndDynamicDependency(start(v), v)
   for (v <- duration.indices) registerStaticAndDynamicDependency(duration(v), v)
   for (v <- amount.indices) registerStaticAndDynamicDependency(amount(v), v)
@@ -38,7 +34,7 @@ case class CumulativeSparse(start: Array[IntValue], duration: Array[IntValue], a
   override def violation(v: Value): IntValue = Violation
   
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int): Unit = {
     if (start(index) == v) {
       //start
       profile.remove(OldVal, duration(index).valueInt, amount(index).valueInt)
@@ -60,7 +56,7 @@ case class CumulativeSparse(start: Array[IntValue], duration: Array[IntValue], a
     //println(violation)
   }
   
-  override def checkInternals(c: Checker) {c.check(false, Some("TODO: Implement checkinternal for CumulativeSparse"))}
+  override def checkInternals(c: Checker): Unit = {c.check(false, Some("TODO: Implement checkinternal for CumulativeSparse"))}
 }
 
 class Profile(n: Int,maxh: Int,model:Store){
@@ -84,7 +80,7 @@ class Profile(n: Int,maxh: Int,model:Store){
     println(max)
     max
   }
-  def print_profile(check: Boolean = true){
+  def print_profile(check: Boolean = true): Unit ={
     var s = ""
     var l = ""
     var h = ""
@@ -109,7 +105,7 @@ class Profile(n: Int,maxh: Int,model:Store){
 	    }
     }
   }
-  def remove(s: Int, d: Int, h: Int){
+  def remove(s: Int, d: Int, h: Int): Unit ={
 //    println("Before removing "+(s,d,h))
 //    print_profile()
     if(h==0L || d==0) return
@@ -179,7 +175,7 @@ class Profile(n: Int,maxh: Int,model:Store){
   }
   
   def insert(s: Int, d: Int, h: Int): Long = {
-    println("Before inserting "+(s,d,h))
+    println(s"Before inserting ${(s,d,h)}")
     print_profile()
     if(h==0L || d==0L) return -1L
     var cur = 0
@@ -187,7 +183,6 @@ class Profile(n: Int,maxh: Int,model:Store){
     var cs = s//current start
     
     while(profile_next(cur)!= -1 && cs >= profile_start(profile_next(cur)) ) cur = profile_next(cur)
-    
     
     //var next = profile_next(cur)
     var next_h = profile_height(cur).newValue
@@ -251,7 +246,7 @@ class Profile(n: Int,maxh: Int,model:Store){
       profile_next(cur) = new_prof
       profile_prev(new_prof) = cur
     }
-    println("After inserting "+(s,d,h))
+    println(s"After inserting ${(s,d,h)}")
     print_profile()
     res
   }

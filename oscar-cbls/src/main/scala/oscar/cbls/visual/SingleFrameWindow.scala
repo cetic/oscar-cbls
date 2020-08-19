@@ -12,7 +12,7 @@ object SingleFrameWindow{
     new SingleFrameWindow(panel:JPanel,title:String,width,height,backgroundPanel)
   }
 
-  def showFrame(frame:JFrame,title:String,width:Int = 960,height:Int = 960) = {
+  def showFrame(frame:JFrame,title:String,width:Int = 960,height:Int = 960): Unit = {
     frame.setTitle(title)
     frame.setLayout(new BorderLayout())
     frame.setPreferredSize(new java.awt.Dimension(width,height))

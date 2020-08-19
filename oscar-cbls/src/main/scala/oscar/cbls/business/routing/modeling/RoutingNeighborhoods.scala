@@ -12,7 +12,6 @@
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
 package oscar.cbls.business.routing.modeling
 
 import oscar.cbls.business.routing.model.VRP
@@ -20,7 +19,7 @@ import oscar.cbls.business.routing.neighborhood._
 import oscar.cbls.core.search.{Best, First, LoopBehavior}
 
 /**
- * Created by rdl on 11L-09L-1L7.
+ * Created by rdl on 11-09-17.
  */
 trait RoutingNeighborhoods
   extends InsertPointAPI
@@ -111,7 +110,6 @@ trait InsertPointAPI{
       hotRestartOnNextSymmetryClass,
       positionIndependentMoves)
 }
-
 
 trait OnePointMoveAPI{
 

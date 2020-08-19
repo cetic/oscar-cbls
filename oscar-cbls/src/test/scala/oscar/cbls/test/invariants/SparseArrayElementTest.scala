@@ -15,12 +15,12 @@ package oscar.cbls.test.invariants
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+import org.scalatest.funsuite.AnyFunSuite
 import oscar.cbls.test.invariants.bench._
-import org.scalatest.FunSuite
 import oscar.cbls._
 import oscar.cbls.lib.invariant.logic._
 
-class SparseArrayElementTest extends FunSuite {
+class SparseArrayElementTest extends AnyFunSuite {
 
   val verbose = 2
 
@@ -74,7 +74,7 @@ class SparseArrayElementTest extends FunSuite {
 
     def valueValue = scala.util.Random.nextInt(maxValue)
 
-    for (i <- (0 until nbTest)) {
+    for (_ <- 0 until nbTest) {
       val m = new Store()
       val indexAndValues : Array[(IntValue,IntValue)] = Array.tabulate(inSize)(i => (CBLSIntVar(m,indexValue,Domain(-1,outSize),"In index " + i),CBLSIntVar(m,valueValue,Domain(0,maxValue),"In Value " + i)))
       val index = CBLSIntVar(m,indexValue,Domain(0,outSize),"index")
@@ -86,7 +86,7 @@ class SparseArrayElementTest extends FunSuite {
 
       val element = SparseArrayIntElement(indexAndValues,index,m)
 
-      if (indexAndValues.filter(_._1.value == index.value).isEmpty)
+      if (!indexAndValues.exists(_._1.value == index.value))
         assert(element.value == Long.MaxValue,indexAndValuesString + indexString + "if the index is not in the sparse array index, it shall be the default value (Currently " + element.value + ")")
       else {
         assert(indexAndValues.filter(_._1.value == index.value).map(_._2.value).contains(element.value),indexAndValuesString + indexString + "The value shall be one of the value associated to the index")
@@ -102,7 +102,7 @@ class SparseArrayElementTest extends FunSuite {
 
     val maxTest = 1000
 
-    for (v <- (0 until maxTest)){
+    for (_ <- 0 until maxTest){
       val listOfPossibleMoves = List(PlusOne(),MinusOne(),ToZero(),ToMax(),ToMin(),Random(),RandomDiff(),MultipleMove(),Shuffle())
 
       val bench = new InvBench(verbose,listOfPossibleMoves)
@@ -113,13 +113,13 @@ class SparseArrayElementTest extends FunSuite {
       val valueVars = bench.genIntVars(inSize,0 to maxValue)
       val index = bench.genIntVar(0 to arraySize)
 
-      val m = indexVars(0).model
+      val m = indexVars.head.model
 
       val indexAndValues : Array[(IntValue,IntValue)] = Array.tabulate(inSize)(i => (indexVars(i),valueVars(i)))
 
       // println(indexAndValues.mkString(";"))
 
-      val aMaker = SparseArrayIntElement(indexAndValues,index,m)
+      // val aMaker = SparseArrayIntElement(indexAndValues,index,m)
 
       // println(index)
 

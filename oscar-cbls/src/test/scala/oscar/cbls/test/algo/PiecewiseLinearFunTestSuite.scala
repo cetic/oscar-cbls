@@ -15,11 +15,12 @@ package oscar.cbls.test.algo
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.algo.fun.{IdentityNaive, LinearTransform, PiecewiseLinearFun, PiecewiseLinearFunNaive}
 
-class PiecewiseLinearFunTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matchers {
+class PiecewiseLinearFunTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
   val maxVal = 100
   var fnFun = new PiecewiseLinearFun()
   var fnNaive:PiecewiseLinearFunNaive = IdentityNaive

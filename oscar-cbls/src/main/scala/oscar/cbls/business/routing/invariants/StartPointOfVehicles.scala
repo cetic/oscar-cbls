@@ -2,8 +2,8 @@ package oscar.cbls.business.routing.invariants
 
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.VehicleLocation
-import oscar.cbls.core._
-import oscar.cbls._
+import oscar.cbls.core.computation.{ChangingSeqValue, Invariant, SeqCheckpointedValueStack, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint}
+import oscar.cbls.core.propagation.Checker
 
 /**
  * This invariant has no output, only a method to get the vehicle reaching a given position, and a method to get the stat point of a vehicle
@@ -71,7 +71,7 @@ class StartPointOfVehicles(routes:ChangingSeqValue,
     }
   }
 
-  override def checkInternals(c : Checker){
+  override def checkInternals(c : Checker): Unit ={
     currentVehicleLocation.checkOnSequence(routes.value)
   }
 }

@@ -19,9 +19,9 @@
  ******************************************************************************/
 package oscar.cbls.business
 
-import oscar.cbls.Store
 import oscar.cbls.business.scheduling.model.Resource
 import oscar.cbls.business.scheduling.modeling.SchedulingInvariants
+import oscar.cbls.core.computation.Store
 
 package object scheduling extends SchedulingInvariants {
   type ActivityId = Int

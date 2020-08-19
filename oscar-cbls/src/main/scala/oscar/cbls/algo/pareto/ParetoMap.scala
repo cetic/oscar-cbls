@@ -35,7 +35,6 @@ object ParetoOrder extends Enumeration {
     }
   }
 
-
   def compare1(a:Long,b:Long):ParetoOrder = {
     if (a == b) Equal
     else if (a < b) Dominates
@@ -54,9 +53,9 @@ object ParetoOrder extends Enumeration {
     soFar
   }
 }
+
 import ParetoOrder._
 import oscar.cbls.algo.quick.QList
-
 
 /**
  * this stores a set of pareto points, and for each pareto point, and additional value of type T.
@@ -138,7 +137,7 @@ abstract class ParetoMap[T](n:Int) {
 class ListParetoMap[T](n:Int)
   extends ParetoMap[T](n) {
 
-  var elements: QList[(Array[Long], T)] = null
+  var elements: QList[(Array[Long], T)] = _
 
   override def content: QList[(Array[Long], T)] = elements
 
@@ -176,7 +175,6 @@ class ListParetoMap[T](n:Int)
   override def size: Int = QList.size(elements)
 }
 
-
 object TestParetoList extends App{
 
   val a:Array[Long] = Array(-1,0,0)
@@ -185,7 +183,7 @@ object TestParetoList extends App{
 
   val l = new ListParetoMap[Array[Long]](3)
 
-  def mInsert(x:Array[Long]){
+  def mInsert(x:Array[Long]): Unit = {
     println()
     println("inserting " + x.mkString(","))
     println("inserted:" + l.insert(x,x))

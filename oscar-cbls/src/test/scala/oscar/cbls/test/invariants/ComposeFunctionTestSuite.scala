@@ -1,12 +1,14 @@
 package oscar.cbls.test.invariants
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+
 
 /**
   * This object's purpose is to test composition function for the TimeWindows Constraint.
   * It won't be on the official release.
   */
-class ComposeFunctionTestSuite extends FunSuite with Matchers {
+class ComposeFunctionTestSuite extends AnyFunSuite with Matchers {
 
   test("Batch tests on TransferFunction (keep expected values)"){
     val earliestArrivalTimes = Array(6, 13)
@@ -103,7 +105,7 @@ class ComposeFunctionTestSuite extends FunSuite with Matchers {
 
     // Generate the TransferFunction and testing
     for(permutation <- permutations if permutation.toSet.size == permutation.length){
-      val it = permutation.toIterator
+      val it = permutation.iterator
       val e1 = it.next()
       val d1 = it.next()
       val l1 = it.next()
@@ -120,10 +122,10 @@ class ComposeFunctionTestSuite extends FunSuite with Matchers {
   }
 
   // This method tests the composition function with linearly generated transfer functions
-  private def easyMethodWithEqualities() {
+  private def easyMethodWithEqualities(): Unit = {
     val n = 10
 
-    val timeMatrix = Array.tabulate(n)(x => Array.tabulate(n)(y => 10))
+    val timeMatrix = Array.tabulate(n)(_ => Array.tabulate(n)(_ => 10))
     val earliestArrivalTimes = Array.tabulate(n)(x => 100 + 20 * x)
     val latestArrivalTimes = Array.tabulate(n)(x => 200 + 20 * x)
 

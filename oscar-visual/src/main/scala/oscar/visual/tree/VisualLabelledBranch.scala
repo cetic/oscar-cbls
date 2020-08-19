@@ -28,8 +28,8 @@ class VisualLabelledBranch(d: VisualDrawing, shapes: (VisualLine, VisualLine, Vi
   private val dist = 4
   def branch: (VisualLine, VisualLine, VisualLine, VisualText) = shapes
   
-  def this(d: VisualDrawing, xorig: Double, yorig: Double, xdest: Double, ydest: Double, label: String) {
-	this(d, (new VisualLine(d, new Line2D.Double(xorig, yorig, xorig, (ydest + 2 * yorig) / 3)),
+  def this(d: VisualDrawing, xorig: Double, yorig: Double, xdest: Double, ydest: Double, label: String) = {
+    this(d, (new VisualLine(d, new Line2D.Double(xorig, yorig, xorig, (ydest + 2 * yorig) / 3)),
 	    new VisualLine(d, new Line2D.Double(xorig, (ydest + 2 * yorig) / 3, xdest, (ydest + 2 * yorig) / 3)),
 	    new VisualLine(d, new Line2D.Double(xdest, (ydest + 2 * yorig) / 3, xdest, ydest)),
 	    new VisualText(d, (4 + xdest).toInt, (d.getFontMetrics(d.getFont).getHeight / 2 + (ydest + 2 * (ydest + 2 * yorig) / 3) / 3).toInt, label)))
@@ -37,9 +37,8 @@ class VisualLabelledBranch(d: VisualDrawing, shapes: (VisualLine, VisualLine, Vi
   
   /**
 	* Moves to the specified coordinates
-	* @param x
 	*/
-  def move(xorig: Double, yorig: Double, xdest: Double, ydest: Double) {
+  def move(xorig: Double, yorig: Double, xdest: Double, ydest: Double): Unit = {
     branch._1.orig_=(xorig, yorig)
     branch._1.dest_=(xorig, (ydest + 2 * yorig) / 3)
     branch._2.orig_=(xorig, (ydest + 2 * yorig) / 3)
@@ -53,18 +52,18 @@ class VisualLabelledBranch(d: VisualDrawing, shapes: (VisualLine, VisualLine, Vi
     * X coordinates of bottom left corner
 	* @return
 	*/
-  def xText = (dist + branch._3.orig._1).toInt
+  def xText: Int = (dist + branch._3.orig._1).toInt
   
   /**
 	* Y coordinates of bottom left corner
 	* @return
 	*/
-  def yText = (d.getFontMetrics(d.getFont).getHeight / 2 + (branch._3.dest._2 + 2 * branch._3.orig._2) / 3).toInt
+  def yText: Int = (d.getFontMetrics(d.getFont).getHeight / 2 + (branch._3.dest._2 + 2 * branch._3.orig._2) / 3).toInt
 }
 
 object VisualLabelledBranch {
   	
-  def main(args : Array[String]) {
+  def main(args : Array[String]): Unit = {
     val f = VisualFrame("toto")
     val d = VisualDrawing(flipped=false)
     val inf = f.createFrame("Drawing")

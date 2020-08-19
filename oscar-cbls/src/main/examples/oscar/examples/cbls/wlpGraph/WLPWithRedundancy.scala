@@ -1,9 +1,10 @@
-package oscar.examples.cbls
+package oscar.examples.cbls.wlpGraph
 
 import oscar.cbls._
 import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, DijkstraDistanceMatrix}
 import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.core.computation.ChangingIntValue
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingIntValue, SetValue, Store}
+import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.invariant.graph.KVoronoiZones
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.set.Cardinality

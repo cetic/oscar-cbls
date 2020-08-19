@@ -1,11 +1,10 @@
 package oscar.cbls.business.routing.modeling
 
-import oscar.cbls._
-import oscar.cbls.core._
 import oscar.cbls.business.routing.invariants._
+import oscar.cbls.core.computation.{CBLSIntVar, CBLSSetVar, ChangingSeqValue}
 
 /**
- * Created by rdl on 11L-09L-1L7.
+ * Created by rdl on 11-09-17.
  */
 trait RoutingInvariants {
 
@@ -147,6 +146,4 @@ trait RoutingInvariants {
     */
   def routingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) =
     RoutingConventionConstraint(routes, n, v)
-
-
 }

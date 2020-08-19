@@ -1,9 +1,10 @@
 package oscar.cbls.test.graph
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, FloydWarshall, Node}
 
-class FloydWarshallTestSuite extends FunSuite with Matchers{
+class FloydWarshallTestSuite extends AnyFunSuite with Matchers {
 
   test("diagonal of matrix from Floyd Warshall should be 0"){
     val nbNodes = 10
@@ -35,7 +36,7 @@ class FloydWarshallTestSuite extends FunSuite with Matchers{
 
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
     for(i <- underApproxDistanceMatrix.indices){
-      for(j <- underApproxDistanceMatrix.indices){
+      for(j <- underApproxDistanceMatrix(i).indices){
         if(i != j){
           underApproxDistanceMatrix(i)(j) should not be 0
         }
@@ -65,8 +66,9 @@ class FloydWarshallTestSuite extends FunSuite with Matchers{
 
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
     for(i <- 0 until underApproxDistanceMatrix.length-1){
-
-      underApproxDistanceMatrix(i)(last) should be(Long.MaxValue)
+      val minIL = i min last
+      val maxIL = i max last
+      underApproxDistanceMatrix(maxIL)(minIL) should be(Long.MaxValue)
     }
   }
 }

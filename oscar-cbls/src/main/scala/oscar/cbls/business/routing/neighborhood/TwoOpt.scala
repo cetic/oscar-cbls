@@ -21,13 +21,11 @@
  *     Refactored with respect to the new architecture by Yoann Guyot.
  * ****************************************************************************
  */
-
 package oscar.cbls.business.routing.neighborhood
 
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.{VRP, VehicleLocation}
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
-import oscar.cbls._
 
 /**
  * Removes two edges of routes, and rebuilds routes from the segments.
@@ -50,7 +48,7 @@ case class TwoOpt(segmentStartValues:()=>Iterable[Int],
   val v = vrp.v
   val seq = vrp.routes
 
-  def doMove(fromPositionIncluded:Int,toPositionIncluded:Int) {
+  def doMove(fromPositionIncluded:Int,toPositionIncluded:Int): Unit ={
     seq.flip(fromPositionIncluded,toPositionIncluded)
   }
 
@@ -58,9 +56,8 @@ case class TwoOpt(segmentStartValues:()=>Iterable[Int],
   var segmentEndPositionForInstantiate:Int = -1
   var segmentStartValue = -1
 
-  override def instantiateCurrentMove(newObj: Long) =
+  override def instantiateCurrentMove(newObj: Long): TwoOptMove =
     TwoOptMove(segmentStartPositionForInstantiate, segmentEndPositionForInstantiate, newObj, this, vrp, neighborhoodName)
-
 
   //the indice to start with for the exploration
   var startIndice: Int = 0
@@ -138,7 +135,6 @@ case class TwoOpt(segmentStartValues:()=>Iterable[Int],
   }
 }
 
-
 /**
  * Models a two-opt-move operator of a given VRP problem.
  * @param objAfter the objective value if we performed this two-opt-move operator.
@@ -157,11 +153,10 @@ case class TwoOptMove(segmentStartPosition:Int,
 
   override def impactedPoints: Iterable[Int] = vrp.routes.value.valuesBetweenPositionsQList(segmentStartPosition,segmentEndPosition)
 
-  override def commit() {
+  override def commit(): Unit = {
     neighborhood.doMove(segmentStartPosition, segmentEndPosition)
   }
 
-  override def toString: String = (neighborhoodNameToString + "TwoOpt(segmentStartPosition:"
-    + segmentStartPosition
-    + "; segmentEndPosition:" + segmentEndPosition + objToString + ")")
+  override def toString: String =
+    s"${neighborhoodNameToString}TwoOpt(segmentStartPosition:$segmentStartPosition; segmentEndPosition:$segmentEndPosition$objToString)"
 }

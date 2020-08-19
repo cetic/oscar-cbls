@@ -14,15 +14,10 @@
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  * ****************************************************************************
  */
-
 package oscar.cbls.lib.invariant.logic
 
-import oscar.cbls.Domain
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.Checker
-import oscar.cbls.lib.invariant.minmax.{Miax, MiaxArray}
-
-import scala.collection.immutable.SortedSet
 
 /**
   * And(vars)
@@ -46,16 +41,15 @@ case class And(vars: Iterable[IntValue])
   for (v <- vars) registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
     this :+= NewVal - OldVal
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
     c.check(this.value == vars.foldLeft(0L)((acc, intvar) => acc + intvar.value),
       Some("output.value == vars.foldLeft(0L)((acc,intvar) => acc+intvar.value)"))
   }
 }
-
 
 /**
   * Or(vars)
@@ -70,27 +64,6 @@ case class And(vars: Iterable[IntValue])
   * @param vars is an iterable of IntVars representing booleans that are true iff 0L, otherwise false.
   * @author gustav.bjordal@it.uu.se
   */
-/*
-case class Or(vars: Array[IntValue]) extends MiaxArray(vars, null, vars.foldLeft(0L)((acc,intvar) => Math.min(acc, intvar.max))) {
-
-  override def Ord(v: IntValue): Long = v.value
-
-  override def ExtremumName: String = "Or"
-
-  //More precise bounds
-  override def performBulkComputation(bulkedVar: Array[IntValue]) =
-      (bulkedVar.foldLeft(Long.MaxValue)((acc, intvar) => Math.min(intvar.min, acc)),
-        bulkedVar.foldLeft(Long.MaxValue)((acc, intvar) =>Math.min(intvar.max, acc)))
-
-  override def checkInternals(c: Checker) {
-    for (v <- this.vars) {
-      c.check(this.value <= v.value,
-              Some("this.value (" + this.value + ") <= " + v.name + ".value (" + v.value + ")"))
-    }
-  }
-}
-*/
-
 case class Or(vars: Array[IntValue])
   extends IntInvariant(
     if(vars.exists(_.value == 0L)) { 0L } else { vars.foldLeft(0L)((a: Long, b: IntValue) => a + b.value)/vars.length },
@@ -100,7 +73,7 @@ case class Or(vars: Array[IntValue])
   for (v <- vars) registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
     if(vars.exists(_.value == 0L)) {
       this := 0L
     }else{
@@ -108,12 +81,11 @@ case class Or(vars: Array[IntValue])
     }
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
     c.check(this.value == vars.foldLeft(0L)((acc, intvar) => acc + intvar.value),
       Some("output.value == vars.foldLeft(0L)((acc,intvar) => acc+intvar.value)"))
   }
 }
-
 
 /**
   * bool2int(var)
@@ -132,11 +104,10 @@ case class Bool2Int(v: IntValue)
   registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
     this := (if(NewVal == 0L) 1L else 0L)
   }
 }
-
 
 /**
   * boolLE(a,b)
@@ -156,7 +127,7 @@ case class BoolLEInv(a: IntValue, b:IntValue)
   registerStaticAndDynamicDependency(b)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
     this :=
       (if(v == a){
         if(NewVal > 0L && b.value == 0L){
@@ -192,7 +163,7 @@ case class BoolLTInv(a: IntValue, b:IntValue)
   registerStaticAndDynamicDependency(b)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
     this :=
       (if(v == a){
         if(NewVal == 0L && b.value>0L)
@@ -228,7 +199,7 @@ case class XOR(a: IntValue, b:IntValue)
   registerStaticAndDynamicDependency(b)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
     if((NewVal > 0L && OldVal == 0L) || (NewVal == 0L && OldVal > 0L)){
       if(this.value > 0L){
         this := 0L
@@ -260,7 +231,7 @@ case class XORArray(vars: Array[IntValue])
   registerStaticAndDynamicDependencyArrayIndex(vars)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
     if((NewVal > 0L && OldVal == 0L) || (NewVal == 0L && OldVal > 0L)){
       if(this.value > 0L){
         this := 0L
@@ -296,7 +267,7 @@ case class Not(a: IntValue)
   registerStaticAndDynamicDependency(a)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
     this := (if(NewVal > 0L) 0L else 1L)
   }
 }

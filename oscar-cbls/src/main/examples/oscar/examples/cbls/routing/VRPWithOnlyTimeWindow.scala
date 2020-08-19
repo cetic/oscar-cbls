@@ -4,7 +4,8 @@ import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
 import oscar.cbls.business.routing.invariants.timeWindow.{DefinedTransferFunction, NaiveTimeWindowConstraint, TimeWindowConstraint, TimeWindowConstraintWithLogReduction, TransferFunction}
-import oscar.cbls.core.computation.FullRange
+import oscar.cbls.business.routing.model.helpers.DistanceHelper
+import oscar.cbls.core.computation.{CBLSIntVar, Domain, FullRange, Store}
 import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.{Best, First}
 

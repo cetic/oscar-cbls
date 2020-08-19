@@ -14,7 +14,6 @@
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  * ****************************************************************************
  */
-
 package oscar.cbls.core.search
 
 import scala.language.reflectiveCalls
@@ -92,7 +91,7 @@ case class First(maxNeighbors:() => Long = () => Long.MaxValue, randomized:Boole
       }
     }
 
-    def notifyFound(){
+    def notifyFound(): Unit ={
       iterable.foundMove = true
     }
 
@@ -114,7 +113,8 @@ case class Best(maxNeighbors:() => Long = () => Long.MaxValue) extends LoopBehav
       }
     }
 
-    def notifyFound(){}
+    def notifyFound(): Unit = {}
+
     (iterable,notifyFound _)
   }
 }

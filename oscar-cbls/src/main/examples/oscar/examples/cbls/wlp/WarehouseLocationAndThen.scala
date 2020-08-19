@@ -16,11 +16,12 @@ package oscar.examples.cbls.wlp
   ******************************************************************************/
 
 import oscar.cbls._
+import oscar.cbls.core.computation.{CBLSIntVar, Store}
+import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.minmax.MinConstArray
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.search.neighborhoods.{AssignNeighborhood, RandomizeNeighborhood}
-
 
 import scala.language.postfixOps
 

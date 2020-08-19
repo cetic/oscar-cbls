@@ -19,6 +19,7 @@ package oscar.cbls.visual
 
 import java.awt.Color
 
+import scala.annotation.tailrec
 import scala.util.Random
 
 /**
@@ -48,7 +49,8 @@ object ColorGenerator {
     * @param exp the current base value
     * @return 
     */
-  def getMaxColorNumber(number:Int,exp:Int = 1):Int = {
+  @tailrec
+  def getMaxColorNumber(number:Int, exp:Int = 1):Int = {
     if(Math.pow(exp,3) < number)
       getMaxColorNumber(number,exp+1)
     else

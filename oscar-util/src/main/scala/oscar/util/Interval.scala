@@ -28,9 +28,9 @@ class Interval(minimum: Double, maximum: Double) {
     throw new IllegalArgumentException("The minimum of the interval should be lower or equal to the maximum.")
 
   /** The lower bound of the interval */
-  val min = minimum
+  val min: Double = minimum
   /** The upper bound of the interval */
-  val max = maximum
+  val max: Double = maximum
 
   /** Returns the width of the interval.
     * 

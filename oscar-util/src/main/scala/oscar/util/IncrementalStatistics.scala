@@ -25,14 +25,14 @@ class IncrementalStatistics {
   private[this] var  s2 = 0.0 // maintain sum_i xi^2
   private[this] var vari = 0.0 // maintain sum_i (xi-s/n)^2
   
-  def reset() {
+  def reset(): Unit = {
     n = 0
     s = 0
     s2 = 0
     vari = 0
   }
   
-  def addPoint(x: Double) {
+  def addPoint(x: Double): Unit = {
     s += x
     n += 1
     if (n >= 1) {
@@ -45,7 +45,6 @@ class IncrementalStatistics {
   
   def average: Double = sum/n
   
-  def variance = vari/n;
-  
+  def variance: Double = vari/n
 
 }

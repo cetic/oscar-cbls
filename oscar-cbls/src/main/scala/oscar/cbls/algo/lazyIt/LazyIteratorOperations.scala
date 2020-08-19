@@ -1,5 +1,3 @@
-package oscar.cbls.algo.lazyIt
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,7 +12,7 @@ package oscar.cbls.algo.lazyIt
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
+package oscar.cbls.algo.lazyIt
 
 class NextIterator[T](base:Iterator[T]) extends Iterator[T]{
   var nextToReturn:T = null.asInstanceOf[T]
@@ -31,7 +29,7 @@ class NextIterator[T](base:Iterator[T]) extends Iterator[T]{
     }
   }
 
-  def pushBack(t:T){
+  def pushBack(t:T): Unit ={
     require(!anyNextToReturn,"can only push back one element")
     anyNextToReturn = true
     nextToReturn = t

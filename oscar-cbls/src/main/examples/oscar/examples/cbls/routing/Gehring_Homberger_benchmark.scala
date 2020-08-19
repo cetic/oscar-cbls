@@ -7,7 +7,11 @@ import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.WeightedNodesPerVehicle
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
 import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TransferFunction}
+import oscar.cbls.business.routing.model.helpers.DistanceHelper
 import oscar.cbls.business.routing.neighborhood.{InsertPointUnroutedFirst, RemovePoint}
+import oscar.cbls.core.computation.{CBLSIntVar, Domain, Store}
+import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.Best
 
 import scala.io.Source
@@ -73,7 +77,7 @@ object Gehring_Homberger_benchmark extends App {
 }
 
 class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Long, distanceMatrix: Array[Array[Long]], singleNodeTransferFunctions: Array[TransferFunction], demands: Array[Long]){
-  val m = new Store(noCycle = false)
+  val m = Store(noCycle = false)
   val myVRP = new VRP(m,n,v)
   val penaltyForUnrouted = 1000000
   val penaltyForMovingVehicle = 10000
@@ -100,7 +104,7 @@ class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Long, distanceMatrix:
   val weightedNodesConstraint = WeightedNodesPerVehicle(gc, n, v, nodeWeight, weightPerVehicle)
   // This invariant maintains the capacity violation of each vehicle (le means lesser or equals)
   val vehicleCapacityViolation = Array.tabulate(v)(vehicle => weightPerVehicle(vehicle) le c)
-  val constraintSystem = new ConstraintSystem(m)
+  val constraintSystem = ConstraintSystem(m)
   vehicleCapacityViolation.foreach(constraintSystem.post(_))
 
   //Constraints & objective

@@ -1,8 +1,8 @@
 package oscar.cbls.business.routing.invariants.global
 
-import oscar.cbls.CBLSIntVar
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
+import oscar.cbls.core.computation.CBLSIntVar
 
 case class PreComputedDistances(distanceFromStart:Long,
                                 distanceToStart:Long)
@@ -17,7 +17,6 @@ class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:
   for(outputVariable <- vehicleToRouteLength)outputVariable.setDefiningInvariant(gc)
 
   override def performPreCompute(vehicle: Int, routes: IntSequence): Unit = {
-
     var previousNode = vehicle
     var prevPreComputedValue =PreComputedDistances(0,0)
     preComputedVals(vehicle) = prevPreComputedValue
@@ -47,7 +46,6 @@ class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:
           true
         }
     }){}
-
   }
 
   override def computeVehicleValue(vehicle: Int,
@@ -86,7 +84,6 @@ class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:
   override def assignVehicleValue(vehicle: Int, value: Long): Unit = {
     vehicleToRouteLength(vehicle) := value
   }
-
 
   override def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Long = {
     var previousNode = vehicle

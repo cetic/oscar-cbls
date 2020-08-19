@@ -1,5 +1,3 @@
-package oscar.cbls.business.routing.neighborhood
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,8 +12,8 @@ package oscar.cbls.business.routing.neighborhood
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.business.routing.neighborhood
 
-import oscar.cbls._
 import oscar.cbls.algo.search.{HotRestart, Pairs}
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
@@ -32,7 +30,7 @@ import scala.collection.immutable.SortedSet
  * @param hotRestart
  * @param tryFlip if false, will not flip any segment (maybe you do not want flipping if using time windows?)
  */
-case class SegmentExchange(val vrp: VRP,
+case class SegmentExchange(vrp: VRP,
                            relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
                            vehicles:() => Iterable[Int],
                            neighborhoodName:String = "SegmentExchange",
@@ -60,7 +58,7 @@ case class SegmentExchange(val vrp: VRP,
 
   val n = vrp.n
 
-  override def exploreNeighborhood(initialObj: Long){
+  override def exploreNeighborhood(initialObj: Long): Unit ={
 
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
 
@@ -135,7 +133,6 @@ case class SegmentExchange(val vrp: VRP,
               for ((relevantFirstNode, _, relevantFirstPos) <- relevantNeighborsForFirstNodeNodeVPos) {
                 for ((relevantSecondNode, _, relevantSecondPos) <- relevantNeighborsForSecondNodeNodeVPos) {
 
-
                   val isReversedFromFirstSecondNodesSecondSegment =
                     if (relevantFirstPos < relevantSecondPos) {
                       secondSegmentStartPosition = relevantFirstPos + 1
@@ -185,7 +182,7 @@ case class SegmentExchange(val vrp: VRP,
   }
 
   def doMove(firstSegmentStartPosition:Int, firstSegmentEndPosition:Int, flipFirstSegment:Boolean,
-             secondSegmentStartPosition: Int, secondSegmentEndPosition: Int, flipSecondSegment:Boolean){
+             secondSegmentStartPosition: Int, secondSegmentEndPosition: Int, flipSecondSegment:Boolean): Unit ={
     seq.swapSegments(firstSegmentStartPosition,
       firstSegmentEndPosition,
       flipFirstSegment,
@@ -194,8 +191,6 @@ case class SegmentExchange(val vrp: VRP,
       flipSecondSegment)
   }
 }
-
-
 
 /**
   * This neighborhood try to exchange segments of route.
@@ -242,7 +237,6 @@ case class SegmentExchangeOnSegments(vrp: VRP,
   val v = vrp.v
 
   val seq = vrp.routes
-
 
   override def exploreNeighborhood(initialObj: Long): Unit = {
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
@@ -313,7 +307,7 @@ case class SegmentExchangeOnSegments(vrp: VRP,
   }
 
   def doMove(firstSegmentStartPosition:Int, firstSegmentEndPosition:Int, flipFirstSegment: Boolean,
-             secondSegmentStartPosition: Int, secondSegmentEndPosition: Int, flipSecondSegment: Boolean){
+             secondSegmentStartPosition: Int, secondSegmentEndPosition: Int, flipSecondSegment: Boolean): Unit ={
     seq.swapSegments(firstSegmentStartPosition,
       firstSegmentEndPosition,
       flipFirstSegment,
@@ -337,15 +331,14 @@ case class SegmentExchangeOnSegmentsMove(firstSegmentStartPosition:Int,
     neighborhood.vrp.routes.value.valuesBetweenPositionsQList(firstSegmentStartPosition,firstSegmentEndPosition) ++
       neighborhood.vrp.routes.value.valuesBetweenPositionsQList(secondSegmentStartPosition,secondSegmentEndPosition)
 
-  override def commit() {
+  override def commit(): Unit = {
     neighborhood.doMove(
       firstSegmentStartPosition,firstSegmentEndPosition, flipFirstSegment,
       secondSegmentStartPosition, secondSegmentEndPosition, flipSecondSegment)
   }
 
   override def toString: String = {
-    neighborhoodNameToString + "SegmentExchange(firstSegmentStartPosition:" + firstSegmentStartPosition + " firstSegmentEndPosition:" + firstSegmentEndPosition + " flipFirstSegment:" + flipFirstSegment +
-      " secondSegmentStartPosition:" + secondSegmentStartPosition + " secondSegmentEndPosition:" + secondSegmentEndPosition + " flipSecondSegment:" + flipSecondSegment + objToString + ")"
+    s"${neighborhoodNameToString}SegmentExchange(firstSegmentStartPosition:firstSegmentStartPosition firstSegmentEndPosition:$firstSegmentEndPosition flipFirstSegment:$flipFirstSegment secondSegmentStartPosition:$secondSegmentStartPosition secondSegmentEndPosition:$secondSegmentEndPosition flipSecondSegment:$flipSecondSegment$objToString)"
   }
 }
 
@@ -363,14 +356,13 @@ case class SegmentExchangeMove(firstSegmentStartPosition:Int,
     neighborhood.vrp.routes.value.valuesBetweenPositionsQList(firstSegmentStartPosition,firstSegmentEndPosition) ++
       neighborhood.vrp.routes.value.valuesBetweenPositionsQList(secondSegmentStartPosition,secondSegmentEndPosition)
 
-  override def commit() {
+  override def commit(): Unit ={
     neighborhood.doMove(
       firstSegmentStartPosition,firstSegmentEndPosition, flipFirstSegment,
       secondSegmentStartPosition, secondSegmentEndPosition, flipSecondSegment)
   }
 
   override def toString: String = {
-    neighborhoodNameToString + "SegmentExchange(firstSegmentStartPosition:" + firstSegmentStartPosition + " firstSegmentEndPosition:" + firstSegmentEndPosition + " flipFirstSegment:" + flipFirstSegment +
-      " secondSegmentStartPosition:" + secondSegmentStartPosition + " secondSegmentEndPosition:" + secondSegmentEndPosition + " flipSecondSegment:" + flipSecondSegment + objToString + ")"
+    s"${neighborhoodNameToString}SegmentExchange(firstSegmentStartPosition:$firstSegmentStartPosition firstSegmentEndPosition:$firstSegmentEndPosition flipFirstSegment:$flipFirstSegment secondSegmentStartPosition:$secondSegmentStartPosition secondSegmentEndPosition:$secondSegmentEndPosition flipSecondSegment:$flipSecondSegment$objToString)"
   }
 }

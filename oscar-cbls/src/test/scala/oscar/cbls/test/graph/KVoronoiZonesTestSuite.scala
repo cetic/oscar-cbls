@@ -1,20 +1,20 @@
 package oscar.cbls.test.graph
 
-import oscar.cbls._
-import org.scalatest.{FunSuite, Matchers}
-import org.scalatest.prop.Checkers
-import oscar.cbls.{CBLSSetVar, SetValue}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.scalacheck.Checkers
+import oscar.cbls.CBLSSetVar
 import oscar.cbls.lib.invariant.graph.KVoronoiZones
 import oscar.cbls.test.invariants.bench._
 
-class KVoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
+class KVoronoiZonesTestSuite extends AnyFunSuite with Matchers with Checkers {
 
   val verbose = 0
 
   test("Voronoi Zones in conditional graph"){
     val nbTests = 5
 
-    for (v <- (0 until nbTests)) {
+    for (_ <- 0 until nbTests) {
 
       val bench = new InvBench(verbose,List(Random(),Shuffle(),MultipleMove()))
 
@@ -52,7 +52,7 @@ class KVoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
     test("Voronoi Zones in conditional graph with non transit nodes"){
     val nbTests = 5
 
-    for (v <- (0 until nbTests)) {
+    for (_ <- 0 until nbTests) {
 
       val bench = new InvBench(verbose,List(Random(),Shuffle(),MultipleMove()))
 

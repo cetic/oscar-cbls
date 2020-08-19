@@ -4,7 +4,10 @@ import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.GlobalConstraintCore
 import oscar.cbls.business.routing.invariants.timeWindow.{DefinedTransferFunction, NaiveTimeWindowConstraint, TimeWindowConstraintWithLogReduction, TransferFunction}
+import oscar.cbls.business.routing.model.helpers.DistanceHelper
 import oscar.cbls.business.routing.visu.RoutingMapTypes
+import oscar.cbls.core.computation.{CBLSIntVar, Domain, Store}
+import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.First
 
 object VRPTWWithGeoCoords extends App{

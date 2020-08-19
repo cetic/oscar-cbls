@@ -1,9 +1,3 @@
-package oscar.cbls.algo.magicArray
-
-import oscar.cbls.algo.quick.QList
-
-import scala.language.postfixOps
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +12,9 @@ import scala.language.postfixOps
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.algo.magicArray
 
+import oscar.cbls.algo.quick.QList
 
 object MagicBoolArray {
   /**
@@ -31,7 +27,6 @@ object MagicBoolArray {
     new MagicBoolArray(n,initVal)
   }
 }
-
 
 /**
  * This represents an array of boolean with O(1) setAll and O(1) clearAll
@@ -47,7 +42,7 @@ class MagicBoolArray(val length:Int,initVal:Boolean = false){
 
   private[this] val internalArray:Array[Long] = Array.fill[Long](length)(if(initVal) 1L else 0L)
 
-  val indices = 0 until length
+  val indices: Range = 0 until length
 
   /**
    * Set the new value of element at specific index
@@ -98,7 +93,7 @@ class MagicBoolArray(val length:Int,initVal:Boolean = false){
   }
 
   @inline
-  private [this] def resetArray(){
+  private [this] def resetArray(): Unit ={
     var i = internalArray.length
     while(i > 0){
       i -= 1
@@ -120,7 +115,7 @@ class MagicBoolArray(val length:Int,initVal:Boolean = false){
         toReturn = QList(n,toReturn)
       }
     }
-    toReturn.toIterator
+    toReturn.iterator
   }
 
   def indicesAtTrueAsQList:QList[Int] ={
@@ -133,7 +128,5 @@ class MagicBoolArray(val length:Int,initVal:Boolean = false){
     toReturn
   }
 
-  override def toString: String = "["+indicesAtTrue.mkString(",")+"]"
+  override def toString: String = s"[${indicesAtTrue.mkString(",")}]"
 }
-
-

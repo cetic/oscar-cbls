@@ -1,8 +1,8 @@
 package oscar.cbls.lib.invariant.minmax
 
 import oscar.cbls.algo.heap.BinomialHeapWithMoveInt
-import oscar.cbls._
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{ChangingSetValue, Domain, IntInvariant, SetNotificationTarget, SetValue, ValueWiseKey}
+import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.SortedSet
 
@@ -94,7 +94,7 @@ class MinConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default:
     IdToAddIntoTheScope
   }
 
-  private def removeValuesFromListenedUntilDiameterSmallerOrEqualToMaxDiameter(){
+  private def removeValuesFromListenedUntilDiameterSmallerOrEqualToMaxDiameter(): Unit ={
     while(heapOfConsideredPositions.size > maxDiameter) {
       require(nbListenedVals >0)
       val removedValue = idSortedByIncreasingValue(nbListenedVals-1)
@@ -104,7 +104,7 @@ class MinConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default:
     }
   }
 
-  private def trimNotListenedTail(){
+  private def trimNotListenedTail(): Unit ={
     while(true) {
       val removedValue = idSortedByIncreasingValue(nbListenedVals-1)
       if(heapOfConsideredPositions.contains(removedValue)) return
@@ -114,7 +114,7 @@ class MinConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default:
     }
   }
 
-  private def addValuesIntoListenedUntilDiameterIsStrictlyBiggerThanZeroOrFullScope(condValue:SortedSet[Int]){
+  private def addValuesIntoListenedUntilDiameterIsStrictlyBiggerThanZeroOrFullScope(condValue:SortedSet[Int]): Unit ={
     while(heapOfConsideredPositions.size == 0 && nbListenedVals < n) {
       val addedValue = addOneMoveValueIntoScope()
       if(condValue contains addedValue) {
@@ -123,10 +123,9 @@ class MinConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default:
     }
   }
 
-  override def checkInternals(c : Checker) {
+  override def checkInternals(c : Checker): Unit = {
     if (condSet.value.isEmpty) c.check(value == default)
     else c.check(value == constArray(condSet.value.minBy(constArray(_))))
     c.check(nbListenedVals >= heapOfConsideredPositions.size)
   }
 }
-

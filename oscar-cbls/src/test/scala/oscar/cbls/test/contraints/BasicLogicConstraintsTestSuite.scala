@@ -1,11 +1,11 @@
 package oscar.cbls.test.contraints
 
-import org.scalatest.FunSuite
-import org.scalatest.prop.Checkers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.Checkers
 import oscar.cbls.lib.constraint._
 import oscar.cbls.test.invariants.bench._
 
-class BasicLogicConstraintsTestSuite extends FunSuite with Checkers{
+class BasicLogicConstraintsTestSuite extends AnyFunSuite with Checkers {
 
   val verbose = 0
 

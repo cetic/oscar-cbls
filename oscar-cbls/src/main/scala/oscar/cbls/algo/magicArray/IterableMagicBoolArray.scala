@@ -1,9 +1,3 @@
-package oscar.cbls.algo.magicArray
-
-import oscar.cbls.algo.quick.QList
-
-import scala.language.postfixOps
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -18,8 +12,11 @@ import scala.language.postfixOps
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.algo.magicArray
 
-object IterableMagicBoolArray{
+import oscar.cbls.algo.quick.QList
+
+object IterableMagicBoolArray {
   /**
     * create a Magical Array Of Boolean of given length
     * @param n the length
@@ -31,12 +28,11 @@ object IterableMagicBoolArray{
   }
 }
 
-
-class IterableMagicBoolArray(override val length:Int,initVal:Boolean = false)
+class IterableMagicBoolArray(override val length:Int, initVal:Boolean = false)
   extends MagicBoolArray(length,initVal){
 
-  private var positionsAtTrueOverApproximated:QList[Int] = null
-  private val isPositionInOverApproximationQList:MagicBoolArray = MagicBoolArray(length,false)
+  private var positionsAtTrueOverApproximated:QList[Int] = _
+  private val isPositionInOverApproximationQList:MagicBoolArray = MagicBoolArray(length)
   private var overApproximationIsComplete:Boolean = initVal
 
   private var anyIndividualSetToFalse:Boolean = false
@@ -68,7 +64,7 @@ class IterableMagicBoolArray(override val length:Int,initVal:Boolean = false)
     if(value){
       if(!oldValue){
         if (!overApproximationIsComplete) {
-          if (!isPositionInOverApproximationQList.update(id,true)) {
+          if (!isPositionInOverApproximationQList.update(id,value = true)) {
             positionsAtTrueOverApproximated = QList(id, positionsAtTrueOverApproximated)
           }
         }
@@ -88,13 +84,13 @@ class IterableMagicBoolArray(override val length:Int,initVal:Boolean = false)
       if(anyIndividualSetToFalse){
         super.indicesAtTrue
       }else{
-        indices.toIterator
+        indices.iterator
       }
     }else{
       if(anyIndividualSetToFalse){
-        positionsAtTrueOverApproximated.filter(this(_)).toIterator
+        positionsAtTrueOverApproximated.filter(this(_)).iterator
       }else{
-        positionsAtTrueOverApproximated.toIterator
+        positionsAtTrueOverApproximated.iterator
       }
     }
   }

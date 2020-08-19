@@ -1,5 +1,3 @@
-package oscar.cbls.algo.seq
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,15 +12,13 @@ package oscar.cbls.algo.seq
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.algo.seq
 
 import oscar.cbls.algo.fun.{LinearTransform, PiecewiseLinearBijectionNaive, PiecewiseLinearFun, Pivot}
 import oscar.cbls.algo.quick.{IterableQList, QList}
 import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
 
 import scala.collection.immutable.SortedSet
-import scala.collection.mutable
-import scala.collection.mutable.HashMap
-import scala.language.implicitConversions
 
 object IntSequence{
   def apply(values:Iterable[Int]):IntSequence = {
@@ -71,6 +67,7 @@ class IterableIntSequence(sequence:IntSequence) extends Iterable[Int]{
 }
 
 class Token()
+
 object Token{
   def apply():Token = new Token()
 }
@@ -162,7 +159,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
           e = explorer.next
       }
     }
-    return null
+    null
   }
 
   def explorerAtFirstOccurrence(value : Int) : Option[IntSequenceExplorer] = {
@@ -223,7 +220,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
   def regularize(targetToken:Token = this.token):ConcreteIntSequence
   def commitPendingMoves:IntSequence
 
-  def check{}
+  def check(): Unit = {}
 
   def quickEquals(that:IntSequence):Boolean = that != null && this.token == that.token
   def equals(that:IntSequence):Boolean = {
@@ -231,7 +228,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
   }
 
   override def toString : String = {
-    "IntSequence(size:" + size + ")[" + this.iterator.toList.mkString(",") + "]_impl:" + descriptorString
+    s"IntSequence(size:$size)[${this.iterator.toList.mkString(",")}]_impl:$descriptorString"
   }
 
   def descriptorString : String
@@ -245,7 +242,6 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
   }
 }
 
-
 class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeMap[Int],
                           private[seq] val valueToInternalPositions:RedBlackTreeMap[RedBlackTreeMap[Int]],
                           private[seq] val externalToInternalPosition:PiecewiseLinearBijectionNaive,
@@ -258,10 +254,10 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
   override def descriptorString: String = "[" + this.iterator.toList.mkString(",") + "]_impl:concrete"
 
   override def toString: String = {
-    "ConcreteIntSequence(size:" + size + ")" + descriptorString
+    s"ConcreteIntSequence(size:$size)$descriptorString"
   }
 
-  override def check {
+  override def check(): Unit = {
     externalToInternalPosition.checkBijection()
     require(internalPositionToValue.content.sortBy(_._1) equals valueToInternalPositions.content.flatMap({case (a, b) => b.keys.map(x => (x, a))}).sortBy(_._1),
       "internalPositionToValue:" + internalPositionToValue.content.sortBy(_._1) + " valueToInternalPositions:" + valueToInternalPositions.content.flatMap({case (a, b) => b.keys.map(x => (x, a))}).sortBy(_._1)
@@ -307,7 +303,6 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
         toReturn
     }
   }
-
 
   def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
     if (position >= this.size) None
@@ -387,8 +382,8 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
 
   def delete(pos : Int, fast : Boolean, autoRework : Boolean) : IntSequence = {
     //println(this + ".delete(pos:" + pos + ")")
-    require(pos < size, "deleting past the end of the sequence (size:" + size + " pos:" + pos + ")")
-    require(pos >= 0, "deleting at negative pos:" + pos)
+    require(pos < size, s"deleting past the end of the sequence (size:$size pos:$pos)")
+    require(pos >= 0, s"deleting at negative pos:$pos")
 
     if (fast) return new RemovedIntSequence(this, pos)
 
@@ -435,17 +430,16 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
       startFreeRangeForInternalPosition - 1)
   }
 
-
   def moveAfter(startPositionIncluded : Int, endPositionIncluded : Int, moveAfterPosition : Int, flip : Boolean, fast : Boolean, autoRework : Boolean) : IntSequence = {
     //println(this + ".moveAfter(startPositionIncluded:" + startPositionIncluded + " endPositionIncluded:" + endPositionIncluded + " moveAfterPosition:" + moveAfterPosition + " flip:" + flip + ")")
     require(startPositionIncluded >= 0 && startPositionIncluded < size, "startPositionIncluded should be in [0,size[ in UniqueIntSequence.moveAfter")
-    require(endPositionIncluded >= 0 && endPositionIncluded < size, "endPositionIncluded(=" + endPositionIncluded+ ") should be in [0,size(="+size+")[ in UniqueIntSequence.moveAfter")
-    require(moveAfterPosition >= -1 && moveAfterPosition < size, "moveAfterPosition=" + moveAfterPosition + " should be in [-1,size=" + size+"[ in UniqueIntSequence.moveAfter")
+    require(endPositionIncluded >= 0 && endPositionIncluded < size, s"endPositionIncluded(=$endPositionIncluded) should be in [0,size(=$size)[ in UniqueIntSequence.moveAfter")
+    require(moveAfterPosition >= -1 && moveAfterPosition < size, s"moveAfterPosition=$moveAfterPosition should be in [-1,size=$size[ in UniqueIntSequence.moveAfter")
 
     require(
       moveAfterPosition < startPositionIncluded || moveAfterPosition > endPositionIncluded,
-      "moveAfterPosition=" + moveAfterPosition + " cannot be between startPositionIncluded=" + startPositionIncluded + " and endPositionIncluded=" + endPositionIncluded)
-    require(startPositionIncluded <= endPositionIncluded, "startPositionIncluded=" + startPositionIncluded + " should be <= endPositionIncluded=" + endPositionIncluded)
+      s"moveAfterPosition=$moveAfterPosition cannot be between startPositionIncluded=$startPositionIncluded and endPositionIncluded=$endPositionIncluded")
+    require(startPositionIncluded <= endPositionIncluded, s"startPositionIncluded=$startPositionIncluded should be <= endPositionIncluded=$endPositionIncluded")
 
     if (fast) return new MovedIntSequence(this, startPositionIncluded, endPositionIncluded, moveAfterPosition, flip)
 
@@ -538,7 +532,6 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
             endPositionIncluded,
             LinearTransform(startPositionIncluded - endPositionIncluded - 1, false))).forward equals newExternalToInternalPosition.forward)
 
-
         new ConcreteIntSequence(
           internalPositionToValue,
           valueToInternalPositions,
@@ -560,9 +553,6 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
       }else this
     }
   }
-  /*
-  @inline
-  private def longToInt(l:Long):Int = Math.toIntExact(l)*/
 
   def regularize(targetToken : Token = this.token) : ConcreteIntSequence = {
     var explorerOpt = this.explorerAtPosition(0)
@@ -634,11 +624,11 @@ class ConcreteIntSequenceExplorer(sequence:ConcreteIntSequence,
                                      case Some(p) => !p.value.f.minus}
                                    ) extends IntSequenceExplorer{
 
-  override def toString : String = "ConcreteIntSequenceExplorer(position:" + position + " value:" + value + " currentPivotPosition:" + currentPivotPosition + " pivotAbovePosition:" + pivotAbovePosition + " positionInRB:" + positionInRB + ")"
+  override def toString : String = s"ConcreteIntSequenceExplorer(position:$position value:$value currentPivotPosition:$currentPivotPosition pivotAbovePosition:$pivotAbovePosition positionInRB:$positionInRB)"
 
   override val value : Int = positionInRB.value
 
-  private[seq] def internalPos = positionInRB.key.toInt
+  private[seq] def internalPos = positionInRB.key
 
   override def next : Option[IntSequenceExplorer] = {
     if(position == sequence.size-1) return None
@@ -724,7 +714,6 @@ abstract class StackedUpdateIntSequence extends IntSequence(){
     require(pos >= 0 && pos <= size , "pos=" + pos + " should be in [0,size="+size+"] in IntSequence.insertAt")
     new InsertedIntSequence(this,value:Int,pos:Int)
   }
-
 
   override def regularizeToMaxPivot(maxPivotPerValuePercent: Int, targetToken: Token = this.token) : ConcreteIntSequence =
     commitPendingMoves.regularizeToMaxPivot(maxPivotPerValuePercent, targetToken)
@@ -834,7 +823,7 @@ class MovedIntSequence(val seq:IntSequence,
 
   override def unorderedContentNoDuplicateWithNBOccurences : List[(Int, Int)] = seq.unorderedContentNoDuplicateWithNBOccurences
 
-  override def descriptorString : String = seq.descriptorString + ".moved(startPos:" + startPositionIncluded + " endPos:" + endPositionIncluded + " targetPos:" + moveAfterPosition + " flip:" + flip + ")"
+  override def descriptorString : String = s"${seq.descriptorString}.moved(startPos:$startPositionIncluded endPos:$endPositionIncluded targetPos:$moveAfterPosition flip:$flip)"
 
   val localBijection = MovedIntSequence.bijectionForMove(startPositionIncluded, endPositionIncluded, moveAfterPosition, flip)
 
@@ -976,7 +965,7 @@ class InsertedIntSequence(seq:IntSequence,
   override def unorderedContentNoDuplicateWithNBOccurences : List[(Int, Int)] =
     unorderedContentNoDuplicate.map(value => (value,if(value == insertedValue) seq.nbOccurrence(value) +1 else seq.nbOccurrence(value)))
 
-  override def descriptorString : String = seq.descriptorString + ".inserted(val:" + insertedValue + " pos:" + pos + ")"
+  override def descriptorString : String = s"${seq.descriptorString}.inserted(val:$insertedValue pos:$pos)"
 
   override def unorderedContentNoDuplicate : List[Int] = if(seq.nbOccurrence(insertedValue) == 0) insertedValue :: seq.unorderedContentNoDuplicate else seq.unorderedContentNoDuplicate
 
@@ -1190,4 +1179,3 @@ class RemovedIntSequenceExplorer(seq:RemovedIntSequence,
     }
   }
 }
-

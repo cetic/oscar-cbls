@@ -2,6 +2,7 @@ package oscar.cbls.business.scheduling.model
 
 import oscar.cbls.business.scheduling.ActivityId
 
+import scala.annotation.tailrec
 import scala.collection.BitSet
 
 // Precedences
@@ -54,6 +55,7 @@ class Precedences(beforeAfterPairs: List [(ActivityId, ActivityId)]) {
     */
   def consistentSeq(seq: List[ActivityId]): Boolean = {
     // Auxiliary function
+    @tailrec
     def consistentSeq(postfix: List[ActivityId],
                       revPrefix: List[ActivityId]): Boolean = postfix match {
       case Nil => true
@@ -91,6 +93,7 @@ class Precedences(beforeAfterPairs: List [(ActivityId, ActivityId)]) {
     */
   private def descendants(act: ActivityId): List[ActivityId] = {
     // Auxiliary function
+    @tailrec
     def descendants(lstActs: List[ActivityId],
                     visitedActs: List[ActivityId]): List[ActivityId] = lstActs match {
       case Nil => visitedActs

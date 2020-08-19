@@ -2,11 +2,8 @@ package oscar.cbls.lib.invariant.logic
 
 import oscar.cbls.IntValue
 import oscar.cbls.algo.quick.QList
-import oscar.cbls.core.computation.ChangingIntValue
+import oscar.cbls.core.computation.{ChangingIntValue, IntInvariant, IntNotificationTarget}
 import oscar.cbls.core.propagation.Checker
-import oscar.cbls.core.{IntInvariant, IntNotificationTarget}
-
-
 
 //the output is the first indice i in the table such that for each j, table(i)(j) >= variables(j)
 //default if no such line exist
@@ -22,9 +19,11 @@ class ParetoTable(val variables:Array[IntValue],
   this.finishInitialization()
 
   override def toString: String = {
-    "ParetoTable(\n\tvariables:" + variables.map(_.value).mkString(",") + "\n\t" +
-      "tables:\n\t\t" + tables.map(_.mkString(",")).zipWithIndex.map(x => if(x._2 == this.value) x._1 + "<--" else x._1).mkString("\n\t\t") +
-      "\n\tdefaultIfNoDominate:" + defaultIfNoDominate + ")"
+    s"""ParetoTable(
+       |  variables:${variables.map(_.value).mkString(",")}
+       |  tables:
+       |    ${tables.map(_.mkString(",")).zipWithIndex.map(x => if(x._2 == this.value) x._1 + "<--" else x._1).mkString("\n\t\t")}
+       |  defaultIfNoDominate:$defaultIfNoDominate)""".stripMargin
   }
 
   val smallestAmongAllRows = Array.tabulate(d)(i => tables.map(row => row(i)).min)
@@ -67,7 +66,6 @@ class ParetoTable(val variables:Array[IntValue],
     val a = searchFromScratchLin(variables.map(_.value),exploreFrom)
     this := (if (a == -1) defaultIfNoDominate else a)
     exploreFrom = a
-
   }
 
   def searchFromScratchLin(v:Array[Long], staAt:Int):Int = {
@@ -101,8 +99,7 @@ class ParetoTable(val variables:Array[IntValue],
    */
   override def checkInternals(c: Checker): Unit ={
     val a = searchFromScratchLin(variables.map(_.value),-1)
-    require(this.value == (if (a == -1) defaultIfNoDominate else a),"For variables :" + variables.mkString(";") + ". It should be " + (if (a == -1) defaultIfNoDominate else a) + "(from scratch) but it is " + this.value + " (Incremental)")
+    require(this.value == (if (a == -1) defaultIfNoDominate else a),
+      s"For variables :${variables.mkString(";")}. It should be ${if (a == -1) defaultIfNoDominate else a}(from scratch) but it is ${this.value} (Incremental)")
   }
 }
-
-

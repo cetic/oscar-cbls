@@ -5,7 +5,10 @@ import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
 import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleCapacityConstraint
-import oscar.cbls.core.ChangingIntValue
+import oscar.cbls.business.routing.model.helpers.{ChainsHelper, DistanceHelper}
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingIntValue, Store}
+import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.core.search.{Best, Neighborhood, NoMoveNeighborhood}
 import oscar.cbls.lib.search.neighborhoods.vlsn._
 
@@ -17,12 +20,6 @@ import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
 
 object PDPTW_VLSN extends App{
   val m = new Store(noCycle = false)
-
-  println("usage: This enrichment partition enrichmentSpec shiftInsert")
-  val enrichment:Int=args(0).toInt
-  val partition:Int = args(1).toInt
-  val enrichmentSpec:Int = args(2).toInt
-  val shiftInsert:Int = args(3).toInt
 
   val v = 10
   val n = 500
@@ -52,8 +49,6 @@ object PDPTW_VLSN extends App{
   // Distance
   val vehiclesRouteLength = Array.tabulate(v)(vehicle => CBLSIntVar(m, name = "Route length of vehicle " + vehicle))
   val routeLengthInvariant = new RouteLength(gc,n,v,vehiclesRouteLength,(from: Int, to: Int) => symmetricDistance(from)(to))
-
-  //Time
 
   //Chains
   val precedenceRoute = myVRP.routes.createClone()
@@ -85,7 +80,7 @@ object PDPTW_VLSN extends App{
 
   // Vehicle content
   val violationOfContentOfVehicle = Array.tabulate(v)(vehicle =>
-    CBLSIntVar(myVRP.routes.model, name = "Violation of capacity of vehicle " + vehicle))
+    CBLSIntVar(myVRP.routes.model, name = s"Violation of capacity of vehicle $vehicle"))
   val capacityInvariant = GlobalVehicleCapacityConstraint(gc, n, v, vehiclesCapacity, contentsFlow, violationOfContentOfVehicle)
 
   //Objective function
@@ -516,37 +511,10 @@ object PDPTW_VLSN extends App{
       unroutedPenaltyOBj,
       obj,
 
-      cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy,
-//1
-      enrichmentSchemeSpec = {
-        val toReturn = enrichment match {
-          case 0 =>
-            println("BENCHMARK: NoEnrichment")
-            NoEnrichment()
-          case 1 =>
-
-            CompositeEnrichmentSchemeSpec(
-              partition match {
-                case 0 => SameSizeRandomPartitionsSpec(nbPartitions = 2)
-                case 1 => SameSizeRandomPartitionsSpec(nbPartitions = 5)
-                case 2 => SameSizeRandomPartitionsSpec(nbPartitions = 10)
-                case 3 => SameSizeRandomPartitionsSpec(nbPartitions = 15)
-                case 4 => SameSizeRandomPartitionsSpec(nbPartitions = 20)
-                case 5 => VehicleStructuredSameSizePartitionsSpreadUnroutedSpec(20)
-                case 6 => VehiclePartitionSpec()
-              },
-              enrichmentSpec match {
-                case 0 => LinearRandomSchemeSpec(nbSteps = 5)
-                case 1 => LinearRandomSchemeSpec(nbSteps = 10)
-                case 2 => LinearRandomSchemeSpec(nbSteps = 15)
-                case 3 => LinearRandomSchemeSpec(nbSteps = 20)
-                case 4 => DivideAndConquerSchemeSpec()
-              },
-              shiftInsert)
-        }
-        println("BENCHMARK:" + toReturn)
-        toReturn
-      },
+      enrichmentSchemeSpec =
+        VLSN.compositeEnrichmentSchemeSpec(
+          VLSN.sameSizeRandomPartitionsSpec(nbPartitions = 20),
+          VLSN.linearRandomSchemeSpec(maxEnrichmentLevel = 10)),
 
       name="VLSN(" + l + ")",
       reoptimizeAtStartUp = true,

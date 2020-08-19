@@ -1,6 +1,5 @@
 package oscar.cbls.business
 
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -15,7 +14,6 @@ package oscar.cbls.business
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
 
 import org.locationtech.jts.geom.impl.CoordinateArraySequence
 import org.locationtech.jts.geom.util.AffineTransformation
@@ -66,7 +64,6 @@ package object geometry {
   }
 
   def createRectangle(height:Double,width:Double):GeometryValue = {
-
     val halfHeight = height /2
     val halfWidth = width/2
 
@@ -129,4 +126,3 @@ package object geometry {
   final val GeometryValue = oscar.cbls.business.geometry.model.GeometryValue
 
 }
-

@@ -1,16 +1,17 @@
 package oscar.cbls.test.graph
 
-import org.scalacheck.Gen
 import org.scalactic.anyvals.PosInt
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalacheck.Gen
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.algo.graph._
 
 import scala.util.Random
 
-class DijkstraMTTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matchers{
+class DijkstraMTTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers{
 
-  test("Astar confirms the result from DijkstraMT is the closest terminal"){
+  test("AStar confirms the result from DijkstraMT is the closest terminal"){
 
     val nbNodes = 50
     val nbConditionalEdges = 90
@@ -25,7 +26,7 @@ class DijkstraMTTestSuite extends FunSuite with GeneratorDrivenPropertyChecks wi
     val closed = Array.tabulate((nbConditionalEdges * 0.5).toInt)(_ => 0L).toList
     val openConditions = Random.shuffle(open ::: closed)
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
-    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b))
+    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => if (a > b) underApproxDistanceMatrix(a)(b) else underApproxDistanceMatrix(b)(a))
     val dijkstra = new DijkstraMT(graph)
 
     val gen = for{
@@ -52,11 +53,12 @@ class DijkstraMTTestSuite extends FunSuite with GeneratorDrivenPropertyChecks wi
           case Unreachable => aStarResults.foreach(_ should (be (a[NeverConnected]) or be (a[NotConnected])))
 
           // If dijkstraResult is a VoronoiZone, the minimum distance of aStar should match dijkstraResult
-          case VoronoiZone(_,distance,_) =>
+          case x@VoronoiZone(_,distance,_) =>
             aStarResults
-              .filter(r => r.isInstanceOf[Distance])
-              .minBy(_.asInstanceOf[Distance].distance)
-              .asInstanceOf[Distance].distance should be (distance)
+              .filter(_.isInstanceOf[Distance])
+              .map(_.asInstanceOf[Distance])
+              .minBy(_.distance)
+              .distance should be (distance)
         }
     }
   }

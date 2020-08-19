@@ -1,9 +1,7 @@
 package oscar.cbls.lib.invariant.set
 
-import oscar.cbls.core.computation.ChangingSetValue
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingSetValue, Invariant, SetNotificationTarget, SetValue}
 import oscar.cbls.core.propagation.Checker
-import oscar.cbls.core.{Invariant, SetNotificationTarget}
-import oscar.cbls.{CBLSIntVar, SetValue}
 
 import scala.collection.immutable.SortedSet
 
@@ -38,7 +36,7 @@ class MapCount(set:SetValue, map:Int=>Int,counts:Array[CBLSIntVar])
 
   override def checkInternals(c: Checker): Unit = {
 
-    val scratchCounts:Array[Int] = Array.fill(counts.size)(0)
+    val scratchCounts:Array[Int] = Array.fill(counts.length)(0)
     for(v <- set.value){
       val i:Int = map(v):Int
       scratchCounts(i) = scratchCounts(i) + 1

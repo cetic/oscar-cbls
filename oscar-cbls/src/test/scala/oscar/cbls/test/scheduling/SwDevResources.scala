@@ -27,13 +27,13 @@ object SwDevResources {
   val analyst_st = SetupTimes(analyst_mode,
     Map(analysis->analyst_mode, design->analyst_mode, qc->qapm, pm->qapm),
     Map((analyst_mode, qapm)->1, (qapm, analyst_mode)->1))
-  val analyst = new CumulativeMultiResourceWithSetupTimes(5,
+  val analyst = new CumulativeResourceWithSetupTimesMultiMode(5,
     Map(analysis->2L, design->1L, qc->1L, pm->2L),
     analyst_st)
   val senior_dev_test_st = SetupTimes(dev,
     Map(coding->dev, testing->test),
     Map((dev, test)->2, (test, dev)->2))
-  val senior_dev_test = new CumulativeMultiResourceWithSetupTimes(2,
+  val senior_dev_test = new CumulativeResourceWithSetupTimesMultiMode(2,
     Map(coding->2L, testing->1L),
     senior_dev_test_st)
 

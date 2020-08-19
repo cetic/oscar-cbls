@@ -1,5 +1,3 @@
-package oscar.cbls.business.routing.invariants
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,12 +12,13 @@ package oscar.cbls.business.routing.invariants
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.business.routing.invariants
 
-import oscar.cbls._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.RoutingConventionMethods
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingSeqValue, Invariant, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint}
+import oscar.cbls.core.propagation.Checker
 
 object RouteLength {
 
@@ -378,7 +377,7 @@ class RouteLength(routes:ChangingSeqValue,
    * you also must call  recordTouchedVehicle(v:Int) for this saving to be effective.
    * @param s
    */
-  protected def saveCurrentCheckpoint(s:IntSequence){
+  protected def saveCurrentCheckpoint(s:IntSequence): Unit ={
     checkpoint = s
     if(perVehicle) {
       while (changedVehiclesSinceCheckpoint != null) {
@@ -393,7 +392,7 @@ class RouteLength(routes:ChangingSeqValue,
     if(v > 1) vehicleSearcher = RoutingConventionMethods.cachedVehicleReachingPosition(checkpoint,v)
   }
 
-  private def restoreCheckpoint(){
+  private def restoreCheckpoint(): Unit ={
     if(perVehicle) {
       while (changedVehiclesSinceCheckpoint != null) {
         val v = changedVehiclesSinceCheckpoint.head
@@ -406,7 +405,7 @@ class RouteLength(routes:ChangingSeqValue,
     }
   }
 
-  private def recordTouchedVehicle(v:Int){
+  private def recordTouchedVehicle(v:Int): Unit ={
     if(perVehicle){
       if(checkpoint!= null && !isVehicleChangedSinceCheckpoint(v)){
         savedValues(v) = distance(v).newValue
@@ -416,7 +415,7 @@ class RouteLength(routes:ChangingSeqValue,
     }
   }
 
-  private def affect(value:Array[Long]){
+  private def affect(value:Array[Long]): Unit ={
     var currentV = distance.length
     while(currentV >0){
       currentV -= 1
@@ -489,13 +488,14 @@ class RouteLength(routes:ChangingSeqValue,
     check(c, routes.value)
   }
 
-  def check(c : Checker,s:IntSequence) {
+  def check(c : Checker,s:IntSequence): Unit ={
     c.check(!distanceIsSymmetric || RouteLength.isDistanceSymmetric(distanceMatrix, n), Some("distance matrix should be symmetric if invariant told so"))
 
     if (perVehicle) {
       val values = computeValueFromScratch(s)
       for (vehicle <- 0 until v) {
-        c.check(distance(vehicle).newValue == values(vehicle), Some("distance(" + vehicle + ").value=" + distance(vehicle).newValue + " should == computeValueFromScratch(routes.value)(0)" + values(vehicle)))
+        c.check(distance(vehicle).newValue == values(vehicle),
+          Some(s"distance($vehicle).value=${distance(vehicle).newValue} should == computeValueFromScratch(routes.value)(0)${values(vehicle)}"))
       }
 
       if (checkpoint != null) {
@@ -507,7 +507,8 @@ class RouteLength(routes:ChangingSeqValue,
       }
 
     } else {
-      c.check(distance(0).newValue == computeValueFromScratch(s)(0), Some("distance(0).value=" + distance(0).newValue + " should== computeValueFromScratch(routes.value)(0)" + computeValueFromScratch(routes.value)(0)))
+      c.check(distance(0).newValue == computeValueFromScratch(s)(0),
+        Some(s"distance(0).value=${distance(0).newValue} should== computeValueFromScratch(routes.value)(0)${computeValueFromScratch(routes.value)(0)}"))
       if (checkpoint != null) {
         c.check(savedValues(0) == computeValueFromScratch(checkpoint)(0))
       }

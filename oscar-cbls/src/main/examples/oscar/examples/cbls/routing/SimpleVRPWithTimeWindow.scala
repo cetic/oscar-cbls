@@ -1,9 +1,10 @@
 package oscar.examples.cbls.routing
 
 import oscar.cbls._
-import oscar.cbls.business.routing.{routeLength, _}
+import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
 import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TransferFunction}
+import oscar.cbls.business.routing.model.helpers.DistanceHelper
 import oscar.cbls.core.search.Best
 import oscar.cbls.lib.constraint.EQ
 

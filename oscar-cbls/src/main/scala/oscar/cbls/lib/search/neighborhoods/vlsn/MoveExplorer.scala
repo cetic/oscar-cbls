@@ -17,12 +17,11 @@
 
 package oscar.cbls.lib.search.neighborhoods.vlsn
 
-import oscar.cbls.Objective
-import oscar.cbls.core.search.{Neighborhood, _}
-import oscar.cbls._
+import oscar.cbls.core.computation.Store
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.core.search.{Move, MoveFound, Neighborhood, NoMoveFound}
+
 import scala.collection.immutable.{SortedMap, SortedSet}
-
-
 
 class MoveExplorer(v:Int,
                    vehicleToRoutedNodes:SortedMap[Int,Iterable[Int]],
@@ -86,13 +85,13 @@ class MoveExplorer(v:Int,
       if (!penaltyChanged){
         val newValue = unroutedNodesPenalty.value
         require(newValue == Long.MaxValue || newValue == initialUnroutedNodesPenalty,
-          "Penaly impacted by current move and should not, can only impact " + changedVehicles.mkString(","))
+          s"Penalty impacted by current move and should not, can only impact ${changedVehicles.mkString(")")}")
       }
       for (vehicle <- 0 until v){
         if(!(changedVehicles contains vehicle)) {
           val newValue = vehicleToObjectives(vehicle).value
           require(newValue == Long.MaxValue || newValue == initialVehicleToObjectives(vehicle),
-            "vehicle " + vehicle + " impacted by current move and should not; it can only impact {" + changedVehicles.mkString(",") +"}" + (if (penaltyChanged) " and penalty " else ""))
+            s"vehicle $vehicle impacted by current move and should not; it can only impact {${changedVehicles.mkString(",")}}${if (penaltyChanged) " and penalty " else ""}")
         }
       }
 
@@ -295,7 +294,7 @@ class MoveExplorer(v:Int,
         n
     }
 
-    val obj = if(debug) {
+    val obj = if (debug) {
       generateCheckerObjForVehicles(globalObjective:Objective, Set(targetVehicleForInsertion), penaltyChanged = true)
     }else {
       globalObjective

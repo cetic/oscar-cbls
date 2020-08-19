@@ -15,11 +15,9 @@
 
 package oscar.cbls.lib.search.neighborhoods
 
-import oscar.cbls._
 import oscar.cbls.algo.search.{IdenticalAggregator, HotRestart}
 import oscar.cbls.core.computation.{Variable, CBLSIntVar}
 import oscar.cbls.core.search.{Move, EasyNeighborhoodMultiLevel, First, LoopBehavior}
-
 
 /**
  * will iteratively swap the value of two different variables in the array
@@ -76,14 +74,14 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
   var secondVarIndice:Int = 0
   var secondVar:CBLSIntVar = null
 
-  override def exploreNeighborhood(initialObj: Long){
+  override def exploreNeighborhood(initialObj: Long): Unit ={
 
     val firstIterationSchemeZone : Iterable[Int] =
       if (searchZone1 == null) {
         if (hotRestart) {
           if (firstVarIndice >= vars.length) firstVarIndice = 0
-          HotRestart(0 until vars.length, firstVarIndice)
-        } else 0 until vars.length
+          HotRestart(vars.indices, firstVarIndice)
+        } else vars.indices
       } else if (hotRestart) HotRestart(searchZone1(), firstVarIndice) else searchZone1()
 
     val firstIterationScheme = symmetryClassOfVariables1 match {
@@ -159,7 +157,6 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
   }
 }
 
-
 /** standard move that swaps the value of two CBLSIntVar
   *
   * @param i the variable
@@ -171,7 +168,7 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
 case class SwapMove(i:CBLSIntVar,j:CBLSIntVar, idI:Int, idJ:Int, adjustIfNotInProperDomain:Boolean, override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
-  override def commit() {
+  override def commit(): Unit = {
     if(adjustIfNotInProperDomain) {      val adjustedJValue:Long = i.domain.adjust(j.value)
       val adjustedIValue:Long = j.domain.adjust(i.value)
       i := adjustedJValue
@@ -183,7 +180,7 @@ case class SwapMove(i:CBLSIntVar,j:CBLSIntVar, idI:Int, idJ:Int, adjustIfNotInPr
   }
 
   override def toString: String  = {
-    neighborhoodNameToString + "SwapMove(" + i + " swapped with " + j + ( if (adjustIfNotInProperDomain) " with adjust" else "") + objToString + ")"
+    s"${neighborhoodNameToString}SwapMove($i swapped with $j${if (adjustIfNotInProperDomain) " with adjust" else ""}$objToString)"
   }
 
   override def touchedVariables: List[Variable] = List(i,j)

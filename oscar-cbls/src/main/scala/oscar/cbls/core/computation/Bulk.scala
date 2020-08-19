@@ -18,7 +18,6 @@
   *         by Renaud De Landtsheer
   *            Yoann Guyot
   ******************************************************************************/
-
 package oscar.cbls.core.computation
 
 import oscar.cbls.core.propagation.{BulkPropagator, Checker}
@@ -47,7 +46,7 @@ trait Bulked[VarType <: Value, BulkedComputationResult] extends Invariant {
       performBulkComputationID(bulkedVars, id)
     } else {
       //check for existing bulk
-      val identifyingString = this.getClass.getName + "/" + id
+      val identifyingString = s"${this.getClass.getName}/$id"
 
       val incredibleBulk = m.getBulk(identifyingString, bulkedVars.asInstanceOf[Array[Value]])
 
@@ -82,7 +81,7 @@ class Bulk(m: Store, val bulkedVars: Array[Value], val bulkedComputationResult: 
   for (dd <- bulkedVars) registerStaticallyListenedElement(dd)
   finishInitialization(m)
 
-  override def checkInternals(c: Checker) = c.check(true)
+  override def checkInternals(c: Checker): Unit = c.check(true)
 }
 
 /**This is the dictionaries where bulks are stored, and can be searched for
@@ -105,7 +104,7 @@ trait Bulker {
     null
   }
 
-  def registerBulk(identifyingName: String, bulk: Bulk) {
+  def registerBulk(identifyingName: String, bulk: Bulk): Unit ={
     val knownbulk = Bulked.getOrElse(identifyingName, List.empty)
     Bulked += ((identifyingName, bulk :: knownbulk))
   }

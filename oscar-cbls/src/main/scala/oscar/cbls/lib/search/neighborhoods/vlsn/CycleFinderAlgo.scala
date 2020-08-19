@@ -14,10 +14,7 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   * ****************************************************************************
   */
-
 package oscar.cbls.lib.search.neighborhoods.vlsn
-
-
 
 object MatrixTools{
   def printBoolMatrix(m:Array[Array[Boolean]]): Unit ={
@@ -52,7 +49,6 @@ object CycleFinderAlgo {
         new CycleFinderAlgoMouthuyAndThenDFS(graph:VLSNGraph)
     }
   }
-
 }
 
 class CycleFinderAlgoMouthuyAndThenDFS(graph:VLSNGraph) extends CycleFinderAlgo{
@@ -67,4 +63,3 @@ class CycleFinderAlgoMouthuyAndThenDFS(graph:VLSNGraph) extends CycleFinderAlgo{
     }
   }
 }
-

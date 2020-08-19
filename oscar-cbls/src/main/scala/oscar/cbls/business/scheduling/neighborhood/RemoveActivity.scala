@@ -1,9 +1,8 @@
 package oscar.cbls.business.scheduling.neighborhood
 
-import oscar.cbls.LoopBehavior
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.scheduling.model.Schedule
-import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First}
+import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
 class RemoveActivity(schedule: Schedule,
                      neighborhoodName: String,

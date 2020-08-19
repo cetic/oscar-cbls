@@ -27,7 +27,6 @@ object HotRestart extends App{
 
   println(new InstrumentedRange(NumericRange.inclusive[Int](0,9,1)) startBy 5)
 
-
   val s:SortedSet[Int] = SortedSet(1, 2, 3, 4, 7, 8, 9)
   val it = s.iteratorFrom(7)
   while(it.hasNext) println("next:" + it.next())

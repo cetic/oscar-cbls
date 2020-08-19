@@ -5,7 +5,6 @@ import java.awt.Graphics2D
 import java.awt.geom.Point2D
 import oscar.visual.VisualDrawing
 import java.awt.BasicStroke
-import java.awt.geom.AffineTransform
 
 abstract class VisualShape(protected val drawing: VisualDrawing) {
 
@@ -14,12 +13,12 @@ abstract class VisualShape(protected val drawing: VisualDrawing) {
   
   private var onClickActions = List[() => Unit]()
   
-  def onClick(action: => Unit) {
+  def onClick(action: => Unit): Unit = {
     onClickActions = (() => action) :: onClickActions
   }
   
   // Adds the visual shape in the drawing
-  drawing.addShape(this);
+  drawing.addShape(this)
 
   // True if the border is dashed
   private var _dashed: Boolean = false
@@ -98,13 +97,13 @@ abstract class VisualShape(protected val drawing: VisualDrawing) {
 
   def toolTip_=(s: String): Unit = { _toolTipText = Some(s) }
 
-  def showToolTip(mousePoint: Point2D) = {
+  def showToolTip(mousePoint: Point2D): Unit = {
     if (_toolTipText.isDefined && shape.contains(drawing.invertTransform(mousePoint))) {
       drawing.showToolTip(toolTip)
     }
   }
   
-  def clicked(mousePoint: Point2D) = {
+  def clicked(mousePoint: Point2D): Unit = {
     if (shape.contains(drawing.invertTransform(mousePoint))) {
       onClickActions.foreach(action => action())
     }
@@ -115,7 +114,7 @@ abstract class VisualShape(protected val drawing: VisualDrawing) {
   }
 
   protected def plainStroke: BasicStroke = {
-    new BasicStroke(_bWidth.toFloat)
+    new BasicStroke(_bWidth)
   }
 
   protected def stroke: BasicStroke = {
@@ -125,7 +124,7 @@ abstract class VisualShape(protected val drawing: VisualDrawing) {
   def repaint(): Unit = drawing.repaint()
 
   
-  def draw(g: Graphics2D) {
+  def draw(g: Graphics2D): Unit = {
     if (visible) {
       if (fill) {
         g.setColor(_fillColor)
@@ -142,7 +141,7 @@ abstract class VisualShape(protected val drawing: VisualDrawing) {
   }
 
   def getBounds: (Int, Int, Int, Int) = {
-    val bounds = shape.getBounds()
+    val bounds = shape.getBounds
     val xMin = bounds.x
     val xMax = xMin + bounds.width
     val yMin = bounds.y

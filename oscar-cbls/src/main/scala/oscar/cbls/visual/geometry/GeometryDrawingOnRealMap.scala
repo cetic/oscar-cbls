@@ -22,7 +22,7 @@ class GeometryDrawingOnRealMap(pointOfOrigin: (Double,Double),
     "x", "y", "z") {
     override def getTileUrl(x: Int, y: Int, zoo: Int): String = {
       val zoom = maxZoom - zoo
-      this.baseURL + "/" + zoom + "/" + x + "/" + y + ".png"
+      s"${this.baseURL}/$zoom/$x/$y.png"
     }
   }
 
@@ -114,4 +114,3 @@ class GeometryDrawingOnRealMap(pointOfOrigin: (Double,Double),
                  saveShapesAndPositions: Boolean = true): Unit ={
   }
 }
-
