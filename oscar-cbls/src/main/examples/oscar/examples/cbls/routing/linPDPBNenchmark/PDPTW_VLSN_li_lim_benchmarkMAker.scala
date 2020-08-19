@@ -1,4 +1,4 @@
-package oscar.examples.cbls.routing
+package oscar.examples.cbls.routing.linPDPBNenchmark
 
 import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
@@ -12,7 +12,7 @@ import oscar.cbls.lib.search.neighborhoods.vlsn._
 import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
 import scala.io.Source
 
-object PDPTW_VLSN_li_lim_benchmark extends App {
+object PDPTW_VLSN_li_lim_benchmarkMAker extends App {
 
   case class PDP(fromNode: Int, toNode: Int, demand: Int) {
     def chain: List[Int] = List(fromNode, toNode)
