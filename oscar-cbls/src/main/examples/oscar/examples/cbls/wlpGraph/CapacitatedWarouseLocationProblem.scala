@@ -303,10 +303,10 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
     initUnroutedNodesToInsert= () => unServedDelivery.value.map(i => i + W),
     nodeToRelevantVehicles = () => distanceToClosestCentroidMap.mapValues(_.map(_._1.valueInt).filter(_ != W)),//() => Map[Long,Iterable[Long]],
 
-    // puisqu'on fait pleuiseurs inserts de nodes différents sur le même véhicule.
-    targetVehicleNodeToInsertNeighborhood= w => d => assignForInsertVLSN(w,d,"insert"),//:Long => Long => Neighborhood,
-    targetVehicleNodeToMoveNeighborhood= w => d => assignForInsertVLSN(w,d,"move"),//:Long => Long => Neighborhood,
-    nodeToRemoveNeighborhood= d => assignForInsertVLSN(W,d,"remove"),//:Long => Neighborhood,
+    // puisqu'on fait plusieurs inserts de nodes différents sur le même véhicule.
+    targetVehicleNodeToInsertNeighborhood = w => d => assignForInsertVLSN(w,d,"insert"),//:Long => Long => Neighborhood,
+    targetVehicleNodeToMoveNeighborhood = w => d => assignForInsertVLSN(w,d,"move"),//:Long => Long => Neighborhood,
+    nodeToRemoveNeighborhood = d => assignForInsertVLSN(W,d,"remove"),//:Long => Neighborhood,
 
     removeNodeAndReInsert= d => {
       val oldWarehouse = deliveryToWarehouse(d - W).value
@@ -315,7 +315,6 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
     },//:Long => () => Unit,
 
     reOptimizeVehicle= None,//:Option[Long => Option[Neighborhood]],
-    useDirectInsert=false, //:Boolean,
 
     vehicleToObjective= objPerWarehouse, //:Array[Objective],
     unroutedPenalty= constantObjective,//:Objective,
@@ -356,7 +355,6 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
     },//:Long => () => Unit,
 
     reOptimizeVehicle= None,//:Option[Long => Option[Neighborhood]],
-    useDirectInsert=false, //:Boolean,
 
     vehicleToObjective= objPerWarehouse, //:Array[Objective],
     unroutedPenalty= constantObjective,//:Objective,
@@ -371,7 +369,7 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
       initUnroutedNodesToInsert = () => unServedDelivery.value.map(i => i + W),
       nodeToRelevantVehicles = () => distanceToClosestCentroidMap.mapValues(_.map(_._1.valueInt).filter(_ != W)), //() => Map[Long,Iterable[Long]],
 
-      // puisqu'on fait pleuiseurs inserts de nodes différents sur le même véhicule.
+      // puisqu'on fait plusieurs inserts de nodes différents sur le même véhicule.
       targetVehicleNodeToInsertNeighborhood = w => d => assignForInsertVLSN(w, d, "insert"), //:Long => Long => Neighborhood,
       targetVehicleNodeToMoveNeighborhood = w => d => assignForInsertVLSN(w, d, "move"), //:Long => Long => Neighborhood,
       nodeToRemoveNeighborhood = d => assignForInsertVLSN(W, d, "remove"), //:Long => Neighborhood,
@@ -383,7 +381,6 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
       }, //:Long => () => Unit,
 
       reOptimizeVehicle = None, //:Option[Long => Option[Neighborhood]],
-      useDirectInsert = false, //:Boolean,
 
       vehicleToObjective = objPerWarehouse, //:Array[Objective],
       unroutedPenalty = constantObjective, //:Objective,

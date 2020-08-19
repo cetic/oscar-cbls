@@ -124,7 +124,7 @@ object RandomGraphGenerator {
         randomMove,
         randomType)
     }
-    builder.finish()
+    builder.buildGraph()
   }
 /*
   val bench = new InvBench(0,List(ToMax()))

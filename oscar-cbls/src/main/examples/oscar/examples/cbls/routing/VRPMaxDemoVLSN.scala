@@ -15,6 +15,9 @@ package oscar.examples.cbls.routing
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+//ce script ne fonctionne pas.
+//normalement il doit essayer de concentrer l'effort sur les noeuds proches au lieu de çà il fait n'importe quoi.
+
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.model.helpers.DistanceHelper
@@ -219,7 +222,6 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
       removeNodeAndReInsert = removeAndReInsertVLSN,
 
       reOptimizeVehicle = Some(vehicle => Some(threeOptOnVehicle(vehicle))),
-      useDirectInsert = true,
 
       objPerVehicle,
       unroutedPenaltyObj,
@@ -227,6 +229,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
       cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy,
 
+      //debugNeighborhoodExploration = true,
       name="VLSN(" + l + ")"
     )
   }
@@ -236,8 +239,19 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
     myVRP,
     neighborhoodName = "InsertUF",
     hotRestart = false,
-    selectNodeBehavior = First(),
+    selectNodeBehavior = Best(),
     selectInsertionPointBehavior = Best())
+
+  val routeUnroutedPoint2 =  insertPointRoutedFirst(
+    myVRP.routed,
+    ()=>myVRP.kFirst(10,closestRelevantNeighborsByDistance(_),unRoutedPostFilter),
+    myVRP,
+    neighborhoodName = "InsertRF",
+    hotRestart = true,
+    selectInsertedNodeBehavior = Best(),
+    selectInsertionPointBehavior = First()
+  )
+
 
   def onePtMove(k:Int) = onePointMove(
     myVRP.routed,
@@ -259,11 +273,12 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
     title = "VRPMaxDemoVLSN(n=" + n + " v=" + v + ")")
 
   val search = (bestSlopeFirst(List(
+    profile(routeUnroutedPoint2),
     profile(routeUnroutedPoint),
     profile(onePtMove(10)),
     profile(customTwoOpt(20)),
     profile(customThreeOpt(20,true))
-  )) exhaust (profile(vlsn(80)) maxMoves 1 exhaustBack bestSlopeFirst(List(segExchange(40),customTwoOpt(30))))) .afterMove(graphical.drawRoutes()).showObjectiveFunction(obj)
+  )) maxMoves 4 exhaust (profile(vlsn(80)) maxMoves 1 exhaustBack bestSlopeFirst(List(segExchange(40),customTwoOpt(30))))).afterMove(graphical.drawRoutes()).showObjectiveFunction(obj)
 
   search.verbose = 2
   //search.verboseWithExtraInfo(2, () => result)

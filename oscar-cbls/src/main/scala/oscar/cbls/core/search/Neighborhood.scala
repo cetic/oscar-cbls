@@ -597,7 +597,7 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
 
     val myPrintExploredNeighbors = printExploredNeighbors
 
-    if ((newObj < bestNewObj || toReturnMove == null) && acceptanceCriterion(oldObj, newObj)) {
+    if ((newObj < bestNewObj || toReturnMove == null)&& acceptanceCriterion(oldObj, newObj)) {
       bestNewObj = newObj
       toReturnMove = instantiateCurrentMove(newObj)
       if (myPrintExploredNeighbors) {

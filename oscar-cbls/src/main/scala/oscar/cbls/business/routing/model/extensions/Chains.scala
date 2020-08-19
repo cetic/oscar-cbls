@@ -5,11 +5,9 @@ import oscar.cbls.business.routing.model.VRP
 import scala.annotation.tailrec
 
 /**
- * Created by fg on 12/09/17.
- */
-//TODO redeprecate this (Fabian)
-//@deprecated("this is overpackaging and shold be deleted","")
-class Chains(vrp: VRP, chains: List[List[Int]]) {
+  * Created by fg on 12/09/17.
+  */
+class Chains(vrp: VRP, chains: List[List[Int]]){
 
   val (chainOfNode, nextNodeInChain, prevNodeInChain, nextNodesInChain, prevNodesInChain) = {
 

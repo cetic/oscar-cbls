@@ -48,6 +48,12 @@ object TransferFunction{
     DefinedTransferFunction(earliestArrivalTime, latestArrivalTime, earliestLeavingTime, node, node)
   }
 
+
+  def identifyTransferFunction(node:Int):TransferFunction = {
+    DefinedTransferFunction(0, Long.MaxValue, 0, node, node)
+  }
+
+
   /**
    * Computes the relevant predecessors of each node.
    * A neighbor is a relevant predecessors of a node if :
