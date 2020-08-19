@@ -24,25 +24,110 @@ import oscar.cbls.core.search._
 import oscar.cbls._
 import scala.collection.immutable.{SortedMap, SortedSet}
 
+object VLSN{
+
+  /**
+   * To prevent any gradual enrichment process in the VLSN,
+   * the whole VLSN graph is then explored prior to cycle detection.
+   */
+  def noEnrichment() = new NoEnrichment()
+
+  /**
+   * create a composite enrichment scheme, where the nodes are first partitioned
+   * according to some BasePartitionSchemeSpec,
+   * and some EnrichmentSchemeSpec specifies
+   * what edges are accepted between nodes of different partitions from the base,
+   * depending on the current enrichment level.
+   *
+   * It is also possible to specify that the insert moves can be shifted by some enrichment level,
+   * compared to the node moves. This can reduce the tendency to load many nodes first before optimizing.
+   * This tendency can increase the appearance of local minima.
+   *
+   * @param base the base partition specifying how nodes are partitioned
+   * @param enrich specifies for each level of enrichment, what edges should be explored or not,
+   *               based on the partitioning
+   * @param shiftInsert to shift the insert by some level of enrichment, compared to other moves.
+   *                    should be >=0
+   *                    This will result in the number of enrichment level to increase by shiftInsert.
+   */
+  def compositeEnrichmentSchemeSpec(base: BasePartitionSchemeSpec,
+                                           enrich: EnrichmentSchemeSpec, shiftInsert:Int = 0) =
+    new CompositeEnrichmentSchemeSpec(base,enrich, shiftInsert)
+
+
+  /**
+   * Specifies that the initial partitions must be based on vehicle routes:
+   * one partition per route, plus one partition for unrouted nodes.
+   */
+  def vehiclePartitionSpec() = new VehiclePartitionSpec()
+
+
+  /**
+   * randomly spreads the nodes (routed and unrouted) into nbPartition sets, of moreless the same size.
+   *
+   * @param nbPartitions the number of partitions to generate
+   */
+  def sameSizeRandomPartitionsSpec(nbPartitions:Int) =
+  new SameSizeRandomPartitionsSpec(nbPartitions:Int)
+
+  /**
+   * spreads the nodes (routed and unrouted) into nbPartition sets, of more less the same size.
+   * nodes of the same vehicle will have a tendency to be in the same partitions,
+   * and unrouted nodes are spread evenly among all partitions
+   *
+   * @param nbPartitions the number of partitions to generate
+   */
+  def vehicleStructuredSameSizePartitionsSpreadUnroutedSpec(nbPartitions:Int) =
+    new VehicleStructuredSameSizePartitionsSpreadUnroutedSpec(nbPartitions:Int)
+
+
+  /**
+   * all edges are to be explored in a single pass.
+   * this is nearly the same as using no enrichment,
+   * except that if using a single pass scheme, you can set a shiftInsert
+   */
+  def singlePassSchemeSpec() = new SinglePassSchemeSpec()
+
+  /**
+   * specifies a random enrichment process;
+   * at each level, it selects a set of pairs of partitions,
+   * and all edges between any f the selected pairs of partition are allowed.
+   * in addition to all the edges allowed at lower enrichment levels
+   *
+   * This also ensures that at all level,
+   * the same number of allowed edge is more less the same
+   *
+   * @param maxEnrichmentLevel the number of enrichment levels to achieve
+   */
+  def linearRandomSchemeSpec(maxEnrichmentLevel:Int) = new LinearRandomSchemeSpec(maxEnrichmentLevel)
+
+  /**
+   * at each level, nodes are grouped into sets;
+   * and all edges between nodes belonging to the same sets are allowed
+   * in addition to all the edges allowed at lower enrichment levels
+   *
+   *  * the initial sets are specified by the base partitioning,
+   *  and at each level, sets are merged two by two.
+   *  thus going from one level eto the nest one will divide the number of sets by two,
+   *  ame force the number of edges to be explored to double,
+   *  compared to the number explored at the previous level
+   */
+  def divideAndConquerSchemeSpec()  = new DivideAndConquerSchemeSpec()
+
+}
+
+
 abstract class VLSNEnrichmentSchemeSpec(){
   def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
                   unroutedNodesToInsert: SortedSet[Int]):EnrichmentScheme
 
 }
 
-case class CompositeEnrichmentSchemeSpec(base: BasePartitionSchemeSpec,
-                                         enrich: EnrichmentSchemeSpec, shiftInsert:Int = 0) extends VLSNEnrichmentSchemeSpec(){
-  override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                           unroutedNodesToInsert: SortedSet[Int]): EnrichmentScheme = {
-    val baseInst = base.instantiate(vehicleToRoutedNodesToMove,unroutedNodesToInsert)
-    new EnrichmentScheme(
-      baseInst,
-      enrich.instantiate(baseInst.nbPartition + shiftInsert),
-      shiftInsert
-    )
-  }
-}
 
+/**
+ * To prevent any gradual enrichment process in the VLSN,
+ * the whole VLSN graph is then explored prior to cycle detection.
+ */
 case class NoEnrichment() extends VLSNEnrichmentSchemeSpec(){
   override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
                            unroutedNodesToInsert: SortedSet[Int]): EnrichmentScheme = {
@@ -52,11 +137,59 @@ case class NoEnrichment() extends VLSNEnrichmentSchemeSpec(){
   }
 }
 
+/**
+ * create a composite enrichment scheme, where the nodes are first partitioned
+ * according to some BasePartitionSchemeSpec,
+ * and some EnrichmentSchemeSpec specifies
+ * what edges are accepted between nodes of different partitions from the base,
+ * depending on the current enrichment level.
+ *
+ * It is also possible to specify that the insert moves can be shifted by some enrichment level,
+ * compared to the node moves. This can reduce the tendency to load many nodes first before optimizing.
+ * This tendency can increase the appearance of local minima.
+ *
+ * @param base the base partition specifying how nodes are partitioned
+ * @param enrich specifies for each level of enrichment, what edges should be explored or not,
+ *               based on the partitioning
+ * @param shiftInsert to shift the insert by some level of enrichment, compared to other moves.
+ *                    should be >=0
+ *                    This will result in the number of enrichment level to increase by shiftInsert.
+ */
+case class CompositeEnrichmentSchemeSpec(base: BasePartitionSchemeSpec,
+                                         enrich: EnrichmentSchemeSpec, shiftInsert:Int = 0) extends VLSNEnrichmentSchemeSpec(){
+  override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
+                           unroutedNodesToInsert: SortedSet[Int]): EnrichmentScheme = {
+    require(shiftInsert >=0, "you cannot shift insert by negative number")
+    val baseInst = base.instantiate(vehicleToRoutedNodesToMove,unroutedNodesToInsert)
+    new EnrichmentScheme(
+      baseInst,
+      enrich.instantiate(baseInst.nbPartition + shiftInsert),
+      shiftInsert
+    )
+  }
+}
+
 abstract class BasePartitionSchemeSpec(){
   def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
                   unroutedNodesToInsert: SortedSet[Int]):BasePartitionScheme
 }
 
+/**
+ * Specifies that the initial partitions must be based on vehicle routes:
+ * one partition per route, plus one partition for unrouted nodes.
+ */
+case class VehiclePartitionSpec() extends BasePartitionSchemeSpec(){
+  override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
+                           unroutedNodesToInsert: SortedSet[Int]): BasePartitionScheme = {
+    new VehiclePartition(vehicleToRoutedNodesToMove, unroutedNodesToInsert)
+  }
+}
+
+/**
+ * randomly spreads the nodes (routed and unrouted) into nbPartition sets, of moreless the same size.
+ *
+ * @param nbPartitions the number of partitions to generate
+ */
 case class SameSizeRandomPartitionsSpec(nbPartitions:Int) extends BasePartitionSchemeSpec(){
   override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
                            unroutedNodesToInsert: SortedSet[Int]): BasePartitionScheme = {
@@ -65,6 +198,13 @@ case class SameSizeRandomPartitionsSpec(nbPartitions:Int) extends BasePartitionS
   }
 }
 
+/**
+ * spreads the nodes (routed and unrouted) into nbPartition sets, of more less the same size.
+ * nodes of the same vehicle will have a tendency to be in the same partitions,
+ * and unrouted nodes are spread evenly among all partitions
+ *
+ * @param nbPartitions the number of partitions to generate
+ */
 case class VehicleStructuredSameSizePartitionsSpreadUnroutedSpec(nbPartitions:Int) extends BasePartitionSchemeSpec(){
   override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
                            unroutedNodesToInsert: SortedSet[Int]): BasePartitionScheme = {
@@ -74,39 +214,57 @@ case class VehicleStructuredSameSizePartitionsSpreadUnroutedSpec(nbPartitions:In
   }
 }
 
-case class VehiclePartitionSpec() extends BasePartitionSchemeSpec(){
-  override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                           unroutedNodesToInsert: SortedSet[Int]): BasePartitionScheme = {
-    new VehiclePartition(vehicleToRoutedNodesToMove, unroutedNodesToInsert)
-  }
-}
 
 abstract class EnrichmentSchemeSpec(){
   def instantiate(nbPartitions:Int):VLSNEnrichmentScheme
 }
 
-case class LinearRandomSchemeSpec(nbSteps:Int) extends EnrichmentSchemeSpec(){
-  override def instantiate(nbPartitions: Int): VLSNEnrichmentScheme = {
-    val realNbSteps = nbSteps min (nbPartitions*(nbPartitions-1)/2)
-    println("nbPartitions:" + nbPartitions)
-    println("realNbSteps:" + realNbSteps)
-    if(realNbSteps == 0)  SinglePassScheme(nbPartitions)
-    else RandomScheme(nbPartitions,realNbSteps)
-  }
-}
-
-case class DivideAndConquerSchemeSpec() extends EnrichmentSchemeSpec(){
-  override def instantiate(nbPartitions: Int): VLSNEnrichmentScheme = {
-    new DivideAndConquerScheme(nbPartitions)
-  }
-}
-
+/**
+ * all edges are to be explored in a single pass.
+ * this is nearly the same as using no enrichment,
+ * except that if using a single pass scheme, you can set a shiftInsert
+ */
 case class SinglePassSchemeSpec() extends EnrichmentSchemeSpec(){
   override def instantiate(nbPartitions: Int): VLSNEnrichmentScheme = {
     SinglePassScheme(nbPartitions)
   }
 }
 
+/**
+ * specifies a random enrichment process;
+ * at each level, it selects a set of pairs of partitions,
+ * and all edges between any f the selected pairs of partition are allowed.
+ * in addition to all the edges allowed at lower enrichment levels
+ *
+ * This also ensures that at all level,
+ * the same number of allowed edge is more less the same
+ *
+ * @param maxEnrichmentLevel the number of enrichment levels to achieve
+ */
+case class LinearRandomSchemeSpec(maxEnrichmentLevel:Int) extends EnrichmentSchemeSpec(){
+  override def instantiate(nbPartitions: Int): VLSNEnrichmentScheme = {
+    val realNbSteps = maxEnrichmentLevel min (nbPartitions*(nbPartitions-1)/2)
+    if(realNbSteps == 0)  SinglePassScheme(nbPartitions)
+    else RandomScheme(nbPartitions,realNbSteps)
+  }
+}
+
+/**
+ * at each level, nodes are grouped into sets;
+ * and all edges between nodes belonging to the same sets are allowed
+ * in addition to all the edges allowed at lower enrichment levels
+ *
+ *  * the initial sets are specified by the base partitioning,
+ *  and at each level, sets are merged two by two.
+ *  thus going from one level eto the nest one will divide the number of sets by two,
+ *  ame force the number of edges to be explored to double,
+ *  compared to the number explored at the previous level
+ */
+case class DivideAndConquerSchemeSpec() extends EnrichmentSchemeSpec(){
+  override def instantiate(nbPartitions: Int): VLSNEnrichmentScheme = {
+    new DivideAndConquerScheme(nbPartitions)
+  }
+}
 
 
 /**
@@ -278,7 +436,28 @@ case class SinglePassSchemeSpec() extends EnrichmentSchemeSpec(){
  *                                 DFS is complete, but slower than Mouthuy
  * @param doAfterCycle an additional method that will be regularly called by the VLSN. you can use it to perform some rendering of the search progress,
  *                     but do not modify the current solution; this can only be done through the reOptimizeVehicle method.
- * @param name a name toat will be used in pretty printing.
+ * @param name a name that will be used in pretty printing.
+ * @param reoptimizeAtStartUp to automatically perform the re-optimization
+ *                            on all vehicle before starting up the VLSN process
+ * @param debugNeighborhoodExploration The base neighborhood should only modify the vehicle they are supposed to.
+ *                                     if they modify another vehicle, this causes the VLSN to crash for unclear reasons.
+ *                                     if this flag is set, the VLSN will check that the base neighborhood
+ *                                     only modify vehicles they are supposed to, and report a clear error if they do not.
+ *                                     by default, it is not set because there is a (small) time overhead in this flag.
+ * @param enrichmentSchemeSpec with this parameter, you can specify how the VLSN can perform early cycle detection throughout the constrution of the VLSN graph.
+ *                             this can provide great speedup when facing weakly constrained problems, with many possible moves WRT. strong constraints,
+ *                             or when the basic moves are significantly time consuming to explore.
+ *                             Check the VLSN object for all possible parameters here.
+ *
+ *                             a good example is{{{
+ *                             CompositeEnrichmentSchemeSpec(
+ *                                  SameSizeRandomPartitionsSpec(nbPartitions = 20),
+ *                                  LinearRandomSchemeSpec(maxEnrichmentLevel=10))
+ *                             }}}
+ *                             THIS IS EXPERIMENTAL
+ * @param injectAllCacheBeforeEnriching forces the VLSN to insect all edges cached from one iteration before starting the exploration of the VLSN graph.
+ *                                      only useful if using gradual enrichment processes, and unlikely to be useful
+ *                                      THIS IS EXPERIMENTAL
  * @author renaud.delandtsheer@cetic.be
  */
 class VLSN(v:Int,
@@ -286,7 +465,6 @@ class VLSN(v:Int,
            initUnroutedNodesToInsert:() => SortedSet[Int],
            nodeToRelevantVehicles:() => Map[Int,Iterable[Int]],
 
-           // puisqu'on fait plusieurs inserts de nodes différents sur le même véhicule.
            targetVehicleNodeToInsertNeighborhood:Int => Int => Neighborhood,
            targetVehicleNodeToMoveNeighborhood:Int => Int => Neighborhood,
            nodeToRemoveNeighborhood:Int => Neighborhood,
@@ -302,11 +480,11 @@ class VLSN(v:Int,
            maxIt : Int = Int.MaxValue,
            doAfterCycle : Option[() => Unit] = None,
            name:String = "VLSN",
-           reoptimizeAtStartUp:Boolean = false,
+
+           reoptimizeAtStartUp:Boolean = true,
            debugNeighborhoodExploration:Boolean = false,
-           enrichmentSchemeSpec:VLSNEnrichmentSchemeSpec = CompositeEnrichmentSchemeSpec(
-             SameSizeRandomPartitionsSpec(nbPartitions = 20)
-             /*VehicleStructuredSameSizePartitionsSpreadUnroutedSpec(20)*/,LinearRandomSchemeSpec(nbSteps=10)),
+
+           enrichmentSchemeSpec:VLSNEnrichmentSchemeSpec = VLSN.noEnrichment(),
            injectAllCacheBeforeEnriching:Boolean = false) extends Neighborhood {
 
   def doReoptimize(vehicle:Int) {

@@ -536,10 +536,10 @@ object PDPTW_VLSN extends App{
                 case 6 => VehiclePartitionSpec()
               },
               enrichmentSpec match {
-                case 0 => LinearRandomSchemeSpec(nbSteps = 5)
-                case 1 => LinearRandomSchemeSpec(nbSteps = 10)
-                case 2 => LinearRandomSchemeSpec(nbSteps = 15)
-                case 3 => LinearRandomSchemeSpec(nbSteps = 20)
+                case 0 => LinearRandomSchemeSpec(maxEnrichmentLevel = 5)
+                case 1 => LinearRandomSchemeSpec(maxEnrichmentLevel = 10)
+                case 2 => LinearRandomSchemeSpec(maxEnrichmentLevel = 15)
+                case 3 => LinearRandomSchemeSpec(maxEnrichmentLevel = 20)
                 case 4 => DivideAndConquerSchemeSpec()
               },
               shiftInsert)
