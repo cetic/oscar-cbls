@@ -92,6 +92,9 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
 
   def runBenchmark(fileName: String, enrichment: Int, partition: Int, enrichmentSpec: Int, shiftInsert: Int): String = {
 
+
+    var toReturn = s"file:$fileName\n"
+
     val m = new Store(noCycle = false)
 
     println("usage: This fileName enrichment partition enrichmentSpec shiftInsert")
@@ -648,7 +651,7 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
         cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy,
         //1
         enrichmentSchemeSpec = {
-          val toReturn = enrichment match {
+          val toReturnp = enrichment match {
             case 0 =>
               println("BENCHMARK: NoEnrichment")
               NoEnrichment()
@@ -665,16 +668,17 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
                   case 6 => VehiclePartitionSpec()
                 },
                 enrichmentSpec match {
-                  case 0 => LinearRandomSchemeSpec(nbSteps = 5)
-                  case 1 => LinearRandomSchemeSpec(nbSteps = 10)
-                  case 2 => LinearRandomSchemeSpec(nbSteps = 15)
-                  case 3 => LinearRandomSchemeSpec(nbSteps = 20)
+                  case 0 => LinearRandomSchemeSpec(nbEnrichmentLevels = 5)
+                  case 1 => LinearRandomSchemeSpec(nbEnrichmentLevels = 10)
+                  case 2 => LinearRandomSchemeSpec(nbEnrichmentLevels = 15)
+                  case 3 => LinearRandomSchemeSpec(nbEnrichmentLevels = 20)
                   case 4 => DivideAndConquerSchemeSpec()
                 },
                 shiftInsert)
           }
-          println("BENCHMARK:" + toReturn)
-          toReturn
+          toReturn = toReturn + toReturnp + "\n"
+          println("BENCHMARK:" + toReturnp)
+          toReturnp
         },
 
         name = "VLSN(" + l + ")",
@@ -689,8 +693,8 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
     val vlsnNeighborhood = vlsn(l)
     val search = bestSlopeFirst(List(oneChainInsert, oneChainMove, onePtMove(k))) exhaust (vlsnNeighborhood maxMoves 1)
     //val search =vlsnNeighborhood
-    search.verbose = 0
-    vlsnNeighborhood.verbose = 0
+    search.verbose = 1
+    vlsnNeighborhood.verbose = 2
 
     search.doAllMoves(obj = obj)
 
@@ -706,6 +710,6 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
 
     println("obj:" + obj.value)
   */
-    println("BENCHMARK: obj:" + obj.value + " duration: " + ((endTime - startTime) / (1000 * 1000)))
+    toReturn + "\nobj:" + obj.value + "\nduration: " + ((endTime - startTime) / (1000 * 1000))
   }
 }

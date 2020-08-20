@@ -22,7 +22,7 @@ object PDPTW_VLSN extends App{
   val m = new Store(noCycle = false)
 
   val v = 10
-  val n = 500
+  val n = 400
   //  val v = 10
   //  val n = 500
 
@@ -513,8 +513,9 @@ object PDPTW_VLSN extends App{
 
       enrichmentSchemeSpec =
         VLSN.compositeEnrichmentSchemeSpec(
-          VLSN.sameSizeRandomPartitionsSpec(nbPartitions = 20),
-          VLSN.linearRandomSchemeSpec(maxEnrichmentLevel = 10)),
+          VLSN.singletonPartitionSpec,
+//          VLSN.sameSizeRandomPartitionsSpec(nbPartitions = 10),
+          VLSN.linearRandomSchemeSpec(maxEnrichmentLevel = 20)),
 
       name="VLSN(" + l + ")",
       reoptimizeAtStartUp = true,

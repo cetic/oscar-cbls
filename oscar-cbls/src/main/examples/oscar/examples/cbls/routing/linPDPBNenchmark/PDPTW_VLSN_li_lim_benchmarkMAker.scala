@@ -88,9 +88,11 @@ object PDPTW_VLSN_li_lim_benchmarkMAker extends App {
   val partition: Int = args(2).toInt
   val enrichmentSpec: Int = args(3).toInt
   val shiftInsert: Int = args(4).toInt
-  runBenchmark(fileName: String, enrichment: Int, partition: Int, enrichmentSpec: Int, shiftInsert: Int)
+  println(runBenchmark(fileName: String, enrichment: Int, partition: Int, enrichmentSpec: Int, shiftInsert: Int))
 
   def runBenchmark(fileName: String, enrichment: Int, partition: Int, enrichmentSpec: Int, shiftInsert: Int): String = {
+
+    var toReturn = fileName + "\n"
 
     val m = new Store(noCycle = false)
 
@@ -648,7 +650,7 @@ object PDPTW_VLSN_li_lim_benchmarkMAker extends App {
         cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy,
         //1
         enrichmentSchemeSpec = {
-          val toReturn = enrichment match {
+          val toReturnp = enrichment match {
             case 0 =>
               println("BENCHMARK: NoEnrichment")
               NoEnrichment()
@@ -665,16 +667,18 @@ object PDPTW_VLSN_li_lim_benchmarkMAker extends App {
                   case 6 => VehiclePartitionSpec()
                 },
                 enrichmentSpec match {
-                  case 0 => LinearRandomSchemeSpec(nbSteps = 5)
-                  case 1 => LinearRandomSchemeSpec(nbSteps = 10)
-                  case 2 => LinearRandomSchemeSpec(nbSteps = 15)
-                  case 3 => LinearRandomSchemeSpec(nbSteps = 20)
+                  case 0 => LinearRandomSchemeSpec(5)
+                  case 1 => LinearRandomSchemeSpec(10)
+                  case 2 => LinearRandomSchemeSpec(15)
+                  case 3 => LinearRandomSchemeSpec(20)
                   case 4 => DivideAndConquerSchemeSpec()
                 },
                 shiftInsert)
           }
-          println("BENCHMARK:" + toReturn)
-          toReturn
+
+          toReturn = toReturn + toReturnp + "\n"
+          println("BENCHMARK:" + toReturnp)
+          toReturnp
         },
 
         name = "VLSN(" + l + ")",
@@ -706,6 +710,6 @@ object PDPTW_VLSN_li_lim_benchmarkMAker extends App {
 
     println("obj:" + obj.value)
   */
-    println("BENCHMARK: obj:" + obj.value + " duration: " + ((endTime - startTime) / (1000 * 1000)))
+    toReturn + "\nobj:" + obj.value + "\nduration: " + ((endTime - startTime) / (1000 * 1000))
   }
 }
