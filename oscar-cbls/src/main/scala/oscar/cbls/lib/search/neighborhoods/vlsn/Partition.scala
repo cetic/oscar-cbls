@@ -125,7 +125,8 @@ class SingletonPartition(allNodes:List[Int]) extends BasePartitionScheme{
     remainingNodes = remainingNodes.tail
   }
   override def nodeToPartitionId(node: Int, vehicle: Int): Int = {
-    nodeToPartition(node)
+    if(node == -1) 0 //just to say something.
+    else nodeToPartition(node)
   }
   override def nbPartition: Int = nextPartition
 }

@@ -14,6 +14,7 @@
   ******************************************************************************/
 package oscar.cbls.business.routing.invariants.timeWindow
 
+import oscar.cbls.{CBLSIntVar, Domain}
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.business.routing.invariants.global._
@@ -28,7 +29,7 @@ object TimeWindowConstraint {
     * @param gc The GlobalConstraint to which this invariant is linked
     * @param n The number of nodes of the problem (including vehicle)
     * @param v The number of vehicles of the problem
-    * @param singleNodeTransferFunctions An array containing the single TransferFunction of each node
+    * @param nodeToTransferFunction An array containing the single TransferFunction of each node
     * @param travelTimeMatrix A matrix representing the different travel time between the nodes
     * @param violations An array of CBLSIntVar maintaining the violation of each vehicle
     * @return a time window constraint
@@ -36,13 +37,39 @@ object TimeWindowConstraint {
   def apply(gc: GlobalConstraintCore,
             n: Int,
             v: Int,
-            singleNodeTransferFunctions: Array[TransferFunction],
+            nodeToTransferFunction: Array[TransferFunction],
             travelTimeMatrix: Array[Array[Long]],
             violations: Array[CBLSIntVar]): TimeWindowConstraint ={
 
     new TimeWindowConstraint(gc, n, v,
-      singleNodeTransferFunctions,
+      nodeToTransferFunction,
       travelTimeMatrix, violations)
+  }
+
+  /**
+   * This method instantiate a TimeWindow constraint given the following input
+   * @param gc The GlobalConstraint to which this invariant is linked
+   * @param n The number of nodes of the problem (including vehicle)
+   * @param v The number of vehicles of the problem
+   * @param nodeToTransferFunction An array containing the single TransferFunction of each node
+   * @param travelTimeMatrix A matrix representing the different travel time between the nodes
+   * @return An array of CBLSIntVar maintaining the violation of each vehicle
+   */
+  def apply(gc: GlobalConstraintCore,
+            n: Int,
+            v: Int,
+            nodeToTransferFunction: Array[TransferFunction],
+            travelTimeMatrix: Array[Array[Long]]
+            ): Array[CBLSIntVar] ={
+
+    val timeWindowViolations = Array.tabulate(v)(vehicle =>
+      new CBLSIntVar(gc.model, 0, Domain.coupleToDomain((0, 1)),s"timeWindowViolationVehicle:$vehicle"))
+
+    new TimeWindowConstraint(gc, n, v,
+      nodeToTransferFunction,
+      travelTimeMatrix, timeWindowViolations)
+
+    timeWindowViolations
   }
 }
 

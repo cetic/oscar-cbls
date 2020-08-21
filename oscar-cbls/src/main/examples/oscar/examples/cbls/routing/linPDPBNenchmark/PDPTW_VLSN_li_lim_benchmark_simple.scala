@@ -1,22 +1,30 @@
-package oscar.examples.cbls.routing
-
+package oscar.examples.cbls.routing.linPDPBNenchmark
 
 import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.business.routing._
+import oscar.cbls.business.routing.{invariants, _}
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
 import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TransferFunction}
 import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleCapacityConstraint
+import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.{Best, Neighborhood, NoMoveNeighborhood}
 import oscar.cbls.lib.search.neighborhoods.vlsn._
 
 import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
 import scala.io.Source
 
-object PDPTW_VLSN_li_lim_benchmark extends App {
+object PDPTW_VLSN_li_lim_benchmark_simple extends App {
+
+  println("usage: This fileName enrichment partition enrichmentSpec shiftInsert")
+  val fileName = args(0)
+  val enrichment: Int = args(1).toInt
+  val partition: Int = args(2).toInt
+  val enrichmentSpec: Int = args(3).toInt
+  val shiftInsert: Int = args(4).toInt
+  runBenchmark(fileName: String, enrichment: Int, partition: Int, enrichmentSpec: Int, shiftInsert: Int)
 
   case class PDP(fromNode: Int, toNode: Int, demand: Int) {
-    def chain: List[Int] = List(fromNode, toNode)
+    def nodeList: List[Int] = List(fromNode, toNode)
 
     def precedence: (Int, Int) = (fromNode, toNode)
   }
@@ -83,21 +91,12 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
     (v, distanceMatrix, pdps, capacity, singleNodeTransferFunctions)
   }
 
-  val fileName = args(0)
-  val enrichment: Int = args(1).toInt
-  val partition: Int = args(2).toInt
-  val enrichmentSpec: Int = args(3).toInt
-  val shiftInsert: Int = args(4).toInt
-  runBenchmark(fileName: String, enrichment: Int, partition: Int, enrichmentSpec: Int, shiftInsert: Int)
 
   def runBenchmark(fileName: String, enrichment: Int, partition: Int, enrichmentSpec: Int, shiftInsert: Int): String = {
-
 
     var toReturn = s"file:$fileName\n"
 
     val m = new Store(noCycle = false)
-
-    println("usage: This fileName enrichment partition enrichmentSpec shiftInsert")
 
     val (v, symmetricDistance, pdpList, capacity, transferFunctions) = readData(fileName)
     val n = symmetricDistance.length
@@ -105,13 +104,11 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
     println(s"VLSN(PDPTW) v:$v n:$n pdp:${pdpList.length}")
 
     val penaltyForUnrouted = 10000
-    val listOfChains = pdpList.map(_.chain)
-    val precedences = pdpList.map(_.precedence)
 
-    val contentsFlow = Array.fill(n)(0L)
+    val nodeToContentDelta = Array.fill(n)(0L)
     for (pdp <- pdpList) {
-      contentsFlow(pdp.fromNode) = pdp.demand.toLong
-      contentsFlow(pdp.toNode) = -pdp.demand.toLong
+      nodeToContentDelta(pdp.fromNode) = pdp.demand.toLong
+      nodeToContentDelta(pdp.toNode) = -pdp.demand.toLong
     }
 
     val vehiclesCapacity = Array.fill(v)(capacity.toLong)
@@ -120,20 +117,14 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
     val vehicles = 0 until v
 
     val k = 20
-    val l = 1000
-    val xNearestVehicles = v-1
 
-    //println("listOfChains: \n" + listOfChains.mkString("\n"))
-    // GC
     val gc = GlobalConstraintCore(myVRP.routes, v)
 
     // Distance
-    val vehiclesRouteLength = Array.tabulate(v)(vehicle => CBLSIntVar(m, name = "Route length of vehicle " + vehicle))
-    val routeLengthInvariant = new RouteLength(gc, n, v, vehiclesRouteLength, (from: Int, to: Int) => symmetricDistance(from)(to))
+    val vehiclesRouteLength = RouteLength(gc, n, v, symmetricDistance(_)(_))
 
     //Time window constraints
-    val timeWindowViolations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0, 1))))
-    val timeWindowConstraint = TimeWindowConstraint(gc, n, v, transferFunctions, symmetricDistance, timeWindowViolations)
+    val timeWindowViolations = TimeWindowConstraint(gc, n, v, transferFunctions, symmetricDistance)
     val timeWindowConstraints = new ConstraintSystem(m)
     for (vehicle <- 0 until v) {
       timeWindowConstraints.add(timeWindowViolations(vehicle) === 0)
@@ -144,46 +135,41 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
     //Chains
     val precedenceRoute = myVRP.routes.createClone()
 
-    //TODO: we need a faster precedence constraint!
-    val precedenceInvariant = precedence(precedenceRoute, precedences)
-    val vehicleOfNodesNow = vehicleOfNodes(precedenceRoute, v)
+    //precedences & sameRoute
     val precedencesConstraints = new ConstraintSystem(m)
-    for (start <- precedenceInvariant.nodesStartingAPrecedence)
-      precedencesConstraints.add(vehicleOfNodesNow(start) === vehicleOfNodesNow(precedenceInvariant.nodesEndingAPrecedenceStartedAt(start).head))
-    precedencesConstraints.add(0 === precedenceInvariant)
-    val chainsExtension = chains(myVRP, listOfChains)
+    //TODO: we need a faster precedence constraint!
+    val precedenceViolation = precedence(precedenceRoute, pdpList.map(pdp => (pdp.fromNode,pdp.toNode)))
+    precedencesConstraints.add(0 === precedenceViolation)
 
-    //for a chain, we want the x nearest vehicles to the chain.
-    //for each node we take the summe distance to each nodes of the chain to the vehicle
-    val chainHeadToSummedDistanceToVehicles = listOfChains.map((chain: List[Int]) => (chain.head, vehicles.map(vehicle => (chain.map((node: Int) => symmetricDistance(node)(vehicle)).sum)).toArray))
-    val chainHeadToxNearestVehicles = SortedMap.empty[Int, List[Int]] ++ chainHeadToSummedDistanceToVehicles.map({ case (chainHead, vehicleToDistance) => (chainHead, KSmallest.getkSmallests(vehicles.toArray, xNearestVehicles, (v: Int) => vehicleToDistance(v))) })
+    val vehicleOfNodes1 = vehicleOfNodes(precedenceRoute, v)
+    for (pdp <- pdpList) {
+      precedencesConstraints.add(vehicleOfNodes1(pdp.fromNode) === vehicleOfNodes1(pdp.toNode))
+    }
 
     // Vehicle content
-    val violationOfContentOfVehicle = Array.tabulate(v)(vehicle =>
-      CBLSIntVar(myVRP.routes.model, name = "Violation of capacity of vehicle " + vehicle))
-    val capacityInvariant = GlobalVehicleCapacityConstraint(gc, n, v, vehiclesCapacity, contentsFlow, violationOfContentOfVehicle)
+    val violationOfContentOfVehicle = GlobalVehicleCapacityConstraint(gc, n, v, vehiclesCapacity, nodeToContentDelta)
 
     //Objective function
     val unroutedPenalty = penaltyForUnrouted * (n - length(myVRP.routes))
 
-    val obj = new CascadingObjective(new CascadingObjective(timeWindowConstraints, precedencesConstraints),
-      new CascadingObjective(sum(violationOfContentOfVehicle),
-        sum(vehiclesRouteLength) + unroutedPenalty))
+    val obj = CascadingObjective(
+      timeWindowConstraints,
+      precedencesConstraints,
+      sum(violationOfContentOfVehicle),
+      sum(vehiclesRouteLength) + unroutedPenalty
+    )
 
     val objPerVehicle = Array.tabulate[Objective](v)(vehicle =>
-      new CascadingObjective(
-        new CascadingObjective(new CascadingObjective(timeWindowConstraints, precedencesConstraints), violationOfContentOfVehicle(vehicle)),
-        Objective(vehiclesRouteLength(vehicle)))
+      CascadingObjective(
+        timeWindowConstraints,
+        precedencesConstraints,
+        violationOfContentOfVehicle(vehicle),
+        vehiclesRouteLength(vehicle))
     )
-    val unroutedPenaltyOBj = Objective(unroutedPenalty)
+
+    val unroutedPenaltyObj = Objective(unroutedPenalty)
 
     m.close()
-
-    val relevantPredecessorsTmp: Map[Int, Iterable[Int]] = GlobalVehicleCapacityConstraint.relevantPredecessorsOfNodes(capacityInvariant)
-
-    val relevantPredecessors = SortedMap.empty[Int, SortedSet[Int]] ++ (relevantPredecessorsTmp.map({ case (node, v) => (node, SortedSet.empty[Int] ++ v) }))
-
-    val closestRelevantPredecessorsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance, relevantPredecessors)(_))
 
     // MOVING
 
@@ -711,3 +697,4 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
     toReturn + "\nobj:" + obj.value + "\nduration: " + ((endTime - startTime) / (1000 * 1000))
   }
 }
+

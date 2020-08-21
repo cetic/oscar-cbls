@@ -376,7 +376,7 @@ class VLSN(v:Int,
                        initialObj: Long,
                        acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
 
-    if(printExploredNeighborhoods) println("start VLSN")
+    if(printTakenMoves) println("start VLSN")
     val initialSolution = obj.model.solution(true)
 
     var somethingDone: Boolean = false
@@ -436,118 +436,6 @@ class VLSN(v:Int,
       NoMoveFound
     }
   }
-
-  /*
-    private def doVLSNSearch(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                             unroutedNodesToInsert: SortedSet[Int],
-                             cachedExplorations: Option[CachedExplorations]): Option[DataForVLSNRestart] = {
-
-      //TODO: this is the time consuming part of the VLSN; a smart approach would really help here.
-      //first, explore the atomic moves, and build VLSN graph
-      val (vlsnGraph,directEdges) = buildGraph(vehicleToRoutedNodesToMove,
-        unroutedNodesToInsert,
-        cachedExplorations)
-
-      //println(vlsnGraph.statistics)
-
-      val liveNodes = Array.fill(vlsnGraph.nbNodes)(true)
-
-      def killNodesImpactedByCycle(cycle: List[Edge]): Unit = {
-        val theImpactedVehicles = impactedVehicles(cycle)
-
-        val impactedRoutingNodes = SortedSet.empty[Int] ++ cycle.flatMap(edge => {
-          val node = edge.from.representedNode; if (node >= 0) Some(node) else None
-        })
-
-        for (vlsnNode <- vlsnGraph.nodes) {
-          if ((impactedRoutingNodes contains vlsnNode.representedNode) || (theImpactedVehicles contains vlsnNode.vehicle)) {
-            liveNodes(vlsnNode.nodeID) = false
-          }
-        }
-      }
-
-      def impactedVehicles(cycle: List[Edge]):SortedSet[Int] = SortedSet.empty[Int] ++ cycle.flatMap(edge => {
-        var l:List[Int] = List.empty
-        val vehicleFrom = edge.from.vehicle
-        if (vehicleFrom < v && vehicleFrom >= 0) l = vehicleFrom :: Nil
-        val vehicleTo = edge.to.vehicle
-        if (vehicleTo < v && vehicleTo >= 0) l = vehicleTo :: Nil
-        l
-      })
-
-      var acc: List[List[Edge]] = List.empty
-      var computedNewObj: Long = globalObjective.value
-
-      def performEdgesAndKillCycles(edges:List[Edge]): Unit ={
-        acc = edges :: acc
-        val delta = edges.map(edge => edge.deltaObj).sum
-        require(delta < 0, "delta should be negative, got " + delta)
-        computedNewObj += delta
-
-        for(edge <- edges){
-          if(edge.move != null){
-            edge.move.commit()
-          }
-        }
-        killNodesImpactedByCycle(edges)
-
-        require(globalObjective.value == computedNewObj, "new global objective differs from computed newObj:" + globalObjective + "!=" + computedNewObj + "edges:" + edges + " - Unrouted Penlaty:" +  unroutedPenalty.value + " - Obj Per Vehicle:" + vehicleToObjective.mkString(";"))
-      }
-
-      //first, kill the direct edges
-      for(directEdge <- directEdges){
-        performEdgesAndKillCycles(List(directEdge))
-      }
-
-      while (true) {
-        CycleFinderAlgo(vlsnGraph, cycleFinderAlgoSelection).findCycle(liveNodes) match {
-          case Some(listOfEdge) =>
-            performEdgesAndKillCycles(listOfEdge)
-          case None =>
-            //we did not find any move at all on the graph
-            //there is no possible incremental restart for VLSN
-            if (acc.isEmpty) return None
-            else {
-              //We have exhausted the graph, and VLSN can be restarted
-              if(printTakenMoves) {
-                println("   - ?  " + computedNewObj + "   " + name)
-                for(cycle <- acc){
-                  val moves = cycle.flatMap(edge => Option(edge.move))
-                  val vehicles = impactedVehicles(cycle)
-                  val moveTypes = "[" + cycle.flatMap(edge => if(edge.deltaObj==0) None else Some(edge.moveType)).groupBy((a:VLSNMoveType) => a).toList.map({case (moveType,l) => (""  + moveType + "->" + l.size)}).mkString(",") + "]"
-                  val deltaObj = cycle.map(edge => edge.deltaObj).sum
-                  println("                deltaObj:" + deltaObj+ " size:" + moves.length + " vehicles:{" + vehicles.mkString(",") + "} moveTypes:" + moveTypes + " moves:{" + moves.mkString(",") + "}")
-                }
-              }
-
-              //println(vlsnGraph.toDOT(acc,false,true))
-
-              //re-optimize
-              reOptimizeVehicle match{
-                case None => ;
-                case Some(_) =>
-                  //re-optimizing impacted vehicles (optional)
-                  for(vehicle <- impactedVehicles(acc.flatten)){
-                    doReoptimize(vehicle)
-                  }
-              }
-
-              //println(debugString())
-
-              //now returns data for incremental restart of VLSN
-              return Some(DataForVLSNRestart(
-                vlsnGraph,
-                acc.flatten,
-                vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                unroutedNodesToInsert: SortedSet[Int]))
-            }
-        }
-      }
-      throw new Error("should not reach this")
-    }
-  */
-
-
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

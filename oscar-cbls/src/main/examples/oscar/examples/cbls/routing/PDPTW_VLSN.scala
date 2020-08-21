@@ -493,9 +493,7 @@ object PDPTW_VLSN extends App{
     //VLSN neighborhood
     new VLSN(
       v,
-      () => SortedMap.empty[Int, SortedSet[Int]] ++
-        vehicles.map((vehicle: Int) =>
-          (vehicle:Int, SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(vehicle).filter(node => chainsExtension.isHead(node)))),
+      () => myVRP.getVehicleToRouteMap.mapValues(_.filter(node => node >= v && chainsExtension.isHead(node))),
       () => SortedSet.empty[Int] ++ myVRP.unroutedNodes.filter(node => chainsExtension.isHead(node)),
       nodeToRelevantVehicles = () => chainHeadToxNearestVehicles,
 
@@ -512,9 +510,9 @@ object PDPTW_VLSN extends App{
       obj,
 
       enrichmentSchemeSpec =
+//        VLSN.noEnrichment(),
         VLSN.compositeEnrichmentSchemeSpec(
-          VLSN.singletonPartitionSpec,
-//          VLSN.sameSizeRandomPartitionsSpec(nbPartitions = 10),
+          VLSN.sameSizeRandomPartitionsSpec(nbPartitions = 20),
           VLSN.linearRandomSchemeSpec(maxEnrichmentLevel = 20)),
 
       name="VLSN(" + l + ")",
