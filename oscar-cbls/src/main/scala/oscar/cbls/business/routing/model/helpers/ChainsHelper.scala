@@ -9,7 +9,6 @@ import scala.collection.immutable.HashSet
  * Created by fg on 12/09/17.
  */
 object ChainsHelper {
-  // TODO move this dans l'objet Chains
 
   def relevantNeighborsForLastNodeAfterHead(vrp: VRP, chainsExtension: Chains, potentialRelevantPredecessorOfLastNode: Option[HashSet[Int]] = None)(lastNode: Int): Iterable[Int] = {
     require(chainsExtension.isLast(lastNode), "The referenced node has to be the last node of a chain.")

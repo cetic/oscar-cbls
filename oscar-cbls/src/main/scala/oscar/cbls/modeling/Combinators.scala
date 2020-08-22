@@ -635,7 +635,7 @@ class NeighborhoodOps(n:Neighborhood){
   def noReset: Neighborhood = NoReset(n)
 
   /**
-   * defines a name wor this (composite) neighborhood
+   * defines a name for this neighborhood
    * this will be used as prefix for each move returned by this neighborhood (the original name will still exist)
    * use this for debug and documentation purpose only
    *

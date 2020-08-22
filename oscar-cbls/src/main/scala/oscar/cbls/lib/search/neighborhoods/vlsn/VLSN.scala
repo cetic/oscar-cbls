@@ -447,7 +447,6 @@ class VLSN(v:Int,
 
     val moveExplorer:MoveExplorer = getMoveExplorer(vehicleToRoutedNodesToMove, unroutedNodesToInsert, enrichmentScheme.moveToLevel, cachedExplorations)
 
-
     val maxEnrichmentLevel = enrichmentScheme.maxLevel
 
     var dirtyNodes:SortedSet[Int] = SortedSet.empty

@@ -196,6 +196,8 @@ class EnrichmentScheme(base: BasePartitionScheme,
     if(fromVehicle == -1) baseLevel + shiftInsert else baseLevel
   }
   def maxLevel:Int = enrich.maxLevel + shiftInsert
+
+  enrich.checkLevel()
 }
 
 
@@ -337,6 +339,10 @@ case class VehicleStructuredSameSizePartitionsSpreadUnrouted(vehicleToNodeToMove
 abstract class VLSNEnrichmentScheme() {
   val partitionToLevel : Array[Array[Int]]
   val maxLevel:Int
+
+  def checkLevel(): Unit ={
+    assert(partitionToLevel.forall(_.forall(_ <= maxLevel)))
+  }
 }
 
 class DivideAndConquerScheme(nbPartition:Int)
@@ -405,6 +411,7 @@ case class RandomScheme(nbPartition:Int, nbSteps:Int)
         nbCouplesToDo -= 1
       }
       level += 1
+      if(level > maxLevel) level = maxLevel
     }
     while(randomizedpartitionCoupleList.nonEmpty){
       val (i,j) = randomizedpartitionCoupleList.head

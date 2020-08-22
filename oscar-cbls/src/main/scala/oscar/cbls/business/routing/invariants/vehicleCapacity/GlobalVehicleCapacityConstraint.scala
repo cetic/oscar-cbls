@@ -4,7 +4,6 @@ import oscar.cbls.CBLSIntVar
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.invariants.global._
-import oscar.cbls.core.computation.CBLSIntVar
 
 import scala.annotation.tailrec
 

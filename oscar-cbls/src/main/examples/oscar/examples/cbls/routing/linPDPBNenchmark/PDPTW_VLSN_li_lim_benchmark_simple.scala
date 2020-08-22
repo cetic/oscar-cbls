@@ -1,8 +1,7 @@
 package oscar.examples.cbls.routing.linPDPBNenchmark
 
 import oscar.cbls._
-import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.business.routing.{invariants, _}
+import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
 import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TransferFunction}
 import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleCapacityConstraint
@@ -10,7 +9,8 @@ import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.{Best, Neighborhood, NoMoveNeighborhood}
 import oscar.cbls.lib.search.neighborhoods.vlsn._
 
-import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
+import scala.annotation.tailrec
+import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.io.Source
 
 object PDPTW_VLSN_li_lim_benchmark_simple extends App {
@@ -116,7 +116,12 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
     val myVRP = new VRP(m, n, v)
     val vehicles = 0 until v
 
-    val k = 20
+    val pickUpPointToDeliveryPoint = Array.fill(n)(-1)
+    for(pdp <- pdpList){
+      pickUpPointToDeliveryPoint(pdp.fromNode) = pdp.toNode
+    }
+
+    val allPickupPoints:SortedSet[Int] = SortedSet(pdpList.map(_.fromNode):_*)
 
     val gc = GlobalConstraintCore(myVRP.routes, v)
 
@@ -149,6 +154,8 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
     // Vehicle content
     val violationOfContentOfVehicle = GlobalVehicleCapacityConstraint(gc, n, v, vehiclesCapacity, nodeToContentDelta)
 
+    val unroutedPickups = myVRP.unrouted inter allPickupPoints
+
     //Objective function
     val unroutedPenalty = penaltyForUnrouted * (n - length(myVRP.routes))
 
@@ -170,391 +177,128 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
     val unroutedPenaltyObj = Objective(unroutedPenalty)
 
     m.close()
+    // //////////////////////////////////////////////////////////////////////////////////////////////////
 
-    // MOVING
-
-    val nextMoveGenerator = {
-      (exploredMoves: List[OnePointMoveMove], t: Option[List[Int]]) => {
-        val chainTail: List[Int] = t match {
-          case None =>
-            val movedNode = exploredMoves.head.movedPoint
-            chainsExtension.nextNodesInChain(chainsExtension.firstNodeInChainOfNode(movedNode))
-          case Some(tail: List[Int]) => tail
-        }
-
-        chainTail match {
-          case Nil => None
-          case head :: Nil => None
-          case nextNodeToMove :: newTail =>
-            val moveNeighborhood = onePointMove(() => Some(nextNodeToMove),
-              () => ChainsHelper.computeRelevantNeighborsForInternalNodes(myVRP, chainsExtension), myVRP)
-            Some(moveNeighborhood, Some(newTail))
-        }
+    @tailrec
+    def trimRouteFromNodeRemoveNode(routeOfVehicle:List[Int], node:Int):List[Int] = {
+      routeOfVehicle match{
+        case Nil => Nil
+        case h::t =>
+          if (h==node) t
+          else trimRouteFromNodeRemoveNode(t,node)
       }
     }
 
-    val firstNodeOfChainMove = onePointMove(
-      () => myVRP.routed.value.filter(chainsExtension.isHead),
-      () => myVRP.kFirst(k, closestRelevantPredecessorsByDistance(_)), myVRP, neighborhoodName = "MoveHeadOfChain")
+    def insertNodeVLSN(node:Int,
+                       relevantPredecessors:Iterable[Int]) =
+      insertPointUnroutedFirst(
+        () => Some(node),
+        () => _ => relevantPredecessors,
+        selectInsertionPointBehavior = Best(),
+        vrp=myVRP,
+        positionIndependentMoves = true)
 
-    def lastNodeOfChainMove(lastNode: Int) = onePointMove(
-      () => List(lastNode),
-      () => myVRP.kFirst(k,
-        ChainsHelper.relevantNeighborsForLastNodeAfterHead(
-          myVRP,
-          chainsExtension
-          , Some(HashSet() ++ relevantPredecessors(lastNode))
-        )),
-      myVRP,
-      neighborhoodName = "MoveLastOfChain")
+    def insertPDPVLSN(vehicle:Int):Int => Neighborhood = {
+      val routeOfVehicle: List[Int] =
+        myVRP.getRouteOfVehicle(vehicle)
 
-    val oneChainMove = {
-      dynAndThen(firstNodeOfChainMove,
-        (moveMove: OnePointMoveMove) => {
-          if (timeWindowConstraints.Violation.value != 0) {
-            NoMoveNeighborhood
-          } else {
-            mu[OnePointMoveMove, Option[List[Int]]](
-              lastNodeOfChainMove(chainsExtension.lastNodeInChainOfNode(moveMove.movedPoint)),
-              nextMoveGenerator,
-              None,
-              Int.MaxValue,
-              false)
-          }
-        }) name "OneChainMove"
-    }
+      pickUp:Int => {
+        val delivery = pickUpPointToDeliveryPoint(pickUp)
 
-    def onePtMove(k: Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k, closestRelevantPredecessorsByDistance(_)), myVRP))
-
-    // INSERTING
-
-    val nextInsertGenerator = {
-      (exploredMoves: List[InsertPointMove], t: Option[List[Int]]) => {
-        val chainTail: List[Int] = t match {
-          case None =>
-            val insertedNode = exploredMoves.head.insertedPoint
-            chainsExtension.nextNodesInChain(chainsExtension.firstNodeInChainOfNode(insertedNode))
-          case Some(tail: List[Int]) => tail
-        }
-
-        chainTail match {
-          case Nil => None
-          case head :: Nil => None
-          case nextNodeToInsert :: newTail =>
-            val insertNeighborhood = insertPointUnroutedFirst(() => Some(nextNodeToInsert),
-              () => ChainsHelper.computeRelevantNeighborsForInternalNodes(myVRP, chainsExtension), myVRP)
-            Some(insertNeighborhood, Some(newTail))
-        }
-      }
-    }
-
-    val firstNodeOfChainInsertion = insertPointUnroutedFirst(() => myVRP.unrouted.value.filter(chainsExtension.isHead), () => {
-      myVRP.kFirst(k, closestRelevantPredecessorsByDistance(_))
-    }, myVRP, neighborhoodName = "InsertUF")
-
-    //TODO: il y a un problème si on a un noeud tout seul.
-    def lastNodeOfChainInsertion(lastNode: Int) = insertPointUnroutedFirst(
-      () => List(lastNode),
-      () => myVRP.kFirst(
-        k,
-        ChainsHelper.relevantNeighborsForLastNodeAfterHead(
-          myVRP,
-          chainsExtension)),
-      myVRP,
-      neighborhoodName = "InsertUF")
-
-    val oneChainInsert = {
-      dynAndThen(firstNodeOfChainInsertion,
-        (insertMove: InsertPointMove) => {
-          if (timeWindowConstraints.Violation.value != 0) {
-            NoMoveNeighborhood
-          } else {
-            mu[InsertPointMove, Option[List[Int]]](
-              lastNodeOfChainInsertion(chainsExtension.lastNodeInChainOfNode(insertMove.insertedPoint)),
-              nextInsertGenerator,
-              None,
-              Int.MaxValue,
-              false)
-          }
-        }) name "OneChainInsert"
-    }
-
-
-    /*
-      def nodesInRouteAfterPosition(position:Int,routes:IntSequence,v:Int):Iterable[Int] = {
-        var currentPosition = routes.explorerAtPosition(position).get
-        var toReturn:List[Int] = Nil
-        while(currentPosition.value >= v){
-          toReturn = currentPosition.value :: toReturn
-          currentPosition = currentPosition.next match{
-            case None => return toReturn
-            case Some(x) => x
-          }
-        }
-        toReturn
-      }
-
-      def pickUpPointToDeliveryPoint(pickUpPoint:Int):Int = ???
-
-      def insertPickUp(pickUpPointsToInsertOpt:Option[Iterable[Int]],
-                       targetVehiclesOpt:Option[Iterable[Int]]) =
-        insertPointUnroutedFirst(
-          () => pickUpPointsToInsertOpt match{
-            case None => myVRP.unrouted.value.filter(chainsExtension.isHead)
-            case Some(pickUpPoints) => pickUpPoints
-          },
-          () => targetVehiclesOpt match{
-            case None => myVRP.kFirst(k,closestRelevantPredecessorsByDistance(_))
-            case Some(vehicle) => ???
-          },
-          selectInsertionPointBehavior = Best(),
-          vrp = myVRP,
-          neighborhoodName = "InsertPickUp")
-
-      def insertDelivery(deliveryPoint:Int,nodesInRouteAfterPickUp:Iterable[Int]) =
-        insertPointUnroutedFirst(
-          () => List(deliveryPoint),
-          () => _ => nodesInRouteAfterPickUp,
-          selectInsertionPointBehavior = Best(),
-          vrp=myVRP,
-          neighborhoodName = s"insertDelivery:$deliveryPoint")
-
-      def insertPDP(pickUpPointsToInsertOpt:Option[Iterable[Int]],
-                    targetVehiclesOpt:Option[Iterable[Int]]) =
         dynAndThen(
-          insertPickUp(pickUpPointsToInsertOpt,targetVehiclesOpt),
+          insertNodeVLSN(
+            pickUp,
+            routeOfVehicle),
           (insertMove: InsertPointMove) =>
-            if(timeWindowConstraints.Violation.value != 0){
+            if (timeWindowConstraints.Violation.value != 0) {
               NoMoveNeighborhood
-            }else{
-              val deliveryPoint = pickUpPointToDeliveryPoint(insertMove.insertedPoint)
-              val nodesInRouteAfterPickUp = nodesInRouteAfterPosition(insertMove.insertAtPosition,myVRP.routes.value,v)
-              insertDelivery(deliveryPoint, nodesInRouteAfterPickUp)
-            }) name "insetPDP"
+            } else {
+              val nodesInRouteAfterPickUp = pickUp :: trimRouteFromNodeRemoveNode(routeOfVehicle,insertMove.newPredecessor)
 
-    */
+              insertNodeVLSN(
+                delivery,
+                nodesInRouteAfterPickUp)
+            }) name s"insertPDPVLSN($pickUp $delivery vehicle:$vehicle)"
+      }
+    }
 
     // //////////////////////////////////////////////////////////////////////////////////////////////////
-    val relevantPredecessorsOfNodes = (node: Int) => myVRP.nodes
 
-    val lClosestNeighborsByDistance: Array[SortedSet[Int]] = Array.tabulate(n)(node =>
-      SortedSet.empty[Int] ++ myVRP.kFirst(l, (node: Int) => closestRelevantPredecessorsByDistance(node))(node))
-
-    def routeUnroutedChainVLSN(targetVehicle: Int): (Int => Neighborhood) = {
-
-      val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(targetVehicle)
-
-      (firstNodeOfUnroutedChain: Int) => {
-        val lNearestNodesOfTargetVehicle = nodesOfTargetVehicle.filter(x => lClosestNeighborsByDistance(firstNodeOfUnroutedChain) contains x)
-
-        val nextInsertGenerator = {
-          (exploredMoves: List[InsertPointMove], t: Option[List[Int]]) => {
-            val chainTail: List[Int] = t match {
-              case None =>
-                val insertedNode = exploredMoves.head.insertedPoint
-                chainsExtension.nextNodesInChain(chainsExtension.firstNodeInChainOfNode(insertedNode))
-              case Some(tail: List[Int]) => tail
-            }
-
-            chainTail match {
-              case Nil => None
-              case head :: Nil => None
-              case nextNodeToInsert :: newTail =>
-                val insertNeighborhood = insertPointUnroutedFirst(
-                  () => Some(nextNodeToInsert),
-                  () => ChainsHelper.computeRelevantNeighborsForInternalNodes(myVRP, chainsExtension),
-                  myVRP,
-                  selectInsertionPointBehavior = Best(),
-                  positionIndependentMoves = true, //compulsory because we are in VLSN
-                  neighborhoodName = "insertChainMiddle"
-                )
-                Some(insertNeighborhood, Some(newTail))
-            }
-          }
-        }
-
-        val firstNodeOfChainInsertion =
-          insertPointUnroutedFirst(
-            () => List(firstNodeOfUnroutedChain),
-            () => _ => lNearestNodesOfTargetVehicle,
-            myVRP,
-            hotRestart = false,
-            selectInsertionPointBehavior = Best(),
-            positionIndependentMoves = true, //compulsory because we are in VLSN
-            neighborhoodName = "insertChainHead"
-          )
-
-        def lastNodeOfChainInsertion(lastNode: Int) = insertPointUnroutedFirst(
-          () => List(lastNode),
-          () => myVRP.kFirst(
-            l,
-            ChainsHelper.relevantNeighborsForLastNodeAfterHead( //TODO: filter in the target vehicle!!
-              myVRP,
-              chainsExtension)),
-          myVRP,
-          selectInsertionPointBehavior = Best(),
-          positionIndependentMoves = true, //compulsory because we are in VLSN
-          neighborhoodName = "insertChainLast")
-
-        dynAndThen(firstNodeOfChainInsertion,
-          (insertMove: InsertPointMove) => {
-            if (timeWindowViolations(targetVehicle).value != 0) {
-              NoMoveNeighborhood
-            } else {
-              mu[InsertPointMove, Option[List[Int]]](
-                lastNodeOfChainInsertion(chainsExtension.lastNodeInChainOfNode(insertMove.insertedPoint)),
-                nextInsertGenerator,
-                None,
-                Int.MaxValue,
-                false)
-            }
-          }) name "insertChainVLSN"
-      }
-    }
-
-    def moveChainVLSN(targetVehicle: Int): (Int => Neighborhood) = {
-      val nodesOfTargetVehicle = (SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(targetVehicle))
-
-      (chainHeadToMove: Int) => {
-        val relevantNodesOfTargetVehicle = nodesOfTargetVehicle intersect (relevantPredecessors(chainHeadToMove))
-        val lNearestNodesOfTargetVehicle = relevantNodesOfTargetVehicle.intersect(lClosestNeighborsByDistance(chainHeadToMove))
-
-        val nextMoveGenerator = {
-          (exploredMoves: List[OnePointMoveMove], t: Option[List[Int]]) => {
-            val chainTail: List[Int] = t match {
-              case None =>
-                val movedNode = exploredMoves.head.movedPoint
-                chainsExtension.nextNodesInChain(chainsExtension.firstNodeInChainOfNode(movedNode))
-              case Some(tail: List[Int]) => tail
-            }
-
-            chainTail match {
-              case Nil => None
-              case head :: Nil => None
-              case nextNodeToMove :: newTail =>
-                val moveNeighborhood = onePointMove(
-                  () => Some(nextNodeToMove),
-                  () => ChainsHelper.computeRelevantNeighborsForInternalNodes(myVRP, chainsExtension),
-                  myVRP,
-                  selectDestinationBehavior = Best(),
-                  positionIndependentMoves = true
-                )
-                Some(moveNeighborhood, Some(newTail))
-            }
-          }
-        }
-
-        val firstNodeOfChainMove =
-          onePointMove(
-            () => List(chainHeadToMove),
-            () => _ => lNearestNodesOfTargetVehicle,
-            myVRP,
-            selectDestinationBehavior = Best(),
-            hotRestart = false,
-            positionIndependentMoves = true, //compulsory because we are in VLSN
-            neighborhoodName = "MoveChainHead"
-          )
-
-        def lastNodeOfChainMove(lastNode: Int) = onePointMove(
-          () => List(lastNode),
-          () => myVRP.kFirst(l,
-            ChainsHelper.relevantNeighborsForLastNodeAfterHead(
-              myVRP,
-              chainsExtension
-              //,Some(HashSet() ++ relevantPredecessors(lastNode))
-            )), //TODO: takes a long time
-          myVRP,
-          positionIndependentMoves = true,
-          neighborhoodName = "MoveChainLast")
-
-        dynAndThen(firstNodeOfChainMove,
-          (moveMove: OnePointMoveMove) => {
-            if (timeWindowViolations(targetVehicle).value != 0) {
-              NoMoveNeighborhood
-            } else {
-              mu[OnePointMoveMove, Option[List[Int]]](
-                lastNodeOfChainMove(chainsExtension.lastNodeInChainOfNode(moveMove.movedPoint)),
-                nextMoveGenerator,
-                None,
-                Int.MaxValue,
-                false)
-            }
-          }) name "OneChainMove"
-      }
-    }
-
-    /*
-      def a(chainHeadToMove: Int): Neighborhood = {
-      val relevantNodesOfTargetVehicle = nodesOfTargetVehicle intersect (relevantPredecessors(chainHeadToMove))
-      val lNearestNodesOfTargetVehicle = relevantNodesOfTargetVehicle.filter(x => lClosestNeighborsByDistance(chainHeadToMove) contains x)
-     */
-
-    def moveChainWithinVehicle(vehicle: Int): Neighborhood = {
-      val nodesOfTargetVehicle = (SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(vehicle))
-      val chainsHeadInVehicle = nodesOfTargetVehicle.filter(chainsExtension.isHead)
-
-
-      val nextMoveGenerator = {
-        (exploredMoves: List[OnePointMoveMove], t: Option[List[Int]]) => {
-          val chainTail: List[Int] = t match {
-            case None =>
-              val movedNode = exploredMoves.head.movedPoint
-              chainsExtension.nextNodesInChain(chainsExtension.firstNodeInChainOfNode(movedNode))
-            case Some(tail: List[Int]) => tail
-          }
-
-          chainTail match {
-            case Nil => None
-            case head :: Nil => None
-            case nextNodeToMove :: newTail =>
-              val moveNeighborhood = onePointMove(
-                () => Some(nextNodeToMove),
-                () => ChainsHelper.computeRelevantNeighborsForInternalNodes(myVRP, chainsExtension),
-                myVRP,
-                selectDestinationBehavior = Best(),
-                positionIndependentMoves = true
-              )
-              Some(moveNeighborhood, Some(newTail))
-          }
-        }
-      }
-
-      val firstNodeOfChainMove =
-        onePointMove(
-          () => chainsHeadInVehicle,
-          () => _ => nodesOfTargetVehicle,
-          myVRP,
-          selectDestinationBehavior = Best(),
-          hotRestart = false,
-          positionIndependentMoves = true, //compulsory because we are in VLSN
-          neighborhoodName = "MoveChainHead"
-        )
-
-      def lastNodeOfChainMove(lastNode: Int) = onePointMove(
-        () => List(lastNode),
-        () => myVRP.kFirst(l,
-          ChainsHelper.relevantNeighborsForLastNodeAfterHead(
-            myVRP,
-            chainsExtension
-            //,Some(HashSet() ++ relevantPredecessors(lastNode))
-          )), //TODO: takes a long time
+    def moveNodeVLSN(node:Int,
+                     relevantPredecessors:Iterable[Int]) =
+      onePointMove(
+        () => Some(node),
+        () => _ => relevantPredecessors,
         myVRP,
-        positionIndependentMoves = true,
-        neighborhoodName = "MoveChainLast")
+        selectDestinationBehavior = Best(),
+        hotRestart = false,
+        positionIndependentMoves = true
+      )
 
-      dynAndThen(firstNodeOfChainMove,
-        (moveMove: OnePointMoveMove) => {
-          if (timeWindowViolations(vehicle).value != 0) {
-            NoMoveNeighborhood
-          } else {
-            mu[OnePointMoveMove, Option[List[Int]]](
-              lastNodeOfChainMove(chainsExtension.lastNodeInChainOfNode(moveMove.movedPoint)),
-              nextMoveGenerator,
-              None,
-              Int.MaxValue,
-              false)
-          }
-        }) name "OneChainMove"
+    def movePDPToAnotherVehicleVLSN(vehicle:Int):Int=>Neighborhood = {
+
+      val routeOfVehicle: List[Int] =
+        myVRP.getRouteOfVehicle(vehicle)
+
+      pickUp: Int => {
+        val delivery = pickUpPointToDeliveryPoint(pickUp)
+
+        dynAndThen(
+          moveNodeVLSN(
+            pickUp,
+            routeOfVehicle),
+          (move: OnePointMoveMove) =>
+            if (timeWindowConstraints.Violation.value != 0) {
+              NoMoveNeighborhood
+            } else {
+              val nodesInRouteAfterPickUp = pickUp :: trimRouteFromNodeRemoveNode(routeOfVehicle,move.newPredecessor)
+              moveNodeVLSN(delivery, nodesInRouteAfterPickUp)
+            }) name s"movePDPVLSN($pickUp $delivery vehicle:$vehicle)"
+      }
+    }
+
+    // //////////////////////////////////////////////////////////////////////////////////////////////////
+
+    def moveNodesVLSN(nodes:List[Int],
+                      relevantPredecessors:Iterable[Int]) =
+      onePointMove(
+        () => nodes,
+        () => _ => relevantPredecessors,
+        myVRP,
+        selectDestinationBehavior = Best(),
+        hotRestart = false,
+        positionIndependentMoves = true
+      )
+
+    def movePointWithinVehicle(vehicle:Int):Neighborhood = {
+      val routeOfVehicle = myVRP.getRouteOfVehicle(vehicle)
+      val movableNodes = routeOfVehicle.filter(_ >=v)
+
+      onePointMove(
+        () => movableNodes,
+        () => movedNode => routeOfVehicle.filter(_!=movedNode),
+        myVRP,
+        selectDestinationBehavior = Best(),
+        hotRestart = false,
+        positionIndependentMoves = true)
+    }
+
+    def movePDPWithinVehicle(vehicle:Int):Neighborhood = {
+
+      val routeOfVehicle: List[Int] =
+        myVRP.getRouteOfVehicle(vehicle)
+
+      val movableNodes = routeOfVehicle.filter(_>=v)
+
+      val pickUpNodes = movableNodes.filter(node => pickUpPointToDeliveryPoint(node) != -1)
+
+      dynAndThen(
+        moveNodesVLSN(pickUpNodes, routeOfVehicle),
+        (moveNode:OnePointMoveMove) => {
+          val nodesInRouteAfterPickUp = moveNode.movedPoint :: trimRouteFromNodeRemoveNode(routeOfVehicle, moveNode.movedPoint)
+          val delivery = pickUpPointToDeliveryPoint(moveNode.movedPoint)
+          NoMoveNeighborhood orElse moveNodeVLSN(delivery, nodesInRouteAfterPickUp)
+        }) name s"movePDPWithinVehicle:$vehicle)"
     }
 
     def removeNode(node: Int) = removePoint(
@@ -563,42 +307,22 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
       positionIndependentMoves = true,
       hotRestart = false)
 
-    def removeChainVLSN(chainHead: Int): Neighborhood = {
-      mu[RemovePointMove, List[Int]](
-        removeNode(chainHead),
-        //(List[(MoveType)], X) => Option[(Neighborhood, X)],
-        (_, chainTail: List[Int]) => chainTail match {
-          case Nil => None
-          case h :: t => Some((removeNode(h), t))
-        },
-        chainsExtension.chainOfNode(chainHead).tail,
-        Int.MaxValue,
-        false)
-    }
+    def removePDPVLSN(pickUp:Int):Neighborhood =
+      removeNode(pickUp) andThen removeNode(pickUpPointToDeliveryPoint(pickUp))
 
-    def removeAndReInsertVLSN(headOfChainToRemove: Int): (() => Unit) = {
+    def removeAndReInsertVLSN(pickUp: Int): () => Unit = {
       val checkpointBeforeRemove = myVRP.routes.defineCurrentValueAsCheckpoint(true)
-      require(headOfChainToRemove >= v, "cannot remove vehicle point: " + headOfChainToRemove)
+      val delivery = pickUpPointToDeliveryPoint(pickUp)
+      myVRP.routes.remove(myVRP.routes.value.positionOfAnyOccurrence(pickUp).get)
+      myVRP.routes.remove(myVRP.routes.value.positionOfAnyOccurrence(delivery).get)
 
-      val allNodesOfChain = chainsExtension.chainOfNode(headOfChainToRemove)
-      for (nodeToRemove <- allNodesOfChain) {
-        myVRP.routes.value.positionOfAnyOccurrence(nodeToRemove) match {
-          case None => throw new Error("cannot remove non routed point:" + nodeToRemove)
-          case Some(positionOfPointToRemove) =>
-            myVRP.routes.remove(positionOfPointToRemove)
-        }
-      }
-
-      def restoreAndRelease: (() => Unit) = () => {
+      () => {
         myVRP.routes.rollbackToTopCheckpoint(checkpointBeforeRemove)
         myVRP.routes.releaseTopCheckpoint()
       }
-
-      restoreAndRelease
     }
 
     //TODO: speedup this 3-opt; it eats most of the run time because Precedence is SSLLOOWWW
-    //for re-optimization
     def threeOptOnVehicle(vehicle: Int) = {
       val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(vehicle)
       //insertions points are position where we perform the insert,
@@ -612,26 +336,24 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
         else math.min(math.abs(t.insertionPoint - t.segmentStartPosition), math.abs(t.insertionPoint - t.segmentEndPosition)) < 6)
     }
 
-    def vlsn(l: Int = Int.MaxValue) = {
+    def vlsn = {
       //VLSN neighborhood
       new VLSN(
         v,
-        () => SortedMap.empty[Int, SortedSet[Int]] ++
-          vehicles.map((vehicle: Int) =>
-            (vehicle: Int, SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(vehicle).filter(node => chainsExtension.isHead(node)))),
-        () => SortedSet.empty[Int] ++ myVRP.unroutedNodes.filter(node => chainsExtension.isHead(node)),
-        nodeToRelevantVehicles = () => chainHeadToxNearestVehicles,
+        () => myVRP.getVehicleToRouteMap.mapValues(_.filter(pickUpPointToDeliveryPoint(_) != -1)),
+        initUnroutedNodesToInsert = unroutedPickups,
+        nodeToRelevantVehicles = () => SortedMap.empty[Int,Iterable[Int]] ++ allPickupPoints.toList.map(p => (p,vehicles)),
 
-        targetVehicleNodeToInsertNeighborhood = routeUnroutedChainVLSN,
-        targetVehicleNodeToMoveNeighborhood = moveChainVLSN,
-        removeChainVLSN,
+        targetVehicleNodeToInsertNeighborhood = insertPDPVLSN,
+        targetVehicleNodeToMoveNeighborhood = movePDPToAnotherVehicleVLSN,
+        removePDPVLSN,
 
         removeNodeAndReInsert = removeAndReInsertVLSN,
 
-        reOptimizeVehicle = None, //Some(vehicle => Some(threeOptOnVehicle(vehicle) exhaustBack moveChainWithinVehicle(vehicle))),
+        reOptimizeVehicle = Some(vehicle => Some(threeOptOnVehicle(vehicle) exhaustBack movePDPWithinVehicle(vehicle))),
 
         objPerVehicle,
-        unroutedPenaltyOBj,
+        unroutedPenaltyObj,
         obj,
 
         cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy,
@@ -663,35 +385,26 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
                 shiftInsert)
           }
           toReturn = toReturn + toReturnp + "\n"
-          println("BENCHMARK:" + toReturnp)
           toReturnp
         },
 
-        name = "VLSN(" + l + ")",
-        reoptimizeAtStartUp = false,
-        debugNeighborhoodExploration = false
+        name = "VLSN",
+        reoptimizeAtStartUp = true,
+//        debugNeighborhoodExploration = true
       )
     }
 
     // ///////////////////////////////////////////////////////////////////////////////////////////////////
 
     val startTime = System.nanoTime()
-    val vlsnNeighborhood = vlsn(l)
-    val search = bestSlopeFirst(List(oneChainInsert, oneChainMove, onePtMove(k))) exhaust (vlsnNeighborhood maxMoves 1)
-    //val search =vlsnNeighborhood
-    search.verbose = 1
-    vlsnNeighborhood.verbose = 2
+    val search = vlsn
+    search.verbose = 2
 
     search.doAllMoves(obj = obj)
 
     val endTime = System.nanoTime()
 
-
     println(myVRP)
-    for(vehicle <- 0 until v){
-      val l = vehiclesRouteLength(vehicle).value
-      if(l !=0) println("vehicle(" + vehicle + ").length:" + l)
-    }
     println("obj:" + obj.value)
 
     toReturn + "\nobj:" + obj.value + "\nduration: " + ((endTime - startTime) / (1000 * 1000))
