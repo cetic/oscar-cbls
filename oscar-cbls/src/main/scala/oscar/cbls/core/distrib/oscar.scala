@@ -1,20 +1,8 @@
 package oscar.cbls.core.distrib
 
+import oscar.cbls.core.computation.Store
+import oscar.cbls.core.search.{Move, MoveFound, SearchResult}
 
-class Store{
-  def getSolution:Solution = {
-    new Solution
-  }
-
-  def getIntVar(id:Int):Variable = ???
-  def getSetVar(id:Int):Variable = ???
-  def getSeqVar(id:Int):Variable = ???
-  def getChangingIntValue(id:Int):Variable = ???
-}
-
-class PropagationElement{
-  def getUniqueId:Int = ???
-}
 class ChangingIntValue() extends PropagationElement{
 
 }
@@ -27,11 +15,6 @@ class SolutionElement{
   def reload(m:Store):Unit = ???
 }
 
-//Il faut modificer Solution pour que ce soit sérialisable. Je dois donc ajouter le store à l'opération load.
-class Solution{
-  def load(m:Store) = {
-  }
-}
 
 // ////////////////////////////////////////////////////////////
 
@@ -76,10 +59,6 @@ abstract class RemoteNeighborhood(){
 
 // ////////////////////////////////////////////////////////////
 
-abstract class SearchResult
-case class MoveFound(i:Move) extends SearchResult
-case class NoMoveFound() extends SearchResult
-
 // ////////////////////////////////////////////////////////////
 
 abstract class IndependentSearchResult{
@@ -89,7 +68,7 @@ case class IndependentMoveFound(i:IndependentMove) extends IndependentSearchResu
   override def getLocalResult(m: Store): SearchResult = MoveFound(new MoveWrapper(i,m))
 }
 case class IndependentNoMoveFound() extends IndependentSearchResult{
-  override def getLocalResult(m: Store): SearchResult = NoMoveFound()
+  override def getLocalResult(m: Store): SearchResult = NoMoveFound
 }
 
 // ////////////////////////////////////////////////////////////
@@ -104,17 +83,7 @@ case class LoadIndependentSolutionMove(s:Solution) extends IndependentMove{
   }
 }
 
-abstract class Move{
-  def commit()
-  def getIndependentMove(m:Store):IndependentMove = {
-    println(s"move ${this.getClass.getName} uses default getIndependentMove; dedicated implementation would be faster")
-    val s = m.getSolution
-    this.commit()
-    val x = LoadIndependentSolutionMove(m.getSolution)
-    s.load(m) //not sure if this is useful at all.
-    x
-  }
-}
+
 
 class MoveWrapper(i:IndependentMove,m:Store) extends Move{
   override def commit(): Unit = i.commit(m)

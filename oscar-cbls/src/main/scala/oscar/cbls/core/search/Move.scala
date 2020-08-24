@@ -14,7 +14,8 @@
   ******************************************************************************/
 package oscar.cbls.core.search
 
-import oscar.cbls.core.computation.{CBLSSetVar, Solution, Variable}
+import oscar.cbls.core.computation.{CBLSSetVar, Solution, Store, Variable}
+import oscar.cbls.core.distrib.{IndependentMove, LoadIndependentSolutionMove}
 import oscar.cbls.core.objective.Objective
 
 /** standard move template
@@ -70,6 +71,15 @@ abstract class Move(val objAfter:Long = Long.MaxValue, val neighborhoodName:Stri
   def shortString:String = toString
 
   def decomposeMove:List[String] = List(this.shortString)
+
+  def getIndependentMove(m:Store):IndependentMove = {
+    println(s"move ${this.getClass.getName} uses default getIndependentMove; dedicated implementation would be faster")
+    val s = m.solution()
+    this.commit()
+    val x = LoadIndependentSolutionMove(m.solution())
+    s.load(m) //not sure if this is useful at all.
+    x
+  }
 }
 
 object Move{
