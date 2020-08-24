@@ -51,7 +51,7 @@ object VLSN{
    *                    This will result in the number of enrichment level to increase by shiftInsert.
    */
   def compositeEnrichmentSchemeSpec(base: BasePartitionSchemeSpec,
-                                           enrich: EnrichmentSchemeSpec, shiftInsert:Int = 0) =
+                                    enrich: EnrichmentSchemeSpec, shiftInsert:Int = 0) =
     new CompositeEnrichmentSchemeSpec(base,enrich, shiftInsert)
 
 
@@ -74,7 +74,7 @@ object VLSN{
    * @param nbPartitions the number of partitions to generate
    */
   def sameSizeRandomPartitionsSpec(nbPartitions:Int) =
-  new SameSizeRandomPartitionsSpec(nbPartitions:Int)
+    new SameSizeRandomPartitionsSpec(nbPartitions:Int)
 
   /**
    * spreads the nodes (routed and unrouted) into nbPartition sets, of more less the same size.
@@ -413,7 +413,8 @@ class VLSN(v:Int,
       dataForRestartOpt = restartVLSNIncrementally(oldGraph = dataForRestart.oldGraph,
         performedMoves = dataForRestart.performedMoves,
         oldVehicleToRoutedNodesToMove = dataForRestart.oldVehicleToRoutedNodesToMove,
-        oldUnroutedNodesToInsert = dataForRestart.oldUnroutedNodesToInsert)
+        oldUnroutedNodesToInsert = dataForRestart.oldUnroutedNodesToInsert,
+        cacheWasBuiltWithIncrementalEnrichment=dataForRestart.cacheWasBuiltWithIncrementalEnrichment)
       doAfterCycle match {
         case Some(toDo) => toDo()
         case None => ()
@@ -518,13 +519,19 @@ class VLSN(v:Int,
       nbEdgesAtPreviousIteration = moveExplorer.nbEdgesInGraph
     }
 
+    if(printTakenMoves) {
+      println("           starting incremental exploration: " + enrichmentSchemeSpec)
+    }
+
+
     var currentEnrichmentLevel = -1
     while (currentEnrichmentLevel < maxEnrichmentLevel && dirtyVehicles.size < v) {
       currentEnrichmentLevel += 1
 
       if(printTakenMoves) {
-        println("            enriching VLSN graph to level " + currentEnrichmentLevel + "/" + maxEnrichmentLevel + " of " + enrichmentSchemeSpec)
+        println("            enriching VLSN graph to level " + currentEnrichmentLevel + "/" + maxEnrichmentLevel)
       }
+      require(dirtyVehicles.forall( x => x >= 0 && x < v))
       vlsnGraph = moveExplorer.enrichGraph(currentEnrichmentLevel, dirtyNodes, dirtyVehicles)
 
       if(printTakenMoves) {
@@ -562,7 +569,7 @@ class VLSN(v:Int,
     // Now, all vehicles are dirty or have been fully developed through the graph is exhausted,
     // it might not be complete but all vehicles are dirty
     if(printTakenMoves) {
-      println("   - ?  " + computedNewObj + "   " + name)
+      println("   - ?  " + computedNewObj + "   " + name + "  (nbUnrouted:" + unroutedNodesToInsert.size + ")")
     }
     //println(vlsnGraph.toDOT(acc,false,true))
 
@@ -584,7 +591,8 @@ class VLSN(v:Int,
         vlsnGraph,
         acc.flatten,
         vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-        unroutedNodesToInsert: SortedSet[Int]))
+        unroutedNodesToInsert: SortedSet[Int],
+        maxEnrichmentLevel!=0))
     }
   }
 
@@ -594,12 +602,14 @@ class VLSN(v:Int,
   case class DataForVLSNRestart(oldGraph: VLSNGraph,
                                 performedMoves: List[Edge],
                                 oldVehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                                oldUnroutedNodesToInsert: SortedSet[Int])
+                                oldUnroutedNodesToInsert: SortedSet[Int],
+                                cacheWasBuiltWithIncrementalEnrichment:Boolean)
 
   private def restartVLSNIncrementally(oldGraph: VLSNGraph,
                                        performedMoves: List[Edge],
                                        oldVehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                                       oldUnroutedNodesToInsert: SortedSet[Int]):Option[DataForVLSNRestart] = {
+                                       oldUnroutedNodesToInsert: SortedSet[Int],
+                                       cacheWasBuiltWithIncrementalEnrichment:Boolean):Option[DataForVLSNRestart] = {
 
     val (updatedVehicleToRoutedNodesToMove, updatedUnroutedNodesToInsert) =
       updateZones(performedMoves: List[Edge],
@@ -610,7 +620,8 @@ class VLSN(v:Int,
       CachedExplorations(
         oldGraph,
         performedMoves,
-        v)
+        v,
+        cacheWasBuiltWithIncrementalEnrichment)
 
     doVLSNSearch(updatedVehicleToRoutedNodesToMove,
       updatedUnroutedNodesToInsert,

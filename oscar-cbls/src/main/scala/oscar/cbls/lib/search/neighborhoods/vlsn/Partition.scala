@@ -341,7 +341,7 @@ abstract class VLSNEnrichmentScheme() {
   val maxLevel:Int
 
   def checkLevel(): Unit ={
-    assert(partitionToLevel.forall(_.forall(_ <= maxLevel)))
+    require(partitionToLevel.forall(_.forall(_ <= maxLevel)))
   }
 }
 

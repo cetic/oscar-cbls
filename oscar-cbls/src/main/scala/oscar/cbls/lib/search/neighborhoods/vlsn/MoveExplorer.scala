@@ -153,7 +153,7 @@ class MoveExplorer(v:Int,
   // /////////////////////////////////////////////////////////////
   //the partitioning data
 
-  var partitionLevelDone:Int = -1
+  var partitionLevelDone:Int = -2
   var currentPartitionLevel:Int = 0
 
   val vehicleIsDirty:Array[Boolean] = Array.fill(v)(false)
