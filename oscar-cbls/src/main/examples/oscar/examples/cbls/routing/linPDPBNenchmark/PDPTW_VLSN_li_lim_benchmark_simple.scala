@@ -312,7 +312,9 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
 
     def removeAndReInsertVLSN(pickUp: Int): () => Unit = {
       val checkpointBeforeRemove = myVRP.routes.defineCurrentValueAsCheckpoint(true)
+
       val delivery = pickUpPointToDeliveryPoint(pickUp)
+
       myVRP.routes.remove(myVRP.routes.value.positionOfAnyOccurrence(pickUp).get)
       myVRP.routes.remove(myVRP.routes.value.positionOfAnyOccurrence(delivery).get)
 
@@ -397,7 +399,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
     // ///////////////////////////////////////////////////////////////////////////////////////////////////
 
     val startTime = System.nanoTime()
-    val search = vlsn
+    val search = vlsn maxMoves 1
     search.verbose = 2
 
     search.doAllMoves(obj = obj)

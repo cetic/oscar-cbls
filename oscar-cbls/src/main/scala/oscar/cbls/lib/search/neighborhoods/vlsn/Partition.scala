@@ -1,12 +1,12 @@
 package oscar.cbls.lib.search.neighborhoods.vlsn
 
-import scala.collection.immutable.{SortedMap, SortedSet}
+import scala.collection.immutable.SortedMap
 import scala.util.Random
 
 
 abstract class VLSNEnrichmentSchemeSpec(){
-  def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                  unroutedNodesToInsert: SortedSet[Int]):EnrichmentScheme
+  def instantiate(vehicleToRoutedNodesToMove: Map[Int, Set[Int]],
+                  unroutedNodesToInsert: Set[Int]):EnrichmentScheme
 
 }
 
@@ -16,8 +16,8 @@ abstract class VLSNEnrichmentSchemeSpec(){
  * the whole VLSN graph is then explored prior to cycle detection.
  */
 case class NoEnrichment() extends VLSNEnrichmentSchemeSpec(){
-  override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                           unroutedNodesToInsert: SortedSet[Int]): EnrichmentScheme = {
+  override def instantiate(vehicleToRoutedNodesToMove: Map[Int, Set[Int]],
+                           unroutedNodesToInsert: Set[Int]): EnrichmentScheme = {
     new EnrichmentScheme(
       SameSizeRandomPartitionsSpec(1).instantiate(vehicleToRoutedNodesToMove,unroutedNodesToInsert),
       SinglePassScheme(1))
@@ -44,8 +44,8 @@ case class NoEnrichment() extends VLSNEnrichmentSchemeSpec(){
  */
 case class CompositeEnrichmentSchemeSpec(base: BasePartitionSchemeSpec,
                                          enrich: EnrichmentSchemeSpec, shiftInsert:Int = 0) extends VLSNEnrichmentSchemeSpec(){
-  override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                           unroutedNodesToInsert: SortedSet[Int]): EnrichmentScheme = {
+  override def instantiate(vehicleToRoutedNodesToMove: Map[Int, Set[Int]],
+                           unroutedNodesToInsert: Set[Int]): EnrichmentScheme = {
     require(shiftInsert >=0, "you cannot shift insert by negative number")
     val baseInst = base.instantiate(vehicleToRoutedNodesToMove,unroutedNodesToInsert)
     new EnrichmentScheme(
@@ -57,8 +57,8 @@ case class CompositeEnrichmentSchemeSpec(base: BasePartitionSchemeSpec,
 }
 
 abstract class BasePartitionSchemeSpec(){
-  def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                  unroutedNodesToInsert: SortedSet[Int]):BasePartitionScheme
+  def instantiate(vehicleToRoutedNodesToMove: Map[Int, Set[Int]],
+                  unroutedNodesToInsert: Set[Int]):BasePartitionScheme
 }
 
 /**
@@ -66,8 +66,8 @@ abstract class BasePartitionSchemeSpec(){
  * one partition per route, plus one partition for unrouted nodes.
  */
 case class VehiclePartitionSpec() extends BasePartitionSchemeSpec(){
-  override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                           unroutedNodesToInsert: SortedSet[Int]): BasePartitionScheme = {
+  override def instantiate(vehicleToRoutedNodesToMove: Map[Int, Set[Int]],
+                           unroutedNodesToInsert: Set[Int]): BasePartitionScheme = {
     new VehiclePartition(vehicleToRoutedNodesToMove, unroutedNodesToInsert)
   }
 }
@@ -78,8 +78,8 @@ case class VehiclePartitionSpec() extends BasePartitionSchemeSpec(){
  * @param nbPartitions the number of partitions to generate
  */
 case class SameSizeRandomPartitionsSpec(nbPartitions:Int) extends BasePartitionSchemeSpec(){
-  override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                           unroutedNodesToInsert: SortedSet[Int]): BasePartitionScheme = {
+  override def instantiate(vehicleToRoutedNodesToMove: Map[Int, Set[Int]],
+                           unroutedNodesToInsert: Set[Int]): BasePartitionScheme = {
     val allNodes = unroutedNodesToInsert.toList ::: vehicleToRoutedNodesToMove.toList.flatMap(_._2.toList)
     new SameSizeRandomPartitions(allNodes,nbPartitions)
   }
@@ -93,8 +93,8 @@ case class SameSizeRandomPartitionsSpec(nbPartitions:Int) extends BasePartitionS
  * @param nbPartitions the number of partitions to generate
  */
 case class VehicleStructuredSameSizePartitionsSpreadUnroutedSpec(nbPartitions:Int) extends BasePartitionSchemeSpec(){
-  override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                           unroutedNodesToInsert: SortedSet[Int]): BasePartitionScheme = {
+  override def instantiate(vehicleToRoutedNodesToMove: Map[Int, Set[Int]],
+                           unroutedNodesToInsert: Set[Int]): BasePartitionScheme = {
     VehicleStructuredSameSizePartitionsSpreadUnrouted(vehicleToRoutedNodesToMove,
       unroutedNodesToInsert,
       nbPartitions:Int)
@@ -107,8 +107,8 @@ case class VehicleStructuredSameSizePartitionsSpreadUnroutedSpec(nbPartitions:In
  * so that partitions are singletons
  */
 case class SingletonPartitionSpec() extends BasePartitionSchemeSpec() {
-  override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                           unroutedNodesToInsert: SortedSet[Int]): BasePartitionScheme = {
+  override def instantiate(vehicleToRoutedNodesToMove: Map[Int, Set[Int]],
+                           unroutedNodesToInsert: Set[Int]): BasePartitionScheme = {
     val allNodes = unroutedNodesToInsert.toList ::: vehicleToRoutedNodesToMove.toList.flatMap(_._2.toList)
     new SingletonPartition(allNodes)
   }
@@ -230,7 +230,7 @@ class SameSizeRandomPartitions(allNodes:List[Int], override val nbPartition:Int)
   }
 }
 
-class VehiclePartition(vehicleToNodeToMove:SortedMap[Int,Iterable[Int]],
+class VehiclePartition(vehicleToNodeToMove:Map[Int,Iterable[Int]],
                        unroutedNodeToInsert:Iterable[Int])
   extends BasePartitionScheme() {
   //TODO: we might consider ventilating unrouted nodes onto partitions of some vehicles as well?
@@ -262,7 +262,7 @@ class VehiclePartition(vehicleToNodeToMove:SortedMap[Int,Iterable[Int]],
 }
 
 
-case class VehicleStructuredSameSizePartitionsSpreadUnrouted(vehicleToNodeToMove:SortedMap[Int,Iterable[Int]],
+case class VehicleStructuredSameSizePartitionsSpreadUnrouted(vehicleToNodeToMove:Map[Int,Iterable[Int]],
                                                              unroutedNodeToInsert:Iterable[Int],
                                                              nbPartitionUpper:Int)
   extends BasePartitionScheme() {

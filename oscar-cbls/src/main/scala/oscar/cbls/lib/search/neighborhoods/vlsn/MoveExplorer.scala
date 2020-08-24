@@ -24,7 +24,7 @@ import oscar.cbls.core.search.{Move, MoveFound, Neighborhood, NoMoveFound}
 import scala.collection.immutable.{SortedMap, SortedSet}
 
 class MoveExplorer(v:Int,
-                   vehicleToRoutedNodes:SortedMap[Int,Iterable[Int]],
+                   vehicleToRoutedNodes:Map[Int,Iterable[Int]],
                    unroutedNodesToInsert:Iterable[Int],
                    nodeToRelevantVehicles:Map[Int,Iterable[Int]],
 

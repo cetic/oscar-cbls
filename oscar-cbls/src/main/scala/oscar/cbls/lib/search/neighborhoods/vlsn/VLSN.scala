@@ -319,7 +319,7 @@ object VLSN{
  * @author renaud.delandtsheer@cetic.be
  */
 class VLSN(v:Int,
-           initVehicleToRoutedNodesToMove:() => SortedMap[Int,SortedSet[Int]],
+           initVehicleToRoutedNodesToMove:() => Map[Int,SortedSet[Int]],
            initUnroutedNodesToInsert:() => SortedSet[Int],
            nodeToRelevantVehicles:() => Map[Int,Iterable[Int]],
 
@@ -440,8 +440,8 @@ class VLSN(v:Int,
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  private def doVLSNSearch(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                           unroutedNodesToInsert: SortedSet[Int],
+  private def doVLSNSearch(vehicleToRoutedNodesToMove: Map[Int, Set[Int]],
+                           unroutedNodesToInsert: Set[Int],
                            cachedExplorations: Option[CachedExplorations]): Option[DataForVLSNRestart] = {
 
     val enrichmentScheme = enrichmentSchemeSpec.instantiate(vehicleToRoutedNodesToMove, unroutedNodesToInsert)
@@ -590,8 +590,8 @@ class VLSN(v:Int,
       Some(DataForVLSNRestart(
         vlsnGraph,
         acc.flatten,
-        vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-        unroutedNodesToInsert: SortedSet[Int],
+        vehicleToRoutedNodesToMove,
+        unroutedNodesToInsert,
         maxEnrichmentLevel!=0))
     }
   }
@@ -601,20 +601,20 @@ class VLSN(v:Int,
 
   case class DataForVLSNRestart(oldGraph: VLSNGraph,
                                 performedMoves: List[Edge],
-                                oldVehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                                oldUnroutedNodesToInsert: SortedSet[Int],
+                                oldVehicleToRoutedNodesToMove: Map[Int, Set[Int]],
+                                oldUnroutedNodesToInsert: Set[Int],
                                 cacheWasBuiltWithIncrementalEnrichment:Boolean)
 
   private def restartVLSNIncrementally(oldGraph: VLSNGraph,
                                        performedMoves: List[Edge],
-                                       oldVehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                                       oldUnroutedNodesToInsert: SortedSet[Int],
+                                       oldVehicleToRoutedNodesToMove: Map[Int, Set[Int]],
+                                       oldUnroutedNodesToInsert: Set[Int],
                                        cacheWasBuiltWithIncrementalEnrichment:Boolean):Option[DataForVLSNRestart] = {
 
     val (updatedVehicleToRoutedNodesToMove, updatedUnroutedNodesToInsert) =
-      updateZones(performedMoves: List[Edge],
-        oldVehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-        oldUnroutedNodesToInsert: SortedSet[Int])
+      updateZones(performedMoves,
+        oldVehicleToRoutedNodesToMove,
+        oldUnroutedNodesToInsert)
 
     val cachedExplorations: Option[CachedExplorations] =
       CachedExplorations(
@@ -629,8 +629,8 @@ class VLSN(v:Int,
   }
 
   private def updateZones(performedMoves: List[Edge],
-                          vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                          unroutedNodesToInsert: SortedSet[Int]): (SortedMap[Int, SortedSet[Int]], SortedSet[Int]) = {
+                          vehicleToRoutedNodesToMove: Map[Int, Set[Int]],
+                          unroutedNodesToInsert: Set[Int]): (Map[Int, Set[Int]], Set[Int]) = {
 
     performedMoves match {
       case Nil => (vehicleToRoutedNodesToMove, unroutedNodesToInsert)
@@ -706,8 +706,8 @@ class VLSN(v:Int,
     }
   }
 
-  private def getMoveExplorer(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                              unroutedNodesToInsert: SortedSet[Int],
+  private def getMoveExplorer(vehicleToRoutedNodesToMove: Map[Int, Set[Int]],
+                              unroutedNodesToInsert: Set[Int],
                               gradualEnrichmentSchemeN1V1N2V2P:(Int,Int,Int,Int) => Int,
                               cachedExplorations: Option[CachedExplorations]): MoveExplorer = {
     cachedExplorations match {
