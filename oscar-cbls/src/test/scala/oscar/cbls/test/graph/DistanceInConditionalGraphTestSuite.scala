@@ -37,7 +37,8 @@ class DistanceInConditionalGraphTestSuite extends AnyFunSuite with ScalaCheckDri
         to = targetID,
         openConditions = openConditions,
         distanceIfNotConnected = Long.MaxValue)
-      (underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b)))
+      (underApproximatingDistance = underApproxDistanceMatrix(_)(_))
+    )
 
     bench.run()
   }
@@ -66,7 +67,8 @@ class DistanceInConditionalGraphTestSuite extends AnyFunSuite with ScalaCheckDri
         to = targetID,
         openConditions = openConditions,
         distanceIfNotConnected = Long.MaxValue)
-      (underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b)))
+      (underApproximatingDistance = underApproxDistanceMatrix(_)(_))
+    )
 
     bench.run()
   }
@@ -92,7 +94,8 @@ class DistanceInConditionalGraphTestSuite extends AnyFunSuite with ScalaCheckDri
         to = nodeID,
         openConditions = openConditions,
         distanceIfNotConnected = Long.MaxValue)
-      (underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b)))
+      (underApproximatingDistance = underApproxDistanceMatrix(_)(_))
+    )
 
     bench.model.close()
     bench.model.propagate()
@@ -127,7 +130,7 @@ class DistanceInConditionalGraphTestSuite extends AnyFunSuite with ScalaCheckDri
         from = nodeId,
         to = lonelyNode.id,
         openConditions = openConditions,
-        distanceIfNotConnected = Long.MaxValue)(underApproximatingDistance = (a:Int,b:Int) => underApproxDistance(a)(b))
+        distanceIfNotConnected = Long.MaxValue)(underApproximatingDistance = underApproxDistance(_)(_))
     )
 
     bench.model.close()
@@ -155,8 +158,7 @@ class DistanceInConditionalGraphTestSuite extends AnyFunSuite with ScalaCheckDri
         to = nodeId2,
         openConditions = openConditions,
         distanceIfNotConnected = Long.MaxValue)
-      (underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b))).flatten
-
+      (underApproximatingDistance = underApproxDistanceMatrix(_)(_))).flatten
 
     bench.model.close()
     bench.model.propagate()
