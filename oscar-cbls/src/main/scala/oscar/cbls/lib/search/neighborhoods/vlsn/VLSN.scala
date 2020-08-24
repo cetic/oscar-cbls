@@ -51,9 +51,15 @@ object VLSN{
    *                    This will result in the number of enrichment level to increase by shiftInsert.
    */
   def compositeEnrichmentSchemeSpec(base: BasePartitionSchemeSpec,
-                                           enrich: EnrichmentSchemeSpec, shiftInsert:Int = 0) =
+                                    enrich: EnrichmentSchemeSpec, shiftInsert:Int = 0) =
     new CompositeEnrichmentSchemeSpec(base,enrich, shiftInsert)
 
+
+  /**
+   * this is the degenerated case where each node has its own partition,
+   * so that partitions are singletons
+   */
+  def singletonPartitionSpec = new SingletonPartitionSpec()
 
   /**
    * Specifies that the initial partitions must be based on vehicle routes:
@@ -68,7 +74,7 @@ object VLSN{
    * @param nbPartitions the number of partitions to generate
    */
   def sameSizeRandomPartitionsSpec(nbPartitions:Int) =
-  new SameSizeRandomPartitionsSpec(nbPartitions:Int)
+    new SameSizeRandomPartitionsSpec(nbPartitions:Int)
 
   /**
    * spreads the nodes (routed and unrouted) into nbPartition sets, of more less the same size.
@@ -117,154 +123,7 @@ object VLSN{
 }
 
 
-abstract class VLSNEnrichmentSchemeSpec(){
-  def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                  unroutedNodesToInsert: SortedSet[Int]):EnrichmentScheme
 
-}
-
-
-/**
- * To prevent any gradual enrichment process in the VLSN,
- * the whole VLSN graph is then explored prior to cycle detection.
- */
-case class NoEnrichment() extends VLSNEnrichmentSchemeSpec(){
-  override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                           unroutedNodesToInsert: SortedSet[Int]): EnrichmentScheme = {
-    new EnrichmentScheme(
-      SameSizeRandomPartitionsSpec(1).instantiate(vehicleToRoutedNodesToMove,unroutedNodesToInsert),
-      SinglePassScheme(1))
-  }
-}
-
-/**
- * create a composite enrichment scheme, where the nodes are first partitioned
- * according to some BasePartitionSchemeSpec,
- * and some EnrichmentSchemeSpec specifies
- * what edges are accepted between nodes of different partitions from the base,
- * depending on the current enrichment level.
- *
- * It is also possible to specify that the insert moves can be shifted by some enrichment level,
- * compared to the node moves. This can reduce the tendency to load many nodes first before optimizing.
- * This tendency can increase the appearance of local minima.
- *
- * @param base the base partition specifying how nodes are partitioned
- * @param enrich specifies for each level of enrichment, what edges should be explored or not,
- *               based on the partitioning
- * @param shiftInsert to shift the insert by some level of enrichment, compared to other moves.
- *                    should be >=0
- *                    This will result in the number of enrichment level to increase by shiftInsert.
- */
-case class CompositeEnrichmentSchemeSpec(base: BasePartitionSchemeSpec,
-                                         enrich: EnrichmentSchemeSpec, shiftInsert:Int = 0) extends VLSNEnrichmentSchemeSpec(){
-  override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                           unroutedNodesToInsert: SortedSet[Int]): EnrichmentScheme = {
-    require(shiftInsert >=0, "you cannot shift insert by negative number")
-    val baseInst = base.instantiate(vehicleToRoutedNodesToMove,unroutedNodesToInsert)
-    new EnrichmentScheme(
-      baseInst,
-      enrich.instantiate(baseInst.nbPartition + shiftInsert),
-      shiftInsert
-    )
-  }
-}
-
-abstract class BasePartitionSchemeSpec(){
-  def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                  unroutedNodesToInsert: SortedSet[Int]):BasePartitionScheme
-}
-
-/**
- * Specifies that the initial partitions must be based on vehicle routes:
- * one partition per route, plus one partition for unrouted nodes.
- */
-case class VehiclePartitionSpec() extends BasePartitionSchemeSpec(){
-  override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                           unroutedNodesToInsert: SortedSet[Int]): BasePartitionScheme = {
-    new VehiclePartition(vehicleToRoutedNodesToMove, unroutedNodesToInsert)
-  }
-}
-
-/**
- * randomly spreads the nodes (routed and unrouted) into nbPartition sets, of moreless the same size.
- *
- * @param nbPartitions the number of partitions to generate
- */
-case class SameSizeRandomPartitionsSpec(nbPartitions:Int) extends BasePartitionSchemeSpec(){
-  override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                           unroutedNodesToInsert: SortedSet[Int]): BasePartitionScheme = {
-    val allNodes = unroutedNodesToInsert.toList ::: vehicleToRoutedNodesToMove.toList.flatMap(_._2.toList)
-    new SameSizeRandomPartitions(allNodes,nbPartitions)
-  }
-}
-
-/**
- * spreads the nodes (routed and unrouted) into nbPartition sets, of more less the same size.
- * nodes of the same vehicle will have a tendency to be in the same partitions,
- * and unrouted nodes are spread evenly among all partitions
- *
- * @param nbPartitions the number of partitions to generate
- */
-case class VehicleStructuredSameSizePartitionsSpreadUnroutedSpec(nbPartitions:Int) extends BasePartitionSchemeSpec(){
-  override def instantiate(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                           unroutedNodesToInsert: SortedSet[Int]): BasePartitionScheme = {
-    VehicleStructuredSameSizePartitionsSpreadUnrouted(vehicleToRoutedNodesToMove,
-      unroutedNodesToInsert,
-      nbPartitions:Int)
-  }
-}
-
-
-abstract class EnrichmentSchemeSpec(){
-  def instantiate(nbPartitions:Int):VLSNEnrichmentScheme
-}
-
-/**
- * all edges are to be explored in a single pass.
- * this is nearly the same as using no enrichment,
- * except that if using a single pass scheme, you can set a shiftInsert
- */
-case class SinglePassSchemeSpec() extends EnrichmentSchemeSpec(){
-  override def instantiate(nbPartitions: Int): VLSNEnrichmentScheme = {
-    SinglePassScheme(nbPartitions)
-  }
-}
-
-/**
- * specifies a random enrichment process;
- * at each level, it selects a set of pairs of partitions,
- * and all edges between any f the selected pairs of partition are allowed.
- * in addition to all the edges allowed at lower enrichment levels
- *
- * This also ensures that at all level,
- * the same number of allowed edge is more less the same
- *
- * @param maxEnrichmentLevel the number of enrichment levels to achieve
- */
-case class LinearRandomSchemeSpec(maxEnrichmentLevel:Int) extends EnrichmentSchemeSpec(){
-  override def instantiate(nbPartitions: Int): VLSNEnrichmentScheme = {
-    val realNbSteps = maxEnrichmentLevel min (nbPartitions*(nbPartitions-1)/2)
-    if(realNbSteps == 0)  SinglePassScheme(nbPartitions)
-    else RandomScheme(nbPartitions,realNbSteps)
-  }
-}
-
-/**
- * at each level, nodes are grouped into sets;
- * and all edges between nodes belonging to the same sets are allowed
- * in addition to all the edges allowed at lower enrichment levels
- *
- *  * the initial sets are specified by the base partitioning,
- *  and at each level, sets are merged two by two.
- *  thus going from one level eto the nest one will divide the number of sets by two,
- *  ame force the number of edges to be explored to double,
- *  compared to the number explored at the previous level
- */
-case class DivideAndConquerSchemeSpec() extends EnrichmentSchemeSpec(){
-  override def instantiate(nbPartitions: Int): VLSNEnrichmentScheme = {
-    new DivideAndConquerScheme(nbPartitions)
-  }
-}
 
 
 /**
@@ -517,7 +376,7 @@ class VLSN(v:Int,
                        initialObj: Long,
                        acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
 
-    if(printExploredNeighborhoods) println("start VLSN")
+    if(printTakenMoves) println("start VLSN")
     val initialSolution = obj.model.solution(true)
 
     var somethingDone: Boolean = false
@@ -554,7 +413,8 @@ class VLSN(v:Int,
       dataForRestartOpt = restartVLSNIncrementally(oldGraph = dataForRestart.oldGraph,
         performedMoves = dataForRestart.performedMoves,
         oldVehicleToRoutedNodesToMove = dataForRestart.oldVehicleToRoutedNodesToMove,
-        oldUnroutedNodesToInsert = dataForRestart.oldUnroutedNodesToInsert)
+        oldUnroutedNodesToInsert = dataForRestart.oldUnroutedNodesToInsert,
+        cacheWasBuiltWithIncrementalEnrichment=dataForRestart.cacheWasBuiltWithIncrementalEnrichment)
       doAfterCycle match {
         case Some(toDo) => toDo()
         case None => ()
@@ -578,118 +438,6 @@ class VLSN(v:Int,
     }
   }
 
-  /*
-    private def doVLSNSearch(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                             unroutedNodesToInsert: SortedSet[Int],
-                             cachedExplorations: Option[CachedExplorations]): Option[DataForVLSNRestart] = {
-
-      //TODO: this is the time consuming part of the VLSN; a smart approach would really help here.
-      //first, explore the atomic moves, and build VLSN graph
-      val (vlsnGraph,directEdges) = buildGraph(vehicleToRoutedNodesToMove,
-        unroutedNodesToInsert,
-        cachedExplorations)
-
-      //println(vlsnGraph.statistics)
-
-      val liveNodes = Array.fill(vlsnGraph.nbNodes)(true)
-
-      def killNodesImpactedByCycle(cycle: List[Edge]): Unit = {
-        val theImpactedVehicles = impactedVehicles(cycle)
-
-        val impactedRoutingNodes = SortedSet.empty[Int] ++ cycle.flatMap(edge => {
-          val node = edge.from.representedNode; if (node >= 0) Some(node) else None
-        })
-
-        for (vlsnNode <- vlsnGraph.nodes) {
-          if ((impactedRoutingNodes contains vlsnNode.representedNode) || (theImpactedVehicles contains vlsnNode.vehicle)) {
-            liveNodes(vlsnNode.nodeID) = false
-          }
-        }
-      }
-
-      def impactedVehicles(cycle: List[Edge]):SortedSet[Int] = SortedSet.empty[Int] ++ cycle.flatMap(edge => {
-        var l:List[Int] = List.empty
-        val vehicleFrom = edge.from.vehicle
-        if (vehicleFrom < v && vehicleFrom >= 0) l = vehicleFrom :: Nil
-        val vehicleTo = edge.to.vehicle
-        if (vehicleTo < v && vehicleTo >= 0) l = vehicleTo :: Nil
-        l
-      })
-
-      var acc: List[List[Edge]] = List.empty
-      var computedNewObj: Long = globalObjective.value
-
-      def performEdgesAndKillCycles(edges:List[Edge]): Unit ={
-        acc = edges :: acc
-        val delta = edges.map(edge => edge.deltaObj).sum
-        require(delta < 0, "delta should be negative, got " + delta)
-        computedNewObj += delta
-
-        for(edge <- edges){
-          if(edge.move != null){
-            edge.move.commit()
-          }
-        }
-        killNodesImpactedByCycle(edges)
-
-        require(globalObjective.value == computedNewObj, "new global objective differs from computed newObj:" + globalObjective + "!=" + computedNewObj + "edges:" + edges + " - Unrouted Penlaty:" +  unroutedPenalty.value + " - Obj Per Vehicle:" + vehicleToObjective.mkString(";"))
-      }
-
-      //first, kill the direct edges
-      for(directEdge <- directEdges){
-        performEdgesAndKillCycles(List(directEdge))
-      }
-
-      while (true) {
-        CycleFinderAlgo(vlsnGraph, cycleFinderAlgoSelection).findCycle(liveNodes) match {
-          case Some(listOfEdge) =>
-            performEdgesAndKillCycles(listOfEdge)
-          case None =>
-            //we did not find any move at all on the graph
-            //there is no possible incremental restart for VLSN
-            if (acc.isEmpty) return None
-            else {
-              //We have exhausted the graph, and VLSN can be restarted
-              if(printTakenMoves) {
-                println("   - ?  " + computedNewObj + "   " + name)
-                for(cycle <- acc){
-                  val moves = cycle.flatMap(edge => Option(edge.move))
-                  val vehicles = impactedVehicles(cycle)
-                  val moveTypes = "[" + cycle.flatMap(edge => if(edge.deltaObj==0) None else Some(edge.moveType)).groupBy((a:VLSNMoveType) => a).toList.map({case (moveType,l) => (""  + moveType + "->" + l.size)}).mkString(",") + "]"
-                  val deltaObj = cycle.map(edge => edge.deltaObj).sum
-                  println("                deltaObj:" + deltaObj+ " size:" + moves.length + " vehicles:{" + vehicles.mkString(",") + "} moveTypes:" + moveTypes + " moves:{" + moves.mkString(",") + "}")
-                }
-              }
-
-              //println(vlsnGraph.toDOT(acc,false,true))
-
-              //re-optimize
-              reOptimizeVehicle match{
-                case None => ;
-                case Some(_) =>
-                  //re-optimizing impacted vehicles (optional)
-                  for(vehicle <- impactedVehicles(acc.flatten)){
-                    doReoptimize(vehicle)
-                  }
-              }
-
-              //println(debugString())
-
-              //now returns data for incremental restart of VLSN
-              return Some(DataForVLSNRestart(
-                vlsnGraph,
-                acc.flatten,
-                vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                unroutedNodesToInsert: SortedSet[Int]))
-            }
-        }
-      }
-      throw new Error("should not reach this")
-    }
-  */
-
-
-
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   private def doVLSNSearch(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
@@ -699,7 +447,6 @@ class VLSN(v:Int,
     val enrichmentScheme = enrichmentSchemeSpec.instantiate(vehicleToRoutedNodesToMove, unroutedNodesToInsert)
 
     val moveExplorer:MoveExplorer = getMoveExplorer(vehicleToRoutedNodesToMove, unroutedNodesToInsert, enrichmentScheme.moveToLevel, cachedExplorations)
-
 
     val maxEnrichmentLevel = enrichmentScheme.maxLevel
 
@@ -772,13 +519,19 @@ class VLSN(v:Int,
       nbEdgesAtPreviousIteration = moveExplorer.nbEdgesInGraph
     }
 
+    if(printTakenMoves) {
+      println("           starting incremental exploration: " + enrichmentSchemeSpec)
+    }
+
+
     var currentEnrichmentLevel = -1
     while (currentEnrichmentLevel < maxEnrichmentLevel && dirtyVehicles.size < v) {
       currentEnrichmentLevel += 1
 
       if(printTakenMoves) {
-        println("            enriching VLSN graph to level " + currentEnrichmentLevel + "/" + maxEnrichmentLevel + " of " + enrichmentSchemeSpec)
+        println("            enriching VLSN graph to level " + currentEnrichmentLevel + "/" + maxEnrichmentLevel)
       }
+      require(dirtyVehicles.forall( x => x >= 0 && x < v))
       vlsnGraph = moveExplorer.enrichGraph(currentEnrichmentLevel, dirtyNodes, dirtyVehicles)
 
       if(printTakenMoves) {
@@ -816,7 +569,7 @@ class VLSN(v:Int,
     // Now, all vehicles are dirty or have been fully developed through the graph is exhausted,
     // it might not be complete but all vehicles are dirty
     if(printTakenMoves) {
-      println("   - ?  " + computedNewObj + "   " + name)
+      println("   - ?  " + computedNewObj + "   " + name + "  (nbUnrouted:" + unroutedNodesToInsert.size + ")")
     }
     //println(vlsnGraph.toDOT(acc,false,true))
 
@@ -838,7 +591,8 @@ class VLSN(v:Int,
         vlsnGraph,
         acc.flatten,
         vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-        unroutedNodesToInsert: SortedSet[Int]))
+        unroutedNodesToInsert: SortedSet[Int],
+        maxEnrichmentLevel!=0))
     }
   }
 
@@ -848,12 +602,14 @@ class VLSN(v:Int,
   case class DataForVLSNRestart(oldGraph: VLSNGraph,
                                 performedMoves: List[Edge],
                                 oldVehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                                oldUnroutedNodesToInsert: SortedSet[Int])
+                                oldUnroutedNodesToInsert: SortedSet[Int],
+                                cacheWasBuiltWithIncrementalEnrichment:Boolean)
 
   private def restartVLSNIncrementally(oldGraph: VLSNGraph,
                                        performedMoves: List[Edge],
                                        oldVehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                                       oldUnroutedNodesToInsert: SortedSet[Int]):Option[DataForVLSNRestart] = {
+                                       oldUnroutedNodesToInsert: SortedSet[Int],
+                                       cacheWasBuiltWithIncrementalEnrichment:Boolean):Option[DataForVLSNRestart] = {
 
     val (updatedVehicleToRoutedNodesToMove, updatedUnroutedNodesToInsert) =
       updateZones(performedMoves: List[Edge],
@@ -864,7 +620,8 @@ class VLSN(v:Int,
       CachedExplorations(
         oldGraph,
         performedMoves,
-        v)
+        v,
+        cacheWasBuiltWithIncrementalEnrichment)
 
     doVLSNSearch(updatedVehicleToRoutedNodesToMove,
       updatedUnroutedNodesToInsert,

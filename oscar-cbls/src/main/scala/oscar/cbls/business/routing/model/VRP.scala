@@ -1,17 +1,17 @@
 /*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
+ * OscaR is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * OscaR is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License  for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+ * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+ ******************************************************************************/
 package oscar.cbls.business.routing.model
 
 import oscar.cbls.algo.search.KSmallest
@@ -22,7 +22,7 @@ import oscar.cbls.lib.invariant.seq.Content
 import oscar.cbls.lib.invariant.set.Diff
 
 import scala.annotation.tailrec
-import scala.collection.immutable.{List, SortedSet}
+import scala.collection.immutable.{List, SortedMap, SortedSet}
 
 /**
  * The class constructor models a VRP problem with N points (deposits and customers)
@@ -32,8 +32,8 @@ import scala.collection.immutable.{List, SortedSet}
  * they all have a different depot (but yo ucan put them at the same place if you want)
  *
  * Info: after instantiation, each customer point is unrouted, and each vehicle loop on his deposit.
-  *
-  * @param n the number of points (deposits and customers) in the problem.
+ *
+ * @param n the number of points (deposits and customers) in the problem.
  * @param v the number of vehicles.
  * @param m the model.
  * @author renaud.delandtsheer@cetic.be
@@ -63,8 +63,8 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4,
 
   /**
    * Returns if a given point is a depot.
-    *
-    * @param n the point queried.
+   *
+   * @param n the point queried.
    * @return true if the point is a depot, else false.
    */
   def isADepot(n:Int): Boolean = { n < v }
@@ -77,18 +77,18 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4,
 
   /**
    * Returns if a given point is still routed.
-    *
-    * @param n the point queried.
+   *
+   * @param n the point queried.
    * @return true if the point is still routed, else false.
    */
   def isRouted(n:Int): Boolean = {routes.value.contains(n)}
 
   /**
-    * Returns if a given point is still routed.
-    *
-    * @param n the point queried.
-    * @return true if the point is not routed, else false.
-    */
+   * Returns if a given point is still routed.
+   *
+   * @param n the point queried.
+   * @return true if the point is not routed, else false.
+   */
   def isUnrouted(n:Int): Boolean = {!routes.value.contains(n)}
 
   /**
@@ -113,15 +113,15 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4,
   }
 
   /**
-    * Return the next node of the given node
-    *   or n if the node isn't routed
-    *   or None if the node is last of his route
-    *
-    * NOTE: if you'll use this method very often,
-    *       you should maybe use the getNextNodeOfAllNodes method instead
-    * @param node The node we want to get the next
-    * @return the next node of the given node or None
-    */
+   * Return the next node of the given node
+   *   or n if the node isn't routed
+   *   or None if the node is last of his route
+   *
+   * NOTE: if you'll use this method very often,
+   *       you should maybe use the getNextNodeOfAllNodes method instead
+   * @param node The node we want to get the next
+   * @return the next node of the given node or None
+   */
   def nextNodeOf(node: Int): Option[Int]={
     val routeExplorer = routes.value.explorerAtAnyOccurrence(node)
     if(routeExplorer.isDefined) {
@@ -135,11 +135,11 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4,
   }
 
   /**
-    * the route of the vehicle, starting at the vehicle node, and not including the last vehicle node
-    *
-    * @param vehicle
-    * @return
-    */
+   * the route of the vehicle, starting at the vehicle node, and not including the last vehicle node
+   *
+   * @param vehicle
+   * @return
+   */
   def getRouteOfVehicle(vehicle:Int):List[Int] = {
     require(vehicle < v, "asking route of vehicle:" + vehicle + " with v:" + v)
     var currentVExplorer = routes.value.explorerAtAnyOccurrence(vehicle).head.next
@@ -153,11 +153,20 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4,
     acc.reverse
   }
 
+
+
+  def getVehicleToRouteMap:SortedMap[Int,SortedSet[Int]] = {
+    SortedMap.empty[Int, SortedSet[Int]] ++
+      (vehicles).map((vehicle: Int) =>
+        (vehicle:Int, SortedSet.empty[Int] ++ getRouteOfVehicle(vehicle)))
+  }
+
+
   /**
-    * Compute the previous node of all nodes in the routes.
-    * If the node isn't routed or is a depot, his previous is n.
-    * @return
-    */
+   * Compute the previous node of all nodes in the routes.
+   * If the node isn't routed or is a depot, his previous is n.
+   * @return
+   */
   def getGlobalPrevNodeOfAllNodes: Array[Int] = {
     val it = routes.value.iterator
     val prevNodeOfNodes = Array.fill[Int](n)(n)
@@ -172,11 +181,11 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4,
   }
 
   /**
-    * Compute the next node of all nodes in the routes.
-    * If the node isn't routed his next is n.
-    * If the node is the last of his route, his next node is the vehicle of his route
-    * @return
-    */
+   * Compute the next node of all nodes in the routes.
+   * If the node isn't routed his next is n.
+   * If the node is the last of his route, his next node is the vehicle of his route
+   * @return
+   */
   def getGlobalNextNodeOfAllNodes: Array[Int] = {
     val it = routes.value.iterator
     val nextNodeOfNodes = Array.fill[Int](n)(n)
@@ -222,9 +231,9 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4,
   }
 
   /**
-    * Redefine the toString method.
-    * @return the VRP problem as a String.
-    */
+   * Redefine the toString method.
+   * @return the VRP problem as a String.
+   */
   override def toString: String = {
     var toReturn = ""
     var notMoving:List[Int] = List.empty
@@ -238,7 +247,7 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4,
       }
     }
     val u = unroutedNodes
-    s"""Vehicle routing n: $n v: $v
+    s"""Vehicle routing n:$n v:$v
        |${u.size} unrouted nodes:{${u.toList.mkString(",")}}
        |${notMoving.size} not used vehicles:{${notMoving.reverse.mkString(",")}}
        |$toReturn

@@ -22,7 +22,7 @@ object PDPTW_VLSN extends App{
   val m = new Store(noCycle = false)
 
   val v = 10
-  val n = 500
+  val n = 400
   //  val v = 10
   //  val n = 500
 
@@ -493,9 +493,7 @@ object PDPTW_VLSN extends App{
     //VLSN neighborhood
     new VLSN(
       v,
-      () => SortedMap.empty[Int, SortedSet[Int]] ++
-        vehicles.map((vehicle: Int) =>
-          (vehicle:Int, SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(vehicle).filter(node => chainsExtension.isHead(node)))),
+      () => myVRP.getVehicleToRouteMap.mapValues(_.filter(node => node >= v && chainsExtension.isHead(node))),
       () => SortedSet.empty[Int] ++ myVRP.unroutedNodes.filter(node => chainsExtension.isHead(node)),
       nodeToRelevantVehicles = () => chainHeadToxNearestVehicles,
 
@@ -512,9 +510,10 @@ object PDPTW_VLSN extends App{
       obj,
 
       enrichmentSchemeSpec =
+//        VLSN.noEnrichment(),
         VLSN.compositeEnrichmentSchemeSpec(
           VLSN.sameSizeRandomPartitionsSpec(nbPartitions = 20),
-          VLSN.linearRandomSchemeSpec(maxEnrichmentLevel = 10)),
+          VLSN.linearRandomSchemeSpec(maxEnrichmentLevel = 20)),
 
       name="VLSN(" + l + ")",
       reoptimizeAtStartUp = true,

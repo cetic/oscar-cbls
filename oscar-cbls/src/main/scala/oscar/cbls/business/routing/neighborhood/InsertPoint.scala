@@ -51,7 +51,7 @@ abstract class InsertPoint(vrp: VRP,
 
 case class InsertPointMove(insertedPoint: Int,
                            insertAtPosition: Int,
-                           insertAfterPointForInstantiation:Int,
+                           newPredecessor:Int,
                            positionIndependentMoves:Boolean,
                            override val objAfter: Long,
                            override val neighborhood: InsertPoint,
@@ -64,17 +64,17 @@ case class InsertPointMove(insertedPoint: Int,
 
   override def commit(): Unit = {
     if(positionIndependentMoves){
-      neighborhood.doMovePositionIndependent(insertedPoint, insertAfterPointForInstantiation)
+      neighborhood.doMovePositionIndependent(insertedPoint, newPredecessor)
     }else{
       neighborhood.doMove(insertedPoint, insertAtPosition)
     }
   }
 
   override def toString: String =
-    s"$neighborhoodName:InsertPoint(insertedPoint:$insertedPoint${if(positionIndependentMoves) s" afterPoint $insertAfterPointForInstantiation positionIndependent" else s" atPosition:$insertAtPosition"}$objToString)"
+    s"$neighborhoodName:InsertPoint(insertedPoint:$insertedPoint${if(positionIndependentMoves) s" afterPoint $newPredecessor positionIndependent" else s" atPosition:$insertAtPosition"}$objToString)"
 
   override def shortString:String =
-    s"InsertPoint($insertedPoint${if(positionIndependentMoves) s" after $insertAfterPointForInstantiation pi" else s" atPos:$insertAtPosition"})"
+    s"InsertPoint($insertedPoint${if(positionIndependentMoves) s" after $newPredecessor pi" else s" atPos:$insertAtPosition"})"
 }
 
 

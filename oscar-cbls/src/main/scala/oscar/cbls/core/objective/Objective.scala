@@ -74,6 +74,21 @@ class IntVarObjective(val objective: ChangingIntValue) extends Objective {
     s"IntVarObjective($objective)"
 }
 
+
+
+object CascadingObjective{
+  def apply(objectives:Objective*):Objective = {
+
+    def buildCascading(objs:List[Objective]):Objective = {
+      objs match{
+        case List(obj) => obj
+        case head :: tail if tail.nonEmpty => new CascadingObjective(head,buildCascading(tail))
+      }
+    }
+
+    buildCascading(objectives.toList)
+  }
+}
 /**
  * if (objective1.value > 0L) Long.MaxValue/2L + objective1.value
  *   else objective2.value

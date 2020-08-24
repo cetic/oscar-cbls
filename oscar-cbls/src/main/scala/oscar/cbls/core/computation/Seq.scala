@@ -469,18 +469,18 @@ class CBLSSeqVar(givenModel:Store,
   override def name: String = if (n == null) defaultName else n
 
   /**
-   * inserts the value at the postion in the sequence, and shifts the tail by one position accordingly
+   * inserts the value at the position in the sequence, and shifts the tail by one position accordingly
    * @param value the inserted value
-   * @param pos the position where the value is located afer the insert is completed
+   * @param pos the position where the value is located after the insert is completed
    */
   override def insertAtPosition(value:Int,pos:Int): Unit ={
     super.insertAtPosition(value,pos)
   }
 
   /**
-   * inserts the value at the postion in the sequence, and shifts the tail by one position accordingly
+   * inserts the value at the position in the sequence, and shifts the tail by one position accordingly
    * @param value the inserted value
-   * @param pos the position where the value is located afer the insert is completed
+   * @param pos the position where the value is located after the insert is completed
    * @param seqAfter the sequence after the insert if performed. if you have it you can set it here, for speed
    */
   override def insertAtPosition(value:Int,pos:Int,seqAfter:IntSequence): Unit ={
