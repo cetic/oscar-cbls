@@ -17,13 +17,10 @@ class ConditionalGraph(val nodes:Array[Node],
   val nodeRange = 0 until nbNodes
 
   val conditionToConditionalEdges:Array[Edge] = Array.fill[Edge](nbConditions)(null)
-  for(edge <- edges){
-    edge.conditionID match{
-      case None => ;
-      case Some(c) =>
-        require(conditionToConditionalEdges(c) == null)
-        conditionToConditionalEdges(c) = edge
-    }
+  for (edge <- edges if edge.conditionID.isDefined) {
+    val c = edge.conditionID.get
+    require(conditionToConditionalEdges(c) == null)
+    conditionToConditionalEdges(c) = edge
   }
   
   require(!conditionToConditionalEdges.contains(null),Array.tabulate(conditionToConditionalEdges.length)(i => i + " -> " + conditionToConditionalEdges(i)).mkString("\n") + "\n" + nbConditions)

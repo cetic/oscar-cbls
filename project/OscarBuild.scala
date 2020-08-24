@@ -14,7 +14,7 @@ object OscarBuild extends Build {
   object BuildSettings {
     val buildOrganization = "oscar"
     val buildVersion = "4.1.0-SNAPSHOT"
-    val buildScalaVersion = "2.12.11"
+    val buildScalaVersion = "2.12.12"
     val buildSbtVersion= "0.13.18"
 
     lazy val commonSettings = Defaults.defaultSettings ++  jacoco.settings ++ Seq(
@@ -68,6 +68,7 @@ object OscarBuild extends Build {
     val scalaParserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2"
     val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.3.0"
     val scalaSwing = "org.scala-lang.modules" %% "scala-swing" % "2.1.1"
+    //TODO for 2.13: val scalaParallel = "org.scala-lang.modules" %% "scala-parallel-collections" % "0.2.0"
     val swingx = "org.swinglabs" % "swingx" % "1.6.1"
     val swingxWs = "org.swinglabs" % "swingx-ws" % "1.0"
     val xmlApisExt = "xml-apis" % "xml-apis-ext" % "1.3.04"
@@ -158,7 +159,7 @@ object OscarBuild extends Build {
         packAutoSettings ++
         Seq(
           resolvers ++= Seq(mvnrepository),
-          libraryDependencies ++= testDeps :+ scalaSwing :+ jxmapviewer2 :+ jtscore,
+          libraryDependencies ++= testDeps :+ scalaSwing :+ jxmapviewer2 :+ jtscore, //TODO for 2.13 ->  :+ scalaParallel
           packGenerateWindowsBatFile := false
         ),
     dependencies = Seq(oscarVisual)

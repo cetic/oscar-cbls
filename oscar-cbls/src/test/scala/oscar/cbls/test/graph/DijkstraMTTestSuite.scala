@@ -26,14 +26,14 @@ class DijkstraMTTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyCheck
     val closed = Array.tabulate((nbConditionalEdges * 0.5).toInt)(_ => 0L).toList
     val openConditions = Random.shuffle(open ::: closed)
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
-    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => if (a > b) underApproxDistanceMatrix(a)(b) else underApproxDistanceMatrix(b)(a))
+    val aStar = new RevisableAStar(graph, underApproximatingDistance = underApproxDistanceMatrix(_)(_))
     val dijkstra = new DijkstraMT(graph)
 
-    val gen = for{
+    val gen = for {
       nbTargets <- Gen.chooseNum(1,10)
       node <- Gen.oneOf(graph.nodes)
       targets <- Gen.listOfN(nbTargets,Gen.oneOf(graph.nodes.filter(_ != node)))
-    } yield(node,targets)
+    } yield (node,targets)
 
     val iterations = PosInt.from(Math.pow(graph.nodes.length,2).toInt).get
 

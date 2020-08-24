@@ -1,4 +1,4 @@
-package oscar.cbls.test.scheduling
+package oscar.examples.cbls.scheduling
 
 import oscar.cbls.Store
 import oscar.cbls.business.scheduling.model._
@@ -8,8 +8,8 @@ import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 
 /**
-  * This is the scheduling example in Cédric Pralet's paper
-  */
+ * This is the scheduling example in Cédric Pralet's paper
+ */
 object Pralet {
   // Model
   // Activities

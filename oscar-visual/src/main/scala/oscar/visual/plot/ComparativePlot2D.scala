@@ -65,9 +65,9 @@ object ComparativePlot2DExample extends App {
   inFrame.pack()
   
   for (i <- 0 until 10) {
-    plot.addPoint(i, math.random, 0)
-    plot.addPoint(i, math.random, 2)
-    plot.addPoint(i, math.random, 1)
+    plot.addPoint(i, math.random(), 0)
+    plot.addPoint(i, math.random(), 2)
+    plot.addPoint(i, math.random(), 1)
     Thread.sleep(1000)
   }
 }

@@ -99,7 +99,7 @@ object PDPTW_VLSN extends App{
 
   m.close()
 
-  val relevantPredecessorsTmp:Map[Int,Iterable[Int]] = GlobalVehicleCapacityConstraint.relevantPredecessorsOfNodes(capacityInvariant)
+  val relevantPredecessorsTmp:Map[Int,Iterable[Int]] = capacityInvariant.relevantPredecessorsOfNodes
 
   val relevantPredecessors = SortedMap.empty[Int,SortedSet[Int]] ++ (relevantPredecessorsTmp.map({case (node,v) => (node,SortedSet.empty[Int] ++ v)}))
 

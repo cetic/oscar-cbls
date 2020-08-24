@@ -1,13 +1,13 @@
-package oscar.cbls.test.scheduling
+package oscar.examples.cbls.scheduling
 
 import oscar.cbls._
 import oscar.cbls.Store
 import oscar.cbls.business.scheduling.model.Schedule
-import oscar.cbls.business.scheduling.neighborhood.{AddActivity, ReplaceActivity}
+import oscar.cbls.business.scheduling.neighborhood.ReplaceActivity
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
+import oscar.cbls.lib.search.combinators.Profile
 
-object TestReplace {
+object ReplaceExample {
   // Model
   // Activities
   val (a, b, c, d, e, f) = (0, 10, 20, 30, 40, 50)

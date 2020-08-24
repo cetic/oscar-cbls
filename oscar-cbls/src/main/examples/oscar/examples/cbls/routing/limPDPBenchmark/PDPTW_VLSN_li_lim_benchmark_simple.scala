@@ -1,4 +1,4 @@
-package oscar.examples.cbls.routing.linPDPBNenchmark
+package oscar.examples.cbls.routing.limPDPBenchmark
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
