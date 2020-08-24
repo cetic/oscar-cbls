@@ -325,17 +325,18 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
     }
 
     //TODO: speedup this 3-opt; it eats most of the run time because Precedence is SSLLOOWWW
-    def threeOptOnVehicle(vehicle: Int) = {
+    def threeOptOnVehicle(vehicle: Int):Neighborhood = {
       val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(vehicle)
       //insertions points are position where we perform the insert,
       // basically the segment will start in place of the insertion point and the insertion point will be moved upward
       val nodesOfTargetVehicleButVehicle = nodesOfTargetVehicle.filter(_ != vehicle)
 
-      threeOpt(() => nodesOfTargetVehicle,
+      (threeOpt(() => nodesOfTargetVehicle,
         () => _ => nodesOfTargetVehicleButVehicle,
-        myVRP, breakSymmetry = false) filter ((t: ThreeOptMove) =>
+        myVRP, breakSymmetry = false)
+      filter ((t: ThreeOptMove) =>
         if (t.flipSegment) t.segmentEndPosition - t.segmentStartPosition < 4
-        else math.min(math.abs(t.insertionPoint - t.segmentStartPosition), math.abs(t.insertionPoint - t.segmentEndPosition)) < 6)
+        else math.min(math.abs(t.insertionPoint - t.segmentStartPosition), math.abs(t.insertionPoint - t.segmentEndPosition)) < 6))
     }
 
     def vlsn = {
@@ -392,7 +393,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
 
         name = "VLSN",
         reoptimizeAtStartUp = true,
-//        debugNeighborhoodExploration = true
+        //        debugNeighborhoodExploration = true
       )
     }
 
