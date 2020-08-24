@@ -1,5 +1,4 @@
-package oscar.examples.cbls.routing.linPDPBNenchmark
-
+package oscar.examples.cbls.routing.limPDPBenchmark
 
 import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
@@ -13,7 +12,7 @@ import oscar.cbls.lib.search.neighborhoods.vlsn._
 import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
 import scala.io.Source
 
-object PDPTW_VLSN_li_lim_benchmarkMAker extends App {
+object PDPTW_VLSN_li_lim_benchmark extends App {
 
   case class PDP(fromNode: Int, toNode: Int, demand: Int) {
     def chain: List[Int] = List(fromNode, toNode)
@@ -88,11 +87,12 @@ object PDPTW_VLSN_li_lim_benchmarkMAker extends App {
   val partition: Int = args(2).toInt
   val enrichmentSpec: Int = args(3).toInt
   val shiftInsert: Int = args(4).toInt
-  println(runBenchmark(fileName: String, enrichment: Int, partition: Int, enrichmentSpec: Int, shiftInsert: Int))
+  runBenchmark(fileName: String, enrichment: Int, partition: Int, enrichmentSpec: Int, shiftInsert: Int)
 
   def runBenchmark(fileName: String, enrichment: Int, partition: Int, enrichmentSpec: Int, shiftInsert: Int): String = {
 
-    var toReturn = fileName + "\n"
+
+    var toReturn = s"file:$fileName\n"
 
     val m = new Store(noCycle = false)
 
@@ -101,7 +101,7 @@ object PDPTW_VLSN_li_lim_benchmarkMAker extends App {
     val (v, symmetricDistance, pdpList, capacity, transferFunctions) = readData(fileName)
     val n = symmetricDistance.length
 
-    println("VLSN(PDPTW) v:" + v + " n:" + n)
+    println(s"VLSN(PDPTW) v:$v n:$n pdp:${pdpList.length}")
 
     val penaltyForUnrouted = 10000
     val listOfChains = pdpList.map(_.chain)
@@ -119,8 +119,8 @@ object PDPTW_VLSN_li_lim_benchmarkMAker extends App {
     val vehicles = 0 until v
 
     val k = 20
-    val l = 60
-    val xNearestVehicles = 20
+    val l = 1000
+    val xNearestVehicles = v-1
 
     //println("listOfChains: \n" + listOfChains.mkString("\n"))
     // GC
@@ -178,7 +178,7 @@ object PDPTW_VLSN_li_lim_benchmarkMAker extends App {
 
     m.close()
 
-    val relevantPredecessorsTmp: Map[Int, Iterable[Int]] = GlobalVehicleCapacityConstraint.relevantPredecessorsOfNodes(capacityInvariant)
+    val relevantPredecessorsTmp: Map[Int, Iterable[Int]] = capacityInvariant.relevantPredecessorsOfNodes
 
     val relevantPredecessors = SortedMap.empty[Int, SortedSet[Int]] ++ (relevantPredecessorsTmp.map({ case (node, v) => (node, SortedSet.empty[Int] ++ v) }))
 
@@ -667,15 +667,14 @@ object PDPTW_VLSN_li_lim_benchmarkMAker extends App {
                   case 6 => VehiclePartitionSpec()
                 },
                 enrichmentSpec match {
-                  case 0 => LinearRandomSchemeSpec(5)
-                  case 1 => LinearRandomSchemeSpec(10)
-                  case 2 => LinearRandomSchemeSpec(15)
-                  case 3 => LinearRandomSchemeSpec(20)
+                  case 0 => LinearRandomSchemeSpec(nbEnrichmentLevels = 5)
+                  case 1 => LinearRandomSchemeSpec(nbEnrichmentLevels = 10)
+                  case 2 => LinearRandomSchemeSpec(nbEnrichmentLevels = 15)
+                  case 3 => LinearRandomSchemeSpec(nbEnrichmentLevels = 20)
                   case 4 => DivideAndConquerSchemeSpec()
                 },
                 shiftInsert)
           }
-
           toReturn = toReturn + toReturnp + "\n"
           println("BENCHMARK:" + toReturnp)
           toReturnp
@@ -693,23 +692,21 @@ object PDPTW_VLSN_li_lim_benchmarkMAker extends App {
     val vlsnNeighborhood = vlsn(l)
     val search = bestSlopeFirst(List(oneChainInsert, oneChainMove, onePtMove(k))) exhaust (vlsnNeighborhood maxMoves 1)
     //val search =vlsnNeighborhood
-    search.verbose = 0
-    vlsnNeighborhood.verbose = 0
+    search.verbose = 1
+    vlsnNeighborhood.verbose = 2
 
     search.doAllMoves(obj = obj)
 
     val endTime = System.nanoTime()
 
-    /*
-    println(myVRP)
 
+    println(myVRP)
     for(vehicle <- 0 until v){
       val l = vehiclesRouteLength(vehicle).value
       if(l !=0) println("vehicle(" + vehicle + ").length:" + l)
     }
-
     println("obj:" + obj.value)
-  */
+
     toReturn + "\nobj:" + obj.value + "\nduration: " + ((endTime - startTime) / (1000 * 1000))
   }
 }

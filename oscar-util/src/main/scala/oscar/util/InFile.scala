@@ -21,7 +21,7 @@ import scala.io.{BufferedSource, Source}
  */
 class InFile(filepath: String) {
   val bufSource: BufferedSource = Source.fromFile(filepath)
-  val lines: String = bufSource.getLines.reduceLeft(_ + " " + _)
+  val lines: String = bufSource.getLines().reduceLeft(_ + " " + _)
   val vals: Seq[Int] = lines.split("[ ,\t]").toList.filterNot(_ == "").map(_.toInt)
   var index = 0
     

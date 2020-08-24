@@ -1,4 +1,4 @@
-package oscar.cbls.test.scheduling
+package oscar.examples.cbls.scheduling
 
 import oscar.cbls._
 import oscar.cbls.business.scheduling.model._

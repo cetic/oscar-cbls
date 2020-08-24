@@ -65,7 +65,7 @@ object SimplePDPTW extends App{
     }
   }*/
 
-  val relevantPredecessors = GlobalVehicleCapacityConstraint.relevantPredecessorsOfNodes(capacityInvariant)
+  val relevantPredecessors = capacityInvariant.relevantPredecessorsOfNodes
 
   val closestRelevantPredecessorsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance,relevantPredecessors)(_))
 

@@ -36,22 +36,6 @@ object GlobalVehicleCapacityConstraint {
     violationOfContentOfVehicle
   }
 
-
-  /**
-   * This method returns for each node an iterable of nodes that could be his neighbor
-   *  In clear ==>  given A the node and B a relevant neighbor :
-   *                capacity variation of node A + capacity variation of node B < max capacity of all vehicles
-   * @param capacityConstraint A capacity constraint
-   * @return A map : Node -> relevant neighbors
-   */
-  @deprecated("this method does not provide strong filtering, and does not use any input from the constraint","")
-  def relevantPredecessorsOfNodes(capacityConstraint: GlobalVehicleCapacityConstraint): Map[Int,Iterable[Int]] ={
-    val allNodes = (0 until capacityConstraint.n).toList
-    val vehicleMaxCapacity = capacityConstraint.vehiclesCapacity.max
-    Array.tabulate(capacityConstraint.n)(node =>
-      node -> allNodes.filter(neighbor =>
-        capacityConstraint.contentVariationAtNode(node) + capacityConstraint.contentVariationAtNode(neighbor) <= vehicleMaxCapacity)).toMap
-  }
 }
 
 class GlobalVehicleCapacityConstraint(gc: GlobalConstraintCore, val n: Int, val v: Int,
@@ -212,4 +196,19 @@ class GlobalVehicleCapacityConstraint(gc: GlobalConstraintCore, val n: Int, val 
     }
     false
   }
+
+  /**
+   * This method returns for each node an iterable of nodes that could be his neighbor
+   *  In clear ==>  given A the node and B a relevant neighbor :
+   *                capacity variation of node A + capacity variation of node B < max capacity of all vehicles
+   * @return A map : Node -> relevant neighbors
+   */
+  def relevantPredecessorsOfNodes: Map[Int,Iterable[Int]] ={
+    val allNodes = (0 until n).toList
+    val vehicleMaxCapacity = vehiclesCapacity.max
+    Array.tabulate(n)(node =>
+      node -> allNodes.filter(neighbor =>
+        contentVariationAtNode(node) + contentVariationAtNode(neighbor) <= vehicleMaxCapacity)).toMap
+  }
+
 }

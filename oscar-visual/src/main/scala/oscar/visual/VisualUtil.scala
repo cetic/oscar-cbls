@@ -32,7 +32,7 @@ object VisualUtil {
   private val brightCoef: Float = 1f
 
   // Introduces variance in the saturation
-  private def randSat: Float = 0.75f + (rand.nextFloat) * 0.25f
+  private def randSat: Float = 0.75f + rand.nextFloat() * 0.25f
 
   // Builds a new color according to its hue, saturation, and brightness.
   private def hsbColor(h: Float, s: Float, b: Float): Color = new Color(Color.HSBtoRGB(h, s, b))
@@ -42,7 +42,7 @@ object VisualUtil {
     val hStep: Float = 1f / n
     val coef: Float = if (pastel) pastelCoef else brightCoef
     val colors = Array.tabulate(n)(i => hsbColor(i * hStep, coef * randSat, randSat))
-    colors.sortBy(i => rand.nextInt)
+    colors.sortBy(_ => rand.nextInt())
   }
 
   /** Returns an array of n hue-uniform colors. */
@@ -58,7 +58,7 @@ object VisualUtil {
   /** Returns a random pastel of bright color. */
   def getRandomColor(pastel: Boolean) = {
     val coef: Float = if (pastel) pastelCoef else brightCoef
-    hsbColor(rand.nextFloat, coef, 1f)
+    hsbColor(rand.nextFloat(), coef, 1f)
   }
 
   // Old system of colors
@@ -70,5 +70,5 @@ object VisualUtil {
   /** Returns a random color (previous implementation of getRandomColor). */
   def getRandomLegacyColor: Color = new Color((next * 255).toInt, (next * 255).toInt, (next * 255).toInt)
 
-  private def next: Double = rand.nextDouble * 0.5 + 0.4
+  private def next: Double = rand.nextDouble() * 0.5 + 0.4
 }
