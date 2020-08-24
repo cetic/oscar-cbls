@@ -244,16 +244,19 @@ class MoveExplorer(v:Int,
 
   private def exploreInsertionsNoRemove(vehicleToUnroutedNodeToInsert: Map[Int, Iterable[Int]]): Unit = {
 
+    //println("vehicleToUnroutedNodeToInsert:" + vehicleToUnroutedNodeToInsert.toList.map({case (ve,nod) => s"sehicle:$ve ${nod.mkString(",")}"}).mkString("\n"))
     for ((targetVehicleForInsertion, unroutedNodesToInsert) <- vehicleToUnroutedNodeToInsert) {
 
-      var currentVehicleHasDirectInsert: Boolean = false
+      //en fait, on devrait autoriser un certain nombre de directInsert: chaque véhicule peut avoir v directInserts.
+
+      var allowedDirectInserts = v
 
       //try inserts without removes
       for (unroutedNodeToInsert <- unroutedNodesToInsert
            if isInsertToExplore(unroutedNode = unroutedNodeToInsert, toVehicle = targetVehicleForInsertion)){
         //insertion without remove
 
-        if (!currentVehicleHasDirectInsert) {
+        if (allowedDirectInserts >0) {
           evaluateInsertOnVehicleNoRemove(
             unroutedNodeToInsert: Int,
             targetVehicleForInsertion: Int,
@@ -267,7 +270,8 @@ class MoveExplorer(v:Int,
               val edge = edgeBuilder.addEdge(symbolicNodeToInsert, vehicleToNode(targetVehicleForInsertion), delta, move, VLSNMoveType.InsertNoEject)
               if (delta < 0L) {
                 //there is a direct insert
-                currentVehicleHasDirectInsert = true
+                allowedDirectInserts -= 1
+                //println("set direct insert flag vehicle:" + targetVehicleForInsertion + "inserted node:" + unroutedNodeToInsert)
               }
           }
         }
