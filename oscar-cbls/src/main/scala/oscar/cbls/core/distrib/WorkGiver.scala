@@ -1,4 +1,4 @@
-package com.example.cbls
+package oscar.cbls.core.distrib
 
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}

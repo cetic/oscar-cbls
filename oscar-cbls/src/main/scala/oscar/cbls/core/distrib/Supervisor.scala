@@ -1,4 +1,4 @@
-package com.example.cbls
+package oscar.cbls.core.distrib
 
 import akka.actor.{TimerScheduler, Timers}
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
@@ -165,7 +165,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],verbose:Boolea
             require(search.searchId == search2.searchId)
             if(verbose) context.log.info(s"search:${search.searchId} start confirmed by worker:${worker.path}")
             ongoingSearches = ongoingSearches + (search.searchId -> (search2, worker2))
-            startingSearches = startingSearches.removed(startID)
+            startingSearches = startingSearches.-(startID)
             runningSearches = runningSearches + (search.searchId -> (search,worker))
           case _ =>
             if(verbose) context.log.warn(s"unexpected search:${search.searchId} start confirmed to Supervisor by worker:${worker.path}; asking for abort")
@@ -187,7 +187,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],verbose:Boolea
             if(verbose) context.log.info(s"got a worker ready:${worker.path}")
           case Some(s) =>
             if(verbose) context.log.info(s"got a worker ready:${worker.path}; finished search:$s")
-            ongoingSearches = ongoingSearches.removed(s)
+            ongoingSearches = ongoingSearches.-(s)
             runningSearches = runningSearches - s
         }
 
@@ -241,7 +241,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],verbose:Boolea
 
       case CancelSearchToSupervisor(searchID: Long) =>
 
-        waitingSearches.removeFirst(_.searchId == searchID) match {
+        waitingSearches.dequeueFirst(_.searchId == searchID) match {
           case None =>
             //Search was already ongoing on some worker
             //the search is already being processed by some search worker.
@@ -254,7 +254,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],verbose:Boolea
 
                 startingSearches.find(_._2._1.searchId == searchID) match{
                   case Some((startID2,(search,startID3,worker)))  =>
-                    startingSearches = startingSearches.removed(startID2)
+                    startingSearches = startingSearches.-(startID2)
                     if(verbose) context.log.info(s"got cancel request for starting search:$searchID forward to worker:${worker.path}")
                     worker ! AbortSearch(search.searchId)
                   case None =>

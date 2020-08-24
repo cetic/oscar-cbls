@@ -1,4 +1,4 @@
-package com.example.cbls
+package oscar.cbls.core.distrib
 
 import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.util.Timeout

@@ -1,4 +1,4 @@
-package com.example.cbls
+package oscar.cbls.core.distrib
 
 import akka.actor.typed._
 import akka.actor.typed.scaladsl.AskPattern.{Askable, schedulerFromActorSystem}

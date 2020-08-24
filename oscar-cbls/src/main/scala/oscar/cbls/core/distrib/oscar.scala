@@ -1,4 +1,4 @@
-package com.example.cbls
+package oscar.cbls.core.distrib
 
 
 class Store{
