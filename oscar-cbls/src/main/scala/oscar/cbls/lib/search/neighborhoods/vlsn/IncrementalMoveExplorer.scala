@@ -211,7 +211,7 @@ class CachedExplorations(oldGraph:VLSNGraph,
 }
 
 class IncrementalMoveExplorer(v:Int,
-                              vehicleToRoutedNodes:SortedMap[Int,Iterable[Int]],
+                              vehicleToRoutedNodes:Map[Int,Iterable[Int]],
                               unroutedNodesToInsert:Iterable[Int],
                               nodeToRelevantVehicles:Map[Int,Iterable[Int]],
 
@@ -230,7 +230,7 @@ class IncrementalMoveExplorer(v:Int,
 
                               gradualEnrichmentSchemeN1V1N2V2P:(Int,Int,Int,Int) => Int)
   extends MoveExplorer(v:Int,
-    vehicleToRoutedNodes:SortedMap[Int,Iterable[Int]],
+    vehicleToRoutedNodes:Map[Int,Iterable[Int]],
     unroutedNodesToInsert:Iterable[Int],
     nodeToRelevantVehicles:Map[Int,Iterable[Int]],
 
