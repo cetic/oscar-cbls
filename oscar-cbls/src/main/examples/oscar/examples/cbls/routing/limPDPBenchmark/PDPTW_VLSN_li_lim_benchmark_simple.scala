@@ -34,27 +34,34 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
     println("usage: This fileName")
 
     //  try pw.print(s) finally pw.close()
-    val fileName = args(0)
-    val resultFileName: String = fileName + "_result"
+    val fileNames = args(0).split(";")
+
+    println(fileNames.mkString("\n"))
+
+    throw new Error("fin")
+
+    val resultFileName: String = args(1)
     val pw = new PrintWriter(new File(resultFileName))
     try {
-      pw.println(runBenchmark(fileName: String, enrichment = 0, partition = 0, enrichmentSpec = 0, shiftInsert = 0))
-      System.gc()
-      pw.flush()
-      pw.println(runBenchmark(fileName: String, enrichment = 0, partition = 0, enrichmentSpec = 0, shiftInsert = 1))
-      pw.flush()
-      System.gc()
-      for (partition <- 0 to 6) {
-        for (enrichmentSpec <- 0 to 4) {
-          for (shiftInsert <- 0 to 3) {
-            pw.println(runBenchmark(
-              fileName: String,
-              enrichment = 1,
-              partition,
-              enrichmentSpec,
-              shiftInsert))
-            pw.flush()
-            System.gc()
+      for(fileName <- fileNames){
+        pw.println(runBenchmark(fileName: String, enrichment = 0, partition = 0, enrichmentSpec = 0, shiftInsert = 0))
+        System.gc()
+        pw.flush()
+        pw.println(runBenchmark(fileName: String, enrichment = 0, partition = 0, enrichmentSpec = 0, shiftInsert = 1))
+        pw.flush()
+        System.gc()
+        for (partition <- 0 to 6) {
+          for (enrichmentSpec <- 0 to 4) {
+            for (shiftInsert <- 0 to 3) {
+              pw.println(runBenchmark(
+                fileName: String,
+                enrichment = 1,
+                partition,
+                enrichmentSpec,
+                shiftInsert))
+              pw.flush()
+              System.gc()
+            }
           }
         }
       }
