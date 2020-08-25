@@ -5,6 +5,8 @@ import java.util.concurrent.Executors
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import org.slf4j.{Logger, LoggerFactory}
+import oscar.cbls.core.computation.{Solution, Store}
+import oscar.cbls.core.search.{MoveFound, NoMoveFound}
 
 import scala.collection.SortedMap
 import scala.concurrent.{ExecutionContext, Future}
@@ -85,11 +87,11 @@ class Worker(neighborhoods:SortedMap[Long,RemoteNeighborhood],
   private final var nbAbortedNeighborhoods:Int = 0
 
   private def doSearch(searchRequest:SearchRequest):IndependentSearchResult = {
-    searchRequest.startSolution.load(m)
+    searchRequest.startSolution.restoreDecisionVariables()
     shouldAbortComputation = false
     val neighborhood = neighborhoods(searchRequest.neighborhoodID.neighborhoodID)
     neighborhood.explore(searchRequest.neighborhoodID.parameters, searchRequest.obj.convertToOBj(m), searchRequest.acc, shouldAbort = () => shouldAbortComputation) match{
-      case NoMoveFound() => IndependentNoMoveFound()
+      case NoMoveFound => IndependentNoMoveFound()
       case MoveFound(m) => IndependentMoveFound(m.getIndependentMove(this.m))
     }
   }

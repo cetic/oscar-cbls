@@ -558,14 +558,17 @@ object CBLSSeqVar{
   implicit val ord:Ordering[CBLSSetVar] = (o1: CBLSSetVar, o2: CBLSSetVar) => o1.compare(o2)
 }
 
-class ChangingSeqValueSnapShot(val variable:ChangingSeqValue,val savedValue:IntSequence) extends AbstractVariableSnapShot(variable){
-  override protected def doRestore() : Unit = {
-    val seqVar = variable.asInstanceOf[CBLSSeqVar]
+class ChangingSeqValueSnapShot(val uniqueId:Int,val savedValue:IntSequence) extends AbstractVariableSnapShot(uniqueId){
+
+  override protected def doRestore(m:Store) : Unit = {
+    val seqVar = m.getSeqVar(uniqueId)
     val currentValue =  seqVar.value
     if(! (currentValue quickEquals savedValue)){
       seqVar := savedValue
     }
   }
+
+  override def valueString(): String = "[" + savedValue.mkString(",") + "]"
 }
 
 /**
@@ -579,9 +582,9 @@ class ChangingSeqValueSnapShot(val variable:ChangingSeqValue,val savedValue:IntS
 abstract class ChangingSeqValue(initialValue: Iterable[Int], val maxValue: Int, val maxPivotPerValuePercent: Int, val maxHistorySize:Int)
   extends AbstractVariable with SeqValue{
 
-  override def snapshot : ChangingSeqValueSnapShot = new ChangingSeqValueSnapShot(this,this.value)
+  override def snapshot : ChangingSeqValueSnapShot = new ChangingSeqValueSnapShot(this.uniqueID,this.value)
 
-  def valueAtSnapShot(s:Snapshot):IntSequence = s(this) match{
+  def valueAtSnapShot(s:Solution):IntSequence = s(this) match{
     case s:ChangingSeqValueSnapShot => s.savedValue
     case _ => throw new Error(s"cannot find value of $this in snapshot")}
 

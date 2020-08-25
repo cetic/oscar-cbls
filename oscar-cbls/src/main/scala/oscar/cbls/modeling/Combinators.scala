@@ -1,6 +1,6 @@
 package oscar.cbls.modeling
 
-import oscar.cbls.core.computation.{AbstractVariable, Snapshot}
+import oscar.cbls.core.computation.{AbstractVariable, Solution}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{JumpNeighborhood, Move, Neighborhood, NoMoveNeighborhood, SupportForAndThenChaining}
 import oscar.cbls.lib.search.combinators._
@@ -229,7 +229,7 @@ trait CompositionCombinators{
 
 
   def DynAndThenWithPrev[FirstMoveType<:Move](x:Neighborhood with SupportForAndThenChaining[FirstMoveType],
-                                              b:((FirstMoveType,Snapshot) => Neighborhood),
+                                              b:((FirstMoveType,Solution) => Neighborhood),
                                               maximalIntermediaryDegradation:Long = Long.MaxValue,
                                               valuesToSave:Iterable[AbstractVariable]) =
     new DynAndThenWithPrev[FirstMoveType](x, b, maximalIntermediaryDegradation, valuesToSave)

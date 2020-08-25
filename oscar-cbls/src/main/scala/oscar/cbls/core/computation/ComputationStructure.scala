@@ -22,7 +22,6 @@ package oscar.cbls.core.computation
 import oscar.cbls
 import oscar.cbls.algo.distributedStorage.{DistributedStorageUtility, StorageUtilityManager}
 import oscar.cbls.algo.quick.QList
-import oscar.cbls.core.ChangingIntValue
 import oscar.cbls.core.propagation._
 
 import scala.collection.immutable.{SortedMap, SortedSet}
@@ -58,10 +57,9 @@ case class Store(override val verbose:Boolean = false,
 
   cbls.warning(checker.isEmpty, "OscaR.cbls is running in debug mode. It makes the engine slower.")
 
-  private[this] var variables:QList[AbstractVariable] = null
-  private var propagationElements:QList[PropagationElement] = null
-
-  private[this] var privateDecisionVariables:QList[Variable] = null;
+  private[this] var variables:QList[AbstractVariable] = _
+  private var propagationElements:QList[PropagationElement] = _
+  private[this] var privateDecisionVariables:QList[Variable] = _
 
   def decisionVariables():QList[Variable] = {
     if(privateDecisionVariables == null){
@@ -90,12 +88,10 @@ case class Store(override val verbose:Boolean = false,
 
   /**this is to be used as a backtracking point in a search engine
     * you can only save variables that are not controlled*/
-  def saveValues(vars:Iterable[Variable]):Solution = {
+  def saveValues(vars:Iterable[AbstractVariable]):Solution = {
     Solution(vars.map(_.snapshot),this)
   }
-
-  def snapShot(toRecord:Iterable[AbstractVariable]) = new Snapshot(toRecord,this)
-
+  
   /**To restore a saved solution
     * notice that only the variables that are not derived will be restored; others will be derived lazily at the next propagation wave.
     * This enables invariants to rebuild their internal data structure if needed.
@@ -177,7 +173,8 @@ case class Store(override val verbose:Boolean = false,
     true
   }
 
-  var notifiedInvariant:Invariant=null
+  //this is for debug purpose
+  var notifiedInvariant:Invariant=_
 
   override def toString:String = "Store(vars:{" + variables.toIterable.mkString(";") + "})"
 
@@ -232,7 +229,7 @@ case class Store(override val verbose:Boolean = false,
 
   // this code is for distributed computation
 
-  private var globalElementsArray:Array[PropagationElement] = null
+  private var globalElementsArray:Array[PropagationElement] = _
   def buildGlobalElementArray(): Unit ={
     globalElementsArray = Array.fill(getMaxID + 1)(null)
     var e = getPropagationElements
@@ -245,6 +242,8 @@ case class Store(override val verbose:Boolean = false,
   def getIntVar(id:Int):CBLSIntVar = globalElementsArray(id).asInstanceOf[CBLSIntVar]
   def getSetVar(id:Int):CBLSSetVar = globalElementsArray(id).asInstanceOf[CBLSSetVar]
   def getSeqVar(id:Int):CBLSSeqVar = globalElementsArray(id).asInstanceOf[CBLSSeqVar]
+  def getVar(id:Int):AbstractVariable = globalElementsArray(id).asInstanceOf[AbstractVariable]
+  def getPropagationElement(id:Int):PropagationElement = globalElementsArray(id)
   def getChangingIntValue(id:Int):IntValue = globalElementsArray(id).asInstanceOf[IntValue]
 
 }
@@ -258,28 +257,16 @@ case class Solution(saves:Iterable[AbstractVariableSnapShot],model:Store){
 
   /**converts the solution to a human-readable string*/
   override def toString:String = {
-    "Solution(\n" + saves.mkString(",\n\t") + "\n)"
+    "Solution(\n" + saves.map(_.toString(model)).mkString(",\n\t") + "\n)"
   }
-
-  def restoreDecisionVariables(): Unit ={
-    for(snapshot <- saves) snapshot.restoreIfDecisionVariable()
-  }
-}
-
-/**
- * a snapshot is moreless the same as a solution, except that the snapshot can be queried for the value of the variables.
- * there is an overhead in creating a snapshot because it cretes a dictionary to store the values.
- * @param toRecord the variables to save
- * @param model
- */
-class Snapshot(toRecord:Iterable[AbstractVariable], val model:Store) {
-  lazy val varDico:SortedMap[AbstractVariable, AbstractVariableSnapShot] = SortedMap.empty[AbstractVariable, AbstractVariableSnapShot] ++ toRecord.map(v => ((v,v.snapshot)))
 
   def restoreDecisionVariables(): Unit = {
-    for(snapshot <- varDico.values) snapshot.restoreIfDecisionVariable()
+    for(snapshot <- saves) snapshot.restore(model)
   }
 
-  def apply(a:AbstractVariable):AbstractVariableSnapShot = varDico(a)
+  lazy val varDico:SortedMap[Int, AbstractVariableSnapShot] =
+    SortedMap.empty[Int, AbstractVariableSnapShot] ++ saves.map(save => ((save.uniqueID,save)))
+  def apply(a:AbstractVariable):AbstractVariableSnapShot = varDico(a.uniqueID)
 }
 
 object Invariant{
@@ -551,26 +538,22 @@ trait Variable extends AbstractVariable{
   }
 }
 
-abstract class AbstractVariableSnapShot(val a:AbstractVariable){
+abstract class AbstractVariableSnapShot(val uniqueID:Int){
 
   // Added by GO for pretty printing of some benchmarks:
   // to change if this affects the printing of other benchmarks
-  override def toString: String = s"Variable[name:${a.name}, value:${a.valueString}]"
+  def toString(m:Store): String = s"Variable[m.name:${m.getVar(uniqueID)}, value:${this.valueString}]"
 
-  final def restore(): Unit = {
-    a match {
-      case v : Variable if v.isDecisionVariable => doRestore()
-      case _ => throw new Error(s"can only re-assign decision variable, not $a")
-    }
-  }
+  def valueString():String
 
-  final def restoreIfDecisionVariable(): Unit ={
-    a match {
-      case v : Variable if v.isDecisionVariable => doRestore()
+  final def restore(m:Store): Unit ={
+    m.getPropagationElement(uniqueID) match {
+      case v : Variable if v.isDecisionVariable => doRestore(m)
       case _ => ;
     }
   }
-  protected def doRestore(): Unit
+
+  protected def doRestore(m:Store): Unit
 }
 
 object Variable{

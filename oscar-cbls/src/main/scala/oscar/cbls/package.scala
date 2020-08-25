@@ -108,7 +108,7 @@ package object cbls extends ModelingAPI{
   type Variable = oscar.cbls.core.computation.Variable
 
   type Solution = oscar.cbls.core.computation.Solution
-  type Snapshot = oscar.cbls.core.computation.Snapshot
+  type Snapshot = oscar.cbls.core.computation.Solution
 
   type AbstractVariable= oscar.cbls.core.computation.AbstractVariable
 

@@ -83,8 +83,8 @@ abstract class ChangingIntValue(initialValue:Long, initialDomain:Domain)
   assert(initialDomain.contains(initialValue),
     s"$initialValue is not in the domain of ${this.name}($initialDomain). This might indicate an integer overflow.")
 
-  override def snapshot : ChangingIntValueSnapShot = new ChangingIntValueSnapShot(this,this.value)
-  def valueAtSnapShot(s:Snapshot):Long = s(this) match{case s:ChangingIntValueSnapShot => s.savedValue case _ => throw new Error("cannot find value of " + this + " in snapshot")}
+  override def snapshot : ChangingIntValueSnapShot = new ChangingIntValueSnapShot(this.uniqueID,this.value)
+  def valueAtSnapShot(s:Solution):Long = s(this) match{case s:ChangingIntValueSnapShot => s.savedValue case _ => throw new Error("cannot find value of " + this + " in snapshot")}
 
   private[this] var privatedomain:Domain = initialDomain
   private[this] var mNewValue: Long = initialValue
@@ -231,8 +231,10 @@ object ChangingIntValue{
   implicit val ord:Ordering[ChangingIntValue] = (o1: ChangingIntValue, o2: ChangingIntValue) => o1.compare(o2)
 }
 
-class ChangingIntValueSnapShot(val variable:ChangingIntValue,val savedValue:Long) extends AbstractVariableSnapShot(variable){
-  override protected def doRestore() : Unit = {variable.asInstanceOf[CBLSIntVar] := savedValue}
+class ChangingIntValueSnapShot(val uniqueId:Int, val savedValue:Long) extends AbstractVariableSnapShot(uniqueId){
+  override protected def doRestore(m:Store) : Unit = {m.getIntVar(uniqueId) := savedValue}
+
+  override def valueString(): String = "" + savedValue
 }
 
 /**An IntVar is a variable managed by the [[oscar.cbls.core.computation.Store]] whose type is integer.

@@ -40,8 +40,10 @@ object SetValue{
   implicit def toFunction(i:SetValue):()=>SortedSet[Int] = () => i.value
 }
 
-class ChangingSetValueSnapShot(val variable:ChangingSetValue,val savedValue:SortedSet[Int]) extends AbstractVariableSnapShot(variable){
-  override protected def doRestore() : Unit = {variable.asInstanceOf[CBLSSetVar] := savedValue}
+class ChangingSetValueSnapShot(val uniqueId:Int,val savedValue:SortedSet[Int]) extends AbstractVariableSnapShot(uniqueId){
+  override protected def doRestore(m:Store) : Unit = {m.getSetVar(uniqueId) := savedValue}
+
+  override def valueString(): String = "{" + savedValue.mkString(",") + "}"
 }
 
 class ValueWisePropagationWaveIdentifier()
@@ -54,8 +56,8 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
   private[this] var domainSizeDiv10 = privatedomain.size/10
   def domain:Domain = privatedomain
 
-  override def snapshot : ChangingSetValueSnapShot = new ChangingSetValueSnapShot(this,this.value)
-  def valueAtSnapShot(s:Snapshot):SortedSet[Int] = s(this) match{case s:ChangingSetValueSnapShot => s.savedValue case _ => throw new Error("cannot find value of " + this + " in snapshot")}
+  override def snapshot : ChangingSetValueSnapShot = new ChangingSetValueSnapShot(this.uniqueID,this.value)
+  def valueAtSnapShot(s:Solution):SortedSet[Int] = s(this) match{case s:ChangingSetValueSnapShot => s.savedValue case _ => throw new Error("cannot find value of " + this + " in snapshot")}
 
   /**this must be protected because invariants might rework this after isntanciation
     * for CBLSVars, no problems*/

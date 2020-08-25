@@ -1,26 +1,10 @@
 package oscar.cbls.core.distrib
 
 import oscar.cbls.core.computation.Store
+import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{Move, MoveFound, SearchResult}
 
-class ChangingIntValue() extends PropagationElement{
-
-}
-
-class Variable() extends PropagationElement{
-  def saveSolution:SolutionElement = ???
-}
-
-class SolutionElement{
-  def reload(m:Store):Unit = ???
-}
-
-
 // ////////////////////////////////////////////////////////////
-
-class Objective{
-  def getIndependentObj:IndependentOBj = ???
-}
 
 abstract class IndependentOBj{
   def convertToOBj(m:Store):Objective

@@ -1,7 +1,7 @@
 package oscar.cbls.lib.search.combinators
 
 import oscar.cbls._
-import oscar.cbls.core.computation.{AbstractVariable, Snapshot, Store}
+import oscar.cbls.core.computation.{AbstractVariable, Solution, Store}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{CallBackMove, CompositeMove, DoNothingNeighborhood, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult, SupportForAndThenChaining}
 
@@ -221,7 +221,7 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
 }
 
 case class DynAndThenWithPrev[FirstMoveType<:Move](x:Neighborhood with SupportForAndThenChaining[FirstMoveType],
-                                                   b:((FirstMoveType,Snapshot) => Neighborhood),
+                                                   b:((FirstMoveType,Solution) => Neighborhood),
                                                    maximalIntermediaryDegradation:Long = Long.MaxValue,
                                                    valuesToSave:Iterable[AbstractVariable]) extends NeighborhoodCombinatorNoProfile(x){
 
@@ -243,12 +243,12 @@ case class DynAndThenWithPrev[FirstMoveType<:Move](x:Neighborhood with SupportFo
 case class SnapShotOnEntry(a: Neighborhood, valuesToSave:Iterable[AbstractVariable])
   extends NeighborhoodCombinator(a){
 
-  var snapShot:Snapshot = null
+  var snapShot:Solution = null
 
   override def getMove(obj: Objective,initialObj:Long,
                        acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
     val s = obj.model
-    snapShot = s.snapShot(valuesToSave)
+    snapShot = s.saveValues(valuesToSave)
     a.getMove(obj,initialObj:Long, acceptanceCriterion)
   }
 }

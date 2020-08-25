@@ -5,6 +5,8 @@ import akka.actor.typed.scaladsl.AskPattern.{Askable, schedulerFromActorSystem}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.util.Timeout
 import org.slf4j.{Logger, LoggerFactory}
+import oscar.cbls.core.computation.{Solution, Store}
+import oscar.cbls.core.search.{Move, MoveFound, NoMoveFound, SearchResult}
 
 import scala.collection.SortedMap
 import scala.concurrent.duration.{Duration, DurationInt}
@@ -67,12 +69,12 @@ object Test extends App{
           i = i + 1
         }
         if(aborted)
-          NoMoveFound()
+          NoMoveFound
         else if(Random.nextBoolean())
           MoveFound(PseudoMove(s"neighborhoodID:${neighborhoodID} params:${parameters} i:$i"))
         else {
          // throw new Exception("bug")
-          NoMoveFound()
+          NoMoveFound
         }
       }
     }
@@ -112,7 +114,7 @@ object Test extends App{
         override def toString: String = "objective"
         override def convertToOBj(m: Store): Objective = new Objective
       },
-      startSolution = new Solution()))
+      startSolution = new Solution(List.empty,null)))
   }
 
   println("started first round")
@@ -126,7 +128,7 @@ object Test extends App{
         override def toString: String = "objective"
         override def convertToOBj(m: Store): Objective = new Objective
       },
-      startSolution = new Solution())
+      startSolution = new Solution(List.empty,null))
   }
 
 
@@ -141,7 +143,7 @@ object Test extends App{
         override def toString: String = "objective"
         override def convertToOBj(m: Store): Objective = new Objective
       },
-      startSolution = new Solution())
+      startSolution = new Solution(List.empty,null))
   }
 
   val w3 = WorkGiverWrapper.wrap(supervisor.delegateORSearches(requests3),null,supervisor)
@@ -154,7 +156,7 @@ object Test extends App{
         override def toString: String = "objective"
         override def convertToOBj(m: Store): Objective = new Objective
       },
-      startSolution = new Solution()))
+      startSolution = new Solution(List.empty,null)))
   }
 
   val w4 = WorkGiverWrapper.andWrap(workGivers4,null,supervisor)

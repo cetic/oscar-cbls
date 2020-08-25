@@ -5,7 +5,8 @@ import akka.util.Timeout
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future, TimeoutException}
-
+import oscar.cbls.core.computation.Store
+import oscar.cbls.core.search.SearchResult
 
 object WorkGiverWrapper{
   def wrap(workGiverActor:ActorRef[MessageToWorkGiver],m:Store,supervisor:SupervisorWrapper)(implicit system: ActorSystem[_]):SingleWorkGiverWrapper = {

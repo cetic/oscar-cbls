@@ -22,6 +22,7 @@ package oscar.cbls.core.objective
 
 import oscar.cbls
 import oscar.cbls.core.computation._
+import oscar.cbls.core.distrib.IndependentOBj
 
 object Objective{
   implicit def objToChangingIntValue(o:IntVarObjective):ChangingIntValue = o.objective
@@ -72,8 +73,14 @@ class IntVarObjective(val objective: ChangingIntValue) extends Objective {
 
   def detailedString(short:Boolean,indent:Long = 0L):String =
     s"IntVarObjective($objective)"
+
+  override def getIndependentObj: IndependentOBj = new IndependentIntVarObjective(objective.uniqueID)
 }
 
+class IndependentIntVarObjective(val uniqueID:Int) extends IndependentOBj{
+  ça va se planter à cause du register!! il faut en fait numéroter les objective eux-même dans le modèle.
+  override def convertToOBj(m: Store): Objective = new IntVarObjective(m.getIntVar(uniqueID))
+}
 
 
 object CascadingObjective{
@@ -332,6 +339,8 @@ trait Objective {
     if(!a.value.contains(i)) return value
     removeValAssumeIn(a, i)
   }
+
+  def getIndependentObj:IndependentOBj = ???
 }
 
 /**
