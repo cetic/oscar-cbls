@@ -21,6 +21,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
   val partition: Int = args(2).toInt
   val enrichmentSpec: Int = args(3).toInt
   val shiftInsert: Int = args(4).toInt
+  val multFactor:Int = 1
   runBenchmark(fileName: String, enrichment: Int, partition: Int, enrichmentSpec: Int, shiftInsert: Int)
 
   case class PDP(fromNode: Int, toNode: Int, demand: Int) {
@@ -31,8 +32,9 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
 
   def readData(fileName: String): (Int, Array[Array[Long]], List[PDP], Int, Array[TransferFunction]) = {
 
+    //multiplie tout par 1000, puis ceil
     case class Node(id: Int, x: Int, y: Int, demand: Int, earlyLine: Int, deadline: Int, duration: Int, pickUP: Int, delivery: Int) {
-      def distance(that: Node): Long = math.sqrt((this.x - that.x) * (this.x - that.x) + (this.y - that.y) * (this.y - that.y)).ceil.toLong
+      def distance(that: Node): Long = (math.sqrt((this.x - that.x) * (this.x - that.x) + (this.y - that.y) * (this.y - that.y))).ceil.toLong
     }
 
     val s = Source.fromFile(fileName)
@@ -40,12 +42,11 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
 
     val Array(v, capacity, _) = lines.next().split("\\t\\s*").map(_.toInt)
 
-
     var allNodesList: List[Node] = Nil
     while (lines.hasNext) {
       val nodeInfo = lines.next().split("\\t\\s*").map(_.toInt)
       //Node(id:Int,      x:Int,        y:Int,      demand:Int,  earlyLine:Int,deadline:Int,duration:Int,pickUP:Int,delivery:Int)
-      allNodesList = Node(nodeInfo(0), nodeInfo(1), nodeInfo(2), nodeInfo(3), nodeInfo(4), nodeInfo(5), nodeInfo(6), nodeInfo(7), nodeInfo(8)) :: allNodesList
+      allNodesList = Node(nodeInfo(0), multFactor*nodeInfo(1), multFactor*nodeInfo(2), nodeInfo(3), multFactor*nodeInfo(4), multFactor*nodeInfo(5), multFactor*nodeInfo(6), nodeInfo(7), nodeInfo(8)) :: allNodesList
     }
 
     s.close()
@@ -72,10 +73,8 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
 
       val nodeData = allNodesArray(oscarNodeToLinNode(node))
       if (node < v) TransferFunction.createFromEarliestAndLatestArrivalTime(node, nodeData.earlyLine, nodeData.deadline)
-      else TransferFunction.createFromEarliestAndLatestArrivalTime(node, 0 /*nodeData.earlyLine*/ , nodeData.deadline, nodeData.duration)
-      //TransferFunction.identifyTransferFunction(node) //
+      else TransferFunction.createFromEarliestAndLatestArrivalTime(node, nodeData.earlyLine , nodeData.deadline, nodeData.duration)
     })
-
 
     val distanceMatrix = Array.tabulate(oscarN)(node1 => Array.tabulate(oscarN)(node2 =>
       allNodesArray(oscarNodeToLinNode(node1)).distance(allNodesArray(oscarNodeToLinNode(node2)))
