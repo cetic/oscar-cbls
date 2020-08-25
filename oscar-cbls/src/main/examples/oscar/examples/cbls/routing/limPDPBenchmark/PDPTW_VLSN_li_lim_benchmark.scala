@@ -1,5 +1,4 @@
-package oscar.examples.cbls.routing
-
+package oscar.examples.cbls.routing.limPDPBenchmark
 
 import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
