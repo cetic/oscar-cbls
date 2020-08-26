@@ -40,7 +40,7 @@ object Worker {
                                 workerName:String = "worker",
                                 verbose:Boolean):ActorSystem[MessageToWorker] = {
 
-    val  startLogger:Logger = LoggerFactory.getLogger("WorkerObject");
+    val  startLogger:Logger = LoggerFactory.getLogger("WorkerObject")
     startLogger.info("Starting actor system and worker:" + workerName)
     ActorSystem(createWorkerBehavior(neighborhoods,m,master,verbose), workerName)
   }
@@ -61,7 +61,7 @@ object Worker {
     new Worker(neighborhoods, m, master, verbose).initBehavior()
   }
 
-  val nbCores = Runtime.getRuntime().availableProcessors()
+  val nbCores:Int = Runtime.getRuntime.availableProcessors()
 }
 
 class Worker(neighborhoods:SortedMap[Long,RemoteNeighborhood],
@@ -71,9 +71,9 @@ class Worker(neighborhoods:SortedMap[Long,RemoteNeighborhood],
 
   //This is the single thread that is ready to perform all computation.
   // There is at most one computation per worker at any point in time, so the threadPool is 1.
-  val executorForComputation = Executors.newFixedThreadPool(1)
+  private val executorForComputation = Executors.newFixedThreadPool(1)
 
-  val executionContextForComputation: scala.concurrent.ExecutionContext = ExecutionContext.fromExecutor(executorForComputation)
+  private val executionContextForComputation: scala.concurrent.ExecutionContext = ExecutionContext.fromExecutor(executorForComputation)
 
   //this is a shared variable. it is not good, but that's the only way to send the abort signal to the Future that contains the computation.
   //Scala requires the final and volatile flags
@@ -182,12 +182,12 @@ class Worker(neighborhoods:SortedMap[Long,RemoteNeighborhood],
           }
 
         case WrappedSearchEnded(result) =>
-          // send result to original requestor
+          // send result to work giver
 
           state match {
             case IAmBusy(search) =>
               require(search.searchId == result.searchID)
-              if(verbose) context.log.info(s"finished search:${search.searchId}, sending result ${result} to ${search.workGiver.path}")
+              if(verbose) context.log.info(s"finished search:${search.searchId}, sending result $result to ${search.workGiver.path}")
               search.workGiver ! result
 
               result match{
@@ -200,7 +200,7 @@ class Worker(neighborhoods:SortedMap[Long,RemoteNeighborhood],
               next(Idle())
 
             case Aborting(search) =>
-              //ok, we'v done it for nothing.
+              //ok, we've done it for nothing.
               if(verbose) context.log.info(s"trashed search result for search:${search.searchId}")
               master ! ReadyForWork(context.self,Some(search.searchId))
               next(Idle())

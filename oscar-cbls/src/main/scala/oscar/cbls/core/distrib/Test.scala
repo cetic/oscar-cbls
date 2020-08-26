@@ -74,7 +74,7 @@ object Test extends App{
         else if(Random.nextBoolean())
           MoveFound(PseudoMove(s"neighborhoodID:${neighborhoodID} params:${parameters} i:$i"))
         else {
-         // throw new Exception("bug")
+//          throw new Exception("bug")
           NoMoveFound
         }
       }
@@ -135,7 +135,6 @@ object Test extends App{
 
   val w2 = WorkGiverWrapper.wrap(supervisor.delegateORSearches(requests2),null,supervisor)
 
-
   val requests3:Array[SearchRequest] = Array.tabulate(10){
     i => SearchRequest(
       RemoteNeighborhoodIdentification(i % 2,parameters = List(i),s"or-searching ${i%2} param:$i"),
@@ -161,7 +160,6 @@ object Test extends App{
   }
 
   val w4 = WorkGiverWrapper.andWrap(workGivers4,null,supervisor)
-
 
   println("got result2:" +   w2.getResultWaitIfNeeded())
 

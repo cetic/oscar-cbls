@@ -46,8 +46,6 @@ object Supervisor{
 
   def createSupervisorBehavior(verbose:Boolean=false,tic:Duration = Duration.Inf):Behavior[MessagesToSupervisor] =
     Behaviors.setup {context:ActorContext[MessagesToSupervisor] => new SupervisorActor(context,verbose,tic)}
-
-
 }
 
 final case class DelegateSearch(searchRequest:SearchRequest, replyTo:ActorRef[WorkGiverActorCreated]) extends MessagesToSupervisor
@@ -100,7 +98,6 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],verbose:Boolea
   private var ongoingSearches:SortedMap[Long,(SearchTask,ActorRef[MessageToWorker])] = SortedMap.empty
 
   private var totalStartedSearches = 0
-
   private var nextSearchID:Long = 0
   private var nextStartID:Long = 0 //search+worker
 
@@ -124,11 +121,14 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],verbose:Boolea
           case f:FiniteDuration => context.scheduleOnce(f, context.self, Tic())
         }
 
+        //TODO: check that worker is still up re schedule associated search in case of worker crash/not responding
+
       case NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) =>
         allKnownWorkers = workerRef :: allKnownWorkers
         idleWorkers = workerRef :: idleWorkers
         context.self ! StartSomeSearch()
         context.log.info("new worker enrolled:" + workerRef.path)
+
       case StartSomeSearch() =>
         (waitingSearches.isEmpty, idleWorkers) match {
           case (true, idleWorkers) if idleWorkers.nonEmpty => ;

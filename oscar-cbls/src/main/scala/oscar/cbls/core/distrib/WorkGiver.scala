@@ -28,8 +28,8 @@ class ORWorkGiverActor(supervisor:ActorRef[MessagesToSupervisor],
                        verbose:Boolean)
   extends AbstractBehavior(context:ActorContext[MessageToWorkGiver]) {
 
- private val resultPromize = Promise[SearchEnded]()
- private val futureForResult:Future[SearchEnded] = resultPromize.future
+ private val resultPromise = Promise[SearchEnded]()
+ private val futureForResult:Future[SearchEnded] = resultPromise.future
 
  if(verbose) context.log.info(s"created for searches:${searchIDs(0)}_${searchIDs(searchIDs.length-1)}")
 
@@ -49,20 +49,20 @@ class ORWorkGiverActor(supervisor:ActorRef[MessagesToSupervisor],
 
    case c: SearchEnded =>
     c match {
-     case SearchCompleted(_, m: IndependentMoveFound) =>
+     case SearchCompleted(_, _) =>
       if(verbose) context.log.info(s"got result for search:${c.searchID} : $c")
-      resultPromize.success(c)
+      resultPromise.success(c)
       cancelSearches()
 
      case SearchCrashed(searchID:Long, neighborhood, exception:Throwable, worker) =>
       //in this case, we avoid silent error, an report eh crash.
-      if(verbose) context.log.info(s"got crash report at worker ${worker} for search:${c.searchID}")
-      resultPromize.success(c)
+      if(verbose) context.log.info(s"got crash report at worker $worker for search:${c.searchID}")
+      resultPromise.success(c)
 
      case _ =>
       remainingSearches -= 1
       if(remainingSearches == 0) {
-       resultPromize.success(new SearchCompleted(-1,IndependentNoMoveFound()))
+       resultPromise.success(SearchCompleted(-1,IndependentNoMoveFound()))
        cancelSearches()
       }
     }
@@ -92,8 +92,8 @@ class WorkGiverActor(supervisor:ActorRef[MessagesToSupervisor],
                      verbose:Boolean)
   extends AbstractBehavior(context:ActorContext[MessageToWorkGiver]) {
 
- private val resultPromize = Promise[SearchEnded]()
- private val futureForResult:Future[SearchEnded] = resultPromize.future
+ private val resultPromise = Promise[SearchEnded]()
+ private val futureForResult:Future[SearchEnded] = resultPromise.future
 
  if(verbose) context.log.info(s"created for search:$searchID")
  override def onMessage(msg: MessageToWorkGiver): Behavior[MessageToWorkGiver] = {
@@ -105,7 +105,7 @@ class WorkGiverActor(supervisor:ActorRef[MessagesToSupervisor],
     require(c.searchID == searchID)
     if (c.searchID == searchID) {
      if(verbose) context.log.info(s"got result for search:$searchID : $c")
-     resultPromize.success(c)
+     resultPromise.success(c)
      forwardResultOpt match{
       case Some(t) => t!c
       case None => ;
@@ -118,7 +118,7 @@ class WorkGiverActor(supervisor:ActorRef[MessagesToSupervisor],
     c match {
      case SearchCrashed(searchID: Long, neighborhood, exception:Throwable, worker) =>
       //in this case, we avoid silent error, an report eh crash.
-      if(verbose) context.log.info(s"got crash report at worker ${worker} for search:${c.searchID}")
+      if(verbose) context.log.info(s"got crash report at worker $worker for search:${c.searchID}")
      case _ => ;
     }
 
