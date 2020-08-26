@@ -36,10 +36,6 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
     //  try pw.print(s) finally pw.close()
     val fileNames = args(0).split(";")
 
-    println(fileNames.mkString("\n"))
-
-    throw new Error("fin")
-
     val resultFileName: String = args(1)
     val pw = new PrintWriter(new File(resultFileName))
     try {
