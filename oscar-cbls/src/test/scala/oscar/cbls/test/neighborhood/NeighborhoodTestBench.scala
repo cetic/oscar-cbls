@@ -36,7 +36,7 @@ object NeighborhoodTestBench {
                   n: Int,
                   v: Int,
                   maxPivotPerValuePercent:Int = 4) extends VRP(m,n,v,maxPivotPerValuePercent) {
-    override val routes = new MockedCBLSSeqVar(check, m, IntSequence(0 until v), n-1, "routes", maxPivotPerValuePercent=maxPivotPerValuePercent)
+    routes <== new MockedCBLSSeqVar(check, m, IntSequence(0 until v), n-1, "routes", maxPivotPerValuePercent=maxPivotPerValuePercent)
   }
 
   class MockedCBLSSeqVar(val check :(Long,Long,IntSequence,IntSequence) => Unit,
