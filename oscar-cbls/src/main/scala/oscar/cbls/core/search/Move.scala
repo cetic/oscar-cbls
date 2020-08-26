@@ -51,7 +51,7 @@ abstract class Move(val objAfter:Long = Long.MaxValue, val neighborhoodName:Stri
 
   protected def neighborhoodNameToString:String = if (neighborhoodName != null) neighborhoodName + ":" else ""
 
-  /** this performs the move, evaluates the objective function, and backtracks the move
+  /** Ghis performs the move, evaluates the objective function, and backtracks the move
     * notice that the objAfter is supposed to carry the proper value, so you generally do not need to call this
     * since it is not an efficient way to proceed
     * notice that it relies on the touchedVariables method.
@@ -76,8 +76,8 @@ abstract class Move(val objAfter:Long = Long.MaxValue, val neighborhoodName:Stri
     println(s"move ${this.getClass.getName} uses default getIndependentMove; dedicated implementation would be faster")
     val s = m.solution()
     this.commit()
-    val x = LoadIndependentSolutionMove(m.solution())
-    s.load(m) //not sure if this is useful at all.
+    val x = LoadIndependentSolutionMove(m.solution().independentSolution)
+    s.restoreDecisionVariables(m)
     x
   }
 }

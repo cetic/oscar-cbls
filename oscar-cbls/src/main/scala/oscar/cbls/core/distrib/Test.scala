@@ -6,6 +6,7 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.util.Timeout
 import org.slf4j.{Logger, LoggerFactory}
 import oscar.cbls.core.computation.{Solution, Store}
+import oscar.cbls.core.objective.{FunctionObjective, Objective}
 import oscar.cbls.core.search.{Move, MoveFound, NoMoveFound, SearchResult}
 
 import scala.collection.SortedMap
@@ -112,7 +113,7 @@ object Test extends App{
       Acceptation.reduce,
       new IndependentOBj {
         override def toString: String = "objective"
-        override def convertToOBj(m: Store): Objective = new Objective
+        override def convertToOBj(m: Store): Objective = new FunctionObjective(() => 5)
       },
       startSolution = new Solution(List.empty,null)))
   }
@@ -126,7 +127,7 @@ object Test extends App{
       Acceptation.reduce,
       new IndependentOBj {
         override def toString: String = "objective"
-        override def convertToOBj(m: Store): Objective = new Objective
+        override def convertToOBj(m: Store): Objective = new FunctionObjective(() => 6)
       },
       startSolution = new Solution(List.empty,null))
   }
@@ -141,7 +142,7 @@ object Test extends App{
       Acceptation.reduce,
       new IndependentOBj {
         override def toString: String = "objective"
-        override def convertToOBj(m: Store): Objective = new Objective
+        override def convertToOBj(m: Store): Objective = new FunctionObjective(() => 7)
       },
       startSolution = new Solution(List.empty,null))
   }
@@ -154,7 +155,7 @@ object Test extends App{
       Acceptation.reduce,
       new IndependentOBj {
         override def toString: String = "objective"
-        override def convertToOBj(m: Store): Objective = new Objective
+        override def convertToOBj(m: Store): Objective = new FunctionObjective(() => 4)
       },
       startSolution = new Solution(List.empty,null)))
   }

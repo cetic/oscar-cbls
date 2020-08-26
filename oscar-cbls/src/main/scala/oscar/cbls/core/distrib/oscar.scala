@@ -1,8 +1,8 @@
 package oscar.cbls.core.distrib
 
-import oscar.cbls.core.computation.Store
+import oscar.cbls.core.computation.{Solution, Store}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{Move, MoveFound, SearchResult}
+import oscar.cbls.core.search.{Move, MoveFound, NoMoveFound, SearchResult}
 
 // ////////////////////////////////////////////////////////////
 
@@ -63,7 +63,7 @@ trait IndependentMove{
 
 case class LoadIndependentSolutionMove(s:Solution) extends IndependentMove{
   def commit(m:Store): Unit = {
-    s.load(m)
+    s.restoreDecisionVariables(m)
   }
 }
 

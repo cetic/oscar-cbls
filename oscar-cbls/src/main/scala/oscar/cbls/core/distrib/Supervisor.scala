@@ -278,7 +278,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],verbose:Boolea
           worker ! ShutDownWorker()
         }
         replyTo match{
-          case Some(x) => x ! ()
+          case Some(x) => x ! Unit
           case None => ;
         }
 

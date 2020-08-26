@@ -78,7 +78,7 @@ class IntVarObjective(val objective: ChangingIntValue) extends Objective {
 }
 
 class IndependentIntVarObjective(val uniqueID:Int) extends IndependentOBj{
-  ça va se planter à cause du register!! il faut en fait numéroter les objective eux-même dans le modèle.
+//  ça va se planter à cause du register!! il faut en fait numéroter les objective eux-même dans le modèle.
   override def convertToOBj(m: Store): Objective = new IntVarObjective(m.getIntVar(uniqueID))
 }
 

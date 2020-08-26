@@ -83,6 +83,9 @@ object OscarBuild extends Build {
     val akkaActor = "com.typesafe.akka" %% "akka-actor" % "2.6.5"
     val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.6.5"
 
+    val akkaActor_typed = "com.typesafe.akka" %% "akka-actor-typed" % "2.6.5"
+    val akkasl4j = "com.typesafe.akka" %% "akka-slf4j" % "2.6.5"
+    
     // Test libraries
     val junit = "junit" % "junit" % "4.13" % Test
     val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.14.3" % Test
@@ -158,7 +161,7 @@ object OscarBuild extends Build {
         packAutoSettings ++
         Seq(
           resolvers ++= Seq(mvnrepository),
-          libraryDependencies ++= testDeps :+ scalaSwing :+ jxmapviewer2 :+ jtscore,
+          libraryDependencies ++= testDeps :+ scalaSwing :+ jxmapviewer2 :+ jtscore :+ akkaActor_typed :+ akkaActor :+ akkasl4j,
           packGenerateWindowsBatFile := false
         ),
     dependencies = Seq(oscarVisual)

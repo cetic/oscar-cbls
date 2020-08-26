@@ -260,13 +260,15 @@ case class Solution(saves:Iterable[AbstractVariableSnapShot],model:Store){
     "Solution(\n" + saves.map(_.toString(model)).mkString(",\n\t") + "\n)"
   }
 
-  def restoreDecisionVariables(): Unit = {
-    for(snapshot <- saves) snapshot.restore(model)
+  def restoreDecisionVariables(store:Store = model): Unit = {
+    for(snapshot <- saves) snapshot.restore(store)
   }
 
   lazy val varDico:SortedMap[Int, AbstractVariableSnapShot] =
     SortedMap.empty[Int, AbstractVariableSnapShot] ++ saves.map(save => ((save.uniqueID,save)))
   def apply(a:AbstractVariable):AbstractVariableSnapShot = varDico(a.uniqueID)
+
+  def independentSolution:Solution = this.copy(model = null)
 }
 
 object Invariant{
@@ -542,7 +544,9 @@ abstract class AbstractVariableSnapShot(val uniqueID:Int){
 
   // Added by GO for pretty printing of some benchmarks:
   // to change if this affects the printing of other benchmarks
-  def toString(m:Store): String = s"Variable[m.name:${m.getVar(uniqueID)}, value:${this.valueString}]"
+  def toString(m:Store): String =
+    if(m == null) s"Variable[m.uniqueID:${uniqueID}, value:${this.valueString}]"
+    else s"Variable[m.name:${m.getVar(uniqueID)}, value:${this.valueString}]"
 
   def valueString():String
 
