@@ -54,6 +54,34 @@ class TestLoopBehavior extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
   }
 
 
+
+  test("firstAll"){
+    val a = First()
+    val (iterable,notifyFound) = a.toIterable(List(1,2,3,4,5))
+
+    val it = iterable.toIterator
+
+    require(it.hasNext)
+    require(1 == it.next())
+
+    require(it.hasNext)
+    require(2 == it.next())
+
+    require(it.hasNext)
+    require(3 == it.next())
+
+    require(it.hasNext)
+    require(4 == it.next())
+
+    require(it.hasNext)
+    require(5 == it.next())
+
+    require(!it.hasNext)
+
+  }
+
+
+
   test("first1"){
     val a = First()
     val (iterable,notifyFound) = a.toIterable(Some(1))
@@ -80,4 +108,23 @@ class TestLoopBehavior extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
     require(!it.hasNext)
   }
 
+
+
+  test("first0"){
+    val a = First()
+    val (iterable,notifyFound) = a.toIterable(None)
+
+    val it = iterable.toIterator
+
+    require(!it.hasNext)
+  }
+
+  test("best0"){
+    val a = Best()
+    val (iterable,notifyFound) = a.toIterable(None)
+
+    val it = iterable.toIterator
+
+    require(!it.hasNext)
+  }
 }
