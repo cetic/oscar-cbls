@@ -703,10 +703,10 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
     println(myVRP)
     for(vehicle <- 0 until v){
       val l = vehiclesRouteLength(vehicle).value
-      if(l !=0) println("vehicle(" + vehicle + ").length:" + l)
+      if(l !=0) println(s"vehicle($vehicle).length:$l")
     }
-    println("obj:" + obj.value)
+    println(s"obj:${obj.value}")
 
-    toReturn + "\nobj:" + obj.value + "\nduration: " + ((endTime - startTime) / (1000 * 1000))
+    s"$toReturn\nobj: ${obj.value}\nduration: ${(endTime - startTime) / (1000 * 1000)}"
   }
 }

@@ -31,7 +31,7 @@ object SimplePDPTW extends App{
   val gc = GlobalConstraintCore(myVRP.routes, v)
 
   // Distance
-  val vehiclesRouteLength = Array.tabulate(v)(vehicle => CBLSIntVar(m, name = "Route length of vehicle " + vehicle))
+  val vehiclesRouteLength = Array.tabulate(v)(vehicle => CBLSIntVar(m, name = s"Route length of vehicle $vehicle"))
   val routeLengthInvariant = new RouteLength(gc,n,v,vehiclesRouteLength,(from: Int, to: Int) => symmetricDistance(from)(to))
 
   //Chains
@@ -46,7 +46,7 @@ object SimplePDPTW extends App{
 
   // Vehicle content
   val violationOfContentOfVehicle = Array.tabulate(v)(vehicle =>
-    CBLSIntVar(myVRP.routes.model, name = "Violation of capacity of vehicle " + vehicle))
+    CBLSIntVar(myVRP.routes.model, name = s"Violation of capacity of vehicle $vehicle"))
   val capacityInvariant = GlobalVehicleCapacityConstraint(gc, n, v, vehiclesCapacity, contentsFlow, violationOfContentOfVehicle)
 
   //Objective function
@@ -82,7 +82,7 @@ object SimplePDPTW extends App{
 
       chainTail match {
         case Nil => None
-        case head :: Nil => None
+        case _ :: Nil => None
         case nextNodeToMove :: newTail =>
           val moveNeighborhood = onePointMove(() => Some(nextNodeToMove),
             () => ChainsHelper.computeRelevantNeighborsForInternalNodes(myVRP,chainsExtension), myVRP)

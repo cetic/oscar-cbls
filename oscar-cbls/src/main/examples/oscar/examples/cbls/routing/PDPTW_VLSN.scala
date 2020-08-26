@@ -19,14 +19,14 @@ import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
  */
 
 object PDPTW_VLSN extends App{
-  val m = new Store(noCycle = false)
+  val m = Store(noCycle = false)
 
   val v = 10
   val n = 400
   //  val v = 10
   //  val n = 500
 
-  println("VLSN(PDPTW) v:" + v +" n:" + n)
+  println(s"VLSN(PDPTW) v:$v n:$n")
   val penaltyForUnrouted = 10000
   val maxVehicleCapacity = 8
   val minVehicleCapacity = 6
@@ -47,7 +47,7 @@ object PDPTW_VLSN extends App{
   val gc = GlobalConstraintCore(myVRP.routes, v)
 
   // Distance
-  val vehiclesRouteLength = Array.tabulate(v)(vehicle => CBLSIntVar(m, name = "Route length of vehicle " + vehicle))
+  val vehiclesRouteLength = Array.tabulate(v)(vehicle => CBLSIntVar(m, name = s"Route length of vehicle $vehicle"))
   val routeLengthInvariant = new RouteLength(gc,n,v,vehiclesRouteLength,(from: Int, to: Int) => symmetricDistance(from)(to))
 
   //Chains
@@ -64,7 +64,7 @@ object PDPTW_VLSN extends App{
 
   val maxLengthConstraints = new ConstraintSystem(m)
   val maxLengthConstraintPerVehicle:Array[ChangingIntValue] = Array.fill(v)(null)
-  for(vehicle <- 0 until v){
+  for(vehicle <- 0 until v) {
     val c = vehiclesRouteLength(vehicle) le 13000
     maxLengthConstraintPerVehicle(vehicle) = c.violation
     maxLengthConstraints.add(c)
@@ -75,7 +75,7 @@ object PDPTW_VLSN extends App{
 
   //for a chain, we want the x nearest vehicles to the chain.
   //for each node we take the summe distance to each nodes of the chain to the vehicle
-  val chainHeadToSummedDistanceToVehicles = listOfChains.map((chain:List[Int]) => (chain.head, vehicles.map(vehicle => (chain.map((node:Int) => symmetricDistance(node)(vehicle)).sum)).toArray))
+  val chainHeadToSummedDistanceToVehicles = listOfChains.map((chain:List[Int]) => (chain.head, vehicles.map(vehicle => chain.map((node:Int) => symmetricDistance(node)(vehicle)).sum).toArray))
   val chainHeadToxNearestVehicles = SortedMap.empty[Int,List[Int]] ++ chainHeadToSummedDistanceToVehicles.map({case (chainHead,vehicleToDistance) => (chainHead,KSmallest.getkSmallests(vehicles.toArray, xNearestVehicles, (v:Int) => vehicleToDistance(v)))})
 
   // Vehicle content
@@ -118,7 +118,7 @@ object PDPTW_VLSN extends App{
 
       chainTail match {
         case Nil => None
-        case head :: Nil => None
+        case _ :: Nil => None
         case nextNodeToMove :: newTail =>
           val moveNeighborhood = onePointMove(() => Some(nextNodeToMove),
             () => ChainsHelper.computeRelevantNeighborsForInternalNodes(myVRP,chainsExtension), myVRP)
@@ -455,12 +455,12 @@ object PDPTW_VLSN extends App{
 
   def removeAndReInsertVLSN(headOfChainToRemove: Int): (() => Unit) = {
     val checkpointBeforeRemove = myVRP.routes.defineCurrentValueAsCheckpoint(true)
-    require(headOfChainToRemove >= v, "cannot remove vehicle point: " + headOfChainToRemove)
+    require(headOfChainToRemove >= v, s"cannot remove vehicle point: $headOfChainToRemove")
 
     val allNodesOfChain = chainsExtension.chainOfNode(headOfChainToRemove)
     for(nodeToRemove <- allNodesOfChain) {
       myVRP.routes.value.positionOfAnyOccurrence(nodeToRemove) match {
-        case None => throw new Error("cannot remove non routed point:" + nodeToRemove)
+        case None => throw new Error(s"cannot remove non routed point: $nodeToRemove")
         case Some(positionOfPointToRemove) =>
           myVRP.routes.remove(positionOfPointToRemove)
       }
@@ -515,7 +515,7 @@ object PDPTW_VLSN extends App{
           VLSN.sameSizeRandomPartitionsSpec(nbPartitions = 20),
           VLSN.linearRandomSchemeSpec(maxEnrichmentLevel = 20)),
 
-      name="VLSN(" + l + ")",
+      name= s"VLSN($l)",
       reoptimizeAtStartUp = true,
       debugNeighborhoodExploration = false
     )
@@ -535,10 +535,9 @@ object PDPTW_VLSN extends App{
 
   for(vehicle <- 0 until v){
     val l = vehiclesRouteLength(vehicle).value
-    if(l !=0) println("vehicle(" + vehicle + ").length:" + l)
+    if(l !=0) println(s"vehicle($vehicle).length:$l")
   }
 
-  println("obj:" + obj.value)
+  println(s"obj:${obj.value}")
 
 }
-

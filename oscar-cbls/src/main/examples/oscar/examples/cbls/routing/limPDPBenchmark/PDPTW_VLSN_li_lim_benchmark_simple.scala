@@ -407,9 +407,9 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
     val endTime = System.nanoTime()
 
     println(myVRP)
-    println("obj:" + obj.value)
+    println(s"obj:${obj.value}")
 
-    toReturn + "\nobj:" + obj.value + "\nduration: " + ((endTime - startTime) / (1000 * 1000))
+    s"$toReturn\nobj: ${obj.value}\nduration: ${(endTime - startTime) / (1000 * 1000)}"
   }
 }
 

@@ -158,7 +158,7 @@ object PDPTW_VLSN_li_lim_benchmarkMaker extends App {
 
     // Vehicle content
     val violationOfContentOfVehicle = Array.tabulate(v)(vehicle =>
-      CBLSIntVar(myVRP.routes.model, name = "Violation of capacity of vehicle " + vehicle))
+      CBLSIntVar(myVRP.routes.model, name = s"Violation of capacity of vehicle $vehicle"))
     val capacityInvariant = GlobalVehicleCapacityConstraint(gc, n, v, vehiclesCapacity, contentsFlow, violationOfContentOfVehicle)
 
     //Objective function
@@ -590,18 +590,18 @@ object PDPTW_VLSN_li_lim_benchmarkMaker extends App {
 
     def removeAndReInsertVLSN(headOfChainToRemove: Int): (() => Unit) = {
       val checkpointBeforeRemove = myVRP.routes.defineCurrentValueAsCheckpoint(true)
-      require(headOfChainToRemove >= v, "cannot remove vehicle point: " + headOfChainToRemove)
+      require(headOfChainToRemove >= v, s"cannot remove vehicle point: $headOfChainToRemove")
 
       val allNodesOfChain = chainsExtension.chainOfNode(headOfChainToRemove)
       for (nodeToRemove <- allNodesOfChain) {
         myVRP.routes.value.positionOfAnyOccurrence(nodeToRemove) match {
-          case None => throw new Error("cannot remove non routed point:" + nodeToRemove)
+          case None => throw new Error(s"cannot remove non routed point: $nodeToRemove")
           case Some(positionOfPointToRemove) =>
             myVRP.routes.remove(positionOfPointToRemove)
         }
       }
 
-      def restoreAndRelease: (() => Unit) = () => {
+      def restoreAndRelease: () => Unit = () => {
         myVRP.routes.rollbackToTopCheckpoint(checkpointBeforeRemove)
         myVRP.routes.releaseTopCheckpoint()
       }
@@ -676,11 +676,11 @@ object PDPTW_VLSN_li_lim_benchmarkMaker extends App {
           }
 
           toReturn = toReturn + toReturnp + "\n"
-          println("BENCHMARK:" + toReturnp)
+          println(s"BENCHMARK:$toReturnp")
           toReturnp
         },
 
-        name = "VLSN(" + l + ")",
+        name = s"VLSN($l)",
         reoptimizeAtStartUp = false,
         debugNeighborhoodExploration = false
       )
@@ -709,6 +709,6 @@ object PDPTW_VLSN_li_lim_benchmarkMaker extends App {
 
     println("obj:" + obj.value)
   */
-    toReturn + "\nobj:" + obj.value + "\nduration: " + ((endTime - startTime) / (1000 * 1000))
+    s"$toReturn\nobj: ${obj.value}\nduration: ${(endTime - startTime) / (1000 * 1000)}"
   }
 }
