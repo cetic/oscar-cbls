@@ -24,8 +24,8 @@ object OscarBuild extends Build {
         "-unchecked", "-Xdisable-assertions", "-language:implicitConversions",
         "-language:postfixOps"),
       scalacOptions in Test := Seq("-optimise"),
-      testOptions in Test <+= (target in Test) map {
-        t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
+      //testOptions in Test <+= (target in Test) map {
+      //  t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
       parallelExecution in Test := false,
       fork in Test := true,
       javaOptions in Test += "-Djava.library.path=../lib:../lib/",
@@ -42,8 +42,8 @@ object OscarBuild extends Build {
       },
       credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
 
-      testOptions in PerfTest <+= (target in PerfTest) map {
-        t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
+      //testOptions in PerfTest <+= (target in PerfTest) map {
+      //  t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
       fork in PerfTest := true,
       parallelExecution in PerfTest := false
 
