@@ -262,4 +262,11 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4,
       Some(s"${routeOfV.mkString("->")}->$vehicle")
     }
   }
+
+  def movingVehicles:Iterable[Int] = {
+    vehicles.filter(vehicle =>
+      getRouteOfVehicle(vehicle).size > 1
+    )
+  }
+
 }

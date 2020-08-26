@@ -14,13 +14,17 @@ abstract class VLSNEnrichmentSchemeSpec(){
 /**
  * To prevent any gradual enrichment process in the VLSN,
  * the whole VLSN graph is then explored prior to cycle detection.
+ * @param shiftInsert to shift the insert by some level of enrichment, compared to other moves.
+ *                    should be >=0
+ *                    This will result in the number of enrichment level to increase by shiftInsert.
  */
-case class NoEnrichment() extends VLSNEnrichmentSchemeSpec(){
+case class NoEnrichment(shiftInsert:Int = 0) extends VLSNEnrichmentSchemeSpec(){
   override def instantiate(vehicleToRoutedNodesToMove: Map[Int, Set[Int]],
                            unroutedNodesToInsert: Set[Int]): EnrichmentScheme = {
     new EnrichmentScheme(
       SameSizeRandomPartitionsSpec(1).instantiate(vehicleToRoutedNodesToMove,unroutedNodesToInsert),
-      SinglePassScheme(1))
+      SinglePassScheme(1),
+      shiftInsert)
   }
 }
 
@@ -43,7 +47,8 @@ case class NoEnrichment() extends VLSNEnrichmentSchemeSpec(){
  *                    This will result in the number of enrichment level to increase by shiftInsert.
  */
 case class CompositeEnrichmentSchemeSpec(base: BasePartitionSchemeSpec,
-                                         enrich: EnrichmentSchemeSpec, shiftInsert:Int = 0) extends VLSNEnrichmentSchemeSpec(){
+                                         enrich: EnrichmentSchemeSpec,
+                                         shiftInsert:Int = 0) extends VLSNEnrichmentSchemeSpec(){
   override def instantiate(vehicleToRoutedNodesToMove: Map[Int, Set[Int]],
                            unroutedNodesToInsert: Set[Int]): EnrichmentScheme = {
     require(shiftInsert >=0, "you cannot shift insert by negative number")
@@ -330,7 +335,7 @@ case class VehicleStructuredSameSizePartitionsSpreadUnrouted(vehicleToNodeToMove
 
     //println("nodeToPartition:" + toReturn.mkString(","))
 
-    (toReturn,toReturnNbPartition)
+    (toReturn,toReturnNbPartition+1)
 
   }
 }
