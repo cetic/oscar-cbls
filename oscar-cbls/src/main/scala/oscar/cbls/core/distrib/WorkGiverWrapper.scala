@@ -9,8 +9,8 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.search.SearchResult
 
 object WorkGiverWrapper{
-  def wrap(workGiverActor:ActorRef[MessageToWorkGiver],m:Store,supervisor:Supervisor)(implicit system: ActorSystem[_]):SingleWorkGiverWrapper = {
-    new SingleWorkGiverWrapper(workGiverActor:ActorRef[MessageToWorkGiver], m, supervisor:Supervisor, system)
+  def wrap(workGiverActor:ActorRef[MessageToWorkGiver],m:Store,supervisor:Supervisor):SingleWorkGiverWrapper = {
+    new SingleWorkGiverWrapper(workGiverActor:ActorRef[MessageToWorkGiver], m, supervisor:Supervisor, supervisor=supervisor.system)
   }
 
   def andWrap(workGiverBehaviors:Array[ActorRef[MessageToWorkGiver]],m:Store,supervisor:Supervisor):AndWorkGiverWrapper =
@@ -27,6 +27,8 @@ class SingleWorkGiverWrapper(workGiverBehavior:ActorRef[MessageToWorkGiver],
 
   private val futureFuture:Future[Future[SearchEnded]] = workGiverBehavior.ask[Future[SearchEnded]](ref => PromiseResult(ref))
   private val futureResult = Await.result(futureFuture,atMost = 3.seconds)
+
+  def getResult:SearchResult = getResultWaitIfNeeded().get
 
   def getResultWaitIfNeeded(timeout:Duration = Duration.Inf):Option[SearchResult] = {
     try {
@@ -73,6 +75,8 @@ class AndWorkGiverWrapper(workGiverBehaviors:Array[ActorRef[MessageToWorkGiver]]
     Await.result(futureFuture, Duration.Inf))
 
   private val results:Array[SearchResult] = Array.fill(workGiverBehaviors.length)(null)
+
+  def getResult:SearchResult = getResultWaitIfNeeded().get
 
   def getResultWaitIfNeeded(timeout:Duration = Duration.Inf):Option[Array[SearchResult]] = {
     try {
