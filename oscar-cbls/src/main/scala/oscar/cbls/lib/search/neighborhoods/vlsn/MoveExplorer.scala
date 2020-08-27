@@ -94,6 +94,8 @@ class MoveExplorer(v:Int,
             s"vehicle $vehicle impacted by current move and should not; it can only impact {${changedVehicles.mkString(",")}}${if (penaltyChanged) " and penalty " else ""}")
         }
       }
+      
+
 
       val global = globalObjective.value
       if(global != Long.MaxValue){
@@ -430,18 +432,25 @@ class MoveExplorer(v:Int,
           //move without remove
           //     :(Int,Int) => Neighborhood,
           evaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle, targetVehicleID: Int, true) match {
-            case null => ;
+            case null => //println("No Accepted Move")
+              ;
             case (move, delta) =>
               edgeBuilder.addEdge(symbolicNodeOfNodeToMove, symbolicNodeOfVehicle, delta, move, VLSNMoveType.MoveNoEject)
+              // println(symbolicNodeOfNodeToMove.incoming.mkString("\n"))
+              // println(s"$move - deltaObj $delta")
             //we cannot consider directMoves here moves because we should also take the impact on the first vehicle into account,
             // and this is not captured into the objective function
           }
+        }
+        else {
+          //println("Not to explore move")
         }
       }
     }
   }
 
   private var cachedNodeMoveNeighborhoodNoRemove:Option[(Int,Int => Neighborhood)] = None //targetVehicle,node=>Neighborhood
+
 
   def evaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle: Int, targetVehicleForInsertion: Int, cached:Boolean): (Move, Long) = {
 
@@ -458,11 +467,10 @@ class MoveExplorer(v:Int,
     }
 
     val obj = if(debug) {
-      generateCheckerObjForVehicles(globalObjective, Set(fromVehicle, targetVehicleForInsertion), penaltyChanged = false)
+      generateCheckerObjForVehicles(vehicleToObjectives(targetVehicleForInsertion), Set(fromVehicle, targetVehicleForInsertion), penaltyChanged = false)
     }else {
       vehicleToObjectives(targetVehicleForInsertion)
     }
-
 
     val neighborhood = nodeToMoveToNeighborhood(routingNodeToMove)
     //    neighborhood.verbose = 5
@@ -500,9 +508,11 @@ class MoveExplorer(v:Int,
               toNode = nodeIDToEject)) {
 
             evaluateMoveToVehicleWithRemove(routingNodeToMove, fromVehicle, targetVehicleID, nodeIDToEject, true) match{
-              case null => ;
+              case null => //println("No Accepted Move");
               case (move,delta) =>
                 edgeBuilder.addEdge(symbolicNodeOfNodeToMove, symbolicNodeToEject, delta, move, VLSNMoveType.MoveWithEject)
+                // println(symbolicNodeOfNodeToMove.incoming.mkString("\n"))
+                // println(s"$move $delta")
             }
           }
         }
@@ -515,6 +525,7 @@ class MoveExplorer(v:Int,
   }
 
   private var cachedNodeMoveNeighborhoodWithRemove:Option[(Int,Int,Int => Neighborhood)] = None //targetVehicle,removedNode,node=>Neighborhood
+
 
   def evaluateMoveToVehicleWithRemove(routingNodeToMove:Int, fromVehicle:Int, targetVehicleForInsertion:Int, removedNode:Int, cached:Boolean):(Move, Long) = {
 
@@ -532,7 +543,7 @@ class MoveExplorer(v:Int,
     }
 
     val obj = if(debug) {
-      generateCheckerObjForVehicles(globalObjective, Set(fromVehicle, targetVehicleForInsertion), penaltyChanged = true) //because node is temporarily removed
+      generateCheckerObjForVehicles(vehicleToObjectives(targetVehicleForInsertion), Set(fromVehicle, targetVehicleForInsertion), penaltyChanged = true) //because node is temporarily removed
     }else {
       vehicleToObjectives(targetVehicleForInsertion)
     }

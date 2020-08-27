@@ -556,7 +556,7 @@ case class NewNode(node:Int) extends Segment{
   }
 
   override def splitAtNode(beforeSplitNode: Int, splitNode: Int, leftLength: Int, rightLength: Int): (Segment,Segment) = {
-    require(beforeSplitNode == node)
+    require(beforeSplitNode == node,s"Spliting $this between $beforeSplitNode and $splitNode is impossible")
     (this, null)
   }
 
