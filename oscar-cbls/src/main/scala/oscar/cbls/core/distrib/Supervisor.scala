@@ -5,6 +5,7 @@ import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import akka.util.Timeout
 import org.slf4j.{Logger, LoggerFactory}
+import oscar.cbls.Store
 
 import scala.collection.immutable.SortedMap
 import scala.concurrent.Future
@@ -30,18 +31,19 @@ case class WorkGiverActorCreated(workGiverActor:ActorRef[MessageToWorkGiver])
 import scala.concurrent.duration._
 
 object Supervisor{
-  def startSupervisorAndActorSystem(verbose:Boolean):ActorSystem[MessagesToSupervisor] = {
+  def startSupervisorAndActorSystem(verbose:Boolean, tic:Duration = Duration.Inf):ActorSystem[MessagesToSupervisor] = {
     val  startLogger:Logger = LoggerFactory.getLogger("SupervisorObject")
     startLogger.info("Starting actor system and supervisor")
-    ActorSystem(createSupervisorBehavior(verbose),"supervisor")
+    ActorSystem(createSupervisorBehavior(verbose, tic),"supervisor")
   }
 
   def spawnSupervisor(context:ActorContext[_],verbose:Boolean):ActorRef[MessagesToSupervisor] = {
     context.spawn(createSupervisorBehavior(verbose),"supervisor")
   }
 
-  def wrapSupervisor(supervisorRef:ActorRef[MessagesToSupervisor])(implicit system:ActorSystem[_]):SupervisorWrapper = {
-    new SupervisorWrapper(supervisorRef,system)
+  def wrapSupervisor(supervisorRef:ActorRef[MessagesToSupervisor], verbose:Boolean)
+                    (implicit system:ActorSystem[_]):Supervisor = {
+    new Supervisor(supervisorRef,verbose, system)
   }
 
   def createSupervisorBehavior(verbose:Boolean=false,tic:Duration = Duration.Inf):Behavior[MessagesToSupervisor] =
@@ -51,8 +53,9 @@ object Supervisor{
 final case class DelegateSearch(searchRequest:SearchRequest, replyTo:ActorRef[WorkGiverActorCreated]) extends MessagesToSupervisor
 final case class DelegateSearches(searchRequest:Array[SearchRequest], replyTo:ActorRef[WorkGiverActorCreated]) extends MessagesToSupervisor
 final case class ShutDown(replyTo:Option[ActorRef[Unit]]) extends MessagesToSupervisor
+final case class SpawnWorker(workerBehavior:Behavior[MessageToWorker],replyTo:ActorRef[Unit]) extends MessagesToSupervisor
 
-class SupervisorWrapper(supervisorActor:ActorRef[MessagesToSupervisor],implicit val system: ActorSystem[_]){
+class Supervisor(supervisorActor:ActorRef[MessagesToSupervisor], verbose:Boolean, implicit val system: ActorSystem[_]){
   implicit val timeout: Timeout = 3.seconds
   import akka.actor.typed.scaladsl.AskPattern._
 
@@ -77,9 +80,15 @@ class SupervisorWrapper(supervisorActor:ActorRef[MessagesToSupervisor],implicit 
     val ongoingRequest:Future[WorkGiverActorCreated] = supervisorActor.ask[WorkGiverActorCreated] (ref => DelegateSearches(searchRequests, ref))
     Await.result(ongoingRequest,atMost = 30.seconds).workGiverActor
   }
+
+  def createLocalWorker(neighborhoods:SortedMap[Int,RemoteNeighborhood], m:Store){
+    val workerBehavior = Worker.createWorkerBehavior(neighborhoods,m,this.supervisorActor,verbose)
+    val ongoingRequest:Future[Unit] = supervisorActor.ask[Unit] (ref => SpawnWorker(workerBehavior,ref))
+    Await.result(ongoingRequest,atMost = 30.seconds)
+  }
 }
 
-class SupervisorActor(context: ActorContext[MessagesToSupervisor],verbose:Boolean, tic:Duration)
+class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boolean, tic:Duration)
   extends AbstractBehavior[MessagesToSupervisor](context){
 
   private final case class StartSomeSearch() extends MessagesToSupervisor
@@ -101,6 +110,9 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],verbose:Boolea
   private var nextSearchID:Long = 0
   private var nextStartID:Long = 0 //search+worker
 
+
+  var nbLocalWorker:Int = 0
+
   def status:String = {
     s"workers(total:${allKnownWorkers.size} busy:${allKnownWorkers.size - idleWorkers.size}) searches(waiting:${waitingSearches.size} starting:${startingSearches.size} running:${runningSearches.size} totalStarted:$totalStartedSearches)"
   }
@@ -120,8 +132,11 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],verbose:Boolea
           case _:Infinite => ;
           case f:FiniteDuration => context.scheduleOnce(f, context.self, Tic())
         }
-
         //TODO: check that worker is still up re schedule associated search in case of worker crash/not responding
+      case SpawnWorker(workerBehavior,ref) =>
+        context.spawn(workerBehavior,s"localWorker$nbLocalWorker")
+        nbLocalWorker += 1
+        ref!Unit
 
       case NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) =>
         allKnownWorkers = workerRef :: allKnownWorkers

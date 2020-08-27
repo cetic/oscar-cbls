@@ -6,14 +6,14 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import org.slf4j.{Logger, LoggerFactory}
 import oscar.cbls.core.computation.{Solution, Store}
-import oscar.cbls.core.search.{MoveFound, NoMoveFound}
+import oscar.cbls.core.search.{MoveFound, Neighborhood, NoMoveFound}
 
 import scala.collection.SortedMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 case class SearchRequest(neighborhoodID:RemoteNeighborhoodIdentification,
-                         acc:Acceptation,
+                         acc:(Long,Long) => Boolean,
                          obj:IndependentOBj,
                          startSolution:Solution){
   override def toString: String = s"SearchRequest($neighborhoodID,$acc,$obj)"
@@ -34,7 +34,13 @@ final case class ShutDownWorker() extends MessageToWorker
 
 object Worker {
 
-  def startWorkerAndActorSystem(neighborhoods:SortedMap[Long,RemoteNeighborhood],
+
+  def generateRemoteNeighborhoods(a:Neighborhood):SortedMap[Int,RemoteNeighborhood] = {
+    val allRemoteNeighborhoods = a.labelAndExtractRemoteNeighborhoods(supervisor = null)._2
+    SortedMap.empty[Int,RemoteNeighborhood] ++ allRemoteNeighborhoods.map(r => (r.neighborhoodID,r))
+  }
+
+  def startWorkerAndActorSystem(neighborhoods:SortedMap[Int,RemoteNeighborhood],
                                 m:Store,
                                 master:ActorRef[MessagesToSupervisor],
                                 workerName:String = "worker",
@@ -45,7 +51,7 @@ object Worker {
     ActorSystem(createWorkerBehavior(neighborhoods,m,master,verbose), workerName)
   }
 
-  def spawnWorker(neighborhoods:SortedMap[Long,RemoteNeighborhood],
+  def spawnWorker(neighborhoods:SortedMap[Int,RemoteNeighborhood],
                   m:Store,
                   master:ActorRef[MessagesToSupervisor],
                   context:ActorContext[_],
@@ -54,7 +60,7 @@ object Worker {
     context.spawn(createWorkerBehavior(neighborhoods,m,master,verbose),workerName)
   }
 
-  def createWorkerBehavior(neighborhoods:SortedMap[Long,RemoteNeighborhood],
+  def createWorkerBehavior(neighborhoods:SortedMap[Int,RemoteNeighborhood],
                            m:Store,
                            master:ActorRef[MessagesToSupervisor],
                            verbose:Boolean=false):Behavior[MessageToWorker] = {
@@ -64,7 +70,7 @@ object Worker {
   val nbCores:Int = Runtime.getRuntime.availableProcessors()
 }
 
-class Worker(neighborhoods:SortedMap[Long,RemoteNeighborhood],
+class Worker(neighborhoods:SortedMap[Int,RemoteNeighborhood],
              m:Store,
              master:ActorRef[MessagesToSupervisor],
              verbose:Boolean) {

@@ -9,18 +9,18 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.search.SearchResult
 
 object WorkGiverWrapper{
-  def wrap(workGiverActor:ActorRef[MessageToWorkGiver],m:Store,supervisor:SupervisorWrapper)(implicit system: ActorSystem[_]):SingleWorkGiverWrapper = {
-    new SingleWorkGiverWrapper(workGiverActor:ActorRef[MessageToWorkGiver], m, supervisor:SupervisorWrapper, system)
+  def wrap(workGiverActor:ActorRef[MessageToWorkGiver],m:Store,supervisor:Supervisor)(implicit system: ActorSystem[_]):SingleWorkGiverWrapper = {
+    new SingleWorkGiverWrapper(workGiverActor:ActorRef[MessageToWorkGiver], m, supervisor:Supervisor, system)
   }
 
-  def andWrap(workGiverBehaviors:Array[ActorRef[MessageToWorkGiver]],m:Store,supervisor:SupervisorWrapper)(implicit system: ActorSystem[_]):AndWorkGiverWrapper =
-    new AndWorkGiverWrapper(workGiverBehaviors, m, supervisor:SupervisorWrapper, system: ActorSystem[_])
+  def andWrap(workGiverBehaviors:Array[ActorRef[MessageToWorkGiver]],m:Store,supervisor:Supervisor):AndWorkGiverWrapper =
+    new AndWorkGiverWrapper(workGiverBehaviors, m, supervisor,system=supervisor.system)
 }
 
 
 class SingleWorkGiverWrapper(workGiverBehavior:ActorRef[MessageToWorkGiver],
                              m:Store,
-                             supervisor:SupervisorWrapper,
+                             supervisor:Supervisor,
                              implicit val system: ActorSystem[_]){
   implicit val timeout: Timeout = 30.seconds
   import akka.actor.typed.scaladsl.AskPattern._
@@ -34,9 +34,16 @@ class SingleWorkGiverWrapper(workGiverBehavior:ActorRef[MessageToWorkGiver],
       result match{
         case c:SearchCrashed =>
           val e = new Exception(s"Crash happened at worker:${c.worker}: \n${c.exception.getMessage}\nwhen performing neighborhood:${c.neighborhood}")
-          e.setStackTrace((c.exception.getStackTrace.toList ::: e.getStackTrace.toList).toArray)
+          e.setStackTrace(
+
+            //This trims the stack trace to hide the intermediary calls to threads, futures and the like.
+            (c.exception.getStackTrace.toList.reverse.dropWhile(!_.getClassName.contains("oscar.cbls")).reverse
+              //c.exception.getStackTrace.toList
+              ::: e.getStackTrace.toList).toArray)
+
 
           supervisor.shutdown()
+
           throw e
         case x:SearchCompleted => Some(x.searchResult.getLocalResult(m))
       }
@@ -52,7 +59,7 @@ class SingleWorkGiverWrapper(workGiverBehavior:ActorRef[MessageToWorkGiver],
   }
 }
 
-class AndWorkGiverWrapper(workGiverBehaviors:Array[ActorRef[MessageToWorkGiver]], m:Store, supervisor:SupervisorWrapper, implicit val system: ActorSystem[_]){
+class AndWorkGiverWrapper(workGiverBehaviors:Array[ActorRef[MessageToWorkGiver]], m:Store, supervisor:Supervisor, implicit val system: ActorSystem[_]){
   implicit val timeout: Timeout = 30.seconds
   import akka.actor.typed.scaladsl.AskPattern._
 

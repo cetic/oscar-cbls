@@ -16,6 +16,9 @@
  */
 package oscar.cbls.core.search
 
+
+import oscar.cbls.core.distrib.{RemoteNeighborhood, Supervisor}
+
 /**
  * @author renaud.delandtsheer@cetic.be
  */
@@ -37,4 +40,15 @@ abstract class NeighborhoodCombinator(a: Neighborhood*) extends Neighborhood {
   override def toString: String = this.getClass.getSimpleName + "(" + a.mkString(",") + ")"
 
   override def collectProfilingStatistics: List[Array[String]] = a.flatMap(_.collectProfilingStatistics).toList
+
+  override def labelAndExtractRemoteNeighborhoods(supervisor: Supervisor, currentID: Int, acc: List[RemoteNeighborhood]):(Int,List[RemoteNeighborhood]) = {
+    var currentIDNow: Int = currentID
+    var accNow: List[RemoteNeighborhood] = acc
+    for(neighborhood <- a){
+      val a = neighborhood.labelAndExtractRemoteNeighborhoods(supervisor, currentIDNow, accNow)
+      currentIDNow = a._1
+      accNow = a._2
+    }
+    (currentIDNow,accNow)
+  }
 }

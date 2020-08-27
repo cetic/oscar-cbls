@@ -1,17 +1,15 @@
 package oscar.cbls.core.distrib
 
 import akka.actor.typed._
-import akka.actor.typed.scaladsl.AskPattern.{Askable, schedulerFromActorSystem}
-import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.util.Timeout
 import org.slf4j.{Logger, LoggerFactory}
 import oscar.cbls.core.computation.{Solution, Store}
 import oscar.cbls.core.objective.{FunctionObjective, Objective}
 import oscar.cbls.core.search.{Move, MoveFound, NoMoveFound, SearchResult}
 
-import scala.collection.SortedMap
-import scala.concurrent.duration.{Duration, DurationInt}
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.collection.immutable.SortedMap
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.DurationInt
 import scala.util.Random
 
 object Test extends App{
@@ -19,38 +17,30 @@ object Test extends App{
   val  startLogger:Logger = LoggerFactory.getLogger("SupervisorObject");
   startLogger.info("starting actor system")
 
-  implicit val system: ActorSystem[SpawnProtocol.Command] = {
-    val b:Behavior[SpawnProtocol.Command] = Behaviors.setup {context:ActorContext[SpawnProtocol.Command] => SpawnProtocol()}
-    ActorSystem(b, "testActorSystem")
-  }
-
-  implicit val ec: ExecutionContext = system.executionContext
+  val supervisorActor:ActorSystem[MessagesToSupervisor] = Supervisor.startSupervisorAndActorSystem(verbose = false, tic = 1.seconds)
+  implicit val ec: ExecutionContext = supervisorActor.executionContext
   implicit val timeout: Timeout = Timeout(3.seconds)
-
-  val supervisorActorFuture:Future[ActorRef[MessagesToSupervisor]] =
-    system.ask[ActorRef[MessagesToSupervisor]](SpawnProtocol.Spawn(behavior = Supervisor.createSupervisorBehavior(tic=1.seconds),"supervisor",Props.empty,_))
-
-  val supervisorActor = Await.result(supervisorActorFuture,3.seconds)
-
-  val supervisor = Supervisor.wrapSupervisor(supervisorActor)
+  val supervisor = Supervisor.wrapSupervisor(supervisorActor, false)(supervisorActor)
 
   case class PseudoMove(test:String) extends Move(){
     override def commit(): Unit = {
-
     }
 
     override def getIndependentMove(m: Store): IndependentMove = new IndependentMove(){
       override def commit(m: Store): Unit = {}
 
-      override def toString: String = s"IndependentMove($test)"
+      override def objAfter: Long = Long.MaxValue
+
+      override def neighborhoodName: String = s"IndependentMove($test)"
     }
   }
 
   def createNeighborhood(actorName:String,neighborhoodID:Int):RemoteNeighborhood = {
-    new RemoteNeighborhood {
+    new RemoteNeighborhood(neighborhoodID, null) {
+      //this is for test purpose
       override def explore(parameters: List[Long],
                            obj: Objective,
-                           acc: Acceptation,
+                           acc: (Long,Long) => Boolean,
                            shouldAbort: () => Boolean): SearchResult = {
 
         val taskDuration = 500*(1+parameters.head) //ms
@@ -74,14 +64,14 @@ object Test extends App{
         else if(Random.nextBoolean())
           MoveFound(PseudoMove(s"neighborhoodID:${neighborhoodID} params:${parameters} i:$i"))
         else {
-//          throw new Exception("bug")
+         // throw new Exception("bug")
           NoMoveFound
         }
       }
     }
   }
 
-  def createNeighborhoods(actorName:String):SortedMap[Long,RemoteNeighborhood] = {
+  def createNeighborhoods(actorName:String):SortedMap[Int,RemoteNeighborhood] = {
     SortedMap(
       (0,createNeighborhood(actorName,0)),
       (1,createNeighborhood(actorName,1)),
@@ -89,18 +79,17 @@ object Test extends App{
     )
   }
 
-  def createWorker(actorName:String, master:ActorRef[MessagesToSupervisor]): Unit ={
-    val neighborhoods:SortedMap[Long,RemoteNeighborhood] = createNeighborhoods(actorName)
-    system.ask[ActorRef[MessageToWorker]](SpawnProtocol.Spawn(behavior =
-      Worker.createWorkerBehavior(neighborhoods,new Store(),master),actorName,Props.empty,_))
+  def createWorker(actorName:String): Unit ={
+    val neighborhoods:SortedMap[Int,RemoteNeighborhood] = createNeighborhoods(actorName)
+    supervisor.createLocalWorker(neighborhoods,new Store())
   }
 
-  createWorker("grincheux",supervisorActor)
-  createWorker("timide",supervisorActor)
-  createWorker("dormeur",supervisorActor)
-  createWorker("joyeux",supervisorActor)
-  createWorker("prof",supervisorActor)
-  createWorker("atchoum",supervisorActor)
+  createWorker("grincheux")
+  createWorker("timide")
+  createWorker("dormeur")
+  createWorker("joyeux")
+  createWorker("prof")
+  createWorker("atchoum")
 
 /*
   for(i <- 0 until Worker.nbCores){
@@ -110,7 +99,7 @@ object Test extends App{
   for(neighborhoodID <- 0 until 5){
     supervisor.delegateSearch(SearchRequest(
       RemoteNeighborhoodIdentification(neighborhoodID % 2,parameters = List(neighborhoodID),s"searching ${neighborhoodID%2} param:$neighborhoodID"),
-      Acceptation.reduce,
+      _ > _,
       new IndependentOBj {
         override def toString: String = "objective"
         override def convertToOBj(m: Store): Objective = new FunctionObjective(() => 5)
@@ -124,7 +113,7 @@ object Test extends App{
   val requests2:Array[SearchRequest] = Array.tabulate(10){
     i => SearchRequest(
       RemoteNeighborhoodIdentification(i % 2,parameters = List(i),s"or-searching ${i%2} param:$i"),
-      Acceptation.reduce,
+      _ > _,
       new IndependentOBj {
         override def toString: String = "objective"
         override def convertToOBj(m: Store): Objective = new FunctionObjective(() => 6)
@@ -133,12 +122,12 @@ object Test extends App{
   }
 
 
-  val w2 = WorkGiverWrapper.wrap(supervisor.delegateORSearches(requests2),null,supervisor)
+  val w2 = WorkGiverWrapper.wrap(supervisor.delegateORSearches(requests2),null,supervisor)(supervisorActor)
 
   val requests3:Array[SearchRequest] = Array.tabulate(10){
     i => SearchRequest(
       RemoteNeighborhoodIdentification(i % 2,parameters = List(i),s"or-searching ${i%2} param:$i"),
-      Acceptation.reduce,
+      _ > _,
       new IndependentOBj {
         override def toString: String = "objective"
         override def convertToOBj(m: Store): Objective = new FunctionObjective(() => 7)
@@ -146,12 +135,12 @@ object Test extends App{
       startSolution = new Solution(List.empty,null))
   }
 
-  val w3 = WorkGiverWrapper.wrap(supervisor.delegateORSearches(requests3),null,supervisor)
+  val w3 = WorkGiverWrapper.wrap(supervisor.delegateORSearches(requests3),null,supervisor)(supervisorActor)
 
   val workGivers4 = Array.tabulate(10){
     i => supervisor.delegateSearch(SearchRequest(
       RemoteNeighborhoodIdentification(i % 2,parameters = List(i),s"and-searching ${i%2} param:$i"),
-      Acceptation.reduce,
+      _ > _,
       new IndependentOBj {
         override def toString: String = "objective"
         override def convertToOBj(m: Store): Objective = new FunctionObjective(() => 4)
@@ -163,17 +152,15 @@ object Test extends App{
 
   println("got result2:" +   w2.getResultWaitIfNeeded())
 
-  createWorker("simplet",supervisorActor)
+  createWorker("simplet")
 
   //starting more workers, to check if it works
   println("got result3:" +   w3.getResultWaitIfNeeded())
 
-
-
   println("got result4:" +   w4.getResultWaitIfNeeded().map("\n\t" + _.mkString("\n\t")))
 
   supervisor.shutdown()
-  system.terminate()
+
   println("exit")
 
 }

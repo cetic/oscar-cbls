@@ -17,6 +17,7 @@
 package oscar.cbls.core.search
 
 import oscar.cbls.core.computation.Store
+import oscar.cbls.core.distrib.{RemoteNeighborhood, Supervisor}
 import oscar.cbls.core.objective.{LoggingObjective, Objective}
 import oscar.cbls.lib.search.combinators._
 import oscar.cbls.util.Properties
@@ -368,6 +369,16 @@ abstract class Neighborhood(name:String = null) {
     toReturn.reverse
   }
 
+  //Call this at the main site
+  def labelNeighborhoodsForRemoteOperation(supervisor:Supervisor):Unit = {
+    labelAndExtractRemoteNeighborhoods(supervisor: Supervisor)
+  }
+  //Call this at the worker site
+  def identifyNeighborhoodForWorker:SortedMap[Int,RemoteNeighborhood] = {
+    SortedMap.empty ++ (labelAndExtractRemoteNeighborhoods(supervisor = null)._2.map(r => (r.neighborhoodID,r)))
+  }
+
+  protected def labelAndExtractRemoteNeighborhoods(supervisor: Supervisor, currentID: Int = 0, acc: List[RemoteNeighborhood] = Nil):(Int,List[RemoteNeighborhood]) = (currentID, acc)
 }
 
 /**

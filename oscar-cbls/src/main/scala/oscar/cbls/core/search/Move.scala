@@ -76,7 +76,10 @@ abstract class Move(val objAfter:Long = Long.MaxValue, val neighborhoodName:Stri
     println(s"move ${this.getClass.getName} uses default getIndependentMove; dedicated implementation would be faster")
     val s = m.solution()
     this.commit()
-    val x = LoadIndependentSolutionMove(m.solution().independentSolution)
+    val x = LoadIndependentSolutionMove(
+      objAfter = this.objAfter,
+      neighborhoodName = this.neighborhoodName,
+      m.solution().independentSolution)
     s.restoreDecisionVariables(m)
     x
   }

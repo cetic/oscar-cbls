@@ -25,6 +25,7 @@ class BestMove(n:Neighborhood*) extends NeighborhoodCombinator(n:_*) {
     if (moves.isEmpty) NoMoveFound
     else moves.minBy(_.objAfter)
   }
+
 }
 
 
