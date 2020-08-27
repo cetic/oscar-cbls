@@ -32,14 +32,7 @@ final case class AbortSearch(searchId:Long) extends MessageToWorker
 final case class WrappedSearchEnded(result: SearchEnded) extends MessageToWorker
 final case class ShutDownWorker() extends MessageToWorker
 
-object Worker {
-
-
-  def generateRemoteNeighborhoods(a:Neighborhood):SortedMap[Int,RemoteNeighborhood] = {
-    val allRemoteNeighborhoods = a.labelAndExtractRemoteNeighborhoods(supervisor = null)._2
-    SortedMap.empty[Int,RemoteNeighborhood] ++ allRemoteNeighborhoods.map(r => (r.neighborhoodID,r))
-  }
-
+object WorkerActor {
   def startWorkerAndActorSystem(neighborhoods:SortedMap[Int,RemoteNeighborhood],
                                 m:Store,
                                 master:ActorRef[MessagesToSupervisor],
@@ -64,16 +57,16 @@ object Worker {
                            m:Store,
                            master:ActorRef[MessagesToSupervisor],
                            verbose:Boolean=false):Behavior[MessageToWorker] = {
-    new Worker(neighborhoods, m, master, verbose).initBehavior()
+    new WorkerActor(neighborhoods, m, master, verbose).initBehavior()
   }
 
   val nbCores:Int = Runtime.getRuntime.availableProcessors()
 }
 
-class Worker(neighborhoods:SortedMap[Int,RemoteNeighborhood],
-             m:Store,
-             master:ActorRef[MessagesToSupervisor],
-             verbose:Boolean) {
+class WorkerActor(neighborhoods:SortedMap[Int,RemoteNeighborhood],
+                  m:Store,
+                  master:ActorRef[MessagesToSupervisor],
+                  verbose:Boolean) {
 
   //This is the single thread that is ready to perform all computation.
   // There is at most one computation per worker at any point in time, so the threadPool is 1.

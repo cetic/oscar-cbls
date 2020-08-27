@@ -52,3 +52,6 @@ abstract class NeighborhoodCombinator(a: Neighborhood*) extends Neighborhood {
     (currentIDNow,accNow)
   }
 }
+
+
+

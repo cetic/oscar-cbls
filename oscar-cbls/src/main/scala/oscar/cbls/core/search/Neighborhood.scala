@@ -375,10 +375,10 @@ abstract class Neighborhood(name:String = null) {
   }
   //Call this at the worker site
   def identifyNeighborhoodForWorker:SortedMap[Int,RemoteNeighborhood] = {
-    SortedMap.empty ++ (labelAndExtractRemoteNeighborhoods(supervisor = null)._2.map(r => (r.neighborhoodID,r)))
+    SortedMap.empty[Int,RemoteNeighborhood] ++ (labelAndExtractRemoteNeighborhoods(supervisor = null)._2.map(r => (r.neighborhoodID,r)))
   }
 
-  protected def labelAndExtractRemoteNeighborhoods(supervisor: Supervisor, currentID: Int = 0, acc: List[RemoteNeighborhood] = Nil):(Int,List[RemoteNeighborhood]) = (currentID, acc)
+  def labelAndExtractRemoteNeighborhoods(supervisor: Supervisor, currentID: Int = 0, acc: List[RemoteNeighborhood] = Nil):(Int,List[RemoteNeighborhood]) = (currentID, acc)
 }
 
 /**

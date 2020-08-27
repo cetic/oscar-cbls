@@ -20,9 +20,9 @@ object Test extends App{
   val supervisorActor:ActorSystem[MessagesToSupervisor] = Supervisor.startSupervisorAndActorSystem(verbose = false, tic = 1.seconds)
   implicit val ec: ExecutionContext = supervisorActor.executionContext
   implicit val timeout: Timeout = Timeout(3.seconds)
-  val supervisor = Supervisor.wrapSupervisor(supervisorActor, false)(supervisorActor)
+  val supervisor = Supervisor.wrapSupervisor(supervisorActor, new Store(), false)(supervisorActor)
 
-  case class PseudoMove(test:String) extends Move(){
+  case class PseudoMove(test:String) extends Move(neighborhoodName="PseudoNeighborhood"){
     override def commit(): Unit = {
     }
 
@@ -32,6 +32,8 @@ object Test extends App{
       override def objAfter: Long = Long.MaxValue
 
       override def neighborhoodName: String = s"IndependentMove($test)"
+
+      override def toString: String = neighborhoodName
     }
   }
 
@@ -122,7 +124,7 @@ object Test extends App{
   }
 
 
-  val w2 = WorkGiverWrapper.wrap(supervisor.delegateORSearches(requests2),null,supervisor)(supervisorActor)
+  val w2 = supervisor.delegateSearchesStopAtFirst(requests2)
 
   val requests3:Array[SearchRequest] = Array.tabulate(10){
     i => SearchRequest(
@@ -135,20 +137,20 @@ object Test extends App{
       startSolution = new Solution(List.empty,null))
   }
 
-  val w3 = WorkGiverWrapper.wrap(supervisor.delegateORSearches(requests3),null,supervisor)(supervisorActor)
+  val w3 = supervisor.delegateSearchesStopAtFirst(requests3)
 
   val workGivers4 = Array.tabulate(10){
-    i => supervisor.delegateSearch(SearchRequest(
+    i => SearchRequest(
       RemoteNeighborhoodIdentification(i % 2,parameters = List(i),s"and-searching ${i%2} param:$i"),
       _ > _,
       new IndependentOBj {
         override def toString: String = "objective"
         override def convertToOBj(m: Store): Objective = new FunctionObjective(() => 4)
       },
-      startSolution = new Solution(List.empty,null)))
+      startSolution = new Solution(List.empty,null))
   }
 
-  val w4 = WorkGiverWrapper.andWrap(workGivers4,null,supervisor)
+  val w4 = supervisor.delegateSearches(workGivers4)
 
   println("got result2:" +   w2.getResultWaitIfNeeded())
 

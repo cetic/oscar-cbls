@@ -1,7 +1,7 @@
 package oscar.cbls.lib.search.combinators
 
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.distrib.{AndWorkGiverWrapper, RemoteNeighborhood, SearchRequest, SingleWorkGiverWrapper, Supervisor, WorkGiverWrapper, Worker}
+import oscar.cbls.core.distrib.{AndWorkGiver, RemoteNeighborhood, SearchRequest, SingleWorkGiver, Supervisor, WorkGiver, WorkerActor}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{MoveFound, Neighborhood, NoMoveFound, SearchResult}
 
@@ -11,14 +11,14 @@ abstract class DistributedCombinator(neighborhoods:Array[List[Long] => Neighborh
   var labeledRemoteNeighborhoods:Array[RemoteNeighborhood] = null
   var supervisor:Supervisor = null
 
-  def delegateAndWrapSearches(searchRequests:Array[SearchRequest]):AndWorkGiverWrapper =
-    supervisor.delegateAndWrapSearches(searchRequests)
+  def delegateSearches(searchRequests:Array[SearchRequest]):AndWorkGiver =
+    supervisor.delegateSearches(searchRequests)
 
-  def delegateOrWrapSearches(searchRequests:Array[SearchRequest]):SingleWorkGiverWrapper =
-    supervisor.delegateOrWrapSearches(searchRequests)
+  def delegateSearchesStopAtFirst(searchRequests:Array[SearchRequest]):SingleWorkGiver =
+    supervisor.delegateSearchesStopAtFirst(searchRequests)
 
-  def delegateWrapSearch(searchRequest:SearchRequest):SingleWorkGiverWrapper =
-    supervisor.delegateWrapSearch(searchRequest)
+  def delegateSearch(searchRequest:SearchRequest):SingleWorkGiver =
+    supervisor.delegateSearch(searchRequest)
 
   override def labelAndExtractRemoteNeighborhoods(supervisor: Supervisor, currentID: Int, acc: List[RemoteNeighborhood]): (Int, List[RemoteNeighborhood]) = {
     this.supervisor = supervisor
@@ -51,7 +51,7 @@ class DistributedBest(n:Array[Neighborhood]) extends DistributedCombinator(n.map
     val independentObj = obj.getIndependentObj
     val startSol = obj.model.solution().independentSolution
 
-    val moves = delegateAndWrapSearches(
+    val moves = delegateSearches(
       labeledRemoteNeighborhoods.map(l =>
         SearchRequest(
           l.getRemoteIdentification(Nil),
@@ -79,7 +79,7 @@ class DistributedFirst(n:Array[Neighborhood]) extends DistributedCombinator(n.ma
     val independentObj = obj.getIndependentObj
     val startSol = obj.model.solution().independentSolution
 
-    val move = delegateOrWrapSearches(
+    val move = delegateSearchesStopAtFirst(
       labeledRemoteNeighborhoods.map(l =>
         SearchRequest(
           l.getRemoteIdentification(Nil),
@@ -91,25 +91,27 @@ class DistributedFirst(n:Array[Neighborhood]) extends DistributedCombinator(n.ma
   }
 }
 
-object Test{
+object MultiCoreOptimizingWithOscaRcbls{
   def createSearchProcedure():(Store,Neighborhood,Objective) = {
 
+    //sreate the store, variables invariants, obj
 
+    //m.close
 
+    //the search procedure, using combinators and some distributed combinators (to be developed)
+
+    //(m,search,obj)
     ???
   }
 
   //supervisor side
   val (store,search,obj) = createSearchProcedure()
-  val supervisor:Supervisor = ???
-  search.labelNeighborhoodsForRemoteOperation(supervisor)
+  val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(store,search)
 
-  val nbWorkers = Worker.nbCores/2
-
-  for(workerID <- (0 until nbWorkers).par) {
+  for(workerID <- (0 until WorkerActor.nbCores/2).par) {
     //worker side
     val (store2, search2, _) = createSearchProcedure()
-    supervisor.createLocalWorker(search2.identifyNeighborhoodForWorker, store2)
+    supervisor.createLocalWorker(store2,search2)
   }
 
   search.doAllMoves(obj = obj)
