@@ -1,7 +1,7 @@
 package oscar.cbls.lib.search.combinators
 
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.distrib.{RemoteNeighborhood, SearchRequest, Supervisor, WorkGiverWrapper}
+import oscar.cbls.core.distrib.{RemoteNeighborhood, SearchRequest, Supervisor, WorkGiverWrapper, Worker}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{MoveFound, Neighborhood, NoMoveFound, SearchResult}
 
@@ -65,35 +65,27 @@ class DistributedBest(n:Array[Neighborhood]) extends DistributedCombinator(n.map
   }
 }
 
-
 object Test{
-
-  //supervisor side
-  val m:Store = ???
-  val n:Neighborhood = ???
-  val supervisor:Supervisor = ???
-
-  n.labelNeighborhoodsForRemoteOperation(supervisor)
-
-  //worker side
-  val m2:Store = ???
-  val n2:Neighborhood = ???
-  supervisor.createLocalWorker(n2.identifyNeighborhoodForWorker, m2)
+  def createSearchProcedure():(Store,Neighborhood,Objective) = {
 
 
 
-  def createSearchProcedure():(Store,Neighborhood,Objective) = ???
-
+    ???
+  }
 
   //supervisor side
   val (store,search,obj) = createSearchProcedure()
   val supervisor:Supervisor = ???
   search.labelNeighborhoodsForRemoteOperation(supervisor)
 
-  //worker side
-  val (store2,search2,_) = createSearchProcedure()
-  supervisor.createLocalWorker(search2.identifyNeighborhoodForWorker, store2)
+  val nbWorkers = Worker.nbCores/2
 
-  search.doAllMoves(obj)
+  for(workerID <- (0 until nbWorkers).par) {
+    //worker side
+    val (store2, search2, _) = createSearchProcedure()
+    supervisor.createLocalWorker(search2.identifyNeighborhoodForWorker, store2)
+  }
+
+  search.doAllMoves(obj = obj)
 
 }

@@ -53,7 +53,7 @@ object Supervisor{
 final case class DelegateSearch(searchRequest:SearchRequest, replyTo:ActorRef[WorkGiverActorCreated]) extends MessagesToSupervisor
 final case class DelegateSearches(searchRequest:Array[SearchRequest], replyTo:ActorRef[WorkGiverActorCreated]) extends MessagesToSupervisor
 final case class ShutDown(replyTo:Option[ActorRef[Unit]]) extends MessagesToSupervisor
-final case class SpawnWorker(workerBehavior:Behavior[MessageToWorker],replyTo:ActorRef[Unit]) extends MessagesToSupervisor
+final case class SpawnWorker(workerBehavior:Behavior[MessageToWorker], replyTo:ActorRef[Unit]) extends MessagesToSupervisor
 
 class Supervisor(supervisorActor:ActorRef[MessagesToSupervisor], verbose:Boolean, implicit val system: ActorSystem[_]){
   implicit val timeout: Timeout = 3.seconds
