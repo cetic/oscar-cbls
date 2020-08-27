@@ -17,7 +17,7 @@ object Test extends App{
   val  startLogger:Logger = LoggerFactory.getLogger("SupervisorObject");
   startLogger.info("starting actor system")
 
-  val supervisorActor:ActorSystem[MessagesToSupervisor] = Supervisor.startSupervisorAndActorSystem(verbose = false, tic = 1.seconds)
+  val supervisorActor:ActorSystem[MessagesToSupervisor] = Supervisor.internalStartSupervisorAndActorSystem(verbose = false, tic = 1.seconds)
   implicit val ec: ExecutionContext = supervisorActor.executionContext
   implicit val timeout: Timeout = Timeout(3.seconds)
   val supervisor = Supervisor.wrapSupervisor(supervisorActor, new Store(), false)(supervisorActor)
@@ -66,7 +66,7 @@ object Test extends App{
         else if(Random.nextBoolean())
           MoveFound(PseudoMove(s"neighborhoodID:${neighborhoodID} params:${parameters} i:$i"))
         else {
-         // throw new Exception("bug")
+          // throw new Exception("bug")
           NoMoveFound
         }
       }
@@ -83,7 +83,7 @@ object Test extends App{
 
   def createWorker(actorName:String): Unit ={
     val neighborhoods:SortedMap[Int,RemoteNeighborhood] = createNeighborhoods(actorName)
-    supervisor.createLocalWorker(neighborhoods,new Store())
+    supervisor.createLocalWorker(new Store(),neighborhoods)
   }
 
   createWorker("grincheux")
@@ -93,10 +93,10 @@ object Test extends App{
   createWorker("prof")
   createWorker("atchoum")
 
-/*
-  for(i <- 0 until Worker.nbCores){
-    createWorker("worker_"+i,supervisorActor)
-  }*/
+  /*
+    for(i <- 0 until Worker.nbCores){
+      createWorker("worker_"+i,supervisorActor)
+    }*/
 
   for(neighborhoodID <- 0 until 5){
     supervisor.delegateSearch(SearchRequest(
@@ -106,7 +106,7 @@ object Test extends App{
         override def toString: String = "objective"
         override def convertToOBj(m: Store): Objective = new FunctionObjective(() => 5)
       },
-      startSolution = new Solution(List.empty,null)))
+      startSolution = IndependentSolution(Solution(List.empty,null))))
   }
 
   println("started first round")
@@ -120,7 +120,7 @@ object Test extends App{
         override def toString: String = "objective"
         override def convertToOBj(m: Store): Objective = new FunctionObjective(() => 6)
       },
-      startSolution = new Solution(List.empty,null))
+      startSolution = IndependentSolution(Solution(List.empty,null)))
   }
 
 
@@ -134,7 +134,7 @@ object Test extends App{
         override def toString: String = "objective"
         override def convertToOBj(m: Store): Objective = new FunctionObjective(() => 7)
       },
-      startSolution = new Solution(List.empty,null))
+      startSolution = IndependentSolution(Solution(List.empty,null)))
   }
 
   val w3 = supervisor.delegateSearchesStopAtFirst(requests3)
@@ -147,7 +147,7 @@ object Test extends App{
         override def toString: String = "objective"
         override def convertToOBj(m: Store): Objective = new FunctionObjective(() => 4)
       },
-      startSolution = new Solution(List.empty,null))
+      startSolution = IndependentSolution(Solution(List.empty,null)))
   }
 
   val w4 = supervisor.delegateSearches(workGivers4)

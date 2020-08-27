@@ -18,7 +18,7 @@ package oscar.cbls.core.search
 
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.distrib.{RemoteNeighborhood, Supervisor}
-import oscar.cbls.core.objective.{LoggingObjective, Objective}
+import oscar.cbls.core.objective.{AbortException, AbortableObjective, LoggingObjective, Objective}
 import oscar.cbls.lib.search.combinators._
 import oscar.cbls.util.Properties
 
@@ -115,6 +115,28 @@ abstract class Neighborhood(name:String = null) {
    * @return
    */
   def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult
+
+  /**
+   * the method that returns a move from the neighborhood.
+   * The returned move should typically be accepted by the acceptance criterion over the objective function.
+   * Some neighborhoods are actually jumps, so that they might violate this basic rule however.
+   *
+   * @param obj the objective function. notice that it is actually a function. if you have an [[oscar.cbls.core.objective.Objective]] there is an implicit conversion available
+   * @param acceptanceCriterion
+   * @param shouldAbort a method that can abort the search abruptly, returning NoMoveFound in case of abort
+   *                    even if high-quality solutions are stores within combinators below this neighborhood
+   * @return
+   */
+  def getMoveAbortable(obj: Objective,
+                       initialObj:Long,
+                       acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj,
+                       shouldAbort:()=>Boolean): SearchResult = {
+    try {
+      getMove(new AbortableObjective(shouldAbort, obj), initialObj, acceptanceCriterion)
+    }catch{
+      case _:AbortException => NoMoveFound
+    }
+  }
 
   //this resets the internal state of the Neighborhood
   def reset(): Unit = {}

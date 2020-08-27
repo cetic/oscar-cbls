@@ -15,7 +15,7 @@ import scala.util.{Failure, Success}
 case class SearchRequest(neighborhoodID:RemoteNeighborhoodIdentification,
                          acc:(Long,Long) => Boolean,
                          obj:IndependentOBj,
-                         startSolution:Solution){
+                         startSolution:IndependentSolution){
   override def toString: String = s"SearchRequest($neighborhoodID,$acc,$obj)"
 }
 
@@ -86,7 +86,7 @@ class WorkerActor(neighborhoods:SortedMap[Int,RemoteNeighborhood],
   private final var nbAbortedNeighborhoods:Int = 0
 
   private def doSearch(searchRequest:SearchRequest):IndependentSearchResult = {
-    searchRequest.startSolution.restoreDecisionVariables()
+    searchRequest.startSolution.makeLocal(m).restoreDecisionVariables()
     shouldAbortComputation = false
     val neighborhood = neighborhoods(searchRequest.neighborhoodID.neighborhoodID)
     neighborhood.explore(searchRequest.neighborhoodID.parameters, searchRequest.obj.convertToOBj(m), searchRequest.acc, shouldAbort = () => shouldAbortComputation) match{

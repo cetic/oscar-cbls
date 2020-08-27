@@ -1,7 +1,7 @@
 package oscar.cbls.lib.search.combinators
 
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.distrib.{AndWorkGiver, RemoteNeighborhood, SearchRequest, SingleWorkGiver, Supervisor, WorkGiver, WorkerActor}
+import oscar.cbls.core.distrib.{AndWorkGiver, IndependentSolution, RemoteNeighborhood, SearchRequest, SingleWorkGiver, Supervisor, WorkGiver, WorkerActor}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{MoveFound, Neighborhood, NoMoveFound, SearchResult}
 
@@ -49,7 +49,7 @@ class DistributedBest(n:Array[Neighborhood]) extends DistributedCombinator(n.map
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
 
     val independentObj = obj.getIndependentObj
-    val startSol = obj.model.solution().independentSolution
+    val startSol = IndependentSolution(obj.model.solution())
 
     val moves = delegateSearches(
       labeledRemoteNeighborhoods.map(l =>
@@ -77,7 +77,7 @@ class DistributedFirst(n:Array[Neighborhood]) extends DistributedCombinator(n.ma
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
 
     val independentObj = obj.getIndependentObj
-    val startSol = obj.model.solution().independentSolution
+    val startSol = IndependentSolution(obj.model.solution())
 
     val move = delegateSearchesStopAtFirst(
       labeledRemoteNeighborhoods.map(l =>

@@ -34,13 +34,13 @@ import scala.concurrent.duration._
 object Supervisor{
 
   def startSupervisorAndActorSystem(store:Store, search:Neighborhood, verbose:Boolean = false, tic:Duration = Duration.Inf):Supervisor = {
-    val supervisorActorSystem = startSupervisorAndActorSystem(verbose, tic)
+    val supervisorActorSystem = internalStartSupervisorAndActorSystem(verbose, tic)
     val supervisor = wrapSupervisor(supervisorActorSystem, store:Store, verbose)(system = supervisorActorSystem)
     search.labelNeighborhoodsForRemoteOperation(supervisor)
     supervisor
   }
 
-  def startSupervisorAndActorSystem(verbose:Boolean = false, tic:Duration = Duration.Inf):ActorSystem[MessagesToSupervisor] = {
+  def internalStartSupervisorAndActorSystem(verbose:Boolean = false, tic:Duration = Duration.Inf):ActorSystem[MessagesToSupervisor] = {
     val  startLogger:Logger = LoggerFactory.getLogger("SupervisorObject")
     startLogger.info("Starting actor system and supervisor")
     ActorSystem(createSupervisorBehavior(verbose, tic),"supervisor")
@@ -74,6 +74,15 @@ class Supervisor(supervisorActor:ActorRef[MessagesToSupervisor], m:Store, verbos
     val ongoingRequest:Future[Unit] = supervisorActor.ask[Unit] (ref => SpawnWorker(workerBehavior,ref))
     Await.result(ongoingRequest,atMost = 30.seconds)
   }
+
+
+  def createLocalWorker(m:Store,neighborhoods:SortedMap[Int,RemoteNeighborhood]){
+    val workerBehavior = WorkerActor.createWorkerBehavior(neighborhoods,m,this.supervisorActor,verbose)
+    val ongoingRequest:Future[Unit] = supervisorActor.ask[Unit] (ref => SpawnWorker(workerBehavior,ref))
+    Await.result(ongoingRequest,atMost = 30.seconds)
+  }
+
+
 
   def delegateSearch(searchRequest:SearchRequest):SingleWorkGiver = {
     WorkGiver.wrap(internalDelegateSearch(searchRequest),m,this)

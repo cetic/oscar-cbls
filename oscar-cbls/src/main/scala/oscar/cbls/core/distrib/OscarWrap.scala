@@ -1,7 +1,7 @@
 package oscar.cbls.core.distrib
 
-import oscar.cbls.core.computation.{Solution, Store}
-import oscar.cbls.core.objective.Objective
+import oscar.cbls.core.computation.{AbstractVariableSnapShot, Solution, Store}
+import oscar.cbls.core.objective.{AbortableObjective, Objective}
 import oscar.cbls.core.search.{Move, MoveFound, Neighborhood, NoMoveFound, SearchResult}
 
 // ////////////////////////////////////////////////////////////
@@ -17,7 +17,7 @@ case class RemoteNeighborhoodIdentification(neighborhoodID:Int, parameters:List[
 
 class RemoteNeighborhood(val neighborhoodID:Int, neighborhood:List[Long] => Neighborhood, neighborhoodName:String = ""){
   def explore(parameters:List[Long], obj:Objective, acc:(Long,Long) => Boolean, shouldAbort:() => Boolean):SearchResult = {
-    neighborhood(parameters).getMove(new AbortableObjective(shouldAbort,obj),obj.value,acc)
+    neighborhood(parameters).getMoveAbortable(obj,obj.value,acc,shouldAbort)
   }
 
   def getRemoteIdentification(parameters:List[Long]=Nil):RemoteNeighborhoodIdentification =
@@ -38,6 +38,20 @@ case class IndependentNoMoveFound() extends IndependentSearchResult{
 
 // ////////////////////////////////////////////////////////////
 
+
+object IndependentSolution{
+  def apply(solution:Solution):IndependentSolution = {
+    new IndependentSolution(solution.saves)
+  }
+}
+
+class IndependentSolution(saves:Iterable[AbstractVariableSnapShot]){
+  def makeLocal(s:Store):Solution = {
+    new Solution(saves,s)
+  }
+}
+// ////////////////////////////////////////////////////////////
+
 trait IndependentMove{
   def commit(m:Store): Unit
   def makeIntoLocal(m:Store):Move = new MoveWrapper(this,m)
@@ -45,10 +59,10 @@ trait IndependentMove{
   def neighborhoodName:String
 }
 
-case class LoadIndependentSolutionMove(objAfter:Long, neighborhoodName: String, s:Solution)
+case class LoadIndependentSolutionMove(objAfter:Long, neighborhoodName: String, s:IndependentSolution)
   extends IndependentMove{
   def commit(m:Store): Unit = {
-    s.restoreDecisionVariables(m)
+    s.makeLocal(m).restoreDecisionVariables()
   }
 }
 
@@ -56,16 +70,4 @@ class MoveWrapper(i:IndependentMove,m:Store)
   extends Move(i.objAfter,i.neighborhoodName){
   override def commit(): Unit = i.commit(m)
   override def toString: String = s"MoveWrapper($i)"
-}
-
-class AbortException extends Exception("")
-class AbortableObjective(shouldAbort:()=>Boolean, baseObj:Objective) extends Objective{
-  override def detailedString(short: Boolean, indent: Long): String = baseObj.detailedString(short,indent)
-
-  override def model: Store = baseObj.model
-
-  override def value: Long = {
-    if(shouldAbort()) throw new AbortException()
-    baseObj.value
-  }
 }

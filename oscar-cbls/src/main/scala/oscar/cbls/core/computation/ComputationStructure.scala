@@ -260,15 +260,13 @@ case class Solution(saves:Iterable[AbstractVariableSnapShot],model:Store){
     "Solution(\n" + saves.map(_.toString(model)).mkString(",\n\t") + "\n)"
   }
 
-  def restoreDecisionVariables(store:Store = model): Unit = {
-    for(snapshot <- saves) snapshot.restore(store)
+  def restoreDecisionVariables(): Unit = {
+    for(snapshot <- saves) snapshot.restore(model)
   }
 
   lazy val varDico:SortedMap[Int, AbstractVariableSnapShot] =
     SortedMap.empty[Int, AbstractVariableSnapShot] ++ saves.map(save => ((save.uniqueID,save)))
   def apply(a:AbstractVariable):AbstractVariableSnapShot = varDico(a.uniqueID)
-
-  def independentSolution:Solution = this.copy(model = null)
 }
 
 object Invariant{

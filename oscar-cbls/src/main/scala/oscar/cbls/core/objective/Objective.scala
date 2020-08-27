@@ -369,3 +369,17 @@ class LoggingObjective(baseObjective:Objective) extends Objective{
     toReturn
   }
 }
+
+
+
+class AbortException extends Exception("")
+class AbortableObjective(shouldAbort:()=>Boolean, baseObj:Objective) extends Objective{
+  override def detailedString(short: Boolean, indent: Long): String = baseObj.detailedString(short,indent)
+
+  override def model: Store = baseObj.model
+
+  override def value: Long = {
+    if(shouldAbort()) throw new AbortException()
+    baseObj.value
+  }
+}
