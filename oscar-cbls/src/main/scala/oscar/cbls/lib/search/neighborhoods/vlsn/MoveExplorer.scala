@@ -582,7 +582,7 @@ class MoveExplorer(v:Int,
     require(!vehicleIsDirty(fromVehicle))
 
     val obj = if(debug) {
-      generateCheckerObjForVehicles(globalObjective, Set(fromVehicle), penaltyChanged = true)
+      generateCheckerObjForVehicles(unroutedNodesPenalty, Set(fromVehicle), penaltyChanged = true)
     }else {
       unroutedNodesPenalty
     }
