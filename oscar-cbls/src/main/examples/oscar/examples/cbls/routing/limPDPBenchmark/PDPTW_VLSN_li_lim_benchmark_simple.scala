@@ -18,7 +18,7 @@ import scala.io.Source
 object PDPTW_VLSN_li_lim_benchmark_simple extends App {
   val multFactor: Long = 1000
 
-  runMany()
+  runOne()
   def runOne() {
     println("usage: This fileName enrichment partition enrichmentSpec shiftInsert")
     val fileName = args(0)
@@ -177,6 +177,8 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
 
     val allPickupPoints:SortedSet[Int] = SortedSet(pdpList.map(_.fromNode):_*)
 
+    def isPickup(i: Int):Boolean = pickUpPointToDeliveryPoint(i) != -1
+
     val gc = GlobalConstraintCore(myVRP.routes, v)
 
     // Distance
@@ -314,10 +316,10 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
     // //////////////////////////////////////////////////////////////////////////////////////////////////
 
     def moveNodesVLSN(nodes:List[Int],
-                      relevantPredecessors:Iterable[Int]) =
+                      relevantPredecessors:Iterable[Int], filter:Boolean = false) =
       onePointMove(
         () => nodes,
-        () => _ => relevantPredecessors,
+        () => x => if(filter) relevantPredecessors.filter(_!=x) else relevantPredecessors,
         myVRP,
         selectDestinationBehavior = Best(),
         hotRestart = false,
@@ -355,6 +357,23 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
         }) name s"movePDPWithinVehicle:$vehicle)"
     }
 
+
+    def movePDP:Neighborhood = {
+      val allRoutedNodes = myVRP.routed.value.toList
+      dynAndThen(
+        moveNodesVLSN(allRoutedNodes.filter(isPickup), allRoutedNodes, filter = true),
+        (moveNode:OnePointMoveMove) => {
+
+          val pickUp = moveNode.movedPoint
+          val targetVehicle = myVRP.vehicleOfNode(pickUp).valueInt
+          val routeOfVehicle: List[Int] = myVRP.getRouteOfVehicle(targetVehicle)
+          val nodesInRouteAfterPickUp = pickUp :: trimRouteFromNodeRemoveNode(routeOfVehicle, pickUp)
+          val delivery = pickUpPointToDeliveryPoint(moveNode.movedPoint)
+          moveNodeVLSN(delivery, nodesInRouteAfterPickUp)
+        }) name s"movePDP"
+    }
+
+
     def removeNode(node: Int) = removePoint(
       () => List(node),
       myVRP,
@@ -365,6 +384,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
       removeNode(pickUp) andThen removeNode(pickUpPointToDeliveryPoint(pickUp))
 
     def removeAndReInsertVLSN(pickUp: Int): () => Unit = {
+
       val checkpointBeforeRemove = myVRP.routes.defineCurrentValueAsCheckpoint(true)
 
       val delivery = pickUpPointToDeliveryPoint(pickUp)
@@ -454,7 +474,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
     // ///////////////////////////////////////////////////////////////////////////////////////////////////
 
     val startTime = System.nanoTime()
-    val search = vlsn maxMoves 1
+    val search = vlsn maxMoves 1 exhaust movePDP
     search.verbose = 2
 
     search.doAllMoves(obj = obj)
