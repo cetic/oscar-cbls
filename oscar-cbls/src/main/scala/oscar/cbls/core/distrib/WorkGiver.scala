@@ -9,8 +9,8 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.search.SearchResult
 
 object WorkGiver{
-  def wrap(workGiverActor:ActorRef[MessageToWorkGiver],m:Store,supervisor:Supervisor):SingleWorkGiver = {
-    new SingleWorkGiver(workGiverActor:ActorRef[MessageToWorkGiver], m, supervisor:Supervisor, system=supervisor.system)
+  def wrap(workGiverActor:ActorRef[MessageToWorkGiver],m:Store,supervisor:Supervisor):WorkGiver = {
+    new WorkGiver(workGiverActor:ActorRef[MessageToWorkGiver], m, supervisor:Supervisor, system=supervisor.system)
   }
 
   def andWrap(workGiverBehaviors:Array[ActorRef[MessageToWorkGiver]],m:Store,supervisor:Supervisor):AndWorkGiver =
@@ -18,10 +18,10 @@ object WorkGiver{
 }
 
 
-class SingleWorkGiver(workGiverBehavior:ActorRef[MessageToWorkGiver],
-                      m:Store,
-                      supervisor:Supervisor,
-                      implicit val system: ActorSystem[_]){
+class WorkGiver(workGiverBehavior:ActorRef[MessageToWorkGiver],
+                m:Store,
+                supervisor:Supervisor,
+                implicit val system: ActorSystem[_]){
   implicit val timeout: Timeout = 30.seconds
   import akka.actor.typed.scaladsl.AskPattern._
 

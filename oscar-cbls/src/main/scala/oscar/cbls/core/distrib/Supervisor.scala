@@ -63,28 +63,28 @@ final case class DelegateSearch(searchRequest:SearchRequest, replyTo:ActorRef[Wo
 final case class DelegateSearches(searchRequest:Array[SearchRequest], replyTo:ActorRef[WorkGiverActorCreated]) extends MessagesToSupervisor
 final case class ShutDown(replyTo:Option[ActorRef[Unit]]) extends MessagesToSupervisor
 final case class SpawnWorker(workerBehavior:Behavior[MessageToWorker], replyTo:ActorRef[Unit]) extends MessagesToSupervisor
+final case class NbWorkers(replyTo:ActorRef[Int]) extends MessagesToSupervisor
 
 class Supervisor(supervisorActor:ActorRef[MessagesToSupervisor], m:Store, verbose:Boolean, implicit val system: ActorSystem[_]){
   implicit val timeout: Timeout = 3.seconds
   import akka.actor.typed.scaladsl.AskPattern._
 
-  def createLocalWorker(m:Store,search:Neighborhood){
-    val neighborhoods:SortedMap[Int,RemoteNeighborhood] = search.identifyNeighborhoodForWorker
+  def createLocalWorker(m:Store,search:Neighborhood) : Unit ={
+    createLocalWorker(m,search.identifyNeighborhoodForWorker)
+  }
+
+  def createLocalWorker(m:Store,neighborhoods:SortedMap[Int,RemoteNeighborhood]):Unit = {
     val workerBehavior = WorkerActor.createWorkerBehavior(neighborhoods,m,this.supervisorActor,verbose)
     val ongoingRequest:Future[Unit] = supervisorActor.ask[Unit] (ref => SpawnWorker(workerBehavior,ref))
     Await.result(ongoingRequest,atMost = 30.seconds)
   }
 
-
-  def createLocalWorker(m:Store,neighborhoods:SortedMap[Int,RemoteNeighborhood]){
-    val workerBehavior = WorkerActor.createWorkerBehavior(neighborhoods,m,this.supervisorActor,verbose)
-    val ongoingRequest:Future[Unit] = supervisorActor.ask[Unit] (ref => SpawnWorker(workerBehavior,ref))
+  def nbWorkers:Int = {
+    val ongoingRequest:Future[Int] = supervisorActor.ask[Int] (ref => NbWorkers(ref))
     Await.result(ongoingRequest,atMost = 30.seconds)
   }
 
-
-
-  def delegateSearch(searchRequest:SearchRequest):SingleWorkGiver = {
+  def delegateSearch(searchRequest:SearchRequest):WorkGiver = {
     WorkGiver.wrap(internalDelegateSearch(searchRequest),m,this)
   }
 
@@ -92,7 +92,7 @@ class Supervisor(supervisorActor:ActorRef[MessagesToSupervisor], m:Store, verbos
     WorkGiver.andWrap(searchRequests.map(searchRequest => this.internalDelegateSearch(searchRequest)),m,this)
   }
 
-  def delegateSearchesStopAtFirst(searchRequests:Array[SearchRequest]):SingleWorkGiver = {
+  def delegateSearchesStopAtFirst(searchRequests:Array[SearchRequest]):WorkGiver = {
     WorkGiver.wrap(delegateORSearches(searchRequests),m,this)
   }
 
@@ -117,7 +117,6 @@ class Supervisor(supervisorActor:ActorRef[MessagesToSupervisor], m:Store, verbos
       case _ => ;
     }
   }
-
 }
 
 class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boolean, tic:Duration)
@@ -157,6 +156,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
 
   override def onMessage(msg: MessagesToSupervisor): Behavior[MessagesToSupervisor] = {
     msg match {
+
       case Tic() =>
         context.log.info(status)
 
@@ -165,10 +165,15 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
           case f:FiniteDuration => context.scheduleOnce(f, context.self, Tic())
         }
       //TODO: check that worker is still up re schedule associated search in case of worker crash/not responding
+
       case SpawnWorker(workerBehavior,ref) =>
-        context.spawn(workerBehavior,s"localWorker$nbLocalWorker")
+        val worker = context.spawn(workerBehavior,s"localWorker$nbLocalWorker")
         nbLocalWorker += 1
-        ref!Unit
+
+       ref!Unit
+
+      case NbWorkers(replyTo) =>
+        replyTo ! this.allKnownWorkers.size
 
       case NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) =>
         allKnownWorkers = workerRef :: allKnownWorkers

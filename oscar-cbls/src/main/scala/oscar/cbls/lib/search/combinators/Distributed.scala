@@ -1,35 +1,35 @@
 package oscar.cbls.lib.search.combinators
 
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.distrib.{AndWorkGiver, IndependentSolution, RemoteNeighborhood, SearchRequest, SingleWorkGiver, Supervisor, WorkGiver, WorkerActor}
+import oscar.cbls.core.distrib._
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{MoveFound, Neighborhood, NoMoveFound, SearchResult}
 
 
 abstract class DistributedCombinator(neighborhoods:Array[List[Long] => Neighborhood]) extends Neighborhood {
 
-  var labeledRemoteNeighborhoods:Array[RemoteNeighborhood] = null
+  var remoteNeighborhoods:Array[RemoteNeighborhood] = null
   var supervisor:Supervisor = null
 
   def delegateSearches(searchRequests:Array[SearchRequest]):AndWorkGiver =
     supervisor.delegateSearches(searchRequests)
 
-  def delegateSearchesStopAtFirst(searchRequests:Array[SearchRequest]):SingleWorkGiver =
+  def delegateSearchesStopAtFirst(searchRequests:Array[SearchRequest]):WorkGiver =
     supervisor.delegateSearchesStopAtFirst(searchRequests)
 
-  def delegateSearch(searchRequest:SearchRequest):SingleWorkGiver =
+  def delegateSearch(searchRequest:SearchRequest):WorkGiver =
     supervisor.delegateSearch(searchRequest)
 
   override def labelAndExtractRemoteNeighborhoods(supervisor: Supervisor, currentID: Int, acc: List[RemoteNeighborhood]): (Int, List[RemoteNeighborhood]) = {
     this.supervisor = supervisor
     val (newID,newAcc,neighborhoods2) = labelAndExtractRemoteNeighborhoodsOutOf(currentID, acc, neighborhoods)
-    labeledRemoteNeighborhoods = neighborhoods2
+    remoteNeighborhoods = neighborhoods2
     (newID,newAcc)
   }
 
   private def labelAndExtractRemoteNeighborhoodsOutOf(currentID:Int,
-                                              acc:List[RemoteNeighborhood],
-                                              neighborhoods:Array[List[Long] => Neighborhood]):
+                                                      acc:List[RemoteNeighborhood],
+                                                      neighborhoods:Array[List[Long] => Neighborhood]):
   (Int,List[RemoteNeighborhood],Array[RemoteNeighborhood]) = {
     var currentIDNow: Int = currentID
     var accNow: List[RemoteNeighborhood] = acc
@@ -44,7 +44,27 @@ abstract class DistributedCombinator(neighborhoods:Array[List[Long] => Neighborh
 }
 
 
-class DistributedBest(n:Array[Neighborhood]) extends DistributedCombinator(n.map(x => (y:List[Long]) => x)) {
+class Remote(neighborhoods:Neighborhood)
+  extends DistributedCombinator(Array(_ => neighborhoods)) {
+
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+
+    val independentObj = obj.getIndependentObj
+    val startSol = IndependentSolution(obj.model.solution())
+
+    val move = delegateSearch(
+      SearchRequest(
+        remoteNeighborhoods(0).getRemoteIdentification(Nil),
+        acceptanceCriteria,
+        independentObj,
+        startSol))
+
+    move.getResult
+  }
+}
+
+class DistributedBest(neighborhoods:Array[Neighborhood])
+  extends DistributedCombinator(neighborhoods.map(x => (y:List[Long]) => x)) {
 
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
 
@@ -52,7 +72,7 @@ class DistributedBest(n:Array[Neighborhood]) extends DistributedCombinator(n.map
     val startSol = IndependentSolution(obj.model.solution())
 
     val moves = delegateSearches(
-      labeledRemoteNeighborhoods.map(l =>
+      remoteNeighborhoods.map(l =>
         SearchRequest(
           l.getRemoteIdentification(Nil),
           acceptanceCriteria,
@@ -72,7 +92,8 @@ class DistributedBest(n:Array[Neighborhood]) extends DistributedCombinator(n.map
 }
 
 
-class DistributedFirst(n:Array[Neighborhood]) extends DistributedCombinator(n.map(x => (y:List[Long]) => x)) {
+class DistributedFirst(neighborhoods:Array[Neighborhood])
+  extends DistributedCombinator(neighborhoods.map(x => (y:List[Long]) => x)) {
 
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
 
@@ -80,16 +101,46 @@ class DistributedFirst(n:Array[Neighborhood]) extends DistributedCombinator(n.ma
     val startSol = IndependentSolution(obj.model.solution())
 
     val move = delegateSearchesStopAtFirst(
-      labeledRemoteNeighborhoods.map(l =>
+      remoteNeighborhoods.map(l =>
         SearchRequest(
           l.getRemoteIdentification(Nil),
           acceptanceCriteria,
           independentObj,
           startSol)))
 
-    move.getResultWaitIfNeeded().get
+    move.getResult
   }
 }
+
+//DistributedRestart
+class DistributedRestart(base:Neighborhood, randomize:Neighborhood, nbWorkers:Int = -1)
+  extends DistributedCombinator(Array((_:List[Long]) => base,(_:List[Long]) => randomize)) {
+
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+
+    val independentObj = obj.getIndependentObj
+    val startSol = IndependentSolution(obj.model.solution())
+
+    val remoteBase = remoteNeighborhoods(0)
+    val remoteRandomize = remoteNeighborhoods(1)
+
+    val myNbWorkers = if(this.nbWorkers == -1) supervisor.nbWorkers else this.nbWorkers
+
+    val ongoingSearches:Array[WorkGiver] = Array.fill(nbWorkers)(null)
+
+    val move = delegateSearchesStopAtFirst(
+      remoteNeighborhoods.map(l =>
+        SearchRequest(
+          l.getRemoteIdentification(Nil),
+          acceptanceCriteria,
+          independentObj,
+          startSol)))
+
+    move.getResult
+  }
+}
+
+//VLSN
 
 object MultiCoreOptimizingWithOscaRcbls{
   def createSearchProcedure():(Store,Neighborhood,Objective) = {
@@ -115,5 +166,6 @@ object MultiCoreOptimizingWithOscaRcbls{
   }
 
   search.doAllMoves(obj = obj)
+  supervisor.shutdown()
 }
 

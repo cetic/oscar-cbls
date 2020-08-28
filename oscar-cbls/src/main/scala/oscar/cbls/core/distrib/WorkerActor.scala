@@ -31,6 +31,8 @@ final case class StartSearch(search:SearchTask, startID:Long, replyTo:ActorRef[M
 final case class AbortSearch(searchId:Long) extends MessageToWorker
 final case class WrappedSearchEnded(result: SearchEnded) extends MessageToWorker
 final case class ShutDownWorker() extends MessageToWorker
+final case class Ping(replyTo:ActorRef[Unit]) extends MessageToWorker
+
 
 object WorkerActor {
   def startWorkerAndActorSystem(neighborhoods:SortedMap[Int,RemoteNeighborhood],
@@ -112,6 +114,11 @@ class WorkerActor(neighborhoods:SortedMap[Int,RemoteNeighborhood],
   private def next(state:WorkerState): Behavior[MessageToWorker] = {
     Behaviors.receive { (context, command) =>
       command match {
+        case Ping(replyTo) =>
+          replyTo ! Unit
+
+          Behaviors.same
+
         case StartSearch(newSearch,startID,replyTo) =>
           state match {
             case ShuttingDown() =>
