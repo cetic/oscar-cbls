@@ -38,11 +38,16 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
 
     val resultFileName: String = args(1)
     val pw = new PrintWriter(new File(resultFileName))
+
+    pw.println("start")
+    pw.flush()
+    System.gc()
+
     try {
       for(fileName <- fileNames){
         pw.println(runBenchmark(fileName: String, enrichment = 0, partition = 0, enrichmentSpec = 0, shiftInsert = 0))
-        System.gc()
         pw.flush()
+        System.gc()
         pw.println(runBenchmark(fileName: String, enrichment = 0, partition = 0, enrichmentSpec = 0, shiftInsert = 1))
         pw.flush()
         System.gc()
@@ -126,7 +131,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
 
       val nodeData = allNodesArray(oscarNodeToLinNode(node))
       if (node < v) TransferFunction.createFromEarliestAndLatestArrivalTime(node, nodeData.earlyLine, nodeData.deadline)
-      else TransferFunction.createFromEarliestAndLatestArrivalTime(node, 0 /*nodeData.earlyLine*/, nodeData.deadline, nodeData.duration)
+      else TransferFunction.createFromEarliestAndLatestArrivalTime(node, nodeData.earlyLine, nodeData.deadline, nodeData.duration)
     })
 
     val distanceMatrix = Array.tabulate(oscarN)(node1 => Array.tabulate(oscarN)(node2 =>
