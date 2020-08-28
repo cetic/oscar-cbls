@@ -92,6 +92,35 @@ class DistributedBest(neighborhoods:Array[Neighborhood])
 }
 
 
+
+class DistributedFirstInSequence(neighborhoods:Array[Neighborhood], lookAhead:Int)
+  extends DistributedCombinator(neighborhoods.map(x => (y:List[Long]) => x)) {
+
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+
+    val independentObj = obj.getIndependentObj
+    val startSol = IndependentSolution(obj.model.solution())
+
+    val moves = delegateSearches(
+      remoteNeighborhoods.map(l =>
+        SearchRequest(
+          l.getRemoteIdentification(Nil),
+          acceptanceCriteria,
+          independentObj,
+          startSol)))
+
+    val answers = moves.getResultWaitIfNeeded()
+
+    val foundMoves = answers.get.flatMap({
+      case NoMoveFound => None
+      case m: MoveFound => Some(m)
+    })
+
+    if (foundMoves.isEmpty) NoMoveFound
+    else foundMoves.minBy(_.objAfter)
+  }
+}
+
 class DistributedFirst(neighborhoods:Array[Neighborhood])
   extends DistributedCombinator(neighborhoods.map(x => (y:List[Long]) => x)) {
 
