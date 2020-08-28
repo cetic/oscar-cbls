@@ -18,7 +18,7 @@ import scala.io.Source
 object PDPTW_VLSN_li_lim_benchmark_simple extends App {
   val multFactor: Long = 1000
 
-  runOne()
+  runMany()
   def runOne() {
     println("usage: This fileName enrichment partition enrichmentSpec shiftInsert")
     val fileName = args(0)
@@ -126,7 +126,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
 
       val nodeData = allNodesArray(oscarNodeToLinNode(node))
       if (node < v) TransferFunction.createFromEarliestAndLatestArrivalTime(node, nodeData.earlyLine, nodeData.deadline)
-      else TransferFunction.createFromEarliestAndLatestArrivalTime(node, nodeData.earlyLine, nodeData.deadline, nodeData.duration)
+      else TransferFunction.createFromEarliestAndLatestArrivalTime(node, 0 /*nodeData.earlyLine*/, nodeData.deadline, nodeData.duration)
     })
 
     val distanceMatrix = Array.tabulate(oscarN)(node1 => Array.tabulate(oscarN)(node2 =>
