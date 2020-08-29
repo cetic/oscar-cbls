@@ -252,7 +252,7 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
 
   def bij = externalToInternalPosition
   override def descriptorString: String = "[" + this.iterator.toList.mkString(",") + "]_impl:concrete"
-  
+
   override def check(): Unit = {
     externalToInternalPosition.checkBijection()
     require(internalPositionToValue.content.sortBy(_._1) equals valueToInternalPositions.content.flatMap({case (a, b) => b.keys.map(x => (x, a))}).sortBy(_._1),
