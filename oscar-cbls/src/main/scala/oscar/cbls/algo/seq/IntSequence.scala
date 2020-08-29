@@ -228,7 +228,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
   }
 
   override def toString : String = {
-    s"IntSequence(size:$size)[${this.iterator.toList.mkString(",")}]_impl:$descriptorString"
+    s"(length:$size)[${this.iterator.toList.mkString(",")}]"
   }
 
   def descriptorString : String
@@ -252,11 +252,7 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
 
   def bij = externalToInternalPosition
   override def descriptorString: String = "[" + this.iterator.toList.mkString(",") + "]_impl:concrete"
-
-  override def toString: String = {
-    s"ConcreteIntSequence(size:$size)$descriptorString"
-  }
-
+  
   override def check(): Unit = {
     externalToInternalPosition.checkBijection()
     require(internalPositionToValue.content.sortBy(_._1) equals valueToInternalPositions.content.flatMap({case (a, b) => b.keys.map(x => (x, a))}).sortBy(_._1),
