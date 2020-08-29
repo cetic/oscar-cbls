@@ -1,23 +1,24 @@
 /*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
+ * OscaR is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * OscaR is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License  for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+ * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+ ******************************************************************************/
 
 package oscar.cbls.lib.search.neighborhoods
 
-import oscar.cbls.algo.search.{IdenticalAggregator, HotRestart}
-import oscar.cbls.core.computation.{Variable, CBLSIntVar}
-import oscar.cbls.core.search.{Move, EasyNeighborhoodMultiLevel, First, LoopBehavior}
+import oscar.cbls.algo.search.{HotRestart, IdenticalAggregator}
+import oscar.cbls.core.computation.{CBLSIntVar, Store, Variable}
+import oscar.cbls.core.distrib.IndependentMove
+import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, Move}
 
 /**
  * will iteratively swap the value of two different variables in the array
@@ -158,18 +159,19 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
 }
 
 /** standard move that swaps the value of two CBLSIntVar
-  *
-  * @param i the variable
-  * @param j the other variable
-  * @param objAfter the objective after this assignation will be performed
-  * @param neighborhoodName a string describing the neighborhood hat found the move (for debug purposes)
-  * @author renaud.delandtsheer@cetic.be
-  */
+ *
+ * @param i the variable
+ * @param j the other variable
+ * @param objAfter the objective after this assignation will be performed
+ * @param neighborhoodName a string describing the neighborhood hat found the move (for debug purposes)
+ * @author renaud.delandtsheer@cetic.be
+ */
 case class SwapMove(i:CBLSIntVar,j:CBLSIntVar, idI:Int, idJ:Int, adjustIfNotInProperDomain:Boolean, override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
   override def commit(): Unit = {
-    if(adjustIfNotInProperDomain) {      val adjustedJValue:Long = i.domain.adjust(j.value)
+    if(adjustIfNotInProperDomain) {
+      val adjustedJValue:Long = i.domain.adjust(j.value)
       val adjustedIValue:Long = j.domain.adjust(i.value)
       i := adjustedJValue
       j := adjustedIValue
@@ -184,4 +186,28 @@ case class SwapMove(i:CBLSIntVar,j:CBLSIntVar, idI:Int, idJ:Int, adjustIfNotInPr
   }
 
   override def touchedVariables: List[Variable] = List(i,j)
+
+  override def getIndependentMove(m: Store): IndependentMove =
+    IndependentSwap(i.uniqueID,
+      j.uniqueID,
+      idI,
+      idJ,
+      adjustIfNotInProperDomain,
+      objAfter,
+      neighborhoodName)
+}
+
+
+case class IndependentSwap(i:Int,
+                           j:Int,
+                           idI:Int,
+                           idJ:Int,
+                           adjustIfNotInProperDomain:Boolean,
+                           override val objAfter:Long,
+                           override val neighborhoodName:String) extends IndependentMove{
+
+  override def commit(m: Store): Unit = ???
+
+  override def makeLocal(m: Store): Move =
+    SwapMove(m.getIntVar(i),m.getIntVar(j), idI, idJ, adjustIfNotInProperDomain,objAfter,neighborhoodName)
 }

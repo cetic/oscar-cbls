@@ -49,22 +49,31 @@ class ORWorkGiverActor(supervisor:ActorRef[MessagesToSupervisor],
 
    case c: SearchEnded =>
     c match {
-     case SearchCompleted(_, _) =>
-      if(verbose) context.log.info(s"got result for search:${c.searchID} : $c")
-      resultPromise.success(c)
-      cancelSearches()
+     case SearchCompleted(_, searchResult) =>
+      searchResult match{
+       case m:IndependentMoveFound =>
+        if(verbose) context.log.info(s"got result for search:${c.searchID} : $c")
+        if(!resultPromise.isCompleted) {
+         resultPromise.success(c)
+         cancelSearches()
+        }
+       case _:IndependentNoMoveFound =>
+        remainingSearches -= 1
+        if(remainingSearches == 0) {
+         if(!resultPromise.isCompleted) {
+          resultPromise.success(SearchCompleted(-1,IndependentNoMoveFound()))
+         }
+        }
+      }
 
      case SearchCrashed(searchID:Long, neighborhood, exception:Throwable, worker) =>
       //in this case, we avoid silent error, an report eh crash.
       if(verbose) context.log.info(s"got crash report at worker $worker for search:${c.searchID}")
-      resultPromise.success(c)
-
-     case _ =>
-      remainingSearches -= 1
-      if(remainingSearches == 0) {
-       resultPromise.success(SearchCompleted(-1,IndependentNoMoveFound()))
+      if(!resultPromise.isCompleted) {
+       resultPromise.success(c)
        cancelSearches()
       }
+
     }
 
    case CancelSearch() =>

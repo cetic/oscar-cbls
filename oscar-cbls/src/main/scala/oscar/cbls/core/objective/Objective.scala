@@ -60,8 +60,6 @@ object Objective{
  */
 class IntVarObjective(val objective: ChangingIntValue) extends Objective {
 
-  model.registerForPartialPropagation(objective)
-
   /**
    * This method returns the actual objective value.
    * It is easy to override it, and perform a smarter propagation if needed.
@@ -74,12 +72,16 @@ class IntVarObjective(val objective: ChangingIntValue) extends Objective {
   def detailedString(short:Boolean,indent:Long = 0L):String =
     s"IntVarObjective($objective)"
 
-  override def getIndependentObj: IndependentOBj = new IndependentIntVarObjective(objective.uniqueID)
+  model.registerForPartialPropagation(objective)
+
+  //for distribution purposes
+  val uniqueID = model.registerObjective(this)
+
+  override def getIndependentObj: IndependentOBj = new IndependentIntVarObjective(uniqueID)
 }
 
 class IndependentIntVarObjective(val uniqueID:Int) extends IndependentOBj{
-//  ça va se planter à cause du register!! il faut en fait numéroter les objective eux-même dans le modèle.
-  override def convertToOBj(m: Store): Objective = new IntVarObjective(m.getIntVar(uniqueID))
+  override def convertToOBj(m: Store): Objective = m.getIntVarObjective(uniqueID)
 }
 
 
@@ -136,6 +138,19 @@ class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objecti
   }
 
   override def model: Store = mustBeZeroObjective.model
+
+  override def getIndependentObj: IndependentOBj =
+    IndependentCascadingObjective(
+      mustBeZeroObjective.getIndependentObj,
+      secondObjective.getIndependentObj,
+      cascadeSize)
+}
+
+case class IndependentCascadingObjective(mustBeZeroObjective: IndependentOBj,
+                                         secondObjective:IndependentOBj,
+                                         cascadeSize:Long) extends IndependentOBj{
+  override def convertToOBj(m: Store): Objective =
+    new CascadingObjective(mustBeZeroObjective.convertToOBj(m),secondObjective.convertToOBj(m), cascadeSize)
 }
 
 object PriorityObjective{
@@ -231,7 +246,22 @@ class PriorityObjective(val objective1: Objective,
         nSpace(indent + 2L) + "objective2:" + objective2.detailedString(false, indent + 4L) + "\n" +
         nSpace(indent) + ")"
     }
+
+  override def getIndependentObj: IndependentOBj =
+    IndependentPriorityObjective(
+      objective1.getIndependentObj,
+      objective2.getIndependentObj,
+      maxObjective2)
 }
+
+
+case class IndependentPriorityObjective(objective1: IndependentOBj,
+                                        objective2:IndependentOBj,
+                                        maxObjective2:Long) extends IndependentOBj{
+  override def convertToOBj(m: Store): Objective =
+    new PriorityObjective(objective1.convertToOBj(m),objective2.convertToOBj(m), maxObjective2)
+}
+
 
 class FunctionObjective(f:()=>Long, m:Store = null) extends Objective{
   override def model: Store = m

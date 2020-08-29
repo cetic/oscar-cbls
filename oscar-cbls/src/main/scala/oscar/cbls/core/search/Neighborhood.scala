@@ -586,18 +586,20 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
 
     require(!exploring,this + " is not a re-entrant neighborhood")
     exploring = true
+    try {
+      oldObj = initialObj
 
-    oldObj = initialObj
-    this.acceptanceCriterion = acceptanceCriterion
-    toReturnMove = null
-    bestNewObj = initialObj //Long.MaxValue // //because we do not want "no move" to be considered as an actual move.
-    this.obj = if (printExploredNeighbors) new LoggingObjective(obj) else obj
-    if (printExploredNeighborhoods)
-      println(neighborhoodNameToString + ": start exploration")
+      this.acceptanceCriterion = acceptanceCriterion
+      toReturnMove = null
+      bestNewObj = initialObj //Long.MaxValue // //because we do not want "no move" to be considered as an actual move.
+      this.obj = if (printExploredNeighbors) new LoggingObjective(obj) else obj
+      if (printExploredNeighborhoods)
+        println(neighborhoodNameToString + ": start exploration")
 
-    exploreNeighborhood(oldObj)
-
-    exploring = false
+      exploreNeighborhood(oldObj)
+    }finally {
+      exploring = false
+    }
 
     if (toReturnMove == null) {
       if (printExploredNeighborhoods) {

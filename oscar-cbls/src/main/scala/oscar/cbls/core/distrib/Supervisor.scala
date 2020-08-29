@@ -1,6 +1,5 @@
 package oscar.cbls.core.distrib
 
-import akka.actor.{TimerScheduler, Timers}
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import akka.util.Timeout

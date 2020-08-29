@@ -30,7 +30,7 @@ abstract class IndependentSearchResult{
   def getLocalResult(m:Store):SearchResult
 }
 case class IndependentMoveFound(i:IndependentMove) extends IndependentSearchResult{
-  override def getLocalResult(m: Store): SearchResult = MoveFound(new MoveWrapper(i,m))
+  override def getLocalResult(m: Store): SearchResult = MoveFound(i.makeLocal(m))
 }
 case class IndependentNoMoveFound() extends IndependentSearchResult{
   override def getLocalResult(m: Store): SearchResult = NoMoveFound
@@ -54,9 +54,9 @@ class IndependentSolution(saves:Iterable[AbstractVariableSnapShot]){
 
 trait IndependentMove{
   def commit(m:Store): Unit
-  def makeIntoLocal(m:Store):Move = new MoveWrapper(this,m)
   def objAfter:Long
   def neighborhoodName:String
+  def makeLocal(m:Store):Move = new MoveWrapper(this,m)
 }
 
 case class LoadIndependentSolutionMove(objAfter:Long, neighborhoodName: String, s:IndependentSolution)
