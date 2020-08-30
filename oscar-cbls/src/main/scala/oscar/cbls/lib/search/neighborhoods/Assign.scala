@@ -254,5 +254,7 @@ case class IndependentAssign(i:Int,
                              id:Int,
                              override val objAfter:Long,
                              override val neighborhoodName:String) extends IndependentMove{
-  override def commit(m: Store): Unit = m.getIntVar(i) := value
+
+  override def makeLocal(m: Store): Move =
+    AssignMove(m.getIntVar(i),value, id, objAfter, neighborhoodName)
 }

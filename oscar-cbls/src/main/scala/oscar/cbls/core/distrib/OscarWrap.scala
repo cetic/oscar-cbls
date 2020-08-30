@@ -2,7 +2,7 @@ package oscar.cbls.core.distrib
 
 import oscar.cbls.core.computation.{AbstractVariableSnapShot, Solution, Store}
 import oscar.cbls.core.objective.{AbortableObjective, Objective}
-import oscar.cbls.core.search.{Move, MoveFound, Neighborhood, NoMoveFound, SearchResult}
+import oscar.cbls.core.search.{LoadSolutionMove, Move, MoveFound, Neighborhood, NoMoveFound, SearchResult}
 
 // ////////////////////////////////////////////////////////////
 
@@ -53,21 +53,16 @@ class IndependentSolution(saves:Iterable[AbstractVariableSnapShot]){
 // ////////////////////////////////////////////////////////////
 
 trait IndependentMove{
-  def commit(m:Store): Unit
   def objAfter:Long
   def neighborhoodName:String
-  def makeLocal(m:Store):Move = new MoveWrapper(this,m)
+  def makeLocal(m:Store):Move
 }
 
 case class LoadIndependentSolutionMove(objAfter:Long, neighborhoodName: String, s:IndependentSolution)
   extends IndependentMove{
-  def commit(m:Store): Unit = {
-    s.makeLocal(m).restoreDecisionVariables()
-  }
-}
-
-class MoveWrapper(i:IndependentMove,m:Store)
-  extends Move(i.objAfter,i.neighborhoodName){
-  override def commit(): Unit = i.commit(m)
-  override def toString: String = s"MoveWrapper($i)"
+  override def makeLocal(m:Store):Move =
+    LoadSolutionMove(
+      s.makeLocal(m),
+      objAfter = objAfter,
+    neighborhoodName = neighborhoodName)
 }

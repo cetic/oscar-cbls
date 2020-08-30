@@ -333,6 +333,12 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
           case None => ;
         }
 
+        tic match{
+          case _:Infinite => ;
+          case f:FiniteDuration =>
+            context.log.info(status)
+        }
+
         if(verbose) context.log.info(s"Supervisor shutdown")
         return Behaviors.stopped
     }

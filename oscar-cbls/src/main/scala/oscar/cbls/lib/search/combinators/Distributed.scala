@@ -5,6 +5,8 @@ import oscar.cbls.core.distrib._
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{MoveFound, Neighborhood, NoMoveFound, SearchResult}
 
+import scala.util.Random
+
 
 abstract class DistributedCombinator(neighborhoods:Array[List[Long] => Neighborhood]) extends Neighborhood {
 
@@ -121,7 +123,7 @@ class DistributedFirstInSequence(neighborhoods:Array[Neighborhood], lookAhead:In
   }
 }
 
-class DistributedFirst(neighborhoods:Array[Neighborhood])
+class DistributedFirst(neighborhoods:Array[Neighborhood], randomOrder:Boolean = true)
   extends DistributedCombinator(neighborhoods.map(x => (y:List[Long]) => x)) {
 
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
@@ -129,13 +131,15 @@ class DistributedFirst(neighborhoods:Array[Neighborhood])
     val independentObj = obj.getIndependentObj
     val startSol = IndependentSolution(obj.model.solution())
 
-    val move = delegateSearchesStopAtFirst(
-      remoteNeighborhoods.map(l =>
-        SearchRequest(
-          l.getRemoteIdentification(Nil),
-          acceptanceCriteria,
-          independentObj,
-          startSol)))
+    val searchRequests = remoteNeighborhoods.map(l =>
+      SearchRequest(
+        l.getRemoteIdentification(Nil),
+        acceptanceCriteria,
+        independentObj,
+        startSol))
+
+    val searchRequests2 = if(randomOrder) Random.shuffle(searchRequests.toList).toArray else searchRequests
+    val move = delegateSearchesStopAtFirst(searchRequests2)
 
     move.getResult
   }

@@ -206,8 +206,6 @@ case class IndependentSwap(i:Int,
                            override val objAfter:Long,
                            override val neighborhoodName:String) extends IndependentMove{
 
-  override def commit(m: Store): Unit = ???
-
   override def makeLocal(m: Store): Move =
     SwapMove(m.getIntVar(i),m.getIntVar(j), idI, idJ, adjustIfNotInProperDomain,objAfter,neighborhoodName)
 }

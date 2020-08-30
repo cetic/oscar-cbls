@@ -207,7 +207,7 @@ class WorkerActor(neighborhoods:SortedMap[Int,RemoteNeighborhood],
 
             case Aborting(search) =>
               //ok, we've done it for nothing.
-              if(verbose) context.log.info(s"trashed search result for search:${search.searchId}")
+              if(verbose) context.log.info(s"aborted search:${search.searchId}")
               master ! ReadyForWork(context.self,Some(search.searchId))
               next(Idle())
 
@@ -215,6 +215,7 @@ class WorkerActor(neighborhoods:SortedMap[Int,RemoteNeighborhood],
               //this is an error
               if(verbose) context.log.info(s"finished search ${result.searchID} and was actually idle??")
               Behaviors.same
+
             case ShuttingDown() =>
               if(verbose) context.log.info(s"shutdown; explored $nbExploredNeighborhoods neighborhoods; aborted $nbAbortedNeighborhoods")
               executorForComputation.shutdown()

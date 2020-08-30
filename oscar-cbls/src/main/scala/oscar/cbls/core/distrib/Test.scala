@@ -5,7 +5,7 @@ import akka.util.Timeout
 import org.slf4j.{Logger, LoggerFactory}
 import oscar.cbls.core.computation.{Solution, Store}
 import oscar.cbls.core.objective.{FunctionObjective, Objective}
-import oscar.cbls.core.search.{Move, MoveFound, NoMoveFound, SearchResult}
+import oscar.cbls.core.search.{DoNothingMove, Move, MoveFound, NoMoveFound, SearchResult}
 
 import scala.collection.immutable.SortedMap
 import scala.concurrent.ExecutionContext
@@ -27,7 +27,8 @@ object Test extends App{
     }
 
     override def getIndependentMove(m: Store): IndependentMove = new IndependentMove(){
-      override def commit(m: Store): Unit = {}
+
+      override def makeLocal(m: Store): Move = DoNothingMove(0)
 
       override def objAfter: Long = Long.MaxValue
 
