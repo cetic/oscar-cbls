@@ -1,5 +1,7 @@
 package oscar.cbls.core.distrib
 
+import java.util.concurrent.Executors
+
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import akka.util.Timeout
@@ -8,7 +10,7 @@ import oscar.cbls.Store
 import oscar.cbls.core.search.Neighborhood
 
 import scala.collection.immutable.SortedMap
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.Duration.Infinite
 import scala.util.{Failure, Success}
 //#imports
@@ -33,6 +35,11 @@ import scala.concurrent.duration._
 object Supervisor{
 
   def startSupervisorAndActorSystem(store:Store, search:Neighborhood, verbose:Boolean = false, tic:Duration = Duration.Inf):Supervisor = {
+
+
+
+
+
     val supervisorActorSystem = internalStartSupervisorAndActorSystem(verbose, tic)
     val supervisor = wrapSupervisor(supervisorActorSystem, store:Store, verbose)(system = supervisorActorSystem)
     search.labelNeighborhoodsForRemoteOperation(supervisor)
@@ -42,6 +49,7 @@ object Supervisor{
   def internalStartSupervisorAndActorSystem(verbose:Boolean = false, tic:Duration = Duration.Inf):ActorSystem[MessagesToSupervisor] = {
     val  startLogger:Logger = LoggerFactory.getLogger("SupervisorObject")
     startLogger.info("Starting actor system and supervisor")
+
     ActorSystem(createSupervisorBehavior(verbose, tic),"supervisor")
   }
 

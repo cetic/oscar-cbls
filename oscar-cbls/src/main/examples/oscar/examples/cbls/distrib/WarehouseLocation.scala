@@ -59,6 +59,7 @@ object WarehouseLocationDistributed extends App{
 
     m.close()
 
+    //These neighborhoods are inefficient and slow; using multiple core is the wrong answer to inefficiency
     val neighborhood = (new DistributedFirst(
       Array(
         assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
@@ -66,7 +67,7 @@ object WarehouseLocationDistributed extends App{
         swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4 + 1 % W); () => range}, name = "SwapWarehouses2"),
         swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4 + 2 % W); () => range}, name = "SwapWarehouses3"),
         swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4 + 3 % W); () => range}, name = "SwapWarehouses4")))
-//      onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray,W/10), 2, obj)
+      onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray,W/10), 2, obj)
       onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/5), 2, obj))
 
     (m,neighborhood,obj,() => {println(openWarehouses)})
@@ -80,12 +81,10 @@ object WarehouseLocationDistributed extends App{
   val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(store,search,tic = 500.millisecond,verbose = false)
 
   val nbWorker = 5
-  for(workerID <- (0 until nbWorker).par) {
-    //worker side
+  for(_ <- (0 until nbWorker).par) {
     val (store2, search2, _, _) = createSearchProcedure()
     supervisor.createLocalWorker(store2,search2)
   }
-
 
   search.verbose = 1
   search.doAllMoves(obj = obj)
