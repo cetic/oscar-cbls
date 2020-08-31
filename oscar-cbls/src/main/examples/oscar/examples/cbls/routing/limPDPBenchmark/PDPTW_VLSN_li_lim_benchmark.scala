@@ -1,5 +1,4 @@
-package oscar.examples.cbls.routing
-
+package oscar.examples.cbls.routing.limPDPBenchmark
 
 import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
@@ -179,7 +178,7 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
 
     m.close()
 
-    val relevantPredecessorsTmp: Map[Int, Iterable[Int]] = GlobalVehicleCapacityConstraint.relevantPredecessorsOfNodes(capacityInvariant)
+    val relevantPredecessorsTmp: Map[Int, Iterable[Int]] = capacityInvariant.relevantPredecessorsOfNodes
 
     val relevantPredecessors = SortedMap.empty[Int, SortedSet[Int]] ++ (relevantPredecessorsTmp.map({ case (node, v) => (node, SortedSet.empty[Int] ++ v) }))
 
@@ -704,10 +703,10 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
     println(myVRP)
     for(vehicle <- 0 until v){
       val l = vehiclesRouteLength(vehicle).value
-      if(l !=0) println("vehicle(" + vehicle + ").length:" + l)
+      if(l !=0) println(s"vehicle($vehicle).length:$l")
     }
-    println("obj:" + obj.value)
+    println(s"obj:${obj.value}")
 
-    toReturn + "\nobj:" + obj.value + "\nduration: " + ((endTime - startTime) / (1000 * 1000))
+    s"$toReturn\nobj: ${obj.value}\nduration: ${(endTime - startTime) / (1000 * 1000)}"
   }
 }

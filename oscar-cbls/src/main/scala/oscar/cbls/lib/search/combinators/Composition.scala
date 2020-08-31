@@ -215,7 +215,7 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
         val moveFromB = s.instantiateCurrentMove(Long.MaxValue)
         val moveFromA = a.instantiateCurrentMove(Long.MaxValue)
         CompositeMove(List(moveFromA,moveFromB),newObj,"DynAndThen(" + moveFromA + "," + moveFromB + ")")
-      case _ => throw new Error("DynAndThen: You are willing to use a DynAndThen 'a' as a left-hand side of another DynAndThen 'b'. This is ok, but the neighborhood on the right of the DynAndThen 'a' should support chaining, and it does not")
+      case _ => throw new Error("DynAndThen: You are willing to use a DynAndThen 'a' as a left-hand side of another DynAndThen 'b'. This is ok, but the neighborhood on the right of the DynAndThen 'a' should support chaining, and it does not:" + currentB)
     }
   }
 }

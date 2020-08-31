@@ -17,12 +17,13 @@ package oscar.examples.visual
 import oscar.visual.map.VisualMap
 import oscar.visual.map.MapWaypoint
 import oscar.visual.VisualFrame
-import oscar.visual.map.Location
-import oscar.visual.map.Geocoder
 import java.io.IOException
 import java.awt.Toolkit
+
 import oscar.visual.map.MapPath
 import java.awt.Color
+
+import javax.swing.JInternalFrame
 import org.jdesktop.swingx.mapviewer.Waypoint
 
 object DemoMap {
@@ -39,87 +40,85 @@ object DemoMap {
   val capitals = List(bruxelles, paris, london, rome, madrid, luxembourg, berlin, hamsterdam)
   
   var bp: MapPath = _
-  var waypoints = List[MapWaypoint]()
+  var waypoints: List[MapWaypoint] = List[MapWaypoint]()
   
   //display components
   
-  val f = VisualFrame("Map visualization demo")
+  val f: VisualFrame = VisualFrame("Map visualization demo")
   val m = new VisualMap()
-  val inf = f.createFrame("VisualMap")
+  val inf: JInternalFrame = f.createFrame("VisualMap")
   
   inf.add(m)
 
   f.pack()
 
-  def runInThread(p: => Unit) = {
-    val thread = new Thread(new Runnable {
-      def run = p
-    })
-    thread.start
+  def runInThread(p: => Unit): Unit = {
+    val thread = new Thread(() => p)
+    thread.start()
   }
 
   def main(args: Array[String]): Unit = {
     val tb = f.createToolBar()
 
-    tb.addButton("routes from capitals to bxl", { runInThread(demoMap) })
-    tb.addButton("add Bruxelles-Paris", { runInThread(bxlparis) })
-    tb.addButton("remove Bruxelles-Paris", { runInThread(removebxlparis) })
-    tb.addButton("mark capitals", { runInThread(wp) })
-    tb.addButton("unmark capitals", { runInThread(removewp) })
-    tb.addButton("clear", { runInThread(clear) })
+    tb.addButton("routes from capitals to bxl", { runInThread(demoMap()) })
+    tb.addButton("add Bruxelles-Paris", { runInThread(bxlparis()) })
+    tb.addButton("remove Bruxelles-Paris", { runInThread(removebxlparis()) })
+    tb.addButton("mark capitals", { runInThread(wp()) })
+    tb.addButton("unmark capitals", { runInThread(removewp()) })
+    tb.addButton("clear", { runInThread(clear()) })
     f.pack()
-    val screensize = Toolkit.getDefaultToolkit().getScreenSize()
-    f.setSize((new java.awt.Dimension(screensize.width - 100, screensize.height - 200)))
-    inf.setSize((new java.awt.Dimension(screensize.width - 150, screensize.height - 300)))
+    val screensize = Toolkit.getDefaultToolkit.getScreenSize
+    f.setSize(new java.awt.Dimension(screensize.width - 100, screensize.height - 200))
+    inf.setSize(new java.awt.Dimension(screensize.width - 150, screensize.height - 300))
   }
   
   /*
    * add a green bruxelles to paris path
    */
-  def bxlparis = {
+  def bxlparis(): Unit = {
     bp = m.createPath(bruxelles, paris, new Color(0, 100, 0))
   }
   
-  def removebxlparis = {
+  def removebxlparis(): Unit = {
     m.removePath(bp)
   }
   
   /*
    * put waypoints on capitals
    */
-  def wp = {
+  def wp(): Unit = {
     waypoints = capitals.map(p => m.createWaypoint(p._1, p._2))
   }
   
-  def removewp = {
-    waypoints.foreach(m.removeWaypoint(_))
+  def removewp(): Unit = {
+    waypoints.foreach(m.removeWaypoint)
     waypoints = List[MapWaypoint]()
   }
   
   /*
    * remove every element from the map
    */
-  def clear = {
-    m.clear
+  def clear(): Unit = {
+    m.clear()
   }
   
   /*
    * scripted demonstration
    */
-  def demoMap = {
+  def demoMap(): Unit = {
 
     try {
 
-      val l = m.createLine(capitals(0), capitals(2));
+      val l = m.createLine(capitals.head, capitals(2))
 
-      capitals.zipWithIndex.filter(p => p._2 != 0 && p._2 != 2).map(_._1).foreach(lo => m.createPath(lo, capitals(0)))
+      capitals.zipWithIndex.filter(p => p._2 != 0 && p._2 != 2).map(_._1).foreach(lo => m.createPath(lo, capitals.head))
 
     } catch {
       case e1: IOException => e1.printStackTrace()
     }
 
     try {
-      Thread.sleep(2000);
+      Thread.sleep(2000)
     } catch {
       case e: InterruptedException => e.printStackTrace()
     }

@@ -1,14 +1,15 @@
-package oscar.cbls.test.scheduling
+package oscar.examples.cbls.scheduling
 
 import oscar.cbls.Store
-import oscar.cbls.business.scheduling.model.Schedule
+import oscar.cbls.business.scheduling.model._
 import oscar.cbls.business.scheduling.neighborhood.{ReinsertActivity, SwapActivity}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 
-object SwDevelopment {
+object SwDevResources {
   // Model
-  val (analysis, design, coding, testing, qc, pm) = (5, 15, 25, 35, 45, 55)
+  // Activities
+  val (analysis, design, coding, testing, qc, pm) = (50, 40, 30, 20, 10, 0)
   val activities = List(analysis, design, coding, testing, qc, pm)
   val initials = List(pm, qc, testing, coding, design, analysis)
   val durations = Map(
@@ -20,10 +21,25 @@ object SwDevelopment {
     pm -> 60
   )
   val precPairs = List((analysis, design), (analysis, qc), (design, coding), (coding, testing))
+  // Resources
+  val (analyst_mode, qapm) = (20, 21)
+  val (dev, test) = (30, 31)
+  val analyst_st: SetupTimes = SetupTimes(analyst_mode,
+    Map(analysis->analyst_mode, design->analyst_mode, qc->qapm, pm->qapm),
+    Map((analyst_mode, qapm)->1, (qapm, analyst_mode)->1))
+  val analyst = new CumulativeResourceWithSetupTimesMultiMode(5,
+    Map(analysis->2L, design->1L, qc->1L, pm->2L),
+    analyst_st)
+  val senior_dev_test_st: SetupTimes = SetupTimes(dev,
+    Map(coding->dev, testing->test),
+    Map((dev, test)->2, (test, dev)->2))
+  val senior_dev_test = new CumulativeResourceWithSetupTimesMultiMode(2,
+    Map(coding->2L, testing->1L),
+    senior_dev_test_st)
 
   def main(args: Array[String]): Unit = {
     val m = new Store()
-    val schedule = new Schedule(m, activities, initials, durations, Map(), precPairs, Nil)
+    val schedule = new Schedule(m, activities, initials, durations, Map(), precPairs, List(analyst, senior_dev_test))
     val objFunc = Objective(schedule.makeSpan)
     m.close()
     println("Model closed.")

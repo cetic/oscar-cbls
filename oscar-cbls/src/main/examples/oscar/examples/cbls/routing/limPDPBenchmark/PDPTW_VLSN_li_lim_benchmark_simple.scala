@@ -1,4 +1,6 @@
-package oscar.examples.cbls.routing.linPDPBNenchmark
+package oscar.examples.cbls.routing.limPDPBenchmark
+
+import java.io.{File, PrintWriter}
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
@@ -14,24 +16,73 @@ import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.io.Source
 
 object PDPTW_VLSN_li_lim_benchmark_simple extends App {
+  val multFactor: Long = 1000
 
-  println("usage: This fileName enrichment partition enrichmentSpec shiftInsert")
-  val fileName = args(0)
-  val enrichment: Int = args(1).toInt
-  val partition: Int = args(2).toInt
-  val enrichmentSpec: Int = args(3).toInt
-  val shiftInsert: Int = args(4).toInt
-  runBenchmark(fileName: String, enrichment: Int, partition: Int, enrichmentSpec: Int, shiftInsert: Int)
+  runMany()
+  def runOne() {
+    println("usage: This fileName enrichment partition enrichmentSpec shiftInsert")
+    val fileName = args(0)
+    val enrichment: Int = args(1).toInt
+    val partition: Int = args(2).toInt
+    val enrichmentSpec: Int = args(3).toInt
+    val shiftInsert: Int = args(4).toInt
+
+    println(runBenchmark(fileName: String, enrichment: Int, partition: Int, enrichmentSpec: Int, shiftInsert: Int))
+  }
+
+  def runMany() {
+    println("usage: This fileName")
+
+    //  try pw.print(s) finally pw.close()
+    val fileNames = args(0).split(";")
+
+    val resultFileName: String = args(1)
+    val pw = new PrintWriter(new File(resultFileName))
+
+    pw.println("start")
+    pw.flush()
+    System.gc()
+
+    try {
+      for(fileName <- fileNames){
+        pw.println(runBenchmark(fileName: String, enrichment = 0, partition = 0, enrichmentSpec = 0, shiftInsert = 0))
+        pw.flush()
+        System.gc()
+        pw.println(runBenchmark(fileName: String, enrichment = 0, partition = 0, enrichmentSpec = 0, shiftInsert = 1))
+        pw.flush()
+        System.gc()
+        for (partition <- 0 to 6) {
+          for (enrichmentSpec <- 0 to 4) {
+            for (shiftInsert <- 0 to 3) {
+              pw.println(runBenchmark(
+                fileName: String,
+                enrichment = 1,
+                partition,
+                enrichmentSpec,
+                shiftInsert))
+              pw.flush()
+              System.gc()
+            }
+          }
+        }
+      }
+    }finally{
+      pw.close()
+    }
+
+  }
+
+
 
   case class PDP(fromNode: Int, toNode: Int, demand: Int) {
     def nodeList: List[Int] = List(fromNode, toNode)
-
     def precedence: (Int, Int) = (fromNode, toNode)
   }
 
   def readData(fileName: String): (Int, Array[Array[Long]], List[PDP], Int, Array[TransferFunction]) = {
 
-    case class Node(id: Int, x: Int, y: Int, demand: Int, earlyLine: Int, deadline: Int, duration: Int, pickUP: Int, delivery: Int) {
+    //multiplie tout par 1000, puis ceil
+    case class Node(id: Int, x: Long, y: Long, demand: Int, earlyLine: Long, deadline: Long, duration: Long, pickUP: Int, delivery: Int) {
       def distance(that: Node): Long = math.sqrt((this.x - that.x) * (this.x - that.x) + (this.y - that.y) * (this.y - that.y)).ceil.toLong
     }
 
@@ -40,12 +91,20 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
 
     val Array(v, capacity, _) = lines.next().split("\\t\\s*").map(_.toInt)
 
-
     var allNodesList: List[Node] = Nil
     while (lines.hasNext) {
       val nodeInfo = lines.next().split("\\t\\s*").map(_.toInt)
       //Node(id:Int,      x:Int,        y:Int,      demand:Int,  earlyLine:Int,deadline:Int,duration:Int,pickUP:Int,delivery:Int)
-      allNodesList = Node(nodeInfo(0), nodeInfo(1), nodeInfo(2), nodeInfo(3), nodeInfo(4), nodeInfo(5), nodeInfo(6), nodeInfo(7), nodeInfo(8)) :: allNodesList
+      allNodesList = Node(
+        nodeInfo(0),
+        x=multFactor*nodeInfo(1),
+        y=multFactor*nodeInfo(2),
+        demand=nodeInfo(3),
+        earlyLine=multFactor*nodeInfo(4),
+        deadline=multFactor*nodeInfo(5),
+        duration=multFactor*nodeInfo(6),
+        pickUP=nodeInfo(7),
+        delivery=nodeInfo(8)) :: allNodesList
     }
 
     s.close()
@@ -72,10 +131,8 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
 
       val nodeData = allNodesArray(oscarNodeToLinNode(node))
       if (node < v) TransferFunction.createFromEarliestAndLatestArrivalTime(node, nodeData.earlyLine, nodeData.deadline)
-      else TransferFunction.createFromEarliestAndLatestArrivalTime(node, 0 /*nodeData.earlyLine*/ , nodeData.deadline, nodeData.duration)
-      //TransferFunction.identifyTransferFunction(node) //
+      else TransferFunction.createFromEarliestAndLatestArrivalTime(node, nodeData.earlyLine, nodeData.deadline, nodeData.duration)
     })
-
 
     val distanceMatrix = Array.tabulate(oscarN)(node1 => Array.tabulate(oscarN)(node2 =>
       allNodesArray(oscarNodeToLinNode(node1)).distance(allNodesArray(oscarNodeToLinNode(node2)))
@@ -94,7 +151,9 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
 
   def runBenchmark(fileName: String, enrichment: Int, partition: Int, enrichmentSpec: Int, shiftInsert: Int): String = {
 
-    var toReturn = s"file:$fileName\n"
+    var toReturn = s"file:\t${fileName.split("""\\""").last}"
+
+    toReturn = toReturn + s"\tenrichment?:\t$enrichment\tpartition:\t$partition\tenrichmentSpec:\t$enrichmentSpec\tshiftInsert:\t$shiftInsert"
 
     val m = new Store(noCycle = false)
 
@@ -103,7 +162,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
 
     println(s"VLSN(PDPTW) v:$v n:$n pdp:${pdpList.length}")
 
-    val penaltyForUnrouted = 10000
+    val penaltyForUnrouted = 10000*multFactor
 
     val nodeToContentDelta = Array.fill(n)(0L)
     for (pdp <- pdpList) {
@@ -122,6 +181,8 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
     }
 
     val allPickupPoints:SortedSet[Int] = SortedSet(pdpList.map(_.fromNode):_*)
+
+    def isPickup(i: Int):Boolean = pickUpPointToDeliveryPoint(i) != -1
 
     val gc = GlobalConstraintCore(myVRP.routes, v)
 
@@ -260,10 +321,10 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
     // //////////////////////////////////////////////////////////////////////////////////////////////////
 
     def moveNodesVLSN(nodes:List[Int],
-                      relevantPredecessors:Iterable[Int]) =
+                      relevantPredecessors:Iterable[Int], filter:Boolean = false) =
       onePointMove(
         () => nodes,
-        () => _ => relevantPredecessors,
+        () => x => if(filter) relevantPredecessors.filter(_!=x) else relevantPredecessors,
         myVRP,
         selectDestinationBehavior = Best(),
         hotRestart = false,
@@ -301,6 +362,23 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
         }) name s"movePDPWithinVehicle:$vehicle)"
     }
 
+
+    def movePDP:Neighborhood = {
+      val allRoutedNodes = myVRP.routed.value.toList
+      dynAndThen(
+        moveNodesVLSN(allRoutedNodes.filter(isPickup), allRoutedNodes, filter = true),
+        (moveNode:OnePointMoveMove) => {
+
+          val pickUp = moveNode.movedPoint
+          val targetVehicle = myVRP.vehicleOfNode(pickUp).valueInt
+          val routeOfVehicle: List[Int] = myVRP.getRouteOfVehicle(targetVehicle)
+          val nodesInRouteAfterPickUp = pickUp :: trimRouteFromNodeRemoveNode(routeOfVehicle, pickUp)
+          val delivery = pickUpPointToDeliveryPoint(moveNode.movedPoint)
+          moveNodeVLSN(delivery, nodesInRouteAfterPickUp)
+        }) name s"movePDP"
+    }
+
+
     def removeNode(node: Int) = removePoint(
       () => List(node),
       myVRP,
@@ -311,6 +389,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
       removeNode(pickUp) andThen removeNode(pickUpPointToDeliveryPoint(pickUp))
 
     def removeAndReInsertVLSN(pickUp: Int): () => Unit = {
+
       val checkpointBeforeRemove = myVRP.routes.defineCurrentValueAsCheckpoint(true)
 
       val delivery = pickUpPointToDeliveryPoint(pickUp)
@@ -364,8 +443,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
         enrichmentSchemeSpec = {
           val toReturnp = enrichment match {
             case 0 =>
-              println("BENCHMARK: NoEnrichment")
-              NoEnrichment()
+              NoEnrichment(shiftInsert)
             case 1 =>
 
               CompositeEnrichmentSchemeSpec(
@@ -387,12 +465,13 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
                 },
                 shiftInsert)
           }
-          toReturn = toReturn + toReturnp + "\n"
+          println(toReturnp)
           toReturnp
         },
 
         name = "VLSN",
-        reoptimizeAtStartUp = true,
+        reoptimizeAtStartUp = true
+
         //        debugNeighborhoodExploration = true
       )
     }
@@ -400,7 +479,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
     // ///////////////////////////////////////////////////////////////////////////////////////////////////
 
     val startTime = System.nanoTime()
-    val search = vlsn maxMoves 1
+    val search = vlsn maxMoves 1 exhaust movePDP
     search.verbose = 2
 
     search.doAllMoves(obj = obj)
@@ -408,9 +487,11 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
     val endTime = System.nanoTime()
 
     println(myVRP)
-    println("obj:" + obj.value)
+    println(s"obj:${obj.value}")
 
-    toReturn + "\nobj:" + obj.value + "\nduration: " + ((endTime - startTime) / (1000 * 1000))
+    toReturn = toReturn + s"\tobj:\t${obj.value.toDouble/(multFactor.toDouble)} \tnbUnrouted:\t${myVRP.unroutedNodes.size}\tusedV:\t${myVRP.movingVehicles.size}\tdurationMS:\t${((endTime - startTime) / (1000 * 1000))}"
+    println(toReturn)
+    toReturn
   }
 }
 

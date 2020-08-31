@@ -738,6 +738,7 @@ class BinomialHeapWithMoveLong(getKey:Int => Long,val maxsize:Int, val maxKey:In
 
   // TODO Should add warning in case of duplicated value. This heap **cannot** contain duplicated values.
   def insert(elem:Int): Unit = {
+    require(!contains(elem), "This heap cannot contain duplicate values!")
     //insert en derniere position, puis bubble up
     heapArray(size)=elem
     position(elem) = size
@@ -760,26 +761,27 @@ class BinomialHeapWithMoveLong(getKey:Int => Long,val maxsize:Int, val maxKey:In
   private def pushDown(startposition:Int):Int = {
     var position = startposition
     val positionKey = getKey(heapArray(position))
-    while(true)
-      if(leftChild(position) < size && positionKey > getKey(heapArray(leftChild(position)))){
+    while(true) {
+      if (leftChild(position) < size && positionKey > getKey(heapArray(leftChild(position)))) {
         //examiner aussi left child
-        if(rightChild(position) < size && getKey(heapArray(rightChild(position))) < getKey(heapArray(leftChild(position)))){
+        if (rightChild(position) < size && getKey(heapArray(rightChild(position))) < getKey(heapArray(leftChild(position)))) {
           //c'est avec le right child qu'il faut inverser
-          swapPositions(position,rightChild(position))
+          swapPositions(position, rightChild(position))
           position = rightChild(position)
-        }else{
+        } else {
           //c'est avec le left chile qu'il faut inverser
-          swapPositions(position,leftChild(position))
+          swapPositions(position, leftChild(position))
           position = leftChild(position)
         }
-      }else if(rightChild(position) < size && positionKey > getKey(heapArray(rightChild(position)))){
+      } else if (rightChild(position) < size && positionKey > getKey(heapArray(rightChild(position)))) {
         //only consider right child
-        swapPositions(position,rightChild(position))
+        swapPositions(position, rightChild(position))
         position = rightChild(position)
-      }else{
+      } else {
         return position
       }
-    require(false) //jamais execute
+    }
+    //jamais execute
     position
   }
 

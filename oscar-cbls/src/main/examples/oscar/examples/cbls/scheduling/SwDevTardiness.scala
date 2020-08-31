@@ -1,4 +1,4 @@
-package oscar.cbls.test.scheduling
+package oscar.examples.cbls.scheduling
 
 import oscar.cbls.{Objective, Store}
 import oscar.cbls.business.scheduling.model.{DisjunctiveResource, Schedule}

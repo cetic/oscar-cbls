@@ -5,7 +5,7 @@ import oscar.cbls._
 import oscar.cbls.core.computation.{CBLSIntVar, DomainRange}
 import oscar.cbls.lib.search.neighborhoods.{NarrowingExhaustive, TransferNeighborhood}
 
-class testTransferWithLO extends AnyFlatSpec {
+class TransferWithLOTest extends AnyFlatSpec {
 
   val s = new Store()
   val a = 1
