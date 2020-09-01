@@ -246,9 +246,9 @@ class IncrementalMoveExplorer(v:Int,
     debug:Boolean,
     gradualEnrichmentSchemeN1V1N2V2P){
 
-  override def injectAllCache(): Unit ={
+  override def injectAllCache(verbose:Boolean): Unit ={
     cacheOnlyNoEvaluate = true
-    enrichGraph(Int.MaxValue,SortedSet.empty,SortedSet.empty)
+    enrichGraph(Int.MaxValue,SortedSet.empty,SortedSet.empty, verbose)
     cacheOnlyNoEvaluate = false
     partitionLevelDone = -1
     skipCachedEdges = true

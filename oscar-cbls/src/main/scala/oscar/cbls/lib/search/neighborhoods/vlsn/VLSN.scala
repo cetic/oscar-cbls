@@ -512,7 +512,7 @@ class VLSN(v:Int,
 
     if(injectAllCacheBeforeEnriching) {
 
-      moveExplorer.injectAllCache()
+      moveExplorer.injectAllCache(printTakenMoves)
       if (printTakenMoves) {
         println("            " + " loaded " + (moveExplorer.nbEdgesInGraph - nbEdgesAtPreviousIteration) + " edges from cache")
       }
@@ -532,7 +532,7 @@ class VLSN(v:Int,
         println("            enriching VLSN graph to level " + currentEnrichmentLevel + "/" + maxEnrichmentLevel)
       }
       require(dirtyVehicles.forall( x => x >= 0 && x < v))
-      vlsnGraph = moveExplorer.enrichGraph(currentEnrichmentLevel, dirtyNodes, dirtyVehicles)
+      vlsnGraph = moveExplorer.enrichGraph(currentEnrichmentLevel, dirtyNodes, dirtyVehicles, printTakenMoves)
 
       if(printTakenMoves) {
         println("            " + vlsnGraph.statisticsString + " added " + (vlsnGraph.nbEdges - nbEdgesAtPreviousIteration) + " edges")
