@@ -22,18 +22,20 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.distrib.{Supervisor, WorkerActor}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Neighborhood
-import oscar.cbls.lib.search.combinators.{DistributedFirst, Remote}
+import oscar.cbls.lib.search.combinators.{Atomic, DistributedBest, DistributedFirst, Remote}
 
 import scala.language.postfixOps
 import oscar.examples.cbls.wlp.WarehouseLocationGenerator
 
+import scala.concurrent.Future
+
 object WarehouseLocationDistributed extends App{
 
   //the number of warehouses
-  val W:Int = 1000
+  val W:Int = 2000
 
   //the number of delivery points
-  val D:Int = 3000
+  val D:Int = 1000
 
   println("WarehouseLocation(W:" + W + ", D:" + D + ")")
   //the cost per delivery point if no location is open
@@ -63,12 +65,21 @@ object WarehouseLocationDistributed extends App{
     val neighborhood = (new DistributedFirst(
       Array(
         assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
-        swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4     % W); () => range}, name = "SwapWarehouses1"),
-        swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4 + 1 % W); () => range}, name = "SwapWarehouses2"),
-        swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4 + 2 % W); () => range}, name = "SwapWarehouses3"),
-        swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4 + 3 % W); () => range}, name = "SwapWarehouses4")))
+        swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4    ); () => range}, name = "SwapWarehouses1"),
+        swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4 + 1); () => range}, name = "SwapWarehouses2"),
+        swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4 + 2); () => range}, name = "SwapWarehouses3"),
+        swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4 + 3); () => range}, name = "SwapWarehouses4")))
       onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray,W/10), 2, obj)
       onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/5), 2, obj))
+
+    val x = 10
+    val neighborhood2 =
+      new DistributedBest(
+        Array.fill(x) (Atomic(
+          assignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
+            exhaustBack swapsNeighborhood(warehouseOpenArray, name = "SwapWarehouses4")
+            onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray,W/10), 2, obj)
+            onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/5), 2, obj),shouldStop = _ => false, aggregateIntoSingleMove = true))) maxMoves 1
 
     (m,neighborhood,obj,() => {println(openWarehouses)})
   }
@@ -84,10 +95,12 @@ object WarehouseLocationDistributed extends App{
   for(_ <- (0 until nbWorker).par) {
     val (store2, search2, _, _) = createSearchProcedure()
     supervisor.createLocalWorker(store2,search2)
+    search2.verbose = 2
   }
 
-  search.verbose = 1
-  search.doAllMoves(obj = obj)
+  val search2 = search.showObjectiveFunction(obj)
+  search2.verbose = 1
+  search2.doAllMoves(obj = obj)
 
   supervisor.shutdown()
 
