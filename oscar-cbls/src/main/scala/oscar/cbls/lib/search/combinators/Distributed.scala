@@ -3,7 +3,7 @@ package oscar.cbls.lib.search.combinators
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.distrib._
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{MoveFound, Neighborhood, NoMoveFound, SearchResult}
+import oscar.cbls.core.search.{First, LoopBehavior, MoveFound, Neighborhood, NoMoveFound, SearchResult}
 
 import scala.util.Random
 
@@ -60,6 +60,7 @@ class Remote(neighborhoods:Neighborhood)
         acceptanceCriteria,
         independentObj,
         startSol))
+
 
     move.getResult
   }

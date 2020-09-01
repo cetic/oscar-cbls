@@ -64,7 +64,7 @@ abstract class Move(val objAfter:Long = Long.MaxValue, val neighborhoodName:Stri
     val snapshot = model.saveValues(touchedVariables)
     commit()
     val toReturn = obj.value
-    model.restoreSolution(snapshot)
+    snapshot.restoreDecisionVariables()
     toReturn
   }
 
@@ -140,10 +140,19 @@ class EvaluableCodedMove(doAndUndo: () => (() => Unit),
  */
 case class LoadSolutionMove(s:Solution,override val objAfter:Long, override val neighborhoodName:String = null) extends Move(objAfter,neighborhoodName){
   /** to actually take the move */
-  override def commit(): Unit = s.model.restoreSolution(s)
+  override def commit(): Unit = s.restoreDecisionVariables()
 
   override def toString : String = s"${neighborhoodNameToString}LoadSolutionMove(objAfter:$objAfter)"
+
+  override def getIndependentMove(m: Store): IndependentMove =
+    IndependentLoadSolutionMove(IndependentSolution(s), objAfter,neighborhoodName)
 }
+
+case class IndependentLoadSolutionMove(s:IndependentSolution ,override val objAfter:Long, override val neighborhoodName:String = null)
+  extends IndependentMove{
+  override def makeLocal(m: Store): Move = LoadSolutionMove(s.makeLocal(m), objAfter,neighborhoodName)
+}
+
 
 /** standard move that adds a value to a CBLSSetVar
  *

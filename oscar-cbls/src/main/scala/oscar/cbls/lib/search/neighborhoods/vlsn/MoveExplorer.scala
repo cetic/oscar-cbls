@@ -307,7 +307,6 @@ class MoveExplorer(v:Int,
     }
 
     val proc = nodeToInsertNeighborhood(unroutedNodeToInsert)
-    //    proc.verbose = 4
 
     proc.getMove(obj, initialGlobalObjective, acceptanceCriterion = acceptAllButMaxInt) match {
       case NoMoveFound => null

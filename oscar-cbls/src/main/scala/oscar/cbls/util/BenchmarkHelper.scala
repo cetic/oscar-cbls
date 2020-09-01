@@ -62,7 +62,7 @@ object Benchmark extends StopWatch{
     breakable {
       while (this.getWatch < warmupInMs) {
         for (n <- strategies) {
-          m.restoreSolution(initialSolution)
+          initialSolution.restoreDecisionVariables()
           val strategyInstance = n()
           strategyInstance._2.verbose = 0
           if (verbose > 1) println(s"Warm up run of ${strategyInstance._1}")
@@ -76,7 +76,7 @@ object Benchmark extends StopWatch{
       if (verbose > 1) println(s"Benchmarking ${n()._1}")
       (n()._1,
         for (trial <- 1 to nRuns) yield {
-          m.restoreSolution(initialSolution)
+          initialSolution.restoreDecisionVariables()
           val strategyInstance = n()
           strategyInstance._2.verbose = if (verbose > 0) verbose else 0
           if (verbose > 1) println(s"Benchmarking ${strategyInstance._1} run $trial of $nRuns")

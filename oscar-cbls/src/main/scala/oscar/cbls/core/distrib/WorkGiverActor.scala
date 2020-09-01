@@ -2,12 +2,15 @@ package oscar.cbls.core.distrib
 
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
+import oscar.cbls.core.computation.Store
+import oscar.cbls.core.search.{NoMoveFound, SearchResult}
 
 import scala.concurrent.{Future, Promise}
+import scala.util.Success
 
 sealed trait MessageToWorkGiver
 
-abstract class SearchEnded(val searchID:Long) extends MessageToWorkGiver
+abstract sealed class SearchEnded(val searchID:Long) extends MessageToWorkGiver
 final case  class SearchCompleted(override val searchID:Long, searchResult:IndependentSearchResult) extends SearchEnded(searchID)
 final case  class SearchAborted(override val searchID:Long) extends SearchEnded(searchID)
 final case class SearchCrashed(override val searchID:Long, neighborhood:RemoteNeighborhoodIdentification, exception:Throwable, worker:ActorRef[MessageToWorker]) extends SearchEnded(searchID)
@@ -73,7 +76,6 @@ class ORWorkGiverActor(supervisor:ActorRef[MessagesToSupervisor],
        resultPromise.success(c)
        cancelSearches()
       }
-
     }
 
    case CancelSearch() =>
@@ -109,6 +111,7 @@ class WorkGiverActor(supervisor:ActorRef[MessagesToSupervisor],
   msg match {
    case PromiseResult(replyTo: ActorRef[Future[SearchEnded]]) =>
     replyTo ! futureForResult
+    Behaviors.same
 
    case c: SearchEnded =>
     require(c.searchID == searchID)
@@ -119,23 +122,78 @@ class WorkGiverActor(supervisor:ActorRef[MessagesToSupervisor],
       case Some(t) => t!c
       case None => ;
      }
+
+     c match {
+      case SearchCrashed(searchID: Long, neighborhood, exception:Throwable, worker) =>
+       //in this case, we avoid silent error, an report eh crash.
+       if(verbose) context.log.info(s"got crash report at worker $worker for search:${c.searchID}")
+      case _ => ;
+     }
+
+     Behaviors.stopped
     } else {
      //received success about another search?!
      if(verbose) context.log.error(s"got result for another search:${c.searchID}, was expecting $searchID; ignoring")
-    }
-
-    c match {
-     case SearchCrashed(searchID: Long, neighborhood, exception:Throwable, worker) =>
-      //in this case, we avoid silent error, an report eh crash.
-      if(verbose) context.log.info(s"got crash report at worker $worker for search:${c.searchID}")
-     case _ => ;
+     Behaviors.same
     }
 
    case CancelSearch() =>
     if(verbose) context.log.info(s"received cancel search command for search:$searchID; forwarding to Supervisor")
     supervisor ! CancelSearchToSupervisor(searchID)
+    Behaviors.same
   }
-  this
  }
 }
 
+class WorkGiverIteratorActor(toDos:Map[Long,SearchResult=>Unit],
+                             context:ActorContext[MessageToWorkGiver],
+                             m:Store,
+                             slaveWorkGivers:Iterable[ActorRef[MessageToWorkGiver]],
+                             verbose:Boolean)
+  extends AbstractBehavior(context:ActorContext[MessageToWorkGiver]) {
+
+ private val resultPromise = Promise[SearchEnded]()
+ private val futureForResult: Future[SearchEnded] = resultPromise.future
+ private var remainingToDos = toDos.size
+
+ override def onMessage(msg: MessageToWorkGiver): Behavior[MessageToWorkGiver] = {
+  msg match {
+   case SearchCompleted(searchID, searchResult) =>
+    toDos(searchID)(searchResult.getLocalResult(m))
+    remainingToDos -= 1
+    if (remainingToDos == 0 && !resultPromise.isCompleted) {
+     resultPromise.complete(Success(SearchCompleted(searchID, searchResult)))
+     Behaviors.stopped
+    }else{
+     Behaviors.same
+    }
+   case s: SearchAborted =>
+    remainingToDos -= 1
+    if (remainingToDos == 0 && !resultPromise.isCompleted) {
+     resultPromise.complete(Success(s))
+     Behaviors.stopped
+    }else{
+     Behaviors.same
+    }
+
+   case crashed: SearchCrashed =>
+    if (!resultPromise.isCompleted) {
+     resultPromise.complete(Success(crashed))
+     Behaviors.stopped
+    }else{
+     Behaviors.same
+    }
+
+   case PromiseResult(replyTo: ActorRef[Future[SearchEnded]]) =>
+    replyTo ! futureForResult
+    Behaviors.same
+
+   case CancelSearch() =>
+    for(wg <- slaveWorkGivers) {
+      wg ! CancelSearch()
+    }
+    resultPromise.complete(Success(SearchAborted(0)))
+    Behaviors.stopped
+  }
+ }
+}

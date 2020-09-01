@@ -93,16 +93,6 @@ case class Store(override val verbose:Boolean = false,
     Solution(vars.map(_.snapshot),this)
   }
 
-  /**To restore a saved solution
-   * notice that only the variables that are not derived will be restored; others will be derived lazily at the next propagation wave.
-   * This enables invariants to rebuild their internal data structure if needed.
-   * Only solutions saved from the same model can be restored in the model.
-   */
-  def restoreSolution(s:Solution): Unit ={
-    assert(s.model==this)
-    s.restoreDecisionVariables()
-  }
-
   /**Called by each variable to register themselves to the model
    * @param v the variable
    * @return a unique identifier that will be used to distinguish variables. basically, variables use this value to set up an arbitrary ordering for use in dictionnaries.
@@ -284,6 +274,7 @@ case class Solution(saves:Iterable[AbstractVariableSnapShot],model:Store){
 
   lazy val varDico:SortedMap[Int, AbstractVariableSnapShot] =
     SortedMap.empty[Int, AbstractVariableSnapShot] ++ saves.map(save => ((save.uniqueID,save)))
+
   def apply(a:AbstractVariable):AbstractVariableSnapShot = varDico(a.uniqueID)
 }
 

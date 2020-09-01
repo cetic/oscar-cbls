@@ -2,11 +2,12 @@ package oscar.cbls.core.distrib
 
 import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.util.Timeout
+import oscar.cbls.core.computation.Store
+import oscar.cbls.core.search.SearchResult
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future, TimeoutException}
-import oscar.cbls.core.computation.Store
-import oscar.cbls.core.search.SearchResult
+import scala.util.Success
 
 object WorkGiver{
   def wrap(workGiverActor:ActorRef[MessageToWorkGiver],m:Store,supervisor:Supervisor):WorkGiver = {
@@ -25,7 +26,8 @@ class WorkGiver(workGiverBehavior:ActorRef[MessageToWorkGiver],
   implicit val timeout: Timeout = 30.seconds
   import akka.actor.typed.scaladsl.AskPattern._
 
-  private val futureFuture:Future[Future[SearchEnded]] = workGiverBehavior.ask[Future[SearchEnded]](ref => PromiseResult(ref))
+  private val futureFuture:Future[Future[SearchEnded]] =
+    workGiverBehavior.ask[Future[SearchEnded]](ref => PromiseResult(ref))
   private val futureResult = Await.result(futureFuture,atMost = 3.seconds)
 
   def getResult:SearchResult = getResultWaitIfNeeded().get
@@ -58,6 +60,10 @@ class WorkGiver(workGiverBehavior:ActorRef[MessageToWorkGiver],
 
   def cancelComputationRequest():Unit = {
     workGiverBehavior ! CancelSearch()
+  }
+
+  def onResult(task:SearchEnded => Unit):Unit = {
+    futureResult.onComplete({case Success(s) => task(s)})(system.executionContext)
   }
 }
 

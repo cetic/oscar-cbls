@@ -77,7 +77,7 @@ class BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = t
     if (best == null && !isCurrentAccepteable) {
       if (verbose >= 1L) println("no single acceptable solution seen")
     } else if (o.value > myBestObj || !isCurrentAccepteable) {
-      s.restoreSolution(best)
+      best.restoreDecisionVariables()
       if (verbose >= 1L) println("restoring best solution (obj:" + myBestObj + ")")
     } else if (verbose >= 1L) println("no better solution to restore")
   }

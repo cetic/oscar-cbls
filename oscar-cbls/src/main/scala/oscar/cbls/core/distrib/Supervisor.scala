@@ -7,7 +7,7 @@ import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import akka.util.Timeout
 import org.slf4j.{Logger, LoggerFactory}
 import oscar.cbls.Store
-import oscar.cbls.core.search.Neighborhood
+import oscar.cbls.core.search.{Neighborhood, SearchResult}
 
 import scala.collection.immutable.SortedMap
 import scala.concurrent.{ExecutionContext, Future}
@@ -94,6 +94,12 @@ class Supervisor(supervisorActor:ActorRef[MessagesToSupervisor], m:Store, verbos
   def delegateSearch(searchRequest:SearchRequest):WorkGiver = {
     WorkGiver.wrap(internalDelegateSearch(searchRequest),m,this)
   }
+
+/*
+  def delegateSearchesAndAction(searchRequests:Iterable[(SearchRequest,SearchResult => Unit)]):()=>Unit = {
+    internalDelegateSearchesAndActions(searchRequests),m,this)
+  }
+*/
 
   def delegateSearches(searchRequests:Array[SearchRequest]):AndWorkGiver = {
     WorkGiver.andWrap(searchRequests.map(searchRequest => this.internalDelegateSearch(searchRequest)),m,this)
