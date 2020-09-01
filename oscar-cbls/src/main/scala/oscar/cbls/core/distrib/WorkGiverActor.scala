@@ -91,13 +91,15 @@ class ORWorkGiverActor(supervisor:ActorRef[MessagesToSupervisor],
 object WorkGiverActor{
  def apply(supervisorActorRef:ActorRef[MessagesToSupervisor],
            searchID:Long,
+           action:Option[SearchEnded => Unit],
            forwardResultOpt:Option[ActorRef[MessageToWorkGiver]] = None,
            verbose:Boolean = false):Behavior[MessageToWorkGiver] =
-  Behaviors.setup[MessageToWorkGiver](context => new WorkGiverActor(supervisorActorRef, searchID, context, forwardResultOpt, verbose))
+  Behaviors.setup[MessageToWorkGiver](context => new WorkGiverActor(supervisorActorRef, searchID, action, context, forwardResultOpt, verbose))
 }
 
 class WorkGiverActor(supervisor:ActorRef[MessagesToSupervisor],
                      searchID:Long,
+                     action:Option[SearchEnded => Unit],
                      context:ActorContext[MessageToWorkGiver],
                      forwardResultOpt:Option[ActorRef[MessageToWorkGiver]] = None,
                      verbose:Boolean)
@@ -105,6 +107,12 @@ class WorkGiverActor(supervisor:ActorRef[MessagesToSupervisor],
 
  private val resultPromise = Promise[SearchEnded]()
  private val futureForResult:Future[SearchEnded] = resultPromise.future
+
+ action match{
+  case None => ;
+  case Some(a) =>
+   futureForResult.onComplete({case Success(r) => a(r)})(context.executionContext)
+ }
 
  if(verbose) context.log.info(s"created for search:$searchID")
  override def onMessage(msg: MessageToWorkGiver): Behavior[MessageToWorkGiver] = {

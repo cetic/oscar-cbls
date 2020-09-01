@@ -7,6 +7,7 @@ import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import akka.util.Timeout
 import org.slf4j.{Logger, LoggerFactory}
 import oscar.cbls.Store
+import oscar.cbls.core.computation.Store
 import oscar.cbls.core.search.{Neighborhood, SearchResult}
 
 import scala.collection.immutable.SortedMap
@@ -35,11 +36,6 @@ import scala.concurrent.duration._
 object Supervisor{
 
   def startSupervisorAndActorSystem(store:Store, search:Neighborhood, verbose:Boolean = false, tic:Duration = Duration.Inf):Supervisor = {
-
-
-
-
-
     val supervisorActorSystem = internalStartSupervisorAndActorSystem(verbose, tic)
     val supervisor = wrapSupervisor(supervisorActorSystem, store:Store, verbose)(system = supervisorActorSystem)
     search.labelNeighborhoodsForRemoteOperation(supervisor)
@@ -66,7 +62,9 @@ object Supervisor{
     Behaviors.setup {context:ActorContext[MessagesToSupervisor] => new SupervisorActor(context,verbose,tic)}
 }
 
-final case class DelegateSearch(searchRequest:SearchRequest, replyTo:ActorRef[WorkGiverActorCreated]) extends MessagesToSupervisor
+
+final case class DelegateSearchWithAction(searchRequest:SearchRequest, action:SearchResult=>Unit) extends MessagesToSupervisor
+final case class DelegateSearch(searchRequest:SearchRequest, replyTo:ActorRef[WorkGiverActorCreated], action:Option[SearchEnded => Unit]) extends MessagesToSupervisor
 final case class DelegateSearches(searchRequest:Array[SearchRequest], replyTo:ActorRef[WorkGiverActorCreated]) extends MessagesToSupervisor
 final case class ShutDown(replyTo:Option[ActorRef[Unit]]) extends MessagesToSupervisor
 final case class SpawnWorker(workerBehavior:Behavior[MessageToWorker], replyTo:ActorRef[Unit]) extends MessagesToSupervisor
@@ -95,22 +93,24 @@ class Supervisor(supervisorActor:ActorRef[MessagesToSupervisor], m:Store, verbos
     WorkGiver.wrap(internalDelegateSearch(searchRequest),m,this)
   }
 
-/*
-  def delegateSearchesAndAction(searchRequests:Iterable[(SearchRequest,SearchResult => Unit)]):()=>Unit = {
-    internalDelegateSearchesAndActions(searchRequests),m,this)
-  }
-*/
-
   def delegateSearches(searchRequests:Array[SearchRequest]):AndWorkGiver = {
     WorkGiver.andWrap(searchRequests.map(searchRequest => this.internalDelegateSearch(searchRequest)),m,this)
+  }
+
+  def createWorkSream():WorkStream = {
+    new WorkStream(m, this)
   }
 
   def delegateSearchesStopAtFirst(searchRequests:Array[SearchRequest]):WorkGiver = {
     WorkGiver.wrap(delegateORSearches(searchRequests),m,this)
   }
 
+  def delegateWithAction(searchRequest:SearchRequest,action:SearchEnded=>Unit): Unit ={
+    supervisorActor.ask[WorkGiverActorCreated] (ref => DelegateSearch(searchRequest, ref, Some(action)))
+  }
+
   private def internalDelegateSearch(searchRequest:SearchRequest):ActorRef[MessageToWorkGiver] = {
-    val ongoingRequest:Future[WorkGiverActorCreated] = supervisorActor.ask[WorkGiverActorCreated] (ref => DelegateSearch(searchRequest, ref))
+    val ongoingRequest:Future[WorkGiverActorCreated] = supervisorActor.ask[WorkGiverActorCreated] (ref => DelegateSearch(searchRequest, ref, None))
     Await.result(ongoingRequest,atMost = 30.seconds).workGiverActor
   }
 
@@ -132,6 +132,7 @@ class Supervisor(supervisorActor:ActorRef[MessagesToSupervisor], m:Store, verbos
   }
 }
 
+
 class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boolean, tic:Duration)
   extends AbstractBehavior[MessagesToSupervisor](context){
 
@@ -140,10 +141,10 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
   private var allKnownWorkers: List[ActorRef[MessageToWorker]] = Nil
   private var idleWorkers: List[ActorRef[MessageToWorker]] = Nil
 
-  //this one is a list, because the most common opretions are add, and takeAny
-  private val waitingSearches = scala.collection.mutable.Queue[SearchTask]()
-
+  //this one is a list, because the most common operations are add and takeFirst
   private var runningSearches:SortedMap[Long,(SearchTask,ActorRef[MessageToWorker])] = SortedMap.empty
+
+  private val waitingSearches = scala.collection.mutable.Queue[SearchTask]()
 
   //need to add, and remove regularly, based on ID, indexed by startID
   private var startingSearches:SortedMap[Long,(SearchTask,Long,ActorRef[MessageToWorker])] = SortedMap.empty
@@ -153,7 +154,6 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
   private var totalStartedSearches = 0
   private var nextSearchID:Long = 0
   private var nextStartID:Long = 0 //search+worker
-
 
   var nbLocalWorker:Int = 0
 
@@ -165,7 +165,6 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
     case _:Infinite => ;
     case f:FiniteDuration => context.scheduleOnce(f, context.self, Tic())
   }
-
 
   override def onMessage(msg: MessagesToSupervisor): Behavior[MessagesToSupervisor] = {
     msg match {
@@ -259,11 +258,11 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
         idleWorkers = worker :: idleWorkers
         context.self ! StartSomeSearch()
 
-      case DelegateSearch(searchRequest:SearchRequest, replyTo: ActorRef[WorkGiverActorCreated]) =>
+      case DelegateSearch(searchRequest:SearchRequest, replyTo: ActorRef[WorkGiverActorCreated], action:Option[SearchEnded => Unit]) =>
         val searchId = nextSearchID
         nextSearchID += 1
 
-        val workGiverActorClass = WorkGiverActor(context.self, searchId)
+        val workGiverActorClass = WorkGiverActor(context.self, searchId, action)
         val workGiverActorRef = context.spawn(workGiverActorClass, "workGiver_search_" + searchId)
 
         if(verbose) context.log.info(s"got new waiting search:$searchId created workGiver:${workGiverActorRef.path}")
@@ -290,7 +289,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
         val orWorkGiverActorRef = context.spawn(orWorkGiverActorClass, s"orWorkGiver_search_${minSearchID}_to_${maxSearchID}")
 
         for((searchRequest,searchId) <- requestsAndIDs){
-          val workGiverActorClass = WorkGiverActor(context.self, searchId,Some(orWorkGiverActorRef))
+          val workGiverActorClass = WorkGiverActor(context.self, searchId, None, Some(orWorkGiverActorRef))
           val workGiverActorRef = context.spawn(workGiverActorClass, "workGiver_search_" + searchId)
 
           if(verbose) context.log.info(s"got new waiting search:$searchId created workGiver:${workGiverActorRef.path}")

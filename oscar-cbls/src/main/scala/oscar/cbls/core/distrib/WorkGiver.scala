@@ -6,7 +6,7 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.search.SearchResult
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future, TimeoutException}
+import scala.concurrent.{Await, Future, Promise, TimeoutException}
 import scala.util.Success
 
 object WorkGiver{
@@ -115,6 +115,72 @@ class AndWorkGiver(workGiverBehaviors:Array[ActorRef[MessageToWorkGiver]], m:Sto
   def cancelComputationRequest():Unit = {
     for(workGiver <- workGiverBehaviors){
       workGiver ! CancelSearch()
+    }
+  }
+}
+
+
+class WorkStream(m:Store, supervisor:Supervisor) {
+
+  private val resultPromise = Promise[Option[SearchCrashed]]()
+  private val futureForResult: Future[Option[SearchCrashed]] = resultPromise.future
+
+  //we start with one more unit than the expected one.
+  @volatile
+  private final var remainingToDos = 1
+
+  def addWork(search:SearchRequest,task:SearchResult => Unit): Unit ={
+    this.synchronized {
+      remainingToDos += 1
+    }
+    supervisor.delegateWithAction(search,execute(task,_))
+  }
+
+  def waitAllComplete() {
+    this.synchronized {
+      remainingToDos -= 1
+      if (remainingToDos == 0
+        && !resultPromise.isCompleted) {
+        resultPromise.complete(Success(None))
+      }
+    }
+
+    Await.result(futureForResult, Duration.Inf) match {
+      case Some(c: SearchCrashed) =>
+        val e = new Exception(s"Crash happened at worker:${c.worker}: \n${c.exception.getMessage}\nwhen performing neighborhood:${c.neighborhood}")
+        e.setStackTrace(
+
+          //This trims the stack trace to hide the intermediary calls to threads, futures and the like.
+          (c.exception.getStackTrace.toList.reverse.dropWhile(!_.getClassName.contains("oscar.cbls")).reverse
+            //c.exception.getStackTrace.toList
+            ::: e.getStackTrace.toList).toArray)
+
+        supervisor.shutdown()
+
+        throw e
+      case None => ;
+    }
+  }
+
+  private def execute(task: SearchResult => Unit, arg: SearchEnded): Unit = {
+    this.synchronized {
+      remainingToDos -= 1
+
+      arg match {
+        case SearchCompleted(_, searchResult) =>
+          task(searchResult.getLocalResult(m))
+          if (remainingToDos == 0 && !resultPromise.isCompleted) {
+            resultPromise.complete(Success(None))
+          }
+        case _: SearchAborted =>
+          if (remainingToDos == 0 && !resultPromise.isCompleted) {
+            resultPromise.complete(Success(None))
+          }
+        case crashed: SearchCrashed =>
+          if (!resultPromise.isCompleted) {
+            resultPromise.complete(Success(Some(crashed)))
+          }
+      }
     }
   }
 }

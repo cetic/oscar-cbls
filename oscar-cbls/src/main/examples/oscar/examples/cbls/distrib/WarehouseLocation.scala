@@ -19,15 +19,13 @@ package oscar.examples.cbls.distrib
 
 import oscar.cbls._
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.distrib.{Supervisor, WorkerActor}
+import oscar.cbls.core.distrib.Supervisor
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Neighborhood
-import oscar.cbls.lib.search.combinators.{Atomic, DistributedBest, DistributedFirst, Remote}
-
-import scala.language.postfixOps
+import oscar.cbls.lib.search.combinators.{Atomic, DistributedBest, DistributedFirst}
 import oscar.examples.cbls.wlp.WarehouseLocationGenerator
 
-import scala.concurrent.Future
+import scala.language.postfixOps
 
 object WarehouseLocationDistributed extends App{
 
