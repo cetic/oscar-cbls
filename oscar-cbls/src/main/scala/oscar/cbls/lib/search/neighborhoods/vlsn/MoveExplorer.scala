@@ -194,10 +194,13 @@ class MoveExplorer(v:Int,
   addTrashNodeToUnroutedNodes()
   exploreEjections()
 
-  def injectAllCache(){}
+  def injectAllCache(verbose:Boolean){}
+
+  var nbExploredMoves = 0
+  var nbExploredEdges = 0
 
   // /////////////////////////////////////////////////////////////
-  def enrichGraph(partitioningLevel:Int, dirtyNodes:Set[Int],dirtyVehicles:Set[Int]): VLSNGraph = {
+  def enrichGraph(partitioningLevel:Int, dirtyNodes:Set[Int],dirtyVehicles:Set[Int],verbose:Boolean): VLSNGraph = {
 
     for(node <- dirtyNodes) nodeIsDirty(node) = true
     for(vehicle <- dirtyVehicles) {
@@ -219,6 +222,8 @@ class MoveExplorer(v:Int,
     //exploreEjections() // about moving one node away from a vehicle, without associated insert or move
     //addNoMoveEdgesVehiclesToTrashNode()
     //addTrashNodeToUnroutedNodes()
+
+    if(verbose) println(s"            nbExploredMoves:$nbExploredMoves nbExploredEdges:$nbExploredEdges")
 
     partitionLevelDone = currentPartitionLevel
     //println("direct inserts:" + directInsertsNodeVehicle)
@@ -259,6 +264,7 @@ class MoveExplorer(v:Int,
         //insertion without remove
 
         if (allowedDirectInserts >0) {
+          nbExploredEdges += 1
           evaluateInsertOnVehicleNoRemove(
             unroutedNodeToInsert: Int,
             targetVehicleForInsertion: Int,
@@ -291,6 +297,7 @@ class MoveExplorer(v:Int,
 
     require(!vehicleIsDirty(targetVehicleForInsertion))
 
+    nbExploredMoves += 1
     val nodeToInsertNeighborhood = cachedInsertNeighborhoodNoRemove match {
       case Some((cachedTarget, cachedNeighborhood)) if cachedTarget == targetVehicleForInsertion && cached =>
         cachedNeighborhood
@@ -307,7 +314,6 @@ class MoveExplorer(v:Int,
     }
 
     val proc = nodeToInsertNeighborhood(unroutedNodeToInsert)
-    //    proc.verbose = 4
 
     proc.getMove(obj, initialGlobalObjective, acceptanceCriterion = acceptAllButMaxInt) match {
       case NoMoveFound => null
@@ -343,6 +349,7 @@ class MoveExplorer(v:Int,
                removedNode = routingNodeToRemove)) {
 
           //Evaluating the delta
+          nbExploredEdges += 1
           evaluateInsertOnVehicleWithRemove(
             unroutedNodeToInsert: Int,
             targetVehicleForInsertion: Int,
@@ -370,6 +377,8 @@ class MoveExplorer(v:Int,
                                         correctedGlobalInit: Long,
                                         cached:Boolean): (Move, Long) = {
     require(!vehicleIsDirty(targetVehicleForInsertion))
+
+    nbExploredMoves += 1
 
     val nodeToInsertToNeighborhood = cachedInsertNeighborhoodWithRemove match {
       case Some((cachedTarget, cachedRemoved, cachedNeighborhood))
@@ -429,6 +438,8 @@ class MoveExplorer(v:Int,
           fromVehicle = fromVehicle,
           toVehicle = targetVehicleID)) {  //that's the target vehicle
 
+          nbExploredEdges += 1
+
           //move without remove
           //     :(Int,Int) => Neighborhood,
           evaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle, targetVehicleID: Int, true) match {
@@ -456,6 +467,8 @@ class MoveExplorer(v:Int,
 
     require(!vehicleIsDirty(fromVehicle))
     require(!vehicleIsDirty(targetVehicleForInsertion))
+
+    nbExploredMoves += 1
 
     val nodeToMoveToNeighborhood = cachedNodeMoveNeighborhoodNoRemove match {
       case Some((cachedTarget, cachedNeighborhood)) if cachedTarget == targetVehicleForInsertion && cached =>
@@ -507,6 +520,8 @@ class MoveExplorer(v:Int,
               toVehicle = targetVehicleID,
               toNode = nodeIDToEject)) {
 
+            nbExploredEdges += 1
+
             evaluateMoveToVehicleWithRemove(routingNodeToMove, fromVehicle, targetVehicleID, nodeIDToEject, true) match{
               case null => //println("No Accepted Move");
               case (move,delta) =>
@@ -531,6 +546,8 @@ class MoveExplorer(v:Int,
 
     require(!vehicleIsDirty(fromVehicle))
     require(!vehicleIsDirty(targetVehicleForInsertion))
+
+    nbExploredMoves += 1
 
     val nodeToMoveToNeighborhood = cachedNodeMoveNeighborhoodWithRemove match {
       case Some((cachedTarget, cachedRemoved,cachedNeighborhood))
@@ -566,6 +583,7 @@ class MoveExplorer(v:Int,
     for ((vehicleID, routingNodesToRemove) <- vehicleToRoutedNodes if !vehicleIsDirty(vehicleID)) {
       for (routingNodeToRemove <- routingNodesToRemove if !nodeIsDirty(routingNodeToRemove)) {
         if (isMoveToExplore(fromVehicle = vehicleID, fromNode = routingNodeToRemove, toVehicle = -1)) {
+          nbExploredEdges += 1
           evaluateRemove(routingNodeToRemove: Int, vehicleID) match {
             case null => ;
             case (move, delta) =>
@@ -580,6 +598,7 @@ class MoveExplorer(v:Int,
   def evaluateRemove(routingNodeToRemove:Int,fromVehicle:Int):(Move,Long) = {
 
     require(!vehicleIsDirty(fromVehicle))
+    nbExploredMoves += 1
 
     val obj = if(debug) {
       generateCheckerObjForVehicles(unroutedNodesPenalty, Set(fromVehicle), penaltyChanged = true)
@@ -620,6 +639,7 @@ class MoveExplorer(v:Int,
   private def exploreEjections(): Unit = {
     for ((vehicleID, routingNodesToRemove) <- vehicleToRoutedNodes if !vehicleIsDirty(vehicleID)) {
       for (routingNodeToRemove <- routingNodesToRemove if (!nodeIsDirty(routingNodeToRemove))) {
+        nbExploredEdges += 1
         evaluateRemoveOnSourceVehicle(routingNodeToRemove:Int,vehicleID) match{
           case null => ;
           case (move,delta) =>
@@ -633,6 +653,7 @@ class MoveExplorer(v:Int,
   def evaluateRemoveOnSourceVehicle(routingNodeToRemove:Int,fromVehicle:Int):(Move, Long) = {
 
     require(!vehicleIsDirty(fromVehicle))
+    nbExploredMoves += 1
 
     nodeToRemoveNeighborhood(routingNodeToRemove)
       .getMove(vehicleToObjectives(fromVehicle),initialVehicleToObjectives(fromVehicle),

@@ -18,7 +18,7 @@ import scala.io.Source
 object PDPTW_VLSN_li_lim_benchmark_simple extends App {
   val multFactor: Long = 1000
 
-  runOne()
+  runMany()
   def runOne() {
     println("usage: This fileName enrichment partition enrichmentSpec shiftInsert")
     val fileName = args(0)
@@ -38,11 +38,16 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
 
     val resultFileName: String = args(1)
     val pw = new PrintWriter(new File(resultFileName))
+
+    pw.println("start")
+    pw.flush()
+    System.gc()
+
     try {
       for(fileName <- fileNames){
         pw.println(runBenchmark(fileName: String, enrichment = 0, partition = 0, enrichmentSpec = 0, shiftInsert = 0))
-        System.gc()
         pw.flush()
+        System.gc()
         pw.println(runBenchmark(fileName: String, enrichment = 0, partition = 0, enrichmentSpec = 0, shiftInsert = 1))
         pw.flush()
         System.gc()
