@@ -77,6 +77,17 @@ case class VehiclePartitionSpec() extends BasePartitionSchemeSpec(){
   }
 }
 
+case class SpreadVehiclePartitionSpec(nbPartition:Int) extends BasePartitionSchemeSpec(){
+  override def instantiate(vehicleToRoutedNodesToMove: Map[Int, Set[Int]],
+                           unroutedNodesToInsert: Set[Int]): BasePartitionScheme = {
+    new SpreadVehiclePartition(
+      vehicleToRoutedNodesToMove,
+      unroutedNodesToInsert,
+      nbPartition)
+  }
+}
+
+
 /**
  * randomly spreads the nodes (routed and unrouted) into nbPartition sets, of moreless the same size.
  *
@@ -232,6 +243,41 @@ class SameSizeRandomPartitions(allNodes:List[Int], override val nbPartition:Int)
   override def nodeToPartitionId(node:Int,vehicle:Int):Int = {
     if(node == -1) 0 //just to say something.
     else nodeToPartitionId(node)
+  }
+}
+
+class SpreadVehiclePartition(vehicleToNodeToMove:Map[Int,Iterable[Int]],
+                             unroutedNodeToInsert:Iterable[Int],
+                             val nbPartition:Int)
+  extends BasePartitionScheme() {
+  //TODO: we might consider ventilating unrouted nodes onto partitions of some vehicles as well?
+
+  override def nodeToPartitionId(node:Int,vehicle:Int):Int = {
+    if(node == -1) 0
+    else myNodeToPartitionId(node)
+  }
+
+  val myNodeToPartitionId: Array[Int] = {
+    val allNodes = unroutedNodeToInsert.toList ::: vehicleToNodeToMove.values.flatten.toList
+    val maxId = allNodes.max
+    require(allNodes.min >= 0)
+    val toReturn = Array.fill(maxId+1)(-1)
+
+    var nextPartitionId:Int = 0
+    for ((_, nodes) <- vehicleToNodeToMove) {
+      for (node <- nodes) {
+        toReturn(node) = nextPartitionId
+        nextPartitionId += 1
+        if(nextPartitionId >= nbPartition) nextPartitionId = 0
+      }
+    }
+    for (node <- unroutedNodeToInsert) {
+      toReturn(node) = nextPartitionId
+      nextPartitionId += 1
+      if(nextPartitionId >= nbPartition) nextPartitionId = 0
+    }
+
+    toReturn
   }
 }
 
