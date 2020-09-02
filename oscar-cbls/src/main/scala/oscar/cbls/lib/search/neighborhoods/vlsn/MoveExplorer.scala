@@ -211,7 +211,7 @@ class MoveExplorer(v:Int,
     initialUnroutedNodesPenalty = unroutedNodesPenalty.value
     initialGlobalObjective = globalObjective.value
 
-    require(partitioningLevel > partitionLevelDone)
+    require(partitioningLevel > partitionLevelDone, s"partitioningLevel:$partitioningLevel partitionLevelDone:$partitionLevelDone")
     currentPartitionLevel = partitioningLevel
 
     exploreInsertions()

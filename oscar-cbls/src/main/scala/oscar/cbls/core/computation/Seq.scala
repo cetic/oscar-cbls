@@ -342,8 +342,10 @@ case class SeqUpdateLastNotified(value:IntSequence) extends SeqUpdate(value){
 
 object SeqUpdateDefineCheckpoint{
 
-  def apply(prev:SeqUpdate,activeCheckpoint:Boolean, maxPivotPerValuePercent:Int,doRegularize:Boolean,level:Int):SeqUpdateDefineCheckpoint = {
-    new SeqUpdateDefineCheckpoint(prev,activeCheckpoint, maxPivotPerValuePercent,doRegularize,level)
+  def apply(prev:SeqUpdate,activeCheckpoint:Boolean, maxPivotPerValuePercent:Int,level:Int):SeqUpdateDefineCheckpoint = {
+    val doRegularize = level == 0
+    val newPrev = if(doRegularize) prev.regularize(maxPivotPerValuePercent) else prev
+    new SeqUpdateDefineCheckpoint(newPrev,activeCheckpoint, maxPivotPerValuePercent,level)
   }
 
   def unapply(u:SeqUpdateDefineCheckpoint):Option[(SeqUpdate,Boolean,Int)] = Some(u.prev,u.activeCheckpoint,u.level)
@@ -353,11 +355,10 @@ object SeqUpdateDefineCheckpoint{
  * @param mprev
  * @param activeCheckpoint
  * @param maxPivotPerValuePercent
- * @param doRegularize
  * @param level the first checkpoint to be declared is 0, the second in stack is 1
  */
-class SeqUpdateDefineCheckpoint(mprev:SeqUpdate,val activeCheckpoint:Boolean, maxPivotPerValuePercent:Int,val doRegularize:Boolean, val level:Int)
-  extends SeqUpdateWithPrev(mprev,if(doRegularize) mprev.newValue.regularizeToMaxPivot(maxPivotPerValuePercent) else mprev.newValue){
+class SeqUpdateDefineCheckpoint(mprev:SeqUpdate,val activeCheckpoint:Boolean, maxPivotPerValuePercent:Int, val level:Int)
+  extends SeqUpdateWithPrev(mprev,mprev.newValue){
 
   override val highestLevelOfDeclaredCheckpoint = prev.highestLevelOfDeclaredCheckpoint max level
 
@@ -370,7 +371,7 @@ class SeqUpdateDefineCheckpoint(mprev:SeqUpdate,val activeCheckpoint:Boolean, ma
   def newPos2OldPos(newPos : Int) : Option[Int] = throw new Error("SeqUpdateDefineCheckpoint should not be queried for delta on moves")
 
   protected[computation] def prepend(u : SeqUpdate) : SeqUpdate = {
-    SeqUpdateDefineCheckpoint(mprev.prepend(u), activeCheckpoint, maxPivotPerValuePercent, doRegularize,level)
+    SeqUpdateDefineCheckpoint(mprev.prepend(u), activeCheckpoint, maxPivotPerValuePercent,level)
   }
 
   override def toString : String = s"SeqUpdateDefineCheckpoint(level:$level prev:$mprev)"
@@ -858,7 +859,6 @@ et cette stack doit être mise à jour au moment de la notification.
         toNotify,
         starModeExploration,
         maxPivotPerValuePercent,
-        doRegularize = levelOfTopCheckpoint == -1,
         levelOfTopCheckpoint+1)
 
     if(topCheckpoint != null){
@@ -881,7 +881,7 @@ et cette stack doit être mise à jour au moment de la notification.
 
     // println("ChangingSeqValue got rollback to top checkpoint my level:" + levelOfTopCheckpoint)
     require(checkpoint quickEquals topCheckpoint,
-      s"given checkpoint not quickequals to my top checkpoint; equal=${checkpoint equals topCheckpoint} checkpoint:$checkpoint my topCheckpoint:$topCheckpoint")
+      s"given checkpoint not quick equals to my top checkpoint; equal=${checkpoint equals topCheckpoint} checkpoint:$checkpoint my topCheckpoint:$topCheckpoint")
 
     popToNotifyUntilCheckpointDeclaration(toNotify,topCheckpoint,removeDeclaration = false) match{
       case CheckpointDeclarationReachedAndRemoved(newToNotify:SeqUpdate) =>
