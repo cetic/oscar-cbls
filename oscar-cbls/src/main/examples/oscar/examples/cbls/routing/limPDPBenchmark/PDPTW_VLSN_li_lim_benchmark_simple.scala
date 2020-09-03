@@ -46,9 +46,9 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
 
     try {
       for(fileName <- fileNames) {
-        pw.println(runBenchmark(fileName: String, enrichment = 0, partition = 0, enrichmentSpec = 0, shiftInsert = 0, injectAllCacheBeforeEnriching = false))
-        pw.flush()
-        System.gc()
+//        pw.println(runBenchmark(fileName: String, enrichment = 0, partition = 0, enrichmentSpec = 0, shiftInsert = 0, injectAllCacheBeforeEnriching = false))
+//        pw.flush()
+//        System.gc()
 //        pw.println(runBenchmark(fileName: String, enrichment = 0, partition = 0, enrichmentSpec = 0, shiftInsert = 0, injectAllCacheBeforeEnriching = false))
 //        pw.flush()
 //        System.gc()
@@ -56,9 +56,9 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
 //        pw.flush()
 //        System.gc()
         for (shiftInsert <- Some(0)) {
-          for (partition <- Some(9)) {
+          for (partition <- Some(10)) {
             for (enrichmentSpec <- List(4)) {
-              for(injectAllCacheBeforeEnriching <- List(true)){
+              for(injectAllCacheBeforeEnriching <- List(true, false)){
                 pw.println(runBenchmark(
                   fileName: String,
                   enrichment = 1,
@@ -465,6 +465,7 @@ def readData(fileName: String): (Int, Array[Array[Long]], List[PDP], Int, Array[
   case 7 => SameSizeRandomPartitionsSpec(nbPartitions = 30) //ok
   case 8 => SameSizeRandomPartitionsSpec(nbPartitions = 40) //non
   case 9 => SpreadVehiclePartitionSpec(nbPartition = 20)
+  case 10 => SpreadVehiclePartitionSpec(nbPartition = 40)
 
 },
   enrichmentSpec match {
