@@ -60,15 +60,25 @@ object WarehouseLocationDistributed extends App{
     m.close()
 
     //These neighborhoods are inefficient and slow; using multiple core is the wrong answer to inefficiency
-    val neighborhood = (new DistributedFirst(
-      Array(
-        assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
-        swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4    ); () => range}, name = "SwapWarehouses1"),
-        swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4 + 1); () => range}, name = "SwapWarehouses2"),
-        swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4 + 2); () => range}, name = "SwapWarehouses3"),
-        swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4 + 3); () => range}, name = "SwapWarehouses4")))
+    val neighborhood = (
+      new DistributedFirst(
+        Array(
+          assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
+          swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4    ); () => range}, name = "SwapWarehouses1"),
+          swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4 + 1); () => range}, name = "SwapWarehouses2"),
+          swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4 + 2); () => range}, name = "SwapWarehouses3"),
+          swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4 + 3); () => range}, name = "SwapWarehouses4")))
       onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray,W/10), 2, obj)
       onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/5), 2, obj))
+
+    //improvament?: how to get feedback on the go from remote worker in case of Atomic? ie: console and obj?
+    //idea: propoze a remoteAtomic with dedicated API?
+    //NB: this is just for verbosities so not very relevant indeed.
+    //improvement2: how to sent only the delta on the model instead of the model itself in order to spare on model loading nd serialization?
+    //improvement3: distributedRestart
+    //improvement4: also work with the main thread?
+    //improvement5: remote
+    //improvement6: unified delegate & worker action for different purposes
 
     val x = 10
     val neighborhood2 =
@@ -77,7 +87,8 @@ object WarehouseLocationDistributed extends App{
           assignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
             exhaustBack swapsNeighborhood(warehouseOpenArray, name = "SwapWarehouses4")
             onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray,W/10), 2, obj)
-            onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/5), 2, obj),shouldStop = _ => false, aggregateIntoSingleMove = true))) maxMoves 1
+            onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/5), 2, obj),
+          shouldStop = _ => false, aggregateIntoSingleMove = true))) maxMoves 1
 
     (m,neighborhood,obj,() => {println(openWarehouses)})
   }
