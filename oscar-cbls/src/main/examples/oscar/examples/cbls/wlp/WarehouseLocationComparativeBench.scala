@@ -88,26 +88,25 @@ object WarehouseLocationComparativeBench extends App{
     orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
 
   val neighborhood8 = ()=>("DynAndThen",
-    (AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse1") dynAndThen
+    AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse1") dynAndThen
       {case AssignMove(variable,value,id,_,_) => AssignNeighborhood(warehouseOpenArray, searchZone = (()=> (id+1 until W)),name="SwitchWarehouse2")}
-    orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust))
+    orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
 
   val neighborhood9 = ()=>("AndThen",
-    (AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse1") andThen AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse2")
-      orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust))
+    AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse1") andThen AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse2")
+      orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
 
   val neighborhood10 = ()=>("BestSlope",
-    (new BestSlopeFirst(List(
+    BestSlopeFirst(List(
       AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
         SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),10,9)
-      orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust))
+      orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
 
   val neighborhood11 = ()=>("Fastest",
-    (new FastestFirst(List(
+    FastestFirst(List(
       AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
       SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),10,9)
-      orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust))
-
+      orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
 
   val neighborhoods = List(neighborhood1,neighborhood2,neighborhood4,neighborhood7,neighborhood10,neighborhood11)
 

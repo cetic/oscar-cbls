@@ -18,7 +18,7 @@ import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Neighborhood
 import scala.util.control.Breaks._
 
-object Benchmark extends StopWatch{
+object Benchmark extends StopWatch {
 
   case class RunValues(it:Long,duration:Long,quality:Long)
   case class RunStatistics(it:Statistics,duration:Statistics,quality:Statistics){
@@ -28,7 +28,7 @@ object Benchmark extends StopWatch{
   }
 
   val firstColumnForStatisticsString = 40
-  def nSpace(n:Int):String = if(n <= 0) "" else s"${nSpace(n-1)}"
+  def nSpace(n:Int):String = if(n <= 0) "" else s" ${nSpace(n-1)}"
   private def padToLength(s: String, l: Int) = (s + nSpace(l)).substring(0, l)
   def benchToStatistics(obj: Objective, nRuns: Int, strategies: Iterable[() => (String, Neighborhood)], warmupTimeInSeconds: Long, verbose: Int) =
     benchToTrace(obj, nRuns, strategies, warmupTimeInSeconds, verbose).map {
@@ -100,7 +100,7 @@ case class Statistics(min:Long, max:Long, avg:Long, med:Long){
   override def toString: String = s"(min:$min max:$max avg:$avg med:$med)"
   def denseString:String = padToLength("" + min,8) + " " + padToLength("" + max,8) + " " + padToLength("" + avg,8) + " " + padToLength("" + med,9)
   def csvString:String = s"$min;$max;$avg;$med"
-  def nSpace(n:Int):String = if(n <= 0) "" else s"${nSpace(n-1)}"
+  def nSpace(n:Int):String = if(n <= 0) "" else s" ${nSpace(n-1)}"
   private def padToLength(s: String, l: Int) = (s + nSpace(l)).substring(0, l)
 }
 

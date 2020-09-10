@@ -40,8 +40,13 @@ case class FastestFirst(l:List[Neighborhood],
                         tabuLength:Int = 10,
                         overrideTabuOnFullExhaust:Long = 9,
                         refresh:Int = 100)
-  extends BestNeighborhoodFirst(l, tabuLength, overrideTabuOnFullExhaust, refresh){
-  override protected def bestKey(p:Profile):Long = - (p.totalTimeSpentMoveFound / p.nbFound).toInt
+  extends BestNeighborhoodFirst(l, tabuLength, overrideTabuOnFullExhaust, refresh) {
+  override protected def bestKey(p:Profile):Long = {
+    if (p.nbFound == 0L)
+      if (p.totalTimeSpentMoveFound == 0L) 0L else -Long.MaxValue
+    else
+      - (p.totalTimeSpentMoveFound / p.nbFound).toInt
+  }
 }
 
 abstract class BestNeighborhoodFirst(l:List[Neighborhood],

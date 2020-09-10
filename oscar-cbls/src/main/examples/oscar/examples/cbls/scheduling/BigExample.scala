@@ -110,11 +110,8 @@ object BigExample {
     // Neighborhoods
     val swapNH = new SwapActivity(scProblem, "Swap")
     val reinsertNH = new ReinsertActivity(scProblem, "Reinsert")
-    val addNH = new AddActivity(scProblem, "Add")
-    val removeNH = new RemoveActivity(scProblem, "Remove")
-    val replaceNHcomb = removeNH andThen addNH
     val replaceNH = new ReplaceActivity(scProblem, "Replace")
-    val combinedNH = BestSlopeFirst(List(Profile(reinsertNH), Profile(swapNH), Profile(replaceNH), Profile(replaceNHcomb)))
+    val combinedNH = BestSlopeFirst(List(Profile(reinsertNH), Profile(swapNH), Profile(replaceNH)))
     // This is the search strategy
     println(s"Initial list (size: ${scProblem.activityPriorityList.value.size}) = ${scProblem.activityPriorityList.value.toList}")
     println("Computing solution...")

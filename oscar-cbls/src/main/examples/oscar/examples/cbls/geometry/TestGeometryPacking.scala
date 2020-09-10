@@ -41,8 +41,8 @@ object TestGeometryPacking extends App{
 
   //declaring the decision variables; the XY of the center of the shapes
   val coordArray = Array.tabulate(nbShapes){ i =>
-    (new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxX - radiusArray(i),"shape_" + i + ".x"),
-      new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxY - radiusArray(i),"shape_" + i + ".y"))
+    (new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxX - radiusArray(i), s"shape_$i.x"),
+      new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxY - radiusArray(i), s"shape_$i.y"))
   }
 
   //creating a set of constant shapes with center at 0,0
@@ -50,7 +50,7 @@ object TestGeometryPacking extends App{
     new CBLSGeometryConst(store,
       if(i%2 ==0) geometry.createRectangle(radiusArray(i)*2,radiusArray(i)*2)
       else geometry.createCircle(radiusArray(i),nbEdges = 30),
-      "shape_" + i + (if (i%2 ==0) "rectangle" + radiusArray(i)*2 else "circle" + radiusArray(i)))
+      s"shape_$i" + (if (i%2 ==0) "rectangle" + radiusArray(i)*2 else "circle" + radiusArray(i)))
   }
 
   for(shape <- constantShapesAt00){
@@ -225,7 +225,7 @@ object TestGeometryPacking extends App{
 
   def gradientOnOneShape(shapeID:Int) = new GradientDescent(
     vars = Array(coordArray(shapeID)._1,coordArray(shapeID)._2),
-    name= "GradientMove(" + shapeID + ")",
+    name= s"GradientMove($shapeID)",
     maxNbVars = 2,
     selectVars = List(0,1),
     variableIndiceToDeltaForGradientDefinition = _ => 20,

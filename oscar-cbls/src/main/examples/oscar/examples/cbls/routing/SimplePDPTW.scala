@@ -38,7 +38,7 @@ object SimplePDPTW extends App{
   val precedenceRoute = myVRP.routes.createClone()
   val precedenceInvariant = precedence(precedenceRoute,precedences)
   val vehicleOfNodesNow = vehicleOfNodes(precedenceRoute,v)
-  val precedencesConstraints = new ConstraintSystem(m)
+  val precedencesConstraints = ConstraintSystem(m)
   for(start <- precedenceInvariant.nodesStartingAPrecedence)
     precedencesConstraints.add(vehicleOfNodesNow(start) === vehicleOfNodesNow(precedenceInvariant.nodesEndingAPrecedenceStartedAt(start).head))
   precedencesConstraints.add(0 === precedenceInvariant)

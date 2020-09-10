@@ -4,7 +4,6 @@ import oscar.cbls.algo.quick.QList
 
 object DataStructSpeed extends App{
 
-
   val max = 100000
 
   def testArray(): Unit = {
@@ -24,7 +23,7 @@ object DataStructSpeed extends App{
     }
 
     val t1 = System.nanoTime()
-    println("array:" + (t1 - startTime))
+    println(s"Array: ${t1 - startTime}")
   }
 
   def testList() {
@@ -43,7 +42,7 @@ object DataStructSpeed extends App{
     }
 
     val t2 = System.nanoTime()
-    println("List: " + (t2 - t1))
+    println(s"List: ${t2 - t1}")
   }
 
   def testQList(): Unit = {
@@ -62,7 +61,7 @@ object DataStructSpeed extends App{
     }
 
     val t3 = System.nanoTime()
-    println("QList:" + (t3 - t2))
+    println(s"QList: ${t3 - t2}")
   }
 
   def test() {
@@ -72,7 +71,7 @@ object DataStructSpeed extends App{
   }
 
   for(x <- 0 until 100) {
-    println("")
+    println()
     println(x)
     test()
   }

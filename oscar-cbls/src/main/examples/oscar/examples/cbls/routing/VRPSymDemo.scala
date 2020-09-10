@@ -23,7 +23,7 @@ import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{Best, First}
 import oscar.cbls.util.StopWatch
 
-object VRPDemo extends App {
+object VRPSymDemo extends App {
 
   //println("usage: VRPDemo n v")
   //val n:Int=args(0)
@@ -31,17 +31,17 @@ object VRPDemo extends App {
   //val v = args(1)
   val v = 4
 
-  println("VRPDemo n:" + n + " v:" + v)
+  println("VRPSymDemo n:" + n + " v:" + v)
 
   val displayDelay = 100 //ms
   val verbose = 1
   val maxPivotPerValuePercent = 4
   val mapSide = 1000
 
-  new VRPDemo(n,v,maxPivotPerValuePercent,verbose,displayDelay, mapSide)
+  new VRPSymDemo(n,v,maxPivotPerValuePercent,verbose,displayDelay, mapSide)
 }
 
-class VRPDemo(n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, displayDelay:Int, mapSide:Int) extends StopWatch{
+class VRPSymDemo(n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, displayDelay:Int, mapSide:Int) extends StopWatch{
 
   val (symmetricDistanceMatrix,nodesPositions) = RoutingMatrixGenerator(n,side=mapSide)
 

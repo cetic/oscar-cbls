@@ -148,17 +148,17 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
 
   val warehouseCapacity = Array.fill(W)(10)
 
-  val warehouseOpenArray = Array.tabulate(W)(i => new CBLSIntVar(m,0,0 to 1,"warehouse " + i + " open"))
+  val warehouseOpenArray = Array.tabulate(W)(i => new CBLSIntVar(m,0,0 to 1,s"warehouse $i open"))
   val openWarehouses = Filter(warehouseOpenArray).setName("open warehouses")
   openWarehouses.setName("OpenW")
   val closedWarehouses = Filter(warehouseOpenArray,_ == 0)
   closedWarehouses.setName("ClosedW")
   val nbOpenWarehouses = Cardinality(openWarehouses)
 
-  val conditionalEdgesOpenArray = Array.tabulate(nbConditionalEdges)(i => new CBLSIntVar(m,0,0 to 1,"conditional edge " + i + "open"))
+  val conditionalEdgesOpenArray = Array.tabulate(nbConditionalEdges)(i => new CBLSIntVar(m,0,0 to 1,s"conditional edge $i open"))
   val openEdges = Filter(conditionalEdgesOpenArray).setName("conditional Edges Open")
 
-  val deliveryToWarehouse = Array.tabulate(D)(i => new CBLSIntVar(m,W,0 until W + 1,"Warehouse that serves node " + (i + W)))
+  val deliveryToWarehouse = Array.tabulate(D)(i => new CBLSIntVar(m,W,0 until W + 1,s"Warehouse that serves node ${i + W}"))
 
   def deliveryToWarhouseMap = {
     var acc = SortedMap.empty[Int,CBLSIntVar]
@@ -202,7 +202,7 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
 
   val distanceToClosestCentroid = Array.tabulate(D)((i : Int) => distanceToClosestCentroidMap(deliveryToNode(i).id))
 
-  val store2WarehouseDistance = Array.tabulate(D)((i : Int) => Array.tabulate(W + 1)(j => CBLSIntVar(m,10000,0 until Int.MaxValue,"Distance from D " + i + " to W " + j)))
+  val store2WarehouseDistance = Array.tabulate(D)((i : Int) => Array.tabulate(W + 1)(j => CBLSIntVar(m,10000,0 until Int.MaxValue,s"Distance from D $i to W $j")))
 
   val storeDistanceToWarehouse : Array[IntValue] = Array.tabulate(D)(i => IntElement(deliveryToWarehouse(i),store2WarehouseDistance(i)))
 
@@ -214,7 +214,7 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
     new StoreToWarehouseDistance(distanceToClosestCentroid(i).map(e => e._1),distanceToClosestCentroid(i).map(e => e._2),store2WarehouseDistance(i))
   }
 
-  val c = new ConstraintSystem(m)
+  val c = ConstraintSystem(m)
 
   (0 until W).foreach(w => c.post(nbStorePerWarehouse(w) le warehouseCapacity(w)))
 
@@ -293,7 +293,7 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
   }
 
   def assignForInsertVLSN(w: Int,d:Int,t : String) = {
-    AssignNeighborhood(deliveryToWarehouse,"InsertDelivery" + d + "_" + w + "_" + t,searchZone = () => Array(d - W),domain = (_,_) => Array(w))
+    AssignNeighborhood(deliveryToWarehouse,s"InsertDelivery${d}_${w}_$t",searchZone = () => Array(d - W),domain = (_,_) => Array(w))
   }
 
   println(distanceToClosestCentroidMap(W).mkString("\n"))

@@ -18,7 +18,7 @@ import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
  * Created by fg on 12/05/17.
  */
 
-object PDPTW_VLSN extends App{
+object PDPTW_VLSN extends App {
   val m = Store(noCycle = false)
 
   val v = 10

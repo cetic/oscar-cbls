@@ -31,7 +31,6 @@ object SimpleVRPWithTimeWindow extends App{
   val routeLengths = Array.fill(v)(CBLSIntVar(m,0))
   val routeLength = new RouteLength(gc,n,v,routeLengths,(from: Int, to: Int) => symmetricDistance(from)(to))
 
-
   //Chains
   val precedenceRoute = myVRP.routes.createClone()
   val precedenceInvariant = precedence(precedenceRoute,precedences)

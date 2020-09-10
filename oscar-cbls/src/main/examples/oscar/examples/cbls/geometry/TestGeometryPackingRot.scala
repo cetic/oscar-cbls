@@ -44,8 +44,8 @@ object TestGeometryPackingRot extends App with LinearSelectors{
 
   //declaring the decision variables; the XY of the center of the shapes
   val coordArray = Array.tabulate(nbShapes){ i =>
-    (new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxX - radiusArray(i),"shape_" + i + ".x"),
-      new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxY - radiusArray(i),"shape_" + i + ".y"))
+    (new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxX - radiusArray(i),s"shape_$i.x"),
+      new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxY - radiusArray(i),s"shape_$i.y"))
   }
 
   //creating a set of constant shapes with center at 0,0
@@ -56,7 +56,7 @@ object TestGeometryPackingRot extends App with LinearSelectors{
       } else {
         geometry.createCircle(radiusArray(i),nbEdges = 30)
       },
-      "shape_" + i + (if (i%2 ==0) "rectangle" + radiusArray(i)*2 else "circle" + radiusArray(i)))
+      s"shape_$i" + (if (i%2 ==0) "rectangle" + radiusArray(i)*2 else "circle" + radiusArray(i)))
   }
 
   for(shape <- constantShapesAt00){
@@ -74,7 +74,7 @@ object TestGeometryPackingRot extends App with LinearSelectors{
     val rotationFollowedBuTranslation = if(i%2 == 0){
       //rectangle
 
-      val rotationAngle = new CBLSIntVar(store,initialValue = 0 ,0 to 180,"rotation_shape_" + i)
+      val rotationAngle = new CBLSIntVar(store,initialValue = 0 ,0 to 180, s"rotation_shape_$i")
       rotationArray(i) = rotationAngle
 
       val rotation = new RotationAroundZero(store, rotationAngle)
@@ -250,14 +250,14 @@ object TestGeometryPackingRot extends App with LinearSelectors{
 
 
   def moveToHoleAndGradient =
-    moveToHole dynAndThen(moveShapeToMove => new Atomic(
+    moveToHole dynAndThen(moveShapeToMove => Atomic(
       gradientAndRotate(moveShapeToMove.shapeID),
       _>10,
       stopAsSoonAsAcceptableMoves=true)) name "toHole&Gradient"
 
-  def gradientOnOneShape(shapeID:Int) = new GradientDescent(
+  def gradientOnOneShape(shapeID:Int) = GradientDescent(
     vars = Array(coordArray(shapeID)._1,coordArray(shapeID)._2),
-    name= "GradientMove(" + shapeID + ")",
+    name= s"GradientMove($shapeID)",
     maxNbVars = 2,
     selectVars = List(0,1),
     variableIndiceToDeltaForGradientDefinition = _ => 20,

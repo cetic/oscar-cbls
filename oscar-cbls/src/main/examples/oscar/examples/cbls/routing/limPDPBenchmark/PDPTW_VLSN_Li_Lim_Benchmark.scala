@@ -12,7 +12,7 @@ import oscar.cbls.lib.search.neighborhoods.vlsn._
 import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
 import scala.io.Source
 
-object PDPTW_VLSN_li_lim_benchmark extends App {
+object PDPTW_VLSN_Li_Lim_Benchmark extends App {
 
   case class PDP(fromNode: Int, toNode: Int, demand: Int) {
     def chain: List[Int] = List(fromNode, toNode)

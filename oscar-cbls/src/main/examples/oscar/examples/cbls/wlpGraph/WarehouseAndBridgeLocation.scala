@@ -53,7 +53,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   val displayDelay = 1000
 
-  println("WarehouseAndBridgeLocation(W:" + W + " D:" + D + " B:" + nbConditionalEdges + ")")
+  println(s"WarehouseAndBridgeLocation(W:$W D:$D B:$nbConditionalEdges)")
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
@@ -84,7 +84,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
   println("start dijkstra's")
   startWatch()
   val underApproximatingDistanceInGraphAllCondtionsOpen:Array[Array[Long]] = DijkstraDistanceMatrix.buildDistanceMatrix(graph, _ => true)
-  println("end dijkstra's " + getWatch + "ms")
+  println(s"end dijkstra's $getWatch ms")
 
   /*
   val anyConditionalEdgeOnShortestPath = FloydWarshall.anyConditionalEdgeOnShortestPath(graph,underApproximatingDistanceInGraphAllCondtionsOpen)
@@ -103,10 +103,10 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
   val m = Store() //checker = Some(new ErrorChecker()))
   println("model")
 
-  val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + l + "_open"))
+  val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, s"warehouse_${l}_open"))
   val openWarehouses = Filter(warehouseOpenArray).setName("openWarehouses")
 
-  val edgeConditionArray = Array.tabulate(nbConditionalEdges)(c => CBLSIntVar(m, 1, 0 to 1, "edgeCondition_" + c + "_open"))
+  val edgeConditionArray = Array.tabulate(nbConditionalEdges)(c => CBLSIntVar(m, 1, 0 to 1, s"edgeCondition_${c}_open"))
 
   val openConditions = Filter(edgeConditionArray).setName("openConditions")
 
@@ -122,7 +122,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   val trackedNodeToDistanceAndCentroid: SortedMap[Int,(CBLSIntVar,CBLSIntVar)] = vor.trackedNodeToDistanceAndCentroidMap
 
-  println("done init voronoï zones")
+  println("Done init Voronoï zones")
 
   val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
     trackedNodeToDistanceAndCentroid(deliveryToNode(d).id)._1)
@@ -202,7 +202,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
   def swapsK(k:Int, openWarehousesToConsider:()=>Iterable[Int] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
     searchZone1 = openWarehousesToConsider,
     searchZone2 = () => (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
-    name = "Swap" + k + "Nearest",
+    name = s"Swap${k}Nearest",
     symmetryCanBeBrokenOnIndices = false)
 
   def doubleSwap(k:Int) = (swapsK(k) dynAndThen((firstSwap:SwapMove) => swapsK(k,() => kNearestOpenWarehouses(firstSwap.idI,k)))) name "DoubleSwap"

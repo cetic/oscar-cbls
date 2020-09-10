@@ -15,7 +15,7 @@ import scala.annotation.tailrec
 import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.io.Source
 
-object PDPTW_VLSN_li_lim_benchmark_simple extends App {
+object PDPTW_VLSN_Li_Lim_Benchmark_Simple extends App {
   val multFactor: Long = 1000
 
   runMany()

@@ -40,7 +40,7 @@ object WareHouseLocationVisu extends App with StopWatch{
 
   val displayDelay = 100
 
-  println("WarehouseLocation(W:" + W + ", D:" + D + ")")
+  println(s"WarehouseLocation(W:$W, D:$D)")
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
@@ -51,7 +51,7 @@ object WareHouseLocationVisu extends App with StopWatch{
 
   val m = Store() //checker = Some(new ErrorChecker()))
 
-  val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + l + "_open"))
+  val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, s"warehouse_${l}_open"))
   val openWarehouses = Filter(warehouseOpenArray).setName("openWarehouses")
 
   //val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
@@ -111,7 +111,7 @@ object WareHouseLocationVisu extends App with StopWatch{
   def swapsK(k:Int,openWarehoueseTocConsider:()=>Iterable[Int] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
     searchZone1 = openWarehoueseTocConsider,
     searchZone2 = () => (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
-    name = "Swap" + k + "Nearest",
+    name = s"Swap${k}Nearest",
     symmetryCanBeBrokenOnIndices = false)
 
   def doubleSwap(k:Int) = (swapsK(k) dynAndThen((firstSwap:SwapMove) => swapsK(k,() => kNearestOpenWarehouses(firstSwap.idI,k)))) name "DoubleSwap"

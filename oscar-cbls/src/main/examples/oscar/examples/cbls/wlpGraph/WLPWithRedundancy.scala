@@ -35,12 +35,11 @@ object WLPWithRedundancy extends App with StopWatch{
   val nbNonConditionalEdges =  (W+D)*5
   val displayDelay = 200
 
-  println("RedundantWarehouseAndBridgeLocation(W:" + W + " D:" + D + " B:" + nbConditionalEdges + ")")
+  println(s"RedundantWarehouseAndBridgeLocation(W:$W D:$D B:$nbConditionalEdges)")
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
   val costForOpeningWarehouse =  Array.fill[Long](W)(800)
-
 
 
   println("generate random graph")
@@ -53,16 +52,16 @@ object WLPWithRedundancy extends App with StopWatch{
     seed = Some(2))
 
 
-  val m = new Store()//checker = Some(new ErrorChecker))
+  val m = Store()//checker = Some(new ErrorChecker))
 
   val deliveryToNode = Array.tabulate(D)(i => graph.nodes(i + W))
   val warehouseToNode =  Array.tabulate(W)(w => graph.nodes(w))
 
-  val warehouseOpenArray = Array.tabulate(W)(i => new CBLSIntVar(m,0,0 to 1,"warehouse " + i + " open"))
+  val warehouseOpenArray = Array.tabulate(W)(i => new CBLSIntVar(m,0,0 to 1,s"warehouse $i open"))
   val openWarehouses : SetValue = Filter(warehouseOpenArray).setName("open warehouses")
   val closedWarehouses : SetValue = Filter(warehouseOpenArray,_ == 0).setName("closed warehouses")
 
-  val conditionalEdgesOpenArray = Array.tabulate(nbConditionalEdges)(i => new CBLSIntVar(m,0,0 to 1,"conditional edge " + i + "open"))
+  val conditionalEdgesOpenArray = Array.tabulate(nbConditionalEdges)(i => new CBLSIntVar(m,0,0 to 1,s"conditional edge $i open"))
   val openEdges = Filter(conditionalEdgesOpenArray).setName("conditional Edges Open")
 
   val centroid2Nodes = SortedMap[Long,Long]() ++ Array.tabulate(W)(i => i.toLong -> i.toLong).toMap
@@ -125,7 +124,7 @@ object WLPWithRedundancy extends App with StopWatch{
 
     val timeStartingModel = System.currentTimeMillis()
   val distanceMatrixAllEdgeOpen = DijkstraDistanceMatrix.buildDistanceMatrix(graph,_ => true)
-  println("Time to compute matrix: " + (System.currentTimeMillis() - timeStartingModel))
+  println(s"Time to compute matrix: ${System.currentTimeMillis() - timeStartingModel}")
 
   val warehouseToWarehouseDistance = Array.tabulate(W)(w1 => Array.tabulate(W)(w2 => w2).sortWith((w2_1 : Int,w2_2 : Int) => distanceMatrixAllEdgeOpen(w1)(w2_1) < distanceMatrixAllEdgeOpen(w1)(w2_2)))
 
@@ -135,12 +134,12 @@ object WLPWithRedundancy extends App with StopWatch{
 
   def swapClosest(k : Int) =
     SwapsNeighborhood(warehouseOpenArray,
-      name = "SwapWarehouse with " + k + " Closest",
+      name = s"SwapWarehouse with $k Closest",
       searchZone1 = () => openWarehouses.value,
       searchZone2 = () => (w : Int,_ : Int) => kNearestClosedWarehouse(k,w))
 
   def makeAssignClose(assign: AssignMove,k : Int) = {
-    AssignNeighborhood(warehouseOpenArray,name = "assign Close",searchZone = () => kNearestClosedWarehouse(k,assign.id))
+    AssignNeighborhood(warehouseOpenArray,name = "Assign Close",searchZone = () => kNearestClosedWarehouse(k,assign.id))
 
   }
 
@@ -154,7 +153,7 @@ object WLPWithRedundancy extends App with StopWatch{
   def kNearestEdges(k : Int,w : Int) = KSmallest.kFirst(k,warehouseToEdgesDistance(w))
 
   def AssignCloseEdge(assign : AssignMove,k : Int) = {
-    AssignNeighborhood(conditionalEdgesOpenArray,"assignEdgeClose",searchZone = () => kNearestEdges(k,assign.id))
+    AssignNeighborhood(conditionalEdgesOpenArray,"AssignEdgeClose",searchZone = () => kNearestEdges(k,assign.id))
   }
 
   val assignWarehouseAndEdge = profile(AssignNeighborhood(warehouseOpenArray,"SwitchWarehouseAndEdgeClose") dynAndThen(AssignCloseEdge(_,10)))
@@ -196,7 +195,7 @@ object WLPWithRedundancy extends App with StopWatch{
 
 
 
-  println("fini en " + ((System.currentTimeMillis() - start)/60000) + "m")
+  println(s"Done in ${(System.currentTimeMillis() - start)/60000} m")
   println(search.profilingStatistics)
   println(obj)
 
@@ -209,6 +208,6 @@ object WLPWithRedundancy extends App with StopWatch{
     extraPath = List()
   )
 
-  println((0 until centroidColors.length).map(i => i + " : " + centroidColors(i).toString()).mkString("\n"))
+  println(centroidColors.indices.map(i => s"$i : ${centroidColors(i)}").mkString("\n"))
 
 }

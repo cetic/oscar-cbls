@@ -16,7 +16,7 @@
  */
 
 package oscar.examples.cbls.userguide
-/*
+
 import oscar.cbls._
 import oscar.cbls.modeling._
 import oscar.examples.cbls.wlp.WarehouseLocationGenerator
@@ -31,7 +31,7 @@ object WarehouseLocation extends CBLSModel with  App{
   //the number of delivery points
   val D:Int = 300
 
-  println("WarehouseLocation(W:" + W + ", D:" + D + ")")
+  println(s"WarehouseLocation(W:$W, D:$D)")
 
   //the cost per delivery point if no location is open (theoretical value)
   val defaultCostForNoOpenWarehouse = 10000
@@ -40,7 +40,7 @@ object WarehouseLocation extends CBLSModel with  App{
   val (costForOpeningWarehouse,distanceCost) = WarehouseLocationGenerator.apply(W,D,0,100,3)
 
   //decision variables of the problem: an array of boolean variables
-  val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(0, 0 to 1, "warehouse_" + l + "_open"))
+  val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(0, 0 to 1, s"warehouse_${l}_open"))
 
   //the set of open warehouses, derived from the array of boolean variables;
   // filter has a default filtering criterion, it selects indices in the array
@@ -49,7 +49,7 @@ object WarehouseLocation extends CBLSModel with  App{
 
   //for each delivery localtion, the distance to the nearest open warehouse
   val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
-    minConstArrayValueWise(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse))
+    minConstArrayValueWise(distanceCost(d).map(_.toInt), openWarehouses, defaultCostForNoOpenWarehouse))
 
   //the objective criterion with its two parts: operation cost, and construction cost
   val obj = Objective(sum(distanceToNearestOpenWarehouseLazy) + sum(costForOpeningWarehouse, openWarehouses))
@@ -79,4 +79,3 @@ object WarehouseLocation extends CBLSModel with  App{
 
   println(openWarehouses)
 }
-*/

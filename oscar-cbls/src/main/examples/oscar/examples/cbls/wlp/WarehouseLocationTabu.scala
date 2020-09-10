@@ -37,7 +37,7 @@ object WarehouseLocationTabu extends App{
   //the number of delivery points
   val D:Int = 600
 
-  println("WarehouseLocationTabu(W:" + W + ", D:" + D + ")")
+  println(s"WarehouseLocationTabu(W:$W, D:$D)")
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
@@ -45,12 +45,12 @@ object WarehouseLocationTabu extends App{
 
   val m = Store()
 
-  val warehouseOpenArray = Array.tabulate(W)(w => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + w + "_open"))
+  val warehouseOpenArray = Array.tabulate(W)(w => CBLSIntVar(m, 0, 0 to 1, s"warehouse_${w}_open"))
 
   val openWarehouses = Filter(warehouseOpenArray).setName("openWarehouses")
 
   val distanceToNearestOpenWarehouse = Array.tabulate(D)(d =>
-    minConstArrayValueWise(distanceCost(d).map(_.toInt), openWarehouses, defaultCostForNoOpenWarehouse).setName("distance_for_delivery_" + d))
+    minConstArrayValueWise(distanceCost(d).map(_.toInt), openWarehouses, defaultCostForNoOpenWarehouse).setName(s"distance_for_delivery_$d"))
 
   val obj = Objective(Sum(distanceToNearestOpenWarehouse) + Sum(costForOpeningWarehouse, openWarehouses))
 

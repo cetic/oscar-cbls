@@ -1,5 +1,3 @@
-package oscar.examples.cbls.car
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,6 +12,7 @@ package oscar.examples.cbls.car
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.examples.cbls.car
 
 import oscar.cbls.core.computation.CBLSIntVar
 import oscar.cbls.lib.search.neighborhoods.WideningFlipNeighborhood
@@ -30,7 +29,7 @@ object CarSequencer extends CBLSModel with App {
   val carTypes = 0 to 5
 
   println("carSequencing")
-  println("orderedCarTypes:" + orderedCarsByType)
+  println(s"orderedCarTypes:$orderedCarsByType")
 
   //option types
   //   A   G   D   E  (airConditionner, automaticGearBox, diesel, esp)
@@ -56,7 +55,7 @@ object CarSequencer extends CBLSModel with App {
   val orderedCarTypes:List[Int] = orderedCarsByType.foldLeft(List.empty[Int])({case (accList,(carType,nbItems)) => prependItems(accList,nbItems,carType)})
   val nbCars = orderedCarTypes.size
 
-  println("totalNumberOfCars:" + nbCars)
+  println(s"totalNumberOfCars:$nbCars")
 
   //initializes the car sequence in a random way
   val orderedCarTypesIterator = Random.shuffle(orderedCarTypes).toIterator

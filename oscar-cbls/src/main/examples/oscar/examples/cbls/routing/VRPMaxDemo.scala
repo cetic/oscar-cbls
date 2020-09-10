@@ -33,9 +33,9 @@ object VRPMaxDemo extends App {
 
   println("usage: VRPMaxDemo n v")
   //val n = args(0).toLong
-  val n = 100
+  val n = 1000
   //val v = args(1).toLong
-  val v = 7
+  val v = 10
 
   //50.404631, 4.452595
   //50.415162, 4.440849
