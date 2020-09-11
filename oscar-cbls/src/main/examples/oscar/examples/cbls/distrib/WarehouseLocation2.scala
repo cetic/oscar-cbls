@@ -53,6 +53,7 @@ object WarehouseLocationDistributed2 extends App{
     val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + l + "_open"))
     val openWarehouses = filter(warehouseOpenArray).setName("openWarehouses")
 
+
     val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
       minConstArrayValueWise(distanceCost(d).map(_.toInt), openWarehouses, defaultCostForNoOpenWarehouse))
 
@@ -87,6 +88,7 @@ object WarehouseLocationDistributed2 extends App{
       new DistributedFirst(
         Array(
           assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
+          swapsK(2,modulo=0,shift=0),
           swapsK(20,modulo=4,shift=0),
           swapsK(20,modulo=4,shift=1),
           swapsK(20,modulo=4,shift=2),
@@ -110,6 +112,7 @@ object WarehouseLocationDistributed2 extends App{
   val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(store,search,tic = 500.millisecond,verbose = false)
 
   val nbWorker = 5
+  
   for(_ <- (0 until nbWorker).par) {
     val (store2, search2, _, _) = createSearchProcedure()
     supervisor.createLocalWorker(store2,search2)

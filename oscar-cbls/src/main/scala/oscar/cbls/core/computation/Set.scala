@@ -1,22 +1,22 @@
 /*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
+ * OscaR is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * OscaR is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License  for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+ * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+ ******************************************************************************/
 /*******************************************************************************
-  * Contributors:
-  *     This code has been initially developed by CETIC www.cetic.be
-  *         by Renaud De Landtsheer
-  ******************************************************************************/
+ * Contributors:
+ *     This code has been initially developed by CETIC www.cetic.be
+ *         by Renaud De Landtsheer
+ ******************************************************************************/
 package oscar.cbls.core.computation
 
 import oscar.cbls.algo.dll._
@@ -60,7 +60,7 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
   def valueAtSnapShot(s:Solution):SortedSet[Int] = s(this) match{case s:ChangingSetValueSnapShot => s.savedValue case _ => throw new Error("cannot find value of " + this + " in snapshot")}
 
   /**this must be protected because invariants might rework this after isntanciation
-    * for CBLSVars, no problems*/
+   * for CBLSVars, no problems*/
   protected def restrictDomain(d:Domain): Unit ={
     privatedomain = privatedomain.intersect(d)
     domainSizeDiv10 = privatedomain.size/10
@@ -71,10 +71,10 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
     else m_NewValue).mkString(",") + "}"
 
   /** this method is a toString that does not trigger a propagation.
-    * use this when debugging your software.
-    * you should specify to your IDE to render variable objects using this method isntead of the toString method
-    * @return a string similar to the toString method
-    */
+   * use this when debugging your software.
+   * you should specify to your IDE to render variable objects using this method isntead of the toString method
+   * @return a string similar to the toString method
+   */
   def toStringNoPropagate: String = name + ":={" + m_NewValue.foldLeft("")(
     (acc,intval) => if(acc.equalsIgnoreCase("")) ""+intval else acc+","+intval) + "}"
 
@@ -91,8 +91,8 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
   }
 
   /**The values that have bee impacted since last propagation was performed.
-    * null if set was assigned
-    */
+   * null if set was assigned
+   */
   private[this] var addedValues:QList[Int] = null
   private[this] var removedValues:QList[Int] = null
   private[this] var nbTouched:Int = 0
@@ -134,9 +134,9 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
   }
 
   /**We suppose that the new value is not the same as the actual value.
-    * otherwise, there is a huge waste of time.
-    * @param v the new value to set to the variable
-    */
+   * otherwise, there is a huge waste of time.
+   * @param v the new value to set to the variable
+   */
   protected def setValue(v:SortedSet[Int]): Unit ={
     removedValues = null
     addedValues = null
@@ -284,9 +284,9 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
   }
 
   /**We suppose that the new value is not the same as the actual value.
-    * otherwise, there is a huge waste of time.
-    * @param v the new value to set to the variable
-    */
+   * otherwise, there is a huge waste of time.
+   * @param v the new value to set to the variable
+   */
   protected def :=(v:SortedSet[Int]): Unit = {setValue(v)}
 
   protected def :+=(i:Int): Unit = {this.insertValue(i)}
@@ -337,8 +337,11 @@ class ValueWiseKey(originalKey:KeyForElementRemoval,setValue:ChangingSetValue,va
 
   def performRemove(): Unit ={
     //remove all values in the focus of this key
-    for(i <- valueToKey.values){
-       i.delete()
+    for(i <- valueToKey.indices) {
+      if (valueToKey(i) != null) {
+        valueToKey(i).delete()
+        valueToKey(i) = null
+      }
     }
     originalKey.performRemove()
   }
@@ -346,22 +349,20 @@ class ValueWiseKey(originalKey:KeyForElementRemoval,setValue:ChangingSetValue,va
   val minValue:Int = setValue.min
   val maxValue:Int = setValue.max
 
-  var valueToKey:RedBlackTreeMap[DLLStorageElement[ValueWiseKey]] = RedBlackTreeMap.empty
+  var valueToKey:Array[DLLStorageElement[ValueWiseKey]] = Array.fill(maxValue - minValue + 1)(null)
   //val valueToKeyArray = Array.fill[DLLStorageElement[ValueWiseKey]](sizeOfSet)(null)
 
   def addToKey(value:Int): Unit ={
     if(!(minValue <= value  && value <= maxValue)) return
-    val intValue = value
-    require(!valueToKey.contains(intValue))
-    valueToKey = valueToKey.insert(intValue,setValue.addToValueWiseKeys(this,intValue))
+    //TODO: this is O(log n) and should be improved to O(1)!!!
+    valueToKey(value) = setValue.addToValueWiseKeys(this,value)
   }
 
   def removeFromKey(value:Int): Unit ={
     if(!(minValue <= value  && value <= maxValue)) return
-    val intValue = value
-    val k = valueToKey.get(intValue).get
+    val k = valueToKey(value)
     k.delete()
-    valueToKey = valueToKey.remove(intValue)
+    valueToKey(value) = null
   }
 }
 
@@ -376,11 +377,11 @@ object ChangingSetValue{
 }
 
 /**An IntSetVar is a variable managed by the [[oscar.cbls.core.computation.Store]] whose type is set of integer.
-  * @param givenModel is the model in s-which the variable is declared, can be null if the variable is actually a constant, see [[oscar.cbls.core.computation.CBLSSetConst]]
-  * @param initialDomain is the domain value of the variable. Some invariants exploit this value to declare fixed size arrays
-  * @param initialValue is the initial value of the variable
-  * @param n is the name of the variable, used for pretty printing only. if not set, a default will be used, based on the variable number
-  * */
+ * @param givenModel is the model in s-which the variable is declared, can be null if the variable is actually a constant, see [[oscar.cbls.core.computation.CBLSSetConst]]
+ * @param initialDomain is the domain value of the variable. Some invariants exploit this value to declare fixed size arrays
+ * @param initialValue is the initial value of the variable
+ * @param n is the name of the variable, used for pretty printing only. if not set, a default will be used, based on the variable number
+ * */
 class CBLSSetVar(givenModel: Store, initialValue: SortedSet[Int], initialDomain:Domain, n: String = null)
   extends ChangingSetValue(initialValue, initialDomain) with Variable{
 
@@ -412,9 +413,9 @@ class CBLSSetVar(givenModel: Store, initialValue: SortedSet[Int], initialDomain:
   override def deleteValuePreviouslyIn(v : Int) : Unit = super.deleteValuePreviouslyIn(v)
 
   /** We suppose that the new value is not the same as the actual value.
-    * otherwise, there is a huge waste of time.
-    * @param v the new value to set to the variable
-    */
+   * otherwise, there is a huge waste of time.
+   * @param v the new value to set to the variable
+   */
   override def setValue(v : SortedSet[Int]) : Unit = super.setValue(v)
 
   override def value : SortedSet[Int] = super.value
@@ -457,7 +458,7 @@ class CBLSSetConst(override val value:SortedSet[Int])
 abstract class SetInvariant(initialValue:SortedSet[Int] = SortedSet.empty,
                             initialDomain:Domain = DomainRange(0, Int.MaxValue))
   extends ChangingSetValue(initialValue, initialDomain)
-  with Invariant {
+    with Invariant {
 
   override def definingInvariant: Invariant = this
   override def isControlledVariable:Boolean = true
@@ -491,11 +492,11 @@ object IdentitySet{
 }
 
 /** an invariant that is the identity function
-  * @author renaud.delandtsheer@cetic.be
-  */
+ * @author renaud.delandtsheer@cetic.be
+ */
 class IdentitySet(toValue:CBLSSetVar, fromValue:ChangingSetValue)
   extends Invariant
-  with SetNotificationTarget{
+    with SetNotificationTarget{
 
   registerStaticAndDynamicDependency(fromValue)
   toValue.setDefiningInvariant(this)

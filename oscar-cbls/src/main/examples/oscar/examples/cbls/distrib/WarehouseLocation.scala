@@ -23,6 +23,7 @@ import oscar.cbls.core.distrib.Supervisor
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.lib.search.combinators.{Atomic, DistributedBest, DistributedFirst}
+import oscar.examples.cbls.distrib.WarehouseLocationDistributed.obj
 import oscar.examples.cbls.wlp.WarehouseLocationGenerator
 
 import scala.language.postfixOps
@@ -70,7 +71,7 @@ object WarehouseLocationDistributed extends App{
           swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4 + 3); () => range}, name = "SwapWarehouses4")))
       onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray,() => W/10), 2, obj)
       onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/5), 2, obj))
-    
+
     val x = 10
     val neighborhood2 =
       new DistributedBest(
@@ -92,15 +93,18 @@ object WarehouseLocationDistributed extends App{
   val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(store,search,tic = 500.millisecond,verbose = false)
 
   val nbWorker = 5
-  for(_ <- (0 until nbWorker).par) {
-    val (store2, search2, _, _) = createSearchProcedure()
-    supervisor.createLocalWorker(store2,search2)
-    search2.verbose = 2
+  for(i <- (0 until nbWorker+1).par) {
+    if(i == 0){
+      val search2 = search.showObjectiveFunction(obj)
+      search2.verbose = 1
+      search2.doAllMoves(obj = obj)
+    }else {
+      val (store2, search2, _, _) = createSearchProcedure()
+      supervisor.createLocalWorker(store2, search2)
+      search2.verbose = 2
+    }
   }
 
-  val search2 = search.showObjectiveFunction(obj)
-  search2.verbose = 1
-  search2.doAllMoves(obj = obj)
 
   supervisor.shutdown()
 
