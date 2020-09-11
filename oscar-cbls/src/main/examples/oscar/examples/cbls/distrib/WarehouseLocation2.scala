@@ -17,7 +17,8 @@
 
 package oscar.examples.cbls.distrib
 
-import oscar.cbls._
+import oscar.cbls.{swapsNeighborhood, _}
+import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.distrib.Supervisor
 import oscar.cbls.core.objective.Objective
@@ -27,7 +28,7 @@ import oscar.examples.cbls.wlp.WarehouseLocationGenerator
 
 import scala.language.postfixOps
 
-object WarehouseLocationDistributed extends App{
+object WarehouseLocationDistributed2 extends App{
 
   //the number of warehouses
   val W:Int = 2000
@@ -39,7 +40,7 @@ object WarehouseLocationDistributed extends App{
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
-  val (_,distanceCost) = WarehouseLocationGenerator.apply(W,D,0,100,3)
+  val (_,distanceCost,_,_,warehouseToWarehouseDistances) = WarehouseLocationGenerator.problemWithPositions(W,D,0,100,3)
 
   val costForOpeningWarehouse = Array.fill(W)(1000L)
 
@@ -59,27 +60,44 @@ object WarehouseLocationDistributed extends App{
 
     m.close()
 
+    //this is an array, that, for each warehouse, keeps the sorted closest warehouses in a lazy way.
+    val closestWarehouses = Array.tabulate(W)(warehouse =>
+      KSmallest.lazySort(
+        Array.tabulate(W)(warehouse => warehouse),
+        otherwarehouse => warehouseToWarehouseDistances(warehouse)(otherwarehouse)
+      ))
+
+    //this procedure returns the k closest closed warehouses
+    def kNearestClosedWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).newValue == 0)
+
+    def swapsK(k:Int,openWarehouseTocConsider:()=>Iterable[Int] = openWarehouses,modulo:Int=0,shift:Int=0) =
+      swapsNeighborhood(warehouseOpenArray,
+        searchZone1 = if(modulo ==0) openWarehouseTocConsider else () => openWarehouseTocConsider().filter(_%modulo == shift),
+        searchZone2 = () => (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
+        name = "SwapK" + k,// + (if(modulo ==0) "" else s"mod:$modulo,s:$shift"),
+        symmetryCanBeBrokenOnIndices = false)
+
+    def swaps(modulo:Int,shift:Int) = {
+      val myRange = (0 until W/modulo).map(_*modulo+shift)
+      swapsNeighborhood(warehouseOpenArray,searchZone1 = () => myRange, name = "SwapWarehouses")
+    }
+
     //These neighborhoods are inefficient and slow; using multiple core is the wrong answer to inefficiency
     val neighborhood = (
       new DistributedFirst(
         Array(
           assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
-          swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4    ); () => range}, name = "SwapWarehouses1"),
-          swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4 + 1); () => range}, name = "SwapWarehouses2"),
-          swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4 + 2); () => range}, name = "SwapWarehouses3"),
-          swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4 + 3); () => range}, name = "SwapWarehouses4")))
-      onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray,() => W/10), 2, obj)
-      onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/5), 2, obj))
-    
-    val x = 10
-    val neighborhood2 =
-      new DistributedBest(
-        Array.fill(x) (Atomic(
-          assignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
-            exhaustBack swapsNeighborhood(warehouseOpenArray, name = "SwapWarehouses4")
-            onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray,() => W/10), 2, obj)
-            onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/5), 2, obj),
-          shouldStop = _ => false, aggregateIntoSingleMove = true))) maxMoves 1
+          swapsK(20,modulo=4,shift=0),
+          swapsK(20,modulo=4,shift=1),
+          swapsK(20,modulo=4,shift=2),
+          swapsK(20,modulo=4,shift=3),
+          swaps(modulo = 5,shift = 0),
+          swaps(modulo = 5,shift = 1),
+          swaps(modulo = 5,shift = 2),
+          swaps(modulo = 5,shift = 3),
+          swaps(modulo = 5,shift = 4)))
+        onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray,() => W/10), 2, obj)
+        onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/5), 2, obj))
 
     (m,neighborhood,obj,() => {println(openWarehouses)})
   }

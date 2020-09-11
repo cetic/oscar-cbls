@@ -55,7 +55,7 @@ class BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = t
           //solution degrades, and we were better than the best recorded
           //so we save
           saveCurrent(initialObj)
-          if (verbose >= 2L) println("saving best solution before degradation (obj:" + myBestObj + ")")
+          if (verbose >= 2L) println("saving best solution before worsening (obj:" + myBestObj + ")")
         }
         MoveFound(m)
     }

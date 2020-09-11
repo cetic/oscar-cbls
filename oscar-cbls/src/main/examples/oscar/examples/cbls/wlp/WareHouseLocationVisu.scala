@@ -24,7 +24,7 @@ import oscar.cbls.lib.invariant.minmax.MinConstArrayValueWise
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu, Profile}
 import oscar.cbls.lib.search.neighborhoods._
-import oscar.cbls.util.StopWatch
+import oscar.cbls.util.{Demo, StopWatch}
 import oscar.cbls.visual.SingleFrameWindow
 import oscar.cbls.visual.wlp.WareHouseLocationMap
 
@@ -108,8 +108,8 @@ object WareHouseLocationVisu extends App with StopWatch{
   maxDepth = width,
   intermediaryStops = true)
 
-  def swapsK(k:Int,openWarehoueseTocConsider:()=>Iterable[Int] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
-    searchZone1 = openWarehoueseTocConsider,
+  def swapsK(k:Int,openWarehouseTocConsider:()=>Iterable[Int] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
+    searchZone1 = openWarehouseTocConsider,
     searchZone2 = () => (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
     name = "Swap" + k + "Nearest",
     symmetryCanBeBrokenOnIndices = false)
@@ -125,30 +125,18 @@ object WareHouseLocationVisu extends App with StopWatch{
         Profile(swapsK(20) guard(() => openWarehouses.value.size >= 5)), //we set a minimal size because the KNearest is very expensive if the size is small
         Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
       ),refresh = W/10)
-      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5,name="smallRandom"), 2, obj)
+      onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5,name="smallRandom"), 2, obj)
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,name="bigRandom"), 1, obj)
     ) exhaust Profile(muLine(4,3,15))) afterMove(
-    //if(obj.value < bestObj){
-     // bestObj = obj.value
       if(this.getWatch > lastDisplay + displayDelay) {
         visual.redraw(openWarehouses.value)
         lastDisplay = this.getWatch
       }
-    //}
     ) showObjectiveFunction(obj)
 
   neighborhood.verbose = 2
 
-  /*
-  println("DEMO: engine on pause; press ENTER to resume execution")
-  scala.io.StdIn.readLine()
-  println("DEMO: start in 3 seconds")
-  Thread.sleep(1000)
-  println("DEMO: start in 2 seconds")
-  Thread.sleep(1000)
-  println("DEMO: start in 1 second")
-  Thread.sleep(1000)
-*/
+  Demo.startUpPause()
 
   neighborhood.doAllMoves(obj=obj)
 

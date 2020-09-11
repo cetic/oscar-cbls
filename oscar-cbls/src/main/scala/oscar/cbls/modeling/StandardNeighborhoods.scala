@@ -93,7 +93,7 @@ trait StandardNeighborhoods {
    * @param name the name of the neighborhood
    */
   def randomSwapNeighborhood(vars:Array[CBLSIntVar],
-                             degree:Int = 1,
+                             degree:() => Int = () => 1,
                              name:String = "RandomSwapNeighborhood",
                              searchZone:() => SortedSet[Int] = null)
   = RandomSwapNeighborhood(vars,degree,name,searchZone)

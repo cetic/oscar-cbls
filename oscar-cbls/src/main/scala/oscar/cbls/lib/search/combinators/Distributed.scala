@@ -43,8 +43,12 @@ abstract class DistributedCombinator(neighborhoods:Array[List[Long] => Neighborh
     })
     (currentIDNow, accNow,toReturnArray)
   }
-}
 
+  override def collectProfilingStatistics: List[Array[String]] = {
+
+    super.collectProfilingStatistics
+  }
+}
 
 class Remote(neighborhoods:Neighborhood)
   extends DistributedCombinator(Array(_ => neighborhoods)) {
@@ -60,7 +64,6 @@ class Remote(neighborhoods:Neighborhood)
         acceptanceCriteria,
         independentObj,
         startSol))
-
 
     move.getResult
   }
@@ -95,35 +98,6 @@ class DistributedBest(neighborhoods:Array[Neighborhood])
 }
 
 
-
-class DistributedFirstInSequence(neighborhoods:Array[Neighborhood], lookAhead:Int)
-  extends DistributedCombinator(neighborhoods.map(x => (y:List[Long]) => x)) {
-
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
-
-    val independentObj = obj.getIndependentObj
-    val startSol = IndependentSolution(obj.model.solution())
-
-    val moves = delegateSearches(
-      remoteNeighborhoods.map(l =>
-        SearchRequest(
-          l.getRemoteIdentification(Nil),
-          acceptanceCriteria,
-          independentObj,
-          startSol)))
-
-    val answers = moves.getResultWaitIfNeeded()
-
-    val foundMoves = answers.get.flatMap({
-      case NoMoveFound => None
-      case m: MoveFound => Some(m)
-    })
-
-    if (foundMoves.isEmpty) NoMoveFound
-    else foundMoves.minBy(_.objAfter)
-  }
-}
-
 class DistributedFirst(neighborhoods:Array[Neighborhood], randomOrder:Boolean = true)
   extends DistributedCombinator(neighborhoods.map(x => (y:List[Long]) => x)) {
 
@@ -141,34 +115,6 @@ class DistributedFirst(neighborhoods:Array[Neighborhood], randomOrder:Boolean = 
 
     val searchRequests2 = if(randomOrder) Random.shuffle(searchRequests.toList).toArray else searchRequests
     val move = delegateSearchesStopAtFirst(searchRequests2)
-
-    move.getResult
-  }
-}
-
-//DistributedRestart
-class DistributedRestart(base:Neighborhood, randomize:Neighborhood, nbWorkers:Int = -1)
-  extends DistributedCombinator(Array((_:List[Long]) => base,(_:List[Long]) => randomize)) {
-
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
-
-    val independentObj = obj.getIndependentObj
-    val startSol = IndependentSolution(obj.model.solution())
-
-    val remoteBase = remoteNeighborhoods(0)
-    val remoteRandomize = remoteNeighborhoods(1)
-
-    val myNbWorkers = if(this.nbWorkers == -1) supervisor.nbWorkers else this.nbWorkers
-
-    val ongoingSearches:Array[WorkGiver] = Array.fill(nbWorkers)(null)
-
-    val move = delegateSearchesStopAtFirst(
-      remoteNeighborhoods.map(l =>
-        SearchRequest(
-          l.getRemoteIdentification(Nil),
-          acceptanceCriteria,
-          independentObj,
-          startSol)))
 
     move.getResult
   }

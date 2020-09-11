@@ -79,7 +79,7 @@ case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
  * @param name the name of the neighborhood
  */
 case class RandomSwapNeighborhood(vars:Array[CBLSIntVar],
-                                  degree:Int = 1,
+                                  degree:() => Int = () => 1,
                                   name:String = "RandomSwapNeighborhood",
                                   searchZone:() => SortedSet[Int] = null)  //TODO: search zone does not work!
   extends Neighborhood(name) with LinearSelectors{
@@ -90,10 +90,10 @@ case class RandomSwapNeighborhood(vars:Array[CBLSIntVar],
     if(printExploredNeighborhoods) println("applying " + name)
 
     var toReturn:List[Move] = List.empty
-
+    val degreeNow:Int = degree()
     var touchedVars:Set[Int] = SortedSet.empty
     val varsToMove = if (searchZone == null) vars.length else searchZone().size
-    for(r <- 1 to degree if varsToMove - touchedVars.size >= 2L){
+    for(r <- 1 to degreeNow if varsToMove - touchedVars.size >= 2L){
       val i = selectFrom(vars.indices,(i:Int) => (searchZone == null || searchZone().contains(i)) && !touchedVars.contains(i))
       touchedVars = touchedVars + i
       val j = selectFrom(vars.indices,(j:Int) => (searchZone == null || searchZone().contains(j)) && !touchedVars.contains(j))
