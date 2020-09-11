@@ -77,7 +77,7 @@ object VRPWithOnlyTimeWindow extends App {
 }
 
 class VRPWithOnlyTimeWindow(version: Int, n: Int = 100, v: Int = 10, fullInfo: Boolean = false, iteration: Int = 0){
-  val m = new Store(noCycle = false, propagateOnToString = false/*, checker = Some(new ErrorChecker())*/)
+  val m = Store(noCycle = false, propagateOnToString = false/*, checker = Some(new ErrorChecker())*/)
   val penaltyForUnrouted = 10000
   RoutingMatrixGenerator.random.setSeed(iteration)
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1

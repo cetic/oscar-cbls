@@ -23,7 +23,6 @@ import oscar.cbls.visual.ColorGenerator
 import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.swing.Color
 
-
 class StoreToWarehouseDistance(warehouseTab : Array[CBLSIntVar],distanceTab : Array[CBLSIntVar],storeWarehouseDistance : Array[CBLSIntVar],defaultDistance : Int = 10000)
   extends Invariant
   with ShortIntNotificationTarget{
@@ -39,7 +38,6 @@ class StoreToWarehouseDistance(warehouseTab : Array[CBLSIntVar],distanceTab : Ar
   private val allreadyNotified = Array.fill(storeWarehouseDistance.length)(false)
   private val newValues : Array[Option[Long]] = Array.fill(storeWarehouseDistance.length)(None)
   var changedValues : List[Int]= List()
-
 
   Array.tabulate(nbElement)(i => {
     if (warehouseTab(i).value != -1)

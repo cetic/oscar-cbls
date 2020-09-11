@@ -14,7 +14,6 @@
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  * ****************************************************************************
  */
-
 package oscar.examples.cbls.wlp
 
 import oscar.cbls._

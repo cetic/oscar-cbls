@@ -31,7 +31,7 @@ object VRPSymDemo extends App {
   //val v = args(1)
   val v = 4
 
-  println("VRPSymDemo n:" + n + " v:" + v)
+  println(s"VRPSymDemo n:$n v:$v")
 
   val displayDelay = 100 //ms
   val verbose = 1
@@ -46,7 +46,7 @@ class VRPSymDemo(n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, display
   val (symmetricDistanceMatrix,nodesPositions) = RoutingMatrixGenerator(n,side=mapSide)
 
   startWatch()
-  val model = new Store()
+  val model = Store()
 
   val myVRP = new VRP(model,n,v)
   val routingDistance = routeLength(myVRP.routes,n,v,false,symmetricDistanceMatrix,true)(0)

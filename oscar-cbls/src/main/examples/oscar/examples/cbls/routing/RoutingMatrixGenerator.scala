@@ -17,6 +17,7 @@ package oscar.examples.cbls.routing
 import oscar.cbls.business.routing.invariants.timeWindow.TransferFunction
 import oscar.cbls.business.routing.model.{TTFConst, TTFMatrix}
 
+import scala.annotation.tailrec
 import scala.util.Random
 
 /**
@@ -27,7 +28,7 @@ object RoutingMatrixGenerator {
 
   /**
     * This method generate a random distance matrix based on numbers of node and map side.
-    * It also generate an array of node positions. (Usefull when you want to display it on a map)
+    * It also generate an array of node positions. (Useful when you want to display it on a map)
     * @param n The number of nodes (considering depots)
     * @param side The side of the map
     * @return The distance matrix (Array[Array[Long] ] and the position of each node (Array[(Long,Long)])
@@ -77,7 +78,7 @@ object RoutingMatrixGenerator {
       val a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
       val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 
-      (R * c).toDouble //meters
+      R * c //meters
     }
 
     val pointPosition: Array[(Double,Double)] = Array.fill(n)((randomLat, randomLong))
@@ -147,6 +148,7 @@ object RoutingMatrixGenerator {
         randomizedNodes.next()
       })
 
+      @tailrec
       def toTuple(chain: List[Int], tuples: List[(Int,Int)]): List[(Int,Int)] ={
         chain match {
           case Nil => throw new IllegalArgumentException("Invalid Nil chain")
@@ -273,6 +275,7 @@ object RoutingMatrixGenerator {
   def generateMaxTravelDurations(precedences: List[List[Int]],
                                  earliestArrivalTimes: Array[Long],
                                  travelDurationMatrix: Array[Array[Long]]): List[(Int, Int, Long)] ={
+    @tailrec
     def maxTravelDurationOfPrecedence(from: Int, toProceed: List[Int], maxTravelDurations: List[(Int,Int,Long)]): List[(Int,Int,Long)] ={
       toProceed match{
         case Nil => maxTravelDurations

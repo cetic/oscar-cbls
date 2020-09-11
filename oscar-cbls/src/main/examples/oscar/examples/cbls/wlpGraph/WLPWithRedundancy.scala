@@ -114,7 +114,6 @@ object WLPWithRedundancy extends App with StopWatch{
     extraPath = List()
   )
 
-
   /**********************************************************************************************************************
     *
     *             Search Model
@@ -140,7 +139,6 @@ object WLPWithRedundancy extends App with StopWatch{
 
   def makeAssignClose(assign: AssignMove,k : Int) = {
     AssignNeighborhood(warehouseOpenArray,name = "Assign Close",searchZone = () => kNearestClosedWarehouse(k,assign.id))
-
   }
 
   def open3Warehouses =
@@ -192,10 +190,8 @@ object WLPWithRedundancy extends App with StopWatch{
   val start = System.currentTimeMillis()
   search.doAllMoves(obj = obj)
 
-
-
-
-  println(s"Done in ${(System.currentTimeMillis() - start)/60000} m")
+  val timeMinutes = 1 + (System.currentTimeMillis() - start)/60000
+  println(s"Done in less than $timeMinutes minute${if (timeMinutes > 1) "s" else ""}")
   println(search.profilingStatistics)
   println(obj)
 

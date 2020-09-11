@@ -216,7 +216,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
     val distanceW1W2:Long = underApproximatingDistanceInGraphAllCondtionsOpen(nodeW1.id)(nodeW2.id)
 
     (0 until nbConditionalEdges).filter(c => {
-      val conditionalEdge = graph.conditionToConditionalEdges(c.toInt)
+      val conditionalEdge = graph.conditionToConditionalEdges(c)
       val distA1 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeIDA)(nodeW1.id)
       val distA2 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeIDA)(nodeW2.id)
       val distB1 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeIDB)(nodeW1.id)

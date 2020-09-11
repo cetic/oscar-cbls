@@ -38,7 +38,7 @@ object VRPTWWithWeightedNodes extends App{
 class VRPTWWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, minLong: Double, maxLong: Double) {
   //////////////////// MODEL ////////////////////
   // The Store : used to store all the model of the problem
-  val store = new Store
+  val store = Store()
 
   // The basic VRP problem, containing the basic needed invariant
   val myVRP = new VRP(store, n, v)
@@ -159,7 +159,6 @@ class VRPTWWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, min
   routeUnroutedPoint.
     exhaust(onePtMove(20)).
     afterMove(routingDisplay.drawRoutes())
-
 
   //////////////////// RUN ////////////////////
 

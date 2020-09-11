@@ -92,8 +92,7 @@ case class DomainRange(override val min: Long, override val max: Long) extends D
   def contains(v:Long): Boolean = min <= v && max >= v
 
   override def size: Long =
-    if (min < 0 && min + Long.MaxValue <= max) Long.MaxValue
-    else if (max == Long.MaxValue && min <= 0) Long.MaxValue
+    if (min <= 0 && min + Long.MaxValue <= max) Long.MaxValue
     else math.max(max-min+1L,0L)
 
   override def values: Iterable[Long] = min to max

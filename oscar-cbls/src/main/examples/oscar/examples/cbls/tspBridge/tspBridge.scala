@@ -29,23 +29,23 @@ object TspBridge extends App {
 
   println(Long.MaxValue)
 
-  println("generate random graph")
+  println("generating random graph")
   val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(
     nbNodes=nbNodes,
     nbConditionalEdges = nbConditionalEdges,
     nbNonConditionalEdges = nbNonConditionalEdges,
     nbTransitNodes = nbTransitNodes,
     seed = Some(1))
-  println("end generate random graph")
+  println("end generating random graph")
 
-  println("start dijkstra")
+  println("start Dijkstra")
   val underApproximatingDistanceInGraphAllBridgesOpen:Array[Array[Long]] = DijkstraDistanceMatrix.buildDistanceMatrix(graph, _ => true)
-  println("end dijkstra")
+  println("end Dijkstra")
 
   val m = Store()
 
   //initially all bridges open
-  val bridgeConditionArray = Array.tabulate(nbConditionalEdges)(c => CBLSIntVar(m, 1, 0 to 1, "bridge_" + c + "_open"))
+  val bridgeConditionArray = Array.tabulate(nbConditionalEdges)(c => CBLSIntVar(m, 1, 0 to 1, s"bridge_${c}_open"))
 
   val openBridges = filter(bridgeConditionArray).setName("openBridges")
 
@@ -80,7 +80,7 @@ object TspBridge extends App {
   // visu
 
   val visu = new TspBridgeVisu(graph, v = v, n,(a,b) => underApproximatingDistanceInGraphAllBridgesOpen(a)(b))
-  SingleFrameWindow.show(visu,"TspBridge(tspN:" + n + " tspV:" + v + " graphN:" + nbNodes + " graphE:" + (nbNonConditionalEdges + nbConditionalEdges) + " graphNCE:" + nbNonConditionalEdges + " graphCE:" + nbConditionalEdges + ")")
+  SingleFrameWindow.show(visu,s"TspBridge(tspN:$n tspV:$v graphN:$nbNodes graphE:${nbNonConditionalEdges + nbConditionalEdges} graphNCE:$nbNonConditionalEdges graphCE:$nbConditionalEdges)")
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -134,7 +134,7 @@ object TspBridge extends App {
     routeUnroutedPoint(50),
     myThreeOpt(20),
     profile(onePtMove(20))),refresh = 20)
-    onExhaust {println("finished inserts; neededBridges:" + neededConditions)}
+    onExhaust {println(s"finished inserts; neededBridges:$neededConditions")}
     exhaust (profile(closeAllUselessBridges) maxMoves 1)
     exhaust (
     bestSlopeFirst(
@@ -154,7 +154,7 @@ object TspBridge extends App {
       obj,
       randomizationName = "OpenAllBridges"))
     afterMove{
-    visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList.map(_.toInt), myVRP.routes.value)
+    visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList, myVRP.routes.value)
   }) showObjectiveFunction obj
 
   search.verbose = 1
@@ -165,8 +165,8 @@ object TspBridge extends App {
 
   println(myVRP)
   println(openBridges)
-  println("neededBridges:" + routeLengthInvar.neededConditions)
-  visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList.map(_.toInt), myVRP.routes.value)
+  println(s"neededBridges:${routeLengthInvar.neededConditions}")
+  visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList, myVRP.routes.value)
 
   println("Route Length :" + routeLength)
 
@@ -208,9 +208,9 @@ class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
         Color.RED
       }
       if(node.transitAllowed) {
-        drawRoundNode(node, color , radius = 3, toolTip = "routing" + node)
+        drawRoundNode(node, color , radius = 3, toolTip = s"routing$node")
       }else{
-        drawCrossNode(node ,color, side = 3, toolTip = "routing" + node)
+        drawCrossNode(node ,color, side = 3, toolTip = s"routing$node")
       }
     }
 
@@ -237,9 +237,9 @@ class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
     //underlying graph with small nodes, cross for non-transit nodes
     for(node <- graph.nodes){
       if(node.transitAllowed) {
-        drawRoundNode(node, Color.BLACK, 1,toolTip = "simple" + node)
+        drawRoundNode(node, Color.BLACK, 1,toolTip = s"simple$node")
       }else{
-        drawCrossNode(node ,Color.BLACK, side = 3,toolTip = "simple" + node)
+        drawCrossNode(node ,Color.BLACK, side = 3,toolTip = s"simple$node")
       }
     }
 
@@ -250,9 +250,9 @@ class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
     for(vehicle <- 0 until v){
       val node = graph.nodes(vehicle)
       if(node.transitAllowed) {
-        drawRoundNode(node, Color.ORANGE, radius = 5, "startPoint" + node)
+        drawRoundNode(node, Color.ORANGE, radius = 5, s"startPoint$node")
       }else{
-        drawCrossNode(node, Color.ORANGE, side = 5, "startPoint" + node)
+        drawCrossNode(node, Color.ORANGE, side = 5, s"startPoint$node")
       }
     }
 
