@@ -105,7 +105,7 @@ class WorkerActor(neighborhoods:SortedMap[Int,RemoteNeighborhood],
   def initBehavior():Behavior[MessageToWorker] = {
     Behaviors.setup { context =>
       master ! NewWorkerEnrolled(context.self)
-      if(verbose) context.log.info("ready for work")
+      if(verbose) context.log.info(s"ready for work nbNeighborhoods:${neighborhoods.size}")
       next(Idle())
     }
   }
@@ -115,7 +115,6 @@ class WorkerActor(neighborhoods:SortedMap[Int,RemoteNeighborhood],
       command match {
         case Ping(replyTo) =>
           replyTo ! Unit
-
           Behaviors.same
 
         case StartSearch(newSearch,startID,replyTo) =>

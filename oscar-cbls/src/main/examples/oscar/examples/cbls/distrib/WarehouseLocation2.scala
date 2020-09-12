@@ -83,21 +83,17 @@ object WarehouseLocationDistributed2 extends App{
       swapsNeighborhood(warehouseOpenArray,searchZone1 = () => myRange, name = "SwapWarehouses")
     }
 
+    val nbSmallSwaps = 5
+    val nbBigSwaps = 20
     //These neighborhoods are inefficient and slow; using multiple core is the wrong answer to inefficiency
     val neighborhood = (
-      new DistributedFirst(
-        Array(
-          assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
-          swapsK(2,modulo=0,shift=0),
-          swapsK(20,modulo=4,shift=0),
-          swapsK(20,modulo=4,shift=1),
-          swapsK(20,modulo=4,shift=2),
-          swapsK(20,modulo=4,shift=3),
-          swaps(modulo = 5,shift = 0),
-          swaps(modulo = 5,shift = 1),
-          swaps(modulo = 5,shift = 2),
-          swaps(modulo = 5,shift = 3),
-          swaps(modulo = 5,shift = 4)))
+      new DistributedFirst((
+        List(assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
+          swapsK(2,modulo=0,shift=0))
+          ++ ((0 until nbSmallSwaps).map((i:Int) => swapsK(20,modulo=nbSmallSwaps,shift=i)))
+          ++ ((0 until nbBigSwaps).map((i:Int) => swapsK(100,modulo=nbBigSwaps,shift=i)))
+        //  ++ ((0 until nbBigSwaps).map((i:Int) =>  swaps(modulo = nbBigSwaps,shift = i)))
+        ).toArray)
         onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray,() => W/10), 2, obj)
         onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/5), 2, obj))
 
@@ -111,8 +107,8 @@ object WarehouseLocationDistributed2 extends App{
 
   val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(store,search,tic = 500.millisecond,verbose = false)
 
-  val nbWorker = 5
-  
+  val nbWorker = 6
+
   for(_ <- (0 until nbWorker).par) {
     val (store2, search2, _, _) = createSearchProcedure()
     supervisor.createLocalWorker(store2,search2)
