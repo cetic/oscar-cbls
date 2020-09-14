@@ -53,7 +53,6 @@ object WarehouseLocationDistributed2 extends App{
     val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + l + "_open"))
     val openWarehouses = filter(warehouseOpenArray).setName("openWarehouses")
 
-
     val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
       minConstArrayValueWise(distanceCost(d).map(_.toInt), openWarehouses, defaultCostForNoOpenWarehouse))
 
@@ -65,7 +64,7 @@ object WarehouseLocationDistributed2 extends App{
     val closestWarehouses = Array.tabulate(W)(warehouse =>
       KSmallest.lazySort(
         Array.tabulate(W)(warehouse => warehouse),
-        otherwarehouse => warehouseToWarehouseDistances(warehouse)(otherwarehouse)
+        otherWarehouse => warehouseToWarehouseDistances(warehouse)(otherWarehouse)
       ))
 
     //this procedure returns the k closest closed warehouses
@@ -86,16 +85,17 @@ object WarehouseLocationDistributed2 extends App{
     val nbSmallSwaps = 5
     val nbBigSwaps = 20
     //These neighborhoods are inefficient and slow; using multiple core is the wrong answer to inefficiency
-    val neighborhood = (
+    val neighborhood = (profile(
       new DistributedFirst((
         List(assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
           swapsK(2,modulo=0,shift=0))
           ++ ((0 until nbSmallSwaps).map((i:Int) => swapsK(20,modulo=nbSmallSwaps,shift=i)))
           ++ ((0 until nbBigSwaps).map((i:Int) => swapsK(100,modulo=nbBigSwaps,shift=i)))
         //  ++ ((0 until nbBigSwaps).map((i:Int) =>  swaps(modulo = nbBigSwaps,shift = i)))
-        ).toArray)
+        ).toArray))
         onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray,() => W/10), 2, obj)
         onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/5), 2, obj))
+
 
     (m,neighborhood,obj,() => {println(openWarehouses)})
   }
@@ -119,7 +119,9 @@ object WarehouseLocationDistributed2 extends App{
   search2.verbose = 1
   search2.doAllMoves(obj = obj)
 
+  println(search2.profilingStatistics)
   supervisor.shutdown()
 
   finalPrint()
+//  System.exit(0)
 }

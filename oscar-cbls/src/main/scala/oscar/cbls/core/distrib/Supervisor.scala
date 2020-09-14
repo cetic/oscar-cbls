@@ -161,6 +161,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
     s"workers(total:${allKnownWorkers.size} busy:${allKnownWorkers.size - idleWorkers.size}) searches(waiting:${waitingSearches.size} starting:${startingSearches.size} running:${runningSearches.size} totalStarted:$totalStartedSearches)"
   }
 
+
   tic match{
     case _:Infinite => ;
     case f:FiniteDuration => context.scheduleOnce(f, context.self, Tic())

@@ -393,7 +393,8 @@ abstract class Neighborhood(name:String = null) {
 
   //Call this at the main site
   def labelNeighborhoodsForRemoteOperation(supervisor:Supervisor):Unit = {
-    labelAndExtractRemoteNeighborhoods(supervisor: Supervisor)
+    val nbNeighborhoods = labelAndExtractRemoteNeighborhoods(supervisor: Supervisor)._1
+    //println(s"identified remote neighborhoods; nbNeighborhoods:$nbNeighborhoods")
   }
   //Call this at the worker site
   def identifyNeighborhoodForWorker:SortedMap[Int,RemoteNeighborhood] = {
