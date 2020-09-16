@@ -147,11 +147,11 @@ class TestIntVar extends AnyFunSuite with Matchers {
     val x = CBLSIntVar(solver, 1, 1 to 10, "x")
     x.value should be(1)
 
-    x ++
+    x.++()
 
     x.value should be(2)
 
-    x ++
+    x.++()
 
     x.value should be(3)
   }

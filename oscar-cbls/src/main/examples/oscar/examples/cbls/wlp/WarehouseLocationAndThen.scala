@@ -50,9 +50,10 @@ object WarehouseLocationAndThen extends App{
 
   m.close()
 
-  val neighborhood = (AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
-    exhaustBack (AssignNeighborhood(warehouseOpenArray,"1") andThen AssignNeighborhood(warehouseOpenArray,"2"))
-    cutTail (100,0.1)
+  val neighborhood = (
+    (AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
+    exhaustBack (AssignNeighborhood(warehouseOpenArray,"1") andThen AssignNeighborhood(warehouseOpenArray,"2")))
+    .cutTail (100,0.1)
     orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2)
     saveBest obj restoreBestOnExhaust)
 

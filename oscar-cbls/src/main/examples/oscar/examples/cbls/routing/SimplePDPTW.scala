@@ -13,7 +13,7 @@ import scala.collection.immutable.HashSet
   * Created by fg on 12/05/17.
   */
 
-object SimplePDPTW extends App{
+object SimplePDPTW extends App {
   val m = Store(noCycle = false)
   val v = 10
   val n = 500
@@ -113,7 +113,7 @@ object SimplePDPTW extends App{
           nextMoveGenerator,
           None,
           Long.MaxValue,
-          false)
+          intermediaryStops = false)
       }) name "OneChainMove"
   }
 
@@ -163,7 +163,7 @@ object SimplePDPTW extends App{
           nextInsertGenerator,
           None,
           Long.MaxValue,
-          false)
+          intermediaryStops = false)
       }) name "OneChainInsert"
 
   }

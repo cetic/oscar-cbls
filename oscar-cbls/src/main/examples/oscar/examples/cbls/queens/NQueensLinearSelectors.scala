@@ -51,7 +51,7 @@ object NQueensLinearSelectors extends LinearSelectorClass(true) with StopWatch{
   def nStrings(N: Int, C: String): String = if (N <= 0) "" else s"$C${nStrings(N - 1, C)}"
   def padToLength(s: String, l: Int): String = (s + nStrings(l, " ")).substring(0, l)
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
 
     if (args.length<1) {
       println("Benchmarking NQueens - this takes time")
@@ -59,11 +59,11 @@ object NQueensLinearSelectors extends LinearSelectorClass(true) with StopWatch{
       println(padToLength("N", 15) + padToLength("tClose[ms]", 15) + padToLength("tTotal[ms]", 15) + "it")
 
       // first run could have some overhead so ignoring it
-      SolveNQueen(1000)
+      SolveNQueens(1000)
 
       // multiple runs
       for (n <- 1000 to 10000 by 1000){
-        SolveNQueen(n)
+        SolveNQueens(n)
         System.gc()
       }
 
@@ -71,13 +71,13 @@ object NQueensLinearSelectors extends LinearSelectorClass(true) with StopWatch{
       val N:Int=args(0).toInt
       println("Running NQueens - this takes time depending on N")
       println(padToLength("N", 15) + padToLength("tClose[ms]", 15) + padToLength("tTotal[ms]", 15) + "it")
-      SolveNQueen(1000)
+      SolveNQueens(1000)
       for(_ <- 1 to 5)
-        SolveNQueen(N)
+        SolveNQueens(N)
     }
   }
 
-  def SolveNQueen(N:Int){
+  def SolveNQueens(N:Int): Unit ={
     print(padToLength(s"$N", 15))
 
     startWatch()
@@ -118,7 +118,7 @@ object NQueensLinearSelectors extends LinearSelectorClass(true) with StopWatch{
         },()=>println("Warning: Tabu it too big compared to queens count"))},
         ()=>println("Warning: Tabu it too big compared to queens count"))
 
-      it ++ ()
+      it.++()
 
     }
 

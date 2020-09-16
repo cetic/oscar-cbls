@@ -79,7 +79,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
   private val aStarEngine = new RevisableAStar(graph: ConditionalGraph, underApproximatingDistance)
 
   //println(routes.toString() + v)
-  private var vehicleSearcher:((IntSequence,Int)=>Int) = if(v == 1) (_,_) => 0 else
+  private var vehicleSearcher:(IntSequence,Int)=>Int = if(v == 1) (_,_) => 0 else
     RoutingConventionMethods.cachedVehicleReachingPosition(routes.value, v)
 
   //fast query for the AStar algo.
@@ -602,7 +602,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
       require(minNode == info.minNode)
       require(maxNode == info.maxNode)
-      require(distance1 == distance2, distance1 + "==" +  distance2)
+      require(distance1 == distance2, s"$distance1==$distance2")
       //TODO: did fail
       require(info.distance == distance1,
         s"${info.distance}==$distance1 info:$info")

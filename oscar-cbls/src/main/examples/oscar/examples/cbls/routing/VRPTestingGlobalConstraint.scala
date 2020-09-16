@@ -16,7 +16,6 @@ object VRPTestingGlobalConstraint extends App {
   val nbNode = 150
   val nbVehicle = 4
   val model = Store() //checker = Some(new ErrorChecker))
-  //val model = new Store()
 
   val problem = new VRP(model,nbNode,nbVehicle)
 

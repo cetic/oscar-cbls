@@ -219,20 +219,18 @@ class KVoronoiZones(graph:ConditionalGraph,
       s"NodeLabeling(${node.id},${centroid.id},$distance,$position,$isInHeap)"
   }
 
-  implicit val A : Ordering[NodeLabeling] = new Ordering[NodeLabeling] {
-    override def compare(x: NodeLabeling, y: NodeLabeling): Int = {
-      if (x.node.id == y.node.id) {
-        if (x.centroid.id == y.centroid.id){
-          if (x.distance == y.distance && x.isInHeap == y.isInHeap)
-            0
-          else
-            throw new Error(s"Could not compare a node with same node and centroid - First :$x -- Second : $y")
-        }
+  implicit val A : Ordering[NodeLabeling] = (x: NodeLabeling, y: NodeLabeling) => {
+    if (x.node.id == y.node.id) {
+      if (x.centroid.id == y.centroid.id) {
+        if (x.distance == y.distance && x.isInHeap == y.isInHeap)
+          0
         else
-          y.centroid.id - x.centroid.id
-      } else {
-        y.node.id - x.node.id
+          throw new Error(s"Could not compare a node with same node and centroid - First :$x -- Second : $y")
       }
+      else
+        y.centroid.id - x.centroid.id
+    } else {
+      y.node.id - x.node.id
     }
   }
 
@@ -270,14 +268,14 @@ class KVoronoiZones(graph:ConditionalGraph,
         centroidMap.get(centroid.id) match {
           case None =>
             if (nbOfLabeledCentroid < k) {
-              val label = NodeLabeling(node,centroid,distance,0,false)
+              val label = NodeLabeling(node,centroid,distance,0,isInHeap = false)
               nbOfLabeledCentroid += 1
               centroidList = insertLabelInCentroidList(label,centroidList,1)
               centroidMap = centroidMap + (centroid.id -> label)
               Some(label)
             } else {
               if (farthestCentroidIsFarthestThan(distance, centroid.id)) {
-                val label = NodeLabeling(node,centroid,distance,0,false)
+                val label = NodeLabeling(node,centroid,distance,0,isInHeap = false)
                 centroidList = centroidList match {
                   case Nil => throw new Error(s"Node has $nbOfLabeledCentroid labeled but the list is Empty")
                   case h::t =>
@@ -377,18 +375,12 @@ class KVoronoiZones(graph:ConditionalGraph,
 
     def iterator: Iterator[(NodeLabeling, Int)] = {throw new Exception("enumeration not supported"); null}
 
-    // Scala 2.12
-    def +=(nodeLabelingAndPos : (NodeLabeling,Int)) = {
-    // Scala 2.13
-    // def addOne(nodeLabelingAndPos : (NodeLabeling,Int)) = {
+    def addOne(nodeLabelingAndPos : (NodeLabeling,Int)) = {
       nodeLabelingAndPos._1.positionInHeapMap = nodeLabelingAndPos._2
       this
     }
 
-    // Scala 2.12
-    def -=(nodeLabeling: NodeLabeling) = {
-    // Scala 2.13
-    // def subtractOne(nodeLabeling: NodeLabeling) = {
+    def subtractOne(nodeLabeling: NodeLabeling) = {
       nodeLabeling.positionInHeapMap = -1
       this
     }
@@ -705,7 +697,7 @@ class KVoronoiZones(graph:ConditionalGraph,
     def removeCentroidFromList(centroidList : List[Node],centroid : Node) : List[Node] = {
       centroidList match {
         case Nil => Nil
-        case head :: tail => if (head == centroid) tail else head::(removeCentroidFromList(tail,centroid))
+        case head :: tail => if (head == centroid) tail else head::removeCentroidFromList(tail,centroid)
       }
     }
 

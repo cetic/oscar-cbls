@@ -14,7 +14,7 @@ import oscar.cbls.util.StopWatch
 import oscar.cbls.visual.graph.GraphViewer
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 
-import scala.collection.immutable.SortedMap
+import scala.collection.immutable.{SortedMap, TreeMap}
 import scala.swing.Color
 
 object WLPWithRedundancy extends App with StopWatch{
@@ -41,16 +41,14 @@ object WLPWithRedundancy extends App with StopWatch{
 
   val costForOpeningWarehouse =  Array.fill[Long](W)(800)
 
-
   println("generate random graph")
   val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(
-    nbNodes=(W+D),
-    nbConditionalEdges=nbConditionalEdges,
-    nbNonConditionalEdges=nbNonConditionalEdges,
+    nbNodes = W+D,
+    nbConditionalEdges = nbConditionalEdges,
+    nbNonConditionalEdges = nbNonConditionalEdges,
     nbTransitNodes = W+D,
     mapSide = 800,
     seed = Some(2))
-
 
   val m = Store()//checker = Some(new ErrorChecker))
 
@@ -70,7 +68,7 @@ object WLPWithRedundancy extends App with StopWatch{
 
   var costOfBridgesPerBridge = 7
 
-  println("init VZone")
+  println("Init VZone")
 
   val kvor : KVoronoiZones= KVoronoiZones(graph,
     openEdges,
@@ -108,7 +106,7 @@ object WLPWithRedundancy extends App with StopWatch{
   visual.redrawMultipleNodes(
     openEdges.value,
     openWarehouses.value,
-    distanceToClosestCentroidMap.mapValues(tab => tab.map(centroidAndDistance => centroidAndDistance._1.valueInt)),
+    TreeMap(distanceToClosestCentroidMap.view.mapValues(tab => tab.map(centroidAndDistance => centroidAndDistance._1.valueInt)).toIndexedSeq:_*),
     k,
     extraCentroids = (0 until W).toArray,
     extraPath = List()
@@ -162,7 +160,7 @@ object WLPWithRedundancy extends App with StopWatch{
   var lastDisplay = this.getWatch
   println("Time to prepare: " + (System.currentTimeMillis() - timeStartingModel))
   val search =
-    (bestSlopeFirst(
+    bestSlopeFirst(
       List(
         profile(AssignNeighborhood(warehouseOpenArray,"Assign Warehouse")),
         profile(AssignNeighborhood(warehouseOpenArray,"OpenWarehouses",searchZone = () => openWarehouses.value)),
@@ -171,13 +169,13 @@ object WLPWithRedundancy extends App with StopWatch{
         swapWarehouseThenAssignEdge,
         profile(swapClosest(20))
       )
-    ) onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize1"), 4, obj)) afterMove (
+    ).onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize1"), 4, obj) afterMove (
       if(lastDisplay + displayDelay <= this.getWatch){ //} && obj.value < bestDisplayedObj) {
 
         visual.redrawMultipleNodes(
           openEdges.value,
           openWarehouses.value,
-          distanceToClosestCentroidMap.mapValues(tab => tab.map(centroidAndDistance => centroidAndDistance._1.valueInt)),
+          TreeMap(distanceToClosestCentroidMap.view.mapValues(tab => tab.map(centroidAndDistance => centroidAndDistance._1.valueInt)).toIndexedSeq:_*),
           k,
           extraPath = List(),
           extraCentroids = (0 until W).toArray)
@@ -198,7 +196,7 @@ object WLPWithRedundancy extends App with StopWatch{
   visual.redrawMultipleNodes(
     openEdges.value,
     openWarehouses.value,
-    distanceToClosestCentroidMap.mapValues(tab => tab.map(centroidAndDistance => {centroidAndDistance._1.valueInt})),
+    TreeMap(distanceToClosestCentroidMap.view.mapValues(tab => tab.map(centroidAndDistance => {centroidAndDistance._1.valueInt})).toIndexedSeq:_*),
     k,
     extraCentroids = (0 until W).toArray,
     extraPath = List()

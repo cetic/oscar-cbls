@@ -129,7 +129,7 @@ class TTFHistogram(val nbSlots: Int, val overallDuration: Int) extends Primitive
   private var max: Int = 0
 
   override def toString: String = {
-    s"TTFHistogram(nbSlots $nbSlots, ${ var strSlots = ""; for (slot <- slots) { strSlots += slot + "; " }; strSlots })"
+    s"TTFHistogram(nbSlots $nbSlots, ${ var strSlots = ""; for (slot <- slots) { strSlots += s"$slot; " }; strSlots })"
   }
 
   def setTravelDurationAtSlot(slotNumber: Int, duration: Int): Unit = {
@@ -173,7 +173,7 @@ class TTFHistogram(val nbSlots: Int, val overallDuration: Int) extends Primitive
     if (nbSlots == 1) {
       slots(0)
     }
-    var maxslot: Int = arrivalTime / slotDuration;
+    var maxslot: Int = arrivalTime / slotDuration
     var minslot: Int = 0
     while (minslot * slotDuration + getTravelDurationAtSlot(minslot) >= arrivalTime) {
       minslot -= nbSlots
@@ -297,9 +297,9 @@ class TTFSegments(val NbPoints: Int, val overallDuration: Int) extends Primitive
     val pointBefore = findLastPointBefore(leaveTime)
     val pointAfter = pointBefore + 1
 
-    linearInterpol(leaveTime,
-      getPointX(pointBefore), getPointY(pointBefore),
-      getPointX(pointAfter), getPointY(pointAfter)).toInt
+    linearInterpol(leaveTime.toFloat,
+      getPointX(pointBefore).toFloat, getPointY(pointBefore).toFloat,
+      getPointX(pointAfter).toFloat, getPointY(pointAfter).toFloat).toInt
   }
 
   @inline
@@ -346,9 +346,9 @@ class TTFSegments(val NbPoints: Int, val overallDuration: Int) extends Primitive
     assert(getPointX(pointBefore) + getPointY(pointBefore) <= arrivalTime)
     assert(arrivalTime <= getPointX(pointBefore + 1) + getPointY(pointBefore + 1))
 
-    linearInterpolBackward(arrivalTime,
-      getPointX(pointBefore), getPointY(pointBefore),
-      getPointX(pointBefore + 1), getPointY(pointBefore + 1)).toInt
+    linearInterpolBackward(arrivalTime.toFloat,
+      getPointX(pointBefore).toFloat, getPointY(pointBefore).toFloat,
+      getPointX(pointBefore + 1).toFloat, getPointY(pointBefore + 1).toFloat).toInt
   }
 
   @inline
@@ -360,43 +360,3 @@ class TTFSegments(val NbPoints: Int, val overallDuration: Int) extends Primitive
 
   override def toString: String = s"TTFSegments(NbPoints: $NbPoints overallDuration: $overallDuration points: [${(0 until NbPoints) map (i => "(" + pointX(i) + ";" + pointY(i) + ")") mkString ","}])"
 }
-//TODO Move these tests
-/*
-object TTFTest extends App {
-
-  val t = new TTFSegments(7, 24 * 60)
-  t.setPoint(0, 60 * 3, 10)
-  t.setPoint(1, 60 * 6, 20)
-  t.setPoint(2, 60 * 9, 30)
-  t.setPoint(3, 60 * 12, 20)
-  t.setPoint(4, 60 * 15, 30)
-  t.setPoint(5, 60 * 18, 30)
-  t.setPoint(6, 60 * 21, 10)
-
-  println(t)
-
-  println("leave\tarrive")
-  for (i <- 0 to (24 * 60) by 30) {
-    println(i + "\t" + t.getTravelDuration(i) + "\t" + t.getBackwardTravelDuration(t.getTravelDuration(i) + i))
-  }
-  println("min: " + t.getMinTravelDuration + " max: " + t.getMaxTravelDuration)
-}
-
-object TTFHistoTest extends App{
-  val t = new TTFHistogram(7, 24*60)
-
-  t.setTravelDurationAtSlot(0, 2*60)
-  t.setTravelDurationAtSlot(1, 2*60)
-  t.setTravelDurationAtSlot(2, 3*60)
-  t.setTravelDurationAtSlot(3, 6*60)
-  t.setTravelDurationAtSlot(4, 5*60)
-  t.setTravelDurationAtSlot(5, 4*60)
-  t.setTravelDurationAtSlot(6, 3*60)
-
-  println(t)
-  println("leave\tarrive")
-  for(i <- 0 to (24 * 60) by 30){
-    println(i + "\t" + t.getTravelDuration(i) + "\t" + t.getBackwardTravelDuration(t.getTravelDuration(i) + i))
-  }
-}
-*/

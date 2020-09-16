@@ -26,7 +26,7 @@ object DataStructSpeed extends App{
     println(s"Array: ${t1 - startTime}")
   }
 
-  def testList() {
+  def testList(): Unit = {
     val t1 = System.nanoTime()
     var i: Int = max
 
@@ -64,7 +64,7 @@ object DataStructSpeed extends App{
     println(s"QList: ${t3 - t2}")
   }
 
-  def test() {
+  def test(): Unit = {
     testArray()
     testList()
     testQList()

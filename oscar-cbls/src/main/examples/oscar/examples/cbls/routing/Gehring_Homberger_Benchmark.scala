@@ -15,6 +15,7 @@ import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.Best
 
 import scala.io.Source
+import scala.math.Ordering.Implicits.seqOrdering
 import scala.util.Random
 
 object Gehring_Homberger_Benchmark extends App {
@@ -29,7 +30,8 @@ object Gehring_Homberger_Benchmark extends App {
 
   private def generateProblem(file: File): (Int, Int, Long, Array[Array[Long]], Array[TransferFunction], Array[Long]) ={
     // Retrieve data from file
-    val lines = Source.fromFile(file).getLines
+    val bufSource = Source.fromFile(file)
+    val lines = bufSource.getLines()
     lines.next()        // NAME
     lines.next()        // blank space
     lines.next()        // VEHICLE
@@ -66,8 +68,8 @@ object Gehring_Homberger_Benchmark extends App {
   }
 
   private def generateMatrix(coords: Array[(Long,Long)]): Array[Array[Long]] = {
-    def distance(from: (Long, Long), to: (Long, Long)) =
-      math.ceil(math.sqrt(math.pow(from._1 - to._1, 2) + math.pow(from._2 - to._2, 2))*100.0).toLong
+    def distance(from: (Long, Long), to: (Long, Long)): Long =
+      math.ceil(math.sqrt(math.pow((from._1 - to._1).toDouble, 2.0) + math.pow((from._2 - to._2).toDouble, 2.0))*100.0).toLong
 
     //for each delivery point, the distance to each warehouse
     Array.tabulate(coords.length)(
@@ -119,7 +121,7 @@ class Gehring_Homberger_Benchmark_VRPTW(n: Int, v: Int, c: Long, distanceMatrix:
   val relevantSuccessorsOfNodes = TransferFunction.relevantSuccessorsOfNodes(n,v,singleNodeTransferFunctions, distanceMatrix)
   val closestRelevantNeighborsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(distanceMatrix,relevantPredecessorsOfNodes)(_))
 
-  def postFilter(node:Int): (Int) => Boolean = {
+  def postFilter(node:Int): Int => Boolean = {
     (neighbor: Int) => {
       val successor = myVRP.nextNodeOf(neighbor)
       myVRP.isRouted(neighbor) &&
@@ -167,14 +169,14 @@ class Gehring_Homberger_Benchmark_VRPTW(n: Int, v: Int, c: Long, distanceMatrix:
         NextRemoveGenerator(),
         None,
         Long.MaxValue,
-        false
+        intermediaryStops = false
       ).acceptAll(), _ > 1).guard(() => {
           movingVehiclesNow.value.nonEmpty
         }))
     }
   }
 
-  val routeUnroutedPoint =  profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(n,closestRelevantNeighborsByDistance(_)), myVRP,selectInsertionPointBehavior = Best(),neighborhoodName = "InsertUF"))
+  val routeUnroutedPoint =  profile(InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(n,closestRelevantNeighborsByDistance(_)), myVRP,selectInsertionPointBehavior = Best(),neighborhoodName = "InsertUF"))
 
 
   val search = (routeUnroutedPoint exhaust onePtMove(n/2)).

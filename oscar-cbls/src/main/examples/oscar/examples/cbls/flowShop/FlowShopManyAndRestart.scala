@@ -60,14 +60,15 @@ object FlowShopManyAndRestart extends CBLSModel with App {
   println("closing model")
   s.close()
 
-  val search = (BestSlopeFirst(
+  val search = BestSlopeFirst(
     List(
       shiftNeighborhood(jobSequence),
       rollNeighborhood(jobSequence),
       SwapsNeighborhood(jobSequence),
       WideningFlipNeighborhood(jobSequence)))
-    onExhaustRestartAfter (shuffleNeighborhood(jobSequence, numberOfShuffledPositions=() => nbJobs/2),3,obj)
-    onExhaustRestartAfter (shuffleNeighborhood(jobSequence),2,obj))
+    .onExhaustRestartAfter (shuffleNeighborhood(jobSequence, numberOfShuffledPositions=() => nbJobs/2),3,obj)
+    .onExhaustRestartAfter (shuffleNeighborhood(jobSequence),2,obj
+    )
 
   search.verbose = 2
 

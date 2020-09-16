@@ -41,7 +41,7 @@ abstract class Move(val objAfter:Long = Long.MaxValue, val neighborhoodName:Stri
     *
     * @return the list of touched variables.
    */
-  def touchedVariables:Iterable[Variable] = throw new Exception(this.getClass().getSimpleName + "cannot provide touched variables")
+  def touchedVariables:Iterable[Variable] = throw new Exception(this.getClass.getSimpleName + "cannot provide touched variables")
 
   /**
    * @return a readable string of the objective after wit ha space before, or an empty string
@@ -83,7 +83,7 @@ object Move{
 class CodedMove(code: => Unit, override val objAfter: Long, override val neighborhoodName: String = null)
   extends Move(objAfter, neighborhoodName){
 
-  override def commit(): Unit = {code}
+  override def commit(): Unit = code
 
 
   override def toString: String = neighborhoodNameToString + "CodedMove"
@@ -94,7 +94,7 @@ class CodedMove(code: => Unit, override val objAfter: Long, override val neighbo
   * since we are only inputting source code for executing the move
   * you must incorporate the obj into the move name in order to display it
   * */
-class EvaluableCodedMove(doAndUndo: () => (() => Unit),
+class EvaluableCodedMove(doAndUndo: () => () => Unit,
                          override val objAfter: Long = Long.MaxValue,
                          override val neighborhoodName: String = "EvaluableCodedMove",
                          val moveName:String = "EvaluableCodedMove")
@@ -206,7 +206,7 @@ case class ConstantMovesNeighborhood[MoveType<:Move](ms:() => Iterable[Long => M
                                                      neighborhoodName:String = "ConstantMovesNeighborhood")
   extends EasyNeighborhoodMultiLevel[MoveType](neighborhoodName) {
 
-  var currentMove:(Long => MoveType) = null
+  var currentMove:Long => MoveType = null
 
   /**
     * This is the method you must implement and that performs the search of your neighborhood.
@@ -270,7 +270,7 @@ case class DoNothingMove(override val objAfter:Long,override val neighborhoodNam
 case class CompositeMove(ml:List[Move], override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
-  def this(ml:List[Move]){
+  def this(ml:List[Move]) = {
     this(ml, ml.last.objAfter)
   }
 

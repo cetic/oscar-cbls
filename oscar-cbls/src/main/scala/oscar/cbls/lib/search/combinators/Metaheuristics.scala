@@ -60,7 +60,7 @@ class Metropolis(a: Neighborhood, iterationToTemperature: Long => Double = _ => 
       //println("relativeIncrease: " + relativeIncrease)
       //println("temp:" + temperatureValue)
 
-      val toReturn = math.random < math.pow(base, - relativeIncrease / temperatureValue)
+      val toReturn = math.random() < math.pow(base, - relativeIncrease / temperatureValue)
 
       //println("metropolis decision: " + toReturn)
 
@@ -89,7 +89,6 @@ class Metropolis(a: Neighborhood, iterationToTemperature: Long => Double = _ => 
  *
  * @param a the neighborhood to consider
  * @param additionalConstraint an additional constraint, considered as a weak constraint at startup, and gradually, as a strong constraint.
- * @maxValueForObj the maximal value for the objective function and for the constraint (do not exceed MaxInt)
  */
 @deprecated("use GLS3 instead","")
 class GuidedLocalSearch(a: Neighborhood,
@@ -220,7 +219,7 @@ class GuidedLocalSearch(a: Neighborhood,
     } else {
       //solving violation, forget about obj
 
-      require(false, "should not happen")
+      require(requirement = false, "should not happen")
       null
     }
   }

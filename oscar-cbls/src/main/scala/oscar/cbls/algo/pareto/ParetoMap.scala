@@ -212,6 +212,6 @@ object TestParetoList extends App{
     for(j <- r){
       print("\t" + union(i,j))
     }
-    println
+    println()
   }
 }

@@ -36,7 +36,7 @@ object Benchmark extends StopWatch {
     }
 
   def benchToStringSimple(obj:Objective, nRuns:Int, strategies:Iterable[Neighborhood],verbose:Int = 0):String = {
-    benchToStringFull(obj,nRuns,strategies.map(n => (() => {n.reset(); (n.toString,n)})),verbose)
+    benchToStringFull(obj,nRuns,strategies.map(n => () => {n.reset(); (n.toString,n)}),verbose)
   }
 
   def statsToString(stats: Iterable[(String, RunStatistics)]) = {
@@ -67,7 +67,7 @@ object Benchmark extends StopWatch {
           strategyInstance._2.verbose = 0
           if (verbose > 1) println(s"Warm up run of ${strategyInstance._1}")
           strategyInstance._2.doAllMoves(_ => false, obj)
-          if (this.getWatch >= warmupInMs) break
+          if (this.getWatch >= warmupInMs) break()
         }
       }
     }

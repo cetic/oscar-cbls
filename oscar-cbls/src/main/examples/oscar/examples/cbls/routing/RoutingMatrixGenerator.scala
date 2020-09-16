@@ -39,8 +39,8 @@ object RoutingMatrixGenerator {
     def randomXY: Long = (random.nextFloat() * side).toLong
     val pointPosition: Array[(Long, Long)] = Array.tabulate(n)(w => (randomXY, randomXY))
 
-    def distance(from: (Long, Long), to: (Long, Long)) =
-      math.sqrt(math.pow(from._1 - to._1, 2) + math.pow(from._2 - to._2, 2)).toLong
+    def distance(from: (Long, Long), to: (Long, Long)): Long =
+      math.sqrt(math.pow((from._1 - to._1).toDouble, 2.0) + math.pow((from._2 - to._2).toDouble, 2.0)).toLong
 
     //for each delivery point, the distance to each warehouse
     (Array.tabulate(n)(
@@ -127,7 +127,7 @@ object RoutingMatrixGenerator {
     */
   def generateChainsPrecedence(n: Int, v: Int, nbPrecedences:Int, maxSize: Int = 2): (List[List[Int]], List[(Int,Int)]) = {
     val allNodes = (v until n).toList
-    val randomizedNodes = random.shuffle(allNodes).toIterator
+    val randomizedNodes = random.shuffle(allNodes).iterator
 
     var currentMaxSize = maxSize
     var precedencesToGenerate = nbPrecedences

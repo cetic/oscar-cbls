@@ -90,8 +90,8 @@ object Overlap {
 
     //we search for point within zone on a grid such that no immediate neighbors on the grid ius closer to the shape.
 
-    val boundingBox = outer.getEnvelope()
-    val coordinates = boundingBox.getCoordinates()
+    val boundingBox = outer.getEnvelope
+    val coordinates = boundingBox.getCoordinates
     val minX = coordinates(0).x.toLong
     val minY = coordinates(0).y.toLong
     val maxX = coordinates(2).x.toLong
@@ -109,7 +109,7 @@ object Overlap {
     for(xId <- 0 to nbSteps1D){
       for(yId <- 0 to nbSteps1D){
 
-        val pt = geometry.point(xs(xId),ys(yId))
+        val pt = geometry.point(xs(xId).toDouble,ys(yId).toDouble)
         if(indexedOuter.covers(pt) && ! indexedZoneFilled.covers(pt)){
           //it contains it :-)
           //commputes the min distance to any edge of the zone
@@ -153,7 +153,7 @@ object Overlap {
   private def computeDistance(shape1:Geometry,point:Point):Double = {
     val ptDist = new PointPairDistance()
     DistanceToPoint.computeDistance(shape1,point.getCoordinate,ptDist) //in distance among all points of the geometry and other point
-    ptDist.getDistance()
+    ptDist.getDistance
   }
 }
 
@@ -276,7 +276,7 @@ class NoOverlapPenetration(shapes:Array[AtomicValue[GeometryValue]],preComputeAl
   private def computeDistance(shape1:Geometry,point:Point):Double = {
     val ptDist = new PointPairDistance()
     DistanceToPoint.computeDistance(shape1,point.getCoordinate,ptDist) //in distance among all points of the geometry and other point
-    ptDist.getDistance()
+    ptDist.getDistance
   }
 }
 
@@ -403,7 +403,7 @@ class NoOverlapPenetrationMargins(shapes:Array[AtomicValue[GeometryValue]],
   private def computeOverlapViolationMarginPoly(shape1:GeometryValue,margin1:Long,id1:Int,shape2:GeometryValue,id2:Int):Long = {
     //here, we use the minDistance point to shape
     //but before, the quick distance stuff
-    val distanceWithApproximatingCircle = (shape1.centerOfOverApproximatingCircle distance shape2.centerOfOverApproximatingCircle)
+    val distanceWithApproximatingCircle = shape1.centerOfOverApproximatingCircle distance shape2.centerOfOverApproximatingCircle
 
     val mightOverlapBasedOnOverApproximatingCirle = distanceWithApproximatingCircle < (margin1 + shape2.overApproximatingRadius)
     if(!mightOverlapBasedOnOverApproximatingCirle) return 0
@@ -419,7 +419,7 @@ class NoOverlapPenetrationMargins(shapes:Array[AtomicValue[GeometryValue]],
   }
 
   private def computeOverlapViolationMarginMargin(shape1:GeometryValue,margin1:Long,id1:Int,shape2:GeometryValue,margin2:Long,id2:Int):Long = {
-    val distance = (shape1.centerOfOverApproximatingCircle distance shape2.centerOfOverApproximatingCircle)
+    val distance = shape1.centerOfOverApproximatingCircle distance shape2.centerOfOverApproximatingCircle
 
     if(distance >= (margin1 + margin2)) 0
     else{
@@ -478,6 +478,6 @@ class NoOverlapPenetrationMargins(shapes:Array[AtomicValue[GeometryValue]],
   private def computeDistance(shape1:Geometry,point:Point):Double = {
     val ptDist = new PointPairDistance()
     DistanceToPoint.computeDistance(shape1,point.getCoordinate,ptDist) //in distance among all points of the geometry and other point
-    ptDist.getDistance()
+    ptDist.getDistance
   }
 }

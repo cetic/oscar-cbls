@@ -22,7 +22,7 @@ import scala.util.Random
   * in such a way that there is no overlap between these shapes.
   * it proceeds through local search (although a more symbolic insertion-based technique would be more efficient
   */
-object TestGeometryPackingRot extends App with LinearSelectors{
+object TestGeometryPackingRot extends App with LinearSelectors {
 
   val store = Store()
 
@@ -50,7 +50,7 @@ object TestGeometryPackingRot extends App with LinearSelectors{
 
   //creating a set of constant shapes with center at 0,0
   val constantShapesAt00 = Array.tabulate(nbShapes){ i =>
-    new CBLSGeometryConst(store,
+    CBLSGeometryConst(store,
       if(i%2 ==0) {
         geometry.createRectangle(radiusArray(i)*2,radiusArray(i)*2)
       } else {
@@ -124,14 +124,14 @@ object TestGeometryPackingRot extends App with LinearSelectors{
   val drawing = GeometryDrawing(List.empty, GeometryDrawingTypes.Simple)
 
   //this method is for updating the display, throughout the search, or after the search
-  def updateDisplay() {
-    val colorsIt = randomColors.toIterator
+  def updateDisplay(): Unit = {
+    val colorsIt = randomColors.iterator
     drawing.drawShapes(shapes =
       (outerFrame,Some(Color.red),None,"")::
         Array.tabulate(nbShapes)(circleID => (
           placedShapes(circleID).value.geometry,
           None,
-          Some(colorsIt.next),
+          Some(colorsIt.next()),
           overlapPenetrationPerShape(circleID).toString)).toList.reverse,
       centers = coordArray.toList.map(xy => (xy._1.value,xy._2.value)))
   }
@@ -182,7 +182,7 @@ object TestGeometryPackingRot extends App with LinearSelectors{
   )
 
   def rotate(i:Int) = NumericAssignNeighborhood(Array(rotationArray(i)),"rotate_" + i,
-    domainExplorer = () => (step: Int, maxIt: Long) => new NarrowingExhaustive(dividingRatio = 5) modulo(180)
+    domainExplorer = () => (step: Int, maxIt: Long) => new NarrowingExhaustive(dividingRatio = 5) modulo 180
     //these are alternative methods for the numerical optimization
     // new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
@@ -277,7 +277,7 @@ object TestGeometryPackingRot extends App with LinearSelectors{
 
   def swapAndGradient = swapX dynAndThen(swapMove => (
     swapYSlave(swapMove.idI,swapMove.idJ)
-      andThen new Atomic(gradientOnOneShape(swapMove.idI),
+      andThen Atomic(gradientOnOneShape(swapMove.idI),
       _>1,
       stopAsSoonAsAcceptableMoves=true))) name "swap&Gradient"
 
@@ -286,7 +286,7 @@ object TestGeometryPackingRot extends App with LinearSelectors{
 
   val search = (Profile(BestSlopeFirst(
     List(
-      atomic(gradientAndRotate(0), _ > 10) name "grad&Rot0",  //TODO: try gradient on multiple shapes at the same time.
+      Atomic(gradientAndRotate(0), _ > 10) name "grad&Rot0",  //TODO: try gradient on multiple shapes at the same time.
       Atomic(gradientAndRotate(1), _ > 10) name "grad1",
       Atomic(gradientAndRotate(2), _ > 10) name "grad&Rot2",
       Atomic(gradientAndRotate(3), _ > 10) name "grad3",
@@ -305,7 +305,7 @@ object TestGeometryPackingRot extends App with LinearSelectors{
       swapAndGradient,
       moveOneShapeYAndThenX).map(Profile(_)),
     refresh=nbShapes*10))
-    onExhaustRestartAfterJump(
+    .onExhaustRestartAfterJump(
     {
       //this is the randomization procedure
       for(i <- Random.shuffle(flattenedCoordArray.indices.toList).take(flattenedCoordArray.length/5)){
@@ -319,7 +319,7 @@ object TestGeometryPackingRot extends App with LinearSelectors{
     maxRestartWithoutImprovement = 2,
     restartFromBest = true,
     obj=obj)
-    onExhaustRestartAfterJump(
+    .onExhaustRestartAfterJump(
     {
       //this is the randomization procedure
       for(i <- flattenedCoordArray.indices.toList){
@@ -346,7 +346,7 @@ object TestGeometryPackingRot extends App with LinearSelectors{
   updateDisplay() //after finish
 
   println(search.profilingStatistics)
-  println
+  println()
   println(overlapPenetrationPerShape.mkString("\n"))
   println(overlapPenetrationConstraint.output)
 }

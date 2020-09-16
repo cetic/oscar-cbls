@@ -91,7 +91,7 @@ object TspBridge extends App {
   val closestRoutingPoint:Array[Iterable[Int]] = Array.tabulate(n)((nodeInGraph:Int) =>
     KSmallest.lazySort(
       Array.tabulate(n)(i => i),
-      (otherNode:Int) => underApproximatingDistanceInGraphAllBridgesOpen(nodeInGraph)(otherNode.toInt)
+      (otherNode:Int) => underApproximatingDistanceInGraphAllBridgesOpen(nodeInGraph)(otherNode)
     ))
 
   // Takes an unrouted node and insert it at the best position within the 10 closest nodes (inserting it after this node)
@@ -112,7 +112,7 @@ object TspBridge extends App {
 
   def myThreeOpt(k:Int) = profile(
     threeOpt(potentialInsertionPoints = myVRP.routed,
-      relevantNeighbors =()=>myVRP.kFirst(k,(x:Int) =>closestRoutingPoint(x.toInt),routedPostFilter),
+      relevantNeighbors =()=>myVRP.kFirst(k,(x:Int) =>closestRoutingPoint(x),routedPostFilter),
       vrp = myVRP))
 
   def switchBridge = assignNeighborhood(bridgeConditionArray,"switchBridge")
@@ -136,7 +136,7 @@ object TspBridge extends App {
     profile(onePtMove(20))),refresh = 20)
     onExhaust {println(s"finished inserts; neededBridges:$neededConditions")}
     exhaust (profile(closeAllUselessBridges) maxMoves 1)
-    exhaust (
+    exhaust
     bestSlopeFirst(
       List(
         profile(onePtMove(40)),
@@ -146,13 +146,13 @@ object TspBridge extends App {
         profile(onePtMove(20) andThen switchBridge name "switchAndMove"),
         profile(switchBridge)),
       refresh = 10)
-      onExhaustRestartAfterJump(
+      .onExhaustRestartAfterJump(
         for(bridge <- bridgeConditionArray.indices){
           bridgeConditionArray(bridge) := 1
         },
       maxRestartWithoutImprovement = 2,
       obj,
-      randomizationName = "OpenAllBridges"))
+      randomizationName = "OpenAllBridges")
     afterMove{
     visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList, myVRP.routes.value)
   }) showObjectiveFunction obj

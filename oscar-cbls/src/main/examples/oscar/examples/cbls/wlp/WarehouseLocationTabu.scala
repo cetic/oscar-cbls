@@ -28,7 +28,7 @@ import oscar.cbls.lib.search.neighborhoods.{AssignMove, AssignNeighborhood}
   * additional behaviors. Here, we restrict a neighborhood to a specific set of variables that not tabu
   * this set of variables is maintained through invariants
   */
-object WarehouseLocationTabu extends App{
+object WarehouseLocationTabu extends App {
 
   //the number of warehouses
   val W:Int = 50
@@ -76,14 +76,14 @@ object WarehouseLocationTabu extends App{
       "SwitchWarehouseTabu",
       searchZone = nonTabuWarehouses, //select non tabu warehouses only
       selectIndiceBehavior = Best(),
-      hotRestart = false) //we do not need hot restart since looking for best
-    afterMoveOnMove((a:AssignMove) => {
+      hotRestart = false
+    ) //we do not need hot restart since looking for best
+    .afterMoveOnMove((a:AssignMove) => {
       //update the tabu mechanics
-    TabuArray(a.id) := It.value + tabuTenure
-    It :+= 1
+      TabuArray(a.id) := It.value + tabuTenure
+      It :+= 1
       println(nonTabuWarehouses)
-  })
-    acceptAll()
+    }).acceptAll()
     maxMoves W withoutImprovementOver obj
     saveBestAndRestoreOnExhaust obj
     showObjectiveFunction obj)

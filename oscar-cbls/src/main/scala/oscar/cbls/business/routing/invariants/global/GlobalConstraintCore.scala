@@ -453,7 +453,7 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
       def checkSegment(segmentsToExplore: QList[Segment], counter: Int = initCounter, exploredSegments: QList[Segment] = null): (Segment, QList[Segment], QList[Segment], Int) ={
         require(segmentsToExplore != null, "Shouldn't happen, it means that the desired position is not within this vehicle route")
         val segment = segmentsToExplore.head
-        val newCounter = counter + segment.length
+        val newCounter = counter + segment.length()
         if(newCounter >= pos)
           (segment, if(exploredSegments != null) exploredSegments.reverse else exploredSegments, segmentsToExplore.tail, counter)
         else
@@ -464,7 +464,7 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
     }
 
     def length(): Int ={
-      QList.qFold[Segment, Int](segments, (acc, item) => acc + item.length, 0)
+      QList.qFold[Segment, Int](segments, (acc, item) => acc + item.length(), 0)
     }
 
     override def toString: String ={

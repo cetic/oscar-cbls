@@ -124,8 +124,8 @@ object GraphPartition extends CBLSModel with App {
         //  searchZone2 = (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).value != itsPartition),
         //  name = "swapAdjacent"))
       ),refresh = nbNodes/10)
-      onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/100, name = s"randomize${nbNodes/100}"), 3, obj)
-    showObjectiveFunction(obj))
+      .onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/100, name = s"randomize${nbNodes/100}"), 3, obj)
+    showObjectiveFunction obj)
   //exhaust profile(swapsNeighborhood(nodeToPartition, //this one is the most complete of swaps, but highly inefficient compared tpo the others,and I think that it does not bring in more connexity than others (althrough I am not so suer...)
   //  symmetryCanBeBrokenOnIndices = true,
   //  searchZone2 = () => {val v = violatedNodes.value; (_,_) => v}, //we should filter on nodes with a violation higher than the gain on swapping the violation of the first node

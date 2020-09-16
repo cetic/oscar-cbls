@@ -59,7 +59,7 @@ object SimpleVRPWithTimeWindow extends App{
   val relevantPredecessorsOfNodes = TransferFunction.relevantPredecessorsOfNodes(n,v,singleNodeTransferFunctions,timeMatrix)
   val relevantSuccessorsOfNodes = TransferFunction.relevantSuccessorsOfNodes(n,v, singleNodeTransferFunctions, timeMatrix)
 
-  def postFilter(node:Int): (Int) => Boolean = {
+  def postFilter(node:Int): Int => Boolean = {
     (neighbor: Int) => {
       val successor = myVRP.nextNodeOf(neighbor)
       myVRP.isRouted(neighbor) &&
@@ -115,7 +115,7 @@ object SimpleVRPWithTimeWindow extends App{
           nextMoveGenerator,
           None,
           Long.MaxValue,
-          false)
+          intermediaryStops = false)
       })name "OneChainMove")
   }
 
@@ -178,7 +178,7 @@ object SimpleVRPWithTimeWindow extends App{
           nextInsertGenerator,
           None,
           Long.MaxValue,
-          false)
+          intermediaryStops = false)
       })name "OneChainInsert")
 
   }
@@ -227,7 +227,8 @@ object SimpleVRPWithTimeWindow extends App{
   //val routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "InsertUF"))
 
 
-  val search = bestSlopeFirst(List(oneChainInsert,oneChainMove,segExchangeOnSegments(5),onePtMove(20)))onExhaustRestartAfter(atomic(oneChainRemove.acceptAll(), _ > 5),3, obj)
+  val search = bestSlopeFirst(List(oneChainInsert,oneChainMove,segExchangeOnSegments(5),onePtMove(20)))
+    .onExhaustRestartAfter(atomic(oneChainRemove.acceptAll(), _ > 5),3, obj)
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 

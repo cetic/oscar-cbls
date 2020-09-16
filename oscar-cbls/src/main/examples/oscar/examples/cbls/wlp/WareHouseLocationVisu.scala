@@ -77,9 +77,9 @@ object WareHouseLocationVisu extends App with StopWatch{
     ))
 
   //this procedure returns the k closest closed warehouses
-  def kNearestClosedWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).newValue == 0)
+  def kNearestClosedWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = otherWarehouse => warehouseOpenArray(otherWarehouse).newValue == 0)
   //this procedure returns the k closest open warehouses
-  def kNearestOpenWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).newValue != 0)
+  def kNearestOpenWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = otherWarehouse => warehouseOpenArray(otherWarehouse).newValue != 0)
   def kNearestdWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse))
 
   def muLine(depth:Int,kOpen:Int,kClosed:Int ) = Mu[AssignMove](
@@ -118,15 +118,16 @@ object WareHouseLocationVisu extends App with StopWatch{
   var lastDisplay = this.getWatch
 
   val neighborhood =(
-    (BestSlopeFirst(
+    BestSlopeFirst(
       List(
         Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
         Profile(swapsK(20) guard(() => openWarehouses.value.size >= 5)), //we set a minimal size because the KNearest is very expensive if the size is small
         Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
       ),refresh = W/10)
-      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5,name="smallRandom"), 2, obj)
-      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,name="bigRandom"), 1, obj)
-    ) exhaust Profile(muLine(4,3,15))) afterMove(
+      .onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5,name="smallRandom"), 2, obj)
+      .onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,name="bigRandom"), 1, obj)
+    exhaust Profile(muLine(4,3,15))
+    ) afterMove (
     //if(obj.value < bestObj){
      // bestObj = obj.value
       if(this.getWatch > lastDisplay + displayDelay) {
@@ -134,7 +135,7 @@ object WareHouseLocationVisu extends App with StopWatch{
         lastDisplay = this.getWatch
       }
     //}
-    ) showObjectiveFunction(obj)
+    ) showObjectiveFunction obj
 
   neighborhood.verbose = 2
 
@@ -151,7 +152,7 @@ object WareHouseLocationVisu extends App with StopWatch{
 
   neighborhood.doAllMoves(obj=obj)
 
-  visual.redraw(openWarehouses.value,false)
+  visual.redraw(openWarehouses.value,boldChanges = false)
 
   println(neighborhood.profilingStatistics)
 

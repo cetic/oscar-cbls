@@ -14,7 +14,6 @@
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  * ****************************************************************************
  */
-
 package oscar.cbls.lib.search.neighborhoods.vlsn
 
 import oscar.cbls.core.computation.Store
@@ -149,7 +148,7 @@ class MoveExplorer(v:Int,
 
   val edgeBuilder: VLSNEdgeBuilder = new VLSNEdgeBuilder(nodes, nbLabels, v)
 
-  val nbNodesInVLSNGraph = nodes.size
+  val nbNodesInVLSNGraph = nodes.length
   def nbEdgesInGraph:Int = edgeBuilder.nbEdges
 
   // /////////////////////////////////////////////////////////////
@@ -160,7 +159,7 @@ class MoveExplorer(v:Int,
 
   val vehicleIsDirty:Array[Boolean] = Array.fill(v)(false)
 
-  val nodeIsDirty:Array[Boolean] = Array.fill(((nodesToMove ++ unroutedNodesToInsert).max)+1)(false)
+  val nodeIsDirty:Array[Boolean] = Array.fill((nodesToMove ++ unroutedNodesToInsert).max+1)(false)
 
   def isMoveToExplore(fromNode:Int, fromVehicle:Int, toVehicle:Int, toNode:Int = -1):Boolean = {
     if(nodeIsDirty(fromNode)
@@ -194,7 +193,7 @@ class MoveExplorer(v:Int,
   addTrashNodeToUnroutedNodes()
   exploreEjections()
 
-  def injectAllCache(verbose:Boolean){}
+  def injectAllCache(verbose:Boolean): Unit = {}
 
   var nbExploredMoves = 0
   var nbExploredEdges = 0
@@ -234,7 +233,7 @@ class MoveExplorer(v:Int,
   val acceptAllButMaxInt: (Long, Long) => Boolean = (_, newObj: Long) => newObj != maxLong
 
   // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  private def exploreInsertions(){
+  private def exploreInsertions(): Unit ={
 
     val vehicleAndUnroutedNodes: Iterable[(Int, Int)] =
       unroutedNodesToInsert.flatMap((unroutedNode:Int) =>
@@ -243,7 +242,11 @@ class MoveExplorer(v:Int,
           if(vehicleIsDirty(vehicle)) None
           else Some((vehicle, unroutedNode))))
 
-    val vehicleToUnroutedNodeToInsert = vehicleAndUnroutedNodes.groupBy(_._1).mapValues(_.map(_._2))
+    val vehicleToUnroutedNodeToInsert = vehicleAndUnroutedNodes
+      .groupBy(_._1)
+      .view
+      .mapValues(_.map(_._2))
+      .toMap
 
     exploreInsertionsNoRemove(vehicleToUnroutedNodeToInsert)
     exploreInsertionsWithRemove(vehicleToUnroutedNodeToInsert)
@@ -268,7 +271,7 @@ class MoveExplorer(v:Int,
           evaluateInsertOnVehicleNoRemove(
             unroutedNodeToInsert: Int,
             targetVehicleForInsertion: Int,
-            true) match {
+            cached = true) match {
             case null => ;
             case (move, delta) =>
               val symbolicNodeToInsert = nodeIDToNode(unroutedNodeToInsert)
@@ -355,7 +358,7 @@ class MoveExplorer(v:Int,
             targetVehicleForInsertion: Int,
             routingNodeToRemove: Int,
             correctedGlobalInit: Long,
-            true) match {
+            cached = true) match {
             case null => ;
             case (move, delta) =>
               val symbolicNodeToInsert = nodeIDToNode(unroutedNodeToInsert)
@@ -415,7 +418,11 @@ class MoveExplorer(v:Int,
           if(vehicleIsDirty(vehicle)) None
           else Some((vehicle,nodeToMove))))
 
-    val vehicleToNodeToMoveThere = vehicleAndNodeToMove.groupBy(_._1).mapValues(_.map(_._2))
+    val vehicleToNodeToMoveThere = vehicleAndNodeToMove
+      .groupBy(_._1)
+      .view
+      .mapValues(_.map(_._2))
+      .toMap
 
     exploreNodeMoveNoRemove(vehicleToNodeToMoveThere)
     exploreNodeMoveWithRemove(vehicleToNodeToMoveThere)
@@ -442,7 +449,7 @@ class MoveExplorer(v:Int,
 
           //move without remove
           //     :(Int,Int) => Neighborhood,
-          evaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle, targetVehicleID: Int, true) match {
+          evaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle, targetVehicleID: Int, cached = true) match {
             case null => //println("No Accepted Move")
               ;
             case (move, delta) =>
@@ -627,7 +634,7 @@ class MoveExplorer(v:Int,
   // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   private def addTrashNodeToUnroutedNodes(): Unit ={
-    for(unroutedNode <- unroutedNodesToInsert if (!nodeIsDirty(unroutedNode))){
+    for(unroutedNode <- unroutedNodesToInsert if !nodeIsDirty(unroutedNode)){
       edgeBuilder.addEdge(trashNode,nodeIDToNode(unroutedNode),0L,null,VLSNMoveType.SymbolicTrashToInsert)
     }
   }
@@ -638,7 +645,7 @@ class MoveExplorer(v:Int,
   // but with delta equal to impact of removing the node from the route.
   private def exploreEjections(): Unit = {
     for ((vehicleID, routingNodesToRemove) <- vehicleToRoutedNodes if !vehicleIsDirty(vehicleID)) {
-      for (routingNodeToRemove <- routingNodesToRemove if (!nodeIsDirty(routingNodeToRemove))) {
+      for (routingNodeToRemove <- routingNodesToRemove if !nodeIsDirty(routingNodeToRemove)) {
         nbExploredEdges += 1
         evaluateRemoveOnSourceVehicle(routingNodeToRemove:Int,vehicleID) match{
           case null => ;

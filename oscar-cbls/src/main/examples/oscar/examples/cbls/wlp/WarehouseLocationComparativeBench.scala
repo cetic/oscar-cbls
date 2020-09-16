@@ -18,7 +18,7 @@ import oscar.cbls._
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.minmax.MinConstArrayLazy
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, FastestFirst, LearningRandom}
+import oscar.cbls.lib.search.combinators.{BestSlopeFirst, FastestFirst}
 import oscar.cbls.lib.search.neighborhoods.{AssignMove, AssignNeighborhood, RandomizeNeighborhood, SwapsNeighborhood}
 import oscar.cbls.util.Benchmark
 
@@ -38,11 +38,11 @@ object WarehouseLocationComparativeBench extends App{
 
   val m = Store()
 
-  val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, "warehouse_${l}_open"))
+  val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, s"warehouse_${l}_open"))
   val openWarehouses = Filter(warehouseOpenArray).setName("openWarehouses")
 
   val distanceToNearestOpenWarehouse = Array.tabulate(D)(d =>
-    MinConstArrayLazy(distanceCost(d).map(_.toInt), openWarehouses, defaultCostForNoOpenWarehouse).setName("distance_for_delivery_$d"))
+    MinConstArrayLazy(distanceCost(d).map(_.toInt), openWarehouses, defaultCostForNoOpenWarehouse).setName(s"distance_for_delivery_$d"))
 
   val obj = Objective(Sum(distanceToNearestOpenWarehouse) + Sum(costForOpeningWarehouse, openWarehouses))
 
@@ -76,7 +76,7 @@ object WarehouseLocationComparativeBench extends App{
     orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
 
   val neighborhood5 = ()=>("simulatedAnnealing",AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
-    metropolis() maxMoves W/2 withoutImprovementOver obj saveBest obj restoreBestOnExhaust)
+    .metropolis() maxMoves W/2 withoutImprovementOver obj saveBest obj restoreBestOnExhaust)
 
   val neighborhood6 = ()=>("roundRobin",AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
     roundRobin SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") step 1
@@ -88,7 +88,7 @@ object WarehouseLocationComparativeBench extends App{
 
   val neighborhood8 = ()=>("DynAndThen",
     AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse1") dynAndThen
-      {case AssignMove(variable,value,id,_,_) => AssignNeighborhood(warehouseOpenArray, searchZone = (()=> (id+1 until W)),name="SwitchWarehouse2")}
+      {case AssignMove(variable,value,id,_,_) => AssignNeighborhood(warehouseOpenArray, searchZone = () => id+1 until W, name="SwitchWarehouse2")}
     orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
 
   val neighborhood9 = ()=>("AndThen",

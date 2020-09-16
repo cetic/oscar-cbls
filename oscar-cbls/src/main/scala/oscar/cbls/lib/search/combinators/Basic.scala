@@ -66,7 +66,7 @@ class MaxMoves(a: Neighborhood, val maxMove: Long, cond: Option[Move => Boolean]
       }
     } else {
       if (verbose >= 1L)
-        println("MaxMoves: reached " + (if (maxMove == 1L) "1 move " else maxMove + " moves"))
+        println(s"MaxMoves: reached ${if (maxMove == 1L) "1 move " else s"$maxMove moves"}")
       NoMoveFound
     }
   }

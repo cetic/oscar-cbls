@@ -30,11 +30,11 @@ class RevisableAStarTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyC
 
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
     val aStar = new RevisableAStar(graph, underApproximatingDistance = underApproxDistanceMatrix(_)(_))
-    val gen = Gen.oneOf(graph.nodes)
+    val gen = Gen.oneOf(graph.nodes.toIndexedSeq)
 
     forAll(gen){
       node =>
-        val result = aStar.search(node,node,_ => true,false)
+        val result = aStar.search(node,node,_ => true, includePath=false)
         result should be (a[Distance])
         result match{
           case Distance(_, _, distance1, _, _, _) =>
@@ -66,11 +66,11 @@ class RevisableAStarTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyC
 
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
     val aStar = new RevisableAStar(graph, underApproximatingDistance = underApproxDistanceMatrix(_)(_))
-    val gen = Gen.oneOf(graphTemp.nodes)
+    val gen = Gen.oneOf(graphTemp.nodes.toIndexedSeq)
 
     forAll(gen){
       node =>
-        val result = aStar.search(node,lonelyNode,_ => true,false)
+        val result = aStar.search(node,lonelyNode,_ => true,includePath=false)
         result should be (a[NeverConnected])
     }
   }
@@ -97,11 +97,11 @@ class RevisableAStarTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyC
 
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => false)
     val aStar = new RevisableAStar(graph, underApproximatingDistance = underApproxDistanceMatrix(_)(_))
-    val gen = Gen.oneOf(graphTemp.nodes)
+    val gen = Gen.oneOf(graphTemp.nodes.toIndexedSeq)
 
     forAll(gen){
       node =>
-        val result = aStar.search(node,lonelyNode,_ => true,false)
+        val result = aStar.search(node,lonelyNode,_ => true,includePath=false)
         result should (be (a[NotConnected]) or be (a[NeverConnected]))
     }
   }
@@ -120,7 +120,7 @@ class RevisableAStarTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyC
     val openConditions = Random.shuffle(List(0,0,0,0,1,1,1,1,1))
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
     val aStar = new RevisableAStar(graph, underApproximatingDistance = underApproxDistanceMatrix(_)(_))
-    val gen = Gen.listOfN(2,Gen.oneOf(graph.nodes))
+    val gen = Gen.listOfN(2,Gen.oneOf(graph.nodes.toIndexedSeq))
 
     forAll(gen){
       nodesCouple =>
@@ -176,7 +176,7 @@ class RevisableAStarTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyC
 
     for (nodeFrom <- graph.nodes) {
       for (nodeTo <- graph.nodes){
-        (underApproxDistanceMatrix(nodeFrom.id)(nodeTo.id)) should be (underApproxDistanceMatrix(nodeTo.id)(nodeFrom.id))
+        underApproxDistanceMatrix(nodeFrom.id)(nodeTo.id) should be (underApproxDistanceMatrix(nodeTo.id)(nodeFrom.id))
 
         val res1 = aStar.search(nodeFrom, nodeTo, openConditions(_) == 1, includePath = true)
         val res2 = aStar.search(nodeTo, nodeFrom, openConditions(_) == 1, includePath = true)
@@ -239,8 +239,8 @@ class RevisableAStarTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyC
     val aStar = new RevisableAStar(graph,
       underApproximatingDistance = underApproxDistanceMatrix(_)(_))
     val gen = for{
-      n1 <- Gen.oneOf(graph.nodes)
-      n2 <- Gen.oneOf(graph.nodes)
+      n1 <- Gen.oneOf(graph.nodes.toIndexedSeq)
+      n2 <- Gen.oneOf(graph.nodes.toIndexedSeq)
     } yield(n1,n2)
 
     val iterations = PosInt.from(Math.pow(graph.nodes.length,2).toInt).get
@@ -289,8 +289,8 @@ class RevisableAStarTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyC
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
     val aStar = new RevisableAStar(graph, underApproximatingDistance = underApproxDistanceMatrix(_)(_))
     val gen = for {
-      n1 <- Gen.oneOf(graph.nodes)
-      n2 <- Gen.oneOf(graph.nodes)
+      n1 <- Gen.oneOf(graph.nodes.toIndexedSeq)
+      n2 <- Gen.oneOf(graph.nodes.toIndexedSeq)
     } yield(n1,n2)
 
     val iterations = PosInt.from(Math.pow(graph.nodes.length,2).toInt).get
@@ -340,8 +340,8 @@ class RevisableAStarTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyC
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
     val aStar = new RevisableAStar(graph, underApproximatingDistance = underApproxDistanceMatrix(_)(_))
     val gen = for{
-      n1 <- Gen.oneOf(graph.nodes)
-      n2 <- Gen.oneOf(graph.nodes)
+      n1 <- Gen.oneOf(graph.nodes.toIndexedSeq)
+      n2 <- Gen.oneOf(graph.nodes.toIndexedSeq)
     } yield(n1,n2)
 
     val iterations = PosInt.from(Math.pow(graph.nodes.length,2).toInt).get

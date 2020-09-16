@@ -1,11 +1,11 @@
 package oscar.cbls.visual.wlp
 
-import java.awt.geom.Rectangle2D
 import java.awt.Color
 import java.awt.geom.Line2D.Double
+import java.awt.geom.Rectangle2D
 
 import oscar.visual.VisualDrawing
-import oscar.visual.shapes.{VisualRectangle, VisualCircle, VisualLine, VisualShape}
+import oscar.visual.shapes.{VisualCircle, VisualLine, VisualRectangle, VisualShape}
 
 import scala.collection.immutable.SortedSet
 
@@ -22,7 +22,7 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Long,Long)],
   val d = deliveryCoordinates.length
 
   override def addShape(shape: VisualShape, repaintAfter: Boolean): Unit ={
-    super.addShape(shape,false)
+    super.addShape(shape,repaintAfter = false)
   }
 
   var prevOpenWarehouse:SortedSet[Int] = SortedSet.empty
@@ -36,8 +36,8 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Long,Long)],
   }
 
   /**
-   * @param d
-   * @return -1L is no open warehouse
+   * @param d the point from where distance is computed
+   * @return -1L is no open warehouse near to d
    */
   private def nearestOpenWareHouse(openWarehouses:SortedSet[Int],d:Int):Int = {
     var closestW = -1

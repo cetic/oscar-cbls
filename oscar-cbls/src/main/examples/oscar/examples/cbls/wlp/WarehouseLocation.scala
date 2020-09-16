@@ -47,12 +47,15 @@ object WarehouseLocation extends App{
 
   m.close()
 
-  val neighborhood =(
+  val neighborhood =
     bestSlopeFirst(
       List(
         assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
-        swapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),refresh = W/10)
-    onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/10), 2, obj))
+        swapsNeighborhood(warehouseOpenArray, "SwapWarehouses")
+      ),
+      refresh = W/10
+    )
+    .onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/10), 2, obj)
 
   neighborhood.verbose = 1
   

@@ -23,7 +23,7 @@ import oscar.examples.cbls.wlp.WarehouseLocationGenerator
 
 import scala.language.postfixOps
 
-object WarehouseLocation extends CBLSModel with  App{
+object WarehouseLocation extends CBLSModel with App {
 
   //the number of warehouses
   val W:Int = 1000
@@ -59,12 +59,12 @@ object WarehouseLocation extends CBLSModel with  App{
 
   //The search procesdure featuring two neighborhoods and a restart meta heuristics that randomly switches one fifts of the warehouses.
   //The restart stops after two consecutive restarts without improvements and restores the best solution
-  val neighborhood =(
+  val neighborhood =
     bestSlopeFirst(
       List(
         assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
         swapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),refresh = W/10)
-    onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/10), 2, obj))
+    .onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/10), 2, obj)
 
   //this triggers some verbosities on the console:
   //0 is no verbosities

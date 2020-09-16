@@ -14,16 +14,12 @@
   ******************************************************************************/
 package oscar.cbls.visual.obj
 
-import javax.swing.JPanel
-import java.awt.BorderLayout
+import java.awt.{BorderLayout, Color}
 
-import org.jfree.data.xy.XYSeries
-import org.jfree.chart.{ChartFactory, ChartPanel, JFreeChart}
-import org.jfree.data.xy.XYSeriesCollection
-import java.awt.Color
-
+import javax.swing.{JPanel, SwingUtilities}
 import org.jfree.chart.plot.{PlotOrientation, ValueMarker, XYPlot}
-import javax.swing.SwingUtilities
+import org.jfree.chart.{ChartFactory, ChartPanel, JFreeChart}
+import org.jfree.data.xy.{XYSeries, XYSeriesCollection}
 
 class LongPlotLine(title: String,
                    xlab: String,
@@ -38,15 +34,15 @@ abstract class LongPlot(title: String, xlab: String, ylab: String, series: List[
 
   var xySeries: List[XYSeries] = series.map(new XYSeries(_))
 
-  val xyDataset: XYSeriesCollection = new XYSeriesCollection();
+  val xyDataset: XYSeriesCollection = new XYSeriesCollection()
   for (s <- xySeries) {xyDataset.addSeries(s)}
   val chart: JFreeChart = createChart()
-  chart.getPlot().setBackgroundPaint(Color.white);
-  val panel: ChartPanel = new ChartPanel(chart);
-  panel.setVisible(true);
-  add(panel);
+  chart.getPlot.setBackgroundPaint(Color.white)
+  val panel: ChartPanel = new ChartPanel(chart)
+  panel.setVisible(true)
+  add(panel)
 
-  val plot = chart.getPlot().asInstanceOf[XYPlot];
+  val plot = chart.getPlot.asInstanceOf[XYPlot]
 
   val xMarker = new ValueMarker(0.5)
   val yMarker = new ValueMarker(0.5)
@@ -56,8 +52,8 @@ abstract class LongPlot(title: String, xlab: String, ylab: String, series: List[
   def highlight(x: Double, y: Double, col: Color = Color.LIGHT_GRAY): Unit = {
     SwingUtilities.invokeLater(new Runnable() {
       def run(): Unit = {
-        xMarker.setPaint(col);
-        yMarker.setPaint(col);
+        xMarker.setPaint(col)
+        yMarker.setPaint(col)
         plot.addDomainMarker(xMarker)
         plot.addRangeMarker(yMarker)
         xMarker.setValue(x)
@@ -74,15 +70,15 @@ abstract class LongPlot(title: String, xlab: String, ylab: String, series: List[
   }
 
   def addPoint(x: Long, y: Long, ser: Int): Unit ={
-    xySeries(ser).add(x,y,true)
+    xySeries(ser).add(x.toDouble,y.toDouble,true)
   }
 
   def addPoint(x: Double, y: Long, ser: Int): Unit ={
-    xySeries(ser).add(x,y,true)
+    xySeries(ser).add(x,y.toDouble,true)
   }
 
   def removeAllPoints(ser: Int = 0): Unit = {
-    xySeries(ser).clear();
+    xySeries(ser).clear()
   }
 
   def getPoints(ser: Int = 0): XYSeries = xySeries(ser)
@@ -93,19 +89,19 @@ abstract class LongPlot(title: String, xlab: String, ylab: String, series: List[
     (min, max)
   }
 
-  def xDom:org.jfree.data.Range = chart.getPlot().asInstanceOf[XYPlot].getDomainAxis().getRange()
+  def xDom:org.jfree.data.Range = chart.getPlot.asInstanceOf[XYPlot].getDomainAxis().getRange
 
-  def yDom:org.jfree.data.Range = chart.getPlot().asInstanceOf[XYPlot].getRangeAxis().getRange()
+  def yDom:org.jfree.data.Range = chart.getPlot.asInstanceOf[XYPlot].getRangeAxis().getRange
 
   def xDom_=(dom: org.jfree.data.Range): Unit = {
     val (min, max) = minMax(dom)
-    val xyPlot = chart.getPlot().asInstanceOf[XYPlot]
+    val xyPlot = chart.getPlot.asInstanceOf[XYPlot]
     xyPlot.getDomainAxis().setRange(min, max)
   }
 
   def yDom_=(dom: org.jfree.data.Range): Unit = {
     val (min, max) = minMax(dom)
-    val xyPlot = chart.getPlot().asInstanceOf[XYPlot]
+    val xyPlot = chart.getPlot.asInstanceOf[XYPlot]
     xyPlot.getRangeAxis().setRange(min, max)
   }
 

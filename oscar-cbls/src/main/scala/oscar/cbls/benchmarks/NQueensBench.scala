@@ -133,7 +133,7 @@ object NQueensBench extends LinearSelectorClass(true) with StopWatch{
         },()=>println("Warning: Tabu it too big compared to queens count"))},
         ()=>println("Warning: Tabu it too big compared to queens count"))
 
-      it ++
+      it.++()
 
     }
 

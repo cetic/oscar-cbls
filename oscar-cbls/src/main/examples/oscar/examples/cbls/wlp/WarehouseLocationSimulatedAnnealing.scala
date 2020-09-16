@@ -30,7 +30,7 @@ import scala.language.postfixOps
   * additional behaviors. Here, we restrict a neighborhood to a specific set of variables that not tabu
   * this set of variables is maintained through invariants
   */
-object WarehouseLocationSimulatedAnnealing extends App{
+object WarehouseLocationSimulatedAnnealing extends App {
 
   //the number of warehouses
   val W:Int = 150
@@ -63,11 +63,10 @@ object WarehouseLocationSimulatedAnnealing extends App{
     "SwitchWarehouse",
     hotRestart = false,
     selectIndiceBehavior = First(randomized = true))
-
-    cauchyAnnealing(initialTemperature = 5, base = 10)
+    .cauchyAnnealing(initialTemperature = 5, base = 10)
     //the two stop criterion here below can be used, although they are useless for small size example.
     //maxMoves W*50 withoutImprovementOver obj
-    cutTail(timePeriodInMilliSecond = 500,minRelativeImprovementByCut = 0.00001,minTimeBeforeFirstCutInMilliSecond=1000)
+    .cutTail(timePeriodInMilliSecond = 500,minRelativeImprovementByCut = 0.00001,minTimeBeforeFirstCutInMilliSecond=1000)
 
     saveBestAndRestoreOnExhaust obj
     showObjectiveFunction obj)
