@@ -23,7 +23,9 @@ object OscarBuild extends Build {
       scalacOptions in Compile ++= Seq("-encoding", "UTF-8", "-deprecation", "-feature",
         "-unchecked", "-Xdisable-assertions", "-language:implicitConversions",
         "-language:postfixOps"),
-      scalacOptions in Test := Seq("-optimise"),
+      scalacOptions in Test := Seq("-encoding", "UTF-8", "-deprecation", "-feature",
+        "-unchecked", "-language:implicitConversions",
+        "-language:postfixOps", "-optimise"),
       //testOptions in Test <+= (target in Test) map {
       //  t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
       parallelExecution in Test := false,
