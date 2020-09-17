@@ -11,7 +11,6 @@ import oscar.cbls.visual.SingleFrameWindow
  *     Matl, Piotr & Hartl, Richard & Vidal, Thibaut. (2017).
  *     Heuristic Rectangle Splitting: Leveraging Single-Objective Heuristics to Efficiently Solve Multi-Objective Problems.
  *
- * it
  * @param globalMaxObj1 the max value of objective 1
  * @param globalMinObj2 the min value of objective 2
  * @param solutionAtMax1Mn2 the solution (max1,min2)
@@ -31,7 +30,7 @@ import oscar.cbls.visual.SingleFrameWindow
  *                metrics: remaining surface and number of points
  *                notice that the optimize method can also print verbose message; up to you)
  * @param visu true to display the Pareto front in real time
- * @param title the title to use for the visu
+ * @param visuTitle the title to use for the visu
  * @param obj1Name the name of obj1, used for verbosities on the console and for the visu
  * @param obj2Name the name of obj2, used for verbosities on the console and for the visu
  * @param filterSquare an additional method that you can specify to filter away some squares of the search,
@@ -41,23 +40,26 @@ class BiObjectiveSearch(globalMaxObj1:Long,
                         globalMinObj2:Long,
                         solutionAtMax1Mn2:Solution,
                         optimize:(Long/*maxObj2*/,Solution)  => Option[(Long,Long,Solution)],
-                        stopSurface:Long = 1000,
-                        maxPoints:Int = 1000,
+                        stopSurface:Long = 0,
+                        maxPoints:Int = Int.MaxValue,
                         verbose:Boolean = false,
                         visu:Boolean = true,
-                        title: String = "Pareto",
+                        visuTitle: String = "Pareto",
                         obj1Name: String = "obj1",
                         obj2Name: String = "obj2",
-                        filterSquare:(Long,Long,Long,Long) => Boolean = (_:Long,_:Long,_:Long,_:Long) =>true
+                        filterSquare:(Long,Long,Long,Long) => Boolean = (_:Long,_:Long,_:Long,_:Long) =>true,
+                       stayAlive:Boolean = false
                        ) {
 
   val (plot,window) = if(visu) {
     val p = new PlotPareto(null,obj1Name,obj2Name)
-    val window = SingleFrameWindow.show(p,title, width = 2000, height = 2000)
+    val window = SingleFrameWindow.show(p,visuTitle, width = 2000, height = 2000)
     (p,window)
   }else (null,null)
 
   var oldParetoPoints:List[(Long,Long)] = Nil
+
+  var nbFilteredSquares = 0
 
   var nextSquareUid:Int = 0
   //a square, anchored at a solution
@@ -106,14 +108,18 @@ class BiObjectiveSearch(globalMaxObj1:Long,
 
   var remainingSurface:Long = 0
   var nbSquare:Int = 0
-  def storeSquare(squareToStore:Square, after: DLLStorageElement[Square],isNew:Boolean = false): Unit ={
-    if(verbose && isNew) println("BiObjectiveSearch: storing new Pareto point " + squareToStore.objString)
+  def storeSquare(squareToStore:Square, after: DLLStorageElement[Square],isNew:Boolean = false): Unit = {
+    if (verbose && isNew) println("non dominated solution " + squareToStore.objString)
 
     squareToStore.elemInFront = squareList.insertAfter(squareToStore, after)
-    if(squareToStore.surface!=0 && filterSquare(squareToStore.obj1,squareToStore.maxObj1,squareToStore.obj2,squareToStore.minObj2)) {
-      squaresToDevelop.insert(squareToStore)
-      remainingSurface += squareToStore.surface
-     }
+    if (squareToStore.surface != 0) {
+      if (filterSquare(squareToStore.obj1, squareToStore.maxObj1, squareToStore.obj2, squareToStore.minObj2)) {
+        squaresToDevelop.insert(squareToStore)
+        remainingSurface += squareToStore.surface
+      } else {
+        nbFilteredSquares += 1
+      }
+    }
 
     nbSquare += 1
 
@@ -138,7 +144,7 @@ class BiObjectiveSearch(globalMaxObj1:Long,
 
   def notifyDeleted(square:Square): Unit ={
     oldParetoPoints = (square.obj1,square.obj2) :: oldParetoPoints
-    if(verbose) println("BiObjectiveSearch: removed dominated point  " + square.objString)
+    if(verbose) println("removed dominated solution  " + square.objString)
   }
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -178,7 +184,7 @@ class BiObjectiveSearch(globalMaxObj1:Long,
       if (currentSquareForPruning.obj1 <= squareToInsert.obj1
         && currentSquareForPruning.obj2 <= squareToInsert.obj2) {
         //on oublie squareToInsert, elle est au mieux équivalente, au pire, dominée
-        if(verbose) println("BiObjectiveSearch: new point is dominated")
+        if(verbose) println("found dominated solution")
       }else if (currentSquareForPruning.obj1 >= squareToInsert.obj1
         && currentSquareForPruning.obj2 >= squareToInsert.obj2) {
         //currentSquareForPruning est au meux équivalent, au pire, dominé.
@@ -228,8 +234,7 @@ class BiObjectiveSearch(globalMaxObj1:Long,
 
     while ((!squaresToDevelop.isEmpty) && (remainingSurface > stopSurface) && (nbSquare < maxPoints)) {
       if(verbose) {
-        println("BiObjectiveSearch: remainingSurface:" + remainingSurface)
-        println("BiObjectiveSearch: nbPoints:" + nbSquare)
+        println(s"termination(surface:$remainingSurface/$stopSurface nonDominatedSolutions:$nbSquare/$maxPoints)")
       }
 
       assert(remainingSurface == squaresToDevelop.getElements.toList.map(square => square.surface).sum)
@@ -269,17 +274,21 @@ class BiObjectiveSearch(globalMaxObj1:Long,
           insertAndPruneRightSquares(squareOnTheRight.elem, firstSolutionSquare)
       }
     }
+
     if(verbose) {
-      println("BiObjectiveSearch: finished")
-      println("BiObjectiveSearch: nbFoundSolutions:" + foundPoints)
-      println("BiObjectiveSearch: nbNonDominatedPoints:" + nbSquare)
-      println("BiObjectiveSearch: remainingSurface:" + remainingSurface)
-      println("BiObjectiveSearch: completed:" + squaresToDevelop.isEmpty)
-      println("BiObjectiveSearch: nbSquaresToDevelop:" + squaresToDevelop.size)
-      println("BiObjectiveSearch: elapsed:" + ((System.nanoTime() - startSearchNanotime)/1000000).toInt + " ms")
+      println(s"termination(surface:$remainingSurface/$stopSurface nonDominatedSolutions:$nbSquare/$maxPoints)")
+      println("elapsed(ms):" + ((System.nanoTime() - startSearchNanotime)/1000000).toInt)
+      println("nbFoundSolutions:" + foundPoints)
+      println("nbNonDominatedSolutions:" + nbSquare)
+      println("removedDominatedSolutions:" + oldParetoPoints.size)
+      println("foundDominatedSolutions:" + (foundPoints - nbSquare - oldParetoPoints.size))
+      println("totalDominatedSolutions:" + (foundPoints - nbSquare))
+      println("remainingSurface:" + remainingSurface)
+      println("nbSquaresToDevelop:" + squaresToDevelop.size)
+      println("filteredSquares:" + nbFilteredSquares)
     }
 
-    //plot.reDrawPareto(squareList.map(square => (square.obj1,square.obj2)), None)
+    if(!stayAlive) window.close()
 
     squareList.toList.map(square => (square.obj1,square.obj2,square.solution))
   }

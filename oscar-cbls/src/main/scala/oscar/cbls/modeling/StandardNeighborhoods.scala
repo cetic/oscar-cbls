@@ -75,6 +75,9 @@ trait StandardNeighborhoods {
    *                   If none is provided, all the array will be considered each time
    * @param valuesToConsider: the set of values to consider for the given variable
    * @param name the name of the neighborhood
+   * @param acceptanceChecking if set to none, the neighborhood will not check for strong constraint violation.
+   *                           if set to Some(value) then the neighborhood will perform "value" attempt to find a proper move, return noMoe if could not randomize without violating the strong constraints
+   *
    */
   def randomizeNeighborhood(vars:Array[CBLSIntVar],
                             degree:() => Int = () => 1,
@@ -95,7 +98,7 @@ trait StandardNeighborhoods {
    * @param name the name of the neighborhood
    */
   def randomSwapNeighborhood(vars:Array[CBLSIntVar],
-                             degree:Int = 1,
+                             degree:() => Int = () => 1,
                              name:String = "RandomSwapNeighborhood",
                              searchZone:() => SortedSet[Int] = null)
   = RandomSwapNeighborhood(vars,degree,name,searchZone)

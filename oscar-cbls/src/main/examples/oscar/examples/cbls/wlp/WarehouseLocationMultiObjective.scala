@@ -41,7 +41,7 @@ object WarehouseLocationMultiObjective extends App {
   val (costForOpeningWarehouse,distanceCost,_,_,warehouseToWarehouseDistances) =
     WarehouseLocationGenerator.problemWithPositions(W,D,0,1000,3)
 
-  for(w <- 0 until W) costForOpeningWarehouse(w) = 100
+  //for(w <- 0 until W) costForOpeningWarehouse(w) = 100
   costForOpeningWarehouse(0) = 0 //This is for demo purpose; to have a curve that is more readable on the output.
   val m = Store()
 
@@ -126,14 +126,13 @@ object WarehouseLocationMultiObjective extends App {
         Some((foundOperationCost, constructionCost.value,m.solution()))
       }
     },
-    stopSurface = 2000,
     maxPoints = 200,
     verbose = true,
     visu = true,
-    title = problemName,
+    visuTitle = problemName,
     obj1Name = "operationCost",
     obj2Name = "constructionCost",
-    filterSquare = {case (obj1,maxOBj1,obj2,minOBj2) => minOBj2 < obj2 - 50}
+    filterSquare = {case (obj1,maxOBj1,obj2,minOBj2) => minOBj2 < obj2 - 26}
   )
 
   val allSolutions = paretoSearch.paretoOptimize()

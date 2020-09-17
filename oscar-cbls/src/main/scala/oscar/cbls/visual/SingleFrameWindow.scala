@@ -40,6 +40,10 @@ class SingleFrameWindow(val panel:JPanel, title:String, width:Int, height:Int, b
   frame.revalidate()
   frame.setVisible(true)
 
+  def close(): Unit ={
+    frame.dispose()
+  }
+
   def saveWindowAsPng(savingFile: File): Unit ={
     val bi = new BufferedImage(panel.getWidth, panel.getHeight, BufferedImage.TYPE_INT_ARGB)
     val g = bi.createGraphics
