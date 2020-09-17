@@ -15,7 +15,7 @@ object GraphPartitionGLS extends CBLSModel with App {
 
   require(nbNodes % 2 == 0, "nbNodes must be even")
 
-  println("nbNodes:" + nbNodes + " nbEdges:" + nbEdges)
+  println(s"nbNodes:$nbNodes nbEdges:$nbEdges")
 
   def generateRandomEdges(nbNodes:Int,nbEdges:Int):(List[(Int,Int)],Array[List[Int]]) = {
     val adjacencyLists:Array[List[Int]] = Array.fill(nbNodes)(List.empty)
@@ -36,7 +36,7 @@ object GraphPartitionGLS extends CBLSModel with App {
   //nodes are randomly distributed into the two partitions, so they might be of different sizes
   val nodeToPartition = Array.tabulate(nbNodes)((nodeID:Int) => CBLSIntVar(if(Random.nextBoolean()) 1 else 0, 0 to 1, "partitionOfNode_" + nodeID))
 
-  val noCrossingConstraints = new ConstraintSystem(s)
+  val noCrossingConstraints = ConstraintSystem(s)
   for((nodeA,nodeB) <- edges){
     noCrossingConstraints.post(nodeToPartition(nodeA) === nodeToPartition(nodeB))
   }
@@ -117,7 +117,7 @@ object GraphPartitionGLS extends CBLSModel with App {
         //  name = "swapAdjacent"))
       ).map(profile(_)),refresh = nbNodes/10)
 
-  val metaHeuristicSearch = (
+  val metaHeuristicSearch =
       GuidedLocalSearch3.progressiveGuidedLocalSearch(
         searchNeighborhood,
         sameSizeObj,
@@ -128,18 +128,18 @@ object GraphPartitionGLS extends CBLSModel with App {
         consecutiveFailsBeforeDivByTwo = 1,
         maxAttemptsBeforeStop = 1,
         tryWeight2WhenNoMoveFound=false)
-      onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/100, name = "randomize" + nbNodes/100), 3, noCrossingObj)
-      onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/100, name = "randomize" + nbNodes/10), 3, noCrossingObj)
-      saveBestAndRestoreOnExhaust(noCrossingObj,() => sameSizeObj.isZero) //conditional saveBest because there is a condition for the solution to be acceptable.
-      showObjectiveFunction(noCrossingObj,"noCrossingObj") showObjectiveFunction(sameSizeObj,"sameSizeObj"))
+      .onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/100, name = s"randomize${nbNodes/100}"), 3, noCrossingObj)
+      .onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/100, name = s"randomize${nbNodes/10}"), 3, noCrossingObj)
+      .saveBestAndRestoreOnExhaust(noCrossingObj,() => sameSizeObj.isZero) //conditional saveBest because there is a condition for the solution to be acceptable.
+      .showObjectiveFunction(noCrossingObj,"noCrossingObj")
+      .showObjectiveFunction(sameSizeObj,"sameSizeObj")
 
-  metaHeuristicSearch.verboseWithExtraInfo(2, () => Console.GREEN + "sameSizeObj:" + sameSizeObj.value + " noCrossingObj:" + noCrossingObj.value + Console.RESET)
+  metaHeuristicSearch.verboseWithExtraInfo(2, () => s"${Console.GREEN}sameSizeObj:${sameSizeObj.value} noCrossingObj:${noCrossingObj.value}${Console.RESET}")
 
   metaHeuristicSearch.doAllMoves(_ >= nbNodes + nbEdges, noCrossingObj)
 
   println(metaHeuristicSearch.profilingStatistics)
 
-  println("violation on sameSize(partitions): " + sameSizeConstraint.violation.value)
-  println("global violation: " + noCrossingObj.value + "/" + nbEdges)
+  println(s"violation on sameSize(partitions): ${sameSizeConstraint.violation.value}")
+  println(s"global violation: ${noCrossingObj.value}/$nbEdges")
 }
-

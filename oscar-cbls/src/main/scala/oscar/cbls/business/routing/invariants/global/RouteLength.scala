@@ -10,7 +10,7 @@ case class PreComputedDistances(distanceFromStart:Long,
 object RouteLength{
   def apply(gc: GlobalConstraintCore, n: Int, v:Int, distanceMatrix:(Int,Int)=>Long):Array[CBLSIntVar] = {
     val routeLengthForVehicle:Array[CBLSIntVar] =
-      Array.tabulate(v)(v => CBLSIntVar(gc.model,name="routeLengthForVehicle" + v))
+      Array.tabulate(v)(v => CBLSIntVar(gc.model,name=s"routeLengthForVehicle$v"))
 
     new RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, routeLengthForVehicle, distanceMatrix)
     routeLengthForVehicle
@@ -35,7 +35,7 @@ class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:
 
   override def performPreCompute(vehicle: Int, routes: IntSequence): Unit = {
     var previousNode = vehicle
-    var prevPreComputedValue =PreComputedDistances(0,0)
+    var prevPreComputedValue = PreComputedDistances(0,0)
     preComputedVals(vehicle) = prevPreComputedValue
 
     var currentExplorerOPt:Option[IntSequenceExplorer] = routes.explorerAtAnyOccurrence(vehicle).get.next
@@ -51,7 +51,7 @@ class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:
           false
         }else{
           //we are not starting the next vehicle, just continue on the current one
-          //We tag the current node with the proper value accumulatin on gthe previous node
+          //We tag the current node with the proper value accumulation on the previous node
 
           prevPreComputedValue = PreComputedDistances(
             distanceFromStart = prevPreComputedValue.distanceFromStart + distanceMatrix(previousNode,explorer.value),

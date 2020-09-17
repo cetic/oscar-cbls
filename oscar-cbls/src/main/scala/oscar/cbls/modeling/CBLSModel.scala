@@ -25,7 +25,6 @@ import oscar.cbls.util.StopWatch
 
 import scala.collection.immutable.SortedSet
 
-
 /** this is a helper object that you can extend to implement your solver with the minimal syntactic overhead.
   * It imports all the methods that you might need to develop your own solver based on the CBLS approach
   *

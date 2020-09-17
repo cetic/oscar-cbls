@@ -19,7 +19,7 @@
   ******************************************************************************/
 
 package oscar.examples.cbls.userguide
-/*
+
 import oscar.cbls._
 
 import scala.util.Random
@@ -31,11 +31,11 @@ object NQueensEasy extends CBLSModel with App{
 
   val N = 1000
 
-  println("NQueensEasy(" + N + ")")
+  println(s"NQueensEasy($N)")
   val range:Range = Range(0,N)
 
   val init = Random.shuffle(range.toList).iterator
-  val queens = Array.tabulate(N)((q:Int) => CBLSIntVar(init.next(),0 until N, "queen" + q))
+  val queens = Array.tabulate(N)((q:Int) => CBLSIntVar(init.next(),0 until N, s"queen$q"))
 
   post(allDiff( for (q <- range) yield queens(q) + q) )
   post(allDiff( for (q <- range) yield q - queens(q)) )
@@ -61,4 +61,3 @@ object NQueensEasy extends CBLSModel with App{
 
   //println(s.stats)
 }
-*/

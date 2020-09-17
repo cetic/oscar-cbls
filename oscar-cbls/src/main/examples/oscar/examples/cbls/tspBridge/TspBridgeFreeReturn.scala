@@ -22,7 +22,7 @@ object TspBridgeFreeReturn extends App {
   val nbNonConditionalEdges = 1600
   val nbTransitNodes = nbNodes
 
-  println("generate random graph")
+  println("generating random graph")
   val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(
     nbNodes=nbNodes,
     nbConditionalEdges = nbConditionalEdges,
@@ -30,16 +30,16 @@ object TspBridgeFreeReturn extends App {
     nbTransitNodes = nbTransitNodes,
     mapSide = 1000,
     seed = Some(1))
-  println("end generate random graph")
+  println("end generating random graph")
 
-  println("start dijkstra")
+  println("start Dijkstra")
   val underApproximatingDistanceInGraphAllBridgesOpen:Array[Array[Long]] = DijkstraDistanceMatrix.buildDistanceMatrix(graph, _ => true)
-  println("end dijkstra")
+  println("end Dijkstra")
 
   val m = Store()//checker = Some(new ErrorChecker()))
 
   //initially all bridges open
-  val bridgeConditionArray = Array.tabulate(nbConditionalEdges)(c => CBLSIntVar(m, 1, 0 to 1, "bridge_" + c + "_open"))
+  val bridgeConditionArray = Array.tabulate(nbConditionalEdges)(c => CBLSIntVar(m, 1, 0 to 1, "bridge_${c}_open"))
 
   val openBridges = filter(bridgeConditionArray).setName("openBridges")
 
@@ -74,9 +74,8 @@ object TspBridgeFreeReturn extends App {
   // visu
 
   val visu = new TspBridgeVisu(graph, v = v, n,(a,b) => underApproximatingDistanceInGraphAllBridgesOpen(a)(b),freeReturn = true)
-  SingleFrameWindow.show(visu,"TspBridge(tspN:" + n + " tspV:" + v + " graphN:" + nbNodes + " graphE:" + (nbNonConditionalEdges + nbConditionalEdges) + " graphNCE:" + nbNonConditionalEdges + " graphCE:" + nbConditionalEdges + ")")
+  SingleFrameWindow.show(visu,s"TspBridge(tspN:$n tspV:$v graphN:$nbNodes graphE:${nbNonConditionalEdges + nbConditionalEdges} graphNCE:$nbNonConditionalEdges graphCE:$nbConditionalEdges)")
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
   val routedPostFilter = (node:Int) => (neighbor:Int) => myVRP.isRouted(neighbor)
 
@@ -85,7 +84,7 @@ object TspBridgeFreeReturn extends App {
   val closestRoutingPoint:Array[Iterable[Int]] = Array.tabulate(n)((nodeInGraph:Int) =>
     KSmallest.lazySort(
       Array.tabulate(n)(i => i),
-      (otherNode:Int) => underApproximatingDistanceInGraphAllBridgesOpen(nodeInGraph)(otherNode.toInt)
+      (otherNode:Int) => underApproximatingDistanceInGraphAllBridgesOpen(nodeInGraph)(otherNode)
     ))
 
   // Takes an unrouted node and insert it at the best position within the 10 closest nodes (inserting it after this node)
@@ -128,9 +127,9 @@ object TspBridgeFreeReturn extends App {
     routeUnroutedPoint(50),
     myThreeOpt(20),
     profile(onePtMove(20))),refresh = 20)
-    onExhaust {println("finished inserts; neededBridges:" + neededConditions)}
+    onExhaust {println(s"finished inserts; neededBridges:$neededConditions")}
     exhaust (profile(closeAllUselessBridges) maxMoves 1)
-    exhaust (
+    exhaust
     bestSlopeFirst(
       List(
         profile(onePtMove(40)),
@@ -140,16 +139,16 @@ object TspBridgeFreeReturn extends App {
         profile(onePtMove(20) andThen switchBridge name "switchAndMove"),
         profile(switchBridge)),
       refresh = 10)
-      onExhaustRestartAfterJump(
+      .onExhaustRestartAfterJump(
       for(bridge <- bridgeConditionArray.indices){
         bridgeConditionArray(bridge) := 1
       },
       maxRestartWithoutImprovement = 2,
       obj,
-      randomizationName = "OpenAllBridges"))
+      randomizationName = "OpenAllBridges")
     afterMove{
     //println(openBridges.value.mkString(";"))
-    visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList.map(_.toInt), myVRP.routes.value)
+    visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList, myVRP.routes.value)
   }) showObjectiveFunction obj
 
   search.verbose = 1
@@ -160,10 +159,10 @@ object TspBridgeFreeReturn extends App {
 
   println(myVRP)
   println(openBridges)
-  println("neededBridges:" + routeLengthInvar.neededConditions)
-  visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList.map(_.toInt), myVRP.routes.value)
+  println(s"neededBridges:${routeLengthInvar.neededConditions}")
+  visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList, myVRP.routes.value)
 
-  println("Route Length :" + routeLength)
+  println(s"Route Length :$routeLength")
 
   //TODO: we should actually substract the open & not used bridges from the objective function, and never try to switch them.
 }

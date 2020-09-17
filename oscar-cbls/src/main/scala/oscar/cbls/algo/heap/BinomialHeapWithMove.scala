@@ -20,7 +20,7 @@
 
 package oscar.cbls.algo.heap
 
-import scala.collection.Iterator
+import scala.collection.{Iterator, mutable}
 import scala.collection.immutable.SortedMap
 
 /**
@@ -350,7 +350,7 @@ class BinomialHeapWithMove[T](getKey:T => Long,val maxsize:Int)(implicit val A:O
  * @author renaud.delandtsheer@cetic.be
  * @param maxId
  */
-class ArrayMap(maxId:Int) extends scala.collection.mutable.Map[Int, Long]{
+class ArrayMap(maxId:Int) extends mutable.Map[Int, Long]{
   
   val array:Array[Long] = Array.fill[Long](maxId)(-1)
   def get(key: Int): Option[Long] =  {
@@ -363,12 +363,12 @@ class ArrayMap(maxId:Int) extends scala.collection.mutable.Map[Int, Long]{
 
   def iterator: Iterator[(Int, Long)] = {throw new Exception("enumeration not supported"); null}
 
-  def +=(kv: (Int, Long)): this.type = {
+  def addOne(kv: (Int, Long)): this.type = {
     array(kv._1) = kv._2
     this
   }
 
-  def -=(key: Int): this.type = {
+  def subtractOne(key: Int): this.type = {
     array(key) = -1
     this
   }

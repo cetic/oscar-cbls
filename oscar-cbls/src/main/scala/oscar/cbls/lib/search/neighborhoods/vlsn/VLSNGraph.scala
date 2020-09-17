@@ -155,7 +155,7 @@ class Node(val nodeID:Int, val representedNode:Int, val nodeType:VLSNSNodeType, 
       case FictiveNode => "trashNode"
     }
 
-    val lineColor = (if (bold) "blue" else "black")
+    val lineColor = if (bold) "blue" else "black"
     "\"" + nodeID + "\" [shape=circle,style=filled,fillcolor=" + fillColor + ",color=" + lineColor +
       ", label = " + dotLabel + "] ; "
   }
@@ -177,12 +177,11 @@ class Edge(val from:Node, val to:Node, val move:Move, val deltaObj:Long, val edg
       "\"Edge" + edgeID + "\" -> " + to.nodeID + (if(bold) "[color=blue]" else "") + ";"
 
   def toDOTLight(bold:Boolean = false):String =
-    from.nodeID + " -> " + to.nodeID + (if(bold) "[color=blue]" else "") + ";"
+    s"${from.nodeID} -> ${to.nodeID}${if(bold) "[color=blue]" else ""};"
 
   def toDOT(bold:Boolean = false,light:Boolean):String =
     if(light){ toDOTLight(bold) }else toDOTHeavy(bold)
 }
-
 
 object VLSNGraphTest extends App{
 
@@ -194,7 +193,7 @@ object VLSNGraphTest extends App{
     val builder = new VLSNEdgeBuilder(nodes: Array[Node], nbNodes,2) //nbLAbel is set here to nbNodes
 
     def edge(from: Int, to: Int, gain: Long): Unit = {
-      builder.addEdge(nodes(from), nodes(to), gain,  new DoNothingMove(Long.MaxValue),VLSNMoveType.SymbolicTrashToInsert)
+      builder.addEdge(nodes(from), nodes(to), gain,  DoNothingMove(Long.MaxValue),VLSNMoveType.SymbolicTrashToInsert)
     }
 
     edge(0, 1, 10)

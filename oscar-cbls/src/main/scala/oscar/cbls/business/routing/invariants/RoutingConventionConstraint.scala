@@ -32,14 +32,14 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
 
   finishInitialization()
 
-  checkVehicleOrder
+  checkVehicleOrder()
 
-  def checkVehicleOrder {
+  def checkVehicleOrder(): Unit = {
     val positionOfVehicles = (0 until v).map(routes.value.positionOfAnyOccurrence(_).get).toArray
     for (vehicle <- 0 until v - 1) {
       require(positionOfVehicles(vehicle) < positionOfVehicles(vehicle + 1),
         "The vehicle depot are not sorted properly ! Their position should be strictly increasing, got : " +
-          positionOfVehicles.toList.zipWithIndex.map(x => x._2 + " -> " + x._1))
+          positionOfVehicles.toList.zipWithIndex.map(x => s"${x._2} -> ${x._1}"))
     }
   }
 
@@ -87,7 +87,7 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
 
   private def digestUpdates(changes: SeqUpdate): Boolean ={
     changes match {
-      case _@SeqUpdateDefineCheckpoint(prev: SeqUpdate,isStarMode: Boolean,checkpointLevel: Int) => {
+      case _@SeqUpdateDefineCheckpoint(prev: SeqUpdate,isStarMode: Boolean,checkpointLevel: Int) =>
         if(!digestUpdates(prev)) return false
         // if checkpoint = 0 ==> movement validation we need to apply all the recorded changes
 
@@ -103,8 +103,8 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
 
         this.checkpointLevel = checkpointLevel
         true
-      }
-      case sui@SeqUpdateInsert(value: Int, pos: Int, prev: SeqUpdate) => {
+
+      case sui@SeqUpdateInsert(value: Int, pos: Int, prev: SeqUpdate) =>
         if(!digestUpdates(prev)) return false
         val errorDataMsg = s"""
              |Got:
@@ -119,16 +119,16 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
 
         currentChanges = currentChanges + ((value, true))
         true
-      }
-      case sum@SeqUpdateMove(fromPos: Int, toPos: Int, afterPos: Int, flip: Boolean, prev: SeqUpdate) => {
+
+      case sum@SeqUpdateMove(fromPos: Int, toPos: Int, afterPos: Int, flip: Boolean, prev: SeqUpdate) =>
         if(!digestUpdates(prev)) return false
         val errorDataMsg = "\nGot : \n    From position -> " + fromPos + "\n    To position -> " + toPos + "\n    After position -> " + afterPos
 
         checkRequirement(!sum.movedValuesQList.exists(_<v), "Trying to move a vehicle !" + errorDataMsg, prev)
 
         true
-      }
-      case sur@SeqUpdateRemove(pos: Int, prev: SeqUpdate) => {
+
+      case sur@SeqUpdateRemove(pos: Int, prev: SeqUpdate) =>
         if(!digestUpdates(prev)) return false
         val errorDataMsg = s"""
              |Got:
@@ -140,7 +140,7 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
         currentChanges = currentChanges + ((value, false))
 
         true
-      }
+
       case _@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Int) =>
         if(checkpointLevel == 0) require(checkpoint quickEquals this.checkpointAtLevel0)
 

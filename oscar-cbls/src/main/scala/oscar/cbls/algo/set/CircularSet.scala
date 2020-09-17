@@ -21,16 +21,16 @@
 
 package oscar.cbls.algo.set
 
-import scala.collection.Iterator
+import scala.collection.{Iterator, mutable}
 
 /**Circular set is a dedicated data structure to represent set of integers in an efficient way
  * although the memory footprint will not be efficient at all
  * stores elements from 0 to size-1L
  * ensure that the maxsize is not so big because it consumes O(maxsize) memory.
-  * @author renaud.delandtsheer@cetic.be
-  * @author gael.thouvenin@student.umons.ac.be
+ * @author renaud.delandtsheer@cetic.be
+ * @author gael.thouvenin@student.umons.ac.be
  */
-class CircularIntSet(val maxsize:Int) extends scala.collection.mutable.SortedSet[Int]{
+class CircularIntSet(val maxsize:Int) extends mutable.SortedSet[Int]{
 
   private val containsvar:Array[Boolean] = new Array[Boolean](maxsize)
   private[set] val next:Array[Int] = new Array[Int](maxsize) //gives the id of the next element, so that they constitute a cycle in the array
@@ -40,7 +40,7 @@ class CircularIntSet(val maxsize:Int) extends scala.collection.mutable.SortedSet
   private var sizevar:Int = 0
   private var inserted:Boolean = false
 
-  def -=(elem: Int):this.type = {
+  def subtractOne(elem: Int):this.type = {
     if(containsvar(elem)) {
       containsvar(elem) = false
       if (handle == elem) {
@@ -64,7 +64,7 @@ class CircularIntSet(val maxsize:Int) extends scala.collection.mutable.SortedSet
     this
   }
 
-  def +=(elem: Int):this.type = {
+  def addOne(elem: Int):this.type = {
     if (sizevar == 0) {
       containsvar(elem) = true
       next(elem) = elem
@@ -78,7 +78,7 @@ class CircularIntSet(val maxsize:Int) extends scala.collection.mutable.SortedSet
       sizevar += 1
       inserted = true
     }
-  this
+    this
   }
 
   private def insertAfter(elem:Int, newElem:Int): Unit ={
@@ -132,8 +132,8 @@ class CircularIntSet(val maxsize:Int) extends scala.collection.mutable.SortedSet
    * @param until upper bound (inclusive) of the elements to keep
    * @return sorted version of this set, truncated such as each element \in [from, until]
    */
-  override def rangeImpl(from: Option[Int], until: Option[Int]): scala.collection.mutable.SortedSet[Int] = {
-    if(inserted) reorder()
+  override def rangeImpl(from: Option[Int], until: Option[Int]): mutable.SortedSet[Int] = {
+    if (inserted) reorder()
     new CircularIntSet(maxsize) ++ (for(e <- this if e >= from.getOrElse(0) && e <= until.getOrElse(maxsize)) yield e)
   }
 
@@ -142,10 +142,15 @@ class CircularIntSet(val maxsize:Int) extends scala.collection.mutable.SortedSet
    * @param start lower bound (inclusive) of the elements to keep
    * @return an iterator over the elements > start
    */
-  override def keysIteratorFrom(start: Int): Iterator[Int] =
-  {
+  override def iteratorFrom(start: Int): Iterator[Int] = {
     if(inserted) reorder()
     new CircularIntSetIterator(handle, this).filter(x => x >= start)
+  }
+
+  override def clear(): Unit = {
+    handle = -1
+    sizevar = 0
+    for {i <- containsvar.indices} { containsvar(i) = false }
   }
 }
 

@@ -12,7 +12,7 @@ import oscar.cbls.lib.search.neighborhoods.vlsn._
 import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
 import scala.io.Source
 
-object PDPTW_VLSN_li_lim_benchmark extends App {
+object PDPTW_VLSN_Li_Lim_Benchmark extends App {
 
   case class PDP(fromNode: Int, toNode: Int, demand: Int) {
     def chain: List[Int] = List(fromNode, toNode)
@@ -27,7 +27,7 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
     }
 
     val s = Source.fromFile(fileName)
-    val lines = s.getLines
+    val lines = s.getLines()
 
     val Array(v, capacity, _) = lines.next().split("\\t\\s*").map(_.toInt)
 
@@ -127,7 +127,7 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
     val gc = GlobalConstraintCore(myVRP.routes, v)
 
     // Distance
-    val vehiclesRouteLength = Array.tabulate(v)(vehicle => CBLSIntVar(m, name = "Route length of vehicle " + vehicle))
+    val vehiclesRouteLength = Array.tabulate(v)(vehicle => CBLSIntVar(m, name = s"Route length of vehicle $vehicle"))
     val routeLengthInvariant = new RouteLength(gc, n, v, vehiclesRouteLength, (from: Int, to: Int) => symmetricDistance(from)(to))
 
     //Time window constraints
@@ -138,7 +138,7 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
       timeWindowConstraints.add(timeWindowViolations(vehicle) === 0)
     }
 
-    m.registerForPartialPropagation(timeWindowViolations: _*)
+    m.registerForPartialPropagation(timeWindowViolations.toIndexedSeq: _*)
 
     //Chains
     val precedenceRoute = myVRP.routes.createClone()
@@ -154,12 +154,12 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
 
     //for a chain, we want the x nearest vehicles to the chain.
     //for each node we take the summe distance to each nodes of the chain to the vehicle
-    val chainHeadToSummedDistanceToVehicles = listOfChains.map((chain: List[Int]) => (chain.head, vehicles.map(vehicle => (chain.map((node: Int) => symmetricDistance(node)(vehicle)).sum)).toArray))
+    val chainHeadToSummedDistanceToVehicles = listOfChains.map((chain: List[Int]) => (chain.head, vehicles.map(vehicle => chain.map((node: Int) => symmetricDistance(node)(vehicle)).sum).toArray))
     val chainHeadToxNearestVehicles = SortedMap.empty[Int, List[Int]] ++ chainHeadToSummedDistanceToVehicles.map({ case (chainHead, vehicleToDistance) => (chainHead, KSmallest.getkSmallests(vehicles.toArray, xNearestVehicles, (v: Int) => vehicleToDistance(v))) })
 
     // Vehicle content
     val violationOfContentOfVehicle = Array.tabulate(v)(vehicle =>
-      CBLSIntVar(myVRP.routes.model, name = "Violation of capacity of vehicle " + vehicle))
+      CBLSIntVar(myVRP.routes.model, name = s"Violation of capacity of vehicle $vehicle"))
     val capacityInvariant = GlobalVehicleCapacityConstraint(gc, n, v, vehiclesCapacity, contentsFlow, violationOfContentOfVehicle)
 
     //Objective function
@@ -180,7 +180,7 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
 
     val relevantPredecessorsTmp: Map[Int, Iterable[Int]] = capacityInvariant.relevantPredecessorsOfNodes
 
-    val relevantPredecessors = SortedMap.empty[Int, SortedSet[Int]] ++ (relevantPredecessorsTmp.map({ case (node, v) => (node, SortedSet.empty[Int] ++ v) }))
+    val relevantPredecessors = SortedMap.empty[Int, SortedSet[Int]] ++ relevantPredecessorsTmp.map({ case (node, v) => (node, SortedSet.empty[Int] ++ v) })
 
     val closestRelevantPredecessorsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance, relevantPredecessors)(_))
 
@@ -232,7 +232,7 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
               nextMoveGenerator,
               None,
               Int.MaxValue,
-              false)
+              intermediaryStops = false)
           }
         }) name "OneChainMove"
     }
@@ -287,7 +287,7 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
               nextInsertGenerator,
               None,
               Int.MaxValue,
-              false)
+              intermediaryStops = false)
           }
         }) name "OneChainInsert"
     }
@@ -353,7 +353,7 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
     val lClosestNeighborsByDistance: Array[SortedSet[Int]] = Array.tabulate(n)(node =>
       SortedSet.empty[Int] ++ myVRP.kFirst(l, (node: Int) => closestRelevantPredecessorsByDistance(node))(node))
 
-    def routeUnroutedChainVLSN(targetVehicle: Int): (Int => Neighborhood) = {
+    def routeUnroutedChainVLSN(targetVehicle: Int): Int => Neighborhood = {
 
       val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(targetVehicle)
 
@@ -419,17 +419,17 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
                 nextInsertGenerator,
                 None,
                 Int.MaxValue,
-                false)
+                intermediaryStops = false)
             }
           }) name "insertChainVLSN"
       }
     }
 
-    def moveChainVLSN(targetVehicle: Int): (Int => Neighborhood) = {
-      val nodesOfTargetVehicle = (SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(targetVehicle))
+    def moveChainVLSN(targetVehicle: Int): Int => Neighborhood = {
+      val nodesOfTargetVehicle = SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(targetVehicle)
 
       (chainHeadToMove: Int) => {
-        val relevantNodesOfTargetVehicle = nodesOfTargetVehicle intersect (relevantPredecessors(chainHeadToMove))
+        val relevantNodesOfTargetVehicle = nodesOfTargetVehicle intersect relevantPredecessors(chainHeadToMove)
         val lNearestNodesOfTargetVehicle = relevantNodesOfTargetVehicle.intersect(lClosestNeighborsByDistance(chainHeadToMove))
 
         val nextMoveGenerator = {
@@ -490,7 +490,7 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
                 nextMoveGenerator,
                 None,
                 Int.MaxValue,
-                false)
+                intermediaryStops = false)
             }
           }) name "OneChainMove"
       }
@@ -503,7 +503,7 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
      */
 
     def moveChainWithinVehicle(vehicle: Int): Neighborhood = {
-      val nodesOfTargetVehicle = (SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(vehicle))
+      val nodesOfTargetVehicle = SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(vehicle)
       val chainsHeadInVehicle = nodesOfTargetVehicle.filter(chainsExtension.isHead)
 
 
@@ -565,7 +565,7 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
               nextMoveGenerator,
               None,
               Int.MaxValue,
-              false)
+              intermediaryStops = false)
           }
         }) name "OneChainMove"
     }
@@ -586,10 +586,10 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
         },
         chainsExtension.chainOfNode(chainHead).tail,
         Int.MaxValue,
-        false)
+        intermediaryStops = false)
     }
 
-    def removeAndReInsertVLSN(headOfChainToRemove: Int): (() => Unit) = {
+    def removeAndReInsertVLSN(headOfChainToRemove: Int): () => Unit = {
       val checkpointBeforeRemove = myVRP.routes.defineCurrentValueAsCheckpoint(true)
       require(headOfChainToRemove >= v, "cannot remove vehicle point: " + headOfChainToRemove)
 
@@ -602,7 +602,7 @@ object PDPTW_VLSN_li_lim_benchmark extends App {
         }
       }
 
-      def restoreAndRelease: (() => Unit) = () => {
+      def restoreAndRelease: () => Unit = () => {
         myVRP.routes.rollbackToTopCheckpoint(checkpointBeforeRemove)
         myVRP.routes.releaseTopCheckpoint()
       }

@@ -32,14 +32,14 @@ object NQueensEasy1 extends CBLSModel with App{
 
   val N = 20
   val range = 0 until N
-  println("NQueens(" + N + ")")
+  println(s"NQueens($N)")
 
   val rand = new scala.util.Random()
 
   // initial solution
   val init = rand.shuffle(range.toList).toArray
 
-  val queens = Array.tabulate(N)(q => CBLSIntVar(init(q), range, "queen" + q))
+  val queens = Array.tabulate(N)(q => CBLSIntVar(init(q), range, s"queen$q"))
 
   //alldiff on rows in enforced because we swap queens initially different
   c.add(allDiff(Array.tabulate(N)(q => queens(q) + q)))
@@ -54,7 +54,7 @@ object NQueensEasy1 extends CBLSModel with App{
   val tabu = Array.fill(N)(0)
   val tenure = 3
 
-  while(violation.value > 0){
+  while(violation().value > 0){
     selectMin(range,range)(
       (p,q) => swapVal(queens(p),queens(q)),
       (p,q) => tabu(p) < it && tabu(q) < it && p < q)

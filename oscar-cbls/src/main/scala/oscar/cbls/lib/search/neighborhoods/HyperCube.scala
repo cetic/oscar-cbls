@@ -41,7 +41,7 @@ case class HyperCube(vars:Array[CBLSIntVar],
       if(currentDeltas.nonEmpty){
         //We can test the current point
         val newObj = obj.value
-        iterator.next
+        iterator.next()
         if (evaluateCurrentMoveObjTrueIfSomethingFound(newObj)) {
           notifyFound()
         }

@@ -167,7 +167,7 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
 
     //hotRestart stuff for next call
     startIndice = if (hotRestartOnNextSymmetryClass) {
-      if (nodeToInsertIterator.hasUnboundedNext())
+      if (nodeToInsertIterator.hasUnboundedNext)
         nodeToInsertIterator.unboundedNext()
       else iterationScheme.head
     } else{insertedPointForInstantiation + 1}

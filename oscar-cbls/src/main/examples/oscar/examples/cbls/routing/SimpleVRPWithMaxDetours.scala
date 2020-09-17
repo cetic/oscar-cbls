@@ -10,8 +10,8 @@ import scala.collection.immutable.HashSet
 /**
   * Created by fg on 12/05/17.
   */
-object SimpleVRPWithMaxDetours extends App{
-  val m = new Store(noCycle = false/*, checker = Some(new ErrorChecker)*/)
+object SimpleVRPWithMaxDetours extends App {
+  val m = Store(noCycle = false/*, checker = Some(new ErrorChecker)*/)
   val v = 10
   val n = 1000
   val penaltyForUnrouted = 10000
@@ -24,7 +24,7 @@ object SimpleVRPWithMaxDetours extends App{
   NaiveTimeWindowConstraint.maxTransferFunctionWithTravelDurationRestriction(n,v,singleNodeTransferFunctions,maxTravelDurations, listOfChains, travelDurationMatrix)
 
   // Distance
-  val totalRouteLength = routeLength(myVRP.routes,n,v,false,symmetricDistance,true)(0)
+  val totalRouteLength = routeLength(myVRP.routes,n,v,perVehicle = false,symmetricDistance,distanceIsSymmetric = true)(0)
 
   //Chains
   val precedenceRoute = myVRP.routes.createClone()
@@ -55,7 +55,7 @@ object SimpleVRPWithMaxDetours extends App{
   def relevantPredecessorsForLastNode(lastNode: Int) = ChainsHelper.relevantNeighborsForLastNodeAfterHead(myVRP,chainsExtension,Some(HashSet() ++ relevantPredecessorsOfNodes(lastNode)))(lastNode)
   val relevantPredecessorsForInternalNodes = ChainsHelper.computeRelevantNeighborsForInternalNodes(myVRP, chainsExtension)_
 
-  def postFilter(node:Int): (Int) => Boolean = {
+  def postFilter(node:Int): Int => Boolean = {
     val routedNode = myVRP.routed.value
     (neighbor: Int) => {
       val successor = myVRP.nextNodeOf(neighbor)
@@ -97,7 +97,7 @@ object SimpleVRPWithMaxDetours extends App{
           nextMoveGenerator,
           None,
           Long.MaxValue,
-          false)
+          intermediaryStops = false)
       }
     ) name "One Chain Move"
 
@@ -139,7 +139,7 @@ object SimpleVRPWithMaxDetours extends App{
           nextInsertGenerator,
           None,
           Long.MaxValue,
-          false)
+          intermediaryStops = false)
       }) name "One Chain Insert"
 
   }

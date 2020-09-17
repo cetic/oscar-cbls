@@ -783,7 +783,7 @@ class InvBench(verbose: Int = 0, moves:List[Move]) extends AnyFunSuite with Scal
     if (vars.nonEmpty) {
       println(name + " vars:")
       vars.foreach((rv: RandomVar) => println(rv.toString()))
-      println
+      println()
     }
   }
 

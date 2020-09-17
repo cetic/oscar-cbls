@@ -71,7 +71,7 @@ object QList{
 
     var toReturn = q
     while(it.hasNext){
-      toReturn = QList(it.next,toReturn)
+      toReturn = QList(it.next(),toReturn)
     }
     toReturn
   }
