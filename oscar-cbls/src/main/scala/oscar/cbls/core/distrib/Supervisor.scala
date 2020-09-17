@@ -20,7 +20,7 @@ import scala.concurrent.Await
 
 sealed trait MessagesToSupervisor
 final case class NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) extends MessagesToSupervisor
-final case class ReadyForWork(workerRef: ActorRef[MessageToWorker],completedSearchIDOpt:Option[Long]) extends MessagesToSupervisor
+final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSearchIDOpt:Option[Long], completedNeighborhoodID:Option[Int]) extends MessagesToSupervisor
 final case class CancelSearchToSupervisor(searchID:Long) extends MessagesToSupervisor
 
 final case class SearchStarted(search:SearchTask, startID:Long, worker:ActorRef[MessageToWorker]) extends MessagesToSupervisor
@@ -167,6 +167,8 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
     case f:FiniteDuration => context.scheduleOnce(f, context.self, Tic())
   }
 
+  var neighborhoodToPreferredWorker:SortedMap[Int,ActorRef[MessageToWorker]] = SortedMap.empty
+
   override def onMessage(msg: MessagesToSupervisor): Behavior[MessagesToSupervisor] = {
     msg match {
 
@@ -182,7 +184,6 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
       case SpawnWorker(workerBehavior,ref) =>
         val worker = context.spawn(workerBehavior,s"localWorker$nbLocalWorker")
         nbLocalWorker += 1
-
        ref!Unit
 
       case NbWorkers(replyTo) =>
@@ -202,23 +203,66 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
           case (_, Nil) => ;
             if(verbose) context.log.info(status)
 
-          case (false, worker :: remainingWorkers) =>
-            val search = waitingSearches.dequeue
-            if(verbose) context.log.info(s"assigning search:${search.searchId} to worker:${worker.path}")
-            val startID = nextStartID
-            nextStartID = nextStartID + 1
-            totalStartedSearches += 1
+          case (false, _ :: _) =>
 
-            implicit val responseTimeout: Timeout = 3.seconds
-            context.ask[MessageToWorker, MessagesToSupervisor](worker, res => StartSearch(search, startID, res)) {
-              case Success(_: SearchStarted) => SearchStarted(search, startID, worker)
-              case Success(_: SearchNotStarted) => SearchNotStarted(search, worker)
-              case Failure(_) => SearchNotStarted(search, worker)
+            def startSearch(search:SearchTask,worker:ActorRef[MessageToWorker]): Unit ={
+              if(verbose) context.log.info(s"assigning search:${search.searchId} to worker:${worker.path}")
+              val startID = nextStartID
+              nextStartID = nextStartID + 1
+              totalStartedSearches += 1
+
+              implicit val responseTimeout: Timeout = 3.seconds
+              context.ask[MessageToWorker, MessagesToSupervisor](worker, res => StartSearch(search, startID, res)) {
+                case Success(_: SearchStarted) => SearchStarted(search, startID, worker)
+                case Success(_: SearchNotStarted) => SearchNotStarted(search, worker)
+                case Failure(_) => SearchNotStarted(search, worker)
+              }
+
+              startingSearches = startingSearches + (startID -> (search, startID, worker))
             }
 
-            startingSearches = startingSearches + (startID -> (search, startID, worker))
+            val nbIdleWorkers = idleWorkers.size
+            val nbAvailableSearches = waitingSearches.size
+            val nbSearchToStart = nbIdleWorkers min nbAvailableSearches
 
-            idleWorkers = remainingWorkers
+            //println(s"nbSearchToStart:$nbSearchToStart")
+            //println(s"idleWorkers:$idleWorkers")
+
+            val searchesToStart = (0 until nbSearchToStart).toArray.map(_ => waitingSearches.dequeue())
+
+            for(searchI <- searchesToStart.indices){
+              val nID = searchesToStart(searchI).request.neighborhoodID.neighborhoodID
+              val preferredWorkerOpt = neighborhoodToPreferredWorker.get(nID)
+              preferredWorkerOpt match{
+                case Some(preferredWorker) =>
+                 // println(s"preferredWorker:$preferredWorker")
+                 // println(s"preferredWorker.path:${preferredWorker.path}")
+                 // println(s"idleWorkers:$idleWorkers")
+                  val newIdle = idleWorkers.filter(_.path != preferredWorker.path)
+                 // println(s"newIdle:$newIdle")
+                  if(newIdle.size != idleWorkers.size){
+                    //start this one
+                    startSearch(searchesToStart(searchI),preferredWorker)
+                    searchesToStart(searchI) = null
+                    idleWorkers = newIdle
+                   // println("match")
+                  }
+                case None => ;
+              }
+            }
+
+            for(searchI <- searchesToStart.indices if searchesToStart(searchI) != null) {
+              val worker = idleWorkers.head
+              idleWorkers = idleWorkers.tail
+              startSearch(searchesToStart(searchI), worker)
+              neighborhoodToPreferredWorker = neighborhoodToPreferredWorker + ((searchesToStart(searchI).request.neighborhoodID.neighborhoodID -> worker))
+              searchesToStart(searchI) = null
+            }
+
+            //// take the first searches, one per available worker
+            // double loop on these searches; perform worker assignment as they come (no smart optimization here, first fit)
+            //for the remaining searches, make it anyhow
+
             if(idleWorkers.isEmpty){
               if(verbose) context.log.info(status)
             }
@@ -244,7 +288,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
       //we do not register the worker as available here because it will register itself through another call,
       // at least to show it is not completely crashed.
 
-      case ReadyForWork(worker: ActorRef[MessageToWorker],completedSearchID:Option[Long]) =>
+      case ReadyForWork(worker: ActorRef[MessageToWorker],completedSearchID:Option[Long],completedNeighborhoodID:Option[Int]) =>
 
         require(allKnownWorkers contains worker)
         completedSearchID match{

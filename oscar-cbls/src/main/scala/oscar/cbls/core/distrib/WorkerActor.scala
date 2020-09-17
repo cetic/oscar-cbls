@@ -200,13 +200,13 @@ class WorkerActor(neighborhoods:SortedMap[Int,RemoteNeighborhood],
                 case _ => ;
               }
 
-              master ! ReadyForWork(context.self,Some(search.searchId))
+              master ! ReadyForWork(context.self,Some(search.searchId),Some(search.request.neighborhoodID.neighborhoodID))
               next(Idle())
 
             case Aborting(search) =>
               //ok, we've done it for nothing.
               if(verbose) context.log.info(s"aborted search:${search.searchId}")
-              master ! ReadyForWork(context.self,Some(search.searchId))
+              master ! ReadyForWork(context.self,Some(search.searchId),Some(search.request.neighborhoodID.neighborhoodID))
               next(Idle())
 
             case Idle() =>

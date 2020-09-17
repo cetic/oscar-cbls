@@ -38,7 +38,6 @@ case class IndependentNoMoveFound() extends IndependentSearchResult{
 
 // ////////////////////////////////////////////////////////////
 
-
 object IndependentSolution{
   def apply(solution:Solution):IndependentSolution = {
     new IndependentSolution(solution.saves)
