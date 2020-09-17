@@ -548,7 +548,8 @@ class VLSN(v:Int,
       if(printTakenMoves) {
         println("            enriching VLSN graph to level " + currentEnrichmentLevel + "/" + maxEnrichmentLevel)
       }
-      require(dirtyVehicles.forall( x => x >= 0 && x < v))
+
+      //require(dirtyVehicles.forall( x => x >= 0 && x < v))
       vlsnGraph = moveExplorer.enrichGraph(currentEnrichmentLevel, dirtyNodes, dirtyVehicles, printTakenMoves)
 
       if(printTakenMoves) {
