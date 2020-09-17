@@ -89,7 +89,7 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
         val prevUpdate = digestUpdates(prev)
 
         // Either we got an assign update or this is the very first define checkpoint ==> We must init all vehicles
-        if(!prevUpdate || this.checkpointLevel < 0) {
+        if (!prevUpdate || this.checkpointLevel < 0) {
           checkpointAtLevel0 = newRoute // Save the state of the route for further comparison
           computeSaveAndAssignVehicleValuesFromScratch(newRoute)
           (0 until v).foreach(vehicle => {
@@ -98,10 +98,10 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
             initSegmentsOfVehicle(vehicle, newRoute)
           })
           // Defining checkpoint 0 ==> we must init every changed since checkpoint 0 vehicles
-        } else if(checkpointLevel == 0) {
+        } else if (checkpointLevel == 0) {
           checkpointAtLevel0 = newRoute // Save the state of the route for further comparison
           // Computing init ListSegment value for each vehicle that has changed
-          QList.qForeach(changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList,(vehicle: Int) => {
+          QList.qForeach(changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList, (vehicle: Int) => {
             setCheckpointLevel0Values(vehicle)
             performPreComputes(vehicle, newRoute)
             initSegmentsOfVehicle(vehicle, newRoute)
@@ -134,8 +134,8 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
         }
         true
 
-      case r@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Int) =>
-        if(checkpointLevel == 0) {
+      case r@SeqUpdateRollBackToCheckpoint(checkpoint: IntSequence, checkpointLevel: Int) =>
+        if (checkpointLevel == 0) {
           require(checkpoint quickEquals this.checkpointAtLevel0)
         }
 
@@ -148,7 +148,7 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
 
         // Restoring all other values
         this.changedVehiclesSinceCheckpoint0.all = false
-        QList.qForeach(savedDataAtCheckpointLevel.head._1, (vehicle: Int) =>  this.changedVehiclesSinceCheckpoint0(vehicle) = true)
+        QList.qForeach(savedDataAtCheckpointLevel.head._1, (vehicle: Int) => this.changedVehiclesSinceCheckpoint0(vehicle) = true)
         vehicleSearcher = savedDataAtCheckpointLevel.head._2
         positionToValueCache = savedDataAtCheckpointLevel.head._3
         segmentsOfVehicle = savedDataAtCheckpointLevel.head._4.clone()
@@ -156,95 +156,87 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
         this.checkpointLevel = checkpointLevel
         true
 
-      case sui@SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
-        if(digestUpdates(prev)){
-          useGlobalConstraintPositionCache(prev)
+      case sui@SeqUpdateInsert(value: Int, pos: Int, prev: SeqUpdate) =>
+        digestUpdates(prev)
+        useGlobalConstraintPositionCache(prev)
 
-          val prevRoutes = prev.newValue
+        val prevRoutes = prev.newValue
 
-          val impactedVehicle = vehicleSearcher.vehicleReachingPosition(pos-1)
-          val impactedSegment = segmentsOfVehicle(impactedVehicle)
+        val impactedVehicle = vehicleSearcher.vehicleReachingPosition(pos - 1)
+        val impactedSegment = segmentsOfVehicle(impactedVehicle)
 
-          // InsertSegment insert a segment AFTER a defined position and SeqUpdateInsert at a position => we must withdraw 1
-          segmentsOfVehicle(impactedVehicle) = impactedSegment.insertSegments(QList[Segment](NewNode(value).asInstanceOf[Segment]),pos-1,prevRoutes)
+        // InsertSegment insert a segment AFTER a defined position and SeqUpdateInsert at a position => we must withdraw 1
+        segmentsOfVehicle(impactedVehicle) = impactedSegment.insertSegments(QList[Segment](NewNode(value).asInstanceOf[Segment]), pos - 1, prevRoutes)
 
-          vehicleSearcher = vehicleSearcher.push(sui.oldPosToNewPos)
-          changedVehiclesSinceCheckpoint0(impactedVehicle) = true
-          true
-        } else {
-          false
-        }
+        vehicleSearcher = vehicleSearcher.push(sui.oldPosToNewPos)
+        changedVehiclesSinceCheckpoint0(impactedVehicle) = true
+        true
 
-      case sum@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
-        if(digestUpdates(prev)) {
-          useGlobalConstraintPositionCache(prev)
+      case sum@SeqUpdateMove(fromIncluded: Int, toIncluded: Int, after: Int, flip: Boolean, prev: SeqUpdate) =>
+        digestUpdates(prev)
+        useGlobalConstraintPositionCache(prev)
 
-          val prevRoutes = prev.newValue
+        val prevRoutes = prev.newValue
 
-          val fromVehicle = vehicleSearcher.vehicleReachingPosition(fromIncluded)
-          val toVehicle = vehicleSearcher.vehicleReachingPosition(after)
-          val sameVehicle = fromVehicle == toVehicle
+        val fromVehicle = vehicleSearcher.vehicleReachingPosition(fromIncluded)
+        val toVehicle = vehicleSearcher.vehicleReachingPosition(after)
+        val sameVehicle = fromVehicle == toVehicle
 
-          val fromImpactedSegment = segmentsOfVehicle(fromVehicle)
+        val fromImpactedSegment = segmentsOfVehicle(fromVehicle)
 
-          // Identification of the sub-segments to remove
-          val (listSegmentsAfterRemove, segmentsToRemove) =
-            fromImpactedSegment.removeSubSegments(fromIncluded, toIncluded, prevRoutes)
+        // Identification of the sub-segments to remove
+        val (listSegmentsAfterRemove, segmentsToRemove) =
+          fromImpactedSegment.removeSubSegments(fromIncluded, toIncluded, prevRoutes)
 
-          val toImpactedSegment = if (sameVehicle) listSegmentsAfterRemove else segmentsOfVehicle(toVehicle)
-          // If we are in same vehicle and we remove nodes to put them later in the route, the route length before insertion point has shortened
-          val delta =
-            if (!sameVehicle || after < fromIncluded) 0
-            else toIncluded - fromIncluded + 1
+        val toImpactedSegment = if (sameVehicle) listSegmentsAfterRemove else segmentsOfVehicle(toVehicle)
+        // If we are in same vehicle and we remove nodes to put them later in the route, the route length before insertion point has shortened
+        val delta =
+          if (!sameVehicle || after < fromIncluded) 0
+          else toIncluded - fromIncluded + 1
 
-          // Insert the sub-segments at his new position
-          val listSegmentsAfterInsertion =
-            if (flip)
-              toImpactedSegment.insertSegments(segmentsToRemove.qMap(_.flip()).reverse, after, prevRoutes, delta)
-            else
-              toImpactedSegment.insertSegments(segmentsToRemove, after, prevRoutes, delta)
+        // Insert the sub-segments at his new position
+        val listSegmentsAfterInsertion =
+          if (flip)
+            toImpactedSegment.insertSegments(segmentsToRemove.qMap(_.flip()).reverse, after, prevRoutes, delta)
+          else
+            toImpactedSegment.insertSegments(segmentsToRemove, after, prevRoutes, delta)
 
-          segmentsOfVehicle(toVehicle) = listSegmentsAfterInsertion
-          if (!sameVehicle) segmentsOfVehicle(fromVehicle) = listSegmentsAfterRemove
+        segmentsOfVehicle(toVehicle) = listSegmentsAfterInsertion
+        if (!sameVehicle) segmentsOfVehicle(fromVehicle) = listSegmentsAfterRemove
 
-          vehicleSearcher = vehicleSearcher.push(sum.oldPosToNewPos)
+        vehicleSearcher = vehicleSearcher.push(sum.oldPosToNewPos)
 
-          changedVehiclesSinceCheckpoint0(fromVehicle) = true
-          changedVehiclesSinceCheckpoint0(toVehicle) = true
-          true
-        } else {
-          false
-        }
+        changedVehiclesSinceCheckpoint0(fromVehicle) = true
+        changedVehiclesSinceCheckpoint0(toVehicle) = true
+        true
 
-      case sur@SeqUpdateRemove(position : Int, prev : SeqUpdate) =>
-        if(digestUpdates(prev)) {
-          useGlobalConstraintPositionCache(prev)
+      case sur@SeqUpdateRemove(position: Int, prev: SeqUpdate) =>
+        digestUpdates(prev)
+        useGlobalConstraintPositionCache(prev)
 
-          val prevRoutes = prev.newValue
+        val prevRoutes = prev.newValue
 
-          val impactedVehicle = vehicleSearcher.vehicleReachingPosition(position)
-          val impactedSegment = segmentsOfVehicle(impactedVehicle)
 
-          val (listSegmentAfterRemove, _) = impactedSegment.removeSubSegments(position, position, prevRoutes)
+        val impactedVehicle = vehicleSearcher.vehicleReachingPosition(position)
+        val impactedSegment = segmentsOfVehicle(impactedVehicle)
 
-          segmentsOfVehicle(impactedVehicle) = listSegmentAfterRemove
+        val (listSegmentAfterRemove, _) = impactedSegment.removeSubSegments(position, position, prevRoutes)
 
-          vehicleSearcher = vehicleSearcher.push(sur.oldPosToNewPos)
-          changedVehiclesSinceCheckpoint0(impactedVehicle) = true
-          true
-        } else {
-          false
-        }
+        segmentsOfVehicle(impactedVehicle) = listSegmentAfterRemove
 
-      case SeqUpdateLastNotified(value:IntSequence) =>
+        vehicleSearcher = vehicleSearcher.push(sur.oldPosToNewPos)
+        changedVehiclesSinceCheckpoint0(impactedVehicle) = true
+        true
+
+      case SeqUpdateLastNotified(value: IntSequence) =>
         require(value quickEquals routes.value)
         true
 
-      case SeqUpdateAssign(value : IntSequence) =>
+      case SeqUpdateAssign(value: IntSequence) =>
         vehicleSearcher = VehicleLocation(Array.tabulate(v)(vehicle => {
           value.positionOfAnyOccurrence(vehicle).get
         }))
-        for(vehicle <- 0 until v) initSegmentsOfVehicle(vehicle, value)
+        for (vehicle <- 0 until v) initSegmentsOfVehicle(vehicle, value)
         false //impossible to go incremental
     }
   }
