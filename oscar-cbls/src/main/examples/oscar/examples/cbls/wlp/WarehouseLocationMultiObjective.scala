@@ -107,6 +107,7 @@ object WarehouseLocationMultiObjective extends App {
             assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
             swapsK(10) exhaust swapsK(20),
             swapsK(5) dynAndThen (swapMove => swapsK(5,() => kNearestOpenWarehouses(swapMove.idI,4).filter(_ >= swapMove.idI)))
+            //TODO: add split and merge if warehouses have different construction costs
           ))
 
         val search1 = (neighborhood

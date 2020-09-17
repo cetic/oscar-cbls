@@ -232,10 +232,13 @@ class BiObjectiveSearch(globalMaxObj1:Long,
 
     var foundPoints = 2
 
-    while ((!squaresToDevelop.isEmpty) && (remainingSurface > stopSurface) && (nbSquare < maxPoints)) {
+    def printStopCriterion(): Unit ={
       if(verbose) {
-        println(s"termination(surface:$remainingSurface/$stopSurface nonDominatedSolutions:$nbSquare/$maxPoints)")
+        println(s"stopCriterion(surface:$remainingSurface/$stopSurface nonDominatedSolutions:$nbSquare/$maxPoints toDevelop:${squaresToDevelop.size})")
       }
+    }
+    while ((!squaresToDevelop.isEmpty) && (remainingSurface > stopSurface) && (nbSquare < maxPoints)) {
+      printStopCriterion()
 
       assert(remainingSurface == squaresToDevelop.getElements.toList.map(square => square.surface).sum)
       assert(nbSquare == squareList.size, "nbSquare:" + nbSquare + " != squareList.size:" + squareList.size)
@@ -276,7 +279,7 @@ class BiObjectiveSearch(globalMaxObj1:Long,
     }
 
     if(verbose) {
-      println(s"termination(surface:$remainingSurface/$stopSurface nonDominatedSolutions:$nbSquare/$maxPoints)")
+      printStopCriterion()
       println("elapsed(ms):" + ((System.nanoTime() - startSearchNanotime)/1000000).toInt)
       println("nbFoundSolutions:" + foundPoints)
       println("nbNonDominatedSolutions:" + nbSquare)
