@@ -1,13 +1,12 @@
 package oscar.cbls.visual.graph
 
+import java.awt.Color
 import java.awt.geom.Line2D.Double
 import java.awt.geom.Rectangle2D
 
 import oscar.cbls.algo.graph._
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualCircle, VisualLine, VisualRectangle, VisualShape}
-
-import scala.swing.Color
 
 class SimpleGraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates)
   extends VisualDrawing(false,false){
@@ -20,7 +19,7 @@ class SimpleGraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates)
   var xMultiplier = this.getWidth.toDouble / maxX.toDouble
   var yMultiplier = this.getHeight.toDouble / maxY.toDouble
 
-  override def addShape(shape: VisualShape, repaintAfter: Boolean = true){
+  override def addShape(shape: VisualShape, repaintAfter: Boolean = true): Unit ={
     super.addShape(shape,false)
   }
 
@@ -43,7 +42,7 @@ class SimpleGraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates)
     tempPoint.toolTip = if(toolTip == null) "" + node else toolTip
   }
 
-  def drawSquareNode(node:Node, side:Int, color:Color, toolTip:String = null){
+  def drawSquareNode(node:Node, side:Int, color:Color, toolTip:String = null): Unit ={
     val nodeCoordinates = graph.coordinates(node.id)
     val tempPoint = new VisualRectangle(this, new Rectangle2D.Double(
       nodeCoordinates._1 * xMultiplier - side/2,
@@ -54,7 +53,7 @@ class SimpleGraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates)
     tempPoint.toolTip = if(toolTip == null) "" + node else toolTip
   }
 
-  def drawCrossNode(node:Node, color:Color, side:Int, toolTip:String = null){
+  def drawCrossNode(node:Node, color:Color, side:Int, toolTip:String = null): Unit ={
     val nodeCoordinates = graph.coordinates(node.id)
     val lineV = new VisualLine(this, new Double(
       nodeCoordinates._1 * xMultiplier,

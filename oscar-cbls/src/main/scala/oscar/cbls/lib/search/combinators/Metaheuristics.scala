@@ -1,10 +1,7 @@
 package oscar.cbls.lib.search.combinators
 
-import oscar.cbls._
 import oscar.cbls.core.objective.{CascadingObjective, FunctionObjective, Objective}
-import oscar.cbls.core.search.{NoMoveFound, _}
-
-import scala.language.postfixOps
+import oscar.cbls.core.search.{InstrumentedMove, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, OverrideObj, SearchResult}
 
 object Restart{
   /**
@@ -71,13 +68,13 @@ class Metropolis(a: Neighborhood, iterationToTemperature: Long => Double = _ => 
     }
   }
 
-  def notifyMoveTaken() {
+  def notifyMoveTaken(): Unit ={
     moveCount += 1L
     temperatureValue = iterationToTemperature(moveCount)
   }
 
   //this resets the internal state of the move combinators
-  override def reset() {
+  override def reset(): Unit ={
     super.reset()
     moveCount = 0L
     temperatureValue = iterationToTemperature(moveCount)
@@ -112,12 +109,12 @@ class GuidedLocalSearch(a: Neighborhood,
     it = 0
     currentWeightOfObj = maxValueForWeighting
     super.reset()
-    println("resetting GLS currentWeightOfObj=" + currentWeightOfObj)
+    println(s"resetting GLS currentWeightOfObj=$currentWeightOfObj")
   }
 
   override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
 
-    println("GLS getMove currentWeightOfObj:" + currentWeightOfObj)
+    println(s"GLS getMove currentWeightOfObj:$currentWeightOfObj")
     if (currentWeightOfObj > 0) {
       //it is still a soft constraint
       val initValueOFConstaint = additionalConstraint.value
@@ -125,11 +122,11 @@ class GuidedLocalSearch(a: Neighborhood,
         //we are going GeneralizedLocalSearch, but the strong constraint is fine,
         //we can swith to a strong constraint
         currentWeightOfObj = 0
-        println("GLS getMove, strong constraints are fine, so switching to Strong (it:" + it + ")")
+        println(s"GLS getMove, strong constraints are fine, so switching to Strong (it:$it)")
         return getMove(obj, initialObj, acceptanceCriterion) //recursive call
       }
 
-      println("GLS getMove, soft constraint currentWeightOfObj:" + currentWeightOfObj + " initValueOFConstraint:" + initValueOFConstaint)
+      println(s"GLS getMove, soft constraint currentWeightOfObj:$currentWeightOfObj initValueOFConstraint:$initValueOFConstaint")
 
       val initCompositeObj = (maxValueForWeighting * initValueOFConstaint) + (currentWeightOfObj * initialObj)
       var bestCompositeObj:Long = initCompositeObj
@@ -172,7 +169,7 @@ class GuidedLocalSearch(a: Neighborhood,
             this.getMove(obj, initialObj, acceptanceCriterion)
           }
         case m: MoveFound =>
-          println("MoveFound " + m)
+          println(s"MoveFound $m")
           //a move was found,
           //we decrease the weighting anyway, so the next iteration will be more directed towards target
 
@@ -182,7 +179,7 @@ class GuidedLocalSearch(a: Neighborhood,
           val replacementOBjValue = if(emulateOriginalObj && bestCompositeObj == m.objAfter){
             baseOBjAtBestCompositeObj
           }else{
-            System.err.println("could not emulate bestCompositeObj:" + bestCompositeObj + "!= m.objAfter:" + m.objAfter)
+            System.err.println(s"could not emulate bestCompositeObj:$bestCompositeObj!= m.objAfter:${m.objAfter}")
             Long.MaxValue
           }
           MoveFound(new OverrideObj(m.m, replacementOBjValue))
@@ -191,9 +188,6 @@ class GuidedLocalSearch(a: Neighborhood,
         // we can record the best obj and its related base obj, but we have no proof that it will be the returned one or the proper combination
         //so let's put it as an option.
         //also in case of VLSN, this just does not work at all
-
-
-
       }
     } else if (currentWeightOfObj == 0) {
       //strong constraint
@@ -619,7 +613,7 @@ class GuidedLocalSearch3(a: Neighborhood,
   def weightString(weightForBase:Long):String =  weightForBase match{
     case 0L => "forget obj, focus on additional constraints"
     case 1L => "additional are strong Constraints"
-    case x if x > 1L =>  "relativeWeight:" + x + "/" + weightCorrectionStrategy.constantWeightForAdditionalConstraint
+    case x if x > 1L =>  s"relativeWeight:$x/${weightCorrectionStrategy.constantWeightForAdditionalConstraint}"
     case x if x < 0L => "interrupted"
   }
 
@@ -639,7 +633,7 @@ class GuidedLocalSearch3(a: Neighborhood,
     }
 
     if(printExploredNeighborhoods){
-      println("GLS trying;" + weightString(weightForBase))
+      println(s"GLS trying;${weightString(weightForBase)}")
     }
 
     val initValForAdditional = additionalConstraint.value
@@ -672,7 +666,7 @@ class GuidedLocalSearch3(a: Neighborhood,
         getMoveNoUpdateWeight(obj, initialObj, acceptanceCriterion,initValForAdditional,remainingAttemptsBeforeStop-1)
 
       case m: MoveFound =>
-        if(printExploredNeighborhoods) println("GLS got MoveFound " + m)
+        if(printExploredNeighborhoods) println(s"GLS got MoveFound $m")
         //a move was found, good
         val correctedObj = compositeObjToBaseOBj(m.objAfter)
         if(m.objAfter == correctedObj){
@@ -683,4 +677,3 @@ class GuidedLocalSearch3(a: Neighborhood,
     }
   }
 }
-

@@ -1,5 +1,3 @@
-package oscar.cbls.business.geometry.model
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,12 +12,12 @@ package oscar.cbls.business.geometry.model
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.business.geometry.model
 
 import org.locationtech.jts.geom.util.AffineTransformation
 import oscar.cbls.Store
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.{Checker, PropagationElement}
-
 
 case class AffineTransformationValue(affineTransform:AffineTransformation,
                                      uniformScalingFactor:Option[Double]){
@@ -41,7 +39,7 @@ class CBLSAffineTransformVar(store: Store,
     val clone = new CBLSAffineTransformVar(
       store,
       this.value,
-      "clone of " + this.name)
+      s"clone of ${this.name}")
 
     clone <== this
     clone
@@ -69,20 +67,18 @@ class IdentityAffineTransformation(toValue:CBLSAffineTransformVar, fromValue:Cha
 
   toValue := fromValue.value
 
-
   override def notifyAffineTransformChange(a: ChangingAtomicValue[AffineTransformationValue], id: Int, oldVal: AffineTransformationValue, newVal: AffineTransformationValue): Unit = {
     toValue := newVal
   }
 
-  override def checkInternals(c:Checker){
+  override def checkInternals(c:Checker): Unit ={
     c.check(toValue.value == fromValue.value)
   }
 }
 
 trait AffineTransformNotificationTarget{
-  def notifyAffineTransformChange(a:ChangingAtomicValue[AffineTransformationValue],id:Int,oldVal:AffineTransformationValue,newVal:AffineTransformationValue)
+  def notifyAffineTransformChange(a:ChangingAtomicValue[AffineTransformationValue],id:Int,oldVal:AffineTransformationValue,newVal:AffineTransformationValue): Unit
 }
-
 
 class CBLSAffineTransformConst(store:Store, override val value:AffineTransformation, givenName:String = null)
   extends CBLSAtomicConst[AffineTransformation](value){
@@ -98,7 +94,7 @@ class CBLSAffineTransformInvariant(initialValue:AffineTransformationValue)
     val clone = new CBLSAffineTransformVar(
       this.model,
       this.value,
-      "clone of " + this.name)
+      s"clone of ${this.name}")
 
     clone <== this
     clone

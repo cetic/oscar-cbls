@@ -1,4 +1,3 @@
-package oscar.cbls.algo.rb
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -13,8 +12,11 @@ package oscar.cbls.algo.rb
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.algo.rb
 
 import oscar.cbls.algo.quick.QList
+
+import scala.annotation.tailrec
 
 /*** Okasaki-style red-black tree maps. ***/
 
@@ -31,7 +33,11 @@ private object RedBlackTreeMapLib{
   }
 
   // balance: Balance a tree with balanced subtrees.
-  def balance[V] (c : Boolean,l : RedBlackTreeMap[V],k : Int,v : Option[V],r : RedBlackTreeMap[V]) : RedBlackTreeMap[V] = {
+  def balance[V] (c : Boolean,
+                  l : RedBlackTreeMap[V],
+                  k : Int,
+                  v : Option[V],
+                  r : RedBlackTreeMap[V]) : RedBlackTreeMap[V] = {
     (c,l,k,v,r) match {
       case (B,T(R,T(R,a,xK,xV,b),yK,yV,c),zK,zV,d) => T(R,T(B,a,xK,xV,b),yK,yV,T(B,c,zK,zV,d))
       case (B,T(R,a,xK,xV,T(R,b,yK,yV,c)),zK,zV,d) => T(R,T(B,a,xK,xV,b),yK,yV,T(B,c,zK,zV,d))
@@ -198,7 +204,7 @@ case class L[@specialized(Int) V]() extends RedBlackTreeMap[V]  {
   override def positionOf(k: Int):Option[RedBlackTreeMapExplorer[V]] = None
 
   // insert: Insert a value at a key.
-  override def insert (k : Int, v : V) =  T(B, L(), k , Some(v), L())
+  override def insert (k : Int, v : V) = T(B, L(), k , Some(v), L())
 
   // remove: Delete a key.
   override def remove (k : Int) = this
@@ -404,7 +410,7 @@ class T[@specialized(Int) V](private[this]val c : Boolean,
     }
   }
 
-  override def updateDelta(fromKeyIncluded : Int, toKeyIncluded : Int, deltaKey : Int, transform : (V) => V) : RedBlackTreeMap[V] = {
+  override def updateDelta(fromKeyIncluded : Int, toKeyIncluded : Int, deltaKey : Int, transform : V => V) : RedBlackTreeMap[V] = {
     val newLeft = if(fromKeyIncluded < k) {
       l.updateDelta(fromKeyIncluded, toKeyIncluded, deltaKey, transform)
     }else{
@@ -440,7 +446,7 @@ class T[@specialized(Int) V](private[this]val c : Boolean,
 // A helper object.
 object RedBlackTreeMap {
 
-  // empty: Converts an orderable type into an empty RBMap.
+  // empty: Converts an order-able type into an empty RBMap.
   def empty[@specialized(Int) V] : RedBlackTreeMap[V] = L[V]()
 
   // apply: Assumes an implicit conversion.
@@ -451,7 +457,6 @@ object RedBlackTreeMap {
     }
     currentMap
   }
-
 
   /**
    * make the red black tree out of already sorted couples (key,value)
@@ -466,12 +471,12 @@ object RedBlackTreeMap {
     //root is to be black, beside alternate red and black
     val a = args.toArray
     if(args.size <=3) this.apply(args)
-    else myMakeFromSorted(a,0,a.length-1,false)
+    else myMakeFromSorted(a,0,a.length-1,targetIsRed = false)
   }
 
   def makeFromSortedContinuousArray[@specialized V](args:Array[V]):RedBlackTreeMap[V] = {
     if(args.length == 0) RedBlackTreeMap.empty [V]
-    else myMakeFromContinuousSorted(args, 0, args.length - 1, false)
+    else myMakeFromContinuousSorted(args, 0, args.length - 1, targetIsRed = false)
   }
 
   private def myMakeFromContinuousSorted[@specialized(Int) V](args:Array[V],fromIncluded:Int,toIncluded:Int,targetIsRed:Boolean): RedBlackTreeMap[V] = {
@@ -493,7 +498,6 @@ object RedBlackTreeMap {
     }
   }
 
-
   /**
    * make the red black tree out of already sorted couples (key,value)
    * they must be sorted by increasing order of key, and a key can only be present once.
@@ -506,7 +510,7 @@ object RedBlackTreeMap {
   def makeFromSortedArray[@specialized(Int) V](args:Array[(Int,V)]): RedBlackTreeMap[V] = {
     //root is to be black, beside alternate red and black
     if(args.length <=1) this.apply(args)
-    else myMakeFromSorted(args,0,args.length-1,false)
+    else myMakeFromSorted(args,0,args.length-1,targetIsRed = false)
   }
 
 
@@ -550,6 +554,7 @@ class RedBlackTreeMapExplorer[@specialized(Int) V](position:QList[(T[V],Boolean)
 
   def next:Option[RedBlackTreeMapExplorer[V]] = {
 
+    @tailrec
     def unstack1(position:QList[(T[V],Boolean)]):QList[(T[V],Boolean)] = {
       if (position == null) return null
       val head = position.head
@@ -562,6 +567,7 @@ class RedBlackTreeMapExplorer[@specialized(Int) V](position:QList[(T[V],Boolean)
       }
     }
 
+    @tailrec
     def descendToLeftMost(position:QList[(T[V],Boolean)]):QList[(T[V],Boolean)] = {
       val headTree = position.head._1
       headTree.pl match{
@@ -580,6 +586,7 @@ class RedBlackTreeMapExplorer[@specialized(Int) V](position:QList[(T[V],Boolean)
   }
 
   def prev:Option[RedBlackTreeMapExplorer[V]] = {
+    @tailrec
     def unstack1(position:QList[(T[V],Boolean)]):QList[(T[V],Boolean)] = {
       if (position == null) return null
       val head = position.head
@@ -592,6 +599,7 @@ class RedBlackTreeMapExplorer[@specialized(Int) V](position:QList[(T[V],Boolean)
       }
     }
 
+    @tailrec
     def descendToRightMost(position:QList[(T[V],Boolean)]):QList[(T[V],Boolean)] = {
       val headTree = position.head._1
       headTree.pr match{

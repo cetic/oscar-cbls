@@ -1,15 +1,24 @@
 package oscar.cbls.test.algo
 
 import org.scalacheck.Gen
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.algo.seq._
 import SequenceTestUtils._
 
 import scala.util.Random
 
+class IntSequenceTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
+  val elem: Gen[Int] = for (n <- Gen.choose(0, 100)) yield n * 4 // Sparse elements
+  val gen: Gen[Operation] = Gen.oneOf(List(MoveAfter(),Insert(),Delete(),Flip(),Regularize(),Commit()))
 
-class IntSequenceTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matchers {
+  val testBenchGen: Gen[(List[Int], List[Operation])] = for{
+    numElems <- Gen.choose(20, 200)
+    numActions <- Gen.choose(20, 100)
+    elems <- Gen.listOfN(numElems, elem)
+    actions <- Gen.listOfN(numActions, gen)
+  } yield (elems,actions)
 
   test("ConcreteIntSequence : batch queries keep expected list"){
     forAll(testBenchGen){testBench => {
@@ -24,12 +33,12 @@ class IntSequenceTestSuite extends FunSuite with GeneratorDrivenPropertyChecks w
           action match {
             case MoveAfter() =>
               val (indexFrom, indexTo, destination) = getRandomParametersForMoveAfter(modifiedList)
-              seq = seq.moveAfter(indexFrom, indexTo, destination, true, fast = false)
+              seq = seq.moveAfter(indexFrom, indexTo, destination, flip = true)
               modifiedList = flipListManually(modifiedList, indexFrom, indexTo, destination)
 
             case Insert() =>
               val (value, pos) = getRandomParametersForInsert(modifiedList)
-              seq = seq.insertAtPosition(value,pos,fast = false)
+              seq = seq.insertAtPosition(value,pos)
 
               val (front, back) = modifiedList.splitAt(pos)
               modifiedList = front ++ List(value) ++ back
@@ -37,12 +46,12 @@ class IntSequenceTestSuite extends FunSuite with GeneratorDrivenPropertyChecks w
             case Delete() =>
               if(referenceList.nonEmpty){
                 val index= Random.nextInt(seq.size)
-                seq = seq.delete(index, fast = false)
+                seq = seq.delete(index)
                 modifiedList = modifiedList.take(index) ++ modifiedList.drop(index+1)
               }
 
             case Flip() =>
-              seq = seq.flip(fast = false)
+              seq = seq.flip()
               modifiedList = modifiedList.reverse
 
             case Regularize() =>
@@ -51,7 +60,7 @@ class IntSequenceTestSuite extends FunSuite with GeneratorDrivenPropertyChecks w
             case Commit() =>
               seq = seq.commitPendingMoves
 
-            case default => {}
+            case _ =>
           }
         }
         compareAllAttributes(seq, modifiedList)
@@ -72,14 +81,14 @@ class IntSequenceTestSuite extends FunSuite with GeneratorDrivenPropertyChecks w
           action match {
             case MoveAfter() =>
               val (indexFrom, indexTo, destination) = getRandomParametersForMoveAfter(modifiedList)
-              seq = seq.moveAfter(indexFrom, indexTo, destination, true, fast = false)
+              seq = seq.moveAfter(indexFrom, indexTo, destination, flip = true)
               modifiedList = flipListManually(modifiedList, indexFrom, indexTo, destination)
 
             case Flip() =>
-              seq = seq.flip(fast = false)
+              seq = seq.flip()
               modifiedList = modifiedList.reverse
 
-            case default => {}
+            case _ =>
           }
         }
         compareAllAttributes(seq, modifiedList)
@@ -97,10 +106,10 @@ class IntSequenceTestSuite extends FunSuite with GeneratorDrivenPropertyChecks w
         var seq :IntSequence = new RemovedIntSequence(IntSequence(referenceList),i)
         var modifiedList = referenceList.take(i) ++ referenceList.drop(i+1)
 
-        for (action <- actionsList) {
+        for (_ <- actionsList) {
           if(modifiedList.size > 1){
             val index= Random.nextInt(seq.size)
-            seq = seq.delete(index, fast = false)
+            seq = seq.delete(index)
             modifiedList = modifiedList.take(index) ++ modifiedList.drop(index+1)
           }
         }
@@ -120,9 +129,9 @@ class IntSequenceTestSuite extends FunSuite with GeneratorDrivenPropertyChecks w
         val (front, back) = referenceList.splitAt(pos)
         var modifiedList = front ++ List(value) ++ back
 
-        for (action <- actionsList) {
+        for (_ <- actionsList) {
           val (value, pos) = getRandomParametersForInsert(modifiedList)
-          seq = seq.insertAtPosition(value,pos,fast = false)
+          seq = seq.insertAtPosition(value,pos)
 
           val (front, back) = modifiedList.splitAt(pos)
           modifiedList = front ++ List(value) ++ back
@@ -145,7 +154,7 @@ class IntSequenceTestSuite extends FunSuite with GeneratorDrivenPropertyChecks w
           action match {
             case MoveAfter() =>
               val (indexFrom, indexTo, destination) = getRandomParametersForMoveAfter(modifiedList)
-              seq = seq.moveAfter(indexFrom, indexTo, destination, true, fast = true)
+              seq = seq.moveAfter(indexFrom, indexTo, destination, flip = true, fast = true)
               modifiedList = flipListManually(modifiedList, indexFrom, indexTo, destination)
 
             case Insert() =>
@@ -172,24 +181,13 @@ class IntSequenceTestSuite extends FunSuite with GeneratorDrivenPropertyChecks w
             case Commit() =>
               seq = seq.commitPendingMoves
 
-            case default =>
+            case _ =>
           }
         }
         compareAllAttributes(seq, modifiedList)
       }
     }}
   }
-
-
-  val elem: Gen[Int] = for (n <- Gen.choose(0, 100)) yield n * 4 // Sparse elements
-  val gen: Gen[Operation] = Gen.oneOf(List(MoveAfter(),Insert(),Delete(),Flip(),Regularize(),Commit()))
-
-  val testBenchGen: Gen[(List[Int], List[Operation])] = for{
-    numElems <- Gen.choose(20, 200)
-    numActions <- Gen.choose(20, 100)
-    elems <- Gen.listOfN(numElems, elem)
-    actions <- Gen.listOfN(numActions, gen)
-  } yield(elems,actions)
 
   abstract sealed class Operation()
   case class MoveAfter() extends Operation
@@ -268,12 +266,12 @@ object SequenceTestUtils{
   def compareAllAttributes(intSeq :IntSequence, list :List[Int]): Unit = myTestUtils.compare(intSeq,list)
 }
 
-class SequenceTestUtils extends FunSuite with Matchers {
+class SequenceTestUtils extends AnyFunSuite with Matchers {
 
   /**
     * Exhaustively compares the IntSequence with a reference list, supposed to be identical
-    * @param intSeq
-    * @param list
+    * @param intSeq the integer sequence
+    * @param list the reference list
     */
   def compare(intSeq :IntSequence, list: List[Int]): Unit ={
     intSeq.size             should be (list.size)
@@ -313,7 +311,7 @@ class SequenceTestUtils extends FunSuite with Matchers {
       intSeq.valueAtPosition(i).get                       should be (list(i))
 
       // Didn't find a matcher for that ...
-      list containsSlice (intSeq.iterateFromAnyOccurrenceOfValue(list(i)).toList) should be (true)
+      list containsSlice intSeq.iterateFromAnyOccurrenceOfValue(list(i)).toList should be (true)
     }
 
     // It is way too expensive to test all index values exhaustively

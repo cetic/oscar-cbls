@@ -1,5 +1,3 @@
-package oscar.cbls.lib.invariant.minmax
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,11 +12,13 @@ package oscar.cbls.lib.invariant.minmax
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.lib.invariant.minmax
 
+import oscar.cbls._
 import oscar.cbls.algo.heap.BinomialHeapWithMoveInt
 import oscar.cbls.algo.quick.QList
-import oscar.cbls._
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{ChangingSetValue, IntInvariant, SetNotificationTarget, SetValue}
+import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.SortedSet
 
@@ -40,7 +40,6 @@ case class MinConstArray(varss: Array[Int], ccond: SetValue, default: Int = Int.
   }
 }
 
-
 /**
  * Maintains Max(Var(i) | i in cond)
  * @param varss is an array of IntVar, which can be bulked
@@ -58,7 +57,6 @@ case class MaxConstArray(varss: Array[Int], ccond: SetValue, default: Int = Int.
     else c.check(value == varss(ccond.value.maxBy(varss(_))))
   }
 }
-
 
 /**
  * Maintains Min(Var(i) | i in cond)
@@ -81,13 +79,13 @@ case class MinConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = 
 
   override def checkInternals(c: Checker): Unit = {
     if(ccond.value.isEmpty) c.check(value == default,Some("default"))
-    else  c.check(value == varss(ccond.value.minBy(varss(_))),Some("expected " + varss(ccond.value.minBy(varss(_))) + " got " + value))
+    else c.check(value == varss(ccond.value.minBy(varss(_))),
+      Some(s"expected ${varss(ccond.value.minBy(varss(_)))} got $value"))
   }
 
   @inline
   override def equalOrNotImpactingMiax(potentialMiax: Long): Boolean = this.newValue <= potentialMiax
 }
-
 
 /**
  * Maintains Max(Var(i) | i in cond)
@@ -111,7 +109,8 @@ case class MaxConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = 
 
   override def checkInternals(c: Checker): Unit = {
     if(ccond.value.isEmpty) c.check(value == default,Some("default"))
-    else  c.check(value == varss(ccond.value.maxBy(varss(_))),Some("expected " + varss(ccond.value.maxBy(varss(_))) + " got " + value))
+    else c.check(value == varss(ccond.value.maxBy(varss(_))),
+      Some(s"expected ${varss(ccond.value.maxBy(varss(_)))} got $value"))
   }
 
   @inline
@@ -160,7 +159,7 @@ abstract class MiaxConstArray(vars: Array[Int], cond: SetValue, default: Int)
   }
 
   @inline
-  def notifyInsertOn(v: ChangingSetValue, value: Int) {
+  def notifyInsertOn(v: ChangingSetValue, value: Int): Unit = {
     assert(v == cond)
 
     //mettre a jour le heap
@@ -168,7 +167,7 @@ abstract class MiaxConstArray(vars: Array[Int], cond: SetValue, default: Int)
   }
 
   @inline
-  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
+  def notifyDeleteOn(v: ChangingSetValue, value: Int): Unit = {
     assert(v == cond)
 
     //mettre a jour le heap
@@ -201,8 +200,8 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
 
   var backLog:QList[Int] = null
   var backlogSize:Int = 0
-  val isBacklogged:Array[Boolean] = Array.fill(vars.size)(false)
-  val consideredValue:Array[Boolean] = Array.fill(vars.size)(false)
+  val isBacklogged:Array[Boolean] = Array.fill(vars.length)(false)
+  val consideredValue:Array[Boolean] = Array.fill(vars.length)(false)
 
   registerStaticAndDynamicDependency(cond)
   finishInitialization()
@@ -226,7 +225,7 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
   def Ord(v: Int): Int
 
   @inline
-  private[this] def updateFromHeap() {
+  private[this] def updateFromHeap(): Unit = {
     if (h.isEmpty) {
       this := default
     } else {
@@ -235,7 +234,7 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
   }
 
   @inline
-  private[this] def updateFromNonEmptyHeap() {
+  private[this] def updateFromNonEmptyHeap(): Unit = {
     this := vars(h.getFirst)
   }
 
@@ -258,7 +257,7 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
    * does not perform final update because was not supposed to be impacted
    */
   @inline
-  private[this] def trimBackLog(){
+  private[this] def trimBackLog(): Unit ={
     while(true){
       if(backLog == null) return
       if(!isBacklogged(backLog.head)){
@@ -315,7 +314,7 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
   }
 
   @inline
-  def notifyInsertOn(v: ChangingSetValue, value: Int) {
+  def notifyInsertOn(v: ChangingSetValue, value: Int): Unit = {
     assert(v == cond)
     if(consideredValue(value)){ //anihilation
       assert(isBacklogged(value))
@@ -333,7 +332,7 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
   }
 
   @inline
-  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
+  def notifyDeleteOn(v: ChangingSetValue, value: Int): Unit = {
     assert(v == cond)
     if(!consideredValue(value)){ //anihilation
       assert(isBacklogged(value))

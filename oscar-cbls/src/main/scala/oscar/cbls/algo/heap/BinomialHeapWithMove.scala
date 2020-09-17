@@ -32,7 +32,8 @@ import scala.collection.immutable.SortedMap
  * @tparam T the type of elements included in the heap
  * @author renaud.delandtsheer@cetic.be
  */
-class BinomialHeap[T](initialGetKey:T => Long,val maxsize:Int)(implicit val X:Manifest[T]) extends AbstractHeap[T] {
+class BinomialHeap[T](initialGetKey:T => Long,val maxsize:Int)
+                     (implicit val X:Manifest[T]) extends AbstractHeap[T] {
   val heapArray:Array[T] = new Array[T](maxsize)
   private var msize:Int=0
 
@@ -42,7 +43,7 @@ class BinomialHeap[T](initialGetKey:T => Long,val maxsize:Int)(implicit val X:Ma
    * Can be costly if the heap is not empty.
    * @param KeyGetter the new key getter
    */
-  def keyGetter_=(KeyGetter:T => Long){
+  def keyGetter_=(KeyGetter:T => Long): Unit = {
     if(msize>0L){
       val content:List[T] = this.toList
       dropAll()
@@ -53,22 +54,22 @@ class BinomialHeap[T](initialGetKey:T => Long,val maxsize:Int)(implicit val X:Ma
     }
   }
 
-  def keyGetter:(T => Long) = GetKey
+  def keyGetter:T => Long = GetKey
 
   override def size: Int = msize
   override def isEmpty:Boolean = msize == 0L
 
-  override def toString():String = {
-    heapArray.toList.toString()
+  override def toString:String = {
+    heapArray.toList.toString
   }
 
   /**makes the datastruct empty, but does not frees the space*/
-  override def dropAll(){
+  override def dropAll(): Unit = {
     msize = 0
   }
 
   /**log(n)*/
-  override def insert(elem:T){
+  override def insert(elem:T): Unit = {
     //insert en derniere position, puis bubble up
     heapArray(msize)=elem
     msize +=1
@@ -76,15 +77,15 @@ class BinomialHeap[T](initialGetKey:T => Long,val maxsize:Int)(implicit val X:Ma
   }
 
   /**O(1L) operation*/
-  private def swapPositions(position1:Int,position2:Int){
+  private def swapPositions(position1:Int,position2:Int): Unit = {
     val tmp:T = heapArray(position1)
     heapArray(position1)=heapArray(position2)
     heapArray(position2)=tmp
   }
 
   //returns the last position of the moved item
-  private def pushDown(startposition:Int):Long = {
-    var position = startposition
+  private def pushDown():Long = {
+    var position = 0
     while(true)
       if(leftChild(position) < msize && GetKey(heapArray(position)) > GetKey(heapArray(leftChild(position)))){
         //examiner aussi left child
@@ -107,7 +108,7 @@ class BinomialHeap[T](initialGetKey:T => Long,val maxsize:Int)(implicit val X:Ma
     position //jamais execute
   }
 
-  private def pushUp(startposition:Int):Long = {
+  private def pushUp(startposition:Int): Long = {
     var position = startposition
     while(true){
       val fatherposition:Int = father(position)
@@ -151,7 +152,7 @@ class BinomialHeap[T](initialGetKey:T => Long,val maxsize:Int)(implicit val X:Ma
       swapPositions(0,msize-1)
       msize -=1
       heapArray(msize)=null.asInstanceOf[T]
-      pushDown(0)
+      pushDown()
     }
     toreturn
   }
@@ -200,7 +201,7 @@ class BinomialHeapWithMove[T](getKey:T => Long,val maxsize:Int)(implicit val A:O
 
   def contains(value:T):Boolean = position.contains(value)
 
-  def checkInternals(){
+  def checkInternals(): Unit = {
     for(i <- heapArray.indices if i < size-1){
       if (leftChild(i) < size){
         require(getKey(heapArray(i)) <= getKey(heapArray(leftChild(i))),"heap error " + this + i)
@@ -218,10 +219,10 @@ class BinomialHeapWithMove[T](getKey:T => Long,val maxsize:Int)(implicit val A:O
   }
 
   override def toString:String = {
-    heapArray.toList.toString()
+    heapArray.toList.toString
   }
 
-  def insert(elem:T){
+  def insert(elem:T): Unit = {
     //insert en derniere position, puis bubble up
     heapArray(size)=elem
     position +=((elem,size))
@@ -233,7 +234,7 @@ class BinomialHeapWithMove[T](getKey:T => Long,val maxsize:Int)(implicit val A:O
     position.keys
   }
 
-  private def swapPositions(position1:Int,position2:Int){
+  private def swapPositions(position1:Int,position2:Int): Unit = {
     position+=((heapArray(position1),position2))
     position+=((heapArray(position2),position1))
 
@@ -282,8 +283,8 @@ class BinomialHeapWithMove[T](getKey:T => Long,val maxsize:Int)(implicit val A:O
   }
 
   private def leftChild(position:Int):Int = (position+1)*2-1
-  private def rightChild(position:Int):Int =(position+1)*2
-  private def father(position:Int):Int =  (position-1)/2
+  private def rightChild(position:Int):Int = (position+1)*2
+  private def father(position:Int):Int = (position-1)/2
 
   def getFirsts:List[T] = {
     def ExploreFirsts(value:Long,startposition:Int,acc:List[T]):List[T] = {
@@ -310,12 +311,12 @@ class BinomialHeapWithMove[T](getKey:T => Long,val maxsize:Int)(implicit val A:O
     toreturn
   }
 
-  def notifyChange(elem:T){
+  def notifyChange(elem:T): Unit = {
     val startposition = position(elem)
     pushDown(pushUp(startposition))
   }
 
-  def delete(elem:T){
+  def delete(elem:T): Unit ={
     val startposition:Int = position(elem)
     if (startposition == size-1){
       size -=1
@@ -389,7 +390,7 @@ class BinomialHeapWithMoveExtMem[T](getKey:T => Long, val maxsize:Int, position:
   private[this] val heapArray:Array[T] = new Array[T](maxsize)
   var size:Int=0
 
-  def checkInternals(){
+  def checkInternals(): Unit = {
     for(i <- heapArray.indices if i < size-1){
       if (leftChild(i) < size){
         require(getKey(heapArray(i)) <= getKey(heapArray(leftChild(i))),"heap error " + this + i)
@@ -405,10 +406,10 @@ class BinomialHeapWithMoveExtMem[T](getKey:T => Long, val maxsize:Int, position:
   def isEmpty:Boolean = size == 0
 
   override def toString:String = {
-    heapArray.toList.toString()
+    heapArray.toList.toString
   }
 
-  def insert(elem:T){
+  def insert(elem:T): Unit = {
     //insert en derniere position, puis bubble up
     heapArray(size)=elem
     position +=((elem,size))
@@ -422,7 +423,7 @@ class BinomialHeapWithMoveExtMem[T](getKey:T => Long, val maxsize:Int, position:
 
   def contains(value:T):Boolean = position.contains(value)
 
-  private def swapPositions(position1:Int,position2:Int){
+  private def swapPositions(position1:Int,position2:Int): Unit = {
     position+=((heapArray(position1),position2))
     position+=((heapArray(position2),position1))
 
@@ -503,12 +504,12 @@ class BinomialHeapWithMoveExtMem[T](getKey:T => Long, val maxsize:Int, position:
     toreturn
   }
 
-  def notifyChange(elem:T){
+  def notifyChange(elem:T): Unit = {
     val startposition = position(elem)
     pushDown(pushUp(startposition))
   }
 
-  def delete(elem:T){
+  def delete(elem:T): Unit ={
     val startposition:Int = position(elem)
     if (startposition == size-1){
       size -=1
@@ -551,7 +552,7 @@ class BinomialHeapWithMoveInt(getKey:Int => Int,val maxsize:Int, val maxKey:Int)
 
   var size:Int=0
 
-  def checkInternals(){
+  def checkInternals(): Unit ={
     for(i <- heapArray.indices if i < size-1L){
       if (leftChild(i) < size){
         require(getKey(heapArray(i)) <= getKey(heapArray(leftChild(i))),"heap error " + this + i)
@@ -567,10 +568,10 @@ class BinomialHeapWithMoveInt(getKey:Int => Int,val maxsize:Int, val maxKey:Int)
   def isEmpty:Boolean = size == 0
 
   override def toString:String = {
-    heapArray.toList.toString()
+    heapArray.toList.toString
   }
 
-  def insert(elem:Int){
+  def insert(elem:Int): Unit = {
     //insert en derniere position, puis bubble up
     heapArray(size)=elem
     position(elem) = size
@@ -580,7 +581,7 @@ class BinomialHeapWithMoveInt(getKey:Int => Int,val maxsize:Int, val maxKey:Int)
 
   def contains(value:Int):Boolean = position(value) != -1
 
-  private def swapPositions(position1:Int,position2:Int){
+  private def swapPositions(position1:Int,position2:Int): Unit ={
     position(heapArray(position1)) = position2
     position(heapArray(position2)) = position1
 
@@ -634,9 +635,9 @@ class BinomialHeapWithMoveInt(getKey:Int => Int,val maxsize:Int, val maxKey:Int)
   @inline
   private def leftChild(position:Int):Int = (position+1)*2-1
   @inline
-  private def rightChild(position:Int):Int =(position+1)*2
+  private def rightChild(position:Int):Int = (position+1)*2
   @inline
-  private def father(position:Int):Int =  (position-1)/2
+  private def father(position:Int):Int = (position-1)/2
 
   def getFirsts:List[Int] = {
     def ExploreFirsts(value:Int,startposition:Int,acc:List[Int]):List[Int] = {
@@ -667,12 +668,12 @@ class BinomialHeapWithMoveInt(getKey:Int => Int,val maxsize:Int, val maxKey:Int)
     toreturn
   }
 
-  def notifyChange(elem:Int){
+  def notifyChange(elem:Int): Unit = {
     val startposition = position(elem)
     pushDown(pushUp(startposition))
   }
 
-  def delete(elem:Int){
+  def delete(elem:Int): Unit = {
     val startposition:Int = position(elem)
     if (startposition == size-1){
       size -=1
@@ -716,7 +717,7 @@ class BinomialHeapWithMoveLong(getKey:Int => Long,val maxsize:Int, val maxKey:In
 
   var size:Int=0
 
-  def checkInternals(){
+  def checkInternals(): Unit = {
     for(i <- heapArray.indices if i < size-1L){
       if (leftChild(i) < size){
         require(getKey(heapArray(i)) <= getKey(heapArray(leftChild(i))),"heap error " + this + i)
@@ -732,12 +733,12 @@ class BinomialHeapWithMoveLong(getKey:Int => Long,val maxsize:Int, val maxKey:In
   def isEmpty:Boolean = size == 0
 
   override def toString:String = {
-    heapArray.toList.toString()
+    heapArray.toList.toString
   }
 
-
   // TODO Should add warning in case of duplicated value. This heap **cannot** contain duplicated values.
-  def insert(elem:Int){
+  def insert(elem:Int): Unit = {
+    require(!contains(elem), "This heap cannot contain duplicate values!")
     //insert en derniere position, puis bubble up
     heapArray(size)=elem
     position(elem) = size
@@ -747,7 +748,7 @@ class BinomialHeapWithMoveLong(getKey:Int => Long,val maxsize:Int, val maxKey:In
 
   def contains(value:Int):Boolean = position(value) != -1
 
-  private def swapPositions(position1:Int,position2:Int){
+  private def swapPositions(position1:Int,position2:Int): Unit = {
     position(heapArray(position1)) = position2
     position(heapArray(position2)) = position1
 
@@ -760,26 +761,27 @@ class BinomialHeapWithMoveLong(getKey:Int => Long,val maxsize:Int, val maxKey:In
   private def pushDown(startposition:Int):Int = {
     var position = startposition
     val positionKey = getKey(heapArray(position))
-    while(true)
-      if(leftChild(position) < size && positionKey > getKey(heapArray(leftChild(position)))){
+    while(true) {
+      if (leftChild(position) < size && positionKey > getKey(heapArray(leftChild(position)))) {
         //examiner aussi left child
-        if(rightChild(position) < size && getKey(heapArray(rightChild(position))) < getKey(heapArray(leftChild(position)))){
+        if (rightChild(position) < size && getKey(heapArray(rightChild(position))) < getKey(heapArray(leftChild(position)))) {
           //c'est avec le right child qu'il faut inverser
-          swapPositions(position,rightChild(position))
+          swapPositions(position, rightChild(position))
           position = rightChild(position)
-        }else{
+        } else {
           //c'est avec le left chile qu'il faut inverser
-          swapPositions(position,leftChild(position))
+          swapPositions(position, leftChild(position))
           position = leftChild(position)
         }
-      }else if(rightChild(position) < size && positionKey > getKey(heapArray(rightChild(position)))){
+      } else if (rightChild(position) < size && positionKey > getKey(heapArray(rightChild(position)))) {
         //only consider right child
-        swapPositions(position,rightChild(position))
+        swapPositions(position, rightChild(position))
         position = rightChild(position)
-      }else{
+      } else {
         return position
       }
-    require(false) //jamais execute
+    }
+    //jamais execute
     position
   }
 
@@ -801,9 +803,9 @@ class BinomialHeapWithMoveLong(getKey:Int => Long,val maxsize:Int, val maxKey:In
   @inline
   private def leftChild(position:Int):Int = (position+1)*2-1
   @inline
-  private def rightChild(position:Int):Int =(position+1)*2
+  private def rightChild(position:Int):Int = (position+1)*2
   @inline
-  private def father(position:Int):Int =  (position-1)/2
+  private def father(position:Int):Int = (position-1)/2
 
   def getFirsts:List[Int] = {
     def ExploreFirsts(key:Long,startposition:Int,acc:List[Int]):List[Int] = {
@@ -834,12 +836,12 @@ class BinomialHeapWithMoveLong(getKey:Int => Long,val maxsize:Int, val maxKey:In
     toreturn
   }
 
-  def notifyChange(elem:Int){
+  def notifyChange(elem:Int): Unit = {
     val startposition = position(elem)
     pushDown(pushUp(startposition))
   }
 
-  def delete(elem:Int){
+  def delete(elem:Int): Unit = {
     require(size > 0, "Attempt to delete on empty heap")
     val startposition:Int = position(elem)
     if (startposition == size-1){
@@ -865,5 +867,3 @@ class BinomialHeapWithMoveLong(getKey:Int => Long,val maxsize:Int, val maxKey:In
     }else false
   }
 }
-
-

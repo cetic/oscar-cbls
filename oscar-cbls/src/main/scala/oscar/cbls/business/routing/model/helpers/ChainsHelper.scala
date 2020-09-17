@@ -2,14 +2,13 @@ package oscar.cbls.business.routing.model.helpers
 
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.business.routing.model.extensions.Chains
-import oscar.cbls._
-import scala.collection.immutable.{HashSet, List}
+
+import scala.collection.immutable.HashSet
 
 /**
-  * Created by fg on 12/09/17.
-  */
+ * Created by fg on 12/09/17.
+ */
 object ChainsHelper {
-  // TODO move this dans l'objet Chains
 
   def relevantNeighborsForLastNodeAfterHead(vrp: VRP, chainsExtension: Chains, potentialRelevantPredecessorOfLastNode: Option[HashSet[Int]] = None)(lastNode: Int): Iterable[Int] = {
     require(chainsExtension.isLast(lastNode), "The referenced node has to be the last node of a chain.")
@@ -48,21 +47,21 @@ object ChainsHelper {
   }
 
   /**
-    * This method search all the complete segments contained in a specified route.
-    * A segment is considered as complete when you can move it to another place
-    * without breaking the precedence constraint.
-    * It runs through the specified route and try to create the smallest complete segments possible
-    * After that it try to combine adjacent segment
-    *
-    * @param routeNumber the number of the route
-    * @return the list of all the complete segment present in the route
-    */
+   * This method search all the complete segments contained in a specified route.
+   * A segment is considered as complete when you can move it to another place
+   * without breaking the precedence constraint.
+   * It runs through the specified route and try to create the smallest complete segments possible
+   * After that it try to combine adjacent segment
+   *
+   * @param routeNumber the number of the route
+   * @return the list of all the complete segment present in the route
+   */
   def computeCompleteSegments(vrp: VRP, routeNumber: Int, chainsExtension: Chains): List[(Int,Int)] ={
     val route = vrp.getRouteOfVehicle(routeNumber).drop(1)
     /**
-      * Each value of segmentsArray represent a possible complete segment.
-      * The List[Long] value represents the segment
-      */
+     * Each value of segmentsArray represent a possible complete segment.
+     * The List[Long] value represents the segment
+     */
     var firstNodeInc = 0
     val segmentsArray:Array[(Int,List[Int])] = Array.tabulate(chainsExtension.heads.length)(_ => (0,List.empty))
     var completeSegments: List[(Int, Int)] = List.empty
@@ -76,15 +75,15 @@ object ChainsHelper {
         }
         else if (chainsExtension.isLast(node)) {
           /**
-            * If the segment doesn't contain the related first node it means that the related first node is before
-            * the beginning of the segment and thus this is not possible to create a complete segment beginning
-            * at this position.
-            */
+           * If the segment doesn't contain the related first node it means that the related first node is before
+           * the beginning of the segment and thus this is not possible to create a complete segment beginning
+           * at this position.
+           */
           if (!segmentsArray(j)._2.contains(chainsExtension.firstNodeInChainOfNode(node)))
             segmentsArray(j) = null
           /**
-            * Else we decrement the number of single first node
-            */
+           * Else we decrement the number of single first node
+           */
           else {
             segmentsArray(j) = (segmentsArray(j)._1-1, node :: segmentsArray(j)._2)
             if (segmentsArray(j)._1 == 0)

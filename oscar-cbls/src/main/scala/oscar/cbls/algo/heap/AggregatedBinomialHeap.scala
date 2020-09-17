@@ -12,17 +12,17 @@
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-package oscar.cbls.algo.heap
-
-import oscar.cbls.algo.quick.{QArrayList, QList}
-
-import scala.collection.Iterator
-
 /*******************************************************************************
  * Contributors:
  *     This code has been initially developed by CETIC www.cetic.be
  *         by Renaud De Landtsheer
  ******************************************************************************/
+
+package oscar.cbls.algo.heap
+
+import oscar.cbls.algo.quick.{QArrayList, QList}
+
+import scala.collection.Iterator
 
 /**This class is a faster version of a heap, where several items stored in it have same index.
  * The heap is actually made of an array,
@@ -42,13 +42,13 @@ class AggregatedBinomialHeapQList[T](GetKey:T => Int,val maxPosition:Int) extend
   private[this] var empty:Boolean = true
 
   /**makes the datastruct empty**/
-  override def dropAll(){
+  override def dropAll(): Unit ={
     for (i <- b) a(i) = null
     empty = true
     b.dropAll()
   }
 
-  override def insert(elem:T){
+  override def insert(elem:T): Unit ={
     val position = GetKey(elem)
     val otherWithSamePosition = a(position)
     if (otherWithSamePosition == null){
@@ -113,13 +113,13 @@ class AggregatedBinomialHeapArrayList[T](GetKey:T => Int,val maxPosition:Int, in
   private[this] var msize:Long = 0
 
   /**makes the datastruct empty*/
-  def dropAll(){
+  def dropAll(): Unit = {
     for (i <- b) a(i).setEmpty()
     msize = 0
     b.dropAll()
   }
 
-  def insert(elem:T){
+  def insert(elem:T): Unit = {
     val position = GetKey(elem)
     val otherWithSamePosition = a(position)
     if(otherWithSamePosition.isEmpty) b.insert(position)

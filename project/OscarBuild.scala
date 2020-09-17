@@ -13,8 +13,8 @@ object OscarBuild extends Build {
 
   object BuildSettings {
     val buildOrganization = "oscar"
-    val buildVersion = "4.0.0-SNAPSHOT"
-    val buildScalaVersion = "2.12.8"
+    val buildVersion = "4.1.0-SNAPSHOT"
+    val buildScalaVersion = "2.12.12"
     val buildSbtVersion= "0.13.18"
 
     lazy val commonSettings = Defaults.defaultSettings ++  jacoco.settings ++ Seq(
@@ -24,8 +24,8 @@ object OscarBuild extends Build {
         "-unchecked", "-Xdisable-assertions", "-language:implicitConversions",
         "-language:postfixOps"),
       scalacOptions in Test := Seq("-optimise"),
-      testOptions in Test <+= (target in Test) map {
-        t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
+      //testOptions in Test <+= (target in Test) map {
+      //  t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
       parallelExecution in Test := false,
       fork in Test := true,
       javaOptions in Test += "-Djava.library.path=../lib:../lib/",
@@ -42,8 +42,8 @@ object OscarBuild extends Build {
       },
       credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
 
-      testOptions in PerfTest <+= (target in PerfTest) map {
-        t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
+      //testOptions in PerfTest <+= (target in PerfTest) map {
+      //  t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
       fork in PerfTest := true,
       parallelExecution in PerfTest := false
 
@@ -61,38 +61,41 @@ object OscarBuild extends Build {
 
   object Dependencies {
     // Regular libraries
-    val antlr4Runtime = "org.antlr" % "antlr4-runtime" % "latest.milestone"
-    val jcommon = "org.jfree" % "jcommon" % "latest.milestone"
-    val jfreechart = "org.jfree" % "jfreechart" % "latest.milestone"
-    val jsci = "net.sf.jsci" % "jsci" % "latest.milestone"
-    val scalaParserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "latest.milestone"
-    val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "latest.milestone"
-    val scalaSwing = "org.scala-lang.modules" %% "scala-swing" % "latest.milestone"
-    val swingx = "org.swinglabs" % "swingx" % "1.0"
+    val antlr4Runtime = "org.antlr" % "antlr4-runtime" % "4.8-1"
+    val jcommon = "org.jfree" % "jcommon" % "1.0.24"
+    val jfreechart = "org.jfree" % "jfreechart" % "1.5.0"
+    val jsci = "net.sf.jsci" % "jsci" % "1.2"
+    val scalaParserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2"
+    val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.3.0"
+    val scalaSwing = "org.scala-lang.modules" %% "scala-swing" % "2.1.1"
+    //TODO for 2.13: val scalaParallel = "org.scala-lang.modules" %% "scala-parallel-collections" % "0.2.0"
+    val swingx = "org.swinglabs" % "swingx" % "1.6.1"
     val swingxWs = "org.swinglabs" % "swingx-ws" % "1.0"
-    val xmlApisExt = "xml-apis" % "xml-apis-ext" % "latest.milestone"
-    val xcsp3 = "xcsp3"  % "xcsp3" % "1.0.0-SNAPSHOT"
+    val xmlApisExt = "xml-apis" % "xml-apis-ext" % "1.3.04"
+    val xcsp3 = "org.xcsp" % "xcsp3-tools" % "1.2.0"
     val graphStreamCore = "org.graphstream" % "gs-core" % "1.3"
     val graphStreamAlgo = "org.graphstream" % "gs-algo" % "1.3"
     val graphStreamUI = "org.graphstream" % "gs-ui" % "1.3"
-    val scallop = "org.rogach" % "scallop_2.11" % "1.0.0"
-    val jxmapviewer2 = "org.jxmapviewer" % "jxmapviewer2" % "2.2"
-    val jtscore = "org.locationtech.jts" % "jts-core" % "1.16.0"
+    val scallop = "org.rogach" %% "scallop" % "3.4.0"
+    val jxmapviewer2 = "org.jxmapviewer" % "jxmapviewer2" % "2.5"
+    val jtscore = "org.locationtech.jts" % "jts-core" % "1.16.1"
 
     // Akka
-    val akkaActor = "com.typesafe.akka" %% "akka-actor" % "2.5.6"
-    val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.5.6"
+    val akkaActor = "com.typesafe.akka" %% "akka-actor" % "2.6.5"
+    val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.6.5"
 
     // Test libraries
-    val junit = "junit" % "junit" % "latest.milestone" % Test
-    val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.13.+" % Test
-    val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4" % Test
+    val junit = "junit" % "junit" % "4.13" % Test
+    val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.14.3" % Test
+    val scalaTest = "org.scalatest" %% "scalatest" % "3.1.2" % Test
+    val scalaTestPlus = "org.scalatestplus" %% "scalacheck-1-14" % "3.1.0.0" % Test
 
-    val junit2 = "junit" % "junit" % "latest.milestone" % PerfTest
-    val scalaCheck2 = "org.scalacheck" %% "scalacheck" % "1.13.+" % PerfTest
-    val scalaTest2 = "org.scalatest" %% "scalatest" % "3.0.4" % PerfTest
+    val junit2 = "junit" % "junit" % "4.13" % PerfTest
+    val scalaCheck2 = "org.scalacheck" %% "scalacheck" % "1.14.3" % PerfTest
+    val scalaTest2 = "org.scalatest" %% "scalatest" % "3.1.2" % PerfTest
+    val scalaTestPlus2 = "org.scalatestplus" %% "scalacheck-1-14" % "3.1.0.0" % PerfTest
 
-    val testDeps = Seq(junit, scalaCheck, scalaTest)
+    val testDeps = Seq(junit, scalaCheck, scalaTest, scalaTestPlus)
   }
 
   import BuildSettings._
@@ -156,7 +159,7 @@ object OscarBuild extends Build {
         packAutoSettings ++
         Seq(
           resolvers ++= Seq(mvnrepository),
-          libraryDependencies ++= testDeps :+ scalaSwing :+ jxmapviewer2 :+ jtscore,
+          libraryDependencies ++= testDeps :+ scalaSwing :+ jxmapviewer2 :+ jtscore, //TODO for 2.13 ->  :+ scalaParallel
           packGenerateWindowsBatFile := false
         ),
     dependencies = Seq(oscarVisual)

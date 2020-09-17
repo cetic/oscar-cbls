@@ -1,10 +1,3 @@
-package oscar.cbls.business.routing.invariants.timeWindow
-
-import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.business.routing.invariants.global._
-import oscar.cbls._
-import oscar.cbls.algo.quick.QList
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -19,6 +12,15 @@ import oscar.cbls.algo.quick.QList
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.business.routing.invariants.timeWindow
+
+import oscar.cbls.{CBLSIntVar, Domain}
+import oscar.cbls.algo.seq.IntSequence
+import oscar.cbls.algo.quick.QList
+import oscar.cbls.business.routing.invariants.global._
+import oscar.cbls.core.computation.CBLSIntVar
+
+import scala.annotation.tailrec
 
 object TimeWindowConstraint {
 
@@ -27,7 +29,7 @@ object TimeWindowConstraint {
     * @param gc The GlobalConstraint to which this invariant is linked
     * @param n The number of nodes of the problem (including vehicle)
     * @param v The number of vehicles of the problem
-    * @param singleNodeTransferFunctions An array containing the single TransferFunction of each node
+    * @param nodeToTransferFunction An array containing the single TransferFunction of each node
     * @param travelTimeMatrix A matrix representing the different travel time between the nodes
     * @param violations An array of CBLSIntVar maintaining the violation of each vehicle
     * @return a time window constraint
@@ -35,13 +37,39 @@ object TimeWindowConstraint {
   def apply(gc: GlobalConstraintCore,
             n: Int,
             v: Int,
-            singleNodeTransferFunctions: Array[TransferFunction],
+            nodeToTransferFunction: Array[TransferFunction],
             travelTimeMatrix: Array[Array[Long]],
             violations: Array[CBLSIntVar]): TimeWindowConstraint ={
 
     new TimeWindowConstraint(gc, n, v,
-      singleNodeTransferFunctions,
+      nodeToTransferFunction,
       travelTimeMatrix, violations)
+  }
+
+  /**
+   * This method instantiate a TimeWindow constraint given the following input
+   * @param gc The GlobalConstraint to which this invariant is linked
+   * @param n The number of nodes of the problem (including vehicle)
+   * @param v The number of vehicles of the problem
+   * @param nodeToTransferFunction An array containing the single TransferFunction of each node
+   * @param travelTimeMatrix A matrix representing the different travel time between the nodes
+   * @return An array of CBLSIntVar maintaining the violation of each vehicle
+   */
+  def apply(gc: GlobalConstraintCore,
+            n: Int,
+            v: Int,
+            nodeToTransferFunction: Array[TransferFunction],
+            travelTimeMatrix: Array[Array[Long]]
+            ): Array[CBLSIntVar] ={
+
+    val timeWindowViolations = Array.tabulate(v)(vehicle =>
+      new CBLSIntVar(gc.model, 0, Domain.coupleToDomain((0, 1)),s"timeWindowViolationVehicle:$vehicle"))
+
+    new TimeWindowConstraint(gc, n, v,
+      nodeToTransferFunction,
+      travelTimeMatrix, timeWindowViolations)
+
+    timeWindowViolations
   }
 }
 
@@ -152,10 +180,7 @@ class TimeWindowConstraint (gc: GlobalConstraintCore,
       }
 
       else
-        throw new Error("Unhandled case : (" + earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 + ", " +
-          earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 + ", " +
-          latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 + ", " +
-          latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 + ")")
+        throw new Error(s"Unhandled case : ($earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2, $earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2, $latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2, $latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2)")
 
     if(ea3 > ll3)
       EmptyTransferFunction
@@ -176,7 +201,6 @@ class TimeWindowConstraint (gc: GlobalConstraintCore,
     }
   }
 
-
   /**
     * This method is called by the framework when a pre-computation must be performed.
     * you are expected to assign a value of type T to each node of the vehicle "vehicle" through the method "setNodeValue"
@@ -187,6 +211,7 @@ class TimeWindowConstraint (gc: GlobalConstraintCore,
     */
   override def performPreCompute(vehicle: Int, routes: IntSequence): Unit = {
 
+    @tailrec
     def performPreComputeForNode(node: Int, prevNode: Int, route: QList[Int], lastTF: TransferFunction): Unit ={
       if(route != null) {
         val curNode = route.head.toInt
@@ -196,6 +221,7 @@ class TimeWindowConstraint (gc: GlobalConstraintCore,
       }
     }
 
+    @tailrec
     def performPreComputeOnRoute(route: QList[Int]): Unit ={
       val node = route.head
       if(preComputedValues(node) == null)preComputedValues(node) = Array.fill(n)(EmptyTransferFunction)
@@ -241,6 +267,7 @@ class TimeWindowConstraint (gc: GlobalConstraintCore,
       * @param prevLeavingTime The leave time at previous segment (0L if first one)
       * @return The leave time after going through all the segments
       */
+    @tailrec
     def arrivalAtDepot(segments: QList[Segment], previousSegmentEnd: Int = vehicle, prevLeavingTime: Long = 0L): Long ={
       val (segment, tail) = (segments.head, segments.tail)
       val transferFunction = segmentsTransferFunction(segment)

@@ -22,14 +22,14 @@ import scala.collection.immutable.SortedMap
  */
 trait DistributedStorageUtility {
 
-  var storage: SortedMap[Int, Any] = null
+  var storage: SortedMap[Int, Any] = _
 
   /**returns null if nothing was stored*/
-  final def getStorageAt[T](key: Int, default: T = null.asInstanceOf[T]) =
+  final def getStorageAt[T](key: Int, default: T = null.asInstanceOf[T]): T =
     if(storage == null) default
     else storage.getOrElse(key, default).asInstanceOf[T]
 
-  final def storeAt(key: Int, value: Any) {
+  final def storeAt(key: Int, value: Any): Unit = {
     if(storage == null) storage = SortedMap.empty
     storage = storage + ((key, value))
   }
@@ -39,7 +39,7 @@ trait DistributedStorageUtility {
     if(storage.isEmpty) storage = null
   }
 
-  final def getAndFreeStorageAt[T](key: Int, default: T = null.asInstanceOf[T]) =
+  final def getAndFreeStorageAt[T](key: Int, default: T = null.asInstanceOf[T]): T =
     if(storage == null) default
     else{
       val toReturn = storage.getOrElse(key, default).asInstanceOf[T]
@@ -75,7 +75,9 @@ trait StorageUtilityManager {
    * @param offsetIndex if not zero, the value stored is actually index+offsetIndex. DEfault value is zero
    * @tparam T the actual type of the storage places
    */
-  def storeIndexesAt[T <: DistributedStorageUtility] (storagePlaces:Array[T], storageKey:Int, offsetIndex:Long = 0L){
+  def storeIndexesAt[T <: DistributedStorageUtility] (storagePlaces:Array[T],
+                                                      storageKey:Int,
+                                                      offsetIndex:Long = 0L): Unit = {
     for(i <- storagePlaces.indices) {
       storagePlaces(i).storeAt(storageKey, i + offsetIndex)
     }

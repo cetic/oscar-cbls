@@ -1,6 +1,3 @@
-
-package oscar.cbls.visual.geometry
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -15,14 +12,11 @@ package oscar.cbls.visual.geometry
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.visual.geometry
 
-import java.awt.event.{ComponentEvent, ComponentListener, KeyEvent, KeyListener}
+import java.awt.event.{ComponentEvent, ComponentListener}
 import java.awt.{Color, Shape}
-import java.awt.image.BufferedImage
-import java.io.File
-import java.time.LocalDateTime
 
-import javax.imageio.ImageIO
 import org.locationtech.jts.awt.ShapeWriter
 import org.locationtech.jts.geom._
 import org.locationtech.jts.geom.util.AffineTransformation
@@ -30,7 +24,6 @@ import oscar.cbls.business.geometry
 import oscar.cbls.business.geometry.invariants.Overlap
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.VisualShape
-
 
 class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
                             windowWidth: Int = 960,
@@ -54,7 +47,6 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
     protected val shape = s
   }
 
-
   override def addShape(shape: VisualShape, repaintAfter: Boolean): Unit ={
     super.addShape(shape,false)
   }
@@ -67,7 +59,7 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
   def drawShapes(boundingBoxOn:Option[Geometry] = None,
                  shapes:List[(Geometry,Option[Color],Option[Color],String)],
                  centers:List[(Long,Long)],
-                 saveShapesAndPositions: Boolean = true) ={
+                 saveShapesAndPositions: Boolean = true): Unit ={
     super.clear(false)
 
     val w = new ShapeWriter()
@@ -220,5 +212,3 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
     }
   }
 }
-
-

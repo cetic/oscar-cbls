@@ -22,7 +22,6 @@ package oscar.cbls.core.computation
 import oscar.cbls._
 
 import scala.collection.immutable.{NumericRange, SortedSet}
-import scala.language.implicitConversions
 import scala.util.Random
 
 //TODO: remplacer çà par Option(Long,Long)
@@ -42,7 +41,6 @@ object Domain{
   }
 
   implicit def intToDomain(i:Long) = SingleValueDomain(i)
-
 
   implicit def minMaxCoupleLongLongToDomain(minMaxCouple:(Long,Long)):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
   implicit def minMaxCoupleIntIntToDomain(minMaxCouple:(Int,Int)):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
@@ -67,8 +65,8 @@ sealed abstract class Domain{
   def sizeInt: Int ={
     val sizeLong = size
     val sizeInt = sizeLong.toInt
-    if (sizeInt != sizeLong) throw new ArithmeticException("integer overflow:" + sizeLong)
-    return sizeInt
+    if (sizeInt != sizeLong) throw new ArithmeticException(s"integer overflow:$sizeLong")
+    sizeInt
   }
   def contains(v:Long): Boolean
   //  def intersect(d:Domain):Domain
@@ -87,25 +85,30 @@ sealed abstract class Domain{
   def isEmpty: Boolean = size == 0L
 }
 
-
 /**this is an inclusive domain*/
 case class DomainRange(override val min: Long, override val max: Long) extends Domain {
-  require(min <= max, "domain should not be empty, got min:" + min + " max: " + max)
+  require(min <= max, s"domain should not be empty, got min:$min max:$max")
+
   def contains(v:Long): Boolean = min <= v && max >= v
+
   override def size: Long =
     if(min < 0 && min + Long.MaxValue <= max) Long.MaxValue
     else if(max==Long.MaxValue && min==Long.MinValue) Long.MaxValue
     else math.max(max-min+1L,0L)
+
   override def values: Iterable[Long] = min to max
+
   override def randomValue(): Long = {
     require(max - min < Int.MaxValue, "Range size must be < Int.MaxValue.")
     (min to max)(Random.nextInt((max - min + 1).toInt))
   }
+
   override def intersect(d: Domain): Domain = {
     val newDomain:Domain = d match{
       case r:DomainRange => (math.max(r.min,min), math.min(r.max,max))
       case FullRange => this
       case d:SingleValueDomain => d.intersect(this)
+      case FullIntRange => this
     }
     if (newDomain.isEmpty) throw new EmptyDomainException
     newDomain
@@ -120,6 +123,7 @@ case class DomainRange(override val min: Long, override val max: Long) extends D
         if(v < min) (v , max)
         else if (max < v) (min , v)
         else this
+      case FullIntRange => FullIntRange
     }
     if (newDomain.isEmpty)
       throw new EmptyDomainException
@@ -128,9 +132,8 @@ case class DomainRange(override val min: Long, override val max: Long) extends D
 
   def toRange:NumericRange[Long] = min to max
 
-  override def toString(): String = "DomainRange(min:" + min + ", max:" +  max + ")"
+  override def toString: String = s"DomainRange(min:$min, max:$max)"
 }
-
 
 case object FullRange extends Domain{
   override def min: Long = Long.MinValue
@@ -141,7 +144,7 @@ case object FullRange extends Domain{
   override def values: Iterable[Long] =  min to max
   override def intersect(d: Domain): Domain = d
   override def union(d: Domain): Domain = this
-  override def toString(): String = "FullRange"
+  override def toString: String = "FullRange"
 }
 
 case object FullIntRange extends Domain{
@@ -153,11 +156,10 @@ case object FullIntRange extends Domain{
   override def values: Iterable[Long] = min to max
   override def intersect(d: Domain): Domain = Domain(Math.max(min, d.min), Math.min(max, d.max))
   override def union(d: Domain): Domain = Domain(Math.min(min, d.min), Math.max(max, d.max))
-  override def toString(): String = "FullIntRange"
+  override def toString: String = "FullIntRange"
 }
 
 object PositiveOrNullRange extends DomainRange(0L, Long.MaxValue)
-
 
 case class SingleValueDomain(value:Long) extends Domain{
   override def min: Long = value
@@ -180,7 +182,7 @@ case class SingleValueDomain(value:Long) extends Domain{
   }
   override def values: Iterable[Long] = List(value)
 
-  override def toString(): String = "SingleValueDomain(" + value + ")"
+  override def toString: String = s"SingleValueDomain($value)"
 }
 
 class EmptyDomainException extends Exception("domain is empty")

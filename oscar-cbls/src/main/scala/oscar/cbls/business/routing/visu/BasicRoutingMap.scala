@@ -1,5 +1,3 @@
-package oscar.cbls.business.routing.visu
-
 /**
   * *****************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -16,17 +14,16 @@ package oscar.cbls.business.routing.visu
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   * ****************************************************************************
   */
+package oscar.cbls.business.routing.visu
 
 import java.awt.Color
 import java.awt.geom.Line2D.Double
 import java.awt.geom.Point2D
 
-import oscar.cbls._
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.util.StopWatch
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualCircle, VisualLine, VisualShape}
-
 
 /**
   * @author fabian.germeau@cetic.be
@@ -56,7 +53,7 @@ class BasicRoutingMap(vrp: VRP,
     * They represent depots (circle of size 5.0) and customers (circle of size 1.0)
     * @return
     */
-  private def buildPoints() ={
+  private def buildPoints(): Array[VisualCircle] = {
     pixelPositionOfNodes.map(position_node => {
       val position = position_node._1
       val node = position_node._2
@@ -65,7 +62,7 @@ class BasicRoutingMap(vrp: VRP,
 
       if(node < vrp.v){
         val tempPoint = new VisualCircle(this,position._1,position._2,5.0){
-          override def showToolTip(mousePoint: Point2D) = {
+          override def showToolTip(mousePoint: Point2D): Unit = {
             if (shape.contains(drawing.invertTransform(mousePoint))) {
               drawing.showToolTip(toolTips(node))
             }
@@ -77,7 +74,7 @@ class BasicRoutingMap(vrp: VRP,
       }
       else{
         val tempPoint = new VisualCircle(this,position._1,position._2,2.0){
-          override def showToolTip(mousePoint: Point2D) = {
+          override def showToolTip(mousePoint: Point2D): Unit = {
             if (shape.contains(drawing.invertTransform(mousePoint))) {
               drawing.showToolTip(toolTips(node))
             }

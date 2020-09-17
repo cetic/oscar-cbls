@@ -1,10 +1,11 @@
 package oscar.cbls.test.algo
 
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.algo.magicArray.MagicIntArrayStacked
 
-class MagicIntArrayStackedTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matchers {
+class MagicIntArrayStackedTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
   test("pop level below zero should fail"){
     val array = new MagicIntArrayStacked(10,int => int,10)
     array.pushLevel()

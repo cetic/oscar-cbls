@@ -17,12 +17,10 @@
   *     This code has been initially developed by CETIC www.cetic.be
   *         by Renaud De Landtsheer
   ******************************************************************************/
-
-
 package oscar.cbls.lib.invariant.minmax
 
-import oscar.cbls._
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{ChangingSetValue, Domain, IntInvariant, SetNotificationTarget, SetValue}
+import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.SortedSet
 
@@ -48,7 +46,7 @@ abstract class MiaxSet(v: SetValue)
   }
 
   @inline
-  def notifyInsertOn(v: ChangingSetValue, value: Int) {
+  def notifyInsertOn(v: ChangingSetValue, value: Int): Unit = {
     if (wasEmpty){
       this := value
     }else if(!this.isScheduled && Better(value,this.newValue)){
@@ -58,7 +56,7 @@ abstract class MiaxSet(v: SetValue)
   }
 
   @inline
-  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
+  def notifyDeleteOn(v: ChangingSetValue, value: Int): Unit = {
     if (v.value.isEmpty){ //TODO: avoid querying this directly on the intsetvar!
       wasEmpty = true
       this := Default
@@ -67,7 +65,7 @@ abstract class MiaxSet(v: SetValue)
     }
   }
 
-  override def performInvariantPropagation(){
+  override def performInvariantPropagation(): Unit ={
     throw new Exception("you must override this to set the this because it has been lost")
   }
 }
@@ -81,10 +79,9 @@ abstract class MiaxSet(v: SetValue)
   * @author renaud.delandtsheer@cetic.be
   */
 case class MinSet(v: SetValue, Default: Long = Long.MaxValue) extends MiaxSet(v) {
-
   override def Better(a:Long,b:Long):Boolean = a < b
 
-  override def performInvariantPropagation(){
+  override def performInvariantPropagation(): Unit ={
     if (v.value.isEmpty){
       this := Default
     }else{
@@ -92,7 +89,7 @@ case class MinSet(v: SetValue, Default: Long = Long.MaxValue) extends MiaxSet(v)
     }
   }
 
-  override def checkInternals(c:Checker){
+  override def checkInternals(c:Checker): Unit ={
     if (v.value.isEmpty){
       c.check(this.value == Default, Some("this.value == Default"))
     }else{
@@ -111,10 +108,9 @@ case class MinSet(v: SetValue, Default: Long = Long.MaxValue) extends MiaxSet(v)
   * @author renaud.delandtsheer@cetic.be
   * */
 case class MaxSet(v: SetValue, Default: Long = Long.MinValue) extends MiaxSet(v) {
-
   override def Better(a:Long,b:Long):Boolean = a > b
 
-  override def performInvariantPropagation(){
+  override def performInvariantPropagation(): Unit ={
     if (v.value.isEmpty){
       this := Default
     }else{
@@ -122,7 +118,7 @@ case class MaxSet(v: SetValue, Default: Long = Long.MinValue) extends MiaxSet(v)
     }
   }
 
-  override def checkInternals(c:Checker){
+  override def checkInternals(c:Checker): Unit ={
     if (v.value.isEmpty){
       c.check(this.value == Default, Some("this.value == Default"))
     }else{

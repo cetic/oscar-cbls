@@ -17,7 +17,6 @@
  *     This code has been initially developed by CETIC www.cetic.be
  *         by Renaud De Landtsheer
  ******************************************************************************/
-
 package oscar.cbls.core.constraint
 
 import oscar.cbls.core.computation._
@@ -42,7 +41,7 @@ case class NamedConstraint(name:String, baseConstraint:Constraint) extends Const
 
   override def checkInternals(c: Checker): Unit = baseConstraint.checkInternals(c)
 
-  override def toString: String = name + ":" + baseConstraint
+  override def toString: String = s"$name:$baseConstraint"
 }
 
 
@@ -76,7 +75,7 @@ trait Constraint{
 
   /**facility to check that the constraint is enforced
     * */
-  final def isTrue: Boolean = (violation.value == 0L)
+  final def isTrue: Boolean = violation.value == 0L
 
   /**the variables that are constrained by the constraint.
    * This should be read only. If you want to declare more constrained variables,
@@ -97,21 +96,21 @@ trait Constraint{
     *
    * @param v the variable that is declared as constrained by the constraint
    */
-  def registerConstrainedVariable(v: Value){
+  def registerConstrainedVariable(v: Value): Unit ={
     v match{
       case c:AbstractVariable if c.model != null => _constrainedVariables = c :: _constrainedVariables
       case _ => ()
     }   //TODO unsure if constraints can handle constraints as input parameter...
   }
 
-  def registerConstrainedVariables(v: Value*){
+  def registerConstrainedVariables(v: Value*): Unit ={
     for (vv <- v){registerConstrainedVariable(vv)}
   }
 
-  def registerConstrainedVariables(v: Iterable[Value]){
+  def registerConstrainedVariables(v: Iterable[Value]): Unit ={
     for (vv <- v){registerConstrainedVariable(vv)}
   }
 
   //TODO this is never called
-  def checkInternals(c: Checker) {}
+  def checkInternals(c: Checker): Unit ={}
 }

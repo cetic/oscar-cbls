@@ -1,13 +1,14 @@
 package oscar.cbls.test.algo
 
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer, MovedIntSequence, RemovedIntSequence}
 import oscar.cbls.test.algo.SequenceTestUtils._
 
 import scala.util.Random
 
-class SequenceExplorerTestSuite extends FunSuite with  GeneratorDrivenPropertyChecks with Matchers{
+class SequenceExplorerTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
 
   test("ConcreteIntSequenceExplorer is coherent"){
     forAll((referenceList: List[Int]) => {
@@ -46,8 +47,8 @@ class SequenceExplorerTestSuite extends FunSuite with  GeneratorDrivenPropertyCh
       whenever(referenceList.size > 5){
 
         val i = Random.nextInt(referenceList.size)
-        var seq :IntSequence = new RemovedIntSequence(IntSequence(referenceList),i)
-        var modifiedList = referenceList.take(i) ++ referenceList.drop(i+1)
+        val seq :IntSequence = new RemovedIntSequence(IntSequence(referenceList),i)
+        val modifiedList = referenceList.take(i) ++ referenceList.drop(i+1)
 
         seq.zipWithIndex.foreach{case (e,i) =>
 
@@ -65,7 +66,7 @@ object ExplorerTestUtils{
   def compareAllAttributes(exp :Option[IntSequenceExplorer], pos: Int,list: List[Int]): Unit = myTestUtils.compareExplorer(exp,pos,list)
 }
 
-class ExplorerTestUtils extends FunSuite with Matchers {
+class ExplorerTestUtils extends AnyFunSuite with Matchers {
 
   /**
     * Exhaustively checks the consistency of an explorer with its reference sequence

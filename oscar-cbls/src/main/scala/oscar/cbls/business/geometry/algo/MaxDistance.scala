@@ -42,4 +42,3 @@ object MaxDistance {
     computeDistanceLineString(poly.getExteriorRing, pt, ptDist)
   }
 }
-

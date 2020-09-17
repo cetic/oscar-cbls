@@ -17,12 +17,11 @@
   *     This code has been initially developed by CETIC www.cetic.be
   *         by Renaud De Landtsheer
   ******************************************************************************/
-
-
 package oscar.cbls.lib.constraint
 
-import oscar.cbls._
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingIntValue, Domain, IntValue, Invariant, ShortIntNotificationTarget, Value}
+import oscar.cbls.core.constraint.Constraint
+import oscar.cbls.core.propagation.Checker
 import oscar.cbls.lib.invariant.logic.LazyIntInt2Int
 import oscar.cbls.lib.invariant.numeric.Sum
 
@@ -55,7 +54,7 @@ case class Sequence(variables: Array[_ <: IntValue], length:Int, Max:Int, predic
   val count:Array[Int] = Array.tabulate(sequences.size)(i => 0)
 
   /**the violation of the sequence starting here*/
-  val violated = Array.tabulate(sequences.size)(i => CBLSIntVar(model,0L, 0 to length - Max, "is_violated_sequence" + i))
+  val violated = Array.tabulate(sequences.size)(i => CBLSIntVar(model,0L, 0 to length - Max, s"is_violated_sequence$i"))
 
   for(v <- violated) v.setDefiningInvariant(this)
 
@@ -95,7 +94,7 @@ case class Sequence(variables: Array[_ <: IntValue], length:Int, Max:Int, predic
     }
   }
 
-  private def sequences = 0 to variables.length - length
+  private def sequences: Range = 0 to variables.length - length
 
   /** returns the sequences that involve this position
     *
@@ -110,7 +109,7 @@ case class Sequence(variables: Array[_ <: IntValue], length:Int, Max:Int, predic
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Int, NewVal: Int): Unit = {
     if (predicate(OldVal)){ //TODO: on peut éventuellement conserver predicate(OldVal) dans un tableau de booléens
       if(!predicate(NewVal)){
         //decrease the count
@@ -152,7 +151,7 @@ case class Sequence(variables: Array[_ <: IntValue], length:Int, Max:Int, predic
     * this will be called for each invariant after propagation is performed.
     * It requires that the Model is instantiated with the variable debug set to true.
     */
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
     val countCheck:Array[Long] = Array.tabulate(sequences.size)(_ => 0L)
     /**the violation of the sequence starting here*/
     val violatedCheck = Array.tabulate(sequences.size)(_ => 0L)

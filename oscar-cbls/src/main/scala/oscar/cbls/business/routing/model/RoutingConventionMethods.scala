@@ -1,5 +1,3 @@
-package oscar.cbls.business.routing.model
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,30 +12,35 @@ package oscar.cbls.business.routing.model
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.business.routing.model
 
 import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.seq.{IntSequence, Token}
-import oscar.cbls._
+
 object RoutingConventionMethods {
 
-  def cachedVehicleReachingPosition(checkpoint:IntSequence,v:Int):((IntSequence,Int) => Int) = {
+  def cachedVehicleReachingPosition(checkpoint:IntSequence,v:Int):(IntSequence,Int) => Int = {
 
     val batch = batchVehicleReachingPosition(checkpoint,v:Int)
+
     def getVehicleReachingPosition(seq:IntSequence,position:Int):Int = {
-      if(seq quickEquals checkpoint) batch(position)
-      else searchVehicleReachingPosition(position, seq, v)
+      if(seq quickEquals checkpoint) {
+        batch(position)
+      } else {
+        searchVehicleReachingPosition(position, seq, v)
+      }
     }
 
     getVehicleReachingPosition
   }
 
-  def batchVehicleReachingPosition(seq:IntSequence,v:Int):(Int=>Int) = {
+  def batchVehicleReachingPosition(seq:IntSequence,v:Int): Int=>Int = {
     val vehiclePositionArray:Array[(Int,Int)] =
       Array.tabulate(v)(vehicle => (seq.positionOfAnyOccurrence(vehicle).get, vehicle))
 
     val vehiclePositionRB = RedBlackTreeMap.makeFromSorted(vehiclePositionArray)
 
-    def findVehicleReachingPosition(position:Int):Int = {
+    def findVehicleReachingPosition(position:Int): Int = {
       vehiclePositionRB.biggestLowerOrEqual(position) match {
         case None => v - 1
         case Some((_, vehicle)) => vehicle
@@ -46,7 +49,8 @@ object RoutingConventionMethods {
     findVehicleReachingPosition
   }
 
-  @deprecated("use the VehicleLocation method instead","we use stacked checkpoints")
+  //TODO Redeprecate after migration
+  //@deprecated("use the VehicleLocation method instead","we use stacked checkpoints")
   def searchVehicleReachingPosition(position:Int, seq:IntSequence, v:Int):Int = {
     var upperVehicle = v-1
     var upperVehiclePosition = seq.positionOfAnyOccurrence(upperVehicle).get
@@ -93,7 +97,7 @@ object RoutingConventionMethods {
         //it is the last vehicle
         seq.valueAtPosition(seq.size-1).get
       }else {
-        //there is oe vehicle above
+        //there is one vehicle above
         seq.valueAtPosition(seq.positionOfAnyOccurrence(value+1).get-1).get
       }
     }else {
@@ -101,7 +105,6 @@ object RoutingConventionMethods {
       seq.valueAtPosition(seq.positionOfAnyOccurrence(value).get-1).get
     }
   }
-
 
   def routingPredPos2Val(position:Int, seq:IntSequence, v:Int):Int = {
     routingPredVal2Val(seq.valueAtPosition(position).get, seq, v)
@@ -112,17 +115,17 @@ object RoutingConventionMethods {
   }
 }
 
-
 class CachedPositionOf(maxValue:Int){
 
-  private var tokenOfCurrentCheckpoint:Token = null
+  private var tokenOfCurrentCheckpoint:Token = _
   private val checkpointIDOfSavedValue:Array[Token] = Array.fill(maxValue+1)(null)
   //-1L stands for NONE, -2L is an error
   private val cachedAnyPosition:Array[Int] = Array.fill(maxValue+1)(-2)
 
-  def updateToCheckpoint(checkpoint:IntSequence){
+  def updateToCheckpoint(checkpoint:IntSequence): Unit ={
     tokenOfCurrentCheckpoint = checkpoint.token
   }
+
   def positionOfAnyOccurrence(seq:IntSequence,value:Int):Option[Int] = {
     val seqID = seq.token
     if(tokenOfCurrentCheckpoint == seqID){
@@ -143,7 +146,7 @@ class CachedPositionOf(maxValue:Int){
     }
   }
 
-  def savePos(seq:IntSequence,value:Int,position:Option[Int]){
+  def savePos(seq:IntSequence,value:Int,position:Option[Int]): Unit ={
     if(seq.token == tokenOfCurrentCheckpoint){
       checkpointIDOfSavedValue(value) = tokenOfCurrentCheckpoint
       position match{

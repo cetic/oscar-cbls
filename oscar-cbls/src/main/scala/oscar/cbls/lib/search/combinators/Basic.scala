@@ -1,8 +1,9 @@
 package oscar.cbls.lib.search.combinators
 
-import oscar.cbls._
-import oscar.cbls.core.search._
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.core.search.{InstrumentedMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult}
 
+import scala.annotation.tailrec
 
 /**
  * this combinator always selects the best move between the two parameters
@@ -71,12 +72,12 @@ class MaxMoves(a: Neighborhood, val maxMove: Long, cond: Option[Move => Boolean]
   }
 
   //this resets the internal state of the move combinators
-  override def reset() {
+  override def reset(): Unit = {
     remainingMoves = maxMove
     super.reset()
   }
 
-  def notifyMoveTaken(m: Move) {
+  def notifyMoveTaken(m: Move): Unit = {
     val shouldMoveBeConsidered = cond match{
       case None => true
       case Some(c) => c(m)}
@@ -135,7 +136,7 @@ class MaxMovesWithoutImprovement(a: Neighborhood,
             NoMoveFound
         }
       } else {
-        if (verbose >= 1L) println("MaxStepsWithoutImprovement: reached " + maxMovesWithoutImprovement + " moves without improvement of " + a)
+        if (verbose >= 1L) println(s"MaxStepsWithoutImprovement: reached $maxMovesWithoutImprovement moves without improvement of $a")
         NoMoveFound
       }
     } else{ //count after move
@@ -146,20 +147,20 @@ class MaxMovesWithoutImprovement(a: Neighborhood,
           case x => x
         }
       } else{
-        if (verbose >= 1L) println("MaxStepsWithoutImprovement: reached " + maxMovesWithoutImprovement + " moves without improvement of " + a)
+        if (verbose >= 1L) println(s"MaxStepsWithoutImprovement: reached $maxMovesWithoutImprovement moves without improvement of $a")
         NoMoveFound
       }
     }
   }
 
   //this resets the internal state of the move combinators
-  override def reset() {
+  override def reset(): Unit = {
     stepsSinceLastImprovement = 0L
     bestObj = Long.MaxValue
     super.reset()
   }
 
-  def notifyMoveTaken(m: Move) {
+  def notifyMoveTaken(m: Move): Unit = {
     val shouldMoveBeConsidered = cond match{
       case None => true
       case Some(c) => c(m)}
@@ -178,8 +179,6 @@ class MaxMovesWithoutImprovement(a: Neighborhood,
   def improvementBeignMeasuredBeforeNeighborhoodExploration = new MaxMovesWithoutImprovement(a, null, maxMovesWithoutImprovement, obj, true)
 }
 
-
-
 /**
  * this combinator is stateless, it checks the condition on every invocation. If the condition is false,
  * it does not try the Neighborhood and finds no move.
@@ -193,7 +192,6 @@ case class Guard(cond: () => Boolean, b: Neighborhood) extends NeighborhoodCombi
   }
 }
 
-
 /**
  * this combinator is stateful.
  * it returns the result of the first Neighborhood until it returns NoMoveFound.
@@ -205,6 +203,7 @@ case class Guard(cond: () => Boolean, b: Neighborhood) extends NeighborhoodCombi
 class Exhaust(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinator(a, b) {
   var currentIsA = true
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+    @tailrec
     def search(): SearchResult = {
       val current = if (currentIsA) a else b
       current.getMove(obj, initialObj:Long, acceptanceCriteria) match {
@@ -216,12 +215,11 @@ class Exhaust(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinator(a
   }
 
   //this resets the internal state of the move combinators
-  override def reset() {
+  override def reset(): Unit = {
     currentIsA = true
     super.reset()
   }
 }
-
 
 /**
  * This combinator finds no move starting from the point where cond evaluates to false,
@@ -240,7 +238,7 @@ case class StopWhen(a: Neighborhood, cond: () => Boolean) extends NeighborhoodCo
   }
 
   //this resets the internal state of the move combinators
-  override def reset() {
+  override def reset(): Unit = {
     isStopped = false
     super.reset()
   }
@@ -272,7 +270,7 @@ class UntilImprovement(a: Neighborhood, over: () => Long, val minMoves: Long = 0
   }
 
   //this resets the internal state of the move combinators
-  override def reset() {
+  override def reset(): Unit = {
     oldObjOnReset = over()
     movesQueriedSinceReset = 0L
     super.reset()
@@ -294,12 +292,11 @@ class MaxSearches(a: Neighborhood, val maxMove: Long) extends NeighborhoodCombin
   }
 
   //this resets the internal state of the move combinators
-  override def reset() {
+  override def reset(): Unit = {
     remainingMoves = maxMove
     super.reset()
   }
 }
-
 
 /**
  * this combinator is stateful.
@@ -332,13 +329,11 @@ class ExhaustBack(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinat
   }
 
   //this resets the internal state of the move combinators
-  override def reset() {
+  override def reset(): Unit = {
     currentIsA = true
     super.reset()
   }
 }
-
-
 
 /**
  * once given condition has turned true,
@@ -369,17 +364,16 @@ class Retry(a: Neighborhood, cond: Long => Boolean = _ <= 1L) extends Neighborho
   }
 
   //this resets the internal state of the move combinators
-  override def reset() {
+  override def reset(): Unit = {
     super.reset()
     consecutiveFails = 0L
   }
 }
 
-
 /**
   * instantiates a new neighborhood on each exploration.
   * You can use it to perform some queries before instantiating the neighborhood.
-  * You can return [[NoMoveNeighborhood]] if tehre is no actul neighborhood to explore
+  * You can return [[oscar.cbls.core.search.NoMoveNeighborhood]] if there is no actual neighborhood to explore
   * @param f a function that generated the neighborhood to explore
   */
 class Dyn(f:() => Neighborhood,name : String = "Dyn()") extends Neighborhood(name) {

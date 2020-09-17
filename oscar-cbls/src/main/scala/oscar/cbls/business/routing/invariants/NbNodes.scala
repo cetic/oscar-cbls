@@ -1,5 +1,3 @@
-package oscar.cbls.business.routing.invariants
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,14 +12,12 @@ package oscar.cbls.business.routing.invariants
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
+package oscar.cbls.business.routing.invariants
 
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
-import oscar.cbls.core.computation.ChangingSeqValue
-import oscar.cbls._
 import oscar.cbls.business.routing.invariants.global.{FlippedPreComputedSubSequence, GlobalConstraintCore, GlobalConstraintDefinition, LogReducedFlippedPreComputedSubSequence, LogReducedGlobalConstraint, LogReducedGlobalConstraintWithExtremes, LogReducedNewNode, LogReducedPreComputedSubSequence, LogReducedSegment, NewNode, PreComputedSubSequence, Segment}
-
+import oscar.cbls.core.computation.CBLSIntVar
 
 object NbNodes{
   /**
@@ -100,8 +96,6 @@ class NbNodes(gc: GlobalConstraintCore, n: Int, v : Int, nbNodesPerVehicle : Arr
       }).sum
   }
 
-
-
   /**
     * the framework calls this method to assign the value U to he output variable of your invariant.
     * It has been dissociated from the method above because the framework memorizes the output value of the vehicle,
@@ -112,7 +106,6 @@ class NbNodes(gc: GlobalConstraintCore, n: Int, v : Int, nbNodesPerVehicle : Arr
   override def assignVehicleValue(vehicle: Int, value: Long): Unit = {
     nbNodesPerVehicle(vehicle) := value
   }
-
 
   def countVehicleNode(vehicle : Int,vExplorer : Option[IntSequenceExplorer]) : Long = {
     vExplorer match {
@@ -140,7 +133,7 @@ case class NodesOnSubsequence(nbNodes:Long,
   //  require(nbNodes == ((1L << (level-1L))  -1L))
 
   override def toString: String = {
-    "NodesOnSubsequence(nbNodes:" + nbNodes + ",level:" + level + ",firstNode:" + firstNode + ",lastNode:" + lastNode + ")"
+    s"NodesOnSubsequence(nbNodes:$nbNodes,level:$level,firstNode:$firstNode,lastNode:$lastNode)"
   }
 }
 
@@ -163,7 +156,6 @@ class LogReducedNumberOfNodes(gc: GlobalConstraintCore, n:Int, v:Int, nbNodesPer
   override def nodeValue(node: Int): NodesOnSubsequence = {
     NodesOnSubsequence(1L, level = 0L,node,node)
   }
-
 
   /**
     * this one is similar to the nodeValue except that it only is applied on vehicle,
@@ -254,7 +246,6 @@ class LogReducedNumberOfNodesWithExtremes(gc: GlobalConstraintCore, n: Int, v:In
     NodesOnSubsequence(1L, level = 0L,node,node)
   }
 
-
   /**
     * this one is similar to the nodeValue except that it only is applied on vehicle,
     * to represent the return to the vehicle start at teh end of its route
@@ -276,7 +267,6 @@ class LogReducedNumberOfNodesWithExtremes(gc: GlobalConstraintCore, n: Int, v:In
   override def composeSteps(firstStep: NodesOnSubsequence, secondStep: NodesOnSubsequence): NodesOnSubsequence = {
     NodesOnSubsequence(firstStep.nbNodes + secondStep.nbNodes, firstStep.level + 1L,firstStep.firstNode,secondStep.lastNode)
   }
-
 
   /**
     * this method is called by the framework when the value of a vehicle must be computed.
@@ -326,4 +316,3 @@ class LogReducedNumberOfNodesWithExtremes(gc: GlobalConstraintCore, n: Int, v:In
     }
   }
 }
-

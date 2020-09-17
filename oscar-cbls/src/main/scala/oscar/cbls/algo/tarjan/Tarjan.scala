@@ -29,7 +29,8 @@ import scala.collection.immutable.{SortedMap, SortedSet}
  */
 class Tarjan[T]( implicit A:Ordering[T]){ // <: Ordered[T]]{
 
-  def getStronglyConnexComponents(Nodes:Iterable[T], GetSucceedingNodes:(T => Iterable[T])):List[SortedSet[T]] = {
+  def getStronglyConnexComponents(Nodes:Iterable[T],
+                                  GetSucceedingNodes:T => Iterable[T]):List[SortedSet[T]] = {
     var Index: SortedMap[T,Int] = SortedMap.empty
     var LowLink: SortedMap[T,Int] = SortedMap.empty
     var index:Int=0
@@ -38,7 +39,7 @@ class Tarjan[T]( implicit A:Ordering[T]){ // <: Ordered[T]]{
     var Components:List[SortedSet[T]]= List.empty
     var InOneComponent:SortedSet[T] = SortedSet.empty
 
-    def visit(v:T){
+    def visit(v:T): Unit = {
       Index += ((v,index))
       LowLink+=((v,index))
       index +=1
@@ -67,7 +68,7 @@ class Tarjan[T]( implicit A:Ordering[T]){ // <: Ordered[T]]{
           StackSet -= node
           SCC +=node
           InOneComponent += node
-          finished = (A.compare(node,v) == 0)
+          finished = A.compare(node,v) == 0
         }
         Components = SCC :: Components
       }

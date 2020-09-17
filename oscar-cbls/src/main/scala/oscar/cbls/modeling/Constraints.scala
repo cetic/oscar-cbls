@@ -25,7 +25,6 @@ import scala.collection.immutable.SortedMap
   */
 trait Constraints {
 
-
   /**
    * implements v \in set
     * the violation is 1L if v is not in set, 0L otherwise

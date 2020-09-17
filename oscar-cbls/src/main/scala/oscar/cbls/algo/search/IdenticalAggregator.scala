@@ -15,6 +15,7 @@ package oscar.cbls.algo.search
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
 /**
@@ -26,7 +27,10 @@ object IdenticalAggregator{
   def removeIdenticals[T](l:List[T], isIdentical:(T,T) => Boolean):List[T] =
     removeIdenticals[T](l, isIdentical, Nil)
 
-  private def removeIdenticals[T](l:List[T], isIdentical:(T,T) => Boolean, canonicals:List[T]):List[T] = {
+  @tailrec
+  private def removeIdenticals[T](l:List[T],
+                                  isIdentical:(T,T) => Boolean,
+                                  canonicals:List[T]):List[T] = {
     l match{
       case Nil => canonicals
       case h :: t =>
@@ -46,9 +50,10 @@ object IdenticalAggregator{
    */
   def removeIdenticalClasses[T](l:Iterable[T], itemClass:T => Int):List[T] = {
     val a: Set[Int] = SortedSet.empty
-    removeIdenticalClasses[T](l.toIterator, itemClass, Nil, a)
+    removeIdenticalClasses[T](l.iterator, itemClass, Nil, a)
   }
 
+  @tailrec
   private def removeIdenticalClasses[T](l:Iterator[T],
                                         itemClass:T => Int,
                                         canonicals:List[T],

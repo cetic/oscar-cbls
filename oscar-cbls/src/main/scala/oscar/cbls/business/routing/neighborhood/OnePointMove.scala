@@ -22,13 +22,11 @@
  *     Factorization of code by Yoann Guyot.
  * ****************************************************************************
  */
-
 package oscar.cbls.business.routing.neighborhood
 
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, EasyNeighborhood}
-import oscar.cbls._
+import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
 /**
  * Moves a point of a route to another place in the same or in an other route.
@@ -56,8 +54,7 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
   //the indice to start with for the exploration
   var startIndice: Int = 0
 
-  override def exploreNeighborhood(initialObj: Long){
-
+  override def exploreNeighborhood(initialObj: Long): Unit ={
     val iterationSchemeOnZone =
       if (hotRestart) HotRestart(nodesToMove(), startIndice)
       else nodesToMove()
@@ -116,7 +113,7 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
   var positionOfMovedPointForInstantiation:Int = -1
   var positionOfNewPredecessorForInstantiation:Int = -1
 
-  override def instantiateCurrentMove(newObj: Long) =
+  override def instantiateCurrentMove(newObj: Long): OnePointMoveMove =
     OnePointMoveMove(movedPointForInstantiation, positionOfMovedPointForInstantiation,
       newPredecessorForInstantiation, positionOfNewPredecessorForInstantiation,
       positionIndependentMoves,
@@ -126,11 +123,11 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
     startIndice = 0
   }
 
-  def doMove(positionOfMovedPoint:Int, positionOfNewPredecessor:Int) {
+  def doMove(positionOfMovedPoint:Int, positionOfNewPredecessor:Int): Unit = {
     seq.move(positionOfMovedPoint,positionOfMovedPoint,positionOfNewPredecessor,false)
   }
 
-  def doPositionIndependentMove(movedPoint:Int, newPredecessor:Int): Unit ={
+  def doPositionIndependentMove(movedPoint:Int, newPredecessor:Int): Unit = {
     val s = seq.newValue
     val movedPos = s.positionOfAnyOccurrence(movedPoint).get
     val positionOfPredecessor = s.positionOfAnyOccurrence(newPredecessor).get
@@ -157,7 +154,7 @@ case class OnePointMoveMove(movedPoint: Int,movedPointPosition:Int,
 
   override def impactedPoints: Iterable[Int] = List(movedPoint,newPredecessor)
 
-  override def commit() {
+  override def commit(): Unit = {
     if(positionIndependentMoves){
       neighborhood.doPositionIndependentMove(movedPoint, newPredecessor)
     }else{
@@ -166,10 +163,8 @@ case class OnePointMoveMove(movedPoint: Int,movedPointPosition:Int,
   }
 
   override def toString: String = (
-    neighborhoodNameToString + "OnePointMove(" + movedPoint
-      + " afterPoint " + newPredecessor + (if (positionIndependentMoves) " positionIndependent" else "") + objToString + ")")
+    s"${neighborhoodNameToString}OnePointMove($movedPoint afterPoint $newPredecessor${if (positionIndependentMoves) " positionIndependent" else ""}$objToString)")
 
   override def shortString:String =
-  "OnePointMove(" + movedPoint + " after " + newPredecessor + (if (positionIndependentMoves) " pi" else "") + ")"
+    s"OnePointMove($movedPoint after $newPredecessor${if (positionIndependentMoves) " pi" else ""})"
 }
-

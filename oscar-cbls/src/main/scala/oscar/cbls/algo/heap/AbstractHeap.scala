@@ -12,22 +12,16 @@
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-package oscar.cbls.algo.heap
-
-
 /*******************************************************************************
  * Contributors:
  *     This code has been initially developed by CETIC www.cetic.be
  *         by Renaud De Landtsheer
  ******************************************************************************/
+package oscar.cbls.algo.heap
 
-/**
- * @author renaud.delandtsheer@cetic.be
- * @tparam T
- */
 abstract class AbstractHeap[T] extends Iterable[T] {
-  def dropAll()
-  def insert(elem:T)
+  def dropAll():Unit
+  def insert(elem:T):Unit
   def getFirsts:List[T]
   def popFirsts:List[T]
   def getFirst:T

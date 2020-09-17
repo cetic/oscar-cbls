@@ -1,5 +1,3 @@
-package oscar.cbls.business.routing.invariants.capa
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,12 +12,14 @@ package oscar.cbls.business.routing.invariants.capa
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.business.routing.invariants.capa
 
 import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
-import oscar.cbls.core._
 import oscar.cbls.business.routing.model.{ConcreteVehicleLocation, VehicleLocation}
-import oscar.cbls._
+import oscar.cbls.core.computation.{Invariant, SeqUpdateMove}
+
+import scala.annotation.tailrec
 
 /**
   * Maintains the content of vehicles at each node and the starting position of each vehicle
@@ -40,12 +40,12 @@ abstract class AbstractVehicleCapacity(n:Int,
   protected def smartPrepend(zoneStart: Int, zoneEnd:Int, list:List[(Int,Int)]): List[(Int,Int)] = {
     require(zoneStart >=0)
     require(zoneEnd >=0)
-    require(zoneStart <= zoneEnd,"smartPrepend(" + zoneStart + "," + zoneEnd + "," + list + ")")
+    require(zoneStart <= zoneEnd, s"smartPrepend($zoneStart,$zoneEnd,$list)")
     assert(list.sortWith((lft : (Int, Int), rgt : (Int, Int)) => lft._1 < rgt._1 && lft._2 < rgt._2).equals(list), list + " " + list.sortWith((lft : (Int, Int), rgt : (Int, Int)) => lft._1 < rgt._1 && lft._2 < rgt._2))
     list match {
       case Nil => List((zoneStart, zoneEnd))
       case (oldStart, oldEnd) :: tail =>
-        require(zoneStart <= oldEnd, "zoneStart:" + zoneStart + " oldEnd:" + oldEnd)
+        require(zoneStart <= oldEnd, s"zoneStart:$zoneStart oldEnd:$oldEnd")
         if (zoneEnd < oldStart - 1) {
           //the new interval does not touch the old one
           (zoneStart,zoneEnd) :: list
@@ -78,6 +78,7 @@ abstract class AbstractVehicleCapacity(n:Int,
       case Some(x) if x >= v => true
       case _ => false
     }
+
     def addInsertionIntoZonesToUpdate(zonesToUpdate:List[(Int,Int)]):List[(Int,Int)] = {
       zonesToUpdate match {
         case Nil =>
@@ -154,7 +155,6 @@ abstract class AbstractVehicleCapacity(n:Int,
     zoneToUpdate.insert(vehicle, zoneOFVehicleAfterInsert)
   }
 
-
   def updateZoneToUpdateAfterRemove(zoneToUpdate: RedBlackTreeMap[List[(Int, Int)]],
                                     posOfRemove:Int,
                                     sequenceBeforeRemove:IntSequence,
@@ -200,7 +200,7 @@ abstract class AbstractVehicleCapacity(n:Int,
             //(startZone, endZone) :: shiftPlusDelta(tail, -1)
             smartPrepend(startZone, endZone, shiftPlusDelta(tail, -1))
           }else{
-            require(tail.isEmpty,"deleted last node on route, yet we have more zoneToUpdate after the remove:" + tail)
+            require(tail.isEmpty,s"deleted last node on route, yet we have more zoneToUpdate after the remove:$tail")
             if(startZone == endZone){
               List.empty
             }else {
@@ -405,7 +405,6 @@ abstract class AbstractVehicleCapacity(n:Int,
         }
       }
 
-
       //inserting the sequence into the list of zones to update
       //also need to insert a single zone at the end, and perform a relative shift of the sequence.
       val zonesToUpdateTo = zonesToUpdateWithVehicleFromUpdated.getOrElse(destinationVehicle, Nil)
@@ -417,7 +416,7 @@ abstract class AbstractVehicleCapacity(n:Int,
 
   //this is a debug procedure
   def checkZonesToUpdate(zonesToUpdate: RedBlackTreeMap[List[(Int, Int)]],
-                         sequenceAfterMovesBeforeUpdates:IntSequence) {
+                         sequenceAfterMovesBeforeUpdates:IntSequence): Unit ={
 
     for (vehicle <- zonesToUpdate.keys) {
       val theZone = zonesToUpdate.get(vehicle).get
@@ -433,7 +432,8 @@ abstract class AbstractVehicleCapacity(n:Int,
         val (start, end) = checkZone(theZone)
 
         require(start >= 0)
-        require(end <= vehicleRouteLength, "end:" + end + " vehicleRouteLength:" + vehicleRouteLength + " theZone:" + theZone + " vehicle:" + vehicle + " routes:" + sequenceAfterMovesBeforeUpdates)
+        require(end <= vehicleRouteLength,
+          s"end:$end vehicleRouteLength:$vehicleRouteLength theZone:$theZone vehicle:$vehicle routes:$sequenceAfterMovesBeforeUpdates")
       }
     }
 
@@ -445,9 +445,10 @@ abstract class AbstractVehicleCapacity(n:Int,
         case (a, b) :: tail =>
           require(a <= b)
           (a, checkZoneLoop(b, tail))
-
       }
     }
+
+    @tailrec
     def checkZoneLoop(endOfPrev : Int, toUpdateZone : List[(Int, Int)]) : Int = {
       toUpdateZone match {
         case List((a, b)) =>
@@ -462,11 +463,7 @@ abstract class AbstractVehicleCapacity(n:Int,
     }
   }
 
-
-
-
-
-  def setNodesUnrouted(unroutedNodes:Iterable[Int])
+  def setNodesUnrouted(unroutedNodes:Iterable[Int]): Unit
 
   /**
     *
@@ -476,7 +473,7 @@ abstract class AbstractVehicleCapacity(n:Int,
     */
   def setVehicleContentAtNode(prevNode:Int, node: Int):Boolean
 
-  def setVehicleContentAtEnd(vehicle:Int, lastNode:Int)
+  def setVehicleContentAtEnd(vehicle:Int, lastNode:Int): Unit
 
   /**
     *
@@ -484,7 +481,6 @@ abstract class AbstractVehicleCapacity(n:Int,
     * @return true if changed, false otherwise
     */
   def setVehicleContentAtStart(vehicle:Int):Boolean
-
 
   /**
     * updates the output, based on the zones to updata, for all vehicles
@@ -494,7 +490,7 @@ abstract class AbstractVehicleCapacity(n:Int,
     */
   protected def updateVehicleContentOnAllVehicle(s:IntSequence,
                                                  vehiclesToZonesToUpdate: RedBlackTreeMap[List[(Int, Int)]],
-                                                 vehicleLocationInSequence:VehicleLocation){
+                                                 vehicleLocationInSequence:VehicleLocation): Unit ={
 
     var tmpExplorer:Option[IntSequenceExplorer] = None
 
@@ -528,13 +524,15 @@ abstract class AbstractVehicleCapacity(n:Int,
   /**
     * performs the update of vehicle content on the mentioned vehicle
     * beware, this does not update the contentAtVehicleEnd; you must do it somewhere else.
+ *
     * @param s the sequence
     * @param sortedZonesToUpdateRelativeToVehicleStartPosition a sorted lsit of non-overlapping intervals wit hthe relative positions to update
     * @param startPositionOfVehicle the start position o he vehicle to update
     * @param vehicle the vehicle to update
     * @param explorerToLatestUpdatedPosition an explorer to the latest position that was updated
     * @return the last position that was updated
-    */
+   */
+  @tailrec
   private def updateVehicleContent(s:IntSequence,
                                    sortedZonesToUpdateRelativeToVehicleStartPosition: List[(Int, Int)],
                                    startPositionOfVehicle:Int,
@@ -609,6 +607,7 @@ abstract class AbstractVehicleCapacity(n:Int,
     * @param vehicle the vehicle to which this belongs
     * @return the last position where an update was performed
     */
+  @tailrec
   private def updateUntilAbsolutePositionAndSaturatedOrVehicleEnd(previousUpdatedPosition:IntSequenceExplorer,
                                                                   endCompulsoryAbsolute:Int,
                                                                   vehicle:Int):Option[IntSequenceExplorer] = {
@@ -641,7 +640,7 @@ abstract class AbstractVehicleCapacity(n:Int,
     * @param s the sequence
     * @return (VehicleLocation)
     */
-  def computeAndAffectContentAndVehicleStartPositionsFromScratch(s:IntSequence,unrouteAllNodes:Boolean):(ConcreteVehicleLocation) = {
+  def computeAndAffectContentAndVehicleStartPositionsFromScratch(s:IntSequence,unrouteAllNodes:Boolean):ConcreteVehicleLocation = {
     val vehicleLocation = Array.fill(v)(0)
 
     if(unrouteAllNodes) setNodesUnrouted((v until n))

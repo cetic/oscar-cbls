@@ -17,11 +17,10 @@ package oscar.cbls.lib.invariant.graph
 
 import oscar.cbls._
 import oscar.cbls.algo.graph._
-import oscar.cbls.core._
-import oscar.cbls.core.computation.{Domain, SetNotificationTarget}
+import oscar.cbls.core.computation.{ChangingIntValue, ChangingSetValue, Domain, IntInvariant, IntNotificationTarget, IntValue, SetNotificationTarget, SetValue, ValueWiseKey, VaryingDependencies}
+import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.SortedSet
-import scala.util.Random
 
 class DistanceInConditionalGraph(graph:ConditionalGraph,
                                  from:IntValue,
@@ -85,7 +84,7 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
   var fromAtLatestComputation:Long = -1
   var toAtLatestComputation:Long = -1
 
-  def computeAffectAndAdjustValueWiseKey() {
+  def computeAffectAndAdjustValueWiseKey(): Unit = {
     //println("computeAffectAndAdjustValueWiseKey")
 
     val (a,b) =
@@ -150,7 +149,6 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
 
     fromAtLatestComputation = -1 //we kil the guard on node swap to ensure computation is performed
   }
-
 
   override def notifyIntChanged(v: ChangingIntValue, id: Int, oldVal: Long, newVal: Long): Unit = {
     //we changed the from or the to, so path recomputation is needed

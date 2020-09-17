@@ -1,5 +1,3 @@
-package oscar.cbls.business.geometry.invariants
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,15 +12,14 @@ package oscar.cbls.business.geometry.invariants
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.business.geometry.invariants
 
 import org.locationtech.jts.operation.buffer.BufferOp
-import oscar.cbls._
 import oscar.cbls.business.geometry
 import oscar.cbls.business.geometry.model._
-import oscar.cbls.core._
-import oscar.cbls.core.computation.{AtomicValue, ChangingAtomicValue}
+import oscar.cbls.core.computation.{AtomicValue, CBLSIntVar, ChangingAtomicValue, ChangingIntValue, Domain, IntInvariant, IntNotificationTarget, IntValue, Invariant, Store, Value}
+import oscar.cbls.core.constraint.Constraint
 import oscar.cbls.core.propagation.Checker
-
 
 case class IsWithin(inner:AtomicValue[GeometryValue], outer:AtomicValue[GeometryValue])
   extends Invariant with Constraint with GeometryNotificationTarget{
@@ -34,7 +31,6 @@ case class IsWithin(inner:AtomicValue[GeometryValue], outer:AtomicValue[Geometry
   finishInitialization()
 
   override val violation = new CBLSIntVar(model,0,0 to Int.MaxValue)
-
 
   override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue], id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
     this.scheduleForPropagation()
@@ -101,7 +97,7 @@ class ConvexHull(store:Store,a:AtomicValue[GeometryValue])
   }
 
   override def performInvariantPropagation(): Unit = {
-    this := new GeometryValue(a.value.geometry.convexHull())
+    this := GeometryValue(a.value.geometry.convexHull())
   }
 }
 
@@ -146,7 +142,7 @@ class Centroid(store:Store,shape:AtomicValue[GeometryValue])
     store,
     initialValue = {
       val c = shape.value.geometry.getCentroid
-      new GeometryValue(
+      GeometryValue(
         c,
         inputCentreOfOverApproximatingCircle = Some(c),
         inputOverApproximatingRadius= Some(0.0))
@@ -162,7 +158,7 @@ class Centroid(store:Store,shape:AtomicValue[GeometryValue])
 
   override def performInvariantPropagation(): Unit = {
     val c = shape.value.geometry.getCentroid
-    this := new GeometryValue(
+    this := GeometryValue(
       c,
       inputCentreOfOverApproximatingCircle = Some(c),
       inputOverApproximatingRadius = Some(0.0))
@@ -206,7 +202,6 @@ class ResizableCircle(store:Store, size: IntValue, givenName: String = null)
   override def toString: String = if (givenName == null) value.toString else givenName
 }
 
-
 class ResizableSquare(store:Store, size: IntValue, givenName: String = null)
   extends CBLSGeometryInvariant(store, {
     val square = geometry.createRectangle(size.value, size.value)
@@ -224,7 +219,6 @@ class ResizableSquare(store:Store, size: IntValue, givenName: String = null)
 
   override def toString: String = if (givenName == null) value.toString else givenName
 }
-
 
 class ResizableRectangle(store:Store, height: IntValue, width: IntValue, givenName: String = null)
   extends CBLSGeometryInvariant(store, {

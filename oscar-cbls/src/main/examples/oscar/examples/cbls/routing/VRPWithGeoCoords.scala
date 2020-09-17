@@ -2,7 +2,10 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
+import oscar.cbls.business.routing.model.helpers.DistanceHelper
 import oscar.cbls.business.routing.visu.RoutingMapTypes
+import oscar.cbls.core.computation.Store
+import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{Best, First}
 
 object VRPWithGeoCoords extends App{

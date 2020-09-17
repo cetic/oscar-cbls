@@ -14,26 +14,22 @@
  ******************************************************************************/
 package oscar.util
 
-import java.io.IOException
 import java.io.FileWriter
 import java.io.BufferedWriter
-import scala.io.Source
 
 class OutFile(filepath: String, critical: Boolean, verbous: Boolean) {
-
   val file: BufferedWriter = openFile()
 
   private def openFile(): BufferedWriter = {
     try new BufferedWriter(new FileWriter(filepath))
     catch {
-      case e: Error => {
+      case e: Error =>
         errorHandling(e)
         null
-      }
     }
   }
 
-  private def errorHandling(e: Error) {
+  private def errorHandling(e: Error): Unit = {
     if (verbous) println(e.getMessage)
     if (critical) System.exit(-1)
   }
@@ -45,17 +41,15 @@ class OutFile(filepath: String, critical: Boolean, verbous: Boolean) {
     }
   }
   
-  def write(line: Int): Unit = {
-    write(line+"")
-  }
+  def write(line: Int): Unit = write(s"$line")
 
-  def writeln(line: String): Unit = write(line + "\n")
+  def writeln(line: String): Unit = write(s"$line\n")
   
-  def writeln(line: Int): Unit = writeln(line+"")
+  def writeln(line: Int): Unit = writeln(s"$line\n")
   
-  def writeln() = write("\n")
+  def writeln(): Unit = write("\n")
 
-  def close() = {
+  def close(): Unit = {
     try file.close()
     catch {
       case e: Error => errorHandling(e)

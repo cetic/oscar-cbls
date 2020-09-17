@@ -1,19 +1,17 @@
 package oscar.examples.cbls.routing
 
 import oscar.cbls._
-import oscar.cbls.algo.seq._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.NbNodes
 import oscar.cbls.business.routing.invariants.global._
+import oscar.cbls.business.routing.model.helpers.DistanceHelper
 import oscar.cbls.business.routing.neighborhood.{ThreeOpt, ThreeOptMove, TwoOpt}
-import oscar.cbls.core.computation.ChangingSeqValue
+import oscar.cbls.core.computation.{CBLSIntVar, Store}
+import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.core.search.Best
-import oscar.cbls.lib.constraint.LE
-
-
 
 object VRPTestingGlobalConstraint extends App {
-
 
   val nbNode = 150
   val nbVehicle = 4

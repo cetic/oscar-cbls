@@ -23,7 +23,7 @@ import java.awt.geom.{AffineTransform, Point2D}
 import javax.swing.{JPanel, SwingUtilities}
 import oscar.visual.shapes.{VisualLine, VisualRectangle, VisualShape}
 
-import scala.collection.mutable.Queue
+import scala.collection.mutable
 
 /**
   * VisualDrawing
@@ -35,7 +35,7 @@ class VisualDrawing(flipped: Boolean, scalable: Boolean) extends JPanel(new Bord
   setBackground(Color.white)
 
   // Shapes contained in the panel
-  protected val shapes: Queue[VisualShape] = Queue()
+  protected val shapes: mutable.Queue[VisualShape] = mutable.Queue()
 
   protected var marginT: Double = 0
   protected var marginR: Double = 0
@@ -43,7 +43,7 @@ class VisualDrawing(flipped: Boolean, scalable: Boolean) extends JPanel(new Bord
   protected var marginL: Double = 0
 
   /** Returns the margins of the panel. */
-  def margin = (marginT, marginR, marginB, marginL)
+  def margin: (Double, Double, Double, Double) = (marginT, marginR, marginB, marginL)
 
   /** Sets the margins of the panel. */
   def margin(m: Double): Unit = margin(m, m, m, m)
@@ -168,24 +168,24 @@ class VisualDrawing(flipped: Boolean, scalable: Boolean) extends JPanel(new Bord
   addMouseMotionListener {
     val drawingPanel = this
     new MouseMotionListener() {
-      override def mouseMoved(e: MouseEvent) {
+      override def mouseMoved(e: MouseEvent): Unit = {
         drawingPanel.setToolTipText("")
         for (s <- shapes) {
           s.showToolTip(e.getPoint)
         }
       }
-      override def mouseDragged(e: MouseEvent) {}
+      override def mouseDragged(e: MouseEvent): Unit = {}
     }
   }
 
-  private def scale(factor: Double) {
+  private def scale(factor: Double): Unit = {
     scale = scale * factor
     repaint()
   }
 
   addMouseListener {
     new MouseListener() {
-      override def mouseClicked(e: MouseEvent) {
+      override def mouseClicked(e: MouseEvent): Unit = {
         if (SwingUtilities.isRightMouseButton(e)) {
           scale(0.9)
         }
@@ -198,10 +198,10 @@ class VisualDrawing(flipped: Boolean, scalable: Boolean) extends JPanel(new Bord
           }
         }
       }
-      override def mouseEntered(e: MouseEvent) {}
-      override def mousePressed(e: MouseEvent) {}
-      override def mouseExited(e: MouseEvent) {}
-      override def mouseReleased(e: MouseEvent) {}
+      override def mouseEntered(e: MouseEvent): Unit = {}
+      override def mousePressed(e: MouseEvent): Unit = {}
+      override def mouseExited(e: MouseEvent): Unit = {}
+      override def mouseReleased(e: MouseEvent): Unit = {}
     }
   }
 

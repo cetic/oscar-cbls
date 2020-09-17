@@ -16,18 +16,16 @@
  */
 package oscar.cbls.core.search
 
-import scala.language.implicitConversions
-
 /**
  * @author renaud.delandtsheer@cetic.be
  */
 abstract class NeighborhoodCombinator(a: Neighborhood*) extends Neighborhood {
   //this resets the internal state of the move combinators
-  override def reset() {
+  override def reset(): Unit = {
     for (n <- a) n.reset()
   }
 
-  override def resetStatistics(){
+  override def resetStatistics(): Unit ={
     for (n <- a) n.resetStatistics()
   }
 
@@ -40,4 +38,3 @@ abstract class NeighborhoodCombinator(a: Neighborhood*) extends Neighborhood {
 
   override def collectProfilingStatistics: List[Array[String]] = a.flatMap(_.collectProfilingStatistics).toList
 }
-

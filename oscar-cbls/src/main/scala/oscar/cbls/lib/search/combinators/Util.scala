@@ -1,7 +1,6 @@
 package oscar.cbls.lib.search.combinators
 
-
-import oscar.cbls._
+import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search._
 import oscar.cbls.util.Properties
 import oscar.cbls.visual.SingleFrameWindow
@@ -20,7 +19,6 @@ trait UtilityCombinators{
    */
   def profile(a:Neighborhood,ignoreInitialObj:Boolean = false) = Profile(a,ignoreInitialObj)
 }
-
 
 /**
  * This combinator create a frame that draw the evolution curve of the objective function.
@@ -126,7 +124,7 @@ class ChainableName[MoveType <: Move](a: Neighborhood with SupportForAndThenChai
 }
 
 /**
- * tis combinator overrides the acceptance criterion given to the whole neighborhood
+ * this combinator overrides the acceptance criterion given to the whole neighborhood
  * this can be necessary if you have a neighborhood with some phases only including simulated annealing
  * notice that the actual acceptance criteria is the one that you give,
  * with a slight modification: it will reject moves that lead to MaxInt, except if we are already at MaxInt.
@@ -146,7 +144,6 @@ class WithAcceptanceCriterion(a: Neighborhood, overridingAcceptanceCriterion: (L
   = a.getMove(obj,initialObj:Long,
     (a, b) => (a == Long.MaxValue || b != Long.MaxValue) && overridingAcceptanceCriterion(a, b))
 }
-
 
 /**
  * Forces the use of a given objective function.
@@ -169,7 +166,6 @@ class OverrideObjective(a: Neighborhood, overridingObjective: Objective) extends
     getMove(overridingObjective, overridingObjective.value,acceptanceCriterion)
 }
 
-
 /**
  * collects statistics about the run time and progress achieved by neighborhood a
  * they can be obtained by querying this object with method toString
@@ -190,12 +186,12 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
 
   def totalTimeSpent:Long = totalTimeSpentMoveFound + totalTimeSpentNoMoveFound
 
-  override def resetStatistics(){
+  override def resetStatistics(): Unit ={
     resetThisStatistics()
     super.resetStatistics()
   }
 
-  def resetThisStatistics() {
+  def resetThisStatistics(): Unit ={
     nbCalls = 0
     nbFound = 0
     totalGain = 0
@@ -229,25 +225,25 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
     }
   }
 
-  def gainPerCall:String = if(nbCalls ==0L) "NA" else "" + (totalGain / nbCalls).toLong
-  def callDuration:String = if(nbCalls == 0L ) "NA" else "" + (totalTimeSpent / nbCalls).toLong
+  def gainPerCall:String = if(nbCalls ==0L) "NA" else s"${totalGain / nbCalls}"
+  def callDuration:String = if(nbCalls == 0L ) "NA" else s"${totalTimeSpent / nbCalls}"
   //gain in obj/s
-  def slope:String = if(totalTimeSpent == 0L) "NA" else "" + (1000L * totalGain.toDouble / totalTimeSpent.toDouble).toLong
+  def slope:String = if(totalTimeSpent == 0L) "NA" else s"${1000 * (totalGain.toDouble / totalTimeSpent.toDouble).toLong}"
 
-  def avgTimeSpendNoMove:String = if(nbCalls - nbFound == 0L) "NA" else "" + (totalTimeSpentNoMoveFound / (nbCalls - nbFound))
-  def avgTimeSpendMove:String = if(nbFound == 0L) "NA" else "" + (totalTimeSpentMoveFound / nbFound)
-  def waistedTime:String = if(nbCalls - nbFound == 0L) "NA" else "" + (totalTimeSpentNoMoveFound / (nbCalls - nbFound))
+  def avgTimeSpendNoMove:String = if(nbCalls - nbFound == 0L) "NA" else s"${totalTimeSpentNoMoveFound / (nbCalls - nbFound)}"
+  def avgTimeSpendMove:String = if(nbFound == 0L) "NA" else s"${totalTimeSpentMoveFound / nbFound}"
+  def waistedTime:String = if(nbCalls - nbFound == 0L) "NA" else s"${totalTimeSpentNoMoveFound / (nbCalls - nbFound)}"
 
   override def collectProfilingStatistics: List[Array[String]] =
     collectThisProfileStatistics :: super.collectProfilingStatistics
 
   def collectThisProfileStatistics:Array[String] =
-    Array[String]("" + a,"" + nbCalls,"" + nbFound,"" + totalGain,
-      "" + totalTimeSpent,"" + gainPerCall,"" + callDuration,"" + slope,
-      "" + avgTimeSpendNoMove,"" + avgTimeSpendMove, "" + totalTimeSpentNoMoveFound)
+    Array[String](s"$a", s"$nbCalls", s"$nbFound", s"$totalGain",
+      s"$totalTimeSpent", s"$gainPerCall", s"$callDuration", s"$slope",
+      s"$avgTimeSpendNoMove", s"$avgTimeSpendMove", s"$totalTimeSpentNoMoveFound")
 
   //  override def toString: String = "Statistics(" + a + " nbCalls:" + nbCalls + " nbFound:" + nbFound + " totalGain:" + totalGain + " totalTimeSpent " + totalTimeSpent + " ms timeSpendWithMove:" + totalTimeSpentMoveFound + " ms totalTimeSpentNoMoveFound " + totalTimeSpentNoMoveFound + " ms)"
-  override def toString: String = "Profile(" + a + ")"
+  override def toString: String = s"Profile($a)"
 
   def slopeOrZero:Long = if(totalTimeSpent == 0L) 0L else ((100L * totalGain) / totalTimeSpent).toInt
 
@@ -268,7 +264,7 @@ case class NoReset(a: Neighborhood) extends NeighborhoodCombinator(a) {
     a.getMove(obj, initialObj:Long, acceptanceCriteria)
 
   //this resets the internal state of the move combinators
-  override def reset() {}
+  override def reset(): Unit = {}
 }
 
 /**
@@ -284,7 +280,6 @@ class ResetOnExhausted(a: Neighborhood) extends NeighborhoodCombinator(a) {
     }
   }
 }
-
 
 /**
   * sets a timeout for a search procedure.
@@ -306,7 +301,7 @@ class Timeout(a:Neighborhood, maxDurationMilliSeconds:Long) extends Neighborhood
       val hours = (maxDurationMilliSeconds / (1000*60*60)).floor.toInt
       val minutes = (maxDurationMilliSeconds / (1000 * 60)).floor.toInt % 60
       val seconds:Double = (maxDurationMilliSeconds / 1000.0) % 60
-      println("Timeout of " + hours + ":" + minutes + ":" + seconds)
+      println(s"Timeout of $hours:$minutes:$seconds")
       NoMoveFound
     } else {
       a.getMove(obj, initialObj: Long, acceptanceCriteria)
@@ -315,7 +310,7 @@ class Timeout(a:Neighborhood, maxDurationMilliSeconds:Long) extends Neighborhood
 
   override def reset(): Unit = {
     deadline = -1
-    a.reset
+    a.reset()
   }
 }
 
@@ -371,7 +366,7 @@ class CutTail(a:Neighborhood, timePeriodInMilliSecond:Long,minRelativeImprovemen
 
       if(relativeImprovementSincePreviousCut < minRelativeImprovementByCut){
         //we have to stop it
-        println("tail cut; relativeImprovement:" + relativeImprovementSincePreviousCut + " periodDurationMilliSecond:" + timePeriodInMilliSecond)
+        println(s"tail cut; relativeImprovement:$relativeImprovementSincePreviousCut periodDurationMilliSecond:$timePeriodInMilliSecond")
         stopped = true
         return NoMoveFound
       }else{
@@ -390,6 +385,3 @@ class CutTail(a:Neighborhood, timePeriodInMilliSecond:Long,minRelativeImprovemen
     }
   }
 }
-
-
-

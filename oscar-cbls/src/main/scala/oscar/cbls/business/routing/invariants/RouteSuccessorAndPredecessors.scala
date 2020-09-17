@@ -1,5 +1,3 @@
-package oscar.cbls.business.routing.invariants
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,11 +12,12 @@ package oscar.cbls.business.routing.invariants
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.business.routing.invariants
 
-import oscar.cbls._
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.business.routing.model.RoutingConventionMethods
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingSeqValue, Invariant, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint}
+import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.SortedSet
 
@@ -127,7 +126,7 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
     }
   }
 
-  def computeAllFromScratch(seq:IntSequence){
+  def computeAllFromScratch(seq:IntSequence): Unit ={
     successorValues.foreach(node => node := defaultWhenNotInSequence)
     predecessorValues.foreach(node => node := defaultWhenNotInSequence)
     var explorer = seq.explorerAtPosition(0).head
@@ -149,7 +148,7 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
     }){}
   }
 
-  def updateStartFrom(startValue:Int,startExplorerOpt:Option[IntSequenceExplorer],seq:IntSequence){
+  def updateStartFrom(startValue:Int,startExplorerOpt:Option[IntSequenceExplorer],seq:IntSequence): Unit ={
     startExplorerOpt match{
       case None =>
         successorValues(startValue) := defaultWhenNotInSequence
@@ -195,19 +194,19 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
     successorValues
   }
 
-  override def checkInternals(c : Checker){
+  override def checkInternals(c : Checker): Unit ={
     require(routes.value quickEquals routes.newValue)
     val fromScratch = computeSuccessorsFromScratchNoAffect(routes.newValue)
     for(node <- 0 until n){
       c.check(successorValues(node).newValue == fromScratch(node),
-        Some("error on next for node " + node + ": " + successorValues(node).newValue + " should== " + fromScratch(node)))
+        Some(s"error on next for node $node: ${successorValues(node).newValue} should== ${fromScratch(node)}"))
 
       if(fromScratch(node)== defaultWhenNotInSequence){
         c.check(predecessorValues(node).newValue == defaultWhenNotInSequence,
-          Some("error on predecessor for node " + node + " it is not routed, but got " + predecessorValues(node).newValue))
+          Some(s"error on predecessor for node $node it is not routed, but got ${predecessorValues(node).newValue}"))
       }else {
         c.check(predecessorValues(fromScratch(node)).newValue == node,
-          Some("error on predecessor for node " + node + " successor from scratch:" + fromScratch(node) + " predecessor of this is: " + predecessorValues(fromScratch(node)).newValue + "seq:" + routes.value))
+          Some(s"error on predecessor for node $node successor from scratch:${fromScratch(node)} predecessor of this is: ${predecessorValues(fromScratch(node)).newValue}seq:${routes.value}"))
       }
     }
   }

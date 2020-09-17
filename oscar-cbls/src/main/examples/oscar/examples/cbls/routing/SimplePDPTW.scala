@@ -3,7 +3,9 @@ package oscar.examples.cbls.routing
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
-import oscar.cbls.business.routing.invariants.vehicleCapacity.{GlobalVehicleCapacityConstraint, GlobalVehicleCapacityConstraintWithLogReduction}
+import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleCapacityConstraint
+import oscar.cbls.core.computation.{CBLSIntVar, Store}
+import oscar.cbls.core.constraint.ConstraintSystem
 
 import scala.collection.immutable.HashSet
 
@@ -12,7 +14,7 @@ import scala.collection.immutable.HashSet
   */
 
 object SimplePDPTW extends App{
-  val m = new Store(noCycle = false)
+  val m = Store(noCycle = false)
   val v = 10
   val n = 500
   val penaltyForUnrouted = 10000
@@ -29,7 +31,7 @@ object SimplePDPTW extends App{
   val gc = GlobalConstraintCore(myVRP.routes, v)
 
   // Distance
-  val vehiclesRouteLength = Array.tabulate(v)(vehicle => CBLSIntVar(m, name = "Route length of vehicle " + vehicle))
+  val vehiclesRouteLength = Array.tabulate(v)(vehicle => CBLSIntVar(m, name = s"Route length of vehicle $vehicle"))
   val routeLengthInvariant = new RouteLength(gc,n,v,vehiclesRouteLength,(from: Int, to: Int) => symmetricDistance(from)(to))
 
   //Chains
@@ -44,7 +46,7 @@ object SimplePDPTW extends App{
 
   // Vehicle content
   val violationOfContentOfVehicle = Array.tabulate(v)(vehicle =>
-    CBLSIntVar(myVRP.routes.model, name = "Violation of capacity of vehicle " + vehicle))
+    CBLSIntVar(myVRP.routes.model, name = s"Violation of capacity of vehicle $vehicle"))
   val capacityInvariant = GlobalVehicleCapacityConstraint(gc, n, v, vehiclesCapacity, contentsFlow, violationOfContentOfVehicle)
 
   //Objective function
@@ -63,7 +65,7 @@ object SimplePDPTW extends App{
     }
   }*/
 
-  val relevantPredecessors = GlobalVehicleCapacityConstraint.relevantPredecessorsOfNodes(capacityInvariant)
+  val relevantPredecessors = capacityInvariant.relevantPredecessorsOfNodes
 
   val closestRelevantPredecessorsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance,relevantPredecessors)(_))
 
@@ -80,7 +82,7 @@ object SimplePDPTW extends App{
 
       chainTail match {
         case Nil => None
-        case head :: Nil => None
+        case _ :: Nil => None
         case nextNodeToMove :: newTail =>
           val moveNeighborhood = onePointMove(() => Some(nextNodeToMove),
             () => ChainsHelper.computeRelevantNeighborsForInternalNodes(myVRP,chainsExtension), myVRP)
@@ -183,3 +185,4 @@ object SimplePDPTW extends App{
 
   search.profilingStatistics
 }
+

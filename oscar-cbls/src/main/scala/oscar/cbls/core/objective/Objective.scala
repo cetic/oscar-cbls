@@ -23,8 +23,6 @@ package oscar.cbls.core.objective
 import oscar.cbls
 import oscar.cbls.core.computation._
 
-import scala.language.implicitConversions
-
 object Objective{
   implicit def objToChangingIntValue(o:IntVarObjective):ChangingIntValue = o.objective
   implicit def objToFun(o:Objective):()=>Long = ()=>o.value
@@ -69,13 +67,29 @@ class IntVarObjective(val objective: ChangingIntValue) extends Objective {
    * It is easy to override it, and perform a smarter propagation if needed.
    * @return the actual objective value.
    */
-  def value = objective.value
+  def value: Long = objective.value
 
   def model:Store = objective.model
 
-  def detailedString(short:Boolean,indent:Long = 0L):String = "IntVarObjective(" + objective + ")"
+  def detailedString(short:Boolean,indent:Long = 0L):String =
+    s"IntVarObjective($objective)"
 }
 
+
+
+object CascadingObjective{
+  def apply(objectives:Objective*):Objective = {
+
+    def buildCascading(objs:List[Objective]):Objective = {
+      objs match{
+        case List(obj) => obj
+        case head :: tail if tail.nonEmpty => new CascadingObjective(head,buildCascading(tail))
+      }
+    }
+
+    buildCascading(objectives.toList)
+  }
+}
 /**
  * if (objective1.value > 0L) Long.MaxValue/2L + objective1.value
  *   else objective2.value
@@ -109,7 +123,7 @@ class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objecti
    * It is easy to override it, and perform a smarter propagation if needed.
    * @return the actual objective value.
    */
-  override def value = {
+  override def value: Long = {
     val firstObjectiveValue = mustBeZeroObjective.value
     if (firstObjectiveValue!=0L) cascadeSize
     else secondObjective.value
@@ -117,7 +131,6 @@ class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objecti
 
   override def model: Store = mustBeZeroObjective.model
 }
-
 
 object PriorityObjective{
   def apply(objective1: Objective, objective2:Objective, maxObjective2:Long) = new PriorityObjective(objective1: Objective, objective2:Objective, maxObjective2:Long)
@@ -155,7 +168,6 @@ object PriorityObjective{
   }
 }
 
-
 /**
  * if (objective1.value == 0) objective2.value
  * else objective1.value * (maxObjective2+1)
@@ -172,18 +184,21 @@ object PriorityObjective{
  * @param objective2 the one to minimize when the first one is zero
  * @param maxObjective2 the maximal value that objective2 will ever have when objective1 is zero.
  */
-class PriorityObjective(val objective1: Objective, val objective2:Objective, val maxObjective2:Long) extends Objective {
+class PriorityObjective(val objective1: Objective,
+                        val objective2:Objective,
+                        val maxObjective2:Long) extends Objective {
 
   /**
    * This method returns the actual objective value.
    * It is easy to override it, and perform a smarter propagation if needed.
    * @return the actual objective value.
    */
-  override def value = {
+  override def value: Long = {
     val firstObjectiveValue = objective1.value
     if (firstObjectiveValue==0) {
       val obj2Value = objective2.value
-      cbls.warning(obj2Value <= maxObjective2,"PriorityObjective:obj2Value(" + obj2Value + ") should be < maxObjective2(" + maxObjective2 + ")")
+      cbls.warning(obj2Value <= maxObjective2,
+        s"PriorityObjective:obj2Value($obj2Value) should be < maxObjective2($maxObjective2)")
       obj2Value
     }else{
       firstObjectiveValue + maxObjective2 + 1
@@ -193,23 +208,23 @@ class PriorityObjective(val objective1: Objective, val objective2:Objective, val
   override def model: Store = objective1.model
 
   override def detailedString(short: Boolean, indent:Long = 0L): String =
-    (if(short) {
+    if(short) {
       if (objective1.value == 0) {
-        "PriorityObjective(value: " + this.value + "\n" +
+        s"PriorityObjective(value: ${this.value}\n" +
           nSpace(indent + 2L) + "objective1 :=0 \n" +
           nSpace(indent + 2L) + "objective2:" + objective2.detailedString(true, indent + 2L) + "\n" +
           nSpace(indent) + ")"
       } else {
-        "PriorityObjective(value:" + this.value + "\n" +
+        s"PriorityObjective(value:${this.value}\n" +
           nSpace(indent + 2L) + "objective1:" + objective1.detailedString(true, indent + 4L) + "\n" +
           nSpace(indent) + ")"
       }
     }else {
-      "PriorityObjective(value:" + this.value + "\n" +
+      s"PriorityObjective(value:${this.value}\n" +
         nSpace(indent + 2L) + "objective1:" + objective1.detailedString(false, indent + 4L) + "\n" +
         nSpace(indent + 2L) + "objective2:" + objective2.detailedString(false, indent + 4L) + "\n" +
         nSpace(indent) + ")"
-    })
+    }
 }
 
 class FunctionObjective(f:()=>Long, m:Store = null) extends Objective{
@@ -222,7 +237,7 @@ class FunctionObjective(f:()=>Long, m:Store = null) extends Objective{
    */
   override def value: Long = f()
 
-  override def detailedString(short: Boolean,indent:Long = 0L): String = nSpace(indent) + "FunctionObjective(" + value + ")"
+  override def detailedString(short: Boolean,indent:Long = 0L): String = s"${nSpace(indent)}FunctionObjective($value)"
 }
 
 trait Objective {
@@ -346,4 +361,3 @@ class LoggingObjective(baseObjective:Objective) extends Objective{
     toReturn
   }
 }
-

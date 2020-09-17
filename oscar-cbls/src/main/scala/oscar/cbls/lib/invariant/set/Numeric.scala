@@ -22,11 +22,11 @@
  *            Yoann Guyot
  * ****************************************************************************
  */
-
 package oscar.cbls.lib.invariant.set
 
-import oscar.cbls._
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{ChangingSetValue, IntInvariant, SetNotificationTarget, SetValue}
+import oscar.cbls.core.propagation.Checker
+
 import scala.collection.immutable.SortedSet
 
 /**
@@ -35,21 +35,26 @@ import scala.collection.immutable.SortedSet
  * @param fun is an optional function Int -> Int to apply before summing elements. It is expected not to rely on any variable of the model.
  * @author renaud.delandtsheer@cetic.be
  * */
-case class SetSum(on: SetValue, fun: (Int => Int) = (a: Int) => a)
+case class SetSum(on: SetValue, fun: Int => Int = (a: Int) => a)
   extends IntInvariant(on.value.foldLeft(0)((a, b) => a + fun(b)))
   with SetNotificationTarget{
 
   registerStaticAndDynamicDependency(on)
   finishInitialization()
 
-  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
+  override def notifySetChanges(v: ChangingSetValue,
+                                id: Int,
+                                addedValues: Iterable[Int],
+                                removedValues: Iterable[Int],
+                                oldValue: SortedSet[Int],
+                                newValue: SortedSet[Int]): Unit = {
     var delta = 0
     for (added <- addedValues) delta += fun(added)
     for (deleted <- removedValues) delta -= fun(deleted)
     this :+= delta
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
     var count = 0
     for (v <- on.value) count += fun(v)
     c.check(this.value == count, Some("this.value == count"))
@@ -87,15 +92,15 @@ case class SetProd(on: SetValue)
     }
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
     var countNZ = 1
     for (v <- on.value) if(v !=0) countNZ *= v
     c.check(nonZeroProduct == countNZ,
-      Some("non zero product (" + nonZeroProduct + ") == product of non zero items (" + countNZ + ") and on is " + on))
+      Some(s"non zero product ($nonZeroProduct) == product of non zero items ($countNZ) and on is $on"))
 
     var count = 1
     for (v <- on.value) count *= v
     c.check(this.value == count,
-      Some("this.value (" + this.value + ") == count (" + count + ") and on is " + on))
+      Some(s"this.value (${this.value}) == count ($count) and on is $on"))
   }
 }

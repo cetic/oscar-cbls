@@ -1,13 +1,26 @@
 package oscar.cbls.test.graph
 
 import org.scalacheck.Gen
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.algo.clique.Clique
 
 import scala.util.Random
 
-class CliqueTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matchers {
+class CliqueTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
+  // Generates a list of 0 to 20 unique tuples
+  val graphGen: Gen[(Int, Array[(Long, Long)])] = for {
+    v <- Gen.choose(0, 30) // Number of tuples
+    p <- Gen.choose(80,90) // Probability of 2 nodes to be neighbor
+  } yield (v,Array.tabulate(v)(item => {
+    Array.tabulate(v-1)(item2 => {
+      if(Random.nextDouble() < p.toFloat/100 && item != item2)
+        if(item > item2) (item2 :Long,item :Long) else (item :Long,item2 :Long)
+      else
+        null
+    })
+  }).flatMap(_.toList).filter(t => t != null).distinct)
 
   //First test with madeup results
   test("Reported clique is expected"){
@@ -29,9 +42,8 @@ class CliqueTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with M
 
   test("Empty graph of N nodes has N cliques each of size 1"){
     val nbNodes = 10
-    val adjacencyList:List[(Long,Long)] = List()
 
-    val cliques = Clique.bronKerbosch2(nbNodes,(a,b) => false)
+    val cliques = Clique.bronKerbosch2(nbNodes,(_,_) => false)
 
     // Should be only N cliques of size 1
     cliques.count(set => set.size == 1) should be (nbNodes)
@@ -39,7 +51,6 @@ class CliqueTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with M
     // All cliques should be size 1
     cliques.forall(c => c.size == 1) should be (true)
   }
-
 
   test("Reported cliques are strongly connected"){
     forAll(graphGen){gen => {
@@ -58,17 +69,4 @@ class CliqueTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with M
       }
     }}
   }
-
-  // Generates a list of 0 to 20 unique tuples
-  val graphGen: Gen[(Int, Array[(Long, Long)])] = for {
-    v <- Gen.choose(0, 30) // Number of tuples
-    p <- Gen.choose(80,90) // Probability of 2 nodes to be neighbor
-  } yield (v,Array.tabulate(v)(item => {
-    Array.tabulate(v-1)(item2 => {
-      if(Random.nextDouble() < p.toFloat/100 && item != item2)
-        if(item > item2) (item2 :Long,item :Long) else (item :Long,item2 :Long)
-      else
-        null
-    })
-  }).flatMap(_.toList).filter(t => t != null).distinct)
 }

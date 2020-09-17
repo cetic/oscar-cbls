@@ -17,12 +17,11 @@
  *     This code has been initially developed by CETIC www.cetic.be
  *         by Renaud De Landtsheer
  ******************************************************************************/
-
-
 package oscar.cbls.lib.constraint
 
-import oscar.cbls._
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{IntValue, SetValue, Value}
+import oscar.cbls.core.constraint.Constraint
+import oscar.cbls.core.propagation.Checker
 import oscar.cbls.lib.invariant.logic.{Cluster, IntElement}
 import oscar.cbls.lib.invariant.numeric.Sum
 
@@ -89,7 +88,7 @@ case class MultiKnapsack(items: Array[IntValue], itemsizes: Array[IntValue], bin
     * this will be called for each invariant after propagation is performed.
     * It requires that the Model is instantiated with the variable debug set to true.
     */
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
     c.check(true,Some("nothing to check, invariant is discharged"))
   }
 }
@@ -157,7 +156,7 @@ case class MultiKnapsackLoad(items: Array[IntValue], itemsizes: Array[IntValue],
     * this will be called for each invariant after propagation is performed.
     * It requires that the Model is instantiated with the variable debug set to true.
     */
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
     c.check(true,Some("nothing to check, invariant is discharged"))
   }
 }

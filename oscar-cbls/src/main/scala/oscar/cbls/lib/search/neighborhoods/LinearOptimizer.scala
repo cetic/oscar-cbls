@@ -1,10 +1,3 @@
-package oscar.cbls.lib.search.neighborhoods
-
-import oscar.cbls.{IntValue, Store}
-import oscar.cbls.core.computation.{CBLSIntVar, Domain}
-import oscar.cbls.core.objective.Objective
-import oscar.cbls.lib.invariant.numeric.Sum2
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -19,6 +12,11 @@ import oscar.cbls.lib.invariant.numeric.Sum2
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.lib.search.neighborhoods
+
+import oscar.cbls.core.computation.{CBLSIntVar, Domain, IntValue, Store}
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.lib.invariant.numeric.Sum2
 
 /**
   * this is a class that explores a range of value between 0L and maxValue.
@@ -54,23 +52,31 @@ abstract class LinearOptimizer{
 }
 
 class CarryOnTo(a:LinearOptimizer, b:LinearOptimizer) extends LinearOptimizer{
-  override def search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long): (Long, Long) = {
-    val newStartPoint = a.search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long)
+  override def search(startPos: Long,
+                      startObj: Long,
+                      minValue: Long,
+                      maxValue: Long,
+                      obj: Long => Long): (Long, Long) = {
+    val newStartPoint = a.search(startPos, startObj, minValue, maxValue, obj)
     //println("CarryOnTo(newStartPoint:" + newStartPoint + ")")
-    b.search(newStartPoint._1, newStartPoint._2, minValue: Long, maxValue: Long, obj: Long => Long)
+    b.search(newStartPoint._1, newStartPoint._2, minValue, maxValue, obj)
   }
 
-  override def toString: String = "(" + a + " carryOnTo " + b + ")"
+  override def toString: String = s"($a carryOnTo $b)"
 }
 
 case class AndThen(a:LinearOptimizer, b:LinearOptimizer) extends LinearOptimizer{
-  override def search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long): (Long, Long) = {
+  override def search(startPos: Long,
+                      startObj: Long,
+                      minValue: Long,
+                      maxValue: Long,
+                      obj: Long => Long): (Long, Long) = {
 
     var bestX = startPos
     var bestObj = startObj
 
     def exploreB(x:Long):Long = {
-      val (newX,newObj) = b.search(x, obj(x), minValue: Long, maxValue: Long, obj: Long => Long)
+      val (newX,newObj) = b.search(x, obj(x), minValue, maxValue, obj)
       if (newObj < bestObj){
         bestX = newX
         bestObj = newObj
@@ -78,21 +84,21 @@ case class AndThen(a:LinearOptimizer, b:LinearOptimizer) extends LinearOptimizer
       newObj
     }
 
-    val newStartPoint = a.search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, exploreB: Long => Long)
+    val newStartPoint = a.search(startPos, startObj, minValue, maxValue, exploreB)
 
     (bestX,bestObj)
   }
-  override def toString: String = "(" + a + " andThen " + b + ")"
+  override def toString: String = s"($a andThen $b)"
 }
 
 case class RestrictBounds(a:LinearOptimizer, newMinValue:Long, newMaxValue:Long) extends LinearOptimizer{
   override def search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long): (Long, Long) =
-    a.search(startPos: Long, startObj: Long, minValue max newMinValue, maxValue min newMaxValue, obj)
+    a.search(startPos, startObj, minValue max newMinValue, maxValue min newMaxValue, obj)
 }
 
 case class RestrictSlide(a:LinearOptimizer, maxIncrease:Long, maxDecrease:Long) extends LinearOptimizer{
   override def search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long): (Long, Long) =
-    a.search(startPos: Long, startObj: Long, minValue max (startPos - maxDecrease), maxValue min (startPos + maxIncrease), obj)
+    a.search(startPos, startObj, minValue max (startPos - maxDecrease), maxValue min (startPos + maxIncrease), obj)
 }
 
 class Exhaustive(step:Long = 1L,skipInitial:Boolean = false, maxIt: Long) extends LinearOptimizer{
@@ -124,17 +130,17 @@ class Exhaustive(step:Long = 1L,skipInitial:Boolean = false, maxIt: Long) extend
     (bestX,bestF)
   }
 
-  override def toString: String = "Exhaustive(step:" + step + ")"
+  override def toString: String = s"Exhaustive(step:$step)"
 }
 
 
 class NarrowingStepSlide(dividingRatio:Long, minStep: Long) extends LinearOptimizer {
 
-  override def toString: String = "NarrowingStepSlide(dividingRatio:" + dividingRatio + ")"
+  override def toString: String = s"NarrowingStepSlide(dividingRatio:$dividingRatio)"
 
   override def search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long): (Long, Long) = {
     new SlideVaryingSteps(generateSteps((maxValue - minValue)/dividingRatio).reverse, false,Long.MaxValue).
-      search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long)
+      search(startPos, startObj, minValue, maxValue, obj)
   }
 
   private def generateSteps(maxStepSize:Long):List[Long] = {
@@ -144,36 +150,35 @@ class NarrowingStepSlide(dividingRatio:Long, minStep: Long) extends LinearOptimi
   }
 }
 
-
 class NarrowingExhaustive(dividingRatio:Long, minStep: Long = 1,isLazy : Boolean = false) extends LinearOptimizer {
 
   require(minStep != 0,"Narrowing Exhaustive Linear Optimizer with a step equal to 0 will make an endless loop")
 
-  override def toString: String = "NarrowingExhaustive(dividingRatio:" + dividingRatio + " minStep:" + minStep + ")"
+  override def toString: String = s"NarrowingExhaustive(dividingRatio:$dividingRatio minStep:$minStep)"
 
   override def search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long): (Long, Long) = {
     val width = maxValue - minValue
 
     if(width < dividingRatio) {
       val localExhaustiveSearch = new Exhaustive(step = minStep, skipInitial = true,maxIt = Long.MaxValue)
-      localExhaustiveSearch.search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long)
+      localExhaustiveSearch.search(startPos, startObj, minValue, maxValue, obj)
     }else{
       val step = width/dividingRatio
       if(step <= minStep){
         //we have to do one search, with minStep, and return
         val localExhaustiveSearch = new Exhaustive(step = minStep, skipInitial = true, maxIt = Long.MaxValue)
-        localExhaustiveSearch.search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long)
+        localExhaustiveSearch.search(startPos, startObj, minValue, maxValue, obj)
       }else{
         val localExhaustiveSearch = new Exhaustive(step = step, skipInitial = true, maxIt = Long.MaxValue)
-        val (newVal, newObj) = localExhaustiveSearch.search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long)
+        val (newVal, newObj) = localExhaustiveSearch.search(startPos, startObj, minValue, maxValue, obj)
         if (isLazy) {
           if (newObj <= startObj)
-            this.search(newVal : Long, newObj,minValue max (newVal - step),maxValue min (newVal + step),  obj: Long => Long)
+            this.search(newVal, newObj, minValue max (newVal - step), maxValue min (newVal + step), obj)
           else
             (newVal,newObj)
         }
         else
-          this.search(newVal: Long, newObj, minValue max (newVal - step), maxValue min (newVal + step), obj: Long => Long)
+          this.search(newVal, newObj, minValue max (newVal - step), maxValue min (newVal + step), obj)
       }
     }
   }
@@ -206,7 +211,7 @@ class SlideVaryingSteps(stepSequence:List[Long] = List(1L), gradualIncrease:Bool
       toReturn
     }
 
-    def recurExploreNoGradualIncrease(toExploreSteps:List[Long]){
+    def recurExploreNoGradualIncrease(toExploreSteps:List[Long]): Unit ={
       toExploreSteps match{
         case Nil => ;
         case head::tail =>
@@ -251,7 +256,7 @@ class SlideVaryingSteps(stepSequence:List[Long] = List(1L), gradualIncrease:Bool
 
 class Slide(step:Long = 1L, maxIt: Long) extends LinearOptimizer {
 
-  override def toString: String = "Slide(step:" + step + ")"
+  override def toString: String = s"Slide(step:$step)"
 
   override def search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long): (Long, Long) = {
 
@@ -308,7 +313,8 @@ class Slide(step:Long = 1L, maxIt: Long) extends LinearOptimizer {
 }
 
 //this one finds a root!!!
-class NewtonRaphsonRoot(dXForDetivativeEvalution:Long, maxIt: Long) extends LinearOptimizer{
+class NewtonRaphsonRoot(dXForDetivativeEvalution:Long,
+                        maxIt: Long) extends LinearOptimizer{
 
   override def toString: String = "NewtonRaphsonRoot(dXForDetivativeEvalution:" + dXForDetivativeEvalution + ")"
 
@@ -341,9 +347,10 @@ class NewtonRaphsonRoot(dXForDetivativeEvalution:Long, maxIt: Long) extends Line
 
 
 //this one finds a min!!!
-class NewtonRaphsonMinimize(dXForDerivativeEvalution:Long, maxIt: Long) extends LinearOptimizer {
+class NewtonRaphsonMinimize(dXForDerivativeEvalution:Long,
+                            maxIt: Long) extends LinearOptimizer {
 
-  override def toString: String = "NewtonRaphson(dXForDerivativeEvalution:" + dXForDerivativeEvalution + ")"
+  override def toString: String = s"NewtonRaphson(dXForDerivativeEvalution:$dXForDerivativeEvalution)"
 
   override def search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long): (Long, Long) = {
     var positionOfBestSoFar:Long = startPos
@@ -373,8 +380,8 @@ class NewtonRaphsonMinimize(dXForDerivativeEvalution:Long, maxIt: Long) extends 
 class ModuloOptimizer(modulo: Long, overlapPercentage:Int = 99, baseOptimizer:LinearOptimizer)
   extends LinearOptimizer {
 
-  require(overlapPercentage <= 99, "overlapPercentage should be < 99, got " + overlapPercentage)
-  require(overlapPercentage >= 0, "overlapPercentage should be >=0 , got " + overlapPercentage)
+  require(overlapPercentage <= 99, s"overlapPercentage should be < 99, got $overlapPercentage")
+  require(overlapPercentage >= 0, s"overlapPercentage should be >=0 , got $overlapPercentage")
 
   /**
     * This is the method that linear selectors must implement.
@@ -394,7 +401,6 @@ class ModuloOptimizer(modulo: Long, overlapPercentage:Int = 99, baseOptimizer:Li
     // Halfwidth spans on both sides of startPos
     val halfWidth:Long = scala.math.ceil(modulo.toFloat * (0.5 + (overlapPercentage / 200))).toLong
 
-
     def valToModulo(v: Long): Long = {
       if (v > maxValue) v - modulo
       else if (v < minValue) v + modulo
@@ -410,7 +416,7 @@ class ModuloOptimizer(modulo: Long, overlapPercentage:Int = 99, baseOptimizer:Li
         val x = valToModulo(v)
         require(x <= maxValue)
         if(minValue > x) {
-          require(minValue <= x, "minValue:" + minValue + " should be <= x:" + x)
+          require(minValue <= x, s"minValue:$minValue should be <= x:$x")
         }
         x
       })
@@ -453,7 +459,7 @@ object TestRN extends App{
 
 object ParaboloideTest extends App{
 
-  val m = new Store()
+  val m = Store()
 
   val x = CBLSIntVar(m,10,Domain(0,1000),"x")
   val y = new CBLSIntVar(m,10,Domain(0,1000),"y")

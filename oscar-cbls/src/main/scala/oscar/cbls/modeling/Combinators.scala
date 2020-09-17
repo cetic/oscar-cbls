@@ -1,12 +1,9 @@
 package oscar.cbls.modeling
 
-import oscar.cbls.{Objective, _}
+import oscar.cbls.core.computation.{AbstractVariable, Snapshot}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{JumpNeighborhood, Move, Neighborhood, NeighborhoodCombinator, NoMoveNeighborhood, SupportForAndThenChaining}
+import oscar.cbls.core.search.{JumpNeighborhood, Move, Neighborhood, NoMoveNeighborhood, SupportForAndThenChaining}
 import oscar.cbls.lib.search.combinators._
-import oscar.cbls.util.StopWatch
-
-import scala.language.postfixOps
 
 trait CombinatorsAPI
   extends BasicCombinators
@@ -151,7 +148,6 @@ trait BasicCombinators{
   def dyn(f:() => Neighborhood) = new Dyn(f)
 }
 
-
 trait MetaheuristicCombinators{
   /**
    * performs a restart of the search for a number of time.
@@ -169,11 +165,9 @@ trait MetaheuristicCombinators{
    */
   def restart(n:Neighborhood,randomizationNeighborhood:Neighborhood, maxRestartWithoutImprovement:Long, obj:Objective) =
     Restart(n,randomizationNeighborhood, maxRestartWithoutImprovement, obj)
-
 }
 
 trait CompositionCombinators{
-
   /**
    * to build a composite neighborhood.
    * the first neighborhood is used only to provide a round robin exploration on its possible moves
@@ -367,9 +361,7 @@ trait NeighborhoodSelectionCombinators{
     new ExhaustAndContinueIfMovesFound(a, b)
 }
 
-
 class NeighborhoodOps(n:Neighborhood){
-
   /**
    * this combinator sequentially tries all neighborhoods until one move is found
    * between calls, it will roll back to the first neighborhood
@@ -411,7 +403,6 @@ class NeighborhoodOps(n:Neighborhood){
    * the idea is to consider the constraint as a weak constraint, and sum this violation to the objective function with weighting.
    * throughout the search, the relative weighing of the constraint is increased until it gets to a strong constraint.
    *
-   * @param a the neighborhood to consider
    * @param additionalConstraint an additional constraint, considered as a weak constraint at startup, and gradually, as a strong constraint.
    * @param weightCorrectionStrategy how the relative weight of obj and additional constraint evolve
    * @param maxAttemptsBeforeStop tolerated number of consecutive calls to weight correction without any move found. if exceded returns noMoveFound
@@ -470,7 +461,6 @@ class NeighborhoodOps(n:Neighborhood){
    * @author renaud.delandtsheer@cetic.be
    */
   def exhaustAndContinueIfMovesFound(b: Neighborhood) = new ExhaustAndContinueIfMovesFound(n, b)
-
 
   /**
    * this one bounds the number of time the search is actually performed
@@ -607,7 +597,7 @@ class NeighborhoodOps(n:Neighborhood){
    * You can do so either by manually calling a restoreBest on the returned object,
    * or by adding the keyword "restoreBestOnExhaust" after this one.
    * You might also consider saveBestAndRestoreOnExhaust
-   * @param o the objective function
+   * @param obj the objective function
    */
   def saveBest(obj: Objective,when:() => Boolean = null) = if(when == null) new SaveBest(n, obj) else new SaveBestWhen(n,obj,when)
 
@@ -645,7 +635,7 @@ class NeighborhoodOps(n:Neighborhood){
   def noReset: Neighborhood = NoReset(n)
 
   /**
-   * defines a name wor this (composite) neighborhood
+   * defines a name for this neighborhood
    * this will be used as prefix for each move returned by this neighborhood (the original name will still exist)
    * use this for debug and documentation purpose only
    *
@@ -698,7 +688,7 @@ class NeighborhoodOps(n:Neighborhood){
    * the criterion accepts all improving moves, and for worsening moves, it applies the metropolis criterion:
    * accept if math.random(0.0; 1.0) < base exponent (-gain / temperatureValue)
    *
-   * @param temperature a function that inputs the number of moves taken, and outputs a temperature, for use in the criterion
+   * @param iterationToTemperature a function that inputs the number of moves taken, and outputs a temperature, for use in the criterion
    *                    the number of steps is reset to zero when the combinator is reset.
    *                    By default, the temperature is 100L/the number of steps
    * @param base the base for the exponent calculation. default is 2L
@@ -713,15 +703,10 @@ class NeighborhoodOps(n:Neighborhood){
 
   //TODO: Adaptive Simulated Annealing: T = T_0 exp(-c k^1/D) wth re-annealing also permits adaptation to changing sensitivities in the multi-dimensional parameter-space.
 
-
-
-
-
   /**
    * sets a timeout for a search procedure.
    * notice that hte timeout itself is a bit lax, because the combinator has no possibility to interrupt a neighborhood during its exploration.
    * this combinator will therefore just prevent any new exploration past the end of the timeout.
-   * @param a a neighborhood
    * @param maxDuration the maximal duration, in milliseconds
    */
   def timeout(maxDuration:Long) = new Timeout(n, maxDuration:Long)

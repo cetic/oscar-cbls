@@ -1,5 +1,3 @@
-package oscar.cbls.util
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,23 +12,23 @@ package oscar.cbls.util
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.util
 
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Neighborhood
-import oscar.cbls._
 import scala.util.control.Breaks._
 
 object Benchmark extends StopWatch{
 
   case class RunValues(it:Long,duration:Long,quality:Long)
   case class RunStatistics(it:Statistics,duration:Statistics,quality:Statistics){
-    override def toString: String = "(it:" + it + " dur:" + duration + " obj:" + quality+")"
-    def denseString:String = it.denseString + "|" + duration.denseString + "|" + quality.denseString
-    def csvString: String = it.csvString + ";" + duration.csvString + ";" + quality.csvString
+    override def toString: String = s"(it:$it dur:$duration obj:$quality)"
+    def denseString:String = s"${it.denseString}|${duration.denseString}|${quality.denseString}"
+    def csvString: String = s"${it.csvString};${duration.csvString};${quality.csvString}"
   }
 
   val firstColumnForStatisticsString = 40
-  def nSpace(n:Int):String = if(n <= 0) "" else " " + nSpace(n-1)
+  def nSpace(n:Int):String = if(n <= 0) "" else s"${nSpace(n-1)}"
   private def padToLength(s: String, l: Int) = (s + nSpace(l)).substring(0, l)
   def benchToStatistics(obj: Objective, nRuns: Int, strategies: Iterable[() => (String, Neighborhood)], warmupTimeInSeconds: Long, verbose: Int) =
     benchToTrace(obj, nRuns, strategies, warmupTimeInSeconds, verbose).map {
@@ -58,7 +56,7 @@ object Benchmark extends StopWatch{
     val initialSolution = m.solution()
 
     // warm run
-    if (verbose > 1) println("Warming up for " + warmupTimeInSeconds + " seconds...")
+    if (verbose > 1) println(s"Warming up for $warmupTimeInSeconds seconds...")
     val warmupInMs = warmupTimeInSeconds * 1000L
     this.startWatch()
     breakable {
@@ -67,7 +65,7 @@ object Benchmark extends StopWatch{
           m.restoreSolution(initialSolution)
           val strategyInstance = n()
           strategyInstance._2.verbose = 0
-          if (verbose > 1) println("Warm up run of " + strategyInstance._1)
+          if (verbose > 1) println(s"Warm up run of ${strategyInstance._1}")
           strategyInstance._2.doAllMoves(_ => false, obj)
           if (this.getWatch >= warmupInMs) break
         }
@@ -75,13 +73,13 @@ object Benchmark extends StopWatch{
     }
 
     for (n <- strategies) yield {
-      if (verbose > 1) println("Benchmarking " + n()._1)
+      if (verbose > 1) println(s"Benchmarking ${n()._1}")
       (n()._1,
         for (trial <- 1 to nRuns) yield {
           m.restoreSolution(initialSolution)
           val strategyInstance = n()
           strategyInstance._2.verbose = if (verbose > 0) verbose else 0
-          if (verbose > 1) println("Benchmarking " + strategyInstance._1 + " run " + trial + " of " + nRuns)
+          if (verbose > 1) println(s"Benchmarking ${strategyInstance._1} run $trial of $nRuns")
           this.startWatch()
           val it = strategyInstance._2.doAllMoves(_ => false, obj)
           val time = this.getWatch
@@ -99,10 +97,10 @@ object Benchmark extends StopWatch{
 }
 
 case class Statistics(min:Long, max:Long, avg:Long, med:Long){
-  override def toString: String = "(min:" + min + " max:" + max + " avg:" + avg + " med:" + med + ")"
+  override def toString: String = s"(min:$min max:$max avg:$avg med:$med)"
   def denseString:String = padToLength("" + min,8) + " " + padToLength("" + max,8) + " " + padToLength("" + avg,8) + " " + padToLength("" + med,9)
-  def csvString:String = min + ";" + max + ";" + avg + ";" + med
-  def nSpace(n:Int):String = if(n <= 0) "" else " " + nSpace(n-1)
+  def csvString:String = s"$min;$max;$avg;$med"
+  def nSpace(n:Int):String = if(n <= 0) "" else s"${nSpace(n-1)}"
   private def padToLength(s: String, l: Int) = (s + nSpace(l)).substring(0, l)
 }
 

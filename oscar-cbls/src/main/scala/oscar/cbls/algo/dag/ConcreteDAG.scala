@@ -17,9 +17,7 @@
   *     This code has been initially developed by CETIC www.cetic.be
   *         by Renaud De Landtsheer
   ******************************************************************************/
-
 package oscar.cbls.algo.dag
-
 
 /** a concrete DAG  implementing all the abstract methods of DAG
   * @author renaud.delandtsheer@cetic.be
@@ -40,13 +38,12 @@ class ConcreteDAGNode(val _UniqueID:Int) extends DAGNode{
   override def getDAGPrecedingNodes: Iterable[DAGNode] = PrecedingNodes
   override def getDAGSucceedingNodes: Iterable[DAGNode] = SucceedingNodes
 
-
   /**
     * Sets the current node as predecessor of the parameter 'successor'
     * so that this -> successor
-    * @param successor
+    * @param successor reference to the next node
     */
-  def setAsPrecedingNodeKnownNotYetPreceding(successor:ConcreteDAGNode){
+  def setAsPrecedingNodeKnownNotYetPreceding(successor:ConcreteDAGNode): Unit = {
     SucceedingNodes = successor :: SucceedingNodes
     successor.PrecedingNodes = this :: successor.PrecedingNodes
   }
@@ -54,10 +51,10 @@ class ConcreteDAGNode(val _UniqueID:Int) extends DAGNode{
   /**
     * Sets the current node as successor of the parameter 'predecessor'
     * so that predecessor -> this
-    * @param predecessor
+    * @param predecessor reference to the predecessor node
     */
 
-  def setAsSucceedingNodeKnownNotYetSucceeding(predecessor:ConcreteDAGNode){
+  def setAsSucceedingNodeKnownNotYetSucceeding(predecessor:ConcreteDAGNode): Unit = {
     predecessor.setAsPrecedingNodeKnownNotYetPreceding(this)
   }
 }
@@ -66,8 +63,6 @@ class ConcreteDAGNode(val _UniqueID:Int) extends DAGNode{
   * @author renaud.delandtsheer@cetic.be
   * @param Nodes the nodes of the DAG
   */
-class ConcreteDAG(Nodes:Iterable[DAGNode]) extends DAG{
-  //  var Nodes:List[DAGNode] = List.empty
+class ConcreteDAG(Nodes:Iterable[DAGNode]) extends DAG {
   def nodes:Iterable[DAGNode] = Nodes
 }
-

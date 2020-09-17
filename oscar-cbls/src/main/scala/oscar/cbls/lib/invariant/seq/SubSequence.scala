@@ -1,5 +1,3 @@
-package oscar.cbls.lib.invariant.seq
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,10 +12,11 @@ package oscar.cbls.lib.invariant.seq
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.lib.invariant.seq
 
-import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{ChangingIntValue, ChangingSeqValue, SeqCheckpointedValueStack, SeqInvariant, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint, SeqValue, ShortIntNotificationTarget}
+import oscar.cbls.core.propagation.Checker
 
 //TODO: document, test and put into modeling API
 case class SubSequence(v: SeqValue,index:Int, length: Int,
@@ -26,12 +25,12 @@ case class SubSequence(v: SeqValue,index:Int, length: Int,
   extends SeqInvariant(IntSequence.empty(), v.max, maxPivotPerValuePercent, maxHistorySize)
     with SeqNotificationTarget{
 
-  setName("SubSequence(" + v.name + ")")
+  setName(s"SubSequence(${v.name})")
 
   registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  def internalPrint() ={
+  def internalPrint(): Unit ={
     val seq = v.value.toList
     for(i <- seq.indices){
       if(i == index){
@@ -49,7 +48,6 @@ case class SubSequence(v: SeqValue,index:Int, length: Int,
     println("["+this.value.toList.mkString(",")+"]")
   }
 
-
   def computeFromScratch(s:IntSequence): IntSequence = {
     var explorer = s.explorerAtPosition(index)
     var subSeq = IntSequence.empty()
@@ -62,7 +60,7 @@ case class SubSequence(v: SeqValue,index:Int, length: Int,
           explorer = e.next
       }
     }
-    return subSeq.regularize()
+    subSeq.regularize()
   }
 
   this := computeFromScratch(v.value)
@@ -90,7 +88,7 @@ case class SubSequence(v: SeqValue,index:Int, length: Int,
             this.insertAtPosition(changes.newValue.valueAtPosition(index).head,0)
           }
         }
-        return true
+        true
 
       case SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
@@ -117,7 +115,6 @@ case class SubSequence(v: SeqValue,index:Int, length: Int,
         }else{
           this.remove(0)
         }
-
         true
 
       case u@SeqUpdateRollBackToCheckpoint(checkpoint,checkPointLevel) =>
@@ -145,8 +142,9 @@ case class SubSequence(v: SeqValue,index:Int, length: Int,
     }
   }
 
-  override def checkInternals(c: Checker) {
-    require(this.newValue.toList equals computeFromScratch(v.value).toList, Some("this.newValue(=" + this.newValue.toList + ") == v.value.subSequence(=" + v.value.toList.reverse + ")"))
+  override def checkInternals(c: Checker): Unit = {
+    require(this.newValue.toList equals computeFromScratch(v.value).toList,
+      Some(s"this.newValue(=${this.newValue.toList}) == v.value.subSequence(=${v.value.toList.reverse})"))
    }
 }
 
@@ -161,7 +159,7 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
   registerStaticAndDynamicDependency(originalSeq)
   finishInitialization()
 
-  def printAll() ={
+  def printAll(): Unit ={
     val seq = originalSeq.value.toList
     for(i <- seq.indices){
       if(i == index.value){
@@ -179,7 +177,6 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
     println("["+this.value.toList.mkString(",")+"]")
   }
 
-
   def computeFromScratch(s:IntSequence, idx:Int): IntSequence = {
     var explorer = s.explorerAtPosition(idx)
     var subSeq = IntSequence.empty()
@@ -192,7 +189,7 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
           explorer = e.next
       }
     }
-    return subSeq.regularize()
+    subSeq.regularize()
   }
 
   this := computeFromScratch(originalSeq.value, index.valueInt)
@@ -229,7 +226,6 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
         }
       }
     }
-
   }
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
@@ -254,7 +250,7 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
             this.insertAtPosition(changes.newValue.valueAtPosition(currentIndex).head,0)
           }
         }
-        return true
+        true
 
       case SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
@@ -287,7 +283,6 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
       case u@SeqUpdateRollBackToCheckpoint(checkpoint,checkpointLevel) =>
         digestChanges(u.howToRollBack)
 
-
       case SeqUpdateDefineCheckpoint(prev, isActive, checkpointLevel) =>
         digestChanges(prev)
 
@@ -299,8 +294,8 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
     }
   }
 
-  override def checkInternals(c: Checker) {
-    require(this.newValue.toList equals computeFromScratch(originalSeq.value,index.valueInt).toList, Some("this.newValue(=" + this.newValue.toList + ") == v.value.subSequence(=" + originalSeq.value.toList.reverse + ")"))
+  override def checkInternals(c: Checker): Unit = {
+    require(this.newValue.toList equals computeFromScratch(originalSeq.value,index.valueInt).toList,
+      Some(s"this.newValue(=${this.newValue.toList}) == v.value.subSequence(=${originalSeq.value.toList.reverse})"))
   }
 }
-

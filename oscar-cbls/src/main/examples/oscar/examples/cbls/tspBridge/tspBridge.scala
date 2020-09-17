@@ -8,7 +8,8 @@ import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.RouteLengthOnConditionalGraph
-import oscar.cbls.core.computation.CBLSIntConst
+import oscar.cbls.core.computation.{CBLSIntConst, CBLSIntVar, IntValue, Store}
+import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{First, JumpNeighborhood}
 import oscar.cbls.test.graph.RandomGraphGenerator
 import oscar.cbls.visual.SingleFrameWindow
