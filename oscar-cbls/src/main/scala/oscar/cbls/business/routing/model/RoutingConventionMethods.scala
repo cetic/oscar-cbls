@@ -115,6 +115,7 @@ object RoutingConventionMethods {
   }
 }
 
+//TODO: this is not very fast.
 class CachedPositionOf(maxValue:Int){
 
   private var tokenOfCurrentCheckpoint:Token = _

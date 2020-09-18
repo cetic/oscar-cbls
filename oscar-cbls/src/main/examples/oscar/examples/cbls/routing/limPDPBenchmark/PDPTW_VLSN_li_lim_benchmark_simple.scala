@@ -46,9 +46,9 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
 
     try {
       for(fileName <- fileNames) {
-//        pw.println(runBenchmark(fileName: String, enrichment = 0, partition = 0, enrichmentSpec = 0, shiftInsert = 0, injectAllCacheBeforeEnriching = false))
-//        pw.flush()
-//        System.gc()
+        pw.println(runBenchmark(fileName: String, enrichment = 0, partition = 0, enrichmentSpec = 0, shiftInsert = 0, injectAllCacheBeforeEnriching = false))
+        pw.flush()
+        System.gc()
 //        pw.println(runBenchmark(fileName: String, enrichment = 0, partition = 0, enrichmentSpec = 0, shiftInsert = 0, injectAllCacheBeforeEnriching = false))
 //        pw.flush()
 //        System.gc()
