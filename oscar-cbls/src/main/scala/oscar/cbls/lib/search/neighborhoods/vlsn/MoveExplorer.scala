@@ -17,11 +17,13 @@
 
 package oscar.cbls.lib.search.neighborhoods.vlsn
 
+import oscar.cbls.algo.quick.QList
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{Move, MoveFound, Neighborhood, NoMoveFound}
 
 import scala.collection.immutable.{SortedMap, SortedSet}
+
 
 class MoveExplorer(v:Int,
                    vehicleToRoutedNodes:Map[Int,Iterable[Int]],
@@ -39,7 +41,6 @@ class MoveExplorer(v:Int,
                    globalObjective:Objective,
                    debug:Boolean,
                    gradualEnrichmentSchemeN1V1N2V2P:(Int,Int,Int,Int) => Int) {
-
 
   //nodes are all the nodes to consider, ll the vehicles, and a trashNode
 
@@ -230,8 +231,7 @@ class MoveExplorer(v:Int,
     edgeBuilder.buildGraph()
   }
 
-  val maxLong = Long.MaxValue
-  val acceptAllButMaxInt: (Long, Long) => Boolean = (_, newObj: Long) => newObj != maxLong
+  val acceptAllButMaxInt: (Long, Long) => Boolean = (_, newObj: Long) => newObj != Long.MaxValue
 
   // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def exploreInsertions(){
@@ -324,7 +324,6 @@ class MoveExplorer(v:Int,
   }
 
   // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
   private def exploreInsertionsWithRemove(vehicleToUnroutedNodeToInsert: Map[Int, Iterable[Int]]): Unit = {
 
