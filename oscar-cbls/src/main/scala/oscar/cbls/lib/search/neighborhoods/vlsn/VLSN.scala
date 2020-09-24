@@ -751,7 +751,8 @@ class VLSN(v:Int,
           vehicleToObjective,
           unroutedPenalty,
           globalObjective,
-          debugNeighborhoodExploration)
+          debugNeighborhoodExploration,
+          gradualEnrichmentSchemeN1V1N2V2P)
       case Some(cache) =>
         new IncrementalMoveExplorer(
           v: Int,
@@ -768,7 +769,8 @@ class VLSN(v:Int,
           unroutedPenalty,
           globalObjective,
           cache,
-          debugNeighborhoodExploration)
+          debugNeighborhoodExploration,
+          gradualEnrichmentSchemeN1V1N2V2P)
     }
   }
 }
