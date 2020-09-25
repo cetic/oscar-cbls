@@ -47,8 +47,8 @@ class ResettableArray(length:Int,defaultValue:Int=>Int) {
   }
 
   /**
-   *resets the array to the default values
-   * complexity is O(number of changed cells)
+   * resets the array to the default values
+   * complexity is O(1) (except one in every MaxInt calls where is it O(n))
    */
   def reset(): Unit ={
     changedValues.all = false
