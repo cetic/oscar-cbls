@@ -49,7 +49,8 @@ class BundledVLSN(v:Int,
                   reoptimizeAtStartUp:Boolean = true,
                   debugNeighborhoodExploration:Boolean = false,
 
-                  injectAllCacheBeforeEnriching:Boolean = false) extends Neighborhood {
+                  injectAllCacheBeforeEnriching:Boolean = false,
+                 ) extends Neighborhood {
 
   def doReoptimize(vehicle:Int) {
     val reOptimizeNeighborhoodGenerator = reOptimizeVehicle match{
@@ -166,7 +167,11 @@ class BundledVLSN(v:Int,
       unroutedPenalty,
       globalObjective,
       cachedExplorations.orNull,
-      verbose = false)
+      verbose = false,
+      nbEdgesToExplore = v * v /10,   //tuning parameters
+      ndEdgesPerBundle = v,           //tuning parameters
+      minAddedEdgesPerLevel = 1000    //tuning parameters
+    )
 
     var dirtyNodes:SortedSet[Int] = SortedSet.empty
 

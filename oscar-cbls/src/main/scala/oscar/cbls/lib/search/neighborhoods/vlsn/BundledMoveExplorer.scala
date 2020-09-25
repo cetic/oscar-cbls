@@ -24,7 +24,11 @@ class BundledMoveExplorer(v:Int,
                           globalObjective:Objective,
 
                           cache:CachedExplorations,
-                          verbose:Boolean) {
+                          verbose:Boolean,
+                          nbEdgesToExplore:Int,
+                          ndEdgesPerBundle:Int,
+                          minAddedEdgesPerLevel:Int
+                         ) {
 
   //nodes are all the nodes to consider, ll the vehicles, and a trashNode
 
@@ -149,11 +153,6 @@ class BundledMoveExplorer(v:Int,
       isVehicleDirty(vehicle) = true
       initialVehicleToObjectives(vehicle) = vehicleToObjectives(vehicle).value
     }
-
-    val nbEdgesToExplore = v * v /10
-    val ndEdgesPerBundle = v
-    val minAddedEdgesPerLevel = 1000
-
 
     var totalExplored = 0
 
