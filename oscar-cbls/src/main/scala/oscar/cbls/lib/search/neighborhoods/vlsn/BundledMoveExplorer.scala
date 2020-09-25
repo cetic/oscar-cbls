@@ -23,7 +23,8 @@ class BundledMoveExplorer(v:Int,
                           unroutedNodesPenalty:Objective,
                           globalObjective:Objective,
 
-                          cache:CachedExplorations) {
+                          cache:CachedExplorations,
+                          verbose:Boolean) {
 
   //nodes are all the nodes to consider, ll the vehicles, and a trashNode
 
@@ -104,14 +105,11 @@ class BundledMoveExplorer(v:Int,
   addTrashNodeToUnroutedNodes()
   exploreNodeEjection()
   exploreDeletions()
-  // /////////////////////////////////////////////////////////////
-  // instantiating all potential edges and bundles
-  //these are stored in bundles below, and postponed until performed.
-  generateInsertions()
-  generateMoves()
 
   // ////////////////////////////////////////////////////////////
   // gradual enrichment procedure
+  // instantiating all potential edges and bundles
+  //these are stored in bundles below, and postponed until performed.
 
   val maxInsertNoEjectPerVehicleAndPerIteration: Int = v
   val maxMoveNoEjectPerVehiclePerIteration: Int = v
@@ -121,23 +119,47 @@ class BundledMoveExplorer(v:Int,
     allBundlesTmp = QList(edgeBundle,allBundlesTmp)
   }
 
-  var allBundlesArray:Array[EdgeToExploreBundle[_]] = null
-  var nbBundles:Int = -1
-  def closeAllBundles(): Unit = {
-    allBundlesArray = Random.shuffle(QList.toIterable(allBundlesTmp)).toArray
-    nbBundles = allBundlesArray.length
+  generateInsertions()
+  generateMoves()
+
+  var allBundlesArray:Array[EdgeToExploreBundle[_]] = Random.shuffle(QList.toIterable(allBundlesTmp)).toArray
+  var nbBundles:Int = allBundlesArray.length
+
+  // ////////////////////////////////////////////////////////////
+
+  def injectAllCache(verbose:Boolean): Unit = {
+    var targetPosition = 0
+    for(i <- 0 until nbBundles) {
+      allBundlesArray(i).loadAllCache()
+      if(allBundlesArray(i).isEmpty){
+        allBundlesArray(i) = null
+      }else{
+        allBundlesArray(targetPosition) = allBundlesArray(i)
+        targetPosition += 1
+      }
+    }
+    nbBundles = targetPosition
   }
 
-
   //the new VLSN graph and a boolean telling if there is more to do or not
-  def enrichVLSNGraph():(VLSNGraph,Boolean) = {
-    val nbBundlesToExplore = 10
-    val ndEdgesPerBundle = 10
+  def enrichGraph(dirtyNodes:Iterable[Int], dirtyVehicles:Iterable[Int], verbose:Boolean):(VLSNGraph,Boolean,Int) = {
+
+    for(node <- dirtyNodes) isNodeDirty(node) = true
+    for(vehicle <- dirtyVehicles) {
+      isVehicleDirty(vehicle) = true
+      initialVehicleToObjectives(vehicle) = vehicleToObjectives(vehicle).value
+    }
+
+    val nbEdgesToExplore = v * v /10
+    val ndEdgesPerBundle = v
 
     var totalExplored = 0
+
     var currentBundleId = Random.nextInt(nbBundles-1)
     val offset = Random.nextInt(nbBundles-1)
-    while(true){
+    val nbEdgesAtStart = nbEdgesInGraph
+    val minAddedEdgesPerLevel = 1000
+    while((totalExplored <= nbEdgesToExplore || (nbEdgesInGraph - nbEdgesAtStart < minAddedEdgesPerLevel) || nbBundles <= 1) && nbBundles > 0){
       currentBundleId = (currentBundleId + offset) % nbBundles
       val nbExplored = allBundlesArray(currentBundleId).pruneExplore(targetNbExplores = ndEdgesPerBundle)
       totalExplored += nbExplored
@@ -150,18 +172,24 @@ class BundledMoveExplorer(v:Int,
         nbBundles = nbBundles -1
       }
     }
-    (edgeBuilder.buildGraph(),nbBundles!=0)
+    (edgeBuilder.buildGraph(),nbBundles!=0,totalExplored)
+  }
+
+
+  def allMovesExplored:Boolean = {
+    require(nbBundles>=0)
+    nbBundles == 0
   }
 
   // ////////////////////////////////////////////////////////////
-  // ////////////////////////////////////////////////////////////
 
   abstract class EdgeToExploreBundle[E:ClassTag](toNode: Int,
-                                        toVehicle: Int,
-                                        initPotentialEdges: Iterable[E]) {
+                                                 toVehicle: Int,
+                                                 initPotentialEdges: Iterable[E]) {
     //non null are stored from position 0 until size-1
     private var potentialEdges: Array[E] = Random.shuffle(initPotentialEdges).toArray
     var size: Int = potentialEdges.length
+    require(potentialEdges.length <= size)
 
     def isEmpty: Boolean = size == 0
 
@@ -171,7 +199,11 @@ class BundledMoveExplorer(v:Int,
 
     def isEdgeDirty(edge: E): Boolean
 
+    private var allCacheLoaded:Boolean = false
+
     def loadAllCache(): Unit ={
+      if(allCacheLoaded) return
+      allCacheLoaded = true
       if(cache == null || size == 0) return
       var targetPosition = 0
       for(i <- 0 until size){
@@ -182,7 +214,7 @@ class BundledMoveExplorer(v:Int,
           targetPosition += 1
         }
       }
-      size = targetPosition + 1
+      size = targetPosition
       garbageCollectIfNeeded()
     }
 
@@ -196,6 +228,7 @@ class BundledMoveExplorer(v:Int,
     }
 
     def pruneExplore(targetNbExplores: Int): Int = {
+      if(verbose) println(s"exploring $targetNbExplores edges of bundle $this")
       if (targetNbExplores <= 0) {
         0
       } else if (isNodeDirty(toNode) || isVehicleDirty(toVehicle)) {
@@ -203,18 +236,20 @@ class BundledMoveExplorer(v:Int,
         size = 0
         0
       } else {
+        require(potentialEdges.length >= size, s"potentialEdges.length:${potentialEdges.length} >= size:$size")
+
         var toReturn = 0
         var toExplore = targetNbExplores
         while (toExplore != 0 && size != 0) {
-          if (!isEdgeDirty(potentialEdges(size))) {
-            if(cache == null || !loadEdgeFromCache(potentialEdges(size))) {
-              exploreEdge(potentialEdges(size))
+          if (!isEdgeDirty(potentialEdges(size-1))) {
+            if(cache == null || allCacheLoaded || !loadEdgeFromCache(potentialEdges(size-1))) {
+              exploreEdge(potentialEdges(size-1))
             }
             toReturn += 1
             toExplore = toExplore - 1
           }
+          potentialEdges(size-1) = null.asInstanceOf[E]
           size = size - 1
-          potentialEdges(size) = null.asInstanceOf[E]
         }
         garbageCollectIfNeeded()
         toReturn
@@ -293,6 +328,8 @@ class BundledMoveExplorer(v:Int,
                             toVehicle: Int,
                             fromNodeVehicle: Iterable[NodeVehicle])
     extends EdgeToExploreBundle[NodeVehicle](toNode, toVehicle, fromNodeVehicle) {
+
+    override def toString: String = s"MoveWithEjectBundle(size:$size, toNode: $toNode, toVehicle:$toVehicle, fromNodeVehicle:${fromNodeVehicle.mkString(",")}"
 
     override def isEdgeDirty(edge: NodeVehicle): Boolean = {
       isNodeDirty(edge.node) || isVehicleDirty(edge.vehicle)
@@ -480,6 +517,8 @@ class BundledMoveExplorer(v:Int,
                             nodesToInsert: Iterable[Int])
     extends EdgeToExploreBundle[Int](toVehicle, toVehicle, nodesToInsert) {
 
+    override def toString: String = s"InsertNoEjectBundle(toVehicle:$toVehicle remaining edges:$size nodesToInsert:${nodesToInsert.toList.sorted.mkString(",")}"
+
     override def isEdgeDirty(edge: Int): Boolean = {
       isNodeDirty(edge)
     }
@@ -601,7 +640,8 @@ class BundledMoveExplorer(v:Int,
       case NoMoveFound => null
       case MoveFound(move) =>
         val delta = move.objAfter - initialVehicleToObjectives(fromVehicle)
-        (move,delta) //will very likely always be negative because of triangular inequality
+        (move,delta) //will negative if triangular inequality
     }
   }
 }
+
