@@ -805,13 +805,13 @@ et cette stack doit être mise à jour au moment de la notification.
         levelOfTopCheckpoint == -1,
       "Sequences cannot be assigned when a checkpoint has been defined")
 
-    toNotify = SeqUpdateAssign(seq)
-
-    notifyChanged()
+    if(!(this.newValue quickEquals seq)) {
+      toNotify = SeqUpdateAssign(seq)
+      notifyChanged()
+    }
   }
 
   // checkpoint management values
-
 
   //This section of code is for maintaining the checkpoint stack.
   //stack does not include top checkpoint
