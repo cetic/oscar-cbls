@@ -15,9 +15,11 @@
 
 package oscar.cbls.algo.magicArray
 
-class ResettableArray(length:Int,defaultValue:Int=>Int) {
+import scala.reflect.ClassTag
 
-  private val internalArray:Array[Int] = Array.tabulate(length)(defaultValue)
+class ResettableArray[T:ClassTag](length:Int,defaultValue:Int=>T) {
+
+  private val internalArray:Array[T] = Array.tabulate(length)(defaultValue)
   private val changedValues:MagicBoolArray = MagicBoolArray(length,false)
 
   /**
@@ -26,7 +28,7 @@ class ResettableArray(length:Int,defaultValue:Int=>Int) {
    * @param value the new element's value
    * @note in O(1) // trivial
    */
-  def update(id:Int, value:Int):Unit = {
+  def update(id:Int, value:T):Unit = {
     assert(id<length && 0<=id)
     internalArray(id) = value
     changedValues(id) = true
@@ -38,7 +40,7 @@ class ResettableArray(length:Int,defaultValue:Int=>Int) {
    * @return the value
    * @note complexity is O(1)
    */
-  def apply(id:Int): Int = {
+  def apply(id:Int): T = {
     if(changedValues(id)) {
       internalArray(id)
     } else {
