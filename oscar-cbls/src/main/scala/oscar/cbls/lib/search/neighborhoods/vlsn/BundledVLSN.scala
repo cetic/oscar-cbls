@@ -22,6 +22,7 @@ import oscar.cbls.core.search._
 import oscar.cbls.lib.search.neighborhoods.vlsn.CycleFinderAlgoType.CycleFinderAlgoType
 import oscar.cbls.lib.search.neighborhoods.vlsn.VLSNMoveType._
 
+import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
 class BundledVLSN(v:Int,
@@ -150,8 +151,22 @@ class BundledVLSN(v:Int,
                            unroutedNodesToInsert: Set[Int],
                            cachedExplorations: Option[CachedExplorations]): Option[DataForVLSNRestart] = {
 
-    val moveExplorer:BundledMoveExplorer = getMoveExplorer(
-      vehicleToRoutedNodesToMove, unroutedNodesToInsert, cachedExplorations)
+    val moveExplorer:BundledMoveExplorer = new BundledMoveExplorer(
+      v: Int,
+      vehicleToRoutedNodesToMove,
+      unroutedNodesToInsert,
+      nodeToRelevantVehicles(),
+
+      targetVehicleNodeToInsertNeighborhood,
+      targetVehicleNodeToMoveNeighborhood,
+      nodeToRemoveNeighborhood,
+      removeNodeAndReInsert,
+
+      vehicleToObjective,
+      unroutedPenalty,
+      globalObjective,
+      cachedExplorations.orNull,
+      verbose = false)
 
     var dirtyNodes:SortedSet[Int] = SortedSet.empty
 
@@ -215,7 +230,6 @@ class BundledVLSN(v:Int,
     var nbEdgesAtPreviousIteration = moveExplorer.nbEdgesInGraph
 
     if(injectAllCacheBeforeEnriching) {
-
       moveExplorer.injectAllCache(printTakenMoves)
       if (printTakenMoves) {
         println("            " + " loaded " + (moveExplorer.nbEdgesInGraph - nbEdgesAtPreviousIteration) + " edges from cache")
@@ -331,6 +345,7 @@ class BundledVLSN(v:Int,
       cachedExplorations)
   }
 
+  @tailrec
   private def updateZones(performedMoves: List[Edge],
                           vehicleToRoutedNodesToMove: Map[Int, Set[Int]],
                           unroutedNodesToInsert: Set[Int]): (Map[Int, Set[Int]], Set[Int]) = {
@@ -407,27 +422,5 @@ class BundledVLSN(v:Int,
 
         }
     }
-  }
-
-  private def getMoveExplorer(vehicleToRoutedNodesToMove: Map[Int, Set[Int]],
-                              unroutedNodesToInsert: Set[Int],
-                              cachedExplorations: Option[CachedExplorations]): BundledMoveExplorer = {
-
-    new BundledMoveExplorer(
-      v: Int,
-      vehicleToRoutedNodesToMove,
-      unroutedNodesToInsert,
-      nodeToRelevantVehicles(),
-
-      targetVehicleNodeToInsertNeighborhood,
-      targetVehicleNodeToMoveNeighborhood,
-      nodeToRemoveNeighborhood,
-      removeNodeAndReInsert,
-
-      vehicleToObjective,
-      unroutedPenalty,
-      globalObjective,
-      cachedExplorations.orNull,
-      verbose = false)
   }
 }

@@ -152,13 +152,15 @@ class BundledMoveExplorer(v:Int,
 
     val nbEdgesToExplore = v * v /10
     val ndEdgesPerBundle = v
+    val minAddedEdgesPerLevel = 1000
+
 
     var totalExplored = 0
 
     var currentBundleId = Random.nextInt(nbBundles-1)
     val offset = Random.nextInt(nbBundles-1)
     val nbEdgesAtStart = nbEdgesInGraph
-    val minAddedEdgesPerLevel = 1000
+
     while((totalExplored <= nbEdgesToExplore || (nbEdgesInGraph - nbEdgesAtStart < minAddedEdgesPerLevel) || nbBundles <= 1) && nbBundles > 0){
       currentBundleId = (currentBundleId + offset) % nbBundles
       val nbExplored = allBundlesArray(currentBundleId).pruneExplore(targetNbExplores = ndEdgesPerBundle)
