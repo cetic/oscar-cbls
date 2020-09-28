@@ -90,10 +90,12 @@ class WorkerActor(neighborhoods:SortedMap[Int,RemoteNeighborhood],
     searchRequest.startSolution.makeLocal(m).restoreDecisionVariables()
     shouldAbortComputation = false
     val neighborhood = neighborhoods(searchRequest.neighborhoodID.neighborhoodID)
-    neighborhood.explore(searchRequest.neighborhoodID.parameters, searchRequest.obj.convertToOBj(m), searchRequest.acc, shouldAbort = () => shouldAbortComputation) match{
-      case NoMoveFound => IndependentNoMoveFound()
-      case MoveFound(m) => IndependentMoveFound(m.getIndependentMove(this.m))
-    }
+
+    neighborhood.explore(
+      searchRequest.neighborhoodID.parameters,
+      searchRequest.obj.convertToOBj(m),
+      searchRequest.acc,
+      shouldAbort = () => shouldAbortComputation)
   }
 
   abstract class WorkerState

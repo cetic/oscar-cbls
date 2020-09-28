@@ -44,7 +44,7 @@ object Test extends App{
       override def explore(parameters: List[Long],
                            obj: Objective,
                            acc: (Long,Long) => Boolean,
-                           shouldAbort: () => Boolean): SearchResult = {
+                           shouldAbort: () => Boolean): IndependentSearchResult = {
 
         val taskDuration = 500*(1+parameters.head) //ms
         val startTime = java.lang.System.currentTimeMillis()
@@ -63,12 +63,12 @@ object Test extends App{
           i = i + 1
         }
         if(aborted)
-          NoMoveFound
+          IndependentNoMoveFound()
         else if(Random.nextBoolean())
-          MoveFound(PseudoMove(s"neighborhoodID:${neighborhoodID} params:${parameters} i:$i"))
+          IndependentMoveFound(PseudoMove(s"neighborhoodID:${neighborhoodID} params:${parameters} i:$i").getIndependentMove(null))
         else {
           // throw new Exception("bug")
-          NoMoveFound
+          IndependentNoMoveFound()
         }
       }
     }
