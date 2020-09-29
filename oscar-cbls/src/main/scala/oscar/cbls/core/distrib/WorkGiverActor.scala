@@ -153,55 +153,52 @@ class WorkGiverActor(supervisor:ActorRef[MessagesToSupervisor],
  }
 }
 
-class WorkGiverIteratorActor(toDos:Map[Long,SearchResult=>Unit],
-                             context:ActorContext[MessageToWorkGiver],
-                             m:Store,
-                             slaveWorkGivers:Iterable[ActorRef[MessageToWorkGiver]],
-                             verbose:Boolean)
-  extends AbstractBehavior(context:ActorContext[MessageToWorkGiver]) {
 
- private val resultPromise = Promise[SearchEnded]()
- private val futureForResult: Future[SearchEnded] = resultPromise.future
- private var remainingToDos = toDos.size
+abstract class MessageToTaskGiver
+case class Result(result:SearchResult, taskID:Long, param:List[Int]) extends MessageToTaskGiver
+case class TaskFinished(searchID:Long) extends MessageToTaskGiver
+case class CancelTask() extends MessageToTaskGiver
 
- override def onMessage(msg: MessageToWorkGiver): Behavior[MessageToWorkGiver] = {
+object TaskGiverActor{
+ def apply(supervisorActorRef:ActorRef[MessagesToSupervisor],
+           searchID:Long,
+           action:((List[Int],SearchResult)=>Unit),
+           verbose:Boolean = false):Behavior[MessageToTaskGiver] =
+  Behaviors.setup[MessageToTaskGiver](context => new TaskGiverActor(supervisorActorRef, searchID, action, context, verbose))
+}
+
+class TaskGiverActor(supervisor:ActorRef[MessagesToSupervisor],
+                     searchID:Long,
+                     action:((List[Int],SearchResult)=>Unit),
+                     context:ActorContext[MessageToTaskGiver],
+                     verbose:Boolean = false)
+  extends AbstractBehavior(context:ActorContext[MessageToTaskGiver]) {
+
+ if(verbose) context.log.info(s"created for search:${this.searchID}")
+
+ override def onMessage(msg: MessageToTaskGiver): Behavior[MessageToTaskGiver] = {
   msg match {
-   case SearchCompleted(searchID, searchResult) =>
-    toDos(searchID)(searchResult.getLocalResult(m))
-    remainingToDos -= 1
-    if (remainingToDos == 0 && !resultPromise.isCompleted) {
-     resultPromise.complete(Success(SearchCompleted(searchID, searchResult)))
-     Behaviors.stopped
-    }else{
-     Behaviors.same
+   case Result(result:SearchResult, taskID:Long, param:List[Int]) =>
+    if(taskID == this.searchID){
+     action(param,result)
+    } else {
+     //received success about another search?!
+     if(verbose) context.log.error(s"got result for another search:${taskID}, was expecting ${this.searchID}; ignoring")
     }
-   case s: SearchAborted =>
-    remainingToDos -= 1
-    if (remainingToDos == 0 && !resultPromise.isCompleted) {
-     resultPromise.complete(Success(s))
-     Behaviors.stopped
-    }else{
-     Behaviors.same
-    }
-
-   case crashed: SearchCrashed =>
-    if (!resultPromise.isCompleted) {
-     resultPromise.complete(Success(crashed))
-     Behaviors.stopped
-    }else{
-     Behaviors.same
-    }
-
-   case PromiseResult(replyTo: ActorRef[Future[SearchEnded]]) =>
-    replyTo ! futureForResult
     Behaviors.same
 
-   case CancelSearch() =>
-    for(wg <- slaveWorkGivers) {
-      wg ! CancelSearch()
+   case TaskFinished(taskID) =>
+    if(taskID == this.searchID){
+     Behaviors.stopped
+    } else {
+     if(verbose) context.log.error(s"got result for another search:${taskID}, was expecting ${this.searchID}; ignoring")
+     Behaviors.same
     }
-    resultPromise.complete(Success(SearchAborted(0)))
-    Behaviors.stopped
+
+   case CancelTask() =>
+    if(verbose) context.log.info(s"received cancel search command for search:${this.searchID}; forwarding to Supervisor")
+    supervisor ! CancelSearchToSupervisor(searchID)
+    Behaviors.same
   }
  }
 }

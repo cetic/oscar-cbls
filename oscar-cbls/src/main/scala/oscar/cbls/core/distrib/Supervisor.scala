@@ -62,10 +62,10 @@ object Supervisor{
     Behaviors.setup {context:ActorContext[MessagesToSupervisor] => new SupervisorActor(context,verbose,tic)}
 }
 
-
-final case class DelegateSearchWithAction(searchRequest:SearchRequest, action:SearchResult=>Unit) extends MessagesToSupervisor
+final case class DelegateMultiSearchWithAction(searchRequest:SearchRequest, action:(List[Int],SearchResult)=>Unit) extends MessagesToSupervisor
 final case class DelegateSearch(searchRequest:SearchRequest, replyTo:ActorRef[WorkGiverActorCreated], action:Option[SearchEnded => Unit]) extends MessagesToSupervisor
-final case class DelegateSearches(searchRequest:Array[SearchRequest], replyTo:ActorRef[WorkGiverActorCreated]) extends MessagesToSupervisor
+final case class DelegateTask(searchRequest:SearchRequest, action:((List[Int],SearchResult)=>Unit)) extends MessagesToSupervisor
+final case class DelegateORSearches(searchRequest:Array[SearchRequest], replyTo:ActorRef[WorkGiverActorCreated]) extends MessagesToSupervisor
 final case class ShutDown(replyTo:Option[ActorRef[Unit]]) extends MessagesToSupervisor
 final case class SpawnWorker(workerBehavior:Behavior[MessageToWorker], replyTo:ActorRef[Unit]) extends MessagesToSupervisor
 final case class NbWorkers(replyTo:ActorRef[Int]) extends MessagesToSupervisor
@@ -115,7 +115,7 @@ class Supervisor(supervisorActor:ActorRef[MessagesToSupervisor], m:Store, verbos
   }
 
   private def delegateORSearches(searchRequests:Array[SearchRequest]):ActorRef[MessageToWorkGiver] = {
-    val ongoingRequest:Future[WorkGiverActorCreated] = supervisorActor.ask[WorkGiverActorCreated] (ref => DelegateSearches(searchRequests, ref))
+    val ongoingRequest:Future[WorkGiverActorCreated] = supervisorActor.ask[WorkGiverActorCreated] (ref => DelegateORSearches(searchRequests, ref))
     Await.result(ongoingRequest,atMost = 30.seconds).workGiverActor
   }
 
@@ -144,7 +144,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
   //this one is a list, because the most common operations are add and takeFirst
   private var runningSearches:SortedMap[Long,(SearchTask,ActorRef[MessageToWorker])] = SortedMap.empty
 
-  private val waitingSearches = scala.collection.mutable.Queue[SearchTask]()
+  private val waitingSearches = scala.collection.mutable.Queue[Task]()
 
   //need to add, and remove regularly, based on ID, indexed by startID
   private var startingSearches:SortedMap[Long,(SearchTask,Long,ActorRef[MessageToWorker])] = SortedMap.empty
@@ -319,7 +319,21 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
         waitingSearches.enqueue(theSearch)
         context.self ! StartSomeSearch()
 
-      case DelegateSearches(searchRequests:Array[SearchRequest], replyTo: ActorRef[WorkGiverActorCreated]) =>
+      case DelegateTask(searchRequest:SearchRequest, action:((List[Int],SearchResult)=>Unit)) =>
+        val searchId = nextSearchID
+        nextSearchID += 1
+
+        val taskGiverActor = TaskGiverActor(context.self, searchId, action)
+        val taskGiverActorRef = context.spawn(taskGiverActor, "taskGiver_search_" + searchId)
+
+        if(verbose) context.log.info(s"got new waiting Task:$searchId")
+
+        //now, we have a workGiverActor, we search for an available worker or put this request on a waiting list.
+        val theSearch = Task(searchRequest, searchId, taskGiverActorRef)
+        waitingSearches.enqueue(theSearch)
+        context.self ! StartSomeSearch()
+
+      case DelegateORSearches(searchRequests:Array[SearchRequest], replyTo: ActorRef[WorkGiverActorCreated]) =>
 
         val minSearchID = nextSearchID
 
