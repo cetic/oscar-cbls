@@ -52,6 +52,7 @@ class BundledVLSN(v:Int,
                   injectAllCacheBeforeEnriching:Boolean = false,
                  ) extends Neighborhood {
 
+
   def doReoptimize(vehicle:Int) {
     val reOptimizeNeighborhoodGenerator = reOptimizeVehicle match{
       case None => return
@@ -152,11 +153,14 @@ class BundledVLSN(v:Int,
                            unroutedNodesToInsert: Set[Int],
                            cachedExplorations: Option[CachedExplorations]): Option[DataForVLSNRestart] = {
 
+    val nodeToRelevantVehiclesNow = nodeToRelevantVehicles()
+    val n = nodeToRelevantVehiclesNow.size
+
     val moveExplorer:BundledMoveExplorer = new BundledMoveExplorer(
       v: Int,
       vehicleToRoutedNodesToMove,
       unroutedNodesToInsert,
-      nodeToRelevantVehicles(),
+      nodeToRelevantVehiclesNow,
 
       targetVehicleNodeToInsertNeighborhood,
       targetVehicleNodeToMoveNeighborhood,
@@ -168,9 +172,9 @@ class BundledVLSN(v:Int,
       globalObjective,
       cachedExplorations.orNull,
       verbose = false,
-      nbEdgesToExplore = v * v /10,   //tuning parameters
-      ndEdgesPerBundle = v,           //tuning parameters
-      minAddedEdgesPerLevel = 1000    //tuning parameters
+      minNbEdgesToExplorePerLevel = 0, //v * v /10,   //tuning parameters
+      minNbAddedEdgesPerLevel = 1000,            //tuning parameters
+      nbEdgesPerBundle = v                       //tuning parameters
     )
 
     var dirtyNodes:SortedSet[Int] = SortedSet.empty
@@ -225,9 +229,16 @@ class BundledVLSN(v:Int,
     def printCycle(cycle:List[Edge]){
       val moves = cycle.flatMap(edge => Option(edge.move))
       val vehicles = impactedVehicles(cycle)
-      val moveTypes = "[" + cycle.flatMap(edge => if(edge.move == null) None else Some(edge.moveType)).groupBy((a:VLSNMoveType) => a).toList.map({case (moveType,l) => (""  + moveType + "->" + l.size)}).mkString(",") + "]"
+      val moveTypes = "[" +
+        cycle
+          .flatMap(edge => if(edge.move == null) None else Some(edge.moveType))
+          .groupBy((a:VLSNMoveType) => a)
+          .toList
+          .map({case (moveType,l) => (""  + moveType + "->" + l.size)})
+          .mkString(",") + "]"
       val deltaObj = cycle.map(edge => edge.deltaObj).sum
-      println("                deltaObj:" + deltaObj+ " size:" + moves.length + " vehicles:{" + vehicles.mkString(",") + "} moveTypes:" + moveTypes + " moves:{" + moves.mkString(",") + "}")
+      println("                deltaObj:" + deltaObj+ " size:" + moves.length +
+        " vehicles:{" + vehicles.mkString(",") + "} moveTypes:" + moveTypes + " moves:{" + moves.mkString(",") + "}")
     }
 
     var vlsnGraph:VLSNGraph = null
@@ -237,7 +248,8 @@ class BundledVLSN(v:Int,
     if(injectAllCacheBeforeEnriching) {
       moveExplorer.injectAllCache(printTakenMoves)
       if (printTakenMoves) {
-        println("            " + " loaded " + (moveExplorer.nbEdgesInGraph - nbEdgesAtPreviousIteration) + " edges from cache")
+        println("            " + " loaded " +
+          (moveExplorer.nbEdgesInGraph - nbEdgesAtPreviousIteration) + " edges from cache")
       }
       nbEdgesAtPreviousIteration = moveExplorer.nbEdgesInGraph
     }
@@ -254,7 +266,8 @@ class BundledVLSN(v:Int,
       vlsnGraph = moveExplorer.enrichGraph(dirtyNodes, dirtyVehicles, printTakenMoves)._1
 
       if(printTakenMoves) {
-        println("            " + vlsnGraph.statisticsString + " added " + (vlsnGraph.nbEdges - nbEdgesAtPreviousIteration) + " edges")
+        println("            " + vlsnGraph.statisticsString + " added " +
+          (vlsnGraph.nbEdges - nbEdgesAtPreviousIteration) + " edges")
       }
 
       if(vlsnGraph.nbEdges == nbEdgesAtPreviousIteration && currentEnrichmentLevel !=0){

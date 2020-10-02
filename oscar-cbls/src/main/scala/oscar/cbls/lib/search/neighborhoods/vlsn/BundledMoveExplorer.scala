@@ -25,9 +25,9 @@ class BundledMoveExplorer(v:Int,
 
                           cache:CachedExplorations,
                           verbose:Boolean,
-                          nbEdgesToExplore:Int,
-                          ndEdgesPerBundle:Int,
-                          minAddedEdgesPerLevel:Int
+                          minNbEdgesToExplorePerLevel:Int,
+                          minNbAddedEdgesPerLevel:Int,
+                          nbEdgesPerBundle:Int
                          ) {
 
   //nodes are all the nodes to consider, ll the vehicles, and a trashNode
@@ -160,9 +160,9 @@ class BundledMoveExplorer(v:Int,
     val offset = Random.nextInt(nbBundles-1)
     val nbEdgesAtStart = nbEdgesInGraph
 
-    while((totalExplored <= nbEdgesToExplore || (nbEdgesInGraph - nbEdgesAtStart < minAddedEdgesPerLevel) || nbBundles <= 1) && nbBundles > 0){
+    while((totalExplored <= minNbEdgesToExplorePerLevel || (nbEdgesInGraph - nbEdgesAtStart < minNbAddedEdgesPerLevel) || nbBundles <= 1) && nbBundles > 0){
       currentBundleId = (currentBundleId + offset) % nbBundles
-      val nbExplored = allBundlesArray(currentBundleId).pruneExplore(targetNbExplores = ndEdgesPerBundle)
+      val nbExplored = allBundlesArray(currentBundleId).pruneExplore(targetNbExplores = nbEdgesPerBundle)
       totalExplored += nbExplored
       if(allBundlesArray(currentBundleId).isEmpty){
         if(currentBundleId == nbBundles-1){

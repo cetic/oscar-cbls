@@ -19,6 +19,8 @@ package oscar.cbls.lib.search.neighborhoods.vlsn
 
 import oscar.cbls.core.search.{DoNothingMove, Move}
 import oscar.cbls._
+import oscar.cbls.algo.quick.QList
+
 import scala.collection.immutable.SortedSet
 
 object VLSNMoveType extends Enumeration{
@@ -64,7 +66,7 @@ class VLSNNodeBuilder(var nbLabels:Int) {
 class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
   private val nbNodes = nodes.length
   private val edges:Array[Array[Edge]] = Array.tabulate(nbNodes)(_ => Array.fill(nbNodes)(null))
-  private var fromToWithEdge:List[(Int,Int)] = List.empty
+  private var fromToWithEdge:QList[(Int,Int)] = null
   private var nextEdgeID:Int = 0
 
   def nbEdges:Int = nextEdgeID
@@ -76,7 +78,7 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
     edges(from.nodeID)(to.nodeID) = edge
 
     nextEdgeID += 1
-    fromToWithEdge = (from.nodeID,to.nodeID) :: fromToWithEdge
+    fromToWithEdge = QList((from.nodeID,to.nodeID),fromToWithEdge)
     edge
   }
 
@@ -87,7 +89,10 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
   def buildGraph():VLSNGraph = {
     val edgeArray:Array[Edge] = Array.fill(nextEdgeID)(null)
 
-    for((from,to) <- fromToWithEdge){
+    var cur = fromToWithEdge
+    while(cur != null){
+      val (from,to) = cur.head
+      cur = cur.tail
       val edge = edges(from)(to)
       edgeArray(edge.edgeID) = edge
     }
