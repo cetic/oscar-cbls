@@ -16,11 +16,13 @@
  */
 package oscar.cbls.lib.search.neighborhoods.vlsn
 
+import oscar.cbls.algo.quick.QList
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{Move, MoveFound, Neighborhood, NoMoveFound}
 
 import scala.collection.immutable.{SortedMap, SortedSet}
+
 
 class MoveExplorer(v:Int,
                    vehicleToRoutedNodes:Map[Int,Iterable[Int]],
@@ -38,7 +40,6 @@ class MoveExplorer(v:Int,
                    globalObjective:Objective,
                    debug:Boolean,
                    gradualEnrichmentSchemeN1V1N2V2P:(Int,Int,Int,Int) => Int) {
-
 
   //nodes are all the nodes to consider, ll the vehicles, and a trashNode
 
@@ -93,7 +94,7 @@ class MoveExplorer(v:Int,
             s"vehicle $vehicle impacted by current move and should not; it can only impact {${changedVehicles.mkString(",")}}${if (penaltyChanged) " and penalty " else ""}")
         }
       }
-      
+
 
 
       val global = globalObjective.value
@@ -229,8 +230,7 @@ class MoveExplorer(v:Int,
     edgeBuilder.buildGraph()
   }
 
-  val maxLong = Long.MaxValue
-  val acceptAllButMaxInt: (Long, Long) => Boolean = (_, newObj: Long) => newObj != maxLong
+  val acceptAllButMaxInt: (Long, Long) => Boolean = (_, newObj: Long) => newObj != Long.MaxValue
 
   // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def exploreInsertions(): Unit ={
@@ -327,7 +327,6 @@ class MoveExplorer(v:Int,
   }
 
   // ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
   private def exploreInsertionsWithRemove(vehicleToUnroutedNodeToInsert: Map[Int, Iterable[Int]]): Unit = {
 
@@ -454,8 +453,8 @@ class MoveExplorer(v:Int,
               ;
             case (move, delta) =>
               edgeBuilder.addEdge(symbolicNodeOfNodeToMove, symbolicNodeOfVehicle, delta, move, VLSNMoveType.MoveNoEject)
-              // println(symbolicNodeOfNodeToMove.incoming.mkString("\n"))
-              // println(s"$move - deltaObj $delta")
+            // println(symbolicNodeOfNodeToMove.incoming.mkString("\n"))
+            // println(s"$move - deltaObj $delta")
             //we cannot consider directMoves here moves because we should also take the impact on the first vehicle into account,
             // and this is not captured into the objective function
           }
@@ -513,7 +512,7 @@ class MoveExplorer(v:Int,
         val symbolicNodeToEject = nodeIDToNode(nodeIDToEject)
 
         //performing the remove
-        val reInsert = removeAndReInsert(nodeIDToEject)
+        var reInsert:()=>Unit = null
 
         //Evaluating all moves on this remove
         for(routingNodeToMove <- routedNodesToMoveThere) {
@@ -528,19 +527,19 @@ class MoveExplorer(v:Int,
               toNode = nodeIDToEject)) {
 
             nbExploredEdges += 1
-
+            if(reInsert == null) reInsert = removeAndReInsert(nodeIDToEject)
             evaluateMoveToVehicleWithRemove(routingNodeToMove, fromVehicle, targetVehicleID, nodeIDToEject, true) match{
               case null => //println("No Accepted Move");
               case (move,delta) =>
                 edgeBuilder.addEdge(symbolicNodeOfNodeToMove, symbolicNodeToEject, delta, move, VLSNMoveType.MoveWithEject)
-                // println(symbolicNodeOfNodeToMove.incoming.mkString("\n"))
-                // println(s"$move $delta")
+              // println(symbolicNodeOfNodeToMove.incoming.mkString("\n"))
+              // println(s"$move $delta")
             }
           }
         }
 
         //re-inserting
-        reInsert()
+        if(reInsert!= null) reInsert()
 
       }
     }

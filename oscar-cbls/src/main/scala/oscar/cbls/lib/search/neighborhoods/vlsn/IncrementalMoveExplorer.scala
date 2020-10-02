@@ -17,13 +17,11 @@
 
 package oscar.cbls.lib.search.neighborhoods.vlsn
 
-import oscar.cbls.core.objective.Objective
+import oscar.cbls.Objective
 import oscar.cbls.core.search.{Move, Neighborhood}
 import oscar.cbls.lib.search.neighborhoods.vlsn.VLSNMoveType._
 
 import scala.collection.immutable.{SortedMap, SortedSet}
-import oscar.cbls.Objective
-import oscar.cbls.core.search.{Neighborhood, _}
 
 abstract sealed class CachedExploration
 case class CachedAtomicMove(move:Move,delta:Long) extends CachedExploration
