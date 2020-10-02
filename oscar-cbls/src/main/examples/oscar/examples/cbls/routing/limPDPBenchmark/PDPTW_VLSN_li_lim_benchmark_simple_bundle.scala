@@ -18,7 +18,7 @@ import scala.io.Source
 object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
   val multFactor: Long = 1000
 
-  runOne()
+  runMany()
   def runOne() {
     println("usage: This fileName enrichment partition enrichmentSpec shiftInsert")
     val fileName = args(0)
@@ -40,22 +40,17 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
     System.gc()
 
     try {
-      for(fileName <- fileNames) {
-        pw.println(runBenchmark(fileName: String))
-        pw.flush()
-        System.gc()
-        //        pw.println(runBenchmark(fileName: String, enrichment = 0, partition = 0, enrichmentSpec = 0, shiftInsert = 0, injectAllCacheBeforeEnriching = false))
-        //        pw.flush()
-        //        System.gc()
-        //        pw.println(runBenchmark(fileName: String, enrichment = 0, partition = 0, enrichmentSpec = 0, shiftInsert = 0, injectAllCacheBeforeEnriching = false))
-        //        pw.flush()
-        //        System.gc()
+      for(i <- 0 until 11) {
+        for(fileName <- fileNames) {
+          pw.println(runBenchmark(fileName: String, verbose = false))
+          pw.flush()
+          System.gc()
+        }
       }
     }finally{
       pw.close()
     }
   }
-
 
 
   case class PDP(fromNode: Int, toNode: Int, demand: Int) {
@@ -73,7 +68,9 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
     val s = Source.fromFile(fileName)
     val lines = s.getLines
 
-    val Array(v, capacity, _) = lines.next().split("\\t\\s*").map(_.toInt)
+    val Array(v0, capacity, _) = lines.next().split("\\t\\s*").map(_.toInt)
+
+    val v = v0*2
 
     var allNodesList: List[Node] = Nil
     while (lines.hasNext) {
@@ -133,7 +130,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
   }
 
 
-  def runBenchmark(fileName: String): String = {
+  def runBenchmark(fileName: String,verbose:Boolean = true): String = {
 
     var toReturn = s"file:\t${fileName.split("""\\""").last}"
 
@@ -143,6 +140,8 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
     val n = symmetricDistance.length
 
     println(s"VLSN(PDPTW) v:$v n:$n pdp:${pdpList.length}")
+
+    toReturn = toReturn + s"\tv: $v\tn: $n\tpdp: ${pdpList.length}"
 
     val penaltyForUnrouted = 10000*multFactor
 
@@ -433,7 +432,13 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
 
     val startTime = System.nanoTime()
     val search = vlsn maxMoves 1 //exhaust movePDP
-    search.verbose = 2
+
+    if(verbose){
+      search.verbose = 2
+    }else {
+      search.verbose = 0
+    }
+
 
     search.doAllMoves(obj = obj)
 
