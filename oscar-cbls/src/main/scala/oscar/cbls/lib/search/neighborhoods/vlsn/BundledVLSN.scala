@@ -53,7 +53,7 @@ class BundledVLSN(v:Int,
                  ) extends Neighborhood {
 
 
-  def doReoptimize(vehicle:Int) {
+  def doReoptimize(vehicle:Int): Unit = {
     val reOptimizeNeighborhoodGenerator = reOptimizeVehicle match{
       case None => return
       case Some(reOptimizeNeighborhoodGenerator) => reOptimizeNeighborhoodGenerator
@@ -226,7 +226,7 @@ class BundledVLSN(v:Int,
       }
     }
 
-    def printCycle(cycle:List[Edge]){
+    def printCycle(cycle:List[Edge]): Unit ={
       val moves = cycle.flatMap(edge => Option(edge.move))
       val vehicles = impactedVehicles(cycle)
       val moveTypes = "[" +

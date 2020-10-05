@@ -62,7 +62,7 @@ class ConsumableResource(capacity: Long,
   override def usingActivities: Iterable[ActivityId] = activitiesConsumption.keys
 
   override def initialState: ResourceState =
-    new ConsumableResourceState(this, 0, capacity)
+    new ConsumableResourceState(this, capacity)
 }
 
 class ConsumableResourceWithSetupTimes(capacity: Long,
@@ -199,14 +199,16 @@ class CumulativeResourceWithSetupTimesState(base: CumulativeResourceWithSetupTim
     val qtyResourceToConsume = base.activitiesConsumption(activity)
     // Explore the releaseTimes map for obtaining the release time for enough resources
     val releaseTimesSorted = releaseTimes.keys.toList.sorted
-    val releaseTime = releaseTimeFrom(0, qtyResourceToConsume, releaseTimesSorted)
     // Check whether there is a mode change
     val actMode = setupTimes.activityModes.getOrElse(activity, currentMode)
     if (actMode == currentMode) {
+      val releaseTime = releaseTimeFrom(0, qtyResourceToConsume, releaseTimesSorted)
       releaseTime max earliestStart
     } else {
+      // Mode has changed : we need to release all the resources before changing mode
+      val lastTime = releaseTimesSorted.last
       val setupTime = setupTimes.setupTimes.getOrElse((currentMode, actMode), 0)
-      (releaseTime + setupTime) max earliestStart
+      (lastTime + setupTime) max earliestStart
     }
   }
 
@@ -316,7 +318,7 @@ class CumulativeResourceWithSetupTimesMultiModeState(base: CumulativeResourceWit
     //////////
     val qtyResourceConsumed = base.activitiesConsumption(activity)
     val actMode = setupTimes.activityModes.getOrElse(activity, currentMode)
-    val releaseTimesWithST = releaseTimes.map{ tup =>
+    val releaseTimesWithST = releaseTimes.map { tup =>
       val t = tup._1
       val m = tup._2._1
       val qty = tup._2._2
@@ -332,7 +334,6 @@ class CumulativeResourceWithSetupTimesMultiModeState(base: CumulativeResourceWit
 }
 
 class ConsumableResourceState(base: ConsumableResource,
-                              availableTime: Int,
                               availableCapacity: Long) extends ResourceState {
 
   override def earliestStartTime(activity: ActivityId, earliestStart: Int): Int = {
@@ -343,19 +344,18 @@ class ConsumableResourceState(base: ConsumableResource,
       // Not available resource, activity will never start
       Int.MaxValue
     } else {
-      availableTime max earliestStart
+      earliestStart
     }
   }
 
   override def nextState(activity: ActivityId, taskDuration: Int, startTime: Int): ResourceState = {
     assert(base.usingActivities.exists(_ == activity))
-    require(startTime >= availableTime)
     //////////
     val qtyResourceToConsume = base.activitiesConsumption(activity)
     if (qtyResourceToConsume > availableCapacity)
       ErrorResourceState
     else {
-      new ConsumableResourceState(base, startTime + taskDuration, availableCapacity - qtyResourceToConsume)
+      new ConsumableResourceState(base, availableCapacity - qtyResourceToConsume)
     }
   }
 }
@@ -364,7 +364,7 @@ class ConsumableResourceWithSetupTimesState(base: ConsumableResourceWithSetupTim
                                             availableTime: Int,
                                             availableCapacity: Long,
                                             setupTimes: SetupTimes,
-                                            currentMode: Mode) extends ResourceState {
+                                            initialMode: Mode) extends ResourceState {
 
   override def earliestStartTime(activity: ActivityId, earliestStart: Int): Int = {
     assert(base.usingActivities.exists(_ == activity))
@@ -375,11 +375,11 @@ class ConsumableResourceWithSetupTimesState(base: ConsumableResourceWithSetupTim
       Int.MaxValue
     } else {
       // Check whether there is a mode change
-      val actMode = setupTimes.activityModes.getOrElse(activity, currentMode)
-      if (actMode == currentMode) {
+      val actMode = setupTimes.activityModes.getOrElse(activity, initialMode)
+      if (actMode == initialMode) {
         availableTime max earliestStart
       } else {
-        val setupTime = setupTimes.setupTimes.getOrElse((currentMode, actMode), 0)
+        val setupTime = setupTimes.setupTimes.getOrElse((initialMode, actMode), 0)
         (availableTime + setupTime) max earliestStart
       }
     }
@@ -393,13 +393,11 @@ class ConsumableResourceWithSetupTimesState(base: ConsumableResourceWithSetupTim
     if (qtyResourceToConsume > availableCapacity)
       ErrorResourceState
     else {
-      // Check whether there is a mode change
-      val actMode = setupTimes.activityModes.getOrElse(activity, currentMode)
       new ConsumableResourceWithSetupTimesState(base,
-        startTime + taskDuration,
+        startTime,
         availableCapacity - qtyResourceToConsume,
         setupTimes,
-        actMode)
+        initialMode)
     }
   }
 }
