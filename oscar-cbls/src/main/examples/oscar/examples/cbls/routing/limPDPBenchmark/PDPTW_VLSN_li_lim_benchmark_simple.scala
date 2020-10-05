@@ -407,7 +407,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple extends App {
       //VLSN neighborhood
       new VLSN(
         v,
-        () => myVRP.getVehicleToRouteMap.mapValues(_.filter(pickUpPointToDeliveryPoint(_) != -1)),
+        () => myVRP.getVehicleToRouteMap.view.mapValues(_.filter(pickUpPointToDeliveryPoint(_) != -1)).toMap,
         initUnroutedNodesToInsert = unroutedPickups,
         nodeToRelevantVehicles = () => SortedMap.empty[Int,Iterable[Int]] ++ allPickupPoints.toList.map(p => (p,vehicles)),
 

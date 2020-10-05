@@ -18,7 +18,8 @@ import scala.io.Source
 object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
   val multFactor: Long = 1000
 
-  runMany()
+  runOne()
+
   def runOne() {
     println("usage: This fileName enrichment partition enrichmentSpec shiftInsert")
     val fileName = args(0)
@@ -403,7 +404,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
       //VLSN neighborhood
       new BundledVLSN(
         v,
-        () => myVRP.getVehicleToRouteMap.mapValues(_.filter(pickUpPointToDeliveryPoint(_) != -1)),
+        () => myVRP.getVehicleToRouteMap.view.mapValues(_.filter(pickUpPointToDeliveryPoint(_) != -1)).toMap,
         initUnroutedNodesToInsert = unroutedPickups,
         nodeToRelevantVehicles = () => SortedMap.empty[Int,Iterable[Int]] ++ allPickupPoints.toList.map(p => (p,vehicles)),
 
