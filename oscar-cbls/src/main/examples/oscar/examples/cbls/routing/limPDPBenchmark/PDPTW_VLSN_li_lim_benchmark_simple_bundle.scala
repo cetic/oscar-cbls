@@ -19,14 +19,14 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
   val multFactor: Long = 1000
 
   runMany()
-  def runOne() {
+  def runOne(): Unit = {
     println("usage: This fileName enrichment partition enrichmentSpec shiftInsert")
     val fileName = args(0)
 
     println(runBenchmark(fileName))
   }
 
-  def runMany() {
+  def runMany(): Unit = {
     println("usage: This fileName")
 
     //  try pw.print(s) finally pw.close()
@@ -52,7 +52,6 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
     }
   }
 
-
   case class PDP(fromNode: Int, toNode: Int, demand: Int) {
     def nodeList: List[Int] = List(fromNode, toNode)
     def precedence: (Int, Int) = (fromNode, toNode)
@@ -62,11 +61,11 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
 
     //multiplie tout par 1000, puis ceil
     case class Node(id: Int, x: Long, y: Long, demand: Int, earlyLine: Long, deadline: Long, duration: Long, pickUP: Int, delivery: Int) {
-      def distance(that: Node): Long = math.sqrt((this.x - that.x) * (this.x - that.x) + (this.y - that.y) * (this.y - that.y)).ceil.toLong
+      def distance(that: Node): Long = math.sqrt(((this.x - that.x) * (this.x - that.x) + (this.y - that.y) * (this.y - that.y)).toDouble).ceil.toLong
     }
 
     val s = Source.fromFile(fileName)
-    val lines = s.getLines
+    val lines = s.getLines()
 
     val Array(v0, capacity, _) = lines.next().split("\\t\\s*").map(_.toInt)
 
@@ -177,7 +176,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
       timeWindowConstraints.add(timeWindowViolations(vehicle) === 0)
     }
 
-    m.registerForPartialPropagation(timeWindowViolations: _*)
+    m.registerForPartialPropagation(timeWindowViolations.toIndexedSeq: _*)
 
     //Chains
     val precedenceRoute = myVRP.routes.createClone()
@@ -403,7 +402,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
       //VLSN neighborhood
       new BundledVLSN(
         v,
-        () => myVRP.getVehicleToRouteMap.mapValues(_.filter(pickUpPointToDeliveryPoint(_) != -1)),
+        () => myVRP.getVehicleToRouteMap.view.mapValues(_.filter(pickUpPointToDeliveryPoint(_) != -1)).toMap,
         initUnroutedNodesToInsert = unroutedPickups,
         nodeToRelevantVehicles = () => SortedMap.empty[Int,Iterable[Int]] ++ allPickupPoints.toList.map(p => (p,vehicles)),
 
@@ -447,7 +446,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
     println(myVRP)
     println(s"obj:${obj.value}")
 
-    toReturn = toReturn + s"\tobj:\t${obj.value.toDouble/(multFactor.toDouble)} \tnbUnrouted:\t${myVRP.unroutedNodes.size}\tusedV:\t${myVRP.movingVehicles.size}\tdurationMS:\t${((endTime - startTime) / (1000 * 1000))}"
+    toReturn = toReturn + s"\tobj:\t${obj.value.toDouble/multFactor.toDouble} \tnbUnrouted:\t${myVRP.unroutedNodes.size}\tusedV:\t${myVRP.movingVehicles.size}\tdurationMS:\t${((endTime - startTime) / (1000 * 1000))}"
     println(toReturn)
     toReturn
   }

@@ -194,7 +194,7 @@ class BundledMoveExplorer(v:Int,
 
     def isEmpty: Boolean = size == 0
 
-    def exploreEdge(edge: E)
+    def exploreEdge(edge: E): Unit
 
     def loadEdgeFromCache(edge:E):Boolean
 
@@ -263,12 +263,12 @@ class BundledMoveExplorer(v:Int,
   // ////////////////////////////////////////////////////////////
   // ////////////////////////////////////////////////////////////
 
-  private def generateInsertions(){
+  private def generateInsertions(): Unit = {
     val vehicleAndUnroutedNodes: Iterable[(Int, Int)] =
       unroutedNodesToInsert.flatMap((unroutedNode:Int) =>
         nodeToRelevantVehicles(unroutedNode).map((vehicle:Int) => (vehicle, unroutedNode)))
 
-    val vehicleToUnroutedNodeToInsert = vehicleAndUnroutedNodes.groupBy(_._1).mapValues(_.map(_._2))
+    val vehicleToUnroutedNodeToInsert = vehicleAndUnroutedNodes.groupBy(_._1).view.mapValues(_.map(_._2))
 
     for ((targetVehicleForInsertion, unroutedNodesToInsert) <- vehicleToUnroutedNodeToInsert) {
       //without eject
@@ -293,7 +293,7 @@ class BundledMoveExplorer(v:Int,
       nodesToMove.flatMap(nodeToMove =>
         nodeToRelevantVehicles(nodeToMove).map(vehicle => (vehicle,nodeToMove)))
 
-    val vehicleToNodeToMoveThere = vehicleAndNodeToMove.groupBy(_._1).mapValues(_.map(_._2))
+    val vehicleToNodeToMoveThere = vehicleAndNodeToMove.groupBy(_._1).view.mapValues(_.map(_._2))
 
     for ((toVehicle, routedNodesToMoveThere) <- vehicleToNodeToMoveThere) {
       //without remove

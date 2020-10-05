@@ -20,12 +20,13 @@ class AddActivity(schedule: Schedule,
     * as explained in the documentation of this class
     */
   override def exploreNeighborhood(initialObj: Long): Unit = {
+    val priorityListValue = schedule.activityPriorityList.value
     // Iteration zone on values to add (optional activities)
     // Checking the Hot Restart
     val iterationZone1: () => Iterable[Int] = searchValues.getOrElse(() =>
       schedule
         .activities
-        .filterNot(schedule.activityPriorityList.value.contains(_))
+        .filterNot(priorityListValue.contains)
     )
     val hotRestart = true
     val iterationZone: Iterable[Int] =
