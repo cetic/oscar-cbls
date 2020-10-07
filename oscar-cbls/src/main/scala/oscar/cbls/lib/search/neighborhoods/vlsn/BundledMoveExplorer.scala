@@ -25,9 +25,7 @@ class BundledMoveExplorer(v:Int,
 
                           cache:CachedExplorations,
                           verbose:Boolean,
-                          minNbEdgesToExplorePerLevel:Int,
-                          minNbAddedEdgesPerLevel:Int,
-                          nbEdgesPerBundle:Int
+                          enrichment:EnrichmentParameters
                          ) {
 
   //nodes are all the nodes to consider, ll the vehicles, and a trashNode
@@ -160,9 +158,9 @@ class BundledMoveExplorer(v:Int,
     val offset = Random.nextInt(nbBundles-1)
     val nbEdgesAtStart = nbEdgesInGraph
 
-    while((totalExplored <= minNbEdgesToExplorePerLevel || (nbEdgesInGraph - nbEdgesAtStart < minNbAddedEdgesPerLevel) || nbBundles <= 1) && nbBundles > 0){
+    while((totalExplored <= enrichment.minNbEdgesToExplorePerLevel || (nbEdgesInGraph - nbEdgesAtStart < enrichment.minNbAddedEdgesPerLevel) || nbBundles <= 1) && nbBundles > 0){
       currentBundleId = (currentBundleId + offset) % nbBundles
-      val nbExplored = allBundlesArray(currentBundleId).pruneExplore(targetNbExplores = nbEdgesPerBundle)
+      val nbExplored = allBundlesArray(currentBundleId).pruneExplore(targetNbExplores = enrichment.nbEdgesPerBundle)
       totalExplored += nbExplored
       if(allBundlesArray(currentBundleId).isEmpty){
         if(currentBundleId == nbBundles-1){
@@ -397,7 +395,6 @@ class BundledMoveExplorer(v:Int,
     }
 
     private var nodeToMoveToNeighborhood: Int => Neighborhood = null
-
 
     override def loadEdgeFromCache(edge: NodeVehicle): Boolean = {
       cache.getMoveToVehicleNoRemove(edge.node, edge.vehicle, toVehicle) match{

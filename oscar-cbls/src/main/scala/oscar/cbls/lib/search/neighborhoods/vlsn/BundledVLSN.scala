@@ -25,6 +25,11 @@ import oscar.cbls.lib.search.neighborhoods.vlsn.VLSNMoveType._
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
+case class EnrichmentParameters(injectAllCacheBeforeEnriching:Boolean,
+                                minNbEdgesToExplorePerLevel:Int,
+                                minNbAddedEdgesPerLevel:Int,
+                                nbEdgesPerBundle:Int)
+
 class BundledVLSN(v:Int,
                   initVehicleToRoutedNodesToMove:() => Map[Int,SortedSet[Int]],
                   initUnroutedNodesToInsert:() => SortedSet[Int],
@@ -47,11 +52,15 @@ class BundledVLSN(v:Int,
                   name:String = "VLSN",
 
                   reoptimizeAtStartUp:Boolean = true,
-                  debugNeighborhoodExploration:Boolean = false,
-
-                  injectAllCacheBeforeEnriching:Boolean = false,
-                 ) extends Neighborhood {
-
+                  debugNeighborhoodExploration:Boolean = false)
+                 (enrichment:Option[EnrichmentParameters] =
+                  Some(
+                    EnrichmentParameters(
+                      injectAllCacheBeforeEnriching = false,
+                      minNbEdgesToExplorePerLevel = 0,
+                      minNbAddedEdgesPerLevel = 1000,
+                      nbEdgesPerBundle= v)))
+  extends Neighborhood {
 
   def doReoptimize(vehicle:Int): Unit = {
     val reOptimizeNeighborhoodGenerator = reOptimizeVehicle match{
@@ -172,9 +181,12 @@ class BundledVLSN(v:Int,
       globalObjective,
       cachedExplorations.orNull,
       verbose = false,
-      minNbEdgesToExplorePerLevel = 0, //v * v /10,   //tuning parameters
-      minNbAddedEdgesPerLevel = 1000,            //tuning parameters
-      nbEdgesPerBundle = v                       //tuning parameters
+      enrichment = enrichment.getOrElse(
+        EnrichmentParameters(injectAllCacheBeforeEnriching = false,
+          minNbEdgesToExplorePerLevel = Int.MaxValue,
+          minNbAddedEdgesPerLevel =  Int.MaxValue,
+          nbEdgesPerBundle =  Int.MaxValue)
+      )
     )
 
     var dirtyNodes:SortedSet[Int] = SortedSet.empty
@@ -245,13 +257,16 @@ class BundledVLSN(v:Int,
     //We need this graph after completion of the loop to build the cache of not used moves.
     var nbEdgesAtPreviousIteration = moveExplorer.nbEdgesInGraph
 
-    if(injectAllCacheBeforeEnriching) {
-      moveExplorer.injectAllCache(printTakenMoves)
-      if (printTakenMoves) {
-        println("            " + " loaded " +
-          (moveExplorer.nbEdgesInGraph - nbEdgesAtPreviousIteration) + " edges from cache")
-      }
-      nbEdgesAtPreviousIteration = moveExplorer.nbEdgesInGraph
+    enrichment match{
+      case Some(x) if x.injectAllCacheBeforeEnriching =>
+        moveExplorer.injectAllCache(printTakenMoves)
+        if (printTakenMoves) {
+          println("            " + " loaded " +
+            (moveExplorer.nbEdgesInGraph - nbEdgesAtPreviousIteration) + " edges from cache")
+        }
+        nbEdgesAtPreviousIteration = moveExplorer.nbEdgesInGraph
+      case _ =>
+
     }
 
     var currentEnrichmentLevel = -1
@@ -327,10 +342,9 @@ class BundledVLSN(v:Int,
         acc.flatten,
         vehicleToRoutedNodesToMove,
         unroutedNodesToInsert,
-        cacheWasBuiltWithIncrementalEnrichment = true))
+        cacheWasBuiltWithIncrementalEnrichment = enrichment.isDefined))
     }
   }
-
 
   // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

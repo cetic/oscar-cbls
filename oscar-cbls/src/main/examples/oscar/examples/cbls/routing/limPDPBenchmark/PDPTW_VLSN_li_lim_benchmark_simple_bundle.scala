@@ -421,10 +421,8 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
         cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy,
 
         name = "VLSN",
-        reoptimizeAtStartUp = true,
-        injectAllCacheBeforeEnriching = true,
-        //        debugNeighborhoodExploration = true
-      )
+        reoptimizeAtStartUp = true
+      )()
     }
 
     // ///////////////////////////////////////////////////////////////////////////////////////////////////
