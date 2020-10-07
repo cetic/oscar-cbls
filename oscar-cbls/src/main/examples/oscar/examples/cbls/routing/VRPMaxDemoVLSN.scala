@@ -233,7 +233,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
       //debugNeighborhoodExploration = true,
       name = s"VLSN($l)"
-    )
+    )()
   }
 
   val routeUnroutedPoint =  insertPointUnroutedFirst(myVRP.unrouted,

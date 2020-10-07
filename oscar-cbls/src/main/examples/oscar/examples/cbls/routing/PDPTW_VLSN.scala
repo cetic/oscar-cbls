@@ -508,17 +508,10 @@ object PDPTW_VLSN extends App {
       objPerVehicle,
       unroutedPenaltyOBj,
       obj,
-
-      enrichmentSchemeSpec =
-//        VLSN.noEnrichment(),
-        VLSN.compositeEnrichmentSchemeSpec(
-          VLSN.sameSizeRandomPartitionsSpec(nbPartitions = 20),
-          VLSN.linearRandomSchemeSpec(maxEnrichmentLevel = 20)),
-
       name= s"VLSN($l)",
       reoptimizeAtStartUp = true,
       debugNeighborhoodExploration = false
-    )
+    )(None) //most of the time, you do not want incremental VLSN
   }
 
   // ///////////////////////////////////////////////////////////////////////////////////////////////////

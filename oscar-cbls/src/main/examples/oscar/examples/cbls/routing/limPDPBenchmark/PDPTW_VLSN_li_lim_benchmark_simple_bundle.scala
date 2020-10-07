@@ -400,7 +400,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
 
     def vlsn = {
       //VLSN neighborhood
-      new BundledVLSN(
+      new VLSN(
         v,
         () => myVRP.getVehicleToRouteMap.view.mapValues(_.filter(pickUpPointToDeliveryPoint(_) != -1)).toMap,
         initUnroutedNodesToInsert = unroutedPickups,

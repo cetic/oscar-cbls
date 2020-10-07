@@ -328,7 +328,8 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
       )
       lastDisplay = this.getWatch
     }),
-  name ="VLSN")
+    maxIt = 1,
+  name ="VLSN")(None)
 
   def closeWarehouseToNodeMap(w : Int,k : Int) = SortedMap.empty[Int,SortedSet[Int]]  ++ (0 until W).map(w => w -> SortedSet[Int]()) ++ kNearestOpenWarehouseToWarehouse(k,w).map(w1 => w1 -> deliveryServedByWarehouse(w1).value.map(_ + W))
 
@@ -359,7 +360,7 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
     globalObjective= obj,//:Objective,
     maxIt = 10,
     cycleFinderAlgoSelection= CycleFinderAlgoType.Mouthuy,//:CycleFinderAlgoType = CycleFinderAlgoType.Mouthuy,
-    name ="VLSNForAssignAndThen")
+    name ="VLSNForAssignAndThen")(None)
 
   def vlsnForSwapAndThen(m : SwapMove) = {
     new VLSN(W: Int,
@@ -384,7 +385,7 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
       unroutedPenalty = constantObjective, //:Objective,
       globalObjective = obj, //:Objective,
       cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy, //:CycleFinderAlgoType = CycleFinderAlgoType.Mouthuy,
-      name = "VLSN")
+      name = "VLSN")(None)
   }
 
   def assignDelivery(m : AssignMove) = AssignNeighborhood(deliveryToWarehouse,searchZone = () => kClosestStoresByStore(m.id),domain = (_,i) => distanceToClosestCentroid(i).map(c => c._1.valueInt))
@@ -407,7 +408,7 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
       extraCentroids = (0 until W).toArray
     )
     lastDisplay = this.getWatch
-  })
+  }) showObjectiveFunction(obj)
 
   search.verbose = 2
   search.doAllMoves(obj = obj)
