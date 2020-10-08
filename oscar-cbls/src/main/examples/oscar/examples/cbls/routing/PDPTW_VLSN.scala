@@ -511,7 +511,7 @@ object PDPTW_VLSN extends App {
       name= s"VLSN($l)",
       reoptimizeAtStartUp = true,
       debugNeighborhoodExploration = false
-    )(None) //most of the time, you do not want incremental VLSN
+    ) //most of the time, you do not want incremental VLSN
   }
 
   // ///////////////////////////////////////////////////////////////////////////////////////////////////
