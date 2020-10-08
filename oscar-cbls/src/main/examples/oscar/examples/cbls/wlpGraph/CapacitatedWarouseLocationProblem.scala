@@ -396,7 +396,8 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
 
   var lastDisplay = this.getWatch
 
-  val search = bestSlopeFirst(List(profile(AssignNeighborhood(deliveryToWarehouse,"SwitchAssignedWarehouse",domain = (_,i) => distanceToClosestCentroid(i).map(c => c._1.valueInt))),
+  val search = bestSlopeFirst(List(
+    profile(AssignNeighborhood(deliveryToWarehouse,"SwitchAssignedWarehouse",domain = (_,i) => distanceToClosestCentroid(i).map(c => c._1.valueInt))),
     profile(AssignNeighborhood(warehouseOpenArray,"OpenWarehouseAndLink") dynAndThen assignHalfTheClosestStores),
     profile(AssignNeighborhood(conditionalEdgesOpenArray,"SwitchEdge")),
     profile(vlsn),
