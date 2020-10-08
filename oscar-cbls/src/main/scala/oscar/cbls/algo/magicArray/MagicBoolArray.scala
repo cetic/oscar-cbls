@@ -108,7 +108,7 @@ class MagicBoolArray(val length:Int,initVal:Boolean = false){
    * this is a O(this.length) method
    * @return the new iterator
    */
-  def indicesAtTrue:Iterator[Int] ={
+  def indicesAtTrue:Iterator[Int] ={ //TODO: this is too slow; maybe have a maintained over-approximating list and just filter here.
     var toReturn:QList[Int]=null
     for(n <-0 until length){
       if(internalArray(n)>=global){

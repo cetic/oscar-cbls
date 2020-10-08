@@ -58,9 +58,10 @@ class ShiftedIterable(it:Iterable[Int], pivot:Int, sequence:Boolean = false) ext
            else nextValue :: fetchHead
         }else Nil
       }
-      val below = fetchHead
+      val below:List[Int] = fetchHead
       new ShiftedIterator(aboveIterator.toList, below)
     }else {
+      //TODO: maybe a lazy approach would be faster here?
       val (above, below) = it.partition(i => i > pivot)
       new ShiftedIterator(above, below)
     }

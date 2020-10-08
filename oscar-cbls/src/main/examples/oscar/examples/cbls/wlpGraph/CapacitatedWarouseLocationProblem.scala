@@ -290,9 +290,13 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
     ConstantMoveNeighborhood(moveAssignStore(m.id))
   }
 
-  def assignForInsertVLSN(w: Int,d:Int,t : String) = {
-    AssignNeighborhood(deliveryToWarehouse,s"InsertDelivery${d}_${w}_$t",searchZone = () => Array(d - W),domain = (_,_) => Array(w))
-  }
+  def assignForInsertVLSN(w: Int,d:Int,t : String) =
+    AssignNeighborhood(
+      deliveryToWarehouse,s"InsertDelivery${d}_${w}_$t",
+      searchZone = () => Some(d - W),
+      domain = (_,_) => Some(w),
+      hotRestart = false)
+
 
   println(distanceToClosestCentroidMap(W).mkString("\n"))
 
@@ -329,7 +333,7 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
       lastDisplay = this.getWatch
     }),
     maxIt = 1,
-  name ="VLSN")(None)
+  name ="VLSN")
 
   def closeWarehouseToNodeMap(w : Int,k : Int) = SortedMap.empty[Int,SortedSet[Int]]  ++ (0 until W).map(w => w -> SortedSet[Int]()) ++ kNearestOpenWarehouseToWarehouse(k,w).map(w1 => w1 -> deliveryServedByWarehouse(w1).value.map(_ + W))
 
@@ -360,7 +364,7 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
     globalObjective= obj,//:Objective,
     maxIt = 10,
     cycleFinderAlgoSelection= CycleFinderAlgoType.Mouthuy,//:CycleFinderAlgoType = CycleFinderAlgoType.Mouthuy,
-    name ="VLSNForAssignAndThen")(None)
+    name ="VLSNForAssignAndThen")
 
   def vlsnForSwapAndThen(m : SwapMove) = {
     new VLSN(W: Int,
@@ -385,7 +389,7 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
       unroutedPenalty = constantObjective, //:Objective,
       globalObjective = obj, //:Objective,
       cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy, //:CycleFinderAlgoType = CycleFinderAlgoType.Mouthuy,
-      name = "VLSN")(None)
+      name = "VLSN")
   }
 
   def assignDelivery(m : AssignMove) = AssignNeighborhood(deliveryToWarehouse,searchZone = () => kClosestStoresByStore(m.id),domain = (_,i) => distanceToClosestCentroid(i).map(c => c._1.valueInt))
