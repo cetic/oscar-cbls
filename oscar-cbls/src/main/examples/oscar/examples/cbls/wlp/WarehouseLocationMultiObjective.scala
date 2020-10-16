@@ -133,7 +133,8 @@ object WarehouseLocationMultiObjective extends App {
     visuTitle = problemName,
     obj1Name = "operationCost",
     obj2Name = "constructionCost",
-    filterSquare = {case (obj1,maxOBj1,obj2,minOBj2) => minOBj2 < obj2 - 26}
+    filterSquare = {case (obj1,maxOBj1,obj2,minOBj2) => minOBj2 < obj2 - 26},
+    stayAlive = true
   )
 
   val allSolutions = paretoSearch.paretoOptimize()
