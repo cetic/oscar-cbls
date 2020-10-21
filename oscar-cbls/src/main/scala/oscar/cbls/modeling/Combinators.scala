@@ -660,7 +660,7 @@ class NeighborhoodOps(n:Neighborhood){
   /**
    * this combinator overrides accepts all moves (this is the withAcceptanceCriteria, given the fully acceptant criterion
    */
-  def acceptAllButStrongViolation() = new WithAcceptanceCriterion(n, (_: Long, n: Long) => n!=Long.MaxValue)
+  def acceptAllButStrongViolation = new WithAcceptanceCriterion(n, (_: Long, n: Long) => n!=Long.MaxValue)
 
 
   /**

@@ -76,7 +76,8 @@ object ParetoOrder extends Enumeration {
 }
 
 import oscar.cbls.algo.pareto.ParetoOrder._
-import oscar.util.RandomGenerator
+
+import scala.util.Random
 
 
 /**
@@ -87,8 +88,7 @@ import oscar.util.RandomGenerator
  * @tparam T
  */
 abstract class ParetoMap[T](nbDimensions:Int)
-  extends Iterable[(Array[Long],T)]
-    with Traversable[(Array[Long],T)] {
+  extends Iterable[(Array[Long],T)] {
 
   /**
    *
@@ -161,7 +161,7 @@ abstract class ParetoMap[T](nbDimensions:Int)
     val qtNodeList = this.toList
     if(qtNodeList.isEmpty)None
     else{
-      val randIndex = RandomGenerator.nextInt(qtNodeList.length)
+      val randIndex = Random.nextInt(qtNodeList.length)
       Some(qtNodeList(randIndex))
     }
   }
