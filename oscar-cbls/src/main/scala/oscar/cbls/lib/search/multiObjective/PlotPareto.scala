@@ -27,13 +27,13 @@ class PlotPareto(
           case None => ;
           case Some(old) =>
             for (p <- old) {
-              addPoint(p._1, p._2, 1)
+              addPoint(p._1.toDouble, p._2.toDouble, 1)
             }
         }
 
         removeAllPoints(0)
         for (p <- paretoPoints) {
-          addPoint(p._1, p._2, 0)
+          addPoint(p._1.toDouble, p._2.toDouble, 0)
         }
       }
     })

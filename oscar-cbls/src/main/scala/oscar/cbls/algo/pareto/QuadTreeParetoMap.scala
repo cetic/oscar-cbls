@@ -43,7 +43,7 @@ class QuadTreeParetoMap[T](nbDimensions:Int)
       successors.flatten.toSet
     }
 
-    def detach() { // Cannot be applied on root
+    def detach() : Unit = { // Cannot be applied on root
       val f = father.get
       f.successors(kSucc) = None
       father = None
@@ -109,13 +109,13 @@ class QuadTreeParetoMap[T](nbDimensions:Int)
   }
 
   /** Insert the candidate node without checking for dominance */
-  private def insertNoCheck(cand: QuadTreeNode) {
+  private def insertNoCheck(cand: QuadTreeNode) : Unit = {
     if (root.isDefined) insert0NoCheck(cand, root.get)
     else root = Some(cand)
   }
 
   @scala.annotation.tailrec
-  private def insert0NoCheck(cand: QuadTreeNode, root: QuadTreeNode) {
+  private def insert0NoCheck(cand: QuadTreeNode, root: QuadTreeNode) : Unit = {
     val kSucc = root.successorship(cand.key)
     // Recursive traversal
     if (root.successors(kSucc).isDefined) {
@@ -146,7 +146,7 @@ class QuadTreeParetoMap[T](nbDimensions:Int)
 
   /** Replace the root */
 
-  private def replace(cand: QuadTreeNode, root: QuadTreeNode) {
+  private def replace(cand: QuadTreeNode, root: QuadTreeNode)  : Unit = {
     // Transplant
     if (root == this.root.get) {
       this.root = Some(cand)
@@ -164,7 +164,7 @@ class QuadTreeParetoMap[T](nbDimensions:Int)
 
   /** Reinsert without dominance check all the subtree rooted at root in inNode */
 
-  private def reinsertIn(root: QuadTreeNode, inNode: QuadTreeNode) {
+  private def reinsertIn(root: QuadTreeNode, inNode: QuadTreeNode)  : Unit = {
     root.detach()
     for (son <- NonDomSuccessors if root.successors(son).isDefined) {
       reinsertIn(root.successors(son).get, inNode)
@@ -174,7 +174,7 @@ class QuadTreeParetoMap[T](nbDimensions:Int)
 
   /** Remove nodes that are dominated by the candidate node */
 
-  private def clean(cand: QuadTreeNode, root: QuadTreeNode) {
+  private def clean(cand: QuadTreeNode, root: QuadTreeNode) : Unit = {
     val kSucc = root.successorship(cand.key)
     // Is the root dominated by the candidate node ?
     if (kSucc == bestSuccessor) {
@@ -243,7 +243,7 @@ class QuadTreeParetoMap[T](nbDimensions:Int)
 
   override def content: List[(Array[Long], T)] = {
     var acc:List[(Array[Long],T)] = Nil
-    def search(root: QuadTreeNode) {
+    def search(root: QuadTreeNode) : Unit = {
       acc = root.toCouple :: acc
       for (son <- NonDomSuccessors if root.successors(son).isDefined) {
         search(root.successors(son).get)
@@ -254,7 +254,7 @@ class QuadTreeParetoMap[T](nbDimensions:Int)
   }
 
   override def foreach[U](f: ((Array[Long], T)) => U): Unit = {
-    def forEach0(root: QuadTreeNode) {
+    def forEach0(root: QuadTreeNode) : Unit = {
       f(root.key,root.value)
       for (son <- NonDomSuccessors if root.successors(son).isDefined) {
         forEach0(root.successors(son).get)
