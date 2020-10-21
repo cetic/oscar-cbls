@@ -16,8 +16,8 @@ import scala.collection.immutable.HashSet
   * Created by fg on 12/05/17.
   */
 
-object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
-  val m = new Store(noCycle = false, checker = Some(new ErrorChecker))
+object SimpleVRPWithTimeWindowsAndVehicleContent extends App {
+  val m = Store(noCycle = false, checker = Some(new ErrorChecker))
   val v = 10
   val n = 100
   val penaltyForUnrouted = 10000
@@ -38,7 +38,7 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
   val gc = GlobalConstraintCore(myVRP.routes, v)
 
   // Distance
-  val routeLengthPerVehicles = Array.tabulate(v)(vehicle => CBLSIntVar(m,name = "Length of route " + vehicle))
+  val routeLengthPerVehicles = Array.tabulate(v)(vehicle => CBLSIntVar(m,name = s"Length of route $vehicle"))
   val routeLengthInvariant = new RouteLength(gc,n,v,routeLengthPerVehicles,(from: Int, to: Int) => symmetricDistance(from)(to))
 
   //Chains
@@ -52,7 +52,7 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
   val chainsExtension = chains(myVRP,listOfChains)
 
   // Vehicle content
-  val violationOfContentAtVehicle = Array.tabulate(v)(vehicle => new CBLSIntVar(myVRP.routes.model, 0, 0 to Int.MaxValue, "violation of capacity of vehicle " + vehicle))
+  val violationOfContentAtVehicle = Array.tabulate(v)(vehicle => new CBLSIntVar(myVRP.routes.model, 0, 0 to Int.MaxValue, s"violation of capacity of vehicle $vehicle"))
   val capacityInvariant = GlobalVehicleCapacityConstraintWithLogReduction(gc, n, v, vehiclesSize, contentsFlow, violationOfContentAtVehicle)
 
   //TimeWindow

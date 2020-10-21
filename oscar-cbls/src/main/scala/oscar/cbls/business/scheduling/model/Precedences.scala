@@ -18,8 +18,8 @@ class Precedences(beforeAfterPairs: List [(ActivityId, ActivityId)]) {
   for {(actA, actB) <- beforeAfterPairs} {
     val predB = predMap.getOrElse(actB, BitSet.empty)
     val succA = succMap.getOrElse(actA, BitSet.empty)
-    predMap += (actB -> (predB + actA))
-    succMap += (actA -> (succA + actB))
+    predMap += (actB -> (predB union Set(actA)))
+    succMap += (actA -> (succA union Set(actB)))
   }
 
   /**

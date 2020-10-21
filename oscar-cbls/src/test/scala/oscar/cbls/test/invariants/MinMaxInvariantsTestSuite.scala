@@ -11,7 +11,7 @@ class MinMaxInvariantsTestSuite extends AnyFunSuite with Checkers{
 
   def randomArray(size:Int,values:Range):Array[Int] = {
     def randomValue(r:Range):Int = {
-      r.start + (r.length * scala.math.random).toInt
+      r.start + (r.length * math.random()).toInt
     }
     Array.tabulate(size)(_ => randomValue(values))
   }

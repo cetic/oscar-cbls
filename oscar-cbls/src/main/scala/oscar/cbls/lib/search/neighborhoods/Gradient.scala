@@ -61,9 +61,9 @@ case class GradientComponent(variable:CBLSIntVar,
  * The directions that can be explored by the gradient descent are therefore discrete.
  *
  * The huge downside is that it creates a combinatorial combination;
- * if there are n dimensions, 3^n neighbors wil be probed
+ * if there are n dimensions, 3^^n neighbors wil be probed
  * to mitigate this; some mechanisms are provided
- * such as the min and max number of variables to change in the probed neigbors.
+ * such as the min and max number of variables to change in the probed neighbors.
  *
  * @param vars
  * @param name
@@ -116,7 +116,7 @@ case class DiscretizedDirectionGradient(vars:Array[CBLSIntVar],
         notifyFound()
       }
 
-      iterator.next
+      iterator.next()
       iterator.hasNext
     }
 
@@ -192,11 +192,10 @@ case class DiscretizedDirectionGradient(vars:Array[CBLSIntVar],
 
       if(exploreVars(
         varsToTest =
-          (if(hotRestartOnVariableSelection)
+          if(hotRestartOnVariableSelection)
             HotRestart(selectVars.toList,firstIndiceInPreviousCall).toList
           else
-            selectVars.toList.map(v => v)
-            ),
+            selectVars.toList.map(v => v),
         nbVar,
         currentGradient = Nil)) {
 
@@ -253,7 +252,7 @@ case class GradientDescent(vars:Array[CBLSIntVar],
     val selectVarsIt = selectVarsWithHotRestart.iterator
 
     while (selectedVarSet.size < maxNbVars && selectVarsIt.hasNext) {
-      val currentVarIndice = selectVarsIt.next
+      val currentVarIndice = selectVarsIt.next()
       startIndiceForHotRestart = currentVarIndice
 
       if (!(selectedVarSet contains currentVarIndice)) {
@@ -296,7 +295,7 @@ case class GradientDescent(vars:Array[CBLSIntVar],
     }
 
     if(selectVarsIt.hasNext){
-      startIndiceForHotRestart = selectVarsIt.next
+      startIndiceForHotRestart = selectVarsIt.next()
     }else{
       startIndiceForHotRestart = startIndiceForHotRestart + 1
     }

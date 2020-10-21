@@ -41,7 +41,7 @@ abstract class AbstractVehicleCapacity(n:Int,
     require(zoneStart >=0)
     require(zoneEnd >=0)
     require(zoneStart <= zoneEnd, s"smartPrepend($zoneStart,$zoneEnd,$list)")
-    assert(list.sortWith((lft : (Int, Int), rgt : (Int, Int)) => lft._1 < rgt._1 && lft._2 < rgt._2).equals(list), list + " " + list.sortWith((lft : (Int, Int), rgt : (Int, Int)) => lft._1 < rgt._1 && lft._2 < rgt._2))
+    assert(list.sortWith((lft : (Int, Int), rgt : (Int, Int)) => lft._1 < rgt._1 && lft._2 < rgt._2).equals(list), s"$list ${list.sortWith((lft : (Int, Int), rgt : (Int, Int)) => lft._1 < rgt._1 && lft._2 < rgt._2)}")
     list match {
       case Nil => List((zoneStart, zoneEnd))
       case (oldStart, oldEnd) :: tail =>
@@ -643,7 +643,7 @@ abstract class AbstractVehicleCapacity(n:Int,
   def computeAndAffectContentAndVehicleStartPositionsFromScratch(s:IntSequence,unrouteAllNodes:Boolean):ConcreteVehicleLocation = {
     val vehicleLocation = Array.fill(v)(0)
 
-    if(unrouteAllNodes) setNodesUnrouted((v until n))
+    if(unrouteAllNodes) setNodesUnrouted(v until n)
 
     var previousPosition = s.explorerAtPosition(0).get
     var currentVehicle = 0

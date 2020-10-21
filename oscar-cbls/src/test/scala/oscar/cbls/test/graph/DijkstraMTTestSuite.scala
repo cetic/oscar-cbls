@@ -31,8 +31,8 @@ class DijkstraMTTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyCheck
 
     val gen = for {
       nbTargets <- Gen.chooseNum(1,10)
-      node <- Gen.oneOf(graph.nodes)
-      targets <- Gen.listOfN(nbTargets,Gen.oneOf(graph.nodes.filter(_ != node)))
+      node <- Gen.oneOf(graph.nodes.toIndexedSeq)
+      targets <- Gen.listOfN(nbTargets,Gen.oneOf(graph.nodes.toIndexedSeq.filter(_ != node)))
     } yield (node,targets)
 
     val iterations = PosInt.from(Math.pow(graph.nodes.length,2).toInt).get
@@ -78,8 +78,8 @@ class DijkstraMTTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyCheck
 
     val gen = for{
       nbTargets <- Gen.chooseNum(1,10)
-      node <- Gen.oneOf(graph.nodes)
-      targets <- Gen.listOfN(nbTargets,Gen.oneOf(graph.nodes.filter(_ != node)))
+      node <- Gen.oneOf(graph.nodes.toIndexedSeq)
+      targets <- Gen.listOfN(nbTargets,Gen.oneOf(graph.nodes.toIndexedSeq.filter(_ != node)))
     } yield(node,targets)
 
     val iterations = PosInt.from(Math.pow(graph.nodes.length,2).toInt).get

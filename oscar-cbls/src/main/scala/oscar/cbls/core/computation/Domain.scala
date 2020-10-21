@@ -92,8 +92,7 @@ case class DomainRange(override val min: Long, override val max: Long) extends D
   def contains(v:Long): Boolean = min <= v && max >= v
 
   override def size: Long =
-    if(min < 0 && min + Long.MaxValue <= max) Long.MaxValue
-    else if(max==Long.MaxValue && min==Long.MinValue) Long.MaxValue
+    if (min <= 0 && min + Long.MaxValue <= max) Long.MaxValue
     else math.max(max-min+1L,0L)
 
   override def values: Iterable[Long] = min to max
@@ -115,12 +114,12 @@ case class DomainRange(override val min: Long, override val max: Long) extends D
   }
 
   override def union(d: Domain): Domain = {
-    val newDomain:Domain = d match{
+    val newDomain:Domain = d match {
       case r:DomainRange =>
         ( math.min(r.min,min) , math.max(r.max,max))
       case FullRange => FullRange
       case SingleValueDomain(v) =>
-        if(v < min) (v , max)
+        if (v < min) (v , max)
         else if (max < v) (min , v)
         else this
       case FullIntRange => FullIntRange

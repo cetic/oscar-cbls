@@ -12,7 +12,7 @@ object TransferFunction{
    */
   def createFromEarliestArrivalTime(node: Int, earliestArrivalTime: Long, taskDuration: Long = 0L): TransferFunction ={
     val latestArrivalTime = Long.MaxValue - taskDuration
-    val earliestLeavingTime = earliestArrivalTime+taskDuration
+    val earliestLeavingTime = earliestArrivalTime + taskDuration
     DefinedTransferFunction(earliestArrivalTime, latestArrivalTime, earliestLeavingTime, node, node)
   }
 

@@ -19,7 +19,7 @@ import oscar.cbls.{CBLSIntVar, Objective, Store, atomic}
   * in such a way that there is no overlap between these shapes.
   * it proceeds through local search (although a more symbolic insertion-based technique would be more efficient
   */
-object TestGeometryPacking extends App{
+object TestGeometryPacking extends App {
 
   val store = Store()
 
@@ -41,16 +41,16 @@ object TestGeometryPacking extends App{
 
   //declaring the decision variables; the XY of the center of the shapes
   val coordArray = Array.tabulate(nbShapes){ i =>
-    (new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxX - radiusArray(i),"shape_" + i + ".x"),
-      new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxY - radiusArray(i),"shape_" + i + ".y"))
+    (new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxX - radiusArray(i), s"shape_$i.x"),
+      new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxY - radiusArray(i), s"shape_$i.y"))
   }
 
   //creating a set of constant shapes with center at 0,0
   val constantShapesAt00 = Array.tabulate(nbShapes){ i =>
-    new CBLSGeometryConst(store,
+    CBLSGeometryConst(store,
       if(i%2 ==0) geometry.createRectangle(radiusArray(i)*2,radiusArray(i)*2)
       else geometry.createCircle(radiusArray(i),nbEdges = 30),
-      "shape_" + i + (if (i%2 ==0) "rectangle" + radiusArray(i)*2 else "circle" + radiusArray(i)))
+      s"shape_$i" + (if (i%2 ==0) "rectangle" + radiusArray(i)*2 else "circle" + radiusArray(i)))
   }
 
   for(shape <- constantShapesAt00){
@@ -100,14 +100,14 @@ object TestGeometryPacking extends App{
   val drawing = GeometryDrawing(List.empty, GeometryDrawingTypes.Simple)
 
   //this method is for updating the display, throughout the search, or after the search
-  def updateDisplay() {
-    val colorsIt = randomColors.toIterator
+  def updateDisplay(): Unit = {
+    val colorsIt = randomColors.iterator
     drawing.drawShapes(shapes =
       (outerFrame,Some(Color.red),None,"")::
         Array.tabulate(nbShapes)(circleID => (
           placedShapes(circleID).value.geometry,
           None,
-          Some(colorsIt.next),
+          Some(colorsIt.next()),
           overlapPenetrationPerShape(circleID).toString)).toList.reverse,
       centers = coordArray.toList.map(xy => (xy._1.value,xy._2.value)))
   }
@@ -218,14 +218,14 @@ object TestGeometryPacking extends App{
 
 
   def moveToHoleAndGradient =
-    moveToHole dynAndThen(moveShapeToMove => new Atomic(
+    moveToHole dynAndThen(moveShapeToMove => Atomic(
       gradientOnOneShape(moveShapeToMove.shapeID),
       _>10,
       stopAsSoonAsAcceptableMoves=true)) name "toHole&Gradient"
 
-  def gradientOnOneShape(shapeID:Int) = new GradientDescent(
+  def gradientOnOneShape(shapeID:Int) = GradientDescent(
     vars = Array(coordArray(shapeID)._1,coordArray(shapeID)._2),
-    name= "GradientMove(" + shapeID + ")",
+    name= s"GradientMove($shapeID)",
     maxNbVars = 2,
     selectVars = List(0,1),
     variableIndiceToDeltaForGradientDefinition = _ => 20,
@@ -237,7 +237,7 @@ object TestGeometryPacking extends App{
 
   def swapAndGradient = swapX dynAndThen(swapMove => (
     swapYSlave(swapMove.idI,swapMove.idJ)
-      andThen new Atomic(gradientOnOneShape(swapMove.idI),
+      andThen Atomic(gradientOnOneShape(swapMove.idI),
       _>1,
       stopAsSoonAsAcceptableMoves=true))) name "swap&Gradient"
 
@@ -246,7 +246,7 @@ object TestGeometryPacking extends App{
 
   val search = (Profile(BestSlopeFirst(
     List(
-      atomic(gradientOnOneShape(0), _ > 10) name "gradient0",  //TODO: try gradient on multiple shapes at the same time.
+      Atomic(gradientOnOneShape(0), _ > 10) name "gradient0",  //TODO: try gradient on multiple shapes at the same time.
       Atomic(gradientOnOneShape(1), _ > 10) name "gradient1",
       Atomic(gradientOnOneShape(2), _ > 10) name "gradient2",
       Atomic(gradientOnOneShape(3), _ > 10) name "gradient3",
@@ -264,12 +264,12 @@ object TestGeometryPacking extends App{
       swapAndGradient,
       moveOneShapeYAndThenX).map(Profile(_)),
     refresh=nbShapes*10))
-    onExhaustRestartAfter(
+    .onExhaustRestartAfter(
     RandomizeNeighborhood(flattenedCoordArray, () => flattenedCoordArray.length/5, name = "smallRandomize"),
     maxRestartWithoutImprovement = 1,
     restartFromBest = true,
     obj=obj)
-    onExhaustRestartAfter (
+    .onExhaustRestartAfter (
     RandomizeNeighborhood(flattenedCoordArray, () => flattenedCoordArray.length, name = "fullRandomize"),
     maxRestartWithoutImprovement = 50,
     restartFromBest = true,
@@ -287,7 +287,7 @@ object TestGeometryPacking extends App{
   updateDisplay() //after finish
 
   println(search.profilingStatistics)
-  println
+  println()
   println(overlapPenetrationPerShape.mkString("\n"))
   println(overlapPenetrationConstraint.output)
 }

@@ -115,6 +115,7 @@ object RoutingConventionMethods {
   }
 }
 
+@deprecated("never provided any speedup","")
 class CachedPositionOf(maxValue:Int){
 
   private var tokenOfCurrentCheckpoint:Token = _

@@ -34,11 +34,11 @@ object NQueens extends CBLSModel with App with StopWatch{
   startWatch()
   val N = 1000
 
-  println("NQueensEasy(" + N + ")")
+  println(s"NQueensEasy($N)")
   val range:Range = Range(0,N)
 
   val init = Random.shuffle(range.toList).iterator
-  val queens = Array.tabulate(N)((q:Int) => CBLSIntVar(init.next(), 0 until N, "queen" + q))
+  val queens = Array.tabulate(N)((q:Int) => CBLSIntVar(init.next(), 0 until N, s"queen$q"))
 
   //c.post(AllDiff(Queens)) //enforced because we swap queens and they are always allDiff
   post(allDiff( for (q <- range) yield queens(q) + q) )
@@ -48,7 +48,7 @@ object NQueens extends CBLSModel with App with StopWatch{
 
   close()
 
-  println("close: " + this.getWatch + " [ms]")
+  println(s"close: ${this.getWatch} [ms]")
   val neighborhood =
     swapsNeighborhood(queens, "SwapQueens",
       searchZone2 = () => {val v = maxViolQueens.value; (_,_) => v}, //much faster than using searchZone1, since hotRestart is on Zone1, and not on zone2, and would be log(n)
@@ -56,9 +56,9 @@ object NQueens extends CBLSModel with App with StopWatch{
 
   val it = neighborhood.doAllMoves(_ >= N || c.violation.value == 0, c)
 
-  println("total: " + this.getWatch + " [ms]")
+  println(s"total: ${this.getWatch} [ms]")
 
-  println("it: " + it)
+  println(s"it: $it")
   println(c.violation)
   println(queens.mkString(","))
 

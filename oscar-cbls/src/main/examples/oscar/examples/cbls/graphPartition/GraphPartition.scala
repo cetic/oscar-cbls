@@ -1,4 +1,4 @@
-package oscar.examples.cbls.graphPatrition
+package oscar.examples.cbls.graphPartition
 
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.invariant.logic.DenseCount
@@ -15,7 +15,7 @@ object GraphPartition extends CBLSModel with App {
 
   require(nbNodes % 2 == 0, "nbNodes must be even")
 
-  println("nbNodes:" + nbNodes + " nbEdges:" + nbEdges)
+  println(s"nbNodes:$nbNodes nbEdges:$nbEdges")
 
   def generateRandomEdges(nbNodes:Int,nbEdges:Int):(List[(Int,Int)],Array[List[Int]]) = {
     val adjacencyLists:Array[List[Int]] = Array.fill(nbNodes)(List.empty)
@@ -124,8 +124,8 @@ object GraphPartition extends CBLSModel with App {
         //  searchZone2 = (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).value != itsPartition),
         //  name = "swapAdjacent"))
       ),refresh = nbNodes/10)
-      onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/100, name = "randomize" + nbNodes/100), 3, obj)
-    showObjectiveFunction(obj))
+      .onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/100, name = s"randomize${nbNodes/100}"), 3, obj)
+    showObjectiveFunction obj)
   //exhaust profile(swapsNeighborhood(nodeToPartition, //this one is the most complete of swaps, but highly inefficient compared tpo the others,and I think that it does not bring in more connexity than others (althrough I am not so suer...)
   //  symmetryCanBeBrokenOnIndices = true,
   //  searchZone2 = () => {val v = violatedNodes.value; (_,_) => v}, //we should filter on nodes with a violation higher than the gain on swapping the violation of the first node
@@ -136,8 +136,7 @@ object GraphPartition extends CBLSModel with App {
 
   println(neighborhood.profilingStatistics)
 
-  println("violation on sameSize(partitions): " + sameSizeConstraint.violation.value)
-  println("global violation: " + obj.value + "/" + nbEdges)
+  println(s"violation on sameSize(partitions): ${sameSizeConstraint.violation.value}")
+  println(s"global violation: ${obj.value}/$nbEdges")
 
 }
-

@@ -1,5 +1,3 @@
-package oscar.examples.cbls.wlp
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,12 +12,13 @@ package oscar.examples.cbls.wlp
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.examples.cbls.wlp
 
 import oscar.cbls._
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.minmax.MinConstArrayLazy
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, FastestFirst, LearningRandom}
+import oscar.cbls.lib.search.combinators.{BestSlopeFirst, FastestFirst}
 import oscar.cbls.lib.search.neighborhoods.{AssignMove, AssignNeighborhood, RandomizeNeighborhood, SwapsNeighborhood}
 import oscar.cbls.util.Benchmark
 
@@ -39,11 +38,11 @@ object WarehouseLocationComparativeBench extends App{
 
   val m = Store()
 
-  val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + l + "_open"))
+  val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, s"warehouse_${l}_open"))
   val openWarehouses = Filter(warehouseOpenArray).setName("openWarehouses")
 
   val distanceToNearestOpenWarehouse = Array.tabulate(D)(d =>
-    MinConstArrayLazy(distanceCost(d).map(_.toInt), openWarehouses, defaultCostForNoOpenWarehouse).setName("distance_for_delivery_" + d))
+    MinConstArrayLazy(distanceCost(d).map(_.toInt), openWarehouses, defaultCostForNoOpenWarehouse).setName(s"distance_for_delivery_$d"))
 
   val obj = Objective(Sum(distanceToNearestOpenWarehouse) + Sum(costForOpeningWarehouse, openWarehouses))
 
@@ -77,7 +76,7 @@ object WarehouseLocationComparativeBench extends App{
     orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
 
   val neighborhood5 = ()=>("simulatedAnnealing",AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
-    metropolis() maxMoves W/2 withoutImprovementOver obj saveBest obj restoreBestOnExhaust)
+    .metropolis() maxMoves W/2 withoutImprovementOver obj saveBest obj restoreBestOnExhaust)
 
   val neighborhood6 = ()=>("roundRobin",AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
     roundRobin SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") step 1
@@ -88,26 +87,25 @@ object WarehouseLocationComparativeBench extends App{
     orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
 
   val neighborhood8 = ()=>("DynAndThen",
-    (AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse1") dynAndThen
-      {case AssignMove(variable,value,id,_,_) => AssignNeighborhood(warehouseOpenArray, searchZone = (()=> (id+1 until W)),name="SwitchWarehouse2")}
-    orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust))
+    AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse1") dynAndThen
+      {case AssignMove(variable,value,id,_,_) => AssignNeighborhood(warehouseOpenArray, searchZone = () => id+1 until W, name="SwitchWarehouse2")}
+    orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
 
   val neighborhood9 = ()=>("AndThen",
-    (AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse1") andThen AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse2")
-      orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust))
+    AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse1") andThen AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse2")
+      orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
 
   val neighborhood10 = ()=>("BestSlope",
-    (new BestSlopeFirst(List(
+    BestSlopeFirst(List(
       AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
         SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),10,9)
-      orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust))
+      orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
 
   val neighborhood11 = ()=>("Fastest",
-    (new FastestFirst(List(
+    FastestFirst(List(
       AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
       SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),10,9)
-      orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust))
-
+      orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
 
   val neighborhoods = List(neighborhood1,neighborhood2,neighborhood4,neighborhood7,neighborhood10,neighborhood11)
 

@@ -75,7 +75,7 @@ class DAGTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
     nodes(5).setAsPrecedingNodeKnownNotYetPreceding(nodes(6))
     nodes(6).setAsPrecedingNodeKnownNotYetPreceding(nodes(3))
 
-    dag.getCycle() should contain allOf (nodes(3),nodes(4),nodes(5),nodes(6))
+    dag.getCycle() should contain.allOf(nodes(3),nodes(4),nodes(5),nodes(6))
   }
 
   test("CheckSort does not throw with acyclic graph"){

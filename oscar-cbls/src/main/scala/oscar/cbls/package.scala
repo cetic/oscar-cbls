@@ -241,7 +241,7 @@ package object cbls extends ModelingAPI{
   // implicit conversion of Range towards a RangeHotRestart, to use the StartBy keyword
   implicit def instrumentRange(r: NumericRange[Int]): InstrumentedRange = new InstrumentedRange(r)
 
-  //this one has been added followingthe 32 to 64 bits port of oscar.cbls
+  //this one has been added following the 32 to 64 bits port of oscar.cbls
   /*  implicit def longToInt(value:Long):Int = {
       val i = value.toInt
       if (i != value) throw new ArithmeticException("integer overflow:" + value)
@@ -263,10 +263,10 @@ package object cbls extends ModelingAPI{
    */
   @inline final def warning(requirement: Boolean, message: => Any): Unit = {
     if (!requirement)
-      println(Console.RED + "WARNING: " + message + Console.RESET)
+      println(s"${Console.RED}WARNING: $message${Console.RESET}")
   }
 
   @inline final def warning(message: => Any): Unit = {
-    println(Console.RED + "WARNING: " + message + Console.RESET)
+    println(s"${Console.RED}WARNING: $message${Console.RESET}")
   }
 }

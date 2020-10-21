@@ -33,41 +33,14 @@ class SparseArrayElementTest extends AnyFunSuite {
 
     val m = new Store()
 
-    val indexAndValues : Array[(IntValue,IntValue)] = Array.tabulate(inSize)(i => (CBLSIntVar(m,0,Domain(-1,outSize),"In Index " + i),CBLSIntVar(m,0,Domain(0,maxValue),"In Value " + i)))
+    val indexAndValues : Array[(IntValue,IntValue)] = Array.tabulate(inSize)(i => (CBLSIntVar(m,0,Domain(-1,outSize),s"In Index $i"),CBLSIntVar(m,0,Domain(0,maxValue),s"In Value $i")))
 
     val index = CBLSIntVar(m,0,Domain(0,outSize),"Index")
 
     assert(SparseArrayIntElement(indexAndValues,index,m).isInstanceOf[SparseArrayIntElement])
   }
 
-
-  test ("SparseArrayIntElement factory detects potentially negative index") {
-    val m = new Store()
-
-    val indexAndValues : Array[(IntValue,IntValue)] = Array.tabulate(inSize)(i => (CBLSIntVar(m,0,Domain(-2,outSize),"In Index " + i),CBLSIntVar(m,0,Domain(0,maxValue),"In Value " + i)))
-
-    val index = CBLSIntVar(m,0,Domain(0,outSize))
-
-    assertThrows[IllegalArgumentException] {
-      SparseArrayIntElement(indexAndValues,index,m)
-    }
-
-  }
-
-  test ("SparseArrayIntElement factory detects multiple different index") {
-    val m = new Store()
-
-    val indexAndValues : Array[(IntValue,IntValue)] = Array.tabulate(inSize)(i => (CBLSIntVar(m,0,Domain(0,outSize - i),"In Index " + i),CBLSIntVar(m,0,Domain(0,maxValue),"In Value " + i)))
-
-    val index = CBLSIntVar(m,0,Domain(0,outSize))
-
-    assertThrows[IllegalArgumentException] {
-      SparseArrayIntElement(indexAndValues,index,m)
-    }
-
-  }
-
-  test("SparseArrayIntElement initilisation is correct") {
+  test("SparseArrayIntElement initialisation is correct") {
     val nbTest = 1000
 
     def indexValue = scala.util.Random.nextInt(outSize + 1) - 1

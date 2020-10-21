@@ -18,10 +18,11 @@ class RemoveActivity(schedule: Schedule,
     * as explained in the documentation of this class
     */
   override def exploreNeighborhood(initialObj: Long): Unit = {
+    val priorityListValue = schedule.activityPriorityList.value
     // Iteration zone on indices to remove (optional activities)
     // Checking the Hot Restart
     val iterationZone1: () => Iterable[Int] = searchIndices.getOrElse(() =>
-      0 until schedule.activityPriorityList.value.size
+      0 until priorityListValue.size
     )
     val hotRestart = true
     val iterationZone: Iterable[Int] =

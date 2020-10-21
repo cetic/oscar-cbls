@@ -65,7 +65,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
 
     val nodeID = node.nodeID
     if(isNodeOnPath(nodeID)){
-      return new PartialCycleFound(List.empty,node)
+      return PartialCycleFound(List.empty,node)
     }
     isNodeOnPath(nodeID) = true
 
@@ -110,12 +110,9 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
     isLabelOnPath.all = false
     isNodeOnPath.all = false
 
-    require(isLabelOnPath.indicesAtTrue.isEmpty)
-    require(isNodeOnPath.indicesAtTrue.isEmpty)
-
     markPathTo(node:Node,false) match{
       case f:CycleFound =>
-        return f
+        f
       case MarkingDone(duplicateLabels) if !duplicateLabels =>
         var outgoingEdges = node.outgoing
         while(outgoingEdges.nonEmpty){
@@ -131,7 +128,6 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
             return extractCycle(toNode)
           }
 
-          //TODO: not sure about the condition...
           if(!isLabelOnPath(toNode.label)) {
             val oldDistance = distanceToNode(toNodeID)
             val newDistance = distanceToNode(nodeID) + currentEdge.deltaObj
@@ -144,9 +140,9 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
         }
 
         MarkingDone(true)
-      case x => {
+      case x =>
         MarkingDone(true)
-      }
+
     }
   }
 

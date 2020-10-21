@@ -278,7 +278,7 @@ class SeqUpdateRemove(val position:Int,prev:SeqUpdate,seq:IntSequence)
   }
 
   override def newPos2OldPos(newPos : Int) : Option[Int] = {
-    if(newPos <= position) Some(newPos)
+    if(newPos < position) Some(newPos)
     else Some(newPos +1)
   }
 

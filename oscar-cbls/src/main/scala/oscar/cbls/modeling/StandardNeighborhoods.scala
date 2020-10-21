@@ -1,5 +1,3 @@
-package oscar.cbls.modeling
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,6 +12,7 @@ package oscar.cbls.modeling
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.modeling
 
 import oscar.cbls._
 import oscar.cbls.core.computation.CBLSIntVar
@@ -194,8 +193,6 @@ trait StandardNeighborhoods {
                         best:Boolean = false,
                         hotRestart:Boolean = true) =
     ShiftNeighborhood(vars, name, searchZone1, maxShiftSize, maxOffsetLength, best, hotRestart)
-
-
 
   /**
    * This neighborhood will consider roll moves that roll the value of contiguous CBLSIntVar in the given array

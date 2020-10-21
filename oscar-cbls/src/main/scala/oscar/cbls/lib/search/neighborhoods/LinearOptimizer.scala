@@ -432,14 +432,14 @@ object TestRN extends App{
 
   def f1:Long => Long = x => {x*x - 150L*x + 5090L}
   def f2:Long => Long = x => {-150L*x + 5090L}
-  def f3:Long => Long = x => {(math.cos(x)*500L).toLong - 150L*x + 5090L}
+  def f3:Long => Long = x => {(math.cos(x.toDouble)*500L).toLong - 150L*x + 5090L}
 
   val f = f1
   val maxIt = 100L
 
   def eval(l:LinearOptimizer): Unit ={
     val aa = l.search(0L, f(0L), -1000L, 15000L, f)
-    println(l + " " + aa)
+    println(s"$l $aa")
   }
 
   //slide should be avoided at all cost; cfr the stop criterion on numerical methods that stop earlier.

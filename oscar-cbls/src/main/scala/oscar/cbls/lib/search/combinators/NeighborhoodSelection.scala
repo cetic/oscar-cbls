@@ -5,44 +5,9 @@ import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search._
 
 import scala.annotation.tailrec
+import scala.util.Random
 
-/**
-  * At each invocation, this combinator explores one of the neighborhoods in l (and repeat if it is exhausted)
-  * neighborhoods are selected based on their slope. the slope is the total gain in objective function performed by the neighborhood, divided by the total amount of time spend exploring the neighborhood.
-  * a tabu is added: in case a neighborhood is exhausted, it is not explored for a number of exploration of this combinator
-  * the tabu can be overriden if all neighborhoods explored are exhausted. tabu neighborhood can be explored anyway if they are still tabu, but for less than overrideTabuOnFullExhaust invocations of this combinator
-  * the refresh parameter forces the combinator to try all neighborhoods every "refresh" invocation. it is useful because some neighorhood can perform poorly at the beginning of search and much better later on, and we do not want the combinator to just "stick to its first impression"
-  * @param l the neighborhoods to select from
-  * @param tabuLength the number of invocation that they will not be explored when exhausted
-  * @param overrideTabuOnFullExhaust the tabu can be overriden if all explored neighbors are exhausted, for each neighborhood that is tabu for les than this override
-  * @param refresh a refresh of the slopee measuring must be perfored every refresh iterations
-  */
-case class BestSlopeFirst(l:List[Neighborhood],
-                          tabuLength:Int = 10,
-                          overrideTabuOnFullExhaust:Long = 9,
-                          refresh:Int = 100)
-  extends BestNeighborhoodFirst(l, tabuLength, overrideTabuOnFullExhaust, refresh){
-  override protected def bestKey(p:Profile):Long = -p.slopeForCombinators()
-}
-
-/**
-  * At each invocation, this combinator explores one of the neighborhoods in l (and repeat if it is exhausted)
-  * neighborhoods are selected based on their speed the fasted one to find a move is selected
-  * a tabu is added: in case a neighborhood is exhausted, it is not explored for a number of exploration of this combinator
-  * the tabu can be overriden if all neighborhoods explored are exhausted. tabu neighborhood can be explored anyway if they are still tabu, but for less than overrideTabuOnFullExhaust invocations of this combinator
-  * the refresh parameter forces the combinator to try all neighborhoods every "refresh" invocation. it is useful because some neighorhood can perform poorly at the beginning of search and much better later on, and we do not want the combinator to just "stick to its first impression"
-  * @param l the neighborhoods to select from
-  * @param tabuLength the number of invocation that they will not be explored when exhausted
-  * @param overrideTabuOnFullExhaust the tabu can be overriden if all explored neighbors are exhausted, for each neighborhood that is tabu for les than this override
-  * @param refresh a refresh of the slopee measuring must be perfored every refresh iterations
-  */
-case class FastestFirst(l:List[Neighborhood],
-                        tabuLength:Int = 10,
-                        overrideTabuOnFullExhaust:Long = 9,
-                        refresh:Int = 100)
-  extends BestNeighborhoodFirst(l, tabuLength, overrideTabuOnFullExhaust, refresh){
-  override protected def bestKey(p:Profile):Long = - (p.totalTimeSpentMoveFound / p.nbFound).toInt
-}
+case class RestrictedNeighborhood(n:Neighborhood, minimalSpaceBetweenExplorations:Long = 0)
 
 abstract class BestNeighborhoodFirst(l:List[Neighborhood],
                                      tabuLength:Int,
@@ -83,14 +48,14 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
   }
 
   /**
-    * the method that returns a move from the neighborhood.
-    * The returned move should typically be accepted by the acceptance criterion over the objective function.
-    * Some neighborhoods are actually jumps, so that they might violate this basic rule however.
-    *
-    * @param obj the objective function. notice that it is actually a function. if you have an [[oscar.cbls.core.objective.Objective]] there is an implicit conversion available
-    * @param acceptanceCriterion
-    * @return
-    */
+   * the method that returns a move from the neighborhood.
+   * The returned move should typically be accepted by the acceptance criterion over the objective function.
+   * Some neighborhoods are actually jumps, so that they might violate this basic rule however.
+   *
+   * @param obj the objective function. notice that it is actually a function. if you have an [[oscar.cbls.core.objective.Objective]] there is an implicit conversion available
+   * @param acceptanceCriterion
+   * @return
+   */
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
     if((it > 0) && ((it % refresh) == 0) && neighborhoodArray.exists(_.nbFound!=0)){
 
@@ -129,24 +94,56 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
   }
 
   /**
-    * prints the profile info for the neighborhoods, for verbosity purposes
-    */
+   * prints the profile info for the neighborhoods, for verbosity purposes
+   */
   def printStatus(): Unit ={
     println(Profile.selectedStatisticInfo(neighborhoodArray))
   }
 }
 
-
-case class RestrictedNeighborhood(n:Neighborhood, minimalSpaceBetweenExplorations:Long = 0)
-
-case class BestSlopeFirstWithRestrictions(l:List[RestrictedNeighborhood],
-                                          tabuLength:Long = 10,
-                                          overrideTabuOnFullExhaust:Long = 9,
-                                          refresh:Long = 100)
-  extends BestNeighborhoodFirstWithRestrictions(l, tabuLength, overrideTabuOnFullExhaust, refresh){
+/**
+ * At each invocation, this combinator explores one of the neighborhoods in l (and repeat if it is exhausted)
+ * neighborhoods are selected based on their slope. the slope is the total gain in objective function performed by the neighborhood, divided by the total amount of time spend exploring the neighborhood.
+ * a tabu is added: in case a neighborhood is exhausted, it is not explored for a number of exploration of this combinator
+ * the tabu can be overriden if all neighborhoods explored are exhausted. tabu neighborhood can be explored anyway if they are still tabu, but for less than overrideTabuOnFullExhaust invocations of this combinator
+ * the refresh parameter forces the combinator to try all neighborhoods every "refresh" invocation. it is useful because some neighorhood can perform poorly at the beginning of search and much better later on, and we do not want the combinator to just "stick to its first impression"
+ *
+ * @param l the neighborhoods to select from
+ * @param tabuLength the number of invocation that they will not be explored when exhausted
+ * @param overrideTabuOnFullExhaust the tabu can be overriden if all explored neighbors are exhausted, for each neighborhood that is tabu for les than this override
+ * @param refresh a refresh of the slopee measuring must be perfored every refresh iterations
+ */
+case class BestSlopeFirst(l:List[Neighborhood],
+                          tabuLength:Int = 10,
+                          overrideTabuOnFullExhaust:Long = 9,
+                          refresh:Int = 100)
+  extends BestNeighborhoodFirst(l, tabuLength, overrideTabuOnFullExhaust, refresh){
   override protected def bestKey(p:Profile):Long = -p.slopeForCombinators()
 }
 
+/**
+ * At each invocation, this combinator explores one of the neighborhoods in l (and repeat if it is exhausted)
+ * neighborhoods are selected based on their speed the fasted one to find a move is selected
+ * a tabu is added: in case a neighborhood is exhausted, it is not explored for a number of exploration of this combinator
+ * the tabu can be overriden if all neighborhoods explored are exhausted. tabu neighborhood can be explored anyway if they are still tabu, but for less than overrideTabuOnFullExhaust invocations of this combinator
+ * the refresh parameter forces the combinator to try all neighborhoods every "refresh" invocation. it is useful because some neighorhood can perform poorly at the beginning of search and much better later on, and we do not want the combinator to just "stick to its first impression"
+ * @param l the neighborhoods to select from
+ * @param tabuLength the number of invocation that they will not be explored when exhausted
+ * @param overrideTabuOnFullExhaust the tabu can be overriden if all explored neighbors are exhausted, for each neighborhood that is tabu for les than this override
+ * @param refresh a refresh of the slopee measuring must be perfored every refresh iterations
+ */
+case class FastestFirst(l:List[Neighborhood],
+                        tabuLength:Int = 10,
+                        overrideTabuOnFullExhaust:Long = 9,
+                        refresh:Int = 100)
+  extends BestNeighborhoodFirst(l, tabuLength, overrideTabuOnFullExhaust, refresh) {
+  override protected def bestKey(p:Profile):Long = {
+    if (p.nbFound == 0L)
+      if (p.totalTimeSpentMoveFound == 0L) 0L else -Long.MaxValue
+    else
+      - (p.totalTimeSpentMoveFound / p.nbFound).toInt
+  }
+}
 
 abstract class BestNeighborhoodFirstWithRestrictions(l:List[RestrictedNeighborhood],
                                                      tabuLength:Long,
@@ -201,14 +198,14 @@ abstract class BestNeighborhoodFirstWithRestrictions(l:List[RestrictedNeighborho
   }
 
   /**
-    * the method that returns a move from the neighborhood.
-    * The returned move should typically be accepted by the acceptance criterion over the objective function.
-    * Some neighborhoods are actually jumps, so that they might violate this basic rule however.
-    *
-    * @param obj the objective function. notice that it is actually a function. if you have an [[oscar.cbls.core.objective.Objective]] there is an implicit conversion available
-    * @param acceptanceCriterion
-    * @return
-    */
+   * the method that returns a move from the neighborhood.
+   * The returned move should typically be accepted by the acceptance criterion over the objective function.
+   * Some neighborhoods are actually jumps, so that they might violate this basic rule however.
+   *
+   * @param obj the objective function. notice that it is actually a function. if you have an [[oscar.cbls.core.objective.Objective]] there is an implicit conversion available
+   * @param acceptanceCriterion
+   * @return
+   */
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
     if((it > 0L) && ((it % refresh) == 0L)){
 
@@ -261,20 +258,27 @@ abstract class BestNeighborhoodFirstWithRestrictions(l:List[RestrictedNeighborho
   }
 
   /**
-    * prints the profile info for the neighborhoods, for verbosity purposes
-    */
+   * prints the profile info for the neighborhoods, for verbosity purposes
+   */
   def printStatus(): Unit ={
     println(Profile.selectedStatisticInfo(neighborhoodArray.map(_._1)))
   }
 }
 
+case class BestSlopeFirstWithRestrictions(l:List[RestrictedNeighborhood],
+                                          tabuLength:Long = 10,
+                                          overrideTabuOnFullExhaust:Long = 9,
+                                          refresh:Long = 100)
+  extends BestNeighborhoodFirstWithRestrictions(l, tabuLength, overrideTabuOnFullExhaust, refresh){
+  override protected def bestKey(p:Profile):Long = -p.slopeForCombinators()
+}
 
 /**
-  * performs a round robin on the neighborhood.
-  * It proceeds to the next one after "step" invocations or if the explored one is exhausted
-  *
-  * @author renaud.delandtsheer@cetic.be
-  */
+ * performs a round robin on the neighborhood.
+ * It proceeds to the next one after "step" invocations or if the explored one is exhausted
+ *
+ * @author renaud.delandtsheer@cetic.be
+ */
 class RoundRobin(l: List[Neighborhood], steps: Long = 1L)
   extends NeighborhoodCombinator(l: _*) {
   val robins = l.length
@@ -283,6 +287,7 @@ class RoundRobin(l: List[Neighborhood], steps: Long = 1L)
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult =
     myGetImprovingMove(obj, initialObj, acceptanceCriteria)
 
+  @tailrec
   private def myGetImprovingMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean, triedRobins: Long = 0L): SearchResult = {
     if (triedRobins >= robins) {
       NoMoveFound
@@ -320,12 +325,12 @@ class RoundRobin(l: List[Neighborhood], steps: Long = 1L)
   }
 
   /**
-    * proposes a round-robin with that.
-    * notice that you can chain steps; this will build a round-robin on the whole sequence (although this operation is not associative)
-    *
-    * @param b
-    * @return
-    */
+   * proposes a round-robin with that.
+   * notice that you can chain steps; this will build a round-robin on the whole sequence (although this operation is not associative)
+   *
+   * @param b
+   * @return
+   */
   def step(b: Neighborhood): RoundRobin = new RoundRobin(l ::: List(b))
 
   def repeat(i: Int): RoundRobin = {
@@ -339,19 +344,20 @@ class RoundRobinNoParam(val a: Neighborhood, val b: Neighborhood) {
 }
 
 /**
-  * this combinator randomly tries one neighborhood.
-  * it tries the other if the first did not find any move
-  *
-  * @param a a neighborhood
-  * @author renaud.delandtsheer@cetic.be
-  */
+ * this combinator randomly tries one neighborhood.
+ * it tries the other if the first did not find any move
+ *
+ * @param a a neighborhood
+ * @author renaud.delandtsheer@cetic.be
+ */
 class RandomCombinator(a: Neighborhood*) extends NeighborhoodCombinator(a:_*) {
   private val r = new scala.util.Random()
 
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
-    val neighborhoods = r.shuffle(a).iterator
-    while (neighborhoods.hasNext) {
-      val current = neighborhoods.next
+    val neighborhoods = a.toList
+    val neighborhoodsIterator = r.shuffle(neighborhoods).iterator
+    while (neighborhoodsIterator.hasNext) {
+      val current = neighborhoodsIterator.next()
       current.getMove(obj, initialObj, acceptanceCriteria) match {
         case m: MoveFound => return m
         case _ => ;
@@ -362,13 +368,15 @@ class RandomCombinator(a: Neighborhood*) extends NeighborhoodCombinator(a:_*) {
 }
 
 /**
-  * this combinator randomly tries one neighborhood.
-  * it tries the other if the first did not find any move
-  *
-  * @param a a neighborhood
-  * @author renaud.delandtsheer@cetic.be
-  */
-class BiasedRandom(a: (Neighborhood,Double)*)(noRetryOnExhaust:Boolean = false) extends NeighborhoodCombinator(a.map(_._1):_*) {
+ * this combinator randomly tries one neighborhood.
+ * it tries the other if the first did not find any move
+ *
+ * @param a a neighborhood
+ * @author renaud.delandtsheer@cetic.be
+ */
+class BiasedRandom(a: (Neighborhood,Double)*)
+                  (noRetryOnExhaust:Boolean = false)
+  extends NeighborhoodCombinator(a.map(_._1):_*) {
   require(a.nonEmpty)
 
   abstract sealed class Node(val weight:Double)
@@ -433,53 +441,14 @@ class BiasedRandom(a: (Neighborhood,Double)*)(noRetryOnExhaust:Boolean = false) 
 }
 
 /**
-  * @param l
-  * @param weightUpdate a function that updates the weight of a neighborhood. if the function returns a negative number, the neighborhood gets the average weight thatthe other received.
-  * @param updateEveryXCalls
-  */
-@deprecated("use the bestSlopeFirst instead","")
-class LearningRandom(l:List[Neighborhood],
-                     weightUpdate:(Profile,Double) => Double =
-                     (stat,oldWeight) => { if (stat.nbCalls == 0L) -1L
-                     else {
-                       val toReturn =  (stat.slopeOrZero + oldWeight)/2L
-                       stat.resetStatistics()
-                       toReturn
-                     }
-                     },
-                     updateEveryXCalls:Long = 10L)
-  extends NeighborhoodCombinator(l:_*){
-
-  val instrumentedNeighborhood:List[Profile] = l.map(Profile(_))
-  var weightedInstrumentedNeighborhoods:List[(Profile,Double)] = instrumentedNeighborhood.map((_,1.0))
-  var currentRandom = new BiasedRandom(weightedInstrumentedNeighborhoods:_*)()
-  var stepsBeforeUpdate = updateEveryXCalls
-
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
-    if(stepsBeforeUpdate <= 0L){
-      val newlyWeightedNeighborhoods = weightedInstrumentedNeighborhoods.map(sd => (sd._1,weightUpdate(sd._1,sd._2)))
-      val (totalWeightNonNegative,nonNegativeCount) = newlyWeightedNeighborhoods.foldLeft((0.0,0L))((a:(Double,Long),b:(Profile,Double)) => if(b._2 < 0L) a else (a._1 + b._2,a._2+1L))
-      val defaultWeight = totalWeightNonNegative / nonNegativeCount
-      weightedInstrumentedNeighborhoods = newlyWeightedNeighborhoods.map(sw => (sw._1,if (sw._2 < 0L) defaultWeight else sw._2))
-      currentRandom = new BiasedRandom(weightedInstrumentedNeighborhoods :_*)()
-      stepsBeforeUpdate = updateEveryXCalls
-      if(printExploredNeighborhoods) println("LearningRandom: weights updated: " + weightedInstrumentedNeighborhoods )
-    }
-    stepsBeforeUpdate -=1L
-    currentRandom.getMove(obj,initialObj,acceptanceCriterion)
-  }
-}
-
-
-/**
-  * this combinator is stateful.
-  * it returns the result of the first Neighborhood until it returns NoMoveFound.
-  * It then switches to the other Neighborhood,
-  * but only if a move was found by the first neighborhood
-  * it does not come back to the first one after the second one is exhausted
-  *
-  * @author renaud.delandtsheer@cetic.be
-  */
+ * this combinator is stateful.
+ * it returns the result of the first Neighborhood until it returns NoMoveFound.
+ * It then switches to the other Neighborhood,
+ * but only if a move was found by the first neighborhood
+ * it does not come back to the first one after the second one is exhausted
+ *
+ * @author renaud.delandtsheer@cetic.be
+ */
 class ExhaustAndContinueIfMovesFound(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinator(a, b) {
   var currentIsA = true
   var movesFoundWithCurrent = false
