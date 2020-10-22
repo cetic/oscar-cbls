@@ -150,9 +150,6 @@ object ForwardCumulativeIntegerIntegerDimensionOnVehicle {
             maxContent:Long = Long.MaxValue,
             contentName:String = "content"): ForwardCumulativeIntegerIntegerDimensionOnVehicle ={
 
-    println(s"MinContent: $minContent | MaxContent: $maxContent | Default1ForUnrouted : $default1ForUnroutedNodes")
-    println(s"Domain coupled = ${Domain.coupleToDomain(minContent,maxContent)}")
-
     val content1AtNode = Array.tabulate(n)((node: Int) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent).union(default1ForUnroutedNodes), s"${contentName}1 at node $node"))
     val content2AtNode = Array.tabulate(n)((node: Int) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent).union(default2ForUnroutedNodes), s"${contentName}2 at node $node"))
 

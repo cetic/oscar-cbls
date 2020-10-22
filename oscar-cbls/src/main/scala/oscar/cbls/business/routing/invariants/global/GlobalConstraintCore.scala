@@ -17,7 +17,6 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
 
   private var managedConstraints: QList[GlobalConstraintDefinition[_]] = _
   private var invariantAreInitiated = false
-  private var useGlobalConstraintPositionCache = false
 
   private var checkpointLevel: Int = -1
   private var checkpointAtLevel0: IntSequence = _
@@ -33,9 +32,8 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
   //    - vehiclesValueAtCheckpoint
   //    - vehicleSearcher
   //    - positionToValueCache
-  private var savedDataAtCheckpointLevel: QList[(QList[Int], VehicleLocation, Array[Int], Array[ListSegments])] = null
+  private var savedDataAtCheckpointLevel: QList[(QList[Int], VehicleLocation, Array[ListSegments])] = null
   // Store the position value of a node for a given checkpoint level. -1 == position not computed
-  private var positionToValueCache: Array[Int] = Array.fill(n)(-1)
 
   protected var vehicleSearcher: VehicleLocation = VehicleLocation((0 until v).toArray)
 
@@ -117,7 +115,7 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
           // Saving position of nodes of the previous checkpoint level to avoid excessive calls to positionAtAnyOccurence(...) when roll-backing
           val previousCheckpointSaveData = savedDataAtCheckpointLevel.head
           savedDataAtCheckpointLevel = QList(
-            (previousCheckpointSaveData._1, previousCheckpointSaveData._2, positionToValueCache, previousCheckpointSaveData._4),
+            (previousCheckpointSaveData._1, previousCheckpointSaveData._2, previousCheckpointSaveData._3),
             savedDataAtCheckpointLevel.tail)
         }
 
@@ -127,10 +125,9 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
         // Common manipulations
         this.checkpointLevel = checkpointLevel
         if (savedDataAtCheckpointLevel == null || savedDataAtCheckpointLevel.size == checkpointLevel) {
-          positionToValueCache = Array.fill(n)(-1)
           savedDataAtCheckpointLevel =
-            QList((changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList, vehicleSearcher, positionToValueCache, segmentsOfVehicle), savedDataAtCheckpointLevel)
-          segmentsOfVehicle = savedDataAtCheckpointLevel.head._4.clone()
+            QList((changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList, vehicleSearcher, segmentsOfVehicle), savedDataAtCheckpointLevel)
+          segmentsOfVehicle = savedDataAtCheckpointLevel.head._3.clone()
         }
         true
 
@@ -150,15 +147,13 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
         this.changedVehiclesSinceCheckpoint0.all = false
         QList.qForeach(savedDataAtCheckpointLevel.head._1, (vehicle: Int) => this.changedVehiclesSinceCheckpoint0(vehicle) = true)
         vehicleSearcher = savedDataAtCheckpointLevel.head._2
-        positionToValueCache = savedDataAtCheckpointLevel.head._3
-        segmentsOfVehicle = savedDataAtCheckpointLevel.head._4.clone()
+        segmentsOfVehicle = savedDataAtCheckpointLevel.head._3.clone()
 
         this.checkpointLevel = checkpointLevel
         true
 
       case sui@SeqUpdateInsert(value: Int, pos: Int, prev: SeqUpdate) =>
         digestUpdates(prev)
-        useGlobalConstraintPositionCache(prev)
 
         val prevRoutes = prev.newValue
 
@@ -174,7 +169,6 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
 
       case sum@SeqUpdateMove(fromIncluded: Int, toIncluded: Int, after: Int, flip: Boolean, prev: SeqUpdate) =>
         digestUpdates(prev)
-        useGlobalConstraintPositionCache(prev)
 
         val prevRoutes = prev.newValue
 
@@ -212,7 +206,6 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
 
       case sur@SeqUpdateRemove(position: Int, prev: SeqUpdate) =>
         digestUpdates(prev)
-        useGlobalConstraintPositionCache(prev)
 
         val prevRoutes = prev.newValue
 
@@ -238,21 +231,6 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
         }))
         for (vehicle <- 0 until v) initSegmentsOfVehicle(vehicle, value)
         false //impossible to go incremental
-    }
-  }
-
-  /**
-    * Determine if we can use the cache or not.
-    * We can use it only if the current insert/move/remove update is right after a defineCheckPoint or a rollbackToCheckpoint
-    * Otherwise, Some changes have occurred and the positions may not be correct anymore.
-    */
-  private def useGlobalConstraintPositionCache(prev: SeqUpdate): Unit ={
-    prev match {
-      case _:SeqUpdateInsert => useGlobalConstraintPositionCache = false
-      case _:SeqUpdateMove => useGlobalConstraintPositionCache = false
-      case _:SeqUpdateRemove => useGlobalConstraintPositionCache = false
-      case _:SeqUpdateLastNotified => useGlobalConstraintPositionCache = false
-      case _ => useGlobalConstraintPositionCache = true
     }
   }
 
@@ -300,19 +278,12 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
 
     private def getValueAtPosition(pos: Int, routes: IntSequence): Int ={
       if(pos >= n) -1
-      else if(!useGlobalConstraintPositionCache){   // If we can't use the cache we use the explorer
+      else {   // If we can't use the cache we use the explorer
         val explorer = routes.explorerAtPosition(pos)
         if (explorer.isDefined)
           explorer.get.value
         else
           -1
-      } else {  // Else we use the memorized value or the explorer if not defined
-        if (pos < n && positionToValueCache(pos) == -1) {
-          val explorer = routes.explorerAtPosition(pos)
-          if (explorer.isDefined)
-            positionToValueCache(pos) = explorer.get.value
-        }
-        positionToValueCache(pos)
       }
     }
 
