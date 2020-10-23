@@ -89,7 +89,8 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
           val vehicleForInsertion = nodeToVehicle(insertionPoint)
 
           val relevantNeighbors = relevantNeighborsNow(insertionPoint)
-          val routedRelevantNeighbors = relevantNeighbors.filter((neighbor : Int) => nodeToVehicle(neighbor) != -1L && neighbor != insertionPoint && neighbor > v)
+
+          val routedRelevantNeighbors = relevantNeighbors.filter((neighbor : Int) => nodeToVehicle(neighbor) != -1L && neighbor != insertionPoint && neighbor >= v)
 
           val (routedRelevantNeighborsByVehicle,notifyFound2) = selectMovedSegmentBehavior.toIterable(routedRelevantNeighbors.groupBy((i : Int) => nodeToVehicle(i)).toList)
 
