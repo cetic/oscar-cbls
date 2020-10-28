@@ -44,11 +44,7 @@ object VRPWithOnlyTimeWindow extends App {
                     acc(4) + item._5,acc(5) + item._6,
                     acc(6) + item._7,acc(7) + item._8,
                     acc(8) + item._9,acc(9) + item._10)).toList.map(_/iterations)
-              println("Average total duration : " + res(1) + " - Average quality : " + res.head +
-                "\nAverage total time in Notify : " + res(2) + " - COUNT : " + res(3) +
-                "\nAverage total time in PreComputation : " + res(4) + " - COUNT : " + res(5) +
-                "\nAverage total time in VehicleValueComputation : " + res(6) + " - COUNT : " + res(7) +
-                "\nAverage total time in Assignation : " + res(8) + " - COUNT : " + res(9) + "\n")
+              println("Average total duration : " + res(1) + " - Average quality : " + res.head + "\n")
             }
           }
         }
@@ -74,7 +70,7 @@ object VRPWithOnlyTimeWindow extends App {
   //Thread.sleep(5000)
   runConfiguration(ns_1,vs_1,timeWindowConstraints,bests, procedures,iterations)
   println("\n\n\n\n\n\n\n#####################################################\n\n\n\n\n\n")
-  runConfiguration(ns_2,vs_2,timeWindowConstraints,bests, procedures,iterations)
+  //runConfiguration(ns_2,vs_2,timeWindowConstraints,bests, procedures,iterations)
 }
 
 class VRPWithOnlyTimeWindow(version: Int, n: Int = 100, v: Int = 10, fullInfo: Boolean = false, iteration: Int = 0){

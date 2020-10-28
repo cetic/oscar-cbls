@@ -17,9 +17,9 @@ import scala.collection.immutable.HashSet
   */
 
 object SimpleVRPWithTimeWindowsAndVehicleContent extends App {
-  val nbIterations = 2
-  for(v <- 10 to 20 by 20){
-    for(n <- 200 to 500 by 500){
+  val nbIterations = 5
+  for(v <- 10 to 20 by 5){
+    for(n <- 100 to 500 by 100){
       var totalTime = 0L
       for(seed <- 0 until nbIterations){
         val start = System.currentTimeMillis()
@@ -55,9 +55,8 @@ class SimpleVRPWithTimeWindowsAndVehicleContent(n: Int, v: Int, seed: Int) {
   val routeLengthInvariant = new RouteLength(myVRP.routes,n,v,routeLengthPerVehicles,(from: Int, to: Int) => symmetricDistance(from)(to))
 
   //Chains
-  val precedenceRoute = myVRP.routes.createClone()
-  val precedenceInvariant = precedence(precedenceRoute,precedences)
-  val vehicleOfNodesNow = vehicleOfNodes(precedenceRoute,v)
+  val precedenceInvariant = precedence(myVRP.routes,precedences)
+  val vehicleOfNodesNow = vehicleOfNodes(myVRP.routes,v)
   val precedencesConstraints = new ConstraintSystem(m)
   for(start <- precedenceInvariant.nodesStartingAPrecedence)
     precedencesConstraints.add(vehicleOfNodesNow(start) === vehicleOfNodesNow(precedenceInvariant.nodesEndingAPrecedenceStartedAt(start).head))
@@ -69,7 +68,6 @@ class SimpleVRPWithTimeWindowsAndVehicleContent(n: Int, v: Int, seed: Int) {
   val capacityInvariant = GlobalVehicleCapacityConstraintWithLogReduction(myVRP.routes, n, v, vehiclesSize, contentsFlow, violationOfContentAtVehicle)
 
   //TimeWindow
-  val timeWindowRoute = precedenceRoute.createClone()
   val timeWindowInvariant = NaiveTimeWindowConstraint(myVRP.routes, n, v, singleNodeTransferFunctions, travelDurationMatrix)
   timeWindowInvariant.addMaxTravelDurationConstraint(maxTravelDurations)
   val timeWindowConstraint = timeWindowInvariant.violation
@@ -178,7 +176,7 @@ class SimpleVRPWithTimeWindowsAndVehicleContent(n: Int, v: Int, seed: Int) {
   //val routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "InsertUF"))
 
 
-  val search = bestSlopeFirst(List(oneChainInsert,oneChainMove,onePtMove(20)))
+  val search = oneChainInsert exhaust oneChainMove exhaust onePtMove(20)
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 
