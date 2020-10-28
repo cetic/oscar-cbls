@@ -19,6 +19,7 @@ import oscar.cbls.algo.quick.{IterableQList, QList}
 import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
 
 import scala.collection.immutable.SortedSet
+import scala.collection.mutable
 
 object IntSequence{
   def apply(values:Iterable[Int]):IntSequence = {
@@ -75,6 +76,7 @@ object Token{
 abstract class IntSequence(protected[cbls] val token: Token = Token()) {
 
   private val cacheSize = 10
+  private var noneExplorerPosition: Int = Int.MinValue
   private val intSequenceExplorerCache: Array[IntSequenceExplorer] = Array.fill(cacheSize)(null)
 
   def size : Int
@@ -140,31 +142,22 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
       intSequenceExplorerCache(i) = explorer
     }
 
+    if(noneExplorerPosition == position) return None
     var index = 0
     while (index < cacheSize) {
-      if(intSequenceExplorerCache(index) != null) {
-        if (intSequenceExplorerCache(index).position == position) {
-          putUsedExplorerAtBack(index)
-          return Some(intSequenceExplorerCache(cacheSize - 1))
-        }
-        else if (intSequenceExplorerCache(index).position == position - 1) {
-          putUsedExplorerAtBack(index)
-          return intSequenceExplorerCache(cacheSize - 1).next
-        }
-        else if (intSequenceExplorerCache(index).position == position + 1) {
-          putUsedExplorerAtBack(index)
-          return intSequenceExplorerCache(cacheSize - 1).prev
-        }
-        else
-          index += 1
-      } else {
-        index += 1
+      if (intSequenceExplorerCache(index) != null &&
+        intSequenceExplorerCache(index).position == position) {
+        putUsedExplorerAtBack(index)
+        return Some(intSequenceExplorerCache(cacheSize - 1))
       }
+      index += 1
     }
 
     val optExplorer = computeExplorerAtPosition(position)
     optExplorer match {
       case None =>
+        noneExplorerPosition = position
+
       case Some(explorer) =>
         if (intSequenceExplorerCache(0) != null)
           insertExplorerAtEnd(explorer) // The cache is full, we need to make space
