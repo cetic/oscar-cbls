@@ -61,8 +61,7 @@ class VRPWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, minLo
   // The sum of node's weight can't excess the capacity of a vehicle
   val weightPerVehicle = Array.tabulate(v)(_ => CBLSIntVar(store))
   // This invariant maintains the total node's weight encountered by each vehicle
-  val gc = GlobalConstraintCore(myVRP.routes,v)
-  val weightedNodesConstraint = WeightedNodesPerVehicle(gc, n, v, nodeWeight, weightPerVehicle)
+  val weightedNodesConstraint = WeightedNodesPerVehicle(myVRP.routes, n, v, nodeWeight, weightPerVehicle)
   // This invariant maintains the capacity violation of each vehicle (le means lesser or equals)
   val vehicleCapacityViolation = Array.tabulate(v)(vehicle => weightPerVehicle(vehicle) le vehicleCapacity(vehicle))
   val constraintSystem = ConstraintSystem(store)

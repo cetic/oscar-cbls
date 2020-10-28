@@ -16,37 +16,36 @@ package oscar.cbls.business.routing.invariants
 
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
-import oscar.cbls.business.routing.invariants.global.{FlippedPreComputedSubSequence, GlobalConstraintCore, GlobalConstraintDefinition, LogReducedFlippedPreComputedSubSequence, LogReducedGlobalConstraint, LogReducedGlobalConstraintWithExtremes, LogReducedNewNode, LogReducedPreComputedSubSequence, LogReducedSegment, NewNode, PreComputedSubSequence, Segment}
-import oscar.cbls.core.computation.CBLSIntVar
+import oscar.cbls.business.routing.invariants.global.{FlippedPreComputedSubSequence, GlobalConstraintCore, LogReducedFlippedPreComputedSubSequence, LogReducedGlobalConstraint, LogReducedGlobalConstraintWithExtremes, LogReducedNewNode, LogReducedPreComputedSubSequence, LogReducedSegment, NewNode, PreComputedSubSequence, Segment}
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingSeqValue}
 
 object NbNodes{
   /**
     * this constraints maintains the number of node per vehicle.
     *
-    * @param gc The GlobalConstraint linked to this constraints
+    * @param routes The routes of the VRP
     * @param v number of vehicle
     * @param nbNodesPerVehicle an array telling how many nodes are reached per vehicle
     */
-  def apply(gc: GlobalConstraintCore, n: Int, v : Int, nbNodesPerVehicle : Array[CBLSIntVar]) =
-    new NbNodes(gc, n, v , nbNodesPerVehicle)
+  def apply(routes: ChangingSeqValue, n: Int, v : Int, nbNodesPerVehicle : Array[CBLSIntVar]) =
+    new NbNodes(routes, n, v , nbNodesPerVehicle)
 }
 
 
 /**
   * this constraints maintains the number of node per vehicle.
   *
-  * @param gc The GlobalConstraint linked to this constraint
+  * @param routes The routes of the VRP
   * @param v number of vehicle
   * @param nbNodesPerVehicle an array telling how many nodes are reached per vehicle
   */
-class NbNodes(gc: GlobalConstraintCore, n: Int, v : Int, nbNodesPerVehicle : Array[CBLSIntVar])
-  extends GlobalConstraintDefinition[Long](gc,v){
+class NbNodes(routes: ChangingSeqValue, n: Int, v : Int, nbNodesPerVehicle : Array[CBLSIntVar])
+  extends GlobalConstraintCore[Long](routes,v){
 
   val preComputedVals: Array[Option[Long]] = Array.fill(n)(None)
 
   // Initialize the vehicles value, the precomputation value and link these invariant to the GlobalConstraintCore
-  gc.register(this)
-  for(outputVariable <- nbNodesPerVehicle)outputVariable.setDefiningInvariant(gc)
+  for(outputVariable <- nbNodesPerVehicle)outputVariable.setDefiningInvariant(this)
 
   /**
     * tis method is called by the framework when a pre-computation must be performed.
@@ -139,14 +138,13 @@ case class NodesOnSubsequence(nbNodes:Long,
 
 
 @deprecated("This is for example only, do not use this version","")
-class LogReducedNumberOfNodes(gc: GlobalConstraintCore, n:Int, v:Int, nbNodesPerRoute:Array[CBLSIntVar])
-  extends LogReducedGlobalConstraint[NodesOnSubsequence,Long](gc,n,v){
+class LogReducedNumberOfNodes(routes: ChangingSeqValue, n:Int, v:Int, nbNodesPerRoute:Array[CBLSIntVar])
+  extends LogReducedGlobalConstraint[NodesOnSubsequence,Long](routes,n,v){
 
   type U = Long
 
   // Initialize the vehicles value, the precomputation value and link these invariant to the GlobalConstraintCore
-  gc.register(this)
-  for(outputVariable <- nbNodesPerRoute)outputVariable.setDefiningInvariant(gc)
+  for(outputVariable <- nbNodesPerRoute)outputVariable.setDefiningInvariant(this)
 
   /**
     * this method delivers the value of the node
@@ -230,12 +228,11 @@ class LogReducedNumberOfNodes(gc: GlobalConstraintCore, n:Int, v:Int, nbNodesPer
 }
 
 @deprecated("This is for example only, do not use this version","")
-class LogReducedNumberOfNodesWithExtremes(gc: GlobalConstraintCore, n: Int, v:Int, nbNodesPerRoute:Array[CBLSIntVar])
-  extends LogReducedGlobalConstraintWithExtremes[NodesOnSubsequence,Long](gc,n,v){
+class LogReducedNumberOfNodesWithExtremes(routes: ChangingSeqValue, n: Int, v:Int, nbNodesPerRoute:Array[CBLSIntVar])
+  extends LogReducedGlobalConstraintWithExtremes[NodesOnSubsequence,Long](routes,n,v){
 
   // Initialize the vehicles value, the precomputation value and link these invariant to the GlobalConstraintCore
-  gc.register(this)
-  for(outputVariable <- nbNodesPerRoute)outputVariable.setDefiningInvariant(gc)
+  for(outputVariable <- nbNodesPerRoute)outputVariable.setDefiningInvariant(this)
 
   /**
     * this method delivers the value of the node

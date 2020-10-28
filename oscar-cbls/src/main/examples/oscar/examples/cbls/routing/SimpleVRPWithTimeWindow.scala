@@ -24,12 +24,11 @@ object SimpleVRPWithTimeWindow extends App{
   val (listOfChains,precedences) = RoutingMatrixGenerator.generateChainsPrecedence(n,v,((n-v)/3)*2,4)
   val singleNodeTransferFunctions = RoutingMatrixGenerator.generateFeasibleTransferFunctions(n,v,timeMatrix,listOfChains)
 
-  val myVRP = new VRP(m,n,v)
-  val gc = GlobalConstraintCore(myVRP.routes,v)
+  val myVRP =  new VRP(m,n,v)
 
   // Distance
   val routeLengths = Array.fill(v)(CBLSIntVar(m,0))
-  val routeLength = new RouteLength(gc,n,v,routeLengths,(from: Int, to: Int) => symmetricDistance(from)(to))
+  val routeLength = new RouteLength(myVRP.routes,n,v,routeLengths,(from: Int, to: Int) => symmetricDistance(from)(to))
 
   //Chains
   val precedenceRoute = myVRP.routes.createClone()
@@ -45,7 +44,7 @@ object SimpleVRPWithTimeWindow extends App{
   val timeWindowViolations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
 
   val smartTimeWindowInvariant =
-    TimeWindowConstraint(gc, n, v,
+    TimeWindowConstraint(myVRP.routes, n, v,
       singleNodeTransferFunctions,
       timeMatrix, timeWindowViolations)
 

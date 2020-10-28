@@ -4,31 +4,32 @@ import oscar.cbls.CBLSIntVar
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.invariants.global._
+import oscar.cbls.core.computation.ChangingSeqValue
 
 import scala.annotation.tailrec
 
 object GlobalVehicleCapacityConstraint {
-  def apply(gc: GlobalConstraintCore, n: Int, v: Int,
+  def apply(routes: ChangingSeqValue, n: Int, v: Int,
             vehiclesCapacity: Array[Long],
             contentVariationAtNode: Array[Long],
             violationPerVehicle: Array[CBLSIntVar]): GlobalVehicleCapacityConstraint =
     new GlobalVehicleCapacityConstraint(
-      gc, n, v,
+      routes, n, v,
       vehiclesCapacity,
       contentVariationAtNode,
       violationPerVehicle)
 
 
 
-  def apply(gc: GlobalConstraintCore, n: Int, v: Int,
+  def apply(routes: ChangingSeqValue, n: Int, v: Int,
             vehiclesCapacity: Array[Long],
             contentVariationAtNode: Array[Long]): Array[CBLSIntVar] = {
 
     val violationOfContentOfVehicle = Array.tabulate(v)(vehicle =>
-      CBLSIntVar(gc.model, name = "Violation of capacity of vehicle " + vehicle))
+      CBLSIntVar(routes.model, name = "Violation of capacity of vehicle " + vehicle))
 
     new GlobalVehicleCapacityConstraint(
-      gc, n, v,
+      routes, n, v,
       vehiclesCapacity,
       contentVariationAtNode,
       violationOfContentOfVehicle)
@@ -38,13 +39,12 @@ object GlobalVehicleCapacityConstraint {
 
 }
 
-class GlobalVehicleCapacityConstraint(gc: GlobalConstraintCore, val n: Int, val v: Int,
+class GlobalVehicleCapacityConstraint(routes: ChangingSeqValue, override val n: Int, val v: Int,
                                       val vehiclesCapacity: Array[Long],
                                       val contentVariationAtNode: Array[Long],
-                                      violationPerVehicle: Array[CBLSIntVar]) extends GlobalConstraintDefinition[Boolean](gc, v){
+                                      violationPerVehicle: Array[CBLSIntVar]) extends GlobalConstraintCore[Boolean](routes, v){
 
-  violationPerVehicle.foreach(violation => violation.setDefiningInvariant(gc))
-  gc.register(this)
+  violationPerVehicle.foreach(violation => violation.setDefiningInvariant(this))
 
   val preComputedValues: Array[Array[VehicleContentFunction]] =
     Array.tabulate(n)(from => Array.tabulate(n)(to =>{

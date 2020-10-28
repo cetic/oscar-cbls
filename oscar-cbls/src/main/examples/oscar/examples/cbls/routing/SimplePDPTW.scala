@@ -27,12 +27,9 @@ object SimplePDPTW extends App {
 
   val myVRP =  new VRP(m,n,v)
 
-  // GC
-  val gc = GlobalConstraintCore(myVRP.routes, v)
-
   // Distance
   val vehiclesRouteLength = Array.tabulate(v)(vehicle => CBLSIntVar(m, name = s"Route length of vehicle $vehicle"))
-  val routeLengthInvariant = new RouteLength(gc,n,v,vehiclesRouteLength,(from: Int, to: Int) => symmetricDistance(from)(to))
+  val routeLengthInvariant = new RouteLength(myVRP.routes,n,v,vehiclesRouteLength,(from: Int, to: Int) => symmetricDistance(from)(to))
 
   //Chains
   val precedenceRoute = myVRP.routes.createClone()
@@ -47,7 +44,7 @@ object SimplePDPTW extends App {
   // Vehicle content
   val violationOfContentOfVehicle = Array.tabulate(v)(vehicle =>
     CBLSIntVar(myVRP.routes.model, name = s"Violation of capacity of vehicle $vehicle"))
-  val capacityInvariant = GlobalVehicleCapacityConstraint(gc, n, v, vehiclesCapacity, contentsFlow, violationOfContentOfVehicle)
+  val capacityInvariant = GlobalVehicleCapacityConstraint(myVRP.routes, n, v, vehiclesCapacity, contentsFlow, violationOfContentOfVehicle)
 
   //Objective function
   val obj = new CascadingObjective(precedencesConstraints,

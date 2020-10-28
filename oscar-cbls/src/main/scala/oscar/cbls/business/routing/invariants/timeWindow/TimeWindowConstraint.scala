@@ -14,11 +14,11 @@
   ******************************************************************************/
 package oscar.cbls.business.routing.invariants.timeWindow
 
-import oscar.cbls.{CBLSIntVar, Domain}
+import oscar.cbls.Domain
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.business.routing.invariants.global._
-import oscar.cbls.core.computation.CBLSIntVar
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingSeqValue}
 
 import scala.annotation.tailrec
 
@@ -26,7 +26,7 @@ object TimeWindowConstraint {
 
   /**
     * This method instantiate a TimeWindow constraint given the following input
-    * @param gc The GlobalConstraint to which this invariant is linked
+    * @param routes The routes of the VRP
     * @param n The number of nodes of the problem (including vehicle)
     * @param v The number of vehicles of the problem
     * @param nodeToTransferFunction An array containing the single TransferFunction of each node
@@ -34,28 +34,28 @@ object TimeWindowConstraint {
     * @param violations An array of CBLSIntVar maintaining the violation of each vehicle
     * @return a time window constraint
     */
-  def apply(gc: GlobalConstraintCore,
+  def apply(routes: ChangingSeqValue,
             n: Int,
             v: Int,
             nodeToTransferFunction: Array[TransferFunction],
             travelTimeMatrix: Array[Array[Long]],
             violations: Array[CBLSIntVar]): TimeWindowConstraint ={
 
-    new TimeWindowConstraint(gc, n, v,
+    new TimeWindowConstraint(routes, n, v,
       nodeToTransferFunction,
       travelTimeMatrix, violations)
   }
 
   /**
    * This method instantiate a TimeWindow constraint given the following input
-   * @param gc The GlobalConstraint to which this invariant is linked
+   * @param routes The routes of the VRP
    * @param n The number of nodes of the problem (including vehicle)
    * @param v The number of vehicles of the problem
    * @param nodeToTransferFunction An array containing the single TransferFunction of each node
    * @param travelTimeMatrix A matrix representing the different travel time between the nodes
    * @return An array of CBLSIntVar maintaining the violation of each vehicle
    */
-  def apply(gc: GlobalConstraintCore,
+  def apply(routes: ChangingSeqValue,
             n: Int,
             v: Int,
             nodeToTransferFunction: Array[TransferFunction],
@@ -63,9 +63,9 @@ object TimeWindowConstraint {
             ): Array[CBLSIntVar] ={
 
     val timeWindowViolations = Array.tabulate(v)(vehicle =>
-      new CBLSIntVar(gc.model, 0, Domain.coupleToDomain((0, 1)),s"timeWindowViolationVehicle:$vehicle"))
+      new CBLSIntVar(routes.model, 0, Domain.coupleToDomain((0, 1)),s"timeWindowViolationVehicle:$vehicle"))
 
-    new TimeWindowConstraint(gc, n, v,
+    new TimeWindowConstraint(routes, n, v,
       nodeToTransferFunction,
       travelTimeMatrix, timeWindowViolations)
 
@@ -76,28 +76,27 @@ object TimeWindowConstraint {
 /**
   * This class represent a time window constraint.
   * Given parameters, it maintains the violation value of each vehicle (in violations var)
-  * @param gc The GlobalConstraint to which this invariant is linked
+  * @param routes The routes of the VRP
   * @param n The number of nodes of the problem (including vehicle)
   * @param v The number of vehicles of the problem
   * @param singleNodeTransferFunctions An array containing the single TransferFunction of each node
   * @param travelTimeMatrix A matrix representing the different travel time between the nodes
   * @param violations An array of CBLSIntVar maintaining the violation of each vehicle
   */
-class TimeWindowConstraint (gc: GlobalConstraintCore,
+class TimeWindowConstraint (routes: ChangingSeqValue,
                             n: Int,
                             v: Int,
                             singleNodeTransferFunctions: Array[TransferFunction],
                             travelTimeMatrix: Array[Array[Long]],
                             val violations: Array[CBLSIntVar]
-                           ) extends GlobalConstraintDefinition[Boolean](gc,v) {
+                           ) extends GlobalConstraintCore[Boolean](routes,v) {
 
   val preComputedValues: Array[Array[TransferFunction]] = Array.fill(n)(Array.fill(n)(EmptyTransferFunction))
 
   // Initialize the vehicles value, the precomputation value and link these invariant to the GlobalConstraintCore
-  gc.register(this)
   //vehiclesValueAtCheckpoint0.map(vValues => false)
   //currentVehiclesValue.map(vValues => false)
-  for(outputVariable <- violations)outputVariable.setDefiningInvariant(gc)
+  for(outputVariable <- violations)outputVariable.setDefiningInvariant(this)
 
   /**
     * This method makes the composition of two TransferFunction

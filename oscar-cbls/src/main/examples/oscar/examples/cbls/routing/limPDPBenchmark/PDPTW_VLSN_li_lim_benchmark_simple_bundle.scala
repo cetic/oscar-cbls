@@ -164,13 +164,11 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
 
     def isPickup(i: Int):Boolean = pickUpPointToDeliveryPoint(i) != -1
 
-    val gc = GlobalConstraintCore(myVRP.routes, v)
-
     // Distance
-    val vehiclesRouteLength = RouteLength(gc, n, v, symmetricDistance(_)(_))
+    val vehiclesRouteLength = RouteLength(myVRP.routes, n, v, symmetricDistance(_)(_))
 
     //Time window constraints
-    val timeWindowViolations = TimeWindowConstraint(gc, n, v, transferFunctions, symmetricDistance)
+    val timeWindowViolations = TimeWindowConstraint(myVRP.routes, n, v, transferFunctions, symmetricDistance)
     val timeWindowConstraints = new ConstraintSystem(m)
     for (vehicle <- 0 until v) {
       timeWindowConstraints.add(timeWindowViolations(vehicle) === 0)
@@ -193,7 +191,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
     }
 
     // Vehicle content
-    val violationOfContentOfVehicle = GlobalVehicleCapacityConstraint(gc, n, v, vehiclesCapacity, nodeToContentDelta)
+    val violationOfContentOfVehicle = GlobalVehicleCapacityConstraint(myVRP.routes, n, v, vehiclesCapacity, nodeToContentDelta)
 
     val unroutedPickups = myVRP.unrouted inter allPickupPoints
 

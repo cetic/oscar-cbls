@@ -17,12 +17,27 @@ import scala.collection.immutable.HashSet
   */
 
 object SimpleVRPWithTimeWindowsAndVehicleContent extends App {
-  val m = Store(noCycle = false, checker = Some(new ErrorChecker))
-  val v = 10
-  val n = 100
+  val nbIterations = 2
+  for(v <- 10 to 20 by 20){
+    for(n <- 200 to 500 by 500){
+      var totalTime = 0L
+      for(seed <- 0 until nbIterations){
+        val start = System.currentTimeMillis()
+        new SimpleVRPWithTimeWindowsAndVehicleContent(n, v, seed)
+        totalTime += (System.currentTimeMillis()-start)
+      }
+      println("N : " + n + "\tV : " + v + "\tIterations : " + nbIterations + "\t=>\tTook (avg) : " + (totalTime/nbIterations) + " ms")
+    }
+  }
+}
+
+class SimpleVRPWithTimeWindowsAndVehicleContent(n: Int, v: Int, seed: Int) {
+  val m = Store(noCycle = false/*, checker = Some(new ErrorChecker)*/)
   val penaltyForUnrouted = 10000
   val maxVehicleContent = 8
   val minVehicleContent = 4
+
+  RoutingMatrixGenerator.random.setSeed(seed)
 
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
   val travelDurationMatrix = symmetricDistance
@@ -35,11 +50,9 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App {
   val myVRP =  new VRP(m,n,v)
   NaiveTimeWindowConstraint.maxTransferFunctionWithTravelDurationRestriction(n,v,singleNodeTransferFunctions,maxTravelDurations,listOfChains, travelDurationMatrix)
 
-  val gc = GlobalConstraintCore(myVRP.routes, v)
-
   // Distance
   val routeLengthPerVehicles = Array.tabulate(v)(vehicle => CBLSIntVar(m,name = s"Length of route $vehicle"))
-  val routeLengthInvariant = new RouteLength(gc,n,v,routeLengthPerVehicles,(from: Int, to: Int) => symmetricDistance(from)(to))
+  val routeLengthInvariant = new RouteLength(myVRP.routes,n,v,routeLengthPerVehicles,(from: Int, to: Int) => symmetricDistance(from)(to))
 
   //Chains
   val precedenceRoute = myVRP.routes.createClone()
@@ -53,7 +66,7 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App {
 
   // Vehicle content
   val violationOfContentAtVehicle = Array.tabulate(v)(vehicle => new CBLSIntVar(myVRP.routes.model, 0, 0 to Int.MaxValue, s"violation of capacity of vehicle $vehicle"))
-  val capacityInvariant = GlobalVehicleCapacityConstraintWithLogReduction(gc, n, v, vehiclesSize, contentsFlow, violationOfContentAtVehicle)
+  val capacityInvariant = GlobalVehicleCapacityConstraintWithLogReduction(myVRP.routes, n, v, vehiclesSize, contentsFlow, violationOfContentAtVehicle)
 
   //TimeWindow
   val timeWindowRoute = precedenceRoute.createClone()
@@ -169,14 +182,14 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App {
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 
-  search.verbose = 1
+  search.verbose = 0
   //search.verboseWithExtraInfo(4, ()=> "" + myVRP)
 
 
 
   search.doAllMoves(obj=obj)
 
-  println(myVRP)
+  //println(myVRP)
 
   search.profilingStatistics
 }

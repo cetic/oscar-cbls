@@ -3,17 +3,17 @@ package oscar.cbls.business.routing.invariants.vehicleCapacity
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.invariants.global._
-import oscar.cbls.core.computation.CBLSIntVar
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingSeqValue}
 
 import scala.annotation.tailrec
 
 object GlobalVehicleCapacityConstraintWithLogReduction{
-  def apply(gc: GlobalConstraintCore, n: Int, v: Int,
+  def apply(routes: ChangingSeqValue, n: Int, v: Int,
             vehiclesCapacity: Array[Long],
             contentVariationAtNode: Array[Long],
             violationPerVehicle: Array[CBLSIntVar]): GlobalVehicleCapacityConstraintWithLogReduction =
     new GlobalVehicleCapacityConstraintWithLogReduction(
-      gc, n, v,
+      routes, n, v,
       vehiclesCapacity,
       contentVariationAtNode,
       violationPerVehicle)
@@ -34,12 +34,11 @@ object GlobalVehicleCapacityConstraintWithLogReduction{
   }
 }
 
-class GlobalVehicleCapacityConstraintWithLogReduction(gc: GlobalConstraintCore, val n: Int, val v: Int,
+class GlobalVehicleCapacityConstraintWithLogReduction(routes: ChangingSeqValue, override val n: Int, val v: Int,
                                                       val vehiclesCapacity: Array[Long],
                                                       val contentVariationAtNode: Array[Long],
-                                                      violationPerVehicle: Array[CBLSIntVar]) extends LogReducedGlobalConstraint[TwoWaysVehicleContentFunction, Boolean](gc, n, v) {
-  violationPerVehicle.foreach(violation => violation.setDefiningInvariant(gc))
-  gc.register(this)
+                                                      violationPerVehicle: Array[CBLSIntVar]) extends LogReducedGlobalConstraint[TwoWaysVehicleContentFunction, Boolean](routes, n, v) {
+  violationPerVehicle.foreach(violation => violation.setDefiningInvariant(this))
 
   val contentFunctionAtNode: Array[TwoWaysVehicleContentFunction] =
     Array.tabulate(n)(node => TwoWaysVehicleContentFunction(

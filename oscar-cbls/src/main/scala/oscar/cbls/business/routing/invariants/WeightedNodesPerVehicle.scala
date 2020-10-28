@@ -3,29 +3,29 @@ package oscar.cbls.business.routing.invariants
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.business.routing.invariants.global._
-import oscar.cbls.core.computation.CBLSIntVar
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingSeqValue}
 
 object WeightedNodesPerVehicle{
   /**
     * this constraints maintains the number of node per vehicle.
     *
-    * @param gc The GlobalConstraint linked to this constraint
+    * @param routes The routes of the VRP
     * @param v number of vehicle
     * @param weightPerVehicle an array telling how many nodes are reached per vehicle
     */
-  def apply(gc: GlobalConstraintCore, n: Int, v : Int, nodeWeight:Array[Long], weightPerVehicle : Array[CBLSIntVar]) =
-    new WeightedNodesPerVehicle(gc, n, v, nodeWeight, weightPerVehicle)
+  def apply(routes: ChangingSeqValue, n: Int, v : Int, nodeWeight:Array[Long], weightPerVehicle : Array[CBLSIntVar]) =
+    new WeightedNodesPerVehicle(routes, n, v, nodeWeight, weightPerVehicle)
 }
 
 /**
   * this constraints maintains the number of node per vehicle.
   *
-  * @param gc               The GlobalConstraint linked to this constraint
+  * @param routes           The routes of the VRP
   * @param v                number of vehicle
   * @param weightPerVehicle an array telling how many nodes are reached per vehicle
   */
-class WeightedNodesPerVehicle(gc: GlobalConstraintCore, n: Int, v : Int, nodeWeight:Array[Long], weightPerVehicle : Array[CBLSIntVar])
-  extends GlobalConstraintDefinition[Long](gc,v){
+class WeightedNodesPerVehicle(routes: ChangingSeqValue, n: Int, v : Int, nodeWeight:Array[Long], weightPerVehicle : Array[CBLSIntVar])
+  extends GlobalConstraintCore[Long](routes,v){
 
   val preComputedVals: Array[Long] = Array.fill(n)(0L)
 

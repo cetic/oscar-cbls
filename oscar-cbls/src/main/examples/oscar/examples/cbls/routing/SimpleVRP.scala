@@ -26,8 +26,7 @@ class SimpleVRP(n: Int, v: Int, size: Int, iteration: Int) {
   RoutingMatrixGenerator.random.setSeed(iteration)
   val (distancesMatrix, _) = RoutingMatrixGenerator(n, size)
 
-  val gc = GlobalConstraintCore(myVRP.routes,v)
-  val routeLength = RouteLength(gc, n, v, (from: Int, to: Int) => distancesMatrix(from)(to))
+  val routeLength = RouteLength(myVRP.routes, n, v, (from: Int, to: Int) => distancesMatrix(from)(to))
 
   val obj = Objective(sum(routeLength) + 1000000*(n - length(myVRP.routes)))
 

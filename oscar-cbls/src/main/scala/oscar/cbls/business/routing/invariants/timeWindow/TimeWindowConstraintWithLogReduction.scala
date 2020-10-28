@@ -3,7 +3,7 @@ package oscar.cbls.business.routing.invariants.timeWindow
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.invariants.global._
-import oscar.cbls.core.computation.CBLSIntVar
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingSeqValue}
 
 import scala.annotation.tailrec
 
@@ -11,7 +11,7 @@ object TimeWindowConstraintWithLogReduction {
 
   /**
    * This method instantiate a TimeWindow constraint given the following input
-   * @param gc The GlobalConstraint to which this invariant is linked
+   * @param routes The routes of the VRP
    * @param n The number of nodes of the problem (including vehicle)
    * @param v The number of vehicles of the problem
    * @param singleNodeTransferFunctions An array containing the single TransferFunction of each node
@@ -19,14 +19,14 @@ object TimeWindowConstraintWithLogReduction {
    * @param violations An array of CBLSIntVar maintaining the violation of each vehicle
    * @return a time window constraint
    */
-  def apply(gc: GlobalConstraintCore,
+  def apply(routes: ChangingSeqValue,
             n: Int,
             v: Int,
             singleNodeTransferFunctions: Array[TransferFunction],
             travelTimeMatrix: Array[Array[Long]],
             violations: Array[CBLSIntVar]): TimeWindowConstraintWithLogReduction ={
 
-    new TimeWindowConstraintWithLogReduction(gc, n, v,
+    new TimeWindowConstraintWithLogReduction(routes, n, v,
       singleNodeTransferFunctions,
       travelTimeMatrix, violations)
   }
@@ -36,23 +36,22 @@ object TimeWindowConstraintWithLogReduction {
  * This class represent a time window constraint with a logarithmic reduction
  *       --> reducing the preComputation duration but increasing the value computation duration .
  * Given parameters, it maintains the violation value of each vehicle (in violations var)
- * @param gc The GlobalConstraint to which this invariant is linked
+ * @param routes The routes of the VRP
  * @param n The number of nodes of the problem (including vehicle)
  * @param v The number of vehicles of the problem
  * @param singleNodeTransferFunctions An array containing the single TransferFunction of each node
  * @param travelTimeMatrix A matrix representing the different travel time between the nodes
  * @param violations An array of CBLSIntVar maintaining the violation of each vehicle
  */
-class TimeWindowConstraintWithLogReduction (gc: GlobalConstraintCore,
-                            n: Int,
-                            v: Int,
-                            singleNodeTransferFunctions: Array[TransferFunction],
-                            travelTimeMatrix: Array[Array[Long]],
-                            val violations: Array[CBLSIntVar]) extends LogReducedGlobalConstraintWithExtremes [TwoWaysTransferFunction,Boolean](gc,n,v){
+class TimeWindowConstraintWithLogReduction (routes: ChangingSeqValue,
+                                            n: Int,
+                                            v: Int,
+                                            singleNodeTransferFunctions: Array[TransferFunction],
+                                            travelTimeMatrix: Array[Array[Long]],
+                                            val violations: Array[CBLSIntVar]) extends LogReducedGlobalConstraintWithExtremes [TwoWaysTransferFunction,Boolean](routes,n,v){
 
   // Initialize the vehicles value, the precomputation value and link these invariant to the GlobalConstraintCore
-  gc.register(this)
-  for(outputVariable <- violations)outputVariable.setDefiningInvariant(gc)
+  for(outputVariable <- violations)outputVariable.setDefiningInvariant(this)
 
   private val twoWaysTransferFunctionOfNode: Array[TwoWaysTransferFunction] = Array.tabulate(n)(
     node =>

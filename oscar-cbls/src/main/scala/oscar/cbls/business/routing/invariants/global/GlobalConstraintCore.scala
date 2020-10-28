@@ -9,18 +9,45 @@ import oscar.cbls.core.propagation.Checker
 
 import scala.annotation.tailrec
 
-case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
+/**
+ * This abstract class must be extends in order to define a new global constraint.
+ *
+ * It uses a parameterized type U that represents the output type of your constraint
+ * (for instance for RouteLength output value is of type Long (the total distance))
+ *
+ * It's associated to a GlobalConstraintCore (gc) by adding gc.register(this) at the beginning of your constraint.
+ *
+ * The following methods must be implemented :
+ *     - performPreCompute
+ *         --> A method that computes some stuff in order to evaluate the value of a vehicle the fastest possible
+ *         --> Can be slow (only performed after a move is accepted)
+ *     - computeVehicleValue
+ *         --> A method that computes the value of a vehicle given a an explored movement (as a List of Segment)
+ *         --> Must be as fast as possible (using your precomputed values)
+ *     - assignVehicleValue
+ *         --> Update your output variable (ex: routeLength(vehicle) := value)
+ *     - computeVehicleValueFromScratch
+ *         --> A naive method that computes the value of a vehicle given the route of the problem (IntSequence)
+ *         --> Must be correct for it's used for debugging purpose (as the good value)
+ */
+abstract class GlobalConstraintCore[U <: Any :Manifest](routes: ChangingSeqValue, v: Int)
   extends Invariant with SeqNotificationTarget{
 
   val n: Int = routes.maxValue+1
   val vehicles: Range = 0 until v
 
-  private var managedConstraints: QList[GlobalConstraintDefinition[_]] = _
-  private var invariantAreInitiated = false
-
   private var checkpointLevel: Int = -1
   private var checkpointAtLevel0: IntSequence = _
   private val changedVehiclesSinceCheckpoint0 = new IterableMagicBoolArray(v, false)
+  private var variableInitiated = false
+
+  // This variable holds the vehicles value at checkpoint 0.
+  // It's used to effectively roll-back to this checkpoint 0 when exploring neighborhood
+  private var vehiclesValueAtCheckpoint0: Array[U] = Array.empty[U]
+
+  // This variable purpose is to keep the latest computed value of each vehicle
+  // So that we can easily update the checkpoint0 value when the movement is accepted
+  private var lastComputedVehiclesValue: Array[U] = Array.empty[U]
 
   // An array holding the ListSegment modifications as a QList
   // Int == checkpoint level, ListSegments the new ListSegment of the vehicle considering the modifications
@@ -41,39 +68,77 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
 
   finishInitialization()
 
-  private def computeAndAssignVehicleValues(vehicle: Int, segmentsOfVehicle: QList[Segment], newRoute: IntSequence): Unit ={
-    QList.qForeach(managedConstraints, (c: GlobalConstraintDefinition[_]) => c.computeSaveAndAssingVehicleValue(vehicle, segmentsOfVehicle, newRoute))
+  /**
+   * This method is called by the framework when a pre-computation must be performed.
+   * you are expected to assign a value of type T to each node of the vehicle "vehicle" through the method "setNodeValue"
+   *
+   * @param vehicle         the vehicle where pre-computation must be performed
+   * @param routes          the sequence representing the route of all vehicle
+   *                        BEWARE,other vehicles are also present in this sequence; you must only work on the given vehicle
+   */
+  protected def performPreCompute(vehicle: Int, routes: IntSequence): Unit
+
+  /**
+   * this method is called by the framework when the value of a vehicle must be computed.
+   *
+   * @param vehicle         the vehicle that we are focusing on
+   * @param segments        the segments that constitute the route.
+   *                        The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
+   * @param routes          the sequence representing the route of all vehicle
+   * @return the value associated with the vehicle
+   */
+  protected def computeVehicleValue(vehicle: Int, segments: QList[Segment], routes: IntSequence): U
+
+  /**
+   * the framework calls this method to assign the value U to he output variable of your invariant.
+   * It has been dissociated from the method above because the framework memorizes the output value of the vehicle,
+   * and is able to restore old value without the need to re-compute them, so it only will call this assignVehicleValue method
+   *
+   * @param vehicle the vehicle number
+   */
+  protected def assignVehicleValue(vehicle: Int, value: U): Unit
+
+  /**
+   * This method is defined for verification purpose.
+   * It computes the value of the vehicle from scratch.
+   *
+   * @param vehicle the vehicle on which the value is computed
+   * @param routes  the sequence representing the route of all vehicle
+   * @return the value of the constraint for the given vehicle
+   */
+  protected def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): U
+
+  /**
+   * This method computes the new value of a vehicle from scratch (by calling computeVehicleValueFromScratch),
+   * saves it in the lastComputedVehiclesValues variable and
+   * finally assign this value to the output CBLS var (using assignVehicleValue method)
+   *
+   * This method is used at the beginning of the search to set the initial value of the constraint or
+   * when we assign the value of the route (not incremental ==> we need to compute from scratch)
+   * @param routes The IntSequence representing the route
+   */
+  private def initVariables(routes: IntSequence): Unit = {
+    variableInitiated = true
+    lastComputedVehiclesValue = Array.tabulate(v)(vehicle => computeVehicleValueFromScratch(vehicle, routes))
+    vehiclesValueAtCheckpoint0 = Array.tabulate(v)(_vehicle => lastComputedVehiclesValue(_vehicle))
   }
 
-  private def performPreComputes(vehicle: Int, routes: IntSequence): Unit ={
-    QList.qForeach(managedConstraints, (c: GlobalConstraintDefinition[_]) => c.performPreCompute(vehicle, routes))
-  }
-
-  private def rollBackVehicleValuesToCheckPoint(vehiclesToRollBack: QList[Int]): Unit ={
-    managedConstraints.foreach(c => c.rollBackToCheckpoint(vehiclesToRollBack))
-  }
-
-  private def setCheckpointLevel0Values(vehicle: Int): Unit ={
-    QList.qForeach(managedConstraints, (c: GlobalConstraintDefinition[_]) => c.setCheckpointLevel0Value(vehicle))
-  }
-
-  private def computeSaveAndAssignVehicleValuesFromScratch(routes: IntSequence): Unit ={
-    invariantAreInitiated = true
-    QList.qForeach(managedConstraints, (c: GlobalConstraintDefinition[_]) => c.computeSaveAndAssignVehicleValuesFromScratch(routes))
-  }
-
-  def register(invariant: GlobalConstraintDefinition[_]): Unit ={
-    managedConstraints = QList(invariant, managedConstraints)
+  def computeSaveAndAssignVehicleValuesFromScratch(newRoute: IntSequence): Unit = {
+    for (vehicle <- 0 until v){
+      lastComputedVehiclesValue(vehicle) = computeVehicleValueFromScratch(vehicle, newRoute)
+      assignVehicleValue(vehicle, lastComputedVehiclesValue(vehicle))
+    }
   }
 
   override def notifySeqChanges(r: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     val newRoute = routes.newValue
-    if(!invariantAreInitiated) computeSaveAndAssignVehicleValuesFromScratch(newRoute)
+    if(!variableInitiated) initVariables(newRoute)
 
     if(digestUpdates(changes) && !(this.checkpointLevel == -1)){
       QList.qForeach(changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList,(vehicle: Int) => {
         // Compute new vehicle value based on last segment changes
-        computeAndAssignVehicleValues(vehicle, segmentsOfVehicle(vehicle).segments, newRoute)
+        lastComputedVehiclesValue(vehicle) = computeVehicleValue(vehicle, segmentsOfVehicle(vehicle).segments, newRoute)
+        assignVehicleValue(vehicle, lastComputedVehiclesValue(vehicle))
       })
     } else {
       computeSaveAndAssignVehicleValuesFromScratch(newRoute)
@@ -91,8 +156,8 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
           checkpointAtLevel0 = newRoute // Save the state of the route for further comparison
           computeSaveAndAssignVehicleValuesFromScratch(newRoute)
           (0 until v).foreach(vehicle => {
-            setCheckpointLevel0Values(vehicle)
-            performPreComputes(vehicle, newRoute)
+            vehiclesValueAtCheckpoint0(vehicle) = lastComputedVehiclesValue(vehicle)
+            performPreCompute(vehicle, newRoute)
             initSegmentsOfVehicle(vehicle, newRoute)
           })
           // Defining checkpoint 0 ==> we must init every changed since checkpoint 0 vehicles
@@ -100,14 +165,13 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
           checkpointAtLevel0 = newRoute // Save the state of the route for further comparison
           // Computing init ListSegment value for each vehicle that has changed
           QList.qForeach(changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList, (vehicle: Int) => {
-            setCheckpointLevel0Values(vehicle)
-            performPreComputes(vehicle, newRoute)
+            vehiclesValueAtCheckpoint0(vehicle) = lastComputedVehiclesValue(vehicle)
+            performPreCompute(vehicle, newRoute)
             initSegmentsOfVehicle(vehicle, newRoute)
           })
 
           // Resetting the savedData QList.
           savedDataAtCheckpointLevel = null
-
           changedVehiclesSinceCheckpoint0.all = false
 
           // Defining another checkpoint. We must keep current segments state
@@ -141,7 +205,10 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
 
         // Restoring the vehicle values if it has changed since checkpoint 0 (using current changedVehiclesSinceCheckpoint0 value)
         QList.qForeach(savedDataAtCheckpointLevel.head._1, (value: Int) => changedVehiclesSinceCheckpoint0(value) = false)
-        rollBackVehicleValuesToCheckPoint(changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList)
+        QList.qForeach(changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList, (vehicle: Int) => {
+          lastComputedVehiclesValue(vehicle) = vehiclesValueAtCheckpoint0(vehicle)
+          assignVehicleValue(vehicle, lastComputedVehiclesValue(vehicle))
+        })
 
         // Restoring all other values
         this.changedVehiclesSinceCheckpoint0.all = false
@@ -260,11 +327,14 @@ case class GlobalConstraintCore(routes: ChangingSeqValue, v: Int)
 
 
   override def checkInternals(c : Checker): Unit = {
-    for (c <- managedConstraints) {
-      for (v <- vehicles) {
-        c.checkInternals(v, routes, segmentsOfVehicle(v).segments.toList)
+    for (vehicle <- vehicles) {
+      val fromScratch = computeVehicleValueFromScratch(vehicle, routes.value)
+      require(fromScratch.equals(lastComputedVehiclesValue(vehicle)),
+        s"""Constraint ${this.getClass.getName} failed.
+           |For Vehicle $vehicle should be $fromScratch got ${lastComputedVehiclesValue(vehicle)} $routes
+           |After receiving segments : ${segmentsOfVehicle(vehicle).segments.toList.mkString("\n    ")}""".stripMargin)
+
       }
-    }
   }
 
   object ListSegments{

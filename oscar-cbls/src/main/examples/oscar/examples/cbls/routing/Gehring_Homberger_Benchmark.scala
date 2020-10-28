@@ -84,26 +84,24 @@ class Gehring_Homberger_Benchmark_VRPTW(n: Int, v: Int, c: Long, distanceMatrix:
   val penaltyForUnrouted = 1000000
   val penaltyForMovingVehicle = 10000
 
-  val gc = GlobalConstraintCore(myVRP.routes, v)
-
   val nodeWeight = demands
 
   // Distance
   val routeLengths = Array.fill(v)(CBLSIntVar(m,0))
-  val routeLength = new RouteLength(gc,n,v,routeLengths,(from: Int, to: Int) => distanceMatrix(from)(to))
+  val routeLength = new RouteLength(myVRP.routes,n,v,routeLengths,(from: Int, to: Int) => distanceMatrix(from)(to))
   val movingVehiclesNow = movingVehicles(myVRP.routes,v)
 
   //Time window constraints
   val timeWindowRoute = myVRP.routes.createClone()
   val timeWindowViolations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
 
-  val timeWindowConstraint = TimeWindowConstraint(gc,n,v,singleNodeTransferFunctions, distanceMatrix, timeWindowViolations)
+  val timeWindowConstraint = TimeWindowConstraint(myVRP.routes,n,v,singleNodeTransferFunctions, distanceMatrix, timeWindowViolations)
 
   // Weighted nodes
   // The sum of node's weight can't excess the capacity of a vehicle
   val weightPerVehicle = Array.tabulate(v)(_ => CBLSIntVar(m))
   // This invariant maintains the total node's weight encountered by each vehicle
-  val weightedNodesConstraint = WeightedNodesPerVehicle(gc, n, v, nodeWeight, weightPerVehicle)
+  val weightedNodesConstraint = WeightedNodesPerVehicle(myVRP.routes, n, v, nodeWeight, weightPerVehicle)
   // This invariant maintains the capacity violation of each vehicle (le means lesser or equals)
   val vehicleCapacityViolation = Array.tabulate(v)(vehicle => weightPerVehicle(vehicle) le c)
   val constraintSystem = ConstraintSystem(m)

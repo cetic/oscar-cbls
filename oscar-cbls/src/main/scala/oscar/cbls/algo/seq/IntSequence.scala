@@ -246,6 +246,14 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
   }
 
   def explorerAtAnyOccurrence(value : Int) : Option[IntSequenceExplorer] = {
+    var index = 0
+    while(index < cacheSize){
+      if(intSequenceExplorerCache(index) != null &&
+        intSequenceExplorerCache(index).value == value)
+        return Some(intSequenceExplorerCache(index))
+      else
+        index += 1
+    }
     positionOfAnyOccurrence(value) match {
       case None => None
       case Some(x) => explorerAtPosition(x)
@@ -269,6 +277,14 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
   }
 
   def positionOfAnyOccurrence(value:Int):Option[Int] = {
+    var index = 0
+    while(index < cacheSize){
+      if(intSequenceExplorerCache(index) != null  &&
+        intSequenceExplorerCache(index).value == value)
+        return Some(intSequenceExplorerCache(index).position)
+      else
+        index += 1
+    }
     positionsOfValue(value) match {
       case null => None
       case x if x.isEmpty => None

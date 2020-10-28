@@ -65,7 +65,7 @@ class VRPTWWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, min
     })
 
   // Generating node weight (0 for depot and 10 to 20 for nodes)
-  val nodeWeight = Array.tabulate(n)(node => if(node < v)0L else Random.nextInt(11)+10)
+  val nodeWeight = Array.tabulate(n)(node => if(node < v)0L else Random.nextInt(11)+10L)
   // Vehicles have capacity varying from (n-v)/(2*v) to (2*(n-v))/v
   val vehicleCapacity = Array.fill(v)(15*(Random.nextInt((2*(n-v)/v)-((n-v)/(2*v))+1)+(n-v)/(2*v)))
 
@@ -76,10 +76,9 @@ class VRPTWWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, min
 
   // The STRONG timeWindow constraint (vehicleTimeWindowViolations contains the violation of each vehicle)
   val vehicleTimeWindowViolations = Array.fill(v)(new CBLSIntVar(store, 0L, Domain(0L, n)))
-  val gc = GlobalConstraintCore(myVRP.routes, v)
   val timeWindowStrongConstraint =
     TimeWindowConstraintWithLogReduction(
-      gc,
+      myVRP.routes,
       n, v,
       strongSingleNodeTransferFunctions,
       timeMatrix,
@@ -96,7 +95,7 @@ class VRPTWWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, min
   // The sum of node's weight can't excess the capacity of a vehicle
   val weightPerVehicle = Array.tabulate(v)(_ => CBLSIntVar(store))
   // This invariant maintains the total node's weight encountered by each vehicle
-  val weightedNodesConstraint = WeightedNodesPerVehicle(gc, n, v, nodeWeight, weightPerVehicle)
+  val weightedNodesConstraint = WeightedNodesPerVehicle(myVRP.routes, n, v, nodeWeight, weightPerVehicle)
   // This invariant maintains the capacity violation of each vehicle (le means lesser or equals)
   val vehicleCapacityViolation = Array.tabulate(v)(vehicle => (weightPerVehicle(vehicle) le vehicleCapacity(vehicle)))
   val constraintSystem = new ConstraintSystem(store)
