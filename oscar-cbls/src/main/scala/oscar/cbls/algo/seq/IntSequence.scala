@@ -75,8 +75,7 @@ object Token{
 abstract class IntSequence(protected[cbls] val token: Token = Token()) {
 
   private val cacheSize = 10
-  private val intSequenceExplorerCache: Array[Option[IntSequenceExplorer]] = Array.fill(cacheSize)(null)
-  private val priorityPositionToRemove: Array[Int] = Array.fill(cacheSize)(Int.MinValue)
+  private val intSequenceExplorerCache: Array[IntSequenceExplorer] = Array.fill(cacheSize)(null)
 
   def size : Int
 
@@ -115,64 +114,65 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
     def putUsedExplorerAtBack(usedExplorerIndex: Int): Unit = {
       // Moving the explorer and position to the end of the related array
       var i = usedExplorerIndex
-      val position = priorityPositionToRemove(i)
       val explorer = intSequenceExplorerCache(i)
       while (i < cacheSize - 1) {
-        priorityPositionToRemove(i) = priorityPositionToRemove(i + 1)
         intSequenceExplorerCache(i) = intSequenceExplorerCache(i + 1)
         i += 1
       }
-      priorityPositionToRemove(cacheSize - 1) = position
       intSequenceExplorerCache(cacheSize - 1) = explorer
     }
 
-    def insertExplorerAtEnd(explorer: Option[IntSequenceExplorer]): Unit = {
+    def insertExplorerAtEnd(explorer: IntSequenceExplorer): Unit = {
       var i = 0
       while (i < cacheSize - 1) {
-        priorityPositionToRemove(i) = priorityPositionToRemove(i + 1)
         intSequenceExplorerCache(i) = intSequenceExplorerCache(i + 1)
         i += 1
       }
-      priorityPositionToRemove(i) = position
       intSequenceExplorerCache(i) = explorer
     }
 
-    def insertExplorerAtFreeSpace(explorer: Option[IntSequenceExplorer]): Unit = {
+    def insertExplorerAtFreeSpace(explorer: IntSequenceExplorer): Unit = {
       var i = cacheSize - 1
-      while (i > 0 && priorityPositionToRemove(i) != -1)
+      while (i > 0 && intSequenceExplorerCache(i) != null)
         i -= 1
-      require(priorityPositionToRemove(i) == Int.MinValue, "That position should be empty got " + priorityPositionToRemove(i) +
-        "\nCurrent value : " + priorityPositionToRemove.toList)
-      priorityPositionToRemove(i) = position
+      require(intSequenceExplorerCache(i) == null, "That position should be empty got " + intSequenceExplorerCache(i) +
+        "\nCurrent value : " + intSequenceExplorerCache.toList)
       intSequenceExplorerCache(i) = explorer
     }
 
     var index = 0
     while (index < cacheSize) {
-      if (priorityPositionToRemove(index) == position) {
-        putUsedExplorerAtBack(index)
-        return intSequenceExplorerCache(cacheSize - 1)
-      }
-      else if (priorityPositionToRemove(index) == position - 1 && intSequenceExplorerCache(index).isDefined) {
-        putUsedExplorerAtBack(index)
-        return intSequenceExplorerCache(cacheSize-1).get.next
-      }
-      else if (priorityPositionToRemove(index) == position + 1 && intSequenceExplorerCache(index).isDefined) {
-        putUsedExplorerAtBack(index)
-        return intSequenceExplorerCache(cacheSize-1).get.prev
-      }
-      else
+      if(intSequenceExplorerCache(index) != null) {
+        if (intSequenceExplorerCache(index).position == position) {
+          putUsedExplorerAtBack(index)
+          return Some(intSequenceExplorerCache(cacheSize - 1))
+        }
+        else if (intSequenceExplorerCache(index).position == position - 1) {
+          putUsedExplorerAtBack(index)
+          return intSequenceExplorerCache(cacheSize - 1).next
+        }
+        else if (intSequenceExplorerCache(index).position == position + 1) {
+          putUsedExplorerAtBack(index)
+          return intSequenceExplorerCache(cacheSize - 1).prev
+        }
+        else
+          index += 1
+      } else {
         index += 1
+      }
     }
 
-    val explorer = computeExplorerAtPosition(position)
-    if (priorityPositionToRemove(0) >= 0) {
-      insertExplorerAtEnd(explorer) // The cache is full, we need to make space
-    } else {
-      insertExplorerAtFreeSpace(explorer) // The cache is not full, saving at free space
+    val optExplorer = computeExplorerAtPosition(position)
+    optExplorer match {
+      case None =>
+      case Some(explorer) =>
+        if (intSequenceExplorerCache(0) != null)
+          insertExplorerAtEnd(explorer) // The cache is full, we need to make space
+        else
+          insertExplorerAtFreeSpace(explorer) // The cache is not full, saving at free space
     }
 
-    explorer
+    optExplorer
   }
 
   protected def computeExplorerAtPosition(position: Int): Option[IntSequenceExplorer]
