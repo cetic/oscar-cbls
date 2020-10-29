@@ -73,10 +73,10 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Int],
       pointToRemove = it.next()
 
       if(pointToRemove >= v){ //otherwise, it is a vehicle start, and we do not try to remove it.
-        seq.value.positionOfAnyOccurrence(pointToRemove) match {
+        seq.value.explorerAtAnyOccurrence(pointToRemove) match {
           case None => ;
-          case Some(p) =>
-            positionOfPointToRemove = p
+          case Some(e) =>
+            positionOfPointToRemove = e.position
             doMove(positionOfPointToRemove)
             if (evaluateCurrentMoveObjTrueIfSomethingFound(evalObjAndRollBack())) {
               notifyFound()

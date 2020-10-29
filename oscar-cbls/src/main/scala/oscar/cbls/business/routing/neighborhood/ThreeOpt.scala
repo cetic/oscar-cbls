@@ -82,9 +82,9 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
     for (insertionPointTmp <- iterationSchemeOnZone){
       insertionPoint = insertionPointTmp
 
-      seqValue.positionOfAnyOccurrence(insertionPoint) match{
+      seqValue.explorerAtAnyOccurrence(insertionPoint) match{
         case None => //not routed?!
-        case Some(insertionPosition) =>
+        case Some(explorerAtInsertionPoint) =>
 
           val vehicleForInsertion = nodeToVehicle(insertionPoint)
 
@@ -95,33 +95,35 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
           val (routedRelevantNeighborsByVehicle,notifyFound2) = selectMovedSegmentBehavior.toIterable(routedRelevantNeighbors.groupBy((i : Int) => nodeToVehicle(i)).toList)
 
           for((vehicleOfMovedSegment,relevantNodes) <- routedRelevantNeighborsByVehicle if vehicleOfMovedSegment != v){
-            val pairsOfNodesWithPosition = Pairs.makeAllSortedPairs(relevantNodes.map(node => (node,seqValue.positionOfAnyOccurrence(node).head)).toList)
-            val orderedPairsOfNode = pairsOfNodesWithPosition.map({case (a, b) => if (a._2 < b._2) (a, b) else (b, a)})
+            val pairsOfNodesWithPosition = Pairs.makeAllSortedPairs(relevantNodes.map(node => (node,seqValue.explorerAtAnyOccurrence(node).head)).toList)
+            val orderedPairsOfNode = pairsOfNodesWithPosition.map({case (a, b) =>
+              if (a._2.position < b._2.position) (a, b) else (b, a)
+            })
 
             val (relevantPairsToExplore,notifyFound3) =
               selectMovedSegmentBehavior.toIterable(
                 if (skipOnePointMove) orderedPairsOfNode.filter({case (a, b) => a._1 != b._1})
                 else orderedPairsOfNode)
 
-            for (((segmentStart,segmentStartPosition), (segmentEnd,segmentEndPosition)) <- relevantPairsToExplore) {
+            for (((segmentStart,explorerAtSegmentStart), (segmentEnd,explorerAtSegmentEnd)) <- relevantPairsToExplore) {
 
-              if (insertionPosition < segmentStartPosition || segmentEndPosition < insertionPosition) {
+              if (explorerAtInsertionPoint.position < explorerAtSegmentStart.position || explorerAtSegmentEnd.position < explorerAtInsertionPoint.position) {
 
-                segmentStartPositionForInstantiation = segmentStartPosition
-                segmentEndPositionForInstantiation = segmentEndPosition
-                insertionPointPositionForInstantiation = insertionPosition
+                segmentStartPositionForInstantiation = explorerAtSegmentStart.position
+                segmentEndPositionForInstantiation = explorerAtSegmentEnd.position
+                insertionPointPositionForInstantiation = explorerAtInsertionPoint.position
                 insertionPointForInstantiation = insertionPoint
 
                 //skip this if same vehicle, no flip, and to the left
 
-                if(!breakSymmetry || vehicleForInsertion != vehicleOfMovedSegment || insertionPosition > segmentStartPosition){
+                if(!breakSymmetry || vehicleForInsertion != vehicleOfMovedSegment || explorerAtInsertionPoint.position > explorerAtSegmentStart.position){
 
                   val (flipValuesToTest,notifyFound4) =
                     selectFlipBehavior.toIterable(if(tryFlip) List(false,true) else List(false))
 
                   for(flipForInstantiationTmp <- flipValuesToTest){
                     flipForInstantiation = flipForInstantiationTmp
-                    doMove(insertionPosition, segmentStartPosition, segmentEndPosition, flipForInstantiation)
+                    doMove(explorerAtInsertionPoint.position, explorerAtSegmentStart.position, explorerAtSegmentEnd.position, flipForInstantiation)
 
                     if (evaluateCurrentMoveObjTrueIfSomethingFound(evalObjAndRollBack())) {
                       notifyFound1()

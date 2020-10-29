@@ -148,10 +148,10 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
 
       for(a <- positionToInsertIterable){
         pointWhereToInsertAfter = a
-        seqValue.positionOfAnyOccurrence(pointWhereToInsertAfter) match{
+        seqValue.explorerAtAnyOccurrence(pointWhereToInsertAfter) match{
           case None => //not routed?!
-          case Some(position) =>
-            insertAtPositionForInstantiation = position + 1
+          case Some(explorer) =>
+            insertAtPositionForInstantiation = explorer.position + 1
 
             doMove(insertedPointForInstantiation, insertAtPositionForInstantiation)
 
