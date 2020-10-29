@@ -3,7 +3,7 @@ package oscar.examples.cbls.routing
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
-import oscar.cbls.business.routing.invariants.timeWindow.{NaiveTimeWindowConstraint, TransferFunction}
+import oscar.cbls.business.routing.invariants.timeWindow.{NaiveTimeWindowConstraint, TimeWindowConstraint, TransferFunction}
 import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleCapacityConstraintWithLogReduction
 import oscar.cbls.core.computation.{CBLSIntVar, Store}
 import oscar.cbls.core.constraint.ConstraintSystem
@@ -43,12 +43,11 @@ class SimpleVRPWithTimeWindowsAndVehicleContent(n: Int, v: Int, seed: Int) {
   val travelDurationMatrix = symmetricDistance
   val (listOfChains,precedences) = RoutingMatrixGenerator.generateChainsPrecedence(n,v,(n-v)/2)
   val singleNodeTransferFunctions = RoutingMatrixGenerator.generateFeasibleTransferFunctions(n,v,travelDurationMatrix,listOfChains)
-  val maxTravelDurations = RoutingMatrixGenerator.generateMaxTravelDurations(listOfChains,singleNodeTransferFunctions.map(_.ea),travelDurationMatrix)
+  //val maxTravelDurations = RoutingMatrixGenerator.generateMaxTravelDurations(listOfChains,singleNodeTransferFunctions.map(_.ea),travelDurationMatrix)
   val contentsFlow = RoutingMatrixGenerator.generateContentFlow(n,listOfChains,maxVehicleContent)
   val vehiclesSize = RoutingMatrixGenerator.generateVehiclesSize(v,maxVehicleContent,minVehicleContent)
 
   val myVRP =  new VRP(m,n,v)
-  NaiveTimeWindowConstraint.maxTransferFunctionWithTravelDurationRestriction(n,v,singleNodeTransferFunctions,maxTravelDurations,listOfChains, travelDurationMatrix)
 
   // Distance
   val routeLengthPerVehicles = Array.tabulate(v)(vehicle => CBLSIntVar(m,name = s"Length of route $vehicle"))
@@ -68,14 +67,12 @@ class SimpleVRPWithTimeWindowsAndVehicleContent(n: Int, v: Int, seed: Int) {
   val capacityInvariant = GlobalVehicleCapacityConstraintWithLogReduction(myVRP.routes, n, v, vehiclesSize, contentsFlow, violationOfContentAtVehicle)
 
   //TimeWindow
-  val timeWindowInvariant = NaiveTimeWindowConstraint(myVRP.routes, n, v, singleNodeTransferFunctions, travelDurationMatrix)
-  timeWindowInvariant.addMaxTravelDurationConstraint(maxTravelDurations)
-  val timeWindowConstraint = timeWindowInvariant.violation
+  val violationOfTimeAtVehicle = TimeWindowConstraint(myVRP.routes, n, v, singleNodeTransferFunctions, travelDurationMatrix)
 
   //Constraints & objective
-  val obj = new CascadingObjective(precedencesConstraints,
-    new CascadingObjective(timeWindowConstraint,
-      new CascadingObjective(sum(violationOfContentAtVehicle),
+  val obj = new CascadingObjective(sum(violationOfContentAtVehicle),
+    new CascadingObjective(sum(violationOfTimeAtVehicle),
+      new CascadingObjective(precedencesConstraints,
         sum(routeLengthPerVehicles) + (penaltyForUnrouted*(n - length(myVRP.routes))))))
   m.close()
 
@@ -186,8 +183,6 @@ class SimpleVRPWithTimeWindowsAndVehicleContent(n: Int, v: Int, seed: Int) {
 
 
   search.doAllMoves(obj=obj)
-
-  //println(myVRP)
 
   search.profilingStatistics
 }

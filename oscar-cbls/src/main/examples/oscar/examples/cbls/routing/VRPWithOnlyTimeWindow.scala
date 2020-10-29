@@ -53,17 +53,17 @@ object VRPWithOnlyTimeWindow extends App {
   }
 
   // 0 == old constraint, 1 == New TimeWindow constraint, 2 == New TimeWindow constraint with log reduction
-  val timeWindowConstraints = List(1)
+  val timeWindowConstraints = List(1,2)
   // Add true if you want to run with Best and/or false if you want to run with First
   val bests = List(false)
   // Add the procedures you want (see at the end of this files for more informations)
   val procedures = List(1,2,3)
   // The variations of n values
-  val ns_1 = List(100, 200, 300, 400, 500, 600, 700, 800, 900, 1000)
+  val ns_1 = (100 to 1000 by 100).toList
   val ns_2 = List(1000)
   // The variations of v values
   val vs_1 = List(10)
-  val vs_2 = List(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+  val vs_2 = (10 to 100 by 10).toList
   //val vs_2 = List(10)
   // The number of iterations of each configuration
   val iterations = 20
