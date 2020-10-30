@@ -49,13 +49,18 @@ class SimpleVRPWithTimeWindowsAndVehicleContent(n: Int, v: Int, seed: Int) {
 
   val myVRP =  new VRP(m,n,v)
 
+  val contentRoute = myVRP.routes.createClone()
+  val timeWindowRoute = contentRoute.createClone()
+  val precedenceRoute = timeWindowRoute.createClone()
+  val routeLengthRoute = precedenceRoute.createClone()
+
   // Distance
   val routeLengthPerVehicles = Array.tabulate(v)(vehicle => CBLSIntVar(m,name = s"Length of route $vehicle"))
-  val routeLengthInvariant = new RouteLength(myVRP.routes,n,v,routeLengthPerVehicles,(from: Int, to: Int) => symmetricDistance(from)(to))
+  val routeLengthInvariant = new RouteLength(routeLengthRoute,n,v,routeLengthPerVehicles,(from: Int, to: Int) => symmetricDistance(from)(to))
 
   //Chains
-  val precedenceInvariant = precedence(myVRP.routes,precedences)
-  val vehicleOfNodesNow = vehicleOfNodes(myVRP.routes,v)
+  val precedenceInvariant = precedence(precedenceRoute,precedences)
+  val vehicleOfNodesNow = vehicleOfNodes(precedenceRoute,v)
   val precedencesConstraints = new ConstraintSystem(m)
   for(start <- precedenceInvariant.nodesStartingAPrecedence)
     precedencesConstraints.add(vehicleOfNodesNow(start) === vehicleOfNodesNow(precedenceInvariant.nodesEndingAPrecedenceStartedAt(start).head))
@@ -63,11 +68,11 @@ class SimpleVRPWithTimeWindowsAndVehicleContent(n: Int, v: Int, seed: Int) {
   val chainsExtension = chains(myVRP,listOfChains)
 
   // Vehicle content
-  val violationOfContentAtVehicle = Array.tabulate(v)(vehicle => new CBLSIntVar(myVRP.routes.model, 0, 0 to Int.MaxValue, s"violation of capacity of vehicle $vehicle"))
-  val capacityInvariant = GlobalVehicleCapacityConstraintWithLogReduction(myVRP.routes, n, v, vehiclesSize, contentsFlow, violationOfContentAtVehicle)
+  val violationOfContentAtVehicle = Array.tabulate(v)(vehicle => new CBLSIntVar(m, 0, 0 to Int.MaxValue, s"violation of capacity of vehicle $vehicle"))
+  val capacityInvariant = GlobalVehicleCapacityConstraintWithLogReduction(contentRoute, n, v, vehiclesSize, contentsFlow, violationOfContentAtVehicle)
 
   //TimeWindow
-  val violationOfTimeAtVehicle = TimeWindowConstraint(myVRP.routes, n, v, singleNodeTransferFunctions, travelDurationMatrix)
+  val violationOfTimeAtVehicle = TimeWindowConstraint(timeWindowRoute, n, v, singleNodeTransferFunctions, travelDurationMatrix)
 
   //Constraints & objective
   val obj = new CascadingObjective(sum(violationOfContentAtVehicle),
