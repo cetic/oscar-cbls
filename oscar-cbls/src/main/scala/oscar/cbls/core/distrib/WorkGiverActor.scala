@@ -2,8 +2,7 @@ package oscar.cbls.core.distrib
 
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
-import oscar.cbls.core.computation.Store
-import oscar.cbls.core.search.{NoMoveFound, SearchResult}
+import oscar.cbls.core.search.SearchResult
 
 import scala.concurrent.{Future, Promise}
 import scala.util.Success
