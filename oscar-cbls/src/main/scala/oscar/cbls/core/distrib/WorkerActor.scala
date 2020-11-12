@@ -5,8 +5,9 @@ import java.util.concurrent.Executors
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import org.slf4j.{Logger, LoggerFactory}
-import oscar.cbls.core.computation.{Solution, Store}
-import oscar.cbls.core.search.{MoveFound, Neighborhood, NoMoveFound}
+import oscar.cbls.core.computation.Store
+import oscar.cbls.core.objective.IndependentObjective
+import oscar.cbls.core.search.{MoveFound, NoMoveFound}
 
 import scala.collection.SortedMap
 import scala.concurrent.{ExecutionContext, Future}
@@ -14,7 +15,7 @@ import scala.util.{Failure, Success}
 
 case class SearchRequest(neighborhoodID:RemoteNeighborhoodIdentification,
                          acc:(Long,Long) => Boolean,
-                         obj:IndependentOBj,
+                         obj:IndependentObjective,
                          startSolution:IndependentSolution){
   override def toString: String = s"SearchRequest($neighborhoodID,$acc,$obj)"
 }
@@ -90,7 +91,7 @@ class WorkerActor(neighborhoods:SortedMap[Int,RemoteNeighborhood],
     searchRequest.startSolution.makeLocal(m).restoreDecisionVariables()
     shouldAbortComputation = false
     val neighborhood = neighborhoods(searchRequest.neighborhoodID.neighborhoodID)
-    neighborhood.explore(searchRequest.neighborhoodID.parameters, searchRequest.obj.convertToOBj(m), searchRequest.acc, shouldAbort = () => shouldAbortComputation) match{
+    neighborhood.explore(searchRequest.neighborhoodID.parameters, searchRequest.obj.convertToObjective(m), searchRequest.acc, shouldAbort = () => shouldAbortComputation) match {
       case NoMoveFound => IndependentNoMoveFound()
       case MoveFound(m) => IndependentMoveFound(m.getIndependentMove(this.m))
     }
@@ -155,7 +156,7 @@ class WorkerActor(neighborhoods:SortedMap[Int,RemoteNeighborhood],
               next(IAmBusy(newSearch))
           }
 
-        case AbortSearch(searchId:Long) =>
+        case AbortSearch(searchId) =>
           state match {
             case ShuttingDown() =>
               Behaviors.same
@@ -191,7 +192,7 @@ class WorkerActor(neighborhoods:SortedMap[Int,RemoteNeighborhood],
           state match {
             case IAmBusy(search) =>
               require(search.searchId == result.searchID)
-              if(verbose) context.log.info(s"finished search:${search.searchId}, sending result $result to ${search.workGiver.path}")
+              if (verbose) context.log.info(s"finished search:${search.searchId}, sending result $result to ${search.workGiver.path}")
               search.workGiver ! result
 
               result match{

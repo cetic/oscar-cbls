@@ -1,14 +1,8 @@
 package oscar.cbls.core.distrib
 
 import oscar.cbls.core.computation.{AbstractVariableSnapShot, Solution, Store}
-import oscar.cbls.core.objective.{AbortableObjective, Objective}
+import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{LoadSolutionMove, Move, MoveFound, Neighborhood, NoMoveFound, SearchResult}
-
-// ////////////////////////////////////////////////////////////
-
-abstract class IndependentOBj{
-  def convertToOBj(m:Store):Objective
-}
 
 // ////////////////////////////////////////////////////////////
 
@@ -26,12 +20,14 @@ class RemoteNeighborhood(val neighborhoodID:Int, neighborhood:List[Long] => Neig
 
 // ////////////////////////////////////////////////////////////
 
-abstract class IndependentSearchResult{
+abstract class IndependentSearchResult {
   def getLocalResult(m:Store):SearchResult
 }
+
 case class IndependentMoveFound(i:IndependentMove) extends IndependentSearchResult{
   override def getLocalResult(m: Store): SearchResult = MoveFound(i.makeLocal(m))
 }
+
 case class IndependentNoMoveFound() extends IndependentSearchResult{
   override def getLocalResult(m: Store): SearchResult = NoMoveFound
 }
@@ -46,19 +42,19 @@ object IndependentSolution{
 
 class IndependentSolution(saves:Iterable[AbstractVariableSnapShot]){
   def makeLocal(s:Store):Solution = {
-    new Solution(saves,s)
+    Solution(saves,s)
   }
 }
 // ////////////////////////////////////////////////////////////
 
-trait IndependentMove{
+trait IndependentMove {
   def objAfter:Long
   def neighborhoodName:String
   def makeLocal(m:Store):Move
 }
 
 case class LoadIndependentSolutionMove(objAfter:Long, neighborhoodName: String, s:IndependentSolution)
-  extends IndependentMove{
+  extends IndependentMove {
   override def makeLocal(m:Store):Move =
     LoadSolutionMove(
       s.makeLocal(m),

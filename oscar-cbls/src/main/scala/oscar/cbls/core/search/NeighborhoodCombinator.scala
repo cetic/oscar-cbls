@@ -16,7 +16,6 @@
  */
 package oscar.cbls.core.search
 
-
 import oscar.cbls.core.distrib.{RemoteNeighborhood, Supervisor}
 
 /**

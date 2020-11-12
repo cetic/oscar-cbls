@@ -4,7 +4,7 @@ import akka.actor.typed._
 import akka.util.Timeout
 import org.slf4j.{Logger, LoggerFactory}
 import oscar.cbls.core.computation.{Solution, Store}
-import oscar.cbls.core.objective.{FunctionObjective, Objective}
+import oscar.cbls.core.objective.{FunctionObjective, IndependentObjective, Objective}
 import oscar.cbls.core.search.{DoNothingMove, Move, MoveFound, NoMoveFound, SearchResult}
 
 import scala.collection.immutable.SortedMap
@@ -12,9 +12,9 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
 import scala.util.Random
 
-object Test extends App{
+object Test extends App {
 
-  val  startLogger:Logger = LoggerFactory.getLogger("SupervisorObject");
+  val startLogger:Logger = LoggerFactory.getLogger("SupervisorObject")
   startLogger.info("starting actor system")
 
   val supervisorActor:ActorSystem[MessagesToSupervisor] = Supervisor.internalStartSupervisorAndActorSystem(verbose = false, tic = 1.seconds)
@@ -22,11 +22,10 @@ object Test extends App{
   implicit val timeout: Timeout = Timeout(3.seconds)
   val supervisor = Supervisor.wrapSupervisor(supervisorActor, new Store(), false)(supervisorActor)
 
-  case class PseudoMove(test:String) extends Move(neighborhoodName="PseudoNeighborhood"){
-    override def commit(): Unit = {
-    }
+  case class PseudoMove(test:String) extends Move(neighborhoodName="PseudoNeighborhood") {
+    override def commit(): Unit = { }
 
-    override def getIndependentMove(m: Store): IndependentMove = new IndependentMove(){
+    override def getIndependentMove(m: Store): IndependentMove = new IndependentMove() {
 
       override def makeLocal(m: Store): Move = DoNothingMove(0)
 
@@ -38,7 +37,7 @@ object Test extends App{
     }
   }
 
-  def createNeighborhood(actorName:String,neighborhoodID:Int):RemoteNeighborhood = {
+  def createNeighborhood(actorName:String, neighborhoodID:Int): RemoteNeighborhood = {
     new RemoteNeighborhood(neighborhoodID, null) {
       //this is for test purpose
       override def explore(parameters: List[Long],
@@ -52,19 +51,19 @@ object Test extends App{
         var i:Long = 0
         var continue = true
         var aborted = false
-        while(continue){
-          if(java.lang.System.currentTimeMillis() >= endTime){
+        while (continue) {
+          if (java.lang.System.currentTimeMillis() >= endTime) {
             continue = false
           }
-          if(shouldAbort()) {
+          if (shouldAbort()) {
             continue = false
             aborted = true
           }
           i = i + 1
         }
-        if(aborted)
+        if (aborted)
           NoMoveFound
-        else if(Random.nextBoolean())
+        else if (Random.nextBoolean())
           MoveFound(PseudoMove(s"neighborhoodID:${neighborhoodID} params:${parameters} i:$i"))
         else {
           // throw new Exception("bug")
@@ -74,7 +73,7 @@ object Test extends App{
     }
   }
 
-  def createNeighborhoods(actorName:String):SortedMap[Int,RemoteNeighborhood] = {
+  def createNeighborhoods(actorName:String): SortedMap[Int,RemoteNeighborhood] = {
     SortedMap(
       (0,createNeighborhood(actorName,0)),
       (1,createNeighborhood(actorName,1)),
@@ -84,7 +83,7 @@ object Test extends App{
 
   def createWorker(actorName:String): Unit ={
     val neighborhoods:SortedMap[Int,RemoteNeighborhood] = createNeighborhoods(actorName)
-    supervisor.createLocalWorker(new Store(),neighborhoods)
+    supervisor.createLocalWorker(Store(), neighborhoods)
   }
 
   createWorker("grincheux")
@@ -103,9 +102,9 @@ object Test extends App{
     supervisor.delegateSearch(SearchRequest(
       RemoteNeighborhoodIdentification(neighborhoodID % 2,parameters = List(neighborhoodID),s"searching ${neighborhoodID%2} param:$neighborhoodID"),
       _ > _,
-      new IndependentOBj {
+      new IndependentObjective {
         override def toString: String = "objective"
-        override def convertToOBj(m: Store): Objective = new FunctionObjective(() => 5)
+        override def convertToObjective(m: Store): Objective = new FunctionObjective(() => 5)
       },
       startSolution = IndependentSolution(Solution(List.empty,null))))
   }
@@ -117,9 +116,9 @@ object Test extends App{
     i => SearchRequest(
       RemoteNeighborhoodIdentification(i % 2,parameters = List(i),s"or-searching ${i%2} param:$i"),
       _ > _,
-      new IndependentOBj {
+      new IndependentObjective {
         override def toString: String = "objective"
-        override def convertToOBj(m: Store): Objective = new FunctionObjective(() => 6)
+        override def convertToObjective(m: Store): Objective = new FunctionObjective(() => 6)
       },
       startSolution = IndependentSolution(Solution(List.empty,null)))
   }
@@ -131,9 +130,9 @@ object Test extends App{
     i => SearchRequest(
       RemoteNeighborhoodIdentification(i % 2,parameters = List(i),s"or-searching ${i%2} param:$i"),
       _ > _,
-      new IndependentOBj {
+      new IndependentObjective {
         override def toString: String = "objective"
-        override def convertToOBj(m: Store): Objective = new FunctionObjective(() => 7)
+        override def convertToObjective(m: Store): Objective = new FunctionObjective(() => 7)
       },
       startSolution = IndependentSolution(Solution(List.empty,null)))
   }
@@ -144,9 +143,9 @@ object Test extends App{
     i => SearchRequest(
       RemoteNeighborhoodIdentification(i % 2,parameters = List(i),s"and-searching ${i%2} param:$i"),
       _ > _,
-      new IndependentOBj {
+      new IndependentObjective {
         override def toString: String = "objective"
-        override def convertToOBj(m: Store): Objective = new FunctionObjective(() => 4)
+        override def convertToObjective(m: Store): Objective = new FunctionObjective(() => 4)
       },
       startSolution = IndependentSolution(Solution(List.empty,null)))
   }

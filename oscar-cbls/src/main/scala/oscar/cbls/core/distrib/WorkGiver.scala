@@ -9,20 +9,24 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future, Promise, TimeoutException}
 import scala.util.Success
 
-object WorkGiver{
-  def wrap(workGiverActor:ActorRef[MessageToWorkGiver],m:Store,supervisor:Supervisor):WorkGiver = {
+object WorkGiver {
+  def wrap(workGiverActor:ActorRef[MessageToWorkGiver],
+           m:Store,
+           supervisor:Supervisor): WorkGiver = {
     new WorkGiver(workGiverActor:ActorRef[MessageToWorkGiver], m, supervisor:Supervisor, system=supervisor.system)
   }
 
-  def andWrap(workGiverBehaviors:Array[ActorRef[MessageToWorkGiver]],m:Store,supervisor:Supervisor):AndWorkGiver =
-    new AndWorkGiver(workGiverBehaviors, m, supervisor,system=supervisor.system)
+  def andWrap(workGiverBehaviors:Array[ActorRef[MessageToWorkGiver]],
+              m:Store,
+              supervisor:Supervisor): AndWorkGiver =
+    new AndWorkGiver(workGiverBehaviors, m, supervisor, system=supervisor.system)
 }
 
 
 class WorkGiver(workGiverBehavior:ActorRef[MessageToWorkGiver],
                 m:Store,
                 supervisor:Supervisor,
-                implicit val system: ActorSystem[_]){
+                implicit val system: ActorSystem[_]) {
   implicit val timeout: Timeout = 30.seconds
   import akka.actor.typed.scaladsl.AskPattern._
 
@@ -35,7 +39,7 @@ class WorkGiver(workGiverBehavior:ActorRef[MessageToWorkGiver],
   def getResultWaitIfNeeded(timeout:Duration = Duration.Inf):Option[SearchResult] = {
     try {
       val result = Await.result[SearchEnded](futureResult,atMost=timeout)
-      result match{
+      result match {
         case c:SearchCrashed =>
           val e = new Exception(s"Crash happened at worker:${c.worker}: \n${c.exception.getMessage}\nwhen performing neighborhood:${c.neighborhood}")
           e.setStackTrace(
@@ -67,7 +71,10 @@ class WorkGiver(workGiverBehavior:ActorRef[MessageToWorkGiver],
   }
 }
 
-class AndWorkGiver(workGiverBehaviors:Array[ActorRef[MessageToWorkGiver]], m:Store, supervisor:Supervisor, implicit val system: ActorSystem[_]){
+class AndWorkGiver(workGiverBehaviors:Array[ActorRef[MessageToWorkGiver]],
+                   m:Store,
+                   supervisor:Supervisor,
+                   implicit val system: ActorSystem[_]) {
   implicit val timeout: Timeout = 30.seconds
   import akka.actor.typed.scaladsl.AskPattern._
 
@@ -184,4 +191,3 @@ class WorkStream(m:Store, supervisor:Supervisor) {
     }
   }
 }
-
