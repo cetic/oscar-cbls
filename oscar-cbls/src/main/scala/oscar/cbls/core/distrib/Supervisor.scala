@@ -1,24 +1,24 @@
 package oscar.cbls.core.distrib
 
+import akka.actor.BootstrapSetup
+import akka.actor.setup.ActorSystemSetup
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
-import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
+import akka.actor.typed.{ActorRef, ActorSystem, Behavior, MailboxSelector}
+import akka.dispatch.ControlMessage
 import akka.util.Timeout
 import org.slf4j.{Logger, LoggerFactory}
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.search.{Neighborhood, SearchResult}
 
 import scala.collection.immutable.SortedMap
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration.Infinite
 import scala.util.{Failure, Success}
 
-
-import scala.concurrent.Await
-
 sealed trait MessagesToSupervisor
-final case class NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) extends MessagesToSupervisor
-final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSearchIDOpt:Option[Long], completedNeighborhoodID:Option[Int]) extends MessagesToSupervisor
-final case class CancelSearchToSupervisor(searchID:Long) extends MessagesToSupervisor
+final case class NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) extends MessagesToSupervisor with ControlMessage
+final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSearchIDOpt:Option[Long], completedNeighborhoodID:Option[Int]) extends MessagesToSupervisor with ControlMessage
+final case class CancelSearchToSupervisor(searchID:Long) extends MessagesToSupervisor with ControlMessage
 
 final case class SearchStarted(search:SearchTask, startID:Long, worker:ActorRef[MessageToWorker]) extends MessagesToSupervisor
 final case class SearchNotStarted(search:SearchTask, worker:ActorRef[MessageToWorker]) extends MessagesToSupervisor
@@ -43,7 +43,18 @@ object Supervisor{
     val  startLogger:Logger = LoggerFactory.getLogger("SupervisorObject")
     startLogger.info("Starting actor system and supervisor")
 
-    ActorSystem(createSupervisorBehavior(verbose, tic),"supervisor")
+
+    //We prioritize some messages to try and maximize the hit on hotRestart
+    val a = ActorSystem(createSupervisorBehavior(verbose, tic),"supervisor",
+      setup=ActorSystemSetup.create(BootstrapSetup()),
+      guardianProps = MailboxSelector.fromConfig("akka.actor.mailbox.unbounded-control-aware-queue-based")) //"akka.dispatch.UnboundedControlAwareMailbox"))
+
+
+
+
+    //println(a.settings)
+
+    a
   }
 
   def spawnSupervisor(context:ActorContext[_],verbose:Boolean):ActorRef[MessagesToSupervisor] = {
@@ -60,9 +71,9 @@ object Supervisor{
 }
 
 
-final case class DelegateSearchWithAction(searchRequest:SearchRequest, action:SearchResult=>Unit) extends MessagesToSupervisor
-final case class DelegateSearch(searchRequest:SearchRequest, replyTo:ActorRef[WorkGiverActorCreated], action:Option[SearchEnded => Unit]) extends MessagesToSupervisor
-final case class DelegateSearches(searchRequest:Array[SearchRequest], replyTo:ActorRef[WorkGiverActorCreated]) extends MessagesToSupervisor
+final case class DelegateSearchWithAction(searchRequest:SearchRequest, action:SearchResult=>Unit) extends MessagesToSupervisor with ControlMessage
+final case class DelegateSearch(searchRequest:SearchRequest, replyTo:ActorRef[WorkGiverActorCreated], action:Option[SearchEnded => Unit]) extends MessagesToSupervisor with ControlMessage
+final case class DelegateSearches(searchRequest:Array[SearchRequest], replyTo:ActorRef[WorkGiverActorCreated]) extends MessagesToSupervisor with ControlMessage
 final case class ShutDown(replyTo:Option[ActorRef[Unit]]) extends MessagesToSupervisor
 final case class SpawnWorker(workerBehavior:Behavior[MessageToWorker], replyTo:ActorRef[Unit]) extends MessagesToSupervisor
 final case class NbWorkers(replyTo:ActorRef[Int]) extends MessagesToSupervisor
@@ -158,7 +169,6 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
     s"workers(total:${allKnownWorkers.size} busy:${allKnownWorkers.size - idleWorkers.size}) searches(waiting:${waitingSearches.size} starting:${startingSearches.size} running:${runningSearches.size} totalStarted:$totalStartedSearches)"
   }
 
-
   tic match{
     case _:Infinite => ;
     case f:FiniteDuration => context.scheduleOnce(f, context.self, Tic())
@@ -181,7 +191,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
       case SpawnWorker(workerBehavior,ref) =>
         val worker = context.spawn(workerBehavior,s"localWorker$nbLocalWorker")
         nbLocalWorker += 1
-       ref!Unit
+        ref!Unit
 
       case NbWorkers(replyTo) =>
         replyTo ! this.allKnownWorkers.size
@@ -232,28 +242,31 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
               val preferredWorkerOpt = neighborhoodToPreferredWorker.get(nID)
               preferredWorkerOpt match{
                 case Some(preferredWorker) =>
-                 // println(s"preferredWorker:$preferredWorker")
-                 // println(s"preferredWorker.path:${preferredWorker.path}")
-                 // println(s"idleWorkers:$idleWorkers")
+                  // println(s"preferredWorker:$preferredWorker")
+                  // println(s"preferredWorker.path:${preferredWorker.path}")
+                  // println(s"idleWorkers:$idleWorkers")
                   val newIdle = idleWorkers.filter(_.path != preferredWorker.path)
-                 // println(s"newIdle:$newIdle")
+                  // println(s"newIdle:$newIdle")
                   if(newIdle.size != idleWorkers.size){
                     //start this one
                     startSearch(searchesToStart(searchI),preferredWorker)
                     searchesToStart(searchI) = null
                     idleWorkers = newIdle
-                   // println("match")
+                    println("hotRestart")
                   }
                 case None => ;
               }
             }
 
             for(searchI <- searchesToStart.indices if searchesToStart(searchI) != null) {
+              println("coldRestart " + searchesToStart(searchI).request.neighborhoodID)
+
               val worker = idleWorkers.head
               idleWorkers = idleWorkers.tail
               startSearch(searchesToStart(searchI), worker)
               neighborhoodToPreferredWorker = neighborhoodToPreferredWorker + ((searchesToStart(searchI).request.neighborhoodID.neighborhoodID -> worker))
               searchesToStart(searchI) = null
+
             }
 
             //// take the first searches, one per available worker
@@ -339,10 +352,10 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
           //now, we have a workGiverActor, we search for an available worker or put this request on a waiting list.
           val theSearch = SearchTask(searchRequest, searchId, workGiverActorRef)
           waitingSearches.enqueue(theSearch)
-          context.self ! StartSomeSearch()
           workGiverActorRef
         }
 
+        context.self ! StartSomeSearch()
         replyTo ! WorkGiverActorCreated(orWorkGiverActorRef)
 
       case CancelSearchToSupervisor(searchID: Long) =>
@@ -400,5 +413,3 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
     this
   }
 }
-
-

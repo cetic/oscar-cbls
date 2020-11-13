@@ -30,6 +30,9 @@ import scala.language.postfixOps
 
 object WarehouseLocationDistributed2 extends App{
 
+  val time = Array.fill(10)(0L)
+
+  for(nbWorker <- 1 until 10){
   //the number of warehouses
   val W:Int = 2000
 
@@ -82,8 +85,8 @@ object WarehouseLocationDistributed2 extends App{
       swapsNeighborhood(warehouseOpenArray,searchZone1 = () => myRange, name = "SwapWarehouses")
     }
 
-    val nbSmallSwaps = 5
-    val nbBigSwaps = 20
+    val nbSmallSwaps = 1 max nbWorker-2
+    val nbBigSwaps = nbWorker*3
     //These neighborhoods are inefficient and slow; using multiple core is the wrong answer to inefficiency
     val neighborhood = (profile(
       new DistributedFirst((
@@ -93,8 +96,9 @@ object WarehouseLocationDistributed2 extends App{
           ++ ((0 until nbBigSwaps).map((i:Int) => swapsK(100,modulo=nbBigSwaps,shift=i)))
         //  ++ ((0 until nbBigSwaps).map((i:Int) =>  swaps(modulo = nbBigSwaps,shift = i)))
         ).toArray))
-        onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray,() => W/10), 2, obj)
-        onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/5), 2, obj))
+//        onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray,() => W/10), 2, obj)
+//        onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/5), 2, obj)
+        )
 
 
     (m,neighborhood,obj,() => {println(openWarehouses)})
@@ -105,9 +109,9 @@ object WarehouseLocationDistributed2 extends App{
 
   import scala.concurrent.duration._
 
-  val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(store,search,tic = 500.millisecond,verbose = false)
+  val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(store,search)
 
-  val nbWorker = 6
+  //val nbWorker = 6
 
   for(_ <- (0 until nbWorker).par) {
     val (store2, search2, _, _) = createSearchProcedure()
@@ -115,13 +119,22 @@ object WarehouseLocationDistributed2 extends App{
     search2.verbose = 2
   }
 
-  val search2 = search.showObjectiveFunction(obj)
+    val start = System.currentTimeMillis()
+
+  val search2 = search //.showObjectiveFunction(obj)
   search2.verbose = 1
   search2.doAllMoves(obj = obj)
+
+    this.time(nbWorker) = System.currentTimeMillis() - start
 
   println(search2.profilingStatistics)
   supervisor.shutdown()
 
   finalPrint()
 //  System.exit(0)
+
+    System.gc()
+    }
+
+  println("time:\n\t" + time.zipWithIndex.mkString("\n\t"))
 }
