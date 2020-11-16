@@ -30,9 +30,11 @@ import scala.language.postfixOps
 
 object WarehouseLocationDistributed2 extends App{
 
-  val time = Array.fill(10)(0L)
+//  val time = Array.fill(10)(0L)
 
-  for(nbWorker <- 1 until 10){
+//  for(nbWorker <- 1 until 10){
+  val nbWorker = 6
+
   //the number of warehouses
   val W:Int = 2000
 
@@ -77,13 +79,8 @@ object WarehouseLocationDistributed2 extends App{
       swapsNeighborhood(warehouseOpenArray,
         searchZone1 = if(modulo ==0) openWarehouseTocConsider else () => openWarehouseTocConsider().filter(_%modulo == shift),
         searchZone2 = () => (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
-        name = "SwapK" + k,// + (if(modulo ==0) "" else s"mod:$modulo,s:$shift"),
+        name = "SwapK" + k, //+ (if(modulo ==0) "" else s"mod:$modulo,s:$shift"),
         symmetryCanBeBrokenOnIndices = false)
-
-    def swaps(modulo:Int,shift:Int) = {
-      val myRange = (0 until W/modulo).map(_*modulo+shift)
-      swapsNeighborhood(warehouseOpenArray,searchZone1 = () => myRange, name = "SwapWarehouses")
-    }
 
     val nbSmallSwaps = 1 max nbWorker-2
     val nbBigSwaps = nbWorker*3
@@ -94,12 +91,10 @@ object WarehouseLocationDistributed2 extends App{
           swapsK(2,modulo=0,shift=0))
           ++ ((0 until nbSmallSwaps).map((i:Int) => swapsK(20,modulo=nbSmallSwaps,shift=i)))
           ++ ((0 until nbBigSwaps).map((i:Int) => swapsK(100,modulo=nbBigSwaps,shift=i)))
-        //  ++ ((0 until nbBigSwaps).map((i:Int) =>  swaps(modulo = nbBigSwaps,shift = i)))
         ).toArray))
-//        onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray,() => W/10), 2, obj)
-//        onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/5), 2, obj)
+        onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray,() => W/10), 2, obj)
+        onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/5), 2, obj)
         )
-
 
     (m,neighborhood,obj,() => {println(openWarehouses)})
   }
@@ -111,7 +106,7 @@ object WarehouseLocationDistributed2 extends App{
 
   val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(store,search)
 
-  //val nbWorker = 6
+
 
   for(_ <- (0 until nbWorker).par) {
     val (store2, search2, _, _) = createSearchProcedure()
@@ -121,11 +116,11 @@ object WarehouseLocationDistributed2 extends App{
 
     val start = System.currentTimeMillis()
 
-  val search2 = search //.showObjectiveFunction(obj)
+  val search2 = search.showObjectiveFunction(obj)
   search2.verbose = 1
   search2.doAllMoves(obj = obj)
 
-    this.time(nbWorker) = System.currentTimeMillis() - start
+//    this.time(nbWorker) = System.currentTimeMillis() - start
 
   println(search2.profilingStatistics)
   supervisor.shutdown()
@@ -134,7 +129,7 @@ object WarehouseLocationDistributed2 extends App{
 //  System.exit(0)
 
     System.gc()
-    }
+  //  }
 
-  println("time:\n\t" + time.zipWithIndex.mkString("\n\t"))
+  //println("time:\n\t" + time.zipWithIndex.mkString("\n\t"))
 }

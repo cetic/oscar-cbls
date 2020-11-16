@@ -10,37 +10,38 @@ import scala.concurrent.{Await, Future, Promise, TimeoutException}
 import scala.util.Success
 
 object WorkGiver {
-  def wrap(workGiverActor:ActorRef[MessageToWorkGiver],
-           m:Store,
-           supervisor:Supervisor): WorkGiver = {
-    new WorkGiver(workGiverActor:ActorRef[MessageToWorkGiver], m, supervisor:Supervisor, system=supervisor.system)
+  def wrap(workGiverActor: ActorRef[MessageToWorkGiver],
+           m: Store,
+           supervisor: Supervisor): WorkGiver = {
+    new WorkGiver(workGiverActor: ActorRef[MessageToWorkGiver], m, supervisor: Supervisor, system = supervisor.system)
   }
 
-  def andWrap(workGiverBehaviors:Array[ActorRef[MessageToWorkGiver]],
-              m:Store,
-              supervisor:Supervisor): AndWorkGiver =
-    new AndWorkGiver(workGiverBehaviors, m, supervisor, system=supervisor.system)
+  def andWrap(workGiverBehaviors: Array[ActorRef[MessageToWorkGiver]],
+              m: Store,
+              supervisor: Supervisor): AndWorkGiver =
+    new AndWorkGiver(workGiverBehaviors, m, supervisor, system = supervisor.system)
 }
 
 
-class WorkGiver(workGiverBehavior:ActorRef[MessageToWorkGiver],
-                m:Store,
-                supervisor:Supervisor,
+class WorkGiver(workGiverBehavior: ActorRef[MessageToWorkGiver],
+                m: Store,
+                supervisor: Supervisor,
                 implicit val system: ActorSystem[_]) {
   implicit val timeout: Timeout = 30.seconds
+
   import akka.actor.typed.scaladsl.AskPattern._
 
-  private val futureFuture:Future[Future[SearchEnded]] =
+  private val futureFuture: Future[Future[SearchEnded]] =
     workGiverBehavior.ask[Future[SearchEnded]](ref => PromiseResult(ref))
-  private val futureResult = Await.result(futureFuture,atMost = 3.seconds)
+  private val futureResult = Await.result(futureFuture, atMost = 3.seconds)
 
-  def getResult:SearchResult = getResultWaitIfNeeded().get
+  def getResult: SearchResult = getResultWaitIfNeeded().get
 
-  def getResultWaitIfNeeded(timeout:Duration = Duration.Inf):Option[SearchResult] = {
+  def getResultWaitIfNeeded(timeout: Duration = Duration.Inf): Option[SearchResult] = {
     try {
-      val result = Await.result[SearchEnded](futureResult,atMost=timeout)
+      val result = Await.result[SearchEnded](futureResult, atMost = timeout)
       result match {
-        case c:SearchCrashed =>
+        case c: SearchCrashed =>
           val e = new Exception(s"Crash happened at worker:${c.worker}: \n${c.exception.getMessage}\nwhen performing neighborhood:${c.neighborhood}")
           e.setStackTrace(
 
@@ -53,81 +54,78 @@ class WorkGiver(workGiverBehavior:ActorRef[MessageToWorkGiver],
           supervisor.shutdown()
 
           throw e
-        case x:SearchCompleted => Some(x.searchResult.getLocalResult(m))
+        case x: SearchCompleted => Some(x.searchResult.getLocalResult(m))
       }
-    }catch{
-      case _:TimeoutException => None
+    } catch {
+      case _: TimeoutException => None
     }
   }
 
-  def isResultAvailable:Boolean = futureResult.isCompleted
+  def isResultAvailable: Boolean = futureResult.isCompleted
 
-  def cancelComputationRequest():Unit = {
+  def cancelComputationRequest(): Unit = {
     workGiverBehavior ! CancelSearch()
   }
 
-  def onResult(task:SearchEnded => Unit):Unit = {
-    futureResult.onComplete({case Success(s) => task(s)})(system.executionContext)
+  def onResult(task: SearchEnded => Unit): Unit = {
+    futureResult.onComplete({ case Success(s) => task(s) })(system.executionContext)
   }
 }
 
-class AndWorkGiver(workGiverBehaviors:Array[ActorRef[MessageToWorkGiver]],
-                   m:Store,
-                   supervisor:Supervisor,
+class AndWorkGiver(workGiverBehaviors: Array[ActorRef[MessageToWorkGiver]],
+                   m: Store,
+                   supervisor: Supervisor,
                    implicit val system: ActorSystem[_]) {
   implicit val timeout: Timeout = 30.seconds
+
   import akka.actor.typed.scaladsl.AskPattern._
-
-  private var lastNonCompletedJob:Int = workGiverBehaviors.length-1
-
   private val futureFutureResults = workGiverBehaviors.map(workGiverBehavior => {
     workGiverBehavior.ask[Future[SearchEnded]](ref => PromiseResult(ref))
   })
-
   private val futureResults = futureFutureResults.map(futureFuture =>
     Await.result(futureFuture, Duration.Inf))
+  private val results: Array[SearchResult] = Array.fill(workGiverBehaviors.length)(null)
+  private var lastNonCompletedJob: Int = workGiverBehaviors.length - 1
 
-  private val results:Array[SearchResult] = Array.fill(workGiverBehaviors.length)(null)
+  def getResult: Array[SearchResult] = getResultWaitIfNeeded().get
 
-  def getResult:Array[SearchResult] = getResultWaitIfNeeded().get
-
-  def getResultWaitIfNeeded(timeout:Duration = Duration.Inf):Option[Array[SearchResult]] = {
-    try {
-      while(lastNonCompletedJob != -1) {
-        Await.result[SearchEnded](futureResults(lastNonCompletedJob), atMost = timeout) match {
-          case c:SearchCrashed =>
-            val e = new Exception(s"Crash happened at worker:${c.worker}: \n${c.exception.getMessage}\nwhen performing neighborhood:${c.neighborhood}")
-            e.setStackTrace((c.exception.getStackTrace.toList ::: e.getStackTrace.toList).toArray)
-
-            supervisor.shutdown()
-            throw e
-          case r:SearchCompleted =>
-            results(lastNonCompletedJob) = r.searchResult.getLocalResult(m)
-            lastNonCompletedJob -= 1
-        }
-      }
-    }catch{
-      case _:TimeoutException => None
-    }
-    Some(results)
-  }
-
-  def isResultAvailable:Boolean = {
-    getResultWaitIfNeeded(timeout = 0.seconds) match{
+  def isResultAvailable: Boolean = {
+    getResultWaitIfNeeded(timeout = 0.seconds) match {
       case None => false
       case Some(_) => true
     }
   }
 
-  def cancelComputationRequest():Unit = {
-    for(workGiver <- workGiverBehaviors){
+  def getResultWaitIfNeeded(timeout: Duration = Duration.Inf): Option[Array[SearchResult]] = {
+    try {
+      while (lastNonCompletedJob != -1) {
+        Await.result[SearchEnded](futureResults(lastNonCompletedJob), atMost = timeout) match {
+          case c: SearchCrashed =>
+            val e = new Exception(s"Crash happened at worker:${c.worker}: \n${c.exception.getMessage}\nwhen performing neighborhood:${c.neighborhood}")
+            e.setStackTrace((c.exception.getStackTrace.toList ::: e.getStackTrace.toList).toArray)
+
+            supervisor.shutdown()
+            throw e
+          case r: SearchCompleted =>
+            results(lastNonCompletedJob) = r.searchResult.getLocalResult(m)
+            lastNonCompletedJob -= 1
+        }
+      }
+    } catch {
+      case _: TimeoutException => None
+    }
+    Some(results)
+  }
+
+  def cancelComputationRequest(): Unit = {
+    for (workGiver <- workGiverBehaviors) {
       workGiver ! CancelSearch()
     }
   }
 }
 
 
-class WorkStream(m:Store, supervisor:Supervisor) {
+class WorkStream(m: Store, supervisor: Supervisor) {
 
   private val resultPromise = Promise[Option[SearchCrashed]]()
   private val futureForResult: Future[Option[SearchCrashed]] = resultPromise.future
@@ -136,11 +134,33 @@ class WorkStream(m:Store, supervisor:Supervisor) {
   @volatile
   private final var remainingToDos = 1
 
-  def addWork(search:SearchRequest,task:SearchResult => Unit): Unit ={
+  def addWork(search: SearchRequest, task: SearchResult => Unit): Unit = {
     this.synchronized {
       remainingToDos += 1
     }
-    supervisor.delegateWithAction(search,execute(task,_))
+    supervisor.delegateWithAction(search, execute(task, _))
+  }
+
+  private def execute(task: SearchResult => Unit, arg: SearchEnded): Unit = {
+    this.synchronized {
+      remainingToDos -= 1
+
+      arg match {
+        case SearchCompleted(_, searchResult) =>
+          task(searchResult.getLocalResult(m))
+          if (remainingToDos == 0 && !resultPromise.isCompleted) {
+            resultPromise.complete(Success(None))
+          }
+        case _: SearchAborted =>
+          if (remainingToDos == 0 && !resultPromise.isCompleted) {
+            resultPromise.complete(Success(None))
+          }
+        case crashed: SearchCrashed =>
+          if (!resultPromise.isCompleted) {
+            resultPromise.complete(Success(Some(crashed)))
+          }
+      }
+    }
   }
 
   def waitAllComplete() {
@@ -166,28 +186,6 @@ class WorkStream(m:Store, supervisor:Supervisor) {
 
         throw e
       case None => ;
-    }
-  }
-
-  private def execute(task: SearchResult => Unit, arg: SearchEnded): Unit = {
-    this.synchronized {
-      remainingToDos -= 1
-
-      arg match {
-        case SearchCompleted(_, searchResult) =>
-          task(searchResult.getLocalResult(m))
-          if (remainingToDos == 0 && !resultPromise.isCompleted) {
-            resultPromise.complete(Success(None))
-          }
-        case _: SearchAborted =>
-          if (remainingToDos == 0 && !resultPromise.isCompleted) {
-            resultPromise.complete(Success(None))
-          }
-        case crashed: SearchCrashed =>
-          if (!resultPromise.isCompleted) {
-            resultPromise.complete(Success(Some(crashed)))
-          }
-      }
     }
   }
 }
