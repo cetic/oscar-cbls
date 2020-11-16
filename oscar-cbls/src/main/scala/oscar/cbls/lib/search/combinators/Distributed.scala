@@ -3,10 +3,9 @@ package oscar.cbls.lib.search.combinators
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.distrib._
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{First, LoopBehavior, MoveFound, Neighborhood, NoMoveFound, SearchResult}
+import oscar.cbls.core.search.{MoveFound, Neighborhood, NoMoveFound, SearchResult}
 
 import scala.util.Random
-
 
 abstract class DistributedCombinator(neighborhoods:Array[List[Long] => Neighborhood]) extends Neighborhood {
 
@@ -22,7 +21,9 @@ abstract class DistributedCombinator(neighborhoods:Array[List[Long] => Neighborh
   def delegateSearch(searchRequest:SearchRequest):WorkGiver =
     supervisor.delegateSearch(searchRequest)
 
-  override def labelAndExtractRemoteNeighborhoods(supervisor: Supervisor, currentID: Int, acc: List[RemoteNeighborhood]): (Int, List[RemoteNeighborhood]) = {
+  override def labelAndExtractRemoteNeighborhoods(supervisor: Supervisor,
+                                                  currentID: Int,
+                                                  acc: List[RemoteNeighborhood]): (Int, List[RemoteNeighborhood]) = {
     this.supervisor = supervisor
     val (newID,newAcc,neighborhoods2) = labelAndExtractRemoteNeighborhoodsOutOf(currentID, acc, neighborhoods)
     remoteNeighborhoods = neighborhoods2
@@ -45,7 +46,6 @@ abstract class DistributedCombinator(neighborhoods:Array[List[Long] => Neighborh
   }
 
   override def collectProfilingStatistics: List[Array[String]] = {
-
     super.collectProfilingStatistics
   }
 }
@@ -53,7 +53,9 @@ abstract class DistributedCombinator(neighborhoods:Array[List[Long] => Neighborh
 class Remote(neighborhoods:Neighborhood)
   extends DistributedCombinator(Array(_ => neighborhoods)) {
 
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
 
     val independentObj = obj.getIndependentObj
     val startSol = IndependentSolution(obj.model.solution())
@@ -113,7 +115,7 @@ class DistributedFirst(neighborhoods:Array[Neighborhood], randomOrder:Boolean = 
         independentObj,
         startSol))
 
-    val searchRequests2 = if(randomOrder) Random.shuffle(searchRequests.toList).toArray else searchRequests
+    val searchRequests2 = if (randomOrder) Random.shuffle(searchRequests.toList).toArray else searchRequests
     val move = delegateSearchesStopAtFirst(searchRequests2)
 
     move.getResult
@@ -148,6 +150,3 @@ object MultiCoreOptimizingWithOscaRcbls{
   search.doAllMoves(obj = obj)
   supervisor.shutdown()
 }
-
-
-

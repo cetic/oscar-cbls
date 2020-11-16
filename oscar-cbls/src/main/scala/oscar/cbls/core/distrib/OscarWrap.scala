@@ -29,12 +29,14 @@ class RemoteNeighborhood(val neighborhoodID:Int, neighborhood:List[Long] => Neig
 
 // ////////////////////////////////////////////////////////////
 
-abstract class IndependentSearchResult{
+abstract class IndependentSearchResult {
   def getLocalResult(m:Store):SearchResult
 }
+
 case class IndependentMoveFound(i:IndependentMove) extends IndependentSearchResult{
   override def getLocalResult(m: Store): SearchResult = MoveFound(i.makeLocal(m))
 }
+
 case class IndependentNoMoveFound() extends IndependentSearchResult{
   override def getLocalResult(m: Store): SearchResult = NoMoveFound
 }
@@ -48,18 +50,19 @@ object IndependentSolution{
 }
 
 class IndependentSolution(saves:Iterable[AbstractVariableSnapShot]){
-  def makeLocal(s:Store):Solution = Solution(saves,s)
+  def makeLocal(s:Store):Solution =
+    Solution(saves,s)
 }
 // ////////////////////////////////////////////////////////////
 
-trait IndependentMove{
+trait IndependentMove {
   def objAfter:Long
   def neighborhoodName:String
   def makeLocal(m:Store):Move
 }
 
 case class LoadIndependentSolutionMove(objAfter:Long, neighborhoodName: String, s:IndependentSolution)
-  extends IndependentMove{
+  extends IndependentMove {
   override def makeLocal(m:Store):Move =
     LoadSolutionMove(
       s.makeLocal(m),

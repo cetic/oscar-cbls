@@ -12,9 +12,9 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
 import scala.util.Random
 
-object Test extends App{
+object Test extends App {
 
-  val  startLogger:Logger = LoggerFactory.getLogger("SupervisorObject");
+  val startLogger:Logger = LoggerFactory.getLogger("SupervisorObject")
   startLogger.info("starting actor system")
 
   val supervisorActor:ActorSystem[MessagesToSupervisor] = Supervisor.internalStartSupervisorAndActorSystem(verbose = false, tic = 1.seconds)
@@ -26,7 +26,7 @@ object Test extends App{
     override def commit(): Unit = {
     }
 
-    override def getIndependentMove(m: Store): IndependentMove = new IndependentMove(){
+    override def getIndependentMove(m: Store): IndependentMove = new IndependentMove() {
 
       override def makeLocal(m: Store): Move = DoNothingMove(0)
 
@@ -38,7 +38,7 @@ object Test extends App{
     }
   }
 
-  def createNeighborhood(actorName:String,neighborhoodID:Int):RemoteNeighborhood = {
+  def createNeighborhood(actorName:String, neighborhoodID:Int): RemoteNeighborhood = {
     new RemoteNeighborhood(neighborhoodID, null) {
       //this is for test purpose
       override def explore(parameters: List[Long],
@@ -52,11 +52,11 @@ object Test extends App{
         var i:Long = 0
         var continue = true
         var aborted = false
-        while(continue){
-          if(java.lang.System.currentTimeMillis() >= endTime){
+        while (continue) {
+          if (java.lang.System.currentTimeMillis() >= endTime) {
             continue = false
           }
-          if(shouldAbort()) {
+          if (shouldAbort()) {
             continue = false
             aborted = true
           }
@@ -74,7 +74,7 @@ object Test extends App{
     }
   }
 
-  def createNeighborhoods(actorName:String):SortedMap[Int,RemoteNeighborhood] = {
+  def createNeighborhoods(actorName:String): SortedMap[Int,RemoteNeighborhood] = {
     SortedMap(
       (0,createNeighborhood(actorName,0)),
       (1,createNeighborhood(actorName,1)),
@@ -84,7 +84,7 @@ object Test extends App{
 
   def createWorker(actorName:String): Unit ={
     val neighborhoods:SortedMap[Int,RemoteNeighborhood] = createNeighborhoods(actorName)
-    supervisor.createLocalWorker(new Store(),neighborhoods)
+    supervisor.createLocalWorker(Store(), neighborhoods)
   }
 
   createWorker("grincheux")

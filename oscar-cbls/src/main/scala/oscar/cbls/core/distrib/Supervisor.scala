@@ -23,7 +23,6 @@ final case class CancelSearchToSupervisor(searchID:Long) extends MessagesToSuper
 final case class SearchStarted(search:SearchTask, startID:Long, worker:ActorRef[MessageToWorker]) extends MessagesToSupervisor
 final case class SearchNotStarted(search:SearchTask, worker:ActorRef[MessageToWorker]) extends MessagesToSupervisor
 final case class Crash(worker:ActorRef[MessageToWorker]) extends MessagesToSupervisor
-
 final case class Tic() extends MessagesToSupervisor
 
 case class WorkGiverActorCreated(workGiverActor:ActorRef[MessageToWorkGiver])
@@ -92,37 +91,37 @@ class Supervisor(supervisorActor:ActorRef[MessagesToSupervisor], m:Store, verbos
     Await.result(ongoingRequest,atMost = 30.seconds)
   }
 
-  def nbWorkers:Int = {
+  def nbWorkers: Int = {
     val ongoingRequest:Future[Int] = supervisorActor.ask[Int] (ref => NbWorkers(ref))
     Await.result(ongoingRequest,atMost = 30.seconds)
   }
 
-  def delegateSearch(searchRequest:SearchRequest):WorkGiver = {
+  def delegateSearch(searchRequest:SearchRequest): WorkGiver = {
     WorkGiver.wrap(internalDelegateSearch(searchRequest),m,this)
   }
 
-  def delegateSearches(searchRequests:Array[SearchRequest]):AndWorkGiver = {
+  def delegateSearches(searchRequests:Array[SearchRequest]): AndWorkGiver = {
     WorkGiver.andWrap(searchRequests.map(searchRequest => this.internalDelegateSearch(searchRequest)),m,this)
   }
 
-  def createWorkSream():WorkStream = {
+  def createWorkStream(): WorkStream = {
     new WorkStream(m, this)
   }
 
-  def delegateSearchesStopAtFirst(searchRequests:Array[SearchRequest]):WorkGiver = {
+  def delegateSearchesStopAtFirst(searchRequests:Array[SearchRequest]): WorkGiver = {
     WorkGiver.wrap(delegateORSearches(searchRequests),m,this)
   }
 
-  def delegateWithAction(searchRequest:SearchRequest,action:SearchEnded=>Unit): Unit ={
+  def delegateWithAction(searchRequest:SearchRequest,action:SearchEnded=>Unit): Unit = {
     supervisorActor.ask[WorkGiverActorCreated] (ref => DelegateSearch(searchRequest, ref, Some(action)))
   }
 
-  private def internalDelegateSearch(searchRequest:SearchRequest):ActorRef[MessageToWorkGiver] = {
+  private def internalDelegateSearch(searchRequest:SearchRequest): ActorRef[MessageToWorkGiver] = {
     val ongoingRequest:Future[WorkGiverActorCreated] = supervisorActor.ask[WorkGiverActorCreated] (ref => DelegateSearch(searchRequest, ref, None))
     Await.result(ongoingRequest,atMost = 30.seconds).workGiverActor
   }
 
-  private def delegateORSearches(searchRequests:Array[SearchRequest]):ActorRef[MessageToWorkGiver] = {
+  private def delegateORSearches(searchRequests:Array[SearchRequest]): ActorRef[MessageToWorkGiver] = {
     val ongoingRequest:Future[WorkGiverActorCreated] = supervisorActor.ask[WorkGiverActorCreated] (ref => DelegateSearches(searchRequests, ref))
     Await.result(ongoingRequest,atMost = 30.seconds).workGiverActor
   }
@@ -140,8 +139,9 @@ class Supervisor(supervisorActor:ActorRef[MessagesToSupervisor], m:Store, verbos
   }
 }
 
-
-class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boolean, tic:Duration)
+class SupervisorActor(context: ActorContext[MessagesToSupervisor],
+                      verbose: Boolean,
+                      tic: Duration)
   extends AbstractBehavior[MessagesToSupervisor](context){
 
   private final case class StartSomeSearch() extends MessagesToSupervisor
@@ -150,26 +150,26 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
   private var idleWorkers: List[ActorRef[MessageToWorker]] = Nil
 
   //this one is a list, because the most common operations are add and takeFirst
-  private var runningSearches:SortedMap[Long,(SearchTask,ActorRef[MessageToWorker])] = SortedMap.empty
+  private var runningSearches: SortedMap[Long,(SearchTask,ActorRef[MessageToWorker])] = SortedMap.empty
 
   private val waitingSearches = scala.collection.mutable.Queue[SearchTask]()
 
   //need to add, and remove regularly, based on ID, indexed by startID
-  private var startingSearches:SortedMap[Long,(SearchTask,Long,ActorRef[MessageToWorker])] = SortedMap.empty
+  private var startingSearches: SortedMap[Long,(SearchTask,Long,ActorRef[MessageToWorker])] = SortedMap.empty
   //need to add, and remove regularly, based on ID
-  private var ongoingSearches:SortedMap[Long,(SearchTask,ActorRef[MessageToWorker])] = SortedMap.empty
+  private var ongoingSearches: SortedMap[Long,(SearchTask,ActorRef[MessageToWorker])] = SortedMap.empty
 
   private var totalStartedSearches = 0
-  private var nextSearchID:Long = 0
-  private var nextStartID:Long = 0 //search+worker
+  private var nextSearchID: Long = 0
+  private var nextStartID: Long = 0 //search+worker
 
   var nbLocalWorker:Int = 0
 
-  def status:String = {
+  def status: String = {
     s"workers(total:${allKnownWorkers.size} busy:${allKnownWorkers.size - idleWorkers.size}) searches(waiting:${waitingSearches.size} starting:${startingSearches.size} running:${runningSearches.size} totalStarted:$totalStartedSearches)"
   }
 
-  tic match{
+  tic match {
     case _:Infinite => ;
     case f:FiniteDuration => context.scheduleOnce(f, context.self, Tic())
   }
@@ -242,31 +242,29 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
               val preferredWorkerOpt = neighborhoodToPreferredWorker.get(nID)
               preferredWorkerOpt match{
                 case Some(preferredWorker) =>
-                  // println(s"preferredWorker:$preferredWorker")
-                  // println(s"preferredWorker.path:${preferredWorker.path}")
-                  // println(s"idleWorkers:$idleWorkers")
+                 // println(s"preferredWorker:$preferredWorker")
+                 // println(s"preferredWorker.path:${preferredWorker.path}")
+                 // println(s"idleWorkers:$idleWorkers")
                   val newIdle = idleWorkers.filter(_.path != preferredWorker.path)
-                  // println(s"newIdle:$newIdle")
+                 // println(s"newIdle:$newIdle")
                   if(newIdle.size != idleWorkers.size){
                     //start this one
                     startSearch(searchesToStart(searchI),preferredWorker)
                     searchesToStart(searchI) = null
                     idleWorkers = newIdle
-                    println("hotRestart")
+                    //println("hotRestart")
                   }
                 case None => ;
               }
             }
 
             for(searchI <- searchesToStart.indices if searchesToStart(searchI) != null) {
-              println("coldRestart " + searchesToStart(searchI).request.neighborhoodID)
-
+              //println("coldRestart " + searchesToStart(searchI).request.neighborhoodID)
               val worker = idleWorkers.head
               idleWorkers = idleWorkers.tail
               startSearch(searchesToStart(searchI), worker)
               neighborhoodToPreferredWorker = neighborhoodToPreferredWorker + ((searchesToStart(searchI).request.neighborhoodID.neighborhoodID -> worker))
               searchesToStart(searchI) = null
-
             }
 
             //// take the first searches, one per available worker
@@ -324,7 +322,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor], verbose:Boole
 
         replyTo ! WorkGiverActorCreated(workGiverActorRef)
 
-        //now, we have a workGiverActor, we search for an available worker or put this request on a waiting list.
+        //now, we have a WorkGiver actor, we search for an available Worker or put this request on a waiting list.
         val theSearch = SearchTask(searchRequest, searchId, workGiverActorRef)
         waitingSearches.enqueue(theSearch)
         context.self ! StartSomeSearch()

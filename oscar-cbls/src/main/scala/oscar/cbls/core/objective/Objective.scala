@@ -22,7 +22,6 @@ package oscar.cbls.core.objective
 
 import oscar.cbls
 import oscar.cbls.core.computation._
-import oscar.cbls.core.distrib.IndependentOBj
 
 object Objective{
   implicit def objToChangingIntValue(o:IntVarObjective):ChangingIntValue = o.objective
@@ -36,6 +35,10 @@ object Objective{
       case c: ChangingIntValue => new IntVarObjective(c)
       case c: CBLSIntConst => throw new Error("you do not want to have an objective that is actually a constant value!")
     }
+}
+
+abstract class IndependentObjective {
+  def convertToObjective(m:Store):Objective
 }
 
 /**
@@ -77,13 +80,12 @@ class IntVarObjective(val objective: ChangingIntValue) extends Objective {
   //for distribution purposes
   val uniqueID = model.registerObjective(this)
 
-  override def getIndependentObj: IndependentOBj = new IndependentIntVarObjective(uniqueID)
+  override def getIndependentObj: IndependentObjective = new IndependentIntVarObjective(uniqueID)
 }
 
-class IndependentIntVarObjective(val uniqueID:Int) extends IndependentOBj{
-  override def convertToOBj(m: Store): Objective = m.getIntVarObjective(uniqueID)
+class IndependentIntVarObjective(val uniqueID:Int) extends IndependentObjective{
+  override def convertToObjective(m: Store): Objective = m.getIntVarObjective(uniqueID)
 }
-
 
 object CascadingObjective{
   def apply(objectives:Objective*):Objective = {
@@ -98,6 +100,7 @@ object CascadingObjective{
     buildCascading(objectives.toList)
   }
 }
+
 /**
  * if (objective1.value > 0L) Long.MaxValue/2L + objective1.value
  *   else objective2.value
@@ -139,18 +142,18 @@ class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objecti
 
   override def model: Store = mustBeZeroObjective.model
 
-  override def getIndependentObj: IndependentOBj =
+  override def getIndependentObj: IndependentObjective =
     IndependentCascadingObjective(
       mustBeZeroObjective.getIndependentObj,
       secondObjective.getIndependentObj,
       cascadeSize)
 }
 
-case class IndependentCascadingObjective(mustBeZeroObjective: IndependentOBj,
-                                         secondObjective:IndependentOBj,
-                                         cascadeSize:Long) extends IndependentOBj{
-  override def convertToOBj(m: Store): Objective =
-    new CascadingObjective(mustBeZeroObjective.convertToOBj(m),secondObjective.convertToOBj(m), cascadeSize)
+case class IndependentCascadingObjective(mustBeZeroObjective: IndependentObjective,
+                                         secondObjective:IndependentObjective,
+                                         cascadeSize:Long) extends IndependentObjective {
+  override def convertToObjective(m: Store): Objective =
+    new CascadingObjective(mustBeZeroObjective.convertToObjective(m),secondObjective.convertToObjective(m), cascadeSize)
 }
 
 object PriorityObjective{
@@ -247,7 +250,7 @@ class PriorityObjective(val objective1: Objective,
         nSpace(indent) + ")"
     }
 
-  override def getIndependentObj: IndependentOBj =
+  override def getIndependentObj: IndependentObjective =
     IndependentPriorityObjective(
       objective1.getIndependentObj,
       objective2.getIndependentObj,
@@ -255,11 +258,11 @@ class PriorityObjective(val objective1: Objective,
 }
 
 
-case class IndependentPriorityObjective(objective1: IndependentOBj,
-                                        objective2:IndependentOBj,
-                                        maxObjective2:Long) extends IndependentOBj{
-  override def convertToOBj(m: Store): Objective =
-    new PriorityObjective(objective1.convertToOBj(m),objective2.convertToOBj(m), maxObjective2)
+case class IndependentPriorityObjective(objective1: IndependentObjective,
+                                        objective2:IndependentObjective,
+                                        maxObjective2:Long) extends IndependentObjective{
+  override def convertToObjective(m: Store): Objective =
+    new PriorityObjective(objective1.convertToObjective(m),objective2.convertToObjective(m), maxObjective2)
 }
 
 
@@ -370,7 +373,7 @@ trait Objective {
     removeValAssumeIn(a, i)
   }
 
-  def getIndependentObj:IndependentOBj = ???
+  def getIndependentObj:IndependentObjective = ???
 }
 
 /**

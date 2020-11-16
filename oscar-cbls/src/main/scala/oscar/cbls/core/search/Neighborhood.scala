@@ -396,6 +396,7 @@ abstract class Neighborhood(name:String = null) {
     val nbNeighborhoods = labelAndExtractRemoteNeighborhoods(supervisor: Supervisor)._1
     //println(s"identified remote neighborhoods; nbNeighborhoods:$nbNeighborhoods")
   }
+
   //Call this at the worker site
   def identifyNeighborhoodForWorker:SortedMap[Int,RemoteNeighborhood] = {
     SortedMap.empty[Int,RemoteNeighborhood] ++ (labelAndExtractRemoteNeighborhoods(supervisor = null)._2.map(r => (r.neighborhoodID,r)))

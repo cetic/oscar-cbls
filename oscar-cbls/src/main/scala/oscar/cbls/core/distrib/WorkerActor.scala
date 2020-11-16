@@ -157,7 +157,7 @@ class WorkerActor(neighborhoods:SortedMap[Int,RemoteNeighborhood],
               next(IAmBusy(newSearch))
           }
 
-        case AbortSearch(searchId:Long) =>
+        case AbortSearch(searchId) =>
           state match {
             case ShuttingDown() =>
               Behaviors.same
@@ -193,7 +193,7 @@ class WorkerActor(neighborhoods:SortedMap[Int,RemoteNeighborhood],
           state match {
             case IAmBusy(search) =>
               require(search.searchId == result.searchID)
-              if(verbose) context.log.info(s"finished search:${search.searchId}, sending result $result to ${search.workGiver.path}")
+              if (verbose) context.log.info(s"finished search:${search.searchId}, sending result $result to ${search.workGiver.path}")
               search.workGiver ! result
 
               result match{
