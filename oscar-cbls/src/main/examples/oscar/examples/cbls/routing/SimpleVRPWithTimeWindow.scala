@@ -24,7 +24,7 @@ object SimpleVRPWithTimeWindow extends App{
   val (listOfChains,precedences) = RoutingMatrixGenerator.generateChainsPrecedence(n,v,((n-v)/3)*2,4)
   val singleNodeTransferFunctions = RoutingMatrixGenerator.generateFeasibleTransferFunctions(n,v,timeMatrix,listOfChains)
 
-  val myVRP =  new VRP(m,n,v)
+  val myVRP = new VRP(m,n,v)
   val gc = GlobalConstraintCore(myVRP.routes,v)
 
   // Distance
@@ -94,11 +94,11 @@ object SimpleVRPWithTimeWindow extends App{
 
   val firstNodeOfChainMove = onePointMove(
     () => myVRP.routed.value.filter(chainsExtension.isHead),
-    ()=> myVRP.kFirst(v*2,closestRelevantPredecessorsByDistance(_),postFilter), myVRP,neighborhoodName = "MoveHeadOfChain")
+    () => myVRP.kFirst(v*2,closestRelevantPredecessorsByDistance(_),postFilter), myVRP,neighborhoodName = "MoveHeadOfChain")
 
   def lastNodeOfChainMove(lastNode:Int) = onePointMove(
     () => List(lastNode),
-    ()=> myVRP.kFirst(v*2,
+    () => myVRP.kFirst(v*2,
       ChainsHelper.relevantNeighborsForLastNodeAfterHead(
         myVRP,
         chainsExtension,
@@ -124,7 +124,7 @@ object SimpleVRPWithTimeWindow extends App{
   def segExchangeOnSegments(k: Int) = profile(
     segmentExchangeOnSegments(myVRP,
       () => Array.tabulate(v)(vehicle => vehicle -> ChainsHelper.computeCompleteSegments(myVRP,vehicle,chainsExtension)).toMap,
-      ()=> closestRelevantPredecessorsByDistance(_),
+      () => closestRelevantPredecessorsByDistance(_),
       () => 0 until v,
       selectFirstSegmentBehavior = Best(),
       selectSecondSegmentBehavior = Best(),
@@ -160,7 +160,7 @@ object SimpleVRPWithTimeWindow extends App{
 
   def lastNodeOfChainInsertion(lastNode:Int) = insertPointUnroutedFirst(
     () => List(lastNode),
-    ()=> myVRP.kFirst(
+    () => myVRP.kFirst(
       v*2,
       ChainsHelper.relevantNeighborsForLastNodeAfterHead(
         myVRP,
@@ -182,7 +182,6 @@ object SimpleVRPWithTimeWindow extends App{
       })name "OneChainInsert")
 
   }
-
 
   // REMOVING
 

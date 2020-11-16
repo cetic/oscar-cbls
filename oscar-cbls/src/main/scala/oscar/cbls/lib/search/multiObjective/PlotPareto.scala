@@ -20,7 +20,7 @@ class PlotPareto(
   def reDrawPareto(paretoPoints:Iterable[(Long,Long)], oldParetoPoints:Option[Iterable[(Long,Long)]] = None): Unit ={
 
     SwingUtilities.invokeLater(new Runnable() {
-      def run() {
+      def run(): Unit = {
 
         removeAllPoints(1)
         oldParetoPoints match{

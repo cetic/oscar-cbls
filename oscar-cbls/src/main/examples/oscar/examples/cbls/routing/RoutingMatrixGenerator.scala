@@ -51,7 +51,7 @@ object RoutingMatrixGenerator {
 
   /**
     * This method generate a random distance matrix based on numbers of node and map side.
-    * It also generate an array of node positions. (Usefull when you want to display it on a map)
+    * It also generate an array of node positions. (Useful when you want to display it on a map)
     * @param n The number of nodes (considering depots)
     * @return The distance matrix (Array[Array[Float] ] in meters and the position of each node (Array[(Double,Double)])
     */
@@ -89,7 +89,6 @@ object RoutingMatrixGenerator {
         n2 => distance(pointPosition(n1), pointPosition(n2)))),pointPosition)
   }
 
-
   /**
     * This method generate random restrictions for the problem.
     * A restriction is a tuple of a vehicle and a node.
@@ -126,6 +125,15 @@ object RoutingMatrixGenerator {
     * @return A list of tuple (precedences)
     */
   def generateChainsPrecedence(n: Int, v: Int, nbPrecedences:Int, maxSize: Int = 2): (List[List[Int]], List[(Int,Int)]) = {
+    @tailrec
+    def toTuple(chain: List[Int], tuples: List[(Int,Int)]): List[(Int,Int)] = {
+      chain match {
+        case Nil => throw new IllegalArgumentException("Invalid Nil chain")
+        case head :: Nil => tuples
+        case head :: tail => toTuple(tail, (head, tail.head) :: tuples)
+      }
+    }
+    //////////
     val allNodes = (v until n).toList
     val randomizedNodes = random.shuffle(allNodes).iterator
 
@@ -136,8 +144,9 @@ object RoutingMatrixGenerator {
     var tuples: List[(Int,Int)] = List.empty
     var usedNodes = 0
 
-    def reduceCurrentSizeBy = Math.max(currentMaxSize - maxSize, (currentMaxSize-2)/2 - (usedNodes/precedencesToGenerate))
-    def randomSize = Math.max(2,1 + random.nextInt(currentMaxSize))
+    def reduceCurrentSizeBy: Int = Math.max(currentMaxSize - maxSize, (currentMaxSize-2)/2 - (usedNodes/precedencesToGenerate))
+
+    def randomSize: Int = Math.max(2,1 + random.nextInt(currentMaxSize))
 
     while(precedencesToGenerate > 0 && randomizedNodes.nonEmpty){
       currentMaxSize = currentMaxSize - reduceCurrentSizeBy
@@ -148,14 +157,6 @@ object RoutingMatrixGenerator {
         randomizedNodes.next()
       })
 
-      @tailrec
-      def toTuple(chain: List[Int], tuples: List[(Int,Int)]): List[(Int,Int)] ={
-        chain match {
-          case Nil => throw new IllegalArgumentException("Invalid Nil chain")
-          case head :: Nil => tuples
-          case head :: tail => toTuple(tail, (head, tail.head) :: tuples)
-        }
-      }
       chains = chain :: chains
       tuples = toTuple(chain, List.empty) ::: tuples
     }
@@ -268,7 +269,8 @@ object RoutingMatrixGenerator {
     *   leaveTime(A) + travel duration to C + taskDuration at C + travel duration to B <= 900
     *
     * @param precedences The list of precedences
-    * @param earliestArrivalTimes The array of earliestArrivalTimes (We can't start the task at this node before the earliestArrivalTime value)
+    * @param earliestArrivalTimes The array of earliestArrivalTimes (We can't start the task at this node before the
+   *                             earliestArrivalTime value)
     * @param travelDurationMatrix The travel time matrix
     * @return A Map[(from,to) -> maxTravelDuration]
     */
@@ -316,7 +318,8 @@ object RoutingMatrixGenerator {
     *
     * @param n The number of node of the problem
     * @param precedences The list of precedences (List[List[Long] ])
-    * @param maxVehicleSize The max size of all vehicles in the problem (All the vehicles don't have to have the same size)
+    * @param maxVehicleSize The max size of all vehicles in the problem (All the vehicles don't have to have the same
+   *                       size)
     * @return An array of Long that represents the vehicle content evolution when arriving at a given node.
     */
   def generateContentFlow(n: Int, precedences: List[List[Int]], maxVehicleSize: Int): Array[Long] ={

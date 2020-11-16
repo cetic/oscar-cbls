@@ -22,9 +22,7 @@ object PDPTW_VLSN extends App {
   val m = Store(noCycle = false)
 
   val v = 10
-  val n = 400
-  //  val v = 10
-  //  val n = 500
+  val n = 500
 
   println(s"VLSN(PDPTW) v:$v n:$n")
   val penaltyForUnrouted = 10000
@@ -86,9 +84,11 @@ object PDPTW_VLSN extends App {
   //Objective function
   val unroutedPenalty = penaltyForUnrouted*(n - length(myVRP.routes))
 
-  val obj = new CascadingObjective(new CascadingObjective(maxLengthConstraints,precedencesConstraints),
+  val obj = new CascadingObjective(
+    new CascadingObjective(maxLengthConstraints, precedencesConstraints),
     new CascadingObjective(sum(violationOfContentOfVehicle),
-      sum(vehiclesRouteLength) + unroutedPenalty))
+      sum(vehiclesRouteLength) + unroutedPenalty)
+  )
 
   val objPerVehicle = Array.tabulate[Objective](v)(vehicle =>
     new CascadingObjective(

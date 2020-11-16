@@ -49,10 +49,9 @@ class VRPWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, minLo
     })})
 
   // Generating node weight (0 for depot and 10 to 20 for nodes)
-  val nodeWeight = Array.tabulate(n)(node => if(node < v)0L else Random.nextInt(11)+10)
+  val nodeWeight = Array.tabulate(n)(node => if (node < v) 0L else Random.nextLong(11)+10)
   // Vehicles have capacity varying from (n-v)/(2*v) to (2*(n-v))/v
   val vehicleCapacity = Array.fill(v)(15*(Random.nextInt((2*(n-v)/v)-((n-v)/(2*v))+1)+(n-v)/(2*v)))
-
 
   ////////// INVARIANTS //////////
   // An invariant that store the total distance travelled by the cars
@@ -65,10 +64,9 @@ class VRPWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, minLo
   val gc = GlobalConstraintCore(myVRP.routes,v)
   val weightedNodesConstraint = WeightedNodesPerVehicle(gc, n, v, nodeWeight, weightPerVehicle)
   // This invariant maintains the capacity violation of each vehicle (le means lesser or equals)
-  val vehicleCapacityViolation = Array.tabulate(v)(vehicle => (weightPerVehicle(vehicle) le vehicleCapacity(vehicle)))
-  val constraintSystem = new ConstraintSystem(store)
+  val vehicleCapacityViolation = Array.tabulate(v)(vehicle => weightPerVehicle(vehicle) le vehicleCapacity(vehicle))
+  val constraintSystem = ConstraintSystem(store)
   vehicleCapacityViolation.foreach(constraintSystem.post(_))
-
 
   ////////// OBJECTIVE FUNCTION //////////
   // A penalty given to all unrouted nodes to force the optimisation to route them

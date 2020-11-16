@@ -111,8 +111,8 @@ object WarehouseLocationMultiObjective extends App {
           ))
 
         val search1 = (neighborhood
-          onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => (W / 10) max 5, name = "smallRandomize", acceptanceChecking = Some(5)) acceptAllButStrongViolation, 5, operationCost)
-          onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/2, name = "bigRandomize", acceptanceChecking = Some(20)) acceptAllButStrongViolation, 2, operationCost))
+          .onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => (W / 10) max 5, name = "smallRandomize", acceptanceChecking = Some(5)) acceptAllButStrongViolation, 5, operationCost)
+          .onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/2, name = "bigRandomize", acceptanceChecking = Some(20)) acceptAllButStrongViolation, 2, operationCost))
         search1.verbose = 0
         search1.doAllMoves(obj = obj2)
 

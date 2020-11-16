@@ -28,7 +28,6 @@ import oscar.cbls.util.StopWatch
 //50.404631, 4.452595
 //50.415162, 4.440849
 
-
 object VRPMaxDemo extends App {
 
   println("usage: VRPMaxDemo n v")
@@ -48,8 +47,7 @@ object VRPMaxDemo extends App {
   new VRPMaxDemo(n,v,maxPivotPerValuePercent,verbose,displayDelay, mapSide)
 }
 
-class VRPMaxDemo(n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, displayDelay:Int, mapSide:Int) extends StopWatch{
-
+class VRPMaxDemo(n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, displayDelay:Int, mapSide:Int) extends StopWatch {
 
   val minLat = 50.404631
   val maxLat = 50.415162
@@ -63,7 +61,6 @@ class VRPMaxDemo(n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, display
       symmetricDistanceMatrix1(a min b)(a max b).toLong
     })})
 
-
   val maxWorkloadPerVehicle = 2500
   val serviceTimePerNode = 100
 
@@ -71,7 +68,7 @@ class VRPMaxDemo(n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, display
   //val serviceTimePerNode = 100
 
   startWatch()
-  val model = new Store()
+  val model = Store()
 
   val myVRP = new VRP(model,n,v)
   val routeLengthPerVehicle = routeLength(myVRP.routes,n,v,perVehicle = true,symmetricDistanceMatrix,true)
@@ -80,7 +77,7 @@ class VRPMaxDemo(n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, display
 
   val totalServiceTimePerVehicle = nodesPerVehicle.map(cardinality(_)*serviceTimePerNode)
 
-  val c = new ConstraintSystem(model)
+  val c = ConstraintSystem(model)
 
   for(vehicle <- 0 until v){
     val workLoadOfVehicle = totalServiceTimePerVehicle(vehicle) + routeLengthPerVehicle(vehicle)

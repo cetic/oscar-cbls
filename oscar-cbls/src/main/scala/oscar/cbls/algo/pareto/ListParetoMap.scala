@@ -53,12 +53,12 @@ object TestParetoList extends App{
 
   val l = new ListParetoMap[Array[Long]](3)
 
-  def mInsert(x:Array[Long]){
+  def mInsert(x:Array[Long]): Unit = {
     println()
     println("inserting " + x.mkString(","))
     println("inserted:" + l.insert(x,x))
 
-    for(y <- l.content.toList){
+    for(y <- l.content){
       println(x.mkString(",") + " " + ParetoOrder.compare(x,y._1) + " " + y._1.mkString(","))
       println(y._1.mkString(",") + " " + ParetoOrder.compare(y._1,x) + " " + x.mkString(","))
     }
@@ -69,7 +69,7 @@ object TestParetoList extends App{
   mInsert(b)
   mInsert(c)
 
-  for((x,_) <- l.content.toList){
+  for((x,_) <- l.content){
     println(x.mkString(","))
   }
 
@@ -82,7 +82,7 @@ object TestParetoList extends App{
     for(j <- r){
       print("\t" + union(i,j))
     }
-    println
+    println()
   }
 }
 

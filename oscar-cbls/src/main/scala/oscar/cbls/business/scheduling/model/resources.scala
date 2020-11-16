@@ -51,7 +51,7 @@ class CumulativeResourceWithSetupTimesMultiMode(val capacity: Long,
 
   override def initialState: ResourceState = {
     new CumulativeResourceWithSetupTimesMultiModeState(this,
-                                                   Map(0 -> (setupTimes.initialMode, capacity)),
+                                                   Map(0 -> Set((setupTimes.initialMode, capacity))),
                                                    setupTimes,
                                                    setupTimes.initialMode)
   }
@@ -172,8 +172,11 @@ class CumulativeResourceState(base: CumulativeResource,
     //////////
     val qtyResourceConsumed = base.activitiesConsumption(activity)
     val releaseTimesSorted = releaseTimes.keys.toList.sorted
-    val updatedReleaseTimes = relTimesMapFrom(qtyResourceConsumed, releaseTimesSorted,
-      alreadyConsumed = false, Map((startTime + taskDuration) -> qtyResourceConsumed))
+    val releaseTimeAct = startTime + taskDuration
+    val updatedReleaseTimes0 = relTimesMapFrom(qtyResourceConsumed, releaseTimesSorted,
+      alreadyConsumed = false, Map())
+    val qtyReleased = updatedReleaseTimes0.getOrElse(releaseTimeAct, 0L)
+    val updatedReleaseTimes = updatedReleaseTimes0 + (releaseTimeAct -> (qtyResourceConsumed+qtyReleased))
     // Return the new state
     new CumulativeResourceState(base, updatedReleaseTimes)
   }
@@ -239,8 +242,11 @@ class CumulativeResourceWithSetupTimesState(base: CumulativeResourceWithSetupTim
     if (actMode == currentMode) {
       // No mode change, behaves as cumulative resource without state
       val releaseTimesSorted = releaseTimes.keys.toList.sorted
-      val updatedReleaseTimes = relTimesMapFrom(qtyResourceConsumed, releaseTimesSorted,
-        alreadyConsumed = false, Map((startTime + taskDuration) -> qtyResourceConsumed))
+      val releaseTimeAct = startTime + taskDuration
+      val updatedReleaseTimes0 = relTimesMapFrom(qtyResourceConsumed, releaseTimesSorted,
+        alreadyConsumed = false, Map())
+      val qtyReleased = updatedReleaseTimes0.getOrElse(releaseTimeAct, 0L)
+      val updatedReleaseTimes = updatedReleaseTimes0 + (releaseTimeAct -> (qtyResourceConsumed+qtyReleased))
       // Return the new state
       new CumulativeResourceWithSetupTimesState(base, updatedReleaseTimes, setupTimes, actMode)
     } else {
@@ -257,7 +263,7 @@ class CumulativeResourceWithSetupTimesState(base: CumulativeResourceWithSetupTim
 }
 
 class CumulativeResourceWithSetupTimesMultiModeState(base: CumulativeResourceWithSetupTimesMultiMode,
-                                                     releaseTimes: Map[Int, (Mode, Long)],
+                                                     releaseTimes: Map[Int, Set[(Mode, Long)]],
                                                      setupTimes: SetupTimes,
                                                      currentMode: Mode)
   extends ResourceState {
@@ -277,12 +283,17 @@ class CumulativeResourceWithSetupTimesMultiModeState(base: CumulativeResourceWit
     //////////
     val qtyResourceToConsume = base.activitiesConsumption(activity)
     val actMode = setupTimes.activityModes.getOrElse(activity, currentMode)
-    val releaseTimesWithST = releaseTimes.map { tup =>
+    val releaseTimesWithST = releaseTimes.foldLeft(Map(): Map[Int, Long]) { (mapAcc, tup) =>
       val t = tup._1
-      val m = tup._2._1
-      val qty = tup._2._2
-      val st = setupTimes.setupTimes.getOrElse((m, actMode), 0)
-      (t+st, qty)
+      val setModeQty = tup._2
+      setModeQty.foldLeft(mapAcc) { (mapAcc1, tup1) =>
+        val m = tup1._1
+        val qty = tup1._2
+        val st = setupTimes.setupTimes.getOrElse((m, actMode), 0)
+        val rt = t + st
+        val qty0 = mapAcc1.getOrElse(rt, 0L)
+        mapAcc1 + (rt -> (qty0+qty))
+      }
     }
     val releaseTimesSorted = releaseTimesWithST.keys.toList.sorted
     val releaseTime = releaseTimeFrom(0, qtyResourceToConsume, releaseTimesWithST, releaseTimesSorted)
@@ -294,40 +305,76 @@ class CumulativeResourceWithSetupTimesMultiModeState(base: CumulativeResourceWit
     def relTimesMapFrom(qtyToConsume: Long,
                         relTimes: List[Int],
                         alreadyConsumed: Boolean,
-                        releaseTimesWithST: Map[Int, (Int, Mode, Long)],
-                        relTimesMapAcc: Map[Int, (Mode, Long)]): Map[Int, (Mode, Long)] = relTimes match {
-      case Nil => relTimesMapAcc
-      case t::ts =>
-        val relTimeST = releaseTimesWithST(t)
-        val originalT = relTimeST._1
-        val modeAtT = relTimeST._2
-        val releasedAtT = relTimeST._3
-        if (alreadyConsumed)
-          relTimesMapFrom(qtyToConsume, ts, alreadyConsumed, releaseTimesWithST,
-            relTimesMapAcc + (originalT -> (modeAtT,releasedAtT)))
-        else {
-          if (qtyToConsume > releasedAtT)
-            relTimesMapFrom(qtyToConsume-releasedAtT, ts, alreadyConsumed, releaseTimesWithST, relTimesMapAcc)
-          else if (releasedAtT == qtyToConsume)
-            relTimesMapFrom(0L, ts, alreadyConsumed = true, releaseTimesWithST, relTimesMapAcc)
-          else
-            relTimesMapFrom(0L, ts, alreadyConsumed = true, releaseTimesWithST,
-              relTimesMapAcc + (originalT -> (modeAtT,releasedAtT-qtyToConsume)))
-        }
+                        releaseTimesWithST: Map[Int, Set[(Int, Mode, Long)]],
+                        relTimesMapAcc: Map[Int, Set[(Mode, Long)]]): Map[Int, Set[(Mode, Long)]] = {
+      @tailrec
+      def takeQuantity(qtyRemaining: Long,
+                       rTimesST: List[(Int, Mode, Long)],
+                       rTMapAcc:Map[Int, Set[(Mode, Long)]]): Map[Int, Set[(Mode, Long)]] = rTimesST match {
+        case Nil => rTMapAcc
+        case (originalT,m,qty)::rts =>
+          if (qtyRemaining == 0) {
+            val setModeQtyAtT = rTMapAcc.getOrElse(originalT, Set())
+            takeQuantity(0, rts, rTMapAcc + (originalT -> (setModeQtyAtT + ((m, qty)))))
+          } else if (qty <= qtyRemaining) {
+            takeQuantity(qtyRemaining-qty, rts, rTMapAcc)
+          } else {
+            val setModeQtyAtT = rTMapAcc.getOrElse(originalT, Set())
+            takeQuantity(0, rts, rTMapAcc + (originalT -> (setModeQtyAtT + ((m, qty-qtyRemaining)))))
+          }
+      }
+      //////////
+      relTimes match {
+        case Nil => relTimesMapAcc
+        case t :: ts =>
+          val relTimeST = releaseTimesWithST(t)
+          if (alreadyConsumed) {
+            val newRelTimesMapAcc = relTimeST.foldLeft(relTimesMapAcc) { (mapAcc, tup) =>
+              val originalT = tup._1
+              val m = tup._2
+              val qty = tup._3
+              val setModeQtyAtT = mapAcc.getOrElse(originalT, Set())
+              mapAcc + (originalT -> (setModeQtyAtT + ((m, qty))))
+            }
+            relTimesMapFrom(qtyToConsume, ts, alreadyConsumed, releaseTimesWithST, newRelTimesMapAcc)
+          }
+          else {
+            val releasedAtT = relTimeST.foldLeft(0L) { (acc, tup) => acc + tup._3 }
+            if (qtyToConsume > releasedAtT)
+              relTimesMapFrom(qtyToConsume - releasedAtT, ts, alreadyConsumed, releaseTimesWithST, relTimesMapAcc)
+            else if (releasedAtT == qtyToConsume)
+              relTimesMapFrom(0L, ts, alreadyConsumed = true, releaseTimesWithST, relTimesMapAcc)
+            else {
+              val rTimesST = relTimeST.toList.sortBy(_._3)
+              val newRelTimesMapAcc = takeQuantity(qtyToConsume, rTimesST, relTimesMapAcc)
+              relTimesMapFrom(0L, ts, alreadyConsumed = true, releaseTimesWithST,
+                newRelTimesMapAcc)
+            }
+          }
+      }
     }
     //////////
     val qtyResourceConsumed = base.activitiesConsumption(activity)
     val actMode = setupTimes.activityModes.getOrElse(activity, currentMode)
-    val releaseTimesWithST = releaseTimes.map { tup =>
-      val t = tup._1
-      val m = tup._2._1
-      val qty = tup._2._2
-      val st = setupTimes.setupTimes.getOrElse((m, actMode), 0)
-      (t+st, (t,m,qty))
-    }
+    val releaseTimesWithST = releaseTimes
+      .foldLeft(Map(): Map[Int, Set[(Int, Mode, Long)]]) { (mapAcc, tup) =>
+        val t = tup._1
+        val setModeQty = tup._2
+        setModeQty.foldLeft(mapAcc) { (mapAcc1, tup1) =>
+          val m = tup1._1
+          val qty = tup1._2
+          val st = setupTimes.setupTimes.getOrElse((m, actMode), 0)
+          val rt = t + st
+          val setModeQty0 = mapAcc1.getOrElse(rt, Set())
+          mapAcc1 + (rt -> (setModeQty0 + ((t, m, qty))))
+        }
+      }
     val releaseTimesSorted = releaseTimesWithST.keys.toList.sorted
-    val updatedReleaseTimes = relTimesMapFrom(qtyResourceConsumed, releaseTimesSorted, alreadyConsumed = false,
-      releaseTimesWithST, Map((startTime + taskDuration) -> (actMode,qtyResourceConsumed)))
+    val updatedReleaseTimes0 = relTimesMapFrom(qtyResourceConsumed, releaseTimesSorted, alreadyConsumed = false,
+      releaseTimesWithST, Map())
+    val releaseTime = startTime + taskDuration
+    val setTMQ = updatedReleaseTimes0.getOrElse(releaseTime, Set())
+    val updatedReleaseTimes = updatedReleaseTimes0 + (releaseTime -> (setTMQ + ((actMode,qtyResourceConsumed))))
     // Return the new state
     new CumulativeResourceWithSetupTimesMultiModeState(base, updatedReleaseTimes, setupTimes, actMode)
   }

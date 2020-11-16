@@ -97,7 +97,7 @@ object SimplePDPTW extends App {
 
   def lastNodeOfChainMove(lastNode:Int) = onePointMove(
     () => List(lastNode),
-    ()=> myVRP.kFirst(v*2,
+    () => myVRP.kFirst(v*2,
       ChainsHelper.relevantNeighborsForLastNodeAfterHead(
         myVRP,
         chainsExtension,
@@ -147,7 +147,7 @@ object SimplePDPTW extends App {
 
   def lastNodeOfChainInsertion(lastNode:Int) = insertPointUnroutedFirst(
     () => List(lastNode),
-    ()=> myVRP.kFirst(
+    () => myVRP.kFirst(
       v*2,
       ChainsHelper.relevantNeighborsForLastNodeAfterHead(
         myVRP,
@@ -170,14 +170,11 @@ object SimplePDPTW extends App {
 
   //val routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "InsertUF"))
 
-
   val search = bestSlopeFirst(List(oneChainInsert,oneChainMove,onePtMove(20)))
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
   search.verbose = 1
   //search.verboseWithExtraInfo(4, ()=> "" + myVRP)
-
-
 
   search.doAllMoves(obj=obj)
 
