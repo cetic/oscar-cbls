@@ -162,8 +162,6 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
   private var allKnownWorkers: List[ActorRef[MessageToWorker]] = Nil
   private var idleWorkers: List[ActorRef[MessageToWorker]] = Nil
   //this one is a list, because the most common operations are add and takeFirst
-  private var runningSearches: SortedMap[Long, (SearchTask, ActorRef[MessageToWorker])] = SortedMap.empty
-  //need to add, and remove regularly, based on ID, indexed by startID
   private var startingSearches: SortedMap[Long, (SearchTask, Long, ActorRef[MessageToWorker])] = SortedMap.empty
   //need to add, and remove regularly, based on ID
   private var ongoingSearches: SortedMap[Long, (SearchTask, ActorRef[MessageToWorker])] = SortedMap.empty
@@ -277,7 +275,6 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
             if (verbose) context.log.info(s"search:${search.searchId} start confirmed by worker:${worker.path}")
             ongoingSearches = ongoingSearches + (search.searchId -> (search2, worker2))
             startingSearches = startingSearches.-(startID)
-            runningSearches = runningSearches + (search.searchId -> (search, worker))
           case _ =>
             if (verbose) context.log.warn(s"unexpected search:${search.searchId} start confirmed to Supervisor by worker:${worker.path}; asking for abort")
             worker ! AbortSearch(search.searchId)
@@ -299,7 +296,6 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
           case Some(s) =>
             if (verbose) context.log.info(s"got a worker ready:${worker.path}; finished search:$s")
             ongoingSearches = ongoingSearches.-(s)
-            runningSearches = runningSearches - s
         }
 
         idleWorkers = worker :: idleWorkers
@@ -411,7 +407,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
   }
 
   def status: String = {
-    s"workers(total:${allKnownWorkers.size} busy:${allKnownWorkers.size - idleWorkers.size}) searches(waiting:${waitingSearches.size} starting:${startingSearches.size} running:${runningSearches.size} totalStarted:$totalStartedSearches)"
+    s"workers(total:${allKnownWorkers.size} busy:${allKnownWorkers.size - idleWorkers.size}) searches(waiting:${waitingSearches.size} starting:${startingSearches.size} running:${ongoingSearches.size} totalStarted:$totalStartedSearches)"
   }
 
   //this one cannot be a control message!!!
