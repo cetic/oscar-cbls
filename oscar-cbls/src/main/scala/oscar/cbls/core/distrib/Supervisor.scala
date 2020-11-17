@@ -18,7 +18,7 @@ sealed trait MessagesToSupervisor
 
 final case class NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) extends MessagesToSupervisor with ControlMessage
 
-final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSearchIDOpt: Option[Long], completedNeighborhoodID: Option[Int]) extends MessagesToSupervisor with ControlMessage
+final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSearchIDOpt: Option[Long], completedNeighborhoodIDAndMoveFound: Option[(Int,Boolean)]) extends MessagesToSupervisor with ControlMessage
 
 final case class CancelSearchToSupervisor(searchID: Long) extends MessagesToSupervisor with ControlMessage
 
@@ -47,16 +47,127 @@ object Supervisor {
     val startLogger: Logger = LoggerFactory.getLogger("SupervisorObject")
     startLogger.info("Starting actor system and supervisor")
 
-
     //We prioritize some messages to try and maximize the hit on hotRestart
     val a = ActorSystem(
       createSupervisorBehavior(verbose, tic), "supervisor",
-      config = ConfigFactory.parseString(
-        """oscarcbls {
-            supervisormailbox {
-                mailbox-type = "akka.dispatch.UnboundedControlAwareMailbox"
-            }
-          }"""),
+      config = ConfigFactory.parseString("""
+                                           |oscarcbls.supervisormailbox.mailbox-type = "akka.dispatch.UnboundedControlAwareMailbox"
+                                           |akka.version = 2.6.5
+                                           |akka.home = ""
+                                           |akka.actor.allow-java-serialization = on
+                                           |akka.actor.creation-timeout = 20s
+                                           |akka.actor.debug.receive = off
+                                           |akka.actor.debug.autoreceive = off
+                                           |akka.actor.debug.lifecycle = off
+                                           |akka.actor.debug.fsm = off
+                                           |akka.actor.debug.event-stream = off
+                                           |akka.actor.debug.unhandled = off
+                                           |akka.actor.debug.router-misconfiguration = off
+                                           |akka.actor.default-dispatcher.type = "Dispatcher"
+                                           |akka.actor.default-dispatcher.executor = "default-executor"
+                                           |akka.actor.default-dispatcher.default-executor.fallback = "fork-join-executor"
+                                           |akka.actor.default-dispatcher.fork-join-executor.parallelism-min = 8
+                                           |akka.actor.default-dispatcher.fork-join-executor.parallelism-factor = 1.0
+                                           |akka.actor.default-dispatcher.fork-join-executor.parallelism-max = 64
+                                           |akka.actor.default-dispatcher.fork-join-executor.task-peeking-mode = "FIFO"
+                                           |akka.actor.default-dispatcher.shutdown-timeout = 1s
+                                           |akka.actor.default-dispatcher.throughput = 1
+                                           |akka.actor.default-dispatcher.throughput-deadline-time = 0ms
+                                           |akka.actor.default-dispatcher.attempt-teamwork = on
+                                           |akka.actor.default-dispatcher.mailbox-requirement = ""
+                                           |akka.actor.default-mailbox.mailbox-type = "akka.dispatch.UnboundedMailbox"
+                                           |akka.actor.default-mailbox.mailbox-capacity = 1000
+                                           |akka.actor.default-mailbox.mailbox-push-timeout-time = 10s
+                                           |akka.actor.default-mailbox.stash-capacity = -1
+                                           |akka.actor.deployment.default.dispatcher = ""
+                                           |akka.actor.deployment.default.remote = ""
+                                           |akka.actor.deployment.default.router = "from-code"
+                                           |akka.actor.deployment.default.virtual-nodes-factor = 10
+                                           |akka.actor.guardian-supervisor-strategy = "akka.actor.DefaultSupervisorStrategy"
+                                           |akka.actor.internal-dispatcher.type = "Dispatcher"
+                                           |akka.actor.internal-dispatcher.executor = "fork-join-executor"
+                                           |akka.actor.internal-dispatcher.throughput = 5
+                                           |akka.actor.internal-dispatcher.fork-join-executor.parallelism-min = 4
+                                           |akka.actor.internal-dispatcher.fork-join-executor.parallelism-factor = 1.0
+                                           |akka.actor.internal-dispatcher.fork-join-executor.parallelism-max = 64
+                                           |akka.actor.mailbox.unbounded-queue-based.mailbox-type = "akka.dispatch.UnboundedMailbox"
+                                           |akka.actor.mailbox.bounded-queue-based.mailbox-type = "akka.dispatch.BoundedMailbox"
+                                           |akka.actor.mailbox.unbounded-deque-based.mailbox-type = "akka.dispatch.UnboundedDequeBasedMailbox"
+                                           |akka.actor.mailbox.bounded-deque-based.mailbox-type = "akka.dispatch.BoundedDequeBasedMailbox"
+                                           |akka.actor.mailbox.unbounded-control-aware-queue-based.mailbox-type = "akka.dispatch.UnboundedControlAwareMailbox"
+                                           |akka.actor.mailbox.bounded-control-aware-queue-based.mailbox-type = "akka.dispatch.BoundedControlAwareMailbox"
+                                           |akka.actor.mailbox.logger-queue.mailbox-type = "akka.event.LoggerMailboxType"
+                                           |akka.actor.mailbox.requirements."akka.dispatch.UnboundedMessageQueueSemantics" = akka.actor.mailbox.unbounded-queue-based
+                                           |akka.actor.mailbox.requirements."akka.dispatch.BoundedMessageQueueSemantics" = akka.actor.mailbox.bounded-queue-based
+                                           |akka.actor.mailbox.requirements."akka.dispatch.DequeBasedMessageQueueSemantics" = akka.actor.mailbox.unbounded-deque-based
+                                           |akka.actor.mailbox.requirements."akka.dispatch.UnboundedDequeBasedMessageQueueSemantics" = akka.actor.mailbox.unbounded-deque-based
+                                           |akka.actor.mailbox.requirements."akka.dispatch.BoundedDequeBasedMessageQueueSemantics" = akka.actor.mailbox.bounded-deque-based
+                                           |akka.actor.mailbox.requirements."akka.dispatch.MultipleConsumerSemantics" = akka.actor.mailbox.unbounded-queue-based
+                                           |akka.actor.mailbox.requirements."akka.dispatch.ControlAwareMessageQueueSemantics" = akka.actor.mailbox.unbounded-control-aware-queue-based
+                                           |akka.actor.mailbox.requirements."akka.dispatch.UnboundedControlAwareMessageQueueSemantics" = akka.actor.mailbox.unbounded-control-aware-queue-based
+                                           |akka.actor.mailbox.requirements."akka.dispatch.BoundedControlAwareMessageQueueSemantics" = akka.actor.mailbox.bounded-control-aware-queue-based
+                                           |akka.actor.mailbox.requirements."akka.event.LoggerMessageQueueSemantics" = akka.actor.mailbox.logger-queue
+                                           |akka.actor.no-serialization-verification-needed-class-prefix = ["akka."]
+                                           |akka.actor.provider = "local"
+                                           |akka.actor.router.type-mapping.from-code = "akka.routing.NoRouter"
+                                           |akka.actor.router.type-mapping.round-robin-pool = "akka.routing.RoundRobinPool"
+                                           |akka.actor.router.type-mapping.round-robin-group = "akka.routing.RoundRobinGroup"
+                                           |akka.actor.router.type-mapping.random-pool = "akka.routing.RandomPool"
+                                           |akka.actor.router.type-mapping.random-group = "akka.routing.RandomGroup"
+                                           |akka.actor.router.type-mapping.balancing-pool = "akka.routing.BalancingPool"
+                                           |akka.actor.router.type-mapping.smallest-mailbox-pool = "akka.routing.SmallestMailboxPool"
+                                           |akka.actor.router.type-mapping.broadcast-pool = "akka.routing.BroadcastPool"
+                                           |akka.actor.router.type-mapping.broadcast-group = "akka.routing.BroadcastGroup"
+                                           |akka.actor.router.type-mapping.scatter-gather-pool = "akka.routing.ScatterGatherFirstCompletedPool"
+                                           |akka.actor.router.type-mapping.scatter-gather-group = "akka.routing.ScatterGatherFirstCompletedGroup"
+                                           |akka.actor.router.type-mapping.tail-chopping-pool = "akka.routing.TailChoppingPool"
+                                           |akka.actor.router.type-mapping.tail-chopping-group = "akka.routing.TailChoppingGroup"
+                                           |akka.actor.router.type-mapping.consistent-hashing-pool = "akka.routing.ConsistentHashingPool"
+                                           |akka.actor.router.type-mapping.consistent-hashing-group = "akka.routing.ConsistentHashingGroup"
+                                           |akka.actor.serialize-creators = off
+                                           |akka.actor.serialize-messages = off
+                                           |akka.actor.unstarted-push-timeout = 10s
+                                           |akka.coordinated-shutdown.default-phase-timeout = 5s
+                                           |akka.coordinated-shutdown.terminate-actor-system = on
+                                           |akka.coordinated-shutdown.exit-jvm = off
+                                           |akka.coordinated-shutdown.run-by-jvm-shutdown-hook = on
+                                           |akka.coordinated-shutdown.run-by-actor-system-terminate = on
+                                           |akka.coordinated-shutdown.exit-code = 0
+                                           |akka.coordinated-shutdown.phases.before-service-unbind = {}
+                                           |akka.coordinated-shutdown.phases.service-unbind.depends-on = [before-service-unbind]
+                                           |akka.coordinated-shutdown.phases.service-requests-done.depends-on = [service-unbind]
+                                           |akka.coordinated-shutdown.phases.service-stop.depends-on = [service-requests-done]
+                                           |akka.coordinated-shutdown.phases.before-cluster-shutdown.depends-on = [service-stop]
+                                           |akka.coordinated-shutdown.phases.cluster-sharding-shutdown-region.timeout = 10s
+                                           |akka.coordinated-shutdown.phases.cluster-sharding-shutdown-region.depends-on = [before-cluster-shutdown]
+                                           |akka.coordinated-shutdown.phases.cluster-leave.depends-on = [cluster-sharding-shutdown-region]
+                                           |akka.coordinated-shutdown.phases.cluster-exiting.timeout = 10s
+                                           |akka.coordinated-shutdown.phases.cluster-exiting.depends-on = [cluster-leave]
+                                           |akka.coordinated-shutdown.phases.cluster-exiting-done.depends-on = [cluster-exiting]
+                                           |akka.coordinated-shutdown.phases.cluster-shutdown.depends-on = [cluster-exiting-done]
+                                           |akka.coordinated-shutdown.phases.before-actor-system-terminate.depends-on = [cluster-shutdown]
+                                           |akka.coordinated-shutdown.phases.actor-system-terminate.timeout = 10s
+                                           |akka.coordinated-shutdown.phases.actor-system-terminate.depends-on = [before-actor-system-terminate]
+                                           |akka.daemonic = off
+                                           |akka.extensions = []
+                                           |akka.fail-mixed-versions = on
+                                           |akka.jvm-exit-on-fatal-error = on
+                                           |akka.jvm-shutdown-hooks = on
+                                           |akka.log-config-on-start = off
+                                           |akka.log-dead-letters = off
+                                           |akka.log-dead-letters-during-shutdown = off
+                                           |akka.log-dead-letters-suspend-duration = infinite
+                                           |akka.logger-startup-timeout = 5s
+                                           |akka.loggers = ["akka.event.slf4j.Slf4jLogger"]
+                                           |akka.loggers-dispatcher = "akka.actor.default-dispatcher"
+                                           |akka.logging-filter = "akka.event.slf4j.Slf4jLoggingFilter"
+                                           |akka.loglevel = "OFF"
+                                           |akka.scheduler.tick-duration = 10ms
+                                           |akka.scheduler.ticks-per-wheel = 512
+                                           |akka.scheduler.implementation = "akka.actor.LightArrayRevolverScheduler"
+                                           |akka.scheduler.shutdown-timeout = 5s
+                                           |akka.stdout-loglevel = "OFF"
+                                           |""".stripMargin),
       guardianProps = MailboxSelector.fromConfig("oscarcbls.supervisormailbox"))
 
     a
@@ -287,15 +398,18 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
       //we do not register the worker as available here because it will register itself through another call,
       // at least to show it is not completely crashed.
 
-      case ReadyForWork(worker: ActorRef[MessageToWorker], completedSearchID: Option[Long], completedNeighborhoodID: Option[Int]) =>
+      case ReadyForWork(worker: ActorRef[MessageToWorker], completedSearchID: Option[Long], completedNeighborhoodIDAndMoveFound: Option[(Int,Boolean)]) =>
 
         require(allKnownWorkers contains worker)
-        completedSearchID match {
+        completedNeighborhoodIDAndMoveFound match {
           case None => ;
             if (verbose) context.log.info(s"got a worker ready:${worker.path}")
-          case Some(s) =>
+          case Some((s:Int,found)) =>
             if (verbose) context.log.info(s"got a worker ready:${worker.path}; finished search:$s")
             ongoingSearches = ongoingSearches.-(s)
+            if(!found){
+              neighborhoodToPreferredWorker = neighborhoodToPreferredWorker.-(s)
+            }
         }
 
         idleWorkers = worker :: idleWorkers

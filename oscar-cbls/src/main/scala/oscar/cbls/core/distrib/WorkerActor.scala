@@ -38,7 +38,6 @@ final case class ShutDownWorker() extends MessageToWorker
 
 final case class Ping(replyTo: ActorRef[Unit]) extends MessageToWorker
 
-
 object WorkerActor {
   val nbCores: Int = Runtime.getRuntime.availableProcessors()
 
@@ -200,14 +199,25 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
                   master ! Crash(context.self)
                 case _ => ;
               }
+              val moveFound = result match{
+                case c:SearchCompleted =>
+                  c.searchResult match{
+                    case _:IndependentMoveFound => true
+                    case _ => false
+                  }
+                case _ => false
+              }
+              master ! ReadyForWork(
+                context.self,
+                Some(search.searchId),
+                Some((search.request.neighborhoodID.neighborhoodID, moveFound)))
 
-              master ! ReadyForWork(context.self, Some(search.searchId), Some(search.request.neighborhoodID.neighborhoodID))
               next(Idle())
 
             case Aborting(search) =>
               //ok, we've done it for nothing.
               if (verbose) context.log.info(s"aborted search:${search.searchId}")
-              master ! ReadyForWork(context.self, Some(search.searchId), Some(search.request.neighborhoodID.neighborhoodID))
+              master ! ReadyForWork(context.self, Some(search.searchId), Some((search.request.neighborhoodID.neighborhoodID,false)))
               next(Idle())
 
             case Idle() =>
