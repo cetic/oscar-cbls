@@ -43,7 +43,7 @@ class TestSeqVar extends AnyFunSuite with Matchers {
     a.insertAtPosition(45,3)
     size2.value should be(5)
 
-    val checkpoint = a.defineCurrentValueAsCheckpoint(true)
+    val checkpoint = a.defineCurrentValueAsCheckpoint()
 
     a.move(1,3,4,false)
     a.insertAtPosition(12,5)

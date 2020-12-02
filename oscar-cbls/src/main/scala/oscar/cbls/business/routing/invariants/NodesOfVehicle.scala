@@ -131,7 +131,7 @@ class NodesOfVehicle(routes:ChangingSeqValue,
         false //impossible to go incremental
       case SeqUpdateLastNotified(value:IntSequence) =>
         true //we are starting from the previous value
-      case SeqUpdateDefineCheckpoint(prev,isStarMode,checkpointLevel) =>
+      case SeqUpdateDefineCheckpoint(prev,checkpointLevel) =>
         if(checkpointLevel == 0) {
           if (!digestUpdates(prev)) {
             affect(computeValueFromScratch(changes.newValue))

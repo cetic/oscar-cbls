@@ -36,7 +36,7 @@ class ReplaceActivity(schedule: Schedule,
     // iterating over the values in the activity list
     val (indicesIterator, notifyIndexToRemoveFound) = selectRemoveBehavior.toIterator(iterationZone)
     // Define checkpoint on sequence (activities list)
-    val seqValueCheckPoint = schedule.activityPriorityList.defineCurrentValueAsCheckpoint(true)
+    val seqValueCheckPoint = schedule.activityPriorityList.defineCurrentValueAsCheckpoint()
     while (indicesIterator.hasNext) {
       indActToRemove = indicesIterator.next()
       // iterating over the possible activities to add after

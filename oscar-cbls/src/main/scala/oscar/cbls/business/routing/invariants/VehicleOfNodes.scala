@@ -109,7 +109,7 @@ class VehicleOfNodes(routes:ChangingSeqValue,
         false //impossible to go incremental
       case SeqUpdateLastNotified(value:IntSequence) =>
         true //we are starting from the previous value
-      case SeqUpdateDefineCheckpoint(prev,isStarMode,checkpointLevel) =>
+      case SeqUpdateDefineCheckpoint(prev,checkpointLevel) =>
         digestUpdates(prev)
       case r@SeqUpdateRollBackToCheckpoint(checkpoint,checkpointLevel) =>
        digestUpdates(r.howToRollBack)

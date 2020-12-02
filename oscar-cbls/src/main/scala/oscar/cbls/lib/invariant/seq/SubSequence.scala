@@ -123,13 +123,13 @@ case class SubSequence(v: SeqValue,index:Int, length: Int,
         rollbackToTopCheckpoint(checkpointStack.rollBackAndOutputValue(checkpoint,checkPointLevel))
         true
 
-      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, isActive, checkpointLevel) =>
+      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, checkpointLevel) =>
         if(!digestChanges(prev)){
           this := computeFromScratch(prev.newValue)
         }
 
         releaseTopCheckpointsToLevel(checkpointLevel,true)
-        this.defineCurrentValueAsCheckpoint(isActive)
+        this.defineCurrentValueAsCheckpoint()
         //we perform this after the define checkpoint above, so that hte saved value is the regularized one (I do not know, but his might be a good idea)
         checkpointStack.defineCheckpoint(prev.newValue,checkpointLevel,this.newValue)
         true
@@ -283,7 +283,7 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
       case u@SeqUpdateRollBackToCheckpoint(checkpoint,checkpointLevel) =>
         digestChanges(u.howToRollBack)
 
-      case SeqUpdateDefineCheckpoint(prev, isActive, checkpointLevel) =>
+      case SeqUpdateDefineCheckpoint(prev, checkpointLevel) =>
         digestChanges(prev)
 
       case SeqUpdateLastNotified(value) =>

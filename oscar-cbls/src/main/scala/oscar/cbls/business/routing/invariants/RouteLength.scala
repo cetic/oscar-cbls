@@ -142,7 +142,7 @@ class RouteLength(routes:ChangingSeqValue,
 
   private def digestUpdates(changes:SeqUpdate):Boolean = {
     changes match {
-      case SeqUpdateDefineCheckpoint(prev,isStarMode,checkpointLevel) =>
+      case SeqUpdateDefineCheckpoint(prev,checkpointLevel) =>
         //we only consider level 0; other are not managed.
         if(checkpointLevel == 0) {
 

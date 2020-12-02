@@ -452,7 +452,7 @@ object PDPTW_VLSN extends App {
   }
 
   def removeAndReInsertVLSN(headOfChainToRemove: Int): () => Unit = {
-    val checkpointBeforeRemove = myVRP.routes.defineCurrentValueAsCheckpoint(true)
+    val checkpointBeforeRemove = myVRP.routes.defineCurrentValueAsCheckpoint()
     require(headOfChainToRemove >= v, s"cannot remove vehicle point: $headOfChainToRemove")
 
     val allNodesOfChain = chainsExtension.chainOfNode(headOfChainToRemove)

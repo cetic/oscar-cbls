@@ -368,7 +368,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
 
     def removeAndReInsertVLSN(pickUp: Int): () => Unit = {
 
-      val checkpointBeforeRemove = myVRP.routes.defineCurrentValueAsCheckpoint(true)
+      val checkpointBeforeRemove = myVRP.routes.defineCurrentValueAsCheckpoint()
 
       val delivery = pickUpPointToDeliveryPoint(pickUp)
 

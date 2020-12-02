@@ -35,7 +35,7 @@ class AddActivity(schedule: Schedule,
     // iterating over the values in the activity list
     val (valuesIterator, notifyValueFound) = selectValueBehavior.toIterator(iterationZone)
     // Define checkpoint on sequence (activities list)
-    val seqValueCheckPoint = schedule.activityPriorityList.defineCurrentValueAsCheckpoint(true)
+    val seqValueCheckPoint = schedule.activityPriorityList.defineCurrentValueAsCheckpoint()
     // Main loop
     while (valuesIterator.hasNext) {
       currentValue = valuesIterator.next()

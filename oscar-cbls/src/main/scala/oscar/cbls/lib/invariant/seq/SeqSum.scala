@@ -78,7 +78,7 @@ case class SeqSum(v: SeqValue, f:Int => Int = (a:Int) => a)
         this := checkpointStack.rollBackAndOutputValue(checkpoint,checkpointLevel)
         true
 
-      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, isActive,checkpointLevel) =>
+      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, checkpointLevel) =>
         if(!digestChanges(prev)){
           val myOutput = computeSumFromScratch(changes.newValue)
           checkpointStack.defineCheckpoint(prev.newValue,checkpointLevel,myOutput)

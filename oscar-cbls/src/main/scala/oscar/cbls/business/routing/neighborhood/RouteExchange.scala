@@ -42,7 +42,7 @@ case class RouteExchange(firstVehicles:()=>Iterable[Int],
       if (hotRestart) HotRestart(firstVehicles(), startFirstVehicle)
       else firstVehicles()
 
-    val startValue = seq.defineCurrentValueAsCheckpoint(true)
+    val startValue = seq.defineCurrentValueAsCheckpoint()
 
     def evalObjAndRollBack() : Long = {
       val a = obj.value

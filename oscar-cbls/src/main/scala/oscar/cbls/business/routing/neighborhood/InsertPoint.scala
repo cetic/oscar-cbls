@@ -117,7 +117,7 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
   var startIndice: Int = 0
 
   override def exploreNeighborhood(initialObj: Long): Unit = {
-    val seqValue = seq.defineCurrentValueAsCheckpoint(true)
+    val seqValue = seq.defineCurrentValueAsCheckpoint()
 
     def evalObjAndRollBack() : Long = {
       val a = obj.value
@@ -209,7 +209,7 @@ case class InsertPointRoutedFirst(insertionPositions:()=>Iterable[Int],
   var startIndice: Int = 0
 
   override def exploreNeighborhood(initialObj: Long): Unit = {
-    val seqValue = seq.defineCurrentValueAsCheckpoint(true)
+    val seqValue = seq.defineCurrentValueAsCheckpoint()
 
     def evalObjAndRollBack() : Long = {
       val a = obj.value

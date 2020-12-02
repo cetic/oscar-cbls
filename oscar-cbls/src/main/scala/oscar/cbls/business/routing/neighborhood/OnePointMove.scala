@@ -60,7 +60,7 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
       else nodesToMove()
 
     //TODO: we might also want to go for checkpoint less neighborhood to avoid invariants computing checkpoint values for small neighborhoods.
-    val startValue = seq.defineCurrentValueAsCheckpoint(true)
+    val startValue = seq.defineCurrentValueAsCheckpoint()
 
     def evalObjAndRollBack() : Long = {
       val a = obj.value

@@ -351,7 +351,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
   private def digestUpdates(changes:SeqUpdate):Unit = {
     changes match {
-      case SeqUpdateDefineCheckpoint(prev,isStarMode,checkpointLevel) =>
+      case SeqUpdateDefineCheckpoint(prev,checkpointLevel) =>
        // println("Define Checkpoint")
         //println(minNodeToAStarInfos(0).toList.mkString(";"))
         //we do not manage checkpoints at all

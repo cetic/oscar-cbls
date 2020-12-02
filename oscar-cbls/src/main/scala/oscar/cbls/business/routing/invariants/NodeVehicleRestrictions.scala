@@ -271,7 +271,7 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
 
   private def digestUpdates(changes : SeqUpdate) : Boolean = {
     changes match {
-      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, isStarMode : Boolean, checkpointLevel:Int) =>
+      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, checkpointLevel:Int) =>
 
         if(checkpointLevel == 0){
           if (!digestUpdates(prev)) {

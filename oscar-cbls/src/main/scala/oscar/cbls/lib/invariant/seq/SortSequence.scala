@@ -179,11 +179,11 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
         releaseTopCheckpointsToLevel(level,false)
         this.rollbackToTopCheckpoint(checkpointStack.rollBackAndOutputValue(checkPoint,level))
 
-      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, isStarMode, level) =>
+      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, level) =>
         digestChanges(prev)
 
         releaseTopCheckpointsToLevel(level,true)
-        this.defineCurrentValueAsCheckpoint(isStarMode)
+        this.defineCurrentValueAsCheckpoint()
         checkpointStack.defineCheckpoint(prev.newValue,level,this.newValue)
 
       case SeqUpdateLastNotified(value) =>

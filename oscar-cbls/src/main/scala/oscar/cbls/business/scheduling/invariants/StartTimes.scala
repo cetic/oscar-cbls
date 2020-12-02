@@ -73,7 +73,7 @@ class StartTimes(actPriorityList: ChangingSeqValue,
     val changesValue = changes.newValue
     val lastValuePos = changesValue.size - 1
     changes match {
-      case SeqUpdateDefineCheckpoint(_, _, _) =>
+      case SeqUpdateDefineCheckpoint(_, _) =>
         Some(0, lastValuePos, changesValue, None)
       case r@SeqUpdateRollBackToCheckpoint(_, _) =>
         val rbkValue = r.howToRollBack.newValue // checkpoint value

@@ -56,7 +56,7 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Int],
 
   override def exploreNeighborhood(initialObj: Long): Unit = {
 
-    val seqValue = seq.defineCurrentValueAsCheckpoint(true)
+    val seqValue = seq.defineCurrentValueAsCheckpoint()
 
     def evalObjAndRollBack() : Long = {
       val a = obj.value

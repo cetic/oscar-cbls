@@ -32,8 +32,8 @@ class RemoveActivity(schedule: Schedule,
     val (indicesIterator, notifyIndexFound) = selectIndexBehavior.toIterator(iterationZone)
     // Define checkpoint on sequence (activities list)
     val seqValueCheckPoint = schedule
-      .activityPriorityList
-      .defineCurrentValueAsCheckpoint(true)
+          .activityPriorityList
+          .defineCurrentValueAsCheckpoint()
     while (indicesIterator.hasNext) {
       currentIndex = indicesIterator.next().toInt
       // perform move

@@ -182,7 +182,7 @@ class Precedence(seq:ChangingSeqValue,
     //println("precedence.digestUpdate(" + changes.getClass.getSimpleName + ")")
     changes match {
       case null => throw new Error()
-      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, isActive : Boolean, checkpointLevel:Int) =>
+      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, checkpointLevel:Int) =>
         //println("define checkpoint")
         if(checkpointLevel == 0){
           if(!digestUpdates(prev)){

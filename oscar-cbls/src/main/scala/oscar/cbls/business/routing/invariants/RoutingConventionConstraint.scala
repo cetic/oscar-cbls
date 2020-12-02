@@ -87,7 +87,7 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
 
   private def digestUpdates(changes: SeqUpdate): Boolean ={
     changes match {
-      case _@SeqUpdateDefineCheckpoint(prev: SeqUpdate,isStarMode: Boolean,checkpointLevel: Int) =>
+      case _@SeqUpdateDefineCheckpoint(prev: SeqUpdate, checkpointLevel: Int) =>
         if(!digestUpdates(prev)) return false
         // if checkpoint = 0 ==> movement validation we need to apply all the recorded changes
 

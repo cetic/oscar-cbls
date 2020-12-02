@@ -192,7 +192,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
     }
 
     def removeAndReInsertVLSN(pointToRemove: Int): () => Unit = {
-      val checkpointBeforeRemove = myVRP.routes.defineCurrentValueAsCheckpoint(true)
+      val checkpointBeforeRemove = myVRP.routes.defineCurrentValueAsCheckpoint()
       require(pointToRemove >= v, "cannot remove vehicle point: " + v)
 
       myVRP.routes.value.positionOfAnyOccurrence(pointToRemove) match {

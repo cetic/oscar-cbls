@@ -33,7 +33,7 @@ class ReinsertActivity(schedule: Schedule,
     // iterating over the indices in the activity list
     val (indicesIterator, notifyIndexFound) = selectIndexBehavior.toIterator(iterationZone)
     // Define checkpoint on sequence (activities list)
-    val seqValueCheckPoint = schedule.activityPriorityList.defineCurrentValueAsCheckpoint(true)
+    val seqValueCheckPoint = schedule.activityPriorityList.defineCurrentValueAsCheckpoint()
     // Main loop
     while (indicesIterator.hasNext) {
       currentIndex = indicesIterator.next().toInt
