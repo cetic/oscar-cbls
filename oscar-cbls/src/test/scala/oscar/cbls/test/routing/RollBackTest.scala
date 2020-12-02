@@ -24,19 +24,57 @@ object RollBackTest extends App {
   val moving = MovingVehicles(routes, v)
 
   store.close()
+  routes.insertAtPosition(16, 3)
+  routes.insertAtPosition(17, 4)
+  println(moving)
 
   val checkpoint0 = routes.defineCurrentValueAsCheckpoint()
-  routes.insertAtPosition(6,1)
-  routes.insertAtPosition(7,2)
-  val checkpoint1 = routes.defineCurrentValueAsCheckpoint()
-  routes.insertAtPosition(8,3)
-  routes.insertAtPosition(9,3)
-  println(moving)
-  routes.rollbackToTopCheckpoint(checkpoint1)
+
+  {
+    routes.insertAtPosition(6, 1)
+    routes.insertAtPosition(7, 2)
+    val checkpoint1 = routes.defineCurrentValueAsCheckpoint()
+    routes.insertAtPosition(8, 3)
+    routes.insertAtPosition(9, 3)
+    routes.rollbackToTopCheckpoint(checkpoint1)
+    routes.insertAtPosition(10, 3)
+    routes.insertAtPosition(11, 3)
+    routes.rollbackToTopCheckpoint(checkpoint1)
+    routes.releaseTopCheckpoint()
+    routes.insertAtPosition(14, 3)
+    routes.insertAtPosition(15, 4)
+  }
+
+  //routes.rollbackToTopCheckpoint(checkpoint0)
+
+
   routes.releaseTopCheckpoint()
-  routes.insertAtPosition(10,3)
-  routes.insertAtPosition(11,3)
-  routes.rollbackToTopCheckpoint(checkpoint0)
+  routes.insertAtPosition(16, 3)
+  routes.insertAtPosition(17, 4)
+
+
+  val checkpoint0b = routes.defineCurrentValueAsCheckpoint()
+
+  {
+    routes.insertAtPosition(6, 1)
+    routes.insertAtPosition(7, 2)
+
+    val checkpoint1 = routes.defineCurrentValueAsCheckpoint()
+    routes.insertAtPosition(8, 3)
+    routes.insertAtPosition(9, 3)
+    routes.rollbackToTopCheckpoint(checkpoint1)
+    routes.insertAtPosition(10, 3)
+    routes.insertAtPosition(11, 3)
+    routes.rollbackToTopCheckpoint(checkpoint1)
+    routes.releaseTopCheckpoint()
+    routes.insertAtPosition(14, 3)
+    routes.insertAtPosition(15, 4)
+  }
+
+  routes.rollbackToTopCheckpoint(checkpoint0b)
+  routes.releaseTopCheckpoint()
+
+
 
   println(myVRP)
   println(moving)

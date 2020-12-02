@@ -23,6 +23,7 @@ case class MovingVehicles(routes:ChangingSeqValue, v:Int)
   this := computeValueFromScratch(routes.value)
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
+    //println("notifySeqChanges " + changes)
     if(!digestUpdates(changes)) {
       this := computeValueFromScratch(changes.newValue)
     }
@@ -117,6 +118,7 @@ case class MovingVehicles(routes:ChangingSeqValue, v:Int)
       case SeqUpdateDefineCheckpoint(prev,checkpointLevel) =>
         digestUpdates(prev)
       case r@SeqUpdateRollBackToCheckpoint(checkpoint,checkpointLevel) =>
+        //println("howToRollBack:" + r.howToRollBack)
             digestUpdates(r.howToRollBack)
     }
   }
