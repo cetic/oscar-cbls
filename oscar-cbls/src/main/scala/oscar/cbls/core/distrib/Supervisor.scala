@@ -205,7 +205,7 @@ class Supervisor(supervisorActor: ActorRef[MessagesToSupervisor], m: Store, verb
   import akka.actor.typed.scaladsl.AskPattern._
 
   def createLocalWorker(m: Store, search: Neighborhood): Unit = {
-    createLocalWorker(m, search.identifyNeighborhoodForWorker)
+    createLocalWorker(m, search.identifyRemotelySearcheableNeighbrhoods)
   }
 
   def createLocalWorker(m: Store, neighborhoods: SortedMap[Int, RemoteNeighborhood]): Unit = {

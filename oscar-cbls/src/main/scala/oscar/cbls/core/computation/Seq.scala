@@ -402,18 +402,10 @@ class SeqUpdateRollBackToCheckpoint(val checkpointValue:IntSequence,howToRollBac
   }
 
   //TODO: there might still be overflows during howToRollBack when rollbacking to top checkpoint; it seems that the rollBack itself is included in the howToRollBack.
-  private var reversedInstructions:SeqUpdate = null
-
-  def howToRollBack:SeqUpdate = {
-    if (reversedInstructions != null) reversedInstructions
-    else {
-      reversedInstructions = howToRollBackFct()
-      reversedInstructions
-    }
-  }
+  lazy val howToRollBack:SeqUpdate = howToRollBackFct()
 
   override def toString : String =
-    s"SeqUpdateRollBackToCheckpoint(level:$level checkpoint:$checkpointValue)" //+ " howTo:" +  howToRollBack + ")"
+    s"SeqUpdateRollBackToCheckpoint(level:$level checkpoint:$checkpointValue)"
 
   override def depth : Int = 0
 

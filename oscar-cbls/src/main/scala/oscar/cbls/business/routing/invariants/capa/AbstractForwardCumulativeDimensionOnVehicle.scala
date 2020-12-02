@@ -149,7 +149,8 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
         }
 
       case u@SeqUpdateRollBackToCheckpoint(checkpoint : IntSequence, level:Int) =>
-        digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(u.howToRollBack,toUpdateZonesAndVehicleStartOpt, potentiallyRemovedPoints, previousSequence) match {
+      //TODO: there is a stack overflow here, because f the howToRollBack
+      digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(u.howToRollBack,toUpdateZonesAndVehicleStartOpt, potentiallyRemovedPoints, previousSequence) match {
           //checkpoints are managed about the vehicleLocation exclusively
           case (Some((zonesAfterPrev, vehicleLocationAfterPrev)), removedPointsAfterPrev) =>
             val regularizedVehicleLocation = vehicleLocationAndCheckpointStack.rollBackAndOutputValue(checkpoint,level)

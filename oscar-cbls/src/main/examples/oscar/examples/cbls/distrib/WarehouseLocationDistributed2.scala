@@ -104,13 +104,14 @@ object WarehouseLocationDistributed2 extends App{
 
   val supervisor = distrib.startSupervisorAndActorSystem(store,search)
 
+  //creating all the workers; here we only create local workers
   for(_ <- (0 until nbWorker).par) {
     val (store2, search2, _, _) = createSearchProcedure()
     supervisor.createLocalWorker(store2,search2)
     search2.verbose = 2
   }
 
-    val start = System.currentTimeMillis()
+  val start = System.currentTimeMillis()
 
   val search2 = search.showObjectiveFunction(obj)
   search2.verbose = 1
