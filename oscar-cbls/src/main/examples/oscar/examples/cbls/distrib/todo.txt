@@ -1,4 +1,16 @@
-  //improvement1: how to get feedback on the go from remote worker in case of Atomic? ie: console and obj?
+    //improvment1: how about hot restart?  1/2
+    // if we assume that neighborhood is stateful,
+    // the only option is to restart the same neighborhood at the same worker, so worker should have some preference in their neighborhoods,
+    // based on who executed the neighborhood last; maybe neighborhood should have their preference on workers
+    // how to identify stateful neighborhoods?
+    //   they must be parameterless
+    //   and have some hot restart, which we do not know, except if told, all we can do is to assume based on no parameters.
+    //   when slave is ready: pick up in his queue otherwise pick from some common queue
+    //   when task comes comes, put into queue of preferred
+    //   when task completes, if move found and parameterless, record worker for next call, otherwise, do not change preference for this neighborhood
+
+
+    //improvement1: how to get feedback on the go from remote worker in case of Atomic? ie: console and obj?
     //rule so far: not possible to get out of the distributed combinator without stopping the workers.
     //  btw: this is not strognly implemented, the combinators must be honest
     //idea: propoze a remoteAtomic with dedicated API?
@@ -9,13 +21,7 @@
     //improvement5: remote
     //improvement6: unified delegate & worker action for different purposes
     //improvement7: how about a carry on instruction to worker?
-    //improvment8: how about hot restart?
-    // if we assume that neighborhood is stateful,
-    // the only option is to restart the same neighborhood at the same worker, so worker should have some preference in their neighborhoods,
-    // based on who executed the neighborhood last; maybe neighborhood should have their preference on workers
-    // how to identify stateful neighborhoods?
-    //   they must be parameterless
-    //   and have some hot restart, which we do not know, except if told, all we can do is to assume based on no parameters.
-    //   when slave is ready: pick up in his queue otherwise pick from some common queue
-    //   when task comes comes, put into queue of preferred
-    //   when task completes, if move found and parameterless, record worker for next call, otherwise, do not change preference for this neighborhood
+    //improvement9: VLSN
+    //improvement9: VLSN
+
+

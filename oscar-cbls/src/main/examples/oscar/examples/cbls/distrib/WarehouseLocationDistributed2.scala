@@ -72,6 +72,7 @@ object WarehouseLocationDistributed2 extends App{
         otherWarehouse => warehouseToWarehouseDistances(warehouse)(otherWarehouse)
       ))
 
+    //TODO: normally, we should search for k being the first encountered open warehouse
     //this procedure returns the k closest closed warehouses
     def kNearestClosedWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).newValue == 0)
 
@@ -88,7 +89,6 @@ object WarehouseLocationDistributed2 extends App{
     val neighborhood = (profile(
       new DistributedFirst((
         List(assignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
-        //  swapsK(2,modulo=0,shift=0))
         )++ ((0 until nbSmallSwaps).map((i:Int) => swapsK(20,modulo=nbSmallSwaps,shift=i)))
           ++ ((0 until nbBigSwaps).map((i:Int) => swapsK(100,modulo=nbBigSwaps,shift=i)))
         ).toArray))
