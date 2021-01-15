@@ -76,7 +76,8 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
 
   //This is the single thread that is ready to perform all computation.
   // There is at most one computation per worker at any point in time, so the threadPool is 1.
-  private val executorForComputation = Executors.newFixedThreadPool(1)
+
+  private val executorForComputation = Executors.newFixedThreadPool(1,new ThreadFactory())
   private val executionContextForComputation: scala.concurrent.ExecutionContext = ExecutionContext.fromExecutor(executorForComputation)
 
   //this is a shared variable. it is not good, but that's the only way to send the abort signal to the Future that contains the computation.
