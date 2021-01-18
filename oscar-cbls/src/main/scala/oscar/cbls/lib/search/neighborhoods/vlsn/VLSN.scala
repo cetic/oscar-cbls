@@ -518,7 +518,7 @@ class VLSN(v:Int,
     // Now, all vehicles are dirty or have been fully developed through the graph is exhausted,
     // it might not be complete but all vehicles are dirty
     if(printTakenMoves) {
-      println("   - ?  " + computedNewObj + "   " + name + "  (nbUnrouted:" + unroutedNodesToInsert.size + ")")
+      println(s"   - ?  $computedNewObj   $name  (nbUnrouted:${unroutedNodesToInsert.size})")
     }
     //println(vlsnGraph.toDOT(acc,false,true))
 
