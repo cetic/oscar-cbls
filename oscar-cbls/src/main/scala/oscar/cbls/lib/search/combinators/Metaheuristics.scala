@@ -84,14 +84,21 @@ class Metropolis(a: Neighborhood, iterationToTemperature: Long => Double = _ => 
 /**
 * Burke EK, Bykov Y (2016) The late acceptance hill-climbing heuristic. Eur J Oper Res 258:70–78
 */
-class LateAcceptanceHillClimbing(a:Neighborhood, length:Int = 20) extends NeighborhoodCombinator(a) {
+class LateAcceptanceHillClimbing(a:Neighborhood, length:Int = 20, maxRelativeIncreaseOnBestObj:Double = 10000) extends NeighborhoodCombinator(a) {
+  require(maxRelativeIncreaseOnBestObj > 1, "maybe you should not use LateAcceptanceHillClimbing if obj cannot increase anyway")
 
   val memory:Array[Long] = Array.fill(length)(Long.MaxValue)
 
   var initialized = false
 
+  var maxToleratedObj = Long.MaxValue
+  var bestKnownObj = Long.MaxValue
+
   def init(initialObj:Long): Unit = {
     for(i <- memory.indices) memory(i) = initialObj
+    maxToleratedObj = Long.MaxValue
+    bestKnownObj = Long.MaxValue
+    initialized = true
   }
 
   var x = 0
@@ -101,12 +108,17 @@ class LateAcceptanceHillClimbing(a:Neighborhood, length:Int = 20) extends Neighb
 
     a.getMove(obj,initialObj,(oldOBj,newObj) => {
       x = x+1
-      if(x == length) x = 0
+      if(x >= length) x = 0
 
-      if(newObj < oldOBj || newObj < memory(x)){
-        memory(x) == newObj
+      if(newObj < maxToleratedObj && (newObj < oldOBj || newObj < memory(x))){
+        memory(x) = newObj
+        if(newObj < bestKnownObj){
+          maxToleratedObj = ((newObj.toFloat * maxRelativeIncreaseOnBestObj) min Long.MaxValue).toLong
+        }
         true
-      }else false
+      }else{
+        false
+      }
     })
   }
 

@@ -2,7 +2,7 @@ package oscar.cbls.modeling
 
 import oscar.cbls.core.computation.{AbstractVariable, Snapshot}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{JumpNeighborhood, Move, Neighborhood, NoMoveNeighborhood, SupportForAndThenChaining}
+import oscar.cbls.core.search.{JumpNeighborhood, Move, Neighborhood, NeighborhoodCombinator, NoMoveNeighborhood, SupportForAndThenChaining}
 import oscar.cbls.lib.search.combinators._
 
 trait CombinatorsAPI
@@ -700,7 +700,11 @@ class NeighborhoodOps(n:Neighborhood){
   //Boltzmann annealing, where T = T_0/ln k
   def boltzmannAnnealing(initialTemperature:Double, base: Double = 2) = new Metropolis(n, iterationToTemperature = (it: Long) => initialTemperature / math.log(it.toDouble + 1), base)
 
-  //TODO: Adaptive Simulated Annealing: T = T_0 exp(-c k^1/D) wth re-annealing also permits adaptation to changing sensitivities in the multi-dimensional parameter-space.
+
+
+  def lateAcceptanceHillClimbing(length:Int = 20,maxRelativeIncreaseOnBestObj:Double=1000) = new LateAcceptanceHillClimbing(n, length,maxRelativeIncreaseOnBestObj)
+
+    //TODO: Adaptive Simulated Annealing: T = T_0 exp(-c k^1/D) wth re-annealing also permits adaptation to changing sensitivities in the multi-dimensional parameter-space.
 
   /**
    * sets a timeout for a search procedure.

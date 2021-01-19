@@ -25,24 +25,24 @@ import oscar.cbls.lib.search.neighborhoods.AssignNeighborhood
 import scala.language.postfixOps
 
 /**
-  * this is a WarehouseLocation problem with Simulated Annealing
+  * this is a WarehouseLocation problem with a LateAcceptanceHillClimbing
   * the purpose is to illustrate how standard neighborhoods can be tuned to encompass
   * additional behaviors. Here, we restrict a neighborhood to a specific set of variables that not tabu
   * this set of variables is maintained through invariants
   */
-object WarehouseLocationSimulatedAnnealing extends App {
+object WarehouseLocationLateAcceptance extends App {
 
   //the number of warehouses
-  val W:Int = 150
+  val W:Int = 300
 
   //the number of delivery points
   val D:Int = 150
 
-  println(s"WarehouseLocationSimulatedAnnealing(W:$W, D:$D)")
+  println(s"WarehouseLocationLateAcceptance(W:$W, D:$D)")
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
-  val (costForOpeningWarehouse,distanceCost) = WarehouseLocationGenerator.apply(W,D,0,100,3)
+  val (costForOpeningWarehouse,distanceCost) = WarehouseLocationGenerator.apply(W,D,0,100,5)
 
   val m = Store()
 
@@ -60,21 +60,16 @@ object WarehouseLocationSimulatedAnnealing extends App {
   
   val neighborhoodSA = (AssignNeighborhood(
     warehouseOpenArray,
-    "SwitchWarehouse",
+    selectIndiceBehavior = First(randomized = true),
     hotRestart = false,
-    selectIndiceBehavior = First(randomized = true))
-    .cauchyAnnealing(initialTemperature = 5, base = 10)
-    //the two stop criterion here below can be used, although they are useless for small size example.
-    //maxMoves W*50 withoutImprovementOver obj
-    .cutTail(timePeriodInMilliSecond = 500,minRelativeImprovementByCut = 0.00001,minTimeBeforeFirstCutInMilliSecond=1000)
-
-    saveBestAndRestoreOnExhaust obj
+    name = "SwitchWarehouse")
+    .lateAcceptanceHillClimbing(10)
     showObjectiveFunction obj)
 
   neighborhoodSA.verbose = 2
 
-  //all moves are accepted because the neighborhood returns the best found move, and tabu might degrade obj.
   neighborhoodSA.doAllMoves(obj=obj)
 
   println(openWarehouses)
+  println(obj)
 }
