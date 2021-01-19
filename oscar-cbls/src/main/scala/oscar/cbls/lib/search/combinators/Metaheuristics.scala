@@ -81,6 +81,40 @@ class Metropolis(a: Neighborhood, iterationToTemperature: Long => Double = _ => 
   }
 }
 
+/**
+* Burke EK, Bykov Y (2016) The late acceptance hill-climbing heuristic. Eur J Oper Res 258:70–78
+*/
+class LateAcceptanceHillClimbing(a:Neighborhood, length:Int = 20) extends NeighborhoodCombinator(a) {
+
+  val memory:Array[Long] = Array.fill(length)(Long.MaxValue)
+
+  var initialized = false
+
+  def init(initialObj:Long): Unit = {
+    for(i <- memory.indices) memory(i) = initialObj
+  }
+
+  var x = 0
+
+  override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+    if(! initialized) init(initialObj)
+
+    a.getMove(obj,initialObj,(oldOBj,newObj) => {
+      x = x+1
+      if(x == length) x = 0
+
+      if(newObj < oldOBj || newObj < memory(x)){
+        memory(x) == newObj
+        true
+      }else false
+    })
+  }
+
+  override def reset(): Unit = {
+    initialized = false
+    super.reset()
+  }
+}
 
 /**
  * This is a combination of a constraint with an objective function.
