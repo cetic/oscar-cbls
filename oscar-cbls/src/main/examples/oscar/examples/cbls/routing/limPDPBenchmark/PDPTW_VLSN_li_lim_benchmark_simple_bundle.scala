@@ -40,7 +40,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
     System.gc()
 
     try {
-      for(i <- 0 until 11) {
+      for(_ <- 0 until 11) {
         for(fileName <- fileNames) {
           pw.println(runBenchmark(fileName: String, verbose = false))
           pw.flush()

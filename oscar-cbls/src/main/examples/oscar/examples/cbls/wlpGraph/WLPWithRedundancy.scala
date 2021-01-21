@@ -140,11 +140,11 @@ object WLPWithRedundancy extends App with StopWatch{
   }
 
   def open3Warehouses =
-    profile(AssignNeighborhood(warehouseOpenArray,name = "Open 3 close Warehouses",searchZone = () => closedWarehouses.value) dynAndThen ((move : AssignMove) => makeAssignClose(move,10) andThen makeAssignClose(move,10)))
+    profile(AssignNeighborhood(warehouseOpenArray,name = "Open 3 closed Warehouses",searchZone = () => closedWarehouses.value) dynAndThen ((move : AssignMove) => makeAssignClose(move,10) andThen makeAssignClose(move,10)))
 
   val warehouseToEdgesDistance =
     Array.tabulate(W)(w1 => Array.tabulate(nbConditionalEdges)(c => c).sortWith((c1 : Int, c2 : Int) =>
-      (distanceMatrixAllEdgeOpen(w1)(graph.conditionToConditionalEdges(c1).nodeA.id) min distanceMatrixAllEdgeOpen(w1)(graph.conditionToConditionalEdges(c1).nodeB.id)) < (distanceMatrixAllEdgeOpen(w1)(graph.conditionToConditionalEdges(c1).nodeA.id) min distanceMatrixAllEdgeOpen(w1)(graph.conditionToConditionalEdges(c1).nodeB.id))))
+      (distanceMatrixAllEdgeOpen(w1)(graph.conditionToConditionalEdges(c1).nodeA.id) min distanceMatrixAllEdgeOpen(w1)(graph.conditionToConditionalEdges(c1).nodeB.id)) < (distanceMatrixAllEdgeOpen(w1)(graph.conditionToConditionalEdges(c1).nodeA.id) min distanceMatrixAllEdgeOpen(w1)(graph.conditionToConditionalEdges(c2).nodeB.id))))
 
   def kNearestEdges(k : Int,w : Int) = KSmallest.kFirst(k,warehouseToEdgesDistance(w))
 
