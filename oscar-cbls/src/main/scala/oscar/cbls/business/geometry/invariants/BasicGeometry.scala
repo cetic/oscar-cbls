@@ -40,7 +40,7 @@ case class IsWithin(inner:AtomicValue[GeometryValue], outer:AtomicValue[Geometry
     violation := inner.value.geometry.difference(outer.value.geometry).getArea.toInt
   }
 
-  override def violation(v: Value):IntValue = { if (inner == v || inner == v) violation else 0 }
+  override def violation(v: Value):IntValue = { if (inner == v || outer == v) violation else 0 }
 
   override def checkInternals(c: Checker): Unit = {}
 }
