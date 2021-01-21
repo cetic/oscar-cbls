@@ -82,8 +82,19 @@ class Metropolis(a: Neighborhood, iterationToTemperature: Long => Double = _ => 
 }
 
 /**
-* Burke EK, Bykov Y (2016) The late acceptance hill-climbing heuristic. Eur J Oper Res 258:70–78
-*/
+ * implements the late acceptance criterion. Similarly to the simulated annealing it will accept degrading moves.
+ * The acceptance is however not computed based on statistics. Instead there is a history of the "length" previous values,
+ * and a pointer that iterates on these values.
+ * It compares the next obj with the value fetched from the history and accepts improves over that historical value.
+ * If the neighbour is accepted,the historical value is updated.
+ *
+ * more details in: Burke EK, Bykov Y (2016) The late acceptance hill-climbing heuristic. Eur J Oper Res 258:70–78
+ * @param a the base neighbourhood
+ * @param length the length of the history
+ * @param maxRelativeIncreaseOnBestObj additionally, newOBj is rejected if > maxRelativeIncreaseOnBestObj*bestObj.
+ *                                     This increases convergence, but decreased optimality of this approach.
+ *                                     The default value is very large, so that this mechanism is inactive.
+ */
 class LateAcceptanceHillClimbing(a:Neighborhood, length:Int = 20, maxRelativeIncreaseOnBestObj:Double = 10000) extends NeighborhoodCombinator(a) {
   require(maxRelativeIncreaseOnBestObj > 1, "maybe you should not use LateAcceptanceHillClimbing if obj cannot increase anyway")
 
@@ -114,6 +125,7 @@ class LateAcceptanceHillClimbing(a:Neighborhood, length:Int = 20, maxRelativeInc
         memory(x) = newObj
         if(newObj < bestKnownObj){
           maxToleratedObj = ((newObj.toFloat * maxRelativeIncreaseOnBestObj) min Long.MaxValue).toLong
+          bestKnownObj = newObj
         }
         true
       }else{

@@ -72,7 +72,7 @@ case class Timeout(enclosedBehavior:LoopBehavior,timeOutMilliSeconds:Long) exten
     (timeOutedIterable,enclosedNotifyFound)
   }
 }
-//TODO: randomized
+
 //TODO: best, cap after xxx sucessive not better neighbors
 
 case class First(maxNeighbors:() => Long = () => Long.MaxValue, randomized:Boolean = false) extends LoopBehavior(){

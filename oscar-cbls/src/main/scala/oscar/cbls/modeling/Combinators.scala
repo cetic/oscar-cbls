@@ -16,13 +16,13 @@ trait CombinatorsAPI
 trait BasicCombinators{
 
   /**
-    * this combinator always selects the best move between the two parameters
-    * notice that this combinator makes more sense
-    * if the two neighborhood return their best found move,
-    * and not their first found move, as usually done.
-    *
-    * @author renaud.delandtsheer@cetic.be
-    */
+   * this combinator always selects the best move between the two parameters
+   * notice that this combinator makes more sense
+   * if the two neighborhood return their best found move,
+   * and not their first found move, as usually done.
+   *
+   * @author renaud.delandtsheer@cetic.be
+   */
   def best(n: Neighborhood*) = new BestMove(n:_*)
 
   /**
@@ -421,13 +421,13 @@ class NeighborhoodOps(n:Neighborhood){
   def sequence(b: Neighborhood): Neighborhood = n maxMoves 1L exhaust b
 
   /**
-    * this combinator always selects the best move between the two parameters
-    * notice that this combinator makes more sense
-    * if the two neighborhood return their best found move,
-    * and not their first found move, as usually done.
-    *
-    * @author renaud.delandtsheer@cetic.be
-    */
+   * this combinator always selects the best move between the two parameters
+   * notice that this combinator makes more sense
+   * if the two neighborhood return their best found move,
+   * and not their first found move, as usually done.
+   *
+   * @author renaud.delandtsheer@cetic.be
+   */
   def best(b: Neighborhood): Neighborhood = new oscar.cbls.lib.search.combinators.BestMove(n, b)
 
   /**
@@ -701,10 +701,21 @@ class NeighborhoodOps(n:Neighborhood){
   def boltzmannAnnealing(initialTemperature:Double, base: Double = 2) = new Metropolis(n, iterationToTemperature = (it: Long) => initialTemperature / math.log(it.toDouble + 1), base)
 
 
-
+  /**
+   * implements the late acceptance criterion. Similarly to the simulated annealing it will accept degrading moves.
+   * The acceptance is however not computed based on statistics. Instead there is a history of the "length" previous values,
+   * and a pointer that iterates on these values.
+   * It compares the next obj with the value fetched from the history and accepts improves over that historical value.
+   * If the neighbour is accepted,the historical value is updated.
+   *
+   * more details in: Burke EK, Bykov Y (2016) The late acceptance hill-climbing heuristic. Eur J Oper Res 258:70–78
+   * @param length the length of the history
+   * @param maxRelativeIncreaseOnBestObj additionally, newOBj is rejected if > maxRelativeIncreaseOnBestObj*bestObj.
+   *                                     This increases convergence, but decreased optimality of this approach. the default value is very large, so that this mechanism is inactive.
+   */
   def lateAcceptanceHillClimbing(length:Int = 20,maxRelativeIncreaseOnBestObj:Double=1000) = new LateAcceptanceHillClimbing(n, length,maxRelativeIncreaseOnBestObj)
 
-    //TODO: Adaptive Simulated Annealing: T = T_0 exp(-c k^1/D) wth re-annealing also permits adaptation to changing sensitivities in the multi-dimensional parameter-space.
+  //TODO: Adaptive Simulated Annealing: T = T_0 exp(-c k^1/D) wth re-annealing also permits adaptation to changing sensitivities in the multi-dimensional parameter-space.
 
   /**
    * sets a timeout for a search procedure.
