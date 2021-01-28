@@ -16,7 +16,7 @@ class Schedule(model: Store,
                resources: List[Resource]) {
 
   // Precedences
-  val precedencesData = new Precedences(precedencePairs)
+  val precedencesData = new Precedences(activities, precedencePairs)
   // Initial priority list
   val initialPriorityList: List[Int] = precedencesData.getPriorityList(initialActivities)
 

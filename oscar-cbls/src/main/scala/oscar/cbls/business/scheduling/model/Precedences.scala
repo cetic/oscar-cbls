@@ -9,11 +9,12 @@ import scala.collection.BitSet
 /**
   * This class is a container for the precedence constraints between activity indices
   */
-class Precedences(beforeAfterPairs: List [(ActivityId, ActivityId)]) {
+class Precedences(activities: List[ActivityId],
+                  beforeAfterPairs: List [(ActivityId, ActivityId)]) {
   // Predecessors map
-  var predMap: Map[ActivityId, BitSet] = Map()
+  var predMap: Map[ActivityId, BitSet] = activities.map(_ -> BitSet.empty).toMap
   // Successors map
-  var succMap: Map[ActivityId, BitSet] = Map()
+  var succMap: Map[ActivityId, BitSet] = activities.map(_ -> BitSet.empty).toMap
   // Filling maps from precedences pairs
   for {(actA, actB) <- beforeAfterPairs} {
     val predB = predMap.getOrElse(actB, BitSet.empty)
@@ -28,21 +29,24 @@ class Precedences(beforeAfterPairs: List [(ActivityId, ActivityId)]) {
     * @return a list containing a permutation of [0..numActivity) corresponding
     *         to a consistent priority list (if A->B, index of A is before index of B in the list)
     */
-  def getPriorityList(activitiesOnList: Iterable[ActivityId]): List[Int] = {
-    def insertList(i: ActivityId, succI: BitSet, accList: List[Int]): List[Int] = {
+  def getPriorityList(activitiesOnList: Iterable[ActivityId]): List[ActivityId] = {
+    def insertList(i: ActivityId,
+                   mapDescendants: Map[ActivityId, List[ActivityId]],
+                   accList: List[ActivityId]): List[ActivityId] = {
       accList match {
         case Nil => List(i)
         case x::xs =>
-          if (succI.contains(x.toInt))
+          if (mapDescendants(i).contains(x))
             i::accList
           else
-            x::insertList(i, succI, xs)
+            x::insertList(i, mapDescendants, xs)
       }
     }
     /////
     var result: List[Int] = Nil
+    val mapDescendants = activitiesOnList.map(act => act -> descendants(act)).toMap
     for {i <- activitiesOnList} {
-      result = insertList(i, succMap.getOrElse(i, BitSet.empty), result)
+      result = insertList(i, mapDescendants, result)
     }
     result
   }
@@ -118,6 +122,7 @@ class Precedences(beforeAfterPairs: List [(ActivityId, ActivityId)]) {
 }
 
 object Precedences {
-  def apply(beforeAfterPairs: List[(ActivityId, ActivityId)]): Precedences =
-    new Precedences(beforeAfterPairs)
+  def apply(activities: List[ActivityId],
+            beforeAfterPairs: List[(ActivityId, ActivityId)]): Precedences =
+    new Precedences(activities, beforeAfterPairs)
 }
