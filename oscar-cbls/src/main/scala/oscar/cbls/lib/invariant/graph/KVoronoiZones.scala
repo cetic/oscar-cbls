@@ -241,10 +241,7 @@ class KVoronoiZones(graph:ConditionalGraph,
     var centroidList : List[NodeLabeling] = Nil
 
     def farthestCentroidIsFarthestThan(distance : Long,centroidID : Long) : Boolean = {
-      if (nbOfLabeledCentroid == k)
-        distance < centroidList.head.distance || (centroidList.head.distance == distance && centroidID < centroidList.head.centroid.id)
-      else
-        true
+      (nbOfLabeledCentroid != k) || (distance < centroidList.head.distance || (centroidList.head.distance == distance && centroidID < centroidList.head.centroid.id))
     }
 
     private def insertLabelInCentroidList(l : NodeLabeling,listOfCentroid : List[NodeLabeling],shift : Long,i : Int = nbOfLabeledCentroid - 1) : List[NodeLabeling] = {

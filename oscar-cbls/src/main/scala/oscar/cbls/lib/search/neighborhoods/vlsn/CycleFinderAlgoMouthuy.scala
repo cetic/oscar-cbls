@@ -38,11 +38,9 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
   val isInQueue:Array[Boolean]= Array.fill(nbNodes)(false)
   val queue = new mutable.Queue[Int]()
   def enqueue(nodeID:Int): Unit ={
-    if(isLiveNode(nodeID)) {
-      if (!isInQueue(nodeID)) {
-        queue.enqueue(nodeID)
-        isInQueue(nodeID) = true
-      }
+    if(isLiveNode(nodeID) && !isInQueue(nodeID)) {
+      queue.enqueue(nodeID)
+      isInQueue(nodeID) = true
     }
   }
 

@@ -330,13 +330,7 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
     implicit val ev: Ordering[Edge] = EdgeOrdering
 
     d match {
-      case Distance(
-      from: Node,
-      to: Node,
-      distance: Long,
-      requiredConditions: SortedSet[Int],
-      unlockingConditions: SortedSet[Int],
-      path: Option[List[Edge]]) =>
+      case Distance(from: Node, to: Node, distance: Long, requiredConditions: SortedSet[Int], unlockingConditions: SortedSet[Int], path: Option[List[Edge]]) =>
 
         if(emphNodes){
           emphNode(graph.coordinates(from.id),
@@ -354,19 +348,14 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
             drawEdge(closedEdge: Edge, 5)
           }
         }
-      case NeverConnected(
-      from: Node,
-      to: Node) =>
+      case NeverConnected(from: Node, to: Node) =>
         if(emphNodes){
           emphNode(graph.coordinates(from.id),
             Color.orange)
           emphNode(graph.coordinates(to.id),
             Color.orange)
         }
-      case NotConnected(
-      from: Node,
-      to: Node,
-      unlockingConditions: SortedSet[Int]) =>
+      case NotConnected(from: Node, to: Node, unlockingConditions: SortedSet[Int]) =>
         if(emphNodes){
           emphNode(graph.coordinates(from.id),
             Color.orange)

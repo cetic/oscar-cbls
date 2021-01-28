@@ -406,12 +406,10 @@ class RouteLength(routes:ChangingSeqValue,
   }
 
   private def recordTouchedVehicle(v:Int): Unit ={
-    if(perVehicle){
-      if(checkpoint!= null && !isVehicleChangedSinceCheckpoint(v)){
-        savedValues(v) = distance(v).newValue
-        isVehicleChangedSinceCheckpoint(v) = true
-        changedVehiclesSinceCheckpoint = QList(v,changedVehiclesSinceCheckpoint)
-      }
+    if (perVehicle && checkpoint!= null && !isVehicleChangedSinceCheckpoint(v)) {
+      savedValues(v) = distance(v).newValue
+      isVehicleChangedSinceCheckpoint(v) = true
+      changedVehiclesSinceCheckpoint = QList(v,changedVehiclesSinceCheckpoint)
     }
   }
 

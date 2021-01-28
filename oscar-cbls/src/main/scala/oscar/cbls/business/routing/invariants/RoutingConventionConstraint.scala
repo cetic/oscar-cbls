@@ -43,7 +43,7 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
     }
   }
 
-  private val routedNodes: Array[Boolean] = Array.tabulate(n)(node => if(node < v) true else false)
+  private val routedNodes: Array[Boolean] = Array.tabulate(n)(node => node < v)
   // A stack of checkpoint changes. It contains at least an empty HashMap (so we avoid building a new HashMap each time we roll-back or define checkpoint level 0
   private var checkpointsChanges: QList[HashMap[Int, Boolean]] = QList(HashMap.empty)
   private var currentChanges: HashMap[Int, Boolean] = checkpointsChanges.head

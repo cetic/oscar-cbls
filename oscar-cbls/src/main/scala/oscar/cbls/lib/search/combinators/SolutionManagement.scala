@@ -41,13 +41,11 @@ class BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = t
 
     a.getMove(obj, initialObj, acceptanceCriteria) match {
       case NoMoveFound =>
-        if(alsoSaveOnExhaust){
-          if (initialObj < myBestObj && currentSolutionIsAcceptable) {
-            //solution degrades, and we were better than the best recorded
-            //so we save
-            saveCurrent(initialObj)
-            if (verbose >= 2L) println("saving best solution on exhaust (obj:" + myBestObj + ")")
-          }
+        if(alsoSaveOnExhaust && (initialObj < myBestObj && currentSolutionIsAcceptable)){
+          //solution degrades, and we were better than the best recorded
+          //so we save
+          saveCurrent(initialObj)
+          if (verbose >= 2L) println("saving best solution on exhaust (obj:" + myBestObj + ")")
         }
         NoMoveFound
       case MoveFound(m) =>

@@ -185,13 +185,12 @@ trait DAG {
       }
     }
 
-    if(Start != null){
-      if(DFS(Start)){ return ExploredStack }
+    if (Start != null) {
+      if (DFS(Start)) return ExploredStack
       else return List(Start)
     }
     nodes.foreach(n => {
-      if (!n.visited)
-        if (DFS(n)){return ExploredStack}
+      if (!n.visited && DFS(n)) return ExploredStack
     })
     nodes.foreach(p => {p.visited = false})
     List.empty

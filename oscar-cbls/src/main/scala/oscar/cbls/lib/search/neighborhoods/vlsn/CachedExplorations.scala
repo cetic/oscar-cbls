@@ -46,22 +46,16 @@ object CachedExplorations{
       val toNode = edge.to
 
       edge.moveType match {
-        case InsertNoEject =>
+        case InsertNoEject | InsertWithEject =>
           dirtyNodes += fromNode.representedNode
           isDirtyVehicle(toNode.vehicle) = true
-        case InsertWithEject =>
-          dirtyNodes += fromNode.representedNode
-          isDirtyVehicle(toNode.vehicle) = true
-        case MoveNoEject =>
-          isDirtyVehicle(fromNode.vehicle) = true
-          isDirtyVehicle(toNode.vehicle) = true
-        case MoveWithEject =>
+        case MoveNoEject | MoveWithEject =>
           isDirtyVehicle(fromNode.vehicle) = true
           isDirtyVehicle(toNode.vehicle) = true
         case Remove =>
           isDirtyVehicle(fromNode.vehicle) = true
           dirtyNodes += fromNode.representedNode
-        case _ => ;
+        case _ =>
       }
     }
 

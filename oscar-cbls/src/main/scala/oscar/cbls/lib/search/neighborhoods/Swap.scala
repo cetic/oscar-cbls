@@ -122,26 +122,22 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
             val adjustedValueToSecondVar:Long = secondVar.domain.adjust(oldValOfFirstVar)
             val adjustedValueToFirstVar:Long = firstVar.domain.adjust(oldValOfSecondVar)
 
-            if(adjustedValueToSecondVar != adjustedValueToFirstVar) {
-              if (evaluateCurrentMoveObjTrueIfSomethingFound(obj.assignVal(
-                List(
-                  (firstVar, adjustedValueToFirstVar),
-                  (secondVar, adjustedValueToSecondVar))))) {
-                notifyFound1()
-                notifyFound2()
-              }
+            if ((adjustedValueToSecondVar != adjustedValueToFirstVar) &&
+                evaluateCurrentMoveObjTrueIfSomethingFound(obj.assignVal(
+                  List(
+                    (firstVar, adjustedValueToFirstVar),
+                    (secondVar, adjustedValueToSecondVar))))) {
+              notifyFound1()
+              notifyFound2()
             }
 
-          } else {
-            if (secondVar.domain.contains(oldValOfFirstVar)
+          } else if (secondVar.domain.contains(oldValOfFirstVar)
               && firstVar.domain.contains(oldValOfSecondVar)
-              && oldValOfFirstVar != oldValOfSecondVar) {
-              if (evaluateCurrentMoveObjTrueIfSomethingFound(obj.swapVal(firstVar, secondVar))) {
-                notifyFound1()
-                notifyFound2()
-              }
+              && oldValOfFirstVar != oldValOfSecondVar
+              && evaluateCurrentMoveObjTrueIfSomethingFound(obj.swapVal(firstVar, secondVar))) {
+              notifyFound1()
+              notifyFound2()
             }
-          }
         }
       }
     }

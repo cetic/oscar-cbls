@@ -195,14 +195,12 @@ class GuidedLocalSearch(a: Neighborhood,
           if (objValue == Long.MaxValue) objValue
           else {
             val compositeObj = (maxValueForWeighting * additionalConstraint.value) + (currentWeightOfObj * objValue)
-            if(compositeObj < bestCompositeObj){
+            if (compositeObj < bestCompositeObj){
               baseOBjAtBestCompositeObj = objValue
               bestCompositeObj = compositeObj
-            }else if(compositeObj == bestCompositeObj){
+            }else if (compositeObj == bestCompositeObj && objValue != baseOBjAtBestCompositeObj){
               //in this case there is potentially an ambiguity on the composite vs the base
-              if(objValue != baseOBjAtBestCompositeObj){
-                baseOBjAtBestCompositeObj = Long.MaxValue
-              }
+              baseOBjAtBestCompositeObj = Long.MaxValue
             }
             compositeObj
           }
@@ -588,12 +586,10 @@ class GuidedLocalSearch3(a: Neighborhood,
       if(compositeObjValue < bestCompositeObj){
         bestCompositeObj = compositeObjValue
         baseOBjAtBestCompositeObj = baseObjValue
-      }else if(compositeObjValue == bestCompositeObj){
+      }else if(compositeObjValue == bestCompositeObj && baseObjValue != baseOBjAtBestCompositeObj){
         //in this case there is potentially an ambiguity on the composite vs the base
-        if(baseObjValue != baseOBjAtBestCompositeObj){
-          //we destroy the best because we cannot guarantee unicity
-          baseOBjAtBestCompositeObj = Long.MaxValue
-        }
+        //we destroy the best because we cannot guarantee unicity
+        baseOBjAtBestCompositeObj = Long.MaxValue
       }
     }
 

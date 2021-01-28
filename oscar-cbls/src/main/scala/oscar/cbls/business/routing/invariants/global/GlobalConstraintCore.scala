@@ -134,7 +134,7 @@ abstract class GlobalConstraintCore[U <: Any :Manifest](routes: ChangingSeqValue
     val newRoute = routes.newValue
     if(!variableInitiated) initVariables(newRoute)
 
-    if(digestUpdates(changes) && !(this.checkpointLevel == -1)){
+    if(digestUpdates(changes) && (this.checkpointLevel != -1)){
       QList.qForeach(changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList,(vehicle: Int) => {
         // Compute new vehicle value based on last segment changes
         lastComputedVehiclesValue(vehicle) = computeVehicleValue(vehicle, segmentsOfVehicle(vehicle).segments, newRoute)

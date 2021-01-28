@@ -55,16 +55,12 @@ class Precedences(beforeAfterPairs: List [(ActivityId, ActivityId)]) {
     */
   def consistentSeq(seq: List[ActivityId]): Boolean = {
     // Auxiliary function
-    @tailrec
     def consistentSeq(postfix: List[ActivityId],
                       revPrefix: List[ActivityId]): Boolean = postfix match {
       case Nil => true
       case act::acts =>
         val notPrecPref = !revPrefix.exists(descendants(act).contains(_))
-        if (notPrecPref)
-          consistentSeq(acts, act::revPrefix)
-        else
-          false
+        notPrecPref && consistentSeq(acts, act::revPrefix)
     }
     /////
     consistentSeq(seq, Nil)

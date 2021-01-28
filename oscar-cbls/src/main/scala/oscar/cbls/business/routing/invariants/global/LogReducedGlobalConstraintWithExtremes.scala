@@ -30,7 +30,7 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest, @specialized(I
         vehicleToExtremePrecomputes(vehicle) = Array.fill(positionInVehicleRoute+1)(null)
         vehicleToExtremePrecomputes(vehicle)(positionInVehicleRoute) = new NodeAndExtremePreComputes(vehicle)
 
-      case  Some(x) if x.value < v && x.value != vehicle => ;
+      case  Some(x) if x.value < v && x.value != vehicle =>
         //end
         vehicleToExtremePrecomputes(vehicle) = Array.fill(positionInVehicleRoute+1)(null)
         vehicleToExtremePrecomputes(vehicle)(positionInVehicleRoute) = new NodeAndExtremePreComputes(vehicle)

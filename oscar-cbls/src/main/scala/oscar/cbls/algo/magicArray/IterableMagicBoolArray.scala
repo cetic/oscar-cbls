@@ -61,20 +61,17 @@ class IterableMagicBoolArray(override val length:Int, initVal:Boolean = false)
 
   override def update(id : Int, value : Boolean):Boolean = {
     val oldValue = super.update(id, value)
-    if(value){
-      if(!oldValue){
-        if (!overApproximationIsComplete) {
-          if (!isPositionInOverApproximationQList.update(id,value = true)) {
-            positionsAtTrueOverApproximated = QList(id, positionsAtTrueOverApproximated)
-          }
+    if (value) {
+      if (!oldValue) {
+        if (!overApproximationIsComplete &&
+            !isPositionInOverApproximationQList.update(id,value = true)) {
+          positionsAtTrueOverApproximated = QList(id, positionsAtTrueOverApproximated)
         }
         nbTrue += 1
       }
-    }else{
-      if(oldValue){
-        anyIndividualSetToFalse = true
-        nbTrue -= 1
-      }
+    } else if (oldValue) {
+      anyIndividualSetToFalse = true
+      nbTrue -= 1
     }
     oldValue
   }

@@ -127,9 +127,7 @@ class GlobalVehicleCapacityConstraintWithLogReduction(routes: ChangingSeqValue, 
             if(isMaxCapaOfNodeViolated) -1
             else previousOutCapa + vehicleContentFunctionOfNode.contentAtEndIfStartAt0(true)
         }
-        if (newOutCapa < 0) true
-        else
-          isVehicleCapacityViolated(logReducedSegments.tail, newOutCapa)
+        (newOutCapa < 0) || isVehicleCapacityViolated(logReducedSegments.tail, newOutCapa)
       }
     }
     isVehicleCapacityViolated(segments)
