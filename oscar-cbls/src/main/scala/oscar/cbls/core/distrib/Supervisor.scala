@@ -228,14 +228,6 @@ class Supervisor(supervisorActor: ActorRef[MessagesToSupervisor], m: Store, verb
     Await.result(ongoingRequest, atMost = 30.seconds).workGiverActor
   }
 
-  def delegateSearches(searchRequests: Array[SearchRequest]): AndWorkGiver = {
-    WorkGiver.andWrap(searchRequests.map(searchRequest => this.internalDelegateSearch(searchRequest)), m, this)
-  }
-
-  def createWorkStream(): WorkStream = {
-    new WorkStream(m, this)
-  }
-
   def delegateSearchesStopAtFirst(searchRequests: Array[SearchRequest]): WorkGiver = {
     WorkGiver.wrap(delegateORSearches(searchRequests), m, this)
   }

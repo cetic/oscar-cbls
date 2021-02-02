@@ -12,9 +12,6 @@ abstract class DistributedCombinator(neighborhoods:Array[List[Long] => Neighborh
   var remoteNeighborhoods:Array[RemoteNeighborhood] = null
   var supervisor:Supervisor = null
 
-  def delegateSearches(searchRequests:Array[SearchRequest]):AndWorkGiver =
-    supervisor.delegateSearches(searchRequests)
-
   def delegateSearchesStopAtFirst(searchRequests:Array[SearchRequest]):WorkGiver =
     supervisor.delegateSearchesStopAtFirst(searchRequests)
 
@@ -79,17 +76,16 @@ class DistributedBest(neighborhoods:Array[Neighborhood])
     val independentObj = obj.getIndependentObj
     val startSol = IndependentSolution(obj.model.solution())
 
-    val moves = delegateSearches(
+    val workGivers =
       remoteNeighborhoods.map(l =>
-        SearchRequest(
+        delegateSearch(SearchRequest(
           l.getRemoteIdentification(Nil),
           acceptanceCriteria,
           independentObj,
           startSol)))
 
-    val answers = moves.getResultWaitIfNeeded()
-
-    val foundMoves = answers.get.flatMap({
+    val foundMoves = workGivers.flatMap(
+      _.getResultWaitIfNeeded().get match{
       case NoMoveFound => None
       case m: MoveFound => Some(m)
     })

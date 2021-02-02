@@ -83,8 +83,8 @@ object WarehouseLocationDistributed2 extends App{
         name = "SwapK" + k, //+ (if(modulo ==0) "" else s"mod:$modulo,s:$shift"),
         symmetryCanBeBrokenOnIndices = false)
 
-    val nbSmallSwaps = 1 max nbWorker-2
-    val nbBigSwaps = nbWorker*3
+    val nbSmallSwaps = 1 max nbWorker
+    val nbBigSwaps = 1 max nbWorker
     //These neighborhoods are inefficient and slow; using multiple core is the wrong answer to inefficiency
     val neighborhood = (profile(
       new DistributedFirst((
