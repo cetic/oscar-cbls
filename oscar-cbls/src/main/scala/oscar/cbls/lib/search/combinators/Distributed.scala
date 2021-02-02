@@ -1,9 +1,8 @@
 package oscar.cbls.lib.search.combinators
 
-import oscar.cbls.core.computation.Store
 import oscar.cbls.core.distrib._
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{MoveFound, Neighborhood, NoMoveFound, SearchResult}
+import oscar.cbls.core.search.{Move, MoveFound, Neighborhood, NoMoveFound, SearchResult}
 
 import scala.util.Random
 
@@ -20,6 +19,9 @@ abstract class DistributedCombinator(neighborhoods:Array[List[Long] => Neighborh
 
   def delegateSearch(searchRequest:SearchRequest):WorkGiver =
     supervisor.delegateSearch(searchRequest)
+
+  def delegateWithAction(searchRequest:SearchRequest,onComplete:SearchEnded => Unit):WorkGiver =
+    supervisor.delegateWithAction(searchRequest,onComplete)
 
   override def labelAndExtractRemoteNeighborhoods(supervisor: Supervisor,
                                                   currentID: Int,
@@ -120,33 +122,4 @@ class DistributedFirst(neighborhoods:Array[Neighborhood], randomOrder:Boolean = 
 
     move.getResult
   }
-}
-
-//VLSN
-
-object MultiCoreOptimizingWithOscaRcbls{
-  def createSearchProcedure():(Store,Neighborhood,Objective) = {
-
-    //sreate the store, variables invariants, obj
-
-    //m.close
-
-    //the search procedure, using combinators and some distributed combinators (to be developed)
-
-    //(m,search,obj)
-    ???
-  }
-
-  //supervisor side
-  val (store,search,obj) = createSearchProcedure()
-  val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(store,search)
-
-  for(workerID <- (0 until WorkerActor.nbCores/2).par) {
-    //worker side
-    val (store2, search2, _) = createSearchProcedure()
-    supervisor.createLocalWorker(store2,search2)
-  }
-
-  search.doAllMoves(obj = obj)
-  supervisor.shutdown()
 }

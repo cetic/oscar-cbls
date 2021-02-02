@@ -199,7 +199,7 @@ final case class SpawnWorker(workerBehavior: Behavior[MessageToWorker], replyTo:
 
 final case class NbWorkers(replyTo: ActorRef[Int]) extends MessagesToSupervisor
 
-class Supervisor(supervisorActor: ActorRef[MessagesToSupervisor], m: Store, verbose: Boolean, implicit val system: ActorSystem[_]) {
+class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor], m: Store, verbose: Boolean, implicit val system: ActorSystem[_]) {
   implicit val timeout: Timeout = 3.seconds
 
   import akka.actor.typed.scaladsl.AskPattern._
@@ -245,11 +245,13 @@ class Supervisor(supervisorActor: ActorRef[MessagesToSupervisor], m: Store, verb
     Await.result(ongoingRequest, atMost = 30.seconds).workGiverActor
   }
 
-  def delegateWithAction(searchRequest: SearchRequest, action: SearchEnded => Unit): Unit = {
-    supervisorActor.ask[WorkGiverActorCreated](ref => DelegateSearch(searchRequest, ref, Some(action)))
+  def delegateWithAction(searchRequest: SearchRequest, action: SearchEnded => Unit): WorkGiver = {
+    val ft = supervisorActor.ask[WorkGiverActorCreated](ref => DelegateSearch(searchRequest, ref, Some(action)))
+    WorkGiver.wrap(Await.result(ft, atMost = 30.seconds).workGiverActor,m,this)
   }
 
-  def shutdown(): Unit = {
+
+    def shutdown(): Unit = {
     val ongoingRequest: Future[Unit] = supervisorActor.ask[Unit](ref => ShutDown(Some(ref)))
     Await.result(ongoingRequest, 30.seconds)
     supervisorActor match {
