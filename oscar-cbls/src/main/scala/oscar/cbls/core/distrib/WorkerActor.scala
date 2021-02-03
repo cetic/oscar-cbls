@@ -163,6 +163,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
             case IAmBusy(search) =>
               if (searchId == search.searchId) {
                 if (verbose) context.log.info(s"got abort command for search:$searchId; aborting")
+                //System.err.println("aborting")
                 shouldAbortComputation = true //shared variable
                 nbAbortedNeighborhoods += 1
                 next(Aborting(search))

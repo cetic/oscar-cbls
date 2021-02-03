@@ -21,7 +21,7 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.distrib.Supervisor
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Neighborhood
-import oscar.cbls.lib.search.combinators.{Atomic, DistributedBest, DistributedFirst}
+import oscar.cbls.lib.search.combinators.{Atomic, DistributedBest}
 import oscar.examples.cbls.wlp.WarehouseLocationGenerator
 
 import scala.collection.parallel.immutable.ParRange
@@ -89,9 +89,7 @@ object WarehouseLocationDistributed extends App{
   //supervisor side
   val (store,search,obj,finalPrint) = createSearchProcedure()
 
-  import scala.concurrent.duration._
-
-  val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(store,search,tic = 500.millisecond,verbose = false)
+  val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(store,search)
 
   val nbWorker = 6
   for (i <- ParRange(0, nbWorker, 1, inclusive = true)) {
