@@ -146,7 +146,6 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
         }
       }
     }
-    firstVarIndice = firstVarIndice +1
   }
 
   override def instantiateCurrentMove(newObj: Long) =

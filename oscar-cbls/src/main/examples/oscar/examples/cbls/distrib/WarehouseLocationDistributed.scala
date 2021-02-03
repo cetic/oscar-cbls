@@ -21,7 +21,7 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.distrib.Supervisor
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Neighborhood
-import oscar.cbls.lib.search.combinators.{Atomic, DistributedBest, DistributedFirst}
+import oscar.cbls.lib.search.combinators.{Atomic, DistributedBest}
 import oscar.examples.cbls.wlp.WarehouseLocationGenerator
 
 import scala.collection.parallel.immutable.ParRange
@@ -61,15 +61,17 @@ object WarehouseLocationDistributed extends App{
 
     //These neighborhoods are inefficient and slow; using multiple core is the wrong answer to inefficiency
     val neighborhood = (
-      new DistributedFirst(
+      new DistributedBest(
         Array(
           assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
-          swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4    ); () => range}, name = "SwapWarehouses1"),
-          swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4 + 1); () => range}, name = "SwapWarehouses2"),
-          swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4 + 2); () => range}, name = "SwapWarehouses3"),
-          swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/4).map(_*4 + 3); () => range}, name = "SwapWarehouses4")))
-      onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray,() => W/10), 2, obj)
-      onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/5), 2, obj))
+          swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/6).map(_*6    ); () => range}, name = "SwapWarehouses1"),
+          swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/6).map(_*6 + 1); () => range}, name = "SwapWarehouses2"),
+          swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/6).map(_*6 + 2); () => range}, name = "SwapWarehouses3"),
+          swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/6).map(_*6 + 3); () => range}, name = "SwapWarehouses4"),
+          swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/6).map(_*6 + 4); () => range}, name = "SwapWarehouses5"),
+          swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/6).map(_*6 + 5); () => range}, name = "SwapWarehouses6")))
+        onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray,() => W/10), 2, obj)
+        onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/5), 2, obj))
 
     val x = 10
     val neighborhood2 =
@@ -87,11 +89,9 @@ object WarehouseLocationDistributed extends App{
   //supervisor side
   val (store,search,obj,finalPrint) = createSearchProcedure()
 
-  import scala.concurrent.duration._
+  val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(store,search)
 
-  val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(store,search,tic = 500.millisecond,verbose = false)
-
-  val nbWorker = 5
+  val nbWorker = 6
   for (i <- ParRange(0, nbWorker, 1, inclusive = true)) {
     if (i == 0) {
       val search2 = search.showObjectiveFunction(obj)

@@ -72,21 +72,6 @@ object Test extends App {
       startSolution = IndependentSolution(Solution(List.empty, null))))
   }
 
-  println("started first round")
-  val workGivers4 = Array.tabulate(10) {
-    i =>
-      SearchRequest(
-        RemoteNeighborhoodIdentification(i % 2, parameters = List(i), s"and-searching ${i % 2} param:$i"),
-        _ > _,
-        new IndependentObjective {
-          override def toString: String = "objective"
-
-          override def convertToObjective(m: Store): Objective = new FunctionObjective(() => 4)
-        },
-        startSolution = IndependentSolution(Solution(List.empty, null)))
-  }
-  val w4 = supervisor.delegateSearches(workGivers4)
-
   def createWorker(actorName: String): Unit = {
     val neighborhoods: SortedMap[Int, RemoteNeighborhood] = createNeighborhoods(actorName)
     supervisor.createLocalWorker(Store(), neighborhoods)
@@ -159,7 +144,6 @@ object Test extends App {
   //starting more workers, to check if it works
   println("got result3:" + w3.getResultWaitIfNeeded())
 
-  println("got result4:" + w4.getResultWaitIfNeeded().map("\n\t" + _.mkString("\n\t")))
 
   supervisor.shutdown()
 

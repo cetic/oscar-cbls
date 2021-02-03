@@ -5,6 +5,8 @@ import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{JumpNeighborhood, Move, Neighborhood, NoMoveNeighborhood, SupportForAndThenChaining}
 import oscar.cbls.lib.search.combinators._
 
+import scala.concurrent.duration.{Duration, DurationInt}
+
 trait CombinatorsAPI
   extends BasicCombinators
     with CompositionCombinators
@@ -701,9 +703,9 @@ class NeighborhoodOps(n:Neighborhood){
    * sets a timeout for a search procedure.
    * notice that hte timeout itself is a bit lax, because the combinator has no possibility to interrupt a neighborhood during its exploration.
    * this combinator will therefore just prevent any new exploration past the end of the timeout.
-   * @param maxDuration the maximal duration, in milliseconds
+   * @param timeOut the maximal duration between the first query and the last authorized query. timeout is reset
    */
-  def timeout(maxDuration:Long) = new Timeout(n, maxDuration:Long)
+  def weakTimeout(timeOut:Duration = 1.minutes) = new WeakTimeout(n, timeOut)
 
   /**
    * This combinator will interrupt the search when it becomes too flat.
