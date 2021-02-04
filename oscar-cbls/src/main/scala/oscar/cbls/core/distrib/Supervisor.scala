@@ -189,9 +189,13 @@ object Supervisor {
 
 final case class DelegateSearchWithAction(searchRequest: SearchRequest, action: SearchResult => Unit) extends MessagesToSupervisor with ControlMessage
 
-final case class DelegateSearch(searchRequest: SearchRequest, replyTo: ActorRef[WorkGiverActorCreated], action: Option[SearchEnded => Unit]) extends MessagesToSupervisor with ControlMessage
+final case class DelegateSearch(searchRequest: SearchRequest,
+                                replyTo: ActorRef[WorkGiverActorCreated],
+                                action: Option[SearchEnded => Unit]) extends MessagesToSupervisor with ControlMessage
 
-final case class DelegateSearches(searchRequest: Array[SearchRequest], replyTo: ActorRef[WorkGiverActorCreated]) extends MessagesToSupervisor with ControlMessage
+final case class DelegateSearchSendSolutionTo(searchRequest: SearchRequest,
+                                              sendSolutionTo: ActorRef[MessageToWorkGiver],
+                                              sendAckTo:ActorRef[Long]) extends MessagesToSupervisor with ControlMessage
 
 final case class ShutDown(replyTo: Option[ActorRef[Unit]]) extends MessagesToSupervisor
 
