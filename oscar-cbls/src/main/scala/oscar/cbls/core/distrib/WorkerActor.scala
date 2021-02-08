@@ -1,13 +1,12 @@
 package oscar.cbls.core.distrib
 
-import java.util.concurrent.Executors
-
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import org.slf4j.{Logger, LoggerFactory}
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.objective.IndependentObjective
 
+import java.util.concurrent.Executors
 import scala.collection.SortedMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -22,8 +21,8 @@ case class SearchRequest(neighborhoodID: RemoteNeighborhoodIdentification,
 
 case class SearchTask(request: SearchRequest,
                       searchId: Long,
-                      workGiver: ActorRef[MessageToWorkGiver]) {
-  override def toString: String = s"SearchTask($request,$searchId,${workGiver.path})"
+                      sendResultTo: ActorRef[SearchEnded]) {
+  override def toString: String = s"SearchTask($request,$searchId,${sendResultTo.path})"
 }
 
 sealed trait MessageToWorker
@@ -193,8 +192,8 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
           state match {
             case IAmBusy(search) =>
               require(search.searchId == result.searchID)
-              if (verbose) context.log.info(s"finished search:${search.searchId}, sending result $result to ${search.workGiver.path}")
-              search.workGiver ! result
+              if (verbose) context.log.info(s"finished search:${search.searchId}, sending result $result to ${search.sendResultTo.path}")
+              search.sendResultTo ! result
 
               result match {
                 case _: SearchCrashed =>

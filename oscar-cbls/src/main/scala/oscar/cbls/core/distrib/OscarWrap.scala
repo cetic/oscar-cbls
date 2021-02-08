@@ -27,12 +27,13 @@ abstract class IndependentSearchResult {
   def getLocalResult(m: Store): SearchResult
 }
 
-case class IndependentMoveFound(i: IndependentMove) extends IndependentSearchResult {
-  override def getLocalResult(m: Store): SearchResult = MoveFound(i.makeLocal(m))
+case class IndependentMoveFound(move: IndependentMove) extends IndependentSearchResult {
+  override def getLocalResult(m: Store): MoveFound = MoveFound(move.makeLocal(m))
+  def objAfter = move.objAfter
 }
 
 case class IndependentNoMoveFound() extends IndependentSearchResult {
-  override def getLocalResult(m: Store): SearchResult = NoMoveFound
+  override def getLocalResult(m: Store): NoMoveFound.type = NoMoveFound
 }
 
 // ////////////////////////////////////////////////////////////

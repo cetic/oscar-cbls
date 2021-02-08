@@ -7,7 +7,7 @@ import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import org.slf4j.{Logger, LoggerFactory}
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.search.{Neighborhood, SearchResult}
+import oscar.cbls.core.search.Neighborhood
 
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.Duration.Infinite
@@ -30,7 +30,17 @@ final case class Crash(worker: ActorRef[MessageToWorker]) extends MessagesToSupe
 
 final case class Tic() extends MessagesToSupervisor
 
-case class WorkGiverActorCreated(workGiverActor: ActorRef[MessageToWorkGiver])
+final case class DelegateSearch(searchRequest: SearchRequest,
+                                sendSearchRequestIDTo: ActorRef[Long],
+                                sendSearchResultTo:ActorRef[SearchEnded]) extends MessagesToSupervisor with ControlMessage
+
+final case class ShutDown(replyTo: Option[ActorRef[Unit]]) extends MessagesToSupervisor
+
+final case class SpawnWorker(workerBehavior: Behavior[MessageToWorker]) extends MessagesToSupervisor
+
+final case class NbWorkers(replyTo: ActorRef[Int]) extends MessagesToSupervisor
+
+final case class SpawnNewActor(behavior:Behavior[_],behaviorName:String) extends MessagesToSupervisor
 
 import scala.concurrent.duration._
 
@@ -187,35 +197,18 @@ object Supervisor {
 }
 
 
-final case class DelegateSearchWithAction(searchRequest: SearchRequest, action: SearchResult => Unit) extends MessagesToSupervisor with ControlMessage
-
-final case class DelegateSearch(searchRequest: SearchRequest,
-                                replyTo: ActorRef[WorkGiverActorCreated],
-                                action: Option[SearchEnded => Unit]) extends MessagesToSupervisor with ControlMessage
-
-final case class DelegateSearchSendSolutionTo(searchRequest: SearchRequest,
-                                              sendSolutionTo: ActorRef[MessageToWorkGiver],
-                                              sendAckTo:ActorRef[Long]) extends MessagesToSupervisor with ControlMessage
-
-final case class ShutDown(replyTo: Option[ActorRef[Unit]]) extends MessagesToSupervisor
-
-final case class SpawnWorker(workerBehavior: Behavior[MessageToWorker], replyTo: ActorRef[Unit]) extends MessagesToSupervisor
-
-final case class NbWorkers(replyTo: ActorRef[Int]) extends MessagesToSupervisor
-
 class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor], m: Store, verbose: Boolean, implicit val system: ActorSystem[_]) {
   implicit val timeout: Timeout = 3.seconds
 
   import akka.actor.typed.scaladsl.AskPattern._
 
   def createLocalWorker(m: Store, search: Neighborhood): Unit = {
-    createLocalWorker(m, search.identifyRemotelySearcheableNeighbrhoods)
+    val workerBehavior = WorkerActor.createWorkerBehavior(search.identifyRemotelySearcheableNeighbrhoods, m, this.supervisorActor, verbose)
+    supervisorActor ! SpawnWorker(workerBehavior)
   }
 
-  def createLocalWorker(m: Store, neighborhoods: SortedMap[Int, RemoteNeighborhood]): Unit = {
-    val workerBehavior = WorkerActor.createWorkerBehavior(neighborhoods, m, this.supervisorActor, verbose)
-    val ongoingRequest: Future[Unit] = supervisorActor.ask[Unit](ref => SpawnWorker(workerBehavior, ref))
-    Await.result(ongoingRequest, atMost = 30.seconds)
+  def spawnNewActor(behavior:Behavior[_],behaviorName:String): Unit = {
+    supervisorActor ! SpawnNewActor(behavior:Behavior[_],behaviorName:String)
   }
 
   def nbWorkers: Int = {
@@ -223,31 +216,15 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor], m: Store, 
     Await.result(ongoingRequest, atMost = 30.seconds)
   }
 
-  def delegateSearch(searchRequest: SearchRequest): WorkGiver = {
-    WorkGiver.wrap(internalDelegateSearch(searchRequest), m, this)
+  def delegateSearch(searchRequest:SearchRequest, sendResultTo:ActorRef[SearchEnded]):Future[Long] = {
+    supervisorActor.ask[Long](ref => DelegateSearch(searchRequest, ref, sendResultTo))
   }
 
-  private def internalDelegateSearch(searchRequest: SearchRequest): ActorRef[MessageToWorkGiver] = {
-    val ongoingRequest: Future[WorkGiverActorCreated] = supervisorActor.ask[WorkGiverActorCreated](ref => DelegateSearch(searchRequest, ref, None))
-    Await.result(ongoingRequest, atMost = 30.seconds).workGiverActor
+  def abortSearch(searchID:Long): Unit = {
+    supervisorActor ! CancelSearchToSupervisor(searchID)
   }
 
-  def delegateSearchesStopAtFirst(searchRequests: Array[SearchRequest]): WorkGiver = {
-    WorkGiver.wrap(delegateORSearches(searchRequests), m, this)
-  }
-
-  private def delegateORSearches(searchRequests: Array[SearchRequest]): ActorRef[MessageToWorkGiver] = {
-    val ongoingRequest: Future[WorkGiverActorCreated] = supervisorActor.ask[WorkGiverActorCreated](ref => DelegateSearches(searchRequests, ref))
-    Await.result(ongoingRequest, atMost = 30.seconds).workGiverActor
-  }
-
-  def delegateWithAction(searchRequest: SearchRequest, action: SearchEnded => Unit): WorkGiver = {
-    val ft = supervisorActor.ask[WorkGiverActorCreated](ref => DelegateSearch(searchRequest, ref, Some(action)))
-    WorkGiver.wrap(Await.result(ft, atMost = 30.seconds).workGiverActor,m,this)
-  }
-
-
-    def shutdown(): Unit = {
+  def shutdown(): Unit = {
     val ongoingRequest: Future[Unit] = supervisorActor.ask[Unit](ref => ShutDown(Some(ref)))
     Await.result(ongoingRequest, 30.seconds)
     supervisorActor match {
@@ -257,6 +234,17 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor], m: Store, 
         startLogger.info("terminating actor system")
       case _ => ;
     }
+  }
+
+  def throwRemoteExceptionAndShutDown(searchCrashed:SearchCrashed): Unit ={
+    val e = new Exception(s"Crash happened at worker:${searchCrashed.worker}: \n${searchCrashed.exception.getMessage}\nwhen performing neighborhood:${searchCrashed.neighborhood}")
+    e.setStackTrace(
+      //This trims the stack trace to hide the intermediary calls to threads, futures and the like.
+      (searchCrashed.exception.getStackTrace.toList.reverse.dropWhile(!_.getClassName.contains("oscar.cbls")).reverse
+        //c.exception.getStackTrace.toList
+        ::: e.getStackTrace.toList).toArray)
+    shutdown()
+    throw e
   }
 }
 
@@ -288,12 +276,13 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
           case _: Infinite => ;
           case f: FiniteDuration => context.scheduleOnce(f, context.self, Tic())
         }
-      //TODO: check that worker is still up re schedule associated search in case of worker crash/not responding
 
-      case SpawnWorker(workerBehavior, ref) =>
-        val worker = context.spawn(workerBehavior, s"localWorker$nbLocalWorker")
+      case SpawnNewActor(behavior:Behavior[_],behaviorName:String) =>
+        context.spawn(behavior, behaviorName)
+
+      case SpawnWorker(workerBehavior) =>
+        context.spawn(workerBehavior, s"localWorker$nbLocalWorker")
         nbLocalWorker += 1
-        ref ! Unit
 
       case NbWorkers(replyTo) =>
         replyTo ! this.allKnownWorkers.size
@@ -413,50 +402,19 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
         idleWorkers = worker :: idleWorkers
         context.self ! StartSomeSearch()
 
-      case DelegateSearch(searchRequest: SearchRequest, replyTo: ActorRef[WorkGiverActorCreated], action: Option[SearchEnded => Unit]) =>
+      case DelegateSearch(searchRequest, sendSearchRequestIDTo, sendSearchResultTo) =>
         val searchId = nextSearchID
         nextSearchID += 1
+        if (verbose) context.log.info(s"got new waiting search:$searchId for :${sendSearchResultTo.path}")
 
-        val workGiverActorClass = WorkGiverActor(context.self, searchId, action)
-        val workGiverActorRef = context.spawn(workGiverActorClass, "workGiver_search_" + searchId)
-
-        if (verbose) context.log.info(s"got new waiting search:$searchId created workGiver:${workGiverActorRef.path}")
-
-        replyTo ! WorkGiverActorCreated(workGiverActorRef)
-
-        //now, we have a WorkGiver actor, we search for an available Worker or put this request on a waiting list.
-        val theSearch = SearchTask(searchRequest, searchId, workGiverActorRef)
-        waitingSearches.enqueue(theSearch)
-        context.self ! StartSomeSearch()
-
-      case DelegateSearches(searchRequests: Array[SearchRequest], replyTo: ActorRef[WorkGiverActorCreated]) =>
-
-        val minSearchID = nextSearchID
-
-        val requestsAndIDs = searchRequests.map(r => {
-          val searchId = nextSearchID
-          nextSearchID += 1
-          (r, searchId)
-        })
-        val maxSearchID = nextSearchID - 1
-
-        val orWorkGiverActorClass = ORWorkGiverActor(context.self, requestsAndIDs.map(_._2))
-        val orWorkGiverActorRef = context.spawn(orWorkGiverActorClass, s"orWorkGiver_search_${minSearchID}_to_${maxSearchID}")
-
-        for ((searchRequest, searchId) <- requestsAndIDs) {
-          val workGiverActorClass = WorkGiverActor(context.self, searchId, None, Some(orWorkGiverActorRef))
-          val workGiverActorRef = context.spawn(workGiverActorClass, "workGiver_search_" + searchId)
-
-          if (verbose) context.log.info(s"got new waiting search:$searchId created workGiver:${workGiverActorRef.path}")
-
-          //now, we have a workGiverActor, we search for an available worker or put this request on a waiting list.
-          val theSearch = SearchTask(searchRequest, searchId, workGiverActorRef)
-          waitingSearches.enqueue(theSearch)
-          workGiverActorRef
+        if(sendSearchRequestIDTo != null) {
+          sendSearchRequestIDTo ! searchId
         }
 
+        //now, we have a WorkGiver actor, we search for an available Worker or put this request on a waiting list.
+        val theSearch = SearchTask(searchRequest, searchId, sendSearchResultTo)
+        waitingSearches.enqueue(theSearch)
         context.self ! StartSomeSearch()
-        replyTo ! WorkGiverActorCreated(orWorkGiverActorRef)
 
       case CancelSearchToSupervisor(searchID: Long) =>
 
@@ -487,7 +445,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
 
       case Crash(worker) =>
         context.log.info(s"got crash report from $worker; waiting for shutdown command")
-      //waitingSearches.dequeueAll(_ => true)
+        //waitingSearches.dequeueAll(_ => true)
 
       case ShutDown(replyTo: Option[ActorRef[Unit]]) =>
         //ask for a coordinated shutdown of all workers

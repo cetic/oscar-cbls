@@ -7,14 +7,14 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.distrib._
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{Neighborhood, NoMoveFound, SearchResult}
-import oscar.cbls.lib.search.combinators.{Atomic, DistributedCombinator}
+import oscar.cbls.lib.search.combinators.Atomic
 
 import scala.collection.SortedMap
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{Await, Future, Promise}
 import scala.util.{Failure, Random, Success}
-
+/*
 //VLSN
 //Restart
 class DistributedRestart(search:Neighborhood,
@@ -111,3 +111,4 @@ class DistributedRestart(search:Neighborhood,
 }
 
 
+*/

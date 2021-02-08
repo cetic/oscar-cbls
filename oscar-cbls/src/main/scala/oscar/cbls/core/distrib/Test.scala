@@ -11,7 +11,7 @@ import scala.collection.immutable.SortedMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
 import scala.util.Random
-
+/*
 object Test extends App {
 
   val startLogger: Logger = LoggerFactory.getLogger("SupervisorObject")
@@ -150,5 +150,5 @@ object Test extends App {
   println("exit")
 
 }
-
+*/
 

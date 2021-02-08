@@ -3,7 +3,7 @@ package oscar.examples.cbls.distrib
 import oscar.cbls._
 import oscar.cbls.core.distrib.Supervisor
 import oscar.cbls.core.search.Neighborhood
-import oscar.cbls.lib.search.combinators.DistributedFirst
+import oscar.cbls.lib.search.combinators.distributed.DistributedFirst
 import oscar.examples.cbls.wlp.WarehouseLocationGenerator
 
 import scala.collection.parallel.immutable.ParRange

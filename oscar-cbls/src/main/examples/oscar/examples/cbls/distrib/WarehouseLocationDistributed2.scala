@@ -22,7 +22,7 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.distrib
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Neighborhood
-import oscar.cbls.lib.search.combinators.DistributedFirst
+import oscar.cbls.lib.search.combinators.distributed.DistributedFirst
 import oscar.cbls.{swapsNeighborhood, _}
 import oscar.examples.cbls.wlp.WarehouseLocationGenerator
 
