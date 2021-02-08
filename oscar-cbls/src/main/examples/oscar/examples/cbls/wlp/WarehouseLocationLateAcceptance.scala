@@ -33,7 +33,7 @@ import scala.language.postfixOps
 object WarehouseLocationLateAcceptance extends App {
 
   //the number of warehouses
-  val W:Int = 300
+  val W:Int = 3000
 
   //the number of delivery points
   val D:Int = 150

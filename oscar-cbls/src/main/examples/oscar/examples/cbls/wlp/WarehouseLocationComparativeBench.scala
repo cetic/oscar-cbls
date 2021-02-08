@@ -26,12 +26,12 @@ import oscar.cbls.util.Benchmark
 object WarehouseLocationComparativeBench extends App{
 
   //the number of warehouses
-  val W:Int = 300
+  val W:Int = 1000
 
   //the number of delivery points
   val D:Int = 300
 
-  println(s"WarehouseLocation(W:$W, D:$D)")
+  println(s"ComparativeBench on WarehouseLocation(W:$W, D:$D)")
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
@@ -98,7 +98,7 @@ object WarehouseLocationComparativeBench extends App{
 
   val neighborhoods = List(neighborhood1,neighborhood2,neighborhood3,neighborhood3b,neighborhood4)
 
-  val a = Benchmark.benchToStringFull(obj,10,neighborhoods,1)
+  val a = Benchmark.benchToStringFull(obj,3,neighborhoods,1,verbose=1)
 
   println(a)
 }

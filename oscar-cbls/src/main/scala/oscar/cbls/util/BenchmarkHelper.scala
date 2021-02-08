@@ -51,12 +51,14 @@ object Benchmark extends StopWatch {
     statsToString(stats)
   }
 
-  def benchToTrace(obj: Objective, nRuns: Int, strategies: Iterable[() => (String, Neighborhood)], warmupTimeInSeconds: Long, verbose: Int) = {
+  def benchToTrace(obj: Objective, nRuns: Int,
+                   strategies: Iterable[() => (String, Neighborhood)],
+                   warmupTimeInSeconds: Long, verbose: Int) = {
     val m = obj.model
     val initialSolution = m.solution()
 
     // warm run
-    if (verbose > 1) println(s"Warming up for $warmupTimeInSeconds seconds...")
+    if (verbose > 0) println(s"Warming up for $warmupTimeInSeconds seconds...")
     val warmupInMs = warmupTimeInSeconds * 1000L
     this.startWatch()
     breakable {
@@ -65,7 +67,7 @@ object Benchmark extends StopWatch {
           m.restoreSolution(initialSolution)
           val strategyInstance = n()
           strategyInstance._2.verbose = 0
-          if (verbose > 1) println(s"Warm up run of ${strategyInstance._1}")
+          if (verbose > 0) println(s"Warm up run of ${strategyInstance._1}")
           strategyInstance._2.doAllMoves(_ => false, obj)
           if (this.getWatch >= warmupInMs) break()
         }
@@ -73,13 +75,13 @@ object Benchmark extends StopWatch {
     }
 
     for (n <- strategies) yield {
-      if (verbose > 1) println(s"Benchmarking ${n()._1}")
+      if (verbose > 0) println(s"Benchmarking ${n()._1}")
       (n()._1,
         for (trial <- 1 to nRuns) yield {
           m.restoreSolution(initialSolution)
           val strategyInstance = n()
           strategyInstance._2.verbose = if (verbose > 0) verbose else 0
-          if (verbose > 1) println(s"Benchmarking ${strategyInstance._1} run $trial of $nRuns")
+          if (verbose > 0) println(s"Benchmarking ${strategyInstance._1} run $trial of $nRuns")
           this.startWatch()
           val it = strategyInstance._2.doAllMoves(_ => false, obj)
           val time = this.getWatch
