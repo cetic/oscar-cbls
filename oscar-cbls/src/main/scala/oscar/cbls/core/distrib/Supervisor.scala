@@ -22,7 +22,7 @@ final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSea
 
 final case class CancelSearchToSupervisor(searchID: Long) extends MessagesToSupervisor with ControlMessage
 
-final case class SearchStarted(search: SearchTask, startID: Long, worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
+final case class SearchStarted(search: SearchTask, searchID: Long, worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
 
 final case class SearchNotStarted(search: SearchTask, worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
 
@@ -31,8 +31,10 @@ final case class Crash(worker: ActorRef[MessageToWorker]) extends MessagesToSupe
 final case class Tic() extends MessagesToSupervisor
 
 final case class DelegateSearch(searchRequest: SearchRequest,
-                                sendSearchRequestIDTo: ActorRef[Long],
-                                sendSearchResultTo:ActorRef[SearchEnded]) extends MessagesToSupervisor with ControlMessage
+                                sendSearchResultTo:ActorRef[SearchEnded],
+                                uniqueSearchID:Long = -1) extends MessagesToSupervisor with ControlMessage
+
+final case class GetNewUniqueID(replyTo:ActorRef[Long]) extends MessagesToSupervisor with ControlMessage
 
 final case class ShutDown(replyTo: Option[ActorRef[Unit]]) extends MessagesToSupervisor
 
@@ -216,14 +218,6 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor], m: Store, 
     Await.result(ongoingRequest, atMost = 30.seconds)
   }
 
-  def delegateSearch(searchRequest:SearchRequest, sendResultTo:ActorRef[SearchEnded]):Future[Long] = {
-    supervisorActor.ask[Long](ref => DelegateSearch(searchRequest, ref, sendResultTo))
-  }
-
-  def abortSearch(searchID:Long): Unit = {
-    supervisorActor ! CancelSearchToSupervisor(searchID)
-  }
-
   def shutdown(): Unit = {
     val ongoingRequest: Future[Unit] = supervisorActor.ask[Unit](ref => ShutDown(Some(ref)))
     Await.result(ongoingRequest, 30.seconds)
@@ -255,6 +249,8 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
 
   private val waitingSearches = scala.collection.mutable.Queue[SearchTask]()
   var nbLocalWorker: Int = 0
+  var nbCustomSearchActor:Int = 0
+
   var neighborhoodToPreferredWorker: SortedMap[Int, ActorRef[MessageToWorker]] = SortedMap.empty
   private var allKnownWorkers: List[ActorRef[MessageToWorker]] = Nil
   private var idleWorkers: List[ActorRef[MessageToWorker]] = Nil
@@ -278,7 +274,8 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
         }
 
       case SpawnNewActor(behavior:Behavior[_],behaviorName:String) =>
-        context.spawn(behavior, behaviorName)
+        context.spawn(behavior, s"customSearchActor$nbCustomSearchActor$behaviorName")
+        nbCustomSearchActor += 1
 
       case SpawnWorker(workerBehavior) =>
         context.spawn(workerBehavior, s"localWorker$nbLocalWorker")
@@ -402,14 +399,19 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
         idleWorkers = worker :: idleWorkers
         context.self ! StartSomeSearch()
 
-      case DelegateSearch(searchRequest, sendSearchRequestIDTo, sendSearchResultTo) =>
-        val searchId = nextSearchID
+      case GetNewUniqueID(replyTo:ActorRef[Long]) =>
+        replyTo ! nextSearchID
         nextSearchID += 1
-        if (verbose) context.log.info(s"got new waiting search:$searchId for :${sendSearchResultTo.path}")
 
-        if(sendSearchRequestIDTo != null) {
-          sendSearchRequestIDTo ! searchId
-        }
+      case DelegateSearch(searchRequest, sendSearchResultTo, givenSearchId) =>
+
+        val searchId = if(givenSearchId == -1){
+          val x = nextSearchID
+          nextSearchID += 1
+          x
+        } else givenSearchId
+
+        if (verbose) context.log.info(s"got new waiting search:$searchId for :${sendSearchResultTo.path}")
 
         //now, we have a WorkGiver actor, we search for an available Worker or put this request on a waiting list.
         val theSearch = SearchTask(searchRequest, searchId, sendSearchResultTo)
@@ -445,7 +447,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
 
       case Crash(worker) =>
         context.log.info(s"got crash report from $worker; waiting for shutdown command")
-        //waitingSearches.dequeueAll(_ => true)
+      //waitingSearches.dequeueAll(_ => true)
 
       case ShutDown(replyTo: Option[ActorRef[Unit]]) =>
         //ask for a coordinated shutdown of all workers

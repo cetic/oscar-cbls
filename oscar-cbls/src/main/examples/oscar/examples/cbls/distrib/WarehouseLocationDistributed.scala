@@ -22,7 +22,7 @@ import oscar.cbls.core.distrib.Supervisor
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.lib.search.combinators.Atomic
-import oscar.cbls.lib.search.combinators.distributed.DistributedBest
+import oscar.cbls.lib.search.combinators.distributed.{DistributedBest, DistributedFirst}
 import oscar.examples.cbls.wlp.WarehouseLocationGenerator
 
 import scala.collection.parallel.immutable.ParRange
@@ -63,7 +63,7 @@ object WarehouseLocationDistributed extends App{
 
     //These neighborhoods are inefficient and slow; using multiple core is the wrong answer to inefficiency
     val neighborhood = (
-      new DistributedBest(
+      new DistributedFirst(
         Array(
           assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
           swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/6).map(_*6    ); () => range}, name = "SwapWarehouses1"),
@@ -74,16 +74,6 @@ object WarehouseLocationDistributed extends App{
           swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = (0 until W/6).map(_*6 + 5); () => range}, name = "SwapWarehouses6")))
         onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray,() => W/10), 2, obj)
         onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/5), 2, obj))
-
-    val x = 10
-    val neighborhood2 =
-      new DistributedBest(
-        Array.fill(x) (Atomic(
-          assignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
-            exhaustBack swapsNeighborhood(warehouseOpenArray, name = "SwapWarehouses4")
-            onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray,() => W/10), 2, obj)
-            onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/5), 2, obj),
-          shouldStop = _ => false, aggregateIntoSingleMove = true))) maxMoves 1
 
     (m,neighborhood,obj,() => {println(openWarehouses)})
   }

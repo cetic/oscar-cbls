@@ -1,25 +1,20 @@
 package oscar.cbls.lib.search.combinators.distributed
 
-import akka.actor.typed.scaladsl.AskPattern.Askable
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
-import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
+import akka.actor.typed.{ActorSystem, Behavior}
 import akka.util.Timeout
-import oscar.cbls.core.distrib
 import oscar.cbls.core.distrib._
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{MoveFound, Neighborhood, NoMoveFound, SearchResult}
+import oscar.cbls.core.search.{Neighborhood, NoMoveFound, SearchResult}
 
 import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{Await, Future, Promise}
-import scala.util.Random
+import scala.util.{Failure, Success}
 
 abstract class DistributedCombinator(neighborhoods:Array[List[Long] => Neighborhood]) extends Neighborhood {
 
   var remoteNeighborhoods:Array[RemoteNeighborhood] = null
   var supervisor:Supervisor = null
-
-  def delegateSearch(searchRequest:SearchRequest, sendResultTo:ActorRef[SearchEnded]):Future[Long] =
-    supervisor.delegateSearch(searchRequest, sendResultTo)
 
   override def labelAndExtractRemoteNeighborhoods(supervisor: Supervisor,
                                                   currentID: Int,
@@ -69,8 +64,8 @@ class Remote(neighborhoods:Neighborhood)
     import akka.actor.typed.scaladsl.AskPattern._
     implicit val timeout: Timeout = 3.seconds
     implicit val system: ActorSystem[_] = supervisor.system
-    val futureResult = supervisor.supervisorActor.ask[SearchEnded](ref => DelegateSearch(searchRequest, null, ref))
 
+    val futureResult = supervisor.supervisorActor.ask[SearchEnded](ref => DelegateSearch(searchRequest, ref))
     Await.result(futureResult,Duration.Inf) match{
       case SearchCompleted(_, searchResult) =>
         searchResult.getLocalResult(obj.model)
@@ -93,13 +88,15 @@ class DistributedBest(neighborhoods:Array[Neighborhood])
     implicit val timeout: Timeout = 3.seconds
     implicit val system: ActorSystem[_] = supervisor.system
 
-    val futureResults =  remoteNeighborhoods.map(l => {
+    val futureResults =  remoteNeighborhoods.indices.map(i => {
+
       val request = SearchRequest(
-        l.getRemoteIdentification(Nil),
+        remoteNeighborhoods(i).getRemoteIdentification(Nil),
         acceptanceCriteria,
         independentObj,
         startSol)
-      supervisor.supervisorActor.ask[SearchEnded](ref => DelegateSearch(request, null, ref))
+
+      supervisor.supervisorActor.ask[SearchEnded](ref => DelegateSearch(request, ref))
     }).toList
 
     val independentMoveFound:Iterable[IndependentMoveFound] = futureResults.flatMap(futureResult =>
@@ -129,55 +126,119 @@ class DistributedFirst(neighborhoods:Array[Neighborhood])
     val independentObj = obj.getIndependentObj
     val startSol = IndependentSolution(obj.model.solution())
 
-    val resultPromise = Promise[SearchEnded]()
-    val futureResult: Future[SearchEnded] = resultPromise.future
+    val resultPromise = Promise[WrappedData]()
+    val futureResult: Future[WrappedData] = resultPromise.future
 
-    supervisor.spawnNewActor(Behaviors.setup { context:ActorContext[Any] => {
-      for (remoteNeighborhood <- remoteNeighborhoods) {
-        val request = SearchRequest(
-          remoteNeighborhood.getRemoteIdentification(Nil),
-          acceptanceCriteria,
-          independentObj,
-          startSol)
-        implicit val timeout: Timeout = 3.seconds
-        implicit val system: ActorSystem[_] = supervisor.system
-        supervisor.supervisorActor ! DelegateSearch(request, context.self, context.self)
+    abstract class WrappedData
+    case class WrappedSearchEnded(searchEnded:SearchEnded) extends WrappedData
+    case class WrappedGotUniqueID(uniqueID:Long,neighborhoodIndice:Int) extends WrappedData
+    case class WrappedError(msg:Option[String] = None, crash:Option[SearchCrashed] = None) extends WrappedData
+
+    implicit val system: ActorSystem[_] = supervisor.system
+    implicit val timeout: Timeout = 3.seconds
+
+    supervisor.spawnNewActor(Behaviors.setup { context:ActorContext[WrappedData] => {
+      //starting up all searches
+      for (i <- remoteNeighborhoods.indices){
+        context.ask[GetNewUniqueID,Long](supervisor.supervisorActor,ref => GetNewUniqueID(ref)) {
+          case Success(uniqueID:Long) => WrappedGotUniqueID(uniqueID:Long,i)
+          case Failure(_) => WrappedError(msg=Some("supervisor actor timeout"))
+        }
       }
-      next()
+      next(
+        runningSearchIDs = List.empty,
+        nbFinishedSearches = 0)
+
     }},"DistributedFirst")
 
-    def next(runningSearchIDs:List[Long] = List.empty, nbKnownSearches:Int = 0, bestSolutionSoFar:Option[IndependentMoveFound] = None): Behavior[Any] = {
+    def next(runningSearchIDs:List[Long],
+             nbFinishedSearches:Int): Behavior[WrappedData] = {
       Behaviors.receive { (context, command) =>
         command match {
-          case newSearchID: Long =>
-            val newSearchIDs = newSearchID :: runningSearchIDs
-            if (bestSolutionSoFar.isDefined) {
-              for (searchID <- newSearchIDs) {
-                supervisor.supervisorActor ! CancelSearchToSupervisor(searchID)
-              }
-              if (nbKnownSearches + 1 == neighborhoods.length) {
-                resultPromise.success(SearchCompleted(0, bestSolutionSoFar.get))
+          case w@WrappedSearchEnded(searchEnded: SearchEnded) =>
+            searchEnded match {
+              case SearchCompleted(searchID: Long, searchResult: IndependentSearchResult) =>
+                searchResult match {
+                  case _: IndependentMoveFound =>
+
+                    for (r <- runningSearchIDs) {
+                      supervisor.supervisorActor ! CancelSearchToSupervisor(r)
+                    }
+
+                    resultPromise.success(w)
+                    Behaviors.stopped
+
+                  case _: IndependentNoMoveFound =>
+
+                    val newNbFinishedSearches = nbFinishedSearches + 1
+                    if (newNbFinishedSearches == neighborhoods.length) {
+                      resultPromise.success(w) //it is a NoMoveFound
+                      Behaviors.stopped
+                    } else {
+                      next(
+                        runningSearchIDs = runningSearchIDs,
+                        nbFinishedSearches = newNbFinishedSearches)
+                    }
+                }
+
+              case SearchAborted(_) =>
+                //ignore it.
+                next(runningSearchIDs = runningSearchIDs,
+                  nbFinishedSearches = nbFinishedSearches + 1)
+
+              case c: SearchCrashed =>
+                for (r <- runningSearchIDs) {
+                  supervisor.supervisorActor ! CancelSearchToSupervisor(r)
+                }
+                resultPromise.success(w)
                 Behaviors.stopped
-              } else {
-                next(newSearchIDs, nbKnownSearches + 1, bestSolutionSoFar)
-              }
-            } else {
-              next(newSearchIDs, nbKnownSearches + 1, bestSolutionSoFar)
             }
 
-          case SearchCompleted(searchID,_:IndependentNoMoveFound) =>
-            val newSearchIDs = searchIDs.filterNot()
-          case s:SearchCompleted(searchID,m:IndependentMoveFound) =>
-        resultPromise.success(s)
-          case c:SearchCrashed =>
+          case WrappedGotUniqueID(uniqueID: Long, neighborhoodIndice: Int) =>
 
-          case _ =>
+            val request = SearchRequest(
+              remoteNeighborhoods(neighborhoodIndice).getRemoteIdentification(Nil),
+              acceptanceCriteria,
+              independentObj,
+              startSol)
 
+            context.ask[DelegateSearch, SearchEnded](supervisor.supervisorActor, ref => DelegateSearch(request, ref, uniqueID)) {
+              case Success(searchEnded) => WrappedSearchEnded(searchEnded)
+              case Failure(_) => WrappedError(msg = Some("supervisor actor timeout"))
+            }
 
+            next(runningSearchIDs = uniqueID :: runningSearchIDs,
+              nbFinishedSearches = nbFinishedSearches)
+
+          case w: WrappedError =>
+
+            for (r <- runningSearchIDs) {
+              supervisor.supervisorActor ! CancelSearchToSupervisor(r)
+            }
+            resultPromise.success(w)
+            Behaviors.stopped
         }
       }
     }
 
+    //await seems to block the actor system??
+    Await.result(futureResult, Duration.Inf) match{
+      case WrappedSearchEnded(searchEnded:SearchEnded) =>
+        searchEnded match{
+          case SearchCompleted(searchID, searchResult: IndependentSearchResult) => searchResult.getLocalResult(obj.model)
+        }
+      case WrappedError(msg:Option[String],crash:Option[SearchCrashed])=>
+        if(msg.isDefined){
+          supervisor.shutdown()
+          throw new Error(msg.get)
+        }
+        if(crash.isDefined){
+          supervisor.throwRemoteExceptionAndShutDown(crash.get)
+        }
+        throw new Error("error in DistributedFirst")
+      case x =>
+        throw new Error("unknown error in DistributedFirst")
+        null
+    }
   }
-
 }
