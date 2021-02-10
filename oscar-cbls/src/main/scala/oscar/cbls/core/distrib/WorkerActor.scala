@@ -20,7 +20,6 @@ case class SearchRequest(neighborhoodID: RemoteNeighborhoodIdentification,
   override def toString: String = s"SearchRequest($neighborhoodID,$acc,$obj,sendFullSolution:$sendFullSolution)"
 }
 
-
 case class SearchTask(request: SearchRequest,
                       searchId: Long,
                       sendResultTo: ActorRef[SearchEnded]) {
@@ -276,5 +275,4 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
       }
     }
   }
-
 }

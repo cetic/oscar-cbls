@@ -54,7 +54,7 @@ object WarehouseLocationDistributed3 extends App{
     val m = Store()
 
     val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, s"warehouse_${l}_open"))
-    val openWarehouses = filter(warehouseOpenArray).setName("openWarehouses")
+    val openWarehouses = filter(warehouseOpenArray)
 
     val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
       minConstArrayValueWise(distanceCost(d).map(_.toInt), openWarehouses, defaultCostForNoOpenWarehouse))
@@ -68,7 +68,7 @@ object WarehouseLocationDistributed3 extends App{
       new DistributedRestart(
         bestSlopeFirst(
           List(
-            assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
+            assignNeighborhood(warehouseOpenArray, name = "SwitchWarehouse"),
             swapsNeighborhood(warehouseOpenArray, name = "SwapWarehouses"))),
         randomSwapNeighborhood(warehouseOpenArray,() => W/10),
         nbConsecutiveRestartWithoutImprovement = 5,
@@ -78,25 +78,19 @@ object WarehouseLocationDistributed3 extends App{
     (m,neighborhood,obj,() => {println(openWarehouses)})
   }
 
-  //supervisor side
+  //main search; distributed combinators delegate to worker
   val (store,search,obj,finalPrint) = createSearchProcedure()
-
   val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(store,search,verbose=false,tic=1.seconds)
 
-
-  for (i <- ParRange(0, nbWorker, 1, inclusive = true)) {
-    if (i == 0) {
-      val search2 = search
-      search2.verbose = 1
-      search2.maxMoves(1).doAllMoves(obj = obj)
-    } else {
-      val (store2, search2, _, _) = createSearchProcedure()
-      supervisor.createLocalWorker(store2, search2)
-      search2.verbose = 2
-    }
+  for (i <- (0 until nbWorker).par){
+    //creating each worker, with its own model and search procedure (we do in in parallel)
+    val (store2, search2, _, _) = createSearchProcedure()
+    supervisor.createLocalWorker(store2, search2)
   }
 
-  supervisor.shutdown()
+  //now, run the main search
+  search.maxMoves(1).doAllMoves(obj = obj)
 
+  supervisor.shutdown()
   finalPrint()
 }
