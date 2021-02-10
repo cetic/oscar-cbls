@@ -71,7 +71,7 @@ object WarehouseLocationDistributed3 extends App{
           swapsNeighborhood(warehouseOpenArray, name = "SwapWarehouses"))),
         randomSwapNeighborhood(warehouseOpenArray,() => W/10),
         nbConsecutiveRestartWithoutImprovement = 10,
-        nbOngoingSearchesToCancelWhenNewBest = nbWorker,
+        nbOngoingSearchesToCancelWhenNewBest = nbWorker-2,
         maxWorkers = nbWorker)
 
     (m,neighborhood,obj,() => {println(openWarehouses)})

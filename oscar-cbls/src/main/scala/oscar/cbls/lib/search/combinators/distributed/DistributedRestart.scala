@@ -27,11 +27,9 @@ class DistributedRestart(baseSearch:Neighborhood,
 
   //TODO: add a mechanism to perform complete search on the worker side, so that the worker can send progress info here, and a display can be provided with all the ongoing searches
   //TODO: add a mechanism to remove the 1 hour timeout on searches; this is ugly stuff
-  
+
   override def getMove(obj: Objective, initialObj: Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
 
-    val restartAndSearch = remoteNeighborhoods(0).getRemoteIdentification(Nil)
-    val search = remoteNeighborhoods(1).getRemoteIdentification(Nil)
 
     val independentObj = obj.getIndependentObj
     val model = obj.model
@@ -214,6 +212,9 @@ class DistributedRestart(baseSearch:Neighborhood,
                 }
               case SearchAborted(_) =>
                 //ignore it.
+                context.log.info(s"got abort confirmation")
+                //TODO: why does it not show??
+
                 next(runningSearchIDsAndIsItFromBestSoFar = runningSearchIDsAndIsItFromBestSoFar,
                   bestObjSoFar = bestObjSoFar,
                   bestMoveSoFar = bestMoveSoFar,
