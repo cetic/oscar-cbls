@@ -1,8 +1,8 @@
 package oscar.cbls.lib.search.multiObjective
 
-import oscar.visual._
-import javax.swing.SwingUtilities
 import oscar.visual.plot.PlotScatter
+
+import javax.swing.SwingUtilities
 
 /**
  * @author Pierre Schaus
