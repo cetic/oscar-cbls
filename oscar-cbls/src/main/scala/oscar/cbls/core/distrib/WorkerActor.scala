@@ -15,7 +15,8 @@ case class SearchRequest(neighborhoodID: RemoteNeighborhoodIdentification,
                          acc: (Long, Long) => Boolean,
                          obj: IndependentObjective,
                          startSolution: IndependentSolution,
-                         sendFullSolution:Boolean = false) {
+                         sendFullSolution:Boolean = false,
+                         doAllMoves:Boolean = false) {
   override def toString: String = s"SearchRequest($neighborhoodID,$acc,$obj,sendFullSolution:$sendFullSolution)"
 }
 
@@ -104,7 +105,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
     shouldAbortComputation = false
     val neighborhood = neighborhoods(searchRequest.neighborhoodID.neighborhoodID)
 
-    neighborhood.explore(
+    neighborhood.getMove(
       searchRequest.neighborhoodID.parameters,
       searchRequest.obj.convertToObjective(m),
       searchRequest.acc,

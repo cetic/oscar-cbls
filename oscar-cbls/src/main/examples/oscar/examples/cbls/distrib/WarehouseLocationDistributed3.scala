@@ -62,13 +62,13 @@ object WarehouseLocationDistributed3 extends App{
     val obj = Objective(sum(distanceToNearestOpenWarehouseLazy) + sum(costForOpeningWarehouse, openWarehouses))
 
     m.close()
-
-
+    
     //These neighborhoods are inefficient and slow; using multiple core is the wrong answer to inefficiency
     val neighborhood =
       new DistributedRestart(
-        bestSlopeFirst(List(assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
-          swapsNeighborhood(warehouseOpenArray, name = "SwapWarehouses"))),
+        bestSlopeFirst(
+          List(assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
+            swapsNeighborhood(warehouseOpenArray, name = "SwapWarehouses"))),
         randomSwapNeighborhood(warehouseOpenArray,() => W/10),
         nbConsecutiveRestartWithoutImprovement = 10,
         nbOngoingSearchesToCancelWhenNewBest = nbWorker-2,

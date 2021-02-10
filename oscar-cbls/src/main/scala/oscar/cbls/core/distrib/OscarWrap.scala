@@ -1,5 +1,6 @@
 package oscar.cbls.core.distrib
 
+import akka.actor.ActorRef
 import oscar.cbls.core.computation.{AbstractVariableSnapShot, Solution, Store}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search._
@@ -10,7 +11,7 @@ import oscar.cbls.core.search._
 case class RemoteNeighborhoodIdentification(neighborhoodID: Int, parameters: List[Long], neighborhoodName: String)
 
 class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Neighborhood, neighborhoodName: String = "") {
-  def explore(parameters: List[Long],
+  def getMove(parameters: List[Long],
               obj: Objective,
               acc: (Long, Long) => Boolean,
               shouldAbort: () => Boolean,

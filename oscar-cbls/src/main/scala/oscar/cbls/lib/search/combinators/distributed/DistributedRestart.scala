@@ -17,7 +17,8 @@ class DistributedRestart(baseSearch:Neighborhood,
                          baseRandomize:Neighborhood,
                          nbConsecutiveRestartWithoutImprovement:Int,
                          nbOngoingSearchesToCancelWhenNewBest:Int,
-                         maxWorkers:Int)
+                         maxWorkers:Int,
+                         performInitialNonRandomizeDescent:Boolean = true)
   extends DistributedCombinator(
     Array(
       (_:List[Long]) => Atomic(baseRandomize maxMoves 1 exhaust baseSearch,_=>false,aggregateIntoSingleMove = true),
@@ -51,7 +52,7 @@ class DistributedRestart(baseSearch:Neighborhood,
       //starting up all searches
 
       context.ask[GetNewUniqueID,Long](supervisor.supervisorActor,ref => GetNewUniqueID(ref)) {
-        case Success(uniqueID:Long) => WrappedGotUniqueID(uniqueID:Long,1)
+        case Success(uniqueID:Long) => WrappedGotUniqueID(uniqueID:Long,if(performInitialNonRandomizeDescent) 1 else 0)
         case Failure(_) => WrappedError(msg=Some("supervisor actor timeout1"))
       }
 
