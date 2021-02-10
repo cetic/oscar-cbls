@@ -71,6 +71,7 @@ object WarehouseLocationDistributed3 extends App{
           swapsNeighborhood(warehouseOpenArray, name = "SwapWarehouses"))),
         randomSwapNeighborhood(warehouseOpenArray,() => W/10),
         nbConsecutiveRestartWithoutImprovement = 10,
+        nbOngoingSearchesToCancelWhenNewBest = nbWorker,
         maxWorkers = nbWorker)
 
     (m,neighborhood,obj,() => {println(openWarehouses)})
@@ -84,7 +85,7 @@ object WarehouseLocationDistributed3 extends App{
 
   for (i <- ParRange(0, nbWorker, 1, inclusive = true)) {
     if (i == 0) {
-      val search2 = search.showObjectiveFunction(obj)
+      val search2 = search
       search2.verbose = 1
       search2.maxMoves(1).doAllMoves(obj = obj)
     } else {
