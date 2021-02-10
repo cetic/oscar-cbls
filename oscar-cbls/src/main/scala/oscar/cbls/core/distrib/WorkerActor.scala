@@ -14,8 +14,9 @@ import scala.util.{Failure, Success}
 case class SearchRequest(neighborhoodID: RemoteNeighborhoodIdentification,
                          acc: (Long, Long) => Boolean,
                          obj: IndependentObjective,
-                         startSolution: IndependentSolution) {
-  override def toString: String = s"SearchRequest($neighborhoodID,$acc,$obj)"
+                         startSolution: IndependentSolution,
+                         sendFullSolution:Boolean = false) {
+  override def toString: String = s"SearchRequest($neighborhoodID,$acc,$obj,sendFullSolution:$sendFullSolution)"
 }
 
 
@@ -107,7 +108,8 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
       searchRequest.neighborhoodID.parameters,
       searchRequest.obj.convertToObjective(m),
       searchRequest.acc,
-      shouldAbort = () => shouldAbortComputation)
+      shouldAbort = () => shouldAbortComputation,
+      sendFullSolution = searchRequest.sendFullSolution)
   }
 
   private def next(state: WorkerState): Behavior[MessageToWorker] = {
@@ -129,6 +131,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
               Behaviors.same
 
             case Aborting(search) =>
+              //TODO: il faudrait pouvoir stocker cette recherche en local ici pour déjà avoir la recherche suivante en cas d'abort
               if (verbose) context.log.info(s"got command for start search:${newSearch.searchId} but already busy aborting a search")
 
               replyTo ! SearchNotStarted(newSearch, context.self)
@@ -140,8 +143,6 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
               this.nbExploredNeighborhoods += 1
 
               val futureResult = Future {
-                //TODO: the abort does not work; Future is probably not the way to go here.
-                //TODO: how about startSol, obj and acceptance?
                 SearchCompleted(newSearch.searchId, doSearch(newSearch.request))
               }(executionContextForComputation)
 
@@ -162,7 +163,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
             case IAmBusy(search) =>
               if (searchId == search.searchId) {
                 if (verbose) context.log.info(s"got abort command for search:$searchId; aborting")
-                //System.err.println("aborting")
+
                 shouldAbortComputation = true //shared variable
                 nbAbortedNeighborhoods += 1
                 next(Aborting(search))
@@ -193,6 +194,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
             case IAmBusy(search) =>
               require(search.searchId == result.searchID)
               if (verbose) context.log.info(s"finished search:${search.searchId}, sending result $result to ${search.sendResultTo.path}")
+
               search.sendResultTo ! result
 
               result match {

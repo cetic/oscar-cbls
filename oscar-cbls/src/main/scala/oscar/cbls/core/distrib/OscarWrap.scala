@@ -10,10 +10,23 @@ import oscar.cbls.core.search._
 case class RemoteNeighborhoodIdentification(neighborhoodID: Int, parameters: List[Long], neighborhoodName: String)
 
 class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Neighborhood, neighborhoodName: String = "") {
-  def explore(parameters: List[Long], obj: Objective, acc: (Long, Long) => Boolean, shouldAbort: () => Boolean): IndependentSearchResult = {
+  def explore(parameters: List[Long],
+              obj: Objective,
+              acc: (Long, Long) => Boolean,
+              shouldAbort: () => Boolean,
+              sendFullSolution:Boolean): IndependentSearchResult = {
     neighborhood(parameters).getMoveAbortable(obj, obj.value, acc, shouldAbort) match {
       case NoMoveFound => IndependentNoMoveFound()
-      case MoveFound(m) => IndependentMoveFound(m.getIndependentMove(obj.model))
+      case MoveFound(m) =>
+        if(sendFullSolution) {
+          m.commit()
+          IndependentMoveFound(LoadIndependentSolutionMove(
+            objAfter = m.objAfter,
+            neighborhoodName = m.neighborhoodName,
+            IndependentSolution(obj.model.solution())))
+        }else {
+          IndependentMoveFound(m.getIndependentMove(obj.model))
+        }
     }
   }
 

@@ -28,8 +28,6 @@ final case class SearchNotStarted(search: SearchTask, worker: ActorRef[MessageTo
 
 final case class Crash(worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
 
-final case class Tic() extends MessagesToSupervisor
-
 final case class DelegateSearch(searchRequest: SearchRequest,
                                 sendSearchResultTo:ActorRef[SearchEnded],
                                 uniqueSearchID:Long = -1) extends MessagesToSupervisor with ControlMessage
@@ -247,6 +245,13 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
                       tic: Duration)
   extends AbstractBehavior[MessagesToSupervisor](context) {
 
+  //message to self
+
+  private final case class Tic() extends MessagesToSupervisor
+  //this one cannot be a control message.
+  private final case class StartSomeSearch() extends MessagesToSupervisor
+
+
   private val waitingSearches = scala.collection.mutable.Queue[SearchTask]()
   var nbLocalWorker: Int = 0
   var nbCustomSearchActor:Int = 0
@@ -291,6 +296,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
         context.log.info("new worker enrolled:" + workerRef.path)
 
       case StartSomeSearch() =>
+        //context.log.info("StartSomeSearch")
         (waitingSearches.isEmpty, idleWorkers) match {
           case (true, idleWorkers) if idleWorkers.nonEmpty => ;
             if (verbose) context.log.info(status)
@@ -383,18 +389,22 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
       // at least to show it is not completely crashed.
 
       case ReadyForWork(worker: ActorRef[MessageToWorker], completedSearchID: Option[Long], completedNeighborhoodIDAndMoveFound: Option[(Int,Boolean)]) =>
+        if (verbose) context.log.info(s"got a worker ready:${worker.path}; finished search:$completedSearchID")
 
         require(allKnownWorkers contains worker)
         completedNeighborhoodIDAndMoveFound match {
           case None => ;
-            if (verbose) context.log.info(s"got a worker ready:${worker.path}")
           case Some((s:Int,found)) =>
-            if (verbose) context.log.info(s"got a worker ready:${worker.path}; finished search:$s")
-            ongoingSearches = ongoingSearches.-(s)
             if(!found){
               neighborhoodToPreferredWorker = neighborhoodToPreferredWorker.-(s)
             }
         }
+
+        completedSearchID match{
+          case Some(s) => ongoingSearches = ongoingSearches.-(s)
+          case None => ;
+        }
+
 
         idleWorkers = worker :: idleWorkers
         context.self ! StartSomeSearch()
@@ -481,7 +491,4 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
   def status: String = {
     s"workers(total:${allKnownWorkers.size} busy:${allKnownWorkers.size - idleWorkers.size}) searches(waiting:${waitingSearches.size} starting:${startingSearches.size} running:${ongoingSearches.size} totalStarted:$totalStartedSearches)"
   }
-
-  //this one cannot be a control message!!!
-  private final case class StartSomeSearch() extends MessagesToSupervisor
 }
