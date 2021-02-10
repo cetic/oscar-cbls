@@ -360,8 +360,8 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
               nbSearchToStart -= 1
             }
 
-            //// take the first searches, one per available worker
-            // double loop on these searches; perform worker assignment as they come (no smart optimization here, first fit)
+            //take the first searches, one per available worker
+            //double loop on these searches; perform worker assignment as they come (no smart optimization here, first fit)
             //for the remaining searches, make it anyhow
 
             if (idleWorkers.isEmpty) {

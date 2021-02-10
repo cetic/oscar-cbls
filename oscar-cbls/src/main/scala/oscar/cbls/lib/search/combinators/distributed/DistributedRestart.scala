@@ -50,6 +50,7 @@ class DistributedRestart(baseSearch:Neighborhood,
 
     supervisor.spawnNewActor(Behaviors.setup { context:ActorContext[WrappedData] => {
       //starting up all searches
+      context.log.info(s"starting restart search, init obj: $initialObj")
 
       context.ask[GetNewUniqueID,Long](supervisor.supervisorActor,ref => GetNewUniqueID(ref)) {
         case Success(uniqueID:Long) => WrappedGotUniqueID(uniqueID:Long,if(performInitialNonRandomizeDescent) 1 else 0)
@@ -85,7 +86,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                     //does it improve over best SoFar?
                     if (moveFound.objAfter < bestObjSoFar) {
                       //We did improve over best so far
-                      context.log.info(s"new solution: improved over best so far")
+                      context.log.info(s"new solution: improved over best so far: ${moveFound.objAfter}")
 
                       var newRunning = runningSearchIDsAndIsItFromBestSoFar.flatMap({case (x:Long,y:Boolean) => if(x == searchID) None else Some((x,false))})
 
@@ -124,7 +125,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                         //We were running on BestSoFar, so stop criterion progressed
                         if(nbCompletedSearchesOnBestSoFar +1 >= nbConsecutiveRestartWithoutImprovement){
                           //we finished :-)
-                          context.log.info(s"new solution: not improved over best so far, was working on bestSoFar, finished, canceling ${runningSearchIDsAndIsItFromBestSoFar.size -1} ongoing searches")
+                          context.log.info(s"new solution: not improved over best so far, was working on bestSoFar, finished, canceling ${runningSearchIDsAndIsItFromBestSoFar.size -1} ongoing searches finalOBj:$bestObjSoFar")
 
                           for(searchID <- runningSearchIDsAndIsItFromBestSoFar.keys){
                             supervisor.supervisorActor ! CancelSearchToSupervisor(searchID)
@@ -172,7 +173,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                       if(nbCompletedSearchesOnBestSoFar +1 >= nbConsecutiveRestartWithoutImprovement){
                         //we finished :-)
 
-                        context.log.info(s"no move found, was working on bestSoFar, finished, canceling ${runningSearchIDsAndIsItFromBestSoFar.size -1} ongoing searches")
+                        context.log.info(s"no move found, was working on bestSoFar, finished, canceling ${runningSearchIDsAndIsItFromBestSoFar.size -1} ongoing searches finalOBj:$bestObjSoFar")
 
                         for(searchID <- runningSearchIDsAndIsItFromBestSoFar.keys){
                           supervisor.supervisorActor ! CancelSearchToSupervisor(searchID)

@@ -37,7 +37,20 @@ final case class WrappedSearchEnded(result: SearchEnded) extends MessageToWorker
 
 final case class ShutDownWorker() extends MessageToWorker
 
-final case class Ping(replyTo: ActorRef[Unit]) extends MessageToWorker
+final case class Ping(replyTo: ActorRef[ExternalWorkerState]) extends MessageToWorker
+
+sealed abstract class ExternalWorkerState
+case class WorkerBusy(searchId: Long, durationMs:Long) extends ExternalWorkerState
+case class WorkerAborting(searchID: Long) extends ExternalWorkerState
+case class WorkerIdle() extends ExternalWorkerState
+case class WorkerShuttingDown() extends ExternalWorkerState
+
+
+sealed abstract class WorkerState
+case class IAmBusy(search: SearchTask, started:Long) extends WorkerState
+case class Aborting(search: SearchTask) extends WorkerState
+case class Idle() extends WorkerState
+case class ShuttingDown() extends WorkerState
 
 object WorkerActor {
   val nbCores: Int = Runtime.getRuntime.availableProcessors()
@@ -117,14 +130,21 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
     Behaviors.receive { (context, command) =>
       command match {
         case Ping(replyTo) =>
-          replyTo ! Unit
+
+          replyTo ! (state match{
+            case IAmBusy(search,started) => WorkerBusy(search.searchId, System.currentTimeMillis() - started)
+            case Aborting(search) => WorkerAborting(search.searchId)
+            case Idle() => WorkerIdle()
+            case ShuttingDown() => WorkerShuttingDown()
+          })
+
           Behaviors.same
 
         case StartSearch(newSearch, startID, replyTo) =>
           state match {
             case ShuttingDown() =>
               Behaviors.same
-            case IAmBusy(search) =>
+            case IAmBusy(search,startedTime) =>
               //we do not tell anything to the workGiver; the supervisor will have to find another slave
               if (verbose) context.log.info(s"got command for start search:${newSearch.searchId} but already busy")
 
@@ -154,14 +174,14 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
                   WrappedSearchEnded(SearchCrashed(newSearch.searchId, newSearch.request.neighborhoodID, e, context.self))
               }
               replyTo ! SearchStarted(newSearch, startID, context.self)
-              next(IAmBusy(newSearch))
+              next(IAmBusy(newSearch,System.currentTimeMillis()))
           }
 
         case AbortSearch(searchId) =>
           state match {
             case ShuttingDown() =>
               Behaviors.same
-            case IAmBusy(search) =>
+            case IAmBusy(search,startTimeMs) =>
               if (searchId == search.searchId) {
                 if (verbose) context.log.info(s"got abort command for search:$searchId; aborting")
 
@@ -192,7 +212,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
           // send result to work giver
 
           state match {
-            case IAmBusy(search) =>
+            case IAmBusy(search,startTimeMs) =>
               require(search.searchId == result.searchID)
               if (verbose) context.log.info(s"finished search:${search.searchId}, sending result $result to ${search.sendResultTo.path}")
 
@@ -237,7 +257,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
 
         case ShutDownWorker() =>
           state match {
-            case IAmBusy(search) =>
+            case IAmBusy(search,startTimeMs) =>
               shouldAbortComputation = true //shared variable
               //we kill the other thread
               if (verbose) context.log.info(s"aborting prior to shutdown")
@@ -257,13 +277,4 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
     }
   }
 
-  abstract class WorkerState
-
-  case class IAmBusy(search: SearchTask) extends WorkerState
-
-  case class Aborting(search: SearchTask) extends WorkerState
-
-  case class Idle() extends WorkerState
-
-  case class ShuttingDown() extends WorkerState
 }
