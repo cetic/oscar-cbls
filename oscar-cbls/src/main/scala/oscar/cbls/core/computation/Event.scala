@@ -111,7 +111,7 @@ object Event{
 
 /**Use the apply method in the companion object for building this*/
 class Event(v:Value, w:Variable, ModifiedVars:Iterable[Variable])
-  extends Invariant with IntNotificationTarget with SetNotificationTarget{
+  extends Invariant with IntNotificationTarget with SetNotificationTarget with SeqNotificationTarget {
 
   //unfortunately, it is not possible to pass a type "=>Unit" as parameter to a case class.
 
@@ -178,6 +178,11 @@ class Event(v:Value, w:Variable, ModifiedVars:Iterable[Variable])
   }
 
   override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
+    scheduleForPropagation()
+  }
+
+
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     scheduleForPropagation()
   }
 
