@@ -1,6 +1,6 @@
 package oscar.cbls.core.distrib
 
-import akka.actor.ActorRef
+import akka.actor.typed.ActorRef
 import oscar.cbls.core.computation.{AbstractVariableSnapShot, Solution, Store}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search._
@@ -31,6 +31,54 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
     }
   }
 
+  def doAllMoves(parameters: List[Long],
+                 obj: Objective,
+                 acc: (Long, Long) => Boolean,
+                 shouldAbort: () => Boolean,
+                 searchId:Long,
+                 sendProgressTo:Option[ActorRef[SearchProgress]]): IndependentSearchResult = {
+
+    var anyMoveFound = false
+    var name:String = ""
+    val delayForNextFeedbackMS = 100 // 0.1 second
+    var nextTimeForFeedbackMS = System.currentTimeMillis() + delayForNextFeedbackMS
+
+    while(neighborhood(parameters).getMoveAbortable(obj, obj.value, acc, shouldAbort) match {
+      case NoMoveFound => false
+      case MoveFound(m) =>
+        m.commit();
+        if(!anyMoveFound){
+          name = m.neighborhoodName
+          anyMoveFound = true;
+        }
+        true
+    }) {
+      sendProgressTo match{
+        case None => ;
+        case Some(target) =>
+          val currentTimeMs = System.currentTimeMillis()
+          if (nextTimeForFeedbackMS <= currentTimeMs){
+            target ! SearchProgress(searchId, obj.value)
+            nextTimeForFeedbackMS = currentTimeMs + delayForNextFeedbackMS
+          }
+      }
+    }
+
+    if(anyMoveFound && !shouldAbort()){
+      sendProgressTo match {
+        case None => ;
+        case Some(target) =>
+          target ! SearchProgress(searchId, obj.value)
+      }
+      IndependentMoveFound(LoadIndependentSolutionMove(
+        objAfter = obj.value,
+        neighborhoodName = name,
+        IndependentSolution(obj.model.solution())))
+    }else {
+      IndependentNoMoveFound()
+    }
+  }
+
   def getRemoteIdentification(parameters: List[Long] = Nil): RemoteNeighborhoodIdentification =
     RemoteNeighborhoodIdentification(neighborhoodID, parameters, neighborhoodName)
 }
@@ -43,7 +91,7 @@ abstract class IndependentSearchResult {
 
 case class IndependentMoveFound(move: IndependentMove) extends IndependentSearchResult {
   override def getLocalResult(m: Store): MoveFound = MoveFound(move.makeLocal(m))
-  def objAfter = move.objAfter
+  def objAfter:Long = move.objAfter
 }
 
 case class IndependentNoMoveFound() extends IndependentSearchResult {

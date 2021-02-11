@@ -146,22 +146,22 @@ class ObjectiveFunctionDisplay(title: String, minCap:Long, maxCap:Long, basePerc
         domain.setAutoRangeIncludesZero(true)
         domain
       })
+
       // Setting Y axis range
-      plot.setRangeAxis({
-        if (dataSetsId == 0) {
-          val axis = new LogAxis()
-          axis.setAutoTickUnitSelection(true)
-          axis.setBase(10)
-          axis.setMinorTickMarksVisible(true)
-          axis.setRange(new org.jfree.data.Range(minCap, maxCap), true, true)
-          axis
-        } else {
-          val axis = new NumberAxis()
-          axis.setAutoRange(true)
-          axis.setAutoRangeIncludesZero(false)
-          axis
-        }
-      })
+      if (dataSetsId == 0) {
+        val axis = new LogAxis()
+        axis.setAutoTickUnitSelection(true)
+        axis.setBase(10)
+        axis.setMinorTickMarksVisible(true)
+        axis.setRange(new org.jfree.data.Range(minCap, maxCap), true, true)
+        plot.setRangeAxis(axis)
+      } else {
+        val axis = new NumberAxis()
+        axis.setAutoRange(true)
+        axis.setAutoRangeIncludesZero(false)
+        plot.setRangeAxis(axis)
+      }
+
 
       val renderer = new XYLineAndShapeRenderer()
       seriesColors.zipWithIndex.foreach(colorId =>

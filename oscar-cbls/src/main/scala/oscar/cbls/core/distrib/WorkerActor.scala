@@ -4,19 +4,21 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import org.slf4j.{Logger, LoggerFactory}
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.objective.IndependentObjective
+import oscar.cbls.core.objective.{IndependentObjective, Objective}
 
 import java.util.concurrent.Executors
 import scala.collection.SortedMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
+case class SearchProgress(searchId:Long, obj:Long)
 case class SearchRequest(neighborhoodID: RemoteNeighborhoodIdentification,
                          acc: (Long, Long) => Boolean,
                          obj: IndependentObjective,
                          startSolution: IndependentSolution,
                          sendFullSolution:Boolean = false,
-                         doAllMoves:Boolean = false) {
+                         doAllMoves:Boolean = false,
+                         sendProgressTo:Option[ActorRef[SearchProgress]] = None) {
   override def toString: String = s"SearchRequest($neighborhoodID,$acc,$obj,sendFullSolution:$sendFullSolution)"
 }
 
@@ -26,16 +28,11 @@ case class SearchTask(request: SearchRequest,
   override def toString: String = s"SearchTask($request,$searchId,${sendResultTo.path})"
 }
 
-sealed trait MessageToWorker
-
+sealed abstract class MessageToWorker
 final case class StartSearch(search: SearchTask, startID: Long, replyTo: ActorRef[MessagesToSupervisor]) extends MessageToWorker
-
 final case class AbortSearch(searchId: Long) extends MessageToWorker
-
 final case class WrappedSearchEnded(result: SearchEnded) extends MessageToWorker
-
 final case class ShutDownWorker() extends MessageToWorker
-
 final case class Ping(replyTo: ActorRef[ExternalWorkerState]) extends MessageToWorker
 
 sealed abstract class ExternalWorkerState
@@ -43,7 +40,6 @@ case class WorkerBusy(searchId: Long, durationMs:Long) extends ExternalWorkerSta
 case class WorkerAborting(searchID: Long) extends ExternalWorkerState
 case class WorkerIdle() extends ExternalWorkerState
 case class WorkerShuttingDown() extends ExternalWorkerState
-
 
 sealed abstract class WorkerState
 case class IAmBusy(search: SearchTask, started:Long) extends WorkerState
@@ -112,17 +108,27 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
     }
   }
 
-  private def doSearch(searchRequest: SearchRequest): IndependentSearchResult = {
+  private def doSearch(searchRequest: SearchRequest,searchId:Long): IndependentSearchResult = {
     searchRequest.startSolution.makeLocal(m).restoreDecisionVariables()
     shouldAbortComputation = false
     val neighborhood = neighborhoods(searchRequest.neighborhoodID.neighborhoodID)
 
-    neighborhood.getMove(
-      searchRequest.neighborhoodID.parameters,
-      searchRequest.obj.convertToObjective(m),
-      searchRequest.acc,
-      shouldAbort = () => shouldAbortComputation,
-      sendFullSolution = searchRequest.sendFullSolution)
+    if(searchRequest.doAllMoves){
+      neighborhood.doAllMoves(
+        searchRequest.neighborhoodID.parameters,
+        searchRequest.obj.convertToObjective(m),
+        searchRequest.acc,
+        shouldAbort = () => shouldAbortComputation,
+        searchId = searchId,
+        sendProgressTo = searchRequest.sendProgressTo)
+    }else{
+      neighborhood.getMove(
+        searchRequest.neighborhoodID.parameters,
+        searchRequest.obj.convertToObjective(m),
+        searchRequest.acc,
+        shouldAbort = () => shouldAbortComputation,
+        sendFullSolution = searchRequest.sendFullSolution)
+    }
   }
 
   private def next(state: WorkerState): Behavior[MessageToWorker] = {
@@ -163,7 +169,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
               this.nbExploredNeighborhoods += 1
 
               val futureResult = Future {
-                SearchCompleted(newSearch.searchId, doSearch(newSearch.request))
+                SearchCompleted(newSearch.searchId, doSearch(newSearch.request,newSearch.searchId))
               }(executionContextForComputation)
 
               context.pipeToSelf(futureResult) {
