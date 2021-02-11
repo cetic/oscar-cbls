@@ -11,6 +11,10 @@ import oscar.cbls.core.search._
 case class RemoteNeighborhoodIdentification(neighborhoodID: Int, parameters: List[Long], neighborhoodName: String)
 
 class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Neighborhood, neighborhoodName: String = "") {
+
+  @volatile
+  var bestObjSoFar:Long = Long.MaxValue
+
   def getMove(parameters: List[Long],
               obj: Objective,
               acc: (Long, Long) => Boolean,
@@ -38,6 +42,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
                  searchId:Long,
                  sendProgressTo:Option[ActorRef[SearchProgress]]): IndependentSearchResult = {
 
+    bestObjSoFar = obj.value
     var anyMoveFound = false
     var name:String = ""
     val delayForNextFeedbackMS = 100 // 0.1 second
@@ -51,6 +56,9 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
         if(!anyMoveFound){
           name = m.neighborhoodName
           anyMoveFound = true;
+        }
+        if(m.objAfter < bestObjSoFar){
+          bestObjSoFar = m.objAfter
         }
         true
     })) {

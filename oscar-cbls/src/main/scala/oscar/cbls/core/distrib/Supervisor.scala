@@ -20,7 +20,7 @@ final case class NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) extends
 
 final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSearchIDOpt: Option[Long], completedNeighborhoodIDAndMoveFound: Option[(Int,Boolean)]) extends MessagesToSupervisor with ControlMessage
 
-final case class CancelSearchToSupervisor(searchID: Long) extends MessagesToSupervisor with ControlMessage
+final case class CancelSearchToSupervisor(searchID: Long,keepAliveIfOjBelow:Option[Long]=None) extends MessagesToSupervisor with ControlMessage
 
 final case class SearchStarted(search: SearchTask, searchID: Long, worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
 
@@ -428,7 +428,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
         waitingSearches.enqueue(theSearch)
         context.self ! StartSomeSearch()
 
-      case CancelSearchToSupervisor(searchID: Long) =>
+      case CancelSearchToSupervisor(searchID: Long,keepAliveIfOjBelow:Option[Long]) =>
 
         waitingSearches.dequeueFirst(_.searchId == searchID) match {
           case None =>
@@ -438,14 +438,14 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
             ongoingSearches.get(searchID) match {
               case Some((search, worker)) =>
                 if (verbose) context.log.info(s"got cancel request for ongoing search:$searchID; forward to worker:${worker.path}")
-                worker ! AbortSearch(search.searchId)
+                worker ! AbortSearch(search.searchId,keepAliveIfOjBelow)
               case None =>
 
                 startingSearches.find(_._2._1.searchId == searchID) match {
                   case Some((startID2, (search, startID3, worker))) =>
                     startingSearches = startingSearches.-(startID2)
                     if (verbose) context.log.info(s"got cancel request for starting search:$searchID forward to worker:${worker.path}")
-                    worker ! AbortSearch(search.searchId)
+                    worker ! AbortSearch(search.searchId,keepAliveIfOjBelow)
                   case None =>
                     if (verbose) context.log.info(s"got cancel request for unknown search:$searchID; ignored; search was already completed")
                 }

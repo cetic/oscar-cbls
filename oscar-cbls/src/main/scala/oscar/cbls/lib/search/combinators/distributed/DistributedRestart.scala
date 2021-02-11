@@ -122,16 +122,11 @@ class DistributedRestart(baseSearch:Neighborhood,
                         val selectedSearchNrToKill = scala.util.Random.self.nextInt(ongoingSearches.size)
                         val selectedSearchToKill = ongoingSearches(selectedSearchNrToKill)
 
-                        context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
-                          case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, 0)
-                          case Failure(_) => WrappedError(msg = Some("supervisor actor timeout11"))
-                        }
-
                         newRunning = newRunning.-(selectedSearchToKill)
-                        supervisor.supervisorActor ! CancelSearchToSupervisor(selectedSearchToKill)
+                        supervisor.supervisorActor ! CancelSearchToSupervisor(selectedSearchToKill,Some(moveFound.objAfter))
                       }
 
-                      if(i >0) {
+                      if(i > 0) {
                         context.log.info(s"cancelled $i ongoing search to start new searches instead from bestSoFar")
                       }
 
@@ -251,7 +246,11 @@ class DistributedRestart(baseSearch:Neighborhood,
               case SearchAborted(_) =>
                 //ignore it.
                 context.log.info(s"got abort confirmation")
-                //TODO: why does it not show??
+
+                context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
+                  case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, 0)
+                  case Failure(_) => WrappedError(msg = Some("supervisor actor timeout11"))
+                }
 
                 next(runningSearchIDsAndIsItFromBestSoFar = runningSearchIDsAndIsItFromBestSoFar,
                   bestObjSoFar = bestObjSoFar,
@@ -268,20 +267,6 @@ class DistributedRestart(baseSearch:Neighborhood,
             }
 
           case WrappedGotUniqueID(uniqueID: Long, neighborhoodIndice: Int) =>
-
-
-            /*
-                        //start a search
-                        val request = SearchRequest(
-                          remoteNeighborhoods(neighborhoodIndice).getRemoteIdentification(Nil),
-                          acceptanceCriteria,
-                          independentObj,
-                          startSolution = bestMoveSoFar match{
-                            case Some(load) => load.s
-                            case None => startSol
-                          },
-                          sendFullSolution = true)
-            */
 
             //start a search
             val request = SearchRequest(

@@ -30,7 +30,7 @@ case class SearchTask(request: SearchRequest,
 
 sealed abstract class MessageToWorker
 final case class StartSearch(search: SearchTask, startID: Long, replyTo: ActorRef[MessagesToSupervisor]) extends MessageToWorker
-final case class AbortSearch(searchId: Long) extends MessageToWorker
+final case class AbortSearch(searchId: Long, keepAliveIfOjBelow:Option[Long] = None) extends MessageToWorker
 final case class WrappedSearchEnded(result: SearchEnded) extends MessageToWorker
 final case class ShutDownWorker() extends MessageToWorker
 final case class Ping(replyTo: ActorRef[ExternalWorkerState]) extends MessageToWorker
@@ -100,6 +100,9 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
   @volatile
   private final var nbAbortedNeighborhoods: Int = 0
 
+  @volatile
+  private final var currentNeighborhood: RemoteNeighborhood = null
+
   def initBehavior(): Behavior[MessageToWorker] = {
     Behaviors.setup { context =>
       master ! NewWorkerEnrolled(context.self)
@@ -111,7 +114,9 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
   private def doSearch(searchRequest: SearchRequest,searchId:Long): IndependentSearchResult = {
     searchRequest.startSolution.makeLocal(m).restoreDecisionVariables()
     shouldAbortComputation = false
+
     val neighborhood = neighborhoods(searchRequest.neighborhoodID.neighborhoodID)
+    currentNeighborhood = neighborhood
 
     if(searchRequest.doAllMoves){
       neighborhood.doAllMoves(
@@ -182,17 +187,27 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
               next(IAmBusy(newSearch,System.currentTimeMillis()))
           }
 
-        case AbortSearch(searchId) =>
+        case AbortSearch(searchId, keepAliveIfOjBelow:Option[Long]) =>
           state match {
             case ShuttingDown() =>
               Behaviors.same
             case IAmBusy(search,startTimeMs) =>
               if (searchId == search.searchId) {
-                if (verbose) context.log.info(s"got abort command for search:$searchId; aborting")
 
-                shouldAbortComputation = true //shared variable
-                nbAbortedNeighborhoods += 1
-                next(Aborting(search))
+                val mustAbort:Boolean = if(search.request.doAllMoves && keepAliveIfOjBelow.isDefined){
+                  currentNeighborhood != null && currentNeighborhood.bestObjSoFar >= keepAliveIfOjBelow.get
+                }else true
+
+                if(mustAbort) {
+                  context.log.info(s"got abort command for search:$searchId; aborting")
+                  shouldAbortComputation = true //shared variable
+                  nbAbortedNeighborhoods += 1
+                  search.sendResultTo ! SearchAborted(searchId)
+                  next(Aborting(search))
+                }else{
+                  context.log.info(s"XXXXXXXXXXX ignoring conditional abort command, for search:$searchId bestOBj:${currentNeighborhood.bestObjSoFar} < threshold:${keepAliveIfOjBelow.get}")
+                  Behaviors.same
+                }
               } else {
                 if (verbose) context.log.info(s"got abort command for search:$searchId but busy on search:${search.searchId}; ignoring")
 
