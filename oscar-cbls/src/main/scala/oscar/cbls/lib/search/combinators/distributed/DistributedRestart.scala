@@ -1,15 +1,13 @@
 package oscar.cbls.lib.search.combinators.distributed
 
-import akka.actor.typed.scaladsl.AskPattern.Askable
+
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import akka.util.Timeout
 import oscar.cbls.core.distrib._
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{Neighborhood, NoMoveFound, SearchResult}
-import oscar.cbls.lib.search.combinators.Atomic
 import oscar.cbls.visual.SingleFrameWindow
-import oscar.visual.plot.PlotScatter
 
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.{Duration, DurationInt}
@@ -272,18 +270,18 @@ class DistributedRestart(baseSearch:Neighborhood,
           case WrappedGotUniqueID(uniqueID: Long, neighborhoodIndice: Int) =>
 
 
-/*
-            //start a search
-            val request = SearchRequest(
-              remoteNeighborhoods(neighborhoodIndice).getRemoteIdentification(Nil),
-              acceptanceCriteria,
-              independentObj,
-              startSolution = bestMoveSoFar match{
-                case Some(load) => load.s
-                case None => startSol
-              },
-              sendFullSolution = true)
-*/
+            /*
+                        //start a search
+                        val request = SearchRequest(
+                          remoteNeighborhoods(neighborhoodIndice).getRemoteIdentification(Nil),
+                          acceptanceCriteria,
+                          independentObj,
+                          startSolution = bestMoveSoFar match{
+                            case Some(load) => load.s
+                            case None => startSol
+                          },
+                          sendFullSolution = true)
+            */
 
             //start a search
             val request = SearchRequest(
@@ -337,9 +335,6 @@ class DistributedRestart(baseSearch:Neighborhood,
       }
     }
 
-
-
-
     //await seems to block the actor system??
     Await.result(futureResult, Duration.Inf) match{
       case WrappedSearchEnded(searchEnded:SearchEnded) =>
@@ -365,6 +360,4 @@ class DistributedRestart(baseSearch:Neighborhood,
         null
     }
   }
-
-
 }

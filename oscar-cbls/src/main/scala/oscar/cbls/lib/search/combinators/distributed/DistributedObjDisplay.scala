@@ -69,6 +69,7 @@ class DistributedObjDisplay(title: String)
       axis.setBase(10)
       axis.setMinorTickMarksVisible(true)
       axis.setAutoRange(true)
+      axis.setAutoRangeMinimumSize(1)
       axis
     },
     {
