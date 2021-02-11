@@ -40,7 +40,7 @@ final case class SpawnWorker(workerBehavior: Behavior[MessageToWorker]) extends 
 
 final case class NbWorkers(replyTo: ActorRef[Int]) extends MessagesToSupervisor
 
-final case class SpawnNewActor(behavior:Behavior[_],behaviorName:String) extends MessagesToSupervisor
+final case class SpawnNewActor[T](behavior:Behavior[T],behaviorName:String, replyTo:ActorRef[ActorRef[T]]) extends MessagesToSupervisor
 
 import scala.concurrent.duration._
 
@@ -207,8 +207,8 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor], m: Store, 
     supervisorActor ! SpawnWorker(workerBehavior)
   }
 
-  def spawnNewActor(behavior:Behavior[_],behaviorName:String): Unit = {
-    supervisorActor ! SpawnNewActor(behavior:Behavior[_],behaviorName:String)
+  def spawnNewActor[T](behavior:Behavior[T],behaviorName:String): Future[ActorRef[T]] = {
+    supervisorActor.ask[ActorRef[T]](ref => SpawnNewActor(behavior:Behavior[T],behaviorName:String, ref))
   }
 
   def nbWorkers: Int = {
@@ -278,8 +278,8 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
           case f: FiniteDuration => context.scheduleOnce(f, context.self, Tic())
         }
 
-      case SpawnNewActor(behavior:Behavior[_],behaviorName:String) =>
-        context.spawn(behavior, s"customSearchActor$nbCustomSearchActor$behaviorName")
+      case SpawnNewActor(behavior:Behavior[Any],behaviorName:String, replyTo) =>
+        replyTo ! context.spawn(behavior, s"customSearchActor$nbCustomSearchActor$behaviorName")
         nbCustomSearchActor += 1
 
       case SpawnWorker(workerBehavior) =>

@@ -80,7 +80,7 @@ object WarehouseLocationDistributed3 extends App{
 
   //main search; distributed combinators delegate to worker
   val (store,search,obj,finalPrint) = createSearchProcedure()
-  val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(store,search,verbose=false,tic=1.seconds)
+  val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(store,search,verbose=false,tic=5.seconds)
 
   for (i <- (0 until nbWorker).par){
     //creating each worker, with its own model and search procedure (we do in in parallel)

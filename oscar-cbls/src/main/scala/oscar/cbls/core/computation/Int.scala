@@ -161,7 +161,7 @@ abstract class ChangingIntValue(initialValue:Long, initialDomain:Domain)
   final protected def performIntPropagation(): Unit ={
     if(mOldValue!=mNewValue){
       val old=mOldValue
-      mOldValue=mNewValue  //TODO: the change should be made AFTER the notification
+      mOldValue=mNewValue
 
       val dynListElements = getDynamicallyListeningElements
       val headPhantom = dynListElements.headPhantom

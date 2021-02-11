@@ -43,7 +43,8 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
     val delayForNextFeedbackMS = 100 // 0.1 second
     var nextTimeForFeedbackMS = System.currentTimeMillis() + delayForNextFeedbackMS
 
-    while(neighborhood(parameters).getMoveAbortable(obj, obj.value, acc, shouldAbort) match {
+    val theNeighborhood = neighborhood(parameters)
+    while(!shouldAbort() && (theNeighborhood.getMoveAbortable(obj, obj.value, acc, shouldAbort) match {
       case NoMoveFound => false
       case MoveFound(m) =>
         m.commit();
@@ -52,7 +53,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
           anyMoveFound = true;
         }
         true
-    }) {
+    })) {
       sendProgressTo match{
         case None => ;
         case Some(target) =>
