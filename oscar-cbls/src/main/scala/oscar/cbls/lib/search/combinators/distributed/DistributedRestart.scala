@@ -197,7 +197,8 @@ class DistributedRestart(baseSearch:Neighborhood,
                           nextCompleting(nbRunningSearches = nbRunningSearchesToStop,
                             bestObjSoFar,
                             bestMoveSoFar,
-                            display)
+                            display,
+                            context)
                         }else{
                           //progress on stop criterion, but not finished yet
                           context.log.info(s"new solution: not improved over best so far, was working on bestSoFar, not yet finished (${nbCompletedSearchesOnBestSoFar +1}/$nbConsecutiveRestartWithoutImprovement)")
@@ -252,7 +253,8 @@ class DistributedRestart(baseSearch:Neighborhood,
                         nextCompleting(nbRunningSearches = nbRunningSearchesToStop,
                           bestObjSoFar,
                           bestMoveSoFar,
-                          display)
+                          display,
+                          context)
                       }else{
                         //progress on stop criterion, but not finished yet
 
@@ -352,19 +354,23 @@ class DistributedRestart(baseSearch:Neighborhood,
     def nextCompleting(nbRunningSearches:Int,
                        bestObjSoFar:Long,
                        bestMoveSoFar:Option[LoadIndependentSolutionMove],
-                       display:Option[ActorRef[SearchProgress]]): Behavior[WrappedData] = {
+                       display:Option[ActorRef[SearchProgress]],
+                       context:ActorContext[WrappedData]): Behavior[WrappedData] = {
 
       if (nbRunningSearches == 0) {
+        context.log.info(s"all search completed; concluding")
         resultPromise.success(WrappedFinalAnswer(move=bestMoveSoFar))
         Behaviors.stopped
       } else {
+        context.log.info(s"waiting for $nbRunningSearches to complete")
         Behaviors.receive { (context, command) =>
           command match {
             case WrappedDisplay(displayActor) =>
               nextCompleting(nbRunningSearches,
                 bestObjSoFar,
                 bestMoveSoFar,
-                Some(displayActor))
+                Some(displayActor),
+                context)
 
             case w@WrappedSearchEnded(searchEnded: SearchEnded) =>
               searchEnded match {
@@ -392,14 +398,16 @@ class DistributedRestart(baseSearch:Neighborhood,
                       nextCompleting(nbRunningSearches - 1,
                         bestObjSoFar,
                         bestMoveSoFar,
-                        display)
+                        display,
+                        context)
                   }
 
                 case SearchAborted(_) =>
                   nextCompleting(nbRunningSearches - 1,
                     bestObjSoFar,
                     bestMoveSoFar,
-                    display)
+                    display,
+                    context)
 
                 case c:SearchCrashed =>
 
@@ -410,7 +418,9 @@ class DistributedRestart(baseSearch:Neighborhood,
               nextCompleting(nbRunningSearches - 1,
                 bestObjSoFar,
                 bestMoveSoFar,
-                display)
+                display,
+                context)
+
             case w: WrappedError =>
 
               resultPromise.success(w)
