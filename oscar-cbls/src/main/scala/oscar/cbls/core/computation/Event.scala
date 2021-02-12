@@ -28,19 +28,19 @@ import scala.collection.immutable.SortedSet
 object Event{
 
   def apply(v:Variable,
-            action: =>Unit):Event = {
+            action: () =>Unit):Event = {
     val toreturn = new Event(v,null,null)
-    toreturn.setAction(() => action)
+    toreturn.setAction(action)
     //    if (intaction != null) toreturn.setIntAction(intaction)
     //   if (intsetaction != null) toreturn.setIntSetAction(intsetaction)
     toreturn
   }
 
   def apply(v:Variable,
-            action: =>Unit,
+            action: () => Unit,
             ModifiedVars:Iterable[Variable]):Event = {
     val toreturn = new Event(v,null,ModifiedVars)
-    toreturn.setAction(() => action)
+    toreturn.setAction(action)
     //    if (intaction != null) toreturn.setIntAction(intaction)
     //   if (intsetaction != null) toreturn.setIntSetAction(intsetaction)
     toreturn
