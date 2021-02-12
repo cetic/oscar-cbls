@@ -113,13 +113,15 @@ object OscarBuild extends Build {
           Some("Artifactory Realm" at artifactory + "libs-snapshot;build.timestamp=" + new java.util.Date().getTime)
         else
           Some("Artifactory Realm" at artifactory + "libs-release")
-      },
+      }
+      /*,
       packageOptions += Package.ManifestAttributes(
         ("REVISION_ID", System.getProperty("REVISION_ID")),
         ("REVISION_URL", "https://bitbucket.org/oscarlib/oscar/commits/"+System.getProperty("REVISION_ID") ),
         ("JENKINS_BUILD_ID", System.getProperty("BUILD_ID")),
         ("BUILD_DATE", new Date().toString)
       )
+       */
     )
     else Seq()
   }
