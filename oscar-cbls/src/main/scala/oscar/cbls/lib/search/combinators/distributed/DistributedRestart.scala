@@ -33,6 +33,7 @@ import scala.util.{Failure, Success}
  *                                                              if its current obj value is <= the best known obj * this value
  * @param maxWorkers the maximal number of searches that are allowed to run at the same time
  * @param performInitialNonRandomizeDescent set to false if there should not be an initial descent without randomization
+ * @param gracefulStop if an improving solution is found past the stop criterion, start it all over again, otherwise ignore it
  * @param visu true for a visualization of the objective function and the performed searches
  * @param visuTitle the title of the visualization
  */
@@ -43,6 +44,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                          factorOnObjForThresholdToContinueDespiteBeingCanceled:Double = 1,
                          maxWorkers:Int,  //TODO: obtain this from the supervisor, and regularly update about it
                          performInitialNonRandomizeDescent:Boolean = true,
+                         gracefulStop:Boolean = true,
                          visu:Boolean = false,
                          visuTitle:String = "distributedRestartObj")
   extends DistributedCombinator(
@@ -357,12 +359,16 @@ class DistributedRestart(baseSearch:Neighborhood,
                        display:Option[ActorRef[SearchProgress]],
                        context:ActorContext[WrappedData]): Behavior[WrappedData] = {
 
-      if (nbRunningSearches == 0) {
-        context.log.info(s"all search completed; concluding")
+      if(!gracefulStop){
+        context.log.info(s"non-graceful stop.")
+        resultPromise.success(WrappedFinalAnswer(move=bestMoveSoFar))
+        Behaviors.stopped
+      } else if (nbRunningSearches == 0) {
+        context.log.info(s"graceful stop: all search completed.")
         resultPromise.success(WrappedFinalAnswer(move=bestMoveSoFar))
         Behaviors.stopped
       } else {
-        context.log.info(s"waiting for $nbRunningSearches to complete")
+        context.log.info(s"graceful stop: waiting for $nbRunningSearches to complete")
         Behaviors.receive { (context, command) =>
           command match {
             case WrappedDisplay(displayActor) =>
