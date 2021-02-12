@@ -18,7 +18,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                          baseRandomize:Neighborhood,
                          nbConsecutiveRestartWithoutImprovement:Int,
                          nbOngoingSearchesToCancelWhenNewBest:Int,
-                         maxWorkers:Int,
+                         maxWorkers:Int,  //TODO: obtain this from the supervisor, and regularly update about it
                          performInitialNonRandomizeDescent:Boolean = true)
   extends DistributedCombinator(
     Array(
@@ -97,7 +97,6 @@ class DistributedRestart(baseSearch:Neighborhood,
           case w@WrappedSearchEnded(searchEnded: SearchEnded) =>
             searchEnded match {
               case SearchCompleted(searchID: Long, searchResult: IndependentSearchResult) =>
-                val wasAtuallyCancelled = !runningSearchIDsAndIsItFromBestSoFar.isDefinedAt(searchID)
 
                 searchResult match {
                   case moveFound: IndependentMoveFound =>
@@ -108,11 +107,9 @@ class DistributedRestart(baseSearch:Neighborhood,
 
                       var newRunning = runningSearchIDsAndIsItFromBestSoFar.flatMap({case (x:Long,y:Boolean) => if(x == searchID) None else Some((x,false))})
 
-                      if(!wasAtuallyCancelled) {
-                        context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
-                          case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, 0)
-                          case Failure(_) => WrappedError(msg = Some("supervisor actor timeout3"))
-                        }
+                      context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
+                        case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, 0)
+                        case Failure(_) => WrappedError(msg = Some("supervisor actor timeout3"))
                       }
 
                       var i = 0
@@ -156,11 +153,9 @@ class DistributedRestart(baseSearch:Neighborhood,
                           //progress on stop criterion, but not finished yet
                           context.log.info(s"new solution: not improved over best so far, was working on bestSoFar, not yet finished (${nbCompletedSearchesOnBestSoFar +1}/$nbConsecutiveRestartWithoutImprovement)")
 
-                          if(!wasAtuallyCancelled) {
-                            context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
-                              case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, 0)
-                              case Failure(_) => WrappedError(msg = Some("supervisor actor timeout4"))
-                            }
+                          context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
+                            case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, 0)
+                            case Failure(_) => WrappedError(msg = Some("supervisor actor timeout4"))
                           }
 
                           next(runningSearchIDsAndIsItFromBestSoFar.-(searchID),
@@ -173,11 +168,9 @@ class DistributedRestart(baseSearch:Neighborhood,
                         //We were NOT running on BestSoFar, so stop criterion NOT progressed
                         context.log.info(s"new solution: not improved over best so far, was not working on bestSoFar")
 
-                        if(!wasAtuallyCancelled) {
-                          context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
-                            case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, 0)
-                            case Failure(_) => WrappedError(msg = Some("supervisor actor timeout5"))
-                          }
+                        context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
+                          case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, 0)
+                          case Failure(_) => WrappedError(msg = Some("supervisor actor timeout5"))
                         }
 
                         next(runningSearchIDsAndIsItFromBestSoFar.-(searchID),
@@ -211,11 +204,9 @@ class DistributedRestart(baseSearch:Neighborhood,
 
                         context.log.info(s"no move found, was working on bestSoFar, not yet finished  (${nbCompletedSearchesOnBestSoFar +1}/$nbConsecutiveRestartWithoutImprovement)")
 
-                        if(!wasAtuallyCancelled) {
-                          context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
-                            case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, 0)
-                            case Failure(_) => WrappedError(msg = Some("supervisor actor timeout6"))
-                          }
+                        context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
+                          case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, 0)
+                          case Failure(_) => WrappedError(msg = Some("supervisor actor timeout6"))
                         }
 
                         next(runningSearchIDsAndIsItFromBestSoFar.-(searchID),
@@ -229,11 +220,9 @@ class DistributedRestart(baseSearch:Neighborhood,
 
                       context.log.info(s"no move found, was not working on bestSoFar")
 
-                      if(!wasAtuallyCancelled) {
-                        context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
-                          case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, 0)
-                          case Failure(_) => WrappedError(msg = Some("supervisor actor timeout7"))
-                        }
+                      context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
+                        case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, 0)
+                        case Failure(_) => WrappedError(msg = Some("supervisor actor timeout7"))
                       }
 
                       next(runningSearchIDsAndIsItFromBestSoFar.-(searchID),
@@ -245,7 +234,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                 }
               case SearchAborted(_) =>
                 //ignore it.
-                context.log.info(s"got abort confirmation")
+                context.log.info(s"got abort confirmation; starting new search")
 
                 context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
                   case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, 0)
@@ -315,7 +304,7 @@ class DistributedRestart(baseSearch:Neighborhood,
 
     def nextDisplayActor(display: DistributedObjDisplay): Behavior[SearchProgress] = {
       Behaviors.receive { (context, command) =>
-        display.addValue(command.searchId, command.obj)
+        display.addValue(command.searchId, command.obj, command.aborted)
         Behaviors.same
       }
     }

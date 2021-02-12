@@ -48,6 +48,8 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
     val delayForNextFeedbackMS = 100 // 0.1 second
     var nextTimeForFeedbackMS = System.currentTimeMillis() + delayForNextFeedbackMS
 
+    var lastProgressOBj:Long = bestObjSoFar
+
     val theNeighborhood = neighborhood(parameters)
     while(!shouldAbort() && (theNeighborhood.getMoveAbortable(obj, obj.value, acc, shouldAbort) match {
       case NoMoveFound => false
@@ -67,7 +69,9 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
         case Some(target) =>
           val currentTimeMs = System.currentTimeMillis()
           if (nextTimeForFeedbackMS <= currentTimeMs){
-            target ! SearchProgress(searchId, obj.value)
+            lastProgressOBj = obj.value
+            target ! SearchProgress(searchId, lastProgressOBj)
+
             nextTimeForFeedbackMS = currentTimeMs + delayForNextFeedbackMS
           }
       }
@@ -84,6 +88,11 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
         neighborhoodName = name,
         IndependentSolution(obj.model.solution())))
     }else {
+      sendProgressTo match {
+        case None => ;
+        case Some(target) =>
+          target ! SearchProgress(searchId, lastProgressOBj, aborted=true)
+      }
       IndependentNoMoveFound()
     }
   }

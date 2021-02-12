@@ -11,7 +11,7 @@ import scala.collection.SortedMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-case class SearchProgress(searchId:Long, obj:Long)
+case class SearchProgress(searchId:Long, obj:Long, aborted:Boolean = false)
 case class SearchRequest(neighborhoodID: RemoteNeighborhoodIdentification,
                          acc: (Long, Long) => Boolean,
                          obj: IndependentObjective,
@@ -199,13 +199,13 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
                 }else true
 
                 if(mustAbort) {
-                  context.log.info(s"got abort command for search:$searchId; aborting")
+                  if(verbose) context.log.info(s"got abort command for search:$searchId; aborting")
                   shouldAbortComputation = true //shared variable
                   nbAbortedNeighborhoods += 1
                   search.sendResultTo ! SearchAborted(searchId)
                   next(Aborting(search))
                 }else{
-                  context.log.info(s"XXXXXXXXXXX ignoring conditional abort command, for search:$searchId bestOBj:${currentNeighborhood.bestObjSoFar} < threshold:${keepAliveIfOjBelow.get}")
+                  if(verbose) context.log.info(s"ignoring conditional abort command, for search:$searchId bestOBj:${currentNeighborhood.bestObjSoFar} < threshold:${keepAliveIfOjBelow.get}")
                   Behaviors.same
                 }
               } else {

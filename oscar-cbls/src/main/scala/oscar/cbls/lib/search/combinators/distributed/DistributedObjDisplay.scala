@@ -17,6 +17,18 @@ class DistributedObjDisplay(title: String)
   private var series:SortedMap[Long,XYSeries] = SortedMap.empty[Long,XYSeries]
   private val dataset: XYSeriesCollection = new XYSeriesCollection()
 
+
+  //Adding bestSeries
+  val bestSeriesId = 0
+  val bestSeries = new XYSeries(s"best")
+  series = series + (-1L -> bestSeries)
+  dataset.addSeries(bestSeries)
+
+  val abortedSeriesId = 1
+  val abortedSeries = new XYSeries(s"aborted")
+  series = series + (-2L -> abortedSeries)
+  dataset.addSeries(abortedSeries)
+
   // Data values
   private lazy val startingAtMS = System.currentTimeMillis()
 
@@ -44,8 +56,18 @@ class DistributedObjDisplay(title: String)
       axis
     },
     {
-      val r = new XYLineAndShapeRenderer()
-      r.setDefaultShapesVisible(false)
+      val r = new XYLineAndShapeRenderer(true,false)
+      r.setSeriesShapesFilled(bestSeriesId,false)
+      r.setSeriesShapesVisible(bestSeriesId,true)
+      r.setSeriesLinesVisible(bestSeriesId,false)
+
+
+      r.setSeriesShapesFilled(abortedSeriesId,true)
+      r.setSeriesShapesVisible(abortedSeriesId,true)
+      r.setSeriesLinesVisible(abortedSeriesId,false)
+
+
+
       r
     }
   )
@@ -58,8 +80,7 @@ class DistributedObjDisplay(title: String)
   panel.setVisible(true)
   add(panel)
 
-
-  def addValue(searchId:Long, obj: Long): Unit ={
+  def addValue(searchId:Long, obj: Long, aborted:Boolean): Unit ={
     val currentTime = System.currentTimeMillis() - startingAtMS
     if(series.isDefinedAt(searchId)){
       series(searchId).add(currentTime,obj)
@@ -68,7 +89,13 @@ class DistributedObjDisplay(title: String)
       newSeries.add(currentTime,obj)
       series = series + (searchId -> newSeries)
       dataset.addSeries(newSeries)
-      plot.getRangeAxis.setUpperBound(obj)
+    }
+
+    if(aborted){
+      abortedSeries.add(currentTime,obj)
+    }
+    if(bestSeries.isEmpty || obj < bestSeries.getMinY){
+      bestSeries.add(currentTime,obj)
     }
   }
 }

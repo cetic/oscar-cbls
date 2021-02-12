@@ -69,10 +69,10 @@ object WarehouseLocationDistributed3 extends App{
         bestSlopeFirst(
           List(
             assignNeighborhood(warehouseOpenArray, name = "SwitchWarehouse"),
-            swapsNeighborhood(warehouseOpenArray, name = "SwapWarehouses"))),
+            swapsNeighborhood(warehouseOpenArray, name = "SwapWarehouses"))),  //TODO: k nearest !!!
         randomSwapNeighborhood(warehouseOpenArray,() => W/10),
         nbConsecutiveRestartWithoutImprovement = 10,
-        nbOngoingSearchesToCancelWhenNewBest = 3,
+        nbOngoingSearchesToCancelWhenNewBest = nbWorker,
         maxWorkers = nbWorker)
 
     (m,neighborhood,obj,() => {println(openWarehouses)})
