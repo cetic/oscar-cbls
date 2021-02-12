@@ -42,11 +42,11 @@ class DistributedObjDisplay()
     },
     {
       /*
-            val axis = new NumberAxis()
-            axis.setAutoRange(true)
-            axis.setAutoRangeIncludesZero(false)
-            axis
-            */
+       * val axis = new NumberAxis()
+       * axis.setAutoRange(true)
+       * axis.setAutoRangeIncludesZero(false)
+       * axis
+       * */
       val axis = new LogAxis()
       axis.setAutoTickUnitSelection(true)
       axis.setBase(10)
