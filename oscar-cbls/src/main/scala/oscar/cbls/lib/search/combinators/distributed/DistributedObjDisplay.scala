@@ -10,13 +10,13 @@ import java.awt.BorderLayout
 import javax.swing.JPanel
 import scala.collection.SortedMap
 
-class DistributedObjDisplay(title: String)
+//TODO: this one should be part of the supervisor.
+class DistributedObjDisplay()
   extends JPanel(new BorderLayout()) {
 
   //series and dataset
   private var series:SortedMap[Long,XYSeries] = SortedMap.empty[Long,XYSeries]
   private val dataset: XYSeriesCollection = new XYSeriesCollection()
-
 
   //Adding bestSeries
   val bestSeriesId = 0
@@ -24,13 +24,13 @@ class DistributedObjDisplay(title: String)
   series = series + (-1L -> bestSeries)
   dataset.addSeries(bestSeries)
 
+  //Adding cancel series
   val abortedSeriesId = 1
   val abortedSeries = new XYSeries(s"aborted")
   series = series + (-2L -> abortedSeries)
   dataset.addSeries(abortedSeries)
 
-  // Data values
-  private lazy val startingAtMS = System.currentTimeMillis()
+  private var startingAtMS:Long = -1
 
   // The plots
   val plot = new XYPlot(
@@ -61,12 +61,9 @@ class DistributedObjDisplay(title: String)
       r.setSeriesShapesVisible(bestSeriesId,true)
       r.setSeriesLinesVisible(bestSeriesId,false)
 
-
       r.setSeriesShapesFilled(abortedSeriesId,true)
       r.setSeriesShapesVisible(abortedSeriesId,true)
       r.setSeriesLinesVisible(abortedSeriesId,false)
-
-
 
       r
     }
@@ -80,8 +77,11 @@ class DistributedObjDisplay(title: String)
   panel.setVisible(true)
   add(panel)
 
-  def addValue(searchId:Long, obj: Long, aborted:Boolean): Unit ={
-    val currentTime = System.currentTimeMillis() - startingAtMS
+  def addValue(searchId:Long, obj: Long, timeMS:Long, aborted:Boolean): Unit ={
+    if(startingAtMS < 0){
+      startingAtMS = timeMS
+    }
+    val currentTime = timeMS - startingAtMS
     if(series.isDefinedAt(searchId)){
       series(searchId).add(currentTime,obj)
     }else{

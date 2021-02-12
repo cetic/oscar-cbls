@@ -23,18 +23,21 @@ object SingleFrameWindow{
 }
 
 class SingleFrameWindow(val panel:JPanel, title:String, width:Int, height:Int, backgroundPanel: Option[JPanel] = None){
-  panel.setPreferredSize(new Dimension(width,height))
 
+  panel.setPreferredSize(new Dimension(width,height))
   val frame = new JFrame()
   frame.setTitle(title)
   frame.setPreferredSize(new java.awt.Dimension(width,height))
+
   if(backgroundPanel.isDefined) {
     frame.setContentPane(backgroundPanel.get)
     frame.setGlassPane(panel)
     panel.setOpaque(false)
     panel.setVisible(true)
+  } else {
+    frame.add(panel)
   }
-  else frame.add(panel)
+
   frame.setResizable(true)
   frame.pack()
   frame.revalidate()
@@ -51,5 +54,9 @@ class SingleFrameWindow(val panel:JPanel, title:String, width:Int, height:Int, b
       case e: Exception =>
         println("WARNING : Error while saving drawing into png file : " + e.getMessage)
     }
+  }
+
+  def close(): Unit ={
+    frame.dispose()
   }
 }

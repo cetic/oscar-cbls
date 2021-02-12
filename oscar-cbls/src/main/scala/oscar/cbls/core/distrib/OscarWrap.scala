@@ -19,10 +19,17 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
               obj: Objective,
               acc: (Long, Long) => Boolean,
               shouldAbort: () => Boolean,
-              sendFullSolution:Boolean): IndependentSearchResult = {
+              sendFullSolution:Boolean,
+              searchId:Long,
+              sendProgressTo:Option[ActorRef[SearchProgress]]): IndependentSearchResult = {
     neighborhood(parameters).getMoveAbortable(obj, obj.value, acc, shouldAbort) match {
       case NoMoveFound => IndependentNoMoveFound()
       case MoveFound(m) =>
+        sendProgressTo match {
+          case None => ;
+          case Some(target) =>
+            target ! SearchProgress(searchId, m.objAfter, System.currentTimeMillis())
+        }
         if(sendFullSolution) {
           m.commit()
           IndependentMoveFound(LoadIndependentSolutionMove(
@@ -46,7 +53,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
     var anyMoveFound = false
     var name:String = ""
     val delayForNextFeedbackMS = 100 // 0.1 second
-    var nextTimeForFeedbackMS = System.currentTimeMillis() + delayForNextFeedbackMS
+    var nextTimeForFeedbackMS = System.currentTimeMillis() - 2* delayForNextFeedbackMS
 
     var lastProgressOBj:Long = bestObjSoFar
 
@@ -70,8 +77,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
           val currentTimeMs = System.currentTimeMillis()
           if (nextTimeForFeedbackMS <= currentTimeMs){
             lastProgressOBj = obj.value
-            target ! SearchProgress(searchId, lastProgressOBj)
-
+            target ! SearchProgress(searchId, lastProgressOBj, currentTimeMs)
             nextTimeForFeedbackMS = currentTimeMs + delayForNextFeedbackMS
           }
       }
@@ -81,7 +87,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
       sendProgressTo match {
         case None => ;
         case Some(target) =>
-          target ! SearchProgress(searchId, obj.value)
+          target ! SearchProgress(searchId, obj.value, System.currentTimeMillis())
       }
       IndependentMoveFound(LoadIndependentSolutionMove(
         objAfter = obj.value,
@@ -91,7 +97,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
       sendProgressTo match {
         case None => ;
         case Some(target) =>
-          target ! SearchProgress(searchId, lastProgressOBj, aborted=true)
+          target ! SearchProgress(searchId, lastProgressOBj, System.currentTimeMillis(), aborted=true)
       }
       IndependentNoMoveFound()
     }

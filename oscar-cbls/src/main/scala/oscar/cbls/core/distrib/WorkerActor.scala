@@ -11,7 +11,9 @@ import scala.collection.SortedMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-case class SearchProgress(searchId:Long, obj:Long, aborted:Boolean = false)
+
+case class SearchProgress(searchId:Long, obj:Long, timeMs:Long, aborted:Boolean = false)
+
 case class SearchRequest(neighborhoodID: RemoteNeighborhoodIdentification,
                          acc: (Long, Long) => Boolean,
                          obj: IndependentObjective,
@@ -132,7 +134,9 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
         searchRequest.obj.convertToObjective(m),
         searchRequest.acc,
         shouldAbort = () => shouldAbortComputation,
-        sendFullSolution = searchRequest.sendFullSolution)
+        sendFullSolution = searchRequest.sendFullSolution,
+        searchId = searchId,
+        sendProgressTo = searchRequest.sendProgressTo)
     }
   }
 
