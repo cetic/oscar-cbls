@@ -54,9 +54,6 @@ object WareHouseLocationVisu extends App with StopWatch{
   val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + l + "_open"))
   val openWarehouses = Filter(warehouseOpenArray).setName("openWarehouses")
 
-  //val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
-  //  MinConstArrayLazy(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse))
-
   val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
     new MinConstArrayValueWise(distanceCost(d).map(_.toInt), openWarehouses, defaultCostForNoOpenWarehouse,maxDiameter = 2))
 

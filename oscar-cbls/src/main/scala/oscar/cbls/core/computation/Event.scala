@@ -86,32 +86,11 @@ object Event{
     if (intaction != null) toreturn.setIntAction(intaction)
     toreturn
   }
-
-  /*  def apply(v:Variable, w:Variable,
-              action: =>Unit = null,
-              intaction:Long=>Unit = null,
-              intsetaction:SortedSet[Long]=>Unit = null,
-              intintaction: (Long,Long)=>Unit = null,
-              intsetintsetaction:(SortedSet[Long],SortedSet[Long]) => Unit = null,
-              intsetintaction:(SortedSet[Long],Long) => Unit = null,
-              intintsetaction:(Long,SortedSet[Long]) => Unit = null,
-              ModifiedVars:Iterable[Variable] = null):Event = {
-      val toreturn = new Event(v,w,ModifiedVars)
-      toreturn.setAction((_:Unit) => {action})
-      if (intaction != null) toreturn.setIntAction(intaction)
-      if (intsetaction != null) toreturn.setIntSetAction(intsetaction)
-      if (intintaction!=null) toreturn.setintintaction(intintaction)
-      if (intsetintsetaction!=null) toreturn.setintsetintsetaction(intsetintsetaction)
-      if (intsetintaction!=null) toreturn.setintsetintaction(intsetintaction)
-      if (intintsetaction!=null) toreturn.setintintsetaction(intintsetaction)
-      toreturn
-    }
-    */
 }
 
 /**Use the apply method in the companion object for building this*/
 class Event(v:Value, w:Variable, ModifiedVars:Iterable[Variable])
-  extends Invariant with IntNotificationTarget with SetNotificationTarget{
+  extends Invariant with IntNotificationTarget with SetNotificationTarget with SeqNotificationTarget {
 
   //unfortunately, it is not possible to pass a type "=>Unit" as parameter to a case class.
 
@@ -178,6 +157,10 @@ class Event(v:Value, w:Variable, ModifiedVars:Iterable[Variable])
   }
 
   override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
+    scheduleForPropagation()
+  }
+
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     scheduleForPropagation()
   }
 

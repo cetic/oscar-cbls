@@ -196,11 +196,12 @@ object Supervisor {
     Behaviors.setup { context: ActorContext[MessagesToSupervisor] => new SupervisorActor(context, verbose, tic) }
 }
 
-
 class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor], m: Store, verbose: Boolean, implicit val system: ActorSystem[_]) {
   implicit val timeout: Timeout = 3.seconds
 
   import akka.actor.typed.scaladsl.AskPattern._
+
+  //TODO: for the distributed version, regularly check that workers performing some wearch are still alive and working, otherwise, search must be restarted at another worker.
 
   def createLocalWorker(m: Store, search: Neighborhood): Unit = {
     val workerBehavior = WorkerActor.createWorkerBehavior(search.identifyRemotelySearcheableNeighbrhoods, m, this.supervisorActor, verbose)

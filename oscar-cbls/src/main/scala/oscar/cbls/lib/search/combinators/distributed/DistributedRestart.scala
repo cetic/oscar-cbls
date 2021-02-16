@@ -40,11 +40,12 @@ import scala.util.{Failure, Success}
 class DistributedRestart(baseSearch:Neighborhood,
                          baseRandomize:Neighborhood,
                          nbConsecutiveRestartWithoutImprovement:Int,
-                         nbOngoingSearchesToCancelWhenNewBest:Int,
-                         factorOnObjForThresholdToContinueDespiteBeingCanceled:Double = 1,
-                         maxWorkers:Int,  //TODO: obtain this from the supervisor, and regularly update about it
+                         nbOngoingSearchesToCancelWhenNewBest:Int = 100,
+                         factorOnObjForThresholdToContinueDespiteBeingCanceled:Double = 1.0001,
+                         setMaxWorkers:Option[Int] = None,
                          performInitialNonRandomizeDescent:Boolean = true,
                          gracefulStop:Boolean = true,
+                         factorOnObjForThresholdToContinueDespiteBeingCanceledOnGracefulStop:Double = 1,
                          visu:Boolean = false,
                          visuTitle:String = "distributedRestartObj")
   extends DistributedCombinator(
@@ -58,6 +59,10 @@ class DistributedRestart(baseSearch:Neighborhood,
 
   override def getMove(obj: Objective, initialObj: Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
 
+    val maxWorkers = setMaxWorkers match{
+      case Some(m) => m
+      case None => supervisor.nbWorkers  //TODO: this is not great because workers can enroll throughout the search; we should be able to scale up when more workers arrive
+    }
     val independentObj = obj.getIndependentObj
     val model = obj.model
     val startSol = IndependentSolution(obj.model.solution())
@@ -188,8 +193,11 @@ class DistributedRestart(baseSearch:Neighborhood,
                           context.log.info(s"new solution: not improved over best so far, was working on bestSoFar, finished, canceling ${runningSearchIDsAndIsItFromBestSoFar.size -1} ongoing searches finalOBj:$bestObjSoFar")
 
                           for(searchID <- runningSearchIDsAndIsItFromBestSoFar.keys){
-                            //TODO: this one MUST be conditional, and we should WAIT for all searches to be concluded before exiting
-                            supervisor.supervisorActor ! CancelSearchToSupervisor(searchID,Some((bestObjSoFar * factorOnObjForThresholdToContinueDespiteBeingCanceled).toLong))
+                            if(gracefulStop) {
+                              supervisor.supervisorActor ! CancelSearchToSupervisor(searchID, Some((bestObjSoFar * factorOnObjForThresholdToContinueDespiteBeingCanceledOnGracefulStop).toLong))
+                            }else{
+                              supervisor.supervisorActor ! CancelSearchToSupervisor(searchID)
+                            }
                           }
 
                           val nbRunningSearchesToStop = runningSearchIDsAndIsItFromBestSoFar.size -1

@@ -17,6 +17,7 @@
 package oscar.examples.cbls.distrib
 
 import oscar.cbls._
+import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.distrib.Supervisor
 import oscar.cbls.core.objective.Objective
@@ -43,7 +44,8 @@ object WarehouseLocationDistributed3 extends App{
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
-  val (_,distanceCost) = WarehouseLocationGenerator.apply(W,D,0,100,3)
+  val (_,distanceCost,_,_,warehouseToWarehouseDistances) =
+    WarehouseLocationGenerator.problemWithPositions(W,D,0,100,3)
 
   val costForOpeningWarehouse = Array.fill(W)(1000L)
 
@@ -63,17 +65,30 @@ object WarehouseLocationDistributed3 extends App{
 
     m.close()
 
-    //These neighborhoods are inefficient and slow; using multiple core is the wrong answer to inefficiency
+    //this is an array, that, for each warehouse, keeps the sorted closest warehouses in a lazy way.
+    val closestWarehouses = Array.tabulate(W)(warehouse =>
+      KSmallest.lazySort(
+        Array.tabulate(W)(warehouse => warehouse),
+        otherwarehouse => warehouseToWarehouseDistances(warehouse)(otherwarehouse)
+      ))
+
+    def kNearestClosedWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).newValue == 0)
+
+    def swapsK(k:Int,openWarehouseTocConsider:()=>Iterable[Int] = openWarehouses) = swapsNeighborhood(warehouseOpenArray,
+      searchZone1 = openWarehouseTocConsider,
+      searchZone2 = () => (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
+      name = "Swap" + k + "Nearest",
+      symmetryCanBeBrokenOnIndices = false)
+
     val neighborhood =
       new DistributedRestart(
         bestSlopeFirst(
           List(
             assignNeighborhood(warehouseOpenArray, name = "SwitchWarehouse"),
-            swapsNeighborhood(warehouseOpenArray, name = "SwapWarehouses"))),  //TODO: k nearest !!!
+            swapsNeighborhood(warehouseOpenArray, name = "SwapWarehouses"),
+            swapsK(20) guard(() => openWarehouses.value.size >= 5))),
         randomSwapNeighborhood(warehouseOpenArray,() => W/10),
         nbConsecutiveRestartWithoutImprovement = 10,
-        nbOngoingSearchesToCancelWhenNewBest = nbWorker,
-        maxWorkers = nbWorker,
         visu = true)
 
     (m,neighborhood,obj,() => {println(openWarehouses)})

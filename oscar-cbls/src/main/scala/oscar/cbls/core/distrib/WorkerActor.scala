@@ -7,6 +7,7 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.objective.{IndependentObjective, Objective}
 
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.SortedMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -87,8 +88,17 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
 
   //This is the single thread that is ready to perform all computation.
   // There is at most one computation per worker at any point in time, so the threadPool is 1.
-
-  private val executorForComputation = Executors.newFixedThreadPool(1,new ThreadFactory())
+  private val executorForComputation = Executors.newFixedThreadPool(1,
+    new java.util.concurrent.ThreadFactory {
+      final private val threadNumber = new AtomicInteger(1)
+      override def newThread(r: Runnable) = {
+        val t = new Thread(null, r, "workerThread" + threadNumber.getAndIncrement, 0)
+        t.setDaemon(false)
+        t.setPriority(Thread.MAX_PRIORITY)
+        t
+      }
+    }
+  )
   private val executionContextForComputation: scala.concurrent.ExecutionContext = ExecutionContext.fromExecutor(executorForComputation)
 
   //this is a shared variable. it is not good, but that's the only way to send the abort signal to the Future that contains the computation.
