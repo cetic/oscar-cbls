@@ -1,73 +1,79 @@
 /*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
+ * OscaR is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * OscaR is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License  for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+ * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+ ******************************************************************************/
 /*******************************************************************************
-  * Contributors:
-  *     This code has been initially developed by CETIC www.cetic.be
-  *         by Renaud De Landtsheer
-  ******************************************************************************/
+ * Contributors:
+ *     This code has been initially developed by CETIC www.cetic.be
+ *         by Renaud De Landtsheer
+ ******************************************************************************/
 package oscar.cbls.core.computation
 
 import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.SortedSet
 
-//TODO: porter à la nouvelle architecture.
-
 object Event{
+
+  /**
+   * This method is when you plan to access the value of the "values" parameter through the .value
+   */
+  def apply(values:Iterable[Value],
+            action: =>Unit,
+            modifiedVariables:Iterable[Variable]):Event = {
+    val toreturn = new Event(values,modifiedVariables)
+    toreturn.setAction(() => action)
+    toreturn
+  }
+
 
   def apply(v:Variable,
             action: =>Unit):Event = {
-    val toreturn = new Event(v,null,null)
+    val toreturn = new Event(Some(v),null)
     toreturn.setAction(() => action)
-    //    if (intaction != null) toreturn.setIntAction(intaction)
-    //   if (intsetaction != null) toreturn.setIntSetAction(intsetaction)
     toreturn
   }
 
   def apply(v:Variable,
             action: =>Unit,
             ModifiedVars:Iterable[Variable]):Event = {
-    val toreturn = new Event(v,null,ModifiedVars)
+    val toreturn = new Event(Some(v),ModifiedVars)
     toreturn.setAction(() => action)
-    //    if (intaction != null) toreturn.setIntAction(intaction)
-    //   if (intsetaction != null) toreturn.setIntSetAction(intsetaction)
     toreturn
   }
 
   /**this is an event, which is used to run dedicated code when the value of some variable changes.
-    * It can also impact on the value of other variable, although it is not recommended
-    * to implement invariants as events, because you cannot have the delta.
-    * @param v the variable whose change will trigger the execution of action
-    */
+   * It can also impact on the value of other variable, although it is not recommended
+   * to implement invariants as events, because you cannot have the delta.
+   * @param v the variable whose change will trigger the execution of action
+   */
   def apply(v:Variable, w:Variable,
             intaction:Int=>Unit):Event = {
-    val toreturn = new Event(v,w,null)
+    val toreturn = new Event(List(v,w),null)
     if (intaction != null) toreturn.setIntAction(intaction)
     toreturn
   }
 
   /**this is an event, which is used to run dedicated code when the value of some variable changes.
-    * It can also impact on the value of other variable, although it is not recommended
-    * to implement invariants as events, because you cannot have the delta.
-    * @param v the variable whose change will trigger the execution of action
-    * @param ModifiedVars the variables that could be modified by the Event
-    */
+   * It can also impact on the value of other variable, although it is not recommended
+   * to implement invariants as events, because you cannot have the delta.
+   * @param v the variable whose change will trigger the execution of action
+   * @param ModifiedVars the variables that could be modified by the Event
+   */
   def apply(v:Variable, w:Variable,
             intaction:Int=>Unit,
             ModifiedVars:Iterable[Variable]):Event = {
-    val toreturn = new Event(v,w,ModifiedVars)
+    val toreturn = new Event(List(v,w),ModifiedVars)
     if (intaction != null) toreturn.setIntAction(intaction)
     toreturn
   }
@@ -75,45 +81,27 @@ object Event{
   def apply(v:Variable,
             intaction:Int=>Unit,
             ModifiedVars:Iterable[Variable]):Event = {
-    val toreturn = new Event(v,null,ModifiedVars)
+    val toreturn = new Event(Some(v),ModifiedVars)
     if (intaction != null) toreturn.setIntAction(intaction)
     toreturn
   }
 
   def apply(v:IntValue,
             intaction:Int=>Unit):Event = {
-    val toreturn = new Event(v,null,null)
+    val toreturn = new Event(Some(v),null)
     if (intaction != null) toreturn.setIntAction(intaction)
     toreturn
   }
-
-  /*  def apply(v:Variable, w:Variable,
-              action: =>Unit = null,
-              intaction:Long=>Unit = null,
-              intsetaction:SortedSet[Long]=>Unit = null,
-              intintaction: (Long,Long)=>Unit = null,
-              intsetintsetaction:(SortedSet[Long],SortedSet[Long]) => Unit = null,
-              intsetintaction:(SortedSet[Long],Long) => Unit = null,
-              intintsetaction:(Long,SortedSet[Long]) => Unit = null,
-              ModifiedVars:Iterable[Variable] = null):Event = {
-      val toreturn = new Event(v,w,ModifiedVars)
-      toreturn.setAction((_:Unit) => {action})
-      if (intaction != null) toreturn.setIntAction(intaction)
-      if (intsetaction != null) toreturn.setIntSetAction(intsetaction)
-      if (intintaction!=null) toreturn.setintintaction(intintaction)
-      if (intsetintsetaction!=null) toreturn.setintsetintsetaction(intsetintsetaction)
-      if (intsetintaction!=null) toreturn.setintsetintaction(intsetintaction)
-      if (intintsetaction!=null) toreturn.setintintsetaction(intintsetaction)
-      toreturn
-    }
-    */
 }
 
 /**Use the apply method in the companion object for building this*/
-class Event(v:Value, w:Variable, ModifiedVars:Iterable[Variable])
+class Event(values:Iterable[Value], ModifiedVars:Iterable[Variable])
   extends Invariant with IntNotificationTarget with SetNotificationTarget with SeqNotificationTarget {
 
   //unfortunately, it is not possible to pass a type "=>Unit" as parameter to a case class.
+
+  private def v:Value = values.head
+  private def w:Value = values.toList(1)
 
   private var action: ()=>Unit=null
   private var actionIntParam: Int=>Unit = null
@@ -167,11 +155,17 @@ class Event(v:Value, w:Variable, ModifiedVars:Iterable[Variable])
     this.oldIntSetw = w.asInstanceOf[CBLSSetVar].value
   }
 
-  registerStaticAndDynamicDependency(v)
-  if(w!=null)  registerStaticAndDynamicDependency(w)
+  for(value <- values){
+    registerStaticAndDynamicDependency(value)
+  }
+
   finishInitialization()
-  if (ModifiedVars != null)
-    for(variable <- ModifiedVars){variable.setDefiningInvariant(this)}
+
+  if (ModifiedVars != null) {
+    for(variable <- ModifiedVars){
+      variable.setDefiningInvariant(this)
+    }
+  }
 
   override def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Long, NewVal: Long): Unit ={
     scheduleForPropagation()

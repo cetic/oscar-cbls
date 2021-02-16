@@ -95,6 +95,11 @@ case class Store(override val verbose:Boolean = false,
 
   def snapShot(toRecord:Iterable[AbstractVariable]) = new Snapshot(toRecord,this)
 
+  def declaredValues:Iterable[Value] = QList.toIterable(propagationElements).flatMap(_ match{
+    case x:Value => Some(x)
+    case _ => None
+  })
+
   /**To restore a saved solution
     * notice that only the variables that are not derived will be restored; others will be derived lazily at the next propagation wave.
     * This enables invariants to rebuild their internal data structure if needed.
