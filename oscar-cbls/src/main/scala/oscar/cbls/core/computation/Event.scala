@@ -29,26 +29,26 @@ object Event{
    * This method is when you plan to access the value of the "values" parameter through the .value
    */
   def apply(values:Iterable[Value],
-            action: =>Unit,
+            action: () => Unit,
             modifiedVariables:Iterable[Variable]):Event = {
     val toreturn = new Event(values,modifiedVariables)
-    toreturn.setAction(() => action)
+    toreturn.setAction(action)
     toreturn
   }
 
 
   def apply(v:Variable,
-            action: =>Unit):Event = {
+            action: () => Unit):Event = {
     val toreturn = new Event(Some(v),null)
-    toreturn.setAction(() => action)
+    toreturn.setAction(action)
     toreturn
   }
 
   def apply(v:Variable,
-            action: =>Unit,
+            action: () => Unit,
             ModifiedVars:Iterable[Variable]):Event = {
     val toreturn = new Event(Some(v),ModifiedVars)
-    toreturn.setAction(() => action)
+    toreturn.setAction(action)
     toreturn
   }
 
@@ -58,7 +58,7 @@ object Event{
    * @param v the variable whose change will trigger the execution of action
    */
   def apply(v:Variable, w:Variable,
-            intaction:Int=>Unit):Event = {
+            intaction:Int => Unit):Event = {
     val toreturn = new Event(List(v,w),null)
     if (intaction != null) toreturn.setIntAction(intaction)
     toreturn
