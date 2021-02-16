@@ -468,7 +468,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
           worker ! ShutDownWorker()
         }
         replyTo match {
-          case Some(x) => x ! Unit
+          case Some(x) => x ! ()
           case None => ;
         }
 

@@ -8,7 +8,7 @@ import org.jfree.data.xy.{XYSeries, XYSeriesCollection}
 
 import java.awt.BorderLayout
 import javax.swing.JPanel
-import scala.collection.SortedMap
+import scala.collection.immutable.SortedMap
 
 //TODO: this one should be part of the supervisor.
 class DistributedObjDisplay()
@@ -83,19 +83,19 @@ class DistributedObjDisplay()
     }
     val currentTime = timeMS - startingAtMS
     if(series.isDefinedAt(searchId)){
-      series(searchId).add(currentTime,obj)
+      series(searchId).add(currentTime.toDouble,obj.toDouble)
     }else{
       val newSeries = new XYSeries(s"search $searchId")
-      newSeries.add(currentTime,obj)
+      newSeries.add(currentTime.toDouble,obj.toDouble)
       series = series + (searchId -> newSeries)
       dataset.addSeries(newSeries)
     }
 
     if(aborted){
-      abortedSeries.add(currentTime,obj)
+      abortedSeries.add(currentTime.toDouble,obj.toDouble)
     }
     if(bestSeries.isEmpty || obj < bestSeries.getMinY){
-      bestSeries.add(currentTime,obj)
+      bestSeries.add(currentTime.toDouble,obj.toDouble)
     }
   }
 }

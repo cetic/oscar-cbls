@@ -20,6 +20,7 @@
 package oscar.cbls.core.computation
 
 import oscar.cbls
+import oscar.cbls.Snapshot
 import oscar.cbls.algo.distributedStorage.{DistributedStorageUtility, StorageUtilityManager}
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.core.objective.IntVarObjective
@@ -92,8 +93,6 @@ case class Store(override val verbose:Boolean = false,
   def saveValues(vars:Iterable[AbstractVariable]):Solution = {
     Solution(vars.map(_.snapshot),this)
   }
-
-  def snapShot(toRecord:Iterable[AbstractVariable]) = new Snapshot(toRecord,this)
 
   def declaredValues:Iterable[Value] = QList.toIterable(propagationElements).flatMap(_ match{
     case x:Value => Some(x)
@@ -569,24 +568,26 @@ abstract class AbstractVariableSnapShot(val uniqueID:Int){
   // Added by GO for pretty printing of some benchmarks:
   // to change if this affects the printing of other benchmarks
   def toString(m:Store): String =
-    if(m == null) s"Variable[m.uniqueID:${uniqueID}, value:${this.valueString}]"
-    else s"Variable[m.name:${m.getVar(uniqueID)}, value:${this.valueString}]"
+    if(m == null) s"Variable[m.uniqueID:${uniqueID}, value:${this.valueString()}]"
+    else s"Variable[m.name:${m.getVar(uniqueID)}, value:${this.valueString()}]"
 
   final def restore(m:Store): Unit = {
     m.getPropagationElement(uniqueID) match {
-      case v : Variable if v.isDecisionVariable => doRestore()
-      case _ => throw new Error(s"can only re-assign decision variable, not $a")
+      case v : Variable if v.isDecisionVariable => doRestore(m)
+      case x => throw new Error(s"can only re-assign decision variable, not $x")
     }
   }
 
   final def restoreIfDecisionVariable(m:Store): Unit ={
     m.getPropagationElement(uniqueID) match {
-      case v : Variable if v.isDecisionVariable => doRestore()
+      case v : Variable if v.isDecisionVariable => doRestore(m)
       case _ => ;
     }
   }
 
   protected def doRestore(m:Store): Unit
+
+  def valueString(): String
 }
 
 object Variable{

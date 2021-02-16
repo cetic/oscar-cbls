@@ -108,8 +108,6 @@ case class RandomSwapNeighborhood(vars:Array[CBLSIntVar],
                        acceptanceCriteria: (Long, Long) => Boolean = null): SearchResult = {
     if(printExploredNeighborhoods) println("applying " + name)
 
-    val degreeNow = degree()
-
     var toReturn:List[Move] = List.empty
     val degreeNow:Int = degree()
     var touchedVars:Set[Int] = SortedSet.empty

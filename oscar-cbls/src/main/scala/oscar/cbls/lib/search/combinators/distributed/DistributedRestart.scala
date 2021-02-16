@@ -1,6 +1,5 @@
 package oscar.cbls.lib.search.combinators.distributed
 
-
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import akka.util.Timeout

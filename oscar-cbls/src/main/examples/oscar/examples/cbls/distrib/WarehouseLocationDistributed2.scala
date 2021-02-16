@@ -26,6 +26,7 @@ import oscar.cbls.lib.search.combinators.distributed.DistributedFirst
 import oscar.cbls.{swapsNeighborhood, _}
 import oscar.examples.cbls.wlp.WarehouseLocationGenerator
 
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 import scala.language.postfixOps
 
 object WarehouseLocationDistributed2 extends App{

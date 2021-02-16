@@ -1,7 +1,7 @@
 package oscar.cbls.util
 
 object Demo {
-  def startUpPause() {
+  def startUpPause() :Unit = {
     println("DEMO: pause; press ENTER to resume execution in 3 seconds")
     scala.io.StdIn.readLine()
     println("DEMO: start in 3 seconds")

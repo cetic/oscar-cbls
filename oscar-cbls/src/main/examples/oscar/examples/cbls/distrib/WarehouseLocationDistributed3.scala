@@ -26,6 +26,7 @@ import oscar.cbls.lib.search.combinators.BestSlopeFirst
 import oscar.cbls.lib.search.combinators.distributed.{DistributedFirst, DistributedRestart}
 import oscar.examples.cbls.wlp.WarehouseLocationGenerator
 
+import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 import scala.collection.parallel.immutable.ParRange
 import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
