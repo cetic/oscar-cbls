@@ -12,14 +12,17 @@
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+
 package oscar.cbls.lib.search.neighborhoods
 
 import oscar.cbls.core.computation.CBLSIntVar
+import oscar.cbls.core.search.{CompositeMove, Move, Neighborhood, NoMoveFound, SearchResult}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{CompositeMove, Move, Neighborhood, SearchResult}
 import oscar.cbls.lib.search.LinearSelectors
 
 import scala.collection.immutable.SortedSet
+
 
 /**
  * Will randomize the array, typically to get out of a local minimal
@@ -36,35 +39,51 @@ case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
                                  degree:() => Int = ()=>1,
                                  name:String = "RandomizeNeighborhood",
                                  searchZone:() => SortedSet[Int] = null,
-                                 valuesToConsider:(CBLSIntVar,Long) => Iterable[Long] = (variable,_) => variable.domain.values)
+                                 valuesToConsider:(CBLSIntVar,Long) => Iterable[Long] = (variable,_) => variable.domain.values,
+                                 acceptanceChecking:Option[Int] = None)
   extends Neighborhood(name) with LinearSelectors{
 
-  override def getMove(obj: Objective,
-                       initialObj:Long,
-                       acceptanceCriteria: (Long, Long) => Boolean = null): SearchResult = {
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean = null): SearchResult = {
     if(printExploredNeighborhoods) println("applying " + name)
-
-    var toReturn:List[Move] = List.empty
 
     val degreeNow = degree()
 
-    if(searchZone != null && searchZone().size <= degreeNow){
-      //We move everything
-      for(i <- searchZone()){
-
-        toReturn = AssignMove(vars(i),selectFrom(vars(i).domain.values),i,Long.MaxValue) :: toReturn
-      }
-    }else{
-      var touchedVars:Set[Int] = SortedSet.empty
-      for(r <- 1 to degreeNow){
-        val i = selectFrom(vars.indices,(j:Int) => (searchZone == null || searchZone().contains(j)) && !touchedVars.contains(j))
-        touchedVars = touchedVars + i
-        val oldVal = vars(i).value
-        toReturn = AssignMove(vars(i),selectFrom(valuesToConsider(vars(i),i),(_:Long) != oldVal),i,Long.MaxValue) :: toReturn
-      }
+    var (nbAttempts:Int,checkAcceptation:Boolean) = acceptanceChecking match{
+      case None => (-1,false)
+      case Some(a) => (a,true)
     }
-    if(printExploredNeighborhoods) println(name + ": move found")
-    CompositeMove(toReturn, Long.MaxValue, name)
+
+    //TODO: we should check acceptation for all parts of the move. That could be implemented using Atomic(swap(behavior:Random))
+    while(nbAttempts != 0) {
+      nbAttempts -= 1
+      var toReturn: List[AssignMove] = List.empty
+
+      if (searchZone != null && searchZone().size <= degreeNow) {
+        //We move everything
+        for (i <- searchZone()) {
+          toReturn = AssignMove(vars(i), selectFrom(vars(i).domain.values), i, Long.MaxValue) :: toReturn
+        }
+      } else {
+        var touchedVars: Set[Int] = SortedSet.empty
+        val searchZoneNow = if(searchZone==null) null else  searchZone()
+        for (r <- 1 to degreeNow) {
+          val i = selectFrom(vars.indices, (j: Int) => (searchZone == null || searchZoneNow.contains(j)) && !touchedVars.contains(j))
+          touchedVars = touchedVars + i
+          val oldVal = vars(i).value
+          val valuesToConsiderForThisVar = valuesToConsider(vars(i), i)
+          val selectedValue = selectFrom(valuesToConsiderForThisVar , (_: Long) != oldVal)
+          toReturn = AssignMove(vars(i), selectedValue, i, Long.MaxValue) :: toReturn
+        }
+      }
+
+      if (!checkAcceptation
+        || acceptanceCriteria(initialObj, obj.assignVal(toReturn.map(x => (x.i, x.value))))) {
+        if (printExploredNeighborhoods) println(name + ": move found")
+        return CompositeMove(toReturn, Long.MaxValue, name)
+      }
+      if(printExploredNeighbors) println(name + ": move explored and not accepted")
+    }
+    NoMoveFound
   }
 }
 
@@ -88,6 +107,8 @@ case class RandomSwapNeighborhood(vars:Array[CBLSIntVar],
                        initialObj:Long,
                        acceptanceCriteria: (Long, Long) => Boolean = null): SearchResult = {
     if(printExploredNeighborhoods) println("applying " + name)
+
+    val degreeNow = degree()
 
     var toReturn:List[Move] = List.empty
     val degreeNow:Int = degree()

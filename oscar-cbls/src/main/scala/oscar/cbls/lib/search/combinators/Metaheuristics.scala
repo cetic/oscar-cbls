@@ -60,7 +60,7 @@ class Metropolis(a: Neighborhood, iterationToTemperature: Long => Double = _ => 
       //println("relativeIncrease: " + relativeIncrease)
       //println("temp:" + temperatureValue)
 
-      val toReturn = math.random < math.pow(base, - relativeIncrease / temperatureValue)
+      val toReturn = math.random() < math.pow(base, - relativeIncrease / temperatureValue)
 
       //println("metropolis decision: " + toReturn)
 
@@ -81,6 +81,64 @@ class Metropolis(a: Neighborhood, iterationToTemperature: Long => Double = _ => 
   }
 }
 
+/**
+ * implements the late acceptance criterion. Similarly to the simulated annealing it will accept degrading moves.
+ * The acceptance is however not computed based on statistics. Instead there is a history of the "length" previous values,
+ * and a pointer that iterates on these values.
+ * It compares the next obj with the value fetched from the history and accepts improves over that historical value.
+ * If the neighbour is accepted,the historical value is updated.
+ *
+ * more details in: Burke EK, Bykov Y (2016) The late acceptance hill-climbing heuristic. Eur J Oper Res 258:70–78
+ * @param a the base neighbourhood
+ * @param length the length of the history
+ * @param maxRelativeIncreaseOnBestObj additionally, newOBj is rejected if > maxRelativeIncreaseOnBestObj*bestObj.
+ *                                     This increases convergence, but decreased optimality of this approach.
+ *                                     The default value is very large, so that this mechanism is inactive.
+ */
+class LateAcceptanceHillClimbing(a:Neighborhood, length:Int = 20, maxRelativeIncreaseOnBestObj:Double = 10000) extends NeighborhoodCombinator(a) {
+  require(maxRelativeIncreaseOnBestObj > 1, "maybe you should not use LateAcceptanceHillClimbing if obj cannot increase anyway")
+
+  val memory:Array[Long] = Array.fill(length)(Long.MaxValue)
+
+  var initialized = false
+
+  var maxToleratedObj = Long.MaxValue
+  var bestKnownObj = Long.MaxValue
+
+  def init(initialObj:Long): Unit = {
+    for(i <- memory.indices) memory(i) = initialObj
+    maxToleratedObj = Long.MaxValue
+    bestKnownObj = Long.MaxValue
+    initialized = true
+  }
+
+  var x = 0
+
+  override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+    if(! initialized) init(initialObj)
+
+    a.getMove(obj,initialObj,(oldOBj,newObj) => {
+      x = x+1
+      if(x >= length) x = 0
+
+      if(newObj < maxToleratedObj && (newObj < oldOBj || newObj < memory(x))){
+        memory(x) = newObj
+        if(newObj < bestKnownObj){
+          maxToleratedObj = ((newObj.toFloat * maxRelativeIncreaseOnBestObj) min Long.MaxValue).toLong
+          bestKnownObj = newObj
+        }
+        true
+      }else{
+        false
+      }
+    })
+  }
+
+  override def reset(): Unit = {
+    initialized = false
+    super.reset()
+  }
+}
 
 /**
  * This is a combination of a constraint with an objective function.
@@ -89,7 +147,6 @@ class Metropolis(a: Neighborhood, iterationToTemperature: Long => Double = _ => 
  *
  * @param a the neighborhood to consider
  * @param additionalConstraint an additional constraint, considered as a weak constraint at startup, and gradually, as a strong constraint.
- * @maxValueForObj the maximal value for the objective function and for the constraint (do not exceed MaxInt)
  */
 @deprecated("use GLS3 instead","")
 class GuidedLocalSearch(a: Neighborhood,
@@ -138,14 +195,12 @@ class GuidedLocalSearch(a: Neighborhood,
           if (objValue == Long.MaxValue) objValue
           else {
             val compositeObj = (maxValueForWeighting * additionalConstraint.value) + (currentWeightOfObj * objValue)
-            if(compositeObj < bestCompositeObj){
+            if (compositeObj < bestCompositeObj){
               baseOBjAtBestCompositeObj = objValue
               bestCompositeObj = compositeObj
-            }else if(compositeObj == bestCompositeObj){
+            }else if (compositeObj == bestCompositeObj && objValue != baseOBjAtBestCompositeObj){
               //in this case there is potentially an ambiguity on the composite vs the base
-              if(objValue != baseOBjAtBestCompositeObj){
-                baseOBjAtBestCompositeObj = Long.MaxValue
-              }
+              baseOBjAtBestCompositeObj = Long.MaxValue
             }
             compositeObj
           }
@@ -220,7 +275,7 @@ class GuidedLocalSearch(a: Neighborhood,
     } else {
       //solving violation, forget about obj
 
-      require(false, "should not happen")
+      require(requirement = false, "should not happen")
       null
     }
   }
@@ -531,12 +586,10 @@ class GuidedLocalSearch3(a: Neighborhood,
       if(compositeObjValue < bestCompositeObj){
         bestCompositeObj = compositeObjValue
         baseOBjAtBestCompositeObj = baseObjValue
-      }else if(compositeObjValue == bestCompositeObj){
+      }else if(compositeObjValue == bestCompositeObj && baseObjValue != baseOBjAtBestCompositeObj){
         //in this case there is potentially an ambiguity on the composite vs the base
-        if(baseObjValue != baseOBjAtBestCompositeObj){
-          //we destroy the best because we cannot guarantee unicity
-          baseOBjAtBestCompositeObj = Long.MaxValue
-        }
+        //we destroy the best because we cannot guarantee unicity
+        baseOBjAtBestCompositeObj = Long.MaxValue
       }
     }
 

@@ -13,7 +13,7 @@ import scala.collection.immutable.HashSet
   * Created by fg on 12/05/17.
   */
 
-object SimplePDPTW extends App{
+object SimplePDPTW extends App {
   val m = Store(noCycle = false)
   val v = 10
   val n = 500
@@ -27,18 +27,15 @@ object SimplePDPTW extends App{
 
   val myVRP =  new VRP(m,n,v)
 
-  // GC
-  val gc = GlobalConstraintCore(myVRP.routes, v)
-
   // Distance
   val vehiclesRouteLength = Array.tabulate(v)(vehicle => CBLSIntVar(m, name = s"Route length of vehicle $vehicle"))
-  val routeLengthInvariant = new RouteLength(gc,n,v,vehiclesRouteLength,(from: Int, to: Int) => symmetricDistance(from)(to))
+  val routeLengthInvariant = new RouteLength(myVRP.routes,n,v,vehiclesRouteLength,(from: Int, to: Int) => symmetricDistance(from)(to))
 
   //Chains
   val precedenceRoute = myVRP.routes.createClone()
   val precedenceInvariant = precedence(precedenceRoute,precedences)
   val vehicleOfNodesNow = vehicleOfNodes(precedenceRoute,v)
-  val precedencesConstraints = new ConstraintSystem(m)
+  val precedencesConstraints = ConstraintSystem(m)
   for(start <- precedenceInvariant.nodesStartingAPrecedence)
     precedencesConstraints.add(vehicleOfNodesNow(start) === vehicleOfNodesNow(precedenceInvariant.nodesEndingAPrecedenceStartedAt(start).head))
   precedencesConstraints.add(0 === precedenceInvariant)
@@ -47,7 +44,7 @@ object SimplePDPTW extends App{
   // Vehicle content
   val violationOfContentOfVehicle = Array.tabulate(v)(vehicle =>
     CBLSIntVar(myVRP.routes.model, name = s"Violation of capacity of vehicle $vehicle"))
-  val capacityInvariant = GlobalVehicleCapacityConstraint(gc, n, v, vehiclesCapacity, contentsFlow, violationOfContentOfVehicle)
+  val capacityInvariant = GlobalVehicleCapacityConstraint(myVRP.routes, n, v, vehiclesCapacity, contentsFlow, violationOfContentOfVehicle)
 
   //Objective function
   val obj = new CascadingObjective(precedencesConstraints,
@@ -97,7 +94,7 @@ object SimplePDPTW extends App{
 
   def lastNodeOfChainMove(lastNode:Int) = onePointMove(
     () => List(lastNode),
-    ()=> myVRP.kFirst(v*2,
+    () => myVRP.kFirst(v*2,
       ChainsHelper.relevantNeighborsForLastNodeAfterHead(
         myVRP,
         chainsExtension,
@@ -113,7 +110,7 @@ object SimplePDPTW extends App{
           nextMoveGenerator,
           None,
           Long.MaxValue,
-          false)
+          intermediaryStops = false)
       }) name "OneChainMove"
   }
 
@@ -147,7 +144,7 @@ object SimplePDPTW extends App{
 
   def lastNodeOfChainInsertion(lastNode:Int) = insertPointUnroutedFirst(
     () => List(lastNode),
-    ()=> myVRP.kFirst(
+    () => myVRP.kFirst(
       v*2,
       ChainsHelper.relevantNeighborsForLastNodeAfterHead(
         myVRP,
@@ -163,21 +160,18 @@ object SimplePDPTW extends App{
           nextInsertGenerator,
           None,
           Long.MaxValue,
-          false)
+          intermediaryStops = false)
       }) name "OneChainInsert"
 
   }
 
   //val routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "InsertUF"))
 
-
   val search = bestSlopeFirst(List(oneChainInsert,oneChainMove,onePtMove(20)))
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
   search.verbose = 1
   //search.verboseWithExtraInfo(4, ()=> "" + myVRP)
-
-
 
   search.doAllMoves(obj=obj)
 

@@ -23,10 +23,11 @@ class ReplaceActivity(schedule: Schedule,
     * as explained in the documentation of this class
     */
   override def exploreNeighborhood(initialObj: Long): Unit = {
+    val priorityListValue = schedule.activityPriorityList.value
     // Iteration zone on activities indices to remove
     // Checking the Hot Restart
     val iterationZone1: () => Iterable[Int] = searchValues.getOrElse(() =>
-      0 until schedule.activityPriorityList.value.size
+      0 until priorityListValue.size
     )
     val hotRestart = true
     val iterationZone: Iterable[Int] =
@@ -35,14 +36,14 @@ class ReplaceActivity(schedule: Schedule,
     // iterating over the values in the activity list
     val (indicesIterator, notifyIndexToRemoveFound) = selectRemoveBehavior.toIterator(iterationZone)
     // Define checkpoint on sequence (activities list)
-    val seqValueCheckPoint = schedule.activityPriorityList.defineCurrentValueAsCheckpoint(true)
+    val seqValueCheckPoint = schedule.activityPriorityList.defineCurrentValueAsCheckpoint()
     while (indicesIterator.hasNext) {
-      indActToRemove = indicesIterator.next().toInt
+      indActToRemove = indicesIterator.next()
       // iterating over the possible activities to add after
       val iterationZone2: () => Iterable[Int] = () => {
         schedule
           .activities
-          .filterNot(schedule.activityPriorityList.value.contains(_))
+          .filterNot(priorityListValue.contains)
       }
       val iterationZoneAdding: Iterable[Int] =
         if (hotRestart) HotRestart(iterationZone2(), actToAdd)
@@ -50,7 +51,7 @@ class ReplaceActivity(schedule: Schedule,
       // iterating over the activities to add
       val (actToAddIterator, notifyActToAddFound) = selectActToAddBehavior.toIterator(iterationZoneAdding)
       while (actToAddIterator.hasNext) {
-        actToAdd = actToAddIterator.next().toInt
+        actToAdd = actToAddIterator.next()
         // Iteration over the reinsertable zone
         val reinsertableZone = schedule.insertableIndices(actToAdd).map { ind =>
           if (ind > indActToRemove) ind-1

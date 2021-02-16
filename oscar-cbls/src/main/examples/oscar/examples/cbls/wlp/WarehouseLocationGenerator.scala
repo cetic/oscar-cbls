@@ -1,5 +1,3 @@
-package oscar.examples.cbls.wlp
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,6 +12,7 @@ package oscar.examples.cbls.wlp
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.examples.cbls.wlp
 
 /**
  * Created by rdl on 23/03/2015.
@@ -34,15 +33,15 @@ object WarehouseLocationGenerator {
     val side = maxXY - minXY
 
     val costForOpeningWarehouse: Array[Long] =
-      Array.tabulate(W)(w => (math.random * side * weightingForOpeningWarehouseCost).toLong)
+      Array.tabulate(W)(w => (math.random() * side * weightingForOpeningWarehouseCost).toLong)
 
     //we generate te cost distance matrix
-    def randomXY: Long = (minXY + (math.random * side)).toLong
+    def randomXY: Long = (minXY + (math.random() * side)).toLong
     def randomPosition = (randomXY, randomXY)
     val warehousePositions: Array[(Long, Long)] = Array.tabulate(W)(w => randomPosition)
     val deliveryPositions: Array[(Long, Long)] = Array.tabulate(D)(d => randomPosition)
-    def distance(from: (Long, Long), to: (Long, Long)) =
-      math.sqrt(math.pow(from._1 - to._1, 2) + math.pow(from._2 - to._2, 2)).toLong
+    def distance(from: (Long, Long), to: (Long, Long)): Long =
+      math.sqrt(math.pow((from._1 - to._1).toDouble, 2.0) + math.pow((from._2 - to._2).toDouble, 2.0)).toLong
 
     //for each delivery point, the distance to each warehouse
     val distanceCost = Array.tabulate(D)(
@@ -66,15 +65,15 @@ object WarehouseLocationGenerator {
     val side = maxXY - minXY
 
     val costForOpeningWarehouse: Array[Long] =
-      Array.tabulate(W)(w => (math.random * side * weightingForOpeningWarehouseCost).toLong)
+      Array.tabulate(W)(w => (math.random() * side * weightingForOpeningWarehouseCost).toLong)
 
     //we generate te cost distance matrix
-    def randomXY: Long = (minXY + (math.random * side)).toLong
+    def randomXY: Long = (minXY + (math.random() * side)).toLong
     def randomPosition = (randomXY, randomXY)
     val warehousePositions: Array[(Long, Long)] = Array.tabulate(W)(w => randomPosition)
     val deliveryPositions: Array[(Long, Long)] = Array.tabulate(D)(d => randomPosition)
-    def distance(from: (Long, Long), to: (Long, Long)) =
-      math.sqrt(math.pow(from._1 - to._1, 2) + math.pow(from._2 - to._2, 2)).toLong
+    def distance(from: (Long, Long), to: (Long, Long)): Long =
+      math.sqrt(math.pow((from._1 - to._1).toDouble, 2.0) + math.pow((from._2 - to._2).toDouble, 2.0)).toLong
 
     //for each delivery point, the distance to each warehouse
     val distanceCost = Array.tabulate(D)(

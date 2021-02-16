@@ -23,6 +23,7 @@ case class MovingVehicles(routes:ChangingSeqValue, v:Int)
   this := computeValueFromScratch(routes.value)
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
+    //println("notifySeqChanges " + changes)
     if(!digestUpdates(changes)) {
       this := computeValueFromScratch(changes.newValue)
     }
@@ -114,9 +115,10 @@ case class MovingVehicles(routes:ChangingSeqValue, v:Int)
         false //impossible to go incremental
       case SeqUpdateLastNotified(value:IntSequence) =>
         true //we are starting from the previous value
-      case SeqUpdateDefineCheckpoint(prev,isStarMode,checkpointLevel) =>
+      case SeqUpdateDefineCheckpoint(prev,checkpointLevel) =>
         digestUpdates(prev)
       case r@SeqUpdateRollBackToCheckpoint(checkpoint,checkpointLevel) =>
+        //println("howToRollBack:" + r.howToRollBack)
             digestUpdates(r.howToRollBack)
     }
   }

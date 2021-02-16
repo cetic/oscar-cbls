@@ -117,7 +117,7 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
   var startIndice: Int = 0
 
   override def exploreNeighborhood(initialObj: Long): Unit = {
-    val seqValue = seq.defineCurrentValueAsCheckpoint(true)
+    val seqValue = seq.defineCurrentValueAsCheckpoint()
 
     def evalObjAndRollBack() : Long = {
       val a = obj.value
@@ -148,10 +148,10 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
 
       for(a <- positionToInsertIterable){
         pointWhereToInsertAfter = a
-        seqValue.positionOfAnyOccurrence(pointWhereToInsertAfter) match{
+        seqValue.explorerAtAnyOccurrence(pointWhereToInsertAfter) match{
           case None => //not routed?!
-          case Some(position) =>
-            insertAtPositionForInstantiation = position + 1
+          case Some(explorer) =>
+            insertAtPositionForInstantiation = explorer.position + 1
 
             doMove(insertedPointForInstantiation, insertAtPositionForInstantiation)
 
@@ -167,7 +167,7 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
 
     //hotRestart stuff for next call
     startIndice = if (hotRestartOnNextSymmetryClass) {
-      if (nodeToInsertIterator.hasUnboundedNext())
+      if (nodeToInsertIterator.hasUnboundedNext)
         nodeToInsertIterator.unboundedNext()
       else iterationScheme.head
     } else{insertedPointForInstantiation + 1}
@@ -209,7 +209,7 @@ case class InsertPointRoutedFirst(insertionPositions:()=>Iterable[Int],
   var startIndice: Int = 0
 
   override def exploreNeighborhood(initialObj: Long): Unit = {
-    val seqValue = seq.defineCurrentValueAsCheckpoint(true)
+    val seqValue = seq.defineCurrentValueAsCheckpoint()
 
     def evalObjAndRollBack() : Long = {
       val a = obj.value

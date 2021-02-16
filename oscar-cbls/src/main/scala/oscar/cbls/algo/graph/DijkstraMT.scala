@@ -64,13 +64,10 @@ class DijkstraMT(g:ConditionalGraph){
             }
           }
 
-          if (isTarget(otherNodeID)) {
-            //must be <= because there is also an order on centroid captured in voronoiZones
-            if (newDistance <= maxDistance) {
-              val newMark = VoronoiZone(otherNode, newDistance, outgoingEdge)
-              if (newMark < toReturn) toReturn = newMark
-              maxDistance = newDistance
-            }
+          if (isTarget(otherNodeID) && (newDistance <= maxDistance)) {
+            val newMark = VoronoiZone(otherNode, newDistance, outgoingEdge)
+            if (newMark < toReturn) toReturn = newMark
+            maxDistance = newDistance
           }
         }
       }

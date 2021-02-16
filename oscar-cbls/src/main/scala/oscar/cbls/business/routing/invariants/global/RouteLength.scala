@@ -2,40 +2,39 @@ package oscar.cbls.business.routing.invariants.global
 
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
-import oscar.cbls.core.computation.CBLSIntVar
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingSeqValue}
 
 case class PreComputedDistances(distanceFromStart:Long,
                                 distanceToStart:Long)
 
 object RouteLength{
-  def apply(gc: GlobalConstraintCore, n: Int, v:Int, distanceMatrix:(Int,Int)=>Long):Array[CBLSIntVar] = {
+  def apply(routes: ChangingSeqValue, n: Int, v:Int, distanceMatrix:(Int,Int)=>Long):Array[CBLSIntVar] = {
     val routeLengthForVehicle:Array[CBLSIntVar] =
-      Array.tabulate(v)(v => CBLSIntVar(gc.model,name="routeLengthForVehicle" + v))
+      Array.tabulate(v)(v => CBLSIntVar(routes.model,name=s"routeLengthForVehicle$v"))
 
-    new RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, routeLengthForVehicle, distanceMatrix)
+    new RouteLength(routes: ChangingSeqValue, n: Int, v:Int, routeLengthForVehicle, distanceMatrix)
     routeLengthForVehicle
   }
 }
 
 /**
- * @param gc The GlobalConstraintCore you want to associate this constraint to
+ * @param routes The routes of the VRP
  * @param n then umber of nodes
  * @param v The number of vehicle
  * @param vehicleToRouteLength the output of the constraint: for each vehicle, the length of the route
  * @param distanceMatrix the distance from each node to each node; it can be asymmetrical
  */
-class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:Array[CBLSIntVar], distanceMatrix:(Int,Int)=>Long)
-  extends GlobalConstraintDefinition[Long](gc,v){
+class RouteLength(routes: ChangingSeqValue, n: Int, v:Int, vehicleToRouteLength:Array[CBLSIntVar], distanceMatrix:(Int,Int)=>Long)
+  extends GlobalConstraintCore[Long](routes,v){
 
   val preComputedVals: Array[PreComputedDistances] = Array.fill(n)(PreComputedDistances(0,0))
 
   // Initialize the vehicles value, the precomputation value and link these invariant to the GlobalConstraintCore
-  gc.register(this)
-  for(outputVariable <- vehicleToRouteLength)outputVariable.setDefiningInvariant(gc)
+  for(outputVariable <- vehicleToRouteLength)outputVariable.setDefiningInvariant(this)
 
   override def performPreCompute(vehicle: Int, routes: IntSequence): Unit = {
     var previousNode = vehicle
-    var prevPreComputedValue =PreComputedDistances(0,0)
+    var prevPreComputedValue = PreComputedDistances(0,0)
     preComputedVals(vehicle) = prevPreComputedValue
 
     var currentExplorerOPt:Option[IntSequenceExplorer] = routes.explorerAtAnyOccurrence(vehicle).get.next
@@ -51,7 +50,7 @@ class RouteLength(gc: GlobalConstraintCore, n: Int, v:Int, vehicleToRouteLength:
           false
         }else{
           //we are not starting the next vehicle, just continue on the current one
-          //We tag the current node with the proper value accumulatin on gthe previous node
+          //We tag the current node with the proper value accumulation on the previous node
 
           prevPreComputedValue = PreComputedDistances(
             distanceFromStart = prevPreComputedValue.distanceFromStart + distanceMatrix(previousNode,explorer.value),

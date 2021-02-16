@@ -55,9 +55,9 @@ case class ConstraintSystem(model:Store) extends Constraint with Objective{
 
   override def detailedString(short: Boolean, indent:Long = 0L): String = {
     val displayedConstraints = (if(short) violatedConstraints
-      else PostedConstraints.map(_._1)).sortBy(c => c.violation.value).map(c => c + " " + "viol:" + c.violation.value)
+      else PostedConstraints.map(_._1)).sortBy(c => c.violation.value).map(c => s"$c viol:${c.violation.value}")
 
-    val displayedConstraintsString = if(displayedConstraints.isEmpty) "None" else ("\n" + nSpace(indent+4L) + displayedConstraints.mkString("\n" + nSpace(indent+4L)))
+    val displayedConstraintsString = if(displayedConstraints.isEmpty) "None" else "\n" + nSpace(indent+4L) + displayedConstraints.mkString("\n" + nSpace(indent+4L))
     val constraintExplanationString = if(short) "violated_constraints" else "all_constraints"
 
     s"ConstraintSystem(${this.Violation} $constraintExplanationString:$displayedConstraintsString)"
@@ -103,7 +103,7 @@ case class ConstraintSystem(model:Store) extends Constraint with Objective{
     for (variable <- VarInConstraints){
       val ConstrAndWeightList:List[(Constraint,IntValue)] = variable.getStorageAt(IndexForLocalViolationINSU,null)
 
-      val product:List[IntValue] = ConstrAndWeightList.map((ConstrAndWeight) => {
+      val product:List[IntValue] = ConstrAndWeightList.map(ConstrAndWeight => {
         val constr = ConstrAndWeight._1
         val weight = ConstrAndWeight._2
         if(weight == null) constr.violation(variable)
@@ -144,7 +144,7 @@ case class ConstraintSystem(model:Store) extends Constraint with Objective{
   def close(): Unit ={
     if(!isClosed){
       isClosed = true
-      Violation = new Sum(PostedConstraints.map((constraintANDintvar) => {
+      Violation = new Sum(PostedConstraints.map(constraintANDintvar => {
         if(constraintANDintvar._2 == null) constraintANDintvar._1.violation
         else Prod(List(constraintANDintvar._1.violation,constraintANDintvar._2))
       }) ::: PostedInvariants).setName("violation")

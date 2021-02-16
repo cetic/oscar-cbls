@@ -99,7 +99,7 @@ class Concatenate(a:ChangingSeqValue,b:ChangingSeqValue,maxPivotPerValuePercent:
       case u@SeqUpdateRollBackToCheckpoint(checkpoint,checkpointLevel) =>
         digestChanges(isFirst, u.howToRollBack)
 
-      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, isStarMode, checkpointLevel) =>
+      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, checkpointLevel) =>
         digestChanges(isFirst, prev)
 
       case SeqUpdateLastNotified(value) =>
@@ -157,12 +157,12 @@ class ConcatenateFirstConstant(a:List[Int],b:ChangingSeqValue,maxPivotPerValuePe
         this.rollbackToTopCheckpoint(checkpointStack.rollBackAndOutputValue(checkpoint,checkpointLevel))
         true
 
-      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, isActive, checkpointLevel) =>
+      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, checkpointLevel) =>
         if(!digestChanges(prev)) {
           this := IntSequence(a ++ prev.newValue)
         }
         this.releaseTopCheckpointsToLevel(checkpointLevel,true)
-        this.defineCurrentValueAsCheckpoint(isActive)
+        this.defineCurrentValueAsCheckpoint()
         checkpointStack.defineCheckpoint(prev.newValue,checkpointLevel,this.newValue)
         true
 
@@ -218,12 +218,12 @@ class ConcatenateSecondConstant(a:ChangingSeqValue,b:List[Int],maxPivotPerValueP
         this.rollbackToTopCheckpoint(checkpointStack.rollBackAndOutputValue(checkpoint,checkpointLevel))
         true
 
-      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, isActive, checkpointLevel) =>
+      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, checkpointLevel) =>
         if(!digestChanges(prev)) {
           this := IntSequence(prev.newValue ++ b)
         }
         this.releaseTopCheckpointsToLevel(checkpointLevel,true)
-        this.defineCurrentValueAsCheckpoint(isActive)
+        this.defineCurrentValueAsCheckpoint()
         checkpointStack.defineCheckpoint(prev.newValue,checkpointLevel,this.newValue)
         true
 

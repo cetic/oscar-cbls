@@ -66,11 +66,11 @@ class MapConstantFun(seq:ChangingSeqValue,
 
   def digestUdpate(changes : SeqUpdate): Unit = {
     changes match {
-      case SeqUpdateDefineCheckpoint(prev, isActive, checkpointLevel) =>
+      case SeqUpdateDefineCheckpoint(prev, checkpointLevel) =>
         digestUdpate(prev)
 
         this.releaseTopCheckpointsToLevel(checkpointLevel,true)
-        defineCurrentValueAsCheckpoint(isActive)
+        defineCurrentValueAsCheckpoint()
         checkpointStack.defineCheckpoint(prev.newValue,checkpointLevel,this.newValue)
 
       case SeqUpdateInsert(value, position, prev) =>
@@ -130,7 +130,7 @@ class MapThroughArray(seq:ChangingSeqValue,
 
   def digestUdpate(changes : SeqUpdate): Unit = {
     changes match {
-      case SeqUpdateDefineCheckpoint(prev, isActive, checkpointLevel) =>
+      case SeqUpdateDefineCheckpoint(prev, checkpointLevel) =>
         digestUdpate(prev)
        case SeqUpdateInsert(value, position, prev) =>
         digestUdpate(prev)

@@ -16,11 +16,11 @@ import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 import oscar.cbls.{CBLSIntVar, Objective, Store}
 
 /**
-  * This demo tries to monimize the distance between centers of shapes plus the overlap distance
+  * This demo tries to minimize the distance between centers of shapes plus the overlap distance
   * while keeping them all within a rectangle.
   * it proceeds through local search (although a more symbolic insertion-based technique would be more efficient
   */
-object TestGeometryPackingMinDistance extends App{
+object TestGeometryPackingMinDistance extends App {
 
   val store = Store()
 
@@ -42,15 +42,15 @@ object TestGeometryPackingMinDistance extends App{
 
   //declaring the optimization model
   val coordArray = Array.tabulate(nbShapes){ i =>
-    (new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxX - radiusArray(i),"shape_" + i + ".x"),
-      new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxY - radiusArray(i),"shape_" + i + ".y"))
+    (new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxX - radiusArray(i), s"shape_$i.x"),
+      new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxY - radiusArray(i), s"shape_$i.y"))
   }
 
   val constantShapesAt00 = Array.tabulate(nbShapes){ i =>
-    new CBLSGeometryConst(store,
+    CBLSGeometryConst(store,
       if(i%2 ==0) geometry.createRectangle(radiusArray(i)*2,radiusArray(i)*2)
       else geometry.createCircle(radiusArray(i),nbEdges = 30),
-      "shape_" + i)
+      s"shape_$i")
   }
 
   //creating the shapes at the location taken fr omteh decision variables,
@@ -81,11 +81,11 @@ object TestGeometryPackingMinDistance extends App{
   //these are the distances we consider, from shape to shape
   val relevantDistances = List((0,1),(1,2),(1,3),(2,4),(3,5),(4,5),(5,6))
 
-  val distancesArray = relevantDistances.map({case (fromId,toId) => {
+  val distancesArray = relevantDistances.map({case (fromId,toId) =>
     val (x1, y1) = coordArray(fromId)
     val (x2, y2) = coordArray(toId)
     Sqrt(Sum2(Square(x1 - x2),Square(y1 - y2))) //pytagore
-  }})
+  })
 
   //val convexHullOfCircle1And3 = new ConvexHull(store, new Union(store, placedCirles(1),placedCirles(3)))
 
@@ -98,14 +98,14 @@ object TestGeometryPackingMinDistance extends App{
 
   val drawing = GeometryDrawing(relevantDistances) //this parameters specifies which centers are linked
 
-  def updateDisplay() {
-    val colorsIt = randomColors.toIterator
+  def updateDisplay(): Unit = {
+    val colorsIt = randomColors.iterator
     drawing.drawShapes(shapes =
       (outerFrame,Some(Color.red),None,"")::
         Array.tabulate(nbShapes)(circleID => (
           placedShapes(circleID).value.geometry,
           None,
-          Some(colorsIt.next),
+          Some(colorsIt.next()),
           overlapPerShape(circleID).toString)).toList,
       centers = coordArray.toList.map(xy => (xy._1.value,xy._2.value)))
   }
@@ -215,12 +215,12 @@ object TestGeometryPackingMinDistance extends App{
 
 
   def moveToHoleAndGradient =
-    moveToHole dynAndThen(moveShapeToMove => new Atomic(
+    moveToHole dynAndThen(moveShapeToMove => Atomic(
       gradientOnOneShape(moveShapeToMove.shapeID),
       _>10,
       stopAsSoonAsAcceptableMoves=true)) name "toHole&Gradient"
 
-  def gradientOnOneShape(shapeID:Int) = new GradientDescent(
+  def gradientOnOneShape(shapeID:Int) = GradientDescent(
     vars = Array(coordArray(shapeID)._1,coordArray(shapeID)._2),
     name= "GradientMove(" + shapeID + ")",
     maxNbVars = 2,
@@ -234,7 +234,7 @@ object TestGeometryPackingMinDistance extends App{
 
   def swapAndGradient = swapX dynAndThen(swapMove => (
     swapYSlave(swapMove.idI,swapMove.idJ)
-      andThen new Atomic(gradientOnOneShape(swapMove.idI),
+      andThen Atomic(gradientOnOneShape(swapMove.idI),
       _>10,
       stopAsSoonAsAcceptableMoves=true))) name "swap&Gradient"
 
@@ -262,11 +262,11 @@ object TestGeometryPackingMinDistance extends App{
       Profile(moveOneShapeYAndThenX)
     ),
     refresh=nbShapes*10))
-    onExhaustRestartAfter(
+    .onExhaustRestartAfter(
     RandomizeNeighborhood(flattenedCoordArray, () => flattenedCoordArray.length/5, name = "smallRandomize"),
     maxRestartWithoutImprovement = 2,
     obj)
-    onExhaustRestartAfter (
+    .onExhaustRestartAfter (
     RandomizeNeighborhood(flattenedCoordArray, () => flattenedCoordArray.length, name = "fullRandomize"),
     maxRestartWithoutImprovement = 2,
     obj)
@@ -287,7 +287,7 @@ object TestGeometryPackingMinDistance extends App{
   updateDisplay() //after finish
 
   println(search.profilingStatistics)
-  println
+  println()
   println(overlapPerShape.mkString("\n"))
   println(totalOverlapArea)
 

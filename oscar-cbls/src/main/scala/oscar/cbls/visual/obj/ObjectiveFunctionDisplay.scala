@@ -1,19 +1,20 @@
 package oscar.cbls.visual.obj
 
-import collection.JavaConverters._
-import java.awt.{BorderLayout, Color, Paint}
 import java.awt.event.MouseWheelEvent
+import java.awt.{BorderLayout, Color, Paint}
 
 import javax.swing.JPanel
 import org.jfree.chart.axis.{LogAxis, NumberAxis}
 import org.jfree.chart.labels.XYToolTipGenerator
-import org.jfree.chart.{ChartColor, ChartPanel, JFreeChart}
 import org.jfree.chart.plot.{CombinedDomainXYPlot, IntervalMarker, XYPlot}
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer
 import org.jfree.chart.ui.Layer
+import org.jfree.chart.{ChartColor, ChartPanel, JFreeChart}
 import org.jfree.data.xy.{XYDataset, XYSeries, XYSeriesCollection}
 import oscar.cbls.util.StopWatch
 import oscar.cbls.visual.ColorGenerator
+
+import scala.jdk.CollectionConverters._
 
 /**
  * This implementation use the CombinedDomainXYPlot of library org.jfree
@@ -92,7 +93,7 @@ class ObjectiveFunctionDisplay(title: String, minCap:Long, maxCap:Long, basePerc
 
     datasets.foreach(d => d.getSeries.asScala.foreach(s => {
       val series = s.asInstanceOf[XYSeries]
-      stringBuilder.append(s"<p style='color:#0000ff;'>${series.getKey()} : ${series.getY(item).intValue()}</p>")
+      stringBuilder.append(s"<p style='color:#0000ff;'>${series.getKey} : ${series.getY(item).intValue()}</p>")
     }))
     stringBuilder.append(s"<p style='color:#0000ff;'>At : ${dataset.getX(series, item)} s </p>")
     stringBuilder.append("</html>")
@@ -146,22 +147,22 @@ class ObjectiveFunctionDisplay(title: String, minCap:Long, maxCap:Long, basePerc
         domain.setAutoRangeIncludesZero(true)
         domain
       })
-
       // Setting Y axis range
-      if (dataSetsId == 0) {
-        val axis = new LogAxis()
-        axis.setAutoTickUnitSelection(true)
-        axis.setBase(10)
-        axis.setMinorTickMarksVisible(true)
-        axis.setRange(new org.jfree.data.Range(minCap, maxCap), true, true)
-        plot.setRangeAxis(axis)
-      } else {
-        val axis = new NumberAxis()
-        axis.setAutoRange(true)
-        axis.setAutoRangeIncludesZero(false)
-        plot.setRangeAxis(axis)
-      }
-
+      plot.setRangeAxis({
+        if (dataSetsId == 0) {
+          val axis = new LogAxis()
+          axis.setAutoTickUnitSelection(true)
+          axis.setBase(10)
+          axis.setMinorTickMarksVisible(true)
+          axis.setRange(new org.jfree.data.Range(minCap.toDouble, maxCap.toDouble), true, true)
+          axis
+        } else {
+          val axis = new NumberAxis()
+          axis.setAutoRange(true)
+          axis.setAutoRangeIncludesZero(false)
+          axis
+        }
+      })
 
       val renderer = new XYLineAndShapeRenderer()
       seriesColors.zipWithIndex.foreach(colorId =>
@@ -179,10 +180,9 @@ class ObjectiveFunctionDisplay(title: String, minCap:Long, maxCap:Long, basePerc
     chart
   }
 
-
   def resizeGraphs(): Unit ={
     val (pMinX, pMaxX, pMinY, pMaxY) = percentileBounds()
-    plots.head.getRangeAxis.setRange(lower(pMinY), upper(pMaxY))
+    plots.head.getRangeAxis.setRange(lower(pMinY).toDouble, upper(pMaxY).toDouble)
     plots.indices.foreach(i => {
       plots(i).getDomainAxis.setRange(pMinX, pMaxX)
       datasets(i).getSeries(0).fireSeriesChanged()
@@ -192,9 +192,9 @@ class ObjectiveFunctionDisplay(title: String, minCap:Long, maxCap:Long, basePerc
   def addValues(at: Double, objFunctionValue: Long, otherValues: Array[Long]): Unit ={
     allValues = allValues :+ (at, objFunctionValue)
     seriesIds.foreach({
-      case 0 => series(0).add(lastValueAt,objFunctionValue)
-      case 1 => series(1).add(lastValueAt, best)
-      case x => series(x).add(lastValueAt, otherValues(x-2))
+      case 0 => series(0).add(lastValueAt,objFunctionValue.toDouble)
+      case 1 => series(1).add(lastValueAt, best.toDouble)
+      case x => series(x).add(lastValueAt, otherValues(x-2).toDouble)
     })
   }
 

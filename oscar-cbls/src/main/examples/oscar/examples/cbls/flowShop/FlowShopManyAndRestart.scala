@@ -36,9 +36,9 @@ object FlowShopManyAndRestart extends CBLSModel with App {
   val jobs = 0 until nbJobs
   val machines = 0 until nbMachines
 
-  println("flowShop(jobs:" + nbJobs + ",machines:" + nbMachines + ")")
+  println(s"flowShop(jobs:$nbJobs,machines:$nbMachines)")
 
-  val jobSequence:Array[CBLSIntVar] = Array.tabulate(nbJobs)(p => CBLSIntVar(p,jobs,"jobStartingAtPosition" + p))
+  val jobSequence:Array[CBLSIntVar] = Array.tabulate(nbJobs)(p => CBLSIntVar(p,jobs,s"jobStartingAtPosition$p"))
 
   val machineToRoundToStartingTimes:Array[Array[IntValue]] = Array.fill(nbMachines,nbJobs)(null)
   val machineToRoundToEndingTimes:Array[Array[IntValue]] = Array.fill(nbMachines,nbJobs)(null)
@@ -60,14 +60,15 @@ object FlowShopManyAndRestart extends CBLSModel with App {
   println("closing model")
   s.close()
 
-  val search = (BestSlopeFirst(
+  val search = BestSlopeFirst(
     List(
       shiftNeighborhood(jobSequence),
       rollNeighborhood(jobSequence),
       SwapsNeighborhood(jobSequence),
       WideningFlipNeighborhood(jobSequence)))
-    onExhaustRestartAfter (shuffleNeighborhood(jobSequence, numberOfShuffledPositions=() => nbJobs/2),3,obj)
-    onExhaustRestartAfter (shuffleNeighborhood(jobSequence),2,obj))
+    .onExhaustRestartAfter (shuffleNeighborhood(jobSequence, numberOfShuffledPositions=() => nbJobs/2),3,obj)
+    .onExhaustRestartAfter (shuffleNeighborhood(jobSequence),2,obj
+    )
 
   search.verbose = 2
 

@@ -33,11 +33,12 @@ import oscar.cbls.util.StopWatch
 import oscar.cbls.visual.graph.GraphViewer
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 
-import scala.collection.immutable.SortedMap
+import scala.collection.immutable.{SortedMap, TreeMap}
+import scala.collection.parallel.immutable.ParVector
 import scala.language.postfixOps
 import scala.swing.Color
 
-object WarehouseAndBridgeLocation extends App with StopWatch{
+object WarehouseAndBridgeLocation extends App with StopWatch {
 
   //the number of warehouses
   val W:Int = 1000
@@ -53,15 +54,15 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   val displayDelay = 1000
 
-  println("WarehouseAndBridgeLocation(W:" + W + " D:" + D + " B:" + nbConditionalEdges + ")")
+  println(s"WarehouseAndBridgeLocation(W:$W D:$D B:$nbConditionalEdges)")
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
   println("generate random graph")
   val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(
-    nbNodes=(W+D),
-    nbConditionalEdges=nbConditionalEdges,
-    nbNonConditionalEdges=nbNonConditionalEdges,
+    nbNodes = W+D,
+    nbConditionalEdges = nbConditionalEdges,
+    nbNonConditionalEdges = nbNonConditionalEdges,
     nbTransitNodes = (W+D) - 50,
     mapSide = 1000)
 
@@ -84,7 +85,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
   println("start dijkstra's")
   startWatch()
   val underApproximatingDistanceInGraphAllCondtionsOpen:Array[Array[Long]] = DijkstraDistanceMatrix.buildDistanceMatrix(graph, _ => true)
-  println("end dijkstra's " + getWatch + "ms")
+  println(s"end dijkstra's $getWatch ms")
 
   /*
   val anyConditionalEdgeOnShortestPath = FloydWarshall.anyConditionalEdgeOnShortestPath(graph,underApproximatingDistanceInGraphAllCondtionsOpen)
@@ -103,10 +104,10 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
   val m = Store() //checker = Some(new ErrorChecker()))
   println("model")
 
-  val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + l + "_open"))
+  val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, s"warehouse_${l}_open"))
   val openWarehouses = Filter(warehouseOpenArray).setName("openWarehouses")
 
-  val edgeConditionArray = Array.tabulate(nbConditionalEdges)(c => CBLSIntVar(m, 1, 0 to 1, "edgeCondition_" + c + "_open"))
+  val edgeConditionArray = Array.tabulate(nbConditionalEdges)(c => CBLSIntVar(m, 1, 0 to 1, s"edgeCondition_${c}_open"))
 
   val openConditions = Filter(edgeConditionArray).setName("openConditions")
 
@@ -122,7 +123,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   val trackedNodeToDistanceAndCentroid: SortedMap[Int,(CBLSIntVar,CBLSIntVar)] = vor.trackedNodeToDistanceAndCentroidMap
 
-  println("done init voronoï zones")
+  println("Done init Voronoï zones")
 
   val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
     trackedNodeToDistanceAndCentroid(deliveryToNode(d).id)._1)
@@ -169,9 +170,9 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
     ))
 
   //this procedure returns the k closest closed warehouses
-  def kNearestClosedWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).newValue == 0)
+  def kNearestClosedWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = otherWarehouse => warehouseOpenArray(otherWarehouse).newValue == 0)
   //this procedure returns the k closest open warehouses
-  def kNearestOpenWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).newValue != 0)
+  def kNearestOpenWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = otherWarehouse => warehouseOpenArray(otherWarehouse).newValue != 0)
   def kNearestdWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse))
 
   def muLine(depth:Int,kOpen:Int,kClosed:Int ) = Mu[AssignMove](
@@ -202,7 +203,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
   def swapsK(k:Int, openWarehousesToConsider:()=>Iterable[Int] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
     searchZone1 = openWarehousesToConsider,
     searchZone2 = () => (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
-    name = "Swap" + k + "Nearest",
+    name = s"Swap${k}Nearest",
     symmetryCanBeBrokenOnIndices = false)
 
   def doubleSwap(k:Int) = (swapsK(k) dynAndThen((firstSwap:SwapMove) => swapsK(k,() => kNearestOpenWarehouses(firstSwap.idI,k)))) name "DoubleSwap"
@@ -216,7 +217,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
     val distanceW1W2:Long = underApproximatingDistanceInGraphAllCondtionsOpen(nodeW1.id)(nodeW2.id)
 
     (0 until nbConditionalEdges).filter(c => {
-      val conditionalEdge = graph.conditionToConditionalEdges(c.toInt)
+      val conditionalEdge = graph.conditionToConditionalEdges(c)
       val distA1 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeIDA)(nodeW1.id)
       val distA2 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeIDA)(nodeW2.id)
       val distB1 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeIDB)(nodeW1.id)
@@ -236,14 +237,15 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   val l = 40
   val isAmongLNearestWarehouses:Array[Array[Boolean]] = Array.tabulate(W)(_ => Array.fill(W)(false))
-  for(w1 <- (0 until W).par){
+  val wPar = ParVector.tabulate(W)(x => x)
+  for(w1 <- wPar){
     for(w2 <- kNearestdWarehouses(w1,l)) {
       isAmongLNearestWarehouses(w1)(w2) = true
       isAmongLNearestWarehouses(w2)(w1) = true
     }
   }
 
-  for(w1 <- (0 until W).par){
+  for(w1 <- wPar){
     warehousesPairToTwiceApartBridges(w1) = Array.tabulate(W)(w2 => if(w1 > w2 || !isAmongLNearestWarehouses(w1)(w2)) List.empty else getFactorApartBridges(w1,w2,factorForFastCombined))
   }
   println("end warehousesPairToTwiceApartBridges")
@@ -261,10 +263,8 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
           name "fastCombined")
         //Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
       ),refresh = W/10)
-
       //cauchyAnnealing (10,2) cutTail (10000,0.00001,1000) saveBestAndRestoreOnExhaust obj
-
-      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize1"), 4, obj, restartFromBest = true)
+      .onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize1"), 4, obj, restartFromBest = true)
 
       //we set it after the restart because it is really slow; it subsumes the fast search, but it does not often find anything anyway, so better gain time
       exhaust Profile((swapsK(20) andThen AssignNeighborhood(edgeConditionArray, "SwitchConditionsCombined")) guard(() => openWarehouses.value.size >= 5) name "combined") //we set a minimal size because the KNearest is very expensive if the size is small
@@ -276,7 +276,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
       visual.redraw(
         openConditions.value,
         openWarehouses.value,
-        trackedNodeToDistanceAndCentroid.mapValues({case (v1, v2) => v2.valueInt}),
+        TreeMap(trackedNodeToDistanceAndCentroid.view.mapValues({case (v1, v2) => v2.valueInt}).toIndexedSeq:_*),
         hideClosedEdges = false,
         hideRegularEdges = true,
         hideOpenEdges = false,
@@ -285,7 +285,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
       )
 
       lastDisplay = this.getWatch
-    }) showObjectiveFunction(obj)
+    }) showObjectiveFunction obj
 
   neighborhood.verbose = 1
 
@@ -298,7 +298,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
   visual.redraw(
     openConditions.value,
     openWarehouses.value,
-    trackedNodeToDistanceAndCentroid.mapValues({case (v1,v2) => v2.valueInt}),
+    TreeMap(trackedNodeToDistanceAndCentroid.view.mapValues({case (v1,v2) => v2.valueInt}).toIndexedSeq:_*),
     emphasizeEdges = vor.spanningTree(deliveryNodeList),
     hideClosedEdges = true,
     hideRegularEdges = false,

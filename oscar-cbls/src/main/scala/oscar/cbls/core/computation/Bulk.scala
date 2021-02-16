@@ -42,7 +42,7 @@ trait Bulked[VarType <: Value, BulkedComputationResult] extends Invariant {
     val m = this.preFinishInitialization()
     if (m == null) {
       //no bulking possible
-      this.registerStaticDependencies(bulkedVars:_*)
+      this.registerStaticDependencies(bulkedVars.toIndexedSeq:_*)
       performBulkComputationID(bulkedVars, id)
     } else {
       //check for existing bulk
@@ -81,7 +81,7 @@ class Bulk(m: Store, val bulkedVars: Array[Value], val bulkedComputationResult: 
   for (dd <- bulkedVars) registerStaticallyListenedElement(dd)
   finishInitialization(m)
 
-  override def checkInternals(c: Checker): Unit = c.check(true)
+  override def checkInternals(c: Checker): Unit = c.check(verity = true)
 }
 
 /**This is the dictionaries where bulks are stored, and can be searched for
@@ -97,7 +97,7 @@ trait Bulker {
     if (bulks == null) return null
 
     for (b <- bulks) {
-      if (bulkedVars == b.bulkedVars) {
+      if (bulkedVars sameElements b.bulkedVars) {
         return b
       }
     }

@@ -92,8 +92,7 @@ case class DomainRange(override val min: Long, override val max: Long) extends D
   def contains(v:Long): Boolean = min <= v && max >= v
 
   override def size: Long =
-    if(min < 0 && min + Long.MaxValue <= max) Long.MaxValue
-    else if(max==Long.MaxValue && min==Long.MinValue) Long.MaxValue
+    if (min <= 0 && min + Long.MaxValue <= max) Long.MaxValue
     else math.max(max-min+1L,0L)
 
   override def values: Iterable[Long] = min to max
@@ -115,12 +114,12 @@ case class DomainRange(override val min: Long, override val max: Long) extends D
   }
 
   override def union(d: Domain): Domain = {
-    val newDomain:Domain = d match{
+    val newDomain:Domain = d match {
       case r:DomainRange =>
         ( math.min(r.min,min) , math.max(r.max,max))
       case FullRange => FullRange
       case SingleValueDomain(v) =>
-        if(v < min) (v , max)
+        if (v < min) (v , max)
         else if (max < v) (min , v)
         else this
       case FullIntRange => FullIntRange
@@ -152,7 +151,7 @@ case object FullIntRange extends Domain{
   override def max: Long = Int.MaxValue
   override def size: Long = Int.MaxValue
   override def randomValue(): Long = Random.nextInt()
-  override def contains(v: Long): Boolean = if(v <= max && v >= min) true else false
+  override def contains(v: Long): Boolean = v <= max && v >= min
   override def values: Iterable[Long] = min to max
   override def intersect(d: Domain): Domain = Domain(Math.max(min, d.min), Math.min(max, d.max))
   override def union(d: Domain): Domain = Domain(Math.min(min, d.min), Math.max(max, d.max))

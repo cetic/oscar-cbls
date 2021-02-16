@@ -52,7 +52,7 @@ class MinConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default:
     //we start wit the added because we want to avoid exploring the values for nothing
     require(id == Int.MinValue)
 
-    val removedValuesIt = removedValues.iterator
+    val removedValuesIt = removedValues.iterator  //TODO: this takes a huge amount of time
     while(removedValuesIt.hasNext){
       val deleted = removedValuesIt.next()
       if(idToTheirPositionNumber(deleted) < nbListenedVals) {
@@ -60,7 +60,7 @@ class MinConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default:
       }
     }
 
-    val addedValuesIt = addedValues.iterator
+    val addedValuesIt = addedValues.iterator //TODO: this takes a huge amount of time
     while(addedValuesIt.hasNext){
       val added = addedValuesIt.next()
       if(idToTheirPositionNumber(added) < nbListenedVals) {

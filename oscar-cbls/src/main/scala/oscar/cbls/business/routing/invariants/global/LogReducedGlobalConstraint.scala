@@ -16,6 +16,7 @@ package oscar.cbls.business.routing.invariants.global
 
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
+import oscar.cbls.core.computation.ChangingSeqValue
 
 sealed abstract class LogReducedSegment[T]()
 
@@ -156,13 +157,13 @@ object LogReducedFlippedPreComputedSubSequence {
     * associated with it. These values are queried from the pre-computation.
     * The assembly includes O(log(n)) of these pre-computations.
     *
-    * @param gc the GlobalConstraint linked to this constraint
+    * @param routes The routes of the VRP
     * @param n the number of nodes
     * @param v the number of vehicles
     * @tparam T the type of pre-computation, which is on subsequences (not on nodes)
     */
-  abstract class LogReducedGlobalConstraint[T:Manifest, U:Manifest](gc: GlobalConstraintCore, n: Int, v :Int)
-    extends GlobalConstraintDefinition[U](gc,v){
+  abstract class LogReducedGlobalConstraint[T:Manifest, U:Manifest](routes: ChangingSeqValue, n: Int, v :Int)
+    extends GlobalConstraintCore[U](routes,v){
 
     /**
       * this method delivers the value of the node

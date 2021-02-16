@@ -98,7 +98,7 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Int = 4,
   def setCircuit(nodes: Iterable[Int]): Unit = {
     routes := IntSequence(nodes)
     for(v <- 0 until v) require(routes.value.contains(v))
-    if(debug)routingConventionConstraintInv.checkVehicleOrder
+    if(debug)routingConventionConstraintInv.checkVehicleOrder()
   }
 
   def unroutedNodes:Iterable[Int] = nodes.filterNot(isRouted)

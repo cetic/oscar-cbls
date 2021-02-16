@@ -2,7 +2,7 @@ package oscar.cbls.modeling
 
 import oscar.cbls.core.computation.{AbstractVariable, Solution}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{JumpNeighborhood, Move, Neighborhood, NoMoveNeighborhood, SupportForAndThenChaining}
+import oscar.cbls.core.search.{JumpNeighborhood, Move, Neighborhood, NeighborhoodCombinator, NoMoveNeighborhood, SupportForAndThenChaining}
 import oscar.cbls.lib.search.combinators._
 
 import scala.concurrent.duration.{Duration, DurationInt}
@@ -15,17 +15,16 @@ trait CombinatorsAPI
     with NeighborhoodSelectionCombinators
     with UtilityCombinators
 
-
 trait BasicCombinators{
 
   /**
-    * this combinator always selects the best move between the two parameters
-    * notice that this combinator makes more sense
-    * if the two neighborhood return their best found move,
-    * and not their first found move, as usually done.
-    *
-    * @author renaud.delandtsheer@cetic.be
-    */
+   * this combinator always selects the best move between the two parameters
+   * notice that this combinator makes more sense
+   * if the two neighborhood return their best found move,
+   * and not their first found move, as usually done.
+   *
+   * @author renaud.delandtsheer@cetic.be
+   */
   def best(n: Neighborhood*) = new BestMove(n:_*)
 
   /**
@@ -225,13 +224,13 @@ trait CompositionCombinators{
    * @author renaud.delandtsheer@cetic.be
    */
   def dynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChaining[FirstMoveType],
-                                      b:(FirstMoveType => Neighborhood),
+                                      b:FirstMoveType => Neighborhood,
                                       maximalIntermediaryDegradation: Long = Long.MaxValue) =
     new DynAndThen[FirstMoveType](a,b,maximalIntermediaryDegradation)
 
 
   def DynAndThenWithPrev[FirstMoveType<:Move](x:Neighborhood with SupportForAndThenChaining[FirstMoveType],
-                                              b:((FirstMoveType,Solution) => Neighborhood),
+                                              b:(FirstMoveType,Solution) => Neighborhood,
                                               maximalIntermediaryDegradation:Long = Long.MaxValue,
                                               valuesToSave:Iterable[AbstractVariable]) =
     new DynAndThenWithPrev[FirstMoveType](x, b, maximalIntermediaryDegradation, valuesToSave)
@@ -266,7 +265,7 @@ trait InstrumentNeighborhoodsCombinator{
    * @param a a neighborhood
    * @param proc the procedure to call on one first move that is performed from this neighborhood
    */
-  def doOnFirstMove(a: Neighborhood, proc: () => Unit) = new DoOnFirstMove(a: Neighborhood, proc: () => Unit)
+  def doOnFirstMove(a: Neighborhood, proc: () => Unit) = DoOnFirstMove(a: Neighborhood, proc: () => Unit)
 
   /**
    * this combinator attaches a custom code to a given neighborhood.
@@ -285,7 +284,7 @@ trait InstrumentNeighborhoodsCombinator{
       procBeforeMove,
       procAfterMove)
 
-  def doOnExhaust(a:Neighborhood, proc:(()=>Unit),onlyFirst:Boolean) =
+  def doOnExhaust(a:Neighborhood, proc:()=>Unit,onlyFirst:Boolean) =
     DoOnExhaust(a, proc,onlyFirst)
 }
 
@@ -311,12 +310,12 @@ trait NeighborhoodSelectionCombinators{
    * At each invocation, this combinator explores one of the neighborhoods in l (and repeat if it is exhausted)
    * neighborhoods are selected based on their speed the fasted one to find a move is selected
    * a tabu is added: in case a neighborhood is exhausted, it is not explored for a number of exploration of this combinator
-   * the tabu can be overriden if all neighborhoods explored are exhausted. tabu neighborhood can be explored anyway if they are still tabu, but for less than overrideTabuOnFullExhaust invocations of this combinator
+   * the tabu can be overridden if all neighborhoods explored are exhausted. tabu neighborhood can be explored anyway if they are still tabu, but for less than overrideTabuOnFullExhaust invocations of this combinator
    * the refresh parameter forces the combinator to try all neighborhoods every "refresh" invocation. it is useful because some neighorhood can perform poorly at the beginning of search and much better later on, and we do not want the combinator to just "stick to its first impression"
    * @param l the neighborhoods to select from
    * @param tabuLength the number of invocation that they will not be explored when exhausted
    * @param overrideTabuOnFullExhaust the tabu can be overriden if all explored neighbors are exhausted, for each neighborhood that is tabu for les than this override
-   * @param refresh a refresh of the slopee measuring must be perfored every refresh iterations
+   * @param refresh a refresh of the slope measuring must be perfored every refresh iterations
    */
   def fastestFirst(l:List[Neighborhood],
                    tabuLength:Int = 10,
@@ -424,13 +423,13 @@ class NeighborhoodOps(n:Neighborhood){
   def sequence(b: Neighborhood): Neighborhood = n maxMoves 1L exhaust b
 
   /**
-    * this combinator always selects the best move between the two parameters
-    * notice that this combinator makes more sense
-    * if the two neighborhood return their best found move,
-    * and not their first found move, as usually done.
-    *
-    * @author renaud.delandtsheer@cetic.be
-    */
+   * this combinator always selects the best move between the two parameters
+   * notice that this combinator makes more sense
+   * if the two neighborhood return their best found move,
+   * and not their first found move, as usually done.
+   *
+   * @author renaud.delandtsheer@cetic.be
+   */
   def best(b: Neighborhood): Neighborhood = new oscar.cbls.lib.search.combinators.BestMove(n, b)
 
   /**
@@ -500,9 +499,9 @@ class NeighborhoodOps(n:Neighborhood){
    */
   def once = new MaxMoves(n, 1L)
 
-  def onExhaust(proc: =>Unit) = DoOnExhaust(n,() => proc,false)
+  def onExhaust(proc: =>Unit) = DoOnExhaust(n,() => proc,onlyFirst = false)
 
-  def onFirstExhaust(proc: =>Unit) = DoOnExhaust(n,() => proc,true)
+  def onFirstExhaust(proc: =>Unit) = DoOnExhaust(n,() => proc,onlyFirst = true)
 
   /**
    * bounds the number of tolerated moves without improvements over the best value
@@ -535,7 +534,7 @@ class NeighborhoodOps(n:Neighborhood){
    *
    * @param proc the procedure to execute when the move is taken
    */
-  def beforeMove(proc: => Unit) = DoOnMove(n, procBeforeMove = (_) => proc)
+  def beforeMove(proc: => Unit) = DoOnMove(n, procBeforeMove = _ => proc)
 
   /**
    * this combinator attaches a custom code to a given neighborhood.
@@ -555,7 +554,7 @@ class NeighborhoodOps(n:Neighborhood){
    *
    * @param proc the procedure to execute when the move is taken
    */
-  def afterMove(proc: => Unit) = DoOnMove(n, procAfterMove = (_) => proc)
+  def afterMove(proc: => Unit) = DoOnMove(n, procAfterMove = _ => proc)
 
   /**
    * this combinator attaches a custom code to a given neighborhood.
@@ -590,7 +589,7 @@ class NeighborhoodOps(n:Neighborhood){
    *
    * @param proc the procedure to call on one first move that is performed from this neighborhood
    */
-  def onFirstMove(proc: => Unit) = new DoOnFirstMove(n, () => proc)
+  def onFirstMove(proc: => Unit) = DoOnFirstMove(n, () => proc)
 
   /**
    * saves the model for the best (smallest) value of obj
@@ -660,6 +659,12 @@ class NeighborhoodOps(n:Neighborhood){
   def acceptAll() = new WithAcceptanceCriterion(n, (_: Long, _: Long) => true)
 
   /**
+   * this combinator overrides accepts all moves (this is the withAcceptanceCriteria, given the fully acceptant criterion
+   */
+  def acceptAllButStrongViolation = new WithAcceptanceCriterion(n, (_: Long, n: Long) => n!=Long.MaxValue)
+
+
+  /**
    * proposes a round-robin with that.
    * notice that you can chain steps; this will build a round-robin on the whole sequence (although this operation is not associative, so better not use parentheses)
    *
@@ -695,7 +700,22 @@ class NeighborhoodOps(n:Neighborhood){
   def cauchyAnnealing(initialTemperature:Double, base: Double = 2) = new Metropolis(n, iterationToTemperature = (it: Long) => initialTemperature / (it + 1), base)
 
   //Boltzmann annealing, where T = T_0/ln k
-  def boltzmannAnnealing(initialTemperature:Double, base: Double = 2) = new Metropolis(n, iterationToTemperature = (it: Long) => initialTemperature / math.log(it + 1), base)
+  def boltzmannAnnealing(initialTemperature:Double, base: Double = 2) = new Metropolis(n, iterationToTemperature = (it: Long) => initialTemperature / math.log(it.toDouble + 1), base)
+
+
+  /**
+   * implements the late acceptance criterion. Similarly to the simulated annealing it will accept degrading moves.
+   * The acceptance is however not computed based on statistics. Instead there is a history of the "length" previous values,
+   * and a pointer that iterates on these values.
+   * It compares the next obj with the value fetched from the history and accepts improves over that historical value.
+   * If the neighbour is accepted,the historical value is updated.
+   *
+   * more details in: Burke EK, Bykov Y (2016) The late acceptance hill-climbing heuristic. Eur J Oper Res 258:70–78
+   * @param length the length of the history
+   * @param maxRelativeIncreaseOnBestObj additionally, newOBj is rejected if > maxRelativeIncreaseOnBestObj*bestObj.
+   *                                     This increases convergence, but decreased optimality of this approach. the default value is very large, so that this mechanism is inactive.
+   */
+  def lateAcceptanceHillClimbing(length:Int = 20,maxRelativeIncreaseOnBestObj:Double=1000) = new LateAcceptanceHillClimbing(n, length,maxRelativeIncreaseOnBestObj)
 
   //TODO: Adaptive Simulated Annealing: T = T_0 exp(-c k^1/D) wth re-annealing also permits adaptation to changing sensitivities in the multi-dimensional parameter-space.
 

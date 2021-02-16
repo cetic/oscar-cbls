@@ -86,7 +86,7 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
     }
   }
 
-  def positionOfValue(value:Int):Option[RedBlackTreeMapExplorer[(Pivot)]] = transformation.positionOf(value)
+  def positionOfValue(value:Int):Option[RedBlackTreeMapExplorer[Pivot]] = transformation.positionOf(value)
 
   def isIdentity: Boolean = transformation.isEmpty
 
@@ -127,10 +127,10 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
     val widthZone2 = endZone2Included - endZone1Included
     //TODO: the choice is based on the number of positions, it should be based on the number of segments instead (but this is probably the same very often)
     if(widthZone1 > widthZone2){
-      swapAdjacentZonesShiftFirst(startZone1Included, endZone1Included, endZone2Included, false)
+      swapAdjacentZonesShiftFirst(startZone1Included, endZone1Included, endZone2Included, flipZone2 = false)
     }else{
-      val tmp = swapAdjacentZonesShiftSecond(startZone1Included, endZone1Included, endZone2Included, false)
-      assert(tmp equals swapAdjacentZonesShiftFirst(startZone1Included, endZone1Included, endZone2Included, false))
+      val tmp = swapAdjacentZonesShiftSecond(startZone1Included, endZone1Included, endZone2Included, flipZone1 = false)
+      assert(tmp equals swapAdjacentZonesShiftFirst(startZone1Included, endZone1Included, endZone2Included, flipZone2 = false))
       tmp
     }
   }
@@ -189,7 +189,7 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
     //update the pivots to the flipped pivot
 
     val updatedForwardFct = transformReadyForFlip.update(startZoneIncluded,transformReadyForFlip.biggestLowerOrEqual(endZoneIncluded).get._1,(_,_) => {
-      val newPivot = flippedPivotsIterator.next
+      val newPivot = flippedPivotsIterator.next()
       (newPivot.fromValue,newPivot)
     } )
 

@@ -37,17 +37,15 @@ class BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = t
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
 
     //we record the obj before move to prevent an additional useless propagation
-    require(initialObj == o.value)
+    require(initialObj == o.value, "initialObj:" + initialObj + "!= o.value:" + o.value)
 
     a.getMove(obj, initialObj, acceptanceCriteria) match {
       case NoMoveFound =>
-        if(alsoSaveOnExhaust){
-          if (initialObj < myBestObj && currentSolutionIsAcceptable) {
-            //solution degrades, and we were better than the best recorded
-            //so we save
-            saveCurrent(initialObj)
-            if (verbose >= 2L) println("saving best solution on exhaust (obj:" + myBestObj + ")")
-          }
+        if(alsoSaveOnExhaust && (initialObj < myBestObj && currentSolutionIsAcceptable)){
+          //solution degrades, and we were better than the best recorded
+          //so we save
+          saveCurrent(initialObj)
+          if (verbose >= 2L) println("saving best solution on exhaust (obj:" + myBestObj + ")")
         }
         NoMoveFound
       case MoveFound(m) =>

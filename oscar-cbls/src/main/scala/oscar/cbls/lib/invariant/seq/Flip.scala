@@ -92,13 +92,13 @@ case class Flip(v: SeqValue,override val maxPivotPerValuePercent:Int = 10, overr
         assert(this.newValue quickEquals checkpointStack.outputAtTopCheckpoint(checkPoint))
         true
 
-      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, isStarMode, level) =>
+      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, level) =>
         if(!digestChanges(prev)){
           this := changes.newValue.flip(false,true)
         }
 
         releaseTopCheckpointsToLevel(level,true)
-        this.defineCurrentValueAsCheckpoint(isStarMode)
+        this.defineCurrentValueAsCheckpoint()
         checkpointStack.defineCheckpoint(prev.newValue,level,this.newValue)
         true
 

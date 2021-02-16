@@ -19,6 +19,8 @@ package oscar.cbls.lib.search.neighborhoods.vlsn
 
 import oscar.cbls.core.search.{DoNothingMove, Move}
 import oscar.cbls._
+import oscar.cbls.algo.quick.QList
+
 import scala.collection.immutable.SortedSet
 
 object VLSNMoveType extends Enumeration{
@@ -64,7 +66,7 @@ class VLSNNodeBuilder(var nbLabels:Int) {
 class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
   private val nbNodes = nodes.length
   private val edges:Array[Array[Edge]] = Array.tabulate(nbNodes)(_ => Array.fill(nbNodes)(null))
-  private var fromToWithEdge:List[(Int,Int)] = List.empty
+  private var fromToWithEdge:QList[(Int,Int)] = null
   private var nextEdgeID:Int = 0
 
   def nbEdges:Int = nextEdgeID
@@ -76,7 +78,7 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
     edges(from.nodeID)(to.nodeID) = edge
 
     nextEdgeID += 1
-    fromToWithEdge = (from.nodeID,to.nodeID) :: fromToWithEdge
+    fromToWithEdge = QList((from.nodeID,to.nodeID),fromToWithEdge)
     edge
   }
 
@@ -87,7 +89,10 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
   def buildGraph():VLSNGraph = {
     val edgeArray:Array[Edge] = Array.fill(nextEdgeID)(null)
 
-    for((from,to) <- fromToWithEdge){
+    var cur = fromToWithEdge
+    while(cur != null){
+      val (from,to) = cur.head
+      cur = cur.tail
       val edge = edges(from)(to)
       edgeArray(edge.edgeID) = edge
     }
@@ -155,7 +160,7 @@ class Node(val nodeID:Int, val representedNode:Int, val nodeType:VLSNSNodeType, 
       case FictiveNode => "trashNode"
     }
 
-    val lineColor = (if (bold) "blue" else "black")
+    val lineColor = if (bold) "blue" else "black"
     "\"" + nodeID + "\" [shape=circle,style=filled,fillcolor=" + fillColor + ",color=" + lineColor +
       ", label = " + dotLabel + "] ; "
   }
@@ -177,12 +182,11 @@ class Edge(val from:Node, val to:Node, val move:Move, val deltaObj:Long, val edg
       "\"Edge" + edgeID + "\" -> " + to.nodeID + (if(bold) "[color=blue]" else "") + ";"
 
   def toDOTLight(bold:Boolean = false):String =
-    from.nodeID + " -> " + to.nodeID + (if(bold) "[color=blue]" else "") + ";"
+    s"${from.nodeID} -> ${to.nodeID}${if(bold) "[color=blue]" else ""};"
 
   def toDOT(bold:Boolean = false,light:Boolean):String =
     if(light){ toDOTLight(bold) }else toDOTHeavy(bold)
 }
-
 
 object VLSNGraphTest extends App{
 
@@ -194,7 +198,7 @@ object VLSNGraphTest extends App{
     val builder = new VLSNEdgeBuilder(nodes: Array[Node], nbNodes,2) //nbLAbel is set here to nbNodes
 
     def edge(from: Int, to: Int, gain: Long): Unit = {
-      builder.addEdge(nodes(from), nodes(to), gain,  new DoNothingMove(Long.MaxValue),VLSNMoveType.SymbolicTrashToInsert)
+      builder.addEdge(nodes(from), nodes(to), gain,  DoNothingMove(Long.MaxValue),VLSNMoveType.SymbolicTrashToInsert)
     }
 
     edge(0, 1, 10)

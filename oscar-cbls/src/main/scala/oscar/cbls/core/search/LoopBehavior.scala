@@ -34,7 +34,7 @@ sealed abstract class LoopBehavior(){
 }
 
 trait BoundedIterator[T] extends Iterator[T]{
-  def hasUnboundedNext():Boolean
+  def hasUnboundedNext:Boolean
   def unboundedNext():T
 }
 
@@ -51,7 +51,7 @@ case class Timeout(enclosedBehavior:LoopBehavior,timeOutMilliSeconds:Long) exten
         val startTimeMS = System.nanoTime()/(1000*1000)
         val baseIterator = enclosedBoundedIterable.iterator
 
-        override def hasUnboundedNext(): Boolean = baseIterator.hasUnboundedNext()
+        override def hasUnboundedNext: Boolean = baseIterator.hasUnboundedNext
 
         override def unboundedNext(): T = baseIterator.unboundedNext()
 
@@ -72,7 +72,7 @@ case class Timeout(enclosedBehavior:LoopBehavior,timeOutMilliSeconds:Long) exten
     (timeOutedIterable,enclosedNotifyFound)
   }
 }
-//TODO: randomized
+
 //TODO: best, cap after xxx sucessive not better neighbors
 
 case class First(maxNeighbors:() => Long = () => Long.MaxValue, randomized:Boolean = false) extends LoopBehavior(){
@@ -85,9 +85,9 @@ case class First(maxNeighbors:() => Long = () => Long.MaxValue, randomized:Boole
           Random.shuffle(baseIterable.toList).iterator
         } else baseIterable.iterator
         override def hasNext : Boolean = baseIterator.hasNext && !foundMove && remainingNeighbors>0L
-        override def next() : T = {remainingNeighbors -= 1L; baseIterator.next}
-        override def hasUnboundedNext() : Boolean = baseIterator.hasNext
-        override def unboundedNext() : T = baseIterator.next
+        override def next() : T = {remainingNeighbors -= 1L; baseIterator.next()}
+        override def hasUnboundedNext : Boolean = baseIterator.hasNext
+        override def unboundedNext() : T = baseIterator.next()
       }
     }
 
@@ -107,9 +107,9 @@ case class Best(maxNeighbors:() => Long = () => Long.MaxValue) extends LoopBehav
       override def iterator : BoundedIterator[T] = new BoundedIterator[T]{
         val baseIterator = baseIterable.iterator
         override def hasNext : Boolean = baseIterator.hasNext && remainingNeighbors>0L
-        override def next() : T = {remainingNeighbors -= 1L; baseIterator.next}
-        override def hasUnboundedNext() : Boolean = baseIterator.hasNext
-        override def unboundedNext() : T = baseIterator.next
+        override def next() : T = {remainingNeighbors -= 1L; baseIterator.next()}
+        override def hasUnboundedNext : Boolean = baseIterator.hasNext
+        override def unboundedNext() : T = baseIterator.next()
       }
     }
 

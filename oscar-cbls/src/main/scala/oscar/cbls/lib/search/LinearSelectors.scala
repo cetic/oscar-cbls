@@ -46,9 +46,9 @@ trait LinearSelectors{
                                        s: Iterable[S]):Iterable[(R,S)]={
     val flattened = for (rr <- r.iterator; ss <- s.iterator) yield (rr,ss)
     // Scala 2.12
-    flattened.toIterable
+    //flattened.toIterable
     // Scala 2.13
-    //flattened.iterator.to(Iterable)
+    flattened.iterator.to(Iterable)
   }
 
   /**return a couple (r,s) that is allowed: st(r,s) is true, and maximizing f(r,s) among the allowed couples

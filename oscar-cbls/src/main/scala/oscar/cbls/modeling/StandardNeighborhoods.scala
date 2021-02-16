@@ -1,5 +1,3 @@
-package oscar.cbls.modeling
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,6 +12,7 @@ package oscar.cbls.modeling
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.modeling
 
 import oscar.cbls._
 import oscar.cbls.core.computation.CBLSIntVar
@@ -75,13 +74,18 @@ trait StandardNeighborhoods {
    *                   If none is provided, all the array will be considered each time
    * @param valuesToConsider: the set of values to consider for the given variable
    * @param name the name of the neighborhood
+   * @param acceptanceChecking if set to none, the neighborhood will not check for strong constraint violation.
+   *                           if set to Some(value) then the neighborhood will perform "value" attempt to find a proper move, return noMoe if could not randomize without violating the strong constraints
+   *
    */
   def randomizeNeighborhood(vars:Array[CBLSIntVar],
                             degree:() => Int = () => 1,
                             name:String = "RandomizeNeighborhood",
                             searchZone:() => SortedSet[Int] = null,
-                            valuesToConsider:(CBLSIntVar,Long) => Iterable[Long] = (variable,_) => variable.value.domain.values)
-  = RandomizeNeighborhood(vars,degree,name,searchZone,valuesToConsider)
+                            valuesToConsider:(CBLSIntVar,Long) => Iterable[Long] = (variable,_) => variable.domain.values,
+                            acceptanceChecking:Option[Int] = None)
+  = RandomizeNeighborhood(vars,degree,name,searchZone,valuesToConsider,acceptanceChecking)
+
 
   /**
    * will randomize the array, by performing swaps only.
@@ -216,9 +220,16 @@ trait StandardNeighborhoods {
                        maxShiftSize:Int=>Int = _ => Int.MaxValue, //the max size of the roll, given the ID of the first variable
                        checkForDifferentValues:Boolean = false,
                        best:Boolean = false,
-                       hotRestart:Boolean = true) =
-    RollNeighborhood(vars, name, searchZone, bridgeOverFrozenVariables,
-      maxShiftSize, checkForDifferentValues, best, hotRestart)
+                       hotRestart:Boolean = true)
+  = RollNeighborhood(
+    vars,
+    name,
+    searchZone,
+    bridgeOverFrozenVariables,
+    maxShiftSize,
+    checkForDifferentValues,
+    best,
+    hotRestart)
 
   /**
    * flips a section of the array, only contiguous zones are searched
@@ -239,6 +250,12 @@ trait StandardNeighborhoods {
                                exploreLargerOpportunitiesFirst:Boolean = true,
                                best:Boolean = false,
                                hotRestart:Boolean = true) =
-    WideningFlipNeighborhood(vars, name, allowedPositions, maxFlipSize,
-      minFlipSize,exploreLargerOpportunitiesFirst, best, hotRestart)
+    WideningFlipNeighborhood(vars,
+      name,
+      allowedPositions,
+      maxFlipSize,
+      minFlipSize,
+      exploreLargerOpportunitiesFirst,
+      best,
+      hotRestart)
 }

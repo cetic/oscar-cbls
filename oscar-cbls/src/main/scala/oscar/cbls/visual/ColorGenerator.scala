@@ -64,9 +64,9 @@ object ColorGenerator {
     */
   def generateColorFromHash(hash:Int): Color = {
     val absHash = Math.abs(hash)
-    val r = absHash%255
-    val g = 255 - (absHash/255)%255
-    val b = ((absHash/255L)/255)%255
+    val r = (absHash%255).toFloat
+    val g = (255 - (absHash/255)%255).toFloat
+    val b = (((absHash/255L)/255)%255).toFloat
     new Color(r,g,b)
   }
 

@@ -134,7 +134,7 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
       case SeqUpdateLastNotified(value : IntSequence) =>
         (toUpdateZonesAndVehicleStartOpt, potentiallyRemovedPoints)
 
-      case s@SeqUpdateDefineCheckpoint(prev : SeqUpdate, isStarMode:Boolean, checkpointLevel:Int) =>
+      case s@SeqUpdateDefineCheckpoint(prev : SeqUpdate, checkpointLevel:Int) =>
         digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehicleStartOpt, potentiallyRemovedPoints, previousSequence) match {
           //checkpoints are managed about the vehicleLocation exclusively
           case (Some((zonesAfterPrev, vehicleLocationAfterPrev)), removedPointsAfterPrev) =>

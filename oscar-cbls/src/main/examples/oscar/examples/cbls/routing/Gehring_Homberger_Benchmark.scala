@@ -15,21 +15,23 @@ import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.Best
 
 import scala.io.Source
+import scala.math.Ordering.Implicits.seqOrdering
 import scala.util.Random
 
-object Gehring_Homberger_benchmark extends App {
+object Gehring_Homberger_Benchmark extends App {
   val size = args(1).toInt
   val files = new File(args(0)).listFiles().toList.sorted
 
   for(file <- files) {
     println(file.getName)
     val problem = generateProblem(file)
-    new Gehring_Homberger_benchmark_VRPTW(problem._1, problem._2, problem._3, problem._4, problem._5, problem._6)
+    new Gehring_Homberger_Benchmark_VRPTW(problem._1, problem._2, problem._3, problem._4, problem._5, problem._6)
   }
 
   private def generateProblem(file: File): (Int, Int, Long, Array[Array[Long]], Array[TransferFunction], Array[Long]) ={
     // Retrieve data from file
-    val lines = Source.fromFile(file).getLines
+    val bufSource = Source.fromFile(file)
+    val lines = bufSource.getLines()
     lines.next()        // NAME
     lines.next()        // blank space
     lines.next()        // VEHICLE
@@ -66,8 +68,8 @@ object Gehring_Homberger_benchmark extends App {
   }
 
   private def generateMatrix(coords: Array[(Long,Long)]): Array[Array[Long]] = {
-    def distance(from: (Long, Long), to: (Long, Long)) =
-      math.ceil(math.sqrt(math.pow(from._1 - to._1, 2) + math.pow(from._2 - to._2, 2))*100.0).toLong
+    def distance(from: (Long, Long), to: (Long, Long)): Long =
+      math.ceil(math.sqrt(math.pow((from._1 - to._1).toDouble, 2.0) + math.pow((from._2 - to._2).toDouble, 2.0))*100.0).toLong
 
     //for each delivery point, the distance to each warehouse
     Array.tabulate(coords.length)(
@@ -76,32 +78,30 @@ object Gehring_Homberger_benchmark extends App {
   }
 }
 
-class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Long, distanceMatrix: Array[Array[Long]], singleNodeTransferFunctions: Array[TransferFunction], demands: Array[Long]){
+class Gehring_Homberger_Benchmark_VRPTW(n: Int, v: Int, c: Long, distanceMatrix: Array[Array[Long]], singleNodeTransferFunctions: Array[TransferFunction], demands: Array[Long]){
   val m = Store(noCycle = false)
   val myVRP = new VRP(m,n,v)
   val penaltyForUnrouted = 1000000
   val penaltyForMovingVehicle = 10000
 
-  val gc = GlobalConstraintCore(myVRP.routes, v)
-
   val nodeWeight = demands
 
   // Distance
   val routeLengths = Array.fill(v)(CBLSIntVar(m,0))
-  val routeLength = new RouteLength(gc,n,v,routeLengths,(from: Int, to: Int) => distanceMatrix(from)(to))
+  val routeLength = new RouteLength(myVRP.routes,n,v,routeLengths,(from: Int, to: Int) => distanceMatrix(from)(to))
   val movingVehiclesNow = movingVehicles(myVRP.routes,v)
 
   //Time window constraints
   val timeWindowRoute = myVRP.routes.createClone()
   val timeWindowViolations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
 
-  val timeWindowConstraint = TimeWindowConstraint(gc,n,v,singleNodeTransferFunctions, distanceMatrix, timeWindowViolations)
+  val timeWindowConstraint = TimeWindowConstraint(myVRP.routes,n,v,singleNodeTransferFunctions, distanceMatrix, timeWindowViolations)
 
   // Weighted nodes
   // The sum of node's weight can't excess the capacity of a vehicle
   val weightPerVehicle = Array.tabulate(v)(_ => CBLSIntVar(m))
   // This invariant maintains the total node's weight encountered by each vehicle
-  val weightedNodesConstraint = WeightedNodesPerVehicle(gc, n, v, nodeWeight, weightPerVehicle)
+  val weightedNodesConstraint = WeightedNodesPerVehicle(myVRP.routes, n, v, nodeWeight, weightPerVehicle)
   // This invariant maintains the capacity violation of each vehicle (le means lesser or equals)
   val vehicleCapacityViolation = Array.tabulate(v)(vehicle => weightPerVehicle(vehicle) le c)
   val constraintSystem = ConstraintSystem(m)
@@ -119,7 +119,7 @@ class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Long, distanceMatrix:
   val relevantSuccessorsOfNodes = TransferFunction.relevantSuccessorsOfNodes(n,v,singleNodeTransferFunctions, distanceMatrix)
   val closestRelevantNeighborsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(distanceMatrix,relevantPredecessorsOfNodes)(_))
 
-  def postFilter(node:Int): (Int) => Boolean = {
+  def postFilter(node:Int): Int => Boolean = {
     (neighbor: Int) => {
       val successor = myVRP.nextNodeOf(neighbor)
       myVRP.isRouted(neighbor) &&
@@ -167,14 +167,14 @@ class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Long, distanceMatrix:
         NextRemoveGenerator(),
         None,
         Long.MaxValue,
-        false
+        intermediaryStops = false
       ).acceptAll(), _ > 1).guard(() => {
           movingVehiclesNow.value.nonEmpty
         }))
     }
   }
 
-  val routeUnroutedPoint =  profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(n,closestRelevantNeighborsByDistance(_)), myVRP,selectInsertionPointBehavior = Best(),neighborhoodName = "InsertUF"))
+  val routeUnroutedPoint =  profile(InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(n,closestRelevantNeighborsByDistance(_)), myVRP,selectInsertionPointBehavior = Best(),neighborhoodName = "InsertUF"))
 
 
   val search = (routeUnroutedPoint exhaust onePtMove(n/2)).

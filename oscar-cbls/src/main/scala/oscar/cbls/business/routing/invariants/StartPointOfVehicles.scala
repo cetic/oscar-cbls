@@ -61,7 +61,7 @@ class StartPointOfVehicles(routes:ChangingSeqValue,
       case SeqUpdateLastNotified(value) =>
         currentVehicleLocation
 
-      case s@SeqUpdateDefineCheckpoint(prev : SeqUpdate, isStarMode : Boolean, checkpointLevel : Int) =>
+      case s@SeqUpdateDefineCheckpoint(prev : SeqUpdate, checkpointLevel : Int) =>
         val previousVehicleStart = if (checkpointLevel == 0) digestUpdates(prev).regularize else digestUpdates(prev)
         vehicleStartStack.defineCheckpoint(prev.newValue, checkpointLevel, previousVehicleStart)
         previousVehicleStart

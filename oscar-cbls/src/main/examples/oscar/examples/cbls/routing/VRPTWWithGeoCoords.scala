@@ -34,7 +34,7 @@ object VRPTWWithGeoCoords extends App{
 class VRPTWWithGeoCoords (n: Int, v: Int, minLat: Double, maxLat: Double, minLong: Double, maxLong: Double) {
   //////////////////// MODEL ////////////////////
   // The Store : used to store all the model of the problem
-  val store = new Store
+  val store = Store()
 
   // The basic VRP problem, containing the basic needed invariant
   val myVRP = new VRP(store,n,v)
@@ -65,10 +65,9 @@ class VRPTWWithGeoCoords (n: Int, v: Int, minLat: Double, maxLat: Double, minLon
   val totalDistance = sum(routeLength(myVRP.routes, n, v, false, symmetricDistanceMatrix, true))
   // The STRONG timeWindow constraint (vehicleTimeWindowViolations contains the violation of each vehicle)
   val vehicleTimeWindowViolations = Array.fill(v)(new CBLSIntVar(store,0L,Domain(0L,n)))
-  val gc = GlobalConstraintCore(myVRP.routes, v)
   val timeWindowStrongConstraint =
     TimeWindowConstraintWithLogReduction(
-      gc,
+      myVRP.routes,
       n,v,
       strongSingleNodeTransferFunctions,
       timeMatrix,

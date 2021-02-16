@@ -42,7 +42,7 @@ abstract class Move(val objAfter:Long = Long.MaxValue, val neighborhoodName:Stri
    *
    * @return the list of touched variables.
    */
-  def touchedVariables:Iterable[Variable] = throw new Exception(this.getClass().getSimpleName + "cannot provide touched variables")
+  def touchedVariables:Iterable[Variable] = throw new Exception(this.getClass.getSimpleName + "cannot provide touched variables")
 
   /**
    * @return a readable string of the objective after wit ha space before, or an empty string
@@ -51,14 +51,14 @@ abstract class Move(val objAfter:Long = Long.MaxValue, val neighborhoodName:Stri
 
   protected def neighborhoodNameToString:String = if (neighborhoodName != null) neighborhoodName + ":" else ""
 
-  /** Ghis performs the move, evaluates the objective function, and backtracks the move
-   * notice that the objAfter is supposed to carry the proper value, so you generally do not need to call this
-   * since it is not an efficient way to proceed
-   * notice that it relies on the touchedVariables method.
-   *
-   * @param obj the objective function to evaluate
-   * @return the value of the objective function if the move were taken
-   */
+  /** this performs the move, evaluates the objective function, and backtracks the move
+    * notice that the objAfter is supposed to carry the proper value, so you generally do not need to call this
+    * since it is not an efficient way to proceed
+    * notice that it relies on the touchedVariables method.
+    *
+    * @param obj the objective function to evaluate
+    * @return the value of the objective function if the move were taken
+    */
   def evaluate(obj:Objective):Long = {
     val model = obj.model
     val snapshot = model.saveValues(touchedVariables)
@@ -96,18 +96,18 @@ object Move{
 class CodedMove(code: => Unit, override val objAfter: Long, override val neighborhoodName: String = null)
   extends Move(objAfter, neighborhoodName){
 
-  override def commit(): Unit = {code}
+  override def commit(): Unit = code
 
 
   override def toString: String = neighborhoodNameToString + "CodedMove"
 }
 
 /**
- * this class does not provide an implementation for touchedVariables,
- * since we are only inputting source code for executing the move
- * you must incorporate the obj into the move name in order to display it
- * */
-class EvaluableCodedMove(doAndUndo: () => (() => Unit),
+  * this class does not provide an implementation for touchedVariables,
+  * since we are only inputting source code for executing the move
+  * you must incorporate the obj into the move name in order to display it
+  * */
+class EvaluableCodedMove(doAndUndo: () => () => Unit,
                          override val objAfter: Long = Long.MaxValue,
                          override val neighborhoodName: String = "EvaluableCodedMove",
                          val moveName:String = "EvaluableCodedMove")
@@ -228,7 +228,7 @@ case class ConstantMovesNeighborhood[MoveType<:Move](ms:() => Iterable[Long => M
                                                      neighborhoodName:String = "ConstantMovesNeighborhood")
   extends EasyNeighborhoodMultiLevel[MoveType](neighborhoodName) {
 
-  var currentMove:(Long => MoveType) = null
+  var currentMove:Long => MoveType = null
 
   /**
    * This is the method you must implement and that performs the search of your neighborhood.
@@ -292,7 +292,7 @@ case class DoNothingMove(override val objAfter:Long,override val neighborhoodNam
 case class CompositeMove(ml:List[Move], override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
-  def this(ml:List[Move]){
+  def this(ml:List[Move]) = {
     this(ml, ml.last.objAfter)
   }
 

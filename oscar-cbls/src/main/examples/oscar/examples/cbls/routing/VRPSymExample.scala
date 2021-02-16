@@ -1,5 +1,3 @@
-package oscar.examples.cbls.routing
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,6 +12,7 @@ package oscar.examples.cbls.routing
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
@@ -35,7 +34,7 @@ class SimpleVRPSymModelWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Ar
   val obj = Objective(totalDistance + (penaltyForUnrouted*(n - length(routes))))
 
   override def toString : String = super.toString +
-    "objective: " + obj.value + "\n"
+    s"objective: ${obj.value}\n"
 
   val closestNeighboursForward = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance, (_) => nodes)(_))
 

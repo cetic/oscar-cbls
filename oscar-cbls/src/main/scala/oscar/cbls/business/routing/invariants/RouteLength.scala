@@ -142,7 +142,7 @@ class RouteLength(routes:ChangingSeqValue,
 
   private def digestUpdates(changes:SeqUpdate):Boolean = {
     changes match {
-      case SeqUpdateDefineCheckpoint(prev,isStarMode,checkpointLevel) =>
+      case SeqUpdateDefineCheckpoint(prev,checkpointLevel) =>
         //we only consider level 0; other are not managed.
         if(checkpointLevel == 0) {
 
@@ -406,12 +406,10 @@ class RouteLength(routes:ChangingSeqValue,
   }
 
   private def recordTouchedVehicle(v:Int): Unit ={
-    if(perVehicle){
-      if(checkpoint!= null && !isVehicleChangedSinceCheckpoint(v)){
-        savedValues(v) = distance(v).newValue
-        isVehicleChangedSinceCheckpoint(v) = true
-        changedVehiclesSinceCheckpoint = QList(v,changedVehiclesSinceCheckpoint)
-      }
+    if (perVehicle && checkpoint!= null && !isVehicleChangedSinceCheckpoint(v)) {
+      savedValues(v) = distance(v).newValue
+      isVehicleChangedSinceCheckpoint(v) = true
+      changedVehiclesSinceCheckpoint = QList(v,changedVehiclesSinceCheckpoint)
     }
   }
 

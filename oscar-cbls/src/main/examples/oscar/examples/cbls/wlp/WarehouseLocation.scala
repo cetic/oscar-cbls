@@ -29,7 +29,7 @@ object WarehouseLocation extends App{
   //the number of delivery points
   val D:Int = 300
 
-  println("WarehouseLocation(W:" + W + ", D:" + D + ")")
+  println(s"WarehouseLocation(W:$W, D:$D)")
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
@@ -37,7 +37,7 @@ object WarehouseLocation extends App{
 
   val m = Store()
 
-  val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + l + "_open"))
+  val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, s"warehouse_${l}_open"))
   val openWarehouses = filter(warehouseOpenArray).setName("openWarehouses")
 
   val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
@@ -53,10 +53,11 @@ object WarehouseLocation extends App{
       List(
         assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
         swapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),refresh = W/10)
-    onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/10), 2, obj))
+      .onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/10, name="smallRandomize"), 2, obj)
+      .onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/2, name="bigRandomize"), 2, obj))
 
   neighborhood.verbose = 1
-  
+
   neighborhood.doAllMoves(obj=obj)
 
   println(openWarehouses)

@@ -16,8 +16,8 @@ trait UtilityCombinators{
    * WARNING: do not use this inside an AndThen,
    *          since the objective function is instrumented by this combinator, so the statistics will be counter-intuitive
    *
-   * @param a
-   * @param ignoreInitialObj
+   * @param a The neighborhood to profile
+   * @param ignoreInitialObj flag to ignore the initial value of objective function
    */
   def profile(a:Neighborhood,ignoreInitialObj:Boolean = false) = Profile(a,ignoreInitialObj)
 }
@@ -68,8 +68,8 @@ class ShowObjectiveFunction(a: Neighborhood, obj: () => Long, title: String = "O
  * it will add a prefix to all moves sent back by this combinator
  * the only purposes are documentation and debug
  *
- * @param a
- * @param name
+ * @param a the base neighborhood
+ * @param name the name
  */
 class Name(a: Neighborhood, val name: String) extends NeighborhoodCombinator(a) {
   /**
@@ -98,8 +98,8 @@ class Name(a: Neighborhood, val name: String) extends NeighborhoodCombinator(a) 
  * it will add a prefix to all moves sent back by this combinator
  * the only purposes are documentation and debug
  *
- * @param a
- * @param name
+ * @param a The base neighborhood
+ * @param name The combinator's name
  */
 class ChainableName[MoveType <: Move](a: Neighborhood with SupportForAndThenChaining[MoveType], val name: String)
   extends NeighborhoodCombinator(a) with SupportForAndThenChaining[MoveType]{
@@ -161,11 +161,11 @@ class OverrideObjective(a: Neighborhood, overridingObjective: Objective) extends
    * Some neighborhoods are actually jumps, so that they might violate this basic rule however.
    *
    * @param obj the objective function. notice that it is actually a function. if you have an [[oscar.cbls.core.objective.Objective]] there is an implicit conversion available
-   * @param acceptanceCriterion
+   * @param acceptanceCriterion a function to decide the acceptation of a move
    * @return
    */
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult =
-    getMove(overridingObjective, overridingObjective.value,acceptanceCriterion)
+    getMove(overridingObjective, overridingObjective.value, acceptanceCriterion)
 }
 
 /**
@@ -175,8 +175,8 @@ class OverrideObjective(a: Neighborhood, overridingObjective: Objective) extends
  * WARNING: do not use this inside an AndThen,
  *          since the objective function is instrumented by this combinator, so the statistics will be counter-intuitive
  *
- * @param a
- * @param ignoreInitialObj
+ * @param a The base neighborhood
+ * @param ignoreInitialObj a flag to ignore or not the initial value of objective function
  */
 case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends NeighborhoodCombinator(a){
 
@@ -207,7 +207,7 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
    * Some neighborhoods are actually jumps, so that they might violate this basic rule however.
    *
    * @param obj the objective function. notice that it is actually a function. if you have an [[oscar.cbls.core.objective.Objective]] there is an implicit conversion available
-   * @param acceptanceCriterion
+   * @param acceptanceCriterion a function to decide the acceptation of a move
    * @return
    */
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {

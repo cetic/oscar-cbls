@@ -93,6 +93,23 @@ case class Store(override val verbose:Boolean = false,
     Solution(vars.map(_.snapshot),this)
   }
 
+  def snapShot(toRecord:Iterable[AbstractVariable]) = new Snapshot(toRecord,this)
+
+  def declaredValues:Iterable[Value] = QList.toIterable(propagationElements).flatMap(_ match{
+    case x:Value => Some(x)
+    case _ => None
+  })
+
+  /**To restore a saved solution
+    * notice that only the variables that are not derived will be restored; others will be derived lazily at the next propagation wave.
+    * This enables invariants to rebuild their internal data structure if needed.
+    * Only solutions saved from the same model can be restored in the model.
+    */
+  def restoreSolution(s:Solution): Unit ={
+    assert(s.model==this)
+    s.restoreDecisionVariables()
+  }
+
   /**Called by each variable to register themselves to the model
    * @param v the variable
    * @return a unique identifier that will be used to distinguish variables. basically, variables use this value to set up an arbitrary ordering for use in dictionnaries.
@@ -265,7 +282,7 @@ case class Solution(saves:Iterable[AbstractVariableSnapShot],model:Store){
 
   /**converts the solution to a human-readable string*/
   override def toString:String = {
-    "Solution(\n" + saves.map(_.toString(model)).mkString(",\n\t") + "\n)"
+    "Solution(\n\t" + saves.map(_.toString(model)).mkString(",\n\t") + "\n)"
   }
 
   def restoreDecisionVariables(): Unit = {
@@ -555,11 +572,16 @@ abstract class AbstractVariableSnapShot(val uniqueID:Int){
     if(m == null) s"Variable[m.uniqueID:${uniqueID}, value:${this.valueString}]"
     else s"Variable[m.name:${m.getVar(uniqueID)}, value:${this.valueString}]"
 
-  def valueString():String
-
-  final def restore(m:Store): Unit ={
+  final def restore(m:Store): Unit = {
     m.getPropagationElement(uniqueID) match {
-      case v : Variable if v.isDecisionVariable => doRestore(m)
+      case v : Variable if v.isDecisionVariable => doRestore()
+      case _ => throw new Error(s"can only re-assign decision variable, not $a")
+    }
+  }
+
+  final def restoreIfDecisionVariable(m:Store): Unit ={
+    m.getPropagationElement(uniqueID) match {
+      case v : Variable if v.isDecisionVariable => doRestore()
       case _ => ;
     }
   }

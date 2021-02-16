@@ -18,7 +18,7 @@ class NextIterator[T](base:Iterator[T]) extends Iterator[T]{
   var nextToReturn:T = null.asInstanceOf[T]
   var anyNextToReturn:Boolean = false
 
-  override def hasNext(): Boolean = anyNextToReturn || base.hasNext
+  override def hasNext: Boolean = anyNextToReturn || base.hasNext
 
   override def next(): T = {
     if (anyNextToReturn){
@@ -59,7 +59,7 @@ class LazyFilteredIterator(over:Iterator[Int],filter:Int => Boolean) extends Ite
 
   private[this] def prepareNextTrueIfExists(): Boolean = {
     if(nextExistsAndIsFiltered) return true
-    while (overPB.hasNext()) {
+    while (overPB.hasNext) {
       val potentialNext = overPB.next()
       if (filter(potentialNext)) {
         overPB.pushBack(potentialNext)

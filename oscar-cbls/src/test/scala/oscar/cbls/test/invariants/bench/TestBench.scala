@@ -517,7 +517,7 @@ case class RouteOfNodesForCheckPoint(intSeqVar: CBLSSeqVar, v:Int, checker:Invar
     var notInSeq = List.tabulate(randomVar.max)(n => n).filterNot(inSeq.contains(_))
     move match{
       case PlusOne() =>
-        val checkPoint = randomVar.defineCurrentValueAsCheckpoint(true)
+        val checkPoint = randomVar.defineCurrentValueAsCheckpoint()
         for(nbOfMove <- notInSeq.indices) {
           for (_ <- 0 to nbOfMove) {
             inSeq = randomVar.newValue.toList
@@ -532,7 +532,7 @@ case class RouteOfNodesForCheckPoint(intSeqVar: CBLSSeqVar, v:Int, checker:Invar
         if(notInSeq.nonEmpty)
           randomVar.insertAtPosition(Gen.oneOf(notInSeq).sample.get, Gen.choose(1, inSeq.size).sample.get)
       case MinusOne() =>
-        val checkPoint = randomVar.defineCurrentValueAsCheckpoint(true)
+        val checkPoint = randomVar.defineCurrentValueAsCheckpoint()
         for(nbOfMove <- inSeq.filterNot(_ < v).indices) {
           for (_ <- 0 to nbOfMove) {
             inSeq = randomVar.newValue.toList
@@ -546,7 +546,7 @@ case class RouteOfNodesForCheckPoint(intSeqVar: CBLSSeqVar, v:Int, checker:Invar
         if(inSeq.size > v)
           randomVar.remove(inSeq.indexOf(Gen.oneOf(inSeq.filterNot(_ < v)).sample.get))
       case Shuffle() =>
-        val checkPoint = randomVar.defineCurrentValueAsCheckpoint(true)
+        val checkPoint = randomVar.defineCurrentValueAsCheckpoint()
         for(nbOfMove <- inSeq.filterNot(_ < v).indices) {
           for (_ <- 0 to nbOfMove){
             inSeq = randomVar.newValue.toList
@@ -569,7 +569,7 @@ case class RouteOfNodesForCheckPoint(intSeqVar: CBLSSeqVar, v:Int, checker:Invar
         }
 
       case MultipleMove() =>
-        val checkPoint = randomVar.defineCurrentValueAsCheckpoint(true)
+        val checkPoint = randomVar.defineCurrentValueAsCheckpoint()
         val moves = List("add", "remove", "shuffle")
         for(nbOfMove <- 1 to 50) {
           for (_ <- 0 until nbOfMove) {
@@ -783,7 +783,7 @@ class InvBench(verbose: Int = 0, moves:List[Move]) extends AnyFunSuite with Scal
     if (vars.nonEmpty) {
       println(name + " vars:")
       vars.foreach((rv: RandomVar) => println(rv.toString()))
-      println
+      println()
     }
   }
 

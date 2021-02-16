@@ -3,7 +3,7 @@ package oscar.examples.cbls.routing
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
-import oscar.cbls.business.routing.invariants.timeWindow.{NaiveTimeWindowConstraint, TransferFunction}
+import oscar.cbls.business.routing.invariants.timeWindow.{NaiveTimeWindowConstraint, TimeWindowConstraint, TransferFunction}
 import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleCapacityConstraintWithLogReduction
 import oscar.cbls.core.computation.{CBLSIntVar, Store}
 import oscar.cbls.core.constraint.ConstraintSystem
@@ -16,33 +16,49 @@ import scala.collection.immutable.HashSet
   * Created by fg on 12/05/17.
   */
 
-object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
-  val m = new Store(noCycle = false, checker = Some(new ErrorChecker))
-  val v = 10
-  val n = 100
+object SimpleVRPWithTimeWindowsAndVehicleContent extends App {
+  val nbIterations = 5
+  for(v <- 10 to 20 by 5){
+    for(n <- 100 to 500 by 100){
+      var totalTime = 0L
+      for(seed <- 0 until nbIterations){
+        val start = System.currentTimeMillis()
+        new SimpleVRPWithTimeWindowsAndVehicleContent(n, v, seed)
+        totalTime += (System.currentTimeMillis()-start)
+      }
+      println("N : " + n + "\tV : " + v + "\tIterations : " + nbIterations + "\t=>\tTook (avg) : " + (totalTime/nbIterations) + " ms")
+    }
+  }
+}
+
+class SimpleVRPWithTimeWindowsAndVehicleContent(n: Int, v: Int, seed: Int) {
+  val m = Store(noCycle = false/*, checker = Some(new ErrorChecker)*/)
   val penaltyForUnrouted = 10000
   val maxVehicleContent = 8
   val minVehicleContent = 4
+
+  RoutingMatrixGenerator.random.setSeed(seed)
 
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
   val travelDurationMatrix = symmetricDistance
   val (listOfChains,precedences) = RoutingMatrixGenerator.generateChainsPrecedence(n,v,(n-v)/2)
   val singleNodeTransferFunctions = RoutingMatrixGenerator.generateFeasibleTransferFunctions(n,v,travelDurationMatrix,listOfChains)
-  val maxTravelDurations = RoutingMatrixGenerator.generateMaxTravelDurations(listOfChains,singleNodeTransferFunctions.map(_.ea),travelDurationMatrix)
+  //val maxTravelDurations = RoutingMatrixGenerator.generateMaxTravelDurations(listOfChains,singleNodeTransferFunctions.map(_.ea),travelDurationMatrix)
   val contentsFlow = RoutingMatrixGenerator.generateContentFlow(n,listOfChains,maxVehicleContent)
   val vehiclesSize = RoutingMatrixGenerator.generateVehiclesSize(v,maxVehicleContent,minVehicleContent)
 
   val myVRP =  new VRP(m,n,v)
-  NaiveTimeWindowConstraint.maxTransferFunctionWithTravelDurationRestriction(n,v,singleNodeTransferFunctions,maxTravelDurations,listOfChains, travelDurationMatrix)
 
-  val gc = GlobalConstraintCore(myVRP.routes, v)
+  val contentRoute = myVRP.routes.createClone()
+  val timeWindowRoute = contentRoute.createClone()
+  val precedenceRoute = timeWindowRoute.createClone()
+  val routeLengthRoute = precedenceRoute.createClone()
 
   // Distance
-  val routeLengthPerVehicles = Array.tabulate(v)(vehicle => CBLSIntVar(m,name = "Length of route " + vehicle))
-  val routeLengthInvariant = new RouteLength(gc,n,v,routeLengthPerVehicles,(from: Int, to: Int) => symmetricDistance(from)(to))
+  val routeLengthPerVehicles = Array.tabulate(v)(vehicle => CBLSIntVar(m,name = s"Length of route $vehicle"))
+  val routeLengthInvariant = new RouteLength(routeLengthRoute,n,v,routeLengthPerVehicles,(from: Int, to: Int) => symmetricDistance(from)(to))
 
   //Chains
-  val precedenceRoute = myVRP.routes.createClone()
   val precedenceInvariant = precedence(precedenceRoute,precedences)
   val vehicleOfNodesNow = vehicleOfNodes(precedenceRoute,v)
   val precedencesConstraints = new ConstraintSystem(m)
@@ -52,19 +68,16 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
   val chainsExtension = chains(myVRP,listOfChains)
 
   // Vehicle content
-  val violationOfContentAtVehicle = Array.tabulate(v)(vehicle => new CBLSIntVar(myVRP.routes.model, 0, 0 to Int.MaxValue, "violation of capacity of vehicle " + vehicle))
-  val capacityInvariant = GlobalVehicleCapacityConstraintWithLogReduction(gc, n, v, vehiclesSize, contentsFlow, violationOfContentAtVehicle)
+  val violationOfContentAtVehicle = Array.tabulate(v)(vehicle => new CBLSIntVar(m, 0, 0 to Int.MaxValue, s"violation of capacity of vehicle $vehicle"))
+  val capacityInvariant = GlobalVehicleCapacityConstraintWithLogReduction(contentRoute, n, v, vehiclesSize, contentsFlow, violationOfContentAtVehicle)
 
   //TimeWindow
-  val timeWindowRoute = precedenceRoute.createClone()
-  val timeWindowInvariant = NaiveTimeWindowConstraint(myVRP.routes, n, v, singleNodeTransferFunctions, travelDurationMatrix)
-  timeWindowInvariant.addMaxTravelDurationConstraint(maxTravelDurations)
-  val timeWindowConstraint = timeWindowInvariant.violation
+  val violationOfTimeAtVehicle = TimeWindowConstraint(timeWindowRoute, n, v, singleNodeTransferFunctions, travelDurationMatrix)
 
   //Constraints & objective
-  val obj = new CascadingObjective(precedencesConstraints,
-    new CascadingObjective(timeWindowConstraint,
-      new CascadingObjective(sum(violationOfContentAtVehicle),
+  val obj = new CascadingObjective(sum(violationOfContentAtVehicle),
+    new CascadingObjective(sum(violationOfTimeAtVehicle),
+      new CascadingObjective(precedencesConstraints,
         sum(routeLengthPerVehicles) + (penaltyForUnrouted*(n - length(myVRP.routes))))))
   m.close()
 
@@ -165,18 +178,16 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
   //val routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "InsertUF"))
 
 
-  val search = bestSlopeFirst(List(oneChainInsert,oneChainMove,onePtMove(20)))
+  val search = oneChainInsert exhaust oneChainMove exhaust onePtMove(20)
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 
-  search.verbose = 1
+  search.verbose = 0
   //search.verboseWithExtraInfo(4, ()=> "" + myVRP)
 
 
 
   search.doAllMoves(obj=obj)
-
-  println(myVRP)
 
   search.profilingStatistics
 }

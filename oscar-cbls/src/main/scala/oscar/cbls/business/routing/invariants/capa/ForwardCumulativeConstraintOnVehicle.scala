@@ -241,7 +241,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
       case SeqUpdateLastNotified(value : IntSequence) =>
         (toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints)
 
-      case s@SeqUpdateDefineCheckpoint(prev : SeqUpdate, isStarMode:Boolean, checkpointLevel:Int) =>
+      case s@SeqUpdateDefineCheckpoint(prev : SeqUpdate, checkpointLevel:Int) =>
         if(checkpointLevel < maxCheckpointLevel) {
           digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints, previousSequence) match {
             //checkpoints are managed about the vehicleLocation exclusively

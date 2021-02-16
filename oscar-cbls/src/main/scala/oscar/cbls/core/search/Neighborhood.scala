@@ -143,7 +143,7 @@ abstract class Neighborhood(name:String = null) {
 
   def resetStatistics(): Unit = {}
 
-  override def toString: String = (if(name == null) this.getClass.getSimpleName else name)
+  override def toString: String = if(name == null) this.getClass.getSimpleName else name
 
   var _verbose: Int = 0
 
@@ -236,14 +236,14 @@ abstract class Neighborhood(name:String = null) {
               " # "
             } else if (finalObj == bestObj) " ° "
             else "   ") + padToLength(finalObj.toString,smallPaddingLength)
-            println(firstPrefix + secondPrefix + moveSynthesis.toList.map({case ((name,n)) => padToLength(trimToLength(name, smallPaddingLength-4)+ ":"+n, smallPaddingLength)}).mkString(" "))
+            println(firstPrefix + secondPrefix + moveSynthesis.toList.map({case (name,n) => padToLength(trimToLength(name, smallPaddingLength-4)+ ":"+n, smallPaddingLength)}).mkString(" "))
 
             moveSynthesis = SortedMap.empty[String,Int]
             nanoTimeAtNextSynthesis = System.nanoTime() + (1000*1000*100) //100ms
           }
           if (printTakenMoves || printMoveSythesis) {
 
-            val runDurationMs:Long = ((System.nanoTime() - startSearchNanotime) / 1000000).ceil.toLong
+            val runDurationMs:Long = ((System.nanoTime() - startSearchNanotime).toFloat / 1000000).ceil.toLong
             val hours = (runDurationMs / (1000.0 * 60 * 60)).floor.toInt
             val minutes = (runDurationMs / (1000.0 * 60)).floor.toInt % 60
             val seconds: Double = (runDurationMs / 1000.0) % 60
@@ -276,7 +276,7 @@ abstract class Neighborhood(name:String = null) {
                 " # "
               } else if (currentObjValue == bestObj) " ° "
               else "   ") + padToLength(currentObjValue.toString,smallPaddingLength)
-              println(firstPrefix + secondPrefix + moveSynthesis.toList.map({case ((name,n)) => padToLength(trimToLength(name, smallPaddingLength-4)+ ":"+n, smallPaddingLength)}).mkString(" "))
+              println(firstPrefix + secondPrefix + moveSynthesis.toList.map({case (name,n) => padToLength(trimToLength(name, smallPaddingLength-4)+ ":"+n, smallPaddingLength)}).mkString(" "))
 
               moveSynthesis = SortedMap.empty[String,Int]
               nanoTimeAtNextSynthesis = System.nanoTime() + (1000*1000*100) //100ms
@@ -302,7 +302,7 @@ abstract class Neighborhood(name:String = null) {
                 " # "
               } else if (m.objAfter == bestObj) " ° "
               else "   ") + padToLength(m.objAfter.toString,smallPaddingLength)
-              println(firstPrefix + secondPrefix + moveSynthesis.toList.map({case ((name,n)) => padToLength(trimToLength(name, smallPaddingLength-4)+ ":"+n, smallPaddingLength)}).mkString(" "))
+              println(firstPrefix + secondPrefix + moveSynthesis.toList.map({case (name,n) => padToLength(trimToLength(name, smallPaddingLength-4)+ ":"+n, smallPaddingLength)}).mkString(" "))
 
               moveSynthesis = SortedMap.empty[String,Int]
               nanoTimeAtNextSynthesis = System.nanoTime() + (1000*1000*100) //100ms
@@ -372,7 +372,7 @@ abstract class Neighborhood(name:String = null) {
         " # "
       } else if (currentObjValue == bestObj) " ° "
       else "   ") + padToLength(currentObjValue.toString, smallPaddingLength)
-      println(firstPrefix + secondPrefix + moveSynthesis.toList.map({case ((name, n)) => padToLength(trimToLength(name, smallPaddingLength - 4) + ":" + n, smallPaddingLength) }).mkString(" "))
+      println(firstPrefix + secondPrefix + moveSynthesis.toList.map({case (name, n) => padToLength(trimToLength(name, smallPaddingLength - 4) + ":" + n, smallPaddingLength) }).mkString(" "))
     }
 
     if (printTakenMoves || printMoveSythesis) {
@@ -475,7 +475,7 @@ trait SupportForAndThenChaining[MoveType<:Move] extends Neighborhood{
 abstract class EasyNeighborhood[M<:Move](best:Boolean = false, neighborhoodName:String=null)
   extends Neighborhood with SupportForAndThenChaining[M]{
 
-  protected def neighborhoodNameToString: String = if (neighborhoodName != null) neighborhoodName else this.getClass().getSimpleName()
+  protected def neighborhoodNameToString: String = if (neighborhoodName != null) neighborhoodName else this.getClass.getSimpleName
 
   override def toString: String = neighborhoodNameToString
 
@@ -566,13 +566,13 @@ abstract class EasyNeighborhood[M<:Move](best:Boolean = false, neighborhoodName:
     }
   }
 
-  def afterMoveOnMove(proc:M => Unit):Neighborhood = new DoOnMove(this,(m:Move) => proc(m.asInstanceOf[M]))
+  def afterMoveOnMove(proc:M => Unit):Neighborhood = DoOnMove(this,(m:Move) => proc(m.asInstanceOf[M]))
 }
 
 abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
   extends Neighborhood with SupportForAndThenChaining[M]{
 
-  protected def neighborhoodNameToString: String = if (neighborhoodName != null) neighborhoodName else this.getClass().getSimpleName()
+  protected def neighborhoodNameToString: String = if (neighborhoodName != null) neighborhoodName else this.getClass.getSimpleName
 
   override def toString: String = neighborhoodNameToString
 
@@ -586,7 +586,7 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
 
   override final def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
 
-    require(!exploring,this + " is not a re-entrant neighborhood")
+    require(!exploring,s"$this is not a re-entrant neighborhood")
     exploring = true
     try {
       oldObj = initialObj
@@ -595,8 +595,9 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
       toReturnMove = null
       bestNewObj = initialObj //Long.MaxValue // //because we do not want "no move" to be considered as an actual move.
       this.obj = if (printExploredNeighbors) new LoggingObjective(obj) else obj
-      if (printExploredNeighborhoods)
-        println(neighborhoodNameToString + ": start exploration")
+      if (printExploredNeighborhoods) {
+        println(s"$neighborhoodNameToString: start exploration")
+      }
 
       exploreNeighborhood(oldObj)
     }finally {

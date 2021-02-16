@@ -61,8 +61,10 @@ class StartTimes(actPriorityList: ChangingSeqValue,
     val boundsOpt = digestUpdates(changes)
     if (boundsOpt.isDefined) {
       val bounds = boundsOpt.get
-      val prevSeq = bounds._3
-      computeStartTimesFrom(prevSeq, bounds._1)
+      val fromPos = bounds._1
+      val currentSeq = bounds._3
+      val prevSeq = bounds._4
+      computeStartTimesFrom(currentSeq, fromPos, prevSeq)
     }
   }
 
@@ -71,7 +73,7 @@ class StartTimes(actPriorityList: ChangingSeqValue,
     val changesValue = changes.newValue
     val lastValuePos = changesValue.size - 1
     changes match {
-      case SeqUpdateDefineCheckpoint(_, _, _) =>
+      case SeqUpdateDefineCheckpoint(_, _) =>
         Some(0, lastValuePos, changesValue, None)
       case r@SeqUpdateRollBackToCheckpoint(_, _) =>
         val rbkValue = r.howToRollBack.newValue // checkpoint value
@@ -121,7 +123,7 @@ class StartTimes(actPriorityList: ChangingSeqValue,
 
   // Compute the start times from a given position
   def computeStartTimesFrom(actPriorityList: IntSequence,
-                            pos: Int,
+                            posFrom: Int,
                             prevList: Option[IntSequence] = None): Unit = {
     val keyMap = actPriorityList.mkString(",")
     val optSeq = findIndex(keyMap)
@@ -143,14 +145,14 @@ class StartTimes(actPriorityList: ChangingSeqValue,
         if (optSeqPrev.isDefined) {
           val prevArrayStates: Array[StartTimesState] = optSeqPrev.get._2
           // Put the values for CBLS variables in prefix from previous sequence
-          for {i <- 0 until pos} {
+          for {i <- 0 until posFrom} {
             val stateI = prevArrayStates(i)
             nextArrayStates(i) = stateI
             startTimesVals += stateI.activityId -> stateI.activityStartTime
             startTimes(stateI.activityId) := stateI.activityStartTime
             makeSpanValue = stateI.makeSpanValue
           }
-          pos
+          posFrom
         } else 0
       } else 0
       // Initialize explorer from startPos
@@ -161,18 +163,18 @@ class StartTimes(actPriorityList: ChangingSeqValue,
         val actInd = seqExplorer.value
         val stStateBeforePos = if (position == 0) initialSTState else nextArrayStates(position-1)
         // Compute maximum ending time for preceding activities
-        val maxEndTimePrecs = actPrecedences
-          .predMap.getOrElse(actInd, BitSet.empty)
-          .foldLeft(0) { (acc, precInd) =>
-            if (actPriorityList.contains(precInd)) {
-              acc max (startTimesVals(precInd) + actDurations(precInd))
-            } else {
+        val actPrecs = actPrecedences.predMap.getOrElse(actInd, BitSet.empty)
+        val maxEndTimePrecs = actPrecs
+          .foldLeft(0) { (acc, prec) =>
+            if (actPriorityList.contains(prec))
+              acc max (startTimesVals(prec) + actDurations(prec))
+            else
               acc
-            }
           }
         // Compute maximum of earliest release time for all needed resources
         val actUsedResources = activityUsedResources.getOrElse(actInd, Set())
-        val maxReleaseResources = actUsedResources.foldLeft(0) { (acc, res) =>
+        val maxReleaseResources = actUsedResources
+          .foldLeft(0) { (acc, res) =>
             acc max stStateBeforePos.resourceStates(res).earliestStartTime(actInd, 0)
           }
         // Getting the minimum start time for this task
@@ -187,9 +189,11 @@ class StartTimes(actPriorityList: ChangingSeqValue,
         // Update resource states
         val nextResState = actUsedResources
           .foldLeft(stStateBeforePos.resourceStates) { (accM, res) =>
-          accM + (res ->
-            stStateBeforePos.resourceStates(res).nextState(actInd, actDurations(actInd), earliestStartTime))
-        }
+            accM + (res ->
+              stStateBeforePos
+                .resourceStates(res)
+                .nextState(actInd, actDurations(actInd), earliestStartTime))
+          }
         val stStateAtPos = StartTimesState(nextResState, makeSpanValue, actInd, earliestStartTime)
         nextArrayStates(position) = stStateAtPos
         // Update CBLS variable

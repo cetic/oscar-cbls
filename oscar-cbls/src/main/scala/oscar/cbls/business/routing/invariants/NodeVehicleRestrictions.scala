@@ -177,30 +177,32 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
     val explorerAtVehicleStart = checkpoint.explorerAtAnyOccurrence(vehicle).head
     var restrictionsForPrev = precomputationAtCheckpoint(explorerAtVehicleStart.value)
     var explorerAtCurrentNode = explorerAtVehicleStart.next
-    //TODO: put a while(true) here, and say that this is Gustav's suggestion in the comit
-    while(explorerAtCurrentNode match{
-      case None => return restrictionsForPrev(vehicle); false
-      case Some(nodePosition) =>
-        val node = nodePosition.value
-        if(node < v){
-          //we are at a vehicle
-          return restrictionsForPrev(vehicle)
-          false
-        }else {
-          val restrictionsForCurrent = precomputationAtCheckpoint(node)
-          for (v <- vehicles) {
-            restrictionsForCurrent(v) = restrictionsForPrev(v)
-          }
+    var resultOpt: Option[Long] = None
 
-          for (forbiddenVehicle <- forbiddenVehicles(node)) {
-            restrictionsForCurrent(forbiddenVehicle) += 1L
+    while (resultOpt.isEmpty) {
+      explorerAtCurrentNode match{
+        case None =>
+          resultOpt = Some(restrictionsForPrev(vehicle))
+        case Some(nodePosition) =>
+          val node = nodePosition.value
+          if (node < v) {
+            //we are at a vehicle
+            resultOpt = Some(restrictionsForPrev(vehicle))
+          } else {
+            val restrictionsForCurrent = precomputationAtCheckpoint(node)
+            for (v <- vehicles) {
+              restrictionsForCurrent(v) = restrictionsForPrev(v)
+            }
+
+            for (forbiddenVehicle <- forbiddenVehicles(node)) {
+              restrictionsForCurrent(forbiddenVehicle) += 1L
+            }
+            restrictionsForPrev = restrictionsForCurrent
+            explorerAtCurrentNode = nodePosition.next
           }
-          restrictionsForPrev = restrictionsForCurrent
-          explorerAtCurrentNode = nodePosition.next
-          true
-        }
-    }){}
-    throw new Error("unexpected end")
+      }
+    }
+    resultOpt.get
   }
 
   def violationOnSegmentFromPrecomputation(fromValue:Int,toValue:Int,vehicle:Int):Long = {
@@ -271,7 +273,7 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
 
   private def digestUpdates(changes : SeqUpdate) : Boolean = {
     changes match {
-      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, isStarMode : Boolean, checkpointLevel:Int) =>
+      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, checkpointLevel:Int) =>
 
         if(checkpointLevel == 0){
           if (!digestUpdates(prev)) {

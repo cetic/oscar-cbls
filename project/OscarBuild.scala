@@ -14,7 +14,7 @@ object OscarBuild extends Build {
   object BuildSettings {
     val buildOrganization = "oscar"
     val buildVersion = "4.1.0-SNAPSHOT"
-    val buildScalaVersion = "2.12.12"
+    val buildScalaVersion = "2.13.3"
     val buildSbtVersion= "0.13.18"
 
     lazy val commonSettings = Defaults.defaultSettings ++  jacoco.settings ++ Seq(
@@ -23,7 +23,9 @@ object OscarBuild extends Build {
       scalacOptions in Compile ++= Seq("-encoding", "UTF-8", "-deprecation", "-feature",
         "-unchecked", "-Xdisable-assertions", "-language:implicitConversions",
         "-language:postfixOps"),
-      scalacOptions in Test := Seq("-optimise"),
+      scalacOptions in Test := Seq("-encoding", "UTF-8", "-deprecation", "-feature",
+        "-unchecked", "-language:implicitConversions",
+        "-language:postfixOps", "-optimise"),
       //testOptions in Test <+= (target in Test) map {
       //  t => Tests.Argument(TestFrameworks.ScalaTest, "junitxml(directory=\"%s\")" format (t / "test-reports") ) },
       parallelExecution in Test := false,
@@ -68,7 +70,7 @@ object OscarBuild extends Build {
     val scalaParserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2"
     val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.3.0"
     val scalaSwing = "org.scala-lang.modules" %% "scala-swing" % "2.1.1"
-    //TODO for 2.13: val scalaParallel = "org.scala-lang.modules" %% "scala-parallel-collections" % "0.2.0"
+    val scalaParallel = "org.scala-lang.modules" %% "scala-parallel-collections" % "0.2.0"
     val swingx = "org.swinglabs" % "swingx" % "1.6.1"
     val swingxWs = "org.swinglabs" % "swingx-ws" % "1.0"
     val xmlApisExt = "xml-apis" % "xml-apis-ext" % "1.3.04"
@@ -117,13 +119,15 @@ object OscarBuild extends Build {
           Some("Artifactory Realm" at artifactory + "libs-snapshot;build.timestamp=" + new java.util.Date().getTime)
         else
           Some("Artifactory Realm" at artifactory + "libs-release")
-      },
+      }
+      /*,
       packageOptions += Package.ManifestAttributes(
         ("REVISION_ID", System.getProperty("REVISION_ID")),
         ("REVISION_URL", "https://bitbucket.org/oscarlib/oscar/commits/"+System.getProperty("REVISION_ID") ),
         ("JENKINS_BUILD_ID", System.getProperty("BUILD_ID")),
         ("BUILD_DATE", new Date().toString)
       )
+       */
     )
     else Seq()
   }
@@ -165,7 +169,7 @@ object OscarBuild extends Build {
         packAutoSettings ++
         Seq(
           resolvers ++= Seq(mvnrepository),
-          libraryDependencies ++= testDeps :+ scalaSwing :+ jxmapviewer2 :+ jtscore :+ akkaActor_typed :+ akkaActor :+ akkasl4j :+ slf4j, //TODO for 2.13 ->  :+ scalaParallel
+          libraryDependencies ++= testDeps :+ scalaSwing :+ jxmapviewer2 :+ jtscore :+ akkaActor_typed :+ akkaActor :+ akkasl4j :+ slf4j :+ scalaParallel, //TODO for 2.13 ->  :+ scalaParallel
           packGenerateWindowsBatFile := false
         ),
     dependencies = Seq(oscarVisual)

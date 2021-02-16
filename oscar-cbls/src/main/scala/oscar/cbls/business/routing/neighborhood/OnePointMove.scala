@@ -60,7 +60,7 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
       else nodesToMove()
 
     //TODO: we might also want to go for checkpoint less neighborhood to avoid invariants computing checkpoint values for small neighborhoods.
-    val startValue = seq.defineCurrentValueAsCheckpoint(true)
+    val startValue = seq.defineCurrentValueAsCheckpoint()
 
     def evalObjAndRollBack() : Long = {
       val a = obj.value
@@ -76,23 +76,23 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
 
       if(!vrp.isADepot(movedPointForInstantiation)) {
         //depots cannot be moved at all.
-        startValue.positionOfAnyOccurrence(movedPointForInstantiation) match {
+        startValue.explorerAtAnyOccurrence(movedPointForInstantiation) match {
           case None => ;//was not routed, actually
-          case Some(positionOfMovedPoint) =>
-            this.positionOfMovedPointForInstantiation = positionOfMovedPoint
+          case Some(explorerOfMovedPoint) =>
+            this.positionOfMovedPointForInstantiation = explorerOfMovedPoint.position
 
             val (insertionPointIt,notifyFound2) = selectDestinationBehavior.toIterator(relevantNeighborsNow(movedPointForInstantiation))
             while (insertionPointIt.hasNext) {
               newPredecessorForInstantiation = insertionPointIt.next()
               if (movedPointForInstantiation != newPredecessorForInstantiation) {
 
-                startValue.positionOfAnyOccurrence(newPredecessorForInstantiation) match {
+                startValue.explorerAtAnyOccurrence(newPredecessorForInstantiation) match {
                   case None => ;
-                  case Some(positionOfNewPredecessor) =>
-                    if(positionOfNewPredecessor+1L != positionOfMovedPoint) {
-                      this.positionOfNewPredecessorForInstantiation = positionOfNewPredecessor
+                  case Some(explorerOfNewPredecessor) =>
+                    if(explorerOfNewPredecessor.position+1L != explorerOfMovedPoint.position) {
+                      this.positionOfNewPredecessorForInstantiation = explorerOfNewPredecessor.position
 
-                      doMove(positionOfMovedPoint, positionOfNewPredecessor)
+                      doMove(explorerOfMovedPoint.position, explorerOfNewPredecessor.position)
 
                       if(evaluateCurrentMoveObjTrueIfSomethingFound(evalObjAndRollBack())) {
                         notifyFound1()
