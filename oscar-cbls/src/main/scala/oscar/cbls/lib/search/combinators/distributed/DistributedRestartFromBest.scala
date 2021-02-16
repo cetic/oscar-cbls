@@ -36,17 +36,17 @@ import scala.util.{Failure, Success}
  * @param visu true for a visualization of the objective function and the performed searches
  * @param visuTitle the title of the visualization
  */
-class DistributedRestart(baseSearch:Neighborhood,
-                         baseRandomize:Neighborhood,
-                         nbConsecutiveRestartWithoutImprovement:Int,
-                         nbOngoingSearchesToCancelWhenNewBest:Int = 100,
-                         factorOnObjForThresholdToContinueDespiteBeingCanceled:Double = 1.0001,
-                         setMaxWorkers:Option[Int] = None,
-                         performInitialNonRandomizeDescent:Boolean = true,
-                         gracefulStop:Boolean = true,
-                         factorOnObjForThresholdToContinueDespiteBeingCanceledOnGracefulStop:Double = 1,
-                         visu:Boolean = false,
-                         visuTitle:String = "distributedRestartObj")
+class DistributedRestartFromBest(baseSearch:Neighborhood,
+                                 baseRandomize:Neighborhood,
+                                 nbConsecutiveRestartWithoutImprovement:Int,
+                                 nbOngoingSearchesToCancelWhenNewBest:Int = 100,
+                                 factorOnObjForThresholdToContinueDespiteBeingCanceled:Double = 1.0001,
+                                 setMaxWorkers:Option[Int] = None,
+                                 performInitialNonRandomizeDescent:Boolean = true,
+                                 gracefulStop:Boolean = true,
+                                 factorOnObjForThresholdToContinueDespiteBeingCanceledOnGracefulStop:Double = 1,
+                                 visu:Boolean = false,
+                                 visuTitle:String = "distributedRestartObj")
   extends DistributedCombinator(
     Array(
       (_:List[Long]) => baseRandomize maxMoves 1 exhaust baseSearch,

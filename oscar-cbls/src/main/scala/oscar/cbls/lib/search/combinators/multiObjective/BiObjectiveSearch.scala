@@ -126,6 +126,7 @@ class BiObjectiveSearch(globalMaxObj1:Long,
     if (verbose && isNew) println("non dominated solution " + squareToStore.objString)
 
     squareToStore.elemInFront = squareList.insertAfter(squareToStore, after)
+
     if (squareToStore.surface != 0) {
       if (filterSquare(squareToStore.obj1, squareToStore.maxObj1, squareToStore.obj2, squareToStore.minObj2)) {
         squaresToDevelop.insert(squareToStore)

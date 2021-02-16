@@ -23,7 +23,7 @@ import oscar.cbls.core.distrib.Supervisor
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.lib.search.combinators.BestSlopeFirst
-import oscar.cbls.lib.search.combinators.distributed.{DistributedFirst, DistributedRestart}
+import oscar.cbls.lib.search.combinators.distributed.{DistributedFirst, DistributedRestartFromBest}
 import oscar.examples.cbls.wlp.WarehouseLocationGenerator
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
@@ -82,7 +82,7 @@ object WarehouseLocationDistributed3 extends App{
       symmetryCanBeBrokenOnIndices = false)
 
     val neighborhood =
-      new DistributedRestart(
+      new DistributedRestartFromBest(
         bestSlopeFirst(
           List(
             assignNeighborhood(warehouseOpenArray, name = "SwitchWarehouse"),
