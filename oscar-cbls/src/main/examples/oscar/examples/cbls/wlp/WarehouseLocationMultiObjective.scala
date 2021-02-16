@@ -20,7 +20,7 @@ package oscar.examples.cbls.wlp
 import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.core.search.Neighborhood
-import oscar.cbls.lib.search.multiObjective.BiObjectiveSearch
+import oscar.cbls.lib.search.combinators.multiObjective.BiObjectiveSearch
 import oscar.cbls.lib.search.neighborhoods.SwapsNeighborhood
 
 import scala.language.postfixOps
