@@ -561,11 +561,23 @@ class ChangingSeqValueSnapShot(val uniqueId:Int,val savedValue:IntSequence) exte
   }
 
   override def valueString(): String = "[" + savedValue.mkString(",") + "]"
+
+  override protected def doRestoreWithoutCheckpoints(m: Store): Unit = {
+    val seqVar = m.getSeqVar(uniqueId)
+    val currentValue =  seqVar.value
+    if (! (currentValue quickEquals savedValue)) {
+      val topCheckPoint = seqVar.getTopCheckpoint
+      if (topCheckPoint != null) {
+        seqVar.releaseTopCheckpoint()
+      }
+      seqVar := savedValue
+    }
+  }
 }
 
 /**
  * this is an abstract implementation with placeholders for checkpoint management stuff
- * There are three implementation of ceckpoint stuff: all,latest,topMost
+ * There are three implementation of checkpoint stuff: all,latest,topMost
  * @param initialValue
  * @param maxValue
  * @param maxPivotPerValuePercent
@@ -1059,6 +1071,9 @@ et cette stack doit être mise à jour au moment de la notification.
       case _:SeqUpdateRollBackToCheckpoint =>
         //we leave it, it is a leaf anyway
         updates
+
+      case x =>
+        throw new Error(s"Unhanded match $x")
     }
   }
 
@@ -1084,7 +1099,7 @@ et cette stack doit être mise à jour au moment de la notification.
   private def popToNotifyUntilCheckpointDeclaration(updates:SeqUpdate,
                                                     searchedCheckpoint:IntSequence,
                                                     removeDeclaration:Boolean):CleaningResult = {
-    updates match{
+    updates match {
       case SeqUpdateInsert(value:Int,pos:Int,prev:SeqUpdate) =>
         popToNotifyUntilCheckpointDeclaration(prev,searchedCheckpoint,removeDeclaration) match{
           case NoSimplificationPerformed =>
@@ -1134,8 +1149,12 @@ et cette stack doit être mise à jour au moment de la notification.
         }else{
           SeqUpdatesCleanedUntilQuickEqualValueReachedCheckpointDeclarationNotRemoved(updates)
         }
+
       case SeqUpdateRollBackToCheckpoint(checkpointValue:IntSequence, level:Int) =>
         NoSimplificationPerformed
+
+      case _ =>
+        NoSimplificationPerformed // Default case
     }
   }
 
@@ -1182,8 +1201,12 @@ et cette stack doit être mise à jour au moment de la notification.
         require(updates.newValue quickEquals searchedCheckpoint,
           "require fail on quick equals: " + updates.newValue + "should== " + searchedCheckpoint)
         CheckpointDeclarationReachedAndRemoved(prev)
+
       case SeqUpdateRollBackToCheckpoint(checkpointValue:IntSequence,level:Int) =>
         NoSimplificationPerformed
+
+      case _ =>
+        NoSimplificationPerformed // Default case
     }
   }
 }
@@ -1311,6 +1334,9 @@ class IdentitySeq(fromValue:ChangingSeqValue, toValue:CBLSSeqVar)
         require(changes.newValue quickEquals prev.newValue)
         pushTopCheckpoint(changes.newValue)
         toValue.defineCurrentValueAsCheckpoint()
+
+      case _ =>
+        // Default case, do nothing
     }
   }
 

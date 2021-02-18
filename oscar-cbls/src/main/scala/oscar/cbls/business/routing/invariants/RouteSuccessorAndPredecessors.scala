@@ -123,6 +123,7 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
         computeStartValuesOfImpactedZone(prev)
       case u@SeqUpdateRollBackToCheckpoint(_,_) =>
         computeStartValuesOfImpactedZone(u.howToRollBack)
+      case x => throw new Error(s"Unhandled match $x in computeStartValuesOfImpactedZone")
     }
   }
 

@@ -248,9 +248,9 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
 
   //message to self
 
-  private final case class Tic() extends MessagesToSupervisor
+  private case class Tic() extends MessagesToSupervisor
   //this one cannot be a control message.
-  private final case class StartSomeSearch() extends MessagesToSupervisor
+  private case class StartSomeSearch() extends MessagesToSupervisor
 
 
   private val waitingSearches = scala.collection.mutable.Queue[SearchTask]()
@@ -318,6 +318,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
                 case Success(_: SearchStarted) => SearchStarted(search, startID, worker)
                 case Success(_: SearchNotStarted) => SearchNotStarted(search, worker)
                 case Failure(_) => SearchNotStarted(search, worker)
+                case _ => SearchNotStarted(search, worker) // Default case
               }
 
               startingSearches = startingSearches + (startID -> (search, startID, worker))
@@ -326,7 +327,6 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
             val nbIdleWorkers = idleWorkers.size
             val nbAvailableSearches = waitingSearches.size
             var nbSearchToStart = nbIdleWorkers min nbAvailableSearches
-
 
             var couldDequeue = true
             while (couldDequeue && nbSearchToStart != 0) {
@@ -368,6 +368,10 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
             if (idleWorkers.isEmpty) {
               if (verbose) context.log.info(status)
             }
+
+          case _ =>
+            // Default case
+            if (verbose) context.log.info(status)
         }
 
       case SearchStarted(search, startID, worker) =>
@@ -405,7 +409,6 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
           case Some(s) => ongoingSearches = ongoingSearches.-(s)
           case None => ;
         }
-
 
         idleWorkers = worker :: idleWorkers
         context.self ! StartSomeSearch()
@@ -479,7 +482,11 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
         }
 
         if (verbose) context.log.info(s"Supervisor shutdown")
-        return Behaviors.stopped
+        Behaviors.stopped
+
+      case msg =>
+        if (verbose) context.log.info(s"Supervisor got wrong message: $msg")
+        Behaviors.same
     }
     this
   }

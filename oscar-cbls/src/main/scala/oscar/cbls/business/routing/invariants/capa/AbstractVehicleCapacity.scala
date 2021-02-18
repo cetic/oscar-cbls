@@ -439,26 +439,23 @@ abstract class AbstractVehicleCapacity(n:Int,
 
     def checkZone(toUpdateZone : List[(Int, Int)]) : (Int, Int) = {
       toUpdateZone match {
-        case List((a, b)) =>
-          require(a <= b)
-          (a, b)
+        case Nil => throw new Error("checkZoneLoop with empty list")
         case (a, b) :: tail =>
           require(a <= b)
-          (a, checkZoneLoop(b, tail))
+          if (tail.isEmpty) (a,b)
+          else (a, checkZoneLoop(b, tail))
       }
     }
 
     @tailrec
     def checkZoneLoop(endOfPrev : Int, toUpdateZone : List[(Int, Int)]) : Int = {
       toUpdateZone match {
-        case List((a, b)) =>
-          require(a <= b)
-          require(endOfPrev + 1 < a)
-          b
+        case Nil => throw new Error("checkZoneLoop with empty list")
         case (a, b) :: tail =>
           require(a <= b)
           require(endOfPrev + 1 < a)
-          checkZoneLoop(b, tail)
+          if (tail.isEmpty) b
+          else checkZoneLoop(b, tail)
       }
     }
   }

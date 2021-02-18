@@ -161,6 +161,8 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
             vehicleLocationAndCheckpointStack.rollBackAndOutputValue(checkpoint,level)
             (None, potentiallyRemovedPointsAfterPrev)
         }
+
+      case x => throw new Error(s"Unhandled match $x in digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate")
     }
   }
 }

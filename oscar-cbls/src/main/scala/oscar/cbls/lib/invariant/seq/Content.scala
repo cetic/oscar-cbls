@@ -70,6 +70,8 @@ case class Content(v:SeqValue)
         false
       case SeqUpdateDefineCheckpoint(prev:SeqUpdate, checkpointLevel) =>
         digestUpdates(prev)
+      case _ =>
+        false // Default case
     }
   }
 

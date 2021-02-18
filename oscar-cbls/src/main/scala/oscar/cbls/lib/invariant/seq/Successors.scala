@@ -125,6 +125,9 @@ class Successors(sequence:ChangingSeqValue, successorValues:Array[CBLSSetVar])
 
       case SeqUpdateAssign(value : IntSequence) =>
         None //impossible to go incremental
+
+      case _ =>
+        None // Default case
     }
   }
 

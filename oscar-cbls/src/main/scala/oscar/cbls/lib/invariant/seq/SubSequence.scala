@@ -139,6 +139,9 @@ case class SubSequence(v: SeqValue,index:Int, length: Int,
 
       case SeqUpdateAssign(value : IntSequence) =>
         false
+
+      case _ =>
+        false // Default case
     }
   }
 
@@ -291,6 +294,9 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
 
       case SeqUpdateAssign(value : IntSequence) =>
         false
+
+      case _ =>
+        false // Default case
     }
   }
 

@@ -66,11 +66,14 @@ class Remote(neighborhoods:Neighborhood)
     implicit val system: ActorSystem[_] = supervisor.system
 
     val futureResult = supervisor.supervisorActor.ask[SearchEnded](ref => DelegateSearch(searchRequest, ref))
-    Await.result(futureResult,Duration.Inf) match{
+    Await.result(futureResult,Duration.Inf) match {
       case SearchCompleted(_, searchResult) =>
         searchResult.getLocalResult(obj.model)
-      case  c:SearchCrashed =>
+      case c:SearchCrashed =>
         supervisor.throwRemoteExceptionAndShutDown(c)
+        null
+      case _ =>
+        // Search Aborted
         null
     }
   }
@@ -109,6 +112,9 @@ class DistributedBest(neighborhoods:Array[Neighborhood])
         case c:SearchCrashed =>
           supervisor.throwRemoteExceptionAndShutDown(c)
           null
+        case _ =>
+          // Search aborted
+          null
       }
     )
 
@@ -142,7 +148,7 @@ class DistributedFirst(neighborhoods:Array[Neighborhood])
       for (i <- remoteNeighborhoods.indices){
         context.ask[GetNewUniqueID,Long](supervisor.supervisorActor,ref => GetNewUniqueID(ref)) {
           case Success(uniqueID:Long) => WrappedGotUniqueID(uniqueID:Long,i)
-          case Failure(_) => WrappedError(msg=Some("supervisor actor timeout"))
+          case Failure(ex) => WrappedError(msg=Some(s"Supervisor actor timeout : ${ex.getMessage}"))
         }
       }
       next(
@@ -204,7 +210,7 @@ class DistributedFirst(neighborhoods:Array[Neighborhood])
 
             context.ask[DelegateSearch, SearchEnded](supervisor.supervisorActor, ref => DelegateSearch(request, ref, uniqueID)) {
               case Success(searchEnded) => WrappedSearchEnded(searchEnded)
-              case Failure(_) => WrappedError(msg = Some("supervisor actor timeout"))
+              case Failure(_) => WrappedError(msg = Some(s"Supervisor actor timeout on $command"))
             }
 
             next(runningSearchIDs = uniqueID :: runningSearchIDs,
@@ -224,21 +230,21 @@ class DistributedFirst(neighborhoods:Array[Neighborhood])
     //await seems to block the actor system??
     Await.result(futureResult, Duration.Inf) match{
       case WrappedSearchEnded(searchEnded:SearchEnded) =>
-        searchEnded match{
-          case SearchCompleted(searchID, searchResult: IndependentSearchResult) => searchResult.getLocalResult(obj.model)
+        searchEnded match {
+          case SearchCompleted(searchID, searchResult) => searchResult.getLocalResult(obj.model)
+          case _ => NoMoveFound
         }
       case WrappedError(msg:Option[String],crash:Option[SearchCrashed])=>
         if(msg.isDefined){
           supervisor.shutdown()
-          throw new Error(msg.get)
+          throw new Error(s"${msg.get}")
         }
         if(crash.isDefined){
           supervisor.throwRemoteExceptionAndShutDown(crash.get)
         }
-        throw new Error("error in DistributedFirst")
-      case x =>
-        throw new Error("unknown error in DistributedFirst")
-        null
+        throw new Error("Error in DistributedFirst")
+      case e =>
+        throw new Error(s"Unknown error in DistributedFirst : $e")
     }
   }
 }

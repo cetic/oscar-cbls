@@ -212,19 +212,21 @@ class PiecewiseLinearFun(private[fun] val transformation: RedBlackTreeMap[Pivot]
   @tailrec
   private def flipSubfunction(pivotList:List[Pivot], endOfLastPivotMoving:Int, endOfLastPivotUntouched:Int, acc:List[Pivot] = List.empty):List[Pivot] = {
     pivotList match {
-      case p1 :: p2 :: tail =>
-        val width = p2.fromValue - p1.fromValue
-        flipSubfunction(p2 :: tail,endOfLastPivotMoving - width, endOfLastPivotUntouched, mirrorPivot(p1,width:Int,endOfLastPivotMoving) :: acc)
-      case List(p1) =>
-        //the updated pivot starts at endOfLastPIvot
-        //its slope is the reverse of p1
-        //the offset is such that
-        //require(p1.f(p1.fromValue) == newPivot.f(endOfLastPivotMoving))
-        //require(p1.f(endOfLastPivotUntouched) == newPivot.f(newPivot.fromValue))
-
-        val width = endOfLastPivotUntouched - p1.fromValue + 1
-        mirrorPivot(p1,width,endOfLastPivotMoving) :: acc
       case Nil => acc
+      case p1 :: tail1 =>
+        tail1 match {
+          case Nil =>
+            //the updated pivot starts at endOfLastPivot
+            //its slope is the reverse of p1
+            //the offset is such that
+            //require(p1.f(p1.fromValue) == newPivot.f(endOfLastPivotMoving))
+            //require(p1.f(endOfLastPivotUntouched) == newPivot.f(newPivot.fromValue))
+            val width = endOfLastPivotUntouched - p1.fromValue + 1
+            mirrorPivot(p1,width,endOfLastPivotMoving) :: acc
+          case p2 :: tail =>
+            val width = p2.fromValue - p1.fromValue
+            flipSubfunction(tail1, endOfLastPivotMoving - width, endOfLastPivotUntouched, mirrorPivot(p1,width,endOfLastPivotMoving) :: acc)
+        }
     }
   }
 

@@ -44,6 +44,7 @@ case class MovingVehicles(routes:ChangingSeqValue, v:Int)
         }
 
         true
+
       case x@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         //on which vehicle did we move?
         //also from --> to cannot include a vehicle start.
@@ -113,13 +114,19 @@ case class MovingVehicles(routes:ChangingSeqValue, v:Int)
 
       case SeqUpdateAssign(value : IntSequence) =>
         false //impossible to go incremental
+
       case SeqUpdateLastNotified(value:IntSequence) =>
         true //we are starting from the previous value
+
       case SeqUpdateDefineCheckpoint(prev,checkpointLevel) =>
         digestUpdates(prev)
+
       case r@SeqUpdateRollBackToCheckpoint(checkpoint,checkpointLevel) =>
         //println("howToRollBack:" + r.howToRollBack)
             digestUpdates(r.howToRollBack)
+
+      case _ =>
+        false // Default case
     }
   }
 
@@ -135,13 +142,15 @@ case class MovingVehicles(routes:ChangingSeqValue, v:Int)
         case None =>
           //we are at the last vehicle, and it does not move
           require(vehicle == v-1)
-        case Some(e) if e.value != vehicle + 1 || e.value >= v =>
-          //there is a node after, and it is not the next vehicle, so vehicle is moving
-          toReturn += vehicle
-        case Some(e) if e.value == vehicle + 1 && e.value < v =>
-          //there is a node after, and it is the next vehicle, so vehicle is not moving
-          //and we have an explorer at the next vehicle, so we save it for the next iteration
-          currentExplorer = e
+        case Some(e) =>
+          if (e.value != vehicle + 1 || e.value >= v) {
+            //there is a node after, and it is not the next vehicle, so vehicle is moving
+            toReturn += vehicle
+          } else { // e.value == vehicle + 1 && e.value < v
+            //there is a node after, and it is the next vehicle, so vehicle is not moving
+            //and we have an explorer at the next vehicle, so we save it for the next iteration
+            currentExplorer = e
+          }
       }
     }
     toReturn

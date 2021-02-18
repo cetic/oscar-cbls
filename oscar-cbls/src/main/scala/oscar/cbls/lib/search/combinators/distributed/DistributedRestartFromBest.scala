@@ -456,10 +456,12 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
     }
 
     //await seems to block the actor system??
-    Await.result(futureResult, Duration.Inf) match{
+    Await.result(futureResult, Duration.Inf) match {
       case WrappedSearchEnded(searchEnded:SearchEnded) =>
-        searchEnded match{
+        searchEnded match {
           case SearchCompleted(searchID, searchResult: IndependentSearchResult) => searchResult.getLocalResult(obj.model)
+          case _ =>
+            throw new Error("Error while obtaining the search result")
         }
       case WrappedFinalAnswer(move:Option[LoadIndependentSolutionMove]) =>
         move match{
@@ -474,10 +476,9 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
         if(crash.isDefined){
           supervisor.throwRemoteExceptionAndShutDown(crash.get)
         }
-        throw new Error("error in DistributedRestart")
-      case x =>
-        throw new Error("unknown error in DistributedFirst")
-        null
+        throw new Error("Error in DistributedRestart")
+      case _ =>
+        throw new Error("Unknown error in DistributedFirst")
     }
   }
 }

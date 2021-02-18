@@ -124,7 +124,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
   }
 
   private def doSearch(searchRequest: SearchRequest,searchId:Long): IndependentSearchResult = {
-    searchRequest.startSolution.makeLocal(m).restoreDecisionVariables()
+    searchRequest.startSolution.makeLocal(m).restoreDecisionVariables(withoutCheckpoints = true)
     shouldAbortComputation = false
 
     val neighborhood = neighborhoods(searchRequest.neighborhoodID.neighborhoodID)

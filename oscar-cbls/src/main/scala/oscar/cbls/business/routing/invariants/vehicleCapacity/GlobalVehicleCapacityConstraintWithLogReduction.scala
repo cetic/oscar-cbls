@@ -126,6 +126,9 @@ class GlobalVehicleCapacityConstraintWithLogReduction(routes: ChangingSeqValue, 
             val isMaxCapaOfNodeViolated = vehicleContentFunctionOfNode(previousOutCapa, vehiclesCapacity(vehicle), true)
             if(isMaxCapaOfNodeViolated) -1
             else previousOutCapa + vehicleContentFunctionOfNode.contentAtEndIfStartAt0(true)
+
+          case x =>
+            throw new Error(s"Unhandled match with $x")
         }
         (newOutCapa < 0) || isVehicleCapacityViolated(logReducedSegments.tail, newOutCapa)
       }

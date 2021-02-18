@@ -14,7 +14,7 @@ object OscarBuild extends Build {
   object BuildSettings {
     val buildOrganization = "oscar"
     val buildVersion = "4.1.0-SNAPSHOT"
-    val buildScalaVersion = "2.13.3"
+    val buildScalaVersion = "2.13.4"
     val buildSbtVersion= "0.13.18"
 
     lazy val commonSettings = Defaults.defaultSettings ++  jacoco.settings ++ Seq(

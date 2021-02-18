@@ -92,8 +92,8 @@ class NodesOfVehicle(routes:ChangingSeqValue,
         nodesOfVehicleOrUnrouted(insertedVehicle) :+= value
         nodesOfVehicleOrUnrouted(v) :-= value
         recordMovedPoint(value, v, insertedVehicle)
-
         true
+
       case x@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         //on which vehicle did we move?
         //also from --> to cannot include a vehicle start.
@@ -127,10 +127,13 @@ class NodesOfVehicle(routes:ChangingSeqValue,
         nodesOfVehicleOrUnrouted(v) :+= removedValue
         recordMovedPoint(removedValue, impactedVehicle, v)
         true
+
       case SeqUpdateAssign(value : IntSequence) =>
         false //impossible to go incremental
+
       case SeqUpdateLastNotified(value:IntSequence) =>
         true //we are starting from the previous value
+
       case SeqUpdateDefineCheckpoint(prev,checkpointLevel) =>
         if(checkpointLevel == 0) {
           if (!digestUpdates(prev)) {
@@ -142,8 +145,8 @@ class NodesOfVehicle(routes:ChangingSeqValue,
           //we do not handle other checkpoint, so ignore declaration
           digestUpdates(prev)
         }
-      case r@SeqUpdateRollBackToCheckpoint(checkpoint,checkpointLevel) =>
 
+      case r@SeqUpdateRollBackToCheckpoint(checkpoint,checkpointLevel) =>
         if(checkpoint == null) false //it has been dropped following a Set
         else {
           if(checkpointLevel == 0) {
@@ -154,6 +157,9 @@ class NodesOfVehicle(routes:ChangingSeqValue,
             digestUpdates(r.howToRollBack)
           }
         }
+
+      case _ =>
+        false // Default case
     }
   }
 

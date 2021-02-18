@@ -114,6 +114,7 @@ abstract class ChangingAtomicValue[T](initialValue:T)
 class ChangingAtomicValueSnapShot[T](uniqueID:Int,val savedValue:T) extends AbstractVariableSnapShot(uniqueID){
   override protected def doRestore(m:Store) : Unit = {m.getVar(uniqueID).asInstanceOf[CBLSAtomicVar[T]] := savedValue}
   override def valueString(): String = savedValue.toString
+  override protected def doRestoreWithoutCheckpoints(m: Store): Unit = {m.getVar(uniqueID).asInstanceOf[CBLSAtomicVar[T]] := savedValue}
 }
 
 /**An IntVar is a variable managed by the [[oscar.cbls.core.computation.Store]] whose type is integer.

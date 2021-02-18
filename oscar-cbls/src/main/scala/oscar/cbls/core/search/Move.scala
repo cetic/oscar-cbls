@@ -73,14 +73,14 @@ abstract class Move(val objAfter:Long = Long.MaxValue, val neighborhoodName:Stri
   def decomposeMove:List[String] = List(this.shortString)
 
   def getIndependentMove(m:Store):IndependentMove = {
-    println(s"move ${this.getClass.getName} uses default getIndependentMove; dedicated implementation would be faster")
+    //println(s"move ${this.getClass.getName} uses default getIndependentMove; dedicated implementation would be faster")
     val s = m.solution()
     this.commit()
     val x = LoadIndependentSolutionMove(
       objAfter = this.objAfter,
       neighborhoodName = this.neighborhoodName,
       IndependentSolution(m.solution()))
-    s.restoreDecisionVariables()
+    s.restoreDecisionVariables(withoutCheckpoints = true)
     x
   }
 }

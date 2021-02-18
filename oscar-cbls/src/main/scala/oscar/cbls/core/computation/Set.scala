@@ -44,6 +44,8 @@ class ChangingSetValueSnapShot(val uniqueId:Int,val savedValue:SortedSet[Int]) e
   override protected def doRestore(m:Store) : Unit = {m.getSetVar(uniqueId) := savedValue}
 
   override def valueString(): String = "{" + savedValue.mkString(",") + "}"
+
+  override protected def doRestoreWithoutCheckpoints(m: Store): Unit = {m.getSetVar(uniqueId) := savedValue}
 }
 
 class ValueWisePropagationWaveIdentifier()

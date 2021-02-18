@@ -235,6 +235,8 @@ class ChangingIntValueSnapShot(val uniqueId:Int, val savedValue:Long) extends Ab
   override protected def doRestore(m:Store) : Unit = {m.getIntVar(uniqueId) := savedValue}
 
   override def valueString(): String = "" + savedValue
+
+  override protected def doRestoreWithoutCheckpoints(m: Store): Unit = {m.getIntVar(uniqueId) := savedValue}
 }
 
 /**An IntVar is a variable managed by the [[oscar.cbls.core.computation.Store]] whose type is integer.

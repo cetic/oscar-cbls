@@ -284,8 +284,13 @@ case class Solution(saves:Iterable[AbstractVariableSnapShot],model:Store){
     "Solution(\n\t" + saves.map(_.toString(model)).mkString(",\n\t") + "\n)"
   }
 
-  def restoreDecisionVariables(): Unit = {
-    for(snapshot <- saves) snapshot.restore(model)
+  def restoreDecisionVariables(withoutCheckpoints: Boolean = false): Unit = {
+    for (snapshot <- saves) {
+      if (withoutCheckpoints)
+        snapshot.restoreWithoutCheckpoints(model)
+      else
+        snapshot.restore(model)
+    }
   }
 
   lazy val varDico:SortedMap[Int, AbstractVariableSnapShot] =
@@ -578,6 +583,13 @@ abstract class AbstractVariableSnapShot(val uniqueID:Int){
     }
   }
 
+  final def restoreWithoutCheckpoints(m:Store): Unit = {
+    m.getPropagationElement(uniqueID) match {
+      case v : Variable if v.isDecisionVariable => doRestoreWithoutCheckpoints(m)
+      case x => throw new Error(s"can only re-assign decision variable, not $x")
+    }
+  }
+
   final def restoreIfDecisionVariable(m:Store): Unit ={
     m.getPropagationElement(uniqueID) match {
       case v : Variable if v.isDecisionVariable => doRestore(m)
@@ -586,6 +598,8 @@ abstract class AbstractVariableSnapShot(val uniqueID:Int){
   }
 
   protected def doRestore(m:Store): Unit
+
+  protected def doRestoreWithoutCheckpoints(m:Store): Unit
 
   def valueString(): String
 }

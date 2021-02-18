@@ -151,16 +151,18 @@ class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
           val vehicle = v-1
           acc += s"\t\tendOfRoute of vehicle$vehicle contentAtEnd:${contentAtEnd(vehicle).value}\n"
           false
-        case Some(explorer) if explorer.value < v =>
-          //reached another vehicle
-          val vehicle = explorer.value-1
-          acc += s"\t\tendOfRoute of vehicle$vehicle contentAtEnd:${contentAtEnd(vehicle).value}\n"
-          false
-        case Some(explorer) if explorer.value >= v =>
-          val node = explorer.value
-          acc += "\t\tnode:" + node + "\t" + " content:" + contentAtNode(node).value + "\n"
-          explorerOpt = explorer.next
-          true
+        case Some(explorer) =>
+          if (explorer.value < v) {
+            //reached another vehicle
+            val vehicle = explorer.value-1
+            acc += s"\t\tendOfRoute of vehicle$vehicle contentAtEnd:${contentAtEnd(vehicle).value}\n"
+            false
+          } else {
+            val node = explorer.value
+            acc += "\t\tnode:" + node + "\t" + " content:" + contentAtNode(node).value + "\n"
+            explorerOpt = explorer.next
+            true
+          }
       }){}
       header+acc}).mkString("")}
        |""".stripMargin

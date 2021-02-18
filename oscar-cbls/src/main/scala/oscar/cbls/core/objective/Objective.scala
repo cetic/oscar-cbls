@@ -92,9 +92,12 @@ object CascadingObjective{
   def apply(objectives:Objective*):Objective = {
 
     def buildCascading(objs:List[Objective]):Objective = {
-      objs match{
-        case List(obj) => obj
-        case head :: tail if tail.nonEmpty => new CascadingObjective(head,buildCascading(tail))
+      objs match {
+        case Nil =>
+          throw new Error("Building cascading objective with empty list")
+        case head :: tail =>
+          if (tail.nonEmpty) new CascadingObjective(head, buildCascading(tail))
+          else head
       }
     }
 
@@ -167,7 +170,9 @@ object PriorityObjective{
 
   private def applyRecur(objective1:Objective,moreObjAndTheirMaxValue:List[(Objective,Long)]):(PriorityObjective,Long) = {
     moreObjAndTheirMaxValue match {
-      case List((objective2, maxObjective2)) =>
+      case Nil =>
+        throw new Error("Using applyRecur on an empty list")
+      case (objective2, maxObjective2) :: Nil =>
         val p = new PriorityObjective(objective1, objective2, maxObjective2)
         (p, maxObjective2)
       case (secondObj, maxSecondObj) :: tail =>
