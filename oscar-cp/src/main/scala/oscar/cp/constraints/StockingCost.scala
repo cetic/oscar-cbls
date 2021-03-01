@@ -73,13 +73,13 @@ class StockingCost(val Y: Array[CPIntVar], val deadline: Array[Int], val H: CPIn
   val mapMagic = Array.fill(domMaxMax-domMinMin+1)(0)
   val map = Array.fill(domMaxMax-domMinMin+1)(0)
  
-  def clearMap() {
+  def clearMap(): Unit = {
     magic += 1
   }
   
   def index(k: Int) = k-domMinMin
   
-  def insert(k: Int,v: Int) {
+  def insert(k: Int,v: Int): Unit = {
     map(index(k)) = v
     mapMagic(index(k)) = magic 
   }
@@ -91,7 +91,7 @@ class StockingCost(val Y: Array[CPIntVar], val deadline: Array[Int], val H: CPIn
   
   def get(k: Int) = map(index(k))
   
-  def printMap () {
+  def printMap (): Unit = {
 	  println("keys:"+(domMinMin to domMaxMax).filter(hasKey(_)).mkString(","))
   }
   
@@ -99,7 +99,7 @@ class StockingCost(val Y: Array[CPIntVar], val deadline: Array[Int], val H: CPIn
 
   val sortX = Array.tabulate(X.size)(i => i)
     
-  def sortIncremental() {
+  def sortIncremental(): Unit = {
     var nn = X.size
     var i = 0
     do {

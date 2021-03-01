@@ -42,7 +42,7 @@ import scala.io.Source
  * @author Pierre Schaus pschaus@gmail.com
  */
 object BACP {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
   
     val lines = Source.fromFile("data/bacp/instances12/inst4.txt").getLines.reduceLeft(_ + " " + _)
     val vals = lines.split("[ ,\t]").toList.filterNot(_ == "").map(_.toInt)

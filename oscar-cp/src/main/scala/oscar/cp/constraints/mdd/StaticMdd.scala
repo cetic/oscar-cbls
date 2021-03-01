@@ -369,7 +369,7 @@ object StaticMdd {
               val v1Id = v1.getId()
               val v2Id = v2.getId()
 
-              var v : StaticMddNode = nodeMap.get(v1Id+"#"+v2Id)
+              var v : StaticMddNode = nodeMap.get(s"$v1Id#$v2Id")
               if(v == null){
                 if(i == arity-1){
                   v = intersection.end
@@ -378,7 +378,7 @@ object StaticMdd {
                   v = new StaticMddNode(i+1)
                   intersection.layers(i+1).add(v)
                 }
-                nodeMap.put(v1Id+"#"+v2Id,v)
+                nodeMap.put(s"$v1Id#$v2Id",v)
                 mapNode1.put(v,v1)
                 mapNode2.put(v,v2)
 

@@ -45,7 +45,7 @@ class TableData(val arity: Int) {
    * Adds a possible tuple
    * @param tuple must have a length arity
    */
-  def add(tuple: Int*) {
+  def add(tuple: Int*): Unit = {
     assert(arity == tuple.length, { println("wrong arrity:" + tuple.length) })
     tuple.zipWithIndex.foreach { case (v, i) => data(i) += tuple(i) }
   }

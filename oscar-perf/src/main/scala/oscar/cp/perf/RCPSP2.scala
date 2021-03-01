@@ -24,9 +24,9 @@ object RCPSP2 extends App {
 
     
   // data/rcpsp/j60/j60_17_8.rcp interesting instance since we close it as lcg
-  
+  // data/rcpsp/j60/j60_17_8.rcp
   val resourceid = 1
-  val (nTasks, nRes, resourcesCapacities, taskDescriptions) = RCPReader.readInstance("data/rcpsp/j60/j60_17_8.rcp")
+  val (nTasks, nRes, resourcesCapacities, taskDescriptions) = RCPReader.readInstance("data/rcpsp/j30/j30_1_1.rcp")
 
   
   val durationsData = taskDescriptions.map(_._1)
@@ -69,8 +69,10 @@ object RCPSP2 extends App {
   }
 
   //Precedence
-  for (t <- taskIds; succ <- successors(t))
+  for (t <- taskIds; succ <- successors(t)) {
+    println(t + " <= " + succ)
     cp.add(ends(t) <= starts(succ))
+  }
 
   // Search
   // -----------------------------------------------------------------------

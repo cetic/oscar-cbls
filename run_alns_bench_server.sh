@@ -13,7 +13,7 @@ CP=${SbtOutput##*$'\n'}
 ConfigsFile="$BenchDir/configs.txt"
 Out="ALNS-bench-results/$Date-$VNum"
 InstancesToRun="parallel-instances.txt"
-N=1
+N=20
 
 echo -e "\n\n\n"
 echo "Date -> $Date"
@@ -72,6 +72,6 @@ rm ${InstancesToRun}
 
 cp -r --parents "${Out}" "/etinfo/users2/cthomas/Workspace/"
 
-scala -J-Xmx4g -cp ${CP} ${BenchRoot}.utils.HtmlReporter ${Out}
+#scala -J-Xmx4g -cp ${CP} ${BenchRoot}.utils.HtmlReporter ${Out}
 
-cat "${Out}/${Date}-${VNum}_htmlReport.html" > "/etinfo/users2/cthomas/Workspace/${Out}/htmlReport.html"
+#cat "${Out}/${Date}-${VNum}_htmlReport.html" > "/etinfo/users2/cthomas/Workspace/${Out}/htmlReport.html"

@@ -126,7 +126,7 @@ class TestBasicSmartTable extends TestSuite {
     }
 
     if (stat.nSols != statRef.nSols) {
-      println(algo + " " + stat.nSols + " " + statRef.nSols)
+      println(s"$algo ${stat.nSols} ${statRef.nSols}")
       tables(0).foreach(a => println(a.mkString(",")))
       println("")
     }

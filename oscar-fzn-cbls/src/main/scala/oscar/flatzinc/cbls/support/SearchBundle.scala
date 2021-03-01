@@ -39,7 +39,7 @@ abstract class SearchProcedure extends LinearSelectors{
     selectMin[(R,S)](flattened.toIterable)((rands:(R,S)) => {/*Console.err.println(rands);*/ f(rands._1,rands._2)}, (rands:(R,S)) => st(rands._1,rands._2))
   }
   
-  def showViolatedConstraints(c: ConstraintSystem){
+  def showViolatedConstraints(c: ConstraintSystem): Unit ={
     for(cc <- c.violatedConstraints){
       println(cc + " "+cc.violation.value)
     }
@@ -62,7 +62,7 @@ class FakeSearch extends SearchProcedure {
 class GreedySearch(val level: Int = 1, val m: FZCBLSModel,val sc: SearchControl) extends SearchProcedure {
   assert(level > 0 && level < 4)
   val log = m.log
-  def run(){
+  def run(): Unit ={
     var it = 0;
     log("Starting Greedy Search level "+level)
     log("Starting Violation: "+m.objective.violation.value)
@@ -96,7 +96,7 @@ class GreedySearch(val level: Int = 1, val m: FZCBLSModel,val sc: SearchControl)
 class SimpleLocalSearch(val m:FZCBLSModel,val sc: SearchControl) extends SearchProcedure {
   val violation: Array[IntValue] = m.vars.map(m.c.violation(_)).toArray;
   val log = m.log
-  def run(){
+  def run(): Unit ={
     var it = 0;
     if(m.vars.length>0) {
       var improving = 3;
@@ -175,7 +175,7 @@ class SearchControl(val m: FZCBLSModel, val objLB:Int, val MaxTimeMilli: Int,val
   }
 
 
-  def handlePossibleSolution(){
+  def handlePossibleSolution(): Unit ={
     if(m.objective().value < weightedBest){
       bestPair = (m.objective.violation.value,m.objective.getObjectiveValue())
     }
@@ -251,7 +251,7 @@ abstract class NeighbourhoodTabuSearch(m: FZCBLSModel, sc: SearchControl) extend
     nonTabuSet.contains(v)
   }
   
-  def makeMove(extendedSearch: Boolean){
+  def makeMove(extendedSearch: Boolean): Unit ={
     val nonTabuSet = nonTabuVariables.value.map(searchVariables(_));
     val bestValue = sc.weightedBest
     if(extendedSearch) ecnt+=1 else bcnt+=1
@@ -546,7 +546,7 @@ class NeighbourhoodSearchOPTbySAT(m:FZCBLSModel, sc: SearchControl) extends Neig
     }
   }
 
-  override def makeMove(extendedSearch: Boolean){
+  override def makeMove(extendedSearch: Boolean): Unit ={
     val nonTabuSet = nonTabuVariables.value.map(searchVariables(_).asInstanceOf[CBLSIntVar]);
     val bestValue = sc.weightedBest
     if(extendedSearch) ecnt+=1 else bcnt+=1
@@ -582,7 +582,7 @@ class NeighbourhoodSearchOPTbySAT(m:FZCBLSModel, sc: SearchControl) extends Neig
 class GLSSAT(m:FZCBLSModel,sc: SearchControl) extends NeighbourhoodSearch(m,sc) {
   val it = CBLSIntVar(m.m, 1, 0 to Int.MaxValue, "it");
 
-  def run(){
+  def run(): Unit ={
 
     var improved = true
 
@@ -728,7 +728,7 @@ class RestrictedNeighbourhoodSearch(m:FZCBLSModel, sc: SearchControl) extends Ne
     }
   }
 
-  override def makeMove(extendedSearch: Boolean){
+  override def makeMove(extendedSearch: Boolean): Unit ={
     val nonTabuSet = nonTabuVariables.value.map(searchVariables(_).asInstanceOf[CBLSIntVar]);
     val bestValue = sc.weightedBest
     if(extendedSearch) ecnt+=1 else bcnt+=1

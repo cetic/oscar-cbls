@@ -25,7 +25,7 @@ import oscar.cp.minizinc.FlatZinc2OscaR
  * @author Pierre Schaus pschaus@gmail.com
  */
 object LinearToProgram {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
         val file = if ((new File("/data/minizinc/linear-to-program.fzn")).exists()) "data/minizinc/linear-to-program.fzn" else "data/minizinc/linear-to-program.fzn"
         val args = Array[String]("-s","-a", file)
 	    FlatZinc2OscaR.parse(args)

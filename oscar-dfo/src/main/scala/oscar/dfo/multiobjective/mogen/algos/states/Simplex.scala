@@ -16,7 +16,6 @@ package oscar.dfo.multiobjective.mogen.algos.states
 
 import oscar.dfo.utils._
 import oscar.util.RandomGenerator
-import org.omg.PortableServer.POA
 
 trait Simplex[E] {
 

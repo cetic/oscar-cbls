@@ -25,7 +25,7 @@ class ALNSConfig(
             metaParameters: Map[Symbol, Any]
           ){
     this(
-      new RandomStore[ALNSOperator](Array(new ALNSNoParamOperator("dummy", 0, () => (_ => Unit, None, None)))),
+      new RandomStore[ALNSOperator](Array(new ALNSNoParamOperator("dummy", 0, () => (_ => (), None, None)))),
       searchStore,
       timeout,
       objective,

@@ -18,7 +18,7 @@ package oscar.algo.reversible.test
 import org.scalatest.FunSuite
 import oscar.algo.search._
 import oscar.algo.reversible._
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 
 /**
  * @author Pierre Schaus pschaus@gmail.com

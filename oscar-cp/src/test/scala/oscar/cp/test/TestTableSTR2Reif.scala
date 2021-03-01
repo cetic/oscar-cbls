@@ -20,9 +20,7 @@ import oscar.cp.constraints._
 import oscar.cp.constraints.tables.TableSTR2Reif
 import oscar.cp._
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
 class TestTableSTR2Reif extends TestSuite  {
   test("Table Test 1") {
     /*

@@ -27,7 +27,7 @@ class Machine1(m : Model, name: String) extends Process(m,name) {
   val liveDur = new scala.util.Random()
   val breakDur = new scala.util.Random()
   
-  def beAlive() {
+  def beAlive(): Unit = {
     println(name+" is alive")
     val aliveDur = 5+liveDur.nextInt(5)
     m.wait (aliveDur.toDouble) {
@@ -35,7 +35,7 @@ class Machine1(m : Model, name: String) extends Process(m,name) {
     }
   }
   
-  def beBroken() {
+  def beBroken(): Unit = {
     println(name+" is broken at time "+m.clock())
     val repairDur = 5+breakDur.nextInt(10)
     m.wait(repairDur.toDouble) {
@@ -43,14 +43,14 @@ class Machine1(m : Model, name: String) extends Process(m,name) {
     }
   }
   
-  def run() {
+  def run(): Unit = {
     beAlive()
   }
   
 }
 
 object Machine1 {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val mod = new Model()
     val m1 = new Machine1(mod,"machine1")
     m1.run()

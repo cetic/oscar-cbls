@@ -80,7 +80,7 @@ abstract class IterativeDeepeningStrategy[Threshold](searchInstantiator: Branchi
     atLeastOne = false
 
     // To store the path
-    val path_list = new mutable.MutableList[(List[Constraint], Int)]
+    val path_list = new mutable.ArrayDeque[(List[Constraint], Int)]
 
     // Search all the possibles paths
     model.apply {

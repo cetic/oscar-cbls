@@ -149,14 +149,14 @@ final class TableCTAC6(X: Array[CPIntVar], table: Array[Array[Int]]) extends Con
   private[this] var inverseLastSupports: Array[NodeSupport] = null // first node is a dummy node
 
 
-  def printInverseLastSupportsLists() {
+  def printInverseLastSupportsLists(): Unit = {
     for (i <- 0 until nbLongs) {
 
       var curr = inverseLastSupports(i)
 
       println("list of word"+i)
       while (curr != null) {
-        print(curr+",")
+        print(s"$curr,")
         curr = curr.next
 
       }

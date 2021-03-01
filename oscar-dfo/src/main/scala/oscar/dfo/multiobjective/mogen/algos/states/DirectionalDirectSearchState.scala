@@ -32,7 +32,7 @@ class DirectionalDirectSearchState(initPoint: MOOPoint, val stepSizes: Array[Dou
     DirectionalDirectSearchState(newBestPoint, stepSizeIntervals.clone, stepSizes.clone, basisSize)
   }
   
-  def promoteDirection(directionIndex: Int) {
+  def promoteDirection(directionIndex: Int): Unit = {
     var formerDirection = currentBasis(directionIndex)
     for (i <- 0 to directionIndex) {
       val formerDir = currentBasis(i)

@@ -83,7 +83,7 @@ object Helper {
     }
     degs
   }
-  def printDegreeDistribution(vars: Iterable[Variable]){
+  def printDegreeDistribution(vars: Iterable[Variable]): Unit ={
     val degs = MMap.empty[Int,Int];
     for(v<-vars){
       degs(v.cstrs.size) = degs.getOrElse(v.cstrs.size, 0) + 1

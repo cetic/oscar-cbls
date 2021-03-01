@@ -63,7 +63,7 @@ class BinaryABS(variables: Array[IntVarLike], valHeuristic: Int => Int,rand: Ran
     }
   }
 
-  override def reset() {
+  override def reset(): Unit = {
     for (i <- 0 until n) {
       stats(i).reset()
       domSize(i) = variables(i).size
@@ -77,7 +77,7 @@ class BinaryABS(variables: Array[IntVarLike], valHeuristic: Int => Int,rand: Ran
     }
   }
   
-  private def updateStatisticsAndReset() {
+  private def updateStatisticsAndReset(): Unit = {
     for (i <- 0 until n) {
       stats(i).addPoint(activity(i))
       activity(i) =  0
@@ -86,7 +86,7 @@ class BinaryABS(variables: Array[IntVarLike], valHeuristic: Int => Int,rand: Ran
   }  
   
   val indexes = Array.tabulate(n)(i => i).toSeq
-  private def probe() {
+  private def probe(): Unit = {
     c.pushState()
     val shuffled = rand.shuffle(indexes)
     var i = 0
@@ -100,7 +100,7 @@ class BinaryABS(variables: Array[IntVarLike], valHeuristic: Int => Int,rand: Ran
     c.pop()
   }
 
-  private def updateActivities() {
+  private def updateActivities(): Unit = {
     for (i <- 0 until n) {
       if (variables(i).size < domSize(i)) {
         activity(i) += 1

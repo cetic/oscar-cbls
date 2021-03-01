@@ -17,7 +17,7 @@ package oscar.cp.constraints
 import oscar.algo.reversible._
 import oscar.cp._
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.variables.CPVar
 

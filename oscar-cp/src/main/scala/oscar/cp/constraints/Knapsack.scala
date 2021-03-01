@@ -15,12 +15,11 @@
 package oscar.cp.constraints
 
 
-import oscar.cp.core._
 import oscar.algo.reversible._
-
-import scala.collection.JavaConversions._
+import oscar.cp.core._
 import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPVar}
 
+import scala.math.Ordering.Double.TotalOrdering
 
 /**
  * Implementation of Knapsack Constraint.

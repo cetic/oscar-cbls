@@ -115,16 +115,15 @@ object Metrics {
     }
   }
 
-  def searchEfficiencySince(sols: Seq[CPIntSol], t: Long, currentTime: Long): Double = {
-    if(sols.isEmpty) 0.0
+  def searchEfficiencySince(iterStates: Seq[(Long, Int)], t: Long, currentTime: Long, currentObj: Int): Double = {
+    if(iterStates.isEmpty) 0.0
     else {
-      val currentObj = sols.last.objective
       var tStart = currentTime
       var objStart = currentObj
-      var i = sols.length - 1
+      var i = iterStates.length - 1
       while(i >= 0 && tStart > t) {
-        tStart = sols(i).time
-        objStart = sols(i).objective
+        tStart = iterStates(i)._1
+        objStart = iterStates(i)._2
         i -= 1
       }
       val time = Math.abs(currentTime - tStart)

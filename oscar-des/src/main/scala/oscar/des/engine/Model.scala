@@ -30,7 +30,7 @@ class Model {
 	
 	private def addEvent(e : SimEvent) = eventQueue += e
 	
-	def simulate(horizon: Int,verbose: Boolean = true) {
+	def simulate(horizon: Int,verbose: Boolean = true): Unit = {
 		while (eventQueue.nonEmpty) {
 			val e = eventQueue.dequeue()
 			if(verbose && e.time <= horizon && e.time != currentTime){
@@ -47,28 +47,28 @@ class Model {
 		}
 	}
 
-	def wait(duration : Double)(block : => Unit) {
+	def wait(duration : Double)(block : => Unit): Unit = {
 		assert(duration >= 0)
 		addEvent(new WaitEvent(clock + duration, block))
 	}
 	
-    def wait(duration : Int)(block : => Unit) {
+    def wait(duration : Int)(block : => Unit): Unit = {
 		wait(duration.toDouble)(block)
 	}
 	
-	def request(r : Resource)(block : => Unit) {
+	def request(r : Resource)(block : => Unit): Unit = {
 		r.request(block)
 	}
 
-	def release(r : Resource) {
+	def release(r : Resource): Unit = {
 		r.release()
 	}
 	
-	def suspend(proc : Process)(block : => Unit) {
+	def suspend(proc : Process)(block : => Unit): Unit = {
 		proc.suspend(block)
 	}
 
-	def resume(proc : Process){
+	def resume(proc : Process): Unit ={
 		proc.resume()
 	}
 

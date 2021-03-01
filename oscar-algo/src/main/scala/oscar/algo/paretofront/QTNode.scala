@@ -38,7 +38,7 @@ abstract class QTNode[U: Numeric] extends ParetoElement[U] {
     }).map(succ => succ.get).toSet
   }
   
-  def detach() { // Cannot be applied on root
+  def detach(): Unit = { // Cannot be applied on root
     val f = father.get
     f.successors(kSucc) = None
     father = None

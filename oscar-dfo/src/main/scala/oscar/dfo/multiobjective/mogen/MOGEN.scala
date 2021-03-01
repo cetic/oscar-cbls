@@ -20,7 +20,6 @@ import oscar.util.RandomGenerator
 import oscar.dfo.utils.MOOPoint
 import oscar.algo.paretofront.LinearList
 import oscar.algo.paretofront.ParetoFront
-import scala.Array.canBuildFrom
 import oscar.dfo.multiobjective.mogen.algos.ComparativeAlgorithm
 
 class MOGEN(var evaluator: MOEvaluator) {
@@ -93,7 +92,7 @@ class MOGEN(var evaluator: MOEvaluator) {
     archive.toSet.map((e: MOGENTriplet) => e.getMOOPoint)
   }
   
-  def performIteration(iterationNumber: Int) {
+  def performIteration(iterationNumber: Int): Unit = {
     if (RandomGenerator.nextDouble <= searchStepProba) searchStep
     val currentTriplet = selectIterate
     MOGEN.onIterateSelected(currentTriplet)
@@ -107,7 +106,7 @@ class MOGEN(var evaluator: MOEvaluator) {
     if (archive.contains(currentTriplet)) archive.priorityQueue.enqueue(currentTriplet)
   }
   
-  def searchStep {
+  def searchStep: Unit = {
     var archiveChanged = false
     if (archive.size > 1) {
 	  val point1 = archive.randomElement

@@ -93,13 +93,13 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
   }
 
 
-  def addNeighbourhood(n: (CBLSObjective,ConstraintSystem) => Neighbourhood,controlledVars: Array[CBLSIntVar]){
+  def addNeighbourhood(n: (CBLSObjective,ConstraintSystem) => Neighbourhood,controlledVars: Array[CBLSIntVar]): Unit ={
     neighbourhoodGenerator = n :: neighbourhoodGenerator
     //neighbourhoods = n :: neighbourhoods
     vars = vars.filterNot(controlledVars.contains(_))
     neighbourhoodVars = neighbourhoodVars ++ controlledVars.toList
   }
-  def addDefaultNeighbourhoods(){
+  def addDefaultNeighbourhoods(): Unit ={
     if (vars.length > 0) {
       //val varsToSwap = vars.groupBy(v => v.dom)
       addNeighbourhood((o,c) => new MaxViolating(vars.toArray, o, c),Array.empty[CBLSIntVar])
@@ -110,7 +110,7 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
     }
   }
 
-  def createNeighbourhoods(){
+  def createNeighbourhoods(): Unit ={
     neighbourhoods = neighbourhoodGenerator.map(_(objective(),c))
     neighbourhoods.foreach(n => log(2,"Created Neighbourhood "+ n+ " over "+n.searchVariables.length+" variables"))
   }
@@ -250,12 +250,12 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
 
   var cpmodel = null.asInstanceOf[FZCPModel]
   var useCP = false
-  def useCPsolver(cpm: FZCPModel){
+  def useCPsolver(cpm: FZCPModel): Unit ={
     assert(cpm.model == fzModel);
     cpmodel = cpm
     useCP = true
   }
-  def restrictVarDomains(){
+  def restrictVarDomains(): Unit ={
     //Might want to get rid of CBLSIntVarDom <---- yes!
     for(v<-fzModel.variables if !v.isDefined && !v.cstrs.exists{
         case c:subcircuit => true;
@@ -281,7 +281,7 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
   }
 
   //Takes the current domain of every cbls variables and unions it with the current domain the corresponding fznVariable.
-  def relaxVarDomains(){
+  def relaxVarDomains(): Unit ={
     for(v<-fzModel.variables if !v.isDefined && !v.cstrs.exists{
       case c:subcircuit => true;
       case c:circuit => true;

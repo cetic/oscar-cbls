@@ -26,7 +26,7 @@ import scala.io.Source
  * @author Pierre Schaus pschaus@gmail.com
  */
 object ElectricityMarket {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
 
     implicit val cp = CPSolver()
     cp.silent = true

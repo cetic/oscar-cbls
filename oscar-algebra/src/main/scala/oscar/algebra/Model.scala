@@ -1,5 +1,7 @@
 package oscar.algebra
 
+import scala.collection.mutable
+
 /**
  * Represents an objective for a mathematical model.
  *
@@ -74,7 +76,7 @@ class Model[O >: Constant <: ExpressionDegree , C <: ExpressionDegree, V: Numeri
   /**
    * Returns the list of constraints (as [[EquationSystem]]) for this [[Model]]
    */
-  def constraints: Seq[EquationSystem[C,V]] = _constraints
+  def constraints: mutable.Seq[EquationSystem[C,V]] = _constraints
 
   /**
    * Adds a variable in this model

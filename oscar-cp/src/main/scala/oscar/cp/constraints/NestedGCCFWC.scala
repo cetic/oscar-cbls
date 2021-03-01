@@ -198,7 +198,7 @@ class NestedGCCFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int
   /**
    * Filters the bounds given in the input to keep only a minimal set of them that gives the same information.
    */
-  private def filterBounds() {
+  private def filterBounds(): Unit = {
     nRelevantVariables = 0
 
     val filterFlat = (prevIdx: Int, prevVal: Int, nextIdx: Int, nextVal: Int) => nextVal > prevVal
@@ -222,7 +222,7 @@ class NestedGCCFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int
    */
   private def filterGeneric(st: SegmentStructure,
                             prevFilter: (Int, Int, Int, Int) => Boolean,
-                            nextFilter: (Int, Int, Int, Int) => Boolean) {
+                            nextFilter: (Int, Int, Int, Int) => Boolean): Unit = {
     import st._
 
     // Adding lower and upper bound 0 at 0, for convenience.
@@ -263,7 +263,7 @@ class NestedGCCFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int
    * For example, if there is a maximum of 3 occurrences in the interval [0,5[, there will be a maximum of 3 in [0,4[
    * and of 4 in [0,6[.
    */
-  private def fillBounds() {
+  private def fillBounds(): Unit = {
     var vi = nValues
     while (vi > 0) {
       vi -= 1
@@ -382,7 +382,7 @@ class NestedGCCFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int
    * @param unboundTmp The list of unbound variables for each value
    */
   private def initialCount(lowerTmp: Array[TempStructure], upperTmp: Array[TempStructure],
-                           unboundTmp: Array[TempList]) {
+                           unboundTmp: Array[TempList]): Unit = {
     var i = 0
     while (i < nRelevantVariables) {
       val x = X(i)
@@ -504,7 +504,7 @@ class NestedGCCFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int
    * @param tmp The temporary segment structure
    * @param criticalInit Gives the initial value for untilCritical
    */
-  private def initTemp(st: SegmentStructure, tmp: TempStructure, criticalInit: (Int, Int) => Int) {
+  private def initTemp(st: SegmentStructure, tmp: TempStructure, criticalInit: (Int, Int) => Int): Unit = {
     import st._
 
     intervalOf = Array.ofDim[Int](lastIdx)
@@ -528,7 +528,7 @@ class NestedGCCFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int
    * @param st The reversible segment structure
    * @param tmp The temporary segment structure
    */
-  private def copyToRev(st: SegmentStructure, tmp: TempStructure) {
+  private def copyToRev(st: SegmentStructure, tmp: TempStructure): Unit = {
     import st._
 
     // Initialize the reversible arrays
@@ -557,7 +557,7 @@ class NestedGCCFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int
    * @param list The reversible unbound list
    * @param tmpList The temporary unbound list
    */
-  private def copyListToRev(list: UnboundList, tmpList: TempList) {
+  private def copyListToRev(list: UnboundList, tmpList: TempList): Unit = {
     // Copy the temporary unbound list into the reversible one
     list.firstRev = new ReversibleInt(s, tmpList.first)
     list.prevRev = Array.tabulate(nRelevantVariables)(i =>
@@ -763,7 +763,7 @@ class NestedGCCFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Array[(Int
    * @param list The unbound variable list
    * @param i The index of the variable
    */
-  @inline private def removeUnbound(list: UnboundList, i: Int) {
+  @inline private def removeUnbound(list: UnboundList, i: Int): Unit = {
     import list._
     val prev = prevRev(i).value
     val next = nextRev(i).value

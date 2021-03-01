@@ -34,14 +34,14 @@ class CountSimple(val N: CPIntVar, val X: Array[CPIntVar], val Y: CPIntVar) exte
 
   override def associatedVars(): Iterable[CPVar] = Array(N, Y) ++ X
 
-  private def setEq(i: Int) {
+  private def setEq(i: Int): Unit = {
     val tmp = eqY(nEqY.value)
     eqY(nEqY.value) = eqY(i)
     eqY(i) = tmp
     nEqY.incr()
   }
   
-  private def setDiff(i: Int) {
+  private def setDiff(i: Int): Unit = {
     val tmp = diffY(nDiffY.value)
     diffY(nDiffY.value) = diffY(i)
     diffY(i) = tmp

@@ -58,7 +58,7 @@ trait Watcher[RetVal] {
     * @param nbSolutions the number of solutions
     * @param solutions only filled if RetVal is not Unit
     */
-  def solutionRecap(nbSolutions: Int, solutions: List[RetVal])
+  def solutionRecap(nbSolutions: Int, solutions: List[RetVal]): Unit
 
   /**
     * Called when solving is completely done and all solutions have been sent. No more function calls will be made

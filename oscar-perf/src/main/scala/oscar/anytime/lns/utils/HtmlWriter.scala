@@ -44,6 +44,7 @@ class HtmlWriter(templatePath: String, outputPath: String){
     */
   def addHeading(text: String, level: Int = 1): Unit = {
     if(level == 2) document += (("sub-heading", text))
+    else if(level == 3) document += (("sub-sub-heading", text))
     else document += (("heading", text))
   }
 
@@ -108,6 +109,7 @@ class HtmlWriter(templatePath: String, outputPath: String){
   private def renderDocument(): String = document.map{
       case ("heading", text) => "<h1>" + text + "</h1>"
       case ("sub-heading", text) => "<h2>" + text + "</h2>"
+      case ("sub-sub-heading", text) => "<h3>" + text + "</h3>"
       case ("paragraph", text) => "<p>" + text + "</p>"
       case ("elem", id) => "<button onclick=\"display(\'" + id + "\')\">Display</button>\n<div id=" + id + "></div>"
     }

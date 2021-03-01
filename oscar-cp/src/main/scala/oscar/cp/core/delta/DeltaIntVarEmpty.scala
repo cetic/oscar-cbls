@@ -29,5 +29,5 @@ final class DeltaIntVarEmpty(final override val variable: CPIntVar,idx: Int = 0)
   final override def fillArray(values: Array[Int]): Int = 0
   final override val minChanged: Boolean = false
   final override val maxChanged: Boolean = false
-  final override def update(): Unit = Unit
+  final override def update(): Unit = ()
 }

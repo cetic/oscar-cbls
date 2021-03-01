@@ -16,7 +16,7 @@ class VisualStateResource(starts: Array[CPIntVar], durations: Array[CPIntVar], e
 
   private val max = stateNeeded.max
 
-  def update(xScale: Int, yScale: Int) {
+  def update(xScale: Int, yScale: Int): Unit = {
     rectangles = List[VisualRoundRectangle]()
     clear()
 

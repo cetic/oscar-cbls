@@ -94,7 +94,8 @@ class TestSum extends TestSuite {
       binaryStatic(x)
     } onSolution {
       nbSol += 1
-    } start ()
+    }
+    cp.start
     cp.popAll()
     nbSol
 

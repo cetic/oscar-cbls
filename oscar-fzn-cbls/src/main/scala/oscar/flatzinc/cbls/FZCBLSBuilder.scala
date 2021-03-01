@@ -35,7 +35,7 @@ import oscar.flatzinc.transfo.FZModelTransfo
 class FZCBLSBuilder extends LinearSelectors with StopWatch {
 
 
-  def solve(opts: Options) {
+  def solve(opts: Options): Unit = {
     startWatch()
     val log = opts.log();
     log("start")

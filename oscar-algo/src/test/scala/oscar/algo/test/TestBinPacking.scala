@@ -1,11 +1,9 @@
 package oscar.algo.test
 
-import org.scalatest.FunSuite
-import org.scalatest.Matchers
-import oscar.algo.RangeMinQuery
-import oscar.algo.HeightProfile
-import scala.collection.mutable.ArrayBuffer
+import org.scalatest.{FunSuite, Matchers}
 import oscar.algo.BinPacking
+
+import scala.collection.mutable.ArrayBuffer
 
 class TestBinPacking extends FunSuite with Matchers {
   
@@ -55,7 +53,7 @@ class TestBinPacking extends FunSuite with Matchers {
   test("test lower bound compared to first fit") {
       val rand = new scala.util.Random()
       
-      def test(items: Array[Int]) {
+      def test(items: Array[Int]): Unit = {
 	    val lb = BinPacking.labbeLB(items, 10)
 	    val ub = BinPacking.firstFitDecreasing(items, 10).max + 1
 	    lb should be <=(ub)

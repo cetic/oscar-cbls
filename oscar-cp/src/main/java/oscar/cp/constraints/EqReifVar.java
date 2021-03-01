@@ -21,7 +21,7 @@ import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.variables.CPVar;
 import scala.collection.Iterable;
-import scala.collection.JavaConversions;
+import scala.jdk.javaapi.CollectionConverters;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -54,7 +54,7 @@ public class EqReifVar extends Constraint {
 	@Override
 	public Iterable<CPVar> associatedVars() {
 		List<CPVar> l = new LinkedList<>(Arrays.asList(x, y, b));
-		return JavaConversions.iterableAsScalaIterable(l);
+		return CollectionConverters.asScala(l);
 	}
 
 	@Override

@@ -33,7 +33,7 @@ object Rack {
 
   class CardType(val power: Int, val quantity: Int)
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
 
     // Data
 

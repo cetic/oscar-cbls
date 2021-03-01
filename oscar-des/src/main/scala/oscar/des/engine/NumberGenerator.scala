@@ -24,7 +24,7 @@ class NumberGenerator(dist: ProbabilityDistribution) {
 
   var generating = true
 
-  def stop() { generating = false }
+  def stop(): Unit = { generating = false }
 
   def apply(): Double = dist.inverse(generator.nextDouble)
   def generateNext = apply

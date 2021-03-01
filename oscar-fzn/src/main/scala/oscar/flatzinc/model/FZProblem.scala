@@ -29,11 +29,11 @@ class FZProblem {
   val solution:FZSolution = new FZSolution();
   val search = new Search();
   
-  def addVariable(variable:Variable) {
+  def addVariable(variable:Variable): Unit = {
     variables += variable
   }
 
-  def addConstraint(c: Constraint) {
+  def addConstraint(c: Constraint): Unit = {
     constraints += c
   }
 
@@ -60,16 +60,16 @@ class FZProblem {
   
 
   
-  def satisfy(anns:Iterable[Annotation]) {
+  def satisfy(anns:Iterable[Annotation]): Unit = {
     search.obj = Objective.SATISFY
     search.setHeuristic(anns)
   }
-  def minimize(obj: IntegerVariable,anns:Iterable[Annotation]) {
+  def minimize(obj: IntegerVariable,anns:Iterable[Annotation]): Unit = {
     search.obj = Objective.MINIMIZE
     search.variable = Some(obj)
     search.setHeuristic(anns)
   }
-  def maximize(obj: IntegerVariable,anns:Iterable[Annotation]) {
+  def maximize(obj: IntegerVariable,anns:Iterable[Annotation]): Unit = {
     search.obj = Objective.MAXIMIZE
     search.variable = Some(obj)
     search.setHeuristic(anns)

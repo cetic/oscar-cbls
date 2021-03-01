@@ -15,6 +15,8 @@
 
 package oscar.cp.core.variables
 
+import java.util.ConcurrentModificationException
+
 import oscar.algo.Inconsistency
 import oscar.algo.vars.IntVarLike
 import oscar.cp.constraints.InSet
@@ -202,8 +204,85 @@ abstract class CPIntVar extends CPVar with IntVarLike {
   }
   
   def iterator: Iterator[Int]
-  
-  final override def foreach[@specialized(Int) U](f: Int => U): Unit = iterator.foreach(f)
+
+  /**
+   * While iterating on a CPIntVar, you are allowed to remove **only the value being currently iterated on**.
+   * Any other value will throw a ConcurrentModificationException.
+   */
+  @inline final override def foreach[U](f: Int => U): Unit = {
+    /**
+     * we really want this to be optimized!
+     * this ugly hack force the inlining of the function, which allows it to be lightning fast.
+     */
+
+    val (multiplier, offset, v) = this match {
+      case linear: CPIntVarViewLinear => linear.linearView
+      case _ => (1, 0, this)
+    }
+
+    if(v.isInstanceOf[CPIntVarAdaptable]) {
+      val va = v.asInstanceOf[CPIntVarAdaptable]
+      var origSize = va._size
+      var lastSeen: Int = 0
+      var wasContinous = false
+      var needSparse = !va._continuous
+
+      if(va._continuous) {
+        wasContinous = true
+        var i = va._min
+        while (i <= va._max && !needSparse) {
+          lastSeen = i
+          f(lastSeen * multiplier + offset)
+
+          if(origSize != va._size) {
+            if(va.hasValue(lastSeen) || origSize - 1 != va._size)
+              throw new ConcurrentModificationException()
+            if(!va._continuous)
+              needSparse = true
+            origSize = va._size
+          }
+
+          i += 1
+        }
+      }
+
+      if(needSparse) {
+        var i = origSize
+        // if it **was** continuous, then the biggest values are at the end. We need to stop as soon as
+        // we reach the value we last saw in the continuous iteration
+        while (i != 0 && (!wasContinous || va.values(i-1) > lastSeen)) {
+          i -= 1
+          val thisValue = va.values(i)
+          f(va.values(i) * multiplier + offset)
+          if(origSize != va._size) {
+            origSize -= 1
+            if(origSize != va._size || va.hasValue(thisValue))
+              throw new ConcurrentModificationException()
+          }
+        }
+      }
+    }
+    else if(v.isInstanceOf[CPBoolVar] || v.isInstanceOf[CPIntVarSingleton]) {
+      //at most two different values here!
+      val origSize = v.size
+      val origMin = v.min
+      f(multiplier * origMin + offset)
+      if(origSize != v.size && v.min == origMin)
+        throw new ConcurrentModificationException()
+      if (origMin != v.max)
+        f(multiplier * v.max + offset)
+    }
+    else {
+      // fallback
+      this._foreach(f)
+    }
+  }
+
+  /**
+   * Fallback for foreach, when the class is not hard-coded inside the main implementation above, or in other
+   * particular circumstances.
+   */
+  protected def _foreach[U](f: Int => U): Unit
 
   /**
    * Level 2 registration: ask that the propagate() method of the constraint c is called whenever
@@ -248,7 +327,7 @@ abstract class CPIntVar extends CPVar with IntVarLike {
    * @param priority
    * @param filter Filters. Should return true when there will never be more filtering to do: the filter will be deactivated
    */
-  def filterWhenDomainChanges(idempot: Boolean = true, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: => Boolean)(implicit constraint: Constraint) {
+  def filterWhenDomainChanges(idempot: Boolean = true, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: => Boolean)(implicit constraint: Constraint): Unit = {
     new SubConstraint(this.store, "filterWhenDomainChanges on  " + this) {
       idempotent = idempot
       priorityL2 = priority
@@ -264,7 +343,7 @@ abstract class CPIntVar extends CPVar with IntVarLike {
    * @param priority
    * @param filter Filters. Should return true when there will never be more filtering to do: the filter will be deactivated
    */
-  def filterWhenBoundsChange(idempot: Boolean = false, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: => Boolean) {
+  def filterWhenBoundsChange(idempot: Boolean = false, priority: Int = CPStore.MaxPriorityL2 - 2)(filter: => Boolean): Unit = {
     new SubConstraint(this.store, "filterWhenBoundsChange on  " + this) {
       idempotent = idempot
       priorityL2 = priority
@@ -279,7 +358,7 @@ abstract class CPIntVar extends CPVar with IntVarLike {
    * @param priority
    * @param filter Filters. Should return true when there will never be more filtering to do: the filter will be deactivated
    */
-  def filterWhenBind(idempot: Boolean = false, priority: Int = CPStore.MaxPriorityL2-2)(filter: => Boolean) {
+  def filterWhenBind(idempot: Boolean = false, priority: Int = CPStore.MaxPriorityL2-2)(filter: => Boolean): Unit = {
     new SubConstraint(this.store, "filterWhenBind on  " + this) {
       idempotent = idempot
       priorityL2 = priority

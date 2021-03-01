@@ -24,7 +24,7 @@ Annotation (
     var args: List[Any]
 	){
     def this(name: String) = this(name,List.empty[Any]);
-    def add(e: Any){
+    def add(e: Any): Unit ={
       args = args ++ List(e);
     }
 	override def toString() = name + "(" + args.mkString(", ") + ")"

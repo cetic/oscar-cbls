@@ -26,7 +26,7 @@ import oscar.cp.minizinc.FlatZinc2OscaR
  * @author Pierre Schaus pschaus@gmail.com
  */
 object PentominoesInt {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val file = if ((new File("data/minizinc/pentominoes-int.fzn")).exists()) "data/minizinc/pentominoes-int.fzn" else "data/minizinc/pentominoes-int.fzn"
 	val args = Array[String]("-s", file)
 	FlatZinc2OscaR.parse(args)

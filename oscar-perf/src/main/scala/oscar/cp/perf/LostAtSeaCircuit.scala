@@ -35,7 +35,7 @@ import oscar.cp._
  * @author Elise Dupont & Pierre Schaus
  */
 object LostAtSeaCircuit  {
-	def main(args: Array[String]) {
+	def main(args: Array[String]): Unit = {
 		
       // input data with the probabilities
       

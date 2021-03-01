@@ -67,7 +67,7 @@ class FZCPBasicModel(val pstrength: oscar.cp.core.CPPropagStrength = oscar.cp.Me
       case Some(c) => c.asInstanceOf[CPBoolVar];
     }
   }
-  def createVariables(variables: Iterable[Variable]){
+  def createVariables(variables: Iterable[Variable]): Unit ={
     for(v <- variables){
       dictVars(v) = v match{
         case bv:BooleanVariable => CPBoolVar()
@@ -79,7 +79,7 @@ class FZCPBasicModel(val pstrength: oscar.cp.core.CPPropagStrength = oscar.cp.Me
       }
     }
   }
-  def createConstraints(constraints:Iterable[Constraint]){
+  def createConstraints(constraints:Iterable[Constraint]): Unit ={
     //TODO: Put all the added cstrs in a ArrayBuffer and then post them all at once.
     for(c <- constraints){
       //TODO: Take consistency annotation to post constraints.
@@ -93,13 +93,13 @@ class FZCPBasicModel(val pstrength: oscar.cp.core.CPPropagStrength = oscar.cp.Me
 
   }
 
-  def add(c:Array[(oscar.cp.Constraint,oscar.cp.core.CPPropagStrength)]){
+  def add(c:Array[(oscar.cp.Constraint,oscar.cp.core.CPPropagStrength)]): Unit ={
     for(cs <- c){
       solver.add(cs._1,cs._2)
     }
   }
 
-  def createObjective(obj:oscar.flatzinc.model.Objective.Value, objVar:Option[Variable] = None){
+  def createObjective(obj:oscar.flatzinc.model.Objective.Value, objVar:Option[Variable] = None): Unit ={
     obj match{
       case Objective.SATISFY =>
       case Objective.MAXIMIZE => maximize(getIntVar(objVar.get))

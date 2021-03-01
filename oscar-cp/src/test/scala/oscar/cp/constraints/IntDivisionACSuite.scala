@@ -30,10 +30,10 @@ class IntDivisionACSuite extends TestSuite {
     val contained = Array(3, 4, 5)
     val removed = values.filter(!contained.contains(_))
     for (v <- contained) {
-      assert(a.hasValue(v), v + " should be in " + a)
+      assert(a.hasValue(v), s"$v should be in $a")
     }
     for (v <- removed) {
-      assert(!a.hasValue(v), v + " should not be in " + a)
+      assert(!a.hasValue(v), s"$v should not be in $a")
     }
   }
   
@@ -47,10 +47,10 @@ class IntDivisionACSuite extends TestSuite {
     val contained = Set(3, 4, 5, 12, 13, 14, 15, 16, 17)
     val removed = values.filter(!contained.contains(_))
     for (v <- contained) {
-      assert(b.hasValue(v), v + " should be in " + b)
+      assert(b.hasValue(v), s"$v should be in $b")
     }
     for (v <- removed) {
-      assert(!b.hasValue(v), v + " should not be in " + b)
+      assert(!b.hasValue(v), s"$v should not be in $b")
     }
   }
   
@@ -61,10 +61,10 @@ class IntDivisionACSuite extends TestSuite {
     solver.post(new IntDivisionAC(a, b, 1)) 
     assert(!solver.isFailed)
     for (v <- a) {
-      assert(b.hasValue(v), v + " should be in " + b)
+      assert(b.hasValue(v), s"$v should be in $b")
     }
     for (v <- b) {     
-      assert(a.hasValue(v), v + " should be in " + a)
+      assert(a.hasValue(v), s"$v should be in $a")
     }
   }
   
@@ -79,10 +79,10 @@ class IntDivisionACSuite extends TestSuite {
     val contained = ((-c+1) until c).toSet
     val removed = values.filter(!contained.contains(_))
     for (v <- contained) {
-      assert(b.hasValue(v), v + " should be in " + b)
+      assert(b.hasValue(v), s"$v should be in $b")
     }
     for (v <- removed) {
-      assert(!b.hasValue(v), v + " should not be in " + b)
+      assert(!b.hasValue(v), s"$v should not be in $b")
     }
   }
   
@@ -104,7 +104,7 @@ class IntDivisionACSuite extends TestSuite {
     def removeAndCheck(v: Int): Unit = {     
       solver.post(a !== v)
       for (i <- (v*c) until (v*c+c)) {
-        assert(!b.hasValue(i), i + " should not be in " + b)
+        assert(!b.hasValue(i), s"$i should not be in $b")
       }
     }
     removeAndCheck(-4)
@@ -120,7 +120,7 @@ class IntDivisionACSuite extends TestSuite {
     solver.post(new IntDivisionAC(a, b, c)) 
     assert(!solver.isFailed)
     solver.post(b !== 13)
-    assert(!a.hasValue(2), "2 should not be in " + a)
+    assert(!a.hasValue(2), s"2 should not be in $a")
   } 
   
   test("removing v from b should not remove v/4 from a if v/4 has still some supports in b") {
@@ -131,12 +131,12 @@ class IntDivisionACSuite extends TestSuite {
     solver.post(new IntDivisionAC(a, b, c)) 
     assert(!solver.isFailed)
     solver.post(b !== 12)
-    assert(a.hasValue(2), "2 should be in " + a)
-    assert(b.hasValue(10), "10 should be in " + b)
-    assert(b.hasValue(11), "11 should be in " + b)
-    assert(!b.hasValue(12), "12 should not be in " + b)
-    assert(b.hasValue(13), "13 should be in " + b)
-    assert(b.hasValue(14), "14 should be in " + b)
-    assert(b.hasValue(15), "15 should be in " + b)
+    assert(a.hasValue(2), s"2 should be in $a")
+    assert(b.hasValue(10), s"10 should be in $b")
+    assert(b.hasValue(11), s"11 should be in $b")
+    assert(!b.hasValue(12), s"12 should not be in $b")
+    assert(b.hasValue(13), s"13 should be in $b")
+    assert(b.hasValue(14), s"14 should be in $b")
+    assert(b.hasValue(15), s"15 should be in $b")
   }
 }

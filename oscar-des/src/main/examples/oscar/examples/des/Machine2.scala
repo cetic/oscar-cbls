@@ -28,7 +28,7 @@ class Machine2(m : Model, name: String, val repairPerson: UnaryResource) extends
   val liveDur = new scala.util.Random()
   val repairDur = new scala.util.Random()
   
-  def beAlive() {
+  def beAlive(): Unit = {
     println(name+" is alive")
     val aliveDur = 5+liveDur.nextInt(20)
     m.wait (aliveDur) {
@@ -36,7 +36,7 @@ class Machine2(m : Model, name: String, val repairPerson: UnaryResource) extends
     }
   }
   
-  def beBroken() {
+  def beBroken(): Unit = {
     println(name+" is broken waiting to be repaired at time "+m.clock())
     
     m.request(repairPerson) {
@@ -44,7 +44,7 @@ class Machine2(m : Model, name: String, val repairPerson: UnaryResource) extends
     }
   }
   
-  def beRepaired() {
+  def beRepaired(): Unit = {
     val brokenDur = 2+repairDur.nextInt(5)
     println(name+" reparation starts at time "+m.clock()+" duration of reparation="+brokenDur)
     m.wait(brokenDur) {
@@ -54,14 +54,14 @@ class Machine2(m : Model, name: String, val repairPerson: UnaryResource) extends
     }
   }   
   
-  def run() {
+  def run(): Unit = {
     beAlive()
   }
   
 }
 
 object Machine2 {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val mod = new Model()
     val repairPerson = new UnaryResource(mod)
     val m1 = new Machine2(mod,"machine1",repairPerson)

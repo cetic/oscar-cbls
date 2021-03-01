@@ -71,7 +71,7 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
 	  case Some(c) => c.asInstanceOf[CPBoolVar];
 	}
   }
-  def createVariables(){
+  def createVariables(): Unit ={
     for(v <- model.variables){
       dictVars(v.id) = v match{
         case bv:BooleanVariable => CPBoolVar()
@@ -83,7 +83,7 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
       }
     }
   }
-  def createConstraints(){
+  def createConstraints(): Unit ={
     //TODO: Add a try catch for if the problem fails at the root.
     //TODO: Put all the added cstrs in a ArrayBuffer and then post them all at once.
     //try{
@@ -94,7 +94,7 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
             add(cons)
           }catch{
             case e: scala.MatchError if ignoreUnkownConstraints => Console.err.println("% ignoring in CP: "+c)
-            case foo =>
+            case foo: Throwable =>
               println(foo)
           }
         }
@@ -103,12 +103,12 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
     //}
   }
   //TODO: why do we need a separate method?
-  def add(c:Array[(oscar.cp.Constraint,oscar.cp.core.CPPropagStrength)]){
+  def add(c:Array[(oscar.cp.Constraint,oscar.cp.core.CPPropagStrength)]): Unit ={
     for(cs <- c){
       solver.add(cs._1,cs._2)
     }
   }
-  def createObjective(){
+  def createObjective(): Unit ={
     model.search.obj match{
      case Objective.SATISFY => 
      case Objective.MAXIMIZE => maximize(getIntVar(model.search.variable.get))
@@ -164,13 +164,13 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
      model.solution.handleSolution(
       (s: String) => dictVars.get(s) match {
         case Some(intVar) =>
-          intVar.value + ""
+          intVar.value.toString
         case r => if(s=="true" || s=="false") s 
         else try{
-          s.toInt.toString()
+          s.toInt.toString
         }catch{
           case e: NumberFormatException => {
-            throw new Exception("Unhappy: "+r+ " "+s)
+            throw new Exception(s"Unhappy: $r $s")
           }
         }
      });
@@ -241,7 +241,7 @@ class FZCPModel(val model:oscar.flatzinc.model.FZProblem, val pstrength: oscar.c
 class FZCPSolver {
   val pstrength = oscar.cp.Medium 
   
-  def solve(opts: Options){
+  def solve(opts: Options): Unit ={
     val log = opts.log();
     log("start")
     val model = FZParser.readFlatZincModelFromFile(opts.fileName,log, false).problem;

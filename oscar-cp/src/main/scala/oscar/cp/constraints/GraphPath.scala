@@ -406,7 +406,7 @@ class GraphPath(val g : CPGraphVar, src : Int, dest : Int, w : (Int,Int) => Int,
         }
         (List(),List(List())) // ni not in any connected component
       }
-      def addConnectEdge(n1 : Int, n2 : Int) {
+      def addConnectEdge(n1 : Int, n2 : Int): Unit = {
         // Determine if in a component
         val (comp1, ccList1) : (List[Int],List[List[Int]]) = checkAndReturn(connectedComponentsOfVisitedNodes,n1)
         val (comp2, ccList2) : (List[Int],List[List[Int]]) = checkAndReturn(connectedComponentsOfVisitedNodes,n2)

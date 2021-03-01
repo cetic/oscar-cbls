@@ -22,7 +22,7 @@ import oscar.cp.core.Constraint;
 import oscar.cp.core.CPStore;
 import oscar.cp.core.variables.CPVar;
 import scala.collection.Iterable;
-import scala.collection.JavaConversions;
+import scala.jdk.javaapi.CollectionConverters;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -55,13 +55,13 @@ public class GrEqCteReif extends Constraint {
 	@Override
 	public Iterable<CPVar> associatedVars() {
 		List<CPVar> l = new LinkedList<>(Arrays.asList(x, b));
-		return JavaConversions.iterableAsScalaIterable(l);
+		return CollectionConverters.asScala(l);
 	}
 
 	@Override
 	public void setup(CPPropagStrength l) throws Inconsistency {
-		priorityBindL1_$eq(CPStore.MAXPRIORL1());
-		priorityL2_$eq(CPStore.MAXPRIORL2()-1);
+		priorityBindL1_$eq(CPStore.MaxPriorityL1());
+		priorityL2_$eq(CPStore.MaxPriorityL2()-1);
 		propagate();
 		if(isActive()){
 			b.callValBindWhenBind(this);
@@ -85,7 +85,7 @@ public class GrEqCteReif extends Constraint {
 	
 	
 	protected int getPriorityBindL1(){
-		return CPStore.MAXPRIORL1();
+		return CPStore.MaxPriorityL1();
 	}
 		
 	@Override

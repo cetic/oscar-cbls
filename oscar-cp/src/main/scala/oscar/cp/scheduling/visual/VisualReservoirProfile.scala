@@ -76,7 +76,7 @@ class VisualReservoirProfile(startVars: Array[CPIntVar], durationVars: Array[CPI
   zeroLine.outerCol = Color.BLUE
 
 
-  def update(xScale: Int, yScale: Int) {
+  def update(xScale: Int, yScale: Int): Unit = {
     var events = List[(Int, Int)]()
     for (i <- 0 until nTasks) {
       if (temporaryProdCons(i)) {

@@ -27,7 +27,7 @@ class Resource(m : Model, capacity: Int) {
   private var n = 0
   private var pendings = Queue[() => Unit]()
   
-  def request(block: => Unit) {
+  def request(block: => Unit): Unit = {
     if (n < capacity) {
            n += 1
            block
@@ -37,7 +37,7 @@ class Resource(m : Model, capacity: Int) {
       }
   }
   
-  def release() {
+  def release(): Unit = {
     n -= 1
     if (pendings.nonEmpty) {
       val block = pendings.dequeue

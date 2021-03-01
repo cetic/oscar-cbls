@@ -47,7 +47,7 @@ class CPObjective(val st: CPStore, val objs: CPObjectiveUnit*) extends Constrain
   def apply(objVar: CPIntVar) = map(objVar)
 
   /** All objective are set in the NoTighten mode*/
-  def diversify() {
+  def diversify(): Unit = {
     for (o <- objs) {
       o.tightenMode = TightenType.NoTighten
     }
@@ -55,7 +55,7 @@ class CPObjective(val st: CPStore, val objs: CPObjectiveUnit*) extends Constrain
 
   /** The objective unit corresponding to objVar is set to the StrongTighten mode. All others 
    *  objective objects are set in the WeakTighten mode. */
-  def intensify(sol: CPSol, objVar: CPIntVar) {
+  def intensify(sol: CPSol, objVar: CPIntVar): Unit = {
     for (o <- objs) {
       o.best = sol(o.objVar)
       o.tightenMode = if (o.objVar == objVar) TightenType.StrongTighten else TightenType.WeakTighten
@@ -63,7 +63,7 @@ class CPObjective(val st: CPStore, val objs: CPObjectiveUnit*) extends Constrain
   }
 
   /** All the objective objects are set in the StrongTighten mode. */
-  def intensify(sol: CPSol) {
+  def intensify(sol: CPSol): Unit = {
     for (o <- objs) {
       o.best = sol(o.objVar)
       o.tightenMode = TightenType.StrongTighten

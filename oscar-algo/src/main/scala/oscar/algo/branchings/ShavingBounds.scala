@@ -68,7 +68,7 @@ class ShavingBounds(val vars: Array[IntVarLike]) extends Branching with Branchin
         
         q += 1
       }
-      if (context.isFailed) return branchOne()
+      if (context.isFailed) return branchOne(())
     }
     
     

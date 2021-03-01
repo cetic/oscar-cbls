@@ -22,7 +22,7 @@ import oscar.cp.core.variables.CPVar;
 import oscar.cp.util.ArrayUtils;
 import oscar.cp.util.NumberUtils;
 import scala.collection.Iterable;
-import scala.collection.JavaConversions;
+import scala.jdk.javaapi.CollectionConverters;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -53,7 +53,7 @@ public class MulVar extends Constraint {
 	@Override
 	public Iterable<CPVar> associatedVars() {
 		List<CPVar> l = new LinkedList<>(Arrays.asList(x, y, z));
-		return JavaConversions.iterableAsScalaIterable(l);
+		return CollectionConverters.asScala(l);
 	}
 
 	@Override

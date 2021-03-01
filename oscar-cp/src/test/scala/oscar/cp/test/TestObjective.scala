@@ -40,13 +40,9 @@ class TestObjective extends TestSuite {
     val obj = new CPObjective(cp, obj1, obj2)
     val x = Array(x1, x2)
     cp.optimize(obj)
-    cp.onSolution {
-      println("solution"+x1+" "+x2)
-    }
     cp.search {
       binaryStaticIdx(x, i => x(i).max)
     }
-    println("before search:"+x.mkString(","))
     cp.start().nSols should be(3)
   }
 

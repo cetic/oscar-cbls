@@ -23,7 +23,7 @@ class Process (m: Model, name : String = "Process"){
 	private var suspending = false
 	private var suspended = {}
 	
-	def suspend(block : => Unit) {
+	def suspend(block : => Unit): Unit = {
 		if (suspending) {
 			//throw new RuntimeException("The process " + name + " is already suspending");
 		}
@@ -31,7 +31,7 @@ class Process (m: Model, name : String = "Process"){
 		suspended = block
 	}
 	
-	def resume(){
+	def resume(): Unit ={
 		if (!suspending){
 			//throw new RuntimeException("The process " + name + " is not suspending");
 		}

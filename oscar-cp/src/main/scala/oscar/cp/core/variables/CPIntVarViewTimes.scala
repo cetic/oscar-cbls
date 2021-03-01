@@ -31,8 +31,16 @@ import oscar.cp.core.delta.DeltaIntVar
  * @author Steven Gay steven.gay@uclouvain.be
  * @author Renaud Hartert ren.hartert@gmail.com
  */
-final class CPIntVarViewTimes(v: CPIntVar, a: Int) extends CPIntVar {
-  
+final class CPIntVarViewTimes(v: CPIntVar, a: Int) extends CPIntVar with CPIntVarViewLinear {
+  private[this] val linearViewData = {
+    val above = v match {
+      case linear: CPIntVarViewLinear => linear.linearView
+      case _ => (1, 0, v)
+    }
+    (above._1*a, above._2*a, above._3)
+  }
+  def linearView: (Int, Int, CPIntVar) = linearViewData
+
   require(a != 0, "a should be different than 0")
   
   final override val store: CPStore = v.store
@@ -174,6 +182,8 @@ final class CPIntVarViewTimes(v: CPIntVar, a: Int) extends CPIntVar {
       i += 1
     }
     m
-  }       
+  }
+
+  @inline def _foreach[U](f: Int => U): Unit = v.foreach(i => f(i * a))
 }
   

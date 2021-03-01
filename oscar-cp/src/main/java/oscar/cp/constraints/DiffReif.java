@@ -21,7 +21,7 @@ import oscar.cp.core.Constraint;
 import oscar.cp.core.CPStore;
 import oscar.cp.core.variables.CPVar;
 import scala.collection.Iterable;
-import scala.collection.JavaConversions;
+import scala.jdk.javaapi.CollectionConverters;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -54,13 +54,13 @@ public class DiffReif extends Constraint {
 	@Override
 	public Iterable<CPVar> associatedVars() {
 		List<CPVar> l = new LinkedList<>(Arrays.asList(x, b));
-		return JavaConversions.iterableAsScalaIterable(l);
+		return CollectionConverters.asScala(l);
 	}
 
 	@Override
 	public void setup(CPPropagStrength l) {
-		priorityBindL1_$eq(CPStore.MAXPRIORL1());
-		priorityRemoveL1_$eq(CPStore.MAXPRIORL1());
+		priorityBindL1_$eq(CPStore.MaxPriorityL1());
+		priorityRemoveL1_$eq(CPStore.MaxPriorityL1());
 		
 		if (x.isBound() || b.isBound())
 			valBind(x);

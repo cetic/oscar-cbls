@@ -29,8 +29,6 @@ import oscar.flatzinc.model._
 import oscar.flatzinc.model.Variable
 import oscar.flatzinc.model.Constraint
 
-import scala.Array.canBuildFrom
-import scala.Array.fallbackCanBuildFrom
 import scala.collection.mutable.{Map => MMap}
 import scala.collection.immutable.SortedMap
 import oscar.flatzinc.NoSuchConstraintException

@@ -63,7 +63,7 @@ class ReversibleInterval(s: ReversibleContext, val minValue: Int, val maxValue: 
     else value
   }
   
-  def removeValue(value: Int) {
+  def removeValue(value: Int): Unit = {
     if (value == min) updateMin(value+1)
     if (!isEmpty && value == max) updateMax(value-1)
   }

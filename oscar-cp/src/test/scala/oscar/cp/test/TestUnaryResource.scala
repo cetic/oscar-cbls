@@ -68,7 +68,7 @@ class TestUnaryResource extends FunSuite with Matchers {
 
     test("decomp vs global, permutations"+strength) {
 
-      def testPermutations(seed: Int) {
+      def testPermutations(seed: Int): Unit = {
         def factorial(n: Int): Int = if (n == 0) 1 else n * factorial(n - 1)
 
         val n = 4
