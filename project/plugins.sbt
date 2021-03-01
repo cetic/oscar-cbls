@@ -1,4 +1,4 @@
-resolvers += Resolver.url("artifactory", url("http://scalasbt.artifactoryonline.com/scalasbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns)
+resolvers += Resolver.url("artifactory", url("http://scalasbt.artifactoryonline.com/scalasbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns).withAllowInsecureProtocol(true)
 
 addSbtPlugin("org.xerial.sbt" % "sbt-pack" % "0.10.1")//"0.6.8")
 

@@ -73,7 +73,7 @@ class TestBasicSmartTable extends TestSuite {
   }
 
   // Create the unit tests
-  for (i <- 1 to 1000) {
+  for (i <- 1 to 100) {
 
     val tuples1 = randomTuples(3, 100, 3, 8, 2)
     val tuples2 = randomTuples(3, 100, 2, 7, 5)

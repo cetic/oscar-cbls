@@ -27,16 +27,15 @@ lazy val oscarAlgo = (project in file("oscar-algo"))
   .dependsOn(oscarUtil)
   .dependsOn(oscarVisual)
 
-
 lazy val oscarCbls = (project in file("oscar-cbls")) // TODO pack : pack auto settings?
   .settings(commonSettings: _*)
   .settings(name := "oscar-cbls")
-  .settings(libraryDependencies ++= Dependencies.testDeps :+ Dependencies.scalaSwing)
+  .settings(libraryDependencies ++= Dependencies.testDeps :+ Dependencies.scalaSwing :+ Dependencies.scalaParallel :+ Dependencies.scalaSwing :+ Dependencies.jxmapviewer2 :+ Dependencies.jtscore :+ Dependencies.akkaActorTyped :+ Dependencies.akkaActor :+ Dependencies.akkasl4j :+ Dependencies.slf4j)
   .enablePlugins(PackPlugin)
   .settings(PackPlugin.packSettings)
   .settings(packGenerateWindowsBatFile := false)
+  .dependsOn(oscarUtil)
   .dependsOn(oscarVisual)
-
 
 lazy val oscarCp = (project in file("oscar-cp")) // TODO pack : pack auto settings?
   .settings(commonSettings: _*)
@@ -123,6 +122,7 @@ lazy val oscarFzn = (project in file("oscar-fzn"))
   .settings(commonSettings: _*)
   .settings(name := "oscar-fzn")
   .settings(libraryDependencies ++= Dependencies.testDeps :+ Dependencies.antlr4Runtime)
+
 lazy val oscarFznCbls = (project in file("oscar-fzn-cbls"))
   .settings(commonSettings: _*)
   .settings(name := "oscar-fzn-cbls")

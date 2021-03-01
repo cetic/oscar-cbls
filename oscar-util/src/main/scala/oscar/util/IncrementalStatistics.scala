@@ -45,6 +45,6 @@ class IncrementalStatistics {
   
   def average: Double = sum/n
   
-  def variance: Double = vari/n
+  def variance: Double = vari/n;
 
 }

@@ -14,6 +14,5 @@
  ******************************************************************************/
 package oscar.util
 
-import scala.util.Random
-
-object RandomGenerator extends Random(42) {}
+object RandomGenerator extends scala.util.Random(42) {
+}

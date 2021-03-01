@@ -219,7 +219,7 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
     }
     if(useCP && fzModel.search.obj != Objective.SATISFY){
       log("Calling the CP solver")
-      cpmodel.updateBestObjectiveValue(getIntValue(fzModel.search.variable.get).value)
+      cpmodel.updateBestObjectiveValue(getIntValue(fzModel.search.variable.get).value.toInt)
     //TODO: ignore variables whose domain should not be reduced (e.g. variables in the Circuit constraint)
       cpmodel.updateIntermediateModelDomains()
       restrictVarDomains()
@@ -238,7 +238,7 @@ class FZCBLSModel(val fzModel: FZProblem, val log:Log, val getWatch: () => Long)
           s
         } else {
           try {
-            s.toInt.toString()
+            s.toInt.toString
           } catch {
             case e: NumberFormatException => {
               throw new Exception("Unhappy: " + r + " " + s)

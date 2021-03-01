@@ -14,18 +14,19 @@
  ******************************************************************************/
 package oscar.util
 
-import java.io.FileWriter
-import java.io.BufferedWriter
+import java.io.{BufferedWriter, FileWriter}
 
 class OutFile(filepath: String, critical: Boolean, verbous: Boolean) {
+
   val file: BufferedWriter = openFile()
 
   private def openFile(): BufferedWriter = {
     try new BufferedWriter(new FileWriter(filepath))
     catch {
-      case e: Error =>
+      case e: Error => {
         errorHandling(e)
         null
+      }
     }
   }
 
@@ -41,15 +42,17 @@ class OutFile(filepath: String, critical: Boolean, verbous: Boolean) {
     }
   }
   
-  def write(line: Int): Unit = write(s"$line")
+  def write(line: Int): Unit = {
+    write(line)
+  }
 
-  def writeln(line: String): Unit = write(s"$line\n")
+  def writeln(line: String): Unit = write(line + "\n")
   
-  def writeln(line: Int): Unit = writeln(s"$line\n")
+  def writeln(line: Int): Unit = writeln(line)
   
-  def writeln(): Unit = write("\n")
+  def writeln() = write("\n")
 
-  def close(): Unit = {
+  def close() = {
     try file.close()
     catch {
       case e: Error => errorHandling(e)
