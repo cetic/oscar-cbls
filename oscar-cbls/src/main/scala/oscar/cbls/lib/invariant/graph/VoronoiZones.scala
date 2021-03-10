@@ -396,6 +396,7 @@ class VoronoiZones(graph:ConditionalGraph,
         val minDistance = orphanNodeLabeling.distance
         val centroidThrough = orphanNodeLabeling.centroid
 
+        require(orphanNode.id != orphanNodeLabeling.centroid.id)
         markNodeUnreachableAndRemoveFromHeapIfPresent(orphanNode)
 
         //we use an iterative approach here with explicit front
