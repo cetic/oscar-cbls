@@ -323,22 +323,22 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
         currentLength += lastHopToComeBack
         distancePerVehicle(v-1) := currentLength
         false
-      case Some(nextPosition) if nextPosition.value < v =>
-        //at the end of the current vehicle; starting a new one
-        val lastHopToComeBack = if (freeReturn) 0 else computeDistanceAndSaveItAll(currentPosition.value,currentVehicle).distance
-        currentLength += lastHopToComeBack
-        distancePerVehicle(currentVehicle) := currentLength
-
-        currentPosition = nextPosition
-        currentVehicle += 1
-        currentLength = 0
-        require(currentVehicle == nextPosition.value)
-        true
-      case Some(nextPosition) if nextPosition.value >= v =>
-        //carry on the current vehicle
-        val newHop = computeDistanceAndSaveItAll(currentPosition.value,nextPosition.value).distance
-        currentLength += newHop
-        currentPosition = nextPosition
+      case Some(nextPosition) =>
+        if (nextPosition.value < v) {
+          //at the end of the current vehicle; starting a new one
+          val lastHopToComeBack = if (freeReturn) 0 else computeDistanceAndSaveItAll(currentPosition.value,currentVehicle).distance
+          currentLength += lastHopToComeBack
+          distancePerVehicle(currentVehicle) := currentLength
+          currentPosition = nextPosition
+          currentVehicle += 1
+          currentLength = 0
+          require(currentVehicle == nextPosition.value)
+        } else {
+          //carry on the current vehicle
+          val newHop = computeDistanceAndSaveItAll(currentPosition.value,nextPosition.value).distance
+          currentLength += newHop
+          currentPosition = nextPosition
+        }
         true
     }){}
   }
@@ -352,7 +352,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
   private def digestUpdates(changes:SeqUpdate):Unit = {
     changes match {
       case SeqUpdateDefineCheckpoint(prev,checkpointLevel) =>
-       // println("Define Checkpoint")
+        // println("Define Checkpoint")
         //println(minNodeToAStarInfos(0).toList.mkString(";"))
         //we do not manage checkpoints at all
         digestUpdates(prev)
@@ -545,11 +545,15 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
       case SeqUpdateLastNotified(value:IntSequence) =>
         require(value quickEquals routes.value)
+
       //we are starting from the previous value
       case SeqUpdateAssign(value : IntSequence) =>
         //impossible to go incremental
         dropAllAStarInfo()
         computeAndAffectValueFromScratch(value)
+
+      case _ =>
+        // Default case (throw exception ?)
     }
   }
 
@@ -614,32 +618,32 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
       println(distancePerVehicle.map(d => d.value).mkString(";"))
     }
 
-    while(currentPosition.next match{
+    while(currentPosition.next match {
       case None => //at the end of the current vehicle, which is the last one
         //compute the last hop
         currentLength += (if (freeReturn) 0 else checkHop(currentPosition.value,v-1))
         require(distancePerVehicle(v-1).value == currentLength,
           s"Incremental Distance ${distancePerVehicle(v-1).value} -- From Scratch Distance $currentLength")
         false
-      case Some(nextPosition) if nextPosition.value < v =>
-        //at the end of the current vehicle; starting a new one
-        val lastHopToComeBack = if (freeReturn) 0 else checkHop(currentPosition.value,currentVehicle)
-        currentLength += lastHopToComeBack
-        if (debug)
-          println(s"Distance of Vehicle :${distancePerVehicle(currentVehicle).value}")
-        require(distancePerVehicle(currentVehicle).value == currentLength,
-          s"vehicle $currentVehicle Incremental Distance ${distancePerVehicle(currentVehicle).value} != From Scratch Distance $currentLength")
-
-        currentPosition = nextPosition
-        currentVehicle += 1
-        currentLength = 0
-        require(currentVehicle == nextPosition.value)
-        true
-      case Some(nextPosition) if nextPosition.value >= v =>
-        //carry on the current vehicle
-        val newHop = checkHop(currentPosition.value,nextPosition.value)
-        currentLength += newHop
-        currentPosition = nextPosition
+      case Some(nextPosition) =>
+        if (nextPosition.value < v) {
+          //at the end of the current vehicle; starting a new one
+          val lastHopToComeBack = if (freeReturn) 0 else checkHop(currentPosition.value,currentVehicle)
+          currentLength += lastHopToComeBack
+          if (debug)
+            println(s"Distance of Vehicle :${distancePerVehicle(currentVehicle).value}")
+          require(distancePerVehicle(currentVehicle).value == currentLength,
+            s"vehicle $currentVehicle Incremental Distance ${distancePerVehicle(currentVehicle).value} != From Scratch Distance $currentLength")
+          currentPosition = nextPosition
+          currentVehicle += 1
+          currentLength = 0
+          require(currentVehicle == nextPosition.value)
+        } else {
+          //carry on the current vehicle
+          val newHop = checkHop(currentPosition.value,nextPosition.value)
+          currentLength += newHop
+          currentPosition = nextPosition
+        }
         true
     }){}
     if (debug)

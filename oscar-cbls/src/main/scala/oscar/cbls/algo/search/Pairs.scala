@@ -106,9 +106,9 @@ object Pairs {
 
   def pairOfNexts[T](l:List[T]):List[(T,T)] = {
     l match{
-      case a::b::t => (a,b) :: pairOfNexts((b::t))
-      case List(a) => Nil
       case Nil => Nil
+      case _::Nil => Nil
+      case a::b::t => (a,b) :: pairOfNexts(b::t)
     }
   }
 }

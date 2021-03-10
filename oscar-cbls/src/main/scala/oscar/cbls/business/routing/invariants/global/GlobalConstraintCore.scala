@@ -276,7 +276,6 @@ abstract class GlobalConstraintCore[U <: Any :Manifest](routes: ChangingSeqValue
 
         val prevRoutes = prev.newValue
 
-
         val impactedVehicle = vehicleSearcher.vehicleReachingPosition(position)
         val impactedSegment = segmentsOfVehicle(impactedVehicle)
 
@@ -298,6 +297,8 @@ abstract class GlobalConstraintCore[U <: Any :Manifest](routes: ChangingSeqValue
         }))
         for (vehicle <- 0 until v) initSegmentsOfVehicle(vehicle, value)
         false //impossible to go incremental
+
+      case _ => false //Default case
     }
   }
 
@@ -329,7 +330,7 @@ abstract class GlobalConstraintCore[U <: Any :Manifest](routes: ChangingSeqValue
   override def checkInternals(c : Checker): Unit = {
     for (vehicle <- vehicles) {
       val fromScratch = computeVehicleValueFromScratch(vehicle, routes.value)
-      require(fromScratch.equals(lastComputedVehiclesValue(vehicle)),
+      require(fromScratch == lastComputedVehiclesValue(vehicle),
         s"""Constraint ${this.getClass.getName} failed.
            |For Vehicle $vehicle should be $fromScratch got ${lastComputedVehiclesValue(vehicle)} $routes
            |After receiving segments : ${segmentsOfVehicle(vehicle).segments.toList.mkString("\n    ")}""".stripMargin)

@@ -182,6 +182,9 @@ class TimeWindowConstraintWithLogReduction (routes: ChangingSeqValue,
 
           case s@LogReducedNewNode(node, transferFunctionOfNode) =>
             (node, computeLeavingTime(previousLeavingTime, lastNode, transferFunctionOfNode, false))
+
+          case x =>
+            throw new Error(s"Unhandled match with $x")
         }
         if (newLeavingTime >= 0L)
           composeLogReduceSegments(logReducedSegments.tail, newLastNode, newLeavingTime)

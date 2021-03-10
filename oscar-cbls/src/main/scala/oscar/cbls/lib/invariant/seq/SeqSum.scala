@@ -94,6 +94,9 @@ case class SeqSum(v: SeqValue, f:Int => Int = (a:Int) => a)
 
       case SeqUpdateAssign(value : IntSequence) =>
         false
+
+      case _ =>
+        false // Default case
     }
   }
 

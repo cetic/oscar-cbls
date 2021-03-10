@@ -56,7 +56,7 @@ class MinConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default:
     while(removedValuesIt.hasNext){
       val deleted = removedValuesIt.next()
       if(idToTheirPositionNumber(deleted) < nbListenedVals) {
-        heapOfConsideredPositions.delete(deleted)
+        heapOfConsideredPositions.delete(deleted) //very expensive
       }
     }
 
@@ -87,7 +87,7 @@ class MinConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default:
    * does not add into the heapOfConsideredPositions
    * @return the iD added into the scope
    */
-  private def addOneMoveValueIntoScope():Int = {
+  private def addOneMoreValueIntoScope():Int = {
     val IdToAddIntoTheScope = idSortedByIncreasingValue(nbListenedVals)
     nbListenedVals += 1
     key.addToKey(IdToAddIntoTheScope)
@@ -116,7 +116,7 @@ class MinConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default:
 
   private def addValuesIntoListenedUntilDiameterIsStrictlyBiggerThanZeroOrFullScope(condValue:SortedSet[Int]): Unit ={
     while(heapOfConsideredPositions.size == 0 && nbListenedVals < n) {
-      val addedValue = addOneMoveValueIntoScope()
+      val addedValue = addOneMoreValueIntoScope()
       if(condValue contains addedValue) {
         heapOfConsideredPositions.insert(addedValue)
       }

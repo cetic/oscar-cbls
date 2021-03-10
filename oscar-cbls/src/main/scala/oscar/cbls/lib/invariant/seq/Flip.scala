@@ -108,6 +108,9 @@ case class Flip(v: SeqValue,override val maxPivotPerValuePercent:Int = 10, overr
       case SeqUpdateAssign(value : IntSequence) =>
         releaseTopCheckpointsToLevel(0,true)
         false
+
+      case _ =>
+        false // Default case
     }
   }
 

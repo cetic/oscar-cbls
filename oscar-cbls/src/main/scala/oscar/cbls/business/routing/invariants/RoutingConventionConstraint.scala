@@ -158,6 +158,8 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
         true
 
       case _@SeqUpdateAssign(value: IntSequence) => false
+
+      case _ => false // Default case
     }
   }
 

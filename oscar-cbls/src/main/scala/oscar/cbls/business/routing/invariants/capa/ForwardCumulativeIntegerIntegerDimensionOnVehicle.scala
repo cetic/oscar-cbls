@@ -267,24 +267,28 @@ class ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
       var explorerOpt = routes.value.explorerAtAnyOccurrence(vehicle).get.next
       var acc:String = ""
 
-      while(explorerOpt match{
+      while(explorerOpt match {
         case None => //at end of last vehicle
           val vehicle = v-1
           acc += s"""endOfRoute of vehicle$vehicle contentAtEnd:${(content1AtEnd(vehicle).value,content2AtEnd(vehicle).value)}
 """
           false
-        case Some(explorer) if explorer.value < v =>
-          //reached another vehicle
-          val vehicle = explorer.value-1
-          acc += s"""endOfRoute of vehicle$vehicle contentAtEnd:${(content1AtEnd(vehicle).value,content2AtEnd(vehicle).value)}
+
+        case Some(explorer) =>
+          if (explorer.value < v) {
+            //reached another vehicle
+            val vehicle = explorer.value-1
+            acc += s"""endOfRoute of vehicle$vehicle contentAtEnd:${(content1AtEnd(vehicle).value,content2AtEnd(vehicle).value)}
 """
-          false
-        case Some(explorer) if explorer.value >= v =>
-          val node = explorer.value
-          acc += s"""    node:$node    content:${(content1AtNode(node).value,content2AtNode(node).value)}
+            false
+          }
+          else {
+            val node = explorer.value
+            acc += s"""    node:$node    content:${(content1AtNode(node).value,content2AtNode(node).value)}
 """
-          explorerOpt = explorer.next
-          true
+            explorerOpt = explorer.next
+            true
+          }
       }){}
       header+acc}).mkString("")}
        |""".stripMargin

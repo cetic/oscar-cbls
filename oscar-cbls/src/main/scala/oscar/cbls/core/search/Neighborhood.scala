@@ -17,7 +17,8 @@
 package oscar.cbls.core.search
 
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.objective.{LoggingObjective, Objective}
+import oscar.cbls.core.distrib.{RemoteNeighborhood, Supervisor}
+import oscar.cbls.core.objective.{AbortException, AbortableObjective, LoggingObjective, Objective}
 import oscar.cbls.lib.search.combinators._
 import oscar.cbls.util.Properties
 
@@ -114,6 +115,28 @@ abstract class Neighborhood(name:String = null) {
    * @return
    */
   def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult
+
+  /**
+   * the method that returns a move from the neighborhood.
+   * The returned move should typically be accepted by the acceptance criterion over the objective function.
+   * Some neighborhoods are actually jumps, so that they might violate this basic rule however.
+   *
+   * @param obj the objective function. notice that it is actually a function. if you have an [[oscar.cbls.core.objective.Objective]] there is an implicit conversion available
+   * @param acceptanceCriterion
+   * @param shouldAbort a method that can abort the search abruptly, returning NoMoveFound in case of abort
+   *                    even if high-quality solutions are stores within combinators below this neighborhood
+   * @return
+   */
+  def getMoveAbortable(obj: Objective,
+                       initialObj:Long,
+                       acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj,
+                       shouldAbort:()=>Boolean): SearchResult = {
+    try {
+      getMove(new AbortableObjective(shouldAbort, obj), initialObj, acceptanceCriterion)
+    }catch{
+      case _:AbortException => NoMoveFound
+    }
+  }
 
   //this resets the internal state of the Neighborhood
   def reset(): Unit = {}
@@ -368,6 +391,18 @@ abstract class Neighborhood(name:String = null) {
     toReturn.reverse
   }
 
+  //Call this at the main site
+  def labelNeighborhoodsForRemoteOperation(supervisor:Supervisor):Unit = {
+    val nbNeighborhoods = labelAndExtractRemoteNeighborhoods(supervisor: Supervisor)._1
+    //println(s"identified remote neighborhoods; nbNeighborhoods:$nbNeighborhoods")
+  }
+
+  //Call this at the worker site
+  def identifyRemotelySearcheableNeighbrhoods:SortedMap[Int,RemoteNeighborhood] = {
+    SortedMap.empty[Int,RemoteNeighborhood] ++ (labelAndExtractRemoteNeighborhoods(supervisor = null)._2.map(r => (r.neighborhoodID,r)))
+  }
+
+  def labelAndExtractRemoteNeighborhoods(supervisor: Supervisor, currentID: Int = 0, acc: List[RemoteNeighborhood] = Nil):(Int,List[RemoteNeighborhood]) = (currentID, acc)
 }
 
 /**
@@ -553,18 +588,21 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
 
     require(!exploring,s"$this is not a re-entrant neighborhood")
     exploring = true
+    try {
+      oldObj = initialObj
 
-    oldObj = initialObj
-    this.acceptanceCriterion = acceptanceCriterion
-    toReturnMove = null
-    bestNewObj = initialObj //Long.MaxValue // //because we do not want "no move" to be considered as an actual move.
-    this.obj = if (printExploredNeighbors) new LoggingObjective(obj) else obj
-    if (printExploredNeighborhoods)
-      println(s"$neighborhoodNameToString: start exploration")
+      this.acceptanceCriterion = acceptanceCriterion
+      toReturnMove = null
+      bestNewObj = initialObj //Long.MaxValue // //because we do not want "no move" to be considered as an actual move.
+      this.obj = if (printExploredNeighbors) new LoggingObjective(obj) else obj
+      if (printExploredNeighborhoods) {
+        println(s"$neighborhoodNameToString: start exploration")
+      }
 
-    exploreNeighborhood(oldObj)
-
-    exploring = false
+      exploreNeighborhood(oldObj)
+    }finally {
+      exploring = false
+    }
 
     if (toReturnMove == null) {
       if (printExploredNeighborhoods) {

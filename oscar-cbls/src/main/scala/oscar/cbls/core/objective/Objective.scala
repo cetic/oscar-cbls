@@ -38,6 +38,10 @@ object Objective{
     }
 }
 
+abstract class IndependentObjective {
+  def convertToObjective(m:Store):Objective
+}
+
 /**
  * a common class for modeling an objective, and querying its variations on different basic moves
  *
@@ -60,8 +64,6 @@ object Objective{
  */
 class IntVarObjective(val objective: ChangingIntValue) extends Objective {
 
-  model.registerForPartialPropagation(objective)
-
   /**
    * This method returns the actual objective value.
    * It is easy to override it, and perform a smarter propagation if needed.
@@ -73,23 +75,36 @@ class IntVarObjective(val objective: ChangingIntValue) extends Objective {
 
   def detailedString(short:Boolean,indent:Long = 0L):String =
     s"IntVarObjective($objective)"
+
+  model.registerForPartialPropagation(objective)
+
+  //for distribution purposes
+  val uniqueID = model.registerObjective(this)
+
+  override def getIndependentObj: IndependentObjective = new IndependentIntVarObjective(uniqueID)
 }
 
-
+class IndependentIntVarObjective(val uniqueID:Int) extends IndependentObjective{
+  override def convertToObjective(m: Store): Objective = m.getIntVarObjective(uniqueID)
+}
 
 object CascadingObjective{
   def apply(objectives:Objective*):Objective = {
 
     def buildCascading(objs:List[Objective]):Objective = {
-      objs match{
-        case List(obj) => obj
-        case head :: tail if tail.nonEmpty => new CascadingObjective(head,buildCascading(tail))
+      objs match {
+        case Nil =>
+          throw new Error("Building cascading objective with empty list")
+        case head :: tail =>
+          if (tail.nonEmpty) new CascadingObjective(head, buildCascading(tail))
+          else head
       }
     }
 
     buildCascading(objectives.toList)
   }
 }
+
 /**
  * if (objective1.value > 0L) Long.MaxValue/2L + objective1.value
  *   else objective2.value
@@ -130,6 +145,19 @@ class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objecti
   }
 
   override def model: Store = mustBeZeroObjective.model
+
+  override def getIndependentObj: IndependentObjective =
+    IndependentCascadingObjective(
+      mustBeZeroObjective.getIndependentObj,
+      secondObjective.getIndependentObj,
+      cascadeSize)
+}
+
+case class IndependentCascadingObjective(mustBeZeroObjective: IndependentObjective,
+                                         secondObjective:IndependentObjective,
+                                         cascadeSize:Long) extends IndependentObjective {
+  override def convertToObjective(m: Store): Objective =
+    new CascadingObjective(mustBeZeroObjective.convertToObjective(m),secondObjective.convertToObjective(m), cascadeSize)
 }
 
 object PriorityObjective{
@@ -142,7 +170,9 @@ object PriorityObjective{
 
   private def applyRecur(objective1:Objective,moreObjAndTheirMaxValue:List[(Objective,Long)]):(PriorityObjective,Long) = {
     moreObjAndTheirMaxValue match {
-      case List((objective2, maxObjective2)) =>
+      case Nil =>
+        throw new Error("Using applyRecur on an empty list")
+      case (objective2, maxObjective2) :: Nil =>
         val p = new PriorityObjective(objective1, objective2, maxObjective2)
         (p, maxObjective2)
       case (secondObj, maxSecondObj) :: tail =>
@@ -225,7 +255,22 @@ class PriorityObjective(val objective1: Objective,
         nSpace(indent + 2L) + "objective2:" + objective2.detailedString(false, indent + 4L) + "\n" +
         nSpace(indent) + ")"
     }
+
+  override def getIndependentObj: IndependentObjective =
+    IndependentPriorityObjective(
+      objective1.getIndependentObj,
+      objective2.getIndependentObj,
+      maxObjective2)
 }
+
+
+case class IndependentPriorityObjective(objective1: IndependentObjective,
+                                        objective2:IndependentObjective,
+                                        maxObjective2:Long) extends IndependentObjective{
+  override def convertToObjective(m: Store): Objective =
+    new PriorityObjective(objective1.convertToObjective(m),objective2.convertToObjective(m), maxObjective2)
+}
+
 
 class FunctionObjective(f:()=>Long, m:Store = null) extends Objective{
   override def model: Store = m
@@ -333,6 +378,8 @@ trait Objective {
     if(!a.value.contains(i)) return value
     removeValAssumeIn(a, i)
   }
+
+  def getIndependentObj:IndependentObjective = ???
 }
 
 /**
@@ -359,5 +406,19 @@ class LoggingObjective(baseObjective:Objective) extends Objective{
     val toReturn = evaluationsLog
     evaluationsLog = List.empty
     toReturn
+  }
+}
+
+
+
+class AbortException extends Exception("")
+class AbortableObjective(shouldAbort:()=>Boolean, baseObj:Objective) extends Objective{
+  override def detailedString(short: Boolean, indent: Long): String = baseObj.detailedString(short,indent)
+
+  override def model: Store = baseObj.model
+
+  override def value: Long = {
+    if(shouldAbort()) throw new AbortException()
+    baseObj.value
   }
 }

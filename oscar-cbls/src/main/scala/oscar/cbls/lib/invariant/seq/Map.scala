@@ -59,32 +59,32 @@ class MapConstantFun(seq:ChangingSeqValue,
   finishInitialization()
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
-    digestUdpate(changes : SeqUpdate)
+    digestUpdate(changes : SeqUpdate)
   }
 
   var checkpointStack = new SeqCheckpointedValueStack[IntSequence]()
 
-  def digestUdpate(changes : SeqUpdate): Unit = {
+  def digestUpdate(changes : SeqUpdate): Unit = {
     changes match {
       case SeqUpdateDefineCheckpoint(prev, checkpointLevel) =>
-        digestUdpate(prev)
+        digestUpdate(prev)
 
         this.releaseTopCheckpointsToLevel(checkpointLevel,true)
         defineCurrentValueAsCheckpoint()
         checkpointStack.defineCheckpoint(prev.newValue,checkpointLevel,this.newValue)
 
       case SeqUpdateInsert(value, position, prev) =>
-        digestUdpate(prev)
+        digestUpdate(prev)
         insertAtPosition(transform(value), position)
 
       case SeqUpdateLastNotified(seq) => ;
 
       case SeqUpdateMove(fromIncluded, toIncluded, after, flip, prev) =>
-        digestUdpate(prev)
+        digestUpdate(prev)
         move(fromIncluded, toIncluded, after, flip)
 
       case SeqUpdateRemove(position, prev) =>
-        digestUdpate(prev)
+        digestUpdate(prev)
         remove(position)
 
       case x@SeqUpdateRollBackToCheckpoint(checkpoint,checkpointLevel) =>
@@ -95,6 +95,9 @@ class MapConstantFun(seq:ChangingSeqValue,
 
       case SeqUpdateAssign(seq) =>
         this := seq.map(transform)
+
+      case _ =>
+        // Default case; Nothing to do (throw exception ?)
     }
   }
 
@@ -117,7 +120,7 @@ class MapThroughArray(seq:ChangingSeqValue,
   finishInitialization()
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
-    digestUdpate(changes : SeqUpdate)
+    digestUpdate(changes : SeqUpdate)
   }
 
   override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int): Unit = {
@@ -128,24 +131,26 @@ class MapThroughArray(seq:ChangingSeqValue,
     }
   }
 
-  def digestUdpate(changes : SeqUpdate): Unit = {
+  def digestUpdate(changes : SeqUpdate): Unit = {
     changes match {
       case SeqUpdateDefineCheckpoint(prev, checkpointLevel) =>
-        digestUdpate(prev)
+        digestUpdate(prev)
        case SeqUpdateInsert(value, position, prev) =>
-        digestUdpate(prev)
+        digestUpdate(prev)
         insertAtPosition(transform(value).valueInt, position)
       case SeqUpdateLastNotified(seq) => ;
       case SeqUpdateMove(fromIncluded, toIncluded, after, flip, prev) =>
-        digestUdpate(prev)
+        digestUpdate(prev)
         move(fromIncluded, toIncluded, after, flip)
       case SeqUpdateRemove(position, prev) =>
-        digestUdpate(prev)
+        digestUpdate(prev)
         remove(position)
       case x@SeqUpdateRollBackToCheckpoint(checkpoint,chechpointLevel) =>
-        digestUdpate(x.howToRollBack)
+        digestUpdate(x.howToRollBack)
       case SeqUpdateAssign(seq) =>
         this := seq.map(v => transform(v).valueInt)
+      case _ =>
+        // Default case. Nothing to do (maybe better to throw an exeception)
     }
   }
 
