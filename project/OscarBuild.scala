@@ -46,11 +46,14 @@ object OscarBuild {
   def ceticSpecificSettings = {
     if(Option(System.getProperty("cetic")).isDefined) Seq(
       publishTo := {
-        val artifactory = "http://maven.oscar.ext.cetic.be:8081/artifactory/"
-        if (isSnapshot.value)
-          Some("Artifactory Realm" at artifactory + "libs-snapshot;build.timestamp=" + new java.util.Date().getTime)
-        else
-          Some("Artifactory Realm" at artifactory + "libs-release")
+        val artifactoryName = "Artifactory Realm"
+        val artifactoryUrl = "http://maven.oscar.ext.cetic.be:8081/artifactory/"
+        val artifactoryRepo = if (isSnapshot.value)
+          Some(artifactoryName at artifactoryUrl + "libs-snapshot-local;build.timestamp=" + new java.util.Date().getTime)
+        else {
+          Some(artifactoryName at artifactoryUrl + "libs-release-local")
+        }
+        artifactoryRepo.map(_.withAllowInsecureProtocol(true))
       }
     )
     else Seq()
