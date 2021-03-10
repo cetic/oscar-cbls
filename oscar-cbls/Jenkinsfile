@@ -50,7 +50,7 @@ node {
     try{
         stage('Package') {
             projects.each { project ->
-                sh "${env.SBT_CMD} \'project "+project+"\' clean package package-doc -Xdisable-assertions"
+                sh "${env.SBT_CMD} \'project "+project+"\' clean package packageDoc -Xdisable-assertions"
             }
         }
         stage('ScalaDoc') {
