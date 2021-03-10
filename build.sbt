@@ -1,5 +1,4 @@
-import oscar.OscarBuild
-import oscar.OscarBuild._
+import OscarBuild._
 
 lazy val aggregatedProjects: Seq[ProjectReference] = Seq(oscarAlgebra, oscarAlgo, oscarCbls, oscarCp, oscarCPXcsp3, oscarPerf, oscarModeling, oscarDfo, oscarUtil, oscarVisual, oscarFzn, oscarFznCbls, oscarFznCp, oscarDes, oscarInvariants)
 
@@ -154,6 +153,3 @@ lazy val oscarVisual = (project in file("oscar-visual"))
   .settings(name := "oscar-visual")
   .settings(libraryDependencies ++= Dependencies.testDeps :+ Dependencies.jfreechart :+ Dependencies.swingx :+ Dependencies.swingxWs :+ Dependencies.scalaXml)
   .dependsOn(oscarUtil)
-
-
-

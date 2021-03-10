@@ -1,5 +1,3 @@
-package oscar
-
 import sbt.Keys._
 import sbt._
 
@@ -9,7 +7,7 @@ object OscarBuild {
 
   lazy val buildSettings = Seq(
     organization := "oscar",
-    version := "4.1.0-SNAPSHOT",
+    version := "5.0.0-SNAPSHOT",
     scalaVersion := "2.13.4",
     sbtVersion := "1.4.7"
   )
@@ -42,7 +40,21 @@ object OscarBuild {
     }).value,
     fork in PerfTest := true,
     parallelExecution in PerfTest := false
-  ) ++ (if(!OscarBuildParameters.debug) Seq(scalacOptions in Compile ++= Seq("-Xdisable-assertions", "-opt:l:inline", "-opt-inline-from:oscar.**")) else Seq())
+  ) ++ (if (!OscarBuildParameters.debug) Seq(scalacOptions in Compile ++= Seq("-Xdisable-assertions", "-opt:l:inline", "-opt-inline-from:oscar.**"))
+        else Seq()) ++ ceticSpecificSettings
+
+  def ceticSpecificSettings = {
+    if(Option(System.getProperty("cetic")).isDefined) Seq(
+      publishTo := {
+        val artifactory = "http://maven.oscar.ext.cetic.be:8081/artifactory/"
+        if (isSnapshot.value)
+          Some("Artifactory Realm" at artifactory + "libs-snapshot;build.timestamp=" + new java.util.Date().getTime)
+        else
+          Some("Artifactory Realm" at artifactory + "libs-release")
+      }
+    )
+    else Seq()
+  }
 
   object Resolvers {
     val xypron = ("Xypron Release" at "http://rsync.xypron.de/repository/").withAllowInsecureProtocol(true)
