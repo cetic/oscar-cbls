@@ -6,7 +6,7 @@ node {
     def GIT_REVISION = sh script: "git rev-parse ${env.BRANCH_NAME}@{upstream}", returnStdout: true
 
     email_to = "oscar.cbls-cetic@lists.cetic.be"
-    projects=['oscar-util', 'oscar-visual', 'oscar-cbls']
+    projects=['oscarUtil', 'oscarVisual', 'oscarCbls']
 
     try{
         stage('scm') {
