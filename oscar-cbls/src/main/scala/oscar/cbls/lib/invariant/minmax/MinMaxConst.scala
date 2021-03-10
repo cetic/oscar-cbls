@@ -241,7 +241,6 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
   updateFromHeap()
   restrictDomain(computeMinMax())
 
-  @inline
   def equalOrNotImpactingMiax(potentialMiax:Long):Boolean
 
   @inline
@@ -314,7 +313,7 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
   }
 
   @inline
-  def notifyInsertOn(v: ChangingSetValue, value: Int): Unit = {
+  final def notifyInsertOn(v: ChangingSetValue, value: Int): Unit = {
     assert(v == cond)
     if(consideredValue(value)){ //anihilation
       assert(isBacklogged(value))
@@ -332,7 +331,7 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
   }
 
   @inline
-  def notifyDeleteOn(v: ChangingSetValue, value: Int): Unit = {
+  final def notifyDeleteOn(v: ChangingSetValue, value: Int): Unit = {
     assert(v == cond)
     if(!consideredValue(value)){ //anihilation
       assert(isBacklogged(value))

@@ -56,7 +56,7 @@ case class SelectLEHeapHeap(values: Array[IntValue], boundary: IntValue)
 
   //pomper des elements de Above et les mettre dans Below et dans output
   @inline
-  def TransferToBelow(): Unit = {
+  final def TransferToBelow(): Unit = {
     while (!HeapAbove.isEmpty && values(HeapAbove.getFirst).value <= boundary.value) {
       val v = HeapAbove.removeFirst()
       HeapBelowOrEqual.insert(v)
@@ -66,7 +66,7 @@ case class SelectLEHeapHeap(values: Array[IntValue], boundary: IntValue)
 
   //pomper des elements de Above et les mettre dans Below et dans output
   @inline
-  def TransferToAbove(): Unit = {
+  final def TransferToAbove(): Unit = {
     //pomper des elements de beloworequal et les mettre dans above
     while (!HeapBelowOrEqual.isEmpty && values(HeapBelowOrEqual.getFirst).value > boundary.value) {
       val v = HeapBelowOrEqual.removeFirst()

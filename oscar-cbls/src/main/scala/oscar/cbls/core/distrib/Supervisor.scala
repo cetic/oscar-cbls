@@ -197,7 +197,8 @@ object Supervisor {
 }
 
 class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor], m: Store, verbose: Boolean, implicit val system: ActorSystem[_]) {
-  implicit val timeout: Timeout = 3.seconds
+  //TODO look for an adequate timeout or stopping mechanism
+  implicit val timeout: Timeout = 1.hour
 
   import akka.actor.typed.scaladsl.AskPattern._
 

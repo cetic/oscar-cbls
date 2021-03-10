@@ -62,7 +62,8 @@ class Remote(neighborhoods:Neighborhood)
       startSol)
 
     import akka.actor.typed.scaladsl.AskPattern._
-    implicit val timeout: Timeout = 3.seconds
+    //TODO look for an adequate timeout or stopping mechanism
+    implicit val timeout: Timeout = 1.hour
     implicit val system: ActorSystem[_] = supervisor.system
 
     val futureResult = supervisor.supervisorActor.ask[SearchEnded](ref => DelegateSearch(searchRequest, ref))
@@ -88,7 +89,8 @@ class DistributedBest(neighborhoods:Array[Neighborhood])
     val startSol = IndependentSolution(obj.model.solution())
 
     import akka.actor.typed.scaladsl.AskPattern._
-    implicit val timeout: Timeout = 3.seconds
+    //TODO look for an adequate timeout or stopping mechanism
+    implicit val timeout: Timeout = 1.hour
     implicit val system: ActorSystem[_] = supervisor.system
 
     val futureResults =  remoteNeighborhoods.indices.map(i => {
@@ -141,7 +143,8 @@ class DistributedFirst(neighborhoods:Array[Neighborhood])
     case class WrappedError(msg:Option[String] = None, crash:Option[SearchCrashed] = None) extends WrappedData
 
     implicit val system: ActorSystem[_] = supervisor.system
-    implicit val timeout: Timeout = 3.seconds
+    //TODO look for the adequate timeout supervisor
+    implicit val timeout: Timeout = 1.hour
 
     supervisor.spawnNewActor(Behaviors.setup { context:ActorContext[WrappedData] => {
       //starting up all searches

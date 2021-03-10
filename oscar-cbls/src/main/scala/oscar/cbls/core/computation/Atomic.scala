@@ -53,7 +53,7 @@ abstract class ChangingAtomicValue[T](initialValue:T)
   override def toStringNoPropagate = s"$name:=$mNewValue"
 
   @inline
-  def setValue(v:T): Unit ={
+  final def setValue(v:T): Unit ={
     if (v != mNewValue){
       mNewValue = v
       notifyChanged()

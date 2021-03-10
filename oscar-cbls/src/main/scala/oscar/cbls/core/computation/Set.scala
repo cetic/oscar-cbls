@@ -162,7 +162,7 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
   private[this] var offsetForValueWiseKey:Int = Int.MaxValue
 
   @inline
-  def addToValueWiseKeys(key:ValueWiseKey,value:Int):DLLStorageElement[ValueWiseKey] = {
+  final def addToValueWiseKeys(key:ValueWiseKey,value:Int):DLLStorageElement[ValueWiseKey] = {
     valueToValueWiseKeys(value - offsetForValueWiseKey).addElem(key)
   }
 

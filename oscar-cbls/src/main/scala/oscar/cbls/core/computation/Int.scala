@@ -116,7 +116,7 @@ abstract class ChangingIntValue(initialValue:Long, initialDomain:Domain)
   override def toStringNoPropagate = s"$name:=$mNewValue"
 
   @inline
-  def setValue(v:Long): Unit ={
+  final def setValue(v:Long): Unit ={
     if (v != mNewValue){
       assert(domain.contains(v),
         s"$v is not in the domain of $this($min..$max). This might indicate an integer overflow.")

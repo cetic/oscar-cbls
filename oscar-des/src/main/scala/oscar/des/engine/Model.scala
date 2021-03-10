@@ -49,7 +49,7 @@ class Model {
 
 	def wait(duration : Double)(block : => Unit): Unit = {
 		assert(duration >= 0)
-		addEvent(new WaitEvent(clock + duration, block))
+		addEvent(new WaitEvent(clock() + duration, block))
 	}
 	
     def wait(duration : Int)(block : => Unit): Unit = {

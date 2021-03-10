@@ -16,8 +16,7 @@ object OscarBuild {
 
   lazy val commonSettings = buildSettings ++ Defaults.coreDefaultSettings ++ Seq(
     scalacOptions in Compile ++= Seq("-encoding", "UTF-8", "-deprecation", "-feature",
-    "-unchecked", "-language:implicitConversions",
-    "-language:postfixOps"),
+    "-unchecked", "-language:implicitConversions", "-language:postfixOps", "-opt-warnings"),
     licenses += ("LGPL-3.0", url("https://www.gnu.org/licenses/lgpl-3.0.en.html")),
     testOptions in Test += ((target in Test) map {
       t => Tests.Argument(TestFrameworks.ScalaTest, "-u","<%s>" format (t / "streams/test"))
