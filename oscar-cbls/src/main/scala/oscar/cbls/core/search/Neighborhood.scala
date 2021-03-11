@@ -131,10 +131,13 @@ abstract class Neighborhood(name:String = null) {
                        initialObj:Long,
                        acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj,
                        shouldAbort:()=>Boolean): SearchResult = {
+    val oldSol = obj.model.solution()
     try {
       getMove(new AbortableObjective(shouldAbort, obj), initialObj, acceptanceCriterion)
     }catch{
-      case _:AbortException => NoMoveFound
+      case _:AbortException =>
+        oldSol.restoreDecisionVariables(true)
+        NoMoveFound
     }
   }
 

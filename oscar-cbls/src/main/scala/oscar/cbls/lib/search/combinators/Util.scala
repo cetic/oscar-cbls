@@ -312,6 +312,39 @@ class WeakTimeout(a:Neighborhood, timeOut:Duration = 1.minutes) extends Neighbor
   }
 }
 
+
+/**
+ * @warning this is experimental.
+ * sets a hard timeout for a search procedure; interrupts ongoing neighborhood exploration if necessary,
+ * and restores the state before the last exploration.
+ * Do not use it on the right of cartesian products.
+ * @param a a neighborhood
+ * @param timeOut the maximal duration
+ *
+ */
+class HardTimeout(a:Neighborhood, timeOut:Duration = 1.minutes) extends NeighborhoodCombinator(a) {
+  private var deadline: Long = -1
+
+  override def getMove(obj: Objective, initialObj: Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+    if (deadline == -1) {
+      deadline = System.currentTimeMillis() + timeOut.toMillis
+    }
+
+    if (System.currentTimeMillis() >= deadline) {
+      println(s"Timeout of $timeOut")
+      NoMoveFound
+    } else {
+      val shouldAbort = () => System.currentTimeMillis() >= deadline
+      a.getMoveAbortable(obj, initialObj, acceptanceCriteria, shouldAbort)
+    }
+  }
+
+  override def reset(): Unit = {
+    deadline = -1
+    a.reset()
+  }
+}
+
 /**
  * This combinator will interrupt the search when it becomes too flat.
  * use it to cut the tail of long, undesired searches

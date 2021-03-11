@@ -726,6 +726,15 @@ class NeighborhoodOps(n:Neighborhood){
    * @param timeOut the maximal duration between the first query and the last authorized query. timeout is reset
    */
   def weakTimeout(timeOut:Duration = 1.minutes) = new WeakTimeout(n, timeOut)
+  
+  /**
+   * @warning this is experimental.
+   * sets a hard timeout for a search procedure; interrupts ongoing neighborhood exploration if necessary,
+   * and restores the state before the last exploration.
+   * Do not use it on the right of cartesian products.
+   * @param timeOut the maximal duration
+   */
+  def hardTimeout(timeOut:Duration = 1.minutes) = new HardTimeout(n, timeOut)
 
   /**
    * This combinator will interrupt the search when it becomes too flat.
