@@ -73,7 +73,8 @@ class TestRostering extends TestSuite  {
       binaryFirstFail(activities.flatten.toSeq)
     } onSolution {
       best = totUnderDemand.value
-    } start ()
+    }
+    cp.start
     best should be(1)
 
   }  

@@ -181,7 +181,6 @@ class Precedence(seq:ChangingSeqValue,
   private def digestUpdates(changes : SeqUpdate) : Boolean = {
     //println("precedence.digestUpdate(" + changes.getClass.getSimpleName + ")")
     changes match {
-      case null => throw new Error()
       case SeqUpdateDefineCheckpoint(prev : SeqUpdate, checkpointLevel:Int) =>
         //println("define checkpoint")
         if(checkpointLevel == 0){
@@ -414,6 +413,10 @@ class Precedence(seq:ChangingSeqValue,
 
       case SeqUpdateAssign(value : IntSequence) =>
         false //impossible to go incremental
+
+      case null => throw new Error(s"changes is null in digestUpdates")
+
+      case _ => false // Default case
     }
   }
 

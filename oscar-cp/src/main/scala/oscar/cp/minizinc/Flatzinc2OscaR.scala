@@ -24,7 +24,7 @@ object FlatZinc2OscaR extends Parser with App {
 
   parse(args)
 
-  def parse(args: Array[String]) {
+  def parse(args: Array[String]): Unit = {
     // "constraint bool2int(BOOL____00771, INT____00772) :: defines_var(INT____00772);"
     val opts = new Options(args)
     //val  pattern = Pattern.compile("\\(.*\\)");

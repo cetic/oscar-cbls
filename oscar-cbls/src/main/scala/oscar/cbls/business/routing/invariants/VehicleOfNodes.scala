@@ -113,6 +113,7 @@ class VehicleOfNodes(routes:ChangingSeqValue,
         digestUpdates(prev)
       case r@SeqUpdateRollBackToCheckpoint(checkpoint,checkpointLevel) =>
        digestUpdates(r.howToRollBack)
+      case x => throw new Error(s"Unhandled match $x in digestUpdates")
     }
   }
 

@@ -14,8 +14,6 @@
  ******************************************************************************/
 package oscar.examples.dfo
 
-import scala.Array.canBuildFrom
-
 import oscar.dfo.singleobjective.algos.NelderMead
 import oscar.util.Interval
 

@@ -1,9 +1,9 @@
 package oscar.cbls.lib.search.combinators
 
 import oscar.cbls._
-import oscar.cbls.core.computation.{AbstractVariable, Snapshot, Store}
+import oscar.cbls.core.computation.{AbstractVariable, Solution, Store}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{CallBackMove, CompositeMove, DoNothingNeighborhood, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult, SupportForAndThenChaining}
+import oscar.cbls.core.search.{CallBackMove, CompositeMove, DoNothingNeighborhood, LoadSolutionMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult, SupportForAndThenChaining}
 
 abstract class NeighborhoodCombinatorNoProfile(a: Neighborhood*) extends NeighborhoodCombinator(a:_*){
   override def collectProfilingStatistics: List[Array[String]] = List.empty
@@ -220,7 +220,7 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
 }
 
 case class DynAndThenWithPrev[FirstMoveType<:Move](x:Neighborhood with SupportForAndThenChaining[FirstMoveType],
-                                                   b:(FirstMoveType,Snapshot) => Neighborhood,
+                                                   b:(FirstMoveType,Solution) => Neighborhood,
                                                    maximalIntermediaryDegradation:Long = Long.MaxValue,
                                                    valuesToSave:Iterable[AbstractVariable]) extends NeighborhoodCombinatorNoProfile(x){
 
@@ -242,12 +242,12 @@ case class DynAndThenWithPrev[FirstMoveType<:Move](x:Neighborhood with SupportFo
 case class SnapShotOnEntry(a: Neighborhood, valuesToSave:Iterable[AbstractVariable])
   extends NeighborhoodCombinator(a){
 
-  var snapShot:Snapshot = null
+  var snapShot:Solution = null
 
   override def getMove(obj: Objective,initialObj:Long,
                        acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
     val s = obj.model
-    snapShot = s.snapShot(valuesToSave)
+    snapShot = s.saveValues(valuesToSave)
     a.getMove(obj,initialObj:Long, acceptanceCriterion)
   }
 }
@@ -304,27 +304,43 @@ case class AtomicJump(a: Neighborhood, bound: Int = Int.MaxValue) extends Neighb
  *
  * @param a
  */
-case class Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAcceptableMoves:Boolean = false) extends NeighborhoodCombinator(a) {
+case class Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAcceptableMoves:Boolean = false, aggregateIntoSingleMove:Boolean = false) extends NeighborhoodCombinator(a) {
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
-
     val startSolution = obj.model.solution(true)
-
     val stopProc = if(stopAsSoonAsAcceptableMoves){
       nbId:Int => shouldStop(nbId) || acceptanceCriterion(initialObj,obj.value)
     }else{
       shouldStop
     }
 
-    val allMoves = a.getAllMoves(stopProc, obj, acceptanceCriterion)
+    if(aggregateIntoSingleMove){
 
-    //restore the initial solution
-    val endObj = obj.value
-    obj.model.restoreSolution(startSolution)
+      val nbMoves = a.doAllMoves(stopProc, obj, acceptanceCriterion)
 
-    if(allMoves.isEmpty){
-      NoMoveFound
-    } else {
-      CompositeMove(allMoves,endObj, s"Atomic($a)")
+      //restore the initial solution
+      val endObj = obj.value
+      val endSolution = obj.model.solution(true)
+
+      startSolution.restoreDecisionVariables()
+
+      if (nbMoves == 0) {
+        NoMoveFound
+      } else {
+        LoadSolutionMove(endSolution, endObj, s"Atomic($a)")
+      }
+
+    }else {
+      val allMoves = a.getAllMoves(stopProc, obj, acceptanceCriterion)
+
+      //restore the initial solution
+      val endObj = obj.value
+      startSolution.restoreDecisionVariables()
+
+      if (allMoves.isEmpty) {
+        NoMoveFound
+      } else {
+        CompositeMove(allMoves, endObj, s"Atomic($a)")
+      }
     }
   }
 

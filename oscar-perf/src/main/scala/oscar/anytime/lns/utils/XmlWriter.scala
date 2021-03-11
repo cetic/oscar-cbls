@@ -3,7 +3,7 @@ package oscar.anytime.lns.utils
 import oscar.cp.searches.lns.CPIntSol
 import oscar.cp.searches.lns.operators.ALNSOperator
 
-import scala.xml.{Elem, NodeBuffer, PrettyPrinter}
+import scala.xml.{Elem, Node, NodeBuffer, PrettyPrinter}
 
 
 object XmlWriter{
@@ -34,7 +34,7 @@ object XmlWriter{
     xml += (<solutions>{solutions.map(_.asXml)}</solutions>)
 
     xml += (<operators>{operators.flatMap{
-      case (category, operators) => operators.map(_.asXml(category))
+      case (category, operators) => operators.map(_.asXml(category)).toIterable
     }}</operators>)
 
     xml += (<score_history>{scoresHistory.map(entry =>{

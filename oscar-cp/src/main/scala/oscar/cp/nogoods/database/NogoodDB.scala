@@ -30,7 +30,7 @@ abstract class NogoodDB {
   
   def size: Int
   
-  def addEmpty()
+  def addEmpty(): Unit
   
   def remove(nogood: Nogood): Unit
 }

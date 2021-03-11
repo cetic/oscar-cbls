@@ -22,7 +22,7 @@ import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.variables.CPVar;
 import scala.collection.Iterable;
-import scala.collection.JavaConversions;
+import scala.jdk.javaapi.CollectionConverters;
 
 
 /**
@@ -73,7 +73,7 @@ public class ElementCst extends Constraint {
 	@Override
 	public Iterable<CPVar> associatedVars() {
 		List<CPVar> l = new LinkedList<>(Arrays.asList(x, z));
-		return JavaConversions.iterableAsScalaIterable(l);
+		return CollectionConverters.asScala(l);
 	}
 
 	@Override

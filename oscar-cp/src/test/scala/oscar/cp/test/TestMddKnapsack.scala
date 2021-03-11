@@ -90,7 +90,7 @@ class TestMddKnapsack extends TestSuite {
   }
 
 
-  for (i <- 0 until 1000) {
+  for (i <- 0 until 100) {
     test(s"test MDD knapsack random $i") {
       val cp = CPSolver()
 

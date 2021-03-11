@@ -294,7 +294,7 @@ class SoftGCCFWC(X: Array[CPIntVar], minVal: Int, lower: Array[Int], upper: Arra
    * @param vi The index of the value
    * @param last The index of the element that will replace i
    */
-  @inline private def removeUnbound(i: Int, vi: Int, last: Int) {
+  @inline private def removeUnbound(i: Int, vi: Int, last: Int): Unit = {
     val thisUnboundSet = unboundSet(vi)
     val thisUnboundIndex = unboundIndex(vi)
     val atLast = thisUnboundSet(last)

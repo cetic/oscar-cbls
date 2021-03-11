@@ -9,7 +9,7 @@ import oscar.cp.testUtils._
 import oscar.cp.core.CPPropagStrength
 
 
-abstract class TestCumulativeConstraint(val cumulativeName: String, val nTests: Int = 1000, val minDuration: Int = 0, val k: Int = 5) extends TestSuite {
+abstract class TestCumulativeConstraint(val cumulativeName: String, val nTests: Int = 100, val minDuration: Int = 0, val k: Int = 5) extends TestSuite {
 
   type Sol = List[Int]
 

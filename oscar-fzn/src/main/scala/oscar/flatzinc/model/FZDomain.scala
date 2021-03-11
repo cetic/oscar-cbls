@@ -31,8 +31,8 @@ sealed abstract class FzDomain {
   def contains(v:Int): Boolean
   def size: Int
   def boundTo(v: Int) = min == v && max == v
-  def geq(v:Int);
-  def leq(v:Int);
+  def geq(v:Int): Unit;
+  def leq(v:Int): Unit;
   def intersect(d:FzDomain):Unit = {
     if(d.isInstanceOf[FzDomainRange]) intersect(d.asInstanceOf[FzDomainRange])
     else intersect(d.asInstanceOf[FzDomainSet])

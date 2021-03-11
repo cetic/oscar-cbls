@@ -21,7 +21,7 @@ import oscar.cp.core.CPPropagStrength;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.variables.CPVar;
 import scala.collection.Iterable;
-import scala.collection.JavaConversions;
+import scala.jdk.javaapi.CollectionConverters;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -76,7 +76,7 @@ public class LexLeq extends Constraint {
 	public Iterable<CPVar> associatedVars() {
 		List<CPVar> l = new LinkedList<>(Arrays.asList(x));
 		l.addAll(Arrays.asList(y));
-		return JavaConversions.iterableAsScalaIterable(l);
+		return CollectionConverters.asScala(l);
 	}
 
 	public void setup(CPPropagStrength l) throws Inconsistency {

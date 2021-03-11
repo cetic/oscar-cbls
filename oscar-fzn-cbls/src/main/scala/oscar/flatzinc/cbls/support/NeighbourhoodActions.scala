@@ -23,7 +23,7 @@ import oscar.cbls.core.computation.{CBLSIntVar, IntValue}
   * @author Gustav Bjordal
   */
 abstract class NeighbourhoodAction {
-  def computeAssignment()
+  def computeAssignment(): Unit
 
   // Should be called after computeAssignment
   def isValid(): Boolean = true

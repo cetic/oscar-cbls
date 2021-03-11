@@ -113,7 +113,7 @@ class DFOSolver(val algo: DFOAlgo.Value = DFOAlgo.NelderMead) {
     	  }
     	}
     	
-    	def recordSolution(sol: (Array[Double],Array[Double])) {
+    	def recordSolution(sol: (Array[Double],Array[Double])): Unit = {
     	  (0 until vars.size) foreach {i =>  solution(i) = sol._1(i)}
     	}
     	

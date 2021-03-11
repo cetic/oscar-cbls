@@ -25,8 +25,8 @@ class SingleObjectiveDFO extends FunSuite with Matchers {
   def pointToStr(point: Array[Double]) : String = {
     var res = "("
     for(i <- 0 to point.length - 2)
-      res += point(i) + ", "
-    res += point(point.length - 1) + ")"
+      res += s"${point(i)}, "
+    res += s"${point(point.length - 1)})"
     res
   }
   

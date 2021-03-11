@@ -40,8 +40,8 @@ sealed trait AtomicValue[T] extends Value{
 abstract class ChangingAtomicValue[T](initialValue:T)
   extends AbstractVariable with AtomicValue[T]{
 
-  override def snapshot : ChangingAtomicValueSnapShot[T] = new ChangingAtomicValueSnapShot(this,this.value)
-  def valueAtSnapShot(s:Snapshot):T = s(this) match{case s:ChangingAtomicValueSnapShot[T] => s.savedValue case _ => throw new Error("cannot find value of " + this + " in snapshot")}
+  override def snapshot : ChangingAtomicValueSnapShot[T] = new ChangingAtomicValueSnapShot(this.uniqueID,this.value)
+  def valueAtSnapShot(s:Solution):T = s(this) match{case s:ChangingAtomicValueSnapShot[T] => s.savedValue case _ => throw new Error("cannot find value of " + this + " in snapshot")}
 
   private[this] var mNewValue: T = initialValue
   private[this] var mOldValue = mNewValue
@@ -53,7 +53,7 @@ abstract class ChangingAtomicValue[T](initialValue:T)
   override def toStringNoPropagate = s"$name:=$mNewValue"
 
   @inline
-  def setValue(v:T): Unit ={
+  final def setValue(v:T): Unit ={
     if (v != mNewValue){
       mNewValue = v
       notifyChanged()
@@ -111,8 +111,10 @@ abstract class ChangingAtomicValue[T](initialValue:T)
   }
 }
 
-class ChangingAtomicValueSnapShot[T](val variable:ChangingAtomicValue[T],val savedValue:T) extends AbstractVariableSnapShot(variable){
-  override protected def doRestore() : Unit = {variable.asInstanceOf[CBLSAtomicVar[T]] := savedValue}
+class ChangingAtomicValueSnapShot[T](uniqueID:Int,val savedValue:T) extends AbstractVariableSnapShot(uniqueID){
+  override protected def doRestore(m:Store) : Unit = {m.getVar(uniqueID).asInstanceOf[CBLSAtomicVar[T]] := savedValue}
+  override def valueString(): String = savedValue.toString
+  override protected def doRestoreWithoutCheckpoints(m: Store): Unit = {m.getVar(uniqueID).asInstanceOf[CBLSAtomicVar[T]] := savedValue}
 }
 
 /**An IntVar is a variable managed by the [[oscar.cbls.core.computation.Store]] whose type is integer.

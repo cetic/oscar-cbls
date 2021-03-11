@@ -25,7 +25,7 @@ import oscar.modeling.algebra.integer.{Constant, IntExpression}
 import oscar.modeling.vars.{BoolVar, IntVar}
 import oscar.modeling.visualisation.Color.Color
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 
 object Color extends Enumeration {
   type Color = Value
@@ -71,9 +71,9 @@ class ConstraintsVisualisation(constraints: Array[Constraint], name: String) {
     val viewer = graph.display(false)
     val layout = new ForestLayout
     viewer.enableAutoLayout(layout)
-    layout.setRoots(roots.toList)
+    layout.setRoots(roots.toList.asJava)
     new Thread(new Runnable {
-      def run() {
+      def run(): Unit = {
         new TerminalNodeDisplay(viewer, graph).pump()
       }
     }).start()
@@ -178,7 +178,7 @@ class TerminalNodeDisplay(viewer: Viewer, graph: Graph) extends ViewerListener {
   pipe.addSink(graph)
   pipe.removeElementSink(graph);
 
-  def pump() { while(!stop) pipe.blockingPump() }
+  def pump(): Unit = { while(!stop) pipe.blockingPump() }
   override def buttonReleased(id: String): Unit = {
     val n:Node = graph.getNode(id)
     val expr: IntExpression= n.getAttribute("expression")

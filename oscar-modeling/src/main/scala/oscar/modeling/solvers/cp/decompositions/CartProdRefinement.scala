@@ -14,6 +14,7 @@
  ******************************************************************************/
 
 package oscar.modeling.solvers.cp.decompositions
+import scala.math.Ordering.Double.TotalOrdering
 
 import oscar.modeling.constraints.Constraint
 import oscar.modeling.misc.CartesianProduct

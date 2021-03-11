@@ -68,6 +68,8 @@ class StartPointOfVehicles(routes:ChangingSeqValue,
 
       case u@SeqUpdateRollBackToCheckpoint(checkpoint : IntSequence, level : Int) =>
         vehicleStartStack.rollBackAndOutputValue(checkpoint, level)
+
+      case x => throw new Error(s"Unhandled match $x in digestUpdates")
     }
   }
 

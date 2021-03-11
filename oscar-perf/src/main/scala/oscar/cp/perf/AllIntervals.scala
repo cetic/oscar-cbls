@@ -51,7 +51,7 @@ import oscar.cp._
 */
 object AllIntervals {
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
 
     implicit val cp = CPSolver()
 

@@ -35,7 +35,7 @@ class VisualSearchTree(tree: Tree) extends JPanel (new BorderLayout()) {
 	add(visualTree)
 
 	
-	def update() {
+	def update(): Unit = {
 	  root = Node.design(tree.toNode(0), 42)
 	  visualTree.update(root)	  
 	}
@@ -43,7 +43,7 @@ class VisualSearchTree(tree: Tree) extends JPanel (new BorderLayout()) {
 }
 
 object VisualSearchTree{
-  def main(args : Array[String]) {
+  def main(args : Array[String]): Unit = {
 			
   }
 }

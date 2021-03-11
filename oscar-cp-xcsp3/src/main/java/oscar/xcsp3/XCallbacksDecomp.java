@@ -2,16 +2,21 @@ package oscar.xcsp3;
 
 import org.xcsp.common.Condition;
 import org.xcsp.common.Types;
-import org.xcsp.common.domains.Domains;
 import org.xcsp.common.predicates.XNode;
 import org.xcsp.common.predicates.XNodeLeaf;
 import org.xcsp.common.predicates.XNodeParent;
+import org.xcsp.parser.*;
 import org.xcsp.parser.callbacks.XCallbacks2;
 import org.xcsp.parser.entries.XConstraints;
+//import org.xcsp.parser.entries.XDomains;
 import org.xcsp.parser.entries.XVariables;
 import org.xcsp.parser.entries.XConstraints.CChild;
 
+import org.xcsp.common.Types.TypeVar;
+import org.xcsp.common.domains.Domains;
+
 import java.util.*;
+import java.util.HashSet;
 import java.util.stream.IntStream;
 
 /**
@@ -60,7 +65,7 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
             int[] domain = Arrays.stream(values).mapToInt(v -> symbolicValues.get(v)).toArray();
 
             // create a std XVarInteger
-            XVariables.XVarInteger var = (XVariables.XVarInteger)XVariables.XVar.build(x.id, Types.TypeVar.integer, new Domains.Dom(domain));
+            XVariables.XVarInteger var = (XVariables.XVarInteger)XVariables.XVar.build(x.id, TypeVar.integer, new Domains.Dom(domain));
             buildVarInteger(var, domain);
 
             // store it for future reference
@@ -167,7 +172,7 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
      */
     @Override
     public void buildCtrElement(String id, XVariables.XVarInteger[] list, XVariables.XVarInteger value) {
-        XVariables.XVarInteger v = (XVariables.XVarInteger)XVariables.XVar.build(generateReservedArrayIdx(), Types.TypeVar.integer, new Domains.Dom(0, list.length-1));
+        XVariables.XVarInteger v = (XVariables.XVarInteger)XVariables.XVar.build(generateReservedArrayIdx(), TypeVar.integer, new Domains.Dom(0, list.length-1));
         buildVarInteger(v, 0, list.length-1);
         buildCtrElement(id, list, 0, v, Types.TypeRank.ANY, value);
     }
@@ -183,7 +188,7 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
      */
     @Override
     public void buildCtrElement(String id, XVariables.XVarInteger[] list, int value) {
-        XVariables.XVarInteger v = (XVariables.XVarInteger)XVariables.XVar.build(generateReservedArrayIdx(), Types.TypeVar.integer, new Domains.Dom(0, list.length-1));
+        XVariables.XVarInteger v = (XVariables.XVarInteger)XVariables.XVar.build(generateReservedArrayIdx(), TypeVar.integer, new Domains.Dom(0, list.length-1));
         buildVarInteger(v, 0, list.length-1);
         buildCtrElement(id, list, 0, v, Types.TypeRank.ANY, value);
     }
@@ -196,7 +201,7 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
         for(int i = 0; i < starts.length; i++) {
             int min = (int)(((Domains.Dom)starts[i].dom).firstValue() + ((Domains.Dom)lengths[i].dom).firstValue());
             int max = (int)(((Domains.Dom)starts[i].dom).lastValue() + ((Domains.Dom)lengths[i].dom).lastValue());
-            output[i] = (XVariables.XVarInteger)XVariables.XVar.build(generateReservedArrayIdx(), Types.TypeVar.integer, new Domains.Dom(min, max));
+            output[i] = (XVariables.XVarInteger)XVariables.XVar.build(generateReservedArrayIdx(), TypeVar.integer, new Domains.Dom(min, max));
             buildVarInteger(output[i], min, max);
         }
         return output;
@@ -210,7 +215,7 @@ public abstract class XCallbacksDecomp implements XCallbacks2 {
         for(int i = 0; i < starts.length; i++) {
             int min = (int)(((Domains.Dom)starts[i].dom).firstValue())+lengths[i];
             int max = (int)(((Domains.Dom)starts[i].dom).lastValue())+lengths[i];
-            output[i] = (XVariables.XVarInteger)XVariables.XVar.build(generateReservedArrayIdx(), Types.TypeVar.integer, new Domains.Dom(min, max));
+            output[i] = (XVariables.XVarInteger)XVariables.XVar.build(generateReservedArrayIdx(), TypeVar.integer, new Domains.Dom(min, max));
             buildVarInteger(output[i], min, max);
         }
         return output;

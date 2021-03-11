@@ -32,3 +32,13 @@ class VisualGrid(nRow: Int, nCol: Int) extends VisualDrawing(false, true) {
   def apply(i: Int) = board(i)
 
 }
+
+
+object VisualGrid extends App {
+
+  val frame = VisualFrame("Example")
+  val inFrame = frame.createFrame("Table")
+  val table = new VisualGrid(800,800)
+  inFrame.add(table)
+  inFrame.pack
+}

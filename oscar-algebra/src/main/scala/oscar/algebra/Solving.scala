@@ -112,14 +112,14 @@ abstract class SolverRun[O  >: Constant <: ExpressionDegree, C <: ExpressionDegr
    *
    * @param v the variable to make continuous
    */
-  def setContinuous(v: Var[Double])
+  def setContinuous(v: Var[Double]): Unit
 
   /**
    * Constrains a variable to be integral. The [[Model]] passed to initialize the [[SolverRun]] will ```not``` be modified.
    *
    * @param v the variable to make integral
    */
-  def setInteger(v: Var[Double])
+  def setInteger(v: Var[Double]): Unit
 
   /**
    * Returns a [[Seq]] containing the extensions of the supported model export formats

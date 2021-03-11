@@ -274,7 +274,6 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
   private def digestUpdates(changes : SeqUpdate) : Boolean = {
     changes match {
       case SeqUpdateDefineCheckpoint(prev : SeqUpdate, checkpointLevel:Int) =>
-
         if(checkpointLevel == 0){
           if (!digestUpdates(prev)) {
             this.checkpoint = prev.newValue
@@ -303,9 +302,9 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
         }else{
           digestUpdates(r.howToRollBack)
         }
+
       case SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
         //on which vehicle did we insert?
-
         if (!digestUpdates(prev)) return false
 
         val vehicleOfInsert = vehicleSearcher(changes.newValue, pos)
@@ -316,6 +315,7 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
         setVehicleChangedSinceCheckpoint(vehicleOfInsert)
 
         true
+
       case x@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         //on which vehicle did we move?
         //also from --> to cannot include a vehicle start.
@@ -396,8 +396,12 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
 
       case SeqUpdateLastNotified(value : IntSequence) =>
         true //we are starting from the previous value
+
       case SeqUpdateAssign(value : IntSequence) =>
         false //impossible to go incremental
+
+      case _ =>
+        false // Default case
     }
   }
 

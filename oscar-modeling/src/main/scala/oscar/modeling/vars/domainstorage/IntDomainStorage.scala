@@ -58,8 +58,8 @@ class IntDomainStorage(val content: Iterable[Int], val name: String) extends Dom
   override def valueAfter(value: Int): Int = {
     content match {
       case b: Range => if(b.contains(value+1)) value+1 else Int.MaxValue
-      case c: SortedSet[Int] => c.from(value + 1).headOption.get
-      case _ => (SortedSet[Int]() ++ content).from(value + 1).headOption.get
+      case c: SortedSet[Int] => c.rangeFrom(value + 1).headOption.get
+      case _ => (SortedSet[Int]() ++ content).rangeFrom(value + 1).headOption.get
     }
   }
 
@@ -70,8 +70,8 @@ class IntDomainStorage(val content: Iterable[Int], val name: String) extends Dom
   override def valueBefore(value: Int): Int = {
     content match {
       case b: Range => if(b.contains(value-1)) value-1 else Int.MinValue
-      case c: SortedSet[Int] => c.to(value - 1).lastOption.get
-      case _ => (SortedSet[Int]() ++ content).to(value - 1).lastOption.get
+      case c: SortedSet[Int] => c.rangeTo(value - 1).lastOption.get
+      case _ => (SortedSet[Int]() ++ content).rangeTo(value - 1).lastOption.get
     }
   }
 

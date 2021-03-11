@@ -18,5 +18,5 @@ package oscar.cp.multiobjective
  * @author Pierre Schaus
  */
 trait ParetoObserver {
-  def update()
+  def update(): Unit
 }

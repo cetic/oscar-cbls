@@ -15,7 +15,7 @@
 
 package oscar.util
 
-import scala.collection.mutable
+import scala.collection.mutable.IndexedSeq
 
 /**
  * A mutable IndexedSeq of Boolean which is able to sets all 
@@ -23,12 +23,12 @@ import scala.collection.mutable
  * 
  * @author Renaud Hartert ren.hartert@gmail.com
  */
-class MagicArray(override val length: Int) extends mutable.IndexedSeq[Boolean] {
-
-  private val array: Array[Int] = Array.fill(length)(Int.MinValue)
+class MagicArray(override val length: Int) extends IndexedSeq[Boolean] {
+   
+  private val array: Array[Int] = Array.fill(size)(Int.MinValue)
   private var magic = Int.MinValue + 1
-
-  /**
+  
+  /** 
    *  Sets all the booleans to false in constant time.
    */
   def reset(): Unit = {
@@ -36,23 +36,23 @@ class MagicArray(override val length: Int) extends mutable.IndexedSeq[Boolean] {
     else {
       magic = Int.MinValue + 1
       var i = 0
-      while (i < length) {
+      while (i < size) {
         array(i) = Int.MinValue
         i += 1
       }
     }
   }
-
+  
   override def update(i: Int, b: Boolean): Unit = {
     if (b) array(i) = magic
     else array(i) = magic - 1
   }
-
+  
   override def apply(i: Int): Boolean = array(i) == magic
-
+  
   override def foreach[U](f: Boolean => U): Unit = {
     var i = 0
-    while (i < length) {
+    while (i < size) {
       f(array(i) == magic)
       i += 1
     }

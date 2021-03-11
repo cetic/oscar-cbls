@@ -17,16 +17,13 @@
 
 package oscar.cp.constraints
 
-import scala.annotation.elidable
-import scala.annotation.elidable.ASSERTION
-import oscar.algo.{DisjointSets, Inconsistency, RangeMinQuery, SortUtils}
 import oscar.algo.reversible.ReversibleInt
-import oscar.cp.CPIntVar
-import oscar.cp.CPIntVarOps
-import oscar.cp.CPSetVar
-import oscar.cp.Constraint
+import oscar.algo.{DisjointSets, Inconsistency, RangeMinQuery}
+import oscar.cp.{CPIntVar, CPIntVarOps, CPSetVar, Constraint}
 import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.variables.CPVar
+
+import scala.math.Ordering.Double.TotalOrdering
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
@@ -250,7 +247,7 @@ class CCTreeNode(private[constraints] var parent: Int, private[constraints] var 
   private[constraints] var h: Int = 0
   def height = h
   
-  private def reset() {
+  private def reset(): Unit = {
     parent = -1
     left = -1
     right = -1
@@ -269,7 +266,7 @@ class CCTree(n: Int) {
   private var rooted = false
 
   
-  def reset() {
+  def reset(): Unit = {
     index = n
     rooted = false
   }
@@ -295,9 +292,9 @@ class CCTree(n: Int) {
     parent
   }
   
-  private def computeHeights() {
+  private def computeHeights(): Unit = {
     height(root)
-    def height(n : CCTreeNode) {
+    def height(n : CCTreeNode): Unit = {
       n.h = if (n.hasParent) nodes(n.parent).h + 1 else 0
       if (n.hasLeft) height(nodes(n.left))
       if (n.hasRight) height(nodes(n.right))

@@ -98,7 +98,7 @@ class ElementVarAC(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constra
   }
 
   // Initializes data structures
-  private def initData() {
+  private def initData(): Unit = {
     for (i <- x) {
       val keep =
         (for (v <- y(i); if (z.hasValue(v))) yield {
@@ -112,9 +112,9 @@ class ElementVarAC(y: Array[CPIntVar], x: CPIntVar, z: CPIntVar) extends Constra
   }
 
   // Reset the content of both data structures
-  private def resetData() {
+  private def resetData(): Unit = {
     for (i <- 0 until intersect.size)
-      intersect(i).empty()
+      intersect(i).makeEmpty()
     for (v <- 0 until nSupports.size)
       nSupports(v).setValue(0)
   }

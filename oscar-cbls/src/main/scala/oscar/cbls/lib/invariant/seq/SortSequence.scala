@@ -191,6 +191,9 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
 
       case SeqUpdateAssign(value : IntSequence) =>
         this := sortSequenceBy(value,sortValue)
+
+      case _ =>
+        // Default case. Nothing to do (maybe throw an exception ?)
     }
   }
 

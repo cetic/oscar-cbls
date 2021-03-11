@@ -10,7 +10,7 @@ abstract class PerfTest(name: String) extends FunSuite with Matchers with Assert
   def perfTest(): Unit
 }
 
-class AppPerfTest(objs: Object{def main(args: Array[String])}*) extends FunSuite with Matchers with Assertions {
+class AppPerfTest(objs: Object{def main(args: Array[String]):Unit}*) extends FunSuite with Matchers with Assertions {
   for(obj <- objs) {
     test(obj.getClass.getName) {
       obj.main(Array())

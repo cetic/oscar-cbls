@@ -29,6 +29,8 @@ import oscar.cbls.algo.heap.{AbstractHeap, AggregatedBinomialHeapQList, Binomial
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.tarjan._
+import oscar.cbls.core.ChangingIntValue
+import oscar.cbls.core.computation.Variable
 
 /**
  * a schedulingHandler handles the scheduling for a set of PE.
@@ -523,82 +525,6 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
    * it allows one to ensure that the propagating element behaves as declared in its dependencies
    */
   def getPropagatingElement: PropagationElement = PropagatingElement
-
-  /*This dumps the propagation graphs in a dot format, for documentation purposes
-    * Static graph should only be set if the static graph has not been dropped
-    * @param StaticGraph adds the static graph as red arrows
-    * @param DynamicGraph adds the dynamic graph as blue arrows
-    * @return a string that contains the dot format
-    **/
-  /*
-  def dumpToDot(StaticGraph: Boolean, DynamicGraph: Boolean, Target:PropagationElement = null): String = {
-    var ToReturn = "digraph PropagationStructure {\n"
-    ToReturn += "   rankdir=LR;\n"
-    def nodeName(p: PropagationElement) = "node" + p.uniqueID
-
-    if(!StaticGraph && !DynamicGraph)
-      throw new Exception("you want to dump to dot, but none of the static and dynamic graphs")
-
-    for (e <- getPropagationElements if e.schedulingHandler == this) {
-      if (! (!StaticGraph && e.isInstanceOf[BulkPropagator]))
-        ToReturn += "   " + nodeName(e) + e.getDotNode + "\n"
-    }
-
-    for (scc <- StronglyConnexComponentsList){
-      ToReturn += "   subgraph " + "cluster_"+nodeName(scc) + "{" + "\n"
-      for (f <- scc.Elements) {
-        ToReturn += "      " + nodeName(f) + f.getDotNode + "\n"
-      }
-      ToReturn += "   }" + "\n"
-    }
-
-    if (StaticGraph && DynamicGraph){
-      for (e <- getPropagationElements) {
-        for (f <- e.getStaticallyListenedElements if f.uniqueID != -1L) {
-          if (e.getDeterminingElement == f){
-            //determining element, blue arrow
-            ToReturn += "   " + nodeName(f) + " -> " + nodeName(e) + "[color = blue]" + "\n"
-          }else if (e.getDynamicallyListenedElements.exists(p => p==f)){
-            //in static and dynamic graph
-            ToReturn += "   " + nodeName(f) + " -> " + nodeName(e) + "[color = red]" + "\n"
-          }else{
-            //only in static graph
-            if(this.isAcyclic){
-              ToReturn += "   " + nodeName(f) + " -> " + nodeName(e) + "[color = black style=dotted]" + "\n"
-            }else{
-              ToReturn += "   " + nodeName(f) + " -> " + nodeName(e) + "[color = black style=dotted constraint=false]" + "\n"
-            }
-          }
-        }
-        for (f <- e.getDynamicallyListenedElements if f.uniqueID != -1L) {
-          if (!e.getStaticallyListenedElements.exists(p => p==f)){
-            //in dynamic graph and not in static one because of bulking
-            ToReturn += "   " + nodeName(f) + " -> " + nodeName(e) + "[color = red]" + "\n"
-          }
-        }
-      }
-    }else if (StaticGraph) {
-      for (e <- getPropagationElements) {
-        for (f <- e.getStaticallyListenedElements if f.uniqueID != -1L) {
-          ToReturn += "   " + nodeName(f) + " -> " + nodeName(e) + "[color = black style=dotted]" + "\n"
-        }
-      }
-    }else if (DynamicGraph) {
-      for (e <- getPropagationElements) {
-        for (f <- e.getDynamicallyListenedElements if f.uniqueID != -1L) {
-          if (e.getDeterminingElement == f){
-            //determining element, blue arrow
-            ToReturn += "   " + nodeName(f) + " -> " + nodeName(e) + "[color = blue]" + "\n"
-          }else{
-            //in dynamic graph
-            ToReturn += "   " + nodeName(f) + " -> " + nodeName(e) + "[color = red]" + "\n"
-          }
-        }
-      }
-    }
-    ToReturn + "}\n"
-  }
-*/
 
   /**
    * Builds a dictionary to store data related to the PE.

@@ -14,7 +14,6 @@
  ******************************************************************************/
 package oscar.des.engine
 
-import scala.math._
 import scala.util.Random
 import JSci.maths.statistics._
 
@@ -24,9 +23,10 @@ class NumberGenerator(dist: ProbabilityDistribution) {
 
   var generating = true
 
-  def stop() { generating = false }
+  def stop(): Unit = { generating = false }
 
-  def apply(): Double = dist.inverse(generator.nextDouble)
-  def generateNext = apply
+  def apply(): Double = dist.inverse(generator.nextDouble())
+
+  def generateNext(): Double = apply()
 
 }

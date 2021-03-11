@@ -11,6 +11,11 @@ object ALNSSearch{
     case "metaOpLaborie" => new MetaOpLaborie(solver, vars, config)
     case _ => new ALNSSearchImpl(solver, vars, config)
   }
+
+  def apply(solver: CPSolver, decisionVars: Array[CPIntVar], auxiliaryVars: Array[CPIntVar], config: ALNSConfig): ALNSSearch = config.strategy match{
+    case "evalWindowLaborie" => new EvalWindowLaborie(solver, decisionVars, auxiliaryVars, config)
+    case _ => new ALNSSearchImpl(solver, decisionVars, auxiliaryVars, config)
+  }
 }
 
 /**

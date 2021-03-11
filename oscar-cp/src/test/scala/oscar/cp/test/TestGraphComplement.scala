@@ -14,10 +14,9 @@
  ******************************************************************************/
 package oscar.cp.test
 
-import org.scalatest.FunSuite
-import oscar.cp.testUtils.TestSuite
 import oscar.cp._
 import oscar.cp.constraints.GraphComplement
+import oscar.cp.testUtils.TestSuite
 
 /**
  * @author Andrew Lambert andrew.lambert@student.uclouvain.be
@@ -30,10 +29,10 @@ class TestGraphComplement extends TestSuite  {
     val cp = CPSolver()
     val nnodes1 : Int = 5
     val edges1 = List((0,1),(0,2),(1,2),(2,3),(1,4))
-    val g1 = CPGraphVar(cp, nnodes1, edges1)
+    val g1 = CPGraphVar(nnodes1, edges1)(cp)
     val nnodes2 : Int = 4
     val edges2 = List((0,1),(0,2))
-    val g2 = CPGraphVar(cp, nnodes2, edges2)
+    val g2 = CPGraphVar(nnodes2, edges2)(cp)
     
     // 1) add some mandatory nodes/edges
     for (x <- 0 to 2) {
@@ -106,10 +105,10 @@ class TestGraphComplement extends TestSuite  {
     val cp = CPSolver()
     val nnodes1 : Int = 5
     val edges1 = List((0,1),(0,2),(1,2),(2,3),(1,4))
-    val g1 = CPGraphVar(cp, nnodes1, edges1)
+    val g1 = CPGraphVar(nnodes1, edges1)(cp)
     val nnodes2 : Int = 4
     val edges2 = List((0,1),(0,2))
-    val g2 = CPGraphVar(cp, nnodes2, edges2)
+    val g2 = CPGraphVar(nnodes2, edges2)(cp)
     
     for (x <- 0 to 2) {
       postAndCheckSuspend(cp,g1.addNode(x))
@@ -149,10 +148,10 @@ class TestGraphComplement extends TestSuite  {
     val cp = CPSolver()
     val nnodes1 : Int = 5
     val edges1 = List((0,1),(0,2),(1,2),(2,3),(1,4))
-    val g1 = CPGraphVar(cp, nnodes1, edges1)
+    val g1 = CPGraphVar(nnodes1, edges1)(cp)
     val nnodes2 : Int = 4
     val edges2 = List((0,1),(0,2))
-    val g2 = CPGraphVar(cp, nnodes2, edges2)
+    val g2 = CPGraphVar(nnodes2, edges2)(cp)
     
     for (x <- 0 to 2) {
       postAndCheckSuspend(cp,g1.addNode(x))

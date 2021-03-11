@@ -61,7 +61,7 @@ class SweepMinCumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], en
 
   override def associatedVars(): Iterable[CPVar] = starts ++ durations ++ ends ++ demands ++ resources ++ Array(capacity)
 
-  private def generateCheck(t: Int) {
+  private def generateCheck(t: Int): Unit = {
 
     if (demands(t).max < capacity.min) {
 
@@ -375,9 +375,9 @@ class SweepMinCumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], en
     def capa = capacity
     def task = t
 
-    def date_=(x: Int) { d = x }
-    def cons_=(x: Int) { consomation = x }
-    def capa_=(x: Int) { capacity = x }
+    def date_=(x: Int): Unit = { d = x }
+    def cons_=(x: Int): Unit = { consomation = x }
+    def capa_=(x: Int): Unit = { capacity = x }
 
     override def toString = { "<" + EventType.eventToString(e) + ", " + t + ", " + d + ", " + capa + ", " + cons + ">" }
   }

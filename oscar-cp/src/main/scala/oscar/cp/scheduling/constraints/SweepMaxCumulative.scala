@@ -398,9 +398,9 @@ class SweepMaxCumulative(starts: Array[CPIntVar], durations: Array[CPIntVar], en
     def capa = capacity
     def task = t
 
-    def date_=(x: Int) { d = x }
-    def cons_=(x: Int) { consomation = x }
-    def capa_=(x: Int) { capacity = x }
+    def date_=(x: Int): Unit = { d = x }
+    def cons_=(x: Int): Unit = { consomation = x }
+    def capa_=(x: Int): Unit = { capacity = x }
 
     override def toString = { "<" + EventType.eventToString(e) + ", " + t + ", " + d + ", " + capa + ", " + cons + ">" }
   }

@@ -16,7 +16,6 @@
  */
 package oscar.cp.test
 
-import oscar.algo.Inconsistency
 import oscar.cp._
 import oscar.cp.testUtils._
 
@@ -193,7 +192,7 @@ class TestOr extends TestSuite {
         cp.add(A(varId) === value)
       }
 
-      def myOr(decomp: Boolean) {
+      def myOr(decomp: Boolean): Unit = {
         for (c: Array[CPBoolVar] <- randClauses) {
           if (decomp) add(sum(c) >= 1)
           else add(or(c.toArray))

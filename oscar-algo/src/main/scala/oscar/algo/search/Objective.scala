@@ -23,11 +23,11 @@ trait Objective {
   
 	private val observers = new ArrayBuffer[ObjectiveObserver]();
   
-	def notifyNewBound() {
+	def notifyNewBound(): Unit = {
 	  observers.foreach(_.newObj(this))
 	}
 	
-	def addObserver(obs: ObjectiveObserver) {
+	def addObserver(obs: ObjectiveObserver): Unit = {
 	  observers += obs
 	}
 	

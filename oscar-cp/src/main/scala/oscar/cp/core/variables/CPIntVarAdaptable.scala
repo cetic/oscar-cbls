@@ -15,6 +15,8 @@
 
 package oscar.cp.core.variables
 
+import java.util.ConcurrentModificationException
+
 import oscar.algo.Inconsistency
 
 import scala.util.Random
@@ -44,7 +46,7 @@ class CPIntVarAdaptableDomainSparse(variable: CPIntVarAdaptable, min: Int, max: 
   final override def restore(): Unit = variable.restoreSparse(min, max, size)
 }
 
-final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int, maxValue: Int, continuous: Boolean, final override val name: String = "") extends CPIntVar {
+final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int, maxValue: Int, origContinuous: Boolean, final override val name: String = "") extends CPIntVar {
 
   final override val context = store
 
@@ -61,16 +63,16 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
   private[this] val degree = new ReversibleInt(store, 0) // should not change often
 
   // Domain representation
-  private[this] var values: Array[Int] = null
-  private[this] var positions: Array[Int] = null
-  private[this] var offset = minValue
-  private[this] var _continuous = continuous // can be true with a sparse representation
-  private[this] var _min = minValue
-  private[this] var _max = maxValue
-  private[this] var _size = maxValue - minValue + 1
+  private[variables] var values: Array[Int] = null
+  private[variables] var positions: Array[Int] = null
+  private[variables] var offset = minValue
+  private[variables] var _continuous = origContinuous // can be true with a sparse representation
+  private[variables] var _min = minValue
+  private[variables] var _max = maxValue
+  private[variables] var _size = maxValue - minValue + 1
 
   // Switch to a sparse set if necessacry
-  if (!continuous) buildSparse()
+  if (!origContinuous) buildSparse()
 
   // Used to trail changes in the domain
   private[this] var lastMagic: Long = -1L
@@ -510,7 +512,7 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
    * @param c
    * @see oscar.cp.core.Constraint#propagate()
    */
-  final override def callPropagateWhenBind(c: Constraint) {
+  final override def callPropagateWhenBind(c: Constraint): Unit = {
     degree.incr()
     onBindL2.register(c)
   }
@@ -521,12 +523,12 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
    * @param c
    * @see oscar.cp.core.Constraint#propagate()
    */
-  final override def callPropagateWhenBoundsChange(c: Constraint) {
+  final override def callPropagateWhenBoundsChange(c: Constraint): Unit = {
     degree.incr()
     onBoundsL2.register(c)
   }
 
-  final override def callPropagateWhenBoundsChange(c: Constraint, cond: => Boolean) {
+  final override def callPropagateWhenBoundsChange(c: Constraint, cond: => Boolean): Unit = {
     degree.incr()
     onBoundsL2.register(c, cond)
   }
@@ -562,7 +564,7 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
    * @param c
    * @see oscar.cp.core.Constraint#propagate()
    */
-  final override def callPropagateWhenDomainChanges(c: Constraint, cond: => Boolean) {
+  final override def callPropagateWhenDomainChanges(c: Constraint, cond: => Boolean): Unit = {
     degree.incr()
     onDomainL2.register(c, cond)
   }
@@ -578,11 +580,11 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
    * @param c
    * @see oscar.cp.core.Constraint#updateBounds(CPIntVar)
    */
-  final override def callUpdateBoundsWhenBoundsChange(c: Constraint) {
+  final override def callUpdateBoundsWhenBoundsChange(c: Constraint): Unit = {
     callUpdateBoundsWhenBoundsChange(c, this)
   }
 
-  final override def callUpdateBoundsWhenBoundsChange(c: Constraint, variable: CPIntVar) {
+  final override def callUpdateBoundsWhenBoundsChange(c: Constraint, variable: CPIntVar): Unit = {
     degree.incr()
     onBoundsL1.register(c, variable)
   }
@@ -593,11 +595,11 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
    * @param c
    * @see oscar.cp.core.Constraint#valRemove(CPIntVar, int)
    */
-  final override def callValRemoveWhenValueIsRemoved(c: Constraint) {
+  final override def callValRemoveWhenValueIsRemoved(c: Constraint): Unit = {
     callValRemoveWhenValueIsRemoved(c, this)
   }
 
-  final override def callValRemoveWhenValueIsRemoved(c: Constraint, variable: CPIntVar) {
+  final override def callValRemoveWhenValueIsRemoved(c: Constraint, variable: CPIntVar): Unit = {
     degree.incr()
     onDomainL1.register(c, variable)
   }
@@ -608,11 +610,11 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
    * @param c
    * @see oscar.cp.core.Constraint#valBind(CPIntVar)
    */
-  final override def callValBindWhenBind(c: Constraint) {
+  final override def callValBindWhenBind(c: Constraint): Unit = {
     callValBindWhenBind(c, this)
   }
 
-  final override def callValBindWhenBind(c: Constraint, variable: CPIntVar) {
+  final override def callValBindWhenBind(c: Constraint, variable: CPIntVar): Unit = {
     degree.incr()
     onBindL1.register(c, variable)
   }
@@ -624,11 +626,11 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
    * @param idx, an index that will be given as parameter to valRemoveIdx(CPIntVar, int, int)
    * @see Constraint#valRemoveIdx(CPIntVar, int, int)
    */
-  final override def callValRemoveIdxWhenValueIsRemoved(c: Constraint, idx: Int) {
+  final override def callValRemoveIdxWhenValueIsRemoved(c: Constraint, idx: Int): Unit = {
     callValRemoveIdxWhenValueIsRemoved(c, this, idx)
   }
 
-  final override def callValRemoveIdxWhenValueIsRemoved(c: Constraint, variable: CPIntVar, idx: Int) {
+  final override def callValRemoveIdxWhenValueIsRemoved(c: Constraint, variable: CPIntVar, idx: Int): Unit = {
     degree.incr()
     onDomainL1.register(c, variable, idx)
   }
@@ -640,11 +642,11 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
    * @param idx, an index that will be given as parameter to updateBoundsIdx(CPIntVar, int)
    * @see Constraint#updateBoundsIdx(CPIntVar, int)
    */
-  final override def callUpdateBoundsIdxWhenBoundsChange(c: Constraint, idx: Int) {
+  final override def callUpdateBoundsIdxWhenBoundsChange(c: Constraint, idx: Int): Unit = {
     callUpdateBoundsIdxWhenBoundsChange(c, this, idx)
   }
 
-  final override def callUpdateBoundsIdxWhenBoundsChange(c: Constraint, variable: CPIntVar, idx: Int) {
+  final override def callUpdateBoundsIdxWhenBoundsChange(c: Constraint, variable: CPIntVar, idx: Int): Unit = {
     degree.incr()
     onBoundsL1.register(c, variable, idx)
   }
@@ -656,11 +658,11 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
    * @param idx, an index that will be given as parameter to valBindIdx(CPIntVar, int)
    * @see Constraint#valBindIdx(CPIntVar, int)
    */
-  final override def callValBindIdxWhenBind(c: Constraint, idx: Int) {
+  final override def callValBindIdxWhenBind(c: Constraint, idx: Int): Unit = {
     callValBindIdxWhenBind(c, this, idx)
   }
 
-  final override def callValBindIdxWhenBind(c: Constraint, variable: CPIntVar, idx: Int) {
+  final override def callValBindIdxWhenBind(c: Constraint, variable: CPIntVar, idx: Int): Unit = {
     degree.incr()
     onBindL1.register(c, variable, idx)
   }
@@ -805,5 +807,9 @@ final class CPIntVarAdaptable( final override val store: CPStore, minValue: Int,
       }
     }
     i
+  }
+
+  def _foreach[U](f: Int => U): Unit = {
+    throw new RuntimeException("This should never be called, as it is implemented in CPIntVar")
   }
 }

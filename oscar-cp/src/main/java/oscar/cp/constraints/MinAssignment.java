@@ -24,7 +24,7 @@ import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.variables.CPIntVarAdaptable;
 import oscar.cp.core.variables.CPVar;
 import scala.collection.Iterable;
-import scala.collection.JavaConversions;
+import scala.jdk.javaapi.CollectionConverters;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -98,7 +98,7 @@ public class MinAssignment extends Constraint {
 
 
 
-        this.priorityL2_$eq(s().MAXPRIORL2()-3);
+        this.priorityL2_$eq(s().MaxPriorityL2()-3);
 
         this.cost = cost;
         this.values = new int[n];
@@ -123,7 +123,7 @@ public class MinAssignment extends Constraint {
 
     @Override
     public Iterable<CPVar> associatedVars() {
-        return JavaConversions.iterableAsScalaIterable(Arrays.asList(x));
+        return CollectionConverters.asScala(Arrays.asList(x));
     }
 
     private void initWeightMatrix(int [][] weightMat) throws RuntimeException {

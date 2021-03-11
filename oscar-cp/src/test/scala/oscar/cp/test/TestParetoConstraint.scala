@@ -119,7 +119,8 @@ class TestParetoConstraint extends TestSuite {
       val inserted = paretoSet.insert(cp.lastSol, totDists.map(_.value): _*)
       // Only non-dominated solutions are found
       inserted should be(true)
-    } start ()
+    }
+    cp.start
     paretoSet.objectiveSols
   }
 

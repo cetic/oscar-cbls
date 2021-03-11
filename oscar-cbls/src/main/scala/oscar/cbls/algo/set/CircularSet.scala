@@ -109,7 +109,10 @@ class CircularIntSet(val maxsize:Int) extends mutable.SortedSet[Int]{
         next(sortedValues.last) = sortedValues.head
         handle = sortedValues.head
 
-      case _ if size > 0L => handle = sortedValues.head
+      case _ =>
+        if (size > 0L) {
+          handle = sortedValues.head
+        }
     }
     inserted = false
   }

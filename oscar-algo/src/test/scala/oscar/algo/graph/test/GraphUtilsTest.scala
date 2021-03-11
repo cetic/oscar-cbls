@@ -14,9 +14,8 @@
  ******************************************************************************/
 package oscar.algo.graph.test
 
-import org.scalatest.FunSuite
-import org.scalatest.Matchers
-import oscar.algo.graph.{NegativeWeightCycleException, GraphUtils}
+import org.scalatest.{FunSuite, Matchers}
+import oscar.algo.graph.{GraphUtils, NegativeWeightCycleException}
 
 /**
  * Created on 06/03/15.

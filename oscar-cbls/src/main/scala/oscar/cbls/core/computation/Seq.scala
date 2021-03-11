@@ -402,18 +402,10 @@ class SeqUpdateRollBackToCheckpoint(val checkpointValue:IntSequence,howToRollBac
   }
 
   //TODO: there might still be overflows during howToRollBack when rollbacking to top checkpoint; it seems that the rollBack itself is included in the howToRollBack.
-  private var reversedInstructions:SeqUpdate = null
-
-  def howToRollBack:SeqUpdate = {
-    if (reversedInstructions != null) reversedInstructions
-    else {
-      reversedInstructions = howToRollBackFct()
-      reversedInstructions
-    }
-  }
+  lazy val howToRollBack:SeqUpdate = howToRollBackFct()
 
   override def toString : String =
-    s"SeqUpdateRollBackToCheckpoint(level:$level checkpoint:$checkpointValue)" //+ " howTo:" +  howToRollBack + ")"
+    s"SeqUpdateRollBackToCheckpoint(level:$level checkpoint:$checkpointValue)"
 
   override def depth : Int = 0
 
@@ -558,11 +550,26 @@ object CBLSSeqVar{
   implicit val ord:Ordering[CBLSSetVar] = (o1: CBLSSetVar, o2: CBLSSetVar) => o1.compare(o2)
 }
 
-class ChangingSeqValueSnapShot(val variable:ChangingSeqValue,val savedValue:IntSequence) extends AbstractVariableSnapShot(variable){
-  override protected def doRestore() : Unit = {
-    val seqVar = variable.asInstanceOf[CBLSSeqVar]
+class ChangingSeqValueSnapShot(val uniqueId:Int,val savedValue:IntSequence) extends AbstractVariableSnapShot(uniqueId){
+
+  override protected def doRestore(m:Store) : Unit = {
+    val seqVar = m.getSeqVar(uniqueId)
     val currentValue =  seqVar.value
     if(! (currentValue quickEquals savedValue)){
+      seqVar := savedValue
+    }
+  }
+
+  override def valueString(): String = "[" + savedValue.mkString(",") + "]"
+
+  override protected def doRestoreWithoutCheckpoints(m: Store): Unit = {
+    val seqVar = m.getSeqVar(uniqueId)
+    val currentValue =  seqVar.value
+    if (! (currentValue quickEquals savedValue)) {
+      val topCheckPoint = seqVar.getTopCheckpoint
+      if (topCheckPoint != null) {
+        seqVar.releaseTopCheckpoint()
+      }
       seqVar := savedValue
     }
   }
@@ -570,7 +577,7 @@ class ChangingSeqValueSnapShot(val variable:ChangingSeqValue,val savedValue:IntS
 
 /**
  * this is an abstract implementation with placeholders for checkpoint management stuff
- * There are three implementation of ceckpoint stuff: all,latest,topMost
+ * There are three implementation of checkpoint stuff: all,latest,topMost
  * @param initialValue
  * @param maxValue
  * @param maxPivotPerValuePercent
@@ -579,9 +586,9 @@ class ChangingSeqValueSnapShot(val variable:ChangingSeqValue,val savedValue:IntS
 abstract class ChangingSeqValue(initialValue: Iterable[Int], val maxValue: Int, val maxPivotPerValuePercent: Int, val maxHistorySize:Int)
   extends AbstractVariable with SeqValue{
 
-  override def snapshot : ChangingSeqValueSnapShot = new ChangingSeqValueSnapShot(this,this.value)
+  override def snapshot : ChangingSeqValueSnapShot = new ChangingSeqValueSnapShot(this.uniqueID,this.value)
 
-  def valueAtSnapShot(s:Snapshot):IntSequence = s(this) match{
+  def valueAtSnapShot(s:Solution):IntSequence = s(this) match{
     case s:ChangingSeqValueSnapShot => s.savedValue
     case _ => throw new Error(s"cannot find value of $this in snapshot")}
 
@@ -802,13 +809,13 @@ et cette stack doit être mise à jour au moment de la notification.
         levelOfTopCheckpoint == -1,
       "Sequences cannot be assigned when a checkpoint has been defined")
 
-    toNotify = SeqUpdateAssign(seq)
-
-    notifyChanged()
+    if(!(this.newValue quickEquals seq)) {
+      toNotify = SeqUpdateAssign(seq)
+      notifyChanged()
+    }
   }
 
   // checkpoint management values
-
 
   //This section of code is for maintaining the checkpoint stack.
   //stack does not include top checkpoint
@@ -1064,6 +1071,9 @@ et cette stack doit être mise à jour au moment de la notification.
       case _:SeqUpdateRollBackToCheckpoint =>
         //we leave it, it is a leaf anyway
         updates
+
+      case x =>
+        throw new Error(s"Unhanded match $x")
     }
   }
 
@@ -1089,7 +1099,7 @@ et cette stack doit être mise à jour au moment de la notification.
   private def popToNotifyUntilCheckpointDeclaration(updates:SeqUpdate,
                                                     searchedCheckpoint:IntSequence,
                                                     removeDeclaration:Boolean):CleaningResult = {
-    updates match{
+    updates match {
       case SeqUpdateInsert(value:Int,pos:Int,prev:SeqUpdate) =>
         popToNotifyUntilCheckpointDeclaration(prev,searchedCheckpoint,removeDeclaration) match{
           case NoSimplificationPerformed =>
@@ -1139,8 +1149,12 @@ et cette stack doit être mise à jour au moment de la notification.
         }else{
           SeqUpdatesCleanedUntilQuickEqualValueReachedCheckpointDeclarationNotRemoved(updates)
         }
+
       case SeqUpdateRollBackToCheckpoint(checkpointValue:IntSequence, level:Int) =>
         NoSimplificationPerformed
+
+      case _ =>
+        NoSimplificationPerformed // Default case
     }
   }
 
@@ -1187,8 +1201,12 @@ et cette stack doit être mise à jour au moment de la notification.
         require(updates.newValue quickEquals searchedCheckpoint,
           "require fail on quick equals: " + updates.newValue + "should== " + searchedCheckpoint)
         CheckpointDeclarationReachedAndRemoved(prev)
+
       case SeqUpdateRollBackToCheckpoint(checkpointValue:IntSequence,level:Int) =>
         NoSimplificationPerformed
+
+      case _ =>
+        NoSimplificationPerformed // Default case
     }
   }
 }
@@ -1316,6 +1334,9 @@ class IdentitySeq(fromValue:ChangingSeqValue, toValue:CBLSSeqVar)
         require(changes.newValue quickEquals prev.newValue)
         pushTopCheckpoint(changes.newValue)
         toValue.defineCurrentValueAsCheckpoint()
+
+      case _ =>
+        // Default case, do nothing
     }
   }
 

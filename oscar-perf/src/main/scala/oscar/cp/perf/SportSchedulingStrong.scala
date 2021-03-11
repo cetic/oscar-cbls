@@ -44,7 +44,7 @@ object SportSchedulingStrong extends CPModel with App {
   val game = Array.tabulate(nbPeriods, nbWeeks)((p, w) => CPIntVar(0 until (n * n - 1)))
   val tuples = for (i <- Teams; j <- i + 1 until nbTeams) yield (i, j, i * nbWeeks + j - 1)
 
-  def printSol() {
+  def printSol(): Unit = {
     println("---------games---------")
     Periods.foreach {
       p => println(Weeks.map(w => game(p)(w).value).mkString("\t"))

@@ -21,7 +21,7 @@ import oscar.cp.core.variables.CPIntVar;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.variables.CPVar;
 import scala.collection.Iterable;
-import scala.collection.JavaConversions;
+import scala.jdk.javaapi.CollectionConverters;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -55,12 +55,12 @@ public class GrEq extends Constraint {
 	@Override
 	public Iterable<CPVar> associatedVars() {
 		List<CPVar> l = new LinkedList<>(Arrays.asList(x, y));
-		return JavaConversions.iterableAsScalaIterable(l);
+		return CollectionConverters.asScala(l);
 	}
 
 	@Override
 	public void setup(CPPropagStrength l) throws Inconsistency {
-		priorityL2_$eq(CPStore.MAXPRIORL2());
+		priorityL2_$eq(CPStore.MaxPriorityL2());
 		propagate();
 		if(isActive()){
 			if (!y.isBound()) y.callPropagateWhenBoundsChange(this);

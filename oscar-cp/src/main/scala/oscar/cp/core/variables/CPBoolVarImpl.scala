@@ -212,22 +212,22 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
   
   final override def constraintDegree: Int = degree.value
 
-  final override def callPropagateWhenBind(c: Constraint) {
+  final override def callPropagateWhenBind(c: Constraint): Unit = {
     degree.incr()
     onBindL2.register(c)
   }
 
-  final override def callPropagateWhenBoundsChange(c: Constraint) {
+  final override def callPropagateWhenBoundsChange(c: Constraint): Unit = {
     degree.incr()
     onBindL2.register(c)
   }
 
-  final override def callPropagateWhenBoundsChange(c: Constraint, cond: => Boolean) {
+  final override def callPropagateWhenBoundsChange(c: Constraint, cond: => Boolean): Unit = {
     degree.incr()
     onBindL2.register(c, cond)
   }
 
-  final override def callPropagateWhenDomainChanges(c: Constraint) {
+  final override def callPropagateWhenDomainChanges(c: Constraint): Unit = {
     degree.incr()
     onBindL2.register(c)
   }
@@ -256,56 +256,56 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
     onBindL2.register(watcher)
   }
 
-  final override def callValBindWhenBind(c: Constraint) {
+  final override def callValBindWhenBind(c: Constraint): Unit = {
     callValBindWhenBind(c, this)
   }
 
-  final override def callValBindWhenBind(c: Constraint, variable: CPIntVar) {
+  final override def callValBindWhenBind(c: Constraint, variable: CPIntVar): Unit = {
     degree.incr()
     onBindL1.register(c, variable)
   }
 
-  final override def callUpdateBoundsWhenBoundsChange(c: Constraint) {
+  final override def callUpdateBoundsWhenBoundsChange(c: Constraint): Unit = {
     callUpdateBoundsWhenBoundsChange(c, this)
   }
 
-  final override def callUpdateBoundsWhenBoundsChange(c: Constraint, variable: CPIntVar) {
+  final override def callUpdateBoundsWhenBoundsChange(c: Constraint, variable: CPIntVar): Unit = {
     degree.incr()
     onBoundsL1.register(c, variable)
   }
 
-  final override def callValRemoveWhenValueIsRemoved(c: Constraint) {
+  final override def callValRemoveWhenValueIsRemoved(c: Constraint): Unit = {
     callValRemoveWhenValueIsRemoved(c, this)
   }
 
-  final override def callValRemoveWhenValueIsRemoved(c: Constraint, variable: CPIntVar) {
+  final override def callValRemoveWhenValueIsRemoved(c: Constraint, variable: CPIntVar): Unit = {
     degree.incr()
     onDomainL1.register(c, variable)
   }
 
-  final override def callValRemoveIdxWhenValueIsRemoved(c: Constraint, idx: Int) {
+  final override def callValRemoveIdxWhenValueIsRemoved(c: Constraint, idx: Int): Unit = {
     callValRemoveIdxWhenValueIsRemoved(c, this, idx)
   }
 
-  final override def callValRemoveIdxWhenValueIsRemoved(c: Constraint, variable: CPIntVar, idx: Int) {
+  final override def callValRemoveIdxWhenValueIsRemoved(c: Constraint, variable: CPIntVar, idx: Int): Unit = {
     degree.incr()
     onDomainL1.register(c, variable, idx)
   }
 
-  final override def callUpdateBoundsIdxWhenBoundsChange(c: Constraint, idx: Int) {
+  final override def callUpdateBoundsIdxWhenBoundsChange(c: Constraint, idx: Int): Unit = {
     callUpdateBoundsIdxWhenBoundsChange(c, this, idx)
   }
 
-  final override def callUpdateBoundsIdxWhenBoundsChange(c: Constraint, variable: CPIntVar, idx: Int) {
+  final override def callUpdateBoundsIdxWhenBoundsChange(c: Constraint, variable: CPIntVar, idx: Int): Unit = {
     degree.incr()
     onBoundsL1.register(c, variable, idx)
   }
 
-  final override def callValBindIdxWhenBind(c: Constraint, idx: Int) {
+  final override def callValBindIdxWhenBind(c: Constraint, idx: Int): Unit = {
     callValBindIdxWhenBind(c, this, idx)
   }
 
-  final override def callValBindIdxWhenBind(c: Constraint, variable: CPIntVar, idx: Int) {
+  final override def callValBindIdxWhenBind(c: Constraint, variable: CPIntVar, idx: Int): Unit = {
     degree.incr()
     onBindL1.register(c, variable, idx)
   }
@@ -329,6 +329,10 @@ class CPBoolVarImpl private(final override val store: CPStore, initDomain: Int, 
     val newarray = new Array[Int](oldSize - size)
     fillDeltaArray(oldMin, oldMax, oldSize, newarray)
     newarray.iterator
+  }
+
+  @inline override def _foreach[U](f: Int => U): Unit = {
+    throw new RuntimeException("This should never be called, as it is implemented in CPIntVar")
   }
 }
 

@@ -71,8 +71,8 @@ class TestCount extends TestSuite {
       binaryStatic(X :+ Y)
     } onSolution {
       X.count(_.value == Y.value) should equal(N.value)
-    } start ()
-
+    }
+    cp.start
   }
 
   test("count2") {

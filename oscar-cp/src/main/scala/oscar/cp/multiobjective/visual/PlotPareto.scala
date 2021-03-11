@@ -35,10 +35,10 @@ class PlotPareto(
 
   val paretos = Array.fill(nbPareto)(new ListPareto[Object](Array(objMax1, objMax2)))
  
-  def insert(obj1: Int, obj2: Int, paretoIdx: Int = 0) {
+  def insert(obj1: Int, obj2: Int, paretoIdx: Int = 0): Unit = {
     paretos(paretoIdx).insert(null, obj1, obj2)
     SwingUtilities.invokeLater(new Runnable() {
-      def run() {
+      def run(): Unit = {
         removeAllPoints(paretoIdx)
         for (p <- paretos(paretoIdx).objectiveSols) {
           val x = p(0)

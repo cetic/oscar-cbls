@@ -24,7 +24,7 @@ abstract class Dependency[A](val reactive: Reactive, var reaction: Reaction[A]) 
     if ( !reaction.apply(msg) )
       dispose()
   }
-  def nowReactsOn(d: Occuring[A]){
+  def nowReactsOn(d: Occuring[A]): Unit ={
     //dispose()
     reaction.dispose()
     reaction = d.foreach(reaction.f)
@@ -37,7 +37,7 @@ class Reactive {
   
   class RDependency[A](reaction: Reaction[A]) extends Dependency[A](this, reaction){
     val elem = dependingOn.add(this)
-    def dispose(){
+    def dispose(): Unit ={
       reaction.dispose()
       dependingOn.remove(elem)
     }
@@ -73,23 +73,23 @@ object Var {
 
 class VarInt(v: Int) extends Var[Int](v) {
   val incChanges = new Event[(Int, Int)]
-  override final def :=(v: Int) {
+  override final def :=(v: Int): Unit = {
     val old = this()
     super.:=(v)
     incChanges emit (old, v)
   }
-  def :+=(v: Int) { this := this() + v}
-  def :-=(v: Int) { this := this() - v}
+  def :+=(v: Int): Unit = { this := this() + v}
+  def :-=(v: Int): Unit = { this := this() - v}
 }
 
 class VarList[A]() extends Var[Seq[A]](Nil){
   val isIncreased = new Event[A]
   val isDecreased = new Event[A]
-  def add(elem: A){
+  def add(elem: A): Unit ={
     this := this() :+ elem
     isIncreased emit(elem)
   }
-  def remove(elem: A){
+  def remove(elem: A): Unit ={
     this := this().drop(this().indexOf(elem))
     isDecreased emit(elem)    
   }

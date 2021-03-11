@@ -32,7 +32,7 @@ class TestTable extends TestSuite {
   }
 
   // Create the unit tests
-  for (i <- 1 to 1000) {
+  for (i <- 1 to 100) {
 
     val tuples1 = randomTuples(3, 100, 3, 8)
     val tuples2 = randomTuples(3, 100, 2, 7)
@@ -130,7 +130,8 @@ class TestTable extends TestSuite {
         binaryStatic(x)
       } onSolution {
         nbSol += 1
-      } start()
+      }
+      cp.start
       nbSol should be(4)
     }
 
@@ -167,7 +168,8 @@ class TestTable extends TestSuite {
           binaryFirstFail(x)
         } onSolution {
           nbSol += 1
-        } start()
+        }
+        cp.start
         nbSol
       }
       nbSol(false) should be(nbSol(true))

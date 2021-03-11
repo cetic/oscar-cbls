@@ -15,13 +15,17 @@
 
 package oscar.algo.paretofront
 
+import java.util
+
 import oscar.util.RandomGenerator
+
+import scala.Iterable
 
 /**
   * @author Renaud Hartert ren.hartert@gmail.com
   * @author Cyrille Dejemeppe cyrille.dejemeppe@gmail.com
   */
-class QT[U: Numeric](private val nDim: Int, private val cmp: (Int, Int) => Boolean) extends ParetoFront[U, QTNode[U]] with Traversable[QTNode[U]] {
+class QT[U: Numeric](private val nDim: Int, private val cmp: (Int, Int) => Boolean) extends ParetoFront[U, QTNode[U]] with Iterable[QTNode[U]] {
   
   val nSuccessors = 1 << nDim
   val Successors = 0 until nSuccessors
@@ -54,7 +58,7 @@ class QT[U: Numeric](private val nDim: Int, private val cmp: (Int, Int) => Boole
   /** QuadTree functions */
   var root: Option[QTNode[U]] = None
 
-  def process(cand: QTNode[U], subR: QTNode[U]) {
+  def process(cand: QTNode[U], subR: QTNode[U]): Unit = {
 
     val kSucc = subR.successorship(cand.objectives)
 
@@ -90,12 +94,12 @@ class QT[U: Numeric](private val nDim: Int, private val cmp: (Int, Int) => Boole
   }
 
   /** Insert the candidate node without checking for dominance */
-  def insertNoCheck(cand: QTNode[U]) {
+  def insertNoCheck(cand: QTNode[U]): Unit = {
     if (root.isDefined) insert0NoCheck(cand, root.get)
     else root = Some(cand)
   }
 
-  private def insert0NoCheck(cand: QTNode[U], root: QTNode[U]) {
+  private def insert0NoCheck(cand: QTNode[U], root: QTNode[U]): Unit = {
     val kSucc = root.successorship(cand.objectives)
     // Recursive traversal
     if (root.successors(kSucc).isDefined) {
@@ -127,7 +131,7 @@ class QT[U: Numeric](private val nDim: Int, private val cmp: (Int, Int) => Boole
 
   /** Replace the root */
 
-  def replace(cand: QTNode[U], root: QTNode[U]) {
+  def replace(cand: QTNode[U], root: QTNode[U]): Unit = {
     // Transplant
     if (root == this.root.get) {
       this.root = Some(cand)
@@ -145,7 +149,7 @@ class QT[U: Numeric](private val nDim: Int, private val cmp: (Int, Int) => Boole
 
   /** Reinsert without dominance check all the subtree rooted at root in inNode */
 
-  def reinsertIn(root: QTNode[U], inNode: QTNode[U]) {
+  def reinsertIn(root: QTNode[U], inNode: QTNode[U]): Unit = {
     root.detach
     for (son <- NonDomSuccessors if root.successors(son).isDefined) {
       reinsertIn(root.successors(son).get, inNode)
@@ -155,7 +159,7 @@ class QT[U: Numeric](private val nDim: Int, private val cmp: (Int, Int) => Boole
 
   /** Remove nodes that are dominated by the candidate node */
 
-  def clean(cand: QTNode[U], root: QTNode[U]) {
+  def clean(cand: QTNode[U], root: QTNode[U]): Unit = {
     val kSucc = root.successorship(cand.objectives)
     // Is the root dominated by the candidate node ?
     if (kSucc == bestSuccessor) {
@@ -210,7 +214,7 @@ class QT[U: Numeric](private val nDim: Int, private val cmp: (Int, Int) => Boole
   }
   
   override def foreach[T](f: QTNode[U] => T): Unit = {
-    def forEach0(root: QTNode[U]) {
+    def forEach0(root: QTNode[U]): Unit = {
       f(root)
       for (son <- NonDomSuccessors if root.successors(son).isDefined) {
         forEach0(root.successors(son).get)
@@ -218,13 +222,29 @@ class QT[U: Numeric](private val nDim: Int, private val cmp: (Int, Int) => Boole
     }
     if (root.isDefined) forEach0(root.get)
   }
-  
+
+  override def iterator: Iterator[QTNode[U]] = new Iterator[QTNode[U]] {
+    val todo = new util.Stack[QTNode[U]]
+    if (root.isDefined)
+      todo.push(root.get)
+
+    override def hasNext: Boolean = !todo.empty()
+
+    override def next(): QTNode[U] = {
+      val nroot = todo.pop()
+      for (son <- NonDomSuccessors if nroot.successors(son).isDefined) {
+        todo.push(nroot.successors(son).get)
+      }
+      nroot
+    }
+  }
+
   def getEvaluations: Set[Array[Double]] = {
     val qtNodeSet = this.toSet
     qtNodeSet.map((e: QTNode[U]) => e.objectives)
   }
 
-  def insert(cand: QTNode[U]) {
+  def insert(cand: QTNode[U]): Unit = {
     if (root.isDefined) process(cand, root.get)
     else {
       root = Some(cand)

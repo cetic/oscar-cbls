@@ -163,7 +163,7 @@ class NestedGCCDecompFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Arra
   /**
    * Filters the bounds given in the input to keep only a minimal set of them that gives the same information.
    */
-  private def filterBounds() {
+  private def filterBounds(): Unit = {
     nRelevantVariables = 0
 
     val filterFlat = (prevIdx: Int, prevVal: Int, nextIdx: Int, nextVal: Int) => nextVal > prevVal
@@ -187,7 +187,7 @@ class NestedGCCDecompFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Arra
    */
   private def filterGeneric(st: SegmentStructure,
                             prevFilter: (Int, Int, Int, Int) => Boolean,
-                            nextFilter: (Int, Int, Int, Int) => Boolean) {
+                            nextFilter: (Int, Int, Int, Int) => Boolean): Unit = {
     import st._
 
     // Adding lower and upper bound 0 at 0, for convenience.
@@ -228,7 +228,7 @@ class NestedGCCDecompFWC(X: Array[CPIntVar], minVal: Int, lowerLists: Array[Arra
    * For example, if there is a maximum of 3 occurrences in the interval [0,5[, there will be a maximum of 3 in [0,4[
    * and of 4 in [0,6[.
    */
-  private def fillBounds() {
+  private def fillBounds(): Unit = {
     var vi = nValues
     while (vi > 0) {
       vi -= 1

@@ -111,7 +111,6 @@ object HtmlReporter extends App{
               }
               if(configTime == bestTime) bests += config
             }
-            Unit //Workaround for strange bug in 2.12
           }
         }
         else if(objType != "unknown") {
@@ -323,7 +322,7 @@ object HtmlReporter extends App{
       }
     }
 
-    (solver, timeout, instance, itype, sols, status)
+    (solver, timeout, instance, itype, sols.toSeq, status)
   }
 
   def renderScores(solvers: Seq[String], scoresByCommits: mutable.Map[String, mutable.Map[String, Int]]): Array[Array[String]] = {

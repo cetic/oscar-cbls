@@ -53,21 +53,21 @@ class FZCBLSObjective(cblsmodel:FZCBLSModel, val bound:Option[CBLSIntVar] = None
         case Objective.MINIMIZE => objectiveVar.value
       }
   }
-  def increaseViolationWeight(minViolationSinceBest: Int){
+  def increaseViolationWeight(minViolationSinceBest: Int): Unit ={
     if (objectiveWeight.value > 1) {
       correctWeights(objectiveWeight.value / 2,violationWeight.value)
     } else {
       correctWeights(objectiveWeight.value,Math.min(Int.MaxValue/3,violationWeight.value) + Math.min(Int.MaxValue/3,Math.max(10, Math.abs(minViolationSinceBest / 2))))
     }
   }
-  def increaseObjectiveWeight(minObjectiveSinceBest: Int){
+  def increaseObjectiveWeight(minObjectiveSinceBest: Int): Unit ={
     if (violationWeight.value > 1) {
       correctWeights(objectiveWeight.value,violationWeight.value / 2)
     } else {
       correctWeights(Math.min(Int.MaxValue/3,objectiveWeight.value) + Math.min(Int.MaxValue/3,Math.max(10, Math.abs(minObjectiveSinceBest / 2))),violationWeight.value)
     }
   }
-  def correctWeights(newObjW: Int,newVioW: Int){
+  def correctWeights(newObjW: Int,newVioW: Int): Unit ={
     val minWeight = math.min(newObjW, newVioW)
     objectiveWeight := math.min(newObjW/minWeight,objectiveWeight.max)
     violationWeight := math.min(newVioW/minWeight,violationWeight.max)

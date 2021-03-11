@@ -1,11 +1,11 @@
 package oscar.cbls.modeling
 
-import oscar.cbls.core.computation.{AbstractVariable, Snapshot}
+import oscar.cbls.core.computation.{AbstractVariable, Solution}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{JumpNeighborhood, Move, Neighborhood, NeighborhoodCombinator, NoMoveNeighborhood, SupportForAndThenChaining}
 import oscar.cbls.lib.search.combinators._
 
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, DurationInt}
 
 trait CombinatorsAPI
   extends BasicCombinators
@@ -230,7 +230,7 @@ trait CompositionCombinators{
 
 
   def DynAndThenWithPrev[FirstMoveType<:Move](x:Neighborhood with SupportForAndThenChaining[FirstMoveType],
-                                              b:(FirstMoveType,Snapshot) => Neighborhood,
+                                              b:(FirstMoveType,Solution) => Neighborhood,
                                               maximalIntermediaryDegradation:Long = Long.MaxValue,
                                               valuesToSave:Iterable[AbstractVariable]) =
     new DynAndThenWithPrev[FirstMoveType](x, b, maximalIntermediaryDegradation, valuesToSave)
@@ -315,7 +315,7 @@ trait NeighborhoodSelectionCombinators{
    * @param l the neighborhoods to select from
    * @param tabuLength the number of invocation that they will not be explored when exhausted
    * @param overrideTabuOnFullExhaust the tabu can be overriden if all explored neighbors are exhausted, for each neighborhood that is tabu for les than this override
-   * @param refresh a refresh of the slopee measuring must be perfored every refresh iterations
+   * @param refresh a refresh of the slope measuring must be perfored every refresh iterations
    */
   def fastestFirst(l:List[Neighborhood],
                    tabuLength:Int = 10,
@@ -721,12 +721,11 @@ class NeighborhoodOps(n:Neighborhood){
 
   /**
    * sets a timeout for a search procedure.
-   * notice that the timeout itself is a bit lax,
-   * because the combinator has no possibility to interrupt a neighborhood during its exploration.
+   * notice that the timeout itself is a bit lax, because the combinator has no possibility to interrupt a neighborhood during its exploration.
    * this combinator will therefore just prevent any new exploration past the end of the timeout.
-   * @param maxDuration the duration between the first exploration and the timeout
+   * @param timeOut the maximal duration between the first query and the last authorized query. timeout is reset
    */
-  def timeout(maxDuration:Duration) = new Timeout(n, maxDuration)
+  def weakTimeout(timeOut:Duration = 1.minutes) = new WeakTimeout(n, timeOut)
 
   /**
    * This combinator will interrupt the search when it becomes too flat.

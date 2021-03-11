@@ -22,17 +22,17 @@ class Extent(var extentList: List[(Double, Double)] = List[(Double, Double)]()) 
     new Extent(extentList.map(elem => (elem._1 + x, elem._2 + x)))
   }
   
-  def add(x1: Double, x2: Double): Unit = {
+  def add(x1: Double, x2: Double) = {
     extentList :+= (x1, x2)
   }
   
-  def append(other: Extent): Unit = {
+  def append(other: Extent) = {
     extentList = extentList ::: other.extentList
   }
   
-  def head1: Double = extentList.head._1
-  def head2: Double = extentList.head._2
-  def tail: Extent = {
+  def head1 = extentList.head._1
+  def head2 = extentList.head._2
+  def tail = {
     new Extent(extentList.tail)
   }
   

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCALA=/home/oscar/scala-2.11.8/bin
+SCALA=/home/oscar/scala-2.12.4/bin
 SBT=/home/oscar/sbt-3/bin
 
 

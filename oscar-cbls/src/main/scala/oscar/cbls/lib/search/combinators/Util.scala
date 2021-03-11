@@ -6,7 +6,7 @@ import oscar.cbls.util.Properties
 import oscar.cbls.visual.SingleFrameWindow
 import oscar.cbls.visual.obj.ObjectiveFunctionDisplay
 
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, DurationInt}
 
 trait UtilityCombinators{
   /**
@@ -285,23 +285,21 @@ class ResetOnExhausted(a: Neighborhood) extends NeighborhoodCombinator(a) {
 
 /**
   * sets a timeout for a search procedure.
-  * notice that the timeout itself is a bit lax,
-  * because the combinator has no possibility to interrupt a neighborhood during its exploration.
+  * notice that hte timeout itself is a bit lax, because the combinator has no possibility to interrupt a neighborhood during its exploration.
   * this combinator will therefore just prevent any new exploration past the end of the timeout.
   * @param a a neighborhood
-  * @param maxDuration the duration between the first exploration and the timeout
+  * @param maxDurationMilliSeconds the maximal duration, in milliseconds
   */
-class Timeout(a:Neighborhood, maxDuration:Duration) extends NeighborhoodCombinator(a) {
+class WeakTimeout(a:Neighborhood, timeOut:Duration = 1.minutes) extends NeighborhoodCombinator(a) {
   private var deadline: Long = -1
 
   override def getMove(obj: Objective, initialObj: Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
     if (deadline == -1) {
-      deadline = System.currentTimeMillis() + maxDuration.toMillis
-    }
+      deadline = System.currentTimeMillis() + timeOut.toMillis
+  }
 
     if (System.currentTimeMillis() >= deadline) {
-
-      println(s"Timeout of $maxDuration")
+      println(s"Timeout of $timeOut")
       NoMoveFound
     } else {
       a.getMove(obj, initialObj: Long, acceptanceCriteria)

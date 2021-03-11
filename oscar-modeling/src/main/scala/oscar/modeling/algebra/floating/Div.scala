@@ -16,6 +16,7 @@
 package oscar.modeling.algebra.floating
 
 import oscar.modeling.algebra.Expression
+import scala.math.Ordering.Double.TotalOrdering
 
 /**
  * Expression left/right

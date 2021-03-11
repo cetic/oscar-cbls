@@ -25,7 +25,8 @@ import oscar.algo.vars.{IntVarLike, SetVarLike}
 import oscar.cp.core.variables.{CPBoolVar, CPIntVar, CPSetVar}
 import oscar.cp.core.watcher.PropagEventQueueVarSet
 
-import scala.collection.JavaConversions.{asJavaCollection, collectionAsScalaIterable}
+import scala.collection.JavaConverters._
+
 import scala.reflect.ClassTag
 import scala.util.Random
 
@@ -63,7 +64,7 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
   // Number of times an L1 filtering is called during the fix point
   private[this] var nCallsL2 = 0L   
   
-  override def resetStats() {
+  override def resetStats(): Unit = {
     super.resetStats()
     timeInFixedPoint = 0
     nCallsL1 = 0
@@ -132,7 +133,7 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
 
   // set variable
 
-  def notifyRequired(constraints: PropagEventQueueVarSet, x: CPSetVar, v: Int) {
+  def notifyRequired(constraints: PropagEventQueueVarSet, x: CPSetVar, v: Int): Unit = {
     var q = constraints
     while (q != null) {
       val c = q.cons
@@ -145,7 +146,7 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
     }
   }
 
-  def notifyRequiredIdx(constraints: PropagEventQueueVarSet, x: CPSetVar, v: Int) {
+  def notifyRequiredIdx(constraints: PropagEventQueueVarSet, x: CPSetVar, v: Int): Unit = {
     var q = constraints
     while (q != null) {
       val c = q.cons
@@ -158,7 +159,7 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
     }
   }
 
-  def notifyExcluded(constraints: PropagEventQueueVarSet, x: CPSetVar, v: Int) {
+  def notifyExcluded(constraints: PropagEventQueueVarSet, x: CPSetVar, v: Int): Unit = {
     var q = constraints
     while (q != null) {
       val c = q.cons
@@ -171,7 +172,7 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
     }
   }
 
-  def notifyExcludedIdx(constraints: PropagEventQueueVarSet, x: CPSetVar, v: Int) {
+  def notifyExcludedIdx(constraints: PropagEventQueueVarSet, x: CPSetVar, v: Int): Unit = {
     var q = constraints
     while (q != null) {
       val c = q.cons
@@ -352,9 +353,9 @@ class CPStore(final val propagStrength: CPPropagStrength) extends DFSearchNode w
    * @param constraints
    * @return Failure if the fix point detects a failure that is one of the domain became empty, Suspend otherwise.
    */
-  def post(constraints: Collection[Constraint], st: CPPropagStrength): Unit = post(constraints.map(x => x.asInstanceOf[Constraint]).toArray, st)
+  def post(constraints: Collection[Constraint], st: CPPropagStrength): Unit = post(constraints.asScala.map(x => x.asInstanceOf[Constraint]).toArray, st)
 
-  def post(constraints: Collection[Constraint]): Unit = post(constraints.map(x => x.asInstanceOf[Constraint]), propagStrength)
+  def post(constraints: Collection[Constraint]): Unit = post(constraints.asScala.toArray.map(x => x.asInstanceOf[Constraint]), propagStrength)
 
   @inline
   def assign(x: IntVarLike, v: Int): Unit = assign(x.asInstanceOf[CPIntVar], v)

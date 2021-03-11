@@ -47,6 +47,7 @@ object WarehouseLocation extends App{
 
   m.close()
 
+
   val neighborhood =(
     bestSlopeFirst(
       List(

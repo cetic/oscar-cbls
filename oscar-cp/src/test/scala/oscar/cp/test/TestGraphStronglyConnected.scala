@@ -14,8 +14,6 @@
  ******************************************************************************/
 package oscar.cp.test
 
-import org.scalatest.FunSuite
-import oscar.cp.testUtils.TestSuite
 import oscar.cp._
 import oscar.cp.constraints.GraphStronglyConnected
 import oscar.cp.testUtils.TestSuite
@@ -29,7 +27,7 @@ class TestGraphStronlgyConnected extends TestSuite  {
   test("Test 1 : Test constraint initial propagation") {
     val cp = CPSolver()
     val nnodes : Int = 3
-    val g = CPGraphVar(cp, nnodes)
+    val g = CPGraphVar(nnodes)(cp)
     // g.edges are (0,1),(0,2),(1,0),(1,2),(2,0),(2,1)
     
     // 1) add some mandatory nodes/edges
@@ -67,7 +65,7 @@ class TestGraphStronlgyConnected extends TestSuite  {
     val cp = CPSolver()
     val nnodes : Int = 5
     val edges = List((0,1),(0,2),(1,0),(1,2),(2,0),(2,1),(2,3),(3,2),(3,4))
-    val g = CPGraphVar(cp, nnodes, edges)
+    val g = CPGraphVar(nnodes, edges)(cp)
     
     postAndCheckSuspend(cp,g.addNode(0))
     g.possibleNodes should be (List(0,1,2,3,4))
@@ -104,7 +102,7 @@ class TestGraphStronlgyConnected extends TestSuite  {
     val cp = CPSolver()
     val nnodes : Int = 5
     val edges = List((0,1),(0,2),(1,0),(1,2),(2,0),(2,1),(2,3),(3,2),(3,4))
-    val g = CPGraphVar(cp, nnodes, edges)
+    val g = CPGraphVar(nnodes, edges)(cp)
     
     postAndCheckSuspend(cp,g.addNode(0))
     postAndCheckSuspend(cp,new GraphStronglyConnected(g))
@@ -133,7 +131,7 @@ class TestGraphStronlgyConnected extends TestSuite  {
     val cp = CPSolver()
     val nnodes : Int = 5
     val edges = List((0,1),(0,2),(1,0),(1,2),(2,0),(2,1),(2,3),(3,2),(3,4))
-    val g = CPGraphVar(cp, nnodes, edges)
+    val g = CPGraphVar(nnodes, edges)(cp)
     
     postAndCheckSuspend(cp,g.addNode(0))
     postAndCheckSuspend(cp,new GraphStronglyConnected(g))
@@ -157,7 +155,7 @@ class TestGraphStronlgyConnected extends TestSuite  {
     val cp = CPSolver()
     val nnodes : Int = 5
     val edges = List((0,1),(0,2),(1,0),(1,2),(2,0),(2,1),(2,3),(3,2),(3,4))
-    val g = CPGraphVar(cp, nnodes, edges)
+    val g = CPGraphVar(nnodes, edges)(cp)
     
     postAndCheckSuspend(cp,g.addNode(0))
     postAndCheckSuspend(cp,new GraphStronglyConnected(g))

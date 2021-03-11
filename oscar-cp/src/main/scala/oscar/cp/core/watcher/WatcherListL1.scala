@@ -36,7 +36,7 @@ class WatcherListL1(store: CPStore) {
   @inline final def isEmpty = index == 0
 
   @inline final def register(constraint: Constraint, variable: CPIntVar, id: Int): Unit = {
-    assert(id != RESERVED_INDEX, RESERVED_INDEX + " is a reserved value that cannot be used as an id.")
+    assert(id != RESERVED_INDEX, s"$RESERVED_INDEX is a reserved value that cannot be used as an id.")
     if (index == constraintStack.length) growStacks()
     constraintStack(index) = constraint
     variablesStack(index) = variable

@@ -18,6 +18,7 @@ package oscar.modeling.misc
 import org.jfree.data.statistics.{SimpleHistogramBin, SimpleHistogramDataset}
 
 import scala.collection.mutable.ArrayBuffer
+import scala.math.Ordering.Double.TotalOrdering
 
 /**
   * Dynamically creates bins to reflect a (probable) gaussian distribution of the data

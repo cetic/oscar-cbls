@@ -22,7 +22,6 @@ import java.awt.Color
 import oscar.visual.shapes.VisualText
 import oscar.visual.shapes.VisualLine
 import oscar.visual.shapes.VisualRectangle
-import scala.Array.canBuildFrom
 
 class VisualGanttChart(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar], f: (Int) => Int, colors: (Int) => Color = i => Color.WHITE) extends VisualDrawing(false, false) {
 
@@ -41,7 +40,7 @@ class VisualGanttChart(starts: Array[CPIntVar], durations: Array[CPIntVar], ends
   private val makespanLine: VisualLine = VisualLine(this, 0, 0, 0, 0)
   makespanLine.outerCol = Color.RED
 
-  def update(xScale: Double, yScale: Double) {
+  def update(xScale: Double, yScale: Double): Unit = {
 
     for (i <- starts.indices) {
 

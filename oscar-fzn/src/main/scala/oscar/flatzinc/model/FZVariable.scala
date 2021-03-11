@@ -42,8 +42,8 @@ abstract class Variable(val id: String, val anns: Iterable[oscar.flatzinc.model.
   }
   def domainSize: Int;
   def isBound: Boolean;
-  def setDomain(range:Range);
-  def setDomain(s:Set[Int]);
+  def setDomain(range:Range): Unit;
+  def setDomain(s:Set[Int]): Unit;
 }
 
 case class BooleanVariable(i: String,

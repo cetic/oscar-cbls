@@ -14,11 +14,9 @@
  ******************************************************************************/
 package oscar.cp.test
 
-import org.scalatest.FunSuite
-import oscar.cp.testUtils.TestSuite
-
-import oscar.cp.constraints._
 import oscar.cp._
+import oscar.cp.constraints._
+import oscar.cp.testUtils.TestSuite
 
 
 class TestDeviationConstraint extends TestSuite  {
@@ -49,7 +47,7 @@ class TestDeviationConstraint extends TestSuite  {
         cp.start().nSols
     }
 
-    def deviationDecomp(x: Array[CPIntVar], s: Int, nd: CPIntVar) {
+    def deviationDecomp(x: Array[CPIntVar], s: Int, nd: CPIntVar): Unit = {
         val cp = x(0).store;
         val dev: Array[CPIntVar] = Array.tabulate(x.length)(i => (mul(x(i),x.length)-s).abs)
 		cp.post(new Sum(dev, nd))

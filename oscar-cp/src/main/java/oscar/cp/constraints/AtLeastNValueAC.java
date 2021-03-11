@@ -21,7 +21,7 @@ import oscar.cp.core.Constraint;
 import oscar.cp.core.CPStore;
 import oscar.cp.core.variables.CPVar;
 import scala.collection.Iterable;
-import scala.collection.JavaConversions;
+import scala.collection.JavaConverters;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -76,7 +76,7 @@ public class AtLeastNValueAC extends Constraint {
         this.x = x;
         this.posted = false;
         this.nValueVar = nval;
-        this.priorityL2_$eq(CPStore.MAXPRIORL2() - 3);
+        this.priorityL2_$eq(CPStore.MaxPriorityL2() - 3);
         this.idempotent_$eq(true);
     }
 
@@ -88,7 +88,7 @@ public class AtLeastNValueAC extends Constraint {
     public Iterable<CPVar> associatedVars() {
         List<CPVar> l = new LinkedList<>(Arrays.asList(x));
         l.add(nValueVar);
-        return JavaConversions.iterableAsScalaIterable(l);
+        return JavaConverters.iterableAsScalaIterable(l);
     }
 
     @Override
@@ -165,13 +165,13 @@ public class AtLeastNValueAC extends Constraint {
         }
 
         int maxMatching = findMaximalMatching();
-
         nValueVar.updateMax(maxMatching);
-        if (nValueVar.getMin() > maxMatching) {
+        if (nValueVar.min() > maxMatching) {
             throw Inconsistency.get();
         }
-        //lower bound of nValueVar is pruned by CotCPAtLeastNValueIFW
-        prune(maxMatching);
+        else if (nValueVar.min() == maxMatching) {
+            prune(maxMatching);
+        }
     }
 
     private void findValueRange() {

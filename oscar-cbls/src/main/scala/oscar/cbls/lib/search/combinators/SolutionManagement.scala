@@ -53,7 +53,7 @@ class BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = t
           //solution degrades, and we were better than the best recorded
           //so we save
           saveCurrent(initialObj)
-          if (verbose >= 2L) println("saving best solution before degradation (obj:" + myBestObj + ")")
+          if (verbose >= 2L) println("saving best solution before worsening (obj:" + myBestObj + ")")
         }
         MoveFound(m)
     }
@@ -75,7 +75,7 @@ class BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = t
     if (best == null && !isCurrentAccepteable) {
       if (verbose >= 1L) println("no single acceptable solution seen")
     } else if (o.value > myBestObj || !isCurrentAccepteable) {
-      s.restoreSolution(best)
+      best.restoreDecisionVariables()
       if (verbose >= 1L) println("restoring best solution (obj:" + myBestObj + ")")
     } else if (verbose >= 1L) println("no better solution to restore")
   }

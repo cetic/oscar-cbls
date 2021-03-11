@@ -20,7 +20,7 @@ import oscar.cp.core.variables.CPBoolVar;
 import oscar.cp.core.Constraint;
 import oscar.cp.core.variables.CPVar;
 import scala.collection.Iterable;
-import scala.collection.JavaConversions;
+import scala.jdk.javaapi.CollectionConverters;
 
 import java.util.Arrays;
 import java.util.List;
@@ -47,9 +47,9 @@ public class Garded extends Constraint {
 
 	@Override
 	public Iterable<CPVar> associatedVars() {
-		List<CPVar> l = JavaConversions.seqAsJavaList(c.associatedVars().toList());
+		List<CPVar> l = CollectionConverters.asJava(c.associatedVars().toList());
 		l.add(b);
-		return JavaConversions.iterableAsScalaIterable(l);
+		return CollectionConverters.asScala(l);
 	}
 
 	@Override

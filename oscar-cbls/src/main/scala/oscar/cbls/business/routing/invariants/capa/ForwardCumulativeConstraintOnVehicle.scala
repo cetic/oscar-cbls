@@ -303,6 +303,8 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
           digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(u.howToRollBack, toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints, previousSequence)
           //we could save and restore the regularized vehicle start, but his is probably not useful
         }
+
+      case x => throw new Error(s"Unhandled match $x in digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate")
     }
   }
 
@@ -317,14 +319,16 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
       while(explorerOpt match{
         case None => //at end of last vehicle
           false
-        case Some(explorer) if explorer.value < v =>
-          //reached another vehicle
-          false
-        case Some(explorer) if explorer.value >= v =>
-          val node = explorer.value
-          acc += s"\t\tnode:$node\t content:${contentAtNode(node)}${if (contentAtNode(node) > cMax) " violation:" + (contentAtNode(node) - cMax) else ""}\n"
-          explorerOpt = explorer.next
-          true
+        case Some(explorer) =>
+          if (explorer.value < v) {
+            //reached another vehicle
+            false
+          } else {
+            val node = explorer.value
+            acc += s"\t\tnode:$node\t content:${contentAtNode(node)}${if (contentAtNode(node) > cMax) " violation:" + (contentAtNode(node) - cMax) else ""}\n"
+            explorerOpt = explorer.next
+            true
+          }
       }){}
       header+acc}).mkString("")}""".stripMargin
   }

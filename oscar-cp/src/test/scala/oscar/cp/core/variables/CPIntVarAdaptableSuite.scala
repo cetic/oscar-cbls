@@ -1,12 +1,10 @@
 package oscar.cp.core.variables
 
+import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
+import oscar.cp.isInconsistent
 import oscar.cp.testUtils._
 
 import scala.util.Random
-import oscar.cp.core.CPStore
-import oscar.cp.isInconsistent
-import oscar.cp.core.Constraint
-import oscar.cp.core.CPPropagStrength
 
 class CPIntVarAdaptableSuite extends TestSuite {
 
@@ -618,6 +616,40 @@ class CPIntVarAdaptableSuite extends TestSuite {
     variable.restrict(values4, values4.length)
     context.propagate()
     assert(n == 3)
+  }
+
+  test("minBy should be stable: always return the same value for the same function and store.") {
+    val store = new CPStore()
+    val variable = new CPIntVarAdaptable(store, 0, 2, true)
+    val f = Array(1, 1, 2)
+
+    val minbyBefore = variable.minBy(f)
+    assert(minbyBefore != 2)
+
+    store.pushState()
+    variable.removeValue(1) // remove another value that also has the minby value
+    assert(variable.minBy(f) == minbyBefore)
+    store.pop() // restore the store
+
+    val minbyAfter = variable.minBy(f)
+    assert(minbyBefore == minbyAfter)
+  }
+
+  test("maxBy should be stable: always return the same value for the same function and store.") {
+    val store = new CPStore()
+    val variable = new CPIntVarAdaptable(store, 0, 3, true)
+    val f = Array(1, 1, 1, 0)
+
+    val maxbyBefore = variable.maxBy(f)
+    assert(maxbyBefore != 3)
+
+    store.pushState()
+    variable.removeValue(1) // remove another value that also has the maxby value
+    assert(variable.maxBy(f) == maxbyBefore)
+    store.pop() // restore the store
+
+    val maxbyAfter = variable.maxBy(f)
+    assert(maxbyBefore == maxbyAfter)
   }
   
 }

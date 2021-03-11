@@ -25,7 +25,7 @@ import oscar.cp.minizinc.FlatZinc2OscaR
  * @author Pierre Schaus pschaus@gmail.com
  */
 object Cubes4{
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val file = if ((new File("data/minizinc/4-cube.fzn")).exists()) "data/minizinc/4-cube.fzn" else  "data/minizinc/4-cube.fzn"
 	val args = Array[String]("-s","-n1", file)
 	FlatZinc2OscaR.parse(args)

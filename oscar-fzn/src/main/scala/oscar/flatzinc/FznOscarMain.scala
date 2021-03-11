@@ -23,7 +23,7 @@ trait FznOscarMain extends App{
     
   def options(name: String,cbls: Boolean): Options = new Options(name,cbls,args)
   
-  def checkAntlr(){
+  def checkAntlr(): Unit ={
       //trick to test whether antlr is on the class path and if not issue a message.
     try{
       val loader = this.getClass().getClassLoader();
@@ -42,7 +42,7 @@ trait FznOscarMain extends App{
     }
   }
   
-  def withCheck(code: => Unit){
+  def withCheck(code: => Unit): Unit ={
       try{
         code
       } catch {

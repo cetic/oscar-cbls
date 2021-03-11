@@ -2,7 +2,6 @@ package oscar.cbls.visual.obj
 
 import java.awt.event.MouseWheelEvent
 import java.awt.{BorderLayout, Color, Paint}
-
 import javax.swing.JPanel
 import org.jfree.chart.axis.{LogAxis, NumberAxis}
 import org.jfree.chart.labels.XYToolTipGenerator
@@ -14,7 +13,7 @@ import org.jfree.data.xy.{XYDataset, XYSeries, XYSeriesCollection}
 import oscar.cbls.util.StopWatch
 import oscar.cbls.visual.ColorGenerator
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.IterableHasAsScala
 
 /**
  * This implementation use the CombinedDomainXYPlot of library org.jfree

@@ -198,6 +198,7 @@ class LogReducedNumberOfNodes(routes: ChangingSeqValue, n:Int, v:Int, nbNodesPer
         QList.qFold[NodesOnSubsequence,Long](steps,(a,b) => a + b.nbNodes,0L)
       case s@LogReducedNewNode(_, _) =>
         1L
+      case x => throw new Error(s"Unhandled match  $x in computeVehicleValueComposed")
     }).sum
   }
 
@@ -285,6 +286,7 @@ class LogReducedNumberOfNodesWithExtremes(routes: ChangingSeqValue, n: Int, v:In
         QList.qFold[NodesOnSubsequence,Long](steps,(a,b) => a + b.nbNodes,0L)
       case s@LogReducedNewNode(_, _) =>
         1L
+      case x => throw new Error(s"Unhandled match  $x in computeVehicleValueComposed")
     }).sum
   }
 

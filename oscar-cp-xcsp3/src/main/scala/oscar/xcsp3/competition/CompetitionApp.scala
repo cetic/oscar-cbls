@@ -6,14 +6,14 @@ class CompetitionConf(args: Seq[String]){
   type ArgMap = Map[Symbol, Any]
   val argMap: ArgMap = parseArgs(Map(), args.toList)
 
-  def randomseed(): Long = argMap.getOrElse('randomseed, Random.nextInt(Int.MaxValue).toLong).asInstanceOf[Long] //A random seed
-  def timelimit(): Int = argMap.getOrElse('timelimit, 240).asInstanceOf[Int] //The time available in seconds
-  def memlimit(): Int = argMap.getOrElse('memlimit, 1000).asInstanceOf[Int] //The memory available in mb
-  def nbcore(): Int = argMap.getOrElse('nbcore, 1).asInstanceOf[Int] //The number of cores available
-  def tmpdir(): String = argMap.getOrElse('tmpdir, "tmpdir").asInstanceOf[String] //A temporary directory to write files
-  def dir(): String = argMap.getOrElse('dir, "dir").asInstanceOf[String] //The directory containing the program
+  def randomseed(): Long = argMap.getOrElse(Symbol("randomseed"), Random.nextInt(Int.MaxValue).toLong).asInstanceOf[Long] //A random seed
+  def timelimit(): Int = argMap.getOrElse(Symbol("timelimit"), 240).asInstanceOf[Int] //The time available in seconds
+  def memlimit(): Int = argMap.getOrElse(Symbol("memlimit"), 1000).asInstanceOf[Int] //The memory available in mb
+  def nbcore(): Int = argMap.getOrElse(Symbol("nbcore"), 1).asInstanceOf[Int] //The number of cores available
+  def tmpdir(): String = argMap.getOrElse(Symbol("tmpdir"), "tmpdir").asInstanceOf[String] //A temporary directory to write files
+  def dir(): String = argMap.getOrElse(Symbol("dir"), "dir").asInstanceOf[String] //The directory containing the program
   def benchname(): String = {
-    val path = argMap.getOrElse('benchname, "").asInstanceOf[String]
+    val path = argMap.getOrElse(Symbol("benchname"), "").asInstanceOf[String]
     if(path.isEmpty) throw new Exception("Instance path not provided!")
     path
   } //The path to the instance file
@@ -23,36 +23,36 @@ class CompetitionConf(args: Seq[String]){
       case Nil => map
 
       case "--randomseed" :: value :: tail =>
-        parseArgs(map ++ Map('randomseed -> value.toLong), tail)
+        parseArgs(map ++ Map(Symbol("randomseed") -> value.toLong), tail)
 
       case "--timelimit" :: value :: tail =>
-        parseArgs(map ++ Map('timelimit -> value.toInt), tail)
+        parseArgs(map ++ Map(Symbol("timelimit") -> value.toInt), tail)
 
       case "--memlimit" :: value :: tail =>
-        parseArgs(map ++ Map('memlimit -> value.toInt), tail)
+        parseArgs(map ++ Map(Symbol("memlimit") -> value.toInt), tail)
 
       case "--nbcore" :: value :: tail =>
-        parseArgs(map ++ Map('nbcore -> value.toInt), tail)
+        parseArgs(map ++ Map(Symbol("nbcore") -> value.toInt), tail)
 
       case "--tmpdir" :: value :: tail =>
-        parseArgs(map ++ Map('tmpdir -> value), tail)
+        parseArgs(map ++ Map(Symbol("tmpdir") -> value), tail)
 
       case "--dir" :: value :: tail =>
-        parseArgs(map ++ Map('dir -> value), tail)
+        parseArgs(map ++ Map(Symbol("dir") -> value), tail)
 
       case benchname :: tail =>
-        parseArgs(map ++ Map('benchname -> benchname), tail)
+        parseArgs(map ++ Map(Symbol("benchname") -> benchname), tail)
     }
   }
 }
 
 abstract class CompetitionApp extends App{
   final val tstart = System.nanoTime()
-  final val version = "2017-08-22"
+  final val version = "2018-04-29"
 
   //Setting up shutdown hook:
   Runtime.getRuntime.addShutdownHook(new Thread{
-    override def run() {
+    override def run(): Unit = {
       if(!statusPrinted) printStatus()
     }
   })
@@ -113,7 +113,7 @@ abstract class CompetitionApp extends App{
 //        printDiagnostic("SOL_NOT_VALID")
 //        printComment(currentSol)
 //        println(tElapsed + " s " + "UNKNOWN")
-////        println("s " + "UNKNOWN")
+//        println("s " + "UNKNOWN")
 //      }
     }
   }

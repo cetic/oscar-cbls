@@ -25,7 +25,7 @@ import oscar.cp.minizinc.FlatZinc2OscaR
  * @author Pierre Schaus pschaus@gmail.com
  */
 object PatternSetMining {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val file = if ((new File("data/minizinc/pattern_set_mining.fzn")).exists()) "data/minizinc/pattern_set_mining.fzn" else  "data/minizinc/pattern_set_mining.fzn"
 	val args = Array[String]("-s","-a", file)
 	FlatZinc2OscaR.parse(args)

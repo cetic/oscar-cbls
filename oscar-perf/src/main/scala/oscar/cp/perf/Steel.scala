@@ -60,13 +60,13 @@ object Steel {
           vals_ = vals_.drop(2)
           weight = weight :+ w
           col = col :+ c - 1 //color starts at 1 in input file
-        case Nil => Unit
+        case Nil => ()
       }
     }
     (capa toArray, weight, col)
   }
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val (capa, weight, col) = readData()
     val (nbCapa, nbSlab, nbCol) = (capa.length, weight.length, col.max + 1)
     val Slabs = 0 until nbSlab
