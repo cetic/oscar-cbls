@@ -6,6 +6,8 @@ import oscar.cbls.util.Properties
 import oscar.cbls.visual.SingleFrameWindow
 import oscar.cbls.visual.obj.ObjectiveFunctionDisplay
 
+import scala.concurrent.duration.Duration
+
 trait UtilityCombinators{
   /**
    * collects statistics about the run time and progress achieved by neighborhood a
@@ -283,25 +285,23 @@ class ResetOnExhausted(a: Neighborhood) extends NeighborhoodCombinator(a) {
 
 /**
   * sets a timeout for a search procedure.
-  * notice that hte timeout itself is a bit lax, because the combinator has no possibility to interrupt a neighborhood during its exploration.
+  * notice that the timeout itself is a bit lax,
+  * because the combinator has no possibility to interrupt a neighborhood during its exploration.
   * this combinator will therefore just prevent any new exploration past the end of the timeout.
   * @param a a neighborhood
-  * @param maxDurationMilliSeconds the maximal duration, in milliseconds
+  * @param maxDuration the duration between the first exploration and the timeout
   */
-class Timeout(a:Neighborhood, maxDurationMilliSeconds:Long) extends NeighborhoodCombinator(a) {
+class Timeout(a:Neighborhood, maxDuration:Duration) extends NeighborhoodCombinator(a) {
   private var deadline: Long = -1
 
   override def getMove(obj: Objective, initialObj: Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
     if (deadline == -1) {
-      deadline = System.currentTimeMillis() + maxDurationMilliSeconds
+      deadline = System.currentTimeMillis() + maxDuration.toMillis
     }
 
     if (System.currentTimeMillis() >= deadline) {
 
-      val hours = (maxDurationMilliSeconds.toFloat / (1000*60*60)).floor.toInt
-      val minutes = (maxDurationMilliSeconds.toFloat / (1000 * 60)).floor.toInt % 60
-      val seconds:Double = (maxDurationMilliSeconds / 1000.0) % 60
-      println(s"Timeout of $hours:$minutes:$seconds")
+      println(s"Timeout of $maxDuration")
       NoMoveFound
     } else {
       a.getMove(obj, initialObj: Long, acceptanceCriteria)
