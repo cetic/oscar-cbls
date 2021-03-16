@@ -36,7 +36,7 @@ class SwapActivity(schedule: Schedule,
     val seqValueCheckPoint = schedule.activityPriorityList.defineCurrentValueAsCheckpoint()
     // Main loop
     while (indicesIterator.hasNext) {
-      currentIndex = indicesIterator.next().toInt
+      currentIndex = indicesIterator.next()
       // explore the swappable zone from the current index
       val swappableZone = schedule.swappableIndices(currentIndex)
       val (swappableIterator, notifySwappingFound) = selectSwapBehavior.toIterator(swappableZone)

@@ -105,7 +105,7 @@ class DistributedBest(neighborhoods:Array[Neighborhood])
     }).toList
 
     val independentMoveFound:Iterable[IndependentMoveFound] = futureResults.flatMap(futureResult =>
-      Await.result(futureResult,Duration.Inf) match{
+      Await.result(futureResult,Duration.Inf) match {
         case SearchCompleted(_, searchResult) =>
           searchResult match{
             case _:IndependentNoMoveFound => None
@@ -113,10 +113,10 @@ class DistributedBest(neighborhoods:Array[Neighborhood])
           }
         case c:SearchCrashed =>
           supervisor.throwRemoteExceptionAndShutDown(c)
-          null
+          None
         case _ =>
           // Search aborted
-          null
+          None
       }
     )
 
@@ -124,7 +124,6 @@ class DistributedBest(neighborhoods:Array[Neighborhood])
     else independentMoveFound.minBy(_.objAfter).getLocalResult(obj.model)
   }
 }
-
 
 class DistributedFirst(neighborhoods:Array[Neighborhood])
   extends DistributedCombinator(neighborhoods.map(x => (y:List[Long]) => x)) {

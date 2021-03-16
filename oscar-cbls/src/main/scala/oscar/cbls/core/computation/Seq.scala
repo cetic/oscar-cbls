@@ -19,7 +19,7 @@ import oscar.cbls.algo.seq.{ConcreteIntSequence, IntSequence, MovedIntSequence, 
 import oscar.cbls.core.propagation.Checker
 
 /*
- *checkpoints must be defined and released manually by neighborhoods
+ * Checkpoints must be defined and released manually by neighborhoods
  * you can release a checkpoint when not at the checkpoint
  * but you must respect the stack model of checkpoint
  * checkpoint releases are not included in the notifications,
@@ -80,7 +80,7 @@ sealed abstract class SeqUpdateWithPrev(val prev:SeqUpdate,newValue:IntSequence)
 object SeqUpdateInsert {
   def apply(value : Int, pos : Int, prev : SeqUpdate, seq : IntSequence) : SeqUpdate = {
     prev match {
-      //we compare the seq here because seq equality is used for checkpointing stuff to anihilate the moves
+      //we compare the seq here because seq equality is used for checkpointing stuff to annihilate the moves
       case x@SeqUpdateRemove(removedPosition : Int, prevOfDelete : SeqUpdate)
         if prevOfDelete.newValue quickEquals seq => prevOfDelete
       case _ => new SeqUpdateInsert(value,pos,prev,seq)
@@ -418,9 +418,9 @@ class SeqUpdateRollBackToCheckpoint(val checkpointValue:IntSequence,howToRollBac
  * this is the thing you must implement to listen to any ChangingSeqValue.
  * you will be notified about seqChanges through this interface
  * notice that you will always be notified of checkpoint-related changes.
- * Invariants must only consider one hcackpoint, since they are never notified about checkpoint release,
+ * Invariants must only consider one checkpoint, since they are never notified about checkpoint release,
  * only about newly defined checkpoints.
- * if you decide not to handle checkpoint, you will anyway be notified about rollbacks, but the rollback actualy
+ * if you decide not to handle checkpoint, you will anyway be notified about rollbacks, but the rollback actually
  * includes incremental changes info, so you can go for incremental changes in this way.
  *
  * notice that checkpoint definition is sent as any other update (although it is identity operator)
@@ -565,11 +565,11 @@ class ChangingSeqValueSnapShot(val uniqueId:Int,val savedValue:IntSequence) exte
   override protected def doRestoreWithoutCheckpoints(m: Store): Unit = {
     val seqVar = m.getSeqVar(uniqueId)
     val currentValue =  seqVar.value
+    val topCheckPoint = seqVar.getTopCheckpoint
+    if (topCheckPoint != null) {
+      seqVar.releaseTopCheckpoint()
+    }
     if (! (currentValue quickEquals savedValue)) {
-      val topCheckPoint = seqVar.getTopCheckpoint
-      if (topCheckPoint != null) {
-        seqVar.releaseTopCheckpoint()
-      }
       seqVar := savedValue
     }
   }
