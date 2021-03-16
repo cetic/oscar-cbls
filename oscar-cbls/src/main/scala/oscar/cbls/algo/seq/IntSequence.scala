@@ -142,30 +142,32 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
       intSequenceExplorerCache(i) = explorer
     }
 
-    if(noneExplorerPosition == position) return None
-    var index = 0
-    while (index < cacheSize) {
-      if (intSequenceExplorerCache(index) != null &&
-        intSequenceExplorerCache(index).position == position) {
-        putUsedExplorerAtBack(index)
-        return Some(intSequenceExplorerCache(cacheSize - 1))
+    this.synchronized {
+      if (noneExplorerPosition == position) return None
+      var index = 0
+      while (index < cacheSize) {
+        if (intSequenceExplorerCache(index) != null &&
+          intSequenceExplorerCache(index).position == position) {
+          putUsedExplorerAtBack(index)
+          return Some(intSequenceExplorerCache(cacheSize - 1))
+        }
+        index += 1
       }
-      index += 1
+
+      val optExplorer = computeExplorerAtPosition(position)
+      optExplorer match {
+        case None =>
+          noneExplorerPosition = position
+
+        case Some(explorer) =>
+          if (intSequenceExplorerCache(0) != null)
+            insertExplorerAtEnd(explorer) // The cache is full, we need to make space
+          else
+            insertExplorerAtFreeSpace(explorer) // The cache is not full, saving at free space
+      }
+
+      optExplorer
     }
-
-    val optExplorer = computeExplorerAtPosition(position)
-    optExplorer match {
-      case None =>
-        noneExplorerPosition = position
-
-      case Some(explorer) =>
-        if (intSequenceExplorerCache(0) != null)
-          insertExplorerAtEnd(explorer) // The cache is full, we need to make space
-        else
-          insertExplorerAtFreeSpace(explorer) // The cache is not full, saving at free space
-    }
-
-    optExplorer
   }
 
   protected def computeExplorerAtPosition(position: Int): Option[IntSequenceExplorer]
@@ -239,17 +241,19 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
   }
 
   def explorerAtAnyOccurrence(value : Int) : Option[IntSequenceExplorer] = {
-    var index = 0
-    while(index < cacheSize){
-      if(intSequenceExplorerCache(index) != null &&
-        intSequenceExplorerCache(index).value == value)
-        return Some(intSequenceExplorerCache(index))
-      else
-        index += 1
-    }
-    positionOfAnyOccurrence(value) match {
-      case None => None
-      case Some(x) => explorerAtPosition(x)
+    this.synchronized {
+      var index = 0
+      while (index < cacheSize) {
+        if (intSequenceExplorerCache(index) != null &&
+          intSequenceExplorerCache(index).value == value)
+          return Some(intSequenceExplorerCache(index))
+        else
+          index += 1
+      }
+      positionOfAnyOccurrence(value) match {
+        case None => None
+        case Some(x) => explorerAtPosition(x)
+      }
     }
   }
 
@@ -270,18 +274,20 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
   }
 
   def positionOfAnyOccurrence(value:Int):Option[Int] = {
-    var index = 0
-    while(index < cacheSize){
-      if(intSequenceExplorerCache(index) != null  &&
-        intSequenceExplorerCache(index).value == value)
-        return Some(intSequenceExplorerCache(index).position)
-      else
-        index += 1
-    }
-    positionsOfValue(value) match {
-      case null => None
-      case x if x.isEmpty => None
-      case x => Some(x.head)
+    this.synchronized {
+      var index = 0
+      while (index < cacheSize) {
+        if (intSequenceExplorerCache(index) != null &&
+          intSequenceExplorerCache(index).value == value)
+          return Some(intSequenceExplorerCache(index).position)
+        else
+          index += 1
+      }
+      positionsOfValue(value) match {
+        case null => None
+        case x if x.isEmpty => None
+        case x => Some(x.head)
+      }
     }
   }
 
