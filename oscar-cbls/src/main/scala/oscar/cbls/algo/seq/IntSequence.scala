@@ -19,7 +19,6 @@ import oscar.cbls.algo.quick.{IterableQList, QList}
 import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
 
 import scala.collection.immutable.SortedSet
-import scala.collection.mutable
 
 object IntSequence{
   def apply(values:Iterable[Int]):IntSequence = {

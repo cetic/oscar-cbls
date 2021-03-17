@@ -64,10 +64,6 @@ object ProcessesWithSharedResources {
       precedences,
       resources)
     val objectiveFunction = Objective(schedulingProblem.makeSpan)
-
-    println(s"Precedences Pred Map = ${schedulingProblem.precedencesData.predMap}")
-    println(s"Precedences Succ Map = ${schedulingProblem.precedencesData.predMap}")
-
     model.close()
     // Neighborhoods
     val swapNH = new SwapActivity(schedulingProblem, "Swap")

@@ -5,13 +5,19 @@ import oscar.cbls.business.scheduling.model._
 import oscar.cbls.business.scheduling.neighborhood.{ReinsertActivity, ReplaceActivity, SwapActivity}
 import oscar.cbls.core.distrib
 import oscar.cbls.core.search.Neighborhood
-import oscar.cbls.lib.search.combinators.distributed.DistributedBest
-import oscar.cbls.{Objective, Store, profile}
+import oscar.cbls.lib.search.combinators.BestSlopeFirst
+import oscar.cbls.lib.search.combinators.distributed.{DistributedBest, DistributedFirst}
+import oscar.cbls.{Objective, Store}
 
 import scala.collection.parallel.immutable.ParRange
 import scala.util.Random
 
 object SchedulingBigExampleDistributed {
+  sealed trait NBType
+  case object Sequential extends NBType
+  case object DistFirst extends NBType
+  case object DistBest extends NBType
+
   val nbWorkers = 3
   val nbAct = 200
   val nbRes = 20
@@ -107,7 +113,8 @@ object SchedulingBigExampleDistributed {
                         durations: Map[ActivityId, Int],
                         minStartTimes: Map[ActivityId, Int],
                         precedencePairs: List[(ActivityId, ActivityId)],
-                        resources: List[Resource]): (Store, Objective, Neighborhood, () => Unit) = {
+                        resources: List[Resource],
+                        typeNb: NBType): (Store, Objective, Neighborhood, () => Unit) = {
     // The CBLS store
     val model = Store(checker = None, noCycle = false)
     val scProblem = new Schedule(model, activities, initialActivities, durations, minStartTimes, precedencePairs, resources)
@@ -116,8 +123,12 @@ object SchedulingBigExampleDistributed {
     val swapNH = new SwapActivity(scProblem, "Swap")
     val reinsertNH = new ReinsertActivity(scProblem, "Reinsert")
     val replaceNH = new ReplaceActivity(scProblem, "Replace")
-    val neighborhood = profile(new DistributedBest(Array(swapNH, reinsertNH, replaceNH)))
-
+    val arrNH: Array[Neighborhood] = Array(swapNH, reinsertNH, replaceNH)
+    val neighborhood = typeNb match {
+      case Sequential => BestSlopeFirst(arrNH.toList)
+      case DistFirst => new DistributedFirst(arrNH)
+      case DistBest => new DistributedBest(arrNH)
+    }
     // Final Print
     def finalPrint(): Unit = {
       val actPriorList = scProblem.activityPriorityList.value.toList
@@ -126,26 +137,46 @@ object SchedulingBigExampleDistributed {
       println(s"Scheduling sequence = ${scProblem.activityPriorityList.value.toList}")
       println("Scheduling start times = [  ")
       for {a <- actPriorList} {
-        println(s"    ${scProblem.startTimes(a.toInt)}")
+        val startTimeA = scProblem.startTimes(a.toInt).value
+        val durationA = durations(a)
+        println(s"    Activity $a : Start Time = $startTimeA : Duration : $durationA")
       }
       println("]")
     }
-
+    // Results
     (model, objFunc, neighborhood, () => finalPrint())
   }
 
-  def main(args: Array[String]): Unit = {
+  def executeProblemSeq(activities: List[ActivityId],
+                        initialActivities: List[ActivityId],
+                        durations: Map[ActivityId, Int],
+                        minStartTimes: Map[ActivityId, Int],
+                        precedencePairs: List[(ActivityId, ActivityId)],
+                        resources: List[Resource],
+                        typeNb: NBType): Unit = {
+    val (_, obj, search, finalPrint) = createCBLSProblem(activities, initialActivities, durations, minStartTimes, precedencePairs, resources, typeNb)
+    search.verbose = 1
+    search.doAllMoves(obj = obj)
+    println(search.profilingStatistics)
+    finalPrint()
+  }
+
+  def executeProblemPar(activities: List[ActivityId],
+                        initialActivities: List[ActivityId],
+                        durations: Map[ActivityId, Int],
+                        minStartTimes: Map[ActivityId, Int],
+                        precedencePairs: List[(ActivityId, ActivityId)],
+                        resources: List[Resource],
+                        typeNb: NBType): Unit = {
     //supervisor side
-    print("Creating Problem...")
-    val (acts, initialActs, durations, minStartTimes, precPairs, resources) = createRandomProblem()
-    val (store, obj, search, finalPrint) = createCBLSProblem(acts, initialActs, durations, minStartTimes, precPairs, resources)
+    val (store, obj, search, finalPrint) = createCBLSProblem(activities, initialActivities, durations, minStartTimes, precedencePairs, resources, typeNb)
     print("Creating Actor System...")
     val supervisor = distrib.startSupervisorAndActorSystem(store, search)
     println("Done")
     //creating all the workers; here we only create local workers
     for (i <- ParRange(0, nbWorkers, 1, inclusive = false)) {
       print(s"Creating worker $i...")
-      val (store2, _, search2, _) = createCBLSProblem(acts, initialActs, durations, minStartTimes, precPairs, resources)
+      val (store2, _, search2, _) = createCBLSProblem(activities, initialActivities, durations, minStartTimes, precedencePairs, resources, typeNb)
       supervisor.createLocalWorker(store2, search2)
       search2.verbose = 2
       println("Done.")
@@ -155,6 +186,18 @@ object SchedulingBigExampleDistributed {
     println(search.profilingStatistics)
     supervisor.shutdown()
     finalPrint()
+  }
+
+  def main(args: Array[String]): Unit = {
+    print("Creating Problem...")
+    val (acts, initialActs, durations, minStartTimes, precPairs, resources) = createRandomProblem()
+    println("******************** Sequential ********************")
+    executeProblemSeq(acts, initialActs, durations, minStartTimes, precPairs, resources, Sequential)
+    println("******************** DistributedFirst ********************")
+    executeProblemPar(acts, initialActs, durations, minStartTimes, precPairs, resources, DistFirst)
+    println("******************** DistributedBest  ********************")
+    executeProblemPar(acts, initialActs, durations, minStartTimes, precPairs, resources, DistBest)
+    println("****************************************")
   }
 
 }

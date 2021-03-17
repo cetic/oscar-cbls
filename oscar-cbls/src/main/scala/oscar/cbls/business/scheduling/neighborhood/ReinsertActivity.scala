@@ -36,7 +36,7 @@ class ReinsertActivity(schedule: Schedule,
     val seqValueCheckPoint = schedule.activityPriorityList.defineCurrentValueAsCheckpoint()
     // Main loop
     while (indicesIterator.hasNext) {
-      currentIndex = indicesIterator.next().toInt
+      currentIndex = indicesIterator.next()
       // explore the insertable zone of the current index
       val reinsertableZone = schedule.reinsertableIndices(currentIndex)
       val (reinsertableIterator, notifyReinsertFound) = selectReinsertBehavior.toIterator(reinsertableZone)

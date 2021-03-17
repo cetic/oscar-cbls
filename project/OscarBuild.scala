@@ -3,13 +3,13 @@ import sbt._
 
 object OscarBuild {
 
-  lazy val PerfTest = config("perf") extend (Test)
+  lazy val PerfTest = config("perf") extend Test
 
   lazy val buildSettings = Seq(
     organization := "oscar",
     version := "5.0.0-SNAPSHOT",
-    scalaVersion := "2.13.4",
-    sbtVersion := "1.4.7"
+    scalaVersion := "2.13.5",
+    sbtVersion := "1.4.8"
   )
 
   lazy val commonSettings = buildSettings ++ Defaults.coreDefaultSettings ++ Seq(

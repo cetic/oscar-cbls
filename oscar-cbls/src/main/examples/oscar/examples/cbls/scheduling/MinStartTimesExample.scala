@@ -48,8 +48,8 @@ object MinStartTimesExample extends App {
   val scheduling = new Schedule(s, activities, Nil, durations, minStartTimes, precPairs, resources)
 
   // Pred and succ maps
-  scheduling.precedencesData.predMap.foreach(pi => println(s"Pred ${pi._1} => ${pi._2}"))
-  scheduling.precedencesData.succMap.foreach(si => println(s"Succ ${si._1} => ${si._2}"))
+  scheduling.precedencesData.ancestorsMap.foreach(pi => println(s"Pred ${pi._1} => ${pi._2}"))
+  scheduling.precedencesData.descendantsMap.foreach(si => println(s"Succ ${si._1} => ${si._2}"))
 
   val sumScheduled = SeqSum(scheduling.activityPriorityList, i => { nAct - i }) //, i => func(i.toInt))
 

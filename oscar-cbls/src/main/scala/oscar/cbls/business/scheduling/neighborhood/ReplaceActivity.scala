@@ -57,7 +57,7 @@ class ReplaceActivity(schedule: Schedule,
           if (ind > indActToRemove) ind-1
           else ind
         }
-        val (reinsertableIterator, notifyRensertFound) = selectReinsertBehavior.toIterator(reinsertableZone)
+        val (reinsertableIterator, notifyReinsertFound) = selectReinsertBehavior.toIterator(reinsertableZone)
         while (reinsertableIterator.hasNext) {
           indActToAdd = reinsertableIterator.next()
           // Perform move on sequence
@@ -69,7 +69,7 @@ class ReplaceActivity(schedule: Schedule,
           if (evaluateCurrentMoveObjTrueIfSomethingFound(newObj)) {
             notifyIndexToRemoveFound()
             notifyActToAddFound()
-            notifyRensertFound()
+            notifyReinsertFound()
           }
         }
       }

@@ -219,10 +219,10 @@ object StartTimes {
             actMinStartTimes: Map[ActivityId, Int] = Map(),
             resources: List[Resource]): (CBLSIntVar, Map[ActivityId, CBLSIntVar]) = {
     val model = actPriorityList.model
-    val makeSpan = CBLSIntVar(model, 0L, name="Schedule Makespan")
+    val makeSpan = CBLSIntVar(model, name="Schedule Makespan")
     val startTimes: Map[ActivityId, CBLSIntVar] = actDurations.map { mapActDur =>
       val act = mapActDur._1
-      act -> CBLSIntVar(model, 0L, name=s"Start Time of Activity($act)")
+      act -> CBLSIntVar(model, name=s"Start Time of Activity($act)")
     }
     new StartTimes(actPriorityList, actDurations, actPrecedences, actMinStartTimes,
       resources, makeSpan, startTimes)
