@@ -238,7 +238,7 @@ class ChangingIntValueSnapShot(val uniqueId:Int, val savedValue:Long) extends Ab
 
   override protected def doRestoreWithoutCheckpoints(m: Store): Unit = {m.getIntVar(uniqueId) := savedValue}
 
-  override def makeIndependentSerializable: IndependentSerializableAbstractVariableSnapshot =
+  override def makeIndependentSerializable: IndependentSerializableAbstractVariableSnapshot = IndependentSerializableChangingIntValueSnapShot(this)
 }
 
 case class IndependentSerializableChangingIntValueSnapShot(base:ChangingIntValueSnapShot)
