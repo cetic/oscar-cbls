@@ -19,14 +19,14 @@ import oscar.cbls.core.propagation.Checker
 
 /**
  *
- * @param verbose
+ * @param verbose indictaor to print more debugging information
  * @author yoann.guyot@cetic.be
  */
 class InvariantChecker(verbose: Int = 0) extends Checker {
   var firstCheck = true
   var invariantChecked = true
 
-  def check(verity: Boolean, traceOption: => Option[String]) = {
+  def check(verity: Boolean, traceOption: => Option[String]): Unit = {
 
     if (traceOption.isDefined) {
       val trace = traceOption.get
@@ -43,7 +43,7 @@ class InvariantChecker(verbose: Int = 0) extends Checker {
     }
   }
 
-  def isChecked() = {
+  def isChecked: Boolean = {
     if(firstCheck) println("no check performed so far")
     invariantChecked
   }

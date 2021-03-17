@@ -3,14 +3,15 @@ package oscar.examples.cbls.routing
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.timeWindow.{NaiveTimeWindowConstraint, TransferFunction}
+import oscar.cbls.business.routing.model.helpers.DistanceHelper
 
 import scala.collection.immutable.HashSet
 
 /**
   * Created by fg on 12/05/17.
   */
-object SimpleVRPWithMaxDetours extends App{
-  val m = new Store(noCycle = false/*, checker = Some(new ErrorChecker)*/)
+object SimpleVRPWithMaxDetours extends App {
+  val m = Store(noCycle = false/*, checker = Some(new ErrorChecker)*/)
   val v = 10
   val n = 1000
   val penaltyForUnrouted = 10000
@@ -23,7 +24,7 @@ object SimpleVRPWithMaxDetours extends App{
   NaiveTimeWindowConstraint.maxTransferFunctionWithTravelDurationRestriction(n,v,singleNodeTransferFunctions,maxTravelDurations, listOfChains, travelDurationMatrix)
 
   // Distance
-  val totalRouteLength = routeLength(myVRP.routes,n,v,false,symmetricDistance,true)(0)
+  val totalRouteLength = routeLength(myVRP.routes,n,v,perVehicle = false,symmetricDistance,distanceIsSymmetric = true)(0)
 
   //Chains
   val precedenceRoute = myVRP.routes.createClone()
@@ -40,8 +41,6 @@ object SimpleVRPWithMaxDetours extends App{
   val timeWindowConstraint = NaiveTimeWindowConstraint(timeWindowRoute, n, v, singleNodeTransferFunctions, travelDurationMatrix)
   val timeWindowViolation = timeWindowConstraint.violation
 
-
-
   //Objective function
   val obj = new CascadingObjective(precedencesConstraints,
     new CascadingObjective(timeWindowViolation,
@@ -53,12 +52,12 @@ object SimpleVRPWithMaxDetours extends App{
   val relevantSuccessorsOfNodes = TransferFunction.relevantSuccessorsOfNodes(n, v, singleNodeTransferFunctions, travelDurationMatrix)
   val closestRelevantNeighborsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance,relevantPredecessorsOfNodes)(_))
 
-  def relevantPredecessorsForLastNode(lastNode: Long) = ChainsHelper.relevantNeighborsForLastNodeAfterHead(myVRP,chainsExtension,Some(HashSet() ++ relevantPredecessorsOfNodes(lastNode)))(lastNode)
+  def relevantPredecessorsForLastNode(lastNode: Int) = ChainsHelper.relevantNeighborsForLastNodeAfterHead(myVRP,chainsExtension,Some(HashSet() ++ relevantPredecessorsOfNodes(lastNode)))(lastNode)
   val relevantPredecessorsForInternalNodes = ChainsHelper.computeRelevantNeighborsForInternalNodes(myVRP, chainsExtension)_
 
-  def postFilter(node:Long): (Long) => Boolean = {
+  def postFilter(node:Int): Int => Boolean = {
     val routedNode = myVRP.routed.value
-    (neighbor: Long) => {
+    (neighbor: Int) => {
       val successor = myVRP.nextNodeOf(neighbor)
       routedNode.contains(neighbor) &&
         (successor.isEmpty || relevantSuccessorsOfNodes(node).exists(_ == successor.get))
@@ -68,12 +67,12 @@ object SimpleVRPWithMaxDetours extends App{
 
   // MOVING
   val nextMoveGenerator = {
-    (exploredMoves:List[OnePointMoveMove], t:Option[List[Long]]) => {
-      val chainTail: List[Long] = t match {
+    (exploredMoves:List[OnePointMoveMove], t:Option[List[Int]]) => {
+      val chainTail: List[Int] = t match {
         case None =>
           val movedNode = exploredMoves.head.movedPoint
           chainsExtension.nextNodesInChain(chainsExtension.firstNodeInChainOfNode(movedNode))
-        case Some(tail: List[Long]) => tail
+        case Some(tail: List[Int]) => tail
       }
       chainTail match {
         case Nil => None
@@ -88,33 +87,33 @@ object SimpleVRPWithMaxDetours extends App{
 
   val firstNodeOfChainMove = onePointMove(() => myVRP.routed.value.filter(chainsExtension.isHead),()=> myVRP.kFirst(v*2,closestRelevantNeighborsByDistance(_),postFilter), myVRP,neighborhoodName = "MoveHeadOfChain")
 
-  def lastNodeOfChainMove(lastNode:Long) = onePointMove(() => List(lastNode),()=> myVRP.kFirst(v*2,relevantPredecessorsForLastNode,postFilter), myVRP,neighborhoodName = "MoveLastOfChain")
+  def lastNodeOfChainMove(lastNode:Int) = onePointMove(() => List(lastNode),()=> myVRP.kFirst(v*2,relevantPredecessorsForLastNode,postFilter), myVRP,neighborhoodName = "MoveLastOfChain")
 
   val oneChainMove = {
     dynAndThen(firstNodeOfChainMove,
       (moveMove: OnePointMoveMove) => {
-        mu[OnePointMoveMove, Option[List[Long]]](
+        mu[OnePointMoveMove, Option[List[Int]]](
           lastNodeOfChainMove(chainsExtension.lastNodeInChainOfNode(moveMove.movedPoint)),
           nextMoveGenerator,
           None,
           Long.MaxValue,
-          false)
+          intermediaryStops = false)
       }
     ) name "One Chain Move"
 
   }
 
-  def onePtMove(k:Long) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance(_),postFilter), myVRP)) name "One Point Move"
+  def onePtMove(k:Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance(_),postFilter), myVRP)) name "One Point Move"
 
 
   // INSERTING
   val nextInsertGenerator = {
-    (exploredMoves:List[InsertPointMove], t:Option[List[Long]]) => {
-      val chainTail: List[Long] = t match {
+    (exploredMoves:List[InsertPointMove], t:Option[List[Int]]) => {
+      val chainTail: List[Int] = t match {
         case None =>
           val insertedNode = exploredMoves.head.insertedPoint
           chainsExtension.nextNodesInChain(chainsExtension.firstNodeInChainOfNode(insertedNode))
-        case Some(tail: List[Long]) => tail
+        case Some(tail: List[Int]) => tail
       }
 
       chainTail match {
@@ -130,17 +129,17 @@ object SimpleVRPWithMaxDetours extends App{
 
   val firstNodeOfChainInsertion = insertPointUnroutedFirst(() => chainsExtension.heads.filter(n => !myVRP.isRouted(n)),()=> myVRP.kFirst(v*2,closestRelevantNeighborsByDistance(_), postFilter), myVRP,neighborhoodName = "InsertUF")
 
-  def lastNodeOfChainInsertion(lastNode:Long) = insertPointUnroutedFirst(() => List(lastNode),()=> myVRP.kFirst(v*2,relevantPredecessorsForLastNode,postFilter), myVRP,neighborhoodName = "InsertUF")
+  def lastNodeOfChainInsertion(lastNode:Int) = insertPointUnroutedFirst(() => List(lastNode),()=> myVRP.kFirst(v*2,relevantPredecessorsForLastNode,postFilter), myVRP,neighborhoodName = "InsertUF")
 
   val oneChainInsert = {
     dynAndThen(firstNodeOfChainInsertion,
       (insertMove: InsertPointMove) => {
-        mu[InsertPointMove,Option[List[Long]]](
+        mu[InsertPointMove,Option[List[Int]]](
           lastNodeOfChainInsertion(chainsExtension.lastNodeInChainOfNode(insertMove.insertedPoint)),
           nextInsertGenerator,
           None,
           Long.MaxValue,
-          false)
+          intermediaryStops = false)
       }) name "One Chain Insert"
 
   }

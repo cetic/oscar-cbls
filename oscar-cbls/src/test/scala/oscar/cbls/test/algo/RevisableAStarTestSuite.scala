@@ -1,9 +1,10 @@
 package oscar.cbls.test.algo
 
-import org.scalacheck.Gen
 import org.scalactic.anyvals.PosInt
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalacheck.Gen
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.CBLSSetVar
 import oscar.cbls.algo.graph._
 import oscar.cbls.test.graph.RandomGraphGenerator
@@ -11,7 +12,7 @@ import oscar.cbls.test.invariants.bench.{InvBench, ToZero}
 
 import scala.util.Random
 
-class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matchers {
+class RevisableAStarTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
 
   val verbose = 0
 
@@ -28,16 +29,17 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
       mapSide = 1000)
 
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
-    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b))
-    val gen = Gen.oneOf(graph.nodes)
+    val aStar = new RevisableAStar(graph, underApproximatingDistance = underApproxDistanceMatrix(_)(_))
+    val gen = Gen.oneOf(graph.nodes.toIndexedSeq)
 
     forAll(gen){
       node =>
-        val result = aStar.search(node,node,_ => true,false)
+        val result = aStar.search(node,node,_ => true, includePath=false)
         result should be (a[Distance])
         result match{
           case Distance(_, _, distance1, _, _, _) =>
             distance1 should be (0)
+          case _ => // Unreachable
         }
     }
   }
@@ -63,12 +65,12 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
       nbConditions = graphTemp.nbConditions)
 
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
-    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b))
-    val gen = Gen.oneOf(graphTemp.nodes)
+    val aStar = new RevisableAStar(graph, underApproximatingDistance = underApproxDistanceMatrix(_)(_))
+    val gen = Gen.oneOf(graphTemp.nodes.toIndexedSeq)
 
     forAll(gen){
       node =>
-        val result = aStar.search(node,lonelyNode,_ => true,false)
+        val result = aStar.search(node,lonelyNode,_ => true,includePath=false)
         result should be (a[NeverConnected])
     }
   }
@@ -94,13 +96,12 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
       nbConditions = graphTemp.nbConditions+1)
 
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => false)
-    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b))
-    val gen = Gen.oneOf(graphTemp.nodes)
-
+    val aStar = new RevisableAStar(graph, underApproximatingDistance = underApproxDistanceMatrix(_)(_))
+    val gen = Gen.oneOf(graphTemp.nodes.toIndexedSeq)
 
     forAll(gen){
       node =>
-        val result = aStar.search(node,lonelyNode,_ => true,false)
+        val result = aStar.search(node,lonelyNode,_ => true,includePath=false)
         result should (be (a[NotConnected]) or be (a[NeverConnected]))
     }
   }
@@ -118,8 +119,8 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
 
     val openConditions = Random.shuffle(List(0,0,0,0,1,1,1,1,1))
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
-    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b))
-    val gen = Gen.listOfN(2,Gen.oneOf(graph.nodes))
+    val aStar = new RevisableAStar(graph, underApproximatingDistance = underApproxDistanceMatrix(_)(_))
+    val gen = Gen.listOfN(2,Gen.oneOf(graph.nodes.toIndexedSeq))
 
     forAll(gen){
       nodesCouple =>
@@ -152,20 +153,52 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
       nbTransitNodes = nbNodes / 2,
       mapSide = 1000)
 
-    val open = Array.tabulate((nbConditionalEdges * 0.7).toInt)(_ => 1).toList
-    val closed = Array.tabulate((nbConditionalEdges * 0.3).toInt)(_ => 0).toList
-    val openConditions = Random.shuffle(open ::: closed)
+    val openConditions = Array.tabulate(nbConditionalEdges)(_ => if (Random.nextFloat() < 0.7) 1 else 0)
+
+    /*
+    println("----------")
+    println(s"Graph:\n$graph")
+    println("----------")
+    println(s"Graph DOT:\n${graph.toDOT}")
+    println("----------")
+    println(s"Open Conditions: \n")
+    for {i <- openConditions.indices} { if (openConditions(i) == 1) print(s"$i ") }
+    println()
+    println("----------")
+    println(s"Closed Conditions: \n")
+    for {i <- openConditions.indices} { if (openConditions(i) == 0) print(s"$i ") }
+    println()
+     */
 
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph, _ => true)
-    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a: Int, b: Int) => underApproxDistanceMatrix(a)(b))
+    val aStar = new RevisableAStar(graph,
+      underApproximatingDistance = underApproxDistanceMatrix(_)(_))
 
     for (nodeFrom <- graph.nodes) {
       for (nodeTo <- graph.nodes){
+        underApproxDistanceMatrix(nodeFrom.id)(nodeTo.id) should be (underApproxDistanceMatrix(nodeTo.id)(nodeFrom.id))
 
         val res1 = aStar.search(nodeFrom, nodeTo, openConditions(_) == 1, includePath = true)
         val res2 = aStar.search(nodeTo, nodeFrom, openConditions(_) == 1, includePath = true)
+
         (res1, res2) match {
-          case (Distance(_, _, dist1, conditions1, _, path1), Distance(_, _, dist2, conditions2, _, path2)) =>
+          case (Distance(_, _, dist1, conditions1, unl1, path1), Distance(_, _, dist2, conditions2, unl2, path2)) =>
+
+            /*
+            println("--------------------")
+            println(s"From $nodeFrom to $nodeTo: $dist1")
+            println(path1)
+            println(conditions1)
+            println(unl1)
+            println(s"From $nodeTo to $nodeFrom: $dist2")
+            println(path2)
+            println(conditions2)
+            println(unl2)
+             */
+
+            dist1 should be >= underApproxDistanceMatrix(nodeFrom.id)(nodeTo.id)
+            dist2 should be >= underApproxDistanceMatrix(nodeFrom.id)(nodeTo.id)
+
             dist1 should be(dist2)
             if (path1.isDefined) {
 
@@ -203,10 +236,11 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
     val openConditions = Random.shuffle(open ::: closed)
 
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
-    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b))
+    val aStar = new RevisableAStar(graph,
+      underApproximatingDistance = underApproxDistanceMatrix(_)(_))
     val gen = for{
-      n1 <- Gen.oneOf(graph.nodes)
-      n2 <- Gen.oneOf(graph.nodes)
+      n1 <- Gen.oneOf(graph.nodes.toIndexedSeq)
+      n2 <- Gen.oneOf(graph.nodes.toIndexedSeq)
     } yield(n1,n2)
 
     val iterations = PosInt.from(Math.pow(graph.nodes.length,2).toInt).get
@@ -223,13 +257,13 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
             // We have a distance between node1 and node2
             // Closing or opening some random edges that are not in 'required' nor 'unlocking'
             for(i <- 0 until 20){
-
-              val tempConditions = scrambleAllConditionsExcept(openConditions,required.toList ::: unlocking.toList)
+              val tempConditions = scrambleAllConditionsExcept(openConditions,(required ++ unlocking).toList)
               val tempResult = aStar.search(node1,node2,tempConditions(_) == 1)
               tempResult should be (a[Distance])
               tempResult match{
                 case Distance(_, _, distanceAfter,_,_, _) =>
                   distanceAfter should be (distanceBefore) // The distance should not have changed
+                case _ => // Unreachable
               }
             }
 
@@ -253,10 +287,10 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
     val openConditions = Random.shuffle(open ::: closed)
 
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
-    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b))
-    val gen = for{
-      n1 <- Gen.oneOf(graph.nodes)
-      n2 <- Gen.oneOf(graph.nodes)
+    val aStar = new RevisableAStar(graph, underApproximatingDistance = underApproxDistanceMatrix(_)(_))
+    val gen = for {
+      n1 <- Gen.oneOf(graph.nodes.toIndexedSeq)
+      n2 <- Gen.oneOf(graph.nodes.toIndexedSeq)
     } yield(n1,n2)
 
     val iterations = PosInt.from(Math.pow(graph.nodes.length,2).toInt).get
@@ -280,6 +314,7 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
               tempResult match{
                 case Distance(_, _, distanceAfter,_,_, _) =>
                   distanceAfter should be <= distanceBefore
+                case _ => //Unreachable
               }
             }
 
@@ -303,10 +338,10 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
     val openConditions = Random.shuffle(open ::: closed)
 
     val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
-    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b))
+    val aStar = new RevisableAStar(graph, underApproximatingDistance = underApproxDistanceMatrix(_)(_))
     val gen = for{
-      n1 <- Gen.oneOf(graph.nodes)
-      n2 <- Gen.oneOf(graph.nodes)
+      n1 <- Gen.oneOf(graph.nodes.toIndexedSeq)
+      n2 <- Gen.oneOf(graph.nodes.toIndexedSeq)
     } yield(n1,n2)
 
     val iterations = PosInt.from(Math.pow(graph.nodes.length,2).toInt).get
@@ -355,7 +390,7 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
       val openConditions = Random.shuffle(open ::: closed)
 
       val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph, _ => true)
-      val aStar = new RevisableAStar(graph, underApproximatingDistance = (a: Int, b: Int) => underApproxDistanceMatrix(a)(b))
+      val aStar = new RevisableAStar(graph, underApproximatingDistance = underApproxDistanceMatrix(_)(_))
 
       for (nodeFrom <- graph.nodes) {
         for (nodeTo <- graph.nodes){
@@ -374,11 +409,11 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
     }
   }
 
-  def scrambleAllConditionsExcept(conditions: List[Long], except :List[Int], setTo :Int = -1): List[Long] ={
+  def scrambleAllConditionsExcept(conditions: List[Long], except :List[Int], setTo :Int = -1): List[Long] = {
 
     var getNewState = () => setTo
-    if(setTo == -1){
-      getNewState = () => if(Random.nextDouble() > 0.5) 0 else 1
+    if(setTo == -1) {
+      getNewState = () => if (Random.nextDouble() > 0.5) 0 else 1
     }
 
     conditions.zipWithIndex.map({case (e,i) =>

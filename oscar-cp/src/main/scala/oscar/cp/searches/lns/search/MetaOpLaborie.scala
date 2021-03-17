@@ -13,7 +13,7 @@ import scala.util.Random
   */
 class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig) extends ALNSSearchImpl(solver, vars, config) {
 
-  val tolerance: Double = config.metaParameters.getOrElse('tolerance, 0.5).asInstanceOf[Double]
+  val tolerance: Double = config.metaParameters.getOrElse(Symbol("tolerance"), 0.5).asInstanceOf[Double]
   override val stagnationThreshold = 10
 
   override lazy val relaxStore: AdaptiveStore[ALNSOperator] = new RouletteWheel[ALNSOperator](
@@ -38,13 +38,13 @@ class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
 
     val t = timeInSearch
 
-    relaxWeights.zipWithIndex.foreach{case(score, index) =>
-      history += ((t, relaxOps(index).name, score))
-    }
-
-    searchWeights.zipWithIndex.foreach{case(score, index) =>
-      history += ((t, searchOps(index).name, score))
-    }
+//    relaxWeights.zipWithIndex.foreach{case(score, index) =>
+//      history += ((t, relaxOps(index).name, score))
+//    }
+//
+//    searchWeights.zipWithIndex.foreach{case(score, index) =>
+//      history += ((t, searchOps(index).name, score))
+//    }
 
     timeLearning()
 
@@ -66,7 +66,7 @@ class MetaOpLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig)
   protected def timeLearning(): Unit = {
     learning = true
     iterTimeout = config.timeout
-    val orderedBaseline = config.metaParameters.getOrElse('opOrder, None).asInstanceOf[Option[Seq[String]]]
+    val orderedBaseline = config.metaParameters.getOrElse(Symbol("opOrder"), None).asInstanceOf[Option[Seq[String]]]
     val orderedRelax = if(orderedBaseline.isDefined) {
       val mapping = orderedBaseline.get.map(_.split("_")(0)).zipWithIndex.reverse.toMap
       relaxOps.toSeq.sortBy(op => mapping.getOrElse(op.name, mapping.size))

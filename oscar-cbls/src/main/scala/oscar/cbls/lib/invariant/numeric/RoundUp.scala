@@ -14,8 +14,6 @@
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  * ****************************************************************************
  */
-package oscar.cbls.lib.invariant.numeric
-
 /**
  * *****************************************************************************
  * Contributors:
@@ -23,10 +21,14 @@ package oscar.cbls.lib.invariant.numeric
  *         by Renaud De Landtsheer
  * ****************************************************************************
  */
+package oscar.cbls.lib.invariant.numeric
 
 import oscar.cbls._
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingIntValue, Domain, IntInvariant, IntNotificationTarget, IntValue, Store}
+import oscar.cbls.core.propagation.Checker
 import oscar.cbls.lib.invariant.logic.LazyIntInt2Int
+
+import scala.annotation.tailrec
 
 /**
  * Maintains output to the smallest value such that
@@ -54,7 +56,7 @@ import oscar.cbls.lib.invariant.logic.LazyIntInt2Int
  */
 case class RoundUpModulo(from: IntValue, duration: IntValue, period: Long, zone: Long, shift: Long)
   extends LazyIntInt2Int(from, duration, (from: Long, duration: Long) => {
-    require(duration <= period - zone, "duration " + duration + "<= period " + period + "- zone " + zone)
+    require(duration <= period - zone, s"duration $duration<= period $period- zone $zone")
     require(period != 0L)
     val reducedfrom = (from + period - shift) % period
     if (reducedfrom < zone)
@@ -63,8 +65,7 @@ case class RoundUpModulo(from: IntValue, duration: IntValue, period: Long, zone:
       from + (period + zone - reducedfrom)
     else
       from
-  }, Domain(from.min , from.max + zone)) {
-}
+  }, Domain(from.min , from.max + zone))
 
 object TestRoundUpModulo extends App {
 
@@ -79,7 +80,7 @@ object TestRoundUpModulo extends App {
       case 6L => "di"
 
     }
-  val m = new Store()
+  val m = Store()
 
   val from = CBLSIntVar(m, 0L, fullRange, "from")
   val duration = CBLSIntVar(m, 2L, fullRange, "duration")
@@ -88,10 +89,9 @@ object TestRoundUpModulo extends App {
 
   m.close()
 
-  for (i <- 0L to 20L) {
+  for (i <- 0 to 20) {
     from := i
     println(n2day(from.value) + " " + from.value + " " + duration + " " + n2day(r.value) + " " + r.value)
-
   }
 }
 
@@ -125,11 +125,11 @@ case class RoundUpCustom(from: IntValue, duration: IntValue, forbiddenZones: Lis
   this := roundup()
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
     scheduleForPropagation()
   }
 
-  override def performInvariantPropagation() {
+  override def performInvariantPropagation(): Unit = {
     this := roundup()
   }
 
@@ -153,6 +153,7 @@ case class RoundUpCustom(from: IntValue, duration: IntValue, forbiddenZones: Lis
    * with the next one (the first one in the sorted list), nothing to do
    * (inductive case) else merges the current zone with the next one
    */
+  @tailrec
   private def absorb(a: Long, b: Long, list: List[(Long, Long)]): List[(Long, Long)] = {
     list match {
       case (c, d) :: tailTail if (b >= c) => absorb(a, (d max b), tailTail)
@@ -164,18 +165,18 @@ case class RoundUpCustom(from: IntValue, duration: IntValue, forbiddenZones: Lis
     var newStart: Long = from.value
     var lastZoneBeforeNewStart = findLastStartBefore(from.value)
     while (true) {
-      if (lastZoneBeforeNewStart != -1L
+      if (lastZoneBeforeNewStart != -1
         && forbiddenEnds(lastZoneBeforeNewStart) >= newStart) {
         //we cannot start here, we are in a forbidden zone
         //the zone before start does not change,
         //we just need to wait for the end of this zone
         newStart = forbiddenEnds(lastZoneBeforeNewStart) + 1L
-      } else if ((lastZoneBeforeNewStart + 1L < forbiddenStarts.size)
-        && (forbiddenStarts(lastZoneBeforeNewStart + 1L) <= newStart + duration.value - 1L)) {
+      } else if ((lastZoneBeforeNewStart + 1 < forbiddenStarts.length)
+        && (forbiddenStarts(lastZoneBeforeNewStart + 1) <= newStart + duration.value - 1L)) {
         //we can start here, but we end up in a forbidden zone
         //we have to start after the next zone
-        newStart = forbiddenEnds(lastZoneBeforeNewStart + 1L) + 1L
-        lastZoneBeforeNewStart += 1L
+        newStart = forbiddenEnds(lastZoneBeforeNewStart + 1) + 1L
+        lastZoneBeforeNewStart += 1
       } else {
         return newStart
       }
@@ -183,11 +184,11 @@ case class RoundUpCustom(from: IntValue, duration: IntValue, forbiddenZones: Lis
     1L
   }
 
-  private def findLastStartBefore(d: Long): Long = {
-    var up = forbiddenStarts.size - 1L
-    var down = -1L
-    while (down + 1L < up) {
-      val mid = (up + down) / 2L
+  private def findLastStartBefore(d: Long): Int = {
+    var up = forbiddenStarts.length - 1
+    var down = -1
+    while (down + 1 < up) {
+      val mid = (up + down) / 2
       if (forbiddenStarts(mid) == d) {
         return mid
       } else if (forbiddenStarts(mid) < d) {
@@ -200,7 +201,7 @@ case class RoundUpCustom(from: IntValue, duration: IntValue, forbiddenZones: Lis
     else down
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
     c.check(from.value <= this.value)
     for ((a, b) <- forbiddenZones) {
       c.check((this.value > b) || (this.value + duration.value - 1L < a), Some("from.value = " + from.value + " (this.value " + this.value + " > zoneEnd " + b + ") || (this.value " + this.value + "+ duration.value " + duration.value + " -1L < zoneStart " + a + ")"))
@@ -209,7 +210,7 @@ case class RoundUpCustom(from: IntValue, duration: IntValue, forbiddenZones: Lis
     for (i <- from.value until this.value) {
       c.check(forbiddenZones.exists(ab =>
         !((i + duration.value - 1L < ab._1) || (ab._2 < i))),
-        Some("should be not suitable at position " + i + " " + duration + " exists:"
+        Some(s"should be not suitable at position $i $duration exists:"
           + forbiddenZones.exists(ab =>
             !((i + duration.value - 1L < ab._1) || (ab._2 < i)))
           + "filter:" + forbiddenZones.filter(ab =>
@@ -231,16 +232,16 @@ object TestRoundUpCustom extends App {
       case 6L => "di"
 
     }
-  val m = new Store()
+  val m = Store()
 
   val from = CBLSIntVar(m, 0L, fullRange, "from")
   val duration = CBLSIntVar(m, 2L, fullRange, "duration")
 
-  val r = new RoundUpCustom(from, duration, List((3L, 4L), (9L, 12L)))
+  val r = RoundUpCustom(from, duration, List((3L, 4L), (9L, 12L)))
 
   m.close()
 
-  for (i <- 0L to 20L) {
+  for (i <- 0 to 20) {
     from := i
     println(n2day(from.value) + " " + from.value + " " + duration + " " + n2day(r.value) + " " + r.value)
   }
@@ -279,16 +280,16 @@ case class PreEmption(startTime: IntValue, duration: IntValue,
         }
       }
       newDuration
-    }, Domain(duration.min , (if (resume) {
+    }, Domain(duration.min, if (resume) {
       duration.max + preEmptDuration
     } else {
       (preEmptStartTime - startTime.min) + preEmptDuration
-    }))) {
+    })) {
 }
 
 // replace with a so-called test
 object TestPreEmption extends App {
-  val m = new Store()
+  val m = Store()
 
   val from = CBLSIntVar(m, 0L, fullRange, "from")
   val duration = CBLSIntVar(m, 4L, fullRange, "duration")

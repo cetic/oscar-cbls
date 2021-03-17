@@ -28,7 +28,6 @@ import oscar.cbls.lib.invariant.minmax._
 import oscar.cbls.lib.search.LinearSelectorClass
 import oscar.cbls.util.StopWatch
 
-import scala.language.postfixOps
 import scala.util.Random
 
 //Beware: this requires a lot of memory, so I use to put this in the command line.
@@ -48,56 +47,56 @@ import scala.util.Random
  */
 object NQueensBench extends LinearSelectorClass(true) with StopWatch{
 
-  def nStrings(N: Long, C: String): String = if (N <= 0L) "" else "" + C + nStrings(N - 1L, C)
-  def padToLength(s: String, l: Long) = (s + nStrings(l, " ")).substring(0L, l)
+  def nStrings(N: Long, C: String): String = if (N <= 0) "" else s"$C${nStrings(N - 1, C)}"
+  def padToLength(s: String, l: Int) = (s + nStrings(l, " ")).substring(0, l)
 
   val help = "Benchmarking NQueen \n" +
-    "advise: specify -Xms1000M -Xmx1000M (eg. 2000LM if going for 50Lk Queens)\n" +
+    "advise: specify -Xms1000M -Xmx1000M (eg. 2000M if going for 50k Queens)\n" +
     "takes four parameters or zero\n"+
-    "if zero parameters, solves 1Lk, 2Lk ... 10Lk queens, with an extra dry run of 1Lk queen at the beginning\n"+
+    "if zero parameters, solves 1k, 2k ... 10k queens, with an extra dry run of 1k queen at the beginning\n"+
     "if four parameters: nQueen nRun random dryRun (they must all be present)\n"+
-    "example: 50000L 10L 0L 0L\n"+
+    "example: 50000 10 0 0\n"+
     "nQueen is the number of queens to test\n"+
     "nRun is the number of time this should be tested\n"+
-    "dryRun: 0L for no dry run, 1L for a dry run\n"+
-    "random 1L for a real random, 0L for a pseudo-random. pseudo-random it will exhibit the same trajectory every time you call the bench\n"
+    "dryRun: 0 for no dry run, 1 for a dry run\n"+
+    "random 1 for a real random, 0 for a pseudo-random. pseudo-random it will exhibit the same trajectory every time you call the bench\n"
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit ={
 
     println(help)
-    if (args.length<1L) {
+    if (args.length<1) {
       println("Benchmarking NQueen - this takes time")
-      println(padToLength("N", 15L) + padToLength("tClose[ms]", 15L) + padToLength("tTotal[ms]", 15L) + "it")
+      println(padToLength("N", 15) + padToLength("tClose[ms]", 15) + padToLength("tTotal[ms]", 15) + "it")
 
       // first run could have some overhead so ignoring it
-      SolveNQueen(1000L,Random)
+      SolveNQueen(1000,Random)
 
       // multiple runs
-      for (n <- 1000L to 10000L by 1000L){
+      for (n <- 1000 to 10000 by 1000){
         SolveNQueen(n,Random)
         System.gc()
       }
 
     } else {
-      val N:Long=args(0L).toInt
-      val nRun = args(1L).toInt
-      val pseudoRandom = args(2L).toInt == 0L
-      val r:Random = if(args(2L).toInt == 0L) new Random(0L) else new Random(System.currentTimeMillis())
-      val dryRun = args(3L).toInt != 0L
+      val N:Int=args(0).toInt
+      val nRun = args(1).toInt
+      val pseudoRandom = args(2).toInt == 0
+      val r:Random = if(args(2).toInt == 0) new Random(0) else new Random(System.currentTimeMillis())
+      val dryRun = args(3).toInt != 0
       println("nQueen:" + N + " nRun:" + nRun + (if (dryRun) " withDryRun" else " noDryRun") + (if(pseudoRandom) " deterministicRandom" else " realRandom"))
-      println(padToLength("N", 15L) + padToLength("tClose[ms]", 15L) + padToLength("tTotal[ms]", 15L) + "it")
-      if(dryRun) SolveNQueen(1000L,r)
-      for(i <- 1L to nRun)
+      println(padToLength("N", 15) + padToLength("tClose[ms]", 15) + padToLength("tTotal[ms]", 15) + "it")
+      if(dryRun) SolveNQueen(1000,r)
+      for(i <- 1 to nRun)
         SolveNQueen(N,r)
     }
   }
 
-  def SolveNQueen(N:Long, r:Random){
-    print(padToLength("" + N, 15L))
+  def SolveNQueen(N:Int, r:Random): Unit ={
+    print(padToLength("" + N, 15))
 
     startWatch()
-    val queensRange:Range = Range(0L,N)
-    val tabulength = 10L
+    val queensRange:Range = Range(0,N)
+    val tabulength = 10
 
     val m = Store()
     val init = Random.shuffle(queensRange.toList).iterator
@@ -122,10 +121,10 @@ object NQueensBench extends LinearSelectorClass(true) with StopWatch{
       require(it.value < N, "NQueens seems to diverge: " + it + " N "+ N)
       val oldviolation:Long = c.violation.value
 
-      selectFirstDo(nonTabuMaxViolQueens.value)((q1:Long) => {
-        selectFirstDo(nonTabuQueens.value, (q2:Long) => {
+      selectFirstDo(nonTabuMaxViolQueens.value)((q1:Int) => {
+        selectFirstDo(nonTabuQueens.value, (q2:Int) => {
           q2!=q1 && c.swapVal(queens(q1),queens(q2)) < oldviolation
-        })((q2:Long) => {
+        })((q2:Int) => {
           //println("" + it.value + " swapping " + q1 +"(tabu: " + tabu(q1) + ") and " + q2 +"(tabu: " + tabu(q2) + ")")
           queens(q1) :=: queens(q2)
           tabu(q1) := it.value + tabulength
@@ -134,7 +133,7 @@ object NQueensBench extends LinearSelectorClass(true) with StopWatch{
         },()=>println("Warning: Tabu it too big compared to queens count"))},
         ()=>println("Warning: Tabu it too big compared to queens count"))
 
-      it ++
+      it.++()
 
     }
 

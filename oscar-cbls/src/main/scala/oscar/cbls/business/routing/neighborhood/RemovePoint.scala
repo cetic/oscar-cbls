@@ -1,30 +1,4 @@
-/**
-  * *****************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  * ****************************************************************************
-  */
-/**
-  * *****************************************************************************
-  * Contributors:
-  *     This code has been initially developed by Ghilain Florent.
-  *     Refactored (in respect with the new architecture) by Yoann Guyot.
-  * ****************************************************************************
-  */
-
-package oscar.cbls.business.routing.neighborhood
-
-/*******************************************************************************
+/*****************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
   * the Free Software Foundation, either version 2.1 of the License, or
@@ -38,11 +12,18 @@ package oscar.cbls.business.routing.neighborhood
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+/**
+  * *****************************************************************************
+  * Contributors:
+  *     This code has been initially developed by Ghilain Florent.
+  *     Refactored (in respect with the new architecture) by Yoann Guyot.
+  * ****************************************************************************
+  */
+package oscar.cbls.business.routing.neighborhood
 
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, EasyNeighborhood}
-import oscar.cbls._
+import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
 /**
   * Removes a point of route.
@@ -56,7 +37,7 @@ import oscar.cbls._
   * @author yoann.guyot@cetic.be
   * @author Florent Ghilain (UMONS)
   */
-case class RemovePoint(relevantPointsToRemove:()=>Iterable[Long],
+case class RemovePoint(relevantPointsToRemove:()=>Iterable[Int],
                        vrp: VRP,
                        neighborhoodName:String = "RemovePoint",
                        selectNodeBehavior:LoopBehavior = First(),
@@ -65,17 +46,17 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Long],
   extends EasyNeighborhoodMultiLevel[RemovePointMove](neighborhoodName){
 
   //the indice to start with for the exploration
-  var startIndice: Long = 0
+  var startIndice: Int = 0
 
-  var pointToRemove:Long = -1L
-  var positionOfPointToRemove:Long = -1L
+  var pointToRemove:Int = -1
+  var positionOfPointToRemove:Int = -1
 
   val v = vrp.v
   val seq = vrp.routes
 
   override def exploreNeighborhood(initialObj: Long): Unit = {
 
-    val seqValue = seq.defineCurrentValueAsCheckpoint(true)
+    val seqValue = seq.defineCurrentValueAsCheckpoint()
 
     def evalObjAndRollBack() : Long = {
       val a = obj.value
@@ -92,10 +73,10 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Long],
       pointToRemove = it.next()
 
       if(pointToRemove >= v){ //otherwise, it is a vehicle start, and we do not try to remove it.
-        seq.value.positionOfAnyOccurrence(pointToRemove) match {
+        seq.value.explorerAtAnyOccurrence(pointToRemove) match {
           case None => ;
-          case Some(p) =>
-            positionOfPointToRemove = p
+          case Some(e) =>
+            positionOfPointToRemove = e.position
             doMove(positionOfPointToRemove)
             if (evaluateCurrentMoveObjTrueIfSomethingFound(evalObjAndRollBack())) {
               notifyFound()
@@ -104,10 +85,10 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Long],
       }
     }
     seq.releaseTopCheckpoint()
-    startIndice = pointToRemove + 1L
+    startIndice = pointToRemove + 1
   }
 
-  override def instantiateCurrentMove(newObj: Long) =
+  override def instantiateCurrentMove(newObj: Long): RemovePointMove =
     RemovePointMove(
       positionOfPointToRemove,
       pointToRemove,
@@ -117,17 +98,17 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Long],
       this,
       neighborhoodNameToString)
 
-  def doMove(positionOfPointToRemove: Long) {
+  def doMove(positionOfPointToRemove: Int): Unit = {
     seq.remove(positionOfPointToRemove)
   }
 
-  def doMovePositionIndependent(valueToRemove: Long) {
+  def doMovePositionIndependent(valueToRemove: Int): Unit = {
     val s = seq.newValue
     seq.remove(s.positionOfAnyOccurrence(valueToRemove).get)
   }
 
   //this resets the internal state of the Neighborhood
-  override def reset(){startIndice = 0L}
+  override def reset(): Unit ={startIndice = 0}
 }
 
 /**
@@ -139,8 +120,8 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Long],
   * @author yoann.guyot@cetic.be
   * @author Florent Ghilain (UMONS)
   */
-case class RemovePointMove(positionOfPointToRemove: Long,
-                           pointToRemove:Long,
+case class RemovePointMove(positionOfPointToRemove: Int,
+                           pointToRemove:Int,
                            positionIndependentMoves:Boolean,
                            vrp:VRP,
                            override val objAfter:Long,
@@ -148,9 +129,9 @@ case class RemovePointMove(positionOfPointToRemove: Long,
                            override val neighborhoodName:String = null)
   extends VRPSMove(objAfter, neighborhood, neighborhoodName, vrp){
 
-  override def impactedPoints: List[Long] = List(pointToRemove)
+  override def impactedPoints: List[Int] = List(pointToRemove)
 
-  override def commit() {
+  override def commit(): Unit = {
     if(positionIndependentMoves){
       neighborhood.doMovePositionIndependent(pointToRemove)
     }else{
@@ -158,7 +139,7 @@ case class RemovePointMove(positionOfPointToRemove: Long,
     }
   }
 
-  override def toString: String = "RemovePoint(point:" + pointToRemove + objToString + ")"
+  override def toString: String = s"RemovePoint(point:$pointToRemove$objToString)"
 
-  override def shortString: String = "RemovePoint(" + pointToRemove + (if (positionIndependentMoves) " pi" else "") + ")"
+  override def shortString: String = s"RemovePoint($pointToRemove${if (positionIndependentMoves) " pi" else ""})"
 }

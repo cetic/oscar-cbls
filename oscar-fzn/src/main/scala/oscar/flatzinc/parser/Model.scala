@@ -19,7 +19,7 @@ package oscar.flatzinc.parser
 
 import oscar.flatzinc.model.FZProblem
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.collection.mutable.{Map, Set => MSet}
 import oscar.flatzinc.parser.intermediatemodel._
 import oscar.flatzinc.model.Annotation
@@ -47,12 +47,12 @@ class OldModel(val log: Log, val acceptAnyCstr: Boolean) {
 
   def handleModel(m:ASTModel) = {
     //Add params
-    for(pd:ASTParamDecl <- m.getParamDecls){
+    for(pd:ASTParamDecl <- m.getParamDecls.asScala){
 
     }
 
     //Add Vars
-    for(vd:ASTVarDecl <- m.getVarDecls){
+    for(vd:ASTVarDecl <- m.getVarDecls.asScala){
 
     }
   }
@@ -62,7 +62,7 @@ class OldModel(val log: Log, val acceptAnyCstr: Boolean) {
       case array:ASTArray =>
         val a = new ArrayOfElement()
         a.typ = new Type(Type.NULL); a.typ.isArray = true;  a.typ.size = 0
-        for(e <- array.getElems){
+        for(e <- array.getElems.asScala){
           val tmp:Element = elementFromASTLit(e)
           a.elements.add(tmp); a.typ.size +=1;if(tmp.typ.isVar){a.typ.isVar}
         }
@@ -202,7 +202,7 @@ class OldModel(val log: Log, val acceptAnyCstr: Boolean) {
   }
   
   
-  def addAnnArg(a: Annotation, x: Any){
+  def addAnnArg(a: Annotation, x: Any): Unit ={
 	val newarg = x match{
       case e: Element =>    
         if(e.typ.typ==Type.INT)

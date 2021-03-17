@@ -1,5 +1,8 @@
 package oscar.cbls.lib.invariant.seq
 
+import oscar.cbls.core.computation.{ChangingSeqValue, Domain, IntInvariant, SeqNotificationTarget, SeqUpdate, SeqValue}
+import oscar.cbls.core.propagation.Checker
+
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -15,20 +18,18 @@ package oscar.cbls.lib.invariant.seq
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls._
-import oscar.cbls.core._
 
 /**
- * length of sequence (rememver that a sequecne can include the same Long value several times)
+ * length of sequence (rememver that a sequecne can include the same Int value several times)
  * @param v is a SeqValue, containing a number of values, to count
  * @param maxSequenceLength is the maximal length of the sequence
  * @author renaud.delandtsheer@cetic.be
  */
-case class Length(v: SeqValue,maxSequenceLength:Long = Long.MaxValue)
-  extends IntInvariant(v.value.size, Domain(0L , maxSequenceLength))
+case class Length(v: SeqValue,maxSequenceLength:Int = Int.MaxValue)
+  extends IntInvariant(v.value.size, Domain(0 , maxSequenceLength))
   with SeqNotificationTarget{
 
-  setName("Length(" + v.name + ")")
+  setName(s"Length(${v.name})")
 
   registerStaticAndDynamicDependency(v)
   finishInitialization()
@@ -37,8 +38,7 @@ case class Length(v: SeqValue,maxSequenceLength:Long = Long.MaxValue)
     this := changes.newValue.size
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit ={
     c.check(this.value == v.value.size, Some("this.value == v.value.size"))
   }
 }
-

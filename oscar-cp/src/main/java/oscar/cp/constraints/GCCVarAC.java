@@ -22,7 +22,7 @@ import oscar.cp.core.Constraint;
 import oscar.cp.core.CPStore;
 import oscar.cp.core.variables.CPVar;
 import scala.collection.Iterable;
-import scala.collection.JavaConversions;
+import scala.jdk.javaapi.CollectionConverters;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -36,49 +36,49 @@ import java.util.List;
 public class GCCVarAC extends Constraint {
 
 
-	private final int NONE = -Integer.MIN_VALUE;
+	protected final int NONE = -Integer.MIN_VALUE;
 
 	//var
-	private CPIntVar [] x;
-	private CPIntVar [] o;
-	private int minValInit;
-	private int minVal;
-	private int maxVal;
-	private int nbVals;
+	protected CPIntVar [] x;
+	protected CPIntVar [] o;
+	protected int minValInit;
+	protected int minVal;
+	protected int maxVal;
+	protected int nbVals;
 
 	// value
-	private int []  low;
-	private int []  up;
-	private int []  flow;
+	protected int []  low;
+	protected int []  up;
+	protected int []  flow;
 
 	// flow
-	private int   sizeFlow;
-	private int[] varMatch;
-	private int[] next;
-	private int[] prev;
-	private int[] valMatch;
-	private int[] varSeen;
-	private int[] valSeen;
-	private int   magic;
+	protected int   sizeFlow;
+	protected int[] varMatch;
+	protected int[] next;
+	protected int[] prev;
+	protected int[] valMatch;
+	protected int[] varSeen;
+	protected int[] valSeen;
+	protected int   magic;
 
-	private int dfs;
-	private int component;
+	protected int dfs;
+	protected int component;
 
-	private int[] varComponent;
-	private int[] varDfs;
-	private int[] varHigh;
+	protected int[] varComponent;
+	protected int[] varDfs;
+	protected int[] varHigh;
 
-	private int[] valComponent;
-	private int[] valDfs;
-	private int[] valHigh;
+	protected int[] valComponent;
+	protected int[] valDfs;
+	protected int[] valHigh;
 
-	int sinkComponent;
-	int sinkDfs;
-	int sinkHigh;
+	protected int sinkComponent;
+	protected int sinkDfs;
+	protected int sinkHigh;
 
-	private int[] stack;
-	private int[] type;
-	int top;
+	protected int[] stack;
+	protected int[] type;
+	protected int top;
 
 
     /**
@@ -97,14 +97,14 @@ public class GCCVarAC extends Constraint {
 		this.minVal = minval;
 		this.maxVal = minval+o.length-1;
 		nbVals = maxVal-minVal+1;
-		this.priorityL2_$eq(CPStore.MAXPRIORL2()-3);
+		this.priorityL2_$eq(CPStore.MaxPriorityL2()-3);
 	}
 
 	@Override
 	public Iterable<CPVar> associatedVars() {
 		List<CPVar> l = new LinkedList<>(Arrays.asList(x));
 		l.addAll(Arrays.asList(o));
-		return JavaConversions.iterableAsScalaIterable(l);
+		return CollectionConverters.asScala(l);
 	}
 
 	@Override
@@ -159,7 +159,7 @@ public class GCCVarAC extends Constraint {
 	}
 
 
-	private void findValueRange() {
+	protected void findValueRange() {
 		int prev_minval = minVal;
 
 		for(int i = 0; i < x.length; i++) {
@@ -194,7 +194,7 @@ public class GCCVarAC extends Constraint {
 	}
 
 
-	private void allocateFlow() {
+	protected void allocateFlow() {
 		// flow
 		flow = new int[nbVals];
 		// first variable matched
@@ -225,7 +225,7 @@ public class GCCVarAC extends Constraint {
 	}
 
 	//assigns value v to variable k and update structures: sizeFlow, flow, varMatch, prev, next, valMatch
-	private void assign(int k,int v){
+	protected void assign(int k,int v){
 		sizeFlow++;
 		unassign(k);
 		// k is now first on the list of v
@@ -240,7 +240,7 @@ public class GCCVarAC extends Constraint {
 	}
 
 	//unassings variable k and updates appropriately the structures: sizeFlow, flow, varMatch, prev, next, valMatch
-	private void unassign(int k){
+	protected void unassign(int k){
 		if (varMatch[k] != NONE) { // this guy is assigned; must be removed
 			sizeFlow--;
 			int w = varMatch[k];
@@ -263,7 +263,7 @@ public class GCCVarAC extends Constraint {
 	}
 
 	//finds a initial flow for both the underflow and overflow
-	private void findInitialFlow() {
+	protected void findInitialFlow() {
 		sizeFlow = 0;
 		for(int k = 0; k < x.length; k++) {
 			int mx = x[k].getMin();
@@ -278,7 +278,7 @@ public class GCCVarAC extends Constraint {
 		}
 	}
 
-	private boolean findMaximalFlow() {
+	protected boolean findMaximalFlow() {
 		if (sizeFlow < x.length) {
 			for(int k = 0; k < x.length; k++) {
 				if (varMatch[k] == NONE) {
@@ -291,7 +291,7 @@ public class GCCVarAC extends Constraint {
 		return true;
 	}
 
-	private boolean findAugmentingPath(int k) {
+	protected boolean findAugmentingPath(int k) {
 		if (varSeen[k] != magic) {
 			varSeen[k] =  magic;
 			int mx = x[k].getMin();
@@ -310,7 +310,7 @@ public class GCCVarAC extends Constraint {
 		return false;
 	}
 
-	private boolean findAugmentingPathValue(int v) {
+	protected boolean findAugmentingPathValue(int v) {
 		int vind = v-minVal;
 		if (valSeen[vind] != magic) {
 			valSeen[vind] = magic;
@@ -328,7 +328,7 @@ public class GCCVarAC extends Constraint {
 		return false;
 	}
 
-	private boolean findFeasibleFlow() {
+	protected boolean findFeasibleFlow() {
 		for(int v = minVal; v <= maxVal; v++) {
 			while (flow[v-minVal] < low[v-minVal])
 				if (!findFeasibleFlowTo(v))
@@ -337,7 +337,7 @@ public class GCCVarAC extends Constraint {
 		return true;
 	}
 
-	private boolean findFeasibleFlowTo(int q) { //q is a value
+	protected boolean findFeasibleFlowTo(int q) { //q is a value
 		magic++;
 		for(int v = minVal; v <= maxVal; v++) {
 			if (flow[v-minVal] > low[v-minVal])
@@ -347,7 +347,7 @@ public class GCCVarAC extends Constraint {
 		return false;
 	}
 
-	private boolean findFeasibleFlowValue(int v,int q) { //try to transfer some flow from v to q
+	protected boolean findFeasibleFlowValue(int v,int q) { //try to transfer some flow from v to q
 		int vind = v-minVal;
 		if (valSeen[vind] != magic) {
 			valSeen[vind] = magic;
@@ -369,7 +369,7 @@ public class GCCVarAC extends Constraint {
 		return false;
 	}
 
-	private boolean findFeasibleFlowVar(int k,int q) { //k is a var index, q is a value
+	protected boolean findFeasibleFlowVar(int k,int q) { //k is a var index, q is a value
 		if (varSeen[k] != magic) {
 			varSeen[k] = magic;
 			int mx = x[k].getMin();
@@ -388,7 +388,7 @@ public class GCCVarAC extends Constraint {
 		return false;
 	}
 
-	private void allocateSCC() {
+	protected void allocateSCC() {
 		varComponent = new int[x.length];
 		varDfs = new int[x.length];
 		varHigh = new int [x.length];
@@ -401,7 +401,7 @@ public class GCCVarAC extends Constraint {
 		type  = new int [x.length+nbVals+2];
 	}
 
-	private void prune() {
+	protected void prune() {
 		findSCC();
 		for(int k = 0; k < x.length; k++) {
 			int mx = x[k].getMin();
@@ -418,7 +418,7 @@ public class GCCVarAC extends Constraint {
 		}
 	}
 
-	private void initSCC() {
+	protected void initSCC() {
 		for(int k = 0 ; k < x.length; k++) {
 			varComponent[k] = 0;
 			varDfs[k] = 0;
@@ -438,7 +438,7 @@ public class GCCVarAC extends Constraint {
 		component = 0;
 	}
 
-	private void findSCC() {
+	protected void findSCC() {
 		initSCC();
 		for(int k = 0; k < x.length; k++) {
 			if (varDfs[k] == 0) {
@@ -447,7 +447,7 @@ public class GCCVarAC extends Constraint {
 		}
 	}
 
-	private void findSCCvar(int k) {
+	protected void findSCCvar(int k) {
 		varDfs[k] = dfs--;
 		varHigh[k] = varDfs[k];
 		stack[top] = k;
@@ -490,7 +490,7 @@ public class GCCVarAC extends Constraint {
 		}
 	}
 
-	private void findSCCval(int v) {
+	protected void findSCCval(int v) {
 		int vind = v-minVal;
 		valDfs[vind] = dfs--;
 		valHigh[vind] = valDfs[vind];
@@ -546,7 +546,7 @@ public class GCCVarAC extends Constraint {
 		}
 	}
 
-	private void findSCCsink() {
+	protected void findSCCsink() {
 		sinkDfs  = dfs--;
 		sinkHigh = sinkDfs;
 		stack[top] = NONE;
@@ -585,9 +585,9 @@ public class GCCVarAC extends Constraint {
 			} while (true);
 		}
 	}
-	
-	
-	private boolean decreaseMax(int w) {
+
+
+	protected boolean decreaseMax(int w) {
 		int wind = w-minVal;
 		while (flow[wind] > up[wind])
 			unassign(valMatch[wind]);
@@ -598,15 +598,15 @@ public class GCCVarAC extends Constraint {
 		return true;
 	}
 
-	private boolean increaseMin(int w) {
+	protected boolean increaseMin(int w) {
 		int wind = w-minVal;
 		while (flow[wind] < low[wind])
 			if (!findFeasibleFlowTo(w))
 				return false;
 		return true;
 	}
-	
-	private void pruneBounds() {
+
+	protected void pruneBounds() {
 	   for(int i = 0 ; i < o.length; i++) {
 	         int m = o[i].getMin();
 	         int M = o[i].getMax();
@@ -636,7 +636,7 @@ public class GCCVarAC extends Constraint {
 	   }
 	}
 
-	private void updateBounds() {
+	protected void updateBounds() {
 		for(int i = 0 ; i < o.length; i++) {
 			int v = o[i].getMin();
 			if (v > 0)

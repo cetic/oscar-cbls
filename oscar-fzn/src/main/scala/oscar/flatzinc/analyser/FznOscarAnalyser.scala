@@ -41,7 +41,7 @@ object FznOscarAnalyser extends FznOscarMain{
     log("done")
   }
   
-  def printInfo(model: Model, log: Log){
+  def printInfo(model: Model, log: Log): Unit ={
     val log = new Log(1);
     log("Variables: "+model.problem.variables.size)
     log("Introduced Variables: "+model.problem.variables.filter(v => !v.anns.isEmpty && model.isIntroducedVar(v.id)).size)

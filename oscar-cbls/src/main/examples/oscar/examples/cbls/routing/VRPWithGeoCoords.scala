@@ -2,7 +2,10 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
+import oscar.cbls.business.routing.model.helpers.DistanceHelper
 import oscar.cbls.business.routing.visu.RoutingMapTypes
+import oscar.cbls.core.computation.Store
+import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{Best, First}
 
 object VRPWithGeoCoords extends App{
@@ -29,7 +32,7 @@ object VRPWithGeoCoords extends App{
 class VRPWithGeoCoords(n: Int, v: Int, minLat: Double, maxLat: Double, minLong: Double, maxLong: Double) {
   //////////////////// MODEL ////////////////////
   // The Store : used to store all the model of the problem
-  val store = new Store
+  val store = Store()
 
   // The basic VRP problem, containing the basic needed invariant
   val myVRP = new VRP(store,n,v)
@@ -59,14 +62,14 @@ class VRPWithGeoCoords(n: Int, v: Int, minLat: Double, maxLat: Double, minLong: 
   ////////// Static Pruning (done once before starting the resolution) //////////
 
   // Relevant predecessors definition for each node (here any node can be the precessor of another node)
-  val relevantPredecessorsOfNodes = (node:Long) => myVRP.nodes
+  val relevantPredecessorsOfNodes = (node:Int) => myVRP.nodes
   // Sort them lazily by distance
   val closestRelevantNeighborsByDistance =
     Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistanceMatrix,relevantPredecessorsOfNodes)(_))
 
   ////////// Dynamic pruning (done each time before evaluation a move) //////////
   // Only condition the new neighbor must be routed
-  val routedPostFilter = (node:Long) => (neighbor:Long) => myVRP.isRouted(neighbor)
+  val routedPostFilter = (node:Int) => (neighbor:Int) => myVRP.isRouted(neighbor)
 
   //////////////////// Search Procedure ////////////////////
   ////////// Neighborhood definition //////////
@@ -81,7 +84,7 @@ class VRPWithGeoCoords(n: Int, v: Int, minLat: Double, maxLat: Double, minLong: 
     selectInsertionPointBehavior = Best())) // Inserting after the best node in myVRP.kFirst(10,...)
 
   // Moves a routed node to a better place (best neighbor within the 10 closest nodes)
-  def onePtMove(k:Long) = profile(onePointMove(
+  def onePtMove(k:Int) = profile(onePointMove(
     myVRP.routed,
     () => myVRP.kFirst(k,closestRelevantNeighborsByDistance(_),routedPostFilter),
     myVRP,

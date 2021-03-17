@@ -17,12 +17,9 @@
   *     This code has been initially developed by CETIC www.cetic.be
   *         by Renaud De Landtsheer
   ******************************************************************************/
-
 package oscar.cbls.core.computation
 
 import oscar.cbls.core.propagation.{Checker, PropagationElement}
-
-import scala.language.implicitConversions
 
 /** this is something that has an integer value.
   * this value can be queried, and invariants can be posted on it,
@@ -32,31 +29,31 @@ sealed trait AtomicValue[T] extends Value{
   def value: T
 
   def name:String
-  override def valueString: String = "" + value
+  override def valueString: String = s"$value"
 }
 
 /**An AtomicVar is a variable managed by the [[oscar.cbls.core.computation.Store]] whose type is integer.
   *
-  * @param initialDomain is the domain value of the variable. Some invariants exploit this value to declare fixed size arrays
+  * initialDomain is the domain value of the variable. Some invariants exploit this value to declare fixed size arrays
   * @param initialValue is the value of the variable
   */
 abstract class ChangingAtomicValue[T](initialValue:T)
   extends AbstractVariable with AtomicValue[T]{
 
-  override def snapshot : ChangingAtomicValueSnapShot[T] = new ChangingAtomicValueSnapShot(this,this.value)
-  def valueAtSnapShot(s:Snapshot):T = s(this) match{case s:ChangingAtomicValueSnapShot[T] => s.savedValue case _ => throw new Error("cannot find value of " + this + " in snapshot")}
-
+  override def snapshot : ChangingAtomicValueSnapShot[T] = new ChangingAtomicValueSnapShot(this.uniqueID,this.value)
+  def valueAtSnapShot(s:Solution):T = s(this) match{case s:ChangingAtomicValueSnapShot[T] => s.savedValue case _ => throw new Error("cannot find value of " + this + " in snapshot")}
 
   private[this] var mNewValue: T = initialValue
   private[this] var mOldValue = mNewValue
 
-  override def toString = {
+  override def toString: String = {
     if(model != null && model.propagateOnToString) s"$name:=$value" else s"$name:=$mNewValue"
   }
+
   override def toStringNoPropagate = s"$name:=$mNewValue"
 
   @inline
-  def setValue(v:T){
+  final def setValue(v:T): Unit ={
     if (v != mNewValue){
       mNewValue = v
       notifyChanged()
@@ -72,14 +69,14 @@ abstract class ChangingAtomicValue[T](initialValue:T)
   }
 
   def newValue:T = {
-    assert(model.checkExecutingInvariantOK(definingInvariant),"variable [" + this
-      + "] queried for latest val by non-controlling invariant")
+    assert(model.checkExecutingInvariantOK(definingInvariant),
+      s"variable [$this] queried for latest val by non-controlling invariant")
     mNewValue
   }
 
-  override def performPropagation(){performAtomicPropagation()}
+  override def performPropagation(): Unit ={performAtomicPropagation()}
 
-  final protected def performAtomicPropagation(){
+  final protected def performAtomicPropagation(): Unit ={
     if(mOldValue!=mNewValue){
       val old=mOldValue
       mOldValue=mNewValue  //TODO: the change should be made AFTER the notification
@@ -97,31 +94,33 @@ abstract class ChangingAtomicValue[T](initialValue:T)
     }
   }
 
-  def performNotificationToListeningInv(inv:PropagationElement,id:Long,oldVal:T,newVal:T)
+  def performNotificationToListeningInv(inv:PropagationElement,id:Int,oldVal:T,newVal:T): Unit
 
-  override def checkInternals(c:Checker){
+  override def checkInternals(c:Checker): Unit ={
     c.check(mOldValue == mNewValue)
   }
 
-  protected def :=(v: T) {
+  protected def :=(v: T): Unit ={
     setValue(v)
   }
 
   def compare(that: ChangingAtomicValue[T]): Long = {
-    assert(this.uniqueID != -1L, "cannot compare non-registered PropagationElements this: [" + this + "] that: [" + that + "]")
-    assert(that.uniqueID != -1L, "cannot compare non-registered PropagationElements this: [" + this + "] that: [" + that + "]")
+    assert(this.uniqueID != -1L, s"cannot compare non-registered PropagationElements this: [$this] that: [$that]")
+    assert(that.uniqueID != -1L, s"cannot compare non-registered PropagationElements this: [$this] that: [$that]")
     this.uniqueID - that.uniqueID
   }
 }
 
-class ChangingAtomicValueSnapShot[T](val variable:ChangingAtomicValue[T],val savedValue:T) extends AbstractVariableSnapShot(variable){
-  override protected def doRestore() : Unit = {variable.asInstanceOf[CBLSAtomicVar[T]] := savedValue}
+class ChangingAtomicValueSnapShot[T](uniqueID:Int,val savedValue:T) extends AbstractVariableSnapShot(uniqueID){
+  override protected def doRestore(m:Store) : Unit = {m.getVar(uniqueID).asInstanceOf[CBLSAtomicVar[T]] := savedValue}
+  override def valueString(): String = savedValue.toString
+  override protected def doRestoreWithoutCheckpoints(m: Store): Unit = {m.getVar(uniqueID).asInstanceOf[CBLSAtomicVar[T]] := savedValue}
 }
 
 /**An IntVar is a variable managed by the [[oscar.cbls.core.computation.Store]] whose type is integer.
   *
   * @param givenModel is the model in s-which the variable is declared, can be null if the variable is actually a constant, see [[oscar.cbls.core.computation.CBLSIntConst]]
-  * @param initialDomain is the domain value of the variable. Some invariants exploit this value to declare fixed size arrays
+  * initialDomain is the domain value of the variable. Some invariants exploit this value to declare fixed size arrays
   * @param initialValue is the initial value of the variable
   * @param n is the name of the variable, used for pretty printing only. if not set, a default will be used, based on the variable number
   */
@@ -134,19 +133,19 @@ abstract class CBLSAtomicVar[T](givenModel: Store, initialValue: T, n: String = 
 
   override def name: String = if (n == null) defaultName else n
 
-  override def :=(v: T) {
+  override def :=(v: T): Unit ={
     setValue(v)
   }
 
   /**this operator swaps the value of two IntVar*/
-  def :=:(v:CBLSAtomicVar[T]){
+  def :=:(v:CBLSAtomicVar[T]): Unit ={
     val a:T = v.value
     v:=this.value
     this := a
   }
 
   /**this operator swaps the value of two IntVar*/
-  def swap(v: CBLSAtomicVar[T]) {
+  def swap(v: CBLSAtomicVar[T]): Unit ={
     this :=: v
   }
 }
@@ -160,8 +159,8 @@ abstract class CBLSAtomicVar[T](givenModel: Store, initialValue: T, n: String = 
   */
 class CBLSAtomicConst[T](override val value:T)
   extends AtomicValue[T]{
-  override def toString:String = "" + value
-  override def name = value.toString
+  override def toString:String = s"$value"
+  override def name: String = value.toString
 }
 
 object CBLSAtomicConst{
@@ -182,7 +181,7 @@ abstract class AtomicInvariant[T](initialValue:T = 0L)
   override def isControlledVariable:Boolean = true
   override def isDecisionVariable:Boolean = false
 
-  override def model = propagationStructure.asInstanceOf[Store]
+  override def model: Store = propagationStructure.asInstanceOf[Store]
 
   override def hasModel:Boolean = schedulingHandler != null
 
@@ -195,9 +194,8 @@ abstract class AtomicInvariant[T](initialValue:T = 0L)
 
   override final def name: String = if(customName == null) this.getClass.getSimpleName else customName
 
-  override final def performPropagation(){
+  override final def performPropagation(): Unit ={
     performInvariantPropagation()
     performAtomicPropagation()
   }
 }
-

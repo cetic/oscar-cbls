@@ -1,13 +1,12 @@
 package oscar.cbls.visual.graph
 
+import java.awt.Color
 import java.awt.geom.Line2D.Double
 import java.awt.geom.Rectangle2D
 
 import oscar.cbls.algo.graph._
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualCircle, VisualLine, VisualRectangle, VisualShape}
-
-import scala.swing.Color
 
 class SimpleGraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates)
   extends VisualDrawing(false,false){
@@ -20,8 +19,8 @@ class SimpleGraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates)
   var xMultiplier = this.getWidth.toDouble / maxX.toDouble
   var yMultiplier = this.getHeight.toDouble / maxY.toDouble
 
-  override def addShape(shape: VisualShape, repaintAfter: Boolean = true){
-    super.addShape(shape,false)
+  override def addShape(shape: VisualShape, repaintAfter: Boolean = true): Unit ={
+    super.addShape(shape,repaintAfter = false)
   }
 
   def drawGraph(nodeColor:Color, edgeColor:Color, edgeDashed:Boolean): Unit = {
@@ -43,7 +42,7 @@ class SimpleGraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates)
     tempPoint.toolTip = if(toolTip == null) "" + node else toolTip
   }
 
-  def drawSquareNode(node:Node, side:Int, color:Color, toolTip:String = null){
+  def drawSquareNode(node:Node, side:Int, color:Color, toolTip:String = null): Unit ={
     val nodeCoordinates = graph.coordinates(node.id)
     val tempPoint = new VisualRectangle(this, new Rectangle2D.Double(
       nodeCoordinates._1 * xMultiplier - side/2,
@@ -54,7 +53,7 @@ class SimpleGraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates)
     tempPoint.toolTip = if(toolTip == null) "" + node else toolTip
   }
 
-  def drawCrossNode(node:Node, color:Color, side:Int, toolTip:String = null){
+  def drawCrossNode(node:Node, color:Color, side:Int, toolTip:String = null): Unit ={
     val nodeCoordinates = graph.coordinates(node.id)
     val lineV = new VisualLine(this, new Double(
       nodeCoordinates._1 * xMultiplier,
@@ -68,10 +67,10 @@ class SimpleGraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates)
       nodeCoordinates._2 * yMultiplier))
 
     lineV.dashed = false
-    lineV.borderWidth = side
+    lineV.borderWidth = side.toFloat
     lineV.outerCol = color
     lineH.dashed = false
-    lineH.borderWidth = side
+    lineH.borderWidth = side.toFloat
     lineH.outerCol = color
 
     val tempPoint = new VisualCircle(this,
@@ -100,7 +99,7 @@ class SimpleGraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates)
     line.dashed = dashed
     line.outerCol = color
 
-    line.borderWidth = width
+    line.borderWidth = width.toFloat
   }
 
 }

@@ -3,10 +3,11 @@ package oscar.examples.cbls.wlpGraph
 import oscar.cbls._
 import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, DijkstraDistanceMatrix}
 import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.core.computation.IntNotificationTarget
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingIntValue, IntValue, Invariant, ShortIntNotificationTarget, Store}
+import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.core.propagation.Checker
 import oscar.cbls.core.search.{ConstantMoveNeighborhood, EvaluableCodedMove}
-import oscar.cbls.core.{ChangingIntValue, Invariant}
 import oscar.cbls.lib.invariant.graph.KVoronoiZones
 import oscar.cbls.lib.invariant.logic.{Cluster, Filter, IntElement}
 import oscar.cbls.lib.invariant.numeric.SumElements
@@ -19,13 +20,12 @@ import oscar.cbls.visual.SingleFrameWindow
 import oscar.cbls.visual.graph.GraphViewer
 import oscar.cbls.visual.ColorGenerator
 
-import scala.collection.immutable.{SortedMap, SortedSet}
+import scala.collection.immutable.{SortedMap, SortedSet, TreeMap}
 import scala.swing.Color
-
 
 class StoreToWarehouseDistance(warehouseTab : Array[CBLSIntVar],distanceTab : Array[CBLSIntVar],storeWarehouseDistance : Array[CBLSIntVar],defaultDistance : Int = 10000)
   extends Invariant
-  with IntNotificationTarget{
+  with ShortIntNotificationTarget{
   storeWarehouseDistance.foreach(v => v.setDefiningInvariant(this))
   val nbElement = warehouseTab.length
   (0 until nbElement).foreach(i => registerStaticAndDynamicDependency(warehouseTab(i),i))
@@ -39,10 +39,9 @@ class StoreToWarehouseDistance(warehouseTab : Array[CBLSIntVar],distanceTab : Ar
   private val newValues : Array[Option[Long]] = Array.fill(storeWarehouseDistance.length)(None)
   var changedValues : List[Int]= List()
 
-
   Array.tabulate(nbElement)(i => {
     if (warehouseTab(i).value != -1)
-      storeWarehouseDistance(warehouseTab(i).value) := distanceTab(i).value
+      storeWarehouseDistance(warehouseTab(i).valueInt) := distanceTab(i).value
   })
 
   override def checkInternals(c: Checker): Unit = {
@@ -59,7 +58,7 @@ class StoreToWarehouseDistance(warehouseTab : Array[CBLSIntVar],distanceTab : Ar
     })
   }
 
-  override def notifyIntChanged(v : ChangingIntValue,id : Int,oldValue : Long, newValue : Long): Unit = {
+  override def notifyIntChanged(v : ChangingIntValue,id : Int,oldValue : Int, newValue : Int): Unit = {
     if (id < nbElement) {
       if (oldValue != -1) {
         changedValues = if (allreadyNotified(oldValue)) changedValues else oldValue :: changedValues
@@ -72,7 +71,7 @@ class StoreToWarehouseDistance(warehouseTab : Array[CBLSIntVar],distanceTab : Ar
         newValues(newValue) = Some(distanceTab(id).newValue)
       }
     } else {
-      val warehouseIndex = warehouseTab(id - nbElement).newValue
+      val warehouseIndex = warehouseTab(id - nbElement).newValueInt
       if (warehouseIndex != -1) {
         changedValues = if (allreadyNotified(warehouseIndex)) changedValues else warehouseIndex :: changedValues
         allreadyNotified(warehouseIndex) = true
@@ -132,37 +131,37 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
 
   println("generate random graph")
   val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(
-    nbNodes=(W+D),
-    nbConditionalEdges=nbConditionalEdges,
-    nbNonConditionalEdges=nbNonConditionalEdges,
+    nbNodes = W+D,
+    nbConditionalEdges = nbConditionalEdges,
+    nbNonConditionalEdges = nbNonConditionalEdges,
     nbTransitNodes = W+D,
     mapSide = 800,
     seed = Some(1))
 
-  val m = new Store()//checker = Some(new ErrorChecker))
+  val m = Store()//checker = Some(new ErrorChecker))
 
   val deliveryToNode = Array.tabulate(D)(i => graph.nodes(i + W))
   val warehouseToNode =  Array.tabulate(W)(w => graph.nodes(w))
-  def nodeIdToDeliveryNumber(id : Long) = id - W
+  def nodeIdToDeliveryNumber(id : Int) = id - W
 
   val warehouseCapacity = Array.fill(W)(10)
 
-  val warehouseOpenArray = Array.tabulate(W)(i => new CBLSIntVar(m,0,0 to 1,"warehouse " + i + " open"))
+  val warehouseOpenArray = Array.tabulate(W)(i => new CBLSIntVar(m,0,0 to 1,s"warehouse $i open"))
   val openWarehouses = Filter(warehouseOpenArray).setName("open warehouses")
   openWarehouses.setName("OpenW")
   val closedWarehouses = Filter(warehouseOpenArray,_ == 0)
   closedWarehouses.setName("ClosedW")
   val nbOpenWarehouses = Cardinality(openWarehouses)
 
-  val conditionalEdgesOpenArray = Array.tabulate(nbConditionalEdges)(i => new CBLSIntVar(m,0,0 to 1,"conditional edge " + i + "open"))
+  val conditionalEdgesOpenArray = Array.tabulate(nbConditionalEdges)(i => new CBLSIntVar(m,0,0 to 1,s"conditional edge $i open"))
   val openEdges = Filter(conditionalEdgesOpenArray).setName("conditional Edges Open")
 
-  val deliveryToWarehouse = Array.tabulate(D)(i => new CBLSIntVar(m,W,0 until W + 1,"Warehouse that serves node " + (i + W)))
+  val deliveryToWarehouse = Array.tabulate(D)(i => new CBLSIntVar(m,W,0 until W + 1,s"Warehouse that serves node ${i + W}"))
 
   def deliveryToWarhouseMap = {
-    var acc = SortedMap.empty[Long,CBLSIntVar]
-    for (d <- (0 until D)) {
-      acc = acc + {(W + d.toLong) -> deliveryToWarehouse(d)}
+    var acc = SortedMap.empty[Int,CBLSIntVar]
+    for (d <- 0 until D) {
+      acc = acc + {(W + d) -> deliveryToWarehouse(d)}
     }
     acc
   }
@@ -182,13 +181,13 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
 
   var costOfBridgesPerBridge = 7
 
-  println("init VZone")
+  println("Init VZone")
 
   val kvor : KVoronoiZones= KVoronoiZones(graph,
     openEdges,
     openWarehouses,
     k,
-    deliveryToNode.map(_.id.toLong),
+    deliveryToNode.map(_.id),
     m,
     defaultDistanceForUnreachableNode = defaultDistanceForWarehouse,
     W
@@ -201,7 +200,7 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
 
   val distanceToClosestCentroid = Array.tabulate(D)((i : Int) => distanceToClosestCentroidMap(deliveryToNode(i).id))
 
-  val store2WarehouseDistance = Array.tabulate(D)((i : Int) => Array.tabulate(W + 1)(j => CBLSIntVar(m,10000,0 until Int.MaxValue,"Distance from D " + i + " to W " + j)))
+  val store2WarehouseDistance = Array.tabulate(D)((i : Int) => Array.tabulate(W + 1)(j => CBLSIntVar(m,10000,0 until Int.MaxValue,s"Distance from D $i to W $j")))
 
   val storeDistanceToWarehouse : Array[IntValue] = Array.tabulate(D)(i => IntElement(deliveryToWarehouse(i),store2WarehouseDistance(i)))
 
@@ -213,11 +212,11 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
     new StoreToWarehouseDistance(distanceToClosestCentroid(i).map(e => e._1),distanceToClosestCentroid(i).map(e => e._2),store2WarehouseDistance(i))
   }
 
-  val c = new ConstraintSystem(m)
+  val c = ConstraintSystem(m)
 
   (0 until W).foreach(w => c.post(nbStorePerWarehouse(w) le warehouseCapacity(w)))
 
-  val objPerWarehouse : Array[Objective] = Array.tabulate(W)((w : Int) => (max2((nbStorePerWarehouse(w) - warehouseCapacity(w)),0) * defaultDistanceForWarehouse + totalDistancePerWarehouse(w)))
+  val objPerWarehouse : Array[Objective] = Array.tabulate(W)((w : Int) => max2(nbStorePerWarehouse(w) - warehouseCapacity(w),0) * defaultDistanceForWarehouse + totalDistancePerWarehouse(w))
 
   val unservedPenalty = totalDistancePerWarehouse(W)
 
@@ -240,7 +239,7 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
 
   visual.redraw(openEdges.value,
     openWarehouses.value,
-    deliveryToWarhouseMap.mapValues(e => if (e.value == W) -1 else e.value),
+    TreeMap(deliveryToWarhouseMap.view.mapValues(e => if (e.valueInt == W) -1 else e.valueInt).toIndexedSeq:_*),
     extraPath = List()
   )
 
@@ -250,13 +249,13 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
 
   val halfTheClosest = kClosestStores(i => warehouseCapacity(i) /2)
 
-  val kClosestStoresByStore = Array.tabulate(D)(d => (0L until D).sortWith((d1,d2) => distanceMatrixAllEdgesOpen(d + W)(d1 + W) < distanceMatrixAllEdgesOpen(d + W)(d2 + W)).slice(1,10))
+  val kClosestStoresByStore = Array.tabulate(D)(d => (0 until D).sortWith((d1,d2) => distanceMatrixAllEdgesOpen(d + W)(d1 + W) < distanceMatrixAllEdgesOpen(d + W)(d2 + W)).slice(1,10))
 
-  val storeToWarehouseDistance = Array.tabulate(D)(d => (0L until W).sortWith((w1,w2) => distanceMatrixAllEdgesOpen(deliveryToNode(d).id)(w1) < distanceMatrixAllEdgesOpen(deliveryToNode(d).id)(w2)))
+  val storeToWarehouseDistance = Array.tabulate(D)(d => (0 until W).sortWith((w1,w2) => distanceMatrixAllEdgesOpen(deliveryToNode(d).id)(w1) < distanceMatrixAllEdgesOpen(deliveryToNode(d).id)(w2)))
 
   def kNearestOpenWarehouseToStore(k : Int, d : Int) = KSmallest.kFirst(k,storeToWarehouseDistance(d),warehouseOpenArray(_).value == 1)
 
-  val warehouseToWarehouseDistance = Array.tabulate(W)(w => (0L until W).sortWith((w1,w2) => distanceMatrixAllEdgesOpen(w)(w1) < distanceMatrixAllEdgesOpen(w)(w2)))
+  val warehouseToWarehouseDistance = Array.tabulate(W)(w => (0 until W).sortWith((w1,w2) => distanceMatrixAllEdgesOpen(w)(w1) < distanceMatrixAllEdgesOpen(w)(w2)))
 
   def kNearestOpenWarehouseToWarehouse(k : Int, w : Int) = KSmallest.kFirst(k,warehouseToWarehouseDistance(w),warehouseOpenArray(_).value == 1)
 
@@ -267,10 +266,10 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
   val swapWarehouses = SwapsNeighborhood(warehouseOpenArray,"SwapWarehouses",searchZone1 = () => closedWarehouses.value,searchZone2 = () => (w1,_) => kNearestOpenWarehouseToWarehouse(10,w1))
 
   def transferStores(m : SwapMove) = {
-    new ConstantMoveNeighborhood(transferStoreMove(m.idI,deliveryServedByWarehouse(m.idJ).value,m))
+    ConstantMoveNeighborhood(transferStoreMove(m.idI,deliveryServedByWarehouse(m.idJ).value,m))
   }
 
-  def transferStoreMove(wId : Int,storesIndex : Iterable[Long],m : SwapMove) = new EvaluableCodedMove(() => {
+  def transferStoreMove(wId : Int,storesIndex : Iterable[Int],m : SwapMove) = new EvaluableCodedMove(() => {
     val savedValues = storesIndex.map(i => (i,deliveryToWarehouse(i).value))
     storesIndex.foreach(i => deliveryToWarehouse(i) := wId)
     () => {
@@ -283,29 +282,33 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
     val savedValues = closest(wId).map(s => deliveryToWarehouse(nodeIdToDeliveryNumber(s)).value)
     closest(wId).foreach(i => deliveryToWarehouse(nodeIdToDeliveryNumber(i)) := wId)
     () => {
-      (0 until closest(wId).length).foreach(i => deliveryToWarehouse(nodeIdToDeliveryNumber(closest(wId)(i))) := savedValues(i))
+      closest(wId).indices.foreach(i => deliveryToWarehouse(nodeIdToDeliveryNumber(closest(wId)(i))) := savedValues(i))
     }
   })
 
   def assignHalfTheClosestStores (m : AssignMove) = {
-    new ConstantMoveNeighborhood(moveAssignStore(m.id))
+    ConstantMoveNeighborhood(moveAssignStore(m.id))
   }
 
-  def assignForInsertVLSN(w: Long,d:Long,t : String) = {
-    AssignNeighborhood(deliveryToWarehouse,"InsertDelivery" + d + "_" + w + "_" + t,searchZone = () => Array(d - W),domain = (_,_) => Array(w))
-  }
+  def assignForInsertVLSN(w: Int,d:Int,t : String) =
+    AssignNeighborhood(
+      deliveryToWarehouse,s"InsertDelivery${d}_${w}_$t",
+      searchZone = () => Some(d - W),
+      domain = (_,_) => Some(w),
+      hotRestart = false)
+
 
   println(distanceToClosestCentroidMap(W).mkString("\n"))
 
   val vlsn = new VLSN(W:Int,
-    initVehicleToRoutedNodesToMove = () => SortedMap.empty[Long,SortedSet[Long]] ++ (0L until W).map(i => (i, deliveryServedByWarehouse(i).value.map(i => i + W))), //() => SortedMap[Long,SortedSet[Long]],
+    initVehicleToRoutedNodesToMove = () => SortedMap.empty[Int,SortedSet[Int]] ++ (0 until W).map(i => (i, deliveryServedByWarehouse(i).value.map(i => i + W))), //() => SortedMap[Long,SortedSet[Long]],
     initUnroutedNodesToInsert= () => unServedDelivery.value.map(i => i + W),
-    nodeToRelevantVehicles = () => distanceToClosestCentroidMap.mapValues(_.map(_._1.value).filter(_ != W)),//() => Map[Long,Iterable[Long]],
+    nodeToRelevantVehicles = () => distanceToClosestCentroidMap.view.mapValues(_.map(_._1.valueInt).toList.filter(_ != W)).toMap,//() => Map[Long,Iterable[Long]],
 
-    // puisqu'on fait pleuiseurs inserts de nodes différents sur le même véhicule.
-    targetVehicleNodeToInsertNeighborhood= w => d => assignForInsertVLSN(w,d,"insert"),//:Long => Long => Neighborhood,
-    targetVehicleNodeToMoveNeighborhood= w => d => assignForInsertVLSN(w,d,"move"),//:Long => Long => Neighborhood,
-    nodeToRemoveNeighborhood= d => assignForInsertVLSN(W,d,"remove"),//:Long => Neighborhood,
+    // puisqu'on fait plusieurs inserts de nodes différents sur le même véhicule.
+    targetVehicleNodeToInsertNeighborhood = w => d => assignForInsertVLSN(w,d,"insert"),//:Long => Long => Neighborhood,
+    targetVehicleNodeToMoveNeighborhood = w => d => assignForInsertVLSN(w,d,"move"),//:Long => Long => Neighborhood,
+    nodeToRemoveNeighborhood = d => assignForInsertVLSN(W,d,"remove"),//:Long => Neighborhood,
 
     removeNodeAndReInsert= d => {
       val oldWarehouse = deliveryToWarehouse(d - W).value
@@ -314,7 +317,6 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
     },//:Long => () => Unit,
 
     reOptimizeVehicle= None,//:Option[Long => Option[Neighborhood]],
-    useDirectInsert=false, //:Boolean,
 
     vehicleToObjective= objPerWarehouse, //:Array[Objective],
     unroutedPenalty= constantObjective,//:Objective,
@@ -324,24 +326,25 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
 
       visual.redraw(openEdges.value,
         openWarehouses.value,
-        deliveryToWarhouseMap.mapValues(e => if (e.value == W) -1 else e.value),
+        TreeMap(deliveryToWarhouseMap.view.mapValues(e => if (e.value == W) -1 else e.valueInt).toIndexedSeq:_*),
         extraPath = List(),
-        extraCentroids = (0L until W).toArray
+        extraCentroids = (0 until W).toArray
       )
       lastDisplay = this.getWatch
     }),
+    maxIt = 1,
   name ="VLSN")
 
-  def closeWarehouseToNodeMap(w : Int,k : Int) = SortedMap.empty[Long,SortedSet[Long]]  ++ (0L until W).map(w => w -> SortedSet[Long]()) ++ kNearestOpenWarehouseToWarehouse(k,w).map(w1 => w1 -> deliveryServedByWarehouse(w1).value.map(_ + W))
+  def closeWarehouseToNodeMap(w : Int,k : Int) = SortedMap.empty[Int,SortedSet[Int]]  ++ (0 until W).map(w => w -> SortedSet[Int]()) ++ kNearestOpenWarehouseToWarehouse(k,w).map(w1 => w1 -> deliveryServedByWarehouse(w1).value.map(_ + W))
 
   def closeOfTwoWarehousesToNodeMap(w1 : Int,w2 : Int,k : Int) = {
-    SortedMap.empty[Long,SortedSet[Long]]  ++ (0L until W).map(w => w -> SortedSet[Long]()) ++ kNearestOpenWarehouseToWarehouse(k,w1).map(w => w -> deliveryServedByWarehouse(w).value.map(_ + W)) ++ kNearestOpenWarehouseToWarehouse(k,w2).map(w => w -> deliveryServedByWarehouse(w).value.map(_ + W))
+    SortedMap.empty[Int,SortedSet[Int]]  ++ (0 until W).map(w => w -> SortedSet[Int]()) ++ kNearestOpenWarehouseToWarehouse(k,w1).map(w => w -> deliveryServedByWarehouse(w).value.map(_ + W)) ++ kNearestOpenWarehouseToWarehouse(k,w2).map(w => w -> deliveryServedByWarehouse(w).value.map(_ + W))
   }
 
   def vlsnForAssignAndThen(m : AssignMove) = new VLSN(W:Int,
     initVehicleToRoutedNodesToMove = () => closeWarehouseToNodeMap(m.id,20),
     initUnroutedNodesToInsert= () => unServedDelivery.value.map(i => i + W),
-    nodeToRelevantVehicles = () => distanceToClosestCentroidMap.mapValues(_.map(_._1.value).filter(_ != W)),//() => Map[Long,Iterable[Long]],
+    nodeToRelevantVehicles = () => distanceToClosestCentroidMap.view.mapValues(_.map(_._1.valueInt).toList.filter(_ != W)).toMap,//() => Map[Long,Iterable[Long]],
 
     // puisqu'on fait pleuiseurs inserts de nodes différents sur le même véhicule.
     targetVehicleNodeToInsertNeighborhood= w => d => assignForInsertVLSN(w,d,"insert"),//:Long => Long => Neighborhood,
@@ -355,7 +358,6 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
     },//:Long => () => Unit,
 
     reOptimizeVehicle= None,//:Option[Long => Option[Neighborhood]],
-    useDirectInsert=false, //:Boolean,
 
     vehicleToObjective= objPerWarehouse, //:Array[Objective],
     unroutedPenalty= constantObjective,//:Objective,
@@ -368,9 +370,9 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
     new VLSN(W: Int,
       initVehicleToRoutedNodesToMove = () => closeOfTwoWarehousesToNodeMap(m.idI, m.idJ, 20),
       initUnroutedNodesToInsert = () => unServedDelivery.value.map(i => i + W),
-      nodeToRelevantVehicles = () => distanceToClosestCentroidMap.mapValues(_.map(_._1.value).filter(_ != W)), //() => Map[Long,Iterable[Long]],
+      nodeToRelevantVehicles = () => distanceToClosestCentroidMap.view.mapValues(_.map(_._1.valueInt).toList.filter(_ != W)).toMap, //() => Map[Long,Iterable[Long]],
 
-      // puisqu'on fait pleuiseurs inserts de nodes différents sur le même véhicule.
+      // puisqu'on fait plusieurs inserts de nodes différents sur le même véhicule.
       targetVehicleNodeToInsertNeighborhood = w => d => assignForInsertVLSN(w, d, "insert"), //:Long => Long => Neighborhood,
       targetVehicleNodeToMoveNeighborhood = w => d => assignForInsertVLSN(w, d, "move"), //:Long => Long => Neighborhood,
       nodeToRemoveNeighborhood = d => assignForInsertVLSN(W, d, "remove"), //:Long => Neighborhood,
@@ -382,7 +384,6 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
       }, //:Long => () => Unit,
 
       reOptimizeVehicle = None, //:Option[Long => Option[Neighborhood]],
-      useDirectInsert = false, //:Boolean,
 
       vehicleToObjective = objPerWarehouse, //:Array[Objective],
       unroutedPenalty = constantObjective, //:Objective,
@@ -391,47 +392,48 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
       name = "VLSN")
   }
 
-  def assignDelivery(m : AssignMove) = AssignNeighborhood(deliveryToWarehouse,searchZone = () => kClosestStoresByStore(m.id),domain = (_,i) => distanceToClosestCentroid(i).map(c => c._1.value))
+  def assignDelivery(m : AssignMove) = AssignNeighborhood(deliveryToWarehouse,searchZone = () => kClosestStoresByStore(m.id),domain = (_,i) => distanceToClosestCentroid(i).map(c => c._1.valueInt))
 
   var lastDisplay = this.getWatch
 
-  val search = bestSlopeFirst(List(profile(AssignNeighborhood(deliveryToWarehouse,"SwitchAssignedWarehouse",domain = (_,i) => distanceToClosestCentroid(i).map(c => c._1.value))),
-    profile(AssignNeighborhood(warehouseOpenArray,"OpenWarehouseAndLink") dynAndThen(assignHalfTheClosestStores)),
+  val search = bestSlopeFirst(List(
+    profile(AssignNeighborhood(deliveryToWarehouse,"SwitchAssignedWarehouse",domain = (_,i) => distanceToClosestCentroid(i).map(c => c._1.valueInt))),
+    profile(AssignNeighborhood(warehouseOpenArray,"OpenWarehouseAndLink") dynAndThen assignHalfTheClosestStores),
     profile(AssignNeighborhood(conditionalEdgesOpenArray,"SwitchEdge")),
     profile(vlsn),
     profile(swapWarehouses dynAndThen transferStores name "swapAndReassign"),
-    profile(AssignNeighborhood(deliveryToWarehouse,"SwitchAssignedWarehouse",domain = (_,i) => distanceToClosestCentroid(i).map(c => c._1.value)) dynAndThen assignDelivery),
-    profile(swapStore))) onExhaustRestartAfter (RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize1"), 2, obj, restartFromBest = true) afterMove(
+    profile(AssignNeighborhood(deliveryToWarehouse,"SwitchAssignedWarehouse",domain = (_,i) => distanceToClosestCentroid(i).map(c => c._1.valueInt)) dynAndThen assignDelivery),
+    profile(swapStore))).onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize1"), 2, obj, restartFromBest = true) afterMove(
     if(lastDisplay + displayDelay <= this.getWatch){ //} && obj.value < bestDisplayedObj) {
 
     visual.redraw(openEdges.value,
       openWarehouses.value,
-      deliveryToWarhouseMap.mapValues(e => if (e.value == W) -1 else e.value),
+      TreeMap(deliveryToWarhouseMap.view.mapValues(e => if (e.value == W) -1 else e.valueInt).toIndexedSeq:_*),
       extraPath = List(),
-      extraCentroids = (0L until W).toArray
+      extraCentroids = (0 until W).toArray
     )
     lastDisplay = this.getWatch
-  })
+  }) showObjectiveFunction(obj)
 
   search.verbose = 2
   search.doAllMoves(obj = obj)
 
-  println(deliveryToWarehouse.foldLeft(true)((b : Boolean,d : CBLSIntVar) => openWarehouses.value.contains(d.value) && b))
+  println(deliveryToWarehouse.foldLeft(true)((b : Boolean,d : CBLSIntVar) => openWarehouses.value.contains(d.valueInt) && b))
 
 
-  println(unServedDelivery.value.map(v => v + " - " + graph.coordinates(v)))
+  println(unServedDelivery.value.map(v => s"$v - ${graph.coordinates(v)}"))
 
   println(openWarehouses)
   println(openWarehouses.value.toArray.length)
 
   visual.redraw(openEdges.value,
     openWarehouses.value,
-    deliveryToWarhouseMap.mapValues(e => if (e.value == W) -1 else e.value),
+    TreeMap(deliveryToWarhouseMap.view.mapValues(e => if (e.value == W) -1 else e.valueInt).toIndexedSeq:_*),
     extraPath = List(),
-    extraCentroids = (0L until W).toArray
+    extraCentroids = (0 until W).toArray
   )
 
-  println(Array.tabulate(deliveryServedByWarehouse.length - 1)(i => deliveryServedByWarehouse(i).toString  + "-" + (objPerWarehouse(i).value + costForOpeningWarehouse * warehouseOpenArray(i).value) + "-" + ((objPerWarehouse(i).value + costForOpeningWarehouse * warehouseOpenArray(i).value) / (deliveryServedByWarehouse(i).value.toIterator.length max 1))).mkString("\n"))
+  println(Array.tabulate(deliveryServedByWarehouse.length - 1)(i => deliveryServedByWarehouse(i).toString  + "-" + (objPerWarehouse(i).value + costForOpeningWarehouse * warehouseOpenArray(i).value) + "-" + ((objPerWarehouse(i).value + costForOpeningWarehouse * warehouseOpenArray(i).value) / (deliveryServedByWarehouse(i).value.iterator.length max 1))).mkString("\n"))
 
 
   println(obj)

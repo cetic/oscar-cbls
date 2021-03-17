@@ -32,7 +32,7 @@ class TestNegativeTable extends TestSuite {
   }
 
     // Create the unit tests
-    for (i <- 1 to 100) {
+    for (i <- 1 to 10) {
 
       val tuples1 = TableUtil.removeDuplicate(randomTuples(3, 100, 3, 8))
       val tuples2 = TableUtil.removeDuplicate(randomTuples(3, 100, 2, 7))
@@ -71,11 +71,8 @@ class TestNegativeTable extends TestSuite {
       solver.add(cons)
     }
 
-    if (stat.nSols != statRef.nSols) {
-      println(algo + " " + stat.nSols + " " + statRef.nSols)
-      tables(0).foreach(a => println(a.mkString(",")))
-      println("")
-    }
+    assert(stat.nSols == statRef.nSols)
+
 
     assert(stat.nSols == statRef.nSols)
     assert(stat.nFails == statRef.nFails)
@@ -124,7 +121,8 @@ class TestNegativeTable extends TestSuite {
         binaryStatic(x)
       } onSolution {
         nbSol += 1
-      } start()
+      }
+      cp.start
       nbSol should be(339)
     }
 
@@ -160,7 +158,8 @@ class TestNegativeTable extends TestSuite {
           binaryFirstFail(x)
         } onSolution {
           nbSol += 1
-        } start()
+        }
+        cp.start
         nbSol
       }
       nbSol(false) should be(nbSol(true))

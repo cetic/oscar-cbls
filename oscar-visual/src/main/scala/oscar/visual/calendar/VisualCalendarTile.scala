@@ -20,12 +20,7 @@ import java.awt.Color
 import java.awt.geom.RoundRectangle2D
 import oscar.visual.VisualDrawing
 import oscar.visual.VisualFrame
-import java.awt.geom.Rectangle2D
-import oscar.visual.shapes.VisualText
-import oscar.visual.shapes.VisualRoundRectangle
-import java.awt.Graphics2D
 import oscar.visual.shapes.VisualLabelledRoundRectangle
-import java.awt.Font
 
 /**
  *
@@ -40,7 +35,7 @@ class VisualCalendarTile(d: VisualDrawing, s: RoundRectangle2D.Double, dayLabel:
     this(d, 
          new RoundRectangle2D.Double(x,y,size,size,arcw,arch),
          label,
-         (size - d.getFontMetrics(d.getFont()).stringWidth(label)) / 2)
+         (size - d.getFontMetrics(d.getFont).stringWidth(label)) / 2)
   }
 
   def this(d: VisualDrawing, x: Double, y: Double, size: Int, label: String) = this(d,x,y,size,label,7.0,7.0)
@@ -49,29 +44,29 @@ class VisualCalendarTile(d: VisualDrawing, s: RoundRectangle2D.Double, dayLabel:
    * Y coordinates of bottom left corner
    * @return
    */
-  override def yText = (y + d.getFontMetrics(d.getFont()).getHeight()).toInt
+  override def yText: Int = (y + d.getFontMetrics(d.getFont).getHeight).toInt
 }
 
 object VisualCalendarTile {
 
-  def main(args: Array[String]) {
-    val f = VisualFrame("toto");
-    val d = VisualDrawing(false);
-    val inf = f.createFrame("Drawing");
+  def main(args: Array[String]): Unit = {
+    val f = VisualFrame("toto")
+    val d = VisualDrawing(flipped = false)
+    val inf = f.createFrame("Drawing")
 
-    val rect = new VisualCalendarTile(d, 50, 50, 100, "Rectangle");
-    rect.toolTip = ("Hello");
+    val rect = new VisualCalendarTile(d, 50, 50, 100, "Rectangle")
+    rect.toolTip = "Hello"
 
-    inf.add(d);
-    f.pack();
+    inf.add(d)
+    f.pack()
 
-    Thread.sleep(1000);
-    rect.innerCol = (Color.red);
-    Thread.sleep(1000);
-    rect.move(100, 20);
-    for (i <- 0 until 20) {
-      Thread.sleep(50);
-      rect.move(rect.x + 5, rect.y);
+    Thread.sleep(1000)
+    rect.innerCol = Color.red
+    Thread.sleep(1000)
+    rect.move(100, 20)
+    for (_ <- 0 until 20) {
+      Thread.sleep(50)
+      rect.move(rect.x + 5, rect.y)
     }
   }
 }

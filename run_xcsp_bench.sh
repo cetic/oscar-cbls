@@ -199,6 +199,6 @@ rm ${ParallelJars}
 
 cp -r --parents "${Out}/${VNum}" "/etinfo/users2/cthomas/Workspace/"
 
-scala -J-Xmx1g -cp ${CP} oscar.xcsp3.competition.html.HtmlReporter ${Out}
+scala -J-Xmx2g -cp ${CP} oscar.xcsp3.competition.html.HtmlReporter ${Out}
 
 cat "${Out}/htmlReport.html" > "/etinfo/users2/cthomas/Workspace/${Out}/htmlReport.html"

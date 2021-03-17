@@ -15,7 +15,9 @@
 
 package oscar
 
+import scala.reflect.ClassTag
 import scala.util.Random
+import scala.Iterable
 package object util {
   val rand = new scala.util.Random(0)
 
@@ -109,13 +111,13 @@ package object util {
    * @return the k value i in r minimizing f(i) and satisfying st(i). In case of tie, those are broken randomly.
    * @author pschaus
    */
-  def selectMinK[R, T](r: Iterable[R], k: Int)(st: (R => Boolean) = ((r: R) => true))(f: R => T)(implicit orderer: T => Ordered[T]): Iterable[R] = {
+  def selectMinK[R, T](r: Iterable[R], k: Int)(st: (R => Boolean) = ((r: R) => true))(f: R => T)(implicit orderer: T => Ordered[T], c: ClassTag[R]): Iterable[R] = {
     val potentials = r.filter(st(_))
     if (potentials.size <= k) potentials
     else {
       val grouped = potentials.groupBy(x => f(x)).toArray
       val groupedSorted = grouped.sortWith { (x1, x2) => orderer(x1._1) < x2._1 }
-      val sorted = groupedSorted.map(_._2).flatMap(rand.shuffle(_))
+      val sorted = groupedSorted.map(_._2).flatMap(rand.shuffle(_))(c)
       sorted.take(k)
     }
   }
@@ -157,7 +159,7 @@ package object util {
       elem
     }
 
-    def weightedSelect[@specialized(Int) B](col: Traversable[B])(prob: B => Int): B = {
+    def weightedSelect[@specialized(Int) B](col: Iterable[B])(prob: B => Int): B = {
       var acc = prob(col.head)
       var elem = col.head
       col.tail.foreach(e => {

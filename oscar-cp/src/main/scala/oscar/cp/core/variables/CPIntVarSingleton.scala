@@ -1,5 +1,7 @@
 package oscar.cp.core.variables
 
+import java.util.ConcurrentModificationException
+
 import oscar.algo.Inconsistency
 
 import scala.util.Random
@@ -251,5 +253,9 @@ final class CPIntVarSingleton(final override val store: CPStore, initValue: Int,
    */
   final override def callValBindIdxWhenBind(c: Constraint, idx: Int): Unit = degree.incr()
   final override def callValBindIdxWhenBind(c: Constraint, variable: CPIntVar, idx: Int): Unit = degree.incr()
+
+  def _foreach[U](f: Int => U): Unit = {
+    throw new RuntimeException("This should never be called, as it is implemented in CPIntVar")
+  }
 }
   

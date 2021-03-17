@@ -34,6 +34,7 @@ import scala.List
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.swing.Swing
+import scala.math.Ordering.Double.TotalOrdering
 
 /**
   * A GUI that shows various stats about a multithreaded solve
@@ -270,16 +271,16 @@ class SubproblemGraphicalProgressBar[T](nbSubproblems: Int, nbThreads: Int) exte
     progressBar.setValue(subproblemsDone)
     progressBarCartProduct.setValue(Math.round(100.0*cartesianProductCCurrent/cartesianProductCSum).toInt)
 
-    subproblemStatus.setText("" + subproblemsDone + "/" + nbSubproblems)
+    subproblemStatus.setText(s"$subproblemsDone/$nbSubproblems")
     solutionsFoundLabel.setText(solutionsFound.toString)
 
-    wallTimeRemaining.setText(round1000(lastRemainingWallTime / math.pow(10, 9)) + "s")
-    wallTimeElapsed.setText(round1000(lastElapsedWallTime / math.pow(10, 9)) + "s")
-    wallTimeTotal.setText(round1000((lastElapsedWallTime + lastRemainingWallTime) / math.pow(10, 9)) + "s")
+    wallTimeRemaining.setText(s"${round1000(lastRemainingWallTime / math.pow(10, 9))}s")
+    wallTimeElapsed.setText(s"${round1000(lastElapsedWallTime / math.pow(10, 9))}s")
+    wallTimeTotal.setText(s"${round1000((lastElapsedWallTime + lastRemainingWallTime) / math.pow(10, 9))}s")
 
-    cpuTimeRemaining.setText(round1000(lastRemainingCPUTime / math.pow(10, 9)) + "s")
-    cpuTimeElapsed.setText(round1000(lastElapsedCPUTime / math.pow(10, 9)) + "s")
-    cpuTimeTotal.setText(round1000((lastElapsedCPUTime + lastRemainingCPUTime) / math.pow(10, 9)) + "s")
+    cpuTimeRemaining.setText(s"${round1000(lastRemainingCPUTime / math.pow(10, 9))}s")
+    cpuTimeElapsed.setText(s"${round1000(lastElapsedCPUTime / math.pow(10, 9))}s")
+    cpuTimeTotal.setText(s"${round1000((lastElapsedCPUTime + lastRemainingCPUTime) / math.pow(10, 9))}s")
 
     cpuWallRatio.setText(round1000(lastElapsedCPUTime / lastElapsedWallTime).toString)
 
@@ -429,7 +430,7 @@ object SubproblemGraphicalProgressBar {
 
     Swing.onEDTWait {
       val frame = new JFrame(windowName)
-      frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
+      frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
       val newContentPane = new SubproblemGraphicalProgressBar[T](nbSubproblems, nbThreads)
       newContentPane.setOpaque(true)
       frame.setContentPane(newContentPane)

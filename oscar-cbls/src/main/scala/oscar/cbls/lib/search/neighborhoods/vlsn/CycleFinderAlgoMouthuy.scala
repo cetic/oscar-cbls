@@ -14,20 +14,18 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   * ****************************************************************************
   */
-
-
 package oscar.cbls.lib.search.neighborhoods.vlsn
 
 import oscar.cbls.algo.magicArray.MagicBoolArray
-import oscar.cbls._
-import scala.collection.mutable
 
+import scala.collection.mutable
+import scala.util.Random
 
 class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
   private val nodes:Array[Node] = graph.nodes
   private val edges:Array[Edge] = graph.edges
   private val nbNodes = nodes.length
-  private val nodeRange = 0L until nbNodes
+  private val nodeRange = 0 until nbNodes
 
   private val isLabelOnPath = MagicBoolArray(graph.nbLabels,false)
   private val isNodeOnPath = MagicBoolArray(nbNodes,false)
@@ -38,17 +36,15 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
   var isLiveNode:Array[Boolean] = null
 
   val isInQueue:Array[Boolean]= Array.fill(nbNodes)(false)
-  val queue = new mutable.Queue[Long]()
-  def enqueue(nodeID:Long): Unit ={
-    if(isLiveNode(nodeID)) {
-      if (!isInQueue(nodeID)) {
-        queue.enqueue(nodeID)
-        isInQueue(nodeID) = true
-      }
+  val queue = new mutable.Queue[Int]()
+  def enqueue(nodeID:Int): Unit ={
+    if(isLiveNode(nodeID) && !isInQueue(nodeID)) {
+      queue.enqueue(nodeID)
+      isInQueue(nodeID) = true
     }
   }
 
-  def dequeue():Option[Long] = {
+  def dequeue():Option[Int] = {
     if(queue.isEmpty){
       None
     }else{
@@ -67,7 +63,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
 
     val nodeID = node.nodeID
     if(isNodeOnPath(nodeID)){
-      return new PartialCycleFound(List.empty,node)
+      return PartialCycleFound(List.empty,node)
     }
     isNodeOnPath(nodeID) = true
 
@@ -112,12 +108,9 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
     isLabelOnPath.all = false
     isNodeOnPath.all = false
 
-    require(isLabelOnPath.indicesAtTrue.isEmpty)
-    require(isNodeOnPath.indicesAtTrue.isEmpty)
-
     markPathTo(node:Node,false) match{
       case f:CycleFound =>
-        return f
+        f
       case MarkingDone(duplicateLabels) if !duplicateLabels =>
         var outgoingEdges = node.outgoing
         while(outgoingEdges.nonEmpty){
@@ -133,7 +126,6 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
             return extractCycle(toNode)
           }
 
-          //TODO: not sure about the condition...
           if(!isLabelOnPath(toNode.label)) {
             val oldDistance = distanceToNode(toNodeID)
             val newDistance = distanceToNode(nodeID) + currentEdge.deltaObj
@@ -146,9 +138,9 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
         }
 
         MarkingDone(true)
-      case x => {
+      case x =>
         MarkingDone(true)
-      }
+
     }
   }
 
@@ -180,16 +172,15 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
     None
   }
 
-
   override def findCycle(liveNodes:Array[Boolean]):Option[List[Edge]] = {
     isLiveNode = liveNodes
-    for(rootNode <- nodes if liveNodes(rootNode.nodeID)){
+    //TODO: i've put a random because I do not want nodes with smaller ID to be better optimized and create over-optimized hotspot. Maybe a HotRestart would be more efficient.
+    for(rootNode <- Random.shuffle(nodes.toList)  if liveNodes(rootNode.nodeID)){
       searchRootedCycle(rootNode) match{
         case None => ;
         case Some(c)  => return Some(c.cycle)
       }
     }
-    return None
+    None
   }
 }
-

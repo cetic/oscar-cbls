@@ -14,7 +14,7 @@ import oscar.cp.core.delta.DeltaIntVar
  *  
  *  @author Renaud Hartert ren.hartert@gmail.com 
  */
-class CPBoolVarNot(final override val not: CPBoolVar) extends CPBoolVar {
+class CPBoolVarNot(final override val not: CPBoolVar) extends CPBoolVar with CPIntVarViewLinear {
   
   final override val store: CPStore = not.store
   final override val context = store
@@ -141,4 +141,20 @@ class CPBoolVarNot(final override val not: CPBoolVar) extends CPBoolVar {
     else if (not.isFalse) "1"
     else "{0, 1}"
   }
+
+  @inline override def _foreach[U](f: Int => U): Unit = {
+    if(hasValue(0))
+      f(0)
+    if(hasValue(1))
+      f(1)
+  }
+
+  private[this] val linearViewData = {
+    val above = not match {
+      case linear: CPIntVarViewLinear => linear.linearView
+      case _ => (1, 0, not)
+    }
+    (-above._1, 1-above._2, above._3)
+  }
+  def linearView: (Int, Int, CPIntVar) = linearViewData
 }

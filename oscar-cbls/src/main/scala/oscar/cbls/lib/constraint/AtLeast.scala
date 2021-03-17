@@ -22,8 +22,10 @@
 package oscar.cbls.lib.constraint
 
 import oscar.cbls._
-import oscar.cbls.core._
-import oscar.cbls.lib.invariant.logic.{IntITE, DenseCount}
+import oscar.cbls.core.computation.{IntValue, InvariantHelper, Value}
+import oscar.cbls.core.constraint.Constraint
+import oscar.cbls.core.propagation.Checker
+import oscar.cbls.lib.invariant.logic.{DenseCount, IntITE}
 import oscar.cbls.lib.invariant.minmax.Max2
 import oscar.cbls.lib.invariant.numeric.Sum
 
@@ -39,20 +41,19 @@ import scala.collection.immutable.SortedMap
  *                We use a map to ensure that there is no two bounds on the same value.
  * @author renaud.delandtsheer@cetic.be
  */
-case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Long, IntValue]) extends Constraint {
+case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Int, IntValue]) extends Constraint {
 
   registerConstrainedVariables(variables)
   registerConstrainedVariables(bounds.values)
 
   private val countInvariant = DenseCount.makeDenseCount(variables.toArray)
-  private val offset:Long = countInvariant.offset
+  private val offset:Int = countInvariant.offset
   private val valueCount = countInvariant.counts //v => #occurrence of v+offset in variables
 
   private val noViolation:IntValue = 0L
 
   private val Violation =
     Sum(bounds.toList.map((value_bound) => Max2(noViolation,value_bound._2 - valueCount(value_bound._1+offset))))
-    .setName("ViolationsOfAtLeast")
 
   private val violationByVal:Array[IntValue]=Array.tabulate(valueCount.length)(value => {
     if(bounds.contains(value + offset))
@@ -66,7 +67,6 @@ case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Long, IntVal
       acc + (acc.get(variable) match{
         case Some(oldViolation) => (variable,(violation + oldViolation).setName(violation.name))
         case None => (variable,violation)})
-
 
     val violationForArray = variables.foldLeft(SortedMap.empty[IntValue,IntValue])(
       (acc, intvar) => accumulate(acc, intvar, violationByVal.element(intvar + offset).setName("Violation_AtLeast_" + intvar.name)))
@@ -88,8 +88,8 @@ case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Long, IntVal
    */
   override def violation(v: Value) = Violations(v.asInstanceOf[IntValue])
 
-  override def checkInternals(c: Checker) {
-    val (minMin,maxMax) = InvariantHelper.getMinMaxBounds(variables)
+  override def checkInternals(c: Checker): Unit = {
+    val (minMin,maxMax) = InvariantHelper.getMinMaxBoundsShort(variables)
     var MyValueCount: SortedMap[Long,Long] = SortedMap.empty
     for(v <- variables){
       val oldCount = MyValueCount.getOrElse(v.value,0L)
@@ -99,12 +99,10 @@ case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Long, IntVal
     for (v <- minMin to maxMax) {
       if (MyValueCount.isDefinedAt(v)){
         c.check(valueCount(v+offset).newValue == MyValueCount(v),
-          Some("ValueCount(" + v + "+offset).newValue (" + valueCount(v).newValue
-            + ") == MyValueCount(" + v + ") (" + MyValueCount(v) + ")"))
+          Some(s"ValueCount($v+offset).newValue (${valueCount(v).newValue}) == MyValueCount($v) (${MyValueCount(v)})"))
       }else{
         c.check(valueCount(v+offset).newValue == 0L,
-          Some("ValueCount(" + v + "+offset).newValue (" + valueCount(v).newValue
-            + ") == 0L"))
+          Some(s"ValueCount($v+offset).newValue (${valueCount(v).newValue}) == 0L"))
       }
     }
 
@@ -113,18 +111,16 @@ case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Long, IntVal
       MyViol += 0L.max(bounds(v).value - MyValueCount.getOrElse(v + offset,0L))
     }
     c.check(Violation.value == MyViol,
-      Some("Violation.value (" + Violation.value + ") == MyViol (" + MyViol + ")"))
+      Some(s"Violation.value (${Violation.value}) == MyViol ($MyViol)"))
 
     for (v <- variables) {
-      if (bounds.contains(v.value) && (MyValueCount(v.value + offset) <= bounds(v.value).value)) {
+      if (bounds.contains(v.valueInt) && (MyValueCount(v.value + offset) <= bounds(v.valueInt).value)) {
         c.check(violation(v).value == 0L,
-            Some("violation(" + v.name + ").value (" + violation(v).value + ") == 0L"))
+            Some(s"violation(${v.name}).value (${violation(v).value}) == 0L"))
       } else {
         c.check(violation(v).value == Violation.value,
-            Some("violation(" + v.name + ").value (" + violation(v).value
-            + ") == Violation.value (" + Violation.value + ")"))
+            Some(s"violation(${v.name}).value (${violation(v).value}) == Violation.value (${Violation.value})"))
       }
     }
   }
 }
-

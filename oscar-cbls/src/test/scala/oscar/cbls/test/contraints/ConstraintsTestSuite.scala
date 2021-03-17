@@ -1,14 +1,14 @@
 package oscar.cbls.test.contraints
 
-import org.scalatest.FunSuite
-import org.scalatest.prop.Checkers
-import oscar.cbls.intToLong
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.Checkers
+import oscar.cbls.core.computation.CBLSIntVar
 import oscar.cbls.lib.constraint._
 import oscar.cbls.test.invariants.bench._
 
 import scala.collection.immutable.SortedMap
 
-class ConstraintsTestSuite extends FunSuite with Checkers{
+class ConstraintsTestSuite extends AnyFunSuite with Checkers {
 
   val verbose = 0
 
@@ -31,7 +31,7 @@ class ConstraintsTestSuite extends FunSuite with Checkers{
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
     val size = 4
-    DisjunctiveConstDuration(bench.genIntVarsArray(size,0 to 100),Array.fill(size)(intToLong(scala.util.Random.nextInt(15))))
+    DisjunctiveConstDuration(bench.genIntVarsArray(size,0 to 100),Array.fill(size)(scala.util.Random.nextInt(15)))
     bench.run()
   }
 
@@ -43,25 +43,25 @@ class ConstraintsTestSuite extends FunSuite with Checkers{
   }
 
   test("AtLeast") {
-    def myMapValues[B,C](s:SortedMap[Long,B],f:B=>C):SortedMap[Long,C] =
-      s.foldLeft[SortedMap[Long,C]](SortedMap.empty)((acc,couple) => acc+((couple._1,f(couple._2))))
+    def myMapValues[B,C](s:SortedMap[Int,B],f:B=>C):SortedMap[Int,C] =
+      s.foldLeft[SortedMap[Int,C]](SortedMap.empty)((acc,couple) => acc+((couple._1,f(couple._2))))
 
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
     val constantMap = InvGen.randomIntSortedMap(10, 0 to 30, 0 to 30)
-    val c = AtLeast(bench.genIntVars(10), myMapValues(constantMap, (_:Long) => bench.genIntVar(0 to 30)))
+    val c = AtLeast(bench.genIntVars(10), myMapValues[Int, CBLSIntVar](constantMap, (_:Int) => bench.genIntVar(0 to 30)))
     bench.run(c)
   }
 
   test("AtMost") {
 
-    def myMapValues[B,C](s:SortedMap[Long,B],f:B=>C):SortedMap[Long,C] =
-      s.foldLeft[SortedMap[Long,C]](SortedMap.empty)((acc,couple) => acc+((couple._1,f(couple._2))))
+    def myMapValues[B,C](s:SortedMap[Int,B],f:B=>C):SortedMap[Int,C] =
+      s.foldLeft[SortedMap[Int,C]](SortedMap.empty)((acc,couple) => acc+((couple._1,f(couple._2))))
 
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
     val constantMap = InvGen.randomIntSortedMap(10, 0 to 30, 0 to 30)
-    val c = AtMost(bench.genIntVars(10, range = 0 to 30),myMapValues(constantMap, (_:Long) => bench.genIntVar(0 to 30)))
+    val c = AtMost(bench.genIntVars(10, range = 0 to 30),myMapValues(constantMap, (_:Int) => bench.genIntVar(0 to 30)))
 
     bench.run(c)
   }

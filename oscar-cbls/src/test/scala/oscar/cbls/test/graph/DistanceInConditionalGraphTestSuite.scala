@@ -1,7 +1,8 @@
 package oscar.cbls.test.graph
 
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.CBLSSetVar
 import oscar.cbls.algo.graph._
 import oscar.cbls.lib.invariant.graph.DistanceInConditionalGraph
@@ -9,7 +10,7 @@ import oscar.cbls.test.invariants.bench._
 
 import scala.collection.immutable.SortedSet
 
-class DistanceInConditionalGraphTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matchers{
+class DistanceInConditionalGraphTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers{
 
   val verbose = 0
 
@@ -36,7 +37,8 @@ class DistanceInConditionalGraphTestSuite extends FunSuite with GeneratorDrivenP
         to = targetID,
         openConditions = openConditions,
         distanceIfNotConnected = Long.MaxValue)
-      (underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b)))
+      (underApproximatingDistance = underApproxDistanceMatrix(_)(_))
+    )
 
     bench.run()
   }
@@ -65,7 +67,8 @@ class DistanceInConditionalGraphTestSuite extends FunSuite with GeneratorDrivenP
         to = targetID,
         openConditions = openConditions,
         distanceIfNotConnected = Long.MaxValue)
-      (underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b)))
+      (underApproximatingDistance = underApproxDistanceMatrix(_)(_))
+    )
 
     bench.run()
   }
@@ -91,7 +94,8 @@ class DistanceInConditionalGraphTestSuite extends FunSuite with GeneratorDrivenP
         to = nodeID,
         openConditions = openConditions,
         distanceIfNotConnected = Long.MaxValue)
-      (underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b)))
+      (underApproximatingDistance = underApproxDistanceMatrix(_)(_))
+    )
 
     bench.model.close()
     bench.model.propagate()
@@ -126,7 +130,7 @@ class DistanceInConditionalGraphTestSuite extends FunSuite with GeneratorDrivenP
         from = nodeId,
         to = lonelyNode.id,
         openConditions = openConditions,
-        distanceIfNotConnected = Long.MaxValue)(underApproximatingDistance = (a:Int,b:Int) => underApproxDistance(a)(b))
+        distanceIfNotConnected = Long.MaxValue)(underApproximatingDistance = underApproxDistance(_)(_))
     )
 
     bench.model.close()
@@ -140,7 +144,7 @@ class DistanceInConditionalGraphTestSuite extends FunSuite with GeneratorDrivenP
     val nbNodes = 10
     val nbConditionalEdges = 15
     val nbNonConditionalEdges = 0
-    val openConditions:CBLSSetVar = new CBLSSetVar(bench.model,SortedSet[Long](), 0 to 0, "openConditions")
+    val openConditions:CBLSSetVar = new CBLSSetVar(bench.model,SortedSet[Int](), 0 to 0, "openConditions")
     val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(nbNodes,
       nbConditionalEdges,
       nbNonConditionalEdges,
@@ -154,8 +158,7 @@ class DistanceInConditionalGraphTestSuite extends FunSuite with GeneratorDrivenP
         to = nodeId2,
         openConditions = openConditions,
         distanceIfNotConnected = Long.MaxValue)
-      (underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b))).flatten
-
+      (underApproximatingDistance = underApproxDistanceMatrix(_)(_))).flatten
 
     bench.model.close()
     bench.model.propagate()

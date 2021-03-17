@@ -14,9 +14,7 @@
  ******************************************************************************/
 package oscar.des.engine
 
-
-import scala.collection.mutable._
-
+import scala.collection.mutable
 
 /**
  * Capacitated resource where waiting customers are served in FIFO order
@@ -25,22 +23,22 @@ import scala.collection.mutable._
 class Resource(m : Model, capacity: Int) {
   
   private var n = 0
-  private var pendings = Queue[() => Unit]()
+  private var pendings = mutable.Queue[() => Unit]()
   
-  def request(block: => Unit) {
+  def request(block: => Unit): Unit = {
     if (n < capacity) {
            n += 1
            block
       } else {
            println("resource saturated, don't give the request immediately")
-           pendings += (() => block);
+           pendings += (() => block)
       }
   }
   
-  def release() {
+  def release(): Unit = {
     n -= 1
     if (pendings.nonEmpty) {
-      val block = pendings.dequeue
+      val block = pendings.dequeue()
       n += 1 
       block()
     }

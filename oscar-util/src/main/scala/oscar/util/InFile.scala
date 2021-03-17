@@ -14,9 +14,6 @@
  ******************************************************************************/
 package oscar.util
 
-import java.io.IOException
-import java.io.FileWriter
-import java.io.BufferedWriter
 import scala.io.Source
 
 /**
@@ -24,16 +21,14 @@ import scala.io.Source
  */
 class InFile(filepath: String) {
 
-    val lines = Source.fromFile(filepath).getLines.reduceLeft(_ + " " + _)
+    val lines = Source.fromFile(filepath).getLines().reduceLeft(_ + " " + _)
     val vals = lines.split("[ ,\t]").toList.filterNot(_ == "").map(_.toInt)
     var index = 0
     
-    def nextInt() = {
+    def nextInt(): Int = {
       index += 1
       vals(index - 1)
     }
-  
-
 }
 
 object InFile {

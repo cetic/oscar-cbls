@@ -83,7 +83,7 @@ class SumNeighborhood(val variables: Array[CBLSIntVar], val coeffs: Array[Int], 
 
   reset();
 
-  def reset() {
+  def reset(): Unit = {
     var s = 0
     val vals = new Array[Int](variables.length)
     for (i <- 0 until variables.length) {
@@ -307,7 +307,7 @@ class ThreeOpt(variables: Array[CBLSIntVar], objective:CBLSObjective, cs: Constr
 
   reset();
 
-  def reset() {
+  def reset(): Unit = {
     val tmpVars:Array[Int] = variables.map(_.value - offset)
     val start = Array.tabulate(tmpVars.length)(i => i)
     val end = Array.tabulate(tmpVars.length)(i => i)
@@ -443,7 +443,7 @@ class ThreeOptSub(variables: Array[CBLSIntVar], objective:CBLSObjective, cs: Con
   //needed to add the allloop variable to be able to reinsert into the chain when the chain is only 1 element long.
   var allloop = false;
 
-  override def reset() {
+  override def reset(): Unit = {
     super.reset();
     allloop = false;
   }

@@ -1,5 +1,3 @@
-package oscar.examples.cbls.wlp
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,23 +12,25 @@ package oscar.examples.cbls.wlp
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.examples.cbls.wlp
 
 import oscar.cbls._
-import oscar.cbls.core.search.{Best, First}
-import oscar.cbls.lib.invariant.logic.{Filter, SelectLESetQueue}
-import oscar.cbls.lib.invariant.minmax.MinConstArray
+import oscar.cbls.core.computation.{CBLSIntVar, Store}
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.core.search.First
+import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.lib.search.neighborhoods.{AssignMove, AssignNeighborhood}
+import oscar.cbls.lib.search.neighborhoods.AssignNeighborhood
 
 import scala.language.postfixOps
 
 /**
-  * this is a WarehouseLocation problem with a Tabu.
+  * this is a WarehouseLocation problem with Simulated Annealing
   * the purpose is to illustrate how standard neighborhoods can be tuned to encompass
   * additional behaviors. Here, we restrict a neighborhood to a specific set of variables that not tabu
   * this set of variables is maintained through invariants
   */
-object WarehouseLocationSimulatedAnnealing extends App{
+object WarehouseLocationSimulatedAnnealing extends App {
 
   //the number of warehouses
   val W:Int = 150
@@ -38,7 +38,7 @@ object WarehouseLocationSimulatedAnnealing extends App{
   //the number of delivery points
   val D:Int = 150
 
-  println("WarehouseLocationSimulatedAnnealing(W:" + W + ", D:" + D + ")")
+  println(s"WarehouseLocationSimulatedAnnealing(W:$W, D:$D)")
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
@@ -46,13 +46,13 @@ object WarehouseLocationSimulatedAnnealing extends App{
 
   val m = Store()
 
-  val warehouseOpenArray = Array.tabulate(W)(w => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + w + "_open"))
+  val warehouseOpenArray = Array.tabulate(W)(w => CBLSIntVar(m, 0, 0 to 1, s"warehouse_${w}_open"))
 
   val openWarehouses = Filter(warehouseOpenArray).setName("openWarehouses")
 
   val distanceToNearestOpenWarehouse = Array.tabulate(D)(d =>
-    minConstArrayValueWise(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse)
-      .setName("distance_for_delivery_" + d))
+    minConstArrayValueWise(distanceCost(d).map(_.toInt), openWarehouses, defaultCostForNoOpenWarehouse)
+      .setName(s"distance_for_delivery_$d"))
 
   val obj = Objective(Sum(distanceToNearestOpenWarehouse) + Sum(costForOpeningWarehouse, openWarehouses))
 
@@ -63,11 +63,10 @@ object WarehouseLocationSimulatedAnnealing extends App{
     "SwitchWarehouse",
     hotRestart = false,
     selectIndiceBehavior = First(randomized = true))
-
-    cauchyAnnealing(initialTemperature = 5, base = 10)
+    .cauchyAnnealing(initialTemperature = 5, base = 10)
     //the two stop criterion here below can be used, although they are useless for small size example.
     //maxMoves W*50 withoutImprovementOver obj
-    cutTail(timePeriodInMilliSecond = 500,minRelativeImprovementByCut = 0.00001,minTimeBeforeFirstCutInMilliSecond=1000)
+    .cutTail(timePeriodInMilliSecond = 500,minRelativeImprovementByCut = 0.00001,minTimeBeforeFirstCutInMilliSecond=1000)
 
     saveBestAndRestoreOnExhaust obj
     showObjectiveFunction obj)

@@ -18,7 +18,6 @@
   *         by Renaud De Landtsheer
   *            Gaël Thouvenin
   ******************************************************************************/
-
 package oscar.cbls.algo.dll
 
 import oscar.cbls.algo.quick.QList
@@ -52,14 +51,14 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
       def injector():Unit = {
         inserted.filtered = QList(filtered.addElem(map(inserted.elem)),inserted.filtered)
       }
-      def isStillValid():Boolean = {inserted.prev != null}
-      filter(inserted.elem, injector _, isStillValid _)
+      def isStillValid:Boolean = {inserted.prev != null}
+      filter(inserted.elem, injector _, () => isStillValid)
     }
   }
 
-  private[this] var filtered:QList[Filtered[_]] = null
+  private[this] var filtered:QList[Filtered[_]] = _
 
-  def headPhantom = phantom
+  def headPhantom: DPFDLLStorageElement[T] = phantom
 
   /**returns the size of the PermaFilteredDLL
     * this is a O(n) method because it is very rarely used.
@@ -91,10 +90,10 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
   }
 
   /**adds an element to the data structure, cfr. method addElem*/
-  def +(elem:T){addElem(elem)}
+  def +(elem:T): Unit = {addElem(elem)}
 
   /**adds a bunch of items to the data structures*/
-  def ++(elems:Iterable[T]) {for(elem <- elems) addElem(elem)}
+  def ++(elems:Iterable[T]): Unit = {for(elem <- elems) addElem(elem)}
 
   override def isEmpty:Boolean = phantom.next == phantom
 
@@ -102,7 +101,6 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
 
   def delayedPermaFilter[F](filter:(T,()=>Unit, ()=> Boolean) => Unit,
                          map:T => F = (t:T) => t.asInstanceOf[F]):DoublyLinkedList[F] = {
-
 
     val newFiltered = new Filtered(filter,map,new DoublyLinkedList[F])
     filtered = QList(newFiltered,filtered)
@@ -116,23 +114,21 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
     newFiltered.filtered
   }
 
-  def permaFilter[F](filter:T => Boolean, map:T => F = (t:T) => t.asInstanceOf[F]):DoublyLinkedList[F] = {
-
+  def permaFilter[F](filter:T => Boolean,
+                     map:T => F = (t:T) => t.asInstanceOf[F]):DoublyLinkedList[F] = {
     def calledWhenAddInFirst(added:T,injector:()=>Unit,isStillValid:() => Boolean):Unit = {
       if(filter(added)){injector()}
     }
-
+    //////////
     delayedPermaFilter(calledWhenAddInFirst,map)
   }
-
-
 
   /**
    * @param fn the function to execute on each items included in this list
    * @tparam U the output type of the function
    * @return a list containing the result of executing fn on each element of the DLL. the list is in reverse order.
    */
-  def mapToList[U](fn:T => U):List[U] = {
+  def mapToList[U](fn:T => U): List[U] = {
     val it = iterator
     var toReturn:List[U] = List.empty
     while(it.hasNext){
@@ -141,7 +137,7 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
     toReturn
   }
 
-  override def foreach[U](f: (T) => U){
+  override def foreach[U](f: T => U): Unit = {
     var currentPos = headPhantom.next
     while(currentPos != headPhantom){
       f(currentPos.elem)
@@ -152,20 +148,20 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
 
 /**
  * @author renaud.delandtsheer@cetic.be
- * @param elem
- * @tparam T
+ * @param elem Element to store
+ * @tparam T Types of elements
  */
 class DPFDLLStorageElement[T](val elem:T){
-  var next:DPFDLLStorageElement[T] = null
-  var prev:DPFDLLStorageElement[T] = null
-  var filtered: QList[DLLStorageElement[_]] = null
+  var next:DPFDLLStorageElement[T] = _
+  var prev:DPFDLLStorageElement[T] = _
+  var filtered: QList[DLLStorageElement[_]] = _
 
-  def setNext(d:DPFDLLStorageElement[T]){
+  def setNext(d:DPFDLLStorageElement[T]): Unit = {
     this.next = d
     d.prev = this
   }
 
-  def delete(){
+  def delete(): Unit = {
     prev.setNext(next)
     prev = null //this is checked by the delayed perma filter, so DO NOT REMOVE THIS SEEMIGNLY USELESS INSTRUCTION
     while(filtered != null) {

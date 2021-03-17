@@ -27,6 +27,8 @@ import oscar.cp.core.variables.{CPGraphVar, CPVar}
 
 class GraphUndirectedConnected(val g : CPGraphVar) extends Constraint(g.s, "Undirected Connected") {
 
+  val cc = new oscar.algo.DisjointSets[Int](0,g.nNodes)
+
   override def associatedVars(): Iterable[CPVar] = Array(g)
 
 	override def setup(l: CPPropagStrength): Unit = {
@@ -44,12 +46,25 @@ class GraphUndirectedConnected(val g : CPGraphVar) extends Constraint(g.s, "Undi
 	  val possNodes : List[Int] = g.possibleNodes
 	  if (!reqNodes.isEmpty){
 	    // we have to compute connected components
+
+      cc.reset()
+      for (e <- g.E.possibleSet()) {
+        val (a,b) = g.edge(e)
+        cc.union(a,b)
+      }
+
+
 	    val connectedComponents : Array[List[Int]] = weaklyConnectedComponents(possNodes).toArray
+
+
 	    
 	    // #1
 	    if (connectedComponents.size > 1) {
 	      // check whether if two required nodes belongs to two different components -> Failure
-	      val componentNumber : Int = connectedComponents.indexWhere(l => l.contains(reqNodes.head))
+
+
+
+        val componentNumber : Int = connectedComponents.indexWhere(l => l.contains(reqNodes.head))
 	      for ( n <- reqNodes.tail)
 	        if (! connectedComponents(componentNumber).contains(n)) throw Inconsistency
 	      // remove all but the connected component containing required D(G)
@@ -68,7 +83,7 @@ class GraphUndirectedConnected(val g : CPGraphVar) extends Constraint(g.s, "Undi
 	  	  val nodesToCheck = newPossNodes.filter(!cutnodes.contains(_))
 	  	  for (n <- nodesToCheck; if ! existPath(n1, n2, n)){
 	  	    // n is a cutnode
-	  	    cutnodes = n :: cutnodes
+	  	    //cutnodes = n :: cutnodes
 	  	    g.addNodeToGraph(n)
 	  	  }
 	  	}
@@ -125,45 +140,46 @@ class GraphUndirectedConnected(val g : CPGraphVar) extends Constraint(g.s, "Undi
       }
       possibleConnectedComponents(possNodes)
     }
-    
-    // return true if there exists at least one path from s to d without going through n
-    private def existPath(s : Int, d : Int, n : Int) : Boolean = {
-      def possibleNeighborsList(nodeId : Int) : List[Int] = g.possibleOutEdges(nodeId).map(g.edge(_)._2) ++ g.possibleInEdges(nodeId).map(g.edge(_)._1)
-      // Search to find a path from s to d
-      if (s == d) return true
-      var toVisit : List [Int] = List(s)
-      var visited : List[Int] = List(n) // we will not visit n anymore
-      while (! toVisit.isEmpty) {
-        val node : Int = toVisit.head
-        val possNList = possibleNeighborsList(node)
-        if (possNList.contains(d)) return true
-        visited = node :: visited
-        val neighb =  possNList.filter(!visited.contains(_))
-        toVisit = toVisit.tail ++ neighb
-      }
-      return false
+
+  // return true if there exists at least one path from s to d without going through n
+  private def existPath(s: Int, d: Int, n: Int): Boolean = {
+    def possibleNeighborsList(nodeId: Int): List[Int] = g.possibleOutEdges(nodeId).map(g.edge(_)._2) ++ g.possibleInEdges(nodeId).map(g.edge(_)._1)
+    // Search to find a path from s to d
+    if (s == d) return true
+    var toVisit: List[Int] = List(s)
+    var visited: List[Int] = List(n) // we will not visit n anymore
+    while (!toVisit.isEmpty) {
+      val node: Int = toVisit.head
+      val possNList = possibleNeighborsList(node)
+      if (possNList.contains(d)) return true
+      visited = node :: visited
+      val neighb = possNList.filter(!visited.contains(_))
+      toVisit = toVisit.tail ++ neighb
     }
-    
-    // return true if there exists at least one path from s to d without going through edge e
-	private def existPath(s : Int, d : Int, e : (Int,Int)) : Boolean = {
-	  val (e1,e2) = e
-	  def possibleNeighborsWithoutE(nodeId : Int) : List[Int] = {
-	    if (nodeId == e1) (g.possibleOutEdges(nodeId).map(g.edge(_)._2) ++ g.possibleInEdges(nodeId).map(g.edge(_)._1)).filter(_ != e2)
-	    else if (nodeId == e2) (g.possibleOutEdges(nodeId).map(g.edge(_)._2) ++ g.possibleInEdges(nodeId).map(g.edge(_)._1)).filter(_ != e1)
-	    else g.possibleOutEdges(nodeId).map(g.edge(_)._2) ++ g.possibleInEdges(nodeId).map(g.edge(_)._1)
-	  }
-      // Search to find a path from s to d
-      if (s == d) return true
-      var toVisit : List [Int] = List(s)
-      var visited : List[Int] = List()
-      while (! toVisit.isEmpty) {
-        val node : Int = toVisit.head
-        val possNList = possibleNeighborsWithoutE(node) 
-        if (possNList.contains(d)) return true
-        visited = node :: visited
-        val neighb =  possNList.filter(!visited.contains(_))
-        toVisit = toVisit.tail ++ neighb
-      }
-      return false
+    return false
+  }
+
+  // return true if there exists at least one path from s to d without going through edge e
+  private def existPath(s: Int, d: Int, e: (Int, Int)): Boolean = {
+    val (e1, e2) = e
+
+    def possibleNeighborsWithoutE(nodeId: Int): List[Int] = {
+      if (nodeId == e1) (g.possibleOutEdges(nodeId).map(g.edge(_)._2) ++ g.possibleInEdges(nodeId).map(g.edge(_)._1)).filter(_ != e2)
+      else if (nodeId == e2) (g.possibleOutEdges(nodeId).map(g.edge(_)._2) ++ g.possibleInEdges(nodeId).map(g.edge(_)._1)).filter(_ != e1)
+      else g.possibleOutEdges(nodeId).map(g.edge(_)._2) ++ g.possibleInEdges(nodeId).map(g.edge(_)._1)
     }
+    // Search to find a path from s to d
+    if (s == d) return true
+    var toVisit: List[Int] = List(s)
+    var visited: List[Int] = List()
+    while (!toVisit.isEmpty) {
+      val node: Int = toVisit.head
+      val possNList = possibleNeighborsWithoutE(node)
+      if (possNList.contains(d)) return true
+      visited = node :: visited
+      val neighb = possNList.filter(!visited.contains(_))
+      toVisit = toVisit.tail ++ neighb
+    }
+    return false
+  }
 }

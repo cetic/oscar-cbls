@@ -1,28 +1,30 @@
 package oscar.cbls.lib.search.combinators
 
 import oscar.cbls._
-import oscar.cbls.core.search._
+import oscar.cbls.core.computation.{AbstractVariable, Solution, Store}
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.core.search.{CallBackMove, CompositeMove, DoNothingNeighborhood, LoadSolutionMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult, SupportForAndThenChaining}
 
 abstract class NeighborhoodCombinatorNoProfile(a: Neighborhood*) extends NeighborhoodCombinator(a:_*){
   override def collectProfilingStatistics: List[Array[String]] = List.empty
-  override def resetStatistics(){}
+  override def resetStatistics(): Unit ={}
 }
 
 object Mu {
 
   def apply[MoveType <: Move](firstNeighborhood : Neighborhood with SupportForAndThenChaining[MoveType],
-                              neighborhoodGenerator : List[(MoveType)] => Option[Neighborhood with SupportForAndThenChaining[MoveType]],
+                              neighborhoodGenerator : List[MoveType] => Option[Neighborhood with SupportForAndThenChaining[MoveType]],
                               maxDepth : Long,
-                              intermediaryStops : Boolean): Neighborhood  with SupportForAndThenChaining[CompositeMove] = {
+                              intermediaryStops : Boolean): Neighborhood with SupportForAndThenChaining[CompositeMove] = {
     Mu[MoveType,Any](
-    firstNeighborhood,
-    (l,_) => neighborhoodGenerator(l) match{
-    case None => None
-    case Some(n) => Some((n,Unit))
-    },
-    Unit,
-    maxDepth,
-    intermediaryStops)
+      firstNeighborhood,
+      (l,_) => neighborhoodGenerator(l) match {
+        case None => None
+        case Some(n) => Some((n,()))
+      },
+      (),
+      maxDepth,
+      intermediaryStops)
   }
 
   /**
@@ -37,7 +39,7 @@ object Mu {
    * @return
    */
   def apply[MoveType <: Move, X](firstNeighborhood : Neighborhood with SupportForAndThenChaining[MoveType],
-                                 neighborhoodGenerator : (List[(MoveType)], X) => Option[(Neighborhood with SupportForAndThenChaining[MoveType], X)],
+                                 neighborhoodGenerator : (List[MoveType], X) => Option[(Neighborhood with SupportForAndThenChaining[MoveType], X)],
                                  x0 : X,
                                  maxDepth : Long,
                                  intermediaryStops : Boolean): Neighborhood  with SupportForAndThenChaining[CompositeMove] = {
@@ -70,7 +72,6 @@ object Mu {
   }
 }
 
-
 /**
  * to build a composite neighborhood.
  * the first neighborhood is used only to provide a round robin exploration on its possible moves
@@ -97,7 +98,7 @@ object Mu {
 case class AndThen[FirstMoveType<:Move](a: Neighborhood with SupportForAndThenChaining[FirstMoveType],
                                         b: Neighborhood,
                                         maximalIntermediaryDegradation: Long = Long.MaxValue)
-  extends DynAndThen[FirstMoveType](a,(_) => b, maximalIntermediaryDegradation){
+  extends DynAndThen[FirstMoveType](a, _ => b, maximalIntermediaryDegradation){
 }
 
 /**
@@ -125,7 +126,7 @@ case class AndThen[FirstMoveType<:Move](a: Neighborhood with SupportForAndThenCh
  * @author renaud.delandtsheer@cetic.be
  */
 class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChaining[FirstMoveType],
-                                      b:(FirstMoveType => Neighborhood),
+                                      b:FirstMoveType => Neighborhood,
                                       maximalIntermediaryDegradation: Long = Long.MaxValue)
   extends NeighborhoodCombinatorNoProfile(a) with SupportForAndThenChaining[CompositeMove]{
 
@@ -154,7 +155,7 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
 
       override def detailedString(short: Boolean, indent: Long = 0L): String = nSpace(indent) + "AndThenInstrumentedObjective(initialObjective:" + obj.detailedString(short) + ")"
 
-      override def model = obj.model
+      override def model: Store = obj.model
 
       override def value: Long = {
 
@@ -164,6 +165,7 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
             val intermediaryVal = obj.value
             val intermediaryDegradation = intermediaryVal - initialObj
             if (intermediaryDegradation > maximalIntermediaryDegradation) {
+              //this is a return; the first step is altogheter ignored
               return Long.MaxValue //we do not consider this first step
             }else{
               intermediaryVal
@@ -176,7 +178,7 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
         //first, let's instantiate it:
         val currentMoveFromA = a.instantiateCurrentMove(intermediaryObjValue)
         currentB = b(currentMoveFromA)
-        currentB.verbose = a.verbose //passing verbosity to b, because b.verbose was not set when it was set of a
+        currentB.verbose = 0 max (a.verbose -1) //passing verbosity to b, because b.verbose was not set when it was set of a
 
         class secondInstrumentedObjective(obj:Objective) extends Objective{
           override def detailedString(short : Boolean, indent : Long) : String = obj.detailedString(short,indent)
@@ -212,13 +214,13 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
         val moveFromB = s.instantiateCurrentMove(Long.MaxValue)
         val moveFromA = a.instantiateCurrentMove(Long.MaxValue)
         CompositeMove(List(moveFromA,moveFromB),newObj,"DynAndThen(" + moveFromA + "," + moveFromB + ")")
-      case _ => throw new Error("DynAndThen: Neighborhood on the right cannot be chained")
+      case _ => throw new Error(s"DynAndThen: You are willing to use a DynAndThen 'a' as a left-hand side of another DynAndThen 'b'. This is ok, but the neighborhood on the right of the DynAndThen 'a' should support chaining, and it does not:$currentB")
     }
   }
 }
 
 case class DynAndThenWithPrev[FirstMoveType<:Move](x:Neighborhood with SupportForAndThenChaining[FirstMoveType],
-                                                   b:((FirstMoveType,Snapshot) => Neighborhood),
+                                                   b:(FirstMoveType,Solution) => Neighborhood,
                                                    maximalIntermediaryDegradation:Long = Long.MaxValue,
                                                    valuesToSave:Iterable[AbstractVariable]) extends NeighborhoodCombinatorNoProfile(x){
 
@@ -240,24 +242,55 @@ case class DynAndThenWithPrev[FirstMoveType<:Move](x:Neighborhood with SupportFo
 case class SnapShotOnEntry(a: Neighborhood, valuesToSave:Iterable[AbstractVariable])
   extends NeighborhoodCombinator(a){
 
-  var snapShot:Snapshot = null
+  var snapShot:Solution = null
 
   override def getMove(obj: Objective,initialObj:Long,
                        acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
     val s = obj.model
-    snapShot = s.snapShot(valuesToSave)
+    snapShot = s.saveValues(valuesToSave)
     a.getMove(obj,initialObj:Long, acceptanceCriterion)
   }
 }
 
+/**
+ * This combinator supports a filter on moves, you can post any function to forbid some moves from being explored
+ * beware: it is more efficient to filter upfront by appropriately tuning the parameters of the neighborhood a, so this is really some sort of DIY solution.
+ * @param a the base neighborhood that we will restrain
+ * @param filter the filter function through which you can accept/reject moves from a
+ * @tparam MoveType the type of moves that a explores
+ */
+case class Filter[MoveType<:Move](a:Neighborhood with SupportForAndThenChaining[MoveType], filter:MoveType => Boolean) extends NeighborhoodCombinator(a) {
+
+  override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+
+    val obj2 = new Objective{
+      override def detailedString(short: Boolean, indent: Long = 0L): String =
+        obj.detailedString(short: Boolean, indent)
+
+      override def model: Store = obj.model
+
+      override def value: Long = {
+        if(filter(a.instantiateCurrentMove(Long.MaxValue))){
+          obj.value
+        }else{
+          Long.MaxValue
+        }
+      }
+    }
+
+    a.getMove(obj2,initialObj, acceptanceCriterion)
+
+  }
+}
 
 /**
-  * This is an atomic combinator, it represent that the neighborhood below should be considered as a single piece.
-  * When you commit a move from this neighborhood, "a" is reset, and exhausted in a single move from Atomic(a)
-  * Also, Atomic is a jump neighborhood as it cannot evaluate any objective function before the move is committed.
-  *
-  * @param a
-  */
+ * This is an atomic combinator, it represent that the neighborhood below should be considered as a single piece.
+ * When you commit a move from this neighborhood, "a" is reset, and exhausted in a single move from Atomic(a)
+ * Also, Atomic is a jump neighborhood as it cannot evaluate any objective function before the move is committed.
+ *
+ * @param a The base neighborhood
+ * @param bound The bound for jumps
+ */
 case class AtomicJump(a: Neighborhood, bound: Int = Int.MaxValue) extends NeighborhoodCombinator(a) {
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
     CallBackMove(() => a.doAllMoves(_ > bound, obj, acceptanceCriterion), Int.MaxValue, this.getClass.getSimpleName)
@@ -265,33 +298,49 @@ case class AtomicJump(a: Neighborhood, bound: Int = Int.MaxValue) extends Neighb
 }
 
 /**
-  * This is an atomic combinator, it represent that the neighborhood below should be considered as a single piece.
-  * When you commit a move from this neighborhood, "a" is reset, and exhausted in a single move from Atomic(a)
-  * Also, Atomic is a jump neighborhood as it cannot evaluate any objective function before the move is committed.
-  *
-  * @param a
-  */
-case class Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAcceptableMoves:Boolean = false) extends NeighborhoodCombinator(a) {
+ * This is an atomic combinator, it represent that the neighborhood below should be considered as a single piece.
+ * When you commit a move from this neighborhood, "a" is reset, and exhausted in a single move from Atomic(a)
+ * Also, Atomic is a jump neighborhood as it cannot evaluate any objective function before the move is committed.
+ *
+ * @param a
+ */
+case class Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAcceptableMoves:Boolean = false, aggregateIntoSingleMove:Boolean = false) extends NeighborhoodCombinator(a) {
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
-
     val startSolution = obj.model.solution(true)
-
     val stopProc = if(stopAsSoonAsAcceptableMoves){
       nbId:Int => shouldStop(nbId) || acceptanceCriterion(initialObj,obj.value)
     }else{
       shouldStop
     }
 
-    val allMoves = a.getAllMoves(stopProc, obj, acceptanceCriterion)
+    if(aggregateIntoSingleMove){
 
-    //restore the initial solution
-    val endObj = obj.value
-    obj.model.restoreSolution(startSolution)
+      val nbMoves = a.doAllMoves(stopProc, obj, acceptanceCriterion)
 
-    if(allMoves.isEmpty){
-      NoMoveFound
-    } else {
-      CompositeMove(allMoves,endObj,"Aomic(" + a + ")")
+      //restore the initial solution
+      val endObj = obj.value
+      val endSolution = obj.model.solution(true)
+
+      startSolution.restoreDecisionVariables()
+
+      if (nbMoves == 0) {
+        NoMoveFound
+      } else {
+        LoadSolutionMove(endSolution, endObj, s"Atomic($a)")
+      }
+
+    }else {
+      val allMoves = a.getAllMoves(stopProc, obj, acceptanceCriterion)
+
+      //restore the initial solution
+      val endObj = obj.value
+      startSolution.restoreDecisionVariables()
+
+      if (allMoves.isEmpty) {
+        NoMoveFound
+      } else {
+        CompositeMove(allMoves, endObj, s"Atomic($a)")
+      }
     }
   }
 
@@ -299,4 +348,3 @@ case class Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAccept
     Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAcceptableMoves=true)
   }
 }
-

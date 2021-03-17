@@ -44,10 +44,11 @@ class TestGCC extends TestSuite {
 
     cp.search {
       binaryStatic(x)
-    }  onSolution {
+    } onSolution {
       if (gccvar) o.forall(_.isBound) should be(true)
       nb += 1
-    } start()
+    }
+    cp.start()
     nb
   }
 

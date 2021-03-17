@@ -26,16 +26,16 @@ class Tree(var record: Boolean = true) {
   
   private[this] var succ: List[Int] = Nil
   
-  def addBranch(parentId: Int, id: Int, nodeName: String="", branchName: String="") {
+  def addBranch(parentId: Int, id: Int, nodeName: String="", branchName: String=""): Unit = {
 	  createBranch(parentId,id,nodeName,branchName){}
   }
   
-  def createBranch(parentId: Int, id: Int, nodeName: String="", branchName: String="")(action: => Unit) {
+  def createBranch(parentId: Int, id: Int, nodeName: String="", branchName: String="")(action: => Unit): Unit = {
 	//<try id="1" parent="0" name="a" size="2" value="1"/>
     if (record) branches = (parentId,id,nodeName,branchName,() => action) :: branches
   }
   
-  def addSuccess(id: Int) {
+  def addSuccess(id: Int): Unit = {
     if (record) succ = id :: succ
   }
   
@@ -54,7 +54,7 @@ class Tree(var record: Boolean = true) {
   private def action(n: Int):() => Unit = {
     branches.find{case(parentId,id,nodeName,branchName,action) => id == n}.map(_._5) match {
       case Some(action) => action
-      case None => () => Unit
+      case None => () => {}
     }
   }
   
@@ -124,7 +124,7 @@ class Tree(var record: Boolean = true) {
 }
 
 object Tree {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
 	  val t = new Tree(true)
 	  t.addBranch(0, 1)
 	  t.addBranch(0,4)

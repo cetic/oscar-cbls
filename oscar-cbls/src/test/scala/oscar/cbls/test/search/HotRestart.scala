@@ -18,16 +18,16 @@ package oscar.cbls.test.search
 import oscar.cbls.algo.search.InstrumentedRange
 
 import scala.collection.immutable.SortedSet
+import scala.collection.immutable.NumericRange
 
 /**
  * Created by rdl on 16/07/2014.
  */
 object HotRestart extends App{
 
-  println(new InstrumentedRange(0L to 9L) startBy 5)
+  println(new InstrumentedRange(NumericRange.inclusive[Int](0,9,1)) startBy 5)
 
-
-  val s:SortedSet[Long] = SortedSet(1, 2, 3, 4, 7, 8, 9)
+  val s:SortedSet[Int] = SortedSet(1, 2, 3, 4, 7, 8, 9)
   val it = s.iteratorFrom(7)
   while(it.hasNext) println("next:" + it.next())
 

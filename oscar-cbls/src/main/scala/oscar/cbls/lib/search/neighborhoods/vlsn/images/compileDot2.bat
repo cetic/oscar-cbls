@@ -1,1 +1,1 @@
-neato.exe -Tpng vlsnGraph2.dot > a2.png
+neato.exe -Tpng small.dot > small.png

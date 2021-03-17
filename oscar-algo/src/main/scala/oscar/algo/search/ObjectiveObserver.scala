@@ -19,5 +19,5 @@ package oscar.algo.search
  * @author Pierre Schaus pschaus@gmail.com
  */
 abstract class ObjectiveObserver {
-	def newObj(obj: Objective)
+	def newObj(obj: Objective): Unit
 }

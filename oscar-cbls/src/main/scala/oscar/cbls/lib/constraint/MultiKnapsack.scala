@@ -17,12 +17,11 @@
  *     This code has been initially developed by CETIC www.cetic.be
  *         by Renaud De Landtsheer
  ******************************************************************************/
-
-
 package oscar.cbls.lib.constraint
 
-import oscar.cbls._
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{IntValue, SetValue, Value}
+import oscar.cbls.core.constraint.Constraint
+import oscar.cbls.core.propagation.Checker
 import oscar.cbls.lib.invariant.logic.{Cluster, IntElement}
 import oscar.cbls.lib.invariant.numeric.Sum
 
@@ -81,15 +80,15 @@ case class MultiKnapsack(items: Array[IntValue], itemsizes: Array[IntValue], bin
     tmp
   }
 
-  def violationOfBin(binNumber:Long) = binviolations(binNumber)
-  def itemsInBin(binNumber:Long) = bincontents(binNumber)
-  def fillingOfBin(binNumber:Long) = binfilling(binNumber)
+  def violationOfBin(binNumber:Int) = binviolations(binNumber)
+  def itemsInBin(binNumber:Int) = bincontents(binNumber)
+  def fillingOfBin(binNumber:Int) = binfilling(binNumber)
 
   /** To override whenever possible to spot errors in invariants.
     * this will be called for each invariant after propagation is performed.
     * It requires that the Model is instantiated with the variable debug set to true.
     */
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
     c.check(true,Some("nothing to check, invariant is discharged"))
   }
 }
@@ -149,15 +148,15 @@ case class MultiKnapsackLoad(items: Array[IntValue], itemsizes: Array[IntValue],
     tmp
   }
 
-  def violationOfBin(binNumber:Long) = binviolations(binNumber)
-  def itemsInBin(binNumber:Long) = bincontents(binNumber)
-  def fillingOfBin(binNumber:Long) = binfilling(binNumber)
+  def violationOfBin(binNumber:Int) = binviolations(binNumber)
+  def itemsInBin(binNumber:Int) = bincontents(binNumber)
+  def fillingOfBin(binNumber:Int) = binfilling(binNumber)
 
   /** To override whenever possible to spot errors in invariants.
     * this will be called for each invariant after propagation is performed.
     * It requires that the Model is instantiated with the variable debug set to true.
     */
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
     c.check(true,Some("nothing to check, invariant is discharged"))
   }
 }

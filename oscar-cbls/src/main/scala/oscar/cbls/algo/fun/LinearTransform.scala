@@ -1,6 +1,4 @@
-package oscar.cbls.algo.fun
-/**
- * *****************************************************************************
+/*****************************************************************************
  * OscaR is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 2.1 of the License, or
@@ -15,6 +13,7 @@ package oscar.cbls.algo.fun
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  * ****************************************************************************
  */
+package oscar.cbls.algo.fun
 
 object LinearTransform{
   val identity = new LinearTransform(0,false)
@@ -26,8 +25,8 @@ object LinearTransform{
  * value => offset op value where op is + or minus, according to "boolean flip": true => - fase => +
  */
 class LinearTransform(val offset:Int,val minus:Boolean){
-  def apply(value:Int) = if(minus) offset - value else offset + value
-  def unApply(value:Int) = if(minus) offset - value else value - offset
+  def apply(value:Int): Int = if(minus) offset - value else offset + value
+  def unApply(value:Int): Int = if(minus) offset - value else value - offset
 
   def shiftOnX(deltaOnFunction:Int):LinearTransform = {
     LinearTransform(if(minus){offset + deltaOnFunction}else{offset - deltaOnFunction},minus)

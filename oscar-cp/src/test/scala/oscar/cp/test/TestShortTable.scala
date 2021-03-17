@@ -32,7 +32,7 @@ class TestShortTable extends TestSuite {
   }
 
   // Create the unit tests
-  for (i <- 1 to 1000) {
+  for (i <- 1 to 100) {
 
     val tuples1 = randomTuples(3, 100, 3, 8, star, 2)
     val tuples2 = randomTuples(3, 100, 2, 7, star, 5)
@@ -126,7 +126,8 @@ class TestShortTable extends TestSuite {
         binaryStatic(x)
       } onSolution {
         nbSol += 1
-      } start()
+      }
+      cp.start
       nbSol should be(26)
     }
 

@@ -1,12 +1,11 @@
 package oscar.cbls.visual.wlp
 
-import java.awt.geom.Rectangle2D
-import java.awt.{Dimension, BorderLayout, Color}
+import java.awt.Color
 import java.awt.geom.Line2D.Double
-import javax.swing.JFrame
-import oscar.cbls._
+import java.awt.geom.Rectangle2D
+
 import oscar.visual.VisualDrawing
-import oscar.visual.shapes.{VisualRectangle, VisualCircle, VisualLine, VisualShape}
+import oscar.visual.shapes.{VisualCircle, VisualLine, VisualRectangle, VisualShape}
 
 import scala.collection.immutable.SortedSet
 
@@ -23,24 +22,24 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Long,Long)],
   val d = deliveryCoordinates.length
 
   override def addShape(shape: VisualShape, repaintAfter: Boolean): Unit ={
-    super.addShape(shape,false)
+    super.addShape(shape,repaintAfter = false)
   }
 
-  var prevOpenWarehouse:SortedSet[Long] = SortedSet.empty
-  var prevNearestOpenWarehouse = Array.fill[Long](d)(-1)
+  var prevOpenWarehouse:SortedSet[Int] = SortedSet.empty
+  var prevNearestOpenWarehouse = Array.fill[Int](d)(-1)
 
-  def redraw(openWarehouses:SortedSet[Long],boldChanges:Boolean=true,hideClosedWarehouses:Boolean = false){
-    val closestWarehouses:Array[Long] = Array.tabulate(d)(nearestOpenWareHouse(openWarehouses,_))
+  def redraw(openWarehouses:SortedSet[Int],boldChanges:Boolean=true,hideClosedWarehouses:Boolean = false): Unit ={
+    val closestWarehouses:Array[Int] = Array.tabulate(d)(nearestOpenWareHouse(openWarehouses,_))
     drawMap(closestWarehouses,openWarehouses,prevOpenWarehouse,prevNearestOpenWarehouse,boldChanges,hideClosedWarehouses)
     prevOpenWarehouse = openWarehouses
     prevNearestOpenWarehouse = closestWarehouses
   }
 
   /**
-   * @param d
-   * @return -1L is no open warehouse
+   * @param d the point from where distance is computed
+   * @return -1L is no open warehouse near to d
    */
-  private def nearestOpenWareHouse(openWarehouses:SortedSet[Long],d:Long):Long = {
+  private def nearestOpenWareHouse(openWarehouses:SortedSet[Int],d:Int):Int = {
     var closestW = -1
     var minDistance = Long.MaxValue
     for(w <- openWarehouses){
@@ -53,19 +52,19 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Long,Long)],
     closestW
   }
 
-  private def drawMap(closestWarehouses:Array[Long],
-                      openWarehouses:SortedSet[Long],
-                      prevOpenWarehouse:SortedSet[Long],
-                      prevClosestWarehouse:Array[Long],
+  private def drawMap(closestWarehouses:Array[Int],
+                      openWarehouses:SortedSet[Int],
+                      prevOpenWarehouse:SortedSet[Int],
+                      prevClosestWarehouse:Array[Int],
                       boldChanges:Boolean,
-                      hideClosedWarehouses:Boolean) ={
+                      hideClosedWarehouses:Boolean): Unit ={
 
     val xMultiplier = this.getWidth.toDouble / maxX.toDouble
     val yMultiplier = this.getHeight.toDouble / maxY.toDouble
 
     super.clear(false)
 
-    //drawind links
+    //drawing links
     if (openWarehouses.nonEmpty) {
       for (delivery <- 0 until d) {
         val warehouse = closestWarehouses(delivery)
@@ -80,7 +79,7 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Long,Long)],
       }
     }
 
-    def drawWarehouse(warehouse:Int,color:Color,focus:Boolean){
+    def drawWarehouse(warehouse:Int,color:Color,focus:Boolean): Unit ={
       val tempPoint = new VisualRectangle(this, new Rectangle2D.Double(
         wareHouseCoordinates(warehouse)._1 * xMultiplier - 4,
         wareHouseCoordinates(warehouse)._2 * yMultiplier - 4,
@@ -90,7 +89,7 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Long,Long)],
       if(focus){
         tempPoint.borderWidth = 4
       }
-      tempPoint.toolTip = "warehouseCost:" + warehouseCosts(warehouse)
+      tempPoint.toolTip = s"warehouseCost:${warehouseCosts(warehouse)}"
     }
 
     //drawing warehouses
@@ -117,7 +116,7 @@ class WareHouseLocationMap(deliveryCoordinates:Array[(Long,Long)],
       tempPoint.innerCol_$eq(color)
       if(boldChanges && changed) tempPoint.setRadius(4)
       if(warehouse != -1){
-        tempPoint.toolTip = "distanceCost:" + distanceCostD2W(delivery)(warehouse)
+        tempPoint.toolTip = s"distanceCost:${distanceCostD2W(delivery)(warehouse)}"
       }
     }
 

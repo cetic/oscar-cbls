@@ -70,7 +70,7 @@ class AllDiffBC(val x: Array[CPIntVar]) extends Constraint(x(0).store, "AllDiffB
   }
 
   // sort the intervals of minSorted such that minSorted(i).min < minSorted(i+1).min forall i
-  def sortMin() {
+  def sortMin(): Unit = {
     var current = n - 1
     var sorted = false
     while (!sorted) {
@@ -90,7 +90,7 @@ class AllDiffBC(val x: Array[CPIntVar]) extends Constraint(x(0).store, "AllDiffB
   }
 
   // sort the intervals of maxSorted such that maxSorted(i).max < maxSorted(i+1).max forall i
-  def sortMax() {
+  def sortMax(): Unit = {
     var current = 0
     var sorted = false
     while (!sorted) {
@@ -109,7 +109,7 @@ class AllDiffBC(val x: Array[CPIntVar]) extends Constraint(x(0).store, "AllDiffB
     }
   }
 
-  def sortIt() {
+  def sortIt(): Unit = {
     sortMin();
     sortMax();
     var min = minSorted(0).min
@@ -150,7 +150,7 @@ class AllDiffBC(val x: Array[CPIntVar]) extends Constraint(x(0).store, "AllDiffB
     bounds(nb + 1) = bounds(nb) + 2
   }
 
-  @inline private def pathSet(t: Array[Int], start: Int, end: Int, to: Int) {
+  @inline private def pathSet(t: Array[Int], start: Int, end: Int, to: Int): Unit = {
     var l = start
     while (l != end) {
       val k = l

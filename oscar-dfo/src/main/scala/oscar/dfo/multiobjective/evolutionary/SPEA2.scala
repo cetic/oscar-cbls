@@ -14,14 +14,11 @@
  ******************************************************************************/
 package oscar.dfo.multiobjective.evolutionary
 
-import oscar.dfo.utils.MOEvaluator
-import oscar.dfo.utils.MOOPoint
-import oscar.util.RandomGenerator
 import oscar.algo.paretofront.ParetoFront
-import oscar.dfo.utils.FeasibleRegion
-import oscar.algo.paretofront.ParetoElement
+import oscar.dfo.utils.{MOEvaluator, MOOPoint}
+
 import scala.collection.mutable.HashMap
-import oscar.algo.paretofront.ParetoFront
+import scala.math.Ordering.Double.TotalOrdering
 
 /**
  * @author Cyrille Dejemeppe cyrille.dejemeppe@gmail.com
@@ -149,7 +146,7 @@ object SPEA2 {
     
   var onArchChan: (ParetoFront[_, _]) => Unit = {newArchive: ParetoFront[_, _] => }
   
-  def onArchiveChanged(newFun: ParetoFront[_, _] => Unit) {
+  def onArchiveChanged(newFun: ParetoFront[_, _] => Unit): Unit = {
 	onArchChan = newFun
   }
   

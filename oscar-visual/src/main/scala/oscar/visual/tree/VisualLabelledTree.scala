@@ -26,35 +26,32 @@ import oscar.visual.VisualFrame
 
 class VisualLabelledTree[T](var tree: PositionedNode[T]) extends VisualDrawing(false, false) {
 
-  private def baseOffset = tree.getMaxStringWidth(this) + tree.minOffset
+  private def baseOffset: Double = tree.getMaxStringWidth(this) + tree.minOffset
 
-  var levelHeights = Array.fill(tree.getMaxDepth + 1)(1)
-  var maxLinesPerLevel = tree.getMaxLinesPerLevel
+  var levelHeights: Array[Int] = Array.fill(tree.getMaxDepth + 1)(1)
+  var maxLinesPerLevel: Array[Int] = tree.getMaxLinesPerLevel
 
   computeLevelHeights()
 
-  var rectSet = Set[VisualLabelledRoundRectangle]()
-  var branchSet = Set[VisualLabelledBranch]()
+  var rectSet: Set[VisualLabelledRoundRectangle] = Set[VisualLabelledRoundRectangle]()
+  var branchSet: Set[VisualLabelledBranch] = Set[VisualLabelledBranch]()
   computeRectangles()
   
   def this(tree: Node[T]) = {
     this(Node.design(tree))
   }
 
-  def update(t: PositionedNode[T]) {
-    SwingUtilities.invokeLater(new Runnable() {
-      def run() {
-        tree = t
-        clear()
-        rectSet = Set[VisualLabelledRoundRectangle]()
-        branchSet = Set[VisualLabelledBranch]()
-        computeLevelHeights()
-        computeRectangles()
-        revalidate()
-        repaint()
-      }
+  def update(t: PositionedNode[T]): Unit = {
+    SwingUtilities.invokeLater(() => {
+      tree = t
+      clear()
+      rectSet = Set[VisualLabelledRoundRectangle]()
+      branchSet = Set[VisualLabelledBranch]()
+      computeLevelHeights()
+      computeRectangles()
+      revalidate()
+      repaint()
     })
-
   }
 
   def computeLevelHeights(): Unit = {
@@ -67,13 +64,13 @@ class VisualLabelledTree[T](var tree: PositionedNode[T]) extends VisualDrawing(f
     }
   }
   
-  def computeRectangles() = {
+  def computeRectangles(): Unit = {
     def rectAux(node: PositionedNode[T], accOffset: Double, level: Int): Unit = {
       val newNode = new VisualLabelledRoundRectangle(this, accOffset + node.pos - node.getMaxStringWidth(this) / 2, levelHeights(level), node.label.toString, 10)
       newNode.innerCol = node.col
       newNode.onClick(node.action())
       newNode.onClick {
-        newNode.innerCol = Color.gray;
+        newNode.innerCol = Color.gray
       }
       rectSet += newNode
       for (i <- node.sons.indices) {
@@ -88,13 +85,13 @@ class VisualLabelledTree[T](var tree: PositionedNode[T]) extends VisualDrawing(f
     rectAux(tree, baseOffset, 0)
   }
   
-  def replaceTree(newTree: PositionedNode[T]) = {
+  def replaceTree(newTree: PositionedNode[T]): Unit = {
     //this.removeAllShapes
     this.tree = newTree
     update()
   }
   
-  def update() = {
+  def update(): Unit = {
     //this.removeAll()
     rectSet = Set[VisualLabelledRoundRectangle]()
     branchSet = Set[VisualLabelledBranch]()
@@ -105,7 +102,7 @@ class VisualLabelledTree[T](var tree: PositionedNode[T]) extends VisualDrawing(f
 
 object VisualLabelledTree {
   	
-  def main(args : Array[String]) {
+  def main(args : Array[String]): Unit = {
     val f = VisualFrame("toto", 1, 1)
     val inf = f.createFrame("Drawing")
 

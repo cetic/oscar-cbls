@@ -79,13 +79,13 @@ abstract class Constraint(val variables: Array[Variable],val annotations: List[A
   //def definesVar(x: Variable):Boolean = {annotations.foldLeft(false)((acc,y)=> (y.name == "defines_var" && y.args(0).asInstanceOf[ConcreteVariable].id == x.id ) || acc)}
   
   //this must be called when a constraint is removed from the model to remove references from variables. 
-  def retract(){
+  def retract(): Unit ={
     if(definedVar.isDefined)unsetDefinedVar(definedVar.get)
     for(v <- variables){
       v.removeConstraint(this)
     }
   }
-  def insert(){
+  def insert(): Unit ={
     for(v <- variables){
        v.addConstraint(this);
     }

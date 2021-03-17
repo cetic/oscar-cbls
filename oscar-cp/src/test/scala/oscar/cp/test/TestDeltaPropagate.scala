@@ -14,16 +14,13 @@
  ******************************************************************************/
 package oscar.cp.test
 
-import oscar.cp.constraints._
 import oscar.cp._
-
-import collection.immutable.SortedSet
 import oscar.cp.core.CPPropagStrength
-
-import scala.collection.mutable.ArrayBuffer
-import oscar.cp.testUtils._
 import oscar.cp.core.delta.DeltaIntVar
 import oscar.cp.core.variables.CPVar
+import oscar.cp.testUtils._
+
+import scala.collection.mutable.ArrayBuffer
 
 
 /**
@@ -109,7 +106,7 @@ class TestDeltaPropagate extends TestSuite {
     var propag = false
     
     class MyCons(val X: CPIntVar) extends Constraint(X.store, "TestDelta") {
-      priorityL2 = CPStore.MAXPRIORL2-5 
+      priorityL2 = CPStore.MaxPriorityL2-5
       var snapshot: DeltaIntVar = null
 
       override def setup(l: CPPropagStrength): Unit = {
@@ -273,7 +270,7 @@ class TestDeltaPropagate extends TestSuite {
     val n = 11 //number of queens
     val Queens = 0 until n
     //variables
-    val queens = for (i <- Queens) yield CPIntVar(cp, 1 to n)
+    val queens = for (i <- Queens) yield CPIntVar(1 to n)(cp)
 
     var nbsol = 0
 
@@ -299,7 +296,7 @@ class TestDeltaPropagate extends TestSuite {
     var nPropagates = 0
     
     class MyCons(val X: CPIntVar) extends Constraint(X.store, "TestDelta") {
-      priorityL2 = CPStore.MAXPRIORL2-5 
+      priorityL2 = CPStore.MaxPriorityL2-5
       
       var snapshot: DeltaIntVar = null
       

@@ -1,10 +1,7 @@
 package oscar.xcsp3.test
 
-import org.xcsp.parser.XCallbacks
-import org.xcsp.parser.XCallbacks.XCallbacksParameters
-import oscar.xcsp3._
 import oscar.cp._
-import oscar.xcsp3.RunXCSP3.{parser, vars}
+import oscar.xcsp3._
 import oscar.xcsp3.testUtils.TestSuite
 
 import scala.collection.mutable.ArrayBuffer
@@ -27,7 +24,7 @@ class TestXCSP3Parser extends TestSuite {
     //println(vars.mkString(","))
     //println(vars.filter(_.isBound).mkString(","))
 
-    val valueHeuris: (Int => Int) = learnValueHeuristic(vars,i => vars(i).min)
+    val valueHeuris: Int => Int = learnValueHeuristic(vars,i => vars(i).min)
 
     parser.cp.search {
       conflictOrderingSearch(vars,i => vars(i).size, valueHeuris)
@@ -47,7 +44,7 @@ class TestXCSP3Parser extends TestSuite {
 
     parser.cp.start(nSol)
 
-    assert(solutions.size > 0) // feasible problem
+    assert(solutions.nonEmpty) // feasible problem
     solutions.forall(sol => testSolution(instancePath, sol))
   }
 
@@ -93,7 +90,8 @@ class TestXCSP3Parser extends TestSuite {
     "Sat-flat200-00-clause.xml",
     "Nonogram-001-regular.xml",
     "Opd-07-007-003.xml",
-    "Ramsey-12.xml"
+    "Ramsey-12.xml",
+    "RoomMate-sr0050-int.xml"
   )
 
 
@@ -184,7 +182,6 @@ class TestXCSP3Parser extends TestSuite {
     "BusScheduling-cnt-t1.xml",
     "MagicSequence-008-co.xml",
     "Warehouse-opl.xml",
-    "RoomMate-sr0050-int.xml",
     /*"PrizeCollecting-15-3-5-0.xml",*/
     /*"Mario-easy-4.xml",*/
     /*"Tpp-3-3-20-1.xml",*/
@@ -231,12 +228,17 @@ class TestXCSP3Parser extends TestSuite {
     "Steiner3-08.xml"
   )
 
+  val NewTest = Array(
+    "StillLife-03-03.xml",
+    "Rack-r1.xml",
+    "OpenStacks-m1-gp-050-1.xml"
+  )
 
 
 
   for (t <- OKTests) {
     test(t) {
-      assert(isValid("../data/xcsp3/instancesTest/"+t))
+      assert(isValid("./data/xcsp3/instancesTest/"+t))
     }
   }
 

@@ -1,20 +1,18 @@
-package oscar
-
 /*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
-
+ * OscaR is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * OscaR is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License  for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+ * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+ ******************************************************************************/
+package oscar
 
 import oscar.cbls.algo.search.InstrumentedRange
 import oscar.cbls.core.computation._
@@ -26,69 +24,68 @@ import oscar.cbls.lib.invariant.set._
 import oscar.cbls.modeling.{ModelingAPI, NeighborhoodOps}
 
 import scala.collection.immutable.NumericRange
-import scala.language.implicitConversions
 
 /**
-  * The `cbls` package provides useful functionalities to model problem using
-  * the OscaR Constraint Based Local Search Library.
-  *
-  * By doing
-  * {{{import oscar.cbls_}}}
-  * you also import
-  *
-  *   - [[oscar.cbls `cbls`]] a package object that is a factory for all types of variable supported by OscaR.cbls:  [[oscar.cbls.CBLSIntVar `CBLSIntVar`]], [[oscar.cbls.CBLSSetVar `CBLSSetVar`]] and [[oscar.cbls.CBLSSeqVar `CBLSSeqVar`]]
-  *   - [[oscar.cbls.modeling.ModelingAPI `ModelingAPI`]] a factory to instantiate all constraints, neighborhoods etc. of OscaR.cbls
-  *   - [[oscar.cbls.modeling.CBLSModel `CBLSModel`]] an object you can extend and that instantiates some basic structure of a model, namely a store and adds some implicits
-  *
-  * === N-Queens Example ===
-  *
-  * {{{
-  *import oscar.cbls._
-  *import scala.util.Random
-  *
-  * /** Local Search for NQueens
-  *  *  Moves are operated by swapping variables, using a standard neighborhood
-  * */
-  *object NQueensEasy extends CBLSModel with App{
-  *
-  *  val N = 1000L
-  *  println("NQueensEasy(" + N + ")")
-  *  val range:Range = Range(0L,N)
-  *  val init = Random.shuffle(range.toList).iterator
-  *
-  *  //creating variables, one queen par column,
-  *  //initialized on a permutation of the diagolal (all on different rows)
-  *  val queens = Array.tabulate(N)((q:Long) => CBLSIntVar(init.next(),0L until N, "queen" + q))
-  *
-  *  c.post(allDiff( for (q <- range) yield queens(q) + q) )
-  *  c.post(allDiff( for (q <- range) yield q - queens(q)) )
-  *
-  *  //the queens that are the most threatened
-  *  val maxViolQueens = argMax(c.violations(queens)).setName("most violated queens")
-  *
-  *  val neighborhood =
-  *    swapsNeighborhood(queens, "SwapQueens",
-  *      searchZone2 = maxViolQueens,
-  *      symmetryCanBeBrokenOnIndices = false)
-  *
-  *  close()
-  *
-  *  val it = neighborhood.doAllMoves(_ >= N || c.violation.value == 0L, c.violation)
-  *
-  *  println("finished: " + getWatchString)
-  *}
-  * }}}
-  *
-  *
-  * === Implicit Conversions ===
-  *
-  * A number of commonly applied implicit conversions are also defined here.
-  * Implicit conversions provide additional functions to core classes
-  * such as infix `+` and `-` for [[oscar.cbls.core.computation.CBLSIntVar `CBLSIntVar`]],
-  * or the combinator as infix notation for [[oscar.cbls.core.search.Neighborhood `Neighborhood`]].
-  *
-  * @author Renaud De Landtsheer renaud.delandtsheer@cetic.be
-  */
+ * The `cbls` package provides useful functionalities to model problem using
+ * the OscaR Constraint Based Local Search Library.
+ *
+ * By doing
+ * {{{import oscar.cbls_}}}
+ * you also import
+ *
+ *   - [[oscar.cbls `cbls`]] a package object that is a factory for all types of variable supported by OscaR.cbls:  [[oscar.cbls.core.computation.CBLSIntVar `CBLSIntVar`]], [[oscar.cbls.core.computation.CBLSSetVar `CBLSSetVar`]] and [[oscar.cbls.core.computation.CBLSSeqVar `CBLSSeqVar`]]
+ *   - [[oscar.cbls.modeling.ModelingAPI `ModelingAPI`]] a factory to instantiate all constraints, neighborhoods etc. of OscaR.cbls
+ *   - [[oscar.cbls.modeling.CBLSModel `CBLSModel`]] an object you can extend and that instantiates some basic structure of a model, namely a store and adds some implicits
+ *
+ * === N-Queens Example ===
+ *
+ * {{{
+ *import oscar.cbls._
+ *import scala.util.Random
+ *
+ * /** Local Search for NQueens
+ *  *  Moves are operated by swapping variables, using a standard neighborhood
+ * */
+ *object NQueensEasy extends CBLSModel with App{
+ *
+ *  val N = 1000L
+ *  println("NQueensEasy(" + N + ")")
+ *  val range:Range = Range(0L,N)
+ *  val init = Random.shuffle(range.toList).iterator
+ *
+ *  //creating variables, one queen par column,
+ *  //initialized on a permutation of the diagolal (all on different rows)
+ *  val queens = Array.tabulate(N)((q:Long) => CBLSIntVar(init.next(),0 until N, "queen" + q))
+ *
+ *  c.post(allDiff( for (q <- range) yield queens(q) + q) )
+ *  c.post(allDiff( for (q <- range) yield q - queens(q)) )
+ *
+ *  //the queens that are the most threatened
+ *  val maxViolQueens = argMax(c.violations(queens)).setName("most violated queens")
+ *
+ *  val neighborhood =
+ *    swapsNeighborhood(queens, "SwapQueens",
+ *      searchZone2 = maxViolQueens,
+ *      symmetryCanBeBrokenOnIndices = false)
+ *
+ *  close()
+ *
+ *  val it = neighborhood.doAllMoves(_ >= N || c.violation.value == 0L, c.violation)
+ *
+ *  println("finished: " + getWatchString)
+ *}
+ * }}}
+ *
+ *
+ * === Implicit Conversions ===
+ *
+ * A number of commonly applied implicit conversions are also defined here.
+ * Implicit conversions provide additional functions to core classes
+ * such as infix `+` and `-` for [[oscar.cbls.core.computation.CBLSIntVar `CBLSIntVar`]],
+ * or the combinator as infix notation for [[oscar.cbls.core.search.Neighborhood `Neighborhood`]].
+ *
+ * @author Renaud De Landtsheer renaud.delandtsheer@cetic.be
+ */
 package object cbls extends ModelingAPI{
   // Alias to useful classes and companion objects
 
@@ -104,17 +101,20 @@ package object cbls extends ModelingAPI{
   final val Domain = oscar.cbls.core.computation.Domain
 
   final val fullRange = oscar.cbls.core.computation.FullRange
+  final val fullIntRange = oscar.cbls.core.computation.FullIntRange
   final val positiveOrNullRange = oscar.cbls.core.computation.PositiveOrNullRange
 
   type Value = oscar.cbls.core.computation.Value
   type Variable = oscar.cbls.core.computation.Variable
 
   type Solution = oscar.cbls.core.computation.Solution
-  type Snapshot = oscar.cbls.core.computation.Snapshot
+  type Snapshot = oscar.cbls.core.computation.Solution
 
   type AbstractVariable= oscar.cbls.core.computation.AbstractVariable
 
   type CascadingObjective = oscar.cbls.core.objective.CascadingObjective
+
+  type PriorityObjective = oscar.cbls.core.objective.PriorityObjective
 
   type IntVarObjective = oscar.cbls.core.objective.IntVarObjective
 
@@ -207,7 +207,7 @@ package object cbls extends ModelingAPI{
 
     def minus(v: SetValue): SetInvariant = Diff(x, v)
 
-    def map(fun: Long => Long,outputDomain:Domain) = SetMap(x, fun, outputDomain)
+    def map(fun: Int => Int,outputDomain:Domain) = SetMap(x, fun, outputDomain)
   }
 
   implicit class IntValueArrayOps(intValueArray: Array[IntValue]) {
@@ -239,33 +239,34 @@ package object cbls extends ModelingAPI{
   }
 
   // implicit conversion of Range towards a RangeHotRestart, to use the StartBy keyword
-  implicit def instrumentRange(r: NumericRange[Long]): InstrumentedRange = new InstrumentedRange(r)
+  implicit def instrumentRange(r: NumericRange[Int]): InstrumentedRange = new InstrumentedRange(r)
 
-  //this one has been added followingthe 32 to 64 bits port of oscar.cbls
-  implicit def longToInt(l:Long):Int = Math.toIntExact(l)
-  implicit def intToLong(i:Int):Long = i
+  //this one has been added following the 32 to 64 bits port of oscar.cbls
+  /*  implicit def longToInt(value:Long):Int = {
+      val i = value.toInt
+      if (i != value) throw new ArithmeticException("integer overflow:" + value)
+      return i
+    }
+    implicit def intToLong(i:Int):Long = i*/
 
-  implicit def minMaxCoupleLongLongToDomain(minMaxCouple:((Long,Long))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
-  implicit def minMaxCoupleIntIntToDomain(minMaxCouple:((Int,Int))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
-  implicit def minMaxCoupleIntLongToDomain(minMaxCouple:((Int,Long))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
-  implicit def minMaxCoupleLongIntToDomain(minMaxCouple:((Long,Int))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
-
-
-
+  implicit def minMaxCoupleLongLongToDomain(minMaxCouple:(Long,Long)):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+  implicit def minMaxCoupleIntIntToDomain(minMaxCouple:(Int,Int)):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+  implicit def minMaxCoupleIntLongToDomain(minMaxCouple:(Int,Long)):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+  implicit def minMaxCoupleLongIntToDomain(minMaxCouple:(Long,Int)):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
 
   /** Tests an expression, prints a warning message on the console if false
-    *  This method is similar to `require`, but does not stop the execution
-    *
-    *  @param requirement   the expression to test
-    *  @param message       a String to print to he error console
-    *  @group assertions
-    */
-  @inline final def warning(requirement: Boolean, message: => Any) {
+   *  This method is similar to `require`, but does not stop the execution
+   *
+   *  @param requirement   the expression to test
+   *  @param message       a String to print to he error console
+   *  @group assertions
+   */
+  @inline final def warning(requirement: Boolean, message: => Any): Unit = {
     if (!requirement)
-      println(Console.RED + "WARNING: " + message + Console.RESET)
+      println(s"${Console.RED}WARNING: $message${Console.RESET}")
   }
 
-  @inline final def warning(message: => Any) {
-      println(Console.RED + "WARNING: " + message + Console.RESET)
+  @inline final def warning(message: => Any): Unit = {
+    println(s"${Console.RED}WARNING: $message${Console.RESET}")
   }
 }

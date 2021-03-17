@@ -27,10 +27,10 @@ class ReversibleSparseSubset(store: ReversibleContext, val min: Int, val max: In
   val values = Array.tabulate(size2.value)(i => i)
   val indexes = Array.tabulate(size2.value)(i => i)
 
-  def requires(value: Int) {
+  def requires(value: Int): Unit = {
     assert(checkVal(value));
     if (isRequired(value)) return ;
-    if (!isPossible(value)) throw new RuntimeException(value + " cannot be required since it is even not possible")
+    if (!isPossible(value)) throw new RuntimeException(s"$value cannot be required since it is even not possible")
     exchangePositions(value, values(size1.value) + min);
     size1.incr()
     assert(size1.value <= values.length);
@@ -42,27 +42,27 @@ class ReversibleSparseSubset(store: ReversibleContext, val min: Int, val max: In
   /**
    * requires all possibles
    */
-  def requiresAll() {
+  def requiresAll(): Unit = {
     size1.value = size2.value
   }
 
   /**
    * excludes all possible not yet required
    */
-  def excludesAll() {
+  def excludesAll(): Unit = {
     size2.value = size1.value
   }
 
-  def excludes(value: Int) {
+  def excludes(value: Int): Unit = {
     assert(checkVal(value))
     if (!isPossible(value)) return // it is already not possible
-    if (isRequired(value)) throw new RuntimeException(value + " is required so it cannot be excluded")
+    if (isRequired(value)) throw new RuntimeException(s"$value is required so it cannot be excluded")
     exchangePositions(value, values(size2.value - 1) + min);
     size2.decr()
     assert(size1.value <= values.length);
   }
 
-  def exchangePositions(value1: Int, value2: Int) {
+  def exchangePositions(value1: Int, value2: Int): Unit = {
     assert(checkVal(value1));
     assert(checkVal(value2));
     val v1 = value1 - min;

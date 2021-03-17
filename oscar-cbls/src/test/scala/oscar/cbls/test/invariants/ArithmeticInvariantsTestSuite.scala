@@ -1,13 +1,13 @@
 package oscar.cbls.test.invariants
 
 import org.scalacheck.Gen
-import org.scalatest.FunSuite
-import org.scalatest.prop.Checkers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.Checkers
 import oscar.cbls.lib.invariant.numeric._
 import oscar.cbls.lib.invariant.set.SetProd
 import oscar.cbls.test.invariants.bench._
 
-class ArithmeticInvariantsTestSuite extends FunSuite with Checkers{
+class ArithmeticInvariantsTestSuite extends AnyFunSuite with Checkers{
 
   val verbose = 0
 
@@ -61,14 +61,14 @@ class ArithmeticInvariantsTestSuite extends FunSuite with Checkers{
   test("Div maintains the division of two variables.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     Div(bench.genIntVar(0 to 100),
-      bench.genIntVar(1 to 100, true, (v: Int) => v != 0))
+      bench.genIntVar(1 to 100, isInput = true, (v: Int) => v != 0))
     bench.run()
   }
 
   test("Mod maintains the modulo of two variables.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     Mod(bench.genIntVar(0 to 100),
-      bench.genIntVar(1 to 100, true, (v: Int) => v != 0))
+      bench.genIntVar(1 to 100, isInput = true, (v: Int) => v != 0))
     bench.run()
   }
 

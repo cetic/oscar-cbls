@@ -1,14 +1,13 @@
 package oscar.cbls.business.scheduling.neighborhood
 
-import oscar.cbls.LoopBehavior
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.scheduling.model.Schedule
-import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First}
+import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
 class RemoveActivity(schedule: Schedule,
                      neighborhoodName: String,
                      selectIndexBehavior:LoopBehavior = First(),
-                     searchIndices: Option[() => Iterable[Long]] = None)
+                     searchIndices: Option[() => Iterable[Int]] = None)
   extends EasyNeighborhoodMultiLevel[RemoveActivityMove](neighborhoodName) {
 
   var currentIndex: Int = -1
@@ -19,21 +18,22 @@ class RemoveActivity(schedule: Schedule,
     * as explained in the documentation of this class
     */
   override def exploreNeighborhood(initialObj: Long): Unit = {
+    val priorityListValue = schedule.activityPriorityList.value
     // Iteration zone on indices to remove (optional activities)
     // Checking the Hot Restart
-    val iterationZone1: () => Iterable[Long] = searchIndices.getOrElse(() =>
-      0L until schedule.activityPriorityList.value.size
+    val iterationZone1: () => Iterable[Int] = searchIndices.getOrElse(() =>
+      0 until priorityListValue.size
     )
     val hotRestart = true
-    val iterationZone: Iterable[Long] =
+    val iterationZone: Iterable[Int] =
       if (hotRestart) HotRestart(iterationZone1(), currentIndex)
       else iterationZone1()
     // iterating over the values in the activity list
     val (indicesIterator, notifyIndexFound) = selectIndexBehavior.toIterator(iterationZone)
     // Define checkpoint on sequence (activities list)
     val seqValueCheckPoint = schedule
-      .activityPriorityList
-      .defineCurrentValueAsCheckpoint(true)
+          .activityPriorityList
+          .defineCurrentValueAsCheckpoint()
     while (indicesIterator.hasNext) {
       currentIndex = indicesIterator.next().toInt
       // perform move

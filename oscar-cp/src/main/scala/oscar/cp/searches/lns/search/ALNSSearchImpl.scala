@@ -13,20 +13,26 @@ import scala.util.Random
 /**
   * Adaptive lage neighbourhood search implementation.
   */
-class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig) extends ALNSSearch(solver, vars, config){
+class ALNSSearchImpl(solver: CPSolver, decisionVars: Array[CPIntVar], auxiliaryVars: Array[CPIntVar], config: ALNSConfig) extends ALNSSearch(solver, decisionVars, config){
   var startTime: Long = System.nanoTime()
   var iter: Long = 1L
   val history: mutable.ArrayBuffer[(Long, String, Double)] = mutable.ArrayBuffer()
 
+  def this(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
+    this(solver, vars, Array[CPIntVar](), config)
+  }
+
+  val vars: Array[CPIntVar] = decisionVars ++ auxiliaryVars
+
   //Stop conditions:
   val endTime: Long = if(config.timeout > 0) System.nanoTime() + config.timeout else Long.MaxValue //Maximal allocated time
-  var iterTimeout: Long = if(config.timeout > 0) config.timeout / 300 else Long.MaxValue //The iteration allocated time
+  var iterTimeout: Long = if(config.timeout > 0) config.timeout / 120 else Long.MaxValue //The iteration allocated time
   var endIter: Long = Long.MaxValue //Maximal allocated time for the current iteration
   var optimumFound = false //True if the whole search space has been explored (csp and cop) or the optimum has been found (cop)
   var nSols = 0
   var nFailures = 0
   var stopSearch = false
-  val opDeactivation: Boolean = config.metaParameters.getOrElse('opDeactivation, false).asInstanceOf[Boolean]
+  val opDeactivation: Boolean = config.metaParameters.getOrElse(Symbol("opDeactivation"), false).asInstanceOf[Boolean]
 
   val stopCondition: (DFSearch) => Boolean = (s: DFSearch) => {
     var stop = optimumFound
@@ -54,7 +60,7 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
 
   //Stagnation:
   var stagnation = 0
-  val stagnationThreshold: Int = config.metaParameters.getOrElse('stagnationThreshold, 0).asInstanceOf[Int]
+  val stagnationThreshold: Int = config.metaParameters.getOrElse(Symbol("stagnationThreshold"), 0).asInstanceOf[Int]
 
   lazy val relaxOps: Array[ALNSOperator] = config.relaxStore.getElements.toArray
   lazy val searchOps: Array[ALNSOperator] = config.searchStore.getElements.toArray
@@ -96,7 +102,9 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
     nSols = 1
 
     val stats = solver.startSubjectTo(stopCondition, Int.MaxValue, null){
-      solver.search(SearchFunctions.conflictOrdering(vars, if(maximizeObjective.isDefined) if(maximizeObjective.get) "Min" else "Max"  else "Max", valLearn = false))
+      if(auxiliaryVars.nonEmpty) solver.search(SearchFunctions.conflictOrdering(decisionVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) "Min" else "Max"  else "Max", valLearn = false) ++
+        SearchFunctions.conflictOrdering(auxiliaryVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) "Min" else "Max"  else "Max", valLearn = false))
+      else solver.search(SearchFunctions.conflictOrdering(decisionVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) "Min" else "Max"  else "Max", valLearn = false))
     }
 
     nSols = defaultNSols
@@ -132,7 +140,7 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
     while(System.nanoTime() < endTime && !optimumFound && !stopSearch){
 
       //learning phase:
-      if (config.metaParameters.getOrElse('learning, false).asInstanceOf[Boolean]) {
+      if (config.metaParameters.getOrElse(Symbol("learning"), false).asInstanceOf[Boolean]) {
         if (!solver.silent) println("\nStarting learning phase...")
         alnsLearning()
         if (!solver.silent) {
@@ -231,6 +239,8 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
     if(math.abs(newObjective - searchObjective) > 0) stagnation = 0
     else stagnation += 1
 
+    if(stats.completed && relax.name == ALNSBuilder.FullRelax) optimumFound = true
+
     if (!solver.silent){
       if(!relaxDone) println("Search space empty, search not applied, improvement: " + improvement)
       else if(stats.completed) println("Search space completely explored, improvement: " + improvement)
@@ -309,7 +319,7 @@ class ALNSSearchImpl(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig
       currentSol = Some(initSol)
     }
 
-    if(config.metaParameters.getOrElse('opDeactivation, false).asInstanceOf[Boolean]) {
+    if(config.metaParameters.getOrElse(Symbol("opDeactivation"), false).asInstanceOf[Boolean]) {
       relaxPerf.values.filter { case (op, perfs) =>
         op.isActive && perfs.map(_._2).max == 0
       }.foreach { case (op, _) =>

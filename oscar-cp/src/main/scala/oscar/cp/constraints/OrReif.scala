@@ -34,7 +34,7 @@ class OrReif(val X: Array[CPBoolVar], y: CPBoolVar) extends Constraint(y.store, 
 
   override def associatedVars(): Iterable[CPVar] = x ++ Array(y)
 
-  private def setBound(i: Int) {
+  private def setBound(i: Int): Unit = {
     
     val tmp = x(nFalse.value)
     x(nFalse.value) = x(i)

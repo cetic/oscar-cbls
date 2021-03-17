@@ -16,8 +16,8 @@
 package oscar.cbls.lib.invariant.set
 
 import oscar.cbls.algo.quick.QList
-import oscar.cbls._
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{ChangingSetValue, Domain, IntInvariant, SetInvariant, SetNotificationTarget, SetValue}
+import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.SortedSet
 
@@ -26,19 +26,19 @@ import scala.collection.immutable.SortedSet
  * @param s a setValue
  * @param subsetToMonitorAndMaxValues iterable of (subset, max occurrence in the subset, weight in case of violation)
  */
-case class IncludedSubsets(s: SetValue, subsetToMonitorAndMaxValues:Iterable[(Iterable[Long],Long,Long)])
-  extends IntInvariant(0L,Domain(0L , subsetToMonitorAndMaxValues.map(_._3).sum))
+case class IncludedSubsets(s: SetValue, subsetToMonitorAndMaxValues:Iterable[(Iterable[Int],Int,Int)])
+  extends IntInvariant(0,Domain(0 , subsetToMonitorAndMaxValues.map(_._3).sum))
   with SetNotificationTarget{
 
   registerStaticAndDynamicDependenciesNoID(s)
   finishInitialization()
 
-  require(s.min == 0L, "SetValue min domain should be equal to 0L instead of " + s.min)
+  require(s.min == 0, s"SetValue min domain should be equal to 0 instead of ${s.min}")
 
   val subsetAndMaxAndWeightArray = subsetToMonitorAndMaxValues.toArray
   val n = subsetAndMaxAndWeightArray.length
 
-  val valueToSubsetID:Array[QList[Long]] = Array.fill(s.max+1L)(null)
+  val valueToSubsetID:Array[QList[Int]] = Array.fill(s.max+1)(null)
 
   for (forbiddenID <- subsetAndMaxAndWeightArray.indices) {
     val (values,maxNumber,weight) = subsetAndMaxAndWeightArray(forbiddenID)
@@ -47,63 +47,62 @@ case class IncludedSubsets(s: SetValue, subsetToMonitorAndMaxValues:Iterable[(It
     }
   }
 
-  this := 0L
-  val subsetToNbPresent = Array.fill[Long](n)(0)
+  this := 0
+  val subsetToNbPresent = Array.fill[Int](n)(0)
   for(value <- s.value){
     notifyInsert(value)
   }
 
-  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
     for (added <- addedValues) notifyInsert(added)
     for (deleted <- removedValues) notifyDelete(deleted)
   }
 
   @inline
-  private def notifyInsert(value: Long) {
+  private def notifyInsert(value: Int): Unit = {
     for(subset <- QList.toIterable(valueToSubsetID(value))){
-      subsetToNbPresent(subset) = subsetToNbPresent(subset) + 1L
-      if(subsetToNbPresent(subset) == subsetAndMaxAndWeightArray(subset)._2 + 1L) {
+      subsetToNbPresent(subset) = subsetToNbPresent(subset) + 1
+      if(subsetToNbPresent(subset) == subsetAndMaxAndWeightArray(subset)._2 + 1) {
         this :+= subsetAndMaxAndWeightArray(subset)._3
       }
     }
   }
 
   @inline
-  private def notifyDelete(value: Long) {
+  private def notifyDelete(value: Int): Unit = {
     for(subset <- QList.toIterable(valueToSubsetID(value))){
-      subsetToNbPresent(subset) = subsetToNbPresent(subset) - 1L
+      subsetToNbPresent(subset) = subsetToNbPresent(subset) - 1
       if(subsetToNbPresent(subset) == subsetAndMaxAndWeightArray(subset)._2){
         this :-= subsetAndMaxAndWeightArray(subset)._3
       }
     }
   }
 
-  override def checkInternals(c: Checker) {
-    val violation = subsetToMonitorAndMaxValues.map({case (values,maxValue,weight) => if(values.count(v => s.value.contains(v)) > maxValue) weight else 0L}).sum
-    c.check(this.value == violation,Some("included subset Error value=" + this.value  + " should be:" + violation))
+  override def checkInternals(c: Checker): Unit = {
+    val violation = subsetToMonitorAndMaxValues.map({case (values,maxValue,weight) => if(values.count(v => s.value.contains(v)) > maxValue) weight else 0}).sum
+    c.check(this.value == violation,Some(s"included subset Error value=${this.value} should be:$violation"))
   }
 }
-
 
 /**
  * {i in such that there is a clause {subset,maxOcc} in clauseAndMaxOccList such that #(subset \inter s) > maxOcc)
  * @param s a setValue
  * @param clauseAndMaxOccList iterable of (subset, max occurrence in the subset)
  */
-case class ValuesInViolatedClauses(s: SetValue, clauseAndMaxOccList:Iterable[(Iterable[Long],Long)])
+case class ValuesInViolatedClauses(s: SetValue, clauseAndMaxOccList:Iterable[(Iterable[Int],Int)])
   extends SetInvariant(initialDomain = s.domain)
   with SetNotificationTarget{
 
   registerStaticAndDynamicDependenciesNoID(s)
   finishInitialization()
 
-  require(s.min == 0L)
+  require(s.min == 0)
 
   val clauseAndMaxOccArray = clauseAndMaxOccList.toArray
   val numberOfClauses = clauseAndMaxOccArray.length
 
   //building valueToClauseIDs
-  val valueToClauseIDs:Array[QList[Long]] = Array.fill(s.max+1L)(null)
+  val valueToClauseIDs:Array[QList[Int]] = Array.fill(s.max+1)(null)
   for (clauseID <- clauseAndMaxOccArray.indices) {
     val (values,maxNumber) = clauseAndMaxOccArray(clauseID)
     for(value <- values){
@@ -112,10 +111,10 @@ case class ValuesInViolatedClauses(s: SetValue, clauseAndMaxOccList:Iterable[(It
   }
 
   //value to number of violated clauses this is in
-  val valToNumberOfViolatedClauses:Array[Long] = Array.fill(s.max + 1L)(0L)
+  val valToNumberOfViolatedClauses:Array[Int] = Array.fill(s.max + 1)(0)
 
   //clause to number of values in s in it
-  val clauseToNbPresent:Array[Long] = Array.fill(numberOfClauses)(0L)
+  val clauseToNbPresent:Array[Int] = Array.fill(numberOfClauses)(0)
 
   //init
   this := SortedSet.empty
@@ -123,38 +122,38 @@ case class ValuesInViolatedClauses(s: SetValue, clauseAndMaxOccList:Iterable[(It
     notifyInsert(value)
   }
 
-  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
     for (added <- addedValues) notifyInsert(added)
     for (deleted <- removedValues) notifyDelete(deleted)
   }
 
   @inline
-  private def setClauseViolated(clauseNumber:Long){
+  private def setClauseViolated(clauseNumber:Int): Unit ={
     for(number <- clauseAndMaxOccArray(clauseNumber)._1){
       val oldCount = valToNumberOfViolatedClauses(number)
-      valToNumberOfViolatedClauses(number) = oldCount + 1L
-      if(oldCount == 0L){
+      valToNumberOfViolatedClauses(number) = oldCount + 1
+      if(oldCount == 0){
         this.insertValue(number)
       }
     }
   }
 
   @inline
-  private def setClauseNonViolated(clauseNumber:Long){
+  private def setClauseNonViolated(clauseNumber:Int): Unit ={
     for(number <- clauseAndMaxOccArray(clauseNumber)._1){
       val oldCount = valToNumberOfViolatedClauses(number)
-      valToNumberOfViolatedClauses(number) = oldCount - 1L
-      if(oldCount == 1L){
+      valToNumberOfViolatedClauses(number) = oldCount - 1
+      if(oldCount == 1){
         this.deleteValue(number)
       }
     }
   }
 
   @inline
-  private def notifyInsert(value: Long) {
+  private def notifyInsert(value: Int): Unit ={
     for(clauseNumber <- QList.toIterable(valueToClauseIDs(value))){
       val oldNbPresent = clauseToNbPresent(clauseNumber)
-      clauseToNbPresent(clauseNumber) = oldNbPresent + 1L
+      clauseToNbPresent(clauseNumber) = oldNbPresent + 1
       if(oldNbPresent == clauseAndMaxOccArray(clauseNumber)._2) {
         setClauseViolated(clauseNumber)
       }
@@ -162,23 +161,23 @@ case class ValuesInViolatedClauses(s: SetValue, clauseAndMaxOccList:Iterable[(It
   }
 
   @inline
-  private def notifyDelete(value: Long) {
+  private def notifyDelete(value: Int): Unit ={
     for(clauseNumber <- QList.toIterable(valueToClauseIDs(value))){
       val oldNbPresent = clauseToNbPresent(clauseNumber)
-      clauseToNbPresent(clauseNumber) = oldNbPresent - 1L
-      if(oldNbPresent == clauseAndMaxOccArray(clauseNumber)._2 + 1L){
+      clauseToNbPresent(clauseNumber) = oldNbPresent - 1
+      if(oldNbPresent == clauseAndMaxOccArray(clauseNumber)._2 + 1){
         setClauseNonViolated(clauseNumber)
       }
     }
   }
 
-  private def computeFromScratch(values:SortedSet[Long]):SortedSet[Long] = {
+  private def computeFromScratch(values:SortedSet[Int]):SortedSet[Int] = {
     val violatedClauses = clauseAndMaxOccList.filter({case (clause,maxOcc) => clause.count(v => values.contains(v)) > maxOcc})
-    SortedSet.empty[Long] ++ violatedClauses.flatMap({case (clause,maxOcc) => clause})
+    SortedSet.empty[Int] ++ violatedClauses.flatMap({case (clause,maxOcc) => clause})
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value equals computeFromScratch(s.value) ,Some("included subset Error value=" + this.value  + " should be:" + computeFromScratch(s.value)))
+  override def checkInternals(c: Checker): Unit = {
+    val str = s"included subset Error value=${this.value} should be:${computeFromScratch(s.value)}"
+    c.check(this.value equals computeFromScratch(s.value), Some(str))
   }
 }
-

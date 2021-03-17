@@ -11,7 +11,7 @@ abstract class Decision {
   def isTrue: Boolean
   def toLiteral: CPBoolVar
   def unary_!(): Decision = opposite
-  def strengthen(): Unit = Unit
+  def strengthen(): Unit = ()
   def variable(): CPIntVar
   def value(): Int
 }

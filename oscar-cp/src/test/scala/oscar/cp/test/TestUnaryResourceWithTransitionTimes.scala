@@ -17,7 +17,7 @@ class TestUnaryResourceWithTransitionTimes extends FunSuite with Matchers with A
   val randGen = new scala.util.Random(seed)
 
   test("Random instance of size 2") {
-    for(i <- 0 until 20) {
+    for (i <- 0 until 10) {
       val nActivities = 2
       val minTT = randGen.nextInt(20)
       val maxTT = minTT + randGen.nextInt(20)
@@ -25,7 +25,7 @@ class TestUnaryResourceWithTransitionTimes extends FunSuite with Matchers with A
       val maxDuration = minDuration + randGen.nextInt(30)
       val intervalMultiplicator = math.max(1, nActivities / 5)
       val intervalProba = 0.0
-      val (durations, triMatrix, actiBounds) = randomInstance(nActivities,minTT, maxTT, minDuration, maxDuration, intervalMultiplicator, intervalProba)
+      val (durations, triMatrix, actiBounds) = randomInstance(nActivities, minTT, maxTT, minDuration, maxDuration, intervalMultiplicator, intervalProba)
 
       if (i > 0) {
         val (stat1, stat2) = compareWithDecomp(nActivities, durations, triMatrix, actiBounds)
@@ -38,7 +38,7 @@ class TestUnaryResourceWithTransitionTimes extends FunSuite with Matchers with A
   }
 
   test("Random instance of size 3") {
-    for(i <- 0 until 10) {
+    for (i <- 0 until 10) {
       val nActivities = 3
       val minTT = randGen.nextInt(20)
       val maxTT = minTT + randGen.nextInt(20)
@@ -46,7 +46,7 @@ class TestUnaryResourceWithTransitionTimes extends FunSuite with Matchers with A
       val maxDuration = minDuration + randGen.nextInt(30)
       val intervalMultiplicator = math.max(1, nActivities / 5)
       val intervalProba = 0.0
-      val (durations, triMatrix, actiBounds) = randomInstance(nActivities,minTT, maxTT, minDuration, maxDuration, intervalMultiplicator, intervalProba)
+      val (durations, triMatrix, actiBounds) = randomInstance(nActivities, minTT, maxTT, minDuration, maxDuration, intervalMultiplicator, intervalProba)
 
       val (stat1, stat2) = compareWithDecomp(nActivities, durations, triMatrix, actiBounds)
 

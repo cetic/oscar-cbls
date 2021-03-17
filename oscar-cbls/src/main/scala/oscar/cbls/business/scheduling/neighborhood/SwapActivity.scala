@@ -1,15 +1,14 @@
 package oscar.cbls.business.scheduling.neighborhood
 
 import oscar.cbls.algo.search.HotRestart
-import oscar.cbls.LoopBehavior
 import oscar.cbls.business.scheduling.model.Schedule
-import oscar.cbls.core.search.{Best, EasyNeighborhoodMultiLevel, First}
+import oscar.cbls.core.search.{Best, EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
 class SwapActivity(schedule: Schedule,
                    neighborhoodName: String,
                    selectIndexBehavior:LoopBehavior = First(),
                    selectSwapBehavior:LoopBehavior = Best(),
-                   searchIndices: Option[() => Iterable[Long]] = None)
+                   searchIndices: Option[() => Iterable[Int]] = None)
   extends EasyNeighborhoodMultiLevel[SwapActivityMove](neighborhoodName) {
 
   var currentIndex: Int = -1
@@ -21,22 +20,23 @@ class SwapActivity(schedule: Schedule,
     * as explained in the documentation of this class
     */
   override def exploreNeighborhood(initialObj: Long): Unit = {
+    val priorityListValue = schedule.activityPriorityList.value
     // Iteration zone on activities indices
     // Checking the Hot Restart
-    val iterationZone1: () => Iterable[Long] = searchIndices.getOrElse(() =>
-      0L until schedule.activityPriorityList.value.size
+    val iterationZone1: () => Iterable[Int] = searchIndices.getOrElse(() =>
+      0 until priorityListValue.size
     )
     val hotRestart = true
-    val iterationZone: Iterable[Long] =
-      if (hotRestart) HotRestart(iterationZone1(), currentIndex.toLong)
+    val iterationZone: Iterable[Int] =
+      if (hotRestart) HotRestart(iterationZone1(), currentIndex)
       else iterationZone1()
     // iterating over the indices in the activity list
     val (indicesIterator, notifyIndexFound) = selectIndexBehavior.toIterator(iterationZone)
     // Define checkpoint on sequence (activities list)
-    val seqValueCheckPoint = schedule.activityPriorityList.defineCurrentValueAsCheckpoint(true)
+    val seqValueCheckPoint = schedule.activityPriorityList.defineCurrentValueAsCheckpoint()
     // Main loop
     while (indicesIterator.hasNext) {
-      currentIndex = indicesIterator.next().toInt
+      currentIndex = indicesIterator.next()
       // explore the swappable zone from the current index
       val swappableZone = schedule.swappableIndices(currentIndex)
       val (swappableIterator, notifySwappingFound) = selectSwapBehavior.toIterator(swappableZone)

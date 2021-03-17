@@ -1,13 +1,23 @@
 package oscar.cbls.test.graph
 
 import org.scalacheck.Gen
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.algo.dag.{ConcreteDAG, ConcreteDAGNode, CycleException}
 
 import scala.util.Random
 
-class DAGTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matchers {
+class DAGTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
+  // Generates a list of 0 to 30 unique tuples, guaranteed to form an acyclic graph
+  val acyclicGraphGen: Gen[(Int, Array[(Int, Int)])] = for {
+    v <- Gen.choose(1, 30) // Number of tuples
+    d <- Gen.choose(v,100) // Density of precedences
+  } yield (v,Array.tabulate(v)(item => (item,item+1)) ++ Array.tabulate(d)(count => {
+    val i = count % v
+    val target = i + Random.nextInt(v - i)
+    (i,target)
+  }).filter(t => t._2 != t._1))
 
   test("notifyAddEdge throws CycleException when autoSort activated"){
 
@@ -65,7 +75,7 @@ class DAGTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matc
     nodes(5).setAsPrecedingNodeKnownNotYetPreceding(nodes(6))
     nodes(6).setAsPrecedingNodeKnownNotYetPreceding(nodes(3))
 
-    dag.getCycle() should contain allOf (nodes(3),nodes(4),nodes(5),nodes(6))
+    dag.getCycle() should contain.allOf(nodes(3),nodes(4),nodes(5),nodes(6))
   }
 
   test("CheckSort does not throw with acyclic graph"){
@@ -121,7 +131,6 @@ class DAGTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matc
     }}
   }
 
-
   test("GetCycle returns null when graph is acyclic (initialized with setAsSucceedingNode)"){
     forAll(acyclicGraphGen){ graph => {
 
@@ -140,15 +149,4 @@ class DAGTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matc
       dag.getCycle() should be (Nil)
     }}
   }
-
-  // Generates a list of 0 to 30 unique tuples, guaranteed to form an acyclic graph
-  val acyclicGraphGen: Gen[(Int, Array[(Int, Int)])] = for {
-    v <- Gen.choose(1, 30) // Number of tuples
-    p <- Gen.choose(10,50) // Probability of 2 nodes to be neighbor
-    d <- Gen.choose(v,100) // Density of precedences
-  } yield (v,Array.tabulate(v)(item => (item,item+1)) ++ Array.tabulate(d)(count => {
-      var i = count % v
-      var target = i + Random.nextInt(v - i)
-      (i,target)
-  }).filter(t => t._2 != t._1))
 }

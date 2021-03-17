@@ -86,7 +86,6 @@ class SubCircuitSuite extends TestSuite {
       CPIntVar(2), //4
       CPIntVar(1) //5
     )
-    println("---------------------------------")
     postAndCheckFailure(cp, subCircuit(successors))
 
     def checkUniqueCircuit(): Boolean = {

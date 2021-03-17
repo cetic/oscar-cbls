@@ -18,17 +18,14 @@
   *         by Renaud De Landtsheer
   *            Yoann Guyot
   ******************************************************************************/
-
-
 package oscar.cbls.lib.invariant.logic
 
-import oscar.cbls._
-import oscar.cbls.core._
 import oscar.cbls.algo.heap.{BinomialHeap, BinomialHeapWithMove}
-import oscar.cbls.core.computation.IntValue
+import oscar.cbls.core.computation.{ChangingIntValue, IntNotificationTarget, IntValue, SetInvariant}
+import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.SortedSet
-import scala.collection.mutable.Queue
+import scala.collection.mutable
 
 /**
  * {i in index of values | values[i] <= boundary}
@@ -38,15 +35,15 @@ import scala.collection.mutable.Queue
  * @author renaud.delandtsheer@cetic.be
  * */
 case class SelectLEHeapHeap(values: Array[IntValue], boundary: IntValue)
-  extends SetInvariant(SortedSet.empty[Long], values.indices.start to values.indices.end)
+  extends SetInvariant(SortedSet.empty[Int], values.indices.start to values.indices.end)
   with IntNotificationTarget{
 
   for (v <- values.indices) registerStaticAndDynamicDependency(values(v), v)
   registerStaticAndDynamicDependency(boundary)
   finishInitialization()
 
-  val HeapAbove: BinomialHeapWithMove[Long] = new BinomialHeapWithMove((i: Long) => values(i).value, values.size)
-  val HeapBelowOrEqual: BinomialHeapWithMove[Long] = new BinomialHeapWithMove((i: Long) => -values(i).value, values.size)
+  val HeapAbove: BinomialHeapWithMove[Int] = new BinomialHeapWithMove((i: Int) => values(i).value, values.size)
+  val HeapBelowOrEqual: BinomialHeapWithMove[Int] = new BinomialHeapWithMove((i: Int) => -values(i).value, values.size)
 
   for(v <- values.indices){
     if(values(v).value <= boundary.value){
@@ -59,7 +56,7 @@ case class SelectLEHeapHeap(values: Array[IntValue], boundary: IntValue)
 
   //pomper des elements de Above et les mettre dans Below et dans output
   @inline
-  def TransferToBelow() {
+  final def TransferToBelow(): Unit = {
     while (!HeapAbove.isEmpty && values(HeapAbove.getFirst).value <= boundary.value) {
       val v = HeapAbove.removeFirst()
       HeapBelowOrEqual.insert(v)
@@ -69,7 +66,7 @@ case class SelectLEHeapHeap(values: Array[IntValue], boundary: IntValue)
 
   //pomper des elements de Above et les mettre dans Below et dans output
   @inline
-  def TransferToAbove() {
+  final def TransferToAbove(): Unit = {
     //pomper des elements de beloworequal et les mettre dans above
     while (!HeapBelowOrEqual.isEmpty && values(HeapBelowOrEqual.getFirst).value > boundary.value) {
       val v = HeapBelowOrEqual.removeFirst()
@@ -79,7 +76,7 @@ case class SelectLEHeapHeap(values: Array[IntValue], boundary: IntValue)
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Long, NewVal: Long): Unit = {
     if (v == boundary) {
       //c'est le boundary
       if (NewVal > OldVal) {
@@ -97,23 +94,20 @@ case class SelectLEHeapHeap(values: Array[IntValue], boundary: IntValue)
     }
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
     for (v <- this.value) {
       c.check(values(v).value <= boundary.value,
-        Some("values(" + v + ").value (" + values(v).value
-          + ") <= boundary.value (" + boundary.value + ")"))
+        Some(s"values($v).value (${values(v).value}) <= boundary.value (${boundary.value})"))
     }
     var count: Long = 0L
     for (v <- values) {
       if (v.value <= boundary.value)
         count += 1L
     }
-    c.check(count == this.value.size, Some("count (" + count
-      + ") == output.value.size (" + this.value.size + ")"))
-    c.check(HeapAbove.size + HeapBelowOrEqual.size == values.size,
-      Some("HeapAbove.size + HeapBelowOrEqual.size ("
-        + HeapAbove.size + "+" + HeapBelowOrEqual.size
-        + ") == values.size (" + values.size + ")"))
+    c.check(count == this.value.size,
+      Some(s"count ($count) == output.value.size (${this.value.size})"))
+    c.check(HeapAbove.size + HeapBelowOrEqual.size == values.length,
+      Some(s"HeapAbove.size + HeapBelowOrEqual.size (${HeapAbove.size}+${HeapBelowOrEqual.size}) == values.size (${values.length})"))
   }
 }
 
@@ -135,10 +129,10 @@ case class SelectLESetQueue[X<:IntValue](values: Array[X], boundary: IntValue)
   registerStaticAndDynamicDependency(boundary)
   finishInitialization()
 
-  val QueueAbove: Queue[Long] = new Queue[Long]
+  val QueueAbove: mutable.Queue[Int] = new mutable.Queue[Int]
 
-  this := SortedSet.empty[Long]
-  val HeapAbove: BinomialHeap[Long] = new BinomialHeap((i: Long) => values(i).value, values.size)
+  this := SortedSet.empty[Int]
+  val HeapAbove: BinomialHeap[Int] = new BinomialHeap((i: Int) => values(i).value, values.size)
   for (v <- values.indices) {
     if (values(v).value <= boundary.value) {
       this.insertValue(v)
@@ -151,33 +145,34 @@ case class SelectLESetQueue[X<:IntValue](values: Array[X], boundary: IntValue)
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long): Unit = {
     if (v == boundary) {
       //c'est le boundary
       assert(NewVal > OldVal, "SelectLESetQueue does not allow boundary to decrease")
-      while (!QueueAbove.isEmpty && values(QueueAbove.head).value <= boundary.value) {
+      while (QueueAbove.nonEmpty && values(QueueAbove.head).value <= boundary.value) {
         val v = QueueAbove.dequeue()
         this.insertValue(v)
       }
     } else { //il est dans BelowOrEqual
       //     println("SelectLEnotify " + v + " index: " + index +  " OldVal: " + OldVal + " NewVal: " + NewVal + " boundary: " + boundary + " this " + this)
-      assert(OldVal <= boundary.value, "SelectLESetQueue does not allow elements above boundary to change: " + v + "(new: " + NewVal + ", old: " + OldVal + ") pivot: " + boundary)
-      assert(QueueAbove.isEmpty || values(QueueAbove.last).value <= NewVal, "SelectLESetQueue requires latest variables passing above boundary to be the biggest one: " + v)
+      assert(OldVal <= boundary.value,
+        s"SelectLESetQueue does not allow elements above boundary to change: $v(new: $NewVal, old: $OldVal) pivot: $boundary")
+      assert(QueueAbove.isEmpty || values(QueueAbove.last).value <= NewVal,
+        s"SelectLESetQueue requires latest variables passing above boundary to be the biggest one: $v")
       QueueAbove.enqueue(index)
       this.deleteValue(index)
     }
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
     var count: Long = 0L
     for (i <- values.indices) {
       if (values(i).value <= boundary.value) {
-        c.check(this.value.contains(i), Some("this.value.contains(" + i + ")"))
+        c.check(this.value.contains(i), Some(s"this.value.contains($i)"))
         count += 1L
       }
     }
     c.check(this.value.size == count,
-      Some("this.value.size (" + this.value.size
-        + ") == count (" + count + ")"))
+      Some(s"this.value.size (${this.value.size}) == count ($count)"))
   }
 }

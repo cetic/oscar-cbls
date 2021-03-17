@@ -1,4 +1,3 @@
-package oscar.cbls.algo.quick
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -13,8 +12,7 @@ package oscar.cbls.algo.quick
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
-import scala.language.implicitConversions
+package oscar.cbls.algo.quick
 
 //TODO (to discuss first) : implement a custom iteration system for the QList. We lose too much time converting it into a iterator
 // And it's quite easy to do it :
@@ -69,11 +67,11 @@ class QList[@specialized T](val head:T, val tail:QList[T] = null){
 object QList{
 
   def append[@specialized T](l:Iterable[T],q:QList[T]):QList[T] = {
-    val it = l.toIterator
+    val it = l.iterator
 
     var toReturn = q
     while(it.hasNext){
-      toReturn = QList(it.next,toReturn)
+      toReturn = QList(it.next(),toReturn)
     }
     toReturn
   }
@@ -101,7 +99,7 @@ object QList{
 
   def buildFromIterable[@specialized T](l:Iterable[T]):QList[T] = {
     var acc:QList[T] = null
-    val it = l.toIterator
+    val it = l.iterator
     while(it.hasNext){
       acc = QList(it.next(),acc)
     }
@@ -174,7 +172,7 @@ object QList{
 
 class IterableQList[@specialized T](l:QList[T]) extends Iterable[T]{
 
-  override def foreach[U](f: (T) => U): Unit = {
+  override def foreach[U](f: T => U): Unit = {
     var currentpos = l
     while(currentpos != null){
       f(currentpos.head)

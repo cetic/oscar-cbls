@@ -1,5 +1,3 @@
-package oscar.cbls.algo.accList
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,7 +12,7 @@ package oscar.cbls.algo.accList
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
+package oscar.cbls.algo.accList
 
 object AccList{
   def base[T](l:T*):AccList[T] = new LeafAccList[T](l.toList)

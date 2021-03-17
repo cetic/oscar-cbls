@@ -1,25 +1,24 @@
 /*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
+ * OscaR is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * OscaR is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License  for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+ * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+ ******************************************************************************/
 
 package oscar.cbls.lib.search.neighborhoods
 
-import oscar.cbls._
-import oscar.cbls.algo.search.{IdenticalAggregator, HotRestart}
-import oscar.cbls.core.computation.{Variable, CBLSIntVar}
-import oscar.cbls.core.search.{Move, EasyNeighborhoodMultiLevel, First, LoopBehavior}
-
+import oscar.cbls.algo.search.{HotRestart, IdenticalAggregator}
+import oscar.cbls.core.computation.{CBLSIntVar, Store, Variable}
+import oscar.cbls.core.distrib.IndependentMove
+import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, Move}
 
 /**
  * will iteratively swap the value of two different variables in the array
@@ -42,12 +41,12 @@ import oscar.cbls.core.search.{Move, EasyNeighborhoodMultiLevel, First, LoopBeha
  * @param symmetryClassOfVariables1 a function that input the ID of a variable and returns a symmetry class;
  *                      for each role of the move, ony one of the variable in each class will be considered for the vars in searchZone1
  *                      this makes search faster
- *                      Long.MinValue is considered different to itself
+ *                      Int.MinValue is considered different to itself
  *                      if you set to None this will not be used at all
  * @param symmetryClassOfVariables2 a function that input the ID of a variable and returns a symmetry class;
  *                      for each role of the move, ony one of the variable in each class will be considered for the vars in searchZone2
  *                      this makes search faster
- *                      Long.MinValue is considered different to itself
+ *                      Int.MinValue is considered different to itself
  *                      if you set to None this will not be used at all
  * @param hotRestart  if true, the exploration order in case you ar not going for the best
  *                    is a hotRestart for the first swapped variable
@@ -57,33 +56,33 @@ import oscar.cbls.core.search.{Move, EasyNeighborhoodMultiLevel, First, LoopBeha
  **/
 case class SwapsNeighborhood(vars:Array[CBLSIntVar],
                              name:String = "SwapsNeighborhood",
-                             searchZone1:()=>Iterable[Long] = null,
-                             searchZone2:() => (Long,Long)=>Iterable[Long] = null,
+                             searchZone1:()=>Iterable[Int] = null,
+                             searchZone2:() => (Int,Int)=>Iterable[Int] = null,
                              symmetryCanBeBrokenOnIndices:Boolean = true,
                              symmetryCanBeBrokenOnValue:Boolean = false,
                              selectFirstVariableBehavior:LoopBehavior = First(),
                              selectSecondVariableBehavior:LoopBehavior = First(),
-                             symmetryClassOfVariables1:Option[Long => Long] = None,
-                             symmetryClassOfVariables2:Option[Long => Long] = None,
+                             symmetryClassOfVariables1:Option[Int => Int] = None,
+                             symmetryClassOfVariables2:Option[Int => Int] = None,
                              hotRestart:Boolean = true,
                              adjustIfNotInProperDomain:Boolean = false)
   extends EasyNeighborhoodMultiLevel[SwapMove](name){
 
   //also used as the indice to start with for the exploration
-  var firstVarIndice:Long = 0L
+  var firstVarIndice:Int = 0
   var firstVar:CBLSIntVar = null
 
-  var secondVarIndice:Long = 0L
+  var secondVarIndice:Int = 0
   var secondVar:CBLSIntVar = null
 
-  override def exploreNeighborhood(initialObj: Long){
+  override def exploreNeighborhood(initialObj: Long): Unit ={
 
-    val firstIterationSchemeZone : Iterable[Long] =
+    val firstIterationSchemeZone : Iterable[Int] =
       if (searchZone1 == null) {
         if (hotRestart) {
-          if (firstVarIndice >= vars.length) firstVarIndice = 0L
-          0L until vars.length startBy firstVarIndice
-        } else 0L until vars.length
+          if (firstVarIndice >= vars.length) firstVarIndice = 0
+          HotRestart(vars.indices, firstVarIndice)
+        } else vars.indices
       } else if (hotRestart) HotRestart(searchZone1(), firstVarIndice) else searchZone1()
 
     val firstIterationScheme = symmetryClassOfVariables1 match {
@@ -97,9 +96,9 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
     while (iIterator.hasNext) {
       firstVarIndice = iIterator.next()
       firstVar = vars(firstVarIndice)
-      val oldValOfFirstVar = firstVar.newValue
+      val oldValOfFirstVar = firstVar.newValueInt
 
-      val secondIterationSchemeZone : Iterable[Long] = if (searchZone2ForThisSearch == null)0L until vars.length else searchZone2ForThisSearch(firstVarIndice,oldValOfFirstVar)
+      val secondIterationSchemeZone : Iterable[Int] = if (searchZone2ForThisSearch == null)0 until vars.length else searchZone2ForThisSearch(firstVarIndice,oldValOfFirstVar)
 
       val secondIterationScheme = symmetryClassOfVariables2 match {
         case None => secondIterationSchemeZone
@@ -124,54 +123,84 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
             val adjustedValueToSecondVar:Long = secondVar.domain.adjust(oldValOfFirstVar)
             val adjustedValueToFirstVar:Long = firstVar.domain.adjust(oldValOfSecondVar)
 
-            if (evaluateCurrentMoveObjTrueIfSomethingFound(obj.assignVal(
-              List(
-                (firstVar, adjustedValueToFirstVar),
-                (secondVar, adjustedValueToSecondVar))))) {
+            if ((adjustedValueToSecondVar != adjustedValueToFirstVar) &&
+                evaluateCurrentMoveObjTrueIfSomethingFound(obj.assignVal(
+                  List(
+                    (firstVar, adjustedValueToFirstVar),
+                    (secondVar, adjustedValueToSecondVar))))) {
               notifyFound1()
               notifyFound2()
             }
 
-          } else {
-            if (secondVar.domain.contains(oldValOfFirstVar)
-              && firstVar.domain.contains(oldValOfSecondVar)) {
-              if (evaluateCurrentMoveObjTrueIfSomethingFound(obj.swapVal(firstVar, secondVar))) {
-                notifyFound1()
-                notifyFound2()
-              }
+          } else if (secondVar.domain.contains(oldValOfFirstVar)
+              && firstVar.domain.contains(oldValOfSecondVar)
+              && oldValOfFirstVar != oldValOfSecondVar
+              && evaluateCurrentMoveObjTrueIfSomethingFound(obj.swapVal(firstVar, secondVar))) {
+              notifyFound1()
+              notifyFound2()
             }
-          }
         }
       }
     }
-    firstVarIndice = firstVarIndice +1L
   }
 
-  override def instantiateCurrentMove(newObj: Long) = SwapMove(firstVar, secondVar, firstVarIndice,secondVarIndice,newObj, name)
+  override def instantiateCurrentMove(newObj: Long) =
+    SwapMove(firstVar, secondVar, firstVarIndice, secondVarIndice, adjustIfNotInProperDomain, newObj, name)
 
   //this resets the internal state of the Neighborhood
   override def reset(): Unit = {
-    firstVarIndice = 0L
+    firstVarIndice = 0
   }
 }
 
-
 /** standard move that swaps the value of two CBLSIntVar
-  *
-  * @param i the variable
-  * @param j the other variable
-  * @param objAfter the objective after this assignation will be performed
-  * @param neighborhoodName a string describing the neighborhood hat found the move (for debug purposes)
-  * @author renaud.delandtsheer@cetic.be
-  */
-case class SwapMove(i:CBLSIntVar,j:CBLSIntVar, idI:Int, idJ:Int, override val objAfter:Long, override val neighborhoodName:String = null)
+ *
+ * @param i the variable
+ * @param j the other variable
+ * @param objAfter the objective after this assignation will be performed
+ * @param neighborhoodName a string describing the neighborhood hat found the move (for debug purposes)
+ * @author renaud.delandtsheer@cetic.be
+ */
+case class SwapMove(i:CBLSIntVar,j:CBLSIntVar, idI:Int, idJ:Int, adjustIfNotInProperDomain:Boolean, override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
-  override def commit() {i :=: j}
+  override def commit(): Unit = {
+    if(adjustIfNotInProperDomain) {
+      val adjustedJValue:Long = i.domain.adjust(j.value)
+      val adjustedIValue:Long = j.domain.adjust(i.value)
+      i := adjustedJValue
+      j := adjustedIValue
+
+    }else{
+      i :=: j
+    }
+  }
 
   override def toString: String  = {
-    neighborhoodNameToString + "SwapMove(" + i + " swapped with " + j + objToString + ")"
+    s"${neighborhoodNameToString}SwapMove($i swapped with $j${if (adjustIfNotInProperDomain) " with adjust" else ""}$objToString)"
   }
 
   override def touchedVariables: List[Variable] = List(i,j)
+
+  override def getIndependentMove(m: Store): IndependentMove =
+    IndependentSwap(i.uniqueID,
+      j.uniqueID,
+      idI,
+      idJ,
+      adjustIfNotInProperDomain,
+      objAfter,
+      neighborhoodName)
+}
+
+
+case class IndependentSwap(i:Int,
+                           j:Int,
+                           idI:Int,
+                           idJ:Int,
+                           adjustIfNotInProperDomain:Boolean,
+                           override val objAfter:Long,
+                           override val neighborhoodName:String) extends IndependentMove{
+
+  override def makeLocal(m: Store): Move =
+    SwapMove(m.getIntVar(i),m.getIntVar(j), idI, idJ, adjustIfNotInProperDomain,objAfter,neighborhoodName)
 }

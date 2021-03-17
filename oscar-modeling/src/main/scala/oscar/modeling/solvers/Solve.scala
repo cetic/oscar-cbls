@@ -18,7 +18,7 @@ package oscar.modeling.solvers
 trait Solve[RetVal] {
   def onSolution: () => RetVal
   def onSolution(o: => RetVal) = onSolutionF(() => o)
-  def onSolutionF(o: () => RetVal)
+  def onSolutionF(o: () => RetVal): Unit
 }
 
 /**

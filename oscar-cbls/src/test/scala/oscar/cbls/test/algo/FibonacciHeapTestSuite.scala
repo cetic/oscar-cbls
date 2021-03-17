@@ -1,11 +1,12 @@
 package oscar.cbls.test.algo
 
 import org.scalacheck.Gen
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.algo.heap.FibonacciHeap
 
-class FibonacciHeapTestSuite extends FunSuite with Matchers with GeneratorDrivenPropertyChecks{
+class FibonacciHeapTestSuite extends AnyFunSuite with Matchers with ScalaCheckDrivenPropertyChecks {
 
   val gen: Gen[Operation] = Gen.frequency(
     (10,Insert()),
@@ -23,7 +24,6 @@ class FibonacciHeapTestSuite extends FunSuite with Matchers with GeneratorDriven
     forAll(genOperations,minSuccessful(150)){ operations :List[Operation] =>
       whenever(operations.nonEmpty){
 
-        val keys = (1L to operations.length).toList
         val heap = new FibonacciHeap[Long]()
         var listNodes = List[FibonacciHeap.Node[Long]]()
         var currentKey = 1
@@ -132,7 +132,7 @@ class FibonacciHeapTestSuite extends FunSuite with Matchers with GeneratorDriven
     heap.insert(1,0)
     heap.insert(1,0)
 
-    var list = heap.popMins
+    val list = heap.popMins
     list.size should be (5)
     list.forall(v => v == 1) should be(true)
 

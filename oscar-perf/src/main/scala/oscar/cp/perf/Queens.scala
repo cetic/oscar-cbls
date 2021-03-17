@@ -24,7 +24,7 @@ import oscar.cp._
  * @author Pierre Schaus pschaus@gmail.com
  */
 object Queens {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
 
     val cp = CPSolver()
     cp.silent = true

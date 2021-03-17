@@ -101,16 +101,21 @@ public class TestSequence extends TestCase {
     }
 
     public void testSequence4() throws Inconsistency {
-    	CPIntVar [] x = new CPIntVar[4];
-    	for (int i = 0; i < x.length; i++) {
-			x[i] = CPIntVar.apply(s,1,5);
-		}
-        SparseSet set = new SparseSet(4,4);
+        try {
+            CPIntVar[] x = new CPIntVar[4];
+            for (int i = 0; i < x.length; i++) {
+                x[i] = CPIntVar.apply(s, 1, 5);
+            }
+            SparseSet set = new SparseSet(4, 4);
 
-        s.add(new EqCons(x[2], 1));
-        s.post(new Sequence(x, set, 1, 1, 1));
-
-        assertTrue(s.isFailed());
+            s.add(new EqCons(x[2], 1));
+            s.post(new Sequence(x, set, 1, 1, 1));
+        }
+        catch (Inconsistency e) {
+            //ok
+            return;
+        }
+        fail();
     }
     
     

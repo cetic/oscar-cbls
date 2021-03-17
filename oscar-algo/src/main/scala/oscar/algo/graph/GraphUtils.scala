@@ -1,10 +1,14 @@
 package oscar.algo.graph
 
+import oscar.algo.DisjointSets
 import oscar.algo.array.{ArrayHeapDouble, ArrayHeapInt}
+
+import scala.collection.mutable
 
 /**
  * Created on 06/03/15.
  * @author Cyrille Dejemeppe (cyrille.dejemeppe@gmail.com)
+ * @author Charles Thomas (cftmthomas@gmail.com)
  */
 
 /**
@@ -240,6 +244,35 @@ object GraphUtils {
 
     Array.tabulate(n)(i => (getPath(source, i, previous), distances(i)))
   }
+
+  /**
+   * Kruskal (https://en.wikipedia.org/wiki/Kruskal%27s_algorithm) implementation to compute a MST for a graph
+   */
+  def kruskal(nodes: Seq[Int], edges: Seq[(Int, Int)], edgeCosts: Array[Array[Int]]): (Seq[(Int, Int)], Int) = {
+    implicit object EdgeOrdering extends Ordering[(Int, Int)] {
+      override def compare(x: (Int, Int), y: (Int, Int)): Int = edgeCosts(y._1)(y._2) compare edgeCosts(x._1)(x._2)
+    }
+    val pq = mutable.PriorityQueue(edges: _*)
+    val uf = new DisjointSets(0, nodes.length)
+    val nodeIndex = nodes.zipWithIndex.toMap
+    val mst = mutable.ArrayBuffer[(Int, Int)]()
+    var weight = 0
+
+    while(pq.nonEmpty && mst.length < nodes.length - 1){
+      val (i, j) = pq.dequeue()
+      val iIdx = nodeIndex(i)
+      val jIdx = nodeIndex(j)
+      if(!uf.inSameSet(iIdx, jIdx)){
+        uf.union(iIdx, jIdx)
+        mst += ((i, j))
+        weight += edgeCosts(i)(j)
+      }
+    }
+
+    (mst.toSeq, weight)
+  }
+
+  def kruskal(nodes: Seq[Int], edgeCosts: Array[Array[Int]]): (Seq[(Int, Int)], Int) = kruskal(nodes, for(i <- nodes; j <- nodes if i != j) yield (i, j), edgeCosts)
 }
 
 class NegativeWeightCycleException(msg: String) extends IllegalArgumentException

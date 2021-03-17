@@ -62,11 +62,11 @@ class TestSoftGCC extends TestSuite {
     var totalNodes1 = 0
     var totalNodes2 = 0
 
-    for (i <- 1 to 100) {
+    for (i <- 1 to 10) {
       //println(s"test #$i")
       rand =  new scala.util.Random(i)
 
-      val nVariables = 8
+      val nVariables = 7
 
       val domVars = Array.fill(nVariables)(randomDom(size = 6))
       val domViol = (0 to rand.nextInt(6)).toSet

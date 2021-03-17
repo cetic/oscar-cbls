@@ -17,8 +17,8 @@ package oscar.invariants
 import scala.collection.immutable._
 
 trait Depending{
-   def dispose()
-  def until(d: Occuring[_]){
+   def dispose(): Unit
+  def until(d: Occuring[_]): Unit ={
     once (d){_ => 
       dispose() 
     }
@@ -62,7 +62,7 @@ class ConditionalOccuring[A](d: Occuring[A], f:A=>Boolean) extends Occuring[A]{
 trait BaseEvent[A] extends Occuring[A]{
 	class EventReaction(var event: BaseEvent[A], f: A => Boolean) extends Reaction[A](f, event) {
 		val cf = dependants.add(this)
-		def dispose(){
+		def dispose(): Unit ={
 			dependants.remove(cf)
 		}
 	}
@@ -71,7 +71,7 @@ trait BaseEvent[A] extends Occuring[A]{
 	override def foreach(f: A => Boolean) ={
 		new EventReaction(this,f)
 	}
-	def emit(msg: A)
+	def emit(msg: A): Unit
 	def hanging = dependants.size
 }
 
@@ -124,7 +124,7 @@ class ReactionDescription[A](val e: Occuring[A], val f: A => Boolean) {
 
 class Signal[A](private var value: A) extends Event[A]{
   
-  override def emit(msg: A){
+  override def emit(msg: A): Unit ={
     val old = value
     value = msg
     if ( msg != old ) super.emit(msg)
@@ -148,13 +148,13 @@ class EventFromNow[A](sig: Signal[A], fil: A => Boolean) extends ConditionalOccu
 
 
 trait NotifyAllEvent[A] extends BaseEvent[A]{  
-  override def emit(msg: A) {
+  override def emit(msg: A): Unit = {
     for (d <- dependants) d(msg)
   }
 }
 
 trait NotifyOneEvent[A] extends Event[A]{
-  override def emit(a: A){
+  override def emit(a: A): Unit ={
     if ( dependants.first != null ) dependants.first.apply(a)
   }
 }
@@ -162,14 +162,14 @@ trait NotifyOneEvent[A] extends Event[A]{
 class EventOne[A] extends NotifyOneEvent[A] {}
 
 class SignalOne[A](value: A) extends Signal[A](value) with NotifyOneEvent[A]{
-  override def emit(msg:A){
+  override def emit(msg:A): Unit ={
     super[Signal].emit(msg)
     super[NotifyOneEvent].emit(msg)
   }
 }
 
 class SignalAll[A](value: A) extends Signal[A](value) with NotifyAllEvent[A]{
-  override def emit(msg:A){
+  override def emit(msg:A): Unit ={
     super[Signal].emit(msg)
     super[NotifyAllEvent].emit(msg)
   }

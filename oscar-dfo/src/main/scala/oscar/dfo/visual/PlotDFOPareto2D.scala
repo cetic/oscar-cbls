@@ -36,14 +36,14 @@ class PlotDFOPareto2D[E <% Ordered[E]] (
   
   var currentIterate: Array[Double] = null
 
-  def highLightIterate(iterate: Array[Double]) {
+  def highLightIterate(iterate: Array[Double]): Unit = {
     currentIterate = iterate
     highlight(iterate(0).asInstanceOf[Double], iterate(1).asInstanceOf[Double])
   }
 
-  def update(archive: Set[ParetoElement[E]], paretoIndex: Int = 0) {
+  def update(archive: Set[ParetoElement[E]], paretoIndex: Int = 0): Unit = {
     SwingUtilities.invokeLater(new Runnable() {
-      def run() {
+      def run(): Unit = {
         removeAllPoints(paretoIndex)
         if (currentIterate != null) {
           addPoint(currentIterate(0).asInstanceOf[Double], currentIterate(1).asInstanceOf[Double], paretoIndex)

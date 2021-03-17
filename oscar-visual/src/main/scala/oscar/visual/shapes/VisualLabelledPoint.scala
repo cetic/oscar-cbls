@@ -19,65 +19,72 @@ import java.awt.Color
 import oscar.visual.VisualDrawing
 import oscar.visual.VisualFrame
 
-
 /**
  * 
  * @author Pierre Schaus
  *
  */
-class VisualLabelledPoint(d:VisualDrawing, s:Ellipse2D.Double, label: String, angle: Double) extends VisualShape(d){
+class VisualLabelledPoint(d:VisualDrawing,
+                          s:Ellipse2D.Double,
+                          label: String,
+                          angle: Double) extends VisualShape(d){
   
   type S = Ellipse2D.Double
-  protected val shape = s
+  protected val shape: Ellipse2D.Double = s
   
   val distFromPoint = 5
   
   def point: Ellipse2D.Double = shape
-  def radius = point.getHeight()
+  def radius: Double = point.getHeight
   
-  def this(d:VisualDrawing, xcenter: Double, ycenter: Double, radius: Double, label: String, angle: Double) {
+  def this(d:VisualDrawing,
+           xcenter: Double,
+           ycenter: Double,
+           radius: Double,
+           label: String,
+           angle: Double) = {
     this(d, new Ellipse2D.Double(xcenter, ycenter, radius, radius), label, angle)	
   }
   
-  def x = point.getX()
+  def x: Double = point.getX
 
-  def y = point.getY()
+  def y: Double = point.getY
   
-  def xText: Int = ((point.getX() + radius + distFromPoint) * math.cos(angle)).toInt
+  def xText: Int = ((point.getX + radius + distFromPoint) * math.cos(angle)).toInt
   
-  def yText: Int = ((point.getY() + radius + distFromPoint) * math.sin(angle)).toInt
+  def yText: Int = ((point.getY + radius + distFromPoint) * math.sin(angle)).toInt
   
-  def move(x: Double, y: Double) {
+  def move(x: Double, y: Double): Unit = {
     point.setFrame(x, y, radius, radius)
-	drawing.repaint()
+    drawing.repaint()
   }
   
-  override def draw(g: Graphics2D) {
-	g.draw(point);
-	println(xText + " " + yText)
-    g.drawString(label, xText, yText);
+  override def draw(g: Graphics2D): Unit = {
+    g.draw(point)
+    println(s"$xText $yText")
+    g.drawString(label, xText, yText)
   }
 }
 
 object VisualLabelledPoint {
   	
-  def main(args : Array[String]) {
-	val f = VisualFrame("toto");
-	val d = VisualDrawing(true);
-	val inf = f.createFrame("Drawing");
-	inf.add(d);
-	f.pack();
-	
-	val point = new VisualLabelledPoint(d, 200, 0, 1, "Yolo", 180);
-	point.toolTip = "Yolo";
-			
-	Thread.sleep(1000);
-	point.innerCol_$eq(Color.red);
-	Thread.sleep(1000);
-	point.move(100, 100);
-	for (i <- 0 until 20) {
-	  Thread.sleep(50);
-	  point.move(point.x+5, point.y);
-	}
+  def main(args : Array[String]): Unit = {
+    val f = VisualFrame("toto")
+    val d = VisualDrawing()
+    val inf = f.createFrame("Drawing")
+    inf.add(d)
+    f.pack()
+
+    val point = new VisualLabelledPoint(d, 200, 0, 1, "Yolo", 180)
+    point.toolTip = "Yolo"
+
+    Thread.sleep(1000)
+    point.innerCol_$eq(Color.red)
+    Thread.sleep(1000)
+    point.move(100, 100)
+    for (_ <- 0 until 20) {
+      Thread.sleep(50)
+      point.move(point.x+5, point.y)
+    }
   }
 }

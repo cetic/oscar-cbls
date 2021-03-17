@@ -25,7 +25,7 @@ import scala.collection.immutable.List;
 
 import java.util.Arrays;
 import java.util.LinkedList;
-import scala.collection.JavaConversions;
+import scala.jdk.javaapi.CollectionConverters;
 
 /**
  * Multiplication Constraint x * c = z
@@ -52,7 +52,7 @@ public class MulCte extends Constraint {
 
 	@Override
 	public Iterable<CPVar> associatedVars() {
-		return JavaConversions.iterableAsScalaIterable(Arrays.asList(x, z));
+		return CollectionConverters.asScala(Arrays.asList(x, z));
 	}
 
 	@Override

@@ -22,24 +22,24 @@ import scala.collection.immutable.SortedMap
  */
 trait DistributedStorageUtility {
 
-  var storage: SortedMap[Long, Any] = null
+  var storage: SortedMap[Int, Any] = _
 
   /**returns null if nothing was stored*/
-  final def getStorageAt[T](key: Long, default: T = null.asInstanceOf[T]) =
+  final def getStorageAt[T](key: Int, default: T = null.asInstanceOf[T]): T =
     if(storage == null) default
     else storage.getOrElse(key, default).asInstanceOf[T]
 
-  final def storeAt(key: Long, value: Any) {
+  final def storeAt(key: Int, value: Any): Unit = {
     if(storage == null) storage = SortedMap.empty
     storage = storage + ((key, value))
   }
 
-  final def freeStorageAt(key: Long): Unit ={
+  final def freeStorageAt(key: Int): Unit ={
     storage = storage - key
     if(storage.isEmpty) storage = null
   }
 
-  final def getAndFreeStorageAt[T](key: Long, default: T = null.asInstanceOf[T]) =
+  final def getAndFreeStorageAt[T](key: Int, default: T = null.asInstanceOf[T]): T =
     if(storage == null) default
     else{
       val toReturn = storage.getOrElse(key, default).asInstanceOf[T]
@@ -54,16 +54,16 @@ trait DistributedStorageUtility {
  * @author renaud.delandtsheer@cetic.be
  */
 trait StorageUtilityManager {
-  var nextStoragePlace: Long = 0L
+  var nextStoragePlace: Int = 0
 
   /** creates a unique storage key that can be used
     * to store anything in all DistributedStorageUtility
     * bound to this StorageUtilityManager
     * @return
     */
-  def newStorageKey(): Long = {
+  def newStorageKey(): Int = {
     val toreturn = nextStoragePlace
-    nextStoragePlace += 1L
+    nextStoragePlace += 1
     toreturn
   }
 
@@ -75,7 +75,9 @@ trait StorageUtilityManager {
    * @param offsetIndex if not zero, the value stored is actually index+offsetIndex. DEfault value is zero
    * @tparam T the actual type of the storage places
    */
-  def storeIndexesAt[T <: DistributedStorageUtility] (storagePlaces:Array[T], storageKey:Long, offsetIndex:Long = 0L){
+  def storeIndexesAt[T <: DistributedStorageUtility] (storagePlaces:Array[T],
+                                                      storageKey:Int,
+                                                      offsetIndex:Long = 0L): Unit = {
     for(i <- storagePlaces.indices) {
       storagePlaces(i).storeAt(storageKey, i + offsetIndex)
     }

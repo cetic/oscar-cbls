@@ -26,7 +26,7 @@ abstract class Pareto[Sol](protected val maxObj: Array[Boolean]) {
   
   var observers: List[ParetoObserver] = List()
   
-  def addObserver(obs: ParetoObserver) {
+  def addObserver(obs: ParetoObserver): Unit = {
     observers = obs :: observers
   }
   
@@ -131,9 +131,9 @@ abstract class Pareto[Sol](protected val maxObj: Array[Boolean]) {
    */
   def mkString(str: String): String = {
     var string = ""
-    var n = this.size
+    val n = this.size
     this.foreach(s => {
-      if (n > 1) string += (s + str)
+      if (n > 1) string += s"$s$str"
       else string += s
     })
     string

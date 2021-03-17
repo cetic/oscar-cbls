@@ -56,7 +56,7 @@ class VisualSimplex2D(simplex: Array[MOOPoint], inputSpace: Boolean = false) ext
   
   initGraph
   
-  def initGraph {
+  def initGraph: Unit = {
     initPoints
     setRanges
     hideHighlight()
@@ -121,7 +121,7 @@ class VisualSimplex2D(simplex: Array[MOOPoint], inputSpace: Boolean = false) ext
   def showInsideContraction(simplex: Array[MOOPoint], newPoint: MOOPoint) = showSingleTransform(simplex, newPoint, "yic", 3)
   def showOutsideContraction(simplex: Array[MOOPoint], newPoint: MOOPoint) = showSingleTransform(simplex, newPoint, "yoc", 3)
   
-  def showSingleTransform(simplex: Array[MOOPoint], newPoint: MOOPoint, label: String, serieIndex: Int) {
+  def showSingleTransform(simplex: Array[MOOPoint], newPoint: MOOPoint, label: String, serieIndex: Int): Unit = {
     if (inputSpace) {
       transformSeries(serieIndex - 1).add(simplex(0).coordinates(0), simplex(0).coordinates(1))
       transformSeries(serieIndex - 1).add(newPoint.coordinates(0), newPoint.coordinates(1))
@@ -142,7 +142,7 @@ class VisualSimplex2D(simplex: Array[MOOPoint], inputSpace: Boolean = false) ext
   
   def highlight(x: Double, y: Double, col: Color = Color.LIGHT_GRAY) = {
     SwingUtilities.invokeLater(new Runnable() {
-      def run() {
+      def run(): Unit = {
         xMarker.setPaint(col);
         yMarker.setPaint(col);
         plot.addDomainMarker(xMarker)
@@ -160,7 +160,7 @@ class VisualSimplex2D(simplex: Array[MOOPoint], inputSpace: Boolean = false) ext
     plot.removeRangeMarker(yMarker)
   }
 
-  def removeAllPoints() {
+  def removeAllPoints(): Unit = {
     originalSerie.clear()
     for (i <- 0 until 4) transformSeries(i).clear()
   }

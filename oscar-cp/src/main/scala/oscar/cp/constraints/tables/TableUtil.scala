@@ -15,7 +15,7 @@
 package oscar.cp.constraints.tables
 
 import oscar.cp.core.variables.CPIntVar
-
+import scala.language.reflectiveCalls
 import scala.collection.mutable.ArrayBuffer
 
 /**

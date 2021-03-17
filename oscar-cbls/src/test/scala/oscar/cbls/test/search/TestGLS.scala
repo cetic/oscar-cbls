@@ -19,7 +19,7 @@ object TestGLS extends App{
   val obj1 = Objective(f)
 
   //trigo are in radiant
-  val g:IntValue = new IntInt2Int(x,y,{case (x,y) => math.abs(100*math.sin(x /10) + 50*math.sin(y /10)).floor.toInt},Domain(0,150))
+  val g:IntValue = new IntInt2Int(x,y,{case (x,y) => math.abs(100*math.sin(x.toDouble/10) + 50*math.sin(y.toDouble/10)).floor.toInt},Domain(0,150))
 
   val obj2 = Objective(f)
 
@@ -29,13 +29,13 @@ object TestGLS extends App{
   def printModel(): Unit ={
     println(x)
     println(y)
-    println("f:" + f)
+    println(s"f:$f")
   }
 
 
   val search = GuidedLocalSearch3.progressiveGuidedLocalSearch(
     GradientDescent(Array(x,y),
-      selectVars = 0L to 1L,
+      selectVars = 0 to 1,
       variableIndiceToDeltaForGradientDefinition = _ => 10L,
       linearSearch = new NarrowingStepSlide(3L, minStep = 1L),
       trySubgradient = true),

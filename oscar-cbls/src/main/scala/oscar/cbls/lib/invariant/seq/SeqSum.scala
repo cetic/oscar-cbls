@@ -15,10 +15,9 @@ package oscar.cbls.lib.invariant.seq
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.core._
-
+import oscar.cbls.core.computation.{ChangingSeqValue, IntInvariant, SeqCheckpointedValueStack, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint, SeqValue}
+import oscar.cbls.core.propagation.Checker
 
 /**
  * sum(f(v))
@@ -28,18 +27,18 @@ import oscar.cbls.core._
  * @param f is a function that is applied to every value in f prior to the sum
  * @author renaud.delandtsheer@cetic.be
  */
-case class SeqSum(v: SeqValue, f:(Long => Long) = (a:Long) => a)
+case class SeqSum(v: SeqValue, f:Int => Int = (a:Int) => a)
   extends IntInvariant()
   with SeqNotificationTarget{
 
-  setName("SeqSum(" + v.name + ")")
+  setName(s"SeqSum(${v.name})")
 
   registerStaticAndDynamicDependency(v)
   finishInitialization()
 
   this := computeSumFromScratch(v.value)
 
-  val checkpointStack = new SeqCheckpointedValueStack[Long]()
+  val checkpointStack = new SeqCheckpointedValueStack[Int]()
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     if (!digestChanges(changes)) {
@@ -47,9 +46,9 @@ case class SeqSum(v: SeqValue, f:(Long => Long) = (a:Long) => a)
     }
   }
 
-  private def computeSumFromScratch(v:IntSequence):Long = {
+  private def computeSumFromScratch(v:IntSequence):Int = {
     var contentWithOccurences = v.unorderedContentNoDuplicateWithNBOccurences
-    var sum = 0L
+    var sum = 0
     while(contentWithOccurences match{
       case Nil => return sum
       case (value,occ) :: tail =>
@@ -57,12 +56,12 @@ case class SeqSum(v: SeqValue, f:(Long => Long) = (a:Long) => a)
         contentWithOccurences = tail
         true
     }){}
-    0L
+    0
   }
 
   def digestChanges(changes : SeqUpdate) : Boolean = {
     changes match {
-      case s@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         this :+= f(value)
         true
@@ -79,14 +78,14 @@ case class SeqSum(v: SeqValue, f:(Long => Long) = (a:Long) => a)
         this := checkpointStack.rollBackAndOutputValue(checkpoint,checkpointLevel)
         true
 
-      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, isActive,checkpointLevel) =>
+      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, checkpointLevel) =>
         if(!digestChanges(prev)){
           val myOutput = computeSumFromScratch(changes.newValue)
           checkpointStack.defineCheckpoint(prev.newValue,checkpointLevel,myOutput)
           this := myOutput
           true
         }else{
-          checkpointStack.defineCheckpoint(prev.newValue,checkpointLevel,this.newValue)
+          checkpointStack.defineCheckpoint(prev.newValue,checkpointLevel,this.newValueInt)
           true
         }
 
@@ -95,12 +94,15 @@ case class SeqSum(v: SeqValue, f:(Long => Long) = (a:Long) => a)
 
       case SeqUpdateAssign(value : IntSequence) =>
         false
+
+      case _ =>
+        false // Default case
     }
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
 //    c.check(this.newValue == v.value.toList.map(f).sum)
-    c.check(this.newValue == computeSumFromScratch(v.value),Some("this.newValue(="+ this.newValue+") == Sum(v.value(="+ computeSumFromScratch(v.value)+ ")"))
+    c.check(this.newValue == computeSumFromScratch(v.value),
+      Some(s"this.newValue(=${this.newValue}) == Sum(v.value(=${computeSumFromScratch(v.value)})"))
   }
 }
-

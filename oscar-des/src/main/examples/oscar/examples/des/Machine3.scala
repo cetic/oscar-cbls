@@ -35,7 +35,7 @@ class Machine3(m : Model, name: String, machineList : MachineList) extends Proce
 	
 	def isRepairInProgress : Boolean =  repairInProgress 
 	
-	def beAlive() {
+	def beAlive(): Unit = {
 		println(name+" is alive")
 		broken = false
 		repairInProgress = false
@@ -44,7 +44,7 @@ class Machine3(m : Model, name: String, machineList : MachineList) extends Proce
 		}
 	}
 	
-	def beBroken() {
+	def beBroken(): Unit = {
 		println(name+" is broken waiting to be repaired")
 		broken = true
 		
@@ -60,14 +60,14 @@ class Machine3(m : Model, name: String, machineList : MachineList) extends Proce
 		}
 	}
 	
-	def askToBeRepaired() {
+	def askToBeRepaired(): Unit = {
 		println(name+" is asking to be repaired")
 		m.request(repairPerson) { //ask for the repair person resource
 			beRepaired()
 		}
 	}
 	
-	def beRepaired() {
+	def beRepaired(): Unit = {
 		println(name+" being repaired")
 		m.wait(repairDur.nextInt(3).max(0)) {
 			m.release(repairPerson)
@@ -75,7 +75,7 @@ class Machine3(m : Model, name: String, machineList : MachineList) extends Proce
 		}
 	}		
 	
-	def run() {
+	def run(): Unit = {
 		beAlive()
 	}
 }
@@ -84,7 +84,7 @@ class MachineList{
 	
 	var machines : List[Machine3] = List()
 	
-	def +(m: Machine3) {
+	def +(m: Machine3): Unit = {
 		machines = m :: machines
 	}
 	
@@ -99,7 +99,7 @@ class MachineList{
 
 
 object Machine3 {
-	def main(args: Array[String]) {
+	def main(args: Array[String]): Unit = {
   		val mod = new Model()
   		val mlist = new MachineList()
 		val m1 = new Machine3(mod,"machine1",mlist)

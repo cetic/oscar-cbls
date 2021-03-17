@@ -15,6 +15,7 @@ package oscar.cbls.algo.search
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
 /**
@@ -26,7 +27,10 @@ object IdenticalAggregator{
   def removeIdenticals[T](l:List[T], isIdentical:(T,T) => Boolean):List[T] =
     removeIdenticals[T](l, isIdentical, Nil)
 
-  private def removeIdenticals[T](l:List[T], isIdentical:(T,T) => Boolean, canonicals:List[T]):List[T] = {
+  @tailrec
+  private def removeIdenticals[T](l:List[T],
+                                  isIdentical:(T,T) => Boolean,
+                                  canonicals:List[T]):List[T] = {
     l match{
       case Nil => canonicals
       case h :: t =>
@@ -39,24 +43,25 @@ object IdenticalAggregator{
   /**
    * @param l a list of items such that we want to discard items of identical class
    * @param itemClass a function that gives a class for a given item.
-   *                  Class Long.MinValue is considered as different from itself
+   *                  Class Int.MinValue is considered as different from itself
    * @tparam T
    * @return a maximal subset of l such that
    *         all items are of different class according to itemClass (with Long.MinValue exception)
    */
-  def removeIdenticalClasses[T](l:Iterable[T], itemClass:T => Long):List[T] = {
-    val a: Set[Long] = SortedSet.empty
-    removeIdenticalClasses[T](l.toIterator, itemClass, Nil, a)
+  def removeIdenticalClasses[T](l:Iterable[T], itemClass:T => Int):List[T] = {
+    val a: Set[Int] = SortedSet.empty
+    removeIdenticalClasses[T](l.iterator, itemClass, Nil, a)
   }
 
+  @tailrec
   private def removeIdenticalClasses[T](l:Iterator[T],
-                                        itemClass:T => Long,
+                                        itemClass:T => Int,
                                         canonicals:List[T],
-                                        classes:Set[Long]):List[T] = {
+                                        classes:Set[Int]):List[T] = {
     if (l.hasNext) {
       val h = l.next()
-      val classOfH:Long = itemClass(h)
-      if(classOfH != Long.MinValue && classes.contains(classOfH))
+      val classOfH:Int = itemClass(h)
+      if(classOfH != Int.MinValue && classes.contains(classOfH))
         removeIdenticalClasses(l, itemClass, canonicals,classes)
       else removeIdenticalClasses(l, itemClass, h::canonicals, classes+classOfH)
     }else {
@@ -64,7 +69,7 @@ object IdenticalAggregator{
     }
   }
 
-  /** class Long.MinValue is considered different from itself
+  /** class Int.MinValue is considered different from itself
     *
     * @param it
     * @param itemClass

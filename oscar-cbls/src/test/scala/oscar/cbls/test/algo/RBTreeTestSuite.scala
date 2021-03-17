@@ -1,13 +1,36 @@
 package oscar.cbls.test.algo
 
 import org.scalacheck.{Gen, Shrink}
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.algo.rb.RedBlackTreeMap
 
 import scala.util.Random
 
-class RBTreeTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matchers {
+class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
+  // Generators
+  val genOperations: Gen[Operation] = Gen.oneOf(List(Insert(),Update(),Delete()))
+
+  val operationGenerator: Gen[List[Operation]] = for {
+    size <- Gen.choose(1,100)
+    list <- Gen.listOfN(size,genOperations)
+  } yield list
+
+  val intGenerator: Gen[Int] = for (n <- Gen.choose(10, 1000)) yield n
+
+  // Generates a list of key-value tuples with incremental key (in order) and random values
+  val sequentialTuplesList: Gen[List[(Int, Int)]] =  for {
+    numElems <- Gen.choose(0, 500)
+    valuesList <- Gen.listOfN(numElems,intGenerator)
+  } yield valuesList.zipWithIndex.map(tuple => (tuple._2 :Int,tuple._1 :Int))
+
+  // Generates a list of key-value tuples with sparse unique keys (in order) and random values
+  val nonSequentialTuplesList: Gen[List[(Int, Int)]] =  for {
+    numElems <- Gen.choose(0, 500)
+    valuesList <- Gen.listOfN(numElems,intGenerator)
+    keysList <- Gen.listOfN(numElems,intGenerator)
+  } yield keysList.distinct.zip(valuesList).map(tuple => (tuple._1 :Int,tuple._2 :Int)).sortWith(_._1 < _._1)
 
   test("empty tree has size 0 and no values"){
     val tree = RedBlackTreeMap.empty[Int]
@@ -92,8 +115,8 @@ class RBTreeTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with M
     forAll(nonSequentialTuplesList){ list =>
       whenever(list.nonEmpty){
 
-        val minTuple = (-1L,50) //The generator does not generate negative values. This tuple is guaranteed to be the smallest
-        val listWithMin  = List[(Long,Int)](minTuple) ::: list
+        val minTuple = (-1,50) //The generator does not generate negative values. This tuple is guaranteed to be the smallest
+        val listWithMin  = List[(Int,Int)](minTuple) ::: list
         val tree = RedBlackTreeMap.makeFromSorted(listWithMin)
 
         tree.smallest.get should be (minTuple)
@@ -105,8 +128,8 @@ class RBTreeTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with M
     forAll(nonSequentialTuplesList){ list =>
       whenever(list.nonEmpty){
 
-        val maxTuple = (1001L,50) //The generator does not generate values above 1000. This tuple is guaranteed to be the biggest
-        val listWithMax  = list ::: List[(Long,Int)](maxTuple)
+        val maxTuple = (1001,50) //The generator does not generate values above 1000. This tuple is guaranteed to be the biggest
+        val listWithMax  = list ::: List[(Int,Int)](maxTuple)
         val tree = RedBlackTreeMap.makeFromSorted(listWithMax)
 
         tree.biggest.get should be (maxTuple)
@@ -198,7 +221,7 @@ class RBTreeTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with M
         for(i <- operations){
 
           var operation = i
-          var randomKey: Long = 1
+          var randomKey: Int = 1
 
           if(tree.content.isEmpty)
             operation = Insert()
@@ -222,7 +245,7 @@ class RBTreeTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with M
               parrallelMap = parrallelMap.map(tuple => if(tuple._1 >= randomKey && tuple._1 <= randomKeyTo) (tuple._1,tuple._2 + 1) else (tuple._1,tuple._2))
 
             case Insert() =>
-              val newkey :Long = 2000 + gapAboveLastKey // Ensures to add a new unique key
+              val newkey :Int = 2000 + gapAboveLastKey // Ensures to add a new unique key
               gapAboveLastKey += 1
               tree = tree.insert(newkey,0)
 
@@ -233,28 +256,6 @@ class RBTreeTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with M
       }
     }}
   }
-
-  val genOperations: Gen[Operation] = Gen.oneOf(List(Insert(),Update(),Delete()))
-
-  val operationGenerator: Gen[List[Operation]] = for {
-    size <- Gen.choose(1,100)
-    list <- Gen.listOfN(size,genOperations)
-  } yield list
-
-  val intGenerator: Gen[Int] = for (n <- Gen.choose(10, 1000)) yield n
-
-  // Generates a list of key-value tuples with incremental key (in order) and random values
-  val sequentialTuplesList: Gen[List[(Long, Int)]] =  for {
-    numElems <- Gen.choose(0, 500)
-    valuesList <- Gen.listOfN(numElems,intGenerator)
-  } yield valuesList.zipWithIndex.map(tuple => (tuple._2 :Long,tuple._1 :Int))
-
-  // Generates a list of key-value tuples with sparse unique keys (in order) and random values
-  val nonSequentialTuplesList: Gen[List[(Long, Int)]] =  for {
-    numElems <- Gen.choose(0, 500)
-    valuesList <- Gen.listOfN(numElems,intGenerator)
-    keysList <- Gen.listOfN(numElems,intGenerator)
-  } yield keysList.distinct.zip(valuesList).map(tuple => (tuple._1 :Long,tuple._2 :Int)).sortWith(_._1 < _._1)
 
   abstract sealed class Operation()
   case class Insert() extends Operation

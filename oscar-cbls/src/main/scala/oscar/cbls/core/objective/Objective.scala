@@ -1,33 +1,33 @@
 /*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
+ * OscaR is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * OscaR is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License  for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+ * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+ ******************************************************************************/
 package oscar.cbls.core.objective
 
 /*******************************************************************************
-  * Contributors:
-  *     This code has been initially developed by CETIC www.cetic.be
-  *         by Renaud De Landtsheer
-  ******************************************************************************/
+ * Contributors:
+ *     This code has been initially developed by CETIC www.cetic.be
+ *         by Renaud De Landtsheer
+ ******************************************************************************/
 
+import oscar.cbls
 import oscar.cbls.core.computation._
-
-import scala.language.implicitConversions
 
 object Objective{
   implicit def objToChangingIntValue(o:IntVarObjective):ChangingIntValue = o.objective
   implicit def objToFun(o:Objective):()=>Long = ()=>o.value
   implicit def funToObj(f:()=>Long) = new FunctionObjective(f)
+  implicit def boolFunToObj(f:()=>Boolean) = new FunctionObjective(() => if(f()) 1L else 0L)
 
   def apply(f:()=>Long,model:Store = null) = new FunctionObjective(f,model)
 
@@ -36,6 +36,10 @@ object Objective{
       case c: ChangingIntValue => new IntVarObjective(c)
       case c: CBLSIntConst => throw new Error("you do not want to have an objective that is actually a constant value!")
     }
+}
+
+abstract class IndependentObjective {
+  def convertToObjective(m:Store):Objective
 }
 
 /**
@@ -60,18 +64,45 @@ object Objective{
  */
 class IntVarObjective(val objective: ChangingIntValue) extends Objective {
 
-  model.registerForPartialPropagation(objective)
-
   /**
    * This method returns the actual objective value.
    * It is easy to override it, and perform a smarter propagation if needed.
    * @return the actual objective value.
    */
-  def value = objective.value
+  def value: Long = objective.value
 
   def model:Store = objective.model
 
-  def detailedString(short:Boolean,indent:Long = 0L):String = "IntVarObjective(" + objective + ")"
+  def detailedString(short:Boolean,indent:Long = 0L):String =
+    s"IntVarObjective($objective)"
+
+  model.registerForPartialPropagation(objective)
+
+  //for distribution purposes
+  val uniqueID = model.registerObjective(this)
+
+  override def getIndependentObj: IndependentObjective = new IndependentIntVarObjective(uniqueID)
+}
+
+class IndependentIntVarObjective(val uniqueID:Int) extends IndependentObjective{
+  override def convertToObjective(m: Store): Objective = m.getIntVarObjective(uniqueID)
+}
+
+object CascadingObjective{
+  def apply(objectives:Objective*):Objective = {
+
+    def buildCascading(objs:List[Objective]):Objective = {
+      objs match {
+        case Nil =>
+          throw new Error("Building cascading objective with empty list")
+        case head :: tail =>
+          if (tail.nonEmpty) new CascadingObjective(head, buildCascading(tail))
+          else head
+      }
+    }
+
+    buildCascading(objectives.toList)
+  }
 }
 
 /**
@@ -107,14 +138,139 @@ class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objecti
    * It is easy to override it, and perform a smarter propagation if needed.
    * @return the actual objective value.
    */
-  override def value = {
+  override def value: Long = {
     val firstObjectiveValue = mustBeZeroObjective.value
     if (firstObjectiveValue!=0L) cascadeSize
     else secondObjective.value
   }
 
   override def model: Store = mustBeZeroObjective.model
+
+  override def getIndependentObj: IndependentObjective =
+    IndependentCascadingObjective(
+      mustBeZeroObjective.getIndependentObj,
+      secondObjective.getIndependentObj,
+      cascadeSize)
 }
+
+case class IndependentCascadingObjective(mustBeZeroObjective: IndependentObjective,
+                                         secondObjective:IndependentObjective,
+                                         cascadeSize:Long) extends IndependentObjective {
+  override def convertToObjective(m: Store): Objective =
+    new CascadingObjective(mustBeZeroObjective.convertToObjective(m),secondObjective.convertToObjective(m), cascadeSize)
+}
+
+object PriorityObjective{
+  def apply(objective1: Objective, objective2:Objective, maxObjective2:Long) = new PriorityObjective(objective1: Objective, objective2:Objective, maxObjective2:Long)
+
+  def apply(firstObj:Objective,moreObjAndTheirMaxValue:List[(Objective,Long)]):Objective = {
+    if(moreObjAndTheirMaxValue.isEmpty) firstObj
+    else applyRecur(firstObj,moreObjAndTheirMaxValue)._1
+  }
+
+  private def applyRecur(objective1:Objective,moreObjAndTheirMaxValue:List[(Objective,Long)]):(PriorityObjective,Long) = {
+    moreObjAndTheirMaxValue match {
+      case Nil =>
+        throw new Error("Using applyRecur on an empty list")
+      case (objective2, maxObjective2) :: Nil =>
+        val p = new PriorityObjective(objective1, objective2, maxObjective2)
+        (p, maxObjective2)
+      case (secondObj, maxSecondObj) :: tail =>
+        val (tailOBj, max2Tail) = applyRecur(secondObj, tail)
+        val newMAx2 = max2Tail + maxSecondObj
+        val p = new PriorityObjective(objective1, tailOBj, newMAx2)
+        (p, newMAx2)
+    }
+  }
+
+  def prettyPrintObjectiveSequence(prioritizedNameAndValue:Iterable[(String,Long)]):String = {
+    var allZeroSoFar:Boolean = true
+    val coloredText = prioritizedNameAndValue.map({ case (name,value) =>
+      val text = name + value
+      if (value!=0 && allZeroSoFar){
+        allZeroSoFar = false
+        Console.BLUE + text + Console.GREEN
+      }else{
+        text
+      }
+    })
+    Console.GREEN + coloredText.mkString(" ") + Console.RESET
+  }
+}
+
+/**
+ * if (objective1.value == 0) objective2.value
+ * else objective1.value * (maxObjective2+1)
+ *
+ * If the product parameter is set to false, the formula uses a + operator instead of a *:
+ *
+ * if (objective1.value == 0) objective2.value
+ * else objective1.value + (maxObjective2+1)
+ *
+ * this is when objective2 is expensive to evaluate
+ * and we want to treat objective1 as a weak objective (opposite to the [[CascadingObjective]])
+ *
+ * @param objective1 the first objective to minimize
+ * @param objective2 the one to minimize when the first one is zero
+ * @param maxObjective2 the maximal value that objective2 will ever have when objective1 is zero.
+ */
+class PriorityObjective(val objective1: Objective,
+                        val objective2:Objective,
+                        val maxObjective2:Long) extends Objective {
+
+  /**
+   * This method returns the actual objective value.
+   * It is easy to override it, and perform a smarter propagation if needed.
+   * @return the actual objective value.
+   */
+  override def value: Long = {
+    val firstObjectiveValue = objective1.value
+    if (firstObjectiveValue==0) {
+      val obj2Value = objective2.value
+      cbls.warning(obj2Value <= maxObjective2,
+        s"PriorityObjective:obj2Value($obj2Value) should be < maxObjective2($maxObjective2)")
+      obj2Value
+    }else{
+      firstObjectiveValue + maxObjective2 + 1
+    }
+  }
+
+  override def model: Store = objective1.model
+
+  override def detailedString(short: Boolean, indent:Long = 0L): String =
+    if(short) {
+      if (objective1.value == 0) {
+        s"PriorityObjective(value: ${this.value}\n" +
+          nSpace(indent + 2L) + "objective1 :=0 \n" +
+          nSpace(indent + 2L) + "objective2:" + objective2.detailedString(true, indent + 2L) + "\n" +
+          nSpace(indent) + ")"
+      } else {
+        s"PriorityObjective(value:${this.value}\n" +
+          nSpace(indent + 2L) + "objective1:" + objective1.detailedString(true, indent + 4L) + "\n" +
+          nSpace(indent) + ")"
+      }
+    }else {
+      s"PriorityObjective(value:${this.value}\n" +
+        nSpace(indent + 2L) + "objective1:" + objective1.detailedString(false, indent + 4L) + "\n" +
+        nSpace(indent + 2L) + "objective2:" + objective2.detailedString(false, indent + 4L) + "\n" +
+        nSpace(indent) + ")"
+    }
+
+  override def getIndependentObj: IndependentObjective =
+    IndependentPriorityObjective(
+      objective1.getIndependentObj,
+      objective2.getIndependentObj,
+      maxObjective2)
+}
+
+
+case class IndependentPriorityObjective(objective1: IndependentObjective,
+                                        objective2:IndependentObjective,
+                                        maxObjective2:Long) extends IndependentObjective{
+  override def convertToObjective(m: Store): Objective =
+    new PriorityObjective(objective1.convertToObjective(m),objective2.convertToObjective(m), maxObjective2)
+}
+
 
 class FunctionObjective(f:()=>Long, m:Store = null) extends Objective{
   override def model: Store = m
@@ -126,7 +282,7 @@ class FunctionObjective(f:()=>Long, m:Store = null) extends Objective{
    */
   override def value: Long = f()
 
-  override def detailedString(short: Boolean,indent:Long = 0L): String = nSpace(indent) + "FunctionObjective(" + value + ")"
+  override def detailedString(short: Boolean,indent:Long = 0L): String = s"${nSpace(indent)}FunctionObjective($value)"
 }
 
 trait Objective {
@@ -146,10 +302,10 @@ trait Objective {
   def isZero:Boolean = value == 0L
 
   /**returns the value of the objective variable if the two variables a and b were swapped values.
-    * This proceeds through explicit state change and restore.
-    * this process is efficiently performed as the objective Variable is registered for partial propagation
-    * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
-    */
+   * This proceeds through explicit state change and restore.
+   * this process is efficiently performed as the objective Variable is registered for partial propagation
+   * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
+   */
   def swapVal(a: CBLSIntVar, b: CBLSIntVar): Long = {
     a :=: b
     val newVal = value
@@ -158,17 +314,17 @@ trait Objective {
   }
 
   /**returns the value of the objective variable if variable a was assigned the value v.
-    * This proceeds through explicit state change and restore.
-    * this process is efficiently performed as the objective Variable is registered for partial propagation
-    * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
-    */
+   * This proceeds through explicit state change and restore.
+   * this process is efficiently performed as the objective Variable is registered for partial propagation
+   * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
+   */
   def assignVal(a: CBLSIntVar, v: Long): Long = assignVal(List((a,v)))
 
   /**returns the value of the objective variable if the assignment described by parameter a was performed
-    * This proceeds through explicit state change and restore.
-    * this process is efficiently performed as the objective Variable is registered for partial propagation
-    * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
-    */
+   * This proceeds through explicit state change and restore.
+   * this process is efficiently performed as the objective Variable is registered for partial propagation
+   * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
+   */
   def assignVal(a: Iterable[(CBLSIntVar, Long)]): Long = {
     //memorize
     val oldvals: Iterable[(CBLSIntVar, Long)] = a.foldLeft(List.empty[(CBLSIntVar, Long)])(
@@ -184,10 +340,10 @@ trait Objective {
   }
 
   /**returns the value of the objective variable if i is inserted to a
-    * this process is efficiently performed as the objective Variable is registered for partial propagation
-    * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
-    */
-  def insertValAssumeNotAlreadyIn(a: CBLSSetVar, i:Long): Long = {
+   * this process is efficiently performed as the objective Variable is registered for partial propagation
+   * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
+   */
+  def insertValAssumeNotAlreadyIn(a: CBLSSetVar, i:Int): Long = {
     a :+= i
     val newVal = value
     a :-= i
@@ -195,19 +351,19 @@ trait Objective {
   }
 
   /**returns the value of the objective variable if i is inserted to a
-    * this process is efficiently performed as the objective Variable is registered for partial propagation
-    * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
-    */
-  def insertVal(a: CBLSSetVar, i:Long): Long = {
+   * this process is efficiently performed as the objective Variable is registered for partial propagation
+   * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
+   */
+  def insertVal(a: CBLSSetVar, i:Int): Long = {
     if(a.value.contains(i)) return value
     insertValAssumeNotAlreadyIn(a, i)
   }
 
   /**returns the value of the objective variable if i is removed from a
-    * this process is efficiently performed as the objective Variable is registered for partial propagation
-    * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
-    */
-  def removeValAssumeIn(a: CBLSSetVar, i:Long): Long = {
+   * this process is efficiently performed as the objective Variable is registered for partial propagation
+   * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
+   */
+  def removeValAssumeIn(a: CBLSSetVar, i:Int): Long = {
     a :-= i
     val newVal = value
     a :+= i
@@ -215,13 +371,15 @@ trait Objective {
   }
 
   /**returns the value of the objective variable if i is removed from a
-    * this process is efficiently performed as the objective Variable is registered for partial propagation
-    * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
-    */
-  def removeVal(a: CBLSSetVar, i:Long): Long = {
+   * this process is efficiently performed as the objective Variable is registered for partial propagation
+   * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
+   */
+  def removeVal(a: CBLSSetVar, i:Int): Long = {
     if(!a.value.contains(i)) return value
     removeValAssumeIn(a, i)
   }
+
+  def getIndependentObj:IndependentObjective = ???
 }
 
 /**
@@ -251,3 +409,16 @@ class LoggingObjective(baseObjective:Objective) extends Objective{
   }
 }
 
+
+
+class AbortException extends Exception("")
+class AbortableObjective(shouldAbort:()=>Boolean, baseObj:Objective) extends Objective{
+  override def detailedString(short: Boolean, indent: Long): String = baseObj.detailedString(short,indent)
+
+  override def model: Store = baseObj.model
+
+  override def value: Long = {
+    if(shouldAbort()) throw new AbortException()
+    baseObj.value
+  }
+}

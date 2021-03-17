@@ -48,10 +48,10 @@ import scala.util.Random
  */
 object NQueensLinearSelectors extends LinearSelectorClass(true) with StopWatch{
 
-  def nStrings(N: Int, C: String): String = if (N <= 0) "" else "" + C + nStrings(N - 1, C)
-  def padToLength(s: String, l: Int) = (s + nStrings(l, " ")).substring(0, l)
+  def nStrings(N: Int, C: String): String = if (N <= 0) "" else s"$C${nStrings(N - 1, C)}"
+  def padToLength(s: String, l: Int): String = (s + nStrings(l, " ")).substring(0, l)
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
 
     if (args.length<1) {
       println("Benchmarking NQueens - this takes time")
@@ -59,11 +59,11 @@ object NQueensLinearSelectors extends LinearSelectorClass(true) with StopWatch{
       println(padToLength("N", 15) + padToLength("tClose[ms]", 15) + padToLength("tTotal[ms]", 15) + "it")
 
       // first run could have some overhead so ignoring it
-      SolveNQueen(1000)
+      SolveNQueens(1000)
 
       // multiple runs
       for (n <- 1000 to 10000 by 1000){
-        SolveNQueen(n)
+        SolveNQueens(n)
         System.gc()
       }
 
@@ -71,14 +71,14 @@ object NQueensLinearSelectors extends LinearSelectorClass(true) with StopWatch{
       val N:Int=args(0).toInt
       println("Running NQueens - this takes time depending on N")
       println(padToLength("N", 15) + padToLength("tClose[ms]", 15) + padToLength("tTotal[ms]", 15) + "it")
-      SolveNQueen(1000)
-      for(i <- 1 to 5)
-        SolveNQueen(N)
+      SolveNQueens(1000)
+      for(_ <- 1 to 5)
+        SolveNQueens(N)
     }
   }
 
-  def SolveNQueen(N:Int){
-    print(padToLength("" + N, 15))
+  def SolveNQueens(N:Int): Unit ={
+    print(padToLength(s"$N", 15))
 
     startWatch()
     val queensRange:Range = Range(0,N)
@@ -86,7 +86,7 @@ object NQueensLinearSelectors extends LinearSelectorClass(true) with StopWatch{
 
     val m = Store()
     val init = Random.shuffle(queensRange.toList).iterator
-    val queens:Array[CBLSIntVar] = queensRange.map(q => CBLSIntVar(m, init.next(), 0 to N-1,"queen" + q)).toArray
+    val queens:Array[CBLSIntVar] = queensRange.map(q => CBLSIntVar(m, init.next(), 0 until N, s"queen$q")).toArray
 
     val c = ConstraintSystem(m)
 
@@ -94,22 +94,22 @@ object NQueensLinearSelectors extends LinearSelectorClass(true) with StopWatch{
     c.post(AllDiff(queensRange.map(q => queens(q) + q)))
     c.post(AllDiff(queensRange.map(q => q - queens(q))))
 
-    val tabu = queensRange.map(q => CBLSIntVar(m, 0, 0 to Int.MaxValue, "Tabu_queen" + q)).toArray
+    val tabu = queensRange.map(q => CBLSIntVar(m, 0, 0 to Int.MaxValue, s"Tabu_queen$q")).toArray
     val it = CBLSIntVar(m,1, 0 to Int.MaxValue,"it")
     val nonTabuQueens = SelectLESetQueue(tabu, it).setName("non tabu queens")
     val nonTabuMaxViolQueens = ArgMax(c.violations(queens), nonTabuQueens)
 
     m.close()
-    print(padToLength("" + getWatch, 15))
+    print(padToLength(s"$getWatch", 15))
 
     while(c.violation.value > 0){
-      require(it.value < N, "NQueens seems to diverge: " + it + " N "+ N)
-      val oldviolation:Int = c.violation.value
+      require(it.value < N, s"NQueens seems to diverge: $it N $N")
+      val oldviolation:Int = c.violation.valueInt
 
-      selectFirstDo(nonTabuMaxViolQueens.value)((q1:Long) => {
-        selectFirstDo(nonTabuQueens.value, (q2:Long) => {
+      selectFirstDo(nonTabuMaxViolQueens.value)((q1:Int) => {
+        selectFirstDo(nonTabuQueens.value, (q2:Int) => {
           q2!=q1 && c.swapVal(queens(q1),queens(q2)) < oldviolation
-        })((q2:Long) => {
+        })((q2:Int) => {
           //println("" + it.value + " swapping " + q1 +"(tabu: " + tabu(q1) + ") and " + q2 +"(tabu: " + tabu(q2) + ")")
           queens(q1) :=: queens(q2)
           tabu(q1) := it.value + tabulength
@@ -118,11 +118,11 @@ object NQueensLinearSelectors extends LinearSelectorClass(true) with StopWatch{
         },()=>println("Warning: Tabu it too big compared to queens count"))},
         ()=>println("Warning: Tabu it too big compared to queens count"))
 
-      it ++
+      it.++()
 
     }
 
-    println(padToLength("" + getWatch, 15) + it.value)
+    println(padToLength(s"$getWatch", 15) + it.value)
     //println(m.stats)
   }
 }

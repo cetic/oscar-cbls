@@ -1,5 +1,3 @@
-package oscar.examples.cbls.routing
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,11 +12,12 @@ package oscar.examples.cbls.routing
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.examples.cbls.routing
 
-import oscar.cbls._
-import oscar.cbls.business.routing.invariants.timeWindow.{DefinedTransferFunction, TransferFunction}
+import oscar.cbls.business.routing.invariants.timeWindow.TransferFunction
 import oscar.cbls.business.routing.model.{TTFConst, TTFMatrix}
 
+import scala.annotation.tailrec
 import scala.util.Random
 
 /**
@@ -29,7 +28,7 @@ object RoutingMatrixGenerator {
 
   /**
     * This method generate a random distance matrix based on numbers of node and map side.
-    * It also generate an array of node positions. (Usefull when you want to display it on a map)
+    * It also generate an array of node positions. (Useful when you want to display it on a map)
     * @param n The number of nodes (considering depots)
     * @param side The side of the map
     * @return The distance matrix (Array[Array[Long] ] and the position of each node (Array[(Long,Long)])
@@ -40,8 +39,8 @@ object RoutingMatrixGenerator {
     def randomXY: Long = (random.nextFloat() * side).toLong
     val pointPosition: Array[(Long, Long)] = Array.tabulate(n)(w => (randomXY, randomXY))
 
-    def distance(from: (Long, Long), to: (Long, Long)) =
-      math.sqrt(math.pow(from._1 - to._1, 2) + math.pow(from._2 - to._2, 2)).toLong
+    def distance(from: (Long, Long), to: (Long, Long)): Long =
+      math.sqrt(math.pow((from._1 - to._1).toDouble, 2.0) + math.pow((from._2 - to._2).toDouble, 2.0)).toLong
 
     //for each delivery point, the distance to each warehouse
     (Array.tabulate(n)(
@@ -52,7 +51,7 @@ object RoutingMatrixGenerator {
 
   /**
     * This method generate a random distance matrix based on numbers of node and map side.
-    * It also generate an array of node positions. (Usefull when you want to display it on a map)
+    * It also generate an array of node positions. (Useful when you want to display it on a map)
     * @param n The number of nodes (considering depots)
     * @return The distance matrix (Array[Array[Float] ] in meters and the position of each node (Array[(Double,Double)])
     */
@@ -79,7 +78,7 @@ object RoutingMatrixGenerator {
       val a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
       val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 
-      (R * c).toDouble //meters
+      R * c //meters
     }
 
     val pointPosition: Array[(Double,Double)] = Array.fill(n)((randomLat, randomLong))
@@ -89,7 +88,6 @@ object RoutingMatrixGenerator {
       n1 => Array.tabulate(n)(
         n2 => distance(pointPosition(n1), pointPosition(n2)))),pointPosition)
   }
-
 
   /**
     * This method generate random restrictions for the problem.
@@ -122,39 +120,43 @@ object RoutingMatrixGenerator {
     *
     * @param n The number of nodes (considering depots)
     * @param v The number of vehicles/depots
-    * @param nbPRecedences The number wanted precedences
+    * @param nbPrecedences The number wanted precedences
     * @param maxSize The max length of precedence you want to generate
     * @return A list of tuple (precedences)
     */
-  def generateChainsPrecedence(n: Int, v: Int, nbPRecedences:Long, maxSize: Long = 2): (List[List[Long]], List[(Long,Long)]) = {
-    val allNodes = (v until n).toList.map(_.toLong)
-    val randomizedNodes = random.shuffle(allNodes).toIterator
+  def generateChainsPrecedence(n: Int, v: Int, nbPrecedences:Int, maxSize: Int = 2): (List[List[Int]], List[(Int,Int)]) = {
+    @tailrec
+    def toTuple(chain: List[Int], tuples: List[(Int,Int)]): List[(Int,Int)] = {
+      chain match {
+        case Nil => throw new IllegalArgumentException("Invalid Nil chain")
+        case head :: Nil => tuples
+        case head :: tail => toTuple(tail, (head, tail.head) :: tuples)
+      }
+    }
+    //////////
+    val allNodes = (v until n).toList
+    val randomizedNodes = random.shuffle(allNodes).iterator
 
     var currentMaxSize = maxSize
-    var precedencesToGenerate = nbPRecedences
+    var precedencesToGenerate = nbPrecedences
 
-    var chains: List[List[Long]] = List.empty
-    var tuples: List[(Long,Long)] = List.empty
-    var usedNodes = 0L
+    var chains: List[List[Int]] = List.empty
+    var tuples: List[(Int,Int)] = List.empty
+    var usedNodes = 0
 
-    def reduceCurrentSizeBy = Math.max(currentMaxSize - maxSize, (currentMaxSize-2)/2 - (usedNodes/precedencesToGenerate))
-    def randomSize = Math.max(2L,1L + intToLong(random.nextInt(longToInt(currentMaxSize))))
+    def reduceCurrentSizeBy: Int = Math.max(currentMaxSize - maxSize, (currentMaxSize-2)/2 - (usedNodes/precedencesToGenerate))
+
+    def randomSize: Int = Math.max(2,1 + random.nextInt(currentMaxSize))
 
     while(precedencesToGenerate > 0 && randomizedNodes.nonEmpty){
       currentMaxSize = currentMaxSize - reduceCurrentSizeBy
       precedencesToGenerate -= 1
 
-      val chain: List[Long] = List.tabulate(Math.min(Math.min(n-v-usedNodes, maxSize), randomSize))(_ => {
+      val chain: List[Int] = List.tabulate(Math.min(Math.min(n-v-usedNodes, maxSize), randomSize))(_ => {
         usedNodes += 1
         randomizedNodes.next()
       })
 
-      def toTuple(chain: List[Long], tuples: List[(Long,Long)]): List[(Long,Long)] ={
-        chain match {
-          case head :: Nil => tuples
-          case head :: tail => toTuple(tail, (head, tail.head) :: tuples)
-        }
-      }
       chains = chain :: chains
       tuples = toTuple(chain, List.empty) ::: tuples
     }
@@ -168,8 +170,8 @@ object RoutingMatrixGenerator {
     * @param chains The chains of the problem
     * @return An updated chains list (with lonely nodes)
     */
-  private def addLonelyNodesToChains(n: Int, v: Int, chains: List[List[Long]]): List[List[Long]]={
-    val allNodes: List[Long] = Range(v,n).toList.map(_.toLong)
+  private def addLonelyNodesToChains(n: Int, v: Int, chains: List[List[Int]]): List[List[Int]]={
+    val allNodes: List[Int] = Range(v,n).toList
     val lonelyNodes = allNodes.diff(chains.flatten)
     var precedencesWithLonelyNodes = chains
     for(lonelyNode <- lonelyNodes)
@@ -197,19 +199,19 @@ object RoutingMatrixGenerator {
     */
   def generateFeasibleTransferFunctions(n: Int, v: Int,
                                   timeMatrix: Array[Array[Long]],
-                                  precedences: List[List[Long]] = List.empty,
-                                  maxIdlingTimeInSec: Long = 1800L,
-                                  maxExtraTravelTimeInSec: Long = 900L,
-                                  maxTaskDurationInSec: Long = 300L): Array[TransferFunction] ={
+                                  precedences: List[List[Int]] = List.empty,
+                                  maxIdlingTimeInSec: Int = 1800,
+                                  maxExtraTravelTimeInSec: Int = 900,
+                                  maxTaskDurationInSec: Int = 300): Array[TransferFunction] ={
 
     def randomVehicleSelection = random.nextInt(v)
-    def randomIdleTime = intToLong(random.nextInt(longToInt(maxIdlingTimeInSec)))
-    def randomExtraTravelTime = intToLong(random.nextInt(longToInt(maxExtraTravelTimeInSec)))
-    def randomTaskDuration = intToLong(random.nextInt(longToInt(maxTaskDurationInSec)))
+    def randomIdleTime = random.nextInt(maxIdlingTimeInSec)
+    def randomExtraTravelTime = random.nextInt(maxExtraTravelTimeInSec)
+    def randomTaskDuration = random.nextInt(maxTaskDurationInSec)
 
     val precedencesWithLonelyNodes = addLonelyNodesToChains(n, v, precedences)
     val endOfLastActionOfVehicles = Array.fill[Long](v)(0L)
-    val lastNodeVisitedOfVehicles = Array.tabulate(v)(x => intToLong(x))
+    val lastNodeVisitedOfVehicles = Array.tabulate(v)(x => x)
     val extraTravelTimeOfNodes = Array.tabulate(n)(node => if(node < v)0L else randomExtraTravelTime)
     val earlyLines = Array.fill[Long](n)(0L)
     val deadLines = Array.fill[Long](n)(Long.MaxValue)
@@ -227,15 +229,15 @@ object RoutingMatrixGenerator {
       * @param node
       * @param onVehicle
       */
-    def generateTimeWindowForNode(node: Long, onVehicle: Long): Unit ={
-      val previousNode = lastNodeVisitedOfVehicles(longToInt(onVehicle))
+    def generateTimeWindowForNode(node: Int, onVehicle: Int): Unit ={
+      val previousNode = lastNodeVisitedOfVehicles(onVehicle)
       val travelFromPreviousNode = timeMatrix(previousNode)(node)
-      endOfLastActionOfVehicles(longToInt(onVehicle)) += travelFromPreviousNode
+      endOfLastActionOfVehicles(onVehicle) += travelFromPreviousNode
 
-      earlyLines(longToInt(node)) = endOfLastActionOfVehicles(longToInt(onVehicle))
-      endOfLastActionOfVehicles(longToInt(onVehicle)) += taskDurations(longToInt(node))
-      deadLines(longToInt(node)) = endOfLastActionOfVehicles(longToInt(onVehicle)) + extraTravelTimeOfNodes(longToInt(node)) + extraTravelTimeOfNodes(longToInt(previousNode))
-      lastNodeVisitedOfVehicles(longToInt(onVehicle)) = node
+      earlyLines(node) = endOfLastActionOfVehicles(onVehicle)
+      endOfLastActionOfVehicles(onVehicle) += taskDurations(node)
+      deadLines(node) = endOfLastActionOfVehicles(onVehicle) + extraTravelTimeOfNodes(node) + extraTravelTimeOfNodes(previousNode)
+      lastNodeVisitedOfVehicles(onVehicle) = node
     }
 
     for(precedence <- precedencesWithLonelyNodes){
@@ -267,14 +269,16 @@ object RoutingMatrixGenerator {
     *   leaveTime(A) + travel duration to C + taskDuration at C + travel duration to B <= 900
     *
     * @param precedences The list of precedences
-    * @param earliestArrivalTimes The array of earliestArrivalTimes (We can't start the task at this node before the earliestArrivalTime value)
+    * @param earliestArrivalTimes The array of earliestArrivalTimes (We can't start the task at this node before the
+   *                             earliestArrivalTime value)
     * @param travelDurationMatrix The travel time matrix
     * @return A Map[(from,to) -> maxTravelDuration]
     */
-  def generateMaxTravelDurations(precedences: List[List[Long]],
+  def generateMaxTravelDurations(precedences: List[List[Int]],
                                  earliestArrivalTimes: Array[Long],
-                                 travelDurationMatrix: Array[Array[Long]]): List[(Long, Long, Long)] ={
-    def maxTravelDurationOfPrecedence(from: Long, toProceed: List[Long], maxTravelDurations: List[(Long,Long,Long)]): List[(Long,Long,Long)] ={
+                                 travelDurationMatrix: Array[Array[Long]]): List[(Int, Int, Long)] ={
+    @tailrec
+    def maxTravelDurationOfPrecedence(from: Int, toProceed: List[Int], maxTravelDurations: List[(Int,Int,Long)]): List[(Int,Int,Long)] ={
       toProceed match{
         case Nil => maxTravelDurations
         case to::Nil => List((from, to,(travelDurationMatrix(from)(to)*1.5).toLong)) ::: maxTravelDurations
@@ -295,9 +299,9 @@ object RoutingMatrixGenerator {
     */
   def generateLinearTravelTimeFunction(n: Int,distanceMatrix: Array[Array[Long]], multiplier: Double = 1.0): TTFMatrix = {
     val ttf = new TTFMatrix(n, new TTFConst(500))
-    for (i <- 0L until n)
-      for (j <- 0L until n)
-        ttf.setTTF(i, j, new TTFConst((distanceMatrix(longToInt(i))(longToInt(j))*multiplier).toInt))
+    for (i <- 0 until n)
+      for (j <- 0 until n)
+        ttf.setTTF(i, j, new TTFConst((distanceMatrix(i)(j)*multiplier).toInt))
     ttf
   }
 
@@ -314,31 +318,32 @@ object RoutingMatrixGenerator {
     *
     * @param n The number of node of the problem
     * @param precedences The list of precedences (List[List[Long] ])
-    * @param maxVehicleSize The max size of all vehicles in the problem (All the vehicles don't have to have the same size)
+    * @param maxVehicleSize The max size of all vehicles in the problem (All the vehicles don't have to have the same
+   *                       size)
     * @return An array of Long that represents the vehicle content evolution when arriving at a given node.
     */
-  def generateContentFlow(n: Int, precedences: List[List[Long]], maxVehicleSize: Long): Array[Long] ={
-    def randomContent(currentMaxContent: Long) = intToLong(random.nextInt(longToInt(currentMaxContent)))
+  def generateContentFlow(n: Int, precedences: List[List[Int]], maxVehicleSize: Int): Array[Long] ={
+    def randomContent(currentMaxContent: Int) = random.nextInt(currentMaxContent)
     def isPickupStep: Boolean = random.nextBoolean()
 
-    val contentFlow = Array.fill(longToInt(n))(0L)
+    val contentFlow = Array.fill(n)(0)
     for(precedence <- precedences){
-      var currentPrecedenceContent = 0L
+      var currentPrecedenceContent = 0
       for (node <- precedence){
         if(node == precedence.head) {
-          contentFlow(longToInt(node)) = randomContent(maxVehicleSize)+1
-          currentPrecedenceContent += contentFlow(longToInt(node))
+          contentFlow(node) = randomContent(maxVehicleSize)+1
+          currentPrecedenceContent += contentFlow(node)
         } else if(node == precedence.last) {
-          contentFlow(longToInt(node)) = -currentPrecedenceContent
+          contentFlow(node) = -currentPrecedenceContent
         } else {
-          contentFlow(longToInt(node)) =
+          contentFlow(node) =
             if(isPickupStep) randomContent(maxVehicleSize-currentPrecedenceContent)+1
             else -randomContent(currentPrecedenceContent)
-          currentPrecedenceContent += contentFlow(longToInt(node))
+          currentPrecedenceContent += contentFlow(node)
         }
       }
     }
-    contentFlow
+    contentFlow.map(_.toLong)
   }
 
   /**
@@ -348,8 +353,8 @@ object RoutingMatrixGenerator {
     * @param maxVehicleSize the maximum vehicle size
     * @return an array of vehicle size
     */
-  def generateVehiclesSize(v: Int, maxVehicleSize: Long, minVehicleSize: Long = 1): Array[Long] ={
-    Array.fill(longToInt(v))(Math.max(intToLong(random.nextInt(longToInt(maxVehicleSize)))+1,minVehicleSize))
+  def generateVehiclesSize(v: Int, maxVehicleSize: Int, minVehicleSize: Int = 1): Array[Long] ={
+    Array.fill(v)(Math.max(random.nextInt(maxVehicleSize)+1,minVehicleSize).toLong)
   }
 }
 

@@ -2,23 +2,72 @@ package oscar.cbls.business.scheduling.model
 
 import oscar.cbls.business.scheduling.ActivityId
 
+import scala.annotation.tailrec
 import scala.collection.BitSet
 
 // Precedences
 /**
   * This class is a container for the precedence constraints between activity indices
   */
-class Precedences(beforeAfterPairs: List [(ActivityId, ActivityId)]) {
+class Precedences(activities: List[ActivityId],
+                  beforeAfterPairs: List [(ActivityId, ActivityId)]) {
   // Predecessors map
-  var predMap: Map[ActivityId, BitSet] = Map()
+  var predMap: Map[ActivityId, BitSet] = activities.map(_ -> BitSet.empty).toMap
   // Successors map
-  var succMap: Map[ActivityId, BitSet] = Map()
+  var succMap: Map[ActivityId, BitSet] = activities.map(_ -> BitSet.empty).toMap
   // Filling maps from precedences pairs
   for {(actA, actB) <- beforeAfterPairs} {
     val predB = predMap.getOrElse(actB, BitSet.empty)
     val succA = succMap.getOrElse(actA, BitSet.empty)
-    predMap += (actB -> (predB + actA))
-    succMap += (actA -> (succA + actB))
+    predMap += (actB -> (predB union Set(actA)))
+    succMap += (actA -> (succA union Set(actB)))
+  }
+  val (ancestorsMap, descendantsMap) = ancestorsAndDescendants
+
+  def ancestorsAndDescendants: (Map[ActivityId, BitSet], Map[ActivityId, BitSet]) = {
+    // Ancestors function
+    def ancestors(act: ActivityId): BitSet = {
+      // Auxiliary function
+      @tailrec
+      def ancestors(act: ActivityId,
+                    toExploreActs: List[ActivityId],
+                    visitedActs: BitSet): BitSet = toExploreActs match {
+        case Nil => visitedActs
+        case a::acts =>
+          if ((a == act) || visitedActs.contains(a))
+            ancestors(act, acts, visitedActs)
+          else
+            ancestors(act, predMap.getOrElse(a, Set()).toList:::acts, visitedActs union Set(a))
+      }
+      /////
+      ancestors(act, predMap.getOrElse(act, Set()).toList, BitSet.empty)
+    }
+    // Descendants function
+    def descendants(act: ActivityId): BitSet = {
+      // Auxiliary function
+      @tailrec
+      def descendants(act: ActivityId,
+                      toExploreActs: List[ActivityId],
+                      visitedActs: BitSet): BitSet = toExploreActs match {
+        case Nil => visitedActs
+        case a::acts =>
+          if ((a == act) || visitedActs.contains(a))
+            descendants(act, acts, visitedActs)
+          else
+            descendants(act, succMap.getOrElse(a, Set()).toList:::acts, visitedActs union Set(a))
+      }
+      /////
+      descendants(act, succMap.getOrElse(act, Set()).toList, BitSet.empty)
+    }
+    //////////
+    // Filling ancestors and descendants map
+    var ancestorsMap: Map[ActivityId, BitSet] = Map()
+    var descendantsMap: Map[ActivityId, BitSet] = Map()
+    activities.foreach { act =>
+      ancestorsMap += (act -> ancestors(act))
+      descendantsMap += (act -> descendants(act))
+    }
+    (ancestorsMap, descendantsMap)
   }
 
   /**
@@ -27,21 +76,22 @@ class Precedences(beforeAfterPairs: List [(ActivityId, ActivityId)]) {
     * @return a list containing a permutation of [0..numActivity) corresponding
     *         to a consistent priority list (if A->B, index of A is before index of B in the list)
     */
-  def getPriorityList(activitiesOnList: Iterable[ActivityId]): List[Long] = {
-    def insertList(i: ActivityId, succI: BitSet, accList: List[Long]): List[Long] = {
+  def getPriorityList(activitiesOnList: Iterable[ActivityId]): List[ActivityId] = {
+    def insertList(i: ActivityId,
+                   accList: List[ActivityId]): List[ActivityId] = {
       accList match {
         case Nil => List(i)
         case x::xs =>
-          if (succI.contains(x.toInt))
+          if (descendantsMap(i).contains(x))
             i::accList
           else
-            x::insertList(i, succI, xs)
+            x::insertList(i, xs)
       }
     }
     /////
-    var result: List[Long] = Nil
+    var result: List[Int] = Nil
     for {i <- activitiesOnList} {
-      result = insertList(i, succMap.getOrElse(i, BitSet.empty), result)
+      result = insertList(i, result)
     }
     result
   }
@@ -54,18 +104,38 @@ class Precedences(beforeAfterPairs: List [(ActivityId, ActivityId)]) {
     */
   def consistentSeq(seq: List[ActivityId]): Boolean = {
     // Auxiliary function
+    @tailrec
     def consistentSeq(postfix: List[ActivityId],
-                      revPrefix: List[ActivityId]): Boolean = postfix match {
-      case Nil => true
-      case act::acts =>
-        val notPrecPref = !revPrefix.exists(descendants(act).contains(_))
-        if (notPrecPref)
-          consistentSeq(acts, act::revPrefix)
-        else
-          false
+                      revPrefix: List[ActivityId],
+                      precPref: Boolean): Boolean = {
+      if (precPref)
+        false
+      else {
+        postfix match {
+          case Nil => true
+          case act::acts =>
+            consistentSeq(acts, act::revPrefix, revPrefix.exists(descendantsMap(act).contains))
+        }
+      }
     }
     /////
-    consistentSeq(seq, Nil)
+    consistentSeq(seq, Nil, precPref = false)
+  }
+
+  def inconsistenceMap(seq: List[ActivityId]): Map[ActivityId, List[ActivityId]] = {
+    @tailrec
+    def inconsistenceMap(ls: List[ActivityId],
+                         prefAcc: List[ActivityId],
+                         mapAcc: Map[ActivityId, List[ActivityId]]): Map[ActivityId, List[ActivityId]] = {
+      ls match {
+        case Nil => mapAcc
+        case a::as =>
+          val inconsistences = prefAcc.filter(descendantsMap(a).contains)
+          inconsistenceMap(as, a::prefAcc, mapAcc + (a -> inconsistences))
+      }
+    }
+    //////////
+    inconsistenceMap(seq, Nil, Map())
   }
 
   /**
@@ -75,35 +145,11 @@ class Precedences(beforeAfterPairs: List [(ActivityId, ActivityId)]) {
     */
   def toPairsList: List[(ActivityId, ActivityId)] = {
     var pairsList: List[(ActivityId, ActivityId)] = Nil
-    for {i <- predMap.keys} {
-      val indPairs = predMap(i).map((i,_)).toList
+    for {i <- ancestorsMap.keys} {
+      val indPairs = ancestorsMap(i).map((_,i)).toList
       pairsList :::= indPairs
     }
     pairsList
-  }
-
-  /**
-    * Determine the "descendants" of an activity in the precedence constraints
-    *
-    * @param act the index of the activity
-    * @return a list of the indices for activities in the transitive closure of
-    *         the precedence relation
-    */
-  private def descendants(act: ActivityId): List[ActivityId] = {
-    // Auxiliary function
-    def descendants(lstActs: List[ActivityId],
-                    visitedActs: List[ActivityId]): List[ActivityId] = lstActs match {
-      case Nil => visitedActs
-      case act::acts =>
-        if (visitedActs.contains(act)) {
-          descendants(acts, visitedActs)
-        }
-        else {
-          descendants(succMap.getOrElse(act, Set()).toList:::acts, act::visitedActs)
-        }
-    }
-    /////
-    descendants(List(act), Nil)
   }
 
   /**
@@ -112,13 +158,14 @@ class Precedences(beforeAfterPairs: List [(ActivityId, ActivityId)]) {
     * @return a readable string for this precedence relation
     */
   override def toString: String = {
-    val strPrec = predMap.foldLeft("[")((str, s) => s"$str{$s} ")
-    val strSucc = succMap.foldLeft("[")((str, s) => s"$str{$s} ")
-    s"Precedences:\n** Direct Precedences : $strPrec\n** Direct Successors : $strSucc"
+    val strPrec = ancestorsMap.foldLeft("[")((str, s) => s"$str{$s} ")
+    val strSucc = descendantsMap.foldLeft("[")((str, s) => s"$str{$s} ")
+    s"Precedences:\n** Ancestors : $strPrec\n** Descendants : $strSucc"
   }
 }
 
 object Precedences {
-  def apply(beforeAfterPairs: List[(ActivityId, ActivityId)]): Precedences =
-    new Precedences(beforeAfterPairs)
+  def apply(activities: List[ActivityId],
+            beforeAfterPairs: List[(ActivityId, ActivityId)]): Precedences =
+    new Precedences(activities, beforeAfterPairs)
 }

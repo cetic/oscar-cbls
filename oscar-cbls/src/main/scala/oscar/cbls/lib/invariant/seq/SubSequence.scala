@@ -1,5 +1,3 @@
-package oscar.cbls.lib.invariant.seq
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,34 +12,35 @@ package oscar.cbls.lib.invariant.seq
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.lib.invariant.seq
 
-import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{ChangingIntValue, ChangingSeqValue, SeqCheckpointedValueStack, SeqInvariant, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint, SeqValue, ShortIntNotificationTarget}
+import oscar.cbls.core.propagation.Checker
 
 //TODO: document, test and put into modeling API
-case class SubSequence(v: SeqValue,index:Long, length: Long,
+case class SubSequence(v: SeqValue,index:Int, length: Int,
                        override val maxPivotPerValuePercent:Int = 10,
                        override val maxHistorySize:Int = 10)
   extends SeqInvariant(IntSequence.empty(), v.max, maxPivotPerValuePercent, maxHistorySize)
     with SeqNotificationTarget{
 
-  setName("SubSequence(" + v.name + ")")
+  setName(s"SubSequence(${v.name})")
 
   registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  def internalPrint() ={
+  def internalPrint(): Unit ={
     val seq = v.value.toList
     for(i <- seq.indices){
       if(i == index){
         print("[")
       }
       print(seq(i))
-      if(i == index+length-1L){
+      if(i == index+length-1){
         print("]")
       }
-      if(i != seq.length-1L){
+      if(i != seq.length-1){
         print(",")
       }
     }
@@ -49,12 +48,11 @@ case class SubSequence(v: SeqValue,index:Long, length: Long,
     println("["+this.value.toList.mkString(",")+"]")
   }
 
-
   def computeFromScratch(s:IntSequence): IntSequence = {
     var explorer = s.explorerAtPosition(index)
     var subSeq = IntSequence.empty()
 
-    for(i <- 0L until length){
+    for(i <- 0 until length){
       explorer match {
         case None => return subSeq.regularize()
         case Some(e) =>
@@ -62,7 +60,7 @@ case class SubSequence(v: SeqValue,index:Long, length: Long,
           explorer = e.next
       }
     }
-    return subSeq.regularize()
+    subSeq.regularize()
   }
 
   this := computeFromScratch(v.value)
@@ -77,27 +75,27 @@ case class SubSequence(v: SeqValue,index:Long, length: Long,
 
   def digestChanges(changes : SeqUpdate) : Boolean = {
     changes match {
-      case s@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         if( pos >= index+length) return true
         if( this.newValue.size == length){
-          this.remove(length-1L)
+          this.remove(length-1)
         }
         if(pos >= index){
           this.insertAtPosition(value, pos-index)
         }else{
           if(changes.newValue.size > index){
-            this.insertAtPosition(changes.newValue.valueAtPosition(index).head,0L)
+            this.insertAtPosition(changes.newValue.valueAtPosition(index).head,0)
           }
         }
-        return true
+        true
 
       case SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         if((toIncluded < index && after < index) ||
-           (fromIncluded >= index+length && after >= index+length-1L)) return true
+           (fromIncluded >= index+length && after >= index+length-1)) return true
 
-        if(fromIncluded >= index && toIncluded <= index+length-1L && after > index-1L && after <= index+length - 1L) {
+        if(fromIncluded >= index && toIncluded <= index+length-1 && after > index-1 && after <= index+length - 1) {
           this.move(fromIncluded - index, toIncluded - index, after - index, flip)
           return true
         }
@@ -107,7 +105,7 @@ case class SubSequence(v: SeqValue,index:Long, length: Long,
         if (!digestChanges(prev)) return false
         if( pos >= index+length) return true
 
-        changes.newValue.valueAtPosition(index+length-1L) match{
+        changes.newValue.valueAtPosition(index+length-1) match{
           case None => ()
           case Some(v) => this.insertAtPosition(v,length)
         }
@@ -115,9 +113,8 @@ case class SubSequence(v: SeqValue,index:Long, length: Long,
         if(pos >= index){
           this.remove(pos-index)
         }else{
-          this.remove(0L)
+          this.remove(0)
         }
-
         true
 
       case u@SeqUpdateRollBackToCheckpoint(checkpoint,checkPointLevel) =>
@@ -126,13 +123,13 @@ case class SubSequence(v: SeqValue,index:Long, length: Long,
         rollbackToTopCheckpoint(checkpointStack.rollBackAndOutputValue(checkpoint,checkPointLevel))
         true
 
-      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, isActive, checkpointLevel) =>
+      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, checkpointLevel) =>
         if(!digestChanges(prev)){
           this := computeFromScratch(prev.newValue)
         }
 
         releaseTopCheckpointsToLevel(checkpointLevel,true)
-        this.defineCurrentValueAsCheckpoint(isActive)
+        this.defineCurrentValueAsCheckpoint()
         //we perform this after the define checkpoint above, so that hte saved value is the regularized one (I do not know, but his might be a good idea)
         checkpointStack.defineCheckpoint(prev.newValue,checkpointLevel,this.newValue)
         true
@@ -142,26 +139,30 @@ case class SubSequence(v: SeqValue,index:Long, length: Long,
 
       case SeqUpdateAssign(value : IntSequence) =>
         false
+
+      case _ =>
+        false // Default case
     }
   }
 
-  override def checkInternals(c: Checker) {
-    require(this.newValue.toList equals computeFromScratch(v.value).toList, Some("this.newValue(=" + this.newValue.toList + ") == v.value.subSequence(=" + v.value.toList.reverse + ")"))
+  override def checkInternals(c: Checker): Unit = {
+    require(this.newValue.toList equals computeFromScratch(v.value).toList,
+      Some(s"this.newValue(=${this.newValue.toList}) == v.value.subSequence(=${v.value.toList.reverse})"))
    }
 }
 
 //TODO: document, test and put into modeling API
-case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length: Long, override val maxPivotPerValuePercent:Int = 10,
-                          override val maxHistorySize:Int = 10)(shiftLimitBeforeRecompute:Long = length/2)
+case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length: Int, override val maxPivotPerValuePercent:Int = 10,
+                          override val maxHistorySize:Int = 10)(shiftLimitBeforeRecompute:Int = length/2)
   extends SeqInvariant(IntSequence.empty(), originalSeq.max, maxPivotPerValuePercent, maxHistorySize)
-    with SeqNotificationTarget with IntNotificationTarget{
+    with SeqNotificationTarget with ShortIntNotificationTarget{
 
   //setName("Flip(" + v.name + ")")
   registerStaticAndDynamicDependency(index)
   registerStaticAndDynamicDependency(originalSeq)
   finishInitialization()
 
-  def printAll() ={
+  def printAll(): Unit ={
     val seq = originalSeq.value.toList
     for(i <- seq.indices){
       if(i == index.value){
@@ -179,8 +180,7 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
     println("["+this.value.toList.mkString(",")+"]")
   }
 
-
-  def computeFromScratch(s:IntSequence, idx:Long): IntSequence = {
+  def computeFromScratch(s:IntSequence, idx:Int): IntSequence = {
     var explorer = s.explorerAtPosition(idx)
     var subSeq = IntSequence.empty()
 
@@ -192,12 +192,12 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
           explorer = e.next
       }
     }
-    return subSeq.regularize()
+    subSeq.regularize()
   }
 
-  this := computeFromScratch(originalSeq.value, index.value)
+  this := computeFromScratch(originalSeq.value, index.valueInt)
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int): Unit = {
     require(v == index)
     if(NewVal >= originalSeq.value.size  && OldVal >= originalSeq.value.size) return
     if(Math.abs(OldVal-NewVal) > shiftLimitBeforeRecompute){
@@ -205,11 +205,11 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
       return
     }
     if(NewVal > OldVal){
-      for( i <- 0L until NewVal-Math.max(0L,OldVal)){
-        this.remove(0L)
+      for( i <- 0 until NewVal-Math.max(0,OldVal)){
+        this.remove(0)
       }
       var originalExplorer = originalSeq.value.explorerAtPosition(OldVal+length)
-      for( i <- 0L until NewVal-OldVal){
+      for( i <- 0 until NewVal-OldVal){
         originalExplorer match {
           case None => return
           case Some(e) => this.insertAtPosition(e.value, this.newValue.size)
@@ -217,44 +217,43 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
         }
       }
     }else if(OldVal > NewVal){
-      for( i <- 0L until OldVal - NewVal - Math.max(0L,(OldVal+length-originalSeq.value.size))){
-        this.remove(this.newValue.size-1L)
+      for( i <- 0 until OldVal - NewVal - Math.max(0,(OldVal+length-originalSeq.value.size))){
+        this.remove(this.newValue.size-1)
       }
-      var originalExplorer = originalSeq.value.explorerAtPosition(OldVal-1L)
-      for( i <- 0L until OldVal-NewVal){
+      var originalExplorer = originalSeq.value.explorerAtPosition(OldVal-1)
+      for( i <- 0 until OldVal-NewVal){
         originalExplorer match {
           case None => return
-          case Some(e) => this.insertAtPosition(e.value, 0L)
+          case Some(e) => this.insertAtPosition(e.value, 0)
             originalExplorer = e.prev
         }
       }
     }
-
   }
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     if (!digestChanges(changes)) {
-      this := computeFromScratch(v.value,index.value)
+      this := computeFromScratch(v.value,index.valueInt)
     }
   }
 
   def digestChanges(changes : SeqUpdate) : Boolean = {
-    val currentIndex = index.value
+    val currentIndex = index.valueInt
     changes match {
-      case s@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         if( pos >= currentIndex+length) return true
         if( this.newValue.size == length){
-          this.remove(length-1L)
+          this.remove(length-1)
         }
         if(pos >= currentIndex){
           this.insertAtPosition(value, pos-currentIndex)
         }else{
           if(changes.newValue.size > currentIndex){
-            this.insertAtPosition(changes.newValue.valueAtPosition(currentIndex).head,0L)
+            this.insertAtPosition(changes.newValue.valueAtPosition(currentIndex).head,0)
           }
         }
-        return true
+        true
 
       case SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
@@ -287,8 +286,7 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
       case u@SeqUpdateRollBackToCheckpoint(checkpoint,checkpointLevel) =>
         digestChanges(u.howToRollBack)
 
-
-      case SeqUpdateDefineCheckpoint(prev, isActive, checkpointLevel) =>
+      case SeqUpdateDefineCheckpoint(prev, checkpointLevel) =>
         digestChanges(prev)
 
       case SeqUpdateLastNotified(value) =>
@@ -296,11 +294,14 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
 
       case SeqUpdateAssign(value : IntSequence) =>
         false
+
+      case _ =>
+        false // Default case
     }
   }
 
-  override def checkInternals(c: Checker) {
-    require(this.newValue.toList equals computeFromScratch(originalSeq.value,index.value).toList, Some("this.newValue(=" + this.newValue.toList + ") == v.value.subSequence(=" + originalSeq.value.toList.reverse + ")"))
+  override def checkInternals(c: Checker): Unit = {
+    require(this.newValue.toList equals computeFromScratch(originalSeq.value,index.valueInt).toList,
+      Some(s"this.newValue(=${this.newValue.toList}) == v.value.subSequence(=${originalSeq.value.toList.reverse})"))
   }
 }
-

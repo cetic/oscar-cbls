@@ -1,7 +1,7 @@
 package oscar.cbls
 
 /**
- * Created by rdl on 11L-09L-1L7.
+ * Created by rdl on 11-09-17.
  */
 package object core {
 
@@ -21,6 +21,7 @@ package object core {
   type IntInvariant = oscar.cbls.core.computation.IntInvariant
   type ChangingIntValue = oscar.cbls.core.computation.ChangingIntValue
   type IntNotificationTarget = oscar.cbls.core.computation.IntNotificationTarget
+  type ShortIntNotificationTarget = oscar.cbls.core.computation.ShortIntNotificationTarget
 
   //set types
   type SetInvariant = oscar.cbls.core.computation.SetInvariant
@@ -58,4 +59,3 @@ package object core {
   type SeqUpdateRollBackToCheckpoint = oscar.cbls.core.computation.SeqUpdateRollBackToCheckpoint
   val SeqUpdateRollBackToCheckpoint = oscar.cbls.core.computation.SeqUpdateRollBackToCheckpoint
 }
-

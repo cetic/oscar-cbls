@@ -51,7 +51,7 @@ class ShavingDomain(val vars: Array[IntVarLike]) extends Branching with Branchin
         context.remove(xr, xrToRemove.toArray)
         toRemove = toRemove.tail
       }
-      if (context.isFailed) return branchOne()
+      if (context.isFailed) return branchOne(())
     }
     
     

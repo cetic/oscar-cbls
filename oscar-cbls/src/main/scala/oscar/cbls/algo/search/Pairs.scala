@@ -1,5 +1,3 @@
-package oscar.cbls.algo.search
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,10 +12,14 @@ package oscar.cbls.algo.search
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.algo.search
+
+import scala.annotation.tailrec
 
 /**
- * Created by rdl on 04L-12L-1L5.
+ * Created by rdl on 04-12-15.
  */
+
 object Pairs {
 
   /**
@@ -25,6 +27,7 @@ object Pairs {
    * @return a list of all pairs of elements made from two elements in l
    */
   def makeAllUnsortedPairs[T](l:List[T]):List[(T,T)] = {
+    @tailrec
     def makeAllUnsortedPairsWithHead(head:T, tail:List[T], toAppend:List[(T,T)]):List[(T,T)] = {
       tail match{
         case other :: newTail => makeAllUnsortedPairsWithHead(head, newTail, (head,other) :: toAppend)
@@ -43,7 +46,8 @@ object Pairs {
    * @return a list of all pairs of elements made from two elements in l, preserving the order
    *         in which those elements are in l
    */
-  def makeAllSortedPairs[T](l:List[T], filter: (T,T) => Boolean = (head:T,other:T) => true, toReturn: List[(T,T)] = List.empty):List[(T,T)] = {
+  @tailrec
+  def makeAllSortedPairs[T](l:List[T], filter: (T,T) => Boolean = (head:T, other:T) => true, toReturn: List[(T,T)] = List.empty):List[(T,T)] = {
     def makeAllSortedPairsWithHead(head:T,
                                    tail:List[T],
                                    toAppend:List[(T,T)]):List[(T,T)] = {
@@ -80,6 +84,7 @@ object Pairs {
     * @param filter an optional filter
     * @return a list containing all the possible pairs (a, b) where a is in l and b is in t
     */
+  @tailrec
   def zipIntoAllPossiblePairs[L,T](l:List[L],
                                    t:List[T],
                                    filter: (L,T) => Boolean = (_:L,_:T) => true,
@@ -87,7 +92,8 @@ object Pairs {
     l match{
       case Nil => toReturn
       case hl::tl =>
-        def myAggregate(lh:L,rt:List[T], toReturn: List[(L,T)]):List[(L,T)] = {
+        @tailrec
+        def myAggregate(lh:L, rt:List[T], toReturn: List[(L,T)]):List[(L,T)] = {
           rt match {
             case ht :: tt if filter(lh,ht) => myAggregate(lh, tt, (lh,ht) :: toReturn)
             case ht :: tt => myAggregate(lh, tt,toReturn)
@@ -95,6 +101,14 @@ object Pairs {
           }
         }
         zipIntoAllPossiblePairs(tl,t,filter,myAggregate(hl,t,List.empty) ::: toReturn)
+    }
+  }
+
+  def pairOfNexts[T](l:List[T]):List[(T,T)] = {
+    l match{
+      case Nil => Nil
+      case _::Nil => Nil
+      case a::b::t => (a,b) :: pairOfNexts(b::t)
     }
   }
 }

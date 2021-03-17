@@ -1,20 +1,19 @@
 package oscar.cbls.business.routing.invariants.timeWindow
 
-import oscar.cbls._
 import oscar.cbls.business.routing.forwardCumulativeIntegerIntegerDimensionOnVehicle
 import oscar.cbls.business.routing.invariants.capa.ForwardCumulativeIntegerIntegerDimensionOnVehicle
-import oscar.cbls.core.computation.{CBLSSeqVar, ChangingIntValue}
-
+import oscar.cbls.core.computation.{CBLSIntConst, CBLSSeqVar, ChangingIntValue}
+import oscar.cbls.core.constraint.ConstraintSystem
 
 object NaiveTimeWindowConstraint {
-  def apply(routes: CBLSSeqVar, n: Long, v: Long, singleNodesTransferFunctions: Array[TransferFunction], travelDurationMatrix: Array[Array[Long]]): NaiveTimeWindowConstraint = {
+  def apply(routes: CBLSSeqVar, n: Int, v: Int, singleNodesTransferFunctions: Array[TransferFunction], travelDurationMatrix: Array[Array[Long]]): NaiveTimeWindowConstraint = {
     new NaiveTimeWindowConstraint(routes, n, v, singleNodesTransferFunctions, travelDurationMatrix)
   }
 
-  def maxTransferFunctionWithTravelDurationRestriction(n: Long, v: Long,
+  def maxTransferFunctionWithTravelDurationRestriction(n: Int, v: Int,
                                                        singleNodesTransferFunctions: Array[TransferFunction],
-                                                       maxTravelDurationConstraints: List[(Long, Long, Long)],
-                                                       chainsOfNodes: List[List[Long]],
+                                                       maxTravelDurationConstraints: List[(Int, Int, Long)],
+                                                       chainsOfNodes: List[List[Int]],
                                                        travelDurationMatrix: Array[Array[Long]]): Unit ={
     val reversedChains = chainsOfNodes.map(_.reverse)
     for((from, to, maxTravelDuration) <- maxTravelDurationConstraints){
@@ -24,7 +23,7 @@ object NaiveTimeWindowConstraint {
         val la = singleNodesTransferFunctions(from).latestLeavingTime + maxTravelDuration
         require(singleNodesTransferFunctions(to).ea <= la,
           "The max travel duration is too short regarding the earliest arrival time at the targeted node.\n" +
-            "Maximum " + maxTravelDuration + " units of time between node : " + from + " and node " + to + ".")
+            s"Maximum $maxTravelDuration units of time between node : $from and node $to.")
         DefinedTransferFunction(singleNodesTransferFunctions(to).ea, la, singleNodesTransferFunctions(to).el, to, to)
       }
 
@@ -38,9 +37,9 @@ object NaiveTimeWindowConstraint {
               travelDurationMatrix(prevNodeInChain)(nextNodeInChain) -
               prevTransferFunction.taskDuration
             require(prevTransferFunction.ea <= la,
-              "The max travel duration is too short regarding the earliest arrival time of the node preceding the targeted node.\n" +
-                "Maximum " + maxTravelDuration+ " units of time between node : " + from + " and node " + to + ".\n" +
-                "Problematic chain of nodes : " + chain.reverse)
+              s"""The max travel duration is too short regarding the earliest arrival time of the node preceding the targeted node.
+                 |Maximum $maxTravelDuration units of time between node : $from and node $to.
+                 |Problematic chain of nodes : ${chain.reverse}""".stripMargin)
 
             singleNodesTransferFunctions(prevNodeInChain) =
               DefinedTransferFunction(prevTransferFunction.ea, la,
@@ -53,7 +52,7 @@ object NaiveTimeWindowConstraint {
   }
 }
 
-class NaiveTimeWindowConstraint(routes: CBLSSeqVar, n: Long, v: Long, singleNodesTransferFunctions: Array[TransferFunction], travelDurationMatrix: Array[Array[Long]]){
+class NaiveTimeWindowConstraint(routes: CBLSSeqVar, n: Int, v: Int, singleNodesTransferFunctions: Array[TransferFunction], travelDurationMatrix: Array[Array[Long]]){
 
   private val naiveTimeWindowInvariant: ForwardCumulativeIntegerIntegerDimensionOnVehicle = forwardCumulativeIntegerIntegerDimensionOnVehicle(
     routes,n,v,
@@ -89,7 +88,7 @@ class NaiveTimeWindowConstraint(routes: CBLSSeqVar, n: Long, v: Long, singleNode
     naiveTimeWindowConstraint
   }
 
-  def addMaxTravelDurationConstraint(maxDurationConstraints: List[(Long, Long, Long)]): Unit ={
+  def addMaxTravelDurationConstraint(maxDurationConstraints: List[(Int, Int, Long)]): Unit ={
     for((from, to, maxTravelDuration) <- maxDurationConstraints){
       _violation.post(arrivalTimes(to) - leaveTimes(from) le maxTravelDuration)
     }
@@ -101,4 +100,3 @@ class NaiveTimeWindowConstraint(routes: CBLSSeqVar, n: Long, v: Long, singleNode
     _violation.Violation
   }
 }
-

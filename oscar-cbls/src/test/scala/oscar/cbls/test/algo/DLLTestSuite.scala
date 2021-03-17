@@ -1,13 +1,14 @@
 package oscar.cbls.test.algo
 
 import org.scalacheck.Gen
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.algo.dll.DoublyLinkedList
 
 import scala.util.Random
 
-class DLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matchers {
+class DLLTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
 
   test("Dequeuing doesn't set the size negative"){
 
@@ -59,7 +60,6 @@ class DLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matc
       val dll = new DoublyLinkedList[Int]()
       intList.foreach(e => dll.addElem(e))
 
-      var i = 0
       dll.foreach(elem => {
         intList should contain (elem)
       })
@@ -67,9 +67,7 @@ class DLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matc
   }
 
   test("addElem, dequeue and enqueue keep the correct size (batch)"){
-
-    var helper = new CRUDHelpers[Int]()
-    val dll = new DoublyLinkedList[Int]()
+    val helper = new CRUDHelpers[Int]()
 
     val genActions = Gen.oneOf(helper.operationList)
 
@@ -141,7 +139,7 @@ class DLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matc
       dll.enqueue(i)
       size+1
     }
-    val dequeue: (DoublyLinkedList[A], A, Int) => Int = (dll: DoublyLinkedList[A], i: A, size:Int) => {
+    val dequeue: (DoublyLinkedList[A], A, Int) => Int = (dll: DoublyLinkedList[A], _: A, size:Int) => {
       if(size == 0)
         size
       else

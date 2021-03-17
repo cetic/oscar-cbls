@@ -3,22 +3,22 @@ package oscar.cbls.business.scheduling.model
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.scheduling.ActivityId
 import oscar.cbls.business.scheduling.invariants.StartTimes
-import oscar.cbls.{CBLSSeqVar, Store}
+import oscar.cbls.core.computation.{CBLSSeqVar, Store}
 
 import scala.collection.BitSet
 
 class Schedule(model: Store,
                val activities: List[ActivityId],
                val initialActivities: List[ActivityId],
-               durations: Map[ActivityId, Long],
-               minStartTimes: Map[ActivityId, Long],
+               durations: Map[ActivityId, Int],
+               minStartTimes: Map[ActivityId, Int],
                precedencePairs: List[(ActivityId, ActivityId)],
                resources: List[Resource]) {
 
   // Precedences
-  val precedencesData = new Precedences(precedencePairs)
+  val precedencesData = new Precedences(activities, precedencePairs)
   // Initial priority list
-  val initialPriorityList: List[Long] = precedencesData.getPriorityList(initialActivities)
+  val initialPriorityList: List[Int] = precedencesData.getPriorityList(initialActivities)
 
   println(s"Initial Activities: $initialActivities")
   println(s"Initial Priority List: $initialPriorityList")
@@ -40,9 +40,9 @@ class Schedule(model: Store,
     */
   def swappableIndices(indAct: Int): Iterable[Int] = {
     val prioritySequence = activityPriorityList.value
-    val currentActivity = prioritySequence.valueAtPosition(indAct).get.toInt
-    val predActIndices = precedencesData.predMap.getOrElse(currentActivity, BitSet.empty)
-    val succActIndices = precedencesData.succMap.getOrElse(currentActivity, BitSet.empty)
+    val currentActivity = prioritySequence.valueAtPosition(indAct).get
+    val predActIndices = precedencesData.ancestorsMap.getOrElse(currentActivity, BitSet.empty)
+    val succActIndices = precedencesData.descendantsMap.getOrElse(currentActivity, BitSet.empty)
     var swappableIndices: List[Int] = List()
     // Determine the bounds of the swappable zone in the priority sequence
     // First loop: backward exploration to find last predecessor
@@ -54,7 +54,7 @@ class Schedule(model: Store,
       if (optExplorer.isDefined) {
         val actExplorer = optExplorer.get
         val pos = actExplorer.position
-        val activityAtPos = actExplorer.value.toInt
+        val activityAtPos = actExplorer.value
         exploredActs ::= activityAtPos
         if (predActIndices.contains(activityAtPos)) {
           inLoop = false
@@ -62,7 +62,7 @@ class Schedule(model: Store,
           // Check whether the already explored activities
           // are not successors of the current explored activity
           val successorsOfActAtPos = precedencesData
-            .succMap
+            .descendantsMap
             .getOrElse(activityAtPos, BitSet.empty)
           if (!exploredActs.exists(successorsOfActAtPos.contains)) {
             swappableIndices ::= pos
@@ -89,7 +89,7 @@ class Schedule(model: Store,
           // Check whether the already explored activities
           // are not predecessors of the current explored activity
           val predecessorsOfActAtPos = precedencesData
-            .predMap
+            .ancestorsMap
             .getOrElse(activityAtPos, BitSet.empty)
           if (!exploredActs.exists(predecessorsOfActAtPos.contains)) {
             swappableIndices ::= pos
@@ -113,9 +113,9 @@ class Schedule(model: Store,
     */
   def reinsertableIndices(indAct: Int): Iterable[Int] = {
     val prioritySequence = activityPriorityList.value
-    val currentActivity = prioritySequence.valueAtPosition(indAct).get.toInt
-    val predActIndices = precedencesData.predMap.getOrElse(currentActivity, BitSet.empty)
-    val succActIndices = precedencesData.succMap.getOrElse(currentActivity, BitSet.empty)
+    val currentActivity = prioritySequence.valueAtPosition(indAct).get
+    val predActIndices = precedencesData.ancestorsMap.getOrElse(currentActivity, BitSet.empty)
+    val succActIndices = precedencesData.descendantsMap.getOrElse(currentActivity, BitSet.empty)
     var reinsertableIndices: List[Int] = List()
     // Determine the bounds of the reinsertable zone in the priority sequence
     // First loop: backward exploration to find last predecessor
@@ -126,7 +126,7 @@ class Schedule(model: Store,
       if (optExplorer.isDefined) {
         val actExplorer = optExplorer.get
         val pos = actExplorer.position
-        val activityAtPos = actExplorer.value.toInt
+        val activityAtPos = actExplorer.value
         if (predActIndices.contains(activityAtPos)) {
           inLoop = false
         } else {
@@ -144,7 +144,7 @@ class Schedule(model: Store,
       if (optExplorer.isDefined) {
         val actExplorer = optExplorer.get
         val pos = actExplorer.position
-        val activityAtPos = actExplorer.value.toInt
+        val activityAtPos = actExplorer.value
         if (succActIndices.contains(activityAtPos)) {
           inLoop = false
         } else {
@@ -165,8 +165,8 @@ class Schedule(model: Store,
       // The sequence is empty: the only insertable index is 0
       List(0)
     } else {
-      val predActIndices = precedencesData.predMap.getOrElse(actValue.toInt, BitSet.empty)
-      val succActIndices = precedencesData.succMap.getOrElse(actValue.toInt, BitSet.empty)
+      val predActIndices = precedencesData.ancestorsMap.getOrElse(actValue.toInt, BitSet.empty)
+      val succActIndices = precedencesData.descendantsMap.getOrElse(actValue.toInt, BitSet.empty)
       // First loop: backward exploration to find last predecessor
       var lastPred = -1
       var firstSucc = prioritySequence.size
@@ -183,7 +183,7 @@ class Schedule(model: Store,
         optExplorer = actExplorer.prev
       }
       // Second loop: forward exploration to find first successor
-      optExplorer = prioritySequence.explorerAtPosition(0)
+      optExplorer = prioritySequence.explorerAtPosition(lastPred+1)
       inLoop = true
       while (inLoop && optExplorer.isDefined) {
         val actExplorer = optExplorer.get

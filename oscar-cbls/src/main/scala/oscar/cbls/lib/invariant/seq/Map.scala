@@ -1,5 +1,3 @@
-package oscar.cbls.lib.invariant.seq
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,10 +12,11 @@ package oscar.cbls.lib.invariant.seq
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.lib.invariant.seq
 
-import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{ChangingIntValue, ChangingSeqValue, IntValue, InvariantHelper, SeqCheckpointedValueStack, SeqInvariant, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint, ShortIntNotificationTarget}
+import oscar.cbls.core.propagation.Checker
 
 object Map {
 
@@ -26,8 +25,8 @@ object Map {
    * @param mapArray an array that is taken as a function (it cannot be modified after this call)
    * @return a sequence where the value at any position p is equal to mapArray(seq(p))
    */
-  def apply(seq:ChangingSeqValue,mapArray:Array[Long]):MapConstantFun = {
-    new MapConstantFun(seq,(i => mapArray(i)),InvariantHelper.getMinMaxBoundsInt(mapArray)._2)
+  def apply(seq:ChangingSeqValue,mapArray:Array[Int]):MapConstantFun = {
+    new MapConstantFun(seq,(i => mapArray(i)),InvariantHelper.getMinMaxBoundsShortInt(mapArray)._2)
   }
 
   /**
@@ -35,8 +34,8 @@ object Map {
    * @param transform a function to apply to each value occuring in the sequence (it cannot be modified after this call)
    * @return a sequence where the value at any position p is equal to transform(seq(p))
    */
-  def apply(seq:ChangingSeqValue, transform:Long=>Long,maxTransform:Long) =
-    new MapConstantFun(seq:ChangingSeqValue, transform:Long=>Long,maxTransform:Long)
+  def apply(seq:ChangingSeqValue, transform:Int=>Int,maxTransform:Int) =
+    new MapConstantFun(seq:ChangingSeqValue, transform:Int=>Int,maxTransform:Int)
 
   /**
    * @param seq a sequence of integers
@@ -49,43 +48,43 @@ object Map {
 
 
 class MapConstantFun(seq:ChangingSeqValue,
-          transform:Long=>Long,maxTransform:Long)
+          transform:Int=>Int,maxTransform:Int)
   extends SeqInvariant(seq.value.map(transform),maxTransform,
     seq.maxPivotPerValuePercent,seq.maxHistorySize)
-with SeqNotificationTarget{
+    with SeqNotificationTarget{
 
-  setName("Map(" + seq.name + ")")
+  setName(s"Map(${seq.name})")
 
   registerStaticAndDynamicDependency(seq)
   finishInitialization()
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
-    digestUdpate(changes : SeqUpdate)
+    digestUpdate(changes : SeqUpdate)
   }
 
   var checkpointStack = new SeqCheckpointedValueStack[IntSequence]()
 
-  def digestUdpate(changes : SeqUpdate) {
+  def digestUpdate(changes : SeqUpdate): Unit = {
     changes match {
-      case SeqUpdateDefineCheckpoint(prev, isActive, checkpointLevel) =>
-        digestUdpate(prev)
+      case SeqUpdateDefineCheckpoint(prev, checkpointLevel) =>
+        digestUpdate(prev)
 
         this.releaseTopCheckpointsToLevel(checkpointLevel,true)
-        defineCurrentValueAsCheckpoint(isActive)
+        defineCurrentValueAsCheckpoint()
         checkpointStack.defineCheckpoint(prev.newValue,checkpointLevel,this.newValue)
 
       case SeqUpdateInsert(value, position, prev) =>
-        digestUdpate(prev)
+        digestUpdate(prev)
         insertAtPosition(transform(value), position)
 
       case SeqUpdateLastNotified(seq) => ;
 
       case SeqUpdateMove(fromIncluded, toIncluded, after, flip, prev) =>
-        digestUdpate(prev)
+        digestUpdate(prev)
         move(fromIncluded, toIncluded, after, flip)
 
       case SeqUpdateRemove(position, prev) =>
-        digestUdpate(prev)
+        digestUpdate(prev)
         remove(position)
 
       case x@SeqUpdateRollBackToCheckpoint(checkpoint,checkpointLevel) =>
@@ -94,9 +93,11 @@ with SeqNotificationTarget{
         rollbackToTopCheckpoint(checkpointStack.rollBackAndOutputValue(checkpoint,checkpointLevel))
         require(checkpointStack.topCheckpoint quickEquals checkpoint)
 
-
       case SeqUpdateAssign(seq) =>
         this := seq.map(transform)
+
+      case _ =>
+        // Default case; Nothing to do (throw exception ?)
     }
   }
 
@@ -107,22 +108,22 @@ with SeqNotificationTarget{
 
 class MapThroughArray(seq:ChangingSeqValue,
                      transform:Array[IntValue])
-  extends SeqInvariant(seq.value.map(v => transform(v).value),
-    InvariantHelper.getMinMaxBounds(transform)._2,
+  extends SeqInvariant(seq.value.map(v => transform(v).valueInt),
+    InvariantHelper.getMinMaxBoundsShort(transform)._2,
     seq.maxPivotPerValuePercent,seq.maxHistorySize)
-  with SeqNotificationTarget with IntNotificationTarget{
+  with SeqNotificationTarget with ShortIntNotificationTarget{
 
-  setName("Map(" + seq.name + ")")
+  setName(s"Map(${seq.name})")
 
   registerStaticAndDynamicDependency(seq)
   registerStaticAndDynamicDependencyArrayIndex(transform)
   finishInitialization()
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
-    digestUdpate(changes : SeqUpdate)
+    digestUpdate(changes : SeqUpdate)
   }
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int): Unit = {
     val impactedValue = id
     for(impactedPosition <- seq.value.positionsOfValue(impactedValue)){
       remove(impactedPosition)
@@ -130,24 +131,26 @@ class MapThroughArray(seq:ChangingSeqValue,
     }
   }
 
-  def digestUdpate(changes : SeqUpdate) {
+  def digestUpdate(changes : SeqUpdate): Unit = {
     changes match {
-      case SeqUpdateDefineCheckpoint(prev, isActive,chechpointLevel) =>
-        digestUdpate(prev)
+      case SeqUpdateDefineCheckpoint(prev, checkpointLevel) =>
+        digestUpdate(prev)
        case SeqUpdateInsert(value, position, prev) =>
-        digestUdpate(prev)
-        insertAtPosition(transform(value).value, position)
+        digestUpdate(prev)
+        insertAtPosition(transform(value).valueInt, position)
       case SeqUpdateLastNotified(seq) => ;
       case SeqUpdateMove(fromIncluded, toIncluded, after, flip, prev) =>
-        digestUdpate(prev)
+        digestUpdate(prev)
         move(fromIncluded, toIncluded, after, flip)
       case SeqUpdateRemove(position, prev) =>
-        digestUdpate(prev)
+        digestUpdate(prev)
         remove(position)
       case x@SeqUpdateRollBackToCheckpoint(checkpoint,chechpointLevel) =>
-        digestUdpate(x.howToRollBack)
+        digestUpdate(x.howToRollBack)
       case SeqUpdateAssign(seq) =>
-        this := seq.map(v => transform(v).value)
+        this := seq.map(v => transform(v).valueInt)
+      case _ =>
+        // Default case. Nothing to do (maybe better to throw an exeception)
     }
   }
 
@@ -155,4 +158,3 @@ class MapThroughArray(seq:ChangingSeqValue,
     c.check(this.value.toList equals seq.value.toList.map(x => transform(x).value))
   }
 }
-

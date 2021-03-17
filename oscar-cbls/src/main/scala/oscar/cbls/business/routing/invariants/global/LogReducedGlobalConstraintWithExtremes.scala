@@ -2,49 +2,47 @@ package oscar.cbls.business.routing.invariants.global
 
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
-import oscar.cbls.core.ChangingSeqValue
-import oscar.cbls._
+import oscar.cbls.core.computation.ChangingSeqValue
 
-abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest, @specialized(Int, Long, Boolean) U:Manifest](gc: GlobalConstraintCore, n: Long, v: Long)
-  extends LogReducedGlobalConstraint[T, U](gc,n,v){
+abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest, @specialized(Int, Long, Boolean) U:Manifest](routes: ChangingSeqValue, n: Int, v: Int)
+  extends LogReducedGlobalConstraint[T, U](routes,n,v){
   var preComputeTime = 0L
   var preComputeCount = 0
   var computeValueTime = 0L
   var computeValueCount = 0
 
-  class NodeAndExtremePreComputes(val node:Long,
+  class NodeAndExtremePreComputes(val node:Int,
                                   var fromStart:T = null.asInstanceOf[T],
                                   var toEnd:T = null.asInstanceOf[T]){
     override def toString: String = {
-      "NodeAndExtremePreComputes(node:" + node + " fromStart:" + fromStart + " toEnd:" + toEnd + ")"
+      s"NodeAndExtremePreComputes(node:$node fromStart:$fromStart toEnd:$toEnd)"
     }
   }
 
   private val vehicleToExtremePrecomputes:Array[Array[NodeAndExtremePreComputes]] = Array.fill(v)(null)
 
-
   private def identifyNodesAndAllocateExtremePrecomputes(e:Option[IntSequenceExplorer],
-                                                         vehicle:Long,positionInVehicleRoute:Long,
+                                                         vehicle:Int,positionInVehicleRoute:Int,
                                                          preComputedVals:Array[VehicleAndPosition]): Unit ={
     e match {
       case None =>
         //end
-        vehicleToExtremePrecomputes(vehicle) = Array.fill(positionInVehicleRoute+1L)(null)
+        vehicleToExtremePrecomputes(vehicle) = Array.fill(positionInVehicleRoute+1)(null)
         vehicleToExtremePrecomputes(vehicle)(positionInVehicleRoute) = new NodeAndExtremePreComputes(vehicle)
 
-      case  Some(x) if x.value < v && x.value != vehicle => ;
+      case  Some(x) if x.value < v && x.value != vehicle =>
         //end
-        vehicleToExtremePrecomputes(vehicle) = Array.fill(positionInVehicleRoute+1L)(null)
+        vehicleToExtremePrecomputes(vehicle) = Array.fill(positionInVehicleRoute+1)(null)
         vehicleToExtremePrecomputes(vehicle)(positionInVehicleRoute) = new NodeAndExtremePreComputes(vehicle)
 
       case Some(ex) =>
-        identifyNodesAndAllocateExtremePrecomputes(ex.next, vehicle, positionInVehicleRoute + 1L, preComputedVals)
+        identifyNodesAndAllocateExtremePrecomputes(ex.next, vehicle, positionInVehicleRoute + 1, preComputedVals)
 
         vehicleToExtremePrecomputes(vehicle)(positionInVehicleRoute) = new NodeAndExtremePreComputes(ex.value)
     }
   }
 
-  override def performPreCompute(vehicle: Long, routes: IntSequence): Unit = {
+  override def performPreCompute(vehicle: Int, routes: IntSequence): Unit = {
     val start = System.nanoTime()
     super.performPreCompute(vehicle, routes)
     //also compute the extremes forward and backwards
@@ -52,42 +50,42 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest, @specialized(I
     identifyNodesAndAllocateExtremePrecomputes(
       routes.explorerAtAnyOccurrence(vehicle),
       vehicle,
-      0L,
+      0,
       preComputedVals)
 
     val extremePrecomputesOfCurrentVehicle = vehicleToExtremePrecomputes(vehicle)
-    val nv = extremePrecomputesOfCurrentVehicle.length-1L //return is ignored here, corrected later
-    require(nv >= 1L, nv)
+    val nv = extremePrecomputesOfCurrentVehicle.length-1 //return is ignored here, corrected later
+    require(nv >= 1, nv)
     //forward precompute
 
-    extremePrecomputesOfCurrentVehicle(0L).fromStart = nodeValue(vehicle)
+    extremePrecomputesOfCurrentVehicle(0).fromStart = nodeValue(vehicle)
 
-    for (i <- 1L until nv) {
+    for (i <- 1 until nv) {
       extremePrecomputesOfCurrentVehicle(i).fromStart =
         composeSteps(
-          extremePrecomputesOfCurrentVehicle(i - 1L).fromStart,
+          extremePrecomputesOfCurrentVehicle(i - 1).fromStart,
           nodeValue(extremePrecomputesOfCurrentVehicle(i).node))
     }
 
     extremePrecomputesOfCurrentVehicle(nv).fromStart =
       composeSteps(
-        extremePrecomputesOfCurrentVehicle(nv - 1L).fromStart,
+        extremePrecomputesOfCurrentVehicle(nv - 1).fromStart,
         endNodeValue(vehicle))
 
     extremePrecomputesOfCurrentVehicle(nv).toEnd = endNodeValue(vehicle)
 
     //backward precompute
-    for (i <- (0L until nv).reverse) {
+    for (i <- (0 until nv).reverse) {
       extremePrecomputesOfCurrentVehicle(i).toEnd =
         composeSteps(
           nodeValue(extremePrecomputesOfCurrentVehicle(i).node),
-          extremePrecomputesOfCurrentVehicle(i+1L).toEnd)
+          extremePrecomputesOfCurrentVehicle(i+1).toEnd)
     }
     preComputeTime += System.nanoTime() - start
     preComputeCount += 1
   }
 
-  override def computeVehicleValue(vehicle:Long,
+  override def computeVehicleValue(vehicle:Int,
                                    segments:QList[Segment],
                                    routes:IntSequence): U = {
     computeValueCount += 1
@@ -102,7 +100,7 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest, @specialized(I
     res
   }
 
-  def decorateSegmentsExtremes(vehicle:Long,
+  def decorateSegmentsExtremes(vehicle:Int,
                                segments:QList[Segment],
                                isFirst:Boolean):QList[LogReducedSegment[T]] = {
 
@@ -111,12 +109,12 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest, @specialized(I
       case null =>
         //back to start; we add a single node (this will seldom be used, actually, since back to start is included in PreComputedSubSequence that was not flipped
         QList(LogReducedPreComputedSubSequenceGiven[T](
-          vehicle: Long, vehicle: Long,
+          vehicle: Int, vehicle: Int,
           QList(endNodeValue(vehicle))))
       case q =>
         q.head match{
           case PreComputedSubSequence
-            (startNode: Long, endNode: Long, length: Long) =>
+            (startNode: Int, endNode: Int, length: Int) =>
             val startNodeValue = preComputedVals(startNode)
             val endNodeValue = preComputedVals(endNode)
 
@@ -125,9 +123,9 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest, @specialized(I
               //println("FROM START EXTREME!")
 
               QList(LogReducedPreComputedSubSequenceGiven[T](
-                startNode: Long, endNode: Long,
+                startNode: Int, endNode: Int,
                 QList(vehicleToExtremePrecomputes(vehicle)(endNodeValue.positionInVehicleRoute).fromStart)
-              ), decorateSegmentsExtremes(vehicle:Long, segments = q.tail,isFirst = false))
+              ), decorateSegmentsExtremes(vehicle:Int, segments = q.tail,isFirst = false))
 
             } else if(
               startNodeValue.vehicle == vehicle
@@ -139,29 +137,29 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest, @specialized(I
               //println("TO END EXTREME!")
 
               QList(LogReducedPreComputedSubSequenceGiven[T](
-                startNode: Long, endNode: Long,
+                startNode: Int, endNode: Int,
                 QList(vehicleToExtremePrecomputes(vehicle)(startNodeValue.positionInVehicleRoute).toEnd)
               ))
             }else{
               QList(LogReducedPreComputedSubSequenceLazy[T](
-                startNode: Long, endNode: Long,
+                startNode: Int, endNode: Int,
                 stepGenerator = () => extractSequenceOfT(
                   startNodeValue.vehicle, startNodeValue.positionInVehicleRoute,
-                  endNodeValue.positionInVehicleRoute, flipped = false)), decorateSegmentsExtremes(vehicle:Long, segments = q.tail,isFirst = false))
+                  endNodeValue.positionInVehicleRoute, flipped = false)), decorateSegmentsExtremes(vehicle:Int, segments = q.tail,isFirst = false))
             }
           case FlippedPreComputedSubSequence(
-          startNode: Long, endNode: Long, length: Long) =>
+          startNode: Int, endNode: Int, length: Int) =>
             val startNodeValue = preComputedVals(startNode)
             val endNodeValue = preComputedVals(endNode)
 
             QList(LogReducedFlippedPreComputedSubSequence[T](
-              startNode: Long, endNode: Long,
+              startNode: Int, endNode: Int,
               stepGenerator = () => extractSequenceOfT(
                 startNodeValue.vehicle, startNodeValue.positionInVehicleRoute,
-                endNodeValue.positionInVehicleRoute, flipped = true)), decorateSegmentsExtremes(vehicle:Long, segments = q.tail,isFirst = false))
+                endNodeValue.positionInVehicleRoute, flipped = true)), decorateSegmentsExtremes(vehicle:Int, segments = q.tail,isFirst = false))
 
-          case NewNode(node: Long) =>
-            QList(LogReducedNewNode[T](node: Long, nodeValue(node)), decorateSegmentsExtremes(vehicle:Long, segments = q.tail,isFirst = false))
+          case NewNode(node: Int) =>
+            QList(LogReducedNewNode[T](node: Int, nodeValue(node)), decorateSegmentsExtremes(vehicle:Int, segments = q.tail,isFirst = false))
         }
     }
   }

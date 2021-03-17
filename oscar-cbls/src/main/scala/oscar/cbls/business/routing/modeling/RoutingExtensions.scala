@@ -1,28 +1,25 @@
 package oscar.cbls.business.routing.modeling
 
 import oscar.cbls.business.routing._
-import oscar.cbls.business.routing.model.extensions._
 import oscar.cbls.business.routing.visu.RoutingMapTypes
 
-import scala.collection.immutable.List
-
 /**
-  * Created by fg on 9L/10L/1L7.
+  * Created by fg on 9/10/17.
   */
 //TODO: use proper name here
 trait RoutingExtensions {
-
   /**
-    * This class is used to represent the concept of chains.
-    * A chain is a list of nodes within which each node is the predecessor of the next node in the list.
-    * This class offers a list of methods and values usefull if you want to implement custom methods for your routing problem.
-    *
-    * @param vrp The basic vehicle routing problem
-    * @param chains The list of chains => List of List of nodes
-    * @return A Chains object
-    */
-  def chains(vrp: VRP, chains: List[List[Long]]) =
+   * This class is used to represent the concept of chains.
+   * A chain is a list of nodes within which each node is the predecessor of the next node in the list.
+   * This class offers a list of methods and values useful if you want to implement custom methods for your routing problem.
+   *
+   * @param vrp The basic vehicle routing problem
+   * @param chains The list of chains => List of List of nodes
+   * @return A Chains object
+   */
+  def chains(vrp: VRP, chains: List[List[Int]]) =
     new Chains(vrp, chains)
+
   type Chains = oscar.cbls.business.routing.model.extensions.Chains
 
   /**
@@ -45,8 +42,8 @@ trait RoutingExtensions {
     */
   def display(vrp: VRP,
               nodePositions: Array[(Double,Double)],
-              sizeOfMap: Option[Long] = None,
-              refreshRate: Long = 100L,
+              sizeOfMap: Option[Int] = None,
+              refreshRate: Int = 100,
               routingMapType: RoutingMapTypes.Value = RoutingMapTypes.BasicRoutingMap,
               toolTipInfo: Option[Int => Option[() => String]] = None,
               title:String = "VRP with OscaR.cbls"

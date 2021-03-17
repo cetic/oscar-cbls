@@ -47,29 +47,33 @@ class DFSearchNode extends ReversibleContextImpl with ConstrainableContext {
   def fail(): Unit = failed.setTrue()
   
   /** This function is executed when the node becomes a solution */
-  def solFound(): Unit = Unit
+  def solFound(): Unit = ()
+
+  def start: Unit = {
+    start(Int.MaxValue, Int.MaxValue, Int.MaxValue, Int.MaxValue, null)
+  }
 
   def start(nSols: Int = Int.MaxValue, failureLimit: Int = Int.MaxValue, timeLimit: Int = Int.MaxValue, maxDiscrepancy: Int = Int.MaxValue, listener: DFSearchListener = null): SearchStatistics = {
     startSubjectTo(nSols, failureLimit, timeLimit, maxDiscrepancy, listener)()
   }
 
   def start(stopCondition: => Boolean): SearchStatistics = {
-    startSubjectTo(stopCondition, Int.MaxValue, null)(Unit)
+    startSubjectTo(stopCondition, Int.MaxValue, null)({})
   }
 
   def start(stopCondition: => Boolean, listener: DFSearchListener): SearchStatistics = {
-    startSubjectTo(stopCondition, Int.MaxValue)(Unit)
+    startSubjectTo(stopCondition, Int.MaxValue)({})
   }
 
   def start(stopCondition: => Boolean, maxDiscrepancy: Int): SearchStatistics = {
-    startSubjectTo(stopCondition, maxDiscrepancy, null)(Unit)
+    startSubjectTo(stopCondition, maxDiscrepancy, null)({})
   }
 
   def start(stopCondition: => Boolean, maxDiscrepancy: Int, listener: DFSearchListener): SearchStatistics = {
-    startSubjectTo(stopCondition, maxDiscrepancy, listener)(Unit)
+    startSubjectTo(stopCondition, maxDiscrepancy, listener)({})
   }
 
-  def startSubjectTo(nSols: Int = Int.MaxValue, failureLimit: Int = Int.MaxValue, timeLimit: Int = Int.MaxValue, maxDiscrepancy: Int = Int.MaxValue, listener: DFSearchListener = null)(block: => Unit = Unit): SearchStatistics = {
+  def startSubjectTo(nSols: Int = Int.MaxValue, failureLimit: Int = Int.MaxValue, timeLimit: Int = Int.MaxValue, maxDiscrepancy: Int = Int.MaxValue, listener: DFSearchListener = null)(block: => Unit = () => ()): SearchStatistics = {
     val stopCondition = buildStopCondition(nSols, failureLimit, timeLimit)
     startSubjectTo(stopCondition, maxDiscrepancy, listener)(block)
   }

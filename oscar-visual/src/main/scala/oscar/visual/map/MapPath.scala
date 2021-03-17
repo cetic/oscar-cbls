@@ -26,7 +26,7 @@ import java.awt.Color
  * Representation of a point defined by coordinates
  */
 case class MapPoint(lat : Double, long : Double) {
-    override def toString() = lat+","+long
+    override def toString: String = s"$lat, $long"
 }
 
 /*
@@ -43,9 +43,9 @@ object MapQuest {
     {
 		  cache.getOrElseUpdate((orig, dest), {
 		  val xmldata = getRoute(orig, dest)
-		  if((xmldata \ "info" \ "statusCode").text != "0") throw new IOException ("Error retrieving path from mapquest");
+		  if((xmldata \ "info" \ "statusCode").text != "0") throw new IOException ("Error retrieving path from mapquest")
 		  else {
-		    (xmldata \ "route" \ "shape" \ "shapePoints" \ "latLng").map(node => new MapPoint((node \ "lat").text.toDouble, (node \ "lng").text.toDouble)).toList
+		    (xmldata \ "route" \ "shape" \ "shapePoints" \ "latLng").map(node => MapPoint((node \ "lat").text.toDouble, (node \ "lng").text.toDouble)).toList
 		  }}
 		  )
     }
@@ -54,31 +54,28 @@ object MapQuest {
   	 * Http request to get an xml element containing the path
   	 */
   	private def getRoute(orig: MapPoint, dest : MapPoint) : Elem = {
-  	  val answer = (new URL(baseUrl + "&from=" + orig + "&to=" + dest)).openStream()
+  	  val answer = new URL(baseUrl + "&from=" + orig + "&to=" + dest).openStream()
   	  XML.loadString(Source.fromInputStream(answer).mkString(""))
   	}
 }
-
 
 /*
  * Represent a path from orig to dest as a list of MapLines
  */
 class MapPath(m : VisualMap, o: MapPoint, d : MapPoint, col : Color = Color.BLACK) {
-  val map = m
+  val map: VisualMap = m
   private var _orig = o
   private var _dest = d
   private var _lines = List[MapLine]()
   
-  val color = col
-  
-  
+  val color: Color = col
+
   refreshLines()
-  
-  
+
   /*
    * get mapquest path from orig to dest
    */
-  private def refreshLines() = {
+  private def refreshLines(): Unit = {
  	val waypoints = MapQuest.getPath(_orig, _dest)
  	//build lines ignoring "empty" shapes
  	_lines = (for(i <- 0 until waypoints.length-2 if waypoints(i).lat != waypoints(i+1).lat || waypoints(i).long != waypoints(i+1).long) 
@@ -87,21 +84,21 @@ class MapPath(m : VisualMap, o: MapPoint, d : MapPoint, col : Color = Color.BLAC
   
   // constructor without using internal MapPoint structure
   def this(map : VisualMap, origlat : Double, origlong: Double, destlat : Double, destlong : Double, col : Color) = 
-    this(map, new MapPoint(origlat,origlong), new MapPoint(destlat, destlong), col) 
+    this(map, MapPoint(origlat,origlong), MapPoint(destlat, destlong), col)
   
   // constructor without using internal MapPoint structure
   def this(map : VisualMap, origlat : Double, origlong: Double, destlat : Double, destlong : Double) = 
-    this(map, new MapPoint(origlat,origlong), new MapPoint(destlat, destlong), Color.BLACK)     
+    this(map, MapPoint(origlat,origlong), MapPoint(destlat, destlong), Color.BLACK)
     
-  def remove = map.removePath(this)
+  def remove(): Unit = map.removePath(this)
   /*
    *  change destination
    */
   def dest_=(d: (Double, Double)): Unit = {
     if(d._1 != _dest.lat || d._2 != _dest.long) {
-      _dest = new MapPoint(d._1, d._2)
+      _dest = MapPoint(d._1, d._2)
       refreshLines()
-      map.viewer.repaint();
+      map.viewer.repaint()
     }      
   }
   
@@ -110,26 +107,23 @@ class MapPath(m : VisualMap, o: MapPoint, d : MapPoint, col : Color = Color.BLAC
    */
   def orig_=(o: (Double,Double)): Unit =  {
     if(o._1 != _orig.lat || o._2 != _orig.long) {
-      _orig = new MapPoint(o._1, o._2)
+      _orig = MapPoint(o._1, o._2)
       refreshLines()
-      map.viewer.repaint();
+      map.viewer.repaint()
     }      
   }
   
-  def dest = (_dest.lat, _dest.long)
-  def orig = (_orig.lat, _orig.long)
+  def dest: (Double, Double) = (_dest.lat, _dest.long)
+  def orig: (Double, Double) = (_orig.lat, _orig.long)
   
-  def lines = _lines
+  def lines: Seq[MapLine] = _lines
   
 }
 
-
 object MapPath {
-  
-  def main(args : Array[String]) {
+  def main(args : Array[String]): Unit = {
     val mp = new MapPath(new VisualMap(), 50.466246,4.869278,50.708634,4.572647)
-    println(mp._lines.map(lin => "["+lin.orig._1+","+lin.orig._2+" to "+lin.dest._1+","+lin.dest._2+"]")) 
-    
+    println(mp._lines.map(lin => "["+lin.orig._1+","+lin.orig._2+" to "+lin.dest._1+","+lin.dest._2+"]"))
   }
 }
 

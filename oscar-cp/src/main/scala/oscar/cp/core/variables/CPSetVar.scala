@@ -16,7 +16,7 @@ import oscar.cp.core.CPPropagStrength
 import oscar.cp.core.watcher.PropagEventQueueVarSet
 import oscar.cp.core.watcher.WatcherListL2
 
-import scala.collection.JavaConversions.mapAsScalaMap
+import scala.jdk.CollectionConverters._
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
@@ -62,7 +62,7 @@ class CPSetVar(override val store: CPStore, min: Int, max: Int, override val nam
    * @param c
    * @see oscar.cp.core.Constraint#propagate()
    */
-  def callPropagateWhenDomainChanges(c: Constraint) {
+  def callPropagateWhenDomainChanges(c: Constraint): Unit = {
     onDomainL2.register(c)
   }
 
@@ -96,7 +96,7 @@ class CPSetVar(override val store: CPStore, min: Int, max: Int, override val nam
    * @param c
    * @see oscar.cp.core.Constraint#propagate()
    */
-  def callValRequiredWhenRequiredValue(c: Constraint) {
+  def callValRequiredWhenRequiredValue(c: Constraint): Unit = {
     onRequiredL1.setValue(new PropagEventQueueVarSet(onRequiredL1.value, c, this))
   }
 
@@ -105,7 +105,7 @@ class CPSetVar(override val store: CPStore, min: Int, max: Int, override val nam
    * @param c
    * @see oscar.cp.core.Constraint#propagate()
    */
-  def callValExcludedWhenExcludedValue(c: Constraint) {
+  def callValExcludedWhenExcludedValue(c: Constraint): Unit = {
     onExcludedL1.setValue(new PropagEventQueueVarSet(onExcludedL1.value, c, this))
   }
 
@@ -114,7 +114,7 @@ class CPSetVar(override val store: CPStore, min: Int, max: Int, override val nam
    * @param c
    * @see oscar.cp.core.Constraint#propagate()
    */
-  def callValRequiredIdxWhenRequiredValue(c: Constraint, idx: Int) {
+  def callValRequiredIdxWhenRequiredValue(c: Constraint, idx: Int): Unit = {
     onRequiredIdxL1.setValue(new PropagEventQueueVarSet(onRequiredIdxL1.value, c, this, idx))
   }
 
@@ -123,7 +123,7 @@ class CPSetVar(override val store: CPStore, min: Int, max: Int, override val nam
    * @param c
    * @see oscar.cp.core.Constraint#propagate()
    */
-  def callValExcludedIdxWhenExcludedValue(c: Constraint, idx: Int) {
+  def callValExcludedIdxWhenExcludedValue(c: Constraint, idx: Int): Unit = {
     onExcludedIdxL1.setValue(new PropagEventQueueVarSet(onExcludedIdxL1.value, c, this, idx))
   }
 

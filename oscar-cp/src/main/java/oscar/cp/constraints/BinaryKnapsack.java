@@ -28,7 +28,7 @@ import oscar.cp.core.Constraint;
 import oscar.cp.core.CPStore;
 import oscar.cp.core.variables.CPVar;
 import scala.collection.Iterable;
-import scala.collection.JavaConversions;
+import scala.jdk.javaapi.CollectionConverters;
 
 
 /**
@@ -67,7 +67,7 @@ public class BinaryKnapsack extends Constraint {
 	public Iterable<CPVar> associatedVars() {
 		List<CPVar> l = new LinkedList<>(Arrays.asList(x));
 		l.add(c);
-		return JavaConversions.iterableAsScalaIterable(l);
+		return CollectionConverters.asScala(l);
 	}
 
     /**
@@ -82,7 +82,7 @@ public class BinaryKnapsack extends Constraint {
 	public BinaryKnapsack(CPBoolVar [] b, final int [] weights, CPIntVar load) {
 		super(b[0].store(),"BinaryKnapsack");
         assert(b.length == weights.length);
-		priorityL2_$eq(CPStore.MAXPRIORL2()-2);
+		priorityL2_$eq(CPStore.MaxPriorityL2()-2);
 		Integer [] perm = new Integer [weights.length];
 		for (int i = 0; i < perm.length; i++) {
             assert (weights[i] >= 0);

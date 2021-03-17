@@ -52,7 +52,7 @@ object QueensTestDelta {
     override def associatedVars(): Iterable[CPVar] = ???
   }
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
 
     implicit val cp = CPSolver()
     cp.silent = true

@@ -14,7 +14,6 @@
  ******************************************************************************/
 package oscar.dfo.multiobjective.mogen.algos.states
 
-import scala.Array.canBuildFrom
 import oscar.dfo.utils.MOOPoint
 import oscar.dfo.utils.MOEvaluator
 import oscar.dfo.utils.FeasibleRegion
@@ -76,7 +75,7 @@ class NelderMeadState(simplexInit: Array[MOOPoint], val startIntervals: Array[(D
   def printSimplex = {
     println("=" * 80)
     for (i <- 0 until simplexSize)
-      println(i + ": " + simplex(i).toString)
+      println(s"$i: ${simplex(i)}")
   }
   
 }

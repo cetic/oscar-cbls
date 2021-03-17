@@ -3,15 +3,16 @@ package oscar.xcsp3
 import java.io.File
 import java.util
 
-import org.xcsp.common.{Condition, IVar}
 import org.xcsp.common.Condition.{ConditionIntvl, ConditionRel, ConditionVal, ConditionVar}
 import org.xcsp.common.Types._
 import org.xcsp.common.predicates.{XNode, XNodeLeaf, XNodeParent}
-import org.xcsp.parser.XCallbacks
-import org.xcsp.parser.XCallbacks.{Implem, XCallbacksParameters}
+import org.xcsp.common.{Condition, Constants, IVar}
+import org.xcsp.parser.callbacks.XCallbacks
+import org.xcsp.parser.callbacks.XCallbacks.{Implem, XCallbacksParameters}
 import org.xcsp.parser.entries.XVariables.XVarInteger
 import oscar.cp.constraints.Automaton
 import oscar.modeling.algebra.bool._
+import oscar.modeling.algebra.integer.IntExpression._
 import oscar.modeling.algebra.integer._
 import oscar.modeling.constraints._
 import oscar.modeling.misc.SearchStatistics
@@ -19,7 +20,6 @@ import oscar.modeling.models.{ModelDeclaration, NoSolException}
 import oscar.modeling.solvers.cp.decompositions.CartProdRefinement
 import oscar.modeling.solvers.cp.{Branchings, CPApp, CPAppConfig}
 import oscar.modeling.vars.IntVar
-import oscar.modeling.algebra.integer.IntExpression._
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -33,6 +33,7 @@ import scala.language.reflectiveCalls
 private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String) extends XCallbacksDecomp {
   implicit val implModelDeclaration = modelDeclaration
   val varHashMap = collection.mutable.LinkedHashMap[String, IntExpression]() //automagically maintains the order of insertion
+  val decisionVars = collection.mutable.LinkedHashSet[String]() //Decision vars ids
 
   val impl = new Implem(this)
 
@@ -51,12 +52,12 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   INTENSION_TO_EXTENSION_PRIORITY;
 */
   impl.currParameters.put(XCallbacksParameters.RECOGNIZE_UNARY_PRIMITIVES, new Object)
-  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_BINARY_PRIMITIVES,  new Object)
-  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_TERNARY_PRIMITIVES,  new Object)
-  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_NVALUES_CASES,  new Object)
-  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_ARITY_LIMIT, 1000:java.lang.Integer) // included
-  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_SPACE_LIMIT, 1000000:java.lang.Integer)
-  impl.currParameters.put(XCallbacksParameters.INTENSION_TO_EXTENSION_PRIORITY, java.lang.Boolean.FALSE)
+  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_BINARY_PRIMITIVES, new Object)
+  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_TERNARY_PRIMITIVES, new Object)
+  //  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_NVALUES_CASES, new Object)
+  impl.currParameters.put(XCallbacksParameters.RECOGNIZING_BEFORE_CONVERTING, java.lang.Boolean.TRUE)
+  impl.currParameters.put(XCallbacksParameters.CONVERT_INTENSION_TO_EXTENSION_ARITY_LIMIT, 0: java.lang.Integer) // included
+  impl.currParameters.put(XCallbacksParameters.CONVERT_INTENSION_TO_EXTENSION_SPACE_LIMIT, 0L: java.lang.Long) // included
 
 
   loadInstance(filename)
@@ -78,11 +79,13 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   // Constraints
   override def buildCtrAllDifferent(id: String, list: Array[XVarInteger]): Unit = {
     val cst = AllDifferent(list.map(elem => varHashMap(elem.id())))
+    for(elem <- list) decisionVars.add(elem.id())
     modelDeclaration.add(cst)
   }
 
   override def buildCtrAllDifferentExcept(id: String, list: Array[XVarInteger], except: Array[Int]): Unit = {
     val cst = AllDifferent(list.map(elem => varHashMap(elem.id())), except.toSet)
+    for(elem <- list) decisionVars.add(elem.id())
     modelDeclaration.add(cst)
   }
 
@@ -369,6 +372,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       case TypeExpr.RATIONAL => throw new Exception("Variable in non-leaf node")
       case TypeExpr.SYMBOL => throw new Exception("Variable in non-leaf node")
       case TypeExpr.DECIMAL => throw new Exception("Variable in non-leaf node")
+      case TypeExpr.SPECIAL => ???
     }
   }
 
@@ -378,16 +382,19 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   }
 
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[Int], occurs: Array[Int]): Unit = {
+    for(elem <- list) decisionVars.add(elem.id())
     val cst = GCC(list.map(i => varHashMap(i.id())), values, occurs, occurs)
     modelDeclaration.add(cst)
   }
 
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[Int], occursMin: Array[Int], occursMax: Array[Int]): Unit = {
+    for(elem <- list) decisionVars.add(elem.id())
     val cst = GCC(list.map(i => varHashMap(i.id())), values, occursMin, occursMax)
     modelDeclaration.add(cst)
   }
 
   override def buildCtrCardinality(id: String, list: Array[XVarInteger], closed: Boolean, values: Array[Int], occurs: Array[XVarInteger]): Unit = {
+    for(elem <- list) decisionVars.add(elem.id())
     val cst = GCC(list.map(i => varHashMap(i.id())), values, occurs.map(i => varHashMap(i.id())))
     modelDeclaration.add(cst)
   }
@@ -423,10 +430,10 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   override def buildCtrExtension(id: String, list: Array[XVarInteger], tuples: Array[Array[Int]], positive: Boolean, flags: util.Set[TypeFlag]): Unit = {
     //println(list.map(x => x.id()).mkString(" "))
     val cst: Constraint = if(positive) {
-      Table(list.map(x => varHashMap(x.id())), tuples, if(flags.contains(TypeFlag.STARRED_TUPLES)) Some(Integer.MAX_VALUE-1) else None)
+      Table(list.map(x => varHashMap(x.id())), tuples, if(flags.contains(TypeFlag.STARRED_TUPLES)) Some(Constants.STAR_INT) else None)
     }
     else {
-      NegativeTable(list.map(x => varHashMap(x.id())), tuples, if(flags.contains(TypeFlag.STARRED_TUPLES)) Some(Integer.MAX_VALUE-1) else None)
+      NegativeTable(list.map(x => varHashMap(x.id())), tuples, if(flags.contains(TypeFlag.STARRED_TUPLES)) Some(Constants.STAR_INT) else None)
     }
     modelDeclaration.add(cst)
   }
@@ -441,6 +448,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       throw new Exception("Element constraint only supports ANY as position for the index")
     val array = list.map(x => varHashMap(x.id()))
     val indexExpr = if(startIndex == 0) varHashMap(index.id()) else varHashMap(index.id()) - startIndex
+    decisionVars.add(index.id())
     val valueExpr = varHashMap(value.id())
     modelDeclaration.add(array(indexExpr) === valueExpr)
   }
@@ -450,6 +458,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
       throw new Exception("Element constraint only supports ANY as position for the index")
     val array = list.map(x => varHashMap(x.id()))
     val indexExpr = if(startIndex == 0) varHashMap(index.id()) else varHashMap(index.id()) - startIndex
+    decisionVars.add(index.id())
     modelDeclaration.add(array(indexExpr) === value)
   }
 
@@ -457,6 +466,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     if(rank != TypeRank.ANY)
       throw new Exception("Element constraint only supports ANY as position for the index")
     val indexExpr = if(startIndex == 0) varHashMap(index.id()) else varHashMap(index.id()) - startIndex
+    decisionVars.add(index.id())
     val valueExpr = varHashMap(value.id())
     modelDeclaration.add(list(indexExpr) === valueExpr)
   }
@@ -559,6 +569,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
 
   override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[XVarInteger], ends: Array[XVarInteger], heights: Array[XVarInteger], condition: Condition): Unit = {
     val mOrigins = origins map(x => varHashMap(x.id()))
+    for(elem <- origins) decisionVars.add(elem.id())
     val mLengths = lengths map(x => varHashMap(x.id()))
     val mEnds = ends map(x => varHashMap(x.id()))
     val mHeights = heights map(x => varHashMap(x.id()))
@@ -567,6 +578,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
 
   override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[Int], ends: Array[XVarInteger], heights: Array[Int], condition: Condition): Unit = {
     val mOrigins = origins map(x => varHashMap(x.id()))
+    for(elem <- origins) decisionVars.add(elem.id())
     val mLengths = lengths map(x => IntVar(x))
     val mEnds = ends map(x => varHashMap(x.id()))
     val mHeights = heights map(x => IntVar(x))
@@ -575,6 +587,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
 
   override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[Int], ends: Array[XVarInteger], heights: Array[XVarInteger], condition: Condition): Unit = {
     val mOrigins = origins map(x => varHashMap(x.id()))
+    for(elem <- origins) decisionVars.add(elem.id())
     val mLengths = lengths map(x => IntVar(x))
     val mEnds = ends map(x => varHashMap(x.id()))
     val mHeights = heights map(x => varHashMap(x.id()))
@@ -583,6 +596,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
 
   override def buildCtrCumulative(id: String, origins: Array[XVarInteger], lengths: Array[XVarInteger], ends: Array[XVarInteger], heights: Array[Int], condition: Condition): Unit = {
     val mOrigins = origins map(x => varHashMap(x.id()))
+    for(elem <- origins) decisionVars.add(elem.id())
     val mLengths = lengths map(x => varHashMap(x.id()))
     val mEnds = ends map(x => varHashMap(x.id()))
     val mHeights = heights map(x => IntVar(x))
@@ -590,10 +604,12 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   }
 
   override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int): Unit = {
+    for(elem <- list) decisionVars.add(elem.id())
     modelDeclaration.add(SubCircuit(list.map(x => varHashMap(x.id())), startIndex))
   }
 
   override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int, size: Int): Unit = {
+    for(elem <- list) decisionVars.add(elem.id())
     if(size == list.length)
       modelDeclaration.add(Circuit(list.map(x => varHashMap(x.id()))))
     else {
@@ -605,6 +621,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   }
 
   override def buildCtrCircuit(id: String, list: Array[XVarInteger], startIndex: Int, size: XVarInteger): Unit = {
+    for(elem <- list) decisionVars.add(elem.id())
     val vars = list.map(x => varHashMap(x.id()))
     // count non-self-looping variables
     modelDeclaration.add(Sum(vars.zipWithIndex.map({case (v, idx) => v !== (idx+startIndex)})) === varHashMap(size.id()))
@@ -614,6 +631,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   //unaryResource(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: Array[CPIntVar])
   override def buildCtrNoOverlap(id: String, origins: Array[XVarInteger], lengths: Array[Int], zeroIgnored: Boolean): Unit = {
     val (starts, durations) = origins.zip(lengths).filter({case (v, l) => l != 0 || !zeroIgnored}).unzip
+    for(elem <- starts) decisionVars.add(elem.id())
     val ends = buildEndsFromStartAndLength(starts, durations)
     val mStarts = starts.map(x => varHashMap(x.id()))
     val mDurations = durations.map(x => Constant(x):IntExpression)
@@ -627,6 +645,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     // TODO we ignore the value of zeroIgnored for now
     val ends = buildEndsFromStartAndLength(origins, lengths)
     val mStarts = origins.map(x => varHashMap(x.id()))
+    for(elem <- origins) decisionVars.add(elem.id())
     val mDurations = lengths.map(x => varHashMap(x.id()))
     val mEnds = ends.map(x => varHashMap(x.id()))
     if(zeroIgnored) {
@@ -653,16 +672,37 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   }
 
   override def buildCtrChannel(id: String, list1: Array[XVarInteger], startIndex1: Int, list2: Array[XVarInteger], startIndex2: Int): Unit = {
-    modelDeclaration.post(Inverse(list1.map(e => varHashMap(e.id())).map(e => if(startIndex1 == 0) e else e-startIndex1),
-      list2.map(e => varHashMap(e.id())).map(e => if(startIndex2 == 0) e else e-startIndex2)))
+    if(list1.length < list2.length) {
+      for (elem <- list1) decisionVars.add(elem.id())
+      modelDeclaration.post(PartialInverse(
+        list1.map(e => varHashMap(e.id())).map(e => if (startIndex1 == 0) e else e - startIndex1),
+        list2.map(e => varHashMap(e.id())).map(e => if (startIndex2 == 0) e else e - startIndex2))
+      )
+    }
+    else if(list1.length > list2.length) {
+      for (elem <- list2) decisionVars.add(elem.id())
+      modelDeclaration.post(PartialInverse(
+        list2.map(e => varHashMap(e.id())).map(e => if (startIndex2 == 0) e else e - startIndex2),
+        list1.map(e => varHashMap(e.id())).map(e => if (startIndex1 == 0) e else e - startIndex1))
+      )
+    }
+    else {
+      for (elem <- list1) decisionVars.add(elem.id())
+      modelDeclaration.post(Inverse(
+        list1.map(e => varHashMap(e.id())).map(e => if (startIndex1 == 0) e else e - startIndex1),
+        list2.map(e => varHashMap(e.id())).map(e => if (startIndex2 == 0) e else e - startIndex2))
+      )
+    }
   }
 
   override def buildCtrChannel(id: String, list: Array[XVarInteger], startIndex: Int): Unit = {
+    for (elem <- list) decisionVars.add(elem.id())
     val corrected = list.map(e => varHashMap(e.id())).map(e => if(startIndex == 0) e else e-startIndex)
     modelDeclaration.post(Inverse(corrected, corrected))
   }
 
   override def buildCtrChannel(id: String, list: Array[XVarInteger], startIndex: Int, pos: XVarInteger): Unit = {
+    for (elem <- list) decisionVars.add(elem.id())
     // In this form, each variable has only domain 0/1. 'pos' should point to the index of the first variable having 1 as value
     val vars = list.map(e => varHashMap(e.id()))
     val posVar = varHashMap(pos.id())
@@ -856,6 +896,11 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
     modelDeclaration.maximize(_recursiveIntentionBuilder(syntaxTreeRoot).reify())
   }
 
+  override def buildAnnotationDecision(list: Array[XVarInteger]): Unit = {
+    decisionVars.clear()
+    for(elem <- list) decisionVars.add(elem.id())
+  }
+
   ////////////
 
   override def buildCtrNValuesExcept(id: String, list: Array[XVarInteger], except: Array[Int], condition: Condition): Unit = ???
@@ -878,6 +923,23 @@ object XCSP3Parser2 {
     val parser = new XCSP3Parser2(modelDeclarator, filename)
     val vars = parser.varHashMap.values.map(i => i.asInstanceOf[IntVar]).toArray
     (vars, () => parser.generateInstantiationWithSymbolic(vars.map(x => x.name), vars.map(x => x.evaluate())))
+  }
+
+  /**
+    * Parse a XCSP3 instance and returns the decision and auxiliary variables
+    * @param modelDeclarator the OscaR-Modeling ModelDeclator to be used
+    * @param filename the path to the file to parse
+    * @return a list of decision and auxiliary variables, and a solution generator.
+    *         The solution generator, to be called when all variables are bound, will return a XCSP3 instantiation
+    *         constraint equivalent to the solution found.
+    */
+  def parse2(modelDeclarator: ModelDeclaration, filename: String): (Array[IntVar], Array[IntVar], () => String) = {
+    val parser = new XCSP3Parser2(modelDeclarator, filename)
+    val decision = parser.varHashMap.keys.filter(parser.decisionVars.contains).map(i => parser.varHashMap(i).asInstanceOf[IntVar]).toArray
+    val auxiliary = parser.varHashMap.keys.filterNot(parser.decisionVars.contains).map(i => parser.varHashMap(i).asInstanceOf[IntVar]).toArray
+    val vars = decision ++ auxiliary
+    if(decision.isEmpty) (auxiliary, Array[IntVar](), () => parser.generateInstantiationWithSymbolic(vars.map(x => x.name), vars.map(x => x.evaluate())))
+    else (decision, auxiliary, () => parser.generateInstantiationWithSymbolic(vars.map(x => x.name), vars.map(x => x.evaluate())))
   }
 }
 
@@ -953,8 +1015,8 @@ object RunEverything extends CPApp[String] with App {
         getFolderContent(x._2.getAbsolutePath).filter(_.getName.endsWith(".lzma")).map(f => (x._1, f.getName, f.getAbsolutePath))
       })
 
-  val working = scala.collection.mutable.MutableList[String]()
-  val notworking = scala.collection.mutable.MutableList[String]()
+  val working = scala.collection.mutable.ArrayDeque[String]()
+  val notworking = scala.collection.mutable.ArrayDeque[String]()
 
   val results = scala.util.Random.shuffle(inputs).map(tuple => {
     val (instanceName, fileName, instancePath) = tuple

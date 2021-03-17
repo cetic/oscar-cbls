@@ -1,13 +1,9 @@
 package oscar.cbls.business.routing.model.helpers
 
-import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.lib.invariant.numeric.Sum
-
-import scala.collection.immutable.HashSet
 
 /**
-  * Created by fg on 14L/09L/1L7.
+  * Created by fg on 14/09/17.
   */
 object DistanceHelper{
 
@@ -21,7 +17,7 @@ object DistanceHelper{
     * @param node The node
     * @param neighbors An array of filtered neighbors
     */
-  def lazyClosestSuccessorsOfNode(distanceMatrix: Array[Array[Long]], neighbors: (Long) => Iterable[Long])(node:Long): Iterable[Long] ={
+  def lazyClosestSuccessorsOfNode(distanceMatrix: Array[Array[Long]], neighbors: (Int) => Iterable[Int])(node:Int): Iterable[Int] ={
     KSmallest.lazySort(neighbors(node).toArray,
       neighbor => distanceMatrix(node)(neighbor)
     )
@@ -37,7 +33,7 @@ object DistanceHelper{
     * @param node The node
     * @param neighbors An array of filtered neighbors
     */
-  def lazyClosestPredecessorsOfNode(distanceMatrix: Array[Array[Long]], neighbors: (Long) => Iterable[Long])(node: Long): Iterable[Long] ={
+  def lazyClosestPredecessorsOfNode(distanceMatrix: Array[Array[Long]], neighbors: (Int) => Iterable[Int])(node: Int): Iterable[Int] ={
     KSmallest.lazySort(neighbors(node).toArray,
       neighbor => distanceMatrix(neighbor)(node)
     )

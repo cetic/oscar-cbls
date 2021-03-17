@@ -14,10 +14,8 @@
  ******************************************************************************/
 package oscar.cp.test
 
-import org.scalatest.{FunSuite, Matchers}
-import oscar.cp.testUtils.TestSuite
-import oscar.cp.constraints._
 import oscar.cp._
+import oscar.cp.constraints._
 import oscar.cp.core.variables.CPGraphVar
 import oscar.cp.testUtils.TestSuite
 
@@ -30,7 +28,7 @@ class TestBipartite extends TestSuite {
   test("Test 1 : Test constraint initial propagation") {
     val cp = CPSolver()
     val nnodes : Int = 3
-    val g = CPGraphVar(cp, nnodes)
+    val g = CPGraphVar(nnodes)(cp)
     // g.edges are (0,1),(0,2),(1,0),(1,2),(2,0),(2,1)
     
     // 1) add some mandatory nodes/edges
@@ -64,7 +62,7 @@ class TestBipartite extends TestSuite {
   test("Test 2 : Test edges removal") {
     val cp = CPSolver()
     val nnodes : Int = 3
-    val g = CPGraphVar(cp, nnodes)
+    val g = CPGraphVar(nnodes)(cp)
     // g.edges are (0,1),(0,2),(1,0),(1,2),(2,0),(2,1)
     
     postAndCheckSuspend(cp,g.addEdge(0,1))
@@ -103,7 +101,7 @@ class TestBipartite extends TestSuite {
     // because required Domain is not bipartite
     val cp = CPSolver()
     val nnodes : Int = 3
-    val g = CPGraphVar(cp, nnodes)
+    val g = CPGraphVar(nnodes)(cp)
     // g.edges are (0,1),(0,2),(1,0),(1,2),(2,0),(2,1)
     
     postAndCheckSuspend(cp,g.addEdge(0,1))
@@ -119,7 +117,7 @@ class TestBipartite extends TestSuite {
     val cp = CPSolver()
     val nnodes : Int = 3
     val edges = List((0,1),(0,2),(2,0))
-    val g = CPGraphVar(cp, nnodes, edges)
+    val g = CPGraphVar(nnodes, edges)(cp)
      
     val c : Constraint = new GraphBipartite(g)
     c.isActive should be (true)
@@ -130,7 +128,7 @@ class TestBipartite extends TestSuite {
   test("Test 5 : Check correct pruning") {
     val cp = CPSolver()
     val nnodes : Int = 4
-    val g = CPGraphVar(cp, nnodes)
+    val g = CPGraphVar(nnodes)(cp)
     // g.edges are (0,1),(0,2),(0,3),(1,0),(1,2),(1,3),(2,0),(2,1),(2,3),(3,0),(3,1),(3,2)
     // with index :  0     1     2     3     4     5     6     7     8     9     10    11
     /* We can represent this graph as :

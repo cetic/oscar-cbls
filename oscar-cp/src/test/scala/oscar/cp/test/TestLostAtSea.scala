@@ -64,7 +64,8 @@ class TestLostAtSea extends TestSuite {
     } onSolution {
       (0 until 10).foreach(i => sol(i) = path(i).value) // record the solution
       best = obj.value
-    } start ()
+    }
+    cp.start
     best should be(33)
   }
 
@@ -95,7 +96,8 @@ class TestLostAtSea extends TestSuite {
       } onSolution {
         (0 until 10).foreach(i => sol(i) = path(i).value) // record the solution
         best = obj.value
-      } start ()
+      }
+      cp.start()
       best
 
     }

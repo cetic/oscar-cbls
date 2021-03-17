@@ -8,7 +8,8 @@ import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.RouteLengthOnConditionalGraph
-import oscar.cbls.core.computation.CBLSIntConst
+import oscar.cbls.core.computation.{CBLSIntConst, CBLSIntVar, IntValue, Store}
+import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{First, JumpNeighborhood}
 import oscar.cbls.test.graph.RandomGraphGenerator
 import oscar.cbls.visual.SingleFrameWindow
@@ -28,23 +29,23 @@ object TspBridge extends App {
 
   println(Long.MaxValue)
 
-  println("generate random graph")
+  println("generating random graph")
   val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(
     nbNodes=nbNodes,
     nbConditionalEdges = nbConditionalEdges,
     nbNonConditionalEdges = nbNonConditionalEdges,
     nbTransitNodes = nbTransitNodes,
     seed = Some(1))
-  println("end generate random graph")
+  println("end generating random graph")
 
-  println("start dijkstra")
+  println("start Dijkstra")
   val underApproximatingDistanceInGraphAllBridgesOpen:Array[Array[Long]] = DijkstraDistanceMatrix.buildDistanceMatrix(graph, _ => true)
-  println("end dijkstra")
+  println("end Dijkstra")
 
-  val m = Store(checker = Some(new ErrorChecker()))
+  val m = Store()
 
   //initially all bridges open
-  val bridgeConditionArray = Array.tabulate(nbConditionalEdges)(c => CBLSIntVar(m, 1, 0 to 1, "bridge_" + c + "_open"))
+  val bridgeConditionArray = Array.tabulate(nbConditionalEdges)(c => CBLSIntVar(m, 1, 0 to 1, s"bridge_${c}_open"))
 
   val openBridges = filter(bridgeConditionArray).setName("openBridges")
 
@@ -79,23 +80,23 @@ object TspBridge extends App {
   // visu
 
   val visu = new TspBridgeVisu(graph, v = v, n,(a,b) => underApproximatingDistanceInGraphAllBridgesOpen(a)(b))
-  SingleFrameWindow.show(visu,"TspBridge(tspN:" + n + " tspV:" + v + " graphN:" + nbNodes + " graphE:" + (nbNonConditionalEdges + nbConditionalEdges) + " graphNCE:" + nbNonConditionalEdges + " graphCE:" + nbConditionalEdges + ")")
+  SingleFrameWindow.show(visu,s"TspBridge(tspN:$n tspV:$v graphN:$nbNodes graphE:${nbNonConditionalEdges + nbConditionalEdges} graphNCE:$nbNonConditionalEdges graphCE:$nbConditionalEdges)")
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-  val routedPostFilter = (node:Long) => (neighbor:Long) => myVRP.isRouted(neighbor)
+  val routedPostFilter = (node:Int) => (neighbor:Int) => myVRP.isRouted(neighbor)
 
   //this is an array, that, for each node in the routing problem,
   // keeps the sorted closest other point in the routing problem
-  val closestRoutingPoint:Array[Iterable[Long]] = Array.tabulate(n)((nodeInGraph:Int) =>
+  val closestRoutingPoint:Array[Iterable[Int]] = Array.tabulate(n)((nodeInGraph:Int) =>
     KSmallest.lazySort(
       Array.tabulate(n)(i => i),
-      (otherNode:Long) => underApproximatingDistanceInGraphAllBridgesOpen(nodeInGraph)(otherNode.toInt)
+      (otherNode:Int) => underApproximatingDistanceInGraphAllBridgesOpen(nodeInGraph)(otherNode)
     ))
 
   // Takes an unrouted node and insert it at the best position within the 10 closest nodes (inserting it after this node)
   def routeUnroutedPoint(k:Int) = profile(insertPointUnroutedFirst(myVRP.unrouted,
-    ()=>myVRP.kFirst(k,(x:Long) =>closestRoutingPoint(x.toInt),routedPostFilter),
+    ()=>myVRP.kFirst(k,(x:Int) =>closestRoutingPoint(x),routedPostFilter),
     myVRP,
     neighborhoodName = "InsertUF",
     hotRestart = false,
@@ -103,15 +104,15 @@ object TspBridge extends App {
     selectInsertionPointBehavior = First())) // Inserting after the first node in myVRP.kFirst(10,...)
 
   // Moves a routed node to a better place (best neighbor within the 10 closest nodes)
-  def onePtMove(k:Long) = onePointMove(
+  def onePtMove(k:Int) = onePointMove(
     myVRP.routed,
-    ()=>myVRP.kFirst(20,(x:Long) =>closestRoutingPoint( x.toInt),routedPostFilter),
+    ()=>myVRP.kFirst(20,(x:Int) =>closestRoutingPoint( x),routedPostFilter),
     myVRP)
 
 
   def myThreeOpt(k:Int) = profile(
     threeOpt(potentialInsertionPoints = myVRP.routed,
-      relevantNeighbors =()=>myVRP.kFirst(k,(x:Long) =>closestRoutingPoint(x.toInt),routedPostFilter),
+      relevantNeighbors =()=>myVRP.kFirst(k,(x:Int) =>closestRoutingPoint(x),routedPostFilter),
       vrp = myVRP))
 
   def switchBridge = assignNeighborhood(bridgeConditionArray,"switchBridge")
@@ -133,9 +134,9 @@ object TspBridge extends App {
     routeUnroutedPoint(50),
     myThreeOpt(20),
     profile(onePtMove(20))),refresh = 20)
-    onExhaust {println("finished inserts; neededBridges:" + neededConditions)}
+    onExhaust {println(s"finished inserts; neededBridges:$neededConditions")}
     exhaust (profile(closeAllUselessBridges) maxMoves 1)
-    exhaust (
+    exhaust
     bestSlopeFirst(
       List(
         profile(onePtMove(40)),
@@ -145,15 +146,15 @@ object TspBridge extends App {
         profile(onePtMove(20) andThen switchBridge name "switchAndMove"),
         profile(switchBridge)),
       refresh = 10)
-      onExhaustRestartAfterJump(
+      .onExhaustRestartAfterJump(
         for(bridge <- bridgeConditionArray.indices){
           bridgeConditionArray(bridge) := 1
         },
       maxRestartWithoutImprovement = 2,
       obj,
-      randomizationName = "OpenAllBridges"))
+      randomizationName = "OpenAllBridges")
     afterMove{
-    visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList.map(_.toInt), myVRP.routes.value)
+    visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList, myVRP.routes.value)
   }) showObjectiveFunction obj
 
   search.verbose = 1
@@ -164,8 +165,8 @@ object TspBridge extends App {
 
   println(myVRP)
   println(openBridges)
-  println("neededBridges:" + routeLengthInvar.neededConditions)
-  visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList.map(_.toInt), myVRP.routes.value)
+  println(s"neededBridges:${routeLengthInvar.neededConditions}")
+  visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList, myVRP.routes.value)
 
   println("Route Length :" + routeLength)
 
@@ -207,9 +208,9 @@ class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
         Color.RED
       }
       if(node.transitAllowed) {
-        drawRoundNode(node, color , radius = 3, toolTip = "routing" + node)
+        drawRoundNode(node, color , radius = 3, toolTip = s"routing$node")
       }else{
-        drawCrossNode(node ,color, side = 3, toolTip = "routing" + node)
+        drawCrossNode(node ,color, side = 3, toolTip = s"routing$node")
       }
     }
 
@@ -220,7 +221,7 @@ class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
     while(currentExplorer.next match{
       case None => //return
         if (!freeReturn)
-          drawPath(graph.nodes(currentExplorer.value), graph.nodes(v-1L), openBridges)
+          drawPath(graph.nodes(currentExplorer.value), graph.nodes(v-1), openBridges)
         false
       case Some(expl) if expl.value < v =>
         if (!freeReturn)
@@ -236,9 +237,9 @@ class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
     //underlying graph with small nodes, cross for non-transit nodes
     for(node <- graph.nodes){
       if(node.transitAllowed) {
-        drawRoundNode(node, Color.BLACK, 1,toolTip = "simple" + node)
+        drawRoundNode(node, Color.BLACK, 1,toolTip = s"simple$node")
       }else{
-        drawCrossNode(node ,Color.BLACK, side = 3,toolTip = "simple" + node)
+        drawCrossNode(node ,Color.BLACK, side = 3,toolTip = s"simple$node")
       }
     }
 
@@ -249,9 +250,9 @@ class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
     for(vehicle <- 0 until v){
       val node = graph.nodes(vehicle)
       if(node.transitAllowed) {
-        drawRoundNode(node, Color.ORANGE, radius = 5, "startPoint" + node)
+        drawRoundNode(node, Color.ORANGE, radius = 5, s"startPoint$node")
       }else{
-        drawCrossNode(node, Color.ORANGE, side = 5, "startPoint" + node)
+        drawCrossNode(node, Color.ORANGE, side = 5, s"startPoint$node")
       }
     }
 

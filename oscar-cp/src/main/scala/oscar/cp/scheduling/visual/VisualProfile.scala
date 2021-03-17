@@ -21,7 +21,6 @@ import oscar.cp._
 import oscar.visual.shapes.VisualPolygon
 import oscar.visual.shapes.VisualLine
 import oscar.visual.VisualDrawing
-import scala.Array.canBuildFrom
 import oscar.algo.HeightProfile
 import oscar.cp.core.CPSolver
 import oscar.visual.VisualFrame
@@ -59,7 +58,7 @@ class VisualProfile(starts: Array[CPIntVar], durations: Array[CPIntVar], ends: A
   zeroLine.outerCol = Color.BLUE
 
 
-  def update(xScale: Int, yScale: Int) {
+  def update(xScale: Int, yScale: Int): Unit = {
     
 
     val rectangles = (for (i <- starts.indices; j <- compulsary(i)) yield j).toArray

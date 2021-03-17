@@ -24,8 +24,17 @@ import oscar.cp.core.delta.DeltaIntVar
  * Represents a view on variable applying an offset on it.
  * @author Pierre Schaus pschaus@gmail.com
  */
-class CPIntVarViewOffset(v: CPIntVar, offset: Int) extends CPIntVar {
-    
+class CPIntVarViewOffset(v: CPIntVar, offset: Int) extends CPIntVar with CPIntVarViewLinear {
+
+  private[this] val linearViewData = {
+    val above = v match {
+      case linear: CPIntVarViewLinear => linear.linearView
+      case _ => (1, 0, v)
+    }
+    (above._1, above._2 + offset, above._3)
+  }
+  def linearView: (Int, Int, CPIntVar) = linearViewData
+
   override val store: CPStore = v.store
   final override val context = store
 
@@ -166,6 +175,8 @@ class CPIntVarViewOffset(v: CPIntVar, offset: Int) extends CPIntVar {
       i += 1
     }
     m
-  }   
+  }
+
+  @inline def _foreach[U](f: Int => U): Unit = v.foreach(i => f(i + offset))
 }
   

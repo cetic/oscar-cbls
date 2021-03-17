@@ -1,13 +1,11 @@
 package oscar.cbls.lib.invariant.set
 
-import oscar.cbls.core.computation.ChangingSetValue
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingSetValue, Invariant, SetNotificationTarget, SetValue}
 import oscar.cbls.core.propagation.Checker
-import oscar.cbls.core.{Invariant, SetNotificationTarget}
-import oscar.cbls.{CBLSIntVar, SetValue}
 
 import scala.collection.immutable.SortedSet
 
-class MapCount(set:SetValue, map:Long=>Int,counts:Array[CBLSIntVar])
+class MapCount(set:SetValue, map:Int=>Int,counts:Array[CBLSIntVar])
   extends Invariant with SetNotificationTarget{
 
   registerStaticAndDynamicDependency(set)
@@ -23,10 +21,10 @@ class MapCount(set:SetValue, map:Long=>Int,counts:Array[CBLSIntVar])
 
   override def notifySetChanges(v: ChangingSetValue,
                                 id: Int,
-                                addedValues: Iterable[Long],
-                                removedValues: Iterable[Long],
-                                oldValue: SortedSet[Long],
-                                newValue: SortedSet[Long]): Unit = {
+                                addedValues: Iterable[Int],
+                                removedValues: Iterable[Int],
+                                oldValue: SortedSet[Int],
+                                newValue: SortedSet[Int]): Unit = {
 
     for(a <- addedValues){
       counts(map(a):Int) :+= 1
@@ -38,7 +36,7 @@ class MapCount(set:SetValue, map:Long=>Int,counts:Array[CBLSIntVar])
 
   override def checkInternals(c: Checker): Unit = {
 
-    val scratchCounts:Array[Int] = Array.fill(counts.size)(0)
+    val scratchCounts:Array[Int] = Array.fill(counts.length)(0)
     for(v <- set.value){
       val i:Int = map(v):Int
       scratchCounts(i) = scratchCounts(i) + 1

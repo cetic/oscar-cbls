@@ -1,0 +1,254 @@
+by #SUP: 1709
+by the #SUP: 1244
+by of #SUP: 1137
+the #SUP: 4035
+the by #SUP: 1273
+the to #SUP: 2314
+the to to #SUP: 1287
+the to the #SUP: 1672
+the to the the #SUP: 1126
+the to the of #SUP: 1221
+the to and #SUP: 1216
+the to of #SUP: 1447
+the the #SUP: 3123
+the the to #SUP: 1623
+the the to the #SUP: 1152
+the the the #SUP: 2282
+the the the to #SUP: 1103
+the the the the #SUP: 1578
+the the the the the #SUP: 1093
+the the the the of #SUP: 1137
+the the the and #SUP: 1197
+the the the of #SUP: 1660
+the the the of the #SUP: 1199
+the the and #SUP: 1710
+the the and the #SUP: 1259
+the the and of #SUP: 1182
+the the is #SUP: 1244
+the the of #SUP: 2387
+the the of to #SUP: 1154
+the the of the #SUP: 1763
+the the of the the #SUP: 1216
+the the of the of #SUP: 1232
+the the of and #SUP: 1256
+the the of of #SUP: 1431
+the the in #SUP: 1174
+the the that #SUP: 1243
+the a #SUP: 1275
+the and #SUP: 2381
+the and to #SUP: 1268
+the and the #SUP: 1780
+the and the the #SUP: 1224
+the and the of #SUP: 1322
+the and and #SUP: 1289
+the and of #SUP: 1659
+the and of the #SUP: 1190
+the is #SUP: 1996
+the is to #SUP: 1135
+the is the #SUP: 1456
+the is of #SUP: 1280
+the of #SUP: 3280
+the of to #SUP: 1739
+the of to the #SUP: 1243
+the of to of #SUP: 1077
+the of the #SUP: 2535
+the of the to #SUP: 1269
+the of the the #SUP: 1792
+the of the the the #SUP: 1234
+the of the the of #SUP: 1322
+the of the and #SUP: 1351
+the of the of #SUP: 1891
+the of the of the #SUP: 1368
+the of the of of #SUP: 1117
+the of and #SUP: 1833
+the of and the #SUP: 1337
+the of and of #SUP: 1247
+the of is #SUP: 1386
+the of of #SUP: 2170
+the of of the #SUP: 1556
+the of of the the #SUP: 1075
+the of of the of #SUP: 1127
+the of of and #SUP: 1132
+the of of of #SUP: 1318
+the of in #SUP: 1259
+the of that #SUP: 1378
+the as #SUP: 1082
+the not #SUP: 1173
+the in #SUP: 1694
+the in the #SUP: 1324
+the in of #SUP: 1151
+the be #SUP: 1181
+the or #SUP: 1076
+the that #SUP: 1877
+the that to #SUP: 1076
+the that the #SUP: 1383
+the that of #SUP: 1239
+the it #SUP: 1074
+the which #SUP: 1180
+and #SUP: 3257
+and to #SUP: 1818
+and to the #SUP: 1262
+and to of #SUP: 1125
+and the #SUP: 2440
+and the to #SUP: 1242
+and the the #SUP: 1756
+and the the the #SUP: 1221
+and the the of #SUP: 1282
+and the and #SUP: 1351
+and the of #SUP: 1873
+and the of the #SUP: 1394
+and the of of #SUP: 1146
+and and #SUP: 1802
+and and the #SUP: 1295
+and and of #SUP: 1193
+and is #SUP: 1437
+and of #SUP: 2293
+and of to #SUP: 1112
+and of the #SUP: 1704
+and of the the #SUP: 1148
+and of the of #SUP: 1217
+and of and #SUP: 1242
+and of of #SUP: 1422
+and in #SUP: 1363
+and that #SUP: 1459
+and that the #SUP: 1074
+is #SUP: 2808
+is to #SUP: 1665
+is to the #SUP: 1157
+is the #SUP: 2072
+is the the #SUP: 1412
+is the and #SUP: 1067
+is the of #SUP: 1540
+is the of the #SUP: 1103
+is and #SUP: 1454
+is is #SUP: 1252
+is of #SUP: 1899
+is of the #SUP: 1356
+is of of #SUP: 1114
+is in #SUP: 1085
+is that #SUP: 1295
+of #SUP: 3777
+of by #SUP: 1132
+of to #SUP: 2075
+of to to #SUP: 1138
+of to the #SUP: 1489
+of to the of #SUP: 1102
+of to and #SUP: 1082
+of to of #SUP: 1310
+of the #SUP: 2935
+of the to #SUP: 1519
+of the to the #SUP: 1076
+of the the #SUP: 2097
+of the the the #SUP: 1434
+of the the and #SUP: 1076
+of the the of #SUP: 1549
+of the the of the #SUP: 1126
+of the and #SUP: 1601
+of the and the #SUP: 1169
+of the and of #SUP: 1109
+of the is #SUP: 1158
+of the of #SUP: 2240
+of the of to #SUP: 1073
+of the of the #SUP: 1626
+of the of the the #SUP: 1120
+of the of the of #SUP: 1154
+of the of and #SUP: 1165
+of the of of #SUP: 1346
+of the in #SUP: 1098
+of the that #SUP: 1156
+of a #SUP: 1163
+of and #SUP: 2151
+of and to #SUP: 1126
+of and the #SUP: 1555
+of and the of #SUP: 1154
+of and and #SUP: 1136
+of and of #SUP: 1471
+of is #SUP: 1668
+of is the #SUP: 1200
+of is of #SUP: 1099
+of of #SUP: 2578
+of of to #SUP: 1264
+of of the #SUP: 1844
+of of the the #SUP: 1273
+of of the of #SUP: 1339
+of of and #SUP: 1342
+of of of #SUP: 1584
+of of of the #SUP: 1131
+of in #SUP: 1499
+of in the #SUP: 1156
+of that #SUP: 1622
+of that the #SUP: 1183
+of that of #SUP: 1075
+of which #SUP: 1074
+as #SUP: 1516
+as the #SUP: 1114
+in #SUP: 2353
+in to #SUP: 1288
+in the #SUP: 1863
+in the the #SUP: 1379
+in the and #SUP: 1067
+in the of #SUP: 1455
+in the of the #SUP: 1091
+in and #SUP: 1351
+in of #SUP: 1671
+in of the #SUP: 1241
+that #SUP: 2648
+that to #SUP: 1603
+that to the #SUP: 1130
+that the #SUP: 2020
+that the the #SUP: 1451
+that the and #SUP: 1116
+that the of #SUP: 1555
+that the of the #SUP: 1143
+that and #SUP: 1517
+that is #SUP: 1404
+that of #SUP: 1871
+that of the #SUP: 1354
+that of of #SUP: 1144
+that in #SUP: 1114
+that that #SUP: 1215
+it #SUP: 1633
+it the #SUP: 1159
+for #SUP: 1830
+for to #SUP: 1074
+for the #SUP: 1434
+for the of #SUP: 1116
+for of #SUP: 1314
+but #SUP: 1714
+but the #SUP: 1271
+but of #SUP: 1178
+a #SUP: 1869
+a to #SUP: 1084
+a the #SUP: 1331
+a of #SUP: 1313
+not #SUP: 1662
+not the #SUP: 1121
+to #SUP: 3088
+to to #SUP: 1827
+to to the #SUP: 1222
+to to of #SUP: 1068
+to the #SUP: 2270
+to the to #SUP: 1247
+to the the #SUP: 1567
+to the the the #SUP: 1075
+to the the of #SUP: 1121
+to the and #SUP: 1206
+to the of #SUP: 1719
+to the of the #SUP: 1231
+to and #SUP: 1697
+to and the #SUP: 1176
+to and of #SUP: 1111
+to is #SUP: 1292
+to of #SUP: 2043
+to of the #SUP: 1457
+to of of #SUP: 1217
+to in #SUP: 1137
+to that #SUP: 1297
+or #SUP: 1427
+which #SUP: 1526
+which the #SUP: 1131
+are #SUP: 1174
+they #SUP: 1130
+he #SUP: 1065
+be #SUP: 1652
+be the #SUP: 1124

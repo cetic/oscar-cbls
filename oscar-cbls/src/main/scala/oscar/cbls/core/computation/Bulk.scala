@@ -18,7 +18,6 @@
   *         by Renaud De Landtsheer
   *            Yoann Guyot
   ******************************************************************************/
-
 package oscar.cbls.core.computation
 
 import oscar.cbls.core.propagation.{BulkPropagator, Checker}
@@ -43,11 +42,11 @@ trait Bulked[VarType <: Value, BulkedComputationResult] extends Invariant {
     val m = this.preFinishInitialization()
     if (m == null) {
       //no bulking possible
-      this.registerStaticDependencies(bulkedVars:_*)
+      this.registerStaticDependencies(bulkedVars.toIndexedSeq:_*)
       performBulkComputationID(bulkedVars, id)
     } else {
       //check for existing bulk
-      val identifyingString = this.getClass.getName + "/" + id
+      val identifyingString = s"${this.getClass.getName}/$id"
 
       val incredibleBulk = m.getBulk(identifyingString, bulkedVars.asInstanceOf[Array[Value]])
 
@@ -82,7 +81,7 @@ class Bulk(m: Store, val bulkedVars: Array[Value], val bulkedComputationResult: 
   for (dd <- bulkedVars) registerStaticallyListenedElement(dd)
   finishInitialization(m)
 
-  override def checkInternals(c: Checker) = c.check(true)
+  override def checkInternals(c: Checker): Unit = c.check(verity = true)
 }
 
 /**This is the dictionaries where bulks are stored, and can be searched for
@@ -98,14 +97,14 @@ trait Bulker {
     if (bulks == null) return null
 
     for (b <- bulks) {
-      if (bulkedVars == b.bulkedVars) {
+      if (bulkedVars sameElements b.bulkedVars) {
         return b
       }
     }
     null
   }
 
-  def registerBulk(identifyingName: String, bulk: Bulk) {
+  def registerBulk(identifyingName: String, bulk: Bulk): Unit ={
     val knownbulk = Bulked.getOrElse(identifyingName, List.empty)
     Bulked += ((identifyingName, bulk :: knownbulk))
   }

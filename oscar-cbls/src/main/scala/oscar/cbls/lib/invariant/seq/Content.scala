@@ -1,5 +1,3 @@
-package oscar.cbls.lib.invariant.seq
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,13 +12,13 @@ package oscar.cbls.lib.invariant.seq
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.lib.invariant.seq
 
-import oscar.cbls.{core, _}
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{ChangingSeqValue, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint, SeqValue, SetInvariant}
+import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.SortedSet
-
 
 /**
  * content of v
@@ -28,7 +26,7 @@ import scala.collection.immutable.SortedSet
  * @author renaud.delandtsheer@cetic.be
  */
 case class Content(v:SeqValue)
-  extends SetInvariant(SortedSet.empty[Long] ++ v.value.unorderedContentNoDuplicate,v.domain)
+  extends SetInvariant(SortedSet.empty[Int] ++ v.value.unorderedContentNoDuplicate,v.domain)
   with SeqNotificationTarget{
 
   registerStaticAndDynamicDependency(v)
@@ -40,14 +38,14 @@ case class Content(v:SeqValue)
     }
   }
 
-  private def updateFromScratch(u:IntSequence){
-    this := (SortedSet.empty[Long] ++ u.unorderedContentNoDuplicate)
+  private def updateFromScratch(u:IntSequence): Unit ={
+    this := (SortedSet.empty[Int] ++ u.unorderedContentNoDuplicate)
   }
 
   //true if could be incremental, false otherwise
   def digestUpdates(changes : SeqUpdate):Boolean = {
     changes match {
-      case SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
+      case SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
         if (!digestUpdates(prev)) return false
         this :+= value
         true
@@ -56,7 +54,7 @@ case class Content(v:SeqValue)
       case r@SeqUpdateRemove(position : Int, prev : SeqUpdate) =>
         if (!digestUpdates(prev)) return false
         val value = r.removedValue
-        if (changes.newValue.nbOccurrence(value) == 0L){
+        if (changes.newValue.nbOccurrence(value) == 0){
           this :-= value
         }
         true
@@ -70,13 +68,15 @@ case class Content(v:SeqValue)
       case SeqUpdateAssign(value:IntSequence) =>
         //raw assign, no incremental possible
         false
-      case SeqUpdateDefineCheckpoint(prev:SeqUpdate,isStarMode:Boolean,checkpointLevel) =>
+      case SeqUpdateDefineCheckpoint(prev:SeqUpdate, checkpointLevel) =>
         digestUpdates(prev)
+      case _ =>
+        false // Default case
     }
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
     c.check(this.value.toList.sorted equals v.value.unorderedContentNoDuplicate.sorted,
-      Some("this.value.toList:" + this.value.toList + " == v.value.toList:" + v.value.unorderedContentNoDuplicate.sorted + " v.value.unorderedContentNoDuplicate:" + v))
+      Some(s"this.value.toList:${this.value.toList} == v.value.toList:${v.value.unorderedContentNoDuplicate.sorted} v.value.unorderedContentNoDuplicate:$v"))
   }
 }

@@ -4,7 +4,10 @@ import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.GlobalConstraintCore
 import oscar.cbls.business.routing.invariants.timeWindow.{DefinedTransferFunction, NaiveTimeWindowConstraint, TimeWindowConstraintWithLogReduction, TransferFunction}
+import oscar.cbls.business.routing.model.helpers.DistanceHelper
 import oscar.cbls.business.routing.visu.RoutingMapTypes
+import oscar.cbls.core.computation.{CBLSIntVar, Domain, Store}
+import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.First
 
 object VRPTWWithGeoCoords extends App{
@@ -31,7 +34,7 @@ object VRPTWWithGeoCoords extends App{
 class VRPTWWithGeoCoords (n: Int, v: Int, minLat: Double, maxLat: Double, minLong: Double, maxLong: Double) {
   //////////////////// MODEL ////////////////////
   // The Store : used to store all the model of the problem
-  val store = new Store
+  val store = Store()
 
   // The basic VRP problem, containing the basic needed invariant
   val myVRP = new VRP(store,n,v)
@@ -62,10 +65,9 @@ class VRPTWWithGeoCoords (n: Int, v: Int, minLat: Double, maxLat: Double, minLon
   val totalDistance = sum(routeLength(myVRP.routes, n, v, false, symmetricDistanceMatrix, true))
   // The STRONG timeWindow constraint (vehicleTimeWindowViolations contains the violation of each vehicle)
   val vehicleTimeWindowViolations = Array.fill(v)(new CBLSIntVar(store,0L,Domain(0L,n)))
-  val gc = GlobalConstraintCore(myVRP.routes, v)
   val timeWindowStrongConstraint =
     TimeWindowConstraintWithLogReduction(
-      gc,
+      myVRP.routes,
       n,v,
       strongSingleNodeTransferFunctions,
       timeMatrix,
@@ -104,7 +106,7 @@ class VRPTWWithGeoCoords (n: Int, v: Int, minLat: Double, maxLat: Double, minLon
 
   ////////// Dynamic pruning (done each time before evaluation a move) //////////
   // Only condition the new neighbor must be routed
-  val routedPostFilter = (node:Long) => (neighbor:Long) => myVRP.isRouted(neighbor)
+  val routedPostFilter = (node:Int) => (neighbor:Int) => myVRP.isRouted(neighbor)
 
   //////////////////// Search Procedure ////////////////////
   ////////// Neighborhood definition //////////
@@ -119,7 +121,7 @@ class VRPTWWithGeoCoords (n: Int, v: Int, minLat: Double, maxLat: Double, minLon
     selectInsertionPointBehavior = First())) // Inserting after the first node in myVRP.kFirst(10,...)
 
   // Moves a routed node to a better place (best neighbor within the 10 closest nodes)
-  def onePtMove(k:Long) = profile(onePointMove(
+  def onePtMove(k:Int) = profile(onePointMove(
     myVRP.routed,
     () => myVRP.kFirst(k,closestRelevantNeighborsByDistance(_),routedPostFilter),
     myVRP))

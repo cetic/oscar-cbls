@@ -40,7 +40,7 @@ class ReversibleSparseSet(s: ReversibleContext, val minValue: Int, val maxValue:
     if (!hasValue(_min.value)) updateMinValRemoved(_min.value)
     _min.value
   }
-  @inline private def min_=(v: Int) {
+  @inline private def min_=(v: Int): Unit = {
     _min.value = v
   }
 
@@ -49,7 +49,7 @@ class ReversibleSparseSet(s: ReversibleContext, val minValue: Int, val maxValue:
     _max.value
   }
 
-  @inline private def max_=(v: Int) {
+  @inline private def max_=(v: Int): Unit = {
     _max.value = v
   }
 
@@ -69,9 +69,9 @@ class ReversibleSparseSet(s: ReversibleContext, val minValue: Int, val maxValue:
   /**
    * remove all elements in the set
    */
-  def empty(): Unit = _size.value = 0
+  def makeEmpty(): Unit = _size.value = 0
 
-  @inline private def exchangePositions(val1: Int, val2: Int) {
+  @inline private def exchangePositions(val1: Int, val2: Int): Unit = {
     assert(checkVal(val1))
     assert(checkVal(val2))
     val v1 = val1 - offset
@@ -84,12 +84,12 @@ class ReversibleSparseSet(s: ReversibleContext, val minValue: Int, val maxValue:
     indexes(v2) = i1
   }
 
-  @inline private def updateBoundsValRemoved(v: Int) {
+  @inline private def updateBoundsValRemoved(v: Int): Unit = {
     updateMaxValRemoved(v)
     updateMinValRemoved(v)
   }
 
-  @inline private def updateMaxValRemoved(v: Int) {
+  @inline private def updateMaxValRemoved(v: Int): Unit = {
 
     /*
     if (!isEmpty) {
@@ -119,7 +119,7 @@ class ReversibleSparseSet(s: ReversibleContext, val minValue: Int, val maxValue:
     }
   }
 
-  @inline private def updateMinValRemoved(v: Int) {
+  @inline private def updateMinValRemoved(v: Int): Unit = {
 
     /*
     if (!isEmpty) {
@@ -189,7 +189,7 @@ class ReversibleSparseSet(s: ReversibleContext, val minValue: Int, val maxValue:
     v + 1
   }
 
-  def removeAllBut(v: Int) {
+  def removeAllBut(v: Int): Unit = {
     // we only have to put in first position this value and set the size to 1
     assert(checkVal(v));
     assert(hasValue(v));
@@ -326,4 +326,15 @@ class ReversibleSparseSet(s: ReversibleContext, val minValue: Int, val maxValue:
     }
   }
 
+  /**
+   * You can safely remove the current value while iterating using this function.
+   * If you remove any other value, you may encounter the same value multiple times.
+   */
+  @inline final override def foreach[U](f: Int => U): Unit = {
+    var i = _size.value
+    while (i != 0) {
+      i -= 1
+      f(values(i) + offset)
+    }
+  }
 }

@@ -39,20 +39,30 @@ object RelaxationFunctions {
     * @param k The number of variables to relax (must be >= 0 and < vars.size)
     */
   def successiveRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, k: Int): Unit = {
-//    println("relaxing " + k + " variables")
-    val varSeq = vars.toSeq
-    var i = Random.nextInt(vars.size)-1 //start of the relaxed sequence (inclusive)
-    if(i < 0) i = varSeq.length-1
-
-    while(i > 0 && vars.count(!_.isBound) > k) {
-      solver.add(varSeq(i) === currentSol.values(i))
-      if (!varSeq(i).isBound) throw Inconsistency
-
-      i -= 1
+  //    println("relaxing " + k + " variables")
+      val varSeq = vars.toSeq
+      var i = Random.nextInt(vars.size)-1 //start of the relaxed sequence (inclusive)
       if(i < 0) i = varSeq.length-1
-    }
 
-//    println("relaxation done, " + (varSeq.length - k) + " vars frozen")
+      while(i > 0 && vars.count(!_.isBound) > k) {
+        solver.add(varSeq(i) === currentSol.values(i))
+        if (!varSeq(i).isBound) throw Inconsistency
+
+        i -= 1
+        if(i < 0) i = varSeq.length-1
+      }
+
+  //    println("relaxation done, " + (varSeq.length - k) + " vars frozen")
+  }
+
+  /**
+    * Relaxes randomly n sequences of k successive variables.
+    * @param n The number of sequences of variables to relax
+    * @param k The number of variables per sequence to relax (n * k must be >= 0 and < vars.size)
+    */
+  def seqRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, n: Int, k: Int): Unit = {
+    //TODO
+    ???
   }
 
   /**
@@ -67,7 +77,7 @@ object RelaxationFunctions {
     * @param s The estimated size of the neighbourhood to attain.
     */
   def reversedPropagationGuidedRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, s: Double): Unit =
-    PropagationGuidedRelax.reversedPropagationGuidedRelax(solver, vars, currentSol, s)
+    PropagationGuidedRelax.reversePropagationGuidedRelax(solver, vars, currentSol, s)
 
   /**
     * Relaxes variables using their values to guide the relaxation.
@@ -222,16 +232,52 @@ object RelaxationFunctions {
     })
   }
 
-  /**
-    * TODO
-    */
-  def valWindowRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, lr: Double, ur: Double): Unit = {
-    vars.zipWithIndex.foreach{case(x, i) =>{
-      val sTime = currentSol.values(i)
-      val lb = sTime - (lr * (sTime - x.min)).floor.toInt
-      val ub = sTime + (ur * (x.max - sTime)).ceil.toInt
-      solver.add(x >= lb)
-      solver.add(x <= ub)
-    }}
+  def precedencyRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, k: Int): Unit = {
+    //selecting vars to relax
+    val varSeq = vars.toSeq
+    val varArray = varSeq.indices.toArray //map to real indice of variable
+    var boundStart = varArray.length //Elements of varArray from this index will be relaxed
+
+    while(boundStart > varArray.length - k){
+      val i = Random.nextInt(boundStart) //Selecting new var to relax randomly
+      val x = varArray(i)
+
+      //marking var as bound:
+      boundStart -= 1
+      varArray(i) = varArray(boundStart)
+      varArray(boundStart) = x
+    }
+
+    //Precedencies:
+    val precedencies = varArray
+      .dropRight(k) //Removing k last vars that have to be relaxed
+      .map(i => (currentSol.values(i), i)) //Zipping with val
+      .groupBy(_._1)//Grouping by values
+      .toArray.sortBy(_._1) //Sorting by values
+      .map(_._2.map(_._2).toSet) //Formatting into array of sets
+
+    //Adding constraints:
+    var i = 0
+    var j = 1
+    while(j < precedencies.length){
+      for(prev <- precedencies(i); next <- precedencies(j)){
+        solver.add(varSeq(prev) <= varSeq(next))
+      }
+      i += 1
+      j += 1
+    }
   }
+
+//  /**
+//    * TODO
+//    */
+//  def valWindowRelax(solver: CPSolver, vars: Iterable[CPIntVar], currentSol: CPIntSol, lr: Double, ur: Double): Unit = {
+//    vars.zipWithIndex.foreach{case(x, i) =>{
+//      val sTime = currentSol.values(i)
+//      val lb = sTime - (lr * (sTime - x.min)).floor.toInt
+//      val ub = sTime + (ur * (x.max - sTime)).ceil.toInt
+//      solver.add(x >= lb)
+//      solver.add(x <= ub)
+//    }}
+//  }
 }

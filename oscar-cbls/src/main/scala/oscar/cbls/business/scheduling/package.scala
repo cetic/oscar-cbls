@@ -19,9 +19,9 @@
  ******************************************************************************/
 package oscar.cbls.business
 
-import oscar.cbls.Store
 import oscar.cbls.business.scheduling.model.Resource
 import oscar.cbls.business.scheduling.modeling.SchedulingInvariants
+import oscar.cbls.core.computation.Store
 
 package object scheduling extends SchedulingInvariants {
   type ActivityId = Int
@@ -33,8 +33,8 @@ package object scheduling extends SchedulingInvariants {
   def schedule(m: Store,
                activities: List[ActivityId],
                initialActivities: List[ActivityId],
-               durations: Map[ActivityId, Long],
-               minStartTimes: Map[ActivityId, Long],
+               durations: Map[ActivityId, Int],
+               minStartTimes: Map[ActivityId, Int],
                precedencePairs: List[(ActivityId, ActivityId)],
                resources: List[Resource]): Schedule =
     new Schedule(m, activities, initialActivities, durations, minStartTimes,

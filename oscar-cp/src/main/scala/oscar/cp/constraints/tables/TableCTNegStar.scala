@@ -48,8 +48,8 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
   private[this] val sizeTemp: Array[Int] = Array.tabulate(arity)(i => x(i).size)
   private[this] val multiplicator = Array.fill(maxNbGroup)(1)
   private[this] val multiplicatorsNeeded = Array.fill(maxNbGroup)(0)
-  private[this] val multCheck = Array.fill(arity, maxNbGroup)(() => Unit)
-  private[this] val multiplicatorFormulaCheck = Array.fill(maxNbGroup)(() => Unit)
+  private[this] val multCheck = Array.fill(arity, maxNbGroup)(() => ())
+  private[this] val multiplicatorFormulaCheck = Array.fill(maxNbGroup)(() => ())
   private[this] val multiplicatorLook = Array.fill(maxNbGroup)(0)
   private[this] val mult = {
     val temp = Array.fill(arity, maxNbGroup)(() => 1)
@@ -87,7 +87,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
       multiplicatorFormula(n) = () => sizeTemp(k)
       val k2 = n
       multiplicatorFormulaCheck(n) =
-        () => {multiplicatorLook(k2) = 1; Unit}
+        () => {multiplicatorLook(k2) = 1}
       n *= 2
     }
     def compute(setofset: Array[Array[Int]]): Unit = {
@@ -116,7 +116,7 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
             val id = k1 + k2
             ares(pos) = id
             multiplicatorFormula(id) = () => multiplicator(k1) * multiplicator(k2)
-            multiplicatorFormulaCheck(id) = () => {multiplicatorLook(id) = 1;multiplicatorFormulaCheck(k1)();multiplicatorFormulaCheck(k2)(); Unit}
+            multiplicatorFormulaCheck(id) = () => {multiplicatorLook(id) = 1;multiplicatorFormulaCheck(k1)();multiplicatorFormulaCheck(k2)()}
             pos += 1
           }
         }
@@ -272,7 +272,6 @@ final class TableCTNegStar(X: Array[CPIntVar], table: Array[Array[Int]], star: I
     }
 
     val array = keepSet.toArray
-    println("preprocess time : " + (System.currentTimeMillis() - t))
     array
   }
 

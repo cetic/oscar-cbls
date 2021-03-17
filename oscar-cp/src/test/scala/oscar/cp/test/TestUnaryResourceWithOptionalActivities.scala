@@ -14,9 +14,8 @@
  ******************************************************************************/
 package oscar.cp.test
 
-import org.scalatest.FunSuite
-import oscar.cp.testUtils.TestSuite
 import oscar.cp._
+import oscar.cp.testUtils.TestSuite
 
 /**
  * @author Pierre Schaus pschaus@gmail.com
@@ -123,7 +122,7 @@ class TestUnaryResourceWithOptionalActivities extends TestSuite {
  
   test("decomp vs global, permutations") {
 
-    def testPermutations(seed: Int) {
+    def testPermutations(seed: Int): Unit = {
       def factorial(n: Int): Int = if (n == 0) 1 else n * factorial(n - 1)
 
       val n = 4

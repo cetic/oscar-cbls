@@ -63,19 +63,19 @@ trait ModelDeclarationInterface {
     *
     * @param v variable to minimize
     */
-  def minimize(v: Expression)
+  def minimize(v: Expression): Unit
 
   /**
     * Maximize on variable v
     *
     * @param v variable to maximize
     */
-  def maximize(v: Expression)
+  def maximize(v: Expression): Unit
 
   /**
     * Remove the optimisation method
     */
-  def removeOptimization()
+  def removeOptimization(): Unit
 
   /**
     * Apply a model operator

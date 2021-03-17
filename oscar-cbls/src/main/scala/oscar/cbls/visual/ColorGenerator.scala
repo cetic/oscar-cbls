@@ -19,6 +19,7 @@ package oscar.cbls.visual
 
 import java.awt.Color
 
+import scala.annotation.tailrec
 import scala.util.Random
 
 /**
@@ -28,8 +29,18 @@ import scala.util.Random
   * @author fabian.germeau@cetic.be
   */
 object ColorGenerator {
-  def generateRandomColors(number:Int,alpha:Int = 255): Array[Color] ={
-    Array.fill(number)(new Color(Random.nextInt(256),Random.nextInt(256),Random.nextInt(256)))
+
+  private val randomValueGenerator = Random
+
+  def setSeed(seed: Long): Unit = randomValueGenerator.setSeed(seed)
+
+  def generateRandomColors(number:Int,alpha:Int = 255): Array[Color] = {
+    Array.fill(number)(
+      new Color(
+        randomValueGenerator.nextInt(256),
+        randomValueGenerator.nextInt(256),
+        randomValueGenerator.nextInt(256),
+        alpha))
   }
 
   /**
@@ -38,7 +49,8 @@ object ColorGenerator {
     * @param exp the current base value
     * @return 
     */
-  def getMaxColorNumber(number:Int,exp:Int = 1):Int = {
+  @tailrec
+  def getMaxColorNumber(number:Int, exp:Int = 1):Int = {
     if(Math.pow(exp,3) < number)
       getMaxColorNumber(number,exp+1)
     else
@@ -52,12 +64,11 @@ object ColorGenerator {
     */
   def generateColorFromHash(hash:Int): Color = {
     val absHash = Math.abs(hash)
-    val r = absHash%255
-    val g = 255 - (absHash/255)%255
-    val b = ((absHash/255L)/255)%255
+    val r = (absHash%255).toFloat
+    val g = (255 - (absHash/255)%255).toFloat
+    val b = (((absHash/255L)/255)%255).toFloat
     new Color(r,g,b)
   }
-
 
   def getAverageColor(colors:List[Color]): Color = {
     var (r,g,b) = (0,0,0)

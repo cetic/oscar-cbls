@@ -15,37 +15,30 @@
 package oscar.algo.reversible.test
 
 
-import org.scalatest.FunSuite
-import oscar.algo.search._
+import org.scalatest.funsuite.AnyFunSuite
 import oscar.algo.reversible._
+import scala.jdk.CollectionConverters._
 
-import scala.collection.JavaConversions._
-import org.scalatest.junit.JUnitRunner
-import org.junit.runner.RunWith
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 
 
-@RunWith(classOf[JUnitRunner])
-class OrderedSetTest extends FunSuite with Matchers {
-
-   
- 
+class OrderedSetTest extends AnyFunSuite with Matchers {
     test("test 1") {
-    			
+
     	val myset = new OrderedSet(3,10)
-    	myset.toSet should equal((3 to 10).toSet)
+    	myset.asScala.toSet should equal((3 to 10).toSet)
     	
     	myset.removeValue(3)
-    	myset.toSet should equal((4 to 10).toSet)
+    	myset.asScala.toSet should equal((4 to 10).toSet)
     	myset.hasValue(3) should equal(false)
     	
     	myset.removeValue(10)
-    	myset.toSet should equal((4 to 9).toSet)
+    	myset.asScala.toSet should equal((4 to 9).toSet)
     	myset.hasValue(10) should equal(false)
     	myset.hasValue(9) should equal(true)
     	
     	myset.removeValue(5)
-    	myset.toSet should equal((4 to 9).toSet - 5)
+    	myset.asScala.toSet should equal((4 to 9).toSet - 5)
     	myset.hasValue(5) should equal(false)
     	
     	myset.removeValue(6)
@@ -53,7 +46,7 @@ class OrderedSetTest extends FunSuite with Matchers {
     	myset.removeValue(8)
     	myset.removeValue(9)
     	
-    	myset.toSet should equal(Set(4))
+    	myset.asScala.toSet should equal(Set(4))
     	myset.getSize should equal(1)
     	
 
@@ -61,11 +54,11 @@ class OrderedSetTest extends FunSuite with Matchers {
     	myset.removeValue(5)
     	myset.removeValue(4)
     	
-    	myset.toSet should equal(Set())
+    	myset.asScala.toSet should equal(Set())
     	myset.getSize should equal(0)
     	myset.hasValue(4) should equal(false)
-    	
-    	
+
+
     }
 
 }

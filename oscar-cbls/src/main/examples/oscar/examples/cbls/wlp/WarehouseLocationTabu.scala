@@ -1,5 +1,3 @@
-package oscar.examples.cbls.wlp
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,14 +12,15 @@ package oscar.examples.cbls.wlp
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.examples.cbls.wlp
 
 import oscar.cbls._
+import oscar.cbls.core.computation.{CBLSIntVar, Store}
+import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Best
 import oscar.cbls.lib.invariant.logic.{Filter, SelectLESetQueue}
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.search.neighborhoods.{AssignMove, AssignNeighborhood}
-
-import scala.language.postfixOps
 
 /**
   * this is a WarehouseLocation problem with a Tabu.
@@ -29,7 +28,7 @@ import scala.language.postfixOps
   * additional behaviors. Here, we restrict a neighborhood to a specific set of variables that not tabu
   * this set of variables is maintained through invariants
   */
-object WarehouseLocationTabu extends App{
+object WarehouseLocationTabu extends App {
 
   //the number of warehouses
   val W:Int = 50
@@ -37,7 +36,7 @@ object WarehouseLocationTabu extends App{
   //the number of delivery points
   val D:Int = 600
 
-  println("WarehouseLocationTabu(W:" + W + ", D:" + D + ")")
+  println(s"WarehouseLocationTabu(W:$W, D:$D)")
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
@@ -45,12 +44,12 @@ object WarehouseLocationTabu extends App{
 
   val m = Store()
 
-  val warehouseOpenArray = Array.tabulate(W)(w => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + w + "_open"))
+  val warehouseOpenArray = Array.tabulate(W)(w => CBLSIntVar(m, 0, 0 to 1, s"warehouse_${w}_open"))
 
   val openWarehouses = Filter(warehouseOpenArray).setName("openWarehouses")
 
   val distanceToNearestOpenWarehouse = Array.tabulate(D)(d =>
-    minConstArrayValueWise(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse).setName("distance_for_delivery_" + d))
+    minConstArrayValueWise(distanceCost(d).map(_.toInt), openWarehouses, defaultCostForNoOpenWarehouse).setName(s"distance_for_delivery_$d"))
 
   val obj = Objective(Sum(distanceToNearestOpenWarehouse) + Sum(costForOpeningWarehouse, openWarehouses))
 
@@ -77,14 +76,14 @@ object WarehouseLocationTabu extends App{
       "SwitchWarehouseTabu",
       searchZone = nonTabuWarehouses, //select non tabu warehouses only
       selectIndiceBehavior = Best(),
-      hotRestart = false) //we do not need hot restart since looking for best
-    afterMoveOnMove((a:AssignMove) => {
+      hotRestart = false
+    ) //we do not need hot restart since looking for best
+    .afterMoveOnMove((a:AssignMove) => {
       //update the tabu mechanics
-    TabuArray(a.id) := It.value + tabuTenure
-    It :+= 1
+      TabuArray(a.id) := It.value + tabuTenure
+      It :+= 1
       println(nonTabuWarehouses)
-  })
-    acceptAll()
+    }).acceptAll()
     maxMoves W withoutImprovementOver obj
     saveBestAndRestoreOnExhaust obj
     showObjectiveFunction obj)

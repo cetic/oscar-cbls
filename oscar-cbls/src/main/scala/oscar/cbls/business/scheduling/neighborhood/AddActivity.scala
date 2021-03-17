@@ -1,18 +1,17 @@
 package oscar.cbls.business.scheduling.neighborhood
 
-import oscar.cbls.LoopBehavior
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.scheduling.model.Schedule
-import oscar.cbls.core.search.{Best, EasyNeighborhoodMultiLevel, First}
+import oscar.cbls.core.search.{Best, EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
 class AddActivity(schedule: Schedule,
                   neighborhoodName: String,
                   selectValueBehavior:LoopBehavior = First(),
                   selectIndexBehavior:LoopBehavior = Best(),
-                  searchValues: Option[() => Iterable[Long]] = None)
+                  searchValues: Option[() => Iterable[Int]] = None)
   extends EasyNeighborhoodMultiLevel[AddActivityMove](neighborhoodName) {
 
-  var currentValue: Long = -1L
+  var currentValue: Int = -1
   var insertIndex: Int = -1
 
   /**
@@ -21,22 +20,22 @@ class AddActivity(schedule: Schedule,
     * as explained in the documentation of this class
     */
   override def exploreNeighborhood(initialObj: Long): Unit = {
+    val priorityListValue = schedule.activityPriorityList.value
     // Iteration zone on values to add (optional activities)
     // Checking the Hot Restart
-    val iterationZone1: () => Iterable[Long] = searchValues.getOrElse(() =>
+    val iterationZone1: () => Iterable[Int] = searchValues.getOrElse(() =>
       schedule
         .activities
-        .filterNot(schedule.activityPriorityList.value.contains(_))
-        .map(_.toLong)
+        .filterNot(priorityListValue.contains)
     )
     val hotRestart = true
-    val iterationZone: Iterable[Long] =
+    val iterationZone: Iterable[Int] =
       if (hotRestart) HotRestart(iterationZone1(), currentValue)
       else iterationZone1()
     // iterating over the values in the activity list
     val (valuesIterator, notifyValueFound) = selectValueBehavior.toIterator(iterationZone)
     // Define checkpoint on sequence (activities list)
-    val seqValueCheckPoint = schedule.activityPriorityList.defineCurrentValueAsCheckpoint(true)
+    val seqValueCheckPoint = schedule.activityPriorityList.defineCurrentValueAsCheckpoint()
     // Main loop
     while (valuesIterator.hasNext) {
       currentValue = valuesIterator.next()
@@ -63,12 +62,12 @@ class AddActivity(schedule: Schedule,
   override def instantiateCurrentMove(newObj: Long): AddActivityMove =
     AddActivityMove(currentValue, insertIndex, schedule.activityPriorityList.value.size, this, neighborhoodNameToString, newObj)
 
-  def performMove(actValue: Long, addIndex: Int): Unit = {
+  def performMove(actValue: Int, addIndex: Int): Unit = {
     schedule.activityPriorityList.insertAtPosition(actValue, addIndex)
   }
 }
 
-case class AddActivityMove(actValue: Long,
+case class AddActivityMove(actValue: Int,
                            addIndex: Int,
                            numActiveActivities: Int,
                            override val neighborhood: AddActivity,

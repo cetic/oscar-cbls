@@ -58,7 +58,8 @@ class TestCarSeq extends FunSuite with Matchers {
       binaryFirstFail(line)
     } onSolution {
       nbSol += 1
-    } start ()
+    }
+    cp.start
     nbSol should be(860)
 
   }

@@ -23,7 +23,7 @@ import scala.collection.mutable.IndexedSeq
  * 
  * @author Renaud Hartert ren.hartert@gmail.com
  */
-class MagicArray(override val size: Int) extends IndexedSeq[Boolean] {
+class MagicArray(override val length: Int) extends IndexedSeq[Boolean] {
    
   private val array: Array[Int] = Array.fill(size)(Int.MinValue)
   private var magic = Int.MinValue + 1
@@ -42,8 +42,6 @@ class MagicArray(override val size: Int) extends IndexedSeq[Boolean] {
       }
     }
   }
-  
-  override val length: Int = size
   
   override def update(i: Int, b: Boolean): Unit = {
     if (b) array(i) = magic

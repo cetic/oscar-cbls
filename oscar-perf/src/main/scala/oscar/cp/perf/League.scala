@@ -25,7 +25,7 @@ import oscar.cp.minizinc.FlatZinc2OscaR
  * @author Pierre Schaus pschaus@gmail.com
  */
 object League {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val file = if ((new File("data/minizinc/league.fzn")).exists()) "data/minizinc/league.fzn" else "data/minizinc/league.fzn"
 	val args = Array[String]("-s","-a", file)
 	FlatZinc2OscaR.parse(args)

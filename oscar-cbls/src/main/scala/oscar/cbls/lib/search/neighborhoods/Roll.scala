@@ -13,13 +13,13 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-
 package oscar.cbls.lib.search.neighborhoods
 
 import oscar.cbls.algo.search.HotRestart
-import oscar.cbls.core.computation.{InvariantHelper, CBLSIntVar}
-import oscar.cbls.core.search.{Move, EasyNeighborhood}
-import oscar.cbls._
+import oscar.cbls.core.computation.{CBLSIntVar, InvariantHelper}
+import oscar.cbls.core.search.{EasyNeighborhood, Move}
+
+import scala.annotation.tailrec
 
 /**
  * This neighborhood will consider roll moves that roll the value of contiguous CBLSIntVar in the given array
@@ -43,23 +43,24 @@ import oscar.cbls._
 //TODO: also implement minimal roll size (we prefer to use swap instead of roll)
 case class RollNeighborhood(vars:Array[CBLSIntVar],
                             name:String = "RollNeighborhood",
-                            searchZone:()=>Set[Long] = null,
+                            searchZone:()=>Set[Int] = null,
                             bridgeOverFrozenVariables:Boolean = false,
-                            maxShiftSize:Long=>Long = _ => Long.MaxValue, //the max size of the roll, given the ID of the first variable
+                            maxShiftSize:Int=>Int = _ => Int.MaxValue, //the max size of the roll, given the ID of the first variable
                             //minRollSize:Long, //TODO
                             checkForDifferentValues:Boolean = false,
                             best:Boolean = false,
                             hotRestart:Boolean = true)
   extends EasyNeighborhood[RollMove](best,name){
   //the indice to start with for the exploration
-  var startIndice:Long = 0L
-  override def exploreNeighborhood(){
+  var startIndice:Int = 0
+
+  override def exploreNeighborhood(): Unit ={
 
     val searchZoneObject = if(searchZone == null) null else searchZone()
-    val currentSearchZone = if(searchZone == null) 0L until vars.length else searchZoneObject
+    val currentSearchZone = if(searchZone == null) vars.indices else searchZoneObject
 
     @inline
-    def searchZoneContains(i:Long):Boolean = {
+    def searchZoneContains(i:Int):Boolean = {
       if(searchZone == null) vars.indices.contains(i) else searchZoneObject.contains(i)
     }
 
@@ -67,25 +68,26 @@ case class RollNeighborhood(vars:Array[CBLSIntVar],
       HotRestart(currentSearchZone, startIndice)
     else currentSearchZone
 
-    for (firstIndice: Long <- firstIndices) {
+    for (firstIndice: Int <- firstIndices) {
 
       val currentMaxShiftSize = maxShiftSize(firstIndice)
 
       var currentEnd = firstIndice
-      var currentRollSize = 1L
+      var currentRollSize = 1
       currentRollCluster = List(vars(currentEnd))
       initValue = List(vars(currentEnd).value)
 
-      def advance(lastIndice:Long):(Long,Boolean) = {
-        if(currentRollSize >= currentMaxShiftSize) return (0L,false)
-        val potentialAdd = currentEnd+1L
-        if(potentialAdd >= vars.length) return (0L,false)
+      @tailrec
+      def advance(lastIndice:Int):(Int,Boolean) = {
+        if(currentRollSize >= currentMaxShiftSize) return (0,false)
+        val potentialAdd = currentEnd+1
+        if(potentialAdd >= vars.length) return (0,false)
         if(searchZoneContains(potentialAdd)){
           (potentialAdd,true)
         }else if(bridgeOverFrozenVariables){
           advance(potentialAdd)
         }else{
-          (0L,false)
+          (0,false)
         }
       }
 
@@ -93,7 +95,7 @@ case class RollNeighborhood(vars:Array[CBLSIntVar],
       while(isNewEnd){
         //updating roll
         currentEnd = newEnd
-        currentRollSize +=1L
+        currentRollSize +=1
         currentRollCluster = vars(currentEnd) :: currentRollCluster
         initValue = vars(currentEnd).value :: initValue
 
@@ -104,7 +106,7 @@ case class RollNeighborhood(vars:Array[CBLSIntVar],
 
         if(shouldExplore) {
           //performing rolls
-          rollOffset = 1L
+          rollOffset = 1
           while (rollOffset < currentRollSize) {
             //check this roll
             doRollOneLeft()
@@ -113,7 +115,7 @@ case class RollNeighborhood(vars:Array[CBLSIntVar],
               assignAll(currentRollCluster, initValue)
               return
             }
-            rollOffset += 1L
+            rollOffset += 1
           }
           assignAll(currentRollCluster, initValue)
         }
@@ -125,7 +127,7 @@ case class RollNeighborhood(vars:Array[CBLSIntVar],
     }
   }
 
-  var rollOffset:Long = 0L
+  var rollOffset:Int = 0
   var currentRollCluster:List[CBLSIntVar] = List.empty
   var initValue:List[Long] = List.empty
 
@@ -145,7 +147,7 @@ case class RollNeighborhood(vars:Array[CBLSIntVar],
     }
   }
 
-  def assignAll(vars:List[CBLSIntVar],vals:List[Long]){
+  def assignAll(vars:List[CBLSIntVar],vals:List[Long]): Unit ={
     (vars, vals) match {
       case (hVar :: t1, hVal :: t2) =>
         hVar := hVal
@@ -160,15 +162,14 @@ case class RollNeighborhood(vars:Array[CBLSIntVar],
 
   //this resets the internal state of the Neighborhood
   override def reset(): Unit = {
-    startIndice = 0L
+    startIndice = 0
   }
 }
 
-
-case class RollMove(l:List[CBLSIntVar],offset:Long, override val objAfter:Long, override val neighborhoodName:String = null)
+case class RollMove(l:List[CBLSIntVar],offset:Int, override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter,neighborhoodName){
   /** to actually take the move */
-  override def commit(){
+  override def commit(): Unit ={
     val variables = l.toArray
     val initialValues:Array[Long] = variables.map(_.value)
     for(i <- variables.indices){
@@ -177,7 +178,7 @@ case class RollMove(l:List[CBLSIntVar],offset:Long, override val objAfter:Long, 
   }
 
   override def toString: String = {
-    neighborhoodNameToString + "RollMove(" + l + ", offset:" + offset + objToString + ")"
+    s"${neighborhoodNameToString}RollMove($l, offset:$offset$objToString)"
   }
 
 }

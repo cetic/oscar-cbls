@@ -135,7 +135,7 @@ class ALNSDiveAndExplore(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCo
     if(op.name != "dummy" && op.time >= iterTimeout) {
       val efficiency = Metrics.efficiencyFor(op, iterTimeout * efficiencyEvalIters)
       if(!solver.silent) println("Operator " + op.name + " efficiency is " + efficiency)
-      if (efficiency < Metrics.searchEfficiencyFor(solsFound, iterTimeout * efficiencyEvalIters, System.nanoTime() - startTime) * tolerance) {
+      if (efficiency < Metrics.searchEfficiencyFor(solsFound.toSeq, iterTimeout * efficiencyEvalIters, System.nanoTime() - startTime) * tolerance) {
         op.setActive(false)
         if (!solver.silent) println("Operator " + op.name + " deactivated due to low efficiency!")
         manageIterTimeout()

@@ -16,14 +16,10 @@
 
 package oscar.cp.constraints.tables
 
-import oscar.cp.core.variables.{CPIntVar, CPVar}
-import oscar.cp.core.Constraint
-import oscar.cp.core.CPPropagStrength
-import oscar.algo.reversible.ReversibleInt
-import java.util.Arrays
-
 import oscar.algo.Inconsistency
-import oscar.cp.core.CPStore
+import oscar.algo.reversible.ReversibleInt
+import oscar.cp.core.{CPPropagStrength, CPStore, Constraint}
+import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 /**
   *
@@ -268,7 +264,7 @@ class TableSTRNe(val variables: Array[CPIntVar], table: Array[Array[Int]]) exten
   }
   
   @inline private def printArray(arrays: Array[Int]) = {
-    for (a <- arrays) print(a + " ")
+    for (a <- arrays) print(s"$a ")
     println
   }
 }

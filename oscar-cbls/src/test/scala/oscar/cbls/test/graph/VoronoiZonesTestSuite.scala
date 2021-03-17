@@ -1,15 +1,14 @@
 package oscar.cbls.test.graph
 
-import org.scalatest.prop.Checkers
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.scalacheck.Checkers
 import oscar.cbls._
-import oscar.cbls.algo.graph._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.lib.invariant.graph.VoronoiZones
 import oscar.cbls.test.invariants.bench._
 
-
-class VoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
+class VoronoiZonesTestSuite extends AnyFunSuite with Matchers with Checkers {
 
   val verbose = 0
 
@@ -20,9 +19,8 @@ class VoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
     val nbNodes = 50
     val nbConditionalEdges = 50
     val nbNonConditionalEdges = 50
-    val nbTarget = 10
 
-    val nbCentroids = 10L
+    val nbCentroids = 10
 
     val openConditions:CBLSSetVar = bench.genIntSetVar(nbVars = 50, range = 0 until nbConditionalEdges,"openConditions")
     val centroids:CBLSSetVar = bench.genIntSetVar(nbVars = nbCentroids, range = 0 until nbCentroids,"centroids")
@@ -53,7 +51,7 @@ class VoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
     val nbNonConditionalEdges = 50
     val nbTarget = 10
 
-    val nbCentroids = 10L
+    val nbCentroids = 10
 
     val openConditions:CBLSSetVar = bench.genIntSetVar(nbVars = 50, range = 0 until nbConditionalEdges, name="openConditions")
     val centroids:CBLSSetVar = bench.genIntSetVar(nbVars = nbCentroids, range = 0 until nbCentroids, name = "Centroids")
@@ -88,7 +86,7 @@ class VoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
     val nbNodes = 30
     val nbConditionalEdges = 0
     val nbNonConditionalEdges = 40
-    val nbCentroids = 3L
+    val nbCentroids = 3
 
     val openConditions: CBLSSetVar = bench.genIntSetVar(nbVars = nbConditionalEdges, range = 0 to nbConditionalEdges, name = "openConditions")
     val centroids: CBLSSetVar = bench.genIntSetVar(nbVars = nbCentroids, range = 0 until nbCentroids, name = "Centroids")

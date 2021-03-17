@@ -16,18 +16,18 @@
  */
 package oscar.cbls.core.search
 
-import scala.language.implicitConversions
+import oscar.cbls.core.distrib.{RemoteNeighborhood, Supervisor}
 
 /**
  * @author renaud.delandtsheer@cetic.be
  */
 abstract class NeighborhoodCombinator(a: Neighborhood*) extends Neighborhood {
   //this resets the internal state of the move combinators
-  override def reset() {
+  override def reset(): Unit = {
     for (n <- a) n.reset()
   }
 
-  override def resetStatistics(){
+  override def resetStatistics(): Unit ={
     for (n <- a) n.resetStatistics()
   }
 
@@ -39,5 +39,18 @@ abstract class NeighborhoodCombinator(a: Neighborhood*) extends Neighborhood {
   override def toString: String = this.getClass.getSimpleName + "(" + a.mkString(",") + ")"
 
   override def collectProfilingStatistics: List[Array[String]] = a.flatMap(_.collectProfilingStatistics).toList
+
+  override def labelAndExtractRemoteNeighborhoods(supervisor: Supervisor, currentID: Int, acc: List[RemoteNeighborhood]):(Int,List[RemoteNeighborhood]) = {
+    var currentIDNow: Int = currentID
+    var accNow: List[RemoteNeighborhood] = acc
+    for(neighborhood <- a){
+      val a = neighborhood.labelAndExtractRemoteNeighborhoods(supervisor, currentIDNow, accNow)
+      currentIDNow = a._1
+      accNow = a._2
+    }
+    (currentIDNow,accNow)
+  }
 }
+
+
 

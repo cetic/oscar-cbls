@@ -14,34 +14,32 @@
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  * ****************************************************************************
  */
-package oscar.visual;
+package oscar.visual
 
-import java.awt.Dimension
+import java.awt.{BorderLayout, Color, Container, Dimension, Toolkit}
 import java.awt.event._
+
 import javax.swing._
-import java.awt.Color
-import java.awt.Toolkit
-import java.awt.BorderLayout
 
 class VisualFrame(title: String, val nbLines: Int = 1, val nbCols: Int = 1, internalFrames: List[JInternalFrame] = Nil) extends JFrame(title) {
 
   val desktop = new JDesktopPane()
 
   desktop.setBackground(Color.white)
-  val sz = Toolkit.getDefaultToolkit().getScreenSize()
-  val screenSize = new Dimension(sz.getWidth().toInt, (sz.getHeight() * 85 / 100).toInt)
+  val sz: Dimension = Toolkit.getDefaultToolkit.getScreenSize
+  val screenSize = new Dimension(sz.getWidth.toInt, (sz.getHeight * 85 / 100).toInt)
   var n = 0
-  var w = (screenSize.width / nbCols) * 90 / 100
-  var h = (screenSize.height / nbLines) * 90 / 100
+  var w: Int = (screenSize.width / nbCols) * 90 / 100
+  var h: Int = (screenSize.height / nbLines) * 90 / 100
 
-  val content = getContentPane()
+  val content: Container = getContentPane
   content.setBackground(Color.white)
   content.add(new JScrollPane(desktop))
   setSize(screenSize)
   setMinimumSize(new Dimension(400, 300))
 
   for(internalFrame <- internalFrames){
-    println("boucle for",internalFrame.getClass().toString)
+    println("boucle for",internalFrame.getClass.toString)
     addFrame(internalFrame)
   }
 
@@ -52,7 +50,7 @@ class VisualFrame(title: String, val nbLines: Int = 1, val nbCols: Int = 1, inte
   }
 
   addWindowListener(new WindowAdapter() {
-    override def windowClosing(event: WindowEvent) {
+    override def windowClosing(event: WindowEvent): Unit = {
       onWindowClosing()
     }
   })
@@ -63,11 +61,8 @@ class VisualFrame(title: String, val nbLines: Int = 1, val nbCols: Int = 1, inte
     menu.setMnemonic(KeyEvent.VK_N)
     val menuItem = new JMenuItem("New IFrame")
     menuItem.setMnemonic(KeyEvent.VK_N)
-    menuItem.addActionListener(new ActionListener() {
-
-      override def actionPerformed(e: ActionEvent) {
-        createFrame("sub frame")
-      }
+    menuItem.addActionListener((_: ActionEvent) => {
+      createFrame("sub frame")
     })
     menu.add(menuItem)
     menuBar.add(menu)

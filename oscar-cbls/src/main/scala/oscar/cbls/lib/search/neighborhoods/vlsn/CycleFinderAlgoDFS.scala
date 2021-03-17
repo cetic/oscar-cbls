@@ -14,11 +14,7 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   * ****************************************************************************
   */
-
-
 package oscar.cbls.lib.search.neighborhoods.vlsn
-
-import oscar.cbls._
 
 class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends CycleFinderAlgo{
   private val nodes:Array[Node] = graph.nodes
@@ -28,7 +24,7 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends Cy
   override def findCycle(isLiveNode:Array[Boolean]):Option[List[Edge]] = {
 
     val reachabilityMatrix = if(pruneOnReachability){
-      new ReacheabilityFloydWarshall(graph:VLSNGraph).buildRechabilityMatrix()
+      new ReachabilityFloydWarshall(graph:VLSNGraph).buildRechabilityMatrix()
     }else null
 
     //MatrixTools.printBoolMatrix(reachabilityMatrix)
@@ -37,7 +33,7 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends Cy
     val isLabelReached = Array.fill(nbLabels)(false)
     val isNodeFullyExplored = Array.fill(nbNodes)(false)
     var rootNode:Node = null
-    var rooNodeID:Long = -1L
+    var rooNodeID:Int = -1
 
     def dfsExplore(node:Node,summedDelta:Long):Option[List[Edge]] ={
       var outgoingEdges = node.outgoing
@@ -100,12 +96,11 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends Cy
 }
 
 
-class ReacheabilityFloydWarshall(graph:VLSNGraph){
+class ReachabilityFloydWarshall(graph:VLSNGraph){
   private val nodes:Array[Node] = graph.nodes
   private val edges:Array[Edge] = graph.edges
   private val nbNodes = nodes.length
-  private val nodeRange = 0L until nbNodes
-
+  private val nodeRange = 0 until nbNodes
 
   def buildRechabilityMatrix():Array[Array[Boolean]] = {
     val adjacencyMatrix = buildFloydMatrices()
@@ -131,7 +126,7 @@ class ReacheabilityFloydWarshall(graph:VLSNGraph){
     for (k <- nodeRange) {
       for (i <- nodeRange) {
         for (j <- nodeRange) {
-          adjacencyMatrix(i)(j) = adjacencyMatrix (i)(j) || adjacencyMatrix (i)(k) ||  adjacencyMatrix(k)(j)
+          adjacencyMatrix(i)(j) = adjacencyMatrix (i)(j) || (adjacencyMatrix (i)(k) &&  adjacencyMatrix(k)(j))
         }
       }
     }

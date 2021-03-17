@@ -67,9 +67,53 @@ trait IntVarLike extends Iterable[Int] {
    */
   def max: Int
 
+  /**
+    * The built-in minBy will return the first minimum value
+    * encountered by the iterator. Due to backtracking and
+    * reversible data-structures, the order of values returned
+    * by the iterator can change over time
+    * (even when the values in the domain are unchanged).
+    * Therefore it is better to return the smallest,
+    * rather than first, minimum value.
+    *
+    * This makes the minBy function stable.
+    *
+    * The only overhead is the code
+    * "|| (cmp.lteq(fx, minF) && elem < minElem)"
+    * which should be insignificant in terms of speed.
+    * The rest of the code is the native scala implementation.
+    *
+    * @return  the smallest minimum value in the domain by function f
+    */
+  override def minBy[B](f: Int => B)(implicit cmp: Ordering[B]): Int = {
+    if (isEmpty)
+      throw new UnsupportedOperationException("empty.minBy")
+
+    var minF: B = null.asInstanceOf[B]
+    var minElem: Int = null.asInstanceOf[Int]
+    var first = true
+
+    for (elem <- iterator) {
+      val fx = f(elem)
+      if (first || cmp.lt(fx, minF) || (cmp.lteq(fx, minF) && elem < minElem)) {
+        minElem = elem
+        minF = fx
+        first = false
+      }
+    }
+    minElem
+  }
+
+  /**
+    * See minBy for description.
+    *
+    * @return  the smallest maximum value in the domain by function f
+    */
+  override def maxBy[B](f: Int => B)(implicit cmp: Ordering[B]): Int = minBy(f)(cmp.reverse)
+
   def iterator: Iterator[Int]
 
-  def foreach[@specialized(Int) U](f: Int => U): Unit
+  def foreach[U](f: Int => U): Unit
 
   /**
    * @return an (not sorted) array representation of the domain.

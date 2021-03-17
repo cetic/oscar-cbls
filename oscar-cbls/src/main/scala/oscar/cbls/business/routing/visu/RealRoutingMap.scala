@@ -4,12 +4,9 @@ import java.awt.Color
 import java.awt.event.{MouseEvent, MouseMotionListener}
 
 import org.jdesktop.swingx.mapviewer.{DefaultTileFactory, GeoPosition}
-import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.util.StopWatch
 import oscar.visual.map._
-
-import scala.swing.Color
 
 /**
   * This class purpose is to display on a real map the resolution of a routing problem having
@@ -31,7 +28,7 @@ import scala.swing.Color
 class RealRoutingMap(vrp: VRP,
                      geoCoords: Array[(scala.Double,scala.Double)],
                      colorValues: Array[Color],
-                     refreshRate: Long,
+                     refreshRate: Int,
                      toolTipInfo: Option[Int => Option[() => String]]) extends VisualMap() with StopWatch with RoutingMapTrait {
 
   private var lastRefresh = 0L
@@ -43,7 +40,7 @@ class RealRoutingMap(vrp: VRP,
 
   val tfRouting = new DefaultTileFactory(info)
   viewer.setTileFactory(tfRouting)
-  viewer.setZoom(defineInitialZoom)
+  viewer.setZoom(defineInitialZoom())
   viewer.setAddressLocation(centerOfMap())
   viewer.setName("Routing Map")
   viewer.setPreferredSize(new java.awt.Dimension(screensize.width / 2, screensize.height / 2))
@@ -52,7 +49,7 @@ class RealRoutingMap(vrp: VRP,
   /**
     * Build all the depot location of the problem as MapWaypoint
     */
-  private def buildWaypoints() ={
+  private def buildWaypoints(): Array[MapWaypoint] ={
     Array.tabulate(vrp.v)(index => {
       toolTips(index) = generateToolTipInfo(index)
 
@@ -64,7 +61,7 @@ class RealRoutingMap(vrp: VRP,
   /**
     * Build all the customer location of the problem as MapPoint
     */
-  private def buildPoints() ={
+  private def buildPoints(): Array[MapPoint] ={
     Array.tabulate(vrp.n - vrp.v)(index => {
       val node = index + vrp.v
       toolTips(node) = generateToolTipInfo(node)
@@ -130,19 +127,19 @@ class RealRoutingMap(vrp: VRP,
         var previousPoint = routes(r).head
         var positionCounter = 1
         for (p <- routes(r).drop(1)) {
-          roads(longToInt(previousPoint)).color = color
-          roads(longToInt(previousPoint)).dest = (customers(longToInt(p-vrp.v)).lat, customers(longToInt(p-vrp.v)).long)
+          roads(previousPoint).color = color
+          roads(previousPoint).dest = (customers(p-vrp.v).lat, customers(p-vrp.v).long)
           toolTips(p) = generateToolTipInfo(p,r,positionCounter)
           previousPoint = p
           positionCounter += 1
         }
-        roads(longToInt(previousPoint)).color = color
-        roads(longToInt(previousPoint)).dest = (depots(r).lat, depots(r).long)
+        roads(previousPoint).color = color
+        roads(previousPoint).dest = (depots(r).lat, depots(r).long)
       }
 
       for(unroutedNode <- vrp.unroutedNodes){
-        roads(longToInt(unroutedNode)).color = Color.black
-        roads(longToInt(unroutedNode)).dest = (customers(longToInt(unroutedNode-vrp.v)).lat, customers(longToInt(unroutedNode-vrp.v)).long)
+        roads(unroutedNode).color = Color.black
+        roads(unroutedNode).dest = (customers(unroutedNode-vrp.v).lat, customers(unroutedNode-vrp.v).long)
         toolTips(unroutedNode) = generateToolTipInfo(unroutedNode)
       }
 
@@ -152,7 +149,7 @@ class RealRoutingMap(vrp: VRP,
 
   viewer.addMouseMotionListener {
     new MouseMotionListener() {
-      override def mouseMoved(e: MouseEvent) {
+      override def mouseMoved(e: MouseEvent): Unit = {
         val xLowerViewportBound = viewer.getViewportBounds.getX
         val yLowerViewportBound = viewer.getViewportBounds.getY
         val mousePosition = e.getPoint
@@ -166,22 +163,21 @@ class RealRoutingMap(vrp: VRP,
         else
           viewer.setToolTipText("")
       }
-      override def mouseDragged(e: MouseEvent) {}
+      override def mouseDragged(e: MouseEvent): Unit = {}
     }
   }
 
   private def generateToolTipInfo(node: Int, vehicle: Int = vrp.n, position: Int = vrp.n): String ={
     val defaultString = "<html>" + (
       if(node < vrp.v)
-        "Depot of vehicle " + vehicle
+        s"Depot of vehicle $vehicle"
       else if(vehicle == vrp.n)
-        "Unrouted node " + node
+        s"Unrouted node $node"
       else
-        "Node " + node + " at the " + position + "th position of the vehicle " + vehicle) +
+        s"Node $node at the ${position}th position of the vehicle $vehicle") +
       "<br>"
 
     defaultString +
       (if(toolTipInfo.isDefined) toolTipInfo.get(node).getOrElse(() => "")() else "") + "</html>"
   }
-
 }

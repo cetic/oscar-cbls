@@ -35,6 +35,11 @@ abstract class Branching {
    * @return the branching resulting of applying this branching, then b if not alternative available
    */
   def ++(b: Branching): Branching = new Branching {
+    override def reset(): Unit = {
+      Branching.this.reset()
+      b.reset()
+    }
+
     override def alternatives = {
       val r = Branching.this.alternatives()
       if (r.isEmpty) b.alternatives()

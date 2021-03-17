@@ -1,12 +1,11 @@
 package oscar.cbls.modeling
 
-import oscar.cbls.{Objective, _}
+import oscar.cbls.core.computation.{AbstractVariable, Solution}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{JumpNeighborhood, Move, Neighborhood, NeighborhoodCombinator, NoMoveNeighborhood, SupportForAndThenChaining}
 import oscar.cbls.lib.search.combinators._
-import oscar.cbls.util.StopWatch
 
-import scala.language.postfixOps
+import scala.concurrent.duration.{Duration, DurationInt}
 
 trait CombinatorsAPI
   extends BasicCombinators
@@ -15,7 +14,6 @@ trait CombinatorsAPI
     with MetaheuristicCombinators
     with NeighborhoodSelectionCombinators
     with UtilityCombinators
-
 
 trait BasicCombinators{
 
@@ -27,7 +25,7 @@ trait BasicCombinators{
    *
    * @author renaud.delandtsheer@cetic.be
    */
-  def best(a: Neighborhood, b: Neighborhood) = new Best(a, b)
+  def best(n: Neighborhood*) = new BestMove(n:_*)
 
   /**
    * this combinator sequentially tries all neighborhoods until one move is found
@@ -151,7 +149,6 @@ trait BasicCombinators{
   def dyn(f:() => Neighborhood) = new Dyn(f)
 }
 
-
 trait MetaheuristicCombinators{
   /**
    * performs a restart of the search for a number of time.
@@ -169,11 +166,9 @@ trait MetaheuristicCombinators{
    */
   def restart(n:Neighborhood,randomizationNeighborhood:Neighborhood, maxRestartWithoutImprovement:Long, obj:Objective) =
     Restart(n,randomizationNeighborhood, maxRestartWithoutImprovement, obj)
-
 }
 
 trait CompositionCombinators{
-
   /**
    * to build a composite neighborhood.
    * the first neighborhood is used only to provide a round robin exploration on its possible moves
@@ -229,13 +224,13 @@ trait CompositionCombinators{
    * @author renaud.delandtsheer@cetic.be
    */
   def dynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChaining[FirstMoveType],
-                                      b:(FirstMoveType => Neighborhood),
+                                      b:FirstMoveType => Neighborhood,
                                       maximalIntermediaryDegradation: Long = Long.MaxValue) =
     new DynAndThen[FirstMoveType](a,b,maximalIntermediaryDegradation)
 
 
   def DynAndThenWithPrev[FirstMoveType<:Move](x:Neighborhood with SupportForAndThenChaining[FirstMoveType],
-                                              b:((FirstMoveType,Snapshot) => Neighborhood),
+                                              b:(FirstMoveType,Solution) => Neighborhood,
                                               maximalIntermediaryDegradation:Long = Long.MaxValue,
                                               valuesToSave:Iterable[AbstractVariable]) =
     new DynAndThenWithPrev[FirstMoveType](x, b, maximalIntermediaryDegradation, valuesToSave)
@@ -270,7 +265,7 @@ trait InstrumentNeighborhoodsCombinator{
    * @param a a neighborhood
    * @param proc the procedure to call on one first move that is performed from this neighborhood
    */
-  def doOnFirstMove(a: Neighborhood, proc: () => Unit) = new DoOnFirstMove(a: Neighborhood, proc: () => Unit)
+  def doOnFirstMove(a: Neighborhood, proc: () => Unit) = DoOnFirstMove(a: Neighborhood, proc: () => Unit)
 
   /**
    * this combinator attaches a custom code to a given neighborhood.
@@ -289,7 +284,7 @@ trait InstrumentNeighborhoodsCombinator{
       procBeforeMove,
       procAfterMove)
 
-  def doOnExhaust(a:Neighborhood, proc:(()=>Unit),onlyFirst:Boolean) =
+  def doOnExhaust(a:Neighborhood, proc:()=>Unit,onlyFirst:Boolean) =
     DoOnExhaust(a, proc,onlyFirst)
 }
 
@@ -306,8 +301,8 @@ trait NeighborhoodSelectionCombinators{
    * @param refresh a refresh of the slopee measuring must be perfored every refresh iterations
    */
   def bestSlopeFirst(l:List[Neighborhood],
-                     tabuLength:Long = 10L,
-                     overrideTabuOnFullExhaust:Long = 9L, refresh:Long = 100L) =
+                     tabuLength:Int = 10,
+                     overrideTabuOnFullExhaust:Long = 9L, refresh:Int = 100) =
     BestSlopeFirst(l,tabuLength,overrideTabuOnFullExhaust,refresh)
 
 
@@ -315,16 +310,16 @@ trait NeighborhoodSelectionCombinators{
    * At each invocation, this combinator explores one of the neighborhoods in l (and repeat if it is exhausted)
    * neighborhoods are selected based on their speed the fasted one to find a move is selected
    * a tabu is added: in case a neighborhood is exhausted, it is not explored for a number of exploration of this combinator
-   * the tabu can be overriden if all neighborhoods explored are exhausted. tabu neighborhood can be explored anyway if they are still tabu, but for less than overrideTabuOnFullExhaust invocations of this combinator
+   * the tabu can be overridden if all neighborhoods explored are exhausted. tabu neighborhood can be explored anyway if they are still tabu, but for less than overrideTabuOnFullExhaust invocations of this combinator
    * the refresh parameter forces the combinator to try all neighborhoods every "refresh" invocation. it is useful because some neighorhood can perform poorly at the beginning of search and much better later on, and we do not want the combinator to just "stick to its first impression"
    * @param l the neighborhoods to select from
    * @param tabuLength the number of invocation that they will not be explored when exhausted
    * @param overrideTabuOnFullExhaust the tabu can be overriden if all explored neighbors are exhausted, for each neighborhood that is tabu for les than this override
-   * @param refresh a refresh of the slopee measuring must be perfored every refresh iterations
+   * @param refresh a refresh of the slope measuring must be perfored every refresh iterations
    */
   def fastestFirst(l:List[Neighborhood],
-                   tabuLength:Long = 10L,
-                   overrideTabuOnFullExhaust:Long = 9L,  refresh:Long = 100L) =
+                   tabuLength:Int = 10,
+                   overrideTabuOnFullExhaust:Long = 9L,  refresh:Int = 100) =
     FastestFirst(l,tabuLength,overrideTabuOnFullExhaust,refresh)
 
   /**
@@ -367,9 +362,7 @@ trait NeighborhoodSelectionCombinators{
     new ExhaustAndContinueIfMovesFound(a, b)
 }
 
-
 class NeighborhoodOps(n:Neighborhood){
-
   /**
    * this combinator sequentially tries all neighborhoods until one move is found
    * between calls, it will roll back to the first neighborhood
@@ -411,7 +404,6 @@ class NeighborhoodOps(n:Neighborhood){
    * the idea is to consider the constraint as a weak constraint, and sum this violation to the objective function with weighting.
    * throughout the search, the relative weighing of the constraint is increased until it gets to a strong constraint.
    *
-   * @param a the neighborhood to consider
    * @param additionalConstraint an additional constraint, considered as a weak constraint at startup, and gradually, as a strong constraint.
    * @param weightCorrectionStrategy how the relative weight of obj and additional constraint evolve
    * @param maxAttemptsBeforeStop tolerated number of consecutive calls to weight correction without any move found. if exceded returns noMoveFound
@@ -438,7 +430,7 @@ class NeighborhoodOps(n:Neighborhood){
    *
    * @author renaud.delandtsheer@cetic.be
    */
-  def best(b: Neighborhood): Neighborhood = new oscar.cbls.lib.search.combinators.Best(n, b)
+  def best(b: Neighborhood): Neighborhood = new oscar.cbls.lib.search.combinators.BestMove(n, b)
 
   /**
    * this combinator is stateful.
@@ -470,7 +462,6 @@ class NeighborhoodOps(n:Neighborhood){
    * @author renaud.delandtsheer@cetic.be
    */
   def exhaustAndContinueIfMovesFound(b: Neighborhood) = new ExhaustAndContinueIfMovesFound(n, b)
-
 
   /**
    * this one bounds the number of time the search is actually performed
@@ -508,9 +499,9 @@ class NeighborhoodOps(n:Neighborhood){
    */
   def once = new MaxMoves(n, 1L)
 
-  def onExhaust(proc: =>Unit) = DoOnExhaust(n,() => proc,false)
+  def onExhaust(proc: =>Unit) = DoOnExhaust(n,() => proc,onlyFirst = false)
 
-  def onFirstExhaust(proc: =>Unit) = DoOnExhaust(n,() => proc,true)
+  def onFirstExhaust(proc: =>Unit) = DoOnExhaust(n,() => proc,onlyFirst = true)
 
   /**
    * bounds the number of tolerated moves without improvements over the best value
@@ -543,7 +534,7 @@ class NeighborhoodOps(n:Neighborhood){
    *
    * @param proc the procedure to execute when the move is taken
    */
-  def beforeMove(proc: => Unit) = DoOnMove(n, procBeforeMove = (_) => proc)
+  def beforeMove(proc: => Unit) = DoOnMove(n, procBeforeMove = _ => proc)
 
   /**
    * this combinator attaches a custom code to a given neighborhood.
@@ -563,7 +554,7 @@ class NeighborhoodOps(n:Neighborhood){
    *
    * @param proc the procedure to execute when the move is taken
    */
-  def afterMove(proc: => Unit) = DoOnMove(n, procAfterMove = (_) => proc)
+  def afterMove(proc: => Unit) = DoOnMove(n, procAfterMove = _ => proc)
 
   /**
    * this combinator attaches a custom code to a given neighborhood.
@@ -577,15 +568,19 @@ class NeighborhoodOps(n:Neighborhood){
   def afterMoveOnMove(procOnMove: Move => Unit) = DoOnMove(n, procAfterMove = procOnMove)
 
   /**
-
-    * This combinator create a frame that draw the evolution curve of the objective function.
-    * The drawn curve possess a scrollbar on the right that allow the user to decrease or
-    * increase the number of value displayed.
-    *
-    * @param obj the objective function
-    * @author fabian.germeau@cetic.be
-    */
-  def showObjectiveFunction(obj: Objective, title: String = "Objective function vs. time[s]") = new ShowObjectiveFunction(n,obj, title)
+   * This combinator create a frame that draw the evolution curve of the objective function.
+   * You can also display other information on the curve, but the main curve will always be the obj function.
+   *
+   * @param obj the objective function
+   * @param title The title of the frame
+   * @param minCap The minimum displayed value
+   * @param maxCap The maximum displayed value
+   * @param percentile The percentile (1 to 100) of the best displayed value
+   * @param otherValues An array of other value you want to be displayed (as a tuple (name, () => Long))
+   * @author fabian.germeau@cetic.be
+   */
+  def showObjectiveFunction(obj: Objective, title: String = "Objective function vs. time[s]", minCap: Long = 0L, maxCap:Long = Long.MaxValue, percentile: Int = 100, otherValues: Array[(String, () => Long)] = Array.empty) =
+    new ShowObjectiveFunction(n,obj, title, minCap, maxCap, percentile, otherValues)
 
   /**
    * this combinator attaches a custom code to a given neighborhood.
@@ -594,7 +589,7 @@ class NeighborhoodOps(n:Neighborhood){
    *
    * @param proc the procedure to call on one first move that is performed from this neighborhood
    */
-  def onFirstMove(proc: => Unit) = new DoOnFirstMove(n, () => proc)
+  def onFirstMove(proc: => Unit) = DoOnFirstMove(n, () => proc)
 
   /**
    * saves the model for the best (smallest) value of obj
@@ -603,7 +598,7 @@ class NeighborhoodOps(n:Neighborhood){
    * You can do so either by manually calling a restoreBest on the returned object,
    * or by adding the keyword "restoreBestOnExhaust" after this one.
    * You might also consider saveBestAndRestoreOnExhaust
-   * @param o the objective function
+   * @param obj the objective function
    */
   def saveBest(obj: Objective,when:() => Boolean = null) = if(when == null) new SaveBest(n, obj) else new SaveBestWhen(n,obj,when)
 
@@ -641,7 +636,7 @@ class NeighborhoodOps(n:Neighborhood){
   def noReset: Neighborhood = NoReset(n)
 
   /**
-   * defines a name wor this (composite) neighborhood
+   * defines a name for this neighborhood
    * this will be used as prefix for each move returned by this neighborhood (the original name will still exist)
    * use this for debug and documentation purpose only
    *
@@ -662,6 +657,12 @@ class NeighborhoodOps(n:Neighborhood){
    * this combinator overrides accepts all moves (this is the withAcceptanceCriteria, given the fully acceptant criterion
    */
   def acceptAll() = new WithAcceptanceCriterion(n, (_: Long, _: Long) => true)
+
+  /**
+   * this combinator overrides accepts all moves (this is the withAcceptanceCriteria, given the fully acceptant criterion
+   */
+  def acceptAllButStrongViolation = new WithAcceptanceCriterion(n, (_: Long, n: Long) => n!=Long.MaxValue)
+
 
   /**
    * proposes a round-robin with that.
@@ -688,7 +689,7 @@ class NeighborhoodOps(n:Neighborhood){
    * the criterion accepts all improving moves, and for worsening moves, it applies the metropolis criterion:
    * accept if math.random(0.0; 1.0) < base exponent (-gain / temperatureValue)
    *
-   * @param temperature a function that inputs the number of moves taken, and outputs a temperature, for use in the criterion
+   * @param iterationToTemperature a function that inputs the number of moves taken, and outputs a temperature, for use in the criterion
    *                    the number of steps is reset to zero when the combinator is reset.
    *                    By default, the temperature is 100L/the number of steps
    * @param base the base for the exponent calculation. default is 2L
@@ -699,22 +700,41 @@ class NeighborhoodOps(n:Neighborhood){
   def cauchyAnnealing(initialTemperature:Double, base: Double = 2) = new Metropolis(n, iterationToTemperature = (it: Long) => initialTemperature / (it + 1), base)
 
   //Boltzmann annealing, where T = T_0/ln k
-  def boltzmannAnnealing(initialTemperature:Double, base: Double = 2) = new Metropolis(n, iterationToTemperature = (it: Long) => initialTemperature / math.log(it + 1), base)
-
-  //TODO: Adaptive Simulated Annealing: T = T_0 exp(-c k^1/D) wth re-annealing also permits adaptation to changing sensitivities in the multi-dimensional parameter-space.
-
-
-
+  def boltzmannAnnealing(initialTemperature:Double, base: Double = 2) = new Metropolis(n, iterationToTemperature = (it: Long) => initialTemperature / math.log(it.toDouble + 1), base)
 
 
   /**
-   * sets a timeout for a search procedure.
-   * notice that hte timeout itself is a bit lax, because the combinator has no possibility to interrupt a neighborhood during its exploration.
-   * this combinator will therefore just prevent any new exploration past the end of the timeout.
-   * @param a a neighborhood
-   * @param maxDuration the maximal duration, in milliseconds
+   * implements the late acceptance criterion. Similarly to the simulated annealing it will accept degrading moves.
+   * The acceptance is however not computed based on statistics. Instead there is a history of the "length" previous values,
+   * and a pointer that iterates on these values.
+   * It compares the next obj with the value fetched from the history and accepts improves over that historical value.
+   * If the neighbour is accepted,the historical value is updated.
+   *
+   * more details in: Burke EK, Bykov Y (2016) The late acceptance hill-climbing heuristic. Eur J Oper Res 258:70–78
+   * @param length the length of the history
+   * @param maxRelativeIncreaseOnBestObj additionally, newOBj is rejected if > maxRelativeIncreaseOnBestObj*bestObj.
+   *                                     This increases convergence, but decreased optimality of this approach. the default value is very large, so that this mechanism is inactive.
    */
-  def timeout(maxDuration:Long) = new Timeout(n, maxDuration:Long)
+  def lateAcceptanceHillClimbing(length:Int = 20,maxRelativeIncreaseOnBestObj:Double=1000) = new LateAcceptanceHillClimbing(n, length,maxRelativeIncreaseOnBestObj)
+
+  //TODO: Adaptive Simulated Annealing: T = T_0 exp(-c k^1/D) wth re-annealing also permits adaptation to changing sensitivities in the multi-dimensional parameter-space.
+
+  /**
+   * sets a timeout for a search procedure.
+   * notice that the timeout itself is a bit lax, because the combinator has no possibility to interrupt a neighborhood during its exploration.
+   * this combinator will therefore just prevent any new exploration past the end of the timeout.
+   * @param timeOut the maximal duration between the first query and the last authorized query. timeout is reset
+   */
+  def weakTimeout(timeOut:Duration = 1.minutes) = new WeakTimeout(n, timeOut)
+  
+  /**
+   * @warning this is experimental.
+   * sets a hard timeout for a search procedure; interrupts ongoing neighborhood exploration if necessary,
+   * and restores the state before the last exploration.
+   * Do not use it on the right of cartesian products.
+   * @param timeOut the maximal duration
+   */
+  def hardTimeout(timeOut:Duration = 1.minutes) = new HardTimeout(n, timeOut)
 
   /**
    * This combinator will interrupt the search when it becomes too flat.

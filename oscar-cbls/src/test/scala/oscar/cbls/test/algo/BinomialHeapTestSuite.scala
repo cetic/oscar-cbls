@@ -1,13 +1,14 @@
 package oscar.cbls.test.algo
 
 import org.scalacheck.Gen
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.algo.heap._
 
 import scala.util.Random
 
-class BinomialHeapTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matchers {
+class BinomialHeapTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
 
   def genOperations(listOps :Gen[Operation]): Gen[List[Operation]] = for {
     size <- Gen.chooseNum(30, 100)
@@ -51,6 +52,8 @@ class BinomialHeapTestSuite extends FunSuite with GeneratorDrivenPropertyChecks 
               for(elem <- firsts){
                 keys(elem) should be (keys(firsts.head))
               }
+
+            case _ => // Unreachable ?
           }
 
           heap.checkInternals()
@@ -104,6 +107,8 @@ class BinomialHeapTestSuite extends FunSuite with GeneratorDrivenPropertyChecks 
               for(elem <- firsts){
                 keys(elem) should be (keys(firsts.head))
               }
+
+            case _ => // Unreachable ?
           }
         }
 
@@ -158,6 +163,8 @@ class BinomialHeapTestSuite extends FunSuite with GeneratorDrivenPropertyChecks 
             case Clear() =>
               heap.dropAll()
               values = List[Int]()
+
+            case _ => // Unreachable ?
           }
         }
 
@@ -192,10 +199,11 @@ class BinomialHeapTestSuite extends FunSuite with GeneratorDrivenPropertyChecks 
                 values = value :: values
               }
 
-
             case Clear() =>
               heap.dropAll()
               values = List[Int]()
+
+            case _ => // Unreachable
           }
         }
 
@@ -206,8 +214,8 @@ class BinomialHeapTestSuite extends FunSuite with GeneratorDrivenPropertyChecks 
           list = heap.popFirst() :: list
         }
 
-        list.sorted should be(listIterator.sorted)
-        list.sorted should be(values.sorted)
+        list.sorted should be (listIterator.sorted)
+        list.sorted should be (values.sorted)
       }
     }
   }
@@ -232,10 +240,11 @@ class BinomialHeapTestSuite extends FunSuite with GeneratorDrivenPropertyChecks 
                 values = value :: values
               }
 
-
             case Clear() =>
               heap.dropAll()
               values = List[Int]()
+
+            case _ => // Unreachable ?
           }
         }
 
@@ -287,6 +296,8 @@ class BinomialHeapTestSuite extends FunSuite with GeneratorDrivenPropertyChecks 
                 heap.delete(value)
                 values = removeElem(values, value)
               }
+
+            case _ => // Unreachable ?
           }
         }
 
@@ -339,6 +350,8 @@ class BinomialHeapTestSuite extends FunSuite with GeneratorDrivenPropertyChecks 
                 heap.delete(value)
                 values = removeElem(values, value)
               }
+
+            case _ => // Unreachable ?
           }
         }
 

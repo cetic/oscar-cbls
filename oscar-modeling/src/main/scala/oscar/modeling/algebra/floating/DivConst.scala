@@ -16,8 +16,7 @@
 package oscar.modeling.algebra.floating
 
 import oscar.modeling.algebra.Expression
-
-import scala.collection.mutable.HashSet
+import scala.math.Ordering.Double.TotalOrdering
 
 /**
  * Expression left/right

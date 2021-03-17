@@ -26,7 +26,7 @@ import oscar.cp.core.Constraint;
 import oscar.cp.core.CPStore;
 import oscar.cp.core.variables.CPVar;
 import scala.collection.Iterable;
-import scala.collection.JavaConversions;
+import scala.jdk.javaapi.CollectionConverters;
 
 
 /**
@@ -92,7 +92,7 @@ public class GCCBinPacking extends Constraint {
         this.minVal = 0;
         this.maxVal = o.length-1;
         nbVals = maxVal-minVal+1;
-        this.priorityL2_$eq(CPStore.MAXPRIORL2()-3);
+        this.priorityL2_$eq(CPStore.MaxPriorityL2()-3);
     }
 
     @Override
@@ -156,7 +156,7 @@ public class GCCBinPacking extends Constraint {
         List<CPVar> vars = new LinkedList<>(Arrays.asList(x));
         vars.addAll(Arrays.asList(l));
         vars.addAll(Arrays.asList(o));
-        return JavaConversions.iterableAsScalaIterable(vars);
+        return CollectionConverters.asScala(vars);
     }
 
 

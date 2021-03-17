@@ -345,6 +345,7 @@ class CPModel(p: UninstantiatedModel) extends InstantiatedModel(CPModel.preproce
         case Circuit(succ, symmetric) => p(constraint,new cp.constraints.Circuit(succ.map(postIntExpressionAndGetVar), symmetric))
         case SubCircuit(succ, offset) => p(constraint,cp.constraints.SubCircuit(succ.map(postIntExpressionAndGetVar), offset))
         case Inverse(a, b) => p(constraint,new cp.constraints.Inverse(a.map(postIntExpressionAndGetVar), b.map(postIntExpressionAndGetVar)))
+        case PartialInverse(a, b) => p(constraint,new cp.constraints.PartialInverse(a.map(postIntExpressionAndGetVar), b.map(postIntExpressionAndGetVar)))
         case MinAssignment(xarg, weightsarg, cost) => p(constraint,new cp.constraints.MinAssignment(xarg.map(postIntExpressionAndGetVar), weightsarg, postIntExpressionAndGetVar(cost)))
         case StrongEq(a, b) => p(constraint,postIntExpressionAndGetVar(a) === postIntExpressionAndGetVar(b))
         case Spread(a, s1, s2) => p(constraint,new cp.constraints.Spread(a.toArray.map(postIntExpressionAndGetVar), s1, postIntExpressionAndGetVar(s2), true))

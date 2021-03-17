@@ -14,8 +14,8 @@
   ******************************************************************************/
 package oscar.cbls.business
 
-import oscar.cbls._
 import oscar.cbls.business.routing.modeling._
+import oscar.cbls.core.computation.Store
 
 
 /**
@@ -23,7 +23,7 @@ import oscar.cbls.business.routing.modeling._
  *
  * it represents the routes as a single sequence and everyting in this pacage relies on the routing assumption, which is stated as follows:
  * - there are v vehicles
- * - They are supposed to start from point of values 0L to v-1L
+ * - They are supposed to start from point of values 0 to v-1L
  * - These values must always be present in the sequence in increasing order
  * - They cannot be included within a moved segment
  *
@@ -31,34 +31,34 @@ import oscar.cbls.business.routing.modeling._
  */
 package object routing
   extends RoutingInvariants
-  with CapacityInvariants
-  with RoutingExtensions
-  with InsertPointAPI
-  with OnePointMoveAPI
-  with RemovePointAPI
-  with RouteExchangeAPI
-  with SegmentExchangeAPI
-  with ThreeOptAPI
-  with TwoOptAPI {
+    with CapacityInvariants
+    with RoutingExtensions
+    with InsertPointAPI
+    with OnePointMoveAPI
+    with RemovePointAPI
+    with RouteExchangeAPI
+    with SegmentExchangeAPI
+    with ThreeOptAPI
+    with TwoOptAPI {
 
   type VRP = oscar.cbls.business.routing.model.VRP
-  def vrp(m: Store,n:Int, v: Int, maxPivotPerValuePercent: Long = 4L): VRP =
+  def vrp(m: Store,n:Int, v: Int, maxPivotPerValuePercent: Int = 4): VRP =
     new VRP(m, n, v, maxPivotPerValuePercent)
 
   type TTFMatrix = oscar.cbls.business.routing.model.TTFMatrix
-  def ttfMatrix(nodeCount: Long, defaultTTF: PrimitiveTravelTimeFunction): TTFMatrix =
+  def ttfMatrix(nodeCount: Int, defaultTTF: PrimitiveTravelTimeFunction): TTFMatrix =
     new TTFMatrix(nodeCount, defaultTTF)
 
   type TTFConst = oscar.cbls.business.routing.model.TTFConst
-  def ttfConst(travelDuration: Long): TTFConst =
+  def ttfConst(travelDuration: Int): TTFConst =
     new TTFConst(travelDuration)
 
   type TTFHistogram = oscar.cbls.business.routing.model.TTFHistogram
-  def ttfHistogram(nbSlots: Long, overallDuration: Long): TTFHistogram =
+  def ttfHistogram(nbSlots: Int, overallDuration: Int): TTFHistogram =
     new TTFHistogram(nbSlots, overallDuration)
 
   type TTFSegments = oscar.cbls.business.routing.model.TTFSegments
-  def ttfSegments(nbPoints: Long, overallDuration: Long): TTFSegments =
+  def ttfSegments(nbPoints: Int, overallDuration: Int): TTFSegments =
     new TTFSegments(nbPoints, overallDuration)
 
   type PrimitiveTravelTimeFunction = oscar.cbls.business.routing.model.PrimitiveTravelTimeFunction
@@ -67,5 +67,3 @@ package object routing
   val DistanceHelper = oscar.cbls.business.routing.model.helpers.DistanceHelper
 
 }
-
-

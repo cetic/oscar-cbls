@@ -22,7 +22,7 @@ import scala.collection.immutable._
 
 class MyDLLElementContainer[C<:A,A](private var elem:C, var previous: MyDLLElementContainer[_<:A,A], var next: MyDLLElementContainer[_<:A,A]) {
 
-  def foreach(f: (A) => Unit) {
+  def foreach(f: (A) => Unit): Unit = {
     f(elem)
     if (next != null) next.foreach(f)
   }
@@ -54,7 +54,7 @@ class MyDLL[A] {
 //    first = ec
 //    ec
 //  }
-  def remove(ec: MyDLLElementContainer[_<:A,A]) {
+  def remove(ec: MyDLLElementContainer[_<:A,A]): Unit = {
     if (ec.previous == null)
       first = ec.next
     else
@@ -66,6 +66,6 @@ class MyDLL[A] {
       ec.next.previous = ec.previous
     _size -= 1
   }
-  def foreach(f: (A) => Unit) { if (first != null) first.foreach(f) }
+  def foreach(f: (A) => Unit): Unit = { if (first != null) first.foreach(f) }
 
 }

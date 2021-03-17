@@ -12,15 +12,13 @@
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
-
 package oscar.cbls.lib.constraint
 
-import oscar.cbls._
-import oscar.cbls.core._
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingIntValue, Domain, IntNotificationTarget, IntValue, Invariant, Value}
+import oscar.cbls.core.constraint.Constraint
+import oscar.cbls.core.propagation.Checker
 
-import scala.collection.immutable.{SortedSet, SortedMap}
-
+import scala.collection.immutable.{SortedMap, SortedSet}
 
 /**
  * Implement the Disjunctive constraint.
@@ -37,15 +35,14 @@ case class DisjunctiveConstDuration(start: Array[IntValue],
 
   private val sumdur = duration.sum
 
-  private val Violation: CBLSIntVar = new CBLSIntVar(model, 0L, 0 to sumdur*start.length, "ViolationOfDisjunctive")
+  private val Violation: CBLSIntVar = new CBLSIntVar(model, 0L, Domain(0, sumdur*start.length), "ViolationOfDisjunctive")
   Violation.setDefiningInvariant(this)
-
 
   //the degree of violation of a task is the sum of the sizes of its overlap with other tasks.
   private val Violations: SortedMap[IntValue, CBLSIntVar] = start.foldLeft(
     SortedMap.empty[IntValue, CBLSIntVar])(
     (acc, intvar) => {
-      val newvar = new CBLSIntVar(model, 0L, 0 to sumdur, "Violation_Disjunctive_" + intvar.name)
+      val newvar = new CBLSIntVar(model, 0L, Domain(0, sumdur), s"Violation_Disjunctive_${intvar.name}")
       acc + ((intvar, newvar))
     })
 
@@ -53,7 +50,7 @@ case class DisjunctiveConstDuration(start: Array[IntValue],
     val curstart = start(i).value
     val curduration = duration(i)
     val curend = curstart+curduration
-    for(j <- i+1L until start.length){
+    for(j <- i+1 until start.length){
       val nextstart = start(j).value
       val nextduration = duration(j)
       val nextend = nextstart + nextduration
@@ -68,7 +65,7 @@ case class DisjunctiveConstDuration(start: Array[IntValue],
   private val oldstarts = start.map(v => v.value)
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, oldstart: Long, newstart: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, oldstart: Long, newstart: Long): Unit = {
     //TODO: This is not completely incremental (but still linear instead of quadratic)!
     val dur = duration(index)
     val oldend = oldstart + dur
@@ -94,11 +91,10 @@ case class DisjunctiveConstDuration(start: Array[IntValue],
     Violations(v.asInstanceOf[IntValue])
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
     //TODO
   }
 }
-
 
 /**
  * Implement the Disjunctive constraint.
@@ -128,7 +124,7 @@ case class Disjunctive(start: Array[IntValue],
   violationVar.setDefiningInvariant(this)
 
   private val violationVarsArray = Array.tabulate(start.length)(i => {
-    val newVar = new CBLSIntVar(model, 0L, Domain(0L,sumMaxDur), "Violation_Disjunctive_" + start(i).name + "_and_" + duration(i).name)
+    val newVar = new CBLSIntVar(model, 0L, Domain(0L,sumMaxDur), s"Violation_Disjunctive_${start(i).name}_and_${duration(i).name}")
     newVar.setDefiningInvariant(this)
     newVar}
   )
@@ -164,7 +160,7 @@ case class Disjunctive(start: Array[IntValue],
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, oldValue: Long, newValue: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, oldValue: Long, newValue: Long): Unit = {
     if(index <0L){
       //a duration has changed
       notifyDurChanged(index + nbTask,oldValue, newValue)
@@ -174,7 +170,7 @@ case class Disjunctive(start: Array[IntValue],
     }
   }
 
-  private def notifyStartChanged(taskID:Long,oldStart:Long,newStart:Long) {
+  private def notifyStartChanged(taskID:Int,oldStart:Long,newStart:Long): Unit = {
     val dur = duration(taskID).value
     if (dur == 0L) return
 
@@ -184,7 +180,7 @@ case class Disjunctive(start: Array[IntValue],
     updateTask(taskID,oldStart,newStart,oldEnd,newEnd)
   }
 
-  private def notifyDurChanged(taskID:Long,oldDur:Long,newDur:Long){
+  private def notifyDurChanged(taskID:Int,oldDur:Long,newDur:Long): Unit ={
     if(oldDur == 0L && newDur !=0L){
       nonZeroTasks = nonZeroTasks + taskID
     }else if (oldDur !=0L && newDur == 0L){
@@ -198,7 +194,7 @@ case class Disjunctive(start: Array[IntValue],
     updateTask(taskID,startTask,startTask,oldEnd,newEnd)
   }
 
-  def updateTask(taskID:Long,oldStart:Long,newStart:Long,oldEnd:Long,newEnd:Long){
+  def updateTask(taskID:Int,oldStart:Long,newStart:Long,oldEnd:Long,newEnd:Long): Unit ={
     //TODO: This is not completely incremental (but still linear instead of quadratic)!
     //We cannot break symmetries here because they are already broken since this method is called with one task set
     for(otherTaskID <- nonZeroTasks if taskID != otherTaskID){
@@ -222,8 +218,7 @@ case class Disjunctive(start: Array[IntValue],
     violationsVarsMap(v.asInstanceOf[IntValue])
   }
 
-  override def checkInternals(c: Checker) {
-
+  override def checkInternals(c: Checker): Unit = {
     var violationFromScratch = 0L
     val violationArrayFromScratch = Array.fill(nbTask)(0L)
 
@@ -257,7 +252,6 @@ case class Disjunctive(start: Array[IntValue],
   }
 }
 
-
 /**
   * Implement the Disjunctive constraint with margins when transitioning from one task to the other one.
   * if tasks have a duration of zero, they can overlap in time
@@ -289,11 +283,11 @@ case class DisjunctiveWithTransitions(start: Array[IntValue],
 
   private val sumMaxDur = duration.foldLeft(0L)((acc,v) => acc + v.max)
 
-  private val violationVar: CBLSIntVar = new CBLSIntVar(model, 0L, 0 to sumMaxDur*start.length, "ViolationOfDisjunctive")
+  private val violationVar: CBLSIntVar = new CBLSIntVar(model, 0L, Domain(0, sumMaxDur*start.length), "ViolationOfDisjunctive")
   violationVar.setDefiningInvariant(this)
 
   private val violationVarsArray = Array.tabulate(start.length)(i => {
-    val newVar = new CBLSIntVar(model, 0L, 0 to sumMaxDur, "Violation_Disjunctive_" + start(i).name + "_and_" + duration(i).name)
+    val newVar = new CBLSIntVar(model, 0L, Domain(0, sumMaxDur), s"Violation_Disjunctive_${start(i).name}_and_${duration(i).name}")
     newVar.setDefiningInvariant(this)
     newVar}
   )
@@ -335,7 +329,7 @@ case class DisjunctiveWithTransitions(start: Array[IntValue],
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, oldValue: Long, newValue: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, oldValue: Long, newValue: Long): Unit = {
     if(index <0L){
       //a duration has changed
       notifyDurChanged(index + nbTask,oldValue, newValue)
@@ -345,7 +339,7 @@ case class DisjunctiveWithTransitions(start: Array[IntValue],
     }
   }
 
-  private def notifyStartChanged(taskID:Long,oldStart:Long,newStart:Long) {
+  private def notifyStartChanged(taskID:Int,oldStart:Long,newStart:Long): Unit = {
     val dur = duration(taskID).value
     if (dur == 0L) return
 
@@ -355,7 +349,7 @@ case class DisjunctiveWithTransitions(start: Array[IntValue],
     updateTask(taskID,oldStart,newStart,oldEnd,newEnd)
   }
 
-  private def notifyDurChanged(taskID:Long,oldDur:Long,newDur:Long){
+  private def notifyDurChanged(taskID:Int,oldDur:Long,newDur:Long): Unit ={
     if(oldDur == 0L && newDur !=0L){
       nonZeroTasks = nonZeroTasks + taskID
     }else if (oldDur !=0L && newDur == 0L){
@@ -369,7 +363,7 @@ case class DisjunctiveWithTransitions(start: Array[IntValue],
     updateTask(taskID,startTask,startTask,oldEnd,newEnd)
   }
 
-  def updateTask(taskID:Long,oldStart:Long,newStart:Long,oldEnd:Long,newEnd:Long){
+  def updateTask(taskID:Int,oldStart:Long,newStart:Long,oldEnd:Long,newEnd:Long): Unit ={
     //TODO: This is not completely incremental (but still linear instead of quadratic)!
     //We cannot break symmetries here because they are already broken since this method is called with one task set
     for(otherTaskID <- nonZeroTasks if taskID != otherTaskID){
@@ -405,8 +399,7 @@ case class DisjunctiveWithTransitions(start: Array[IntValue],
     violationsVarsMap(v.asInstanceOf[IntValue])
   }
 
-  override def checkInternals(c: Checker) {
-
+  override def checkInternals(c: Checker): Unit = {
     var violationFromScratch = 0L
     val violationArrayFromScratch = Array.fill(nbTask)(0L)
 
@@ -434,12 +427,12 @@ case class DisjunctiveWithTransitions(start: Array[IntValue],
     }
 
     c.check(violation.value == violationFromScratch,
-      Some("Violation value should be " + violationFromScratch + ", instead of " + violation.value))
+      Some(s"Violation value should be $violationFromScratch, instead of ${violation.value}"))
     for(t <- taskIndices){
       c.check(violation(start(t)).value == violationArrayFromScratch(t),
-        Some("Violation (start) for taskID " + t + " : "  + violation(start(t)) + " doesn't equal " + violationArrayFromScratch(t)))
+        Some(s"Violation (start) for taskID $t : ${violation(start(t))} doesn't equal ${violationArrayFromScratch(t)}"))
       c.check(violation(duration(t)).value == violationArrayFromScratch(t),
-        Some("Violation (duration) for taskID " + t + " : "  + violation(duration(t)) + " doesn't equal " + violationArrayFromScratch(t)))
+        Some(s"Violation (duration) for taskID $t : ${violation(duration(t))} doesn't equal ${violationArrayFromScratch(t)}"))
     }
 
     val nonZeroTasksFromScratch = SortedSet.empty[Long] ++ taskIndices.filter(i => duration(i).value != 0L)

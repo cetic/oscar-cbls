@@ -1,5 +1,3 @@
-package oscar.cbls.business.routing.invariants
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,43 +12,40 @@ package oscar.cbls.business.routing.invariants
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
+package oscar.cbls.business.routing.invariants
 
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
-import oscar.cbls.core.computation.ChangingSeqValue
-import oscar.cbls._
-import oscar.cbls.business.routing.invariants.global.{FlippedPreComputedSubSequence, GlobalConstraintCore, GlobalConstraintDefinition, LogReducedFlippedPreComputedSubSequence, LogReducedGlobalConstraint, LogReducedGlobalConstraintWithExtremes, LogReducedNewNode, LogReducedPreComputedSubSequence, LogReducedSegment, NewNode, PreComputedSubSequence, Segment}
-
+import oscar.cbls.business.routing.invariants.global.{FlippedPreComputedSubSequence, GlobalConstraintCore, LogReducedFlippedPreComputedSubSequence, LogReducedGlobalConstraint, LogReducedGlobalConstraintWithExtremes, LogReducedNewNode, LogReducedPreComputedSubSequence, LogReducedSegment, NewNode, PreComputedSubSequence, Segment}
+import oscar.cbls.core.computation.{CBLSIntVar, ChangingSeqValue}
 
 object NbNodes{
   /**
     * this constraints maintains the number of node per vehicle.
     *
-    * @param gc The GlobalConstraint linked to this constraints
+    * @param routes The routes of the VRP
     * @param v number of vehicle
     * @param nbNodesPerVehicle an array telling how many nodes are reached per vehicle
     */
-  def apply(gc: GlobalConstraintCore, n: Int, v : Int, nbNodesPerVehicle : Array[CBLSIntVar]) =
-    new NbNodes(gc, n, v , nbNodesPerVehicle)
+  def apply(routes: ChangingSeqValue, n: Int, v : Int, nbNodesPerVehicle : Array[CBLSIntVar]) =
+    new NbNodes(routes, n, v , nbNodesPerVehicle)
 }
 
 
 /**
   * this constraints maintains the number of node per vehicle.
   *
-  * @param gc The GlobalConstraint linked to this constraint
+  * @param routes The routes of the VRP
   * @param v number of vehicle
   * @param nbNodesPerVehicle an array telling how many nodes are reached per vehicle
   */
-class NbNodes(gc: GlobalConstraintCore, n: Long, v : Int, nbNodesPerVehicle : Array[CBLSIntVar])
-  extends GlobalConstraintDefinition[Long](gc,v){
+class NbNodes(routes: ChangingSeqValue, n: Int, v : Int, nbNodesPerVehicle : Array[CBLSIntVar])
+  extends GlobalConstraintCore[Long](routes,v){
 
   val preComputedVals: Array[Option[Long]] = Array.fill(n)(None)
 
   // Initialize the vehicles value, the precomputation value and link these invariant to the GlobalConstraintCore
-  gc.register(this)
-  for(outputVariable <- nbNodesPerVehicle)outputVariable.setDefiningInvariant(gc)
+  for(outputVariable <- nbNodesPerVehicle)outputVariable.setDefiningInvariant(this)
 
   /**
     * tis method is called by the framework when a pre-computation must be performed.
@@ -60,7 +55,7 @@ class NbNodes(gc: GlobalConstraintCore, n: Long, v : Int, nbNodesPerVehicle : Ar
     * @param routes       the sequence representing the route of all vehicle
     *                     BEWARE,other vehicles are also present in this sequence; you must only work on the given vehicle
     */
-  override def performPreCompute(vehicle: Long, routes: IntSequence): Unit = {
+  override def performPreCompute(vehicle: Int, routes: IntSequence): Unit = {
     var nbNode = 0
     var continue = true
     var vExplorer = routes.explorerAtAnyOccurrence(vehicle)
@@ -88,7 +83,7 @@ class NbNodes(gc: GlobalConstraintCore, n: Long, v : Int, nbNodesPerVehicle : Ar
     * @param routes    the sequence representing the route of all vehicle
     * @return the value associated with the vehicle
     */
-  override def computeVehicleValue(vehicle: Long, segments: QList[Segment], routes: IntSequence): Long = {
+  override def computeVehicleValue(vehicle: Int, segments: QList[Segment], routes: IntSequence): Long = {
     QList.qMap(segments, (s: Segment) =>
       s match {
         case PreComputedSubSequence (fstNode, lstNode, length) =>
@@ -100,8 +95,6 @@ class NbNodes(gc: GlobalConstraintCore, n: Long, v : Int, nbNodesPerVehicle : Ar
       }).sum
   }
 
-
-
   /**
     * the framework calls this method to assign the value U to he output variable of your invariant.
     * It has been dissociated from the method above because the framework memorizes the output value of the vehicle,
@@ -109,12 +102,11 @@ class NbNodes(gc: GlobalConstraintCore, n: Long, v : Int, nbNodesPerVehicle : Ar
     *
     * @param vehicle the vehicle number
     */
-  override def assignVehicleValue(vehicle: Long, value: Long): Unit = {
+  override def assignVehicleValue(vehicle: Int, value: Long): Unit = {
     nbNodesPerVehicle(vehicle) := value
   }
 
-
-  def countVehicleNode(vehicle : Long,vExplorer : Option[IntSequenceExplorer]) : Long = {
+  def countVehicleNode(vehicle : Int,vExplorer : Option[IntSequenceExplorer]) : Long = {
     vExplorer match {
       case None => 0
       case Some(elem) =>
@@ -128,42 +120,40 @@ class NbNodes(gc: GlobalConstraintCore, n: Long, v : Int, nbNodesPerVehicle : Ar
     * @param routes
     * @return
     */
-  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence): Long = {
+  override def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Long = {
     1 + countVehicleNode(vehicle,routes.explorerAtAnyOccurrence(vehicle).get.next)
   }
 }
 
 case class NodesOnSubsequence(nbNodes:Long,
                               level:Long,
-                              firstNode:Long,
-                              lastNode:Long){
+                              firstNode:Int,
+                              lastNode:Int){
   //  require(nbNodes == ((1L << (level-1L))  -1L))
 
   override def toString: String = {
-    "NodesOnSubsequence(nbNodes:" + nbNodes + ",level:" + level + ",firstNode:" + firstNode + ",lastNode:" + lastNode + ")"
+    s"NodesOnSubsequence(nbNodes:$nbNodes,level:$level,firstNode:$firstNode,lastNode:$lastNode)"
   }
 }
 
 
 @deprecated("This is for example only, do not use this version","")
-class LogReducedNumberOfNodes(gc: GlobalConstraintCore, n:Long, v:Int, nbNodesPerRoute:Array[CBLSIntVar])
-  extends LogReducedGlobalConstraint[NodesOnSubsequence,Long](gc,n,v){
+class LogReducedNumberOfNodes(routes: ChangingSeqValue, n:Int, v:Int, nbNodesPerRoute:Array[CBLSIntVar])
+  extends LogReducedGlobalConstraint[NodesOnSubsequence,Long](routes,n,v){
 
   type U = Long
 
   // Initialize the vehicles value, the precomputation value and link these invariant to the GlobalConstraintCore
-  gc.register(this)
-  for(outputVariable <- nbNodesPerRoute)outputVariable.setDefiningInvariant(gc)
+  for(outputVariable <- nbNodesPerRoute)outputVariable.setDefiningInvariant(this)
 
   /**
     * this method delivers the value of the node
     *
     * @return the type T associated with the node "node"
     */
-  override def nodeValue(node: Long): NodesOnSubsequence = {
+  override def nodeValue(node: Int): NodesOnSubsequence = {
     NodesOnSubsequence(1L, level = 0L,node,node)
   }
-
 
   /**
     * this one is similar to the nodeValue except that it only is applied on vehicle,
@@ -172,7 +162,7 @@ class LogReducedNumberOfNodes(gc: GlobalConstraintCore, n:Long, v:Int, nbNodesPe
     * @param vehicle
     * @return
     */
-  override def endNodeValue(vehicle: Long): NodesOnSubsequence = {
+  override def endNodeValue(vehicle: Int): NodesOnSubsequence = {
     NodesOnSubsequence(0L, level = 0L, vehicle, vehicle) //since it is the number of nodes, return is not counted as a node
   }
 
@@ -196,7 +186,7 @@ class LogReducedNumberOfNodes(gc: GlobalConstraintCore, n:Long, v:Int, nbNodesPe
     *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
     * @return the value associated with the vehicle. this value should only be computed based on the provided segments
     */
-  override def computeVehicleValueComposed(vehicle: Long, segments: QList[LogReducedSegment[NodesOnSubsequence]]): Long = {
+  override def computeVehicleValueComposed(vehicle: Int, segments: QList[LogReducedSegment[NodesOnSubsequence]]): Long = {
     segments.qMap({
       case s@LogReducedPreComputedSubSequence(startNode, endNode, steps)=>
         //require(steps.isEmpty || steps.head.firstNode == startNode)
@@ -208,6 +198,7 @@ class LogReducedNumberOfNodes(gc: GlobalConstraintCore, n:Long, v:Int, nbNodesPe
         QList.qFold[NodesOnSubsequence,Long](steps,(a,b) => a + b.nbNodes,0L)
       case s@LogReducedNewNode(_, _) =>
         1L
+      case x => throw new Error(s"Unhandled match  $x in computeVehicleValueComposed")
     }).sum
   }
 
@@ -218,7 +209,7 @@ class LogReducedNumberOfNodes(gc: GlobalConstraintCore, n:Long, v:Int, nbNodesPe
     *
     * @param vehicle the vehicle number
     */
-  override def assignVehicleValue(vehicle: Long, value: Long): Unit = {
+  override def assignVehicleValue(vehicle: Int, value: Long): Unit = {
     nbNodesPerRoute(vehicle) := value
   }
 
@@ -228,32 +219,30 @@ class LogReducedNumberOfNodes(gc: GlobalConstraintCore, n:Long, v:Int, nbNodesPe
     * @param routes
     * @return
     */
-  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence): Long = {
-    if(vehicle == v-1L){
+  override def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Long = {
+    if(vehicle == v-1){
       routes.size - routes.positionOfAnyOccurrence(vehicle).get
     }else{
-      routes.positionOfAnyOccurrence(vehicle+1L).get - routes.positionOfAnyOccurrence(vehicle).get
+      routes.positionOfAnyOccurrence(vehicle+1).get - routes.positionOfAnyOccurrence(vehicle).get
     }
   }
 }
 
 @deprecated("This is for example only, do not use this version","")
-class LogReducedNumberOfNodesWithExtremes(gc: GlobalConstraintCore, n: Long, v:Int, nbNodesPerRoute:Array[CBLSIntVar])
-  extends LogReducedGlobalConstraintWithExtremes[NodesOnSubsequence,Long](gc,n,v){
+class LogReducedNumberOfNodesWithExtremes(routes: ChangingSeqValue, n: Int, v:Int, nbNodesPerRoute:Array[CBLSIntVar])
+  extends LogReducedGlobalConstraintWithExtremes[NodesOnSubsequence,Long](routes,n,v){
 
   // Initialize the vehicles value, the precomputation value and link these invariant to the GlobalConstraintCore
-  gc.register(this)
-  for(outputVariable <- nbNodesPerRoute)outputVariable.setDefiningInvariant(gc)
+  for(outputVariable <- nbNodesPerRoute)outputVariable.setDefiningInvariant(this)
 
   /**
     * this method delivers the value of the node
     *
     * @return the type T associated with the node "node"
     */
-  override def nodeValue(node: Long): NodesOnSubsequence = {
+  override def nodeValue(node: Int): NodesOnSubsequence = {
     NodesOnSubsequence(1L, level = 0L,node,node)
   }
-
 
   /**
     * this one is similar to the nodeValue except that it only is applied on vehicle,
@@ -262,7 +251,7 @@ class LogReducedNumberOfNodesWithExtremes(gc: GlobalConstraintCore, n: Long, v:I
     * @param vehicle
     * @return
     */
-  override def endNodeValue(vehicle: Long): NodesOnSubsequence = {
+  override def endNodeValue(vehicle: Int): NodesOnSubsequence = {
     NodesOnSubsequence(0L, level = 0L, vehicle, vehicle) //since it is the number of nodes, return is not counted as a node
   }
 
@@ -277,7 +266,6 @@ class LogReducedNumberOfNodesWithExtremes(gc: GlobalConstraintCore, n: Long, v:I
     NodesOnSubsequence(firstStep.nbNodes + secondStep.nbNodes, firstStep.level + 1L,firstStep.firstNode,secondStep.lastNode)
   }
 
-
   /**
     * this method is called by the framework when the value of a vehicle must be computed.
     *
@@ -286,7 +274,7 @@ class LogReducedNumberOfNodesWithExtremes(gc: GlobalConstraintCore, n: Long, v:I
     *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
     * @return the value associated with the vehicle. this value should only be computed based on the provided segments
     */
-  override def computeVehicleValueComposed(vehicle: Long, segments: QList[LogReducedSegment[NodesOnSubsequence]]): Long = {
+  override def computeVehicleValueComposed(vehicle: Int, segments: QList[LogReducedSegment[NodesOnSubsequence]]): Long = {
     segments.qMap({
       case s@LogReducedPreComputedSubSequence(startNode, endNode, steps)=>
         //require(steps.isEmpty || steps.head.firstNode == startNode)
@@ -298,6 +286,7 @@ class LogReducedNumberOfNodesWithExtremes(gc: GlobalConstraintCore, n: Long, v:I
         QList.qFold[NodesOnSubsequence,Long](steps,(a,b) => a + b.nbNodes,0L)
       case s@LogReducedNewNode(_, _) =>
         1L
+      case x => throw new Error(s"Unhandled match  $x in computeVehicleValueComposed")
     }).sum
   }
 
@@ -308,7 +297,7 @@ class LogReducedNumberOfNodesWithExtremes(gc: GlobalConstraintCore, n: Long, v:I
     *
     * @param vehicle the vehicle number
     */
-  override def assignVehicleValue(vehicle: Long, value: Long): Unit = {
+  override def assignVehicleValue(vehicle: Int, value: Long): Unit = {
     nbNodesPerRoute(vehicle) := value
   }
 
@@ -318,12 +307,11 @@ class LogReducedNumberOfNodesWithExtremes(gc: GlobalConstraintCore, n: Long, v:I
     * @param routes
     * @return
     */
-  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence): Long = {
-    if(vehicle == v-1L){
+  override def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Long = {
+    if(vehicle == v-1){
       routes.size - routes.positionOfAnyOccurrence(vehicle).get
     }else{
-      routes.positionOfAnyOccurrence(vehicle+1L).get - routes.positionOfAnyOccurrence(vehicle).get
+      routes.positionOfAnyOccurrence(vehicle+1).get - routes.positionOfAnyOccurrence(vehicle).get
     }
   }
 }
-

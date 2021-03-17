@@ -21,9 +21,6 @@ import oscar.cbls.core.computation.{CBLSIntVar, DomainRange}
 import oscar.flatzinc.cbls.support._
 import oscar.flatzinc.model._
 
-import scala.collection.mutable.ArrayOps
-
-
 
 class FZCBLSImplicitConstraints(val cblsmodel:FZCBLSModel) {
   var uid = 0;

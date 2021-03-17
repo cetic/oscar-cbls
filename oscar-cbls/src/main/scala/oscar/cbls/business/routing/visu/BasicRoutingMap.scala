@@ -1,5 +1,3 @@
-package oscar.cbls.business.routing.visu
-
 /**
   * *****************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -16,17 +14,16 @@ package oscar.cbls.business.routing.visu
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   * ****************************************************************************
   */
+package oscar.cbls.business.routing.visu
 
 import java.awt.Color
 import java.awt.geom.Line2D.Double
 import java.awt.geom.Point2D
 
-import oscar.cbls._
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.util.StopWatch
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualCircle, VisualLine, VisualShape}
-
 
 /**
   * @author fabian.germeau@cetic.be
@@ -35,8 +32,8 @@ import oscar.visual.shapes.{VisualCircle, VisualLine, VisualShape}
 class BasicRoutingMap(vrp: VRP,
                       nodesPositions: Array[(scala.Double,scala.Double)],
                       colorValues: Array[Color],
-                      mapSize: Option[Long],
-                      refreshRate: Long,
+                      mapSize: Option[Int],
+                      refreshRate: Int,
                       toolTipInfo: Option[Int => Option[() => String]]) extends VisualDrawing(false,false) with StopWatch with RoutingMapTrait {
 
   private lazy val pixelPositionOfNodes: Array[((scala.Double,scala.Double),Int)] = positionsToPixels()
@@ -56,7 +53,7 @@ class BasicRoutingMap(vrp: VRP,
     * They represent depots (circle of size 5.0) and customers (circle of size 1.0)
     * @return
     */
-  private def buildPoints() ={
+  private def buildPoints(): Array[VisualCircle] = {
     pixelPositionOfNodes.map(position_node => {
       val position = position_node._1
       val node = position_node._2
@@ -65,7 +62,7 @@ class BasicRoutingMap(vrp: VRP,
 
       if(node < vrp.v){
         val tempPoint = new VisualCircle(this,position._1,position._2,5.0){
-          override def showToolTip(mousePoint: Point2D) = {
+          override def showToolTip(mousePoint: Point2D): Unit = {
             if (shape.contains(drawing.invertTransform(mousePoint))) {
               drawing.showToolTip(toolTips(node))
             }
@@ -77,7 +74,7 @@ class BasicRoutingMap(vrp: VRP,
       }
       else{
         val tempPoint = new VisualCircle(this,position._1,position._2,2.0){
-          override def showToolTip(mousePoint: Point2D) = {
+          override def showToolTip(mousePoint: Point2D): Unit = {
             if (shape.contains(drawing.invertTransform(mousePoint))) {
               drawing.showToolTip(toolTips(node))
             }
@@ -123,19 +120,19 @@ class BasicRoutingMap(vrp: VRP,
         var previousPoint = routes(r).head
         var positionCounter = 1
         for (p <- routes(r).drop(1)) {
-          lines(longToInt(previousPoint)).outerCol_$eq(color)
-          lines(longToInt(previousPoint)).dest = (points(p).getX, points(p).getY)
+          lines(previousPoint).outerCol_$eq(color)
+          lines(previousPoint).dest = (points(p).getX, points(p).getY)
           toolTips(p) = generateToolTipInfo(p,r,positionCounter)
           previousPoint = p
           positionCounter += 1
         }
-        lines(longToInt(previousPoint)).outerCol_$eq(color)
-        lines(longToInt(previousPoint)).dest = (points(r).getX, points(r).getY)
+        lines(previousPoint).outerCol_$eq(color)
+        lines(previousPoint).dest = (points(r).getX, points(r).getY)
       }
 
       for(unroutedNode <- vrp.unroutedNodes){
-        lines(longToInt(unroutedNode)).outerCol_$eq(Color.black)
-        lines(longToInt(unroutedNode)).dest = (points(unroutedNode).getX,points(unroutedNode).getY)
+        lines(unroutedNode).outerCol_$eq(Color.black)
+        lines(unroutedNode).dest = (points(unroutedNode).getX,points(unroutedNode).getY)
         toolTips(unroutedNode) = generateToolTipInfo(unroutedNode)
       }
 
@@ -153,7 +150,7 @@ class BasicRoutingMap(vrp: VRP,
     })
   }
 
-  private def computeSize(nodesPositions: Array[(scala.Double,scala.Double)]): Long ={
+  private def computeSize(nodesPositions: Array[(scala.Double,scala.Double)]): Int ={
     val distanceBetweenNodes = Array.tabulate(vrp.n)(x =>
       Array.tabulate(vrp.n)(y =>
         List(nodesPositions(x)._1 - nodesPositions(y)._1,nodesPositions(x)._2 - nodesPositions(y)._2))).

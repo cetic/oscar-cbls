@@ -1,12 +1,13 @@
 package oscar.cbls.test.algo
 
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.algo.magicArray.ImmutableArray
 
 import scala.util.Random
 
-class ImmutableArrayTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matchers {
+class ImmutableArrayTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
 
   test("Updating random elements keeps expected array"){
     forAll((referenceArray: Array[Int]) => {
@@ -14,7 +15,7 @@ class ImmutableArrayTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
         var immutableArray = ImmutableArray.createAndImportBaseValues(referenceArray)
         val n = referenceArray.length
 
-        for(i <- 1 to 100){
+        for(_ <- 1 to 100){
           val modifiedId = Random.nextInt(n)
           val newValue = Random.nextInt(n * (modifiedId+1))
 
@@ -34,8 +35,7 @@ class ImmutableArrayTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
   test("iterator yields expected array"){
     forAll((referenceArray: Array[Int]) => {
 
-      var immutableArray = ImmutableArray.createAndImportBaseValues(referenceArray)
-      val n = referenceArray.length
+      val immutableArray = ImmutableArray.createAndImportBaseValues(referenceArray)
 
       immutableArray.iterator.toList should be (referenceArray)
     })

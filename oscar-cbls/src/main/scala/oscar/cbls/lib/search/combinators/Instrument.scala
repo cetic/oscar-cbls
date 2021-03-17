@@ -1,9 +1,7 @@
 package oscar.cbls.lib.search.combinators
 
-import oscar.cbls._
-import oscar.cbls.core.search._
-
-
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.core.search.{InstrumentedMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult}
 
 /**
  * this combinator attaches a custom code to a given neighborhood.
@@ -18,8 +16,6 @@ case class DoOnQuery(a: Neighborhood, proc: () => Unit) extends NeighborhoodComb
     a.getMove(obj, initialObj, acceptanceCriteria)
   }
 }
-
-
 
 /**
  * this combinator attaches a custom code to a given neighborhood.
@@ -43,17 +39,16 @@ case class DoOnFirstMove(a: Neighborhood, proc: () => Unit) extends Neighborhood
   }
 
   //this resets the internal state of the move combinators
-  override def reset() {
+  override def reset(): Unit ={
     isFirstMove = true
     super.reset()
   }
 
-  private def notifyMoveTaken() {
+  private def notifyMoveTaken(): Unit ={
     proc()
     isFirstMove = false
   }
 }
-
 
 /**
  * this combinator attaches a custom code to a given neighborhood.
@@ -71,21 +66,21 @@ case class DoOnMove(a: Neighborhood,
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
     a.getMove(obj, initialObj, acceptanceCriteria) match {
       case m: MoveFound =>
-        InstrumentedMove(m.m, callBackBeforeMove(m.m)_, callBackAfterMove(m.m)_)
+        InstrumentedMove(m.m, callBackBeforeMove(m.m), callBackAfterMove(m.m))
       case x => x
     }
   }
 
-  def callBackBeforeMove(m: Move)() {
+  def callBackBeforeMove(m: Move)(): Unit ={
     if (procBeforeMove != null) procBeforeMove(m)
   }
 
-  def callBackAfterMove(m: Move)() {
+  def callBackAfterMove(m: Move)(): Unit ={
     if (procAfterMove != null) procAfterMove(m)
   }
 }
 
-case class DoOnExhaust(a:Neighborhood, proc:(()=>Unit),onlyFirst:Boolean) extends NeighborhoodCombinator(a) {
+case class DoOnExhaust(a:Neighborhood, proc:()=>Unit,onlyFirst:Boolean) extends NeighborhoodCombinator(a) {
 
   var alreadyExhaustedOnce = false
   override def getMove(obj : Objective, initialObj:Long, acceptanceCriterion : (Long, Long) => Boolean) : SearchResult =
@@ -97,7 +92,5 @@ case class DoOnExhaust(a:Neighborhood, proc:(()=>Unit),onlyFirst:Boolean) extend
         }
         NoMoveFound
       case x:MoveFound => x
-
     }
 }
-

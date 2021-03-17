@@ -12,16 +12,13 @@
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
 package oscar.cbls.lib.invariant.logic
 
 import oscar.cbls._
-import oscar.cbls.core._
-import oscar.cbls.core.computation.DomainRange
+import oscar.cbls.core.computation.{Bulked, ChangingIntValue, ChangingSetValue, Domain, DomainRange, IntInvariant, IntNotificationTarget, IntValue, InvariantHelper, SetInvariant, SetNotificationTarget, SetValue, ShortIntNotificationTarget, VaryingDependencies}
+import oscar.cbls.core.propagation.{Checker, KeyForElementRemoval}
 
 import scala.collection.immutable.SortedSet
-
-
 
 /**
  * if (ifVar > pivot) then thenVar else elveVar
@@ -42,7 +39,7 @@ case class IntITE(ifVar: IntValue, thenVar: IntValue, elseVar: IntValue, pivot: 
   finishInitialization()
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
     if (v == ifVar) {
       if (NewVal > pivot && OldVal <= pivot) {
         //modifier le graphe de dependances
@@ -61,14 +58,12 @@ case class IntITE(ifVar: IntValue, thenVar: IntValue, elseVar: IntValue, pivot: 
   }
 
   override def toString: String = {
-    "ITE(" + ifVar + ',' + thenVar + "," + elseVar + ")"
+    s"ITE($ifVar,$thenVar,$elseVar)"
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
     c.check(this.value == (if (ifVar.value <= pivot) elseVar.value else thenVar.value),
-      Some("output.value (" + this.value
-        + ") == (if (ifVar.value (" + ifVar.value + ") <= " + pivot + ") elseVar.value (" + elseVar.value
-        + ") else thenVar.value (" + thenVar.value + "))"))
+      Some(s"output.value (${this.value}) == (if (ifVar.value (${ifVar.value}) <= $pivot) elseVar.value (${elseVar.value}) else thenVar.value (${thenVar.value}))"))
   }
 }
 
@@ -79,7 +74,7 @@ case class IntITE(ifVar: IntValue, thenVar: IntValue, elseVar: IntValue, pivot: 
  * @author renaud.delandtsheer@cetic.be
  * */
 case class ConstantIntElement(index: IntValue, inputArray: Array[Long])
-  extends Int2Int(index, inputArray(_), InvariantHelper.getMinMaxBoundsInt(inputArray))
+  extends Int2Int(index, i => inputArray(i.toInt), InvariantHelper.getMinMaxBoundsInt(inputArray))
 
 /**
  * inputarray[index]
@@ -88,17 +83,17 @@ case class ConstantIntElement(index: IntValue, inputArray: Array[Long])
  * @author renaud.delandtsheer@cetic.be
  * */
 case class IntElement(index: IntValue, inputarray: Array[IntValue])
-  extends IntInvariant(initialValue = inputarray(index.value).value)
+  extends IntInvariant(initialValue = inputarray(index.valueInt).value)
   with Bulked[IntValue, Domain]
   with VaryingDependencies
-  with IntNotificationTarget{
+  with ShortIntNotificationTarget{
 
   registerStaticDependency(index)
   registerDeterminingDependency(index)
 
   restrictDomain(bulkRegister(inputarray))
 
-  var KeyToCurrentVar = registerDynamicDependency(inputarray(index.value))
+  var KeyToCurrentVar = registerDynamicDependency(inputarray(index.valueInt))
 
   finishInitialization()
 
@@ -107,30 +102,29 @@ case class IntElement(index: IntValue, inputarray: Array[IntValue])
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int): Unit = {
     if (v == index) {
       //modifier le graphe de dependances
       KeyToCurrentVar.performRemove()
       KeyToCurrentVar = registerDynamicDependency(inputarray(NewVal))
       this := inputarray(NewVal).value
     } else { //si c'est justement celui qui est affiche.
-      assert(v == inputarray.apply(index.value), "access notified for non listened var")
+      assert(v == inputarray.apply(index.valueInt), "access notified for non listened var")
       this := NewVal
     }
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value == inputarray(index.value).value,
-      Some("output.value (" + this.value + ") == inputarray(index.value ("
-        + index.value + ")).value (" + inputarray(index.value).value + ")"))
+  override def checkInternals(c: Checker): Unit = {
+    c.check(this.value == inputarray(index.valueInt).value,
+      Some(s"output.value (${this.value}) == inputarray(index.valueInt (${index.valueInt})).value (${inputarray(index.valueInt).value})"))
   }
 
   override def toString: String = {
     val inputs = inputarray.toList
-    if(inputs.length > 4L){
-      "Array(" +inputs.take(4L).map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "]"
+    if(inputs.length > 4){
+      s"Array(${inputs.take(4).map(_.toString).mkString(",")}, ...)[${index.toString}]"
     }else{
-      "Array(" +inputs.map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "]"
+      s"Array(${inputs.map(_.toString).mkString(",")}, ...)[${index.toString}]"
     }
   }
 }
@@ -143,14 +137,14 @@ case class IntElement(index: IntValue, inputarray: Array[IntValue])
  * @author jean-noel.monette@it.uu.se
  * */
 case class IntElementNoVar(index: IntValue, inputarray: Array[Long])
-  extends IntInvariant(initialValue = inputarray(index.value),DomainRange(inputarray.min,inputarray.max))
-  with IntNotificationTarget{
+  extends IntInvariant(initialValue = inputarray(index.valueInt),DomainRange(inputarray.min,inputarray.max))
+  with ShortIntNotificationTarget{
 
   registerStaticAndDynamicDependency(index)
   finishInitialization()
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int): Unit = {
    // println(OldVal + " "+ NewVal)
     if(NewVal >= inputarray.length){
       println("something is wrong")
@@ -158,18 +152,17 @@ case class IntElementNoVar(index: IntValue, inputarray: Array[Long])
     this := inputarray(NewVal)
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value == inputarray(index.value),
-      Some("output.value (" + this.value + ") == inputarray(index.value ("
-        + index.value + ")) (" + inputarray(index.value) + ")"))
+  override def checkInternals(c: Checker): Unit = {
+    c.check(this.value == inputarray(index.valueInt),
+      Some(s"output.value (${this.value}) == inputarray(index.valueInt (${index.valueInt})) (${inputarray(index.valueInt)})"))
   }
 
   override def toString: String = {
     val inputs = inputarray.toList
-    if(inputs.length > 4L){
-      "Array(" +inputs.take(4L).map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "] = " + this.value
+    if(inputs.length > 4){
+      s"Array(${inputs.take(4).map(_.toString).mkString(",")}, ...)[${index.toString}] = ${this.value}"
     }else{
-      "Array(" +inputs.map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "] = " + this.value
+      s"Array(${inputs.map(_.toString).mkString(",")}, ...)[${index.toString}] = ${this.value}"
     }
   }
 }
@@ -184,7 +177,7 @@ case class Elements[T <:IntValue](index: SetValue, inputarray: Array[T])
   extends SetInvariant
   with Bulked[T, Domain]
   with VaryingDependencies
-  with IntNotificationTarget
+  with ShortIntNotificationTarget
   with SetNotificationTarget{
 
   val KeysToInputArray: Array[KeyForElementRemoval] = new Array(inputarray.length)
@@ -199,10 +192,10 @@ case class Elements[T <:IntValue](index: SetValue, inputarray: Array[T])
   finishInitialization()
 
   //this array is the number of elements with value i-myMin
-  var ValueCount: Array[Long] = Array.tabulate(max-min+1L)(_ => 0L)
+  var ValueCount: Array[Int] = Array.tabulate(max-min+1)(_ => 0)
 
   for (arrayPosition <- index.value) {
-    val value = inputarray(arrayPosition).value
+    val value = inputarray(arrayPosition).valueInt
     internalInsert(value)
   }
 
@@ -210,17 +203,16 @@ case class Elements[T <:IntValue](index: SetValue, inputarray: Array[T])
     InvariantHelper.getMinMaxBounds(bulkedVar)
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int): Unit = {
     internalDelete(OldVal)
     internalInsert(NewVal)
   }
 
-
-  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
     assert(index == v)
     for(value <- addedValues){
       KeysToInputArray(value) = registerDynamicDependency(inputarray(value))
-      val NewVal: Long = inputarray(value).value
+      val NewVal: Int = inputarray(value).valueInt
 
       internalInsert(NewVal)
     }
@@ -231,47 +223,47 @@ case class Elements[T <:IntValue](index: SetValue, inputarray: Array[T])
       KeysToInputArray(value).performRemove()
       KeysToInputArray(value) = null
 
-      val OldVal:Long = inputarray(value).value
+      val OldVal:Int = inputarray(value).valueInt
       internalDelete(OldVal)
     }
   }
 
-  private def internalInsert(value:Long){
-    if (ValueCount(value - min) == 0L){
-      ValueCount(value - min) = 1L
+  private def internalInsert(value:Int): Unit ={
+    if (ValueCount(value - min) == 0){
+      ValueCount(value - min) = 1
       this :+= value
     }else{
-      ValueCount(value - min) += 1L
+      ValueCount(value - min) += 1
     }
     assert(ValueCount(value - min) > 0L)
   }
 
-  private def internalDelete(value:Long){
-    assert(ValueCount(value - min) > 0L)
-    if (ValueCount(value - min) == 1L){
-      ValueCount(value - min) = 0L
+  private def internalDelete(value:Int): Unit ={
+    assert(ValueCount(value - min) > 0)
+    if (ValueCount(value - min) == 1){
+      ValueCount(value - min) = 0
       this :-= value
     }else{
-      ValueCount(value - min) -= 1L
+      ValueCount(value - min) -= 1
     }
   }
 
-  override def checkInternals(c: Checker) {
+  override def checkInternals(c: Checker): Unit = {
     c.check(KeysToInputArray.indices.forall(i => (KeysToInputArray(i) != null) == index.value.contains(i)),
-      Some("KeysToInputArray.indices.forall(i => ((KeysToInputArray(i) != null) == index.value.contains(i)))"))
-    c.check(index.value.forall((i: Long) =>
-      this.value.contains(inputarray(i).value)),
-      Some("index.value.forall((i: Long) => output.value.contains(inputarray(i).value))"))
+      Some("KeysToInputArray.indices.forall(i => ((KeysToInputArray(i) != null) == index.valueInt.contains(i)))"))
+    c.check(index.value.forall((i: Int) =>
+      this.value.contains(inputarray(i).valueInt)),
+      Some("index.valueInt.forall((i: Long) => output.value.contains(inputarray(i).value))"))
     c.check(this.value.size <= index.value.size,
-      Some("output.value.size (" + this.value.size + ") <= index.value.size (" + index.value.size + ")"))
+      Some(s"output.value.size (${this.value.size}) <= index.valueInt.size (${index.value.size})"))
   }
 
   override def toString: String = {
     val inputs = inputarray.toList
-    if(inputs.length > 4L){
-      "Array(" +inputs.take(4L).map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "]"
+    if (inputs.length > 4){
+      s"Array(${inputs.take(4).map(_.toString).mkString(",")}, ...)[${index.toString}]"
     }else{
-      "Array(" +inputs.map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "]"
+      s"Array(${inputs.map(_.toString).mkString(",")}, ...)[${index.toString}]"
     }
   }
 }
@@ -283,10 +275,10 @@ case class Elements[T <:IntValue](index: SetValue, inputarray: Array[T])
  * @author renaud.delandtsheer@cetic.be
  * */
 case class SetElement[X<:SetValue](index: IntValue, inputarray: Array[X])
-  extends SetInvariant(inputarray.apply(index.value).value)
+  extends SetInvariant(inputarray.apply(index.valueInt).value)
   with Bulked[X, Domain]
   with VaryingDependencies
-  with IntNotificationTarget
+  with ShortIntNotificationTarget
   with SetNotificationTarget{
 
   var KeyToCurrentVar: KeyForElementRemoval = null
@@ -296,7 +288,7 @@ case class SetElement[X<:SetValue](index: IntValue, inputarray: Array[X])
 
   restrictDomain(bulkRegister(inputarray))
 
-  KeyToCurrentVar = registerDynamicDependency(inputarray(index.value))
+  KeyToCurrentVar = registerDynamicDependency(inputarray(index.valueInt))
 
   finishInitialization()
 
@@ -304,7 +296,7 @@ case class SetElement[X<:SetValue](index: IntValue, inputarray: Array[X])
     InvariantHelper.getMinMaxBoundsSet(bulkedVar)
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int): Unit = {
     assert(v == index)
     //modifier le graphe de dependances
     KeyToCurrentVar.performRemove()
@@ -312,25 +304,22 @@ case class SetElement[X<:SetValue](index: IntValue, inputarray: Array[X])
     this := inputarray(NewVal).value
   }
 
-  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
-    assert(v == inputarray.apply(index.value))
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
+    assert(v == inputarray.apply(index.valueInt))
     this := newValue
   }
 
-  override def checkInternals(c: Checker) {
-    c.check(this.value.intersect(inputarray(index.value).value).size == this.value.size,
-      Some("output.value.intersect(inputarray(index.value (" + index.value + ")).value ("
-        + inputarray(index.value).value + ")).size ("
-        + this.value.intersect(inputarray(index.value).value).size
-        + ") == output.value.size (" + this.value.size + ")"))
+  override def checkInternals(c: Checker): Unit = {
+    c.check(this.value.intersect(inputarray(index.valueInt).value).size == this.value.size,
+      Some(s"output.value.intersect(inputarray(index.valueInt (${index.valueInt})).value (${inputarray(index.valueInt).value})).size (${this.value.intersect(inputarray(index.valueInt).value).size}) == output.value.size (${this.value.size})"))
   }
 
   override def toString: String = {
     val inputs = inputarray.toList
-    if(inputs.length > 4L){
-      "Array(" +inputs.take(4L).map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "]"
+    if(inputs.length > 4){
+      s"Array(${inputs.take(4).map(_.toString).mkString(",")}, ...)[${index.toString}]"
     }else{
-      "Array(" +inputs.map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "]"
+      s"Array(${inputs.map(_.toString).mkString(",")}, ...)[${index.toString}]"
     }
   }
 }

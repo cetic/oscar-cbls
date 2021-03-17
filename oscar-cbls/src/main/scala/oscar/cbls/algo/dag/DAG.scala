@@ -23,8 +23,8 @@ package oscar.cbls.algo.dag
 import oscar.cbls.algo.heap.BinomialHeap
 import oscar.cbls.algo.quick.QList
 
+import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
-
 
 /** a DAG node with some abstract methods
   * @author renaud.delandtsheer@cetic.be
@@ -72,7 +72,7 @@ trait DAG {
   def nodes:Iterable[DAGNode]
 
   /**performs a self-check on the ordering, use for testing*/
-  def checkSort(){
+  def checkSort(): Unit = {
     for (to <- nodes){
       for(from <- to.getDAGPrecedingNodes){
         assert(from.position < to.position,"topological sort is wrong at " + from + "->" + to)
@@ -89,7 +89,7 @@ trait DAG {
     * Nodes are expected to know their successors and predecessors.
     * This is expected to be consistent between several nodes.
     */
-  def checkGraph(){
+  def checkGraph(): Unit = {
     nodes.foreach(n => {
       n.getDAGPrecedingNodes.foreach(p=> {
         if(!p.getDAGSucceedingNodes.exists(p => p == n)){
@@ -109,7 +109,7 @@ trait DAG {
     * Incremental sort is then applied at each edge insert. node insert and delete is prohibited when autosort is activated
     * in case a cycle is detected, does not pass in autosort model, but throws an exception
     */
-  def autoSort_=(mAutoSort: Boolean){
+  def autoSort_=(mAutoSort: Boolean): Unit = {
     if (mAutoSort && !AutoSort) {
       try{
         doDAGSort()
@@ -135,7 +135,7 @@ trait DAG {
     * We expect the graph to be updated prior to calling this method
     * notice that you do not need to notify edge deletion.
     */
-  def notifyAddEdge(from: DAGNode, to: DAGNode) {
+  def notifyAddEdge(from: DAGNode, to: DAGNode): Unit = {
 
     if (AutoSort && (from.position > to.position)) {
       //refaire le sort
@@ -185,13 +185,12 @@ trait DAG {
       }
     }
 
-    if(Start != null){
-      if(DFS(Start)){ return ExploredStack }
+    if (Start != null) {
+      if (DFS(Start)) return ExploredStack
       else return List(Start)
     }
     nodes.foreach(n => {
-      if (!n.visited)
-        if (DFS(n)){return ExploredStack}
+      if (!n.visited && DFS(n)) return ExploredStack
     })
     nodes.foreach(p => {p.visited = false})
     List.empty
@@ -201,7 +200,7 @@ trait DAG {
     * first position is set to zero.
     * this throws an exception [[oscar.cbls.algo.dag.CycleException]] in case a cycle is detected
     */
-  def doDAGSort() {
+  def doDAGSort(): Unit = {
     //on utilise les positions pour stocker le nombre de noeuds predecesseurs non visites, puis on met l'autre valeur apres.
     var front: QList[DAGNode] = null
     nodes.foreach(n => {
@@ -334,6 +333,7 @@ trait DAG {
     }
   }
 
+  @tailrec
   private def realloc(OrderedNodeForReinsertion: QList[DAGNode], FreePositionsToDistribute: QList[Int]):QList[Int] = {
     if (OrderedNodeForReinsertion != null) {
       OrderedNodeForReinsertion.head.visited = false

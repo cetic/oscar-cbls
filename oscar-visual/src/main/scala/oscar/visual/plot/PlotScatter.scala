@@ -13,8 +13,9 @@
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  ******************************************************************************/
 package oscar.visual.plot
-import org.jfree.chart.ChartFactory
+import org.jfree.chart.{ChartFactory, JFreeChart}
 import java.awt.Color
+
 import org.jfree.chart.plot.PlotOrientation
 import oscar.visual.VisualFrame
 
@@ -23,18 +24,15 @@ import oscar.visual.VisualFrame
  * @author Pierre Schaus
  */
 class PlotScatter(title: String, xlab: String, ylab: String, nbSeries: Int = 1) extends Plot(title,xlab,ylab,nbSeries) {
-  
-	def createChart = ChartFactory.createScatterPlot(title,xlab,ylab,xyDataset,PlotOrientation.VERTICAL,false,false, false);
-
-
+	def createChart(): JFreeChart = ChartFactory.createScatterPlot(title,xlab,ylab,xyDataset,PlotOrientation.VERTICAL,false,false, false)
 }
 
 object PlotScatter extends App {
-		val f = VisualFrame("toto");
-		val inf = f.createFrame("Drawing");
-		val myPlot = new PlotScatter("My Scatter Plot","xlab","ylab",2);
-		inf.add(myPlot);
-		inf.pack();
+		val f = VisualFrame("toto")
+		val inf = f.createFrame("Drawing")
+		val myPlot = new PlotScatter("My Scatter Plot","xlab","ylab",2)
+		inf.add(myPlot)
+		inf.pack()
 		
 				
 		myPlot.xDom = 0 to 10
@@ -42,16 +40,16 @@ object PlotScatter extends App {
 		
 		for (i <- 0 until 10) {
 		    val y = Math.random()
-			myPlot.addPoint(i, y);
+			myPlot.addPoint(i, y)
 			myPlot.highlight(i,y, Color.green)
-			Thread.sleep(1000);
+			Thread.sleep(1000)
 		} 
 		// add points on second series
 		for (i <- 0 until 10) {
 		    val y = Math.random()
-			myPlot.addPoint(i, y, 1);
+			myPlot.addPoint(i, y, 1)
 			myPlot.highlight(i,y, Color.blue)
-			Thread.sleep(1000);
+			Thread.sleep(1000)
 		} 		
 		
 }

@@ -15,18 +15,18 @@ package oscar.cbls.test.invariants
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import org.scalatest.{FunSuite, Matchers}
+
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.invariant.seq.{Content, Length, PositionsOf}
 
-import scala.collection.immutable.SortedSet
-
 /**
  * Created by rdl on 18-05-16.
  */
-class TestSeqVar extends FunSuite with Matchers {
+class TestSeqVar extends AnyFunSuite with Matchers {
 
   test("CBLSSeqVar is coherent"){
     val m = new Store(verbose = true,propagateOnToString = true, checker = Some(new ErrorChecker()))
@@ -43,7 +43,7 @@ class TestSeqVar extends FunSuite with Matchers {
     a.insertAtPosition(45,3)
     size2.value should be(5)
 
-    val checkpoint = a.defineCurrentValueAsCheckpoint(true)
+    val checkpoint = a.defineCurrentValueAsCheckpoint()
 
     a.move(1,3,4,false)
     a.insertAtPosition(12,5)
@@ -61,4 +61,3 @@ class TestSeqVar extends FunSuite with Matchers {
     size1.value should be(size2.value)
   }
 }
-

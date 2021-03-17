@@ -52,6 +52,15 @@ class DoublyLinkedList[T] extends Iterable[T]{
     d
   }
 
+  //inserts toInsert after the position specified by afterPosition.
+  //if afterPosition is the phantom position, it is inserted as the first element (since start and end phantom are the same)
+  def insertAfter(toInsert:T,afterPosition:DLLStorageElement[T]):DLLStorageElement[T] = {
+    val successor = afterPosition.next
+    val d = new DLLStorageElement[T](toInsert)
+    d.setNext(successor)
+    afterPosition.setNext(d)
+    d
+  }
 
   /**adds the element at the end of the DLL*/
   def enqueue(elem:T):DLLStorageElement[T] = {
@@ -61,6 +70,7 @@ class DoublyLinkedList[T] extends Iterable[T]{
     d
   }
 
+  //removes the first element in the list and returns it; throws exception if empty
   def dequeue():T = {
     val d = phantom.next
     assert(d != phantom)
@@ -68,14 +78,14 @@ class DoublyLinkedList[T] extends Iterable[T]{
     d.elem
   }
 
-  def +(elem:T){addElem(elem)}
-  def ++(elems:Iterable[T]) {for(elem <- elems) addElem(elem)}
+  def +(elem:T): Unit = {addElem(elem)}
+  def ++(elems:Iterable[T]): Unit = {for(elem <- elems) addElem(elem)}
 
-  def dropAll(){
+  def dropAll(): Unit = {
     phantom.setNext(phantom)
   }
 
-  override def isEmpty = phantom.next == phantom
+  override def isEmpty: Boolean = phantom.next == phantom
 
   override def iterator = new DLLIterator[T](phantom, phantom)
 
@@ -94,15 +104,15 @@ class DoublyLinkedList[T] extends Iterable[T]{
  * @tparam T
  */
 class DLLStorageElement[T](val elem:T){
-  var next:DLLStorageElement[T] = null
-  var prev:DLLStorageElement[T] = null
+  var next:DLLStorageElement[T] = _
+  var prev:DLLStorageElement[T] = _
 
-  def setNext(d:DLLStorageElement[T]){
+  def setNext(d:DLLStorageElement[T]): Unit = {
     this.next = d
     d.prev = this
   }
 
-  def delete(): Unit ={
+  def delete(): Unit = {
     prev.setNext(next)
   }
 }

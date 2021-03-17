@@ -20,34 +20,17 @@ import oscar.cbls.business.scheduling.neighborhood.{ReinsertActivity, SwapActivi
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 
-/*******************************************************************************
- * This file is part of OscaR (Scala in OR).
- *
- * OscaR is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2.1 of the License, or
- * (at your option) any later version.
- *
- * OscaR is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with OscaR.
- * If not, see http://www.gnu.org/licenses/gpl-3.0.html
- ******************************************************************************/
-
 object Reagan {
   // Reagan model
   val (eat, sleep, think, chew, speak, drink) = (0, 1, 2, 3, 4, 5)
 
   val durations = Map(
-    eat -> 2L,
-    sleep -> 8L,
-    think -> 12L,
-    chew -> 3L,
-    speak -> 3L,
-    drink -> 3L
+    eat -> 2,
+    sleep -> 8,
+    think -> 12,
+    chew -> 3,
+    speak -> 3,
+    drink -> 3
   )
 
   val precPairs = List((think, drink), (eat, sleep), (chew, speak))

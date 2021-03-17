@@ -14,10 +14,7 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   * ****************************************************************************
   */
-
 package oscar.cbls.lib.search.neighborhoods.vlsn
-
-
 
 object MatrixTools{
   def printBoolMatrix(m:Array[Array[Boolean]]): Unit ={
@@ -52,16 +49,15 @@ object CycleFinderAlgo {
         new CycleFinderAlgoMouthuyAndThenDFS(graph:VLSNGraph)
     }
   }
-
 }
 
 class CycleFinderAlgoMouthuyAndThenDFS(graph:VLSNGraph) extends CycleFinderAlgo{
   override def findCycle(liveNodes:Array[Boolean]): Option[List[Edge]] = {
     new CycleFinderAlgoMouthuy(graph).findCycle(liveNodes:Array[Boolean]) match{
       case None =>
-        println("Mouthy stalled, reverting to DFS")
+        println("VLSN: Mouthy did not find; reverting to DFS")
         val moreCycle = new CycleFinderAlgoDFS(graph, pruneOnReachability = true).findCycle(liveNodes:Array[Boolean])
-        if(moreCycle.nonEmpty)println("DFS did improve")
+        if(moreCycle.nonEmpty) println("VLSN: DFS did improve") else println("VLSN: DFS did not improve")
         moreCycle
       case a => a
     }

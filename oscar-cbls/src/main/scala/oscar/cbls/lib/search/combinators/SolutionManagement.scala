@@ -1,6 +1,7 @@
 package oscar.cbls.lib.search.combinators
 
-import oscar.cbls._
+import oscar.cbls.core.computation.{IntValue, SetValue, Solution}
+import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search._
 
 //there is no API here because the relevant api are all available infix.
@@ -25,7 +26,7 @@ class BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = t
   def bestObj:Long = myBestObj
 
   //this resets the internal state of the move combinators
-  override def reset() {
+  override def reset(): Unit ={
     super.reset()
     if(!alsoSaveOnExhaust) {
       myBestObj = Long.MaxValue
@@ -36,17 +37,15 @@ class BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = t
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
 
     //we record the obj before move to prevent an additional useless propagation
-    require(initialObj == o.value)
+    require(initialObj == o.value, "initialObj:" + initialObj + "!= o.value:" + o.value)
 
     a.getMove(obj, initialObj, acceptanceCriteria) match {
       case NoMoveFound =>
-        if(alsoSaveOnExhaust){
-          if (initialObj < myBestObj && currentSolutionIsAcceptable) {
-            //solution degrades, and we were better than the best recorded
-            //so we save
-            saveCurrent(initialObj)
-            if (verbose >= 2L) println("saving best solution on exhaust (obj:" + myBestObj + ")")
-          }
+        if(alsoSaveOnExhaust && (initialObj < myBestObj && currentSolutionIsAcceptable)){
+          //solution degrades, and we were better than the best recorded
+          //so we save
+          saveCurrent(initialObj)
+          if (verbose >= 2L) println("saving best solution on exhaust (obj:" + myBestObj + ")")
         }
         NoMoveFound
       case MoveFound(m) =>
@@ -54,29 +53,29 @@ class BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = t
           //solution degrades, and we were better than the best recorded
           //so we save
           saveCurrent(initialObj)
-          if (verbose >= 2L) println("saving best solution before degradation (obj:" + myBestObj + ")")
+          if (verbose >= 2L) println("saving best solution before worsening (obj:" + myBestObj + ")")
         }
         MoveFound(m)
     }
   }
 
-  def saveCurrentIfBest(objToSave:Long) {
+  def saveCurrentIfBest(objToSave:Long): Unit ={
     if(objToSave < myBestObj) saveCurrent(objToSave)
   }
 
-  def saveCurrent(objToSave:Long){
+  def saveCurrent(objToSave:Long): Unit ={
     best = s.solution(true)
     myBestObj = objToSave
   }
 
   protected def currentSolutionIsAcceptable = true
 
-  def restoreBest() {
+  def restoreBest(): Unit ={
     val isCurrentAccepteable = currentSolutionIsAcceptable
     if (best == null && !isCurrentAccepteable) {
       if (verbose >= 1L) println("no single acceptable solution seen")
     } else if (o.value > myBestObj || !isCurrentAccepteable) {
-      s.restoreSolution(best)
+      best.restoreDecisionVariables()
       if (verbose >= 1L) println("restoring best solution (obj:" + myBestObj + ")")
     } else if (verbose >= 1L) println("no better solution to restore")
   }

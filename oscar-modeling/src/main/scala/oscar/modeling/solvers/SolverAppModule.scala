@@ -22,7 +22,8 @@ import oscar.modeling.models.ModelDeclaration
   * A Module for SolverApp. Represents a solver or a solving method.
   */
 trait SolverAppModule {
-  def name: String = subcommand.commandName
+
+  def name: String = subcommand.printedName
 
   /**
     * A Scallop subcommand containing all the needed information to start the solver, if needed
