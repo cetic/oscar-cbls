@@ -277,7 +277,8 @@ case class Store(override val verbose:Boolean = false,
  * you cannot pass it over a network connection for instance.
  * see methods getSolution and restoreSolution in [[oscar.cbls.core.computation.Store]]
  */
-case class Solution(saves:Iterable[AbstractVariableSnapShot],model:Store){
+case class Solution(saves:Iterable[AbstractVariableSnapShot],
+                    model:Store){
 
   /**converts the solution to a human-readable string*/
   override def toString:String = {
@@ -602,6 +603,12 @@ abstract class AbstractVariableSnapShot(val uniqueID:Int){
   protected def doRestoreWithoutCheckpoints(m:Store): Unit
 
   def valueString(): String
+
+  def makeIndependentSerializable:IndependentSerializableAbstractVariableSnapshot
+}
+
+abstract class IndependentSerializableAbstractVariableSnapshot{
+  def makeLocal:AbstractVariableSnapShot
 }
 
 object Variable{

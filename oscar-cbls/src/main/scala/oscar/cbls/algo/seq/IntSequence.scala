@@ -1,17 +1,17 @@
 /*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
+ * OscaR is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * OscaR is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License  for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+ * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+ ******************************************************************************/
 package oscar.cbls.algo.seq
 
 import oscar.cbls.algo.fun.{LinearTransform, PiecewiseLinearBijectionNaive, PiecewiseLinearFun, Pivot}
@@ -142,32 +142,30 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
       intSequenceExplorerCache(i) = explorer
     }
 
-    this.synchronized {
-      if (noneExplorerPosition == position) return None
-      var index = 0
-      while (index < cacheSize) {
-        if (intSequenceExplorerCache(index) != null &&
-          intSequenceExplorerCache(index).position == position) {
-          putUsedExplorerAtBack(index)
-          return Some(intSequenceExplorerCache(cacheSize - 1))
-        }
-        index += 1
+    if (noneExplorerPosition == position) return None
+    var index = 0
+    while (index < cacheSize) {
+      if (intSequenceExplorerCache(index) != null &&
+        intSequenceExplorerCache(index).position == position) {
+        putUsedExplorerAtBack(index)
+        return Some(intSequenceExplorerCache(cacheSize - 1))
       }
-
-      val optExplorer = computeExplorerAtPosition(position)
-      optExplorer match {
-        case None =>
-          noneExplorerPosition = position
-
-        case Some(explorer) =>
-          if (intSequenceExplorerCache(0) != null)
-            insertExplorerAtEnd(explorer) // The cache is full, we need to make space
-          else
-            insertExplorerAtFreeSpace(explorer) // The cache is not full, saving at free space
-      }
-
-      optExplorer
+      index += 1
     }
+
+    val optExplorer = computeExplorerAtPosition(position)
+    optExplorer match {
+      case None =>
+        noneExplorerPosition = position
+
+      case Some(explorer) =>
+        if (intSequenceExplorerCache(0) != null)
+          insertExplorerAtEnd(explorer) // The cache is full, we need to make space
+        else
+          insertExplorerAtFreeSpace(explorer) // The cache is not full, saving at free space
+    }
+
+    optExplorer
   }
 
   protected def computeExplorerAtPosition(position: Int): Option[IntSequenceExplorer]
@@ -241,19 +239,17 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
   }
 
   def explorerAtAnyOccurrence(value : Int) : Option[IntSequenceExplorer] = {
-    this.synchronized {
-      var index = 0
-      while (index < cacheSize) {
-        if (intSequenceExplorerCache(index) != null &&
-          intSequenceExplorerCache(index).value == value)
-          return Some(intSequenceExplorerCache(index))
-        else
-          index += 1
-      }
-      positionOfAnyOccurrence(value) match {
-        case None => None
-        case Some(x) => explorerAtPosition(x)
-      }
+    var index = 0
+    while (index < cacheSize) {
+      if (intSequenceExplorerCache(index) != null &&
+        intSequenceExplorerCache(index).value == value)
+        return Some(intSequenceExplorerCache(index))
+      else
+        index += 1
+    }
+    positionOfAnyOccurrence(value) match {
+      case None => None
+      case Some(x) => explorerAtPosition(x)
     }
   }
 
@@ -274,20 +270,18 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
   }
 
   def positionOfAnyOccurrence(value:Int):Option[Int] = {
-    this.synchronized {
-      var index = 0
-      while (index < cacheSize) {
-        if (intSequenceExplorerCache(index) != null &&
-          intSequenceExplorerCache(index).value == value)
-          return Some(intSequenceExplorerCache(index).position)
-        else
-          index += 1
-      }
-      positionsOfValue(value) match {
-        case null => None
-        case x if x.isEmpty => None
-        case x => Some(x.head)
-      }
+    var index = 0
+    while (index < cacheSize) {
+      if (intSequenceExplorerCache(index) != null &&
+        intSequenceExplorerCache(index).value == value)
+        return Some(intSequenceExplorerCache(index).position)
+      else
+        index += 1
+    }
+    positionsOfValue(value) match {
+      case null => None
+      case x if x.isEmpty => None
+      case x => Some(x.head)
     }
   }
 
@@ -702,7 +696,7 @@ class ConcreteIntSequenceExplorer(sequence:ConcreteIntSequence,
                                    slopeIsPositive:Boolean = currentPivotPosition match{
                                      case None => true
                                      case Some(p) => !p.value.f.minus}
-                                   ) extends IntSequenceExplorer{
+                                 ) extends IntSequenceExplorer{
 
   override def toString : String = s"ConcreteIntSequenceExplorer(position:$position value:$value currentPivotPosition:$currentPivotPosition pivotAbovePosition:$pivotAbovePosition positionInRB:$positionInRB)"
 
@@ -966,7 +960,7 @@ class MovedIntSequenceExplorer(sequence:MovedIntSequence,
                                 slopeIsPositive:Boolean = currentPivotPosition match{
                                   case None => true
                                   case Some(p) => !p.value.f.minus}
-                                ) extends IntSequenceExplorer{
+                              ) extends IntSequenceExplorer{
 
   override val value : Int = positionInBasicSequence.value
 
