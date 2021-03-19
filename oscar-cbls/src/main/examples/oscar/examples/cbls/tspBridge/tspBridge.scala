@@ -184,9 +184,6 @@ class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
   def redraw(openBridges:SortedSet[Int], routes:IntSequence): Unit ={
     super.clear(false)
 
-    xMultiplier = this.getWidth.toDouble / maxX.toDouble
-    yMultiplier = this.getHeight.toDouble / maxY.toDouble
-
     //all edges, simple made
     drawEdges(graph.edges, 1, Color.black, dashed = true)
 
