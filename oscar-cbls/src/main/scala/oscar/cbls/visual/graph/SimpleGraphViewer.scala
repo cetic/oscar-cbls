@@ -8,8 +8,8 @@ import oscar.cbls.algo.graph._
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualCircle, VisualLine, VisualRectangle, VisualShape}
 
-class SimpleGraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates)
-  extends VisualDrawing(false,false){
+class SimpleGraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates, flipped:Boolean = false)
+  extends VisualDrawing(flipped,false){
 
   this.setDoubleBuffered(true) //does not work.
 
