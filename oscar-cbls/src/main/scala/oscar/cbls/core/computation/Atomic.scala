@@ -1,30 +1,30 @@
 /*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
+ * OscaR is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * OscaR is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License  for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+ * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+ ******************************************************************************/
 /*******************************************************************************
-  * Contributors:
-  *     This code has been initially developed by CETIC www.cetic.be
-  *         by Renaud De Landtsheer
-  ******************************************************************************/
+ * Contributors:
+ *     This code has been initially developed by CETIC www.cetic.be
+ *         by Renaud De Landtsheer
+ ******************************************************************************/
 package oscar.cbls.core.computation
 
 import oscar.cbls.core.propagation.{Checker, PropagationElement}
 
 /** this is something that has an integer value.
-  * this value can be queried, and invariants can be posted on it,
-  * and it can be used on the righ hand of <== operator
-  */
+ * this value can be queried, and invariants can be posted on it,
+ * and it can be used on the righ hand of <== operator
+ */
 sealed trait AtomicValue[T] extends Value{
   def value: T
 
@@ -33,10 +33,10 @@ sealed trait AtomicValue[T] extends Value{
 }
 
 /**An AtomicVar is a variable managed by the [[oscar.cbls.core.computation.Store]] whose type is integer.
-  *
-  * initialDomain is the domain value of the variable. Some invariants exploit this value to declare fixed size arrays
-  * @param initialValue is the value of the variable
-  */
+ *
+ * initialDomain is the domain value of the variable. Some invariants exploit this value to declare fixed size arrays
+ * @param initialValue is the value of the variable
+ */
 abstract class ChangingAtomicValue[T](initialValue:T)
   extends AbstractVariable with AtomicValue[T]{
 
@@ -115,15 +115,21 @@ class ChangingAtomicValueSnapShot[T](uniqueID:Int,val savedValue:T) extends Abst
   override protected def doRestore(m:Store) : Unit = {m.getVar(uniqueID).asInstanceOf[CBLSAtomicVar[T]] := savedValue}
   override def valueString(): String = savedValue.toString
   override protected def doRestoreWithoutCheckpoints(m: Store): Unit = {m.getVar(uniqueID).asInstanceOf[CBLSAtomicVar[T]] := savedValue}
+  override def makeIndependentSerializable: IndependentSerializableAbstractVariableSnapshot = IndependentSerializableChangingAtomicValueSnapShot(this)
+}
+
+case class IndependentSerializableChangingAtomicValueSnapShot[T](base:ChangingAtomicValueSnapShot[T])
+  extends IndependentSerializableAbstractVariableSnapshot{
+  override def makeLocal: AbstractVariableSnapShot = base
 }
 
 /**An IntVar is a variable managed by the [[oscar.cbls.core.computation.Store]] whose type is integer.
-  *
-  * @param givenModel is the model in s-which the variable is declared, can be null if the variable is actually a constant, see [[oscar.cbls.core.computation.CBLSIntConst]]
-  * initialDomain is the domain value of the variable. Some invariants exploit this value to declare fixed size arrays
-  * @param initialValue is the initial value of the variable
-  * @param n is the name of the variable, used for pretty printing only. if not set, a default will be used, based on the variable number
-  */
+ *
+ * @param givenModel is the model in s-which the variable is declared, can be null if the variable is actually a constant, see [[oscar.cbls.core.computation.CBLSIntConst]]
+ * initialDomain is the domain value of the variable. Some invariants exploit this value to declare fixed size arrays
+ * @param initialValue is the initial value of the variable
+ * @param n is the name of the variable, used for pretty printing only. if not set, a default will be used, based on the variable number
+ */
 abstract class CBLSAtomicVar[T](givenModel: Store, initialValue: T, n: String = null)
   extends ChangingAtomicValue(initialValue) with Variable{
 
@@ -151,12 +157,12 @@ abstract class CBLSAtomicVar[T](givenModel: Store, initialValue: T, n: String = 
 }
 
 /**
-  * An AtomicConst is an [[oscar.cbls.core.computation.CBLSAtomicVar]] that has a constant value.
-  * It has no associated model, as there is no need to incorporate it into any propagation process.
-  * notice that you should not attempt to create a CBLSAtomicConst directly; use the companion object for an efficient memoïzation
-  * @param value: the value of the constant
-  * @author renaud.delandtsheer@cetic.be
-  */
+ * An AtomicConst is an [[oscar.cbls.core.computation.CBLSAtomicVar]] that has a constant value.
+ * It has no associated model, as there is no need to incorporate it into any propagation process.
+ * notice that you should not attempt to create a CBLSAtomicConst directly; use the companion object for an efficient memoïzation
+ * @param value: the value of the constant
+ * @author renaud.delandtsheer@cetic.be
+ */
 class CBLSAtomicConst[T](override val value:T)
   extends AtomicValue[T]{
   override def toString:String = s"$value"
@@ -171,8 +177,8 @@ object CBLSAtomicConst{
 }
 
 /** this is a special case of invariant that has a single output variable, that is an IntVar
-  * @author renaud.delandtsheer@cetic.be
-  */
+ * @author renaud.delandtsheer@cetic.be
+ */
 abstract class AtomicInvariant[T](initialValue:T = 0L)
   extends ChangingAtomicValue[T](initialValue)
     with Invariant{

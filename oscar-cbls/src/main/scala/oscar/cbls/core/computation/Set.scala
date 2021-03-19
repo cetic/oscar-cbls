@@ -46,6 +46,13 @@ class ChangingSetValueSnapShot(val uniqueId:Int,val savedValue:SortedSet[Int]) e
   override def valueString(): String = "{" + savedValue.mkString(",") + "}"
 
   override protected def doRestoreWithoutCheckpoints(m: Store): Unit = {m.getSetVar(uniqueId) := savedValue}
+
+  override def makeIndependentSerializable: IndependentSerializableAbstractVariableSnapshot = IndependentSerializableChangingSetValueSnapShot(this)
+}
+
+case class IndependentSerializableChangingSetValueSnapShot(base:ChangingSetValueSnapShot)
+  extends IndependentSerializableAbstractVariableSnapshot{
+  override def makeLocal: AbstractVariableSnapShot = base
 }
 
 class ValueWisePropagationWaveIdentifier()

@@ -1,7 +1,7 @@
 package oscar.cbls.core.distrib
 
 import akka.actor.typed.ActorRef
-import oscar.cbls.core.computation.{AbstractVariableSnapShot, Solution, Store}
+import oscar.cbls.core.computation.{AbstractVariableSnapShot, IndependentSerializableAbstractVariableSnapshot, Solution, Store}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search._
 
@@ -126,13 +126,13 @@ case class IndependentNoMoveFound() extends IndependentSearchResult {
 
 object IndependentSolution {
   def apply(solution: Solution): IndependentSolution = {
-    new IndependentSolution(solution.saves)
+    new IndependentSolution(solution.saves.map(_.makeIndependentSerializable))
   }
 }
 
-class IndependentSolution(saves: Iterable[AbstractVariableSnapShot]) {
+class IndependentSolution(saves: Iterable[IndependentSerializableAbstractVariableSnapshot]) {
   def makeLocal(s: Store): Solution =
-    Solution(saves, s)
+    Solution(saves.map(_.makeLocal), s)
 }
 
 // ////////////////////////////////////////////////////////////
