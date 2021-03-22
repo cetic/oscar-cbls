@@ -13,11 +13,11 @@ class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
                     n:Int,
                     underApproximatingDistance:(Int,Int) => Long,
                     freeReturn: Boolean = false)
-  extends SimpleGraphViewer(graph){
+  extends SimpleGraphViewer(graph,scalable = true){
 
   def redraw(openBridges:SortedSet[Int], routes:IntSequence): Unit ={
     super.clear(false)
-    
+
     //all edges, simple made
     drawEdges(graph.edges, 1, Color.black, dashed = true)
 
