@@ -395,17 +395,18 @@ abstract class Neighborhood(name:String = null) {
   }
 
   //Call this at the main site
-  def labelNeighborhoodsForRemoteOperation(supervisor:Supervisor):Unit = {
-    val nbNeighborhoods = labelAndExtractRemoteNeighborhoods(supervisor: Supervisor)._1
-    //println(s"identified remote neighborhoods; nbNeighborhoods:$nbNeighborhoods")
+  def labelNeighborhoodsForRemoteOperation(supervisor:Supervisor):(Int,Int) = {
+    val x = labelAndExtractRemoteNeighborhoods(supervisor: Supervisor)
+    (x._1,x._2)
   }
 
   //Call this at the worker site
   def identifyRemotelySearcheableNeighbrhoods:SortedMap[Int,RemoteNeighborhood] = {
-    SortedMap.empty[Int,RemoteNeighborhood] ++ (labelAndExtractRemoteNeighborhoods(supervisor = null)._2.map(r => (r.neighborhoodID,r)))
+    SortedMap.empty[Int,RemoteNeighborhood] ++ (labelAndExtractRemoteNeighborhoods(supervisor = null)._3.map(r => (r.neighborhoodID,r)))
   }
 
-  def labelAndExtractRemoteNeighborhoods(supervisor: Supervisor, currentID: Int = 0, acc: List[RemoteNeighborhood] = Nil):(Int,List[RemoteNeighborhood]) = (currentID, acc)
+  def labelAndExtractRemoteNeighborhoods(supervisor: Supervisor, currentID: Int = 0, nbDistributedCombinators:Int = 0, acc: List[RemoteNeighborhood] = Nil):(Int,Int,List[RemoteNeighborhood]) =
+    (currentID, nbDistributedCombinators, acc)
 }
 
 /**

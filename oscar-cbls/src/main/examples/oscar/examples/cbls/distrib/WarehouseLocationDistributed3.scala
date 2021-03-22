@@ -105,7 +105,7 @@ object WarehouseLocationDistributed3 extends App{
     supervisor.createLocalWorker(store2, search2)
   }
 
-  //now, run the main search
+  //now, run the main search, we set a maxMoves because distributed restart has a search loop
   search.maxMoves(1).doAllMoves(obj = obj)
 
   supervisor.shutdown()

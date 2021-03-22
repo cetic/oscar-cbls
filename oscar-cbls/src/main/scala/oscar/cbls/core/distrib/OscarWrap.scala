@@ -8,9 +8,9 @@ import oscar.cbls.core.search._
 // ////////////////////////////////////////////////////////////
 
 //le truc qu'on envoie au worker
-case class RemoteNeighborhoodIdentification(neighborhoodID: Int, parameters: List[Long], neighborhoodName: String)
+case class RemoteNeighborhoodIdentification(neighborhoodID: Int, parameters: List[Long])
 
-class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Neighborhood, neighborhoodName: String = "") {
+class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Neighborhood) {
 
   @volatile
   var bestObjSoFar:Long = Long.MaxValue
@@ -104,7 +104,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
   }
 
   def getRemoteIdentification(parameters: List[Long] = Nil): RemoteNeighborhoodIdentification =
-    RemoteNeighborhoodIdentification(neighborhoodID, parameters, neighborhoodName)
+    RemoteNeighborhoodIdentification(neighborhoodID, parameters)
 }
 
 // ////////////////////////////////////////////////////////////

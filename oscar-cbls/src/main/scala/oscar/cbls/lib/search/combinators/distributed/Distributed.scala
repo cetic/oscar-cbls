@@ -18,11 +18,12 @@ abstract class DistributedCombinator(neighborhoods:Array[List[Long] => Neighborh
 
   override def labelAndExtractRemoteNeighborhoods(supervisor: Supervisor,
                                                   currentID: Int,
-                                                  acc: List[RemoteNeighborhood]): (Int, List[RemoteNeighborhood]) = {
+                                                  nbDistributedCombinators:Int = 0,
+                                                  acc: List[RemoteNeighborhood]): (Int, Int, List[RemoteNeighborhood]) = {
     this.supervisor = supervisor
     val (newID,newAcc,neighborhoods2) = labelAndExtractRemoteNeighborhoodsOutOf(currentID, acc, neighborhoods)
     remoteNeighborhoods = neighborhoods2
-    (newID,newAcc)
+    (newID,nbDistributedCombinators+1,newAcc)
   }
 
   private def labelAndExtractRemoteNeighborhoodsOutOf(currentID:Int,
