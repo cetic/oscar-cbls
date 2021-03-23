@@ -17,6 +17,7 @@ import scala.collection.immutable.SortedSet
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 import scala.concurrent.duration.DurationInt
 import scala.language.implicitConversions
+import scala.util.Random
 
 object TspBridgeDistributed extends App {
 
@@ -87,8 +88,9 @@ object TspBridgeDistributed extends App {
         SingleFrameWindow.show(vv, s"TspBridge(tspN:$n tspV:$v graphN:$nbNodes graphE:${nbNonConditionalEdges + nbConditionalEdges} graphNCE:$nbNonConditionalEdges graphCE:$nbConditionalEdges)")
         vv
       } else null
-    // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // search
 
     val routedPostFilter = (node: Int) => (neighbor: Int) => myVRP.isRouted(neighbor)
 
@@ -124,6 +126,10 @@ object TspBridgeDistributed extends App {
     def switchBridge = assignNeighborhood(bridgeConditionArray, "switchBridge")
 
     def swapBridge = swapsNeighborhood(bridgeConditionArray, "swapBridge")
+    def swapBridgeMod(modulo:Int,shift:Int) = {
+      val range = bridgeConditionArray.indices.filter(_%modulo == shift)
+      swapsNeighborhood(bridgeConditionArray, searchZone1 =  () => range, name=s"swapBridge($modulo,$shift)")
+    }
 
     def closeAllUselessBridges = new JumpNeighborhood("closeUselessBridges") {
       override def doIt(): Unit = {
@@ -138,29 +144,36 @@ object TspBridgeDistributed extends App {
 
     val search = (new DistributedFirst(Array(
       routeUnroutedPoint(50),
-      myThreeOpt(20),
-      profile(onePtMove(20))))
+      profile(onePtMove(20)),
+      myThreeOpt(20)))
       onExhaust {
       println(s"finished inserts; neededBridges:$neededConditions")
     }
       exhaust (profile(closeAllUselessBridges) maxMoves 1)
-      exhaust
+      exhaust (
       new DistributedFirst(
         Array(
           profile(onePtMove(40)),
-          myThreeOpt(40),
-          profile(swapBridge),
           closeUsedBridge,
+          myThreeOpt(40),
           profile(onePtMove(20) andThen switchBridge name "switchAndMove"),
-          profile(switchBridge)),
+          profile(switchBridge),
+          swapBridgeMod(5,0),
+          swapBridgeMod(5,1),
+          swapBridgeMod(5,2),
+          swapBridgeMod(5,3),
+          swapBridgeMod(5,4)
+        ),
       )
-        .onExhaustRestartAfterJump(
-          for (bridge <- bridgeConditionArray.indices) {
+        .onExhaustRestartAfterJump({
+          //open up all bridges
+          val partOfBridges = Random.shuffle((0 until nbConditionalEdges).toList).take(nbConditionalEdges/2)
+          for (bridge <- partOfBridges) {
             bridgeConditionArray(bridge) := 1
-          },
+          }},
           maxRestartWithoutImprovement = 2,
           obj,
-          randomizationName = "OpenAllBridges")
+          randomizationName = "OpenAllBridges"))
       )
 
     var nextDisplay:Long = 0
@@ -180,8 +193,8 @@ object TspBridgeDistributed extends App {
       }
       println(myVRP)
       println(openBridges)
-      println(s"neededBridges:${routeLengthInvar.neededConditions}")
-      println("Route Length :" + routeLength)
+      println(s"neededBridges:${routeLengthInvar.neededConditions.value}")
+      println("routeLength:" + routeLength.value)
     }
 
     (m,fullSearch,obj,() => finalPrint)
@@ -189,9 +202,9 @@ object TspBridgeDistributed extends App {
 
   //main search; distributed combinators delegate to worker
   val (store,search,obj,finalPrint) = createSearchProcedure(true)
-  val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(store,search,verbose=false,tic=1.seconds)
+  val supervisor = Supervisor.startSupervisorAndActorSystem(store,search,verbose=false,tic=1.seconds)
 
-  val nbWorker = 5
+  val nbWorker = 6
   for (i <- ((0 until nbWorker)).par){
     //creating each worker, with its own model and search procedure (we do in in parallel)
     val (store2, search2, _, _) = createSearchProcedure(false)
