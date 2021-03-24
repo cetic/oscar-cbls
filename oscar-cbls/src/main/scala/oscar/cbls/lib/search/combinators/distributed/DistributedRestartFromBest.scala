@@ -325,10 +325,10 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
               remoteNeighborhoods(neighborhoodIndice).getRemoteIdentification(Nil),
               acceptanceCriteria,
               independentObj,
-              startSolution = bestMoveSoFar match{
+              startSolutionOpt = Some(bestMoveSoFar match{
                 case Some(load) => load.s
                 case None => startSol
-              },
+              }),
               doAllMoves = true,
               sendProgressTo = display,
               sendFullSolution = true)

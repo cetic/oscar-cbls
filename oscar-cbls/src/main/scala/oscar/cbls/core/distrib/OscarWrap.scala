@@ -126,13 +126,17 @@ case class IndependentNoMoveFound() extends IndependentSearchResult {
 
 object IndependentSolution {
   def apply(solution: Solution): IndependentSolution = {
-    new IndependentSolution(solution.saves.map(_.makeIndependentSerializable))
+    new IndependentSolution(solution.saves.map(_.makeIndependentSerializable),solution.saveNr)
   }
 }
 
-class IndependentSolution(saves: Iterable[IndependentSerializableAbstractVariableSnapshot]) {
-  def makeLocal(s: Store): Solution =
-    Solution(saves.map(_.makeLocal), s)
+class IndependentSolution(saves: Iterable[IndependentSerializableAbstractVariableSnapshot], val solutionId:Int) {
+  def makeLocal(s: Store): Solution = {
+    require(saves.nonEmpty)
+    Solution(saves.map(_.makeLocal), s, solutionId)
+  }
+
+  def isEmpty:Boolean = saves.isEmpty
 }
 
 // ////////////////////////////////////////////////////////////

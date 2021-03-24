@@ -85,13 +85,16 @@ case class Store(override val verbose:Boolean = false,
     val variablesToSave = if(inputOnly) {
       decisionVariables()
     }else variables
-    Solution(variablesToSave.map(_.snapshot),this)
+    saveNr += 1
+    Solution(variablesToSave.map(_.snapshot),this,saveNr)
   }
 
+  private var saveNr:Int = 0
   /**this is to be used as a backtracking point in a search engine
    * you can only save variables that are not controlled*/
   def saveValues(vars:Iterable[AbstractVariable]):Solution = {
-    Solution(vars.map(_.snapshot),this)
+    saveNr += 1
+    Solution(vars.map(_.snapshot),this,saveNr)
   }
 
   def declaredValues:Iterable[Value] = QList.toIterable(propagationElements).flatMap(_ match{
@@ -278,7 +281,8 @@ case class Store(override val verbose:Boolean = false,
  * see methods getSolution and restoreSolution in [[oscar.cbls.core.computation.Store]]
  */
 case class Solution(saves:Iterable[AbstractVariableSnapShot],
-                    model:Store){
+                    model:Store,
+                    saveNr:Int){
 
   /**converts the solution to a human-readable string*/
   override def toString:String = {

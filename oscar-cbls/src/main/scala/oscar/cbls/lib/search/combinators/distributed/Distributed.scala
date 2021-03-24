@@ -54,7 +54,7 @@ class Remote(neighborhoods:Neighborhood)
                        acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
 
     val independentObj = obj.getIndependentObj
-    val startSol = IndependentSolution(obj.model.solution())
+    val startSol = Some(IndependentSolution(obj.model.solution()))
 
     val searchRequest = SearchRequest(
       remoteNeighborhoods(0).getRemoteIdentification(Nil),
@@ -87,7 +87,7 @@ class DistributedBest(neighborhoods:Array[Neighborhood])
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
 
     val independentObj = obj.getIndependentObj
-    val startSol = IndependentSolution(obj.model.solution())
+    val startSol = Some(IndependentSolution(obj.model.solution()))
 
     import akka.actor.typed.scaladsl.AskPattern._
     //TODO look for an adequate timeout or stopping mechanism
@@ -132,7 +132,7 @@ class DistributedFirst(neighborhoods:Array[Neighborhood])
   override def getMove(obj: Objective, initialObj: Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
 
     val independentObj = obj.getIndependentObj
-    val startSol = IndependentSolution(obj.model.solution())
+    val startSol = Some(IndependentSolution(obj.model.solution()))
 
     val resultPromise = Promise[WrappedData]()
     val futureResult: Future[WrappedData] = resultPromise.future

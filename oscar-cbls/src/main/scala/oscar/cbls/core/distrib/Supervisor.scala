@@ -18,7 +18,7 @@ sealed trait MessagesToSupervisor
 
 final case class NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) extends MessagesToSupervisor with ControlMessage
 
-final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSearchIDOpt: Option[Long], completedNeighborhoodIDAndMoveFound: Option[(Int,Boolean)]) extends MessagesToSupervisor with ControlMessage
+final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSearchIDOpt: Option[Long], completedNeighborhoodIDAndMoveFound: Option[(Int,Boolean)], currentModelId:Option[Int]) extends MessagesToSupervisor with ControlMessage
 
 final case class CancelSearchToSupervisor(searchID: Long,keepAliveIfOjBelow:Option[Long]=None) extends MessagesToSupervisor with ControlMessage
 
@@ -257,14 +257,13 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
   //this one cannot be a control message.
   private case class StartSomeSearch() extends MessagesToSupervisor
 
-
   private val waitingSearches = scala.collection.mutable.Queue[SearchTask]()
   var nbLocalWorker: Int = 0
   var nbCustomSearchActor:Int = 0
 
   var neighborhoodToPreferredWorker: SortedMap[Int, ActorRef[MessageToWorker]] = SortedMap.empty
   private var allKnownWorkers: List[ActorRef[MessageToWorker]] = Nil
-  private var idleWorkers: List[ActorRef[MessageToWorker]] = Nil
+  private var idleWorkersAndTheirCurentModelID: List[(ActorRef[MessageToWorker],Option[Int])] = Nil
   //this one is a list, because the most common operations are add and takeFirst
   private var startingSearches: SortedMap[Long, (SearchTask, Long, ActorRef[MessageToWorker])] = SortedMap.empty
   //need to add, and remove regularly, based on ID
@@ -297,13 +296,13 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
 
       case NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) =>
         allKnownWorkers = workerRef :: allKnownWorkers
-        idleWorkers = workerRef :: idleWorkers
+        idleWorkersAndTheirCurentModelID = (workerRef,None) :: idleWorkersAndTheirCurentModelID
         context.self ! StartSomeSearch()
         context.log.info("new worker enrolled:" + workerRef.path)
 
       case StartSomeSearch() =>
         //context.log.info("StartSomeSearch")
-        (waitingSearches.isEmpty, idleWorkers) match {
+        (waitingSearches.isEmpty, idleWorkersAndTheirCurentModelID) match {
           case (true, idleWorkers) if idleWorkers.nonEmpty => ;
             if (verbose) context.log.info(status)
 
@@ -312,14 +311,22 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
 
           case (false, _ :: _) =>
 
-            def startSearch(search: SearchTask, worker: ActorRef[MessageToWorker]): Unit = {
+            def startSearch(search: SearchTask, worker: ActorRef[MessageToWorker], currentSolutionAtWorker:Option[Int]): Unit = {
               if (verbose) context.log.info(s"assigning search:${search.searchId} to worker:${worker.path}")
               val startID = nextStartID
               nextStartID = nextStartID + 1
               totalStartedSearches += 1
 
+              val solutionForThisSearch = search.request.startSolutionOpt
+
+
+              val simplifiedSearch = (solutionForThisSearch,currentSolutionAtWorker) match{
+                case (Some(x),Some(y)) if x.solutionId == y => search.copy(request = search.request.copy(startSolutionOpt = None))
+                case _ => search
+              }
+
               implicit val responseTimeout: Timeout = 3.seconds
-              context.ask[MessageToWorker, MessagesToSupervisor](worker, res => StartSearch(search, startID, res)) {
+              context.ask[MessageToWorker, MessagesToSupervisor](worker, res => StartSearch(simplifiedSearch, startID, res)) {
                 case Success(_: SearchStarted) => SearchStarted(search, startID, worker)
                 case Success(_: SearchNotStarted) => SearchNotStarted(search, worker)
                 case Failure(_) => SearchNotStarted(search, worker)
@@ -329,7 +336,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
               startingSearches = startingSearches + (startID -> (search, startID, worker))
             }
 
-            val nbIdleWorkers = idleWorkers.size
+            val nbIdleWorkers = idleWorkersAndTheirCurentModelID.size
             val nbAvailableSearches = waitingSearches.size
             var nbSearchToStart = nbIdleWorkers min nbAvailableSearches
 
@@ -341,12 +348,16 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
                 val preferredWorkerOpt = neighborhoodToPreferredWorker.get(nID)
                 preferredWorkerOpt match {
                   case Some(preferredWorker) =>
-                    val newIdle = idleWorkers.filter(_.path != preferredWorker.path)
-                    if (newIdle.size != idleWorkers.size) {
+                    val newIdle = idleWorkersAndTheirCurentModelID.filter(_._1.path != preferredWorker.path)
+                    if (newIdle.size != idleWorkersAndTheirCurentModelID.size) {
                       //start this one
                       //println("hotRestart" + searchTask.request.neighborhoodID)
-                      startSearch(searchTask, preferredWorker)
-                      idleWorkers = newIdle
+                      val modelAtWorkerSide = idleWorkersAndTheirCurentModelID.filter(_._1.path == preferredWorker.path) match{
+                        case (_,modelOpt) :: Nil => modelOpt
+                        case _ => None
+                      }
+                      startSearch(searchTask, preferredWorker, modelAtWorkerSide)
+                      idleWorkersAndTheirCurentModelID = newIdle
                       nbSearchToStart -= 1
                       couldDequeue = true
                       true
@@ -358,11 +369,11 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
 
             while (nbSearchToStart != 0) {
               val searchToStart = waitingSearches.dequeue()
-              val worker = idleWorkers.head
-              idleWorkers = idleWorkers.tail
+              val worker = idleWorkersAndTheirCurentModelID.head
+              idleWorkersAndTheirCurentModelID = idleWorkersAndTheirCurentModelID.tail
               //println("coldRestart " + searchToStart.request.neighborhoodID)
-              startSearch(searchToStart, worker)
-              neighborhoodToPreferredWorker = neighborhoodToPreferredWorker + (searchToStart.request.neighborhoodID.neighborhoodID -> worker)
+              startSearch(searchToStart, worker._1,worker._2)
+              neighborhoodToPreferredWorker = neighborhoodToPreferredWorker + (searchToStart.request.neighborhoodID.neighborhoodID -> worker._1)
               nbSearchToStart -= 1
             }
 
@@ -370,7 +381,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
             //double loop on these searches; perform worker assignment as they come (no smart optimization here, first fit)
             //for the remaining searches, make it anyhow
 
-            if (idleWorkers.isEmpty) {
+            if (idleWorkersAndTheirCurentModelID.isEmpty) {
               if (verbose) context.log.info(status)
             }
 
@@ -398,7 +409,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
       //we do not register the worker as available here because it will register itself through another call,
       // at least to show it is not completely crashed.
 
-      case ReadyForWork(worker: ActorRef[MessageToWorker], completedSearchID: Option[Long], completedNeighborhoodIDAndMoveFound: Option[(Int,Boolean)]) =>
+      case ReadyForWork(worker: ActorRef[MessageToWorker], completedSearchID: Option[Long], completedNeighborhoodIDAndMoveFound: Option[(Int,Boolean)], currentModelId:Option[Int]) =>
         if (verbose) context.log.info(s"got a worker ready:${worker.path}; finished search:$completedSearchID")
 
         require(allKnownWorkers contains worker)
@@ -415,7 +426,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
           case None => ;
         }
 
-        idleWorkers = worker :: idleWorkers
+        idleWorkersAndTheirCurentModelID = (worker,currentModelId) :: idleWorkersAndTheirCurentModelID
         context.self ! StartSomeSearch()
 
       case GetNewUniqueID(replyTo:ActorRef[Long]) =>
@@ -502,6 +513,6 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
   }
 
   def status: String = {
-    s"workers(total:${allKnownWorkers.size} busy:${allKnownWorkers.size - idleWorkers.size}) searches(waiting:${waitingSearches.size} starting:${startingSearches.size} running:${ongoingSearches.size} totalStarted:$totalStartedSearches)"
+    s"workers(total:${allKnownWorkers.size} busy:${allKnownWorkers.size - idleWorkersAndTheirCurentModelID.size}) searches(waiting:${waitingSearches.size} starting:${startingSearches.size} running:${ongoingSearches.size} totalStarted:$totalStartedSearches)"
   }
 }

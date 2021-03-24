@@ -18,7 +18,7 @@ case class SearchProgress(searchId:Long, obj:Long, timeMs:Long, aborted:Boolean 
 case class SearchRequest(neighborhoodID: RemoteNeighborhoodIdentification,
                          acc: (Long, Long) => Boolean,
                          obj: IndependentObjective,
-                         startSolution: IndependentSolution,
+                         startSolutionOpt: Option[IndependentSolution],
                          sendFullSolution:Boolean = false,
                          doAllMoves:Boolean = false,
                          sendProgressTo:Option[ActorRef[SearchProgress]] = None) {
@@ -115,6 +115,10 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
   @volatile
   private final var currentNeighborhood: RemoteNeighborhood = null
 
+  @volatile
+  final var currentModelNr:Option[Int] = None
+
+
   def initBehavior(): Behavior[MessageToWorker] = {
     Behaviors.setup { context =>
       master ! NewWorkerEnrolled(context.self)
@@ -124,7 +128,15 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
   }
 
   private def doSearch(searchRequest: SearchRequest,searchId:Long): IndependentSearchResult = {
-    searchRequest.startSolution.makeLocal(m).restoreDecisionVariables(withoutCheckpoints = true)
+    searchRequest.startSolutionOpt match{
+      case None => require(currentModelNr.isDefined)
+      case Some(startSolution) =>
+        if(this.currentModelNr.isEmpty || startSolution.solutionId != this.currentModelNr.get) {
+          startSolution.makeLocal(m).restoreDecisionVariables(withoutCheckpoints = true)
+          currentModelNr = Some(startSolution.solutionId)
+        }
+    }
+
     shouldAbortComputation = false
 
     val neighborhood = neighborhoods(searchRequest.neighborhoodID.neighborhoodID)
@@ -268,14 +280,15 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
               master ! ReadyForWork(
                 context.self,
                 Some(search.searchId),
-                Some((search.request.neighborhoodID.neighborhoodID, moveFound)))
+                Some((search.request.neighborhoodID.neighborhoodID, moveFound)),
+                currentModelNr)
 
               next(Idle())
 
             case Aborting(search) =>
               //ok, we've done it for nothing.
               if (verbose) context.log.info(s"aborted search:${search.searchId}")
-              master ! ReadyForWork(context.self, Some(search.searchId), Some((search.request.neighborhoodID.neighborhoodID,false)))
+              master ! ReadyForWork(context.self, Some(search.searchId), Some((search.request.neighborhoodID.neighborhoodID,false)),currentModelNr)
               next(Idle())
 
             case Idle() =>
