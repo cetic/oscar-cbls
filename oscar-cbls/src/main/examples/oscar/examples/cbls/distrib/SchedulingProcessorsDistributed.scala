@@ -19,7 +19,7 @@ object SchedulingProcessorsDistributed {
   case object DistFirst extends NBType
   case object DistBest extends NBType
 
-  final val NB_WORKERS = 3
+  final val NB_WORKERS = 6
   final val NB_PROCESSES = 200
   final val NB_RESOURCES = 20
   final val MAX_DURATION = 20
@@ -80,9 +80,23 @@ object SchedulingProcessorsDistributed {
     val scProblem = new Schedule(model, activities, initialActivities, durations, minStartTimes, precedencePairs, resources)
     val objFunc = Objective(scProblem.makeSpan)
     model.close()
-    val swapNH = new SwapActivity(scProblem, "Swap")
-    val reinsertNH = new ReinsertActivity(scProblem, "Reinsert")
-    val arrNH: Array[Neighborhood] = Array(swapNH, reinsertNH)
+    val arrNH: Array[Neighborhood] = if (typeNb == Sequential) {
+      val swapNH = new SwapActivity(scProblem, "Swap")
+      val reinsertNH = new ReinsertActivity(scProblem, "Reinsert")
+      Array(swapNH, reinsertNH)
+    } else {
+      val actIndices = initialActivities.indices
+      val actIndices0 = actIndices.filter(_ % 3 == 0)
+      val actIndices1 = actIndices.filter(_ % 3 == 1)
+      val actIndices2 = actIndices.filter(_ % 3 == 2)
+      val swapNH0 = new SwapActivity(scProblem, "Swap0", searchIndices = Some(() => actIndices0))
+      val swapNH1 = new SwapActivity(scProblem, "Swap1", searchIndices = Some(() => actIndices1))
+      val swapNH2 = new SwapActivity(scProblem, "Swap2", searchIndices = Some(() => actIndices2))
+      val reinsertNH0 = new ReinsertActivity(scProblem, "Reinsert0", searchIndices = Some(() => actIndices0))
+      val reinsertNH1 = new ReinsertActivity(scProblem, "Reinsert1", searchIndices = Some(() => actIndices1))
+      val reinsertNH2 = new ReinsertActivity(scProblem, "Reinsert2", searchIndices = Some(() => actIndices2))
+      Array(swapNH0, swapNH1, swapNH2, reinsertNH0, reinsertNH1, reinsertNH2)
+    }
     val neighborhood = typeNb match {
       case Sequential => BestSlopeFirst(arrNH.toList)
       case DistFirst => new DistributedFirst(arrNH)
@@ -133,13 +147,13 @@ object SchedulingProcessorsDistributed {
     val supervisor = distrib.startSupervisorAndActorSystem(store, search)
     println("Done")
     //creating all the workers; here we only create local workers
+    print(s"Creating $NB_WORKERS workers...")
     for (i <- ParRange(0, NB_WORKERS, 1, inclusive = false)) {
-      print(s"Creating worker $i...")
       val (store2, _, search2, _) = createCBLSProblem(activities, initialActivities, durations, minStartTimes, precedencePairs, resources, typeNb)
       supervisor.createLocalWorker(store2, search2)
       search2.verbose = 2
-      println("Done.")
     }
+    println("Done.")
     search.verbose = 1
     search.doAllMoves(obj = obj)
     println(search.profilingStatistics)

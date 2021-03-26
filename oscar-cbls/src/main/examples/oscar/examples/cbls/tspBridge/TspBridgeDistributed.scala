@@ -3,7 +3,7 @@ package oscar.examples.cbls.tspBridge
 import oscar.cbls._
 import oscar.cbls.algo.graph._
 import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.business.routing.{visu, _}
+import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.RouteLengthOnConditionalGraph
 import oscar.cbls.core.computation.{CBLSIntConst, CBLSIntVar, IntValue, Store}
 import oscar.cbls.core.distrib.Supervisor
@@ -197,7 +197,7 @@ object TspBridgeDistributed extends App {
       println("routeLength:" + routeLength.value)
     }
 
-    (m,fullSearch,obj,() => finalPrint)
+    (m,fullSearch,obj,() => finalPrint())
   }
 
   //main search; distributed combinators delegate to worker
@@ -205,7 +205,7 @@ object TspBridgeDistributed extends App {
   val supervisor = Supervisor.startSupervisorAndActorSystem(store,search,verbose=false,tic=1.seconds)
 
   val nbWorker = 6
-  for (i <- ((0 until nbWorker)).par){
+  for (_ <- (0 until nbWorker).par) {
     //creating each worker, with its own model and search procedure (we do in in parallel)
     val (store2, search2, _, _) = createSearchProcedure(false)
     supervisor.createLocalWorker(store2, search2)
