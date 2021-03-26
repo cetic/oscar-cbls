@@ -19,10 +19,6 @@ class Schedule(model: Store,
   val precedencesData = new Precedences(activities, precedencePairs)
   // Initial priority list
   val initialPriorityList: List[Int] = precedencesData.getPriorityList(initialActivities)
-
-  println(s"Initial Activities: $initialActivities")
-  println(s"Initial Priority List: $initialPriorityList")
-
   // CBLS variable: the priority list of activities to be scheduled
   val activityPriorityList = new CBLSSeqVar(model,
                                            IntSequence(initialPriorityList),

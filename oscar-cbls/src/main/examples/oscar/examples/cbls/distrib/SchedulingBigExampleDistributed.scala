@@ -18,7 +18,7 @@ object SchedulingBigExampleDistributed {
   case object DistFirst extends NBType
   case object DistBest extends NBType
 
-  val nbWorkers = 3
+  val nbWorkers = 6
   val nbAct = 200
   val nbRes = 20
   val minDuration = 1
@@ -120,10 +120,22 @@ object SchedulingBigExampleDistributed {
     val scProblem = new Schedule(model, activities, initialActivities, durations, minStartTimes, precedencePairs, resources)
     val objFunc = Objective(scProblem.makeSpan)
     model.close()
-    val swapNH = new SwapActivity(scProblem, "Swap")
-    val reinsertNH = new ReinsertActivity(scProblem, "Reinsert")
-    val replaceNH = new ReplaceActivity(scProblem, "Replace")
-    val arrNH: Array[Neighborhood] = Array(swapNH, reinsertNH, replaceNH)
+    val actIndices = initialActivities.indices
+
+    val arrNH: Array[Neighborhood] = if (typeNb == Sequential) {
+      val swapNH = new SwapActivity(scProblem, "Swap")
+      val reinsertNH = new ReinsertActivity(scProblem, "Reinsert")
+      val replaceNH = new ReplaceActivity(scProblem, "Replace")
+      Array(swapNH, reinsertNH, replaceNH)
+    } else {
+      val swapNH0 = new SwapActivity(scProblem, "Swap0", searchIndices = Some(() => actIndices.filter(_ % 2 == 0)))
+      val swapNH1 = new SwapActivity(scProblem, "Swap1", searchIndices = Some(() => actIndices.filter(_ % 2 == 1)))
+      val reinsertNH0 = new ReinsertActivity(scProblem, "Reinsert", searchIndices = Some(() => actIndices.filter(_ % 2 == 0)))
+      val reinsertNH1 = new ReinsertActivity(scProblem, "Reinsert", searchIndices = Some(() => actIndices.filter(_ % 2 == 1)))
+      val replaceNH0 = new ReplaceActivity(scProblem, "Replace0", searchValues = Some(() => actIndices.filter(_ % 2 == 0)))
+      val replaceNH1 = new ReplaceActivity(scProblem, "Replace1", searchValues = Some(() => actIndices.filter(_ % 2 == 1)))
+      Array(swapNH0, swapNH1, reinsertNH0, reinsertNH1, replaceNH0, replaceNH1)
+    }
     val neighborhood = typeNb match {
       case Sequential => BestSlopeFirst(arrNH.toList)
       case DistFirst => new DistributedFirst(arrNH)
@@ -174,13 +186,13 @@ object SchedulingBigExampleDistributed {
     val supervisor = distrib.startSupervisorAndActorSystem(store, search)
     println("Done")
     //creating all the workers; here we only create local workers
-    for (i <- ParRange(0, nbWorkers, 1, inclusive = false)) {
-      print(s"Creating worker $i...")
+    print(s"Creating $nbWorkers workers...")
+    for (_ <- ParRange(0, nbWorkers, 1, inclusive = false)) {
       val (store2, _, search2, _) = createCBLSProblem(activities, initialActivities, durations, minStartTimes, precedencePairs, resources, typeNb)
       supervisor.createLocalWorker(store2, search2)
       search2.verbose = 2
-      println("Done.")
     }
+    println("Done.")
     search.verbose = 1
     search.doAllMoves(obj = obj)
     println(search.profilingStatistics)
