@@ -18,7 +18,7 @@ class NbConnectedComponents(graph:ConditionalGraph,
   this := componentsAllConditionsOpen.length //just to set something before restricting the domain
   this.restrictDomain(Domain(componentsAllConditionsOpen.length,components.length))
 
-  val nodeToComponents = Array.fill(graph.nbNodes)(-1)
+  private val nodeToComponents = Array.fill(graph.nbNodes)(-1)
   for(componentId <- components.indices){
     for(node <- components(componentId)){
       nodeToComponents(node.id) = componentId
@@ -27,11 +27,11 @@ class NbConnectedComponents(graph:ConditionalGraph,
 
   //Generating nodes of contracted graph
   //basically, there are as many nodes as there are components
-  val newNodes = Array.tabulate(components.length)(id => new Node(id,true))
+  private val newNodes = Array.tabulate(components.length)(id => new Node(id,true))
 
-  val anythingRelevantInNewNode = components.map(nodeList => nodeList.exists(node => relevantNodes.contains(node.id)))
+  private val anythingRelevantInNewNode = components.map(nodeList => nodeList.exists(node => relevantNodes.contains(node.id)))
 
-  val newEdges = graph.conditionToConditionalEdges.map(conditionalEdge => {
+  private val newEdges = graph.conditionToConditionalEdges.map(conditionalEdge => {
     val nodeAInNewGraph = newNodes(nodeToComponents(conditionalEdge.nodeIDA))
     val nodeBInNewGraph = newNodes(nodeToComponents(conditionalEdge.nodeIDB))
     new Edge(
@@ -42,7 +42,7 @@ class NbConnectedComponents(graph:ConditionalGraph,
       conditionalEdge.conditionID)
   })
 
-  val contractedGraph = new ConditionalGraph(newNodes,newEdges,graph.nbConditions)
+  private val contractedGraph = new ConditionalGraph(newNodes,newEdges,graph.nbConditions)
 
   println(contractedGraph.statistics)
 
