@@ -1,5 +1,7 @@
 package oscar.cbls.algo.graph
 
+import oscar.cbls.util.Properties
+
 /**
  *
  * @param edges edges. Some of them are conditional, a condition can only appear in one edge,
@@ -30,6 +32,8 @@ class ConditionalGraph(val nodes:Array[Node],
        |    nodes:[${nodes.mkString("\n\t\t")}]
        |    edges:[${edges.mkString("\n\t\t")}]
        |  )""".stripMargin
+
+  def statistics:String = Properties.justifyLeft(features).mkString("\n")
 
   def features:List[(String,String)] = {
     val ccClosed = Connexity.components(this,_ => false)
