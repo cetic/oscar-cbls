@@ -11,7 +11,7 @@ class ListParetoMap[T](nbDimensions:Int)
 
   override def insert(key: Array[Long], value: T): Boolean = {
     def internalInsert(melements: List[(Array[Long], T)]): (List[(Array[Long], T)], Boolean) = {
-      if (melements == null) {
+      if (melements.isEmpty) {
         //when we get to here, we might dominate some keys, and we might be incomparable to some others we insert
         (List((key, value)), true)
       } else {
