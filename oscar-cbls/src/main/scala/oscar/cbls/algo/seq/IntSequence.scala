@@ -768,7 +768,7 @@ class ConcreteIntSequenceExplorer(sequence:ConcreteIntSequence,
   }
 }
 
-abstract class StackedUpdateIntSequence extends IntSequence(){
+abstract class StackedUpdateIntSequence() extends IntSequence(){
   override def delete(pos : Int, fast:Boolean,autoRework:Boolean) : IntSequence = {
     require(pos >= 0, "pos=" + pos + " for delete on UniqueIntSequence should be >= 0")
     require(pos < size, "cannot delete past end of sequence in UniqueIntSequence")

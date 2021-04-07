@@ -62,8 +62,14 @@ class ParetoTable(val variables:Array[IntValue],
     }
   }
 
+  private[this] var myArray = variables.map(_.value)
   override def performInvariantPropagation(): Unit = {
-    val a = searchFromScratchLin(variables.map(_.value),exploreFrom)
+    var i = myArray.length
+    while(i > 0){
+      i = i-1
+      myArray(i) = variables(i).value
+    }
+    val a = searchFromScratchLin(myArray,exploreFrom)
     this := (if (a == -1) defaultIfNoDominate else a)
     exploreFrom = a
   }
