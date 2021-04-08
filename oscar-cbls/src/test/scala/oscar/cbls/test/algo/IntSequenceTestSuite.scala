@@ -74,7 +74,7 @@ class IntSequenceTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChec
         val actionsList = testBench._2
         val referenceList = testBench._1
         val (indexFrom, indexTo, destination) = getRandomParametersForMoveAfter(referenceList)
-        var seq :IntSequence = new MovedIntSequence(IntSequence(referenceList),indexFrom,indexTo,destination,true)
+        var seq :IntSequence = new MovedIntSequence(IntSequence(referenceList),indexFrom,indexTo,destination,true,1)
         var modifiedList = flipListManually(referenceList,indexFrom,indexTo,destination)
 
         for (action <- actionsList) {
@@ -103,7 +103,7 @@ class IntSequenceTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChec
         val referenceList = testBench._1
 
         val i = Random.nextInt(referenceList.size)
-        var seq :IntSequence = new RemovedIntSequence(IntSequence(referenceList),i)
+        var seq :IntSequence = new RemovedIntSequence(IntSequence(referenceList),i,1)
         var modifiedList = referenceList.take(i) ++ referenceList.drop(i+1)
 
         for (_ <- actionsList) {
@@ -125,7 +125,7 @@ class IntSequenceTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChec
         val referenceList = testBench._1
 
         val (value, pos) = getRandomParametersForInsert(referenceList)
-        var seq :IntSequence = new InsertedIntSequence(IntSequence(referenceList),value,pos)
+        var seq :IntSequence = new InsertedIntSequence(IntSequence(referenceList),value,pos,1)
         val (front, back) = referenceList.splitAt(pos)
         var modifiedList = front ++ List(value) ++ back
 

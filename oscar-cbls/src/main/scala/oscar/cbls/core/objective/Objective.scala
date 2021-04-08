@@ -318,7 +318,7 @@ trait Objective {
    * this process is efficiently performed as the objective Variable is registered for partial propagation
    * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
    */
-  def assignVal(a: CBLSIntVar, v: Long): Long = assignVal(List((a,v)))
+  def assignVal(a: CBLSIntVar, v: Long): Long = assignVal(Some((a,v)))
 
   /**returns the value of the objective variable if the assignment described by parameter a was performed
    * This proceeds through explicit state change and restore.

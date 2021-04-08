@@ -173,14 +173,6 @@ abstract class GlobalConstraintCore[U <: Any :Manifest](routes: ChangingSeqValue
           // Resetting the savedData QList.
           savedDataAtCheckpointLevel = null
           changedVehiclesSinceCheckpoint0.all = false
-
-          // Defining another checkpoint. We must keep current segments state
-        } else {
-          // Saving position of nodes of the previous checkpoint level to avoid excessive calls to positionAtAnyOccurence(...) when roll-backing
-          val previousCheckpointSaveData = savedDataAtCheckpointLevel.head
-          savedDataAtCheckpointLevel = QList(
-            (previousCheckpointSaveData._1, previousCheckpointSaveData._2, previousCheckpointSaveData._3),
-            savedDataAtCheckpointLevel.tail)
         }
 
         // Persisting recent updates of the vehicleSearcher

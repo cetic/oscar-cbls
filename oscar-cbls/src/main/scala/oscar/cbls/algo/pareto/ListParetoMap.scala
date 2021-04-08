@@ -11,27 +11,27 @@ class ListParetoMap[T](nbDimensions:Int)
 
   override def insert(key: Array[Long], value: T): Boolean = {
     def internalInsert(melements: List[(Array[Long], T)]): (List[(Array[Long], T)], Boolean) = {
-      if (melements == null) {
-        //when we get to here, we might dominate some keys, and we might be incomparable to some others we insert
-        (List((key, value)), true)
-      } else {
-        val h = melements.head
-        val t = melements.tail
-        compare(key, h._1) match {
-          case Dominates =>
-            //this new key dominates h; h to be removed and proceed
-            internalInsert(t)
-          case Dominated =>
-            //this new key is dominated, discard it
-            (melements, false)
-          case Incomparable =>
-            //proceed
-            val (x, y) = internalInsert(t)
-            (h :: x, y)
-          case Equal =>
-            //override h and stop
-            ((key, value) :: t, true)
-        }
+      melements match {
+        case Nil =>
+          (List((key, value)), true)
+        case h::t =>
+          val h = melements.head
+          val t = melements.tail
+          compare(key, h._1) match {
+            case Dominates =>
+              //this new key dominates h; h to be removed and proceed
+              internalInsert(t)
+            case Dominated =>
+              //this new key is dominated, discard it
+              (melements, false)
+            case Incomparable =>
+              //proceed
+              val (x, y) = internalInsert(t)
+              (h :: x, y)
+            case Equal =>
+              //override h and stop
+              ((key, value) :: t, true)
+          }
       }
     }
 
