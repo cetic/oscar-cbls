@@ -45,7 +45,7 @@ trait BasicCombinators{
    *
    * @author renaud.delandtsheer@cetic.be
    */
-  def maxMoves(a: Neighborhood, maxMove: Long, cond: Option[Move => Boolean] = None) = new MaxMoves(a, maxMove, cond)
+  def maxMoves(a: Neighborhood, maxMove: Int, cond: Option[Move => Boolean] = None) = new MaxMoves(a, maxMove, cond)
 
   /**
    * bounds the number of tolerated moves without improvements over the best value
@@ -59,7 +59,7 @@ trait BasicCombinators{
    */
   def maxMovesWithoutImprovement(a: Neighborhood,
                                  cond: Option[Move => Boolean],
-                                 maxMovesWithoutImprovement: Long,
+                                 maxMovesWithoutImprovement: Int,
                                  obj: () => Long,
                                  countBeforeMove:Boolean = false) =
     new MaxMovesWithoutImprovement(a,
@@ -164,7 +164,7 @@ trait MetaheuristicCombinators{
    * @param maxRestartWithoutImprovement the stop criterion of the restarting
    * @param obj the objective function
    */
-  def restart(n:Neighborhood,randomizationNeighborhood:Neighborhood, maxRestartWithoutImprovement:Long, obj:Objective) =
+  def restart(n:Neighborhood,randomizationNeighborhood:Neighborhood, maxRestartWithoutImprovement:Int, obj:Objective) =
     Restart(n,randomizationNeighborhood, maxRestartWithoutImprovement, obj)
 }
 
@@ -388,11 +388,11 @@ class NeighborhoodOps(n:Neighborhood){
    * @param maxRestartWithoutImprovement the stop criterion of the restarting
    * @param obj the objective function
    */
-  def onExhaustRestartAfter(randomizationNeighborhood:Neighborhood, maxRestartWithoutImprovement:Long, obj:Objective, restartFromBest:Boolean = false) = {
-    Restart(n,randomizationNeighborhood,maxRestartWithoutImprovement,obj,restartFromBest)
+  def onExhaustRestartAfter(randomizationNeighborhood:Neighborhood, maxRestartWithoutImprovement:Int, obj:Objective, restartFromBest:Boolean = false, minRestarts:Int = 0) = {
+    Restart(n,randomizationNeighborhood,maxRestartWithoutImprovement,obj,restartFromBest,minRestarts)
   }
 
-  def onExhaustRestartAfterJump(randomizationProcedure: =>Unit, maxRestartWithoutImprovement:Long, obj:Objective, restartFromBest:Boolean = false, randomizationName:String = "Randomization") = {
+  def onExhaustRestartAfterJump(randomizationProcedure: =>Unit, maxRestartWithoutImprovement:Int, obj:Objective, restartFromBest:Boolean = false, randomizationName:String = "Randomization") = {
     val jumpNeighborhood = new JumpNeighborhood(randomizationName){
       override def doIt(): Unit = randomizationProcedure
     }
@@ -411,7 +411,7 @@ class NeighborhoodOps(n:Neighborhood){
   def guidedLocalSearch(additionalConstraint:Objective,
                         weightCorrectionStrategy:WeightCorrectionStrategy,
                         maxAttemptsBeforeStop:Int = 10) =
-    new GuidedLocalSearch3(n, additionalConstraint, weightCorrectionStrategy, maxAttemptsBeforeStop)
+    new GuidedLocalSearch(n, additionalConstraint, weightCorrectionStrategy, maxAttemptsBeforeStop)
 
   /**
    * alias for (this maxMoves 1L) exhaust b
@@ -420,7 +420,7 @@ class NeighborhoodOps(n:Neighborhood){
    * @param b
    * @return
    */
-  def sequence(b: Neighborhood): Neighborhood = n maxMoves 1L exhaust b
+  def sequence(b: Neighborhood): Neighborhood = n maxMoves 1 exhaust b
 
   /**
    * this combinator always selects the best move between the two parameters
@@ -477,7 +477,7 @@ class NeighborhoodOps(n:Neighborhood){
    *
    * @author renaud.delandtsheer@cetic.be
    */
-  def maxMoves(maxMove: Long) = new MaxMoves(n, maxMove)
+  def maxMoves(maxMove: Int) = new MaxMoves(n, maxMove)
 
   /**
    * no move if cond evaluates to false, otherwise ,it forwards the search request to a
@@ -497,7 +497,7 @@ class NeighborhoodOps(n:Neighborhood){
   /**
    * this is an alias for maxMoves 1L
    */
-  def once = new MaxMoves(n, 1L)
+  def once = new MaxMoves(n, 1)
 
   def onExhaust(proc: =>Unit) = DoOnExhaust(n,() => proc,onlyFirst = false)
 
@@ -509,7 +509,7 @@ class NeighborhoodOps(n:Neighborhood){
    *
    * @author renaud.delandtsheer@cetic.be
    */
-  def maxMovesWithoutImprovement(maxMove: Long, obj: () => Long) = new MaxMovesWithoutImprovement(n, null, maxMove, obj)
+  def maxMovesWithoutImprovement(maxMove: Int, obj: () => Long) = new MaxMovesWithoutImprovement(n, null, maxMove, obj)
 
   /**
    * makes a round robin on the neighborhood. it swaps as soon as one does not find a move

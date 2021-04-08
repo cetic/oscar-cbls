@@ -3,7 +3,7 @@ package oscar.cbls.test.search
 import oscar.cbls.core.computation.{CBLSIntVar, Domain, FullRange}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.invariant.logic.IntInt2Int
-import oscar.cbls.lib.search.combinators.GuidedLocalSearch3
+import oscar.cbls.lib.search.combinators.GuidedLocalSearch
 import oscar.cbls.lib.search.neighborhoods.{GradientDescent, NarrowingStepSlide}
 import oscar.cbls.{IntValue, Store}
 
@@ -33,7 +33,7 @@ object TestGLS extends App{
   }
 
 
-  val search = GuidedLocalSearch3.progressiveGuidedLocalSearch(
+  val search = GuidedLocalSearch.progressiveGuidedLocalSearch(
     GradientDescent(Array(x,y),
       selectVars = 0 to 1,
       variableIndiceToDeltaForGradientDefinition = _ => 10L,

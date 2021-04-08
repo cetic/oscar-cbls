@@ -22,12 +22,10 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.distrib.Supervisor
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Neighborhood
-import oscar.cbls.lib.search.combinators.BestSlopeFirst
-import oscar.cbls.lib.search.combinators.distributed.{DistributedFirst, DistributedRestartFromBest}
+import oscar.cbls.lib.search.combinators.distributed.DistributedRestartFromBest
 import oscar.examples.cbls.wlp.WarehouseLocationGenerator
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
-import scala.collection.parallel.immutable.ParRange
 import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
 

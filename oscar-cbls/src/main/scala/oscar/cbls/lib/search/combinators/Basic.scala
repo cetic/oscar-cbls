@@ -57,16 +57,16 @@ class OrElse(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinator(a,
  *
  * @author renaud.delandtsheer@cetic.be
  */
-class MaxMoves(a: Neighborhood, val maxMove: Long, cond: Option[Move => Boolean] = None) extends NeighborhoodCombinator(a) {
+class MaxMoves(a: Neighborhood, val maxMove: Int, cond: Option[Move => Boolean] = None) extends NeighborhoodCombinator(a) {
   var remainingMoves = maxMove
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
-    if (remainingMoves > 0L) {
+    if (remainingMoves > 0) {
       a.getMove(obj, initialObj:Long, acceptanceCriteria) match {
         case m: MoveFound => InstrumentedMove(m.m, () => notifyMoveTaken(m.m))
         case x => x
       }
     } else {
-      if (verbose >= 1L)
+      if (verbose >= 1)
         println(s"MaxMoves: reached ${if (maxMove == 1L) "1 move " else s"$maxMove moves"}")
       NoMoveFound
     }
@@ -83,7 +83,7 @@ class MaxMoves(a: Neighborhood, val maxMove: Long, cond: Option[Move => Boolean]
       case None => true
       case Some(c) => c(m)}
 
-    if (shouldMoveBeConsidered) remainingMoves -= 1L
+    if (shouldMoveBeConsidered) remainingMoves -= 1
   }
 
   /**
@@ -110,12 +110,14 @@ class MaxMoves(a: Neighborhood, val maxMove: Long, cond: Option[Move => Boolean]
  */
 class MaxMovesWithoutImprovement(a: Neighborhood,
                                  val cond: Option[Move => Boolean],
-                                 val maxMovesWithoutImprovement: Long,
+                                 val maxMovesWithoutImprovement: Int,
                                  obj: () => Long,
-                                 countBeforeMove:Boolean = false)
+                                 countBeforeMove:Boolean = false,
+                                 val minMoves:Int = 1)
   extends NeighborhoodCombinator(a) {
 
-  var stepsSinceLastImprovement = 0L
+  var totalSteps = 0
+  var stepsSinceLastImprovement = 0
   var bestObj = Long.MaxValue
 
   override def getMove(obj: Objective,initialObj:Long,  acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
@@ -123,17 +125,18 @@ class MaxMovesWithoutImprovement(a: Neighborhood,
       val startObj = obj()
       if (startObj < bestObj) {
         bestObj = startObj
-        stepsSinceLastImprovement = 0L
+        stepsSinceLastImprovement = 0
       } else {
-        stepsSinceLastImprovement += 1L
+        stepsSinceLastImprovement += 1
       }
 
-      if (stepsSinceLastImprovement < maxMovesWithoutImprovement) {
+      totalSteps += 1
+      if (totalSteps <= minMoves || stepsSinceLastImprovement < maxMovesWithoutImprovement) {
         //We can go on
         a.getMove(obj, initialObj:Long, acceptanceCriteria) match {
           case m: MoveFound => m
           case NoMoveFound =>
-            stepsSinceLastImprovement = 0L
+            stepsSinceLastImprovement = 0
             NoMoveFound
         }
       } else {
@@ -141,7 +144,7 @@ class MaxMovesWithoutImprovement(a: Neighborhood,
         NoMoveFound
       }
     } else{ //count after move
-      if (stepsSinceLastImprovement < maxMovesWithoutImprovement) {
+      if (totalSteps <= minMoves || stepsSinceLastImprovement < maxMovesWithoutImprovement) {
         //we can go on
         a.getMove(obj, initialObj,acceptanceCriteria) match {
           case m: MoveFound => InstrumentedMove(m.m, afterMove = () => notifyMoveTaken(m.m))
@@ -156,7 +159,8 @@ class MaxMovesWithoutImprovement(a: Neighborhood,
 
   //this resets the internal state of the move combinators
   override def reset(): Unit = {
-    stepsSinceLastImprovement = 0L
+    stepsSinceLastImprovement = 0
+    totalSteps = 0
     bestObj = Long.MaxValue
     super.reset()
   }
@@ -168,16 +172,18 @@ class MaxMovesWithoutImprovement(a: Neighborhood,
 
     if (shouldMoveBeConsidered) {
       val newObj = obj()
+      totalSteps += 1
       if (newObj < bestObj) {
         bestObj = newObj
-        stepsSinceLastImprovement = 0L
+        stepsSinceLastImprovement = 0
       } else {
-        stepsSinceLastImprovement += 1L
+        stepsSinceLastImprovement += 1
       }
     }
   }
 
-  def improvementBeignMeasuredBeforeNeighborhoodExploration = new MaxMovesWithoutImprovement(a, null, maxMovesWithoutImprovement, obj, true)
+  def withMinimalMoves(minMoves:Int) = new MaxMovesWithoutImprovement(a,cond, maxMovesWithoutImprovement, obj, countBeforeMove, minMoves)
+  def improvementBeingMeasuredBeforeNeighborhoodExploration = new MaxMovesWithoutImprovement(a, null, maxMovesWithoutImprovement, obj, true)
 }
 
 /**
