@@ -1,130 +1,16 @@
 package oscar.cbls.lib.search.combinators.distributed
 
-import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorSystem, Behavior}
+import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.util.Timeout
-import oscar.cbls.core.distrib._
+import oscar.cbls.core.distrib.{CancelSearchToSupervisor, DelegateSearch, GetNewUniqueID, IndependentMoveFound, IndependentNoMoveFound, IndependentSearchResult, IndependentSolution, SearchAborted, SearchCompleted, SearchCrashed, SearchEnded, SearchRequest}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{Neighborhood, NoMoveFound, SearchResult}
+import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
 
-import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{Await, Future, Promise}
+import scala.concurrent.duration.{Duration, DurationInt}
 import scala.util.{Failure, Success}
 
-abstract class DistributedCombinator(neighborhoods:Array[List[Long] => Neighborhood]) extends Neighborhood {
-
-  var remoteNeighborhoods:Array[RemoteNeighborhood] = null
-  var supervisor:Supervisor = null
-
-  override def labelAndExtractRemoteNeighborhoods(supervisor: Supervisor,
-                                                  currentID: Int,
-                                                  nbDistributedCombinators:Int = 0,
-                                                  acc: List[RemoteNeighborhood]): (Int, Int, List[RemoteNeighborhood]) = {
-    this.supervisor = supervisor
-    val (newID,newAcc,neighborhoods2) = labelAndExtractRemoteNeighborhoodsOutOf(currentID, acc, neighborhoods)
-    remoteNeighborhoods = neighborhoods2
-    (newID,nbDistributedCombinators+1,newAcc)
-  }
-
-  private def labelAndExtractRemoteNeighborhoodsOutOf(currentID:Int,
-                                                      acc:List[RemoteNeighborhood],
-                                                      neighborhoods:Array[List[Long] => Neighborhood]):
-  (Int,List[RemoteNeighborhood],Array[RemoteNeighborhood]) = {
-    var currentIDNow: Int = currentID
-    var accNow: List[RemoteNeighborhood] = acc
-    val toReturnArray = neighborhoods.map(n => {
-      val r = new RemoteNeighborhood(currentIDNow, n)
-      currentIDNow += 1
-      accNow = r :: accNow
-      r
-    })
-    (currentIDNow, accNow,toReturnArray)
-  }
-
-  override def collectProfilingStatistics: List[Array[String]] = {
-    super.collectProfilingStatistics
-  }
-}
-
-class Remote(neighborhoods:Neighborhood)
-  extends DistributedCombinator(Array(_ => neighborhoods)) {
-
-  override def getMove(obj: Objective,
-                       initialObj: Long,
-                       acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
-
-    val independentObj = obj.getIndependentObj
-    val startSol = Some(IndependentSolution(obj.model.solution()))
-
-    val searchRequest = SearchRequest(
-      remoteNeighborhoods(0).getRemoteIdentification(Nil),
-      acceptanceCriteria,
-      independentObj,
-      startSol)
-
-    import akka.actor.typed.scaladsl.AskPattern._
-    //TODO look for an adequate timeout or stopping mechanism
-    implicit val timeout: Timeout = 1.hour
-    implicit val system: ActorSystem[_] = supervisor.system
-
-    val futureResult = supervisor.supervisorActor.ask[SearchEnded](ref => DelegateSearch(searchRequest, ref))
-    Await.result(futureResult,Duration.Inf) match {
-      case SearchCompleted(_, searchResult) =>
-        searchResult.getLocalResult(obj.model)
-      case c:SearchCrashed =>
-        supervisor.throwRemoteExceptionAndShutDown(c)
-        null
-      case _ =>
-        // Search Aborted
-        null
-    }
-  }
-}
-
-class DistributedBest(neighborhoods:Array[Neighborhood])
-  extends DistributedCombinator(neighborhoods.map(x => (y:List[Long]) => x)) {
-
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
-
-    val independentObj = obj.getIndependentObj
-    val startSol = Some(IndependentSolution(obj.model.solution()))
-
-    import akka.actor.typed.scaladsl.AskPattern._
-    //TODO look for an adequate timeout or stopping mechanism
-    implicit val timeout: Timeout = 1.hour
-    implicit val system: ActorSystem[_] = supervisor.system
-
-    val futureResults =  remoteNeighborhoods.indices.map(i => {
-
-      val request = SearchRequest(
-        remoteNeighborhoods(i).getRemoteIdentification(Nil),
-        acceptanceCriteria,
-        independentObj,
-        startSol)
-
-      supervisor.supervisorActor.ask[SearchEnded](ref => DelegateSearch(request, ref))
-    }).toList
-
-    val independentMoveFound:Iterable[IndependentMoveFound] = futureResults.flatMap(futureResult =>
-      Await.result(futureResult,Duration.Inf) match {
-        case SearchCompleted(_, searchResult) =>
-          searchResult match{
-            case _:IndependentNoMoveFound => None
-            case m:IndependentMoveFound => Some(m)
-          }
-        case c:SearchCrashed =>
-          supervisor.throwRemoteExceptionAndShutDown(c)
-          None
-        case _ =>
-          // Search aborted
-          None
-      }
-    )
-
-    if (independentMoveFound.isEmpty) NoMoveFound
-    else independentMoveFound.minBy(_.objAfter).getLocalResult(obj.model)
-  }
-}
 
 class DistributedFirst(neighborhoods:Array[Neighborhood])
   extends DistributedCombinator(neighborhoods.map(x => (y:List[Long]) => x)) {
@@ -166,7 +52,7 @@ class DistributedFirst(neighborhoods:Array[Neighborhood])
         command match {
           case w@WrappedSearchEnded(searchEnded: SearchEnded) =>
             searchEnded match {
-              case SearchCompleted(searchID: Long, searchResult: IndependentSearchResult) =>
+              case SearchCompleted(searchID: Long, searchResult: IndependentSearchResult, durationMS) =>
                 searchResult match {
                   case _: IndependentMoveFound =>
 
@@ -234,7 +120,7 @@ class DistributedFirst(neighborhoods:Array[Neighborhood])
     Await.result(futureResult, Duration.Inf) match{
       case WrappedSearchEnded(searchEnded:SearchEnded) =>
         searchEnded match {
-          case SearchCompleted(searchID, searchResult) => searchResult.getLocalResult(obj.model)
+          case SearchCompleted(searchID, searchResult, durationMs) => searchResult.getLocalResult(obj.model)
           case _ => NoMoveFound
         }
       case WrappedError(msg:Option[String],crash:Option[SearchCrashed])=>

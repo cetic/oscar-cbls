@@ -4,7 +4,7 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import org.slf4j.{Logger, LoggerFactory}
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.objective.{IndependentObjective, Objective}
+import oscar.cbls.core.objective.IndependentObjective
 
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
@@ -127,7 +127,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
     }
   }
 
-  private def doSearch(searchRequest: SearchRequest,searchId:Long): IndependentSearchResult = {
+  private def doSearch(searchRequest: SearchRequest,searchId:Long): (IndependentSearchResult,Int) = {
     searchRequest.startSolutionOpt match{
       case None => require(currentModelNr.isDefined)
       case Some(startSolution) =>
@@ -142,7 +142,8 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
     val neighborhood = neighborhoods(searchRequest.neighborhoodID.neighborhoodID)
     currentNeighborhood = neighborhood
 
-    if(searchRequest.doAllMoves){
+    val startTime = System.currentTimeMillis()
+    val result = if(searchRequest.doAllMoves){
       neighborhood.doAllMoves(
         searchRequest.neighborhoodID.parameters,
         searchRequest.obj.convertToObjective(m),
@@ -160,6 +161,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
         searchId = searchId,
         sendProgressTo = searchRequest.sendProgressTo)
     }
+    (result,(System.currentTimeMillis() - startTime).toInt)
   }
 
   private def next(state: WorkerState): Behavior[MessageToWorker] = {
@@ -200,7 +202,8 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
               this.nbExploredNeighborhoods += 1
 
               val futureResult = Future {
-                SearchCompleted(newSearch.searchId, doSearch(newSearch.request,newSearch.searchId))
+                val (result,durationMS) = doSearch(newSearch.request,newSearch.searchId)
+                SearchCompleted(newSearch.searchId, result, durationMS)
               }(executionContextForComputation)
 
               context.pipeToSelf(futureResult) {

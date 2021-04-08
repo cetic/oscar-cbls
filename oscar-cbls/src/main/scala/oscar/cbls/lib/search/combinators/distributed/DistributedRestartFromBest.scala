@@ -5,7 +5,7 @@ import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import akka.util.Timeout
 import oscar.cbls.core.distrib._
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{Neighborhood, NoMoveFound, SearchResult}
+import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
 import oscar.cbls.visual.SingleFrameWindow
 
 import scala.collection.immutable.SortedMap
@@ -142,7 +142,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
               display = Some(displayActor))
           case w@WrappedSearchEnded(searchEnded: SearchEnded) =>
             searchEnded match {
-              case SearchCompleted(searchID: Long, searchResult: IndependentSearchResult) =>
+              case SearchCompleted(searchID: Long, searchResult: IndependentSearchResult, durationMS) =>
 
                 searchResult match {
                   case moveFound: IndependentMoveFound =>
@@ -385,7 +385,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
 
             case w@WrappedSearchEnded(searchEnded: SearchEnded) =>
               searchEnded match {
-                case SearchCompleted(searchID: Long, searchResult: IndependentSearchResult) =>
+                case SearchCompleted(searchID: Long, searchResult: IndependentSearchResult, durationMS) =>
                   searchResult match {
                     case moveFound: IndependentMoveFound if moveFound.objAfter < bestObjSoFar =>
                       //We did improve over best so far, so we have to restart anyway
@@ -459,7 +459,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
     Await.result(futureResult, Duration.Inf) match {
       case WrappedSearchEnded(searchEnded:SearchEnded) =>
         searchEnded match {
-          case SearchCompleted(searchID, searchResult: IndependentSearchResult) => searchResult.getLocalResult(obj.model)
+          case SearchCompleted(searchID, searchResult: IndependentSearchResult, durationMS) => searchResult.getLocalResult(obj.model)
           case _ =>
             throw new Error("Error while obtaining the search result")
         }

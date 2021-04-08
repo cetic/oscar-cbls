@@ -1,7 +1,7 @@
 package oscar.cbls.core.distrib
 
 import akka.actor.typed.ActorRef
-import oscar.cbls.core.computation.{AbstractVariableSnapShot, IndependentSerializableAbstractVariableSnapshot, Solution, Store}
+import oscar.cbls.core.computation.{IndependentSerializableAbstractVariableSnapshot, Solution, Store}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search._
 
