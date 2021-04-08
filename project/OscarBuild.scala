@@ -90,10 +90,10 @@ object OscarBuild {
     val slf4j = "org.slf4j" % "slf4j-simple" % "1.7.30"
 
     // Akka
-    val akkaActor = "com.typesafe.akka" %% "akka-actor" % "2.6.5"
-    val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.6.5"
-    val akkaActorTyped = "com.typesafe.akka" %% "akka-actor-typed" % "2.6.5"
-    val akkasl4j = "com.typesafe.akka" %% "akka-slf4j" % "2.6.5"
+    val akkaActor = "com.typesafe.akka" %% "akka-actor" % "2.6.14"
+    val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.6.14"
+    val akkaActorTyped = "com.typesafe.akka" %% "akka-actor-typed" % "2.6.14"
+    val akkasl4j = "com.typesafe.akka" %% "akka-slf4j" % "2.6.14"
 
     // Test libraries
     val junit = "junit" % "junit" % "4.13" % Test
