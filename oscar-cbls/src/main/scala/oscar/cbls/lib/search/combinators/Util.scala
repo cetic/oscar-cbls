@@ -418,7 +418,7 @@ class CutTail(a:Neighborhood, timePeriodInMilliSecond:Long,minRelativeImprovemen
 }
 
 
-case class WatchDog(a:Neighborhood, calibrationRuns:Int = 5, cutPercentage:Double = 0.5)
+case class WatchDog(a:Neighborhood, calibrationRuns:Int = 5, cutFraction:Double = 0.5)
   extends NeighborhoodCombinator(a) {
 
   var minTimeNoFoundMS:Int = Int.MaxValue
@@ -432,7 +432,7 @@ case class WatchDog(a:Neighborhood, calibrationRuns:Int = 5, cutPercentage:Doubl
       //watchdog is active
       if(maxTimeFoundMS < minTimeNoFoundMS){
         //can use watchdog
-        val cutDuration = ((minTimeNoFoundMS - maxTimeFoundMS)*cutPercentage + minTimeNoFoundMS).toInt
+        val cutDuration = ((minTimeNoFoundMS - maxTimeFoundMS)*cutFraction + minTimeNoFoundMS).toInt
         new HardTimeout(a,cutDuration.millisecond).getMove(obj,initialObj,acceptanceCriterion)
       } else{
         //cannot use watchdog
