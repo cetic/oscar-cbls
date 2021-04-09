@@ -284,19 +284,19 @@ class ResetOnExhausted(a: Neighborhood) extends NeighborhoodCombinator(a) {
 }
 
 /**
-  * sets a timeout for a search procedure.
-  * notice that hte timeout itself is a bit lax, because the combinator has no possibility to interrupt a neighborhood during its exploration.
-  * this combinator will therefore just prevent any new exploration past the end of the timeout.
-  * @param a a neighborhood
-  * @param maxDurationMilliSeconds the maximal duration, in milliseconds
-  */
+ * sets a timeout for a search procedure.
+ * notice that hte timeout itself is a bit lax, because the combinator has no possibility to interrupt a neighborhood during its exploration.
+ * this combinator will therefore just prevent any new exploration past the end of the timeout.
+ * @param a a neighborhood
+ * @param maxDurationMilliSeconds the maximal duration, in milliseconds
+ */
 class WeakTimeout(a:Neighborhood, timeOut:Duration = 1.minutes) extends NeighborhoodCombinator(a) {
   private var deadline: Long = -1
 
   override def getMove(obj: Objective, initialObj: Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
     if (deadline == -1) {
       deadline = System.currentTimeMillis() + timeOut.toMillis
-  }
+    }
 
     if (System.currentTimeMillis() >= deadline) {
       println(s"Timeout of $timeOut")
@@ -417,28 +417,18 @@ class CutTail(a:Neighborhood, timePeriodInMilliSecond:Long,minRelativeImprovemen
   }
 }
 
-
-case class WatchDog(a:Neighborhood, calibrationRuns:Int = 5, cutFraction:Double = 0.5)
+case class WatchDog(a:Neighborhood, calibrationRuns:Int = 5, cutMultiplier:Double = 2)
   extends NeighborhoodCombinator(a) {
 
-  var minTimeNoFoundMS:Int = Int.MaxValue
   var maxTimeFoundMS:Int = 0
   var nbCalibrationRunsFound:Int = 0
-  var nbCalibrationRunsNotFound:Int = 0
 
   override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
 
-    if(nbCalibrationRunsFound > calibrationRuns && nbCalibrationRunsNotFound > calibrationRuns){
+    if(nbCalibrationRunsFound > calibrationRuns){
       //watchdog is active
-      if(maxTimeFoundMS < minTimeNoFoundMS){
-        //can use watchdog
-        val cutDuration = ((minTimeNoFoundMS - maxTimeFoundMS)*cutFraction + minTimeNoFoundMS).toInt
-        new HardTimeout(a,cutDuration.millisecond).getMove(obj,initialObj,acceptanceCriterion)
-      } else{
-        //cannot use watchdog
-        if(verbose > 2) println("watchDog cannot apply clear cut rule")
-        a.getMove(obj,initialObj,acceptanceCriterion)
-      }
+      val cutDuration = (maxTimeFoundMS * cutMultiplier).toInt
+      new HardTimeout(a,cutDuration.millisecond).getMove(obj,initialObj,acceptanceCriterion)
     }else{
       //still calibrating
       val startTimeMs = System.currentTimeMillis()
@@ -448,11 +438,8 @@ case class WatchDog(a:Neighborhood, calibrationRuns:Int = 5, cutFraction:Double 
           val duration = (System.currentTimeMillis() - startTimeMs).toInt
           maxTimeFoundMS = maxTimeFoundMS max duration
           m
-        case n@NoMoveFound =>
-          nbCalibrationRunsNotFound += 1
-          val duration = (System.currentTimeMillis() - startTimeMs).toInt
-          minTimeNoFoundMS = minTimeNoFoundMS min duration
-          n
+        case x => x
+        //not found
       }
     }
   }
