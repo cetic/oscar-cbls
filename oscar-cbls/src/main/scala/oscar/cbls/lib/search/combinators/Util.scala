@@ -416,3 +416,44 @@ class CutTail(a:Neighborhood, timePeriodInMilliSecond:Long,minRelativeImprovemen
     }
   }
 }
+
+
+case class WatchDog(a:Neighborhood, calibrationRuns:Int = 5, cutPercentage:Double = 0.5)
+  extends NeighborhoodCombinator(a) {
+
+  var minTimeNoFoundMS:Int = Int.MaxValue
+  var maxTimeFoundMS:Int = 0
+  var nbCalibrationRunsFound:Int = 0
+  var nbCalibrationRunsNotFound:Int = 0
+
+  override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+
+    if(nbCalibrationRunsFound > calibrationRuns && nbCalibrationRunsNotFound > calibrationRuns){
+      //watchdog is active
+      if(maxTimeFoundMS < minTimeNoFoundMS){
+        //can use watchdog
+        val cutDuration = ((minTimeNoFoundMS - maxTimeFoundMS)*cutPercentage + minTimeNoFoundMS).toInt
+        new HardTimeout(a,cutDuration.millisecond).getMove(obj,initialObj,acceptanceCriterion)
+      } else{
+        //cannot use watchdog
+        if(verbose > 2) println("watchDog cannot apply clear cut rule")
+        a.getMove(obj,initialObj,acceptanceCriterion)
+      }
+    }else{
+      //still calibrating
+      val startTimeMs = System.currentTimeMillis()
+      a.getMove(obj,initialObj,acceptanceCriterion) match{
+        case m:MoveFound =>
+          nbCalibrationRunsFound += 1
+          val duration = (System.currentTimeMillis() - startTimeMs).toInt
+          maxTimeFoundMS = maxTimeFoundMS max duration
+          m
+        case n@NoMoveFound =>
+          nbCalibrationRunsNotFound += 1
+          val duration = (System.currentTimeMillis() - startTimeMs).toInt
+          minTimeNoFoundMS = minTimeNoFoundMS min duration
+          n
+      }
+    }
+  }
+}
