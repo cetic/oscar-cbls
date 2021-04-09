@@ -103,7 +103,6 @@ abstract class AbstractVehicleWiseGenericConstraint[U <: Any : Manifest](routes:
   override def notifySeqChanges(r: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     val newRoute = routes.newValue
     if (!variableInitiated) initVariables(newRoute)
-    println(changes)
 
     if (digestUpdates(changes) && (this.checkpointLevel != -1)) {
       QList.qForeach(changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList, (vehicle: Int) => {
