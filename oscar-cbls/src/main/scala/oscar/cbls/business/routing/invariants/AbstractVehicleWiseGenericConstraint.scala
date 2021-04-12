@@ -171,9 +171,7 @@ abstract class AbstractVehicleWiseGenericConstraint[U <: Any : Manifest](routes:
         // Restoring all other values
         this.changedVehiclesSinceCheckpoint0.all = false
         QList.qForeach(savedDataAtCheckpointLevel.head._1, (vehicle: Int) => this.changedVehiclesSinceCheckpoint0(vehicle) = true)
-        println("before : " + (0 until v).map(vehicleSearcher.startPosOfVehicle(_)).toList)
         vehicleSearcher = savedDataAtCheckpointLevel.head._2
-        println("after : " + (0 until v).map(vehicleSearcher.startPosOfVehicle(_)).toList)
 
 
         this.checkpointLevel = checkpointLevel
