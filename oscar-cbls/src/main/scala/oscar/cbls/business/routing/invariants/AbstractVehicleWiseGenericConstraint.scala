@@ -8,6 +8,8 @@ import oscar.cbls.core.{Checker, Invariant}
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.Checker
 
+import scala.collection.immutable.SortedSet
+
 /**
  * This abstract class purpose is to ease the implementation of constraints that only need the route on which a modification occurred.
  * For instance if you have a very complicated computation that's not supported by another constraint.
@@ -19,7 +21,7 @@ import oscar.cbls.core.propagation.Checker
  * @tparam U The value type of your constraint (Int, Boolean...)
  */
 abstract class AbstractVehicleWiseGenericConstraint[U <: Any : Manifest](routes: ChangingSeqValue, v: Int, values: Iterable[Value] = Iterable.empty)
-  extends Invariant with SeqNotificationTarget {
+  extends Invariant with SeqNotificationTarget with IntNotificationTarget with SetNotificationTarget {
   val n: Int = routes.maxValue + 1
   val vehicles: Range = 0 until v
 
@@ -101,6 +103,25 @@ abstract class AbstractVehicleWiseGenericConstraint[U <: Any : Manifest](routes:
       lastComputedVehiclesValue(vehicle) = computeVehicleValueFromScratch(vehicle, newRoute)
       assignVehicleValue(vehicle, lastComputedVehiclesValue(vehicle))
     }
+  }
+
+  override def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Long, NewVal: Long): Unit ={
+    scheduleForPropagation()
+  }
+
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
+    scheduleForPropagation()
+  }
+
+  override def performInvariantPropagation(): Unit = {
+    val newRoute = routes.value
+    QList.qForeach(changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList, (vehicle: Int) => {
+      // Compute new vehicle value based on last segment changes
+      val vehicleStartPos = vehicleSearcher.startPosOfVehicle(vehicle)
+      val vehicleRouteSize = (if (vehicle + 1 == v) newRoute.size else vehicleSearcher.startPosOfVehicle(vehicle + 1)) - vehicleStartPos
+      lastComputedVehiclesValue(vehicle) = computeVehicleValue(vehicle, vehicleStartPos, vehicleRouteSize, newRoute)
+      assignVehicleValue(vehicle, lastComputedVehiclesValue(vehicle))
+    })
   }
 
   override def notifySeqChanges(r: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
