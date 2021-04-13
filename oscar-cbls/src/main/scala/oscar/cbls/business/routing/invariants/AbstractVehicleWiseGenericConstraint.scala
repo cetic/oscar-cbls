@@ -113,17 +113,6 @@ abstract class AbstractVehicleWiseGenericConstraint[U <: Any : Manifest](routes:
     scheduleForPropagation()
   }
 
-  override def performInvariantPropagation(): Unit = {
-    val newRoute = routes.value
-    QList.qForeach(changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList, (vehicle: Int) => {
-      // Compute new vehicle value based on last segment changes
-      val vehicleStartPos = vehicleSearcher.startPosOfVehicle(vehicle)
-      val vehicleRouteSize = (if (vehicle + 1 == v) newRoute.size else vehicleSearcher.startPosOfVehicle(vehicle + 1)) - vehicleStartPos
-      lastComputedVehiclesValue(vehicle) = computeVehicleValue(vehicle, vehicleStartPos, vehicleRouteSize, newRoute)
-      assignVehicleValue(vehicle, lastComputedVehiclesValue(vehicle))
-    })
-  }
-
   override def notifySeqChanges(r: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     val newRoute = routes.newValue
     if (!variableInitiated) initVariables(newRoute)
