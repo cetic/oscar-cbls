@@ -18,7 +18,7 @@ import oscar.cbls.core.propagation.Checker
  * @param v The number of vehicles
  * @tparam U The value type of your constraint (Int, Boolean...)
  */
-abstract class AbstractVehicleWiseGenericConstraint[U <: Any : Manifest](routes: ChangingSeqValue, v: Int, values: Array[IntValue] = Array.empty)
+abstract class AbstractVehicleWiseGenericConstraint[U <: Any : Manifest](routes: ChangingSeqValue, v: Int, values: Iterable[IntValue] = Iterable.empty)
   extends Invariant with SeqNotificationTarget {
   val n: Int = routes.maxValue + 1
   val vehicles: Range = 0 until v
