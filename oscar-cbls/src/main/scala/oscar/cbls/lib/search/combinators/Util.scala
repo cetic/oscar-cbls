@@ -417,18 +417,46 @@ class CutTail(a:Neighborhood, timePeriodInMilliSecond:Long,minRelativeImprovemen
   }
 }
 
-case class WatchDog(a:Neighborhood, calibrationRuns:Int = 5, cutMultiplier:Double = 2)
+/**
+ * This combinator will prevent a neighborhood from taking way more time than usual
+ * it first calibrates to know the time that the neighborhood needs to find a move, "maxTimeToFind"
+ * then it will set a hard timeout on the neighborhood.
+ * This hard timeout will abort the exploration after "maxTimeToFind * cutMultiplier".
+ * In case of abort, this combinator will return "noMoveFound"
+ *
+ * @param a the base neighborhood
+ * @param calibrationRuns the number of moves that the neighborhood will find in order to calibrate the watchdog
+ * @param cutMultiplier the max multiplier on the time
+ * @param reevaluate after a set of neighborhood exploration, calibration wil be performed again
+ */
+case class WatchDog(a:Neighborhood, calibrationRuns:Int = 5, cutMultiplier:Double = 2, reevaluate:Int = 1000)
   extends NeighborhoodCombinator(a) {
 
   var maxTimeFoundMS:Int = 0
   var nbCalibrationRunsFound:Int = 0
+  var nbSearch:Int = 0
 
   override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+    nbSearch += 1
+    if(nbSearch > reevaluate){
+      maxTimeFoundMS = 0
+      nbCalibrationRunsFound = 0
+      nbSearch = 0
+    }
 
     if(nbCalibrationRunsFound > calibrationRuns){
       //watchdog is active
       val cutDuration = (maxTimeFoundMS * cutMultiplier).toInt
-      new HardTimeout(a,cutDuration.millisecond).getMove(obj,initialObj,acceptanceCriterion)
+      val startTimeMs = System.currentTimeMillis()
+      new HardTimeout(a,cutDuration.millisecond).getMove(obj,initialObj,acceptanceCriterion) match{
+        case m:MoveFound =>
+          nbCalibrationRunsFound += 1
+          val duration = (System.currentTimeMillis() - startTimeMs).toInt
+          maxTimeFoundMS = maxTimeFoundMS max duration
+          m
+        case x => x
+        //not found
+      }
     }else{
       //still calibrating
       val startTimeMs = System.currentTimeMillis()

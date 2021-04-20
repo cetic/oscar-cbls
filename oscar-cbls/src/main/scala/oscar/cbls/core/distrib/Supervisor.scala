@@ -209,7 +209,7 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor], m: Store, 
   //TODO: for the distributed version, regularly check that workers performing some wearch are still alive and working, otherwise, search must be restarted at another worker.
 
   def createLocalWorker(m: Store, search: Neighborhood): Unit = {
-    val workerBehavior = WorkerActor.createWorkerBehavior(search.identifyRemotelySearcheableNeighbrhoods, m, this.supervisorActor, verbose)
+    val workerBehavior = WorkerActor.createWorkerBehavior(search.identifyRemotelySearchableNeighborhoods, m, this.supervisorActor, verbose)
     supervisorActor ! SpawnWorker(workerBehavior)
   }
 
