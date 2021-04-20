@@ -142,6 +142,7 @@ class VisualDrawing(flipped: Boolean, scalable: Boolean) extends JPanel(new Bord
         case _:java.util.NoSuchElementException =>
         case _:java.lang.IndexOutOfBoundsException =>
         case _:java.lang.NullPointerException =>
+        case _:java.lang.InternalError =>
       }
     }
   }
