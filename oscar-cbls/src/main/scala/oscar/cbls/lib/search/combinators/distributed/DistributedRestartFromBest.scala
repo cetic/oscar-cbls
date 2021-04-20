@@ -24,10 +24,12 @@ import scala.util.{Failure, Success}
  * @param baseSearch the base neighborhood that is repeatedly searched to perform the descent
  * @param baseRandomize the randomization procedure in use. It is used for each new search performed,
  *                      except for the start, where one search is performed without randomization.
+ * @param minNbRestarts th minimal number of restarts to perform
  * @param nbConsecutiveRestartWithoutImprovement the restarts stop when this number of restart was performed
  *                                               and finished without any improvement on the best known solution.
  * @param nbOngoingSearchesToCancelWhenNewBest whenever an improving solution is found,
  *                                             the strategy attempts to cancel this number of ongoing searches
+ *                                             in order to start new ones from the new current best
  * @param factorOnObjForThresholdToContinueDespiteBeingCanceled whenever a search is cancelled, it can still carry on
  *                                                              if its current obj value is <= the best known obj * this value
  * @param maxWorkers the maximal number of searches that are allowed to run at the same time
@@ -38,6 +40,7 @@ import scala.util.{Failure, Success}
  */
 class DistributedRestartFromBest(baseSearch:Neighborhood,
                                  baseRandomize:Neighborhood,
+                                 minNbRestarts:Int,
                                  nbConsecutiveRestartWithoutImprovement:Int,
                                  nbOngoingSearchesToCancelWhenNewBest:Int = 100,
                                  factorOnObjForThresholdToContinueDespiteBeingCanceled:Double = 1.0001,
@@ -123,6 +126,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
         bestObjSoFar = initialObj,
         bestMoveSoFar = None,
         nbCompletedSearchesOnBestSoFar = 0,
+        nbCompletedRestarts = 0,
         display = visu)
 
     }
@@ -131,6 +135,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
              bestObjSoFar:Long,
              bestMoveSoFar:Option[LoadIndependentSolutionMove],
              nbCompletedSearchesOnBestSoFar:Int,
+             nbCompletedRestarts:Int,
              display:Option[ActorRef[SearchProgress]]): Behavior[WrappedData] = {
       Behaviors.receive { (context, command) =>
         command match {
@@ -139,6 +144,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
               bestObjSoFar,
               bestMoveSoFar,
               nbCompletedSearchesOnBestSoFar,
+              nbCompletedRestarts = nbCompletedRestarts,
               display = Some(displayActor))
           case w@WrappedSearchEnded(searchEnded: SearchEnded) =>
             searchEnded match {
@@ -179,6 +185,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
                         bestObjSoFar = moveFound.objAfter,
                         bestMoveSoFar = Some(moveFound.move.asInstanceOf[LoadIndependentSolutionMove]),
                         nbCompletedSearchesOnBestSoFar = 0,
+                        nbCompletedRestarts = nbCompletedRestarts+1,
                         display)
 
                     }else{
@@ -187,7 +194,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
                       val wasRunningOnBestSoFar = runningSearchIDsAndIsItFromBestSoFar.getOrElse(searchID,false)
                       if(wasRunningOnBestSoFar){
                         //We were running on BestSoFar, so stop criterion progressed
-                        if(nbCompletedSearchesOnBestSoFar +1 >= nbConsecutiveRestartWithoutImprovement){
+                        if(nbCompletedSearchesOnBestSoFar +1 >= nbConsecutiveRestartWithoutImprovement && nbCompletedRestarts + 1 >= minNbRestarts){
                           //we finished :-)
                           context.log.info(s"new solution: not improved over best so far, was working on bestSoFar, finished, canceling ${runningSearchIDsAndIsItFromBestSoFar.size -1} ongoing searches finalOBj:$bestObjSoFar")
 
@@ -205,10 +212,11 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
                             bestObjSoFar,
                             bestMoveSoFar,
                             display,
+                            nbCompletedRestarts = nbCompletedRestarts + 1,
                             context)
                         }else{
                           //progress on stop criterion, but not finished yet
-                          context.log.info(s"new solution: not improved over best so far, was working on bestSoFar, not yet finished (${nbCompletedSearchesOnBestSoFar +1}/$nbConsecutiveRestartWithoutImprovement)")
+                          context.log.info(s"new solution: not improved over best so far, was working on bestSoFar, not finished yet (${nbCompletedSearchesOnBestSoFar +1}/$nbConsecutiveRestartWithoutImprovement) (${nbCompletedRestarts +1}/$minNbRestarts)")
 
                           context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
                             case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, 0)
@@ -218,7 +226,8 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
                           next(runningSearchIDsAndIsItFromBestSoFar.-(searchID),
                             bestObjSoFar = bestObjSoFar,
                             bestMoveSoFar = bestMoveSoFar,
-                            nbCompletedSearchesOnBestSoFar+1,
+                            nbCompletedSearchesOnBestSoFar = nbCompletedSearchesOnBestSoFar+1,
+                            nbCompletedRestarts = nbCompletedRestarts + 1,
                             display)
                         }
                       }else{
@@ -233,7 +242,8 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
                         next(runningSearchIDsAndIsItFromBestSoFar.-(searchID),
                           bestObjSoFar = bestObjSoFar,
                           bestMoveSoFar = bestMoveSoFar,
-                          nbCompletedSearchesOnBestSoFar,
+                          nbCompletedSearchesOnBestSoFar = nbCompletedSearchesOnBestSoFar,
+                          nbCompletedRestarts = nbCompletedRestarts + 1,
                           display)
                       }
                     }
@@ -245,7 +255,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
                     val wasRunningOnBestSoFar = runningSearchIDsAndIsItFromBestSoFar.getOrElse(searchID,false)
                     if(wasRunningOnBestSoFar){
                       //We were running on BestSoFar, so stop criterion progressed
-                      if(nbCompletedSearchesOnBestSoFar +1 >= nbConsecutiveRestartWithoutImprovement){
+                      if(nbCompletedSearchesOnBestSoFar +1 >= nbConsecutiveRestartWithoutImprovement && nbCompletedRestarts +1 >= minNbRestarts){
                         //we finished :-)
 
                         context.log.info(s"no move found, was working on bestSoFar, finished, canceling ${runningSearchIDsAndIsItFromBestSoFar.size -1} ongoing searches finalOBj:$bestObjSoFar")
@@ -261,11 +271,12 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
                           bestObjSoFar,
                           bestMoveSoFar,
                           display,
+                          nbCompletedRestarts = nbCompletedRestarts + 1,
                           context)
                       }else{
                         //progress on stop criterion, but not finished yet
 
-                        context.log.info(s"no move found, was working on bestSoFar, not yet finished  (${nbCompletedSearchesOnBestSoFar +1}/$nbConsecutiveRestartWithoutImprovement)")
+                        context.log.info(s"no move found, was working on bestSoFar, not finished yet (${nbCompletedSearchesOnBestSoFar +1}/$nbConsecutiveRestartWithoutImprovement) (${nbCompletedRestarts +1}/$minNbRestarts)")
 
                         context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
                           case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, 0)
@@ -276,6 +287,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
                           bestObjSoFar = bestObjSoFar,
                           bestMoveSoFar = bestMoveSoFar,
                           nbCompletedSearchesOnBestSoFar+1,
+                          nbCompletedRestarts = nbCompletedRestarts + 1,
                           display)
                       }
                     }else{
@@ -292,6 +304,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
                         bestObjSoFar = bestObjSoFar,
                         bestMoveSoFar = bestMoveSoFar,
                         nbCompletedSearchesOnBestSoFar,
+                        nbCompletedRestarts = nbCompletedRestarts + 1,
                         display)
                     }
                 }
@@ -308,6 +321,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
                   bestObjSoFar = bestObjSoFar,
                   bestMoveSoFar = bestMoveSoFar,
                   nbCompletedSearchesOnBestSoFar = nbCompletedSearchesOnBestSoFar,
+                  nbCompletedRestarts = nbCompletedRestarts,
                   display)
 
               case c: SearchCrashed =>
@@ -344,6 +358,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
               bestObjSoFar = bestObjSoFar,
               bestMoveSoFar = bestMoveSoFar,
               nbCompletedSearchesOnBestSoFar = nbCompletedSearchesOnBestSoFar,
+              nbCompletedRestarts = nbCompletedRestarts,
               display)
 
           case w: WrappedError =>
@@ -362,14 +377,15 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
                        bestObjSoFar:Long,
                        bestMoveSoFar:Option[LoadIndependentSolutionMove],
                        display:Option[ActorRef[SearchProgress]],
+                       nbCompletedRestarts:Int,
                        context:ActorContext[WrappedData]): Behavior[WrappedData] = {
 
       if(!gracefulStop){
-        context.log.info(s"non-graceful stop.")
+        context.log.info(s"non-graceful stop; nbRestarts:$nbCompletedRestarts")
         resultPromise.success(WrappedFinalAnswer(move=bestMoveSoFar))
         Behaviors.stopped
       } else if (nbRunningSearches == 0) {
-        context.log.info(s"graceful stop: all search completed.")
+        context.log.info(s"graceful stop: all search completed; nbRestarts:$nbCompletedRestarts")
         resultPromise.success(WrappedFinalAnswer(move=bestMoveSoFar))
         Behaviors.stopped
       } else {
@@ -381,6 +397,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
                 bestObjSoFar,
                 bestMoveSoFar,
                 Some(displayActor),
+                nbCompletedRestarts = nbCompletedRestarts,
                 context)
 
             case w@WrappedSearchEnded(searchEnded: SearchEnded) =>
@@ -403,6 +420,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
                         bestObjSoFar = moveFound.objAfter,
                         bestMoveSoFar = Some(moveFound.move.asInstanceOf[LoadIndependentSolutionMove]),
                         nbCompletedSearchesOnBestSoFar = 0,
+                        nbCompletedRestarts = nbCompletedRestarts + 1,
                         display)
 
                     case _ =>
@@ -410,6 +428,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
                         bestObjSoFar,
                         bestMoveSoFar,
                         display,
+                        nbCompletedRestarts = nbCompletedRestarts + 1,
                         context)
                   }
 
@@ -418,6 +437,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
                     bestObjSoFar,
                     bestMoveSoFar,
                     display,
+                    nbCompletedRestarts = nbCompletedRestarts,
                     context)
 
                 case c:SearchCrashed =>
@@ -430,6 +450,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
                 bestObjSoFar,
                 bestMoveSoFar,
                 display,
+                nbCompletedRestarts = nbCompletedRestarts,
                 context)
 
             case w: WrappedError =>
