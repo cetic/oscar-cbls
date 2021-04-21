@@ -2,7 +2,7 @@ package oscar.cbls.business.routing.invariants.vehicleCapacity
 
 import oscar.cbls.CBLSIntVar
 import oscar.cbls.algo.quick.QList
-import oscar.cbls.algo.seq.IntSequence
+import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.business.routing.invariants.global._
 import oscar.cbls.core.computation.ChangingSeqValue
 
@@ -209,6 +209,31 @@ class GlobalVehicleCapacityConstraint(routes: ChangingSeqValue, override val n: 
     Array.tabulate(n)(node =>
       node -> allNodes.filter(neighbor =>
         contentVariationAtNode(node) + contentVariationAtNode(neighbor) <= vehicleMaxCapacity)).toMap
+  }
+
+  /**
+   * WARNING : know what you're doing
+   * Perform the precomputation on all vehicle given the current value of routes.
+   * The main purpose of this method is to update the vehicle content functions after the end
+   * of the optimisation for result extraction purpose.
+   */
+  def performPreComputeOnAllVehicle() ={
+    val curRoutes = routes.value
+    for(curV <- 0 until v){
+      performPreCompute(curV, curRoutes)
+    }
+  }
+
+  def contentsOfRoute(vehicle: Int): Array[Long] = {
+    def contentAtNode(explorer: Option[IntSequenceExplorer], contentAtPreviousNode: Long = 0L): List[Long] ={
+      if(explorer.isEmpty || (vehicle != v - 1 && explorer.get.value == vehicle + 1))
+        List.empty
+      else{
+        val content = contentAtPreviousNode + contentVariationAtNode(explorer.get.value)
+        List(content) ::: contentAtNode(explorer.get.next, content)
+      }
+    }
+    contentAtNode(routes.value.explorerAtAnyOccurrence(vehicle)).toArray
   }
 
 }
