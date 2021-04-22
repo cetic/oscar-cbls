@@ -481,7 +481,7 @@ class MoveExplorer(v:Int,
     }
 
     override def exploreEdge(edge: Int): Unit = {
-      //ensureNeighborhoodAndRemove, we do it lazyly because there might be nothing to do, actually
+      //ensureNeighborhoodAndRemove, we do it lazily because there might be nothing to do, actually
       // (although it is not quite sure that this actually useful at all)
       ensureNeighborhoodAndReInsert()
 

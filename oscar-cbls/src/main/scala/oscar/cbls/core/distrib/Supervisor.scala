@@ -49,10 +49,10 @@ object Supervisor {
   def startSupervisorAndActorSystem(store: Store, search: Neighborhood, verbose: Boolean = false, tic: Duration = Duration.Inf): Supervisor = {
     val supervisorActorSystem = internalStartSupervisorAndActorSystem(verbose, tic)
     val supervisor = wrapSupervisor(supervisorActorSystem, store: Store, verbose)(system = supervisorActorSystem)
-    val (nbNRemoteNeighborhood,nbRemoteCombinator,neighborhoods) = search.labelAndExtractRemoteNeighborhoods(supervisor: Supervisor)
+    val (nbNRemoteNeighborhood,nbDistributedCombinator,neighborhoods) = search.labelAndExtractRemoteNeighborhoods(supervisor: Supervisor)
 
     val startLogger: Logger = LoggerFactory.getLogger("SupervisorObject")
-    startLogger.info(s"analyzed search; nbRemoteNeighborhood:$nbNRemoteNeighborhood nbRemoteCombinator:$nbRemoteCombinator")
+    startLogger.info(s"analyzed search; nbDistributedCombinator:$nbDistributedCombinator nbRemoteNeighborhood:$nbNRemoteNeighborhood")
 
     supervisor
   }

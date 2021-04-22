@@ -26,7 +26,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
       case NoMoveFound => IndependentNoMoveFound()
       case MoveFound(m) =>
         sendProgressTo match {
-          case None => ;
+          case None =>
           case Some(target) =>
             target ! SearchProgress(searchId, m.objAfter, System.currentTimeMillis())
         }
@@ -61,10 +61,10 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
     while(!shouldAbort() && (theNeighborhood.getMoveAbortable(obj, obj.value, acc, shouldAbort) match {
       case NoMoveFound => false
       case MoveFound(m) =>
-        m.commit();
+        m.commit()
         if(!anyMoveFound){
           name = m.neighborhoodName
-          anyMoveFound = true;
+          anyMoveFound = true
         }
         if(m.objAfter < bestObjSoFar){
           bestObjSoFar = m.objAfter
@@ -72,7 +72,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
         true
     })) {
       sendProgressTo match{
-        case None => ;
+        case None =>
         case Some(target) =>
           val currentTimeMs = System.currentTimeMillis()
           if (nextTimeForFeedbackMS <= currentTimeMs){
@@ -85,7 +85,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
 
     if(anyMoveFound && !shouldAbort()){
       sendProgressTo match {
-        case None => ;
+        case None =>
         case Some(target) =>
           target ! SearchProgress(searchId, obj.value, System.currentTimeMillis())
       }
@@ -95,7 +95,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
         IndependentSolution(obj.model.solution())))
     }else {
       sendProgressTo match {
-        case None => ;
+        case None =>
         case Some(target) =>
           target ! SearchProgress(searchId, lastProgressOBj, System.currentTimeMillis(), aborted=true)
       }
