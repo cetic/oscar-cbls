@@ -224,16 +224,28 @@ class GlobalVehicleCapacityConstraint(routes: ChangingSeqValue, override val n: 
     }
   }
 
-  def contentsOfRoute(vehicle: Int): Array[Long] = {
-    def contentAtNode(explorer: Option[IntSequenceExplorer], contentAtPreviousNode: Long = 0L): List[Long] ={
+  def contentsOfRoute(vehicle: Int): CapacityResult = {
+    var totalPickedUp = 0L
+    var totalDroppedOff = 0L
+    def contentAtNode(explorer: Option[IntSequenceExplorer], contentAtPreviousNode: Long = 0L): List[(Long,Long)] ={
       if(explorer.isEmpty || (vehicle != v - 1 && explorer.get.value == vehicle + 1))
         List.empty
       else{
-        val content = contentAtPreviousNode + contentVariationAtNode(explorer.get.value)
-        List(content) ::: contentAtNode(explorer.get.next, content)
+        val node = explorer.get.value
+        val delta = contentVariationAtNode(node)
+        val newContent = contentAtPreviousNode + delta
+
+        if(contentVariationAtNode(node) > 0) totalPickedUp+=delta
+        else totalDroppedOff+=delta
+        List(contentAtPreviousNode,newContent) ::: contentAtNode(explorer.get.next, newContent)
       }
     }
-    contentAtNode(routes.value.explorerAtAnyOccurrence(vehicle)).toArray
+    val contentFlow = contentAtNode(routes.value.explorerAtAnyOccurrence(vehicle))
+    val lastNode = if(vehicle == v-1) routes.value.last else routes.value.explorerAtAnyOccurrence(vehicle+1).get.prev.get.value
+    val maxContentAnyTime = preComputedValues(vehicle)(lastNode).maxContentIfStartAt0
+    CapacityResult(totalPickedUp, totalDroppedOff, maxContentAnyTime, contentFlow.toArray)
   }
 
 }
+
+case class CapacityResult(totalPickedUp: Long, totalDroppedOff: Long, maximumContentAnyTime: Long, contentFlow: Array[(Long,Long)])
