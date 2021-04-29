@@ -229,7 +229,7 @@ class GlobalVehicleCapacityConstraint(routes: ChangingSeqValue, override val n: 
     var totalDroppedOff = 0L
     def contentAtNode(explorer: Option[IntSequenceExplorer], contentAtPreviousNode: Long = 0L): List[(Long,Long)] ={
       if(explorer.isEmpty || (vehicle != v - 1 && explorer.get.value == vehicle + 1))
-        List.empty
+        List.empty[(Long,Long)]
       else{
         val node = explorer.get.value
         val delta = contentVariationAtNode(node)
@@ -237,10 +237,10 @@ class GlobalVehicleCapacityConstraint(routes: ChangingSeqValue, override val n: 
 
         if(contentVariationAtNode(node) > 0) totalPickedUp+=delta
         else totalDroppedOff+=delta
-        List(contentAtPreviousNode,newContent) ::: contentAtNode(explorer.get.next, newContent)
+        List((contentAtPreviousNode,newContent)) ::: contentAtNode(explorer.get.next, newContent)
       }
     }
-    val contentFlow = contentAtNode(routes.value.explorerAtAnyOccurrence(vehicle))
+    val contentFlow: List[(Long,Long)] = contentAtNode(routes.value.explorerAtAnyOccurrence(vehicle))
     val lastNode = if(vehicle == v-1) routes.value.last else routes.value.explorerAtAnyOccurrence(vehicle+1).get.prev.get.value
     val maxContentAnyTime = preComputedValues(vehicle)(lastNode).maxContentIfStartAt0
     CapacityResult(totalPickedUp, totalDroppedOff, maxContentAnyTime, contentFlow.toArray)
