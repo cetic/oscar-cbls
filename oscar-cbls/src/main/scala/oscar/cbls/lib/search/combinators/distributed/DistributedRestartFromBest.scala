@@ -109,14 +109,9 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
       //starting up all searches
       context.log.info(s"starting restart search, init obj: $initialObj")
 
-      context.ask[GetNewUniqueID,Long](supervisor.supervisorActor,ref => GetNewUniqueID(ref)) {
-        case Success(uniqueID:Long) => WrappedGotUniqueID(uniqueID:Long,if(performInitialNonRandomizeDescent) 1 else 0)
-        case Failure(_) => WrappedError(msg=Some("supervisor actor timeout1"))
-      }
-
-      for(i <- 1 until maxWorkers) {
+      for(i <- 0 until maxWorkers) { //one nless than number of workers
         context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
-          case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, 0)
+          case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, if(performInitialNonRandomizeDescent && i == 0) 1 else 0)
           case Failure(_) => WrappedError(msg = Some("supervisor actor timeout2"))
         }
       }
@@ -161,6 +156,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
 
                       var newRunning = runningSearchIDsAndIsItFromBestSoFar.flatMap({case (x:Long,y:Boolean) => if(x == searchID) None else Some((x,false))})
 
+                      //ask to restart a search
                       context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
                         case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, 0)
                         case Failure(_) => WrappedError(msg = Some("supervisor actor timeout3"))
@@ -218,6 +214,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
                           //progress on stop criterion, but not finished yet
                           context.log.info(s"new solution: not improved over best so far, was working on bestSoFar, not finished yet (${nbCompletedSearchesOnBestSoFar +1}/$nbConsecutiveRestartWithoutImprovement) (${nbCompletedRestarts +1}/$minNbRestarts)")
 
+                          //ask to restart a search
                           context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
                             case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, 0)
                             case Failure(_) => WrappedError(msg = Some("supervisor actor timeout4"))
@@ -234,6 +231,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
                         //We were NOT running on BestSoFar, so stop criterion NOT progressed
                         context.log.info(s"new solution: not improved over best so far, was not working on bestSoFar")
 
+                        //ask to restart a search
                         context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
                           case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, 0)
                           case Failure(_) => WrappedError(msg = Some("supervisor actor timeout5"))
