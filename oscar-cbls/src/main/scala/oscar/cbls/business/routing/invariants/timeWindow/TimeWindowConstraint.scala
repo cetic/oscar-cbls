@@ -359,10 +359,10 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     preComputedValues
   }
 
-  def arrivalAndLeaveTimesOfRoute(vehicle: Int): Array[(Long,Long)] ={
+  def timingResultsOfRoute(vehicle: Int): Array[TimingResult] ={
 
     var lastNode = -1
-    def nodesArrivalAndLeaveTimes(explorer: Option[IntSequenceExplorer]): Array[(Long,Long)] ={
+    def nodesArrivalAndLeaveTimes(explorer: Option[IntSequenceExplorer]): Array[TimingResult] ={
       if(explorer.isEmpty){
         lastNode = routes.value.last
         Array.empty
@@ -371,24 +371,29 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
         Array.empty
       } else {
         val node = explorer.get.value
+        val previousNode = explorer.get.prev.get.value
         val leaveTimeAtNode = preComputedValues(vehicle)(node)(0)
-        val lastNodeTF = preComputedValues(node)(node)
-        val arrivalTimeAtNode = leaveTimeAtNode - lastNodeTF.taskDuration
-        Array((arrivalTimeAtNode, leaveTimeAtNode)) ++
+        val leaveTimeAtPreviousNode = preComputedValues(vehicle)(previousNode)(0)
+        val nodeTF = preComputedValues(node)(node)
+        val arrivalTimeAtNode = leaveTimeAtPreviousNode + travelTimeMatrix(previousNode)(node)
+        val waitingDuration = Math.max(nodeTF.ea - arrivalTimeAtNode,0)
+        Array(TimingResult(arrivalTimeAtNode, leaveTimeAtNode, waitingDuration, nodeTF.taskDuration)) ++
           nodesArrivalAndLeaveTimes(explorer.get.next)
       }
     }
     val explorerAtFirstNode = routes.value.explorerAtAnyOccurrence(vehicle).get.next
     val nodesAandL = nodesArrivalAndLeaveTimes(explorerAtFirstNode)
-    val (arrivalTimeAtDepot, latestLeaveTimeFromDepot) = {
-      if(nodesAandL.isEmpty) (0L,0L)
+    val vehicleTimingResult = {
+      if(nodesAandL.isEmpty) TimingResult(0L,0L,0L,0L)
       else{
         val firstNode = explorerAtFirstNode.get.value
-        (nodesAandL.head._1 - travelTimeMatrix(vehicle)(firstNode),
-          nodesAandL.last._2 + travelTimeMatrix(lastNode)(vehicle))
+        TimingResult(nodesAandL.last.leaveTime + travelTimeMatrix(lastNode)(vehicle),
+          nodesAandL.head.arrivalTime - travelTimeMatrix(vehicle)(firstNode), 0, preComputedValues(vehicle)(vehicle).taskDuration)
       }
     }
 
-    Array((arrivalTimeAtDepot, latestLeaveTimeFromDepot)) ++ nodesAandL
+    Array(vehicleTimingResult) ++ nodesAandL
   }
 }
+
+case class TimingResult(arrivalTime: Long, leaveTime: Long, waitingDuration: Long, taskDuration: Long){}
