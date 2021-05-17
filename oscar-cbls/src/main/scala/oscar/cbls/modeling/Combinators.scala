@@ -392,11 +392,11 @@ class NeighborhoodOps(n:Neighborhood){
     Restart(n,randomizationNeighborhood,maxRestartWithoutImprovement,obj,restartFromBest,minRestarts)
   }
 
-  def onExhaustRestartAfterJump(randomizationProcedure: =>Unit, maxRestartWithoutImprovement:Int, obj:Objective, restartFromBest:Boolean = false, randomizationName:String = "Randomization") = {
+  def onExhaustRestartAfterJump(randomizationProcedure: =>Unit, maxRestartWithoutImprovement:Int, obj:Objective, restartFromBest:Boolean = false, minRestarts:Int = 0,randomizationName:String = "Randomization") = {
     val jumpNeighborhood = new JumpNeighborhood(randomizationName){
       override def doIt(): Unit = randomizationProcedure
     }
-    onExhaustRestartAfter(jumpNeighborhood, maxRestartWithoutImprovement, obj, restartFromBest)
+    onExhaustRestartAfter(jumpNeighborhood, maxRestartWithoutImprovement, obj, restartFromBest,minRestarts)
   }
 
   /**
