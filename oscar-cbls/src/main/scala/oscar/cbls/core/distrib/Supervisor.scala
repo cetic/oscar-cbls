@@ -49,10 +49,10 @@ object Supervisor {
   def startSupervisorAndActorSystem(store: Store, search: Neighborhood, verbose: Boolean = false, tic: Duration = Duration.Inf): Supervisor = {
     val supervisorActorSystem = internalStartSupervisorAndActorSystem(verbose, tic)
     val supervisor = wrapSupervisor(supervisorActorSystem, store: Store, verbose)(system = supervisorActorSystem)
-    val (nbNRemoteNeighborhood,nbRemoteCombinator,neighborhoods) = search.labelAndExtractRemoteNeighborhoods(supervisor: Supervisor)
+    val (nbNRemoteNeighborhood,nbDistributedCombinator,neighborhoods) = search.labelAndExtractRemoteNeighborhoods(supervisor: Supervisor)
 
     val startLogger: Logger = LoggerFactory.getLogger("SupervisorObject")
-    startLogger.info(s"analyzed search; nbRemoteNeighborhood:$nbNRemoteNeighborhood nbRemoteCombinator:$nbRemoteCombinator")
+    startLogger.info(s"analyzed search; nbDistributedCombinator:$nbDistributedCombinator nbRemoteNeighborhood:$nbNRemoteNeighborhood")
 
     supervisor
   }
@@ -209,7 +209,7 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor], m: Store, 
   //TODO: for the distributed version, regularly check that workers performing some wearch are still alive and working, otherwise, search must be restarted at another worker.
 
   def createLocalWorker(m: Store, search: Neighborhood): Unit = {
-    val workerBehavior = WorkerActor.createWorkerBehavior(search.identifyRemotelySearcheableNeighbrhoods, m, this.supervisorActor, verbose)
+    val workerBehavior = WorkerActor.createWorkerBehavior(search.identifyRemotelySearchableNeighborhoods, m, this.supervisorActor, verbose)
     supervisorActor ! SpawnWorker(workerBehavior)
   }
 

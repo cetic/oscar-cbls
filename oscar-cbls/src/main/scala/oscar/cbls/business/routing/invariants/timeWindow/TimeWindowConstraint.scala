@@ -15,7 +15,7 @@
 package oscar.cbls.business.routing.invariants.timeWindow
 
 import oscar.cbls.Domain
-import oscar.cbls.algo.seq.IntSequence
+import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.business.routing.invariants.global._
 import oscar.cbls.core.computation.{CBLSIntVar, ChangingSeqValue}
@@ -338,15 +338,62 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
   }
 
   /**
+   * WARNING : know what you're doing
+   * Perform the precomputation on all vehicle given the current value of routes.
+   * The main purpose of this method is to update the transfer functions after the end
+   * of the optimisation for result extraction purpose.
+   */
+  def performPreComputeOnAllVehicle() ={
+    val curRoutes = routes.value
+    for(curV <- 0 until v){
+      performPreCompute(curV, curRoutes)
+    }
+  }
+
+  /**
     * Return all transfer functions of the problem.
-    * Meant for post-optimisation. Don't use it during optimisation.
+    * Meant for post-optimisation.
     * @return A 2L-dimension table of TransferFunction
     */
-  def transferFunctions(routes: IntSequence): Array[Array[TransferFunction]] ={
-    for(curV <- 0 to v){
-      performPreCompute(curV, routes)
-    }
-
+  def transferFunctions(): Array[Array[TransferFunction]] ={
     preComputedValues
   }
+
+  def timingResultsOfRoute(vehicle: Int): Array[TimingResult] ={
+
+    var lastNode = -1
+    def nodesArrivalAndLeaveTimes(explorer: Option[IntSequenceExplorer]): Array[TimingResult] ={
+      if(explorer.isEmpty){
+        lastNode = routes.value.last
+        Array.empty
+      } else if(vehicle != v-1 && explorer.get.value == vehicle + 1) {
+        lastNode = explorer.get.prev.get.value
+        Array.empty
+      } else {
+        val node = explorer.get.value
+        val previousNode = explorer.get.prev.get.value
+        val leaveTimeAtNode = preComputedValues(vehicle)(node)(0)
+        val leaveTimeAtPreviousNode = preComputedValues(vehicle)(previousNode)(0)
+        val nodeTF = preComputedValues(node)(node)
+        val arrivalTimeAtNode = leaveTimeAtPreviousNode + travelTimeMatrix(previousNode)(node)
+        val waitingDuration = Math.max(nodeTF.ea - arrivalTimeAtNode,0)
+        Array(TimingResult(arrivalTimeAtNode, leaveTimeAtNode, waitingDuration, nodeTF.taskDuration)) ++
+          nodesArrivalAndLeaveTimes(explorer.get.next)
+      }
+    }
+    val explorerAtFirstNode = routes.value.explorerAtAnyOccurrence(vehicle).get.next
+    val nodesAandL = nodesArrivalAndLeaveTimes(explorerAtFirstNode)
+    val vehicleTimingResult = {
+      if(nodesAandL.isEmpty) TimingResult(0L,0L,0L,0L)
+      else{
+        val firstNode = explorerAtFirstNode.get.value
+        TimingResult(nodesAandL.last.leaveTime + travelTimeMatrix(lastNode)(vehicle),
+          nodesAandL.head.arrivalTime - travelTimeMatrix(vehicle)(firstNode), 0, preComputedValues(vehicle)(vehicle).taskDuration)
+      }
+    }
+
+    Array(vehicleTimingResult) ++ nodesAandL
+  }
 }
+
+case class TimingResult(arrivalTime: Long, leaveTime: Long, waitingDuration: Long, taskDuration: Long){}

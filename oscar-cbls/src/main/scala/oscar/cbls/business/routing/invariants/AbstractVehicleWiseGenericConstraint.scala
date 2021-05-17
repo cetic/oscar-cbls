@@ -8,6 +8,8 @@ import oscar.cbls.core.{Checker, Invariant}
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.Checker
 
+import scala.collection.immutable.SortedSet
+
 /**
  * This abstract class purpose is to ease the implementation of constraints that only need the route on which a modification occurred.
  * For instance if you have a very complicated computation that's not supported by another constraint.
@@ -18,8 +20,8 @@ import oscar.cbls.core.propagation.Checker
  * @param v The number of vehicles
  * @tparam U The value type of your constraint (Int, Boolean...)
  */
-abstract class AbstractVehicleWiseGenericConstraint[U <: Any : Manifest](routes: ChangingSeqValue, v: Int)
-  extends Invariant with SeqNotificationTarget {
+abstract class AbstractVehicleWiseGenericConstraint[U <: Any : Manifest](routes: ChangingSeqValue, v: Int, values: Iterable[Value] = Iterable.empty)
+  extends Invariant with SeqNotificationTarget with IntNotificationTarget with SetNotificationTarget {
   val n: Int = routes.maxValue + 1
   val vehicles: Range = 0 until v
 
@@ -46,6 +48,9 @@ abstract class AbstractVehicleWiseGenericConstraint[U <: Any : Manifest](routes:
   protected var vehicleSearcher: VehicleLocation = VehicleLocation((0 until v).toArray)
 
   registerStaticAndDynamicDependency(routes)
+  for(value <- values){
+    registerStaticAndDynamicDependency(value)
+  }
 
   finishInitialization()
 
@@ -100,10 +105,17 @@ abstract class AbstractVehicleWiseGenericConstraint[U <: Any : Manifest](routes:
     }
   }
 
+  override def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Long, NewVal: Long): Unit ={
+    scheduleForPropagation()
+  }
+
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
+    scheduleForPropagation()
+  }
+
   override def notifySeqChanges(r: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     val newRoute = routes.newValue
     if (!variableInitiated) initVariables(newRoute)
-    println(changes)
 
     if (digestUpdates(changes) && (this.checkpointLevel != -1)) {
       QList.qForeach(changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList, (vehicle: Int) => {
@@ -172,9 +184,7 @@ abstract class AbstractVehicleWiseGenericConstraint[U <: Any : Manifest](routes:
         // Restoring all other values
         this.changedVehiclesSinceCheckpoint0.all = false
         QList.qForeach(savedDataAtCheckpointLevel.head._1, (vehicle: Int) => this.changedVehiclesSinceCheckpoint0(vehicle) = true)
-        println("before : " + (0 until v).map(vehicleSearcher.startPosOfVehicle(_)).toList)
         vehicleSearcher = savedDataAtCheckpointLevel.head._2
-        println("after : " + (0 until v).map(vehicleSearcher.startPosOfVehicle(_)).toList)
 
 
         this.checkpointLevel = checkpointLevel

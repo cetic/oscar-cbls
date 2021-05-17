@@ -401,7 +401,7 @@ abstract class Neighborhood(name:String = null) {
   }
 
   //Call this at the worker site
-  def identifyRemotelySearcheableNeighbrhoods:SortedMap[Int,RemoteNeighborhood] = {
+  def identifyRemotelySearchableNeighborhoods:SortedMap[Int,RemoteNeighborhood] = {
     SortedMap.empty[Int,RemoteNeighborhood] ++ (labelAndExtractRemoteNeighborhoods(supervisor = null)._3.map(r => (r.neighborhoodID,r)))
   }
 

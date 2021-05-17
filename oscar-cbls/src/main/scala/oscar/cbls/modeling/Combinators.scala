@@ -753,4 +753,19 @@ class NeighborhoodOps(n:Neighborhood){
    */
   def cutTail(timePeriodInMilliSecond:Long,minRelativeImprovementByCut:Double,minTimeBeforeFirstCutInMilliSecond:Long = 0) =
     new CutTail(n, timePeriodInMilliSecond,minRelativeImprovementByCut,minTimeBeforeFirstCutInMilliSecond)
+
+
+  /**
+   * This combinator will prevent a neighborhood from taking way more time than usual
+   * it first calibrates to know the time that the neighborhood needs to find a move, "maxTimeToFind"
+   * then it will set a hard timeout on the neighborhood.
+   * This hard timeout will abort the exploration after "maxTimeToFind * cutMultiplier".
+   * In case of abort, this combinator will return "noMoveFound"
+   *
+   * @param calibrationRuns the number of moves that the neighborhood will find in order to calibrate the watchdog
+   * @param cutMultiplier the max multiplier on the time
+   * @param reevaluate after a set of neighborhood exploration, calibration wil be performed again
+   */
+  def watchDog(calibrationRuns:Int = 5, cutMultiplier:Double = 2, reevaluate:Int = 1000) =
+    WatchDog(n, calibrationRuns, cutMultiplier, reevaluate)
 }

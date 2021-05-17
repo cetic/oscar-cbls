@@ -88,6 +88,7 @@ object WarehouseLocationDistributed3 extends App{
             swapsK(20) guard(() => openWarehouses.value.size >= 5))),
         randomSwapNeighborhood(warehouseOpenArray,() => W/10),
         nbConsecutiveRestartWithoutImprovement = 5,
+        minNbRestarts = 20,
         visu = true)
 
     (m,neighborhood,obj,() => {println(openWarehouses)})
