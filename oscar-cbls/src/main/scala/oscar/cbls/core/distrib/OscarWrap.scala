@@ -2,9 +2,29 @@ package oscar.cbls.core.distrib
 
 import akka.actor.typed.ActorRef
 import oscar.cbls.core.computation.{IndependentSerializableAbstractVariableSnapshot, Solution, Store}
-import oscar.cbls.core.objective.Objective
+import oscar.cbls.core.objective.{IndependentObjective, Objective}
 import oscar.cbls.core.search._
 
+
+// ////////////////////////////////////////////////////////////
+
+case class SearchProgress(searchId:Long, obj:Long, timeMs:Long, aborted:Boolean = false)
+
+case class SearchRequest(neighborhoodID: RemoteNeighborhoodIdentification,
+                         acc: (Long, Long) => Boolean,
+                         obj: IndependentObjective,
+                         startSolutionOpt: Option[IndependentSolution],
+                         sendFullSolution:Boolean = false,
+                         doAllMoves:Boolean = false,
+                         sendProgressTo:Option[ActorRef[SearchProgress]] = None) {
+  override def toString: String = s"SearchRequest($neighborhoodID,$acc,$obj,sendFullSolution:$sendFullSolution)"
+}
+
+case class SearchTask(request: SearchRequest,
+                      searchId: Long,
+                      sendResultTo: ActorRef[SearchEnded]) {
+  override def toString: String = s"SearchTask($request,$searchId,${sendResultTo.path})"
+}
 // ////////////////////////////////////////////////////////////
 
 //le truc qu'on envoie au worker

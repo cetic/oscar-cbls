@@ -14,6 +14,7 @@ import scala.concurrent.duration.Duration.Infinite
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
 
+
 sealed trait MessagesToSupervisor
 
 final case class NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) extends MessagesToSupervisor with ControlMessage
@@ -42,9 +43,12 @@ final case class NbWorkers(replyTo: ActorRef[Int]) extends MessagesToSupervisor
 
 final case class SpawnNewActor[T](behavior:Behavior[T],behaviorName:String, replyTo:ActorRef[ActorRef[T]]) extends MessagesToSupervisor
 
+
 import scala.concurrent.duration._
 
 object Supervisor {
+
+  val nbCores: Int = Runtime.getRuntime.availableProcessors()
 
   def startSupervisorAndActorSystem(store: Store, search: Neighborhood, verbose: Boolean = false, tic: Duration = Duration.Inf): Supervisor = {
     val supervisorActorSystem = internalStartSupervisorAndActorSystem(verbose, tic)

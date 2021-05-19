@@ -12,25 +12,6 @@ import scala.collection.SortedMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-
-case class SearchProgress(searchId:Long, obj:Long, timeMs:Long, aborted:Boolean = false)
-
-case class SearchRequest(neighborhoodID: RemoteNeighborhoodIdentification,
-                         acc: (Long, Long) => Boolean,
-                         obj: IndependentObjective,
-                         startSolutionOpt: Option[IndependentSolution],
-                         sendFullSolution:Boolean = false,
-                         doAllMoves:Boolean = false,
-                         sendProgressTo:Option[ActorRef[SearchProgress]] = None) {
-  override def toString: String = s"SearchRequest($neighborhoodID,$acc,$obj,sendFullSolution:$sendFullSolution)"
-}
-
-case class SearchTask(request: SearchRequest,
-                      searchId: Long,
-                      sendResultTo: ActorRef[SearchEnded]) {
-  override def toString: String = s"SearchTask($request,$searchId,${sendResultTo.path})"
-}
-
 sealed abstract class MessageToWorker
 final case class StartSearch(search: SearchTask, startID: Long, replyTo: ActorRef[MessagesToSupervisor]) extends MessageToWorker
 final case class AbortSearch(searchId: Long, keepAliveIfOjBelow:Option[Long] = None) extends MessageToWorker
@@ -44,14 +25,7 @@ case class WorkerAborting(searchID: Long) extends ExternalWorkerState
 case class WorkerIdle() extends ExternalWorkerState
 case class WorkerShuttingDown() extends ExternalWorkerState
 
-sealed abstract class WorkerState
-case class IAmBusy(search: SearchTask, started:Long) extends WorkerState
-case class Aborting(search: SearchTask) extends WorkerState
-case class Idle() extends WorkerState
-case class ShuttingDown() extends WorkerState
-
 object WorkerActor {
-  val nbCores: Int = Runtime.getRuntime.availableProcessors()
 
   def startWorkerAndActorSystem(neighborhoods: SortedMap[Int, RemoteNeighborhood],
                                 m: Store,
@@ -85,6 +59,12 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
                   m: Store,
                   master: ActorRef[MessagesToSupervisor],
                   verbose: Boolean) {
+
+  sealed abstract class WorkerState
+  case class IAmBusy(search: SearchTask, started:Long) extends WorkerState
+  case class Aborting(search: SearchTask) extends WorkerState
+  case class Idle() extends WorkerState
+  case class ShuttingDown() extends WorkerState
 
   //This is the single thread that is ready to perform all computation.
   // There is at most one computation per worker at any point in time, so the threadPool is 1.
