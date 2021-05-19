@@ -4,7 +4,6 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import org.slf4j.{Logger, LoggerFactory}
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.objective.IndependentObjective
 
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
@@ -71,7 +70,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
   private val executorForComputation = Executors.newFixedThreadPool(1,
     new java.util.concurrent.ThreadFactory {
       final private val threadNumber = new AtomicInteger(1)
-      override def newThread(r: Runnable) = {
+      override def newThread(r: Runnable): Thread = {
         val t = new Thread(null, r, "workerThread" + threadNumber.getAndIncrement, 0)
         t.setDaemon(false)
         t.setPriority(Thread.MAX_PRIORITY)
