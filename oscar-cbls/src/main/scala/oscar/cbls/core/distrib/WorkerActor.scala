@@ -165,14 +165,14 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
               //we do not tell anything to the workGiver; the supervisor will have to find another slave
               if (verbose) context.log.info(s"got command for start search:${newSearch.searchId} but already busy")
 
-              replyTo ! SearchNotStarted(newSearch, context.self)
+              replyTo ! SearchNotStarted(newSearch.searchId, startID, context.self)
               Behaviors.same
 
             case Aborting(search) =>
               //TODO: il faudrait pouvoir stocker cette recherche en local ici pour déjà avoir la recherche suivante en cas d'abort
               if (verbose) context.log.info(s"got command for start search:${newSearch.searchId} but already busy aborting a search")
 
-              replyTo ! SearchNotStarted(newSearch, context.self)
+              replyTo ! SearchNotStarted(newSearch.searchId, startID, context.self)
               Behaviors.same
 
             case Idle() =>
@@ -191,7 +191,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
                 case Failure(e) =>
                   WrappedSearchEnded(SearchCrashed(newSearch.searchId, newSearch.request.neighborhoodID, e, context.self))
               }
-              replyTo ! SearchStarted(newSearch, startID, context.self)
+              replyTo ! SearchStarted(newSearch.searchId, startID, context.self)
               next(IAmBusy(newSearch,System.currentTimeMillis()))
           }
 

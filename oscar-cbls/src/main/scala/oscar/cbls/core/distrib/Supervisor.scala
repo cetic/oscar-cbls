@@ -21,17 +21,17 @@ final case class NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) extends
 
 final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSearchIDOpt: Option[Long], completedNeighborhoodIDAndMoveFound: Option[(Int,Boolean)], currentModelId:Option[Int]) extends MessagesToSupervisor with ControlMessage
 
-final case class CancelSearchToSupervisor(searchID: Long,keepAliveIfOjBelow:Option[Long]=None) extends MessagesToSupervisor with ControlMessage
+final case class CancelSearchToSupervisor(searchID: Long, keepAliveIfOjBelow:Option[Long]=None) extends MessagesToSupervisor with ControlMessage
 
-final case class SearchStarted(search: SearchTask, searchID: Long, worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
+final case class SearchStarted(searchID: Long, startID: Long, worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
 
-final case class SearchNotStarted(search: SearchTask, worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
+final case class SearchNotStarted(searchID: Long, startID:Long, worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
 
 final case class Crash(worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
 
 final case class DelegateSearch(searchRequest: SearchRequest,
                                 sendSearchResultTo:ActorRef[SearchEnded],
-                                uniqueSearchID:Long = -1) extends MessagesToSupervisor with ControlMessage
+                                searchID:Long = -1) extends MessagesToSupervisor with ControlMessage
 
 final case class GetNewUniqueID(replyTo:ActorRef[Long]) extends MessagesToSupervisor with ControlMessage
 
@@ -42,7 +42,6 @@ final case class SpawnWorker(workerBehavior: Behavior[MessageToWorker]) extends 
 final case class NbWorkers(replyTo: ActorRef[Int]) extends MessagesToSupervisor
 
 final case class SpawnNewActor[T](behavior:Behavior[T],behaviorName:String, replyTo:ActorRef[ActorRef[T]]) extends MessagesToSupervisor
-
 
 import scala.concurrent.duration._
 
@@ -331,10 +330,10 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
 
               implicit val responseTimeout: Timeout = 3.seconds
               context.ask[MessageToWorker, MessagesToSupervisor](worker, res => StartSearch(simplifiedSearch, startID, res)) {
-                case Success(_: SearchStarted) => SearchStarted(search, startID, worker)
-                case Success(_: SearchNotStarted) => SearchNotStarted(search, worker)
-                case Failure(_) => SearchNotStarted(search, worker)
-                case _ => SearchNotStarted(search, worker) // Default case
+                case Success(_: SearchStarted) => SearchStarted(simplifiedSearch.searchId, startID, worker)
+                case Success(_: SearchNotStarted) => SearchNotStarted(simplifiedSearch.searchId, startID, worker)
+                case Failure(_) => SearchNotStarted(simplifiedSearch.searchId, startID, worker)
+                case _ => SearchNotStarted(simplifiedSearch.searchId, startID, worker) // Default case
               }
 
               startingSearches = startingSearches + (startID -> (search, startID, worker))
@@ -394,22 +393,31 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
             if (verbose) context.log.info(status)
         }
 
-      case SearchStarted(search, startID, worker) =>
+      case SearchStarted(searchID, startID, worker) =>
         startingSearches.get(startID) match {
           case Some((search2, startID2, worker2)) if startID2 == startID =>
-            require(search.searchId == search2.searchId)
-            if (verbose) context.log.info(s"search:${search.searchId} start confirmed by worker:${worker.path}")
-            ongoingSearches = ongoingSearches + (search.searchId -> (search2, worker2))
+            require(searchID == search2.searchId)
+            if (verbose) context.log.info(s"search:${searchID} start confirmed by worker:${worker.path}")
+            ongoingSearches = ongoingSearches + (searchID -> (search2, worker2))
             startingSearches = startingSearches.-(startID)
           case _ =>
-            if (verbose) context.log.warn(s"unexpected search:${search.searchId} start confirmed to Supervisor by worker:${worker.path}; asking for abort")
-            worker ! AbortSearch(search.searchId)
+            if (verbose) context.log.warn(s"unexpected search:${searchID} start confirmed to Supervisor by worker:${worker.path}; asking for abort")
+            worker ! AbortSearch(searchID)
         }
 
-      case SearchNotStarted(search, worker) =>
-        if (verbose) context.log.info(s"search:${search.searchId} could not be started by worker:${worker.path}")
-        waitingSearches.enqueue(search)
-        context.self ! StartSomeSearch()
+      case SearchNotStarted(searchID, startID, worker) =>
+        startingSearches.get(startID) match {
+          case Some((search2, startID2, worker2)) if startID2 == startID =>
+            require(searchID == search2.searchId)
+
+            if (verbose) context.log.info(s"search:${searchID} could not be started by worker:${worker.path}")
+            waitingSearches.enqueue(search2)
+            startingSearches = startingSearches.-(startID)
+            context.self ! StartSomeSearch()
+
+          case _ =>
+            if (verbose) context.log.warn(s"unexpected search:${searchID} could not be started; ignoring")
+        }
       //we do not register the worker as available here because it will register itself through another call,
       // at least to show it is not completely crashed.
 
