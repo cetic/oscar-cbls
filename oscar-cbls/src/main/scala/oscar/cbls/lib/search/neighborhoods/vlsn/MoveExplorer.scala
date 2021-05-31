@@ -466,7 +466,7 @@ class MoveExplorer(v:Int,
           val delta = move.objAfter - initialVehicleToObjectives(toVehicle)
           edgeBuilder.addEdge(nodeIDToNode(edge.node), vehicleToNode(toVehicle), delta, move, VLSNMoveType.MoveNoEject)
 
-
+          //this prevents moves with same vehicle or node to be explored (would be faster to bypass VLSN & cycle search actually)
           if(prioritizeMoveNoEject && delta < nodeToRemoveGain(nodeIDToNode(edge.node).nodeID)){
             isNodeDirty(nodeIDToNode(edge.node).nodeID) = true
             isVehicleDirty(toVehicle) = true
@@ -614,6 +614,12 @@ class MoveExplorer(v:Int,
             delta,
             move,
             VLSNMoveType.InsertNoEject)
+
+          //this prevents moves with same vehicle or node to be explored (would be faster to bypass VLSN & cycle search actually)
+          if(delta < 0){
+            isNodeDirty(nodeIDToNode(edge).nodeID) = true
+            isVehicleDirty(toVehicle) = true
+          }
       }
     }
 
