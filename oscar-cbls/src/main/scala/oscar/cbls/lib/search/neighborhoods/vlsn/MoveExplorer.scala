@@ -102,7 +102,7 @@ class MoveExplorer(v:Int,
   val isNodeDirty:Array[Boolean] = Array.fill(((nodesToMove ++ unroutedNodesToInsert).max)+1)(false)
 
 
-  val nodeToRemoveGain:Array[Long]= Array.fill(((nodesToMove ++ unroutedNodesToInsert).max)+1)(Long.MaxValue)
+  val nodeToRemoveDelta:Array[Long]= Array.fill(((nodesToMove ++ unroutedNodesToInsert).max)+1)(Long.MaxValue)
   // /////////////////////////////////////////////////////////////
   //creating all cheap edges
 
@@ -432,7 +432,7 @@ class MoveExplorer(v:Int,
     extends EdgeToExploreBundle[NodeVehicle](toVehicle, toVehicle, fromNodeVehicle) {
 
     override def isEdgeDirty(edge: NodeVehicle): Boolean = {
-      isNodeDirty(edge.node) || isVehicleDirty(edge.vehicle)
+      isNodeDirty(edge.node) || isVehicleDirty(edge.vehicle) || isVehicleDirty(toVehicle)
     }
 
     private var nodeToMoveToNeighborhood: Int => Neighborhood = null
@@ -467,10 +467,10 @@ class MoveExplorer(v:Int,
           edgeBuilder.addEdge(nodeIDToNode(edge.node), vehicleToNode(toVehicle), delta, move, VLSNMoveType.MoveNoEject)
 
           //this prevents moves with same vehicle or node to be explored (would be faster to bypass VLSN & cycle search actually)
-          if(prioritizeMoveNoEject && delta < nodeToRemoveGain(nodeIDToNode(edge.node).nodeID)){
-            isNodeDirty(nodeIDToNode(edge.node).nodeID) = true
+          val delta1 = nodeToRemoveDelta(nodeIDToNode(edge.node).nodeID)
+          if(prioritizeMoveNoEject && delta1 != Long.MaxValue && delta + delta1 < 0){
+            isVehicleDirty(edge.vehicle) = true
             isVehicleDirty(toVehicle) = true
-            isVehicleDirty(nodeIDToNode(edge.node).vehicle) = true
           }
       }
     }
@@ -680,7 +680,7 @@ class MoveExplorer(v:Int,
           case (move,delta) =>
             val symbolicNodeOfNodeToRemove = nodeIDToNode(routingNodeToRemove)
             edgeBuilder.addEdge(trashNode, symbolicNodeOfNodeToRemove, delta, null, VLSNMoveType.SymbolicTrashToNodeForEject)
-            nodeToRemoveGain(symbolicNodeOfNodeToRemove.nodeID) = delta
+            nodeToRemoveDelta(symbolicNodeOfNodeToRemove.nodeID) = delta
         }
       }
     }
