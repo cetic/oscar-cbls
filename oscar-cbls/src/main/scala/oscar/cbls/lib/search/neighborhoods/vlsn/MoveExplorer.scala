@@ -101,6 +101,8 @@ class MoveExplorer(v:Int,
   val isVehicleDirty:Array[Boolean] = Array.fill(v)(false)
   val isNodeDirty:Array[Boolean] = Array.fill(((nodesToMove ++ unroutedNodesToInsert).max)+1)(false)
 
+
+  val nodeToRemoveGain:Array[Long]= Array.fill(((nodesToMove ++ unroutedNodesToInsert).max)+1)(Long.MaxValue)
   // /////////////////////////////////////////////////////////////
   //creating all cheap edges
 
@@ -463,6 +465,13 @@ class MoveExplorer(v:Int,
         case MoveFound(move) =>
           val delta = move.objAfter - initialVehicleToObjectives(toVehicle)
           edgeBuilder.addEdge(nodeIDToNode(edge.node), vehicleToNode(toVehicle), delta, move, VLSNMoveType.MoveNoEject)
+
+
+          if(prioritizeMoveNoEject && delta < nodeToRemoveGain(nodeIDToNode(edge.node).nodeID)){
+            isNodeDirty(nodeIDToNode(edge.node).nodeID) = true
+            isVehicleDirty(toVehicle) = true
+            isVehicleDirty(nodeIDToNode(edge.node).vehicle) = true
+          }
       }
     }
 
@@ -665,6 +674,7 @@ class MoveExplorer(v:Int,
           case (move,delta) =>
             val symbolicNodeOfNodeToRemove = nodeIDToNode(routingNodeToRemove)
             edgeBuilder.addEdge(trashNode, symbolicNodeOfNodeToRemove, delta, null, VLSNMoveType.SymbolicTrashToNodeForEject)
+            nodeToRemoveGain(symbolicNodeOfNodeToRemove.nodeID) = delta
         }
       }
     }
