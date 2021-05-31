@@ -25,8 +25,9 @@ class MoveExplorer(v:Int,
 
                    cache:CachedExplorations,
                    verbose:Boolean,
-                   enrichment:EnrichmentParameters
-                         ) {
+                   enrichment:EnrichmentParameters,
+                   prioritizeMoveNoEject:Boolean = true
+                  ) {
 
   //nodes are all the nodes to consider, ll the vehicles, and a trashNode
 
@@ -125,7 +126,17 @@ class MoveExplorer(v:Int,
   generateMoves()
 
   var allBundlesArray:Array[EdgeToExploreBundle[_]] = Random.shuffle(allBundlesTmp).toArray
+
+  var priorityBundleArray:Array[EdgeToExploreBundle[_]] = if(prioritizeMoveNoEject){
+    val tmp = allBundlesArray
+    allBundlesArray = allBundlesArray.filter(!_.isInstanceOf[MoveNoEjectBundle])
+    tmp.filter(_.isInstanceOf[MoveNoEjectBundle])
+  }else{
+    Array.ofDim(0)
+  }
+
   var nbBundles:Int = allBundlesArray.length
+  var nbPriorityBundles:Int = priorityBundleArray.length
 
   // ////////////////////////////////////////////////////////////
 
@@ -141,6 +152,19 @@ class MoveExplorer(v:Int,
       }
     }
     nbBundles = targetPosition
+
+    //priorityBundles are handled separatedly
+    targetPosition = 0
+    for(i <- 0 until nbPriorityBundles) {
+      priorityBundleArray(i).loadAllCache()
+      if(priorityBundleArray(i).isEmpty){
+        priorityBundleArray(i) = null
+      }else{
+        priorityBundleArray(targetPosition) = priorityBundleArray(i)
+        targetPosition += 1
+      }
+    }
+    nbPriorityBundles = targetPosition
   }
 
   //the new VLSN graph and a boolean telling if there is more to do or not
@@ -154,12 +178,28 @@ class MoveExplorer(v:Int,
 
     var totalExplored = 0
 
-    var currentBundleId = Random.nextInt(nbBundles-1)
-    val offset = Random.nextInt(nbBundles-1)
     val nbEdgesAtStart = nbEdgesInGraph
 
+    while((totalExplored <= enrichment.minNbEdgesToExplorePerLevel || (nbEdgesInGraph - nbEdgesAtStart < enrichment.minNbAddedEdgesPerLevel) || nbPriorityBundles <= 1) && nbPriorityBundles > 0){
+      //Random selection of next bundle
+      val currentPriorityBundleId = if(nbPriorityBundles == 1) 1 else Random.nextInt(nbPriorityBundles-1)
+      //TODO: all movesNoEject (thus inserts and moves) should mark related nodes & vahicle as dirty if they have negative delta on obj.
+      val nbExplored = priorityBundleArray(currentPriorityBundleId).pruneExplore(targetNbExplores = enrichment.nbEdgesPerBundle/10)
+      totalExplored += nbExplored
+      if(priorityBundleArray(currentPriorityBundleId).isEmpty){
+        if(currentPriorityBundleId == nbPriorityBundles-1){
+          priorityBundleArray(currentPriorityBundleId) = null
+        }else{
+          priorityBundleArray(currentPriorityBundleId) = priorityBundleArray(nbPriorityBundles-1)
+        }
+        nbPriorityBundles = nbPriorityBundles -1
+      }
+    }
+
     while((totalExplored <= enrichment.minNbEdgesToExplorePerLevel || (nbEdgesInGraph - nbEdgesAtStart < enrichment.minNbAddedEdgesPerLevel) || nbBundles <= 1) && nbBundles > 0){
-      currentBundleId = (currentBundleId + offset) % nbBundles
+      //Random selection of next bundle
+      val currentBundleId = if(nbBundles == 1) 1 else Random.nextInt(nbBundles-1)
+      //TODO: we should foster moveNoEject first because they are really fast to explore...
       val nbExplored = allBundlesArray(currentBundleId).pruneExplore(targetNbExplores = enrichment.nbEdgesPerBundle)
       totalExplored += nbExplored
       if(allBundlesArray(currentBundleId).isEmpty){
@@ -171,13 +211,14 @@ class MoveExplorer(v:Int,
         nbBundles = nbBundles -1
       }
     }
+
     (edgeBuilder.buildGraph(),nbBundles!=0,totalExplored)
   }
 
-
   def allMovesExplored:Boolean = {
     require(nbBundles>=0)
-    nbBundles == 0
+    require(nbPriorityBundles >= 0)
+    nbBundles == 0 && nbPriorityBundles == 0
   }
 
   // ////////////////////////////////////////////////////////////

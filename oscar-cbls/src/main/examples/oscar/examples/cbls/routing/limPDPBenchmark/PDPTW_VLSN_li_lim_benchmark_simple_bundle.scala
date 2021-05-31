@@ -42,7 +42,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
     try {
       for(_ <- 0 until 11) {
         for(fileName <- fileNames) {
-          pw.println(runBenchmark(fileName: String, verbose = false))
+          pw.println(runBenchmark(fileName: String, verbose = true))
           pw.flush()
           System.gc()
         }
@@ -419,7 +419,8 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
         cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy,
 
         name = "VLSN",
-        reoptimizeAtStartUp = true
+        reoptimizeAtStartUp = true,
+        enrichment = Some(VLSN.standardEnrichment(500))
       )
     }
 
