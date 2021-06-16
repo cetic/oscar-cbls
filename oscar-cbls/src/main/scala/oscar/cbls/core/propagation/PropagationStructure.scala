@@ -388,26 +388,26 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
   /**
    * performs a propagation on a propagation track
    * if propagation track is omitte, total propagation is performed
-   * @param Track the propagation track, an array indices_of_propagation_element -> should it be propagated now
-   * @param SameAsBefore the previous propagation was on the same track, so that the postponed element are still postponed
+   * @param track the propagation track, an array indices_of_propagation_element -> should it be propagated now
+   * @param sameAsBefore the previous propagation was on the same track, so that the postponed element are still postponed
    */
   @inline
-  private def propagateOnTrack(Track: Array[Boolean], SameAsBefore: Boolean): Unit = {
+  private def propagateOnTrack(track: Array[Boolean], sameAsBefore: Boolean): Unit = {
 
-    if (SameAsBefore) {
+    if (sameAsBefore) {
       //initialize the heap with the scheduled elements that are on the track
       var currentPos = scheduledElements
       while (currentPos != null) {
         val e = currentPos.head
         currentPos = currentPos.tail
-        if (Track(e.uniqueID)) {
+        if (track(e.uniqueID)) {
           executionQueue.insert(e)
         } else {
           postponedElements = QList(e, postponedElements)
         }
       }
       scheduledElements = null
-    } else if (Track == null) {
+    } else if (track == null) {
       //all elements are to be put on the heap, included postponed ones
       var currentPos = postponedElements
       while (currentPos != null) {
@@ -432,7 +432,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
       while (currentPos != null) {
         val e = currentPos.head
         currentPos = currentPos.tail
-        if (Track(e.uniqueID)) {
+        if (track(e.uniqueID)) {
           executionQueue.insert(e)
         } else {
           newPostponed = QList(e, newPostponed)
@@ -444,7 +444,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
       while (currentPos != null) {
         val e = currentPos.head
         currentPos = currentPos.tail
-        if (Track(e.uniqueID)) {
+        if (track(e.uniqueID)) {
           executionQueue.insert(e)
         } else {
           postponedElements = QList(e, postponedElements)
@@ -467,7 +467,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
       while (scheduledElements != null) {
         val e = scheduledElements.head
         scheduledElements = scheduledElements.tail
-        if (Track == null || Track(e.uniqueID)) {
+        if (track == null || track(e.uniqueID)) {
           executionQueue.insert(e)
         } else {
           postponedElements = QList(e, postponedElements)
@@ -475,7 +475,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
       }
     }
 
-    if (Track == null && anythingDone) {
+    if (track == null && anythingDone) {
       checker match {
         case Some(c) =>
           for (p <- getPropagationElements) {
