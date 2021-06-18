@@ -238,12 +238,12 @@ class ChangingIntValueSnapShot(val uniqueId:Int, val savedValue:Long) extends Ab
 
   override protected def doRestoreWithoutCheckpoints(m: Store): Unit = {m.getIntVar(uniqueId) := savedValue}
 
-  override def makeIndependentSerializable: IndependentSerializableAbstractVariableSnapshot = IndependentSerializableChangingIntValueSnapShot(this)
+  override def makeIndependentSerializable: IndependentSerializableAbstractVariableSnapshot = IndependentSerializableChangingIntValueSnapShot(uniqueId, savedValue)
 }
 
-case class IndependentSerializableChangingIntValueSnapShot(base:ChangingIntValueSnapShot)
+case class IndependentSerializableChangingIntValueSnapShot(uniqueId:Int, savedValue:Long)
   extends IndependentSerializableAbstractVariableSnapshot{
-  override def makeLocal: AbstractVariableSnapShot = base
+  override def makeLocal: AbstractVariableSnapShot = new ChangingIntValueSnapShot(uniqueId, savedValue)
 }
 
 /**An IntVar is a variable managed by the [[oscar.cbls.core.computation.Store]] whose type is integer.
