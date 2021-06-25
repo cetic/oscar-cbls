@@ -415,18 +415,21 @@ class VLSN(v:Int,
         val node = edge.from.representedNode; if (node >= 0) Some(node) else None
       })
 
+      //require((dirtyVehicles intersect theImpactedVehicles).isEmpty)
+
       dirtyVehicles = dirtyVehicles ++ theImpactedVehicles
       dirtyNodes = dirtyNodes ++ edges.flatMap(edge => List(edge.from.representedNode,edge.to.representedNode).filter(_ > v))
 
       for (vlsnNode <- vlsnGraph.nodes) {
         if ((impactedRoutingNodes contains vlsnNode.representedNode) || (theImpactedVehicles contains vlsnNode.vehicle)) {
+          //require(liveNodes(vlsnNode.nodeID))
           liveNodes(vlsnNode.nodeID) = false
         }
       }
     }
 
     def performEdgesInCycle(edges:List[Edge]): Unit ={
-      val delta = edges.map(edge => edge.deltaObj).sum
+      val delta = edges.map(_.deltaObj).sum
       require(delta < 0, "delta should be negative, got " + delta)
       computedNewObj += delta
 
@@ -451,6 +454,7 @@ class VLSN(v:Int,
       println("                deltaObj:" + deltaObj+ " size:" + moves.length +
         " vehicles:{" + vehicles.mkString(",") + "} moveTypes:" + moveTypes + " moves:{" + moves.mkString(",") + "}")
     }
+
 
     var vlsnGraph:VLSNGraph = null
     //We need this graph after completion of the loop to build the cache of not used moves.
@@ -477,11 +481,13 @@ class VLSN(v:Int,
       }
 
       //require(dirtyVehicles.forall( x => x >= 0 && x < v))
-      vlsnGraph = moveExplorer.enrichGraph(dirtyNodes, dirtyVehicles, printTakenMoves)._1
+      val (newVlsnGraph,_,_,priorityCycles):(VLSNGraph,Any,Any,List[List[Edge]]) = moveExplorer.enrichGraph(dirtyNodes, dirtyVehicles, printTakenMoves)
+
+      vlsnGraph = newVlsnGraph
 
       if(printTakenMoves) {
         println("            " + vlsnGraph.statisticsString + " added " +
-          (vlsnGraph.nbEdges - nbEdgesAtPreviousIteration) + " edges")
+          (vlsnGraph.nbEdges - nbEdgesAtPreviousIteration) + " edges including " + priorityCycles.size + " priority cycles")
       }
 
       if(vlsnGraph.nbEdges == nbEdgesAtPreviousIteration && currentEnrichmentLevel !=0){
@@ -492,17 +498,30 @@ class VLSN(v:Int,
         nbEdgesAtPreviousIteration = vlsnGraph.nbEdges
         var cycleFound: Boolean = true
         //now, we search for every cycles in this graph
+
+        //bypass the cycle detection algo for the priority cycles
+        var priorityCyclesToDigest = priorityCycles
+        var nbCycles = 0
         while (cycleFound) {
-          CycleFinderAlgo(vlsnGraph, cycleFinderAlgoSelection).findCycle(liveNodes) match {
+          val cycle = if(priorityCyclesToDigest.nonEmpty){
+            val toReturn = priorityCyclesToDigest.head
+            priorityCyclesToDigest = priorityCyclesToDigest.tail
+            Some(toReturn)
+          }else CycleFinderAlgo(vlsnGraph, cycleFinderAlgoSelection).findCycle(liveNodes)
+
+          cycle match {
             case Some(listOfEdge) =>
               if (printTakenMoves) printCycle(listOfEdge)
               killCycles(listOfEdge, vlsnGraph)
               cycleFound = true
+              nbCycles += 1
+
             case None =>
               //we did not find any move at all on the graph, so it can be enriched now
               cycleFound = false
           }
         }
+        if(printTakenMoves) println("                nbCycles : " + nbCycles)
       }
     }
 

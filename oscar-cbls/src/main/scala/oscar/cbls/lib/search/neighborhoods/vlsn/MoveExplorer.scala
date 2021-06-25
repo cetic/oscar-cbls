@@ -1,6 +1,5 @@
 package oscar.cbls.lib.search.neighborhoods.vlsn
 
-import oscar.cbls.algo.quick.QList
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{Move, MoveFound, Neighborhood, NoMoveFound}
 
@@ -101,8 +100,10 @@ class MoveExplorer(v:Int,
   val isVehicleDirty:Array[Boolean] = Array.fill(v)(false)
   val isNodeDirty:Array[Boolean] = Array.fill(((nodesToMove ++ unroutedNodesToInsert).max)+1)(false)
 
+  val nodeToNodeRemoveEdge:Array[Edge]= Array.fill(((nodesToMove ++ unroutedNodesToInsert).max)+1)(null)
 
-  val nodeToRemoveGain:Array[Long]= Array.fill(((nodesToMove ++ unroutedNodesToInsert).max)+1)(Long.MaxValue)
+  var newlyAddedPriorityCycles:List[List[Edge]] = Nil
+
   // /////////////////////////////////////////////////////////////
   //creating all cheap edges
 
@@ -131,8 +132,8 @@ class MoveExplorer(v:Int,
 
   var priorityBundleArray:Array[EdgeToExploreBundle[_]] = if(prioritizeMoveNoEject){
     val tmp = allBundlesArray
-    allBundlesArray = allBundlesArray.filter(!_.isInstanceOf[MoveNoEjectBundle])
-    tmp.filter(_.isInstanceOf[MoveNoEjectBundle])
+    allBundlesArray = allBundlesArray.filter(bundle => !bundle.isInstanceOf[MoveNoEjectBundle] && !bundle.isInstanceOf[InsertNoEjectBundle])
+    tmp.filter(bundle => bundle.isInstanceOf[MoveNoEjectBundle] || bundle.isInstanceOf[InsertNoEjectBundle])
   }else{
     Array.ofDim(0)
   }
@@ -170,7 +171,17 @@ class MoveExplorer(v:Int,
   }
 
   //the new VLSN graph and a boolean telling if there is more to do or not
-  def enrichGraph(dirtyNodes:Iterable[Int], dirtyVehicles:Iterable[Int], verbose:Boolean):(VLSNGraph,Boolean,Int) = {
+
+  /**
+   *
+   * @param dirtyNodes
+   * @param dirtyVehicles
+   * @param verbose
+   * @return the enriched graph, true if there is more to load, the number of added edges, and a list of priority edge that can be taken as is (no need for cycle detection)
+   */
+  def enrichGraph(dirtyNodes:Iterable[Int], dirtyVehicles:Iterable[Int], verbose:Boolean):(VLSNGraph,Boolean,Int, List[List[Edge]]) = {
+
+    newlyAddedPriorityCycles = Nil
 
     for(node <- dirtyNodes) isNodeDirty(node) = true
     for(vehicle <- dirtyVehicles) {
@@ -185,7 +196,7 @@ class MoveExplorer(v:Int,
     while((totalExplored <= enrichment.minNbEdgesToExplorePerLevel || (nbEdgesInGraph - nbEdgesAtStart < enrichment.minNbAddedEdgesPerLevel) || nbPriorityBundles <= 1) && nbPriorityBundles > 0){
       //Random selection of next bundle
       val currentPriorityBundleId = if(nbPriorityBundles == 1) 1 else Random.nextInt(nbPriorityBundles-1)
-      //TODO: all movesNoEject (thus inserts and moves) should mark related nodes & vahicle as dirty if they have negative delta on obj.
+      //TODO: all movesNoEject (thus inserts and moves) should mark related nodes & vehicle as dirty if they have negative delta on obj.
       val nbExplored = priorityBundleArray(currentPriorityBundleId).pruneExplore(targetNbExplores = enrichment.nbEdgesPerBundle/10)
       totalExplored += nbExplored
       if(priorityBundleArray(currentPriorityBundleId).isEmpty){
@@ -214,7 +225,7 @@ class MoveExplorer(v:Int,
       }
     }
 
-    (edgeBuilder.buildGraph(),nbBundles!=0,totalExplored)
+    (edgeBuilder.buildGraph(),nbBundles!=0,totalExplored, newlyAddedPriorityCycles)
   }
 
   def allMovesExplored:Boolean = {
@@ -282,7 +293,7 @@ class MoveExplorer(v:Int,
 
         var toReturn = 0
         var toExplore = targetNbExplores
-        while (toExplore != 0 && size != 0) {
+        while (toExplore != 0 && size != 0 && !isNodeDirty(toNode) && !isVehicleDirty(toVehicle)) {
           if (!isEdgeDirty(potentialEdges(size-1))) {
             if(cache == null || allCacheLoaded || !loadEdgeFromCache(potentialEdges(size-1))) {
               exploreEdge(potentialEdges(size-1))
@@ -337,10 +348,11 @@ class MoveExplorer(v:Int,
     for ((toVehicle, routedNodesToMoveThere) <- vehicleToNodeToMoveThere) {
       //without remove
       registerEdgeBundle(new MoveNoEjectBundle(toVehicle = toVehicle,
-        fromNodeVehicle = routedNodesToMoveThere.map(node => {
+        fromNodeVehicle = routedNodesToMoveThere.flatMap(node => {
           val symbolicNodeOfNodeToMove = nodeIDToNode(node)
           val fromVehicle = symbolicNodeOfNodeToMove.vehicle
-          NodeVehicle(node,fromVehicle)
+          if(fromVehicle == toVehicle) Nil
+          else Some(NodeVehicle(node,fromVehicle))
         }).toList))
 
       //moves with removes
@@ -349,10 +361,11 @@ class MoveExplorer(v:Int,
           new MoveWithEjectBundle(nodeIDToEject,
             toVehicle,
             fromNodeVehicle =
-              routedNodesToMoveThere.map(node => {
+              routedNodesToMoveThere.flatMap(node => {
                 val symbolicNodeOfNodeToMove = nodeIDToNode(node)
                 val fromVehicle = symbolicNodeOfNodeToMove.vehicle
-                NodeVehicle(node, fromVehicle)
+                if(fromVehicle == toVehicle) Nil
+                else Some(NodeVehicle(node, fromVehicle))
               }).toList
           )
         )
@@ -432,7 +445,7 @@ class MoveExplorer(v:Int,
     extends EdgeToExploreBundle[NodeVehicle](toVehicle, toVehicle, fromNodeVehicle) {
 
     override def isEdgeDirty(edge: NodeVehicle): Boolean = {
-      isNodeDirty(edge.node) || isVehicleDirty(edge.vehicle)
+      isNodeDirty(edge.node) || isVehicleDirty(edge.vehicle) || isVehicleDirty(toVehicle)
     }
 
     private var nodeToMoveToNeighborhood: Int => Neighborhood = null
@@ -457,6 +470,12 @@ class MoveExplorer(v:Int,
         nodeToMoveToNeighborhood = targetVehicleNodeToMoveNeighborhood(toVehicle)
       }
 
+      require(!isNodeDirty(edge.node))
+        require(!isVehicleDirty(toVehicle))
+        require(!isVehicleDirty(nodeIDToNode(edge.node).vehicle))
+
+      require(toVehicle != nodeIDToNode(edge.node).vehicle, "moving to same vehicle?!")
+
       nodeToMoveToNeighborhood(edge.node).getMove(
         vehicleToObjectives(toVehicle),
         initialVehicleToObjectives(toVehicle),
@@ -464,13 +483,16 @@ class MoveExplorer(v:Int,
         case NoMoveFound => ;
         case MoveFound(move) =>
           val delta = move.objAfter - initialVehicleToObjectives(toVehicle)
-          edgeBuilder.addEdge(nodeIDToNode(edge.node), vehicleToNode(toVehicle), delta, move, VLSNMoveType.MoveNoEject)
+          val graphEdge = edgeBuilder.addEdge(nodeIDToNode(edge.node), vehicleToNode(toVehicle), delta, move, VLSNMoveType.MoveNoEject)
 
+          val nodeRemoveEdge = nodeToNodeRemoveEdge(nodeIDToNode(edge.node).nodeID)
           //this prevents moves with same vehicle or node to be explored (would be faster to bypass VLSN & cycle search actually)
-          if(prioritizeMoveNoEject && delta < nodeToRemoveGain(nodeIDToNode(edge.node).nodeID)){
-            isNodeDirty(nodeIDToNode(edge.node).nodeID) = true
+          if(prioritizeMoveNoEject && nodeRemoveEdge != null && delta + nodeRemoveEdge.deltaObj < 0){
+            isNodeDirty(edge.node) = true
             isVehicleDirty(toVehicle) = true
             isVehicleDirty(nodeIDToNode(edge.node).vehicle) = true
+
+            newlyAddedPriorityCycles = List(nodeRemoveEdge,graphEdge) :: newlyAddedPriorityCycles
           }
       }
     }
@@ -562,11 +584,12 @@ class MoveExplorer(v:Int,
   class InsertNoEjectBundle(toVehicle: Int,
                             nodesToInsert: List[Int])
     extends EdgeToExploreBundle[Int](toVehicle, toVehicle, nodesToInsert) {
+    //the id is the routing node that is moved
 
     override def toString: String = s"InsertNoEjectBundle(toVehicle:$toVehicle remaining edges:$size nodesToInsert:${nodesToInsert.toList.sorted.mkString(",")}"
 
     override def isEdgeDirty(edge: Int): Boolean = {
-      isNodeDirty(edge)
+      isNodeDirty(edge) || isVehicleDirty(toVehicle)
     }
 
     private var nodeToInsertNeighborhood:Int => Neighborhood = null
@@ -599,6 +622,9 @@ class MoveExplorer(v:Int,
       // (although it is not quite sure that this actually useful at all)
       ensureNeighborhood()
 
+      require(!isNodeDirty(edge))
+      require(!isVehicleDirty(toVehicle))
+
       nodeToInsertNeighborhood(edge).getMove(
         globalObjective,
         initialGlobalObjective,
@@ -608,7 +634,7 @@ class MoveExplorer(v:Int,
           val delta = move.objAfter - initialGlobalObjective
           val symbolicNodeToInsert = nodeIDToNode(edge)
 
-          edgeBuilder.addEdge(
+          val vlsnEdge = edgeBuilder.addEdge(
             symbolicNodeToInsert,
             vehicleToNode(toVehicle),
             delta,
@@ -617,8 +643,9 @@ class MoveExplorer(v:Int,
 
           //this prevents moves with same vehicle or node to be explored (would be faster to bypass VLSN & cycle search actually)
           if(delta < 0){
-            isNodeDirty(nodeIDToNode(edge).nodeID) = true
+            isNodeDirty(edge) = true  //TODO: pas clair; cest pas juste edge???
             isVehicleDirty(toVehicle) = true
+            newlyAddedPriorityCycles = List(vlsnEdge)  :: newlyAddedPriorityCycles
           }
       }
     }
@@ -679,8 +706,8 @@ class MoveExplorer(v:Int,
           case null => ;
           case (move,delta) =>
             val symbolicNodeOfNodeToRemove = nodeIDToNode(routingNodeToRemove)
-            edgeBuilder.addEdge(trashNode, symbolicNodeOfNodeToRemove, delta, null, VLSNMoveType.SymbolicTrashToNodeForEject)
-            nodeToRemoveGain(symbolicNodeOfNodeToRemove.nodeID) = delta
+            val edge = edgeBuilder.addEdge(trashNode, symbolicNodeOfNodeToRemove, delta, null, VLSNMoveType.SymbolicTrashToNodeForEject)
+            nodeToNodeRemoveEdge(symbolicNodeOfNodeToRemove.nodeID) = edge
         }
       }
     }
