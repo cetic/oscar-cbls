@@ -18,12 +18,12 @@ import scala.io.Source
 object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
   val multFactor: Long = 1000
 
-  runMany()
+  runOne()
   def runOne(): Unit = {
     println("usage: This fileName enrichment partition enrichmentSpec shiftInsert")
     val fileName = args(0)
 
-    println(runBenchmark(fileName))
+    println(runBenchmark(fileName,true))
   }
 
   def runMany(): Unit = {

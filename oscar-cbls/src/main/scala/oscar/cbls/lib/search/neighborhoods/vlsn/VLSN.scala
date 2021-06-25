@@ -308,10 +308,10 @@ class VLSN(v:Int,
     }
 
     //first VLSN search
-    var dataForRestartOpt = doVLSNSearch(
+    var (dataForRestartOpt,hotRestart) = doVLSNSearch(
       initVehicleToRoutedNodesToMove(),
       initUnroutedNodesToInsert(),
-      None)
+      None,None)
 
     val somethingDone = dataForRestartOpt.isDefined
 
@@ -327,11 +327,14 @@ class VLSN(v:Int,
     while (dataForRestartOpt.isDefined && remainingIt > 0) {
       remainingIt = remainingIt - 1
       val dataForRestart = dataForRestartOpt.get
-      dataForRestartOpt = restartVLSNIncrementally(oldGraph = dataForRestart.oldGraph,
+       val x = restartVLSNIncrementally(oldGraph = dataForRestart.oldGraph,
         performedMoves = dataForRestart.performedMoves,
         oldVehicleToRoutedNodesToMove = dataForRestart.oldVehicleToRoutedNodesToMove,
         oldUnroutedNodesToInsert = dataForRestart.oldUnroutedNodesToInsert,
-        cacheWasBuiltWithIncrementalEnrichment=dataForRestart.cacheWasBuiltWithIncrementalEnrichment)
+        cacheWasBuiltWithIncrementalEnrichment=dataForRestart.cacheWasBuiltWithIncrementalEnrichment,
+        Some(hotRestart))
+      dataForRestartOpt = x._1
+      hotRestart = x._2
       doAfterCycle match {
         case Some(toDo) => toDo()
         case None => ()
@@ -359,7 +362,8 @@ class VLSN(v:Int,
 
   private def doVLSNSearch(vehicleToRoutedNodesToMove: Map[Int, Set[Int]],
                            unroutedNodesToInsert: Set[Int],
-                           cachedExplorations: Option[CachedExplorations]): Option[DataForVLSNRestart] = {
+                           cachedExplorations: Option[CachedExplorations],
+                           hotRestart:Option[HotRestartInfo]): (Option[DataForVLSNRestart],HotRestartInfo) = {
 
     val nodeToRelevantVehiclesNow = nodeToRelevantVehicles()
     val n = nodeToRelevantVehiclesNow.size
@@ -379,6 +383,8 @@ class VLSN(v:Int,
       unroutedPenalty,
       globalObjective,
       cachedExplorations.orNull,
+      hotRestart = hotRestart.orNull,
+
       verbose = false,
       enrichment = enrichment.getOrElse(
         EnrichmentParameters(injectAllCacheBeforeEnriching = false,
@@ -551,17 +557,27 @@ class VLSN(v:Int,
         }
     }
 
+    val newHotRestart = {
+      val hr = hotRestart match{
+        case None => HotRestartInfo.apply(v)
+        case Some(x) => x}
+      for(edge <- acc.flatten){
+        hr.update(edge)
+      }
+      hr
+    }
+
     //there is no possible incremental restart for VLSN
     if (acc.isEmpty) {
-      None
+      (None,newHotRestart)
     } else {
-      Some(DataForVLSNRestart(
+      (Some(DataForVLSNRestart(
         vlsnGraph,
         acc.flatten,
         vehicleToRoutedNodesToMove,
         unroutedNodesToInsert,
         cacheWasBuiltWithIncrementalEnrichment = enrichment.isDefined,
-        allVehiclesDirty = dirtyVehicles.size == v))
+        allVehiclesDirty = dirtyVehicles.size == v)),newHotRestart)
     }
   }
 
@@ -578,7 +594,8 @@ class VLSN(v:Int,
                                        performedMoves: List[Edge],
                                        oldVehicleToRoutedNodesToMove: Map[Int, Set[Int]],
                                        oldUnroutedNodesToInsert: Set[Int],
-                                       cacheWasBuiltWithIncrementalEnrichment:Boolean):Option[DataForVLSNRestart] = {
+                                       cacheWasBuiltWithIncrementalEnrichment:Boolean,
+                                       hotRestart:Option[HotRestartInfo]):(Option[DataForVLSNRestart],HotRestartInfo) = {
 
     val (updatedVehicleToRoutedNodesToMove, updatedUnroutedNodesToInsert) =
       updateZones(performedMoves,
@@ -594,7 +611,8 @@ class VLSN(v:Int,
 
     doVLSNSearch(updatedVehicleToRoutedNodesToMove,
       updatedUnroutedNodesToInsert,
-      cachedExplorations)
+      cachedExplorations,
+      hotRestart)
   }
 
   @tailrec

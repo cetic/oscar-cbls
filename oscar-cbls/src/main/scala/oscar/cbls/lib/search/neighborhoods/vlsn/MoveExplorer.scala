@@ -1,11 +1,42 @@
 package oscar.cbls.lib.search.neighborhoods.vlsn
 
+import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{Move, MoveFound, Neighborhood, NoMoveFound}
+import oscar.cbls.lib.search.neighborhoods.vlsn.VLSNMoveType._
 
 import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.reflect.ClassTag
 import scala.util.Random
+
+object HotRestartInfo{
+  def apply(v:Int):HotRestartInfo = {
+    HotRestartInfo(
+      Array.fill(v)(0),
+      Array.fill(v)(0),
+      Array.fill(v)(0),
+      Array.fill(v)(0))
+  }
+}
+
+case class HotRestartInfo(hotRestartVehicleToInsertedNoEject:Array[Int],
+                          hotRestartVehicleToMovedNoEject:Array[Int],
+                          hotRestartVehicleToInsertedWithEject:Array[Int],
+                          hotRestartVehicleToMovedWithEject:Array[Int]){
+  def update(edge:Edge):Unit = {
+    edge.moveType match{
+      case InsertNoEject =>
+        hotRestartVehicleToInsertedNoEject(edge.to.vehicle) = edge.from.representedNode
+      case InsertWithEject =>
+        hotRestartVehicleToInsertedWithEject(edge.to.vehicle) = edge.from.representedNode
+      case MoveNoEject =>
+        hotRestartVehicleToMovedNoEject(edge.to.vehicle) = edge.from.representedNode
+      case MoveWithEject =>
+        hotRestartVehicleToMovedWithEject(edge.to.vehicle) = edge.from.representedNode
+      case _ => ;
+    }
+  }
+}
 
 class MoveExplorer(v:Int,
                    vehicleToRoutedNodes:Map[Int,Iterable[Int]],
@@ -23,6 +54,8 @@ class MoveExplorer(v:Int,
                    globalObjective:Objective,
 
                    cache:CachedExplorations,
+                   hotRestart:HotRestartInfo,
+
                    verbose:Boolean,
                    enrichment:EnrichmentParameters,
                    prioritizeMoveNoEject:Boolean = true
@@ -240,6 +273,9 @@ class MoveExplorer(v:Int,
                                                  toVehicle: Int,
                                                  initPotentialEdges: List[E]) {
     //non null are stored from position 0 until size-1
+
+    il faut explorer les edges dnas l'ordre où ils sont donnés!!!
+      donc on peut très bien explorer en commençan par le premier, tout simplement.
     private var potentialEdges: Array[E] = Random.shuffle(initPotentialEdges).toArray
     var size: Int = potentialEdges.length
     require(potentialEdges.length <= size)
@@ -380,7 +416,13 @@ class MoveExplorer(v:Int,
   class MoveWithEjectBundle(toNode: Int,
                             toVehicle: Int,
                             fromNodeVehicle: List[NodeVehicle])
-    extends EdgeToExploreBundle[NodeVehicle](toNode, toVehicle, fromNodeVehicle) {
+    extends EdgeToExploreBundle[NodeVehicle](toNode, toVehicle,
+      if(hotRestart == null) fromNodeVehicle
+      else {
+        val pivot = hotRestart.hotRestartVehicleToMovedWithEject(toVehicle)
+        val offset = nodes.length
+        fromNodeVehicle.sortBy(nodeVehicle => if(nodeVehicle.node < pivot) nodeVehicle.node + offset else nodeVehicle.node)}
+    ) {
 
     override def toString: String = s"MoveWithEjectBundle(size:$size, toNode: $toNode, toVehicle:$toVehicle, fromNodeVehicle:${fromNodeVehicle.mkString(",")}"
 
@@ -442,7 +484,12 @@ class MoveExplorer(v:Int,
 
   class MoveNoEjectBundle(toVehicle: Int,
                           fromNodeVehicle: List[NodeVehicle])
-    extends EdgeToExploreBundle[NodeVehicle](toVehicle, toVehicle, fromNodeVehicle) {
+    extends EdgeToExploreBundle[NodeVehicle](toVehicle, toVehicle,
+      if(hotRestart == null) fromNodeVehicle
+      else {
+        val pivot = hotRestart.hotRestartVehicleToMovedNoEject(toVehicle)
+        val offset = nodes.length
+        fromNodeVehicle.sortBy(nodeVehicle => if(nodeVehicle.node < pivot) nodeVehicle.node + offset else nodeVehicle.node)}) {
 
     override def isEdgeDirty(edge: NodeVehicle): Boolean = {
       isNodeDirty(edge.node) || isVehicleDirty(edge.vehicle) || isVehicleDirty(toVehicle)
@@ -471,8 +518,8 @@ class MoveExplorer(v:Int,
       }
 
       require(!isNodeDirty(edge.node))
-        require(!isVehicleDirty(toVehicle))
-        require(!isVehicleDirty(nodeIDToNode(edge.node).vehicle))
+      require(!isVehicleDirty(toVehicle))
+      require(!isVehicleDirty(nodeIDToNode(edge.node).vehicle))
 
       require(toVehicle != nodeIDToNode(edge.node).vehicle, "moving to same vehicle?!")
 
@@ -511,7 +558,12 @@ class MoveExplorer(v:Int,
   class InsertWithEjectBundle(toNode: Int,
                               toVehicle: Int,
                               nodesToInsert: List[Int])
-    extends EdgeToExploreBundle[Int](toNode, toVehicle, nodesToInsert) {
+    extends EdgeToExploreBundle[Int](toNode, toVehicle,
+      if(hotRestart == null) nodesToInsert
+      else {
+        val pivot = hotRestart.hotRestartVehicleToInsertedWithEject(toVehicle)
+        val offset = nodes.length
+        nodesToInsert.sortBy(x => if(x < pivot) x + offset else x)}) {
 
     override def isEdgeDirty(edge: Int): Boolean = {
       isNodeDirty(edge)
@@ -583,7 +635,12 @@ class MoveExplorer(v:Int,
 
   class InsertNoEjectBundle(toVehicle: Int,
                             nodesToInsert: List[Int])
-    extends EdgeToExploreBundle[Int](toVehicle, toVehicle, nodesToInsert) {
+    extends EdgeToExploreBundle[Int](toVehicle, toVehicle,
+      if(hotRestart == null) nodesToInsert
+      else {
+        val pivot = hotRestart.hotRestartVehicleToInsertedNoEject(toVehicle)
+        val offset = nodes.length
+        nodesToInsert.sortBy(x => if(x < pivot) x + offset else x)}) {
     //the id is the routing node that is moved
 
     override def toString: String = s"InsertNoEjectBundle(toVehicle:$toVehicle remaining edges:$size nodesToInsert:${nodesToInsert.toList.sorted.mkString(",")}"
