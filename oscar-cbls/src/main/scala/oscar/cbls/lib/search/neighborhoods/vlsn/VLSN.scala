@@ -28,7 +28,8 @@ import scala.collection.immutable.SortedSet
 case class EnrichmentParameters(injectAllCacheBeforeEnriching:Boolean,
                                 minNbEdgesToExplorePerLevel:Int,
                                 minNbAddedEdgesPerLevel:Int,
-                                nbEdgesPerBundle:Int)
+                                nbEdgesPerBundle:Int,
+                                nbEdgesPerPriorityBundle:Int)
 
 object VLSN{
 
@@ -37,14 +38,16 @@ object VLSN{
       injectAllCacheBeforeEnriching = true,
       minNbEdgesToExplorePerLevel = 0,
       minNbAddedEdgesPerLevel = 1000,
-      nbEdgesPerBundle= v)
+      nbEdgesPerBundle= v,
+      nbEdgesPerPriorityBundle = 10*v)
 
   def noEnrichment:EnrichmentParameters =
     EnrichmentParameters(
       injectAllCacheBeforeEnriching = false,
       minNbEdgesToExplorePerLevel = Int.MaxValue,
       minNbAddedEdgesPerLevel =  Int.MaxValue,
-      nbEdgesPerBundle =  Int.MaxValue)
+      nbEdgesPerBundle =  Int.MaxValue,
+      nbEdgesPerPriorityBundle = Int.MaxValue)
 }
 
 
@@ -388,7 +391,8 @@ class VLSN(v:Int,
         EnrichmentParameters(injectAllCacheBeforeEnriching = false,
           minNbEdgesToExplorePerLevel = Int.MaxValue,
           minNbAddedEdgesPerLevel =  Int.MaxValue,
-          nbEdgesPerBundle =  Int.MaxValue)
+          nbEdgesPerBundle =  Int.MaxValue,
+          nbEdgesPerPriorityBundle = Int.MaxValue)
       )
     )
 

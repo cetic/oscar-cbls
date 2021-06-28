@@ -242,7 +242,7 @@ class MoveExplorer(v:Int,
       //Random selection of next bundle
       val currentPriorityBundleId = if(nbPriorityBundles == 1) 1 else Random.nextInt(nbPriorityBundles-1)
       //TODO: all movesNoEject (thus inserts and moves) should mark related nodes & vehicle as dirty if they have negative delta on obj.
-      val nbExplored = priorityBundleArray(currentPriorityBundleId).pruneExplore(targetNbExplores = enrichment.nbEdgesPerBundle)
+      val nbExplored = priorityBundleArray(currentPriorityBundleId).pruneExplore(targetNbExplores = enrichment.nbEdgesPerPriorityBundle)
       totalExplored += nbExplored
       if(priorityBundleArray(currentPriorityBundleId).isEmpty){
         if(currentPriorityBundleId == nbPriorityBundles-1){
