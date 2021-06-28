@@ -1,5 +1,6 @@
 package oscar.cbls.lib.search.neighborhoods.vlsn
 
+import oscar.cbls.algo.quick.QList
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{Move, MoveFound, Neighborhood, NoMoveFound}
 import oscar.cbls.lib.search.neighborhoods.vlsn.VLSNMoveType._
@@ -65,10 +66,10 @@ class MoveExplorer(v:Int,
 
                    verbose:Boolean,
                    enrichment:EnrichmentParameters,
-                   prioritizeMoveNoEject:Boolean = true
+                   prioritizeMoveNoEject:Double = 0.5,
+                   deletionsAuthorized:Boolean = false
                   ) {
 
-  //println("hotRestart: " + hotRestart)
   //nodes are all the nodes to consider, ll the vehicles, and a trashNode
 
   //nodes of the moveGraph are:
@@ -143,6 +144,7 @@ class MoveExplorer(v:Int,
 
   val nodeToNodeRemoveEdge:Array[Edge]= Array.fill(((nodesToMove ++ unroutedNodesToInsert).max)+1)(null)
 
+  val nodeToRemoveDelta:Array[Long]= Array.fill(((nodesToMove ++ unroutedNodesToInsert).max)+1)(Long.MaxValue)
   var newlyAddedPriorityCycles:List[List[Edge]] = Nil
 
   // /////////////////////////////////////////////////////////////
@@ -169,14 +171,18 @@ class MoveExplorer(v:Int,
   generateInsertions()
   generateMoves()
 
-  var allBundlesArray:Array[EdgeToExploreBundle[_]] = Random.shuffle(allBundlesTmp).toArray
+  val (allBundlesArray,priorityBundleArray):(Array[EdgeToExploreBundle[_]],Array[EdgeToExploreBundle[_]]) =
+    if(prioritizeMoveNoEject!=0){
 
-  var priorityBundleArray:Array[EdgeToExploreBundle[_]] = if(prioritizeMoveNoEject){
-    val tmp = allBundlesArray
-    allBundlesArray = allBundlesArray.filter(bundle => !bundle.isInstanceOf[MoveNoEjectBundle] && !bundle.isInstanceOf[InsertNoEjectBundle])
-    tmp.filter(bundle => bundle.isInstanceOf[MoveNoEjectBundle] || bundle.isInstanceOf[InsertNoEjectBundle])
+      val bundlesAndPrioritized:Iterable[(Boolean,EdgeToExploreBundle[_])] = allBundlesTmp.map(
+        x => if(x.isInstanceOf[MoveNoEjectBundle] || x.isInstanceOf[InsertNoEjectBundle]) (Random.nextFloat() < prioritizeMoveNoEject ,x) else (false,x)
+      )
+
+      val prioritizedBundles = Random.shuffle(bundlesAndPrioritized.filter(x => x._1).map(_._2)).toArray
+      val nonPrioritizedBundle = Random.shuffle(bundlesAndPrioritized.filter(x => !x._1).map(_._2)).toArray
+      (nonPrioritizedBundle,prioritizedBundles)
   }else{
-    Array.ofDim(0)
+      (Random.shuffle(allBundlesTmp).toArray,Array.ofDim(0))
   }
 
   var nbBundles:Int = allBundlesArray.length
@@ -534,7 +540,7 @@ class MoveExplorer(v:Int,
 
           val nodeRemoveEdge = nodeToNodeRemoveEdge(nodeIDToNode(edge.node).nodeID)
           //this prevents moves with same vehicle or node to be explored (would be faster to bypass VLSN & cycle search actually)
-          if(prioritizeMoveNoEject && nodeRemoveEdge != null && delta + nodeRemoveEdge.deltaObj < 0){
+          if(prioritizeMoveNoEject !=0 && nodeRemoveEdge != null && delta + nodeRemoveEdge.deltaObj < 0){
             isNodeDirty(edge.node) = true
             isVehicleDirty(toVehicle) = true
             isVehicleDirty(nodeIDToNode(edge.node).vehicle) = true
@@ -720,6 +726,7 @@ class MoveExplorer(v:Int,
   // ////////////////////////////////////////////////////////////////////////////////////////////
 
   private def exploreDeletions(): Unit = {
+    if(!deletionsAuthorized) return
     for ((vehicleID, routingNodesToRemove) <- vehicleToRoutedNodes) {
       for (routingNodeToRemove <- routingNodesToRemove) {
         evaluateRemoveOnPenalty(routingNodeToRemove: Int, vehicleID) match {
@@ -766,8 +773,8 @@ class MoveExplorer(v:Int,
           case null => ;
           case (move,delta) =>
             val symbolicNodeOfNodeToRemove = nodeIDToNode(routingNodeToRemove)
-            val edge = edgeBuilder.addEdge(trashNode, symbolicNodeOfNodeToRemove, delta, null, VLSNMoveType.SymbolicTrashToNodeForEject)
-            nodeToNodeRemoveEdge(symbolicNodeOfNodeToRemove.nodeID) = edge
+            edgeBuilder.addEdge(trashNode, symbolicNodeOfNodeToRemove, delta, null, VLSNMoveType.SymbolicTrashToNodeForEject)
+            nodeToRemoveDelta(symbolicNodeOfNodeToRemove.nodeID) = delta
         }
       }
     }
