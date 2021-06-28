@@ -420,7 +420,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
 
         name = "VLSN",
         reoptimizeAtStartUp = true,
-        enrichment = Some(VLSN.standardEnrichment(500))
+        enrichment = None //Some(VLSN.standardEnrichment(v))
       )
     }
 
@@ -434,7 +434,6 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
     }else {
       search.verbose = 0
     }
-
 
     search.doAllMoves(obj = obj)
 

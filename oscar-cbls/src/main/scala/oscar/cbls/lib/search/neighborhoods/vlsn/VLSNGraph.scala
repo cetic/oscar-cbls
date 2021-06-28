@@ -25,7 +25,8 @@ import scala.collection.immutable.SortedSet
 
 object VLSNMoveType extends Enumeration{
   type VLSNMoveType = Value
-  val InsertNoEject, InsertWithEject, MoveNoEject, MoveWithEject, Remove, SymbolicTrashToInsert,SymbolicVehicleToTrash,SymbolicTrashToNodeForEject = Value
+  val InsertNoEject, InsertWithEject, MoveNoEject, MoveWithEject,
+  Remove, SymbolicTrashToInsert,SymbolicVehicleToTrash,SymbolicTrashToNodeForEject = Value
 }
 
 import oscar.cbls.lib.search.neighborhoods.vlsn.VLSNMoveType._
@@ -66,6 +67,7 @@ class VLSNNodeBuilder(var nbLabels:Int) {
 class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
   private val nbNodes = nodes.length
   private val edges:Array[Array[Edge]] = Array.tabulate(nbNodes)(_ => Array.fill(nbNodes)(null))
+  private var nonEdges:QList[NonEdge] = null
   private var fromToWithEdge:QList[(Int,Int)] = null
   private var nextEdgeID:Int = 0
 
@@ -80,6 +82,13 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
     nextEdgeID += 1
     fromToWithEdge = QList((from.nodeID,to.nodeID),fromToWithEdge)
     edge
+  }
+
+  def addNonEdge(from:Node, to:Node, vLSNMoveType: VLSNMoveType):NonEdge = {
+    val nonEdge = new NonEdge(from:Node,to:Node, vLSNMoveType)
+    //   println("add edge (vehicles: vehicle" + from.vehicle + ", vehicle" + to.vehicle + " : " + edge)
+    nonEdges = QList(nonEdge,nonEdges)
+    nonEdge
   }
 
   /**
@@ -97,7 +106,7 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
       edgeArray(edge.edgeID) = edge
     }
 
-    new VLSNGraph(nodes,edgeArray,nbLabels,v)
+    new VLSNGraph(nodes,edgeArray,nbLabels,v,nonEdges)
   }
 
   override def toString: String = "EdgeBuilder( nbNodes:" + nbNodes + " nbEdges:" + nextEdgeID + ")"
@@ -108,7 +117,7 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
  * @param edges
  * @param nbLabels labels range from 0 to nbLabels-1L
  */
-class VLSNGraph(val nodes:Array[Node],val edges:Array[Edge],val nbLabels:Int, v:Int){
+class VLSNGraph(val nodes:Array[Node],val edges:Array[Edge],val nbLabels:Int, v:Int, val nonEdges:QList[NonEdge]){
   val nbNodes = nodes.length
   val nbEdges = edges.length
 
@@ -165,6 +174,9 @@ class Node(val nodeID:Int, val representedNode:Int, val nodeType:VLSNSNodeType, 
       ", label = " + dotLabel + "] ; "
   }
 }
+
+
+class NonEdge(val from:Node, val to:Node, val moveType:VLSNMoveType)
 
 class Edge(val from:Node, val to:Node, val move:Move, val deltaObj:Long, val edgeID:Int, val moveType:VLSNMoveType){
 

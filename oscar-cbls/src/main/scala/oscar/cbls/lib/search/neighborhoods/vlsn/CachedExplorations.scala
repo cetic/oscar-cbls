@@ -79,16 +79,13 @@ class CachedExplorations(oldGraph:VLSNGraph,
   def isDirtyNode(node: Int): Boolean = dirtyNodes.contains(node)
 
   //TODO: use arrays for O(1) access?
-  var cachedInsertNoEject: SortedMap[(Int, Int), CachedAtomicMove] = SortedMap.empty //unroute,targetVehicle
-  var cachedInsertWithEject: SortedMap[(Int, Int), CachedAtomicMove] = SortedMap.empty //movedNode, ejectedNode
-  var cachedMoveNoEject: SortedMap[(Int, Int), CachedAtomicMove] = SortedMap.empty //node,vehicle
-  var cachedMoveWithEject: SortedMap[(Int, Int), CachedAtomicMove] = SortedMap.empty
-  var cachedRemove: SortedMap[(Int), CachedAtomicMove] = SortedMap.empty
+  var cachedInsertNoEject: SortedMap[(Int, Int), CachedExploration] = SortedMap.empty //unroute,targetVehicle
+  var cachedInsertWithEject: SortedMap[(Int, Int), CachedExploration] = SortedMap.empty //movedNode, ejectedNode
+  var cachedMoveNoEject: SortedMap[(Int, Int), CachedExploration] = SortedMap.empty //node,vehicle
+  var cachedMoveWithEject: SortedMap[(Int, Int), CachedExploration] = SortedMap.empty
+  var cachedRemove: SortedMap[(Int), CachedExploration] = SortedMap.empty
 
-  var size = 0L
-  var dirtyEdge = 0L
-
-  for (edge <- oldGraph.edges){
+  for (edge <- oldGraph.edges) {
 
     val fromNode = edge.from
     val toNode = edge.to
@@ -97,39 +94,52 @@ class CachedExplorations(oldGraph:VLSNGraph,
       case InsertNoEject =>
         if (!isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle)) {
           cachedInsertNoEject += (fromNode.representedNode, toNode.vehicle) -> CachedAtomicMove(edge)
-          size += 1L
-        }else{
-          dirtyEdge += 1L
         }
       case InsertWithEject =>
         if (!isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle)) {
           cachedInsertWithEject += (fromNode.representedNode, toNode.representedNode) -> CachedAtomicMove(edge)
-          size += 1L
-        }else{
-          dirtyEdge += 1L
         }
       case MoveNoEject =>
-        //TODO: ajouter aussi froVehicle ici en cas de incremental move
-        if(!isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle)) {
+        if (!isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle)) {
           cachedMoveNoEject += (fromNode.representedNode, toNode.vehicle) -> CachedAtomicMove(edge)
-          size += 1L
-        }else{
-          dirtyEdge += 1L
         }
       case MoveWithEject =>
-        //TODO: ajouter aussi froVehicle ici en cas de incremental move
         if (!isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle)) {
           cachedMoveWithEject += (fromNode.representedNode, toNode.representedNode) -> CachedAtomicMove(edge)
-          size += 1L
-        }else{
-          dirtyEdge += 1L
+        }
+      case Remove =>
+        if (!isDirtyVehicle(fromNode.vehicle)) {
+          cachedRemove += fromNode.representedNode -> CachedAtomicMove(edge)
+        }
+      case _ => ; // non cachable
+    }
+  }
+
+  for (nonEdge <- oldGraph.nonEdges){
+
+    val fromNode = nonEdge.from
+    val toNode = nonEdge.to
+
+    nonEdge.moveType match {
+      case InsertNoEject =>
+        if (!isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle)) {
+          cachedInsertNoEject += (fromNode.representedNode, toNode.vehicle) -> CachedAtomicNoMove
+        }
+      case InsertWithEject =>
+        if (!isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle)) {
+          cachedInsertWithEject += (fromNode.representedNode, toNode.representedNode) -> CachedAtomicNoMove
+        }
+      case MoveNoEject =>
+        if(!isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle)) {
+          cachedMoveNoEject += (fromNode.representedNode, toNode.vehicle) -> CachedAtomicNoMove
+        }
+      case MoveWithEject =>
+        if (!isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle)) {
+          cachedMoveWithEject += (fromNode.representedNode, toNode.representedNode) -> CachedAtomicNoMove
         }
       case Remove =>
         if(!isDirtyVehicle(fromNode.vehicle)) {
-          cachedRemove += fromNode.representedNode -> CachedAtomicMove(edge)
-          size += 1L
-        }else{
-          dirtyEdge += 1L
+          cachedRemove += fromNode.representedNode -> CachedAtomicNoMove
         }
       case _ => ; // non cachable
     }
@@ -141,7 +151,7 @@ class CachedExplorations(oldGraph:VLSNGraph,
   def getInsertOnVehicleNoRemove(unroutedNodeToInsert: Int,
                                  targetVehicleForInsertion: Int): CachedExploration = {
     if (!isDirtyNode(unroutedNodeToInsert) && !isDirtyVehicle(targetVehicleForInsertion)) {
-      cachedInsertNoEject.getOrElse((unroutedNodeToInsert, targetVehicleForInsertion), CachedAtomicNoMove)
+      cachedInsertNoEject.getOrElse((unroutedNodeToInsert, targetVehicleForInsertion), CachedAtomicNoMove) //TODO: not sure about that if incremental
     } else {
       CacheDirty
     }
@@ -151,7 +161,7 @@ class CachedExplorations(oldGraph:VLSNGraph,
                                    targetVehicleForInsertion: Int,
                                    removedNode: Int): CachedExploration = {
     if (!isDirtyNode(unroutedNodeToInsert) && !isDirtyVehicle(targetVehicleForInsertion)) {
-      cachedInsertWithEject.getOrElse((unroutedNodeToInsert, removedNode), CachedAtomicNoMove)
+      cachedInsertWithEject.getOrElse((unroutedNodeToInsert, removedNode), CachedAtomicNoMove) //TODO: not sure about that if incremental
     } else {
       CacheDirty
     }
@@ -160,36 +170,34 @@ class CachedExplorations(oldGraph:VLSNGraph,
   def getMoveToVehicleNoRemove(routingNodeToMove: Int,
                                fromVehicle: Int,
                                targetVehicle: Int): CachedExploration = {
-    if(cacheWasBuiltWithIncrementalEnrichment){
-      if (!isDirtyNode(routingNodeToMove) && !isDirtyVehicle(targetVehicle) && !isDirtyVehicle(fromVehicle)) {
-        cachedMoveNoEject.getOrElse((routingNodeToMove, targetVehicle), CachedAtomicNoMove)
-      } else {
-        CacheDirty
-      }
-    }else{
-      if (!isDirtyNode(routingNodeToMove) && !isDirtyVehicle(targetVehicle)) {
-        cachedMoveNoEject.getOrElse((routingNodeToMove, targetVehicle), CachedAtomicNoMove)
-      } else {
-        CacheDirty
-      }
+    //TODO: this is possibly the bottleneck of incremental approach: we forget bout explored and rejected moves
+    cachedMoveNoEject.get((routingNodeToMove, targetVehicle)) match{
+      case Some(stuff) =>
+        stuff
+      case None =>
+        if (!isDirtyNode(routingNodeToMove) && !isDirtyVehicle(targetVehicle) &&
+          (!cacheWasBuiltWithIncrementalEnrichment || !isDirtyVehicle(fromVehicle))) {
+          CachedAtomicNoMove
+        }else{
+          CacheDirty
+        }
     }
   }
 
   def getMoveToVehicleWithRemove(routingNodeToMove: Int,
                                  fromVehicle: Int,
                                  targetVehicle: Int, removedNode: Int): CachedExploration = {
-    if(cacheWasBuiltWithIncrementalEnrichment) {
-      if (!isDirtyNode(routingNodeToMove) && !isDirtyVehicle(targetVehicle) && !isDirtyVehicle(fromVehicle)) {
-        cachedMoveWithEject.getOrElse((routingNodeToMove, removedNode), CachedAtomicNoMove)
-      } else {
-        CacheDirty
-      }
-    }else {
-      if (!isDirtyNode(routingNodeToMove) && !isDirtyVehicle(targetVehicle)) {
-        cachedMoveWithEject.getOrElse((routingNodeToMove, removedNode), CachedAtomicNoMove)
-      } else {
-        CacheDirty
-      }
+    //TODO: this is possibly the bottleneck of incremental approach: we forget bout explored and rejected moves
+    cachedMoveWithEject.get((routingNodeToMove, removedNode)) match{
+      case Some(stuff) =>
+        stuff
+      case None =>
+        if (!isDirtyNode(routingNodeToMove) && !isDirtyVehicle(targetVehicle)
+          && (!cacheWasBuiltWithIncrementalEnrichment || !isDirtyVehicle(fromVehicle))) {
+          CachedAtomicNoMove
+        } else {
+          CacheDirty
+        }
     }
   }
 

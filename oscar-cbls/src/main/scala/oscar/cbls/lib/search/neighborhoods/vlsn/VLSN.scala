@@ -45,8 +45,6 @@ object VLSN{
       minNbEdgesToExplorePerLevel = Int.MaxValue,
       minNbAddedEdgesPerLevel =  Int.MaxValue,
       nbEdgesPerBundle =  Int.MaxValue)
-
-
 }
 
 
