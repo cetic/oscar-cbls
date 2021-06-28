@@ -450,10 +450,6 @@ class MoveExplorer(v:Int,
       //ensureNeighborhoodAndRemove, we do it lazyly because there might be nothing to do, actually
       // (although it is not quite sure that this actually useful at all)
 
-      require(!isEdgeDirty(edge))
-      require(!isVehicleDirty(toVehicle))
-      require(!isNodeDirty(toNode))
-
       if (nodeToMoveToNeighborhood == null) {
         reInsert = removeAndReInsert(toNode)
         nodeToMoveToNeighborhood = targetVehicleNodeToMoveNeighborhood(toVehicle)
@@ -471,7 +467,6 @@ class MoveExplorer(v:Int,
           edgeBuilder.addNonEdge(symbolicNodeOfNodeToMove, symbolicNodeToEject, VLSNMoveType.MoveWithEject)
         case MoveFound(move) =>
           val delta = move.objAfter - initialVehicleToObjectives(toVehicle)
-
           edgeBuilder.addEdge(symbolicNodeOfNodeToMove, symbolicNodeToEject, delta, move, VLSNMoveType.MoveWithEject)
       }
     }
@@ -525,12 +520,6 @@ class MoveExplorer(v:Int,
       if (nodeToMoveToNeighborhood == null) {
         nodeToMoveToNeighborhood = targetVehicleNodeToMoveNeighborhood(toVehicle)
       }
-
-      require(!isNodeDirty(edge.node))
-      require(!isVehicleDirty(toVehicle))
-      require(!isVehicleDirty(nodeIDToNode(edge.node).vehicle))
-
-      require(toVehicle != nodeIDToNode(edge.node).vehicle, "moving to same vehicle?!")
 
       nodeToMoveToNeighborhood(edge.node).getMove(
         vehicleToObjectives(toVehicle),
@@ -695,9 +684,6 @@ class MoveExplorer(v:Int,
       //ensureNeighborhoodAndRemove, we do it lazyly because there might be nothing to do, actually
       // (although it is not quite sure that this actually useful at all)
       ensureNeighborhood()
-
-      require(!isNodeDirty(edge))
-      require(!isVehicleDirty(toVehicle))
 
       nodeToInsertNeighborhood(edge).getMove(
         globalObjective,

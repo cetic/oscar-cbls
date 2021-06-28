@@ -115,33 +115,35 @@ class CachedExplorations(oldGraph:VLSNGraph,
     }
   }
 
-  for (nonEdge <- oldGraph.nonEdges){
+  if(cacheWasBuiltWithIncrementalEnrichment) {
+    for (nonEdge <- oldGraph.nonEdges) {
 
-    val fromNode = nonEdge.from
-    val toNode = nonEdge.to
+      val fromNode = nonEdge.from
+      val toNode = nonEdge.to
 
-    nonEdge.moveType match {
-      case InsertNoEject =>
-        if (!isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle)) {
-          cachedInsertNoEject += (fromNode.representedNode, toNode.vehicle) -> CachedAtomicNoMove
-        }
-      case InsertWithEject =>
-        if (!isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle)) {
-          cachedInsertWithEject += (fromNode.representedNode, toNode.representedNode) -> CachedAtomicNoMove
-        }
-      case MoveNoEject =>
-        if(!isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle)) {
-          cachedMoveNoEject += (fromNode.representedNode, toNode.vehicle) -> CachedAtomicNoMove
-        }
-      case MoveWithEject =>
-        if (!isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle)) {
-          cachedMoveWithEject += (fromNode.representedNode, toNode.representedNode) -> CachedAtomicNoMove
-        }
-      case Remove =>
-        if(!isDirtyVehicle(fromNode.vehicle)) {
-          cachedRemove += fromNode.representedNode -> CachedAtomicNoMove
-        }
-      case _ => ; // non cachable
+      nonEdge.moveType match {
+        case InsertNoEject =>
+          if (!isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle)) {
+            cachedInsertNoEject += (fromNode.representedNode, toNode.vehicle) -> CachedAtomicNoMove
+          }
+        case InsertWithEject =>
+          if (!isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle)) {
+            cachedInsertWithEject += (fromNode.representedNode, toNode.representedNode) -> CachedAtomicNoMove
+          }
+        case MoveNoEject =>
+          if (!isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle)) {
+            cachedMoveNoEject += (fromNode.representedNode, toNode.vehicle) -> CachedAtomicNoMove
+          }
+        case MoveWithEject =>
+          if (!isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle)) {
+            cachedMoveWithEject += (fromNode.representedNode, toNode.representedNode) -> CachedAtomicNoMove
+          }
+        case Remove =>
+          if (!isDirtyVehicle(fromNode.vehicle)) {
+            cachedRemove += fromNode.representedNode -> CachedAtomicNoMove
+          }
+        case _ => ; // non cachable
+      }
     }
   }
 
