@@ -29,7 +29,7 @@ class SequenceExplorerTestSuite extends AnyFunSuite with ScalaCheckDrivenPropert
     forAll((referenceList: List[Int]) => {
       whenever(referenceList.size > 5){
         val (indexFrom, indexTo, destination) = getRandomParametersForMoveAfter(referenceList)
-        val seq = new MovedIntSequence(IntSequence(referenceList),indexFrom,indexTo,destination,true)
+        val seq = new MovedIntSequence(IntSequence(referenceList),indexFrom,indexTo,destination,true,1)
         val modifiedList = flipListManually(referenceList,indexFrom,indexTo,destination)
 
         seq.zipWithIndex.foreach{case (e,i) =>
@@ -47,7 +47,7 @@ class SequenceExplorerTestSuite extends AnyFunSuite with ScalaCheckDrivenPropert
       whenever(referenceList.size > 5){
 
         val i = Random.nextInt(referenceList.size)
-        val seq :IntSequence = new RemovedIntSequence(IntSequence(referenceList),i)
+        val seq :IntSequence = new RemovedIntSequence(IntSequence(referenceList),i,1)
         val modifiedList = referenceList.take(i) ++ referenceList.drop(i+1)
 
         seq.zipWithIndex.foreach{case (e,i) =>

@@ -72,7 +72,11 @@ object Token{
   def apply():Token = new Token()
 }
 
-abstract class IntSequence(protected[cbls] val token: Token = Token()) {
+abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth:Int) {
+
+  private val cacheSize = 10
+  private var noneExplorerPosition: Int = Int.MinValue
+  private val intSequenceExplorerCache: Array[IntSequenceExplorer] = Array.fill(cacheSize)(null)
 
   def size : Int
 
@@ -106,7 +110,64 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
 
   def contains(value : Int) : Boolean
 
-  def explorerAtPosition(position : Int) : Option[IntSequenceExplorer]
+  def explorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
+
+    def putUsedExplorerAtBack(usedExplorerIndex: Int): Unit = {
+      // Moving the explorer and position to the end of the related array
+      var i = usedExplorerIndex
+      val explorer = intSequenceExplorerCache(i)
+      while (i < cacheSize - 1) {
+        intSequenceExplorerCache(i) = intSequenceExplorerCache(i + 1)
+        i += 1
+      }
+      intSequenceExplorerCache(cacheSize - 1) = explorer
+    }
+
+    def insertExplorerAtEnd(explorer: IntSequenceExplorer): Unit = {
+      var i = 0
+      while (i < cacheSize - 1) {
+        intSequenceExplorerCache(i) = intSequenceExplorerCache(i + 1)
+        i += 1
+      }
+      intSequenceExplorerCache(i) = explorer
+    }
+
+    def insertExplorerAtFreeSpace(explorer: IntSequenceExplorer): Unit = {
+      var i = cacheSize - 1
+      while (i > 0 && intSequenceExplorerCache(i) != null)
+        i -= 1
+      require(intSequenceExplorerCache(i) == null, "That position should be empty got " + intSequenceExplorerCache(i) +
+        "\nCurrent value : " + intSequenceExplorerCache.toList)
+      intSequenceExplorerCache(i) = explorer
+    }
+
+    if (noneExplorerPosition == position) return None
+    var index = 0
+    while (index < cacheSize) {
+      if (intSequenceExplorerCache(index) != null &&
+        intSequenceExplorerCache(index).position == position) {
+        putUsedExplorerAtBack(index)
+        return Some(intSequenceExplorerCache(cacheSize - 1))
+      }
+      index += 1
+    }
+
+    val optExplorer = computeExplorerAtPosition(position)
+    optExplorer match {
+      case None =>
+        noneExplorerPosition = position
+
+      case Some(explorer) =>
+        if (intSequenceExplorerCache(0) != null)
+          insertExplorerAtEnd(explorer) // The cache is full, we need to make space
+        else
+          insertExplorerAtFreeSpace(explorer) // The cache is not full, saving at free space
+    }
+
+    optExplorer
+  }
+
+  protected def computeExplorerAtPosition(position: Int): Option[IntSequenceExplorer]
 
   def map(fun:Int=>Int):IntSequence = {
     val l:List[Int] = this.iterator.toList
@@ -177,6 +238,14 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
   }
 
   def explorerAtAnyOccurrence(value : Int) : Option[IntSequenceExplorer] = {
+    var index = 0
+    while (index < cacheSize) {
+      if (intSequenceExplorerCache(index) != null &&
+        intSequenceExplorerCache(index).value == value)
+        return Some(intSequenceExplorerCache(index))
+      else
+        index += 1
+    }
     positionOfAnyOccurrence(value) match {
       case None => None
       case Some(x) => explorerAtPosition(x)
@@ -200,6 +269,14 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
   }
 
   def positionOfAnyOccurrence(value:Int):Option[Int] = {
+    var index = 0
+    while (index < cacheSize) {
+      if (intSequenceExplorerCache(index) != null &&
+        intSequenceExplorerCache(index).value == value)
+        return Some(intSequenceExplorerCache(index).position)
+      else
+        index += 1
+    }
     positionsOfValue(value) match {
       case null => None
       case x if x.isEmpty => None
@@ -246,7 +323,7 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
                           private[seq] val valueToInternalPositions:RedBlackTreeMap[RedBlackTreeMap[Int]],
                           private[seq] val externalToInternalPosition:PiecewiseLinearBijectionNaive,
                           private[seq] val startFreeRangeForInternalPosition:Int,
-                          token:Token = Token()) extends IntSequence(token) {
+                          token:Token = Token()) extends IntSequence(token,0) {
 
   //TODO: replace internalPositionToValue by an immutable Array, or an immutable array + a small RBTree + size
 
@@ -300,7 +377,7 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
     }
   }
 
-  def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
+  def computeExplorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
     if (position >= this.size) None
     else {
       val currentPivotPosition = externalToInternalPosition.forward.pivotWithPositionApplyingTo(position)
@@ -343,7 +420,7 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
     //println(this + ".insertAtPosition(value:" + value + " pos:" + pos + ")")
     require(pos <= size, "inserting past the end of the sequence (size:" + size + " pos:" + pos + ")")
 
-    if (fast) return new InsertedIntSequence(this, value, pos)
+    if (fast) return new InsertedIntSequence(this, value, pos, 1)
 
     //insert into red blacks
     val newInternalPositionToValue = internalPositionToValue.insert(startFreeRangeForInternalPosition, value)
@@ -381,7 +458,7 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
     require(pos < size, s"deleting past the end of the sequence (size:$size pos:$pos)")
     require(pos >= 0, s"deleting at negative pos:$pos")
 
-    if (fast) return new RemovedIntSequence(this, pos)
+    if (fast) return new RemovedIntSequence(this, pos, 1)
 
     val internalPosition = externalToInternalPosition(pos)
     val value = internalPositionToValue.get(internalPosition).head
@@ -437,7 +514,7 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
       s"moveAfterPosition=$moveAfterPosition cannot be between startPositionIncluded=$startPositionIncluded and endPositionIncluded=$endPositionIncluded")
     require(startPositionIncluded <= endPositionIncluded, s"startPositionIncluded=$startPositionIncluded should be <= endPositionIncluded=$endPositionIncluded")
 
-    if (fast) return new MovedIntSequence(this, startPositionIncluded, endPositionIncluded, moveAfterPosition, flip)
+    if (fast) return new MovedIntSequence(this, startPositionIncluded, endPositionIncluded, moveAfterPosition, flip, 1)
 
     if (moveAfterPosition + 1 == startPositionIncluded) {
       //not moving
@@ -618,7 +695,7 @@ class ConcreteIntSequenceExplorer(sequence:ConcreteIntSequence,
                                    slopeIsPositive:Boolean = currentPivotPosition match{
                                      case None => true
                                      case Some(p) => !p.value.f.minus}
-                                   ) extends IntSequenceExplorer{
+                                 ) extends IntSequenceExplorer{
 
   override def toString : String = s"ConcreteIntSequenceExplorer(position:$position value:$value currentPivotPosition:$currentPivotPosition pivotAbovePosition:$pivotAbovePosition positionInRB:$positionInRB)"
 
@@ -691,24 +768,35 @@ class ConcreteIntSequenceExplorer(sequence:ConcreteIntSequence,
   }
 }
 
-abstract class StackedUpdateIntSequence extends IntSequence(){
+abstract class StackedUpdateIntSequence(depth:Int) extends IntSequence(depth = depth){
   override def delete(pos : Int, fast:Boolean,autoRework:Boolean) : IntSequence = {
     require(pos >= 0, "pos=" + pos + " for delete on UniqueIntSequence should be >= 0")
     require(pos < size, "cannot delete past end of sequence in UniqueIntSequence")
-    new RemovedIntSequence(this,pos)
+    if(depth >= 20){
+      new RemovedIntSequence(this,pos, depth+1).commitPendingMoves
+    }else{
+      new RemovedIntSequence(this,pos, depth+1)
+    }
   }
 
   override def moveAfter(startPositionIncluded : Int, endPositionIncluded : Int, moveAfterPosition : Int, flip : Boolean, fast:Boolean,autoRework:Boolean) : IntSequence = {
     require(startPositionIncluded >= 0 && startPositionIncluded < size , "startPositionIncluded=" + startPositionIncluded + " should be in [0,size" + size + "[ in UniqueIntSequence.moveAfter")
     require(endPositionIncluded >= 0 && endPositionIncluded < size , "endPositionIncluded=" + endPositionIncluded +" should be in [0,size"+size+"[ in UniqueIntSequence.moveAfter")
     require(moveAfterPosition >= -1 && moveAfterPosition < size , "moveAfterPosition=" + moveAfterPosition + " should be in [-1,size="+size+"[ in UniqueIntSequence.moveAfter")
-
-    new MovedIntSequence(this,startPositionIncluded,endPositionIncluded,moveAfterPosition,flip)
+    if(depth >= 20) {
+      new MovedIntSequence(this,startPositionIncluded,endPositionIncluded,moveAfterPosition,flip,depth+1).commitPendingMoves
+    }else{
+      new MovedIntSequence(this,startPositionIncluded,endPositionIncluded,moveAfterPosition,flip,depth+1)
+    }
   }
 
   override def insertAtPosition(value : Int, pos : Int, fast:Boolean,autoRework:Boolean) : IntSequence = {
     require(pos >= 0 && pos <= size , "pos=" + pos + " should be in [0,size="+size+"] in IntSequence.insertAt")
-    new InsertedIntSequence(this,value:Int,pos:Int)
+    if(depth >= 20){
+      new InsertedIntSequence(this,value:Int,pos:Int, depth+1).commitPendingMoves
+    }else{
+      new InsertedIntSequence(this,value:Int,pos:Int, depth+1)
+    }
   }
 
   override def regularizeToMaxPivot(maxPivotPerValuePercent: Int, targetToken: Token = this.token) : ConcreteIntSequence =
@@ -811,7 +899,8 @@ class MovedIntSequence(val seq:IntSequence,
                        val startPositionIncluded:Int,
                        val endPositionIncluded:Int,
                        val moveAfterPosition:Int,
-                       val flip:Boolean) extends StackedUpdateIntSequence{
+                       val flip:Boolean,
+                       depth:Int) extends StackedUpdateIntSequence(depth){
 
   //TODO: provide a cache on the values at the boundary of the move
 
@@ -829,7 +918,7 @@ class MovedIntSequence(val seq:IntSequence,
 
   override def commitPendingMoves:IntSequence = seq.commitPendingMoves.moveAfter(startPositionIncluded,endPositionIncluded,moveAfterPosition,flip,fast=false,autoRework = false)
 
-  override def explorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
+  override def computeExplorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
     val positionOfCurrentPivot = localBijection.forward.pivotWithPositionApplyingTo(position)
     seq.explorerAtPosition(localBijection.forward(position)) match{
       case None => None
@@ -882,7 +971,7 @@ class MovedIntSequenceExplorer(sequence:MovedIntSequence,
                                 slopeIsPositive:Boolean = currentPivotPosition match{
                                   case None => true
                                   case Some(p) => !p.value.f.minus}
-                                ) extends IntSequenceExplorer{
+                              ) extends IntSequenceExplorer{
 
   override val value : Int = positionInBasicSequence.value
 
@@ -953,7 +1042,9 @@ class MovedIntSequenceExplorer(sequence:MovedIntSequence,
 
 class InsertedIntSequence(seq:IntSequence,
                           val insertedValue:Int,
-                          val pos:Int) extends StackedUpdateIntSequence {
+                          val pos:Int,
+                          depth:Int)
+  extends StackedUpdateIntSequence(depth) {
   override val size : Int = seq.size + 1
 
   override def nbOccurrence(value : Int) : Int = if(value == this.insertedValue) seq.nbOccurrence(value) + 1 else seq.nbOccurrence(value)
@@ -983,7 +1074,7 @@ class InsertedIntSequence(seq:IntSequence,
     if(oldPOs < pos) oldPOs else oldPOs +1
   }
 
-  override def explorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
+  override def computeExplorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
     if (position == this.pos) {
       if (position == 0) {
         Some(new InsertedIntSequenceExplorer(this, position, seq.explorerAtPosition(0), true, true))
@@ -1084,7 +1175,9 @@ class InsertedIntSequenceExplorer(seq:InsertedIntSequence,
 }
 
 class RemovedIntSequence(val seq:IntSequence,
-                         val positionOfDelete:Int) extends StackedUpdateIntSequence{
+                         val positionOfDelete:Int,
+                         depth:Int)
+  extends StackedUpdateIntSequence(depth){
 
   val removedValue = seq.valueAtPosition(positionOfDelete).head
 
@@ -1105,7 +1198,7 @@ class RemovedIntSequence(val seq:IntSequence,
 
   override val size : Int = seq.size - 1
 
-  override def explorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
+  override def computeExplorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
     seq.explorerAtPosition(if (position < this.positionOfDelete) position else position + 1) match {
       case None => None
       case Some(e) => Some(new RemovedIntSequenceExplorer(this, position, e))
