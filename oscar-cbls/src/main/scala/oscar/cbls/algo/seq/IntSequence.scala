@@ -76,7 +76,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
 
   private val cacheSize = 10
   private var noneExplorerPosition: Int = Int.MinValue
-  private val intSequenceExplorerCache: Array[IntSequenceExplorer] = Array.fill(cacheSize)(null)
+  private val intSequenceExplorerCache: Array[IntSequenceExplorer] = Array.ofDim(cacheSize)
 
   def size : Int
 

@@ -223,8 +223,6 @@ class MoveExplorer(v:Int,
    */
   def enrichGraph(dirtyNodes:Iterable[Int], dirtyVehicles:Iterable[Int], verbose:Boolean):(VLSNGraph,Boolean,Int, List[List[Edge]]) = {
 
-    newlyAddedPriorityCycles = Nil
-
     for(node <- dirtyNodes) isNodeDirty(node) = true
     for(vehicle <- dirtyVehicles) {
       isVehicleDirty(vehicle) = true
@@ -272,7 +270,10 @@ class MoveExplorer(v:Int,
       }
     }
 
-    (edgeBuilder.buildGraph(),nbBundles!=0 || nbPriorityBundles!=0,totalExplored, newlyAddedPriorityCycles)
+    val toReturnPriorityCycles = newlyAddedPriorityCycles
+    newlyAddedPriorityCycles = Nil
+
+    (edgeBuilder.buildGraph(),nbBundles!=0 || nbPriorityBundles!=0,totalExplored, toReturnPriorityCycles)
   }
 
   def allMovesExplored:Boolean = {
@@ -592,15 +593,17 @@ class MoveExplorer(v:Int,
     }
 
     override def loadEdgeFromCache(edge: Int): Boolean = {
+      val symbolicNodeToInsert = nodeIDToNode(edge)
+      val symbolicNodeToRemove = nodeIDToNode(toNode)
+
       cache.getInsertOnVehicleWithRemove(edge,
         toVehicle,
         toNode) match{
         case CachedAtomicMove(move:Move,delta:Long) =>
-          val symbolicNodeToInsert = nodeIDToNode(edge)
-          val symbolicNodeToRemove = nodeIDToNode(toNode)
           edgeBuilder.addEdge(symbolicNodeToInsert, symbolicNodeToRemove, delta, move, VLSNMoveType.InsertWithEject)
           true
         case CachedAtomicNoMove =>
+          edgeBuilder.addNonEdge(symbolicNodeToInsert, symbolicNodeToRemove, VLSNMoveType.InsertWithEject)
           true
         case CacheDirty =>
           false
@@ -611,14 +614,15 @@ class MoveExplorer(v:Int,
       //ensureNeighborhoodAndRemove, we do it lazily because there might be nothing to do, actually
       // (although it is not quite sure that this actually useful at all)
       ensureNeighborhoodAndReInsert()
+      val symbolicNodeToInsert = nodeIDToNode(edge)
+      val symbolicNodeToRemove = nodeIDToNode(toNode)
 
       nodeToInsertToNeighborhood(edge).
         getMove(globalObjective, correctedGlobalInit, acceptAllButMaxInt) match {
-        case NoMoveFound => ;
+        case NoMoveFound =>
+          edgeBuilder.addNonEdge(symbolicNodeToInsert, symbolicNodeToRemove, VLSNMoveType.InsertWithEject)
         case MoveFound(move) =>
           val delta = move.objAfter - correctedGlobalInit
-          val symbolicNodeToInsert = nodeIDToNode(edge)
-          val symbolicNodeToRemove = nodeIDToNode(toNode)
           edgeBuilder.addEdge(symbolicNodeToInsert, symbolicNodeToRemove, delta, move, VLSNMoveType.InsertWithEject)
       }
     }
@@ -674,6 +678,10 @@ class MoveExplorer(v:Int,
             VLSNMoveType.InsertNoEject)
           true
         case CachedAtomicNoMove =>
+          edgeBuilder.addNonEdge(
+            nodeIDToNode(edge),
+            vehicleToNode(toVehicle),
+            VLSNMoveType.InsertNoEject)
           true
         case CacheDirty =>
           false
@@ -684,15 +692,20 @@ class MoveExplorer(v:Int,
       //ensureNeighborhoodAndRemove, we do it lazyly because there might be nothing to do, actually
       // (although it is not quite sure that this actually useful at all)
       ensureNeighborhood()
+      val symbolicNodeToInsert = nodeIDToNode(edge)
 
       nodeToInsertNeighborhood(edge).getMove(
         globalObjective,
         initialGlobalObjective,
         acceptanceCriterion = acceptAllButMaxInt) match {
-        case NoMoveFound => ;
+        case NoMoveFound =>
+          edgeBuilder.addNonEdge(
+            symbolicNodeToInsert,
+            vehicleToNode(toVehicle),
+            VLSNMoveType.InsertNoEject)
+
         case MoveFound(move) =>
           val delta = move.objAfter - initialGlobalObjective
-          val symbolicNodeToInsert = nodeIDToNode(edge)
 
           val vlsnEdge = edgeBuilder.addEdge(
             symbolicNodeToInsert,

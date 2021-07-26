@@ -420,7 +420,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
 
         name = "VLSN",
         reoptimizeAtStartUp = true,
-        enrichment = Some(VLSN.standardEnrichment(v))
+        enrichment = None //Some(VLSN.standardEnrichment(v))
       )
     }
 
