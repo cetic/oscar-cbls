@@ -74,10 +74,6 @@ object Token{
 
 abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth:Int) {
 
-  private val cacheSize = 10
-  private var noneExplorerPosition: Int = Int.MinValue
-  private val intSequenceExplorerCache: Array[IntSequenceExplorer] = Array.ofDim(cacheSize)
-
   def size : Int
 
   def isEmpty : Boolean = size == 0
@@ -110,64 +106,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
 
   def contains(value : Int) : Boolean
 
-  def explorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
-
-    def putUsedExplorerAtBack(usedExplorerIndex: Int): Unit = {
-      // Moving the explorer and position to the end of the related array
-      var i = usedExplorerIndex
-      val explorer = intSequenceExplorerCache(i)
-      while (i < cacheSize - 1) {
-        intSequenceExplorerCache(i) = intSequenceExplorerCache(i + 1)
-        i += 1
-      }
-      intSequenceExplorerCache(cacheSize - 1) = explorer
-    }
-
-    def insertExplorerAtEnd(explorer: IntSequenceExplorer): Unit = {
-      var i = 0
-      while (i < cacheSize - 1) {
-        intSequenceExplorerCache(i) = intSequenceExplorerCache(i + 1)
-        i += 1
-      }
-      intSequenceExplorerCache(i) = explorer
-    }
-
-    def insertExplorerAtFreeSpace(explorer: IntSequenceExplorer): Unit = {
-      var i = cacheSize - 1
-      while (i > 0 && intSequenceExplorerCache(i) != null)
-        i -= 1
-      require(intSequenceExplorerCache(i) == null, "That position should be empty got " + intSequenceExplorerCache(i) +
-        "\nCurrent value : " + intSequenceExplorerCache.toList)
-      intSequenceExplorerCache(i) = explorer
-    }
-
-    if (noneExplorerPosition == position) return None
-    var index = 0
-    while (index < cacheSize) {
-      if (intSequenceExplorerCache(index) != null &&
-        intSequenceExplorerCache(index).position == position) {
-        putUsedExplorerAtBack(index)
-        return Some(intSequenceExplorerCache(cacheSize - 1))
-      }
-      index += 1
-    }
-
-    val optExplorer = computeExplorerAtPosition(position)
-    optExplorer match {
-      case None =>
-        noneExplorerPosition = position
-
-      case Some(explorer) =>
-        if (intSequenceExplorerCache(0) != null)
-          insertExplorerAtEnd(explorer) // The cache is full, we need to make space
-        else
-          insertExplorerAtFreeSpace(explorer) // The cache is not full, saving at free space
-    }
-
-    optExplorer
-  }
-
-  protected def computeExplorerAtPosition(position: Int): Option[IntSequenceExplorer]
+  def explorerAtPosition(position: Int): Option[IntSequenceExplorer]
 
   def map(fun:Int=>Int):IntSequence = {
     val l:List[Int] = this.iterator.toList
@@ -238,14 +177,6 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
   }
 
   def explorerAtAnyOccurrence(value : Int) : Option[IntSequenceExplorer] = {
-    var index = 0
-    while (index < cacheSize) {
-      if (intSequenceExplorerCache(index) != null &&
-        intSequenceExplorerCache(index).value == value)
-        return Some(intSequenceExplorerCache(index))
-      else
-        index += 1
-    }
     positionOfAnyOccurrence(value) match {
       case None => None
       case Some(x) => explorerAtPosition(x)
@@ -269,14 +200,6 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
   }
 
   def positionOfAnyOccurrence(value:Int):Option[Int] = {
-    var index = 0
-    while (index < cacheSize) {
-      if (intSequenceExplorerCache(index) != null &&
-        intSequenceExplorerCache(index).value == value)
-        return Some(intSequenceExplorerCache(index).position)
-      else
-        index += 1
-    }
     positionsOfValue(value) match {
       case null => None
       case x if x.isEmpty => None
@@ -324,6 +247,11 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
                           private[seq] val externalToInternalPosition:PiecewiseLinearBijectionNaive,
                           private[seq] val startFreeRangeForInternalPosition:Int,
                           token:Token = Token()) extends IntSequence(token,0) {
+
+
+  private val cacheSize = 10
+  private var noneExplorerPosition: Int = Int.MinValue
+  private val intSequenceExplorerCache: Array[IntSequenceExplorer] = Array.ofDim(cacheSize)
 
   //TODO: replace internalPositionToValue by an immutable Array, or an immutable array + a small RBTree + size
 
@@ -377,7 +305,64 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
     }
   }
 
-  def computeExplorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
+  def explorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
+
+    def putUsedExplorerAtBack(usedExplorerIndex: Int): Unit = {
+      // Moving the explorer and position to the end of the related array
+      var i = usedExplorerIndex
+      val explorer = intSequenceExplorerCache(i)
+      while (i < cacheSize - 1) {
+        intSequenceExplorerCache(i) = intSequenceExplorerCache(i + 1)
+        i += 1
+      }
+      intSequenceExplorerCache(cacheSize - 1) = explorer
+    }
+
+    def insertExplorerAtEnd(explorer: IntSequenceExplorer): Unit = {
+      var i = 0
+      while (i < cacheSize - 1) {
+        intSequenceExplorerCache(i) = intSequenceExplorerCache(i + 1)
+        i += 1
+      }
+      intSequenceExplorerCache(i) = explorer
+    }
+
+    def insertExplorerAtFreeSpace(explorer: IntSequenceExplorer): Unit = {
+      var i = cacheSize - 1
+      while (i > 0 && intSequenceExplorerCache(i) != null)
+        i -= 1
+      require(intSequenceExplorerCache(i) == null, "That position should be empty got " + intSequenceExplorerCache(i) +
+        "\nCurrent value : " + intSequenceExplorerCache.toList)
+      intSequenceExplorerCache(i) = explorer
+    }
+
+    if (noneExplorerPosition == position) return None
+    var index = 0
+    while (index < cacheSize) {
+      if (intSequenceExplorerCache(index) != null &&
+        intSequenceExplorerCache(index).position == position) {
+        putUsedExplorerAtBack(index)
+        return Some(intSequenceExplorerCache(cacheSize - 1))
+      }
+      index += 1
+    }
+
+    val optExplorer = computeExplorerAtPosition(position)
+    optExplorer match {
+      case None =>
+        noneExplorerPosition = position
+
+      case Some(explorer) =>
+        if (intSequenceExplorerCache(0) != null)
+          insertExplorerAtEnd(explorer) // The cache is full, we need to make space
+        else
+          insertExplorerAtFreeSpace(explorer) // The cache is not full, saving at free space
+    }
+
+    optExplorer
+  }
+
+  private def computeExplorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
     if (position >= this.size) None
     else {
       val currentPivotPosition = externalToInternalPosition.forward.pivotWithPositionApplyingTo(position)
@@ -393,6 +378,30 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
         pivotAbovePosition)()
       )
     }
+  }
+
+  override def explorerAtAnyOccurrence(value : Int) : Option[IntSequenceExplorer] = {
+    var index = 0
+    while (index < cacheSize) {
+      if (intSequenceExplorerCache(index) != null &&
+        intSequenceExplorerCache(index).value == value)
+        return Some(intSequenceExplorerCache(index))
+      else
+        index += 1
+    }
+    super.explorerAtAnyOccurrence(value)
+  }
+
+  override def positionOfAnyOccurrence(value:Int):Option[Int] = {
+    var index = 0
+    while (index < cacheSize) {
+      if (intSequenceExplorerCache(index) != null &&
+        intSequenceExplorerCache(index).value == value)
+        return Some(intSequenceExplorerCache(index).position)
+      else
+        index += 1
+    }
+    super.positionOfAnyOccurrence(value)
   }
 
   private def internalInsertToValueToInternalPositions(value : Int, internalPosition : Int, valueToInternalPositions : RedBlackTreeMap[RedBlackTreeMap[Int]]) : RedBlackTreeMap[RedBlackTreeMap[Int]] = {
@@ -918,7 +927,7 @@ class MovedIntSequence(val seq:IntSequence,
 
   override def commitPendingMoves:IntSequence = seq.commitPendingMoves.moveAfter(startPositionIncluded,endPositionIncluded,moveAfterPosition,flip,fast=false,autoRework = false)
 
-  override def computeExplorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
+  override def explorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
     val positionOfCurrentPivot = localBijection.forward.pivotWithPositionApplyingTo(position)
     seq.explorerAtPosition(localBijection.forward(position)) match{
       case None => None
@@ -1074,7 +1083,7 @@ class InsertedIntSequence(seq:IntSequence,
     if(oldPOs < pos) oldPOs else oldPOs +1
   }
 
-  override def computeExplorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
+  override def explorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
     if (position == this.pos) {
       if (position == 0) {
         Some(new InsertedIntSequenceExplorer(this, position, seq.explorerAtPosition(0), true, true))
@@ -1198,7 +1207,7 @@ class RemovedIntSequence(val seq:IntSequence,
 
   override val size : Int = seq.size - 1
 
-  override def computeExplorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
+  override def explorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
     seq.explorerAtPosition(if (position < this.positionOfDelete) position else position + 1) match {
       case None => None
       case Some(e) => Some(new RemovedIntSequenceExplorer(this, position, e))

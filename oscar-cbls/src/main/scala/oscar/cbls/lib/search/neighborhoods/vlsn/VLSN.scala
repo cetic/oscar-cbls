@@ -259,9 +259,6 @@ class VLSN(v:Int,
            enrichment:Option[EnrichmentParameters] = None)
   extends Neighborhood {
 
-  //TODO: add a hot restart feature that could reload a cache if still valid.
-  // useful when restricting the number of iterations
-
   def doReoptimize(vehicle:Int): Unit = {
     val reOptimizeNeighborhoodGenerator = reOptimizeVehicle match{
       case None => return
@@ -529,7 +526,7 @@ class VLSN(v:Int,
               cycleFound = false
           }
         }
-        if(printTakenMoves) println("                nbCycles : " + nbCycles)
+        if(printTakenMoves) println("                nbCycles:" + nbCycles + " nbDirtyVehicles:" + dirtyVehicles.size)
       }
     }
 
