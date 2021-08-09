@@ -202,7 +202,7 @@ object TspBridgeDistributed extends App {
 
   //main search; distributed combinators delegate to worker
   val (store,search,obj,finalPrint) = createSearchProcedure(true)
-  val supervisor = Supervisor.startSupervisorAndActorSystem(store,search,verbose=false,tic=1.seconds)
+  val supervisor = Supervisor.startSupervisorAndActorSystem(search,verbose=false,tic=1.seconds)
 
   val nbWorker = 6
   for (_ <- (0 until nbWorker).par) {

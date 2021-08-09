@@ -103,7 +103,7 @@ object WarehouseLocationDistributed2 extends App{
   //supervisor side
   val (store,search,obj, finalPrint) = createSearchProcedure()
 
-  val supervisor = distrib.startSupervisorAndActorSystem(store,search)
+  val supervisor = distrib.startSupervisorAndActorSystem(search)
 
   //creating all the workers; here we only create local workers
   for(_ <- (0 until nbWorker).par) {

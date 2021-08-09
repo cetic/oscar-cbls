@@ -49,10 +49,10 @@ object Supervisor {
 
   val nbCores: Int = Runtime.getRuntime.availableProcessors()
 
-  def startSupervisorAndActorSystem(store: Store, search: Neighborhood, verbose: Boolean = false, tic: Duration = Duration.Inf): Supervisor = {
-    val supervisorActorSystem = internalStartSupervisorAndActorSystem(verbose, tic)
-    val supervisor = wrapSupervisor(supervisorActorSystem, store: Store, verbose)(system = supervisorActorSystem)
-    val (nbNRemoteNeighborhood,nbDistributedCombinator,neighborhoods) = search.labelAndExtractRemoteNeighborhoods(supervisor: Supervisor)
+  def startSupervisorAndActorSystem(search: Neighborhood, verbose: Boolean = false, hotRestart:Boolean = true, tic: Duration = Duration.Inf): Supervisor = {
+    val supervisorActorSystem = internalStartSupervisorAndActorSystem(verbose, hotRestart, tic)
+    val supervisor = wrapSupervisor(supervisorActorSystem, verbose)(system = supervisorActorSystem)
+    val (nbNRemoteNeighborhood,nbDistributedCombinator,_) = search.labelAndExtractRemoteNeighborhoods(supervisor: Supervisor)
 
     val startLogger: Logger = LoggerFactory.getLogger("SupervisorObject")
     startLogger.info(s"analyzed search; nbDistributedCombinator:$nbDistributedCombinator nbRemoteNeighborhood:$nbNRemoteNeighborhood")
@@ -60,13 +60,13 @@ object Supervisor {
     supervisor
   }
 
-  def internalStartSupervisorAndActorSystem(verbose: Boolean = false, tic: Duration = Duration.Inf): ActorSystem[MessagesToSupervisor] = {
+  def internalStartSupervisorAndActorSystem(verbose: Boolean = false, hotRestart:Boolean, tic: Duration = Duration.Inf): ActorSystem[MessagesToSupervisor] = {
     val startLogger: Logger = LoggerFactory.getLogger("SupervisorObject")
     startLogger.info("Starting actor system and supervisor")
 
     //We prioritize some messages to try and maximize the hit on hotRestart
     val a = ActorSystem(
-      createSupervisorBehavior(verbose, tic), "supervisor",
+      createSupervisorBehavior(verbose, hotRestart, tic), "supervisor",
       config = ConfigFactory.parseString("""
                                            |oscarcbls.supervisormailbox.mailbox-type = "akka.dispatch.UnboundedControlAwareMailbox"
                                            |akka.version = 2.6.14
@@ -190,20 +190,22 @@ object Supervisor {
     a
   }
 
-  def wrapSupervisor(supervisorRef: ActorRef[MessagesToSupervisor], store: Store, verbose: Boolean)
+  def wrapSupervisor(supervisorRef: ActorRef[MessagesToSupervisor], verbose: Boolean)
                     (implicit system: ActorSystem[_]): Supervisor = {
-    new Supervisor(supervisorRef, store, verbose, system)
+    new Supervisor(supervisorRef, verbose, system)
   }
 
-  def spawnSupervisor(context: ActorContext[_], verbose: Boolean): ActorRef[MessagesToSupervisor] = {
-    context.spawn(createSupervisorBehavior(verbose), "supervisor")
+  def spawnSupervisor(context: ActorContext[_], verbose: Boolean, hotRestart:Boolean): ActorRef[MessagesToSupervisor] = {
+    context.spawn(createSupervisorBehavior(verbose, hotRestart), "supervisor")
   }
 
-  def createSupervisorBehavior(verbose: Boolean = false, tic: Duration = Duration.Inf): Behavior[MessagesToSupervisor] =
-    Behaviors.setup { context: ActorContext[MessagesToSupervisor] => new SupervisorActor(context, verbose, tic) }
+  def createSupervisorBehavior(verbose: Boolean = false, hotRestart:Boolean = true, tic: Duration = Duration.Inf): Behavior[MessagesToSupervisor] =
+    Behaviors.setup { context: ActorContext[MessagesToSupervisor] => new SupervisorActor(context, verbose, hotRestart, tic) }
 }
 
-class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor], m: Store, verbose: Boolean, implicit val system: ActorSystem[_]) {
+class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor],
+                 verbose: Boolean,
+                 implicit val system: ActorSystem[_]) {
   //TODO look for an adequate timeout or stopping mechanism
   implicit val timeout: Timeout = 1.hour
 
@@ -251,6 +253,7 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor], m: Store, 
 
 class SupervisorActor(context: ActorContext[MessagesToSupervisor],
                       verbose: Boolean,
+                      hotRestart:Boolean,
                       tic: Duration)
   extends AbstractBehavior[MessagesToSupervisor](context) {
 
@@ -344,7 +347,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
             var nbSearchToStart = nbIdleWorkers min nbAvailableSearches
 
             var couldDequeue = true
-            while (couldDequeue && nbSearchToStart != 0) {
+            while (hotRestart && couldDequeue && nbSearchToStart != 0) {
               couldDequeue = false
               waitingSearches.dequeueFirst(searchTask => {
                 val nID = searchTask.request.neighborhoodID.neighborhoodID
@@ -376,7 +379,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
               idleWorkersAndTheirCurentModelID = idleWorkersAndTheirCurentModelID.tail
               //println("coldRestart " + searchToStart.request.neighborhoodID)
               startSearch(searchToStart, worker._1,worker._2)
-              neighborhoodToPreferredWorker = neighborhoodToPreferredWorker + (searchToStart.request.neighborhoodID.neighborhoodID -> worker._1)
+              if(hotRestart) neighborhoodToPreferredWorker = neighborhoodToPreferredWorker + (searchToStart.request.neighborhoodID.neighborhoodID -> worker._1)
               nbSearchToStart -= 1
             }
 
@@ -428,7 +431,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
         completedNeighborhoodIDAndMoveFound match {
           case None => ;
           case Some((s:Int,found)) =>
-            if(!found){
+            if(!found && hotRestart){
               neighborhoodToPreferredWorker = neighborhoodToPreferredWorker.-(s)
             }
         }
