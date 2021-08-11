@@ -67,6 +67,9 @@ object Supervisor {
     //We prioritize some messages to try and maximize the hit on hotRestart
     val a = ActorSystem(
       createSupervisorBehavior(verbose, hotRestart, tic), "supervisor",
+
+      //we want oscarcbls.supervisormailbox.mailbox-type = "akka.dispatch.UnboundedControlAwareMailbox"
+
       config = ConfigFactory.parseString("""
                                            |oscarcbls.supervisormailbox.mailbox-type = "akka.dispatch.UnboundedControlAwareMailbox"
                                            |akka.version = 2.6.14

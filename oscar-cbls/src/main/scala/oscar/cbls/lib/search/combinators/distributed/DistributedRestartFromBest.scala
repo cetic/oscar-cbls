@@ -7,6 +7,7 @@ import oscar.cbls.core.distrib._
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
 import oscar.cbls.visual.SingleFrameWindow
+import oscar.cbls.warning
 
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.{Duration, DurationInt}
@@ -65,6 +66,9 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
       case Some(m) => m
       case None => supervisor.nbWorkers  //TODO: this is not great because workers can enroll throughout the search; we should be able to scale up when more workers arrive
     }
+
+    require(maxWorkers > 0, "there must be at least one worker")
+    warning(maxWorkers > 1, "only one worker allowed; this is not enough to justify distributed computations")
     val independentObj = obj.getIndependentObj
     val model = obj.model
     val startSol = IndependentSolution(obj.model.solution())
@@ -123,7 +127,6 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
         nbCompletedSearchesOnBestSoFar = 0,
         nbCompletedRestarts = 0,
         display = visu)
-
     }
 
     def next(runningSearchIDsAndIsItFromBestSoFar:SortedMap[Long,Boolean],
