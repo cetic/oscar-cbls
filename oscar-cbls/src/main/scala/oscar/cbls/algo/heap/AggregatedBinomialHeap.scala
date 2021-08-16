@@ -39,12 +39,12 @@ class AggregatedBinomialHeapQList[T](GetKey:T => Int,val maxPosition:Int) extend
 
   private[this] val a:Array[QList[T]] = Array.tabulate (maxPosition)(_ => null)
 
-  private[this] var empty:Boolean = true
+  private[this] var checkEmpty:Boolean = true
 
   /**makes the datastruct empty**/
   override def dropAll(): Unit ={
     for (i <- b) a(i) = null
-    empty = true
+    checkEmpty = true
     b.dropAll()
   }
 
@@ -54,7 +54,7 @@ class AggregatedBinomialHeapQList[T](GetKey:T => Int,val maxPosition:Int) extend
     if (otherWithSamePosition == null){
       a(position) = QList(elem)
       b.insert(position)
-      empty = false
+      checkEmpty = false
     }else{
       //this is the desired branch, as it is O(1L)
       a(position) = QList(elem, otherWithSamePosition)
@@ -65,7 +65,7 @@ class AggregatedBinomialHeapQList[T](GetKey:T => Int,val maxPosition:Int) extend
 
   override def popFirsts:List[T] = throw new Error("too inefficient")
 
-  override def isEmpty:Boolean = empty
+  override def isEmpty:Boolean = checkEmpty
   override def size: Int = throw new Error("too inefficient")
 
   override def getFirst: T = a(b.getFirst).head
@@ -77,7 +77,7 @@ class AggregatedBinomialHeapQList[T](GetKey:T => Int,val maxPosition:Int) extend
     a(position) = liste.tail
     if (liste.tail == null){
       b.popFirst()
-      empty = b.isEmpty
+      checkEmpty = b.isEmpty
     }
     toreturn
   }
