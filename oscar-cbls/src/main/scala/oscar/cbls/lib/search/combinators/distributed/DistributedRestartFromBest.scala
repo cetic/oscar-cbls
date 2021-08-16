@@ -113,7 +113,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
       //starting up all searches
       context.log.info(s"starting restart search, init obj: $initialObj")
 
-      for(i <- 0 until maxWorkers) { //one nless than number of workers
+      for(i <- 0 until maxWorkers) {
         context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
           case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, if(performInitialNonRandomizeDescent && i == 0) 1 else 0)
           case Failure(_) => WrappedError(msg = Some("supervisor actor timeout2"))

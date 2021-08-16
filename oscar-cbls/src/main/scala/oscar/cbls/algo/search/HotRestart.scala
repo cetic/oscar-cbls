@@ -1,17 +1,17 @@
 /*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
+ * OscaR is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * OscaR is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License  for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+ * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+ ******************************************************************************/
 package oscar.cbls.algo.search
 
 import scala.collection.Iterator
@@ -22,15 +22,15 @@ import scala.collection.immutable.{NumericRange, SortedSet}
  * it takes an Iterable[Long] and some pivot, and ensures that the iteration will explore
  * the values above the pivot first, in increasing order,
  * and the values below the pivot later, in increasing order as well.
-*/
+ */
 object HotRestart {
 
   /** this will return a shiftedIterable
-    * the most efficient method will be automatically selected for Range and sorted sets
-    * @param it
-    * @param pivot
-    * @return
-    */
+   * the most efficient method will be automatically selected for Range and sorted sets
+   * @param it
+   * @param pivot
+   * @return
+   */
   def apply(it:Iterable[Int], pivot:Int):Iterable[Int] = {
     it match{
       case r:NumericRange[Int] => if (r contains pivot) new InstrumentedRange(r) startBy pivot else r
@@ -46,6 +46,21 @@ object HotRestart {
   def apply(s:SortedSet[Int], pivot:Int):Iterable[Int] =  new ShiftedSet(s,pivot)
 }
 
+object Test extends App{
+
+  val it = (0 until 100).filter(_%3 == 1)
+  println("nonHotRestart" + it)
+  val setM = HotRestart(it,31)
+  println("hotRestart" + setM)
+
+  val it2 = (0 until 100)
+  println("nonHotRestart2" + it2)
+  val setM2 = HotRestart(it2,31)
+  println("hotRestart2" + setM2)
+
+}
+
+
 class ShiftedIterable(it:Iterable[Int], pivot:Int, sequence:Boolean = false) extends Iterable[Int] {
   override def iterator: Iterator[Int] = {
     if(sequence) {
@@ -55,7 +70,7 @@ class ShiftedIterable(it:Iterable[Int], pivot:Int, sequence:Boolean = false) ext
         if (aboveIterator.hasNext) {
           val nextValue = aboveIterator.next()
           if (nextValue == pivot) List(nextValue)
-           else nextValue :: fetchHead
+          else nextValue :: fetchHead
         }else Nil
       }
       val below:List[Int] = fetchHead
@@ -137,9 +152,9 @@ class ShiftedSet(s:SortedSet[Int], pivot:Int) extends Iterable[Int] {
     var currentValueReady = false
 
     /** returns true if a next value is available
-      *
-      * @return
-      */
+     *
+     * @return
+     */
     def internalMoveToNext():Boolean = {
       if(currentValueReady) return true
       if(first){
