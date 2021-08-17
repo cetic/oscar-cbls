@@ -81,7 +81,7 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
       if (searchZone1 == null) {
         if (hotRestart) {
           if (firstVarIndice >= vars.length) firstVarIndice = 0
-          HotRestart(vars.indices, firstVarIndice)
+          HotRestart(vars.indices, 0 max (firstVarIndice-1))
         } else vars.indices
       } else if (hotRestart) HotRestart(searchZone1(), 0 max (firstVarIndice-1)) else searchZone1()
 
@@ -144,7 +144,7 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
     }
   }
 
-  override def instantiateCurrentMove(newObj: Long) =
+  override def instantiateCurrentMove(newObj: Long): SwapMove =
     SwapMove(firstVar, secondVar, firstVarIndice, secondVarIndice, adjustIfNotInProperDomain, newObj, name)
 
   //this resets the internal state of the Neighborhood
