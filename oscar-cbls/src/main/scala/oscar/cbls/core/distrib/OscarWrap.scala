@@ -39,10 +39,11 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
               obj: Objective,
               acc: (Long, Long) => Boolean,
               shouldAbort: () => Boolean,
+              initSolutionOpt:Option[Solution],
               sendFullSolution:Boolean,
               searchId:Long,
               sendProgressTo:Option[ActorRef[SearchProgress]]): IndependentSearchResult = {
-    neighborhood(parameters).getMoveAbortable(obj, obj.value, acc, shouldAbort) match {
+    neighborhood(parameters).getMoveAbortable(obj, obj.value, acc, shouldAbort,initSolutionOpt) match {
       case NoMoveFound => IndependentNoMoveFound()
       case MoveFound(m) =>
         sendProgressTo match {

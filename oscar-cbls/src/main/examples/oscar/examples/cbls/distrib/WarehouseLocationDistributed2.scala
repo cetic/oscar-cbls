@@ -37,10 +37,10 @@ object WarehouseLocationDistributed2 extends App{
   val nbWorker = 4
 
   //the number of warehouses
-  val W:Int = 2000
+  val W:Int = 3000
 
   //the number of delivery points
-  val D:Int = 1000
+  val D:Int = 2000
 
   println("WarehouseLocation(W:" + W + ", D:" + D + ")")
   //the cost per delivery point if no location is open
@@ -114,7 +114,7 @@ object WarehouseLocationDistributed2 extends App{
 
   val start = System.currentTimeMillis()
 
-  val search2 = search.showObjectiveFunction(obj)
+  val search2 = search // .showObjectiveFunction(obj)
   search2.verbose = 1
   search2.doAllMoves(obj = obj)
 

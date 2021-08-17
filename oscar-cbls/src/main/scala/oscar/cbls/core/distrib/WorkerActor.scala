@@ -3,7 +3,7 @@ package oscar.cbls.core.distrib
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import org.slf4j.{Logger, LoggerFactory}
-import oscar.cbls.core.computation.Store
+import oscar.cbls.core.computation.{Solution, Store}
 
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
@@ -107,12 +107,18 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
   }
 
   private def doSearch(searchRequest: SearchRequest,searchId:Long): (IndependentSearchResult,Int) = {
-    searchRequest.startSolutionOpt match{
-      case None => require(currentModelNr.isDefined)
+    val initLocalSolutionOpt:Option[Solution] = searchRequest.startSolutionOpt match{
+      case None =>
+        require(currentModelNr.isDefined)
+        None
       case Some(startSolution) =>
         if(this.currentModelNr.isEmpty || startSolution.solutionId != this.currentModelNr.get) {
-          startSolution.makeLocal(m).restoreDecisionVariables(withoutCheckpoints = true)
+          val s = startSolution.makeLocal(m)
+          s.restoreDecisionVariables(withoutCheckpoints = true)
           currentModelNr = Some(startSolution.solutionId)
+          Some(s)
+        }else{
+          None
         }
     }
 
@@ -136,6 +142,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
         searchRequest.obj.convertToObjective(m),
         searchRequest.acc,
         shouldAbort = () => shouldAbortComputation,
+        initSolutionOpt = initLocalSolutionOpt,
         sendFullSolution = searchRequest.sendFullSolution,
         searchId = searchId,
         sendProgressTo = searchRequest.sendProgressTo)
