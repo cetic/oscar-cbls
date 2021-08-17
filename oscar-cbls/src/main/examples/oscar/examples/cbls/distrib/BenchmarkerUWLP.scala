@@ -10,7 +10,7 @@ import oscar.examples.cbls.wlp.WarehouseLocationGenerator
 
 import scala.collection.parallel.immutable.ParRange
 
-object Benchmarker extends ModelingAPI {
+object BenchmarkerUWLP extends ModelingAPI {
   // Inner Classes
   sealed trait NeighborhoodType {
     def withHotRestart: Boolean
