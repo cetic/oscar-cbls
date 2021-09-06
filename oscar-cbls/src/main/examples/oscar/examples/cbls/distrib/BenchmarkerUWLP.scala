@@ -11,29 +11,33 @@ import oscar.examples.cbls.wlp.WarehouseLocationGenerator
 import scala.collection.parallel.immutable.ParRange
 
 object BenchmarkerUWLP extends ModelingAPI {
-  // Inner Classes
   sealed trait NeighborhoodType {
     def withHotRestart: Boolean
   }
+
   case object Sequential extends NeighborhoodType {
 
     override def toString: String = "Sequential"
 
     override val withHotRestart: Boolean = false
   }
+
   case object DistRemote extends NeighborhoodType {
     override def toString: String = "Remote"
 
     override val withHotRestart: Boolean = false
   }
+
   case object DistRestart extends NeighborhoodType  {
     override def toString: String = "Distributed Restart"
 
     override val withHotRestart: Boolean = false
   }
+
   case class DistFirst(withHotRestart: Boolean = true) extends NeighborhoodType  {
     override def toString: String = "Distributed First"
   }
+
   case class DistBest(withHotRestart: Boolean = true) extends NeighborhoodType {
     override def toString: String = "Distributed Best"
   }
@@ -52,10 +56,10 @@ object BenchmarkerUWLP extends ModelingAPI {
   }
 
   //Nb Iterations per benchmark
-  val NB_ITERS = 20
+  val NB_ITERS = 25
 
   //max nbWorkers
-  val MAX_WORKERS: Int = 10
+  val MAX_WORKERS: Int = 8
 
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
@@ -98,17 +102,16 @@ object BenchmarkerUWLP extends ModelingAPI {
     val obj = Objective(sum(distanceToNearestOpenWarehouseLazy) + sum(costForOpeningWarehouse, openWarehouses))
     m.close()
     //Neighborhoods
-    val divWarehouses = nbWarehouses/4
+    val divWarehouses = nbWarehouses/nbWorkers
     val divRange = 0 until divWarehouses
     val assignNb: Neighborhood = assignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
-    val swapNb0: Neighborhood = swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = divRange.map(_*4    ); () => range}, name = "SwapWarehouses1")
-    val swapNb1: Neighborhood = swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = divRange.map(_*4 + 1); () => range}, name = "SwapWarehouses2")
-    val swapNb2: Neighborhood = swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = divRange.map(_*4 + 2); () => range}, name = "SwapWarehouses3")
-    val swapNb3: Neighborhood = swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = divRange.map(_*4 + 3); () => range}, name = "SwapWarehouses4")
+    val swapNb: Neighborhood = swapsNeighborhood(warehouseOpenArray, "SwapWarehouse")
+    /////
     def kNearestClosedWarehouses(warehouse:Int, k:Int) =
       KSmallest.kFirst(k, closestWarehouses(warehouse),
         filter = otherWarehouse => warehouseOpenArray(otherWarehouse).newValue == 0
       )
+    /////
     def swapsK(k:Int, openWarehouseTocConsider:()=>Iterable[Int] = openWarehouses) =
       swapsNeighborhood(
         warehouseOpenArray,
@@ -119,16 +122,18 @@ object BenchmarkerUWLP extends ModelingAPI {
       )
     val swapsKNb: Neighborhood = swapsK(20) guard(() => openWarehouses.value.size >= 5)
     val randomSwapNb: Neighborhood = randomSwapNeighborhood(warehouseOpenArray, () => nbWarehouses/10)
-    val arrayNbs: Array[Neighborhood] = Array(
+    val swapNbs: Seq[Neighborhood] = if (nbWorkers < 4) {
+      Seq(swapNb)
+    } else {
+      for {i <- 0 until nbWorkers} yield swapsNeighborhood(warehouseOpenArray,searchZone1 = {val range = divRange.map(_*nbWorkers+i); () => range}, name = s"SwapWarehouse_$i")
+    }
+    val basicNeighborhood: Neighborhood = bestSlopeFirst(List(
       assignNb,
-      swapNb0,
-      swapNb1,
-      swapNb2,
-      swapNb3,
+      swapNb,
       swapsKNb
-    )
-    val basicNeighborhood: Neighborhood = bestSlopeFirst(arrayNbs.toList)
-    val seqNeighborhood: Neighborhood = basicNeighborhood onExhaustRestartAfter (randomSwapNb, 2, obj)
+    ))
+    val seqNeighborhood: Neighborhood = basicNeighborhood onExhaustRestartAfter (randomSwapNb, 0, obj, minRestarts = 20, restartFromBest = true)
+    val parNeighborhoods: Array[Neighborhood] = (assignNb +: (swapsKNb +: swapNbs)).toArray
     val neighborhood: Neighborhood = neighborhoodType match {
       case Sequential =>
         seqNeighborhood
@@ -138,16 +143,16 @@ object BenchmarkerUWLP extends ModelingAPI {
         new DistributedRestartFromBest(
           basicNeighborhood,
           randomSwapNb,
-          minNbRestarts = 0,
+          minNbRestarts = 20,
           nbConsecutiveRestartWithoutImprovement = 0,
           nbOngoingSearchesToCancelWhenNewBest = 0,
           setMaxWorkers = Some(nbWorkers),
           gracefulStop = false
         )
       case DistFirst(_) =>
-        new DistributedFirst(arrayNbs) onExhaustRestartAfter (randomSwapNb, 2, obj)
+        new DistributedFirst(parNeighborhoods) onExhaustRestartAfter (randomSwapNb, 0, obj, minRestarts = 20, restartFromBest = true)
       case DistBest(_) =>
-        new DistributedBest(arrayNbs) onExhaustRestartAfter (randomSwapNb, 2, obj)
+        new DistributedBest(parNeighborhoods) onExhaustRestartAfter (randomSwapNb, 0, obj, minRestarts = 20, restartFromBest = true)
     }
     (m, obj, neighborhood)
   }
@@ -160,16 +165,15 @@ object BenchmarkerUWLP extends ModelingAPI {
                  costForOpeningWarehouse: Array[Long],
                  warehouseToWarehouseDistances: Array[Array[Long]],
                  neighborhoodType: NeighborhoodType): BenchResult = {
-    // Stage 1 : Create Model
-    val t0 = System.nanoTime()
-    val (_, obj, nb) = createCBLSModel(nbWarehouses, nbDelivers, distanceCost,
-      costForOpeningWarehouse, warehouseToWarehouseDistances, neighborhoodType, nbWorkers)
-    val t1 = System.nanoTime()
-    val timeCreation = (t1-t0)/1000000
-    // Sequential Neighborhood
+    // Search Procedure
     val benchResult: BenchResult = neighborhoodType match {
       case Sequential =>
         // Sequential execution
+        val t0 = System.nanoTime()
+        val (_, obj, nb) = createCBLSModel(nbWarehouses, nbDelivers, distanceCost,
+          costForOpeningWarehouse, warehouseToWarehouseDistances, neighborhoodType, nbWorkers)
+        val t1 = System.nanoTime()
+        val timeCreation = (t1-t0)/1000000
         val t2 = System.nanoTime()
         val iters = nb.doAllMoves(obj = obj)
         val t3 = System.nanoTime()
@@ -177,16 +181,25 @@ object BenchmarkerUWLP extends ModelingAPI {
         val objValue = obj.value
         BenchResult(nbName, neighborhoodType.withHotRestart, 0, nbWarehouses, nbDelivers, timeCreation, 0, timeRun, objValue, iters)
       case DistRestart =>
+        // Stage 1 : Creation of models
+        val t0 = System.nanoTime()
+        val arrayOfStoreSearchObjs:Array[(Store, Objective, Neighborhood)] = new Array[(Store, Objective, Neighborhood)](nbWorkers+1)
+        for (i <- ParRange(0, nbWorkers, 1, inclusive = true)) {
+          arrayOfStoreSearchObjs(i) = createCBLSModel(nbWarehouses, nbDelivers, distanceCost,
+            costForOpeningWarehouse, warehouseToWarehouseDistances, neighborhoodType, nbWorkers)
+        }
+        val t1 = System.nanoTime()
+        val timeCreation = (t1-t0)/1000000
         // Stage 2 : Start actor system
         val t2 = System.nanoTime()
+        val (_, obj, nb) = arrayOfStoreSearchObjs(nbWorkers)
         val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(nb, hotRestart = neighborhoodType.withHotRestart)
         val t3 = System.nanoTime()
         val timeActSys = (t3-t2)/1000000
         // Stage 3 : Run procedure
         val t4 = System.nanoTime()
-        for (_ <- ParRange(0, nbWorkers, 1, inclusive = true)) {
-          val (mi, _, nbi) = createCBLSModel(nbWarehouses, nbDelivers, distanceCost,
-            costForOpeningWarehouse, warehouseToWarehouseDistances, neighborhoodType, nbWorkers)
+        for (i <- 0 until nbWorkers) {
+          val (mi, _, nbi) = arrayOfStoreSearchObjs(i)
           supervisor.createLocalWorker(mi, nbi)
           nbi.verbose = 0
         }
@@ -197,25 +210,29 @@ object BenchmarkerUWLP extends ModelingAPI {
         val objValue = obj.value
         BenchResult(nbName, neighborhoodType.withHotRestart, nbWorkers, nbWarehouses, nbDelivers, timeCreation, timeActSys, timeRun, objValue, iters)
       case _ =>
+        // Stage 1 : Creation of models
+        val t0 = System.nanoTime()
+        val arrayOfStoreSearchObjs:Array[(Store,Objective,Neighborhood)] = new Array[(Store, Objective, Neighborhood)](nbWorkers+1)
+        for (i <- ParRange(0, nbWorkers, 1, inclusive = true)) {
+          arrayOfStoreSearchObjs(i) = createCBLSModel(nbWarehouses, nbDelivers, distanceCost,
+            costForOpeningWarehouse, warehouseToWarehouseDistances, neighborhoodType, nbWorkers)
+        }
+        val t1 = System.nanoTime()
+        val timeCreation = (t1-t0)/1000000
         // Stage 2 : Start actor system
         val t2 = System.nanoTime()
+        val (_, obj, nb) = arrayOfStoreSearchObjs(nbWorkers)
         val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(nb, hotRestart = neighborhoodType.withHotRestart)
         val t3 = System.nanoTime()
         val timeActSys = (t3-t2)/1000000
         // Stage 3 : Run procedure
         val t4 = System.nanoTime()
-        var iters = 0
-        for (i <- ParRange(0, nbWorkers+1, 1, inclusive = true)) {
-          if (i == 0) {
-            nb.verbose = 0
-            iters = nb.doAllMoves(obj = obj)
-          } else {
-            val (mi, _, nbi) = createCBLSModel(nbWarehouses, nbDelivers, distanceCost,
-              costForOpeningWarehouse, warehouseToWarehouseDistances, neighborhoodType, nbWorkers)
-            supervisor.createLocalWorker(mi, nbi)
-            nbi.verbose = 0
-          }
+        for (i <- 0 until nbWorkers) {
+          val (mi, _, nbi) = arrayOfStoreSearchObjs(i)
+          supervisor.createLocalWorker(mi, nbi)
+          nbi.verbose = 0
         }
+        val iters = nb.doAllMoves(obj = obj)
         supervisor.shutdown()
         val t5 = System.nanoTime()
         val timeRun = (t5-t4)/1000000
@@ -241,30 +258,30 @@ object BenchmarkerUWLP extends ModelingAPI {
   }
 
   def main(args: Array[String]): Unit = {
-    val nbWs = Array(1000, 2000, 3000, 4000)
-    val nbDs = Array(500, 1000, 1500, 2000)
+    val nbWs = Array(2000, 4000) // Array(500, 1000) // Array(1000, 2000, 3000, 4000)
+    val nbDs = Array(1000, 2000) // Array(250, 500) // Array(500, 1000, 1500, 2000)
     // Warming loop
     val (dc1, c1, wtw1) = createCosts(1000, 500)
-    runProblem("Warming", 0, 1000, 500, dc1, c1, wtw1, Sequential)
+    runProblem("Warming", 1, 1000, 500, dc1, c1, wtw1, Sequential)
     runProblem("Warming", 1, 1000, 500, dc1, c1, wtw1, DistRemote)
     println("Neighborhood Name;Hot Restart;# Workers;# Warehouses;# Delivery Points;Model Creation (ms);Actor Creation (ms);Solution Computing (ms);Objective Value;# Iterations")
     for {i <- nbWs.indices} {
       val (distanceCost, costForOpeningWarehouse, wtwDistances) = createCosts(nbWs(i), nbDs(i))
       // Sequential
-      runBenchmarkNb(0, nbWs(i), nbDs(i), distanceCost, costForOpeningWarehouse, wtwDistances, Sequential)
+      runBenchmarkNb(1, nbWs(i), nbDs(i), distanceCost, costForOpeningWarehouse, wtwDistances, Sequential)
       // Remote
       runBenchmarkNb(1, nbWs(i), nbDs(i), distanceCost, costForOpeningWarehouse, wtwDistances, DistRemote)
-      for {j <- 2 to MAX_WORKERS} {
+      for {j <- 1 to MAX_WORKERS} {
         // Distributed Restart
         runBenchmarkNb(j, nbWs(i), nbDs(i), distanceCost, costForOpeningWarehouse, wtwDistances, DistRestart)
         // Distributed First with Hot restart
         runBenchmarkNb(j, nbWs(i), nbDs(i), distanceCost, costForOpeningWarehouse, wtwDistances, DistFirst())
         // Distributed First without Hot restart
-        runBenchmarkNb(j, nbWs(i), nbDs(i), distanceCost, costForOpeningWarehouse, wtwDistances, DistFirst(false))
+        //runBenchmarkNb(j, nbWs(i), nbDs(i), distanceCost, costForOpeningWarehouse, wtwDistances, DistFirst(false))
         // Distributed Best with Hot restart
         runBenchmarkNb(j, nbWs(i), nbDs(i), distanceCost, costForOpeningWarehouse, wtwDistances, DistBest())
         // Distributed Best without Hot restart
-        runBenchmarkNb(j, nbWs(i), nbDs(i), distanceCost, costForOpeningWarehouse, wtwDistances, DistBest(false))
+        //runBenchmarkNb(j, nbWs(i), nbDs(i), distanceCost, costForOpeningWarehouse, wtwDistances, DistBest(false))
       }
     }
   }

@@ -72,7 +72,7 @@ object Supervisor {
 
       config = ConfigFactory.parseString("""
                                            |oscarcbls.supervisormailbox.mailbox-type = "akka.dispatch.UnboundedControlAwareMailbox"
-                                           |akka.version = 2.6.15
+                                           |akka.version = 2.6.16
                                            |akka.home = ""
                                            |akka.actor.allow-java-serialization = on
                                            |akka.actor.creation-timeout = 20s

@@ -33,7 +33,7 @@ import scala.util.{Failure, Success}
  *                                             in order to start new ones from the new current best
  * @param factorOnObjForThresholdToContinueDespiteBeingCanceled whenever a search is cancelled, it can still carry on
  *                                                              if its current obj value is <= the best known obj * this value
- * @param maxWorkers the maximal number of searches that are allowed to run at the same time
+ * @param setMaxWorkers the maximal number of searches that are allowed to run at the same time
  * @param performInitialNonRandomizeDescent set to false if there should not be an initial descent without randomization
  * @param gracefulStop if an improving solution is found past the stop criterion, start it all over again, otherwise ignore it
  * @param visu true for a visualization of the objective function and the performed searches
@@ -144,7 +144,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
               nbCompletedSearchesOnBestSoFar,
               nbCompletedRestarts = nbCompletedRestarts,
               display = Some(displayActor))
-          case w@WrappedSearchEnded(searchEnded: SearchEnded) =>
+          case WrappedSearchEnded(searchEnded) =>
             searchEnded match {
               case SearchCompleted(searchID: Long, searchResult: IndependentSearchResult, durationMS) =>
 
