@@ -114,7 +114,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
       case Some(startSolution) =>
         if(this.currentModelNr.isEmpty || startSolution.solutionId != this.currentModelNr.get) {
           val s = startSolution.makeLocal(m)
-          s.restoreDecisionVariables(withoutCheckpoints = true)
+          s.restoreDecisionVariables(withoutCheckpoints = true)  //TODO: we should only transmit the delta, eventually
           currentModelNr = Some(startSolution.solutionId)
           Some(s)
         }else{
@@ -188,6 +188,8 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
               this.nbExploredNeighborhoods += 1
 
               val futureResult = Future {
+                //this is the thread of the search, as it is a future,
+                //TODO nothing can happen after the future is bound, opportunity to improve and postpone cleaning tasks?
                 val (result,durationMS) = doSearch(newSearch.request,newSearch.searchId)
                 SearchCompleted(newSearch.searchId, result, durationMS)
               }(executionContextForComputation)
@@ -218,6 +220,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
                   shouldAbortComputation = true //shared variable
                   nbAbortedNeighborhoods += 1
                   search.sendResultTo ! SearchAborted(searchId)
+                  //TODO: we should be ready for work here actually
                   next(Aborting(search))
                 }else{
                   if(verbose) context.log.info(s"ignoring conditional abort command, for search:$searchId bestOBj:${currentNeighborhood.bestObjSoFar} < threshold:${keepAliveIfOjBelow.get}")

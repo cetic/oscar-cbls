@@ -3,7 +3,7 @@ package oscar.cbls.lib.search.combinators.distributed
 import akka.actor.typed.ActorSystem
 import oscar.cbls.core.distrib.{DelegateSearch, IndependentSolution, SearchCompleted, SearchCrashed, SearchEnded, SearchRequest}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, SearchResult}
+import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
 import akka.util.Timeout
 
 import scala.concurrent.Await
@@ -39,8 +39,8 @@ class Remote(neighborhoods:Neighborhood)
         supervisor.throwRemoteExceptionAndShutDown(c)
         null
       case _ =>
-        // Search Aborted
-        null
+        // Search Aborted, should not happen
+        NoMoveFound
     }
   }
 }

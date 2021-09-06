@@ -4,7 +4,7 @@ import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.core.distrib.Supervisor
 import oscar.cbls.core.search.Neighborhood
-import oscar.cbls.lib.search.combinators.distributed.{DistributedBest, DistributedFirst, DistributedRestartFromBest, Remote}
+import oscar.cbls.lib.search.combinators.distributed._
 import oscar.cbls.modeling.ModelingAPI
 import oscar.examples.cbls.wlp.WarehouseLocationGenerator
 
