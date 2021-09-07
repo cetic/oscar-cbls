@@ -173,10 +173,13 @@ abstract class GlobalConstraintCore[U <: Any :Manifest](routes: ChangingSeqValue
           // Resetting the savedData QList.
           savedDataAtCheckpointLevel = null
           changedVehiclesSinceCheckpoint0.all = false
+
+          //TODO: not a good idea to do that so frequently.
+          vehicleSearcher = vehicleSearcher.regularize
+
         }
 
         // Persisting recent updates of the vehicleSearcher
-        vehicleSearcher = vehicleSearcher.regularize
 
         // Common manipulations
         this.checkpointLevel = checkpointLevel
@@ -191,6 +194,8 @@ abstract class GlobalConstraintCore[U <: Any :Manifest](routes: ChangingSeqValue
         if (checkpointLevel == 0) {
           require(checkpoint quickEquals this.checkpointAtLevel0)
         }
+
+        //Todo: vérifier si on dépile bin les vehicle searcher
 
         // Restore the saved data corresponding to the required checkpoint
         savedDataAtCheckpointLevel = QList.qDrop(savedDataAtCheckpointLevel, this.checkpointLevel - checkpointLevel)
@@ -340,14 +345,7 @@ abstract class GlobalConstraintCore[U <: Any :Manifest](routes: ChangingSeqValue
   class ListSegments(val segments: QList[Segment], val vehicle: Int){
 
     private def getValueAtPosition(pos: Int, routes: IntSequence): Int ={
-      if(pos >= n) -1
-      else {   // If we can't use the cache we use the explorer
-        val explorer = routes.explorerAtPosition(pos)
-        if (explorer.isDefined)
-          explorer.get.value
-        else
-          -1
-      }
+        routes.valueAtPosition(pos).getOrElse(-1)
     }
 
     /**

@@ -1,7 +1,6 @@
 package oscar.examples.cbls.routing.limPDPBenchmark
 
 import java.io.{File, PrintWriter}
-
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, RouteLength}
@@ -12,18 +11,18 @@ import oscar.cbls.core.search.{Best, Neighborhood, NoMoveNeighborhood}
 import oscar.cbls.lib.search.neighborhoods.vlsn._
 
 import scala.annotation.tailrec
-import scala.collection.immutable.{SortedMap, SortedSet}
+import scala.collection.immutable.{List, SortedMap, SortedSet}
 import scala.io.Source
 
 object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
   val multFactor: Long = 1000
 
-  runMany()
+  runOne()
   def runOne(): Unit = {
     println("usage: This fileName enrichment partition enrichmentSpec shiftInsert")
     val fileName = args(0)
 
-    println(runBenchmark(fileName))
+    println(runBenchmark(fileName,true))
   }
 
   def runMany(): Unit = {
@@ -152,13 +151,40 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
 
     val vehiclesCapacity = Array.fill(v)(capacity.toLong)
 
-    val myVRP = new VRP(m, n, v)
-    val vehicles = 0 until v
-
     val pickUpPointToDeliveryPoint = Array.fill(n)(-1)
     for(pdp <- pdpList){
       pickUpPointToDeliveryPoint(pdp.fromNode) = pdp.toNode
     }
+
+    val myVRP = new VRP(m, n, v){
+      override def toString: String = {
+        var toReturn = ""
+        var notMoving:List[Int] = List.empty
+
+        for (vehicle <- 0 until v) {
+          val routeOfV = getRouteOfVehicle(vehicle).map(node => {
+            if (node < v) "" + node
+            else pickUpPointToDeliveryPoint(node) match{
+              case -1 => "d" + node //delivery
+              case delivery => node+ "p(" + delivery + ")"
+            }})
+          if(routeOfV.length == 1){
+            notMoving  = vehicle :: notMoving
+          }else{
+            toReturn += s"vehicle $vehicle: ${routeOfV.mkString("->")}->$vehicle\n"
+          }
+        }
+        val u = unroutedNodes
+        s"""Vehicle routing n:$n v:$v
+           |${u.size} unrouted nodes:{${u.toList.mkString(",")}}
+           |${notMoving.size} not used vehicles:{${notMoving.reverse.mkString(",")}}
+           |$toReturn
+           |""".stripMargin
+      }
+    }
+    val vehicles = 0 until v
+
+
 
     val allPickupPoints:SortedSet[Int] = SortedSet(pdpList.map(_.fromNode):_*)
 
@@ -420,7 +446,7 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
 
         name = "VLSN",
         reoptimizeAtStartUp = true,
-        enrichment = Some(VLSN.standardEnrichment(500))
+        enrichment = None //Some(VLSN.standardEnrichment(v))
       )
     }
 
@@ -434,7 +460,6 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
     }else {
       search.verbose = 0
     }
-
 
     search.doAllMoves(obj = obj)
 

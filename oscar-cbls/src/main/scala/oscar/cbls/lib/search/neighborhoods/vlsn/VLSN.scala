@@ -28,7 +28,8 @@ import scala.collection.immutable.SortedSet
 case class EnrichmentParameters(injectAllCacheBeforeEnriching:Boolean,
                                 minNbEdgesToExplorePerLevel:Int,
                                 minNbAddedEdgesPerLevel:Int,
-                                nbEdgesPerBundle:Int)
+                                nbEdgesPerBundle:Int,
+                                nbEdgesPerPriorityBundle:Int)
 
 object VLSN{
 
@@ -37,16 +38,16 @@ object VLSN{
       injectAllCacheBeforeEnriching = true,
       minNbEdgesToExplorePerLevel = 0,
       minNbAddedEdgesPerLevel = 1000,
-      nbEdgesPerBundle= v)
+      nbEdgesPerBundle= v,
+      nbEdgesPerPriorityBundle = 10*v)
 
   def noEnrichment:EnrichmentParameters =
     EnrichmentParameters(
       injectAllCacheBeforeEnriching = false,
       minNbEdgesToExplorePerLevel = Int.MaxValue,
       minNbAddedEdgesPerLevel =  Int.MaxValue,
-      nbEdgesPerBundle =  Int.MaxValue)
-
-
+      nbEdgesPerBundle =  Int.MaxValue,
+      nbEdgesPerPriorityBundle = Int.MaxValue)
 }
 
 
@@ -258,9 +259,6 @@ class VLSN(v:Int,
            enrichment:Option[EnrichmentParameters] = None)
   extends Neighborhood {
 
-  //TODO: add a hot restart feature that could reload a cache if still valid.
-  // useful when restricting the number of iterations
-
   def doReoptimize(vehicle:Int): Unit = {
     val reOptimizeNeighborhoodGenerator = reOptimizeVehicle match{
       case None => return
@@ -308,10 +306,10 @@ class VLSN(v:Int,
     }
 
     //first VLSN search
-    var dataForRestartOpt = doVLSNSearch(
+    var (dataForRestartOpt,hotRestart) = doVLSNSearch(
       initVehicleToRoutedNodesToMove(),
       initUnroutedNodesToInsert(),
-      None)
+      None,None)
 
     val somethingDone = dataForRestartOpt.isDefined
 
@@ -327,11 +325,14 @@ class VLSN(v:Int,
     while (dataForRestartOpt.isDefined && remainingIt > 0) {
       remainingIt = remainingIt - 1
       val dataForRestart = dataForRestartOpt.get
-      dataForRestartOpt = restartVLSNIncrementally(oldGraph = dataForRestart.oldGraph,
+       val x = restartVLSNIncrementally(oldGraph = dataForRestart.oldGraph,
         performedMoves = dataForRestart.performedMoves,
         oldVehicleToRoutedNodesToMove = dataForRestart.oldVehicleToRoutedNodesToMove,
         oldUnroutedNodesToInsert = dataForRestart.oldUnroutedNodesToInsert,
-        cacheWasBuiltWithIncrementalEnrichment=dataForRestart.cacheWasBuiltWithIncrementalEnrichment)
+        cacheWasBuiltWithIncrementalEnrichment=dataForRestart.cacheWasBuiltWithIncrementalEnrichment,
+        Some(hotRestart))
+      dataForRestartOpt = x._1
+      hotRestart = x._2
       doAfterCycle match {
         case Some(toDo) => toDo()
         case None => ()
@@ -359,7 +360,8 @@ class VLSN(v:Int,
 
   private def doVLSNSearch(vehicleToRoutedNodesToMove: Map[Int, Set[Int]],
                            unroutedNodesToInsert: Set[Int],
-                           cachedExplorations: Option[CachedExplorations]): Option[DataForVLSNRestart] = {
+                           cachedExplorations: Option[CachedExplorations],
+                           hotRestart:Option[HotRestartInfo]): (Option[DataForVLSNRestart],HotRestartInfo) = {
 
     val nodeToRelevantVehiclesNow = nodeToRelevantVehicles()
     val n = nodeToRelevantVehiclesNow.size
@@ -379,12 +381,15 @@ class VLSN(v:Int,
       unroutedPenalty,
       globalObjective,
       cachedExplorations.orNull,
+      hotRestart = hotRestart.orNull,
+
       verbose = false,
       enrichment = enrichment.getOrElse(
         EnrichmentParameters(injectAllCacheBeforeEnriching = false,
           minNbEdgesToExplorePerLevel = Int.MaxValue,
           minNbAddedEdgesPerLevel =  Int.MaxValue,
-          nbEdgesPerBundle =  Int.MaxValue)
+          nbEdgesPerBundle =  Int.MaxValue,
+          nbEdgesPerPriorityBundle = Int.MaxValue)
       )
     )
 
@@ -415,18 +420,21 @@ class VLSN(v:Int,
         val node = edge.from.representedNode; if (node >= 0) Some(node) else None
       })
 
+      //require((dirtyVehicles intersect theImpactedVehicles).isEmpty)
+
       dirtyVehicles = dirtyVehicles ++ theImpactedVehicles
       dirtyNodes = dirtyNodes ++ edges.flatMap(edge => List(edge.from.representedNode,edge.to.representedNode).filter(_ > v))
 
       for (vlsnNode <- vlsnGraph.nodes) {
         if ((impactedRoutingNodes contains vlsnNode.representedNode) || (theImpactedVehicles contains vlsnNode.vehicle)) {
+          //require(liveNodes(vlsnNode.nodeID))
           liveNodes(vlsnNode.nodeID) = false
         }
       }
     }
 
     def performEdgesInCycle(edges:List[Edge]): Unit ={
-      val delta = edges.map(edge => edge.deltaObj).sum
+      val delta = edges.map(_.deltaObj).sum
       require(delta < 0, "delta should be negative, got " + delta)
       computedNewObj += delta
 
@@ -451,6 +459,7 @@ class VLSN(v:Int,
       println("                deltaObj:" + deltaObj+ " size:" + moves.length +
         " vehicles:{" + vehicles.mkString(",") + "} moveTypes:" + moveTypes + " moves:{" + moves.mkString(",") + "}")
     }
+
 
     var vlsnGraph:VLSNGraph = null
     //We need this graph after completion of the loop to build the cache of not used moves.
@@ -477,11 +486,13 @@ class VLSN(v:Int,
       }
 
       //require(dirtyVehicles.forall( x => x >= 0 && x < v))
-      vlsnGraph = moveExplorer.enrichGraph(dirtyNodes, dirtyVehicles, printTakenMoves)._1
+      val (newVlsnGraph,_,_,priorityCycles):(VLSNGraph,Any,Any,List[List[Edge]]) = moveExplorer.enrichGraph(dirtyNodes, dirtyVehicles, printTakenMoves)
+
+      vlsnGraph = newVlsnGraph
 
       if(printTakenMoves) {
         println("            " + vlsnGraph.statisticsString + " added " +
-          (vlsnGraph.nbEdges - nbEdgesAtPreviousIteration) + " edges")
+          (vlsnGraph.nbEdges - nbEdgesAtPreviousIteration) + " edges including " + priorityCycles.size + " priority cycles")
       }
 
       if(vlsnGraph.nbEdges == nbEdgesAtPreviousIteration && currentEnrichmentLevel !=0){
@@ -492,17 +503,30 @@ class VLSN(v:Int,
         nbEdgesAtPreviousIteration = vlsnGraph.nbEdges
         var cycleFound: Boolean = true
         //now, we search for every cycles in this graph
+
+        //bypass the cycle detection algo for the priority cycles
+        var priorityCyclesToDigest = priorityCycles
+        var nbCycles = 0
         while (cycleFound) {
-          CycleFinderAlgo(vlsnGraph, cycleFinderAlgoSelection).findCycle(liveNodes) match {
+          val cycle = if(priorityCyclesToDigest.nonEmpty){
+            val toReturn = priorityCyclesToDigest.head
+            priorityCyclesToDigest = priorityCyclesToDigest.tail
+            Some(toReturn)
+          }else CycleFinderAlgo(vlsnGraph, cycleFinderAlgoSelection).findCycle(liveNodes)
+
+          cycle match {
             case Some(listOfEdge) =>
               if (printTakenMoves) printCycle(listOfEdge)
               killCycles(listOfEdge, vlsnGraph)
               cycleFound = true
+              nbCycles += 1
+
             case None =>
               //we did not find any move at all on the graph, so it can be enriched now
               cycleFound = false
           }
         }
+        if(printTakenMoves) println("                nbCycles:" + nbCycles + " nbDirtyVehicles:" + dirtyVehicles.size)
       }
     }
 
@@ -532,17 +556,27 @@ class VLSN(v:Int,
         }
     }
 
+    val newHotRestart = {
+      val hr = hotRestart match{
+        case None => HotRestartInfo.apply(v)
+        case Some(x) => x}
+      for(edge <- acc.flatten){
+        hr.update(edge)
+      }
+      hr
+    }
+
     //there is no possible incremental restart for VLSN
     if (acc.isEmpty) {
-      None
+      (None,newHotRestart)
     } else {
-      Some(DataForVLSNRestart(
+      (Some(DataForVLSNRestart(
         vlsnGraph,
         acc.flatten,
         vehicleToRoutedNodesToMove,
         unroutedNodesToInsert,
         cacheWasBuiltWithIncrementalEnrichment = enrichment.isDefined,
-        allVehiclesDirty = dirtyVehicles.size == v))
+        allVehiclesDirty = dirtyVehicles.size == v)),newHotRestart)
     }
   }
 
@@ -559,7 +593,8 @@ class VLSN(v:Int,
                                        performedMoves: List[Edge],
                                        oldVehicleToRoutedNodesToMove: Map[Int, Set[Int]],
                                        oldUnroutedNodesToInsert: Set[Int],
-                                       cacheWasBuiltWithIncrementalEnrichment:Boolean):Option[DataForVLSNRestart] = {
+                                       cacheWasBuiltWithIncrementalEnrichment:Boolean,
+                                       hotRestart:Option[HotRestartInfo]):(Option[DataForVLSNRestart],HotRestartInfo) = {
 
     val (updatedVehicleToRoutedNodesToMove, updatedUnroutedNodesToInsert) =
       updateZones(performedMoves,
@@ -575,7 +610,8 @@ class VLSN(v:Int,
 
     doVLSNSearch(updatedVehicleToRoutedNodesToMove,
       updatedUnroutedNodesToInsert,
-      cachedExplorations)
+      cachedExplorations,
+      hotRestart)
   }
 
   @tailrec
