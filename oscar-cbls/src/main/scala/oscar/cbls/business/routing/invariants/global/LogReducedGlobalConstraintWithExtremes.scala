@@ -3,6 +3,7 @@ package oscar.cbls.business.routing.invariants.global
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation.ChangingSeqValue
+import oscar.cbls.business.routing.invariants.segments.{Segment,PreComputedSubSequence,FlippedPreComputedSubSequence,NewNode}
 
 abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest, @specialized(Int, Long, Boolean) U:Manifest](routes: ChangingSeqValue, n: Int, v: Int)
   extends LogReducedGlobalConstraint[T, U](routes,n,v){

@@ -14,7 +14,7 @@ import oscar.cbls.lib.invariant.numeric.SumElements
 import oscar.cbls.lib.invariant.set.Cardinality
 import oscar.cbls.lib.search.neighborhoods.vlsn.{CycleFinderAlgoType, VLSN}
 import oscar.cbls.lib.search.neighborhoods._
-import oscar.cbls.test.graph.RandomGraphGenerator
+import oscar.cbls.algo.generator.RandomGraphGenerator
 import oscar.cbls.util._
 import oscar.cbls.visual.SingleFrameWindow
 import oscar.cbls.visual.graph.GraphViewer

@@ -8,7 +8,7 @@ import oscar.cbls.business.routing.invariants.RouteLengthOnConditionalGraph
 import oscar.cbls.core.computation.{CBLSIntConst, CBLSIntVar, IntValue, Store}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{First, JumpNeighborhood}
-import oscar.cbls.test.graph.RandomGraphGenerator
+import oscar.cbls.algo.generator.RandomGraphGenerator
 import oscar.cbls.visual.SingleFrameWindow
 
 import scala.collection.immutable.SortedSet

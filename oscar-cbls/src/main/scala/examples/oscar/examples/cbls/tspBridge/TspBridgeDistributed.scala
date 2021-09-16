@@ -10,7 +10,7 @@ import oscar.cbls.core.distrib.Supervisor
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{First, JumpNeighborhood, Neighborhood}
 import oscar.cbls.lib.search.combinators.distributed.DistributedFirst
-import oscar.cbls.test.graph.RandomGraphGenerator
+import oscar.cbls.algo.generator.RandomGraphGenerator
 import oscar.cbls.visual.SingleFrameWindow
 
 import scala.collection.immutable.SortedSet

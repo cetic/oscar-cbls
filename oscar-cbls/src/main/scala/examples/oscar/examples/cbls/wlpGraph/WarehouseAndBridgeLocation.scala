@@ -28,7 +28,7 @@ import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.invariant.set.Cardinality
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu, Profile}
 import oscar.cbls.lib.search.neighborhoods._
-import oscar.cbls.test.graph.RandomGraphGenerator
+import oscar.cbls.algo.generator.RandomGraphGenerator
 import oscar.cbls.util.StopWatch
 import oscar.cbls.visual.graph.GraphViewer
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}

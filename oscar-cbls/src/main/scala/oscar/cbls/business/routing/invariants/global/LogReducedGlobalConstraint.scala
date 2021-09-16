@@ -17,6 +17,8 @@ package oscar.cbls.business.routing.invariants.global
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation.ChangingSeqValue
+import oscar.cbls.business.routing.invariants
+import oscar.cbls.business.routing.invariants.segments.{Segment,PreComputedSubSequence,FlippedPreComputedSubSequence,NewNode}
 
 sealed abstract class LogReducedSegment[T]()
 

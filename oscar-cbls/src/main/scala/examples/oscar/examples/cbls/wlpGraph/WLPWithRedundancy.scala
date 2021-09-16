@@ -9,7 +9,7 @@ import oscar.cbls.lib.invariant.graph.KVoronoiZones
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.set.Cardinality
 import oscar.cbls.lib.search.neighborhoods._
-import oscar.cbls.test.graph.RandomGraphGenerator
+import oscar.cbls.algo.generator.RandomGraphGenerator
 import oscar.cbls.util.StopWatch
 import oscar.cbls.visual.graph.GraphViewer
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
