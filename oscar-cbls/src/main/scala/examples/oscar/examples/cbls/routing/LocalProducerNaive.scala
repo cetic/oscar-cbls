@@ -541,7 +541,7 @@ object LocalProducer extends App {
               newLoad = newLoad.removed(p)
           }
         })
-        (s"Node $nodeValue (Producer ${routingIdToProducerId(nodeValue)}) : Charging (${prodToCharge.mkString(",")}) --  Current Load : ${load.map(_._2).sum} (< ${currentCapacity}) -- Load After : ${load.mkString(",")}",newLoad)
+        (s"Node $nodeValue (Producer ${routingIdToProducerId(nodeValue)}) : Loading (${prodToCharge.mkString(",")}) --  Current Load : ${load.map(_._2).sum} (< ${currentCapacity}) -- Load After : ${load.mkString(",")}",newLoad)
       }
       else {
         var newLoad = load
@@ -553,7 +553,7 @@ object LocalProducer extends App {
           })
           newLoad += {pAndQ.product -> newQ}
         })
-        (s"Node $nodeValue (Client) : Decharging (${client.demand.map(pAndQ => (pAndQ.product,pAndQ.nb * pAndQ.product.size)).mkString(",")} -- Current Load : ${load.map(_._2).sum} (< ${currentCapacity}) -- (Load After : ${load.mkString(",")})",newLoad)
+        (s"Node $nodeValue (Client) : Unloading (${client.demand.map(pAndQ => (pAndQ.product,pAndQ.nb * pAndQ.product.size)).mkString(",")} -- Current Load : ${load.map(_._2).sum} (< ${currentCapacity}) -- (Load After : ${load.mkString(",")})",newLoad)
       }
     }
   }
