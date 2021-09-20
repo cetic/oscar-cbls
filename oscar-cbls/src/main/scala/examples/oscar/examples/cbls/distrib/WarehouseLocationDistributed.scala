@@ -81,7 +81,7 @@ object WarehouseLocationDistributed extends App{
   //supervisor side
   val (store,search,obj,finalPrint) = createSearchProcedure()
 
-  val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(store,search,verbose=false,tic=1.seconds)
+  val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(search,verbose=false,tic=1.seconds)
 
   val nbWorker = 6
   for (i <- ParRange(0, nbWorker, 1, inclusive = true)) {

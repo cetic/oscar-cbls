@@ -14,23 +14,24 @@ import scala.concurrent.duration.Duration.Infinite
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
 
+
 sealed trait MessagesToSupervisor
 
 final case class NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) extends MessagesToSupervisor with ControlMessage
 
 final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSearchIDOpt: Option[Long], completedNeighborhoodIDAndMoveFound: Option[(Int,Boolean)], currentModelId:Option[Int]) extends MessagesToSupervisor with ControlMessage
 
-final case class CancelSearchToSupervisor(searchID: Long,keepAliveIfOjBelow:Option[Long]=None) extends MessagesToSupervisor with ControlMessage
+final case class CancelSearchToSupervisor(searchID: Long, keepAliveIfOjBelow:Option[Long]=None) extends MessagesToSupervisor with ControlMessage
 
-final case class SearchStarted(search: SearchTask, searchID: Long, worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
+final case class SearchStarted(searchID: Long, startID: Long, worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
 
-final case class SearchNotStarted(search: SearchTask, worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
+final case class SearchNotStarted(searchID: Long, startID:Long, worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
 
 final case class Crash(worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
 
 final case class DelegateSearch(searchRequest: SearchRequest,
                                 sendSearchResultTo:ActorRef[SearchEnded],
-                                uniqueSearchID:Long = -1) extends MessagesToSupervisor with ControlMessage
+                                searchID:Long = -1) extends MessagesToSupervisor with ControlMessage
 
 final case class GetNewUniqueID(replyTo:ActorRef[Long]) extends MessagesToSupervisor with ControlMessage
 
@@ -46,10 +47,12 @@ import scala.concurrent.duration._
 
 object Supervisor {
 
-  def startSupervisorAndActorSystem(store: Store, search: Neighborhood, verbose: Boolean = false, tic: Duration = Duration.Inf): Supervisor = {
-    val supervisorActorSystem = internalStartSupervisorAndActorSystem(verbose, tic)
-    val supervisor = wrapSupervisor(supervisorActorSystem, store: Store, verbose)(system = supervisorActorSystem)
-    val (nbNRemoteNeighborhood,nbDistributedCombinator,neighborhoods) = search.labelAndExtractRemoteNeighborhoods(supervisor: Supervisor)
+  val nbCores: Int = Runtime.getRuntime.availableProcessors()
+
+  def startSupervisorAndActorSystem(search: Neighborhood, verbose: Boolean = false, hotRestart:Boolean = true, tic: Duration = Duration.Inf): Supervisor = {
+    val supervisorActorSystem = internalStartSupervisorAndActorSystem(verbose, hotRestart, tic)
+    val supervisor = wrapSupervisor(supervisorActorSystem, verbose)(system = supervisorActorSystem)
+    val (nbNRemoteNeighborhood,nbDistributedCombinator,_) = search.labelAndExtractRemoteNeighborhoods(supervisor: Supervisor)
 
     val startLogger: Logger = LoggerFactory.getLogger("SupervisorObject")
     startLogger.info(s"analyzed search; nbDistributedCombinator:$nbDistributedCombinator nbRemoteNeighborhood:$nbNRemoteNeighborhood")
@@ -57,16 +60,19 @@ object Supervisor {
     supervisor
   }
 
-  def internalStartSupervisorAndActorSystem(verbose: Boolean = false, tic: Duration = Duration.Inf): ActorSystem[MessagesToSupervisor] = {
+  def internalStartSupervisorAndActorSystem(verbose: Boolean = false, hotRestart:Boolean, tic: Duration = Duration.Inf): ActorSystem[MessagesToSupervisor] = {
     val startLogger: Logger = LoggerFactory.getLogger("SupervisorObject")
     startLogger.info("Starting actor system and supervisor")
 
     //We prioritize some messages to try and maximize the hit on hotRestart
     val a = ActorSystem(
-      createSupervisorBehavior(verbose, tic), "supervisor",
+      createSupervisorBehavior(verbose, hotRestart, tic), "supervisor",
+
+      //we want oscarcbls.supervisormailbox.mailbox-type = "akka.dispatch.UnboundedControlAwareMailbox"
+
       config = ConfigFactory.parseString("""
                                            |oscarcbls.supervisormailbox.mailbox-type = "akka.dispatch.UnboundedControlAwareMailbox"
-                                           |akka.version = 2.6.14
+                                           |akka.version = 2.6.16
                                            |akka.home = ""
                                            |akka.actor.allow-java-serialization = on
                                            |akka.actor.creation-timeout = 20s
@@ -187,20 +193,22 @@ object Supervisor {
     a
   }
 
-  def wrapSupervisor(supervisorRef: ActorRef[MessagesToSupervisor], store: Store, verbose: Boolean)
+  def wrapSupervisor(supervisorRef: ActorRef[MessagesToSupervisor], verbose: Boolean)
                     (implicit system: ActorSystem[_]): Supervisor = {
-    new Supervisor(supervisorRef, store, verbose, system)
+    new Supervisor(supervisorRef, verbose, system)
   }
 
-  def spawnSupervisor(context: ActorContext[_], verbose: Boolean): ActorRef[MessagesToSupervisor] = {
-    context.spawn(createSupervisorBehavior(verbose), "supervisor")
+  def spawnSupervisor(context: ActorContext[_], verbose: Boolean, hotRestart:Boolean): ActorRef[MessagesToSupervisor] = {
+    context.spawn(createSupervisorBehavior(verbose, hotRestart), "supervisor")
   }
 
-  def createSupervisorBehavior(verbose: Boolean = false, tic: Duration = Duration.Inf): Behavior[MessagesToSupervisor] =
-    Behaviors.setup { context: ActorContext[MessagesToSupervisor] => new SupervisorActor(context, verbose, tic) }
+  def createSupervisorBehavior(verbose: Boolean = false, hotRestart:Boolean = true, tic: Duration = Duration.Inf): Behavior[MessagesToSupervisor] =
+    Behaviors.setup { context: ActorContext[MessagesToSupervisor] => new SupervisorActor(context, verbose, hotRestart, tic) }
 }
 
-class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor], m: Store, verbose: Boolean, implicit val system: ActorSystem[_]) {
+class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor],
+                 verbose: Boolean,
+                 implicit val system: ActorSystem[_]) {
   //TODO look for an adequate timeout or stopping mechanism
   implicit val timeout: Timeout = 1.hour
 
@@ -248,6 +256,7 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor], m: Store, 
 
 class SupervisorActor(context: ActorContext[MessagesToSupervisor],
                       verbose: Boolean,
+                      hotRestart:Boolean,
                       tic: Duration)
   extends AbstractBehavior[MessagesToSupervisor](context) {
 
@@ -327,10 +336,10 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
 
               implicit val responseTimeout: Timeout = 3.seconds
               context.ask[MessageToWorker, MessagesToSupervisor](worker, res => StartSearch(simplifiedSearch, startID, res)) {
-                case Success(_: SearchStarted) => SearchStarted(search, startID, worker)
-                case Success(_: SearchNotStarted) => SearchNotStarted(search, worker)
-                case Failure(_) => SearchNotStarted(search, worker)
-                case _ => SearchNotStarted(search, worker) // Default case
+                case Success(_: SearchStarted) => SearchStarted(simplifiedSearch.searchId, startID, worker)
+                case Success(_: SearchNotStarted) => SearchNotStarted(simplifiedSearch.searchId, startID, worker)
+                case Failure(_) => SearchNotStarted(simplifiedSearch.searchId, startID, worker)
+                case _ => SearchNotStarted(simplifiedSearch.searchId, startID, worker) // Default case
               }
 
               startingSearches = startingSearches + (startID -> (search, startID, worker))
@@ -341,7 +350,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
             var nbSearchToStart = nbIdleWorkers min nbAvailableSearches
 
             var couldDequeue = true
-            while (couldDequeue && nbSearchToStart != 0) {
+            while (hotRestart && couldDequeue && nbSearchToStart != 0) {
               couldDequeue = false
               waitingSearches.dequeueFirst(searchTask => {
                 val nID = searchTask.request.neighborhoodID.neighborhoodID
@@ -373,7 +382,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
               idleWorkersAndTheirCurentModelID = idleWorkersAndTheirCurentModelID.tail
               //println("coldRestart " + searchToStart.request.neighborhoodID)
               startSearch(searchToStart, worker._1,worker._2)
-              neighborhoodToPreferredWorker = neighborhoodToPreferredWorker + (searchToStart.request.neighborhoodID.neighborhoodID -> worker._1)
+              if(hotRestart) neighborhoodToPreferredWorker = neighborhoodToPreferredWorker + (searchToStart.request.neighborhoodID.neighborhoodID -> worker._1)
               nbSearchToStart -= 1
             }
 
@@ -390,22 +399,31 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
             if (verbose) context.log.info(status)
         }
 
-      case SearchStarted(search, startID, worker) =>
+      case SearchStarted(searchID, startID, worker) =>
         startingSearches.get(startID) match {
           case Some((search2, startID2, worker2)) if startID2 == startID =>
-            require(search.searchId == search2.searchId)
-            if (verbose) context.log.info(s"search:${search.searchId} start confirmed by worker:${worker.path}")
-            ongoingSearches = ongoingSearches + (search.searchId -> (search2, worker2))
+            require(searchID == search2.searchId)
+            if (verbose) context.log.info(s"search:${searchID} start confirmed by worker:${worker.path}")
+            ongoingSearches = ongoingSearches + (searchID -> (search2, worker2))
             startingSearches = startingSearches.-(startID)
           case _ =>
-            if (verbose) context.log.warn(s"unexpected search:${search.searchId} start confirmed to Supervisor by worker:${worker.path}; asking for abort")
-            worker ! AbortSearch(search.searchId)
+            if (verbose) context.log.warn(s"unexpected search:${searchID} start confirmed to Supervisor by worker:${worker.path}; asking for abort")
+            worker ! AbortSearch(searchID)
         }
 
-      case SearchNotStarted(search, worker) =>
-        if (verbose) context.log.info(s"search:${search.searchId} could not be started by worker:${worker.path}")
-        waitingSearches.enqueue(search)
-        context.self ! StartSomeSearch()
+      case SearchNotStarted(searchID, startID, worker) =>
+        startingSearches.get(startID) match {
+          case Some((search2, startID2, worker2)) if startID2 == startID =>
+            require(searchID == search2.searchId)
+
+            if (verbose) context.log.info(s"search:${searchID} could not be started by worker:${worker.path}")
+            waitingSearches.enqueue(search2)
+            startingSearches = startingSearches.-(startID)
+            context.self ! StartSomeSearch()
+
+          case _ =>
+            if (verbose) context.log.warn(s"unexpected search:${searchID} could not be started; ignoring")
+        }
       //we do not register the worker as available here because it will register itself through another call,
       // at least to show it is not completely crashed.
 
@@ -413,13 +431,13 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
         if (verbose) context.log.info(s"got a worker ready:${worker.path}; finished search:$completedSearchID")
 
         require(allKnownWorkers contains worker)
-        completedNeighborhoodIDAndMoveFound match {
+/*        completedNeighborhoodIDAndMoveFound match {
           case None => ;
           case Some((s:Int,found)) =>
-            if(!found){
+            if(!found && hotRestart){
               neighborhoodToPreferredWorker = neighborhoodToPreferredWorker.-(s)
             }
-        }
+        }*/
 
         completedSearchID match{
           case Some(s) => ongoingSearches = ongoingSearches.-(s)

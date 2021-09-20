@@ -174,7 +174,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
 
   override def findCycle(liveNodes:Array[Boolean]):Option[List[Edge]] = {
     isLiveNode = liveNodes
-    //TODO: i've put a random because I do not want nodes with smaller ID to be better optimized and create over-optimized hotspot. Maybe a HotRestart would be more efficient.
+    //i've put a random because I do not want nodes with smaller ID to be better optimized and create over-optimized hotspot.
     for(rootNode <- Random.shuffle(nodes.toList)  if liveNodes(rootNode.nodeID)){
       searchRootedCycle(rootNode) match{
         case None => ;

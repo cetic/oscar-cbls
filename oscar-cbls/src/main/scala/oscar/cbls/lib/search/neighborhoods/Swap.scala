@@ -81,9 +81,9 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
       if (searchZone1 == null) {
         if (hotRestart) {
           if (firstVarIndice >= vars.length) firstVarIndice = 0
-          HotRestart(vars.indices, firstVarIndice)
+          HotRestart(vars.indices, 0 max (firstVarIndice-1))
         } else vars.indices
-      } else if (hotRestart) HotRestart(searchZone1(), firstVarIndice) else searchZone1()
+      } else if (hotRestart) HotRestart(searchZone1(), 0 max (firstVarIndice-1)) else searchZone1()
 
     val firstIterationScheme = symmetryClassOfVariables1 match {
       case None => firstIterationSchemeZone
@@ -98,7 +98,7 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
       firstVar = vars(firstVarIndice)
       val oldValOfFirstVar = firstVar.newValueInt
 
-      val secondIterationSchemeZone : Iterable[Int] = if (searchZone2ForThisSearch == null)0 until vars.length else searchZone2ForThisSearch(firstVarIndice,oldValOfFirstVar)
+      val secondIterationSchemeZone : Iterable[Int] = if (searchZone2ForThisSearch == null)vars.indices else searchZone2ForThisSearch(firstVarIndice,oldValOfFirstVar)
 
       val secondIterationScheme = symmetryClassOfVariables2 match {
         case None => secondIterationSchemeZone
@@ -144,7 +144,7 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
     }
   }
 
-  override def instantiateCurrentMove(newObj: Long) =
+  override def instantiateCurrentMove(newObj: Long): SwapMove =
     SwapMove(firstVar, secondVar, firstVarIndice, secondVarIndice, adjustIfNotInProperDomain, newObj, name)
 
   //this resets the internal state of the Neighborhood

@@ -18,6 +18,7 @@ import oscar.cbls.business.routing.invariants.timeWindow.TransferFunction
 import oscar.cbls.business.routing.model.{TTFConst, TTFMatrix}
 
 import scala.annotation.tailrec
+import scala.collection.immutable.HashSet
 import scala.util.Random
 
 /**
@@ -206,7 +207,7 @@ object RoutingMatrixGenerator {
 
     def randomVehicleSelection = random.nextInt(v)
     def randomIdleTime = random.nextInt(maxIdlingTimeInSec)
-    def randomExtraTravelTime = random.nextInt(maxExtraTravelTimeInSec)
+    def randomExtraTravelTime = random.nextLong(maxExtraTravelTimeInSec)
     def randomTaskDuration = random.nextInt(maxTaskDurationInSec)
 
     val precedencesWithLonelyNodes = addLonelyNodesToChains(n, v, precedences)
@@ -347,6 +348,46 @@ object RoutingMatrixGenerator {
   }
 
   /**
+   * Generate the content flow of all node considering the fact that we have multiple content type.
+   * Each content type is transported by specifics vehicles.
+   * Each precedence is linked to a specific content type.
+   *      e.g.: 1 -> 2 -> 3       ==> Get some apples at 1, deliver some of them at 2 and the rest at 3
+   *
+   *
+   * @param n The total number of nodes
+   * @param c The number of content type
+   * @param precedences The precedences
+   * @param maxContentPerContentType The maximum content of a certain type picked-up for one precedence.
+   * @return
+   */
+  def generateMultipleContentsFlow(n: Int, c: Int, precedences: List[List[Int]], maxContentPerContentType: Array[Long]): Array[Array[Long]] = {
+    require(maxContentPerContentType.length == c)
+    def randomContentType = random.nextInt(c)
+    def randomContent(currentMaxContent: Long) = random.nextLong(currentMaxContent)
+    def isPickupStep: Boolean = random.nextBoolean()
+
+    val contentFlow = Array.fill(n)(Array.fill(c)(0L))
+    for(precedence <- precedences){
+      var currentPrecedenceContent = 0L
+      val contentType = randomContentType
+      for (node <- precedence){
+        if(node == precedence.head) {
+          contentFlow(node)(contentType) = randomContent(maxContentPerContentType(contentType))+1
+          currentPrecedenceContent += contentFlow(node)(contentType)
+        } else if(node == precedence.last) {
+          contentFlow(node)(contentType) = -currentPrecedenceContent
+        } else {
+          contentFlow(node)(contentType) =
+            if(isPickupStep) randomContent(maxContentPerContentType(contentType)-currentPrecedenceContent)+1
+            else -randomContent(currentPrecedenceContent)
+          currentPrecedenceContent += contentFlow(node)(contentType)
+        }
+      }
+    }
+    contentFlow
+  }
+
+  /**
     * This method generate a random array of vehicle size
     *
     * @param v the number of vehicle
@@ -355,6 +396,16 @@ object RoutingMatrixGenerator {
     */
   def generateVehiclesSize(v: Int, maxVehicleSize: Int, minVehicleSize: Int = 1): Array[Long] ={
     Array.fill(v)(Math.max(random.nextInt(maxVehicleSize)+1,minVehicleSize).toLong)
+  }
+
+  def generateMultipleContentVehicleSize(v: Int, c: Int, minVehicleSize: Long, maxVehicleSizePerContentType: Array[Long], contentTypePerVehicle: Int): Array[Array[Long]] = {
+    val contentTypes = (0 until c).toSet
+    val contentTypeOfVehicle: Array[Set[Int]] = Array.tabulate(v)(vehicle => HashSet(vehicle%c) ++ Set.fill(contentTypePerVehicle-1)(random.nextInt(c)))
+    Array.tabulate(v)(vehicle => {
+      val res = Array.fill(c)(0L)
+      for(ct <- contentTypeOfVehicle(vehicle)) res(ct) = Math.max(minVehicleSize, random.nextLong(maxVehicleSizePerContentType(ct)))
+      res
+    })
   }
 }
 

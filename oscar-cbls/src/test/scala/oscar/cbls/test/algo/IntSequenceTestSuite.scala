@@ -74,7 +74,7 @@ class IntSequenceTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChec
         val actionsList = testBench._2
         val referenceList = testBench._1
         val (indexFrom, indexTo, destination) = getRandomParametersForMoveAfter(referenceList)
-        var seq :IntSequence = new MovedIntSequence(IntSequence(referenceList),indexFrom,indexTo,destination,true,1)
+        var seq :IntSequence = new MovedIntSequence(IntSequence(referenceList),indexFrom,indexTo,destination,true, 1)
         var modifiedList = flipListManually(referenceList,indexFrom,indexTo,destination)
 
         for (action <- actionsList) {

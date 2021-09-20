@@ -16,7 +16,7 @@
  */
 package oscar.cbls.core.search
 
-import oscar.cbls.core.computation.Store
+import oscar.cbls.core.computation.{Solution, Store}
 import oscar.cbls.core.distrib.{RemoteNeighborhood, Supervisor}
 import oscar.cbls.core.objective.{AbortException, AbortableObjective, LoggingObjective, Objective}
 import oscar.cbls.lib.search.combinators._
@@ -130,8 +130,9 @@ abstract class Neighborhood(name:String = null) {
   def getMoveAbortable(obj: Objective,
                        initialObj:Long,
                        acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj,
-                       shouldAbort:()=>Boolean): SearchResult = {
-    val oldSol = obj.model.solution()
+                       shouldAbort:()=>Boolean,
+                       initSolutionOpt:Option[Solution] = None): SearchResult = {
+    val oldSol = initSolutionOpt.getOrElse(obj.model.solution())
     try {
       getMove(new AbortableObjective(shouldAbort, obj), initialObj, acceptanceCriterion)
     }catch{

@@ -60,7 +60,7 @@ class BinomialHeap[T](initialGetKey:T => Long,val maxsize:Int)
   override def isEmpty:Boolean = msize == 0L
 
   override def toString:String = {
-    heapArray.toList.toString
+    heapArray.toList.filter(_!=null).sortBy(GetKey).mkString("[",",","]")
   }
 
   /**makes the datastruct empty, but does not frees the space*/
@@ -219,7 +219,7 @@ class BinomialHeapWithMove[T](getKey:T => Long,val maxsize:Int)(implicit val A:O
   }
 
   override def toString:String = {
-    heapArray.toList.toString
+    heapArray.toList.filter(contains).sortBy(getKey)mkString("{",",","}")
   }
 
   def insert(elem:T): Unit = {
@@ -406,7 +406,7 @@ class BinomialHeapWithMoveExtMem[T](getKey:T => Long, val maxsize:Int, position:
   def isEmpty:Boolean = size == 0
 
   override def toString:String = {
-    heapArray.toList.toString
+    heapArray.toList.filter(contains).sortBy(getKey)mkString("{",",","}")
   }
 
   def insert(elem:T): Unit = {
@@ -568,7 +568,7 @@ class BinomialHeapWithMoveInt(getKey:Int => Int,val maxsize:Int, val maxKey:Int)
   def isEmpty:Boolean = size == 0
 
   override def toString:String = {
-    heapArray.toList.toString
+    heapArray.toList.filter(contains).sortBy(getKey)mkString("{",",","}")
   }
 
   def insert(elem:Int): Unit = {
@@ -733,7 +733,7 @@ class BinomialHeapWithMoveLong(getKey:Int => Long,val maxsize:Int, val maxKey:In
   def isEmpty:Boolean = size == 0
 
   override def toString:String = {
-    heapArray.toList.toString
+    heapArray.toList.filter(contains).sortBy(getKey)mkString("{",",","}")
   }
 
   // TODO Should add warning in case of duplicated value. This heap **cannot** contain duplicated values.

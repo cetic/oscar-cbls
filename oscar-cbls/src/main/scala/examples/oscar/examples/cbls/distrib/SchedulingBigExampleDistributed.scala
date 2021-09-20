@@ -183,7 +183,7 @@ object SchedulingBigExampleDistributed {
     //supervisor side
     val (store, obj, search, finalPrint) = createCBLSProblem(activities, initialActivities, durations, minStartTimes, precedencePairs, resources, typeNb)
     print("Creating Actor System...")
-    val supervisor = distrib.startSupervisorAndActorSystem(store, search)
+    val supervisor = distrib.startSupervisorAndActorSystem(search)
     println("Done")
     //creating all the workers; here we only create local workers
     print(s"Creating $nbWorkers workers...")

@@ -228,6 +228,9 @@ abstract class AbstractVehicleWiseGenericConstraint[U <: Any : Manifest](routes:
           value.positionOfAnyOccurrence(vehicle).get
         }))
         false //impossible to go incremental
+
+      case _ =>
+        false // In any other case, impossible to go incremental
     }
   }
 
@@ -235,7 +238,7 @@ abstract class AbstractVehicleWiseGenericConstraint[U <: Any : Manifest](routes:
   override def checkInternals(c: Checker): Unit = {
     for (vehicle <- vehicles) {
       val fromScratch = computeVehicleValueFromScratch(vehicle, routes.value)
-      require(fromScratch.equals(lastComputedVehiclesValue(vehicle)),
+      require(fromScratch == lastComputedVehiclesValue(vehicle),
         s"""Constraint ${this.getClass.getName} failed.
            |For Vehicle $vehicle should be $fromScratch got ${lastComputedVehiclesValue(vehicle)} $routes """.stripMargin)
     }

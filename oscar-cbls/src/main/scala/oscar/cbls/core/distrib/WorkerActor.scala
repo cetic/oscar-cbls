@@ -3,33 +3,13 @@ package oscar.cbls.core.distrib
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import org.slf4j.{Logger, LoggerFactory}
-import oscar.cbls.core.computation.Store
-import oscar.cbls.core.objective.IndependentObjective
+import oscar.cbls.core.computation.{Solution, Store}
 
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.SortedMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
-
-
-case class SearchProgress(searchId:Long, obj:Long, timeMs:Long, aborted:Boolean = false)
-
-case class SearchRequest(neighborhoodID: RemoteNeighborhoodIdentification,
-                         acc: (Long, Long) => Boolean,
-                         obj: IndependentObjective,
-                         startSolutionOpt: Option[IndependentSolution],
-                         sendFullSolution:Boolean = false,
-                         doAllMoves:Boolean = false,
-                         sendProgressTo:Option[ActorRef[SearchProgress]] = None) {
-  override def toString: String = s"SearchRequest($neighborhoodID,$acc,$obj,sendFullSolution:$sendFullSolution)"
-}
-
-case class SearchTask(request: SearchRequest,
-                      searchId: Long,
-                      sendResultTo: ActorRef[SearchEnded]) {
-  override def toString: String = s"SearchTask($request,$searchId,${sendResultTo.path})"
-}
 
 sealed abstract class MessageToWorker
 final case class StartSearch(search: SearchTask, startID: Long, replyTo: ActorRef[MessagesToSupervisor]) extends MessageToWorker
@@ -44,14 +24,7 @@ case class WorkerAborting(searchID: Long) extends ExternalWorkerState
 case class WorkerIdle() extends ExternalWorkerState
 case class WorkerShuttingDown() extends ExternalWorkerState
 
-sealed abstract class WorkerState
-case class IAmBusy(search: SearchTask, started:Long) extends WorkerState
-case class Aborting(search: SearchTask) extends WorkerState
-case class Idle() extends WorkerState
-case class ShuttingDown() extends WorkerState
-
 object WorkerActor {
-  val nbCores: Int = Runtime.getRuntime.availableProcessors()
 
   def startWorkerAndActorSystem(neighborhoods: SortedMap[Int, RemoteNeighborhood],
                                 m: Store,
@@ -86,12 +59,18 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
                   master: ActorRef[MessagesToSupervisor],
                   verbose: Boolean) {
 
+  sealed abstract class WorkerState
+  case class IAmBusy(search: SearchTask, started:Long) extends WorkerState
+  case class Aborting(search: SearchTask) extends WorkerState
+  case class Idle() extends WorkerState
+  case class ShuttingDown() extends WorkerState
+
   //This is the single thread that is ready to perform all computation.
   // There is at most one computation per worker at any point in time, so the threadPool is 1.
   private val executorForComputation = Executors.newFixedThreadPool(1,
     new java.util.concurrent.ThreadFactory {
       final private val threadNumber = new AtomicInteger(1)
-      override def newThread(r: Runnable) = {
+      override def newThread(r: Runnable): Thread = {
         val t = new Thread(null, r, "workerThread" + threadNumber.getAndIncrement, 0)
         t.setDaemon(false)
         t.setPriority(Thread.MAX_PRIORITY)
@@ -128,12 +107,18 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
   }
 
   private def doSearch(searchRequest: SearchRequest,searchId:Long): (IndependentSearchResult,Int) = {
-    searchRequest.startSolutionOpt match{
-      case None => require(currentModelNr.isDefined)
+    val initLocalSolutionOpt:Option[Solution] = searchRequest.startSolutionOpt match{
+      case None =>
+        require(currentModelNr.isDefined)
+        None
       case Some(startSolution) =>
         if(this.currentModelNr.isEmpty || startSolution.solutionId != this.currentModelNr.get) {
-          startSolution.makeLocal(m).restoreDecisionVariables(withoutCheckpoints = true)
+          val s = startSolution.makeLocal(m)
+          s.restoreDecisionVariables(withoutCheckpoints = true)  //TODO: we should only transmit the delta, eventually
           currentModelNr = Some(startSolution.solutionId)
+          Some(s)
+        }else{
+          None
         }
     }
 
@@ -157,6 +142,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
         searchRequest.obj.convertToObjective(m),
         searchRequest.acc,
         shouldAbort = () => shouldAbortComputation,
+        initSolutionOpt = initLocalSolutionOpt,
         sendFullSolution = searchRequest.sendFullSolution,
         searchId = searchId,
         sendProgressTo = searchRequest.sendProgressTo)
@@ -186,14 +172,14 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
               //we do not tell anything to the workGiver; the supervisor will have to find another slave
               if (verbose) context.log.info(s"got command for start search:${newSearch.searchId} but already busy")
 
-              replyTo ! SearchNotStarted(newSearch, context.self)
+              replyTo ! SearchNotStarted(newSearch.searchId, startID, context.self)
               Behaviors.same
 
             case Aborting(search) =>
               //TODO: il faudrait pouvoir stocker cette recherche en local ici pour déjà avoir la recherche suivante en cas d'abort
               if (verbose) context.log.info(s"got command for start search:${newSearch.searchId} but already busy aborting a search")
 
-              replyTo ! SearchNotStarted(newSearch, context.self)
+              replyTo ! SearchNotStarted(newSearch.searchId, startID, context.self)
               Behaviors.same
 
             case Idle() =>
@@ -202,6 +188,8 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
               this.nbExploredNeighborhoods += 1
 
               val futureResult = Future {
+                //this is the thread of the search, as it is a future,
+                //TODO nothing can happen after the future is bound, opportunity to improve and postpone cleaning tasks?
                 val (result,durationMS) = doSearch(newSearch.request,newSearch.searchId)
                 SearchCompleted(newSearch.searchId, result, durationMS)
               }(executionContextForComputation)
@@ -212,7 +200,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
                 case Failure(e) =>
                   WrappedSearchEnded(SearchCrashed(newSearch.searchId, newSearch.request.neighborhoodID, e, context.self))
               }
-              replyTo ! SearchStarted(newSearch, startID, context.self)
+              replyTo ! SearchStarted(newSearch.searchId, startID, context.self)
               next(IAmBusy(newSearch,System.currentTimeMillis()))
           }
 
@@ -232,6 +220,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
                   shouldAbortComputation = true //shared variable
                   nbAbortedNeighborhoods += 1
                   search.sendResultTo ! SearchAborted(searchId)
+                  //TODO: we should be ready for work here actually
                   next(Aborting(search))
                 }else{
                   if(verbose) context.log.info(s"ignoring conditional abort command, for search:$searchId bestOBj:${currentNeighborhood.bestObjSoFar} < threshold:${keepAliveIfOjBelow.get}")

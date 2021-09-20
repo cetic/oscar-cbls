@@ -9,11 +9,11 @@ package object distrib {
   type supervisor = oscar.cbls.core.distrib.Supervisor
   final val supervisor = oscar.cbls.core.distrib.Supervisor
 
-  def startSupervisorAndActorSystem(store: Store,
-                                    search: Neighborhood,
+  def startSupervisorAndActorSystem(search: Neighborhood,
                                     verbose: Boolean = false,
+                                    hotRestart:Boolean = true,
                                     tic: Duration = Duration.Inf): Supervisor = {
-    supervisor.startSupervisorAndActorSystem(store, search, verbose, tic)
+    supervisor.startSupervisorAndActorSystem(search, verbose, hotRestart, tic)
   }
 
 }

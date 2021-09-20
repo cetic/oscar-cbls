@@ -96,7 +96,7 @@ object WarehouseLocationDistributed3 extends App{
 
   //main search; distributed combinators delegate to worker
   val (store,search,obj,finalPrint) = createSearchProcedure()
-  val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(store,search,verbose=false,tic=5.seconds)
+  val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(search,hotRestart = false,tic=5.seconds)
 
   for (i <- (0 until nbWorker).par){
     //creating each worker, with its own model and search procedure (we do in in parallel)
@@ -104,9 +104,10 @@ object WarehouseLocationDistributed3 extends App{
     supervisor.createLocalWorker(store2, search2)
   }
 
-  //now, run the main search, we set a maxMoves because distributed restart has a search loop
-  search.maxMoves(1).doAllMoves(obj = obj)
-
+  for(i <- 1 to 10){
+    //now, run the main search, we set a maxMoves because distributed restart has a search loop
+    search.maxMoves(1).doAllMoves(obj = obj)
+  }
   supervisor.shutdown()
   finalPrint()
 }

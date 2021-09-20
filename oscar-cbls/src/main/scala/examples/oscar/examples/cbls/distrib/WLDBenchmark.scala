@@ -79,7 +79,7 @@ object WLDBenchmark {
     val timeCreation = (t1-t0)/1000000
     // Stage 2 : Start actor system
     val t2 = System.nanoTime()
-    val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(m, nb)
+    val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(nb)
     val t3 = System.nanoTime()
     val timeActSys = (t3-t2)/1000000
     // Stage 3 : Run procedure

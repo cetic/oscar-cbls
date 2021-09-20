@@ -37,10 +37,10 @@ object WarehouseLocationDistributed2 extends App{
   val nbWorker = 4
 
   //the number of warehouses
-  val W:Int = 2000
+  val W:Int = 4000
 
   //the number of delivery points
-  val D:Int = 1000
+  val D:Int = 2000
 
   println("WarehouseLocation(W:" + W + ", D:" + D + ")")
   //the cost per delivery point if no location is open
@@ -100,21 +100,28 @@ object WarehouseLocationDistributed2 extends App{
     (m,neighborhood,obj,() => {println(openWarehouses)})
   }
 
-  //supervisor side
-  val (store,search,obj, finalPrint) = createSearchProcedure()
 
-  val supervisor = distrib.startSupervisorAndActorSystem(store,search)
+  val arrayOfStoreSearchObjAndFinalPrint:Array[(Store,Neighborhood,Objective,()=>Unit)] =
+    Array.fill(nbWorker+1)(null)
+
+  for(i <- (0 to nbWorker).par) {
+    arrayOfStoreSearchObjAndFinalPrint(i) = createSearchProcedure()
+  }
+
+  //supervisor side
+  val (store,search,obj, finalPrint) = arrayOfStoreSearchObjAndFinalPrint(nbWorker)
+  val supervisor = distrib.startSupervisorAndActorSystem(search)
 
   //creating all the workers; here we only create local workers
-  for(_ <- (0 until nbWorker).par) {
-    val (store2, search2, _, _) = createSearchProcedure()
+  for(i <- (0 until nbWorker).par) {
+    val (store2, search2, _, _) = arrayOfStoreSearchObjAndFinalPrint(i)
     supervisor.createLocalWorker(store2,search2)
-    search2.verbose = 2
   }
+
 
   val start = System.currentTimeMillis()
 
-  val search2 = search.showObjectiveFunction(obj)
+  val search2 = search // .showObjectiveFunction(obj)
   search2.verbose = 1
   search2.doAllMoves(obj = obj)
 
