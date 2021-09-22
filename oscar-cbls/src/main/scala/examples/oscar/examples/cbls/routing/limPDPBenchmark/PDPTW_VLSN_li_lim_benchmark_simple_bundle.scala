@@ -165,8 +165,8 @@ object PDPTW_VLSN_li_lim_benchmark_simple_bundle extends App {
           val routeOfV = getRouteOfVehicle(vehicle).map(node => {
             if (node < v) "" + node
             else pickUpPointToDeliveryPoint(node) match{
-              case -1 => "d" + node //delivery
-              case delivery => node+ "p(" + delivery + ")"
+              case -1 => s"d$node" //delivery
+              case delivery => s"${node}p($delivery)"
             }})
           if(routeOfV.length == 1){
             notMoving  = vehicle :: notMoving

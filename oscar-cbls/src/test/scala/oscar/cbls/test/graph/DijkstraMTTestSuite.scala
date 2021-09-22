@@ -5,6 +5,7 @@ import org.scalacheck.Gen
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import oscar.cbls.algo.generator.RandomGraphGenerator
 import oscar.cbls.algo.graph._
 
 import scala.util.Random

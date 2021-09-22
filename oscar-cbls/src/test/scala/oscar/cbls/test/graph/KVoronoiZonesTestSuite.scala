@@ -4,6 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.Checkers
 import oscar.cbls.CBLSSetVar
+import oscar.cbls.algo.generator.RandomGraphGenerator
 import oscar.cbls.lib.invariant.graph.KVoronoiZones
 import oscar.cbls.test.invariants.bench._
 

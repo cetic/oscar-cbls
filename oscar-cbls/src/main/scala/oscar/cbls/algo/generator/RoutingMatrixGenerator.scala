@@ -19,6 +19,7 @@ import oscar.cbls._
 import oscar.cbls.business.routing.invariants.timeWindow.{DefinedTransferFunction, TransferFunction}
 import oscar.cbls.business.routing.model.{TTFConst, TTFMatrix}
 
+import scala.annotation.tailrec
 import scala.util.Random
 
 /**
@@ -41,7 +42,7 @@ object RoutingMatrixGenerator {
     val pointPosition: Array[(Long, Long)] = Array.tabulate(n)(w => (randomXY, randomXY))
 
     def distance(from: (Long, Long), to: (Long, Long)) =
-      math.sqrt(math.pow(from._1 - to._1, 2) + math.pow(from._2 - to._2, 2)).toLong
+      math.sqrt(math.pow(from._1.toDouble - to._1.toDouble, 2.0) + math.pow(from._2.toDouble - to._2.toDouble, 2.0)).toLong
 
     //for each delivery point, the distance to each warehouse
     (Array.tabulate(n)(
@@ -122,13 +123,13 @@ object RoutingMatrixGenerator {
     *
     * @param n The number of nodes (considering depots)
     * @param v The number of vehicles/depots
-    * @param nbPRecedences The number wanted precedences
+    * @param nbPrecedences The number of wanted precedences
     * @param maxSize The max length of precedence you want to generate
     * @return A list of tuple (precedences)
     */
   def generateChainsPrecedence(n: Int, v: Int, nbPrecedences:Int, maxSize: Int = 2): (List[List[Int]], List[(Int,Int)]) = {
     val allNodes = (v until n).toList
-    val randomizedNodes = random.shuffle(allNodes).toIterator
+    val randomizedNodes = random.shuffle(allNodes).iterator
 
     var currentMaxSize = maxSize
     var precedencesToGenerate = nbPrecedences
@@ -149,8 +150,10 @@ object RoutingMatrixGenerator {
         randomizedNodes.next()
       })
 
+      @tailrec
       def toTuple(chain: List[Int], tuples: List[(Int,Int)]): List[(Int,Int)] ={
         chain match {
+          case Nil => throw new IllegalArgumentException("Empty chain")
           case head :: Nil => tuples
           case head :: tail => toTuple(tail, (head, tail.head) :: tuples)
         }
