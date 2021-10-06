@@ -17,7 +17,7 @@ package oscar.examples.cbls.wlp
 import oscar.cbls._
 import oscar.cbls.core.computation.{CBLSIntVar, Store}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{Best, Move}
+import oscar.cbls.core.search.Best
 import oscar.cbls.lib.invariant.logic.{Filter, SelectLESetQueue}
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.search.combinators.Profile
@@ -31,7 +31,7 @@ import scala.collection.immutable.SortedSet
  * additional behaviors. Here, we restrict a neighborhood to a specific set of variables that not tabu
  * this set of variables is maintained through invariants
  */
-object WarehouseLocationTabu extends App {
+object WarehouseLocationTabuAspiration extends App {
 
   //the number of warehouses
   val W:Int = 500

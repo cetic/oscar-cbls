@@ -28,10 +28,10 @@ import scala.language.postfixOps
 object WarehouseLocationMultiObjective extends App {
 
   //the number of warehouses
-  val W: Int = 100
+  val W: Int = 500
 
   //the number of delivery points
-  val D: Int = 100
+  val D: Int = 500
 
   val problemName = "BiObjective WLP(W:" + W + ", D:" + D + ")"
   println(problemName)

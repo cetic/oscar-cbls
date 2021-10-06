@@ -348,10 +348,12 @@ trait Objective {
   }
 
   //for distribution purposes
-  val uniqueID: Int = model.registerObjective(this)
+  val uniqueID: Int = if(model != null) model.registerObjective(this) else -1
 
-  def getIndependentObj: IndependentObjective = new IndependentIntVarObjective(uniqueID)
-
+  def getIndependentObj: IndependentObjective = {
+    if (uniqueID == -1) throw new Error("objective function cannot be made model-independent and used for distributed optimization: " + this)
+    new IndependentIntVarObjective(uniqueID)
+  }
 }
 
 /**

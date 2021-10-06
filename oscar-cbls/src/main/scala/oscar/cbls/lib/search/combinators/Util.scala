@@ -147,6 +147,14 @@ class WithAcceptanceCriterion(a: Neighborhood, overridingAcceptanceCriterion: (L
     (a, b) => (a == Long.MaxValue || b != Long.MaxValue) && overridingAcceptanceCriterion(a, b))
 }
 
+class StrictlyImproveOverBestKnown(a: Neighborhood, bestKnown : () => Long) extends NeighborhoodCombinator(a) {
+
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+    val bestKnownObj = bestKnown()
+    a.getMove(obj,initialObj:Long, (a, b) => b < bestKnownObj)
+  }
+}
+
 /**
  * Forces the use of a given objective function.
  * this overrides the one that you might pass in the higher level

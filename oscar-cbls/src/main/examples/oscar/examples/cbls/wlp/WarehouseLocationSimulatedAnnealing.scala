@@ -33,10 +33,10 @@ import scala.language.postfixOps
 object WarehouseLocationSimulatedAnnealing extends App {
 
   //the number of warehouses
-  val W:Int = 150
+  val W:Int = 500
 
   //the number of delivery points
-  val D:Int = 150
+  val D:Int = 500
 
   println(s"WarehouseLocationSimulatedAnnealing(W:$W, D:$D)")
   //the cost per delivery point if no location is open

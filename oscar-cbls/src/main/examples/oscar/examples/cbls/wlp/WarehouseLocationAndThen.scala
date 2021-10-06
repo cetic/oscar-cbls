@@ -57,7 +57,7 @@ object WarehouseLocationAndThen extends App{
     orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2)
     saveBest obj restoreBestOnExhaust)
 
-  neighborhood.verbose = 1
+  neighborhood.verbose = 2
   neighborhood.doAllMoves(_ >= W+D, obj)
 
   println(openWarehouses)

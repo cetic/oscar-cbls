@@ -663,6 +663,11 @@ class NeighborhoodOps(n:Neighborhood){
    */
   def acceptAllButStrongViolation = new WithAcceptanceCriterion(n, (_: Long, n: Long) => n!=Long.MaxValue)
 
+  /**
+   * this combinator accept only moves that strictly improve over the best known
+   */
+  def improvingOverBestKnown(bestKnown:() => Long) = new StrictlyImproveOverBestKnown(n: Neighborhood,bestKnown)
+
 
   /**
    * proposes a round-robin with that.
