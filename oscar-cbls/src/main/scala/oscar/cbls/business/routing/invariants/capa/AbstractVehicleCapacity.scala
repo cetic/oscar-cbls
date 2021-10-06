@@ -21,11 +21,13 @@ import oscar.cbls.core.computation.{Invariant, SeqUpdateMove}
 
 import scala.annotation.tailrec
 
+
 /**
   * Maintains the content of vehicles at each node and the starting position of each vehicle
   * @param n The maximum number of nodes
   * @param v The number of vehicles
   */
+@deprecated("Use AbstractNaiveConstraint instead with the variations ForwardNaiveRoutingConstraint and BackwardNaiveRoutingConstraint")
 abstract class AbstractVehicleCapacity(n:Int,
                                        v:Int) extends Invariant{
 

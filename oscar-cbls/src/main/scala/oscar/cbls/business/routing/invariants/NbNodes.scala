@@ -16,7 +16,8 @@ package oscar.cbls.business.routing.invariants
 
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
-import oscar.cbls.business.routing.invariants.global.{FlippedPreComputedSubSequence, GlobalConstraintCore, LogReducedFlippedPreComputedSubSequence, LogReducedGlobalConstraint, LogReducedGlobalConstraintWithExtremes, LogReducedNewNode, LogReducedPreComputedSubSequence, LogReducedSegment, NewNode, PreComputedSubSequence, Segment}
+import oscar.cbls.business.routing.invariants.global.{GlobalConstraintCore, LogReducedFlippedPreComputedSubSequence, LogReducedGlobalConstraint, LogReducedGlobalConstraintWithExtremes, LogReducedNewNode, LogReducedPreComputedSubSequence, LogReducedSegment}
+import oscar.cbls.business.routing.invariants.segments.{Segment,NewNode,FlippedPreComputedSubSequence,  PreComputedSubSequence}
 import oscar.cbls.core.computation.{CBLSIntVar, ChangingSeqValue}
 
 object NbNodes{

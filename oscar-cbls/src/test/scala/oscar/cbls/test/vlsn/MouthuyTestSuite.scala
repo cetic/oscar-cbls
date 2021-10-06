@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.lib.search.neighborhoods.vlsn.CycleFinderAlgoType._
 import oscar.cbls.lib.search.neighborhoods.vlsn._
-import oscar.cbls.test.graph.RandomGraphGenerator._
+import oscar.cbls.test.graph.VLSNGenerator.generateVLSN
 
 class MouthuyTestSuite extends AnyFunSuite with Matchers with ScalaCheckDrivenPropertyChecks {
   val genVlsn: Gen[VLSNGraph] = for{

@@ -6,8 +6,8 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.CBLSSetVar
+import oscar.cbls.algo.generator.RandomGraphGenerator
 import oscar.cbls.algo.graph._
-import oscar.cbls.test.graph.RandomGraphGenerator
 import oscar.cbls.test.invariants.bench.{InvBench, ToZero}
 
 import scala.util.Random

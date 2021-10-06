@@ -22,6 +22,7 @@ import oscar.cbls.business.routing.model.VehicleLocation
 import oscar.cbls.core.computation.{CBLSIntVar, ChangingIntValue, ChangingSeqValue, SeqCheckpointedValueStack, SeqNotificationTarget, SeqUpdate, SeqUpdateAssign, SeqUpdateDefineCheckpoint, SeqUpdateInsert, SeqUpdateLastNotified, SeqUpdateMove, SeqUpdateRemove, SeqUpdateRollBackToCheckpoint}
 import oscar.cbls.core.propagation.Checker
 
+@deprecated("Use AbstractNaiveConstraint instead with the variations ForwardNaiveRoutingConstraint and BackwardNaiveRoutingConstraint")
 object ForwardCumulativeConstraintOnVehicle {
   /**
    * the violation maintained by this invariant is the sum over all routed nodes of the overshoot
@@ -74,6 +75,7 @@ object ForwardCumulativeConstraintOnVehicle {
  * @param maxCheckpointLevel the maximal level of checkpoints that this should support.
  *                           it consumes O(n) memory per level, so do not overdrive uselessly
  */
+@deprecated("Use AbstractNaiveConstraint instead with the variations ForwardNaiveRoutingConstraint and BackwardNaiveRoutingConstraint")
 class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
                                            n:Int,
                                            v:Int,
