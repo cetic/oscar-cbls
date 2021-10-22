@@ -15,35 +15,37 @@
  * ****************************************************************************
  */
 
-/**
- * *****************************************************************************
- * Contributors:
- *     This code has been initially developed by CETIC www.cetic.be
- *         by Renaud De Landtsheer and Florent Ghilain.
- *
- *     Refactored with respect to the new architecture by Yoann Guyot
- * ****************************************************************************
- */
 package oscar.cbls.business.routing.neighborhood
 
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.search.{HotRestart, Pairs}
 import oscar.cbls.business.routing.model.VRP
+import oscar.cbls.core.computation.CBLSSeqVar
 import oscar.cbls.core.search._
 
 /**
- * Removes three edges of routes, and rebuilds routes from the segments.
- * Finds 3L candidate points for a 3L-opt move, and then
- * chooses on-the-fly between simple 3L-opt move and reverse 3L-opt move.
+ * This implementation of threeOpt explores the classical threeOpt by aspiration
+ * it first iterates on position in routes, then searches for segments to "aspirate" from somewhere else on the routes.
  *
- * Info : it also could be saw as the move of a route's segment to another place.
- * The search complexity is O(n³).
- * @author renaud.delandtsheer@cetic.be
- * @author yoann.guyot@cetic.be
- * @author Florent Ghilain (UMONS)
+ * @param potentialInsertionNodes the nodes where we might insert a segment.
+ *                                Segments are inserted after these positions.
+ *                                they must be routed, and can include vehicles
+ *                                It expects nodes, not positions in the sequence
+ * @param relevantNeighbors for a node, you must specify the
+ * @param vrp the VRP problem
+ * @param neighborhoodName the name for this neighborhood
+ * @param selectInsertionPointBehavior first or est for the insertion point
+ * @param selectMovedSegmentBehavior among all segments, first or best
+ * @param selectFlipBehavior first or best for the flip
+ * @param hotRestart hot restart on the insertion point
+ * @param skipOnePointMove if set to true, segment will include more than one point.
+ * @param breakSymmetry there is a symmetry in the 3-opt
+ *                      when moving a segment within the same vehicle without flipping it,
+ *                      it is equivalent to moving hte nodes between the segment and the insertion position in the other direction
+ * @param tryFlip true if flip should be considered, false otherwise.
  */
-case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
-                    relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
+case class ThreeOpt(potentialInsertionNodes:()=>Iterable[Int], //must be routed, can include vehicles
+                    relevantNeighbors:()=>Int=>Iterable[Int], //must be routed, vehicles are filtered away
                     vrp: VRP,
                     neighborhoodName:String = "ThreeOpt",
                     selectInsertionPointBehavior:LoopBehavior = First(),
@@ -55,22 +57,22 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
                     tryFlip:Boolean = true)
   extends EasyNeighborhoodMultiLevel[ThreeOptMove](neighborhoodName) {
 
-  //the indice to start with for the exploration
-  var startIndice: Int = 0
+  //the node in the route, for hotRestart
+  private var startNodeForHotRestart: Int = 0
 
-  val v = vrp.v
-  val seq = vrp.routes
+  val v: Int = vrp.v
+  val seqVar: CBLSSeqVar = vrp.routes
 
   def exploreNeighborhood(initialObj: Long): Unit = {
-    val seqValue = seq.defineCurrentValueAsCheckpoint()
+    val checkpoint = seqVar.defineCurrentValueAsCheckpoint()
 
     val (iterationSchemeOnZone,notifyFound1) = selectInsertionPointBehavior.toIterable(
-      if (hotRestart) HotRestart(potentialInsertionPoints(), startIndice)
-      else potentialInsertionPoints())
+      if (hotRestart) HotRestart(potentialInsertionNodes(), startNodeForHotRestart)
+      else potentialInsertionNodes())
 
     def evalObjAndRollBack() : Long = {
       val a = obj.value
-      seq.rollbackToTopCheckpoint(seqValue)
+      seqVar.rollbackToTopCheckpoint(checkpoint)
       a
     }
 
@@ -78,52 +80,55 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
 
     val nodeToVehicle = vrp.vehicleOfNode.map(_.value)
 
-    var insertionPoint = -1
-    for (insertionPointTmp <- iterationSchemeOnZone){
-      insertionPoint = insertionPointTmp
+    for (insertionNodeTmp <- iterationSchemeOnZone){
+      insertionPointForInstantiation = insertionNodeTmp
 
-      seqValue.explorerAtAnyOccurrence(insertionPoint) match{
+      checkpoint.explorerAtAnyOccurrence(insertionPointForInstantiation) match{
         case None => //not routed?!
         case Some(explorerAtInsertionPoint) =>
+          insertionPointPositionForInstantiation = explorerAtInsertionPoint.position
 
-          val vehicleForInsertion = nodeToVehicle(insertionPoint)
+          val vehicleForInsertion = nodeToVehicle(insertionPointForInstantiation)
 
-          val relevantNeighbors = relevantNeighborsNow(insertionPoint)
+          val relevantNeighbors = relevantNeighborsNow(insertionPointForInstantiation)
 
-          val routedRelevantNeighbors = relevantNeighbors.filter((neighbor : Int) => nodeToVehicle(neighbor) != -1L && neighbor != insertionPoint && neighbor >= v)
+          val routedRelevantNeighbors = relevantNeighbors.filter((neighbor : Int) => nodeToVehicle(neighbor) != -1 && neighbor != insertionPointForInstantiation && neighbor >= v)
 
           val (routedRelevantNeighborsByVehicle,notifyFound2) = selectMovedSegmentBehavior.toIterable(routedRelevantNeighbors.groupBy((i : Int) => nodeToVehicle(i)).toList)
 
-          for((vehicleOfMovedSegment,relevantNodes) <- routedRelevantNeighborsByVehicle if vehicleOfMovedSegment != v){
-            val pairsOfNodesWithPosition = Pairs.makeAllSortedPairs(relevantNodes.map(node => (node,seqValue.explorerAtAnyOccurrence(node).head)).toList)
+          for((vehicleOfMovedSegment,relevantNodes) <- routedRelevantNeighborsByVehicle if vehicleOfMovedSegment != v /*not sure this is useful since the nodes are routed*/){
+            val pairsOfNodesWithPosition = Pairs.makeAllSortedPairs(relevantNodes.map(node => (node,checkpoint.explorerAtAnyOccurrence(node).head)).toList)
             val orderedPairsOfNode = pairsOfNodesWithPosition.map({case (a, b) =>
               if (a._2.position < b._2.position) (a, b) else (b, a)
             })
 
-            val (relevantPairsToExplore,notifyFound3) =
-              selectMovedSegmentBehavior.toIterable(
-                if (skipOnePointMove) orderedPairsOfNode.filter({case (a, b) => a._1 != b._1})
-                else orderedPairsOfNode)
+            val (relevantPairsToExplore,notifyFound3) = selectMovedSegmentBehavior.toIterable(
+              if (skipOnePointMove) orderedPairsOfNode.filter({case (a, b) => a._1 != b._1}) else orderedPairsOfNode)
 
             for (((segmentStart,explorerAtSegmentStart), (segmentEnd,explorerAtSegmentEnd)) <- relevantPairsToExplore) {
 
-              if (explorerAtInsertionPoint.position < explorerAtSegmentStart.position || explorerAtSegmentEnd.position < explorerAtInsertionPoint.position) {
+              if (explorerAtInsertionPoint.position < explorerAtSegmentStart.position
+                || explorerAtSegmentEnd.position < explorerAtInsertionPoint.position) {
+                //moved segment does not include insertion point
 
                 segmentStartPositionForInstantiation = explorerAtSegmentStart.position
                 segmentEndPositionForInstantiation = explorerAtSegmentEnd.position
-                insertionPointPositionForInstantiation = explorerAtInsertionPoint.position
-                insertionPointForInstantiation = insertionPoint
 
                 //skip this if same vehicle, no flip, and to the left
 
-                if(!breakSymmetry || vehicleForInsertion != vehicleOfMovedSegment || explorerAtInsertionPoint.position > explorerAtSegmentStart.position){
+                if(!breakSymmetry
+                  || vehicleForInsertion != vehicleOfMovedSegment
+                  || explorerAtSegmentStart.position < explorerAtInsertionPoint.position){
 
                   val (flipValuesToTest,notifyFound4) =
                     selectFlipBehavior.toIterable(if(tryFlip) List(false,true) else List(false))
 
                   for(flipForInstantiationTmp <- flipValuesToTest){
                     flipForInstantiation = flipForInstantiationTmp
-                    doMove(explorerAtInsertionPoint.position, explorerAtSegmentStart.position, explorerAtSegmentEnd.position, flipForInstantiation)
+                    doMove(insertionPointPositionForInstantiation,
+                      segmentStartPositionForInstantiation,
+                      segmentEndPositionForInstantiation,
+                      flipForInstantiation)
 
                     if (evaluateCurrentMoveObjTrueIfSomethingFound(evalObjAndRollBack())) {
                       notifyFound1()
@@ -138,8 +143,8 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
           }
       }
     }
-    seq.releaseTopCheckpoint()
-    startIndice = insertionPoint + 1
+    seqVar.releaseTopCheckpoint()
+    startNodeForHotRestart = insertionPointForInstantiation
     segmentStartPositionForInstantiation = -1
   }
 
@@ -161,11 +166,11 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
 
   //this resets the internal state of the Neighborhood
   override def reset(): Unit ={
-    startIndice = 0
+    startNodeForHotRestart = 0
   }
 
   def doMove(insertionPosition: Int, segmentStartPosition: Int, segmentEndPosition: Int, flip: Boolean): Unit ={
-    seq.move(segmentStartPosition,segmentEndPosition,insertionPosition,flip)
+    seqVar.move(segmentStartPosition,segmentEndPosition,insertionPosition,flip)
   }
 }
 

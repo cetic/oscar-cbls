@@ -173,7 +173,7 @@ object TspBridgeDistributed extends App {
           }},
           maxRestartWithoutImprovement = 2,
           obj,
-          randomizationName = "OpenAllBridges"))
+          name = "OpenAllBridges"))
       )
 
     var nextDisplay:Long = 0

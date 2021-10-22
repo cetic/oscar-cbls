@@ -41,7 +41,7 @@ object  TestTreeOpt extends App {
 
   val threeOpt =
     ThreeOpt(
-      potentialInsertionPoints = myVRP.routed,
+      potentialInsertionNodes = myVRP.routed,
       relevantNeighbors = () => n => myVRP.routed.value,
       vrp = myVRP,
       neighborhoodName = "Three Opt",

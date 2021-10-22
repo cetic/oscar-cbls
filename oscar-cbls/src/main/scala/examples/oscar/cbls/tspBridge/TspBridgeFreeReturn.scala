@@ -145,7 +145,7 @@ object TspBridgeFreeReturn extends App {
       },
       maxRestartWithoutImprovement = 2,
       obj,
-      randomizationName = "OpenAllBridges")
+      name = "OpenAllBridges")
     afterMove{
     //println(openBridges.value.mkString(";"))
     visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList, myVRP.routes.value)

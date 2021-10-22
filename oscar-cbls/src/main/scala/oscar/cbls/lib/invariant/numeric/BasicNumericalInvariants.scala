@@ -48,6 +48,7 @@ object Prod {
 
 /**
  * sum(vars)
+ * maintains the sum of the vars
  * @param vars is an iterable of IntVars
  * @author renaud.delandtsheer@cetic.be
  */

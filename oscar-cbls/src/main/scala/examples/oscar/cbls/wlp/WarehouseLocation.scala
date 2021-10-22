@@ -20,14 +20,15 @@ package examples.oscar.cbls.wlp
 import oscar.cbls._
 
 import scala.language.postfixOps
+import scala.util.Random
 
 object WarehouseLocation extends App{
 
   //the number of warehouses
-  val W:Int = 1000
+  val W:Int = 100
 
   //the number of delivery points
-  val D:Int = 300
+  val D:Int = 500
 
   println(s"WarehouseLocation(W:$W, D:$D)")
   //the cost per delivery point if no location is open
@@ -53,8 +54,14 @@ object WarehouseLocation extends App{
       List(
         assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
         swapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),refresh = W/10)
-      .onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/10, name="smallRandomize"), 2, obj)
+      .onExhaustRestartAfterJump({
+        for (_ <- 0 to (5 min openWarehouses.value.size/10)){
+          val open = openWarehouses.value
+          val r = Random.nextInt(open.size)
+          warehouseOpenArray(r) := 0
+        }}, name="smallRandomize", minRestarts = 10, obj = obj)
       .onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/2, name="bigRandomize"), 2, obj))
+    .showObjectiveFunction(obj)
 
   neighborhood.verbose = 1
 

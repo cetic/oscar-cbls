@@ -8,8 +8,8 @@ import scala.util.Random
 
 object GraphPartition extends CBLSModel with App {
 
-  val nbNodes:Int = 50000
-  val nbEdges:Int = nbNodes * 3 // 500000 //nbNodes * nbNodes / 1000
+  val nbNodes:Int = 5000
+  val nbEdges:Int = nbNodes * 3
 
   //try with nbNodes = 50000 nbEdges = nbNodes*3
 
@@ -70,12 +70,12 @@ object GraphPartition extends CBLSModel with App {
   val neighborhood =(
     bestSlopeFirst(
       List(
-        profile(assignNeighborhood(nodeToPartition, "moveAll") guard (() => sameSizeConstraint.violation.value != 0)),
+        profile(assignNeighborhood(nodeToPartition, "moveAny") guard (() => sameSizeConstraint.violation.value != 0)),
         //profile(swapsNeighborhood(nodeToPartition, "swapAll")),
-        profile(swapsNeighborhood(nodeToPartition,
-          symmetryCanBeBrokenOnIndices = false,
-          searchZone1 = () => mostViolatedNodes.value,
-          name = "swap1Most")),
+       // profile(swapsNeighborhood(nodeToPartition,
+       //   symmetryCanBeBrokenOnIndices = false,
+       //   searchZone1 = () => mostViolatedNodes.value,
+       //   name = "swap1Most")),
         profile(swapsNeighborhood(nodeToPartition,
           symmetryCanBeBrokenOnIndices = false,
           searchZone2 = () => { val v = mostViolatedNodes.value; (_,_) => v},
@@ -93,23 +93,23 @@ object GraphPartition extends CBLSModel with App {
           searchZone1 = mostViolatedNodes,
           searchZone2 = () => {val v = violatedNodes.value; (_,_) => v},
           name = "swap1Most1Viol")),
-        profile(swapsNeighborhood(nodeToPartition,
-          symmetryCanBeBrokenOnIndices = false,
-          searchZone1 = mostViolatedNodes,
-          searchZone2 = () => {val v = mostViolatedNodes.value; (_,_) => v},
-          name = "swap1Most1Most")),
+       // profile(swapsNeighborhood(nodeToPartition,
+        //  symmetryCanBeBrokenOnIndices = false,
+        //  searchZone1 = mostViolatedNodes,
+       //   searchZone2 = () => {val v = mostViolatedNodes.value; (_,_) => v},
+       //   name = "swap1Most1Most")),
         profile(swapsNeighborhood(nodeToPartition,
           searchZone1 = mostViolatedNodes,
           searchZone2 = () => (firstNode:Int, itsPartition:Int) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).newValue != itsPartition),
           hotRestart = false,
           symmetryCanBeBrokenOnIndices = false,
           name = "swap1MostVAdj")),
-        profile(swapsNeighborhood(nodeToPartition,
-          searchZone1 = violatedNodes,
-          searchZone2 = () => (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).newValue != itsPartition),
-          hotRestart = true,
-          symmetryCanBeBrokenOnIndices = false,
-          name = "swap1ViolAdj"))
+        //profile(swapsNeighborhood(nodeToPartition,
+        //  searchZone1 = violatedNodes,
+        //  searchZone2 = () => (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).newValue != itsPartition),
+        //  hotRestart = true,
+        //  symmetryCanBeBrokenOnIndices = false,
+        //  name = "swap1ViolAdj"))
 
         //profile(swapsNeighborhood(nodeToPartition,
         //  searchZone1 = swappableNodes,
@@ -123,13 +123,11 @@ object GraphPartition extends CBLSModel with App {
         //  symmetryCanBeBrokenOnIndices = false,
         //  searchZone2 = (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).value != itsPartition),
         //  name = "swapAdjacent"))
-      ),refresh = nbNodes/10)
-      .onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes/100, name = s"randomize${nbNodes/100}"), 3, obj)
-    showObjectiveFunction obj)
-  //exhaust profile(swapsNeighborhood(nodeToPartition, //this one is the most complete of swaps, but highly inefficient compared tpo the others,and I think that it does not bring in more connexity than others (althrough I am not so suer...)
-  //  symmetryCanBeBrokenOnIndices = true,
-  //  searchZone2 = () => {val v = violatedNodes.value; (_,_) => v}, //we should filter on nodes with a violation higher than the gain on swapping the violation of the first node
-  //  name = "swapAny1Viol"))) //showObjectiveFunction(obj)
+      ),refresh = 100)
+      .onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => 30, name = s"randomize30"), minRestarts = 5, obj=obj,maxRestartWithoutImprovement = 2)
+      .onExhaustRestartAfter(randomizeNeighborhood(nodeToPartition, () => nbNodes / 100, name = s"randomize${nbNodes/100}"), 3, obj)
+    showObjectiveFunction obj
+  )
 
   neighborhood.verbose = 1
   neighborhood.doAllMoves(_ >= nbNodes + nbEdges, obj)

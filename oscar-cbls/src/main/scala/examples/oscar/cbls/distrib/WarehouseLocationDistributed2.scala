@@ -106,7 +106,7 @@ object WarehouseLocationDistributed2 extends App {
 
   val start = System.currentTimeMillis()
 
-  val search2 = search // .showObjectiveFunction(obj)
+  val search2 = search.showObjectiveFunction(obj)
   search2.verbose = 1
   search2.doAllMoves(obj = obj)
 

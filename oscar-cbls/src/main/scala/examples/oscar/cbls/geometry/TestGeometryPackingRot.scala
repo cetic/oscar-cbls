@@ -315,7 +315,7 @@ object TestGeometryPackingRot extends App with LinearSelectors {
         if(rotationArray(i) != null) rotationArray(i).randomize()
       }
     },
-    randomizationName = "smallRandomize",
+    name = "smallRandomize",
     maxRestartWithoutImprovement = 2,
     restartFromBest = true,
     obj=obj)
@@ -329,7 +329,7 @@ object TestGeometryPackingRot extends App with LinearSelectors {
         if(rotationArray(i) != null) rotationArray(i).randomize()
       }
     },
-    randomizationName = "fullRandomize",
+    name = "fullRandomize",
     maxRestartWithoutImprovement = 5,
     restartFromBest = true,
     obj=obj)

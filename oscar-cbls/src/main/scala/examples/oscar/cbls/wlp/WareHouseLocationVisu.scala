@@ -66,7 +66,7 @@ object WareHouseLocationVisu extends App with StopWatch{
 
   var bestObj = Int.MaxValue
 
-  //this is an array, that, for each warehouse, keeps the sorted closest warehouses in a lazy way.
+  //this is an array, that, for each warehouse, keeps the closest warehouses in a lazy way.
   val closestWarehouses = Array.tabulate(W)(warehouse =>
     KSmallest.lazySort(
       Array.tabulate(W)(warehouse => warehouse),
@@ -91,7 +91,6 @@ object WareHouseLocationVisu extends App with StopWatch{
   maxDepth = depth,
   intermediaryStops = true)
 
-
   def muStar(width:Int,kOpen:Int,kClosed:Int ) = Mu[AssignMove](
   AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
   (assignList:List[AssignMove]) =>
@@ -104,8 +103,8 @@ object WareHouseLocationVisu extends App with StopWatch{
   maxDepth = width,
   intermediaryStops = true)
 
-  def swapsK(k:Int,openWarehouseTocConsider:()=>Iterable[Int] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
-    searchZone1 = openWarehouseTocConsider,
+  def swapsK(k:Int, openWarehousesToConsider:()=>Iterable[Int] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
+    searchZone1 = openWarehousesToConsider,
     searchZone2 = () => (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
     name = s"Swap${k}Nearest",
     symmetryCanBeBrokenOnIndices = false)

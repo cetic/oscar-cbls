@@ -10,7 +10,7 @@ import scala.util.Random
 
 object GraphPartitionGLS extends CBLSModel with App {
 
-  val nbNodes:Int = 500
+  val nbNodes:Int = 5000
   val nbEdges:Int = nbNodes * 3 // 500000 //nbNodes * nbNodes / 1000
 
   require(nbNodes % 2 == 0, "nbNodes must be even")
@@ -134,7 +134,7 @@ object GraphPartitionGLS extends CBLSModel with App {
       .showObjectiveFunction(noCrossingObj,"noCrossingObj")
       .showObjectiveFunction(sameSizeObj,"sameSizeObj")
 
-  metaHeuristicSearch.verboseWithExtraInfo(2, () => s"${Console.GREEN}sameSizeObj:${sameSizeObj.value} noCrossingObj:${noCrossingObj.value}${Console.RESET}")
+  metaHeuristicSearch.verboseWithExtraInfo(1, () => s"${Console.GREEN}sameSizeObj:${sameSizeObj.value} noCrossingObj:${noCrossingObj.value}${Console.RESET}")
 
   metaHeuristicSearch.doAllMoves(_ >= nbNodes + nbEdges, noCrossingObj)
 

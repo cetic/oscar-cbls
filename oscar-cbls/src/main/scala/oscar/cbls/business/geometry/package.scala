@@ -21,6 +21,7 @@ import org.locationtech.jts.geom.{Coordinate, Geometry, GeometryFactory, MultiPo
 
 package object geometry {
 
+
   // This is the general factory to use, it is kept in floats because putting it to integers
   // only adds an extra rounding at the end of each operation.
   // so better to keep it all in floats, and perform any conversion when getting things out of JTS

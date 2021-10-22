@@ -95,7 +95,7 @@ object CarSequencer extends CBLSModel with App {
       .onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => 5 max (violatedCars.value.size/2))), 2, obj)
       .onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, name = "shuffleMostCars", numberOfShuffledPositions = () => nbCars/2)), 2, obj)
       orElse (Profile(shuffleNeighborhood(carSequence, name = "shuffleAllCars")) maxMoves 4)
-//      showObjectiveFunction(obj)
+      showObjectiveFunction(obj)
       saveBestAndRestoreOnExhaust obj) //in case we do not solve it, we want to restore the best solution anyway
 
   search.verbose = 2
