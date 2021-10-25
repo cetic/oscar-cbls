@@ -365,7 +365,7 @@ case class Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAccept
 case class EjectionChains(initMove:Move,
                           nextMove: Move => Neighborhood,
                           shouldStop:Int => Boolean,
-                          acc:(Long,Long) => Boolean,
+                          acc:(Long,Long) => Boolean = (oldObj,newObj) => newObj < oldObj,
                           aggregateMoves:Boolean = false,
                           name:String = "EjectionChains") extends NeighborhoodCombinator() {
   override def getMove(obj: Objective,
@@ -378,6 +378,7 @@ case class EjectionChains(initMove:Move,
 
       var prevMove: Move = initMove
       var currentObj: Long = initialObj
+
       var nbMoves: Int = 0
       while (!shouldStop(nbMoves) && !acceptanceCriterion(initialObj, currentObj)) {
         nextMove(prevMove).getMove(obj, currentObj, acceptanceCriterion = acc) match {
@@ -412,12 +413,11 @@ case class EjectionChains(initMove:Move,
       var currentObj: Long = initialObj
       var nbMoves: Int = 0
       while (!shouldStop(nbMoves) && !acceptanceCriterion(initialObj, currentObj)) {
-        nextMove(prevMove).getMove(obj, currentObj, acceptanceCriterion = acc) match {
+        nextMove(prevMove).getMove(obj, obj.value, acceptanceCriterion = acc) match {
           case NoMoveFound =>
-            if(nbMoves >=1 && acceptanceCriterion(initialObj, currentObj)) {
-              val endSolution = obj.model.solution(true)
+            if(nbMoves >= 1 && acceptanceCriterion(initialObj, currentObj)) {
               startSolution.restoreDecisionVariables()
-              return MoveFound(LoadSolutionMove(endSolution, currentObj, name))
+              return MoveFound(CompositeMove(allMoves.reverse, currentObj, name))
             }else {
               startSolution.restoreDecisionVariables()
               return NoMoveFound
