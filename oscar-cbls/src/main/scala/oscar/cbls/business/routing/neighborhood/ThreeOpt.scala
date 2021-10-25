@@ -31,7 +31,8 @@ import oscar.cbls.core.search._
  *                                Segments are inserted after these positions.
  *                                they must be routed, and can include vehicles
  *                                It expects nodes, not positions in the sequence
- * @param relevantNeighbors for a node, you must specify the
+ * @param relevantNeighbors for a node, specify here the set of nodes that can define a segment to be inserted afer the node.
+ *                          TODO: we do not distinguish the nodes by role here, so it is a bit useless
  * @param vrp the VRP problem
  * @param neighborhoodName the name for this neighborhood
  * @param selectInsertionPointBehavior first or est for the insertion point
@@ -41,7 +42,7 @@ import oscar.cbls.core.search._
  * @param skipOnePointMove if set to true, segment will include more than one point.
  * @param breakSymmetry there is a symmetry in the 3-opt
  *                      when moving a segment within the same vehicle without flipping it,
- *                      it is equivalent to moving hte nodes between the segment and the insertion position in the other direction
+ *                      it is equivalent to moving the nodes between the segment and the insertion position in the other direction
  * @param tryFlip true if flip should be considered, false otherwise.
  */
 case class ThreeOpt(potentialInsertionNodes:()=>Iterable[Int], //must be routed, can include vehicles

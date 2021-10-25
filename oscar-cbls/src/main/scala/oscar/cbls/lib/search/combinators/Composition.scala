@@ -348,3 +348,96 @@ case class Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAccept
     Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAcceptableMoves=true)
   }
 }
+
+
+/**
+ * ejection chains built ouf of a neighborhood
+ * it is meant to be used as follows:
+ *    neighborhood dynAndThen EjectionChain(_, move => nestStepNeighborhood)
+ *
+ * @param initMove the initial move to start the chain
+ * @param nextMove
+ * @param shouldStop
+ * @param acc
+ * @param aggregateMoves
+ * @param name
+ */
+case class EjectionChains(initMove:Move,
+                          nextMove: Move => Neighborhood,
+                          shouldStop:Int => Boolean,
+                          acc:(Long,Long) => Boolean,
+                          aggregateMoves:Boolean = false,
+                          name:String = "EjectionChains") extends NeighborhoodCombinator() {
+  override def getMove(obj: Objective,
+                       initialObj:Long,
+                       acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
+
+    if(aggregateMoves) {
+
+      val startSolution = obj.model.solution(true)
+
+      var prevMove: Move = initMove
+      var currentObj: Long = initialObj
+      var nbMoves: Int = 0
+      while (!shouldStop(nbMoves) && !acceptanceCriterion(initialObj, currentObj)) {
+        nextMove(prevMove).getMove(obj, currentObj, acceptanceCriterion = acc) match {
+          case NoMoveFound =>
+            if(nbMoves >=1 && acceptanceCriterion(initialObj, currentObj)) {
+              val endSolution = obj.model.solution(true)
+              startSolution.restoreDecisionVariables()
+              return MoveFound(LoadSolutionMove(endSolution, currentObj, name))
+            }else {
+              startSolution.restoreDecisionVariables()
+              return NoMoveFound
+            }
+          case MoveFound(move) =>
+            move.commit()
+            prevMove = move
+            currentObj = move.objAfter
+            nbMoves = nbMoves + 1
+        }
+      }
+      if(nbMoves >=1 && acceptanceCriterion(initialObj, currentObj)) {
+        val endSolution = obj.model.solution(true)
+        startSolution.restoreDecisionVariables()
+        MoveFound(LoadSolutionMove(endSolution, currentObj, name))
+      }else {
+        startSolution.restoreDecisionVariables()
+        NoMoveFound
+      }
+    }else {
+      val startSolution = obj.model.solution(true)
+      var allMoves:List[Move] = Nil
+      var prevMove: Move = initMove
+      var currentObj: Long = initialObj
+      var nbMoves: Int = 0
+      while (!shouldStop(nbMoves) && !acceptanceCriterion(initialObj, currentObj)) {
+        nextMove(prevMove).getMove(obj, currentObj, acceptanceCriterion = acc) match {
+          case NoMoveFound =>
+            if(nbMoves >=1 && acceptanceCriterion(initialObj, currentObj)) {
+              val endSolution = obj.model.solution(true)
+              startSolution.restoreDecisionVariables()
+              return MoveFound(LoadSolutionMove(endSolution, currentObj, name))
+            }else {
+              startSolution.restoreDecisionVariables()
+              return NoMoveFound
+            }
+          case MoveFound(move) =>
+            move.commit()
+            prevMove = move
+            currentObj = move.objAfter
+            nbMoves = nbMoves + 1
+            allMoves = move :: allMoves
+        }
+      }
+
+      if(nbMoves >= 1 && acceptanceCriterion(initialObj, currentObj)) {
+        startSolution.restoreDecisionVariables()
+        MoveFound(CompositeMove(allMoves.reverse, currentObj, name))
+      }else {
+        startSolution.restoreDecisionVariables()
+        NoMoveFound
+      }
+    }
+  }
+}

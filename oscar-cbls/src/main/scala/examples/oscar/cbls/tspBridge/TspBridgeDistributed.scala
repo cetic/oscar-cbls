@@ -172,7 +172,8 @@ object TspBridgeDistributed extends App {
             bridgeConditionArray(bridge) := 1
           }},
           maxRestartWithoutImprovement = 2,
-          obj,
+          minRestarts = 3,
+          obj = obj,
           name = "OpenAllBridges"))
       )
 
@@ -211,7 +212,7 @@ object TspBridgeDistributed extends App {
     supervisor.createLocalWorker(store2, search2)
   }
 
-  search.verbose = 1
+  search.verbose = 2
 
   search.doAllMoves(obj = obj)
 
