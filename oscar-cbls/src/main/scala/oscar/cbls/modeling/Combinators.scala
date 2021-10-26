@@ -582,7 +582,18 @@ class NeighborhoodOps(n:Neighborhood){
   def showObjectiveFunction(obj: Objective, title: String = "Objective function vs. time[s]", minCap: Long = 0L, maxCap:Long = Long.MaxValue, percentile: Int = 100, otherValues: Array[(String, () => Long)] = Array.empty) =
     new ShowObjectiveFunction(n,obj, title, minCap, maxCap, percentile, otherValues)
 
+
   /**
+   * Displays a graphical window to interrupt or kill a search
+   * @param hardStop true for a hard stop, false for a soft one
+   *                 hard  interrupts ongoing neighborhoods,
+   *                 soft waits for current neighborhood to finish)
+   * @param message a message for the title of the window
+   */
+  def graphicalInterrupt(hardStop:Boolean = false,message:String = "Stop search"):GraphicalInterrupt =
+    new GraphicalInterrupt(n:Neighborhood,hardStop,message)
+
+    /**
    * this combinator attaches a custom code to a given neighborhood.
    * the code is called whenever a move from this neighborhood is taken for the first time.
    * notice that this neighborhood is reset, so first time can occur several times.

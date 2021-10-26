@@ -6,6 +6,9 @@ import oscar.cbls.util.Properties
 import oscar.cbls.visual.SingleFrameWindow
 import oscar.cbls.visual.obj.ObjectiveFunctionDisplay
 
+import java.awt.event.ActionEvent
+import java.awt.{BorderLayout, FlowLayout}
+import javax.swing.JLabel
 import scala.concurrent.duration.{Duration, DurationInt}
 
 trait UtilityCombinators{
@@ -477,6 +480,76 @@ case class WatchDog(a:Neighborhood, calibrationRuns:Int = 5, cutMultiplier:Doubl
         case x => x
         //not found
       }
+    }
+  }
+}
+
+
+/**
+ * Displays a graphical window to interrupt or kill a search
+ * @param n the base neighborhood
+ * @param hardStop true for a hard stop, false for a soft one
+ *                 hard  interrupts ongoing neighborhoods,
+ *                 soft waits for current neighborhood to finish)
+ * @param message a message for the title of the window
+ */
+class GraphicalInterrupt(n:Neighborhood,hardStop:Boolean,message:String = "Stop search") extends NeighborhoodCombinator(n){
+
+  var stopped = false
+
+  import javax.swing.{JFrame, JPanel, JButton}
+
+  class StopWindow() extends JFrame {
+    setTitle(message)
+    setSize(600, 200)
+
+    val panel = new JPanel(new BorderLayout())
+    // Add button to JPanel
+
+    val label = new JLabel("<HTML>\"kill\" will exit the application immediately <BR> \"stop\" will mark the search as complete</HTML>")
+    import java.awt.Font
+    label.setFont(new Font("Serif", Font.PLAIN, 32))
+    panel.add(label,"North")
+
+    val panel2 = new JPanel(new FlowLayout(FlowLayout.CENTER))
+    panel2.setSize(600, 50)
+    panel.add(panel2,"South")
+
+    // Create JButton and JPanel
+    val stopButton = new JButton("stop")
+    stopButton.addActionListener((_: ActionEvent) => {
+      stopped = true
+      this.setVisible(false)
+    })
+    stopButton.setFont(new Font("Serif", Font.PLAIN, 32))
+    panel2.add(stopButton,"West")
+
+    val killButton = new JButton("kill")
+    killButton.addActionListener((_: ActionEvent) => {
+      System.exit(0)
+    })
+    killButton.setFont(new Font("Serif", Font.PLAIN, 32))
+    panel2.add(killButton,"East")
+
+    //TODO: add pause button
+
+    // And JPanel needs to be added to the JFrame itself!
+    this.getContentPane.add(panel)
+    setLocationRelativeTo(null)
+    setResizable(false)
+    setVisible(true)
+  }
+
+  val myStop = new StopWindow()
+  //SingleFrameWindow.showFrame(myStop,title = message)
+
+  override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+    if(stopped) NoMoveFound
+    else n.getMove(obj, initialObj, acceptanceCriterion) match{
+      case NoMoveFound =>
+        myStop.setVisible(false)
+        NoMoveFound
+      case x => x
     }
   }
 }

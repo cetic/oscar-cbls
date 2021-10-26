@@ -22,7 +22,7 @@ import oscar.cbls.core.search.{Best, Neighborhood}
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.minmax.MinConstArrayValueWise
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, EjectionChains, Mu, Profile}
+import oscar.cbls.lib.search.combinators.{BestSlopeFirst, EjectionChains, GraphicalInterrupt, Mu, Profile}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.util.{Demo, StopWatch}
 import oscar.cbls.visual.SingleFrameWindow
@@ -142,7 +142,7 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
       )}) name "mergeWarehouses"
   }
 
-  val neighborhood = (
+  val neighborhood = ((
     BestSlopeFirst(
       List(
         Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
@@ -153,11 +153,14 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
       ),refresh = W/10)
       onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5,name="smallRandom"), 2, obj)
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,name="bigRandom"), 1, obj)
-    ) exhaust Profile(muLine(4,3,15)) afterMove(
+    )
+    exhaust Profile(muLine(4,3,15)) afterMove(
     if(this.getWatch > lastDisplay + displayDelay) {
       visual.redraw(openWarehouses.value)
       lastDisplay = this.getWatch
-    }) showObjectiveFunction obj
+    })
+    showObjectiveFunction obj
+    graphicalInterrupt(true))
 
   neighborhood.verbose = 2
 
