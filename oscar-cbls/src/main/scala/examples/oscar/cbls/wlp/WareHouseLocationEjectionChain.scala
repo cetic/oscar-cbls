@@ -125,18 +125,31 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
             val setTo = lastMove.value
             val lastChangedWarehouse = lastMove.id
             val allWarehouses = assigns.map(_.id)
-            val otherWarehouses = if (setTo == 0) kNearestClosedWarehouses(lastChangedWarehouse, kClosed).filter(!allWarehouses.contains(_)) else kNearestOpenWarehouses(lastChangedWarehouse, kOpen).filter(!allWarehouses.contains(_))
+            val otherWarehouses = if (setTo == 0) kNearestClosedWarehouses(lastChangedWarehouse, kClosed).filter(!allWarehouses.contains(_))
+            else kNearestOpenWarehouses(lastChangedWarehouse, kOpen).filter(!allWarehouses.contains(_))
             AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse", searchZone = () => otherWarehouses, selectIndiceBehavior = Best(), hotRestart = false)
         },
         shouldStop = _ >= maxLength)) name s"EjectionChain($maxLength,$kOpen,$kClosed")
 
-  val neighborhood =(
+  def mergeWarehouses(kClosed:Int,kOpen:Int):Neighborhood = {
+    AssignNeighborhood(warehouseOpenArray,searchZone = openWarehouses) dynAndThen(switchMove => {
+      val setTo = switchMove.value
+      require(setTo == 0)
+      SwapsNeighborhood(warehouseOpenArray,
+        searchZone1 = () => kNearestClosedWarehouses(switchMove.id, kClosed).filter(_ != switchMove.id),
+        searchZone2 = () => {case (w2,oldValue) => require(oldValue == 0); kNearestOpenWarehouses(w2, kOpen)},
+        symmetryCanBeBrokenOnIndices = false
+      )}) name "mergeWarehouses"
+  }
+
+  val neighborhood = (
     BestSlopeFirst(
       List(
         Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
         Profile(swapsK(20)), //we set a minimal size because the KNearest is very expensive if the size is small
-       // Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),
-        Profile(ejection(maxLength = 10,kOpen= 5, kClosed = 20))
+        // Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),
+        Profile(mergeWarehouses(kClosed = 30,kOpen = 10)),
+        //Profile(ejection(maxLength = 10,kOpen= 5, kClosed = 20))
       ),refresh = W/10)
       onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5,name="smallRandom"), 2, obj)
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,name="bigRandom"), 1, obj)
@@ -144,8 +157,7 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
     if(this.getWatch > lastDisplay + displayDelay) {
       visual.redraw(openWarehouses.value)
       lastDisplay = this.getWatch
-    }
-    ) showObjectiveFunction obj
+    }) showObjectiveFunction obj
 
   neighborhood.verbose = 2
 
