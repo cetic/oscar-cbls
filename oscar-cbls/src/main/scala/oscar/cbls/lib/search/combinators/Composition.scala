@@ -363,7 +363,7 @@ case class Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAccept
  * @param name
  */
 case class EjectionChains(initMove:Move,
-                          nextNeighborhood: Move => Neighborhood,
+                          nextNeighborhood: List[Move] => Neighborhood,
                           shouldStop:Int => Boolean,
                           acc:(Long,Long) => Boolean = (oldObj,newObj) => newObj < oldObj,
                           aggregateMoves:Boolean = false,
@@ -376,12 +376,12 @@ case class EjectionChains(initMove:Move,
 
       val startSolution = obj.model.solution(true)
 
-      var prevMove: Move = initMove
+      var prevMoves: List[Move] = List(initMove)
       var currentObj: Long = initialObj
 
       var nbMoves: Int = 0
       while (!shouldStop(nbMoves) && !acceptanceCriterion(initialObj, currentObj)) {
-        nextNeighborhood(prevMove).getMove(obj, currentObj, acceptanceCriterion = acc) match {
+        nextNeighborhood(prevMoves).getMove(obj, currentObj, acceptanceCriterion = acc) match {
           case NoMoveFound =>
             if(acceptanceCriterion(initialObj, currentObj)) {
               val endSolution = obj.model.solution(true)
@@ -397,7 +397,7 @@ case class EjectionChains(initMove:Move,
             }
           case MoveFound(move) =>
             move.commit()
-            prevMove = move
+            prevMoves = move :: prevMoves
             currentObj = move.objAfter
             nbMoves = nbMoves + 1
         }
@@ -417,12 +417,12 @@ case class EjectionChains(initMove:Move,
     }else {
       val startSolution = obj.model.solution(true)
       var allMoves:List[Move] = Nil
-      var prevMove: Move = initMove
+      var prevMoves: List[Move] = List(initMove)
       var currentObj: Long = initialObj
       var nbMoves: Int = 0
       while (!shouldStop(nbMoves) && !acceptanceCriterion(initialObj, currentObj)) {
         //it start from obj.value, not from currentObj because when used in a cross-product, initObj != obj.value
-        nextNeighborhood(prevMove).getMove(obj, obj.value, acceptanceCriterion = acc) match {
+        nextNeighborhood(prevMoves).getMove(obj, obj.value, acceptanceCriterion = acc) match {
           case NoMoveFound =>
             if(acceptanceCriterion(initialObj, currentObj)) {
               if(nbMoves >= 1){
@@ -436,7 +436,7 @@ case class EjectionChains(initMove:Move,
             }
           case MoveFound(move) =>
             move.commit()
-            prevMove = move
+            prevMoves = move :: prevMoves
             currentObj = move.objAfter
             nbMoves = nbMoves + 1
             allMoves = move :: allMoves

@@ -120,10 +120,12 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
       EjectionChains(
         initMove,
         nextNeighborhood = {
-          case assign: AssignMove =>
-            val setTo = assign.value
-            val lastChangedWarehouse = assign.id
-            val otherWarehouses = if (setTo == 0) kNearestClosedWarehouses(lastChangedWarehouse, kClosed) else kNearestOpenWarehouses(lastChangedWarehouse, kOpen)
+          case assigns: List[AssignMove] =>
+            val lastMove = assigns.head
+            val setTo = lastMove.value
+            val lastChangedWarehouse = lastMove.id
+            val allWarehouses = assigns.map(_.id)
+            val otherWarehouses = if (setTo == 0) kNearestClosedWarehouses(lastChangedWarehouse, kClosed).filter(!allWarehouses.contains(_)) else kNearestOpenWarehouses(lastChangedWarehouse, kOpen).filter(!allWarehouses.contains(_))
             AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse", searchZone = () => otherWarehouses, selectIndiceBehavior = Best(), hotRestart = false)
         },
         shouldStop = _ >= maxLength)) name s"EjectionChain($maxLength,$kOpen,$kClosed")
@@ -147,7 +149,7 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
 
   neighborhood.verbose = 2
 
-  Demo.startUpPause()
+  //Demo.startUpPause()
 
   neighborhood.doAllMoves(obj=obj)
 
