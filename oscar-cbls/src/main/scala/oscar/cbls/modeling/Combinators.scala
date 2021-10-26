@@ -590,8 +590,8 @@ class NeighborhoodOps(n:Neighborhood){
    *                 soft waits for current neighborhood to finish)
    * @param message a message for the title of the window
    */
-  def graphicalInterrupt(hardStop:Boolean = false,message:String = "Stop search"):GraphicalInterrupt =
-    new GraphicalInterrupt(n:Neighborhood,hardStop,message)
+  def graphicalInterrupt(message:String = "Stop search",hardStop:Boolean = false):GraphicalInterrupt =
+    new GraphicalInterrupt(n:Neighborhood,message,hardStop)
 
     /**
    * this combinator attaches a custom code to a given neighborhood.

@@ -493,7 +493,7 @@ case class WatchDog(a:Neighborhood, calibrationRuns:Int = 5, cutMultiplier:Doubl
  *                 soft waits for current neighborhood to finish)
  * @param message a message for the title of the window
  */
-class GraphicalInterrupt(n:Neighborhood,hardStop:Boolean,message:String = "Stop search") extends NeighborhoodCombinator(n){
+class GraphicalInterrupt(n:Neighborhood, message:String = "Stop search", hardStop:Boolean) extends NeighborhoodCombinator(n){
 
   var stopped = false
 

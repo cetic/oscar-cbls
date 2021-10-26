@@ -22,9 +22,9 @@ import oscar.cbls.core.search.{Best, Neighborhood}
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.minmax.MinConstArrayValueWise
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, EjectionChains, GraphicalInterrupt, Mu, Profile}
+import oscar.cbls.lib.search.combinators.{BestSlopeFirst, EjectionChains, Mu, Profile}
 import oscar.cbls.lib.search.neighborhoods._
-import oscar.cbls.util.{Demo, StopWatch}
+import oscar.cbls.util.StopWatch
 import oscar.cbls.visual.SingleFrameWindow
 import oscar.cbls.visual.wlp.WareHouseLocationMap
 
@@ -160,7 +160,7 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
       lastDisplay = this.getWatch
     })
     showObjectiveFunction obj
-    graphicalInterrupt(true))
+    graphicalInterrupt("Warehouse Location"))
 
   neighborhood.verbose = 2
 
