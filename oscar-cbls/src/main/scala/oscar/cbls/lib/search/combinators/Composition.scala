@@ -3,7 +3,7 @@ package oscar.cbls.lib.search.combinators
 import oscar.cbls._
 import oscar.cbls.core.computation.{AbstractVariable, Solution, Store}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{CallBackMove, CompositeMove, DoNothingNeighborhood, LoadSolutionMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult, SupportForAndThenChaining}
+import oscar.cbls.core.search.{CallBackMove, CompositeMove, DoNothingMove, DoNothingNeighborhood, LoadSolutionMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult, SupportForAndThenChaining}
 
 abstract class NeighborhoodCombinatorNoProfile(a: Neighborhood*) extends NeighborhoodCombinator(a:_*){
   override def collectProfilingStatistics: List[Array[String]] = List.empty
@@ -356,14 +356,14 @@ case class Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAccept
  *    neighborhood dynAndThen EjectionChain(_, move => nestStepNeighborhood)
  *
  * @param initMove the initial move to start the chain
- * @param nextMove
+ * @param nextNeighborhood
  * @param shouldStop
  * @param acc
  * @param aggregateMoves
  * @param name
  */
 case class EjectionChains(initMove:Move,
-                          nextMove: Move => Neighborhood,
+                          nextNeighborhood: Move => Neighborhood,
                           shouldStop:Int => Boolean,
                           acc:(Long,Long) => Boolean = (oldObj,newObj) => newObj < oldObj,
                           aggregateMoves:Boolean = false,
@@ -381,12 +381,16 @@ case class EjectionChains(initMove:Move,
 
       var nbMoves: Int = 0
       while (!shouldStop(nbMoves) && !acceptanceCriterion(initialObj, currentObj)) {
-        nextMove(prevMove).getMove(obj, currentObj, acceptanceCriterion = acc) match {
+        nextNeighborhood(prevMove).getMove(obj, currentObj, acceptanceCriterion = acc) match {
           case NoMoveFound =>
-            if(nbMoves >=1 && acceptanceCriterion(initialObj, currentObj)) {
+            if(acceptanceCriterion(initialObj, currentObj)) {
               val endSolution = obj.model.solution(true)
               startSolution.restoreDecisionVariables()
-              return MoveFound(LoadSolutionMove(endSolution, currentObj, name))
+              if(nbMoves >= 1){
+                return MoveFound(LoadSolutionMove(endSolution, currentObj, name))
+              }else{
+                return MoveFound(DoNothingMove(currentObj,name))
+              }
             }else {
               startSolution.restoreDecisionVariables()
               return NoMoveFound
@@ -398,10 +402,14 @@ case class EjectionChains(initMove:Move,
             nbMoves = nbMoves + 1
         }
       }
-      if(nbMoves >=1 && acceptanceCriterion(initialObj, currentObj)) {
+      if(acceptanceCriterion(initialObj, currentObj)) {
         val endSolution = obj.model.solution(true)
         startSolution.restoreDecisionVariables()
-        MoveFound(LoadSolutionMove(endSolution, currentObj, name))
+        if(nbMoves >= 1){
+          MoveFound(LoadSolutionMove(endSolution, currentObj, name))
+        }else{
+          MoveFound(DoNothingMove(currentObj,name))
+        }
       }else {
         startSolution.restoreDecisionVariables()
         NoMoveFound
@@ -413,11 +421,15 @@ case class EjectionChains(initMove:Move,
       var currentObj: Long = initialObj
       var nbMoves: Int = 0
       while (!shouldStop(nbMoves) && !acceptanceCriterion(initialObj, currentObj)) {
-        nextMove(prevMove).getMove(obj, obj.value, acceptanceCriterion = acc) match {
+        //it start from obj.value, not from currentObj because when used in a cross-product, initObj != obj.value
+        nextNeighborhood(prevMove).getMove(obj, obj.value, acceptanceCriterion = acc) match {
           case NoMoveFound =>
-            if(nbMoves >= 1 && acceptanceCriterion(initialObj, currentObj)) {
-              startSolution.restoreDecisionVariables()
-              return MoveFound(CompositeMove(allMoves.reverse, currentObj, name))
+            if(acceptanceCriterion(initialObj, currentObj)) {
+              if(nbMoves >= 1){
+                return MoveFound(CompositeMove(allMoves.reverse, currentObj, name))
+              }else{
+                return MoveFound(DoNothingMove(currentObj,name))
+              }
             }else {
               startSolution.restoreDecisionVariables()
               return NoMoveFound
@@ -430,12 +442,15 @@ case class EjectionChains(initMove:Move,
             allMoves = move :: allMoves
         }
       }
+      startSolution.restoreDecisionVariables()
 
-      if(nbMoves >= 1 && acceptanceCriterion(initialObj, currentObj)) {
-        startSolution.restoreDecisionVariables()
-        MoveFound(CompositeMove(allMoves.reverse, currentObj, name))
+      if(acceptanceCriterion(initialObj, currentObj)) {
+        if(nbMoves >= 1){
+          MoveFound(CompositeMove(allMoves.reverse, currentObj, name))
+        }else{
+          MoveFound(DoNothingMove(currentObj,name))
+        }
       }else {
-        startSolution.restoreDecisionVariables()
         NoMoveFound
       }
     }

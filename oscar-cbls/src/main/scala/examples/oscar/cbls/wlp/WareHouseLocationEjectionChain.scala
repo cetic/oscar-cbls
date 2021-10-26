@@ -119,7 +119,7 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
       dynAndThen(initMove =>
       EjectionChains(
         initMove,
-        nextMove = {
+        nextNeighborhood = {
           case assign: AssignMove =>
             val setTo = assign.value
             val lastChangedWarehouse = assign.id
@@ -132,8 +132,8 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
     BestSlopeFirst(
       List(
         Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
-        Profile(swapsK(20) guard(() => openWarehouses.value.size >= 5)), //we set a minimal size because the KNearest is very expensive if the size is small
-        Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5)),
+        Profile(swapsK(20)), //we set a minimal size because the KNearest is very expensive if the size is small
+       // Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),
         Profile(ejection(maxLength = 10,kOpen= 5, kClosed = 20))
       ),refresh = W/10)
       onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5,name="smallRandom"), 2, obj)
