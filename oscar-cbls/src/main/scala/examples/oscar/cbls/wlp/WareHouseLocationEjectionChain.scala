@@ -129,7 +129,7 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
             else kNearestOpenWarehouses(lastChangedWarehouse, kOpen).filter(!allWarehouses.contains(_))
             AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse", searchZone = () => otherWarehouses, selectIndiceBehavior = Best(), hotRestart = false)
         },
-        shouldStop = _ >= maxLength)) name s"EjectionChain($maxLength,$kOpen,$kClosed")
+        shouldStop = _ >= maxLength)) name s"Eject($maxLength,$kOpen,$kClosed)")
 
   def mergeWarehouses(kClosed:Int,kOpen:Int):Neighborhood = {
     AssignNeighborhood(warehouseOpenArray,searchZone = openWarehouses) dynAndThen(switchMove => {
@@ -138,18 +138,19 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
       SwapsNeighborhood(warehouseOpenArray,
         searchZone1 = () => kNearestClosedWarehouses(switchMove.id, kClosed).filter(_ != switchMove.id),
         searchZone2 = () => {case (w2,oldValue) => require(oldValue == 0); kNearestOpenWarehouses(w2, kOpen)},
-        symmetryCanBeBrokenOnIndices = false
-      )}) name "mergeWarehouses"
+        symmetryCanBeBrokenOnIndices = false,
+        hotRestart = false
+      )}) name "merge"
   }
 
   val neighborhood = ((
     BestSlopeFirst(
       List(
         Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
-        Profile(swapsK(20)), //we set a minimal size because the KNearest is very expensive if the size is small
+        //Profile(swapsK(20)), //we set a minimal size because the KNearest is very expensive if the size is small
         // Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),
         Profile(mergeWarehouses(kClosed = 30,kOpen = 10)),
-        //Profile(ejection(maxLength = 10,kOpen= 5, kClosed = 20))
+        Profile(ejection(maxLength = 5,kOpen= 5, kClosed = 20))
       ),refresh = W/10)
       onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5,name="smallRandom"), 2, obj)
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,name="bigRandom"), 1, obj)
@@ -162,7 +163,7 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
     showObjectiveFunction obj
     graphicalInterrupt("Warehouse Location"))
 
-  neighborhood.verbose = 2
+  neighborhood.verbose = 1
 
   //Demo.startUpPause()
 

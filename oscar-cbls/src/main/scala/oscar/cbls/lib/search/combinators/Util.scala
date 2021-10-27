@@ -254,6 +254,7 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
     Array[String](s"$a", s"$nbCalls", s"$nbFound", s"$totalGain",
       s"$totalTimeSpent", s"$gainPerCall", s"$callDuration", s"$slope",
       s"$avgTimeSpendNoMove", s"$avgTimeSpendMove", s"$totalTimeSpentNoMoveFound")
+      //TODO: (${if(nbCalls == 0) "NA" else (100*nbFound.toFloat/nbCalls.toFloat).toInt}%)
 
   //  override def toString: String = "Statistics(" + a + " nbCalls:" + nbCalls + " nbFound:" + nbFound + " totalGain:" + totalGain + " totalTimeSpent " + totalTimeSpent + " ms timeSpendWithMove:" + totalTimeSpentMoveFound + " ms totalTimeSpentNoMoveFound " + totalTimeSpentNoMoveFound + " ms)"
   override def toString: String = s"Profile($a)"
