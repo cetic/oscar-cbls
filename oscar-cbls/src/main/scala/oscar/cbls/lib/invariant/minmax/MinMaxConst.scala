@@ -1,17 +1,17 @@
 /*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
+ * OscaR is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * OscaR is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License  for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+ * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+ ******************************************************************************/
 package oscar.cbls.lib.invariant.minmax
 
 import oscar.cbls._
@@ -127,7 +127,7 @@ case class MaxConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = 
  * */
 abstract class MiaxConstArray(vars: Array[Int], cond: SetValue, default: Int)
   extends IntInvariant
-  with SetNotificationTarget{
+    with SetNotificationTarget{
 
   var h: BinomialHeapWithMoveInt = new BinomialHeapWithMoveInt(i => Ord(vars(i)), vars.length, vars.length)
 
@@ -142,36 +142,12 @@ abstract class MiaxConstArray(vars: Array[Int], cond: SetValue, default: Int)
 
   def Ord(v: Int): Int
 
-  if (h.isEmpty) {
-    this := default
-  } else {
-    this := vars(h.getFirst)
-  }
+  this := (if (h.isEmpty) default else vars(h.getFirst))
 
   override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
-    for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
-    for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
-    if (h.isEmpty) {
-      this := default
-    } else {
-      this := vars(h.getFirst)
-    }
-  }
-
-  @inline
-  def notifyInsertOn(v: ChangingSetValue, value: Int): Unit = {
-    assert(v == cond)
-
-    //mettre a jour le heap
-    h.insert(value)
-  }
-
-  @inline
-  def notifyDeleteOn(v: ChangingSetValue, value: Int): Unit = {
-    assert(v == cond)
-
-    //mettre a jour le heap
-    h.delete(value)
+    for (added <- addedValues) h.insert(added)
+    for (deleted <- removedValues) h.delete(deleted)
+    this := (if (h.isEmpty) default else vars(h.getFirst))
   }
 
   override def checkInternals(c: Checker): Unit = {
@@ -190,7 +166,7 @@ abstract class MiaxConstArray(vars: Array[Int], cond: SetValue, default: Int)
  * */
 abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int, maxBacklog:Int = Int.MaxValue)
   extends IntInvariant
-  with SetNotificationTarget{
+    with SetNotificationTarget{
 
   //  var nbAnihilation = 0L
   //  var nbDoIt = 0L
@@ -301,29 +277,20 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
 
   override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]): Unit = {
     //insert first because reduces chances of flush
-    val itAdded = addedValues.iterator
-    while(itAdded.hasNext){
-      notifyInsertOn(v: ChangingSetValue, itAdded.next())
-    }
-
-    val itDeleted = removedValues.iterator
-    while(itDeleted.hasNext){
-      notifyDeleteOn(v: ChangingSetValue, itDeleted.next())
-    }
+    assert(v == cond)
+    for (added <- addedValues) notifyInsert(added)
+    for (deleted <- removedValues) notifyDelete(deleted)
   }
 
   @inline
-  final def notifyInsertOn(v: ChangingSetValue, value: Int): Unit = {
-    assert(v == cond)
-    if(consideredValue(value)){ //anihilation
+  final def notifyInsert(value: Int): Unit = {
+    if(consideredValue(value)){ //value delete was postponed, anihilation
       assert(isBacklogged(value))
       isBacklogged(value) = false
-      return
-    }
-    if(equalOrNotImpactingMiax(vars(value))){//backlog
+    } else if(equalOrNotImpactingMiax(vars(value))){// put into backlog
       trimBackLog()
       putIntoBackLog(value)
-    }else{//impacted
+    }else{ //miax impacted, update heap and output
       this := vars(value)
       h.insert(value)
       consideredValue(value) = true
@@ -331,14 +298,12 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
   }
 
   @inline
-  final def notifyDeleteOn(v: ChangingSetValue, value: Int): Unit = {
-    assert(v == cond)
-    if(!consideredValue(value)){ //anihilation
+  final def notifyDelete(value: Int): Unit = {
+    if(!consideredValue(value)){ //value insert was postponed, anihilation
       assert(isBacklogged(value))
       isBacklogged(value) = false
       return
-    }
-    if(this.newValue == vars(value)){//impacted, flush backLog
+    }else if(this.newValue == vars(value)){//miax impacted, flush backLog
       processBackLog()
       h.delete(value)
       consideredValue(value) = false

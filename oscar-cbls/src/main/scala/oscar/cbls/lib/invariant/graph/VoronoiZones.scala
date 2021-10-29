@@ -1,3 +1,4 @@
+
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -25,6 +26,19 @@ import oscar.cbls.lib.invariant.set.SetMap
 import scala.collection.immutable.{SortedMap, SortedSet}
 
 object VoronoiZones{
+
+  /**
+   * Creates an invariant implementing Voronoi zones on the conditional graph
+   * @param graph a conditional graph (constant)
+   * @param graphDiameterOverApprox an over-approximation of the diameter of the graph (lowest possible, but sum of edge length is acceptable)
+   * @param openConditions a setVar telling the set of open conditions in the graph (use the indexes of conditions)
+   * @param centroids a set var telling the centroids in the graph (use the indexes of nodes)
+   * @param trackedNodes a set of node in the graph such that we want to kow the closest centroid to them, as well as the distance to the closest centroid
+   * @param m the model
+   * @param defaultDistanceForUnreachableNodes in case a node is not reacheable from any centroid (disconnected or zero centroid) this is the distance
+   * @param defaultCentroidForOrphanNodes in case a node is not reacheable from any centroid (disconnected or zero centroid) this is the centroid
+   * @return the voronoiZones invariant. Check the [[VoronoiZones.trackedNodeToDistanceAndCentroidMap]] property to access the outputs
+   */
   def apply(graph:ConditionalGraph,
             graphDiameterOverApprox:Long,
             openConditions:SetValue,

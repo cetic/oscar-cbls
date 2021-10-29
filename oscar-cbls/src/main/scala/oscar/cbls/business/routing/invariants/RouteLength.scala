@@ -119,9 +119,8 @@ class RouteLength(routes:ChangingSeqValue,
   finishInitialization()
   for(i <- distance) i.setDefiningInvariant(this)
 
-  //TODO: handle inactive checkpoints
   private val savedValues:Array[Long] = computeValueFromScratch(routes.value)
-  protected var checkpoint = routes.value
+  protected var checkpoint: IntSequence = routes.value
 
   protected[this] val isVehicleChangedSinceCheckpoint:Array[Boolean] = Array.fill(v)(false)
   protected var changedVehiclesSinceCheckpoint:QList[Int] = null

@@ -315,7 +315,7 @@ abstract class WeightCorrectionStrategy{
  * @param nbConsecutiveIterationWithConstraintTrueBeforeStrong an additional restriction on hen constraints ca be considered as strong (provided they are true)
  * @param consecutiveFailsBeforeDivByTwo the number of attempts to find a move before the weight is divided by two (otherwise it is only decreased by one)
  * @param maxAttemptsBeforeStop the number of consecutive NoMoveFound before the strategy globally return NoMoveFound
- * @param tryWeight2WhenNoMoveFound when there ias a series of NoMoveFound and the strategy is about to stop, perform a last attempt with weight set to min,
+ * @param tryWeight2WhenNoMoveFound when there is a series of NoMoveFound and the strategy is about to stop, perform a last attempt with weight set to min,
  *                                  to ensure that we are not stuck in a local minimum artificially created by the composition
  */
 class Progressive(override val startWeightForBase: Long,
@@ -326,9 +326,9 @@ class Progressive(override val startWeightForBase: Long,
                   maxAttemptsBeforeStop:Int,
                   tryWeight2WhenNoMoveFound:Boolean) extends WeightCorrectionStrategy {
 
-  var remainingConsecutiveIterationWithConstraintTrueBeforeStrong = nbConsecutiveIterationWithConstraintTrueBeforeStrong
-  var remainingConsecutiveFailsBeforeDivByTwo = consecutiveFailsBeforeDivByTwo
-  var remainingFailsBeforeStop = maxAttemptsBeforeStop
+  var remainingConsecutiveIterationWithConstraintTrueBeforeStrong: Long = nbConsecutiveIterationWithConstraintTrueBeforeStrong
+  var remainingConsecutiveFailsBeforeDivByTwo: Long = consecutiveFailsBeforeDivByTwo
+  var remainingFailsBeforeStop: Int = maxAttemptsBeforeStop
 
   override def weightForBaseReset(): Unit = {
     remainingConsecutiveIterationWithConstraintTrueBeforeStrong = nbConsecutiveIterationWithConstraintTrueBeforeStrong
@@ -393,6 +393,9 @@ class Progressive(override val startWeightForBase: Long,
     }
   }
 }
+
+//TODO
+//class DecreaseWhenExhausted extends WeightCorrectionStrategy {
 
 
 /**

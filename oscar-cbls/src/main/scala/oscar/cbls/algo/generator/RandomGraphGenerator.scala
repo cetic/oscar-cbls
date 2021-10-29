@@ -51,7 +51,7 @@ object RandomGraphGenerator {
       coordinates = pointPosition,
       nodes = nodeArray,
       edges = Array.tabulate(subDistance.size)(edgeId => {
-        val edgeData = scrambled.next
+        val edgeData = scrambled.next()
         new Edge(
           edgeId,
           nodeA = nodeArray(edgeData._1),

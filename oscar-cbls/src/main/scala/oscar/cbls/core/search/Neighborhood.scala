@@ -104,6 +104,7 @@ abstract class Neighborhood(name:String = null) {
    */
   final def profilingStatistics:String = Properties.justifyRightArray(Profile.statisticsHeader :: collectProfilingStatistics/*.map(a => ("" :: a.toList).toArray)*/).mkString("\n")
   def collectProfilingStatistics:List[Array[String]] = List.empty
+  //TODO: profiling stats should als include %founds next to #found
 
   /**
    * the method that returns a move from the neighborhood.

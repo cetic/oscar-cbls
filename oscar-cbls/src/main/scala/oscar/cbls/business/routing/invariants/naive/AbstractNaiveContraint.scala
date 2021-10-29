@@ -363,10 +363,7 @@ abstract class AbstractNaiveRoutingConstraint[U <: Any : Manifest](routes : Chan
 
         }
 
-
         vehicleSearcher = vehicleSearcher.push(sui.oldPosToNewPos)
-
-
 
         prevUpdate
       case sum@SeqUpdateMove(fromIncluded: Int, toIncluded: Int, after: Int, flip: Boolean, prev: SeqUpdate) =>
@@ -441,9 +438,9 @@ abstract class AbstractNaiveRoutingConstraint[U <: Any : Manifest](routes : Chan
         for (vehicle <- 0 until v) initSegmentsOfVehicle(vehicle,value)
         false
 
+      case _ => // Not incremental
+        false
     }
-
-
   }
 
   override def checkInternals(c: Checker): Unit = {

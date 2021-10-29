@@ -2,6 +2,7 @@ package oscar.cbls.test.graph
 
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import oscar.cbls.algo.generator.RandomGraphGenerator
 import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, FloydWarshall, Node}
 
 class FloydWarshallTestSuite extends AnyFunSuite with Matchers {

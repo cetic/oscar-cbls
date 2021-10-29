@@ -392,8 +392,8 @@ class NeighborhoodOps(n:Neighborhood){
     Restart(n,randomizationNeighborhood,maxRestartWithoutImprovement,obj,restartFromBest,minRestarts)
   }
 
-  def onExhaustRestartAfterJump(randomizationProcedure: =>Unit, maxRestartWithoutImprovement:Int, obj:Objective, restartFromBest:Boolean = false, minRestarts:Int = 0,randomizationName:String = "Randomization") = {
-    val jumpNeighborhood = new JumpNeighborhood(randomizationName){
+  def onExhaustRestartAfterJump(randomizationProcedure: =>Unit, maxRestartWithoutImprovement:Int = 5, obj:Objective, restartFromBest:Boolean = false, minRestarts:Int = 0, name:String = "Randomization") = {
+    val jumpNeighborhood = new JumpNeighborhood(name){
       override def doIt(): Unit = randomizationProcedure
     }
     onExhaustRestartAfter(jumpNeighborhood, maxRestartWithoutImprovement, obj, restartFromBest,minRestarts)
@@ -582,7 +582,18 @@ class NeighborhoodOps(n:Neighborhood){
   def showObjectiveFunction(obj: Objective, title: String = "Objective function vs. time[s]", minCap: Long = 0L, maxCap:Long = Long.MaxValue, percentile: Int = 100, otherValues: Array[(String, () => Long)] = Array.empty) =
     new ShowObjectiveFunction(n,obj, title, minCap, maxCap, percentile, otherValues)
 
+
   /**
+   * Displays a graphical window to interrupt or kill a search
+   * @param hardStop true for a hard stop, false for a soft one
+   *                 hard  interrupts ongoing neighborhoods,
+   *                 soft waits for current neighborhood to finish)
+   * @param message a message for the title of the window
+   */
+  def graphicalInterrupt(message:String = "Stop search",hardStop:Boolean = false):GraphicalInterrupt =
+    new GraphicalInterrupt(n:Neighborhood,message,hardStop)
+
+    /**
    * this combinator attaches a custom code to a given neighborhood.
    * the code is called whenever a move from this neighborhood is taken for the first time.
    * notice that this neighborhood is reset, so first time can occur several times.
@@ -662,6 +673,11 @@ class NeighborhoodOps(n:Neighborhood){
    * this combinator overrides accepts all moves (this is the withAcceptanceCriteria, given the fully acceptant criterion
    */
   def acceptAllButStrongViolation = new WithAcceptanceCriterion(n, (_: Long, n: Long) => n!=Long.MaxValue)
+
+  /**
+   * this combinator accept only moves that strictly improve over the best known
+   */
+  def improvingOverBestKnown(bestKnown:() => Long) = new StrictlyImproveOverBestKnown(n: Neighborhood,bestKnown)
 
 
   /**

@@ -27,7 +27,7 @@ import oscar.cbls.visual.SingleFrameWindow
  *
  * @param globalMaxObj1 the max value of objective 1
  * @param globalMinObj2 the min value of objective 2
- * @param solutionAtMax1Mn2 the solution (max1,min2)
+ * @param solutionAtMax1Min2 the solution (max1,min2)
  * @param optimize a function that performs the optimization
  *                 it input a max value for obj2, and an initial solution.
  *                 This initial solution has obj2 < max2, and can be used as initial solution to perform the search.
@@ -52,7 +52,7 @@ import oscar.cbls.visual.SingleFrameWindow
  */
 class BiObjectiveSearch(globalMaxObj1:Long,
                         globalMinObj2:Long,
-                        solutionAtMax1Mn2:Solution,
+                        solutionAtMax1Min2:Solution,
                         optimize:(Long/*maxObj2*/,Solution)  => Option[(Long,Long,Solution)],
                         stopSurface:Long = 0,
                         maxPoints:Int = Int.MaxValue,
@@ -62,7 +62,7 @@ class BiObjectiveSearch(globalMaxObj1:Long,
                         obj1Name: String = "obj1",
                         obj2Name: String = "obj2",
                         filterSquare:(Long,Long,Long,Long) => Boolean = (_:Long,_:Long,_:Long,_:Long) =>true,
-                       stayAlive:Boolean = false
+                        stayAlive:Boolean = false
                        ) {
 
   val (plot,window) = if(visu) {
@@ -84,7 +84,7 @@ class BiObjectiveSearch(globalMaxObj1:Long,
     require(minObj2 <= obj2)
     require(maxObj1 >= obj1)
 
-    val uid = nextSquareUid
+    val uid: Int = nextSquareUid
     nextSquareUid = nextSquareUid+1
 
     var elemInFront:DLLStorageElement[Square] = null
@@ -105,7 +105,7 @@ class BiObjectiveSearch(globalMaxObj1:Long,
     def objString:String = "(" + obj1Name + ":" + obj1 + ";" + obj2Name + ":" + obj2 + ")"
   }
 
-  implicit val A = new Ordering[Square]{
+  implicit val A: Ordering[Square] = new Ordering[Square]{
     override def compare(x: Square, y: Square): Int = x.uid compare y.uid
   }
 
@@ -231,12 +231,12 @@ class BiObjectiveSearch(globalMaxObj1:Long,
     val square1 = Square(
       globalMaxObj1, globalMaxObj1,
       globalMinObj2, globalMinObj2,
-      solutionAtMax1Mn2)
+      solutionAtMax1Min2)
 
     storeSquare(square1,squareList.phantom,isNew=true)
 
     //initialization, search for other extreme of he spectre
-    val startSol = optimize(Long.MaxValue,solutionAtMax1Mn2).get
+    val startSol = optimize(Long.MaxValue,solutionAtMax1Min2).get
     val square = Square(
       startSol._1, globalMaxObj1,
       startSol._2, globalMinObj2,
@@ -272,7 +272,7 @@ class BiObjectiveSearch(globalMaxObj1:Long,
       storeSquare(remainingUpperSquare, oldPrev)
       val prev = remainingUpperSquare.elemInFront
 
-      optimize(c, Option(prev.next.elem).map(_.solution).getOrElse(solutionAtMax1Mn2)) match {
+      optimize(c, Option(prev.next.elem).map(_.solution).getOrElse(solutionAtMax1Min2)) match {
         case None => ;
         //nothing to do, we already updated the structures accordingly
         case Some((obj1, obj2, sol)) =>
