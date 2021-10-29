@@ -45,13 +45,12 @@ object RoutingMatrixGenerator {
    * @param n The number of nodes (considering depots)
    * @return The distance matrix (Array[Array[Float] ] in meters and the position of each node (Array[(Double,Double)])
    */
-  def geographicRandom(n: Int, minLong: Double, maxLong: Double, minLat: Double, maxLat: Double, seed:Long = System.currentTimeMillis()): (Array[Array[Double]], Array[(Double, Double)]) = {
+  def geographicRandom(n: Int, minLong: Double, maxLong: Double, minLat: Double, maxLat: Double): (Array[Array[Double]], Array[(Double, Double)]) = {
 
     //we generate te cost distance matrix
     val deltaLat = maxLat - minLat
     val deltaLong = maxLong - minLong
 
-    val random = new Random(seed = seed)
     def randomLat: Double = (random.nextDouble() * deltaLat) + minLat
 
     def randomLong: Double = (random.nextDouble() * deltaLong) + minLong
@@ -197,10 +196,7 @@ object RoutingMatrixGenerator {
                                         precedences: List[List[Int]] = List.empty,
                                         maxIdlingTimeInSec: Int = 1800,
                                         maxExtraTravelTimeInSec: Int = 900,
-                                        maxTaskDurationInSec: Int = 300,
-                                        seed:Long = System.currentTimeMillis()): Array[TransferFunction] = {
-
-    val random = new Random(seed)
+                                        maxTaskDurationInSec: Int = 300): Array[TransferFunction] = {
 
     def randomVehicleSelection = random.nextInt(v)
 

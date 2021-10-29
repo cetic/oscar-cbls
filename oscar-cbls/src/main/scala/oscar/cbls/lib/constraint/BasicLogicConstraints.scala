@@ -43,13 +43,12 @@ protected class LEA(val left: IntValue, val right: IntValue) extends Constraint 
    * the violation is Max(0L,right-left)
    */
   override val violation =
-    MinusOffsetPos(left,right,0L).setName(this.getClass.getSimpleName + ".violation")
-    //Max2(0L, left - right).setName(this.getClass().getSimpleName() + ".violation")
+    MinusOffsetPos(left,right,0).setName(this.getClass.getSimpleName + ".violation")
 
   /**
    * The violation of each variable is equal to the global violation of the constraint
    */
-  override def violation(v: Value): IntValue = { if (left == v || right == v) violation else 0L }
+  override def violation(v: Value): IntValue = { if (left == v || right == v) violation else 0}
 
   override def checkInternals(c: Checker): Unit = {
     val diff = left.value - right.value

@@ -315,7 +315,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
         val SameAsBefore = Track != null && previousPropagationTrack == Track
         propagating = true
         if (verbose) {
-          println("PropagationStructure: " + (if (Track == null) "total" else "partial") + " propagation triggered by " + UpTo)
+          println("PropagationStructure: " + (if (Track == null) "total" else "partial") + " propagation triggered by " + UpTo + " SameAsBefore:" + SameAsBefore)
         }
         propagateOnTrack(Track, SameAsBefore)
         previousPropagationTrack = Track

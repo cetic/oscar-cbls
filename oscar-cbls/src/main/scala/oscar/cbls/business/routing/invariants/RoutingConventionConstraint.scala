@@ -52,7 +52,10 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
   private var checkpointAtLevel0 = routes.newValue
 
   override def notifySeqChanges(routes: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit ={
+    require(this.routes.value quickEquals lastNotified)
+    require(this.routes.value.toList equals lastNotified.toList)
     digestUpdates(changes)
+    lastNotified = changes.newValue
   }
 
   private def isRouted(node: Int): Boolean ={
@@ -84,6 +87,8 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
     checkpointsChanges = QList(checkpointsChanges.head)
     currentChanges = checkpointsChanges.head
   }
+
+  var lastNotified:IntSequence = routes.value
 
   private def digestUpdates(changes: SeqUpdate): Boolean ={
     changes match {
@@ -141,7 +146,7 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
 
         true
 
-      case _@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Int) =>
+      case s@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Int) =>
         if(checkpointLevel == 0) require(checkpoint quickEquals this.checkpointAtLevel0)
 
         // Pop required (this.checkpointLevel - checkpointLevel) checkpoint level data
@@ -153,12 +158,16 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
 
         true
 
-      case _@SeqUpdateLastNotified(value: IntSequence) =>
+      case SeqUpdateLastNotified(value: IntSequence) =>
+        require(value quickEquals lastNotified)
+        require(value.toList equals lastNotified.toList)
+
         require(value quickEquals routes.value)
         true
 
-      case _@SeqUpdateAssign(value: IntSequence) => false
+      case SeqUpdateAssign(value: IntSequence) =>
 
+        false
       case _ => false // Default case
     }
   }

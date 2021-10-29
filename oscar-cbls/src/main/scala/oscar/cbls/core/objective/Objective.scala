@@ -135,7 +135,7 @@ class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objecti
    */
   override def value: Long = {
     val firstObjectiveValue = mustBeZeroObjective.value
-    if (firstObjectiveValue!=0L) cascadeSize
+    if (firstObjectiveValue != 0) cascadeSize
     else secondObjective.value
   }
 

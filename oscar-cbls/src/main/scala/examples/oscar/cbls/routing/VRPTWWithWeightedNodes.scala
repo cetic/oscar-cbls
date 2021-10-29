@@ -15,8 +15,8 @@ import oscar.cbls.lib.search.combinators.DoOnMove
 import scala.util.Random
 
 object VRPTWWithWeightedNodes extends App{
-  val n = 10
-  val v = 3
+  val n = 11
+  val v = 4
 
   val minLat = 50.404631
   val maxLat = 50.415162
@@ -43,7 +43,7 @@ class VRPTWWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, min
   // The basic VRP problem, containing the basic needed invariant
   val myVRP = new VRP(store, n, v)
   // Generating the nodes of the problem and making it symmetrical
-  val (asymetricDistanceMatrix, geoCoords) = RoutingMatrixGenerator.geographicRandom(n, minLong, maxLong, minLat, maxLat,0)
+  val (asymetricDistanceMatrix, geoCoords) = RoutingMatrixGenerator.geographicRandom(n, minLong, maxLong, minLat, maxLat)
   val symmetricDistanceMatrix = Array.tabulate(n)({ a =>
     Array.tabulate(n)({ b =>
       asymetricDistanceMatrix(a min b)(a max b).toLong
@@ -53,7 +53,7 @@ class VRPTWWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, min
   // Generating timeMatrix and a time window for each node of the problem
   val timeMatrix = symmetricDistanceMatrix
   //Strong time windows
-  val strongSingleNodeTransferFunctions = RoutingMatrixGenerator.generateFeasibleTransferFunctions(n, v, timeMatrix,seed = 1)
+  val strongSingleNodeTransferFunctions = RoutingMatrixGenerator.generateFeasibleTransferFunctions(n, v, timeMatrix)
   //Weak time windows
   val weakSingleNodeTransferFunctions = Array.tabulate(n)(node =>
     if(node < v) strongSingleNodeTransferFunctions(node)
@@ -109,9 +109,10 @@ class VRPTWWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, min
   // The objectif function :
   // If there is no time window violation :
   //    unroutedNode*penalty + totalDistance ==> To minimize
-  val obj = new CascadingObjective(constraintSystem,
-    new CascadingObjective(sum(vehicleTimeWindowViolations),
-      (n - length(myVRP.routes)) * unroutedPenalty + totalDistance + totalExcessTimeForWeakConstraint))
+  val obj = CascadingObjective(
+    constraintSystem,
+    sum(vehicleTimeWindowViolations),
+    (n - length(myVRP.routes)) * unroutedPenalty + totalDistance + totalExcessTimeForWeakConstraint)
 
   store.close()
 
