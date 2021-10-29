@@ -28,6 +28,8 @@ object WeightedNodesPerVehicle{
 class WeightedNodesPerVehicle(routes: ChangingSeqValue, n: Int, v : Int, nodeWeight:Array[Long], weightPerVehicle : Array[CBLSIntVar])
   extends GlobalConstraintCore[Long](routes,v){
 
+  weightPerVehicle.foreach(_.setDefiningInvariant(this))
+
   val preComputedVals: Array[Long] = Array.fill(n)(0L)
 
   /**
