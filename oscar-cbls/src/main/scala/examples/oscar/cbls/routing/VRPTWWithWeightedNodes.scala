@@ -9,13 +9,14 @@ import oscar.cbls.business.routing.visu.RoutingMapTypes
 import oscar.cbls.core.computation.{CBLSIntVar, Domain, Store}
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.CascadingObjective
-import oscar.cbls.core.search.First
+import oscar.cbls.core.search.{First, Neighborhood}
+import oscar.cbls.lib.search.combinators.DoOnMove
 
 import scala.util.Random
 
 object VRPTWWithWeightedNodes extends App{
-  val n = 1000
-  val v = 10
+  val n = 10
+  val v = 3
 
   val minLat = 50.404631
   val maxLat = 50.415162
@@ -42,7 +43,7 @@ class VRPTWWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, min
   // The basic VRP problem, containing the basic needed invariant
   val myVRP = new VRP(store, n, v)
   // Generating the nodes of the problem and making it symmetrical
-  val (asymetricDistanceMatrix, geoCoords) = RoutingMatrixGenerator.geographicRandom(n, minLong, maxLong, minLat, maxLat)
+  val (asymetricDistanceMatrix, geoCoords) = RoutingMatrixGenerator.geographicRandom(n, minLong, maxLong, minLat, maxLat,0)
   val symmetricDistanceMatrix = Array.tabulate(n)({ a =>
     Array.tabulate(n)({ b =>
       asymetricDistanceMatrix(a min b)(a max b).toLong
@@ -52,7 +53,7 @@ class VRPTWWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, min
   // Generating timeMatrix and a time window for each node of the problem
   val timeMatrix = symmetricDistanceMatrix
   //Strong time windows
-  val strongSingleNodeTransferFunctions = RoutingMatrixGenerator.generateFeasibleTransferFunctions(n, v, timeMatrix)
+  val strongSingleNodeTransferFunctions = RoutingMatrixGenerator.generateFeasibleTransferFunctions(n, v, timeMatrix,seed = 1)
   //Weak time windows
   val weakSingleNodeTransferFunctions = Array.tabulate(n)(node =>
     if(node < v) strongSingleNodeTransferFunctions(node)
@@ -64,9 +65,10 @@ class VRPTWWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, min
     })
 
   // Generating node weight (0 for depot and 10 to 20 for nodes)
-  val nodeWeight = Array.tabulate(n)(node => if(node < v)0L else Random.nextInt(11)+10L)
+  val random = new Random(1)
+  val nodeWeight = Array.tabulate(n)(node => if(node < v)0L else random.nextInt(11)+10L)
   // Vehicles have capacity varying from (n-v)/(2*v) to (2*(n-v))/v
-  val vehicleCapacity = Array.fill(v)(15*(Random.nextInt((2*(n-v)/v)-((n-v)/(2*v))+1)+(n-v)/(2*v)))
+  val vehicleCapacity = Array.fill(v)(15*(random.nextInt((2*(n-v)/v)-((n-v)/(2*v))+1)+(n-v)/(2*v)))
 
 
   ////////// INVARIANTS //////////
@@ -153,14 +155,14 @@ class VRPTWWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, min
 
   // bestSlopeFirst => Perform the best neighborhood in the list (meaning the one that reduces the most the objective function)
   // afterMove => after each move update the routing display
-  val searchProcedure =
+  val searchProcedure: Neighborhood =
   routeUnroutedPoint.
     exhaust(onePtMove(20)).
     afterMove(routingDisplay.drawRoutes())
 
   //////////////////// RUN ////////////////////
 
-  searchProcedure.verbose = 1
+  searchProcedure.verbose = 3
   searchProcedure.doAllMoves(obj = obj)
   routingDisplay.drawRoutes(true)
   println(myVRP)
