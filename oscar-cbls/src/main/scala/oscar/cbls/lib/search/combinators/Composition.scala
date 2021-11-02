@@ -351,16 +351,17 @@ case class Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAccept
 
 
 /**
- * ejection chains built ouf of a neighborhood
+ * Ejection chains built ouf of a neighborhood
  * it is meant to be used as follows:
  *    neighborhood dynAndThen EjectionChain(_, move => nestStepNeighborhood)
- *
  * @param initMove the initial move to start the chain
- * @param nextNeighborhood
- * @param shouldStop
- * @param acc
- * @param aggregateMoves
- * @param name
+ * @param nextNeighborhood given the moves already selected in the chain, generates the next neighborhood
+ * @param shouldStop given the number of steps, true is we should sop, false otherwise
+ *                   (ejection chains stops as soon as the global move is acceptable, so this is to restrict the length of hte exploration)
+ * @param acc the acceptance criterion to use in the chain
+ *            the regular acceptance criterion is used to accept the full chain, but each move in the chain is accepted based on this acc
+ * @param aggregateMoves true to aggregate the moves int oa single "solution load", false otherwise
+ * @param name the name to use in the console
  */
 case class EjectionChains(initMove:Move,
                           nextNeighborhood: List[Move] => Neighborhood,
