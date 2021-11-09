@@ -123,7 +123,6 @@ case class AndThen[FirstMoveType<:Move](a: Neighborhood with SupportForAndThenCh
  * @param b given that the move returned by the first neighborhood is committed, we explore the globally improving moves of this one
  *          you pass a method to instantiate b, based on,the currently explored move from a
  * @param maximalIntermediaryDegradation the maximal degradation that is admitted for the intermediary step; the higher, the more moves will be considered
- * @author renaud.delandtsheer@cetic.be
  */
 class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChaining[FirstMoveType],
                                       b:FirstMoveType => Neighborhood,

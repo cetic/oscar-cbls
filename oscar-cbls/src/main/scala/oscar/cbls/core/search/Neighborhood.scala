@@ -16,7 +16,7 @@
  */
 package oscar.cbls.core.search
 
-import oscar.cbls.core.computation.{Solution, Store}
+import oscar.cbls.core.computation.{Solution, Store, Variable}
 import oscar.cbls.core.distrib.{RemoteNeighborhood, Supervisor}
 import oscar.cbls.core.objective.{AbortException, AbortableObjective, LoggingObjective, Objective}
 import oscar.cbls.lib.search.combinators._
@@ -35,6 +35,23 @@ case class MoveFound(m: Move) extends SearchResult {
 
 object SearchResult {
   implicit def moveToSearchResult(m: Move): MoveFound = MoveFound(m)
+}
+
+case class CodedNeighborhood(codedMove:()=>Unit,impactedVariables:Option[Iterable[Variable]] = None,name:String = "CodedNeighborhood") extends Neighborhood(name){
+  override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+    val startSol = impactedVariables match{
+      case None => obj.model.solution(true)
+      case Some(x) => obj.model.saveValues(x)
+    }
+    codedMove()
+    val nextObj = obj.value
+    startSol.restoreDecisionVariables()
+    if(acceptanceCriterion(initialObj,nextObj)){
+      MoveFound(new CodedMove(codedMove,nextObj, name))
+    }else{
+      NoMoveFound
+    }
+  }
 }
 
 abstract class JumpNeighborhood(name:String) extends Neighborhood(name) {
@@ -423,9 +440,32 @@ trait SupportForAndThenChaining[MoveType<:Move] extends Neighborhood{
 
   def instantiateCurrentMove(newObj:Long):MoveType
 
+
   def dynAndThen(other:MoveType => Neighborhood,maximalIntermediaryDegradation: Long = Long.MaxValue):DynAndThen[MoveType] = {
     new DynAndThen[MoveType](this,other,maximalIntermediaryDegradation)
   }
+
+  /**
+   * This is to perform "afterMove" corrections. After the move, we can perform some deterministic (!) corrections,
+   * that are grouped into a move and aggregated to the moves from the left hand side neighborhood
+   *
+   * @param correctAfterMove the procedure that further change something to the model.
+   *                         It mut be deterministic and it is not advised to perform a search here.
+   *                         If you want to perform a search, please use the classical dyAndThen method with regular neighborhoods
+   * @param impactedVariables the set of variables that are impacted by the correctAfterMove procedure.
+   *                          It is optional but a speed improvement is probably gained if it is specified
+   * @param maximalIntermediaryDegradation the maximal degradation that can be done after a move from the left hand side neighborhood.
+   * @return
+   */
+  def dynAndThenDo(correctAfterMove: MoveType => Unit,
+                   impactedVariables:Option[Iterable[Variable]] = None,
+                   maximalIntermediaryDegradation: Long = Long.MaxValue):DynAndThen[MoveType] =
+    dynAndThen(
+      other = firstMove =>
+        CodedNeighborhood(
+          () => correctAfterMove(firstMove),
+          impactedVariables),
+      maximalIntermediaryDegradation = maximalIntermediaryDegradation)
 
   /**
    * to build a composite neighborhood.

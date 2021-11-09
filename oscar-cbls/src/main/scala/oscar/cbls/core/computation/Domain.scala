@@ -137,7 +137,7 @@ case class DomainRange(override val min: Long, override val max: Long) extends D
 case object FullRange extends Domain{
   override def min: Long = Long.MinValue
   override def max: Long = Long.MaxValue
-  override def size: Long = Long.MaxValue
+  override def size: Long = Long.MaxValue  //TODO: this is half correct
   override def randomValue(): Long = Random.nextLong()
   override def contains(v: Long): Boolean = true
   override def values: Iterable[Long] =  min to max

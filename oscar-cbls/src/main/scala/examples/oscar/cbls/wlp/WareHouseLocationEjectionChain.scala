@@ -80,38 +80,6 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
   def kNearestOpenWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = otherWarehouse => warehouseOpenArray(otherWarehouse).newValue != 0)
   def kNearestdWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse))
 
-  def muLine(depth:Int,kOpen:Int,kClosed:Int ) = Mu[AssignMove](
-    AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
-    (assignList:List[AssignMove]) =>
-    {
-      val lastChangedWarehouse = assignList.head.id
-      val setTo = assignList.head.value
-      val otherWarehouses = if(setTo == 0) kNearestClosedWarehouses(lastChangedWarehouse,kClosed) else kNearestOpenWarehouses(lastChangedWarehouse,kOpen)
-      Some(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse",searchZone = () => otherWarehouses,hotRestart = false))
-    },
-    maxDepth = depth,
-    intermediaryStops = true)
-
-  def muStar(width:Int,kOpen:Int,kClosed:Int ) = Mu[AssignMove](
-    AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
-    (assignList:List[AssignMove]) =>
-    {
-      val lastChangedWarehouse = assignList.last.id
-      val setTo = assignList.head.value
-      val otherWarehouses = if(setTo == 0) kNearestClosedWarehouses(lastChangedWarehouse,kClosed) else kNearestOpenWarehouses(lastChangedWarehouse,kOpen)
-      Some(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse",searchZone = () => otherWarehouses,hotRestart = false))
-    },
-    maxDepth = width,
-    intermediaryStops = true)
-
-  def swapsK(k:Int, openWarehousesToConsider:()=>Iterable[Int] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
-    searchZone1 = openWarehousesToConsider,
-    searchZone2 = () => (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
-    name = s"Swap${k}Nearest",
-    symmetryCanBeBrokenOnIndices = false)
-
-  def doubleSwap(k:Int) = (swapsK(k) dynAndThen((firstSwap:SwapMove) => swapsK(k,() => kNearestOpenWarehouses(firstSwap.idI,k)))) name "DoubleSwap"
-
   var lastDisplay = this.getWatch
 
   def ejection(maxLength:Int, kOpen:Int, kClosed:Int):Neighborhood =(
@@ -131,31 +99,15 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
         },
         shouldStop = _ >= maxLength)) name s"Eject($maxLength,$kOpen,$kClosed)")
 
-  def mergeWarehouses(kClosed:Int,kOpen:Int):Neighborhood = {
-    AssignNeighborhood(warehouseOpenArray,searchZone = openWarehouses) dynAndThen(switchMove => {
-      val setTo = switchMove.value
-      require(setTo == 0)
-      SwapsNeighborhood(warehouseOpenArray,
-        searchZone1 = () => kNearestClosedWarehouses(switchMove.id, kClosed).filter(_ != switchMove.id),
-        searchZone2 = () => {case (w2,oldValue) => require(oldValue == 0); kNearestOpenWarehouses(w2, kOpen)},
-        symmetryCanBeBrokenOnIndices = false,
-        hotRestart = false
-      )}) name "merge"
-  }
-
   val neighborhood = ((
     BestSlopeFirst(
       List(
         Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
-        //Profile(swapsK(20)), //we set a minimal size because the KNearest is very expensive if the size is small
-        // Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),
-        Profile(mergeWarehouses(kClosed = 30,kOpen = 10)),
         Profile(ejection(maxLength = 5,kOpen= 5, kClosed = 20))
       ),refresh = W/10)
       onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5,name="smallRandom"), 2, obj)
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,name="bigRandom"), 1, obj)
-    )
-    exhaust Profile(muLine(4,3,15)) afterMove(
+    ) afterMove(
     if(this.getWatch > lastDisplay + displayDelay) {
       visual.redraw(openWarehouses.value)
       lastDisplay = this.getWatch
