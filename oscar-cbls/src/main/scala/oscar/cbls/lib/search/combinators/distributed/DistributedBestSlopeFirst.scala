@@ -1,4 +1,4 @@
-package oscar.cbls.lib.search.combinators.distributed
+/*package oscar.cbls.lib.search.combinators.distributed
 
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorSystem, Behavior}
@@ -15,7 +15,7 @@ import scala.util.{Failure, Success}
 class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                                 nbWorkers: Int,
                                 refresh: Option[Int] = None,
-                                tabuLength:Int)
+                                tabuLength:Int = 4)
   extends DistributedCombinator(neighborhoods.map(x => (y:List[Long]) => x)) {
   require(nbWorkers >= 1, "at least one worker is needed")
 
@@ -193,3 +193,4 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
   }
 }
 
+*/

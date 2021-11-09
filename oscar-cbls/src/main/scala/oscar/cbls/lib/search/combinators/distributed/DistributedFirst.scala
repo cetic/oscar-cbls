@@ -9,7 +9,7 @@ import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, NoMoveFound,
 
 import scala.concurrent.{Await, Future, Promise}
 import scala.concurrent.duration.{Duration, DurationInt}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Random, Success}
 
 
 class DistributedFirst(neighborhoods:Array[Neighborhood])
@@ -34,7 +34,7 @@ class DistributedFirst(neighborhoods:Array[Neighborhood])
 
     supervisor.spawnNewActor(Behaviors.setup { context:ActorContext[WrappedData] => {
       //starting up all searches
-      for (i <- remoteNeighborhoods.indices){
+      for (i <- Random.shuffle(remoteNeighborhoods.indices.toList)){
         context.ask[GetNewUniqueID,Long](supervisor.supervisorActor,ref => GetNewUniqueID(ref)) {
           case Success(uniqueID:Long) => WrappedGotUniqueID(uniqueID:Long,i)
           case Failure(ex) => WrappedError(msg=Some(s"Supervisor actor timeout : ${ex.getMessage}"))
