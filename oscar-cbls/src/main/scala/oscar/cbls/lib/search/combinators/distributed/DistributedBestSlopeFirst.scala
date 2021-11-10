@@ -16,6 +16,8 @@ import scala.util.{Failure, Success}
  * This distributed combinator is useful if there are more neighborhoods than workers,
  * to prioritize which neighborhood to explore first, by exploring the ones that have the best slope in priority
  *
+ * Since it is a distributed combinator, it is only worth using if the neighborhoods are time consuming to explore
+ *
  * The neighborhood systematically uses all available workers.
  *
  * @param neighborhoods the neighborhoods to explore
@@ -44,8 +46,6 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
 
     tabuSlopeId.sorted.map(_._3)
   }
-
-
 
   //If we want a refresh, it will happen at this iteration number
   var nextRefreshIt: Int = refresh
