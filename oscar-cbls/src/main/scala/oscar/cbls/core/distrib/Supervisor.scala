@@ -234,7 +234,7 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor],
    * Waits for at least one worker to be available, with a timeout
    *
    * @param waitFor after the timeout, returns zero
-   * @return the number of available workers
+   * @return the number of available workers, which is zero if timeout is reached
    */
   def waitForAtLestOneWorker(waitFor:Duration = 5.minutes):Int = {
     val ongoingRequest: Future[Int] = supervisorActor.ask[Int](ref => NbWorkers(ref,true))
@@ -358,7 +358,6 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
               totalStartedSearches += 1
 
               val solutionForThisSearch = search.request.startSolutionOpt
-
 
               val simplifiedSearch = (solutionForThisSearch,currentSolutionAtWorker) match{
                 case (Some(x),Some(y)) if x.solutionId == y => search.copy(request = search.request.copy(startSolutionOpt = None))
