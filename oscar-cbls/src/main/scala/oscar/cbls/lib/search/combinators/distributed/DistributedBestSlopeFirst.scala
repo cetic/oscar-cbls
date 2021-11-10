@@ -1,4 +1,4 @@
-/*package oscar.cbls.lib.search.combinators.distributed
+package oscar.cbls.lib.search.combinators.distributed
 
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorSystem, Behavior}
@@ -12,12 +12,21 @@ import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{Await, Future, Promise}
 import scala.util.{Failure, Success}
 
+/**
+ * This distributed combinator is useful if there are more neighborhoods than workers,
+ * to prioritize which neighborhood to explore first, by exploring the ones that have the best slope in priority
+ *
+ * The neighborhood systematically uses all available workers.
+ *
+ * @param neighborhoods
+ * @param nbWorkers
+ * @param refresh
+ * @param tabuLength
+ */
 class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
-                                nbWorkers: Int,
-                                refresh: Option[Int] = None,
+                                refresh: Int = 10,
                                 tabuLength:Int = 4)
   extends DistributedCombinator(neighborhoods.map(x => (y:List[Long]) => x)) {
-  require(nbWorkers >= 1, "at least one worker is needed")
 
   val durations: Array[Long] = neighborhoods.map(_ => 0L)
   val gains: Array[Long] = neighborhoods.map(_ => 0L)
@@ -25,7 +34,7 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
 
   def getSortedNeighborhoods(currentIt:Int):List[Int] = {
     val tabuSlopeId = neighborhoods.indices.toList.map(i => {
-      val slope = if(durations(i) == 0) Int.MinValue else - (gains(i).toDouble / durations(i).toDouble)
+      val slope = if(durations(i) == 0) Int.MinValue else (gains(i).toDouble / durations(i).toDouble)
       val tabu = tabuUntilIt(i)
       (if(tabu > currentIt) 1 else 0, slope, i)
     })
@@ -33,18 +42,19 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
   }
 
   //If we want a refresh, it will happen at this iteration number
-  var nextRefreshIt: Int = refresh match{
-    case None => Int.MaxValue
-    case Some(x) => x
-  }
+  var nextRefreshIt: Int = refresh
 
   var currentIt = 0
 
   override def getMove(obj: Objective, initialObj: Long, acceptanceCriteria: (Long, Long) => Boolean):SearchResult = {
     currentIt += 1
 
-    if(nextRefreshIt == currentIt) {
-      nextRefreshIt = nextRefreshIt + refresh.getOrElse(0)
+    //supervisor.waitForAtLestOneWorker
+    val nbWorkers = supervisor.nbWorkers
+    require(nbWorkers >= 1, "at least one worker is needed")
+
+    if(currentIt >= nextRefreshIt) {
+      nextRefreshIt = nextRefreshIt + refresh
       for (i <- neighborhoods.indices) {
         durations(i) = 0
         gains(i) = 0
@@ -81,7 +91,7 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
         case _ =>
           next(nextSearchesToStart = neighborhoodList,
             runningSearchIDs = List.empty,
-            nbFinishedSearches= 0,
+            nbFinishedSearches  = 0,
             nbStartingAndRunningSearches = nbStartingAndRunningSearches,
             currentIt)
       }
@@ -112,21 +122,32 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                     resultPromise.success(w)
                     Behaviors.stopped
                   case _: IndependentNoMoveFound =>
-
                     durations(neighborhoodIndice) = durations(neighborhoodIndice) + durationMS
-                    tabuUntilIt(neighborhoodIndice) = currentIt + tabuLength
+                    tabuUntilIt(neighborhoodIndice) = currentIt + tabuLength + 1
 
                     val nextRunningSearchID = runningSearchIDs.filter(_ != uniqueId)
 
                     nextSearchesToStart match{
                       case h::t =>
                         initiateNeighborhoodExploration(h, context)
-                        next(nextSearchesToStart = t, nextRunningSearchID, nbStartingAndRunningSearches, nbFinishedSearches+1 ,currentIt)
-                      case Nil if nbStartingAndRunningSearches == 1 => //-1 because we just finished one, actually
+
+                        next(nextSearchesToStart = t,
+                          runningSearchIDs = nextRunningSearchID,
+                          nbFinishedSearches = nbFinishedSearches+1,
+                          nbStartingAndRunningSearches = nbStartingAndRunningSearches,
+                          currentIt = currentIt)
+
+                      case Nil if nbStartingAndRunningSearches == 1 => // because we just finished one, actually
                         resultPromise.success(w) //it is a NoMoveFound
                         Behaviors.stopped
                       case Nil =>
-                        next(nextSearchesToStart = Nil, nextRunningSearchID, nbStartingAndRunningSearches-1, nbFinishedSearches+1 ,currentIt)
+
+                        next(nextSearchesToStart = Nil,
+                          runningSearchIDs = nextRunningSearchID,
+                          nbFinishedSearches = nbFinishedSearches+1,
+                          nbStartingAndRunningSearches = nbStartingAndRunningSearches - 1,
+                          currentIt = currentIt)
+
                     }
                 }
 
@@ -145,14 +166,17 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
               independentObj,
               startSol,
               doAllMoves = true)
-            //context.ask thing
 
             context.ask[DelegateSearch, SearchEnded](supervisor.supervisorActor, ref => DelegateSearch(request, ref, uniqueID)) {
               case Success(searchEnded) => WrappedSearchEnded(searchEnded, neighborhoodIndice, uniqueID)
               case Failure(_) => WrappedError(msg = Some(s"Error in WrappedGotUniqueID, uniqueID=$uniqueID"))
             }
 
-            next(nextSearchesToStart, uniqueID :: runningSearchIDs, nbStartingAndRunningSearches, nbFinishedSearches ,currentIt)
+            next(nextSearchesToStart = nextSearchesToStart,
+              runningSearchIDs = uniqueID :: runningSearchIDs,
+              nbStartingAndRunningSearches = nbStartingAndRunningSearches,
+              nbFinishedSearches = nbFinishedSearches,
+              currentIt = currentIt)
 
           case w: WrappedError =>
             for(r <- runningSearchIDs) {
@@ -193,4 +217,3 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
   }
 }
 
-*/

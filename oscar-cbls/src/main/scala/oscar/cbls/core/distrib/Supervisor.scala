@@ -230,6 +230,8 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor],
     Await.result(ongoingRequest, atMost = 30.seconds)
   }
 
+  def waitForAtLestOneWorker:Unit = ???
+
   def shutdown(): Unit = {
     val ongoingRequest: Future[Unit] = supervisorActor.ask[Unit](ref => ShutDown(Some(ref)))
     Await.result(ongoingRequest, 30.seconds)
