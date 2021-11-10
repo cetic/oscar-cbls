@@ -70,16 +70,20 @@ object WarehouseLocationDistributed1 extends App {
 
   val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(search, verbose = false, tic = 1.seconds)
 
+//This is a bit stupid: start the search while workers are not isntantiated yet, but it is possible
+  for (i <- ParRange(0, nbWorker, 1, inclusive = true)) {
+    if(i == 0){
+      val search2 = search.showObjectiveFunction(obj)
+      search2.verbose = 1
+      search2.doAllMoves(obj = obj)
 
-  for (i <- ParRange(0, nbWorker-1, 1, inclusive = true)) {
+    }else {
       val (store2, search2, _, _) = createSearchProcedure()
       supervisor.createLocalWorker(store2, search2)
       search2.verbose = 2
+    }
   }
 
-  val search2 = search.showObjectiveFunction(obj)
-  search2.verbose = 1
-  search2.doAllMoves(obj = obj)
 
 
   supervisor.shutdown()

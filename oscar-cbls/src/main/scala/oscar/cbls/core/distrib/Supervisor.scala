@@ -11,7 +11,7 @@ import oscar.cbls.core.search.Neighborhood
 
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.Duration.Infinite
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, Future, TimeoutException}
 import scala.util.{Failure, Success}
 
 
@@ -39,7 +39,7 @@ final case class ShutDown(replyTo: Option[ActorRef[Unit]]) extends MessagesToSup
 
 final case class SpawnWorker(workerBehavior: Behavior[MessageToWorker]) extends MessagesToSupervisor
 
-final case class NbWorkers(replyTo: ActorRef[Int]) extends MessagesToSupervisor
+final case class NbWorkers(replyTo: ActorRef[Int],waitForAtLeastOneWorker:Boolean) extends MessagesToSupervisor
 
 final case class SpawnNewActor[T](behavior:Behavior[T],behaviorName:String, replyTo:ActorRef[ActorRef[T]]) extends MessagesToSupervisor
 
@@ -226,11 +226,24 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor],
   }
 
   def nbWorkers: Int = {
-    val ongoingRequest: Future[Int] = supervisorActor.ask[Int](ref => NbWorkers(ref))
+    val ongoingRequest: Future[Int] = supervisorActor.ask[Int](ref => NbWorkers(ref, false))
     Await.result(ongoingRequest, atMost = 30.seconds)
   }
 
-  def waitForAtLestOneWorker:Unit = ???
+  /**
+   * Waits for at least one worker to be available, with a timeout
+   *
+   * @param waitFor after the timeout, returns zero
+   * @return the number of available workers
+   */
+  def waitForAtLestOneWorker(waitFor:Duration = 5.minutes):Int = {
+    val ongoingRequest: Future[Int] = supervisorActor.ask[Int](ref => NbWorkers(ref,true))
+    try{
+      Await.result(ongoingRequest, atMost = waitFor)
+    }catch {
+      case _: TimeoutException => 0
+    }
+  }
 
   def shutdown(): Unit = {
     val ongoingRequest: Future[Unit] = supervisorActor.ask[Unit](ref => ShutDown(Some(ref)))
@@ -283,6 +296,8 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
   private var nextSearchID: Long = 0
   private var nextStartID: Long = 0 //search+worker
 
+  private var notifyForAvailableWorkers:List[NbWorkers] = Nil
+
   override def onMessage(msg: MessagesToSupervisor): Behavior[MessagesToSupervisor] = {
     msg match {
 
@@ -302,14 +317,28 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
         context.spawn(workerBehavior, s"localWorker$nbLocalWorker")
         nbLocalWorker += 1
 
-      case NbWorkers(replyTo) =>
+      case NbWorkers(replyTo,waitForAtLeastOneWorker) if !waitForAtLeastOneWorker=>
         replyTo ! this.allKnownWorkers.size
+
+      case n@NbWorkers(replyTo,waitForAtLeastOneWorker) if waitForAtLeastOneWorker=>
+
+        if(this.allKnownWorkers.nonEmpty) {
+          replyTo ! this.allKnownWorkers.size
+        }else{
+          //we must wait for some workers...
+          notifyForAvailableWorkers = n :: notifyForAvailableWorkers
+        }
 
       case NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) =>
         allKnownWorkers = workerRef :: allKnownWorkers
         idleWorkersAndTheirCurentModelID = (workerRef,None) :: idleWorkersAndTheirCurentModelID
         context.self ! StartSomeSearch()
         context.log.info("new worker enrolled:" + workerRef.path)
+
+        for(nbWorker <- notifyForAvailableWorkers){
+          nbWorker.replyTo ! this.allKnownWorkers.size
+        }
+        notifyForAvailableWorkers = Nil
 
       case StartSomeSearch() =>
         //context.log.info("StartSomeSearch")

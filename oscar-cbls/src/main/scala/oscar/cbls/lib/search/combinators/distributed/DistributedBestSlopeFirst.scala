@@ -18,28 +18,34 @@ import scala.util.{Failure, Success}
  *
  * The neighborhood systematically uses all available workers.
  *
- * @param neighborhoods
- * @param nbWorkers
- * @param refresh
- * @param tabuLength
+ * @param neighborhoods the neighborhoods to explore
+ * @param refresh to force the exploration of all neighborhoods every "refresh" iterations.
+ *                This is when some neighborhoods perform very poorly at the start of the search
+ *                and become more interesting during the search,
+ *                or when some have guards conditions that are eventually met
+ * @param tabuLength when a neighborhood does not find a move, we set it t oa very low priority
+ *                   for a number of iteration equal to "the number of available workers" + tabulength
  */
 class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                                 refresh: Int = 10,
                                 tabuLength:Int = 4)
   extends DistributedCombinator(neighborhoods.map(x => (y:List[Long]) => x)) {
 
-  val durations: Array[Long] = neighborhoods.map(_ => 0L)
-  val gains: Array[Long] = neighborhoods.map(_ => 0L)
+  val durationsMs: Array[Long] = neighborhoods.map(_ => 0L)
+  val deltaObjs: Array[Long] = neighborhoods.map(_ => 0L)
   val tabuUntilIt: Array[Int] = neighborhoods.map(_ => 0)
 
   def getSortedNeighborhoods(currentIt:Int):List[Int] = {
     val tabuSlopeId = neighborhoods.indices.toList.map(i => {
-      val slope = if(durations(i) == 0) Int.MinValue else (gains(i).toDouble / durations(i).toDouble)
+      val slope = if(durationsMs(i) == 0) Int.MinValue else (deltaObjs(i).toDouble / durationsMs(i).toDouble)
       val tabu = tabuUntilIt(i)
-      (if(tabu > currentIt) 1 else 0, slope, i)
+      ((tabu - currentIt) max 0, slope, i)
     })
+
     tabuSlopeId.sorted.map(_._3)
   }
+
+
 
   //If we want a refresh, it will happen at this iteration number
   var nextRefreshIt: Int = refresh
@@ -49,15 +55,14 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
   override def getMove(obj: Objective, initialObj: Long, acceptanceCriteria: (Long, Long) => Boolean):SearchResult = {
     currentIt += 1
 
-    //supervisor.waitForAtLestOneWorker
-    val nbWorkers = supervisor.nbWorkers
+    val nbWorkers = supervisor.waitForAtLestOneWorker()
     require(nbWorkers >= 1, "at least one worker is needed")
 
     if(currentIt >= nextRefreshIt) {
       nextRefreshIt = nextRefreshIt + refresh
       for (i <- neighborhoods.indices) {
-        durations(i) = 0
-        gains(i) = 0
+        durationsMs(i) = 0
+        deltaObjs(i) = 0
         tabuUntilIt(i) = currentIt
       }
     }
@@ -111,19 +116,19 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                   case moveFound: IndependentMoveFound =>
 
                     //stop at the first found move
-                    durations(neighborhoodIndice) = durations(neighborhoodIndice) + durationMS
-                    gains(neighborhoodIndice) += moveFound.objAfter - initialObj
+                    //TODO: wait for the best move among the first responders?
+                    durationsMs(neighborhoodIndice) = durationsMs(neighborhoodIndice) + durationMS
+                    deltaObjs(neighborhoodIndice) += moveFound.objAfter - initialObj
 
                     for (r <- runningSearchIDs) {
                       supervisor.supervisorActor ! CancelSearchToSupervisor(r)
                     }
 
-                    //make better
                     resultPromise.success(w)
                     Behaviors.stopped
                   case _: IndependentNoMoveFound =>
-                    durations(neighborhoodIndice) = durations(neighborhoodIndice) + durationMS
-                    tabuUntilIt(neighborhoodIndice) = currentIt + tabuLength + 1
+                    durationsMs(neighborhoodIndice) = durationsMs(neighborhoodIndice) + durationMS
+                    tabuUntilIt(neighborhoodIndice) = currentIt + tabuLength + 1 + nbWorkers
 
                     val nextRunningSearchID = runningSearchIDs.filter(_ != uniqueId)
 
@@ -151,7 +156,7 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                     }
                 }
 
-              case c: SearchCrashed =>
+              case _:SearchCrashed =>
                 for (r <- runningSearchIDs) {
                   supervisor.supervisorActor ! CancelSearchToSupervisor(r)
                 }
