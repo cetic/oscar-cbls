@@ -1,8 +1,10 @@
 package oscar.cbls.core.search
 
+import akka.actor.Status.{Failure, Success}
+import akka.actor.typed.scaladsl.AskPattern.Askable
 import oscar.cbls.core.distrib._
 
-abstract class DistributedCombinator(neighborhoods:Array[List[Long] => Neighborhood]) extends Neighborhood {
+abstract class DistributedCombinator(neighborhoods:Array[Neighborhood]) extends Neighborhood {
 
   var remoteNeighborhoods:Array[RemoteNeighborhood] = null
   var supervisor:Supervisor = null
@@ -19,7 +21,7 @@ abstract class DistributedCombinator(neighborhoods:Array[List[Long] => Neighborh
 
   private def labelAndExtractRemoteNeighborhoodsOutOf(currentID:Int,
                                                       acc:List[RemoteNeighborhood],
-                                                      neighborhoods:Array[List[Long] => Neighborhood]):
+                                                      neighborhoods:Array[Neighborhood]):
   (Int,List[RemoteNeighborhood],Array[RemoteNeighborhood]) = {
     var currentIDNow: Int = currentID
     var accNow: List[RemoteNeighborhood] = acc
@@ -33,6 +35,6 @@ abstract class DistributedCombinator(neighborhoods:Array[List[Long] => Neighborh
   }
 
   override def collectProfilingStatistics: List[Array[String]] = {
-    super.collectProfilingStatistics
+    remoteNeighborhoods.flatMap(remote => supervisor.getRemoteStatisticsFor(remote.getRemoteIdentification())).toList
   }
 }

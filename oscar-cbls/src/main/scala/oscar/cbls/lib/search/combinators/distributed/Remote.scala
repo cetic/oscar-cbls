@@ -9,9 +9,8 @@ import akka.util.Timeout
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, DurationInt}
 
-
 class Remote(neighborhoods:Neighborhood)
-  extends DistributedCombinator(Array(_ => neighborhoods)) {
+  extends DistributedCombinator(Array(neighborhoods)) {
 
   override def getMove(obj: Objective,
                        initialObj: Long,

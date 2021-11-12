@@ -245,6 +245,10 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor],
     }
   }
 
+  def getRemoteStatisticsFor(remoteNeighborhood:RemoteNeighborhoodIdentification):List[Array[String]] = {
+    ???
+  }
+
   def shutdown(): Unit = {
     val ongoingRequest: Future[Unit] = supervisorActor.ask[Unit](ref => ShutDown(Some(ref)))
     Await.result(ongoingRequest, 30.seconds)
@@ -461,13 +465,13 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
         if (verbose) context.log.info(s"got a worker ready:${worker.path}; finished search:$completedSearchID")
 
         require(allKnownWorkers contains worker)
-/*        completedNeighborhoodIDAndMoveFound match {
-          case None => ;
-          case Some((s:Int,found)) =>
-            if(!found && hotRestart){
-              neighborhoodToPreferredWorker = neighborhoodToPreferredWorker.-(s)
-            }
-        }*/
+        /*        completedNeighborhoodIDAndMoveFound match {
+                  case None => ;
+                  case Some((s:Int,found)) =>
+                    if(!found && hotRestart){
+                      neighborhoodToPreferredWorker = neighborhoodToPreferredWorker.-(s)
+                    }
+                }*/
 
         completedSearchID match{
           case Some(s) => ongoingSearches = ongoingSearches.-(s)

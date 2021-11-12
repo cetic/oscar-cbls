@@ -53,8 +53,8 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
                                  visuTitle:String = "distributedRestartObj")
   extends DistributedCombinator(
     Array(
-      (_:List[Long]) => baseRandomize maxMoves 1 exhaust baseSearch,
-      (_:List[Long]) => baseSearch)) {
+      baseRandomize maxMoves 1 exhaust baseSearch,
+      baseSearch)) {
   //0 is randomize and search
   //1 is first search
 

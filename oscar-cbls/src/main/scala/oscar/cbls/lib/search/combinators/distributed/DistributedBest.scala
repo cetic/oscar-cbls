@@ -11,7 +11,7 @@ import scala.concurrent.duration.{Duration, DurationInt}
 
 
 class DistributedBest(neighborhoods:Array[Neighborhood])
-  extends DistributedCombinator(neighborhoods.map(x => (y:List[Long]) => x)) {
+  extends DistributedCombinator(neighborhoods) {
 
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
 

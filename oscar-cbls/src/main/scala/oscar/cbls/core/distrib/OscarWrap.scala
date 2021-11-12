@@ -30,7 +30,7 @@ case class SearchTask(request: SearchRequest,
 //le truc qu'on envoie au worker
 case class RemoteNeighborhoodIdentification(neighborhoodID: Int, parameters: List[Long])
 
-class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Neighborhood) {
+class RemoteNeighborhood(val neighborhoodID: Int, neighborhood:Neighborhood) {
 
   @volatile
   var bestObjSoFar:Long = Long.MaxValue
@@ -43,7 +43,8 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
               sendFullSolution:Boolean,
               searchId:Long,
               sendProgressTo:Option[ActorRef[SearchProgress]]): IndependentSearchResult = {
-    neighborhood(parameters).getMoveAbortable(obj, obj.value, acc, shouldAbort,initSolutionOpt) match {
+    require(parameters.isEmpty,"only parameterless neighborhoods so far")
+    neighborhood.getMoveAbortable(obj, obj.value, acc, shouldAbort,initSolutionOpt) match {
       case NoMoveFound => IndependentNoMoveFound()
       case MoveFound(m) =>
         sendProgressTo match {
@@ -70,6 +71,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
                  searchId:Long,
                  sendProgressTo:Option[ActorRef[SearchProgress]]): IndependentSearchResult = {
 
+    require(parameters.isEmpty,"only parameterless neighborhoods supported so far")
     bestObjSoFar = obj.value
     var anyMoveFound = false
     var name:String = ""
@@ -78,8 +80,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood: List[Long] => Ne
 
     var lastProgressOBj:Long = bestObjSoFar
 
-    val theNeighborhood = neighborhood(parameters)
-    while(!shouldAbort() && (theNeighborhood.getMoveAbortable(obj, obj.value, acc, shouldAbort) match {
+    while(!shouldAbort() && (neighborhood.getMoveAbortable(obj, obj.value, acc, shouldAbort) match {
       case NoMoveFound => false
       case MoveFound(m) =>
         m.commit()

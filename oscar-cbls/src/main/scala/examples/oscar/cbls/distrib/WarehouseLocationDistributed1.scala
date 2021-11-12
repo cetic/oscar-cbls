@@ -56,7 +56,7 @@ object WarehouseLocationDistributed1 extends App {
       new DistributedBestSlopeFirst(
         Array(
           assignNeighborhood(warehouseOpenArray, "SwitchWarehouse")) ++
-          Array.tabulate(divideSwap)(swapShifted(_,divideSwap)),nbWorker)
+          Array.tabulate(divideSwap)(swapShifted(_,divideSwap)))
         onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray, () => W / 10), 2, obj)
         onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W / 5), 2, obj))
 
