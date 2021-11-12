@@ -92,7 +92,7 @@ class DistributedFirst(neighborhoods:Array[Neighborhood])
           case WrappedGotUniqueID(uniqueID: Long, neighborhoodIndice: Int) =>
 
             val request = SearchRequest(
-              remoteNeighborhoods(neighborhoodIndice).getRemoteIdentification(Nil),
+              remoteNeighborhoods(neighborhoodIndice).getRemoteIdentification(),
               acceptanceCriteria,
               independentObj,
               startSol)

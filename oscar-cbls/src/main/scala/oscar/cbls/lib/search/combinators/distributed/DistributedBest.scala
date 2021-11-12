@@ -26,7 +26,7 @@ class DistributedBest(neighborhoods:Array[Neighborhood])
     val futureResults =  remoteNeighborhoods.indices.map(i => {
 
       val request = SearchRequest(
-        remoteNeighborhoods(i).getRemoteIdentification(Nil),
+        remoteNeighborhoods(i).getRemoteIdentification(),
         acceptanceCriteria,
         independentObj,
         startSol)

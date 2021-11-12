@@ -6,6 +6,7 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.distrib.Supervisor
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Neighborhood
+import oscar.cbls.lib.search.combinators.Profile
 import oscar.cbls.lib.search.combinators.distributed.DistributedBestSlopeFirst
 
 import scala.collection.parallel.immutable.ParRange
@@ -55,11 +56,11 @@ object WarehouseLocationDistributed1 extends App {
     val neighborhood = (
       new DistributedBestSlopeFirst(
         Array(
-          assignNeighborhood(warehouseOpenArray, "SwitchWarehouse")) ++
-          Array.tabulate(divideSwap)(swapShifted(_,divideSwap)))
+          Profile(assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"))) ++
+          Array.tabulate(divideSwap)(x => Profile(swapShifted(x,divideSwap)):Neighborhood))
         onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray, () => W / 10), 2, obj)
-        onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W / 5), 2, obj))
-
+        onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W / 5), 2, obj)
+      )
     (m, neighborhood, obj, () => {
       println(openWarehouses)
     })
@@ -68,9 +69,9 @@ object WarehouseLocationDistributed1 extends App {
   //supervisor side
   val (store, search, obj, finalPrint) = createSearchProcedure()
 
-  val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(search, verbose = false, tic = 1.seconds)
+  val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(search)
 
-//This is a bit stupid: start the search while workers are not isntantiated yet, but it is possible
+  //This is a bit stupid: start the search while workers are not instantiated yet, but it is possible
   for (i <- ParRange(0, nbWorker, 1, inclusive = true)) {
     if(i == 0){
       val search2 = search.showObjectiveFunction(obj)
@@ -83,9 +84,8 @@ object WarehouseLocationDistributed1 extends App {
     }
   }
 
-
+  println(search.profilingStatistics)
 
   supervisor.shutdown()
-
   finalPrint()
 }

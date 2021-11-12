@@ -28,22 +28,20 @@ case class SearchTask(request: SearchRequest,
 // ////////////////////////////////////////////////////////////
 
 //le truc qu'on envoie au worker
-case class RemoteNeighborhoodIdentification(neighborhoodID: Int, parameters: List[Long])
+case class RemoteNeighborhoodIdentification(neighborhoodID: Int)
 
-class RemoteNeighborhood(val neighborhoodID: Int, neighborhood:Neighborhood) {
+class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood) {
 
   @volatile
   var bestObjSoFar:Long = Long.MaxValue
 
-  def getMove(parameters: List[Long],
-              obj: Objective,
+  def getMove(obj: Objective,
               acc: (Long, Long) => Boolean,
               shouldAbort: () => Boolean,
               initSolutionOpt:Option[Solution],
               sendFullSolution:Boolean,
               searchId:Long,
               sendProgressTo:Option[ActorRef[SearchProgress]]): IndependentSearchResult = {
-    require(parameters.isEmpty,"only parameterless neighborhoods so far")
     neighborhood.getMoveAbortable(obj, obj.value, acc, shouldAbort,initSolutionOpt) match {
       case NoMoveFound => IndependentNoMoveFound()
       case MoveFound(m) =>
@@ -64,14 +62,12 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood:Neighborhood) {
     }
   }
 
-  def doAllMoves(parameters: List[Long],
-                 obj: Objective,
+  def doAllMoves(obj: Objective,
                  acc: (Long, Long) => Boolean,
                  shouldAbort: () => Boolean,
                  searchId:Long,
                  sendProgressTo:Option[ActorRef[SearchProgress]]): IndependentSearchResult = {
 
-    require(parameters.isEmpty,"only parameterless neighborhoods supported so far")
     bestObjSoFar = obj.value
     var anyMoveFound = false
     var name:String = ""
@@ -125,8 +121,8 @@ class RemoteNeighborhood(val neighborhoodID: Int, neighborhood:Neighborhood) {
     }
   }
 
-  def getRemoteIdentification(parameters: List[Long] = Nil): RemoteNeighborhoodIdentification =
-    RemoteNeighborhoodIdentification(neighborhoodID, parameters)
+  def getRemoteIdentification(): RemoteNeighborhoodIdentification =
+    RemoteNeighborhoodIdentification(neighborhoodID)
 }
 
 // ////////////////////////////////////////////////////////////

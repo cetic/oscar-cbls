@@ -41,6 +41,8 @@ final case class SpawnWorker(workerBehavior: Behavior[MessageToWorker]) extends 
 
 final case class NbWorkers(replyTo: ActorRef[Int],waitForAtLeastOneWorker:Boolean) extends MessagesToSupervisor
 
+final case class RemoteStatisticsFor(replyTo:ActorRef[List[Array[String]]],remoteNeighborhood:RemoteNeighborhoodIdentification) extends MessagesToSupervisor
+
 final case class SpawnNewActor[T](behavior:Behavior[T],behaviorName:String, replyTo:ActorRef[ActorRef[T]]) extends MessagesToSupervisor
 
 import scala.concurrent.duration._
@@ -216,8 +218,10 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor],
 
   //TODO: for the distributed version, regularly check that workers performing some wearch are still alive and working, otherwise, search must be restarted at another worker.
 
-  def createLocalWorker(m: Store, search: Neighborhood): Unit = {
-    val workerBehavior = WorkerActor.createWorkerBehavior(search.identifyRemotelySearchableNeighborhoods, m, this.supervisorActor, verbose)
+  var nbLocalWorker:Int = 0
+  def createLocalWorker(m: Store, search: Neighborhood,workerName:String = null): Unit = {
+    nbLocalWorker += 1
+    val workerBehavior = WorkerActor.createWorkerBehavior(search.identifyRemotelySearchableNeighborhoods, m, this.supervisorActor, verbose, if(workerName == null) "localWorker"+nbLocalWorker else workerName)
     supervisorActor ! SpawnWorker(workerBehavior)
   }
 
@@ -245,8 +249,9 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor],
     }
   }
 
-  def getRemoteStatisticsFor(remoteNeighborhood:RemoteNeighborhoodIdentification):List[Array[String]] = {
-    ???
+  def getRemoteStatisticsFor(remoteNeighborhood:RemoteNeighborhoodIdentification,waitFor:Duration = 5.minutes):List[Array[String]] = {
+    val ongoingRequest: Future[List[Array[String]]] = supervisorActor.ask[List[Array[String]]](ref => RemoteStatisticsFor(ref,remoteNeighborhood:RemoteNeighborhoodIdentification))
+    Await.result(ongoingRequest, atMost = waitFor)
   }
 
   def shutdown(): Unit = {
@@ -302,6 +307,8 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
 
   private var notifyForAvailableWorkers:List[NbWorkers] = Nil
 
+  private var statisticCollectorID:Int = 0
+
   override def onMessage(msg: MessagesToSupervisor): Behavior[MessagesToSupervisor] = {
     msg match {
 
@@ -332,6 +339,39 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
           //we must wait for some workers...
           notifyForAvailableWorkers = n :: notifyForAvailableWorkers
         }
+
+      case RemoteStatisticsFor(replyTo:ActorRef[List[Array[String]]],remoteNeighborhood:RemoteNeighborhoodIdentification) =>
+
+        statisticCollectorID += 1
+
+        def statisticsCollector1(context:ActorContext[(Int,List[Array[String]])]): Behavior[(Int,List[Array[String]])] ={
+          val workerArray = allKnownWorkers.toArray
+          for( i <- workerArray.indices) {
+            workerArray(i) ! GetStatisticsFor(remoteNeighborhood, i, context.self)
+          }
+          val statisticsArray:Array[List[Array[String]]] = Array.fill(workerArray.length)(null)
+          statisticsCollector2(statisticsArray,statisticsArray.length)
+        }
+
+        def statisticsCollector2(statisticsArray:Array[List[Array[String]]],
+                                 waitedAnswers:Int): Behavior[(Int,List[Array[String]])] = {
+
+          Behaviors.receive { (context, command) =>
+            command match {
+              case (i, statistics) =>
+                statisticsArray(i) = statistics
+                if (waitedAnswers == 1) {
+                  replyTo ! statisticsArray.toList.flatten
+                  Behaviors.stopped
+                } else {
+                  statisticsCollector2(statisticsArray, waitedAnswers - 1)
+                }
+            }
+          }
+        }
+
+        context.spawn(Behaviors.setup
+        { context: ActorContext[(Int,List[Array[String]])] => statisticsCollector1(context)},"statisticsCollector" + statisticCollectorID)
 
       case NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) =>
         allKnownWorkers = workerRef :: allKnownWorkers

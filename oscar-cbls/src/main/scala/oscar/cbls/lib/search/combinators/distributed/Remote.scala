@@ -20,7 +20,7 @@ class Remote(neighborhoods:Neighborhood)
     val startSol = Some(IndependentSolution(obj.model.solution()))
 
     val searchRequest = SearchRequest(
-      remoteNeighborhoods(0).getRemoteIdentification(Nil),
+      remoteNeighborhoods(0).getRemoteIdentification(),
       acceptanceCriteria,
       independentObj,
       startSol)

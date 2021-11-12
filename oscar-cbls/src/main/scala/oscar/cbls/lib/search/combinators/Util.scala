@@ -224,14 +224,15 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
    */
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
 
-    nbCalls += 1L
     val startTime = System.nanoTime()
 
     a.getMove(obj, initialObj:Long, acceptanceCriterion) match {
       case NoMoveFound =>
+        nbCalls += 1L
         totalTimeSpentNoMoveFound += (System.nanoTime() - startTime) / 1000000L
         NoMoveFound
       case m: MoveFound =>
+        nbCalls += 1L
         totalTimeSpentMoveFound += (System.nanoTime() - startTime) / 1000000L
         nbFound += 1L
         if (!ignoreInitialObj || nbCalls > 1L) totalGain += initialObj - m.objAfter

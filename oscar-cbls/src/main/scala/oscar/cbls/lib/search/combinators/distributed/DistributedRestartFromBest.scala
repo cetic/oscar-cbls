@@ -337,7 +337,7 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
 
             //start a search
             val request = SearchRequest(
-              remoteNeighborhoods(neighborhoodIndice).getRemoteIdentification(Nil),
+              remoteNeighborhoods(neighborhoodIndice).getRemoteIdentification(),
               acceptanceCriteria,
               independentObj,
               startSolutionOpt = Some(bestMoveSoFar match{

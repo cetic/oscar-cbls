@@ -17,6 +17,7 @@ final case class AbortSearch(searchId: Long, keepAliveIfOjBelow:Option[Long] = N
 final case class WrappedSearchEnded(result: SearchEnded) extends MessageToWorker
 final case class ShutDownWorker() extends MessageToWorker
 final case class Ping(replyTo: ActorRef[ExternalWorkerState]) extends MessageToWorker
+final case class GetStatisticsFor(neighborhood:RemoteNeighborhoodIdentification,indice:Int,replyTo: ActorRef[(Int,List[Array[String]])]) extends MessageToWorker
 
 sealed abstract class ExternalWorkerState
 case class WorkerBusy(searchId: Long, durationMs:Long) extends ExternalWorkerState
@@ -34,14 +35,15 @@ object WorkerActor {
 
     val startLogger: Logger = LoggerFactory.getLogger("WorkerObject")
     startLogger.info("Starting actor system and worker:" + workerName)
-    ActorSystem(createWorkerBehavior(neighborhoods, m, master, verbose), workerName)
+    ActorSystem(createWorkerBehavior(neighborhoods, m, master, verbose,workerName), workerName)
   }
 
   def createWorkerBehavior(neighborhoods: SortedMap[Int, RemoteNeighborhood],
                            m: Store,
                            master: ActorRef[MessagesToSupervisor],
-                           verbose: Boolean = false): Behavior[MessageToWorker] = {
-    new WorkerActor(neighborhoods, m, master, verbose).initBehavior()
+                           verbose: Boolean = false,
+                           workerName:String): Behavior[MessageToWorker] = {
+    new WorkerActor(neighborhoods, m, master, verbose, workerName).initBehavior()
   }
 
   def spawnWorker(neighborhoods: SortedMap[Int, RemoteNeighborhood],
@@ -50,14 +52,15 @@ object WorkerActor {
                   context: ActorContext[_],
                   workerName: String = "worker",
                   verbose: Boolean): ActorRef[MessageToWorker] = {
-    context.spawn(createWorkerBehavior(neighborhoods, m, master, verbose), workerName)
+    context.spawn(createWorkerBehavior(neighborhoods, m, master, verbose,workerName), workerName)
   }
 }
 
 class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
                   m: Store,
                   master: ActorRef[MessagesToSupervisor],
-                  verbose: Boolean) {
+                  verbose: Boolean,
+                  workerName:String) {
 
   sealed abstract class WorkerState
   case class IAmBusy(search: SearchTask, started:Long) extends WorkerState
@@ -130,7 +133,6 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
     val startTime = System.currentTimeMillis()
     val result = if(searchRequest.doAllMoves){
       neighborhood.doAllMoves(
-        searchRequest.neighborhoodID.parameters,
         searchRequest.obj.convertToObjective(m),
         searchRequest.acc,
         shouldAbort = () => shouldAbortComputation,
@@ -138,7 +140,6 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
         sendProgressTo = searchRequest.sendProgressTo)
     }else{
       neighborhood.getMove(
-        searchRequest.neighborhoodID.parameters,
         searchRequest.obj.convertToObjective(m),
         searchRequest.acc,
         shouldAbort = () => shouldAbortComputation,
@@ -164,6 +165,20 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
 
           Behaviors.same
 
+        case GetStatisticsFor(neighborhood,indice,replyTo) =>
+          state match {
+            case Idle() =>
+              replyTo!((indice,neighborhoods(neighborhood.neighborhoodID).neighborhood.
+                collectProfilingStatistics.map(profilingLine => {
+                profilingLine(0) = workerName +"."+ profilingLine(0)
+                profilingLine
+              }
+              )))
+            case _ => ;
+              //TODO: we should enqueue this query somewhere and answer it later
+              replyTo!((indice,Nil))
+          }
+          Behaviors.same
         case StartSearch(newSearch, startID, replyTo) =>
           state match {
             case ShuttingDown() =>

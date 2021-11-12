@@ -213,7 +213,7 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
 
           case WrappedGotUniqueID(uniqueID: Long, neighborhoodIndice: Int,priorityOfSearch:Int) =>
             //start search with val request
-            val request = SearchRequest(remoteNeighborhoods(neighborhoodIndice).getRemoteIdentification(Nil),
+            val request = SearchRequest(remoteNeighborhoods(neighborhoodIndice).getRemoteIdentification(),
               acceptanceCriteria,
               independentObj,
               startSol,
