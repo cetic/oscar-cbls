@@ -579,8 +579,8 @@ class NeighborhoodOps(n:Neighborhood){
    * @param otherValues An array of other value you want to be displayed (as a tuple (name, () => Long))
    * @author fabian.germeau@cetic.be
    */
-  def showObjectiveFunction(obj: Objective, title: String = "Objective function vs. time[s]", minCap: Long = 0L, maxCap:Long = Long.MaxValue, percentile: Int = 100, otherValues: Array[(String, () => Long)] = Array.empty) =
-    new ShowObjectiveFunction(n,obj, title, minCap, maxCap, percentile, otherValues)
+  def showObjectiveFunction(obj: Objective, title: String = "Objective function vs. time[s]", minCap: Long = 0L, maxCap:Long = Long.MaxValue, percentile: Int = 100, otherValues: Array[(String, () => Long)] = Array.empty, logScale:Boolean = true) =
+    new ShowObjectiveFunction(n,obj, title, minCap, maxCap, percentile, otherValues,logScale)
 
 
   /**

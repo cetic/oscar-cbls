@@ -76,7 +76,6 @@ object WarehouseLocationDistributed1 extends App {
       val search2 = search.showObjectiveFunction(obj)
       search2.verbose = 1
       search2.doAllMoves(obj = obj)
-
     }else {
       val (store2, search2, _, _) = createSearchProcedure()
       supervisor.createLocalWorker(store2, search2)

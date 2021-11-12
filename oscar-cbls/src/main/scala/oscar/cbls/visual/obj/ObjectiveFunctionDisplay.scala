@@ -40,7 +40,7 @@ import scala.jdk.CollectionConverters.IterableHasAsScala
  * @param basePercentile
  * @param otherValues
  */
-class ObjectiveFunctionDisplay(title: String, minCap:Long, maxCap:Long, basePercentile: Int, otherValues: List[String])
+class ObjectiveFunctionDisplay(title: String, minCap:Long, maxCap:Long, basePercentile: Int, otherValues: List[String],logScale:Boolean = true)
   extends JPanel(new BorderLayout()) with StopWatch {
 
   require(minCap+5 < maxCap, "Min cap should be lesser than max cap - 5 (for proper display purpose) . Got minCap : " + minCap + ", maxCap : " + maxCap)
@@ -149,12 +149,20 @@ class ObjectiveFunctionDisplay(title: String, minCap:Long, maxCap:Long, basePerc
       // Setting Y axis range
       plot.setRangeAxis({
         if (dataSetsId == 0) {
-          val axis = new LogAxis()
-          axis.setAutoTickUnitSelection(true)
-          axis.setBase(10)
-          axis.setMinorTickMarksVisible(true)
-          axis.setRange(new org.jfree.data.Range(minCap.toDouble, maxCap.toDouble), true, true)
-          axis
+          if(logScale) {
+            val axis = new LogAxis()
+            axis.setAutoTickUnitSelection(true)
+            axis.setBase(10)
+            axis.setMinorTickMarksVisible(true)
+            axis.setRange(new org.jfree.data.Range(minCap.toDouble, maxCap.toDouble), true, true)
+            axis
+          }else{
+            val axis = new NumberAxis()
+            axis.setAutoTickUnitSelection(true)
+            axis.setMinorTickMarksVisible(true)
+            axis.setRange(new org.jfree.data.Range(minCap.toDouble, maxCap.toDouble), true, true)
+            axis
+          }
         } else {
           val axis = new NumberAxis()
           axis.setAutoRange(true)
@@ -291,6 +299,6 @@ class ObjectiveFunctionDisplay(title: String, minCap:Long, maxCap:Long, basePerc
 }
 
 object ObjectiveFunctionDisplay{
-  def apply(title: String, minCap: Long, maxCap:Long, percentile: Int, otherValues: List[String]): ObjectiveFunctionDisplay =
-    new ObjectiveFunctionDisplay(title, minCap, maxCap, percentile, otherValues)
+  def apply(title: String, minCap: Long, maxCap:Long, percentile: Int, otherValues: List[String],logScale:Boolean = true): ObjectiveFunctionDisplay =
+    new ObjectiveFunctionDisplay(title, minCap, maxCap, percentile, otherValues,logScale)
 }

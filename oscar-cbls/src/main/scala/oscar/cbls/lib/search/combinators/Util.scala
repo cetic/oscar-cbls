@@ -42,9 +42,10 @@ class ShowObjectiveFunction(a: Neighborhood, obj: () => Long, title: String = "O
                             minCap: Long = 0L,
                             maxCap:Long = Long.MaxValue,
                             percentile:Int = 100,
-                            otherValues: Array[(String, () => Long)] = Array.empty) extends NeighborhoodCombinator(a){
+                            otherValues: Array[(String, () => Long)] = Array.empty,
+                            logScale:Boolean = true) extends NeighborhoodCombinator(a){
   //objGraphic is an internal frame that contains the curve itself and visualFrame is a basic frame that contains objGraphic
-  private val objGraphic = ObjectiveFunctionDisplay(title, minCap, maxCap, percentile, otherValues.map(_._1).toList)
+  private val objGraphic = ObjectiveFunctionDisplay(title, minCap, maxCap, percentile, otherValues.map(_._1).toList,logScale)
   private val otherValuesFunctions = otherValues.map(_._2)
   val window = SingleFrameWindow.show(objGraphic,title)
 
