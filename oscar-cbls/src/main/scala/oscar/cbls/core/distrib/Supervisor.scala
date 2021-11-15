@@ -218,11 +218,14 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor],
 
   //TODO: for the distributed version, regularly check that workers performing some wearch are still alive and working, otherwise, search must be restarted at another worker.
 
-  var nbLocalWorker:Int = 0
+  @volatile
+  private var nbLocalWorker:Int = 0
   def createLocalWorker(m: Store, search: Neighborhood,workerName:String = null): Unit = {
-    nbLocalWorker += 1
-    val workerBehavior = WorkerActor.createWorkerBehavior(search.identifyRemotelySearchableNeighborhoods, m, this.supervisorActor, verbose, if(workerName == null) "localWorker"+nbLocalWorker else workerName)
-    supervisorActor ! SpawnWorker(workerBehavior)
+    this.synchronized {
+      nbLocalWorker += 1
+      val workerBehavior = WorkerActor.createWorkerBehavior(search.identifyRemotelySearchableNeighborhoods, m, this.supervisorActor, verbose, if (workerName == null) "localWorker" + nbLocalWorker else workerName)
+      supervisorActor ! SpawnWorker(workerBehavior)
+    }
   }
 
   def spawnNewActor[T](behavior:Behavior[T],behaviorName:String): Future[ActorRef[T]] = {
@@ -345,7 +348,8 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
         statisticCollectorID += 1
 
         def statisticsCollector1(context:ActorContext[(Int,List[Array[String]])]): Behavior[(Int,List[Array[String]])] ={
-          val workerArray = allKnownWorkers.toArray
+          val workerArray = allKnownWorkers.reverse.toArray
+          //println("workers:\n\t" + workerArray.mkString("\n\t"))
           for( i <- workerArray.indices) {
             workerArray(i) ! GetStatisticsFor(remoteNeighborhood, i, context.self)
           }
