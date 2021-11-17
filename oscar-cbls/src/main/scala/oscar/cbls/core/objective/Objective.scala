@@ -22,6 +22,7 @@ package oscar.cbls.core.objective
 
 import oscar.cbls
 import oscar.cbls.core.computation._
+import oscar.cbls.warning
 
 object Objective{
   implicit def objToChangingIntValue(o:IntVarObjective):ChangingIntValue = o.objective
@@ -34,7 +35,9 @@ object Objective{
   implicit def apply(objective:IntValue) =
     objective match {
       case c: ChangingIntValue => new IntVarObjective(c)
-      case c: CBLSIntConst => throw new Error("you do not want to have an objective that is actually a constant value!")
+      case c: CBLSIntConst =>
+        warning("you do not want to have an objective that is actually a constant value: " + c)
+        new FunctionObjective(() => c.value)
     }
 }
 
