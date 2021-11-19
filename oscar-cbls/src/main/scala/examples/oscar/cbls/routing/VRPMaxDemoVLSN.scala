@@ -102,11 +102,12 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
       Objective(routeLengthPerVehicle(vehicle)))
   )
 
-  val unroutedPenaltyObj = Objective(penaltyForUnrouted*(n - length(myVRP.routes)))
+  val unroutedPenalty = penaltyForUnrouted*(n - length(myVRP.routes))
+  val unroutedPenaltyObj = Objective(unroutedPenalty)
 
   val obj = new CascadingObjective(
     c,
-    Objective(totalRouteLength + unroutedPenaltyObj.objective)
+    Objective(totalRouteLength + unroutedPenalty)
   )
 
   model.close()
