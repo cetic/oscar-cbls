@@ -32,7 +32,7 @@ object Objective{
 
   def apply(f:()=>Long,model:Store = null) = new FunctionObjective(f,model)
 
-  implicit def apply(objective:IntValue) =
+  implicit def apply(objective:IntValue): Objective =
     objective match {
       case c: ChangingIntValue => new IntVarObjective(c)
       case c: CBLSIntConst =>
