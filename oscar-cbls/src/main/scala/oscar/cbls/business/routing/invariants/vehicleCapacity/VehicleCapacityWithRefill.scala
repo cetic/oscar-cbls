@@ -183,7 +183,7 @@ class VehicleCapacityWithRefill(routes: ChangingSeqValue, override val n: Int, v
    * this one is similar to the nodeValue except that it only is applied on vehicle,
    * to represent the return to the vehicle start at the end of its route
    *
-   * @param vehicle
+   * @param vehicle th
    * @return
    */
   override def endNodeValue(vehicle: Int): TwoWaysVehicleContentWithRefillFunction =
@@ -219,7 +219,7 @@ class VehicleCapacityWithRefill(routes: ChangingSeqValue, override val n: Int, v
         case f:LogReducedFlippedPreComputedSubSequence[TwoWaysVehicleContentWithRefillFunction] =>
           evaluateOnStepsBackwards(currentContent,f.steps)
         case n:LogReducedNewNode[TwoWaysVehicleContentWithRefillFunction] =>
-          evaluateOnStepsForward(currentContent:Long, steps = QList(n.value.nonFlippedFunction))
+          evaluateOnStepsForward(currentContent:Long, steps = QList(n.value))
       }
     }
 
