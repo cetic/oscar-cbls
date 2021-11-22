@@ -10,32 +10,35 @@ import oscar.cbls.core.search._
 
 case class SearchProgress(searchId:Long, obj:Long, timeMs:Long, aborted:Boolean = false)
 
-abstract sealed class SearchRequest
+abstract sealed class SearchRequest{
+  def startSolutionOpt: Option[IndependentSolution]
+  def dropStartSolution:SearchRequest
+  def neighborhoodIdOpt:Option[RemoteNeighborhoodIdentification]
+}
 
 case class SingleMoveSearch(neighborhoodID: RemoteNeighborhoodIdentification,
-                         acc: (Long, Long) => Boolean,
-                         obj: IndependentObjective,
+                            acc: (Long, Long) => Boolean,
+                            obj: IndependentObjective,
                             sendFullSolution:Boolean = false,
-                         startSolutionOpt: Option[IndependentSolution]) {
-  override def toString: String = s"SearchRequest($neighborhoodID,$acc,$obj,sendFullSolution:$sendFullSolution)"
+                            startSolutionOpt: Option[IndependentSolution]) extends SearchRequest{
+  override def toString: String = s"SingleMoveSearch($neighborhoodID,$acc,$obj,sendFullSolution:$sendFullSolution)"
+
+  override def dropStartSolution: SearchRequest = this.copy(startSolutionOpt = None)
+
+  override def neighborhoodIdOpt: Option[RemoteNeighborhoodIdentification] = Some(neighborhoodID)
 }
 
 case class DoAllMoveSearch(neighborhoodID: RemoteNeighborhoodIdentification,
-                            acc: (Long, Long) => Boolean,
-                            obj: IndependentObjective,
-                            startSolutionOpt: Option[IndependentSolution],
-                            sendFullSolution:Boolean = false,
-                            sendProgressTo:Option[ActorRef[SearchProgress]] = None) {
-  override def toString: String = s"SearchRequest($neighborhoodID,$acc,$obj,sendFullSolution:$sendFullSolution)"
-}
-
-case class MultipleSearch(neighborhoodIDs: ????????????,
                            acc: (Long, Long) => Boolean,
                            obj: IndependentObjective,
                            startSolutionOpt: Option[IndependentSolution],
                            sendFullSolution:Boolean = false,
-                           sendProgressTo:Option[ActorRef[SearchProgress]] = None) {
-  override def toString: String = s"SearchRequest($neighborhoodID,$acc,$obj,sendFullSolution:$sendFullSolution)"
+                           sendProgressTo:Option[ActorRef[SearchProgress]] = None) extends SearchRequest {
+  override def toString: String = s"DoAllMoveSearch($neighborhoodID,$acc,$obj,sendFullSolution:$sendFullSolution)"
+
+  override def dropStartSolution: SearchRequest = this.copy(startSolutionOpt = None)
+
+  override def neighborhoodIdOpt: Option[RemoteNeighborhoodIdentification] = Some(neighborhoodID)
 }
 
 case class SearchTask(request: SearchRequest,

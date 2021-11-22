@@ -19,7 +19,7 @@ sealed trait MessagesToSupervisor
 
 final case class NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) extends MessagesToSupervisor with ControlMessage
 
-final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSearchIDOpt: Option[Long], completedNeighborhoodIDAndMoveFound: Option[(Int,Boolean)], currentModelId:Option[Int]) extends MessagesToSupervisor with ControlMessage
+final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSearchIDOpt: Option[Long], currentModelId:Option[Int]) extends MessagesToSupervisor with ControlMessage
 
 final case class CancelSearchToSupervisor(searchID: Long, keepAliveIfOjBelow:Option[Long]=None) extends MessagesToSupervisor with ControlMessage
 
@@ -408,7 +408,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
               val solutionForThisSearch = search.request.startSolutionOpt
 
               val simplifiedSearch = (solutionForThisSearch,currentSolutionAtWorker) match{
-                case (Some(x),Some(y)) if x.solutionId == y => search.copy(request = search.request.copy(startSolutionOpt = None))
+                case (Some(x),Some(y)) if x.solutionId == y => search.copy(request = search.request.dropStartSolution)
                 case _ => search
               }
 
@@ -431,7 +431,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
             while (hotRestart && couldDequeue && nbSearchToStart != 0) {
               couldDequeue = false
               waitingSearches.dequeueFirst(searchTask => {
-                val nID = searchTask.request.neighborhoodID.neighborhoodID
+                val nID = searchTask.request.neighborhoodIdOpt.map(_.neighborhoodID).getOrElse(-1)
                 val preferredWorkerOpt = neighborhoodToPreferredWorker.get(nID)
                 preferredWorkerOpt match {
                   case Some(preferredWorker) =>
@@ -460,7 +460,15 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
               idleWorkersAndTheirCurentModelID = idleWorkersAndTheirCurentModelID.tail
               //println("coldRestart " + searchToStart.request.neighborhoodID)
               startSearch(searchToStart, worker._1,worker._2)
-              if(hotRestart) neighborhoodToPreferredWorker = neighborhoodToPreferredWorker + (searchToStart.request.neighborhoodID.neighborhoodID -> worker._1)
+
+              if(hotRestart) {
+                searchToStart.request.neighborhoodIdOpt match{
+                  case None => ;
+                  case Some(n) =>
+                    neighborhoodToPreferredWorker = neighborhoodToPreferredWorker + (n.neighborhoodID -> worker._1)
+                }
+              }
+
               nbSearchToStart -= 1
             }
 
@@ -505,7 +513,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
       //we do not register the worker as available here because it will register itself through another call,
       // at least to show it is not completely crashed.
 
-      case ReadyForWork(worker: ActorRef[MessageToWorker], completedSearchID: Option[Long], completedNeighborhoodIDAndMoveFound: Option[(Int,Boolean)], currentModelId:Option[Int]) =>
+      case ReadyForWork(worker: ActorRef[MessageToWorker], completedSearchID: Option[Long], currentModelId:Option[Int]) =>
         if (verbose) context.log.info(s"got a worker ready:${worker.path}; finished search:$completedSearchID")
 
         require(allKnownWorkers contains worker)

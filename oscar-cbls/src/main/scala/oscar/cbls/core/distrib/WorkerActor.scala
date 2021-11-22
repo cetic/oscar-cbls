@@ -109,21 +109,25 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
     }
   }
 
-  private def doSearch(searchRequest: SearchRequest,searchId:Long): (IndependentSearchResult,Int) = {
-    val initLocalSolutionOpt:Option[Solution] = searchRequest.startSolutionOpt match{
+  private def loadSolutionOpt(startSolOpt:Option[IndependentSolution]) : Option[Solution] = {
+    startSolOpt match {
       case None =>
         require(currentModelNr.isDefined)
         None
       case Some(startSolution) =>
-        if(this.currentModelNr.isEmpty || startSolution.solutionId != this.currentModelNr.get) {
+        if (this.currentModelNr.isEmpty || startSolution.solutionId != this.currentModelNr.get) {
           val s = startSolution.makeLocal(m)
-          s.restoreDecisionVariables(withoutCheckpoints = true)  //TODO: we should only transmit the delta, eventually
+          s.restoreDecisionVariables(withoutCheckpoints = true) //TODO: we should only transmit the delta, eventually
           currentModelNr = Some(startSolution.solutionId)
           Some(s)
-        }else{
+        } else {
           None
         }
     }
+  }
+
+  private def doSingleMoveSearch(searchRequest: SingleMoveSearch,searchId:Long) : (IndependentSearchResult,Int) = {
+    val initLocalSolutionOpt:Option[Solution] = loadSolutionOpt(searchRequest.startSolutionOpt)
 
     shouldAbortComputation = false
 
@@ -131,24 +135,46 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
     currentNeighborhood = neighborhood
 
     val startTime = System.currentTimeMillis()
-    val result = if(searchRequest.doAllMoves){
-      neighborhood.doAllMoves(
-        searchRequest.obj.convertToObjective(m),
-        searchRequest.acc,
-        shouldAbort = () => shouldAbortComputation,
-        searchId = searchId,
-        sendProgressTo = searchRequest.sendProgressTo)
-    }else{
-      neighborhood.getMove(
-        searchRequest.obj.convertToObjective(m),
-        searchRequest.acc,
-        shouldAbort = () => shouldAbortComputation,
-        initSolutionOpt = initLocalSolutionOpt,
-        sendFullSolution = searchRequest.sendFullSolution,
-        searchId = searchId,
-        sendProgressTo = searchRequest.sendProgressTo)
-    }
+    val result = neighborhood.getMove(
+      searchRequest.obj.convertToObjective(m),
+      searchRequest.acc,
+      shouldAbort = () => shouldAbortComputation,
+      initSolutionOpt = initLocalSolutionOpt,
+      sendFullSolution = searchRequest.sendFullSolution,
+      searchId = searchId,
+      sendProgressTo = None)
+
     (result,(System.currentTimeMillis() - startTime).toInt)
+  }
+
+
+  private def doDoAllMoveSearch(searchRequest:DoAllMoveSearch, searchId:Long) : (IndependentSearchResult,Int) = {
+
+    val initLocalSolutionOpt:Option[Solution] = loadSolutionOpt(searchRequest.startSolutionOpt)
+
+    shouldAbortComputation = false
+
+    val neighborhood = neighborhoods(searchRequest.neighborhoodID.neighborhoodID)
+    currentNeighborhood = neighborhood
+
+    val startTime = System.currentTimeMillis()
+    val result = neighborhood.doAllMoves(
+      searchRequest.obj.convertToObjective(m),
+      searchRequest.acc,
+      shouldAbort = () => shouldAbortComputation,
+      searchId = searchId,
+      sendProgressTo = searchRequest.sendProgressTo)
+
+
+    (result,(System.currentTimeMillis() - startTime).toInt)
+  }
+
+  private def doSearch(searchRequest: SearchRequest,searchId:Long): (IndependentSearchResult,Int) = {
+    searchRequest match{
+      case s:SingleMoveSearch =>doSingleMoveSearch(s,searchId)
+      case d:DoAllMoveSearch =>doDoAllMoveSearch(d,searchId)
+      //TODO: more search tasks should ne supported, bu I do not know yet how to do it cleanly
+    }
   }
 
   private def next(state: WorkerState): Behavior[MessageToWorker] = {
@@ -213,7 +239,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
                 // map the Future value to a message, handled by this actor
                 case Success(s) => WrappedSearchEnded(s)
                 case Failure(e) =>
-                  WrappedSearchEnded(SearchCrashed(newSearch.searchId, newSearch.request.neighborhoodID, e, context.self))
+                  WrappedSearchEnded(SearchCrashed(newSearch.searchId, newSearch.request.neighborhoodIdOpt, e, context.self))
               }
               replyTo ! SearchStarted(newSearch.searchId, startID, context.self)
               next(IAmBusy(newSearch,System.currentTimeMillis()))
@@ -226,7 +252,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
             case IAmBusy(search,startTimeMs) =>
               if (searchId == search.searchId) {
 
-                val mustAbort:Boolean = if(search.request.doAllMoves && keepAliveIfOjBelow.isDefined){
+                val mustAbort:Boolean = if(keepAliveIfOjBelow.isDefined){
                   currentNeighborhood != null && currentNeighborhood.bestObjSoFar >= keepAliveIfOjBelow.get
                 }else true
 
@@ -287,7 +313,6 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
               master ! ReadyForWork(
                 context.self,
                 Some(search.searchId),
-                Some((search.request.neighborhoodID.neighborhoodID, moveFound)),
                 currentModelNr)
 
               next(Idle())
@@ -295,7 +320,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
             case Aborting(search) =>
               //ok, we've done it for nothing.
               if (verbose) context.log.info(s"aborted search:${search.searchId}")
-              master ! ReadyForWork(context.self, Some(search.searchId), Some((search.request.neighborhoodID.neighborhoodID,false)),currentModelNr)
+              master ! ReadyForWork(context.self, Some(search.searchId), currentModelNr)
               next(Idle())
 
             case Idle() =>
