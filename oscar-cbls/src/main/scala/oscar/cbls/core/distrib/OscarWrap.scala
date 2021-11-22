@@ -10,13 +10,31 @@ import oscar.cbls.core.search._
 
 case class SearchProgress(searchId:Long, obj:Long, timeMs:Long, aborted:Boolean = false)
 
-case class SearchRequest(neighborhoodID: RemoteNeighborhoodIdentification,
+abstract sealed class SearchRequest
+
+case class SingleMoveSearch(neighborhoodID: RemoteNeighborhoodIdentification,
                          acc: (Long, Long) => Boolean,
                          obj: IndependentObjective,
-                         startSolutionOpt: Option[IndependentSolution],
-                         sendFullSolution:Boolean = false,
-                         doAllMoves:Boolean = false,
-                         sendProgressTo:Option[ActorRef[SearchProgress]] = None) {
+                            sendFullSolution:Boolean = false,
+                         startSolutionOpt: Option[IndependentSolution]) {
+  override def toString: String = s"SearchRequest($neighborhoodID,$acc,$obj,sendFullSolution:$sendFullSolution)"
+}
+
+case class DoAllMoveSearch(neighborhoodID: RemoteNeighborhoodIdentification,
+                            acc: (Long, Long) => Boolean,
+                            obj: IndependentObjective,
+                            startSolutionOpt: Option[IndependentSolution],
+                            sendFullSolution:Boolean = false,
+                            sendProgressTo:Option[ActorRef[SearchProgress]] = None) {
+  override def toString: String = s"SearchRequest($neighborhoodID,$acc,$obj,sendFullSolution:$sendFullSolution)"
+}
+
+case class MultipleSearch(neighborhoodIDs: ????????????,
+                           acc: (Long, Long) => Boolean,
+                           obj: IndependentObjective,
+                           startSolutionOpt: Option[IndependentSolution],
+                           sendFullSolution:Boolean = false,
+                           sendProgressTo:Option[ActorRef[SearchProgress]] = None) {
   override def toString: String = s"SearchRequest($neighborhoodID,$acc,$obj,sendFullSolution:$sendFullSolution)"
 }
 
