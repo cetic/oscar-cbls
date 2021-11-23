@@ -100,7 +100,6 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
   @volatile
   final var currentModelNr:Option[Int] = None
 
-
   def initBehavior(): Behavior[MessageToWorker] = {
     Behaviors.setup { context =>
       master ! NewWorkerEnrolled(context.self)
@@ -147,10 +146,9 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
     (result,(System.currentTimeMillis() - startTime).toInt)
   }
 
-
   private def doDoAllMoveSearch(searchRequest:DoAllMoveSearch, searchId:Long) : (IndependentSearchResult,Int) = {
 
-    val initLocalSolutionOpt:Option[Solution] = loadSolutionOpt(searchRequest.startSolutionOpt)
+    loadSolutionOpt(searchRequest.startSolutionOpt)
 
     shouldAbortComputation = false
 
@@ -171,7 +169,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
 
   private def doSearch(searchRequest: SearchRequest,searchId:Long): (IndependentSearchResult,Int) = {
     searchRequest match{
-      case s:SingleMoveSearch =>doSingleMoveSearch(s,searchId)
+      case s:SingleMoveSearch => doSingleMoveSearch(s,searchId)
       case d:DoAllMoveSearch =>doDoAllMoveSearch(d,searchId)
       //TODO: more search tasks should ne supported, bu I do not know yet how to do it cleanly
     }

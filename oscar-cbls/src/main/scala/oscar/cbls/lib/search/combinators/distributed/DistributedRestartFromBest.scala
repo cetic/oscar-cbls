@@ -336,15 +336,14 @@ class DistributedRestartFromBest(baseSearch:Neighborhood,
           case WrappedGotUniqueID(uniqueID: Long, neighborhoodIndice: Int) =>
 
             //start a search
-            val request = SearchRequest(
-              remoteNeighborhoods(neighborhoodIndice).getRemoteIdentification(),
+            val request = DoAllMoveSearch(
+              remoteNeighborhoods(neighborhoodIndice).getRemoteIdentification,
               acceptanceCriteria,
               independentObj,
               startSolutionOpt = Some(bestMoveSoFar match{
                 case Some(load) => load.s
                 case None => startSol
               }),
-              doAllMoves = true,
               sendProgressTo = display,
               sendFullSolution = true)
 

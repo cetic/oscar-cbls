@@ -3,7 +3,7 @@ package oscar.cbls.lib.search.combinators.distributed
 import akka.actor.typed.{ActorSystem, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.util.Timeout
-import oscar.cbls.core.distrib.{CancelSearchToSupervisor, DelegateSearch, GetNewUniqueID, IndependentMoveFound, IndependentNoMoveFound, IndependentSearchResult, IndependentSolution, SearchAborted, SearchCompleted, SearchCrashed, SearchEnded, SearchRequest}
+import oscar.cbls.core.distrib.{CancelSearchToSupervisor, DelegateSearch, GetNewUniqueID, IndependentMoveFound, IndependentNoMoveFound, IndependentSearchResult, IndependentSolution, SearchAborted, SearchCompleted, SearchCrashed, SearchEnded, SearchRequest, SingleMoveSearch}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
 
@@ -12,7 +12,7 @@ import scala.concurrent.duration.{Duration, DurationInt}
 import scala.util.{Failure, Random, Success}
 
 
-class DistributedFirst(neighborhoods:Array[Neighborhood])
+class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean = false)
   extends DistributedCombinator(neighborhoods) {
 
   override def getMove(obj: Objective, initialObj: Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
@@ -91,10 +91,11 @@ class DistributedFirst(neighborhoods:Array[Neighborhood])
 
           case WrappedGotUniqueID(uniqueID: Long, neighborhoodIndice: Int) =>
 
-            val request = SearchRequest(
-              remoteNeighborhoods(neighborhoodIndice).getRemoteIdentification(),
+            val request = SingleMoveSearch(
+              remoteNeighborhoods(neighborhoodIndice).getRemoteIdentification,
               acceptanceCriteria,
               independentObj,
+              sendFullSolution = false,
               startSol)
 
             context.ask[DelegateSearch, SearchEnded](supervisor.supervisorActor, ref => DelegateSearch(request, ref, uniqueID)) {

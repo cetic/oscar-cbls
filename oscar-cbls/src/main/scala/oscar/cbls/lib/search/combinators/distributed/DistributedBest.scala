@@ -2,7 +2,7 @@ package oscar.cbls.lib.search.combinators.distributed
 
 import akka.actor.typed.ActorSystem
 import akka.util.Timeout
-import oscar.cbls.core.distrib.{DelegateSearch, IndependentMoveFound, IndependentNoMoveFound, IndependentSolution, SearchCompleted, SearchCrashed, SearchEnded, SearchRequest}
+import oscar.cbls.core.distrib.{DelegateSearch, IndependentMoveFound, IndependentNoMoveFound, IndependentSolution, SearchCompleted, SearchCrashed, SearchEnded, SearchRequest, SingleMoveSearch, StartSomeSearch}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
 
@@ -10,7 +10,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, DurationInt}
 
 
-class DistributedBest(neighborhoods:Array[Neighborhood])
+class DistributedBest(neighborhoods:Array[Neighborhood],useHotRestart:Boolean = true)
   extends DistributedCombinator(neighborhoods) {
 
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
@@ -25,14 +25,21 @@ class DistributedBest(neighborhoods:Array[Neighborhood])
 
     val futureResults =  remoteNeighborhoods.indices.map(i => {
 
-      val request = SearchRequest(
-        remoteNeighborhoods(i).getRemoteIdentification(),
+      val request = SingleMoveSearch(
+        remoteNeighborhoods(i).getRemoteIdentification,
         acceptanceCriteria,
         independentObj,
+        sendFullSolution = false,
         startSol)
 
-      supervisor.supervisorActor.ask[SearchEnded](ref => DelegateSearch(request, ref))
+      supervisor.supervisorActor.ask[SearchEnded](ref =>
+        DelegateSearch(request, ref, waitForMoreSearch = useHotRestart))
     }).toList
+
+    if(useHotRestart) {
+      //now that all searches are sent, tll the superviso to start searches, so it can use hotRestart
+      supervisor.supervisorActor ! StartSomeSearch()
+    }
 
     val independentMoveFound:Iterable[IndependentMoveFound] = futureResults.flatMap(futureResult =>
       Await.result(futureResult,Duration.Inf) match {

@@ -88,7 +88,6 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
       init(getSortedNeighborhoods(currentIt), priorityOfNextSearch = 0, nbWorkers, nbStartingAndRunningSearches = 0, context)
     }}, "DistributedBestSlopeFirst")
 
-
     @tailrec
     def init(neighborhoodList: List[Int], priorityOfNextSearch:Int, nbSearchesToStart: Int, nbStartingAndRunningSearches:Int, context: ActorContext[WrappedData]): Behavior[WrappedData] = {
       neighborhoodList match {
@@ -213,11 +212,12 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
 
           case WrappedGotUniqueID(uniqueID: Long, neighborhoodIndice: Int,priorityOfSearch:Int) =>
             //start search with val request
-            val request = SearchRequest(remoteNeighborhoods(neighborhoodIndice).getRemoteIdentification(),
+            val request = SingleMoveSearch(
+              remoteNeighborhoods(neighborhoodIndice).getRemoteIdentification,
               acceptanceCriteria,
               independentObj,
-              startSol,
-              doAllMoves = true)
+              sendFullSolution = false,
+              startSol)
 
             context.ask[DelegateSearch, SearchEnded](supervisor.supervisorActor, ref => DelegateSearch(request, ref, uniqueID)) {
               case Success(searchEnded) => WrappedSearchEnded(searchEnded, neighborhoodIndice, priorityOfSearch, uniqueID)

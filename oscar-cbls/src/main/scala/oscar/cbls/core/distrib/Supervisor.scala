@@ -17,11 +17,11 @@ import scala.util.{Failure, Success}
 
 sealed trait MessagesToSupervisor
 
-final case class NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) extends MessagesToSupervisor with ControlMessage
+final case class NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) extends MessagesToSupervisor
 
-final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSearchIDOpt: Option[Long], currentModelId:Option[Int]) extends MessagesToSupervisor with ControlMessage
+final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSearchIDOpt: Option[Long], currentModelId:Option[Int]) extends MessagesToSupervisor
 
-final case class CancelSearchToSupervisor(searchID: Long, keepAliveIfOjBelow:Option[Long]=None) extends MessagesToSupervisor with ControlMessage
+final case class CancelSearchToSupervisor(searchID: Long, keepAliveIfOjBelow:Option[Long]=None) extends MessagesToSupervisor
 
 final case class SearchStarted(searchID: Long, startID: Long, worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
 
@@ -29,11 +29,22 @@ final case class SearchNotStarted(searchID: Long, startID:Long, worker: ActorRef
 
 final case class Crash(worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
 
+/**
+ *
+ * @param searchRequest
+ * @param sendSearchResultTo
+ * @param searchID this ID is useful if we want to cancel searches. You get a uniqueID through GetUniqueID message.
+ *                 If you do not want to cancel searches, use the default -1 value here
+ * @param waitForMoreSearch
+ */
 final case class DelegateSearch(searchRequest: SearchRequest,
                                 sendSearchResultTo:ActorRef[SearchEnded],
-                                searchID:Long = -1) extends MessagesToSupervisor with ControlMessage
+                                searchID:Long = -1,
+                                waitForMoreSearch:Boolean = false) extends MessagesToSupervisor
 
-final case class GetNewUniqueID(replyTo:ActorRef[Long]) extends MessagesToSupervisor with ControlMessage
+final case class StartSomeSearch() extends MessagesToSupervisor
+
+final case class GetNewUniqueID(replyTo:ActorRef[Long]) extends MessagesToSupervisor
 
 final case class ShutDown(replyTo: Option[ActorRef[Unit]]) extends MessagesToSupervisor
 
@@ -291,7 +302,6 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
 
   private case class Tic() extends MessagesToSupervisor
   //this one cannot be a control message.
-  private case class StartSomeSearch() extends MessagesToSupervisor
 
   private val waitingSearches = scala.collection.mutable.Queue[SearchTask]()
   var nbLocalWorker: Int = 0
@@ -537,7 +547,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
         replyTo ! nextSearchID
         nextSearchID += 1
 
-      case DelegateSearch(searchRequest, sendSearchResultTo, givenSearchId) =>
+      case DelegateSearch(searchRequest, sendSearchResultTo, givenSearchId, waitForMoreSearches) =>
 
         val searchId = if(givenSearchId == -1){
           val x = nextSearchID
@@ -550,8 +560,10 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
         //now, we have a WorkGiver actor, we search for an available Worker or put this request on a waiting list.
         val theSearch = SearchTask(searchRequest, searchId, sendSearchResultTo)
         waitingSearches.enqueue(theSearch)
-        context.self ! StartSomeSearch()
+        if(!waitForMoreSearches) context.self ! StartSomeSearch()
 
+      case StartSomeSearch() =>
+        context.self ! StartSomeSearch()
       case CancelSearchToSupervisor(searchID: Long,keepAliveIfOjBelow:Option[Long]) =>
 
         waitingSearches.dequeueFirst(_.searchId == searchID) match {

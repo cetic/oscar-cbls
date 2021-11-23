@@ -1,7 +1,7 @@
 package oscar.cbls.lib.search.combinators.distributed
 
 import akka.actor.typed.ActorSystem
-import oscar.cbls.core.distrib.{DelegateSearch, IndependentSolution, SearchCompleted, SearchCrashed, SearchEnded, SearchRequest}
+import oscar.cbls.core.distrib.{DelegateSearch, IndependentSolution, SearchCompleted, SearchCrashed, SearchEnded, SearchRequest, SingleMoveSearch}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
 import akka.util.Timeout
@@ -19,11 +19,13 @@ class Remote(neighborhoods:Neighborhood)
     val independentObj = obj.getIndependentObj
     val startSol = Some(IndependentSolution(obj.model.solution()))
 
-    val searchRequest = SearchRequest(
-      remoteNeighborhoods(0).getRemoteIdentification(),
+    val searchRequest = SingleMoveSearch(
+      remoteNeighborhoods(0).getRemoteIdentification,
       acceptanceCriteria,
       independentObj,
-      startSol)
+      sendFullSolution = false,
+      startSol
+    )
 
     import akka.actor.typed.scaladsl.AskPattern._
     //TODO look for an adequate timeout or stopping mechanism

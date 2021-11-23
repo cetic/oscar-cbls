@@ -63,6 +63,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
               sendFullSolution:Boolean,
               searchId:Long,
               sendProgressTo:Option[ActorRef[SearchProgress]]): IndependentSearchResult = {
+    bestObjSoFar = Long.MaxValue
     neighborhood.getMoveAbortable(obj, obj.value, acc, shouldAbort,initSolutionOpt) match {
       case NoMoveFound => IndependentNoMoveFound()
       case MoveFound(m) =>
@@ -72,12 +73,17 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
             target ! SearchProgress(searchId, m.objAfter, System.currentTimeMillis())
         }
         if(sendFullSolution) {
+          val startSol = initSolutionOpt.getOrElse(obj.model.solution())
           m.commit()
-          IndependentMoveFound(LoadIndependentSolutionMove(
+          bestObjSoFar = Long.MaxValue
+          val toReturn = IndependentMoveFound(LoadIndependentSolutionMove(
             objAfter = m.objAfter,
             neighborhoodName = m.neighborhoodName,
             IndependentSolution(obj.model.solution())))
+          startSol.restoreDecisionVariables()
+          toReturn
         }else {
+          bestObjSoFar = Long.MaxValue
           IndependentMoveFound(m.getIndependentMove(obj.model))
         }
     }
@@ -128,10 +134,12 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
         case Some(target) =>
           target ! SearchProgress(searchId, obj.value, System.currentTimeMillis())
       }
-      IndependentMoveFound(LoadIndependentSolutionMove(
+      val toReturn = IndependentMoveFound(LoadIndependentSolutionMove(
         objAfter = obj.value,
         neighborhoodName = name,
         IndependentSolution(obj.model.solution())))
+
+      toReturn
     }else {
       sendProgressTo match {
         case None =>
@@ -142,7 +150,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
     }
   }
 
-  def getRemoteIdentification(): RemoteNeighborhoodIdentification =
+  def getRemoteIdentification: RemoteNeighborhoodIdentification =
     RemoteNeighborhoodIdentification(neighborhoodID)
 }
 
