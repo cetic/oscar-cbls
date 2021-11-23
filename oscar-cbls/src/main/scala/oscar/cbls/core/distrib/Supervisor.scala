@@ -560,8 +560,10 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
         //now, we have a WorkGiver actor, we search for an available Worker or put this request on a waiting list.
         val theSearch = SearchTask(searchRequest, searchId, sendSearchResultTo)
         waitingSearches.enqueue(theSearch)
-        if(!waitForMoreSearches) context.self ! StartSomeSearch()
 
+        if(!waitForMoreSearches) {
+          context.self ! StartSomeSearch()
+        }
       case StartSomeSearch() =>
         context.self ! StartSomeSearch()
       case CancelSearchToSupervisor(searchID: Long,keepAliveIfOjBelow:Option[Long]) =>

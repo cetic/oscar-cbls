@@ -98,7 +98,8 @@ class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean =
               sendFullSolution = false,
               startSol)
 
-            context.ask[DelegateSearch, SearchEnded](supervisor.supervisorActor, ref => DelegateSearch(request, ref, uniqueID)) {
+            context.ask[DelegateSearch, SearchEnded](supervisor.supervisorActor, ref => DelegateSearch(request, ref, uniqueID,
+              waitForMoreSearch = runningSearchIDs.size >= neighborhoods.length-1)) {
               case Success(searchEnded) => WrappedSearchEnded(searchEnded)
               case Failure(_) => WrappedError(msg = Some(s"Supervisor actor timeout on $command"))
             }
