@@ -40,12 +40,12 @@ abstract class NeighborhoodCombinator(a: Neighborhood*) extends Neighborhood {
 
   override def collectProfilingStatistics: List[Array[String]] = a.flatMap(_.collectProfilingStatistics).toList
 
-  override def labelAndExtractRemoteNeighborhoods(supervisor: Supervisor, currentID: Int, nbDistributedCombinators:Int = 0, acc: List[RemoteNeighborhood]):(Int,Int,List[RemoteNeighborhood]) = {
+  override def labelAndExtractRemoteTasks(supervisor: Supervisor, currentID: Int, nbDistributedCombinators:Int = 0, acc: List[RemoteNeighborhood]):(Int,Int,List[RemoteNeighborhood]) = {
     var currentIDNow: Int = currentID
     var nbDistributedCombinatorsNow:Int = nbDistributedCombinators
     var accNow: List[RemoteNeighborhood] = acc
     for(neighborhood <- a){
-      val a = neighborhood.labelAndExtractRemoteNeighborhoods(supervisor, currentIDNow, nbDistributedCombinatorsNow, accNow)
+      val a = neighborhood.labelAndExtractRemoteTasks(supervisor, currentIDNow, nbDistributedCombinatorsNow, accNow)
       currentIDNow = a._1
       nbDistributedCombinatorsNow = a._2
       accNow = a._3

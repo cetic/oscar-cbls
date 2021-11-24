@@ -41,6 +41,7 @@ case class DoAllMoveSearch(neighborhoodID: RemoteNeighborhoodIdentification,
   override def neighborhoodIdOpt: Option[RemoteNeighborhoodIdentification] = Some(neighborhoodID)
 }
 
+
 case class SearchTask(request: SearchRequest,
                       searchId: Long,
                       sendResultTo: ActorRef[SearchEnded]) {
@@ -49,12 +50,94 @@ case class SearchTask(request: SearchRequest,
 // ////////////////////////////////////////////////////////////
 
 //le truc qu'on envoie au worker
-case class RemoteNeighborhoodIdentification(neighborhoodID: Int)
+case class RemoteTaskIdentification(taskId: Int, description:String)
 
-class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood) {
+abstract class RemoteTask[TaskMessage](val taskId: Int, description:String) {
+
+  def doTask(taskMessage:Any): Unit ={
+     internalDoTask(taskMessage.asInstanceOf[TaskMessage])
+  }
+  def internalDoTask(taskMessage:TaskMessage):Unit
+
+  def getRemoteIdentification: RemoteTaskIdentification =
+    RemoteTaskIdentification(taskId,description)
+
+}
+
+class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
+  extends RemoteTask[SearchRequest](neighborhoodID: Int,neighborhood.toString){
 
   @volatile
   var bestObjSoFar:Long = Long.MaxValue
+
+  private def internalDoTask(searchRequest: SearchRequest): (IndependentSearchResult,Int) = {
+    searchRequest match{
+      case s:SingleMoveSearch => doSingleMoveSearch(s,searchId)
+      case d:DoAllMoveSearch =>doDoAllMoveSearch(d,searchId)
+      //TODO: more search tasks should ne supported, bu I do not know yet how to do it cleanly
+    }
+  }
+
+
+  private def loadSolutionOpt(startSolOpt:Option[IndependentSolution]) : Option[Solution] = {
+    startSolOpt match {
+      case None =>
+        require(currentModelNr.isDefined)
+        None
+      case Some(startSolution) =>
+        if (this.currentModelNr.isEmpty || startSolution.solutionId != this.currentModelNr.get) {
+          val s = startSolution.makeLocal(m)
+          s.restoreDecisionVariables(withoutCheckpoints = true) //TODO: we should only transmit the delta, eventually
+          currentModelNr = Some(startSolution.solutionId)
+          Some(s)
+        } else {
+          None
+        }
+    }
+  }
+
+  private def doSingleMoveSearch(searchRequest: SingleMoveSearch,searchId:Long) : (IndependentSearchResult,Int) = {
+    val initLocalSolutionOpt:Option[Solution] = loadSolutionOpt(searchRequest.startSolutionOpt)
+
+    shouldAbortComputation = false
+
+    val neighborhood = neighborhoods(searchRequest.neighborhoodID.neighborhoodID)
+    currentNeighborhood = neighborhood
+
+    val startTime = System.currentTimeMillis()
+    val result = neighborhood.getMove(
+      searchRequest.obj.convertToObjective(m),
+      searchRequest.acc,
+      shouldAbort = () => shouldAbortComputation,
+      initSolutionOpt = initLocalSolutionOpt,
+      sendFullSolution = searchRequest.sendFullSolution,
+      searchId = searchId,
+      sendProgressTo = None)
+
+    (result,(System.currentTimeMillis() - startTime).toInt)
+  }
+
+  private def doDoAllMoveSearch(searchRequest:DoAllMoveSearch, searchId:Long) : (IndependentSearchResult,Int) = {
+
+    loadSolutionOpt(searchRequest.startSolutionOpt)
+
+    shouldAbortComputation = false
+
+    val neighborhood = neighborhoods(searchRequest.neighborhoodID.neighborhoodID)
+    currentNeighborhood = neighborhood
+
+    val startTime = System.currentTimeMillis()
+    val result = neighborhood.doAllMoves(
+      searchRequest.obj.convertToObjective(m),
+      searchRequest.acc,
+      shouldAbort = () => shouldAbortComputation,
+      searchId = searchId,
+      sendProgressTo = searchRequest.sendProgressTo)
+
+
+    (result,(System.currentTimeMillis() - startTime).toInt)
+  }
+
 
   def getMove(obj: Objective,
               acc: (Long, Long) => Boolean,
@@ -149,9 +232,6 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
       IndependentNoMoveFound()
     }
   }
-
-  def getRemoteIdentification: RemoteNeighborhoodIdentification =
-    RemoteNeighborhoodIdentification(neighborhoodID)
 }
 
 // ////////////////////////////////////////////////////////////

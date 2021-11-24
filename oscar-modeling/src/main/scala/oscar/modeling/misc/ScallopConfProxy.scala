@@ -31,7 +31,7 @@ abstract class ScallopConfProxy {
       optionInstance += ((x, name) -> opt)
     })
 
-    new ScallopOption[A](name) {
+    new ScallopOption[A](() => name) {
       override lazy val fn = { name: String =>
         optionInstance((proxyTo, name)).asInstanceOf[ScallopOption[A]].fn(name)
       }

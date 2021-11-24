@@ -65,7 +65,7 @@ object Supervisor {
   def startSupervisorAndActorSystem(search: Neighborhood, verbose: Boolean = false, hotRestart:Boolean = true, tic: Duration = Duration.Inf): Supervisor = {
     val supervisorActorSystem = internalStartSupervisorAndActorSystem(verbose, hotRestart, tic)
     val supervisor = wrapSupervisor(supervisorActorSystem, verbose)(system = supervisorActorSystem)
-    val (nbNRemoteNeighborhood,nbDistributedCombinator,_) = search.labelAndExtractRemoteNeighborhoods(supervisor: Supervisor)
+    val (nbNRemoteNeighborhood,nbDistributedCombinator,_) = search.labelAndExtractRemoteTasks(supervisor: Supervisor)
 
     val startLogger: Logger = LoggerFactory.getLogger("SupervisorObject")
     startLogger.info(s"analyzed search; nbDistributedCombinator:$nbDistributedCombinator nbRemoteNeighborhood:$nbNRemoteNeighborhood")
