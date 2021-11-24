@@ -19,7 +19,7 @@ sealed trait MessagesToSupervisor
 
 final case class NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) extends MessagesToSupervisor
 
-final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSearchIDOpt: Option[Long], currentModelId:Option[Int]) extends MessagesToSupervisor
+final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSearchIDOpt: Option[Long], currentModelId:Int) extends MessagesToSupervisor
 
 final case class CancelSearchToSupervisor(searchID: Long, keepAliveIfOjBelow:Option[Long]=None) extends MessagesToSupervisor
 
@@ -38,8 +38,6 @@ final case class Crash(worker: ActorRef[MessageToWorker]) extends MessagesToSupe
  * @param waitForMoreSearch
  */
 final case class DelegateSearch(searchRequest: SearchRequest,
-                                sendSearchResultTo:ActorRef[SearchEnded],
-                                searchID:Long = -1,
                                 waitForMoreSearch:Boolean = false) extends MessagesToSupervisor
 
 final case class StartSomeSearch() extends MessagesToSupervisor
@@ -52,7 +50,7 @@ final case class SpawnWorker(workerBehavior: Behavior[MessageToWorker]) extends 
 
 final case class NbWorkers(replyTo: ActorRef[Int],waitForAtLeastOneWorker:Boolean) extends MessagesToSupervisor
 
-final case class RemoteStatisticsFor(replyTo:ActorRef[List[Array[String]]],remoteNeighborhood:RemoteNeighborhoodIdentification) extends MessagesToSupervisor
+final case class RemoteStatisticsFor(replyTo:ActorRef[List[Array[String]]],remoteNeighborhood:RemoteTaskIdentification) extends MessagesToSupervisor
 
 final case class SpawnNewActor[T](behavior:Behavior[T],behaviorName:String, replyTo:ActorRef[ActorRef[T]]) extends MessagesToSupervisor
 
@@ -78,132 +76,7 @@ object Supervisor {
     startLogger.info("Starting actor system and supervisor")
 
     //We prioritize some messages to try and maximize the hit on hotRestart
-    val a = ActorSystem(
-      createSupervisorBehavior(verbose, hotRestart, tic), "supervisor",
-
-      //we want oscarcbls.supervisormailbox.mailbox-type = "akka.dispatch.UnboundedControlAwareMailbox"
-
-      config = ConfigFactory.parseString("""
-                                           |oscarcbls.supervisormailbox.mailbox-type = "akka.dispatch.UnboundedControlAwareMailbox"
-                                           |akka.version = 2.6.16
-                                           |akka.home = ""
-                                           |akka.actor.allow-java-serialization = on
-                                           |akka.actor.creation-timeout = 20s
-                                           |akka.actor.debug.receive = off
-                                           |akka.actor.debug.autoreceive = off
-                                           |akka.actor.debug.lifecycle = off
-                                           |akka.actor.debug.fsm = off
-                                           |akka.actor.debug.event-stream = off
-                                           |akka.actor.debug.unhandled = off
-                                           |akka.actor.debug.router-misconfiguration = off
-                                           |akka.actor.default-dispatcher.type = "Dispatcher"
-                                           |akka.actor.default-dispatcher.executor = "default-executor"
-                                           |akka.actor.default-dispatcher.default-executor.fallback = "fork-join-executor"
-                                           |akka.actor.default-dispatcher.fork-join-executor.parallelism-min = 8
-                                           |akka.actor.default-dispatcher.fork-join-executor.parallelism-factor = 1.0
-                                           |akka.actor.default-dispatcher.fork-join-executor.parallelism-max = 64
-                                           |akka.actor.default-dispatcher.fork-join-executor.task-peeking-mode = "FIFO"
-                                           |akka.actor.default-dispatcher.shutdown-timeout = 1s
-                                           |akka.actor.default-dispatcher.throughput = 1
-                                           |akka.actor.default-dispatcher.throughput-deadline-time = 0ms
-                                           |akka.actor.default-dispatcher.attempt-teamwork = on
-                                           |akka.actor.default-dispatcher.mailbox-requirement = ""
-                                           |akka.actor.default-mailbox.mailbox-type = "akka.dispatch.UnboundedMailbox"
-                                           |akka.actor.default-mailbox.mailbox-capacity = 1000
-                                           |akka.actor.default-mailbox.mailbox-push-timeout-time = 10s
-                                           |akka.actor.default-mailbox.stash-capacity = -1
-                                           |akka.actor.deployment.default.dispatcher = ""
-                                           |akka.actor.deployment.default.remote = ""
-                                           |akka.actor.deployment.default.router = "from-code"
-                                           |akka.actor.deployment.default.virtual-nodes-factor = 10
-                                           |akka.actor.guardian-supervisor-strategy = "akka.actor.DefaultSupervisorStrategy"
-                                           |akka.actor.internal-dispatcher.type = "Dispatcher"
-                                           |akka.actor.internal-dispatcher.executor = "fork-join-executor"
-                                           |akka.actor.internal-dispatcher.throughput = 5
-                                           |akka.actor.internal-dispatcher.fork-join-executor.parallelism-min = 4
-                                           |akka.actor.internal-dispatcher.fork-join-executor.parallelism-factor = 1.0
-                                           |akka.actor.internal-dispatcher.fork-join-executor.parallelism-max = 64
-                                           |akka.actor.mailbox.unbounded-queue-based.mailbox-type = "akka.dispatch.UnboundedMailbox"
-                                           |akka.actor.mailbox.bounded-queue-based.mailbox-type = "akka.dispatch.BoundedMailbox"
-                                           |akka.actor.mailbox.unbounded-deque-based.mailbox-type = "akka.dispatch.UnboundedDequeBasedMailbox"
-                                           |akka.actor.mailbox.bounded-deque-based.mailbox-type = "akka.dispatch.BoundedDequeBasedMailbox"
-                                           |akka.actor.mailbox.unbounded-control-aware-queue-based.mailbox-type = "akka.dispatch.UnboundedControlAwareMailbox"
-                                           |akka.actor.mailbox.bounded-control-aware-queue-based.mailbox-type = "akka.dispatch.BoundedControlAwareMailbox"
-                                           |akka.actor.mailbox.logger-queue.mailbox-type = "akka.event.LoggerMailboxType"
-                                           |akka.actor.mailbox.requirements."akka.dispatch.UnboundedMessageQueueSemantics" = akka.actor.mailbox.unbounded-queue-based
-                                           |akka.actor.mailbox.requirements."akka.dispatch.BoundedMessageQueueSemantics" = akka.actor.mailbox.bounded-queue-based
-                                           |akka.actor.mailbox.requirements."akka.dispatch.DequeBasedMessageQueueSemantics" = akka.actor.mailbox.unbounded-deque-based
-                                           |akka.actor.mailbox.requirements."akka.dispatch.UnboundedDequeBasedMessageQueueSemantics" = akka.actor.mailbox.unbounded-deque-based
-                                           |akka.actor.mailbox.requirements."akka.dispatch.BoundedDequeBasedMessageQueueSemantics" = akka.actor.mailbox.bounded-deque-based
-                                           |akka.actor.mailbox.requirements."akka.dispatch.MultipleConsumerSemantics" = akka.actor.mailbox.unbounded-queue-based
-                                           |akka.actor.mailbox.requirements."akka.dispatch.ControlAwareMessageQueueSemantics" = akka.actor.mailbox.unbounded-control-aware-queue-based
-                                           |akka.actor.mailbox.requirements."akka.dispatch.UnboundedControlAwareMessageQueueSemantics" = akka.actor.mailbox.unbounded-control-aware-queue-based
-                                           |akka.actor.mailbox.requirements."akka.dispatch.BoundedControlAwareMessageQueueSemantics" = akka.actor.mailbox.bounded-control-aware-queue-based
-                                           |akka.actor.mailbox.requirements."akka.event.LoggerMessageQueueSemantics" = akka.actor.mailbox.logger-queue
-                                           |akka.actor.no-serialization-verification-needed-class-prefix = ["akka."]
-                                           |akka.actor.provider = "local"
-                                           |akka.actor.router.type-mapping.from-code = "akka.routing.NoRouter"
-                                           |akka.actor.router.type-mapping.round-robin-pool = "akka.routing.RoundRobinPool"
-                                           |akka.actor.router.type-mapping.round-robin-group = "akka.routing.RoundRobinGroup"
-                                           |akka.actor.router.type-mapping.random-pool = "akka.routing.RandomPool"
-                                           |akka.actor.router.type-mapping.random-group = "akka.routing.RandomGroup"
-                                           |akka.actor.router.type-mapping.balancing-pool = "akka.routing.BalancingPool"
-                                           |akka.actor.router.type-mapping.smallest-mailbox-pool = "akka.routing.SmallestMailboxPool"
-                                           |akka.actor.router.type-mapping.broadcast-pool = "akka.routing.BroadcastPool"
-                                           |akka.actor.router.type-mapping.broadcast-group = "akka.routing.BroadcastGroup"
-                                           |akka.actor.router.type-mapping.scatter-gather-pool = "akka.routing.ScatterGatherFirstCompletedPool"
-                                           |akka.actor.router.type-mapping.scatter-gather-group = "akka.routing.ScatterGatherFirstCompletedGroup"
-                                           |akka.actor.router.type-mapping.tail-chopping-pool = "akka.routing.TailChoppingPool"
-                                           |akka.actor.router.type-mapping.tail-chopping-group = "akka.routing.TailChoppingGroup"
-                                           |akka.actor.router.type-mapping.consistent-hashing-pool = "akka.routing.ConsistentHashingPool"
-                                           |akka.actor.router.type-mapping.consistent-hashing-group = "akka.routing.ConsistentHashingGroup"
-                                           |akka.actor.serialize-creators = off
-                                           |akka.actor.serialize-messages = off
-                                           |akka.actor.unstarted-push-timeout = 10s
-                                           |akka.coordinated-shutdown.default-phase-timeout = 5s
-                                           |akka.coordinated-shutdown.terminate-actor-system = on
-                                           |akka.coordinated-shutdown.exit-jvm = off
-                                           |akka.coordinated-shutdown.run-by-jvm-shutdown-hook = on
-                                           |akka.coordinated-shutdown.run-by-actor-system-terminate = on
-                                           |akka.coordinated-shutdown.exit-code = 0
-                                           |akka.coordinated-shutdown.phases.before-service-unbind = {}
-                                           |akka.coordinated-shutdown.phases.service-unbind.depends-on = [before-service-unbind]
-                                           |akka.coordinated-shutdown.phases.service-requests-done.depends-on = [service-unbind]
-                                           |akka.coordinated-shutdown.phases.service-stop.depends-on = [service-requests-done]
-                                           |akka.coordinated-shutdown.phases.before-cluster-shutdown.depends-on = [service-stop]
-                                           |akka.coordinated-shutdown.phases.cluster-sharding-shutdown-region.timeout = 10s
-                                           |akka.coordinated-shutdown.phases.cluster-sharding-shutdown-region.depends-on = [before-cluster-shutdown]
-                                           |akka.coordinated-shutdown.phases.cluster-leave.depends-on = [cluster-sharding-shutdown-region]
-                                           |akka.coordinated-shutdown.phases.cluster-exiting.timeout = 10s
-                                           |akka.coordinated-shutdown.phases.cluster-exiting.depends-on = [cluster-leave]
-                                           |akka.coordinated-shutdown.phases.cluster-exiting-done.depends-on = [cluster-exiting]
-                                           |akka.coordinated-shutdown.phases.cluster-shutdown.depends-on = [cluster-exiting-done]
-                                           |akka.coordinated-shutdown.phases.before-actor-system-terminate.depends-on = [cluster-shutdown]
-                                           |akka.coordinated-shutdown.phases.actor-system-terminate.timeout = 10s
-                                           |akka.coordinated-shutdown.phases.actor-system-terminate.depends-on = [before-actor-system-terminate]
-                                           |akka.daemonic = off
-                                           |akka.extensions = []
-                                           |akka.fail-mixed-versions = on
-                                           |akka.jvm-exit-on-fatal-error = on
-                                           |akka.jvm-shutdown-hooks = on
-                                           |akka.log-config-on-start = off
-                                           |akka.log-dead-letters = off
-                                           |akka.log-dead-letters-during-shutdown = off
-                                           |akka.log-dead-letters-suspend-duration = infinite
-                                           |akka.logger-startup-timeout = 5s
-                                           |akka.loggers = ["akka.event.slf4j.Slf4jLogger"]
-                                           |akka.loggers-dispatcher = "akka.actor.default-dispatcher"
-                                           |akka.logging-filter = "akka.event.slf4j.Slf4jLoggingFilter"
-                                           |akka.loglevel = "OFF"
-                                           |akka.scheduler.tick-duration = 10ms
-                                           |akka.scheduler.ticks-per-wheel = 512
-                                           |akka.scheduler.implementation = "akka.actor.LightArrayRevolverScheduler"
-                                           |akka.scheduler.shutdown-timeout = 5s
-                                           |akka.stdout-loglevel = "OFF"
-                                           |""".stripMargin),
-      guardianProps = MailboxSelector.fromConfig("oscarcbls.supervisormailbox"))
-
-    a
+    ActorSystem(createSupervisorBehavior(verbose, hotRestart, tic), "supervisor")
   }
 
   def wrapSupervisor(supervisorRef: ActorRef[MessagesToSupervisor], verbose: Boolean)
@@ -263,8 +136,8 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor],
     }
   }
 
-  def getRemoteStatisticsFor(remoteNeighborhood:RemoteNeighborhoodIdentification,waitFor:Duration = 5.minutes):List[Array[String]] = {
-    val ongoingRequest: Future[List[Array[String]]] = supervisorActor.ask[List[Array[String]]](ref => RemoteStatisticsFor(ref,remoteNeighborhood:RemoteNeighborhoodIdentification))
+  def getRemoteStatisticsFor(remoteNeighborhood:RemoteTaskIdentification,waitFor:Duration = 5.minutes):List[Array[String]] = {
+    val ongoingRequest: Future[List[Array[String]]] = supervisorActor.ask[List[Array[String]]](ref => RemoteStatisticsFor(ref,remoteNeighborhood))
     Await.result(ongoingRequest, atMost = waitFor)
   }
 
@@ -281,7 +154,7 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor],
   }
 
   def throwRemoteExceptionAndShutDown(searchCrashed:SearchCrashed): Unit ={
-    val e = new Exception(s"Crash happened at worker:${searchCrashed.worker}: \n${searchCrashed.exception.getMessage}\nwhen performing neighborhood:${searchCrashed.neighborhood}")
+    val e = new Exception(s"Crash happened at worker:${searchCrashed.worker}: \n${searchCrashed.exception.getMessage}\nwhen performing neighborhood:${searchCrashed.searchTask}")
     e.setStackTrace(
       //This trims the stack trace to hide the intermediary calls to threads, futures and the like.
       (searchCrashed.exception.getStackTrace.toList.reverse.dropWhile(!_.getClassName.contains("oscar.cbls")).reverse
@@ -303,7 +176,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
   private case class Tic() extends MessagesToSupervisor
   //this one cannot be a control message.
 
-  private val waitingSearches = scala.collection.mutable.Queue[SearchTask]()
+  private val waitingSearches = scala.collection.mutable.Queue[SearchRequest]()
   var nbLocalWorker: Int = 0
   var nbCustomSearchActor:Int = 0
 
@@ -311,9 +184,9 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
   private var allKnownWorkers: List[ActorRef[MessageToWorker]] = Nil
   private var idleWorkersAndTheirCurentModelID: List[(ActorRef[MessageToWorker],Option[Int])] = Nil
   //this one is a list, because the most common operations are add and takeFirst
-  private var startingSearches: SortedMap[Long, (SearchTask, Long, ActorRef[MessageToWorker])] = SortedMap.empty
+  private var startingSearches: SortedMap[Long, (SearchRequest, Long, ActorRef[MessageToWorker])] = SortedMap.empty
   //need to add, and remove regularly, based on ID
-  private var ongoingSearches: SortedMap[Long, (SearchTask, ActorRef[MessageToWorker])] = SortedMap.empty
+  private var ongoingSearches: SortedMap[Long, (SearchRequest, ActorRef[MessageToWorker])] = SortedMap.empty
   private var totalStartedSearches = 0
   private var nextSearchID: Long = 0
   private var nextStartID: Long = 0 //search+worker
@@ -353,7 +226,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
           notifyForAvailableWorkers = n :: notifyForAvailableWorkers
         }
 
-      case RemoteStatisticsFor(replyTo:ActorRef[List[Array[String]]],remoteNeighborhood:RemoteNeighborhoodIdentification) =>
+      case RemoteStatisticsFor(replyTo:ActorRef[List[Array[String]]],remoteNeighborhood:RemoteTaskIdentification) =>
 
         statisticCollectorID += 1
 
@@ -409,25 +282,25 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
 
           case (false, _ :: _) =>
 
-            def startSearch(search: SearchTask, worker: ActorRef[MessageToWorker], currentSolutionAtWorker:Option[Int]): Unit = {
-              if (verbose) context.log.info(s"assigning search:${search.searchId} to worker:${worker.path}")
+            def startSearch(search: SearchRequest, worker: ActorRef[MessageToWorker], currentSolutionAtWorker:Option[Int]): Unit = {
+              if (verbose) context.log.info(s"assigning search:${search.uniqueSearchId} to worker:${worker.path}")
               val startID = nextStartID
               nextStartID = nextStartID + 1
               totalStartedSearches += 1
 
-              val solutionForThisSearch = search.request.startSolutionOpt
+              val solutionForThisSearch = search.startSolutionOpt
 
               val simplifiedSearch = (solutionForThisSearch,currentSolutionAtWorker) match{
-                case (Some(x),Some(y)) if x.solutionId == y => search.copy(request = search.request.dropStartSolution)
+                case (Some(x),Some(y)) if x.solutionId == y => search.dropStartSolution
                 case _ => search
               }
 
               implicit val responseTimeout: Timeout = 3.seconds
               context.ask[MessageToWorker, MessagesToSupervisor](worker, res => StartSearch(simplifiedSearch, startID, res)) {
-                case Success(_: SearchStarted) => SearchStarted(simplifiedSearch.searchId, startID, worker)
-                case Success(_: SearchNotStarted) => SearchNotStarted(simplifiedSearch.searchId, startID, worker)
-                case Failure(_) => SearchNotStarted(simplifiedSearch.searchId, startID, worker)
-                case _ => SearchNotStarted(simplifiedSearch.searchId, startID, worker) // Default case
+                case Success(_: SearchStarted) => SearchStarted(simplifiedSearch.uniqueSearchId, startID, worker)
+                case Success(_: SearchNotStarted) => SearchNotStarted(simplifiedSearch.uniqueSearchId, startID, worker)
+                case Failure(_) => SearchNotStarted(simplifiedSearch.uniqueSearchId, startID, worker)
+                case _ => SearchNotStarted(simplifiedSearch.uniqueSearchId, startID, worker) // Default case
               }
 
               startingSearches = startingSearches + (startID -> (search, startID, worker))
@@ -441,7 +314,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
             while (hotRestart && couldDequeue && nbSearchToStart != 0) {
               couldDequeue = false
               waitingSearches.dequeueFirst(searchTask => {
-                val nID = searchTask.request.neighborhoodIdOpt.map(_.neighborhoodID).getOrElse(-1)
+                val nID = searchTask.neighborhoodIdOpt.getOrElse(-1)
                 val preferredWorkerOpt = neighborhoodToPreferredWorker.get(nID)
                 preferredWorkerOpt match {
                   case Some(preferredWorker) =>
@@ -472,10 +345,10 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
               startSearch(searchToStart, worker._1,worker._2)
 
               if(hotRestart) {
-                searchToStart.request.neighborhoodIdOpt match{
+                searchToStart.neighborhoodIdOpt match{
                   case None => ;
                   case Some(n) =>
-                    neighborhoodToPreferredWorker = neighborhoodToPreferredWorker + (n.neighborhoodID -> worker._1)
+                    neighborhoodToPreferredWorker = neighborhoodToPreferredWorker + (n -> worker._1)
                 }
               }
 
@@ -498,7 +371,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
       case SearchStarted(searchID, startID, worker) =>
         startingSearches.get(startID) match {
           case Some((search2, startID2, worker2)) if startID2 == startID =>
-            require(searchID == search2.searchId)
+            require(searchID == search2.uniqueSearchId)
             if (verbose) context.log.info(s"search:${searchID} start confirmed by worker:${worker.path}")
             ongoingSearches = ongoingSearches + (searchID -> (search2, worker2))
             startingSearches = startingSearches.-(startID)
@@ -510,7 +383,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
       case SearchNotStarted(searchID, startID, worker) =>
         startingSearches.get(startID) match {
           case Some((search2, startID2, worker2)) if startID2 == startID =>
-            require(searchID == search2.searchId)
+            require(searchID == search2.uniqueSearchId)
 
             if (verbose) context.log.info(s"search:${searchID} could not be started by worker:${worker.path}")
             waitingSearches.enqueue(search2)
@@ -523,7 +396,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
       //we do not register the worker as available here because it will register itself through another call,
       // at least to show it is not completely crashed.
 
-      case ReadyForWork(worker: ActorRef[MessageToWorker], completedSearchID: Option[Long], currentModelId:Option[Int]) =>
+      case ReadyForWork(worker: ActorRef[MessageToWorker], completedSearchID: Option[Long], currentModelId) =>
         if (verbose) context.log.info(s"got a worker ready:${worker.path}; finished search:$completedSearchID")
 
         require(allKnownWorkers contains worker)
@@ -540,26 +413,21 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
           case None => ;
         }
 
-        idleWorkersAndTheirCurentModelID = (worker,currentModelId) :: idleWorkersAndTheirCurentModelID
+        idleWorkersAndTheirCurentModelID = (worker,Some(currentModelId)) :: idleWorkersAndTheirCurentModelID
         context.self ! StartSomeSearch()
 
       case GetNewUniqueID(replyTo:ActorRef[Long]) =>
         replyTo ! nextSearchID
         nextSearchID += 1
 
-      case DelegateSearch(searchRequest, sendSearchResultTo, givenSearchId, waitForMoreSearches) =>
+      case DelegateSearch(searchRequest, waitForMoreSearches) =>
 
-        val searchId = if(givenSearchId == -1){
-          val x = nextSearchID
-          nextSearchID += 1
-          x
-        } else givenSearchId
+        val searchId = searchRequest.uniqueSearchId
 
-        if (verbose) context.log.info(s"got new waiting search:$searchId for :${sendSearchResultTo.path}")
+        if (verbose) context.log.info(s"got new waiting search:$searchId for :${searchRequest.sendResultTo.path}")
 
         //now, we have a WorkGiver actor, we search for an available Worker or put this request on a waiting list.
-        val theSearch = SearchTask(searchRequest, searchId, sendSearchResultTo)
-        waitingSearches.enqueue(theSearch)
+        waitingSearches.enqueue(searchRequest)
 
         if(!waitForMoreSearches) {
           context.self ! StartSomeSearch()
@@ -568,7 +436,8 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
         context.self ! StartSomeSearch()
       case CancelSearchToSupervisor(searchID: Long,keepAliveIfOjBelow:Option[Long]) =>
 
-        waitingSearches.dequeueFirst(_.searchId == searchID) match {
+        require(searchID != -1)
+        waitingSearches.dequeueFirst(_.uniqueSearchId == searchID) match {
           case None =>
             //Search was already ongoing on some worker
             //the search is already being processed by some search worker.
@@ -576,14 +445,14 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
             ongoingSearches.get(searchID) match {
               case Some((search, worker)) =>
                 if (verbose) context.log.info(s"got cancel request for ongoing search:$searchID; forward to worker:${worker.path}")
-                worker ! AbortSearch(search.searchId,keepAliveIfOjBelow)
+                worker ! AbortSearch(search.uniqueSearchId,keepAliveIfOjBelow)
               case None =>
 
-                startingSearches.find(_._2._1.searchId == searchID) match {
+                startingSearches.find(_._2._1.uniqueSearchId == searchID) match {
                   case Some((startID2, (search, startID3, worker))) =>
                     startingSearches = startingSearches.-(startID2)
                     if (verbose) context.log.info(s"got cancel request for starting search:$searchID forward to worker:${worker.path}")
-                    worker ! AbortSearch(search.searchId,keepAliveIfOjBelow)
+                    worker ! AbortSearch(search.uniqueSearchId,keepAliveIfOjBelow)
                   case None =>
                     if (verbose) context.log.info(s"got cancel request for unknown search:$searchID; ignored; search was already completed")
                 }

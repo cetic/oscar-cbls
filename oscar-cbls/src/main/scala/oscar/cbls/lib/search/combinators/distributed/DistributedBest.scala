@@ -2,7 +2,7 @@ package oscar.cbls.lib.search.combinators.distributed
 
 import akka.actor.typed.ActorSystem
 import akka.util.Timeout
-import oscar.cbls.core.distrib.{DelegateSearch, IndependentMoveFound, IndependentNoMoveFound, IndependentSolution, SearchCompleted, SearchCrashed, SearchEnded, SearchRequest, SingleMoveSearch, StartSomeSearch}
+import oscar.cbls.core.distrib.{DelegateSearch, IndependentMoveFound, IndependentNoMoveFound, IndependentSearchResult, IndependentSolution, SearchCompleted, SearchCrashed, SearchEnded, SearchRequest, SingleMoveSearch, StartSomeSearch}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
 
@@ -23,17 +23,16 @@ class DistributedBest(neighborhoods:Array[Neighborhood],useHotRestart:Boolean = 
     implicit val timeout: Timeout = 1.hour
     implicit val system: ActorSystem[_] = supervisor.system
 
-    val futureResults =  remoteNeighborhoods.indices.map(i => {
+    val futureResults =  remoteNeighborhoodIdentifications.map(r => {
 
-      val request = SingleMoveSearch(
-        remoteNeighborhoods(i).getRemoteIdentification,
-        acceptanceCriteria,
-        independentObj,
-        sendFullSolution = false,
-        startSol)
-
-      supervisor.supervisorActor.ask[SearchEnded](ref =>
-        DelegateSearch(request, ref, waitForMoreSearch = useHotRestart))
+      supervisor.supervisorActor.ask[SearchEnded[IndependentSearchResult]](ref =>
+        DelegateSearch(SingleMoveSearch(
+          remoteTaskId = r,
+          acc =  acceptanceCriteria,
+          obj = independentObj,
+          startSolutionOpt = startSol,
+          sendResultTo = ref
+        ), waitForMoreSearch = useHotRestart))
     }).toList
 
     if(useHotRestart) {

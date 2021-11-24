@@ -8,175 +8,188 @@ import oscar.cbls.core.search._
 
 // ////////////////////////////////////////////////////////////
 
-case class SearchProgress(searchId:Long, obj:Long, timeMs:Long, aborted:Boolean = false)
 
-abstract sealed class SearchRequest{
+abstract sealed class SearchRequest(val uniqueSearchId:Long,
+                                    val remoteTaskId:RemoteTaskIdentification,
+                                    val sendResultTo:ActorRef[SearchEnded[Null]]){
+  /**
+   * The supervisor checks that the worker already has this solution loaded.
+   * If it is the case, the solution is removed from the SearchRequest by calling dropStartSolution hereBelow
+   * In case there is no startSolution, just return None
+   * @return
+   */
   def startSolutionOpt: Option[IndependentSolution]
+
+  /**
+   * the Supervisor can drop the startSolution in case the worker already has this solution loaded,
+   * to spare on transmission and loading costs
+   * @return
+   */
   def dropStartSolution:SearchRequest
-  def neighborhoodIdOpt:Option[RemoteNeighborhoodIdentification]
+
+  /**
+   * in case this is a neighborhood, the supervisor tries to run it on the same worker as last time
+   * to try and benefit from te hotRestart of the neighborhood
+   * only for neighborhoods, not for other purely stateless tasks
+   * @return
+   */
+  def neighborhoodIdOpt:Option[Int]
 }
 
-case class SingleMoveSearch(neighborhoodID: RemoteNeighborhoodIdentification,
+abstract class NeighborhoodSearchRequest(uniqueSearchId:Long,
+                                         remoteTaskId:RemoteTaskIdentification,
+                                         sendResultTo: ActorRef[SearchEnded[IndependentSearchResult]])
+  extends SearchRequest(uniqueSearchId, remoteTaskId,sendResultTo)
+
+case class SingleMoveSearch(override val uniqueSearchId:Long = -1,
+                            override val remoteTaskId:RemoteTaskIdentification,
                             acc: (Long, Long) => Boolean,
                             obj: IndependentObjective,
                             sendFullSolution:Boolean = false,
-                            startSolutionOpt: Option[IndependentSolution]) extends SearchRequest{
-  override def toString: String = s"SingleMoveSearch($neighborhoodID,$acc,$obj,sendFullSolution:$sendFullSolution)"
+                            startSolutionOpt: Option[IndependentSolution],
+                            override val sendResultTo: ActorRef[SearchEnded[IndependentSearchResult]]
+                           ) extends NeighborhoodSearchRequest(uniqueSearchId, remoteTaskId,sendResultTo){
+  override def toString: String = s"SingleMoveSearch($remoteTaskId,$acc,$obj,sendFullSolution:$sendFullSolution)"
 
   override def dropStartSolution: SearchRequest = this.copy(startSolutionOpt = None)
 
-  override def neighborhoodIdOpt: Option[RemoteNeighborhoodIdentification] = Some(neighborhoodID)
+  override def neighborhoodIdOpt: Option[Int] = Some(remoteTaskId.taskId)
 }
 
-case class DoAllMoveSearch(neighborhoodID: RemoteNeighborhoodIdentification,
+case class SearchProgress(searchId:Long, obj:Long, timeMs:Long, aborted:Boolean = false)
+
+case class DoAllMoveSearch(override val uniqueSearchId:Long = -1,
+                           override val remoteTaskId:RemoteTaskIdentification,
                            acc: (Long, Long) => Boolean,
                            obj: IndependentObjective,
                            startSolutionOpt: Option[IndependentSolution],
                            sendFullSolution:Boolean = false,
-                           sendProgressTo:Option[ActorRef[SearchProgress]] = None) extends SearchRequest {
-  override def toString: String = s"DoAllMoveSearch($neighborhoodID,$acc,$obj,sendFullSolution:$sendFullSolution)"
+                           sendProgressTo:Option[ActorRef[SearchProgress]] = None,
+                           override val sendResultTo: ActorRef[SearchEnded[IndependentSearchResult]])
+  extends NeighborhoodSearchRequest(uniqueSearchId, remoteTaskId,sendResultTo) {
+  override def toString: String = s"DoAllMoveSearch($remoteTaskId,$acc,$obj,sendFullSolution:$sendFullSolution)"
 
   override def dropStartSolution: SearchRequest = this.copy(startSolutionOpt = None)
 
-  override def neighborhoodIdOpt: Option[RemoteNeighborhoodIdentification] = Some(neighborhoodID)
+  override def neighborhoodIdOpt: Option[Int] = Some(remoteTaskId.taskId)
 }
 
-
-case class SearchTask(request: SearchRequest,
-                      searchId: Long,
-                      sendResultTo: ActorRef[SearchEnded]) {
-  override def toString: String = s"SearchTask($request,$searchId,${sendResultTo.path})"
-}
 // ////////////////////////////////////////////////////////////
 
 //le truc qu'on envoie au worker
 case class RemoteTaskIdentification(taskId: Int, description:String)
 
-abstract class RemoteTask[TaskMessage](val taskId: Int, description:String) {
+abstract class RemoteTask[TaskMessage <: SearchRequest](val taskId: Int, description:String) {
 
-  def doTask(taskMessage:Any): Unit ={
-     internalDoTask(taskMessage.asInstanceOf[TaskMessage])
+  val remoteIdentification: RemoteTaskIdentification = RemoteTaskIdentification(taskId,description)
+
+  def abort():Unit
+
+  def doTask(taskMessage:SearchRequest,model:Store,currentSolOpt:Option[(Solution,Int)]):(Solution,Int) ={
+    internalDoTask(taskMessage.asInstanceOf[TaskMessage],model:Store,currentSolOpt:Option[(Solution,Int)])
   }
-  def internalDoTask(taskMessage:TaskMessage):Unit
 
-  def getRemoteIdentification: RemoteTaskIdentification =
-    RemoteTaskIdentification(taskId,description)
-
+  def internalDoTask(taskMessage:TaskMessage,model:Store,currentSolOpt:Option[(Solution,Int)]): (Solution,Int)
 }
 
 class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
-  extends RemoteTask[SearchRequest](neighborhoodID: Int,neighborhood.toString){
+  extends RemoteTask[NeighborhoodSearchRequest](neighborhoodID: Int,neighborhood.toString){
 
   @volatile
   var bestObjSoFar:Long = Long.MaxValue
 
-  private def internalDoTask(searchRequest: SearchRequest): (IndependentSearchResult,Int) = {
-    searchRequest match{
-      case s:SingleMoveSearch => doSingleMoveSearch(s,searchId)
-      case d:DoAllMoveSearch =>doDoAllMoveSearch(d,searchId)
-      //TODO: more search tasks should ne supported, bu I do not know yet how to do it cleanly
-    }
+  @volatile
+  private var shouldAbortComputation:Boolean  = false
+
+  override def abort(): Unit = {
+    shouldAbortComputation = true
   }
 
+  override def internalDoTask(searchRequest: NeighborhoodSearchRequest,model:Store,currentSolOpt:Option[(Solution,Int)]): (Solution,Int) = {
 
-  private def loadSolutionOpt(startSolOpt:Option[IndependentSolution]) : Option[Solution] = {
+    val initLocalSolutionAndSolutionId:(Solution,Int) = loadSolution(searchRequest.startSolutionOpt,model,currentSolOpt)
+    shouldAbortComputation = false
+
+    searchRequest match{
+      case s:SingleMoveSearch => doSingleMoveSearch(s,model,initLocalSolutionAndSolutionId._1)
+      case d:DoAllMoveSearch =>doDoAllMoveSearch(d,model,initLocalSolutionAndSolutionId._1)
+      //TODO: more search tasks should be supported, bu I do not know yet how to do it cleanly
+    }
+    initLocalSolutionAndSolutionId
+  }
+
+  private def loadSolution(startSolOpt:Option[IndependentSolution],
+                           model:Store,
+                           currentSolOpt:Option[(Solution,Int)]) : (Solution,Int) = {
     startSolOpt match {
       case None =>
-        require(currentModelNr.isDefined)
-        None
+        require(currentSolOpt.isDefined)
+        currentSolOpt.get
       case Some(startSolution) =>
-        if (this.currentModelNr.isEmpty || startSolution.solutionId != this.currentModelNr.get) {
-          val s = startSolution.makeLocal(m)
-          s.restoreDecisionVariables(withoutCheckpoints = true) //TODO: we should only transmit the delta, eventually
-          currentModelNr = Some(startSolution.solutionId)
-          Some(s)
+        if (currentSolOpt.isEmpty || startSolution.solutionId != currentSolOpt.get._2) {
+          //we must load the new solution
+          val s = startSolOpt.get.makeLocal(model)
+          //TODO: we should only transmit the delta, eventually
+          s.restoreDecisionVariables(withoutCheckpoints = true)
+          (s,startSolution.solutionId)
         } else {
-          None
+          //no need to load the new solution
+          currentSolOpt.get
         }
     }
   }
 
-  private def doSingleMoveSearch(searchRequest: SingleMoveSearch,searchId:Long) : (IndependentSearchResult,Int) = {
-    val initLocalSolutionOpt:Option[Solution] = loadSolutionOpt(searchRequest.startSolutionOpt)
-
-    shouldAbortComputation = false
-
-    val neighborhood = neighborhoods(searchRequest.neighborhoodID.neighborhoodID)
-    currentNeighborhood = neighborhood
+  private def doSingleMoveSearch(searchRequest: SingleMoveSearch,model:Store,startSol:Solution) : Unit = {
 
     val startTime = System.currentTimeMillis()
-    val result = neighborhood.getMove(
-      searchRequest.obj.convertToObjective(m),
-      searchRequest.acc,
-      shouldAbort = () => shouldAbortComputation,
-      initSolutionOpt = initLocalSolutionOpt,
-      sendFullSolution = searchRequest.sendFullSolution,
-      searchId = searchId,
-      sendProgressTo = None)
 
-    (result,(System.currentTimeMillis() - startTime).toInt)
-  }
-
-  private def doDoAllMoveSearch(searchRequest:DoAllMoveSearch, searchId:Long) : (IndependentSearchResult,Int) = {
-
-    loadSolutionOpt(searchRequest.startSolutionOpt)
-
-    shouldAbortComputation = false
-
-    val neighborhood = neighborhoods(searchRequest.neighborhoodID.neighborhoodID)
-    currentNeighborhood = neighborhood
-
-    val startTime = System.currentTimeMillis()
-    val result = neighborhood.doAllMoves(
-      searchRequest.obj.convertToObjective(m),
-      searchRequest.acc,
-      shouldAbort = () => shouldAbortComputation,
-      searchId = searchId,
-      sendProgressTo = searchRequest.sendProgressTo)
-
-
-    (result,(System.currentTimeMillis() - startTime).toInt)
-  }
-
-
-  def getMove(obj: Objective,
-              acc: (Long, Long) => Boolean,
-              shouldAbort: () => Boolean,
-              initSolutionOpt:Option[Solution],
-              sendFullSolution:Boolean,
-              searchId:Long,
-              sendProgressTo:Option[ActorRef[SearchProgress]]): IndependentSearchResult = {
     bestObjSoFar = Long.MaxValue
-    neighborhood.getMoveAbortable(obj, obj.value, acc, shouldAbort,initSolutionOpt) match {
-      case NoMoveFound => IndependentNoMoveFound()
-      case MoveFound(m) =>
-        sendProgressTo match {
-          case None =>
-          case Some(target) =>
-            target ! SearchProgress(searchId, m.objAfter, System.currentTimeMillis())
-        }
-        if(sendFullSolution) {
-          val startSol = initSolutionOpt.getOrElse(obj.model.solution())
-          m.commit()
-          bestObjSoFar = Long.MaxValue
-          val toReturn = IndependentMoveFound(LoadIndependentSolutionMove(
-            objAfter = m.objAfter,
-            neighborhoodName = m.neighborhoodName,
-            IndependentSolution(obj.model.solution())))
-          startSol.restoreDecisionVariables()
-          toReturn
+    val obj = searchRequest.obj.convertToObjective(model)
+
+    neighborhood.getMoveAbortable(
+      obj,
+      obj.value,
+      searchRequest.acc,
+      () => shouldAbortComputation,
+      Some(startSol)) match {
+      case NoMoveFound =>
+        if(shouldAbortComputation){
+          searchRequest.sendResultTo ! SearchAborted(searchRequest.uniqueSearchId)
         }else {
-          bestObjSoFar = Long.MaxValue
-          IndependentMoveFound(m.getIndependentMove(obj.model))
+          searchRequest.sendResultTo ! SearchCompleted(
+            searchRequest.uniqueSearchId,
+            IndependentNoMoveFound(),
+            (System.currentTimeMillis() - startTime).toInt)
+        }
+      case MoveFound(m) =>
+        if(searchRequest.sendFullSolution) {
+          val endTime = System.currentTimeMillis()
+          m.commit()
+
+          searchRequest.sendResultTo!SearchCompleted(
+            searchRequest.uniqueSearchId,
+            IndependentMoveFound(LoadIndependentSolutionMove(
+              objAfter = m.objAfter,
+              neighborhoodName = m.neighborhoodName,
+              IndependentSolution(obj.model.solution()))),
+            (endTime - startTime).toInt)
+
+          startSol.restoreDecisionVariables()
+        }else {
+          searchRequest.sendResultTo!SearchCompleted(
+            searchRequest.uniqueSearchId,
+            IndependentMoveFound(m.getIndependentMove(obj.model)),
+            (System.currentTimeMillis() - startTime).toInt)
         }
     }
   }
 
-  def doAllMoves(obj: Objective,
-                 acc: (Long, Long) => Boolean,
-                 shouldAbort: () => Boolean,
-                 searchId:Long,
-                 sendProgressTo:Option[ActorRef[SearchProgress]]): IndependentSearchResult = {
+  private def doDoAllMoveSearch(searchRequest:DoAllMoveSearch,model:Store,startSol:Solution) : Unit = {
+
+    val startTime = System.currentTimeMillis()
+
+    bestObjSoFar = Long.MaxValue
+    val obj = searchRequest.obj.convertToObjective(model)
 
     bestObjSoFar = obj.value
     var anyMoveFound = false
@@ -186,7 +199,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
 
     var lastProgressOBj:Long = bestObjSoFar
 
-    while(!shouldAbort() && (neighborhood.getMoveAbortable(obj, obj.value, acc, shouldAbort) match {
+    while(!shouldAbortComputation && (neighborhood.getMoveAbortable(obj, obj.value, searchRequest.acc, () => shouldAbortComputation) match {
       case NoMoveFound => false
       case MoveFound(m) =>
         m.commit()
@@ -199,38 +212,42 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
         }
         true
     })) {
-      sendProgressTo match{
+      searchRequest.sendProgressTo match{
         case None =>
         case Some(target) =>
           val currentTimeMs = System.currentTimeMillis()
           if (nextTimeForFeedbackMS <= currentTimeMs){
             lastProgressOBj = obj.value
-            target ! SearchProgress(searchId, lastProgressOBj, currentTimeMs)
+            target ! SearchProgress(searchRequest.uniqueSearchId, lastProgressOBj, currentTimeMs)
             nextTimeForFeedbackMS = currentTimeMs + delayForNextFeedbackMS
           }
       }
     }
 
-    if(anyMoveFound && !shouldAbort()){
-      sendProgressTo match {
+    if(anyMoveFound && !shouldAbortComputation){
+      val endTime = System.currentTimeMillis()
+      searchRequest.sendProgressTo match{
         case None =>
         case Some(target) =>
-          target ! SearchProgress(searchId, obj.value, System.currentTimeMillis())
+          target ! SearchProgress(searchRequest.uniqueSearchId, obj.value, endTime)
       }
-      val toReturn = IndependentMoveFound(LoadIndependentSolutionMove(
-        objAfter = obj.value,
-        neighborhoodName = name,
-        IndependentSolution(obj.model.solution())))
 
-      toReturn
+      searchRequest.sendResultTo!SearchCompleted(
+        searchRequest.uniqueSearchId,
+        IndependentMoveFound(LoadIndependentSolutionMove(
+          objAfter = obj.value,
+          neighborhoodName = name,
+          IndependentSolution(obj.model.solution()))),
+        (endTime - startTime).toInt)
+
     }else {
-      sendProgressTo match {
+      searchRequest.sendProgressTo match {
         case None =>
         case Some(target) =>
-          target ! SearchProgress(searchId, lastProgressOBj, System.currentTimeMillis(), aborted=true)
+          target ! SearchProgress(searchRequest.uniqueSearchId, obj.value, System.currentTimeMillis(), aborted=true)
       }
-      IndependentNoMoveFound()
     }
+    startSol.restoreDecisionVariables()
   }
 }
 

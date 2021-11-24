@@ -1,7 +1,7 @@
 package oscar.cbls.lib.search.combinators.distributed
 
 import akka.actor.typed.ActorSystem
-import oscar.cbls.core.distrib.{DelegateSearch, IndependentSolution, SearchCompleted, SearchCrashed, SearchEnded, SearchRequest, SingleMoveSearch}
+import oscar.cbls.core.distrib.{DelegateSearch, IndependentSearchResult, IndependentSolution, SearchCompleted, SearchCrashed, SearchEnded, SearchRequest, SingleMoveSearch}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
 import akka.util.Timeout
@@ -17,22 +17,23 @@ class Remote(neighborhoods:Neighborhood)
                        acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
 
     val independentObj = obj.getIndependentObj
-    val startSol = Some(IndependentSolution(obj.model.solution()))
-
-    val searchRequest = SingleMoveSearch(
-      remoteNeighborhoods(0).getRemoteIdentification,
-      acceptanceCriteria,
-      independentObj,
-      sendFullSolution = false,
-      startSol
-    )
+    val startSol = IndependentSolution(obj.model.solution())
 
     import akka.actor.typed.scaladsl.AskPattern._
     //TODO look for an adequate timeout or stopping mechanism
     implicit val timeout: Timeout = 1.hour
     implicit val system: ActorSystem[_] = supervisor.system
 
-    val futureResult = supervisor.supervisorActor.ask[SearchEnded](ref => DelegateSearch(searchRequest, ref))
+    val futureResult = supervisor.supervisorActor.ask[SearchEnded[IndependentSearchResult]](ref =>
+      DelegateSearch(
+        SingleMoveSearch(
+          remoteTaskId = remoteNeighborhoodIdentifications(0),
+          acc = acceptanceCriteria,
+          obj = independentObj,
+          startSolutionOpt = Some(startSol),
+          sendResultTo = ref
+        )))
+
     Await.result(futureResult,Duration.Inf) match {
       case SearchCompleted(_, searchResult, durationMS) =>
         searchResult.getLocalResult(obj.model)
