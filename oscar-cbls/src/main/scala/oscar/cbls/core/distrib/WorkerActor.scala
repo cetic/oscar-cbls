@@ -169,7 +169,6 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
                     master ! Crash(context.self)
                 }
                 context.self ! WrappedSearchEnded(newSearch.uniqueSearchId)
-                currentNeighborhood = null
               }(executionContextForComputation)
 
               replyTo ! SearchStarted(newSearch.uniqueSearchId, startID, context.self)
@@ -183,9 +182,9 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
             case IAmBusy(search,startTimeMs) =>
               if (searchId == search.uniqueSearchId) {
 
-                val mustAbort:Boolean = if(keepAliveIfOjBelow.isDefined){
-                  currentNeighborhood != null && currentNeighborhood.bestObjSoFar >= keepAliveIfOjBelow.get
-                }else true
+                val mustAbort:Boolean = currentNeighborhood != null && (if(keepAliveIfOjBelow.isDefined){
+                  currentNeighborhood.bestObjSoFar >= keepAliveIfOjBelow.get
+                }else true)
 
                 if(mustAbort) {
                   if(verbose) context.log.info(s"got abort command for search:$searchId; aborting")
