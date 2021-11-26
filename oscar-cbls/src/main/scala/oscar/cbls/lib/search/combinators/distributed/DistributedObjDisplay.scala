@@ -78,7 +78,6 @@ class DistributedObjDisplay()
   add(panel)
 
   def addValue(searchId:Long, obj: Long, timeMS:Long, aborted:Boolean): Unit ={
-    println(s"addValue searchId:$searchId , obj:$obj , timeMS:$timeMS")
     if(startingAtMS < 0){
       startingAtMS = timeMS
     }

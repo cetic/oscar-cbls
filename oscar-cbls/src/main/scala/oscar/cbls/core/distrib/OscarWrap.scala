@@ -125,11 +125,9 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
                            currentSolOpt:Option[(Solution,Int)]) : (Solution,Int) = {
     startSolOpt match {
       case None =>
-        println("no startsol sent")
         require(currentSolOpt.isDefined)
         currentSolOpt.get
       case Some(startSolution) =>
-        println("startsol sent")
         if (currentSolOpt.isEmpty || startSolution.solutionId != currentSolOpt.get._2) {
           //we must load the new solution
           val s = startSolOpt.get.makeLocal(model)
@@ -207,7 +205,6 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
       (neighborhood.getMoveAbortable(obj, obj.value, searchRequest.acc, () => shouldAbortComputation) match {
       case NoMoveFound => false
       case MoveFound(m) =>
-        println("moveFound")
         m.commit()
         if(!anyMoveFound){
           name = m.neighborhoodName
@@ -230,7 +227,6 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
       }
     }
 
-    println("EndSearch for " + this.neighborhood)
     val endTime = System.currentTimeMillis()
 
     if(shouldAbortComputation){

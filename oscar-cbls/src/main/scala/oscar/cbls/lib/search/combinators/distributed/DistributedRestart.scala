@@ -6,6 +6,7 @@ import akka.util.Timeout
 import oscar.cbls.core.distrib._
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
+import oscar.cbls.lib.search.combinators.NoReset
 import oscar.cbls.visual.SingleFrameWindow
 import oscar.cbls.warning
 
@@ -53,7 +54,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                          visuTitle:String = "distributedRestartObj")
   extends DistributedCombinator(
     Array(
-      baseRandomize maxMoves 1 exhaust baseSearch,
+      baseRandomize maxMoves 1 exhaust NoReset(baseSearch),
       baseSearch)) {
   //0 is randomize and search
   //1 is first search
