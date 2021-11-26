@@ -51,7 +51,8 @@ class DistributedRestart(baseSearch:Neighborhood,
                          gracefulStop:Boolean = true,
                          factorOnObjForThresholdToContinueDespiteBeingCanceledOnGracefulStop:Double = 1,
                          visu:Boolean = false,
-                         visuTitle:String = "distributedRestartObj")
+                         visuTitle:String = "distributedRestartObj",
+                         verbose:Boolean = false)
   extends DistributedCombinator(
     Array(
       baseRandomize maxMoves 1 exhaust NoReset(baseSearch),
@@ -112,7 +113,7 @@ class DistributedRestart(baseSearch:Neighborhood,
 
     def startSearch(visu:Option[ActorRef[SearchProgress]],context:ActorContext[WrappedData]): Behavior[WrappedData] = {
       //starting up all searches
-      context.log.info(s"starting restart search, init obj: $initialObj")
+      if(verbose) context.log.info(s"starting restart search, init obj: $initialObj")
 
       for(i <- 0 until maxWorkers) {
         context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
@@ -156,7 +157,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                       //We did improve over best so far
 
                       val wasCancelled = !runningSearchIDsAndIsItFromBestSoFar.isDefinedAt(searchID)
-                      context.log.info(s"new solution: improved over best so far: ${moveFound.objAfter}" + (if (wasCancelled) " was conditionally cancelled" else ""))
+                      if(verbose) context.log.info(s"new solution: improved over best so far: ${moveFound.objAfter}" + (if (wasCancelled) " was conditionally cancelled" else ""))
 
                       var newRunning = runningSearchIDsAndIsItFromBestSoFar.flatMap({case (x:Long,y:Boolean) => if(x == searchID) None else Some((x,false))})
 
@@ -178,7 +179,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                       }
 
                       if(i > 0) {
-                        context.log.info(s"cancelled $i ongoing search to start new searches instead from bestSoFar")
+                        if(verbose) context.log.info(s"cancelled $i ongoing search to start new searches instead from bestSoFar")
                       }
 
                       next(newRunning,
@@ -196,7 +197,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                         //We were running on BestSoFar, so stop criterion progressed
                         if(nbCompletedSearchesOnBestSoFar +1 >= nbConsecutiveRestartWithoutImprovement && nbCompletedRestarts + 1 >= minNbRestarts){
                           //we finished :-)
-                          context.log.info(s"new solution: not improved over best so far, was working on bestSoFar, finished, canceling ${runningSearchIDsAndIsItFromBestSoFar.size -1} ongoing searches finalOBj:$bestObjSoFar")
+                          if(verbose) context.log.info(s"new solution: not improved over best so far, was working on bestSoFar, finished, canceling ${runningSearchIDsAndIsItFromBestSoFar.size -1} ongoing searches finalOBj:$bestObjSoFar")
 
                           for(searchID <- runningSearchIDsAndIsItFromBestSoFar.keys){
                             if(gracefulStop) {
@@ -216,7 +217,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                             context)
                         }else{
                           //progress on stop criterion, but not finished yet
-                          context.log.info(s"new solution: not improved over best so far, was working on bestSoFar, not finished yet (${nbCompletedSearchesOnBestSoFar +1}/$nbConsecutiveRestartWithoutImprovement) (${nbCompletedRestarts +1}/$minNbRestarts)")
+                          if(verbose) context.log.info(s"new solution: not improved over best so far, was working on bestSoFar, not finished yet (${nbCompletedSearchesOnBestSoFar +1}/$nbConsecutiveRestartWithoutImprovement) (${nbCompletedRestarts +1}/$minNbRestarts)")
 
                           //ask to restart a search
                           context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
@@ -233,7 +234,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                         }
                       }else{
                         //We were NOT running on BestSoFar, so stop criterion NOT progressed
-                        context.log.info(s"new solution: not improved over best so far, was not working on bestSoFar")
+                        if(verbose) context.log.info(s"new solution: not improved over best so far, was not working on bestSoFar")
 
                         //ask to restart a search
                         context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
@@ -260,7 +261,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                       if(nbCompletedSearchesOnBestSoFar +1 >= nbConsecutiveRestartWithoutImprovement && nbCompletedRestarts +1 >= minNbRestarts){
                         //we finished :-)
 
-                        context.log.info(s"no move found, was working on bestSoFar, finished, canceling ${runningSearchIDsAndIsItFromBestSoFar.size -1} ongoing searches finalOBj:$bestObjSoFar")
+                        if(verbose) context.log.info(s"no move found, was working on bestSoFar, finished, canceling ${runningSearchIDsAndIsItFromBestSoFar.size -1} ongoing searches finalOBj:$bestObjSoFar")
 
                         for(searchID <- runningSearchIDsAndIsItFromBestSoFar.keys){
                           //TODO: this one MUST be conditional, and we should WAIT for all searches to be concluded before exiting
@@ -278,7 +279,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                       }else{
                         //progress on stop criterion, but not finished yet
 
-                        context.log.info(s"no move found, was working on bestSoFar, not finished yet (${nbCompletedSearchesOnBestSoFar +1}/$nbConsecutiveRestartWithoutImprovement) (${nbCompletedRestarts +1}/$minNbRestarts)")
+                        if(verbose) context.log.info(s"no move found, was working on bestSoFar, not finished yet (${nbCompletedSearchesOnBestSoFar +1}/$nbConsecutiveRestartWithoutImprovement) (${nbCompletedRestarts +1}/$minNbRestarts)")
 
                         context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
                           case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, remoteNeighborhoodIdentifications(0))
@@ -295,7 +296,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                     }else{
                       //We were NOT running on BestSoFar, so stop criterion NOT progressed
 
-                      context.log.info(s"no move found, was not working on bestSoFar")
+                      if(verbose) context.log.info(s"no move found, was not working on bestSoFar")
 
                       context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
                         case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, remoteNeighborhoodIdentifications(0))
@@ -312,7 +313,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                 }
               case SearchAborted(_) =>
                 //ignore it.
-                context.log.info(s"got abort confirmation; starting new search")
+                if(verbose) context.log.info(s"got abort confirmation; starting new search")
 
                 context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
                   case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, remoteNeighborhoodIdentifications(0))
@@ -382,15 +383,15 @@ class DistributedRestart(baseSearch:Neighborhood,
                        context:ActorContext[WrappedData]): Behavior[WrappedData] = {
 
       if(!gracefulStop){
-        context.log.info(s"non-graceful stop; nbRestarts:$nbCompletedRestarts")
+        if(verbose) context.log.info(s"non-graceful stop; nbRestarts:$nbCompletedRestarts")
         resultPromise.success(WrappedFinalAnswer(move=bestMoveSoFar))
         Behaviors.stopped
       } else if (nbRunningSearches == 0) {
-        context.log.info(s"graceful stop: all search completed; nbRestarts:$nbCompletedRestarts")
+        if(verbose) context.log.info(s"graceful stop: all search completed; nbRestarts:$nbCompletedRestarts")
         resultPromise.success(WrappedFinalAnswer(move=bestMoveSoFar))
         Behaviors.stopped
       } else {
-        context.log.info(s"graceful stop: waiting for $nbRunningSearches to complete")
+        if(verbose) context.log.info(s"graceful stop: waiting for $nbRunningSearches to complete")
         Behaviors.receive { (context, command) =>
           command match {
             case WrappedDisplay(displayActor) =>
@@ -408,7 +409,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                     case moveFound: IndependentMoveFound if moveFound.objAfter < bestObjSoFar =>
                       //We did improve over best so far, so we have to restart anyway
 
-                      context.log.info(s"new solution: improved over best so far: ${moveFound.objAfter} although search criterion was reached, so restart search")
+                      if(verbose) context.log.info(s"new solution: improved over best so far: ${moveFound.objAfter} although search criterion was reached, so restart search")
 
                       for (i <- (0 until (maxWorkers - nbRunningSearches + 1))) {
                         context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {

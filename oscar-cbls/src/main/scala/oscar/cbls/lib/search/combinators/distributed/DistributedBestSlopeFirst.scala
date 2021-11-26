@@ -216,19 +216,18 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
 
           case WrappedGotUniqueID(uniqueID: Long, neighborhoodIndice: Int,priorityOfSearch:Int) =>
             //start search with val request
-            val request =
 
-              context.ask[DelegateSearch, SearchEnded[IndependentSearchResult]](supervisor.supervisorActor, ref => DelegateSearch(SingleMoveSearch(
-                uniqueSearchId = uniqueID,
-                remoteTaskId = remoteNeighborhoodIdentifications(neighborhoodIndice),
-                acc = acceptanceCriteria,
-                obj = independentObj,
-                sendFullSolution = false,
-                startSolutionOpt = startSol,
-                sendResultTo = ref), waitForMoreSearch = nbStartedSearches < nbWorkers-1)) {
-                case Success(searchEnded) => WrappedSearchEnded(searchEnded, neighborhoodIndice, priorityOfSearch, uniqueID)
-                case Failure(_) => WrappedError(msg = Some(s"Error in WrappedGotUniqueID, uniqueID=$uniqueID"))
-              }
+            context.ask[DelegateSearch, SearchEnded[IndependentSearchResult]](supervisor.supervisorActor, ref => DelegateSearch(SingleMoveSearch(
+              uniqueSearchId = uniqueID,
+              remoteTaskId = remoteNeighborhoodIdentifications(neighborhoodIndice),
+              acc = acceptanceCriteria,
+              obj = independentObj,
+              sendFullSolution = false,
+              startSolutionOpt = startSol,
+              sendResultTo = ref), waitForMoreSearch = nbStartedSearches < nbWorkers-1)) {
+              case Success(searchEnded) => WrappedSearchEnded(searchEnded, neighborhoodIndice, priorityOfSearch, uniqueID)
+              case Failure(_) => WrappedError(msg = Some(s"Error in WrappedGotUniqueID, uniqueID=$uniqueID"))
+            }
 
             next(nextSearchesToStart = nextSearchesToStart,
               priorityOfNextSearch =  priorityOfNextSearch:Int,

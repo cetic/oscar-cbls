@@ -6,7 +6,7 @@ import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.distrib
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.Neighborhood
+import oscar.cbls.core.search.{Best, Neighborhood}
 import oscar.cbls.lib.search.combinators.distributed.DistributedFirst
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
@@ -77,7 +77,6 @@ object WarehouseLocationDistributed2 extends App {
           ++ ((0 until nbBigSwaps).map((i: Int) => swapsK(100, modulo = nbBigSwaps, shift = i)))
         ).toArray))
       onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray, () => W / 10), 2, obj, minRestarts = 5)
-      onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W / 8), 2, obj)
       )
 
     (m, neighborhood, obj, () => {

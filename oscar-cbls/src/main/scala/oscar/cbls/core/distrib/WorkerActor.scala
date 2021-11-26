@@ -153,7 +153,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
               Behaviors.same
 
             case Idle() =>
-              if (verbose) context.log.info(s"starting search:${newSearch.uniqueSearchId}")
+              if (verbose) context.log.info(s"starting search:${newSearch.uniqueSearchId} neighborhood:${newSearch.remoteTaskId}")
 
               this.nbExploredNeighborhoods += 1
               currentNeighborhood = neighborhoods(newSearch.remoteTaskId.taskId)
@@ -221,7 +221,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
           state match {
             case IAmBusy(search,startTimeMs) =>
               require(search.uniqueSearchId == uniqueId)
-              if (verbose) context.log.info(s"finished search:${search.uniqueSearchId}")
+              if (verbose) context.log.info(s"finished search:${search.uniqueSearchId} neighborhood:${search.remoteTaskId}")
 
               master ! ReadyForWork(
                 context.self,
@@ -233,6 +233,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
             case Aborting(search) =>
               //ok, we've done it for nothing.
               if (verbose) context.log.info(s"aborted search:${search.uniqueSearchId}")
+
               master ! ReadyForWork(context.self, Some(search.uniqueSearchId),currentSolOpt.get._2)
               next(Idle())
 
