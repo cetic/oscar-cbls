@@ -7,7 +7,7 @@ import oscar.cbls.core.distrib.Supervisor
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.lib.search.combinators.Profile
-import oscar.cbls.lib.search.combinators.distributed.DistributedBestSlopeFirst
+import oscar.cbls.lib.search.combinators.distributed.{DistributedBest, DistributedBestSlopeFirst, DistributedFirst}
 
 import scala.collection.parallel.immutable.ParRange
 import scala.concurrent.duration.DurationInt
@@ -69,18 +69,17 @@ object WarehouseLocationDistributed1 extends App {
   //supervisor side
   val (store, search, obj, finalPrint) = createSearchProcedure()
 
-  val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(search)
+  val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(search,verbose = false)
 
   //This is a bit stupid: start the search while workers are not instantiated yet, but it is possible
   for (i <- ParRange(0, nbWorker, 1, inclusive = true)) {
     if(i == 0){
       val search2 = search.showObjectiveFunction(obj)
-      search2.verbose = 1
+      search2.verbose = 2
       search2.doAllMoves(obj = obj)
     }else {
       val (store2, search2, _, _) = createSearchProcedure()
       supervisor.createLocalWorker(store2, search2)
-      search2.verbose = 2
     }
   }
 

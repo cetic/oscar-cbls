@@ -1,21 +1,19 @@
 package oscar.cbls.core.search
 
-import akka.actor.Status.{Failure, Success}
-import akka.actor.typed.scaladsl.AskPattern.Askable
 import oscar.cbls.core.distrib._
 
 abstract class DistributedCombinator(neighborhoods:Array[Neighborhood]) extends Neighborhood {
 
-  var remoteNeighborhoods:Array[RemoteNeighborhood] = null
+  var remoteNeighborhoodIdentifications:Array[RemoteTaskIdentification] = null
   var supervisor:Supervisor = null
 
-  override def labelAndExtractRemoteNeighborhoods(supervisor: Supervisor,
-                                                  currentID: Int,
-                                                  nbDistributedCombinators:Int = 0,
-                                                  acc: List[RemoteNeighborhood]): (Int, Int, List[RemoteNeighborhood]) = {
+  override def labelAndExtractRemoteTasks(supervisor: Supervisor,
+                                          currentID: Int,
+                                          nbDistributedCombinators:Int = 0,
+                                          acc: List[RemoteNeighborhood]): (Int, Int, List[RemoteNeighborhood]) = {
     this.supervisor = supervisor
     val (newID,newAcc,neighborhoods2) = labelAndExtractRemoteNeighborhoodsOutOf(currentID, acc, neighborhoods)
-    remoteNeighborhoods = neighborhoods2
+    remoteNeighborhoodIdentifications = neighborhoods2.map(_.remoteIdentification)
     (newID,nbDistributedCombinators+1,newAcc)
   }
 
@@ -35,6 +33,6 @@ abstract class DistributedCombinator(neighborhoods:Array[Neighborhood]) extends 
   }
 
   override def collectProfilingStatistics: List[Array[String]] = {
-    remoteNeighborhoods.flatMap(remote => supervisor.getRemoteStatisticsFor(remote.getRemoteIdentification())).toList
+    remoteNeighborhoodIdentifications.flatMap(i => supervisor.getRemoteStatisticsFor(i)).toList
   }
 }

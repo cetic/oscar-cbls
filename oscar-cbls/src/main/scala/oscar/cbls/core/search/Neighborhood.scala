@@ -415,16 +415,16 @@ abstract class Neighborhood(name:String = null) {
 
   //Call this at the main site
   def labelNeighborhoodsForRemoteOperation(supervisor:Supervisor):(Int,Int) = {
-    val x = labelAndExtractRemoteNeighborhoods(supervisor: Supervisor)
+    val x = labelAndExtractRemoteTasks(supervisor: Supervisor)
     (x._1,x._2)
   }
 
   //Call this at the worker site
   def identifyRemotelySearchableNeighborhoods:SortedMap[Int,RemoteNeighborhood] = {
-    SortedMap.empty[Int,RemoteNeighborhood] ++ (labelAndExtractRemoteNeighborhoods(supervisor = null)._3.map(r => (r.neighborhoodID,r)))
+    SortedMap.empty[Int,RemoteNeighborhood] ++ (labelAndExtractRemoteTasks(supervisor = null)._3.map(r => (r.neighborhoodID,r)))
   }
 
-  def labelAndExtractRemoteNeighborhoods(supervisor: Supervisor, currentID: Int = 0, nbDistributedCombinators:Int = 0, acc: List[RemoteNeighborhood] = Nil):(Int,Int,List[RemoteNeighborhood]) =
+  def labelAndExtractRemoteTasks(supervisor: Supervisor, currentID: Int = 0, nbDistributedCombinators:Int = 0, acc: List[RemoteNeighborhood] = Nil):(Int,Int,List[RemoteNeighborhood]) =
     (currentID, nbDistributedCombinators, acc)
 }
 
@@ -435,11 +435,9 @@ case object NoMoveNeighborhood extends Neighborhood {
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = NoMoveFound
 }
 
-
 trait SupportForAndThenChaining[MoveType<:Move] extends Neighborhood{
 
   def instantiateCurrentMove(newObj:Long):MoveType
-
 
   def dynAndThen(other:MoveType => Neighborhood,maximalIntermediaryDegradation: Long = Long.MaxValue):DynAndThen[MoveType] = {
     new DynAndThen[MoveType](this,other,maximalIntermediaryDegradation)

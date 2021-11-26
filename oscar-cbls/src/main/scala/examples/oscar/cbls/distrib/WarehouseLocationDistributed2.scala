@@ -85,7 +85,6 @@ object WarehouseLocationDistributed2 extends App {
     })
   }
 
-
   val arrayOfStoreSearchObjAndFinalPrint: Array[(Store, Neighborhood, Objective, () => Unit)] =
     Array.fill(nbWorker + 1)(null)
 
@@ -98,11 +97,10 @@ object WarehouseLocationDistributed2 extends App {
   val supervisor = distrib.startSupervisorAndActorSystem(search)
 
   //creating all the workers; here we only create local workers
-  for (i <- (0 until nbWorker).par) {
+  for (i <- 0 until nbWorker) {
     val (store2, search2, _, _) = arrayOfStoreSearchObjAndFinalPrint(i)
     supervisor.createLocalWorker(store2, search2)
   }
-
 
   val start = System.currentTimeMillis()
 

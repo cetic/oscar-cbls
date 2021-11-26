@@ -6,7 +6,7 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.distrib.Supervisor
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Neighborhood
-import oscar.cbls.lib.search.combinators.distributed.DistributedRestartFromBest
+import oscar.cbls.lib.search.combinators.distributed.DistributedRestart
 import oscar.cbls._
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
@@ -64,7 +64,7 @@ object WarehouseLocationDistributed3 extends App {
       symmetryCanBeBrokenOnIndices = false)
 
     val neighborhood =
-      new DistributedRestartFromBest(
+      new DistributedRestart(
         bestSlopeFirst(
           List(
             assignNeighborhood(warehouseOpenArray, name = "SwitchWarehouse"),
@@ -72,7 +72,7 @@ object WarehouseLocationDistributed3 extends App {
             swapsK(20) guard (() => openWarehouses.value.size >= 5))),
         randomSwapNeighborhood(warehouseOpenArray, () => W / 10),
         nbConsecutiveRestartWithoutImprovement = 5,
-        minNbRestarts = 20,
+        minNbRestarts = 100,
         visu = true)
 
     (m, neighborhood, obj, () => {
@@ -82,7 +82,7 @@ object WarehouseLocationDistributed3 extends App {
 
   //main search; distributed combinators delegate to worker
   val (store, search, obj, finalPrint) = createSearchProcedure()
-  val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(search, hotRestart = false, tic = 5.seconds)
+  val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(search, hotRestart = false, tic = 5.seconds,verbose = true)
 
   for (i <- (0 until nbWorker).par) {
     //creating each worker, with its own model and search procedure (we do in in parallel)

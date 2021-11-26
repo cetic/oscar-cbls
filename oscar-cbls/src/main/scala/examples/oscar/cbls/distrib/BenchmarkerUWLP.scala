@@ -140,7 +140,7 @@ object BenchmarkerUWLP extends ModelingAPI {
       case DistRemote =>
         new Remote(seqNeighborhood)
       case DistRestart =>
-        new DistributedRestartFromBest(
+        new DistributedRestart(
           basicNeighborhood,
           randomSwapNb,
           minNbRestarts = 20,

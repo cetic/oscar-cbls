@@ -76,7 +76,7 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
     val futureResult : Future[WrappedData] = resultPromise.future
 
     abstract class WrappedData
-    case class WrappedSearchEnded(searchEnded:SearchEnded, neighborhoodIndice: Int, priorityOfSearch:Int, uniqueId: Long) extends WrappedData
+    case class WrappedSearchEnded(searchEnded:SearchEnded[IndependentSearchResult], neighborhoodIndice: Int, priorityOfSearch:Int, uniqueId: Long) extends WrappedData
     case class WrappedGotUniqueID(uniqueID: Long, neighborhoodIndice: Int,priorityOfSearch:Int) extends WrappedData
     case class WrappedError(msg: Option[String]=None, crash:Option[SearchCrashed] = None) extends WrappedData
 
@@ -87,7 +87,6 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
     supervisor.spawnNewActor(Behaviors.setup { context:ActorContext[WrappedData] => {
       init(getSortedNeighborhoods(currentIt), priorityOfNextSearch = 0, nbWorkers, nbStartingAndRunningSearches = 0, context)
     }}, "DistributedBestSlopeFirst")
-
 
     @tailrec
     def init(neighborhoodList: List[Int], priorityOfNextSearch:Int, nbSearchesToStart: Int, nbStartingAndRunningSearches:Int, context: ActorContext[WrappedData]): Behavior[WrappedData] = {
@@ -101,6 +100,7 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
             runningSearchIDs = List.empty,
             nbFinishedSearches  = 0,
             nbStartingAndRunningSearches = nbStartingAndRunningSearches,
+            nbStartedSearches = 0,
             currentIt = currentIt,
             responses = Array.fill(neighborhoods.length)(null))
       }
@@ -111,11 +111,12 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
              runningSearchIDs:List[Long],
              nbFinishedSearches: Int,
              nbStartingAndRunningSearches:Int,
+             nbStartedSearches:Int,
              currentIt:Int,
              responses:Array[IndependentSearchResult]): Behavior[WrappedData] = {
       Behaviors.receive{ (context, command) =>
         command match {
-          case w@WrappedSearchEnded(searchEnded:SearchEnded, neighborhoodIndice: Int, priorityOfSearch:Int, uniqueId: Long) =>
+          case w@WrappedSearchEnded(searchEnded:SearchEnded[IndependentSearchResult], neighborhoodIndice: Int, priorityOfSearch:Int, uniqueId: Long) =>
             searchEnded match {
               case w:SearchCrashed =>
                 for (r <- runningSearchIDs) {
@@ -150,7 +151,7 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                     supervisor.supervisorActor ! CancelSearchToSupervisor(r)
                   }
                   resultPromise.success(
-                    WrappedSearchEnded(searchEnded = SearchCompleted(searchID = 0, searchResult, 0),
+                    WrappedSearchEnded(searchEnded = SearchCompleted(uniqueSearchID = 0, searchResult, 0),
                       neighborhoodIndice = 0, priorityOfSearch = 0, uniqueId = 0))
                   Behaviors.stopped
                 }
@@ -174,6 +175,7 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                               runningSearchIDs = nextRunningSearchID,
                               nbFinishedSearches = nbFinishedSearches + 1,
                               nbStartingAndRunningSearches = nbStartingAndRunningSearches,
+                              nbStartedSearches = nbStartedSearches,
                               currentIt = currentIt,
                               responses = responses)
                           case Nil =>
@@ -182,6 +184,7 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                               runningSearchIDs = nextRunningSearchID,
                               nbFinishedSearches = nbFinishedSearches + 1,
                               nbStartingAndRunningSearches = nbStartingAndRunningSearches,
+                              nbStartedSearches = nbStartedSearches,
                               currentIt = currentIt,
                               responses = responses)
                         }
@@ -195,7 +198,7 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                           responses(j) match{
                             case m:IndependentMoveFound if m.objAfter < best.objAfter =>
                               best = m
-                              //if(i != j) println(s"worth it! i:$i j:$j objI:${moveFound.objAfter} objJ:${m.objAfter}")
+                            //if(i != j) println(s"worth it! i:$i j:$j objI:${moveFound.objAfter} objJ:${m.objAfter}")
                             case _ => ;
                           }
                         }
@@ -213,22 +216,26 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
 
           case WrappedGotUniqueID(uniqueID: Long, neighborhoodIndice: Int,priorityOfSearch:Int) =>
             //start search with val request
-            val request = SearchRequest(remoteNeighborhoods(neighborhoodIndice).getRemoteIdentification(),
-              acceptanceCriteria,
-              independentObj,
-              startSol,
-              doAllMoves = true)
+            val request =
 
-            context.ask[DelegateSearch, SearchEnded](supervisor.supervisorActor, ref => DelegateSearch(request, ref, uniqueID)) {
-              case Success(searchEnded) => WrappedSearchEnded(searchEnded, neighborhoodIndice, priorityOfSearch, uniqueID)
-              case Failure(_) => WrappedError(msg = Some(s"Error in WrappedGotUniqueID, uniqueID=$uniqueID"))
-            }
+              context.ask[DelegateSearch, SearchEnded[IndependentSearchResult]](supervisor.supervisorActor, ref => DelegateSearch(SingleMoveSearch(
+                uniqueSearchId = uniqueID,
+                remoteTaskId = remoteNeighborhoodIdentifications(neighborhoodIndice),
+                acc = acceptanceCriteria,
+                obj = independentObj,
+                sendFullSolution = false,
+                startSolutionOpt = startSol,
+                sendResultTo = ref), waitForMoreSearch = nbStartedSearches < nbWorkers-1)) {
+                case Success(searchEnded) => WrappedSearchEnded(searchEnded, neighborhoodIndice, priorityOfSearch, uniqueID)
+                case Failure(_) => WrappedError(msg = Some(s"Error in WrappedGotUniqueID, uniqueID=$uniqueID"))
+              }
 
             next(nextSearchesToStart = nextSearchesToStart,
               priorityOfNextSearch =  priorityOfNextSearch:Int,
               runningSearchIDs = uniqueID :: runningSearchIDs,
               nbFinishedSearches = nbFinishedSearches,
               nbStartingAndRunningSearches = nbStartingAndRunningSearches,
+              nbStartedSearches = nbStartedSearches + 1,
               currentIt = currentIt,
               responses = responses)
 
@@ -252,7 +259,7 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
     Await.result(futureResult, Duration.Inf) match {
       case w:WrappedSearchEnded =>
         w.searchEnded match {
-          case c:SearchCompleted => c.searchResult.getLocalResult(obj.model)
+          case c:SearchCompleted[IndependentSearchResult] => c.searchResult.getLocalResult(obj.model)
           case _ => NoMoveFound
         }
       case WrappedError(msg:Option[String],crash:Option[SearchCrashed]) =>
