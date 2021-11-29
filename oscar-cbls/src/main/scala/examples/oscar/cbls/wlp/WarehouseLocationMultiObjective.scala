@@ -124,7 +124,7 @@ object WarehouseLocationMultiObjective extends App {
         search2.verbose = 0
         search2.doAllMoves(obj = obj3)
 
-        (foundOperationCost, constructionCost.value,m.solution())
+        Some((foundOperationCost, constructionCost.value,m.solution()))
       }
     },
     maxPoints = 200,
