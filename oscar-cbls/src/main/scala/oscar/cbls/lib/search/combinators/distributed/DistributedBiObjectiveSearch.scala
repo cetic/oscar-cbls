@@ -20,7 +20,7 @@ import oscar.cbls.Solution
 import oscar.cbls.algo.dll.{DLLStorageElement, DoublyLinkedList}
 import oscar.cbls.algo.heap.BinomialHeapWithMove
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.distrib.{IndependentSolution, NeighborhoodSearchRequest, RemoteTask, RemoteTaskIdentification, SearchCompleted, SearchEnded, SearchRequest}
+import oscar.cbls.core.distrib._
 import oscar.cbls.core.objective.{CascadingObjective, IndependentObjective}
 import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.lib.search.combinators.multiObjective.PlotPareto
@@ -43,6 +43,7 @@ class OptimizeWithBoundTask(taskId:Int,
         () => (obj2.value >= taskMessage.maxValueForObj2),
         obj1)
 
+    //this ensures that metaheuristics starts from scratch properly
     minObj1WithOBj2BoundNeighborhood.reset()
 
     minObj1WithOBj2BoundNeighborhood.doAllMoves(obj = minObj1WithOBj2Bound)
@@ -50,6 +51,7 @@ class OptimizeWithBoundTask(taskId:Int,
     minObj2WithFoundObj1BoundNeighborhoodOpt match{
       case Some(neighborhood2) =>
         val foundOBj1 = obj1.value
+        //this ensures that metaheuristics starts from scratch properly
         neighborhood2.reset()
         val minObj2WithFoundObj1 = new CascadingObjective(() => (obj1.value > foundOBj1), obj2)
         neighborhood2.doAllMoves(obj = minObj2WithFoundObj1)
@@ -173,116 +175,31 @@ class DistributedBiObjectiveSearch(globalMaxObj1:Long,
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  //this one uses a sortedMAp to perform removes, squares cannot be changed.
-  //the squares to develop, sorted in decreasing surface
-  val squaresToDevelop = new BinomialHeapWithMove[Square](getKey = - _.surface,maxPoints*2)
-
-  //Stores the front in increasing obj1 order
-  val squareList = new DoublyLinkedList[Square]
-
-  // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+  var allSquares:List[Square] = Nil
+  var dominatedSolutions:List[(Long,Long)]= Nil
   var remainingSurface:Long = 0
   var nbSquare:Int = 0
-  def storeSquare(squareToStore:Square, after: DLLStorageElement[Square],isNew:Boolean = false): Unit = {
-    if (verbose && isNew) println("non dominated solution " + squareToStore.objString)
 
-    squareToStore.elemInFront = squareList.insertAfter(squareToStore, after)
-
-    if (squareToStore.surface != 0) {
-      if (filterSquare(squareToStore.obj1, squareToStore.maxObj1, squareToStore.obj2, squareToStore.minObj2)) {
-        squaresToDevelop.insert(squareToStore)
-        remainingSurface += squareToStore.surface
-      } else {
-        nbFilteredSquares += 1
-      }
+  // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  def redrawPareto():Unit = {
+    if (plot != null){
+      plot.reDrawPareto(allSquares.map(square => (square.obj1,square.obj2)), Some(oldParetoPoints))
     }
+  }
 
-    nbSquare += 1
+  def storeNewSquare(square:Square): Unit = {
 
-    if(plot != null){
-      plot.reDrawPareto(squareList.map(square => (square.obj1,square.obj2)), Some(oldParetoPoints))
-    }
   }
 
   def removeSquare(square:Square): Unit ={
-    if(squaresToDevelop.deleteIfPresent(square)){
-      remainingSurface -= square.surface
-    }
-    square.elemInFront.delete()
-    nbSquare -= 1
+
   }
 
-  def popFirstSquare():Square = {
-    val square = squaresToDevelop.removeFirst()
-    remainingSurface -= square.surface
-    square
+  def removeSmallestSquare():Option[Square] = {
+
   }
 
-  def notifyDeleted(square:Square): Unit ={
-    oldParetoPoints = (square.obj1,square.obj2) :: oldParetoPoints
-    if(verbose) println("removed dominated solution  " + square.objString)
-  }
-
-  // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  def pruneLeftSquares(currentSquare:Square, obj1:Long): Unit = {
-    val currentPos = currentSquare.elemInFront
-
-    if (obj1 <= currentSquare.maxObj1) {
-      //something to do; start by removing it
-
-      val predecessor = currentPos.prev
-
-      removeSquare(currentSquare)
-
-      //TODO: maybe we should extend the first remaining square in case some were removed?
-      currentSquare.rectifyOnNewObj1(obj1) match {
-        case Some(trimmedSquare) =>
-          storeSquare(trimmedSquare, predecessor)
-        case None => ;
-          //this one was completely deleted, so we carry on to the next
-          notifyDeleted(currentSquare)
-          if (squareList.phantom != predecessor) {
-            pruneLeftSquares(predecessor.elem, obj1: Long)
-          }
-      }
-    }
-  }
-
-  def insertAndPruneRightSquares(currentSquareForPruning:Square,
-                                 squareToInsert:Square): Unit = {
-
-    if(currentSquareForPruning == null){
-      //insert at last position
-      storeSquare(squareToInsert,squareList.phantom.prev,isNew = true)
-    }else{
-
-      if (currentSquareForPruning.obj1 <= squareToInsert.obj1
-        && currentSquareForPruning.obj2 <= squareToInsert.obj2) {
-        //on oublie squareToInsert, elle est au mieux équivalente, au pire, dominée
-        if(verbose) println("found dominated solution")
-      }else if (currentSquareForPruning.obj1 >= squareToInsert.obj1
-        && currentSquareForPruning.obj2 >= squareToInsert.obj2) {
-        //currentSquareForPruning est au meux équivalent, au pire, dominé.
-        // on supprime currentSquareForPruning et on hérite de ses valeurs dans currentSquare
-
-        notifyDeleted(currentSquareForPruning)
-        val nextSquare = currentSquareForPruning.elemInFront.next.elem
-        val enlargedSquareToInsert = squareToInsert.enlargeBounds(currentSquareForPruning)
-        removeSquare(currentSquareForPruning)
-        insertAndPruneRightSquares(nextSquare, enlargedSquareToInsert)
-
-      }else{
-        //ils sont incomparables
-        //forcément, c'est le new qui est à gauche et au dessus, on l'insère avant le currentSquareForPruning
-        require(squareToInsert.obj1 <= currentSquareForPruning.obj1)
-        require(squareToInsert.obj2 >= currentSquareForPruning.obj2)
-
-        storeSquare(squareToInsert,currentSquareForPruning.elemInFront.prev,isNew = true)
-      }
-    }
-  }
+  // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
   def paretoOptimize():List[(Long,Long,Solution)] = {
@@ -375,3 +292,4 @@ class DistributedBiObjectiveSearch(globalMaxObj1:Long,
 }
 
 
+*/
