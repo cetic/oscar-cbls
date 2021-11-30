@@ -23,7 +23,6 @@ package oscar.cbls.core.objective
 import oscar.cbls
 import oscar.cbls.core.computation._
 import oscar.cbls.warning
-
 object Objective{
   implicit def objToChangingIntValue(o:IntVarObjective):ChangingIntValue = o.objective
   implicit def objToFun(o:Objective):()=>Long = ()=>o.value

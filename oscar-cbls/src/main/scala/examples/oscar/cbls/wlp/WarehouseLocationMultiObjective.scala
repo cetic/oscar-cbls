@@ -111,8 +111,8 @@ object WarehouseLocationMultiObjective extends App {
           ))
 
         val search1 = (neighborhood
-          .onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => (W / 10) max 5, name = "smallRandomize", acceptanceChecking = Some(5)) acceptAllButStrongViolation, 5, operationCost)
-          .onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/2, name = "bigRandomize", acceptanceChecking = Some(20)) acceptAllButStrongViolation, 2, operationCost))
+          .onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, searchZone = openWarehouses, degree = () => openWarehouses.value.size/10 max 5, name = "smallRandomize") acceptAllButStrongViolation, 5, operationCost))
+
         search1.verbose = 0
         search1.doAllMoves(obj = obj2)
 
@@ -127,13 +127,12 @@ object WarehouseLocationMultiObjective extends App {
         Some((foundOperationCost, constructionCost.value,m.solution()))
       }
     },
-    maxPoints = 200,
+    maxPoints = 100,
     verbose = true,
     visu = true,
     visuTitle = problemName,
     obj1Name = "operationCost",
     obj2Name = "constructionCost",
-    filterSquare = {case (obj1,maxOBj1,obj2,minOBj2) => minOBj2 < obj2 - 26},
     stayAlive = true
   )
 

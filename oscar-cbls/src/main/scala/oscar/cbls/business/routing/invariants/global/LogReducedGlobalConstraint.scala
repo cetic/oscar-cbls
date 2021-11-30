@@ -175,7 +175,7 @@ object LogReducedFlippedPreComputedSubSequence {
 
     /**
       * this one is similar to the nodeValue except that it only is applied on vehicle,
-      * to represent the return to the vehicle start at teh end of its route
+      * to represent the return to the vehicle start at the end of its route
       * @param vehicle
       * @return
       */

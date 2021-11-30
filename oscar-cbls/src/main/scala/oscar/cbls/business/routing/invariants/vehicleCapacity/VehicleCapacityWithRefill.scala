@@ -1,17 +1,71 @@
-/*package oscar.cbls.business.routing.invariants.vehicleCapacity
+package oscar.cbls.business.routing.invariants.vehicleCapacity
 
 import oscar.cbls._
 import oscar.cbls.algo.quick.QList
-import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
+import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.invariants.global._
-import oscar.cbls.business.routing.invariants.vehicleCapacity.VehicleCapacityWithRefill.ActionAtNode
 import oscar.cbls.core.ChangingSeqValue
 
 import scala.annotation.tailrec
 
+/**
+ * This constraint represents a vehicle capacity with refill.
+ *
+ * All vehicles have a given max capacity; the content must be between zero and this max capacity
+ * The content of the vehicle changes at eah node through two possible actions:
+ * - through a delta: content' = content + delta_node
+ * - through a refill: content! = constantValue_node
+ *
+ * WARNING: this is very low maturity constraint and needs validation!
+ */
+object VehicleCapacityWithRefill{
+
+  /**
+   * when getting to the node,the capacity is changed by a delta, positive or negative)
+   * @param delta the delta on the content of the vehicle
+   * @return
+   */
+  def delta(delta:Long):VehicleContentFunctionRefill = VehicleContentFunctionNoRefill(delta, delta, delta)
+
+  /**
+   * wje, getting to the node, the content is set to a definite content (refill, empty, whatever)
+   * @param content the content of the vehicle when leaves this node
+   * @return
+   */
+  def setContent(content:Long):VehicleContentFunctionRefill = VehicleContentFunctionWithRefill(Long.MinValue, Long.MaxValue, 0, content, content, content)
+
+  /**
+   * when getting to the node, the content of the vehicle is unchanged
+   * this is identical to delta(0)
+   * @return
+   */
+  def noAction:VehicleContentFunctionRefill = delta(0)
+
+  /**
+   * intantiate the CapacityWithRefill constraint
+   * @param routes the route
+   * @param n the number of points
+   * @param v the number of vehicles
+   * @param vehiclesCapacity the max capacity of each vehicle (min is zero)
+   * @param actionAtNode for each node, the action on the capacity; check the methods in thi object: noAction, setContent and delta
+   * @param violationPerVehicle the output of the constraint: 1 if there is a violation, 0 otherwise
+   * @return
+   */
+  def apply(routes: ChangingSeqValue, n: Int, v: Int,
+            vehiclesCapacity: Array[Long],
+            actionAtNode: Array[VehicleContentFunctionRefill],
+            violationPerVehicle: Array[CBLSIntVar]): VehicleCapacityWithRefill =
+    new VehicleCapacityWithRefill(
+      routes, n, v,
+      vehiclesCapacity,
+      actionAtNode,
+      violationPerVehicle)
+}
+
 abstract sealed class VehicleContentFunctionRefill() {
-  def max(startContent: Long): Long
   def min(startContent: Long): Long
+  def max(startContent: Long): Long
+  def contentAtEnd(startContent:Long):Long
   def compose(c:VehicleContentFunctionRefill):VehicleContentFunctionRefill
 }
 
@@ -20,13 +74,11 @@ case class VehicleContentFunctionNoRefill(maxContentIfStartAt0: Long,
                                           contentAtEndIfStartAt0: Long)
   extends VehicleContentFunctionRefill(){
 
-  def max(startContent: Long): Long = {
-    maxContentIfStartAt0 + startContent
-  }
+  def min(startContent: Long): Long = minContentIfStartAt0 + startContent
 
-  def min(startContent: Long): Long = {
-    minContentIfStartAt0 + startContent
-  }
+  def max(startContent: Long): Long = maxContentIfStartAt0 + startContent
+
+  override def contentAtEnd(startContent: Long): Long = startContent + contentAtEndIfStartAt0
 
   def compose(c:VehicleContentFunctionRefill):VehicleContentFunctionRefill = {
     c match{
@@ -55,13 +107,14 @@ case class VehicleContentFunctionWithRefill(maxContentBeforeFirstRefillIfStartAt
                                             contentAtEnd: Long)
   extends VehicleContentFunctionRefill() {
 
-  def max(startContent: Long): Long = {
-    Math.max(maxContentBeforeFirstRefillIfStartAt0 + startContent,maxContentAfterFirstRefill)
-  }
-
-  def min(startContent: Long): Long = {
+  def min(startContent: Long): Long =
     Math.min(minContentBeforeFirstRefillIfStartAt0 + startContent,minContentAfterFirstRefill)
-  }
+
+  def max(startContent: Long): Long =
+    Math.max(maxContentBeforeFirstRefillIfStartAt0 + startContent,maxContentAfterFirstRefill)
+
+  override def contentAtEnd(startContent: Long): Long =
+    contentAtEnd
 
   override def compose(c: VehicleContentFunctionRefill): VehicleContentFunctionRefill =
     c match{
@@ -85,39 +138,20 @@ case class VehicleContentFunctionWithRefill(maxContentBeforeFirstRefillIfStartAt
     }
 }
 
-object VehicleCapacityWithRefill{
-
-  def delta(delta:Long):VehicleContentFunctionRefill = VehicleContentFunctionNoRefill(delta, delta, delta)
-  def setContent(content:Long):VehicleContentFunctionRefill = VehicleContentFunctionWithRefill(Long.MinValue, Long.MaxValue, 0, content, content, content)
-  def noAction:VehicleContentFunctionRefill = delta(0)
-
-  def apply(routes: ChangingSeqValue, n: Int, v: Int,
-            vehiclesCapacity: Array[Long],
-            actionAtNode: Array[VehicleContentFunctionRefill],
-            violationPerVehicle: Array[CBLSIntVar]): VehicleCapacityWithRefill =
-    new VehicleCapacityWithRefill(
-      routes, n, v,
-      vehiclesCapacity,
-      actionAtNode,
-      violationPerVehicle)
-}
 
 protected case class TwoWaysVehicleContentWithRefillFunction(nonFlippedFunction: VehicleContentFunctionRefill,
                                                              flippedFunction: VehicleContentFunctionRefill){
-
-
-  def contentAtEndIfStartAt0(flipped: Boolean): Long =
-    if(flipped) flippedFunction.contentAtEndIfStartAt0
-    else nonFlippedFunction.contentAtEndIfStartAt0
 
   def apply(startContent: Long, maxVehicleContent: Long, flipped: Boolean): Boolean ={
     val vehicleContentFunction = if(flipped)flippedFunction else nonFlippedFunction
     vehicleContentFunction.max(startContent) > maxVehicleContent || vehicleContentFunction.min(startContent) < 0
   }
 
-  def isEmpty(flipped: Boolean): Boolean =
-    if(flipped)flippedFunction.isEmpty
-    else nonFlippedFunction.isEmpty
+  def compose(that:TwoWaysVehicleContentWithRefillFunction):TwoWaysVehicleContentWithRefillFunction = {
+    TwoWaysVehicleContentWithRefillFunction(
+      nonFlippedFunction = this.nonFlippedFunction compose that.nonFlippedFunction,
+      flippedFunction = that.flippedFunction compose this.flippedFunction)
+  }
 
   override def toString: String = {
     s"""Two ways vehicle content function :
@@ -135,100 +169,86 @@ class VehicleCapacityWithRefill(routes: ChangingSeqValue, override val n: Int, v
 
   violationPerVehicle.foreach(violation => violation.setDefiningInvariant(this))
 
-  val contentFunctionAtNode: Array[TwoWaysVehicleContentFunction] =
-    Array.tabulate(n)(node => TwoWaysVehicleContentFunction(
-      DefinedContentFunction(contentVariationAtNode(node),contentVariationAtNode(node),contentVariationAtNode(node), node, node),
-      DefinedContentFunction(contentVariationAtNode(node),contentVariationAtNode(node),contentVariationAtNode(node), node, node)))
-
-  // For the vehicle return value we consider that by default nothing is loaded/unloaded at the depot
-  // (it's a fictive node)
-  val contentFunctionForVehicleReturn: Array[TwoWaysVehicleContentFunction] =
-  Array.tabulate(v)(vehicle => TwoWaysVehicleContentFunction(
-    DefinedContentFunction(0,0,0,vehicle, vehicle),DefinedContentFunction(0,0,0,vehicle, vehicle)))
+  val contentFunctionAtNode: Array[TwoWaysVehicleContentWithRefillFunction] =
+    Array.tabulate(n)(node => TwoWaysVehicleContentWithRefillFunction(actionAtNode(node),actionAtNode(node)))
 
   /**
    * this method delivers the value of the node
    *
    * @return the type T associated with the node "node"
    */
-  override def nodeValue(node: Int): TwoWaysVehicleContentFunction = contentFunctionAtNode(node)
+  override def nodeValue(node: Int): TwoWaysVehicleContentWithRefillFunction = contentFunctionAtNode(node)
 
   /**
    * this one is similar to the nodeValue except that it only is applied on vehicle,
-   * to represent the return to the vehicle start at teh end of its route
+   * to represent the return to the vehicle start at the end of its route
    *
-   * @param vehicle
+   * @param vehicle th
    * @return
    */
-  override def endNodeValue(vehicle: Int): TwoWaysVehicleContentFunction = contentFunctionForVehicleReturn(vehicle)
+  override def endNodeValue(vehicle: Int): TwoWaysVehicleContentWithRefillFunction =
+    TwoWaysVehicleContentWithRefillFunction(VehicleCapacityWithRefill.noAction,VehicleCapacityWithRefill.noAction)
 
-  /**
-   * this method is for composing steps into bigger steps.
-   *
-   * @param firstStep  the type T associated with stepping over a sequence of nodes (which can be minial two)
-   * @param secondStep the type T associated with stepping over a sequence of nodes (which can be minial two)
-   * @return the type T associated wit hthe first step followed by the second step
-   */
-  override def composeSteps(firstStep: TwoWaysVehicleContentFunction, secondStep: TwoWaysVehicleContentFunction): TwoWaysVehicleContentFunction = {
-    val flipped = composeVehicleContentFunctions(secondStep.flippedFunction, firstStep.flippedFunction)
-    val nonFlipped = composeVehicleContentFunctions(firstStep.nonFlippedFunction, secondStep.nonFlippedFunction)
-    TwoWaysVehicleContentFunction(nonFlipped, flipped)
+  override def composeSteps(firstStep: TwoWaysVehicleContentWithRefillFunction,
+                            secondStep: TwoWaysVehicleContentWithRefillFunction): TwoWaysVehicleContentWithRefillFunction = {
+    firstStep.compose(secondStep)
   }
 
-  private def composeVehicleContentFunctions(f1: VehicleContentFunction, f2: VehicleContentFunction): VehicleContentFunction ={
-    if(f1.isEmpty || f2.isEmpty) return EmptyContentFunction
-    val from = f1.from
-    val to = f2.to
-    val max = Math.max(f1.maxContentIfStartAt0, f1.contentAtEndIfStartAt0 + f2.maxContentIfStartAt0)
-    val min = Math.min(f1.minContentIfStartAt0, f1.contentAtEndIfStartAt0 + f2.minContentIfStartAt0)
-    val end = f1.contentAtEndIfStartAt0 + f2.contentAtEndIfStartAt0
-    DefinedContentFunction(max, min, end, from, to)
-  }
-
-  /**
-   * this method is called by the framework when the value of a vehicle must be computed.
-   *
-   * @param vehicle  the vehicle that we are focusing on
-   * @param segments the segments that constitute the route.
-   *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
-   * @return the value associated with the vehicle. This value should only be computed based on the provided segments
-   */
-  override def computeVehicleValueComposed(vehicle: Int, segments: QList[LogReducedSegment[TwoWaysVehicleContentFunction]]): Boolean = {
+  override def computeVehicleValueComposed(vehicle: Int,
+                                           segments: QList[LogReducedSegment[TwoWaysVehicleContentWithRefillFunction]]): Boolean = {
+    val maxCapa = vehiclesCapacity(vehicle)
 
     @tailrec
-    def composeSubSegments(vehicleContentFunctions: QList[TwoWaysVehicleContentFunction], previousOutCapa: Long, flipped: Boolean): Long ={
-      val twoWaysVehicleContentFunction = vehicleContentFunctions.head
-      val newOutCapa = previousOutCapa + twoWaysVehicleContentFunction.contentAtEndIfStartAt0(flipped)
-      val isMaxCapaOfSegmentViolated = twoWaysVehicleContentFunction(previousOutCapa, vehiclesCapacity(vehicle), flipped)
-      if(isMaxCapaOfSegmentViolated) -1
-      else if(vehicleContentFunctions.tail == null) newOutCapa
-      else composeSubSegments(vehicleContentFunctions.tail, newOutCapa, flipped)
-    }
-
-    @tailrec
-    def isVehicleCapacityViolated(logReducedSegments: QList[LogReducedSegment[TwoWaysVehicleContentFunction]],
-                                  previousOutCapa: Long = 0L): Boolean ={
-      if(logReducedSegments == null) false
-      else {
-        val newOutCapa: Long = logReducedSegments.head match {
-          case s@LogReducedPreComputedSubSequence(_, _, steps) =>
-            composeSubSegments(steps, previousOutCapa, false)
-
-          case s@LogReducedFlippedPreComputedSubSequence(_, _, steps) =>
-            composeSubSegments(steps.reverse, previousOutCapa, true)
-
-          case s@LogReducedNewNode(node, vehicleContentFunctionOfNode) =>
-            val isMaxCapaOfNodeViolated = vehicleContentFunctionOfNode(previousOutCapa, vehiclesCapacity(vehicle), true)
-            if(isMaxCapaOfNodeViolated) -1
-            else previousOutCapa + vehicleContentFunctionOfNode.contentAtEndIfStartAt0(true)
-
-          case x =>
-            throw new Error(s"Unhandled match with $x")
-        }
-        (newOutCapa < 0) || isVehicleCapacityViolated(logReducedSegments.tail, newOutCapa)
+    def evaluateOnSegments(currentContent:Long,
+                           segments : QList[LogReducedSegment[TwoWaysVehicleContentWithRefillFunction]]):Option[Long] = {
+      if(currentContent > maxCapa) return None
+      if(currentContent < 0) return None
+      if(segments == null) return Some(currentContent)
+      val head = segments.head
+      evaluateOnSubSegments(currentContent,head) match{
+        case None => None
+        case Some(outContent) => evaluateOnSegments(outContent, segments.tail)
       }
     }
-    isVehicleCapacityViolated(segments)
+
+    def evaluateOnSubSegments(currentContent:Long,
+                              subsegment:LogReducedSegment[TwoWaysVehicleContentWithRefillFunction]):Option[Long] = {
+      subsegment match{
+        case l:LogReducedPreComputedSubSequence[TwoWaysVehicleContentWithRefillFunction] =>
+          evaluateOnStepsForward(currentContent,l.steps)
+        case f:LogReducedFlippedPreComputedSubSequence[TwoWaysVehicleContentWithRefillFunction] =>
+          evaluateOnStepsBackwards(currentContent,f.steps)
+        case n:LogReducedNewNode[TwoWaysVehicleContentWithRefillFunction] =>
+          evaluateOnStepsForward(currentContent:Long, steps = QList(n.value))
+      }
+    }
+
+    @tailrec
+    def evaluateOnStepsForward(currentContent:Long,
+                               steps : QList[TwoWaysVehicleContentWithRefillFunction]):Option[Long] = {
+      if(currentContent > maxCapa) return None
+      if(currentContent < 0) return None
+      if(steps == null) return Some(currentContent)
+      val head = steps.head
+      if(head.nonFlippedFunction.max(currentContent) > maxCapa) return None
+      if(head.nonFlippedFunction.min(currentContent) < 0) return None
+      evaluateOnStepsForward(head.nonFlippedFunction.contentAtEnd(currentContent),steps.tail)
+    }
+
+    @tailrec
+    def evaluateOnStepsBackwards(currentContent:Long,
+                                 steps : QList[TwoWaysVehicleContentWithRefillFunction]):Option[Long] = {
+      //TODO: I do not know if I have to iterate in reverse order here!!!
+      if(currentContent > maxCapa) return None
+      if(currentContent < 0) return None
+      if(steps == null) return Some(currentContent)
+      val head = steps.head
+      if(head.flippedFunction.max(currentContent) > maxCapa) return None
+      if(head.flippedFunction.min(currentContent) < 0) return None
+      evaluateOnStepsBackwards(head.flippedFunction.contentAtEnd(currentContent),steps.tail)
+    }
+
+    evaluateOnSegments(0,segments).isEmpty //empty means violation
   }
 
   /**
@@ -253,11 +273,13 @@ class VehicleCapacityWithRefill(routes: ChangingSeqValue, override val n: Int, v
    */
   override def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Boolean = {
     var explorer = routes.explorerAtAnyOccurrence(vehicle)
-    var currentContent = contentVariationAtNode(vehicle)
+    var currentContent:Long = actionAtNode(vehicle).contentAtEnd(0)
     val maxCapacity = vehiclesCapacity(vehicle)
 
     // The vehicle content at start is greater than the max allowed in the vehicle (shouldn't happen)
     if(currentContent > maxCapacity) return true
+    if(currentContent < 0) return true
+
     explorer = explorer.get.next
 
     // No node in this vehicle route
@@ -266,36 +288,11 @@ class VehicleCapacityWithRefill(routes: ChangingSeqValue, override val n: Int, v
 
     while(explorer.isDefined && explorer.get.value >= v){
       val currentNode = explorer.get
-      currentContent += contentVariationAtNode(currentNode.value)
-      if(currentContent > maxCapacity || currentContent < 0) return true
+      currentContent = actionAtNode(currentNode.value).contentAtEnd(currentContent)
+      if(currentContent < 0) return true
+      if(currentContent > maxCapacity) return true
       explorer = currentNode.next
     }
     false
   }
-
-  /**
-   * WARNING : know what you're doing
-   * Perform the precomputation on all vehicle given the current value of routes.
-   * The main purpose of this method is to update the vehicle content functions after the end
-   * of the optimisation for result extraction purpose.
-   */
-  def performPreComputeOnAllVehicle() ={
-    val curRoutes = routes.value
-    for(curV <- 0 until v){
-      performPreCompute(curV, curRoutes)
-    }
-  }
-
-  def contentsOfRoute(vehicle: Int): Array[Long] = {
-    def contentAtNode(explorer: Option[IntSequenceExplorer], contentAtPreviousNode: Long = 0L): List[Long] ={
-      if(explorer.isEmpty || (vehicle != v - 1 && explorer.get.value == vehicle + 1))
-        List.empty
-      else{
-        val content = contentAtPreviousNode + contentVariationAtNode(explorer.get.value)
-        List(content) ::: contentAtNode(explorer.get.next, content)
-      }
-    }
-    contentAtNode(routes.value.explorerAtAnyOccurrence(vehicle)).toArray
-  }
 }
-*/
