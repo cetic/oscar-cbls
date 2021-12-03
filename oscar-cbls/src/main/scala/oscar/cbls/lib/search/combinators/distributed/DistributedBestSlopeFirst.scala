@@ -211,6 +211,7 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                   }
                 }
 
+                //TODO: we might stop anyway if we are waiting for too long. For isntance if we wait for more than twicethe average response time?
                 checkStopNoMoveFoundSoFar(0)
             }
 
