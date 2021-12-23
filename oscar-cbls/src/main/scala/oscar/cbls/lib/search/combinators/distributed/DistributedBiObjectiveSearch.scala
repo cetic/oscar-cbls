@@ -26,6 +26,8 @@ import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.lib.search.combinators.multiObjective.PlotPareto
 import oscar.cbls.visual.SingleFrameWindow
 
+import scala.collection.immutable.TreeSet
+
 class OptimizeWithBoundTask(taskId:Int,
                             minObj1WithOBj2BoundNeighborhood:Neighborhood,
                             minObj2WithFoundObj1BoundNeighborhoodOpt:Option[Neighborhood])
@@ -125,40 +127,46 @@ class DistributedBiObjectiveSearch(globalMaxObj1:Long,
                                    visuTitle: String = "Pareto",
                                    obj1Name: String = "obj1",
                                    obj2Name: String = "obj2",
-                                   filterSquare:(Long,Long,Long,Long) => Boolean = (_:Long,_:Long,_:Long,_:Long) =>true,
+                                   filterSquare:(Long, Long, Long, Long) => Boolean = (_:Long, _:Long, _:Long, _:Long) => true,
                                    stayAlive:Boolean = false
                                   ) {
 
-  val (plot,window) = if(visu) {
-    val p = new PlotPareto(null,obj1Name,obj2Name)
-    val window = SingleFrameWindow.show(p,visuTitle, width = 2000, height = 2000)
-    (p,window)
-  }else (null,null)
+  val (plot, window) = if(visu) {
+    val p = new PlotPareto(null, obj1Name, obj2Name)
+    val window = SingleFrameWindow.show(p, visuTitle, width = 2000, height = 2000)
+    (p, window)
+  } else (null, null)
 
-  var oldParetoPoints:List[(Long,Long)] = Nil
+  var oldParetoPoints:List[(Long, Long)] = Nil
 
   var nbFilteredSquares = 0
 
   var nextSquareUid:Int = 0
+
   //a square, anchored at a solution
-  case class Square(obj1:Long,maxObj1:Long,
-                    obj2:Long,minObj2:Long,
+  case class Square(obj1:Long, maxObj1:Long,
+                    obj2:Long, minObj2:Long,
                     solution:Solution) {
 
     require(minObj2 <= obj2)
     require(maxObj1 >= obj1)
+    // not requiring anything on the solution itself? like solution = (obj1, obj2)?
 
     val uid: Int = nextSquareUid
-    nextSquareUid = nextSquareUid+1
+    nextSquareUid = nextSquareUid + 1
 
     var elemInFront:DLLStorageElement[Square] = null
+
     def surface:Long = (maxObj1 - obj1) * (obj2 - minObj2)
+
     def getUpperSquareAboveObj2Cut(obj2Cut:Long):Square =
-      Square(obj1, maxObj1, obj2, obj2Cut+1 min obj2, solution)
+      Square(obj1, maxObj1, obj2, obj2Cut + 1 min obj2, solution)
+
     def rectifyOnNewObj1(newOBj1:Long):Option[Square] = {
-      if(newOBj1-1 < obj1) None
-      else Some(this.copy(maxObj1 = newOBj1-1))
+      if(newOBj1 - 1 < obj1) None
+      else Some(this.copy(maxObj1 = newOBj1 - 1))
     }
+
     def enlargeBounds(otherSquare:Square):Square = this.copy(
       maxObj1 = maxObj1 max otherSquare.maxObj1,
       minObj2 = minObj2 min otherSquare.minObj2
@@ -172,6 +180,8 @@ class DistributedBiObjectiveSearch(globalMaxObj1:Long,
   implicit val A: Ordering[Square] = new Ordering[Square]{
     override def compare(x: Square, y: Square): Int = x.uid compare y.uid
   }
+
+  // TODO here two new orderings, according to obj for treesets
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -188,16 +198,16 @@ class DistributedBiObjectiveSearch(globalMaxObj1:Long,
   }
 
   def storeNewSquare(square:Square): Unit = {
-
+    // TODO add square to pqueue and the two treesets
   }
 
   def removeSquare(square:Square): Unit ={
-
+    // TODO
   }
 
   def removeSmallestSquare():Option[Square] = {
-
-  }
+    // TODO
+  }//
 
   // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -215,12 +225,14 @@ class DistributedBiObjectiveSearch(globalMaxObj1:Long,
     storeSquare(square1,squareList.phantom,isNew=true)
 
     //initialization, search for other extreme of he spectre
-    val startSol = optimize(Long.MaxValue,solutionAtMax1Min2).get
+    val startSol = optimize(Long.MaxValue, solutionAtMax1Min2).get
+
     val square = Square(
       startSol._1, globalMaxObj1,
       startSol._2, globalMinObj2,
       startSol._3)
-    storeSquare(square,squareList.phantom,isNew=true)
+
+    storeSquare(square, squareList.phantom, isNew = true)
 
     if(verbose) println("BiObjectiveSearch: Start front exploration")
 
@@ -236,6 +248,7 @@ class DistributedBiObjectiveSearch(globalMaxObj1:Long,
 
       assert(remainingSurface == squaresToDevelop.getElements.toList.map(square => square.surface).sum)
       assert(nbSquare == squareList.size, "nbSquare:" + nbSquare + " != squareList.size:" + squareList.size)
+
       val currentSquareToSplit = popFirstSquare()
 
       val c = ((currentSquareToSplit.obj2 + currentSquareToSplit.minObj2) / 2.0).ceil.toLong
@@ -257,7 +270,7 @@ class DistributedBiObjectiveSearch(globalMaxObj1:Long,
         case Some((obj1, obj2, sol)) =>
           //we have a solution.
           //correct the front
-          foundPoints +=1
+          foundPoints += 1
 
           val squareOnTheRight = prev.next
           pruneLeftSquares(remainingUpperSquare, obj1) //this will correct the maxObj1 of the split square
