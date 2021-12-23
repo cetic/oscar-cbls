@@ -20,6 +20,8 @@ import oscar.cbls.algo.dll.{DLLStorageElement, DoublyLinkedList}
 import oscar.cbls.algo.heap.BinomialHeapWithMove
 import oscar.cbls.visual.SingleFrameWindow
 
+import scala.collection.immutable.TreeSet
+
 /**
  * This is an implementation of the rectangle splitting heuristics for heuristic optimization presented in
  *     Matl, Piotr & Hartl, Richard & Vidal, Thibaut. (2017).
@@ -117,6 +119,18 @@ class BiObjectiveSearch(globalMaxObj1:Long,
 
   //Stores the front in increasing obj1 order
   val squareList = new DoublyLinkedList[Square]
+
+  object Obj1Ordering extends Ordering[Square] {
+    def compare(a:Square, b:Square):Int = a.obj1 compare b.obj1
+  }
+
+  object Obj2ReverseOrdering extends Ordering[Square] {
+    def compare(a:Square, b:Square):Int = b.obj2 compare a.obj2
+  }
+
+  val treeSetObj1: TreeSet[Square] = TreeSet[Square](Obj1Ordering)
+
+  val treeSetObj2: TreeSet[Square] = TreeSet[Square](Obj2ReverseOrdering)
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
