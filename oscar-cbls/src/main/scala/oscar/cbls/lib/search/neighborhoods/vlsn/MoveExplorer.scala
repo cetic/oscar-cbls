@@ -238,7 +238,7 @@ class MoveExplorer(v:Int,
         || ((nbEdgesInGraph - nbEdgesAtStart)/10 < enrichment.minNbAddedEdgesPerLevel))
         && nbPriorityBundles > 0){
       //Random selection of next bundle
-      val currentPriorityBundleId = if(nbPriorityBundles == 1) 1 else Random.nextInt(nbPriorityBundles-1)
+      val currentPriorityBundleId = if(nbPriorityBundles == 1) 0 else Random.nextInt(nbPriorityBundles-1)
       //TODO: all movesNoEject (thus inserts and moves) should mark related nodes & vehicle as dirty if they have negative delta on obj.
       val nbExplored = priorityBundleArray(currentPriorityBundleId).pruneExplore(targetNbExplores = enrichment.nbEdgesPerPriorityBundle)
       totalExplored += nbExplored
@@ -256,7 +256,7 @@ class MoveExplorer(v:Int,
       || (nbEdgesInGraph - nbEdgesAtStart < enrichment.minNbAddedEdgesPerLevel))
       && nbBundles > 0){
       //Random selection of next bundle
-      val currentBundleId = if(nbBundles == 1) 1 else Random.nextInt(nbBundles-1)
+      val currentBundleId = if(nbBundles == 1) 0 else Random.nextInt(nbBundles-1)
       //TODO: we should foster moveNoEject first because they are really fast to explore...
       val nbExplored = allBundlesArray(currentBundleId).pruneExplore(targetNbExplores = enrichment.nbEdgesPerBundle)
       totalExplored += nbExplored
