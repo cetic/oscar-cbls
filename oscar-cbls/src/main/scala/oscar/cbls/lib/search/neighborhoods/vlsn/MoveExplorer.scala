@@ -134,7 +134,7 @@ class MoveExplorer(v:Int,
   val nbNodesInVLSNGraph: Int = nodes.length
   def nbEdgesInGraph:Int = edgeBuilder.nbEdges
 
-  val acceptAllButMaxInt: (Long, Long) => Boolean = (_, newObj: Long) => newObj != Long.MaxValue
+  val acceptAllButMaxLong: (Long, Long) => Boolean = (_, newObj: Long) => newObj != Long.MaxValue
 
   // /////////////////////////////////////////////////////////////
   //about incrementality
@@ -341,6 +341,8 @@ class MoveExplorer(v:Int,
   // ////////////////////////////////////////////////////////////
 
   private def generateInsertions(): Unit = {
+
+    println("unroutedNodesToInsert:" + unroutedNodesToInsert.mkString(","))
     val vehicleAndUnroutedNodes: Iterable[(Int, Int)] =
       unroutedNodesToInsert.flatMap((unroutedNode:Int) =>
         nodeToRelevantVehicles(unroutedNode).map((vehicle:Int) => (vehicle, unroutedNode)))
@@ -463,7 +465,7 @@ class MoveExplorer(v:Int,
       nodeToMoveToNeighborhood(fromNode).getMove(
         vehicleToObjectives(toVehicle),
         initialVehicleToObjectives(toVehicle),
-        acceptanceCriterion = acceptAllButMaxInt) match {
+        acceptanceCriterion = acceptAllButMaxLong) match {
         case NoMoveFound =>
           edgeBuilder.addNonEdge(symbolicNodeOfNodeToMove, symbolicNodeToEject, VLSNMoveType.MoveWithEject)
         case MoveFound(move) =>
@@ -525,7 +527,7 @@ class MoveExplorer(v:Int,
       nodeToMoveToNeighborhood(edge.node).getMove(
         vehicleToObjectives(toVehicle),
         initialVehicleToObjectives(toVehicle),
-        acceptanceCriterion = acceptAllButMaxInt) match {
+        acceptanceCriterion = acceptAllButMaxLong) match {
         case NoMoveFound => ;
           edgeBuilder.addNonEdge(nodeIDToNode(edge.node), vehicleToNode(toVehicle), VLSNMoveType.MoveNoEject)
 
@@ -618,7 +620,7 @@ class MoveExplorer(v:Int,
       val symbolicNodeToRemove = nodeIDToNode(toNode)
 
       nodeToInsertToNeighborhood(edge).
-        getMove(globalObjective, correctedGlobalInit, acceptAllButMaxInt) match {
+        getMove(globalObjective, correctedGlobalInit, acceptAllButMaxLong) match {
         case NoMoveFound =>
           edgeBuilder.addNonEdge(symbolicNodeToInsert, symbolicNodeToRemove, VLSNMoveType.InsertWithEject)
         case MoveFound(move) =>
@@ -697,7 +699,7 @@ class MoveExplorer(v:Int,
       nodeToInsertNeighborhood(edge).getMove(
         globalObjective,
         initialGlobalObjective,
-        acceptanceCriterion = acceptAllButMaxInt) match {
+        acceptanceCriterion = acceptAllButMaxLong) match {
         case NoMoveFound =>
           edgeBuilder.addNonEdge(
             symbolicNodeToInsert,
@@ -747,7 +749,7 @@ class MoveExplorer(v:Int,
 
   def evaluateRemoveOnPenalty(routingNodeToRemove:Int, fromVehicle:Int):(Move,Long) = {
     nodeToRemoveNeighborhood(routingNodeToRemove)
-      .getMove(unroutedNodesPenalty, initialUnroutedNodesPenalty, acceptanceCriterion = (_,newObj) => newObj != Long.MaxValue) match{
+      .getMove(unroutedNodesPenalty, initialUnroutedNodesPenalty, acceptanceCriterion = acceptAllButMaxLong) match{
       case NoMoveFound => null
       case MoveFound(move) =>
         val delta = move.objAfter - initialUnroutedNodesPenalty
@@ -789,7 +791,7 @@ class MoveExplorer(v:Int,
   def evaluateRemoveOnSourceVehicle(routingNodeToRemove:Int,fromVehicle:Int):(Move, Long) = {
     nodeToRemoveNeighborhood(routingNodeToRemove)
       .getMove(vehicleToObjectives(fromVehicle),initialVehicleToObjectives(fromVehicle),
-        acceptanceCriterion = (_,newObj) => newObj != Int.MaxValue) match{
+        acceptanceCriterion = acceptAllButMaxLong) match{
       case NoMoveFound => null
       case MoveFound(move) =>
         val delta = move.objAfter - initialVehicleToObjectives(fromVehicle)
