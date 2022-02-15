@@ -128,7 +128,6 @@ class MoveExplorer(v:Int,
   }
 
   val (nodes:Array[Node],nbLabels:Int) = nodeBuilder.finish()
-  println("nodes:\n\t" + nodes.mkString("\n\t"))
 
   val edgeBuilder: VLSNEdgeBuilder = new VLSNEdgeBuilder(nodes, nbLabels, v)
 
@@ -776,13 +775,11 @@ class MoveExplorer(v:Int,
   private def exploreNodeEjection(): Unit = {
     for ((vehicleID, routingNodesToRemove) <- vehicleToRoutedNodes ) {
       for (routingNodeToRemove <- routingNodesToRemove) {
-        println("routingNodeToRemove: " + routingNodeToRemove)
         evaluateRemoveOnSourceVehicle(routingNodeToRemove:Int,vehicleID) match{
           case null => ;
           case (move,delta) =>
             val symbolicNodeOfNodeToRemove = nodeIDToNode(routingNodeToRemove)
             val edge = edgeBuilder.addEdge(trashNode, symbolicNodeOfNodeToRemove, delta, null, VLSNMoveType.SymbolicTrashToNodeForEject)
-            println("symbolicNodeOfNodeToRemove.nodeID: " + symbolicNodeOfNodeToRemove.vlsnNodeID)
             nodeToNodeRemoveEdge(symbolicNodeOfNodeToRemove.vlsnNodeID) = edge
         }
       }
