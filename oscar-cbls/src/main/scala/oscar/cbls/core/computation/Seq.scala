@@ -359,7 +359,7 @@ object SeqUpdateDefineCheckpoint{
 class SeqUpdateDefineCheckpoint(mprev: SeqUpdate, maxPivotPerValuePercent: Int, val level: Int)
   extends SeqUpdateWithPrev(mprev,mprev.newValue){
 
-  override val highestLevelOfDeclaredCheckpoint = prev.highestLevelOfDeclaredCheckpoint max level
+  override val highestLevelOfDeclaredCheckpoint: Int = prev.highestLevelOfDeclaredCheckpoint max level
 
   protected[computation] def reverse(target : IntSequence, from : SeqUpdate) : SeqUpdate = mprev.reverse(target,from)
 
@@ -387,7 +387,7 @@ object SeqUpdateRollBackToCheckpoint{
 class SeqUpdateRollBackToCheckpoint(val checkpointValue:IntSequence,howToRollBackFct:()=>SeqUpdate, val level:Int)
   extends SeqUpdate(checkpointValue){
 
-  override def highestLevelOfDeclaredCheckpoint = -1
+  override def highestLevelOfDeclaredCheckpoint: Int = -1
 
   override protected[computation] def regularize(maxPivot:Int) : SeqUpdate = this
 
@@ -397,7 +397,7 @@ class SeqUpdateRollBackToCheckpoint(val checkpointValue:IntSequence,howToRollBac
   }
 
   override protected[computation] def prepend(u : SeqUpdate) : SeqUpdate = {
-    assert(!u.anyCheckpointDefinition)
+    require(!u.anyCheckpointDefinition)
     this
   }
 
@@ -627,6 +627,18 @@ abstract class ChangingSeqValue(initialValue: Iterable[Int], val maxValue: Int, 
 
   def toStringNoPropagate: String = s"$name:=${toNotify.newValue}"
 
+/* rollback infini sor howToRollBack.
+ * se produit en présence de produit cartésien, cad deux niveaux de checkpoints
+ * donc un howToRollBack qui mène à un autre checkpoint
+ * le souci est san doute que le howToRollBack est calculé on the fly
+ * approche propre:
+ *
+ * interdiction de faire un assign quand un checkpoint est défini.
+ * quand on reçoit un move incrémental, il va dans le toNotify et dans les performedMovesSinceCurrentCheckpoint
+ * quad on pousse un nouveau checkpoint, on sauve cette déclaration dans performedSinceLastNotifiedCheckpoint et on
+ *
+*/
+
   /*
 gestion des checkpoints
 -------------------------------------
@@ -650,7 +662,7 @@ store into toNotify (erases toNotify)
 
 * new checkpoint
 storeIntoToNotify
-(checkpoints must be freed explicitely, so no need to search and destroy)
+(checkpoints must be freed explicitly, so no need to search and destroy)
 
 quel est le niveau de ce checkpoint?
 il y a un copteur de niveau: currentCheckpointLevel
@@ -905,7 +917,7 @@ et cette stack doit être mise à jour au moment de la notification.
 
       case NoSimplificationPerformed =>
         //in this case, the checkpoint was already notified, and possibly some moves were performed from it.
-        assert(!toNotify.anyCheckpointDefinition)
+        require(!toNotify.anyCheckpointDefinition)
         //checkpoint value could not be found in sequence, we have to add rollBack instructions
         //It also means that the checkpoint was communicated to the listening side
 
@@ -922,26 +934,12 @@ et cette stack doit être mise à jour au moment de la notification.
         //we specify a roll back and give the instructions that must be undone, just in case.
         toNotify = SeqUpdateRollBackToCheckpoint(
           checkpoint,
-          () => {
-            try {
-              tmp.reverse(checkpoint, tmpToNotify)
-            }catch{
-              case e:StackOverflowError =>
-                println("computing howToRollBack")
-                println("tmp:" + tmp)
-                println("checkpoint:" + checkpoint)
-                println("tmpToNotify:" + tmpToNotify)
-                throw e
-            }
-          },
+          () => tmp.reverse(checkpoint, tmpToNotify),  la question, c'est quid si il y a déjà un rollback dedans?'
           level = levelOfTopCheckpoint)
 
+        performedSinceTopCheckpoint = SeqUpdateLastNotified(topCheckpoint)
         notifyChanged()
     }
-
-    //in all case, we are at the checkpoint, so set it to LastNotified if active
-    if(performedSinceTopCheckpoint != null)
-      performedSinceTopCheckpoint = SeqUpdateLastNotified(topCheckpoint)
 
     require(toNotify.newValue quickEquals checkpoint,
       s"${toNotify.newValue} not quickEquals $checkpoint")

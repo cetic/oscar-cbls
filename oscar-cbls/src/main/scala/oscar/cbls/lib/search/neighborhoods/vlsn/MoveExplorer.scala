@@ -780,7 +780,7 @@ class MoveExplorer(v:Int,
           case (move,delta) =>
             val symbolicNodeOfNodeToRemove = nodeIDToNode(routingNodeToRemove)
             val edge = edgeBuilder.addEdge(trashNode, symbolicNodeOfNodeToRemove, delta, null, VLSNMoveType.SymbolicTrashToNodeForEject)
-            nodeToNodeRemoveEdge(symbolicNodeOfNodeToRemove.nodeID) = edge
+            nodeToNodeRemoveEdge(symbolicNodeOfNodeToRemove.nodeID) = edge  ERROR: there is an overflow here; node 23 and 23 nodes, nodeToNodeRemoveEdge is too small??
         }
       }
     }
