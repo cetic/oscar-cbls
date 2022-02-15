@@ -111,7 +111,7 @@ class MoveExplorer(v:Int,
   }
 
   //noeud cible pour l'unroutage, label is v
-  val trashNode: Node = nodeBuilder.addNode(-1, -1, nodeBuilder.newFreshLabel(), VLSNSNodeType.FictiveNode)
+  val trashNode: Node = nodeBuilder.addNode(-1, Int.MaxValue, nodeBuilder.newFreshLabel(), VLSNSNodeType.FictiveNode)
 
   //noeuds pour les noeud à déplacer
   for ((vehicle, routedNodesOnVehicle) <- vehicleToRoutedNodes) {
@@ -128,6 +128,7 @@ class MoveExplorer(v:Int,
   }
 
   val (nodes:Array[Node],nbLabels:Int) = nodeBuilder.finish()
+  println("nodes:\n\t" + nodes.mkString("\n\t"))
 
   val edgeBuilder: VLSNEdgeBuilder = new VLSNEdgeBuilder(nodes, nbLabels, v)
 
@@ -141,7 +142,7 @@ class MoveExplorer(v:Int,
   val isVehicleDirty:Array[Boolean] = Array.fill(v)(false)
   val isNodeDirty:Array[Boolean] = Array.fill(((nodesToMove ++ unroutedNodesToInsert).max)+1)(false)
 
-  val nodeToNodeRemoveEdge:Array[Edge]= Array.fill(((nodesToMove ++ unroutedNodesToInsert).max)+1)(null)
+  val nodeToNodeRemoveEdge:Array[Edge]= Array.fill(nbNodesInVLSNGraph)(null)
 
   var newlyAddedPriorityCycles:List[List[Edge]] = Nil
 
@@ -533,7 +534,7 @@ class MoveExplorer(v:Int,
           val delta = move.objAfter - initialVehicleToObjectives(toVehicle)
           val graphEdge = edgeBuilder.addEdge(nodeIDToNode(edge.node), vehicleToNode(toVehicle), delta, move, VLSNMoveType.MoveNoEject)
 
-          val nodeRemoveEdge = nodeToNodeRemoveEdge(nodeIDToNode(edge.node).nodeID)
+          val nodeRemoveEdge = nodeToNodeRemoveEdge(nodeIDToNode(edge.node).vlsnNodeID)
           //this prevents moves with same vehicle or node to be explored (would be faster to bypass VLSN & cycle search actually)
           if(prioritizeMoveNoEject && nodeRemoveEdge != null && delta + nodeRemoveEdge.deltaObj < 0){
             isNodeDirty(edge.node) = true
@@ -775,12 +776,14 @@ class MoveExplorer(v:Int,
   private def exploreNodeEjection(): Unit = {
     for ((vehicleID, routingNodesToRemove) <- vehicleToRoutedNodes ) {
       for (routingNodeToRemove <- routingNodesToRemove) {
+        println("routingNodeToRemove: " + routingNodeToRemove)
         evaluateRemoveOnSourceVehicle(routingNodeToRemove:Int,vehicleID) match{
           case null => ;
           case (move,delta) =>
             val symbolicNodeOfNodeToRemove = nodeIDToNode(routingNodeToRemove)
             val edge = edgeBuilder.addEdge(trashNode, symbolicNodeOfNodeToRemove, delta, null, VLSNMoveType.SymbolicTrashToNodeForEject)
-            nodeToNodeRemoveEdge(symbolicNodeOfNodeToRemove.nodeID) = edge
+            println("symbolicNodeOfNodeToRemove.nodeID: " + symbolicNodeOfNodeToRemove.vlsnNodeID)
+            nodeToNodeRemoveEdge(symbolicNodeOfNodeToRemove.vlsnNodeID) = edge
         }
       }
     }
