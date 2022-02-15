@@ -166,47 +166,56 @@ class VehicleSegments(val segments : QList[Segment],n : Int,v : Int)  {
   def insertSegments(segmentsToInsert: QList[Segment], afterPosition: Int, routes: IntSequence,searchStartPos : Int, delta: Int = 0): VehicleSegments ={
     //val searchStartPos = vehicleSearcher.startPosOfVehicle(vehicle)
 
-    //println(s"$searchStartPos $this ${segmentsToInsert.mkString(",")} $delta")
+    // println(s"$searchStartPos ($this) ${segmentsToInsert.mkString(",")} $afterPosition $delta")
 
     if (segments == null)
       VehicleSegments(segmentsToInsert,n,v)
     else {
 
-      val (impactedSegment, segmentsBeforeImpactedSegment, segmentsAfterImpactedSegment,_) = findImpactedSegment(afterPosition - delta, searchStartPos-1)
-
-      // val insertAfterNode = getValueAtPosition(afterPosition, routes)
-      // val insertBeforeNode: Int = if(afterPosition+1 < n) getValueAtPosition(afterPosition+1, routes) else -1
-      val explorerBeforeInsert = routes.explorerAtPosition(afterPosition).get
-      val insertAfterNode = explorerBeforeInsert.value
-      val insertBeforeNode = explorerBeforeInsert.next match {
-        case None => -1
-        case Some(e) => e.value
-      }
-
-
-      // We split the impacted segment in two parts (leftResidue and rightResidue)
-      // 1° => Compute parts' length
-      // 2° => Split the impacted segment
-      val segmentsLengthBeforeImpactedSegment = QList.qFold[Segment,Int](segmentsBeforeImpactedSegment, (acc,item) => acc + item.length(),0)
-      val leftRightResidue = if(insertBeforeNode < v){
-        (impactedSegment, null)
+      if (afterPosition - delta == searchStartPos - 1) {
+        VehicleSegments(QList.nonReversedAppend(segmentsToInsert, segments),n,v)
       } else {
-        val rightResidueLength = segmentsLengthBeforeImpactedSegment + impactedSegment.length() - afterPosition + searchStartPos - 1 + delta
-        val leftResidueLength = impactedSegment.length() - rightResidueLength
-        impactedSegment.splitAtNode(insertAfterNode, insertBeforeNode, leftResidueLength, rightResidueLength)
+
+        val (impactedSegment, segmentsBeforeImpactedSegment, segmentsAfterImpactedSegment,_) = findImpactedSegment(afterPosition - delta, searchStartPos-1)
+
+        // println(s"$impactedSegment -- $segmentsBeforeImpactedSegment -- ${segmentsAfterImpactedSegment}")
+
+        // val insertAfterNode = getValueAtPosition(afterPosition, routes)
+        // val insertBeforeNode: Int = if(afterPosition+1 < n) getValueAtPosition(afterPosition+1, routes) else -1
+        val explorerBeforeInsert = routes.explorerAtPosition(afterPosition).get
+        val insertAfterNode = explorerBeforeInsert.value
+        val insertBeforeNode = explorerBeforeInsert.next match {
+          case None => -1
+          case Some(e) => e.value
+        }
+
+        // println(s"$insertAfterNode -- $insertBeforeNode")
+
+        // We split the impacted segment in two parts (leftResidue and rightResidue)
+        // 1° => Compute parts' length
+        // 2° => Split the impacted segment
+        val segmentsLengthBeforeImpactedSegment = QList.qFold[Segment,Int](segmentsBeforeImpactedSegment, (acc,item) => acc + item.length(),0)
+        val leftRightResidue = if(insertBeforeNode < v){
+          (impactedSegment, null)
+        } else {
+          val rightResidueLength = segmentsLengthBeforeImpactedSegment + impactedSegment.length() - afterPosition + searchStartPos - 1 + delta
+          val leftResidueLength = impactedSegment.length() - rightResidueLength
+          impactedSegment.splitAtNode(insertAfterNode, insertBeforeNode, leftResidueLength, rightResidueLength)
+        }
+        // println(leftRightResidue)
+        val leftResidue = leftRightResidue._1
+        val rightResidue = leftRightResidue._2
+
+
+        // Building the resulting QList starting at the end
+        var newSegments: QList[Segment] = segmentsAfterImpactedSegment                     // Segments after impacted segment
+        if(rightResidue != null) newSegments = QList(rightResidue, newSegments)               // add right residue
+        newSegments = QList.nonReversedAppend(segmentsToInsert, newSegments)                  // prepend the segments to insert
+        if(leftResidue != null) newSegments = QList(leftResidue, newSegments)                 // add left residue
+        newSegments = QList.nonReversedAppend(segmentsBeforeImpactedSegment, newSegments)     // Prepend segments before impacted segments
+
+        VehicleSegments(newSegments, n,v)
       }
-      val leftResidue = leftRightResidue._1
-      val rightResidue = leftRightResidue._2
-
-
-      // Building the resulting QList starting at the end
-      var newSegments: QList[Segment] = segmentsAfterImpactedSegment                     // Segments after impacted segment
-      if(rightResidue != null) newSegments = QList(rightResidue, newSegments)               // add right residue
-      newSegments = QList.nonReversedAppend(segmentsToInsert, newSegments)                  // prepend the segments to insert
-      if(leftResidue != null) newSegments = QList(leftResidue, newSegments)                 // add left residue
-      newSegments = QList.nonReversedAppend(segmentsBeforeImpactedSegment, newSegments)     // Prepend segments before impacted segments
-
-      VehicleSegments(newSegments, n,v)
     }
   }
 
@@ -247,6 +256,8 @@ case class PreComputedSubSequence(startNode:Int,
   }
 
   override def splitAtNode(beforeSplitNode: Int, splitNode: Int, leftLength: Int, rightLength: Int): (Segment,Segment) = {
+    // println(this)
+    // println(s"$beforeSplitNode -- $splitNode")
     if(splitNode == startNode) (null,this)
     else if(beforeSplitNode == endNode) (this,null)
     else {
