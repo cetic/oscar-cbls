@@ -5,7 +5,7 @@
   * (at your option) any later version.
   *
   * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+n  * but WITHOUT ANY WARRANTY; without even the implied warranty of
   * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   * GNU Lesser General Public License  for more details.
   *
@@ -361,7 +361,6 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
   }
 
   def timingResultsOfRoute(vehicle: Int): Array[TimingResult] ={
-
     var lastNode = -1
     def nodesArrivalAndLeaveTimes(explorer: Option[IntSequenceExplorer]): Array[TimingResult] ={
       if(explorer.isEmpty){
@@ -392,6 +391,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
           nodesAandL.head.arrivalTime - travelTimeMatrix(vehicle)(firstNode), 0, preComputedValues(vehicle)(vehicle).taskDuration)
       }
     }
+
 
     Array(vehicleTimingResult) ++ nodesAandL
   }

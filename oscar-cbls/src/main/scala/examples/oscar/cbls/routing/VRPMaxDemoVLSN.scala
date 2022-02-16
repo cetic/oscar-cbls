@@ -37,9 +37,9 @@ import scala.collection.immutable.{SortedMap, SortedSet}
 object VRPMaxDemoVLSN  extends App {
 
   println("usage: VRPMaxDemo n v")
-  val n:Int = 1000
+  val n:Int = 5
   //val n = args(0).toInt
-  val v = 10
+  val v = 3
   //val v = args(1).toInt
   println(s"VRPMaxDemoVLSN(n:$n, v:$v)")
 

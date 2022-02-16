@@ -70,6 +70,10 @@ abstract class GlobalConstraintCore[U <: Any :Manifest](routes: ChangingSeqValue
 
   finishInitialization()
 
+
+  (0 until v).foreach(vehicle => 
+    initSegmentsOfVehicle(vehicle,routes.value))
+
   /**
    * This method is called by the framework when a pre-computation must be performed.
    * you are expected to assign a value of type T to each node of the vehicle "vehicle" through the method "setNodeValue"
@@ -340,5 +344,7 @@ abstract class GlobalConstraintCore[U <: Any :Manifest](routes: ChangingSeqValue
 
       }
   }
+
+
 
 }
