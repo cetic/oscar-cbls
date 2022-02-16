@@ -145,7 +145,6 @@ object SeqUpdateMove{
     new SeqUpdateMove(fromIncluded,toIncluded,after,flip,prev,prev.newValue.moveAfter(fromIncluded,toIncluded,after,flip,fast=true))
 
   def apply(fromIncluded:Int,toIncluded:Int,after:Int,flip:Boolean,prev:SeqUpdate,seq:IntSequence):SeqUpdate = {
-    assert(seq equals prev.newValue.moveAfter(fromIncluded,toIncluded,after,flip,fast=true), "found bug :)")
     prev match{
       case u:SeqUpdateMove if u.prev.newValue quickEquals seq => u.prev
       case _ => new SeqUpdateMove(fromIncluded,toIncluded,after, flip, prev, seq)
