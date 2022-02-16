@@ -654,7 +654,6 @@ abstract class ChangingSeqValue(initialValue: Iterable[Int], val maxValue: Int, 
     recordPerformedIncrementalUpdate((prev,newSeq) =>
       if(newSeq == null) SeqUpdateRemove(position, prev)
       else SeqUpdateRemove(position, prev,newSeq))
-    //println(" notify remove " + toNotify)
     notifyChanged()
   }
 
@@ -662,7 +661,6 @@ abstract class ChangingSeqValue(initialValue: Iterable[Int], val maxValue: Int, 
     require(toNotify.newValue.size > position && position >=0,
       s"removing at position $position size is ${newValue.size}")
     recordPerformedIncrementalUpdate((prev,_) => SeqUpdateRemove(position,prev,seqAfter))
-    //println(" notify remove " + toNotify)
     notifyChanged()
   }
 
@@ -672,7 +670,6 @@ abstract class ChangingSeqValue(initialValue: Iterable[Int], val maxValue: Int, 
 
   //-1 for first position
   protected def move(fromIncludedPosition:Int,toIncludedPosition:Int,afterPosition:Int,flip:Boolean): Unit ={
-    //println("seq.move(fromIncludedPosition:" + fromIncludedPosition + " toIncludedPosition:" + toIncludedPosition +" afterPosition:" + afterPosition + " flip:" + flip+ ")")
     require(toNotify.newValue.size > toIncludedPosition)
     require(toNotify.newValue.size > afterPosition,
       s"toNotify.newValue.size(=${toNotify.newValue.size}) > afterPosition(=$afterPosition)")
@@ -811,7 +808,6 @@ abstract class ChangingSeqValue(initialValue: Iterable[Int], val maxValue: Int, 
 
   protected def rollbackToTopCheckpoint(checkpoint : IntSequence): Unit ={
 
-    // println("ChangingSeqValue got rollback to top checkpoint my level:" + levelOfTopCheckpoint)
     require(checkpoint quickEquals topCheckpoint,
       s"given checkpoint not quick equals to my top checkpoint; equal=${checkpoint equals topCheckpoint} checkpoint:$checkpoint my topCheckpoint:$topCheckpoint")
 
@@ -844,7 +840,6 @@ abstract class ChangingSeqValue(initialValue: Iterable[Int], val maxValue: Int, 
           howToRollBack = howToRollBack,
           level = levelOfTopCheckpoint)
 
-        if(howToRollBack.depth > 5) println("rollBack size " + howToRollBack.depth)
         performedSinceTopCheckpoint = SeqUpdateLastNotified(topCheckpoint)
         notifyChanged()
     }
@@ -860,8 +855,6 @@ abstract class ChangingSeqValue(initialValue: Iterable[Int], val maxValue: Int, 
   protected def releaseTopCheckpoint(): Unit ={
     require(topCheckpoint != null, "No checkpoint defined to release")
     require(levelOfTopCheckpoint >= 0)
-
-    //  println("changing seq got release top checkpoint current level is: " + levelOfTopCheckpoint)
 
     //the checkpoint might not have been communicated yet, so we look for newValue, since we are at the checkpoint.
     val checkPointWipedOut =
@@ -1242,7 +1235,6 @@ class IdentitySeq(fromValue:ChangingSeqValue, toValue:CBLSSeqVar)
         toValue.rollbackToTopCheckpoint(value)
       case SeqUpdateDefineCheckpoint(prev:SeqUpdate,level:Int) =>
         digestChanges(prev)
-        // println("IdentitySeq got define checkpoint level=" + level + " my level=" + levelTopCheckpoint)
         while(level <= levelTopCheckpoint){
           toValue.releaseTopCheckpoint()
           popTopCheckpoint()
