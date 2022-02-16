@@ -1,4 +1,4 @@
-package oscar.cbls.lib.search.neighborhoods.vlsn
+/*package oscar.cbls.lib.search.neighborhoods.vlsn
 
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorSystem, Behavior}
@@ -223,3 +223,4 @@ class DistributedVLSN(v:Int,
   }
 }
 
+*/

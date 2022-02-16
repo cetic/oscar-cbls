@@ -141,7 +141,7 @@ class MoveExplorer(v:Int,
   val isVehicleDirty:Array[Boolean] = Array.fill(v)(false)
   val isNodeDirty:Array[Boolean] = Array.fill(((nodesToMove ++ unroutedNodesToInsert).max)+1)(false)
 
-  val nodeToNodeRemoveEdge:Array[Edge]= Array.fill(((nodesToMove ++ unroutedNodesToInsert).max)+1)(null)
+  val nodeToNodeRemoveEdge:Array[Edge]= Array.fill(nbEdgesInGraph)(null)
 
   var newlyAddedPriorityCycles:List[List[Edge]] = Nil
 
@@ -780,7 +780,7 @@ class MoveExplorer(v:Int,
           case (move,delta) =>
             val symbolicNodeOfNodeToRemove = nodeIDToNode(routingNodeToRemove)
             val edge = edgeBuilder.addEdge(trashNode, symbolicNodeOfNodeToRemove, delta, null, VLSNMoveType.SymbolicTrashToNodeForEject)
-            nodeToNodeRemoveEdge(symbolicNodeOfNodeToRemove.nodeID) = edge  ERROR: there is an overflow here; node 23 and 23 nodes, nodeToNodeRemoveEdge is too small??
+            nodeToNodeRemoveEdge(symbolicNodeOfNodeToRemove.nodeID) = edge
         }
       }
     }

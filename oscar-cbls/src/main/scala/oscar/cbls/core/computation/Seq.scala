@@ -43,7 +43,11 @@ object SeqValue{
 //basically, move instantiation should proceed through obects that perfor such anihilation automatically, and based on move features, not on quikhEquals.
 
 sealed abstract class SeqUpdate(val newValue:IntSequence){
-  protected[computation] def reverse(target:IntSequence, from:SeqUpdate):SeqUpdate
+  protected[computation] def reverseThis(newValueForThisAfterFullReverse:IntSequence, nextOp:SeqUpdate = SeqUpdateLastNotified(this.newValue)):SeqUpdate
+  protected[computation] def appendThisTo(previousUpdates:SeqUpdate):SeqUpdate
+  protected[computation] def explicitHowToRollBack():SeqUpdate
+
+
   protected[computation] def regularize(maxPivot:Int):SeqUpdate
   protected[computation] def prepend(u:SeqUpdate):SeqUpdate
   protected[computation] def pruneTo(target:IntSequence):SeqUpdate
@@ -117,9 +121,16 @@ class SeqUpdateInsert(val value: Int, val pos: Int, prev:SeqUpdate, seq:IntSeque
   extends SeqUpdateWithPrev(prev:SeqUpdate, seq){
   assert(seq equals prev.newValue.insertAtPosition(value,pos,fast=true))
 
-  override protected[computation] def reverse(target:IntSequence, newPrev:SeqUpdate) : SeqUpdate = {
-    if(newPrev.newValue quickEquals target) newPrev
-    else prev.reverse(target,SeqUpdateRemove(pos,newPrev,prev.newValue))
+  override protected[computation] def reverseThis(newValueForThisAfterFullReverse: IntSequence, nextOp:SeqUpdate): SeqUpdate = {
+    prev.reverseThis(newValueForThisAfterFullReverse, SeqUpdateRemove(pos,nextOp,prev.newValue))
+  }
+
+  override protected[computation] def appendThisTo(previousUpdates: SeqUpdate): SeqUpdate = {
+    SeqUpdateInsert(value: Int, pos: Int, prev.appendThisTo(previousUpdates), seq)
+  }
+
+  override protected[computation] def explicitHowToRollBack(): SeqUpdate = {
+    SeqUpdateInsert(value: Int, pos: Int, prev.explicitHowToRollBack(), seq)
   }
 
   override def oldPosToNewPos(oldPos : Int) : Option[Int] = {
@@ -182,17 +193,26 @@ class SeqUpdateMove(val fromIncluded:Int,val toIncluded:Int,val after:Int, val f
   def movedValuesSet = prev.newValue.valuesBetweenPositionsSet(fromIncluded,toIncluded)
   def movedValuesQList = prev.newValue.valuesBetweenPositionsQList(fromIncluded,toIncluded)
 
-  override protected[computation] def reverse(target:IntSequence, newPrev:SeqUpdate) : SeqUpdate = {
 
+  override protected[computation] def reverseThis(newValueForThisAfterFullReverse: IntSequence, nextOp: SeqUpdate): SeqUpdate = {
     val (intFromIncluded,intToIncluded) = if(flip) (toIncluded,fromIncluded) else (fromIncluded,toIncluded)
 
-    prev.reverse(target, SeqUpdateMove(
-      oldPosToNewPosNoOopt(intFromIncluded),
-      oldPosToNewPosNoOopt(intToIncluded),
-      oldPosToNewPosNoOopt(fromIncluded-1),
-      flip,
-      newPrev,
-      prev.newValue))
+    prev.reverseThis(newValueForThisAfterFullReverse,
+      SeqUpdateMove(
+        oldPosToNewPosNoOopt(intFromIncluded),
+        oldPosToNewPosNoOopt(intToIncluded),
+        oldPosToNewPosNoOopt(fromIncluded-1),
+        flip,
+        nextOp,
+        prev.newValue))
+  }
+
+  override protected[computation] def appendThisTo(previousUpdates: SeqUpdate): SeqUpdate = {
+    SeqUpdateMove(fromIncluded,toIncluded,after,flip, prev.appendThisTo(previousUpdates), seq:IntSequence)
+  }
+
+  override protected[computation] def explicitHowToRollBack(): SeqUpdate = {
+    SeqUpdateMove(fromIncluded,toIncluded,after,flip, prev.explicitHowToRollBack(), seq:IntSequence)
   }
 
   assert({seq match{case m:MovedIntSequence => m.localBijection.checkBijection() case _ => ;};true})
@@ -269,9 +289,17 @@ class SeqUpdateRemove(val position:Int,prev:SeqUpdate,seq:IntSequence)
     case d:RemovedIntSequence if position == d.positionOfDelete && (d.seq quickEquals prev.newValue) => d.removedValue
     case _ => prev.newValue.valueAtPosition(position).head}
 
-  override protected[computation] def reverse(target:IntSequence, newPrev:SeqUpdate) : SeqUpdate = {
-    if(newPrev.newValue quickEquals target) newPrev
-    else prev.reverse(target,SeqUpdateInsert(removedValue, position, newPrev, prev.newValue))
+
+  override protected[computation] def reverseThis(newValueForThisAfterFullReverse: IntSequence, nextOp: SeqUpdate): SeqUpdate = {
+    prev.reverseThis(newValueForThisAfterFullReverse, SeqUpdateInsert(removedValue, position, nextOp, prev.newValue))
+  }
+
+  override protected[computation] def appendThisTo(previousUpdates: SeqUpdate): SeqUpdate = {
+    SeqUpdateRemove(position,prev.appendThisTo(previousUpdates),seq)
+  }
+
+  override protected[computation] def explicitHowToRollBack(): SeqUpdate = {
+    SeqUpdateRemove(position,prev.explicitHowToRollBack(),seq)
   }
 
   override def oldPosToNewPos(oldPos : Int) : Option[Int] = {
@@ -301,10 +329,13 @@ case class SeqUpdateAssign(value:IntSequence) extends SeqUpdate(value){
 
   val highestLevelOfDeclaredCheckpoint = -1
 
-  override protected[computation] def reverse(target : IntSequence, newPrev:SeqUpdate) : SeqUpdate = {
-    if (target quickEquals this.newValue) newPrev
-    else SeqUpdateAssign (target)
+  override protected[computation] def reverseThis(newValueForThisAfterFullReverse: IntSequence, nextOp: SeqUpdate): SeqUpdate = {
+    SeqUpdateAssign(newValueForThisAfterFullReverse)
   }
+
+  override protected[computation] def appendThisTo(previousUpdates: SeqUpdate): SeqUpdate = this
+
+  override protected[computation] def explicitHowToRollBack(): SeqUpdate = this
 
   override protected[computation] def regularize(maxPivot:Int) : SeqUpdate =
     SeqUpdateAssign(value.regularizeToMaxPivot(maxPivot))
@@ -327,12 +358,19 @@ case class SeqUpdateLastNotified(value:IntSequence) extends SeqUpdate(value){
 
   override def highestLevelOfDeclaredCheckpoint = -1
 
-  override protected[computation] def reverse(target : IntSequence, newPrev:SeqUpdate) : SeqUpdate = {
-    require(target quickEquals this.newValue,
-      s"not proper reverse target on $this target:$target")
-    if (target quickEquals this.newValue) newPrev
-    else SeqUpdateAssign (target)
+
+  override protected[computation] def reverseThis(newValueForThisAfterFullReverse: IntSequence, nextOp: SeqUpdate): SeqUpdate = {
+    require(newValueForThisAfterFullReverse quickEquals this.newValue,
+      s"not proper reverse target on $this target:$newValueForThisAfterFullReverse")
+    nextOp
   }
+
+  override protected[computation] def appendThisTo(previousUpdates: SeqUpdate): SeqUpdate = {
+    require(this.newValue quickEquals previousUpdates.newValue, "illegal append operation; values do not match")
+    previousUpdates
+  }
+
+  override protected[computation] def explicitHowToRollBack(): SeqUpdate = this
 
   override protected[computation] def regularize(maxPivot:Int) : SeqUpdate = SeqUpdateLastNotified(value.regularizeToMaxPivot(maxPivot))
 
@@ -368,7 +406,19 @@ class SeqUpdateDefineCheckpoint(mprev: SeqUpdate, maxPivotPerValuePercent: Int, 
 
   override val highestLevelOfDeclaredCheckpoint: Int = prev.highestLevelOfDeclaredCheckpoint max level
 
-  protected[computation] def reverse(target : IntSequence, from : SeqUpdate) : SeqUpdate = mprev.reverse(target,from)
+
+  override protected[computation] def reverseThis(newValueForThisAfterFullReverse: IntSequence, nextOp: SeqUpdate): SeqUpdate = {
+    require(nextOp.newValue quickEquals this.newValue)
+    prev.reverseThis(newValueForThisAfterFullReverse, SeqUpdateDefineCheckpoint(nextOp, maxPivotPerValuePercent, level))
+  }
+
+  override protected[computation] def appendThisTo(previousUpdates: SeqUpdate): SeqUpdate = {
+    SeqUpdateDefineCheckpoint(mprev.appendThisTo(previousUpdates), maxPivotPerValuePercent,level)
+  }
+
+  override protected[computation] def explicitHowToRollBack(): SeqUpdate = {
+    SeqUpdateDefineCheckpoint(mprev.explicitHowToRollBack(), maxPivotPerValuePercent,level)
+  }
 
   protected[computation] def regularize(maxPivot:Int) : SeqUpdate = this
 
@@ -384,14 +434,14 @@ class SeqUpdateDefineCheckpoint(mprev: SeqUpdate, maxPivotPerValuePercent: Int, 
 }
 
 object SeqUpdateRollBackToCheckpoint{
-  def apply(checkpointValue:IntSequence,howToRollBackfct:()=>SeqUpdate,level:Int):SeqUpdateRollBackToCheckpoint = {
-    new SeqUpdateRollBackToCheckpoint(checkpointValue, howToRollBackfct,level)
+  def apply(checkpointValue:IntSequence, howToRollBack:SeqUpdate, level:Int):SeqUpdateRollBackToCheckpoint = {
+    new SeqUpdateRollBackToCheckpoint(checkpointValue, howToRollBack, level)
   }
 
   def unapply(u:SeqUpdateRollBackToCheckpoint):Option[(IntSequence,Int)] = Some(u.checkpointValue,u.level)
 }
 
-class SeqUpdateRollBackToCheckpoint(val checkpointValue:IntSequence,howToRollBackFct:()=>SeqUpdate, val level:Int)
+class SeqUpdateRollBackToCheckpoint(val checkpointValue:IntSequence, val howToRollBack:SeqUpdate, val level:Int)
   extends SeqUpdate(checkpointValue){
 
   override def anyRollBack: Boolean = true
@@ -400,18 +450,23 @@ class SeqUpdateRollBackToCheckpoint(val checkpointValue:IntSequence,howToRollBac
 
   override protected[computation] def regularize(maxPivot:Int) : SeqUpdate = this
 
-  override protected[computation] def reverse(target : IntSequence, newPrev:SeqUpdate) : SeqUpdate = {
-    if (target quickEquals this.newValue) newPrev
-    else SeqUpdateAssign (target)
+
+  override protected[computation] def reverseThis(newValueForThisAfterFullReverse: IntSequence, nextOp: SeqUpdate): SeqUpdate = {
+    throw new Error("cannot reverse SeqUpdateRollBackToCheckpoint")
+  }
+
+  override protected[computation] def appendThisTo(previousUpdates: SeqUpdate): SeqUpdate = {
+    throw new Error("cannot append SeqUpdateRollBackToCheckpoint to something")
+  }
+
+  override protected[computation] def explicitHowToRollBack(): SeqUpdate = {
+    howToRollBack
   }
 
   override protected[computation] def prepend(u : SeqUpdate) : SeqUpdate = {
     require(!u.anyCheckpointDefinition)
     this
   }
-
-  //TODO: there might still be overflows during howToRollBack when rollbacking to top checkpoint; it seems that the rollBack itself is included in the howToRollBack.
-  lazy val howToRollBack:SeqUpdate = howToRollBackFct()
 
   override def toString : String =
     s"SeqUpdateRollBackToCheckpoint(level:$level checkpoint:$checkpointValue)"
@@ -589,7 +644,7 @@ class ChangingSeqValueSnapShot(val uniqueId:Int,val savedValue:IntSequence) exte
 
 
 case class IndependentSerializableChangingSeqValueSnapShot(uniqueId:Int, savedValues:Array[Int])
-extends IndependentSerializableAbstractVariableSnapshot{
+  extends IndependentSerializableAbstractVariableSnapshot{
   override def makeLocal: AbstractVariableSnapShot = new ChangingSeqValueSnapShot(uniqueId:Int,IntSequence(savedValues))
 }
 
@@ -636,17 +691,17 @@ abstract class ChangingSeqValue(initialValue: Iterable[Int], val maxValue: Int, 
 
   def toStringNoPropagate: String = s"$name:=${toNotify.newValue}"
 
-/* rollback infini sor howToRollBack.
- * se produit en présence de produit cartésien, cad deux niveaux de checkpoints
- * donc un howToRollBack qui mène à un autre checkpoint
- * le souci est san doute que le howToRollBack est calculé on the fly
- * approche propre:
- *
- * interdiction de faire un assign quand un checkpoint est défini.
- * quand on reçoit un move incrémental, il va dans le toNotify et dans les performedMovesSinceCurrentCheckpoint
- * quad on pousse un nouveau checkpoint, on sauve cette déclaration dans performedSinceLastNotifiedCheckpoint et on
- *
-*/
+  /* rollback infini sor howToRollBack.
+   * se produit en présence de produit cartésien, cad deux niveaux de checkpoints
+   * donc un howToRollBack qui mène à un autre checkpoint
+   * le souci est san doute que le howToRollBack est calculé on the fly
+   * approche propre:
+   *
+   * interdiction de faire un assign quand un checkpoint est défini.
+   * quand on reçoit un move incrémental, il va dans le toNotify et dans les performedMovesSinceCurrentCheckpoint
+   * quad on pousse un nouveau checkpoint, on sauve cette déclaration dans performedSinceLastNotifiedCheckpoint et on
+   *
+  */
 
   /*
 gestion des checkpoints
@@ -927,14 +982,12 @@ et cette stack doit être mise à jour au moment de la notification.
       case NoSimplificationPerformed =>
         //in this case, the checkpoint was already notified, and possibly some moves were performed from it.
         require(!toNotify.anyCheckpointDefinition)
-        require(!toNotify.anyRollBack, "there is a roll back with a roll back to notify")
+
         //checkpoint value could not be found in sequence, we have to add rollBack instructions
         //It also means that the checkpoint was communicated to the listening side
 
         //we are in star mode, so we can do a rollBack
         //we must do it incrementally, or through rollBack update
-
-        assert(performedSinceTopCheckpoint.reverse(topCheckpoint,toNotify).newValue equals checkpoint)
 
         //the purpose of transferring performedSinceTopCheckpoint to a tmp value if to ensure that the function created
         // herebelow is not affected by a change in the variable, as it is modified later on
@@ -944,7 +997,7 @@ et cette stack doit être mise à jour au moment de la notification.
         //we specify a roll back and give the instructions that must be undone, just in case.
         toNotify = SeqUpdateRollBackToCheckpoint(
           checkpoint,
-          () => tmp.reverse(checkpoint, tmpToNotify),  //la question, c'est quid si il y a déjà un rollback dedans?'
+          performedSinceTopCheckpoint.reverseThis(newValueForThisAfterFullReverse = topCheckpoint).appendThisTo(toNotify.explicitHowToRollBack()),
           level = levelOfTopCheckpoint)
 
         performedSinceTopCheckpoint = SeqUpdateLastNotified(topCheckpoint)
@@ -1355,7 +1408,7 @@ class IdentitySeq(fromValue:ChangingSeqValue, toValue:CBLSSeqVar)
         toValue.defineCurrentValueAsCheckpoint()
 
       case _ =>
-        // Default case, do nothing
+      // Default case, do nothing
     }
   }
 
