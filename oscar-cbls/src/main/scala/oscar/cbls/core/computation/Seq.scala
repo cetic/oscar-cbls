@@ -51,6 +51,7 @@ sealed abstract class SeqUpdate(val newValue:IntSequence){
   def depth:Int
 
   final def anyCheckpointDefinition:Boolean = highestLevelOfDeclaredCheckpoint != -1
+  def anyRollBack:Boolean
 
   /**the level of he highest declared checkpoint in this sequpdate nd its predecessors.
    * -1 if no declared checkpoints
@@ -59,6 +60,8 @@ sealed abstract class SeqUpdate(val newValue:IntSequence){
 }
 
 sealed abstract class SeqUpdateWithPrev(val prev:SeqUpdate,newValue:IntSequence) extends SeqUpdate(newValue) {
+
+  def anyRollBack:Boolean = prev.anyRollBack
 
   val highestLevelOfDeclaredCheckpoint = prev.highestLevelOfDeclaredCheckpoint
 
@@ -294,6 +297,8 @@ class SeqUpdateRemove(val position:Int,prev:SeqUpdate,seq:IntSequence)
 
 case class SeqUpdateAssign(value:IntSequence) extends SeqUpdate(value){
 
+  override def anyRollBack: Boolean = false
+
   val highestLevelOfDeclaredCheckpoint = -1
 
   override protected[computation] def reverse(target : IntSequence, newPrev:SeqUpdate) : SeqUpdate = {
@@ -317,6 +322,8 @@ case class SeqUpdateAssign(value:IntSequence) extends SeqUpdate(value){
 }
 
 case class SeqUpdateLastNotified(value:IntSequence) extends SeqUpdate(value){
+
+  override def anyRollBack: Boolean = false
 
   override def highestLevelOfDeclaredCheckpoint = -1
 
@@ -386,6 +393,8 @@ object SeqUpdateRollBackToCheckpoint{
 
 class SeqUpdateRollBackToCheckpoint(val checkpointValue:IntSequence,howToRollBackFct:()=>SeqUpdate, val level:Int)
   extends SeqUpdate(checkpointValue){
+
+  override def anyRollBack: Boolean = true
 
   override def highestLevelOfDeclaredCheckpoint: Int = -1
 
@@ -904,7 +913,7 @@ et cette stack doit être mise à jour au moment de la notification.
         //error, we asked removeDeclaration = false
         throw new Error("unexpected result")
       case SeqUpdatesCleanedUntilQuickEqualValueReachedCheckpointDeclarationNotRemoved(newToNotify:SeqUpdate) =>
-        //checkpoint value could be found in toNotify, and updatsd after it were removed so we don't have to do anything
+        //checkpoint value could be found in toNotify, and updated after it were removed so we don't have to do anything
         require(newToNotify.newValue quickEquals checkpoint,
           s"${newToNotify.newValue} not quickEquals $checkpoint")
 
@@ -918,6 +927,7 @@ et cette stack doit être mise à jour au moment de la notification.
       case NoSimplificationPerformed =>
         //in this case, the checkpoint was already notified, and possibly some moves were performed from it.
         require(!toNotify.anyCheckpointDefinition)
+        require(!toNotify.anyRollBack, "there is a roll back with a roll back to notify")
         //checkpoint value could not be found in sequence, we have to add rollBack instructions
         //It also means that the checkpoint was communicated to the listening side
 
@@ -934,7 +944,7 @@ et cette stack doit être mise à jour au moment de la notification.
         //we specify a roll back and give the instructions that must be undone, just in case.
         toNotify = SeqUpdateRollBackToCheckpoint(
           checkpoint,
-          () => tmp.reverse(checkpoint, tmpToNotify),  la question, c'est quid si il y a déjà un rollback dedans?'
+          () => tmp.reverse(checkpoint, tmpToNotify),  //la question, c'est quid si il y a déjà un rollback dedans?'
           level = levelOfTopCheckpoint)
 
         performedSinceTopCheckpoint = SeqUpdateLastNotified(topCheckpoint)
@@ -1158,7 +1168,9 @@ et cette stack doit être mise à jour au moment de la notification.
         }
 
       case SeqUpdateRollBackToCheckpoint(checkpointValue:IntSequence, level:Int) =>
-        NoSimplificationPerformed
+        if(checkpointValue quickEquals searchedCheckpoint)
+          SeqUpdatesCleanedUntilQuickEqualValueReachedCheckpointDeclarationNotRemoved(updates)
+        else NoSimplificationPerformed
 
       case _ =>
         NoSimplificationPerformed // Default case
