@@ -15,8 +15,11 @@
 package oscar.cbls.core.computation
 
 import oscar.cbls.algo.fun.PiecewiseLinearBijectionNaive
+import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.{ConcreteIntSequence, IntSequence, MovedIntSequence, RemovedIntSequence}
 import oscar.cbls.core.propagation.Checker
+
+import scala.collection.immutable.SortedSet
 
 /*
  * Checkpoints must be defined and released manually by neighborhoods
@@ -38,9 +41,6 @@ sealed trait SeqValue extends Value{
 object SeqValue{
   implicit def tist2IntSeqVar(a:List[Int]):SeqValue = CBLSSeqConst(IntSequence(a))
 }
-
-//TODO: when instantiating moves, we must always check that they cannot be anihilated.
-//basically, move instantiation should proceed through obects that perfor such anihilation automatically, and based on move features, not on quikhEquals.
 
 sealed abstract class SeqUpdate(val newValue:IntSequence){
   protected[computation] def reverseThis(newValueForThisAfterFullReverse:IntSequence, nextOp:SeqUpdate = SeqUpdateLastNotified(this.newValue)):SeqUpdate
@@ -64,7 +64,7 @@ sealed abstract class SeqUpdateWithPrev(val prev:SeqUpdate,newValue:IntSequence)
 
   def anyRollBack:Boolean = prev.anyRollBack
 
-  val highestLevelOfDeclaredCheckpoint = prev.highestLevelOfDeclaredCheckpoint
+  val highestLevelOfDeclaredCheckpoint: Int = prev.highestLevelOfDeclaredCheckpoint
 
   def oldPosToNewPos(oldPos:Int):Option[Int]
   def newPos2OldPos(newPos:Int):Option[Int]
@@ -153,7 +153,6 @@ object SeqUpdateMove{
   }
 
   /**
-   *
    * @param move
    * @return fromIncluded,toIncluded,after,flip,prev
    */
@@ -177,9 +176,8 @@ class SeqUpdateMove(val fromIncluded:Int,val toIncluded:Int,val after:Int, val f
   def moveUpwards:Boolean = fromIncluded < after
   def nbPointsInMovedSegment:Int = toIncluded - fromIncluded + 1
 
-  def movedValuesSet = prev.newValue.valuesBetweenPositionsSet(fromIncluded,toIncluded)
-  def movedValuesQList = prev.newValue.valuesBetweenPositionsQList(fromIncluded,toIncluded)
-
+  def movedValuesSet: SortedSet[Int] = prev.newValue.valuesBetweenPositionsSet(fromIncluded,toIncluded)
+  def movedValuesQList: QList[Int] = prev.newValue.valuesBetweenPositionsQList(fromIncluded,toIncluded)
 
   override protected[computation] def reverseThis(newValueForThisAfterFullReverse: IntSequence, nextOp: SeqUpdate): SeqUpdate = {
     val (intFromIncluded,intToIncluded) = if(flip) (toIncluded,fromIncluded) else (fromIncluded,toIncluded)
@@ -250,8 +248,7 @@ object SeqUpdateRemove {
   def apply(position : Int, prev : SeqUpdate, seq:IntSequence):SeqUpdate = {
     prev match {
       case SeqUpdateInsert(insertedValue:Int,insertPos:Int,insertPrev:SeqUpdate)
-        if insertPrev.newValue quickEquals seq //comparison must be on quickequals since this is the stuff used for checkpoint cleaning
-      => insertPrev
+        if insertPrev.newValue quickEquals seq => insertPrev
       case _ => new SeqUpdateRemove(position,prev,seq)
     }
   }
@@ -308,7 +305,7 @@ case class SeqUpdateAssign(value:IntSequence) extends SeqUpdate(value){
 
   override def anyRollBack: Boolean = false
 
-  val highestLevelOfDeclaredCheckpoint = -1
+  val highestLevelOfDeclaredCheckpoint: Int = -1
 
   override protected[computation] def reverseThis(newValueForThisAfterFullReverse: IntSequence, nextOp: SeqUpdate): SeqUpdate = {
     SeqUpdateAssign(newValueForThisAfterFullReverse)
@@ -328,8 +325,7 @@ case class SeqUpdateLastNotified(value:IntSequence) extends SeqUpdate(value){
 
   override def anyRollBack: Boolean = false
 
-  override def highestLevelOfDeclaredCheckpoint = -1
-
+  override def highestLevelOfDeclaredCheckpoint: Int = -1
 
   override protected[computation] def reverseThis(newValueForThisAfterFullReverse: IntSequence, nextOp: SeqUpdate): SeqUpdate = {
     require(newValueForThisAfterFullReverse quickEquals this.newValue,
@@ -512,13 +508,6 @@ class CBLSSeqVar(givenModel:Store,
     super.remove(position,seqAfter)
   }
 
-  /**
-   *
-   * @param fromIncludedPosition
-   * @param toIncludedPosition
-   * @param afterPosition
-   * @param flip
-   */
   override def move(fromIncludedPosition:Int,toIncludedPosition:Int,afterPosition:Int,flip:Boolean): Unit ={
     super.move(fromIncludedPosition,toIncludedPosition,afterPosition,flip)
   }
@@ -849,11 +838,13 @@ abstract class ChangingSeqValue(initialValue: Iterable[Int], val maxValue: Int, 
         //checkpoint value could not be found in sequence, we have to add rollBack instructions
         //It also means that the checkpoint was communicated to the listening side
 
+        val howToRollBack = performedSinceTopCheckpoint.reverseThis(newValueForThisAfterFullReverse = topCheckpoint).appendThisTo(toNotify.explicitHowToRollBack())
         toNotify = SeqUpdateRollBackToCheckpoint(
           checkpoint,
-          performedSinceTopCheckpoint.reverseThis(newValueForThisAfterFullReverse = topCheckpoint).appendThisTo(toNotify.explicitHowToRollBack()),
+          howToRollBack = howToRollBack,
           level = levelOfTopCheckpoint)
 
+        if(howToRollBack.depth > 5) println("rollBack size " + howToRollBack.depth)
         performedSinceTopCheckpoint = SeqUpdateLastNotified(topCheckpoint)
         notifyChanged()
     }
