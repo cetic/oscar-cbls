@@ -1,10 +1,8 @@
 package oscar.cbls.core.distrib
 
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
-import akka.actor.typed.{ActorRef, ActorSystem, Behavior, MailboxSelector}
-import akka.dispatch.ControlMessage
+import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import akka.util.Timeout
-import com.typesafe.config.ConfigFactory
 import org.slf4j.{Logger, LoggerFactory}
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.search.Neighborhood
@@ -13,7 +11,6 @@ import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.Duration.Infinite
 import scala.concurrent.{Await, Future, TimeoutException}
 import scala.util.{Failure, Success}
-
 
 sealed trait MessagesToSupervisor
 
@@ -100,7 +97,7 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor],
 
   import akka.actor.typed.scaladsl.AskPattern._
 
-  //TODO: for the distributed version, regularly check that workers performing some wearch are still alive and working, otherwise, search must be restarted at another worker.
+  //TODO: for the distributed version, regularly check that workers performing some search are still alive and working, otherwise, search must be restarted at another worker.
 
   @volatile
   private var nbLocalWorker:Int = 0
@@ -432,8 +429,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
         if(!waitForMoreSearches) {
           context.self ! StartSomeSearch()
         }
-      case StartSomeSearch() =>
-        context.self ! StartSomeSearch()
+
       case CancelSearchToSupervisor(searchID: Long,keepAliveIfOjBelow:Option[Long]) =>
 
         require(searchID != -1)

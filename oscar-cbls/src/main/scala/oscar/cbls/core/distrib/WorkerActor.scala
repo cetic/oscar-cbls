@@ -68,7 +68,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
   case class Idle() extends WorkerState
   case class ShuttingDown() extends WorkerState
 
-  //This is the single thread that is ready to perform all computation.
+  // This is the single thread that is ready to perform all computation.
   // There is at most one computation per worker at any point in time, so the threadPool is 1.
   private val executorForComputation = Executors.newFixedThreadPool(1,
     new java.util.concurrent.ThreadFactory {
@@ -81,9 +81,10 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
       }
     }
   )
+
   private val executionContextForComputation: scala.concurrent.ExecutionContext = ExecutionContext.fromExecutor(executorForComputation)
 
-  //this is a shared variable. it is not good, but that's the only way to send the abort signal to the Future that contains the computation.
+  //This is a shared variable. it is not good, but that's the only way to send the abort signal to the Future that contains the computation.
   //Scala requires the final and volatile flags
 
   @volatile

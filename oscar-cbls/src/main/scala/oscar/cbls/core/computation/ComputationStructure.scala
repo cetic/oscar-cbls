@@ -186,7 +186,7 @@ case class Store(override val verbose:Boolean = false,
   //this is for debug purpose
   var notifiedInvariant:Invariant=_
 
-  override def toString:String = "Store(vars:{" + variables.toIterable.mkString(";") + "})"
+  override def toString:String = "Store(vars:{" + variables.mkString(";") + "})"
 
   //returns the set of source variable that define this one.
   // This exploration procedure explores passed dynamic invariants,

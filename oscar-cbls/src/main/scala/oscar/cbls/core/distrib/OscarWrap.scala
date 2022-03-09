@@ -2,12 +2,10 @@ package oscar.cbls.core.distrib
 
 import akka.actor.typed.ActorRef
 import oscar.cbls.core.computation.{IndependentSerializableAbstractVariableSnapshot, Solution, Store}
-import oscar.cbls.core.objective.{IndependentObjective, Objective}
+import oscar.cbls.core.objective.IndependentObjective
 import oscar.cbls.core.search._
 
-
-// ////////////////////////////////////////////////////////////
-
+///////////////////////////////////////////////////////////////
 
 abstract sealed class SearchRequest(val uniqueSearchId:Long,
                                     val remoteTaskId:RemoteTaskIdentification,

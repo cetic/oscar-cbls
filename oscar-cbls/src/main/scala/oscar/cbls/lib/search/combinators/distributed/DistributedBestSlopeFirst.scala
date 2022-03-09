@@ -116,7 +116,7 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
              responses:Array[IndependentSearchResult]): Behavior[WrappedData] = {
       Behaviors.receive{ (context, command) =>
         command match {
-          case w@WrappedSearchEnded(searchEnded:SearchEnded[IndependentSearchResult], neighborhoodIndice: Int, priorityOfSearch:Int, uniqueId: Long) =>
+          case w@WrappedSearchEnded(searchEnded, neighborhoodIndice, priorityOfSearch, uniqueId) =>
             searchEnded match {
               case w:SearchCrashed =>
                 for (r <- runningSearchIDs) {
@@ -125,12 +125,9 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                 resultPromise.success(WrappedError(msg = Some("DistributedBestSlopeFirst triggered distant error"),crash = Some(w)))
                 Behaviors.stopped
 
-              case SearchCompleted(searchID: Long, searchResult: IndependentSearchResult, durationMS) =>
-
+              case SearchCompleted(searchID, searchResult, durationMS) =>
                 responses(priorityOfSearch) = searchResult
-
                 durationsMs(neighborhoodIndice) = durationsMs(neighborhoodIndice) + durationMS
-
                 searchResult match{
                   case moveFound: IndependentMoveFound =>
                     deltaObjs(neighborhoodIndice) += moveFound.objAfter - initialObj
@@ -138,14 +135,12 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                     tabuUntilIt(neighborhoodIndice) = currentIt + tabuLength + 1 + nbWorkers
                 }
                 val nextRunningSearchID = runningSearchIDs.filter(_ != uniqueId)
-
                 //iterate on the array
                 //we stop the search successful if there is a MoveFound preceded only by NoMoveFound
                 //We stop the search NoMoveFound if there are only NoMoveFound
                 //we carry on if there is a null preceded only by NoMoveFound
 
                 //we start new searches if there are more searches to start
-
                 def stopSearch(searchResult:IndependentSearchResult): Behavior[WrappedData] ={
                   for (r <- runningSearchIDs) {
                     supervisor.supervisorActor ! CancelSearchToSupervisor(r)
@@ -162,14 +157,12 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                     //only noMoveFound, so return NoMoveFound
                     stopSearch(searchResult = responses(0))
                   }else{
-                    responses(i) match{
+                    responses(i) match {
                       case null =>
                         //waiting for more responses, so carry on, and start one more search if possible
-
                         nextSearchesToStart match {
                           case h :: t =>
                             initiateNeighborhoodExploration(h, priorityOfSearch = priorityOfNextSearch, context)
-
                             next(nextSearchesToStart = t,
                               priorityOfNextSearch + 1,
                               runningSearchIDs = nextRunningSearchID,
@@ -212,24 +205,33 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                 }
 
                 checkStopNoMoveFoundSoFar(0)
+
+              //TODO case SearchAborted(uniqueSearchID) =>
+              case SearchAborted(uniqueSearchID) =>
+                for (r <- runningSearchIDs) {
+                  supervisor.supervisorActor ! CancelSearchToSupervisor(r)
+                }
+                resultPromise.success(WrappedError(msg = Some("DistributedBestSlopeFirst aborted"),crash = None))
+                Behaviors.stopped
             }
 
           case WrappedGotUniqueID(uniqueID: Long, neighborhoodIndice: Int,priorityOfSearch:Int) =>
             //start search with val request
-            val request =
-
-              context.ask[DelegateSearch, SearchEnded[IndependentSearchResult]](supervisor.supervisorActor, ref => DelegateSearch(SingleMoveSearch(
+            context.ask[DelegateSearch, SearchEnded[IndependentSearchResult]](
+              supervisor.supervisorActor,
+              ref => DelegateSearch(SingleMoveSearch(
                 uniqueSearchId = uniqueID,
                 remoteTaskId = remoteNeighborhoodIdentifications(neighborhoodIndice),
                 acc = acceptanceCriteria,
                 obj = independentObj,
                 sendFullSolution = false,
                 startSolutionOpt = startSol,
-                sendResultTo = ref), waitForMoreSearch = nbStartedSearches < nbWorkers-1)) {
+                sendResultTo = ref
+              ),
+              waitForMoreSearch = nbStartedSearches < nbWorkers-1)) {
                 case Success(searchEnded) => WrappedSearchEnded(searchEnded, neighborhoodIndice, priorityOfSearch, uniqueID)
                 case Failure(_) => WrappedError(msg = Some(s"Error in WrappedGotUniqueID, uniqueID=$uniqueID"))
               }
-
             next(nextSearchesToStart = nextSearchesToStart,
               priorityOfNextSearch =  priorityOfNextSearch:Int,
               runningSearchIDs = uniqueID :: runningSearchIDs,

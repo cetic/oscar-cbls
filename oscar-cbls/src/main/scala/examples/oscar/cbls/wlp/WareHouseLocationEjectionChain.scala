@@ -87,15 +87,15 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
       dynAndThen(initMove =>
       EjectionChains(
         initMove,
-        nextNeighborhood = {
-          case assigns: List[AssignMove] =>
-            val lastMove = assigns.head
-            val setTo = lastMove.value
-            val lastChangedWarehouse = lastMove.id
-            val allWarehouses = assigns.map(_.id)
-            val otherWarehouses = if (setTo == 0) kNearestClosedWarehouses(lastChangedWarehouse, kClosed).filter(!allWarehouses.contains(_))
+        nextNeighborhood = moves => {
+          val assigns = moves.map(_.asInstanceOf[AssignMove])
+          val lastMove = assigns.head
+          val setTo = lastMove.value
+          val lastChangedWarehouse = lastMove.id
+          val allWarehouses = assigns.map(_.id)
+          val otherWarehouses = if (setTo == 0) kNearestClosedWarehouses(lastChangedWarehouse, kClosed).filter(!allWarehouses.contains(_))
             else kNearestOpenWarehouses(lastChangedWarehouse, kOpen).filter(!allWarehouses.contains(_))
-            AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse", searchZone = () => otherWarehouses, selectIndiceBehavior = Best(), hotRestart = false)
+          AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse", searchZone = () => otherWarehouses, selectIndiceBehavior = Best(), hotRestart = false)
         },
         shouldStop = _ >= maxLength)) name s"Eject($maxLength,$kOpen,$kClosed)")
 

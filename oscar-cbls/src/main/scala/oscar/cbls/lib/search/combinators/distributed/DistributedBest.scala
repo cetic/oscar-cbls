@@ -9,7 +9,6 @@ import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, NoMoveFound,
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, DurationInt}
 
-
 class DistributedBest(neighborhoods:Array[Neighborhood],useHotRestart:Boolean = true)
   extends DistributedCombinator(neighborhoods) {
 
@@ -36,7 +35,7 @@ class DistributedBest(neighborhoods:Array[Neighborhood],useHotRestart:Boolean = 
     }).toList
 
     if(useHotRestart) {
-      //now that all searches are sent, tll the superviso to start searches, so it can use hotRestart
+      //now that all searches are sent, tell the supervisor to start searches, so it can use hotRestart
       supervisor.supervisorActor ! StartSomeSearch()
     }
 

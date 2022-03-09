@@ -37,17 +37,21 @@ object SearchResult {
   implicit def moveToSearchResult(m: Move): MoveFound = MoveFound(m)
 }
 
-case class CodedNeighborhood(codedMove:()=>Unit,impactedVariables:Option[Iterable[Variable]] = None,name:String = "CodedNeighborhood") extends Neighborhood(name){
-  override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+class CodedNeighborhood(codedMove: => Unit,
+                        impactedVariables:Option[Iterable[Variable]] = None,
+                        name:String = "CodedNeighborhood") extends Neighborhood(name) {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
     val startSol = impactedVariables match{
-      case None => obj.model.solution(true)
+      case None => obj.model.solution()
       case Some(x) => obj.model.saveValues(x)
     }
-    codedMove()
+    codedMove
     val nextObj = obj.value
     startSol.restoreDecisionVariables()
     if(acceptanceCriterion(initialObj,nextObj)){
-      MoveFound(new CodedMove(codedMove,nextObj, name))
+      MoveFound(new CodedMove(codedMove, nextObj, name))
     }else{
       NoMoveFound
     }
@@ -226,8 +230,8 @@ abstract class Neighborhood(name:String = null) {
   def doAllMoves(shouldStop: Int => Boolean = _ => false, obj: Objective, acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): Int = {
 
     def nStrings(n: Int, s: String): String = if (n <= 0) "" else s + nStrings(n - 1, s)
-    def padToLength(s: String, l: Int) = (s + nStrings(l, " ")).substring(0, l)
-    def trimToLength(s: String, l: Int) = if (s.length >= l) s.substring(0, l) else s
+    def padToLength(s: String, l: Int): String = (s + nStrings(l, " ")).substring(0, l)
+    def trimToLength(s: String, l: Int): String = if (s.length >= l) s.substring(0, l) else s
 
     if (verbose != 0){
       println(s"start doAllMove at ${java.time.LocalDateTime.now}")
@@ -460,9 +464,10 @@ trait SupportForAndThenChaining[MoveType<:Move] extends Neighborhood{
                    maximalIntermediaryDegradation: Long = Long.MaxValue):DynAndThen[MoveType] =
     dynAndThen(
       other = firstMove =>
-        CodedNeighborhood(
-          () => correctAfterMove(firstMove),
-          impactedVariables),
+        new CodedNeighborhood(
+          correctAfterMove(firstMove),
+          impactedVariables
+        ),
       maximalIntermediaryDegradation = maximalIntermediaryDegradation)
 
   /**
