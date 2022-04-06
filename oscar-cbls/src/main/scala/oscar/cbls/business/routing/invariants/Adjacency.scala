@@ -30,7 +30,7 @@ object AdjacencyConstraint {
           if (adjacencyList.contains((i,j)) || (!respectOrder && adjacencyList.contains((j,i)))) {
             -2
           } else {
-            if (i == j)
+            if (i == j && (adjacencyList.map(_._1).contains(i) || adjacencyList.map(_._2).contains(i) || adjacencyList.map(_._1).contains(j) || adjacencyList.map(_._2).contains(j)))
               1
             else
               0
