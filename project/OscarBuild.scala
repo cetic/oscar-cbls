@@ -13,17 +13,17 @@ object OscarBuild {
   )
 
   lazy val commonSettings = buildSettings ++ Defaults.coreDefaultSettings ++ Seq(
-    scalacOptions in Compile ++= Seq("-encoding", "UTF-8", "-deprecation", "-feature",
+    Compile / scalacOptions ++= Seq("-encoding", "UTF-8", "-deprecation", "-feature",
     "-unchecked", "-language:implicitConversions", "-language:postfixOps", "-opt-warnings"),
     licenses += ("LGPL-3.0", url("https://www.gnu.org/licenses/lgpl-3.0.en.html")),
-    testOptions in Test += ((target in Test) map {
+    Test / testOptions += ((Test / target) map {
       t => Tests.Argument(TestFrameworks.ScalaTest, "-u","<%s>" format (t / "streams/test"))
     }).value,
-    parallelExecution in Test := false,
-    fork in Test := true,
-    javaOptions in Test += "-Djava.library.path=../lib:../lib/",
+    Test / parallelExecution := false,
+    Test / fork := true,
+    Test / javaOptions += "-Djava.library.path=../lib:../lib/",
     javacOptions ++= Seq("-encoding", "UTF-8"),
-    unmanagedSourceDirectories in Test += baseDirectory.value / "src" / "main" / "examples",
+    Test / unmanagedSourceDirectories += baseDirectory.value / "src" / "main" / "examples",
     publishTo := {
       val artifactoryName = "Artifactory Realm"
       val artifactoryUrl = "http://130.104.228.131/artifactory/"
@@ -35,12 +35,12 @@ object OscarBuild {
       artifactoryRepo.map(_.withAllowInsecureProtocol(true))
     },
     credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
-    testOptions in PerfTest += ((target in PerfTest) map {
+    PerfTest / testOptions += ((PerfTest / target) map {
       t => Tests.Argument(TestFrameworks.ScalaTest, "-u","<%s>" format (t / "streams/test"))
     }).value,
-    fork in PerfTest := true,
-    parallelExecution in PerfTest := false
-  ) ++ (if (!OscarBuildParameters.debug) Seq(scalacOptions in Compile ++= Seq("-Xdisable-assertions", "-opt:l:inline", "-opt-inline-from:oscar.**"))
+    PerfTest / fork := true,
+    PerfTest / parallelExecution := false
+  ) ++ (if (!OscarBuildParameters.debug) Seq(Compile / scalacOptions ++= Seq("-Xdisable-assertions", "-opt:l:inline", "-opt-inline-from:oscar.**"))
         else Seq()) ++ ceticSpecificSettings
 
   def ceticSpecificSettings = {
