@@ -73,14 +73,14 @@ object OscarBuild {
     val jfreechart = "org.jfree" % "jfreechart" % "1.5.3"
     val jsci = "net.sf.jsci" % "jsci" % "1.2"
     val scalaParserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1"
-    val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "2.0.1"
+    val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "2.1.0"
     val scalaSwing = "org.scala-lang.modules" %% "scala-swing" % "3.0.0"
     val scalaParallel = "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4"
     val swingx = "org.swinglabs" % "swingx" % "1.6.1"
     val swingxWs = "org.swinglabs" % "swingx-ws" % "1.0"
     val xmlApisExt = "xml-apis" % "xml-apis-ext" % "1.3.04"
     //    val xcsp3 = "xcsp3"  % "xcsp3" % "1.0.0-SNAPSHOT"
-    val xcsp3 = "org.xcsp" % "xcsp3-tools" % "1.2.4"
+    val xcsp3 = "org.xcsp" % "xcsp3-tools" % "2.0.1"
     val graphStreamCore = "org.graphstream" % "gs-core" % "2.0"
     val graphStreamAlgo = "org.graphstream" % "gs-algo" % "2.0"
     val graphStreamUI = "org.graphstream" % "gs-ui" % "1.3"
@@ -90,20 +90,20 @@ object OscarBuild {
     val slf4j = "org.slf4j" % "slf4j-simple" % "1.7.36"
 
     // Akka
-    val akkaActor = "com.typesafe.akka" %% "akka-actor" % "2.6.18"
-    val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.6.18"
-    val akkaActorTyped = "com.typesafe.akka" %% "akka-actor-typed" % "2.6.18"
-    val akkasl4j = "com.typesafe.akka" %% "akka-slf4j" % "2.6.18"
+    val akkaActor = "com.typesafe.akka" %% "akka-actor" % "2.6.19"
+    val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.6.19"
+    val akkaActorTyped = "com.typesafe.akka" %% "akka-actor-typed" % "2.6.19"
+    val akkasl4j = "com.typesafe.akka" %% "akka-slf4j" % "2.6.19"
 
     // Test libraries
     val junit = "junit" % "junit" % "4.13.2" % Test
     val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.15.4" % Test
-    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.9" % Test
+    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.11" % Test
     val scalaTestPlus = "org.scalatestplus" %% "scalacheck-1-14" % "3.2.2.0" % Test
 
     val junit2 = "junit" % "junit" % "4.13.2" % PerfTest
     val scalaCheck2 = "org.scalacheck" %% "scalacheck" % "1.15.4" % PerfTest
-    val scalaTest2 = "org.scalatest" %% "scalatest" % "3.2.9" % PerfTest
+    val scalaTest2 = "org.scalatest" %% "scalatest" % "3.2.11" % PerfTest
     val scalaTestPlus2 = "org.scalatestplus" %% "scalacheck-1-14" % "3.2.2.0" % PerfTest
 
     val testDeps = Seq(junit, scalaCheck, scalaTest, scalaTestPlus)
