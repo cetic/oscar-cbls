@@ -1,9 +1,7 @@
-package oscar.cbls.routing.invariants
+package oscar.cbls.business.routing.invariants
 
 import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.business.routing.invariants.RouteLength
 import oscar.cbls.core.computation.CBLSIntVar
-
 
 object AdjacencyConstraint {
   /**
@@ -13,7 +11,7 @@ object AdjacencyConstraint {
     * 
     * @param vrp The vehicle routing problem
     * @param perVehicle a boolean flag that tells if the value shall be coputed per vehicle
-    * @param resepctOrder a boolean flag that tells is the adjacency shall respect the order
+    * @param respectOrder a boolean flag that tells is the adjacency shall respect the order
     * @param adjacencyList The list of pair of node that shall be adjacent
     * @return An array of CBLSIntVar that maintains the violation value. The array contains v value if the flag perVehicle is true and one value otherwise
     * 
@@ -38,8 +36,6 @@ object AdjacencyConstraint {
         })
       })
 
-
-
     RouteLength(vrp.routes,
       vrp.n,
       vrp.v,
@@ -48,7 +44,5 @@ object AdjacencyConstraint {
       !respectOrder)
 
   }
-
-
 
 }
