@@ -22,19 +22,28 @@ object AdjacencyConstraint {
     respectOrder : Boolean,
     adjacencyList : List[(Int,Int)]) : Array[CBLSIntVar] = {
 
-    val distanceMatrix4Adjacency : Array[Array[Long]] =
-      Array.tabulate(vrp.n)(i => {
-        Array.tabulate(vrp.n)(j => {
-          if (adjacencyList.contains((i,j)) || (!respectOrder && adjacencyList.contains((j,i)))) {
-            -2
-          } else {
-            if (i == j && (adjacencyList.map(_._1).contains(i) || adjacencyList.map(_._2).contains(i) || adjacencyList.map(_._1).contains(j) || adjacencyList.map(_._2).contains(j)))
-              1
-            else
-              0
-          }
-        })
-      })
+    val distanceMatrix4Adjacency : Array[Array[Long]] = Array.fill(vrp.n)(Array.fill(vrp.n)(0))
+
+
+      // Array.tabulate(vrp.n)(i => {
+      //   Array.tabulate(vrp.n)(j => {
+      //     if (adjacencyList.contains((i,j)) || (!respectOrder && adjacencyList.contains((j,i)))) {
+      //       -2
+      //     } else {
+      //       if (i == j && (adjacencyList.map(_._1).contains(i) || adjacencyList.map(_._2).contains(i) || adjacencyList.map(_._1).contains(j) || adjacencyList.map(_._2).contains(j)))
+      //         1
+      //       else
+      //         0
+      //     }
+      //   })
+      // })
+
+    adjacencyList.foreach({case (i,j) => {
+      distanceMatrix4Adjacency(i)(i) = 1
+      distanceMatrix4Adjacency(j)(j) = 1
+      distanceMatrix4Adjacency(i)(j) = -2
+      if (!respectOrder) distanceMatrix4Adjacency(j)(i) = -2
+    }})
 
     RouteLength(vrp.routes,
       vrp.n,
