@@ -47,7 +47,7 @@ import oscar.cbls.core.search._
  */
 case class ThreeOpt(potentialInsertionNodes:()=>Iterable[Int], //must be routed, can include vehicles
                     relevantNeighbors:()=>Int=>Iterable[Int], //must be routed, vehicles are filtered away
-                    vrp: VRP,
+                    override val vrp: VRP,
                     neighborhoodName:String = "ThreeOpt",
                     selectInsertionPointBehavior:LoopBehavior = First(),
                     selectMovedSegmentBehavior:LoopBehavior = First(),
@@ -56,13 +56,10 @@ case class ThreeOpt(potentialInsertionNodes:()=>Iterable[Int], //must be routed,
                     skipOnePointMove:Boolean = false,
                     breakSymmetry:Boolean = true,
                     tryFlip:Boolean = true)
-  extends EasyNeighborhoodMultiLevel[ThreeOptMove](neighborhoodName) {
+  extends AbstractThreeOpt(vrp, neighborhoodName) {
 
   //the node in the route, for hotRestart
   private var startNodeForHotRestart: Int = 0
-
-  val v: Int = vrp.v
-  val seqVar: CBLSSeqVar = vrp.routes
 
   def exploreNeighborhood(initialObj: Long): Unit = {
     val checkpoint = seqVar.defineCurrentValueAsCheckpoint()
@@ -149,11 +146,127 @@ case class ThreeOpt(potentialInsertionNodes:()=>Iterable[Int], //must be routed,
     segmentStartPositionForInstantiation = -1
   }
 
+  //this resets the internal state of the Neighborhood
+  override def reset(): Unit ={
+    startNodeForHotRestart = 0
+  }
+}
+
+
+case class ThreeOptDetail(potentialInsertionNodes:()=>Iterable[Int], //must be routed, can include vehicles
+                          relevantMovedSegmentStartNode:()=>Int=>Iterable[Int],
+                          relevantMovedSegmentEndNode:()=>(Int,Int,Int)=>Iterable[Int],
+                          override val vrp: VRP,
+                          neighborhoodName:String = "ThreeOpt",
+                          selectInsertionPointBehavior:LoopBehavior = First(),
+                          selectMovedSegmentBehavior:LoopBehavior = First(),
+                          selectFlipBehavior:LoopBehavior = Best(),
+                          hotRestart:Boolean = true,
+                          skipOnePointMove:Boolean = false,
+                          breakSymmetry:Boolean = true,
+                          tryFlip:Boolean = true)
+  extends AbstractThreeOpt(vrp, neighborhoodName) {
+
+  //the node in the route, for hotRestart
+  private var startNodeForHotRestart: Int = 0
+
+  def exploreNeighborhood(initialObj: Long): Unit = {
+    val checkpoint = seqVar.defineCurrentValueAsCheckpoint()
+
+    val (iterationSchemeOnZone,notifyFound1) = selectInsertionPointBehavior.toIterable(
+      if (hotRestart) HotRestart(potentialInsertionNodes(), startNodeForHotRestart)
+      else potentialInsertionNodes())
+
+    def evalObjAndRollBack() : Long = {
+      val a = obj.value
+      seqVar.rollbackToTopCheckpoint(checkpoint)
+      a
+    }
+
+    val nodeToVehicle = vrp.vehicleOfNode.map(_.value.toInt)
+    val positionOfAllNode = vrp.getGlobalRoutePositionOfAllNode
+    val relevantMovedSegmentStartNodeNow = relevantMovedSegmentStartNode()
+    val relevantMovedSegmentEndNodeNow = relevantMovedSegmentEndNode()
+
+    for (insertionNodeTmp <- iterationSchemeOnZone if positionOfAllNode(insertionNodeTmp) < vrp.n) {
+      insertionPointForInstantiation = insertionNodeTmp
+      insertionPointPositionForInstantiation = positionOfAllNode(insertionNodeTmp)
+
+      val vehicleForInsertion = nodeToVehicle(insertionPointForInstantiation)
+      val relevantSegmentStartsNodes = relevantMovedSegmentStartNodeNow(insertionPointForInstantiation)
+      val routedRelevantSegmentStartNodes = relevantSegmentStartsNodes.filter((node: Int) => nodeToVehicle(node) != -1 && node != insertionPointForInstantiation && node >= v)
+
+      val (routedRelevantNeighborsByVehicle, notifyFound2) = selectMovedSegmentBehavior.toIterable(routedRelevantSegmentStartNodes.groupBy((i: Int) => nodeToVehicle(i)).toList)
+      for ((vehicleOfMovedSegment, relevantSegmentStarts) <- routedRelevantNeighborsByVehicle) {
+
+        val (segmentStartIt, notifyFound3) = selectMovedSegmentBehavior.toIterable(relevantSegmentStarts)
+        for (relevantSegmentStart <- segmentStartIt if positionOfAllNode(relevantSegmentStart) < vrp.n) {
+
+          segmentStartPositionForInstantiation = positionOfAllNode(relevantSegmentStart)
+
+          val relevantSegmentEndNodes =
+            relevantMovedSegmentEndNodeNow(insertionPointForInstantiation, relevantSegmentStart, vehicleOfMovedSegment)
+
+          val (segmentEndIt, notifyFound4) = selectMovedSegmentBehavior.toIterable(relevantSegmentEndNodes)
+          for (segmentEndNode <- segmentEndIt if positionOfAllNode(segmentEndNode) < vrp.n) {
+            segmentEndPositionForInstantiation = positionOfAllNode(segmentEndNode)
+
+
+            if (!breakSymmetry
+              || vehicleForInsertion != vehicleOfMovedSegment
+              || insertionPointPositionForInstantiation < segmentEndPositionForInstantiation) {
+
+              val (flipValuesToTest, notifyFound5) =
+                selectFlipBehavior.toIterable(if (tryFlip) List(false, true) else List(false))
+
+              for (flipForInstantiationTmp <- flipValuesToTest) {
+                flipForInstantiation = flipForInstantiationTmp
+                doMove(insertionPointPositionForInstantiation,
+                  segmentStartPositionForInstantiation,
+                  segmentEndPositionForInstantiation,
+                  flipForInstantiation)
+
+                if (evaluateCurrentMoveObjTrueIfSomethingFound(evalObjAndRollBack())) {
+                  notifyFound1()
+                  notifyFound2()
+                  notifyFound3()
+                  notifyFound4()
+                  notifyFound5()
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    seqVar.releaseTopCheckpoint()
+    startNodeForHotRestart = insertionPointForInstantiation
+    segmentStartPositionForInstantiation = -1
+  }
+
+
+  //this resets the internal state of the Neighborhood
+  override def reset(): Unit ={
+    startNodeForHotRestart = 0
+  }
+}
+
+abstract class AbstractThreeOpt(val vrp: VRP,
+                                neighborhoodName:String = "ThreeOpt")
+  extends EasyNeighborhoodMultiLevel[ThreeOptMove](neighborhoodName) {
+
+  val v: Int = vrp.v
+  val seqVar: CBLSSeqVar = vrp.routes
+
   var segmentStartPositionForInstantiation:Int = -1
   var segmentEndPositionForInstantiation:Int = -1
   var insertionPointPositionForInstantiation:Int = -1
   var insertionPointForInstantiation:Int = -1
   var flipForInstantiation:Boolean = false
+
+  def doMove(insertionPosition: Int, segmentStartPosition: Int, segmentEndPosition: Int, flip: Boolean): Unit ={
+    seqVar.move(segmentStartPosition,segmentEndPosition,insertionPosition,flip)
+  }
 
   override def instantiateCurrentMove(newObj: Long): ThreeOptMove =
     ThreeOptMove(segmentStartPositionForInstantiation,
@@ -165,14 +278,6 @@ case class ThreeOpt(potentialInsertionNodes:()=>Iterable[Int], //must be routed,
       this,
       neighborhoodName)
 
-  //this resets the internal state of the Neighborhood
-  override def reset(): Unit ={
-    startNodeForHotRestart = 0
-  }
-
-  def doMove(insertionPosition: Int, segmentStartPosition: Int, segmentEndPosition: Int, flip: Boolean): Unit ={
-    seqVar.move(segmentStartPosition,segmentEndPosition,insertionPosition,flip)
-  }
 }
 
 case class ThreeOptMove(segmentStartPosition:Int,
@@ -181,7 +286,7 @@ case class ThreeOptMove(segmentStartPosition:Int,
                         insertionPoint:Int,
                         flipSegment: Boolean,
                         override val objAfter: Long,
-                        override val neighborhood:ThreeOpt,
+                        override val neighborhood:AbstractThreeOpt,
                         override val neighborhoodName:String = "ThreeOptMove")
   extends VRPSMove(objAfter, neighborhood, neighborhoodName,neighborhood.vrp){
 
