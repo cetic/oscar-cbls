@@ -169,26 +169,22 @@ case class ThreeOpt(potentialInsertionNodes:()=>Iterable[Int], //must be routed,
  * @param neighborhoodName the name for this neighborhood
  * @param selectInsertionPointBehavior first or est for the insertion point
  * @param selectMovedSegmentBehavior among all segments, first or best
- * @param selectFlipBehavior first or best for the flip
  * @param hotRestart hot restart on the insertion point
- * @param skipOnePointMove if set to true, segment will include more than one point.
  * @param breakSymmetry there is a symmetry in the 3-opt
  *                      when moving a segment within the same vehicle without flipping it,
  *                      it is equivalent to moving the nodes between the segment and the insertion position in the other direction
  * @param tryFlip true if flip should be considered, false otherwise.
  */
-case class ThreeOptDetail(potentialInsertionNodes:()=>Iterable[Int], //must be routed, can include vehicles
-                          relevantMovedSegmentStartNode:()=>Int=>Iterable[Int],
-                          relevantMovedSegmentEndNode:()=>(Int,Int,Int,Int)=>Iterable[Int],
-                          override val vrp: VRP,
-                          neighborhoodName:String = "ThreeOpt",
-                          selectInsertionPointBehavior:LoopBehavior = First(),
-                          selectMovedSegmentBehavior:LoopBehavior = First(),
-                          selectFlipBehavior:LoopBehavior = Best(),
-                          hotRestart:Boolean = true,
-                          skipOnePointMove:Boolean = false,
-                          breakSymmetry:Boolean = true,
-                          tryFlip:Boolean = true)
+case class ThreeOptByNodes(potentialInsertionNodes:()=>Iterable[Int], //must be routed, can include vehicles
+                           relevantMovedSegmentStartNode:()=>Int=>Iterable[Int],
+                           relevantMovedSegmentEndNode:()=>(Int,Int,Int,Int)=>Iterable[Int],
+                           override val vrp: VRP,
+                           neighborhoodName:String = "ThreeOpt",
+                           selectInsertionPointBehavior:LoopBehavior = First(),
+                           selectMovedSegmentBehavior:LoopBehavior = First(),
+                           hotRestart:Boolean = true,
+                           breakSymmetry:Boolean = true,
+                           tryFlip:Boolean = true)
   extends AbstractThreeOpt(vrp, neighborhoodName) {
 
   //the node in the route, for hotRestart
@@ -246,10 +242,7 @@ case class ThreeOptDetail(potentialInsertionNodes:()=>Iterable[Int], //must be r
             || vehicleForInsertion != vehicleOfMovedSegment
             || insertionPointPositionForInstantiation < segmentEndPositionForInstantiation) {
 
-            val (flipValuesToTest, notifyFound4) =
-              selectFlipBehavior.toIterable(if (tryFlip) List(false, true) else List(false))
-
-            for (flipForInstantiationTmp <- flipValuesToTest) {
+            for (flipForInstantiationTmp <- if (tryFlip) List(false, true) else List(false)) {
               flipForInstantiation = flipForInstantiationTmp
               doMove(insertionPointPositionForInstantiation,
                 segmentStartPositionForInstantiation,
@@ -260,7 +253,6 @@ case class ThreeOptDetail(potentialInsertionNodes:()=>Iterable[Int], //must be r
                 notifyFound1()
                 notifyFound2()
                 notifyFound3()
-                notifyFound4()
               }
             }
           }
