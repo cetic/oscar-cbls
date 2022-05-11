@@ -218,7 +218,7 @@ class GlobalVehicleCapacityConstraint(routes: ChangingSeqValue, override val n: 
    * The main purpose of this method is to update the vehicle content functions after the end
    * of the optimisation for result extraction purpose.
    */
-  def performPreComputeOnAllVehicle() ={
+  def performPreComputeOnAllVehicle(): Unit ={
     val curRoutes = routes.value
     for(curV <- 0 until v){
       performPreCompute(curV, curRoutes)
@@ -249,4 +249,7 @@ class GlobalVehicleCapacityConstraint(routes: ChangingSeqValue, override val n: 
 
 }
 
-case class CapacityResult(totalPickedUp: Long, totalDroppedOff: Long, maximumContentAnyTime: Long, contentFlow: Array[(Long,Long)])
+case class CapacityResult(totalPickedUp: Long,
+                          totalDroppedOff: Long,
+                          maximumContentAnyTime: Long,
+                          contentFlow: Array[(Long,Long)])
