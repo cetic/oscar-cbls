@@ -244,6 +244,7 @@ case class ThreeOptByNodes(potentialInsertionNodes:()=>Iterable[Int], //must be 
 
             for (flipForInstantiationTmp <- if (tryFlip) List(false, true) else List(false)) {
               flipForInstantiation = flipForInstantiationTmp
+
               doMove(insertionPointPositionForInstantiation,
                 segmentStartPositionForInstantiation,
                 segmentEndPositionForInstantiation,
