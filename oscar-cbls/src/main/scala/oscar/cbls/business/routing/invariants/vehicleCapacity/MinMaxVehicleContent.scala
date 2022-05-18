@@ -135,8 +135,8 @@ class MinMaxVehicleContent(routes: ChangingSeqValue, override val n: Int, val v:
           case s@LogReducedNewNode(node, vehicleContentFunctionOfNode) =>
 
             val prevContent = prev._3
-            val newMin = prev._1 min (prevContent + vehicleContentFunctionOfNode.minIfStartAtZero)
-            val newMax = prev._2 max (prevContent + vehicleContentFunctionOfNode.maxIfStartAtZero)
+            val newMin = prev._1 min (prevContent + vehicleContentFunctionOfNode.minIfStartAtZero(false))
+            val newMax = prev._2 max (prevContent + vehicleContentFunctionOfNode.maxIfStartAtZero(false))
             val newOutContent = prev._3 + vehicleContentFunctionOfNode.contentAtEndIfStartAt0(false)
             (newMin,newMax,newOutContent)
 

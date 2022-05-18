@@ -68,7 +68,7 @@ object OscarBuild {
 
   object Dependencies {
     // Regular libraries
-    val antlr4Runtime = "org.antlr" % "antlr4-runtime" % "4.9.3"
+    val antlr4Runtime = "org.antlr" % "antlr4-runtime" % "4.10.1"
     val jcommon = "org.jfree" % "jcommon" % "1.0.24"
     val jfreechart = "org.jfree" % "jfreechart" % "1.5.3"
     val jsci = "net.sf.jsci" % "jsci" % "1.2"
@@ -97,13 +97,13 @@ object OscarBuild {
 
     // Test libraries
     val junit = "junit" % "junit" % "4.13.2" % Test
-    val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.15.4" % Test
-    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.11" % Test
+    val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.16.0" % Test
+    val scalaTest = "org.scalatest" %% "scalatest" % "3.2.12" % Test
     val scalaTestPlus = "org.scalatestplus" %% "scalacheck-1-14" % "3.2.2.0" % Test
 
     val junit2 = "junit" % "junit" % "4.13.2" % PerfTest
-    val scalaCheck2 = "org.scalacheck" %% "scalacheck" % "1.15.4" % PerfTest
-    val scalaTest2 = "org.scalatest" %% "scalatest" % "3.2.11" % PerfTest
+    val scalaCheck2 = "org.scalacheck" %% "scalacheck" % "1.16.0" % PerfTest
+    val scalaTest2 = "org.scalatest" %% "scalatest" % "3.2.12" % PerfTest
     val scalaTestPlus2 = "org.scalatestplus" %% "scalacheck-1-14" % "3.2.2.0" % PerfTest
 
     val testDeps = Seq(junit, scalaCheck, scalaTest, scalaTestPlus)
