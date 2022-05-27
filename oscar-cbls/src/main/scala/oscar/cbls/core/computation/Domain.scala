@@ -193,11 +193,14 @@ class EmptyDomainException extends Exception("domain is empty")
 object DomainHelper{
 
   def safeAdd(a:Long, b:Long):Long = {
-    val tmp = a.toLong + b.toLong
-
-    if (a > 0 && b > 0 && tmp < 0) Long.MaxValue
-    else if (a <0 && b <0 && tmp > 0) Long.MinValue
-    else tmp
+    if (a > 0 && b > 0 && a + b < 0)
+      Long.MaxValue
+    else {
+      if (a < 0 && b < 0 && a + b >= 0)
+        Long.MinValue
+      else
+        a + b
+    }
   }
 
   def safeAdd(a: Int, b: Int):Int = {
