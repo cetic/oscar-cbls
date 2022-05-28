@@ -14,7 +14,7 @@
   ******************************************************************************/
 package oscar.cbls.lib.invariant.seq
 
-import oscar.cbls.core.computation.{ChangingIntValue, ChangingSeqValue, ChangingSetValue, Domain, DomainHelper, IntNotificationTarget, IntValue, SeqNotificationTarget, SeqUpdate, SeqValue, SetInvariant}
+import oscar.cbls.core.computation.{ChangingIntValue, ChangingSeqValue, ChangingSetValue, Domain, LongDomainHelper, IntNotificationTarget, IntValue, SeqNotificationTarget, SeqUpdate, SeqValue, SetInvariant}
 import oscar.cbls.core.propagation.Checker
 
 import scala.collection.immutable.SortedSet
@@ -46,7 +46,7 @@ object PositionsOf{
  * @param a is the value that is to locate in the sequence
  */
 class PositionsOf(v: SeqValue, a:IntValue)
-  extends SetInvariant(v.value.positionsOfValue(a.valueInt).foldLeft(SortedSet.empty[Int])((acc:SortedSet[Int],i:Int) => acc + i) , Domain(0 , DomainHelper.safeAdd(v.max,1)))
+  extends SetInvariant(v.value.positionsOfValue(a.valueInt).foldLeft(SortedSet.empty[Int])((acc:SortedSet[Int],i:Int) => acc + i) , Domain(0 , LongDomainHelper.safeAdd(v.max,1)))
   with SeqNotificationTarget with IntNotificationTarget{
 
   setName(s"PositionOf(${a.name} in ${v.name})")
@@ -81,7 +81,7 @@ class PositionsOf(v: SeqValue, a:IntValue)
  * @param a is the value that is to locate in the sequence
  */
 class PositionsOfConst(v: SeqValue, a:Int)
-  extends SetInvariant(v.value.positionsOfValue(a).foldLeft(SortedSet.empty[Int])((acc:SortedSet[Int],i:Int) => acc + i), Domain(0 , DomainHelper.safeAdd(v.max,1)))
+  extends SetInvariant(v.value.positionsOfValue(a).foldLeft(SortedSet.empty[Int])((acc:SortedSet[Int],i:Int) => acc + i), Domain(0 , LongDomainHelper.safeAdd(v.max,1)))
   with SeqNotificationTarget{
 
   setName(s"PositionOf($a in ${v.name})")

@@ -8,7 +8,8 @@ package object core {
   type Invariant = oscar.cbls.core.computation.Invariant
   val InvariantHelper = oscar.cbls.core.computation.InvariantHelper
 
-  val DomainHelper = oscar.cbls.core.computation.DomainHelper
+  val IntDomainHelper = oscar.cbls.core.computation.IntDomainHelper
+  val LongDomainHelper = oscar.cbls.core.computation.LongDomainHelper
 
   type Checker = oscar.cbls.core.propagation.Checker
 

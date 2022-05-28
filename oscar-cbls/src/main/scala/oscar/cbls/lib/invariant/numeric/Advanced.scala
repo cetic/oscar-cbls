@@ -19,7 +19,7 @@
  ******************************************************************************/
 package oscar.cbls.lib.invariant.numeric
 
-import oscar.cbls.core.computation.{Bulked, CBLSIntVar, ChangingIntValue, ChangingSetValue, Domain, DomainHelper, DomainRange, IntInvariant, IntNotificationTarget, IntValue, SetNotificationTarget, SetValue, Store, VaryingDependencies}
+import oscar.cbls.core.computation.{Bulked, CBLSIntVar, ChangingIntValue, ChangingSetValue, Domain, LongDomainHelper, DomainRange, IntInvariant, IntNotificationTarget, IntValue, SetNotificationTarget, SetValue, Store, VaryingDependencies}
 import oscar.cbls.core.propagation.{Checker, ErrorChecker, KeyForElementRemoval}
 
 import scala.collection.immutable.SortedSet
@@ -58,7 +58,7 @@ case class SumConstants(vars: Array[Long], cond: SetValue)
   * */
 case class SumElements(vars: Array[IntValue], cond: SetValue)
   extends IntInvariant(initialValue=cond.value.foldLeft(0L)((acc, i) => acc + vars(i).value),
-    initialDomain = Domain(vars.foldLeft(0L)((acc, v) => DomainHelper.safeAdd(acc,v.min min 0)), vars.foldLeft(0L)((acc, v) => DomainHelper.safeAdd(acc,v.max)))
+    initialDomain = Domain(vars.foldLeft(0L)((acc, v) => LongDomainHelper.safeAdd(acc,v.min min 0)), vars.foldLeft(0L)((acc, v) => LongDomainHelper.safeAdd(acc,v.max)))
   )
   with Bulked[IntValue, Unit]
   with VaryingDependencies
