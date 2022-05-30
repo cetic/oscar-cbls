@@ -385,7 +385,3 @@ case class Step(x: IntValue, pivot: Long = 0L, thenVal: Long = 1L, elseVal: Long
 case class Bound(x: IntValue, minBound: Long, maxBound: Long)
   extends Int2Int(x, (a: Long) => if (a < minBound) minBound else if (a > maxBound) maxBound else a,
     Domain(math.max(minBound, x.min) , math.min(maxBound, x.max)))
-
-/**
- * @author Gustav Björdal
- */
