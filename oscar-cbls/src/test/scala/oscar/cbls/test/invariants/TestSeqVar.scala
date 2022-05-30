@@ -29,7 +29,7 @@ import oscar.cbls.lib.invariant.seq.{Content, Length, PositionsOf}
 class TestSeqVar extends AnyFunSuite with Matchers {
 
   test("CBLSSeqVar is coherent"){
-    val m = new Store(verbose = true,propagateOnToString = true, checker = Some(new ErrorChecker()))
+    val m = new Store(verbose = true,propagateOnToString = true, checker = Some(ErrorChecker()))
     val a = new CBLSSeqVar(m,IntSequence(List(1,2,3,5)), n = "toto")
 
     val size1 = Length(a.createClone())

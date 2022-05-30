@@ -24,7 +24,7 @@
  */
 package oscar.cbls.lib.invariant.numeric
 
-import oscar.cbls.core.computation.{CBLSIntConst, ChangingIntValue, Domain, DomainHelper, DomainRange, IntInvariant, IntNotificationTarget, IntValue, InvariantHelper, SetValue, ShortIntNotificationTarget, Store}
+import oscar.cbls.core.computation.{CBLSIntConst, ChangingIntValue, Domain,  LongDomainHelper, DomainRange, IntInvariant, IntNotificationTarget, IntValue, InvariantHelper, SetValue, ShortIntNotificationTarget, Store}
 import oscar.cbls.core.propagation.Checker
 import oscar.cbls.lib.invariant.logic.{Int2Int, IntInt2Int}
 
@@ -55,7 +55,7 @@ object Prod {
 class Sum(vars: Iterable[IntValue])
   extends IntInvariant(
     vars.foldLeft(0L)((a: Long, b: IntValue) => a + b.value),
-    Domain(vars.foldLeft(0L)((acc, intvar) => DomainHelper.safeAdd(acc, intvar.min)) , vars.foldLeft(0L)((acc, intvar) => DomainHelper.safeAdd(acc, intvar.max))))
+    Domain(vars.foldLeft(0L)((acc, intvar) => LongDomainHelper.safeAdd(acc, intvar.min)) , vars.foldLeft(0L)((acc, intvar) => LongDomainHelper.safeAdd(acc, intvar.max))))
     with IntNotificationTarget{
 
   for (v <- vars) registerStaticAndDynamicDependency(v)
@@ -81,8 +81,8 @@ class Sum(vars: Iterable[IntValue])
 class Linear(vars: Iterable[IntValue], coeffs: IndexedSeq[Long])
   extends IntInvariant(
     vars.zip(coeffs).foldLeft(0L)((acc, intvar) => acc + intvar._1.value*intvar._2),
-    Domain(vars.zip(coeffs).foldLeft(0L)((acc, intvar) => DomainHelper.safeAdd(acc,DomainHelper2.getMinProd(intvar._1.min,intvar._1.max,intvar._2,intvar._2))) ,
-      vars.zip(coeffs).foldLeft(0L)((acc, intvar) => DomainHelper.safeAdd(acc,DomainHelper2.getMaxProd(intvar._1.min,intvar._1.max,intvar._2,intvar._2)))))
+    Domain(vars.zip(coeffs).foldLeft(0L)((acc, intvar) => LongDomainHelper.safeAdd(acc,LongDomainHelper.getMinProd(intvar._1.min,intvar._1.max,intvar._2,intvar._2))) ,
+      vars.zip(coeffs).foldLeft(0L)((acc, intvar) => LongDomainHelper.safeAdd(acc,LongDomainHelper.getMaxProd(intvar._1.min,intvar._1.max,intvar._2,intvar._2)))))
     with IntNotificationTarget {
 
   //coeffs needs to be indexed as we need to access it be index from the index of vars (as given in notifyIntChanged)
@@ -212,8 +212,8 @@ class Prod(vars: Iterable[IntValue])
 
   //TODO: find better bound, this is far too much??
   restrictDomain({
-    val (myMin,myMax) = vars.foldLeft((1L,1L))((acc, intvar) => (DomainHelper2.getMinProd(acc._1, acc._2, intvar.min, intvar.max),
-      DomainHelper2.getMaxProd(acc._1, acc._2, intvar.min, intvar.max)))
+    val (myMin,myMax) = vars.foldLeft((1L,1L))((acc, intvar) => (LongDomainHelper.getMinProd(acc._1, acc._2, intvar.min, intvar.max),
+      LongDomainHelper.getMaxProd(acc._1, acc._2, intvar.min, intvar.max)))
     Domain(-myMax , myMax)})
 
   @inline
@@ -251,10 +251,8 @@ class Prod(vars: Iterable[IntValue])
  * @author gustav.bjordal@it.uu.se
  */
 case class Pow(a: IntValue, b: IntValue)
-  extends IntInt2Int(a, b, if (DomainHelper2.isSafePow(a,b))
-    (l,r) => Math.pow(l.toDouble,r.toDouble).toInt
-  else (l: Long, r: Long) => DomainHelper2.safePow(l,r),
-    Domain(DomainHelper2.safePow(a.min, b.min) , DomainHelper2.safePow(a.max, b.max)))
+  extends IntInt2Int(a, b, (l: Long, r: Long) => LongDomainHelper.safePow(l,r),
+    Domain(LongDomainHelper.safePow(a.min, b.min) , LongDomainHelper.safePow(a.max, b.max)))
 
 /**
  * left - right
@@ -262,10 +260,8 @@ case class Pow(a: IntValue, b: IntValue)
  * @author renaud.delandtsheer@cetic.be
  */
 case class Minus(left: IntValue, right: IntValue)
-  extends IntInt2Int(left, right, if(DomainHelper2.isSafeSub(left,right))
-    (l,r) => l - r
-  else (l: Long, r: Long) => DomainHelper2.safeSub(l,r),
-    Domain(DomainHelper2.safeSub(left.min, right.max) , DomainHelper2.safeSub(left.max, right.min))) {
+  extends IntInt2Int(left, right,(l,r) => LongDomainHelper.safeSub(l,r),
+    Domain(LongDomainHelper.safeSub(left.min, right.max) , LongDomainHelper.safeSub(left.max, right.min))) {
   assert(left != right)
 }
 
@@ -274,10 +270,8 @@ case class Minus(left: IntValue, right: IntValue)
  *  @author jean-noel.monette@it.uu.se
  */
 case class MinusOffsetPos(left:IntValue, right:IntValue, offset: Long)
-  extends IntInt2Int(left,right, if(DomainHelper2.isSafeSub(left,right))
-    (l,r) => 0L.max(l - r + offset)
-  else (l: Long, r: Long) => 0L.max(DomainHelper2.safeSub(l,r)+offset),
-    Domain(0L , 0L.max(DomainHelper2.safeAdd(DomainHelper2.safeSub(left.max, right.min),offset))))
+  extends IntInt2Int(left,right, (l: Long, r: Long) => 0L.max(LongDomainHelper.safeSub(l,r)+offset),
+    Domain(0L , 0L.max(LongDomainHelper.safeAdd(LongDomainHelper.safeSub(left.max, right.min),offset))))
 
 /**
  * abs(left - right)
@@ -287,11 +281,9 @@ case class MinusOffsetPos(left:IntValue, right:IntValue, offset: Long)
  * */
 case class Dist(left: IntValue, right: IntValue)
   extends IntInt2Int(left, right,
-    if(DomainHelper2.isSafeSub(left,right))
-      (l,r) => (l - r).abs
-    else (l: Long, r: Long) => DomainHelper2.safeSub(l,r).abs,
-    Domain({val v = DomainHelper2.safeSub(left.min, right.max); if (v <= 0L) 0L else v} ,
-      DomainHelper2.safeSub(left.max, right.min).max(DomainHelper2.safeSub(right.max,left.min)))) {
+    (l: Long, r: Long) => LongDomainHelper.safeSub(l,r).abs,
+    Domain({val v = LongDomainHelper.safeSub(left.min, right.max); if (v <= 0L) 0L else v} ,
+      LongDomainHelper.safeSub(left.max, right.min).max(LongDomainHelper.safeSub(right.max,left.min)))) {
   assert(left != right)
 }
 
@@ -310,10 +302,8 @@ case class ReifViol(b: IntValue, v:IntValue) extends IntInt2Int(b,v, (b,v) => {i
  * @author renaud.delandtsheer@cetic.be
  */
 case class Sum2(left: IntValue, right: IntValue)
-  extends IntInt2Int(left, right, if(DomainHelper2.isSafeAdd(left,right))
-    (l,r) => l + r
-  else (l: Long, r: Long) => DomainHelper2.safeAdd(l,r),
-    Domain(DomainHelper.safeAdd(left.min, right.min) , DomainHelper.safeAdd(left.max, right.max)))
+  extends IntInt2Int(left, right, (l: Long, r: Long) => LongDomainHelper.safeAdd(l,r),
+    Domain(LongDomainHelper.safeAdd(left.min, right.min) , LongDomainHelper.safeAdd(left.max, right.max)))
 //TODO: Should return simply left if right is the constant zero. (use a companion object)
 
 /**
@@ -322,10 +312,8 @@ case class Sum2(left: IntValue, right: IntValue)
  * @author renaud.delandtsheer@cetic.be
  */
 case class Prod2(left: IntValue, right: IntValue)
-  extends IntInt2Int(left, right, if(DomainHelper2.isSafeMult(left,right))
-    (l,r) => l * r
-  else (l: Long, r: Long) => DomainHelper2.safeMult(l,r),
-    Domain(DomainHelper2.getMinProd2(left, right) , DomainHelper2.getMaxProd2(left, right)))
+  extends IntInt2Int(left, right,(l: Long, r: Long) => LongDomainHelper.safeMult(l,r),
+    Domain(LongDomainHelper.getMinProd2(left, right) , LongDomainHelper.getMaxProd2(left, right)))
 
 /**
  * left / right
@@ -335,7 +323,7 @@ case class Prod2(left: IntValue, right: IntValue)
  */
 case class Div(left: IntValue, right: IntValue)
   extends IntInt2Int(left, right, (l: Long, r: Long) => l / r,
-    Domain(DomainHelper2.getMinDiv(left, right) , DomainHelper2.getMaxDiv(left, right)))
+    Domain(LongDomainHelper.getMinDiv(left, right) , LongDomainHelper.getMaxDiv(left, right)))
 /**
  * left / right
  * where left, right, and output are IntVar
@@ -401,105 +389,3 @@ case class Bound(x: IntValue, minBound: Long, maxBound: Long)
 /**
  * @author Gustav Björdal
  */
-object DomainHelper2 {
-  def getMinDiv(left: IntValue, right: IntValue): Long = {
-    val maxVal = if (right.max == 0L) { -1L } else { right.max }
-    val minVal = if (right.min == 0L) { 1L } else { right.min }
-    Math.min(left.min / maxVal, Math.min(left.min / minVal,
-      Math.min(left.max / maxVal, left.max / minVal)))
-  }
-
-  def getMaxDiv(left: IntValue, right: IntValue): Long = {
-    val maxVal = if (right.max == 0L) { -1L } else { right.max }
-    val minVal = if (right.min == 0L) { 1L } else { right.min }
-    Math.max(left.min / maxVal, Math.max(left.min / minVal,
-      Math.max(left.max / maxVal, left.max / minVal)))
-  }
-
-  // Unfortunately all of these options need to be checked. For example if left has the domain -1L0..0 and right has the domain 3..5 then
-  // the min value would be -50L and the max value would be 0. But if the domains were -1L0..0 and -1L0..0 then the min would be 0L and max 10L0.
-  // So basically all combinations of the domains min and max could yield the new min and max, as the ugly code below indicates. 
-  def getMinProd2(left: IntValue, right: IntValue): Long = {
-    Math.min(safeMult(left.min, right.min), Math.min(safeMult(left.min, right.max),
-      Math.min(safeMult(left.max, right.min), safeMult(left.max, right.max))))
-  }
-
-  def getMinProd(lm:Long,lM:Long,rm:Long,rM:Long): Long = {
-    Math.min(safeMult(lm, rm), Math.min(safeMult(lm, rM), Math.min(safeMult(lM,rm), safeMult(lM,rM))))
-  }
-
-  def getMaxProd2(left: IntValue, right: IntValue): Long = {
-    Math.max(safeMult(left.min, right.min), Math.max(safeMult(left.min, right.max),
-      Math.max(safeMult(left.max, right.min), safeMult(left.max, right.max))))
-  }
-
-  def getMaxProd(lm:Long,lM:Long,rm:Long,rM:Long): Long = {
-    Math.max(safeMult(lm, rm), Math.max(safeMult(lm, rM), Math.max(safeMult(lM,rm), safeMult(lM,rM))))
-  }
-
-  def isSafeAdd(x: IntValue, y:IntValue): Boolean = {
-    x.max + y.max <= Long.MaxValue && x.min + y.min >= Long.MinValue
-  }
-
-  def isSafeSub(x: IntValue, y:IntValue): Boolean = {
-    x.max - y.min <= Long.MaxValue && x.min - y.max >= Long.MinValue
-  }
-
-  def isSafeMult(x:IntValue,y:IntValue): Boolean = {
-    val m1 = x.max * y.max
-    val m2 = x.max * y.min
-    val m3 = x.min * y.max
-    val m4 = x.min * y.min
-    math.max(math.max(m1,m2), math.max(m3,m4)) <= Long.MaxValue && math.min(math.min(m1,m2), math.min(m3,m4)) >= Long.MinValue
-  }
-
-  def isSafePow(x: IntValue, y:IntValue): Boolean = {
-    Math.pow(x.max.toDouble, y.max.toDouble).toLong <= Long.MaxValue/10L
-  }
-
-  //Safe addition
-  def safeAdd(x: Long, y: Long): Long = {
-    if (x.toLong + y.toLong > Long.MaxValue) {
-      Long.MaxValue
-    } else if (x.toLong + y.toLong < Long.MinValue) {
-      Long.MinValue
-    } else {
-      x + y
-    }
-  }
-
-  //Safe subtraction
-  def safeSub(x: Long, y: Long): Long = {
-    if (x.toLong - y.toLong > Long.MaxValue) {
-      Long.MaxValue
-    } else if (x.toLong - y.toLong < Long.MinValue) {
-      Long.MinValue
-    } else {
-      x - y
-    }
-  }
-
-  //Safe multiplication
-  def safeMult(x: Long, y: Long): Long = {
-    if (x.toLong * y.toLong > Long.MaxValue) {
-      Long.MaxValue
-    } else if (x.toLong * y.toLong < Long.MinValue) {
-      Long.MinValue
-    } else {
-      x * y
-    }
-  }
-
-  //Safe multiplication
-  def safePow(x: Long, y: Long): Long = {
-    val xD = x.toDouble
-    val yD = y.toDouble
-    val powXY = Math.pow(xD, yD)
-    if (powXY.toLong > Long.MaxValue/10L || powXY.isInfinity) {
-      Long.MaxValue/10L
-    } else {
-      powXY.toLong
-    }
-  }
-  //Division of integers is always safe.
-}

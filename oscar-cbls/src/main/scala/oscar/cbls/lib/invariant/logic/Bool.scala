@@ -35,7 +35,7 @@ import oscar.cbls.core.propagation.Checker
 case class And(vars: Iterable[IntValue])
   extends IntInvariant(
     vars.foldLeft(0L)((a: Long, b: IntValue) => a + b.value),
-    Domain(0 ,vars.foldLeft(0L)((acc, intvar) => DomainHelper.safeAdd(acc, intvar.max))))
+    Domain(0 ,vars.foldLeft(0L)((acc, intvar) => LongDomainHelper.safeAdd(acc, intvar.max))))
     with IntNotificationTarget{
 
   for (v <- vars) registerStaticAndDynamicDependency(v)
@@ -67,7 +67,7 @@ case class And(vars: Iterable[IntValue])
 case class Or(vars: Array[IntValue])
   extends IntInvariant(
     if(vars.exists(_.value == 0L)) { 0L } else { vars.foldLeft(0L)((a: Long, b: IntValue) => a + b.value)/vars.length },
-    Domain(0L ,vars.foldLeft(0L)((acc, intvar) => DomainHelper.safeAdd(acc, intvar.max))))
+    Domain(0L ,vars.foldLeft(0L)((acc, intvar) => LongDomainHelper.safeAdd(acc, intvar.max))))
     with IntNotificationTarget{
 
   for (v <- vars) registerStaticAndDynamicDependency(v)
