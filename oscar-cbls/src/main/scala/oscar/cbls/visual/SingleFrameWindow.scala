@@ -22,6 +22,7 @@ object SingleFrameWindow{
   }
 }
 
+// Display a custom panel in a frame window
 class SingleFrameWindow(val panel:JPanel, title:String, width:Int, height:Int, backgroundPanel: Option[JPanel] = None){
 
   panel.setPreferredSize(new Dimension(width,height))
