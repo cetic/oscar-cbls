@@ -375,8 +375,8 @@ case class Step(x: IntValue, pivot: Long = 0L, thenVal: Long = 1L, elseVal: Long
 
 /**
  * This invariant implements the identity function within the min-max range.
- * values lower tham min result to min
- * values higher tham max result to max
+ * values lower than min result to min
+ * values higher than max result to max
  * @author renaud.delandtsheer@cetic.be
  * @param x
  * @param minBound
