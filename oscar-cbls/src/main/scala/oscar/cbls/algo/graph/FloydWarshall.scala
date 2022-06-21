@@ -8,7 +8,7 @@ object FloydWarshall {
   def buildDistanceMatrix(g: ConditionalGraph,
                           isConditionalEdgeOpen: Int => Boolean): Array[Array[Long]] = {
     val m = buildAdjacencyMatrix(g, isConditionalEdgeOpen)
-    saturateAdjacencyMatrixToDistanceMatrix(m, g)
+    saturateAdjacencyMatrixToDistanceMatrix(m)
     m
   }
 
@@ -79,7 +79,7 @@ object FloydWarshall {
     matrix
   }
 
-  def saturateAdjacencyMatrixToDistanceMatrix(w: Array[Array[Long]], graph: ConditionalGraph): Unit = {
+  def saturateAdjacencyMatrixToDistanceMatrix(w: Array[Array[Long]]): Unit = {
     val n = w.length
     for (k <- 0 until n) {
       for (i <- 0 until n) {
