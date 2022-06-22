@@ -6,8 +6,6 @@ import oscar.cbls.business.routing.invariants.segments.{Segment,NewNode,PreCompu
 import oscar.cbls.business.routing.invariants.segments.VehicleSegments
 import oscar.cbls.algo.quick.QList
 
-
-
 abstract class BackwardNaiveRoutingConstraint[U <: Any : Manifest](routes : ChangingSeqValue,
                                                                    n : Int,
                                                                    v : Int,
