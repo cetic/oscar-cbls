@@ -52,6 +52,7 @@ class VisualMap extends JPanel(new BorderLayout()) {
   var lines = List[MapLine]()
   var waypoints = List[MapWaypoint]()
   var paths = List[MapPath]()
+  var polygons = List[MapPolygon]()
 
   val max = 17
   val info = new TileFactoryInfo(1, max - 2, max,
@@ -124,8 +125,21 @@ class VisualMap extends JPanel(new BorderLayout()) {
   }
 
 
+
   def removePath(p: MapPath) = {
     paths = paths.filterNot(_ == p)
+    refresh()
+  }
+
+
+  def createPolygon(coords : Array[(Double,Double)], col : Color = Color.GREEN) = {
+    val poly = new MapPolygon(this,coords,col)
+    polygons = polygons :+ poly
+    refresh()
+  }
+
+  def removePolygon(poly : MapPolygon) = {
+    polygons = polygons.filterNot(_ == poly)
     refresh()
   }
 
