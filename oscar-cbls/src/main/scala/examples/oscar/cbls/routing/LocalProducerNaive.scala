@@ -242,11 +242,11 @@ object CapacityConstraint {
 }
 
 
-class CapacityConstraint(routes : ChangingSeqValue,n : Int,v : Int,default4Unrouted : NodeState ,initValue : Array[NodeState],fonc : (Int,Int,NodeState) => NodeState,val loadAtEachNode : Array[CBLSIntVar],val vehicleOfNode : Array[CBLSIntVar]) extends BackwardNaiveRoutingConstraint[NodeState](routes,n,v,default4Unrouted,initValue,fonc) {
+class CapacityConstraint(routes : ChangingSeqValue,n : Int,v : Int,default4Unrouted : NodeState ,initValue : Array[NodeState],fonc : (Int,Int,NodeState) => NodeState,val loadAtEachNode : Array[CBLSIntVar],val vehicleOfNode : Array[CBLSIntVar])
+  extends BackwardNaiveRoutingConstraint[NodeState](routes,n,v,default4Unrouted,initValue,fonc) {
 
   loadAtEachNode.foreach(v => v.setDefiningInvariant(this))
   vehicleOfNode.foreach(v => v.setDefiningInvariant(this))
-
 
   override def assignNodeValue(node : Int,value : NodeState) = {
     loadAtEachNode(node) := value.loadPerProduct.map(pAndL => pAndL._2).sum
