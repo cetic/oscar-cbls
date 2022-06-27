@@ -14,7 +14,8 @@ abstract class BackwardNaiveRoutingConstraint[U <: Any : Manifest](routes : Chan
                                                                    fonc : (Int,Int,U) => U)
   extends AbstractNaiveRoutingConstraint[U](routes,n,v,defaultValue,initValuePerVehicle,fonc) {
 
-  override def getNextPointOfSegmentToUpdate(expl : IntSequenceExplorer,seg : Segment) : Option[IntSequenceExplorer] =  {
+  override def getNextPointOfSegmentToUpdate(expl : IntSequenceExplorer,
+                                             seg : Segment) : Option[IntSequenceExplorer] =  {
     seg match {
       case NewNode(_) => None
       case PreComputedSubSequence(fstNode,_,_) =>

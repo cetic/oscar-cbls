@@ -7,7 +7,9 @@ import oscar.cbls.core.computation.ChangingSeqValue
 import oscar.cbls.lib.invariant.logic.Filter
 
 /**
- * this is DRAFT
+ * Given a routing problem where each node have a class (an integer)
+ * it maintains the set of route nodes such that their successor belongs to another class
+ * This invariant is very useful for pre-filterig application, as a speedup for complex neighborhoods.
  */
 object FilteringBasedOnDifferentSuccessorClass {
   /**
