@@ -55,7 +55,9 @@ object FilteringBasedOnDifferentPredecessorClass {
         op = {
           case (node, nextNode, _) => (if (nodeClass(node) != nodeClass(nextNode)) 1 else 0)},
         contentAtStart = Array.fill(v)(CBLSIntConst(0)),
-        defaultForUnroutedNodes = 0)
+        defaultForUnroutedNodes = 0,
+        minContent = 0,
+        maxContent = 1)
 
     Filter(nodeHasPredecessorOfDifferentClass)
   }
