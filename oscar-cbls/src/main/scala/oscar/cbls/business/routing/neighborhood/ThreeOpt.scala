@@ -233,7 +233,9 @@ case class ThreeOptByNodes(potentialInsertionNodes:()=>Iterable[Int], //must be 
         for (segmentEndNode <- segmentEndIt
              if (positionOfAllNode(segmentEndNode) < vrp.n
                && vehicleOfMovedSegment == nodeToVehicle(segmentEndNode)
-               && positionOfAllNode(relevantSegmentStart) < positionOfAllNode(segmentEndNode) )) {
+               && positionOfAllNode(relevantSegmentStart) < positionOfAllNode(segmentEndNode)
+               && (positionOfAllNode(insertionNodeTmp) < positionOfAllNode(relevantSegmentStart) ||
+                    positionOfAllNode(segmentEndNode) < positionOfAllNode(insertionNodeTmp)))) {
 
           segmentEndPositionForInstantiation = positionOfAllNode(segmentEndNode)
 
