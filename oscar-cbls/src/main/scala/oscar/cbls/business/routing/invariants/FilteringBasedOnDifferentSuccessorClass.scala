@@ -2,8 +2,8 @@
 package oscar.cbls.business.routing.invariants
 
 import oscar.cbls.SetValue
-import oscar.cbls.business.routing.invariants.capa.BackwardIntegerDimensionOnVehicle
-import oscar.cbls.core.computation.ChangingSeqValue
+import oscar.cbls.business.routing.invariants.capa.{BackwardIntegerDimensionOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle}
+import oscar.cbls.core.computation.{CBLSIntConst, ChangingSeqValue}
 import oscar.cbls.lib.invariant.logic.Filter
 
 /**
@@ -32,5 +32,31 @@ object FilteringBasedOnDifferentSuccessorClass {
       }).contentAtEachNode
 
     Filter(nodeHasSuccessorOfDifferentClass)
+  }
+}
+
+//This is DRAFT
+object FilteringBasedOnDifferentPredecessorClass {
+  /**
+   * @param routes a route
+   * @param v the number of vehicles
+   * @param nodeClass the class of each node
+   * @return the set of all routed nodes such that the predecessor belongs to another class
+   */
+  def apply(routes: ChangingSeqValue,
+            n:Int,
+            v: Int,
+            nodeClass: Int => Int): SetValue = {
+
+    val (nodeHasPredecessorOfDifferentClass,_,_,_) =
+      ForwardCumulativeIntegerDimensionOnVehicle(routes,
+        n = n,
+        v = n,
+        op = {
+          case (node, nextNode, _) => (if (nodeClass(node) != nodeClass(nextNode)) 1 else 0)},
+        contentAtStart = Array.fill(v)(CBLSIntConst(0)),
+        defaultForUnroutedNodes = 0)
+
+    Filter(nodeHasPredecessorOfDifferentClass)
   }
 }
