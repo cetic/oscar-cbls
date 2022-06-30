@@ -51,7 +51,7 @@ object FilteringBasedOnDifferentPredecessorClass {
     val (nodeHasPredecessorOfDifferentClass,_,_,_) =
       ForwardCumulativeIntegerDimensionOnVehicle(routes,
         n = n,
-        v = n,
+        v = v,
         op = {
           case (node, nextNode, _) => (if (nodeClass(node) != nodeClass(nextNode)) 1 else 0)},
         contentAtStart = Array.fill(v)(CBLSIntConst(0)),
