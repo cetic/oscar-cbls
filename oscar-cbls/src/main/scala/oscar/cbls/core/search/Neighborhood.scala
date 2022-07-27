@@ -25,6 +25,7 @@ import oscar.cbls.util.Properties
 import scala.collection.immutable.SortedMap
 
 abstract sealed class SearchResult
+
 case object NoMoveFound extends SearchResult
 
 case class MoveFound(m: Move) extends SearchResult {

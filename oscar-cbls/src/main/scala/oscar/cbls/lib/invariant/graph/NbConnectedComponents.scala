@@ -42,7 +42,7 @@ class NbConnectedComponents(graph:ConditionalGraph,
       conditionalEdge.conditionID)
   })
 
-  private val contractedGraph = new ConditionalGraph(newNodes,newEdges,graph.nbConditions)
+  private val contractedGraph = ConditionalGraph(newNodes,newEdges,graph.nbConditions)
 
   println(contractedGraph.statistics)
 

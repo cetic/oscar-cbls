@@ -2,7 +2,7 @@ package oscar.cbls.modeling
 
 import oscar.cbls.core.computation.{AbstractVariable, Solution}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{JumpNeighborhood, Move, Neighborhood, NeighborhoodCombinator, NoMoveNeighborhood, SupportForAndThenChaining}
+import oscar.cbls.core.search.{JumpNeighborhood, Move, Neighborhood, NoMoveNeighborhood, SupportForAndThenChaining}
 import oscar.cbls.lib.search.combinators._
 
 import scala.concurrent.duration.{Duration, DurationInt}

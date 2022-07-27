@@ -5,7 +5,6 @@ import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search._
 
 import scala.annotation.tailrec
-import scala.util.Random
 
 case class RestrictedNeighborhood(n:Neighborhood, minimalSpaceBetweenExplorations:Long = 0)
 

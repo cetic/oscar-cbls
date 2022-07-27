@@ -19,7 +19,7 @@ import org.scalacheck.Gen
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 import oscar.cbls._
-import oscar.cbls.benchmarks.vrp.RoutingMatrixGenerator
+import oscar.cbls.algo.generator.RoutingMatrixGenerator
 import oscar.cbls.lib.constraint._
 import oscar.cbls.lib.invariant.logic._
 import oscar.cbls.lib.invariant.seq._
@@ -343,7 +343,7 @@ class InvariantTests extends AnyFunSuite with Checkers {
   test ("Precedence"){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     val seqVar = bench.genNotRandomIntSeqVar(100)
-    val precedences = RoutingMatrixGenerator.generatePrecedence(seqVar.value.size,0,seqVar.value.size/2)
+    val precedences = RoutingMatrixGenerator.generatePrecedences(seqVar.value.size,0,seqVar.value.size/2)
     Precedence(seqVar,precedences)
     bench.run()
   }
@@ -372,7 +372,7 @@ class InvariantTests extends AnyFunSuite with Checkers {
     bench.run()
   }
 
-  test ("OccurenceOf maintains the occurence of a certain value"){
+  test ("OccurrencesOf maintains the occurrence of a certain value"){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     val seqVar = bench.genIntSeqVar()
     OccurrencesOf(seqVar,Gen.choose(0, 100).sample.get)

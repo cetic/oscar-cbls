@@ -1,15 +1,15 @@
-package examples.oscar.cbls.distrib
+package examples.oscar.cbls.benchmarks
 
-import examples.oscar.cbls.wlp.WarehouseLocationGenerator
+import oscar.cbls._
+import oscar.cbls.algo.generator.WarehouseLocationGenerator
 import oscar.cbls.business.scheduling.ActivityId
 import oscar.cbls.core.distrib.Supervisor
 import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.lib.search.combinators.distributed.{DistributedBest, DistributedFirst}
-import oscar.cbls._
 
 import scala.collection.parallel.immutable.ParRange
 
-object WLDBenchmark {
+object WLPDistributedBench {
   case class BenchResult(nbName: String,
                          nbWorkers: Int,
                          nbWarehouses: Int,
@@ -58,16 +58,20 @@ object WLDBenchmark {
     val arrayNbs: Array[Neighborhood] = Array(
       assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
       swapsNeighborhood(warehouseOpenArray, searchZone1 = {
-        val range = divRange.map(_ * 4); () => range
+        val range = divRange.map(_ * 4);
+        () => range
       }, name = "SwapWarehouses1"),
       swapsNeighborhood(warehouseOpenArray, searchZone1 = {
-        val range = divRange.map(_ * 4 + 1); () => range
+        val range = divRange.map(_ * 4 + 1);
+        () => range
       }, name = "SwapWarehouses2"),
       swapsNeighborhood(warehouseOpenArray, searchZone1 = {
-        val range = divRange.map(_ * 4 + 2); () => range
+        val range = divRange.map(_ * 4 + 2);
+        () => range
       }, name = "SwapWarehouses3"),
       swapsNeighborhood(warehouseOpenArray, searchZone1 = {
-        val range = divRange.map(_ * 4 + 3); () => range
+        val range = divRange.map(_ * 4 + 3);
+        () => range
       }, name = "SwapWarehouses4"))
     val neighborhood = if (isFirstNb) new DistributedFirst(arrayNbs) else new DistributedBest(arrayNbs)
     (m, obj, neighborhood)

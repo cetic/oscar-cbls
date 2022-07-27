@@ -1,6 +1,6 @@
 package oscar.cbls.lib.search.combinators
 
-import oscar.cbls.core.objective.{CascadingObjective, FunctionObjective, Objective}
+import oscar.cbls.core.objective.{FunctionObjective, Objective}
 import oscar.cbls.core.search.{InstrumentedMove, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, OverrideObj, SearchResult}
 
 object Restart{
@@ -18,7 +18,12 @@ object Restart{
    * @param maxRestartWithoutImprovement the stop criterion of the restarting
    * @param obj the objective function
    */
-  def apply(n:Neighborhood,randomizationNeighborhood:Neighborhood, maxRestartWithoutImprovement:Int, obj:Objective, restartFromBest:Boolean=false, minRestarts:Int = 0):Neighborhood = {
+  def apply(n:Neighborhood,
+            randomizationNeighborhood:Neighborhood,
+            maxRestartWithoutImprovement:Int,
+            obj:Objective,
+            restartFromBest:Boolean=false,
+            minRestarts:Int = 0): Neighborhood = {
     ((if(restartFromBest) n saveBestOnExhaustAndRestoreOnExhaust obj else n) orElse ((randomizationNeighborhood
       maxMoves maxRestartWithoutImprovement withoutImprovementOver obj improvementBeingMeasuredBeforeNeighborhoodExploration) withMinimalMoves(minRestarts))
       ) saveBestAndRestoreOnExhaust obj
@@ -102,8 +107,8 @@ class LateAcceptanceHillClimbing(a:Neighborhood, length:Int = 20, maxRelativeInc
 
   var initialized = false
 
-  var maxToleratedObj = Long.MaxValue
-  var bestKnownObj = Long.MaxValue
+  var maxToleratedObj: Long = Long.MaxValue
+  var bestKnownObj: Long = Long.MaxValue
 
   def init(initialObj:Long): Unit = {
     for(i <- memory.indices) memory(i) = initialObj

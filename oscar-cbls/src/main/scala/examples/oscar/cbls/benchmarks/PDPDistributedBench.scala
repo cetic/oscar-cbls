@@ -1,43 +1,48 @@
-package examples.oscar.cbls.distrib
+package examples.oscar.cbls.benchmarks
 
 import oscar.cbls._
 import oscar.cbls.algo.generator.RoutingMatrixGenerator
-import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global.RouteLength
 import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleCapacityConstraint
 import oscar.cbls.business.routing.model.helpers.DistanceHelper
+import oscar.cbls.business.routing._
 import oscar.cbls.core.distrib.Supervisor
 import oscar.cbls.core.search.Neighborhood
-import oscar.cbls.lib.search.combinators.distributed._
+import oscar.cbls.lib.search.combinators.distributed.{DistributedBest, DistributedFirst, Remote}
 import oscar.cbls.modeling.ModelingAPI
 
 import scala.collection.immutable.HashSet
 import scala.collection.parallel.immutable.ParRange
 
-object BenchmarkerPDP extends ModelingAPI {
+object PDPDistributedBench extends ModelingAPI {
   // Inner Classes
   sealed trait NeighborhoodType {
     def withHotRestart: Boolean
   }
+
   case object Sequential extends NeighborhoodType {
 
     override def toString: String = "Sequential"
 
     override val withHotRestart: Boolean = false
   }
+
   case object DistRemote extends NeighborhoodType {
     override def toString: String = "Remote"
 
     override val withHotRestart: Boolean = false
   }
-  case object DistRestart extends NeighborhoodType  {
+
+  case object DistRestart extends NeighborhoodType {
     override def toString: String = "Distributed Restart"
 
     override val withHotRestart: Boolean = false
   }
-  case class DistFirst(withHotRestart: Boolean = true) extends NeighborhoodType  {
+
+  case class DistFirst(withHotRestart: Boolean = true) extends NeighborhoodType {
     override def toString: String = "Distributed First"
   }
+
   case class DistBest(withHotRestart: Boolean = true) extends NeighborhoodType {
     override def toString: String = "Distributed Best"
   }
@@ -59,7 +64,7 @@ object BenchmarkerPDP extends ModelingAPI {
   val NB_ITERS = 20
 
   //Max nbWorkers
-  val MAX_WORKERS: Int = 10
+  val MAX_WORKERS: Int = 8
 
   // Constants
   val penaltyForUnrouted = 10000
@@ -69,7 +74,7 @@ object BenchmarkerPDP extends ModelingAPI {
   def createPDPParameters(nbVehicles: Int,
                           nbPoints: Int): (Array[Array[Long]], List[List[Int]], List[(Int, Int)], Array[Long], Array[Long]) = {
     val symmetricDistance = RoutingMatrixGenerator(nbPoints)._1
-    val (listOfChains,precedences) = RoutingMatrixGenerator.generateChainsPrecedence(nbPoints, nbVehicles, (nbPoints-nbVehicles)/2)
+    val (listOfChains, precedences) = RoutingMatrixGenerator.generateChainsPrecedence(nbPoints, nbVehicles, (nbPoints - nbVehicles) / 2)
     val contentsFlow = RoutingMatrixGenerator.generateContentFlow(nbPoints, listOfChains, maxVehicleCapacity)
     val vehiclesCapacity = RoutingMatrixGenerator.generateVehiclesSize(nbVehicles, maxVehicleCapacity, minVehicleCapacity)
     /////
@@ -86,19 +91,19 @@ object BenchmarkerPDP extends ModelingAPI {
                       neighborhoodType: NeighborhoodType): (Store, Objective, Neighborhood) = {
     //CBLS Store
     val m = Store(noCycle = false)
-    val myVRP =  new VRP(m, nbPoints, nbVehicles)
+    val myVRP = new VRP(m, nbPoints, nbVehicles)
     // Distance
     val vehiclesRouteLength = Array.tabulate(nbVehicles)(vehicle => CBLSIntVar(m, name = s"Route length of vehicle $vehicle"))
-    val routeLengthInvariant = new RouteLength(myVRP.routes, nbPoints, nbVehicles, vehiclesRouteLength,(from: Int, to: Int) => symmetricDistance(from)(to))
+    val routeLengthInvariant = new RouteLength(myVRP.routes, nbPoints, nbVehicles, vehiclesRouteLength, (from: Int, to: Int) => symmetricDistance(from)(to))
     //Chains
     val precedenceRoute = myVRP.routes.createClone()
     val precedenceInvariant = precedence(precedenceRoute, precedences)
     val vehicleOfNodesNow = vehicleOfNodes(precedenceRoute, nbVehicles)
     val precedencesConstraints = ConstraintSystem(m)
-    for(start <- precedenceInvariant.nodesStartingAPrecedence)
+    for (start <- precedenceInvariant.nodesStartingAPrecedence)
       precedencesConstraints.add(vehicleOfNodesNow(start) === vehicleOfNodesNow(precedenceInvariant.nodesEndingAPrecedenceStartedAt(start).head))
     precedencesConstraints.add(0 === precedenceInvariant)
-    val chainsExtension = chains(myVRP,listOfChains)
+    val chainsExtension = chains(myVRP, listOfChains)
     // Vehicle content
     val violationOfContentOfVehicle = Array.tabulate(nbVehicles)(vehicle =>
       CBLSIntVar(myVRP.routes.model, name = s"Violation of capacity of vehicle $vehicle"))
@@ -106,13 +111,13 @@ object BenchmarkerPDP extends ModelingAPI {
     // Objective function
     val obj = new CascadingObjective(precedencesConstraints,
       new CascadingObjective(sum(violationOfContentOfVehicle),
-        sum(vehiclesRouteLength) + (penaltyForUnrouted*(nbPoints - length(myVRP.routes)))))
+        sum(vehiclesRouteLength) + (penaltyForUnrouted * (nbPoints - length(myVRP.routes)))))
     m.close()
     // Neighborhoods
     val relevantPredecessors = capacityInvariant.relevantPredecessorsOfNodes
-    val closestRelevantPredecessorsByDistance = Array.tabulate(nbPoints)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance,relevantPredecessors)(_))
+    val closestRelevantPredecessorsByDistance = Array.tabulate(nbPoints)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance, relevantPredecessors)(_))
     val nextMoveGenerator = {
-      (exploredMoves:List[OnePointMoveMove], t:Option[List[Int]]) => {
+      (exploredMoves: List[OnePointMoveMove], t: Option[List[Int]]) => {
         val chainTail: List[Int] = t match {
           case None =>
             val movedNode = exploredMoves.head.movedPoint
@@ -125,21 +130,22 @@ object BenchmarkerPDP extends ModelingAPI {
           case _ :: Nil => None
           case nextNodeToMove :: newTail =>
             val moveNeighborhood = onePointMove(() => Some(nextNodeToMove),
-              () => ChainsHelper.computeRelevantNeighborsForInternalNodes(myVRP,chainsExtension), myVRP)
+              () => ChainsHelper.computeRelevantNeighborsForInternalNodes(myVRP, chainsExtension), myVRP)
             Some(moveNeighborhood, Some(newTail))
         }
       }
     }
     val firstNodeOfChainMove = onePointMove(
       () => myVRP.routed.value.filter(chainsExtension.isHead),
-      ()=> myVRP.kFirst(nbVehicles*2, closestRelevantPredecessorsByDistance(_)),
+      () => myVRP.kFirst(nbVehicles * 2, closestRelevantPredecessorsByDistance(_)),
       myVRP,
       neighborhoodName = "MoveHeadOfChain"
     )
+
     /////
-    def lastNodeOfChainMove(lastNode:Int) = onePointMove(
+    def lastNodeOfChainMove(lastNode: Int) = onePointMove(
       () => List(lastNode),
-      () => myVRP.kFirst(nbVehicles*2,
+      () => myVRP.kFirst(nbVehicles * 2,
         ChainsHelper.relevantNeighborsForLastNodeAfterHead(
           myVRP,
           chainsExtension,
@@ -147,6 +153,7 @@ object BenchmarkerPDP extends ModelingAPI {
       myVRP,
       neighborhoodName = "MoveLastOfChain"
     )
+
     // One Chain Move Neighborhood
     val oneChainMove = dynAndThen(firstNodeOfChainMove,
       (moveMove: OnePointMoveMove) => {
@@ -158,14 +165,16 @@ object BenchmarkerPDP extends ModelingAPI {
           intermediaryStops = false)
       }
     ) name "OneChainMove"
+
     /////
-    def onePtMove(k:Int) = onePointMove(
+    def onePtMove(k: Int) = onePointMove(
       myVRP.routed,
-      () => myVRP.kFirst(k,closestRelevantPredecessorsByDistance(_)), myVRP
+      () => myVRP.kFirst(k, closestRelevantPredecessorsByDistance(_)), myVRP
     )
+
     // INSERTING
     val nextInsertGenerator = {
-      (exploredMoves:List[InsertPointMove], t:Option[List[Int]]) => {
+      (exploredMoves: List[InsertPointMove], t: Option[List[Int]]) => {
         val chainTail: List[Int] = t match {
           case None =>
             val insertedNode = exploredMoves.head.insertedPoint
@@ -177,35 +186,37 @@ object BenchmarkerPDP extends ModelingAPI {
           case head :: Nil => None
           case nextNodeToInsert :: newTail =>
             val insertNeighborhood = insertPointUnroutedFirst(() => Some(nextNodeToInsert),
-              () => ChainsHelper.computeRelevantNeighborsForInternalNodes(myVRP,chainsExtension), myVRP)
+              () => ChainsHelper.computeRelevantNeighborsForInternalNodes(myVRP, chainsExtension), myVRP)
             Some(insertNeighborhood, Some(newTail))
         }
       }
     }
     val firstNodeOfChainInsertion = insertPointUnroutedFirst(
       () => myVRP.unrouted.value.filter(chainsExtension.isHead),
-      ()=> {
-        myVRP.kFirst(nbVehicles*2, closestRelevantPredecessorsByDistance(_))
+      () => {
+        myVRP.kFirst(nbVehicles * 2, closestRelevantPredecessorsByDistance(_))
       },
       myVRP,
       neighborhoodName = "InsertUF"
     )
+
     /////
-    def lastNodeOfChainInsertion(lastNode:Int) = insertPointUnroutedFirst(
+    def lastNodeOfChainInsertion(lastNode: Int) = insertPointUnroutedFirst(
       () => List(lastNode),
       () => myVRP.kFirst(
-        nbVehicles*2,
+        nbVehicles * 2,
         ChainsHelper.relevantNeighborsForLastNodeAfterHead(
           myVRP,
           chainsExtension)),
       myVRP,
       neighborhoodName = "InsertUF"
     )
+
     // One Chain Insert Neighborhood
     val oneChainInsert = dynAndThen(
       firstNodeOfChainInsertion,
       (insertMove: InsertPointMove) => {
-        mu[InsertPointMove,Option[List[Int]]](
+        mu[InsertPointMove, Option[List[Int]]](
           lastNodeOfChainInsertion(chainsExtension.lastNodeInChainOfNode(insertMove.insertedPoint)),
           nextInsertGenerator,
           None,
@@ -250,7 +261,7 @@ object BenchmarkerPDP extends ModelingAPI {
     val (_, obj, nb) = createCBLSModel(nbVehicles, nbPoints, symmetricDistance,
       listOfChains, precedences, contentsFlow, vehiclesCapacity, neighborhoodType)
     val t1 = System.nanoTime()
-    val timeCreation = (t1-t0)/1000000
+    val timeCreation = (t1 - t0) / 1000000
     // Search Procedure Execution
     val benchResult: BenchResult = neighborhoodType match {
       case Sequential =>
@@ -258,19 +269,19 @@ object BenchmarkerPDP extends ModelingAPI {
         val t2 = System.nanoTime()
         val iters = nb.doAllMoves(obj = obj)
         val t3 = System.nanoTime()
-        val timeRun = (t3-t2)/1000000
+        val timeRun = (t3 - t2) / 1000000
         val objValue = obj.value
         BenchResult(nbName, neighborhoodType.withHotRestart, 0, nbVehicles, nbPoints, timeCreation, 0, timeRun, objValue, iters)
       case _ =>
         // Stage 2 : Start actor system
         val t2 = System.nanoTime()
-        val supervisor:Supervisor = Supervisor.startSupervisorAndActorSystem(nb, hotRestart = neighborhoodType.withHotRestart)
+        val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(nb, hotRestart = neighborhoodType.withHotRestart)
         val t3 = System.nanoTime()
-        val timeActSys = (t3-t2)/1000000
+        val timeActSys = (t3 - t2) / 1000000
         // Stage 3 : Run procedure
         val t4 = System.nanoTime()
         var iters = 0
-        for (i <- ParRange(0, nbWorkers+1, 1, inclusive = true)) {
+        for (i <- ParRange(0, nbWorkers + 1, 1, inclusive = true)) {
           if (i == 0) {
             nb.verbose = 0
             iters = nb.doAllMoves(obj = obj)
@@ -283,7 +294,7 @@ object BenchmarkerPDP extends ModelingAPI {
         }
         supervisor.shutdown()
         val t5 = System.nanoTime()
-        val timeRun = (t5-t4)/1000000
+        val timeRun = (t5 - t4) / 1000000
         val objValue = obj.value
         BenchResult(nbName, neighborhoodType.withHotRestart, nbWorkers, nbVehicles, nbPoints, timeCreation, timeActSys, timeRun, objValue, iters)
     }
@@ -327,7 +338,7 @@ object BenchmarkerPDP extends ModelingAPI {
         // Distributed First without Hot restart
         runBenchmarkNb(j, nbVs(i), nbPs(i), sDI, lOCI, precI, cFI, vCI, DistFirst(false))
         // Distributed Best with Hot restart
-        runBenchmarkNb(j, nbVs(i), nbPs(i),sDI, lOCI, precI, cFI, vCI, DistBest())
+        runBenchmarkNb(j, nbVs(i), nbPs(i), sDI, lOCI, precI, cFI, vCI, DistBest())
         // Distributed Best without Hot restart
         runBenchmarkNb(j, nbVs(i), nbPs(i), sDI, lOCI, precI, cFI, vCI, DistBest(false))
       }

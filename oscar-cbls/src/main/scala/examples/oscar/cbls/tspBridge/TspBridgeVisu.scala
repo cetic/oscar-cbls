@@ -7,7 +7,6 @@ import oscar.cbls.visual.graph.SimpleGraphViewer
 import java.awt.Color
 import scala.collection.immutable.SortedSet
 
-
 class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
                     v:Int,
                     n:Int,
@@ -76,7 +75,6 @@ class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
 
     //routing nodes
 
-
     //start points
     for(vehicle <- 0 until v){
       val node = graph.nodes(vehicle)
@@ -95,7 +93,6 @@ class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
   def drawPath(fromNode:Node, toNode:Node, openConditions:SortedSet[Int]): Unit ={
     //println(fromNode + " -- " + toNode)
     //println(graph.coordinates(fromNode.id) + " -- " + graph.coordinates(toNode.id))
-
     drawEdges(aStarEngine.getPath(fromNode,toNode,openConditions).get, 2, Color.BLUE)
   }
 }

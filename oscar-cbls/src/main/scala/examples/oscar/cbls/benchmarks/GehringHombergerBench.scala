@@ -1,4 +1,4 @@
-package examples.oscar.cbls.routing
+package examples.oscar.cbls.benchmarks
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
@@ -17,14 +17,14 @@ import scala.io.Source
 import scala.math.Ordering.Implicits.seqOrdering
 import scala.util.Random
 
-object Gehring_Homberger_Benchmark extends App {
+object GehringHombergerBench extends App {
   val size = args(1).toInt
   val files = new File(args(0)).listFiles().toList.sorted
 
   for(file <- files) {
     println(file.getName)
     val problem = generateProblem(file)
-    new Gehring_Homberger_Benchmark_VRPTW(problem._1, problem._2, problem._3, problem._4, problem._5, problem._6)
+    new GehringHombergerBenchmarkVRPTW(problem._1, problem._2, problem._3, problem._4, problem._5, problem._6)
   }
 
   private def generateProblem(file: File): (Int, Int, Long, Array[Array[Long]], Array[TransferFunction], Array[Long]) ={
@@ -77,7 +77,7 @@ object Gehring_Homberger_Benchmark extends App {
   }
 }
 
-class Gehring_Homberger_Benchmark_VRPTW(n: Int, v: Int, c: Long, distanceMatrix: Array[Array[Long]], singleNodeTransferFunctions: Array[TransferFunction], demands: Array[Long]){
+class GehringHombergerBenchmarkVRPTW(n: Int, v: Int, c: Long, distanceMatrix: Array[Array[Long]], singleNodeTransferFunctions: Array[TransferFunction], demands: Array[Long]){
   val m = Store(noCycle = false)
   val myVRP = new VRP(m,n,v)
   val penaltyForUnrouted = 1000000

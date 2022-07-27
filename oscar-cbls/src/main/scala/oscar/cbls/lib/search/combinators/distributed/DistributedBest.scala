@@ -2,7 +2,7 @@ package oscar.cbls.lib.search.combinators.distributed
 
 import akka.actor.typed.ActorSystem
 import akka.util.Timeout
-import oscar.cbls.core.distrib.{DelegateSearch, IndependentMoveFound, IndependentNoMoveFound, IndependentSearchResult, IndependentSolution, SearchCompleted, SearchCrashed, SearchEnded, SearchRequest, SingleMoveSearch, StartSomeSearch}
+import oscar.cbls.core.distrib.{DelegateSearch, IndependentMoveFound, IndependentNoMoveFound, IndependentSearchResult, IndependentSolution, SearchCompleted, SearchCrashed, SearchEnded, SingleMoveSearch, StartSomeSearch}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
 
@@ -24,7 +24,7 @@ class DistributedBest(neighborhoods:Array[Neighborhood],useHotRestart:Boolean = 
 
     val futureResults =  remoteNeighborhoodIdentifications.map(r => {
 
-      supervisor.supervisorActor.ask[SearchEnded[IndependentSearchResult]](ref =>
+      supervisor.supervisorActor.ask[SearchEnded](ref =>
         DelegateSearch(SingleMoveSearch(
           remoteTaskId = r,
           acc =  acceptanceCriteria,
@@ -41,9 +41,9 @@ class DistributedBest(neighborhoods:Array[Neighborhood],useHotRestart:Boolean = 
 
     val independentMoveFound:Iterable[IndependentMoveFound] = futureResults.flatMap(futureResult =>
       Await.result(futureResult,Duration.Inf) match {
-        case SearchCompleted(_, searchResult, durationMS) =>
-          searchResult match{
-            case _:IndependentNoMoveFound => None
+        case SearchCompleted(_, searchResult: IndependentSearchResult, _) =>
+          searchResult match {
+            case IndependentNoMoveFound => None
             case m:IndependentMoveFound => Some(m)
           }
         case c:SearchCrashed =>

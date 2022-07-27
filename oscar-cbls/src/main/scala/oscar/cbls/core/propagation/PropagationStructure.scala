@@ -29,8 +29,6 @@ import oscar.cbls.algo.heap.{AbstractHeap, AggregatedBinomialHeapQList, Binomial
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.tarjan._
-import oscar.cbls.core.ChangingIntValue
-import oscar.cbls.core.computation.Variable
 
 /**
  * a schedulingHandler handles the scheduling for a set of PE.
@@ -88,7 +86,11 @@ trait SchedulingHandler {
  * @param sortScc true if SCC should be sorted, false otherwise. Set to true, unless you know what your are doing. Setting to false might provide a speedup, but propagation will not be single pass on SCC anymore
  * @author renaud.delandtsheer@cetic.be
  */
-abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Checker] = None, val noCycle: Boolean, val topologicalSort: Boolean, val sortScc: Boolean = true)
+abstract class PropagationStructure(val verbose: Boolean,
+                                    val checker: Option[Checker] = None,
+                                    val noCycle: Boolean,
+                                    val topologicalSort: Boolean,
+                                    val sortScc: Boolean = true)
   extends SchedulingHandler {
 
   protected var closed: Boolean = false
@@ -584,7 +586,8 @@ class NodeDictionary[T](val MaxNodeID: Int)(implicit val X: Manifest[T]) {
 }
 
 abstract class StronglyConnectedComponent(val propagationElements: Iterable[PropagationElement],
-                                          val core: PropagationStructure, val _UniqueID: Int) extends PropagationElement with SchedulingHandler {
+                                          val core: PropagationStructure, val _UniqueID: Int)
+  extends PropagationElement with SchedulingHandler {
   schedulingHandler = core
   uniqueID = _UniqueID
 

@@ -648,6 +648,7 @@ class BinomialHeapWithMoveInt(getKey:Int => Int,val maxsize:Int, val maxKey:Int)
         acc
       }
     }
+    //////////
     if(size == 0)List.empty
     else ExploreFirsts(getKey(heapArray(0)),0,List.empty)
   }
@@ -655,14 +656,13 @@ class BinomialHeapWithMoveInt(getKey:Int => Int,val maxsize:Int, val maxKey:Int)
   def getFirst:Int=heapArray(0)
 
   /**
-    *
     * removes the smallest element and returns its value
     * @return
     */
   def removeFirst():Int={
     val toreturn:Int = heapArray(0)
     swapPositions(0,size-1)
-    size -=1
+    size -= 1
     position(toreturn) = -1
     pushDown(0)
     toreturn
@@ -676,11 +676,11 @@ class BinomialHeapWithMoveInt(getKey:Int => Int,val maxsize:Int, val maxKey:Int)
   def delete(elem:Int): Unit = {
     val startposition:Int = position(elem)
     if (startposition == size-1){
-      size -=1
+      size -= 1
       position(elem) = -1
     }else{
       swapPositions(startposition,size-1)
-      size -=1
+      size -= 1
       position(elem) = -1
       pushDown(pushUp(startposition))
     }
@@ -688,8 +688,8 @@ class BinomialHeapWithMoveInt(getKey:Int => Int,val maxsize:Int, val maxKey:Int)
 
   /**
    * removes one elem from the heap if present
-   * @param elem
-   * @return trus if it was in the heap, false otherwise
+   * @param elem the element to seek in the heap
+   * @return true if it was in the heap, false otherwise
    */
   def deleteIfPresent(elem:Int):Boolean = {
     if(contains(elem)){
@@ -781,7 +781,7 @@ class BinomialHeapWithMoveLong(getKey:Int => Long,val maxsize:Int, val maxKey:In
         return position
       }
     }
-    //jamais execute
+    //never reached
     position
   }
 
@@ -797,7 +797,8 @@ class BinomialHeapWithMoveLong(getKey:Int => Long,val maxsize:Int, val maxKey:In
         return position
       }
     }
-    position //never reached
+    //never reached
+    position
   }
 
   @inline
@@ -816,6 +817,7 @@ class BinomialHeapWithMoveLong(getKey:Int => Long,val maxsize:Int, val maxKey:In
         acc
       }
     }
+    //////////
     if(size == 0)List.empty
     else ExploreFirsts(getKey(heapArray(0)),0,List.empty)
   }
@@ -823,14 +825,13 @@ class BinomialHeapWithMoveLong(getKey:Int => Long,val maxsize:Int, val maxKey:In
   def getFirst:Long=heapArray(0)
 
   /**
-    *
     * removes the smallest element and returns its value
-    * @return
+    * @return the value of the deleted element (the smallest one)
     */
   def removeFirst():Int={
     val toreturn:Int = heapArray(0)
     swapPositions(0,size-1)
-    size -=1
+    size -= 1
     position(toreturn) = -1
     pushDown(0)
     toreturn
@@ -842,7 +843,7 @@ class BinomialHeapWithMoveLong(getKey:Int => Long,val maxsize:Int, val maxKey:In
   }
 
   def delete(elem:Int): Unit = {
-    require(size > 0, "Attempt to delete on empty heap")
+    require(size > 0, "Attempt to delete an element on empty heap")
     val startposition:Int = position(elem)
     if (startposition == size-1){
       size -=1

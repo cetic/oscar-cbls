@@ -34,7 +34,7 @@ class LinearTransform(val offset:Int,val minus:Boolean){
 
   /**
    * delivers a new linear transform that is equal to this(that(value))
-   * @param that
+   * @param that the other linear transform
    * @return
    */
   def apply(that: LinearTransform):LinearTransform = {

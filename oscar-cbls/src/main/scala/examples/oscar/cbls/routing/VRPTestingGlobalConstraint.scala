@@ -1,5 +1,7 @@
 package examples.oscar.cbls.routing
 
+import oscar.cbls._
+import oscar.cbls.algo.generator.RoutingMatrixGenerator
 import oscar.cbls.business.routing.invariants.NbNodes
 import oscar.cbls.business.routing.invariants.global.RouteLength
 import oscar.cbls.business.routing.model.helpers.DistanceHelper
@@ -9,7 +11,6 @@ import oscar.cbls.core.computation.{CBLSIntVar, Store}
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.core.search.Best
-import oscar.cbls._
 
 object VRPTestingGlobalConstraint extends App {
 

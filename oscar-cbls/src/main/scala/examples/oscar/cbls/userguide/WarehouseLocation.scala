@@ -17,8 +17,8 @@
 
 package examples.oscar.cbls.userguide
 
-import examples.oscar.cbls.wlp.WarehouseLocationGenerator
 import oscar.cbls._
+import oscar.cbls.algo.generator.WarehouseLocationGenerator
 
 import scala.language.postfixOps
 

@@ -17,6 +17,7 @@
 package examples.oscar.cbls.wlp
 
 import oscar.cbls._
+import oscar.cbls.algo.generator.WarehouseLocationGenerator
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.core.search.{Best, Neighborhood}
 import oscar.cbls.lib.invariant.logic.Filter

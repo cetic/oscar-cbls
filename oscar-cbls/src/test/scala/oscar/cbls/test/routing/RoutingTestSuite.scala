@@ -3,7 +3,7 @@ package oscar.cbls.test.routing
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 import oscar.cbls._
-import oscar.cbls.benchmarks.vrp.RoutingMatrixGenerator
+import oscar.cbls.algo.generator.RoutingMatrixGenerator
 import oscar.cbls.business.routing.invariants._
 import oscar.cbls.business.routing.invariants.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle}
 import oscar.cbls.test.invariants.bench._
@@ -61,7 +61,7 @@ class RoutingTestSuite extends AnyFunSuite with Checkers{
     val n = 100
     val v = 5
     val route = bench.genRouteOfNodes(n,v)
-    val nodeVehicleRestrictions = RoutingMatrixGenerator.generateRestrictions(n,v,n/v)
+    val nodeVehicleRestrictions = RoutingMatrixGenerator.generateRestrictions(n,v,n/v).map({case (a,b) => (a.toInt,b.toInt)})
     NodeVehicleRestrictions(route,v,nodeVehicleRestrictions)
     bench.run()
   }

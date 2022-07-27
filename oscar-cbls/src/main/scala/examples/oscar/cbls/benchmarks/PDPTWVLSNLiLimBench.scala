@@ -1,5 +1,6 @@
-package examples.oscar.cbls.routing
+package examples.oscar.cbls.benchmarks
 
+import oscar.cbls._
 import oscar.cbls.business.routing.invariants.global.RouteLength
 import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TransferFunction}
 import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleCapacityConstraint
@@ -7,14 +8,13 @@ import oscar.cbls.business.routing._
 import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.{Best, Neighborhood, NoMoveNeighborhood}
 import oscar.cbls.lib.search.neighborhoods.vlsn.{CycleFinderAlgoType, VLSN}
-import oscar.cbls._
 
 import java.io.{File, PrintWriter}
 import scala.annotation.tailrec
-import scala.collection.immutable.{List, SortedMap, SortedSet}
+import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.io.Source
 
-object PDPTW_VLSN_Li_Lim_Benchmark_Simple_Bundle extends App {
+object PDPTWVLSNLiLimBench extends App {
   val multFactor: Long = 1000
 
   runOne()
@@ -383,7 +383,6 @@ object PDPTW_VLSN_Li_Lim_Benchmark_Simple_Bundle extends App {
           moveNodeVLSN(delivery, nodesInRouteAfterPickUp)
         }) name s"movePDP"
     }
-
 
     def removeNode(node: Int) = removePoint(
       () => List(node),

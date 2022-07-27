@@ -19,9 +19,10 @@
  ******************************************************************************/
 package oscar.cbls.util
 
-/**This trait implements simple stopwatch functionality used for benchmarking search scripts
-  * @author renaud.delandtsheer@cetic.be
-  * */
+/**
+ * This trait implements simple stopwatch functionality used for benchmarking search scripts
+ * @author renaud.delandtsheer@cetic.be
+ * */
 trait StopWatch {
 
   private var starttime:Long = 0L

@@ -8,6 +8,7 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.search.Neighborhood
 
 import scala.collection.immutable.SortedMap
+import scala.concurrent.duration._
 import scala.concurrent.duration.Duration.Infinite
 import scala.concurrent.{Await, Future, TimeoutException}
 import scala.util.{Failure, Success}
@@ -26,14 +27,6 @@ final case class SearchNotStarted(searchID: Long, startID:Long, worker: ActorRef
 
 final case class Crash(worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
 
-/**
- *
- * @param searchRequest
- * @param sendSearchResultTo
- * @param searchID this ID is useful if we want to cancel searches. You get a uniqueID through GetUniqueID message.
- *                 If you do not want to cancel searches, use the default -1 value here
- * @param waitForMoreSearch
- */
 final case class DelegateSearch(searchRequest: SearchRequest,
                                 waitForMoreSearch:Boolean = false) extends MessagesToSupervisor
 
@@ -50,8 +43,6 @@ final case class NbWorkers(replyTo: ActorRef[Int],waitForAtLeastOneWorker:Boolea
 final case class RemoteStatisticsFor(replyTo:ActorRef[List[Array[String]]],remoteNeighborhood:RemoteTaskIdentification) extends MessagesToSupervisor
 
 final case class SpawnNewActor[T](behavior:Behavior[T],behaviorName:String, replyTo:ActorRef[ActorRef[T]]) extends MessagesToSupervisor
-
-import scala.concurrent.duration._
 
 object Supervisor {
 
@@ -114,7 +105,7 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor],
   }
 
   def nbWorkers: Int = {
-    val ongoingRequest: Future[Int] = supervisorActor.ask[Int](ref => NbWorkers(ref, false))
+    val ongoingRequest: Future[Int] = supervisorActor.ask[Int](ref => NbWorkers(ref, waitForAtLeastOneWorker = false))
     Await.result(ongoingRequest, atMost = 30.seconds)
   }
 
@@ -125,7 +116,7 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor],
    * @return the number of available workers, which is zero if timeout is reached
    */
   def waitForAtLestOneWorker(waitFor:Duration = 5.minutes):Int = {
-    val ongoingRequest: Future[Int] = supervisorActor.ask[Int](ref => NbWorkers(ref,true))
+    val ongoingRequest: Future[Int] = supervisorActor.ask[Int](ref => NbWorkers(ref,waitForAtLeastOneWorker = true))
     try{
       Await.result(ongoingRequest, atMost = waitFor)
     }catch {
@@ -239,18 +230,15 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
 
         def statisticsCollector2(statisticsArray:Array[List[Array[String]]],
                                  waitedAnswers:Int): Behavior[(Int,List[Array[String]])] = {
-
-          Behaviors.receive { (context, command) =>
-            command match {
-              case (i, statistics) =>
-                statisticsArray(i) = statistics
-                if (waitedAnswers == 1) {
-                  replyTo ! statisticsArray.toList.flatten
-                  Behaviors.stopped
-                } else {
-                  statisticsCollector2(statisticsArray, waitedAnswers - 1)
-                }
-            }
+          Behaviors.receiveMessage {
+            case (i, statistics) =>
+              statisticsArray(i) = statistics
+              if (waitedAnswers == 1) {
+                replyTo ! statisticsArray.toList.flatten
+                Behaviors.stopped
+              } else {
+                statisticsCollector2(statisticsArray, waitedAnswers - 1)
+              }
           }
         }
 
@@ -369,26 +357,26 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
         startingSearches.get(startID) match {
           case Some((search2, startID2, worker2)) if startID2 == startID =>
             require(searchID == search2.uniqueSearchId)
-            if (verbose) context.log.info(s"search:${searchID} start confirmed by worker:${worker.path}")
+            if (verbose) context.log.info(s"search:$searchID start confirmed by worker:${worker.path}")
             ongoingSearches = ongoingSearches + (searchID -> (search2, worker2))
             startingSearches = startingSearches.-(startID)
           case _ =>
-            if (verbose) context.log.warn(s"unexpected search:${searchID} start confirmed to Supervisor by worker:${worker.path}; asking for abort")
+            if (verbose) context.log.warn(s"unexpected search:$searchID start confirmed to Supervisor by worker:${worker.path}; asking for abort")
             worker ! AbortSearch(searchID)
         }
 
       case SearchNotStarted(searchID, startID, worker) =>
         startingSearches.get(startID) match {
-          case Some((search2, startID2, worker2)) if startID2 == startID =>
+          case Some((search2, startID2, _)) if startID2 == startID =>
             require(searchID == search2.uniqueSearchId)
 
-            if (verbose) context.log.info(s"search:${searchID} could not be started by worker:${worker.path}")
+            if (verbose) context.log.info(s"search:$searchID could not be started by worker:${worker.path}")
             waitingSearches.enqueue(search2)
             startingSearches = startingSearches.-(startID)
             context.self ! StartSomeSearch()
 
           case _ =>
-            if (verbose) context.log.warn(s"unexpected search:${searchID} could not be started; ignoring")
+            if (verbose) context.log.warn(s"unexpected search:$searchID could not be started; ignoring")
         }
       //we do not register the worker as available here because it will register itself through another call,
       // at least to show it is not completely crashed.
@@ -445,7 +433,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
               case None =>
 
                 startingSearches.find(_._2._1.uniqueSearchId == searchID) match {
-                  case Some((startID2, (search, startID3, worker))) =>
+                  case Some((startID2, (search, _, worker))) =>
                     startingSearches = startingSearches.-(startID2)
                     if (verbose) context.log.info(s"got cancel request for starting search:$searchID forward to worker:${worker.path}")
                     worker ! AbortSearch(search.uniqueSearchId,keepAliveIfOjBelow)
@@ -467,7 +455,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
 
         context.log.info(s"got Shutdown command; forwarding to workers")
         for (worker <- allKnownWorkers) {
-          worker ! ShutDownWorker()
+          worker ! ShutDownWorker
         }
         replyTo match {
           case Some(x) => x ! ()
@@ -476,7 +464,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
 
         tic match {
           case _: Infinite => ;
-          case f: FiniteDuration =>
+          case _: FiniteDuration =>
             context.log.info(status)
         }
 

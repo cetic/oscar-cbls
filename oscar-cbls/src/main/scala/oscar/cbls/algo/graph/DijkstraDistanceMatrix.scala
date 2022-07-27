@@ -5,19 +5,14 @@ import scala.collection.parallel.immutable.ParVector
 object DijkstraDistanceMatrix {
 
   def buildDistanceMatrix(g:ConditionalGraph,
-                           isConditionalEdgeOpen:Int => Boolean):Array[Array[Long]] = {
-
-
-    val distanceMatrix:Array[Array[Long]] =
-      Array.fill(g.nbNodes)(null)
-
+                          isConditionalEdgeOpen:Int => Boolean):Array[Array[Long]] = {
+    val distanceMatrix:Array[Array[Long]] = Array.fill(g.nbNodes)(null)
     val parNodes = ParVector.tabulate(g.nbNodes){x => x}
     for(fromNodeID <- parNodes) {
       distanceMatrix(fromNodeID) = computeAllDistancesFomNode(g.nodes(fromNodeID),
         g:ConditionalGraph,
         isConditionalEdgeOpen:Int => Boolean)
     }
-
     distanceMatrix
   }
 
@@ -30,7 +25,7 @@ object DijkstraDistanceMatrix {
         case None => true
         case Some(condition) => isConditionalEdgeOpen(condition)
       }
-
+    //////////
     val nodeToDistance = Array.fill(g.nbNodes)(Long.MaxValue)
     nodeToDistance(from.id) = 0
 

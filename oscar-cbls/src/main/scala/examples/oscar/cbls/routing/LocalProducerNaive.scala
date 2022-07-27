@@ -18,9 +18,9 @@ import oscar.visual.{VisualDrawing, VisualUtil}
 import java.awt.geom.Line2D
 import java.awt.{BorderLayout, Color, Dimension}
 import javax.swing.JFrame
+import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 import scala.util.Random
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -75,10 +75,7 @@ case class Strawberry() extends Products() {
   val size = 5
 }
 
-
-case class Problem(vehicles : Array[Vehicle],
-  producer : Array[Producer],
-  clients : Array[Client]) {
+case class Problem(vehicles: Array[Vehicle], producer: Array[Producer], clients: Array[Client]) {
 
   def getPoints : Array[Point] = {
     vehicles.map(_.startingPoint) ++ producer.map(_.point) ++ clients.map(_.point)
@@ -102,7 +99,6 @@ case class Problem(vehicles : Array[Vehicle],
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 class Generator(maxX : Int,maxY : Int,seed : Option[Int] = None) {
   private val realSeed = seed match {
     case None => System.currentTimeMillis().toInt
@@ -117,7 +113,6 @@ class Generator(maxX : Int,maxY : Int,seed : Option[Int] = None) {
     Point(rand.nextInt(maxX),rand.nextInt(maxY))
   }
 
-
   private def generateVehicles(nbVehicle : Int) : Array[Vehicle] = {
     Array.fill(nbVehicle)(Vehicle(generatePoint,100 + rand.nextInt(5) * 10))
   }
@@ -130,11 +125,9 @@ class Generator(maxX : Int,maxY : Int,seed : Option[Int] = None) {
     rand.shuffle(allProducts.toList).take(1 + rand.nextInt(allProducts.length - 1)).toArray
   }
 
-
   private def generateClients(nbClients : Int) : Array[Client] = {
     Array.fill(nbClients)(Client(generatePoint,selectProducts.map(p => Demand(p,rand.nextInt(4) + 1))))
   }
-
 
   def generateProblem(nbVehicle : Int,
     nbProducer : Int,
@@ -151,8 +144,7 @@ class Generator(maxX : Int,maxY : Int,seed : Option[Int] = None) {
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-class MyFrame(map : SolutionMap,title: String) {
+class MyFrame(map: SolutionMap,title: String) {
   val frame = new JFrame()
   frame.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE)
   frame.setTitle(title)
@@ -164,7 +156,6 @@ class MyFrame(map : SolutionMap,title: String) {
   frame.setVisible(true)
 
 }
-
 
 class SolutionMap(problem : Problem,v : Int,n : Int,routingIdToPoint : Int => Point,fact : Int = 10) extends VisualDrawing(false,true) {
   val points = problem.getPoints
@@ -190,15 +181,14 @@ class SolutionMap(problem : Problem,v : Int,n : Int,routingIdToPoint : Int => Po
     new VisualLine(this,new Line2D.Double(coord4Drawin(point.x),coord4Drawin(point.y),coord4Drawin(point.x),coord4Drawin(point.y)))
   })
 
-
-
-  def updateVisu(routes : IntSequence,unrouted : Iterable[Int]) = {
+  def updateVisu(routes : IntSequence,unrouted : Iterable[Int]): Unit = {
     val expl = routes.explorerAtPosition(0).get
     unrouted.foreach(n => {
       val point = routingIdToPoint(n)
       lines(n).dest_=((coord4Drawin(point.x),coord4Drawin(point.y)))
       })
-    def updateVisuAux(explorer : Option[IntSequenceExplorer],prevPointId : Int,currentVehicle : Int) : Unit = {
+    @tailrec
+    def updateVisuAux(explorer : Option[IntSequenceExplorer], prevPointId : Int, currentVehicle : Int) : Unit = {
       explorer match {
         case None =>
           val vehiclePoint = routingIdToPoint(v - 1)
@@ -209,16 +199,11 @@ class SolutionMap(problem : Problem,v : Int,n : Int,routingIdToPoint : Int => Po
           lines(prevPointId).outerCol_=(vehicleColors(currentVehicle))
           updateVisuAux(expl.next,expl.value,if (expl.value < v) expl.value else currentVehicle)
       }
-
-
     }
     updateVisuAux(expl.next,expl.value,expl.value)
   }
 
 }
-
-
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -226,9 +211,7 @@ class SolutionMap(problem : Problem,v : Int,n : Int,routingIdToPoint : Int => Po
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-case class NodeState(loadPerProduct : Map[Products,Int],
-  vehicle : Int)
+case class NodeState(loadPerProduct: Map[Products,Int], vehicle: Int)
 
 object CapacityConstraint {
   def apply(routes : ChangingSeqValue,v : Int,m : Store,fonc : (Int,Int,NodeState) => NodeState) : (Array[CBLSIntVar],Array[CBLSIntVar],CapacityConstraint) = {
@@ -237,10 +220,8 @@ object CapacityConstraint {
     val vehicleOfNode = Array.tabulate(nbNodes)(node => CBLSIntVar(m,v,FullRange,s"Vehicle serving node $node"))
     val constraint = new CapacityConstraint(routes,nbNodes,v,NodeState(Map.empty,v),(0 until v).map(vehicle => NodeState(Map.empty,vehicle)).toArray,fonc,load,vehicleOfNode)
     (load,vehicleOfNode,constraint)
-
   }
 }
-
 
 class CapacityConstraint(routes : ChangingSeqValue,n : Int,v : Int,default4Unrouted : NodeState ,initValue : Array[NodeState],fonc : (Int,Int,NodeState) => NodeState,val loadAtEachNode : Array[CBLSIntVar],val vehicleOfNode : Array[CBLSIntVar])
   extends BackwardNaiveRoutingConstraint[NodeState](routes,n,v,default4Unrouted,initValue,fonc) {
@@ -248,8 +229,8 @@ class CapacityConstraint(routes : ChangingSeqValue,n : Int,v : Int,default4Unrou
   loadAtEachNode.foreach(v => v.setDefiningInvariant(this))
   vehicleOfNode.foreach(v => v.setDefiningInvariant(this))
 
-  override def assignNodeValue(node : Int,value : NodeState) = {
-    loadAtEachNode(node) := value.loadPerProduct.map(pAndL => pAndL._2).sum
+  override def assignNodeValue(node : Int,value : NodeState): Unit = {
+    loadAtEachNode(node) := value.loadPerProduct.values.sum
     vehicleOfNode(node) := value.vehicle
   }
 
@@ -262,51 +243,34 @@ class CapacityConstraint(routes : ChangingSeqValue,n : Int,v : Int,default4Unrou
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
 object LocalProducer extends App {
-
-
   // Generating the problem
   val gene = new Generator(100,100,Some(1000))
-
   val problem = gene.generateProblem(10,10,100)
-
-
   // Creating Store
-  val m = new Store()
-  //val m = new Store(checker = Some(new ErrorChecker()))
-
+  val m = Store()
+  //val m = Store(checker = Some(new ErrorChecker()))
   // General variables
   val v = problem.vehicles.length
-
   val nbProducer = problem.producer.length
-
   val nbClients = problem.clients.length
-
   val nbProducerNodesPerProducer = nbClients / 2
-
   val nbProducerNodes = nbProducer * nbProducerNodesPerProducer
-
   val n = v + nbProducerNodes + nbClients
-
-
   // Generating the vrp
   val vrp = new VRP(m,n,v)
-
   val routes = vrp.routes
 
-
   // Mapping constraint between node id in routing and node id in problem
-  def routingIdToClientId(id : Int) = {
+  def routingIdToClientId(id: Int): Int = {
     id - (v + nbProducerNodes)
   }
 
-  def routingIdToProducerId(id : Int) : Int = {
+  def routingIdToProducerId(id: Int): Int = {
     (id - v) / nbClients
   }
 
-  def routingIdToPoint(id : Int) : Point = {
+  def routingIdToPoint(id: Int): Point = {
     if (id < v)
       problem.vehicles(id).startingPoint
     else {
@@ -315,12 +279,10 @@ object LocalProducer extends App {
       else
         problem.clients(routingIdToClientId(id)).point
     }
-
   }
 
-
   // The function that updates the nodes value
-  def updateNodeState(from : Int, to : Int,state : NodeState) : NodeState = {
+  def updateNodeState(from: Int, to: Int, state: NodeState): NodeState = {
     if (to < v + nbProducerNodes) {
       if (to < v)
         NodeState(state.loadPerProduct,to)
@@ -336,51 +298,36 @@ object LocalProducer extends App {
     else {
       var chargeFrom = state.loadPerProduct
       problem.clients(routingIdToClientId(to)).demand.foreach(d => {
-
         chargeFrom.get(d.product) match {
           case None => chargeFrom = chargeFrom + {d.product -> (d.nb * d.product.size)}
           case Some(load) => chargeFrom = chargeFrom + {d.product -> ((d.nb * d.product.size) + load)}
         }
       })
-
       NodeState(chargeFrom,state.vehicle)
     }
   }
 
   // Creating the capacity constraint
   val capacityConstraint = CapacityConstraint(routes,v,m,updateNodeState)
-
   val loadAtEachNode : Array[CBLSIntVar] = capacityConstraint._1
-
   val vehicleOfNode : Array[CBLSIntVar] = capacityConstraint._2
-
   val maxCapacityOfNode : Array[IntValue] = Array.tabulate(n)(node => ConstantIntElement(vehicleOfNode(node),problem.vehicles.map(_.capacity.toLong)++Array(Long.MaxValue)))
 
   // filtering the unrouted and routed nodes between producers and clients
   val producerNodePerProducer : Array[SortedSet[Int]] = Array.tabulate(nbProducer)(p => SortedSet[Int]() ++ ((v + p * nbProducerNodesPerProducer) until (v + p * nbProducerNodesPerProducer + nbProducerNodesPerProducer)).toSet)
-
   val unroutedPerProducer : Array[SetValue] = producerNodePerProducer.map(s => vrp.unrouted inter CBLSSetConst(s))
-
   val clientSet : SortedSet[Int] = SortedSet[Int]() ++  (nbProducerNodes until n).toSet
-
   val unroutedClients = vrp.unrouted inter CBLSSetConst(clientSet)
-
   val routedClients = vrp.routed inter CBLSSetConst(clientSet)
-
-
 
   // Implementing the capacity constraint
   val constraints = new ConstraintSystem(m)
-
   (0 until n).foreach(node => constraints.add(loadAtEachNode(node) le maxCapacityOfNode(node)))
-
   (0 until v).foreach(vehicle => constraints.add(loadAtEachNode(vehicle) === 0))
-
-
+  // Distance matrix
   val distanceMatrix : Array[Array[Long]] = Array.tabulate(n)(from => Array.tabulate(n)(to => {
     problem.distance(routingIdToPoint(from),routingIdToPoint(to))
   }))
-
   // Route length constraint
   val routesLength = RouteLength(routes,
     n,
@@ -395,26 +342,18 @@ object LocalProducer extends App {
 
   def kClosestRoutedPoint(nodeId : Int,k : Int) = KSmallest.kFirst(k,kClosestPoint(nodeId),node => vrp.routed.value contains node)
 
-
   val clientVehicles = Array.tabulate(nbClients)(clientId => vehicleOfNode(clientId + v + nbProducerNodes))
-
   val unservedClients = Filter(clientVehicles,_ == v)
-
   val penalty = distanceMatrix.map(_.max).max * nbProducer * 2 + 10
-
   val penalty4UnservedClients = Cardinality(unservedClients) * penalty
-
   // This penalty is here to prevent to have many producer nodes routed in the same time
-
   val routedNodesPenalty = Cardinality(vrp.routed) * 10
-
   // Defining the objectives
   val obj = new CascadingObjective(constraints,Objective(routesLength(0) + penalty4UnservedClients + routedNodesPenalty))
 
   m.close()
 
   val map = new SolutionMap(problem,v,n,routingIdToPoint)
-
   // change visu to false to disable the visualization
   val visu = true
   if (visu) {
@@ -423,7 +362,6 @@ object LocalProducer extends App {
     map.updateVisu(vrp.routes.value,vrp.unrouted.value)
 
   }
-
 
   // The producer are represented by many nodes. This function gets one unrouted node for a given producer if there is one
   def producerNodeToInsert(producerId : Int) : List[Int] = {
@@ -436,7 +374,7 @@ object LocalProducer extends App {
 
   // Insert a producer with a the given id
   def insertProducerId(producerId : Int,prevNode : Option[Int] = None) = {
-    new InsertPointUnroutedFirst(() => producerNodeToInsert(producerId),
+    InsertPointUnroutedFirst(() => producerNodeToInsert(producerId),
       () => _ => prevNode match {case None => vrp.routed.value; case Some(p) => List(p)},
       vrp)
   }
@@ -461,12 +399,12 @@ object LocalProducer extends App {
   val insertAllProducerAndMoveClient = mkInsertAllProducer((0 until nbProducer).toList,None,false) name "InsertAllProducerAndMoveClients"
 
   // Insert one point
-  def insertPoint = new InsertPointUnroutedFirst(() => unroutedClients.value,
+  def insertPoint = InsertPointUnroutedFirst(() => unroutedClients.value,
     () => (_ : Int) => vrp.routed.value,
     vrp)
 
   // Insert one producer and one client
-  def insertProducerAndClient = new InsertPointUnroutedFirst(() => {
+  def insertProducerAndClient = InsertPointUnroutedFirst(() => {
     unroutedPerProducer.map(s => {
       if (s.value.isEmpty) None else Some(s.value.min)
     }).flatten
@@ -478,17 +416,17 @@ object LocalProducer extends App {
 
 
   // Move One point
-  def onePointMove = new OnePointMove(() => vrp.routed.value,
+  def onePointMove = OnePointMove(() => vrp.routed.value,
     () => (_ : Int) => vrp.routed.value,
     vrp)
 
   // ThreeOpt
-  def threeOpt(k : Int) = new ThreeOpt(() => vrp.routed.value,
+  def threeOpt(k : Int) = ThreeOpt(() => vrp.routed.value,
     () => (fstPoint : Int) => kClosestRoutedPoint(fstPoint,k),
     vrp)
 
   // Remove one point (sometimes to many points are inserted
-  def removePoint = new RemovePoint(() => v until v + nbProducerNodes,
+  def removePoint = RemovePoint(() => v until v + nbProducerNodes,
     vrp)
 
   // Defining the search strategy
@@ -504,7 +442,6 @@ object LocalProducer extends App {
   // Adding visualisation
   val search = if (visu) searchStrategy afterMove  map.updateVisu(vrp.routes.value,vrp.unrouted.value) else searchStrategy
 
-
   // Do the search !
   search.verbose = 1
   search.doAllMoves(obj = obj)
@@ -516,7 +453,7 @@ object LocalProducer extends App {
 
   private def treateNode(nodeValue : Int,load : Map[Products,Int],currentCapacity : Int) : (String,Map[Products,Int]) = {
     if (nodeValue < v) {
-      val currentLoad = load.map(_._2).sum
+      val currentLoad = load.values.sum
       ((s"======== VEHICLE ${nodeValue} ======== (current load : $currentLoad ( < ${problem.vehicles(nodeValue).capacity}) -- (${load.mkString(",")}))"),Map[Products,Int]())
     }
     else {
@@ -558,7 +495,9 @@ object LocalProducer extends App {
           nodeTreate._1:: printResultAux(e.prev,nodeTreate._2,nextCapa)
       }
     }
-    def getLastExplAndCapa(expl : Option[IntSequenceExplorer],current : IntSequenceExplorer,currentCapa : Int) : (IntSequenceExplorer,Int) = {
+
+    @tailrec
+    def getLastExplAndCapa(expl : Option[IntSequenceExplorer], current : IntSequenceExplorer, currentCapa : Int) : (IntSequenceExplorer,Int) = {
       expl match {
         case None => (current,currentCapa)
         case Some(e) =>
@@ -573,4 +512,3 @@ object LocalProducer extends App {
 
   printResult
 }
-

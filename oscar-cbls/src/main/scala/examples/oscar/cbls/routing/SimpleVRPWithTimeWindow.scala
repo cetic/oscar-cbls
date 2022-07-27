@@ -1,12 +1,13 @@
 package examples.oscar.cbls.routing
 
+import oscar.cbls._
+import oscar.cbls.algo.generator.RoutingMatrixGenerator
 import oscar.cbls.business.routing.invariants.global.RouteLength
 import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TransferFunction}
 import oscar.cbls.business.routing.model.helpers.DistanceHelper
 import oscar.cbls.business.routing._
 import oscar.cbls.core.search.Best
 import oscar.cbls.lib.constraint.EQ
-import oscar.cbls._
 
 import scala.collection.immutable.HashSet
 

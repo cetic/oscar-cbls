@@ -1,7 +1,7 @@
 package oscar.cbls.lib.search.combinators.distributed
 
 import akka.actor.typed.ActorSystem
-import oscar.cbls.core.distrib.{DelegateSearch, IndependentSearchResult, IndependentSolution, SearchCompleted, SearchCrashed, SearchEnded, SearchRequest, SingleMoveSearch}
+import oscar.cbls.core.distrib.{DelegateSearch, IndependentSearchResult, IndependentSolution, SearchCompleted, SearchCrashed, SearchEnded, SingleMoveSearch}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
 import akka.util.Timeout
@@ -24,7 +24,7 @@ class Remote(neighborhoods:Neighborhood)
     implicit val timeout: Timeout = 1.hour
     implicit val system: ActorSystem[_] = supervisor.system
 
-    val futureResult = supervisor.supervisorActor.ask[SearchEnded[IndependentSearchResult]](ref =>
+    val futureResult = supervisor.supervisorActor.ask[SearchEnded](ref =>
       DelegateSearch(
         SingleMoveSearch(
           remoteTaskId = remoteNeighborhoodIdentifications(0),
@@ -35,7 +35,7 @@ class Remote(neighborhoods:Neighborhood)
         )))
 
     Await.result(futureResult,Duration.Inf) match {
-      case SearchCompleted(_, searchResult, durationMS) =>
+      case SearchCompleted(_, searchResult: IndependentSearchResult, _) =>
         searchResult.getLocalResult(obj.model)
       case c:SearchCrashed =>
         supervisor.throwRemoteExceptionAndShutDown(c)

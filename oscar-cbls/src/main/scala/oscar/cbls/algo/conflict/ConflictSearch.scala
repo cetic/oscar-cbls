@@ -20,16 +20,20 @@
 
 package oscar.cbls.algo.conflict
 
-/** a class that proposes several conflict search algorithms.
-  * given a set of items I, and a condition over subsets of I that is monotonic (forall X, Y subset of I, conflict(X) => conflict(X U Y)
-  * a minimal conflict C is a subset of I such that conflict(C) and if any part of C is removed, C is not in conflict anymore.
-  * @author renaud.delandtsheer@cetic.be
-  * */
+/**
+ * A class that proposes several conflict search algorithms.
+ * given a set of items I, and a condition over subsets of I that is monotonic
+ * (forall X, Y subset of I, conflict(X) => conflict(X U Y)
+ * a minimal conflict C is a subset of I such that conflict(C) and if any part of C is removed,
+ * C is not in conflict anymore.
+ * @author renaud.delandtsheer@cetic.be
+ **/
 object ConflictSearch {
 
-  /**Computes a minimal conflict over a list of thinks.
-   *Implements the famous quickXplain algorithm in a generic way
-   *[Ulrich Junker and F Valbonne, QuickXPlain: Conflict Detection for Arbitrary Constraint Propagation Algorithms, 2001L]
+  /**
+   * Computes a minimal conflict over a list of thinks.
+   * Implements the famous quickXplain algorithm in a generic way
+   * [Ulrich Junker and F Valbonne, QuickXPlain: Conflict Detection for Arbitrary Constraint Propagation Algorithms, 2001]
    * and proposes a faster implementation in case that additional operations can be performed on the state
    *
    * @param init the initial S, typically empty
@@ -90,7 +94,7 @@ object ConflictSearch {
     List.empty //never reached
   }
 
-  /**Computes a minimal conflict over a list of thinks.
+  /**Computes a minimal conflict over a list of things.
    * This version is faster : O(n) because it benefits from a remove operation
    * @param init the initial S, typically empty
    * @param toInject a list of C among which the minimal conflict must be searched
@@ -101,9 +105,9 @@ object ConflictSearch {
    */
   def apply[S,C](init:S,
                  toInject:List[C],
-                 inject:(S,C)=>S,
+                 inject:(S,C) => S,
                  remove:(S,C) => S,
-                 isConflict:S=>Boolean):List[C] = {
+                 isConflict:S => Boolean):List[C] = {
     if (isConflict(init)) return List.empty
 
     var accumulatorList:List[C] = List.empty

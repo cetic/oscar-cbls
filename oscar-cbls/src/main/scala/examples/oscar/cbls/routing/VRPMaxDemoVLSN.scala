@@ -19,6 +19,7 @@ package examples.oscar.cbls.routing
 //normalement il doit essayer de concentrer l'effort sur les noeuds proches au lieu de çà il fait n'importe quoi.
 
 import oscar.cbls._
+import oscar.cbls.algo.generator.RoutingMatrixGenerator
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.model.helpers.DistanceHelper
 import oscar.cbls.core.computation.Store
@@ -32,7 +33,6 @@ import scala.collection.immutable.{SortedMap, SortedSet}
 
 //50.404631, 4.452595
 //50.415162, 4.440849
-
 
 object VRPMaxDemoVLSN  extends App {
 
