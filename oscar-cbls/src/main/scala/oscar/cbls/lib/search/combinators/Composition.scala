@@ -6,7 +6,7 @@ import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{CallBackMove, CompositeMove, DoNothingMove, DoNothingNeighborhood, LoadSolutionMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult, SupportForAndThenChaining}
 
 abstract class NeighborhoodCombinatorNoProfile(a: Neighborhood*) extends NeighborhoodCombinator(a:_*){
-  override def collectProfilingStatistics: List[Array[String]] = List.empty
+  override def collectProfilingStatistics: List[Array[String]] = a.flatMap(_.collectProfilingStatistics).toList
   override def resetStatistics(): Unit ={}
 }
 

@@ -41,6 +41,7 @@ object SearchResult {
 class CodedNeighborhood(codedMove: => Unit,
                         impactedVariables:Option[Iterable[Variable]] = None,
                         name:String = "CodedNeighborhood") extends Neighborhood(name) {
+  override def createProfiler(): Profiler = new Profiler("CodedNeighborhood")
   override def getMove(obj: Objective,
                        initialObj: Long,
                        acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
@@ -60,6 +61,8 @@ class CodedNeighborhood(codedMove: => Unit,
 }
 
 abstract class JumpNeighborhood(name:String) extends Neighborhood(name) {
+
+  override def createProfiler(): Profiler = new Profiler("JumpNeighborhood")
 
   /**
    * the method that actually performs the move
@@ -96,6 +99,8 @@ abstract class JumpNeighborhood(name:String) extends Neighborhood(name) {
 
 abstract class JumpNeighborhoodParam[T](name:String) extends Neighborhood(name) {
 
+  override def createProfiler(): Profiler = new Profiler("JumpNeighborhoodParam")
+
   final def doIt(): Unit = {
     doIt(getParam)
   }
@@ -125,8 +130,10 @@ abstract class Neighborhood(name:String = null) {
    * @return
    */
   final def profilingStatistics:String = Properties.justifyRightArray(Profile.statisticsHeader :: collectProfilingStatistics/*.map(a => ("" :: a.toList).toArray)*/).mkString("\n")
-  def collectProfilingStatistics:List[Array[String]] = List.empty
+  def collectProfilingStatistics:List[Array[String]] = List(profiler.collectThisProfileStatistics)
   //TODO: profiling stats should als include %founds next to #found
+  protected def createProfiler(): Profiler
+  val profiler = createProfiler()
 
   /**
    * the method that returns a move from the neighborhood.
@@ -437,6 +444,7 @@ abstract class Neighborhood(name:String = null) {
  * a neighborhood that never finds any move (quite useless, actually)
  */
 case object NoMoveNeighborhood extends Neighborhood {
+  override def createProfiler(): Profiler = new Profiler("NoMoveNeighborhood")
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = NoMoveFound
 }
 
@@ -536,6 +544,8 @@ abstract class EasyNeighborhood[M<:Move](best:Boolean = false, neighborhoodName:
   private var bestNewObj: Long = Long.MaxValue
   protected var obj: Objective = null
 
+  override def createProfiler(): Profiler = new Profiler(neighborhoodNameToString)
+
   override final def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
 
     oldObj = initialObj
@@ -626,6 +636,8 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
 
   override def toString: String = neighborhoodNameToString
 
+  override def createProfiler(): Profiler = new Profiler(neighborhoodNameToString)
+
   //passing parameters, and getting return values from the search
   private var oldObj: Long = 0L
   private var acceptanceCriterion: (Long, Long) => Boolean = null
@@ -638,6 +650,7 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
 
     require(!exploring,s"$this is not a re-entrant neighborhood")
     exploring = true
+    profiler.explorationStarted()
     try {
       oldObj = initialObj
 
@@ -658,11 +671,13 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
       if (printExploredNeighborhoods) {
         println(neighborhoodNameToString + ": NoMoveFound")
       }
+      profiler.explorationEnded(false,0L)
       NoMoveFound
     } else {
       if (printExploredNeighborhoods) {
         println(neighborhoodNameToString + ": MoveFound: " + toReturnMove)
       }
+      profiler.explorationEnded(true,oldObj - bestNewObj)
       toReturnMove
     }
   }
@@ -684,6 +699,7 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
     //on dit juste si un mouvement a été accepté et améliore le best so far ou pas
 
     val myPrintExploredNeighbors = printExploredNeighbors
+    profiler.neighborExplored()
 
     if ((newObj < bestNewObj || toReturnMove == null)&& acceptanceCriterion(oldObj, newObj)) {
       bestNewObj = newObj

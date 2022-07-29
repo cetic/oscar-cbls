@@ -112,7 +112,7 @@ class VRPWithMultipleCapacity(n: Int, v: Int, c: Int, maxCapacityPerContentType:
 
   }
 
-  def onePtMove(k:Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance(_)), myVRP)) name "One Point Move"
+  def onePtMove(k:Int) = onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance(_)), myVRP) name "One Point Move"
 
   // INSERTING
 
@@ -156,9 +156,10 @@ class VRPWithMultipleCapacity(n: Int, v: Int, c: Int, maxCapacityPerContentType:
   //val routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "InsertUF"))
 
   val search = oneChainInsert exhaust oneChainMove exhaust onePtMove(20)
+  println(search.getClass)
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
-  search.verbose = 1
+  search.verbose = 0
   //search.verboseWithExtraInfo(4, ()=> "" + myVRP)
 
   search.doAllMoves(obj=obj)
