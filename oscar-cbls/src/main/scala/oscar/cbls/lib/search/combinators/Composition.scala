@@ -3,7 +3,7 @@ package oscar.cbls.lib.search.combinators
 import oscar.cbls._
 import oscar.cbls.core.computation.{AbstractVariable, Solution, Store}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{CallBackMove, CompositeMove, DoNothingMove, DoNothingNeighborhood, LoadSolutionMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult, SupportForAndThenChaining}
+import oscar.cbls.core.search.{CallBackMove, CompositeMove, DoNothingMove, DoNothingNeighborhood, LoadSolutionMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, Profiler, SearchResult, SupportForAndThenChaining}
 
 abstract class NeighborhoodCombinatorNoProfile(a: Neighborhood*) extends NeighborhoodCombinator(a:_*){
   override def collectProfilingStatistics: List[Array[String]] = a.flatMap(_.collectProfilingStatistics).toList
@@ -132,7 +132,12 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
   //we need to store currentB here because we might need to instantiate the current move from it.
   var currentB:Neighborhood = null
 
+  override val profiler: Profiler = new Profiler(s"DynAndThen : ${a.getClass}")
+
+  override def collectProfilingStatistics: List[Array[String]] = List(profiler.collectThisProfileStatistics)
+
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+    profiler.explorationStarted()
 
     var bestObj:Long = Long.MaxValue
     var toReturn:SearchResult = NoMoveFound
@@ -186,11 +191,14 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
         }
 
         currentB.getMove(new secondInstrumentedObjective(obj), initialObj, secondAcceptanceCriteria) match {
-          case NoMoveFound => Long.MaxValue
+          case NoMoveFound =>
+            profiler.neighborExplored()
+            Long.MaxValue
           case MoveFound(m : Move) =>
             require(m.objAfter < bestObj)
             bestObj = m.objAfter
             toReturn = MoveFound(CompositeMove(List(a.instantiateCurrentMove(intermediaryObjValue),m),bestObj,"DynAndThen"))
+            profiler.neighborExplored()
             bestObj
         }
       }
@@ -199,8 +207,11 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
     val tmp = a.getMove(new InstrumentedObjectiveForFirstNeighborhood(), initialObj, firstAcceptanceCriterion)
 
     tmp match {
-      case NoMoveFound => NoMoveFound
+      case NoMoveFound =>
+        profiler.explorationEnded(false,0L)
+        NoMoveFound
       case MoveFound(m: Move) =>
+        profiler.explorationEnded(true,initialObj-bestObj)
         require(m.objAfter == bestObj)
         toReturn
     }
