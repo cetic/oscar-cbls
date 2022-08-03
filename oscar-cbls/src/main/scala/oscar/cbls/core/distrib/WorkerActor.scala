@@ -38,7 +38,7 @@ object WorkerActor {
     ActorSystem(createWorkerBehavior(neighborhoods, m, master, verbose,workerName), workerName)
   }
 
-  def createWorkerBehavior(neighborhoods: SortedMap[Int, RemoteNeighborhood],
+  def createWorkerBehavior(neighborhoods: SortedMap[Int, RemoteTask],
                            m: Store,
                            master: ActorRef[MessagesToSupervisor],
                            verbose: Boolean = false,
@@ -56,7 +56,7 @@ object WorkerActor {
   }
 }
 
-class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
+class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
                   m: Store,
                   master: ActorRef[MessagesToSupervisor],
                   verbose: Boolean,
@@ -93,7 +93,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
   private final var nbAbortedNeighborhoods: Int = 0
 
   @volatile
-  private final var currentNeighborhood: RemoteNeighborhood = null
+  private final var currentNeighborhood: RemoteTask = null
 
   @volatile
   final var currentSolOpt:Option[(Solution,Int)] = None
@@ -101,7 +101,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
   def initBehavior(): Behavior[MessageToWorker] = {
     Behaviors.setup { context =>
       master ! NewWorkerEnrolled(context.self)
-      if (verbose) context.log.info(s"ready for work nbNeighborhoods:${neighborhoods.size}")
+      if (verbose) context.log.info(s"ready for work nbNeighborhoods:${remoteTasks.size}")
       next(Idle())
     }
   }
@@ -123,12 +123,16 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
         case GetStatisticsFor(neighborhood,indice,replyTo) =>
           state match {
             case Idle() =>
-              replyTo!((indice,neighborhoods(neighborhood.taskId).neighborhood.
-                collectProfilingStatistics.map(profilingLine => {
-                profilingLine(0) = workerName +"."+ profilingLine(0)
-                profilingLine
+              remoteTasks(neighborhood.taskId) match {
+                case neighborhood1: RemoteNeighborhood =>
+                  replyTo ! ((indice, neighborhood1.neighborhood.
+                    collectProfilingStatistics.map(profilingLine => {
+                    profilingLine(0) = workerName + "." + profilingLine(0)
+                    profilingLine
+                  })))
+                case _ =>
+                  replyTo!((indice,Nil))
               }
-              )))
             case _ => ;
               //TODO: we should enqueue this query somewhere and answer it later
               replyTo!((indice,Nil))
@@ -156,7 +160,7 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
               if (verbose) context.log.info(s"starting search:${newSearch.uniqueSearchId} neighborhood:${newSearch.remoteTaskId}")
 
               this.nbExploredNeighborhoods += 1
-              currentNeighborhood = neighborhoods(newSearch.remoteTaskId.taskId)
+              currentNeighborhood = remoteTasks(newSearch.remoteTaskId.taskId)
 
               val futureResult = Future {
                 //this is the thread of the search, as it is a future,
@@ -181,20 +185,30 @@ class WorkerActor(neighborhoods: SortedMap[Int, RemoteNeighborhood],
               Behaviors.same
             case IAmBusy(search,startTimeMs) =>
               if (searchId == search.uniqueSearchId) {
+                currentNeighborhood match{
+                  case null => //RAS
+                    //otherwise, ignore.
+                    Behaviors.same
+                  case neighborhood:RemoteNeighborhood =>
+                    val mustAbort:Boolean = neighborhood != null && (if(keepAliveIfOjBelow.isDefined){
+                      neighborhood.bestObjSoFar >= keepAliveIfOjBelow.get
+                    }else true)
 
-                val mustAbort:Boolean = currentNeighborhood != null && (if(keepAliveIfOjBelow.isDefined){
-                  currentNeighborhood.bestObjSoFar >= keepAliveIfOjBelow.get
-                }else true)
-
-                if(mustAbort) {
-                  if(verbose) context.log.info(s"got abort command for search:$searchId; aborting")
-                  currentNeighborhood.abort()
-                  nbAbortedNeighborhoods += 1
-                  next(Aborting(search))
-                }else{
-                  if(verbose) context.log.info(s"ignoring conditional abort command, for search:$searchId bestOBj:${currentNeighborhood.bestObjSoFar} < threshold:${keepAliveIfOjBelow.get}")
-                  Behaviors.same
+                    if(mustAbort) {
+                      if(verbose) context.log.info(s"got abort command for search:$searchId; aborting")
+                      neighborhood.abort()
+                      nbAbortedNeighborhoods += 1
+                      next(Aborting(search))
+                    }else{
+                      if(verbose) context.log.info(s"ignoring conditional abort command, for search:$searchId bestOBj:${neighborhood.bestObjSoFar} < threshold:${keepAliveIfOjBelow.get}")
+                      Behaviors.same
+                    }
+                  case t:RemoteTask =>
+                    t.abort()
+                    nbAbortedNeighborhoods += 1
+                    next(Aborting(search))
                 }
+
               } else {
                 if (verbose) context.log.info(s"got abort command for search:$searchId but busy on search:${search.uniqueSearchId}; ignoring")
 

@@ -20,8 +20,6 @@ import oscar.cbls.algo.dll.{DLLStorageElement, DoublyLinkedList}
 import oscar.cbls.algo.heap.BinomialHeapWithMove
 import oscar.cbls.visual.SingleFrameWindow
 
-import scala.collection.immutable.TreeSet
-
 /**
  * This is an implementation of the rectangle splitting heuristics for heuristic optimization presented in
  *     Matl, Piotr & Hartl, Richard & Vidal, Thibaut. (2017).
@@ -120,18 +118,6 @@ class BiObjectiveSearch(globalMaxObj1:Long,
   //Stores the front in increasing obj1 order
   val squareList = new DoublyLinkedList[Square]
 
-  object Obj1Ordering extends Ordering[Square] {
-    def compare(a:Square, b:Square):Int = a.obj1 compare b.obj1
-  }
-
-  object Obj2ReverseOrdering extends Ordering[Square] {
-    def compare(a:Square, b:Square):Int = b.obj2 compare a.obj2
-  }
-
-  val treeSetObj1: TreeSet[Square] = TreeSet[Square](Obj1Ordering)
-
-  val treeSetObj2: TreeSet[Square] = TreeSet[Square](Obj2ReverseOrdering)
-
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   var remainingSurface:Long = 0
@@ -216,7 +202,7 @@ class BiObjectiveSearch(globalMaxObj1:Long,
         if(verbose) println("found dominated solution")
       }else if (currentSquareForPruning.obj1 >= squareToInsert.obj1
         && currentSquareForPruning.obj2 >= squareToInsert.obj2) {
-        //currentSquareForPruning est au meux équivalent, au pire, dominé.
+        //currentSquareForPruning est au mieux équivalent, au pire, dominé.
         // on supprime currentSquareForPruning et on hérite de ses valeurs dans currentSquare
 
         notifyDeleted(currentSquareForPruning)

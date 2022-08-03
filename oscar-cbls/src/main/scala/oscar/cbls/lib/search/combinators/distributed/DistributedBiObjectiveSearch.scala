@@ -12,29 +12,39 @@
  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  ******************************************************************************/
-/*
+
 package oscar.cbls.lib.search.combinators.distributed
 
-import akka.actor.typed.ActorRef
-import oscar.cbls.Solution
+import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
+import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
+import akka.util.Timeout
+import oscar.cbls.{Objective, Solution}
 import oscar.cbls.algo.dll.{DLLStorageElement, DoublyLinkedList}
 import oscar.cbls.algo.heap.BinomialHeapWithMove
-import oscar.cbls.core.computation.Store
+import oscar.cbls.core.computation.{Solution, Store}
 import oscar.cbls.core.distrib._
 import oscar.cbls.core.objective.{CascadingObjective, IndependentObjective}
-import oscar.cbls.core.search.Neighborhood
+import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
 import oscar.cbls.lib.search.combinators.multiObjective.PlotPareto
 import oscar.cbls.visual.SingleFrameWindow
 
-import scala.collection.immutable.TreeSet
+import scala.annotation.tailrec
+import scala.collection.immutable.{SortedMap, TreeSet}
+import scala.concurrent.{Await, Future, Promise}
+import scala.concurrent.duration.{Duration, DurationInt}
+import scala.util.{Failure, Success}
 
 class OptimizeWithBoundTask(taskId:Int,
                             minObj1WithOBj2BoundNeighborhood:Neighborhood,
-                            minObj2WithFoundObj1BoundNeighborhoodOpt:Option[Neighborhood])
-  extends RemoteTask[OptimizeWithBoundRequest](taskId,"optimizeWithBound"){
+                            minObj2WithFoundObj1BoundNeighborhood:Neighborhood)
+  extends RemoteTask(taskId,"optimizeWithBound"){
+
   override def abort(): Unit = { } //there is no abort
 
-  override def internalDoTask(taskMessage: OptimizeWithBoundRequest, model: Store, startSol: Solution): Unit = {
+  def doTask(taskMessage1:SearchRequest,model:Store,currentSolOpt:Option[(Solution,Int)]):(Solution,Int) = {
+    val (startSol,solId):(Solution,Int) = loadSolution(taskMessage1.startSolutionOpt,model,currentSolOpt)
+
+    val taskMessage = taskMessage1.asInstanceOf[OptimizeWithBoundRequest]
 
     val startTime = System.currentTimeMillis()
     val obj1 = taskMessage.obj1.convertToObjective(model)
@@ -44,21 +54,15 @@ class OptimizeWithBoundTask(taskId:Int,
       CascadingObjective(
         () => (obj2.value >= taskMessage.maxValueForObj2),
         obj1)
-
     //this ensures that metaheuristics starts from scratch properly
     minObj1WithOBj2BoundNeighborhood.reset()
-
     minObj1WithOBj2BoundNeighborhood.doAllMoves(obj = minObj1WithOBj2Bound)
 
-    minObj2WithFoundObj1BoundNeighborhoodOpt match{
-      case Some(neighborhood2) =>
-        val foundOBj1 = obj1.value
-        //this ensures that metaheuristics starts from scratch properly
-        neighborhood2.reset()
-        val minObj2WithFoundObj1 = new CascadingObjective(() => (obj1.value > foundOBj1), obj2)
-        neighborhood2.doAllMoves(obj = minObj2WithFoundObj1)
-      case _ => ;
-    }
+    val foundOBj1 = obj1.value
+    //this ensures that metaheuristics starts from scratch properly
+    minObj2WithFoundObj1BoundNeighborhood.reset()
+    val minObj2WithFoundObj1 = new CascadingObjective(() => (obj1.value > foundOBj1), obj2)
+    minObj2WithFoundObj1BoundNeighborhood.doAllMoves(obj = minObj2WithFoundObj1)
 
     val dur = System.currentTimeMillis() - startTime
 
@@ -68,13 +72,15 @@ class OptimizeWithBoundTask(taskId:Int,
       dur.toInt)
 
     startSol.restoreDecisionVariables()
+    (startSol,solId)
   }
 }
 
+//there is no uniqueID here because we will not cancel tasks
 case class OptimizeWithBoundRequest(override val remoteTaskId:RemoteTaskIdentification,
                                     obj1: IndependentObjective,
                                     obj2: IndependentObjective,
-                                    maxValueForObj2:Long,
+                                    maxValueForObj2:Long, //only this one is considered, the other are informative and traceability stuff
                                     startSolution: Option[IndependentSolution],
                                     override val sendResultTo: ActorRef[SearchEnded[(Long,Long,IndependentSolution)]]
                                    ) extends SearchRequest(-1,remoteTaskId,sendResultTo){
@@ -116,10 +122,12 @@ case class OptimizeWithBoundRequest(override val remoteTaskId:RemoteTaskIdentifi
  * @param filterSquare an additional method that you can specify to filter away some squares of the search,
  *                     typically when you want to trade time for granularity of the Pareto front.
  */
-class DistributedBiObjectiveSearch(globalMaxObj1:Long,
-                                   globalMinObj2:Long,
-                                   solutionAtMax1Min2:Solution,
-                                   optimize:(Long/*maxObj2*/,Solution)  => Option[(Long,Long,Solution)],
+class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
+                                   minObj2Neighborhood:Option[Neighborhood],
+                                   obj1:Objective,
+                                   obj2:Objective,
+                                   minObj1:Long = Long.MinValue,
+                                   maxObj2:Long = Long.MaxValue,
                                    stopSurface:Long = 0,
                                    maxPoints:Int = Int.MaxValue,
                                    verbose:Boolean = false,
@@ -128,181 +136,269 @@ class DistributedBiObjectiveSearch(globalMaxObj1:Long,
                                    obj1Name: String = "obj1",
                                    obj2Name: String = "obj2",
                                    filterSquare:(Long, Long, Long, Long) => Boolean = (_:Long, _:Long, _:Long, _:Long) => true,
-                                   stayAlive:Boolean = false
-                                  ) {
+                                   stayAlive:Boolean = false,
+                                   setMaxWorkers:Option[Int]
+                                  ) extends DistributedCombinator(
+  Array(),
+  Array((taskId:Int) =>  new OptimizeWithBoundTask(
+    taskId,
+    minObj1WithOBj2BoundNeighborhood = minObj1Neighborhood,
+    minObj2WithFoundObj1BoundNeighborhood = minObj2Neighborhood.getOrElse(minObj1Neighborhood)))) {
 
-  val (plot, window) = if(visu) {
+  val (plot, window) = if (visu) {
     val p = new PlotPareto(null, obj1Name, obj2Name)
     val window = SingleFrameWindow.show(p, visuTitle, width = 2000, height = 2000)
     (p, window)
   } else (null, null)
 
-  var oldParetoPoints:List[(Long, Long)] = Nil
-
-  var nbFilteredSquares = 0
-
-  var nextSquareUid:Int = 0
-
   //a square, anchored at a solution
-  case class Square(obj1:Long, maxObj1:Long,
-                    obj2:Long, minObj2:Long,
-                    solution:Solution) {
+  //the solution is the lower right corner
+  case class Square(obj1: Long, obj2: Long,
+                    minObj1: Long, maxObj2: Long,
+                    solution: Solution,
+                    independentSolution:IndependentSolution) {
 
-    require(minObj2 <= obj2)
-    require(maxObj1 >= obj1)
+    require(minObj1 <= obj1)
+    require(maxObj2 >= obj2)
     // not requiring anything on the solution itself? like solution = (obj1, obj2)?
 
-    val uid: Int = nextSquareUid
-    nextSquareUid = nextSquareUid + 1
+    def surface: Long = (obj1 - minObj1) * (maxObj2 - obj2)
 
-    var elemInFront:DLLStorageElement[Square] = null
-
-    def surface:Long = (maxObj1 - obj1) * (obj2 - minObj2)
-
-    def getUpperSquareAboveObj2Cut(obj2Cut:Long):Square =
-      Square(obj1, maxObj1, obj2, obj2Cut + 1 min obj2, solution)
-
-    def rectifyOnNewObj1(newOBj1:Long):Option[Square] = {
-      if(newOBj1 - 1 < obj1) None
-      else Some(this.copy(maxObj1 = newOBj1 - 1))
+    /**
+     * @param obj1
+     * @param obj2
+     * @param solution
+     * @return (child,rectifiedThis)
+     */
+    def createChildAndRectifyThisForSolution(obj1: Long, obj2: Long, solution: Solution,independentSolution:IndependentSolution): (Square, Square) = {
+      val child = Square(
+        obj1: Long, obj2: Long,
+        minObj1: Long, maxObj2: Long,
+        solution: Solution,
+        independentSolution:IndependentSolution)
+      val rectifiedThis = this.copy(
+        minObj1 = obj1 + 1,
+        maxObj2 = obj2 - 1)
+      (child, rectifiedThis)
     }
 
-    def enlargeBounds(otherSquare:Square):Square = this.copy(
-      maxObj1 = maxObj1 max otherSquare.maxObj1,
-      minObj2 = minObj2 min otherSquare.minObj2
-    )
-
-    override def toString: String = "Square(" + obj1 + "," + maxObj1 + "," + obj2 + "," + minObj2 + "surf:" + surface + ")"
-
-    def objString:String = "(" + obj1Name + ":" + obj1 + ";" + obj2Name + ":" + obj2 + ")"
+    override def toString: String = s"Square(obj1:$obj1,obj2:$obj2,minObj1:$minObj1,maxobj2:$maxObj2,surf:" + surface + ")"
   }
 
-  implicit val A: Ordering[Square] = new Ordering[Square]{
-    override def compare(x: Square, y: Square): Int = x.uid compare y.uid
+  implicit val OrderingByObj1: Ordering[Square] = new Ordering[Square] {
+    def compare(a: Square, b: Square): Int = a.obj1 compare b.obj1
   }
-
-  // TODO here two new orderings, according to obj for treesets
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  var allSquares:List[Square] = Nil
-  var dominatedSolutions:List[(Long,Long)]= Nil
-  var remainingSurface:Long = 0
-  var nbSquare:Int = 0
+  var dominatedSolutions: List[(Long, Long)] = Nil
+  var remainingSurface: Long = 0 //equal to the surface in the pareto front
+  val squaresToDevelopBiggestSquareFirst = new BinomialHeapWithMove[Square](getKey = -_.surface, maxPoints * 2)
+  var paretoFront: TreeSet[Square] = new TreeSet()(OrderingByObj1)
+  val store = obj1.model
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  def redrawPareto():Unit = {
-    if (plot != null){
-      plot.reDrawPareto(allSquares.map(square => (square.obj1,square.obj2)), Some(oldParetoPoints))
+  def redrawPareto(): Unit = {
+    if (plot != null) {
+      plot.reDrawPareto(
+        paretoFront.toList.map(square => (square.obj1, square.obj2)),
+        Some(dominatedSolutions))
     }
   }
 
-  def storeNewSquare(square:Square): Unit = {
-    // TODO add square to pqueue and the two treesets
+  def storeAndScheduleNewSquareIfNotDominated(newSquare: Square): Unit = {
+    if (!isNewSquareDominated(newSquare)) {
+      removeDominatedSquares(newSquare)
+      storeAndScheduleSquare(newSquare)
+    }
   }
 
-  def removeSquare(square:Square): Unit ={
-    // TODO
+  def isNewSquareDominated(newSquare: Square): Boolean = {
+    paretoFront.maxBefore(newSquare) match {
+      case Some(potentialBetterSquare)
+        if potentialBetterSquare.obj2 <= newSquare.obj2 && potentialBetterSquare.obj1 < newSquare.obj1 => true
+      case Some(potentialBetterSquare)
+        if potentialBetterSquare.obj2 < newSquare.obj2 && potentialBetterSquare.obj1 <= newSquare.obj1 => true
+      case _ => false
+    }
   }
 
-  def removeSmallestSquare():Option[Square] = {
-    // TODO
-  }//
+  @tailrec
+  final def removeDominatedSquares(newSquare: Square): Unit = {
+    paretoFront.minAfter(newSquare) match {
+      case None => ;
+      case Some(squareBigger) =>
+        if (squareBigger.obj2 >= newSquare.obj2) {
+          //remove squareBigger and continue
+          removeDominatedSquare(squareBigger)
+          removeDominatedSquares(newSquare)
+        }
+    }
+  }
+
+  def removeDominatedSquare(square: Square): Unit = {
+    paretoFront = paretoFront.excl(square)
+    remainingSurface -= square.surface
+    squaresToDevelopBiggestSquareFirst.deleteIfPresent(square)
+    dominatedSolutions = (square.obj1, square.obj2) :: dominatedSolutions
+  }
+
+  def replaceSquare(oldSquare: Square, newSquare: Square): Unit = {
+    paretoFront = paretoFront.excl(oldSquare).incl(newSquare)
+    remainingSurface -= oldSquare.surface
+    remainingSurface += newSquare.surface
+
+    if (squaresToDevelopBiggestSquareFirst.deleteIfPresent(oldSquare)) {
+      squaresToDevelopBiggestSquareFirst.insert(newSquare)
+    }
+  }
+
+  def storeAndScheduleSquare(newSquare: Square): Unit = {
+    squaresToDevelopBiggestSquareFirst.insert(newSquare)
+
+    paretoFront = paretoFront.incl(newSquare)
+    remainingSurface += newSquare.surface
+  }
 
   // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-  def paretoOptimize():List[(Long,Long,Solution)] = {
+  def paretoOptimize(): List[(Long, Long, Solution)] = {
 
     val startSearchNanotime = System.nanoTime()
 
-    //Store initial given solution
-    val square1 = Square(
-      globalMaxObj1, globalMaxObj1,
-      globalMinObj2, globalMinObj2,
-      solutionAtMax1Min2)
+    if (verbose) println("BiObjectiveSearch: search first solution: minObj2")
 
-    storeSquare(square1,squareList.phantom,isNew=true)
+    storeAndScheduleNewSquareIfNotDominated({
+      val neighborhoodForFistSolution = minObj2Neighborhood.getOrElse(minObj1Neighborhood)
+      neighborhoodForFistSolution.doAllMoves(obj = obj2)
 
-    //initialization, search for other extreme of he spectre
-    val startSol = optimize(Long.MaxValue, solutionAtMax1Min2).get
+      val solutionAtMin2: Solution = obj2.model.solution()
 
-    val square = Square(
-      startSol._1, globalMaxObj1,
-      startSol._2, globalMinObj2,
-      startSol._3)
+      //Store initial given solution
+      val square1 = Square(
+        obj1 = obj1.value, obj2 = obj2.value,
+        minObj1 = minObj1, maxObj2 = maxObj2,
+        solutionAtMin2,
+        IndependentSolution(solutionAtMin2))
 
-    storeSquare(square, squareList.phantom, isNew = true)
+      square1
+    })
 
-    if(verbose) println("BiObjectiveSearch: Start front exploration")
+    if (verbose) println("BiObjectiveSearch: Start front exploration")
 
-    var foundPoints = 2
-
-    def printStopCriterion(): Unit ={
-      if(verbose) {
-        println(s"stopCriterion(surface:$remainingSurface/$stopSurface nonDominatedSolutions:$nbSquare/$maxPoints toDevelop:${squaresToDevelop.size})")
-      }
-    }
-    while ((!squaresToDevelop.isEmpty) && (remainingSurface > stopSurface) && (nbSquare < maxPoints)) {
-      printStopCriterion()
-
-      assert(remainingSurface == squaresToDevelop.getElements.toList.map(square => square.surface).sum)
-      assert(nbSquare == squareList.size, "nbSquare:" + nbSquare + " != squareList.size:" + squareList.size)
-
-      val currentSquareToSplit = popFirstSquare()
-
-      val c = ((currentSquareToSplit.obj2 + currentSquareToSplit.minObj2) / 2.0).ceil.toLong
-
-      //we remove the sol from the front
-      val oldPrev = currentSquareToSplit.elemInFront.prev
-      currentSquareToSplit.elemInFront.delete()
-      nbSquare -= 1
-
-      //add the split square back into the front
-      val remainingUpperSquare = currentSquareToSplit.getUpperSquareAboveObj2Cut(c)
-
-      storeSquare(remainingUpperSquare, oldPrev)
-      val prev = remainingUpperSquare.elemInFront
-
-      optimize(c, Option(prev.next.elem).map(_.solution).getOrElse(solutionAtMax1Min2)) match {
-        case None => ;
-        //nothing to do, we already updated the structures accordingly
-        case Some((obj1, obj2, sol)) =>
-          //we have a solution.
-          //correct the front
-          foundPoints += 1
-
-          val squareOnTheRight = prev.next
-          pruneLeftSquares(remainingUpperSquare, obj1) //this will correct the maxObj1 of the split square
-
-          //this square, without any pruning
-          val firstSolutionSquare = Square(
-            obj1, currentSquareToSplit.maxObj1 max obj1, //we are not lucky at all
-            obj2, currentSquareToSplit.minObj2 min obj2, //we can get below the anticipated min
-            sol)
-
-          insertAndPruneRightSquares(squareOnTheRight.elem, firstSolutionSquare)
+    def printStopCriterion(): Unit = {
+      if (verbose) {
+        println(s"stopCriterion(surface:$remainingSurface/$stopSurface nonDominatedSolutions:${paretoFront.size}/$maxPoints toDevelop:${squaresToDevelopBiggestSquareFirst.size})")
       }
     }
 
-    if(verbose) {
-      printStopCriterion()
-      println("elapsed(ms):" + ((System.nanoTime() - startSearchNanotime)/1000000).toInt)
-      println("nbFoundSolutions:" + foundPoints)
-      println("nbNonDominatedSolutions:" + nbSquare)
-      println("removedDominatedSolutions:" + oldParetoPoints.size)
-      println("foundDominatedSolutions:" + (foundPoints - nbSquare - oldParetoPoints.size))
-      println("totalDominatedSolutions:" + (foundPoints - nbSquare))
-      println("remainingSurface:" + remainingSurface)
-      println("nbSquaresToDevelop:" + squaresToDevelop.size)
-      println("filteredSquares:" + nbFilteredSquares)
+    def shouldStop:Boolean = {
+      remainingSurface < stopSurface || paretoFront.size >= maxPoints
+    }
+
+    abstract class WrappedData
+    case class WrappedSearchEnded(searchEnded: SearchEnded[(Long, Long, IndependentSolution)], //obj1,obj2,sol
+                                  initSquare: Square //the one before the split, so we are on the left
+                                 ) extends WrappedData
+    case class WrappedCompleted() extends WrappedData
+    case class WrappedError(msg:Option[String] = None,crash:Option[SearchCrashed] = None) extends WrappedData
+
+    val resultPromise = Promise[WrappedData]()
+    val futureResult: Future[WrappedData] = resultPromise.future
+
+    val maxWorkers = setMaxWorkers match {
+      case Some(m) => m
+      case None => supervisor.nbWorkers //TODO: this is not great because workers can enroll throughout the search; we should be able to scale up when more workers arrive
+    }
+    implicit val system: ActorSystem[_] = supervisor.system
+    implicit val timeout: Timeout = 3.seconds
+
+    //the search is performed in a separated actor while this tread is waiting on a future
+    //we wait on futureResult for the final answer
+    supervisor.spawnNewActor(Behaviors.setup { context: ActorContext[WrappedData] => {
+      if (verbose) context.log.info(s"start search")
+      next(nbRunningOrStartingSearches = 0, context)
+    }
+    }, "DistributedBiObjective")
+
+    def next(nbRunningOrStartingSearches: Int, context:ActorContext[WrappedData]): Behavior[WrappedData] = {
+      if(shouldStop && nbRunningOrStartingSearches == 0){
+        //we should stop
+        //TODO: bind the answer
+        Behaviors.stopped
+      }else if (!shouldStop && nbRunningOrStartingSearches < maxWorkers && !squaresToDevelopBiggestSquareFirst.isEmpty) {
+
+        //split a square
+        val squareToSplit:Square = squaresToDevelopBiggestSquareFirst.removeFirst()
+        context.ask[DelegateSearch, SearchEnded[(Long, Long, IndependentSolution)]](
+          supervisor.supervisorActor, ref =>  DelegateSearch(new OptimizeWithBoundRequest(remoteTaskId = this.remoteTaskIdentification(0),
+            obj1 = this.obj1.getIndependentObj,
+            obj2 = this.obj2.getIndependentObj,
+            maxValueForObj2 = (squareToSplit.maxObj2 + squareToSplit.obj2)/2,
+            startSolution = Some(squareToSplit.independentSolution),
+            sendResultTo = ref))) {
+          case Success(ended:SearchEnded[(Long, Long, IndependentSolution)]) => WrappedSearchEnded(ended, squareToSplit)
+          case Failure(_) => WrappedError(msg = Some("supervisor actor timeout3"))
+        }
+
+        next(nbRunningOrStartingSearches = nbRunningOrStartingSearches + 1,
+          context)
+
+      } else {
+        Behaviors.receive { (context, command) =>
+          command match {
+            case WrappedSearchEnded(searchEnded, initSquare) =>
+              searchEnded match {
+                case SearchCompleted(searchID: Long, (obj1, obj2, independentSolution), durationMS) =>
+
+                  val (child,rectified) = initSquare.createChildAndRectifyThisForSolution(obj1,obj2,independentSolution.makeLocal(store),independentSolution)
+
+                  replaceSquare(initSquare,rectified)
+                  storeAndScheduleNewSquareIfNotDominated(child)
+
+                  next(nbRunningOrStartingSearches = nbRunningOrStartingSearches - 1, context)
+
+                case SearchAborted(uniqueSearchID: Long) =>
+                  //strange, we should never abort serches...
+                  resultPromise.success(WrappedError(msg=Some("search aborted unexpectedly")))
+                  Behaviors.stopped
+                case c:SearchCrashed =>
+                  //finish it all with a crash message
+                  resultPromise.success(WrappedError(crash = Some(c)))
+                  Behaviors.stopped
+              }
+            case  e:WrappedError =>
+              resultPromise.success(e)
+              Behaviors.stopped
+          }
+        }
+      }
+    }
+
+    //await seems to block the actor system??
+    Await.result(futureResult, Duration.Inf) match {
+      case WrappedCompleted() =>
+
+      case WrappedError(msg:Option[String],crash:Option[SearchCrashed])=>
+        if(msg.isDefined){
+          supervisor.shutdown()
+          throw new Error(msg.get)
+        }
+        if(crash.isDefined){
+          supervisor.throwRemoteExceptionAndShutDown(crash.get)
+        }
+        throw new Error("Error in DistributedRestart")
+      case _ =>
+        throw new Error("Unknown error in DistributedFirst")
     }
 
     if(!stayAlive) window.close()
 
-    squareList.toList.map(square => (square.obj1,square.obj2,square.solution))
+    paretoFront.toList.map(square => (square.obj1,square.obj2,square.solution))
+  }
+
+  override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+    throw new Error("DistributedPreto cannot be used as a regular neighborhood; use paretoOptimize method")
   }
 }
-
-
-*/

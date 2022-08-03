@@ -17,7 +17,7 @@
 package oscar.cbls.core.search
 
 import oscar.cbls.core.computation.{Solution, Store, Variable}
-import oscar.cbls.core.distrib.{RemoteNeighborhood, Supervisor}
+import oscar.cbls.core.distrib.{RemoteNeighborhood, RemoteTask, Supervisor}
 import oscar.cbls.core.objective.{AbortException, AbortableObjective, LoggingObjective, Objective}
 import oscar.cbls.lib.search.combinators._
 import oscar.cbls.util.Properties
@@ -47,7 +47,7 @@ case class CodedNeighborhood(codedMove:()=>Unit,impactedVariables:Option[Iterabl
     val nextObj = obj.value
     startSol.restoreDecisionVariables()
     if(acceptanceCriterion(initialObj,nextObj)){
-      MoveFound(new CodedMove(codedMove,nextObj, name))
+      MoveFound(new CodedMove(() => {codedMove()},nextObj, name))
     }else{
       NoMoveFound
     }
@@ -420,11 +420,11 @@ abstract class Neighborhood(name:String = null) {
   }
 
   //Call this at the worker site
-  def identifyRemotelySearchableNeighborhoods:SortedMap[Int,RemoteNeighborhood] = {
-    SortedMap.empty[Int,RemoteNeighborhood] ++ (labelAndExtractRemoteTasks(supervisor = null)._3.map(r => (r.neighborhoodID,r)))
+  def identifyRemotelySearchableNeighborhoods:SortedMap[Int,RemoteTask] = {
+    SortedMap.empty[Int,RemoteNeighborhood] ++ (labelAndExtractRemoteTasks(supervisor = null)._3.map(r => (r.taskId,r)))
   }
 
-  def labelAndExtractRemoteTasks(supervisor: Supervisor, currentID: Int = 0, nbDistributedCombinators:Int = 0, acc: List[RemoteNeighborhood] = Nil):(Int,Int,List[RemoteNeighborhood]) =
+  def labelAndExtractRemoteTasks(supervisor: Supervisor, currentID: Int = 0, nbDistributedCombinators:Int = 0, acc: List[RemoteTask] = Nil):(Int,Int,List[RemoteTask]) =
     (currentID, nbDistributedCombinators, acc)
 }
 

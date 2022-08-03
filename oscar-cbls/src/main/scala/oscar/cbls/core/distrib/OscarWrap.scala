@@ -78,13 +78,13 @@ case class DoAllMoveSearch(override val uniqueSearchId:Long = -1,
 //le truc qu'on envoie au worker
 case class RemoteTaskIdentification(taskId: Int, description:String)
 
-abstract class RemoteTask[TaskMessage <: SearchRequest](val taskId: Int, description:String) {
+abstract class RemoteTask(val taskId: Int, description:String) {
 
   val remoteIdentification: RemoteTaskIdentification = RemoteTaskIdentification(taskId,description)
 
   def abort():Unit
 
-  private def loadSolution(startSolOpt:Option[IndependentSolution],
+  def loadSolution(startSolOpt:Option[IndependentSolution],
                            model:Store,
                            currentSolOpt:Option[(Solution,Int)]) : (Solution,Int) = {
     startSolOpt match {
@@ -106,17 +106,11 @@ abstract class RemoteTask[TaskMessage <: SearchRequest](val taskId: Int, descrip
     }
   }
 
-  def doTask(taskMessage:SearchRequest,model:Store,currentSolOpt:Option[(Solution,Int)]):(Solution,Int) = {
-    val initLocalSolutionAndSolutionId:(Solution,Int) = loadSolution(taskMessage.startSolutionOpt,model,currentSolOpt)
-    internalDoTask(taskMessage.asInstanceOf[TaskMessage],model:Store,initLocalSolutionAndSolutionId._1)
-    initLocalSolutionAndSolutionId
-  }
-
-  def internalDoTask(taskMessage:TaskMessage,model:Store,startSol:Solution): Unit
+  def doTask(taskMessage:SearchRequest,model:Store,currentSolOpt:Option[(Solution,Int)]):(Solution,Int)
 }
 
 class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
-  extends RemoteTask[NeighborhoodSearchRequest](neighborhoodID: Int,neighborhood.toString){
+  extends RemoteTask(neighborhoodID: Int,neighborhood.toString){
 
   @volatile
   var bestObjSoFar:Long = Long.MaxValue
@@ -128,20 +122,21 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
     shouldAbortComputation = true
   }
 
-  override def internalDoTask(searchRequest: NeighborhoodSearchRequest,model:Store,startSol:Solution): Unit = {
+  def doTask(taskMessage:SearchRequest,model:Store,currentSolOpt:Option[(Solution,Int)]):(Solution,Int) = {
+    val (startSol,solId):(Solution,Int) = loadSolution(taskMessage.startSolutionOpt,model,currentSolOpt)
 
     shouldAbortComputation = false
 
     neighborhood.reset()
 
-    searchRequest match{
+    taskMessage.asInstanceOf[NeighborhoodSearchRequest] match{
       case s:SingleMoveSearch => doSingleMoveSearch(s,model,startSol)
       case d:DoAllMoveSearch => doDoAllMoveSearch(d,model,startSol)
-      //TODO: more search tasks should be supported, bu I do not know yet how to do it cleanly
     }
     shouldAbortComputation = false
-  }
 
+     (startSol,solId)
+  }
 
   private def doSingleMoveSearch(searchRequest: SingleMoveSearch,model:Store,startSol:Solution) : Unit = {
 

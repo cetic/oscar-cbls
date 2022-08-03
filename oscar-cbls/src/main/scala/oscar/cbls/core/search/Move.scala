@@ -87,16 +87,16 @@ abstract class Move(val objAfter:Long = Long.MaxValue, val neighborhoodName:Stri
 
 object Move{
   def apply(objAfter:Long = 0L, neighborhoodName:String = null)(code: =>Unit):CodedMove =
-    new CodedMove(code, objAfter, neighborhoodName)
+    new CodedMove(() => code, objAfter, neighborhoodName)
 }
 /**
  * this class does not provide an implementation for touchedVariables,
  * since we are only inputting source code for executing the move
  * */
-class CodedMove(code: => Unit, override val objAfter: Long, override val neighborhoodName: String = null)
+class CodedMove(code: () => Unit, override val objAfter: Long, override val neighborhoodName: String = null)
   extends Move(objAfter, neighborhoodName){
 
-  override def commit(): Unit = code
+  override def commit(): Unit = code()
 
 
   override def toString: String = neighborhoodNameToString + "CodedMove"
