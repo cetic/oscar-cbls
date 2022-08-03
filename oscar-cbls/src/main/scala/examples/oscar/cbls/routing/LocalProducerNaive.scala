@@ -437,7 +437,7 @@ object LocalProducer extends App {
     onePointMove,
     removePoint,
     threeOpt(3) name "ThreeOpt3",
-    threeOpt(10) name "ThreeOpt10").map(n => profile(n)))
+    threeOpt(10) name "ThreeOpt10").map(n => n))
 
   // Adding visualisation
   val search = if (visu) searchStrategy afterMove  map.updateVisu(vrp.routes.value,vrp.unrouted.value) else searchStrategy

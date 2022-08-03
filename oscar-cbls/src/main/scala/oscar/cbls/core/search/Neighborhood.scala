@@ -129,7 +129,7 @@ abstract class Neighborhood(name:String = null) {
    *
    * @return
    */
-  final def profilingStatistics:String = Properties.justifyRightArray(Profile.statisticsHeader :: collectProfilingStatistics/*.map(a => ("" :: a.toList).toArray)*/).mkString("\n")
+  final def profilingStatistics:String = Properties.justifyRightArray(Profiler.statisticsHeader :: collectProfilingStatistics/*.map(a => ("" :: a.toList).toArray)*/).mkString("\n")
   def collectProfilingStatistics:List[Array[String]] = List(profiler.collectThisProfileStatistics)
   //TODO: profiling stats should als include %founds next to #found
   protected def createProfiler(): Profiler

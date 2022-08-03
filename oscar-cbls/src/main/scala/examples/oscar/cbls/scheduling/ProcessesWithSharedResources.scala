@@ -4,7 +4,7 @@ import oscar.cbls.{Objective, Store}
 import oscar.cbls.business.scheduling.{ActivityId, Mode, Schedule}
 import oscar.cbls.business.scheduling.model.{DisjunctiveResourceWithSetupTimes, Resource, SetupTimes}
 import oscar.cbls.business.scheduling.neighborhood.{ReinsertActivity, SwapActivity}
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
+import oscar.cbls.lib.search.combinators.BestSlopeFirst
 
 import scala.util.Random
 
@@ -68,7 +68,7 @@ object ProcessesWithSharedResources {
     // Neighborhoods
     val swapNH = new SwapActivity(schedulingProblem, "Swap")
     val reinsertNH = new ReinsertActivity(schedulingProblem, "Reinsert")
-    val combinedNH = BestSlopeFirst(List(Profile(reinsertNH), Profile(swapNH)))
+    val combinedNH = BestSlopeFirst(List(reinsertNH, swapNH))
     // This is the search strategy
     println("Computing solution...")
     val t0 = System.nanoTime()

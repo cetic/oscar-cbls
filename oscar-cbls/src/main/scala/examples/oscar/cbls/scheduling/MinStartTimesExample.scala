@@ -4,7 +4,7 @@ import oscar.cbls._
 import oscar.cbls.business.scheduling.model._
 import oscar.cbls.business.scheduling.neighborhood._
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
+import oscar.cbls.lib.search.combinators.BestSlopeFirst
 import oscar.cbls.lib.invariant.seq.SeqSum
 
 import scala.util.Random
@@ -78,7 +78,7 @@ object MinStartTimesExample extends App {
   //val replaceNHcomb = removeNH dynAndThen (_ => addNH)
   val replaceNH = new ReplaceActivity(scheduling, "Replace")
   //val combinedNH = Profile(replaceNHcomb)
-  val combinedNH = BestSlopeFirst(List(Profile(addNH), Profile(reinsertNH), Profile(swapNH), Profile(replaceNH)))
+  val combinedNH = BestSlopeFirst(List(addNH, reinsertNH, swapNH, replaceNH))
   //Profile c'est pour les stats : à enlever
 
   //lancement de la recherche

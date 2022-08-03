@@ -37,33 +37,33 @@ class SimpleVRP(n: Int, v: Int, size: Int, iteration: Int) {
 
 
   def routeUnroutedPoint =
-    profile(insertPointUnroutedFirst(myVRP.unrouted,
+    insertPointUnroutedFirst(myVRP.unrouted,
       () => myVRP.kFirst(10,closestRelevantNeighbors(_),_ => node => myVRP.isRouted(node)),
       myVRP,
       selectInsertionPointBehavior = Best(),
-      neighborhoodName = "InsertUR 1"))
+      neighborhoodName = "InsertUR 1")
 
   def onePtMove =
-    profile(onePointMove(myVRP.routed,
+    onePointMove(myVRP.routed,
       () => myVRP.kFirst(10,closestRelevantNeighbors(_),_ => node => myVRP.isRouted(node)),
       myVRP,
       selectPointToMoveBehavior = Best(),
-      selectDestinationBehavior = Best()))
+      selectDestinationBehavior = Best())
 
   val twoOpt =
-    profile(TwoOpt(myVRP.routed,
+    TwoOpt(myVRP.routed,
       () => myVRP.kFirst(10,closestRelevantNeighbors(_),_ => node => myVRP.isRouted(node)),
       myVRP,
       selectSegmentStartBehavior = Best(),
-      selectSegmentEndBehavior = Best()))
+      selectSegmentEndBehavior = Best())
 
   def threeOpt =
-    profile(ThreeOpt(myVRP.routed,
+    ThreeOpt(myVRP.routed,
       () => myVRP.kFirst(10,closestRelevantNeighbors(_),_ => node => myVRP.isRouted(node)),
       myVRP,
       selectInsertionPointBehavior = Best(),
       selectMovedSegmentBehavior = Best(),
-      selectFlipBehavior = Best()))
+      selectFlipBehavior = Best())
 
   val search =
   //bestSlopeFirst(List(routeUnroutedPoint, twoOpt, onePtMove, threeOpt))

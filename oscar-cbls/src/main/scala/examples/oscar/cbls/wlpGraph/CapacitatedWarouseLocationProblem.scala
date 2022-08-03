@@ -397,13 +397,13 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
   var lastDisplay = this.getWatch
 
   val search = bestSlopeFirst(List(
-    profile(AssignNeighborhood(deliveryToWarehouse,"SwitchAssignedWarehouse",domain = (_,i) => distanceToClosestCentroid(i).map(c => c._1.valueInt))),
-    profile(AssignNeighborhood(warehouseOpenArray,"OpenWarehouseAndLink") dynAndThen assignHalfTheClosestStores),
-    profile(AssignNeighborhood(conditionalEdgesOpenArray,"SwitchEdge")),
-    profile(vlsn),
-    profile(swapWarehouses dynAndThen transferStores name "swapAndReassign"),
-    profile(AssignNeighborhood(deliveryToWarehouse,"SwitchAssignedWarehouse",domain = (_,i) => distanceToClosestCentroid(i).map(c => c._1.valueInt)) dynAndThen assignDelivery),
-    profile(swapStore))).onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize1"), 2, obj, restartFromBest = true) afterMove(
+    AssignNeighborhood(deliveryToWarehouse,"SwitchAssignedWarehouse",domain = (_,i) => distanceToClosestCentroid(i).map(c => c._1.valueInt)),
+    AssignNeighborhood(warehouseOpenArray,"OpenWarehouseAndLink") dynAndThen assignHalfTheClosestStores,
+    AssignNeighborhood(conditionalEdgesOpenArray,"SwitchEdge"),
+    vlsn,
+    swapWarehouses dynAndThen transferStores name "swapAndReassign",
+    AssignNeighborhood(deliveryToWarehouse,"SwitchAssignedWarehouse",domain = (_,i) => distanceToClosestCentroid(i).map(c => c._1.valueInt)) dynAndThen assignDelivery,
+    swapStore)).onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize1"), 2, obj, restartFromBest = true) afterMove(
     if(lastDisplay + displayDelay <= this.getWatch){ //} && obj.value < bestDisplayedObj) {
 
     visual.redraw(openEdges.value,

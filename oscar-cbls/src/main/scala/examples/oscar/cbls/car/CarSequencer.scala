@@ -18,7 +18,6 @@ import oscar.cbls.core.computation.CBLSIntVar
 import oscar.cbls.lib.search.neighborhoods.WideningFlipNeighborhood
 import oscar.cbls.modeling.CBLSModel
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.lib.search.combinators.Profile
 
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedMap
@@ -89,12 +88,12 @@ object CarSequencer extends CBLSModel with App {
   println("starting search")
 
   val search =
-    (Profile(swapsNeighborhood(carSequence,"mostViolatedSwap", searchZone2 = () => {val v = mostViolatedCars.value; (_,_) => v}, symmetryCanBeBrokenOnIndices = false))
-      exhaust Profile(WideningFlipNeighborhood(carSequence)) //it seems useless to try swaps once flip is exhausted, so simple exhaust is used here
-      .onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars")) guard(() => mostViolatedCars.value.size > 2), 2, obj)
-      .onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => 5 max (violatedCars.value.size/2))), 2, obj)
-      .onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, name = "shuffleMostCars", numberOfShuffledPositions = () => nbCars/2)), 2, obj)
-      orElse (Profile(shuffleNeighborhood(carSequence, name = "shuffleAllCars")) maxMoves 4)
+    (swapsNeighborhood(carSequence,"mostViolatedSwap", searchZone2 = () => {val v = mostViolatedCars.value; (_,_) => v}, symmetryCanBeBrokenOnIndices = false)
+      exhaust WideningFlipNeighborhood(carSequence) //it seems useless to try swaps once flip is exhausted, so simple exhaust is used here
+      .onExhaustRestartAfter(shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars") guard(() => mostViolatedCars.value.size > 2), 2, obj)
+      .onExhaustRestartAfter(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => 5 max (violatedCars.value.size/2)), 2, obj)
+      .onExhaustRestartAfter(shuffleNeighborhood(carSequence, name = "shuffleMostCars", numberOfShuffledPositions = () => nbCars/2), 2, obj)
+      orElse (shuffleNeighborhood(carSequence, name = "shuffleAllCars") maxMoves 4)
       showObjectiveFunction(obj)
       saveBestAndRestoreOnExhaust obj) //in case we do not solve it, we want to restore the best solution anyway
 

@@ -140,7 +140,7 @@ object WLPWithRedundancy extends App with StopWatch{
   }
 
   def open3Warehouses =
-    profile(AssignNeighborhood(warehouseOpenArray,name = "Open 3 closed Warehouses",searchZone = () => closedWarehouses.value) dynAndThen ((move : AssignMove) => makeAssignClose(move,10) andThen makeAssignClose(move,10)))
+    AssignNeighborhood(warehouseOpenArray,name = "Open 3 closed Warehouses",searchZone = () => closedWarehouses.value) dynAndThen ((move : AssignMove) => makeAssignClose(move,10) andThen makeAssignClose(move,10))
 
   val warehouseToEdgesDistance =
     Array.tabulate(W)(w1 => Array.tabulate(nbConditionalEdges)(c => c).sortWith((c1 : Int, c2 : Int) =>
@@ -152,22 +152,22 @@ object WLPWithRedundancy extends App with StopWatch{
     AssignNeighborhood(conditionalEdgesOpenArray,"AssignEdgeClose",searchZone = () => kNearestEdges(k,assign.id))
   }
 
-  val assignWarehouseAndEdge = profile(AssignNeighborhood(warehouseOpenArray,"SwitchWarehouseAndEdgeClose") dynAndThen(AssignCloseEdge(_,10)))
+  val assignWarehouseAndEdge = AssignNeighborhood(warehouseOpenArray,"SwitchWarehouseAndEdgeClose") dynAndThen(AssignCloseEdge(_,10))
 
   val swapWarehouseThenAssignEdge =
-    profile(swapClosest(5) dynAndThen((swap : SwapMove) => AssignNeighborhood(conditionalEdgesOpenArray,"SwitchCloseEdge",searchZone = () => KSmallest.kFirst(10,warehouseToEdgesDistance(swap.idI)))))
+    swapClosest(5) dynAndThen((swap : SwapMove) => AssignNeighborhood(conditionalEdgesOpenArray,"SwitchCloseEdge",searchZone = () => KSmallest.kFirst(10,warehouseToEdgesDistance(swap.idI))))
 
   var lastDisplay = this.getWatch
   println("Time to prepare: " + (System.currentTimeMillis() - timeStartingModel))
   val search =
     bestSlopeFirst(
       List(
-        profile(AssignNeighborhood(warehouseOpenArray,"Assign Warehouse")),
-        profile(AssignNeighborhood(warehouseOpenArray,"OpenWarehouses",searchZone = () => openWarehouses.value)),
-        profile(AssignNeighborhood(conditionalEdgesOpenArray,"Assign Edge")),
+        AssignNeighborhood(warehouseOpenArray,"Assign Warehouse"),
+        AssignNeighborhood(warehouseOpenArray,"OpenWarehouses",searchZone = () => openWarehouses.value),
+        AssignNeighborhood(conditionalEdgesOpenArray,"Assign Edge"),
         assignWarehouseAndEdge,
         swapWarehouseThenAssignEdge,
-        profile(swapClosest(20))
+        swapClosest(20)
       )
     ).onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize1"), 4, obj) afterMove (
       if(lastDisplay + displayDelay <= this.getWatch){ //} && obj.value < bestDisplayedObj) {

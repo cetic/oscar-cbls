@@ -19,6 +19,5 @@ trait ModelingAPI
   with InstrumentNeighborhoodsCombinator
   with MetaheuristicCombinators
   with NeighborhoodSelectionCombinators
-  with UtilityCombinators
   //standard neighborhoods
   with StandardNeighborhoods

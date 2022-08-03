@@ -115,7 +115,7 @@ object GraphPartitionGLS extends CBLSModel with App {
         //  symmetryCanBeBrokenOnIndices = false,
         //  searchZone2 = (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).value != itsPartition),
         //  name = "swapAdjacent"))
-      ).map(profile(_)),refresh = nbNodes/10)
+      ),refresh = nbNodes/10)
 
   val metaHeuristicSearch =
       GuidedLocalSearch.progressiveGuidedLocalSearch(

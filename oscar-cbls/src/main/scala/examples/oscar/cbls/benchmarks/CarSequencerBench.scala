@@ -1,6 +1,5 @@
 package examples.oscar.cbls.benchmarks
 
-import oscar.cbls.lib.search.combinators.Profile
 import oscar.cbls.lib.search.neighborhoods.{RollNeighborhood, SwapMove}
 import oscar.cbls.util.Benchmark
 import oscar.cbls.{CBLSIntVar, CBLSModel, Objective}
@@ -118,9 +117,9 @@ object CarSequencerBench extends CBLSModel with App {
 
   val search2 = (
     ((mostViolatedSwap orElse roll)
-      .onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars")) guard (() => mostViolatedCars.value.size > 2), 5, obj)
+      .onExhaustRestartAfter(shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars") guard(() => mostViolatedCars.value.size > 2), 5, obj)
       orElse shiftNeighbor)
-      .onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => violatedCars.value.size / 2)), 2, obj)
+      .onExhaustRestartAfter(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => violatedCars.value.size/2), 2, obj)
       orElse (shuffleNeighborhood(carSequence, name = "shuffleAllCars") maxMoves 5)
       guard (() => c.violation.value > 0)
       saveBestAndRestoreOnExhaust obj)
@@ -128,9 +127,9 @@ object CarSequencerBench extends CBLSModel with App {
   val search3 = (
     ((random(mostViolatedSwap, swap)
       orElse rollViolated)
-      .onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars")) guard (() => mostViolatedCars.value.size > 2), 5, obj)
+      .onExhaustRestartAfter(shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars") guard(() => mostViolatedCars.value.size > 2), 5, obj)
       exhaustBack shiftNeighbor)
-      .onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => violatedCars.value.size / 2)), 2, obj)
+      .onExhaustRestartAfter(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => violatedCars.value.size/2), 2, obj)
       orElse (shuffleNeighborhood(carSequence, name = "shuffleAllCars") maxMoves 5)
       guard (() => c.violation.value > 0)
       saveBestAndRestoreOnExhaust obj)
@@ -138,27 +137,27 @@ object CarSequencerBench extends CBLSModel with App {
   val search4 = (
     ((random(mostViolatedSwap, swap)
       orElse rollViolated)
-      .onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars")) guard (() => mostViolatedCars.value.size > 2), 5, obj)
+      .onExhaustRestartAfter(shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars") guard(() => mostViolatedCars.value.size > 2), 5, obj)
       exhaustBack shiftNeighbor)
-      .onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => violatedCars.value.size / 2)), 2, obj)
+      .onExhaustRestartAfter(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => violatedCars.value.size/2), 2, obj)
       orElse (shuffleNeighborhood(carSequence, name = "shuffleAllCars") maxMoves 5)
       guard (() => c.violation.value > 0)
       saveBestAndRestoreOnExhaust obj)
 
   val search5 = (
-    (random(mostViolatedSwap, roll)
-      .onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars")) guard (() => mostViolatedCars.value.size > 2), 5, obj)
+    (random(mostViolatedSwap,roll)
+      .onExhaustRestartAfter(shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars") guard(() => mostViolatedCars.value.size > 2), 5, obj)
       orElse shiftNeighbor)
-      .onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => violatedCars.value.size / 2)), 2, obj)
+      .onExhaustRestartAfter(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => violatedCars.value.size/2), 2, obj)
       orElse (shuffleNeighborhood(carSequence, name = "shuffleAllCars") maxMoves 5)
       guard (() => c.violation.value > 0)
       saveBestAndRestoreOnExhaust obj)
 
   val search6 = (
-    (random(mostViolatedSwap, roll)
-      .onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars")) guard (() => mostViolatedCars.value.size > 2), 4, obj)
+    (random(mostViolatedSwap,roll)
+      .onExhaustRestartAfter(shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars") guard(() => mostViolatedCars.value.size > 2), 4, obj)
       orElse shiftNeighbor)
-      .onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => violatedCars.value.size / 2)), 1, obj)
+      .onExhaustRestartAfter(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => violatedCars.value.size/2), 1, obj)
       orElse (shuffleNeighborhood(carSequence, name = "shuffleAllCars") maxMoves 6)
       guard (() => c.violation.value > 0)
       saveBestAndRestoreOnExhaust obj)

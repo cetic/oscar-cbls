@@ -103,13 +103,13 @@ object TspBridgeDistributed extends App {
       ))
 
     // Takes an unrouted node and insert it at the best position within the 10 closest nodes (inserting it after this node)
-    def routeUnroutedPoint(k: Int) = profile(insertPointUnroutedFirst(myVRP.unrouted,
+    def routeUnroutedPoint(k: Int) = insertPointUnroutedFirst(myVRP.unrouted,
       () => myVRP.kFirst(k, (x: Int) => closestRoutingPoint(x), routedPostFilter),
       myVRP,
       neighborhoodName = "InsertUF",
       hotRestart = false,
       selectNodeBehavior = First(), // Select the first unrouted node in myVRP.unrouted
-      selectInsertionPointBehavior = First())) // Inserting after the first node in myVRP.kFirst(10,...)
+      selectInsertionPointBehavior = First()) // Inserting after the first node in myVRP.kFirst(10,...)
 
     // Moves a routed node to a better place (best neighbor within the 10 closest nodes)
     def onePtMove(k: Int) = onePointMove(
@@ -118,10 +118,10 @@ object TspBridgeDistributed extends App {
       myVRP)
 
 
-    def myThreeOpt(k: Int) = profile(
+    def myThreeOpt(k: Int) =
       threeOpt(potentialInsertionPoints = myVRP.routed,
         relevantNeighbors = () => myVRP.kFirst(k, (x: Int) => closestRoutingPoint(x), routedPostFilter),
-        vrp = myVRP))
+        vrp = myVRP)
 
     def switchBridge = assignNeighborhood(bridgeConditionArray, "switchBridge")
 
@@ -140,24 +140,24 @@ object TspBridgeDistributed extends App {
       }
     }
 
-    def closeUsedBridge = profile(assignNeighborhood(bridgeConditionArray, name = "closeUsedBridge", searchZone = neededConditions))
+    def closeUsedBridge = assignNeighborhood(bridgeConditionArray, name = "closeUsedBridge", searchZone = neededConditions)
 
     val search = (new DistributedFirst(Array(
       routeUnroutedPoint(50),
-      profile(onePtMove(20)),
+      onePtMove(20),
       myThreeOpt(20)))
       onExhaust {
       println(s"finished inserts; neededBridges:$neededConditions")
     }
-      exhaust (profile(closeAllUselessBridges) maxMoves 1)
+      exhaust (closeAllUselessBridges maxMoves 1)
       exhaust (
       new DistributedFirst(
         Array(
-          profile(onePtMove(40)),
+          onePtMove(40),
           closeUsedBridge,
           myThreeOpt(40),
-          profile(onePtMove(20) andThen switchBridge name "switchAndMove"),
-          profile(switchBridge),
+          onePtMove(20) andThen switchBridge name "switchAndMove",
+          switchBridge,
           swapBridgeMod(5,0),
           swapBridgeMod(5,1),
           swapBridgeMod(5,2),

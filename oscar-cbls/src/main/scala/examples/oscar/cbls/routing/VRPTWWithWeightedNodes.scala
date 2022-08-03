@@ -138,19 +138,19 @@ class VRPTWWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, min
   ////////// Neighborhood definition //////////
 
   // Takes an unrouted node and insert it at the best position within the 10 closest nodes (inserting it after this node)
-  val routeUnroutedPoint = profile(insertPointUnroutedFirst(myVRP.unrouted,
+  val routeUnroutedPoint = insertPointUnroutedFirst(myVRP.unrouted,
     () => myVRP.kFirst(20, closestRelevantNeighborsByDistance(_), routedPostFilter),
     myVRP,
     neighborhoodName = "InsertUF",
     hotRestart = false,
     selectNodeBehavior = First(), // Select the first unrouted node in myVRP.unrouted
-    selectInsertionPointBehavior = First())) // Inserting after the first node in myVRP.kFirst(10,...)
+    selectInsertionPointBehavior = First()) // Inserting after the first node in myVRP.kFirst(10,...)
 
   // Moves a routed node to a better place (best neighbor within the 10 closest nodes)
-  def onePtMove(k: Int) = profile(onePointMove(
+  def onePtMove(k: Int) = onePointMove(
     myVRP.routed,
     () => myVRP.kFirst(k, closestRelevantNeighborsByDistance(_), routedPostFilter),
-    myVRP))
+    myVRP)
 
   ////////// Final search procedure //////////
 

@@ -70,12 +70,12 @@ object WarehouseLocationDistributed2 extends App {
     val nbSmallSwaps = 1 max nbWorker
     val nbBigSwaps = 1 max nbWorker
     //These neighborhoods are inefficient and slow; using multiple core is the wrong answer to inefficiency
-    val neighborhood = (profile(
+    val neighborhood = (
       new DistributedFirst((
         List(assignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
         ) ++ ((0 until nbSmallSwaps).map((i: Int) => swapsK(20, modulo = nbSmallSwaps, shift = i)))
           ++ ((0 until nbBigSwaps).map((i: Int) => swapsK(100, modulo = nbBigSwaps, shift = i)))
-        ).toArray))
+        ).toArray)
       onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray, () => W / 10), 2, obj, minRestarts = 5)
       )
 

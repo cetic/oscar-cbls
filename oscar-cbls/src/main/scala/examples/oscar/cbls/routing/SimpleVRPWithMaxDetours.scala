@@ -105,7 +105,7 @@ object SimpleVRPWithMaxDetours extends App {
 
   }
 
-  def onePtMove(k: Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k, closestRelevantNeighborsByDistance(_), postFilter), myVRP)) name "One Point Move"
+  def onePtMove(k: Int) = onePointMove(myVRP.routed, () => myVRP.kFirst(k, closestRelevantNeighborsByDistance(_), postFilter), myVRP) name "One Point Move"
 
 
   // INSERTING

@@ -115,7 +115,7 @@ object SimplePDPTW extends App {
       }) name "OneChainMove"
   }
 
-  def onePtMove(k: Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k, closestRelevantPredecessorsByDistance(_)), myVRP))
+  def onePtMove(k: Int) = onePointMove(myVRP.routed, () => myVRP.kFirst(k, closestRelevantPredecessorsByDistance(_)), myVRP)
 
   // INSERTING
 

@@ -9,7 +9,7 @@ import oscar.cbls.business.geometry.model.CBLSGeometryConst
 import oscar.cbls.core.computation.IntValue
 import oscar.cbls.core.search.{ConstantMovesNeighborhood, EvaluableCodedMove}
 import oscar.cbls.lib.invariant.numeric.{Sqrt, Square, Sum, Sum2}
-import oscar.cbls.lib.search.combinators.{Atomic, BestSlopeFirst, Profile}
+import oscar.cbls.lib.search.combinators.{Atomic, BestSlopeFirst}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.visual.geometry.GeometryDrawing
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
@@ -241,25 +241,25 @@ object TestGeometryPackingMinDistance extends App {
 
   val displayDelay:Long = 1000.toLong * 1000 * 1000 //1 seconds
   var lastDisplay = System.nanoTime()
-  val search = (Profile(BestSlopeFirst(
+  val search = (BestSlopeFirst(
     List(
-      Profile(gradientOnOneShape(0)),  //TODO: try gradient on multiple shapes at the same time.
-      Profile(gradientOnOneShape(1)),
-      Profile(gradientOnOneShape(2)),
-      Profile(gradientOnOneShape(3)),
-      Profile(gradientOnOneShape(4)),
-      Profile(gradientOnOneShape(5)),
-      Profile(gradientOnOneShape(6)),
-      Profile(gradientOnOneShape(7)),
-      Profile(gradientOnOneShape(8)),
-      Profile(gradientOnOneShape(9)),
-      Profile(moveToHole),
-      Profile(moveToHoleAndGradient),
-      Profile(moveOneCoordNumeric),
-      Profile(moveOneShapeXAndThenY),
-      Profile(swapAndSlide),
-      Profile(swapAndGradient),
-      Profile(moveOneShapeYAndThenX)
+      gradientOnOneShape(0),  //TODO: try gradient on multiple shapes at the same time.
+      gradientOnOneShape(1),
+      gradientOnOneShape(2),
+      gradientOnOneShape(3),
+      gradientOnOneShape(4),
+      gradientOnOneShape(5),
+      gradientOnOneShape(6),
+      gradientOnOneShape(7),
+      gradientOnOneShape(8),
+      gradientOnOneShape(9),
+      moveToHole,
+      moveToHoleAndGradient,
+      moveOneCoordNumeric,
+      moveOneShapeXAndThenY,
+      swapAndSlide,
+      swapAndGradient,
+      moveOneShapeYAndThenX
     ),
     refresh=nbShapes*10))
     .onExhaustRestartAfter(
@@ -270,12 +270,12 @@ object TestGeometryPackingMinDistance extends App {
     RandomizeNeighborhood(flattenedCoordArray, () => flattenedCoordArray.length, name = "fullRandomize"),
     maxRestartWithoutImprovement = 2,
     obj)
-    afterMove {
+    .afterMove {
     if(System.nanoTime() > lastDisplay + displayDelay) {
       updateDisplay()
       lastDisplay = System.nanoTime()
     }
-  } showObjectiveFunction obj)
+  } showObjectiveFunction obj
 
   // Thread.sleep(20000)
   // println("start")

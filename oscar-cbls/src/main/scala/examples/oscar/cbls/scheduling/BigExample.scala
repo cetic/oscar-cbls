@@ -5,7 +5,7 @@ import oscar.cbls.business.scheduling.ActivityId
 import oscar.cbls.business.scheduling.model._
 import oscar.cbls.business.scheduling.neighborhood._
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
+import oscar.cbls.lib.search.combinators.BestSlopeFirst
 
 import scala.util.Random
 
@@ -111,7 +111,7 @@ object BigExample {
     val swapNH = new SwapActivity(scProblem, "Swap")
     val reinsertNH = new ReinsertActivity(scProblem, "Reinsert")
     val replaceNH = new ReplaceActivity(scProblem, "Replace")
-    val combinedNH = BestSlopeFirst(List(Profile(reinsertNH), Profile(swapNH), Profile(replaceNH)))
+    val combinedNH = BestSlopeFirst(List(reinsertNH, swapNH, replaceNH))
     // This is the search strategy
     println(s"Initial list (size: ${scProblem.activityPriorityList.value.size}) = ${scProblem.activityPriorityList.value.toList}")
     println("Computing solution...")
