@@ -34,10 +34,10 @@ import scala.concurrent.{Await, Future, Promise}
 import scala.concurrent.duration.{Duration, DurationInt}
 import scala.util.{Failure, Success}
 
-class OptimizeWithBoundTask(taskId:Int,
-                            minObj1WithOBj2BoundNeighborhood:Neighborhood,
-                            minObj2WithFoundObj1BoundNeighborhood:Neighborhood)
-  extends RemoteTask(taskId,"optimizeWithBound"){
+class SearchNewParetoPoint(taskId:Int,
+                           minObj1WithOBj2BoundNeighborhood:Neighborhood,
+                           minObj2WithFoundObj1BoundNeighborhood:Neighborhood)
+  extends RemoteTask(taskId,"SearchNewParetoPoint"){
 
   override def abort(): Unit = { } //there is no abort
 
@@ -50,25 +50,33 @@ class OptimizeWithBoundTask(taskId:Int,
     val obj1 = taskMessage.obj1.convertToObjective(model)
     val obj2 = taskMessage.obj2.convertToObjective(model)
 
+    println("obj2.value: " + obj2.value)
+    println("taskMessage.maxValueForObj2:" + taskMessage.maxValueForObj2)
     val minObj1WithOBj2Bound =
       CascadingObjective(
-        () => (obj2.value >= taskMessage.maxValueForObj2),
+        () => (0L max (obj2.value - taskMessage.maxValueForObj2)),
         obj1)
     //this ensures that metaheuristics starts from scratch properly
     minObj1WithOBj2BoundNeighborhood.reset()
     minObj1WithOBj2BoundNeighborhood.doAllMoves(obj = minObj1WithOBj2Bound)
 
     val foundOBj1 = obj1.value
+    val foundOBj2 = obj2.value
+
     //this ensures that metaheuristics starts from scratch properly
     minObj2WithFoundObj1BoundNeighborhood.reset()
-    val minObj2WithFoundObj1 = new CascadingObjective(() => (obj1.value > foundOBj1), obj2)
+    val minObj2WithFoundObj1 = new CascadingObjective(() => (0L max (obj1.value - foundOBj1)), obj2)
     minObj2WithFoundObj1BoundNeighborhood.doAllMoves(obj = minObj2WithFoundObj1)
 
     val dur = System.currentTimeMillis() - startTime
 
+    println("finished")
+    println("obj1.value:" + obj1.value)
+    println("obj2.value:" + obj2.value)
+
     taskMessage.sendResultTo!SearchCompleted(
       taskMessage.uniqueSearchId,
-      (obj1.value, obj2.value,IndependentSolution(model.solution())),
+      (obj1.value, obj2.value, IndependentSolution(model.solution())),
       dur.toInt)
 
     startSol.restoreDecisionVariables()
@@ -87,9 +95,14 @@ case class OptimizeWithBoundRequest(override val remoteTaskId:RemoteTaskIdentifi
 
   override def startSolutionOpt: Option[IndependentSolution] = startSolution //we are not interested by hotRestart
 
-  override def dropStartSolution: SearchRequest = this.copy(startSolution = None)
+  override def dropStartSolution: SearchRequest = {
+    println("dropping startsol")
+    this.copy(startSolution = None)
+  }
 
   override def neighborhoodIdOpt: Option[Int] = Some(remoteTaskId.taskId)
+
+  override def toString: String = s"OptimizeWithBoundRequest(maxValueForObj2:$maxValueForObj2)"
 }
 
 /**
@@ -123,24 +136,24 @@ case class OptimizeWithBoundRequest(override val remoteTaskId:RemoteTaskIdentifi
  *                     typically when you want to trade time for granularity of the Pareto front.
  */
 class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
-                                   minObj2Neighborhood:Option[Neighborhood],
+                                   minObj2Neighborhood:Option[Neighborhood] = None,
                                    obj1:Objective,
                                    obj2:Objective,
                                    minObj1:Long = Long.MinValue,
                                    maxObj2:Long = Long.MaxValue,
                                    stopSurface:Long = 0,
-                                   maxPoints:Int = Int.MaxValue,
+                                   maxPoints:Int = 200,
                                    verbose:Boolean = false,
-                                   visu:Boolean = true,
+                                   visu:Boolean = false,
                                    visuTitle: String = "Pareto",
                                    obj1Name: String = "obj1",
                                    obj2Name: String = "obj2",
                                    filterSquare:(Long, Long, Long, Long) => Boolean = (_:Long, _:Long, _:Long, _:Long) => true,
                                    stayAlive:Boolean = false,
-                                   setMaxWorkers:Option[Int]
+                                   setMaxWorkers:Option[Int] = None
                                   ) extends DistributedCombinator(
   Array(),
-  Array((taskId:Int) =>  new OptimizeWithBoundTask(
+  Array((taskId:Int) =>  new SearchNewParetoPoint(
     taskId,
     minObj1WithOBj2BoundNeighborhood = minObj1Neighborhood,
     minObj2WithFoundObj1BoundNeighborhood = minObj2Neighborhood.getOrElse(minObj1Neighborhood)))) {
@@ -193,7 +206,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
 
   var dominatedSolutions: List[(Long, Long)] = Nil
   var remainingSurface: Long = 0 //equal to the surface in the pareto front
-  val squaresToDevelopBiggestSquareFirst = new BinomialHeapWithMove[Square](getKey = -_.surface, maxPoints * 2)
+  val squaresToDevelopBiggestSquareFirst = new BinomialHeapWithMove[Square](getKey = -_.surface, (Int.MaxValue.toLong min (maxPoints.toLong * 2)).toInt)
   var paretoFront: TreeSet[Square] = new TreeSet()(OrderingByObj1)
   val store = obj1.model
 
@@ -284,6 +297,11 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
 
       square1
     })
+    def frontStr:String = {
+      paretoFront.toList.map(_.toString).mkString("\n\t")
+    }
+    println("squares:\n\t" + frontStr)
+
 
     if (verbose) println("BiObjectiveSearch: Start front exploration")
 
@@ -323,9 +341,10 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
     }, "DistributedBiObjective")
 
     def next(nbRunningOrStartingSearches: Int, context:ActorContext[WrappedData]): Behavior[WrappedData] = {
-      if(shouldStop && nbRunningOrStartingSearches == 0){
+      context.log.info(s"nbRunningOrStartingSearches:$nbRunningOrStartingSearches heapSize:${squaresToDevelopBiggestSquareFirst.size}")
+      if(nbRunningOrStartingSearches == 0 && (shouldStop || squaresToDevelopBiggestSquareFirst.isEmpty)){
         //we should stop
-        //TODO: bind the answer
+        resultPromise.success(WrappedCompleted())
         Behaviors.stopped
       }else if (!shouldStop && nbRunningOrStartingSearches < maxWorkers && !squaresToDevelopBiggestSquareFirst.isEmpty) {
 
@@ -352,11 +371,14 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
               searchEnded match {
                 case SearchCompleted(searchID: Long, (obj1, obj2, independentSolution), durationMS) =>
 
-                  val (child,rectified) = initSquare.createChildAndRectifyThisForSolution(obj1,obj2,independentSolution.makeLocal(store),independentSolution)
+                  context.log.info(s"searchCompleted: obj1:$obj1, obj2:$obj2")
+                  context.log.info(s"init square: $initSquare")
+                  if(obj1 != initSquare.obj1 && obj2 != initSquare.obj2) {
+                    val (child, rectified) = initSquare.createChildAndRectifyThisForSolution(obj1, obj2, independentSolution.makeLocal(store), independentSolution)
 
-                  replaceSquare(initSquare,rectified)
-                  storeAndScheduleNewSquareIfNotDominated(child)
-
+                    replaceSquare(initSquare, rectified)
+                    storeAndScheduleNewSquareIfNotDominated(child)
+                  }
                   next(nbRunningOrStartingSearches = nbRunningOrStartingSearches - 1, context)
 
                 case SearchAborted(uniqueSearchID: Long) =>
@@ -392,8 +414,6 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
       case _ =>
         throw new Error("Unknown error in DistributedFirst")
     }
-
-    if(!stayAlive) window.close()
 
     paretoFront.toList.map(square => (square.obj1,square.obj2,square.solution))
   }

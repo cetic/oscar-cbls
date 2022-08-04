@@ -19,7 +19,7 @@ sealed trait MessagesToSupervisor
 
 final case class NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) extends MessagesToSupervisor
 
-final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSearchIDOpt: Option[Long], currentModelId:Int) extends MessagesToSupervisor
+final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSearchIDOpt: Option[Long], currentModelId:Option[Int]) extends MessagesToSupervisor
 
 final case class CancelSearchToSupervisor(searchID: Long, keepAliveIfOjBelow:Option[Long]=None) extends MessagesToSupervisor
 
@@ -396,7 +396,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
       //we do not register the worker as available here because it will register itself through another call,
       // at least to show it is not completely crashed.
 
-      case ReadyForWork(worker: ActorRef[MessageToWorker], completedSearchID: Option[Long], currentModelId) =>
+      case ReadyForWork(worker: ActorRef[MessageToWorker], completedSearchID: Option[Long], currentModelId:Option[Int]) =>
         if (verbose) context.log.info(s"got a worker ready:${worker.path}; finished search:$completedSearchID")
 
         require(allKnownWorkers contains worker)
@@ -413,7 +413,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
           case None => ;
         }
 
-        idleWorkersAndTheirCurentModelID = (worker,Some(currentModelId)) :: idleWorkersAndTheirCurentModelID
+        idleWorkersAndTheirCurentModelID = (worker,currentModelId) :: idleWorkersAndTheirCurentModelID
         context.self ! StartSomeSearch()
 
       case GetNewUniqueID(replyTo:ActorRef[Long]) =>

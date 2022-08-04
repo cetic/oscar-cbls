@@ -20,8 +20,9 @@ abstract class DistributedCombinator(neighborhoods:Array[Neighborhood],
     val (newID2,newAcc2,neighborhoods3) = labelAndExtractRemoteTasksOutOf(currentID:Int,
       acc = newAcc,
       remoteTaskGenerators = remoteTasks)
+    remoteTaskIdentification = neighborhoods3.map(_.remoteIdentification)
 
-    (newID,nbDistributedCombinators+1,newAcc)
+    (newID2,nbDistributedCombinators+1,newAcc2)
   }
 
   private def labelAndExtractRemoteNeighborhoodsOutOf(currentID:Int,
