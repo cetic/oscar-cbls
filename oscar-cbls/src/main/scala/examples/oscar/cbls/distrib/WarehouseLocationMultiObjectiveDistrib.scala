@@ -89,9 +89,7 @@ object WarehouseLocationMultiObjectiveDistrib extends App {
           assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
           swapsK(10) exhaust swapsK(20),
           swapsK(5) dynAndThen (swapMove => swapsK(5, () => kNearestOpenWarehouses(swapMove.idI, 4).filter(_ >= swapMove.idI)))
-        )).onExhaustRestartAfter(
-        randomizeNeighborhood(warehouseOpenArray, searchZone = openWarehouses, degree = () => openWarehouses.value.size / 10 max 5, name = "smallRandomize") acceptAllButStrongViolation,
-        5, operationCost),
+        )),
       minObj2Neighborhood = Some(bestSlopeFirst(
         List(
           assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
