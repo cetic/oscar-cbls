@@ -256,14 +256,13 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
     dominatedSolutions = (square.obj1, square.obj2) :: dominatedSolutions
   }
 
-  def replaceSquare(oldSquare: Square, newSquare: Square): Unit = {
+  def replaceSquareAndSchedule(oldSquare: Square, newSquare: Square): Unit = {
     paretoFront = paretoFront.excl(oldSquare).incl(newSquare)
     remainingSurface -= oldSquare.surface
     remainingSurface += newSquare.surface
 
-    if (squaresToDevelopBiggestSquareFirst.deleteIfPresent(oldSquare)) {
+    squaresToDevelopBiggestSquareFirst.deleteIfPresent(oldSquare)
       squaresToDevelopBiggestSquareFirst.insert(newSquare)
-    }
   }
 
   def storeAndScheduleSquare(newSquare: Square): Unit = {
@@ -373,10 +372,10 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
 
                   context.log.info(s"searchCompleted: obj1:$obj1, obj2:$obj2")
                   context.log.info(s"init square: $initSquare")
-                  if(obj1 != initSquare.obj1 && obj2 != initSquare.obj2) {
+                  if(obj1 < initSquare.obj1 && obj2 != initSquare.obj2) {
                     val (child, rectified) = initSquare.createChildAndRectifyThisForSolution(obj1, obj2, independentSolution.makeLocal(store), independentSolution)
 
-                    replaceSquare(initSquare, rectified)
+                    replaceSquareAndSchedule(initSquare, rectified)
                     storeAndScheduleNewSquareIfNotDominated(child)
                   }
                   next(nbRunningOrStartingSearches = nbRunningOrStartingSearches - 1, context)
