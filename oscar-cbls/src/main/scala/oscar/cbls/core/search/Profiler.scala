@@ -38,7 +38,6 @@ class Profiler(neighborhoodName: String) {
 
   def collectThisProfileStatistics:Array[String] =
     {
-      println(s"Collecting - $neighborhoodName")
       Array[String](s"${neighborhoodName}", s"$nbCalls", s"$nbFound", s"$totalGain",
         s"$totalTimeSpent", s"$gainPerCall", s"$callDuration", s"$slope",
         s"$avgTimeSpendNoMove", s"$avgTimeSpendMove", s"$totalTimeSpentNoMoveFound", s"$totalExplored")
@@ -49,8 +48,6 @@ class Profiler(neighborhoodName: String) {
   override def toString: String = s"Profile($neighborhoodName)"
 
   def slopeOrZero:Long = if(totalTimeSpent == 0L) 0L else ((100L * totalGain) / totalTimeSpent).toInt
-
-  def slopeForCombinators(defaultIfNoCall:Long = Long.MaxValue):Long =  if(totalTimeSpent == 0L) defaultIfNoCall else ((1000L * totalGain) / totalTimeSpent).toInt
 
   def resetThisStatistics(): Unit ={
     println(s"$neighborhoodName reset")
@@ -84,16 +81,36 @@ class Profiler(neighborhoodName: String) {
    * Use this method to update some profiling variables.
    * Move found or not, total time searching ...
    */
-  def explorationEnded(moveFound: Boolean, gain: Long): Unit ={
-    if(moveFound) {
+  def explorationEnded(gain: Option[Long]): Unit ={
+    if(gain.nonEmpty) {
       totalTimeSpentMoveFound += System.currentTimeMillis()-startExplorationAtMillis
       nbFound += 1
-      totalGain += gain
+      totalGain += gain.get
     }
     else totalTimeSpentNoMoveFound += System.currentTimeMillis()-startExplorationAtMillis
 
     totalExplored += nbExplored
   }
 
+
+}
+
+
+case class BestNeighborhoodFirstProfiler(combinatorName: String, nbNeighborhoods: Int) extends Profiler(combinatorName) {
+
+  val profilers: Array[Profiler] = Array.tabulate(nbNeighborhoods)(i => new Profiler(s"$combinatorName - neighborhood $i"))
+
+  def slopeForCombinators(neighborhoodId: Int, defaultIfNoCall:Long = Long.MaxValue):Long =
+    if(totalTimeSpent(neighborhoodId) == 0L) defaultIfNoCall
+    else ((1000L * totalGain(neighborhoodId)) / totalTimeSpent(neighborhoodId)).toInt
+
+  def nbCalls(i: Int): Long = profilers(i).nbCalls
+  def nbFound(i: Int): Long = profilers(i).nbFound
+  def nbExplored(i: Int): Long = profilers(i).nbExplored
+  def totalExplored(i: Int): Long = profilers(i).totalExplored
+  def totalGain(i: Int): Long = profilers(i).totalGain
+  def totalTimeSpentMoveFound(i: Int): Long = profilers(i).totalTimeSpentMoveFound
+  def totalTimeSpentNoMoveFound(i: Int): Long = profilers(i).totalTimeSpentNoMoveFound
+  def totalTimeSpent(i: Int): Long = profilers(i)totalTimeSpent
 
 }

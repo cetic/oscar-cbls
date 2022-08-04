@@ -16,13 +16,16 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
   require(overrideTabuOnFullExhaust < tabuLength, "overrideTabuOnFullExhaust should be < tabuLength")
 
   protected var it:Int = 0
-  protected def bestKey(p:Profiler):Long
+  protected def bestKey(neighborhoodId:Int):Long
+  override val profiler: BestNeighborhoodFirstProfiler = BestNeighborhoodFirstProfiler(s"BestSlopeFirst ${l.length} neighborhoods",l.size)
+  override def collectProfilingStatistics: List[Array[String]] =
+    List(profiler.collectThisProfileStatistics) ::: super.collectProfilingStatistics
 
   protected val neighborhoodArray: Array[Neighborhood] = l.toArray
   protected val tabu:Array[Int] = Array.fill(neighborhoodArray.length)(0)
   protected var tabuNeighborhoods = new BinomialHeap[Int](tabu(_),tabu.length)
 
-  protected val neighborhoodHeap = new BinomialHeapWithMove[Int]((neighborhoodID:Int) => bestKey(neighborhoodArray(neighborhoodID).profiler), neighborhoodArray.length)
+  protected val neighborhoodHeap = new BinomialHeapWithMove[Int]((neighborhoodID:Int) => bestKey(neighborhoodID), neighborhoodArray.length)
   neighborhoodArray.indices.foreach((i : Int) => neighborhoodHeap.insert(i))
 
   private def getBestNeighborhooID:Long = neighborhoodHeap.getFirst
@@ -56,7 +59,8 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
    * @return
    */
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
-    if((it > 0) && ((it % refresh) == 0) && neighborhoodArray.exists(_.profiler.nbFound!=0)){
+    profiler.explorationStarted()
+    if((it > 0) && ((it % refresh) == 0) && neighborhoodArray.indices.toList.exists(profiler.nbFound(_)!=0)){
 
       if(printExploredNeighborhoods){
         println("refreshing knowledge on neighborhood; statistics since last refresh: ")
@@ -73,9 +77,12 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
       val headNeighborhood = neighborhoodArray(headID)
       headNeighborhood.getMove(obj,initialObj, acceptanceCriterion) match{
         case NoMoveFound =>
+          profiler.neighborExplored()
           makeTabu(headID)
         case MoveFound(m) =>
           neighborhoodHeap.notifyChange(headID)
+          profiler.neighborExplored()
+          profiler.explorationEnded(Some(initialObj-m.objAfter))
           return MoveFound(m)
       }
     }
@@ -88,6 +95,7 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
       it -=1
       getMove(obj,initialObj,acceptanceCriterion)
     }else{
+      profiler.explorationEnded(None)
       NoMoveFound
     }
   }
@@ -117,7 +125,7 @@ case class BestSlopeFirst(l:List[Neighborhood],
                           overrideTabuOnFullExhaust:Long = 9,
                           refresh:Int = 100)
   extends BestNeighborhoodFirst(l, tabuLength, overrideTabuOnFullExhaust, refresh){
-  override protected def bestKey(p:Profiler):Long = -p.slopeForCombinators()
+  override protected def bestKey(neighborhoodId:Int):Long = -profiler.slopeForCombinators(neighborhoodId)
 }
 
 /**
@@ -136,11 +144,11 @@ case class FastestFirst(l:List[Neighborhood],
                         overrideTabuOnFullExhaust:Long = 9,
                         refresh:Int = 100)
   extends BestNeighborhoodFirst(l, tabuLength, overrideTabuOnFullExhaust, refresh) {
-  override protected def bestKey(p:Profiler):Long = {
-    if (p.nbFound == 0L)
-      if (p.totalTimeSpentMoveFound == 0L) 0L else -Long.MaxValue
+  override protected def bestKey(neighborhoodId:Int):Long = {
+    if (profiler.nbFound(neighborhoodId) == 0L)
+      if (profiler.totalTimeSpentMoveFound(neighborhoodId) == 0L) 0L else -Long.MaxValue
     else
-      - (p.totalTimeSpentMoveFound / p.nbFound).toInt
+      - (profiler.totalTimeSpentMoveFound(neighborhoodId) / profiler.nbFound(neighborhoodId)).toInt
   }
 }
 
@@ -151,7 +159,10 @@ abstract class BestNeighborhoodFirstWithRestrictions(l:List[RestrictedNeighborho
   extends NeighborhoodCombinator(l.map(_.n):_*) {
 
   protected var it:Long = 0
-  protected def bestKey(p:Profiler):Long
+  protected def bestKey(neighborhoodId:Int):Long
+  override val profiler: BestNeighborhoodFirstProfiler = BestNeighborhoodFirstProfiler(s"BestSlopeFirst ${l.length} neighborhoods",l.size)
+  override def collectProfilingStatistics: List[Array[String]] =
+    List(profiler.collectThisProfileStatistics) ::: super.collectProfilingStatistics
 
   protected val neighborhoodArray: Array[(Neighborhood,Long)] = l.map(r => (r.n,r.minimalSpaceBetweenExplorations)).toArray
   protected val tabu:Array[Long] = Array.fill(neighborhoodArray.length)(0L)
@@ -159,7 +170,7 @@ abstract class BestNeighborhoodFirstWithRestrictions(l:List[RestrictedNeighborho
   protected val tabuRestrictedNeighborhoods = new BinomialHeap[Int](tabu(_),tabu.length)
 
   protected val neighborhoodHeap = new BinomialHeapWithMove[Int]((neighborhoodID:Int) =>
-    bestKey(neighborhoodArray(neighborhoodID)._1.profiler), neighborhoodArray.length)
+    bestKey(neighborhoodID), neighborhoodArray.length)
 
   neighborhoodArray.indices.foreach((i : Int) => neighborhoodHeap.insert(i))
 
@@ -269,7 +280,7 @@ case class BestSlopeFirstWithRestrictions(l:List[RestrictedNeighborhood],
                                           overrideTabuOnFullExhaust:Long = 9,
                                           refresh:Long = 100)
   extends BestNeighborhoodFirstWithRestrictions(l, tabuLength, overrideTabuOnFullExhaust, refresh){
-  override protected def bestKey(p:Profiler):Long = -p.slopeForCombinators()
+  override protected def bestKey(neighborhoodId:Int):Long = -profiler.slopeForCombinators(neighborhoodId)
 }
 
 /**

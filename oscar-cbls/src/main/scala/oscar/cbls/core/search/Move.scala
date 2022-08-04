@@ -206,7 +206,7 @@ case class ConstantMoveNeighborhood(m: Move,
                                     skipAcceptanceCriterion:Boolean = false,
                                     neighborhoodName:String = null)
   extends Neighborhood with SupportForAndThenChaining[Move] {
-  override def createProfiler(): Profiler = new Profiler("ConstantMoveNeighborhood")
+  override val profiler: Profiler = new Profiler("ConstantMoveNeighborhood")
   override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
     if (skipAcceptanceCriterion) {
       MoveFound(m)
@@ -265,7 +265,7 @@ class OverrideObj(initMove:Move, objAfter:Long, neighborhoodName:String = null)
 }
 
 case class DoNothingNeighborhood() extends Neighborhood with SupportForAndThenChaining[DoNothingMove]{
-  override def createProfiler(): Profiler = new Profiler("DoNothingNeighborhood")
+  override val profiler: Profiler = new Profiler("DoNothingNeighborhood")
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
     val objValue = obj.value
     if(acceptanceCriterion(objValue,objValue)){

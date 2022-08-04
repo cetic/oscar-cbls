@@ -208,10 +208,10 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
 
     tmp match {
       case NoMoveFound =>
-        profiler.explorationEnded(false,0L)
+        profiler.explorationEnded(None)
         NoMoveFound
       case MoveFound(m: Move) =>
-        profiler.explorationEnded(true,initialObj-bestObj)
+        profiler.explorationEnded(Some(initialObj-bestObj))
         require(m.objAfter == bestObj)
         toReturn
     }

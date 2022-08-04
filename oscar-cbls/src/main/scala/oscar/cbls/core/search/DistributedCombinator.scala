@@ -9,7 +9,7 @@ abstract class DistributedCombinator(neighborhoods:Array[Neighborhood],
   var remoteTaskIdentification:Array[RemoteTaskIdentification] = null
   var supervisor:Supervisor = null
 
-  override def createProfiler(): Profiler = new Profiler("Distributed Combinator")
+  override val profiler: Profiler = new Profiler("Distributed Combinator")
 
   override def labelAndExtractRemoteTasks(supervisor: Supervisor,
                                           currentID: Int,

@@ -40,7 +40,7 @@ case class ShuffleNeighborhood(vars:Array[CBLSIntVar],
                                checkNoMoveFound:Boolean = true)
   extends Neighborhood(name) with LinearSelectors{
 
-  override def createProfiler(): Profiler = new Profiler(name)
+  override val profiler: Profiler = new Profiler(name)
 
   override def getMove(obj: Objective,
                        initialObj:Long,

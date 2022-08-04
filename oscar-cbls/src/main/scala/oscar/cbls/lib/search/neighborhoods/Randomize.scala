@@ -42,7 +42,7 @@ case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
                                  acceptanceChecking:Option[Int] = None)
   extends Neighborhood(name) with LinearSelectors{
 
-  override def createProfiler(): Profiler = new Profiler(name)
+  override val profiler: Profiler = new Profiler(name)
 
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean = null): SearchResult = {
     if(printExploredNeighborhoods) println("applying " + name)
@@ -104,7 +104,7 @@ case class RandomSwapNeighborhood(vars:Array[CBLSIntVar],
                                   searchZone:() => SortedSet[Int] = null)  //TODO: search zone does not work!
   extends Neighborhood(name) with LinearSelectors{
 
-  override def createProfiler(): Profiler = new Profiler(name)
+  override val profiler: Profiler = new Profiler(name)
 
   override def getMove(obj: Objective,
                        initialObj:Long,
