@@ -272,8 +272,15 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
     }
     if (verbose) println("BiObjectiveSearch: search first solution: minObj2")
     val rightMostRectangle = {
+
       val neighborhoodForFistSolution = minObj2Neighborhood.getOrElse(minObj1Neighborhood)
       neighborhoodForFistSolution.doAllMoves(obj = obj2)
+      val foundOBj2 = obj2.value
+      val minObj1WithFoundObj2 =
+        CascadingObjective(
+          () => (0L max (obj2.value - foundOBj2)),
+          obj1)
+      minObj1Neighborhood.doAllMoves(obj = minObj1WithFoundObj2)
 
       val solutionAtMin2: Solution = obj2.model.solution()
 
@@ -354,7 +361,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
       val sortedByObj1 = paretoFront.toList.sortBy(_.obj1).map(_.asInstanceOf[Rectangle]).toArray
       for(i <- 0 until sortedByObj1.length-1){
         require(sortedByObj1(i).obj1 < sortedByObj1(i+1).obj1)
-        require(sortedByObj1(i).obj2 > sortedByObj1(i+1).obj2, "dominated square in front:" + sortedByObj1(i+1))
+        require(sortedByObj1(i).obj2 > sortedByObj1(i+1).obj2, "dominated square in front: " + sortedByObj1(i+1) + " by " + sortedByObj1(i))
       }
     }
 
