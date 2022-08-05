@@ -34,10 +34,10 @@ import scala.concurrent.{Await, Future, Promise}
 import scala.concurrent.duration.{Duration, DurationInt}
 import scala.util.{Failure, Success}
 
-class NewParetoPointSearcer(taskId:Int,
-                            minObj1WithOBj2BoundNeighborhood:Neighborhood,
-                            minObj2WithFoundObj1BoundNeighborhood:Neighborhood)
-  extends RemoteTask(taskId,"SearchNewParetoPoint"){
+class ParetoPointSearcher(taskId:Int,
+                          minObj1WithOBj2BoundNeighborhood:Neighborhood,
+                          minObj2WithFoundObj1BoundNeighborhood:Neighborhood)
+  extends RemoteTask(taskId,"ParetoPointSearcher"){
 
   override def abort(): Unit = { } //there is no abort
 
@@ -142,8 +142,6 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
                                    minObj2Neighborhood:Option[Neighborhood] = None,
                                    obj1:Objective,
                                    obj2:Objective,
-                                   maxObj1:Long = Long.MaxValue,
-                                   minObj2:Long = Long.MinValue,
                                    stopSurface:Long = 0,
                                    maxPoints:Int = 200,
                                    verbose:Boolean = false,
@@ -156,7 +154,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
                                    setMaxWorkers:Option[Int] = None
                                   ) extends DistributedCombinator(
   Array(),
-  Array((taskId:Int) =>  new NewParetoPointSearcer(
+  Array((taskId:Int) =>  new ParetoPointSearcher(
     taskId,
     minObj1WithOBj2BoundNeighborhood = minObj1Neighborhood,
     minObj2WithFoundObj1BoundNeighborhood = minObj2Neighborhood.getOrElse(minObj1Neighborhood)))) {
@@ -219,25 +217,32 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
 
   def removeDominatedSquare(square: Square): Unit = {
     paretoFront = paretoFront.excl(square)
-    remainingSurface -= square.surface
-    squaresToDevelopBiggestSquareFirst.deleteIfPresent(square)
+
+    if(squaresToDevelopBiggestSquareFirst.deleteIfPresent(square)){
+      remainingSurface -= square.surface
+    }
     dominatedSolutions = (square.obj1, square.obj2) :: dominatedSolutions
   }
 
   def replaceSquareAndSchedule(oldSquare: Square, newSquare: Square): Unit = {
     paretoFront = paretoFront.excl(oldSquare).incl(newSquare)
-    remainingSurface -= oldSquare.surface
-    remainingSurface += newSquare.surface
 
-    squaresToDevelopBiggestSquareFirst.deleteIfPresent(oldSquare)
-    squaresToDevelopBiggestSquareFirst.insert(newSquare)
+    if(squaresToDevelopBiggestSquareFirst.deleteIfPresent(oldSquare)){
+      remainingSurface -= oldSquare.surface
+    }
+
+    if(newSquare.surface !=0) {
+      squaresToDevelopBiggestSquareFirst.insert(newSquare)
+      remainingSurface += newSquare.surface
+    }
   }
 
   def storeAndScheduleSquare(newSquare: Square): Unit = {
-    squaresToDevelopBiggestSquareFirst.insert(newSquare)
-
     paretoFront = paretoFront.incl(newSquare)
-    remainingSurface += newSquare.surface
+    if(newSquare.surface !=0) {
+      squaresToDevelopBiggestSquareFirst.insert(newSquare)
+      remainingSurface += newSquare.surface
+    }
   }
 
   // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -248,22 +253,41 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
     val startSearchNanotime = System.nanoTime()
 
     if (verbose) println("BiObjectiveSearch: search first solution: minObj2")
-
-    storeAndScheduleSquare({
+    val rightMostSquare = {
       val neighborhoodForFistSolution = minObj2Neighborhood.getOrElse(minObj1Neighborhood)
       neighborhoodForFistSolution.doAllMoves(obj = obj2)
 
       val solutionAtMin2: Solution = obj2.model.solution()
 
       //Store initial given solution
-      val square1 = Square(
+      val square = Square(
         obj1 = obj1.value, obj2 = obj2.value,
-        maxObj1 = maxObj1, minObj2 = minObj2,
+        maxObj1 = obj1.value, minObj2 = obj2.value,
         solutionAtMin2,
         IndependentSolution(solutionAtMin2))
 
-      square1
-    })
+      storeAndScheduleSquare(square)
+      square
+    }
+
+    val leftMostSquare = {
+      val neighborhoodForFistSolution = minObj1Neighborhood
+      neighborhoodForFistSolution.doAllMoves(obj = obj1)
+
+      val solutionAtMin1: Solution = obj2.model.solution()
+
+      //Store initial given solution
+      val square = Square(
+        obj1 = obj1.value, obj2 = obj2.value,
+        maxObj1 = rightMostSquare.obj1-1, minObj2 = rightMostSquare.obj2+1,
+        solutionAtMin1,
+        IndependentSolution(solutionAtMin1))
+
+      storeAndScheduleSquare(square)
+      square
+    }
+
+
     def frontStr:String = {
       paretoFront.toList.map(_.toString).mkString("\n\t")
     }
@@ -308,22 +332,25 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
     }, "DistributedBiObjective")
 
     def next(nbRunningOrStartingSearches: Int, context:ActorContext[WrappedData]): Behavior[WrappedData] = {
-      context.log.info(s"nbRunningOrStartingSearches:$nbRunningOrStartingSearches heapSize:${squaresToDevelopBiggestSquareFirst.size} front size:${paretoFront.size}")
+      context.log.info(s"nbRunningOrStartingSearches:$nbRunningOrStartingSearches heapSize:${squaresToDevelopBiggestSquareFirst.size} front size:${paretoFront.size} remainingSurface:$remainingSurface")
       if(nbRunningOrStartingSearches == 0 && (shouldStop || squaresToDevelopBiggestSquareFirst.isEmpty)){
         //we should stop
+        context.log.info("should stop in the loop")
         resultPromise.success(WrappedCompleted())
         Behaviors.stopped
       }else if (!shouldStop && nbRunningOrStartingSearches < maxWorkers && !squaresToDevelopBiggestSquareFirst.isEmpty) {
 
         //split a square
         val squareToSplit:Square = squaresToDevelopBiggestSquareFirst.removeFirst()
+        remainingSurface -= squareToSplit.surface
+
         context.ask[DelegateSearch, SearchEnded[(Long, Long, IndependentSolution,Long)]](
           supervisor.supervisorActor, ref =>  DelegateSearch(OptimizeWithBoundRequest(
             remoteTaskId = this.remoteTaskIdentification(0),
             obj1 = this.obj1.getIndependentObj,
             obj2 = this.obj2.getIndependentObj,
             maxValueForObj2 = (squareToSplit.minObj2 + squareToSplit.obj2)/2,
-            startSolution = Some(squareToSplit.independentSolution),
+            startSolution = Some(paretoFront.minAfter(new SortedSquare(squareToSplit.obj1+1)).getOrElse(rightMostSquare).asInstanceOf[Square].independentSolution),
             sendResultTo = ref))) {
           case Success(ended:SearchEnded[(Long, Long, IndependentSolution,Long)]) => WrappedSearchEnded(ended, squareToSplit)
           case Failure(_) => WrappedError(msg = Some("DistributedBIObjectiveSearch timeout3"))
@@ -344,16 +371,22 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
                   if(isNewSquareDominated(obj1,obj2)){
                     //forget about it, but init square is pruned
                     val newInitSquare = initSquare.copy(minObj2 = initSquare.minObj2 max maxValueForObj2)
+                    context.log.info(s"new square dominated, updating initSquare to:$newInitSquare")
                     replaceSquareAndSchedule(initSquare, newInitSquare)
+
                   }else{
                     val firstSquareOpt = paretoFront.maxBefore(new SortedSquare(obj1))
                     firstSquareOpt match{
                       case Some(firstSquare:Square) =>
+                        context.log.info(s"firstSquare:" + firstSquare)
+                        val newFirstSquare = firstSquare.copy(
+                          maxObj1 = firstSquare.maxObj1 min (obj1-1),
+                          minObj2 = firstSquare.obj2 min (firstSquare.minObj2 max (maxValueForObj2+1)))
                         replaceSquareAndSchedule(
                           firstSquare,
-                          firstSquare.copy(
-                            maxObj1 = firstSquare.maxObj1 min obj1-1,
-                            minObj2 = firstSquare.minObj2 max maxValueForObj2+1))
+                          newFirstSquare)
+                        context.log.info(s"first square updated to:" + newFirstSquare)
+
                       case _ => ;//it has disappeared since then
                     }
                     var dominatedSquareOpt = paretoFront.minAfter(new SortedSquare(obj1))
@@ -380,8 +413,8 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
                         storeAndScheduleSquare(Square(
                           obj1,
                           obj2,
-                          maxObj1 = initSquare.maxObj1,
-                          minObj2 = initSquare.minObj2,
+                          maxObj1 = obj1 max initSquare.maxObj1,
+                          minObj2 = obj2 min initSquare.minObj2,
                           solution = independentSolution.makeLocal(store),
                           independentSolution = independentSolution))
                     }
