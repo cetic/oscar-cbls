@@ -160,19 +160,13 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
     minObj1WithOBj2BoundNeighborhood = minObj1Neighborhood,
     minObj2WithFoundObj1BoundNeighborhood = minObj2Neighborhood.getOrElse(minObj1Neighborhood)))) {
 
-  val (plot, window) = if (visu) {
-    val p = new PlotPareto(null, obj1Name, obj2Name)
-    val window = SingleFrameWindow.show(p, visuTitle, width = 2000, height = 2000)
-    (p, window)
-  } else (null, null)
-
   //a rectangle, anchored at a solution
   //the solution is the upper left corner
   class SortedRectangle(val obj1:Long)
   case class Rectangle(override val obj1: Long, obj2: Long,
-                    maxObj1: Long, minObj2: Long,
-                    solution: Solution,
-                    independentSolution:IndependentSolution) extends SortedRectangle(obj1){
+                       maxObj1: Long, minObj2: Long,
+                       solution: Solution,
+                       independentSolution:IndependentSolution) extends SortedRectangle(obj1){
 
     require(obj1 <= maxObj1)
     require(obj2 >= minObj2)
@@ -205,21 +199,14 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
   val store = obj1.model
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  def redrawPareto(): Unit = {
-    if (plot != null) {
-      plot.reDrawPareto(
-        paretoFront.toList.map({case rectangle:Rectangle => (rectangle.obj1, rectangle.obj2)}),
-        Some(dominatedSolutions))
-    }
-  }
 
-  def isNewRectangleDominated(obj1:Long,obj2:Long): Boolean = {
+  def getDominatorRectangle(obj1:Long, obj2:Long): Option[Rectangle] = {
     paretoFront.maxBefore(new SortedRectangle(obj1)) match {
       case Some(potentialBetterRectangle:Rectangle)
-        if potentialBetterRectangle.obj2 <= obj2 && potentialBetterRectangle.obj1 < obj1 => true
+        if potentialBetterRectangle.obj2 <= obj2 && potentialBetterRectangle.obj1 < obj1 => Some(potentialBetterRectangle)
       case Some(potentialBetterRectangle:Rectangle)
-        if potentialBetterRectangle.obj2 < obj2 && potentialBetterRectangle.obj1 <= obj1 => true
-      case _ => false
+        if potentialBetterRectangle.obj2 < obj2 && potentialBetterRectangle.obj1 <= obj1 => Some(potentialBetterRectangle)
+      case _ => None
     }
   }
 
@@ -261,8 +248,28 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
 
   def paretoOptimize(): List[(Long, Long, Solution)] = {
 
+    val (plot, window) = if (visu) {
+      val p = new PlotPareto(null, obj1Name, obj2Name)
+      val window = SingleFrameWindow.show(p, visuTitle, width = 2000, height = 2000)
+      (p, window)
+    } else (null, null)
+
+    def redrawPareto(): Unit = {
+      if (plot != null) {
+        plot.reDrawPareto(
+          paretoFront.toList.map({case rectangle:Rectangle => (rectangle.obj1, rectangle.obj2)}),
+          Some(dominatedSolutions))
+      }
+    }
+    def closeWindow():Unit = {
+      if(window!=null)window.close()
+    }
+
     val startSearchNanotime = System.nanoTime()
 
+    def paretoFrontStr:String = {
+      "paretoFront:\n\t" + paretoFront.toList.map({case s:Rectangle => ("" + s.obj1 +"," +s.obj2)}).mkString("\n\t")
+    }
     if (verbose) println("BiObjectiveSearch: search first solution: minObj2")
     val rightMostRectangle = {
       val neighborhoodForFistSolution = minObj2Neighborhood.getOrElse(minObj1Neighborhood)
@@ -298,6 +305,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
       rectangle
     }
 
+    println(paretoFrontStr)
 
     def frontStr:String = {
       paretoFront.toList.map(_.toString).mkString("\n\t")
@@ -342,6 +350,14 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
     }
     }, "DistributedBiObjective")
 
+    def checkParetoFront() :Unit = {
+      val sortedByObj1 = paretoFront.toList.sortBy(_.obj1).map(_.asInstanceOf[Rectangle]).toArray
+      for(i <- 0 until sortedByObj1.length-1){
+        require(sortedByObj1(i).obj1 < sortedByObj1(i+1).obj1)
+        require(sortedByObj1(i).obj2 > sortedByObj1(i+1).obj2, "dominated square in front:" + sortedByObj1(i+1))
+      }
+    }
+
     def next(nbRunningOrStartingSearches: Int, context:ActorContext[WrappedData]): Behavior[WrappedData] = {
       context.log.info(s"nbRunningOrStartingSearches:$nbRunningOrStartingSearches heapSize:${rectanglesToDevelopBiggestRectangleFirst.size} front size:${paretoFront.size} remainingSurface:$remainingSurface")
       if(nbRunningOrStartingSearches == 0 && (shouldStop || rectanglesToDevelopBiggestRectangleFirst.isEmpty)){
@@ -380,57 +396,66 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
                   context.log.info(s"searchCompleted: obj1:$obj1, obj2:$obj2")
                   context.log.info(s"init rectangle: $initRectangle")
 
-                  if(isNewRectangleDominated(obj1,obj2)){
-                    //forget about it, but init rectangle is pruned
-                    val newInitRectangle = initRectangle.copy(minObj2 = initRectangle.minObj2 max maxValueForObj2)
-                    context.log.info(s"new rectangle dominated, updating initRectangle to:$newInitRectangle")
-                    replaceRectangleAndSchedule(initRectangle, newInitRectangle)
+                  getDominatorRectangle(obj1,obj2) match{
+                    case Some(dominatingRectangle) =>
+                      //forget about it, but the dominating rectangle can be pruned
+                      //we do not know if init rectangle is still present...
+                      context.log.info(s"new rectangle dominated")
+                      if(dominatingRectangle.minObj2 > maxValueForObj2) {
+                        val newDominatingRectangle = dominatingRectangle.copy(minObj2 = dominatingRectangle.minObj2 max maxValueForObj2)
+                        replaceRectangleAndSchedule(dominatingRectangle, newDominatingRectangle)
+                      }
+                    case None =>
 
-                  }else{
-                    val firstRectangleOpt = paretoFront.maxBefore(new SortedRectangle(obj1))
-                    firstRectangleOpt match{
-                      case Some(firstRectangle:Rectangle) =>
-                        context.log.info(s"firstRectangle:" + firstRectangle)
-                        val newFirstRectangle = firstRectangle.copy(
-                          maxObj1 = firstRectangle.maxObj1 min (obj1-1),
-                          minObj2 = firstRectangle.obj2 min (firstRectangle.minObj2 max (maxValueForObj2+1)))
-                        replaceRectangleAndSchedule(
-                          firstRectangle,
-                          newFirstRectangle)
-                        context.log.info(s"first rectangle updated to:" + newFirstRectangle)
+                      val firstRectangleOpt = paretoFront.maxBefore(new SortedRectangle(obj1))
+                      firstRectangleOpt match{
+                        case Some(firstRectangle:Rectangle) =>
+                          context.log.info(s"firstRectangle:" + firstRectangle)
+                          val newFirstRectangle = firstRectangle.copy(
+                            maxObj1 = firstRectangle.maxObj1 min (obj1-1),
+                            minObj2 = firstRectangle.obj2 min (firstRectangle.minObj2 max (maxValueForObj2+1)))
+                          replaceRectangleAndSchedule(
+                            firstRectangle,
+                            newFirstRectangle)
+                          context.log.info(s"first rectangle updated to:" + newFirstRectangle)
 
-                      case _ => ;//it has disappeared since then
-                    }
-                    var dominatedRectangleOpt = paretoFront.minAfter(new SortedRectangle(obj1))
-                    while(dominatedRectangleOpt match{
-                      case Some(dominated:Rectangle) if dominated.minObj2 > obj2 =>
-                        removeDominatedRectangle(dominated)
-                        dominatedRectangleOpt = paretoFront.minAfter(new SortedRectangle(obj1))
-                        true
-                      case _ => false
-                    }) {}
-                    //last rectangle
-                    dominatedRectangleOpt match{
-                      case Some(lastRectangle:Rectangle) =>
-                        removeDominatedRectangle(lastRectangle)
-                        storeAndScheduleRectangle(Rectangle(
-                          obj1,
-                          obj2,
-                          maxObj1 = lastRectangle.maxObj1,
-                          minObj2 = lastRectangle.minObj2,
-                          solution = independentSolution.makeLocal(store),
-                          independentSolution = independentSolution))
-                      case _ =>
-                        //we cut nothing
-                        storeAndScheduleRectangle(Rectangle(
-                          obj1,
-                          obj2,
-                          maxObj1 = obj1 max initRectangle.maxObj1,
-                          minObj2 = obj2 min initRectangle.minObj2,
-                          solution = independentSolution.makeLocal(store),
-                          independentSolution = independentSolution))
-                    }
+                        case _ => ;//it has disappeared since then
+                      }
+                      var dominatedRectangleOpt = paretoFront.minAfter(new SortedRectangle(obj1))
+                      while(dominatedRectangleOpt match{
+                        case Some(dominated:Rectangle) if dominated.minObj2 > obj2 =>
+                          removeDominatedRectangle(dominated)
+                          dominatedRectangleOpt = paretoFront.minAfter(new SortedRectangle(obj1))
+                          true
+                        case _ => false
+                      }) {}
+                      //last rectangle
+                      dominatedRectangleOpt match{
+                        case Some(lastRectangle:Rectangle) if lastRectangle.obj2 > obj2 =>
+                          removeDominatedRectangle(lastRectangle)
+                          println("removed dominated rectangle:" + lastRectangle)
+                          storeAndScheduleRectangle(Rectangle(
+                            obj1,
+                            obj2,
+                            maxObj1 = lastRectangle.maxObj1,
+                            minObj2 = lastRectangle.minObj2,
+                            solution = independentSolution.makeLocal(store),
+                            independentSolution = independentSolution))
+                        case _ =>
+                          //we cut nothing
+                          storeAndScheduleRectangle(Rectangle(
+                            obj1,
+                            obj2,
+                            maxObj1 = obj1 max initRectangle.maxObj1,
+                            minObj2 = obj2 min initRectangle.minObj2,
+                            solution = independentSolution.makeLocal(store),
+                            independentSolution = independentSolution))
+                      }
                   }
+
+                  checkParetoFront()
+                  redrawPareto()
+                  //println(paretoFrontStr)
 
                   next(nbRunningOrStartingSearches = nbRunningOrStartingSearches - 1, context)
 
@@ -468,7 +493,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
         throw new Error("Unknown error in DistributedFirst")
     }
 
-    paretoFront.toList.map({case rectangle:Rectangle => (rectangle.obj1,rectangle.obj2,rectangle.solution)})
+    paretoFront.toList.map({case rectangle:Rectangle => (rectangle.obj1,rectangle.obj2,rectangle.solution)}).sortBy(_._1)
   }
 
   override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {

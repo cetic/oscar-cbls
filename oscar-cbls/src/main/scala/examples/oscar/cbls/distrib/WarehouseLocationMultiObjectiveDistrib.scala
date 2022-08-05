@@ -97,7 +97,8 @@ object WarehouseLocationMultiObjectiveDistrib extends App {
           swapsK(5) dynAndThen (swapMove => swapsK(5, () => kNearestOpenWarehouses(swapMove.idI, 4).filter(_ >= swapMove.idI)))
         ))),
       obj1 = operationCost,
-      obj2 = constructionCost)
+      obj2 = constructionCost,
+      visu = true)
 
     (m, paretoSearch())
   }
