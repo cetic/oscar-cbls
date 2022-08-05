@@ -32,6 +32,7 @@ import scala.annotation.tailrec
 import scala.collection.immutable.{SortedMap, TreeSet}
 import scala.concurrent.{Await, Future, Promise}
 import scala.concurrent.duration.{Duration, DurationInt}
+import scala.math.Ordered.orderingToOrdered
 import scala.util.{Failure, Success}
 
 class ParetoPointSearcher(taskId:Int,
@@ -185,18 +186,22 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
     def isSplitteable:Boolean = surface !=0 && (obj2 - minObj2) > 1
   }
 
-  implicit val OrderingByObj1: Ordering[SortedRectangle] = new Ordering[SortedRectangle] {
+  implicit val OrderingSortedRectByObj1: Ordering[SortedRectangle] = new Ordering[SortedRectangle] {
     def compare(a: SortedRectangle, b: SortedRectangle): Int = a.obj1 compare b.obj1
   }
-  implicit val Ordering2ByObj1: Ordering[Rectangle] = new Ordering[Rectangle] {
-    def compare(a: Rectangle, b: Rectangle): Int = a.obj1 compare b.obj1
+
+  implicit val TotalOrderingRect: Ordering[Rectangle] = new Ordering[Rectangle] {
+    def compare(a: Rectangle, b: Rectangle): Int = {
+      ((a.obj1, a.obj2, a.maxObj1, a.minObj2) compare(b.obj1, b.obj2, b.maxObj1, b.minObj2))
+    }
   }
+
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   var dominatedSolutions: List[(Long, Long)] = Nil
   var remainingSurface: Long = 0 //equal to the surface in the pareto front
   val rectanglesToDevelopBiggestRectangleFirst = new BinomialHeapWithMove[Rectangle](getKey = -_.surface, (Int.MaxValue.toLong min (maxPoints.toLong * 2)).toInt)
-  var paretoFront: TreeSet[SortedRectangle] = new TreeSet()(OrderingByObj1)
+  var paretoFront: TreeSet[SortedRectangle] = new TreeSet()(OrderingSortedRectByObj1)
   val store = obj1.model
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -223,6 +228,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
 
     if(rectanglesToDevelopBiggestRectangleFirst.deleteIfPresent(rectangle)){
       remainingSurface -= rectangle.surface
+      require(remainingSurface>=0)
     }
     dominatedSolutions = (rectangle.obj1, rectangle.obj2) :: dominatedSolutions
   }
@@ -232,6 +238,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
 
     if(rectanglesToDevelopBiggestRectangleFirst.deleteIfPresent(oldRectangle)){
       remainingSurface -= oldRectangle.surface
+      require(remainingSurface>=0)
     }
 
     if(newRectangle.isSplitteable) {
@@ -245,6 +252,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
     if(newRectangle.isSplitteable) {
       rectanglesToDevelopBiggestRectangleFirst.insert(newRectangle)
       remainingSurface += newRectangle.surface
+      require(remainingSurface>=0)
     }
   }
 
@@ -447,7 +455,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
     Await.result(futureResult, Duration.Inf) match {
       case WrappedCompleted() =>
 
-      case WrappedError(msg:Option[String],crash:Option[SearchCrashed])=>
+      case WrappedError(msg:Option[String],crash:Option[SearchCrashed]) =>
         if(msg.isDefined){
           supervisor.shutdown()
           throw new Error(msg.get)
