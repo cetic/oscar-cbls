@@ -181,6 +181,8 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
     require(surface >=0)
 
     override def toString: String = s"Square(obj1:$obj1,obj2:$obj2,maxObj1:$maxObj1,minObj2:$minObj2,surf:" + surface + ")"
+
+    def isSplitteable:Boolean = surface !=0 && (obj2 - minObj2) > 1
   }
 
   implicit val OrderingByObj1: Ordering[SortedSquare] = new Ordering[SortedSquare] {
@@ -232,7 +234,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
       remainingSurface -= oldSquare.surface
     }
 
-    if(newSquare.surface !=0) {
+    if(newSquare.isSplitteable) {
       squaresToDevelopBiggestSquareFirst.insert(newSquare)
       remainingSurface += newSquare.surface
     }
@@ -240,7 +242,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
 
   def storeAndScheduleSquare(newSquare: Square): Unit = {
     paretoFront = paretoFront.incl(newSquare)
-    if(newSquare.surface !=0) {
+    if(newSquare.isSplitteable) {
       squaresToDevelopBiggestSquareFirst.insert(newSquare)
       remainingSurface += newSquare.surface
     }
