@@ -334,7 +334,7 @@ class BinomialHeapWithMove[T](getKey:T => Long,val maxsize:Int)(implicit val A:O
   /**
    * removes one elem from the heap if present
    * @param elem
-   * @return trus if it was in the heap, false otherwise
+   * @return true if it was in the heap, false otherwise
    */
   def deleteIfPresent(elem:T):Boolean = {
     position.get(elem) match{

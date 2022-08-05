@@ -177,7 +177,8 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
     require(obj2 >= minObj2)
     // not requiring anything on the solution itself? like solution = (obj1, obj2)?
 
-    def surface: Long = (maxObj1 - obj1) * (obj2 - minObj2)
+    val surface: Long = (maxObj1 - obj1) * (obj2 - minObj2)
+    require(surface >=0)
 
     override def toString: String = s"Square(obj1:$obj1,obj2:$obj2,maxObj1:$maxObj1,minObj2:$minObj2,surf:" + surface + ")"
   }
@@ -343,6 +344,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
         //split a square
         val squareToSplit:Square = squaresToDevelopBiggestSquareFirst.removeFirst()
         remainingSurface -= squareToSplit.surface
+        context.log.info(s"squareToSplit: $squareToSplit")
 
         context.ask[DelegateSearch, SearchEnded[(Long, Long, IndependentSolution,Long)]](
           supervisor.supervisorActor, ref =>  DelegateSearch(OptimizeWithBoundRequest(
