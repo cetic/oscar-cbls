@@ -89,10 +89,12 @@ abstract class RemoteTask(val taskId: Int, description:String) {
                            currentSolOpt:Option[(Solution,Int)]) : (Solution,Int) = {
     startSolOpt match {
       case None =>
+        println("no load solution")
         require(currentSolOpt.isDefined)
         currentSolOpt.get
       case Some(startSolution) =>
         if (currentSolOpt.isEmpty || startSolution.solutionId != currentSolOpt.get._2) {
+          println("load solution")
           //we must load the new solution
           val s = startSolOpt.get.makeLocal(model)
           //TODO: we should only transmit the delta, eventually
@@ -100,7 +102,7 @@ abstract class RemoteTask(val taskId: Int, description:String) {
           (s,startSolution.solutionId)
         } else {
           //no need to load the new solution
-
+          println("no need to load solution")
           currentSolOpt.get
         }
     }

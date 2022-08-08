@@ -84,13 +84,18 @@ object WarehouseLocationMultiObjectiveDistrib extends App {
       symmetryCanBeBrokenOnIndices = false)
 
     def paretoSearch() = new DistributedBiObjectiveSearch(
-      minObj1Neighborhood = bestSlopeFirst(
+      minObj1Neighborhood = ()=>bestSlopeFirst(
         List(
           assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
           swapsK(10) exhaust swapsK(20),
           swapsK(5) dynAndThen (swapMove => swapsK(5, () => kNearestOpenWarehouses(swapMove.idI, 4).filter(_ >= swapMove.idI)))
-        )),
-      minObj2Neighborhood = Some(bestSlopeFirst(
+        )).onExhaustRestartAfter(
+        randomizeNeighborhood(
+          warehouseOpenArray, searchZone = openWarehouses, degree = () => openWarehouses.value.size/10 max 5, name = "smallRandomize")
+          acceptAllButStrongViolation,
+        5,
+        operationCost),
+      minObj2Neighborhood = Some(() => bestSlopeFirst(
         List(
           assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
           swapsK(10) exhaust swapsK(20),
@@ -109,7 +114,7 @@ object WarehouseLocationMultiObjectiveDistrib extends App {
   val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(paretoSearch,verbose = false)
 
   //This is a bit stupid: start the search while workers are not instantiated yet, but it is possible
-  for (i <- 0 until Supervisor.nbCores/2) {
+  for (i <- 0 until 2){ //Supervisor.nbCores/2) {
     val (store2, search2) = createSearchProcedure()
     supervisor.createLocalWorker(store2, search2)
   }

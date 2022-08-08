@@ -36,13 +36,15 @@ import scala.math.Ordered.orderingToOrdered
 import scala.util.{Failure, Success}
 
 class ParetoPointSearcher(taskId:Int,
-                          minObj1WithOBj2BoundNeighborhood:Neighborhood,
-                          minObj2WithFoundObj1BoundNeighborhood:Neighborhood)
+                          minObj1WithOBj2BoundNeighborhood:() => Neighborhood,
+                          minObj2WithFoundObj1BoundNeighborhood:() => Neighborhood)
   extends RemoteTask(taskId,"ParetoPointSearcher"){
 
   override def abort(): Unit = { } //there is no abort
 
   def doTask(taskMessage1:SearchRequest,model:Store,currentSolOpt:Option[(Solution,Int)]):(Solution,Int) = {
+
+    println("currentSolOpt.isDefined" + currentSolOpt.isDefined)
     val (startSol,solId):(Solution,Int) = loadSolution(taskMessage1.startSolutionOpt,model,currentSolOpt)
 
     val taskMessage = taskMessage1.asInstanceOf[OptimizeWithBoundRequest]
@@ -51,26 +53,29 @@ class ParetoPointSearcher(taskId:Int,
     val obj1 = taskMessage.obj1.convertToObjective(model)
     val obj2 = taskMessage.obj2.convertToObjective(model)
 
+    require(obj1.value == taskMessage.initObj1)
+    require(taskMessage.initObj2 == obj2.value)
+
     println("obj2.value: " + obj2.value)
     println("taskMessage.maxValueForObj2:" + taskMessage.maxValueForObj2)
     val minObj1WithOBj2Bound =
       CascadingObjective(
         () => (0L max (obj2.value - taskMessage.maxValueForObj2)),
         obj1)
-    //this ensures that metaheuristics starts from scratch properly
-    minObj1WithOBj2BoundNeighborhood.reset()
-    minObj1WithOBj2BoundNeighborhood.doAllMoves(obj = minObj1WithOBj2Bound)
+
+    println("tarting slave search, init obj1:" + obj1.value + " init obj2:" + obj2.value + " maxValueForObj2:" + taskMessage.maxValueForObj2)
+    minObj1WithOBj2BoundNeighborhood().doAllMoves(obj = minObj1WithOBj2Bound)
 
     val foundOBj1 = obj1.value
     val foundOBj2 = obj2.value
 
     //this ensures that metaheuristics starts from scratch properly
-    minObj2WithFoundObj1BoundNeighborhood.reset()
+
     val minObj2WithFoundObj1 =
       CascadingObjective(
         () => (0L max (obj1.value - foundOBj1)),
         obj2)
-    minObj2WithFoundObj1BoundNeighborhood.doAllMoves(obj = minObj2WithFoundObj1)
+    minObj2WithFoundObj1BoundNeighborhood().doAllMoves(obj = minObj2WithFoundObj1)
 
     val dur = System.currentTimeMillis() - startTime
 
@@ -94,6 +99,8 @@ case class OptimizeWithBoundRequest(override val remoteTaskId:RemoteTaskIdentifi
                                     obj2: IndependentObjective,
                                     maxValueForObj2:Long, //only this one is considered, the other are informative and traceability stuff
                                     startSolution: Option[IndependentSolution],
+                                    initObj1:Long,
+                                    initObj2:Long,
                                     override val sendResultTo: ActorRef[SearchEnded[(Long,Long,IndependentSolution,Long)]]
                                    ) extends SearchRequest(-1,remoteTaskId,sendResultTo){
 
@@ -139,8 +146,8 @@ case class OptimizeWithBoundRequest(override val remoteTaskId:RemoteTaskIdentifi
  * @param filterRectangle an additional method that you can specify to filter away some rectangles of the search,
  *                     typically when you want to trade time for granularity of the Pareto front.
  */
-class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
-                                   minObj2Neighborhood:Option[Neighborhood] = None,
+class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
+                                   minObj2Neighborhood:Option[() => Neighborhood] = None,
                                    obj1:Objective,
                                    obj2:Objective,
                                    stopSurface:Long = 0,
@@ -274,13 +281,13 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
     val rightMostRectangle = {
 
       val neighborhoodForFistSolution = minObj2Neighborhood.getOrElse(minObj1Neighborhood)
-      neighborhoodForFistSolution.doAllMoves(obj = obj2)
+      neighborhoodForFistSolution().doAllMoves(obj = obj2)
       val foundOBj2 = obj2.value
       val minObj1WithFoundObj2 =
         CascadingObjective(
           () => (0L max (obj2.value - foundOBj2)),
           obj1)
-      minObj1Neighborhood.doAllMoves(obj = minObj1WithFoundObj2)
+      minObj1Neighborhood().doAllMoves(obj = minObj1WithFoundObj2)
 
       val solutionAtMin2: Solution = obj2.model.solution()
 
@@ -297,7 +304,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
 
     val leftMostRectangle = {
       val neighborhoodForFistSolution = minObj1Neighborhood
-      neighborhoodForFistSolution.doAllMoves(obj = obj1)
+      neighborhoodForFistSolution().doAllMoves(obj = obj1)
 
       val solutionAtMin1: Solution = obj2.model.solution()
 
@@ -379,13 +386,24 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
         remainingSurface -= rectangleToSplit.surface
         context.log.info(s"rectangleToSplit: $rectangleToSplit")
 
+        val maxValueForObj2 = (rectangleToSplit.minObj2 + rectangleToSplit.obj2)/2
+        val rectagleForStartSolution = paretoFront.minAfter(new SortedRectangle(rectangleToSplit.obj1+1)).getOrElse(rightMostRectangle).asInstanceOf[Rectangle]
+
+        val startSolution = Some(rectagleForStartSolution.independentSolution)
+
+        System.err.println("maxValueForObj2:" + maxValueForObj2)
+        System.err.println("rectagleForStartSolution:" + rectagleForStartSolution)
+        require(maxValueForObj2 >= rectagleForStartSolution.obj2, "maxValueForObj2:" + maxValueForObj2 + "obj2:" + rectagleForStartSolution.obj2)
+
         context.ask[DelegateSearch, SearchEnded[(Long, Long, IndependentSolution,Long)]](
           supervisor.supervisorActor, ref =>  DelegateSearch(OptimizeWithBoundRequest(
             remoteTaskId = this.remoteTaskIdentification(0),
             obj1 = this.obj1.getIndependentObj,
             obj2 = this.obj2.getIndependentObj,
-            maxValueForObj2 = (rectangleToSplit.minObj2 + rectangleToSplit.obj2)/2,
-            startSolution = Some(paretoFront.minAfter(new SortedRectangle(rectangleToSplit.obj1+1)).getOrElse(rightMostRectangle).asInstanceOf[Rectangle].independentSolution),
+            maxValueForObj2 = maxValueForObj2,
+            startSolution = startSolution,
+            initObj1 = rectagleForStartSolution.obj1,
+            initObj2 = rectagleForStartSolution.obj2,
             sendResultTo = ref))) {
           case Success(ended:SearchEnded[(Long, Long, IndependentSolution,Long)]) => WrappedSearchEnded(ended, rectangleToSplit)
           case Failure(_) => WrappedError(msg = Some("DistributedBIObjectiveSearch timeout3"))
@@ -462,7 +480,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:Neighborhood,
 
                   checkParetoFront()
                   redrawPareto()
-                  //println(paretoFrontStr)
+                  println(paretoFrontStr)
 
                   next(nbRunningOrStartingSearches = nbRunningOrStartingSearches - 1, context)
 
