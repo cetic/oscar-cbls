@@ -104,6 +104,9 @@ object WarehouseLocationMultiObjectiveDistrib extends App {
         ))),
       obj1 = operationCost,
       obj2 = constructionCost,
+      obj1Name = "operationCost",
+      obj2Name = "constructionCost",
+      maxPoints = 100,
       visu = true)
 
     (m, paretoSearch())

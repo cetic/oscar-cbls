@@ -166,10 +166,7 @@ class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
                 //this is the thread of the search, as it is a future,
                 //TODO nothing can happen after the future is bound, opportunity to improve and postpone cleaning tasks?
                 try{
-
-                  println("running task " + newSearch)
                   currentSolOpt = currentNeighborhood.doTask(newSearch, m, currentSolOpt)
-                  println("currentSolOpt after:" + currentSolOpt.isDefined)
                 }catch {
                   case e:Throwable =>
                     newSearch.sendResultTo ! SearchCrashed(newSearch.uniqueSearchId,Some(newSearch.remoteTaskId),e,context.self)
