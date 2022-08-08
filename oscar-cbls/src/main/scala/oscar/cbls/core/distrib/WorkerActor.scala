@@ -168,7 +168,8 @@ class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
                 try{
 
                   println("running task " + newSearch)
-                  currentSolOpt = Some(currentNeighborhood.doTask(newSearch, m, currentSolOpt))
+                  currentSolOpt = currentNeighborhood.doTask(newSearch, m, currentSolOpt)
+                  println("currentSolOpt after:" + currentSolOpt.isDefined)
                 }catch {
                   case e:Throwable =>
                     newSearch.sendResultTo ! SearchCrashed(newSearch.uniqueSearchId,Some(newSearch.remoteTaskId),e,context.self)

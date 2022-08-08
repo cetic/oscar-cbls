@@ -42,9 +42,9 @@ class ParetoPointSearcher(taskId:Int,
 
   override def abort(): Unit = { } //there is no abort
 
-  def doTask(taskMessage1:SearchRequest,model:Store,currentSolOpt:Option[(Solution,Int)]):(Solution,Int) = {
+  def doTask(taskMessage1:SearchRequest,model:Store,currentSolOpt:Option[(Solution,Int)]):Option[(Solution,Int)] = {
 
-    println("currentSolOpt.isDefined" + currentSolOpt.isDefined)
+    println("taskMessage1.startSolutionOpt" + taskMessage1.startSolutionOpt)
     val (startSol,solId):(Solution,Int) = loadSolution(taskMessage1.startSolutionOpt,model,currentSolOpt)
 
     val taskMessage = taskMessage1.asInstanceOf[OptimizeWithBoundRequest]
@@ -53,8 +53,8 @@ class ParetoPointSearcher(taskId:Int,
     val obj1 = taskMessage.obj1.convertToObjective(model)
     val obj2 = taskMessage.obj2.convertToObjective(model)
 
-    require(obj1.value == taskMessage.initObj1)
-    require(taskMessage.initObj2 == obj2.value)
+    require(obj1.value == taskMessage.initObj1, "obj1.value:" + obj1.value + " taskMessage.initObj1:" + taskMessage.initObj1 + " taskMessage1.startSolutionOpt" + taskMessage1.startSolutionOpt)
+    require(taskMessage.initObj2 == obj2.value, "taskMessage.initObj2:" + taskMessage.initObj2 + " obj2.value:" + obj2.value + " taskMessage1.startSolutionOpt" + taskMessage1.startSolutionOpt)
 
     println("obj2.value: " + obj2.value)
     println("taskMessage.maxValueForObj2:" + taskMessage.maxValueForObj2)
@@ -85,11 +85,10 @@ class ParetoPointSearcher(taskId:Int,
 
     taskMessage.sendResultTo!SearchCompleted(
       taskMessage.uniqueSearchId,
-      (obj1.value, obj2.value, IndependentSolution(model.solution()),taskMessage.maxValueForObj2),
+      (obj1.value, obj2.value, IndependentSolution(model.solution(), noSaveNr = true),taskMessage.maxValueForObj2),
       dur.toInt)
 
-    startSol.restoreDecisionVariables()
-    (startSol,solId)
+    None
   }
 }
 
@@ -354,7 +353,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
       case None => supervisor.nbWorkers //TODO: this is not great because workers can enroll throughout the search; we should be able to scale up when more workers arrive
     }
     implicit val system: ActorSystem[_] = supervisor.system
-    implicit val timeout: Timeout = 3.seconds
+    implicit val timeout: Timeout = 30.minutes
 
     //the search is performed in a separated actor while this tread is waiting on a future
     //we wait on futureResult for the final answer

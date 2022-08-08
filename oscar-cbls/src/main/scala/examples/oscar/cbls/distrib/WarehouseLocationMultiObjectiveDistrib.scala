@@ -45,9 +45,10 @@ object WarehouseLocationMultiObjectiveDistrib extends App {
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
+  val (costForOpeningWarehouse, distanceCost, _, _, warehouseToWarehouseDistances) =
+    WarehouseLocationGenerator.problemWithPositions(W, D, 0, 1000, 3)
+
   def createSearchProcedure(): (Store, DistributedBiObjectiveSearch) = {
-    val (costForOpeningWarehouse, distanceCost, _, _, warehouseToWarehouseDistances) =
-      WarehouseLocationGenerator.problemWithPositions(W, D, 0, 1000, 3)
 
     //for(w <- 0 until W) costForOpeningWarehouse(w) = 100
     costForOpeningWarehouse(0) = 0 //This is for demo purpose; to have a curve that is more readable on the output.
@@ -114,7 +115,7 @@ object WarehouseLocationMultiObjectiveDistrib extends App {
   val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(paretoSearch,verbose = false)
 
   //This is a bit stupid: start the search while workers are not instantiated yet, but it is possible
-  for (i <- 0 until 2){ //Supervisor.nbCores/2) {
+  for (i <- 0 until Supervisor.nbCores/2) {
     val (store2, search2) = createSearchProcedure()
     supervisor.createLocalWorker(store2, search2)
   }

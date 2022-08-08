@@ -108,7 +108,7 @@ abstract class RemoteTask(val taskId: Int, description:String) {
     }
   }
 
-  def doTask(taskMessage:SearchRequest,model:Store,currentSolOpt:Option[(Solution,Int)]):(Solution,Int)
+  def doTask(taskMessage:SearchRequest,model:Store,currentSolOpt:Option[(Solution,Int)]):Option[(Solution,Int)]
 }
 
 class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
@@ -124,7 +124,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
     shouldAbortComputation = true
   }
 
-  def doTask(taskMessage:SearchRequest,model:Store,currentSolOpt:Option[(Solution,Int)]):(Solution,Int) = {
+  def doTask(taskMessage:SearchRequest,model:Store,currentSolOpt:Option[(Solution,Int)]):Option[(Solution,Int)] = {
     val (startSol,solId):(Solution,Int) = loadSolution(taskMessage.startSolutionOpt,model,currentSolOpt)
 
     shouldAbortComputation = false
@@ -137,7 +137,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
     }
     shouldAbortComputation = false
 
-     (startSol,solId)
+     Some((startSol,solId))
   }
 
   private def doSingleMoveSearch(searchRequest: SingleMoveSearch,model:Store,startSol:Solution) : Unit = {
@@ -286,8 +286,8 @@ case class IndependentNoMoveFound() extends IndependentSearchResult {
 // ////////////////////////////////////////////////////////////
 
 object IndependentSolution {
-  def apply(solution: Solution): IndependentSolution = {
-    new IndependentSolution(solution.saves.map(_.makeIndependentSerializable),solution.saveNr)
+  def apply(solution: Solution, noSaveNr:Boolean = false): IndependentSolution = {
+    new IndependentSolution(solution.saves.map(_.makeIndependentSerializable),if(noSaveNr) -1 else solution.saveNr)
   }
 }
 
