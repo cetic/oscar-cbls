@@ -275,6 +275,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
 
       val neighborhoodForFistSolution = minObj2Neighborhood.getOrElse(minObj1Neighborhood)
       neighborhoodForFistSolution().doAllMoves(obj = obj2)
+
       val foundOBj2 = obj2.value
       val minObj1WithFoundObj2 =
         CascadingObjective(
@@ -295,9 +296,17 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
       rectangle
     }
 
+    if (verbose) println("BiObjectiveSearch: search first solution: minObj1")
     val leftMostRectangle = {
       val neighborhoodForFistSolution = minObj1Neighborhood
       neighborhoodForFistSolution().doAllMoves(obj = obj1)
+
+      val foundOBj1 = obj1.value
+      val minObj2WithFoundObj1 =
+        CascadingObjective(
+          () => (0L max (obj1.value - foundOBj1)),
+          obj2)
+      minObj2Neighborhood.getOrElse(minObj1Neighborhood)().doAllMoves(obj = minObj2WithFoundObj1)
 
       val solutionAtMin1: Solution = obj2.model.solution()
 
@@ -364,7 +373,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
     }
 
     def logNext(context:ActorContext[WrappedData],nbRunningOrStartingSearches:Int): Unit ={
-      context.log.info(s"nbRunningOrStartingSearches:$nbRunningOrStartingSearches heapSize:${rectanglesToDevelopBiggestRectangleFirst.size} paretoFrontSize:${paretoFront.size}/$maxPoints remainingSurface:$remainingSurface/$stopSurface")
+      if(verbose) context.log.info(s"nbRunningOrStartingSearches:$nbRunningOrStartingSearches heapSize:${rectanglesToDevelopBiggestRectangleFirst.size} paretoFrontSize:${paretoFront.size}/$maxPoints remainingSurface:$remainingSurface/$stopSurface")
     }
     def next(nbRunningOrStartingSearches: Int, context:ActorContext[WrappedData]): Behavior[WrappedData] = {
 
@@ -449,7 +458,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
                       dominatedRectangleOpt match{
                         case Some(lastRectangle:Rectangle) if lastRectangle.obj2 >= obj2 =>
                           removeDominatedRectangle(lastRectangle)
-                          if(verbose)  println("removed dominated rectangle:" + lastRectangle)
+                          if(verbose)  context.log.info("removed dominated rectangle:" + lastRectangle)
                           storeAndScheduleRectangle(Rectangle(
                             obj1,
                             obj2,
