@@ -86,7 +86,7 @@ case class Store(override val verbose:Boolean = false,
       decisionVariables()
     }else variables
     saveNr += 1
-    Solution(variablesToSave.map(_.snapshot),this,saveNr)
+    Solution(variablesToSave.map(_.snapshot),this,Some(saveNr))
   }
 
   private var saveNr:Int = 0
@@ -94,7 +94,7 @@ case class Store(override val verbose:Boolean = false,
    * you can only save variables that are not controlled*/
   def saveValues(vars:Iterable[AbstractVariable]):Solution = {
     saveNr += 1
-    Solution(vars.map(_.snapshot),this,saveNr)
+    Solution(vars.map(_.snapshot),this,Some(saveNr))
   }
 
   def declaredValues:Iterable[Value] = QList.toIterable(propagationElements).flatMap(_ match{
@@ -282,7 +282,7 @@ case class Store(override val verbose:Boolean = false,
  */
 case class Solution(saves:Iterable[AbstractVariableSnapShot],
                     model:Store,
-                    saveNr:Int){
+                    saveNr:Option[Int]){
 
   /**converts the solution to a human-readable string*/
   override def toString:String = {

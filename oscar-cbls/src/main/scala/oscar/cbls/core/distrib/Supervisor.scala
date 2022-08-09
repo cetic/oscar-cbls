@@ -19,7 +19,7 @@ sealed trait MessagesToSupervisor
 
 final case class NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) extends MessagesToSupervisor
 
-final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSearchIDOpt: Option[Long], currentModelId:Option[Int]) extends MessagesToSupervisor
+final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSearchIDOpt: Option[Long], currentModelId:Option[SolutionID]) extends MessagesToSupervisor
 
 final case class CancelSearchToSupervisor(searchID: Long, keepAliveIfOjBelow:Option[Long]=None) extends MessagesToSupervisor
 
@@ -182,7 +182,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
 
   var neighborhoodToPreferredWorker: SortedMap[Int, ActorRef[MessageToWorker]] = SortedMap.empty
   private var allKnownWorkers: List[ActorRef[MessageToWorker]] = Nil
-  private var idleWorkersAndTheirCurentModelID: List[(ActorRef[MessageToWorker],Option[Int])] = Nil
+  private var idleWorkersAndTheirCurentModelID: List[(ActorRef[MessageToWorker],Option[SolutionID])] = Nil
   //this one is a list, because the most common operations are add and takeFirst
   private var startingSearches: SortedMap[Long, (SearchRequest, Long, ActorRef[MessageToWorker])] = SortedMap.empty
   //need to add, and remove regularly, based on ID
@@ -282,7 +282,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
 
           case (false, _ :: _) =>
 
-            def startSearch(search: SearchRequest, worker: ActorRef[MessageToWorker], currentSolutionAtWorker:Option[Int]): Unit = {
+            def startSearch(search: SearchRequest, worker: ActorRef[MessageToWorker], currentSolutionAtWorker:Option[SolutionID]): Unit = {
               if (verbose) context.log.info(s"assigning search:${search.uniqueSearchId} to worker:${worker.path}")
               val startID = nextStartID
               nextStartID = nextStartID + 1
@@ -291,7 +291,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
               val solutionForThisSearch = search.startSolutionOpt
 
               val simplifiedSearch = (solutionForThisSearch,currentSolutionAtWorker) match{
-                case (Some(x),Some(y)) if x.solutionId == y => search.dropStartSolution
+                case (Some(x),Some(y)) if x.solutionId.isDefined && x.solutionId.get == y => search.dropStartSolution
                 case _ => search
               }
 
@@ -396,7 +396,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
       //we do not register the worker as available here because it will register itself through another call,
       // at least to show it is not completely crashed.
 
-      case ReadyForWork(worker: ActorRef[MessageToWorker], completedSearchID: Option[Long], currentModelId:Option[Int]) =>
+      case ReadyForWork(worker: ActorRef[MessageToWorker], completedSearchID: Option[Long], currentModelId:Option[SolutionID]) =>
         if (verbose) context.log.info(s"got a worker ready:${worker.path}; finished search:$completedSearchID")
 
         require(allKnownWorkers contains worker)
@@ -432,8 +432,6 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
         if(!waitForMoreSearches) {
           context.self ! StartSomeSearch()
         }
-      case StartSomeSearch() =>
-        context.self ! StartSomeSearch()
       case CancelSearchToSupervisor(searchID: Long,keepAliveIfOjBelow:Option[Long]) =>
 
         require(searchID != -1)

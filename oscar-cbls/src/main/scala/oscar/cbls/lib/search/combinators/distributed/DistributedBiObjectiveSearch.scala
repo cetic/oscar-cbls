@@ -44,9 +44,9 @@ class ParetoPointSearcher(taskId:Int,
 
   override def abort(): Unit = { } //there is no abort
 
-  def doTask(taskMessage1:SearchRequest,model:Store,currentSolOpt:Option[(Solution,Int)]):Option[(Solution,Int)] = {
+  override def doTask(taskMessage1: SearchRequest, model: Store, currentSolOpt: Option[(Solution, SolutionID)], workerID: Option[String]): Option[(Solution, SolutionID)] = {
 
-    val (startSol,solId):(Solution,Int) = loadSolution(taskMessage1.startSolutionOpt,model,currentSolOpt)
+    val (startSol,solId):(Solution,Option[SolutionID]) = loadSolution(taskMessage1.startSolutionOpt,model,currentSolOpt,workerID)
 
     val taskMessage = taskMessage1.asInstanceOf[OptimizeWithBoundRequest]
 
@@ -79,7 +79,7 @@ class ParetoPointSearcher(taskId:Int,
 
     taskMessage.sendResultTo!SearchCompleted(
       taskMessage.uniqueSearchId,
-      (obj1.value, obj2.value, IndependentSolution(model.solution(), noSaveNr = true),taskMessage.maxValueForObj2),
+      (obj1.value, obj2.value, IndependentSolution(model.solution(), workerID),taskMessage.maxValueForObj2),
       dur.toInt)
 
     None
@@ -289,7 +289,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
         obj1 = obj1.value, obj2 = obj2.value,
         maxObj1 = obj1.value, minObj2 = obj2.value,
         solutionAtMin2,
-        IndependentSolution(solutionAtMin2))
+        IndependentSolution(solutionAtMin2,None))
 
       storeAndScheduleRectangle(rectangle)
       rectangle
@@ -306,7 +306,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
         obj1 = obj1.value, obj2 = obj2.value,
         maxObj1 = rightMostRectangle.obj1-1, minObj2 = rightMostRectangle.obj2+1,
         solutionAtMin1,
-        IndependentSolution(solutionAtMin1))
+        IndependentSolution(solutionAtMin1,None))
 
       storeAndScheduleRectangle(rectangle)
       rectangle

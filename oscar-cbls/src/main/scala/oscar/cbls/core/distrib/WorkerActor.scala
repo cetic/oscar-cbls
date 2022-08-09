@@ -96,7 +96,7 @@ class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
   private final var currentNeighborhood: RemoteTask = null
 
   @volatile
-  final var currentSolOpt:Option[(Solution,Int)] = None
+  final var currentSolOpt:Option[(Solution,SolutionID)] = None
 
   def initBehavior(): Behavior[MessageToWorker] = {
     Behaviors.setup { context =>
@@ -166,7 +166,7 @@ class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
                 //this is the thread of the search, as it is a future,
                 //TODO nothing can happen after the future is bound, opportunity to improve and postpone cleaning tasks?
                 try{
-                  currentSolOpt = currentNeighborhood.doTask(newSearch, m, currentSolOpt)
+                  currentSolOpt = currentNeighborhood.doTask(newSearch, m, currentSolOpt, Some(context.self.path.toString))
                 }catch {
                   case e:Throwable =>
                     newSearch.sendResultTo ! SearchCrashed(newSearch.uniqueSearchId,Some(newSearch.remoteTaskId),e,context.self)
