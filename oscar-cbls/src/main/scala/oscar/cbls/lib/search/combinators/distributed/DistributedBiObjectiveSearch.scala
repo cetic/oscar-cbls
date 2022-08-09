@@ -211,20 +211,20 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
 
   def removeDominatedRectangle(rectangle: Rectangle): Unit = {
     paretoFront = paretoFront.excl(rectangle)
+    remainingSurface -= rectangle.surface
+    require(remainingSurface>=0)
 
     if(rectanglesToDevelopBiggestRectangleFirst.deleteIfPresent(rectangle)){
-      remainingSurface -= rectangle.surface
-      require(remainingSurface>=0)
     }
+
     dominatedSolutions = (rectangle.obj1, rectangle.obj2) :: dominatedSolutions
   }
 
   def replaceRectangleAndSchedule(oldRectangle: Rectangle, newRectangle: Rectangle): Unit = {
     paretoFront = paretoFront.excl(oldRectangle).incl(newRectangle)
-
+    remainingSurface -= oldRectangle.surface
+    require(remainingSurface>=0)
     if(rectanglesToDevelopBiggestRectangleFirst.deleteIfPresent(oldRectangle)){
-      remainingSurface -= oldRectangle.surface
-      require(remainingSurface>=0)
     }
 
     if(newRectangle.isSplitteable) {
@@ -364,14 +364,14 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
     }
 
     def logNext(context:ActorContext[WrappedData],nbRunningOrStartingSearches:Int): Unit ={
-      context.log.info(s"nbRunningOrStartingSearches:$nbRunningOrStartingSearches heapSize:${rectanglesToDevelopBiggestRectangleFirst.size} front size:${paretoFront.size} remainingSurface:$remainingSurface")
+      context.log.info(s"nbRunningOrStartingSearches:$nbRunningOrStartingSearches heapSize:${rectanglesToDevelopBiggestRectangleFirst.size} paretoFrontSize:${paretoFront.size}/$maxPoints remainingSurface:$remainingSurface/$stopSurface")
     }
     def next(nbRunningOrStartingSearches: Int, context:ActorContext[WrappedData]): Behavior[WrappedData] = {
 
       if(nbRunningOrStartingSearches == 0 && (shouldStop || rectanglesToDevelopBiggestRectangleFirst.isEmpty)){
         //we should stop
         logNext(context,nbRunningOrStartingSearches)
-        context.log.info("should stop in the loop")
+        context.log.trace("should stop in the loop")
 
         resultPromise.success(WrappedCompleted())
         Behaviors.stopped
@@ -379,14 +379,14 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
 
         //split a rectangle
         val rectangleToSplit:Rectangle = rectanglesToDevelopBiggestRectangleFirst.removeFirst()
-        remainingSurface -= rectangleToSplit.surface
+//        remainingSurface -= rectangleToSplit.surface
 
         val maxValueForObj2 = (rectangleToSplit.minObj2 + rectangleToSplit.obj2)/2
-        val rectagleForStartSolution = paretoFront.minAfter(new SortedRectangle(rectangleToSplit.obj1+1)).getOrElse(rightMostRectangle).asInstanceOf[Rectangle]
+        val rectangleForStartSolution = paretoFront.minAfter(new SortedRectangle(rectangleToSplit.obj1+1)).getOrElse(rightMostRectangle).asInstanceOf[Rectangle]
 
-        val startSolution = Some(rectagleForStartSolution.independentSolution)
+        val startSolution = Some(rectangleForStartSolution.independentSolution)
 
-        require(maxValueForObj2 >= rectagleForStartSolution.obj2, "maxValueForObj2:" + maxValueForObj2 + "obj2:" + rectagleForStartSolution.obj2)
+        require(maxValueForObj2 >= rectangleForStartSolution.obj2, "maxValueForObj2:" + maxValueForObj2 + "obj2:" + rectangleForStartSolution.obj2)
 
         context.ask[DelegateSearch, SearchEnded[(Long, Long, IndependentSolution,Long)]](
           supervisor.supervisorActor, ref =>  DelegateSearch(OptimizeWithBoundRequest(
@@ -395,8 +395,8 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
             obj2 = this.obj2.getIndependentObj,
             maxValueForObj2 = maxValueForObj2,
             startSolution = startSolution,
-            initObj1 = rectagleForStartSolution.obj1,
-            initObj2 = rectagleForStartSolution.obj2,
+            initObj1 = rectangleForStartSolution.obj1,
+            initObj2 = rectangleForStartSolution.obj2,
             sendResultTo = ref))) {
           case Success(ended:SearchEnded[(Long, Long, IndependentSolution,Long)]) => WrappedSearchEnded(ended, rectangleToSplit)
           case Failure(_) => WrappedError(msg = Some("DistributedBIObjectiveSearch timeout3"))
@@ -514,6 +514,14 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
       case _ =>
         throw new Error("Unknown error in DistributedFirst")
     }
+
+
+    if(verbose) {
+      printStopCriterion()
+      println("elapsed(ms):" + ((System.nanoTime() - startSearchNanotime)/1000000).toInt)
+    }
+
+    if(!stayAlive) window.close()
 
     paretoFront.toList.map({case rectangle:Rectangle => (rectangle.obj1,rectangle.obj2,rectangle.solution)}).sortBy(_._1)
   }
