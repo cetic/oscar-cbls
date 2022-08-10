@@ -15,7 +15,7 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
 
   protected var it:Int = 0
   protected def bestKey(neighborhoodId:Int):Long
-  override val profiler: BestNeighborhoodFirstProfiler = BestNeighborhoodFirstProfiler(this,l)
+  override val profiler: SelectionProfiler = SelectionProfiler(this,l)
   override def collectProfilingStatistics: List[Array[String]] =
     profiler.collectThisProfileStatistics ::: super.collectProfilingStatistics
 
@@ -57,13 +57,14 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
    * @return
    */
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
-    if((it > 0) && ((it % refresh) == 0) && neighborhoodArray.indices.toList.exists(profiler.nbFound(_)!=0)){
+    profiler.explorationStarted()
+    if((it > 0) && ((it % refresh) == 0) && neighborhoodArray.indices.toList.exists(profiler.nbFoundSubN(_)!=0)){
 
       if(printExploredNeighborhoods){
         println("refreshing knowledge on neighborhood; statistics since last refresh: ")
         printStatus()
       }
-      profiler.resetThisStatistics()
+      profiler.resetSelectionNeighborhoodStatistics()
       for(p <- neighborhoodArray.indices){
         if(tabu(p) <= it) updateNeighborhodPerformances(p)
       }
@@ -72,15 +73,16 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
     while(!neighborhoodHeap.isEmpty){
       val headID = neighborhoodHeap.getFirst
       val headNeighborhood = neighborhoodArray(headID)
-      profiler.explorationStarted(headID)
+      profiler.subExplorationStarted(headID)
       headNeighborhood.getMove(obj,initialObj, acceptanceCriterion) match{
         case NoMoveFound =>
           if(neighborhoodHeap.size == l.size) profiler.firstFailed()
           makeTabu(headID)
-          profiler.explorationEnded(headID,None)
+          profiler.subExplorationEnded(headID,None)
         case MoveFound(m) =>
           neighborhoodHeap.notifyChange(headID)
-          profiler.explorationEnded(headID,Some(initialObj-m.objAfter))
+          profiler.subExplorationEnded(headID,Some(initialObj-m.objAfter))
+          profiler.explorationEnded(true)
           return MoveFound(m)
       }
     }
@@ -93,6 +95,7 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
       it -=1
       getMove(obj,initialObj,acceptanceCriterion)
     }else{
+      profiler.explorationEnded(false)
       NoMoveFound
     }
   }
@@ -142,10 +145,10 @@ case class FastestFirst(l:List[Neighborhood],
                         refresh:Int = 100)
   extends BestNeighborhoodFirst(l, tabuLength, overrideTabuOnFullExhaust, refresh) {
   override protected def bestKey(neighborhoodId:Int):Long = {
-    if (profiler.nbFound(neighborhoodId) == 0L)
-      if (profiler.totalTimeSpentMoveFound(neighborhoodId) == 0L) 0L else -Long.MaxValue
+    if (profiler.nbFoundSubN(neighborhoodId) == 0L)
+      if (profiler.totalTimeSpentMoveFoundSubN(neighborhoodId) == 0L) 0L else -Long.MaxValue
     else
-      - (profiler.totalTimeSpentMoveFound(neighborhoodId) / profiler.nbFound(neighborhoodId)).toInt
+      - (profiler.totalTimeSpentMoveFoundSubN(neighborhoodId) / profiler.nbFoundSubN(neighborhoodId)).toInt
   }
 }
 
@@ -164,7 +167,10 @@ class RoundRobin(robins: Array[(Neighborhood,Int)], tabu:Int = 1)
   var currentCycleNr = 0
   private val cycleOfLastFail:Array[Int] = Array.fill(robins.length)(Int.MinValue)
 
+  override val profiler: SelectionProfiler = SelectionProfiler(this, robins.map(_._1).toList)
+
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+    profiler.explorationStarted()
     while(true){
       //select next robin
       val prevRobin = currentRobin
@@ -181,7 +187,10 @@ class RoundRobin(robins: Array[(Neighborhood,Int)], tabu:Int = 1)
       }
       while(! nextNeighborFound) {
         //check that we have not circled around whole set of robins
-        if (currentRobin == firstFailedRobinInRow) return NoMoveFound
+        if (currentRobin == firstFailedRobinInRow) {
+          profiler.explorationEnded(false)
+          return NoMoveFound
+        }
         if(overrideTabu || (cycleOfLastFail(currentRobin) + tabu < currentCycleNr)) {
           nextNeighborFound = true
         }else{
@@ -196,13 +205,17 @@ class RoundRobin(robins: Array[(Neighborhood,Int)], tabu:Int = 1)
       }
 
       //explore current robin
+      profiler.subExplorationStarted(currentRobin)
       robins(currentRobin)._1.getMove(obj, initialObj:Long, acceptanceCriteria) match {
         case NoMoveFound =>
+          profiler.subExplorationEnded(currentRobin, None)
           if(firstFailedRobinInRow == -1) firstFailedRobinInRow = currentRobin
           nbExplorationsOnCurrentRobin = robins(currentRobin)._2
           cycleOfLastFail(currentRobin) = currentCycleNr
         //iterate, simply
         case x: MoveFound =>
+          profiler.explorationEnded(true)
+          profiler.subExplorationEnded(currentRobin,Some(initialObj - x.objAfter))
           firstFailedRobinInRow = -1
           nbExplorationsOnCurrentRobin += 1
           return x
@@ -240,16 +253,25 @@ class RoundRobinNoParam(val a: Neighborhood, val b: Neighborhood) {
 class RandomCombinator(a: Neighborhood*) extends NeighborhoodCombinator(a:_*) {
   private val r = new scala.util.Random()
 
+  override val profiler: SelectionProfiler = SelectionProfiler(this,a.toList)
+
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+    profiler.explorationStarted()
     val neighborhoods = a.toList
     val neighborhoodsIterator = r.shuffle(neighborhoods).iterator
     while (neighborhoodsIterator.hasNext) {
       val current = neighborhoodsIterator.next()
+      profiler.subExplorationStarted(a.indexOf(current))
       current.getMove(obj, initialObj, acceptanceCriteria) match {
-        case m: MoveFound => return m
-        case _ => ;
+        case m: MoveFound =>
+          profiler.subExplorationEnded(a.indexOf(current),Some(initialObj - m.objAfter))
+          profiler.explorationEnded(true)
+          return m
+        case _ =>
+          profiler.subExplorationEnded(a.indexOf(current), None);
       }
     }
+    profiler.explorationEnded(false)
     NoMoveFound
   }
 }

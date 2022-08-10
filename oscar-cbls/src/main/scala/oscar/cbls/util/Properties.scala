@@ -25,12 +25,8 @@ object Properties {
   }
 
   def justifyRightArray(l:List[Array[String]], sep:String = " "):List[String] = {
-    println("##########################################################")
-    println(l.map(_.mkString(" - ")).mkString("\n"))
     val nbCol = l.map(_.length).max
     val lengths:Array[Int] = Array.tabulate(nbCol)(i => l.map(line => if(i < line.length)line(i).length else 0).max)
-    println(nbCol, lengths.toList)
-    println("##########################################################")
     l.map(line => Array.tabulate(Math.min(nbCol,line.length))(col => prePadToLength(line(col),lengths(col))).mkString("  "))
   }
 }
