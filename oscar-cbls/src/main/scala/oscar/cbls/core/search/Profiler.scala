@@ -3,15 +3,34 @@ package oscar.cbls.core.search
 import oscar.cbls.util.Properties
 
 object Profiler {
-  def statisticsHeader: Array[String] = Array("Neighborhood","calls", "found", "sumGain", "sumTime(ms)", "avgGain",
-    "avgTime(ms)", "slope(-/s)", "avgTimeNoMove", "avgTimeMove", "wastedTime")
-
-  def selectedStatisticInfo(i:Iterable[Profiler]):String = {
-    Properties.justifyRightArray(Profiler.statisticsHeader :: i.toList.map(_.collectThisProfileStatistics)).mkString("\n")
+  def selectedStatisticInfo(profilers:Iterable[Profiler]):String = {
+    Properties.justifyRightArray(profilers.toList.flatMap(p => List(p.collectThisProfileHeader,p.collectThisProfileData))).mkString("\n")
   }
 }
 
-class Profiler(neighborhoodName: String) {
+abstract class Profiler(val neighborhood:Neighborhood){
+  def collectThisProfileStatistics:List[Array[String]] = List(collectThisProfileHeader, collectThisProfileData)
+  def collectThisProfileHeader:Array[String]
+  def collectThisProfileData:Array[String]
+
+  def resetThisStatistics(): Unit
+
+  override def toString: String = s"Profile(${neighborhood.toString})"
+  def profiledNeighborhood: String = neighborhood.getClass.getSimpleName
+}
+
+class EmptyProfiler(neighborhood: Neighborhood) extends Profiler(neighborhood) {
+  override def collectThisProfileHeader: Array[String] = Array("Neighborhood", "Undefined")
+  override def collectThisProfileData: Array[String] = Array(neighborhood.toString,"N/A")
+  // Nothing to do
+  override def resetThisStatistics(): Unit = {}
+}
+
+/**
+ * Base profiler for EasyNeighborhoods
+ * @param neighborhood
+ */
+class NeighborhoodProfiler(neighborhood: Neighborhood) extends Profiler(neighborhood) {
 
   var nbCalls:Long = 0L
   var nbFound:Long = 0L
@@ -34,23 +53,24 @@ class Profiler(neighborhoodName: String) {
 
   def avgTimeSpendNoMove:String = if(nbCalls - nbFound == 0L) "NA" else s"${totalTimeSpentNoMoveFound / (nbCalls - nbFound)}"
   def avgTimeSpendMove:String = if(nbFound == 0L) "NA" else s"${totalTimeSpentMoveFound / nbFound}"
+  def avgTimeExplore: String = s"${(totalTimeSpent.toDouble/totalExplored*1000).round/1000.0}"
   def waistedTime:String = if(nbCalls - nbFound == 0L) "NA" else s"${totalTimeSpentNoMoveFound / (nbCalls - nbFound)}"
 
-  def collectThisProfileStatistics:Array[String] =
-    {
-      Array[String](s"${neighborhoodName}", s"$nbCalls", s"$nbFound", s"$totalGain",
-        s"$totalTimeSpent", s"$gainPerCall", s"$callDuration", s"$slope",
-        s"$avgTimeSpendNoMove", s"$avgTimeSpendMove", s"$totalTimeSpentNoMoveFound", s"$totalExplored")
-    }
-  //TODO: (${if(nbCalls == 0) "NA" else (100*nbFound.toFloat/nbCalls.toFloat).toInt}%)
+  override def collectThisProfileHeader: Array[String] = Array("Neighborhood","calls", "found", "explored", "sumGain", "sumTime(ms)", "avgGain",
+    "avgTime(ms)", "slope(-/s)", "avgTimeNoMove", "avgTimeMove", "wastedTime", "avgTimeExplored(ms)")
 
-  //  override def toString: String = "Statistics(" + a + " nbCalls:" + nbCalls + " nbFound:" + nbFound + " totalGain:" + totalGain + " totalTimeSpent " + totalTimeSpent + " ms timeSpendWithMove:" + totalTimeSpentMoveFound + " ms totalTimeSpentNoMoveFound " + totalTimeSpentNoMoveFound + " ms)"
-  override def toString: String = s"Profile($neighborhoodName)"
+  override def collectThisProfileData:Array[String] =
+    {
+      Array[String](s"${neighborhood}",
+        s"$nbCalls", s"$nbFound", s"$totalExplored",
+        s"$totalGain", s"$totalTimeSpent", s"$gainPerCall", s"$callDuration", s"$slope",
+        s"$avgTimeSpendNoMove", s"$avgTimeSpendMove", s"$totalTimeSpentNoMoveFound",
+        s"$avgTimeExplore")
+    }
 
   def slopeOrZero:Long = if(totalTimeSpent == 0L) 0L else ((100L * totalGain) / totalTimeSpent).toInt
 
-  def resetThisStatistics(): Unit ={
-    println(s"$neighborhoodName reset")
+  override def resetThisStatistics(): Unit ={
     nbCalls = 0
     nbFound = 0
     totalGain = 0
@@ -96,21 +116,40 @@ class Profiler(neighborhoodName: String) {
 }
 
 
-case class BestNeighborhoodFirstProfiler(combinatorName: String, nbNeighborhoods: Int) extends Profiler(combinatorName) {
+case class BestNeighborhoodFirstProfiler(combinator: Neighborhood, nbNeighborhoods: List[Neighborhood]) extends Profiler(combinator) {
 
-  val profilers: Array[Profiler] = Array.tabulate(nbNeighborhoods)(i => new Profiler(s"$combinatorName - neighborhood $i"))
+  val profilers: Array[NeighborhoodProfiler] = nbNeighborhoods.map(n => new NeighborhoodProfiler(n)).toArray
 
   def slopeForCombinators(neighborhoodId: Int, defaultIfNoCall:Long = Long.MaxValue):Long =
     if(totalTimeSpent(neighborhoodId) == 0L) defaultIfNoCall
     else ((1000L * totalGain(neighborhoodId)) / totalTimeSpent(neighborhoodId)).toInt
 
-  def nbCalls(i: Int): Long = profilers(i).nbCalls
+  //def nbCalls(i: Int): Long = profilers(i).nbCalls
   def nbFound(i: Int): Long = profilers(i).nbFound
-  def nbExplored(i: Int): Long = profilers(i).nbExplored
-  def totalExplored(i: Int): Long = profilers(i).totalExplored
+  //def nbExplored(i: Int): Long = profilers(i).nbExplored
+  //def totalExplored(i: Int): Long = profilers(i).totalExplored
   def totalGain(i: Int): Long = profilers(i).totalGain
   def totalTimeSpentMoveFound(i: Int): Long = profilers(i).totalTimeSpentMoveFound
-  def totalTimeSpentNoMoveFound(i: Int): Long = profilers(i).totalTimeSpentNoMoveFound
+  //def totalTimeSpentNoMoveFound(i: Int): Long = profilers(i).totalTimeSpentNoMoveFound
   def totalTimeSpent(i: Int): Long = profilers(i)totalTimeSpent
 
+  var nbReset: Int = 0
+  var nbFirstFailed: Int = 0
+  val nbMoveFoundPerNeighbor: Array[Int] = Array.fill(nbNeighborhoods.size)(0)
+
+  override def collectThisProfileHeader: Array[String] = Array("Neighborhood", "NbReset", "NbFirstFailed") ++ profilers.map(p => s"${p.neighborhood.toString} - Usage (%)")
+  override def collectThisProfileData: Array[String] =
+    Array(s"${neighborhood.toString}", s"$nbReset",s"$nbFirstFailed") ++ nbMoveFoundPerNeighbor.map(m => s"${((m.toDouble/nbMoveFoundPerNeighbor.sum)*100).round}")
+
+  override def resetThisStatistics(): Unit = {
+    nbReset += 1
+    profilers.foreach(p => p.resetThisStatistics())
+  }
+
+  def firstFailed(): Unit = nbFirstFailed += 1
+  def explorationStarted(neighborhoodId: Int): Unit = profilers(neighborhoodId).explorationStarted()
+  def explorationEnded(neighborhoodId: Int, gain: Option[Long]): Unit = {
+    profilers(neighborhoodId).explorationEnded(gain)
+    if(gain.nonEmpty)nbMoveFoundPerNeighbor(neighborhoodId)+=1
+  }
 }

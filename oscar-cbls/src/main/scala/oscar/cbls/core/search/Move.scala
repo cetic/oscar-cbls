@@ -206,7 +206,7 @@ case class ConstantMoveNeighborhood(m: Move,
                                     skipAcceptanceCriterion:Boolean = false,
                                     neighborhoodName:String = null)
   extends Neighborhood with SupportForAndThenChaining[Move] {
-  override val profiler: Profiler = new Profiler("ConstantMoveNeighborhood")
+  override val profiler: EmptyProfiler = new EmptyProfiler(this)
   override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
     if (skipAcceptanceCriterion) {
       MoveFound(m)
@@ -222,6 +222,8 @@ case class ConstantMoveNeighborhood(m: Move,
 
   override def instantiateCurrentMove(newObj: Long): Move =
     new OverrideObj(m, newObj,neighborhoodName)
+
+  override def toString: String = "ConstantMoveNeighborhood"
 }
 
 case class ConstantMovesNeighborhood[MoveType<:Move](ms:() => Iterable[Long => MoveType],
@@ -265,7 +267,7 @@ class OverrideObj(initMove:Move, objAfter:Long, neighborhoodName:String = null)
 }
 
 case class DoNothingNeighborhood() extends Neighborhood with SupportForAndThenChaining[DoNothingMove]{
-  override val profiler: Profiler = new Profiler("DoNothingNeighborhood")
+  override val profiler: EmptyProfiler = new EmptyProfiler(this)
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
     val objValue = obj.value
     if(acceptanceCriterion(objValue,objValue)){
@@ -276,6 +278,8 @@ case class DoNothingNeighborhood() extends Neighborhood with SupportForAndThenCh
   }
 
   override def instantiateCurrentMove(newObj : Long) : DoNothingMove = DoNothingMove(newObj)
+
+  override def toString = "DoNothingNeighborhood"
 }
 
 case class DoNothingMove(override val objAfter:Long,override val neighborhoodName:String = null) extends Move(objAfter,neighborhoodName){

@@ -74,6 +74,7 @@ class VisualText(d: VisualDrawing, private var x: Double, private var y: Double,
     }
     else {
       for (i <- 0 until nLines) {
+        g.setFont(font)
         g.drawString(
           lines(i),
           x.toInt,

@@ -259,7 +259,7 @@ class VLSN(v:Int,
            enrichment:Option[EnrichmentParameters] = None)
   extends Neighborhood {
 
-  override val profiler: Profiler = new Profiler(name)
+  override val profiler: NeighborhoodProfiler = new NeighborhoodProfiler(this)
 
   def doReoptimize(vehicle:Int): Unit = {
     val reOptimizeNeighborhoodGenerator = reOptimizeVehicle match{

@@ -1,7 +1,7 @@
 package oscar.cbls.lib.search.combinators
 
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{DoNothingNeighborhood, InstrumentedMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, Profiler, SearchResult}
+import oscar.cbls.core.search.{DoNothingNeighborhood, EmptyProfiler, InstrumentedMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, Profiler, SearchResult}
 
 import scala.annotation.tailrec
 
@@ -399,7 +399,7 @@ class Retry(a: Neighborhood, cond: Long => Boolean = _ <= 1L) extends Neighborho
   * @param f a function that generated the neighborhood to explore
   */
 class Dyn(f:() => Neighborhood,name : String = "Dyn()") extends Neighborhood(name) {
-  override val profiler: Profiler = new Profiler(name)
+  override val profiler: EmptyProfiler = new EmptyProfiler(this)
   override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
     val neighborhood = f()
     neighborhood.verbose = this.verbose

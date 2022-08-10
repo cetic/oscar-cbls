@@ -9,7 +9,7 @@ abstract class DistributedCombinator(neighborhoods:Array[Neighborhood],
   var remoteTaskIdentification:Array[RemoteTaskIdentification] = null
   var supervisor:Supervisor = null
 
-  override val profiler: Profiler = new Profiler("Distributed Combinator")
+  override val profiler: EmptyProfiler = new EmptyProfiler(this)
 
   override def labelAndExtractRemoteTasks(supervisor: Supervisor,
                                           currentID: Int,
@@ -60,4 +60,6 @@ abstract class DistributedCombinator(neighborhoods:Array[Neighborhood],
   override def collectProfilingStatistics: List[Array[String]] = {
     remoteNeighborhoodIdentifications.flatMap(i => supervisor.getRemoteStatisticsFor(i)).toList
   }
+
+  override def toString: String = "Distributed Combinator"
 }

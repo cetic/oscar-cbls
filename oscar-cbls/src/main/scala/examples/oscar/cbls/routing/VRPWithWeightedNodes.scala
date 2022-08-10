@@ -10,6 +10,8 @@ import oscar.cbls.core.computation.{CBLSIntVar, Store}
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.{Best, First}
+import oscar.cbls.visual.SingleFrameWindow
+import oscar.cbls.visual.profiling.ProfilingTree
 
 import scala.util.Random
 
@@ -130,7 +132,9 @@ class VRPWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, minLo
 
   searchProcedure.verbose = 1
   searchProcedure.doAllMoves(obj = obj)
-  routingDisplay.drawRoutes(true)
+  val profilingDisplay = new ProfilingTree(searchProcedure)
+  SingleFrameWindow.show(profilingDisplay, "Profiling display")
+  profilingDisplay.draw()
   println(searchProcedure.profilingStatistics)
   println(myVRP)
   println(obj)

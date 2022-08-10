@@ -42,7 +42,9 @@ abstract class NeighborhoodCombinator(a: Neighborhood*) extends Neighborhood {
     a.flatMap(_.collectProfilingStatistics).toList
   }
 
-  override val profiler: Profiler = new Profiler("CombinatorProfiler")
+  override val profiler: Profiler = new EmptyProfiler(this)
+
+  def subNeighborhoods: List[Neighborhood] = a.toList
 
   override def labelAndExtractRemoteTasks(supervisor: Supervisor, currentID: Int, nbDistributedCombinators:Int = 0, acc: List[RemoteTask]):(Int,Int,List[RemoteTask]) = {
     var currentIDNow: Int = currentID

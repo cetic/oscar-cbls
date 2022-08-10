@@ -3,7 +3,7 @@ package oscar.cbls.lib.search.combinators
 import oscar.cbls._
 import oscar.cbls.core.computation.{AbstractVariable, Solution, Store}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{CallBackMove, CompositeMove, DoNothingMove, DoNothingNeighborhood, LoadSolutionMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, Profiler, SearchResult, SupportForAndThenChaining}
+import oscar.cbls.core.search.{CallBackMove, CompositeMove, DoNothingMove, DoNothingNeighborhood, LoadSolutionMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NeighborhoodProfiler, NoMoveFound, Profiler, SearchResult, SupportForAndThenChaining}
 
 abstract class NeighborhoodCombinatorNoProfile(a: Neighborhood*) extends NeighborhoodCombinator(a:_*){
   override def collectProfilingStatistics: List[Array[String]] = a.flatMap(_.collectProfilingStatistics).toList
@@ -132,9 +132,9 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
   //we need to store currentB here because we might need to instantiate the current move from it.
   var currentB:Neighborhood = null
 
-  override val profiler: Profiler = new Profiler(s"DynAndThen : ${a.getClass}")
+  override val profiler: NeighborhoodProfiler = new NeighborhoodProfiler(this)
 
-  override def collectProfilingStatistics: List[Array[String]] = List(profiler.collectThisProfileStatistics)
+  override def collectProfilingStatistics: List[Array[String]] = profiler.collectThisProfileStatistics
 
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
     profiler.explorationStarted()
