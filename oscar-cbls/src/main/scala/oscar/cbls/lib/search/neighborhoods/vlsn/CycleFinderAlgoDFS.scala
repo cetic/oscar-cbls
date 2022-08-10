@@ -46,7 +46,7 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends Cy
         val newSummedDelta = currentEdgeDelta + summedDelta
 
         val targetNode = currentEdge.to
-        val targetNodeID = targetNode.nodeID
+        val targetNodeID = targetNode.vlsnNodeID
 
         if(isLiveNode(targetNodeID) && !isNodeFullyExplored(targetNodeID)) {
           if (targetNode == rootNode) {
@@ -79,7 +79,7 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends Cy
 
     for(n <- nodes){
       rootNode = n
-      rooNodeID = n.nodeID
+      rooNodeID = n.vlsnNodeID
       isLabelReached(rootNode.label) = true
       isNodeReached(rooNodeID) = true
 
@@ -116,7 +116,7 @@ class ReachabilityFloydWarshall(graph:VLSNGraph){
     }
 
     for(edge <- edges){
-      adjacencyMatrix(edge.from.nodeID)(edge.to.nodeID) = true
+      adjacencyMatrix(edge.from.vlsnNodeID)(edge.to.vlsnNodeID) = true
     }
 
     adjacencyMatrix

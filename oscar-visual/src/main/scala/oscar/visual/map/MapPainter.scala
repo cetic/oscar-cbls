@@ -29,65 +29,75 @@ import java.awt.Font
  * @author Pierre Schaus
  */
 class MapPainter(map : VisualMap) extends Painter[JXMapViewer] {
-	var mymap: VisualMap = map
-	
-	private val renderer = new DefaultWaypointRenderer()
+  var mymap: VisualMap = map
 
-	def paint(gin: Graphics2D,
-						map: JXMapViewer,
-						w: Int,
-						h: Int): Unit = {
-		val g =  gin.create().asInstanceOf[Graphics2D]
-		
-		//convert from viewport to world bitmap
-		val rect = mymap.viewer.getViewportBounds
-		g.translate(-rect.x, -rect.y)
+  private val renderer = new DefaultWaypointRenderer()
 
-		/*
-		 * draw : 
-		 */
-		//lines
-		g.setColor(Color.RED)
-		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-		g.setStroke(new BasicStroke(2))
+  def paint(gin: Graphics2D,
+    map: JXMapViewer,
+    w: Int,
+    h: Int): Unit = {
+    val g =  gin.create().asInstanceOf[Graphics2D]
 
-		for ( l <- mymap.lines) {
-			//convert geo to world bitmap pixel 
-			val pt1 = mymap.viewer.getTileFactory.geoToPixel(new GeoPosition(l.orig._1, l.orig._2), mymap.viewer.getZoom)
-			val pt2 = mymap.viewer.getTileFactory.geoToPixel(new GeoPosition(l.dest._1, l.dest._2), mymap.viewer.getZoom)
-			g.setColor(l.color)
-			g.drawLine( pt1.getX.toInt, pt1.getY.toInt, pt2.getX.toInt, pt2.getY.toInt)
-		}
-		//paths
-		g.setColor(Color.BLACK)
-		for ( l <- mymap.paths.flatMap(_.lines)) {
-			//convert geo to world bitmap pixel 
-			val pt1 = mymap.viewer.getTileFactory.geoToPixel(new GeoPosition(l.orig._1, l.orig._2), mymap.viewer.getZoom)
-			val pt2 = mymap.viewer.getTileFactory.geoToPixel(new GeoPosition(l.dest._1, l.dest._2), mymap.viewer.getZoom)
-			g.setColor(l.color)
-			g.drawLine(pt1.getX.toInt, pt1.getY.toInt, pt2.getX.toInt, pt2.getY.toInt)
-		}
-		//waypoints
-		g.setColor(Color.BLUE)
-		for (wp <- mymap.waypoints) {
-			val pt1 = map.getTileFactory.geoToPixel(new GeoPosition(wp.lat, wp.long), map.getZoom)
-			val x =  pt1.getX.toInt
-			val y = pt1.getY.toInt
-			g.setColor(wp.color)
-			g.setStroke(new BasicStroke(2f))
-			g.drawOval(x-10,y-10,20,20)
-			g.setStroke(new BasicStroke(1f))
-			g.drawLine(x-10,y-0,x+10,y+0)
-			g.drawLine(x-0,y-10,x+0,y+10)
-			if (wp.label != null) {
-				g.setFont(new Font("Arial", Font.BOLD, 16))
-				g.drawString(wp.label, x+15 , y)
-			}
-		}
-		g.dispose()
-	}
-	
-	protected def paintWaypoint(w: Waypoint, g:  Graphics2D): Unit = {
-		renderer.paintWaypoint(g, mymap.viewer, w)
-	}
+    //convert from viewport to world bitmap
+    val rect = mymap.viewer.getViewportBounds
+    g.translate(-rect.x, -rect.y)
+
+    /*
+     * draw : 
+     */
+    //lines
+    g.setColor(Color.RED)
+    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+    g.setStroke(new BasicStroke(2))
+
+    for ( l <- mymap.lines) {
+      //convert geo to world bitmap pixel
+      val pt1 = mymap.viewer.getTileFactory.geoToPixel(new GeoPosition(l.orig._1, l.orig._2), mymap.viewer.getZoom)
+      val pt2 = mymap.viewer.getTileFactory.geoToPixel(new GeoPosition(l.dest._1, l.dest._2), mymap.viewer.getZoom)
+      g.setColor(l.color)
+      g.drawLine( pt1.getX.toInt, pt1.getY.toInt, pt2.getX.toInt, pt2.getY.toInt)
+    }
+    //paths
+    g.setColor(Color.BLACK)
+    for ( l <- mymap.paths.flatMap(_.lines)) {
+      //convert geo to world bitmap pixel
+      val pt1 = mymap.viewer.getTileFactory.geoToPixel(new GeoPosition(l.orig._1, l.orig._2), mymap.viewer.getZoom)
+      val pt2 = mymap.viewer.getTileFactory.geoToPixel(new GeoPosition(l.dest._1, l.dest._2), mymap.viewer.getZoom)
+      g.setColor(l.color)
+      g.drawLine(pt1.getX.toInt, pt1.getY.toInt, pt2.getX.toInt, pt2.getY.toInt)
+    }
+    //waypoints
+    g.setColor(Color.BLUE)
+    for (wp <- mymap.waypoints) {
+      val pt1 = map.getTileFactory.geoToPixel(new GeoPosition(wp.lat, wp.long), map.getZoom)
+      val x =  pt1.getX.toInt
+      val y = pt1.getY.toInt
+      g.setColor(wp.color)
+      g.setStroke(new BasicStroke(2f))
+      g.drawOval(x-10,y-10,20,20)
+      g.setStroke(new BasicStroke(1f))
+      g.drawLine(x-10,y-0,x+10,y+0)
+      g.drawLine(x-0,y-10,x+0,y+10)
+      if (wp.label != null) {
+	g.setFont(new Font("Arial", Font.BOLD, 16))
+	g.drawString(wp.label, x+15 , y)
+      }
+    }
+
+    for (poly <- mymap.polygons) {
+      val pointsPxl = poly.coords.map(c => mymap.viewer.getTileFactory().geoToPixel(new GeoPosition(c._1,c._2),mymap.viewer.getZoom))
+      val ptX = pointsPxl.map(_.getX.toInt)
+      val ptY = pointsPxl.map(_.getY.toInt)
+      val nPoints = poly.coords.length
+      g.setColor(poly.color)
+      g.fillPolygon(ptX,ptY,nPoints)
+
+    }
+    g.dispose()
+  }
+
+  protected def paintWaypoint(w: Waypoint, g:  Graphics2D): Unit = {
+    renderer.paintWaypoint(g, mymap.viewer, w)
+  }
 }

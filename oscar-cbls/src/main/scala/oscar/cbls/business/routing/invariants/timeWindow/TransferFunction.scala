@@ -101,10 +101,10 @@ object TransferFunction{
    */
   def relevantSuccessorsOfNodes(n: Int, v: Int, singleNodesTransferFunctions: Array[TransferFunction], timeMatrix: Array[Array[Long]]): Map[Int,Iterable[Int]] ={
     val allNodes = (0 until n).toList
-    List.tabulate(n)(to => {
-      val toTF = singleNodesTransferFunctions(to)
-      to -> allNodes.collect{
-        case from: Int if from != to && singleNodesTransferFunctions(from.toInt).latestLeavingTime + timeMatrix(from.toInt)(to) <= toTF.la => from
+    List.tabulate(n)(from => {
+      val fromTF = singleNodesTransferFunctions(from)
+      from -> allNodes.collect{
+        case to: Int if from != to && fromTF.el + timeMatrix(from)(to) <= singleNodesTransferFunctions(to).la => to
       }}).toMap
   }
 }

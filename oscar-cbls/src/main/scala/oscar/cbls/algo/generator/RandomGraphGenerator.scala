@@ -1,11 +1,6 @@
 package oscar.cbls.algo.generator
 
 import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, Edge, Node}
-import oscar.cbls.business.routing.neighborhood.InsertPointMove
-import oscar.cbls.lib.search.neighborhoods.vlsn._
-import oscar.cbls.core.search._
-import oscar.cbls.lib.search.neighborhoods._
-import java.io._
 
 import scala.util.Random
 
@@ -25,12 +20,12 @@ object RandomGraphGenerator {
     })
 
     def randomXY: Int = rand.nextInt(mapSide)
-    val pointPosition: Array[(Int, Int)] = Array.tabulate(nbNodes)(w => (randomXY, randomXY))
+    val pointPosition: Array[(Int, Int)] = Array.tabulate(nbNodes)(_ => (randomXY, randomXY))
 
 
     val nodes = 0 until nbNodes
 
-    def distance(fromNode: Int,toNode:Int) = {
+    def distance(fromNode: Int,toNode:Int): Int = {
       val fromCoord = pointPosition(fromNode)
       val tooCoord = pointPosition(toNode)
       2 + math.sqrt(math.pow(fromCoord._1 - tooCoord._1, 2) + math.pow(fromCoord._2 - tooCoord._2, 2)).toInt

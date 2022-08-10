@@ -57,6 +57,14 @@ protected case class TwoWaysVehicleContentFunction(nonFlippedFunction: VehicleCo
     if(flipped) flippedFunction.contentAtEndIfStartAt0
     else nonFlippedFunction.contentAtEndIfStartAt0
 
+  def minIfStartAtZero(flipped: Boolean): Long =
+    if(flipped) flippedFunction.min(0)
+    else nonFlippedFunction.min(0)
+
+  def maxIfStartAtZero(flipped: Boolean): Long =
+    if(flipped) flippedFunction.max(0)
+    else nonFlippedFunction.max(0)
+
   def apply(startContent: Long, maxVehicleContent: Long, flipped: Boolean): Boolean ={
     val vehicleContentFunction = if(flipped)flippedFunction else nonFlippedFunction
     vehicleContentFunction.max(startContent) > maxVehicleContent || vehicleContentFunction.min(startContent) < 0

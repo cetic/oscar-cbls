@@ -1,5 +1,7 @@
 package examples.oscar.cbls.routing
 
+import oscar.cbls._
+import oscar.cbls.algo.generator.RoutingMatrixGenerator
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.business.routing.invariants.global.RouteLength
 import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleCapacityConstraint
@@ -10,7 +12,6 @@ import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.core.search.{Best, Neighborhood, NoMoveNeighborhood}
 import oscar.cbls.lib.search.neighborhoods.vlsn.VLSN
-import oscar.cbls._
 
 import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
 
@@ -18,7 +19,7 @@ import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
  * Created by fg on 12/05/17.
  */
 
-object PDPTW_VLSN extends App {
+object PDPTWVLSN extends App {
   val m = Store(noCycle = false)
 
   val v = 10

@@ -1,7 +1,7 @@
 package examples.oscar.cbls.distrib
 
-import examples.oscar.cbls.wlp.WarehouseLocationGenerator
 import oscar.cbls._
+import oscar.cbls.algo.generator.WarehouseLocationGenerator
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.distrib

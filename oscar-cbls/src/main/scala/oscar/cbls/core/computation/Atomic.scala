@@ -41,7 +41,15 @@ abstract class ChangingAtomicValue[T](initialValue:T)
   extends AbstractVariable with AtomicValue[T]{
 
   override def snapshot : ChangingAtomicValueSnapShot[T] = new ChangingAtomicValueSnapShot(this.uniqueID,this.value)
-  def valueAtSnapShot(s:Solution):T = s(this) match{case s:ChangingAtomicValueSnapShot[T] => s.savedValue case _ => throw new Error("cannot find value of " + this + " in snapshot")}
+
+  def valueAtSnapShot(s:Solution):T = {
+    try {
+      s(this).asInstanceOf[ChangingAtomicValueSnapShot[T]].savedValue
+    } catch {
+      case _:ClassCastException =>
+        throw new Error("cannot find value of " + this + " in snapshot")
+    }
+  }
 
   private[this] var mNewValue: T = initialValue
   private[this] var mOldValue = mNewValue

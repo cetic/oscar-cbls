@@ -23,11 +23,12 @@ package oscar.cbls.core.objective
 import oscar.cbls
 import oscar.cbls.core.computation._
 import oscar.cbls.warning
-object Objective{
+
+object Objective {
   implicit def objToChangingIntValue(o:IntVarObjective):ChangingIntValue = o.objective
   implicit def objToFun(o:Objective):()=>Long = ()=>o.value
-  implicit def funToObj(f:()=>Long) = new FunctionObjective(f)
-  implicit def boolFunToObj(f:()=>Boolean) = new FunctionObjective(() => if(f()) 1L else 0L)
+  implicit def funToObj(f:()=>Long): FunctionObjective = new FunctionObjective(f)
+  implicit def boolFunToObj(f:()=>Boolean): FunctionObjective = new FunctionObjective(() => if(f()) 1L else 0L)
 
   def apply(f:()=>Long,model:Store = null) = new FunctionObjective(f,model)
 
@@ -81,11 +82,11 @@ class IntVarObjective(val objective: ChangingIntValue) extends Objective {
   model.registerForPartialPropagation(objective)
 }
 
-class IndependentIntVarObjective(val uniqueID:Int) extends IndependentObjective{
+class IndependentIntVarObjective(val uniqueID:Int) extends IndependentObjective {
   override def convertToObjective(m: Store): Objective = m.getObjective(uniqueID)
 }
 
-object CascadingObjective{
+object CascadingObjective {
   def apply(objectives:Objective*):Objective = {
 
     def buildCascading(objs:List[Objective]):Objective = {
@@ -109,10 +110,12 @@ object CascadingObjective{
  *   this is computed partially both for objective and mustBeZeroObjective
  * @param mustBeZeroObjective
  */
-class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objective,cascadeSize:Long = Long.MaxValue) extends Objective {
+class CascadingObjective(mustBeZeroObjective: Objective,
+                         secondObjective:Objective,
+                         cascadeSize:Long = Long.MaxValue) extends Objective {
 
   override def detailedString(short: Boolean, indent:Long = 0L): String =
-    (if(short) {
+    if (short) {
       if (mustBeZeroObjective.value == 0L) {
         nSpace(indent) + "CascadingObjective(\n" +
           nSpace(indent + 2L) + "mustBeZeroObjective :=0L \n" +
@@ -123,12 +126,12 @@ class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objecti
           nSpace(indent + 2L) + "mustBeZeroObjective:" + mustBeZeroObjective.detailedString(true, indent + 4L) + "\n" +
           nSpace(indent) + ")"
       }
-    }else {
+    } else {
       nSpace(indent) + "CascadingObjective(\n" +
         nSpace(indent + 2L) + "mustBeZeroObjective:" + mustBeZeroObjective.detailedString(true, indent + 4L) + "\n" +
         nSpace(indent + 2L) + "secondObjective:" + secondObjective.detailedString(true, indent + 4L) + "\n" +
         nSpace(indent) + ")"
-    })
+    }
 
   /**
    * This method returns the actual objective value.
@@ -145,7 +148,7 @@ class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objecti
 }
 
 
-object PriorityObjective{
+object PriorityObjective {
   def apply(objective1: Objective, objective2:Objective, maxObjective2:Long) = new PriorityObjective(objective1: Objective, objective2:Objective, maxObjective2:Long)
 
   def apply(firstObj:Objective,moreObjAndTheirMaxValue:List[(Objective,Long)]):Objective = {
@@ -175,7 +178,7 @@ object PriorityObjective{
       if (value!=0 && allZeroSoFar){
         allZeroSoFar = false
         Console.BLUE + text + Console.GREEN
-      }else{
+      } else {
         text
       }
     })
@@ -298,7 +301,7 @@ trait Objective {
   def assignVal(a: Iterable[(CBLSIntVar, Long)]): Long = {
     //memorize
     val oldvals: Iterable[(CBLSIntVar, Long)] = a.foldLeft(List.empty[(CBLSIntVar, Long)])(
-      (acc, IntVarAndInt) => ((IntVarAndInt._1, IntVarAndInt._1.value)) :: acc)
+      (acc, IntVarAndInt) => (IntVarAndInt._1, IntVarAndInt._1.value)::acc)
     //excurse
     for (assign <- a)
       assign._1 := assign._2
@@ -385,16 +388,15 @@ class LoggingObjective(baseObjective:Objective) extends Objective{
   }
 }
 
+class AbortException extends Exception("Abort!")
 
-
-class AbortException extends Exception("")
 class AbortableObjective(shouldAbort:()=>Boolean, baseObj:Objective) extends Objective{
   override def detailedString(short: Boolean, indent: Long): String = baseObj.detailedString(short,indent)
 
   override def model: Store = baseObj.model
 
   override def value: Long = {
-    if(shouldAbort()) throw new AbortException()
+    if (shouldAbort()) throw new AbortException()
     baseObj.value
   }
 }

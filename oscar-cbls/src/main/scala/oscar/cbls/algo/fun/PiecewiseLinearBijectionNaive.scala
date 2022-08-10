@@ -23,8 +23,7 @@ object PiecewiseLinearBijectionNaive{
   def identity:PiecewiseLinearBijectionNaive = new PiecewiseLinearBijectionNaive(PiecewiseLinearFun.identity)
 
   @tailrec
-  def computeInvertedPivots(prevPivot : Pivot,
-                            remainingPivots : List[Pivot],
+  def computeInvertedPivots(remainingPivots : List[Pivot],
                             newPivots : QList[Pivot] = null): QList[Pivot] = {
     remainingPivots match {
       case Nil => newPivots
@@ -32,7 +31,7 @@ object PiecewiseLinearBijectionNaive{
         val fun = p1.f
         val invert = fun.invert
         val newPivot = new PivotWithTo(fun(if (fun.minus) p2.fromValue - 1 else p1.fromValue), invert, fun(if (fun.minus) p1.fromValue else p2.fromValue - 1))
-        computeInvertedPivots(p1, p2 :: tail, QList(newPivot, newPivots))
+        computeInvertedPivots(p2 :: tail, QList(newPivot, newPivots))
       case p1 :: _ =>
         val fun = p1.f
         require(!fun.minus)
@@ -47,7 +46,7 @@ object PiecewiseLinearBijectionNaive{
 class PiecewiseLinearBijectionNaive(val forward:PiecewiseLinearFun, givenBackward:PiecewiseLinearFun = null) {
   lazy val backward : PiecewiseLinearFun = {
     if (givenBackward != null) givenBackward
-    else PiecewiseLinearFun.createFromPivots(PiecewiseLinearBijectionNaive.computeInvertedPivots(null, forward.pivots, null))
+    else PiecewiseLinearFun.createFromPivots(PiecewiseLinearBijectionNaive.computeInvertedPivots(forward.pivots, null))
   }
 
   def invert : PiecewiseLinearBijectionNaive = new PiecewiseLinearBijectionNaive(backward, forward)

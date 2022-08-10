@@ -118,14 +118,19 @@ abstract class AbstractNaiveRoutingConstraint[U <: Any : Manifest](routes : Chan
     */
 
   private def updateValuesOfVehicleNodes(vehicle : Int,routes : IntSequence) : Unit = {
-    // println("Update Vehicle Values")
+    // println(s"Update Vehicle Values of vehicle $vehicle")
     // println(segmentsOfVehicle(vehicle))
     val segmentList = ordonateSegments(segmentsOfVehicle(vehicle))
     // println(segmentList.mkString(", "))
     //println(valueOfNodes.mkString("\n"))
     val lastNode = updateSegmentListValues(segmentList,initValuePerVehicle(vehicle),vehicle,routes)
-    val lastValue = if (lastNode == vehicle) initValuePerVehicle(vehicle) else valueOfNodes(lastNode)
-    updateValueOfNode(vehicle,op(lastNode,vehicle,lastValue))
+    // println(s"LastNode : $lastNode")
+    //val lastValue = if (lastNode == vehicle) initValuePerVehicle(vehicle) else valueOfNodes(lastNode)
+    //println(s"Last value : $lastValue")
+    if (lastNode != vehicle)
+      updateValueOfNode(vehicle,op(lastNode,vehicle,valueOfNodes(lastNode)))
+    else
+      updateValueOfNode(vehicle,initValuePerVehicle(vehicle))
     //vehicleValueAtEnd(vehicle) = op(lastNode,vehicle,valueOfNodes(lastNode))
   }
 
@@ -136,7 +141,7 @@ abstract class AbstractNaiveRoutingConstraint[U <: Any : Manifest](routes : Chan
     * @param value The new value of the node
     */
   private def updateValueOfNode(node : Int,value : U) : Unit = {
-    //println(s"Update $node with $value")
+    // println(s"Update $node with $value")
     valueOfNodes(node) = value
     assignNodeValue(node : Int,value : U)
   }
@@ -192,6 +197,8 @@ abstract class AbstractNaiveRoutingConstraint[U <: Any : Manifest](routes : Chan
     * @param routes The current routes of the vehicles
     */
   private def updateValuesOfVehicleNodesFromScratch(vehicle : Int,routes : IntSequence) : Unit = {
+
+
     initSegmentsOfVehicle(vehicle,routes)
     updateValueOfNode(vehicle,initValuePerVehicle(vehicle))
     if (segmentsOfVehicle(vehicle).segments != null) {
@@ -270,7 +277,7 @@ abstract class AbstractNaiveRoutingConstraint[U <: Any : Manifest](routes : Chan
     // println("== New Notify")
     // println("==============================================================================================")
     // println(r.value)
-    // //println(valueOfNodes.mkString("\n"))
+    // (0 until n).foreach(node => println(s"$node -> (value: ${valueOfNodes(node)})"))
     // println(changes)
     // println(changes.newValue)
     // (0 until v).foreach(vehicle => println(s"$vehicle --> ${segmentsOfVehicle(vehicle)}"))
@@ -382,11 +389,15 @@ abstract class AbstractNaiveRoutingConstraint[U <: Any : Manifest](routes : Chan
 
         val fromImpactedSegment = segmentsOfVehicle(fromVehicle)
 
+        // println(fromImpactedSegment)
+
         val (listSegmentsAfterRemove, segmentsToRemove) =
           fromImpactedSegment.removeSubSegments(fromIncluded, toIncluded, prevRoutes,fromVehiclePosition + 1)
 
+        // println(listSegmentsAfterRemove)
+
         val toImpactedSegment = if (sameVehicle) listSegmentsAfterRemove else segmentsOfVehicle(toVehicle)
-        //println(s"toImpactedSegment : $toImpactedSegment")
+        // println(s"toImpactedSegment : $toImpactedSegment")
         // If we are in same vehicle and we remove nodes to put them later in the route, the route length before insertion point has shortened
         val delta =
           if (!sameVehicle || after < fromIncluded) 0
@@ -399,6 +410,8 @@ abstract class AbstractNaiveRoutingConstraint[U <: Any : Manifest](routes : Chan
             toImpactedSegment.insertSegments(segmentsToRemove.qMap(_.flip()).reverse, after, prevRoutes,toVehiclePosition + 1 , delta)
           else
             toImpactedSegment.insertSegments(segmentsToRemove, after, prevRoutes, toVehiclePosition + 1 , delta)
+
+        // println(listSegmentsAfterInsertion)
 
         segmentsOfVehicle(toVehicle) = listSegmentsAfterInsertion
         if (!sameVehicle) segmentsOfVehicle(fromVehicle) = listSegmentsAfterRemove

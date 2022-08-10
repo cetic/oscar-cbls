@@ -12,11 +12,10 @@
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-package oscar.cbls.benchmarks.vrp
-
-import java.io.{File, PrintWriter}
+package examples.oscar.cbls.benchmarks
 
 import oscar.cbls._
+import oscar.cbls.algo.generator.RoutingMatrixGenerator
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.model.helpers.DistanceHelper
 import oscar.cbls.core.computation.Store
@@ -24,6 +23,7 @@ import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.First
 import oscar.cbls.util.StopWatch
 
+import java.io.{File, PrintWriter}
 import scala.io.Source
 
 object TSProutePoints extends App {
@@ -171,8 +171,9 @@ object TSProutePoints extends App {
   }
 
   val benchmarkSizes = 500 to 5000 by 500
-  var fileName = "C:\\Users\\rdl\\Documents\\Oscar\\BitBucket3\\oscar-cbls\\src\\main\\examples\\oscar\\examples\\cbls\\routing\\data\\bench"
-  fileName = args(0)
+  // var fileName = "C:\\Users\\rdl\\Documents\\Oscar\\BitBucket3\\oscar-cbls\\src\\main\\examples\\oscar\\examples\\cbls\\routing\\data\\bench"
+  // args(0) contains the path to the benchmark data
+  val fileName = args(0)
   println("benchmark path: " + fileName)
   //runBenchmark(fileName,1000L)
  // generateAllBenchmarks()
@@ -180,7 +181,12 @@ object TSProutePoints extends App {
   //performRandomBenchmark()
 }
 
-class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symmetricDistanceMatrix:Array[Array[Long]],printobj:Boolean = false) extends StopWatch{
+class TSPRoutePointsS(n:Int,
+                      v:Int,
+                      maxPivotPerValuePercent:Int,
+                      verbose:Int,
+                      symmetricDistanceMatrix:Array[Array[Long]],
+                      printobj:Boolean = false) extends StopWatch {
 
   //  println("restrictions:" + restrictions)
   val model = Store() //checker = Some(new ErrorChecker()))

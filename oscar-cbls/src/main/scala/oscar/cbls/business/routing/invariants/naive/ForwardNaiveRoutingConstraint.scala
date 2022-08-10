@@ -8,7 +8,13 @@ import oscar.cbls.algo.quick.QList
 
 
 
-abstract class ForwardNaiveRoutingConstraint[U <: Any : Manifest](routes : ChangingSeqValue,n : Int,v : Int,defaultValue : U ,initValuePerVehicle : Array[U],fonc : (Int,Int,U) => U) extends AbstractNaiveRoutingConstraint[U](routes,n,v,defaultValue,initValuePerVehicle,fonc) {
+abstract class ForwardNaiveRoutingConstraint[U <: Any : Manifest](routes : ChangingSeqValue,
+                                                                  n : Int,
+                                                                  v : Int,
+                                                                  defaultValue : U ,
+                                                                  initValuePerVehicle : Array[U],
+                                                                  fonc : (Int,Int,U) => U)
+  extends AbstractNaiveRoutingConstraint[U](routes,n,v,defaultValue,initValuePerVehicle,fonc) {
 
   override def getNextPointOfSegmentToUpdate(expl : IntSequenceExplorer,seg : Segment) : Option[IntSequenceExplorer] =  {
     seg match {

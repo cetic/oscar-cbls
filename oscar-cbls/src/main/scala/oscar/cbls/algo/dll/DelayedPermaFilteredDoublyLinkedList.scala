@@ -22,7 +22,7 @@ package oscar.cbls.algo.dll
 
 import oscar.cbls.algo.quick.QList
 
-/**this is a mutable data structure that is able to represent sets through doubly-lined lists, with insert
+/** This is a mutable data structure that is able to represent sets through doubly-linked lists, with insert
   * and delete in O(1L) through reference
   * and to update in parallel another set that is a filter of the first one through a specified function
   * the filter can be specified anytime and filtering can be cascaded
@@ -73,7 +73,7 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
     toReturn
   }
 
-  /**adds an a item in the PermaFilteredDLL, and if accepted by the filter, adds it in the slave PermaFilteredDLL.
+  /** adds an a item in the PermaFilteredDLL, and if accepted by the filter, adds it in the slave PermaFilteredDLL.
     * returns a reference that should be used to remove the item from all those structures at once.
     */
   def addElem(elem:T):DPFDLLStorageElement[T] = {
@@ -89,10 +89,10 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
     d
   }
 
-  /**adds an element to the data structure, cfr. method addElem*/
+  /** adds an element to the data structure, cfr. method addElem*/
   def +(elem:T): Unit = {addElem(elem)}
 
-  /**adds a bunch of items to the data structures*/
+  /** adds a bunch of items to the data structures*/
   def ++(elems:Iterable[T]): Unit = {for(elem <- elems) addElem(elem)}
 
   override def isEmpty:Boolean = phantom.next == phantom
@@ -163,7 +163,7 @@ class DPFDLLStorageElement[T](val elem:T){
 
   def delete(): Unit = {
     prev.setNext(next)
-    prev = null //this is checked by the delayed perma filter, so DO NOT REMOVE THIS SEEMIGNLY USELESS INSTRUCTION
+    prev = null //this is checked by the delayed perma filter, so DO NOT REMOVE THIS SEEMINGLY USELESS INSTRUCTION
     while(filtered != null) {
       filtered.head.delete()
       filtered = filtered.tail

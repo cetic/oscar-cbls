@@ -41,7 +41,7 @@ class DistributedObjDisplay()
       domain
     },
     {
-      /*
+      /* *
        * val axis = new NumberAxis()
        * axis.setAutoRange(true)
        * axis.setAutoRangeIncludesZero(false)

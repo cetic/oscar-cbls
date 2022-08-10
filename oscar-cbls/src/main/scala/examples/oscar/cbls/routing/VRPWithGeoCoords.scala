@@ -1,6 +1,7 @@
 package examples.oscar.cbls.routing
 
 import oscar.cbls._
+import oscar.cbls.algo.generator.RoutingMatrixGenerator
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.model.helpers.DistanceHelper
 import oscar.cbls.business.routing.visu.RoutingMapTypes
@@ -53,7 +54,6 @@ class VRPWithGeoCoords(n: Int, v: Int, minLat: Double, maxLat: Double, minLong: 
 
   store.close()
 
-
   //////////////////// Pruning and display ////////////////////
   ////////// Display VRP resolution on real map //////////
 
@@ -101,7 +101,6 @@ class VRPWithGeoCoords(n: Int, v: Int, minLat: Double, maxLat: Double, minLong: 
     List(routeUnroutedPoint, onePtMove(20),customTwoOpt)
   ).showObjectiveFunction(obj).afterMove(
     routingDisplay.drawRoutes())
-
 
   //////////////////// RUN ////////////////////
 

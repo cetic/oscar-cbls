@@ -1,6 +1,5 @@
 package oscar.cbls.core
 
-import oscar.cbls.core.computation.Store
 import oscar.cbls.core.search.Neighborhood
 
 import scala.concurrent.duration.Duration

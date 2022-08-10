@@ -12,24 +12,6 @@
  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  ******************************************************************************/
-/**
- * *****************************************************************************
- * This file is part of OscaR (Scala in OR).
- *
- * OscaR is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2.1 of the License, or
- * (at your option) any later version.
- *
- * OscaR is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with OscaR.
- * If not, see http://www.gnu.org/licenses/gpl-3.0.html
- * ****************************************************************************
- */
 package oscar.visual.map
 import java.awt.BorderLayout
 import java.awt.Color
@@ -39,7 +21,6 @@ import org.jdesktop.swingx.JXMapViewer
 import org.jdesktop.swingx.mapviewer.DefaultTileFactory
 import org.jdesktop.swingx.mapviewer.GeoPosition
 import org.jdesktop.swingx.mapviewer.TileFactoryInfo
-import java.lang.InterruptedException
 import java.awt.Toolkit
 import oscar.visual.VisualFrame
 
@@ -52,13 +33,14 @@ class VisualMap extends JPanel(new BorderLayout()) {
   var lines = List[MapLine]()
   var waypoints = List[MapWaypoint]()
   var paths = List[MapPath]()
+  var polygons = List[MapPolygon]()
 
   val max = 17
   val info = new TileFactoryInfo(1, max - 2, max,
     256, true, true, // tile size is 256 and x/y orientation is normal
     "http://tile.openstreetmap.org",
     "x", "y", "z") {
-    override def getTileUrl(x: Int, y: Int, zoo: Int) = {
+    override def getTileUrl(x: Int, y: Int, zoo: Int): String = {
       val zoom = max - zoo
       this.baseURL + "/" + zoom + "/" + x + "/" + y + ".png"
     }
@@ -87,7 +69,7 @@ class VisualMap extends JPanel(new BorderLayout()) {
     res
   }
 
-  def removeWaypoint(wp : MapWaypoint) = {
+  def removeWaypoint(wp : MapWaypoint): Unit = {
     waypoints = waypoints.filterNot(_ == wp)
     refresh()
   }
@@ -102,12 +84,12 @@ class VisualMap extends JPanel(new BorderLayout()) {
   }
 
 
-  def removeLine(line: MapLine) = {
+  def removeLine(line: MapLine): Unit = {
     lines = lines.filterNot(_ == line)
     refresh()
   }
 
-  def clear() = {
+  def clear(): Unit = {
     lines = List[MapLine]()
     waypoints = List[MapWaypoint]()
     paths = List[MapPath]()
@@ -123,20 +105,30 @@ class VisualMap extends JPanel(new BorderLayout()) {
     p
   }
 
-
-  def removePath(p: MapPath) = {
+  def removePath(p: MapPath): Unit = {
     paths = paths.filterNot(_ == p)
     refresh()
   }
 
-  def refresh() = {
+  def createPolygon(coords : Array[(Double,Double)], col : Color = Color.GREEN): Unit = {
+    val poly = new MapPolygon(this,coords,col)
+    polygons = polygons :+ poly
+    refresh()
+  }
+
+  def removePolygon(poly : MapPolygon): Unit = {
+    polygons = polygons.filterNot(_ == poly)
+    refresh()
+  }
+
+  def refresh(): Unit = {
     viewer.repaint()
   }
 
 }
 
 object VisualMap {
-  def main(args: Array[String]) = {
+  def main(args: Array[String]): Unit = {
 
     val f = VisualFrame("toto")
     var inf = f.createFrame("tmap")

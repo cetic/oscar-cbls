@@ -22,11 +22,11 @@ import scala.collection.immutable.SortedSet
 object Clique {
 
   /**
-   * from https://en.wikipedia.org/wiki/Bron%E2%80L%93LKerbosch_algorithm
-   * @param nbNodes nodes are from 0 to nbNodes-1L
+   * from https://en.wikipedia.org/wiki/Bron-Kerbosch_algorithm
+   * @param nbNodes nodes are from 0 to nbNodes-1
    * @param isNeighbor true if the two nodes are adjacent
    * @return a list of all the maximal cliques of the graph represented by the nodes
-   *         (0..nbNodes-1L) and the adjacency (isNeighbor function)
+   *         (0..nbNodes-1) and the adjacency (isNeighbor function)
    */
   def bronKerbosch2(nbNodes:Int,
                     isNeighbor:(Int,Int)=>Boolean): List[SortedSet[Int]] = {

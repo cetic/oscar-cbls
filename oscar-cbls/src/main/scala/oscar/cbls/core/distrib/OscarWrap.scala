@@ -2,16 +2,14 @@ package oscar.cbls.core.distrib
 
 import akka.actor.typed.ActorRef
 import oscar.cbls.core.computation.{IndependentSerializableAbstractVariableSnapshot, Solution, Store}
-import oscar.cbls.core.objective.{IndependentObjective, Objective}
+import oscar.cbls.core.objective.IndependentObjective
 import oscar.cbls.core.search._
 
+///////////////////////////////////////////////////////////////
 
-// ////////////////////////////////////////////////////////////
-
-
-abstract class SearchRequest(val uniqueSearchId:Long,
-                             val remoteTaskId:RemoteTaskIdentification,
-                             val sendResultTo:ActorRef[SearchEnded[Null]]){
+abstract sealed class SearchRequest(val uniqueSearchId:Long,
+                                    val remoteTaskId:RemoteTaskIdentification,
+                                    val sendResultTo:ActorRef[SearchEnded]){
   /**
    * The supervisor checks that the worker already has this solution loaded.
    * If it is the case, the solution is removed from the SearchRequest by calling dropStartSolution hereBelow
@@ -47,8 +45,8 @@ case class SingleMoveSearch(override val uniqueSearchId:Long = -1,
                             obj: IndependentObjective,
                             sendFullSolution:Boolean = false,
                             startSolutionOpt: Option[IndependentSolution],
-                            override val sendResultTo: ActorRef[SearchEnded[IndependentSearchResult]]
-                           ) extends NeighborhoodSearchRequest(uniqueSearchId, remoteTaskId,sendResultTo){
+                            override val sendResultTo: ActorRef[SearchEnded])
+  extends SearchRequest(uniqueSearchId, remoteTaskId, sendResultTo) {
   override def toString: String = s"SingleMoveSearch($remoteTaskId,$acc,$obj,sendFullSolution:$sendFullSolution)"
 
   override def dropStartSolution: SearchRequest = this.copy(startSolutionOpt = None)
@@ -64,8 +62,8 @@ case class DoAllMoveSearch(override val uniqueSearchId:Long = -1,
                            obj: IndependentObjective,
                            startSolutionOpt: Option[IndependentSolution],
                            sendProgressTo:Option[ActorRef[SearchProgress]] = None,
-                           override val sendResultTo: ActorRef[SearchEnded[IndependentSearchResult]])
-  extends NeighborhoodSearchRequest(uniqueSearchId, remoteTaskId,sendResultTo) {
+                           override val sendResultTo: ActorRef[SearchEnded])
+  extends SearchRequest(uniqueSearchId, remoteTaskId,sendResultTo) {
   override def toString: String = s"DoAllMoveSearch($remoteTaskId,$acc,$obj)"
 
   override def dropStartSolution: SearchRequest = this.copy(startSolutionOpt = None)
@@ -73,9 +71,8 @@ case class DoAllMoveSearch(override val uniqueSearchId:Long = -1,
   override def neighborhoodIdOpt: Option[Int] = Some(remoteTaskId.taskId)
 }
 
-// ////////////////////////////////////////////////////////////
-
-//le truc qu'on envoie au worker
+//////////////////////////////////////////////////////////////
+// le truc qu'on envoie au worker
 case class RemoteTaskIdentification(taskId: Int, description:String)
 
 abstract class RemoteTask(val taskId: Int, description:String) {
@@ -155,7 +152,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
         }else {
           searchRequest.sendResultTo ! SearchCompleted(
             searchRequest.uniqueSearchId,
-            IndependentNoMoveFound(),
+            IndependentNoMoveFound,
             (System.currentTimeMillis() - startTime).toInt)
         }
       case MoveFound(m) =>
@@ -184,7 +181,6 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
   private def doDoAllMoveSearch(searchRequest:DoAllMoveSearch,model:Store,startSol:Solution,workerID: Option[String]) : Unit = {
 
     val startTime = System.currentTimeMillis()
-
     val obj = searchRequest.obj.convertToObjective(model)
 
     bestObjSoFar = obj.value
@@ -213,7 +209,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
         case None =>
         case Some(target) =>
           val currentTimeMs:Long = System.currentTimeMillis()
-          if (nextTimeForFeedbackMS <= currentTimeMs){
+          if (nextTimeForFeedbackMS <= currentTimeMs) {
             lastProgressOBj = obj.value
             target ! SearchProgress(searchRequest.uniqueSearchId, lastProgressOBj, currentTimeMs)
             nextTimeForFeedbackMS = currentTimeMs + delayForNextFeedbackMS
@@ -233,7 +229,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
           target ! SearchProgress(searchRequest.uniqueSearchId, lastProgressOBj, endTime, aborted=true)
       }
 
-    } else if(anyMoveFound){
+    } else if (anyMoveFound) {
 
       searchRequest.sendProgressTo match {
         case None =>
@@ -249,7 +245,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
           IndependentSolution(obj.model.solution(),workerID))),
         (endTime - startTime).toInt)
 
-    }else {
+    } else {
       searchRequest.sendProgressTo match {
         case None =>
         case Some(target) =>
@@ -257,7 +253,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
       }
       searchRequest.sendResultTo!SearchCompleted(
         searchRequest.uniqueSearchId,
-        IndependentNoMoveFound(),
+        IndependentNoMoveFound,
         (endTime - startTime).toInt)
     }
     startSol.restoreDecisionVariables()
@@ -275,7 +271,7 @@ case class IndependentMoveFound(move: IndependentMove) extends IndependentSearch
   def objAfter:Long = move.objAfter
 }
 
-case class IndependentNoMoveFound() extends IndependentSearchResult {
+case object IndependentNoMoveFound extends IndependentSearchResult {
   override def getLocalResult(m: Store): NoMoveFound.type = NoMoveFound
 }
 

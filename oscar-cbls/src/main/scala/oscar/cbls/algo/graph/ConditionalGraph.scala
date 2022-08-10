@@ -9,14 +9,14 @@ import oscar.cbls.util.Properties
  * @param nodes nodes.
  * @param nbConditions the number of conditions.
  *                     Conditions are labeled from 0 to nbCondition-1 inclusive.
- *                     all conditions mut appear in one edge.
+ *                     all conditions must appear in one edge.
  */
-class ConditionalGraph(val nodes:Array[Node],
-                       val edges:Array[Edge],
-                       val nbConditions:Int){
-  val nbNodes = nodes.length
-  val nbEdges = edges.length
-  val nodeRange = 0 until nbNodes
+case class ConditionalGraph(nodes:Array[Node],
+                            edges:Array[Edge],
+                            nbConditions:Int){
+  val nbNodes: Int = nodes.length
+  val nbEdges: Int = edges.length
+  val nodeRange: Range = 0 until nbNodes
 
   val conditionToConditionalEdges:Array[Edge] = Array.fill[Edge](nbConditions)(null)
   for (edge <- edges if edge.conditionID.isDefined) {
@@ -58,7 +58,7 @@ class ConditionalGraph(val nodes:Array[Node],
     s"""##Command to produce the output: "neato -Tpng thisfile > thisfile.png"
        |graph ConditionalGraph {
        |${nodes.map(node => node.toDOT).mkString("\t", "\n\t", "\n")}
-       |${edges.map(edge => edge.toDOT(this)).mkString("\t", "\n\t", "\n")}
+       |${edges.map(edge => edge.toDOT).mkString("\t", "\n\t", "\n")}
        |  overlap=false
        |  fontsize=12;
        |}""".stripMargin
@@ -99,7 +99,7 @@ class Edge(val id:Int,
   override def toString: String =
     s"Edge(id:$id nodeA: $nodeIDA nodeB: $nodeIDB length: $length${conditionID match {case None => ""  case Some(c) => s" condition:$c"}})"
 
-  def toDOT(g:ConditionalGraph):String = {
+  def toDOT:String = {
     conditionID match{
       case None => s"""n$nodeIDA -- n$nodeIDB[label= "$length"];"""
       case Some(c) => s"""n$nodeIDA -- n$nodeIDB[label= "$length\ncond=$c" color=red];"""

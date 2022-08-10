@@ -61,7 +61,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
 
   def markPathTo(node:Node,labelDuplicates:Boolean):MarkingResult = {
 
-    val nodeID = node.nodeID
+    val nodeID = node.vlsnNodeID
     if(isNodeOnPath(nodeID)){
       return PartialCycleFound(List.empty,node)
     }
@@ -89,7 +89,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
     var currentNode = rootNode
     var toReturn:List[Edge] = List.empty
     while(true){
-      val incomingEdge = selectedIncomingEdges(currentNode.nodeID)
+      val incomingEdge = selectedIncomingEdges(currentNode.vlsnNodeID)
       toReturn = incomingEdge :: toReturn
       currentNode = incomingEdge.from
 
@@ -103,7 +103,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
   }
 
   def correctLabel(node:Node): MarkingResult = {
-    val nodeID = node.nodeID
+    val nodeID = node.vlsnNodeID
 
     isLabelOnPath.all = false
     isNodeOnPath.all = false
@@ -119,7 +119,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
           outgoingEdges = outgoingEdges.tail
 
           val toNode = currentEdge.to
-          val toNodeID = toNode.nodeID
+          val toNodeID = toNode.vlsnNodeID
           if(isNodeOnPath(toNodeID) && distanceToNode(nodeID) - distanceToNode(toNodeID) + currentEdge.deltaObj < 0L) {
             //we found a negative cycle
             selectedIncomingEdges(toNodeID) = currentEdge
@@ -151,7 +151,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
       distanceToNode(nodeID) = Long.MaxValue
     }
 
-    val rootNodeID = rootNode.nodeID
+    val rootNodeID = rootNode.vlsnNodeID
     enqueue(rootNodeID)
     distanceToNode(rootNodeID) = 0L
 
@@ -175,7 +175,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
   override def findCycle(liveNodes:Array[Boolean]):Option[List[Edge]] = {
     isLiveNode = liveNodes
     //i've put a random because I do not want nodes with smaller ID to be better optimized and create over-optimized hotspot.
-    for(rootNode <- Random.shuffle(nodes.toList)  if liveNodes(rootNode.nodeID)){
+    for(rootNode <- Random.shuffle(nodes.toList)  if liveNodes(rootNode.vlsnNodeID)){
       searchRootedCycle(rootNode) match{
         case None => ;
         case Some(c)  => return Some(c.cycle)

@@ -18,6 +18,7 @@
 package examples.oscar.cbls.wlp
 
 import oscar.cbls._
+import oscar.cbls.algo.generator.WarehouseLocationGenerator
 
 import scala.language.postfixOps
 import scala.util.Random

@@ -3,7 +3,8 @@ package oscar.cbls.algo.graph
 import scala.collection.immutable.{SortedMap, SortedSet}
 
 object Connexity {
-  //TODO: these algo do not consider non transit nodes that constitute a boundary between different components; so far, we consider transit at all nodes.
+  //TODO: these algo do not consider non transit nodes that constitute a boundary between different components;
+  // so far, we consider transit at all nodes.
 
   def components(graph:ConditionalGraph,
                  isConditionOpen:Int => Boolean):Array[List[Node]] = {
@@ -11,7 +12,8 @@ object Connexity {
       e.conditionID match {
         case None => true
         case Some(condition) => isConditionOpen(condition)
-      })
+      }
+    )
     performMerges(graph,consideredEdges).map(_._1)
   }
 

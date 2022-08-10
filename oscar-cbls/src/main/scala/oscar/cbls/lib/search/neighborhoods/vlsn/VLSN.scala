@@ -428,7 +428,7 @@ class VLSN(v:Int,
       for (vlsnNode <- vlsnGraph.nodes) {
         if ((impactedRoutingNodes contains vlsnNode.representedNode) || (theImpactedVehicles contains vlsnNode.vehicle)) {
           //require(liveNodes(vlsnNode.nodeID))
-          liveNodes(vlsnNode.nodeID) = false
+          liveNodes(vlsnNode.vlsnNodeID) = false
         }
       }
     }

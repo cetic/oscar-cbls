@@ -23,17 +23,17 @@ package oscar.cbls.algo.dll
 /** This is a mutable data structure allowing insert,
   * and delete in O(1L) based on a key mechanism
   * @author renaud.delandtsheer@cetic.be
-  * @tparam T
+  * @tparam T the type of the elements in the collection
   */
-class DoublyLinkedList[T] extends Iterable[T]{
+class DoublyLinkedList[T] extends Iterable[T] {
 
   val phantom:DLLStorageElement[T] = new DLLStorageElement[T](null.asInstanceOf[T])
 
   phantom.setNext(phantom)
 
-  /**returns the size of the PermaFilteredDLL
+  /** returns the size of the PermaFilteredDLL
     * this is a O(n) method because it is very rarely used.
-    * and in this context, we want to keep the memory footprint as small as possible*/
+    * and in this context, we want to keep the memory footprint as small as possible */
   override def size: Int ={
     var toReturn = 0
     var current = phantom.next
@@ -44,7 +44,7 @@ class DoublyLinkedList[T] extends Iterable[T]{
     toReturn
   }
 
-  /**adds the element at the start of the DLL*/
+  /** adds the element at the start of the DLL */
   def addElem(elem:T):DLLStorageElement[T] = {
     val d = new DLLStorageElement[T](elem)
     d.setNext(phantom.next)
@@ -52,9 +52,10 @@ class DoublyLinkedList[T] extends Iterable[T]{
     d
   }
 
-  //inserts toInsert after the position specified by afterPosition.
-  //if afterPosition is the phantom position, it is inserted as the first element (since start and end phantom are the same)
-  def insertAfter(toInsert:T,afterPosition:DLLStorageElement[T]):DLLStorageElement[T] = {
+  /** inserts toInsert after the position specified by afterPosition.
+    * if afterPosition is the phantom position, it is inserted as the first element
+    * (since start and end phantom are the same) */
+  def insertAfter(toInsert:T, afterPosition:DLLStorageElement[T]):DLLStorageElement[T] = {
     val successor = afterPosition.next
     val d = new DLLStorageElement[T](toInsert)
     d.setNext(successor)
@@ -62,7 +63,7 @@ class DoublyLinkedList[T] extends Iterable[T]{
     d
   }
 
-  /**adds the element at the end of the DLL*/
+  /** adds the element at the end of the DLL */
   def enqueue(elem:T):DLLStorageElement[T] = {
     val d = new DLLStorageElement[T](elem)
     phantom.prev.setNext(d)
@@ -70,7 +71,7 @@ class DoublyLinkedList[T] extends Iterable[T]{
     d
   }
 
-  //removes the first element in the list and returns it; throws exception if empty
+  /** removes the first element in the list and returns it; throws exception if empty */
   def dequeue():T = {
     val d = phantom.next
     assert(d != phantom)
@@ -100,8 +101,8 @@ class DoublyLinkedList[T] extends Iterable[T]{
 
 /**
  * @author renaud.delandtsheer@cetic.be
- * @param elem
- * @tparam T
+ * @param elem the element to store
+ * @tparam T the type of the element
  */
 class DLLStorageElement[T](val elem:T){
   var next:DLLStorageElement[T] = _
@@ -119,9 +120,9 @@ class DLLStorageElement[T](val elem:T){
 
 /**
  * @author renaud.delandtsheer@cetic.be
- * @param CurrentKey
- * @param phantom
- * @tparam T
+ * @param CurrentKey the current key in the iteratot
+ * @param phantom the phantom element that indicates the beginning/end of the list
+ * @tparam T the type of elements in the iterator
  */
 class DLLIterator[T](var CurrentKey:DLLStorageElement[T], val phantom:DLLStorageElement[T]) extends Iterator[T]{
   def next():T = {

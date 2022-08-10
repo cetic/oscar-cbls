@@ -1,41 +1,27 @@
-/*******************************************************************************
- * OscaR is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 2.1 of the License, or
- * (at your option) any later version.
- *
- * OscaR is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License  for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License along with OscaR.
- * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
- ******************************************************************************/
-package examples.oscar.cbls.wlp
+package examples.oscar.cbls.benchmarks
 
 import oscar.cbls._
+import oscar.cbls.algo.generator.WarehouseLocationGenerator
 import oscar.cbls.core.search.First
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.minmax.MinConstArrayLazy
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, FastestFirst}
-import oscar.cbls.lib.search.neighborhoods.{AssignMove, AssignNeighborhood, RandomizeNeighborhood, SwapsNeighborhood}
+import oscar.cbls.lib.search.neighborhoods.{AssignNeighborhood, RandomizeNeighborhood, SwapsNeighborhood}
 import oscar.cbls.util.Benchmark
 
-object WarehouseLocationComparativeBench extends App{
+object WLPComparativeBench extends App {
 
   //the number of warehouses
-  val W:Int = 1000
+  val W: Int = 1000
 
   //the number of delivery points
-  val D:Int = 300
+  val D: Int = 300
 
   println(s"ComparativeBench on WarehouseLocation(W:$W, D:$D)")
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
-  val (costForOpeningWarehouse,distanceCost) = WarehouseLocationGenerator.apply(W,D,0,100,3)
+  val (costForOpeningWarehouse, distanceCost) = WarehouseLocationGenerator.apply(W, D, 0, 100, 3)
 
   val m = Store()
 
@@ -59,11 +45,11 @@ object WarehouseLocationComparativeBench extends App{
 
     println(neighborhood.statistics)
   */
-  val neighborhood1 = ()=>("exhaustBack",AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
+  val neighborhood1 = () => ("exhaustBack", AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
     exhaustBack SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")
-    orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
+    orElse (RandomizeNeighborhood(warehouseOpenArray, () => W / 5) maxMoves 2) saveBest obj restoreBestOnExhaust)
 
-  val neighborhood2 = ()=>("simulatedAnnealing", (AssignNeighborhood(
+  val neighborhood2 = () => ("simulatedAnnealing", (AssignNeighborhood(
     warehouseOpenArray,
     "SwitchWarehouse",
     hotRestart = false,
@@ -71,10 +57,10 @@ object WarehouseLocationComparativeBench extends App{
     .cauchyAnnealing(initialTemperature = 5, base = 10)
     //the two stop criterion here below can be used, although they are useless for small size example.
     //maxMoves W*50 withoutImprovementOver obj
-    .cutTail(timePeriodInMilliSecond = 500,minRelativeImprovementByCut = 0.00001,minTimeBeforeFirstCutInMilliSecond=1000)
+    .cutTail(timePeriodInMilliSecond = 500, minRelativeImprovementByCut = 0.00001, minTimeBeforeFirstCutInMilliSecond = 1000)
     saveBestAndRestoreOnExhaust obj))
 
-  val neighborhood3 = ()=>("lateAcceptance", (AssignNeighborhood(
+  val neighborhood3 = () => ("lateAcceptance", (AssignNeighborhood(
     warehouseOpenArray,
     selectIndiceBehavior = First(randomized = true),
     hotRestart = false,
@@ -83,7 +69,7 @@ object WarehouseLocationComparativeBench extends App{
     saveBestAndRestoreOnExhaust obj))
 
 
-  val neighborhood3b = ()=>("lateAcceptanceSwichAndSwap", (AssignNeighborhood(
+  val neighborhood3b = () => ("lateAcceptanceSwichAndSwap", (AssignNeighborhood(
     warehouseOpenArray,
     selectIndiceBehavior = First(randomized = true),
     hotRestart = false,
@@ -92,13 +78,13 @@ object WarehouseLocationComparativeBench extends App{
     .lateAcceptanceHillClimbing(20)
     saveBestAndRestoreOnExhaust obj))
 
-  val neighborhood4 = ()=>("best",AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
+  val neighborhood4 = () => ("best", AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
     best SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses")
-    orElse (RandomizeNeighborhood(warehouseOpenArray, () => W/5) maxMoves 2) saveBest obj restoreBestOnExhaust)
+    orElse (RandomizeNeighborhood(warehouseOpenArray, () => W / 5) maxMoves 2) saveBest obj restoreBestOnExhaust)
 
-  val neighborhoods = List(neighborhood1,neighborhood2,neighborhood3,neighborhood3b,neighborhood4)
+  val neighborhoods = List(neighborhood1, neighborhood2, neighborhood3, neighborhood3b, neighborhood4)
 
-  val a = Benchmark.benchToStringFull(obj,3,neighborhoods,1,verbose=1)
+  val a = Benchmark.benchToStringFull(obj, 3, neighborhoods, 1, verbose = 1)
 
   println(a)
 }

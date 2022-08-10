@@ -9,7 +9,7 @@ lazy val root = (project in file(".")) // has to be named root.
   .settings(libraryDependencies ++= Dependencies.testDeps)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(ScalaUnidocPlugin.globalSettings)
-  .settings(unidocProjectFilter in(ScalaUnidoc, unidoc) := inAnyProject -- inProjects(oscarFzn, oscarFznCbls, oscarFznCp, oscarPerf))
+  .settings(ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(oscarFzn, oscarFznCbls, oscarFznCp, oscarPerf))
   .enablePlugins(PackPlugin)
   .settings(PackPlugin.packSettings)
 
@@ -56,7 +56,7 @@ lazy val oscarCpExample = (project in file("oscar-cp-examples")) // TODO pack : 
 lazy val oscarModeling = (project in file("oscar-modeling"))
   .settings(commonSettings: _*)
   .settings(name := "oscar-modeling")
-  .settings(scalacOptions in Compile ++= Seq("-language:reflectiveCalls"))
+  .settings(Compile / scalacOptions ++= Seq("-language:reflectiveCalls"))
   .settings(resolvers ++= Seq(OscarBuild.Resolvers.xypron))
   .settings(libraryDependencies ++= Dependencies.testDeps :+ Dependencies.graphStreamCore
     :+ Dependencies.graphStreamAlgo :+ Dependencies.graphStreamUI :+ Dependencies.scallop
@@ -66,7 +66,7 @@ lazy val oscarModeling = (project in file("oscar-modeling"))
 lazy val oscarCPXcsp3 = (project in file("oscar-cp-xcsp3"))
   .settings(commonSettings: _*)
   .settings(name := "oscar-cp-xcsp3")
-  .settings(scalacOptions in Compile ++= Seq("-language:reflectiveCalls"))
+  .settings(Compile / scalacOptions ++= Seq("-language:reflectiveCalls"))
   .settings(resolvers ++= Seq(OscarBuild.Resolvers.xypron))
   .settings(libraryDependencies ++= Dependencies.testDeps :+ Dependencies.xcsp3)
   .dependsOn(oscarCp)
@@ -85,7 +85,7 @@ lazy val oscarMl = (project in file("oscar-ml")) // TODO pack : pack auto settin
 lazy val oscarPerf = (project in file("oscar-perf")) // TODO check configs PerfTest?
   .settings(commonSettings: _*)
   .settings(name := "oscar-perf")
-  .settings(scalacOptions in Compile ++= Seq("-language:reflectiveCalls"))
+  .settings(Compile / scalacOptions ++= Seq("-language:reflectiveCalls"))
   .settings(resolvers ++= Seq(OscarBuild.Resolvers.ingi))
   .settings(libraryDependencies ++= Dependencies.testDeps :+ Dependencies.xcsp3)
   .dependsOn(oscarCp)
@@ -94,9 +94,9 @@ lazy val oscarPerf = (project in file("oscar-perf")) // TODO check configs PerfT
   .configs(PerfTest)
   .settings(libraryDependencies ++= Dependencies.testDeps)
   .settings(inConfig(PerfTest)(Defaults.testTasks ++ Seq()): _*)
-  .settings(inConfig(PerfTest)(baseDirectory in PerfTest := file(".")))
-  .settings(testOptions in Test := Seq(Tests.Filter(x => !(x endsWith "PerfTest"))))
-  .settings(testOptions in PerfTest := Seq(Tests.Filter(_ endsWith "PerfTest")))
+  .settings(inConfig(PerfTest)(PerfTest / baseDirectory := file(".")))
+  .settings(Test / testOptions := Seq(Tests.Filter(x => !(x endsWith "PerfTest"))))
+  .settings(PerfTest / testOptions := Seq(Tests.Filter(_ endsWith "PerfTest")))
 
 
 // Not included in the default build

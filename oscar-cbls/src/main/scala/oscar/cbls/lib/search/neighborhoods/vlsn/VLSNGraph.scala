@@ -76,11 +76,11 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Int,v:Int){
   def addEdge(from:Node, to:Node, deltaObj:Long, move:Move, vLSNMoveType: VLSNMoveType):Edge = {
     val edge = new Edge(from:Node,to:Node, move:Move,deltaObj:Long, nextEdgeID, vLSNMoveType)
  //   println("add edge (vehicles: vehicle" + from.vehicle + ", vehicle" + to.vehicle + " : " + edge)
-    require(edges(from.nodeID)(to.nodeID) == null, "\nalready existing edge:       " + edges(from.nodeID)(to.nodeID) + "\nan edge that we want to add: " + edge)
-    edges(from.nodeID)(to.nodeID) = edge
+    require(edges(from.vlsnNodeID)(to.vlsnNodeID) == null, "\nalready existing edge:       " + edges(from.vlsnNodeID)(to.vlsnNodeID) + "\nan edge that we want to add: " + edge)
+    edges(from.vlsnNodeID)(to.vlsnNodeID) = edge
 
     nextEdgeID += 1
-    fromToWithEdge = QList((from.nodeID,to.nodeID),fromToWithEdge)
+    fromToWithEdge = QList((from.vlsnNodeID,to.vlsnNodeID),fromToWithEdge)
     edge
   }
 
@@ -128,10 +128,10 @@ class VLSNGraph(val nodes:Array[Node],val edges:Array[Edge],val nbLabels:Int, v:
   //"C:\Program Files (x86)\Graphviz2.38\bin\neato" -Tpng  vlsnGraph.dot > a.png
   def toDOT(edgesToBold:List[Edge] = List.empty,light:Boolean = false,onlyCycles:Boolean = false):String = {
     val setOfEdgesToBold = SortedSet.empty[Int] ++ edgesToBold.map(_.edgeID)
-    val setOfNodesToBold = SortedSet.empty[Int] ++ edgesToBold.map(_.from.nodeID) ++ edgesToBold.map(_.to.nodeID)
+    val setOfNodesToBold = SortedSet.empty[Int] ++ edgesToBold.map(_.from.vlsnNodeID) ++ edgesToBold.map(_.to.vlsnNodeID)
     "##Command to produce the output: \"neato -Tpng thisfile > thisfile.png\"\n" +
       "digraph VLSNGraph {\n" +
-      nodes.flatMap(node => {val ofInterest = setOfNodesToBold.contains(node.nodeID)
+      nodes.flatMap(node => {val ofInterest = setOfNodesToBold.contains(node.vlsnNodeID)
         if(onlyCycles && !ofInterest) None else Some(node.toDOT(ofInterest))}).mkString("\t", "\n\t", "\n") +
       edges.flatMap(edge => {val ofInterest = setOfEdgesToBold.contains(edge.edgeID)
         if(onlyCycles && !ofInterest) None
@@ -147,11 +147,11 @@ class VLSNGraph(val nodes:Array[Node],val edges:Array[Edge],val nbLabels:Int, v:
 }
 
 
-class Node(val nodeID:Int, val representedNode:Int, val nodeType:VLSNSNodeType, val vehicle:Int, val label:Int){
+class Node(val vlsnNodeID:Int, val representedNode:Int, val nodeType:VLSNSNodeType, val vehicle:Int, val label:Int){
   var incoming:List[Edge] = List.empty
   var outgoing:List[Edge] = List.empty
 
-  override def toString: String = "Node(vlsnNode:" + nodeID + " routingNode:" + representedNode + " v:" + vehicle + " label:" + label + ")"
+  override def toString: String = "Node(vlsnNode:" + vlsnNodeID + " routingNode:" + representedNode + " v:" + vehicle + " label:" + label + " nodeType:" + nodeType + ")"
 
   def toDOT(bold:Boolean):String = {
 
@@ -170,7 +170,7 @@ class Node(val nodeID:Int, val representedNode:Int, val nodeType:VLSNSNodeType, 
     }
 
     val lineColor = if (bold) "blue" else "black"
-    "\"" + nodeID + "\" [shape=circle,style=filled,fillcolor=" + fillColor + ",color=" + lineColor +
+    "\"" + vlsnNodeID + "\" [shape=circle,style=filled,fillcolor=" + fillColor + ",color=" + lineColor +
       ", label = " + dotLabel + "] ; "
   }
 }
@@ -184,17 +184,17 @@ class Edge(val from:Node, val to:Node, val move:Move, val deltaObj:Long, val edg
   from.outgoing = this :: from.outgoing
   to.incoming = this :: to.incoming
 
-  override def toString: String = "Edge(from:" + from.nodeID + ",to:"+to.nodeID + ",deltaObj:" + deltaObj + ",type:" + moveType+ ")" + move
+  override def toString: String = "Edge(from:" + from.vlsnNodeID + ",to:"+to.vlsnNodeID + ",deltaObj:" + deltaObj + ",type:" + moveType+ ")" + move
 
   def toDOTHeavy(bold:Boolean = false):String =
     "\"Edge" + edgeID + "\" [shape=rectangle,style=filled,fillcolor=gray, label=\"deltaObj:" + deltaObj +
       "\\n" + moveType +
       "\\n" + (if (move == null) "null" else move.shortString) + "\"" + (if(bold) " color=blue" else "") +"] ; " +
-      from.nodeID + " -> " + "\"Edge" + edgeID + "\"" + (if(bold) "[color=blue]" else "") + ";" +
-      "\"Edge" + edgeID + "\" -> " + to.nodeID + (if(bold) "[color=blue]" else "") + ";"
+      from.vlsnNodeID + " -> " + "\"Edge" + edgeID + "\"" + (if(bold) "[color=blue]" else "") + ";" +
+      "\"Edge" + edgeID + "\" -> " + to.vlsnNodeID + (if(bold) "[color=blue]" else "") + ";"
 
   def toDOTLight(bold:Boolean = false):String =
-    s"${from.nodeID} -> ${to.nodeID}${if(bold) "[color=blue]" else ""};"
+    s"${from.vlsnNodeID} -> ${to.vlsnNodeID}${if(bold) "[color=blue]" else ""};"
 
   def toDOT(bold:Boolean = false,light:Boolean):String =
     if(light){ toDOTLight(bold) }else toDOTHeavy(bold)

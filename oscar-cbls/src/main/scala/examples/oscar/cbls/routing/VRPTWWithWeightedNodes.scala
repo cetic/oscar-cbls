@@ -1,6 +1,7 @@
 package examples.oscar.cbls.routing
 
 import oscar.cbls._
+import oscar.cbls.algo.generator.RoutingMatrixGenerator
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.WeightedNodesPerVehicle
 import oscar.cbls.business.routing.invariants.timeWindow.{DefinedTransferFunction, NaiveTimeWindowConstraint, TimeWindowConstraintWithLogReduction, TransferFunction}
@@ -10,7 +11,6 @@ import oscar.cbls.core.computation.{CBLSIntVar, Domain, Store}
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.{First, Neighborhood}
-import oscar.cbls.lib.search.combinators.DoOnMove
 
 import scala.util.Random
 

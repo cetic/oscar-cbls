@@ -6,11 +6,16 @@ import oscar.cbls.business.routing.invariants.segments.{Segment,NewNode,PreCompu
 import oscar.cbls.business.routing.invariants.segments.VehicleSegments
 import oscar.cbls.algo.quick.QList
 
+abstract class BackwardNaiveRoutingConstraint[U <: Any : Manifest](routes : ChangingSeqValue,
+                                                                   n : Int,
+                                                                   v : Int,
+                                                                   defaultValue : U ,
+                                                                   initValuePerVehicle : Array[U],
+                                                                   fonc : (Int,Int,U) => U)
+  extends AbstractNaiveRoutingConstraint[U](routes,n,v,defaultValue,initValuePerVehicle,fonc) {
 
-
-abstract class BackwardNaiveRoutingConstraint[U <: Any : Manifest](routes : ChangingSeqValue,n : Int,v : Int,defaultValue : U ,initValuePerVehicle : Array[U],fonc : (Int,Int,U) => U) extends AbstractNaiveRoutingConstraint[U](routes,n,v,defaultValue,initValuePerVehicle,fonc) {
-
-  override def getNextPointOfSegmentToUpdate(expl : IntSequenceExplorer,seg : Segment) : Option[IntSequenceExplorer] =  {
+  override def getNextPointOfSegmentToUpdate(expl : IntSequenceExplorer,
+                                             seg : Segment) : Option[IntSequenceExplorer] =  {
     seg match {
       case NewNode(_) => None
       case PreComputedSubSequence(fstNode,_,_) =>
@@ -26,9 +31,7 @@ abstract class BackwardNaiveRoutingConstraint[U <: Any : Manifest](routes : Chan
       case PreComputedSubSequence(_,lstNode,_) => lstNode
       case FlippedPreComputedSubSequence(_,lstNode,_) => lstNode
     }
-
   }
-
 
   override def lastPointToUpdateOnSegment(seg : Segment) : Int = {
     seg match {
@@ -38,13 +41,10 @@ abstract class BackwardNaiveRoutingConstraint[U <: Any : Manifest](routes : Chan
     }
   }
 
-
   override def ordonateSegments(segments : VehicleSegments) : QList[Segment] = {
     if (segments.segments != null)
       segments.segments.reverse
     else
       segments.segments
   }
-
-
 }

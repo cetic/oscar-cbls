@@ -1,6 +1,7 @@
 package examples.oscar.cbls.routing
 
 import oscar.cbls._
+import oscar.cbls.algo.generator.RoutingMatrixGenerator
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global._
 import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleMultipleCapacityConstraint
@@ -13,14 +14,11 @@ import scala.collection.immutable.HashSet
 
 object VRPWithMultipleCapacity extends App{
 
-
   val n: Int = 200
   val v: Int = 5
   val c: Int = 5
 
   new VRPWithMultipleCapacity(n,v,c,Array.fill(c)(20),0)
-
-
 }
 
 class VRPWithMultipleCapacity(n: Int, v: Int, c: Int, maxCapacityPerContentType: Array[Long], seed: Int){
@@ -160,15 +158,11 @@ class VRPWithMultipleCapacity(n: Int, v: Int, c: Int, maxCapacityPerContentType:
 
   //val routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "InsertUF"))
 
-
   val search = oneChainInsert exhaust oneChainMove exhaust onePtMove(20)
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
-
   search.verbose = 1
   //search.verboseWithExtraInfo(4, ()=> "" + myVRP)
-
-
 
   search.doAllMoves(obj=obj)
   println(myVRP)

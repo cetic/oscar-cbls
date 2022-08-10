@@ -25,7 +25,7 @@ class MouthuyTestSuite extends AnyFunSuite with Matchers with ScalaCheckDrivenPr
       val dfsAlgo = CycleFinderAlgo(vlsnGraph, DFS)
       val dfsAlgoPruned = CycleFinderAlgo(vlsnGraph, DFSPruned)
 
-      val size = vlsnGraph.nodes.maxBy(_.nodeID).nodeID.toInt
+      val size = vlsnGraph.nodes.maxBy(_.vlsnNodeID).vlsnNodeID.toInt
       val liveNodes = Array.tabulate(size + 1)(_ => true)
       val cycle = mouthuyAlgo.findCycle(liveNodes)
 
@@ -50,7 +50,7 @@ class MouthuyTestSuite extends AnyFunSuite with Matchers with ScalaCheckDrivenPr
     forAll(genVlsn) { vlsnGraph =>
 
       val mouthuyAlgo = CycleFinderAlgo(vlsnGraph, Mouthuy)
-      val size = vlsnGraph.nodes.maxBy(_.nodeID).nodeID.toInt
+      val size = vlsnGraph.nodes.maxBy(_.vlsnNodeID).vlsnNodeID.toInt
       val liveNodes = Array.tabulate(size + 1)(_ => true)
       val cycle = mouthuyAlgo.findCycle(liveNodes)
 
