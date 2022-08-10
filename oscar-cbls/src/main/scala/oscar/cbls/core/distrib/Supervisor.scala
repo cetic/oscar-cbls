@@ -54,7 +54,7 @@ object Supervisor {
     val (nbNRemoteNeighborhood,nbDistributedCombinator,_) = search.labelAndExtractRemoteTasks(supervisor: Supervisor)
 
     val startLogger: Logger = LoggerFactory.getLogger("SupervisorObject")
-    startLogger.info(s"analyzed search; nbDistributedCombinator:$nbDistributedCombinator nbRemoteNeighborhood:$nbNRemoteNeighborhood")
+    startLogger.info(s"Analyzed search; Nb Distributed Combinators:$nbDistributedCombinator; Nb Remote Neighborhoods:$nbNRemoteNeighborhood")
 
     supervisor
   }
@@ -88,14 +88,15 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor],
 
   import akka.actor.typed.scaladsl.AskPattern._
 
-  //TODO: for the distributed version, regularly check that workers performing some search are still alive and working, otherwise, search must be restarted at another worker.
+  //TODO: for the distributed version, regularly check that workers performing some search are still alive and working,
+  // otherwise, search must be restarted at another worker.
 
   @volatile
-  private var nbLocalWorker:Int = 0
-  def createLocalWorker(m: Store, search: Neighborhood,workerName:String = null): Unit = {
+  private var nbLocalWorkers:Int = 0
+  def createLocalWorker(m: Store, search: Neighborhood, workerName: String = null): Unit = {
     this.synchronized {
-      nbLocalWorker += 1
-      val workerBehavior = WorkerActor.createWorkerBehavior(search.identifyRemotelySearchableNeighborhoods, m, this.supervisorActor, verbose, if (workerName == null) "localWorker" + nbLocalWorker else workerName)
+      nbLocalWorkers += 1
+      val workerBehavior = WorkerActor.createWorkerBehavior(search.identifyRemotelySearchableNeighborhoods, m, this.supervisorActor, verbose, if (workerName == null) "localWorker" + nbLocalWorkers else workerName)
       supervisorActor ! SpawnWorker(workerBehavior)
     }
   }

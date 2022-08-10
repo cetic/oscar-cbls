@@ -81,7 +81,7 @@ class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
     }
   )
 
-  private val executionContextForComputation: scala.concurrent.ExecutionContext = ExecutionContext.fromExecutor(executorForComputation)
+  private val executionContextForComputation: ExecutionContext = ExecutionContext.fromExecutor(executorForComputation)
 
   //This is a shared variable. it is not good, but that's the only way to send the abort signal to the Future that contains the computation.
   //Scala requires the final and volatile flags
@@ -150,7 +150,8 @@ class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
               Behaviors.same
 
             case Aborting(_) =>
-              //TODO: il faudrait pouvoir stocker cette recherche en local ici pour déjà avoir la recherche suivante en cas d'abort
+              //TODO: il faudrait pouvoir stocker cette recherche en local ici pour déjà avoir la recherche suivante
+              // en cas d'abort
               if (verbose) context.log.info(s"got command for start search:${newSearch.uniqueSearchId} but already busy aborting a search")
 
               replyTo ! SearchNotStarted(newSearch.uniqueSearchId, startID, context.self)
@@ -165,9 +166,9 @@ class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
               Future {
                 //this is the thread of the search, as this is a future,
                 //TODO nothing can happen after the future is bound, opportunity to improve and postpone cleaning tasks?
-                try{
+                try {
                   currentSolOpt = currentNeighborhood.doTask(newSearch, m, currentSolOpt, Some(context.self.path.toString))
-                }catch {
+                } catch {
                   case e:Throwable =>
                     newSearch.sendResultTo ! SearchCrashed(newSearch.uniqueSearchId,Some(newSearch.remoteTaskId),e,context.self)
                     master ! Crash(context.self)

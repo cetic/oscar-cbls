@@ -36,7 +36,6 @@ case class Demand(product : Products,
 case class Producer(point : Point,
   production : Array[Products]) {
   override def toString() = {
-
     s"Producer(point = $point,production = [${production.mkString(",")}])"
   }
 }
@@ -48,12 +47,9 @@ case class Client(point : Point,
     s"Client(Point = $point,\n" +
     s"\t\t       Demand = [${demand.mkString(",")}]"
   }
-
 }
 
-
-case class Vehicle(startingPoint : Point,
-  capacity : Int)
+case class Vehicle(startingPoint : Point, capacity : Int)
 
 sealed abstract class Products() {
   val size : Int
@@ -160,7 +156,7 @@ class MyFrame(map: SolutionMap,title: String) {
 class SolutionMap(problem : Problem,v : Int,n : Int,routingIdToPoint : Int => Point,fact : Int = 10) extends VisualDrawing(false,true) {
   val points = problem.getPoints
 
-  def coord4Drawin(x : Int) = x * fact
+  def coord4Drawin(x : Int): Int = x * fact
 
   val vehicleColors = VisualUtil.getRandomColors(v)
 
@@ -223,7 +219,14 @@ object CapacityConstraint {
   }
 }
 
-class CapacityConstraint(routes : ChangingSeqValue,n : Int,v : Int,default4Unrouted : NodeState ,initValue : Array[NodeState],fonc : (Int,Int,NodeState) => NodeState,val loadAtEachNode : Array[CBLSIntVar],val vehicleOfNode : Array[CBLSIntVar])
+class CapacityConstraint(routes : ChangingSeqValue,
+                         n : Int,
+                         v : Int,
+                         default4Unrouted : NodeState ,
+                         initValue : Array[NodeState],
+                         fonc : (Int,Int,NodeState) => NodeState,
+                         val loadAtEachNode : Array[CBLSIntVar],
+                         val vehicleOfNode : Array[CBLSIntVar])
   extends BackwardNaiveRoutingConstraint[NodeState](routes,n,v,default4Unrouted,initValue,fonc) {
 
   loadAtEachNode.foreach(v => v.setDefiningInvariant(this))
@@ -233,9 +236,7 @@ class CapacityConstraint(routes : ChangingSeqValue,n : Int,v : Int,default4Unrou
     loadAtEachNode(node) := value.loadPerProduct.values.sum
     vehicleOfNode(node) := value.vehicle
   }
-
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -413,7 +414,6 @@ object LocalProducer extends App {
     vrp) andThen InsertPointUnroutedFirst(() => unroutedClients.value,
       () => (_ : Int) => vrp.routed.value,
       vrp) name "InsertProducerAndClient"
-
 
   // Move One point
   def onePointMove = OnePointMove(() => vrp.routed.value,

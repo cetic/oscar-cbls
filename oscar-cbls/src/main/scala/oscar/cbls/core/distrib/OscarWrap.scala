@@ -4,10 +4,9 @@ import akka.actor.typed.ActorRef
 import oscar.cbls.core.computation.{IndependentSerializableAbstractVariableSnapshot, Solution, Store}
 import oscar.cbls.core.objective.IndependentObjective
 import oscar.cbls.core.search._
-
 ///////////////////////////////////////////////////////////////
 
-abstract sealed class SearchRequest(val uniqueSearchId:Long,
+abstract class SearchRequest(val uniqueSearchId:Long,
                                     val remoteTaskId:RemoteTaskIdentification,
                                     val sendResultTo:ActorRef[SearchEnded]){
   /**
@@ -33,11 +32,6 @@ abstract sealed class SearchRequest(val uniqueSearchId:Long,
    */
   def neighborhoodIdOpt:Option[Int]
 }
-
-abstract class NeighborhoodSearchRequest(uniqueSearchId:Long,
-                                         remoteTaskId:RemoteTaskIdentification,
-                                         sendResultTo: ActorRef[SearchEnded[IndependentSearchResult]])
-  extends SearchRequest(uniqueSearchId, remoteTaskId,sendResultTo)
 
 case class SingleMoveSearch(override val uniqueSearchId:Long = -1,
                             override val remoteTaskId:RemoteTaskIdentification,
@@ -89,15 +83,18 @@ abstract class RemoteTask(val taskId: Int, description:String) {
       case (None,Some(cur)) =>
         (cur._1,Some(cur._2))
       case (Some(startSolution),Some(cur))
-        if  startSolution.solutionId.isDefined
+        if startSolution.solutionId.isDefined
           && cur._2 == startSolution.solutionId.get =>
         //no need to load the new solution
         (cur._1,Some(cur._2))
-      case (Some(startSolution),_) =>
+      case (Some(startSolution),None) =>
         val s = startSolution.makeLocal(model)
         //TODO: we should only transmit the delta, eventually
         s.restoreDecisionVariables(withoutCheckpoints = true)
         (s,startSolution.solutionId)
+      case _ =>
+        //TODO This case should never be reached; Throw exception ?
+        (null, None)
     }
   }
 
@@ -124,7 +121,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
 
     neighborhood.reset()
 
-    taskMessage.asInstanceOf[NeighborhoodSearchRequest] match{
+    taskMessage match {
       case s:SingleMoveSearch => doSingleMoveSearch(s,model,startSol,workerID)
       case d:DoAllMoveSearch => doDoAllMoveSearch(d,model,startSol,workerID)
     }

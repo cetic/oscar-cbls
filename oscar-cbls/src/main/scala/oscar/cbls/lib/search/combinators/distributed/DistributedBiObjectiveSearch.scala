@@ -19,14 +19,13 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import akka.util.Timeout
 import oscar.cbls.algo.heap.BinomialHeapWithMove
-import oscar.cbls.core.computation.Store
+import oscar.cbls.core.computation.{Solution, Store}
 import oscar.cbls.core.distrib._
-import oscar.cbls.core.objective.{CascadingObjective, IndependentObjective}
+import oscar.cbls.core.objective.{CascadingObjective, IndependentObjective, Objective}
 import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, SearchResult}
 import oscar.cbls.lib.search.combinators.multiObjective.PlotPareto
 import oscar.cbls.util.Properties
 import oscar.cbls.visual.SingleFrameWindow
-import oscar.cbls.{Objective, Solution}
 
 import scala.collection.immutable.TreeSet
 import scala.concurrent.duration.{Duration, DurationInt}
@@ -91,7 +90,7 @@ case class OptimizeWithBoundRequest(override val remoteTaskId:RemoteTaskIdentifi
                                     startSolution: Option[IndependentSolution],
                                     initObj1:Long,
                                     initObj2:Long,
-                                    override val sendResultTo: ActorRef[SearchEnded[(Long,Long,IndependentSolution,Long)]]
+                                    override val sendResultTo: ActorRef[SearchEnded]
                                    ) extends SearchRequest(-1,remoteTaskId,sendResultTo){
 
   override def startSolutionOpt: Option[IndependentSolution] = startSolution //we are not interested by hotRestart
@@ -335,7 +334,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
     }
 
     abstract class WrappedData
-    case class WrappedSearchEnded(searchEnded: SearchEnded[(Long, Long, IndependentSolution,Long)], //obj1,obj2,sol,maxValueForObj2
+    case class WrappedSearchEnded(searchEnded: SearchEnded, //obj1,obj2,sol,maxValueForObj2
                                   initRectangle: Rectangle //the one before the split, so we are on the left
                                  ) extends WrappedData
     case class WrappedCompleted() extends WrappedData
@@ -362,10 +361,10 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
     def checkParetoFront() :Unit = {
       val sortedByObj1 = paretoFront.toList.sortBy(_.obj1).map(_.asInstanceOf[Rectangle]).toArray
       for(i <- 0 until sortedByObj1.length-1){
-        require(sortedByObj1(i).obj1 < sortedByObj1(i+1).obj1, sortedByObj1(i)  + ";" + sortedByObj1(i+1))
-        require(sortedByObj1(i).obj2 > sortedByObj1(i+1).obj2, "dominated square in front: " + sortedByObj1(i+1) + " by " + sortedByObj1(i))
-        require(sortedByObj1(i).maxObj1 < sortedByObj1(i+1).obj1, sortedByObj1(i)  + ";" + sortedByObj1(i+1))
-        require(sortedByObj1(i).minObj2 > sortedByObj1(i+1).obj2, sortedByObj1(i)  + ";" + sortedByObj1(i+1))
+        require(sortedByObj1(i).obj1 < sortedByObj1(i+1).obj1, s"${sortedByObj1(i)};${sortedByObj1(i+1)}")
+        require(sortedByObj1(i).obj2 > sortedByObj1(i+1).obj2, s"dominated square in front: ${sortedByObj1(i+1)} by ${sortedByObj1(i)}")
+        require(sortedByObj1(i).maxObj1 < sortedByObj1(i+1).obj1, s"${sortedByObj1(i)};${sortedByObj1(i+1)}")
+        require(sortedByObj1(i).minObj2 > sortedByObj1(i+1).obj2, s"${sortedByObj1(i)};${sortedByObj1(i+1)}")
       }
     }
 
@@ -394,7 +393,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
 
         require(maxValueForObj2 >= rectangleForStartSolution.obj2, "maxValueForObj2:" + maxValueForObj2 + "obj2:" + rectangleForStartSolution.obj2)
 
-        context.ask[DelegateSearch, SearchEnded[(Long, Long, IndependentSolution,Long)]](
+        context.ask[DelegateSearch, SearchEnded](
           supervisor.supervisorActor, ref =>  DelegateSearch(OptimizeWithBoundRequest(
             remoteTaskId = this.remoteTaskIdentification(0),
             obj1 = this.obj1.getIndependentObj,
@@ -404,7 +403,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
             initObj1 = rectangleForStartSolution.obj1,
             initObj2 = rectangleForStartSolution.obj2,
             sendResultTo = ref))) {
-          case Success(ended:SearchEnded[(Long, Long, IndependentSolution,Long)]) => WrappedSearchEnded(ended, rectangleToSplit)
+          case Success(ended:SearchEnded) => WrappedSearchEnded(ended, rectangleToSplit)
           case Failure(_) => WrappedError(msg = Some("DistributedBIObjectiveSearch timeout3"))
         }
         logNext(context,nbRunningOrStartingSearches+1)
@@ -415,7 +414,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
           command match {
             case WrappedSearchEnded(searchEnded, initRectangle) =>
               searchEnded match {
-                case SearchCompleted(searchID: Long, (obj1, obj2, independentSolution, maxValueForObj2), durationMS) =>
+                case SearchCompleted(_, (obj1: Long, obj2: Long, independentSolution: IndependentSolution, maxValueForObj2: Long), _) =>
                   //Ici, il faut analyser le front de Pareto correctement
 
                   getDominatorRectangle(obj1,obj2) match{
@@ -476,9 +475,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
                               independentSolution = independentSolution))
                         //checkParetoFront() //bug ici
                       }
-
                   }
-
                   redrawPareto()
                   // println(paretoFrontStr)
 

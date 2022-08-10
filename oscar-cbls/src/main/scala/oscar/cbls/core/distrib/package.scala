@@ -11,7 +11,7 @@ package object distrib {
   def startSupervisorAndActorSystem(search: Neighborhood,
                                     verbose: Boolean = false,
                                     hotRestart:Boolean = true,
-                                    tic: Duration = Duration.Inf): Supervisor = {
+                                    tic: Duration = Duration.Inf): supervisor = {
     supervisor.startSupervisorAndActorSystem(search, verbose, hotRestart, tic)
   }
 
