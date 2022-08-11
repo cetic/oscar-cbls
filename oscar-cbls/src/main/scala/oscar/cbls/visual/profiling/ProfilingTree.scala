@@ -14,7 +14,7 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
   private val PROFILER_HEIGHT = 40
   private val PROFILER_WIDTH = 200
   private val HEIGHT_BETWEEN_PROFILERS = 20
-  private val WIDTH_BETWEEN_PROFILERS = 10
+  private val WIDTH_BETWEEN_PROFILERS = PROFILER_WIDTH/4
   private val TEXT_PADDING = 2
 
   // COLORS
@@ -81,7 +81,7 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
   })
 
   private def drawTask(color: Color, row: Int, column: Int, name: String, profilingData: String): (VisualRectangle,VisualText,VisualText) ={
-    val x = column*(PROFILER_WIDTH+WIDTH_BETWEEN_PROFILERS)
+    val x = column*WIDTH_BETWEEN_PROFILERS
     val y = row*(PROFILER_HEIGHT+HEIGHT_BETWEEN_PROFILERS)
 
     val rectangle = new VisualRectangle(this, x, y, PROFILER_WIDTH, PROFILER_HEIGHT)
@@ -99,10 +99,10 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
   }
 
   private def drawArrow(from: VisualRectangle, to: VisualRectangle, color: Color): List[VisualShape] ={
-    val downwardStroke = VisualLine(this,from.x+from.width, from.y+from.height,from.x+from.width, to.y)
+    val downwardStroke = VisualLine(this,from.x+from.width/8, from.y+from.height,from.x+from.width/8, to.y+to.height/4)
     downwardStroke.borderWidth = 3
     downwardStroke.outerCol = color
-    val toDestStroke = VisualLine(this,downwardStroke.orig._1,downwardStroke.orig._2,to.x,to.y)
+    val toDestStroke = VisualLine(this,downwardStroke.orig._1,downwardStroke.orig._2,to.x,to.y+to.height/4)
     toDestStroke.borderWidth = 3
     toDestStroke.outerCol = color
     List(downwardStroke, toDestStroke)
