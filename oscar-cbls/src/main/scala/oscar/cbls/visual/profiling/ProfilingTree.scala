@@ -22,36 +22,28 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
   private val combinatorColor = new Color(215,230,204)
   private val neighborhoodColor = new Color(204,204,204)
 
-  var allProfilingRectangle: Array[VisualRectangle] = Array.empty
-  var allProfilingName: Array[VisualText] = Array.empty
-  var allProfilingText: Array[VisualText] = Array.empty
-  var allLinks: Array[List[VisualShape]] = Array.empty
+  private val drawing = this
+
+  var allProfilingNodes: List[ProfilingNode] = List.empty
 
   def drawProfilerBoxes(currentNeighborhood: Neighborhood = search,
-                        parentRect: VisualRectangle = null,
-                        count: Int = 0,
-                        depth: Int = 0): Int = {
-    val isCombinator = currentNeighborhood match{
+                        parentRect: Option[ProfilingNode] = None,
+                        depth: Int = 0): ProfilingNode = {
+    val isCombinator = currentNeighborhood match {
       case _: NeighborhoodCombinator => true
       case _ => false
     }
-    val currentRectangleAndTexts =
-      drawTask(if(isCombinator)combinatorColor else neighborhoodColor,count, depth,
-        currentNeighborhood.profiler.profiledNeighborhood,
-        Properties.justifyLeftArray(currentNeighborhood.profiler.collectThisProfileStatistics).mkString("\n"))
-    allProfilingRectangle :+= currentRectangleAndTexts._1
-    allProfilingName :+= currentRectangleAndTexts._2
-    allProfilingText :+= currentRectangleAndTexts._3
-    if(parentRect != null)
-      allLinks :+= drawArrow(parentRect,currentRectangleAndTexts._1,linksColor)
+    val profilingNode = ProfilingNode(currentNeighborhood, parentRect)
+    profilingNode.draw(isCombinator)
+    profilingNode.setVisible(parentRect.isEmpty)
+    allProfilingNodes :+= profilingNode
 
-    var nextCount = count
-    if(isCombinator)
-      currentNeighborhood.asInstanceOf[NeighborhoodCombinator].subNeighborhoods.foreach(child => {
-          nextCount += 1
-          nextCount = drawProfilerBoxes(child, currentRectangleAndTexts._1, nextCount, depth+1)
-        })
-    nextCount
+    if (isCombinator) {
+      val children = currentNeighborhood.asInstanceOf[NeighborhoodCombinator].subNeighborhoods.map(child =>
+        drawProfilerBoxes(child, Some(profilingNode), depth + 1))
+      profilingNode.addChildren(children)
+    }
+    profilingNode
   }
 
   def resize(): Unit ={
@@ -64,11 +56,17 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
   this.getMouseListeners.foreach(this.removeMouseListener)
   this.addMouseListener(new MouseListener() {
     override def mouseClicked(e: MouseEvent): Unit = {
+      val clickedProfilingNodes = allProfilingNodes.filter(_.contains(e.getX, e.getY))
       if (SwingUtilities.isRightMouseButton(e)) {
-        scale = scale*(0.9)
+        if(clickedProfilingNodes.nonEmpty)
+          clickedProfilingNodes.foreach(pn => if(pn.isExpanded) pn.collapse() )
+        else
+          scale = scale*(0.9)
       }
       if (SwingUtilities.isLeftMouseButton(e)) {
-        if (e.getClickCount == 2) {
+        if(clickedProfilingNodes.nonEmpty){
+          clickedProfilingNodes.foreach(pn => if(pn.isCollapsed) pn.expand())
+        } else if (e.getClickCount == 2) {
           scale = scale*(1.1)
         }
       }
@@ -80,37 +78,171 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
     override def mouseReleased(e: MouseEvent): Unit = {}
   })
 
-  private def drawTask(color: Color, row: Int, column: Int, name: String, profilingData: String): (VisualRectangle,VisualText,VisualText) ={
-    val x = column*WIDTH_BETWEEN_PROFILERS
-    val y = row*(PROFILER_HEIGHT+HEIGHT_BETWEEN_PROFILERS)
-
-    val rectangle = new VisualRectangle(this, x, y, PROFILER_WIDTH, PROFILER_HEIGHT)
-    rectangle.fill = true
-    rectangle.innerCol = color
-
-    val boxText = new VisualText(this,x,y,name,false)
-    boxText.move(boxText.getBounds._1+TEXT_PADDING, boxText.getBounds._3+boxText.font.getSize+TEXT_PADDING)
-    boxText.setFont(new Font(Font.MONOSPACED, Font.BOLD, boxText.font.getSize))
-
-    val text = new VisualText(this,x+PROFILER_WIDTH,y,profilingData)
-    text.move(text.getBounds._1+TEXT_PADDING, text.getBounds._3+text.font.getSize+TEXT_PADDING)
-    text.setFont(new Font(Font.MONOSPACED, Font.BOLD, text.font.getSize))
-    (rectangle,boxText,text)
+  this.addMouseMotionListener {
+    new MouseMotionListener() {
+      override def mouseMoved(e: MouseEvent): Unit = {
+        val targetedProfilingNodes = allProfilingNodes.filter(_.contains(e.getX, e.getY))
+        if(targetedProfilingNodes.nonEmpty) {
+          displayToolTip(s"${targetedProfilingNodes.head.toString}")
+        }
+      }
+      override def mouseDragged(e: MouseEvent): Unit = {}
+    }
   }
 
-  private def drawArrow(from: VisualRectangle, to: VisualRectangle, color: Color): List[VisualShape] ={
-    val downwardStroke = VisualLine(this,from.x+from.width/8, from.y+from.height,from.x+from.width/8, to.y+to.height/4)
-    downwardStroke.borderWidth = 3
-    downwardStroke.outerCol = color
-    val toDestStroke = VisualLine(this,downwardStroke.orig._1,downwardStroke.orig._2,to.x,to.y+to.height/4)
-    toDestStroke.borderWidth = 3
-    toDestStroke.outerCol = color
-    List(downwardStroke, toDestStroke)
-  }
+  private def displayToolTip(text: String): Unit = this.showToolTip(text)
 
   def draw(): Unit ={
     resize()
     drawProfilerBoxes()
+    allProfilingNodes.foreach(_.drawLinks(this))
+  }
+
+  case class ProfilingNodeDisplay(rectangle: VisualRectangle, header: VisualText,
+                                  statistics: VisualText, depth: Int){
+
+    private val headerTxt = header.text
+    private val statisticsTxt = statistics.text
+    private var _links: List[VisualLine] = List.empty
+
+    def setVisible(visible: Boolean): Unit ={
+      rectangle.visible = visible
+      _links.foreach(_.visible = visible)
+      header.text = if(visible) headerTxt else ""
+      statistics.text = if(visible) statisticsTxt else ""
+    }
+
+    def position(): (Int,Int) = (rectangle.x.toInt, rectangle.y.toInt)
+    def moveDownBy(nbRow: Int, parentRow: Int): Unit ={
+      val moveDownBy = (PROFILER_HEIGHT+HEIGHT_BETWEEN_PROFILERS)*nbRow
+      val parentYPos = (PROFILER_HEIGHT+HEIGHT_BETWEEN_PROFILERS)*parentRow
+
+      // Moving artifacts
+      rectangle.move(rectangle.x, rectangle.y+moveDownBy)
+      header.move(header.getBounds._1, header.getBounds._3+moveDownBy)
+      statistics.move(statistics.getBounds._1, statistics.getBounds._3+moveDownBy)
+      _links.foreach(l => l.move(0,moveDownBy))
+      // Extending (or retracting) vertical VisualLine
+      _links.head.orig = (_links.head.orig._1,parentYPos+PROFILER_HEIGHT)
+    }
+
+    def setLinks(links: List[VisualLine]): Unit = _links = links
+  }
+
+
+  case class ProfilingNode(value: Neighborhood, parent: Option[ProfilingNode]){
+
+    private var _visible = false
+    private var _row = 0
+    private var _expanded = false
+
+    private var nodeDisplay: ProfilingNodeDisplay = _
+    private var children: List[ProfilingNode] = List.empty
+
+    // LET THE LAZY, the tree is build from leaf to root. So the parent may not already have it's depth.
+    lazy val depth: Int = if(parent.nonEmpty)parent.get.depth+1 else 0
+
+    def contains(x: Int, y: Int): Boolean ={
+      if(_visible){
+        val rectBounds = nodeDisplay.rectangle.getBounds
+        return x <= rectBounds._2 && x >= rectBounds._1 && y <= rectBounds._4 && y >= rectBounds._3
+      }
+      false
+    }
+
+    // WARNING use this method only when the tree is fully build
+    def draw(isCombinator: Boolean): Unit ={
+      val x = depth*WIDTH_BETWEEN_PROFILERS
+      val y = 0
+      val name: String = value.profiler.profiledNeighborhood
+      val statistics: String = Properties.justifyLeftArray(value.profiler.collectThisProfileStatistics).mkString("\n")
+
+      val header = new VisualText(drawing,x,y,name,false)
+      header.move(header.getBounds._1+TEXT_PADDING, header.getBounds._3+header.font.getSize+TEXT_PADDING)
+      header.setFont(new Font(Font.MONOSPACED, Font.BOLD, header.font.getSize))
+      val rectangleWidth = 1.5*(header.fm.stringWidth(name)+2*TEXT_PADDING)
+
+      // Remove the header and insert it after the rectangle
+      // So that the header is drawn after the rectangle and thus in front of it
+      shapes.remove(shapes.indexOf(header))
+      val rectangle = new VisualRectangle(drawing, x, y, rectangleWidth, PROFILER_HEIGHT)
+      rectangle.fill = true
+      rectangle.innerCol = if(isCombinator)combinatorColor else neighborhoodColor
+      shapes.addOne(header)
+
+      val text = new VisualText(drawing,x+rectangleWidth.toInt,y,statistics)
+      text.move(text.getBounds._1+TEXT_PADDING, text.getBounds._3+text.font.getSize+TEXT_PADDING)
+      text.setFont(new Font(Font.MONOSPACED, Font.BOLD, text.font.getSize))
+
+      nodeDisplay = ProfilingNodeDisplay(rectangle,header,text,depth)
+      nodeDisplay.setVisible(_visible)
+    }
+
+    def drawLinks(drawing: VisualDrawing): Unit ={
+      for(childId <- children.indices){
+        val childNodeDisplay = children(childId).nodeDisplay
+        val to = childNodeDisplay.rectangle
+        // Drawn as if the destination rectangle is set at Y pos 0
+        val downwardStroke = VisualLine(drawing,
+          depth*WIDTH_BETWEEN_PROFILERS+20, -(childId*PROFILER_HEIGHT + (childId+1)*HEIGHT_BETWEEN_PROFILERS),
+          depth*WIDTH_BETWEEN_PROFILERS+20, to.height/4)
+        downwardStroke.borderWidth = 3
+        downwardStroke.outerCol = linksColor
+        downwardStroke.visible = false
+        val toDestStroke = VisualLine(drawing, downwardStroke.dest._1,downwardStroke.dest._2,to.x,downwardStroke.dest._2)
+        toDestStroke.borderWidth = 3
+        toDestStroke.outerCol = linksColor
+        toDestStroke.visible = false
+        childNodeDisplay.setLinks(List(downwardStroke,toDestStroke))
+      }
+    }
+
+    def addChildren(children: List[ProfilingNode]): Unit ={
+      this.children = children
+    }
+
+    def setVisible(visible: Boolean): Unit ={
+      _visible = visible
+      nodeDisplay.setVisible(visible)
+    }
+
+    def row: Int = _row
+
+    def isVisible: Boolean = _visible
+
+    def isExpanded: Boolean = _expanded
+
+    def isCollapsed: Boolean = !_expanded
+
+    def expand(): Unit ={
+      allProfilingNodes.filter(pn => pn.isVisible && pn.row > _row).foreach(pn => pn.moveDownBy(children.length,if(pn.parent.isDefined)pn.parent.get._row else 0))
+      children.indices.foreach(
+        childId => {
+          children(childId).setVisible(true)
+          children(childId).moveAtRow(_row+childId+1, _row)
+        }
+      )
+      _expanded = true
+    }
+
+    def collapse(): Unit ={
+      children.filter(_.isExpanded).foreach(_.collapse())
+      children.foreach(_.setVisible(false))
+      allProfilingNodes.filter(pn => pn.isVisible && pn.row > _row).foreach(pn => pn.moveDownBy(-children.length,if(pn.parent.isDefined)pn.parent.get._row else 0))
+      _expanded = false
+    }
+
+    def moveDownBy(nbRow: Int, parentRow: Int): Unit ={
+      _row += nbRow
+      nodeDisplay.moveDownBy(nbRow, parentRow)
+    }
+
+    def moveAtRow(row: Int, parentRow: Int): Unit ={
+      nodeDisplay.moveDownBy(row - _row, parentRow)
+      _row = row
+    }
+
+    override def toString: String = nodeDisplay.header.text
   }
 
 }

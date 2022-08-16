@@ -37,12 +37,13 @@ class VisualText(d: VisualDrawing, private var x: Double, private var y: Double,
 
   val fm: FontMetrics = d.getFontMetrics(d.getFont)
   shape.setRect(x, y, lines.map(lineStr => fm.stringWidth(lineStr)).max, nLines * fm.getHeight)
-  
+
   var font = new Font(Font.SANS_SERIF, Font.PLAIN, 13)
   var fontColor: Color = Color.BLACK
   
   def setFont(font: Font): Unit = {
     this.font = font
+    shape.setRect(shape.getX, shape.getY, lines.map(lineStr => fm.stringWidth(lineStr)).max, nLines * fm.getHeight)
   }
 
   /**

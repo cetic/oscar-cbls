@@ -16,7 +16,7 @@ import oscar.cbls.visual.profiling.ProfilingTree
 import scala.util.Random
 
 object VRPWithWeightedNodes extends App{
-  val n = 1000
+  val n = 100
   val v = 10
 
   val minLat = 49.404631
@@ -82,7 +82,7 @@ class VRPWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, minLo
   //////////////////// Pruning and display ////////////////////
   ////////// Display VRP resolution on real map //////////
 
-  val routingDisplay = display(myVRP,geoCoords,routingMapType = RoutingMapTypes.RealRoutingMap, refreshRate = 10)
+  val routingDisplay = display(myVRP,geoCoords,routingMapType = RoutingMapTypes.BasicRoutingMap, refreshRate = 10)
 
   ////////// Static Pruning (done once before starting the resolution) //////////
 
@@ -116,14 +116,14 @@ class VRPWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, minLo
     selectDestinationBehavior = Best())
 
   // Swap two edges based on the 40 closest neighbors of the first segment's head
-  val customTwoOpt = twoOpt(myVRP.routed, ()=>myVRP.kFirst(40,closestRelevantNeighborsByDistance(_),routedPostFilter), myVRP)
+  val customTwoOpt = twoOpt(myVRP.routed, ()=>myVRP.kFirst(10,closestRelevantNeighborsByDistance(_),routedPostFilter), myVRP)
 
   ////////// Final search procedure //////////
 
   // bestSlopeFirst => Perform the best neighborhood in the list (meaning the one that reduces the most the objective function)
   // afterMove => after each move update the routing display
   val searchProcedure = roundRobin(
-    List(routeUnroutedPoint, onePtMove(20),customTwoOpt)
+    List(routeUnroutedPoint, onePtMove(10),customTwoOpt)
   ).showObjectiveFunction(obj).afterMove(
     routingDisplay.drawRoutes())
 
