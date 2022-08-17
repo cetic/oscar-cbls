@@ -59,15 +59,12 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
     override def mouseClicked(e: MouseEvent): Unit = {
       val clickedProfilingNodes = allProfilingNodes.filter(_.contains(e.getX, e.getY))
       if (SwingUtilities.isRightMouseButton(e)) {
-        if(clickedProfilingNodes.nonEmpty)
-          clickedProfilingNodes.foreach(pn => if(pn.isExpanded) pn.collapse() )
-        else
-          scale = scale*(0.9)
+        scale = scale*(0.9)
       }
       if (SwingUtilities.isLeftMouseButton(e)) {
         if (e.getClickCount == 2) {
           if(clickedProfilingNodes.nonEmpty)
-            clickedProfilingNodes.foreach(pn => if(pn.isCollapsed) pn.recursiveExpand())
+            clickedProfilingNodes.foreach(pn => if(pn.isCollapsed) pn.recursiveExpand() else pn.collapse())
           else
             scale = scale*(1.1)
         }

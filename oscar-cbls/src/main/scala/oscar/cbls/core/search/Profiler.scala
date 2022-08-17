@@ -125,7 +125,7 @@ class CombinatorProfiler(combinator: NeighborhoodCombinator) extends Profiler(co
 
   override def collectThisProfileHeader: Array[String] = Array("Combinator", "Total calls", "% Founds", "Total time (ms)")
 
-  override def collectThisProfileData: Array[String] = Array(combinator.toString, nbCalls.toString, (Math.floor(nbFounds.toDouble/nbCalls*100000)/1000).toString, totalTime.toString)
+  override def collectThisProfileData: Array[String] = Array(combinator.getClass.getSimpleName, nbCalls.toString, (Math.floor(nbFounds.toDouble/nbCalls*100000)/1000).toString, totalTime.toString)
 
   override def resetThisStatistics(): Unit = {
     nbCalls = 0L
@@ -182,11 +182,6 @@ class SelectionProfiler(combinator: NeighborhoodCombinator, nbNeighborhoods: Lis
 
   def collectExtraProfileHeader: Array[String] = Array.empty
   def collectExtraProfileData: Array[String] = Array.empty
-}
-
-case class RoundRobinProfiler(combinator: NeighborhoodCombinator,
-                              nbNeighborhoods: List[Neighborhood]) extends SelectionProfiler(combinator,nbNeighborhoods){
-
 }
 
 case class BestFirstProfiler(combinator: NeighborhoodCombinator,

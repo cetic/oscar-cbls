@@ -167,7 +167,7 @@ class RoundRobin(robins: Array[(Neighborhood,Int)], tabu:Int = 1)
   var currentCycleNr = 0
   private val cycleOfLastFail:Array[Int] = Array.fill(robins.length)(Int.MinValue)
 
-  override val profiler: RoundRobinProfiler = RoundRobinProfiler(this, robins.map(_._1).toList)
+  override val profiler: SelectionProfiler = new SelectionProfiler(this, robins.map(_._1).toList)
 
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
     profiler.explorationStarted()
