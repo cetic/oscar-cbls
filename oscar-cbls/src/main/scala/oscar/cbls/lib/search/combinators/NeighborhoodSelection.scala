@@ -15,7 +15,7 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
 
   protected var it:Int = 0
   protected def bestKey(neighborhoodId:Int):Long
-  override val profiler: SelectionProfiler = SelectionProfiler(this,l)
+  override val profiler: BestFirstProfiler = BestFirstProfiler(this,l)
   override def collectProfilingStatistics: List[Array[String]] =
     profiler.collectThisProfileStatistics ::: super.collectProfilingStatistics
 
@@ -167,7 +167,7 @@ class RoundRobin(robins: Array[(Neighborhood,Int)], tabu:Int = 1)
   var currentCycleNr = 0
   private val cycleOfLastFail:Array[Int] = Array.fill(robins.length)(Int.MinValue)
 
-  override val profiler: SelectionProfiler = SelectionProfiler(this, robins.map(_._1).toList)
+  override val profiler: RoundRobinProfiler = RoundRobinProfiler(this, robins.map(_._1).toList)
 
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
     profiler.explorationStarted()
@@ -253,7 +253,7 @@ class RoundRobinNoParam(val a: Neighborhood, val b: Neighborhood) {
 class RandomCombinator(a: Neighborhood*) extends NeighborhoodCombinator(a:_*) {
   private val r = new scala.util.Random()
 
-  override val profiler: SelectionProfiler = SelectionProfiler(this,a.toList)
+  override val profiler: SelectionProfiler = new SelectionProfiler(this,a.toList)
 
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
     profiler.explorationStarted()

@@ -122,7 +122,7 @@ class VRPWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, minLo
 
   // bestSlopeFirst => Perform the best neighborhood in the list (meaning the one that reduces the most the objective function)
   // afterMove => after each move update the routing display
-  val searchProcedure = roundRobin(
+  val searchProcedure = bestSlopeFirst(
     List(routeUnroutedPoint, onePtMove(10),customTwoOpt)
   ).showObjectiveFunction(obj).afterMove(
     routingDisplay.drawRoutes())

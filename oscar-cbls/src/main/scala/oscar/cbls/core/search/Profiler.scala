@@ -20,8 +20,8 @@ abstract class Profiler(val neighborhood:Neighborhood){
 }
 
 class EmptyProfiler(neighborhood: Neighborhood) extends Profiler(neighborhood) {
-  override def collectThisProfileHeader: Array[String] = Array("Neighborhood", "Undefined")
-  override def collectThisProfileData: Array[String] = Array(neighborhood.toString,"N/A")
+  override def collectThisProfileHeader: Array[String] = Array.empty
+  override def collectThisProfileData: Array[String] = Array.empty
   // Nothing to do
   override def resetThisStatistics(): Unit = {}
 }
@@ -143,28 +143,58 @@ class CombinatorProfiler(combinator: NeighborhoodCombinator) extends Profiler(co
   }
 }
 
-case class SelectionProfiler(combinator: NeighborhoodCombinator, nbNeighborhoods: List[Neighborhood]) extends CombinatorProfiler(combinator) {
+class SelectionProfiler(combinator: NeighborhoodCombinator, nbNeighborhoods: List[Neighborhood]) extends CombinatorProfiler(combinator) {
 
-  var nbReset: Int = 0
-  var nbFirstFailed: Int = 0
   val nbMoveFoundPerNeighbor: Array[Int] = Array.fill(nbNeighborhoods.size)(0)
 
-  override def collectThisProfileHeader: Array[String] =
+  override final def collectThisProfileHeader: Array[String] =
     super.collectThisProfileHeader ++
-      Array("NbReset", "NbFirstFailed") ++
-      profilers.map(p => s"${p.neighborhood.toString} - Usage (%)")
-  override def collectThisProfileData: Array[String] =
+      collectExtraProfileHeader ++
+      profilers.flatMap(p => Array("|", " ", "Usage (%)", "Success (%)"))
+  override final def collectThisProfileData: Array[String] =
     super.collectThisProfileData ++
-      Array(s"$nbReset",s"$nbFirstFailed") ++
-      nbMoveFoundPerNeighbor.map(m => s"${((m.toDouble/nbMoveFoundPerNeighbor.sum)*100).round}")
-
-  def firstFailed(): Unit = nbFirstFailed += 1
+      collectExtraProfileData ++
+      profilers.indices.flatMap(pi =>
+        Array("|", profilers(pi).neighborhood.toString,
+          s"${neighborhoodUsage(pi)}",
+          s"${neighborhoodSuccess(pi)}")
+        )
 
   ///////////////////////////////////////
   // Selection-Neighborhood management //
   ///////////////////////////////////////
 
   val profilers: Array[NeighborhoodProfiler] = nbNeighborhoods.map(n => new NeighborhoodProfiler(n)).toArray
+
+  def totalTimeSpentSubN(i: Int): Long = profilers(i)totalTimeSpent
+
+  def subExplorationStarted(neighborhoodId: Int): Unit = profilers(neighborhoodId).explorationStarted()
+  def subExplorationEnded(neighborhoodId: Int, gain: Option[Long]): Unit = {
+    profilers(neighborhoodId).explorationEnded(gain)
+    if(gain.nonEmpty)nbMoveFoundPerNeighbor(neighborhoodId)+=1
+  }
+
+  def neighborhoodUsage(neighborhoodId: Int): Double =
+    ((nbMoveFoundPerNeighbor(neighborhoodId).toDouble/nbMoveFoundPerNeighbor.sum)*10000).round/100.0
+
+  def neighborhoodSuccess(neighborhoodId: Int): Double =
+    ((profilers(neighborhoodId).nbFound.toDouble/profilers(neighborhoodId).nbCalls)*10000).round/100.0
+
+  def collectExtraProfileHeader: Array[String] = Array.empty
+  def collectExtraProfileData: Array[String] = Array.empty
+}
+
+case class RoundRobinProfiler(combinator: NeighborhoodCombinator,
+                              nbNeighborhoods: List[Neighborhood]) extends SelectionProfiler(combinator,nbNeighborhoods){
+
+}
+
+case class BestFirstProfiler(combinator: NeighborhoodCombinator,
+                             nbNeighborhoods: List[Neighborhood]) extends SelectionProfiler(combinator,nbNeighborhoods){
+
+  var nbReset: Int = 0
+  var nbFirstFailed: Int = 0
+  var neighborhoodsProfilersSummedStatistics: Array[Array[Long]] = nbNeighborhoods.map(_ => Array(0L,0L,0L)).toArray
 
   def slopeForCombinators(neighborhoodId: Int, defaultIfNoCall:Long = Long.MaxValue):Long =
     if(totalTimeSpentSubN(neighborhoodId) == 0L) defaultIfNoCall
@@ -173,15 +203,29 @@ case class SelectionProfiler(combinator: NeighborhoodCombinator, nbNeighborhoods
   def nbFoundSubN(i: Int): Long = profilers(i).nbFound
   def totalGainSubN(i: Int): Long = profilers(i).totalGain
   def totalTimeSpentMoveFoundSubN(i: Int): Long = profilers(i).totalTimeSpentMoveFound
-  def totalTimeSpentSubN(i: Int): Long = profilers(i)totalTimeSpent
 
-  def subExplorationStarted(neighborhoodId: Int): Unit = profilers(neighborhoodId).explorationStarted()
-  def subExplorationEnded(neighborhoodId: Int, gain: Option[Long]): Unit = {
-    profilers(neighborhoodId).explorationEnded(gain)
-    if(gain.nonEmpty)nbMoveFoundPerNeighbor(neighborhoodId)+=1
-  }
+  def firstFailed(): Unit = nbFirstFailed += 1
   def resetSelectionNeighborhoodStatistics(): Unit ={
     nbReset += 1
+    saveSelectionNeighborhoodStatistics()
     profilers.foreach(p => p.resetThisStatistics())
   }
+  private def saveSelectionNeighborhoodStatistics(): Unit = {
+    profilers.indices.foreach(i => {
+      neighborhoodsProfilersSummedStatistics(i)(0) += profilers(i).nbCalls
+      neighborhoodsProfilersSummedStatistics(i)(1) += profilers(i).nbFound
+      neighborhoodsProfilersSummedStatistics(i)(2) += profilers(i).totalGain
+    })
+  }
+
+  override def collectThisProfileStatistics: List[Array[String]] = {
+    saveSelectionNeighborhoodStatistics() // Save last stat data
+    super.collectThisProfileStatistics
+  }
+  override def collectExtraProfileHeader: Array[String] = Array("NbReset", "NbFirstFailed")
+  override def collectExtraProfileData: Array[String] = Array(s"$nbReset",s"$nbFirstFailed")
+  override def neighborhoodUsage(neighborhoodId: Int): Double =
+    ((neighborhoodsProfilersSummedStatistics(neighborhoodId)(1).toDouble/nbMoveFoundPerNeighbor.sum)*10000).round/100.0
+  override def neighborhoodSuccess(neighborhoodId: Int): Double =
+    ((neighborhoodsProfilersSummedStatistics(neighborhoodId)(1).toDouble/neighborhoodsProfilersSummedStatistics(neighborhoodId)(0))*10000).round/100.0
 }

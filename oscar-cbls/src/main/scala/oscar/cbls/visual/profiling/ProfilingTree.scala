@@ -14,12 +14,14 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
   private val PROFILER_HEIGHT = 40
   private val HEIGHT_BETWEEN_PROFILERS = 10
   private val WIDTH_BETWEEN_PROFILERS = 20
-  private val TEXT_PADDING = 2
+  private val TEXT_PADDING = 5
 
   // COLORS
   private val linksColor = Color.BLACK
   private val combinatorColor = new Color(215,230,204)
+  private val combinatorTextColor = new Color(123,172,87)
   private val neighborhoodColor = new Color(204,204,204)
+  private val neighborhoodTextColor = new Color(150,150,150)
 
   private val drawing = this
 
@@ -177,6 +179,7 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
       val text = new VisualText(drawing,x+rectangleWidth.toInt,y,statistics)
       text.move(text.getBounds._1+TEXT_PADDING, text.getBounds._3+text.font.getSize+TEXT_PADDING)
       text.setFont(new Font(Font.MONOSPACED, Font.BOLD, text.font.getSize))
+      text.fontColor = if(isCombinator)combinatorTextColor else neighborhoodTextColor
 
       nodeDisplay = ProfilingNodeDisplay(rectangle,header,text,depth)
       nodeDisplay.setVisible(_visible)
