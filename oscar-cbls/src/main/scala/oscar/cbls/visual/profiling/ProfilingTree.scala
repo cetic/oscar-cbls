@@ -12,9 +12,8 @@ import javax.swing.{JScrollBar, SwingUtilities}
 class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
 
   private val PROFILER_HEIGHT = 40
-  private val PROFILER_WIDTH = 200
-  private val HEIGHT_BETWEEN_PROFILERS = 20
-  private val WIDTH_BETWEEN_PROFILERS = PROFILER_WIDTH/4
+  private val HEIGHT_BETWEEN_PROFILERS = 10
+  private val WIDTH_BETWEEN_PROFILERS = 20
   private val TEXT_PADDING = 2
 
   // COLORS
@@ -64,10 +63,11 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
           scale = scale*(0.9)
       }
       if (SwingUtilities.isLeftMouseButton(e)) {
-        if(clickedProfilingNodes.nonEmpty){
-          clickedProfilingNodes.foreach(pn => if(pn.isCollapsed) pn.expand())
-        } else if (e.getClickCount == 2) {
-          scale = scale*(1.1)
+        if (e.getClickCount == 2) {
+          if(clickedProfilingNodes.nonEmpty)
+            clickedProfilingNodes.foreach(pn => if(pn.isCollapsed) pn.recursiveExpand())
+          else
+            scale = scale*(1.1)
         }
       }
       resize()
@@ -96,6 +96,8 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
     resize()
     drawProfilerBoxes()
     allProfilingNodes.foreach(_.drawLinks(this))
+    allProfilingNodes.foreach(_.moveStatRight(shapes.filter(_.isInstanceOf[VisualRectangle]).map(_.getBounds._2).max))
+    allProfilingNodes.find(_.parent.isEmpty).get.recursiveExpand()
   }
 
   case class ProfilingNodeDisplay(rectangle: VisualRectangle, header: VisualText,
@@ -138,6 +140,8 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
 
     private var nodeDisplay: ProfilingNodeDisplay = _
     private var children: List[ProfilingNode] = List.empty
+
+    def hasChildren: Boolean = children.nonEmpty
 
     // LET THE LAZY, the tree is build from leaf to root. So the parent may not already have it's depth.
     lazy val depth: Int = if(parent.nonEmpty)parent.get.depth+1 else 0
@@ -184,8 +188,8 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
         val to = childNodeDisplay.rectangle
         // Drawn as if the destination rectangle is set at Y pos 0
         val downwardStroke = VisualLine(drawing,
-          depth*WIDTH_BETWEEN_PROFILERS+20, -(childId*PROFILER_HEIGHT + (childId+1)*HEIGHT_BETWEEN_PROFILERS),
-          depth*WIDTH_BETWEEN_PROFILERS+20, to.height/4)
+          depth*WIDTH_BETWEEN_PROFILERS+WIDTH_BETWEEN_PROFILERS/2, -(childId*PROFILER_HEIGHT + (childId+1)*HEIGHT_BETWEEN_PROFILERS),
+          depth*WIDTH_BETWEEN_PROFILERS+WIDTH_BETWEEN_PROFILERS/2, to.height/4)
         downwardStroke.borderWidth = 3
         downwardStroke.outerCol = linksColor
         downwardStroke.visible = false
@@ -225,6 +229,11 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
       _expanded = true
     }
 
+    def recursiveExpand(): Unit ={
+      expand()
+      children.foreach(_.recursiveExpand())
+    }
+
     def collapse(): Unit ={
       children.filter(_.isExpanded).foreach(_.collapse())
       children.foreach(_.setVisible(false))
@@ -240,6 +249,10 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
     def moveAtRow(row: Int, parentRow: Int): Unit ={
       nodeDisplay.moveDownBy(row - _row, parentRow)
       _row = row
+    }
+
+    def moveStatRight(at: Long): Unit ={
+      nodeDisplay.statistics.move(at+TEXT_PADDING,nodeDisplay.statistics.font.getSize+TEXT_PADDING)
     }
 
     override def toString: String = nodeDisplay.header.text
