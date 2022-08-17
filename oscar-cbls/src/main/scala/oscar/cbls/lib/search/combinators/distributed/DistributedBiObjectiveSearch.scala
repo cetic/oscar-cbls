@@ -384,7 +384,6 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
 
         //split a rectangle
         val rectangleToSplit:Rectangle = rectanglesToDevelopBiggestRectangleFirst.removeFirst()
-        //        remainingSurface -= rectangleToSplit.surface
 
         val maxValueForObj2 = (rectangleToSplit.minObj2 + rectangleToSplit.obj2)/2
         val rectangleForStartSolution = paretoFront.minAfter(new SortedRectangle(rectangleToSplit.obj1+1)).getOrElse(rightMostRectangle).asInstanceOf[Rectangle]
@@ -426,7 +425,6 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
                         val newDominatingRectangle = dominatingRectangle.copy(minObj2 = dominatingRectangle.minObj2 max maxValueForObj2)
                         replaceRectangleAndSchedule(dominatingRectangle, newDominatingRectangle)
                       }
-                    //checkParetoFront()
                     case None =>
 
                       val firstRectangleOpt = paretoFront.maxBefore(new SortedRectangle(obj1))
@@ -438,7 +436,6 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
                           replaceRectangleAndSchedule(
                             firstRectangle,
                             newFirstRectangle)
-                        //checkParetoFront()
                         case _ => ;//it has disappeared since then
                       }
                       var dominatedRectangleOpt = paretoFront.minAfter(new SortedRectangle(obj1))
@@ -449,7 +446,6 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
                           true
                         case _ => false
                       }) {}
-                      //checkParetoFront()
                       //last rectangle
                       dominatedRectangleOpt match{
                         case Some(lastRectangle:Rectangle) if lastRectangle.obj2 >= obj2 =>
@@ -465,7 +461,6 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
                         //checkParetoFront()
                         case Some(lastRectangle:Rectangle) if lastRectangle.obj2 <= obj2 =>
                           //we cut nothing
-                          val nextRectangle =
                             storeAndScheduleRectangle(Rectangle(
                               obj1,
                               obj2,
@@ -473,16 +468,14 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
                               minObj2 = obj2 min (initRectangle.minObj2 max (lastRectangle.obj2+1)),
                               solution = independentSolution.makeLocal(store),
                               independentSolution = independentSolution))
-                        //checkParetoFront() //bug ici
                       }
                   }
                   redrawPareto()
-                  // println(paretoFrontStr)
 
                   next(nbRunningOrStartingSearches = nbRunningOrStartingSearches - 1, context)
 
                 case SearchAborted(uniqueSearchID: Long) =>
-                  //strange, we should never abort serches...
+                  //strange, we never abort searches...
                   logNext(context,nbRunningOrStartingSearches)
                   resultPromise.success(WrappedError(msg=Some("search aborted unexpectedly")))
                   Behaviors.stopped
