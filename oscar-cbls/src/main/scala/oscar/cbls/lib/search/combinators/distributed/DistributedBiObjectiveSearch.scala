@@ -53,6 +53,7 @@ class ParetoPointSearcher(taskId:Int,
     require(obj1.value == taskMessage.initObj1, "obj1.value:" + obj1.value + " taskMessage.initObj1:" + taskMessage.initObj1 + " taskMessage1.startSolutionOpt" + taskMessage1.startSolutionOpt)
     require(taskMessage.initObj2 == obj2.value, "taskMessage.initObj2:" + taskMessage.initObj2 + " obj2.value:" + obj2.value + " taskMessage1.startSolutionOpt" + taskMessage1.startSolutionOpt)
 
+    //we optimize as requested
     val minObj1WithOBj2Bound =
       CascadingObjective(
         () => (0L max (obj2.value - taskMessage.maxValueForObj2)),
@@ -63,8 +64,8 @@ class ParetoPointSearcher(taskId:Int,
     val foundOBj1 = obj1.value
     val foundOBj2 = obj2.value
 
-    //this ensures that metaheuristics starts from scratch properly
-
+    //second pass, optimizingthe other objective while keeping the first constant,
+    // to ensure that this is Pareto optimal
     val minObj2WithFoundObj1 =
       CascadingObjective(
         () => (0L max (obj1.value - foundOBj1)),
@@ -82,7 +83,7 @@ class ParetoPointSearcher(taskId:Int,
   }
 }
 
-//there is no uniqueID here because we will not cancel tasks
+
 case class OptimizeWithBoundRequest(override val remoteTaskId:RemoteTaskIdentification,
                                     obj1: IndependentObjective,
                                     obj2: IndependentObjective,
@@ -91,7 +92,7 @@ case class OptimizeWithBoundRequest(override val remoteTaskId:RemoteTaskIdentifi
                                     initObj1:Long,
                                     initObj2:Long,
                                     override val sendResultTo: ActorRef[SearchEnded]
-                                   ) extends SearchRequest(-1,remoteTaskId,sendResultTo){
+                                   ) extends SearchRequest(-1,remoteTaskId,sendResultTo){ //there is no uniqueID here because we will not cancel tasks
 
   override def startSolutionOpt: Option[IndependentSolution] = startSolution //we are not interested by hotRestart
 
@@ -187,15 +188,16 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  var dominatedSolutions: List[(Long, Long)] = Nil
-  var remainingSurface: Long = 0 //equal to the surface in the pareto front
-  val rectanglesToDevelopBiggestRectangleFirst = new BinomialHeapWithMove[Rectangle](getKey = -_.surface, (Int.MaxValue.toLong min (maxPoints.toLong * 2)).toInt)
-  var paretoFront: TreeSet[SortedRectangle] = new TreeSet()(OrderingSortedRectByObj1)
-  val store = obj1.model
+  private var dominatedSolutions: List[(Long, Long)] = Nil
+  private var remainingSurface: Long = 0 //equal to the surface in the pareto front
+  private val rectanglesToDevelopBiggestRectangleFirst =
+    new BinomialHeapWithMove[Rectangle](getKey = -_.surface, (Int.MaxValue.toLong min (maxPoints.toLong * 2)).toInt)
+  private var paretoFront: TreeSet[SortedRectangle] = new TreeSet()(OrderingSortedRectByObj1)
+  private val store = obj1.model
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  def getDominatorRectangle(obj1:Long, obj2:Long): Option[Rectangle] = {
+  private def getDominatorRectangle(obj1:Long, obj2:Long): Option[Rectangle] = {
     paretoFront.maxBefore(new SortedRectangle(obj1)) match {
       case Some(potentialBetterRectangle:Rectangle)
         if potentialBetterRectangle.obj2 <= obj2 && potentialBetterRectangle.obj1 < obj1 => Some(potentialBetterRectangle)
@@ -205,7 +207,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
     }
   }
 
-  def removeDominatedRectangle(rectangle: Rectangle): Unit = {
+  private def removeDominatedRectangle(rectangle: Rectangle): Unit = {
     paretoFront = paretoFront.excl(rectangle)
     remainingSurface -= rectangle.surface
     require(remainingSurface>=0)
@@ -216,7 +218,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
     dominatedSolutions = (rectangle.obj1, rectangle.obj2) :: dominatedSolutions
   }
 
-  def replaceRectangleAndSchedule(oldRectangle: Rectangle, newRectangle: Rectangle): Unit = {
+  private def replaceRectangleAndSchedule(oldRectangle: Rectangle, newRectangle: Rectangle): Unit = {
     paretoFront = paretoFront.excl(oldRectangle).incl(newRectangle)
     remainingSurface -= oldRectangle.surface
     require(remainingSurface>=0)
@@ -229,7 +231,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
     }
   }
 
-  def storeAndScheduleRectangle(newRectangle: Rectangle): Unit = {
+  private def storeAndScheduleRectangle(newRectangle: Rectangle): Unit = {
     paretoFront = paretoFront.incl(newRectangle)
     if(newRectangle.isSplitteable) {
       rectanglesToDevelopBiggestRectangleFirst.insert(newRectangle)
@@ -240,7 +242,10 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
 
   // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
+  /**
+   * The method that performs pareto search
+   * @return list of pareto points in the form (obj1,obj2,solution)
+   */
   def paretoOptimize(): List[(Long, Long, Solution)] = {
 
     val (plot, window) = if (visu) {
@@ -523,6 +528,6 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
   }
 
   override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
-    throw new Error("DistributedPreto cannot be used as a regular neighborhood; use paretoOptimize method")
+    throw new Error("DistributedPareto cannot be used as a regular neighborhood; use paretoOptimize method")
   }
 }

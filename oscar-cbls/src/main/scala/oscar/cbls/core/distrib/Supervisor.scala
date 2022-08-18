@@ -130,6 +130,9 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor],
     Await.result(ongoingRequest, atMost = waitFor)
   }
 
+  /**
+   * shuts town the supervisor and all workers
+   */
   def shutdown(): Unit = {
     val ongoingRequest: Future[Unit] = supervisorActor.ask[Unit](ref => ShutDown(Some(ref)))
     Await.result(ongoingRequest, 30.seconds)
