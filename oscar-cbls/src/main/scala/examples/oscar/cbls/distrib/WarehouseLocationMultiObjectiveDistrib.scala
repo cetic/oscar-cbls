@@ -44,10 +44,12 @@ object WarehouseLocationMultiObjectiveDistrib extends App {
   val (costForOpeningWarehouse, distanceCost, _, _, warehouseToWarehouseDistances) =
     WarehouseLocationGenerator.problemWithPositions(W, D, 0, 1000, 3)
 
-  def createSearchProcedure(): (Store, DistributedBiObjectiveSearch) = {
+  //This is for demo purpose; to have a curve that is more readable on the output.
+  // Opening zero warehouses and having operationCost = D*defaultCostForNoOpenWarehouse
+  // is a relevant trade off point in the mathematical sense.
+  costForOpeningWarehouse(0) = 0
 
-    //for(w <- 0 until W) costForOpeningWarehouse(w) = 100
-    costForOpeningWarehouse(0) = 0 //This is for demo purpose; to have a curve that is more readable on the output.
+  def createSearchProcedure(): (Store, DistributedBiObjectiveSearch) = {
     val m = Store()
 
     val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + l + "_open"))
@@ -70,9 +72,11 @@ object WarehouseLocationMultiObjectiveDistrib extends App {
       ))
 
     //this procedure returns the k closest closed warehouses
-    def kNearestClosedWarehouses(warehouse: Int, k: Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).newValue == 0)
+    def kNearestClosedWarehouses(warehouse: Int, k: Int) =
+      KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).newValue == 0)
 
-    def kNearestOpenWarehouses(warehouse: Int, k: Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).newValue != 0)
+    def kNearestOpenWarehouses(warehouse: Int, k: Int) =
+      KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).newValue != 0)
 
     def swapsK(k: Int, openWarehousesToConsider: () => Iterable[Int] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
       searchZone1 = openWarehousesToConsider,
@@ -100,6 +104,7 @@ object WarehouseLocationMultiObjectiveDistrib extends App {
         ))),
       obj1 = operationCost,
       obj2 = constructionCost,
+      visuTitle = problemName,
       obj1Name = "operationCost",
       obj2Name = "constructionCost",
       maxPoints = 100,
@@ -112,7 +117,7 @@ object WarehouseLocationMultiObjectiveDistrib extends App {
 
   //supervisor side
   val (store, paretoSearch) = createSearchProcedure()
-  val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(paretoSearch,verbose = false)
+  val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(paretoSearch,verbose = true)
 
   //create the workers
   for (i <- 0 until Supervisor.nbCores/2) {
