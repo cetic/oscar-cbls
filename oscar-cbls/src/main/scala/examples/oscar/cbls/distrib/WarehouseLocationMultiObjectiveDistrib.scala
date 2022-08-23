@@ -25,6 +25,7 @@ import oscar.cbls.core.distrib.Supervisor
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.search.combinators.distributed.DistributedBiObjectiveSearch
 import oscar.cbls.lib.search.neighborhoods.SwapsNeighborhood
+import oscar.cbls.util.Properties
 
 import scala.language.postfixOps
 
@@ -49,7 +50,7 @@ object WarehouseLocationMultiObjectiveDistrib extends App {
   // is a relevant trade off point in the mathematical sense.
   costForOpeningWarehouse(0) = 0
 
-  def createSearchProcedure(): (Store, DistributedBiObjectiveSearch) = {
+  def createSearchStructures(): (Store, DistributedBiObjectiveSearch,SetValue) = {
     val m = Store()
 
     val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + l + "_open"))
@@ -84,7 +85,7 @@ object WarehouseLocationMultiObjectiveDistrib extends App {
       name = "Swap" + k + "Nearest",
       symmetryCanBeBrokenOnIndices = false)
 
-    def paretoSearch() = new DistributedBiObjectiveSearch(
+    val paretoSearch = new DistributedBiObjectiveSearch(
       minObj1Neighborhood = ()=>bestSlopeFirst(
         List(
           assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
@@ -102,35 +103,46 @@ object WarehouseLocationMultiObjectiveDistrib extends App {
           swapsK(10) exhaust swapsK(20),
           swapsK(5) dynAndThen (swapMove => swapsK(5, () => kNearestOpenWarehouses(swapMove.idI, 4).filter(_ >= swapMove.idI)))
         ))),
+
       obj1 = operationCost,
-      obj2 = constructionCost,
-      visuTitle = problemName,
       obj1Name = "operationCost",
+
+      obj2 = constructionCost,
       obj2Name = "constructionCost",
+
+      visuTitle = problemName,
       maxPoints = 100,
-      verbose = true,
+      verbose = false,
       visu = true,
       stayAlive = true)
 
-    (m, paretoSearch())
+    (m, paretoSearch,openWarehouses)
   }
 
   //supervisor side
-  val (store, paretoSearch) = createSearchProcedure()
-  val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(paretoSearch,verbose = true)
+  val (store, paretoSearch, openWarehouses) = createSearchStructures()
+  val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(paretoSearch,verbose = false)
 
   //create the workers
   for (i <- 0 until Supervisor.nbCores/2) {
-    val (store2, search2) = createSearchProcedure()
+    val (store2, search2,_) = createSearchStructures()
     supervisor.createLocalWorker(store2, search2)
   }
 
   //start the search, et the supervisor side
-  val allSolutions = paretoSearch.paretoOptimize()
+  val allSolutions =
+    paretoSearch
+      .paretoOptimize()
+      .map({case (obj1,obj,sol) => {
+        sol.restoreDecisionVariables()
+        val w = openWarehouses.value
+        List(obj1,obj,w.size,w)
+      }})
 
   //shut down supervisor and all workers
   supervisor.shutdown()
 
-  println("solution:\n\t" +allSolutions.map(s => ("" + s._1 + "," +s._2)).mkString("\n\t"))
+  println(Properties.justifyLeftAny(List("operationCost","constructionCost","nbWarehouses" ,"open warehouses") :: allSolutions," ").mkString("\n"))
+
 
 }

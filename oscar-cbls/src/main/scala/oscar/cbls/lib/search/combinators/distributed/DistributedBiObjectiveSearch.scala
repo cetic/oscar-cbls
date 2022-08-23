@@ -426,6 +426,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
                       //forget about it, but the dominating rectangle can be pruned
                       //we do not know if init rectangle is still present...
                       if(verbose) context.log.info(s"new rectangle dominated")
+                      dominatedSolutions = (obj1,obj2) :: dominatedSolutions
                       if(dominatingRectangle.minObj2 > maxValueForObj2) {
                         val newDominatingRectangle = dominatingRectangle.copy(minObj2 = dominatingRectangle.minObj2 max maxValueForObj2)
                         replaceRectangleAndSchedule(dominatingRectangle, newDominatingRectangle)
