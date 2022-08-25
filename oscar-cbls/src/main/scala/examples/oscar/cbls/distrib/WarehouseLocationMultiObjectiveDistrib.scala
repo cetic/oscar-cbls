@@ -81,7 +81,7 @@ object WarehouseLocationMultiObjectiveDistrib extends App {
       symmetryCanBeBrokenOnIndices = false)
 
     def paretoSearch() = new DistributedBiObjectiveSearch(
-      minObj1Neighborhood = ()=>bestSlopeFirst(
+      minObj1Neighborhood = () => bestSlopeFirst(
         List(
           assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
           swapsK(10) exhaust swapsK(20),

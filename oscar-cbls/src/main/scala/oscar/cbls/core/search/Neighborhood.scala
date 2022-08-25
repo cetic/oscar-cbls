@@ -429,7 +429,10 @@ abstract class Neighborhood(name:String = null) {
     SortedMap.empty[Int,RemoteNeighborhood] ++ (labelAndExtractRemoteTasks(supervisor = null)._3.map(r => (r.taskId,r)))
   }
 
-  def labelAndExtractRemoteTasks(supervisor: Supervisor, currentID: Int = 0, nbDistributedCombinators:Int = 0, acc: List[RemoteTask] = Nil):(Int,Int,List[RemoteTask]) =
+  def labelAndExtractRemoteTasks(supervisor: Supervisor,
+                                 currentID: Int = 0,
+                                 nbDistributedCombinators: Int = 0,
+                                 acc: List[RemoteTask] = Nil): (Int, Int, List[RemoteTask]) =
     (currentID, nbDistributedCombinators, acc)
 }
 

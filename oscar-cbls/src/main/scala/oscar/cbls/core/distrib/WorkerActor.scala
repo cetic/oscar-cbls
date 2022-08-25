@@ -14,7 +14,8 @@ sealed abstract class MessageToWorker
 final case class StartSearch(search: SearchRequest, startID: Long, replyTo: ActorRef[MessagesToSupervisor]) extends MessageToWorker
 final case class AbortSearch(searchId: Long, keepAliveIfOjBelow:Option[Long] = None) extends MessageToWorker
 final case class WrappedSearchEnded(searchId:Long) extends MessageToWorker
-final case object ShutDownWorker extends MessageToWorker
+
+case object ShutDownWorker extends MessageToWorker
 final case class Ping(replyTo: ActorRef[ExternalWorkerState]) extends MessageToWorker
 final case class GetStatisticsFor(neighborhood:RemoteTaskIdentification,indice:Int,replyTo: ActorRef[(Int,List[Array[String]])]) extends MessageToWorker
 
@@ -34,7 +35,7 @@ object WorkerActor {
 
     val startLogger: Logger = LoggerFactory.getLogger("WorkerObject")
     startLogger.info("Starting actor system and worker:" + workerName)
-    ActorSystem(createWorkerBehavior(neighborhoods, m, master, verbose,workerName), workerName)
+    ActorSystem(createWorkerBehavior(neighborhoods, m, master, verbose, workerName), workerName)
   }
 
   def createWorkerBehavior(neighborhoods: SortedMap[Int, RemoteTask],

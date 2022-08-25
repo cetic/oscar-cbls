@@ -48,14 +48,15 @@ object Supervisor {
 
   val nbCores: Int = Runtime.getRuntime.availableProcessors()
 
-  def startSupervisorAndActorSystem(search: Neighborhood, verbose: Boolean = false, hotRestart:Boolean = true, tic: Duration = Duration.Inf): Supervisor = {
+  def startSupervisorAndActorSystem(search: Neighborhood,
+                                    verbose: Boolean = false,
+                                    hotRestart: Boolean = true,
+                                    tic: Duration = Duration.Inf): Supervisor = {
     val supervisorActorSystem = internalStartSupervisorAndActorSystem(verbose, hotRestart, tic)
     val supervisor = wrapSupervisor(supervisorActorSystem, verbose)(system = supervisorActorSystem)
     val (nbNRemoteNeighborhood,nbDistributedCombinator,_) = search.labelAndExtractRemoteTasks(supervisor: Supervisor)
-
     val startLogger: Logger = LoggerFactory.getLogger("SupervisorObject")
     startLogger.info(s"Analyzed search; Nb Distributed Combinators:$nbDistributedCombinator; Nb Remote Neighborhoods:$nbNRemoteNeighborhood")
-
     supervisor
   }
 
@@ -96,7 +97,13 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor],
   def createLocalWorker(m: Store, search: Neighborhood, workerName: String = null): Unit = {
     this.synchronized {
       nbLocalWorkers += 1
-      val workerBehavior = WorkerActor.createWorkerBehavior(search.identifyRemotelySearchableNeighborhoods, m, this.supervisorActor, verbose, if (workerName == null) "localWorker" + nbLocalWorkers else workerName)
+      val workerBehavior = WorkerActor.createWorkerBehavior(
+        search.identifyRemotelySearchableNeighborhoods,
+        m,
+        this.supervisorActor,
+        verbose,
+        if (workerName == null) "localWorker" + nbLocalWorkers else workerName
+      )
       supervisorActor ! SpawnWorker(workerBehavior)
     }
   }
@@ -162,7 +169,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
 
   //message to self
 
-  private case class Tic() extends MessagesToSupervisor
+  private case object Tic extends MessagesToSupervisor
   //this one cannot be a control message.
 
   private val waitingSearches = scala.collection.mutable.Queue[SearchRequest]()
@@ -187,12 +194,12 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
   override def onMessage(msg: MessagesToSupervisor): Behavior[MessagesToSupervisor] = {
     msg match {
 
-      case Tic() =>
+      case Tic =>
         context.log.info(status)
 
         tic match {
           case _: Infinite => ;
-          case f: FiniteDuration => context.scheduleOnce(f, context.self, Tic())
+          case f: FiniteDuration => context.scheduleOnce(f, context.self, Tic)
         }
 
       case SpawnNewActor(behavior:Behavior[Any],behaviorName:String, replyTo) =>
@@ -481,7 +488,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
 
   tic match {
     case _: Infinite => ;
-    case f: FiniteDuration => context.scheduleOnce(f, context.self, Tic())
+    case f: FiniteDuration => context.scheduleOnce(f, context.self, Tic)
   }
 
   def status: String = {

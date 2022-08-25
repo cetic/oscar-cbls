@@ -40,7 +40,10 @@ class ParetoPointSearcher(taskId:Int,
 
   override def abort(): Unit = { } //there is no abort
 
-  override def doTask(taskMessage1: SearchRequest, model: Store, currentSolOpt: Option[(Solution, SolutionID)], workerID: Option[String]): Option[(Solution, SolutionID)] = {
+  override def doTask(taskMessage1: SearchRequest,
+                      model: Store,
+                      currentSolOpt: Option[(Solution, SolutionID)],
+                      workerID: Option[String]): Option[(Solution, SolutionID)] = {
 
     val (startSol,solId):(Solution,Option[SolutionID]) = loadSolution(taskMessage1.startSolutionOpt,model,currentSolOpt,workerID)
 
@@ -55,7 +58,7 @@ class ParetoPointSearcher(taskId:Int,
 
     val minObj1WithOBj2Bound =
       CascadingObjective(
-        () => (0L max (obj2.value - taskMessage.maxValueForObj2)),
+        () => 0L max (obj2.value - taskMessage.maxValueForObj2),
         obj1)
 
     minObj1WithOBj2BoundNeighborhood().doAllMoves(obj = minObj1WithOBj2Bound)
@@ -73,7 +76,7 @@ class ParetoPointSearcher(taskId:Int,
 
     val dur = System.currentTimeMillis() - startTime
 
-    taskMessage.sendResultTo!SearchCompleted(
+    taskMessage.sendResultTo ! SearchCompleted(
       taskMessage.uniqueSearchId,
       (obj1.value, obj2.value, IndependentSolution(model.solution(), workerID),taskMessage.maxValueForObj2),
       dur.toInt)
