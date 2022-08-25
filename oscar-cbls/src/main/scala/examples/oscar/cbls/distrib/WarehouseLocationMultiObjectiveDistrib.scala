@@ -112,16 +112,15 @@ object WarehouseLocationMultiObjectiveDistrib extends App {
 
       visuTitle = problemName,
       maxPoints = 100,
-      verbose = false,
-      visu = true,
-      stayAlive = true)
+      verbose = true,
+      visu = true)
 
     (m, paretoSearch,openWarehouses)
   }
 
   //supervisor side
   val (store, paretoSearch, openWarehouses) = createSearchStructures()
-  val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(paretoSearch,verbose = false)
+  val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(paretoSearch)
 
   //create the workers
   for (i <- 0 until Supervisor.nbCores/2) {
@@ -142,7 +141,9 @@ object WarehouseLocationMultiObjectiveDistrib extends App {
   //shut down supervisor and all workers
   supervisor.shutdown()
 
-  println(Properties.justifyLeftAny(List("operationCost","constructionCost","nbWarehouses" ,"open warehouses") :: allSolutions," ").mkString("\n"))
-
+  println(
+    Properties.justifyLeftAny(
+      List("operationCost","constructionCost","nbWarehouses" ,"open warehouses") :: allSolutions)
+    .mkString("\n"))
 
 }

@@ -267,6 +267,9 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
 
     val startSearchNanotime = System.nanoTime()
 
+    val verbosityDelayMS = 1000
+
+    var nextVerbosity = System.currentTimeMillis() + verbosityDelayMS
     def paretoFrontStr:String = {
       val paretoFrontCouples = paretoFront.toList.map({case s:Rectangle => ("" + s.obj1 ,"" + s.obj2)})
       "paretoFront:\n\t" + Properties.justifyLeft(paretoFrontCouples,",").mkString("\n\t")
@@ -374,8 +377,15 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
     }
 
     def logNext(context:ActorContext[WrappedData],nbRunningOrStartingSearches:Int): Unit ={
-      if(verbose) context.log.info(s"nbRunningOrStartingSearches:$nbRunningOrStartingSearches heapSize:${rectanglesToDevelopBiggestRectangleFirst.size} paretoFrontSize:${paretoFront.size}/$maxPoints remainingSurface:$remainingSurface/$stopSurface")
+      if(verbose){
+        val now = System.currentTimeMillis()
+        if(now > nextVerbosity){
+          context.log.info(s"nbRunningOrStartingSearches:$nbRunningOrStartingSearches heapSize:${rectanglesToDevelopBiggestRectangleFirst.size} paretoFrontSize:${paretoFront.size}/$maxPoints remainingSurface:$remainingSurface/$stopSurface")
+          nextVerbosity = now + verbosityDelayMS
+        }
+      }
     }
+
     def next(nbRunningOrStartingSearches: Int, context:ActorContext[WrappedData]): Behavior[WrappedData] = {
 
       if(nbRunningOrStartingSearches == 0 && (shouldStop || rectanglesToDevelopBiggestRectangleFirst.isEmpty)){
