@@ -7,8 +7,8 @@ import oscar.cbls.core.search._
 ///////////////////////////////////////////////////////////////
 
 abstract class SearchRequest(val uniqueSearchId:Long,
-                                    val remoteTaskId:RemoteTaskIdentification,
-                                    val sendResultTo:ActorRef[SearchEnded]){
+                             val remoteTaskId:RemoteTaskIdentification,
+                             val sendResultTo:ActorRef[SearchEnded]){
   /**
    * The supervisor checks that the worker already has this solution loaded.
    * If it is the case, the solution is removed from the SearchRequest by calling dropStartSolution hereBelow
@@ -67,9 +67,9 @@ case class DoAllMoveSearch(override val uniqueSearchId:Long = -1,
 
 //////////////////////////////////////////////////////////////
 // le truc qu'on envoie au worker
-case class RemoteTaskIdentification(taskId: Int, description:String)
+case class RemoteTaskIdentification(taskId: Int, description: String)
 
-abstract class RemoteTask(val taskId: Int, description:String) {
+abstract class RemoteTask(val taskId: Int, description: String) {
 
   val remoteIdentification: RemoteTaskIdentification = RemoteTaskIdentification(taskId,description)
 
@@ -98,7 +98,10 @@ abstract class RemoteTask(val taskId: Int, description:String) {
     }
   }
 
-  def doTask(taskMessage: SearchRequest, model: Store, currentSolOpt: Option[(Solution, SolutionID)], workerID: Option[String]):Option[(Solution,SolutionID)]
+  def doTask(taskMessage: SearchRequest,
+             model: Store,
+             currentSolOpt: Option[(Solution, SolutionID)],
+             workerID: Option[String]) : Option[(Solution,SolutionID)]
 }
 
 class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)

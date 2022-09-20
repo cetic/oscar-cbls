@@ -112,7 +112,7 @@ object WarehouseLocationMultiObjectiveDistrib extends App {
   //supervisor side
   val (store, paretoSearch) = createSearchProcedure()
 
-  val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(paretoSearch,verbose = false)
+  val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(paretoSearch)
 
   //This is a bit stupid: start the search while workers are not instantiated yet, but it is possible
   for (i <- 0 until Supervisor.nbCores/2) {
@@ -123,6 +123,6 @@ object WarehouseLocationMultiObjectiveDistrib extends App {
   val allSolutions = paretoSearch.paretoOptimize()
   supervisor.shutdown()
 
-  println("solution:\n\t" +allSolutions.map(s => ("" + s._1 + "," +s._2)).mkString("\n\t"))
+  println(s"solution:\n\t${allSolutions.map(s => s"${s._1},${s._2}").mkString("\n\t")}")
 
 }

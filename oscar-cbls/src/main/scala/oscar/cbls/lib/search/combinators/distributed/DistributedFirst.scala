@@ -39,10 +39,7 @@ class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean =
           case Failure(ex) => WrappedError(msg=Some(s"Supervisor actor timeout : ${ex.getMessage}"))
         }
       }
-      next(
-        runningSearchIDs = List.empty,
-        nbFinishedSearches = 0)
-
+      next(runningSearchIDs = List.empty, nbFinishedSearches = 0)
     }},"DistributedFirst")
 
     def next(runningSearchIDs:List[Long],
@@ -54,7 +51,6 @@ class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean =
               case SearchCompleted(_, searchResult, _) =>
                 searchResult match {
                   case _: IndependentMoveFound =>
-
                     for (r <- runningSearchIDs) {
                       supervisor.supervisorActor ! CancelSearchToSupervisor(r)
                     }
@@ -62,15 +58,12 @@ class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean =
                     Behaviors.stopped
 
                   case IndependentNoMoveFound =>
-
                     val newNbFinishedSearches = nbFinishedSearches + 1
                     if (newNbFinishedSearches == neighborhoods.length) {
                       resultPromise.success(w) //it is a NoMoveFound
                       Behaviors.stopped
                     } else {
-                      next(
-                        runningSearchIDs = runningSearchIDs,
-                        nbFinishedSearches = newNbFinishedSearches)
+                      next(runningSearchIDs = runningSearchIDs, nbFinishedSearches = newNbFinishedSearches)
                     }
                 }
 
@@ -88,7 +81,6 @@ class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean =
             }
 
           case WrappedGotUniqueID(uniqueId: Long, remoteNeighborhoodIdentification) =>
-
             context.ask[DelegateSearch, SearchEnded](
               supervisor.supervisorActor,
               ref => DelegateSearch(
