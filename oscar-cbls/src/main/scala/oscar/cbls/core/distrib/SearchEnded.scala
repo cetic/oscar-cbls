@@ -6,7 +6,9 @@ sealed trait SearchEnded {
   val uniqueSearchID: Long
 }
 
-final case class SearchCompleted[ResultType](uniqueSearchID: Long, searchResult: ResultType, durationMS: Int)
+final case class SearchCompleted[ResultType](uniqueSearchID: Long,
+                                             searchResult: ResultType,
+                                             durationMS: Int)
   extends SearchEnded
 
 final case class SearchAborted(uniqueSearchID: Long)

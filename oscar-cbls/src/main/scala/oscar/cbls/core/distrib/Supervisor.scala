@@ -18,34 +18,46 @@ sealed trait MessagesToSupervisor
 
 final case class NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) extends MessagesToSupervisor
 
-final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSearchIDOpt: Option[Long], currentModelId:Option[SolutionID]) extends MessagesToSupervisor
+final case class ReadyForWork(workerRef: ActorRef[MessageToWorker],
+                              completedSearchIDOpt: Option[Long],
+                              currentModelId:Option[SolutionID]) extends MessagesToSupervisor
 
-final case class CancelSearchToSupervisor(searchID: Long, keepAliveIfOjBelow:Option[Long]=None) extends MessagesToSupervisor
+final case class CancelSearchToSupervisor(searchID: Long,
+                                          keepAliveIfOjBelow: Option[Long]=None) extends MessagesToSupervisor
 
-final case class SearchStarted(searchID: Long, startID: Long, worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
+final case class SearchStarted(searchID: Long,
+                               startID: Long,
+                               worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
 
-final case class SearchNotStarted(searchID: Long, startID:Long, worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
+final case class SearchNotStarted(searchID: Long,
+                                  startID: Long,
+                                  worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
 
 final case class Crash(worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
 
 final case class DelegateSearch(searchRequest: SearchRequest,
-                                waitForMoreSearch:Boolean = false) extends MessagesToSupervisor
+                                waitForMoreSearch: Boolean = false) extends MessagesToSupervisor
 
 case object StartSomeSearch extends MessagesToSupervisor
 
-final case class GetNewUniqueID(replyTo:ActorRef[Long]) extends MessagesToSupervisor
+final case class GetNewUniqueID(replyTo: ActorRef[Long]) extends MessagesToSupervisor
 
 final case class ShutDown(replyTo: Option[ActorRef[Unit]]) extends MessagesToSupervisor
 
 final case class SpawnWorker(workerBehavior: Behavior[MessageToWorker]) extends MessagesToSupervisor
 
-final case class NbWorkers(replyTo: ActorRef[Int],waitForAtLeastOneWorker:Boolean) extends MessagesToSupervisor
+final case class NbWorkers(replyTo: ActorRef[Int],
+                           waitForAtLeastOneWorker:Boolean) extends MessagesToSupervisor
 
-final case class RemoteStatisticsFor(replyTo:ActorRef[List[Array[String]]],remoteNeighborhood:RemoteTaskIdentification) extends MessagesToSupervisor
+final case class RemoteStatisticsFor(replyTo: ActorRef[List[Array[String]]],
+                                     remoteNeighborhood: RemoteTaskIdentification) extends MessagesToSupervisor
 
-final case class SpawnNewActor[T](behavior:Behavior[T],behaviorName:String, replyTo:ActorRef[ActorRef[T]]) extends MessagesToSupervisor
+final case class SpawnNewActor[T](behavior:Behavior[T],
+                                  behaviorName:String,
+                                  replyTo:ActorRef[ActorRef[T]]) extends MessagesToSupervisor
 
 object Supervisor {
+  // Number of available cores on this JVM
   val nbCores: Int = Runtime.getRuntime.availableProcessors()
 
   def startSupervisorAndActorSystem(search: Neighborhood,

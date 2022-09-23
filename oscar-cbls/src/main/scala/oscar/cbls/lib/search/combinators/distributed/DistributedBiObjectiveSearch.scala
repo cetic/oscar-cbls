@@ -44,43 +44,39 @@ class ParetoPointSearcher(taskId:Int,
                       model: Store,
                       currentSolOpt: Option[(Solution, SolutionID)],
                       workerID: Option[String]): Option[(Solution, SolutionID)] = {
-
-    val (startSol,solId):(Solution,Option[SolutionID]) = loadSolution(taskMessage1.startSolutionOpt,model,currentSolOpt,workerID)
-
+    // Load the current solution is necessary, even though the solution itself is not used
+    loadSolution(taskMessage1.startSolutionOpt, model, currentSolOpt)
+    // Search request must be an instance of OptimizeWithBoundRequest
     val taskMessage = taskMessage1.asInstanceOf[OptimizeWithBoundRequest]
-
     val startTime = System.currentTimeMillis()
     val obj1 = taskMessage.obj1.convertToObjective(model)
     val obj2 = taskMessage.obj2.convertToObjective(model)
-
+    //
     require(obj1.value == taskMessage.initObj1, "obj1.value:" + obj1.value + " taskMessage.initObj1:" + taskMessage.initObj1 + " taskMessage1.startSolutionOpt" + taskMessage1.startSolutionOpt)
     require(taskMessage.initObj2 == obj2.value, "taskMessage.initObj2:" + taskMessage.initObj2 + " obj2.value:" + obj2.value + " taskMessage1.startSolutionOpt" + taskMessage1.startSolutionOpt)
-
+    //
     val minObj1WithOBj2Bound =
       CascadingObjective(
         () => 0L max (obj2.value - taskMessage.maxValueForObj2),
-        obj1)
-
+        obj1
+      )
     minObj1WithOBj2BoundNeighborhood().doAllMoves(obj = minObj1WithOBj2Bound)
-
     val foundOBj1 = obj1.value
-    val foundOBj2 = obj2.value
-
     //this ensures that metaheuristics starts from scratch properly
-
     val minObj2WithFoundObj1 =
       CascadingObjective(
-        () => (0L max (obj1.value - foundOBj1)),
-        obj2)
+        () => 0L max (obj1.value - foundOBj1),
+        obj2
+      )
     minObj2WithFoundObj1BoundNeighborhood().doAllMoves(obj = minObj2WithFoundObj1)
-
+    /////
     val dur = System.currentTimeMillis() - startTime
-
+    // Send result
     taskMessage.sendResultTo ! SearchCompleted(
       taskMessage.uniqueSearchId,
       (obj1.value, obj2.value, IndependentSolution(model.solution(), workerID),taskMessage.maxValueForObj2),
-      dur.toInt)
-
+      dur.toInt
+    )
     None
   }
 }
@@ -94,7 +90,8 @@ case class OptimizeWithBoundRequest(override val remoteTaskId:RemoteTaskIdentifi
                                     initObj1:Long,
                                     initObj2:Long,
                                     override val sendResultTo: ActorRef[SearchEnded]
-                                   ) extends SearchRequest(-1,remoteTaskId,sendResultTo){
+                                   ) extends SearchRequest {
+  override val uniqueSearchId: Long = -1
 
   override def startSolutionOpt: Option[IndependentSolution] = startSolution //we are not interested by hotRestart
 
@@ -153,15 +150,19 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
                                    setMaxWorkers:Option[Int] = None
                                   ) extends DistributedCombinator(
   Array(),
-  Array((taskId:Int) =>  new ParetoPointSearcher(
-    taskId,
-    minObj1WithOBj2BoundNeighborhood = minObj1Neighborhood,
-    minObj2WithFoundObj1BoundNeighborhood = minObj2Neighborhood.getOrElse(minObj1Neighborhood)))) {
+  Array(
+    (taskId:Int) =>  new ParetoPointSearcher(
+      taskId,
+      minObj1WithOBj2BoundNeighborhood = minObj1Neighborhood,
+      minObj2WithFoundObj1BoundNeighborhood = minObj2Neighborhood.getOrElse(minObj1Neighborhood)
+    )
+  )) {
 
   //a rectangle, anchored at a solution
   //the solution is the upper left corner
   class SortedRectangle(val obj1:Long)
-  case class Rectangle(override val obj1: Long, obj2: Long,
+  case class Rectangle(override val obj1: Long,
+                       obj2: Long,
                        maxObj1: Long, minObj2: Long,
                        solution: Solution,
                        independentSolution:IndependentSolution) extends SortedRectangle(obj1){
@@ -430,8 +431,8 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
                         replaceRectangleAndSchedule(dominatingRectangle, newDominatingRectangle)
                       }
                     //checkParetoFront()
-                    case None =>
 
+                    case None =>
                       val firstRectangleOpt = paretoFront.maxBefore(new SortedRectangle(obj1))
                       firstRectangleOpt match{
                         case Some(firstRectangle:Rectangle) =>
@@ -466,6 +467,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
                             solution = independentSolution.makeLocal(store),
                             independentSolution = independentSolution))
                         //checkParetoFront()
+
                         case Some(lastRectangle:Rectangle) if lastRectangle.obj2 <= obj2 =>
                           //we cut nothing
                           val nextRectangle =
@@ -477,11 +479,12 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
                               solution = independentSolution.makeLocal(store),
                               independentSolution = independentSolution))
                         //checkParetoFront() //bug ici
+
+                        case _ => // Do nothing
                       }
                   }
                   redrawPareto()
                   // println(paretoFrontStr)
-
                   next(nbRunningOrStartingSearches = nbRunningOrStartingSearches - 1, context)
 
                 case SearchAborted(uniqueSearchID: Long) =>
@@ -489,22 +492,31 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
                   logNext(context,nbRunningOrStartingSearches)
                   resultPromise.success(WrappedError(msg=Some("search aborted unexpectedly")))
                   Behaviors.stopped
+
                 case c:SearchCrashed =>
                   //finish it all with a crash message
                   logNext(context,nbRunningOrStartingSearches)
                   resultPromise.success(WrappedError(crash = Some(c)))
                   Behaviors.stopped
+
+                case _ =>
+                  // Ignore. Maybe it's better to throw an error ?
+                  Behaviors.same
               }
-            case  e:WrappedError =>
+
+            case e:WrappedError =>
               logNext(context,nbRunningOrStartingSearches)
               resultPromise.success(e)
               Behaviors.stopped
+
+            case _ =>
+              // Ignore. Maybe it's better to throw an error ?
+              Behaviors.same
           }
         }
       }
     }
-
-    //await seems to block the actor system??
+    //Await seems to block the actor system??
     Await.result(futureResult, Duration.Inf) match {
       case WrappedCompleted() =>
 

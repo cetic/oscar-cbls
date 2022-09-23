@@ -15,10 +15,11 @@
 package oscar.cbls.core.search
 
 import oscar.cbls.core.computation.{CBLSSetVar, Solution, Store, Variable}
-import oscar.cbls.core.distrib.{IndependentMove, IndependentSolution, LoadIndependentSolutionMove}
+import oscar.cbls.core.distrib.{IndependentLoadSolutionMove, IndependentMove, IndependentSolution}
 import oscar.cbls.core.objective.Objective
 
-/** standard move template
+/**
+ * Standard move template
  *
  * @param objAfter         the objective after this assignation will be performed
  *                         in case you degrade the objective because you make a jump, and you do not want to compute it,
@@ -76,10 +77,11 @@ abstract class Move(val objAfter:Long = Long.MaxValue, val neighborhoodName:Stri
     //println(s"move ${this.getClass.getName} uses default getIndependentMove; dedicated implementation would be faster")
     val s = m.solution()
     this.commit()
-    val x = LoadIndependentSolutionMove(
-      objAfter = this.objAfter,
-      neighborhoodName = this.neighborhoodName,
-      IndependentSolution(m.solution()))
+    val x = IndependentLoadSolutionMove(
+      IndependentSolution(m.solution()),
+      this.objAfter,
+      this.neighborhoodName
+    )
     s.restoreDecisionVariables(withoutCheckpoints = true)
     x
   }
@@ -138,21 +140,18 @@ class EvaluableCodedMove(doAndUndo: () => () => Unit,
  * @param neighborhoodName the name of the neighborhood that generated this move, used for pretty printing purpose.
  *                         Notice that the name is not the type of the neighborhood.
  */
-case class LoadSolutionMove(s:Solution,override val objAfter:Long, override val neighborhoodName:String = null) extends Move(objAfter,neighborhoodName){
+case class LoadSolutionMove(s: Solution,
+                            override val objAfter: Long,
+                            override val neighborhoodName: String = null)
+  extends Move(objAfter, neighborhoodName) {
   /** to actually take the move */
   override def commit(): Unit = s.restoreDecisionVariables()
 
   override def toString : String = s"${neighborhoodNameToString}LoadSolutionMove(objAfter:$objAfter)"
 
   override def getIndependentMove(m: Store): IndependentMove =
-    IndependentLoadSolutionMove(IndependentSolution(s), objAfter,neighborhoodName)
+    IndependentLoadSolutionMove(IndependentSolution(s), objAfter, neighborhoodName)
 }
-
-case class IndependentLoadSolutionMove(s:IndependentSolution ,override val objAfter:Long, override val neighborhoodName:String = null)
-  extends IndependentMove{
-  override def makeLocal(m: Store): Move = LoadSolutionMove(s.makeLocal(m), objAfter,neighborhoodName)
-}
-
 
 /** standard move that adds a value to a CBLSSetVar
  *

@@ -1,6 +1,5 @@
 package examples.oscar.cbls.distrib
 
-import examples.oscar.cbls.tspBridge.TspBridgeVisu
 import oscar.cbls._
 import oscar.cbls.algo.graph._
 import oscar.cbls.algo.search.KSmallest
@@ -13,7 +12,7 @@ import oscar.cbls.core.search.{First, JumpNeighborhood, Neighborhood}
 import oscar.cbls.lib.search.combinators.distributed.DistributedFirst
 import oscar.cbls.algo.generator.RandomGraphGenerator
 import oscar.cbls.visual.SingleFrameWindow
-
+import oscar.cbls.visual.tsp.TspBridgeVisu
 import scala.collection.immutable.SortedSet
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 import scala.concurrent.duration.DurationInt

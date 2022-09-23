@@ -23,7 +23,6 @@ class DistributedBest(neighborhoods:Array[Neighborhood],useHotRestart:Boolean = 
     implicit val system: ActorSystem[_] = supervisor.system
 
     val futureResults =  remoteNeighborhoodIdentifications.map(r => {
-
       supervisor.supervisorActor.ask[SearchEnded](ref =>
         DelegateSearch(SingleMoveSearch(
           remoteTaskId = r,
@@ -34,7 +33,7 @@ class DistributedBest(neighborhoods:Array[Neighborhood],useHotRestart:Boolean = 
         ), waitForMoreSearch = useHotRestart))
     }).toList
 
-    if(useHotRestart) {
+    if (useHotRestart) {
       //now that all searches are sent, tell the supervisor to start searches, so it can use hotRestart
       supervisor.supervisorActor ! StartSomeSearch
     }

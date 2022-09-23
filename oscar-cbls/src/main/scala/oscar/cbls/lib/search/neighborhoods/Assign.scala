@@ -252,8 +252,8 @@ case class AssignMove(i:CBLSIntVar,value:Long, id:Int, override val objAfter:Lon
 case class IndependentAssign(i:Int,
                              value:Long,
                              id:Int,
-                             override val objAfter:Long,
-                             override val neighborhoodName:String) extends IndependentMove{
+                             objAfter:Long,
+                             neighborhoodName:String) extends IndependentMove {
 
   override def makeLocal(m: Store): Move =
     AssignMove(m.getIntVar(i),value, id, objAfter, neighborhoodName)

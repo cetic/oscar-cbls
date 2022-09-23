@@ -1,4 +1,4 @@
-package examples.oscar.cbls.tspBridge
+package oscar.cbls.visual.tsp
 
 import oscar.cbls.algo.graph.{ConditionalGraph, ConditionalGraphWithIntegerNodeCoordinates, Node, RevisableAStar}
 import oscar.cbls.algo.seq.IntSequence

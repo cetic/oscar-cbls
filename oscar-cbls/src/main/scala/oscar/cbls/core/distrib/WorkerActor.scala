@@ -11,12 +11,17 @@ import scala.collection.SortedMap
 import scala.concurrent.{ExecutionContext, Future}
 
 sealed trait MessageToWorker
-final case class StartSearch(search: SearchRequest, startID: Long, replyTo: ActorRef[MessagesToSupervisor]) extends MessageToWorker
-final case class AbortSearch(searchId: Long, keepAliveIfOjBelow:Option[Long] = None) extends MessageToWorker
+final case class StartSearch(search: SearchRequest,
+                             startID: Long,
+                             replyTo: ActorRef[MessagesToSupervisor]) extends MessageToWorker
+final case class AbortSearch(searchId: Long,
+                             keepAliveIfOjBelow:Option[Long] = None) extends MessageToWorker
 final case class WrappedSearchEnded(searchId:Long) extends MessageToWorker
 case object ShutDownWorker extends MessageToWorker
 final case class Ping(replyTo: ActorRef[ExternalWorkerState]) extends MessageToWorker
-final case class GetStatisticsFor(neighborhood:RemoteTaskIdentification,indice:Int,replyTo: ActorRef[(Int,List[Array[String]])]) extends MessageToWorker
+final case class GetStatisticsFor(neighborhood:RemoteTaskIdentification,
+                                  indice:Int,
+                                  replyTo: ActorRef[(Int,List[Array[String]])]) extends MessageToWorker
 
 sealed trait ExternalWorkerState
 case class WorkerBusy(searchId: Long, durationMs:Long) extends ExternalWorkerState

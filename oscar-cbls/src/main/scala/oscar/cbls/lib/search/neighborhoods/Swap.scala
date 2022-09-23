@@ -12,7 +12,6 @@
  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  ******************************************************************************/
-
 package oscar.cbls.lib.search.neighborhoods
 
 import oscar.cbls.algo.search.{HotRestart, IdenticalAggregator}
@@ -68,10 +67,9 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
                              adjustIfNotInProperDomain:Boolean = false)
   extends EasyNeighborhoodMultiLevel[SwapMove](name){
 
-  //also used as the indice to start with for the exploration
+  //also used as the indices to start with for the exploration
   var firstVarIndice:Int = 0
   var firstVar:CBLSIntVar = null
-
   var secondVarIndice:Int = 0
   var secondVar:CBLSIntVar = null
 
@@ -192,14 +190,13 @@ case class SwapMove(i:CBLSIntVar,j:CBLSIntVar, idI:Int, idJ:Int, adjustIfNotInPr
       neighborhoodName)
 }
 
-
 case class IndependentSwap(i:Int,
                            j:Int,
                            idI:Int,
                            idJ:Int,
                            adjustIfNotInProperDomain:Boolean,
                            override val objAfter:Long,
-                           override val neighborhoodName:String) extends IndependentMove{
+                           override val neighborhoodName:String) extends IndependentMove {
 
   override def makeLocal(m: Store): Move =
     SwapMove(m.getIntVar(i),m.getIntVar(j), idI, idJ, adjustIfNotInProperDomain,objAfter,neighborhoodName)
