@@ -85,7 +85,7 @@ case class ThreeOpt(potentialInsertionNodes:()=>Iterable[Int], //must be routed,
         case Some(explorerAtInsertionPoint) =>
           insertionPointPositionForInstantiation = explorerAtInsertionPoint.position
 
-          val vehicleForInsertion = nodeToVehicle(insertionPointForInstantiation)
+          toVehicleForInstantiation = nodeToVehicle(insertionPointForInstantiation).toInt
 
           val relevantNeighbors = relevantNeighborsNow(insertionPointForInstantiation)
 
@@ -98,6 +98,8 @@ case class ThreeOpt(potentialInsertionNodes:()=>Iterable[Int], //must be routed,
             val orderedPairsOfNode = pairsOfNodesWithPosition.map({case (a, b) =>
               if (a._2.position < b._2.position) (a, b) else (b, a)
             })
+
+            fromVehicleForInstantiation = vehicleOfMovedSegment.toInt
 
             val (relevantPairsToExplore,notifyFound3) = selectMovedSegmentBehavior.toIterable(
               if (skipOnePointMove) orderedPairsOfNode.filter({case (a, b) => a._1 != b._1}) else orderedPairsOfNode)
@@ -114,7 +116,7 @@ case class ThreeOpt(potentialInsertionNodes:()=>Iterable[Int], //must be routed,
                 //skip this if same vehicle, no flip, and to the left
 
                 if(!breakSymmetry
-                  || vehicleForInsertion != vehicleOfMovedSegment
+                  || toVehicleForInstantiation != fromVehicleForInstantiation
                   || explorerAtSegmentStart.position < explorerAtInsertionPoint.position){
 
                   val (flipValuesToTest,notifyFound4) =
@@ -213,7 +215,7 @@ case class ThreeOptByNodes(potentialInsertionNodes:()=>Iterable[Int], //must be 
       insertionPointForInstantiation = insertionNodeTmp
       insertionPointPositionForInstantiation = positionOfAllNode(insertionNodeTmp)
 
-      val vehicleForInsertion = nodeToVehicle(insertionPointForInstantiation)
+      toVehicleForInstantiation = nodeToVehicle(insertionPointForInstantiation)
       val relevantSegmentStartsNodes = relevantMovedSegmentStartNodeNow(insertionPointForInstantiation)
       val routedRelevantSegmentStartNodes = relevantSegmentStartsNodes.filter((node: Int) => nodeToVehicle(node) != -1 && node != insertionPointForInstantiation && node >= v)
 
@@ -221,18 +223,20 @@ case class ThreeOptByNodes(potentialInsertionNodes:()=>Iterable[Int], //must be 
       val (routedRelevantNeighborsByVehicle, notifyFound2) = selectMovedSegmentBehavior.toIterable(routedRelevantSegmentStartNodes)
       for (relevantSegmentStart <- routedRelevantNeighborsByVehicle if positionOfAllNode(relevantSegmentStart) < vrp.n) {
 
-        val vehicleOfMovedSegment = nodeToVehicle(relevantSegmentStart)
+        fromVehicleForInstantiation = nodeToVehicle(relevantSegmentStart)
 
         segmentStartPositionForInstantiation = positionOfAllNode(relevantSegmentStart)
 
         val relevantSegmentEndNodes =
-          relevantMovedSegmentEndNodeNow(insertionPointForInstantiation, relevantSegmentStart, segmentStartPositionForInstantiation, vehicleOfMovedSegment)
+          relevantMovedSegmentEndNodeNow(
+            insertionPointForInstantiation, relevantSegmentStart,
+            segmentStartPositionForInstantiation, fromVehicleForInstantiation)
 
         //segment end
         val (segmentEndIt, notifyFound3) = selectMovedSegmentBehavior.toIterable(relevantSegmentEndNodes)
         for (segmentEndNode <- segmentEndIt
              if (positionOfAllNode(segmentEndNode) < vrp.n
-               && vehicleOfMovedSegment == nodeToVehicle(segmentEndNode)
+               && fromVehicleForInstantiation == nodeToVehicle(segmentEndNode)
                && positionOfAllNode(relevantSegmentStart) < positionOfAllNode(segmentEndNode)
                && (positionOfAllNode(insertionNodeTmp) < positionOfAllNode(relevantSegmentStart) ||
                     positionOfAllNode(segmentEndNode) < positionOfAllNode(insertionNodeTmp)))) {
@@ -241,7 +245,7 @@ case class ThreeOptByNodes(potentialInsertionNodes:()=>Iterable[Int], //must be 
 
           //flip
           if (!breakSymmetry
-            || vehicleForInsertion != vehicleOfMovedSegment
+            || toVehicleForInstantiation != fromVehicleForInstantiation
             || insertionPointPositionForInstantiation < segmentEndPositionForInstantiation) {
 
             for (flipForInstantiationTmp <- if (tryFlip) List(false, true) else List(false)) {
@@ -286,6 +290,9 @@ abstract class AbstractThreeOpt(val vrp: VRP,
   var insertionPointForInstantiation:Int = -1
   var flipForInstantiation:Boolean = false
 
+  var fromVehicleForInstantiation:Int = -1
+  var toVehicleForInstantiation:Int = -1
+
   def doMove(insertionPosition: Int, segmentStartPosition: Int, segmentEndPosition: Int, flip: Boolean): Unit ={
     seqVar.move(segmentStartPosition,segmentEndPosition,insertionPosition,flip)
   }
@@ -296,7 +303,9 @@ abstract class AbstractThreeOpt(val vrp: VRP,
       insertionPointPositionForInstantiation,
       insertionPointForInstantiation,
       flipForInstantiation,
-      newObj,
+fromVehicleForInstantiation,
+ toVehicleForInstantiation,
+  newObj,
       this,
       neighborhoodName)
 
@@ -307,6 +316,8 @@ case class ThreeOptMove(segmentStartPosition:Int,
                         insertionPointPosition: Int,
                         insertionPoint:Int,
                         flipSegment: Boolean,
+                        fromVehicle:Int,
+                        toVehicle:Int,
                         override val objAfter: Long,
                         override val neighborhood:AbstractThreeOpt,
                         override val neighborhoodName:String = "ThreeOptMove")
