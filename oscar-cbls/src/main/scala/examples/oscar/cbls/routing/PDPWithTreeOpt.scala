@@ -167,7 +167,7 @@ object PDPWithTreeOpt extends App {
     val toVehicle = move.toVehicle
     val pickupPointsRelatedToMovedDeliveryPoints:List[Int] = ???
 
-    Mu(firstNeighborhood = DoNothingNeighborhood,
+    Mu(firstNeighborhood = DoNothingNeighborhood(),
       x0 = pickupPointsRelatedToMovedDeliveryPoints,
       neighborhoodGenerator = {case (_:Any,pickupPointsToMove:List[Int]) =>
         pickupPointsToMove match{
