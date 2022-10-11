@@ -42,7 +42,7 @@ abstract class NeighborhoodCombinator(a: Neighborhood*) extends Neighborhood {
     a.flatMap(_.collectProfilingStatistics).toList
   }
 
-  override val profiler: Profiler = new EmptyProfiler(this)
+  override val profiler: Profiler = new DummyCombinatorProfiler(this)
 
   def subNeighborhoods: List[Neighborhood] = a.toList
 

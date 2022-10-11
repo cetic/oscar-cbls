@@ -138,7 +138,7 @@ abstract class Neighborhood(name:String = null) {
   final def profilingStatistics:String = Properties.justifyRightArray(collectProfilingStatistics).mkString("\n")
   def collectProfilingStatistics:List[Array[String]] = profiler.collectThisProfileStatistics
   //TODO: profiling stats should als include %founds next to #found
-  val profiler: Profiler
+  val profiler: Profiler = new EmptyProfiler(this)
 
   /**
    * the method that returns a move from the neighborhood.

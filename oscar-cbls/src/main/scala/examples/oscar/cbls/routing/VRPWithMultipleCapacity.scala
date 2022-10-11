@@ -138,9 +138,9 @@ class VRPWithMultipleCapacity(n: Int, v: Int, c: Int, maxCapacityPerContentType:
     }
   }
 
-  val firstNodeOfChainInsertion = insertPointUnroutedFirst(() => chainsExtension.heads.filter(n => !myVRP.isRouted(n)),()=> myVRP.kFirst(n,closestRelevantNeighborsByDistance(_)), myVRP,neighborhoodName = "InsertUF")
+  val firstNodeOfChainInsertion = insertPointUnroutedFirst(() => chainsExtension.heads.filter(n => !myVRP.isRouted(n)),()=> myVRP.kFirst(n,closestRelevantNeighborsByDistance(_)), myVRP,neighborhoodName = "InsertHeadOfChain")
 
-  def lastNodeOfChainInsertion(lastNode:Int) = insertPointUnroutedFirst(() => List(lastNode),()=> myVRP.kFirst(n,relevantPredecessorsForLastNode), myVRP,neighborhoodName = "InsertUF")
+  def lastNodeOfChainInsertion(lastNode:Int) = insertPointUnroutedFirst(() => List(lastNode),()=> myVRP.kFirst(n,relevantPredecessorsForLastNode), myVRP,neighborhoodName = "InsertLastOfChain")
 
   val oneChainInsert = {
     dynAndThen(firstNodeOfChainInsertion,
@@ -157,11 +157,12 @@ class VRPWithMultipleCapacity(n: Int, v: Int, c: Int, maxCapacityPerContentType:
 
   //val routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "InsertUF"))
 
-  val search = oneChainInsert exhaust oneChainMove exhaust onePtMove(20)
+
+  val search = oneChainInsert exhaustBack oneChainMove exhaustBack onePtMove(20) orElse onePtMove(80)
   println(search.getClass)
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
-  search.verbose = 0
+  search.verbose = 1
   //search.verboseWithExtraInfo(4, ()=> "" + myVRP)
 
   search.doAllMoves(obj=obj)

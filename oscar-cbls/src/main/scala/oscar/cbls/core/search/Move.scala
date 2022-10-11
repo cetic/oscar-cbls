@@ -267,12 +267,16 @@ class OverrideObj(initMove:Move, objAfter:Long, neighborhoodName:String = null)
 }
 
 case class DoNothingNeighborhood() extends Neighborhood with SupportForAndThenChaining[DoNothingMove]{
-  override val profiler: EmptyProfiler = new EmptyProfiler(this)
+  override val profiler: NeighborhoodProfiler = new NeighborhoodProfiler(this)
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+    profiler.explorationStarted()
+    profiler.neighborExplored()
     val objValue = obj.value
     if(acceptanceCriterion(objValue,objValue)){
+      profiler.explorationEnded(Some(0))
       MoveFound(DoNothingMove(objValue))
     }else{
+      profiler.explorationEnded(None)
       NoMoveFound
     }
   }

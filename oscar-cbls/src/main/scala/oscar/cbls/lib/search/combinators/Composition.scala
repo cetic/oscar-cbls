@@ -3,12 +3,7 @@ package oscar.cbls.lib.search.combinators
 import oscar.cbls._
 import oscar.cbls.core.computation.{AbstractVariable, Solution, Store}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{CallBackMove, CompositeMove, DoNothingMove, DoNothingNeighborhood, LoadSolutionMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NeighborhoodProfiler, NoMoveFound, Profiler, SearchResult, SupportForAndThenChaining}
-
-abstract class NeighborhoodCombinatorNoProfile(a: Neighborhood*) extends NeighborhoodCombinator(a:_*){
-  override def collectProfilingStatistics: List[Array[String]] = a.flatMap(_.collectProfilingStatistics).toList
-  override def resetStatistics(): Unit ={}
-}
+import oscar.cbls.core.search.{CallBackMove, CompositeMove, CompositionProfiler, DoNothingMove, DoNothingNeighborhood, LoadSolutionMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NeighborhoodProfiler, NoMoveFound, Profiler, SearchResult, SupportForAndThenChaining}
 
 object Mu {
 
@@ -42,7 +37,7 @@ object Mu {
                                  neighborhoodGenerator : (List[MoveType], X) => Option[(Neighborhood with SupportForAndThenChaining[MoveType], X)],
                                  x0 : X,
                                  maxDepth : Long,
-                                 intermediaryStops : Boolean): Neighborhood  with SupportForAndThenChaining[CompositeMove] = {
+                                 intermediaryStops : Boolean): ChainableName[CompositeMove] = {
     require(maxDepth >= 1L)
 
     def generateNextNeighborhood(oldMoves : List[MoveType], remainingDepth : Long, prevX : X)(newMove : MoveType):Neighborhood = {
@@ -127,12 +122,13 @@ case class AndThen[FirstMoveType<:Move](a: Neighborhood with SupportForAndThenCh
 class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChaining[FirstMoveType],
                                       b:FirstMoveType => Neighborhood,
                                       maximalIntermediaryDegradation: Long = Long.MaxValue)
-  extends NeighborhoodCombinatorNoProfile(a) with SupportForAndThenChaining[CompositeMove]{
+  extends  NeighborhoodCombinator(a) with SupportForAndThenChaining[CompositeMove]{
 
   //we need to store currentB here because we might need to instantiate the current move from it.
   var currentB:Neighborhood = null
 
-  override val profiler: NeighborhoodProfiler = new NeighborhoodProfiler(this)
+  override val profiler: CompositionProfiler = CompositionProfiler(this,a,() => currentB)
+  override def subNeighborhoods: List[Neighborhood] = if(currentB == null) List(a) else List(a,currentB)
 
   override def collectProfilingStatistics: List[Array[String]] = profiler.collectThisProfileStatistics
 
@@ -163,13 +159,13 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
 
       override def value: Long = {
 
-        val intermediaryObjValue =
+        val intermediaryObjValue = {
           if (maximalIntermediaryDegradation != Long.MaxValue) {
             //we need to ensure that intermediary step is admissible
             val intermediaryVal = obj.value
             val intermediaryDegradation = intermediaryVal - initialObj
             if (intermediaryDegradation > maximalIntermediaryDegradation) {
-              //this is a return; the first step is altogheter ignored
+              //this is a return; the first step is altogether ignored
               return Long.MaxValue //we do not consider this first step
             }else{
               intermediaryVal
@@ -177,10 +173,13 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
           }else{
             Long.MaxValue
           }
+        }
 
         //now, we need to check the other neighborhood
         //first, let's instantiate it:
         val currentMoveFromA = a.instantiateCurrentMove(intermediaryObjValue)
+        //val oldCurrentBProfiler = if(currentB != null)Some(currentB.profiler) else None
+        if(currentB != null)profiler.mergeDynProfiler(currentB.profiler)
         currentB = b(currentMoveFromA)
         currentB.verbose = 0 max a.verbose //passing verbosity to b, because b.verbose was not set when it was set of a
 
@@ -189,16 +188,15 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
           override def model : Store = obj.model
           override def value : Long = obj.value
         }
-
         currentB.getMove(new secondInstrumentedObjective(obj), initialObj, secondAcceptanceCriteria) match {
           case NoMoveFound =>
-            profiler.neighborExplored()
+            //profiler.addExploredMove()
             Long.MaxValue
           case MoveFound(m : Move) =>
             require(m.objAfter < bestObj)
             bestObj = m.objAfter
             toReturn = MoveFound(CompositeMove(List(a.instantiateCurrentMove(intermediaryObjValue),m),bestObj,"DynAndThen"))
-            profiler.neighborExplored()
+            //profiler.addExploredMove()
             bestObj
         }
       }
@@ -208,10 +206,10 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
 
     tmp match {
       case NoMoveFound =>
-        profiler.explorationEnded(None)
+        profiler.explorationEnded(false)
         NoMoveFound
       case MoveFound(m: Move) =>
-        profiler.explorationEnded(Some(initialObj-bestObj))
+        profiler.explorationEnded(true)
         require(m.objAfter == bestObj)
         toReturn
     }
@@ -232,7 +230,7 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
 case class DynAndThenWithPrev[FirstMoveType<:Move](x:Neighborhood with SupportForAndThenChaining[FirstMoveType],
                                                    b:(FirstMoveType,Solution) => Neighborhood,
                                                    maximalIntermediaryDegradation:Long = Long.MaxValue,
-                                                   valuesToSave:Iterable[AbstractVariable]) extends NeighborhoodCombinatorNoProfile(x){
+                                                   valuesToSave:Iterable[AbstractVariable]) extends NeighborhoodCombinator(x){
 
   val instrumentedA = new SnapShotOnEntry(x,valuesToSave) with SupportForAndThenChaining[FirstMoveType]{
     override def instantiateCurrentMove(newObj: Long): FirstMoveType = x.instantiateCurrentMove(newObj)

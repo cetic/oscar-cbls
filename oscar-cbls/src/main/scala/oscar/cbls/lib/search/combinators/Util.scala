@@ -62,6 +62,7 @@ class ShowObjectiveFunction(a: Neighborhood, obj: () => Long, title: String = "O
  * @param name the name
  */
 class Name(a: Neighborhood, val name: String) extends NeighborhoodCombinator(a) {
+  override val profiler: DummyCombinatorProfiler = new DummyCombinatorProfiler(this)
   /**
    * @param acceptanceCriterion oldObj,newObj => should the move to the newObj be kept (default is oldObj > newObj)
    *                            beware that a changing criteria might interact unexpectedly with stateful neighborhood combinators
@@ -93,6 +94,7 @@ class Name(a: Neighborhood, val name: String) extends NeighborhoodCombinator(a) 
  */
 class ChainableName[MoveType <: Move](a: Neighborhood with SupportForAndThenChaining[MoveType], val name: String)
   extends NeighborhoodCombinator(a) with SupportForAndThenChaining[MoveType]{
+  override val profiler: DummyCombinatorProfiler = new DummyCombinatorProfiler(this)
   /**
    * @param acceptanceCriterion oldObj,newObj => should the move to the newObj be kept (default is oldObj > newObj)
    *                            beware that a changing criteria might interact unexpectedly with stateful neighborhood combinators

@@ -1,6 +1,6 @@
 package oscar.cbls.visual.profiling
 
-import oscar.cbls.core.search.{Neighborhood, NeighborhoodCombinator, Profiler}
+import oscar.cbls.core.search.{CombinatorProfiler, Neighborhood, NeighborhoodCombinator, Profiler}
 import oscar.cbls.util.Properties
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualLine, VisualRectangle, VisualShape, VisualText}
@@ -27,20 +27,20 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
 
   var allProfilingNodes: List[ProfilingNode] = List.empty
 
-  def drawProfilerBoxes(currentNeighborhood: Neighborhood = search,
+  def drawProfilerBoxes(currentProfiler: Profiler = search.profiler,
                         parentRect: Option[ProfilingNode] = None,
                         depth: Int = 0): ProfilingNode = {
-    val isCombinator = currentNeighborhood match {
-      case _: NeighborhoodCombinator => true
+    val isCombinator = currentProfiler match {
+      case _: CombinatorProfiler => true
       case _ => false
     }
-    val profilingNode = ProfilingNode(currentNeighborhood, parentRect)
+    val profilingNode = ProfilingNode(currentProfiler, parentRect)
     profilingNode.draw(isCombinator)
     profilingNode.setVisible(parentRect.isEmpty)
     allProfilingNodes :+= profilingNode
 
     if (isCombinator) {
-      val children = currentNeighborhood.asInstanceOf[NeighborhoodCombinator].subNeighborhoods.map(child =>
+      val children = currentProfiler.subProfilers.map(child =>
         drawProfilerBoxes(child, Some(profilingNode), depth + 1))
       profilingNode.addChildren(children)
     }
@@ -131,7 +131,7 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
   }
 
 
-  case class ProfilingNode(value: Neighborhood, parent: Option[ProfilingNode]){
+  case class ProfilingNode(profiler: Profiler, parent: Option[ProfilingNode]){
 
     private var _visible = false
     private var _row = 0
@@ -157,8 +157,8 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
     def draw(isCombinator: Boolean): Unit ={
       val x = depth*WIDTH_BETWEEN_PROFILERS
       val y = 0
-      val name: String = value.profiler.profiledNeighborhood
-      val statistics: String = Properties.justifyLeftArray(value.profiler.collectThisProfileStatistics).mkString("\n")
+      val name: String = profiler.profiledNeighborhood
+      val statistics: String = Properties.justifyLeftArray(profiler.collectThisProfileStatistics).mkString("\n")
 
       val header = new VisualText(drawing,x,y,name,false)
       header.move(header.getBounds._1+TEXT_PADDING, header.getBounds._3+header.font.getSize+TEXT_PADDING)
