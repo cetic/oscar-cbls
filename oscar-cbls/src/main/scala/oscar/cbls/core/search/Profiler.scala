@@ -81,8 +81,6 @@ abstract class Profiler(val neighborhood:Neighborhood){
   //        Especially when dealing with MU with no fixed depth.
   def merge(profiler: Profiler): Unit
 
-  def importProfiler(profiler: Profiler): Boolean
-
   override def toString: String = s"Profile(${neighborhood.toString})\nTOTAL : $totalBpd\nCURRENT : $bpd"
   def profiledNeighborhood: String = neighborhood.getClass.getSimpleName
 }
@@ -93,7 +91,6 @@ class EmptyProfiler(neighborhood: Neighborhood) extends Profiler(neighborhood) {
   override def collectThisProfileData: Array[String] = Array.empty
   // Nothing to do
   override def resetThisStatistics(): Unit = {}
-  override def importProfiler(profiler: Profiler): Boolean = profiler.isInstanceOf[EmptyProfiler]
   override def merge(profiler: Profiler): Unit = {}
 }
 
@@ -104,15 +101,6 @@ class EmptyProfiler(neighborhood: Neighborhood) extends Profiler(neighborhood) {
 class NeighborhoodProfiler(neighborhood: Neighborhood) extends Profiler(neighborhood) {
 
   var startExplorationAtMillis: Long = 0L
-
-  override def importProfiler(profiler: Profiler): Boolean ={
-    profiler match {
-      case p: NeighborhoodProfiler =>
-        merge(p)
-        true
-      case _ => false
-    }
-  }
 
 
   def gainPerCall:String = if(totalBpd.nbCalls ==0L) "NA" else s"${totalBpd.gain / totalBpd.nbCalls}"
@@ -183,16 +171,6 @@ class NeighborhoodProfiler(neighborhood: Neighborhood) extends Profiler(neighbor
 
 class CombinatorProfiler(val combinator: NeighborhoodCombinator) extends Profiler(combinator) {
 
-  override def importProfiler(profiler: Profiler): Boolean = {
-    profiler match {
-      case p: CombinatorProfiler =>
-        merge(p)
-        true
-      case _ =>
-        false
-    }
-  }
-
   var explorationStartAt: Long = 0L
 
   override def subProfilers: List[Profiler] = combinator.subNeighborhoods.map(_.profiler)
@@ -253,17 +231,6 @@ class SelectionProfiler(combinator: NeighborhoodCombinator, val neighborhoods: L
           s"${neighborhoodUsage(pi)}",
           s"${neighborhoodSuccess(pi)}")
         )
-
-  override def importProfiler(profiler: Profiler): Boolean = {
-    super.importProfiler(profiler) && (profiler match {
-      case p: SelectionProfiler =>
-        if (neighborhoods.size == p.neighborhoods.size && !neighborhoods.zip(p.neighborhoods).exists(i => i._1.getClass != i._2.getClass)) {
-          for(i <- neighborhoods.indices) neighborhoods(i).profiler.merge(p.neighborhoods(i).profiler)
-          true
-        } else
-          false
-    })
-  }
 
   ///////////////////////////////////////
   // Selection-Neighborhood management //
