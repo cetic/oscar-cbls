@@ -87,7 +87,10 @@ abstract class Profiler(val neighborhood:Neighborhood){
 
 class EmptyProfiler(neighborhood: Neighborhood) extends Profiler(neighborhood) {
   override def subProfilers: List[Profiler] = List.empty
-  override def collectThisProfileHeader: Array[String] = Array.empty
+  override def collectThisProfileHeader: Array[String] = {
+    println("CHEH")
+    Array.empty
+  }
   override def collectThisProfileData: Array[String] = Array.empty
   // Nothing to do
   override def resetThisStatistics(): Unit = {}
@@ -236,15 +239,9 @@ class SelectionProfiler(combinator: NeighborhoodCombinator, val neighborhoods: L
   // Selection-Neighborhood management //
   ///////////////////////////////////////
 
-  // TODO changer ça, on peut avoir n'importe quoi comme voisinage pas nécessairement un voisinage simple
-  val profilers: Array[NeighborhoodProfiler] = neighborhoods.map(_.profiler.asInstanceOf[NeighborhoodProfiler]).toArray
+  val profilers: Array[Profiler] = neighborhoods.map(_.profiler).toArray
 
   def totalTimeSpentSubN(i: Int): Long = profilers(i).totalBpd.timeSpent
-
-  def subExplorationStarted(neighborhoodId: Int): Unit = profilers(neighborhoodId).explorationStarted()
-  def subExplorationEnded(neighborhoodId: Int, gain: Option[Long]): Unit = {
-    profilers(neighborhoodId).explorationEnded(gain)
-  }
 
   def neighborhoodUsage(neighborhoodId: Int): Double =
     ((profilers(neighborhoodId).totalBpd.nbFound.toDouble/profilers.map(_.totalBpd.nbFound).sum)*10000).round/100.0

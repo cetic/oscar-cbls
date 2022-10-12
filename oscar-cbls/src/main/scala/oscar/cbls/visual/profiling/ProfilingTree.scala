@@ -2,6 +2,7 @@ package oscar.cbls.visual.profiling
 
 import oscar.cbls.core.search.{CombinatorProfiler, Neighborhood, NeighborhoodCombinator, Profiler}
 import oscar.cbls.util.Properties
+import oscar.cbls.visual.ScrollableVisualDrawing
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualLine, VisualRectangle, VisualShape, VisualText}
 
@@ -9,7 +10,8 @@ import java.awt.{Color, Font}
 import java.awt.event.{MouseEvent, MouseListener, MouseMotionListener}
 import javax.swing.{JScrollBar, SwingUtilities}
 
-class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
+
+class ProfilingTree(search: Neighborhood) extends ScrollableVisualDrawing(false,false) {
 
   private val PROFILER_HEIGHT = 40
   private val HEIGHT_BETWEEN_PROFILERS = 10
@@ -47,11 +49,10 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
     profilingNode
   }
 
-  def resize(): Unit ={
+  override def resize(): Unit ={
     val bounds = this.findBounds(this.shapes)
     this.setPreferredSize(new java.awt.Dimension((scale*bounds._2).toInt,(scale*bounds._4).toInt))
-    this.repaint()
-    this.revalidate()
+    super.resize()
   }
 
   this.getMouseListeners.foreach(this.removeMouseListener)
@@ -92,11 +93,11 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
   private def displayToolTip(text: String): Unit = this.showToolTip(text)
 
   def draw(): Unit ={
-    resize()
     drawProfilerBoxes()
     allProfilingNodes.foreach(_.drawLinks(this))
     allProfilingNodes.foreach(_.moveStatRight(shapes.filter(_.isInstanceOf[VisualRectangle]).map(_.getBounds._2).max))
     allProfilingNodes.find(_.parent.isEmpty).get.recursiveExpand()
+    resize()
   }
 
   case class ProfilingNodeDisplay(rectangle: VisualRectangle, header: VisualText,
@@ -104,7 +105,7 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
 
     private val headerTxt = header.text
     private val statisticsTxt = statistics.text
-    private var _links: List[VisualLine] = List.empty
+    var _links: List[VisualLine] = List.empty
 
     def setVisible(visible: Boolean): Unit ={
       rectangle.visible = visible
@@ -119,10 +120,10 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
       val parentYPos = (PROFILER_HEIGHT+HEIGHT_BETWEEN_PROFILERS)*parentRow
 
       // Moving artifacts
-      rectangle.move(rectangle.x, rectangle.y+moveDownBy)
-      header.move(header.getBounds._1, header.getBounds._3+moveDownBy)
-      statistics.move(statistics.getBounds._1, statistics.getBounds._3+moveDownBy)
-      _links.foreach(l => l.move(0,moveDownBy))
+      rectangle.moveAt(rectangle.x, rectangle.y+moveDownBy)
+      header.moveAt(header.getBounds._1, header.getBounds._3+moveDownBy)
+      statistics.moveAt(statistics.getBounds._1, statistics.getBounds._3+moveDownBy)
+      _links.foreach(l => l.translate(0,moveDownBy))
       // Extending (or retracting) vertical VisualLine
       _links.head.orig = (_links.head.orig._1,parentYPos+PROFILER_HEIGHT)
     }
@@ -161,7 +162,7 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
       val statistics: String = Properties.justifyLeftArray(profiler.collectThisProfileStatistics).mkString("\n")
 
       val header = new VisualText(drawing,x,y,name,false)
-      header.move(header.getBounds._1+TEXT_PADDING, header.getBounds._3+header.font.getSize+TEXT_PADDING)
+      header.moveAt(header.getBounds._1+TEXT_PADDING, header.getBounds._3+header.font.getSize+TEXT_PADDING)
       header.setFont(new Font(Font.MONOSPACED, Font.BOLD, header.font.getSize))
       val rectangleWidth = 1.5*(header.fm.stringWidth(name)+2*TEXT_PADDING)
 
@@ -174,7 +175,7 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
       shapes.addOne(header)
 
       val text = new VisualText(drawing,x+rectangleWidth.toInt,y,statistics)
-      text.move(text.getBounds._1+TEXT_PADDING, text.getBounds._3+text.font.getSize+TEXT_PADDING)
+      text.moveAt(text.getBounds._1+TEXT_PADDING, text.getBounds._3+text.font.getSize+TEXT_PADDING)
       text.setFont(new Font(Font.MONOSPACED, Font.BOLD, text.font.getSize))
       text.fontColor = if(isCombinator)combinatorTextColor else neighborhoodTextColor
 
@@ -252,7 +253,7 @@ class ProfilingTree(search: Neighborhood) extends VisualDrawing(false,false) {
     }
 
     def moveStatRight(at: Long): Unit ={
-      nodeDisplay.statistics.move(at+TEXT_PADDING,nodeDisplay.statistics.font.getSize+TEXT_PADDING)
+      nodeDisplay.statistics.moveAt(at+TEXT_PADDING,nodeDisplay.statistics.font.getSize+TEXT_PADDING)
     }
 
     override def toString: String = nodeDisplay.header.text

@@ -47,7 +47,7 @@ class VisualGanttChart(starts: Array[CPIntVar], durations: Array[CPIntVar], ends
       rectangles(i).width = durations(i).max * xScale
       rectangles(i).height = yScale
 
-      rectangles(i).move(starts(i).min * xScale, f(i) * yScale)
+      rectangles(i).moveAt(starts(i).min * xScale, f(i) * yScale)
 
       rectangles(i).innerCol = colors(i)
     }
@@ -58,7 +58,7 @@ class VisualGanttChart(starts: Array[CPIntVar], durations: Array[CPIntVar], ends
     makespanLine.dest = (makespan * xScale, (max + 1) * yScale)
 
     text.text = makespan.toString
-    text.move(makespan * xScale, (max + 2) * yScale)
+    text.moveAt(makespan * xScale, (max + 2) * yScale)
     repaint()
   }
 

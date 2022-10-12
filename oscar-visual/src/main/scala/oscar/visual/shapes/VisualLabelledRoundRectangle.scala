@@ -37,7 +37,7 @@ class VisualLabelledRoundRectangle(d: VisualDrawing,
   shape.height = (textDraw.nLines * d.getFontMetrics(d.getFont).getHeight) + marginWidth * 2
   shape.width = getWidth(label)
   
-  textDraw.move(xText, yText)
+  textDraw.translate(xText, yText)
 
   def this(d: VisualDrawing, x: Double, y: Double, label: String, marginWidth: Double, arcw: Double, arch: Double) = {
     this(d, new RoundRectangle2D.Double(x,
@@ -66,14 +66,19 @@ class VisualLabelledRoundRectangle(d: VisualDrawing,
    */
   def yText: Int = (y + marginWidth + d.getFontMetrics(d.getFont).getHeight).toInt
 
+  override def moveAt(x: Double, y: Double): Unit = {
+    super.moveAt(x, y)
+    textDraw.moveAt(x, y)
+  }
+
   /**
    * Move the specified left corner
    * @param x X coordinate
    * @param y Y coordinate
    */
-  override def move(x: Double, y: Double): Unit = {
-    super.move(x, y)
-    textDraw.move(xText, yText)
+  override def translate(x: Double, y: Double): Unit = {
+    super.translate(x, y)
+    textDraw.translate(xText, yText)
   }
 
   def getWidth(newLabel: String): Double = {
@@ -99,10 +104,10 @@ object VisualLabelledRoundRectangle {
     rect.innerCol = Color.red
     rect.textDraw.innerCol = Color.BLUE
     Thread.sleep(1000)
-    rect.move(100, 20)
+    rect.translate(100, 20)
     for (_ <- 0 until 20) {
       Thread.sleep(50)
-      rect.move(rect.x + 5, rect.y)
+      rect.translate(rect.x + 5, rect.y)
     }
   }
 }

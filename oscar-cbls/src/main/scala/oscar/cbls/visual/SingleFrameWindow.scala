@@ -3,9 +3,8 @@ package oscar.cbls.visual
 import java.awt.image.BufferedImage
 import java.awt.{BorderLayout, Dimension}
 import java.io.File
-
 import javax.imageio.ImageIO
-import javax.swing.{JFrame, JPanel}
+import javax.swing.{JFrame, JPanel, JScrollPane}
 
 object SingleFrameWindow{
   def show(panel:JPanel, title:String, width:Int = 960, height:Int = 960, backgroundPanel: Option[JPanel] = None):SingleFrameWindow = {

@@ -55,7 +55,7 @@ object VisualToolBar{
 		  rect.toolTip_$eq("Hello")
 		  
 		  tb.addButton("make it move",{
-			  rect.move(100, 20)
+			  rect.translate(100, 20)
 		  })
 		})		
 	}

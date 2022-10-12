@@ -30,7 +30,7 @@ class VisualStateResource(starts: Array[CPIntVar], durations: Array[CPIntVar], e
       if (stateNeeded(sortedActivitiesNeedingStateIndex(i)) != curState) {
         val rect = VisualRoundRectangle(this, 0, 0, (starts(sortedActivitiesNeedingStateIndex(i)).min - startTimeState) * xScale, yScale, 3, 3)
         rect.innerCol = colors(curState)
-        rect.move(startTimeState * xScale, curState * yScale)
+        rect.moveAt(startTimeState * xScale, curState * yScale)
         rectangles ::= rect
         curState = stateNeeded(sortedActivitiesNeedingStateIndex(i))
         startTimeState = starts(sortedActivitiesNeedingStateIndex(i)).min
@@ -39,7 +39,7 @@ class VisualStateResource(starts: Array[CPIntVar], durations: Array[CPIntVar], e
 
     val rect = VisualRoundRectangle(this, 0, 0, (ends(sortedActivitiesNeedingStateIndex(sortedActivitiesNeedingStateIndex.length - 1)).min - starts(sortedActivitiesNeedingStateIndex(sortedActivitiesNeedingStateIndex.length - 1)).min) * xScale, yScale, 3, 3)
     rect.innerCol = colors(stateNeeded(sortedActivitiesNeedingStateIndex(sortedActivitiesNeedingStateIndex.length - 1)))
-    rect.move(starts(sortedActivitiesNeedingStateIndex(sortedActivitiesNeedingStateIndex.length - 1)).min * xScale, stateNeeded(sortedActivitiesNeedingStateIndex(sortedActivitiesNeedingStateIndex.length - 1)) * yScale)
+    rect.moveAt(starts(sortedActivitiesNeedingStateIndex(sortedActivitiesNeedingStateIndex.length - 1)).min * xScale, stateNeeded(sortedActivitiesNeedingStateIndex(sortedActivitiesNeedingStateIndex.length - 1)) * yScale)
     rectangles ::= rect
 
     repaint()

@@ -45,7 +45,7 @@ class VisualLabelledBranch(d: VisualDrawing, shapes: (VisualLine, VisualLine, Vi
     branch._2.dest_=(xdest, (ydest + 2 * yorig) / 3)
     branch._3.orig_=(xdest, (ydest + 2 * yorig) / 3)
     branch._3.dest_=(xdest, ydest)
-    branch._4.move(xText, yText)
+    branch._4.translate(xText, yText)
   }
   
   /**

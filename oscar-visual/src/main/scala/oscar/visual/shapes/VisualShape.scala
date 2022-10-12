@@ -149,7 +149,9 @@ abstract class VisualShape(protected val drawing: VisualDrawing) {
     (xMin, xMax, yMin, yMax)
   }
 
-  def move(x: Double, y: Double): Unit
+  def moveAt(x: Double, y: Double): Unit
+
+  def translate(x: Double, y: Double): Unit
 }
 
 

@@ -82,8 +82,8 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
     val nbNodes = rectangleShapes.length
     (0 until nbNodes).foreach(id => {
       val coord = graph.coordinates(id)
-      rectangleShapes(id).move(coord._1 * xMultiplier - side / 2,coord._2 * yMultiplier - side / 2)
-      circleShape(id).foreach(_.move(coord._1 * xMultiplier,coord._2 * yMultiplier))
+      rectangleShapes(id).moveAt(coord._1 * xMultiplier - side / 2,coord._2 * yMultiplier - side / 2)
+      circleShape(id).foreach(_.moveAt(coord._1 * xMultiplier,coord._2 * yMultiplier))
     })
     graph.edges.indices.foreach(id => {
       val coordA = graph.coordinates(graph.edges(id).nodeA.id)
@@ -199,7 +199,7 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
       //rectangle
       val side = 12
       val tempPoint = rectangleShapes(nodeId)
-      tempPoint.move(nodeCoordinates._1 * xMultiplier - side/2,
+      tempPoint.moveAt(nodeCoordinates._1 * xMultiplier - side/2,
         nodeCoordinates._2 * yMultiplier - side/2)
       tempPoint.visible_=(true)
       tempPoint.innerCol_$eq(color)
@@ -209,7 +209,7 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
         //circle
 
         val circle = circleShape(nodeId)(index)
-        circle.move(nodeCoordinates._1 * xMultiplier,
+        circle.moveAt(nodeCoordinates._1 * xMultiplier,
           nodeCoordinates._2 * yMultiplier)
         circle.visible_=(true)
         circle.innerCol_$eq(color)
@@ -239,7 +239,7 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
         lineV.toolTip = s"Node(id:$nodeId transit:false)"
         lineH.toolTip = s"Node(id:$nodeId transit:false)"
         val circle = circleShape(nodeId)(index)
-        circle.move(nodeCoordinates._1 * xMultiplier,nodeCoordinates._2 * yMultiplier)
+        circle.moveAt(nodeCoordinates._1 * xMultiplier,nodeCoordinates._2 * yMultiplier)
         circle.visible_=(true)
         circle.border = false
         circle.innerCol_=(color)

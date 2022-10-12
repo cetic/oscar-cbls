@@ -50,12 +50,22 @@ class VisualRectangle(d: VisualDrawing, s: Rectangle2D.Double) extends VisualSha
   def y: Double = rect.getY
 
   /**
-   * Move the specified left corner
+   * Move the specified left corner at the given position
    * @param x X coordinate
    * @param y Y coordinate
    */
-  def move(x: Double, y: Double): Unit = {
+  def moveAt(x: Double, y: Double): Unit = {
     rect.setRect(x, y, width, height)
+    drawing.repaint()
+  }
+
+  /**
+   * Translate the specified left corner
+   * @param x X coordinate
+   * @param y Y coordinate
+   */
+  def translate(x: Double, y: Double): Unit = {
+    rect.setRect(rect.x+x, rect.y+y, width, height)
     drawing.repaint()
   }
 

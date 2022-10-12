@@ -8,6 +8,12 @@ import oscar.cbls.business.routing.model.helpers.DistanceHelper
 import oscar.cbls.business.routing._
 import oscar.cbls.core.search.Best
 import oscar.cbls.lib.constraint.EQ
+<<<<<<< HEAD
+=======
+import oscar.cbls._
+import oscar.cbls.visual.SingleFrameWindow
+import oscar.cbls.visual.profiling.ProfilingTree
+>>>>>>> 8f7ae7148... Add an extension of visualDrawing, adding automatically scrollbars when shapes are outside visual. + fix a method with two different behaviour depending on which class extends it
 
 import scala.collection.immutable.HashSet
 
@@ -235,8 +241,11 @@ object SimpleVRPWithTimeWindow extends App {
   //search.verboseWithExtraInfo(2, ()=> "" + myVRP)
 
 
-
   search.doAllMoves(obj = obj)
+
+  val profilingTree = new ProfilingTree(search)
+  SingleFrameWindow.show(profilingTree, "VRPTW - Profiling")
+  profilingTree.draw()
 
   println(myVRP)
 

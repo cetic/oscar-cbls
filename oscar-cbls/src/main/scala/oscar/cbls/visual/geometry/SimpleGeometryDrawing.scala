@@ -41,7 +41,9 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
 
   class VisualShapeConcrete(d: VisualDrawing, s: Shape) extends VisualShape(d) {
 
-    override def move(x: Double, y: Double): Unit = {}
+    override def moveAt(x: Double, y: Double): Unit = {}
+
+    override def translate(x: Double, y: Double): Unit = {}
 
     type S = Shape
     protected val shape = s

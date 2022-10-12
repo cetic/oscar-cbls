@@ -73,15 +73,12 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
     while(!neighborhoodHeap.isEmpty){
       val headID = neighborhoodHeap.getFirst
       val headNeighborhood = neighborhoodArray(headID)
-      profiler.subExplorationStarted(headID)
       headNeighborhood.getMove(obj,initialObj, acceptanceCriterion) match{
         case NoMoveFound =>
           if(neighborhoodHeap.size == l.size) profiler.firstFailed()
           makeTabu(headID)
-          profiler.subExplorationEnded(headID,None)
         case MoveFound(m) =>
           neighborhoodHeap.notifyChange(headID)
-          profiler.subExplorationEnded(headID,Some(initialObj-m.objAfter))
           profiler.explorationEnded(true)
           return MoveFound(m)
       }
@@ -205,17 +202,17 @@ class RoundRobin(robins: Array[(Neighborhood,Int)], tabu:Int = 1)
       }
 
       //explore current robin
-      profiler.subExplorationStarted(currentRobin)
+      //profiler.subExplorationStarted(currentRobin)
       robins(currentRobin)._1.getMove(obj, initialObj:Long, acceptanceCriteria) match {
         case NoMoveFound =>
-          profiler.subExplorationEnded(currentRobin, None)
+          //profiler.subExplorationEnded(currentRobin, None)
           if(firstFailedRobinInRow == -1) firstFailedRobinInRow = currentRobin
           nbExplorationsOnCurrentRobin = robins(currentRobin)._2
           cycleOfLastFail(currentRobin) = currentCycleNr
         //iterate, simply
         case x: MoveFound =>
           profiler.explorationEnded(true)
-          profiler.subExplorationEnded(currentRobin,Some(initialObj - x.objAfter))
+          //profiler.subExplorationEnded(currentRobin,Some(initialObj - x.objAfter))
           firstFailedRobinInRow = -1
           nbExplorationsOnCurrentRobin += 1
           return x
@@ -261,14 +258,11 @@ class RandomCombinator(a: Neighborhood*) extends NeighborhoodCombinator(a:_*) {
     val neighborhoodsIterator = r.shuffle(neighborhoods).iterator
     while (neighborhoodsIterator.hasNext) {
       val current = neighborhoodsIterator.next()
-      profiler.subExplorationStarted(a.indexOf(current))
       current.getMove(obj, initialObj, acceptanceCriteria) match {
         case m: MoveFound =>
-          profiler.subExplorationEnded(a.indexOf(current),Some(initialObj - m.objAfter))
           profiler.explorationEnded(true)
           return m
         case _ =>
-          profiler.subExplorationEnded(a.indexOf(current), None);
       }
     }
     profiler.explorationEnded(false)
