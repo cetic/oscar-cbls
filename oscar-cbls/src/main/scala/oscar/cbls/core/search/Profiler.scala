@@ -122,6 +122,7 @@ class NeighborhoodProfiler(neighborhood: Neighborhood) extends Profiler(neighbor
 
   override def collectThisProfileData:Array[String] =
     {
+      if(this.neighborhood.toString.contains("DoNothing"))println(s"Collecting found : ${totalBpd.nbFound}")
       Array[String](s"${neighborhood}",
         s"${totalBpd.nbCalls}", s"${totalBpd.nbFound}", s"${totalBpd.nbExplored}",
         s"${totalBpd.gain}", s"${totalBpd.timeSpent}", s"$gainPerCall", s"$callDuration", s"$slope",

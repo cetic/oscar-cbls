@@ -2,7 +2,7 @@ package oscar.cbls.visual.profiling
 
 import oscar.cbls.core.search.{CombinatorProfiler, Neighborhood, NeighborhoodCombinator, Profiler}
 import oscar.cbls.util.Properties
-import oscar.cbls.visual.ScrollableVisualDrawing
+import oscar.cbls.visual.BetterVisualDrawing
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualLine, VisualRectangle, VisualShape, VisualText}
 
@@ -10,8 +10,7 @@ import java.awt.{Color, Font}
 import java.awt.event.{MouseEvent, MouseListener, MouseMotionListener}
 import javax.swing.{JScrollBar, SwingUtilities}
 
-
-class ProfilingTree(search: Neighborhood) extends ScrollableVisualDrawing(false,false) {
+class ProfilingTree(search: Neighborhood) extends BetterVisualDrawing(false,false) {
 
   private val PROFILER_HEIGHT = 40
   private val HEIGHT_BETWEEN_PROFILERS = 10
@@ -55,20 +54,14 @@ class ProfilingTree(search: Neighborhood) extends ScrollableVisualDrawing(false,
     super.resize()
   }
 
-  this.getMouseListeners.foreach(this.removeMouseListener)
   this.addMouseListener(new MouseListener() {
     override def mouseClicked(e: MouseEvent): Unit = {
       val clickedProfilingNodes = allProfilingNodes.filter(_.contains(e.getX, e.getY))
-      if (SwingUtilities.isRightMouseButton(e)) {
-        scale = scale*(0.9)
-      }
-      if (SwingUtilities.isLeftMouseButton(e)) {
-        if (e.getClickCount == 2) {
-          if(clickedProfilingNodes.nonEmpty)
-            clickedProfilingNodes.foreach(pn => if(pn.isCollapsed) pn.recursiveExpand() else pn.collapse())
-          else
-            scale = scale*(1.1)
-        }
+      if(clickedProfilingNodes.nonEmpty){
+        if (SwingUtilities.isRightMouseButton(e))
+          clickedProfilingNodes.foreach(pn => if(!pn.isCollapsed) pn.collapse())
+        if (SwingUtilities.isLeftMouseButton(e))
+          clickedProfilingNodes.foreach(pn => if(pn.isCollapsed) pn.recursiveExpand())
       }
       resize()
     }
