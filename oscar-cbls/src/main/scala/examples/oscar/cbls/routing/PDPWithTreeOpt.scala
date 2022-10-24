@@ -1,4 +1,4 @@
-package examples.oscar.cbls.routing
+/*package examples.oscar.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.algo.generator.RoutingMatrixGenerator
@@ -167,12 +167,12 @@ object PDPWithTreeOpt extends App {
     val toVehicle = move.toVehicle
     val pickupPointsRelatedToMovedDeliveryPoints:List[Int] = ???
 
-    Mu(firstNeighborhood = DoNothingNeighborhood(),
+    mu(firstNeighborhood = DoNothingNeighborhood(),
       x0 = pickupPointsRelatedToMovedDeliveryPoints,
-      neighborhoodGenerator = {case (_:Any,pickupPointsToMove:List[Int]) =>
+      neighborhoodGenerator = {case (_,pickupPointsToMove) =>
         pickupPointsToMove match{
           case Nil => None
-          case pickupPoint::t => Some((movePickupPointToVehicle(pickupPoint,toVehicle),t))
+          case (pickupPoint:Int)::(t:List[Int]) => Some((???(pickupPoint,toVehicle),t))
         }
       },
       maxDepth = Long.MaxValue,
@@ -194,3 +194,4 @@ object PDPWithTreeOpt extends App {
 
   search.profilingStatistics
 }
+*/
