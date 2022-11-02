@@ -153,7 +153,7 @@ object SchedulingBigExampleDistributed {
       println(s"Scheduling sequence = ${scProblem.activityPriorityList.value.toList}")
       println("Scheduling start times = [  ")
       for {a <- actPriorList} {
-        val startTimeA = scProblem.startTimes(a.toInt).value
+        val startTimeA = scProblem.startTimes(a).value
         val durationA = durations(a)
         println(s"    Activity $a : Start Time = $startTimeA : Duration : $durationA")
       }

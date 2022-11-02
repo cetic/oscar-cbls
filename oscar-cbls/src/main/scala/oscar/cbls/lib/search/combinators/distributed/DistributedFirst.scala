@@ -5,7 +5,7 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.util.Timeout
 import oscar.cbls.core.distrib.{CancelSearchToSupervisor, DelegateSearch, GetNewUniqueID, IndependentMoveFound, IndependentNoMoveFound, IndependentSearchResult, IndependentSolution, RemoteTaskIdentification, SearchAborted, SearchCompleted, SearchCrashed, SearchEnded, SingleMoveSearch}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
+import oscar.cbls.core.search.{AcceptanceCriterion, DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
 
 import scala.concurrent.{Await, Future, Promise}
 import scala.concurrent.duration.{Duration, DurationInt}
@@ -14,7 +14,9 @@ import scala.util.{Failure, Random, Success}
 class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean = false)
   extends DistributedCombinator(neighborhoods) {
 
-  override def getMove(obj: Objective, initialObj: Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
 
     val independentObj = obj.getIndependentObj
     val startSol = Some(IndependentSolution(obj.model.solution()))
@@ -34,8 +36,8 @@ class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean =
     supervisor.spawnNewActor(Behaviors.setup { context:ActorContext[WrappedData] => {
       //starting up all searches
       for (r <- Random.shuffle(remoteNeighborhoodIdentifications.toList)){
-        context.ask[GetNewUniqueID,Long](supervisor.supervisorActor,ref => GetNewUniqueID(ref)) {
-          case Success(uniqueID:Long) => WrappedGotUniqueID(uniqueID:Long,r)
+        context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
+          case Success(uniqueID) => WrappedGotUniqueID(uniqueID, r)
           case Failure(ex) => WrappedError(msg=Some(s"Supervisor actor timeout : ${ex.getMessage}"))
         }
       }
@@ -69,8 +71,7 @@ class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean =
 
               case SearchAborted(_) =>
                 //ignore it.
-                next(runningSearchIDs = runningSearchIDs,
-                  nbFinishedSearches = nbFinishedSearches + 1)
+                next(runningSearchIDs = runningSearchIDs, nbFinishedSearches = nbFinishedSearches + 1)
 
               case _: SearchCrashed =>
                 for (r <- runningSearchIDs) {
@@ -87,7 +88,7 @@ class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean =
                 SingleMoveSearch(
                   uniqueSearchId = uniqueId,
                   remoteTaskId = remoteNeighborhoodIdentification,
-                  acc = acceptanceCriteria,
+                  acceptanceCriterion = acceptanceCriteria,
                   obj = independentObj,
                   startSolutionOpt = startSol,
                   sendResultTo = ref

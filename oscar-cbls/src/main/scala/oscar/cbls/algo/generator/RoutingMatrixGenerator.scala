@@ -29,7 +29,7 @@ object RoutingMatrixGenerator {
 
   /**
     * This method generate a random distance matrix based on numbers of node and map side.
-    * It also generate an array of node positions. (Usefull when you want to display it on a map)
+    * It also generate an array of node positions. (Useful when you want to display it on a map)
     * @param n The number of nodes (considering depots)
     * @param side The side of the map
     * @return The distance matrix (Array[Array[Long] ] and the position of each node (Array[(Long,Long)])

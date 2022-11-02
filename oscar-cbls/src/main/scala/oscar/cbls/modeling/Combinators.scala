@@ -2,7 +2,7 @@ package oscar.cbls.modeling
 
 import oscar.cbls.core.computation.{AbstractVariable, Solution}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{JumpNeighborhood, Move, Neighborhood, NoMoveNeighborhood, SupportForAndThenChaining}
+import oscar.cbls.core.search.{AcceptAll, AcceptanceCriterion, DifferentOf, JumpNeighborhood, Move, Neighborhood, NoMoveNeighborhood, SupportForAndThenChaining}
 import oscar.cbls.lib.search.combinators._
 
 import scala.concurrent.duration.{Duration, DurationInt}
@@ -662,22 +662,23 @@ class NeighborhoodOps(n:Neighborhood){
    *
    * @param overridingAcceptanceCriterion the acceptance criterion that is used instead of the one given to the overall sear
    */
-  def withAcceptanceCriterion(overridingAcceptanceCriterion: (Long, Long) => Boolean) = new WithAcceptanceCriterion(n, overridingAcceptanceCriterion)
+  def withAcceptanceCriterion(overridingAcceptanceCriterion: AcceptanceCriterion) =
+    new WithAcceptanceCriterion(n, overridingAcceptanceCriterion)
 
   /**
-   * this combinator overrides accepts all moves (this is the withAcceptanceCriteria, given the fully acceptant criterion
+   * this combinator overrides accepts all moves (this is the withAcceptanceCriteria, given the fully acceptance criterion
    */
-  def acceptAll() = new WithAcceptanceCriterion(n, (_: Long, _: Long) => true)
+  def acceptAll() = new WithAcceptanceCriterion(n, AcceptAll)
 
   /**
-   * this combinator overrides accepts all moves (this is the withAcceptanceCriteria, given the fully acceptant criterion
+   * this combinator overrides accepts all moves (this is the withAcceptanceCriteria, given the fully acceptance criterion
    */
-  def acceptAllButStrongViolation = new WithAcceptanceCriterion(n, (_: Long, n: Long) => n!=Long.MaxValue)
+  def acceptAllButStrongViolation = new WithAcceptanceCriterion(n, DifferentOf(Long.MaxValue))
 
   /**
    * this combinator accept only moves that strictly improve over the best known
    */
-  def improvingOverBestKnown(bestKnown:() => Long) = new StrictlyImproveOverBestKnown(n: Neighborhood,bestKnown)
+  def improvingOverBestKnown(bestKnown:() => Long) = new StrictlyImproveOverBestKnown(n: Neighborhood, bestKnown)
 
 
   /**
@@ -767,7 +768,9 @@ class NeighborhoodOps(n:Neighborhood){
    * @param timePeriodInMilliSecond defines teh time period for the cut
    * @param minRelativeImprovementByCut the relative improvement over obj
    */
-  def cutTail(timePeriodInMilliSecond:Long,minRelativeImprovementByCut:Double,minTimeBeforeFirstCutInMilliSecond:Long = 0) =
+  def cutTail(timePeriodInMilliSecond: Long,
+              minRelativeImprovementByCut: Double,
+              minTimeBeforeFirstCutInMilliSecond: Long = 0) =
     new CutTail(n, timePeriodInMilliSecond,minRelativeImprovementByCut,minTimeBeforeFirstCutInMilliSecond)
 
 

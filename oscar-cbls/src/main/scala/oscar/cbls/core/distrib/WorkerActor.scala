@@ -13,18 +13,18 @@ import scala.concurrent.{ExecutionContext, Future}
 sealed trait MessageToWorker
 final case class StartSearch(search: SearchRequest,
                              startID: Long,
-                             replyTo: ActorRef[MessagesToSupervisor]) extends MessageToWorker
+                             replyTo: ActorRef[MessageToSupervisor]) extends MessageToWorker
 final case class AbortSearch(searchId: Long,
-                             keepAliveIfOjBelow:Option[Long] = None) extends MessageToWorker
-final case class WrappedSearchEnded(searchId:Long) extends MessageToWorker
-case object ShutDownWorker extends MessageToWorker
+                             keepAliveIfObjBelow: Option[Long] = None) extends MessageToWorker
+final case class WrappedSearchEnded(searchId: Long) extends MessageToWorker
+case object ShutdownWorker extends MessageToWorker
 final case class Ping(replyTo: ActorRef[ExternalWorkerState]) extends MessageToWorker
-final case class GetStatisticsFor(neighborhood:RemoteTaskIdentification,
-                                  indice:Int,
+final case class GetStatisticsFor(neighborhood: RemoteTaskIdentification,
+                                  indice: Int,
                                   replyTo: ActorRef[(Int,List[Array[String]])]) extends MessageToWorker
 
 sealed trait ExternalWorkerState
-case class WorkerBusy(searchId: Long, durationMs:Long) extends ExternalWorkerState
+case class WorkerBusy(searchId: Long, durationMs: Long) extends ExternalWorkerState
 case class WorkerAborting(searchID: Long) extends ExternalWorkerState
 case object WorkerIdle extends ExternalWorkerState
 case object WorkerShuttingDown extends ExternalWorkerState
@@ -33,7 +33,7 @@ object WorkerActor {
   /////
   def startWorkerAndActorSystem(neighborhoods: SortedMap[Int, RemoteNeighborhood],
                                 m: Store,
-                                master: ActorRef[MessagesToSupervisor],
+                                master: ActorRef[MessageToSupervisor],
                                 workerName: String = "worker",
                                 verbose: Boolean): ActorSystem[MessageToWorker] = {
 
@@ -44,7 +44,7 @@ object WorkerActor {
 
   def createWorkerBehavior(neighborhoods: SortedMap[Int, RemoteTask],
                            m: Store,
-                           master: ActorRef[MessagesToSupervisor],
+                           master: ActorRef[MessageToSupervisor],
                            verbose: Boolean = false,
                            workerName:String): Behavior[MessageToWorker] = {
     new WorkerActor(neighborhoods, m, master, verbose, workerName).initBehavior()
@@ -52,7 +52,7 @@ object WorkerActor {
 
   def spawnWorker(neighborhoods: SortedMap[Int, RemoteNeighborhood],
                   m: Store,
-                  master: ActorRef[MessagesToSupervisor],
+                  master: ActorRef[MessageToSupervisor],
                   context: ActorContext[_],
                   workerName: String = "worker",
                   verbose: Boolean): ActorRef[MessageToWorker] = {
@@ -62,7 +62,7 @@ object WorkerActor {
 
 class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
                   m: Store,
-                  master: ActorRef[MessagesToSupervisor],
+                  master: ActorRef[MessageToSupervisor],
                   verbose: Boolean,
                   workerName:String) {
 
@@ -247,7 +247,11 @@ class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
             case Aborting(search) =>
               //ok, we've done it for nothing.
               if (verbose) context.log.info(s"aborted search:${search.uniqueSearchId}")
-              master ! ReadyForWork(context.self, Some(search.uniqueSearchId),currentSolOpt.map(_._2))
+              master ! ReadyForWork(
+                context.self,
+                Some(search.uniqueSearchId),
+                currentSolOpt.map(_._2)
+              )
               next(Idle)
 
             case Idle =>
@@ -261,7 +265,7 @@ class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
               Behaviors.stopped
           }
 
-        case ShutDownWorker =>
+        case ShutdownWorker =>
           state match {
             case _:IAmBusy =>
               currentNeighborhood.abort() //shared variable

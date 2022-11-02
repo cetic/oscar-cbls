@@ -5,12 +5,12 @@ import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, Edge, 
 import scala.util.Random
 
 object RandomGraphGenerator {
-  def generatePseudoPlanarConditionalGraph(nbNodes : Int,
-                                           nbConditionalEdges:Int,
-                                           nbNonConditionalEdges:Int,
-                                           nbTransitNodes:Int,
-                                           mapSide:Int = 1000,
-                                           seed : Option[Long] = None) : ConditionalGraphWithIntegerNodeCoordinates = {
+  def generatePseudoPlanarConditionalGraph(nbNodes: Int,
+                                           nbConditionalEdges: Int,
+                                           nbNonConditionalEdges: Int,
+                                           nbTransitNodes: Int,
+                                           mapSide: Int = 1000,
+                                           seed: Option[Long] = None) : ConditionalGraphWithIntegerNodeCoordinates = {
     //closest edges first
     val totalEdges = nbConditionalEdges + nbNonConditionalEdges
 

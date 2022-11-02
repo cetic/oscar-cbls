@@ -55,23 +55,24 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
    * @param acceptanceCriterion
    * @return
    */
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
-    if((it > 0) && ((it % refresh) == 0) && neighborhoodArray.exists(_.nbFound!=0)){
-
+  override def getMove(obj: Objective,
+                       initialObj:Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
+    if ((it > 0) && ((it % refresh) == 0) && neighborhoodArray.exists(_.nbFound!=0)) {
       if(printExploredNeighborhoods){
         println("refreshing knowledge on neighborhood; statistics since last refresh: ")
         printStatus()
       }
-      for(p <- neighborhoodArray.indices){
+      for (p <- neighborhoodArray.indices) {
         neighborhoodArray(p).resetThisStatistics()
-        if(tabu(p) <= it) updateNeighborhodPerformances(p)
+        if (tabu(p) <= it) updateNeighborhodPerformances(p)
       }
     }
     updateTabu()
-    while(!neighborhoodHeap.isEmpty){
+    while (!neighborhoodHeap.isEmpty) {
       val headID = neighborhoodHeap.getFirst
       val headNeighborhood = neighborhoodArray(headID)
-      headNeighborhood.getMove(obj,initialObj, acceptanceCriterion) match{
+      headNeighborhood.getMove(obj,initialObj, acceptanceCriterion) match {
         case NoMoveFound =>
           makeTabu(headID)
         case MoveFound(m) =>
@@ -86,7 +87,7 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
       neighborhoodArray(newNonTabu).reset()
       neighborhoodHeap.insert(newNonTabu)
       it -=1
-      getMove(obj,initialObj,acceptanceCriterion)
+      getMove(obj, initialObj, acceptanceCriterion)
     }else{
       NoMoveFound
     }
@@ -112,10 +113,10 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
  * @param overrideTabuOnFullExhaust the tabu can be overriden if all explored neighbors are exhausted, for each neighborhood that is tabu for les than this override
  * @param refresh a refresh of the slopee measuring must be perfored every refresh iterations
  */
-case class BestSlopeFirst(l:List[Neighborhood],
-                          tabuLength:Int = 10,
-                          overrideTabuOnFullExhaust:Long = 9,
-                          refresh:Int = 100)
+case class BestSlopeFirst(l: List[Neighborhood],
+                          tabuLength: Int = 10,
+                          overrideTabuOnFullExhaust: Long = 9,
+                          refresh: Int = 100)
   extends BestNeighborhoodFirst(l, tabuLength, overrideTabuOnFullExhaust, refresh){
   override protected def bestKey(p:Profile):Long = -p.slopeForCombinators()
 }
@@ -131,12 +132,12 @@ case class BestSlopeFirst(l:List[Neighborhood],
  * @param overrideTabuOnFullExhaust the tabu can be overriden if all explored neighbors are exhausted, for each neighborhood that is tabu for les than this override
  * @param refresh a refresh of the slopee measuring must be perfored every refresh iterations
  */
-case class FastestFirst(l:List[Neighborhood],
-                        tabuLength:Int = 10,
-                        overrideTabuOnFullExhaust:Long = 9,
+case class FastestFirst(l: List[Neighborhood],
+                        tabuLength: Int = 10,
+                        overrideTabuOnFullExhaust: Long = 9,
                         refresh:Int = 100)
   extends BestNeighborhoodFirst(l, tabuLength, overrideTabuOnFullExhaust, refresh) {
-  override protected def bestKey(p:Profile):Long = {
+  override protected def bestKey(p:Profile): Long = {
     if (p.nbFound == 0L)
       if (p.totalTimeSpentMoveFound == 0L) 0L else -Long.MaxValue
     else
@@ -144,14 +145,14 @@ case class FastestFirst(l:List[Neighborhood],
   }
 }
 
-abstract class BestNeighborhoodFirstWithRestrictions(l:List[RestrictedNeighborhood],
-                                                     tabuLength:Long,
-                                                     overrideTabuOnFullExhaust:Long,
-                                                     refresh:Long)
+abstract class BestNeighborhoodFirstWithRestrictions(l: List[RestrictedNeighborhood],
+                                                     tabuLength: Long,
+                                                     overrideTabuOnFullExhaust: Long,
+                                                     refresh: Long)
   extends NeighborhoodCombinator(l.map(_.n):_*) {
 
-  protected var it:Long = 0
-  protected def bestKey(p:Profile):Long
+  protected var it: Long = 0
+  protected def bestKey(p:Profile): Long
 
   protected val neighborhoodArray: Array[(Profile,Long)] = l.map(r => (Profile(r.n),r.minimalSpaceBetweenExplorations)).toArray
   protected val tabu:Array[Long] = Array.fill(neighborhoodArray.length)(0L)
@@ -163,7 +164,7 @@ abstract class BestNeighborhoodFirstWithRestrictions(l:List[RestrictedNeighborho
 
   neighborhoodArray.indices.foreach((i : Int) => neighborhoodHeap.insert(i))
 
-  private def getBestNeighborhoodID:Long = neighborhoodHeap.getFirst
+  private def getBestNeighborhoodID: Long = neighborhoodHeap.getFirst
 
   private def updateNeighborhodPerformances(neighborhoodID:Int): Unit ={
     neighborhoodHeap.notifyChange(neighborhoodID)
@@ -205,14 +206,16 @@ abstract class BestNeighborhoodFirstWithRestrictions(l:List[RestrictedNeighborho
    * @param acceptanceCriterion
    * @return
    */
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
-    if((it > 0L) && ((it % refresh) == 0L)){
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
+    if ((it > 0L) && ((it % refresh) == 0L)){
 
-      if(printExploredNeighborhoods){
+      if (printExploredNeighborhoods) {
         println("refreshing knowledge on neighborhood; statistics since last refresh: ")
         printStatus()
       }
-      for(p <- neighborhoodArray.indices){
+      for (p <- neighborhoodArray.indices) {
         neighborhoodArray(p)._1.resetThisStatistics()
         if(tabu(p) <= it) updateNeighborhodPerformances(p)
       }
@@ -220,38 +223,39 @@ abstract class BestNeighborhoodFirstWithRestrictions(l:List[RestrictedNeighborho
 
     updateTabus()
 
-    while(!neighborhoodHeap.isEmpty){
+    while (!neighborhoodHeap.isEmpty) {
       val headID = neighborhoodHeap.getFirst
       val headNeighborhood = neighborhoodArray(headID)
       headNeighborhood._1.getMove(obj,initialObj, acceptanceCriterion) match{
         case NoMoveFound =>
           makeTabuExhausted(headID)
         case MoveFound(m) =>
-          if(headNeighborhood._2 != 0L){
+          if (headNeighborhood._2 != 0L) {
             makeTabuRestricted(headID)
-          }else{
+          } else {
             neighborhoodHeap.notifyChange(headID)
           }
           return MoveFound(m)
       }
     }
-
     //ok, we try again, and pop tabu restricted neighborhoods first
-    if(tabuRestrictedNeighborhoods.nonEmpty){
+    if (tabuRestrictedNeighborhoods.nonEmpty) {
       val newNonTabu = tabuRestrictedNeighborhoods.popFirst()
       neighborhoodArray(newNonTabu)._1.reset()
       neighborhoodHeap.insert(newNonTabu)
       return getMove(obj,initialObj,acceptanceCriterion)
     }
-
     //ok, we try again with tabu, overriding tabu exhausted as allowed
-    if(tabuExhaustedNeighborhoods.nonEmpty && tabu(tabuExhaustedNeighborhoods.getFirst) <= it + overrideTabuOnFullExhaust){
+    if (
+      tabuExhaustedNeighborhoods.nonEmpty &&
+      tabu(tabuExhaustedNeighborhoods.getFirst) <= it + overrideTabuOnFullExhaust
+    ) {
       val newNonTabu = tabuExhaustedNeighborhoods.popFirst()
       neighborhoodArray(newNonTabu)._1.reset()
       neighborhoodHeap.insert(newNonTabu)
       it -=1L
       getMove(obj,initialObj,acceptanceCriterion)
-    }else{
+    } else {
       NoMoveFound
     }
   }
@@ -283,17 +287,22 @@ class RoundRobin(l: List[Neighborhood], steps: Long = 1L)
   val robins = l.length
   var remainingSteps: Long = steps
   var tail: List[Neighborhood] = l
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult =
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult =
     myGetImprovingMove(obj, initialObj, acceptanceCriteria)
 
   @tailrec
-  private def myGetImprovingMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean, triedRobins: Long = 0L): SearchResult = {
+  private def myGetImprovingMove(obj: Objective,
+                                 initialObj: Long,
+                                 acceptanceCriteria: AcceptanceCriterion,
+                                 triedRobins: Long = 0L): SearchResult = {
     if (triedRobins >= robins) {
       NoMoveFound
     } else if (remainingSteps > 0L) {
       //no need to change neighborhood yet
       remainingSteps -= 1L
-      tail.head.getMove(obj, initialObj:Long, acceptanceCriteria) match {
+      tail.head.getMove(obj, initialObj, acceptanceCriteria) match {
         case NoMoveFound =>
           tail.head.reset()
           moveToNextRobin()
@@ -352,7 +361,9 @@ class RoundRobinNoParam(val a: Neighborhood, val b: Neighborhood) {
 class RandomCombinator(a: Neighborhood*) extends NeighborhoodCombinator(a:_*) {
   private val r = new scala.util.Random()
 
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
     val neighborhoods = a.toList
     val neighborhoodsIterator = r.shuffle(neighborhoods).iterator
     while (neighborhoodsIterator.hasNext) {
@@ -378,13 +389,13 @@ class BiasedRandom(a: (Neighborhood,Double)*)
   extends NeighborhoodCombinator(a.map(_._1):_*) {
   require(a.nonEmpty)
 
-  abstract sealed class Node(val weight:Double)
-  case class MiddleNode(l:Node,r:Node) extends Node(l.weight + r.weight)
-  case class TerminalNode(override val weight:Double, n:Neighborhood) extends Node(weight)
+  abstract sealed class Node(val weight: Double)
+  case class MiddleNode(l:Node, r:Node) extends Node(l.weight + r.weight)
+  case class TerminalNode(override val weight: Double, n: Neighborhood) extends Node(weight)
 
   private val r = new scala.util.Random()
 
-  def reduce(l:List[Node]):List[Node] = {
+  def reduce(l:List[Node]): List[Node] = {
     l match{
       case h1 :: h2 :: t => MiddleNode(h1,h2) :: reduce(t)
       case List(_) => l
@@ -394,7 +405,7 @@ class BiasedRandom(a: (Neighborhood,Double)*)
 
   def fixPoint[A](init:A, function:A => A, fixpointReached:A => Boolean):A={
     var current = init
-    while(!fixpointReached(current)){
+    while (!fixpointReached(current)) {
       current = function(current)
     }
     current
@@ -420,7 +431,9 @@ class BiasedRandom(a: (Neighborhood,Double)*)
 
   var neighborhoodWithExhaustedRemoved:Option[Node] = Some(initialNeighborhoodTree)
 
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
     var remainingNeighborhoods:Option[Node] = neighborhoodWithExhaustedRemoved
     while (true) {
       remainingNeighborhoods match{
@@ -431,7 +444,7 @@ class BiasedRandom(a: (Neighborhood,Double)*)
           selectedNeighborhood.getMove(obj, initialObj, acceptanceCriteria) match {
             case m: MoveFound => return m
             case _ =>
-              if(noRetryOnExhaust) neighborhoodWithExhaustedRemoved = newHead
+              if (noRetryOnExhaust) neighborhoodWithExhaustedRemoved = newHead
           }
       }
     }
@@ -451,11 +464,13 @@ class BiasedRandom(a: (Neighborhood,Double)*)
 class ExhaustAndContinueIfMovesFound(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinator(a, b) {
   var currentIsA = true
   var movesFoundWithCurrent = false
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
     @tailrec
     def search(): SearchResult = {
       val current = if (currentIsA) a else b
-      current.getMove(obj, initialObj:Long, acceptanceCriteria) match {
+      current.getMove(obj, initialObj, acceptanceCriteria) match {
         case NoMoveFound =>
           if (currentIsA) {
             currentIsA = false

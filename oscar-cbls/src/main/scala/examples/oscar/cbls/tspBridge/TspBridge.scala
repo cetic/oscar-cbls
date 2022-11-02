@@ -167,6 +167,6 @@ object TspBridge extends App {
 
   println("Route Length :" + routeLength)
 
-  //TODO: we should actually substract the open & not used bridges from the objective function, and never try to switch them.
+  //TODO: we should actually subtract the open & not used bridges from the objective function, and never try to switch them.
 }
 

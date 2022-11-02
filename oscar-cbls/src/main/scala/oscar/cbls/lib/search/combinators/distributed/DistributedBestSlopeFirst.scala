@@ -5,7 +5,7 @@ import akka.actor.typed.{ActorSystem, Behavior}
 import akka.util.Timeout
 import oscar.cbls.core.distrib._
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
+import oscar.cbls.core.search.{AcceptanceCriterion, DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
 
 import scala.annotation.tailrec
 import scala.concurrent.duration.{Duration, DurationInt}
@@ -52,15 +52,16 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
 
   var currentIt = 0
 
-  override def getMove(obj: Objective, initialObj: Long, acceptanceCriteria: (Long, Long) => Boolean):SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriteria: AcceptanceCriterion):SearchResult = {
     currentIt += 1
 
-    //TODO:  we might use fewer workers,
-    // so that they would be available faster for the next round
+    //TODO:  we might use fewer workers, so that they would be available faster for the next round
     val nbWorkers = supervisor.waitForAtLestOneWorker()
     require(nbWorkers >= 1, "at least one worker is needed")
 
-    if(currentIt >= nextRefreshIt) {
+    if (currentIt >= nextRefreshIt) {
       nextRefreshIt = nextRefreshIt + refresh
       for (i <- neighborhoods.indices) {
         durationsMs(i) = 0
@@ -68,52 +69,65 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
         tabuUntilIt(i) = currentIt
       }
     }
-
+    // Wrapping the objective function and the starting solution
     val independentObj = obj.getIndependentObj
     val startSol = Some(IndependentSolution(obj.model.solution()))
-
+    // Wrapping the future result into a Promise
     val resultPromise = Promise[WrappedData]()
     val futureResult : Future[WrappedData] = resultPromise.future
 
+    // Messages between combinator actor and supervisor
     abstract class WrappedData
-    case class WrappedSearchEnded(searchEnded:SearchEnded, neighborhoodIndice: Int, priorityOfSearch:Int, uniqueId: Long) extends WrappedData
-    case class WrappedGotUniqueID(uniqueID: Long, neighborhoodIndice: Int,priorityOfSearch:Int) extends WrappedData
-    case class WrappedError(msg: Option[String]=None, crash:Option[SearchCrashed] = None) extends WrappedData
+    case class WrappedSearchEnded(searchEnded: SearchEnded,
+                                  neighborhoodIndice: Int,
+                                  priorityOfSearch: Int,
+                                  uniqueId: Long) extends WrappedData
+    case class WrappedGotUniqueID(uniqueID: Long,
+                                  neighborhoodIndice: Int,
+                                  priorityOfSearch: Int) extends WrappedData
+    case class WrappedError(msg: Option[String] = None,
+                            crash:Option[SearchCrashed] = None) extends WrappedData
 
     implicit val system: ActorSystem[_] = supervisor.system
     //TODO look for the adequate timeout supervisor
     implicit val timeout: Timeout = 1.hour
-
+    // Spawning the Combinator Actor
     supervisor.spawnNewActor(Behaviors.setup { context:ActorContext[WrappedData] => {
       init(getSortedNeighborhoods(currentIt), priorityOfNextSearch = 0, nbWorkers, nbStartingAndRunningSearches = 0, context)
     }}, "DistributedBestSlopeFirst")
 
     @tailrec
-    def init(neighborhoodList: List[Int], priorityOfNextSearch:Int, nbSearchesToStart: Int, nbStartingAndRunningSearches:Int, context: ActorContext[WrappedData]): Behavior[WrappedData] = {
+    def init(neighborhoodList: List[Int],
+             priorityOfNextSearch:Int,
+             nbSearchesToStart: Int,
+             nbStartingAndRunningSearches:Int,
+             context: ActorContext[WrappedData]): Behavior[WrappedData] = {
       neighborhoodList match {
         case h :: t if nbSearchesToStart > 0 =>
           initiateNeighborhoodExploration(h, priorityOfNextSearch, context)
           init(t, priorityOfNextSearch + 1, nbSearchesToStart - 1, nbStartingAndRunningSearches+1, context)
         case _ =>
-          next(nextSearchesToStart = neighborhoodList,
+          next(
+            nextSearchesToStart = neighborhoodList,
             priorityOfNextSearch = priorityOfNextSearch,
             runningSearchIDs = List.empty,
             nbFinishedSearches  = 0,
             nbStartingAndRunningSearches = nbStartingAndRunningSearches,
             nbStartedSearches = 0,
             currentIt = currentIt,
-            responses = Array.fill(neighborhoods.length)(null))
+            responses = Array.fill(neighborhoods.length)(null)
+          )
       }
     }
 
-    def next(nextSearchesToStart : List[Int],
-             priorityOfNextSearch:Int,
-             runningSearchIDs:List[Long],
+    def next(nextSearchesToStart: List[Int],
+             priorityOfNextSearch: Int,
+             runningSearchIDs: List[Long],
              nbFinishedSearches: Int,
-             nbStartingAndRunningSearches:Int,
-             nbStartedSearches:Int,
-             currentIt:Int,
-             responses:Array[IndependentSearchResult]): Behavior[WrappedData] = {
+             nbStartingAndRunningSearches: Int,
+             nbStartedSearches: Int,
+             currentIt: Int,
+             responses: Array[IndependentSearchResult]): Behavior[WrappedData] = {
       Behaviors.receive{ (context, command) =>
         command match {
           case WrappedSearchEnded(searchEnded, neighborhoodIndice, priorityOfSearch, uniqueId) =>
@@ -134,7 +148,7 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                 //we carry on if there is a null preceded only by NoMoveFound
 
                 //we start new searches if there are more searches to start
-                def stopSearch(searchResult:IndependentSearchResult): Behavior[WrappedData] ={
+                def stopSearch(searchResult: IndependentSearchResult): Behavior[WrappedData] ={
                   for (r <- runningSearchIDs) {
                     supervisor.supervisorActor ! CancelSearchToSupervisor(r)
                   }
@@ -145,11 +159,11 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                 }
 
                 @tailrec
-                def checkStopNoMoveFoundSoFar(i:Int): Behavior[WrappedData] ={
-                  if(i == responses.length){
+                def checkStopNoMoveFoundSoFar(i: Int): Behavior[WrappedData] ={
+                  if (i == responses.length) {
                     //only noMoveFound, so return NoMoveFound
                     stopSearch(searchResult = responses(0))
-                  }else{
+                  } else {
                     responses(i) match {
                       case null =>
                         //waiting for more responses, so carry on, and start one more search if possible
@@ -200,7 +214,8 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                   }
                 }
 
-                //TODO: we might stop anyway if we are waiting for too long. For isntance if we wait for more than twicethe average response time?
+                //TODO: we might stop anyway if we are waiting for too long.
+                // For instance if we wait for more than twice the average response time?
                 checkStopNoMoveFoundSoFar(0)
 
               case w:SearchCrashed =>
@@ -219,20 +234,20 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                 Behaviors.stopped
             }
 
-          case WrappedGotUniqueID(uniqueID: Long, neighborhoodIndice: Int,priorityOfSearch:Int) =>
+          case WrappedGotUniqueID(uniqueID, neighborhoodIndex, priorityOfSearch) =>
             //start search with val request
             context.ask[DelegateSearch, SearchEnded](
               supervisor.supervisorActor,
               ref => DelegateSearch(SingleMoveSearch(
                 uniqueSearchId = uniqueID,
-                remoteTaskId = remoteNeighborhoodIdentifications(neighborhoodIndice),
-                acc = acceptanceCriteria,
+                remoteTaskId = remoteNeighborhoodIdentifications(neighborhoodIndex),
+                acceptanceCriterion = acceptanceCriteria,
                 obj = independentObj,
                 startSolutionOpt = startSol,
                 sendResultTo = ref
               ),
               waitForMoreSearch = nbStartedSearches < nbWorkers-1)) {
-                case Success(searchEnded) => WrappedSearchEnded(searchEnded, neighborhoodIndice, priorityOfSearch, uniqueID)
+                case Success(searchEnded) => WrappedSearchEnded(searchEnded, neighborhoodIndex, priorityOfSearch, uniqueID)
                 case Failure(_) => WrappedError(msg = Some(s"Error in WrappedGotUniqueID, uniqueID=$uniqueID"))
               }
             next(
@@ -256,9 +271,11 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
       }
     }
 
-    def initiateNeighborhoodExploration(neighborhoodIndice:Int, priorityOfSearch:Int, context: ActorContext[WrappedData]): Unit = {
-      context.ask[GetNewUniqueID,Long](supervisor.supervisorActor,ref => GetNewUniqueID(ref)) {
-        case Success(uniqueID:Long) => WrappedGotUniqueID(uniqueID,neighborhoodIndice,priorityOfSearch)
+    def initiateNeighborhoodExploration(neighborhoodIndice: Int,
+                                        priorityOfSearch: Int,
+                                        context: ActorContext[WrappedData]): Unit = {
+      context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
+        case Success(uniqueID) => WrappedGotUniqueID(uniqueID, neighborhoodIndice, priorityOfSearch)
         case Failure(ex) => WrappedError(msg=Some(s"Supervisor actor timeout : ${ex.getMessage}"))
       }
     }
@@ -269,16 +286,16 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
           case SearchCompleted(_, searchResult: IndependentSearchResult, _) => searchResult.getLocalResult(obj.model)
           case _ => NoMoveFound
         }
-      case WrappedError(msg:Option[String],crash:Option[SearchCrashed]) =>
-        if(msg.isDefined){
+      case WrappedError(msg, crash) =>
+        if (msg.isDefined) {
           supervisor.shutdown()
           throw new Error(s"${msg.get}")
         }
-        if(crash.isDefined){
+        if (crash.isDefined) {
           supervisor.throwRemoteExceptionAndShutDown(crash.get)
         }
         throw new Error("Error in DistributedBestSlopeFirst")
-      case e => throw new Error(s"Uknown error in DistributedBestSlopeFirst : $e")
+      case e => throw new Error(s"Unknown error in DistributedBestSlopeFirst : $e")
     }
   }
 }

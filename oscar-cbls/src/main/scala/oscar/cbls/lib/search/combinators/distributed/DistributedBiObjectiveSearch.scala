@@ -22,7 +22,7 @@ import oscar.cbls.algo.heap.BinomialHeapWithMove
 import oscar.cbls.core.computation.{Solution, Store}
 import oscar.cbls.core.distrib._
 import oscar.cbls.core.objective.{CascadingObjective, IndependentObjective, Objective}
-import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, SearchResult}
+import oscar.cbls.core.search.{AcceptanceCriterion, DistributedCombinator, Neighborhood, SearchResult}
 import oscar.cbls.lib.search.combinators.multiObjective.PlotPareto
 import oscar.cbls.util.Properties
 import oscar.cbls.visual.SingleFrameWindow
@@ -82,15 +82,15 @@ class ParetoPointSearcher(taskId:Int,
 }
 
 //there is no uniqueID here because we will not cancel tasks
-case class OptimizeWithBoundRequest(override val remoteTaskId:RemoteTaskIdentification,
+case class OptimizeWithBoundRequest(remoteTaskId: RemoteTaskIdentification,
                                     obj1: IndependentObjective,
                                     obj2: IndependentObjective,
-                                    maxValueForObj2:Long, //only this one is considered, the other are informative and traceability stuff
+                                    maxValueForObj2: Long, //only this one is considered, the other are informative and traceability stuff
                                     startSolution: Option[IndependentSolution],
-                                    initObj1:Long,
-                                    initObj2:Long,
-                                    override val sendResultTo: ActorRef[SearchEnded]
-                                   ) extends SearchRequest {
+                                    initObj1: Long,
+                                    initObj2: Long,
+                                    sendResultTo: ActorRef[SearchEnded])
+  extends SearchRequest {
   override val uniqueSearchId: Long = -1
 
   override def startSolutionOpt: Option[IndependentSolution] = startSolution //we are not interested by hotRestart
@@ -539,12 +539,14 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
       println("elapsed(ms):" + ((System.nanoTime() - startSearchNanotime)/1000000).toInt)
     }
 
-    if(!stayAlive) window.close()
+    if (!stayAlive) window.close()
 
     paretoFront.toList.map({case rectangle:Rectangle => (rectangle.obj1,rectangle.obj2,rectangle.solution)}).sortBy(_._1)
   }
 
-  override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
-    throw new Error("DistributedPreto cannot be used as a regular neighborhood; use paretoOptimize method")
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
+    throw new Error("DistributedPareto cannot be used as a regular neighborhood; use paretoOptimize method")
   }
 }

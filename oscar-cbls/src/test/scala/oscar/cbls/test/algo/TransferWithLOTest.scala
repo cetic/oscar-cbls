@@ -3,6 +3,7 @@ package oscar.cbls.test.algo
 import org.scalatest.flatspec.AnyFlatSpec
 import oscar.cbls._
 import oscar.cbls.core.computation.{CBLSIntVar, DomainRange}
+import oscar.cbls.core.objective.IntVarObjective
 import oscar.cbls.lib.search.neighborhoods.{NarrowingExhaustive, TransferNeighborhood}
 
 class TransferWithLOTest extends AnyFlatSpec {
@@ -19,7 +20,7 @@ class TransferWithLOTest extends AnyFlatSpec {
   val var1 = CBLSIntVar(s,var1InitValue,DomainRange(-1000,1000))
   val var2 = CBLSIntVar(s,var2InitValue,DomainRange(-1000,1000))
 
-  val obj = new IntVarObjective(var1 * var1 * a + var1 * b + c)
+  val obj = IntVarObjective(var1 * var1 * a + var1 * b + c)
 
   s.close()
 

@@ -3,7 +3,7 @@ package oscar.cbls.lib.search.combinators.distributed
 import akka.actor.typed.ActorSystem
 import oscar.cbls.core.distrib.{DelegateSearch, IndependentSearchResult, IndependentSolution, SearchCompleted, SearchCrashed, SearchEnded, SingleMoveSearch}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
+import oscar.cbls.core.search.{AcceptanceCriterion, DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
 import akka.util.Timeout
 
 import scala.concurrent.Await
@@ -14,7 +14,7 @@ class Remote(neighborhoods:Neighborhood)
 
   override def getMove(obj: Objective,
                        initialObj: Long,
-                       acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
 
     val independentObj = obj.getIndependentObj
     val startSol = IndependentSolution(obj.model.solution())
@@ -28,7 +28,7 @@ class Remote(neighborhoods:Neighborhood)
       DelegateSearch(
         SingleMoveSearch(
           remoteTaskId = remoteNeighborhoodIdentifications(0),
-          acc = acceptanceCriteria,
+          acceptanceCriterion = acceptanceCriteria,
           obj = independentObj,
           startSolutionOpt = Some(startSol),
           sendResultTo = ref

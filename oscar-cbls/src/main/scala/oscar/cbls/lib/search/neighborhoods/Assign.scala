@@ -46,19 +46,18 @@ import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, 
  *                    at the position where it stopped, and consider the indices in increasing order
  *                    if false, consider the exploration range in natural order from the first position.
  */
-case class AssignNeighborhood(vars:Array[CBLSIntVar],
-                              name:String = "AssignNeighborhood",
-                              selectIndiceBehavior:LoopBehavior = First(),
-                              selectValueBehavior:LoopBehavior = First(),
+case class AssignNeighborhood(vars: Array[CBLSIntVar],
+                              name: String = "AssignNeighborhood",
+                              selectIndiceBehavior: LoopBehavior = First(),
+                              selectValueBehavior: LoopBehavior = First(),
                               searchZone:() => Iterable[Int] = null,
-                              symmetryClassOfVariables:Option[Int => Int] = None,
-                              symmetryClassOfValues:Option[Int => Int => Int] = None,
-                              domain:(CBLSIntVar,Int) => Iterable[Int] = (v,_) => v.minInt to v.maxInt,
-                              hotRestart:Boolean = true)
+                              symmetryClassOfVariables: Option[Int => Int] = None,
+                              symmetryClassOfValues: Option[Int => Int => Int] = None,
+                              domain: (CBLSIntVar,Int) => Iterable[Int] = (v,_) => v.minInt to v.maxInt,
+                              hotRestart: Boolean = true)
   extends EasyNeighborhoodMultiLevel[AssignMove](name){
   //the indice to start with for the exploration
   var startIndice:Int = 0
-
   var currentVar:CBLSIntVar = _ //null
   var currentIndice:Int = 0
   var newVal:Long = 0L

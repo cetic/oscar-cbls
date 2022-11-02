@@ -1,14 +1,14 @@
 package oscar.cbls.lib.search.neighborhoods.vlsn
 
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{Move, MoveFound, Neighborhood, NoMoveFound}
+import oscar.cbls.core.search.{AcceptanceCriterion, DifferentOf, Move, MoveFound, Neighborhood, NoMoveFound}
 import oscar.cbls.lib.search.neighborhoods.vlsn.VLSNMoveType._
 
 import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.reflect.ClassTag
 import scala.util.Random
 
-object HotRestartInfo{
+object HotRestartInfo {
   def apply(v:Int):HotRestartInfo = {
     HotRestartInfo(
       Array.fill(v)(-1),
@@ -18,11 +18,11 @@ object HotRestartInfo{
   }
 }
 
-case class HotRestartInfo(hotRestartVehicleToInsertedNoEject:Array[Int],
-                          hotRestartVehicleToMovedNoEject:Array[Int],
-                          hotRestartVehicleToInsertedWithEject:Array[Int],
-                          hotRestartVehicleToMovedWithEject:Array[Int]){
-  def update(edge:Edge):Unit = {
+case class HotRestartInfo(hotRestartVehicleToInsertedNoEject: Array[Int],
+                          hotRestartVehicleToMovedNoEject: Array[Int],
+                          hotRestartVehicleToInsertedWithEject: Array[Int],
+                          hotRestartVehicleToMovedWithEject: Array[Int]){
+  def update(edge:Edge): Unit = {
     edge.moveType match{
       case InsertNoEject =>
         hotRestartVehicleToInsertedNoEject(edge.to.vehicle) = edge.from.representedNode
@@ -45,27 +45,22 @@ case class HotRestartInfo(hotRestartVehicleToInsertedNoEject:Array[Int],
   }
 }
 
-class MoveExplorer(v:Int,
-                   vehicleToRoutedNodes:Map[Int,Iterable[Int]],
-                   unroutedNodesToInsert:Iterable[Int],
-                   nodeToRelevantVehicles:Map[Int,Iterable[Int]],
-
-                   targetVehicleNodeToInsertNeighborhood:Int => Int => Neighborhood,
-                   targetVehicleNodeToMoveNeighborhood:Int => Int => Neighborhood,
-                   nodeToRemoveNeighborhood:Int => Neighborhood,
-
-                   removeAndReInsert:Int => () => Unit,
-
-                   vehicleToObjectives:Array[Objective],
-                   unroutedNodesPenalty:Objective,
-                   globalObjective:Objective,
-
-                   cache:CachedExplorations,
-                   hotRestart:HotRestartInfo,
-
-                   verbose:Boolean,
-                   enrichment:EnrichmentParameters,
-                   prioritizeMoveNoEject:Boolean = true
+class MoveExplorer(v: Int,
+                   vehicleToRoutedNodes: Map[Int,Iterable[Int]],
+                   unroutedNodesToInsert: Iterable[Int],
+                   nodeToRelevantVehicles: Map[Int,Iterable[Int]],
+                   targetVehicleNodeToInsertNeighborhood: Int => Int => Neighborhood,
+                   targetVehicleNodeToMoveNeighborhood: Int => Int => Neighborhood,
+                   nodeToRemoveNeighborhood: Int => Neighborhood,
+                   removeAndReInsert: Int => () => Unit,
+                   vehicleToObjectives: Array[Objective],
+                   unroutedNodesPenalty: Objective,
+                   globalObjective: Objective,
+                   cache: CachedExplorations,
+                   hotRestart :HotRestartInfo,
+                   verbose: Boolean,
+                   enrichment: EnrichmentParameters,
+                   prioritizeMoveNoEject: Boolean = true
                   ) {
 
   //println("hotRestart: " + hotRestart)
@@ -134,7 +129,7 @@ class MoveExplorer(v:Int,
   val nbNodesInVLSNGraph: Int = nodes.length
   def nbEdgesInGraph:Int = edgeBuilder.nbEdges
 
-  val acceptAllButMaxLong: (Long, Long) => Boolean = (_, newObj: Long) => newObj != Long.MaxValue
+  val acceptAllButMaxLong: AcceptanceCriterion = DifferentOf(Long.MaxValue)
 
   // /////////////////////////////////////////////////////////////
   //about incrementality
@@ -187,24 +182,24 @@ class MoveExplorer(v:Int,
   def injectAllCache(verbose:Boolean): Unit = {
     var targetPosition = 0
     if(cache == null) return
-    for(i <- 0 until nbBundles) {
+    for (i <- 0 until nbBundles) {
       allBundlesArray(i).loadAllCache()
-      if(allBundlesArray(i).isEmpty){
+      if (allBundlesArray(i).isEmpty) {
         allBundlesArray(i) = null
-      }else{
+      } else {
         allBundlesArray(targetPosition) = allBundlesArray(i)
         targetPosition += 1
       }
     }
     nbBundles = targetPosition
 
-    //priorityBundles are handled separatedly
+    //priorityBundles are handled separately
     targetPosition = 0
     for(i <- 0 until nbPriorityBundles) {
       priorityBundleArray(i).loadAllCache()
-      if(priorityBundleArray(i).isEmpty){
+      if (priorityBundleArray(i).isEmpty) {
         priorityBundleArray(i) = null
-      }else{
+      } else {
         priorityBundleArray(targetPosition) = priorityBundleArray(i)
         targetPosition += 1
       }
@@ -221,10 +216,12 @@ class MoveExplorer(v:Int,
    * @param verbose
    * @return the enriched graph, true if there is more to load, the number of added edges, and a list of priority edge that can be taken as is (no need for cycle detection)
    */
-  def enrichGraph(dirtyNodes:Iterable[Int], dirtyVehicles:Iterable[Int], verbose:Boolean):(VLSNGraph,Boolean,Int, List[List[Edge]]) = {
+  def enrichGraph(dirtyNodes: Iterable[Int],
+                  dirtyVehicles: Iterable[Int],
+                  verbose:Boolean): (VLSNGraph, Boolean, Int, List[List[Edge]]) = {
 
-    for(node <- dirtyNodes) isNodeDirty(node) = true
-    for(vehicle <- dirtyVehicles) {
+    for (node <- dirtyNodes) isNodeDirty(node) = true
+    for (vehicle <- dirtyVehicles) {
       isVehicleDirty(vehicle) = true
       initialVehicleToObjectives(vehicle) = vehicleToObjectives(vehicle).value
     }
@@ -238,32 +235,33 @@ class MoveExplorer(v:Int,
         || ((nbEdgesInGraph - nbEdgesAtStart)/10 < enrichment.minNbAddedEdgesPerLevel))
         && nbPriorityBundles > 0){
       //Random selection of next bundle
-      val currentPriorityBundleId = if(nbPriorityBundles == 1) 0 else Random.nextInt(nbPriorityBundles-1)
+      val currentPriorityBundleId = if (nbPriorityBundles == 1) 0 else Random.nextInt(nbPriorityBundles-1)
       //TODO: all movesNoEject (thus inserts and moves) should mark related nodes & vehicle as dirty if they have negative delta on obj.
-      val nbExplored = priorityBundleArray(currentPriorityBundleId).pruneExplore(targetNbExplores = enrichment.nbEdgesPerPriorityBundle)
+      val nbExplored = priorityBundleArray(currentPriorityBundleId)
+        .pruneExplore(targetNbExplores = enrichment.nbEdgesPerPriorityBundle)
       totalExplored += nbExplored
-      if(priorityBundleArray(currentPriorityBundleId).isEmpty){
-        if(currentPriorityBundleId == nbPriorityBundles-1){
+      if (priorityBundleArray(currentPriorityBundleId).isEmpty) {
+        if (currentPriorityBundleId == nbPriorityBundles-1) {
           priorityBundleArray(currentPriorityBundleId) = null
-        }else{
+        } else {
           priorityBundleArray(currentPriorityBundleId) = priorityBundleArray(nbPriorityBundles-1)
         }
         nbPriorityBundles = nbPriorityBundles -1
       }
     }
 
-    while((totalExplored <= enrichment.minNbEdgesToExplorePerLevel
+    while ((totalExplored <= enrichment.minNbEdgesToExplorePerLevel
       || (nbEdgesInGraph - nbEdgesAtStart < enrichment.minNbAddedEdgesPerLevel))
-      && nbBundles > 0){
+      && nbBundles > 0) {
       //Random selection of next bundle
       val currentBundleId = if(nbBundles == 1) 0 else Random.nextInt(nbBundles-1)
       //TODO: we should foster moveNoEject first because they are really fast to explore...
       val nbExplored = allBundlesArray(currentBundleId).pruneExplore(targetNbExplores = enrichment.nbEdgesPerBundle)
       totalExplored += nbExplored
-      if(allBundlesArray(currentBundleId).isEmpty){
-        if(currentBundleId == nbBundles-1){
+      if (allBundlesArray(currentBundleId).isEmpty) {
+        if (currentBundleId == nbBundles-1) {
           allBundlesArray(currentBundleId) = null
-        }else{
+        } else {
           allBundlesArray(currentBundleId) = allBundlesArray(nbBundles-1)
         }
         nbBundles = nbBundles -1
@@ -276,7 +274,7 @@ class MoveExplorer(v:Int,
     (edgeBuilder.buildGraph(),nbBundles!=0 || nbPriorityBundles!=0,totalExplored, toReturnPriorityCycles)
   }
 
-  def allMovesExplored:Boolean = {
+  def allMovesExplored: Boolean = {
     require(nbBundles>=0)
     require(nbPriorityBundles >= 0)
     nbBundles == 0 && nbPriorityBundles == 0
@@ -293,7 +291,7 @@ class MoveExplorer(v:Int,
 
     def isEmpty: Boolean = remainingEdges.isEmpty
 
-    def size = remainingEdges.size
+    def size: Int = remainingEdges.size
 
     def exploreEdge(edge: E): Unit
 
@@ -305,8 +303,8 @@ class MoveExplorer(v:Int,
     private var allCacheLoaded:Boolean = false
 
     def loadAllCache(): Unit ={
-      if(cache == null) return
-      if(allCacheLoaded) return
+      if (cache == null) return
+      if (allCacheLoaded) return
       allCacheLoaded = true
       remainingEdges = remainingEdges.filterNot(loadEdgeFromCache)
     }
@@ -318,14 +316,13 @@ class MoveExplorer(v:Int,
         remainingEdges = Nil
         0
       } else {
-
         var toReturn = 0
         var toExplore = targetNbExplores
         while (toExplore != 0 && remainingEdges.nonEmpty && !isNodeDirty(toNode) && !isVehicleDirty(toVehicle)) {
           val current = remainingEdges.head
           remainingEdges = remainingEdges.tail
           if (!isEdgeDirty(current)) {
-            if(cache == null || allCacheLoaded || !loadEdgeFromCache(current)) {
+            if (cache == null || allCacheLoaded || !loadEdgeFromCache(current)) {
               exploreEdge(current)
             }
             toReturn += 1
@@ -341,7 +338,6 @@ class MoveExplorer(v:Int,
   // ////////////////////////////////////////////////////////////
 
   private def generateInsertions(): Unit = {
-
     println("unroutedNodesToInsert:" + unroutedNodesToInsert.mkString(","))
     val vehicleAndUnroutedNodes: Iterable[(Int, Int)] =
       unroutedNodesToInsert.flatMap((unroutedNode:Int) =>
@@ -410,7 +406,7 @@ class MoveExplorer(v:Int,
                             toVehicle: Int,
                             fromNodeVehicle: List[NodeVehicle])
     extends EdgeToExploreBundle[NodeVehicle](toNode, toVehicle,
-      if(hotRestart == null) fromNodeVehicle
+      if (hotRestart == null) fromNodeVehicle
       else {
         val pivot = hotRestart.hotRestartVehicleToMovedWithEject(toVehicle)
         if(pivot == -1) fromNodeVehicle
@@ -435,16 +431,21 @@ class MoveExplorer(v:Int,
         case CachedAtomicMove(move:Move,delta:Long) =>
           val symbolicNodeOfNodeToMove = nodeIDToNode(edge.node)
           val symbolicNodeToEject = nodeIDToNode(toNode)
-
-          edgeBuilder.addEdge(symbolicNodeOfNodeToMove,
-            symbolicNodeToEject, delta, move, VLSNMoveType.MoveWithEject)
-
+          edgeBuilder.addEdge(
+            symbolicNodeOfNodeToMove,
+            symbolicNodeToEject,
+            delta,
+            move,
+            VLSNMoveType.MoveWithEject
+          )
           true
+
         case CachedAtomicNoMove =>
           val symbolicNodeOfNodeToMove = nodeIDToNode(edge.node)
           val symbolicNodeToEject = nodeIDToNode(toNode)
           edgeBuilder.addNonEdge(symbolicNodeOfNodeToMove, symbolicNodeToEject, VLSNMoveType.MoveWithEject)
           true
+
         case CacheDirty => false
       }
     }
@@ -494,7 +495,7 @@ class MoveExplorer(v:Int,
         if(pivot == -1) fromNodeVehicle
         else {
           val offset = nodes.length
-          fromNodeVehicle.sortBy(nodeVehicle => if(nodeVehicle.vehicle < pivot) nodeVehicle.vehicle + offset else nodeVehicle.vehicle)
+          fromNodeVehicle.sortBy(nodeVehicle => if (nodeVehicle.vehicle < pivot) nodeVehicle.vehicle + offset else nodeVehicle.vehicle)
         }}) {
 
     override def isEdgeDirty(edge: NodeVehicle): Boolean = {
@@ -799,4 +800,3 @@ class MoveExplorer(v:Int,
     }
   }
 }
-

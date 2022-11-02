@@ -197,7 +197,7 @@ case class RemoveFromSetMove(s:CBLSSetVar,v:Int, override val objAfter:Long, ove
  * This neighborhood always returns the same move, given in the constructor
  * it checks the objctive function before returning it, and adds the objective funtion value to the move
  *
- * this one canot be chained because there is no UNDO operation defined
+ * this one cannot be chained because there is no UNDO operation defined
  *
  * @param m the move to return when the neighborhood is queried for a move
  */
@@ -205,7 +205,9 @@ case class ConstantMoveNeighborhood(m: Move,
                                     skipAcceptanceCriterion:Boolean = false,
                                     neighborhoodName:String = null)
   extends Neighborhood with SupportForAndThenChaining[Move] {
-  override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     if (skipAcceptanceCriterion) {
       MoveFound(m)
     } else {
@@ -252,8 +254,11 @@ case class ConstantMovesNeighborhood[MoveType<:Move](ms:() => Iterable[Long => M
     currentMove(newObj)
 }
 
-class OverrideObj(initMove:Move, objAfter:Long, neighborhoodName:String = null)
-  extends Move(objAfter = objAfter, neighborhoodName = if(neighborhoodName != null) neighborhoodName else initMove.neighborhoodName){
+class OverrideObj(initMove: Move, objAfter: Long, neighborhoodName: String = null)
+  extends Move(
+    objAfter = objAfter,
+    neighborhoodName = if(neighborhoodName != null) neighborhoodName else initMove.neighborhoodName
+  ) {
 
   override def commit(): Unit = initMove.commit()
 
@@ -263,19 +268,22 @@ class OverrideObj(initMove:Move, objAfter:Long, neighborhoodName:String = null)
 }
 
 case class DoNothingNeighborhood() extends Neighborhood with SupportForAndThenChaining[DoNothingMove]{
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     val objValue = obj.value
-    if(acceptanceCriterion(objValue,objValue)){
+    if (acceptanceCriterion(objValue, objValue)) {
       MoveFound(DoNothingMove(objValue))
-    }else{
+    } else {
       NoMoveFound
     }
   }
 
-  override def instantiateCurrentMove(newObj : Long) : DoNothingMove = DoNothingMove(newObj)
+  override def instantiateCurrentMove(newObj: Long) : DoNothingMove = DoNothingMove(newObj)
 }
 
-case class DoNothingMove(override val objAfter:Long,override val neighborhoodName:String = null) extends Move(objAfter,neighborhoodName){
+case class DoNothingMove(override val objAfter: Long,
+                         override val neighborhoodName: String = null) extends Move(objAfter,neighborhoodName) {
   override def commit() : Unit = {}
 
   override def decomposeMove:List[String] = List.empty
@@ -288,8 +296,8 @@ case class DoNothingMove(override val objAfter:Long,override val neighborhoodNam
  * @param neighborhoodName a string describing the neighborhood hat found the move (for debug purposes)
  * @author renaud.delandtsheer@cetic.be
  */
-case class CompositeMove(ml:List[Move], override val objAfter:Long, override val neighborhoodName:String = null)
-  extends Move(objAfter, neighborhoodName){
+case class CompositeMove(ml: List[Move], override val objAfter: Long, override val neighborhoodName: String = null)
+  extends Move(objAfter, neighborhoodName) {
 
   def this(ml:List[Move]) = {
     this(ml, ml.last.objAfter)
@@ -311,7 +319,7 @@ case class CompositeMove(ml:List[Move], override val objAfter:Long, override val
   override def decomposeMove:List[String] = this.ml.flatMap(_.decomposeMove)
 }
 
-case class NamedMove(m:Move, override val neighborhoodName:String = null)
+case class NamedMove(m: Move, override val neighborhoodName: String = null)
   extends Move(m.objAfter, neighborhoodName){
 
   override def commit(): Unit = {
@@ -370,7 +378,10 @@ object CallBackMove{
  * @param param            the parameter that is passed to the callBack method when the move is committed
  * @tparam T
  */
-case class CallBackMove[T](callBack: T => Unit, override val objAfter:Long, override val neighborhoodName:String, param:T = null) extends Move{
+case class CallBackMove[T](callBack: T => Unit,
+                           override val objAfter: Long,
+                           override val neighborhoodName:String,
+                           param:T = null) extends Move {
   def commit(): Unit = {
     callBack(param)
   }
