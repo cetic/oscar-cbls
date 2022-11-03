@@ -171,6 +171,7 @@ class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
                   currentSolOpt = currentNeighborhood.doTask(newSearch, m, currentSolOpt, Some(context.self.path.toString))
                 } catch {
                   case e:Throwable =>
+                    if (verbose) context.log.info(s"remote task crashed; reason: ${e.getMessage}; search:${newSearch.uniqueSearchId} neighborhood:${newSearch.remoteTaskId}")
                     newSearch.sendResultTo ! SearchCrashed(newSearch.uniqueSearchId,Some(newSearch.remoteTaskId),e,context.self)
                     master ! Crash(context.self)
                 }
