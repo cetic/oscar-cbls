@@ -205,11 +205,35 @@ class SupervisorActor(context: ActorContext[MessageToSupervisor],
   private var notifyForAvailableWorkers:List[NbWorkers] = Nil
   private var statisticCollectorID:Int = 0
 
+  // The following function starts the search in a worker
+  def startSearch(search: SearchRequest,
+                  worker: ActorRef[MessageToWorker],
+                  currentSolutionAtWorker: Option[SolutionID]): Unit = {
+    if (verbose) context.log.info(s"assigning search:${search.uniqueSearchId} to worker:${worker.path}")
+    val startID = nextStartID
+    nextStartID = nextStartID + 1
+    totalStartedSearches += 1
+    val solutionForThisSearch = search.startSolutionOpt
+    val simplifiedSearch = (solutionForThisSearch, currentSolutionAtWorker) match {
+      case (Some(x), Some(y)) if x.solutionId.isDefined && x.solutionId.get == y => search.dropStartSolution
+      case _ => search
+    }
+    implicit val responseTimeout: Timeout = 2.5.seconds
+    // Ask worker to start the search, and get the response
+    context.ask[MessageToWorker, MessageToSupervisor](worker, res => StartSearch(simplifiedSearch, startID, res)) {
+      case Success(_: SearchStarted) => SearchStarted(simplifiedSearch.uniqueSearchId, startID, worker)
+      case Success(_: SearchNotStarted) => SearchNotStarted(simplifiedSearch.uniqueSearchId, startID, worker)
+      case Failure(_) => SearchNotStarted(simplifiedSearch.uniqueSearchId, startID, worker)
+      case _ => SearchNotStarted(simplifiedSearch.uniqueSearchId, startID, worker) // Default case
+    }
+    startingSearches = startingSearches + (startID -> (search, startID, worker))
+  }
+
   override def onMessage(msg: MessageToSupervisor): Behavior[MessageToSupervisor] = {
     msg match {
 
       case Tic =>
-        context.log.info(status)
+        context.log.info(status(s"Tic:$tic:"))
         tic match {
           case _: Infinite => ;
           case f: FiniteDuration => context.scheduleOnce(f, context.self, Tic)
@@ -278,42 +302,18 @@ class SupervisorActor(context: ActorContext[MessageToSupervisor],
         notifyForAvailableWorkers = Nil
 
       case StartSomeSearch =>
-        //context.log.info("StartSomeSearch")
+        // Looking for waiting searches
         (waitingSearches.isEmpty, idleWorkersAndTheirCurrentModelID) match {
           case (true, idleWorkers) if idleWorkers.nonEmpty =>
             // No waiting searches
-            if (verbose) context.log.info(status)
+            if (verbose) context.log.info(status("StartSomeSearch:No Waiting Searches:"))
 
           case (_, Nil) =>
             // No idle workers
-            if (verbose) context.log.info(status)
+            if (verbose) context.log.info(status("StartSomeSearch:No Idle Workers:"))
 
           case (false, _ :: _) =>
             // There are waiting searches with idle workers ; a search can be started
-            // The following function starts the search in a worker
-            def startSearch(search: SearchRequest,
-                            worker: ActorRef[MessageToWorker],
-                            currentSolutionAtWorker:Option[SolutionID]): Unit = {
-              if (verbose) context.log.info(s"assigning search:${search.uniqueSearchId} to worker:${worker.path}")
-              val startID = nextStartID
-              nextStartID = nextStartID + 1
-              totalStartedSearches += 1
-              val solutionForThisSearch = search.startSolutionOpt
-              val simplifiedSearch = (solutionForThisSearch,currentSolutionAtWorker) match {
-                case (Some(x),Some(y)) if x.solutionId.isDefined && x.solutionId.get == y => search.dropStartSolution
-                case _ => search
-              }
-              implicit val responseTimeout: Timeout = 3.seconds
-              // Ask worker to start the search, and get the response
-              context.ask[MessageToWorker, MessageToSupervisor](worker, res => StartSearch(simplifiedSearch, startID, res)) {
-                case Success(_: SearchStarted) => SearchStarted(simplifiedSearch.uniqueSearchId, startID, worker)
-                case Success(_: SearchNotStarted) => SearchNotStarted(simplifiedSearch.uniqueSearchId, startID, worker)
-                case Failure(_) => SearchNotStarted(simplifiedSearch.uniqueSearchId, startID, worker)
-                case _ => SearchNotStarted(simplifiedSearch.uniqueSearchId, startID, worker) // Default case
-              }
-              startingSearches = startingSearches + (startID -> (search, startID, worker))
-            }
-            //////////
             val nbIdleWorkers = idleWorkersAndTheirCurrentModelID.size
             val nbAvailableSearches = waitingSearches.size
             var nbSearchToStart = nbIdleWorkers min nbAvailableSearches
@@ -327,8 +327,7 @@ class SupervisorActor(context: ActorContext[MessageToSupervisor],
                   case Some(preferredWorker) =>
                     val newIdle = idleWorkersAndTheirCurrentModelID.filter(_._1.path != preferredWorker.path)
                     if (newIdle.size != idleWorkersAndTheirCurrentModelID.size) {
-                      //start this one
-                      //println("hotRestart" + searchTask.request.neighborhoodID)
+                      //start this search
                       val modelAtWorkerSide = idleWorkersAndTheirCurrentModelID.filter(_._1.path == preferredWorker.path) match {
                         case (_,modelOpt) :: Nil => modelOpt
                         case _ => None
@@ -363,12 +362,12 @@ class SupervisorActor(context: ActorContext[MessageToSupervisor],
             //double loop on these searches; perform worker assignment as they come (no smart optimization here, first fit)
             //for the remaining searches, make it anyhow
             if (idleWorkersAndTheirCurrentModelID.isEmpty) {
-              if (verbose) context.log.info(status)
+              if (verbose) context.log.info(status("StartSomeSearch:No idle workers after start search:"))
             }
 
           case _ =>
             // Default case
-            if (verbose) context.log.info(status)
+            if (verbose) context.log.info(status("StartSomeSearch:Should be unreachable:"))
         }
 
       case SearchStarted(searchID, startID, worker) =>
@@ -468,7 +467,7 @@ class SupervisorActor(context: ActorContext[MessageToSupervisor],
         tic match {
           case _: Infinite => ;
           case _: FiniteDuration =>
-            context.log.info(status)
+            context.log.info(status(s"ShutDown:$tic:"))
         }
         if (verbose) context.log.info(s"Supervisor shutdown")
         Behaviors.stopped
@@ -485,7 +484,7 @@ class SupervisorActor(context: ActorContext[MessageToSupervisor],
     case f: FiniteDuration => context.scheduleOnce(f, context.self, Tic)
   }
 
-  def status: String = {
-    s"workers(total:${allKnownWorkers.size} busy:${allKnownWorkers.size - idleWorkersAndTheirCurrentModelID.size}) searches(waiting:${waitingSearches.size} starting:${startingSearches.size} running:${ongoingSearches.size} totalStarted:$totalStartedSearches)"
+  def status(contextString: String): String = {
+    s"$contextString : workers(total:${allKnownWorkers.size} busy:${allKnownWorkers.size - idleWorkersAndTheirCurrentModelID.size}) searches(waiting:${waitingSearches.size} starting:${startingSearches.size} running:${ongoingSearches.size} totalStarted:$totalStartedSearches)"
   }
 }

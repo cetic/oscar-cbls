@@ -6,7 +6,7 @@ import oscar.cbls.business.scheduling.neighborhood.{ReinsertActivity, ReplaceAct
 import oscar.cbls.core.distrib
 import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.lib.search.combinators.BestSlopeFirst
-import oscar.cbls.lib.search.combinators.distributed.{DistributedBest, DistributedFirst}
+import oscar.cbls.lib.search.combinators.distributed.{DistributedBestSlopeFirst, DistributedFirst}
 import oscar.cbls.{Objective, Store}
 
 import scala.collection.parallel.immutable.ParRange
@@ -142,7 +142,7 @@ object SchedulingBigExampleDistributed {
     val neighborhood = typeNb match {
       case Sequential => BestSlopeFirst(arrNH.toList)
       case DistFirst => new DistributedFirst(arrNH)
-      case DistBest => new DistributedBest(arrNH)
+      case DistBest => new DistributedBestSlopeFirst(arrNH)
     }
 
     // Final Print
