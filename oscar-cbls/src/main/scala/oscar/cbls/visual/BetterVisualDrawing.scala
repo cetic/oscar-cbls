@@ -1,6 +1,7 @@
 package oscar.cbls.visual
 
 import oscar.visual.VisualDrawing
+import oscar.visual.shapes.VisualText
 
 import java.awt.Point
 import java.awt.event.{MouseEvent, MouseListener, MouseMotionListener, MouseWheelEvent, MouseWheelListener}
