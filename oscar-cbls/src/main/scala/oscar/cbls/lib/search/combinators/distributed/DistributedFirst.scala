@@ -102,7 +102,6 @@ class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean =
             next(runningSearchIDs = uniqueId :: runningSearchIDs, nbFinishedSearches = nbFinishedSearches)
 
           case w: WrappedError =>
-
             for (r <- runningSearchIDs) {
               supervisor.supervisorActor ! CancelSearchToSupervisor(r)
             }
@@ -121,7 +120,7 @@ class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean =
         }
 
       case WrappedError(msg:Option[String],crash:Option[SearchCrashed])=>
-        if(msg.isDefined){
+        if (msg.isDefined) {
           supervisor.shutdown()
           throw new Error(s"${msg.get}")
         }

@@ -312,8 +312,9 @@ class SupervisorActor(context: ActorContext[MessageToSupervisor],
             // No idle workers
             if (verbose) context.log.info(status("StartSomeSearch:No Idle Workers:"))
 
-          case (false, _ :: _) =>
+          case (false, iw :: _) =>
             // There are waiting searches with idle workers ; some searches can be started
+            if (verbose) context.log.info(status(s"StartSomeSearch:Idle Worker: ${iw._1.path.name}"))
             val nbIdleWorkers = idleWorkersAndTheirCurrentModelID.size
             val nbAvailableSearches = waitingSearches.size
             var nbSearchToStart = nbIdleWorkers min nbAvailableSearches
@@ -416,7 +417,7 @@ class SupervisorActor(context: ActorContext[MessageToSupervisor],
 
       case DelegateSearch(searchRequest, waitForMoreSearches) =>
         val searchId = searchRequest.uniqueSearchId
-        if (verbose) context.log.info(s"got new waiting search:$searchId for :${searchRequest.sendResultTo.path}")
+        if (verbose) context.log.info(s"got new waiting search:$searchId for :${searchRequest.sendResultTo.path} (${searchRequest.remoteTaskId})")
         //now, we search for an available Worker or put this request on a waiting list.
         waitingSearches.enqueue(searchRequest)
         if (!waitForMoreSearches) {
