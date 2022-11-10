@@ -54,7 +54,7 @@ object WarehouseLocationDistributed1 extends App {
 
     //These neighborhoods are inefficient and slow; using multiple core is the wrong answer to inefficiency
     val neighborhood = (
-      new DistributedBestSlopeFirst(
+      new DistributedFirst(
         Array(
           Profile(assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"))) ++
           Array.tabulate(divideSwap)(x => Profile(swapShifted(x,divideSwap)):Neighborhood))
@@ -69,7 +69,7 @@ object WarehouseLocationDistributed1 extends App {
   //supervisor side
   val (store, search, obj, finalPrint) = createSearchProcedure()
 
-  val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(search, verbose = false)
+  val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(search, verbose = true)
 
   //This is a bit stupid: start the search while workers are not instantiated yet, but it is possible
   for (i <- ParRange(0, nbWorker, 1, inclusive = true)) {

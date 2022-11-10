@@ -66,7 +66,7 @@ object Supervisor {
                                     tic: Duration = Duration.Inf): Supervisor = {
     val supervisorActorSystem = internalStartSupervisorAndActorSystem(verbose, hotRestart, tic)
     val supervisor = wrapSupervisor(supervisorActorSystem, verbose)(system = supervisorActorSystem)
-    val (nbNRemoteNeighborhood,nbDistributedCombinator,_) = search.labelAndExtractRemoteTasks(supervisor: Supervisor)
+    val (nbNRemoteNeighborhood,nbDistributedCombinator,_) = search.labelAndExtractRemoteTasks(supervisor)
     val startLogger: Logger = LoggerFactory.getLogger("SupervisorObject")
     startLogger.info(s"Analyzed search; Nb Distributed Combinators:$nbDistributedCombinator; Nb Remote Neighborhoods:$nbNRemoteNeighborhood")
     supervisor
@@ -313,7 +313,7 @@ class SupervisorActor(context: ActorContext[MessageToSupervisor],
             if (verbose) context.log.info(status("StartSomeSearch:No Idle Workers:"))
 
           case (false, _ :: _) =>
-            // There are waiting searches with idle workers ; a search can be started
+            // There are waiting searches with idle workers ; some searches can be started
             val nbIdleWorkers = idleWorkersAndTheirCurrentModelID.size
             val nbAvailableSearches = waitingSearches.size
             var nbSearchToStart = nbIdleWorkers min nbAvailableSearches
@@ -376,7 +376,7 @@ class SupervisorActor(context: ActorContext[MessageToSupervisor],
             require(searchID == search2.uniqueSearchId)
             if (verbose) context.log.info(s"search:$searchID start confirmed by worker:${worker.path}")
             ongoingSearches = ongoingSearches + (searchID -> (search2, worker2))
-            startingSearches = startingSearches.-(startID)
+            startingSearches = startingSearches - startID
           case _ =>
             if (verbose) context.log.warn(s"unexpected search:$searchID start confirmed to Supervisor by worker:${worker.path}; asking for abort")
             worker ! AbortSearch(searchID)
@@ -410,6 +410,7 @@ class SupervisorActor(context: ActorContext[MessageToSupervisor],
         context.self ! StartSomeSearch
 
       case GetNewUniqueID(replyTo) =>
+        if (verbose) context.log.info(s"got a unique ID $nextSearchID for :${replyTo.path.name}")
         replyTo ! nextSearchID
         nextSearchID += 1
 

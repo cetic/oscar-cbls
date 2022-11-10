@@ -164,6 +164,8 @@ class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
               if (verbose) context.log.info(s"starting search:${newSearch.uniqueSearchId} neighborhood:${newSearch.remoteTaskId}")
               this.nbExploredNeighborhoods += 1
               currentNeighborhood = remoteTasks(newSearch.remoteTaskId.taskId)
+              // Notify the supervisor that the search has started
+              replyTo ! SearchStarted(newSearch.uniqueSearchId, startID, context.self)
               // This is the thread of the search, expressed as a future.
               Future {
                 //TODO nothing can happen after the future is bound, opportunity to improve and postpone cleaning tasks?
@@ -176,9 +178,7 @@ class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
                     master ! Crash(context.self)
                 }
                 context.self ! WrappedSearchEnded(newSearch.uniqueSearchId)
-              }(executionContextForComputation)
-              // While search computes, notify it has started
-              replyTo ! SearchStarted(newSearch.uniqueSearchId, startID, context.self)
+              } (executionContextForComputation)
               next(IAmBusy(newSearch,System.currentTimeMillis()))
           }
 
@@ -189,7 +189,7 @@ class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
 
             case IAmBusy(search,_) =>
               if (searchId == search.uniqueSearchId) {
-                currentNeighborhood match{
+                currentNeighborhood match {
                   case null => //RAS
                     //otherwise, ignore.
                     Behaviors.same

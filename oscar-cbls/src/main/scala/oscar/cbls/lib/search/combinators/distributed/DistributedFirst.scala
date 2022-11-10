@@ -25,9 +25,9 @@ class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean =
     val futureResult: Future[WrappedData] = resultPromise.future
 
     abstract class WrappedData
-    case class WrappedSearchEnded(searchEnded:SearchEnded) extends WrappedData
-    case class WrappedGotUniqueID(uniqueID:Long,remote:RemoteTaskIdentification) extends WrappedData
-    case class WrappedError(msg:Option[String] = None, crash:Option[SearchCrashed] = None) extends WrappedData
+    case class WrappedSearchEnded(searchEnded: SearchEnded) extends WrappedData
+    case class WrappedGotUniqueID(uniqueID: Long, remote: RemoteTaskIdentification) extends WrappedData
+    case class WrappedError(msg: Option[String] = None, crash: Option[SearchCrashed] = None) extends WrappedData
 
     implicit val system: ActorSystem[_] = supervisor.system
     //TODO look for the adequate timeout supervisor
@@ -81,7 +81,7 @@ class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean =
                 Behaviors.stopped
             }
 
-          case WrappedGotUniqueID(uniqueId: Long, remoteNeighborhoodIdentification) =>
+          case WrappedGotUniqueID(uniqueId, remoteNeighborhoodIdentification) =>
             context.ask[DelegateSearch, SearchEnded](
               supervisor.supervisorActor,
               ref => DelegateSearch(
@@ -119,17 +119,19 @@ class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean =
           case SearchCompleted(_, searchResult: IndependentSearchResult, _) => searchResult.getLocalResult(obj.model)
           case _ => NoMoveFound
         }
+
       case WrappedError(msg:Option[String],crash:Option[SearchCrashed])=>
         if(msg.isDefined){
           supervisor.shutdown()
           throw new Error(s"${msg.get}")
         }
-        if(crash.isDefined){
+        if (crash.isDefined) {
           supervisor.throwRemoteExceptionAndShutDown(crash.get)
         }
         throw new Error("Error in DistributedFirst")
+
       case e =>
-        throw new Error(s"Unknown error in DistributedFirst : $e")
+        throw new Error(s"Unknown message in in DistributedFirst : $e")
     }
   }
 }
