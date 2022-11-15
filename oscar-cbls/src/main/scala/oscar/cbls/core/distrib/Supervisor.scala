@@ -303,18 +303,21 @@ class SupervisorActor(context: ActorContext[MessageToSupervisor],
 
       case StartSomeSearch =>
         // Looking for waiting searches
-        (waitingSearches.isEmpty, idleWorkersAndTheirCurrentModelID) match {
-          case (true, idleWorkers) if idleWorkers.nonEmpty =>
-            // No waiting searches
-            if (verbose) context.log.info(status("StartSomeSearch:No Waiting Searches:"))
-
-          case (_, Nil) =>
-            // No idle workers
-            if (verbose) context.log.info(status("StartSomeSearch:No Idle Workers:"))
-
-          case (false, iw :: _) =>
+        if (waitingSearches.isEmpty) {
+          if (idleWorkersAndTheirCurrentModelID.isEmpty) {
+            // No waiting searches and no idle workers
+            if (verbose) context.log.info(status("StartSomeSearch:No Waiting Searches--No Idle Workers:"))
+          } else {
+            // No waiting searches and idle workers
+            if (verbose) context.log.info(status("StartSomeSearch:No Waiting Searches--Idle Workers:"))
+          }
+        } else {
+          if (idleWorkersAndTheirCurrentModelID.isEmpty) {
+            // Waiting searches and no idle workers
+            if (verbose) context.log.info(status("StartSomeSearch:Waiting Searches--No Idle Workers:"))
+          } else {
             // There are waiting searches with idle workers ; some searches can be started
-            if (verbose) context.log.info(status(s"StartSomeSearch:Idle Worker: ${iw._1.path.name}"))
+            if (verbose) context.log.info(status(s"StartSomeSearch:Waiting Searches--Idle Workers (${idleWorkersAndTheirCurrentModelID.map(_._1.path.toString).mkString(", ")}):"))
             val nbIdleWorkers = idleWorkersAndTheirCurrentModelID.size
             val nbAvailableSearches = waitingSearches.size
             var nbSearchToStart = nbIdleWorkers min nbAvailableSearches
@@ -330,7 +333,7 @@ class SupervisorActor(context: ActorContext[MessageToSupervisor],
                     if (newIdle.size != idleWorkersAndTheirCurrentModelID.size) {
                       //start this search
                       val modelAtWorkerSide = idleWorkersAndTheirCurrentModelID.filter(_._1.path == preferredWorker.path) match {
-                        case (_,modelOpt) :: Nil => modelOpt
+                        case (_, modelOpt) :: Nil => modelOpt
                         case _ => None
                       }
                       startSearch(searchTask, preferredWorker, modelAtWorkerSide)
@@ -349,13 +352,9 @@ class SupervisorActor(context: ActorContext[MessageToSupervisor],
               idleWorkersAndTheirCurrentModelID = idleWorkersAndTheirCurrentModelID.tail
               //println("coldRestart " + searchToStart.request.neighborhoodID)
               startSearch(searchToStart, workerActor, solutionAtWorkerOpt)
-
-              if (hotRestart) {
-                searchToStart.neighborhoodIdOpt match{
-                  case None => ;
-                  case Some(n) =>
-                    neighborhoodToPreferredWorker = neighborhoodToPreferredWorker + (n -> workerActor)
-                }
+              if (hotRestart && searchToStart.neighborhoodIdOpt.isDefined) {
+                val nbId = searchToStart.neighborhoodIdOpt.get
+                neighborhoodToPreferredWorker = neighborhoodToPreferredWorker + (nbId -> workerActor)
               }
               nbSearchToStart -= 1
             }
@@ -363,12 +362,9 @@ class SupervisorActor(context: ActorContext[MessageToSupervisor],
             //double loop on these searches; perform worker assignment as they come (no smart optimization here, first fit)
             //for the remaining searches, make it anyhow
             if (idleWorkersAndTheirCurrentModelID.isEmpty) {
-              if (verbose) context.log.info(status("StartSomeSearch:No idle workers after start search:"))
+              if (verbose) context.log.info(status("StartSomeSearch:No Idle Workers after Started Searches:"))
             }
-
-          case _ =>
-            // Default case
-            if (verbose) context.log.info(status("StartSomeSearch:Should be unreachable:"))
+          }
         }
 
       case SearchStarted(searchID, startID, worker) =>
