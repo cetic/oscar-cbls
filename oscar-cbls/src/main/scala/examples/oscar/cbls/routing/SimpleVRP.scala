@@ -5,12 +5,12 @@ import oscar.cbls.algo.generator.RoutingMatrixGenerator
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global._
 import oscar.cbls.business.routing.model.helpers.DistanceHelper
-import oscar.cbls.business.routing.neighborhood.{ThreeOpt, TwoOpt}
+import oscar.cbls.business.routing.neighborhood.{ThreeOpt, TreeOpt, TwoOpt}
 import oscar.cbls.core.search.Best
 
 object SimpleVRP extends App{
-  val n: Int = 2000
-  val v: Int = 20
+  val n: Int = 200
+  val v: Int = 2
   val size: Int = 10000
 
   val start = System.currentTimeMillis()
@@ -74,15 +74,15 @@ class SimpleVRP(n: Int, v: Int, size: Int, iteration: Int) {
   println(search.profilingStatistics)
   //println(myVRP)
 
-  /*
- val n2 = profile(TreeOpt.threeOptOnVehicle(myVRP,0,6))
+/*
+ val n2 = profile(TreeOpt.threeOptOnVehicle(myVRP,0,6).lateAcceptanceHillClimbing(initialObj = Some(obj.value*2)))
  n2.verbose = 1
  n2.doAllMoves(obj = obj)
  println(n2.profilingStatistics)
  println(myVRP)
  //println(myVRP)
 
- val n3 = profile(TreeOpt.threeOptOnVehicle(myVRP,1,6))
+ val n3 = profile(TreeOpt.threeOptOnVehicle(myVRP,1,6).lateAcceptanceHillClimbing(initialObj = Some(obj.value*2)))
  n3.verbose = 1
  n3.doAllMoves(obj = obj)
  println(n3.profilingStatistics)

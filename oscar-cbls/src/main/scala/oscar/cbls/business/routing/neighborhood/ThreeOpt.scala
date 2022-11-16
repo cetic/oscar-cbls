@@ -166,7 +166,7 @@ object TreeOpt{
    */
   def threeOptOnVehicle(myVRP:VRP, vehicle:Int, maxSizeOfMovedSegments:Int): Neighborhood = {
     ThreeOptByNodes(
-      neighborhoodName = s"threeOptOnVehicle(vehicle:$vehicle,maxSizeOfMovedSegments:$maxSizeOfMovedSegments)",
+      neighborhoodName = s"3-Opt(v:$vehicle,max:$maxSizeOfMovedSegments)",
       breakSymmetry = false,
       potentialInsertionNodes = () => myVRP.getRouteOfVehicle(vehicle),
       relevantMovedSegmentStartNode = () => {

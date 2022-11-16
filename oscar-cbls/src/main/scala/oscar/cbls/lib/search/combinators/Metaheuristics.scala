@@ -100,7 +100,7 @@ class Metropolis(a: Neighborhood, iterationToTemperature: Long => Double = _ => 
  *                                     This increases convergence, but decreased optimality of this approach.
  *                                     The default value is very large, so that this mechanism is inactive.
  */
-class LateAcceptanceHillClimbing(a:Neighborhood, length:Int = 20, maxRelativeIncreaseOnBestObj:Double = 10000) extends NeighborhoodCombinator(a) {
+class LateAcceptanceHillClimbing(a:Neighborhood, length:Int = 20, maxRelativeIncreaseOnBestObj:Double = 10000, initialObj:Option[Long] = None) extends NeighborhoodCombinator(a) {
   require(maxRelativeIncreaseOnBestObj > 1, "maybe you should not use LateAcceptanceHillClimbing if obj cannot increase anyway")
 
   val memory:Array[Long] = Array.fill(length)(Long.MaxValue)
@@ -111,7 +111,7 @@ class LateAcceptanceHillClimbing(a:Neighborhood, length:Int = 20, maxRelativeInc
   var bestKnownObj: Long = Long.MaxValue
 
   def init(initialObj:Long): Unit = {
-    for(i <- memory.indices) memory(i) = initialObj
+    for(i <- memory.indices) memory(i) = this.initialObj.getOrElse(initialObj)
     maxToleratedObj = Long.MaxValue
     bestKnownObj = Long.MaxValue
     initialized = true
