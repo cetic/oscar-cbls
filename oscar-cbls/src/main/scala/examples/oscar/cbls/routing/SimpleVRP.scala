@@ -73,4 +73,18 @@ class SimpleVRP(n: Int, v: Int, size: Int, iteration: Int) {
   search.doAllMoves(obj = obj)
   println(search.profilingStatistics)
   //println(myVRP)
+
+  /*
+ val n2 = profile(TreeOpt.threeOptOnVehicle(myVRP,0,6))
+ n2.verbose = 1
+ n2.doAllMoves(obj = obj)
+ println(n2.profilingStatistics)
+ println(myVRP)
+ //println(myVRP)
+
+ val n3 = profile(TreeOpt.threeOptOnVehicle(myVRP,1,6))
+ n3.verbose = 1
+ n3.doAllMoves(obj = obj)
+ println(n3.profilingStatistics)
+*/
 }

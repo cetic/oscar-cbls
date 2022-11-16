@@ -23,6 +23,8 @@ import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.computation.CBLSSeqVar
 import oscar.cbls.core.search._
 
+import scala.collection.immutable.SortedMap
+
 /**
  * This implementation of threeOpt explores the classical threeOpt by aspiration
  * it first iterates on position in routes, then searches for segments to "aspirate" from somewhere else on the routes.
@@ -153,6 +155,59 @@ case class ThreeOpt(potentialInsertionNodes:()=>Iterable[Int], //must be routed,
   }
 }
 
+object TreeOpt{
+  /**
+   * declares a neighborhood that performs a 3-ot on a given vehicle
+   * @param myVRP the VRP
+   * @param vehicle the statically defined vehicle
+   * @param maxSizeOfMovedSegments the max size of the moved segments
+   *                               (also the segment from the insertion node to the start of the moved segment)
+   * @return a 3-opt neighborhood
+   */
+  def threeOptOnVehicle(myVRP:VRP, vehicle:Int, maxSizeOfMovedSegments:Int): Neighborhood = {
+    ThreeOptByNodes(
+      neighborhoodName = s"threeOptOnVehicle(vehicle:$vehicle,maxSizeOfMovedSegments:$maxSizeOfMovedSegments)",
+      breakSymmetry = false,
+      potentialInsertionNodes = () => myVRP.getRouteOfVehicle(vehicle),
+      relevantMovedSegmentStartNode = () => {
+        val route:Array[Int] = myVRP.getRouteOfVehicle(vehicle).toArray
+        val positionOfEachNodeInArray:SortedMap[Int,Int] =
+          SortedMap.empty[Int,Int] ++ route.indices.map(i => (route(i),i))
+        (insertionNode:Int) => {
+          val positionInTheArray:Int = positionOfEachNodeInArray(insertionNode)
+          val minPos = 1 max positionInTheArray-(maxSizeOfMovedSegments*2)
+          val maxPos = (route.length-1) min (positionInTheArray + maxSizeOfMovedSegments)
+          (minPos to maxPos).flatMap(i =>
+            if (i == positionInTheArray || i == positionInTheArray+1) None
+            else Some(route(i))
+          )
+        }
+      },
+      relevantMovedSegmentEndNode = () => {
+        val routeWithoutVehicle = myVRP.getRouteOfVehicle(vehicle).filter(_!=vehicle)
+        (insertionNode, startNodeOfSegment, positionOfSegmentStart, fromVehicle) => {
+          var potentialSegmentEnds:List[Int] = Nil
+          var nbCandidateEnd = 0
+
+          var startNodeOfSegmentSeen = false
+          var finished = false
+          for(node <- routeWithoutVehicle if !finished){
+            if(node == insertionNode){
+              finished = startNodeOfSegmentSeen
+            }else if (node == startNodeOfSegment){
+              startNodeOfSegmentSeen = true
+            }else if (startNodeOfSegmentSeen) {
+              potentialSegmentEnds = node :: potentialSegmentEnds
+              nbCandidateEnd += 1
+              if(nbCandidateEnd > maxSizeOfMovedSegments) finished = true
+            }
+          }
+          potentialSegmentEnds.reverse
+        }
+      },
+      vrp = myVRP)
+  }
+}
 
 /**
  * This implementation of threeOpt explores the classical threeOpt by aspiration
