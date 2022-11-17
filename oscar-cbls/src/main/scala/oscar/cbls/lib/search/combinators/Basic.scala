@@ -202,7 +202,7 @@ case class Guard(cond: () => Boolean, b: Neighborhood) extends NeighborhoodCombi
 object ExhaustList{
   def apply(neighborhoods:Iterable[Neighborhood],neighborhoodName:String = "ExhaustList",backOnExhaust:Boolean = false):Neighborhood = {
     def recur(l: List[Neighborhood]): Neighborhood = {
-      neighborhoods match {
+      l match {
         case h :: Nil => h
         case h :: t => new Exhaust(h, recur(t))
         case Nil => DoNothingNeighborhood()
