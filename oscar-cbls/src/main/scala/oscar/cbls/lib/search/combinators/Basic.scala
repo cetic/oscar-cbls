@@ -1,7 +1,7 @@
 package oscar.cbls.lib.search.combinators
 
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{InstrumentedMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult}
+import oscar.cbls.core.search.{DoNothingNeighborhood, InstrumentedMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult}
 
 import scala.annotation.tailrec
 
@@ -196,6 +196,19 @@ case class Guard(cond: () => Boolean, b: Neighborhood) extends NeighborhoodCombi
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
     if (cond()) b.getMove(obj, initialObj:Long, acceptanceCriteria)
     else NoMoveFound
+  }
+}
+
+object ExhaustList{
+  def apply(neighborhoods:Iterable[Neighborhood],neighborhoodName:String = "ExhaustList"):Neighborhood = {
+    def recur(l: List[Neighborhood]): Neighborhood = {
+      neighborhoods match {
+        case h :: Nil => h
+        case h :: t => new Exhaust(h, recur(t))
+        case Nil => DoNothingNeighborhood()
+      }
+    }
+    recur(neighborhoods.toList) name neighborhoodName
   }
 }
 

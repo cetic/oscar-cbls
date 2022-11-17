@@ -22,6 +22,7 @@ import oscar.cbls.algo.search.{HotRestart, Pairs}
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.computation.CBLSSeqVar
 import oscar.cbls.core.search._
+import oscar.cbls.lib.search.combinators.ExhaustList
 
 import scala.collection.immutable.SortedMap
 
@@ -225,6 +226,27 @@ object TreeOpt{
         }
       },
       vrp = myVRP)
+  }
+
+  def threeOptByVehicle(myVRP:VRP, vehicles:Iterable[Int],
+                        maxSizeOfMovedSegments:Int,
+                        maxDistanceOfMove:Int,
+                        selectInsertionPointBehavior:LoopBehavior = First(),
+                        selectMovedSegmentBehavior:LoopBehavior = First(),
+                        hotRestart:Boolean = true,
+                        breakSymmetry:Boolean = true,
+                        tryFlip:Boolean = true
+                       ): Neighborhood = {
+    ExhaustList(vehicles.map(vehicle => threeOptOnVehicle(myVRP,
+      vehicle:Int,
+      maxSizeOfMovedSegments,
+      maxDistanceOfMove,
+      selectInsertionPointBehavior,
+      selectMovedSegmentBehavior,
+      hotRestart,
+      breakSymmetry,
+      tryFlip
+    )))
   }
 }
 
