@@ -237,16 +237,21 @@ object TreeOpt{
                         breakSymmetry:Boolean = true,
                         tryFlip:Boolean = true
                        ): Neighborhood = {
-    ExhaustList(vehicles.map(vehicle => threeOptOnVehicle(myVRP,
-      vehicle:Int,
-      maxSizeOfMovedSegments,
-      maxDistanceOfMove,
-      selectInsertionPointBehavior,
-      selectMovedSegmentBehavior,
-      hotRestart,
-      breakSymmetry,
-      tryFlip
-    )))
+    ExhaustList(
+      vehicles.map(vehicle =>
+        threeOptOnVehicle(
+          myVRP,
+          vehicle,
+          maxSizeOfMovedSegments,
+          maxDistanceOfMove,
+          selectInsertionPointBehavior,
+          selectMovedSegmentBehavior,
+          hotRestart,
+          breakSymmetry,
+          tryFlip
+        )),
+      backOnExhaust = true,
+    )
   }
 }
 

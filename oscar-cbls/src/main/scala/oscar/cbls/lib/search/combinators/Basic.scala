@@ -200,7 +200,7 @@ case class Guard(cond: () => Boolean, b: Neighborhood) extends NeighborhoodCombi
 }
 
 object ExhaustList{
-  def apply(neighborhoods:Iterable[Neighborhood],neighborhoodName:String = "ExhaustList"):Neighborhood = {
+  def apply(neighborhoods:Iterable[Neighborhood],neighborhoodName:String = "ExhaustList",backOnExhaust:Boolean = false):Neighborhood = {
     def recur(l: List[Neighborhood]): Neighborhood = {
       neighborhoods match {
         case h :: Nil => h
@@ -208,7 +208,9 @@ object ExhaustList{
         case Nil => DoNothingNeighborhood()
       }
     }
-    recur(neighborhoods.toList) name neighborhoodName
+    if(backOnExhaust){
+      recur(neighborhoods.toList) retry() name neighborhoodName
+    }else recur(neighborhoods.toList) name neighborhoodName
   }
 }
 
