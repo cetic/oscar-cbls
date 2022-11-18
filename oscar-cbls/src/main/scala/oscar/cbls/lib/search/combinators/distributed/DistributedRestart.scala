@@ -126,7 +126,7 @@ class DistributedRestart(baseSearch:Neighborhood,
       // ask supervisor to obtain unique IDs for the workers
       for(i <- 0 until maxWorkers) {
         context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
-          case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, remoteNeighborhoodIdentifications(if(performInitialNonRandomizeDescent && i == 0) 1 else 0))
+          case Success(uniqueID) => WrappedGotUniqueID(uniqueID, remoteNeighborhoodIdentifications(if(performInitialNonRandomizeDescent && i == 0) 1 else 0))
           case Failure(_) => WrappedError(msg = Some("supervisor actor timeout2"))
         }
       }
@@ -318,7 +318,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                 Behaviors.stopped
             }
 
-          case WrappedGotUniqueID(uniqueID: Long, remoteNeighborhoodIdentification) =>
+          case WrappedGotUniqueID(uniqueID, remoteNeighborhoodIdentification) =>
             // Get the unique ID
             implicit val timeout: Timeout = 1.hour //TODO: put a proper value here;
             // Ask the supervisor to delegate this search to the worker
@@ -394,7 +394,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                   searchResult match {
                     case moveFound: IndependentMoveFound if moveFound.objAfter < bestObjSoFar =>
                       //We did improve over best so far, so we have to restart anyway
-                      if(verbose) context.log.info(s"new solution: improved over best so far: ${moveFound.objAfter} although search criterion was reached, so restart search")
+                      if (verbose) context.log.info(s"new solution: improved over best so far: ${moveFound.objAfter} although search criterion was reached, so restart search")
                       for (_ <- 0 until (maxWorkers - nbRunningSearches + 1)) {
                         context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
                           case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, remoteNeighborhoodIdentifications(0))

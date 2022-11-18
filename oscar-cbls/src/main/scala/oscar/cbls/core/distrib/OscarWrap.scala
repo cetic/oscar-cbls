@@ -157,7 +157,8 @@ case class RemoteNeighborhood(neighborhoodID: Int, neighborhood: Neighborhood)
       obj.value,
       searchRequest.acceptanceCriterion,
       () => shouldAbortComputation,
-      Some(startSol)) match {
+      Some(startSol)
+    ) match {
       case NoMoveFound =>
         if (shouldAbortComputation) {
           searchRequest.sendResultTo ! SearchAborted(searchRequest.uniqueSearchId)
@@ -168,6 +169,7 @@ case class RemoteNeighborhood(neighborhoodID: Int, neighborhood: Neighborhood)
             (System.currentTimeMillis() - startTime).toInt
           )
         }
+
       case MoveFound(m) =>
         if (searchRequest.sendFullSolution) {
           val endTime = System.currentTimeMillis()

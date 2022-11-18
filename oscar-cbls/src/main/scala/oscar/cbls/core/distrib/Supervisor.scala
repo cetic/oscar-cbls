@@ -190,9 +190,9 @@ class SupervisorActor(context: ActorContext[MessageToSupervisor],
   // This one cannot be a control message.
 
   private val waitingSearches = mutable.Queue[SearchRequest]()
-  var nbLocalWorker: Int = 0
-  var nbCustomSearchActor:Int = 0
-  var neighborhoodToPreferredWorker: SortedMap[Int, ActorRef[MessageToWorker]] = SortedMap.empty
+  private var nbLocalWorkers: Int = 0
+  private var nbCustomSearchActors:Int = 0
+  private var neighborhoodToPreferredWorker: SortedMap[Int, ActorRef[MessageToWorker]] = SortedMap.empty
   private var allKnownWorkers: List[ActorRef[MessageToWorker]] = Nil
   private var idleWorkersAndTheirCurrentModelID: List[(ActorRef[MessageToWorker],Option[SolutionID])] = Nil
   //this one is a list, because the most common operations are add and takeFirst
@@ -240,12 +240,12 @@ class SupervisorActor(context: ActorContext[MessageToSupervisor],
         }
 
       case SpawnNewActor(behavior, behaviorName, replyTo) =>
-        replyTo ! context.spawn(behavior, s"customSearchActor$nbCustomSearchActor$behaviorName")
-        nbCustomSearchActor += 1
+        replyTo ! context.spawn(behavior, s"customSearchActor$nbCustomSearchActors$behaviorName")
+        nbCustomSearchActors += 1
 
       case SpawnWorker(workerBehavior) =>
-        context.spawn(workerBehavior, s"localWorker$nbLocalWorker")
-        nbLocalWorker += 1
+        context.spawn(workerBehavior, s"localWorker$nbLocalWorkers")
+        nbLocalWorkers += 1
 
       case NbWorkers(replyTo, waitForAtLeastOneWorker) if !waitForAtLeastOneWorker =>
         replyTo ! this.allKnownWorkers.size
@@ -400,7 +400,7 @@ class SupervisorActor(context: ActorContext[MessageToSupervisor],
         /////
         if (verbose) context.log.info(s"got a worker ready:${worker.path}; finished search:$completedSearchID")
         completedSearchID match {
-          case Some(s) => ongoingSearches = ongoingSearches.-(s)
+          case Some(s) => ongoingSearches -= s
           case None => ;
         }
         idleWorkersAndTheirCurrentModelID = (worker,currentModelId) :: idleWorkersAndTheirCurrentModelID

@@ -170,7 +170,14 @@ class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
               Future {
                 //TODO nothing can happen after the future is bound, opportunity to improve and postpone cleaning tasks?
                 try {
-                  currentSolOpt = currentNeighborhood.doTask(newSearch, m, currentSolOpt, Some(context.self.path.toString))
+                  if (verbose) context.log.info(s"remote task starting:${newSearch.uniqueSearchId} worker ref:${context.self.path}")
+                  currentSolOpt = currentNeighborhood.doTask(
+                    newSearch,
+                    m,
+                    currentSolOpt,
+                    Some(context.self.path.toString)
+                  )
+                  if (verbose) context.log.info(s"remote task ending:${newSearch.uniqueSearchId} worker ref:${context.self.path}")
                 } catch {
                   case e:Throwable =>
                     if (verbose) context.log.info(s"remote task crashed; reason: ${e.getMessage}; search:${newSearch.uniqueSearchId} neighborhood:${newSearch.remoteTaskId}")
