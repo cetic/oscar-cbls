@@ -167,7 +167,7 @@ class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
               // Notify the supervisor that the search has started
               replyTo ! SearchStarted(newSearch.uniqueSearchId, startID, context.self)
               // This is the thread of the search, expressed as a future.
-              //Future {
+              Future {
                 //TODO nothing can happen after the future is bound, opportunity to improve and postpone cleaning tasks?
                 try {
                   currentSolOpt = currentNeighborhood.doTask(
@@ -183,7 +183,7 @@ class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
                     master ! Crash(context.self)
                 }
                 context.self ! WrappedSearchEnded(newSearch.uniqueSearchId)
-              //} (executionContextForComputation)
+              } (executionContextForComputation)
               next(IAmBusy(newSearch,System.currentTimeMillis()))
           }
 
