@@ -209,7 +209,7 @@ object ExhaustList{
       }
     }
     if(backOnExhaust){
-      recur(neighborhoods.toList) retry() name neighborhoodName
+      recur(neighborhoods.toList).retry() name neighborhoodName
     }else recur(neighborhoods.toList) name neighborhoodName
   }
 }
