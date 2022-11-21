@@ -201,13 +201,13 @@ class PiecewiseAffineFunction(points:Array[(Long,Long)]){
       } else if (down + 1 == up) {
         return linearInterpol(x - points(down)._1, points(down)._1,points(down)._2,points(up)._1,points(up)._2).toLong
       }
-      val medslot = (up + down) / 2
-      val medslotstart = points(medslot)._1
+      val medSlot = (up + down) / 2
+      val medSlotStart = points(medSlot)._1
 
-      if (medslotstart <= x) {
-        down = medslot
+      if (medSlotStart <= x) {
+        down = medSlot
       }else{
-        up = medslot
+        up = medSlot
       }
     }
     ??? //never reached

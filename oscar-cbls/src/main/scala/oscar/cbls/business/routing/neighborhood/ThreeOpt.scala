@@ -277,8 +277,8 @@ object TreeOpt{
  *                      it is equivalent to moving the nodes between the segment and the insertion position in the other direction
  * @param tryFlip true if flip should be considered, false otherwise.
  */
-case class ThreeOptByNodes(potentialInsertionNodes:()=>Iterable[Int], //must be routed, can include vehicles
-                           relevantMovedSegmentStartNode:()=>(Int,Int,Int)=>Iterable[Int], //() => (insertionNode,insertionPosition,toVehicle) => segmentStartNodes
+case class ThreeOptByNodes(potentialInsertionNodes:()=>Iterable[(Int,Option[Int]), //must be routed, can include vehicles
+                           relevantMovedSegmentStartNode:()=>(Int,Int,Int)=>Iterable[(Int,Option[Int]), //() => (insertionNode,insertionPosition,toVehicle) => segmentStartNodes
                            relevantMovedSegmentEndNode:()=>(Int,Int,Int)=>(Int,Int,Int)=>Iterable[Int], //() => (insertionNode,insertionPosition,toVehicle) => (segmentStartNode,segmentStartPosition,fromVehicle) => segmentEndNodes
                            override val vrp: VRP,
                            neighborhoodName:String = "ThreeOpt",
