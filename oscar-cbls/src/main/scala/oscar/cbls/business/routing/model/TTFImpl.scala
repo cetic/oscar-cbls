@@ -92,22 +92,19 @@ class TTFConst(travelDuration: Long) extends TravelTimeFunction {
 }
 
 /**
-  * represents a TTF using histograms
-  * Notice that the representation is modulo, if asked for a time after the overallDuration,
-  * it is assumed to start again at position zero in time
-  *
-  * @param nbSlots the number of slots in the histogram
-  * @param overallDuration the duration of the whole TTF
-  * @author renaud.delandtsheer@cetic.be
-  */
-class TTFHistogramStaircase(slotDuration:Long, startTimeOfHistogram:Long, slots:Array[Long]) extends TravelTimeFunction {
+  * represents a TTF using histograms with staircase
+ *
+ * @param slotDuration the duration of a slot in the histogram
+ * @param slots slots of the histogram. The first one is at time zero
+ */
+class TTFHistogramStaircase(slotDuration:Long, slots:Array[Long]) extends TravelTimeFunction {
 
   override def toString: String = {
     s"TTFHistogram(${ var strSlots = ""; for (slot <- slots) { strSlots += s"$slot; " }; strSlots })"
   }
 
   override def travelDuration(leaveTime: Long): Long = {
-    val slotNr:Int = ((leaveTime - startTimeOfHistogram) / slotDuration).toInt
+    val slotNr:Int = (leaveTime.toDouble / slotDuration.toDouble).toInt
     slots(slotNr)
   }
 
@@ -126,20 +123,21 @@ class TTFHistogramStaircase(slotDuration:Long, startTimeOfHistogram:Long, slots:
       if (minslot == maxslot) {
         return slots(minslot)
       } else if (minslot + 1 == maxslot) {
-        if (startTimeOfHistogram + maxslot * slotDuration + slots(maxslot) <= arrivalTime) {
+        if (maxslot * slotDuration + slots(maxslot) <= arrivalTime) {
           return slots(maxslot)
         } else {
           return slots(minslot)
         }
-      }
-      val medslot = (minslot + maxslot) / 2
-      val medslotstart = startTimeOfHistogram + medslot * slotDuration
+      }else {
+        val medslot = (minslot + maxslot) / 2
+        val medslotstart = medslot * slotDuration
 
-      if (medslotstart + slots(medslot) <= arrivalTime) {
-        minslot = medslot
-      }
-      if (medslotstart + slotDuration + slots(medslot) >= arrivalTime) {
-        maxslot = medslot
+        if (medslotstart + slots(medslot) <= arrivalTime) {
+          minslot = medslot
+        }
+        if (medslotstart + slotDuration + slots(medslot) >= arrivalTime) {
+          maxslot = medslot
+        }
       }
     }
     // Default return value
@@ -162,64 +160,56 @@ class TTFHistogramStaircase(slotDuration:Long, startTimeOfHistogram:Long, slots:
   */
 class TTFSegments(points:Array[(Long,Long)], val overallDuration: Int) extends TravelTimeFunction {
 
+  override def checkFIFOProperty(): Boolean = {
+    for(i <- 0 until points.length-1){
+      val j = i+1
+      if((points(i)._2 - points(j)._2) > (points(j)._1 - points(i)._1))
+        return false
+    }
+    true
+  }
+
+  val fwdFun = new PiecewiseAffineFunction(points)
+  val bwdFun = new PiecewiseAffineFunction(points.toList.map({case (start,dur) =>  (start+dur,dur)}).sortBy(_._1).toArray)
   override def minTravelDuration: Long = points.minBy(_._2)._2
 
   override def maxTravelDuration: Long = points.maxBy(_._2)._2
 
-  override def travelDuration(leaveTime: Int): Int = {
-    val pointBefore = findLastPointBefore(leaveTime)
-    val pointAfter = pointBefore + 1
+  override def travelDuration(leaveTime: Long): Long = fwdFun(leaveTime)
 
-    linearInterpol(leaveTime.toFloat,
-      getPointX(pointBefore).toFloat, getPointY(pointBefore).toFloat,
-      getPointX(pointAfter).toFloat, getPointY(pointAfter).toFloat).toInt
-  }
+  override def backwardTravelDuration(arrivalTime: Long): Long = bwdFun(arrivalTime)
 
+  override def toString: String = s"TTFSegments(NbPoints: ${points.length})"
+}
+
+class PiecewiseAffineFunction(points:Array[(Long,Long)]){
   @inline
-  private def linearInterpol(X: Float, X1: Float, Y1: Float, X2: Float, Y2: Float): Float = {
+  private def linearInterpol(X: Double, X1: Double, Y1: Double, X2: Double, Y2: Double): Double = {
     ((X - X1) * (Y2 - Y1)) / (X2 - X1) + Y1
   }
 
-  def findLastPointBeforeLeave(arrivalTime: Int): Int = {
-    var up: Int = NbPoints - 1
-    while (getPointX(up) + getPointY(up) < arrivalTime) up = up + NbPoints
-    var down: Int = -1
-    while (getPointX(down) + getPointX(down) > arrivalTime - overallDuration) down = down - NbPoints
+  def apply(x:Long):Long = {
+    var down: Int = 0 //strictly below
+    var up: Int = points.length - 1 //Strictly above
 
-    while (down + 1 < up) {
-      val mid: Int = (up + down) / 2
-      if (getPointX(mid) + getPointY(mid) == arrivalTime) {
-        return mid
-      } else if (getPointX(mid) + getPointY(mid) < arrivalTime) {
-        down = mid
-      } else {
-        up = mid
+    if(x == points(down)._1) return points(down)._2
+    if(x == points(up)._1) return points(up)._2
+
+    while (true) {
+      if (up == down) {
+        return points(up)._2
+      } else if (down + 1 == up) {
+        return linearInterpol(x - points(down)._1, points(down)._1,points(down)._2,points(up)._1,points(up)._2).toLong
+      }
+      val medslot = (up + down) / 2
+      val medslotstart = points(medslot)._1
+
+      if (medslotstart <= x) {
+        down = medslot
+      }else{
+        up = medslot
       }
     }
-    if (getPointX(up) + getPointY(up) <= arrivalTime) up
-    else down
+    ??? //never reached
   }
-
-  override def backwardTravelDuration(arrivalTime: Int): Int = {
-    var pointBefore = findLastPointBeforeLeave(arrivalTime)
-    while (getPointX(pointBefore + 1) + getPointY(pointBefore + 1) <= arrivalTime) {
-      pointBefore += 1
-    }
-
-    assert(getPointX(pointBefore) + getPointY(pointBefore) <= arrivalTime)
-    assert(arrivalTime <= getPointX(pointBefore + 1) + getPointY(pointBefore + 1))
-
-    linearInterpolBackward(arrivalTime.toFloat,
-      getPointX(pointBefore).toFloat, getPointY(pointBefore).toFloat,
-      getPointX(pointBefore + 1).toFloat, getPointY(pointBefore + 1).toFloat).toInt
-  }
-
-  @inline
-  private def linearInterpolBackward(Y: Float, X1: Float, Y1: Float, X2: Float, Y2: Float): Float = {
-    if (Y1 == Y2) return Y1
-    val p = (X1 - X2) / (Y1 - Y2)
-    ((Y + p * Y1 - X1) / (p + 1.0)).toFloat
-  }
-
-  override def toString: String = s"TTFSegments(NbPoints: $NbPoints overallDuration: $overallDuration points: [${(0 until NbPoints) map (i => "(" + pointX(i) + ";" + pointY(i) + ")") mkString ","}])"
 }
