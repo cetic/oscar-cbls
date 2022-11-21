@@ -53,7 +53,7 @@ package object routing
   def ttfConst(travelDuration: Int): TTFConst =
     new TTFConst(travelDuration)
 
-  type TTFHistogram = oscar.cbls.business.routing.model.TTFHistogram
+  type TTFHistogram = oscar.cbls.business.routing.model.TTFHistogramStaircase
   def ttfHistogram(nbSlots: Int, overallDuration: Int): TTFHistogram =
     new TTFHistogram(nbSlots, overallDuration)
 
@@ -61,7 +61,7 @@ package object routing
   def ttfSegments(nbPoints: Int, overallDuration: Int): TTFSegments =
     new TTFSegments(nbPoints, overallDuration)
 
-  type PrimitiveTravelTimeFunction = oscar.cbls.business.routing.model.PrimitiveTravelTimeFunction
+  type PrimitiveTravelTimeFunction = oscar.cbls.business.routing.model.TravelTimeFunction
 
   val ChainsHelper = oscar.cbls.business.routing.model.helpers.ChainsHelper
   val DistanceHelper = oscar.cbls.business.routing.model.helpers.DistanceHelper
