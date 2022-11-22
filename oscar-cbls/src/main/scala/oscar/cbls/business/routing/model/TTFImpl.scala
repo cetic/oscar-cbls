@@ -223,8 +223,6 @@ object testPiecewiseAffineBijection extends App{
 
 class PiecewiseAffineFunction(points:Array[(Long,Long)]){
 
-  println(toString)
-
   override def toString: String = "PiecewiseAffineFunction(" + points.mkString(",") +")"
 
   @inline
