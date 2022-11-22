@@ -21,6 +21,14 @@ package oscar.cbls.business.routing.model
 abstract class TravelTimeFunction {
 
   /**
+   * this is the default functin; it returns the travelDuration
+   *
+   * @param leaveTime when the travel begins
+   * @return the duration of the travels
+   */
+  def apply(leaveTime:Long):Long = travelDuration(leaveTime)
+
+  /**
     * the duration to perform the travel
     *
     * @param leaveTime when the travel begins
@@ -65,7 +73,7 @@ abstract class TravelTimeFunction {
    * the slope of the travelDuration function can never be < -1
    * @return
    */
-  def checkFIFOProperty():Boolean
+  def requireFifoProperty():Unit
 }
 
 /**
@@ -88,7 +96,7 @@ class TTFConst(travelDuration: Long) extends TravelTimeFunction {
 
   override def backwardTravelDuration(arrivalTime: Long): Long = travelDuration
 
-  override def checkFIFOProperty(): Boolean = true
+  override def requireFifoProperty():Unit = {}
 }
 
 /**
@@ -144,7 +152,13 @@ class TTFHistogramStaircase(slotDuration:Long, slots:Array[Long]) extends Travel
     0
   }
 
-  override def checkFIFOProperty(): Boolean = false
+  /**
+   * checks that the TTF enforces the FIFO property
+   * the slope of the travelDuration function can never be < -1
+   *
+   * @return
+   */
+  override def requireFifoProperty(): Unit = require(false,"Staircase histograms have infinite slope at each step; they do not enforce FIFO property")
 }
 
 /**
@@ -158,15 +172,14 @@ class TTFHistogramStaircase(slotDuration:Long, slots:Array[Long]) extends Travel
   * @param overallDuration the duration to consider
   * @author renaud.delandtsheer@cetic.be
   */
-class TTFSegments(points:Array[(Long,Long)], val overallDuration: Int) extends TravelTimeFunction {
+class TTFSegments(points:Array[(Long,Long)]) extends TravelTimeFunction {
 
-  override def checkFIFOProperty(): Boolean = {
+  override def requireFifoProperty(): Unit = {
     for(i <- 0 until points.length-1){
       val j = i+1
-      if((points(i)._2 - points(j)._2) > (points(j)._1 - points(i)._1))
-        return false
+      require((points(i)._2 - points(j)._2) <= (points(j)._1 - points(i)._1),
+        s"TTF not FIFO compliant slope between $i ${points(i)} and $j ${points(j)} dx:${(points(j)._1 - points(i)._1)} dy:${(points(j)._2 - points(i)._2)}")
     }
-    true
   }
 
   val fwdFun = new PiecewiseAffineFunction(points)
@@ -182,10 +195,29 @@ class TTFSegments(points:Array[(Long,Long)], val overallDuration: Int) extends T
   override def toString: String = s"TTFSegments(NbPoints: ${points.length})"
 }
 
+object testPiecewiseAffineBijection extends App{
+  val points:Array[(Long,Long)] = Array((1,55),(10,50),(56,100),(74,83),(100,200))
+  //val f:PiecewiseAffineFunction = new PiecewiseAffineFunction(points)
+  val f = new TTFSegments(points)
+
+  f.requireFifoProperty()
+
+  {val i = 1; println(s"$i -> ${f(i)}")}
+  {val i = 10; println(s"$i -> ${f(i)}")}
+  {val i = 56; println(s"$i -> ${f(i)}")}
+  {val i = 74; println(s"$i -> ${f(i)}")}
+  {val i = 100; println(s"$i -> ${f(i)}")}
+
+  for(i <- 1 to 100){
+    println(s"$i -> ${f(i)}")
+  }
+}
+
+
 class PiecewiseAffineFunction(points:Array[(Long,Long)]){
   @inline
   private def linearInterpol(X: Double, X1: Double, Y1: Double, X2: Double, Y2: Double): Double = {
-    ((X - X1) * (Y2 - Y1)) / (X2 - X1) + Y1
+    ((X) * (Y2 - Y1)) / (X2 - X1) + Y1
   }
 
   def apply(x:Long):Long = {
