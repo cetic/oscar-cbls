@@ -13,7 +13,7 @@
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  ******************************************************************************/
 package oscar.cbls.business.routing.model
-
+import scala.collection.immutable.SortedMap
 /**
  * This stores a single TTF of a travel binding two nodes
  * @author renaud.delandtsheer@cetic.be
@@ -183,20 +183,15 @@ class TTFSegments(points:Array[(Long,Long)]) extends TravelTimeFunction {
   }
 
   val fwdFun = new PiecewiseAffineFunction(points)
-  val bwdFun = new PiecewiseAffineFunction(  {
-    val pivotPoints =  points.map(_._1)
-    val firstPivotX = pivotPoints(0)
-    val lastPivotX = pivotPoints.last
-    val enlargedPivots = pivotPoints
-    val pivotAndValue = enlargedPivots.map(x => {
-      var start = x
-      val dur = fwdFun(x)
-      while(start+1 + fwdFun(start+1) == x + dur) start+=1
-      (start,fwdFun(start))
-    })
-    println("pivotAndValue:" + pivotAndValue.mkString(","))
-    pivotAndValue.map({case (start,dur) =>  (start+dur,dur)}).groupBy(_._1).map({case (x,pairs) => (x,pairs.map(_._2).min)}).toArray.sortBy(_._1)
-  })
+  val bwdFun = {
+    var travels:Map[Long,Long] = SortedMap.empty
+    for(startTime <- points(0)._1 to points.last._1){
+      val travelTime = fwdFun(startTime)
+      val arrivalTime = startTime + travelTime
+      travels += (arrivalTime -> travelTime)
+    }
+    new PiecewiseAffineFunction(travels.toArray)
+  }
 
   override def minTravelDuration: Long = points.minBy(_._2)._2
 
@@ -220,11 +215,12 @@ object testPiecewiseAffineBijection extends App{
     val forwardTravelTime = f(time)
     val arrivalTime = f.earliestArrivalTime(time)
     val backwardTravelTIme = f.backwardTravelDuration(arrivalTime)
-    val leaveTime = f.latestLeaveTime(arrivalTime)
-    println(s"time:$time forwardTravelTime:$forwardTravelTime arrivalTime:$arrivalTime backwardTravelTIme:$backwardTravelTIme latestLeaveTime:$leaveTime")
+    val latestLeaveTime = f.latestLeaveTime(arrivalTime)
+    println(s"time:$time forwardTravelTime:$forwardTravelTime arrivalTime:$arrivalTime backwardTravelTime:$backwardTravelTIme latestLeaveTime:$latestLeaveTime")
+    require(latestLeaveTime + f(latestLeaveTime) <= arrivalTime,f(latestLeaveTime))
+    require(latestLeaveTime + 1 + f(latestLeaveTime+1) > arrivalTime,f(latestLeaveTime+1))
   }
 }
-
 
 class PiecewiseAffineFunction(points:Array[(Long,Long)]){
 
