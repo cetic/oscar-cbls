@@ -1,23 +1,23 @@
 /*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
+ * OscaR is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * OscaR is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License  for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+ * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+ ******************************************************************************/
 package oscar.cbls.business.routing.model
 
 /**
-  * This stores a single TTF of a travel binding two nodes
-  * @author renaud.delandtsheer@cetic.be
-  */
+ * This stores a single TTF of a travel binding two nodes
+ * @author renaud.delandtsheer@cetic.be
+ */
 abstract class TravelTimeFunction {
 
   /**
@@ -29,11 +29,11 @@ abstract class TravelTimeFunction {
   def apply(leaveTime:Long):Long = travelDuration(leaveTime)
 
   /**
-    * the duration to perform the travel
-    *
-    * @param leaveTime when the travel begins
-    * @return the duration of the travel
-    */
+   * the duration to perform the travel
+   *
+   * @param leaveTime when the travel begins
+   * @return the duration of the travel
+   */
   def travelDuration(leaveTime: Long): Long
 
   /**
@@ -41,14 +41,14 @@ abstract class TravelTimeFunction {
    * @param leaveTime when the ravel starts
    * @return when the travel finishes
    */
-  def arrivalTime(leaveTime:Long):Long = leaveTime + travelDuration(leaveTime)
+  def earliestArrivalTime(leaveTime:Long):Long = leaveTime + travelDuration(leaveTime)
 
   /**
-    * the duration of the travel if you plan to arrive at the given time
-    *
-    * @param arrivalTime when the travel finishes
-    * @return the duration of the travel
-    */
+   * the duration of the travel if you plan to arrive at the given time
+   *
+   * @param arrivalTime when the travel finishes
+   * @return the duration of the travel
+   */
   def backwardTravelDuration(arrivalTime: Long): Long
 
   /**
@@ -56,7 +56,7 @@ abstract class TravelTimeFunction {
    * @param arrivalTime when the travel finishes
    * @return when the ravel starts
    */
-  def leaveTime(arrivalTime:Long):Long = arrivalTime - backwardTravelDuration(arrivalTime)
+  def latestLeaveTime(arrivalTime:Long):Long = arrivalTime - backwardTravelDuration(arrivalTime)
 
   /**
    * @return the min travel duration
@@ -77,11 +77,11 @@ abstract class TravelTimeFunction {
 }
 
 /**
-  * A TTF that is constant
-  * this is similar to using a TTFHistogram with a single slot, but this class is lighter
-  * @param travelDuration the duration of the travel
-  * @author renaud.delandtsheer@cetic.be
-  */
+ * A TTF that is constant
+ * this is similar to using a TTFHistogram with a single slot, but this class is lighter
+ * @param travelDuration the duration of the travel
+ * @author renaud.delandtsheer@cetic.be
+ */
 class TTFConst(travelDuration: Long) extends TravelTimeFunction {
 
   override def toString: String = {
@@ -100,7 +100,7 @@ class TTFConst(travelDuration: Long) extends TravelTimeFunction {
 }
 
 /**
-  * represents a TTF using histograms with staircase
+ * represents a TTF using histograms with staircase
  *
  * @param slotDuration the duration of a slot in the histogram
  * @param slots slots of the histogram. The first one is at time zero
@@ -162,16 +162,16 @@ class TTFHistogramStaircase(slotDuration:Long, slots:Array[Long]) extends Travel
 }
 
 /**
-  * Represents a TTF as a piecewise linear function
-  *
-  * Notice that the representation is modulo, if asked for a time after the last point,
-  * it is assumed to start again at position zero in time,
-  * so that linear interpolation might happen between the last point and the first point, shifted by overallDuration
-  *
-  * @param NbPoints the number of points to consider
-  * @param overallDuration the duration to consider
-  * @author renaud.delandtsheer@cetic.be
-  */
+ * Represents a TTF as a piecewise linear function
+ *
+ * Notice that the representation is modulo, if asked for a time after the last point,
+ * it is assumed to start again at position zero in time,
+ * so that linear interpolation might happen between the last point and the first point, shifted by overallDuration
+ *
+ * @param NbPoints the number of points to consider
+ * @param overallDuration the duration to consider
+ * @author renaud.delandtsheer@cetic.be
+ */
 class TTFSegments(points:Array[(Long,Long)]) extends TravelTimeFunction {
 
   override def requireFifoProperty(): Unit = {
@@ -183,7 +183,15 @@ class TTFSegments(points:Array[(Long,Long)]) extends TravelTimeFunction {
   }
 
   val fwdFun = new PiecewiseAffineFunction(points)
-  val bwdFun = new PiecewiseAffineFunction(points.toList.map({case (start,dur) =>  (start+dur,dur)}).sortBy(_._1).toArray)
+  val bwdFun = new PiecewiseAffineFunction(  {
+    val pivotPoints =  points.map(_._1)
+    val firstPivotX = pivotPoints(0)
+    val lastPivotX = pivotPoints.last
+    val enlargedPivots = pivotPoints.flatMap(x => {List(x-1,x,x+1).filter(x => firstPivotX < x && x <= lastPivotX)})
+    val pivotAndValue = enlargedPivots.map(x => (x,fwdFun(x)))
+    pivotAndValue.map({case (start,dur) =>  (start+dur,dur)}).groupBy(_._1).map({case (x,pairs) => (x,pairs.map(_._2).min)}).toArray.sortBy(_._1)
+  })
+
   override def minTravelDuration: Long = points.minBy(_._2)._2
 
   override def maxTravelDuration: Long = points.maxBy(_._2)._2
@@ -202,19 +210,22 @@ object testPiecewiseAffineBijection extends App{
 
   f.requireFifoProperty()
 
-  {val i = 1; println(s"$i -> ${f(i)}")}
-  {val i = 10; println(s"$i -> ${f(i)}")}
-  {val i = 56; println(s"$i -> ${f(i)}")}
-  {val i = 74; println(s"$i -> ${f(i)}")}
-  {val i = 100; println(s"$i -> ${f(i)}")}
-
-  for(i <- 1 to 100){
-    println(s"$i -> ${f(i)}")
+  for(time <- 1 to 100){
+    val forwardTravelTime = f(time)
+    val arrivalTime = f.earliestArrivalTime(time)
+    val backwardTravelTIme = f.backwardTravelDuration(arrivalTime)
+    val leaveTime = f.latestLeaveTime(arrivalTime)
+    println(s"time:$time forwardTravelTime:$forwardTravelTime arrivalTime:$arrivalTime backwardTravelTIme:$backwardTravelTIme latestLeaveTime:$leaveTime")
   }
 }
 
 
 class PiecewiseAffineFunction(points:Array[(Long,Long)]){
+
+  println(toString)
+
+  override def toString: String = "PiecewiseAffineFunction(" + points.mkString(",") +")"
+
   @inline
   private def linearInterpol(X: Double, X1: Double, Y1: Double, X2: Double, Y2: Double): Double = {
     ((X) * (Y2 - Y1)) / (X2 - X1) + Y1
