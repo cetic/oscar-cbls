@@ -21,7 +21,7 @@ import scala.collection.immutable.SortedMap
 abstract class TravelTimeFunction {
 
   /**
-   * this is the default functin; it returns the travelDuration
+   * default function; it returns the travelDuration
    *
    * @param leaveTime when the travel begins
    * @return the duration of the travels
@@ -112,7 +112,7 @@ class TTFHistogramStaircase(slotDuration:Long, slots:Array[Long]) extends Travel
   }
 
   override def travelDuration(leaveTime: Long): Long = {
-    val slotNr:Int = (leaveTime.toDouble / slotDuration.toDouble).toInt
+    val slotNr:Int = (leaveTime.toDouble / slotDuration.toDouble).floor.toInt
     slots(slotNr)
   }
 
@@ -206,7 +206,6 @@ class TTFSegments(points:Array[(Long,Long)]) extends TravelTimeFunction {
 
 object testPiecewiseAffineBijection extends App{
   val points:Array[(Long,Long)] = Array((1,55),(10,50),(56,100),(74,83),(100,200))
-  //val f:PiecewiseAffineFunction = new PiecewiseAffineFunction(points)
   val f = new TTFSegments(points)
 
   f.requireFifoProperty()
