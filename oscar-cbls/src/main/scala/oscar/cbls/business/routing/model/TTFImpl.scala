@@ -187,8 +187,14 @@ class TTFSegments(points:Array[(Long,Long)]) extends TravelTimeFunction {
     val pivotPoints =  points.map(_._1)
     val firstPivotX = pivotPoints(0)
     val lastPivotX = pivotPoints.last
-    val enlargedPivots = pivotPoints.flatMap(x => {List(x-1,x,x+1).filter(x => firstPivotX < x && x <= lastPivotX)})
-    val pivotAndValue = enlargedPivots.map(x => (x,fwdFun(x)))
+    val enlargedPivots = pivotPoints
+    val pivotAndValue = enlargedPivots.map(x => {
+      var start = x
+      val dur = fwdFun(x)
+      while(start+1 + fwdFun(start+1) == x + dur) start+=1
+      (start,fwdFun(start))
+    })
+    println("pivotAndValue:" + pivotAndValue.mkString(","))
     pivotAndValue.map({case (start,dur) =>  (start+dur,dur)}).groupBy(_._1).map({case (x,pairs) => (x,pairs.map(_._2).min)}).toArray.sortBy(_._1)
   })
 
