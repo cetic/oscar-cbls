@@ -56,7 +56,8 @@ trait InsertPointAPI{
                              selectInsertionPointBehavior:LoopBehavior = First(),
                              selectInsertedNodeBehavior:LoopBehavior = First(),
                              hotRestart: Boolean = true,
-                             insertedPointsSymetryClass:Option[Int => Int] = None) =
+                             insertedPointsSymetryClass:Option[Int => Int] = None,
+                             includeVehicleInformationInMove:Boolean = false) =
     InsertPointRoutedFirst(insertionPoints,
       relevantSuccessorsToInsert,
       vrp,
@@ -64,7 +65,8 @@ trait InsertPointAPI{
       selectInsertionPointBehavior,
       selectInsertedNodeBehavior,
       hotRestart,
-      insertedPointsSymetryClass)
+      insertedPointsSymetryClass,
+      includeVehicleInformationInMove = includeVehicleInformationInMove)
 
   /**
    * Inserts an unrouted point in a route. The size of the neighborhood is O(u*n).
@@ -98,7 +100,8 @@ trait InsertPointAPI{
                                selectInsertionPointBehavior:LoopBehavior = First(),
                                nodeSymmetryClass:Option[Int => Int] = None,
                                hotRestartOnNextSymmetryClass:Boolean = false,
-                               positionIndependentMoves:Boolean = false) =
+                               positionIndependentMoves:Boolean = false,
+                               includeVehicleInformationInMove:Boolean = false) =
     InsertPointUnroutedFirst(unroutedNodesToInsert,
       relevantPredecessor,
       vrp,
@@ -108,7 +111,8 @@ trait InsertPointAPI{
       selectInsertionPointBehavior,
       nodeSymmetryClass,
       hotRestartOnNextSymmetryClass,
-      positionIndependentMoves)
+      positionIndependentMoves = positionIndependentMoves,
+      includeVehicleInformationInMove = includeVehicleInformationInMove)
 }
 
 trait OnePointMoveAPI{
