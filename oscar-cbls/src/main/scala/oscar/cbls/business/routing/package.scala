@@ -45,23 +45,10 @@ package object routing
   def vrp(m: Store,n:Int, v: Int, maxPivotPerValuePercent: Int = 4): VRP =
     new VRP(m, n, v, maxPivotPerValuePercent)
 
-  type TTFMatrix = oscar.cbls.business.routing.model.TTFMatrix
-  def ttfMatrix(nodeCount: Int, defaultTTF: PrimitiveTravelTimeFunction): TTFMatrix =
-    new TTFMatrix(nodeCount, defaultTTF)
-
+  type TravelTimeFunction = oscar.cbls.business.routing.model.TravelTimeFunction
   type TTFConst = oscar.cbls.business.routing.model.TTFConst
-  def ttfConst(travelDuration: Int): TTFConst =
-    new TTFConst(travelDuration)
-
-  type TTFHistogram = oscar.cbls.business.routing.model.TTFHistogram
-  def ttfHistogram(nbSlots: Int, overallDuration: Int): TTFHistogram =
-    new TTFHistogram(nbSlots, overallDuration)
-
+  type TTFHistogram = oscar.cbls.business.routing.model.TTFHistogramStaircase
   type TTFSegments = oscar.cbls.business.routing.model.TTFSegments
-  def ttfSegments(nbPoints: Int, overallDuration: Int): TTFSegments =
-    new TTFSegments(nbPoints, overallDuration)
-
-  type PrimitiveTravelTimeFunction = oscar.cbls.business.routing.model.PrimitiveTravelTimeFunction
 
   val ChainsHelper = oscar.cbls.business.routing.model.helpers.ChainsHelper
   val DistanceHelper = oscar.cbls.business.routing.model.helpers.DistanceHelper

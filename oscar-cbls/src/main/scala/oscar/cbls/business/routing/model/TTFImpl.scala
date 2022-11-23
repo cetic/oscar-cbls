@@ -1,362 +1,280 @@
 /*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
+ * OscaR is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * OscaR is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License  for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+ * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+ ******************************************************************************/
 package oscar.cbls.business.routing.model
 
+/**
+ * This stores a single TTF of a travel binding two nodes
+ * @author renaud.delandtsheer@cetic.be
+ */
 abstract class TravelTimeFunction {
-  def getTravelDuration(from: Int, leaveTime: Int, to: Int): Int
-  def getBackwardTravelDuration(from: Int, arrivalTime: Int, to: Int): Int
-
-  def getMinMaxTravelDuration(from: Int, to: Int): (Int, Int) =
-    (getMinTravelDuration(from, to), getMaxTravelDuration(from, to))
-
-  def getMinTravelDuration(from: Int, to: Int): Int
-  def getMaxTravelDuration(from: Int, to:Int): Int
-}
-
-/**
-  * Stores a square matrix of primitive TTF
-  *
-  * @param nodeCount the number of nodes to consider; continuous ranges starting at zero
-  * @param defaultTTF if we do not specify a TTF for a node, this is the value considered
-  * @author renaud.delandtsheer@cetic.be
-  */
-class TTFMatrix(nodeCount: Int, defaultTTF: PrimitiveTravelTimeFunction) extends TravelTimeFunction {
-
-  private val matrix: Array[Array[PrimitiveTravelTimeFunction]] = Array.fill(nodeCount, nodeCount)(defaultTTF)
-
-  def setTTF(from: Int, to: Int, ttf: PrimitiveTravelTimeFunction): Unit = {
-    matrix(from)(to) = ttf
-  }
-
-  def getTTF(from: Int, to: Int): PrimitiveTravelTimeFunction =
-    matrix(from)(to)
-
-  override def getTravelDuration(from: Int, leaveTime: Int, to: Int): Int =
-    matrix(from)(to).getTravelDuration(leaveTime)
-
-  override def getBackwardTravelDuration(from: Int, arrivalTime: Int, to: Int): Int =
-    matrix(from)(to).getBackwardTravelDuration(arrivalTime)
-
-  override def getMinTravelDuration(from: Int, to: Int): Int =
-    matrix(from)(to).getMinTravelDuration
-
-  override def getMaxTravelDuration(from: Int, to: Int): Int =
-    matrix(from)(to).getMaxTravelDuration
-
-  override def getMinMaxTravelDuration(from: Int, to: Int): (Int, Int) =
-    matrix(from)(to).getMinMaxTravelDuration
-}
-
-/**
-  * This stores a single TTF of a travel binding two nodes
-  * @author renaud.delandtsheer@cetic.be
-  */
-abstract class PrimitiveTravelTimeFunction {
 
   /**
-    * the duration to perform the travel at leave time "éleaveTime
-    *
-    * @param leaveTime when the travel begins
-    * @return when the travel ends
-    */
-  def getTravelDuration(leaveTime: Int): Int
+   * default function; it returns the travelDuration
+   *
+   * @param leaveTime when the travel begins
+   * @return the duration of the travels
+   */
+  def apply(leaveTime:Long):Long = travelDuration(leaveTime)
 
   /**
-    * the duration of he travel if you plan to arive at the given time
-    *
-    * @param arrivalTime
-    * @return the latest start to begin the travel
-    */
-  def getBackwardTravelDuration(arrivalTime: Int): Int
+   * the duration to perform the travel
+   *
+   * @param leaveTime when the travel begins
+   * @return the duration of the travel
+   */
+  def travelDuration(leaveTime: Long): Long
 
-  def getMinMaxTravelDuration: (Int, Int) =
-    (getMinTravelDuration, getMaxTravelDuration)
+  /**
+   * the arrival time
+   * @param leaveTime when the ravel starts
+   * @return when the travel finishes
+   */
+  def earliestArrivalTime(leaveTime:Long):Long = leaveTime + travelDuration(leaveTime)
 
-  def getMinTravelDuration: Int
-  def getMaxTravelDuration: Int
+  /**
+   * the duration of the travel if you plan to arrive at the given time
+   *
+   * @param arrivalTime when the travel finishes
+   * @return the duration of the travel
+   */
+  def backwardTravelDuration(arrivalTime: Long): Long
 
+  /**
+   * the latest time to leave in order to arrive at a ginven time
+   * @param arrivalTime when the travel finishes
+   * @return when the ravel starts
+   */
+  def latestLeaveTime(arrivalTime:Long):Long = arrivalTime - backwardTravelDuration(arrivalTime)
+
+  /**
+   * @return the min travel duration
+   */
+  def minTravelDuration: Long
+
+  /**
+   * @return the max travel duration
+   */
+  def maxTravelDuration: Long
+
+  /**
+   * checks that the TTF enforces the FIFO property
+   * the slope of the travelDuration function can never be < -1
+   * @return
+   */
+  def requireFifoProperty():Unit
 }
 
 /**
-  * A TTF that is constant
-  * this is similar to using a TTFHistogram with a single slot, but this class is lighter
-  * @param travelDuration the duration of the travel
-  * @author renaud.delandtsheer@cetic.be
-  */
-class TTFConst(travelDuration: Int) extends PrimitiveTravelTimeFunction {
+ * A TTF that is constant
+ * this is similar to using a TTFHistogram with a single slot, but this class is lighter
+ * @param travelDuration the duration of the travel
+ * @author renaud.delandtsheer@cetic.be
+ */
+class TTFConst(travelDuration: Long) extends TravelTimeFunction {
 
   override def toString: String = {
     s"TTFConst($travelDuration)"
   }
 
-  override def getTravelDuration(leaveTime: Int): Int = travelDuration
+  override def travelDuration(leaveTime: Long): Long = travelDuration
 
-  override def getMinTravelDuration: Int = travelDuration
+  override def minTravelDuration: Long = travelDuration
 
-  override def getMaxTravelDuration: Int = travelDuration
+  override def maxTravelDuration: Long = travelDuration
 
-  override def getBackwardTravelDuration(arrivalTime: Int): Int = travelDuration
+  override def backwardTravelDuration(arrivalTime: Long): Long = travelDuration
+
+  override def requireFifoProperty():Unit = {}
+}
+
+
+
+object TestTTFHistogramStaircase extends App{
+  val points:Array[Long] = Array(55,20,200,100)
+  val f = new TTFHistogramStaircase(60,points)
+
+  for(time <- 1 to 60*5){
+    val forwardTravelTime = f(time)
+    val arrivalTime = f.earliestArrivalTime(time)
+    val backwardTravelTIme = f.backwardTravelDuration(arrivalTime)
+    val latestLeaveTime = f.latestLeaveTime(arrivalTime)
+    println(s"time:$time forwardTravelTime:$forwardTravelTime arrivalTime:$arrivalTime backwardTravelTime:$backwardTravelTIme latestLeaveTime:$latestLeaveTime")
+    require(latestLeaveTime + f(latestLeaveTime) <= arrivalTime,f(latestLeaveTime))
+    require(latestLeaveTime + 1 + f(latestLeaveTime+1) > arrivalTime,f(latestLeaveTime+1))
+  }
 }
 
 /**
-  * represents a TTF using histograms
-  * Notice that the representation is modulo, if asked for a time after the overallDuration,
-  * it is assumed to start again at position zero in time
-  *
-  * @param nbSlots the number of slots in the histogram
-  * @param overallDuration the duration of the whole TTF
-  * @author renaud.delandtsheer@cetic.be
-  * THIS IS EXPERIMENTAL
-  */
-class TTFHistogram(val nbSlots: Int, val overallDuration: Int) extends PrimitiveTravelTimeFunction {
-  private val slotDuration: Int = overallDuration / nbSlots
-
-  private val slots: Array[Int] = Array.fill(nbSlots)(0)
-  private var nimMaxAccurate = false
-  private var min: Int = 0
-  private var max: Int = 0
+ * represents a TTF using histograms with staircase
+ *
+ * @param slotDuration the duration of a slot in the histogram
+ * @param slots slots of the histogram. The first one is at time zero
+ */
+class TTFHistogramStaircase(slotDuration:Long, slots:Array[Long]) extends TravelTimeFunction {
 
   override def toString: String = {
-    s"TTFHistogram(nbSlots $nbSlots, ${ var strSlots = ""; for (slot <- slots) { strSlots += s"$slot; " }; strSlots })"
+    s"TTFHistogram(${ var strSlots = ""; for (slot <- slots) { strSlots += s"$slot; " }; strSlots })"
   }
 
-  def setTravelDurationAtSlot(slotNumber: Int, duration: Int): Unit = {
-    slots(slotNumber) = duration
-    nimMaxAccurate = false
-  }
-  def getTravelDurationAtSlot(slotNumber: Int): Int = slots(rectifySlot(slotNumber))
-
-  private def updateMinMax(): Unit = {
-    if (!nimMaxAccurate) {
-      nimMaxAccurate = true
-      min = Int.MaxValue
-      max = Int.MinValue
-      for (v <- slots) {
-        if (v < min) min = v
-        if (max < v) max = v
-      }
-    }
+  override def travelDuration(leaveTime: Long): Long = {
+    val slotNr:Int = (leaveTime.toDouble / slotDuration.toDouble).floor.toInt
+    slots(slotNr)
   }
 
-  private def rectifySlot(slotNr: Int): Int = {
-    var tmp: Int = slotNr % nbSlots
-    if (tmp < 0) tmp += nbSlots
-    tmp
-  }
+  override val minTravelDuration: Long = slots.min
 
-  override def getTravelDuration(leaveTime: Int): Int =
-    getTravelDurationAtSlot(leaveTime / slotDuration)
+  override val maxTravelDuration: Long = slots.max
 
-  override def getMinTravelDuration: Int = {
-    updateMinMax()
-    min
-  }
+  override def backwardTravelDuration(arrivalTime: Long): Long = {
+    if (slots.length == 1)
+      return slots(0)
 
-  override def getMaxTravelDuration: Int = {
-    updateMinMax()
-    max
-  }
-
-  override def getBackwardTravelDuration(arrivalTime: Int): Int = {
-    if (nbSlots == 1) {
-      slots(0)
-    }
-    var maxslot: Int = arrivalTime / slotDuration
+    var maxslot: Int = slots.length
     var minslot: Int = 0
-    while (minslot * slotDuration + getTravelDurationAtSlot(minslot) >= arrivalTime) {
-      minslot -= nbSlots
-    }
 
     while (true) {
       if (minslot == maxslot) {
-        return slots(rectifySlot(minslot))
+        return slots(minslot)
       } else if (minslot + 1 == maxslot) {
-        if (maxslot * slotDuration + getTravelDurationAtSlot(maxslot) <= arrivalTime) {
-          return getTravelDurationAtSlot(maxslot)
+        if (maxslot * slotDuration + slots(maxslot) <= arrivalTime) {
+          return slots(maxslot)
         } else {
-          return getTravelDurationAtSlot(minslot)
+          return slots(minslot)
         }
-      }
-      val medslot = (minslot + maxslot) / 2
-      val medslotstart = medslot * slotDuration
+      }else {
+        val medslot = (minslot + maxslot) / 2
+        val medslotstart = medslot * slotDuration
 
-      if (medslotstart + getTravelDurationAtSlot(medslot) <= arrivalTime) {
-        minslot = medslot
-      }
-      if (medslotstart + slotDuration + getTravelDurationAtSlot(medslot) >= arrivalTime) {
-        maxslot = medslot
+        if (medslotstart + slots(medslot) <= arrivalTime) {
+          minslot = medslot
+        }
+        if (medslotstart + slotDuration + slots(medslot) >= arrivalTime) {
+          maxslot = medslot
+        }
       }
     }
     // Default return value
     0
   }
+
+  /**
+   * checks that the TTF enforces the FIFO property
+   * the slope of the travelDuration function can never be < -1
+   *
+   * @return
+   */
+  override def requireFifoProperty(): Unit = require(false,"Staircase histograms have infinite slope at each step; they do not enforce FIFO property")
 }
 
 /**
-  * Represents a TTF as a piecewise linear function
-  *
-  * Notice that the representation is modulo, if asked for a time after the last point,
-  * it is assumed to start again at position zero in time,
-  * so that linear interpolation might happen between the last point and the first point, shifted by overallDuration
-  *
-  * @param NbPoints the number of points to consider
-  * @param overallDuration the duration to consider
-  * @author renaud.delandtsheer@cetic.be
-  */
-class TTFSegments(val NbPoints: Int, val overallDuration: Int) extends PrimitiveTravelTimeFunction {
+ * represents a TTF using histograms with staircase
+ *
+ * @param slotDuration the duration of a slot in the histogram
+ * @param slots slots of the histogram. The first one is at time zero
+ */
+class TTFHistogramSloped(slotDuration:Long, slots:Array[Long]) extends TTFSegments(Array.tabulate(slots.length+1)(t => (slotDuration * t,if(t == slots.length) slots(t-1) else slots(t) ) )) {
 
-  private val pointX: Array[Int] = Array.fill(NbPoints)(0)
-  private val pointY: Array[Int] = Array.fill(NbPoints)(0)
+  override def toString: String = {
+    s"TTFHistogramSloped(${ var strSlots = ""; for (slot <- slots) { strSlots += s"$slot; " }; strSlots })"
+  }
+}
 
-  private var nimMaxAccurate = false
-  private var min: Int = 0
-  private var max: Int = 0
+/**
+ * Represents a TTF as a piecewise linear function
+ *
+ * Notice that the representation is modulo, if asked for a time after the last point,
+ * it is assumed to start again at position zero in time,
+ * so that linear interpolation might happen between the last point and the first point, shifted by overallDuration
+ *
+ * @param NbPoints the number of points to consider
+ * @param overallDuration the duration to consider
+ * @author renaud.delandtsheer@cetic.be
+ */
+class TTFSegments(points:Array[(Long,Long)]) extends TravelTimeFunction {
 
-  /**throws an error if the X is smaller than the predecessor's X, or if the slope is too steep*/
-  def setPoint(pointNr: Int, pointX: Int, pointY: Int): Unit = {
-    this.pointX(pointNr) = pointX
-    this.pointY(pointNr) = pointY
-    nimMaxAccurate = false
-    if (pointNr != 0) {
-
-      val firstId = pointNr - 1
-      val secondId = pointNr
-
-      val intervalX = this.pointX(secondId) - this.pointX(firstId)
-      if (intervalX <= 0) throw new Error("TTF segments are going backward in time")
-
-      val intervalY = this.pointY(secondId) - this.pointY(firstId)
-      if (intervalX < -intervalY) throw new Error("slope is too steep")
+  override def requireFifoProperty(): Unit = {
+    for(i <- 0 until points.length-1){
+      val j = i+1
+      require((points(i)._2 - points(j)._2) <= (points(j)._1 - points(i)._1),
+        s"TTF not FIFO compliant slope between $i ${points(i)} and $j ${points(j)} dx:${(points(j)._1 - points(i)._1)} dy:${(points(j)._2 - points(i)._2)}")
     }
   }
 
-  def getPointX(pointNr: Int): Int = getPoint(pointNr)._1
-  def getPointY(pointNr: Int): Int = getPoint(pointNr)._2
+  val fwdFun = new PiecewiseAffineFunction(points,roundUp = true)
+  val bwdFun = new PiecewiseAffineFunction(points.toList.map({case (start,dur) =>  (start+dur,dur)}).sortBy(_._1).toArray,roundUp = true)
 
-  def getPoint(pointNr: Int): (Int, Int) = {
-    var rectifiedPoint: Int = pointNr % NbPoints
-    var shifting: Int = math.floor(pointNr / NbPoints).toInt * overallDuration
-    while (rectifiedPoint < 0) {
-      rectifiedPoint += NbPoints
-      shifting -= overallDuration
-    }
+  override def minTravelDuration: Long = points.minBy(_._2)._2
 
-    (pointX(rectifiedPoint) + shifting, pointY(rectifiedPoint))
+  override def maxTravelDuration: Long = points.maxBy(_._2)._2
+
+  override def travelDuration(leaveTime: Long): Long = fwdFun(leaveTime)
+
+  override def backwardTravelDuration(arrivalTime: Long): Long = bwdFun(arrivalTime)
+
+  override def toString: String = s"TTFSegments(NbPoints: ${points.length})"
+}
+
+object testTTFSegments extends App{
+  val points:Array[(Long,Long)] = Array((1,55),(10,50),(56,100),(74,83),(100,200))
+  val f = new TTFSegments(points)
+
+  f.requireFifoProperty()
+
+  for(time <- 1 to 100){
+    val forwardTravelTime = f(time)
+    val arrivalTime = f.earliestArrivalTime(time)
+    val backwardTravelTIme = f.backwardTravelDuration(arrivalTime)
+    val latestLeaveTime = f.latestLeaveTime(arrivalTime)
+    println(s"time:$time forwardTravelTime:$forwardTravelTime arrivalTime:$arrivalTime backwardTravelTime:$backwardTravelTIme latestLeaveTime:$latestLeaveTime")
+    require(latestLeaveTime + f(latestLeaveTime) <= arrivalTime,f(latestLeaveTime))
+    require(latestLeaveTime + 1 + f(latestLeaveTime+1) > arrivalTime,f(latestLeaveTime+1))
   }
+}
 
-  private def updateMinMax(): Unit = {
-    if (!nimMaxAccurate) {
-      nimMaxAccurate = true
-      min = Int.MaxValue
-      max = Int.MinValue
-      for (v <- pointY) {
-        if (v < min) min = v
-        if (max < v) max = v
-      }
-    }
-  }
+class PiecewiseAffineFunction(points:Array[(Long,Long)],roundUp:Boolean){
 
-  /**
-    *
-    * @param x is a point in time
-    * @return a point number
-    */
-  private def findLastPointBefore(x: Int): Int = {
-    var up: Int = NbPoints - 1
-    while (getPointX(up) < x) up = up + NbPoints
-    var down: Int = -1
-    while (getPointX(down) > x) down = down - NbPoints
-
-    while (down + 1 < up) {
-      val mid: Int = (up + down) / 2
-      if (getPointX(mid) == x) {
-        return mid
-      } else if (getPointX(mid) < x) {
-        down = mid
-      } else {
-        up = mid
-      }
-    }
-    if (getPointX(up) <= x) up
-    else down
-  }
-
-  override def getTravelDuration(leaveTime: Int): Int = {
-    val pointBefore = findLastPointBefore(leaveTime)
-    val pointAfter = pointBefore + 1
-
-    linearInterpol(leaveTime.toFloat,
-      getPointX(pointBefore).toFloat, getPointY(pointBefore).toFloat,
-      getPointX(pointAfter).toFloat, getPointY(pointAfter).toFloat).toInt
-  }
+  override def toString: String = "PiecewiseAffineFunction(" + points.mkString(",") +")"
 
   @inline
-  private def linearInterpol(X: Float, X1: Float, Y1: Float, X2: Float, Y2: Float): Float = {
-    ((X - X1) * (Y2 - Y1)) / (X2 - X1) + Y1
+  private def linearInterpol(X: Double, X1: Double, Y1: Double, X2: Double, Y2: Double): Long = {
+    val z = ((X) * (Y2 - Y1)) / (X2 - X1) + Y1
+    if(roundUp) z.ceil.toLong else z.floor.toLong
   }
 
-  override def getMinTravelDuration: Int = {
-    updateMinMax()
-    min
-  }
+  def apply(x:Long):Long = {
+    var down: Int = 0 //strictly below
+    var up: Int = points.length - 1 //Strictly above
 
-  override def getMaxTravelDuration: Int = {
-    updateMinMax()
-    max
-  }
+    if(x == points(down)._1) return points(down)._2
+    if(x == points(up)._1) return points(up)._2
 
-  def findLastPointBeforeLeave(arrivalTime: Int): Int = {
-    var up: Int = NbPoints - 1
-    while (getPointX(up) + getPointY(up) < arrivalTime) up = up + NbPoints
-    var down: Int = -1
-    while (getPointX(down) + getPointX(down) > arrivalTime - overallDuration) down = down - NbPoints
+    while (true) {
+      if (up == down) {
+        return points(up)._2
+      } else if (down + 1 == up) {
+        return linearInterpol(x - points(down)._1, points(down)._1,points(down)._2,points(up)._1,points(up)._2).toLong
+      }
+      val medSlot = (up + down) / 2
+      val medSlotStart = points(medSlot)._1
 
-    while (down + 1 < up) {
-      val mid: Int = (up + down) / 2
-      if (getPointX(mid) + getPointY(mid) == arrivalTime) {
-        return mid
-      } else if (getPointX(mid) + getPointY(mid) < arrivalTime) {
-        down = mid
-      } else {
-        up = mid
+      if (medSlotStart <= x) {
+        down = medSlot
+      }else{
+        up = medSlot
       }
     }
-    if (getPointX(up) + getPointY(up) <= arrivalTime) up
-    else down
+    ??? //never reached
   }
-
-  override def getBackwardTravelDuration(arrivalTime: Int): Int = {
-    var pointBefore = findLastPointBeforeLeave(arrivalTime)
-    while (getPointX(pointBefore + 1) + getPointY(pointBefore + 1) <= arrivalTime) {
-      pointBefore += 1
-    }
-
-    assert(getPointX(pointBefore) + getPointY(pointBefore) <= arrivalTime)
-    assert(arrivalTime <= getPointX(pointBefore + 1) + getPointY(pointBefore + 1))
-
-    linearInterpolBackward(arrivalTime.toFloat,
-      getPointX(pointBefore).toFloat, getPointY(pointBefore).toFloat,
-      getPointX(pointBefore + 1).toFloat, getPointY(pointBefore + 1).toFloat).toInt
-  }
-
-  @inline
-  private def linearInterpolBackward(Y: Float, X1: Float, Y1: Float, X2: Float, Y2: Float): Float = {
-    if (Y1 == Y2) return Y1
-    val p = (X1 - X2) / (Y1 - Y2)
-    ((Y + p * Y1 - X1) / (p + 1.0)).toFloat
-  }
-
-  override def toString: String = s"TTFSegments(NbPoints: $NbPoints overallDuration: $overallDuration points: [${(0 until NbPoints) map (i => "(" + pointX(i) + ";" + pointY(i) + ")") mkString ","}])"
 }
