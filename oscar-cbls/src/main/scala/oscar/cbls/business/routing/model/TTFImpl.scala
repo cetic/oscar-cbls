@@ -111,8 +111,8 @@ object TestTTFHistogramStaircase extends App{
     val backwardTravelTIme = f.backwardTravelDuration(arrivalTime)
     val latestLeaveTime = f.latestLeaveTime(arrivalTime)
     println(s"time:$time forwardTravelTime:$forwardTravelTime arrivalTime:$arrivalTime backwardTravelTime:$backwardTravelTIme latestLeaveTime:$latestLeaveTime")
-//    require(latestLeaveTime + f(latestLeaveTime) <= arrivalTime,f(latestLeaveTime))
-    //require(latestLeaveTime + 1 + f(latestLeaveTime+1) > arrivalTime,f(latestLeaveTime+1))
+    require(latestLeaveTime + f(latestLeaveTime) <= arrivalTime,f(latestLeaveTime))
+    require(latestLeaveTime + 1 + f(latestLeaveTime+1) > arrivalTime,f(latestLeaveTime+1))
   }
 }
 
@@ -176,6 +176,19 @@ class TTFHistogramStaircase(slotDuration:Long, slots:Array[Long]) extends Travel
    * @return
    */
   override def requireFifoProperty(): Unit = require(false,"Staircase histograms have infinite slope at each step; they do not enforce FIFO property")
+}
+
+/**
+ * represents a TTF using histograms with staircase
+ *
+ * @param slotDuration the duration of a slot in the histogram
+ * @param slots slots of the histogram. The first one is at time zero
+ */
+class TTFHistogramSloped(slotDuration:Long, slots:Array[Long]) extends TTFSegments(Array.tabulate(slots.length+1)(t => (slotDuration * t,if(t == slots.length) slots(t-1) else slots(t) ) )) {
+
+  override def toString: String = {
+    s"TTFHistogramSloped(${ var strSlots = ""; for (slot <- slots) { strSlots += s"$slot; " }; strSlots })"
+  }
 }
 
 /**
