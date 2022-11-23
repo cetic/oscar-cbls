@@ -119,17 +119,17 @@ class CascadingObjective(mustBeZeroObjective: Objective,
       if (mustBeZeroObjective.value == 0L) {
         nSpace(indent) + "CascadingObjective(\n" +
           nSpace(indent + 2L) + "mustBeZeroObjective :=0L \n" +
-          nSpace(indent + 2L) + "secondObjective:" + secondObjective.detailedString(true, indent + 2L) + "\n" +
+          nSpace(indent + 2L) + "secondObjective:" + secondObjective.detailedString(short, indent + 2L) + "\n" +
           nSpace(indent) + ")"
       } else {
         nSpace(indent) + "CascadingObjective(\n" +
-          nSpace(indent + 2L) + "mustBeZeroObjective:" + mustBeZeroObjective.detailedString(true, indent + 4L) + "\n" +
+          nSpace(indent + 2L) + "mustBeZeroObjective:" + mustBeZeroObjective.detailedString(short, indent + 4L) + "\n" +
           nSpace(indent) + ")"
       }
     } else {
       nSpace(indent) + "CascadingObjective(\n" +
-        nSpace(indent + 2L) + "mustBeZeroObjective:" + mustBeZeroObjective.detailedString(true, indent + 4L) + "\n" +
-        nSpace(indent + 2L) + "secondObjective:" + secondObjective.detailedString(true, indent + 4L) + "\n" +
+        nSpace(indent + 2L) + "mustBeZeroObjective:" + mustBeZeroObjective.detailedString(short, indent + 4L) + "\n" +
+        nSpace(indent + 2L) + "secondObjective:" + secondObjective.detailedString(short, indent + 4L) + "\n" +
         nSpace(indent) + ")"
     }
 
@@ -377,7 +377,7 @@ class LoggingObjective(baseObjective:Objective) extends Objective{
 
   override def value: Long = {
     val toReturn = baseObjective.value
-    evaluationsLog = baseObjective.detailedString(true) :: evaluationsLog
+    evaluationsLog = baseObjective.detailedString(short=false) :: evaluationsLog
     toReturn
   }
 

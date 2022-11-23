@@ -236,7 +236,7 @@ abstract class Neighborhood(name:String = null) {
 
     if (verbose != 0){
       println(s"start doAllMove at ${java.time.LocalDateTime.now}")
-      println(s"initial objective function:$obj")
+      println(s"initial objective function:${obj.detailedString(true)}")
     }
     var moveSynthesis = SortedMap.empty[String,Int]
 
