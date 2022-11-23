@@ -15,8 +15,8 @@
 package oscar.cbls.business.routing.neighborhood
 
 import oscar.cbls.algo.search.{HotRestart, IdenticalAggregator}
-import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.core.search.{First, EasyNeighborhoodMultiLevel, LoopBehavior}
+import oscar.cbls.business.routing.model.{VRP, VehicleLocation}
+import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
 /**
   * base class for point insertion moves
@@ -27,15 +27,17 @@ abstract class InsertPoint(vrp: VRP,
                            positionIndependentMoves:Boolean)
   extends EasyNeighborhoodMultiLevel[InsertPointMove](neighborhoodName){
 
-  val v = vrp.v
-  val seq = vrp.routes
+  protected val v = vrp.v
+  protected val seq = vrp.routes
 
-  var insertAtPositionForInstantiation:Int = -1
-  var insertedPointForInstantiation:Int = -2
-  var pointWhereToInsertAfter:Int = -3
+  protected var insertAtPositionForInstantiation:Int = -1
+  protected var insertedPointForInstantiation:Int = -2
+  protected var pointWhereToInsertAfterForInstantiation:Int = -3
+  protected var vehicleForInstantiation:Int = -1
 
   override def instantiateCurrentMove(newObj: Long): InsertPointMove =
-    InsertPointMove(insertedPointForInstantiation, insertAtPositionForInstantiation, pointWhereToInsertAfter, positionIndependentMoves, newObj, this, vrp, neighborhoodNameToString)
+    InsertPointMove(insertedPointForInstantiation, insertAtPositionForInstantiation,
+      pointWhereToInsertAfterForInstantiation, positionIndependentMoves, vehicleForInstantiation, newObj, this, vrp, neighborhoodNameToString)
 
   def doMove(insertedPoint: Int, insertAtPosition:Int): Unit = {
     seq.insertAtPosition(insertedPoint, insertAtPosition)
@@ -53,6 +55,7 @@ case class InsertPointMove(insertedPoint: Int,
                            insertAtPosition: Int,
                            newPredecessor:Int,
                            positionIndependentMoves:Boolean,
+                           vehicle:Int,
                            override val objAfter: Long,
                            override val neighborhood: InsertPoint,
                            vrp:VRP,
@@ -110,7 +113,8 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
                                     selectInsertionPointBehavior:LoopBehavior = First(),
                                     nodeSymmetryClass:Option[Int => Int] = None,
                                     hotRestartOnNextSymmetryClass:Boolean = false,
-                                    positionIndependentMoves:Boolean = false)
+                                    positionIndependentMoves:Boolean = false,
+                                    includeVehicleInformationInMove:Boolean = false)
   extends InsertPoint(vrp: VRP,neighborhoodName,positionIndependentMoves){
 
   //the indice to start with for the exploration
@@ -118,6 +122,17 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
 
   override def exploreNeighborhood(initialObj: Long): Unit = {
     val seqValue = seq.defineCurrentValueAsCheckpoint()
+
+    val vehicleLocation:VehicleLocation = if(includeVehicleInformationInMove){
+      VehicleLocation(Array.tabulate(v)(vehicle => {
+        seqValue.positionOfAnyOccurrence(vehicle).get
+      }))
+    }else null
+
+    def getVehicleReaching(position:Int):Int = {
+      if(vehicleLocation == null) -1
+      else vehicleLocation.vehicleReachingPosition(position)
+    }
 
     def evalObjAndRollBack() : Long = {
       val a = obj.value
@@ -147,12 +162,12 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
         selectInsertionPointBehavior.toIterable(relevantNeighborsNow(insertedPointForInstantiation))
 
       for(a <- positionToInsertIterable){
-        pointWhereToInsertAfter = a
-        seqValue.explorerAtAnyOccurrence(pointWhereToInsertAfter) match{
+        pointWhereToInsertAfterForInstantiation = a
+        seqValue.explorerAtAnyOccurrence(pointWhereToInsertAfterForInstantiation) match{
           case None => //not routed?!
           case Some(explorer) =>
             insertAtPositionForInstantiation = explorer.position + 1
-
+            vehicleForInstantiation = getVehicleReaching(insertAtPositionForInstantiation)
             doMove(insertedPointForInstantiation, insertAtPositionForInstantiation)
 
             if (evaluateCurrentMoveObjTrueIfSomethingFound(evalObjAndRollBack())) {
@@ -202,7 +217,8 @@ case class InsertPointRoutedFirst(insertionPositions:()=>Iterable[Int],
                                   selectInsertedNodeBehavior:LoopBehavior = First(),
                                   hotRestart: Boolean = true,
                                   insertedPointsSymetryClass:Option[Int => Int] = None,
-                                  positionIndependentMoves:Boolean = false)
+                                  positionIndependentMoves:Boolean = false,
+                                    includeVehicleInformationInMove:Boolean = false)
   extends InsertPoint(vrp: VRP,neighborhoodName,positionIndependentMoves) {
 
   //the indice to start with for the exploration
@@ -210,6 +226,17 @@ case class InsertPointRoutedFirst(insertionPositions:()=>Iterable[Int],
 
   override def exploreNeighborhood(initialObj: Long): Unit = {
     val seqValue = seq.defineCurrentValueAsCheckpoint()
+
+    val vehicleLocation:VehicleLocation = if(includeVehicleInformationInMove){
+      VehicleLocation(Array.tabulate(v)(vehicle => {
+        seqValue.positionOfAnyOccurrence(vehicle).get
+      }))
+    }else null
+
+    def getVehicleReaching(position:Int):Int = {
+      if(vehicleLocation == null) -1
+      else vehicleLocation.vehicleReachingPosition(position)
+    }
 
     def evalObjAndRollBack() : Long = {
       val a = obj.value
@@ -227,16 +254,17 @@ case class InsertPointRoutedFirst(insertionPositions:()=>Iterable[Int],
 
     while (iterationSchemeOnInsertionPointIterator.hasNext) {
 
-      pointWhereToInsertAfter = iterationSchemeOnInsertionPointIterator.next()
+      pointWhereToInsertAfterForInstantiation = iterationSchemeOnInsertionPointIterator.next()
 
-      seqValue.positionOfAnyOccurrence(pointWhereToInsertAfter) match{
+      seqValue.positionOfAnyOccurrence(pointWhereToInsertAfterForInstantiation) match{
         case None => //not routed?
         case Some(position) =>
           insertAtPositionForInstantiation = position + 1
+          vehicleForInstantiation = getVehicleReaching(insertAtPositionForInstantiation)
 
           val (iteratorOnPointsToInsert,notifyFound2) = selectInsertedNodeBehavior.toIterator(insertedPointsSymetryClass match {
-            case None => unroutedNodesToInsertNow(pointWhereToInsertAfter)
-            case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(unroutedNodesToInsertNow(pointWhereToInsertAfter), s)
+            case None => unroutedNodesToInsertNow(pointWhereToInsertAfterForInstantiation)
+            case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(unroutedNodesToInsertNow(pointWhereToInsertAfterForInstantiation), s)
           })
 
           while (iteratorOnPointsToInsert.hasNext) {
@@ -254,7 +282,7 @@ case class InsertPointRoutedFirst(insertionPositions:()=>Iterable[Int],
 
     seq.releaseTopCheckpoint()
     //hot restart
-    startIndice = pointWhereToInsertAfter + 1
+    startIndice = pointWhereToInsertAfterForInstantiation + 1
   }
 
   //this resets the internal state of the Neighborhood
