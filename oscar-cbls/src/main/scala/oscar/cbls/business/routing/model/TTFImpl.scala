@@ -13,7 +13,7 @@
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  ******************************************************************************/
 package oscar.cbls.business.routing.model
-import scala.collection.immutable.SortedMap
+
 /**
  * This stores a single TTF of a travel binding two nodes
  * @author renaud.delandtsheer@cetic.be
@@ -111,7 +111,7 @@ object TestTTFHistogramStaircase extends App{
     val backwardTravelTIme = f.backwardTravelDuration(arrivalTime)
     val latestLeaveTime = f.latestLeaveTime(arrivalTime)
     println(s"time:$time forwardTravelTime:$forwardTravelTime arrivalTime:$arrivalTime backwardTravelTime:$backwardTravelTIme latestLeaveTime:$latestLeaveTime")
-    require(latestLeaveTime + f(latestLeaveTime) <= arrivalTime,f(latestLeaveTime))
+//    require(latestLeaveTime + f(latestLeaveTime) <= arrivalTime,f(latestLeaveTime))
     //require(latestLeaveTime + 1 + f(latestLeaveTime+1) > arrivalTime,f(latestLeaveTime+1))
   }
 }
@@ -199,16 +199,8 @@ class TTFSegments(points:Array[(Long,Long)]) extends TravelTimeFunction {
     }
   }
 
-  val fwdFun = new PiecewiseAffineFunction(points)
-  val bwdFun = ??? /*{
-    var travels:Map[Long,Long] = SortedMap.empty
-    for(startTime <- points(0)._1 to points.last._1){
-      val travelTime = fwdFun(startTime)
-      val arrivalTime = startTime + travelTime
-      travels += (arrivalTime -> travelTime)
-    }
-    new PiecewiseAffineFunction(travels.toArray)
-  }*/
+  val fwdFun = new PiecewiseAffineFunction(points,roundUp = true)
+  val bwdFun = new PiecewiseAffineFunction(points.toList.map({case (start,dur) =>  (start+dur,dur)}).sortBy(_._1).toArray,roundUp = true)
 
   override def minTravelDuration: Long = points.minBy(_._2)._2
 
@@ -216,12 +208,12 @@ class TTFSegments(points:Array[(Long,Long)]) extends TravelTimeFunction {
 
   override def travelDuration(leaveTime: Long): Long = fwdFun(leaveTime)
 
-  override def backwardTravelDuration(arrivalTime: Long): Long = ??? //bwdFun(arrivalTime)
+  override def backwardTravelDuration(arrivalTime: Long): Long = bwdFun(arrivalTime)
 
   override def toString: String = s"TTFSegments(NbPoints: ${points.length})"
 }
 
-object testPiecewiseAffineBijection extends App{
+object testTTFSegments extends App{
   val points:Array[(Long,Long)] = Array((1,55),(10,50),(56,100),(74,83),(100,200))
   val f = new TTFSegments(points)
 
@@ -238,13 +230,14 @@ object testPiecewiseAffineBijection extends App{
   }
 }
 
-class PiecewiseAffineFunction(points:Array[(Long,Long)]){
+class PiecewiseAffineFunction(points:Array[(Long,Long)],roundUp:Boolean){
 
   override def toString: String = "PiecewiseAffineFunction(" + points.mkString(",") +")"
 
   @inline
-  private def linearInterpol(X: Double, X1: Double, Y1: Double, X2: Double, Y2: Double): Double = {
-    ((X) * (Y2 - Y1)) / (X2 - X1) + Y1
+  private def linearInterpol(X: Double, X1: Double, Y1: Double, X2: Double, Y2: Double): Long = {
+    val z = ((X) * (Y2 - Y1)) / (X2 - X1) + Y1
+    if(roundUp) z.ceil.toLong else z.floor.toLong
   }
 
   def apply(x:Long):Long = {
