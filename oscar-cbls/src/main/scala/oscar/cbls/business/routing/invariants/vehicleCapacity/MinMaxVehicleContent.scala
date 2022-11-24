@@ -146,7 +146,10 @@ class MinMaxVehicleContent(routes: ChangingSeqValue, override val n: Int, val v:
         minMaxFinishContent(logReducedSegments.tail,r)
       }
     }
-    minMaxFinishContent(segments,(0L,0L,0L))
+    minMaxFinishContent(segments,
+      (contentFunctionAtNode(vehicle).minIfStartAtZero(false),
+        contentFunctionAtNode(vehicle).maxIfStartAtZero(false),
+        contentFunctionAtNode(vehicle).contentAtEndIfStartAt0(false)))
   }
 
   /**
