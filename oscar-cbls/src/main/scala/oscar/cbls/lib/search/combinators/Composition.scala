@@ -425,6 +425,7 @@ case class EjectionChains(initMove:Move,
         nextNeighborhood(prevMoves).getMove(obj, obj.value, acceptanceCriterion = acc) match {
           case NoMoveFound =>
             if(acceptanceCriterion(initialObj, currentObj)) {
+              startSolution.restoreDecisionVariables()
               if(nbMoves >= 1){
                 return MoveFound(CompositeMove(allMoves.reverse, currentObj, name))
               }else{
@@ -442,8 +443,8 @@ case class EjectionChains(initMove:Move,
             allMoves = move :: allMoves
         }
       }
-      startSolution.restoreDecisionVariables()
 
+      startSolution.restoreDecisionVariables()
       if(acceptanceCriterion(initialObj, currentObj)) {
         if(nbMoves >= 1){
           MoveFound(CompositeMove(allMoves.reverse, currentObj, name))
