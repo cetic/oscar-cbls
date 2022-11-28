@@ -36,7 +36,7 @@ abstract class NeighborhoodCombinator(a: Neighborhood*) extends Neighborhood {
     super.verbose_=(i)
   }
 
-  override def toString: String = this.getClass.getSimpleName + "(" + a.mkString(",") + ")"
+  override def toString: String = this.getClass.getSimpleName
 
   override def collectProfilingStatistics: List[Array[String]] = {
     a.flatMap(_.collectProfilingStatistics).toList

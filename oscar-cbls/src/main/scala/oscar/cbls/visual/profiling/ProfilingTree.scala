@@ -57,12 +57,20 @@ class ProfilingTree(search: Neighborhood) extends BetterVisualDrawing(false,fals
   def draw(): Unit ={
     drawProfilerBoxes()
     allProfilingNodes.foreach(_.drawLinks(this))
+    justifyAllStatisticsToTheRight()
     resize()
+  }
+
+  def justifyAllStatisticsToTheRight(): Unit ={
+    val rightMostStatMinX = allProfilingNodes.map(_.nodeDisplay.statistics.getBounds._1).max
+    allProfilingNodes.foreach(pn => {
+      val bounds = pn.nodeDisplay.statistics.getBounds
+      pn.nodeDisplay.statistics.translate(rightMostStatMinX - bounds._1, 0)
+    })
   }
 
   case class ProfilingNodeDisplay(rectangle: VisualRectangle, header: VisualText,
                                   statistics: VisualText, depth: Int){
-
 
     var _links: List[VisualLine] = List.empty
 
@@ -74,8 +82,8 @@ class ProfilingTree(search: Neighborhood) extends BetterVisualDrawing(false,fals
 
   case class ProfilingNode(profiler: Profiler, parent: Option[ProfilingNode]){
 
-    private var nodeDisplay: ProfilingNodeDisplay = _
-    private var children: List[ProfilingNode] = List.empty
+    var nodeDisplay: ProfilingNodeDisplay = _
+    var children: List[ProfilingNode] = List.empty
 
     def hasChildren: Boolean = children.nonEmpty
 

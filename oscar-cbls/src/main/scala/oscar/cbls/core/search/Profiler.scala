@@ -82,15 +82,12 @@ abstract class Profiler(val neighborhood:Neighborhood){
   def merge(profiler: Profiler): Unit
 
   override def toString: String = s"Profile(${neighborhood.toString})\nTOTAL : $totalBpd\nCURRENT : $bpd"
-  def profiledNeighborhood: String = neighborhood.getClass.getSimpleName
+  def profiledNeighborhood: String = neighborhood.toString
 }
 
 class EmptyProfiler(neighborhood: Neighborhood) extends Profiler(neighborhood) {
   override def subProfilers: List[Profiler] = List.empty
-  override def collectThisProfileHeader: Array[String] = {
-    println("CHEH")
-    Array.empty
-  }
+  override def collectThisProfileHeader: Array[String] = Array.empty
   override def collectThisProfileData: Array[String] = Array.empty
   // Nothing to do
   override def resetThisStatistics(): Unit = {}
@@ -122,7 +119,6 @@ class NeighborhoodProfiler(neighborhood: Neighborhood) extends Profiler(neighbor
 
   override def collectThisProfileData:Array[String] =
     {
-      if(this.neighborhood.toString.contains("DoNothing"))println(s"Collecting found : ${totalBpd.nbFound}")
       Array[String](s"${neighborhood}",
         s"${totalBpd.nbCalls}", s"${totalBpd.nbFound}", s"${totalBpd.nbExplored}",
         s"${totalBpd.gain}", s"${totalBpd.timeSpent}", s"$gainPerCall", s"$callDuration", s"$slope",

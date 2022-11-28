@@ -16,7 +16,7 @@ import scala.collection.immutable.HashSet
 
 object VRPWithMultipleCapacity extends App{
 
-  val n: Int = 200
+  val n: Int = 100
   val v: Int = 5
   val c: Int = 5
 
