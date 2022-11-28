@@ -15,7 +15,7 @@ package oscar.cbls.algo.generator
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 import oscar.cbls.business.routing.invariants.timeWindow.TransferFunction
-import oscar.cbls.business.routing.model.{TTFConst, TTFMatrix}
+import oscar.cbls.business.routing.model.{TTFConst, TravelTimeFunction}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.HashSet
@@ -318,12 +318,8 @@ object RoutingMatrixGenerator {
     * @param distanceMatrix The distance matrix (of size n*n)
     * @return A TTFMatrix object that represent the travel time matrix.
     */
-  def generateLinearTravelTimeFunction(n: Int,distanceMatrix: Array[Array[Long]], multiplier: Double = 1.0): TTFMatrix = {
-    val ttf = new TTFMatrix(n, new TTFConst(500))
-    for (i <- 0 until n)
-      for (j <- 0 until n)
-        ttf.setTTF(i, j, new TTFConst((distanceMatrix(i)(j)*multiplier).toInt))
-    ttf
+  def generateLinearTravelTimeFunction(n: Int,distanceMatrix: Array[Array[Long]], multiplier: Double = 1.0): Array[Array[TravelTimeFunction]] = {
+    Array.tabulate(n,n)((i,j) => new TTFConst((distanceMatrix(i)(j)*multiplier.toLong)))
   }
 
   /**
