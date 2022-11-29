@@ -177,7 +177,7 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
         //first, let's instantiate it:
         val currentMoveFromA = a.instantiateCurrentMove(intermediaryObjValue)
         currentB = b(currentMoveFromA)
-        currentB.verbose = 0 max (a.verbose -1) //passing verbosity to b, because b.verbose was not set when it was set of a
+        currentB.verbose = 0 max a.verbose //passing verbosity to b, because b.verbose was not set when it was set of a
 
         class secondInstrumentedObjective(obj:Objective) extends Objective{
           override def detailedString(short : Boolean, indent : Long) : String = obj.detailedString(short,indent)

@@ -95,6 +95,37 @@ class IntInt2Int(a:IntValue, b:IntValue, fun:(Long, Long) => Long, domain:Domain
   }
 }
 
+/** This is a helper to define an invariant from an Long x Long x Long x Long -> Long function.
+ * Ths invariant is not incremental, so this should only be used for very simple functions.
+ * it maintains output = fun(a,b,c,d)
+ * @param a the first parameter of the function
+ * @param b the second parameter of the function
+ * @param c the third parameter of the function
+ * @param d the fourth parameter of the function
+ * @param fun the function to maintain, it is supposed not to listen to any variable in the model
+ * @param domain the expected domain of the output
+ * @author renaud.delandtsheer@cetic.be
+ * */
+class FourInt2Int(a:IntValue, b:IntValue, c:IntValue, d:IntValue, fun:(Long, Long, Long, Long) => Long, domain:Domain)
+  extends IntInvariant(fun(a.value,b.value,c.value,d.value),domain)
+    with IntNotificationTarget{
+
+  registerStaticAndDynamicDependenciesNoID(a,b,c,d)
+  finishInitialization()
+
+  this := fun(a.value,b.value,c.value,d.value)
+
+  @inline
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
+    this := fun(a.value,b.value,c.value,d.value)
+  }
+
+  override def checkInternals(c:Checker): Unit ={
+    c.check(this.value == fun(a.value,b.value,this.c.value,d.value),
+      Some(s"${this.value} == ${fun(a.value,b.value,this.c.value,d.value)}"))
+  }
+}
+
 /** This is a helper to define an invariant from an Long x Long -> Long function.
   * Ths invariant is not incremental, so this should only be used for very simple functions.
   * it maintains output = fun(a,b) The difference with [[oscar.cbls.lib.invariant.logic.IntInt2Int]] is that this one performs the computation only after both variables have been updated.
