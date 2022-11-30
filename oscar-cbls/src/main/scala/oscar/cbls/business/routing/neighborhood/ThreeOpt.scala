@@ -22,6 +22,9 @@ import oscar.cbls.algo.search.{HotRestart, Pairs}
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.computation.CBLSSeqVar
 import oscar.cbls.core.search._
+import oscar.cbls.lib.search.combinators.ExhaustList
+
+import scala.collection.immutable.SortedMap
 
 /**
  * This implementation of threeOpt explores the classical threeOpt by aspiration
@@ -85,7 +88,7 @@ case class ThreeOpt(potentialInsertionNodes:()=>Iterable[Int], //must be routed,
         case Some(explorerAtInsertionPoint) =>
           insertionPointPositionForInstantiation = explorerAtInsertionPoint.position
 
-          val vehicleForInsertion = nodeToVehicle(insertionPointForInstantiation)
+          toVehicleForInstantiation = nodeToVehicle(insertionPointForInstantiation).toInt
 
           val relevantNeighbors = relevantNeighborsNow(insertionPointForInstantiation)
 
@@ -98,6 +101,8 @@ case class ThreeOpt(potentialInsertionNodes:()=>Iterable[Int], //must be routed,
             val orderedPairsOfNode = pairsOfNodesWithPosition.map({case (a, b) =>
               if (a._2.position < b._2.position) (a, b) else (b, a)
             })
+
+            fromVehicleForInstantiation = vehicleOfMovedSegment.toInt
 
             val (relevantPairsToExplore,notifyFound3) = selectMovedSegmentBehavior.toIterable(
               if (skipOnePointMove) orderedPairsOfNode.filter({case (a, b) => a._1 != b._1}) else orderedPairsOfNode)
@@ -114,7 +119,7 @@ case class ThreeOpt(potentialInsertionNodes:()=>Iterable[Int], //must be routed,
                 //skip this if same vehicle, no flip, and to the left
 
                 if(!breakSymmetry
-                  || vehicleForInsertion != vehicleOfMovedSegment
+                  || toVehicleForInstantiation != fromVehicleForInstantiation
                   || explorerAtSegmentStart.position < explorerAtInsertionPoint.position){
 
                   val (flipValuesToTest,notifyFound4) =
@@ -151,6 +156,104 @@ case class ThreeOpt(potentialInsertionNodes:()=>Iterable[Int], //must be routed,
   }
 }
 
+object TreeOpt{
+  /**
+   * declares a neighborhood that performs a 3-ot on a given vehicle
+   * @param myVRP the VRP
+   * @param vehicle the statically defined vehicle
+   * @param maxSizeOfMovedSegments the max size of the moved segments
+   *                               (also the segment from the insertion node to the start of the moved segment)
+   * @param maxDistanceOfMove the max distance between the moved segment and the insertion point
+   *
+   * @return a 3-opt neighborhood
+   */
+  def threeOptOnVehicle(myVRP:VRP, vehicle:Int,
+                        maxSizeOfMovedSegments:Int,
+                        maxDistanceOfMove:Int,
+                        selectInsertionPointBehavior:LoopBehavior = First(),
+                        selectMovedSegmentBehavior:LoopBehavior = First(),
+                        hotRestart:Boolean = true,
+                        breakSymmetry:Boolean = true,
+                        tryFlip:Boolean = true
+                       ): Neighborhood = {
+    ThreeOptByNodes(
+      neighborhoodName = s"3-Opt(v:$vehicle,max:$maxSizeOfMovedSegments)",
+      breakSymmetry = breakSymmetry,
+      selectInsertionPointBehavior = selectInsertionPointBehavior,
+      selectMovedSegmentBehavior = selectMovedSegmentBehavior,
+      hotRestart = hotRestart,
+      tryFlip = tryFlip,
+      potentialInsertionNodes = () => myVRP.getRouteOfVehicle(vehicle),
+      relevantMovedSegmentStartNode = () => {
+        //(insertionNode,insertionPosition,toVehicle) => segmentStartNodes
+        val route:Array[Int] = myVRP.getRouteOfVehicle(vehicle).toArray
+        val positionOfEachNodeInArray:SortedMap[Int,Int] =
+          SortedMap.empty[Int,Int] ++ route.indices.map(i => (route(i),i))
+        (insertionNode:Int,insertionPosition:Int,toVehicle:Int) => {
+          val positionInTheArray:Int = positionOfEachNodeInArray(insertionNode)
+          val minPos = 1 max positionInTheArray-(maxSizeOfMovedSegments + maxDistanceOfMove)
+          val maxPos = (route.length-1) min (positionInTheArray + maxDistanceOfMove)
+          (minPos to maxPos).flatMap(i =>
+            if (i == positionInTheArray || i == positionInTheArray+1) None
+            else Some(route(i))
+          )
+        }
+      },
+      relevantMovedSegmentEndNode = () => {
+        //(insertionNode,insertionPosition,toVehicle) => (segmentStartNode,segmentStartPosition,fromVehicle) => segmentEndNodes
+        val routeWithoutVehicle = myVRP.getRouteOfVehicle(vehicle).filter(_ != vehicle)
+        (insertionNode: Int, insertionPosition: Int, toVehicle: Int) => {
+          //(segmentStartNode,segmentStartPosition,fromVehicle) => segmentEndNodes
+          (segmentStartNode: Int, segmentStartPosition: Int, fromVehicle: Int) => {
+            var potentialSegmentEnds: List[Int] = Nil
+            var nbCandidateEnd = 0
+
+            var startNodeOfSegmentSeen = false
+            var finished = false
+            for (node <- routeWithoutVehicle if !finished) {
+              if (node == insertionNode) {
+                finished = startNodeOfSegmentSeen
+              } else if (node == segmentStartNode) {
+                startNodeOfSegmentSeen = true
+              } else if (startNodeOfSegmentSeen) {
+                potentialSegmentEnds = node :: potentialSegmentEnds
+                nbCandidateEnd += 1
+                if (nbCandidateEnd > maxSizeOfMovedSegments) finished = true
+              }
+            }
+            potentialSegmentEnds.reverse
+          }
+        }
+      },
+      vrp = myVRP)
+  }
+
+  def threeOptByVehicle(myVRP:VRP, vehicles:Iterable[Int],
+                        maxSizeOfMovedSegments:Int,
+                        maxDistanceOfMove:Int,
+                        selectInsertionPointBehavior:LoopBehavior = First(),
+                        selectMovedSegmentBehavior:LoopBehavior = First(),
+                        hotRestart:Boolean = true,
+                        breakSymmetry:Boolean = true,
+                        tryFlip:Boolean = true
+                       ): Neighborhood = {
+    ExhaustList(
+      vehicles.map(vehicle =>
+        threeOptOnVehicle(
+          myVRP,
+          vehicle,
+          maxSizeOfMovedSegments,
+          maxDistanceOfMove,
+          selectInsertionPointBehavior,
+          selectMovedSegmentBehavior,
+          hotRestart,
+          breakSymmetry,
+          tryFlip
+        )),
+      backOnExhaust = true,
+    )
+  }
+}
 
 /**
  * This implementation of threeOpt explores the classical threeOpt by aspiration
@@ -160,10 +263,9 @@ case class ThreeOpt(potentialInsertionNodes:()=>Iterable[Int], //must be routed,
  *                                Segments are inserted after these positions.
  *                                the potential insertion nodes must be routed, and can include vehicles
  *                                It expects nodes, not positions in the sequence
- * @param relevantMovedSegmentStartNode given an insertion point, the relevant start nodes of the moved segment.
+ * @param relevantMovedSegmentStartNode () => (insertionNode,insertionPosition,toVehicle) => segmentStartNodes
  *                                      They must be routed, but it will not crash if not routed
- * @param relevantMovedSegmentEndNode given the (insertionPointForInstantiation, segment start node, position of segment start, vehicle of the segment start,
- *                                    give the set of segments ends.
+ * @param relevantMovedSegmentEndNode () => (insertionNode,insertionPosition,toVehicle) => (segmentStartNode,segmentStartPosition,fromVehicle) => segmentEndNodes
  *                                    this node must be after segment start, in the same vehicle and routed, otherwise it is not considered.
  * @param vrp the VRP problem
  * @param neighborhoodName the name for this neighborhood
@@ -176,8 +278,8 @@ case class ThreeOpt(potentialInsertionNodes:()=>Iterable[Int], //must be routed,
  * @param tryFlip true if flip should be considered, false otherwise.
  */
 case class ThreeOptByNodes(potentialInsertionNodes:()=>Iterable[Int], //must be routed, can include vehicles
-                           relevantMovedSegmentStartNode:()=>Int=>Iterable[Int],
-                           relevantMovedSegmentEndNode:()=>(Int,Int,Int,Int)=>Iterable[Int],
+                           relevantMovedSegmentStartNode:()=>(Int,Int,Int)=>Iterable[Int], //() => (insertionNode,insertionPosition,toVehicle) => segmentStartNodes
+                           relevantMovedSegmentEndNode:()=>(Int,Int,Int)=>(Int,Int,Int)=>Iterable[Int], //() => (insertionNode,insertionPosition,toVehicle) => (segmentStartNode,segmentStartPosition,fromVehicle) => segmentEndNodes
                            override val vrp: VRP,
                            neighborhoodName:String = "ThreeOpt",
                            selectInsertionPointBehavior:LoopBehavior = First(),
@@ -205,43 +307,48 @@ case class ThreeOptByNodes(potentialInsertionNodes:()=>Iterable[Int], //must be 
 
     val nodeToVehicle = vrp.vehicleOfNode.map(_.value.toInt)
     val positionOfAllNode = vrp.getGlobalRoutePositionOfAllNode
-    val relevantMovedSegmentStartNodeNow = relevantMovedSegmentStartNode()
-    val relevantMovedSegmentEndNodeNow = relevantMovedSegmentEndNode()
+    val relevantMovedSegmentStartNodeNow = relevantMovedSegmentStartNode() //(insertionNode,insertionPosition,toVehicle) => segmentStartNodes
+    val relevantMovedSegmentEndNodeNow = relevantMovedSegmentEndNode() //(insertionNode,insertionPosition,toVehicle) => (segmentStartNode,segmentStartPosition,fromVehicle) => segmentEndNodes
 
     //insertion points
     for (insertionNodeTmp <- iterationSchemeOnZone if positionOfAllNode(insertionNodeTmp) < vrp.n) {
       insertionPointForInstantiation = insertionNodeTmp
       insertionPointPositionForInstantiation = positionOfAllNode(insertionNodeTmp)
+      toVehicleForInstantiation = nodeToVehicle(insertionPointForInstantiation)
 
-      val vehicleForInsertion = nodeToVehicle(insertionPointForInstantiation)
-      val relevantSegmentStartsNodes = relevantMovedSegmentStartNodeNow(insertionPointForInstantiation)
+      val relevantSegmentStartsNodes = relevantMovedSegmentStartNodeNow(insertionPointForInstantiation,insertionPointPositionForInstantiation,toVehicleForInstantiation)
+      val relevantMovedSegmentEndNodeNow1 = //(segmentStartNode,segmentStartPosition,fromVehicle) => segmentEndNodes
+        relevantMovedSegmentEndNodeNow(insertionPointForInstantiation,insertionPointPositionForInstantiation,toVehicleForInstantiation)
+
+
       val routedRelevantSegmentStartNodes = relevantSegmentStartsNodes.filter((node: Int) => nodeToVehicle(node) != -1 && node != insertionPointForInstantiation && node >= v)
 
       //segment start
       val (routedRelevantNeighborsByVehicle, notifyFound2) = selectMovedSegmentBehavior.toIterable(routedRelevantSegmentStartNodes)
       for (relevantSegmentStart <- routedRelevantNeighborsByVehicle if positionOfAllNode(relevantSegmentStart) < vrp.n) {
 
-        val vehicleOfMovedSegment = nodeToVehicle(relevantSegmentStart)
+        fromVehicleForInstantiation = nodeToVehicle(relevantSegmentStart)
 
         segmentStartPositionForInstantiation = positionOfAllNode(relevantSegmentStart)
 
         val relevantSegmentEndNodes =
-          relevantMovedSegmentEndNodeNow(insertionPointForInstantiation, relevantSegmentStart, segmentStartPositionForInstantiation, vehicleOfMovedSegment)
+          relevantMovedSegmentEndNodeNow1(
+            relevantSegmentStart, segmentStartPositionForInstantiation, fromVehicleForInstantiation)
 
         //segment end
         val (segmentEndIt, notifyFound3) = selectMovedSegmentBehavior.toIterable(relevantSegmentEndNodes)
         for (segmentEndNode <- segmentEndIt
              if (positionOfAllNode(segmentEndNode) < vrp.n
-               && vehicleOfMovedSegment == nodeToVehicle(segmentEndNode)
+               && fromVehicleForInstantiation == nodeToVehicle(segmentEndNode)
                && positionOfAllNode(relevantSegmentStart) < positionOfAllNode(segmentEndNode)
                && (positionOfAllNode(insertionNodeTmp) < positionOfAllNode(relevantSegmentStart) ||
-                    positionOfAllNode(segmentEndNode) < positionOfAllNode(insertionNodeTmp)))) {
+               positionOfAllNode(segmentEndNode) < positionOfAllNode(insertionNodeTmp)))) {
 
           segmentEndPositionForInstantiation = positionOfAllNode(segmentEndNode)
 
           //flip
           if (!breakSymmetry
-            || vehicleForInsertion != vehicleOfMovedSegment
+            || toVehicleForInstantiation != fromVehicleForInstantiation
             || insertionPointPositionForInstantiation < segmentEndPositionForInstantiation) {
 
             for (flipForInstantiationTmp <- if (tryFlip) List(false, true) else List(false)) {
@@ -286,6 +393,9 @@ abstract class AbstractThreeOpt(val vrp: VRP,
   var insertionPointForInstantiation:Int = -1
   var flipForInstantiation:Boolean = false
 
+  var fromVehicleForInstantiation:Int = -1
+  var toVehicleForInstantiation:Int = -1
+
   def doMove(insertionPosition: Int, segmentStartPosition: Int, segmentEndPosition: Int, flip: Boolean): Unit ={
     seqVar.move(segmentStartPosition,segmentEndPosition,insertionPosition,flip)
   }
@@ -296,6 +406,8 @@ abstract class AbstractThreeOpt(val vrp: VRP,
       insertionPointPositionForInstantiation,
       insertionPointForInstantiation,
       flipForInstantiation,
+      fromVehicleForInstantiation,
+      toVehicleForInstantiation,
       newObj,
       this,
       neighborhoodName)
@@ -307,6 +419,8 @@ case class ThreeOptMove(segmentStartPosition:Int,
                         insertionPointPosition: Int,
                         insertionPoint:Int,
                         flipSegment: Boolean,
+                        fromVehicle:Int,
+                        toVehicle:Int,
                         override val objAfter: Long,
                         override val neighborhood:AbstractThreeOpt,
                         override val neighborhoodName:String = "ThreeOptMove")

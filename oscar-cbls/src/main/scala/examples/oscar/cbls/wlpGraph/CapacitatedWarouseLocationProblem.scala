@@ -389,8 +389,7 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
       unroutedPenalty = constantObjective, //:Objective,
       globalObjective = obj, //:Objective,
       cycleFinderAlgoSelection = CycleFinderAlgoType.Mouthuy, //:CycleFinderAlgoType = CycleFinderAlgoType.Mouthuy,
-      name = "VLSN"
-    )
+      name = "VLSN")
   }
 
   def assignDelivery(m : AssignMove) = AssignNeighborhood(deliveryToWarehouse,searchZone = () => kClosestStoresByStore(m.id),domain = (_,i) => distanceToClosestCentroid(i).map(c => c._1.valueInt))
@@ -436,8 +435,10 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
 
   println(Array.tabulate(deliveryServedByWarehouse.length - 1)(i => deliveryServedByWarehouse(i).toString  + "-" + (objPerWarehouse(i).value + costForOpeningWarehouse * warehouseOpenArray(i).value) + "-" + ((objPerWarehouse(i).value + costForOpeningWarehouse * warehouseOpenArray(i).value) / (deliveryServedByWarehouse(i).value.iterator.length max 1))).mkString("\n"))
 
+
   println(obj)
 
   println(search.profilingStatistics)
+
 
 }

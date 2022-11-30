@@ -1,20 +1,19 @@
-package oscar.cbls.visual.tsp
+package oscar.cbls.visual.graph
 
 import oscar.cbls.algo.graph.{ConditionalGraph, ConditionalGraphWithIntegerNodeCoordinates, Node, RevisableAStar}
 import oscar.cbls.algo.seq.IntSequence
-import oscar.cbls.visual.graph.SimpleGraphViewer
 
 import java.awt.Color
 import scala.collection.immutable.SortedSet
 
-class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
-                    v:Int,
-                    n:Int,
-                    underApproximatingDistance:(Int,Int) => Long,
+class TspBridgeVisu(graph: ConditionalGraphWithIntegerNodeCoordinates,
+                    v: Int,
+                    n: Int,
+                    underApproximatingDistance: (Int,Int) => Long,
                     freeReturn: Boolean = false)
-  extends SimpleGraphViewer(graph,scalable = true){
+  extends SimpleGraphViewer(graph, scalable = true) {
 
-  def redraw(openBridges:SortedSet[Int], routes:IntSequence): Unit ={
+  def redraw(openBridges: SortedSet[Int], routes: IntSequence): Unit ={
     super.clear(false)
 
     //all edges, simple made
@@ -34,7 +33,7 @@ class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
       val node = graph.nodes(nodeId)
       val color = if(routes contains nodeId) {
         Color.BLUE
-      }else {
+      } else {
         Color.RED
       }
       if(node.transitAllowed) {

@@ -25,7 +25,7 @@
 package oscar.cbls.business.routing.neighborhood
 
 import oscar.cbls.algo.search.HotRestart
-import oscar.cbls.business.routing.model.VRP
+import oscar.cbls.business.routing.model.{VRP, VehicleLocation}
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
 /**
@@ -44,7 +44,8 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
                         hotRestart: Boolean = true,
                         allPointsToMoveAreRouted:Boolean = true,
                         allRelevantNeighborsAreRouted:Boolean = true,
-                        positionIndependentMoves:Boolean = false)
+                        positionIndependentMoves:Boolean = false,
+                        includeVehicleInformationInMove:Boolean = false)
   extends EasyNeighborhoodMultiLevel[OnePointMoveMove](neighborhoodName) {
 
   val seq = vrp.routes
@@ -61,6 +62,17 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
 
     //TODO: we might also want to go for checkpoint less neighborhood to avoid invariants computing checkpoint values for small neighborhoods.
     val startValue = seq.defineCurrentValueAsCheckpoint()
+
+    val vehicleLocation:VehicleLocation = if(includeVehicleInformationInMove){
+      VehicleLocation(Array.tabulate(v)(vehicle => {
+        startValue.positionOfAnyOccurrence(vehicle).get
+      }))
+    }else null
+
+    def getVehicleReaching(position:Int):Int = {
+      if(vehicleLocation == null) -1
+      else vehicleLocation.vehicleReachingPosition(position)
+    }
 
     def evalObjAndRollBack() : Long = {
       val a = obj.value
@@ -80,6 +92,7 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
           case None => ;//was not routed, actually
           case Some(explorerOfMovedPoint) =>
             this.positionOfMovedPointForInstantiation = explorerOfMovedPoint.position
+            this.vehicleFromForInstantiation = getVehicleReaching(positionOfMovedPointForInstantiation)
 
             val (insertionPointIt,notifyFound2) = selectDestinationBehavior.toIterator(relevantNeighborsNow(movedPointForInstantiation))
             while (insertionPointIt.hasNext) {
@@ -91,6 +104,7 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
                   case Some(explorerOfNewPredecessor) =>
                     if(explorerOfNewPredecessor.position+1L != explorerOfMovedPoint.position) {
                       this.positionOfNewPredecessorForInstantiation = explorerOfNewPredecessor.position
+                      this.vehicleToForInstantiation = getVehicleReaching(positionOfNewPredecessorForInstantiation)
 
                       doMove(explorerOfMovedPoint.position, explorerOfNewPredecessor.position)
 
@@ -108,14 +122,18 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
     seq.releaseTopCheckpoint()
     startIndice = movedPointForInstantiation + 1
   }
+
   var movedPointForInstantiation:Int = -1
   var newPredecessorForInstantiation:Int = -1
   var positionOfMovedPointForInstantiation:Int = -1
   var positionOfNewPredecessorForInstantiation:Int = -1
+  var vehicleFromForInstantiation:Int = -1
+  var vehicleToForInstantiation:Int = -1
 
   override def instantiateCurrentMove(newObj: Long): OnePointMoveMove =
     OnePointMoveMove(movedPointForInstantiation, positionOfMovedPointForInstantiation,
       newPredecessorForInstantiation, positionOfNewPredecessorForInstantiation,
+      vehicleFromForInstantiation, vehicleToForInstantiation,
       positionIndependentMoves,
       newObj, this, neighborhoodName)
 
@@ -146,6 +164,7 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
  */
 case class OnePointMoveMove(movedPoint: Int,movedPointPosition:Int,
                             newPredecessor: Int,newPredecessorPosition:Int,
+                            vehicleFrom:Int, vehicleTo:Int,
                             positionIndependentMoves:Boolean,
                             override val objAfter: Long,
                             override val neighborhood: OnePointMove,

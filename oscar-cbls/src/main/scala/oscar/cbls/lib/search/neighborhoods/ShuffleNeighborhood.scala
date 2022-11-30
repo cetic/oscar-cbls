@@ -42,22 +42,22 @@ case class ShuffleNeighborhood(vars:Array[CBLSIntVar],
 
   override def getMove(obj: Objective,
                        initialObj: Long,
-                       acceptanceCriteria: AcceptanceCriterion = null): SearchResult = {
-    if (printExploredNeighborhoods) println("applying " + name)
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
+    if(printExploredNeighborhoods) println("applying " + name)
 
     val (realIndicesToConsider:List[Int],numberOfIndicesToConsider:Int) =
       if(indicesToConsider == null) (vars.indices.toList,vars.length)
       else { val tmp = indicesToConsider(); (tmp.toList,tmp.size) }
 
-    if (checkNoMoveFound) {
+    if(checkNoMoveFound) {
       val (minValue, maxValue) = InvariantHelper.getMinMaxBoundsInt(realIndicesToConsider.map(vars(_).value))
       if (minValue == maxValue) return NoMoveFound
     }
 
-    val numberOfShuffledPositionsThisTime: Int = numberOfShuffledPositions()
-    val subsetOfIndicesToConsider: List[Int] = if (numberOfShuffledPositionsThisTime >= numberOfIndicesToConsider) {
+    val numberOfShuffledPositionsThisTime:Int = numberOfShuffledPositions()
+    val subsetOfIndicesToConsider:List[Int] = if(numberOfShuffledPositionsThisTime >= numberOfIndicesToConsider){
       realIndicesToConsider
-    } else {
+    }else{
       //shuffle only a subset; select it randomly
       Random.shuffle(realIndicesToConsider).takeRight(numberOfShuffledPositionsThisTime)
     }
@@ -69,7 +69,7 @@ case class ShuffleNeighborhood(vars:Array[CBLSIntVar],
     val moves:List[AssignMove] = subsetOfIndicesToConsider.zip(newValues).
       map({case (indice,newValue) => AssignMove(vars(indice),newValue,indice,Int.MaxValue)})
 
-    if (printExploredNeighborhoods) println(name + ": move found")
+    if(printExploredNeighborhoods) println(name + ": move found")
     CompositeMove(moves, Long.MaxValue, name)
   }
 }

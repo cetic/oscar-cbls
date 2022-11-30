@@ -33,9 +33,6 @@ class VRPWithMultipleCapacity(n: Int, v: Int, c: Int, maxCapacityPerContentType:
   val contentsFlow = RoutingMatrixGenerator.generateMultipleContentsFlow(n,c,listOfChains, maxCapacityPerContentType.map(_/2))
   val vehiclesSize = RoutingMatrixGenerator.generateMultipleContentVehicleSize(v,c,10,maxCapacityPerContentType,3)
 
-  println(vehiclesSize.map(_.toList).mkString("\n"))
-  println(listOfChains.map(_.map(node => contentsFlow(node).toList).mkString("\t-\t")).mkString("\n"))
-
   val myVRP =  new VRP(m,n,v)
 
   val contentRoute = myVRP.routes.createClone()

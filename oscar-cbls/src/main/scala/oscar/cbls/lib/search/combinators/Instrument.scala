@@ -29,16 +29,17 @@ case class DoOnQuery(a: Neighborhood, proc: () => Unit) extends NeighborhoodComb
  */
 case class DoOnFirstMove(a: Neighborhood, proc: () => Unit) extends NeighborhoodCombinator(a) {
   var isFirstMove = true
+
   override def getMove(obj: Objective,
                        initialObj: Long,
-                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     if (isFirstMove) {
-      a.getMove(obj, initialObj, acceptanceCriteria) match {
+      a.getMove(obj, initialObj, acceptanceCriterion) match {
         case m: MoveFound => InstrumentedMove(m.m, notifyMoveTaken _)
         case x => x
       }
     } else {
-      a.getMove(obj, initialObj, acceptanceCriteria)
+      a.getMove(obj, initialObj, acceptanceCriterion)
     }
   }
 
@@ -69,8 +70,8 @@ case class DoOnMove(a: Neighborhood,
                     procAfterMove: Move => Unit = null) extends NeighborhoodCombinator(a) {
   override def getMove(obj: Objective,
                        initialObj: Long,
-                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
-    a.getMove(obj, initialObj, acceptanceCriteria) match {
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
+    a.getMove(obj, initialObj, acceptanceCriterion) match {
       case m: MoveFound =>
         InstrumentedMove(m.m, () =>callBackBeforeMove(m.m), () => callBackAfterMove(m.m))
       case x => x
@@ -86,16 +87,16 @@ case class DoOnMove(a: Neighborhood,
   }
 }
 
-case class DoOnExhaust(a: Neighborhood,
-                       proc: ()=>Unit,
-                       onlyFirst:Boolean) extends NeighborhoodCombinator(a) {
+case class DoOnExhaust(a:Neighborhood, proc:()=>Unit,onlyFirst:Boolean) extends NeighborhoodCombinator(a) {
+
   var alreadyExhaustedOnce = false
+
   override def getMove(obj: Objective,
                        initialObj: Long,
-                       acceptanceCriterion: AcceptanceCriterion) : SearchResult =
-    a.getMove(obj,initialObj,acceptanceCriterion) match {
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult =
+    a.getMove(obj,initialObj,acceptanceCriterion) match{
       case NoMoveFound =>
-        if(!onlyFirst || !alreadyExhaustedOnce){
+        if (!onlyFirst || !alreadyExhaustedOnce) {
           alreadyExhaustedOnce = true
           proc()
         }

@@ -7,7 +7,7 @@ import oscar.cbls.core.distrib.Supervisor
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.lib.search.combinators.Profile
-import oscar.cbls.lib.search.combinators.distributed._
+import oscar.cbls.lib.search.combinators.distributed.{DistributedBest, DistributedBestSlopeFirst, DistributedFirst}
 
 import scala.collection.parallel.immutable.ParRange
 import scala.concurrent.duration.DurationInt
@@ -54,7 +54,7 @@ object WarehouseLocationDistributed1 extends App {
 
     //These neighborhoods are inefficient and slow; using multiple core is the wrong answer to inefficiency
     val neighborhood = (
-      new DistributedFirst(
+      new DistributedBestSlopeFirst(
         Array(
           Profile(assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"))) ++
           Array.tabulate(divideSwap)(x => Profile(swapShifted(x,divideSwap)):Neighborhood))
@@ -69,7 +69,7 @@ object WarehouseLocationDistributed1 extends App {
   //supervisor side
   val (store, search, obj, finalPrint) = createSearchProcedure()
 
-  val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(search, verbose = true)
+  val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(search,verbose = false)
 
   //This is a bit stupid: start the search while workers are not instantiated yet, but it is possible
   for (i <- ParRange(0, nbWorker, 1, inclusive = true)) {

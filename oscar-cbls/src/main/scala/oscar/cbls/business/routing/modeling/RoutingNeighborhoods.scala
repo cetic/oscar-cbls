@@ -1,17 +1,17 @@
 /*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
+ * OscaR is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * OscaR is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License  for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+ * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+ ******************************************************************************/
 package oscar.cbls.business.routing.modeling
 
 import oscar.cbls.business.routing.model.VRP
@@ -23,12 +23,12 @@ import oscar.cbls.core.search.{Best, First, LoopBehavior}
  */
 trait RoutingNeighborhoods
   extends InsertPointAPI
-  with OnePointMoveAPI
-  with RemovePointAPI
-  with RouteExchangeAPI
-  with SegmentExchangeAPI
-  with ThreeOptAPI
-  with TwoOptAPI
+    with OnePointMoveAPI
+    with RemovePointAPI
+    with RouteExchangeAPI
+    with SegmentExchangeAPI
+    with ThreeOptAPI
+    with TwoOptAPI
 
 trait InsertPointAPI{
   type InsertPointMove = oscar.cbls.business.routing.neighborhood.InsertPointMove
@@ -56,7 +56,8 @@ trait InsertPointAPI{
                              selectInsertionPointBehavior:LoopBehavior = First(),
                              selectInsertedNodeBehavior:LoopBehavior = First(),
                              hotRestart: Boolean = true,
-                             insertedPointsSymetryClass:Option[Int => Int] = None) =
+                             insertedPointsSymetryClass:Option[Int => Int] = None,
+                             includeVehicleInformationInMove:Boolean = false) =
     InsertPointRoutedFirst(insertionPoints,
       relevantSuccessorsToInsert,
       vrp,
@@ -64,7 +65,8 @@ trait InsertPointAPI{
       selectInsertionPointBehavior,
       selectInsertedNodeBehavior,
       hotRestart,
-      insertedPointsSymetryClass)
+      insertedPointsSymetryClass,
+      includeVehicleInformationInMove = includeVehicleInformationInMove)
 
   /**
    * Inserts an unrouted point in a route. The size of the neighborhood is O(u*n).
@@ -98,7 +100,8 @@ trait InsertPointAPI{
                                selectInsertionPointBehavior:LoopBehavior = First(),
                                nodeSymmetryClass:Option[Int => Int] = None,
                                hotRestartOnNextSymmetryClass:Boolean = false,
-                               positionIndependentMoves:Boolean = false) =
+                               positionIndependentMoves:Boolean = false,
+                               includeVehicleInformationInMove:Boolean = false) =
     InsertPointUnroutedFirst(unroutedNodesToInsert,
       relevantPredecessor,
       vrp,
@@ -108,7 +111,8 @@ trait InsertPointAPI{
       selectInsertionPointBehavior,
       nodeSymmetryClass,
       hotRestartOnNextSymmetryClass,
-      positionIndependentMoves)
+      positionIndependentMoves = positionIndependentMoves,
+      includeVehicleInformationInMove = includeVehicleInformationInMove)
 }
 
 trait OnePointMoveAPI{
@@ -132,7 +136,8 @@ trait OnePointMoveAPI{
                    hotRestart: Boolean = true,
                    allPointsToMoveAreRouted:Boolean = true,
                    allRelevantNeighborsAreRouted:Boolean = true,
-                   positionIndependentMoves:Boolean = false) =
+                   positionIndependentMoves:Boolean = false,
+                   includeVehicleInformationInMove:Boolean = false) =
     OnePointMove(nodesToMove,
       relevantNewPredecessors,
       vrp,
@@ -142,7 +147,8 @@ trait OnePointMoveAPI{
       hotRestart,
       allPointsToMoveAreRouted,
       allRelevantNeighborsAreRouted,
-      positionIndependentMoves)
+      positionIndependentMoves,
+      includeVehicleInformationInMove)
 
 }
 
@@ -251,15 +257,15 @@ trait SegmentExchangeAPI{
     tryFlip)
 
   /**
-    * exchanges segments of different vehicles (not on the same vehicle!)
-    *
-    * @param vrp the routing problem
-    * @param segmentsToExchangeGroupedByVehicles the map of segments you want to exchange grouped by vehicles
-    * @param relevantNeighbors given the start and end of the first segment, which are the relevant neighbors for the other segment? (will be filtered for vehicle by the neighborhood)
-    * @param neighborhoodName the name of the neighborhood, used for verbosities
-    * @param hotRestart
-    * @param tryFlip if false, will not flip any segment (maybe you do not want flipping if using time windows?)
-    */
+   * exchanges segments of different vehicles (not on the same vehicle!)
+   *
+   * @param vrp the routing problem
+   * @param segmentsToExchangeGroupedByVehicles the map of segments you want to exchange grouped by vehicles
+   * @param relevantNeighbors given the start and end of the first segment, which are the relevant neighbors for the other segment? (will be filtered for vehicle by the neighborhood)
+   * @param neighborhoodName the name of the neighborhood, used for verbosities
+   * @param hotRestart
+   * @param tryFlip if false, will not flip any segment (maybe you do not want flipping if using time windows?)
+   */
   def segmentExchangeOnSegments(vrp: VRP,
                                 segmentsToExchangeGroupedByVehicles: () => Map[Int,(List[(Int,Int)])],
                                 relevantNeighbors:()=>Int=>Iterable[Int], //must be routed

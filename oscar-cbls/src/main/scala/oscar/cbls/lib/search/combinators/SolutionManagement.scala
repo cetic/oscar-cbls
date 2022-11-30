@@ -13,9 +13,7 @@ import oscar.cbls.core.search._
   * @param a a neighborhood
   * @param o the objective function
   */
-class BasicSaveBest(a: Neighborhood,
-                    o: Objective,
-                    alsoSaveOnExhaust: Boolean = true) extends NeighborhoodCombinator(a) {
+class BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = true) extends NeighborhoodCombinator(a) {
 
   protected val s = o.model
 
@@ -28,9 +26,9 @@ class BasicSaveBest(a: Neighborhood,
   def bestObj:Long = myBestObj
 
   //this resets the internal state of the move combinators
-  override def reset(): Unit = {
+  override def reset(): Unit ={
     super.reset()
-    if (!alsoSaveOnExhaust) {
+    if(!alsoSaveOnExhaust) {
       myBestObj = Long.MaxValue
       best = null
     }
@@ -38,12 +36,12 @@ class BasicSaveBest(a: Neighborhood,
 
   override def getMove(obj: Objective,
                        initialObj: Long,
-                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
 
     //we record the obj before move to prevent an additional useless propagation
     require(initialObj == o.value, "initialObj:" + initialObj + "!= o.value:" + o.value)
 
-    a.getMove(obj, initialObj, acceptanceCriteria) match {
+    a.getMove(obj, initialObj, acceptanceCriterion) match {
       case NoMoveFound =>
         if(alsoSaveOnExhaust && (initialObj < myBestObj && currentSolutionIsAcceptable)){
           //solution degrades, and we were better than the best recorded
@@ -99,9 +97,7 @@ class BasicSaveBest(a: Neighborhood,
   def restoreBestOnExhaust: RestoreBestOnExhaust = new RestoreBestOnExhaust(this)
 }
 
-class SaveBest(a: Neighborhood,
-               o: Objective,
-               alsoSaveOnExhaust:Boolean = true) extends BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust) {
+class SaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = true) extends BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust) {
 
   def whenEmpty(violation: SetValue) = new SaveBestWhen(a, o, () => violation.value.isEmpty)
   def whenZero(violation: IntValue) = new SaveBestWhen(a, o, () => violation.value == 0L)
@@ -116,9 +112,7 @@ class SaveBest(a: Neighborhood,
   def saveWhen(shouldSave: () => Boolean) = new SaveBestWhen(a, o, shouldSave)
 }
 
-class SaveBestWhen(a: Neighborhood,
-                   o: Objective,
-                   shouldSave: () => Boolean) extends BasicSaveBest(a, o) {
+class SaveBestWhen(a: Neighborhood, o: Objective, shouldSave: () => Boolean) extends BasicSaveBest(a, o) {
   override protected def currentSolutionIsAcceptable: Boolean = shouldSave()
 }
 
@@ -137,12 +131,12 @@ class RestoreBestOnExhaust(a: BasicSaveBest) extends NeighborhoodCombinator(a) {
 
   override def getMove(obj: Objective,
                        initialObj: Long,
-                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
-    if (childExhausted) {
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
+    if(childExhausted) {
       childExhausted = false
       NoMoveFound
     } else {
-      a.getMove(obj, initialObj, acceptanceCriteria) match {
+      a.getMove(obj, initialObj, acceptanceCriterion) match {
         case m : MoveFound => m
         case x =>
           a.getBestSolutionToRestore match {

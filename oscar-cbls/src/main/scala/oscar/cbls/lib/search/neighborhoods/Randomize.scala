@@ -44,18 +44,18 @@ case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
 
   override def getMove(obj: Objective,
                        initialObj: Long,
-                       acceptanceCriteria: AcceptanceCriterion = null): SearchResult = {
-    if (printExploredNeighborhoods) println("applying " + name)
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
+    if(printExploredNeighborhoods) println("applying " + name)
 
     val degreeNow = degree()
 
-    var (nbAttempts:Int, checkAcceptation:Boolean) = acceptanceChecking match {
+    var (nbAttempts:Int,checkAcceptation:Boolean) = acceptanceChecking match{
       case None => (-1,false)
       case Some(a) => (a,true)
     }
 
     //TODO: we should check acceptation for all parts of the move. That could be implemented using Atomic(swap(behavior:Random))
-    while (nbAttempts != 0) {
+    while(nbAttempts != 0) {
       nbAttempts -= 1
       var toReturn: List[AssignMove] = List.empty
 
@@ -78,7 +78,7 @@ case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
       }
 
       if (!checkAcceptation
-        || acceptanceCriteria(initialObj, obj.assignVal(toReturn.map(x => (x.i, x.value))))) {
+        || acceptanceCriterion(initialObj, obj.assignVal(toReturn.map(x => (x.i, x.value))))) {
         if (printExploredNeighborhoods) println(name + ": move found")
         return CompositeMove(toReturn, Long.MaxValue, name)
       }
@@ -105,9 +105,9 @@ case class RandomSwapNeighborhood(vars:Array[CBLSIntVar],
   extends Neighborhood(name) with LinearSelectors{
 
   override def getMove(obj: Objective,
-                       initialObj:Long,
-                       acceptanceCriteria: AcceptanceCriterion = null): SearchResult = {
-    if (printExploredNeighborhoods) println("applying " + name)
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
+    if(printExploredNeighborhoods) println("applying " + name)
 
     var toReturn:List[Move] = List.empty
     val degreeNow:Int = degree()
@@ -118,10 +118,10 @@ case class RandomSwapNeighborhood(vars:Array[CBLSIntVar],
       touchedVars = touchedVars + i
       val j = selectFrom(vars.indices,(j:Int) => (searchZone == null || searchZone().contains(j)) && !touchedVars.contains(j))
       touchedVars = touchedVars + j
-      toReturn = SwapMove(vars(i), vars(j), i, j, adjustIfNotInProperDomain=false, Long.MaxValue) :: toReturn
+      toReturn = SwapMove(vars(i), vars(j), i,j,false, Long.MaxValue) :: toReturn
     }
 
-    if (printExploredNeighborhoods) println(name + ": move found")
+    if(printExploredNeighborhoods) println(name + ": move found")
     CompositeMove(toReturn, Long.MaxValue, name)
   }
 }

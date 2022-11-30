@@ -17,7 +17,7 @@ object WarehouseLocationDistributed2 extends App {
   //  val time = Array.fill(10)(0L)
 
   //  for(nbWorker <- 1 until 10){
-  val nbWorker = 6
+  val nbWorker = 4
 
   //the number of warehouses
   val W: Int = 4000

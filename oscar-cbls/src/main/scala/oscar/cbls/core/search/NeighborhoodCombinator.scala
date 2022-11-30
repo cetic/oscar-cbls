@@ -16,42 +16,39 @@
  */
 package oscar.cbls.core.search
 
-import oscar.cbls.core.distrib.{RemoteTask, Supervisor}
+import oscar.cbls.core.distrib.{RemoteNeighborhood, RemoteTask, Supervisor}
 
 /**
  * @author renaud.delandtsheer@cetic.be
  */
-abstract class NeighborhoodCombinator(nbs: Neighborhood*) extends Neighborhood {
+abstract class NeighborhoodCombinator(a: Neighborhood*) extends Neighborhood {
   //this resets the internal state of the move combinators
   override def reset(): Unit = {
-    for (n <- nbs) n.reset()
+    for (n <- a) n.reset()
   }
 
   override def resetStatistics(): Unit ={
-    for (n <- nbs) n.resetStatistics()
+    for (n <- a) n.resetStatistics()
   }
 
   override def verbose_=(i: Int): Unit = {
-    for (n <- nbs) n.verbose = i
+    for (n <- a) n.verbose = i
     super.verbose_=(i)
   }
 
-  override def toString: String = this.getClass.getSimpleName + "(" + nbs.mkString(",") + ")"
+  override def toString: String = this.getClass.getSimpleName + "(" + a.mkString(",") + ")"
 
-  override def collectProfilingStatistics: List[Array[String]] = nbs.flatMap(_.collectProfilingStatistics).toList
+  override def collectProfilingStatistics: List[Array[String]] = a.flatMap(_.collectProfilingStatistics).toList
 
-  override def labelAndExtractRemoteTasks(supervisor: Supervisor,
-                                          currentID: Int,
-                                          nbDistributedCombinators: Int = 0,
-                                          acc: List[RemoteTask]): (Int, Int, List[RemoteTask]) = {
+  override def labelAndExtractRemoteTasks(supervisor: Supervisor, currentID: Int, nbDistributedCombinators:Int = 0, acc: List[RemoteTask]):(Int,Int,List[RemoteTask]) = {
     var currentIDNow: Int = currentID
-    var nbDistributedCombinatorsNow: Int = nbDistributedCombinators
+    var nbDistributedCombinatorsNow:Int = nbDistributedCombinators
     var accNow: List[RemoteTask] = acc
-    for(nb <- nbs){
-      val (currId, nbDC, accN) = nb.labelAndExtractRemoteTasks(supervisor, currentIDNow, nbDistributedCombinatorsNow, accNow)
-      currentIDNow = currId
-      nbDistributedCombinatorsNow = nbDC
-      accNow = accN
+    for(neighborhood <- a){
+      val a = neighborhood.labelAndExtractRemoteTasks(supervisor, currentIDNow, nbDistributedCombinatorsNow, accNow)
+      currentIDNow = a._1
+      nbDistributedCombinatorsNow = a._2
+      accNow = a._3
     }
     (currentIDNow,nbDistributedCombinatorsNow,accNow)
   }

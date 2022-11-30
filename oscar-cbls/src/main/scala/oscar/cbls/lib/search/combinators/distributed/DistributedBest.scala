@@ -9,38 +9,39 @@ import oscar.cbls.core.search.{AcceptanceCriterion, DistributedCombinator, Neigh
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, DurationInt}
 
-class DistributedBest(neighborhoods: Array[Neighborhood],
-                      useHotRestart: Boolean = true)
+class DistributedBest(neighborhoods:Array[Neighborhood],useHotRestart:Boolean = true)
   extends DistributedCombinator(neighborhoods) {
 
   override def getMove(obj: Objective,
                        initialObj: Long,
-                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
-    import akka.actor.typed.scaladsl.AskPattern._
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
 
     val independentObj = obj.getIndependentObj
     val startSol = Some(IndependentSolution(obj.model.solution()))
+
+    import akka.actor.typed.scaladsl.AskPattern._
     //TODO look for an adequate timeout or stopping mechanism
     implicit val timeout: Timeout = 1.hour
     implicit val system: ActorSystem[_] = supervisor.system
 
     val futureResults =  remoteNeighborhoodIdentifications.map(r => {
+
       supervisor.supervisorActor.ask[SearchEnded](ref =>
         DelegateSearch(SingleMoveSearch(
           remoteTaskId = r,
-          acceptanceCriterion =  acceptanceCriteria,
+          acceptanceCriterion = acceptanceCriterion,
           obj = independentObj,
           startSolutionOpt = startSol,
           sendResultTo = ref
         ), waitForMoreSearch = useHotRestart))
     }).toList
 
-    if (useHotRestart) {
+    if(useHotRestart) {
       //now that all searches are sent, tell the supervisor to start searches, so it can use hotRestart
-      supervisor.supervisorActor ! StartSomeSearch
+      supervisor.supervisorActor ! StartSomeSearch()
     }
 
-    val independentMoveFound: Iterable[IndependentMoveFound] = futureResults.flatMap(futureResult =>
+    val independentMoveFound:Iterable[IndependentMoveFound] = futureResults.flatMap(futureResult =>
       Await.result(futureResult,Duration.Inf) match {
         case SearchCompleted(_, searchResult: IndependentSearchResult, _) =>
           searchResult match {

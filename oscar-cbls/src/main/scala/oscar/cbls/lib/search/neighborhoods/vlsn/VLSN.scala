@@ -290,16 +290,16 @@ class VLSN(v:Int,
                        initialObj: Long,
                        acceptanceCriterion: AcceptanceCriterion): SearchResult = {
 
-    if (printTakenMoves) println("start VLSN")
+    if(printTakenMoves) println("start VLSN")
     val initialSolution = obj.model.solution(true)
 
-    if (reoptimizeAtStartUp) {
-      for (vehicle <- 0 until v) {
+    if(reoptimizeAtStartUp){
+      for(vehicle <- 0 until v){
         doReoptimize(vehicle)
       }
     }
 
-    if (debugNeighborhoodExploration) {
+    if(debugNeighborhoodExploration){
       require(globalObjective.value == obj.value, "global objective given to VLSN(" + globalObjective.value + ") not equal to Obj of search procedure (" + obj.value + ")")
       val summedPartialObjective = vehicleToObjective.map(_.value).sum + unroutedPenalty.value
       require(summedPartialObjective == globalObjective.value, "summed partial objectives with unrouted (" + summedPartialObjective + ") not equal to global objective (" + globalObjective.value + ")")
@@ -309,9 +309,7 @@ class VLSN(v:Int,
     var (dataForRestartOpt,hotRestart) = doVLSNSearch(
       initVehicleToRoutedNodesToMove(),
       initUnroutedNodesToInsert(),
-      None,
-      None
-    )
+      None,None)
 
     val somethingDone = dataForRestartOpt.isDefined
 
@@ -321,6 +319,7 @@ class VLSN(v:Int,
     }
 
     var remainingIt = maxIt-1
+
 
     //we restart as much as possible, there is no data for restart when there is no cycle found at all
     while (dataForRestartOpt.isDefined && remainingIt > 0) {
@@ -386,13 +385,11 @@ class VLSN(v:Int,
 
       verbose = false,
       enrichment = enrichment.getOrElse(
-        EnrichmentParameters(
-          injectAllCacheBeforeEnriching = false,
+        EnrichmentParameters(injectAllCacheBeforeEnriching = false,
           minNbEdgesToExplorePerLevel = Int.MaxValue,
           minNbAddedEdgesPerLevel =  Int.MaxValue,
           nbEdgesPerBundle =  Int.MaxValue,
-          nbEdgesPerPriorityBundle = Int.MaxValue
-        )
+          nbEdgesPerPriorityBundle = Int.MaxValue)
       )
     )
 
@@ -597,7 +594,7 @@ class VLSN(v:Int,
                                        oldVehicleToRoutedNodesToMove: Map[Int, Set[Int]],
                                        oldUnroutedNodesToInsert: Set[Int],
                                        cacheWasBuiltWithIncrementalEnrichment:Boolean,
-                                       hotRestart:Option[HotRestartInfo]): (Option[DataForVLSNRestart],HotRestartInfo) = {
+                                       hotRestart:Option[HotRestartInfo]):(Option[DataForVLSNRestart],HotRestartInfo) = {
 
     val (updatedVehicleToRoutedNodesToMove, updatedUnroutedNodesToInsert) =
       updateZones(performedMoves,
@@ -611,12 +608,10 @@ class VLSN(v:Int,
         v,
         cacheWasBuiltWithIncrementalEnrichment)
 
-    doVLSNSearch(
-      updatedVehicleToRoutedNodesToMove,
+    doVLSNSearch(updatedVehicleToRoutedNodesToMove,
       updatedUnroutedNodesToInsert,
       cachedExplorations,
-      hotRestart
-    )
+      hotRestart)
   }
 
   @tailrec

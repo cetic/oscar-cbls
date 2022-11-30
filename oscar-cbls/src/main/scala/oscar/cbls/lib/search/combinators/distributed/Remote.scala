@@ -14,7 +14,7 @@ class Remote(neighborhoods:Neighborhood)
 
   override def getMove(obj: Objective,
                        initialObj: Long,
-                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
 
     val independentObj = obj.getIndependentObj
     val startSol = IndependentSolution(obj.model.solution())
@@ -28,7 +28,7 @@ class Remote(neighborhoods:Neighborhood)
       DelegateSearch(
         SingleMoveSearch(
           remoteTaskId = remoteNeighborhoodIdentifications(0),
-          acceptanceCriterion = acceptanceCriteria,
+          acceptanceCriterion = acceptanceCriterion,
           obj = independentObj,
           startSolutionOpt = Some(startSol),
           sendResultTo = ref

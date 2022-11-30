@@ -50,8 +50,8 @@ class ChangingSetValueSnapShot(val uniqueId:Int,val savedValue:SortedSet[Int]) e
   override def makeIndependentSerializable: IndependentSerializableAbstractVariableSnapshot = IndependentSerializableChangingSetValueSnapShot(uniqueId, savedValue)
 }
 
-case class IndependentSerializableChangingSetValueSnapShot(uniqueId: Int, savedValue: SortedSet[Int])
-  extends IndependentSerializableAbstractVariableSnapshot {
+case class IndependentSerializableChangingSetValueSnapShot(uniqueId:Int,savedValue:SortedSet[Int])
+  extends IndependentSerializableAbstractVariableSnapshot{
   override def makeLocal: AbstractVariableSnapShot = new ChangingSetValueSnapShot(uniqueId, savedValue)
 }
 

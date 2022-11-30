@@ -51,9 +51,9 @@ class CodedNeighborhood(codedMove: => Unit,
     codedMove
     val nextObj = obj.value
     startSol.restoreDecisionVariables()
-    if (acceptanceCriterion(initialObj,nextObj)) {
+    if(acceptanceCriterion(initialObj,nextObj)){
       MoveFound(new CodedMove(() => codedMove,nextObj, name))
-    } else {
+    }else{
       NoMoveFound
     }
   }
@@ -80,7 +80,7 @@ abstract class JumpNeighborhood(name:String) extends Neighborhood(name) {
   def canDoIt: Boolean = true
 
   override def getMove(obj: Objective,
-                       initialObj:Long,
+                       initialObj: Long,
                        acceptanceCriterion: AcceptanceCriterion = StrictImprovement): SearchResult = {
     if (canDoIt) CallBackMove(() => doIt(), valueAfter, name)
     else NoMoveFound
@@ -159,14 +159,14 @@ abstract class Neighborhood(name:String = null) {
    * @return
    */
   def getMoveAbortable(obj: Objective,
-                       initialObj: Long,
+                       initialObj:Long,
                        acceptanceCriterion:  AcceptanceCriterion = StrictImprovement,
-                       shouldAbort: () => Boolean,
-                       initSolutionOpt: Option[Solution] = None): SearchResult = {
+                       shouldAbort:()=>Boolean,
+                       initSolutionOpt:Option[Solution] = None): SearchResult = {
     val oldSol = initSolutionOpt.getOrElse(obj.model.solution())
     try {
       getMove(new AbortableObjective(shouldAbort, obj), initialObj, acceptanceCriterion)
-    } catch {
+    }catch{
       case _:AbortException =>
         oldSol.restoreDecisionVariables(true)
         NoMoveFound
@@ -184,17 +184,16 @@ abstract class Neighborhood(name:String = null) {
 
   /**
    * possible verbosity levels:
-   * 0: no verbosity
+   * 0: no verbosities
    * 1: every 10th of a second, summarise all performed moves, by neighbourhoods
    * 2: print every move
    * 3: print every search
    * 4: print every explored neighbour
    * */
   def verbose: Int = _verbose
-
   /**
    * possible verbosity levels:
-   * 0: no verbosity
+   * 0: no verbosities
    * 1: every 10th of a second, summarise all performed moves, by neighbourhoods
    * 2: print every move
    * 3: print every search
@@ -216,7 +215,7 @@ abstract class Neighborhood(name:String = null) {
     additionalStringGenerator = additionalString
   }
 
-  protected def printMoveSynthesis:Boolean = verbose == 1L
+  protected def printMoveSythesis:Boolean = verbose == 1L
   protected def printTakenMoves: Boolean = verbose >= 2L
   protected def printExploredNeighborhoods: Boolean = verbose >= 3L
   protected def printExploredNeighbors: Boolean = verbose >= 4L
@@ -245,13 +244,15 @@ abstract class Neighborhood(name:String = null) {
     def padToLength(s: String, l: Int): String = (s + nStrings(l, " ")).substring(0, l)
     def trimToLength(s: String, l: Int): String = if (s.length >= l) s.substring(0, l) else s
 
-    if (verbose != 0) {
+    if (verbose != 0){
       println(s"start doAllMove at ${java.time.LocalDateTime.now}")
-      println(s"initial objective function:$obj")
+      println(s"initial objective function:${obj.detailedString(true)}")
     }
     var moveSynthesis = SortedMap.empty[String,Int]
+
     val startSearchNanotime = System.nanoTime()
     var nanoTimeAtNextSynthesis = startSearchNanotime + (1000*1000*100) //100ms
+
     var bestObj = Long.MaxValue
     var prevObj = Long.MaxValue
     var toReturn = 0
@@ -260,132 +261,158 @@ abstract class Neighborhood(name:String = null) {
     while (!shouldStop(moveCount)) {
       getMove(enrichedObj, obj.value, acceptanceCriterion) match {
         case NoMoveFound =>
-          // No (more) moves found
-          if (printMoveSynthesis && moveSynthesis.nonEmpty) {
+
+          if(printMoveSythesis && moveSynthesis.nonEmpty){
             val finalObj = obj.value
             val firstPrefix = if (finalObj < prevObj) "-"
             else if (finalObj == prevObj) "="
             else "+"
             val smallPaddingLength = 20
-            val secondPrefix = (
-              if (finalObj < bestObj) {
-                " # "
-              } else if (finalObj == bestObj) " ° "
-              else "   "
-              ) + padToLength(finalObj.toString,smallPaddingLength)
+
+            val secondPrefix = (if (finalObj < bestObj) {
+              " # "
+            } else if (finalObj == bestObj) " ° "
+            else "   ") + padToLength(finalObj.toString,smallPaddingLength)
             println(firstPrefix + secondPrefix + moveSynthesis.toList.map({case (name,n) => padToLength(trimToLength(name, smallPaddingLength-4)+ ":"+n, smallPaddingLength)}).mkString(" "))
+
             moveSynthesis = SortedMap.empty[String,Int]
             nanoTimeAtNextSynthesis = System.nanoTime() + (1000*1000*100) //100ms
           }
-          if (printTakenMoves || printMoveSynthesis) {
+          if (printTakenMoves || printMoveSythesis) {
+
             val runDurationMs:Long = ((System.nanoTime() - startSearchNanotime).toFloat / 1000000).ceil.toLong
             val hours = (runDurationMs / (1000.0 * 60 * 60)).floor.toInt
             val minutes = (runDurationMs / (1000.0 * 60)).floor.toInt % 60
             val seconds: Double = (runDurationMs / 1000.0) % 60
+
             println(f"no more move found after $toReturn it, duration:$hours:$minutes:$seconds%1.3f")
           }
-          return toReturn
 
+          return toReturn;
         case m: MoveFound =>
-          if (printMoveSynthesis) {
+          if(printMoveSythesis){
+
             var didPrintBefore:Boolean = false
             if(m.m.objAfter == Long.MaxValue && moveSynthesis.nonEmpty){
-              //in case we are jumping and there are some moves to print, we force print a synthesis
+              //in case we are jumping and tehre are some moves to print, we force print a synthesis
               didPrintBefore = true
               //TODO: we should not consider m.objAfter!!! we should consider the obj BEFORE the move is taken
+
               val currentObjValue = obj.value // this is the obj before the jump
               //flush the preceding moves before a jump
               val firstPrefix = if (currentObjValue  < prevObj) "-"
               else if (currentObjValue  == prevObj) "="
               else "+"
+
               prevObj = currentObjValue //we update it since it was displayed
+
               val smallPaddingLength = 20
-              val secondPrefix = (
-                if (currentObjValue < bestObj) {
-                  bestObj = currentObjValue
-                  " # "
-                } else if (currentObjValue == bestObj) " ° "
-                else "   "
-                ) + padToLength(currentObjValue.toString,smallPaddingLength)
+
+              val secondPrefix = (if (currentObjValue < bestObj) {
+                bestObj = currentObjValue
+                " # "
+              } else if (currentObjValue == bestObj) " ° "
+              else "   ") + padToLength(currentObjValue.toString,smallPaddingLength)
               println(firstPrefix + secondPrefix + moveSynthesis.toList.map({case (name,n) => padToLength(trimToLength(name, smallPaddingLength-4)+ ":"+n, smallPaddingLength)}).mkString(" "))
+
               moveSynthesis = SortedMap.empty[String,Int]
               nanoTimeAtNextSynthesis = System.nanoTime() + (1000*1000*100) //100ms
             }
+
             val neighborhoodName = m.m.neighborhoodName
             moveSynthesis = moveSynthesis + ((neighborhoodName,moveSynthesis.getOrElse(neighborhoodName,0)+1))
+
             val printSynthesis = (System.nanoTime() >= nanoTimeAtNextSynthesis) || m.m.objAfter == Long.MaxValue
-            if (printSynthesis) {
+
+            if(printSynthesis){
+
               val firstPrefix = if (m.objAfter < prevObj) "-"
               else if (m.objAfter == prevObj) "="
               else "+"
+
               prevObj = m.objAfter
+
               val smallPaddingLength = 20
-              val secondPrefix = (
-                if (m.objAfter < bestObj) {
-                  bestObj = m.objAfter
-                  " # "
-                } else if (m.objAfter == bestObj) " ° "
-                else "   "
-                ) + padToLength(m.objAfter.toString,smallPaddingLength)
+
+              val secondPrefix = (if (m.objAfter < bestObj) {
+                bestObj = m.objAfter
+                " # "
+              } else if (m.objAfter == bestObj) " ° "
+              else "   ") + padToLength(m.objAfter.toString,smallPaddingLength)
               println(firstPrefix + secondPrefix + moveSynthesis.toList.map({case (name,n) => padToLength(trimToLength(name, smallPaddingLength-4)+ ":"+n, smallPaddingLength)}).mkString(" "))
+
               moveSynthesis = SortedMap.empty[String,Int]
               nanoTimeAtNextSynthesis = System.nanoTime() + (1000*1000*100) //100ms
-            } else if (didPrintBefore) {
+            }else if(didPrintBefore){
               prevObj = m.objAfter
             }
-            // commit the move
+
             m.commit()
             //TODO: additionalString should be handled with synthesis!
             if (printSynthesis && additionalStringGenerator != null) println(additionalStringGenerator())
             if (obj.value == Long.MaxValue) println("Warning : objective == MaxLong, maybe you have some strong constraint violated?")
+
             require(m.objAfter == Long.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
-          } else if (printTakenMoves) {
+
+          }else if (printTakenMoves) {
+
             if (m.objAfter != Long.MaxValue) {
               val firstPrefix = if (m.objAfter < prevObj) "-"
               else if (m.objAfter == prevObj) "="
               else "+"
+
               prevObj = m.objAfter
+
               val secondPrefix = (if (m.objAfter < bestObj) {
                 bestObj = m.objAfter
                 " # "
               } else if (m.objAfter == bestObj) " ° "
               else "   ") + " " + m.objAfter
+
               println(firstPrefix + secondPrefix + "   " + m.toString())
             } else {
               prevObj = m.objAfter
               println(m.toString())
             }
+
             m.commit()
             if (additionalStringGenerator != null) println(additionalStringGenerator())
             if (obj.value == Long.MaxValue) println("Warning : objective == MaxLong, maybe you have some strong constraint violated?")
+
             require(m.objAfter == Long.MaxValue || obj.value == m.objAfter, s"neighborhood was lying!:$m got $obj")
-          } else {
+
+          }else{
             m.commit()
             if (additionalStringGenerator != null) println(additionalStringGenerator())
             if (obj.value == Long.MaxValue) println("Warning : objective == MaxLong, maybe you have some strong constraint violated?")
+
             require(m.objAfter == Long.MaxValue || obj.value == m.objAfter, s"neighborhood was lying!:$m got $obj")
           }
       }
+
       toReturn += 1
       moveCount += 1
     }
-    if (printMoveSynthesis && moveSynthesis.nonEmpty) {
+
+    if(printMoveSythesis && moveSynthesis.nonEmpty) {
+
       val currentObjValue = obj.value
       //flush the preceding moves before a jump
       val firstPrefix = if (currentObjValue < prevObj) "-"
       else if (currentObjValue == prevObj) "="
       else "+"
+
       val smallPaddingLength = 20
-      val secondPrefix = (
-        if (currentObjValue < bestObj) {
-          bestObj = currentObjValue
-          " # "
-        } else if (currentObjValue == bestObj) " ° "
-        else "   "
-        ) + padToLength(currentObjValue.toString, smallPaddingLength)
+
+      val secondPrefix = (if (currentObjValue < bestObj) {
+        bestObj = currentObjValue
+        " # "
+      } else if (currentObjValue == bestObj) " ° "
+      else "   ") + padToLength(currentObjValue.toString, smallPaddingLength)
       println(firstPrefix + secondPrefix + moveSynthesis.toList.map({case (name, n) => padToLength(trimToLength(name, smallPaddingLength - 4) + ":" + n, smallPaddingLength) }).mkString(" "))
     }
-    if (printTakenMoves || printMoveSynthesis) {
+
+    if (printTakenMoves || printMoveSythesis) {
       println(s"stop criteria of doAllMove met after $moveCount moves, ${((System.nanoTime() - startSearchNanotime)/1000000).toInt} ms")
     }
     toReturn
@@ -394,9 +421,12 @@ abstract class Neighborhood(name:String = null) {
   def getAllMoves(shouldStop: Int => Boolean = _ => false,
                   obj: Objective,
                   acceptanceCriterion: AcceptanceCriterion = StrictImprovement): List[Move] = {
+
     var toReturn : List[Move] = List.empty
+
     val instrumentedThis = this afterMoveOnMove(m => toReturn = m :: toReturn)
     instrumentedThis.doAllMoves(shouldStop,obj,acceptanceCriterion)
+
     toReturn.reverse
   }
 
@@ -413,8 +443,8 @@ abstract class Neighborhood(name:String = null) {
 
   def labelAndExtractRemoteTasks(supervisor: Supervisor,
                                  currentID: Int = 0,
-                                 nbDistributedCombinators: Int = 0,
-                                 acc: List[RemoteTask] = Nil): (Int, Int, List[RemoteTask]) =
+                                 nbDistributedCombinators:Int = 0,
+                                 acc: List[RemoteTask] = Nil) : (Int, Int, List[RemoteTask]) =
     (currentID, nbDistributedCombinators, acc)
 }
 
@@ -427,13 +457,12 @@ case object NoMoveNeighborhood extends Neighborhood {
                        acceptanceCriterion: AcceptanceCriterion): SearchResult = NoMoveFound
 }
 
-trait SupportForAndThenChaining[MoveType<:Move] extends Neighborhood {
+trait SupportForAndThenChaining[MoveType<:Move] extends Neighborhood{
 
   def instantiateCurrentMove(newObj:Long):MoveType
 
-  def dynAndThen(other:MoveType => Neighborhood,
-                 maximalIntermediaryDegradation: Long = Long.MaxValue): DynAndThen[MoveType] = {
-    new DynAndThen[MoveType](this, other, maximalIntermediaryDegradation)
+  def dynAndThen(other:MoveType => Neighborhood,maximalIntermediaryDegradation: Long = Long.MaxValue):DynAndThen[MoveType] = {
+    new DynAndThen[MoveType](this,other,maximalIntermediaryDegradation)
   }
 
   /**
@@ -510,8 +539,7 @@ trait SupportForAndThenChaining[MoveType<:Move] extends Neighborhood {
  * @param best true if you want the best move false if you want the first acceptable move
  * @param neighborhoodName the name of the neighborhood, used for verbosities
  */
-abstract class EasyNeighborhood[M<:Move](best: Boolean=false,
-                                         neighborhoodName: String=null)
+abstract class EasyNeighborhood[M<:Move](best:Boolean = false, neighborhoodName:String=null)
   extends Neighborhood with SupportForAndThenChaining[M]{
 
   protected def neighborhoodNameToString: String = if (neighborhoodName != null) neighborhoodName else this.getClass.getSimpleName
@@ -528,14 +556,17 @@ abstract class EasyNeighborhood[M<:Move](best: Boolean=false,
   override final def getMove(obj: Objective,
                              initialObj: Long,
                              acceptanceCriterion: AcceptanceCriterion): SearchResult = {
+
     oldObj = initialObj
     this.acceptanceCriterion = acceptanceCriterion
     toReturnMove = null
     bestNewObj = Long.MaxValue
     this.obj = if (printExploredNeighbors) new LoggingObjective(obj) else obj
-    if (printExploredNeighborhoods) println(neighborhoodNameToString + ": start exploration")
-    // Exploration of neighborhood
+    if (printExploredNeighborhoods)
+      println(neighborhoodNameToString + ": start exploration")
+
     exploreNeighborhood()
+
     if (toReturnMove == null || (best && !acceptanceCriterion(oldObj, bestNewObj))) {
       if (printExploredNeighborhoods) {
         println(neighborhoodNameToString + ": no move found")
@@ -566,7 +597,9 @@ abstract class EasyNeighborhood[M<:Move](best: Boolean=false,
     //andThen (pas utile de l'instancier sns obj pq on va de tt façons propager en commençant le voisinage suivant.
     //normal
     //pour l'instant, cas normal uniquement (en fait le AndThen sera géré par le combinateur idoine)
+
     val myPrintExploredNeighbors = printExploredNeighbors
+
     if (best) {
       if (newObj < bestNewObj) {
         bestNewObj = newObj
@@ -605,8 +638,8 @@ abstract class EasyNeighborhood[M<:Move](best: Boolean=false,
   def afterMoveOnMove(proc:M => Unit):Neighborhood = DoOnMove(this,(m:Move) => proc(m.asInstanceOf[M]))
 }
 
-abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName: String=null)
-  extends Neighborhood with SupportForAndThenChaining[M] {
+abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
+  extends Neighborhood with SupportForAndThenChaining[M]{
 
   protected def neighborhoodNameToString: String = if (neighborhoodName != null) neighborhoodName else this.getClass.getSimpleName
 
@@ -621,13 +654,14 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName: String=null
   private var exploring = false // to check that it is not called recursively because it is not reentrant
 
   override final def getMove(obj: Objective,
-                             initialObj:Long,
+                             initialObj: Long,
                              acceptanceCriterion: AcceptanceCriterion): SearchResult = {
-    require(!exploring, s"$this is not a re-entrant neighborhood")
-    /////
+
+    require(!exploring,s"$this is not a re-entrant neighborhood")
     exploring = true
     try {
       oldObj = initialObj
+
       this.acceptanceCriterion = acceptanceCriterion
       toReturnMove = null
       bestNewObj = initialObj //Long.MaxValue // //because we do not want "no move" to be considered as an actual move.
@@ -635,10 +669,12 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName: String=null
       if (printExploredNeighborhoods) {
         println(s"$neighborhoodNameToString: start exploration")
       }
+
       exploreNeighborhood(oldObj)
-    } finally {
+    }finally {
       exploring = false
     }
+
     if (toReturnMove == null) {
       if (printExploredNeighborhoods) {
         println(neighborhoodNameToString + ": no move found")
@@ -670,7 +706,7 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName: String=null
 
     val myPrintExploredNeighbors = printExploredNeighbors
 
-    if ((newObj < bestNewObj || toReturnMove == null) && acceptanceCriterion(oldObj, newObj)) {
+    if ((newObj < bestNewObj || toReturnMove == null)&& acceptanceCriterion(oldObj, newObj)) {
       bestNewObj = newObj
       toReturnMove = instantiateCurrentMove(newObj)
       if (myPrintExploredNeighbors) {

@@ -11,7 +11,7 @@ object MinMaxVehicleContent{
   def apply(routes: ChangingSeqValue,
             n: Int,
             v: Int,
-            contentVariationAtNodeOrInitAtVehicleStart: Array[Long],
+            contentVariationAtNodeOrInitAtVehicleStart: Array[Long]
            ): MinMaxVehicleContent = {
 
     val minContentOnVehicleRoute: Array[CBLSIntVar] =
@@ -146,7 +146,10 @@ class MinMaxVehicleContent(routes: ChangingSeqValue, override val n: Int, val v:
         minMaxFinishContent(logReducedSegments.tail,r)
       }
     }
-    minMaxFinishContent(segments,(0L,0L,0L))
+    minMaxFinishContent(segments,
+      (contentFunctionAtNode(vehicle).minIfStartAtZero(false),
+        contentFunctionAtNode(vehicle).maxIfStartAtZero(false),
+        0))
   }
 
   /**

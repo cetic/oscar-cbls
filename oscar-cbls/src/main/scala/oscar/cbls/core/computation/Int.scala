@@ -26,9 +26,9 @@ import scala.collection.mutable.{Map => MMap}
 
 /** this is something that has an integer value.
   * this value can be queried, and invariants can be posted on it,
-  * and it can be used on the right hand of <== operator
+  * and it can be used on the righ hand of <== operator
   */
-sealed trait IntValue extends Value {
+sealed trait IntValue extends Value{
   def value: Long
   def valueInt: Int
   def domain:Domain
@@ -36,6 +36,7 @@ sealed trait IntValue extends Value {
   def minInt: Int = longToInt(min)
   def max: Long = domain.max
   def maxInt: Int = longToInt(max)
+
   def name:String
   override def valueString: String = s"$value"
   def restrictDomain(d:Domain): Unit
@@ -48,6 +49,7 @@ sealed trait IntValue extends Value {
 }
 
 object IntValue {
+
   implicit def intArray2IntValueArray(a: Array[Long]): Array[CBLSIntConst] = a.map(CBLSIntConst(_))
 
   implicit def toFunction(i: IntValue): () => Long = () => i.value
@@ -62,11 +64,11 @@ object IntValue {
   }
 }
 
-trait IntNotificationTarget {
+trait IntNotificationTarget{
   def notifyIntChanged(v: ChangingIntValue, id: Int, oldVal: Long, newVal: Long): Unit
 }
 
-trait ShortIntNotificationTarget {
+trait ShortIntNotificationTarget{
   def notifyIntChanged(v: ChangingIntValue, id: Int, oldVal: Int, newVal: Int): Unit
 }
 
@@ -75,39 +77,36 @@ trait ShortIntNotificationTarget {
   * @param initialDomain is the domain value of the variable. Some invariants exploit this value to declare fixed size arrays
   * @param initialValue is the value of the variable
   */
-abstract class ChangingIntValue(initialValue: Long, initialDomain: Domain)
-  extends AbstractVariable with IntValue {
+abstract class ChangingIntValue(initialValue:Long, initialDomain:Domain)
+  extends AbstractVariable with IntValue{
 
   assert(initialDomain.contains(initialValue),
     s"$initialValue is not in the domain of ${this.name}($initialDomain). This might indicate an integer overflow.")
 
-  override def snapshot: ChangingIntValueSnapShot = ChangingIntValueSnapShot(this.uniqueID, this.value)
-  def valueAtSnapShot(s: Solution): Long = s(this) match {
-    case s: ChangingIntValueSnapShot => s.savedValue
-    case _ => throw new Error("cannot find value of " + this + " in snapshot")
-  }
+  override def snapshot : ChangingIntValueSnapShot = new ChangingIntValueSnapShot(this.uniqueID,this.value)
+  def valueAtSnapShot(s:Solution):Long = s(this) match{case s:ChangingIntValueSnapShot => s.savedValue case _ => throw new Error("cannot find value of " + this + " in snapshot")}
 
-  private[this] var privatedomain: Domain = initialDomain
+  private[this] var privatedomain:Domain = initialDomain
   private[this] var mNewValue: Long = initialValue
   private[this] var mOldValue = mNewValue
 
-  def domain: Domain = privatedomain
+  def domain:Domain = privatedomain
 
-  def restrictDomain(d: Domain): Unit = {
+  def restrictDomain(d:Domain): Unit = {
     privatedomain = privatedomain.intersect(d)
     require(privatedomain.contains(mNewValue),
       s"you are restricting a domain and the value is not in this domain; value:$mNewValue newDomain:$d")
   }
 
   //Unions the domain with d
-  def relaxDomain(d: Domain): Unit = {
+  def relaxDomain(d:Domain): Unit = {
     require(this.getStaticallyListeningElements.isEmpty,
       "you cannot relax the domain when someone is already listening to you")
     privatedomain = privatedomain.union(d)
   }
 
-  def inDomain(v: Long): Boolean = privatedomain.contains(v)
-  def domainSize: Long = privatedomain.size
+  def inDomain(v:Long): Boolean = privatedomain.contains(v)
+  def domainSize:Long = privatedomain.size
 
   override def toString: String = {
     if (model != null && model.propagateOnToString)
@@ -117,7 +116,7 @@ abstract class ChangingIntValue(initialValue: Long, initialDomain: Domain)
   override def toStringNoPropagate = s"$name:=$mNewValue"
 
   @inline
-  final def setValue(v: Long): Unit ={
+  final def setValue(v:Long): Unit ={
     if (v != mNewValue){
       assert(domain.contains(v),
         s"$v is not in the domain of $this($min..$max). This might indicate an integer overflow.")
@@ -126,10 +125,10 @@ abstract class ChangingIntValue(initialValue: Long, initialDomain: Domain)
     }
   }
 
-  def adjustToDomain(v: Long): Long = {
+  def adjustToDomain(v:Long):Long = {
     (v max this.min) min this.max
   }
-  def adjustToDomainModulo(v: Long): Long = {
+  def adjustToDomainModulo(v:Long):Long = {
     val modVal = Math.max(domain.max - domain.min,1)
     val adjusted = (v - domain.min) % modVal
     adjusted + domain.min
@@ -147,13 +146,13 @@ abstract class ChangingIntValue(initialValue: Long, initialDomain: Domain)
     longToInt(value)
   }
 
-  def newValue: Long = {
+  def newValue:Long = {
     assert(model.checkExecutingInvariantOK(definingInvariant),
       s"variable [$this] queried for latest val by non-controlling invariant")
     mNewValue
   }
 
-  def newValueInt: Int = {
+  def newValueInt:Int = {
     longToInt(newValue)
   }
 
@@ -189,7 +188,7 @@ abstract class ChangingIntValue(initialValue: Long, initialDomain: Domain)
     }
   }
 
-  override def checkInternals(c: Checker): Unit ={
+  override def checkInternals(c:Checker): Unit ={
     c.check(mOldValue == mNewValue)
   }
 
@@ -205,7 +204,7 @@ abstract class ChangingIntValue(initialValue: Long, initialDomain: Domain)
     setValue(v * mNewValue)
   }
 
-  protected def :-=(v: Long): Unit = {
+  protected def :-=(v:Long): Unit = {
     setValue(mNewValue - v)
   }
 
@@ -215,7 +214,7 @@ abstract class ChangingIntValue(initialValue: Long, initialDomain: Domain)
     setValue(1L + mNewValue)
   }
 
-  def createClone: CBLSIntVar = {
+  def createClone:CBLSIntVar = {
     val clone = new CBLSIntVar(model, this.value, this.domain, "clone of ${this.name}")
     clone <== this
     clone
@@ -228,23 +227,23 @@ abstract class ChangingIntValue(initialValue: Long, initialDomain: Domain)
   }
 }
 
-object ChangingIntValue {
+object ChangingIntValue{
   implicit val ord:Ordering[ChangingIntValue] = (o1: ChangingIntValue, o2: ChangingIntValue) => o1.compare(o2)
 }
 
-case class ChangingIntValueSnapShot(uniqueId: Int, savedValue: Long) extends AbstractVariableSnapShot(uniqueId) {
-  override protected def doRestore(m:Store) : Unit = { m.getIntVar(uniqueId) := savedValue }
+class ChangingIntValueSnapShot(val uniqueId:Int, val savedValue:Long) extends AbstractVariableSnapShot(uniqueId){
+  override protected def doRestore(m:Store) : Unit = {m.getIntVar(uniqueId) := savedValue}
 
   override def valueString(): String = "" + savedValue
 
-  override protected def doRestoreWithoutCheckpoints(m: Store): Unit = { m.getIntVar(uniqueId) := savedValue }
+  override protected def doRestoreWithoutCheckpoints(m: Store): Unit = {m.getIntVar(uniqueId) := savedValue}
 
   override def makeIndependentSerializable: IndependentSerializableAbstractVariableSnapshot = IndependentSerializableChangingIntValueSnapShot(uniqueId, savedValue)
 }
 
-case class IndependentSerializableChangingIntValueSnapShot(uniqueId: Int, savedValue: Long)
-  extends IndependentSerializableAbstractVariableSnapshot {
-  override def makeLocal: AbstractVariableSnapShot = ChangingIntValueSnapShot(uniqueId, savedValue)
+case class IndependentSerializableChangingIntValueSnapShot(uniqueId:Int, savedValue:Long)
+  extends IndependentSerializableAbstractVariableSnapshot{
+  override def makeLocal: AbstractVariableSnapShot = new ChangingIntValueSnapShot(uniqueId, savedValue)
 }
 
 /**An IntVar is a variable managed by the [[oscar.cbls.core.computation.Store]] whose type is integer.
@@ -267,15 +266,15 @@ class CBLSIntVar(givenModel: Store, initialValue: Long, initialDomain:Domain, n:
     setValue(v)
   }
 
-  def assignWithAdjust(v: Long): Unit ={
+  def assignWithAdjust (v: Long): Unit ={
     setValue(adjustToDomain(v))
   }
 
-  def incrementWithAdjust(v: Long): Unit ={
+  def incrementWithAdjust (v: Long): Unit ={
     setValue(adjustToDomain(v+newValue))
   }
 
-  def assignWithModuloAdjust(v: Long): Unit ={
+  def assignWithModuloAdjust (v: Long): Unit ={
     setValue(adjustToDomainModulo(v))
   }
 
@@ -291,27 +290,28 @@ class CBLSIntVar(givenModel: Store, initialValue: Long, initialDomain:Domain, n:
     setValue(newValue - v)
   }
 
-  /**increments the variable by one */
+  /** increments the variable by one
+    */
   override def ++(): Unit ={
     setValue(1L + newValue)
   }
 
-  /**this operator swaps the values of two IntVar */
+  /**this operator swaps the value of two IntVar*/
   def :=:(v:CBLSIntVar): Unit ={
-    val a: Long = v.value
-    v := this.value
+    val a:Long = v.value
+    v:=this.value
     this := a
   }
 
-  /**this operator swaps the values of two IntVar */
+  /**this operator swaps the value of two IntVar*/
   def swap(v: CBLSIntVar): Unit ={
     this :=: v
   }
 
-  def <==(i: IntValue): Unit = { IdentityInt(this,i) }
+  def <==(i: IntValue): Unit ={IdentityInt(this,i)}
 
   def randomize(): Unit ={
-    if (this.max != this.min) {
+    if(this.max != this.min) {
       require(this.max - this.min < Int.MaxValue, "The domain is too wide to take a random value")
       this := this.min + RandomGenerator.nextInt((this.max - this.min).toInt)
     }
@@ -319,7 +319,8 @@ class CBLSIntVar(givenModel: Store, initialValue: Long, initialDomain:Domain, n:
 }
 
 object CBLSIntVar{
-  def apply(model: Store, value: Long = 0L, d: Domain = FullRange, name: String = null) =
+
+  def apply(model: Store, value:Long = 0L, d:Domain = FullRange, name:String = null) =
     new CBLSIntVar(model, value, d, name)
 
   implicit val ord:Ordering[CBLSIntVar] = (o1: CBLSIntVar, o2: CBLSIntVar) => o1.compare(o2)
@@ -332,8 +333,8 @@ object CBLSIntVar{
 * @param value: the value of the constant
 * @author renaud.delandtsheer@cetic.be
 */
-class CBLSIntConst(override val value: Long)
-  extends IntValue {
+class CBLSIntConst(override val value:Long)
+  extends IntValue{
   override def valueInt: Int = {
     require(value <= Int.MaxValue, "The constant value is higher than Int.MaxValue")
     value.toInt
@@ -342,7 +343,7 @@ class CBLSIntConst(override val value: Long)
   override def domain: SingleValueDomain = SingleValueDomain(value)
   override def min: Long = value
   override def max: Long = value
-  override def name: String = value.toString
+  override def name = value.toString
   override def restrictDomain(d:Domain): Unit ={
     require(d.contains(value))
   }
@@ -352,9 +353,9 @@ object CBLSIntConst{
   implicit def int2IntValue(a: Long): IntValue = apply(a)
   implicit def int2IntConst(a: Long): CBLSIntConst = apply(a)
   //def apply(a:Long) = new CBLSIntConst(a)
-  val constMap = MMap.empty[Long, CBLSIntConst]
-  def apply(a:Long): CBLSIntConst = {
-    if (constMap.contains(a)) constMap(a)
+  val constMap = MMap.empty[Long,CBLSIntConst]
+  def apply(a:Long) = {
+    if(constMap.contains(a))constMap(a)
     else{
       val res = new CBLSIntConst(a)
       constMap(a) = res
@@ -366,9 +367,9 @@ object CBLSIntConst{
 /** this is a special case of invariant that has a single output variable, that is an IntVar
   * @author renaud.delandtsheer@cetic.be
   */
-abstract class IntInvariant(initialValue: Long = 0L, initialDomain: Domain = FullRange)
+abstract class IntInvariant(initialValue:Long = 0L, initialDomain:Domain = FullRange)
   extends ChangingIntValue(initialValue, initialDomain)
-  with Invariant {
+  with Invariant{
 
   override def definingInvariant: Invariant = this
   override def isControlledVariable:Boolean = true
@@ -379,14 +380,13 @@ abstract class IntInvariant(initialValue: Long = 0L, initialDomain: Domain = Ful
   override def hasModel:Boolean = schedulingHandler != null
 
   private var customName:String = null
-
   /**use this if you want to give a particular name to this concept, to be used in toString*/
   def setName(n:String):IntInvariant = {
     customName = n
     this
   }
 
-  override final def name: String = if (customName == null) this.getClass.getSimpleName else customName
+  override final def name: String = if(customName == null) this.getClass.getSimpleName else customName
 
   override final def performPropagation(): Unit ={
     performInvariantPropagation()
@@ -395,10 +395,10 @@ abstract class IntInvariant(initialValue: Long = 0L, initialDomain: Domain = Ful
 }
 
 object IdentityInt{
-  def apply(toValue: CBLSIntVar, fromValue: IntValue): Unit ={
+  def apply(toValue:CBLSIntVar, fromValue:IntValue): Unit ={
     fromValue match{
-      case c: CBLSIntConst => toValue := c.value
-      case c: ChangingIntValue => new IdentityInt(toValue, c)
+      case c:CBLSIntConst => toValue := c.value
+      case c:ChangingIntValue => new IdentityInt(toValue, c)
     }
   }
 }

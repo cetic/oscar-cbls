@@ -583,8 +583,8 @@ class ChangingSeqValueSnapShot(val uniqueId:Int,val savedValue:IntSequence) exte
 }
 
 
-case class IndependentSerializableChangingSeqValueSnapShot(uniqueId: Int, savedValues: Array[Int])
-  extends IndependentSerializableAbstractVariableSnapshot {
+case class IndependentSerializableChangingSeqValueSnapShot(uniqueId:Int, savedValues:Array[Int])
+  extends IndependentSerializableAbstractVariableSnapshot{
   override def makeLocal: AbstractVariableSnapShot = new ChangingSeqValueSnapShot(uniqueId:Int,IntSequence(savedValues))
 }
 

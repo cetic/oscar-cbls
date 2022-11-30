@@ -35,23 +35,26 @@ import scala.collection.immutable.SortedSet
  * @author renaud.delandtsheer@cetic.be
  * */
 case class MaxArray(varss: Array[IntValue], cond: SetValue = null, default: Long = Long.MinValue)
-  extends MiaxArray(varss, cond, varss.map(_.min).min) {
+  extends MiaxArray(varss, cond, default) {
 
   override def Ord(v: IntValue): Int = -v.valueInt
 
   override def ExtremumName: String = "Max"
 
   //More precise bounds
-  override def performBulkComputation(bulkedVar: Array[IntValue]) =
+  override def performBulkComputation(bulkedVar: Array[IntValue]): Domain =
     if (cond == null){
       (bulkedVar.foldLeft(Long.MinValue)((acc, intvar) => if (intvar.min > acc) intvar.min else acc),
         bulkedVar.foldLeft(Long.MinValue)((acc, intvar) => if (intvar.max > acc) intvar.max else acc))
     }else super.performBulkComputation(bulkedVar)
 
   override def checkInternals(c: Checker): Unit = {
-    for (v <- this.varss) {
-      c.check(this.value >= v.value,
-        Some(s"output.value (${this.value}) >= ${v.name}.value (${v.value})"))
+    val indices = if (cond == null) varss.indices else cond.value
+    if (indices.isEmpty) {
+      c.check(this.value == default)
+    } else {
+      val m = indices.map(i => varss(i).value).min
+      c.check(this.value == m)
     }
   }
 }
@@ -64,23 +67,26 @@ case class MaxArray(varss: Array[IntValue], cond: SetValue = null, default: Long
  * @author renaud.delandtsheer@cetic.be
  * */
 case class MinArray(varss: Array[IntValue], cond: SetValue = null, default: Long = Long.MaxValue)
-  extends MiaxArray(varss, cond, varss.map(_.max).max) {
+  extends MiaxArray(varss, cond, default = default) {
 
   override def Ord(v: IntValue): Int = v.valueInt
 
   override def ExtremumName: String = "Min"
 
   //More precise bounds
-  override def performBulkComputation(bulkedVar: Array[IntValue]) =
+  override def performBulkComputation(bulkedVar: Array[IntValue]): Domain =
     if (cond == null){
       (bulkedVar.foldLeft(Long.MaxValue)((acc, intvar) => if (intvar.min < acc) intvar.min else acc),
         bulkedVar.foldLeft(Long.MaxValue)((acc, intvar) => if (intvar.max < acc) intvar.max else acc))
     }else super.performBulkComputation(bulkedVar)
 
   override def checkInternals(c: Checker): Unit = {
-    for (v <- this.varss) {
-      c.check(this.value <= v.value,
-        Some(s"this.value (${this.value}) <= ${v.name}.value (${v.value})"))
+    val indices = if (cond == null) varss.indices else cond.value
+    if (indices.isEmpty) {
+      c.check(this.value == default)
+    } else {
+      val m = indices.map(i => varss(i).value).min
+      c.check(this.value == m)
     }
   }
 }

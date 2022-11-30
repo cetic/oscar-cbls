@@ -666,19 +666,19 @@ class NeighborhoodOps(n:Neighborhood){
     new WithAcceptanceCriterion(n, overridingAcceptanceCriterion)
 
   /**
-   * this combinator overrides accepts all moves (this is the withAcceptanceCriteria, given the fully acceptance criterion
+   * this combinator overrides accepts all moves (this is the withAcceptanceCriteria, given the fully acceptant criterion
    */
   def acceptAll() = new WithAcceptanceCriterion(n, AcceptAll)
 
   /**
-   * this combinator overrides accepts all moves (this is the withAcceptanceCriteria, given the fully acceptance criterion
+   * this combinator overrides accepts all moves (this is the withAcceptanceCriteria, given the fully acceptant criterion
    */
   def acceptAllButStrongViolation = new WithAcceptanceCriterion(n, DifferentOf(Long.MaxValue))
 
   /**
    * this combinator accept only moves that strictly improve over the best known
    */
-  def improvingOverBestKnown(bestKnown:() => Long) = new StrictlyImproveOverBestKnown(n: Neighborhood, bestKnown)
+  def improvingOverBestKnown(bestKnown:() => Long) = new StrictlyImproveOverBestKnown(n: Neighborhood,bestKnown)
 
 
   /**
@@ -732,7 +732,8 @@ class NeighborhoodOps(n:Neighborhood){
    * @param maxRelativeIncreaseOnBestObj additionally, newOBj is rejected if > maxRelativeIncreaseOnBestObj*bestObj.
    *                                     This increases convergence, but decreased optimality of this approach. the default value is very large, so that this mechanism is inactive.
    */
-  def lateAcceptanceHillClimbing(length:Int = 20,maxRelativeIncreaseOnBestObj:Double=1000) = new LateAcceptanceHillClimbing(n, length,maxRelativeIncreaseOnBestObj)
+  def lateAcceptanceHillClimbing(length:Int = 20,maxRelativeIncreaseOnBestObj:Double=1000, initialObj:Option[Long] = None) =
+    new LateAcceptanceHillClimbing(n, length,maxRelativeIncreaseOnBestObj, initialObj)
 
   //TODO: Adaptive Simulated Annealing: T = T_0 exp(-c k^1/D) wth re-annealing also permits adaptation to changing sensitivities in the multi-dimensional parameter-space.
 
@@ -768,9 +769,7 @@ class NeighborhoodOps(n:Neighborhood){
    * @param timePeriodInMilliSecond defines teh time period for the cut
    * @param minRelativeImprovementByCut the relative improvement over obj
    */
-  def cutTail(timePeriodInMilliSecond: Long,
-              minRelativeImprovementByCut: Double,
-              minTimeBeforeFirstCutInMilliSecond: Long = 0) =
+  def cutTail(timePeriodInMilliSecond:Long,minRelativeImprovementByCut:Double,minTimeBeforeFirstCutInMilliSecond:Long = 0) =
     new CutTail(n, timePeriodInMilliSecond,minRelativeImprovementByCut,minTimeBeforeFirstCutInMilliSecond)
 
 

@@ -1,6 +1,7 @@
 package examples.oscar.cbls.distrib
 
 import oscar.cbls._
+import oscar.cbls.algo.generator.RandomGraphGenerator
 import oscar.cbls.algo.graph._
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.business.routing._
@@ -10,9 +11,9 @@ import oscar.cbls.core.distrib.Supervisor
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{First, JumpNeighborhood, Neighborhood}
 import oscar.cbls.lib.search.combinators.distributed.DistributedFirst
-import oscar.cbls.algo.generator.RandomGraphGenerator
 import oscar.cbls.visual.SingleFrameWindow
-import oscar.cbls.visual.tsp.TspBridgeVisu
+import oscar.cbls.visual.graph.TspBridgeVisu
+
 import scala.collection.immutable.SortedSet
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 import scala.concurrent.duration.DurationInt
@@ -32,7 +33,7 @@ object TspBridgeDistributed extends App {
 
   println("generating random graph")
   val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(
-    nbNodes = nbNodes,
+    nbNodes=nbNodes,
     nbConditionalEdges = nbConditionalEdges,
     nbNonConditionalEdges = nbNonConditionalEdges,
     nbTransitNodes = nbTransitNodes,
@@ -40,10 +41,10 @@ object TspBridgeDistributed extends App {
   println("end generating random graph")
 
   println("start Dijkstra")
-  val underApproximatingDistanceInGraphAllBridgesOpen: Array[Array[Long]] = DijkstraDistanceMatrix.buildDistanceMatrix(graph, _ => true)
+  val underApproximatingDistanceInGraphAllBridgesOpen:Array[Array[Long]] = DijkstraDistanceMatrix.buildDistanceMatrix(graph, _ => true)
   println("end Dijkstra")
 
-  def createSearchProcedure(withVisu: Boolean): (Store, Neighborhood, Objective, () => Unit) = {
+  def createSearchProcedure(withVisu:Boolean) : (Store,Neighborhood,Objective,() => Unit) = {
 
     val m = Store()
 
@@ -126,10 +127,9 @@ object TspBridgeDistributed extends App {
     def switchBridge = assignNeighborhood(bridgeConditionArray, "switchBridge")
 
     def swapBridge = swapsNeighborhood(bridgeConditionArray, "swapBridge")
-
-    def swapBridgeMod(modulo: Int, shift: Int) = {
-      val range = bridgeConditionArray.indices.filter(_ % modulo == shift)
-      swapsNeighborhood(bridgeConditionArray, searchZone1 = () => range, name = s"swapBridge($modulo,$shift)")
+    def swapBridgeMod(modulo:Int,shift:Int) = {
+      val range = bridgeConditionArray.indices.filter(_%modulo == shift)
+      swapsNeighborhood(bridgeConditionArray, searchZone1 =  () => range, name=s"swapBridge($modulo,$shift)")
     }
 
     def closeAllUselessBridges = new JumpNeighborhood("closeUselessBridges") {
@@ -159,39 +159,38 @@ object TspBridgeDistributed extends App {
           myThreeOpt(40),
           profile(onePtMove(20) andThen switchBridge name "switchAndMove"),
           profile(switchBridge),
-          swapBridgeMod(5, 0),
-          swapBridgeMod(5, 1),
-          swapBridgeMod(5, 2),
-          swapBridgeMod(5, 3),
-          swapBridgeMod(5, 4)
+          swapBridgeMod(5,0),
+          swapBridgeMod(5,1),
+          swapBridgeMod(5,2),
+          swapBridgeMod(5,3),
+          swapBridgeMod(5,4)
         ),
       )
         .onExhaustRestartAfterJump({
           //open up all bridges
-          val partOfBridges = Random.shuffle((0 until nbConditionalEdges).toList).take(nbConditionalEdges / 2)
+          val partOfBridges = Random.shuffle((0 until nbConditionalEdges).toList).take(nbConditionalEdges/2)
           for (bridge <- partOfBridges) {
             bridgeConditionArray(bridge) := 1
-          }
-        },
+          }},
           maxRestartWithoutImprovement = 2,
           minRestarts = 3,
           obj = obj,
           name = "OpenAllBridges"))
       )
 
-    var nextDisplay: Long = 0
+    var nextDisplay:Long = 0
     val fullSearch =
-      (if (withVisu) {
+      (if(withVisu) {
         search afterMove {
-          if (System.currentTimeMillis() > nextDisplay) {
+          if(System.currentTimeMillis() > nextDisplay) {
             visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList, myVRP.routes.value)
             nextDisplay = System.currentTimeMillis() + 500 //0.5 second
           }
         } showObjectiveFunction obj
-      } else search)
+      }else search)
 
-    def finalPrint(): Unit = {
-      if (withVisu) {
+    def finalPrint():Unit = {
+      if(withVisu){
         visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList, myVRP.routes.value)
       }
       println(myVRP)
@@ -200,12 +199,12 @@ object TspBridgeDistributed extends App {
       println("routeLength:" + routeLength.value)
     }
 
-    (m, fullSearch, obj, () => finalPrint())
+    (m,fullSearch,obj,() => finalPrint())
   }
 
   //main search; distributed combinators delegate to worker
-  val (store, search, obj, finalPrint) = createSearchProcedure(true)
-  val supervisor = Supervisor.startSupervisorAndActorSystem(search, verbose = false, tic = 1.seconds)
+  val (store,search,obj,finalPrint) = createSearchProcedure(true)
+  val supervisor = Supervisor.startSupervisorAndActorSystem(search,verbose=false,tic=1.seconds)
 
   val nbWorker = 6
   for (_ <- (0 until nbWorker).par) {
@@ -222,3 +221,4 @@ object TspBridgeDistributed extends App {
 
   finalPrint()
 }
+

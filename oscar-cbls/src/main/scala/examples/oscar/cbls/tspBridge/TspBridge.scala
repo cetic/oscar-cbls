@@ -10,7 +10,7 @@ import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{First, JumpNeighborhood}
 import oscar.cbls.algo.generator.RandomGraphGenerator
 import oscar.cbls.visual.SingleFrameWindow
-import oscar.cbls.visual.tsp.TspBridgeVisu
+import oscar.cbls.visual.graph.TspBridgeVisu
 
 import scala.collection.immutable.SortedSet
 import scala.language.implicitConversions
@@ -167,6 +167,6 @@ object TspBridge extends App {
 
   println("Route Length :" + routeLength)
 
-  //TODO: we should actually subtract the open & not used bridges from the objective function, and never try to switch them.
+  //TODO: we should actually substract the open & not used bridges from the objective function, and never try to switch them.
 }
 

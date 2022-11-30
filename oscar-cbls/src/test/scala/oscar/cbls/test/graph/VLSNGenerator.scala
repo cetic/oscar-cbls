@@ -37,7 +37,7 @@ object VLSNGenerator {
       (1, DoNothingMove(0L)),
       (1, FlipMove(0, 1, bench.genIntVars().toArray, 0L)),
       (1, GradientMove(List(), 0L, Nil, 0L)),
-      (1, InsertPointMove(0, 0, 0, positionIndependentMoves = true, 0L, null, null)),
+      (1, InsertPointMove(0, 0, 0, positionIndependentMoves = true, 0, 0L, null, null)),
       (1, InstrumentedMove(DoNothingMove(0L))),
       (1, LoadSolutionMove(null, 0L)),
       (1, NamedMove(DoNothingMove(0L))),

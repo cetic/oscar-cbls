@@ -3,10 +3,10 @@ package oscar.cbls.lib.search.combinators
 import oscar.cbls.core.objective.{FunctionObjective, Objective}
 import oscar.cbls.core.search.{AcceptanceCriterion, InstrumentedMove, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, OverrideObj, SearchResult}
 
-object Restart {
+object Restart{
   /**
-   * performs a restart of the search for a number of times.
-   * it queries the neighborhood on the left every time (this is the search neighborhood)
+   * performs a restart of the search for a number of time.
+   * it queries neighborhood on the left every time (this is the search neighborhood)
    * if the search neighborhood is exhausted, it queries the randomizationNeighborhood once (this is the randomization neighborhood, and resets the neighborhood on the left
    * the process of restarting is allowed maxRestartWithoutImprovement time without improvement over the objective function obj,
    * that is: every time the search neighborhood is exhausted, it checks if the search delivered an improvement over the objective function,
@@ -18,12 +18,12 @@ object Restart {
    * @param maxRestartWithoutImprovement the stop criterion of the restarting
    * @param obj the objective function
    */
-  def apply(n: Neighborhood,
-            randomizationNeighborhood: Neighborhood,
-            maxRestartWithoutImprovement: Int,
-            obj: Objective,
-            restartFromBest: Boolean=false,
-            minRestarts: Int = 0): Neighborhood = {
+  def apply(n:Neighborhood,
+            randomizationNeighborhood:Neighborhood,
+            maxRestartWithoutImprovement:Int,
+            obj:Objective,
+            restartFromBest:Boolean=false,
+            minRestarts:Int = 0): Neighborhood = {
     ((if(restartFromBest) n saveBestOnExhaustAndRestoreOnExhaust obj else n) orElse ((randomizationNeighborhood
       maxMoves maxRestartWithoutImprovement withoutImprovementOver obj improvementBeingMeasuredBeforeNeighborhoodExploration) withMinimalMoves(minRestarts))
       ) saveBestAndRestoreOnExhaust obj
@@ -52,18 +52,20 @@ class Metropolis(a: Neighborhood,
   case object MetropolisCriterion extends AcceptanceCriterion {
     override def apply(oldValue: Long, newValue: Long): Boolean = {
       val gain = oldValue - newValue
+
       def applyMetropolis: Boolean = {
         // metropolis criterion
         val relativeIncrease = -gain.toFloat / oldValue.toFloat
         math.random() < math.pow(base, -relativeIncrease / temperatureValue)
       }
+
       (gain > 0) || applyMetropolis
     }
   }
 
   override def getMove(obj: Objective,
                        initialObj: Long,
-                       acceptanceCriterion: AcceptanceCriterion): SearchResult =
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult =
     a.getMove(obj, initialObj, MetropolisCriterion) match {
       case NoMoveFound => NoMoveFound
       case MoveFound(m) => InstrumentedMove(m, notifyMoveTaken _)
@@ -98,17 +100,19 @@ class Metropolis(a: Neighborhood,
  */
 class LateAcceptanceHillClimbing(a: Neighborhood,
                                  length: Int = 20,
-                                 maxRelativeIncreaseOnBestObj: Double = 10000) extends NeighborhoodCombinator(a) {
+                                 maxRelativeIncreaseOnBestObj: Double = 10000,
+                                 initialObj: Option[Long] = None) extends NeighborhoodCombinator(a) {
   require(maxRelativeIncreaseOnBestObj > 1, "maybe you should not use LateAcceptanceHillClimbing if obj cannot increase anyway")
-  /////
+
   val memory:Array[Long] = Array.fill(length)(Long.MaxValue)
-  //
+
   var initialized = false
+
   var maxToleratedObj: Long = Long.MaxValue
   var bestKnownObj: Long = Long.MaxValue
 
   def init(initialObj:Long): Unit = {
-    for(i <- memory.indices) memory(i) = initialObj
+    for(i <- memory.indices) memory(i) = this.initialObj.getOrElse(initialObj)
     maxToleratedObj = Long.MaxValue
     bestKnownObj = Long.MaxValue
     initialized = true
@@ -116,29 +120,26 @@ class LateAcceptanceHillClimbing(a: Neighborhood,
 
   var x = 0
 
-  object LateAcceptanceCriterion extends AcceptanceCriterion {
-    override def apply(oldValue: Long, newValue: Long): Boolean = {
-      x = x + 1
-      if (x >= length) x = 0
-      if (newValue < maxToleratedObj && (newValue < oldValue || newValue < memory(x))) {
-        memory(x) = newValue
-        if (newValue < bestKnownObj) {
-          maxToleratedObj = ((newValue.toFloat * maxRelativeIncreaseOnBestObj) min Long.MaxValue).toLong
-          bestKnownObj = newValue
-        }
-        true
-      } else {
-        false
-      }
-    }
-  }
-
   override def getMove(obj: Objective,
                        initialObj: Long,
                        acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     if (!initialized) init(initialObj)
 
-    a.getMove(obj, initialObj, LateAcceptanceCriterion)
+    a.getMove(obj,initialObj,(oldOBj,newObj) => {
+      x = x+1
+      if (x >= length) x = 0
+
+      if (newObj < maxToleratedObj && (newObj < oldOBj || newObj < memory(x))){
+        memory(x) = newObj
+        if (newObj < bestKnownObj) {
+          maxToleratedObj = ((newObj.toFloat * maxRelativeIncreaseOnBestObj) min Long.MaxValue).toLong
+          bestKnownObj = newObj
+        }
+        true
+      } else {
+        false
+      }
+    })
   }
 
   override def reset(): Unit = {
@@ -219,31 +220,27 @@ object GuidedLocalSearch {
    *                                  to ensure that we are not stuck in a local minimum artificially created by the composition
    */
   def progressiveGuidedLocalSearch(a: Neighborhood,
-                                   additionalConstraint: Objective,
+                                   additionalConstraint:Objective,
                                    startWeightForBase: Long,
-                                   constantWeightForAdditionalConstraint: Long,
+                                   constantWeightForAdditionalConstraint:Long,
                                    minimumIterationsBeforeStrong: Long,
-                                   nbConsecutiveIterationWithConstraintTrueBeforeStrong: Long,
-                                   consecutiveFailsBeforeDivByTwo: Long,
-                                   maxAttemptsBeforeStop: Int,
-                                   tryWeight2WhenNoMoveFound: Boolean): GuidedLocalSearch =
-    new GuidedLocalSearch(
-      a,
-      additionalConstraint,
-      weightCorrectionStrategy = new Progressive(
-        startWeightForBase,
-        constantWeightForAdditionalConstraint,
-        minimumIterationsBeforeStrong,
-        nbConsecutiveIterationWithConstraintTrueBeforeStrong,
-        consecutiveFailsBeforeDivByTwo,
-        maxAttemptsBeforeStop,
-        tryWeight2WhenNoMoveFound
-      ),
-      maxAttemptsBeforeStop
-    )
+                                   nbConsecutiveIterationWithConstraintTrueBeforeStrong:Long,
+                                   consecutiveFailsBeforeDivByTwo:Long,
+                                   maxAttemptsBeforeStop:Int,
+                                   tryWeight2WhenNoMoveFound:Boolean):GuidedLocalSearch =
+    new GuidedLocalSearch(a: Neighborhood,
+      additionalConstraint:Objective,
+      weightCorrectionStrategy = new Progressive(startWeightForBase: Long,
+        constantWeightForAdditionalConstraint:Long,
+        minimumIterationsBeforeStrong: Long,
+        nbConsecutiveIterationWithConstraintTrueBeforeStrong:Long,
+        consecutiveFailsBeforeDivByTwo:Long,
+        maxAttemptsBeforeStop:Int,
+        tryWeight2WhenNoMoveFound:Boolean),
+      maxAttemptsBeforeStop)
 }
 
-abstract class WeightCorrectionStrategy {
+abstract class WeightCorrectionStrategy{
   /**
    * this method is called before exploration takes place
    * weight < 0 => stop the search. unless there is a reset
@@ -257,8 +254,10 @@ abstract class WeightCorrectionStrategy {
    * @return new neight
    */
   def getNewWeight(found:Boolean, weight:Long, sCViolation:Long):Long
+
   def startWeightForBase:Long
   def constantWeightForAdditionalConstraint:Long
+
   def weightForBaseReset():Unit = {}
 }
 
@@ -328,12 +327,12 @@ abstract class WeightCorrectionStrategy {
  *                                  to ensure that we are not stuck in a local minimum artificially created by the composition
  */
 class Progressive(override val startWeightForBase: Long,
-                  override val constantWeightForAdditionalConstraint: Long,
+                  override val constantWeightForAdditionalConstraint:Long,
                   minimumIterationsBeforeStrong: Long,
-                  nbConsecutiveIterationWithConstraintTrueBeforeStrong: Long,
-                  consecutiveFailsBeforeDivByTwo: Long,
-                  maxAttemptsBeforeStop: Int,
-                  tryWeight2WhenNoMoveFound: Boolean) extends WeightCorrectionStrategy {
+                  nbConsecutiveIterationWithConstraintTrueBeforeStrong:Long,
+                  consecutiveFailsBeforeDivByTwo:Long,
+                  maxAttemptsBeforeStop:Int,
+                  tryWeight2WhenNoMoveFound:Boolean) extends WeightCorrectionStrategy {
 
   var remainingConsecutiveIterationWithConstraintTrueBeforeStrong: Long = nbConsecutiveIterationWithConstraintTrueBeforeStrong
   var remainingConsecutiveFailsBeforeDivByTwo: Long = consecutiveFailsBeforeDivByTwo
@@ -349,11 +348,11 @@ class Progressive(override val startWeightForBase: Long,
     //weight = 0 => additionalConstraint (forget about obj)
     //weight = 1 =>  cascading(constraint,obj)
     //weight > 1 =>  weight*obj + constantWeightForConstraint*constraint
-    if (sCViolation !=0) {
+    if(sCViolation !=0) {
       remainingConsecutiveIterationWithConstraintTrueBeforeStrong = nbConsecutiveIterationWithConstraintTrueBeforeStrong
-    } else {
-      remainingConsecutiveIterationWithConstraintTrueBeforeStrong -= 1
-      if (remainingConsecutiveIterationWithConstraintTrueBeforeStrong <0) remainingConsecutiveIterationWithConstraintTrueBeforeStrong = 0
+    }else{
+      remainingConsecutiveIterationWithConstraintTrueBeforeStrong -=1
+      if(remainingConsecutiveIterationWithConstraintTrueBeforeStrong <0) remainingConsecutiveIterationWithConstraintTrueBeforeStrong = 0
     }
 
     if (found) {
@@ -375,12 +374,13 @@ class Progressive(override val startWeightForBase: Long,
         }
       }
     } else { //not found
-      remainingConsecutiveFailsBeforeDivByTwo -= 1
-      if (remainingConsecutiveFailsBeforeDivByTwo < 0) remainingConsecutiveFailsBeforeDivByTwo = 0
-      remainingFailsBeforeStop -= 1
-      if (remainingFailsBeforeStop < 0) remainingFailsBeforeStop = 0
 
-      if (remainingFailsBeforeStop==0) {
+      remainingConsecutiveFailsBeforeDivByTwo -= 1
+      if(remainingConsecutiveFailsBeforeDivByTwo < 0) remainingConsecutiveFailsBeforeDivByTwo = 0
+      remainingFailsBeforeStop -= 1
+      if(remainingFailsBeforeStop < 0) remainingFailsBeforeStop = 0
+
+      if(remainingFailsBeforeStop==0) {
         if (weight <= 2 || !tryWeight2WhenNoMoveFound) return -1 //Stop
         else return 2
       }
@@ -391,10 +391,10 @@ class Progressive(override val startWeightForBase: Long,
       } else {
         //we are not dealing with strong constraints
         //we increase pressure on the obj a little bit
-        if (remainingConsecutiveFailsBeforeDivByTwo == 0){
+        if(remainingConsecutiveFailsBeforeDivByTwo == 0){
           remainingConsecutiveFailsBeforeDivByTwo = consecutiveFailsBeforeDivByTwo
           2L max (weight /2)
-        } else {
+        }else{
           2L max (weight - 1)
         }
       }
@@ -404,6 +404,7 @@ class Progressive(override val startWeightForBase: Long,
 
 //TODO
 //class DecreaseWhenExhausted extends WeightCorrectionStrategy {
+
 
 /**
  * This is a combination of a constraint with an objective function.
@@ -433,39 +434,38 @@ class Progressive(override val startWeightForBase: Long,
  *                              The weightCorrectionStrategy might propoze the same parameter. In his case, parameter here can be set to something large such as 20.
  */
 class GuidedLocalSearch(a: Neighborhood,
-                        additionalConstraint: Objective,
-                        weightCorrectionStrategy: WeightCorrectionStrategy,
-                        maxAttemptsBeforeStop: Int = 1)
-  extends NeighborhoodCombinator(a) {
+                        additionalConstraint:Objective,
+                        weightCorrectionStrategy:WeightCorrectionStrategy,
+                        maxAttemptsBeforeStop:Int = 10
+                        ) extends NeighborhoodCombinator(a) {
 
   //call this before any neigborhood exploration to define the obj etc to use for this exploration.
-  def compositeObjectiveAndOriginalObjConverter(baseObj: Objective,
-                                                initValForBase: Long,
-                                                changingWeightForBaseObj: Long,
-                                                additionalConstraint: Objective,
-                                                initValForAdditional: Long,
-                                                constantWeightForAdditionalConstraint: Long): (Objective,Long,Long=>Long) = {
+  def compositeObjectiveAndOriginalOBjConverter(baseObj:Objective,
+                                                initValForBase:Long,
+                                                changingWeightForBaseObj:Long,
+                                                additionalConstraint:Objective,
+                                                initValForAdditional:Long,
+                                                constantWeightForAdditionalConstraint:Long):(Objective,Long,Long=>Long) = {
 
-    val initCompositeObj = (initValForBase * changingWeightForBaseObj) +
-      (initValForAdditional * constantWeightForAdditionalConstraint)
-    var bestCompositeObj: Long = initCompositeObj
-    var baseOBjAtBestCompositeObj: Long = initValForBase
+    val initCompositeObj = (initValForBase * changingWeightForBaseObj) + (initValForAdditional * constantWeightForAdditionalConstraint)
+    var bestCompositeObj:Long = initCompositeObj
+    var baseOBjAtBestCompositeObj:Long = initValForBase
 
-    def logObj(baseObjValue: Long, compositeObjValue: Long): Unit = {
-      if (compositeObjValue < bestCompositeObj) {
+    def logObj(baseObjValue:Long,compositeObjValue:Long): Unit ={
+      if(compositeObjValue < bestCompositeObj){
         bestCompositeObj = compositeObjValue
         baseOBjAtBestCompositeObj = baseObjValue
-      } else if(compositeObjValue == bestCompositeObj && baseObjValue != baseOBjAtBestCompositeObj) {
+      }else if(compositeObjValue == bestCompositeObj && baseObjValue != baseOBjAtBestCompositeObj){
         //in this case there is potentially an ambiguity on the composite vs the base
-        //we destroy the best because we cannot guarantee uniqueness
+        //we destroy the best because we cannot guarantee unicity
         baseOBjAtBestCompositeObj = Long.MaxValue
       }
     }
 
-    def foundCompositeObjToBaseObj(foundObj: Long): Long =
-      if (foundObj == bestCompositeObj) baseOBjAtBestCompositeObj else Long.MaxValue
+    def foundCompositeObjToBaseObj(foundObj:Long):Long =
+      if(foundObj == bestCompositeObj) baseOBjAtBestCompositeObj else Long.MaxValue
 
-    val (fun, initObj) = changingWeightForBaseObj match {
+    val (fun,initObj) = changingWeightForBaseObj match{
       case 0 => //neglect the primary objective, only the additional one is considered;
         // the primary does not need to be evaluated, so we put a dedicated code here to do that.
         //the bestBaseOBj in this case is not logged
@@ -509,7 +509,7 @@ class GuidedLocalSearch(a: Neighborhood,
           })
     }
 
-    (new FunctionObjective(fun), initObj, foundCompositeObjToBaseObj)
+    (new FunctionObjective(fun),initObj, foundCompositeObjToBaseObj)
   }
 
   val store = additionalConstraint.model
@@ -533,7 +533,7 @@ class GuidedLocalSearch(a: Neighborhood,
     getMoveNoUpdateWeight(obj, initialObj, acceptanceCriterion, initValForAdditional, maxAttemptsBeforeStop)
   }
 
-  def weightString(weightForBase: Long): String =  weightForBase match {
+  def weightString(weightForBase:Long):String =  weightForBase match{
     case 0L => "forget obj, focus on additional constraints"
     case 1L => "additional are strong Constraints"
     case x if x > 1L =>  s"relativeWeight:$x/${weightCorrectionStrategy.constantWeightForAdditionalConstraint}"
@@ -543,59 +543,62 @@ class GuidedLocalSearch(a: Neighborhood,
   def getMoveNoUpdateWeight(obj: Objective,
                             initialObj: Long,
                             acceptanceCriterion: AcceptanceCriterion,
-                            initValForAdditional:Long,
-                            remainingAttemptsBeforeStop:Int): SearchResult = {
-    if (remainingAttemptsBeforeStop == 0) {
-      if (printExploredNeighborhoods){
+                            initValForAdditional: Long,
+                            remainingAttemptsBeforeStop: Int): SearchResult = {
+    if(remainingAttemptsBeforeStop == 0) {
+      if(printExploredNeighborhoods){
         println("GLS stop because remainingAttemptsBeforeStop==0")
       }
       return NoMoveFound
     }
-    //
-    if (weightForBase <0) {
-      if (printExploredNeighborhoods){
+
+    if(weightForBase <0) {
+      if(printExploredNeighborhoods){
         println("GLS stopped by weightCorrectionStrategy")
       }
       return NoMoveFound
     }
-    //
-    if (printExploredNeighborhoods){
+
+    if(printExploredNeighborhoods){
       println(s"GLS trying;${weightString(weightForBase)}")
     }
-    //
-    val initValForAdditional = additionalConstraint.value
-    val (compositeObj, initCompositeObj, compositeObjToBaseOBj) =
-      compositeObjectiveAndOriginalObjConverter(
-        obj,
-        initialObj,
-        weightForBase,
-        additionalConstraint,
-        initValForAdditional,
-        weightCorrectionStrategy.constantWeightForAdditionalConstraint
-      )
 
-    a.getMove(compositeObj, initCompositeObj, acceptanceCriterion) match {
+    val initValForAdditional = additionalConstraint.value
+
+    val (compositeObj,initCompositeObj,compositeObjToBaseOBj) = compositeObjectiveAndOriginalOBjConverter(
+      obj:Objective,
+      initialObj,
+      weightForBase,
+      additionalConstraint,
+      initValForAdditional,
+      weightCorrectionStrategy.constantWeightForAdditionalConstraint)
+
+    a.getMove(compositeObj,initCompositeObj, acceptanceCriterion) match {
       case NoMoveFound =>
-        if (printExploredNeighborhoods) {
+
+        if(printExploredNeighborhoods){
           println("GLS got NoMoveFound")
         }
+
         //we try and update the weight
         val oldWeightForBase = weightForBase
-        weightForBase = weightCorrectionStrategy.getNewWeight(found = false,weightForBase,initValForAdditional)
-        if (oldWeightForBase == weightForBase) {
-          if (printExploredNeighborhoods) println("GLS stop because weightForBase unchanged")
+        weightForBase = weightCorrectionStrategy.getNewWeight(false,weightForBase,initValForAdditional)
+
+        if(oldWeightForBase == weightForBase) {
+          if(printExploredNeighborhoods) println("GLS stop because weightForBase unchanged")
           return NoMoveFound
         }
-        //policy has changed,so we try again
-        getMoveNoUpdateWeight(obj, initialObj, acceptanceCriterion, initValForAdditional, remainingAttemptsBeforeStop-1)
 
-      case m:MoveFound =>
+        //policy has changed,so we try again
+        getMoveNoUpdateWeight(obj, initialObj, acceptanceCriterion,initValForAdditional,remainingAttemptsBeforeStop-1)
+
+      case m: MoveFound =>
         if(printExploredNeighborhoods) println(s"GLS got MoveFound $m")
         //a move was found, good
         val correctedObj = compositeObjToBaseOBj(m.objAfter)
         if(m.objAfter == correctedObj){
           m
-        } else {
+        }else{
           MoveFound(new OverrideObj(m.m, correctedObj))
         }
     }

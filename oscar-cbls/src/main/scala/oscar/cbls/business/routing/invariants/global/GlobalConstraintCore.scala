@@ -41,7 +41,6 @@ abstract class GlobalConstraintCore[U <: Any :Manifest](routes: ChangingSeqValue
   private var checkpointLevel: Int = -1
   private var checkpointAtLevel0: IntSequence = _
   private val changedVehiclesSinceCheckpoint0 = new IterableMagicBoolArray(v, false)
-  private var variableInitiated = false
 
   // This variable holds the vehicles value at checkpoint 0.
   // It's used to effectively roll-back to this checkpoint 0 when exploring neighborhood
@@ -70,9 +69,12 @@ abstract class GlobalConstraintCore[U <: Any :Manifest](routes: ChangingSeqValue
 
   finishInitialization()
 
-
+  // Constraint initialization
+  initVariables(routes.value)                                   // Create constraint output variables
+  computeSaveAndAssignVehicleValuesFromScratch(routes.value)    // Init constraint value from scratch
   (0 until v).foreach(vehicle => 
-    initSegmentsOfVehicle(vehicle,routes.value))
+    initSegmentsOfVehicle(vehicle,routes.value))                // Init global constraint variables
+
 
   /**
    * This method is called by the framework when a pre-computation must be performed.
@@ -124,7 +126,6 @@ abstract class GlobalConstraintCore[U <: Any :Manifest](routes: ChangingSeqValue
    * @param routes The IntSequence representing the route
    */
   private def initVariables(routes: IntSequence): Unit = {
-    variableInitiated = true
     lastComputedVehiclesValue = Array.tabulate(v)(vehicle => computeVehicleValueFromScratch(vehicle, routes))
     vehiclesValueAtCheckpoint0 = Array.tabulate(v)(_vehicle => lastComputedVehiclesValue(_vehicle))
   }
@@ -138,7 +139,6 @@ abstract class GlobalConstraintCore[U <: Any :Manifest](routes: ChangingSeqValue
 
   override def notifySeqChanges(r: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     val newRoute = routes.newValue
-    if(!variableInitiated) initVariables(newRoute)
 
     if(digestUpdates(changes) && (this.checkpointLevel != -1)){
       QList.qForeach(changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList,(vehicle: Int) => {

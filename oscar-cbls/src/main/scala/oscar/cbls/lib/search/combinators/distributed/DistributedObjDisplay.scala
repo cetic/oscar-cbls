@@ -30,7 +30,7 @@ class DistributedObjDisplay()
   series = series + (-2L -> abortedSeries)
   dataset.addSeries(abortedSeries)
 
-  private var startingAtMS: Long = -1
+  private var startingAtMS:Long = -1
 
   // The plots
   val plot = new XYPlot(
@@ -78,23 +78,23 @@ class DistributedObjDisplay()
   add(panel)
 
   def addValue(searchId:Long, obj: Long, timeMS:Long, aborted:Boolean): Unit ={
-    if (startingAtMS < 0) {
+    if(startingAtMS < 0){
       startingAtMS = timeMS
     }
     val currentTime = timeMS - startingAtMS
-    if (series.isDefinedAt(searchId)) {
+    if(series.isDefinedAt(searchId)){
       series(searchId).add(currentTime.toDouble,obj.toDouble)
-    } else {
+    }else{
       val newSeries = new XYSeries(s"search $searchId")
       newSeries.add(currentTime.toDouble,obj.toDouble)
       series = series + (searchId -> newSeries)
       dataset.addSeries(newSeries)
     }
 
-    if (aborted) {
+    if(aborted){
       abortedSeries.add(currentTime.toDouble,obj.toDouble)
     }
-    if (bestSeries.isEmpty || obj < bestSeries.getMinY) {
+    if(bestSeries.isEmpty || obj < bestSeries.getMinY){
       bestSeries.add(currentTime.toDouble,obj.toDouble)
     }
   }
