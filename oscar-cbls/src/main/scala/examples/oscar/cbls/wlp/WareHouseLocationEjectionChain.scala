@@ -104,7 +104,7 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
     BestSlopeFirst(
       List(
         Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
-        Profile(ejection(maxLength = 5,kOpen= 5, kClosed = 20))
+        Profile(ejection(maxLength = 3,kOpen= 5, kClosed = 20))
       ),refresh = W/10)
       onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5,name="smallRandom"), 2, obj)
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,name="bigRandom"), 1, obj)
