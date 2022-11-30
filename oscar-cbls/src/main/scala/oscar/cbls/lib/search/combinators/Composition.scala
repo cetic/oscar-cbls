@@ -153,10 +153,6 @@ class DynAndThen[FirstMoveType<:Move](a: Neighborhood with SupportForAndThenChai
       }
     }
 
-    //def secondAcceptanceCriterion(intermediaryObj: Long, newObj: Long): Boolean = {
-      //we ignore the intermediaryObj.
-    //  (newObj < bestObj) && acceptanceCriteria(initialObj, newObj)
-    //}
     val secondAcceptanceCriterion = SecondAcceptanceCriterion(initialObj)
 
     class InstrumentedObjectiveForFirstNeighborhood() extends Objective {

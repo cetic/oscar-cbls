@@ -51,7 +51,7 @@ class ShowObjectiveFunction(a: Neighborhood, obj: () => Long, title: String = "O
 
   override def getMove(obj: Objective,
                        initialObj: Long,
-                       acceptanceCriteria: AcceptanceCriterion): SearchResult ={
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
     a.getMove(obj, initialObj, acceptanceCriteria) match {
       case m: MoveFound =>
         InstrumentedMove(m.m, null, () => notifyNewObjValue(m.m))
@@ -155,8 +155,7 @@ class WithAcceptanceCriterion(a: Neighborhood,
   override def getMove(obj: Objective,
                        initialObj: Long,
                        acceptanceCriterion: AcceptanceCriterion): SearchResult
-  = a.getMove(obj, initialObj,
-    (a, b) => (a == Long.MaxValue || b != Long.MaxValue) && overridingAcceptanceCriterion(a, b))
+  = a.getMove(obj, initialObj, OverrideCriterion(overridingAcceptanceCriterion))
 }
 
 class StrictlyImproveOverBestKnown(a: Neighborhood, bestKnown : () => Long) extends NeighborhoodCombinator(a) {

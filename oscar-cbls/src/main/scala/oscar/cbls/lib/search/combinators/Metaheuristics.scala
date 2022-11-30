@@ -52,7 +52,7 @@ class Metropolis(a: Neighborhood,
   case object MetropolisCriterion extends AcceptanceCriterion {
     override def apply(oldValue: Long, newValue: Long): Boolean = {
       val gain = oldValue - newValue
-      val applyMetropolis = {
+      def applyMetropolis: Boolean = {
         // metropolis criterion
         val relativeIncrease = -gain.toFloat / oldValue.toFloat
         math.random() < math.pow(base, -relativeIncrease / temperatureValue)
@@ -528,7 +528,6 @@ class GuidedLocalSearch(a: Neighborhood,
   override def getMove(obj: Objective,
                        initialObj: Long,
                        acceptanceCriterion: AcceptanceCriterion): SearchResult = {
-
     val initValForAdditional = additionalConstraint.value
     weightForBase = weightCorrectionStrategy.getNewWeight(found = true, weightForBase, initValForAdditional)
     getMoveNoUpdateWeight(obj, initialObj, acceptanceCriterion, initValForAdditional, maxAttemptsBeforeStop)
