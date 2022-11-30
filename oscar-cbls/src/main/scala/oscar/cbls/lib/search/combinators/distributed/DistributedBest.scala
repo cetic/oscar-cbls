@@ -36,9 +36,9 @@ class DistributedBest(neighborhoods:Array[Neighborhood],useHotRestart:Boolean = 
         ), waitForMoreSearch = useHotRestart))
     }).toList
 
-    if(useHotRestart) {
+    if (useHotRestart) {
       //now that all searches are sent, tell the supervisor to start searches, so it can use hotRestart
-      supervisor.supervisorActor ! StartSomeSearch()
+      supervisor.supervisorActor ! StartSomeSearch
     }
 
     val independentMoveFound:Iterable[IndependentMoveFound] = futureResults.flatMap(futureResult =>
@@ -52,7 +52,7 @@ class DistributedBest(neighborhoods:Array[Neighborhood],useHotRestart:Boolean = 
           supervisor.throwRemoteExceptionAndShutDown(c)
           None
         case _ =>
-          // Search aborted
+          // Search aborted or ill-formed
           None
       }
     )

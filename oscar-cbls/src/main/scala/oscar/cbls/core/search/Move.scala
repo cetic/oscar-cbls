@@ -148,8 +148,10 @@ case class LoadSolutionMove(s:Solution,override val objAfter:Long, override val 
     IndependentLoadSolutionMove(IndependentSolution(s), objAfter,neighborhoodName)
 }
 
-case class IndependentLoadSolutionMove(s:IndependentSolution ,override val objAfter:Long, override val neighborhoodName:String = null)
-  extends IndependentMove{
+case class IndependentLoadSolutionMove(s: IndependentSolution,
+                                       objAfter:Long,
+                                       neighborhoodName:String = null)
+  extends IndependentMove {
   override def makeLocal(m: Store): Move = LoadSolutionMove(s.makeLocal(m), objAfter,neighborhoodName)
 }
 
@@ -162,7 +164,7 @@ case class IndependentLoadSolutionMove(s:IndependentSolution ,override val objAf
  * @param neighborhoodName a string describing the neighborhood hat found the move (for debug purposes)
  * @author renaud.delandtsheer@cetic.be
  */
-case class AddToSetMove(s:CBLSSetVar,v:Int, override val objAfter:Long, override val neighborhoodName:String = null)
+case class AddToSetMove(s: CBLSSetVar, v:Int, override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
   override def commit(): Unit = {s :+= v}

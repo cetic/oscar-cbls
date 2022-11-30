@@ -9,7 +9,7 @@ import akka.util.Timeout
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, DurationInt}
 
-class Remote(neighborhoods:Neighborhood)
+class Remote(neighborhoods: Neighborhood)
   extends DistributedCombinator(Array(neighborhoods)) {
 
   override def getMove(obj: Objective,
@@ -32,9 +32,10 @@ class Remote(neighborhoods:Neighborhood)
           obj = independentObj,
           startSolutionOpt = Some(startSol),
           sendResultTo = ref
-        )))
-
-    Await.result(futureResult,Duration.Inf) match {
+        )
+      )
+    )
+    Await.result(futureResult, Duration.Inf) match {
       case SearchCompleted(_, searchResult: IndependentSearchResult, _) =>
         searchResult.getLocalResult(obj.model)
       case c:SearchCrashed =>

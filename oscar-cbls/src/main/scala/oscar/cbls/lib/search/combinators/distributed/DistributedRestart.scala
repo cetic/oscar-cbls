@@ -80,7 +80,7 @@ class DistributedRestart(baseSearch:Neighborhood,
     val resultPromise = Promise[WrappedData]()
     val futureResult: Future[WrappedData] = resultPromise.future
 
-    abstract class WrappedData
+    sealed trait WrappedData
     case class WrappedSearchEnded(searchEnded:SearchEnded) extends WrappedData
     case class WrappedGotUniqueID(uniqueID:Long,remoteNeighborhoodIdentification:RemoteTaskIdentification) extends WrappedData
     case class WrappedError(msg:Option[String] = None, crash:Option[SearchCrashed] = None) extends WrappedData
@@ -89,7 +89,6 @@ class DistributedRestart(baseSearch:Neighborhood,
 
     implicit val system: ActorSystem[_] = supervisor.system
     implicit val timeout: Timeout = 3.seconds
-
 
     supervisor.spawnNewActor(Behaviors.setup { context:ActorContext[WrappedData] => {
       if (visu) {
@@ -109,28 +108,31 @@ class DistributedRestart(baseSearch:Neighborhood,
         command match {
           case WrappedDisplay(displayActor) =>
             startSearch(Some(displayActor), context)
+          case _ =>
+            Behaviors.same
         }
       }
     }
 
-    def startSearch(visu:Option[ActorRef[SearchProgress]],context:ActorContext[WrappedData]): Behavior[WrappedData] = {
+    def startSearch(visu: Option[ActorRef[SearchProgress]], context: ActorContext[WrappedData]): Behavior[WrappedData] = {
       //starting up all searches
       if(verbose) context.log.info(s"starting restart search, init obj: $initialObj")
-
+      // ask for IDs for workers
       for(i <- 0 until maxWorkers) {
         context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
           case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, remoteNeighborhoodIdentifications(if(performInitialNonRandomizeDescent && i == 0) 1 else 0))
           case Failure(_) => WrappedError(msg = Some("supervisor actor timeout2"))
         }
       }
-
+      // Behavior
       next(
         runningSearchIDsAndIsItFromBestSoFar = SortedMap.empty,
         bestObjSoFar = initialObj,
         bestMoveSoFar = None,
         nbCompletedSearchesOnBestSoFar = 0,
         nbCompletedRestarts = 0,
-        display = visu)
+        display = visu
+      )
     }
 
     def next(runningSearchIDsAndIsItFromBestSoFar:SortedMap[Long,Boolean],
@@ -148,6 +150,7 @@ class DistributedRestart(baseSearch:Neighborhood,
               nbCompletedSearchesOnBestSoFar,
               nbCompletedRestarts = nbCompletedRestarts,
               display = Some(displayActor))
+
           case WrappedSearchEnded(searchEnded) =>
             searchEnded match {
               case SearchCompleted(searchID, searchResult, _) =>
@@ -184,16 +187,17 @@ class DistributedRestart(baseSearch:Neighborhood,
                         if(verbose) context.log.info(s"cancelled $i ongoing search to start new searches instead from bestSoFar")
                       }
 
-                      next(newRunning,
+                      next(
+                        newRunning,
                         bestObjSoFar = moveFound.objAfter,
                         bestMoveSoFar = Some(moveFound.move.asInstanceOf[LoadIndependentSolutionMove]),
                         nbCompletedSearchesOnBestSoFar = 0,
                         nbCompletedRestarts = nbCompletedRestarts+1,
-                        display)
+                        display
+                      )
 
-                    }else{
+                    } else {
                       //We did NOT improve over best so far
-
                       val wasRunningOnBestSoFar = runningSearchIDsAndIsItFromBestSoFar.getOrElse(searchID,false)
                       if(wasRunningOnBestSoFar){
                         //We were running on BestSoFar, so stop criterion progressed
@@ -217,7 +221,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                             display,
                             nbCompletedRestarts = nbCompletedRestarts + 1,
                             context)
-                        }else{
+                        } else {
                           //progress on stop criterion, but not finished yet
                           if(verbose) context.log.info(s"new solution: not improved over best so far, was working on bestSoFar, not finished yet (${nbCompletedSearchesOnBestSoFar +1}/$nbConsecutiveRestartWithoutImprovement) (${nbCompletedRestarts +1}/$minNbRestarts)")
 
@@ -227,14 +231,16 @@ class DistributedRestart(baseSearch:Neighborhood,
                             case Failure(_) => WrappedError(msg = Some("supervisor actor timeout4"))
                           }
 
-                          next(runningSearchIDsAndIsItFromBestSoFar.-(searchID),
+                          next(
+                            runningSearchIDsAndIsItFromBestSoFar.-(searchID),
                             bestObjSoFar = bestObjSoFar,
                             bestMoveSoFar = bestMoveSoFar,
                             nbCompletedSearchesOnBestSoFar = nbCompletedSearchesOnBestSoFar+1,
                             nbCompletedRestarts = nbCompletedRestarts + 1,
-                            display)
+                            display
+                          )
                         }
-                      }else{
+                      } else {
                         //We were NOT running on BestSoFar, so stop criterion NOT progressed
                         if(verbose) context.log.info(s"new solution: not improved over best so far, was not working on bestSoFar")
 
@@ -244,21 +250,22 @@ class DistributedRestart(baseSearch:Neighborhood,
                           case Failure(_) => WrappedError(msg = Some("supervisor actor timeout5"))
                         }
 
-                        next(runningSearchIDsAndIsItFromBestSoFar.-(searchID),
+                        next(
+                          runningSearchIDsAndIsItFromBestSoFar.-(searchID),
                           bestObjSoFar = bestObjSoFar,
                           bestMoveSoFar = bestMoveSoFar,
                           nbCompletedSearchesOnBestSoFar = nbCompletedSearchesOnBestSoFar,
                           nbCompletedRestarts = nbCompletedRestarts + 1,
-                          display)
+                          display
+                        )
                       }
                     }
 
                   case IndependentNoMoveFound =>
                     //this is more unlikely, but nevertheless we must support it
                     //We did NOT improve over best so far
-
                     val wasRunningOnBestSoFar = runningSearchIDsAndIsItFromBestSoFar.getOrElse(searchID,false)
-                    if(wasRunningOnBestSoFar){
+                    if (wasRunningOnBestSoFar) {
                       //We were running on BestSoFar, so stop criterion progressed
                       if(nbCompletedSearchesOnBestSoFar +1 >= nbConsecutiveRestartWithoutImprovement && nbCompletedRestarts +1 >= minNbRestarts){
                         //we finished :-)
@@ -278,7 +285,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                           display,
                           nbCompletedRestarts = nbCompletedRestarts + 1,
                           context)
-                      }else{
+                      } else {
                         //progress on stop criterion, but not finished yet
 
                         if(verbose) context.log.info(s"no move found, was working on bestSoFar, not finished yet (${nbCompletedSearchesOnBestSoFar +1}/$nbConsecutiveRestartWithoutImprovement) (${nbCompletedRestarts +1}/$minNbRestarts)")
@@ -295,7 +302,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                           nbCompletedRestarts = nbCompletedRestarts + 1,
                           display)
                       }
-                    }else{
+                    } else {
                       //We were NOT running on BestSoFar, so stop criterion NOT progressed
 
                       if(verbose) context.log.info(s"no move found, was not working on bestSoFar")
@@ -338,44 +345,50 @@ class DistributedRestart(baseSearch:Neighborhood,
             }
 
           case WrappedGotUniqueID(uniqueID: Long, remoteNeighborhoodIdentification) =>
-
-
             implicit val timeout: Timeout = 1.hour //TODO: put a proper value here;
 
             context.ask[DelegateSearch, SearchEnded](supervisor.supervisorActor, ref =>
-              DelegateSearch(DoAllMoveSearch(
-                uniqueSearchId = uniqueID,
-                remoteTaskId = remoteNeighborhoodIdentification,
-                acceptanceCriterion = acceptanceCriterion,
-                obj = independentObj,
-                startSolutionOpt = Some(bestMoveSoFar match{
-                  case Some(load) => load.s
-                  case None => startSol
-                }),
-                sendProgressTo = display,
-                sendResultTo = ref))) {
+              DelegateSearch(
+                DoAllMoveSearch(
+                  uniqueSearchId = uniqueID,
+                  remoteTaskId = remoteNeighborhoodIdentification,
+                  acceptanceCriterion = acceptanceCriterion,
+                  obj = independentObj,
+                  startSolutionOpt = Some(bestMoveSoFar match {
+                    case Some(load) => load.s
+                    case None => startSol
+                  }),
+                  sendProgressTo = display,
+                  sendResultTo = ref
+                )
+              )
+            ) {
               case Success(searchEnded) => WrappedSearchEnded(searchEnded)
               case Failure(_) => WrappedError(msg = Some("supervisor actor timeout8"))
             }
 
-            next(runningSearchIDsAndIsItFromBestSoFar = runningSearchIDsAndIsItFromBestSoFar + (uniqueID -> true),
+            next(
+              runningSearchIDsAndIsItFromBestSoFar = runningSearchIDsAndIsItFromBestSoFar + (uniqueID -> true),
               bestObjSoFar = bestObjSoFar,
               bestMoveSoFar = bestMoveSoFar,
               nbCompletedSearchesOnBestSoFar = nbCompletedSearchesOnBestSoFar,
               nbCompletedRestarts = nbCompletedRestarts,
-              display)
+              display
+            )
 
           case w: WrappedError =>
-
             for (r <- runningSearchIDsAndIsItFromBestSoFar.keys) {
               supervisor.supervisorActor ! CancelSearchToSupervisor(r)
             }
             resultPromise.success(w)
             Behaviors.stopped
+
+          case _ =>
+            // Ignore this
+            Behaviors.same
         }
       }
     }
-
 
     def nextCompleting(nbRunningSearches:Int,
                        bestObjSoFar:Long,
@@ -445,9 +458,9 @@ class DistributedRestart(baseSearch:Neighborhood,
                     context)
 
                 case c:SearchCrashed =>
-
                   resultPromise.success(WrappedError(crash = Some(c)))
                   Behaviors.stopped
+
               }
             case _:WrappedGotUniqueID =>
               nextCompleting(nbRunningSearches - 1,
@@ -458,9 +471,12 @@ class DistributedRestart(baseSearch:Neighborhood,
                 context)
 
             case w: WrappedError =>
-
               resultPromise.success(w)
               Behaviors.stopped
+
+            case _ =>
+              // Ignore this
+            Behaviors.same
           }
         }
       }

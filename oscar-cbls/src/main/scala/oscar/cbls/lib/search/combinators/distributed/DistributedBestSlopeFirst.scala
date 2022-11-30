@@ -57,12 +57,12 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                        acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     currentIt += 1
 
-    //TODO:  we might use fewer workers,
+    //TODO: we might use fewer workers,
     // so that they would be available faster for the next round
     val nbWorkers = supervisor.waitForAtLestOneWorker()
     require(nbWorkers >= 1, "at least one worker is needed")
 
-    if(currentIt >= nextRefreshIt) {
+    if (currentIt >= nextRefreshIt) {
       nextRefreshIt = nextRefreshIt + refresh
       for (i <- neighborhoods.indices) {
         durationsMs(i) = 0
@@ -77,7 +77,7 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
     val resultPromise = Promise[WrappedData]()
     val futureResult : Future[WrappedData] = resultPromise.future
 
-    abstract class WrappedData
+    sealed trait WrappedData
     case class WrappedSearchEnded(searchEnded:SearchEnded, neighborhoodIndice: Int, priorityOfSearch:Int, uniqueId: Long) extends WrappedData
     case class WrappedGotUniqueID(uniqueID: Long, neighborhoodIndice: Int,priorityOfSearch:Int) extends WrappedData
     case class WrappedError(msg: Option[String]=None, crash:Option[SearchCrashed] = None) extends WrappedData
@@ -108,14 +108,14 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
       }
     }
 
-    def next(nextSearchesToStart : List[Int],
-             priorityOfNextSearch:Int,
-             runningSearchIDs:List[Long],
+    def next(nextSearchesToStart: List[Int],
+             priorityOfNextSearch: Int,
+             runningSearchIDs: List[Long],
              nbFinishedSearches: Int,
-             nbStartingAndRunningSearches:Int,
-             nbStartedSearches:Int,
-             currentIt:Int,
-             responses:Array[IndependentSearchResult]): Behavior[WrappedData] = {
+             nbStartingAndRunningSearches: Int,
+             nbStartedSearches: Int,
+             currentIt: Int,
+             responses: Array[IndependentSearchResult]): Behavior[WrappedData] = {
       Behaviors.receive{ (context, command) =>
         command match {
           case WrappedSearchEnded(searchEnded, neighborhoodIndice, priorityOfSearch, uniqueId) =>
@@ -141,17 +141,22 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                     supervisor.supervisorActor ! CancelSearchToSupervisor(r)
                   }
                   resultPromise.success(
-                    WrappedSearchEnded(searchEnded = SearchCompleted(uniqueSearchID = 0, searchResult, 0),
-                      neighborhoodIndice = 0, priorityOfSearch = 0, uniqueId = 0))
+                    WrappedSearchEnded(
+                      searchEnded = SearchCompleted(uniqueSearchID = 0, searchResult, 0),
+                      neighborhoodIndice = 0,
+                      priorityOfSearch = 0,
+                      uniqueId = 0
+                    )
+                  )
                   Behaviors.stopped
                 }
 
                 @tailrec
                 def checkStopNoMoveFoundSoFar(i:Int): Behavior[WrappedData] ={
-                  if(i == responses.length){
+                  if (i == responses.length) {
                     //only noMoveFound, so return NoMoveFound
                     stopSearch(searchResult = responses(0))
-                  }else{
+                  } else {
                     responses(i) match {
                       case null =>
                         //waiting for more responses, so carry on, and start one more search if possible
@@ -168,6 +173,7 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                               currentIt = currentIt,
                               responses = responses
                             )
+
                           case Nil =>
                             next(
                               nextSearchesToStart = Nil,
@@ -185,7 +191,7 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                         //we can return this one
                         //check that there is no better solution, actually in the array
                         var best = moveFound
-                        for(j <- responses.indices){
+                        for (j <- responses.indices) {
                           responses(j) match{
                             case m:IndependentMoveFound if m.objAfter < best.objAfter =>
                               best = m
@@ -193,8 +199,8 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                             case _ => ;
                           }
                         }
-
                         stopSearch(searchResult = best)
+
                       case IndependentNoMoveFound =>
                         //so far, no Move found, goto next position in the array
                         checkStopNoMoveFoundSoFar(i+1)
@@ -202,7 +208,7 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                   }
                 }
 
-                //TODO: we might stop anyway if we are waiting for too long. For isntance if we wait for more than twicethe average response time?
+                //TODO: we might stop anyway if we are waiting for too long. For instance if we wait for more than twice the average response time?
                 checkStopNoMoveFoundSoFar(0)
 
               case w:SearchCrashed =>
@@ -221,7 +227,7 @@ class DistributedBestSlopeFirst(neighborhoods:Array[Neighborhood],
                 Behaviors.stopped
             }
 
-          case WrappedGotUniqueID(uniqueID: Long, neighborhoodIndice: Int,priorityOfSearch:Int) =>
+          case WrappedGotUniqueID(uniqueID, neighborhoodIndice, priorityOfSearch) =>
             //start search with val request
             context.ask[DelegateSearch, SearchEnded](
               supervisor.supervisorActor,

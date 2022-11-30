@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.SortedMap
 import scala.concurrent.{ExecutionContext, Future}
 
-sealed abstract class MessageToWorker
+sealed trait MessageToWorker
 final case class StartSearch(search: SearchRequest, startID: Long, replyTo: ActorRef[MessageToSupervisor]) extends MessageToWorker
 final case class AbortSearch(searchId: Long, keepAliveIfOjBelow:Option[Long] = None) extends MessageToWorker
 final case class WrappedSearchEnded(searchId: Long) extends MessageToWorker
@@ -20,8 +20,8 @@ final case class GetStatisticsFor(neighborhood: RemoteTaskIdentification,
                                   indice: Int,
                                   replyTo: ActorRef[(Int,List[Array[String]])]) extends MessageToWorker
 
-sealed abstract class ExternalWorkerState
-case class WorkerBusy(searchId: Long, durationMs:Long) extends ExternalWorkerState
+sealed trait ExternalWorkerState
+case class WorkerBusy(searchId: Long, durationMs: Long) extends ExternalWorkerState
 case class WorkerAborting(searchID: Long) extends ExternalWorkerState
 case object WorkerIdle extends ExternalWorkerState
 case object WorkerShuttingDown extends ExternalWorkerState
@@ -63,8 +63,8 @@ class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
                   verbose: Boolean,
                   workerName:String) {
 
-  sealed abstract class WorkerState
-  case class IAmBusy(search: SearchRequest, started:Long) extends WorkerState
+  sealed trait WorkerState
+  case class IAmBusy(search: SearchRequest, started: Long) extends WorkerState
   case class Aborting(search: SearchRequest) extends WorkerState
   case object Idle extends WorkerState
   case object ShuttingDown extends WorkerState
@@ -165,8 +165,8 @@ class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
               this.nbExploredNeighborhoods += 1
               currentNeighborhood = remoteTasks(newSearch.remoteTaskId.taskId)
 
+              // This is the thread of the search, expressed as a future
               Future {
-                //this is the thread of the search, as this is a future,
                 //TODO nothing can happen after the future is bound, opportunity to improve and postpone cleaning tasks?
                 try {
                   currentSolOpt = currentNeighborhood.doTask(newSearch, m, currentSolOpt, Some(context.self.path.toString))
@@ -182,7 +182,7 @@ class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
               next(IAmBusy(newSearch,System.currentTimeMillis()))
           }
 
-        case AbortSearch(searchId, keepAliveIfOjBelow:Option[Long]) =>
+        case AbortSearch(searchId, keepAliveIfOjBelow) =>
           state match {
             case ShuttingDown =>
               Behaviors.same
@@ -195,7 +195,7 @@ class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
                   case neighborhood:RemoteNeighborhood =>
                     val mustAbort:Boolean = neighborhood != null && (if(keepAliveIfOjBelow.isDefined){
                       neighborhood.bestObjSoFar >= keepAliveIfOjBelow.get
-                    }else true)
+                    } else true)
 
                     if(mustAbort) {
                       if(verbose) context.log.info(s"got abort command for search:$searchId; aborting")

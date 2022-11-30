@@ -193,13 +193,13 @@ case class SwapMove(i:CBLSIntVar,j:CBLSIntVar, idI:Int, idJ:Int, adjustIfNotInPr
 }
 
 
-case class IndependentSwap(i:Int,
-                           j:Int,
-                           idI:Int,
-                           idJ:Int,
-                           adjustIfNotInProperDomain:Boolean,
-                           override val objAfter:Long,
-                           override val neighborhoodName:String) extends IndependentMove{
+case class IndependentSwap(i: Int,
+                           j: Int,
+                           idI: Int,
+                           idJ: Int,
+                           adjustIfNotInProperDomain: Boolean,
+                           objAfter: Long,
+                           neighborhoodName: String) extends IndependentMove {
 
   override def makeLocal(m: Store): Move =
     SwapMove(m.getIntVar(i),m.getIntVar(j), idI, idJ, adjustIfNotInProperDomain,objAfter,neighborhoodName)

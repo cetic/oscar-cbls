@@ -17,18 +17,20 @@ abstract class DistributedCombinator(neighborhoods:Array[Neighborhood],
     val (newID,newAcc,neighborhoods2) = labelAndExtractRemoteNeighborhoodsOutOf(currentID, acc, neighborhoods)
     remoteNeighborhoodIdentifications = neighborhoods2.map(_.remoteIdentification)
 
-    val (newID2,newAcc2,neighborhoods3) = labelAndExtractRemoteTasksOutOf(currentID:Int,
+    val (newID2,newAcc2,neighborhoods3) = labelAndExtractRemoteTasksOutOf(
+      currentID,
       acc = newAcc,
-      remoteTaskGenerators = remoteTasks)
+      remoteTaskGenerators = remoteTasks
+    )
     remoteTaskIdentification = neighborhoods3.map(_.remoteIdentification)
 
     (newID2,nbDistributedCombinators+1,newAcc2)
   }
 
-  private def labelAndExtractRemoteNeighborhoodsOutOf(currentID:Int,
-                                                      acc:List[RemoteTask],
-                                                      neighborhoods:Array[Neighborhood]):
-  (Int,List[RemoteTask],Array[RemoteTask]) = {
+  private def labelAndExtractRemoteNeighborhoodsOutOf(currentID: Int,
+                                                      acc: List[RemoteTask],
+                                                      neighborhoods: Array[Neighborhood]):
+  (Int, List[RemoteTask], Array[RemoteTask]) = {
     var currentIDNow: Int = currentID
     var accNow: List[RemoteTask] = acc
     val toReturnArray = neighborhoods.map(n => {
@@ -43,7 +45,7 @@ abstract class DistributedCombinator(neighborhoods:Array[Neighborhood],
   private def labelAndExtractRemoteTasksOutOf(currentID:Int,
                                               acc:List[RemoteTask],
                                               remoteTaskGenerators:Array[Int => RemoteTask]):
-  (Int,List[RemoteTask],Array[RemoteTask]) = {
+  (Int, List[RemoteTask], Array[RemoteTask]) = {
     var currentIDNow: Int = currentID
     var accNow: List[RemoteTask] = acc
     val toReturnArray = remoteTaskGenerators.map(remoteTaskGenerator => {
