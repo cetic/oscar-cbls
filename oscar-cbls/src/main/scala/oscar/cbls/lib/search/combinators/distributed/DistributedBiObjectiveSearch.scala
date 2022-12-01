@@ -20,7 +20,7 @@ import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import akka.util.Timeout
 import oscar.cbls.algo.heap.BinomialHeapWithMove
 import oscar.cbls.core.computation.{Solution, Store}
-import oscar.cbls.core.distrib._
+import oscar.cbls.core.distributed._
 import oscar.cbls.core.objective.{CascadingObjective, IndependentObjective, Objective}
 import oscar.cbls.core.search.{AcceptanceCriterion, DistributedCombinator, Neighborhood, SearchResult}
 import oscar.cbls.lib.search.combinators.multiObjective.PlotPareto

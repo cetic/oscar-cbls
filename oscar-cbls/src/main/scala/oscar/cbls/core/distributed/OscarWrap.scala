@@ -1,4 +1,4 @@
-package oscar.cbls.core.distrib
+package oscar.cbls.core.distributed
 
 import akka.actor.typed.ActorRef
 import oscar.cbls.core.computation.{IndependentSerializableAbstractVariableSnapshot, Solution, Store}

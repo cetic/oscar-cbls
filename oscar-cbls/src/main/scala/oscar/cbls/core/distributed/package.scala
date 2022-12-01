@@ -4,7 +4,7 @@ import oscar.cbls.core.search.Neighborhood
 
 import scala.concurrent.duration.Duration
 
-package object distrib {
+package object distributed {
   def startSupervisorAndActorSystem(search: Neighborhood,
                                     verbose: Boolean = false,
                                     hotRestart:Boolean = true,

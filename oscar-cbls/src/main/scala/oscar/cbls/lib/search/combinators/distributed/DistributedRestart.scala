@@ -3,7 +3,7 @@ package oscar.cbls.lib.search.combinators.distributed
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import akka.util.Timeout
-import oscar.cbls.core.distrib._
+import oscar.cbls.core.distributed._
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{AcceptanceCriterion, DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
 import oscar.cbls.lib.search.combinators.NoReset

@@ -1,6 +1,6 @@
 package oscar.cbls.core.search
 
-import oscar.cbls.core.distrib._
+import oscar.cbls.core.distributed._
 
 abstract class DistributedCombinator(neighborhoods:Array[Neighborhood],
                                      remoteTasks:Array[Int => RemoteTask] = Array()) extends Neighborhood {

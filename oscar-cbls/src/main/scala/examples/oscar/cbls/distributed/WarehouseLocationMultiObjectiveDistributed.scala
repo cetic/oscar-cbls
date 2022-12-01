@@ -15,13 +15,13 @@
  * ****************************************************************************
  */
 
-package examples.oscar.cbls.distrib
+package examples.oscar.cbls.distributed
 
 import oscar.cbls._
 import oscar.cbls.algo.generator.WarehouseLocationGenerator
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.distrib.Supervisor
+import oscar.cbls.core.distributed.Supervisor
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.search.combinators.distributed.DistributedBiObjectiveSearch
 import oscar.cbls.lib.search.neighborhoods.SwapsNeighborhood
@@ -29,7 +29,7 @@ import oscar.cbls.util.Properties
 
 import scala.language.postfixOps
 
-object WarehouseLocationMultiObjectiveDistrib extends App {
+object WarehouseLocationMultiObjectiveDistributed extends App {
 
   //the number of warehouses
   val W: Int = 500

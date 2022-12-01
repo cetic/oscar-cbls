@@ -2,7 +2,7 @@ package oscar.cbls.lib.search.combinators.distributed
 
 import akka.actor.typed.ActorSystem
 import akka.util.Timeout
-import oscar.cbls.core.distrib.{DelegateSearch, IndependentMoveFound, IndependentNoMoveFound, IndependentSearchResult, IndependentSolution, SearchCompleted, SearchCrashed, SearchEnded, SingleMoveSearch, StartSomeSearch}
+import oscar.cbls.core.distributed.{DelegateSearch, IndependentMoveFound, IndependentNoMoveFound, IndependentSearchResult, IndependentSolution, SearchCompleted, SearchCrashed, SearchEnded, SingleMoveSearch, StartSomeSearch}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{AcceptanceCriterion, DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
 

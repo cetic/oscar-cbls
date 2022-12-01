@@ -16,7 +16,7 @@ package oscar.cbls.lib.search.neighborhoods
 
 import oscar.cbls.algo.search.{HotRestart, IdenticalAggregator}
 import oscar.cbls.core.computation.{CBLSIntVar, Store, Variable}
-import oscar.cbls.core.distrib.IndependentMove
+import oscar.cbls.core.distributed.IndependentMove
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, Move}
 
 /**

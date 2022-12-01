@@ -20,8 +20,8 @@ case class DifferentOf(value: Long) extends AcceptanceCriterion {
   override def apply(oldValue: Long, newValue: Long): Boolean = newValue != value
 }
 
-case class OverrideCriterion(overCrit: AcceptanceCriterion) extends AcceptanceCriterion {
+case class OverrideCriterion(overridingCriterion: AcceptanceCriterion) extends AcceptanceCriterion {
   override def apply(oldValue: Long, newValue: Long): Boolean = {
-    (oldValue == Long.MaxValue || oldValue != Long.MaxValue) && overCrit(oldValue, newValue)
+    (oldValue == Long.MaxValue || newValue != Long.MaxValue) && overridingCriterion(oldValue, newValue)
   }
 }

@@ -15,7 +15,7 @@
 package oscar.cbls.core.search
 
 import oscar.cbls.core.computation.{CBLSSetVar, Solution, Store, Variable}
-import oscar.cbls.core.distrib.{IndependentMove, IndependentSolution, LoadIndependentSolutionMove}
+import oscar.cbls.core.distributed.{IndependentMove, IndependentSolution, LoadIndependentSolutionMove}
 import oscar.cbls.core.objective.Objective
 
 /** standard move template
