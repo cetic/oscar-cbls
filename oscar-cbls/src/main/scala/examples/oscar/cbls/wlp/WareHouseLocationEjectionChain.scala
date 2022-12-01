@@ -19,7 +19,7 @@ package examples.oscar.cbls.wlp
 import oscar.cbls._
 import oscar.cbls.algo.generator.WarehouseLocationGenerator
 import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.core.search.{Best, Neighborhood}
+import oscar.cbls.core.search.{Best, Move, Neighborhood}
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.minmax.MinConstArrayValueWise
 import oscar.cbls.lib.invariant.numeric.Sum
@@ -79,32 +79,38 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
   def kNearestClosedWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = otherWarehouse => warehouseOpenArray(otherWarehouse).newValue == 0)
   //this procedure returns the k closest open warehouses
   def kNearestOpenWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = otherWarehouse => warehouseOpenArray(otherWarehouse).newValue != 0)
-  def kNearestdWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse))
+  def kNearestWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse))
 
   var lastDisplay = this.getWatch
 
   def ejection(maxLength:Int, kOpen:Int, kClosed:Int):Neighborhood =(
     AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
-      dynAndThen(initMove =>
+      dynAndThen({case initMove:Move =>
       EjectionChains(
-        initMove,
-        nextNeighborhood = moves => {
-          val assigns = moves.map(_.asInstanceOf[AssignMove])
-          val lastMove = assigns.head
-          val setTo = lastMove.value
-          val lastChangedWarehouse = lastMove.id
-          val allWarehouses = assigns.map(_.id)
-          val otherWarehouses = if (setTo == 0) kNearestClosedWarehouses(lastChangedWarehouse, kClosed).filter(!allWarehouses.contains(_))
-            else kNearestOpenWarehouses(lastChangedWarehouse, kOpen).filter(!allWarehouses.contains(_))
-          AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse", searchZone = () => otherWarehouses, selectIndiceBehavior = Best(), hotRestart = false)
+        nextNeighborhood = (moves:List[Move]) => {
+          val length = moves.length
+          if(length > maxLength) None
+          else {
+            val lastMove = (if(moves.isEmpty) initMove else moves.head).asInstanceOf[AssignMove]
+            val setTo = lastMove.value
+            val lastChangedWarehouse = lastMove.id
+            val allWarehouses = initMove.id :: moves.map(_.asInstanceOf[AssignMove].id)
+            val otherWarehouses =
+              if (setTo == 0) kNearestClosedWarehouses(lastChangedWarehouse, kClosed).filter(!allWarehouses.contains(_))
+              else kNearestOpenWarehouses(lastChangedWarehouse, kOpen).filter(!allWarehouses.contains(_))
+            Some(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse", searchZone = () => otherWarehouses, selectIndiceBehavior = Best(), hotRestart = false))
+          }
         },
-        shouldStop = _ >= maxLength)) name s"Eject($maxLength,$kOpen,$kClosed)")
+        overrideObj = true,
+        intermediaryStops = true)}
+
+      ) name s"Eject($maxLength,$kOpen,$kClosed)")
 
   val neighborhood = ((
     BestSlopeFirst(
       List(
-        Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
-        Profile(ejection(maxLength = 3,kOpen= 5, kClosed = 20))
+        //Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
+        Profile(ejection(maxLength = 4, kOpen= 10, kClosed = 40))
       ),refresh = W/10)
       onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5,name="smallRandom"), 2, obj)
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,name="bigRandom"), 1, obj)
@@ -116,7 +122,7 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
     showObjectiveFunction obj
     graphicalInterrupt("Warehouse Location"))
 
-  neighborhood.verbose = 1
+  neighborhood.verbose = 2
 
   //Demo.startUpPause()
 

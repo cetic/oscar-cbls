@@ -348,21 +348,9 @@ case class Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAccept
   }
 }
 
-/**
- * Ejection chains built ouf of a neighborhood
- * it is meant to be used as follows:
- *    neighborhood dynAndThen EjectionChain(_, move => nestStepNeighborhood)
- * @param initMove the initial move to start the chain
- * @param nextNeighborhood given the moves already selected in the chain, generates the next neighborhood
- * @param shouldStop given the number of steps, true is we should sop, false otherwise
- *                   (ejection chains stops as soon as the global move is acceptable, so this is to restrict the length of hte exploration)
- * @param acc the acceptance criterion to use in the chain
- *            the regular acceptance criterion is used to accept the full chain, but each move in the chain is accepted based on this acc
- * @param aggregateMoves true to aggregate the moves int oa single "solution load", false otherwise
- * @param name the name to use in the console
- */
 case class EjectionChains(nextNeighborhood: List[Move] => Option[Neighborhood],
-                          acc:(Long,Long) => Boolean = (oldObj,newObj) => newObj < oldObj,
+                          overrideObj:Boolean = true,
+                          overrideAcc:Option[(Long,Long) => Boolean] = Some((oldObj,newObj) => newObj < oldObj),
                           intermediaryStops:Boolean = false,
                           name:String = "EjectionChains") extends NeighborhoodCombinator() {
   override def getMove(obj: Objective,
@@ -370,52 +358,50 @@ case class EjectionChains(nextNeighborhood: List[Move] => Option[Neighborhood],
                        acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
 
     val startSolution = obj.model.solution(true)
+
+    val searchAcc = overrideAcc match{case Some(acc2) => acc2 case None => acceptanceCriterion}
     var allMoves:List[Move] = Nil
-    var prevMoves: List[Move] = List(initMove)
-    var currentObj: Long = initialObj
+    var currentObj: Long = if(overrideObj) obj.value else initialObj
     var nbMoves: Int = 0
+
     while (true) {
-      //it start from obj.value, not from currentObj because when used in a cross-product, initObj != obj.value
-      nextNeighborhood(prevMoves) match{
+      nextNeighborhood(allMoves) match{
         case None =>
-          if(acceptanceCriterion(initialObj,obj.value)){
-            MoveFound()
+          val returnObj = obj.value
+          if(nbMoves >= 1 && acceptanceCriterion(initialObj,returnObj)){
+            startSolution.restoreDecisionVariables()
+            return MoveFound(CompositeMove(allMoves.reverse, returnObj, name))
           }else{
-            NoMoveFound
+            startSolution.restoreDecisionVariables()
+            return NoMoveFound
           }
         case Some(neighborhood) =>
-          neighborhood.getMove(obj, obj.value, acceptanceCriterion = acc) match {
+          neighborhood.getMove(obj, currentObj, searchAcc) match {
             case NoMoveFound =>
-              if(acceptanceCriterion(initialObj, currentObj)) {
+              val returnObj = obj.value
+              if(nbMoves >= 1 && acceptanceCriterion(initialObj,returnObj)){
                 startSolution.restoreDecisionVariables()
-                if(nbMoves >= 1){
-                  return MoveFound(CompositeMove(allMoves.reverse, currentObj, name))
-                }else{
-                  return MoveFound(DoNothingMove(currentObj,name))
-                }
-              }else {
+                return MoveFound(CompositeMove(allMoves.reverse, returnObj, name))
+              }else{
                 startSolution.restoreDecisionVariables()
                 return NoMoveFound
               }
             case MoveFound(move) =>
               move.commit()
-              prevMoves = move :: prevMoves
-              currentObj = move.objAfter
-              nbMoves = nbMoves + 1
               allMoves = move :: allMoves
+              nbMoves = nbMoves + 1
+              currentObj = move.objAfter
           }
       }
 
-      startSolution.restoreDecisionVariables()
-      if(acceptanceCriterion(initialObj, currentObj)) {
-        if(nbMoves >= 1){
-          MoveFound(CompositeMove(allMoves.reverse, currentObj, name))
-        }else{
-          MoveFound(DoNothingMove(currentObj,name))
+      if(intermediaryStops){
+        val returnObj = obj.value
+        if(nbMoves >= 1 && acceptanceCriterion(initialObj,returnObj)) {
+          startSolution.restoreDecisionVariables()
+          return MoveFound(CompositeMove(allMoves.reverse, returnObj, name))
         }
-      }else {
-        NoMoveFound
       }
     }
+    throw new Error("should not be reached")
   }
 }
