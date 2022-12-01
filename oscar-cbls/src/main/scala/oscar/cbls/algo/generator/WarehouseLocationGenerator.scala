@@ -61,7 +61,7 @@ object WarehouseLocationGenerator {
     val side = maxXY - minXY
 
     val costForOpeningWarehouse: Array[Long] =
-      Array.tabulate(W)(_ => (math.random() * side * weightingForOpeningWarehouseCost).toLong)
+      Array.tabulate(W)(_ => (random.nextDouble() * side * weightingForOpeningWarehouseCost).toLong)
 
     //we generate te cost distance matrix
     def randomXY: Long = (minXY + (random.nextDouble() * side)).toLong
