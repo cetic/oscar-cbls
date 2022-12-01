@@ -18,7 +18,7 @@ package oscar.cbls.core.search
 
 import oscar.cbls.core.computation.{Solution, Store, Variable}
 import oscar.cbls.core.distrib.{RemoteNeighborhood, RemoteTask, Supervisor}
-import oscar.cbls.core.objective.{AbortException, AbortableObjective, LoggingObjective, Objective}
+import oscar.cbls.core.objective.{AbortException, AbortableObjective, LoggingObjective, Objective, ProfiledObjective}
 import oscar.cbls.lib.search.combinators._
 import oscar.cbls.util.Properties
 
@@ -662,7 +662,7 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
       this.acceptanceCriterion = acceptanceCriterion
       toReturnMove = null
       bestNewObj = initialObj //Long.MaxValue // //because we do not want "no move" to be considered as an actual move.
-      this.obj = if (printExploredNeighbors) new LoggingObjective(obj) else obj
+      this.obj = new ProfiledObjective(if (printExploredNeighbors) new LoggingObjective(obj) else obj, profiler)
       if (printExploredNeighborhoods) {
         println(s"$neighborhoodNameToString: start exploration")
       }

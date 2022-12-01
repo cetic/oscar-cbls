@@ -61,6 +61,10 @@ object Profiler {
   def selectedStatisticInfo(profilers:Iterable[Profiler]):String = {
     Properties.justifyRightArray(profilers.toList.flatMap(p => List(p.collectThisProfileHeader,p.collectThisProfileData))).mkString("\n")
   }
+
+//  def nodeSelectionProfiling(nodeSelectionFunction: () => Int => Iterable[Int])(profiler: Profiler): () => Int => Iterable[Int] ={
+//    nodeSelectionFunction()
+//  }
 }
 
 
@@ -100,8 +104,26 @@ class EmptyProfiler(neighborhood: Neighborhood) extends Profiler(neighborhood) {
  */
 class NeighborhoodProfiler(neighborhood: Neighborhood) extends Profiler(neighborhood) {
 
-  var startExplorationAtMillis: Long = 0L
+  private var startExplorationAtMillis: Long = 0L
+  private var lastNeighborSelectionAtMillis: Long = 0L
+  private var firstNeighborSelection: Boolean = true
+  private var firstNeighborSelectionCounter: Long = 0L
+  private var firstNeighborSelectionDuration: Long = 0L
+  private var notFirstNeighborSelectionCounter: Long = 0L
+  private var notFirstNeighborSelectionsDuration: Long = 0L
 
+  def neighborSelected(): Unit = {
+    val neighborSelectionAtMillis = System.currentTimeMillis()
+    if(firstNeighborSelection) {
+      firstNeighborSelectionCounter += 1
+      firstNeighborSelectionDuration += neighborSelectionAtMillis - startExplorationAtMillis
+      firstNeighborSelection = false
+    } else {
+      notFirstNeighborSelectionCounter += 1
+      notFirstNeighborSelectionsDuration += neighborSelectionAtMillis - lastNeighborSelectionAtMillis
+    }
+    lastNeighborSelectionAtMillis = neighborSelectionAtMillis
+  }
 
   def gainPerCall:String = if(totalBpd.nbCalls ==0L) "NA" else s"${totalBpd.gain / totalBpd.nbCalls}"
   def callDuration:String = if(totalBpd.nbCalls == 0L ) "NA" else s"${totalBpd.timeSpent / totalBpd.nbCalls}"
@@ -111,11 +133,14 @@ class NeighborhoodProfiler(neighborhood: Neighborhood) extends Profiler(neighbor
   def avgTimeSpendNoMove:String = if(totalBpd.nbCalls - totalBpd.nbFound == 0L) "NA" else s"${totalBpd.timeSpentNoMoveFound / (totalBpd.nbCalls - totalBpd.nbFound)}"
   def avgTimeSpendMove:String = if(totalBpd.nbFound == 0L) "NA" else s"${totalBpd.timeSpentMoveFound / totalBpd.nbFound}"
   def avgTimeExplore: String = s"${(totalBpd.timeSpent.toDouble/totalBpd.nbExplored*1000).round/1000.0}"
+  def avgTimeFirstNeighborSelection: String = if(firstNeighborSelectionCounter == 0) "NA" else s"${firstNeighborSelectionDuration.toDouble/firstNeighborSelectionCounter}"
+  def avgTimeNotFirstNeighborSelection: String = if(notFirstNeighborSelectionCounter == 0) "NA" else s"${notFirstNeighborSelectionsDuration.toDouble/notFirstNeighborSelectionCounter}"
   def waistedTime:String = if(totalBpd.nbCalls - totalBpd.nbFound == 0L) "NA" else s"${totalBpd.timeSpentNoMoveFound / (totalBpd.nbCalls - totalBpd.nbFound)}"
 
   override def subProfilers: List[Profiler] = List.empty
   override def collectThisProfileHeader: Array[String] = Array("Neighborhood","calls", "found", "explored", "sumGain", "sumTime(ms)", "avgGain",
-    "avgTime(ms)", "slope(-/s)", "avgTimeNoMove", "avgTimeMove", "wastedTime", "avgTimeExplored(ms)")
+    "avgTime(ms)", "slope(-/s)", "avgTimeNoMove", "avgTimeMove", "wastedTime", "avgTimeExplored(ms)",
+    "avgFirstNeighborSelectionTime(ms)", "avgNotFirstNeighborSelectionTime(ms)")
 
   override def collectThisProfileData:Array[String] =
     {
@@ -123,7 +148,7 @@ class NeighborhoodProfiler(neighborhood: Neighborhood) extends Profiler(neighbor
         s"${totalBpd.nbCalls}", s"${totalBpd.nbFound}", s"${totalBpd.nbExplored}",
         s"${totalBpd.gain}", s"${totalBpd.timeSpent}", s"$gainPerCall", s"$callDuration", s"$slope",
         s"$avgTimeSpendNoMove", s"$avgTimeSpendMove", s"${totalBpd.timeSpentNoMoveFound}",
-        s"$avgTimeExplore")
+        s"$avgTimeExplore", avgTimeFirstNeighborSelection, avgTimeNotFirstNeighborSelection)
     }
 
   override def merge(profiler: Profiler): Unit ={
@@ -137,6 +162,7 @@ class NeighborhoodProfiler(neighborhood: Neighborhood) extends Profiler(neighbor
    */
   def explorationStarted(): Unit ={
     startExplorationAtMillis = System.currentTimeMillis()
+    firstNeighborSelection = true
     bpd.callIncr(); totalBpd.callIncr()
   }
 
