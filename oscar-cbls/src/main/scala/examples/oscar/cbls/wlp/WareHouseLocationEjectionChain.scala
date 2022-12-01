@@ -85,31 +85,32 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
 
   def ejection(maxLength:Int, kOpen:Int, kClosed:Int):Neighborhood =(
     AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
-      dynAndThen({case initMove:Move =>
+      dynAndThen({initMove: Move =>
       EjectionChains(
-        nextNeighborhood = (moves:List[Move]) => {
+        nextNeighborhood = (moves: List[Move]) => {
           val length = moves.length
-          if(length > maxLength) None
+          if (length >= maxLength) None
           else {
-            val lastMove = (if(moves.isEmpty) initMove else moves.head).asInstanceOf[AssignMove]
+            val initMoveWarehouse = initMove.asInstanceOf[AssignMove].id
+            val lastMove = (if (moves.isEmpty) initMove else moves.head).asInstanceOf[AssignMove]
             val setTo = lastMove.value
             val lastChangedWarehouse = lastMove.id
-            val allWarehouses = initMove.id :: moves.map(_.asInstanceOf[AssignMove].id)
+            val allWarehouses = (initMove :: moves).map(_.asInstanceOf[AssignMove].id)
             val otherWarehouses =
-              if (setTo == 0) kNearestClosedWarehouses(lastChangedWarehouse, kClosed).filter(!allWarehouses.contains(_))
-              else kNearestOpenWarehouses(lastChangedWarehouse, kOpen).filter(!allWarehouses.contains(_))
+              if (setTo == 0) kNearestClosedWarehouses(lastChangedWarehouse, kClosed).filter(w => !allWarehouses.contains(w) && w < initMoveWarehouse)
+              else kNearestOpenWarehouses(lastChangedWarehouse, kOpen).filter(w => !allWarehouses.contains(w) && w < initMoveWarehouse)
             Some(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse", searchZone = () => otherWarehouses, selectIndiceBehavior = Best(), hotRestart = false))
           }
         },
-        overrideObj = true,
-        intermediaryStops = true)}
+        intermediaryStops = true)
+    }
 
       ) name s"Eject($maxLength,$kOpen,$kClosed)")
 
   val neighborhood = ((
     BestSlopeFirst(
       List(
-        //Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
+        //Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")), //subsumed by the ejection chain, which can be of size 1
         Profile(ejection(maxLength = 4, kOpen= 10, kClosed = 40))
       ),refresh = W/10)
       onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5,name="smallRandom"), 2, obj)

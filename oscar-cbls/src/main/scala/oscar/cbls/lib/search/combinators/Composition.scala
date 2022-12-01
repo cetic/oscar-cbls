@@ -365,6 +365,14 @@ case class EjectionChains(nextNeighborhood: List[Move] => Option[Neighborhood],
     var nbMoves: Int = 0
 
     while (true) {
+      if(intermediaryStops){
+        val returnObj = obj.value
+        if(acceptanceCriterion(initialObj,returnObj)) {
+          startSolution.restoreDecisionVariables()
+          return MoveFound(CompositeMove(allMoves.reverse, returnObj, name))
+        }
+      }
+
       nextNeighborhood(allMoves) match{
         case None =>
           val returnObj = obj.value
@@ -392,14 +400,6 @@ case class EjectionChains(nextNeighborhood: List[Move] => Option[Neighborhood],
               nbMoves = nbMoves + 1
               currentObj = move.objAfter
           }
-      }
-
-      if(intermediaryStops){
-        val returnObj = obj.value
-        if(nbMoves >= 1 && acceptanceCriterion(initialObj,returnObj)) {
-          startSolution.restoreDecisionVariables()
-          return MoveFound(CompositeMove(allMoves.reverse, returnObj, name))
-        }
       }
     }
     throw new Error("should not be reached")
