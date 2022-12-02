@@ -5,7 +5,7 @@ import oscar.cbls.core.computation.{AbstractVariable, Solution, Store}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{AcceptanceCriterion, CallBackMove, CompositeMove, DifferentOf, DoNothingMove, DoNothingNeighborhood, LoadSolutionMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult, StrictImprovement, SupportForAndThenChaining}
 
-abstract class NeighborhoodCombinatorNoProfile(a: Neighborhood*) extends NeighborhoodCombinator(a:_*){
+abstract class NeighborhoodCombinatorNoProfile(a: Neighborhood*) extends NeighborhoodCombinator(a:_*) {
   override def collectProfilingStatistics: List[Array[String]] = List.empty
   override def resetStatistics(): Unit ={}
 }
@@ -28,7 +28,6 @@ object Mu {
   }
 
   /**
-   *
    * @param firstNeighborhood
    * @param neighborhoodGenerator latest moves are closer to the head
    * @param x0
@@ -46,7 +45,6 @@ object Mu {
     require(maxDepth >= 1L)
 
     def generateNextNeighborhood(oldMoves : List[MoveType], remainingDepth : Long, prevX : X)(newMove : MoveType):Neighborhood = {
-
       if (remainingDepth == 0L) {
         DoNothingNeighborhood()
       } else if (remainingDepth == 1L) {
@@ -67,8 +65,13 @@ object Mu {
         }
       }
     }
-    new ChainableName(dynAndThen(firstNeighborhood,
-      generateNextNeighborhood(List.empty, maxDepth - 1L, x0)),"Mu(" + firstNeighborhood + ")")
+    new ChainableName(
+      dynAndThen(
+        firstNeighborhood,
+        generateNextNeighborhood(List.empty, maxDepth - 1L, x0)
+      ),
+      "Mu(" + firstNeighborhood + ")"
+    )
   }
 }
 
@@ -160,7 +163,6 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
       override def model: Store = obj.model
 
       override def value: Long = {
-
         val intermediaryObjValue =
           if (maximalIntermediaryDegradation != Long.MaxValue) {
             //we need to ensure that intermediary step is admissible
@@ -169,10 +171,10 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
             if (intermediaryDegradation > maximalIntermediaryDegradation) {
               //this is a return; the first step is altogheter ignored
               return Long.MaxValue //we do not consider this first step
-            }else{
+            } else {
               intermediaryVal
             }
-          }else{
+          } else {
             Long.MaxValue
           }
 
@@ -221,10 +223,11 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
   }
 }
 
-case class DynAndThenWithPrev[FirstMoveType<:Move](x:Neighborhood with SupportForAndThenChaining[FirstMoveType],
-                                                   b:(FirstMoveType,Solution) => Neighborhood,
-                                                   maximalIntermediaryDegradation:Long = Long.MaxValue,
-                                                   valuesToSave:Iterable[AbstractVariable]) extends NeighborhoodCombinatorNoProfile(x){
+case class DynAndThenWithPrev[FirstMoveType<:Move](x: Neighborhood with SupportForAndThenChaining[FirstMoveType],
+                                                   b: (FirstMoveType,Solution) => Neighborhood,
+                                                   maximalIntermediaryDegradation: Long = Long.MaxValue,
+                                                   valuesToSave: Iterable[AbstractVariable])
+  extends NeighborhoodCombinatorNoProfile(x) {
 
   val instrumentedA = new SnapShotOnEntry(x,valuesToSave) with SupportForAndThenChaining[FirstMoveType]{
     override def instantiateCurrentMove(newObj: Long): FirstMoveType = x.instantiateCurrentMove(newObj)
@@ -244,7 +247,7 @@ case class DynAndThenWithPrev[FirstMoveType<:Move](x:Neighborhood with SupportFo
 }
 
 case class SnapShotOnEntry(a: Neighborhood, valuesToSave:Iterable[AbstractVariable])
-  extends NeighborhoodCombinator(a){
+  extends NeighborhoodCombinator(a) {
 
   var snapShot:Solution = null
 
@@ -264,7 +267,8 @@ case class SnapShotOnEntry(a: Neighborhood, valuesToSave:Iterable[AbstractVariab
  * @param filter the filter function through which you can accept/reject moves from a
  * @tparam MoveType the type of moves that a explores
  */
-case class Filter[MoveType<:Move](a:Neighborhood with SupportForAndThenChaining[MoveType], filter:MoveType => Boolean) extends NeighborhoodCombinator(a) {
+case class Filter[MoveType<:Move](a: Neighborhood with SupportForAndThenChaining[MoveType],
+                                  filter: MoveType => Boolean) extends NeighborhoodCombinator(a) {
 
   override def getMove(obj: Objective,
                        initialObj: Long,
@@ -313,11 +317,14 @@ case class AtomicJump(a: Neighborhood, bound: Int = Int.MaxValue) extends Neighb
  *
  * @param a
  */
-case class Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAcceptableMoves:Boolean = false, aggregateIntoSingleMove:Boolean = false) extends NeighborhoodCombinator(a) {
+case class Atomic(a: Neighborhood,
+                  shouldStop: Int => Boolean,
+                  stopAsSoonAsAcceptableMoves: Boolean = false,
+                  aggregateIntoSingleMove: Boolean = false) extends NeighborhoodCombinator(a) {
   override def getMove(obj: Objective,
                        initialObj: Long,
                        acceptanceCriterion: AcceptanceCriterion = StrictImprovement): SearchResult = {
-    val startSolution = obj.model.solution(true)
+    val startSolution = obj.model.solution()
     val stopProc = if(stopAsSoonAsAcceptableMoves){
       nbId:Int => shouldStop(nbId) || acceptanceCriterion(initialObj,obj.value)
     }else{
@@ -340,7 +347,7 @@ case class Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAccept
         LoadSolutionMove(endSolution, endObj, s"Atomic($a)")
       }
 
-    }else {
+    } else {
       val allMoves = a.getAllMoves(stopProc, obj, acceptanceCriterion)
 
       //restore the initial solution
@@ -355,8 +362,8 @@ case class Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAccept
     }
   }
 
-  def stopAsSoonAsAcceptable:Atomic = {
-    Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAcceptableMoves=true)
+  def stopAsSoonAsAcceptable: Atomic = {
+    Atomic(a, shouldStop, stopAsSoonAsAcceptableMoves=true)
   }
 }
 
@@ -383,20 +390,16 @@ case class EjectionChains(initMove:Move,
   override def getMove(obj: Objective,
                        initialObj: Long,
                        accCrit: AcceptanceCriterion = StrictImprovement): SearchResult = {
-
     if (aggregateMoves) {
-
-      val startSolution = obj.model.solution(true)
-
+      val startSolution = obj.model.solution()
       var prevMoves: List[Move] = List(initMove)
       var currentObj: Long = initialObj
-
       var nbMoves: Int = 0
       while (!shouldStop(nbMoves) && !accCrit(initialObj, currentObj)) {
         nextNeighborhood(prevMoves).getMove(obj, currentObj, accCrit) match {
           case NoMoveFound =>
             if (accCrit(initialObj, currentObj)) {
-              val endSolution = obj.model.solution(true)
+              val endSolution = obj.model.solution()
               startSolution.restoreDecisionVariables()
               if (nbMoves >= 1) {
                 return MoveFound(LoadSolutionMove(endSolution, currentObj, name))
@@ -414,20 +417,20 @@ case class EjectionChains(initMove:Move,
             nbMoves = nbMoves + 1
         }
       }
-      if(acceptanceCriterion(initialObj, currentObj)) {
-        val endSolution = obj.model.solution(true)
+      if (acceptanceCriterion(initialObj, currentObj)) {
+        val endSolution = obj.model.solution()
         startSolution.restoreDecisionVariables()
-        if(nbMoves >= 1){
+        if (nbMoves >= 1) {
           MoveFound(LoadSolutionMove(endSolution, currentObj, name))
-        }else{
+        } else {
           MoveFound(DoNothingMove(currentObj,name))
         }
-      }else {
+      } else {
         startSolution.restoreDecisionVariables()
         NoMoveFound
       }
-    }else {
-      val startSolution = obj.model.solution(true)
+    } else {
+      val startSolution = obj.model.solution()
       var allMoves:List[Move] = Nil
       var prevMoves: List[Move] = List(initMove)
       var currentObj: Long = initialObj
@@ -455,15 +458,14 @@ case class EjectionChains(initMove:Move,
             allMoves = move :: allMoves
         }
       }
-
       startSolution.restoreDecisionVariables()
-      if(acceptanceCriterion(initialObj, currentObj)) {
-        if(nbMoves >= 1){
+      if (acceptanceCriterion(initialObj, currentObj)) {
+        if (nbMoves >= 1) {
           MoveFound(CompositeMove(allMoves.reverse, currentObj, name))
-        }else{
-          MoveFound(DoNothingMove(currentObj,name))
+        } else {
+          MoveFound(DoNothingMove(currentObj, name))
         }
-      }else {
+      } else {
         NoMoveFound
       }
     }
