@@ -50,7 +50,7 @@ object WarehouseLocationMultiObjectiveDistributed extends App {
   // is a relevant trade off point in the mathematical sense.
   costForOpeningWarehouse(0) = 0
 
-  def createSearchStructures(): (Store, DistributedBiObjectiveSearch,SetValue) = {
+  def createSearchStructures(): (Store, DistributedBiObjectiveSearch, SetValue) = {
     val m = Store()
 
     val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + l + "_open"))
@@ -113,7 +113,7 @@ object WarehouseLocationMultiObjectiveDistributed extends App {
       visuTitle = problemName,
       maxPoints = 100,
       verbose = true,
-      visu = true)
+      visu = false)
 
     (m, paretoSearch,openWarehouses)
   }
@@ -132,11 +132,11 @@ object WarehouseLocationMultiObjectiveDistributed extends App {
   val allSolutions =
     paretoSearch
       .paretoOptimize()
-      .map({case (obj1,obj,sol) => {
+      .map({ case (obj1,obj,sol) =>
         sol.restoreDecisionVariables()
         val w = openWarehouses.value
         List(obj1,obj,w.size,w)
-      }})
+      })
 
   //shut down supervisor and all workers
   supervisor.shutdown()

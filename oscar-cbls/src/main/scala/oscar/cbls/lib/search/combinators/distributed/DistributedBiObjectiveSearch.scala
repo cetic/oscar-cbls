@@ -558,7 +558,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood: () => Neighborhood,
       println("elapsed(ms):" + ((System.nanoTime() - startSearchNanotime)/1000000).toInt)
     }
 
-    if(!stayAlive) window.close()
+    if ((window!=null) && !stayAlive) window.close()
 
     paretoFront.toList.map({case rectangle:Rectangle => (rectangle.obj1,rectangle.obj2,rectangle.solution)}).sortBy(_._1)
   }
