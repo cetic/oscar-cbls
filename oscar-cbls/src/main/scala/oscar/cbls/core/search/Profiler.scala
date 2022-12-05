@@ -102,7 +102,7 @@ class EmptyProfiler(neighborhood: Neighborhood) extends Profiler(neighborhood) {
  * Base profiler for EasyNeighborhoods
  * @param neighborhood
  */
-class NeighborhoodProfiler(neighborhood: Neighborhood) extends Profiler(neighborhood) {
+class NeighborhoodProfiler(override val neighborhood: Neighborhood) extends Profiler(neighborhood) {
 
   private var startExplorationAtMillis: Long = 0L
   private var lastNeighborSelectionAtMillis: Long = 0L
@@ -138,9 +138,19 @@ class NeighborhoodProfiler(neighborhood: Neighborhood) extends Profiler(neighbor
   def waistedTime:String = if(totalBpd.nbCalls - totalBpd.nbFound == 0L) "NA" else s"${totalBpd.timeSpentNoMoveFound / (totalBpd.nbCalls - totalBpd.nbFound)}"
 
   override def subProfilers: List[Profiler] = List.empty
+
+  def goodValueIndicator(): Array[Option[String]] = {
+    // Neighborhood, calls, founds, explored, sumGain, sumTime, avgGain
+    Array(None, None, Some("Max"), None, Some("Max"), Some("Min"), Some("Max"),
+      // avgTime, slope, avgTimeNoMove, avgTimeMove, wastedTime, avtTimeExplored
+      Some("Min"), Some("Max"), Some("Min"), Some("Min"), Some("Min"), Some("Min"),
+      // avgFirstNeighborSelectionTime, avgNotFirstNeighborSelectionTime
+      Some("Min"), Some("Min"))
+  }
+
   override def collectThisProfileHeader: Array[String] = Array("Neighborhood","calls", "found", "explored", "sumGain", "sumTime(ms)", "avgGain",
     "avgTime(ms)", "slope(-/s)", "avgTimeNoMove", "avgTimeMove", "wastedTime", "avgTimeExplored(ms)",
-    "avgFirstNeighborSelectionTime(ms)", "avgNotFirstNeighborSelectionTime(ms)")
+    "avgFirstSelectionTime(ms)", "avgOtherSelectionTime(ms)")
 
   override def collectThisProfileData:Array[String] =
     {

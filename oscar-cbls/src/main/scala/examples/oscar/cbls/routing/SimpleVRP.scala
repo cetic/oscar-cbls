@@ -9,7 +9,7 @@ import oscar.cbls.business.routing.model.helpers.DistanceHelper
 import oscar.cbls.business.routing.neighborhood.{ThreeOpt, TreeOpt, TwoOpt}
 import oscar.cbls.core.search.{Best, First}
 import oscar.cbls.visual.SingleFrameWindow
-import oscar.cbls.visual.profiling.ProfilingTree
+import oscar.cbls.visual.profiling.{ProfilingTree, VisualProfiler}
 
 object SimpleVRP extends App{
   val n: Int = 20
@@ -74,9 +74,7 @@ class SimpleVRP(n: Int, v: Int, size: Int, iteration: Int) {
 
   search.verbose = 2
   search.doAllMoves(obj = obj)
-  val profilingTree = new ProfilingTree(search)
-  SingleFrameWindow.show(profilingTree, "Profiling")
-  profilingTree.draw()
+  VisualProfiler.showProfile(search)
   //println(myVRP)
 
 /*

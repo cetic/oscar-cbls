@@ -35,7 +35,7 @@ class SingleFrameWindow(val panel:JPanel, title:String, width:Int, height:Int, b
     panel.setOpaque(false)
     panel.setVisible(true)
   } else {
-    frame.add(panel)
+    frame.add(panel, BorderLayout.CENTER)
   }
 
   frame.setResizable(true)

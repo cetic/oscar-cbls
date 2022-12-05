@@ -3,7 +3,7 @@ package oscar.cbls.visual.profiling
 import oscar.cbls.core.search.{CombinatorProfiler, Neighborhood, Profiler}
 import oscar.cbls.util.Properties
 import oscar.cbls.visual.BetterVisualDrawing
-import oscar.visual.VisualDrawing
+import oscar.visual.{VisualDrawing, VisualTable}
 import oscar.visual.shapes.{VisualLine, VisualRectangle, VisualText}
 
 import java.awt.{Color, Font}
@@ -44,12 +44,6 @@ class ProfilingTree(search: Neighborhood) extends BetterVisualDrawing(false,fals
       profilingNode.addChildren(children)
     }
     profilingNode
-  }
-
-  override def resize(): Unit ={
-    val bounds = this.findBounds(this.shapes)
-    this.setPreferredSize(new java.awt.Dimension((scale*bounds._2).toInt,(scale*bounds._4).toInt))
-    super.resize()
   }
 
   private def displayToolTip(text: String): Unit = this.showToolTip(text)

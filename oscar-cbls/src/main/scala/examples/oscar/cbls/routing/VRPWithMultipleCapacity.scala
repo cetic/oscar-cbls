@@ -9,7 +9,7 @@ import oscar.cbls.core.computation.{CBLSIntVar, Store}
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.visual.SingleFrameWindow
-import oscar.cbls.visual.profiling.ProfilingTree
+import oscar.cbls.visual.profiling.{ProfilingTree, VisualProfiler}
 import oscar.cbls.{length, precedence, sum}
 
 import scala.collection.immutable.HashSet
@@ -168,8 +168,5 @@ class VRPWithMultipleCapacity(n: Int, v: Int, c: Int, maxCapacityPerContentType:
   search.doAllMoves(obj=obj)
   println(myVRP)
 
-  println(search.profilingStatistics)
-  val profiling = new ProfilingTree(search)
-  SingleFrameWindow.show(profiling,"Profiling")
-  profiling.draw()
+  VisualProfiler.showProfile(search)
 }
