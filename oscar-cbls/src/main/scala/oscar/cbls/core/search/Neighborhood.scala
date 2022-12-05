@@ -550,12 +550,12 @@ abstract class EasyNeighborhood[M<:Move](best:Boolean = false, neighborhoodName:
 
     if (toReturnMove == null || (best && !acceptanceCriterion(oldObj, bestNewObj))) {
       if (printExploredNeighborhoods) {
-        println(neighborhoodNameToString + ": no move found")
+        println(neighborhoodNameToString + ": NoMoveFound")
       }
       NoMoveFound
     } else {
       if (printExploredNeighborhoods) {
-        println(neighborhoodNameToString + ": move found: " + toReturnMove)
+        println(neighborhoodNameToString + ": MoveFound: " + toReturnMove)
       }
       toReturnMove
     }
@@ -656,12 +656,12 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
 
     if (toReturnMove == null) {
       if (printExploredNeighborhoods) {
-        println(neighborhoodNameToString + ": no move found")
+        println(neighborhoodNameToString + ": NoMoveFound")
       }
       NoMoveFound
     } else {
       if (printExploredNeighborhoods) {
-        println(neighborhoodNameToString + ": move found: " + toReturnMove)
+        println(neighborhoodNameToString + ": MoveFound: " + toReturnMove)
       }
       toReturnMove
     }

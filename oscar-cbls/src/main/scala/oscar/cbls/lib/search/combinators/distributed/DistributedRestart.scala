@@ -261,7 +261,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                       if(nbCompletedSearchesOnBestSoFar +1 >= nbConsecutiveRestartWithoutImprovement && nbCompletedRestarts +1 >= minNbRestarts){
                         //we finished :-)
 
-                        if(verbose) context.log.info(s"no move found, was working on bestSoFar, finished, canceling ${runningSearchIDsAndIsItFromBestSoFar.size -1} ongoing searches finalOBj:$bestObjSoFar")
+                        if(verbose) context.log.info(s"NoMoveFound, was working on bestSoFar, finished, canceling ${runningSearchIDsAndIsItFromBestSoFar.size -1} ongoing searches finalOBj:$bestObjSoFar")
 
                         for(searchID <- runningSearchIDsAndIsItFromBestSoFar.keys){
                           //TODO: this one MUST be conditional, and we should WAIT for all searches to be concluded before exiting
@@ -279,7 +279,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                       }else{
                         //progress on stop criterion, but not finished yet
 
-                        if(verbose) context.log.info(s"no move found, was working on bestSoFar, not finished yet (${nbCompletedSearchesOnBestSoFar +1}/$nbConsecutiveRestartWithoutImprovement) (${nbCompletedRestarts +1}/$minNbRestarts)")
+                        if(verbose) context.log.info(s"NoMoveFound, was working on bestSoFar, not finished yet (${nbCompletedSearchesOnBestSoFar +1}/$nbConsecutiveRestartWithoutImprovement) (${nbCompletedRestarts +1}/$minNbRestarts)")
 
                         context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
                           case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, remoteNeighborhoodIdentifications(0))
@@ -296,7 +296,7 @@ class DistributedRestart(baseSearch:Neighborhood,
                     }else{
                       //We were NOT running on BestSoFar, so stop criterion NOT progressed
 
-                      if(verbose) context.log.info(s"no move found, was not working on bestSoFar")
+                      if(verbose) context.log.info(s"NoMoveFound, was not working on bestSoFar")
 
                       context.ask[GetNewUniqueID, Long](supervisor.supervisorActor, ref => GetNewUniqueID(ref)) {
                         case Success(uniqueID: Long) => WrappedGotUniqueID(uniqueID: Long, remoteNeighborhoodIdentifications(0))

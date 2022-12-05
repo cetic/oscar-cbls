@@ -328,7 +328,7 @@ trait NeighborhoodSelectionCombinators{
    *
    * @author renaud.delandtsheer@cetic.be
    */
-  def roundRobin(l: List[Neighborhood], steps: Long = 1L) = new RoundRobin(l, steps)
+  def roundRobin(l: Iterable[(Neighborhood,Int)]) = new RoundRobin(l.toArray)
 
   /**
    * this combinator randomly tries one neighborhood.
@@ -687,7 +687,7 @@ class NeighborhoodOps(n:Neighborhood){
    * @param b
    * @return
    */
-  def step(b: Neighborhood) = new RoundRobin(List(n, b))
+  def step(b: Neighborhood) = new RoundRobin(Array((n,1), (b,1)))
 
   /**
    * calls the neighborhood until an improvement over obj is achieved

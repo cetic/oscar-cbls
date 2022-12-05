@@ -23,7 +23,7 @@ import oscar.cbls.core.search.{Best, Move, Neighborhood}
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.minmax.MinConstArrayValueWise
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, EjectionChains, Mu, Profile}
+import oscar.cbls.lib.search.combinators.{BestSlopeFirst, EjectionChains, Mu, Profile, RoundRobin}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.util.StopWatch
 import oscar.cbls.visual.SingleFrameWindow
@@ -84,7 +84,7 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
   var lastDisplay = this.getWatch
 
   def ejection(maxLength:Int, kOpen:Int, kClosed:Int):Neighborhood =(
-    AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
+    AssignNeighborhood(warehouseOpenArray, "EjectWarehouse")
       dynAndThen({initMove: Move =>
       EjectionChains(
         nextNeighborhood = (moves: List[Move]) => {
@@ -99,7 +99,7 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
             val otherWarehouses =
               if (setTo == 0) kNearestClosedWarehouses(lastChangedWarehouse, kClosed).filter(w => !allWarehouses.contains(w) && w < initMoveWarehouse)
               else kNearestOpenWarehouses(lastChangedWarehouse, kOpen).filter(w => !allWarehouses.contains(w) && w < initMoveWarehouse)
-            Some(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse", searchZone = () => otherWarehouses, selectIndiceBehavior = Best(), hotRestart = false))
+            Some(AssignNeighborhood(warehouseOpenArray, "EjectWarehouse2", searchZone = () => otherWarehouses, selectIndiceBehavior = Best(), hotRestart = false))
           }
         },
         intermediaryStops = true)
@@ -108,11 +108,10 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
       ) name s"Eject($maxLength,$kOpen,$kClosed)")
 
   val neighborhood = ((
-    BestSlopeFirst(
-      List(
-        //Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")), //subsumed by the ejection chain, which can be of size 1
-        Profile(ejection(maxLength = 4, kOpen= 10, kClosed = 40))
-      ),refresh = W/10)
+    new RoundRobin(Array(
+      (Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),1), //subsumed by the ejection chain, which can be of size 1
+        (Profile(ejection(maxLength = 4, kOpen= 10, kClosed = 40)),1)
+      ),tabu = 10)
       onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5,name="smallRandom"), 2, obj)
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,name="bigRandom"), 1, obj)
     ) afterMove(
@@ -123,7 +122,7 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
     showObjectiveFunction obj
     graphicalInterrupt("Warehouse Location"))
 
-  neighborhood.verbose = 2
+  neighborhood.verbose = 1
 
   //Demo.startUpPause()
 

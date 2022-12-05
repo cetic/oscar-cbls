@@ -278,68 +278,79 @@ case class BestSlopeFirstWithRestrictions(l:List[RestrictedNeighborhood],
  *
  * @author renaud.delandtsheer@cetic.be
  */
-class RoundRobin(l: List[Neighborhood], steps: Long = 1L)
-  extends NeighborhoodCombinator(l: _*) {
-  val robins = l.length
-  var remainingSteps: Long = steps
-  var tail: List[Neighborhood] = l
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult =
-    myGetImprovingMove(obj, initialObj, acceptanceCriteria)
+class RoundRobin(robins: Array[(Neighborhood,Int)], tabu:Int = 1)
+  extends NeighborhoodCombinator(robins.map(_._1):_*){
+  private var currentRobin = 0
+  private var nbExplorationsOnCurrentRobin:Int = 0
+  private var firstFailedRobinInRow:Int = -1
 
-  @tailrec
-  private def myGetImprovingMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean, triedRobins: Long = 0L): SearchResult = {
-    if (triedRobins >= robins) {
-      NoMoveFound
-    } else if (remainingSteps > 0L) {
-      //no need to change neighborhood yet
-      remainingSteps -= 1L
-      tail.head.getMove(obj, initialObj:Long, acceptanceCriteria) match {
-        case NoMoveFound =>
-          tail.head.reset()
-          moveToNextRobin()
-          myGetImprovingMove(obj, initialObj, acceptanceCriteria, triedRobins + 1L)
-        case x: MoveFound => x
+  var currentCycleNr = 0
+  private val cycleOfLastFail:Array[Int] = Array.fill(robins.length)(Int.MinValue)
+
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+    while(true){
+      //select next robin
+      val prevRobin = currentRobin
+      var nextNeighborFound = false
+      var overrideTabu:Boolean = false
+      if (nbExplorationsOnCurrentRobin >= robins(currentRobin)._2) {
+        //move to next robin
+        currentRobin += 1
+        if (currentRobin == robins.length) {
+          currentRobin = 0
+          currentCycleNr += 1
+        }
+        nbExplorationsOnCurrentRobin = 0
       }
-    } else {
-      //move to next robin
-      moveToNextRobin()
-      myGetImprovingMove(obj, initialObj, acceptanceCriteria, triedRobins)
+      while(! nextNeighborFound) {
+        //check that we have not circled around whole set of robins
+        if (currentRobin == firstFailedRobinInRow) return NoMoveFound
+        if(overrideTabu || (cycleOfLastFail(currentRobin) + tabu < currentCycleNr)) {
+          nextNeighborFound = true
+        }else{
+          currentRobin += 1
+          if (currentRobin == robins.length) {
+            currentRobin = 0
+            currentCycleNr += 1
+          }
+          nbExplorationsOnCurrentRobin = 0
+          if(prevRobin == currentRobin) overrideTabu = true
+        }
+      }
+
+      //explore current robin
+      robins(currentRobin)._1.getMove(obj, initialObj:Long, acceptanceCriteria) match {
+        case NoMoveFound =>
+          if(firstFailedRobinInRow == -1) firstFailedRobinInRow = currentRobin
+          nbExplorationsOnCurrentRobin = robins(currentRobin)._2
+          cycleOfLastFail(currentRobin) = currentCycleNr
+        //iterate, simply
+        case x: MoveFound =>
+          firstFailedRobinInRow = -1
+          nbExplorationsOnCurrentRobin += 1
+          return x
+      }
     }
+    throw new Error("should not be reached")
   }
 
-  private def moveToNextRobin(): Unit ={
-    if (tail.tail.isEmpty) {
-      tail = l
-    } else {
-      tail = tail.tail
-    }
-    remainingSteps = steps
-  }
 
   //this resets the internal state of the move combinators
   override def reset(): Unit ={
-    remainingSteps = steps
-    tail = l
+    currentRobin = 0
+    nbExplorationsOnCurrentRobin = 0
+    firstFailedRobinInRow = -1
+
+    for(i <- cycleOfLastFail.indices){
+      cycleOfLastFail(i) = Int.MinValue
+    }
+
     super.reset()
-  }
-
-  /**
-   * proposes a round-robin with that.
-   * notice that you can chain steps; this will build a round-robin on the whole sequence (although this operation is not associative)
-   *
-   * @param b
-   * @return
-   */
-  def step(b: Neighborhood): RoundRobin = new RoundRobin(l ::: List(b))
-
-  def repeat(i: Int): RoundRobin = {
-    val last = l.last
-    new RoundRobin(l ::: List.fill(i - 1)(last))
   }
 }
 
 class RoundRobinNoParam(val a: Neighborhood, val b: Neighborhood) {
-  def step(s: Long): Neighborhood = new RoundRobin(List(a, b), s)
+  def step(s: Long): Neighborhood = new RoundRobin(Array((a,1), (b,1)),0)
 }
 
 /**
