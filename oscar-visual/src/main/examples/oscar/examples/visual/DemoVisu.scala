@@ -82,14 +82,14 @@ object DemoVisu {
     Thread.sleep(1000);
     rect.height = 100;
     Thread.sleep(1000);
-    rect.move(100, 20);
+    rect.translate(100, 20);
     Thread.sleep(1000);
 
     val test = new VisualRectangle(d,5,5,5,5)
     test.innerCol_$eq(Color.black)
     for (i <- 0 until 20) {
       Thread.sleep(50);
-      rect.move(rect.x + 5, rect.y);
+      rect.translate(rect.x + 5, rect.y);
     }
     rect.toolTip_$eq("Hello");
   }

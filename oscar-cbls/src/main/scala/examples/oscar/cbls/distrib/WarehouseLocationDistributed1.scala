@@ -6,7 +6,6 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.distrib.Supervisor
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Neighborhood
-import oscar.cbls.lib.search.combinators.Profile
 import oscar.cbls.lib.search.combinators.distributed.{DistributedBest, DistributedBestSlopeFirst, DistributedFirst}
 
 import scala.collection.parallel.immutable.ParRange
@@ -56,8 +55,8 @@ object WarehouseLocationDistributed1 extends App {
     val neighborhood = (
       new DistributedBestSlopeFirst(
         Array(
-          Profile(assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"))) ++
-          Array.tabulate(divideSwap)(x => Profile(swapShifted(x,divideSwap)):Neighborhood))
+          assignNeighborhood(warehouseOpenArray, "SwitchWarehouse")) ++
+          Array.tabulate(divideSwap)(x => swapShifted(x,divideSwap):Neighborhood))
         onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray, () => W / 10), 2, obj)
         onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W / 5), 2, obj)
       )

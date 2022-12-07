@@ -12,6 +12,8 @@ import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.core.search.{Best, Neighborhood, NoMoveNeighborhood}
 import oscar.cbls.lib.search.neighborhoods.vlsn.VLSN
+import oscar.cbls.visual.SingleFrameWindow
+import oscar.cbls.visual.profiling.ProfilingTree
 
 import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
 
@@ -157,7 +159,7 @@ object PDPTWVLSN extends App {
       }) name "OneChainMove"
   }
 
-  def onePtMove(k: Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k, closestRelevantPredecessorsByDistance(_)), myVRP))
+  def onePtMove(k: Int) = onePointMove(myVRP.routed, () => myVRP.kFirst(k, closestRelevantPredecessorsByDistance(_)), myVRP)
 
   // INSERTING
 
@@ -518,7 +520,7 @@ object PDPTWVLSN extends App {
   // ///////////////////////////////////////////////////////////////////////////////////////////////////
 
   val vlsnNeighborhood = vlsn(l)
-  val search = bestSlopeFirst(List(oneChainInsert, oneChainMove, onePtMove(20))) exhaust (vlsnNeighborhood maxMoves 1)
+  val search = bestSlopeFirst(List(oneChainInsert, oneChainMove, onePtMove(20)))// exhaust (vlsnNeighborhood maxMoves 1)
 
   search.verbose = 1
   vlsnNeighborhood.verbose = 2
@@ -526,12 +528,16 @@ object PDPTWVLSN extends App {
   search.doAllMoves(obj = obj)
 
   println(myVRP)
+  println(search.profilingStatistics)
 
   for (vehicle <- 0 until v) {
     val l = vehiclesRouteLength(vehicle).value
     if (l != 0) println(s"vehicle($vehicle).length:$l")
   }
 
+  val profilingTree = new ProfilingTree(search)
+  SingleFrameWindow.show(profilingTree, "Profiling")
+  profilingTree.draw()
   println(s"obj:${obj.value}")
 
 }

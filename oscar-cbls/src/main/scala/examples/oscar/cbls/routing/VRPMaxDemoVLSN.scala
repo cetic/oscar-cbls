@@ -276,12 +276,12 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
     title = "VRPMaxDemoVLSN(n=" + n + " v=" + v + ")")
 
   val search = (bestSlopeFirst(List(
-    profile(routeUnroutedPoint2),
-    profile(routeUnroutedPoint),
-    profile(onePtMove(10)),
-    profile(customTwoOpt(20)),
-    profile(customThreeOpt(20,breakSym = true))
-  )) maxMoves 4 exhaust (profile(vlsn(80)) maxMoves 1 exhaustBack bestSlopeFirst(List(segExchange(40),customTwoOpt(30))))).afterMove(graphical.drawRoutes()).showObjectiveFunction(obj)
+    routeUnroutedPoint2,
+    routeUnroutedPoint,
+    onePtMove(10),
+    customTwoOpt(20),
+    customThreeOpt(20,breakSym = true)
+  )) maxMoves 4 exhaust (vlsn(80) maxMoves 1 exhaustBack bestSlopeFirst(List(segExchange(40),customTwoOpt(30))))).afterMove(graphical.drawRoutes()).showObjectiveFunction(obj)
 
   search.verbose = 2
   //search.verboseWithExtraInfo(2, () => result)

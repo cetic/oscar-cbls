@@ -4,7 +4,7 @@ import oscar.cbls.Store
 import oscar.cbls.business.scheduling.model.{CumulativeResource, Schedule}
 import oscar.cbls.business.scheduling.neighborhood.{ReinsertActivity, SwapActivity}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
+import oscar.cbls.lib.search.combinators.BestSlopeFirst
 
 object Reagan {
   // Reagan model
@@ -33,7 +33,7 @@ object Reagan {
     // Neighborhoods
     val swapNH = new SwapActivity(schedule, "Swap")
     val reinsertNH = new ReinsertActivity(schedule, "Reinsert")
-    val combinedNH = BestSlopeFirst(List(Profile(reinsertNH), Profile(swapNH)))
+    val combinedNH = BestSlopeFirst(List(reinsertNH, swapNH))
     // This is the search strategy
     combinedNH.doAllMoves(obj=objFunc)
     // And here, the results

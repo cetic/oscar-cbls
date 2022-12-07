@@ -107,7 +107,7 @@ abstract class VisualShape(protected val drawing: VisualDrawing) {
     if (shape.contains(drawing.invertTransform(mousePoint))) {
       onClickActions.foreach(action => action())
     }
-  }  
+  }
 
   protected def dashedStroke: BasicStroke = {
     new BasicStroke(_bWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_MITER, 10.0f, Array(_bWidth / 2, 2 * _bWidth), 0)
@@ -149,7 +149,9 @@ abstract class VisualShape(protected val drawing: VisualDrawing) {
     (xMin, xMax, yMin, yMax)
   }
 
-  def move(x: Double, y: Double): Unit
+  def moveAt(x: Double, y: Double): Unit
+
+  def translate(x: Double, y: Double): Unit
 }
 
 

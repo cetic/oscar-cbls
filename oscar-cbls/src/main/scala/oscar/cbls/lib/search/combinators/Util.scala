@@ -11,20 +11,6 @@ import java.awt.{BorderLayout, FlowLayout}
 import javax.swing.JLabel
 import scala.concurrent.duration.{Duration, DurationInt}
 
-trait UtilityCombinators{
-  /**
-   * collects statistics about the run time and progress achieved by neighborhood a
-   * they can be obtained by querying this object with method toString
-   * or globally on the whole neighborhood using the method statistics
-   * WARNING: do not use this inside an AndThen,
-   *          since the objective function is instrumented by this combinator, so the statistics will be counter-intuitive
-   *
-   * @param a The neighborhood to profile
-   * @param ignoreInitialObj flag to ignore the initial value of objective function
-   */
-  def profile(a:Neighborhood,ignoreInitialObj:Boolean = false) = Profile(a,ignoreInitialObj)
-}
-
 /**
  * This combinator create a frame that draw the evolution curve of the objective function.
  * You can also display other information on the curve, but the main curve will always be the obj function.
@@ -76,6 +62,7 @@ class ShowObjectiveFunction(a: Neighborhood, obj: () => Long, title: String = "O
  * @param name the name
  */
 class Name(a: Neighborhood, val name: String) extends NeighborhoodCombinator(a) {
+  override val profiler: DummyCombinatorProfiler = new DummyCombinatorProfiler(this)
   /**
    * @param acceptanceCriterion oldObj,newObj => should the move to the newObj be kept (default is oldObj > newObj)
    *                            beware that a changing criteria might interact unexpectedly with stateful neighborhood combinators
@@ -107,6 +94,7 @@ class Name(a: Neighborhood, val name: String) extends NeighborhoodCombinator(a) 
  */
 class ChainableName[MoveType <: Move](a: Neighborhood with SupportForAndThenChaining[MoveType], val name: String)
   extends NeighborhoodCombinator(a) with SupportForAndThenChaining[MoveType]{
+  override val profiler: DummyCombinatorProfiler = new DummyCombinatorProfiler(this)
   /**
    * @param acceptanceCriterion oldObj,newObj => should the move to the newObj be kept (default is oldObj > newObj)
    *                            beware that a changing criteria might interact unexpectedly with stateful neighborhood combinators
@@ -178,101 +166,6 @@ class OverrideObjective(a: Neighborhood, overridingObjective: Objective) extends
    */
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult =
     getMove(overridingObjective, overridingObjective.value, acceptanceCriterion)
-}
-
-/**
- * collects statistics about the run time and progress achieved by neighborhood a
- * they can be obtained by querying this object with method toString
- * or globally on the whole neighborhood using the method statistics
- * WARNING: do not use this inside an AndThen,
- *          since the objective function is instrumented by this combinator, so the statistics will be counter-intuitive
- *
- * @param a The base neighborhood
- * @param ignoreInitialObj a flag to ignore or not the initial value of objective function
- */
-case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends NeighborhoodCombinator(a){
-
-  var nbCalls:Long = 0L
-  var nbFound:Long = 0L
-  var totalGain:Long = 0L
-  var totalTimeSpentMoveFound:Long = 0L
-  var totalTimeSpentNoMoveFound:Long = 0L
-
-  def totalTimeSpent:Long = totalTimeSpentMoveFound + totalTimeSpentNoMoveFound
-
-  override def resetStatistics(): Unit ={
-    resetThisStatistics()
-    super.resetStatistics()
-  }
-
-  def resetThisStatistics(): Unit ={
-    nbCalls = 0
-    nbFound = 0
-    totalGain = 0
-    totalTimeSpentMoveFound = 0
-    totalTimeSpentNoMoveFound = 0
-  }
-
-  /**
-   * the method that returns a move from the neighborhood.
-   * The returned move should typically be accepted by the acceptance criterion over the objective function.
-   * Some neighborhoods are actually jumps, so that they might violate this basic rule however.
-   *
-   * @param obj the objective function. notice that it is actually a function. if you have an [[oscar.cbls.core.objective.Objective]] there is an implicit conversion available
-   * @param acceptanceCriterion a function to decide the acceptation of a move
-   * @return
-   */
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
-
-    val startTime = System.nanoTime()
-
-    a.getMove(obj, initialObj:Long, acceptanceCriterion) match {
-      case NoMoveFound =>
-        nbCalls += 1L
-        totalTimeSpentNoMoveFound += (System.nanoTime() - startTime) / 1000000L
-        NoMoveFound
-      case m: MoveFound =>
-        nbCalls += 1L
-        totalTimeSpentMoveFound += (System.nanoTime() - startTime) / 1000000L
-        nbFound += 1L
-        if (!ignoreInitialObj || nbCalls > 1L) totalGain += initialObj - m.objAfter
-        m
-    }
-  }
-
-  def gainPerCall:String = if(nbCalls ==0L) "NA" else s"${totalGain / nbCalls}"
-  def callDuration:String = if(nbCalls == 0L ) "NA" else s"${totalTimeSpent / nbCalls}"
-  //gain in obj/s
-  def slope:String = if(totalTimeSpent == 0L) "NA" else s"${1000 * (totalGain.toDouble / totalTimeSpent.toDouble).toLong}"
-
-  def avgTimeSpendNoMove:String = if(nbCalls - nbFound == 0L) "NA" else s"${totalTimeSpentNoMoveFound / (nbCalls - nbFound)}"
-  def avgTimeSpendMove:String = if(nbFound == 0L) "NA" else s"${totalTimeSpentMoveFound / nbFound}"
-  def waistedTime:String = if(nbCalls - nbFound == 0L) "NA" else s"${totalTimeSpentNoMoveFound / (nbCalls - nbFound)}"
-
-  override def collectProfilingStatistics: List[Array[String]] =
-    collectThisProfileStatistics :: super.collectProfilingStatistics
-
-  def collectThisProfileStatistics:Array[String] =
-    Array[String](s"$a", s"$nbCalls", s"$nbFound", s"$totalGain",
-      s"$totalTimeSpent", s"$gainPerCall", s"$callDuration", s"$slope",
-      s"$avgTimeSpendNoMove", s"$avgTimeSpendMove", s"$totalTimeSpentNoMoveFound")
-      //TODO: (${if(nbCalls == 0) "NA" else (100*nbFound.toFloat/nbCalls.toFloat).toInt}%)
-
-  //  override def toString: String = "Statistics(" + a + " nbCalls:" + nbCalls + " nbFound:" + nbFound + " totalGain:" + totalGain + " totalTimeSpent " + totalTimeSpent + " ms timeSpendWithMove:" + totalTimeSpentMoveFound + " ms totalTimeSpentNoMoveFound " + totalTimeSpentNoMoveFound + " ms)"
-  override def toString: String = s"Profile($a)"
-
-  def slopeOrZero:Long = if(totalTimeSpent == 0L) 0L else ((100L * totalGain) / totalTimeSpent).toInt
-
-  def slopeForCombinators(defaultIfNoCall:Long = Long.MaxValue):Long =  if(totalTimeSpent == 0L) defaultIfNoCall else ((1000L * totalGain) / totalTimeSpent).toInt
-}
-
-object Profile{
-  def statisticsHeader: Array[String] = Array("Neighborhood","calls", "found", "sumGain", "sumTime(ms)", "avgGain",
-    "avgTime(ms)", "slope(-/s)", "avgTimeNoMove", "avgTimeMove", "wastedTime")
-
-  def selectedStatisticInfo(i:Iterable[Profile]):String = {
-    Properties.justifyRightArray(Profile.statisticsHeader :: i.toList.map(_.collectThisProfileStatistics)).mkString("\n")
-  }
 }
 
 case class NoReset(a: Neighborhood) extends NeighborhoodCombinator(a) {

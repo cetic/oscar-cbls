@@ -37,23 +37,36 @@ class VisualText(d: VisualDrawing, private var x: Double, private var y: Double,
 
   val fm: FontMetrics = d.getFontMetrics(d.getFont)
   shape.setRect(x, y, lines.map(lineStr => fm.stringWidth(lineStr)).max, nLines * fm.getHeight)
-  
+
   var font = new Font(Font.SANS_SERIF, Font.PLAIN, 13)
   var fontColor: Color = Color.BLACK
   
   def setFont(font: Font): Unit = {
     this.font = font
+    shape.setRect(shape.getX, shape.getY, lines.map(lineStr => fm.stringWidth(lineStr)).max, nLines * fm.getHeight)
   }
 
   /**
-   * Move the specified left corner
+   * Move the specified left corner at the given position
+   * @param x x position in pixel
+   * @param y y position in pixel
+   */
+  def moveAt(x: Double, y: Double): Unit = {
+    this.x = x
+    this.y = y
+    shape.setRect(this.x, this.y, shape.getWidth, shape.getHeight)
+    drawing.repaint()
+  }
+
+  /**
+   * Translate the specified left corner
    * @param x the relative number of pixels to move along the x-axis
    * @param y the relative number of pixels to move along the y-axis
    */
-  def move(x: Double, y: Double): Unit = {
-    this.x = x
-    this.y = y
-    shape.setRect(x, y, shape.getWidth, shape.getHeight)
+  def translate(x: Double, y: Double): Unit = {
+    this.x += x
+    this.y += y
+    shape.setRect(this.x, this.y, shape.getWidth, shape.getHeight)
     drawing.repaint()
   }
 
@@ -74,6 +87,8 @@ class VisualText(d: VisualDrawing, private var x: Double, private var y: Double,
     }
     else {
       for (i <- 0 until nLines) {
+        g.setFont(font)
+        g.setColor(fontColor)
         g.drawString(
           lines(i),
           x.toInt,
@@ -107,5 +122,5 @@ object VisualText extends App {
   Thread.sleep(1000)
 
   arrow.dest = (100.0, 100.0)
-  text.move(100, 100)
+  text.translate(100, 100)
 }

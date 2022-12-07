@@ -23,7 +23,7 @@ import oscar.cbls.core.search.{Best, Move, Neighborhood}
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.minmax.MinConstArrayValueWise
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, EjectionChains, Mu, Profile, RoundRobin}
+import oscar.cbls.lib.search.combinators.{BestSlopeFirst, EjectionChains, Mu, RoundRobin}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.util.StopWatch
 import oscar.cbls.visual.SingleFrameWindow
@@ -109,8 +109,8 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
 
   val neighborhood = ((
     new RoundRobin(Array(
-      (Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),1), //subsumed by the ejection chain, which can be of size 1
-        (Profile(ejection(maxLength = 4, kOpen= 10, kClosed = 40)),1)
+      (AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),1), //subsumed by the ejection chain, which can be of size 1
+        (ejection(maxLength = 4, kOpen= 10, kClosed = 40),1)
       ),tabu = 10)
       onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5,name="smallRandom"), 2, obj)
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,name="bigRandom"), 1, obj)

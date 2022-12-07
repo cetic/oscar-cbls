@@ -10,11 +10,13 @@ import oscar.cbls.core.computation.{CBLSIntVar, Store}
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.{Best, First}
+import oscar.cbls.visual.SingleFrameWindow
+import oscar.cbls.visual.profiling.{ProfilingTree, VisualProfiler}
 
 import scala.util.Random
 
 object VRPWithWeightedNodes extends App{
-  val n = 1000
+  val n = 100
   val v = 10
 
   val minLat = 49.404631
@@ -80,7 +82,7 @@ class VRPWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, minLo
   //////////////////// Pruning and display ////////////////////
   ////////// Display VRP resolution on real map //////////
 
-  val routingDisplay = display(myVRP,geoCoords,routingMapType = RoutingMapTypes.RealRoutingMap, refreshRate = 10)
+  val routingDisplay = display(myVRP,geoCoords,routingMapType = RoutingMapTypes.BasicRoutingMap, refreshRate = 10)
 
   ////////// Static Pruning (done once before starting the resolution) //////////
 
@@ -98,30 +100,30 @@ class VRPWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, minLo
   ////////// Neighborhood definition //////////
 
   // Takes an unrouted node and insert it at the best position within the 10 closest nodes (inserting it after this node)
-  val routeUnroutedPoint =  profile(insertPointUnroutedFirst(myVRP.unrouted,
+  val routeUnroutedPoint =  insertPointUnroutedFirst(myVRP.unrouted,
     ()=>myVRP.kFirst(10,closestRelevantNeighborsByDistance(_),routedPostFilter),
     myVRP,
     neighborhoodName = "InsertUF",
     hotRestart = false,
     selectNodeBehavior = First(), // Select the first unrouted node in myVRP.unrouted
-    selectInsertionPointBehavior = Best())) // Inserting after the best node in myVRP.kFirst(10,...)
+    selectInsertionPointBehavior = Best()) // Inserting after the best node in myVRP.kFirst(10,...)
 
   // Moves a routed node to a better place (best neighbor within the 10 closest nodes)
-  def onePtMove(k:Int) = profile(onePointMove(
+  def onePtMove(k:Int) = onePointMove(
     myVRP.routed,
     () => myVRP.kFirst(k,closestRelevantNeighborsByDistance(_),routedPostFilter),
     myVRP,
-    selectDestinationBehavior = Best()))
+    selectDestinationBehavior = Best())
 
   // Swap two edges based on the 40 closest neighbors of the first segment's head
-  val customTwoOpt = profile(twoOpt(myVRP.routed, ()=>myVRP.kFirst(40,closestRelevantNeighborsByDistance(_),routedPostFilter), myVRP))
+  val customTwoOpt = twoOpt(myVRP.routed, ()=>myVRP.kFirst(10,closestRelevantNeighborsByDistance(_),routedPostFilter), myVRP)
 
   ////////// Final search procedure //////////
 
   // bestSlopeFirst => Perform the best neighborhood in the list (meaning the one that reduces the most the objective function)
   // afterMove => after each move update the routing display
   val searchProcedure = bestSlopeFirst(
-    List(routeUnroutedPoint, onePtMove(20),customTwoOpt)
+    List(routeUnroutedPoint, onePtMove(10),customTwoOpt)
   ).showObjectiveFunction(obj).afterMove(
     routingDisplay.drawRoutes())
 
@@ -130,7 +132,7 @@ class VRPWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, minLo
 
   searchProcedure.verbose = 1
   searchProcedure.doAllMoves(obj = obj)
-  routingDisplay.drawRoutes(true)
+  VisualProfiler.showProfile(searchProcedure)
   println(myVRP)
   println(obj)
 }

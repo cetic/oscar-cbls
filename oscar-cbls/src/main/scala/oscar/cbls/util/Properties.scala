@@ -12,9 +12,9 @@ object Properties {
   }
 
   def justifyLeftArray(l:List[Array[String]], sep:String = " "):List[String] = {
-    val nbCol = l.head.length
-    val lengths:Array[Int] = Array.tabulate(nbCol)(i => l.map(line => line(i).length).max)
-    l.map(line => Array.tabulate(nbCol)(col => padToLength(line(col),lengths(col)+2)).mkString(""))
+    val nbCol = l.map(_.length).max
+    val lengths:Array[Int] = Array.tabulate(nbCol)(i => l.map(line => if(i < line.length)line(i).length else 0).max)
+    l.map(line => Array.tabulate(Math.min(nbCol,line.length))(col => padToLength(line(col),lengths(col)+2)).mkString(""))
   }
 
   def justifyLeftAny(l:List[List[Any]], sep:String = " "):List[String] = {
@@ -25,8 +25,8 @@ object Properties {
   }
 
   def justifyRightArray(l:List[Array[String]], sep:String = " "):List[String] = {
-    val nbCol = l.head.length
-    val lengths:Array[Int] = Array.tabulate(nbCol)(i => l.map(line => line(i).length).max)
-    l.map(line => Array.tabulate(nbCol)(col => prePadToLength(line(col),lengths(col))).mkString("  "))
+    val nbCol = l.map(_.length).max
+    val lengths:Array[Int] = Array.tabulate(nbCol)(i => l.map(line => if(i < line.length)line(i).length else 0).max)
+    l.map(line => Array.tabulate(Math.min(nbCol,line.length))(col => prePadToLength(line(col),lengths(col))).mkString("  "))
   }
 }

@@ -13,7 +13,6 @@ trait CombinatorsAPI
     with InstrumentNeighborhoodsCombinator
     with MetaheuristicCombinators
     with NeighborhoodSelectionCombinators
-    with UtilityCombinators
 
 trait BasicCombinators{
 

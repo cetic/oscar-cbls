@@ -6,8 +6,6 @@ import oscar.cbls.core.search._
 
 import scala.annotation.tailrec
 
-case class RestrictedNeighborhood(n:Neighborhood, minimalSpaceBetweenExplorations:Long = 0)
-
 abstract class BestNeighborhoodFirst(l:List[Neighborhood],
                                      tabuLength:Int,
                                      overrideTabuOnFullExhaust:Long,
@@ -16,13 +14,16 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
   require(overrideTabuOnFullExhaust < tabuLength, "overrideTabuOnFullExhaust should be < tabuLength")
 
   protected var it:Int = 0
-  protected def bestKey(p:Profile):Long
+  protected def bestKey(neighborhoodId:Int):Long
+  override val profiler =BestFirstProfiler(this,l)
+  override def collectProfilingStatistics: List[Array[String]] =
+    profiler.collectThisProfileStatistics ::: super.collectProfilingStatistics
 
-  protected val neighborhoodArray: Array[Profile] = l.map(Profile(_)).toArray
+  protected val neighborhoodArray: Array[Neighborhood] = l.toArray
   protected val tabu:Array[Int] = Array.fill(neighborhoodArray.length)(0)
   protected var tabuNeighborhoods = new BinomialHeap[Int](tabu(_),tabu.length)
 
-  protected val neighborhoodHeap = new BinomialHeapWithMove[Int]((neighborhoodID:Int) => bestKey(neighborhoodArray(neighborhoodID)), neighborhoodArray.length)
+  protected val neighborhoodHeap = new BinomialHeapWithMove[Int]((neighborhoodID:Int) => bestKey(neighborhoodID), neighborhoodArray.length)
   neighborhoodArray.indices.foreach((i : Int) => neighborhoodHeap.insert(i))
 
   private def getBestNeighborhooID:Long = neighborhoodHeap.getFirst
@@ -56,14 +57,15 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
    * @return
    */
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
-    if((it > 0) && ((it % refresh) == 0) && neighborhoodArray.exists(_.nbFound!=0)){
+    profiler.explorationStarted()
+    if((it > 0) && ((it % refresh) == 0) && neighborhoodArray.indices.toList.exists(profiler.nbFoundSubN(_)!=0)){
 
       if(printExploredNeighborhoods){
         println("refreshing knowledge on neighborhood; statistics since last refresh: ")
         printStatus()
       }
+      profiler.resetSelectionNeighborhoodStatistics()
       for(p <- neighborhoodArray.indices){
-        neighborhoodArray(p).resetThisStatistics()
         if(tabu(p) <= it) updateNeighborhodPerformances(p)
       }
     }
@@ -73,9 +75,11 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
       val headNeighborhood = neighborhoodArray(headID)
       headNeighborhood.getMove(obj,initialObj, acceptanceCriterion) match{
         case NoMoveFound =>
+          if(neighborhoodHeap.size == l.size) profiler.firstFailed()
           makeTabu(headID)
         case MoveFound(m) =>
           neighborhoodHeap.notifyChange(headID)
+          profiler.explorationEnded(true)
           return MoveFound(m)
       }
     }
@@ -88,6 +92,7 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
       it -=1
       getMove(obj,initialObj,acceptanceCriterion)
     }else{
+      profiler.explorationEnded(false)
       NoMoveFound
     }
   }
@@ -96,7 +101,7 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
    * prints the profile info for the neighborhoods, for verbosity purposes
    */
   def printStatus(): Unit ={
-    println(Profile.selectedStatisticInfo(neighborhoodArray))
+    println(Profiler.selectedStatisticInfo(neighborhoodArray.map(_.profiler)))
   }
 }
 
@@ -117,7 +122,7 @@ case class BestSlopeFirst(l:List[Neighborhood],
                           overrideTabuOnFullExhaust:Long = 9,
                           refresh:Int = 100)
   extends BestNeighborhoodFirst(l, tabuLength, overrideTabuOnFullExhaust, refresh){
-  override protected def bestKey(p:Profile):Long = -p.slopeForCombinators()
+  override protected def bestKey(neighborhoodId:Int):Long = -profiler.slopeForCombinators(neighborhoodId)
 }
 
 /**
@@ -136,140 +141,12 @@ case class FastestFirst(l:List[Neighborhood],
                         overrideTabuOnFullExhaust:Long = 9,
                         refresh:Int = 100)
   extends BestNeighborhoodFirst(l, tabuLength, overrideTabuOnFullExhaust, refresh) {
-  override protected def bestKey(p:Profile):Long = {
-    if (p.nbFound == 0L)
-      if (p.totalTimeSpentMoveFound == 0L) 0L else -Long.MaxValue
+  override protected def bestKey(neighborhoodId:Int):Long = {
+    if (profiler.nbFoundSubN(neighborhoodId) == 0L)
+      if (profiler.totalTimeSpentMoveFoundSubN(neighborhoodId) == 0L) 0L else -Long.MaxValue
     else
-      - (p.totalTimeSpentMoveFound / p.nbFound).toInt
+      - (profiler.totalTimeSpentMoveFoundSubN(neighborhoodId) / profiler.nbFoundSubN(neighborhoodId)).toInt
   }
-}
-
-abstract class BestNeighborhoodFirstWithRestrictions(l:List[RestrictedNeighborhood],
-                                                     tabuLength:Long,
-                                                     overrideTabuOnFullExhaust:Long,
-                                                     refresh:Long)
-  extends NeighborhoodCombinator(l.map(_.n):_*) {
-
-  protected var it:Long = 0
-  protected def bestKey(p:Profile):Long
-
-  protected val neighborhoodArray: Array[(Profile,Long)] = l.map(r => (Profile(r.n),r.minimalSpaceBetweenExplorations)).toArray
-  protected val tabu:Array[Long] = Array.fill(neighborhoodArray.length)(0L)
-  protected val tabuExhaustedNeighborhoods = new BinomialHeap[Int](tabu(_),tabu.length)
-  protected val tabuRestrictedNeighborhoods = new BinomialHeap[Int](tabu(_),tabu.length)
-
-  protected val neighborhoodHeap = new BinomialHeapWithMove[Int]((neighborhoodID:Int) =>
-    bestKey(neighborhoodArray(neighborhoodID)._1), neighborhoodArray.length)
-
-  neighborhoodArray.indices.foreach((i : Int) => neighborhoodHeap.insert(i))
-
-  private def getBestNeighborhoodID:Long = neighborhoodHeap.getFirst
-
-  private def updateNeighborhodPerformances(neighborhoodID:Int): Unit ={
-    neighborhoodHeap.notifyChange(neighborhoodID)
-  }
-
-  private def updateTabus(): Unit ={
-    it +=1L
-
-    while(tabuExhaustedNeighborhoods.nonEmpty && tabu(tabuExhaustedNeighborhoods.getFirst) <= it){
-      val newNonTabu = tabuExhaustedNeighborhoods.popFirst()
-      neighborhoodArray(newNonTabu)._1.reset()
-      neighborhoodHeap.insert(newNonTabu)
-    }
-    while(tabuRestrictedNeighborhoods.nonEmpty && tabu(tabuRestrictedNeighborhoods.getFirst) <= it){
-      val newNonTabu = tabuRestrictedNeighborhoods.popFirst()
-      //there is no reset here because this tabu is normally for too efficient neighborhoods that must be slowed down
-      neighborhoodHeap.insert(newNonTabu)
-    }
-  }
-
-  protected def makeTabuExhausted(neighborhoodID:Int): Unit ={
-    neighborhoodHeap.delete(neighborhoodID)
-    tabu(neighborhoodID) = it + tabuLength
-    tabuExhaustedNeighborhoods.insert(neighborhoodID)
-  }
-
-  protected def makeTabuRestricted(neighborhoodID:Int): Unit ={
-    neighborhoodHeap.delete(neighborhoodID)
-    tabu(neighborhoodID) = it + neighborhoodArray(neighborhoodID)._2
-    tabuExhaustedNeighborhoods.insert(neighborhoodID)
-  }
-
-  /**
-   * the method that returns a move from the neighborhood.
-   * The returned move should typically be accepted by the acceptance criterion over the objective function.
-   * Some neighborhoods are actually jumps, so that they might violate this basic rule however.
-   *
-   * @param obj the objective function. notice that it is actually a function. if you have an [[oscar.cbls.core.objective.Objective]] there is an implicit conversion available
-   * @param acceptanceCriterion
-   * @return
-   */
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
-    if((it > 0L) && ((it % refresh) == 0L)){
-
-      if(printExploredNeighborhoods){
-        println("refreshing knowledge on neighborhood; statistics since last refresh: ")
-        printStatus()
-      }
-      for(p <- neighborhoodArray.indices){
-        neighborhoodArray(p)._1.resetThisStatistics()
-        if(tabu(p) <= it) updateNeighborhodPerformances(p)
-      }
-    }
-
-    updateTabus()
-
-    while(!neighborhoodHeap.isEmpty){
-      val headID = neighborhoodHeap.getFirst
-      val headNeighborhood = neighborhoodArray(headID)
-      headNeighborhood._1.getMove(obj,initialObj, acceptanceCriterion) match{
-        case NoMoveFound =>
-          makeTabuExhausted(headID)
-        case MoveFound(m) =>
-          if(headNeighborhood._2 != 0L){
-            makeTabuRestricted(headID)
-          }else{
-            neighborhoodHeap.notifyChange(headID)
-          }
-          return MoveFound(m)
-      }
-    }
-
-    //ok, we try again, and pop tabu restricted neighborhoods first
-    if(tabuRestrictedNeighborhoods.nonEmpty){
-      val newNonTabu = tabuRestrictedNeighborhoods.popFirst()
-      neighborhoodArray(newNonTabu)._1.reset()
-      neighborhoodHeap.insert(newNonTabu)
-      return getMove(obj,initialObj,acceptanceCriterion)
-    }
-
-    //ok, we try again with tabu, overriding tabu exhausted as allowed
-    if(tabuExhaustedNeighborhoods.nonEmpty && tabu(tabuExhaustedNeighborhoods.getFirst) <= it + overrideTabuOnFullExhaust){
-      val newNonTabu = tabuExhaustedNeighborhoods.popFirst()
-      neighborhoodArray(newNonTabu)._1.reset()
-      neighborhoodHeap.insert(newNonTabu)
-      it -=1L
-      getMove(obj,initialObj,acceptanceCriterion)
-    }else{
-      NoMoveFound
-    }
-  }
-
-  /**
-   * prints the profile info for the neighborhoods, for verbosity purposes
-   */
-  def printStatus(): Unit ={
-    println(Profile.selectedStatisticInfo(neighborhoodArray.map(_._1)))
-  }
-}
-
-case class BestSlopeFirstWithRestrictions(l:List[RestrictedNeighborhood],
-                                          tabuLength:Long = 10,
-                                          overrideTabuOnFullExhaust:Long = 9,
-                                          refresh:Long = 100)
-  extends BestNeighborhoodFirstWithRestrictions(l, tabuLength, overrideTabuOnFullExhaust, refresh){
-  override protected def bestKey(p:Profile):Long = -p.slopeForCombinators()
 }
 
 /**
@@ -287,7 +164,10 @@ class RoundRobin(robins: Array[(Neighborhood,Int)], tabu:Int = 1)
   var currentCycleNr = 0
   private val cycleOfLastFail:Array[Int] = Array.fill(robins.length)(Int.MinValue)
 
+  override val profiler: SelectionProfiler = new SelectionProfiler(this, robins.map(_._1).toList)
+
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+    profiler.explorationStarted()
     while(true){
       //select next robin
       val prevRobin = currentRobin
@@ -304,7 +184,10 @@ class RoundRobin(robins: Array[(Neighborhood,Int)], tabu:Int = 1)
       }
       while(! nextNeighborFound) {
         //check that we have not circled around whole set of robins
-        if (currentRobin == firstFailedRobinInRow) return NoMoveFound
+        if (currentRobin == firstFailedRobinInRow) {
+          profiler.explorationEnded(false)
+          return NoMoveFound
+        }
         if(overrideTabu || (cycleOfLastFail(currentRobin) + tabu < currentCycleNr)) {
           nextNeighborFound = true
         }else{
@@ -319,13 +202,17 @@ class RoundRobin(robins: Array[(Neighborhood,Int)], tabu:Int = 1)
       }
 
       //explore current robin
+      //profiler.subExplorationStarted(currentRobin)
       robins(currentRobin)._1.getMove(obj, initialObj:Long, acceptanceCriteria) match {
         case NoMoveFound =>
+          //profiler.subExplorationEnded(currentRobin, None)
           if(firstFailedRobinInRow == -1) firstFailedRobinInRow = currentRobin
           nbExplorationsOnCurrentRobin = robins(currentRobin)._2
           cycleOfLastFail(currentRobin) = currentCycleNr
         //iterate, simply
         case x: MoveFound =>
+          profiler.explorationEnded(true)
+          //profiler.subExplorationEnded(currentRobin,Some(initialObj - x.objAfter))
           firstFailedRobinInRow = -1
           nbExplorationsOnCurrentRobin += 1
           return x
@@ -363,16 +250,22 @@ class RoundRobinNoParam(val a: Neighborhood, val b: Neighborhood) {
 class RandomCombinator(a: Neighborhood*) extends NeighborhoodCombinator(a:_*) {
   private val r = new scala.util.Random()
 
+  override val profiler: SelectionProfiler = new SelectionProfiler(this,a.toList)
+
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+    profiler.explorationStarted()
     val neighborhoods = a.toList
     val neighborhoodsIterator = r.shuffle(neighborhoods).iterator
     while (neighborhoodsIterator.hasNext) {
       val current = neighborhoodsIterator.next()
       current.getMove(obj, initialObj, acceptanceCriteria) match {
-        case m: MoveFound => return m
-        case _ => ;
+        case m: MoveFound =>
+          profiler.explorationEnded(true)
+          return m
+        case _ =>
       }
     }
+    profiler.explorationEnded(false)
     NoMoveFound
   }
 }

@@ -8,6 +8,8 @@ import oscar.cbls.business.routing.model.helpers.DistanceHelper
 import oscar.cbls.business.routing._
 import oscar.cbls.core.search.Best
 import oscar.cbls.lib.constraint.EQ
+import oscar.cbls.visual.SingleFrameWindow
+import oscar.cbls.visual.profiling.ProfilingTree
 
 import scala.collection.immutable.HashSet
 
@@ -108,7 +110,7 @@ object SimpleVRPWithTimeWindow extends App {
     neighborhoodName = "MoveLastOfChain")
 
   val oneChainMove = {
-    profile(dynAndThen(firstNodeOfChainMove,
+    dynAndThen(firstNodeOfChainMove,
       (moveMove: OnePointMoveMove) => {
         mu[OnePointMoveMove, Option[List[Int]]](
           lastNodeOfChainMove(chainsExtension.lastNodeInChainOfNode(moveMove.movedPoint)),
@@ -116,12 +118,12 @@ object SimpleVRPWithTimeWindow extends App {
           None,
           Long.MaxValue,
           intermediaryStops = false)
-      }) name "OneChainMove")
+      }) name "OneChainMove"
   }
 
-  def onePtMove(k: Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k, closestRelevantPredecessorsByDistance(_), postFilter), myVRP))
+  def onePtMove(k: Int) = onePointMove(myVRP.routed, () => myVRP.kFirst(k, closestRelevantPredecessorsByDistance(_), postFilter), myVRP)
 
-  def segExchangeOnSegments(k: Int) = profile(
+  def segExchangeOnSegments(k: Int) =
     segmentExchangeOnSegments(myVRP,
       () => Array.tabulate(v)(vehicle => vehicle -> ChainsHelper.computeCompleteSegments(myVRP, vehicle, chainsExtension)).toMap,
       () => closestRelevantPredecessorsByDistance(_),
@@ -130,7 +132,7 @@ object SimpleVRPWithTimeWindow extends App {
       selectSecondSegmentBehavior = Best(),
       selectFirstVehicleBehavior = Best(),
       selectSecondVehicleBehavior = Best()
-    ))
+    )
 
   // INSERTING
 
@@ -171,7 +173,7 @@ object SimpleVRPWithTimeWindow extends App {
     neighborhoodName = "InsertUF")
 
   val oneChainInsert = {
-    profile(dynAndThen(firstNodeOfChainInsertion,
+    dynAndThen(firstNodeOfChainInsertion,
       (insertMove: InsertPointMove) => {
         mu[InsertPointMove, Option[List[Int]]](
           lastNodeOfChainInsertion(chainsExtension.lastNodeInChainOfNode(insertMove.insertedPoint)),
@@ -179,7 +181,7 @@ object SimpleVRPWithTimeWindow extends App {
           None,
           Long.MaxValue,
           intermediaryStops = false)
-      }) name "OneChainInsert")
+      }) name "OneChainInsert"
 
   }
 
@@ -212,7 +214,7 @@ object SimpleVRPWithTimeWindow extends App {
     neighborhoodName = "RemovePoint")
 
   val oneChainRemove = {
-    profile(dynAndThen(firstNodeOfChainRemoval,
+    dynAndThen(firstNodeOfChainRemoval,
       (removalMove: RemovePointMove) => {
         mu[RemovePointMove, Option[List[Int]]](
           lastNodeOfChainRemoval(chainsExtension.lastNodeInChainOfNode(removalMove.pointToRemove)),
@@ -220,7 +222,7 @@ object SimpleVRPWithTimeWindow extends App {
           None,
           Long.MaxValue,
           false)
-      }) name "OneChainRemove")
+      }) name "OneChainRemove"
   }
 
   //val routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "InsertUF"))
@@ -231,12 +233,15 @@ object SimpleVRPWithTimeWindow extends App {
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 
-  search.verbose = 1
+  search.verbose = 2
   //search.verboseWithExtraInfo(2, ()=> "" + myVRP)
 
 
-
   search.doAllMoves(obj = obj)
+
+  val profilingTree = new ProfilingTree(search)
+  SingleFrameWindow.show(profilingTree, "VRPTW - Profiling")
+  profilingTree.draw()
 
   println(myVRP)
 

@@ -26,7 +26,7 @@ import oscar.cbls.lib.invariant.graph._
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.invariant.set.Cardinality
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu, Profile}
+import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.algo.generator.RandomGraphGenerator
 import oscar.cbls.util.StopWatch
@@ -253,21 +253,21 @@ object WarehouseAndBridgeLocation extends App with StopWatch {
   val neighborhood =(
     BestSlopeFirst(
       List(
-        Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
-        Profile(AssignNeighborhood(edgeConditionArray, "SwitchConditions")),
-        Profile(SwapsNeighborhood(edgeConditionArray, "SwapConditions")),
-        Profile(swapsK(20) guard(() => openWarehouses.value.size >= 5)), //we set a minimal size because the KNearest is very expensive if the size is small
-        Profile(swapsK(20)
+        AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
+        AssignNeighborhood(edgeConditionArray, "SwitchConditions"),
+        SwapsNeighborhood(edgeConditionArray, "SwapConditions"),
+        swapsK(20) guard(() => openWarehouses.value.size >= 5), //we set a minimal size because the KNearest is very expensive if the size is small
+        swapsK(20)
           dynAndThen((s:SwapMove) => AssignNeighborhood(edgeConditionArray, searchZone = ()=>warehousesPairToTwiceApartBridges(s.idI min s.idJ)(s.idI max s.idJ), name ="FastSwitchConditionsCombined"))
           guard(() => openWarehouses.value.size >= 5)
-          name "fastCombined")
+          name "fastCombined"
         //Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
       ),refresh = W/10)
       //cauchyAnnealing (10,2) cutTail (10000,0.00001,1000) saveBestAndRestoreOnExhaust obj
       .onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize1"), 4, obj, restartFromBest = true)
 
       //we set it after the restart because it is really slow; it subsumes the fast search, but it does not often find anything anyway, so better gain time
-      exhaust Profile((swapsK(20) andThen AssignNeighborhood(edgeConditionArray, "SwitchConditionsCombined")) guard(() => openWarehouses.value.size >= 5) name "combined") //we set a minimal size because the KNearest is very expensive if the size is small
+      exhaust (swapsK(20) andThen AssignNeighborhood(edgeConditionArray, "SwitchConditionsCombined") guard(() => openWarehouses.value.size >= 5) name "combined") //we set a minimal size because the KNearest is very expensive if the size is small
 
     ) afterMove(
     if(lastDisplay + displayDelay <= this.getWatch){ //} && obj.value < bestDisplayedObj) {

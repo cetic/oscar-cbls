@@ -22,6 +22,7 @@ package oscar.cbls.core.objective
 
 import oscar.cbls
 import oscar.cbls.core.computation._
+import oscar.cbls.core.search.NeighborhoodProfiler
 import oscar.cbls.warning
 
 object Objective {
@@ -385,6 +386,17 @@ class LoggingObjective(baseObjective:Objective) extends Objective{
     val toReturn = evaluationsLog
     evaluationsLog = List.empty
     toReturn
+  }
+}
+
+class ProfiledObjective(baseObjective: Objective, neighborhoodProfiler: NeighborhoodProfiler) extends Objective {
+  override def detailedString(short: Boolean, indent: Long): String = baseObjective.detailedString(short, indent)
+
+  override def model: Store = baseObjective.model
+
+  override def value: Long ={
+    neighborhoodProfiler.neighborSelected()
+    baseObjective.value
   }
 }
 

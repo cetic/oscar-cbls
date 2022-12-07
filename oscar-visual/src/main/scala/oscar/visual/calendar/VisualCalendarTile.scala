@@ -63,10 +63,10 @@ object VisualCalendarTile {
     Thread.sleep(1000)
     rect.innerCol = Color.red
     Thread.sleep(1000)
-    rect.move(100, 20)
+    rect.translate(100, 20)
     for (_ <- 0 until 20) {
       Thread.sleep(50)
-      rect.move(rect.x + 5, rect.y)
+      rect.translate(rect.x + 5, rect.y)
     }
   }
 }

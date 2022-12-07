@@ -21,7 +21,7 @@ class VisualBinPacking(binWidth: Int, autoRepaint: Boolean) extends VisualDrawin
     var y: Double = 0
     for (item <- items) {
       if (item.bin == bin) {
-        item.move(bin*binWidth, y)
+        item.translate(bin*binWidth, y)
         y += item.height
       }      
     }
@@ -33,7 +33,7 @@ class VisualBinPacking(binWidth: Int, autoRepaint: Boolean) extends VisualDrawin
     def bin_=(bin: Int): Unit = {
       val oldBin = _bin
       _bin = bin
-      move(binWidth*bin, y)
+      translate(binWidth*bin, y)
       redraw(oldBin)
       redraw(bin)
     }

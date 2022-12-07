@@ -53,9 +53,14 @@ class VisualLabelledPoint(d:VisualDrawing,
   def xText: Int = ((point.getX + radius + distFromPoint) * math.cos(angle)).toInt
   
   def yText: Int = ((point.getY + radius + distFromPoint) * math.sin(angle)).toInt
-  
-  def move(x: Double, y: Double): Unit = {
+
+  def moveAt(x: Double, y: Double): Unit ={
     point.setFrame(x, y, radius, radius)
+    drawing.repaint()
+  }
+
+  def translate(x: Double, y: Double): Unit = {
+    point.setFrame(point.x+x, point.y+y, radius, radius)
     drawing.repaint()
   }
   
@@ -81,10 +86,10 @@ object VisualLabelledPoint {
     Thread.sleep(1000)
     point.innerCol_$eq(Color.red)
     Thread.sleep(1000)
-    point.move(100, 100)
+    point.translate(100, 100)
     for (_ <- 0 until 20) {
       Thread.sleep(50)
-      point.move(point.x+5, point.y)
+      point.translate(point.x+5, point.y)
     }
   }
 }

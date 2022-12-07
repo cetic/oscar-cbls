@@ -8,13 +8,15 @@ import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleMulti
 import oscar.cbls.core.computation.{CBLSIntVar, Store}
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.CascadingObjective
+import oscar.cbls.visual.SingleFrameWindow
+import oscar.cbls.visual.profiling.{ProfilingTree, VisualProfiler}
 import oscar.cbls.{length, precedence, sum}
 
 import scala.collection.immutable.HashSet
 
 object VRPWithMultipleCapacity extends App{
 
-  val n: Int = 200
+  val n: Int = 100
   val v: Int = 5
   val c: Int = 5
 
@@ -112,7 +114,7 @@ class VRPWithMultipleCapacity(n: Int, v: Int, c: Int, maxCapacityPerContentType:
 
   }
 
-  def onePtMove(k:Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance(_)), myVRP)) name "One Point Move"
+  def onePtMove(k:Int) = onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance(_)), myVRP) name "One Point Move"
 
   // INSERTING
 
@@ -136,9 +138,9 @@ class VRPWithMultipleCapacity(n: Int, v: Int, c: Int, maxCapacityPerContentType:
     }
   }
 
-  val firstNodeOfChainInsertion = insertPointUnroutedFirst(() => chainsExtension.heads.filter(n => !myVRP.isRouted(n)),()=> myVRP.kFirst(n,closestRelevantNeighborsByDistance(_)), myVRP,neighborhoodName = "InsertUF")
+  val firstNodeOfChainInsertion = insertPointUnroutedFirst(() => chainsExtension.heads.filter(n => !myVRP.isRouted(n)),()=> myVRP.kFirst(n,closestRelevantNeighborsByDistance(_)), myVRP,neighborhoodName = "InsertHeadOfChain")
 
-  def lastNodeOfChainInsertion(lastNode:Int) = insertPointUnroutedFirst(() => List(lastNode),()=> myVRP.kFirst(n,relevantPredecessorsForLastNode), myVRP,neighborhoodName = "InsertUF")
+  def lastNodeOfChainInsertion(lastNode:Int) = insertPointUnroutedFirst(() => List(lastNode),()=> myVRP.kFirst(n,relevantPredecessorsForLastNode), myVRP,neighborhoodName = "InsertLastOfChain")
 
   val oneChainInsert = {
     dynAndThen(firstNodeOfChainInsertion,
@@ -155,7 +157,9 @@ class VRPWithMultipleCapacity(n: Int, v: Int, c: Int, maxCapacityPerContentType:
 
   //val routeUnroutedPoint =  Profile(new InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,filteredClosestRelevantNeighborsByDistance), myVRP,neighborhoodName = "InsertUF"))
 
-  val search = oneChainInsert exhaust oneChainMove exhaust onePtMove(20)
+
+  val search = oneChainInsert exhaustBack oneChainMove exhaustBack onePtMove(20) orElse onePtMove(80)
+  println(search.getClass)
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
   search.verbose = 1
@@ -164,5 +168,5 @@ class VRPWithMultipleCapacity(n: Int, v: Int, c: Int, maxCapacityPerContentType:
   search.doAllMoves(obj=obj)
   println(myVRP)
 
-  println(search.profilingStatistics)
+  VisualProfiler.showProfile(search)
 }

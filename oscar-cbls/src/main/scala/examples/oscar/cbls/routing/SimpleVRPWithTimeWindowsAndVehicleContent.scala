@@ -134,7 +134,7 @@ class SimpleVRPWithTimeWindowsAndVehicleContent(n: Int, v: Int, seed: Int) {
 
   }
 
-  def onePtMove(k:Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance(_)), myVRP)) name "One Point Move"
+  def onePtMove(k:Int) = onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance(_)), myVRP) name "One Point Move"
 
   // INSERTING
 

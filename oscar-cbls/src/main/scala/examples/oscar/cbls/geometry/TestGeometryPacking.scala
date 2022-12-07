@@ -8,7 +8,7 @@ import oscar.cbls.business.geometry.invariants.{Apply, NoOverlapPenetration, Ove
 import oscar.cbls.business.geometry.model.{CBLSGeometryConst, GeometryValue}
 import oscar.cbls.core.computation.{AtomicValue, IntValue}
 import oscar.cbls.core.search.{ConstantMovesNeighborhood, EvaluableCodedMove}
-import oscar.cbls.lib.search.combinators.{Atomic, BestSlopeFirst, Profile}
+import oscar.cbls.lib.search.combinators.{Atomic, BestSlopeFirst}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.visual.geometry.{GeometryDrawing, GeometryDrawingTypes}
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
@@ -244,7 +244,7 @@ object TestGeometryPacking extends App {
   val displayDelay:Long = 1000.toLong * 1000 * 1000 * 2 //2 seconds
   var lastDisplay = System.nanoTime()
 
-  val search = (Profile(BestSlopeFirst(
+  val search = (BestSlopeFirst(
     List(
       Atomic(gradientOnOneShape(0), _ > 10) name "gradient0",  //TODO: try gradient on multiple shapes at the same time.
       Atomic(gradientOnOneShape(1), _ > 10) name "gradient1",
@@ -262,8 +262,8 @@ object TestGeometryPacking extends App {
       moveOneShapeXAndThenY,
       swapAndSlide,
       swapAndGradient,
-      moveOneShapeYAndThenX).map(Profile(_)),
-    refresh=nbShapes*10))
+      moveOneShapeYAndThenX),
+    refresh=nbShapes*10)
     .onExhaustRestartAfter(
       RandomizeNeighborhood(flattenedCoordArray, () => flattenedCoordArray.length/5, name = "smallRandomize"),
       maxRestartWithoutImprovement = 1,

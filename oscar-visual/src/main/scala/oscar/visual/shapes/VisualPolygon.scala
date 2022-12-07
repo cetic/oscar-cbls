@@ -41,7 +41,16 @@ class VisualPolygon(d: VisualDrawing, s: Polygon) extends VisualShape(d) {
     addVertices(vertices)
   }
 
-  def move(x: Double, y: Double): Unit = shape.translate(x.toInt, y.toInt)
+  // Warning, we take the first vertex as point of reference
+  def moveAt(x: Double, y: Double): Unit = {
+    val refX = shape.xpoints.head
+    val refY = shape.ypoints.head
+    val deltaX = x-refX
+    val deltaY = y-refY
+    shape.translate(deltaX.toInt,deltaY.toInt)
+  }
+
+  def translate(x: Double, y: Double): Unit = shape.translate(x.toInt, y.toInt)
 }
 
 object VisualPolygon {

@@ -22,7 +22,7 @@ import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.minmax.MinConstArrayValueWise
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu, Profile}
+import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.util.{Demo, StopWatch}
 import oscar.cbls.visual.SingleFrameWindow
@@ -117,13 +117,13 @@ object WareHouseLocationVisu extends App with StopWatch{
   val neighborhood =(
     BestSlopeFirst(
       List(
-        Profile(AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
-        Profile(swapsK(20) guard(() => openWarehouses.value.size >= 5)), //we set a minimal size because the KNearest is very expensive if the size is small
-        Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
+        AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
+        swapsK(20) guard(() => openWarehouses.value.size >= 5), //we set a minimal size because the KNearest is very expensive if the size is small
+        SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5)
       ),refresh = W/10)
       onExhaustRestartAfter(randomSwapNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5,name="smallRandom"), 2, obj)
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,name="bigRandom"), 1, obj)
-    ) exhaust Profile(muLine(4,3,15)) afterMove(
+    ) exhaust muLine(4,3,15) afterMove(
       if(this.getWatch > lastDisplay + displayDelay) {
         visual.redraw(openWarehouses.value)
         lastDisplay = this.getWatch

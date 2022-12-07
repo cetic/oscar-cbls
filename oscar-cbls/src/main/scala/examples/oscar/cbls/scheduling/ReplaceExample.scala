@@ -5,7 +5,7 @@ import oscar.cbls.Store
 import oscar.cbls.business.scheduling.model.Schedule
 import oscar.cbls.business.scheduling.neighborhood.ReplaceActivity
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.lib.search.combinators.Profile
+import oscar.cbls.lib.search.combinators
 
 object ReplaceExample {
   // Model
@@ -40,7 +40,7 @@ object ReplaceExample {
     m.close()
     println("Model closed.")
     // Neighborhood
-    val replaceNH = Profile(new ReplaceActivity(schedule, "Replace"))
+    val replaceNH = new ReplaceActivity(schedule, "Replace")
     //val addNH = Profile(new AddActivity(schedule, "Add"))
     //val combinedNH = BestSlopeFirst(List(replaceNH, addNH))
     // This is the search strategy

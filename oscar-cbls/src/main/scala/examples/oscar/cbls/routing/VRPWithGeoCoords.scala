@@ -75,23 +75,23 @@ class VRPWithGeoCoords(n: Int, v: Int, minLat: Double, maxLat: Double, minLong: 
   ////////// Neighborhood definition //////////
 
   // Takes an unrouted node and insert it at the best position within the 10 closest nodes (inserting it after this node)
-  val routeUnroutedPoint =  profile(insertPointUnroutedFirst(myVRP.unrouted,
+  val routeUnroutedPoint =  insertPointUnroutedFirst(myVRP.unrouted,
     ()=>myVRP.kFirst(10,closestRelevantNeighborsByDistance(_),routedPostFilter),
     myVRP,
     neighborhoodName = "InsertUF",
     hotRestart = false,
     selectNodeBehavior = First(), // Select the first unrouted node in myVRP.unrouted
-    selectInsertionPointBehavior = Best())) // Inserting after the best node in myVRP.kFirst(10,...)
+    selectInsertionPointBehavior = Best()) // Inserting after the best node in myVRP.kFirst(10,...)
 
   // Moves a routed node to a better place (best neighbor within the 10 closest nodes)
-  def onePtMove(k:Int) = profile(onePointMove(
+  def onePtMove(k:Int) = onePointMove(
     myVRP.routed,
     () => myVRP.kFirst(k,closestRelevantNeighborsByDistance(_),routedPostFilter),
     myVRP,
-    selectDestinationBehavior = Best()))
+    selectDestinationBehavior = Best())
 
   // Swap two edges based on the 40 closest neighbors of the first segment's head
-  val customTwoOpt = profile(twoOpt(myVRP.routed, ()=>myVRP.kFirst(40,closestRelevantNeighborsByDistance(_),routedPostFilter), myVRP))
+  val customTwoOpt = twoOpt(myVRP.routed, ()=>myVRP.kFirst(40,closestRelevantNeighborsByDistance(_),routedPostFilter), myVRP)
 
   ////////// Final search procedure //////////
 

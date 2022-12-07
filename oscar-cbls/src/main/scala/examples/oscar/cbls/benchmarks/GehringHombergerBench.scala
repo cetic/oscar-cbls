@@ -11,6 +11,8 @@ import oscar.cbls.core.computation.{CBLSIntVar, Domain, Store}
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.Best
+import oscar.cbls.visual.SingleFrameWindow
+import oscar.cbls.visual.profiling.ProfilingTree
 
 import java.io.File
 import scala.io.Source
@@ -126,7 +128,7 @@ class GehringHombergerBenchmarkVRPTW(n: Int, v: Int, c: Long, distanceMatrix: Ar
     }
   }
 
-  def onePtMove(k:Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance(_),postFilter), myVRP)) name "One Point Move"
+  def onePtMove(k:Int) = onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance(_),postFilter), myVRP) name "One Point Move"
 
   private var removingRoute: List[Int] = List.empty
 
@@ -161,7 +163,7 @@ class GehringHombergerBenchmarkVRPTW(n: Int, v: Int, c: Long, distanceMatrix: Ar
 
   object EmptyVehicle {
     def apply() = {
-      profile(atomic(mu[RemovePointMove, Option[List[Int]]](
+      atomic(mu[RemovePointMove, Option[List[Int]]](
         RemoveNode(),
         NextRemoveGenerator(),
         None,
@@ -169,11 +171,11 @@ class GehringHombergerBenchmarkVRPTW(n: Int, v: Int, c: Long, distanceMatrix: Ar
         intermediaryStops = false
       ).acceptAll(), _ > 1).guard(() => {
           movingVehiclesNow.value.nonEmpty
-        }))
+        })
     }
   }
 
-  val routeUnroutedPoint =  profile(InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(n,closestRelevantNeighborsByDistance(_)), myVRP,selectInsertionPointBehavior = Best(),neighborhoodName = "InsertUF"))
+  val routeUnroutedPoint = InsertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(n,closestRelevantNeighborsByDistance(_)), myVRP,selectInsertionPointBehavior = Best(),neighborhoodName = "InsertUF")
 
 
   val search = (routeUnroutedPoint exhaust onePtMove(n/2)).

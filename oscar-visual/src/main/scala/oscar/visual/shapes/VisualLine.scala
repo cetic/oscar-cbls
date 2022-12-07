@@ -34,8 +34,8 @@ class VisualLine(d: VisualDrawing, s: Line2D.Double) extends VisualShape(d) {
   // No need to fill the line
   fill = false
   
-  def orig = (shape.getX2(), shape.getY2())
-  def dest = (shape.getX1(), shape.getY1())
+  def orig = (shape.getX1(), shape.getY1())
+  def dest = (shape.getX2(), shape.getY2())
 
   /**
    * Move the destination point
@@ -56,12 +56,20 @@ class VisualLine(d: VisualDrawing, s: Line2D.Double) extends VisualShape(d) {
     shape.setLine(orig._1, orig._2, shape.getX2(), shape.getY2())
     if (autoRepaint) repaint()
   }
+
+  def moveAt(x: Double, y: Double): Unit = {
+    val (oldXOrig,oldYOrig) = orig
+    val (oldXDest,oldYDest) = dest
+    orig = (x,y)
+    dest = (oldXDest+x-oldXOrig,
+      oldYDest+y-oldYOrig)
+  }
   
-  def move(x: Double, y: Double): Unit = {
+  def translate(x: Double, y: Double): Unit = {
     val (xOrig, yOrig) = orig
     val (xDest, yDest) = dest
     orig = (xOrig + x, yOrig + y)
-    dest = (xDest + x, yOrig + y)
+    dest = (xDest + x, yDest + y)
     if (autoRepaint) repaint()
   }
 }

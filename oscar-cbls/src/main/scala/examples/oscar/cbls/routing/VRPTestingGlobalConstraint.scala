@@ -50,18 +50,18 @@ object VRPTestingGlobalConstraint extends App {
 
 
   def routeUnroutedPoint =
-    profile(insertPointUnroutedFirst(problem.unrouted,
+    insertPointUnroutedFirst(problem.unrouted,
       () => problem.kFirst(10, closestRelevantNeighbors(_), _ => node => problem.isRouted(node)),
       problem,
       selectInsertionPointBehavior = Best(),
-      neighborhoodName = "InsertUR 1"))
+      neighborhoodName = "InsertUR 1")
 
   val routeUnroutedPointLarger =
-    profile(insertPointUnroutedFirst(problem.unrouted,
+    insertPointUnroutedFirst(problem.unrouted,
       () => problem.kFirst(100, closestRelevantNeighbors(_), _ => node => problem.isRouted(node)),
       problem,
       selectInsertionPointBehavior = Best(),
-      neighborhoodName = "InsertURLarger 1"))
+      neighborhoodName = "InsertURLarger 1")
 
 
   /*val routeUnroutedPoint =
@@ -77,9 +77,9 @@ object VRPTestingGlobalConstraint extends App {
       problem)
 
   val twoOpt =
-    profile(TwoOpt(problem.routed,
+    TwoOpt(problem.routed,
       () => problem.kFirst(10, closestRelevantNeighbors(_), _ => node => problem.isRouted(node)),
-      problem))
+      problem)
 
   def threeOpt =
     ThreeOpt(problem.routed,

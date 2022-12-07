@@ -21,7 +21,6 @@ import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Best
 import oscar.cbls.lib.invariant.logic.{Filter, SelectLESetQueue}
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.lib.search.combinators.Profile
 import oscar.cbls.lib.search.neighborhoods.{AssignMove, AssignNeighborhood}
 
 import scala.collection.immutable.SortedSet
@@ -79,20 +78,20 @@ object WarehouseLocationTabuAspiration extends App {
 
   val switchWithTabuNeighborhood = (
 
-    (Profile(AssignNeighborhood(
+    (AssignNeighborhood(
       warehouseOpenArray,
       "Aspiration",
       searchZone = tabuWarehouses,
       selectIndiceBehavior = Best(),
       hotRestart = false
-    )).improvingOverBestKnown(() => bestKnown) best
-      Profile(AssignNeighborhood(
+    ).improvingOverBestKnown(() => bestKnown) best
+      AssignNeighborhood(
         warehouseOpenArray,
         "SwitchWarehouseTabu",
         searchZone = nonTabuWarehouses, //select non tabu warehouses only
         selectIndiceBehavior = Best(),
         hotRestart = false //we do not need hot restart since looking for best
-      ))).afterMoveOnMove({case (a:AssignMove) => {
+      )).afterMoveOnMove({case (a:AssignMove) => {
       //update the tabu mechanics
       tabuArray(a.id) := iterationCount.value + tabuTenure
       iterationCount :+= 1

@@ -67,51 +67,49 @@ class VRPSymDemo(n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, display
   val routedPostFilter = (node:Int) => (neighbor:Int) => myVRP.isRouted(neighbor)
   val unRoutedPostFilter = (node:Int) => (neighbor:Int) => !myVRP.isRouted(neighbor)
 
-  val routeUnroutedPoint =  profile(insertPointUnroutedFirst(myVRP.unrouted,
+  val routeUnroutedPoint =  insertPointUnroutedFirst(myVRP.unrouted,
     ()=>myVRP.kFirst(10,closestRelevantPredecessors(_),routedPostFilter),
     myVRP,
     neighborhoodName = "InsertUF",
     hotRestart = false,
     selectNodeBehavior = First(),
-    selectInsertionPointBehavior = Best(maxNeighbors = () => 10)))
+    selectInsertionPointBehavior = Best(maxNeighbors = () => 10))
 
-  val routeUnroutedPointBad =  profile(insertPointUnroutedFirst(myVRP.unrouted,
+  val routeUnroutedPointBad =  insertPointUnroutedFirst(myVRP.unrouted,
     ()=> myVRP.kFirst(20,closestRelevantPredecessors(_),routedPostFilter),
     myVRP,
     neighborhoodName = "InsertUF",
-    hotRestart = false))
+    hotRestart = false)
 
 
   //using post-filters on k-nearest is probably a bit slower than possible for large problems.
   //that's why we prefer to block this neighborhood when many nodes are already routed (so few are unrouted, so the filter filters many nodes away)
-  val routeUnroutedPoint2 =  profile(insertPointRoutedFirst(
+  val routeUnroutedPoint2 =  insertPointRoutedFirst(
     myVRP.routed,
     ()=>myVRP.kFirst(10,closestRelevantSuccessors(_),unRoutedPostFilter),
     myVRP,
     selectInsertionPointBehavior = Best(maxNeighbors = ()=>10),
     selectInsertedNodeBehavior = First(),
-    neighborhoodName = "InsertRF")
-    guard(() => myVRP.routed.value.size < n/5))
+    neighborhoodName = "InsertRF") guard(() => myVRP.routed.value.size < n/5)
 
-  val routeUnroutedPoint3 =  profile(insertPointRoutedFirst(
+  val routeUnroutedPoint3 =  insertPointRoutedFirst(
     myVRP.routed,
     ()=>myVRP.kFirst(10,closestRelevantSuccessors(_),unRoutedPostFilter),
     myVRP,
     selectInsertionPointBehavior = First(),
     selectInsertedNodeBehavior = First(),
-    neighborhoodName = "InsertRF")
-    guard(() => myVRP.routed.value.size < n/2 && myVRP.routed.value.size >= n/5))
+    neighborhoodName = "InsertRF") guard(() => myVRP.routed.value.size < n/2 && myVRP.routed.value.size >= n/5)
 
-  def onePtMove(k:Int) = profile(onePointMove(
+  def onePtMove(k:Int) = onePointMove(
     myVRP.routed,
     () => myVRP.kFirst(k,closestRelevantPredecessors(_),routedPostFilter),
     myVRP,
-    selectDestinationBehavior = Best()))
+    selectDestinationBehavior = Best())
 
-  val customTwoOpt = profile(twoOpt(myVRP.routed, ()=>myVRP.kFirst(20,closestRelevantPredecessors(_),routedPostFilter), myVRP))
+  val customTwoOpt = twoOpt(myVRP.routed, ()=>myVRP.kFirst(20,closestRelevantPredecessors(_),routedPostFilter), myVRP)
 
   def customThreeOpt(k:Int, breakSym:Boolean) =
-    profile(threeOpt(myVRP.routed, ()=>myVRP.kFirst(k,closestRelevantPredecessors(_),routedPostFilter), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
+    threeOpt(myVRP.routed, ()=>myVRP.kFirst(k,closestRelevantPredecessors(_),routedPostFilter), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")")
 
   val vlsn1pt = mu[OnePointMoveMove](
     onePointMove(myVRP.routed, () => myVRP.kFirst(5,closestRelevantPredecessors(_),routedPostFilter),myVRP),

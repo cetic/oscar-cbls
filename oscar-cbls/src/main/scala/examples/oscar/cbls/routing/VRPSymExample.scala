@@ -62,33 +62,32 @@ class SimpleVRPSymSolver(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int){
 
   model.close()
 
-  val routeUnroutedPoint =  profile(insertPointUnroutedFirst(myVRP.unrouted,
+  val routeUnroutedPoint =  insertPointUnroutedFirst(myVRP.unrouted,
     ()=>myVRP.kFirst(10,myVRP.closestNeighboursForward(_),(_) => myVRP.isRouted),
     myVRP,
     neighborhoodName = "InsertUF",
     hotRestart = false,
     selectNodeBehavior = First(),
-    selectInsertionPointBehavior = Best()))
+    selectInsertionPointBehavior = Best())
   
   //using post-filters on k-nearest is probably a bit slower than possible for large problems.
   //that's why we prefer to block this neighborhood when many nodes are already routed (so few are unrouted, so the filter filters many nodes away)
-  val routeUnroutedPoint2 =  profile(insertPointRoutedFirst(
+  val routeUnroutedPoint2 =  insertPointRoutedFirst(
     myVRP.routed,
     ()=>myVRP.kFirst(10,myVRP.closestNeighboursForward(_),(_) => x => !myVRP.isRouted(x)),  //should be the backward ones but this is a symmetric distance so we do not care
     myVRP,
-    neighborhoodName = "InsertRF")
-    guard(() => myVRP.nbRouted < n/2))
+    neighborhoodName = "InsertRF") guard(() => myVRP.nbRouted < n/2)
 
-  def onePtMove(k:Int) = profile(onePointMove(
+  def onePtMove(k:Int) = onePointMove(
     myVRP.routed,
     () => myVRP.kFirst(k,myVRP.closestNeighboursForward(_),(_) => myVRP.isRouted),
     myVRP,
-    selectDestinationBehavior = Best()))
+    selectDestinationBehavior = Best())
 
-  val customTwoOpt = profile(twoOpt(myVRP.routed, ()=>myVRP.kFirst(20,myVRP.closestNeighboursForward(_),(_) => myVRP.isRouted), myVRP))
+  val customTwoOpt = twoOpt(myVRP.routed, ()=>myVRP.kFirst(20,myVRP.closestNeighboursForward(_),(_) => myVRP.isRouted), myVRP)
 
   def customThreeOpt(k:Int, breakSym:Boolean) =
-    profile(threeOpt(myVRP.routed, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward(_),(_) => myVRP.isRouted), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
+    threeOpt(myVRP.routed, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward(_),(_) => myVRP.isRouted), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")")
 
   val vlsn1pt = mu[OnePointMoveMove](
     onePointMove(myVRP.routed, () => myVRP.kFirst(5,myVRP.closestNeighboursForward(_),(_) => myVRP.isRouted),myVRP),

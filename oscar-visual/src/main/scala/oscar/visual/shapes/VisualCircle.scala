@@ -13,10 +13,16 @@ class VisualCircle(d: VisualDrawing, x: Double, y: Double, r: Double) extends Vi
   private var radius: Double = r
   private var centerX: Double = x
   private var centerY: Double = y
-  
-  def move(x: Double, y: Double): Unit = {
+
+  override def moveAt(x: Double, y: Double): Unit = {
     centerX = x
     centerY = y
+    update()
+  }
+
+  def translate(x: Double, y: Double): Unit = {
+    centerX += x
+    centerY += y
     update()
   }
   
@@ -57,9 +63,9 @@ object VisualCircleExample extends App {
   Thread.sleep(1000)
   circ.setRadius(100)
   Thread.sleep(1000)
-  circ.move(300,200)
+  circ.translate(300,200)
   for (i <- 1 to 20) {
     Thread.sleep(50)
-    circ.move(circ.getX+5, circ.getY)
+    circ.translate(circ.getX+5, circ.getY)
   }
 }

@@ -4,7 +4,7 @@ import oscar.cbls.{Objective, Store}
 import oscar.cbls.business.scheduling.model.{DisjunctiveResource, Schedule}
 import oscar.cbls.business.scheduling.neighborhood.{ReinsertActivity, SwapActivity}
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
+import oscar.cbls.lib.search.combinators.BestSlopeFirst
 
 object SwDevTardiness {
   // Model
@@ -37,7 +37,7 @@ object SwDevTardiness {
     // Neighborhoods
     val swapNH = new SwapActivity(schedule, "Swap")
     val reinsertNH = new ReinsertActivity(schedule, "Reinsert")
-    val combinedNH = BestSlopeFirst(List(Profile(reinsertNH), Profile(swapNH)))
+    val combinedNH = BestSlopeFirst(List(reinsertNH, swapNH))
     // This is the search strategy
     combinedNH.doAllMoves(obj = globalTardiness)
     // And here, the results

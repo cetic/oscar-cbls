@@ -259,6 +259,8 @@ class VLSN(v:Int,
            enrichment:Option[EnrichmentParameters] = None)
   extends Neighborhood {
 
+  override val profiler: NeighborhoodProfiler = new NeighborhoodProfiler(this)
+
   def doReoptimize(vehicle:Int): Unit = {
     val reOptimizeNeighborhoodGenerator = reOptimizeVehicle match{
       case None => return
@@ -289,7 +291,7 @@ class VLSN(v:Int,
   override def getMove(obj: Objective,
                        initialObj: Long,
                        acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
-
+    profiler.explorationStarted()
     if(printTakenMoves) println("start VLSN")
     val initialSolution = obj.model.solution(true)
 
@@ -337,6 +339,7 @@ class VLSN(v:Int,
         case Some(toDo) => toDo()
         case None => ()
       }
+      profiler.neighborExplored()
     }
 
     if (somethingDone) {
@@ -346,12 +349,15 @@ class VLSN(v:Int,
       initialSolution.restoreDecisionVariables()
 
       if(acceptanceCriterion(initialObj,finalObj)){
+        profiler.explorationEnded(Some(initialObj - finalObj))
         MoveFound(LoadSolutionMove(finalSolution, finalObj, name))
       }else{
+        profiler.explorationEnded(None)
         NoMoveFound
       }
 
     } else {
+      profiler.explorationEnded(None)
       NoMoveFound
     }
   }

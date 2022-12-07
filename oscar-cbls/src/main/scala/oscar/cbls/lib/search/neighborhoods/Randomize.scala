@@ -16,9 +16,8 @@
 package oscar.cbls.lib.search.neighborhoods
 
 import oscar.cbls.core.computation.CBLSIntVar
-import oscar.cbls.core.search.{CompositeMove, Move, Neighborhood, NoMoveFound, SearchResult}
+import oscar.cbls.core.search.{CompositeMove, EmptyProfiler, Move, Neighborhood, NoMoveFound, Profiler, SearchResult}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{CompositeMove, Move, Neighborhood, SearchResult}
 import oscar.cbls.lib.search.LinearSelectors
 
 import scala.collection.immutable.SortedSet
@@ -42,6 +41,8 @@ case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
                                  valuesToConsider:(CBLSIntVar,Long) => Iterable[Long] = (variable,_) => variable.domain.values,
                                  acceptanceChecking:Option[Int] = None)
   extends Neighborhood(name) with LinearSelectors{
+
+  override val profiler: EmptyProfiler = new EmptyProfiler(this)
 
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean = null): SearchResult = {
     if(printExploredNeighborhoods) println("applying " + name)
@@ -102,6 +103,8 @@ case class RandomSwapNeighborhood(vars:Array[CBLSIntVar],
                                   name:String = "RandomSwapNeighborhood",
                                   searchZone:() => SortedSet[Int] = null)  //TODO: search zone does not work!
   extends Neighborhood(name) with LinearSelectors{
+
+  override val profiler: EmptyProfiler = new EmptyProfiler(this)
 
   override def getMove(obj: Objective,
                        initialObj:Long,
