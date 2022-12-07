@@ -469,6 +469,9 @@ class CBLSSeqVar(givenModel:Store,
     c.check(this.toNotify.isInstanceOf[SeqUpdateLastNotified], Some(s"toNotify:$toNotify"))
   }
 
+  override def createCheckpoint: VariableCheckpoint =
+    SeqVarCheckpoint(this,this.defineCurrentValueAsCheckpoint())
+
   override def name: String = if (n == null) defaultName else n
 
   /**
@@ -588,6 +591,14 @@ case class IndependentSerializableChangingSeqValueSnapShot(uniqueId:Int, savedVa
   override def makeLocal: AbstractVariableSnapShot = new ChangingSeqValueSnapShot(uniqueId:Int,IntSequence(savedValues))
 }
 
+case class SeqVarCheckpoint(variable:CBLSSeqVar,checkpoint:IntSequence) extends VariableCheckpoint{
+  override def restoreAndReleaseCheckpoint(): Unit = {
+    require(variable.getTopCheckpoint quickEquals checkpoint)
+    variable.rollbackToTopCheckpoint(checkpoint)
+    variable.releaseTopCheckpoint()
+  }
+}
+
 /**
  * this is an abstract implementation with placeholders for checkpoint management stuff
  * There are three implementation of checkpoint stuff: all,latest,topMost
@@ -600,6 +611,8 @@ abstract class ChangingSeqValue(initialValue: Iterable[Int], val maxValue: Int, 
   extends AbstractVariable with SeqValue{
 
   override def snapshot : ChangingSeqValueSnapShot = new ChangingSeqValueSnapShot(this.uniqueID,this.value)
+
+  override def createCheckpoint: VariableCheckpoint = ???
 
   def valueAtSnapShot(s:Solution):IntSequence = s(this) match{
     case s:ChangingSeqValueSnapShot => s.savedValue

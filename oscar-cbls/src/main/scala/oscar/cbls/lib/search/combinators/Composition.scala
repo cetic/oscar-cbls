@@ -365,7 +365,7 @@ case class EjectionChains(nextNeighborhood: List[Move] => Option[Neighborhood],
                        initialObj:Long,
                        acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
 
-    val startSolution = obj.model.solution(true)
+    val startSolution = obj.model.createCheckpoint()
 
     val searchAcc = intermediaryAcc match{case Some(acc2) => acc2 case None => acceptanceCriterion}
     val searchObj = intermediaryObj match{case Some(o) => o case None => obj}
@@ -377,7 +377,7 @@ case class EjectionChains(nextNeighborhood: List[Move] => Option[Neighborhood],
       if(intermediaryStops){
         val returnObj = obj.value
         if(acceptanceCriterion(initialObj,returnObj)) {
-          startSolution.restoreDecisionVariables()
+          startSolution.restoreAndReleaseCheckpoint()
           return MoveFound(CompositeMove(allMoves.reverse, returnObj, name))
         }
       }
@@ -386,10 +386,10 @@ case class EjectionChains(nextNeighborhood: List[Move] => Option[Neighborhood],
         case None =>
           val returnObj = obj.value
           if(nbMoves >= 1 && acceptanceCriterion(initialObj,returnObj)){
-            startSolution.restoreDecisionVariables()
+            startSolution.restoreAndReleaseCheckpoint()
             return MoveFound(CompositeMove(allMoves.reverse, returnObj, name))
           }else{
-            startSolution.restoreDecisionVariables()
+            startSolution.restoreAndReleaseCheckpoint()
             return NoMoveFound
           }
         case Some(neighborhood) =>
@@ -397,10 +397,10 @@ case class EjectionChains(nextNeighborhood: List[Move] => Option[Neighborhood],
             case NoMoveFound =>
               val returnObj = obj.value
               if(nbMoves >= 1 && acceptanceCriterion(initialObj,returnObj)){
-                startSolution.restoreDecisionVariables()
+                startSolution.restoreAndReleaseCheckpoint()
                 return MoveFound(CompositeMove(allMoves.reverse, returnObj, name))
               }else{
-                startSolution.restoreDecisionVariables()
+                startSolution.restoreAndReleaseCheckpoint()
                 return NoMoveFound
               }
             case MoveFound(move) =>

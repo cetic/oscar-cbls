@@ -130,7 +130,7 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
 
   visual.redraw(openWarehouses.value,boldChanges = false)
 
-  println(neighborhood.profilingStatistics)
+//  println(neighborhood.profilingStatistics)
 
   println(openWarehouses)
 }

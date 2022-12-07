@@ -88,6 +88,11 @@ case class Store(override val verbose:Boolean = false,
     Solution(variablesToSave.map(_.snapshot),this,Some(saveNr))
   }
 
+  def createCheckpoint():Checkpoint = {
+    saveNr += 1
+    Checkpoint(decisionVariables.map(_.createCheckpoint),this,Some(saveNr))
+  }
+
   private var saveNr:Int = 0
   /**this is to be used as a backtracking point in a search engine
    * you can only save variables that are not controlled*/
@@ -302,6 +307,24 @@ case class Solution(saves:Iterable[AbstractVariableSnapShot],
 
   def apply(a:AbstractVariable):AbstractVariableSnapShot = varDico(a.uniqueID)
 }
+
+
+trait VariableCheckpoint{
+  def restoreAndReleaseCheckpoint()
+}
+
+case class Checkpoint(saves:Iterable[VariableCheckpoint],
+                      model:Store,
+                      saveNr:Option[Int]){
+
+  private var released:Boolean = false
+  def restoreAndReleaseCheckpoint():Unit = {
+    if(released) throw new Error("cannot restore and release twice")
+    released = true
+    for (save <- saves) save.restoreAndReleaseCheckpoint()
+  }
+}
+
 
 object Invariant{
   implicit val Ord:Ordering[Invariant] = (o1: Invariant, o2: Invariant) => o1.compare(o2)
@@ -635,6 +658,8 @@ trait AbstractVariable
   def hasModel:Boolean = hasPropagationStructure
 
   def snapshot:AbstractVariableSnapShot
+
+  def createCheckpoint:VariableCheckpoint
 
   def name:String
 

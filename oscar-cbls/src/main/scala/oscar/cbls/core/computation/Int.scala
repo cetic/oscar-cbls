@@ -84,6 +84,9 @@ abstract class ChangingIntValue(initialValue:Long, initialDomain:Domain)
     s"$initialValue is not in the domain of ${this.name}($initialDomain). This might indicate an integer overflow.")
 
   override def snapshot : ChangingIntValueSnapShot = new ChangingIntValueSnapShot(this.uniqueID,this.value)
+
+  override def createCheckpoint: VariableCheckpoint = ???
+
   def valueAtSnapShot(s:Solution):Long = s(this) match{case s:ChangingIntValueSnapShot => s.savedValue case _ => throw new Error("cannot find value of " + this + " in snapshot")}
 
   private[this] var privatedomain:Domain = initialDomain
@@ -246,6 +249,12 @@ case class IndependentSerializableChangingIntValueSnapShot(uniqueId:Int, savedVa
   override def makeLocal: AbstractVariableSnapShot = new ChangingIntValueSnapShot(uniqueId, savedValue)
 }
 
+case class CBLSIntVarCheckpoint(variable:CBLSIntVar,value:Long) extends VariableCheckpoint{
+ override def restoreAndReleaseCheckpoint():Unit = {
+   variable := value
+ }
+}
+
 /**An IntVar is a variable managed by the [[oscar.cbls.core.computation.Store]] whose type is integer.
   *
   * @param givenModel is the model in s-which the variable is declared, can be null if the variable is actually a constant, see [[oscar.cbls.core.computation.CBLSIntConst]]
@@ -261,6 +270,8 @@ class CBLSIntVar(givenModel: Store, initialValue: Long, initialDomain:Domain, n:
   model = givenModel
 
   override def name: String = if (n == null) defaultName else n
+
+  override def createCheckpoint: VariableCheckpoint = new CBLSIntVarCheckpoint(this,this.newValue)
 
   override def :=(v: Long): Unit ={
     setValue(v)

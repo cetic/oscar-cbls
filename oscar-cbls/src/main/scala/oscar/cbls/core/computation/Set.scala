@@ -55,6 +55,12 @@ case class IndependentSerializableChangingSetValueSnapShot(uniqueId:Int,savedVal
   override def makeLocal: AbstractVariableSnapShot = new ChangingSetValueSnapShot(uniqueId, savedValue)
 }
 
+case class CBLSetVarCheckpoint(variable:CBLSSetVar,savedValue:SortedSet[Int]) extends VariableCheckpoint {
+  override def restoreAndReleaseCheckpoint(): Unit = {
+    variable := savedValue
+  }
+}
+
 class ValueWisePropagationWaveIdentifier()
 abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domain)
   extends AbstractVariable with SetValue{
@@ -67,6 +73,8 @@ abstract class ChangingSetValue(initialValue:SortedSet[Int], initialDomain:Domai
 
   override def snapshot : ChangingSetValueSnapShot = new ChangingSetValueSnapShot(this.uniqueID,this.value)
   def valueAtSnapShot(s:Solution):SortedSet[Int] = s(this) match{case s:ChangingSetValueSnapShot => s.savedValue case _ => throw new Error("cannot find value of " + this + " in snapshot")}
+
+  override def createCheckpoint: VariableCheckpoint = ???
 
   /**this must be protected because invariants might rework this after isntanciation
    * for CBLSVars, no problems*/
@@ -399,6 +407,8 @@ class CBLSSetVar(givenModel: Store, initialValue: SortedSet[Int], initialDomain:
   model = givenModel
 
   override def restrictDomain(d:Domain): Unit = super.restrictDomain(d)
+
+  override def createCheckpoint: VariableCheckpoint = new CBLSetVarCheckpoint(this,this.newValue)
 
   override def name: String = if (n == null) defaultName else n
 

@@ -42,6 +42,8 @@ abstract class ChangingAtomicValue[T](initialValue:T)
 
   override def snapshot : ChangingAtomicValueSnapShot[T] = new ChangingAtomicValueSnapShot(this.uniqueID,this.value)
 
+  override def createCheckpoint: VariableCheckpoint = ???
+
   def valueAtSnapShot(s:Solution):T = {
     try {
       s(this).asInstanceOf[ChangingAtomicValueSnapShot[T]].savedValue
