@@ -349,8 +349,8 @@ case class Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAccept
 }
 
 case class EjectionChains(nextNeighborhood: List[Move] => Option[Neighborhood],
-                          overrideObj:Boolean = true,
-                          overrideAcc:Option[(Long,Long) => Boolean] = Some((oldObj,newObj) => newObj < oldObj),
+                          intermediaryObj:Option[Objective] = None,
+                          intermediaryAcc:Option[(Long,Long) => Boolean] = Some((oldObj,newObj) => newObj < oldObj),
                           intermediaryStops:Boolean = false,
                           name:String = "EjectionChains") extends NeighborhoodCombinator() {
   override def getMove(obj: Objective,
@@ -359,9 +359,10 @@ case class EjectionChains(nextNeighborhood: List[Move] => Option[Neighborhood],
 
     val startSolution = obj.model.solution(true)
 
-    val searchAcc = overrideAcc match{case Some(acc2) => acc2 case None => acceptanceCriterion}
+    val searchAcc = intermediaryAcc match{case Some(acc2) => acc2 case None => acceptanceCriterion}
+    val searchObj = intermediaryObj match{case Some(o) => o case None => obj}
     var allMoves:List[Move] = Nil
-    var currentObj: Long = if(overrideObj) obj.value else initialObj
+    var currentObj: Long = intermediaryObj match{case Some(o) => o.value case None => obj.value}
     var nbMoves: Int = 0
 
     while (true) {
@@ -384,7 +385,7 @@ case class EjectionChains(nextNeighborhood: List[Move] => Option[Neighborhood],
             return NoMoveFound
           }
         case Some(neighborhood) =>
-          neighborhood.getMove(obj, currentObj, searchAcc) match {
+          neighborhood.getMove(searchObj, currentObj, searchAcc) match {
             case NoMoveFound =>
               val returnObj = obj.value
               if(nbMoves >= 1 && acceptanceCriterion(initialObj,returnObj)){
