@@ -1,7 +1,7 @@
 package oscar.cbls.lib.search.combinators
 
 import oscar.cbls.core.objective.{FunctionObjective, Objective}
-import oscar.cbls.core.search.{InstrumentedMove, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, OverrideObj, SearchResult}
+import oscar.cbls.core.search.{AcceptanceCriterion, InstrumentedMove, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, OverrideObj, SearchResult}
 
 object Restart{
   /**
@@ -42,36 +42,34 @@ object Restart{
  *                    by default, it is the constant function returning 100L
  * @param base the base for the exponent calculation. default is 2L
  */
-class Metropolis(a: Neighborhood, iterationToTemperature: Long => Double = _ => 100, base: Double = 2) extends NeighborhoodCombinator(a) {
+class Metropolis(a: Neighborhood,
+                 iterationToTemperature: Long => Double = _ => 100,
+                 base: Double = 2) extends NeighborhoodCombinator(a) {
 
   var moveCount = 0L
   var temperatureValue: Double = iterationToTemperature(moveCount)
 
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult =
-    a.getMove(obj, initialObj:Long, acceptation) match {
+  case object MetropolisCriterion extends AcceptanceCriterion {
+    override def apply(oldValue: Long, newValue: Long): Boolean = {
+      val gain = oldValue - newValue
+
+      def applyMetropolis: Boolean = {
+        // metropolis criterion
+        val relativeIncrease = -gain.toFloat / oldValue.toFloat
+        math.random() < math.pow(base, -relativeIncrease / temperatureValue)
+      }
+
+      (gain > 0) || applyMetropolis
+    }
+  }
+
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult =
+    a.getMove(obj, initialObj, MetropolisCriterion) match {
       case NoMoveFound => NoMoveFound
       case MoveFound(m) => InstrumentedMove(m, notifyMoveTaken _)
     }
-
-  def acceptation(oldObj: Long, newObj: Long): Boolean = {
-    val gain = oldObj - newObj
-    if (gain > 0L){
-      true
-    } else {
-      // metropolis criterion
-
-      val relativeIncrease = - gain.toFloat / oldObj.toFloat
-
-      //println("relativeIncrease: " + relativeIncrease)
-      //println("temp:" + temperatureValue)
-
-      val toReturn = math.random() < math.pow(base, - relativeIncrease / temperatureValue)
-
-      //println("metropolis decision: " + toReturn)
-
-      toReturn
-    }
-  }
 
   def notifyMoveTaken(): Unit ={
     moveCount += 1L
@@ -100,7 +98,10 @@ class Metropolis(a: Neighborhood, iterationToTemperature: Long => Double = _ => 
  *                                     This increases convergence, but decreased optimality of this approach.
  *                                     The default value is very large, so that this mechanism is inactive.
  */
-class LateAcceptanceHillClimbing(a:Neighborhood, length:Int = 20, maxRelativeIncreaseOnBestObj:Double = 10000, initialObj:Option[Long] = None) extends NeighborhoodCombinator(a) {
+class LateAcceptanceHillClimbing(a: Neighborhood,
+                                 length: Int = 20,
+                                 maxRelativeIncreaseOnBestObj: Double = 10000,
+                                 initialObj: Option[Long] = None) extends NeighborhoodCombinator(a) {
   require(maxRelativeIncreaseOnBestObj > 1, "maybe you should not use LateAcceptanceHillClimbing if obj cannot increase anyway")
 
   val memory:Array[Long] = Array.fill(length)(Long.MaxValue)
@@ -119,21 +120,23 @@ class LateAcceptanceHillClimbing(a:Neighborhood, length:Int = 20, maxRelativeInc
 
   var x = 0
 
-  override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
-    if(! initialized) init(initialObj)
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
+    if (!initialized) init(initialObj)
 
     a.getMove(obj,initialObj,(oldOBj,newObj) => {
       x = x+1
-      if(x >= length) x = 0
+      if (x >= length) x = 0
 
-      if(newObj < maxToleratedObj && (newObj < oldOBj || newObj < memory(x))){
+      if (newObj < maxToleratedObj && (newObj < oldOBj || newObj < memory(x))){
         memory(x) = newObj
-        if(newObj < bestKnownObj){
+        if (newObj < bestKnownObj) {
           maxToleratedObj = ((newObj.toFloat * maxRelativeIncreaseOnBestObj) min Long.MaxValue).toLong
           bestKnownObj = newObj
         }
         true
-      }else{
+      } else {
         false
       }
     })
@@ -522,10 +525,11 @@ class GuidedLocalSearch(a: Neighborhood,
     if(printExploredNeighborhoods) println("resetting GLS")
   }
 
-  override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
-
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     val initValForAdditional = additionalConstraint.value
-    weightForBase = weightCorrectionStrategy.getNewWeight(true,weightForBase,initValForAdditional)
+    weightForBase = weightCorrectionStrategy.getNewWeight(found = true, weightForBase, initValForAdditional)
     getMoveNoUpdateWeight(obj, initialObj, acceptanceCriterion, initValForAdditional, maxAttemptsBeforeStop)
   }
 
@@ -536,7 +540,11 @@ class GuidedLocalSearch(a: Neighborhood,
     case x if x < 0L => "interrupted"
   }
 
-  def getMoveNoUpdateWeight(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean, initValForAdditional:Long, remainingAttemptsBeforeStop:Int): SearchResult = {
+  def getMoveNoUpdateWeight(obj: Objective,
+                            initialObj: Long,
+                            acceptanceCriterion: AcceptanceCriterion,
+                            initValForAdditional: Long,
+                            remainingAttemptsBeforeStop: Int): SearchResult = {
     if(remainingAttemptsBeforeStop == 0) {
       if(printExploredNeighborhoods){
         println("GLS stop because remainingAttemptsBeforeStop==0")

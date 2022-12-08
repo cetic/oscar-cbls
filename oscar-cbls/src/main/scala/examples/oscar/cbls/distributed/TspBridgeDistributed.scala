@@ -1,17 +1,18 @@
-package examples.oscar.cbls.tspBridge
+package examples.oscar.cbls.distributed
 
 import oscar.cbls._
+import oscar.cbls.algo.generator.RandomGraphGenerator
 import oscar.cbls.algo.graph._
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.RouteLengthOnConditionalGraph
 import oscar.cbls.core.computation.{CBLSIntConst, CBLSIntVar, IntValue, Store}
-import oscar.cbls.core.distrib.Supervisor
+import oscar.cbls.core.distributed.Supervisor
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{First, JumpNeighborhood, Neighborhood}
 import oscar.cbls.lib.search.combinators.distributed.DistributedFirst
-import oscar.cbls.algo.generator.RandomGraphGenerator
 import oscar.cbls.visual.SingleFrameWindow
+import oscar.cbls.visual.graph.TspBridgeVisu
 
 import scala.collection.immutable.SortedSet
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable

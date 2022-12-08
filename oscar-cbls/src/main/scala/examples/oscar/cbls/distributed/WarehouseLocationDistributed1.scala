@@ -1,9 +1,9 @@
-package examples.oscar.cbls.distrib
+package examples.oscar.cbls.distributed
 
 import oscar.cbls._
 import oscar.cbls.algo.generator.WarehouseLocationGenerator
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.distrib.Supervisor
+import oscar.cbls.core.distributed.Supervisor
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.lib.search.combinators.distributed.{DistributedBest, DistributedBestSlopeFirst, DistributedFirst}
@@ -72,11 +72,11 @@ object WarehouseLocationDistributed1 extends App {
 
   //This is a bit stupid: start the search while workers are not instantiated yet, but it is possible
   for (i <- ParRange(0, nbWorker, 1, inclusive = true)) {
-    if(i == 0){
+    if (i == 0) {
       val search2 = search.showObjectiveFunction(obj)
       search2.verbose = 2
       search2.doAllMoves(obj = obj)
-    }else {
+    } else {
       val (store2, search2, _, _) = createSearchProcedure()
       supervisor.createLocalWorker(store2, search2)
     }

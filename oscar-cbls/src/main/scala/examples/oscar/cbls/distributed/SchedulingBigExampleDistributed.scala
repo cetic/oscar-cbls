@@ -1,9 +1,9 @@
-package examples.oscar.cbls.distrib
+package examples.oscar.cbls.distributed
 
 import oscar.cbls.business.scheduling.ActivityId
 import oscar.cbls.business.scheduling.model._
 import oscar.cbls.business.scheduling.neighborhood.{ReinsertActivity, ReplaceActivity, SwapActivity}
-import oscar.cbls.core.distrib
+import oscar.cbls.core.distributed
 import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.lib.search.combinators.BestSlopeFirst
 import oscar.cbls.lib.search.combinators.distributed.{DistributedBest, DistributedFirst}
@@ -187,7 +187,7 @@ object SchedulingBigExampleDistributed {
     //supervisor side
     val (store, obj, search, finalPrint) = createCBLSProblem(activities, initialActivities, durations, minStartTimes, precedencePairs, resources, typeNb)
     print("Creating Actor System...")
-    val supervisor = distrib.startSupervisorAndActorSystem(search)
+    val supervisor = distributed.startSupervisorAndActorSystem(search)
     println("Done")
     //creating all the workers; here we only create local workers
     print(s"Creating $nbWorkers workers...")

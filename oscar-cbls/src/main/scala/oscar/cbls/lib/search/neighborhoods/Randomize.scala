@@ -16,7 +16,7 @@
 package oscar.cbls.lib.search.neighborhoods
 
 import oscar.cbls.core.computation.CBLSIntVar
-import oscar.cbls.core.search.{CompositeMove, EmptyProfiler, Move, Neighborhood, NoMoveFound, Profiler, SearchResult}
+import oscar.cbls.core.search.{AcceptanceCriterion, CompositeMove, Move, Neighborhood, NoMoveFound, SearchResult}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.search.LinearSelectors
 
@@ -44,8 +44,10 @@ case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
 
   override val profiler: EmptyProfiler = new EmptyProfiler(this)
 
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean = null): SearchResult = {
-    if(printExploredNeighborhoods) println("applying " + name)
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
+    if (printExploredNeighborhoods) println("applying " + name)
 
     val degreeNow = degree()
 
@@ -55,7 +57,7 @@ case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
     }
 
     //TODO: we should check acceptation for all parts of the move. That could be implemented using Atomic(swap(behavior:Random))
-    while(nbAttempts != 0) {
+    while (nbAttempts != 0) {
       nbAttempts -= 1
       var toReturn: List[AssignMove] = List.empty
 
@@ -78,7 +80,7 @@ case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
       }
 
       if (!checkAcceptation
-        || acceptanceCriteria(initialObj, obj.assignVal(toReturn.map(x => (x.i, x.value))))) {
+        || acceptanceCriterion(initialObj, obj.assignVal(toReturn.map(x => (x.i, x.value))))) {
         if (printExploredNeighborhoods) println(name + ": move found")
         return CompositeMove(toReturn, Long.MaxValue, name)
       }
@@ -107,8 +109,8 @@ case class RandomSwapNeighborhood(vars:Array[CBLSIntVar],
   override val profiler: EmptyProfiler = new EmptyProfiler(this)
 
   override def getMove(obj: Objective,
-                       initialObj:Long,
-                       acceptanceCriteria: (Long, Long) => Boolean = null): SearchResult = {
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     if(printExploredNeighborhoods) println("applying " + name)
 
     var toReturn:List[Move] = List.empty

@@ -1,7 +1,7 @@
 package oscar.cbls.lib.search.combinators
 
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{DoNothingNeighborhood, BasicProfiler, EmptyProfiler, InstrumentedMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, Profiler, SearchResult}
+import oscar.cbls.core.search.{AcceptanceCriterion, DoNothingNeighborhood, InstrumentedMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult}
 
 import scala.annotation.tailrec
 
@@ -15,7 +15,9 @@ import scala.annotation.tailrec
  */
 class BestMove(n:Neighborhood*) extends NeighborhoodCombinator(n:_*) {
 
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
 
     val moves = n.flatMap(_.getMove(obj, initialObj:Long, acceptanceCriteria) match {
       case NoMoveFound => None
@@ -41,9 +43,12 @@ class BestMove(n:Neighborhood*) extends NeighborhoodCombinator(n:_*) {
  */
 class OrElse(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinator(a, b) {
   override val profiler: BasicProfiler = BasicProfiler(this,List("Else calls"))
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
     profiler.explorationStarted()
-    a.getMove(obj, initialObj:Long, acceptanceCriteria) match {
+    a.getMove(obj, initialObj, acceptanceCriteria) match {
       case NoMoveFound =>
         a.reset()
         profiler statPlus (0,1)
@@ -72,10 +77,12 @@ class OrElse(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinator(a,
 class MaxMoves(a: Neighborhood, val maxMove: Int, cond: Option[Move => Boolean] = None) extends NeighborhoodCombinator(a) {
   var remainingMoves = maxMove
   override val profiler: BasicProfiler = BasicProfiler(this,List("MaxMove reached"))
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj:Long,
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
     profiler.explorationStarted()
     if (remainingMoves > 0) {
-      a.getMove(obj, initialObj:Long, acceptanceCriteria) match {
+      a.getMove(obj, initialObj, acceptanceCriteria) match {
         case m: MoveFound =>
           profiler.explorationEnded(true)
           InstrumentedMove(m.m, () => notifyMoveTaken(m.m))
@@ -142,9 +149,11 @@ class MaxMovesWithoutImprovement(a: Neighborhood,
 
   override val profiler: BasicProfiler = BasicProfiler(this,List("MaxMove reached"))
 
-  override def getMove(obj: Objective,initialObj:Long,  acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
     profiler.explorationStarted()
-    if(countBeforeMove) {
+    if (countBeforeMove) {
       val startObj = obj()
       if (startObj < bestObj) {
         bestObj = startObj
@@ -228,7 +237,9 @@ class MaxMovesWithoutImprovement(a: Neighborhood,
  */
 case class Guard(cond: () => Boolean, b: Neighborhood) extends NeighborhoodCombinator(b) {
   override val profiler: BasicProfiler = BasicProfiler(this,List("Blocked"))
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
     profiler.explorationStarted()
     if (cond()) {
       b.getMove(obj, initialObj:Long, acceptanceCriteria)match {
@@ -249,7 +260,9 @@ case class Guard(cond: () => Boolean, b: Neighborhood) extends NeighborhoodCombi
 }
 
 object ExhaustList{
-  def apply(neighborhoods:Iterable[Neighborhood],neighborhoodName:String = "ExhaustList",backOnExhaust:Boolean = false):Neighborhood = {
+  def apply(neighborhoods: Iterable[Neighborhood],
+            neighborhoodName: String = "ExhaustList",
+            backOnExhaust: Boolean = false): Neighborhood = {
     def recur(l: List[Neighborhood]): Neighborhood = {
       l match {
         case h :: Nil => h
@@ -257,9 +270,9 @@ object ExhaustList{
         case Nil => DoNothingNeighborhood()
       }
     }
-    if(backOnExhaust){
+    if (backOnExhaust){
       recur(neighborhoods.toList).retry() name neighborhoodName
-    }else recur(neighborhoods.toList) name neighborhoodName
+    } else recur(neighborhoods.toList) name neighborhoodName
   }
 }
 
@@ -275,13 +288,15 @@ class Exhaust(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinator(a
   var currentIsA = true
   var start: Long = 0L
   override val profiler: BasicProfiler = BasicProfiler(this, List("MinExhaustTime (ms)", "MaxExhaustTime (ms)"), List(Long.MaxValue, Long.MinValue))
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
     profiler.explorationStarted()
     if(start == 0L) start = System.currentTimeMillis()
     @tailrec
     def search(): SearchResult = {
       val current = if (currentIsA) a else b
-      current.getMove(obj, initialObj:Long, acceptanceCriteria) match {
+      current.getMove(obj, initialObj, acceptanceCriteria) match {
         case NoMoveFound => if (currentIsA) {
           currentIsA = false;
           val exhaustTiming = System.currentTimeMillis()-start
@@ -321,7 +336,10 @@ case class StopWhen(a: Neighborhood, cond: () => Boolean) extends NeighborhoodCo
   var isStopped: Boolean = false
   var start: Long = 0L
   override val profiler: BasicProfiler = BasicProfiler(this,List("MinStoppedAfter", "MaxStoppedAfter"),List(Long.MaxValue, 0L))
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
     profiler.explorationStarted()
     if(start == 0L) start = System.currentTimeMillis()
     if (isStopped || cond()) {
@@ -333,7 +351,7 @@ case class StopWhen(a: Neighborhood, cond: () => Boolean) extends NeighborhoodCo
       isStopped = true;
       NoMoveFound
     }
-    else a.getMove(obj, initialObj:Long, acceptanceCriterion)
+    else a.getMove(obj, initialObj, acceptanceCriteria)
   }
 
   //this resets the internal state of the move combinators
@@ -361,11 +379,13 @@ class UntilImprovement(a: Neighborhood, over: () => Long, val minMoves: Long = 0
   var oldObjOnReset = over()
   var movesQueriedSinceReset = 0L
 
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
     movesQueriedSinceReset += 1L
     if (movesQueriedSinceReset < maxMove
       && (movesQueriedSinceReset < minMoves || over() >= oldObjOnReset))
-      a.getMove(obj, initialObj:Long, acceptanceCriterion)
+      a.getMove(obj, initialObj:Long, acceptanceCriteria)
     else NoMoveFound
   }
 
@@ -384,10 +404,13 @@ class UntilImprovement(a: Neighborhood, over: () => Long, val minMoves: Long = 0
  */
 class MaxSearches(a: Neighborhood, val maxMove: Long) extends NeighborhoodCombinator(a) {
   var remainingMoves = maxMove
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
     if (remainingMoves > 0L) {
       remainingMoves -= 1L
-      a.getMove(obj, initialObj:Long, acceptanceCriteria)
+      a.getMove(obj, initialObj, acceptanceCriteria)
     } else NoMoveFound
   }
 
@@ -411,12 +434,15 @@ class ExhaustBack(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinat
   override val profiler: BasicProfiler =
     BasicProfiler(this, List("MinExhaustTime (ms)", "MaxExhaustTime (ms)", "nbBacks"), List(Long.MaxValue, Long.MinValue, 0L))
   var start: Long = 0L
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
-    if(start == 0L) start = System.currentTimeMillis()
+
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
+    if (start == 0L) start = System.currentTimeMillis()
     profiler.explorationStarted()
 
       val current = if (currentIsA) a else b
-      current.getMove(obj, initialObj:Long, acceptanceCriteria) match {
+      current.getMove(obj, initialObj, acceptanceCriteria) match {
         case NoMoveFound =>
           if (currentIsA) {
             val exhaustTiming = System.currentTimeMillis()-start
@@ -437,7 +463,7 @@ class ExhaustBack(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinat
             profiler statPlus (2,1)
             start = 0L
             a.reset()
-            a.getMove(obj,initialObj:Long,  acceptanceCriteria) match {
+            a.getMove(obj, initialObj, acceptanceCriteria) match {
               case NoMoveFound =>
                 profiler.explorationEnded(false)
                 NoMoveFound
@@ -473,13 +499,16 @@ class ExhaustBack(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinat
  */
 class Retry(a: Neighborhood, cond: Long => Boolean = _ <= 1L) extends NeighborhoodCombinator(a) {
   var consecutiveFails = 0L
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
-    a.getMove(obj, initialObj:Long, acceptanceCriteria) match {
+
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
+    a.getMove(obj, initialObj, acceptanceCriteria) match {
       case NoMoveFound =>
         consecutiveFails = consecutiveFails + 1L
         if (cond(consecutiveFails)) {
           a.reset()
-          getMove(obj, initialObj:Long, acceptanceCriteria)
+          getMove(obj, initialObj, acceptanceCriteria)
         } else {
           NoMoveFound
         }
@@ -504,9 +533,12 @@ class Retry(a: Neighborhood, cond: Long => Boolean = _ <= 1L) extends Neighborho
   */
 class Dyn(f:() => Neighborhood,name : String = "Dyn()") extends Neighborhood(name) {
   override val profiler: EmptyProfiler = new EmptyProfiler(this)
-  override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
     val neighborhood = f()
     neighborhood.verbose = this.verbose
-    neighborhood.getMove(obj, initialObj, acceptanceCriterion)
+    neighborhood.getMove(obj, initialObj, acceptanceCriteria)
   }
 }

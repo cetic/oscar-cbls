@@ -34,12 +34,14 @@ class BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = t
     }
   }
 
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
 
     //we record the obj before move to prevent an additional useless propagation
     require(initialObj == o.value, "initialObj:" + initialObj + "!= o.value:" + o.value)
 
-    a.getMove(obj, initialObj, acceptanceCriteria) match {
+    a.getMove(obj, initialObj, acceptanceCriterion) match {
       case NoMoveFound =>
         if(alsoSaveOnExhaust && (initialObj < myBestObj && currentSolutionIsAcceptable)){
           //solution degrades, and we were better than the best recorded
@@ -127,12 +129,14 @@ class RestoreBestOnExhaust(a: BasicSaveBest) extends NeighborhoodCombinator(a) {
     super.reset()
   }
 
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     if(childExhausted) {
       childExhausted = false
       NoMoveFound
     } else {
-      a.getMove(obj, initialObj, acceptanceCriteria) match {
+      a.getMove(obj, initialObj, acceptanceCriterion) match {
         case m : MoveFound => m
         case x =>
           a.getBestSolutionToRestore match {

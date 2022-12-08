@@ -202,7 +202,7 @@ class TTFHistogramSloped(slotDuration:Long, slots:Array[Long]) extends TTFSegmen
  * @param overallDuration the duration to consider
  * @author renaud.delandtsheer@cetic.be
  */
-class TTFSegments(points:Array[(Long,Long)]) extends TravelTimeFunction {
+class TTFSegments(points: Array[(Long,Long)]) extends TravelTimeFunction {
 
   override def requireFifoProperty(): Unit = {
     for(i <- 0 until points.length-1){
@@ -232,7 +232,7 @@ object testTTFSegments extends App{
 
   f.requireFifoProperty()
 
-  for(time <- 1 to 100){
+  for (time <- 1 to 100) {
     val forwardTravelTime = f(time)
     val arrivalTime = f.earliestArrivalTime(time)
     val backwardTravelTIme = f.backwardTravelDuration(arrivalTime)
@@ -277,7 +277,7 @@ class PiecewiseAffineFunction(points:Array[(Long,Long)],roundUp:Boolean){
 
       if (medSlotStart <= x) {
         down = medSlot
-      }else{
+      } else {
         up = medSlot
       }
     }

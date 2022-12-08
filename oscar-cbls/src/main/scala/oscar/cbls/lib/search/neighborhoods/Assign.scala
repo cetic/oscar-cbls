@@ -16,7 +16,7 @@ package oscar.cbls.lib.search.neighborhoods
 
 import oscar.cbls.algo.search.{HotRestart, IdenticalAggregator}
 import oscar.cbls.core.computation.{CBLSIntVar, Store, Variable}
-import oscar.cbls.core.distrib.IndependentMove
+import oscar.cbls.core.distributed.IndependentMove
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, Move}
 
 /**
@@ -249,11 +249,11 @@ case class AssignMove(i:CBLSIntVar,value:Long, id:Int, override val objAfter:Lon
     IndependentAssign(i.uniqueID, value, id, objAfter, neighborhoodName)
 }
 
-case class IndependentAssign(i:Int,
-                             value:Long,
-                             id:Int,
-                             override val objAfter:Long,
-                             override val neighborhoodName:String) extends IndependentMove{
+case class IndependentAssign(i: Int,
+                             value: Long,
+                             id: Int,
+                             objAfter: Long,
+                             neighborhoodName: String) extends IndependentMove {
 
   override def makeLocal(m: Store): Move =
     AssignMove(m.getIntVar(i),value, id, objAfter, neighborhoodName)

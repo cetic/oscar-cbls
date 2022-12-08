@@ -1,8 +1,8 @@
-package examples.oscar.cbls.distrib
+package examples.oscar.cbls.distributed
 
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.distrib.Supervisor
+import oscar.cbls.core.distributed.Supervisor
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.lib.search.combinators.distributed.DistributedRestart
@@ -82,7 +82,7 @@ object WarehouseLocationDistributed3 extends App {
 
   //main search; distributed combinators delegate to worker
   val (store, search, obj, finalPrint) = createSearchProcedure()
-  val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(search, hotRestart = false, tic = 5.seconds,verbose = false)
+  val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(search, hotRestart = false, tic = 5.seconds, verbose = true)
 
   for (i <- (0 until nbWorker).par) {
     //creating each worker, with its own model and search procedure (we do in in parallel)

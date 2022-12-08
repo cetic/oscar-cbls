@@ -56,11 +56,12 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
    * @param acceptanceCriterion
    * @return
    */
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     profiler.explorationStarted()
-    if((it > 0) && ((it % refresh) == 0) && neighborhoodArray.indices.toList.exists(profiler.nbFoundSubN(_)!=0)){
-
-      if(printExploredNeighborhoods){
+    if ((it > 0) && ((it % refresh) == 0) && neighborhoodArray.exists(_.nbFound!=0)) {
+      if (printExploredNeighborhoods) {
         println("refreshing knowledge on neighborhood; statistics since last refresh: ")
         printStatus()
       }
@@ -75,7 +76,7 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
       val headNeighborhood = neighborhoodArray(headID)
       headNeighborhood.getMove(obj,initialObj, acceptanceCriterion) match{
         case NoMoveFound =>
-          if(neighborhoodHeap.size == l.size) profiler.firstFailed()
+          if (neighborhoodHeap.size == l.size) profiler.firstFailed()
           makeTabu(headID)
         case MoveFound(m) =>
           neighborhoodHeap.notifyChange(headID)
@@ -85,13 +86,13 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
     }
 
     //ok, we try again with tabu, overriding tabu as allowed
-    if(tabuNeighborhoods.nonEmpty && tabu(tabuNeighborhoods.getFirst) <= it + overrideTabuOnFullExhaust){
+    if (tabuNeighborhoods.nonEmpty && tabu(tabuNeighborhoods.getFirst) <= it + overrideTabuOnFullExhaust) {
       val newNonTabu = tabuNeighborhoods.popFirst()
       neighborhoodArray(newNonTabu).reset()
       neighborhoodHeap.insert(newNonTabu)
       it -=1
       getMove(obj,initialObj,acceptanceCriterion)
-    }else{
+    } else {
       profiler.explorationEnded(false)
       NoMoveFound
     }
@@ -100,7 +101,7 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
   /**
    * prints the profile info for the neighborhoods, for verbosity purposes
    */
-  def printStatus(): Unit ={
+  def printStatus(): Unit = {
     println(Profiler.selectedStatisticInfo(neighborhoodArray.map(_.profiler)))
   }
 }
@@ -156,7 +157,7 @@ case class FastestFirst(l:List[Neighborhood],
  * @author renaud.delandtsheer@cetic.be
  */
 class RoundRobin(robins: Array[(Neighborhood,Int)], tabu:Int = 1)
-  extends NeighborhoodCombinator(robins.map(_._1).toIndexedSeq:_*){
+  extends NeighborhoodCombinator(robins.map(_._1).toIndexedSeq:_*) {
   private var currentRobin = 0
   private var nbExplorationsOnCurrentRobin:Int = 0
   private var firstFailedRobinInRow:Int = -1
@@ -166,7 +167,9 @@ class RoundRobin(robins: Array[(Neighborhood,Int)], tabu:Int = 1)
 
   override val profiler: SelectionProfiler = new SelectionProfiler(this, robins.map(_._1).toList)
 
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj:Long,
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
     profiler.explorationStarted()
     while(true){
       //select next robin
@@ -221,17 +224,14 @@ class RoundRobin(robins: Array[(Neighborhood,Int)], tabu:Int = 1)
     throw new Error("should not be reached")
   }
 
-
   //this resets the internal state of the move combinators
   override def reset(): Unit ={
     currentRobin = 0
     nbExplorationsOnCurrentRobin = 0
     firstFailedRobinInRow = -1
-
-    for(i <- cycleOfLastFail.indices){
+    for (i <- cycleOfLastFail.indices) {
       cycleOfLastFail(i) = Int.MinValue
     }
-
     super.reset()
   }
 }
@@ -252,7 +252,9 @@ class RandomCombinator(a: Neighborhood*) extends NeighborhoodCombinator(a:_*) {
 
   override val profiler: SelectionProfiler = new SelectionProfiler(this,a.toList)
 
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj:Long,
+                       acceptanceCriteria: AcceptanceCriterion): SearchResult = {
     profiler.explorationStarted()
     val neighborhoods = a.toList
     val neighborhoodsIterator = r.shuffle(neighborhoods).iterator
@@ -324,7 +326,9 @@ class BiasedRandom(a: (Neighborhood,Double)*)
 
   var neighborhoodWithExhaustedRemoved:Option[Node] = Some(initialNeighborhoodTree)
 
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     var remainingNeighborhoods:Option[Node] = neighborhoodWithExhaustedRemoved
     while (true) {
       remainingNeighborhoods match{
@@ -332,7 +336,7 @@ class BiasedRandom(a: (Neighborhood,Double)*)
         case Some(node) =>
           val (newHead,selectedNeighborhood) = findAndRemove(node,r.nextFloat()*node.weight)
           remainingNeighborhoods = newHead
-          selectedNeighborhood.getMove(obj, initialObj, acceptanceCriteria) match {
+          selectedNeighborhood.getMove(obj, initialObj, acceptanceCriterion) match {
             case m: MoveFound => return m
             case _ =>
               if(noRetryOnExhaust) neighborhoodWithExhaustedRemoved = newHead
@@ -355,11 +359,14 @@ class BiasedRandom(a: (Neighborhood,Double)*)
 class ExhaustAndContinueIfMovesFound(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinator(a, b) {
   var currentIsA = true
   var movesFoundWithCurrent = false
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     @tailrec
     def search(): SearchResult = {
       val current = if (currentIsA) a else b
-      current.getMove(obj, initialObj:Long, acceptanceCriteria) match {
+      current.getMove(obj, initialObj:Long, acceptanceCriterion) match {
         case NoMoveFound =>
           if (currentIsA) {
             currentIsA = false

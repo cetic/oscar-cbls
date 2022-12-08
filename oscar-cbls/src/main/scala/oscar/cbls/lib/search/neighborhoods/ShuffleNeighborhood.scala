@@ -43,8 +43,8 @@ case class ShuffleNeighborhood(vars:Array[CBLSIntVar],
   override val profiler: NeighborhoodProfiler = new NeighborhoodProfiler(this)
 
   override def getMove(obj: Objective,
-                       initialObj:Long,
-                       acceptanceCriteria: (Long, Long) => Boolean = null): SearchResult = {
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     if(printExploredNeighborhoods) println("applying " + name)
 
     val (realIndicesToConsider:List[Int],numberOfIndicesToConsider:Int) =

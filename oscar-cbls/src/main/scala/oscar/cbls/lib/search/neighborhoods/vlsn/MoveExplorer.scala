@@ -1,7 +1,7 @@
 package oscar.cbls.lib.search.neighborhoods.vlsn
 
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{Move, MoveFound, Neighborhood, NoMoveFound}
+import oscar.cbls.core.search.{AcceptanceCriterion, DifferentOf, Move, MoveFound, Neighborhood, NoMoveFound}
 import oscar.cbls.lib.search.neighborhoods.vlsn.VLSNMoveType._
 
 import scala.collection.immutable.{SortedMap, SortedSet}
@@ -134,7 +134,7 @@ class MoveExplorer(v:Int,
   val nbNodesInVLSNGraph: Int = nodes.length
   def nbEdgesInGraph:Int = edgeBuilder.nbEdges
 
-  val acceptAllButMaxLong: (Long, Long) => Boolean = (_, newObj: Long) => newObj != Long.MaxValue
+  val acceptAllButMaxLong: AcceptanceCriterion = DifferentOf(Long.MaxValue)
 
   // /////////////////////////////////////////////////////////////
   //about incrementality

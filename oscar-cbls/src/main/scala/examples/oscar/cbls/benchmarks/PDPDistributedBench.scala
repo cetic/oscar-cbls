@@ -6,7 +6,7 @@ import oscar.cbls.business.routing.invariants.global.RouteLength
 import oscar.cbls.business.routing.invariants.vehicleCapacity.GlobalVehicleCapacityConstraint
 import oscar.cbls.business.routing.model.helpers.DistanceHelper
 import oscar.cbls.business.routing._
-import oscar.cbls.core.distrib.Supervisor
+import oscar.cbls.core.distributed.Supervisor
 import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.lib.search.combinators.distributed.{DistributedBest, DistributedFirst, Remote}
 import oscar.cbls.modeling.ModelingAPI

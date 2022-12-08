@@ -1,4 +1,4 @@
-package oscar.cbls.core.distrib
+package oscar.cbls.core.distributed
 
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
@@ -13,42 +13,52 @@ import scala.concurrent.duration.Duration.Infinite
 import scala.concurrent.{Await, Future, TimeoutException}
 import scala.util.{Failure, Success}
 
-sealed trait MessagesToSupervisor
+sealed trait MessageToSupervisor
 
-final case class NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) extends MessagesToSupervisor
+final case class NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) extends MessageToSupervisor
 
-final case class ReadyForWork(workerRef: ActorRef[MessageToWorker], completedSearchIDOpt: Option[Long], currentModelId:Option[SolutionID]) extends MessagesToSupervisor
+final case class ReadyForWork(workerRef: ActorRef[MessageToWorker],
+                              completedSearchIDOpt: Option[Long],
+                              currentModelId: Option[SolutionID]) extends MessageToSupervisor
 
-final case class CancelSearchToSupervisor(searchID: Long, keepAliveIfOjBelow:Option[Long]=None) extends MessagesToSupervisor
+final case class CancelSearchToSupervisor(searchID: Long,
+                                          keepAliveIfOjBelow: Option[Long]=None) extends MessageToSupervisor
 
-final case class SearchStarted(searchID: Long, startID: Long, worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
+final case class SearchStarted(searchID: Long,
+                               startID: Long,
+                               worker: ActorRef[MessageToWorker]) extends MessageToSupervisor
 
-final case class SearchNotStarted(searchID: Long, startID:Long, worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
+final case class SearchNotStarted(searchID: Long,
+                                  startID:Long,
+                                  worker: ActorRef[MessageToWorker]) extends MessageToSupervisor
 
-final case class Crash(worker: ActorRef[MessageToWorker]) extends MessagesToSupervisor
+final case class Crash(worker: ActorRef[MessageToWorker]) extends MessageToSupervisor
 
 final case class DelegateSearch(searchRequest: SearchRequest,
-                                waitForMoreSearch:Boolean = false) extends MessagesToSupervisor
+                                waitForMoreSearch: Boolean = false) extends MessageToSupervisor
 
-final case class StartSomeSearch() extends MessagesToSupervisor
+case object StartSomeSearch extends MessageToSupervisor
 
-final case class GetNewUniqueID(replyTo:ActorRef[Long]) extends MessagesToSupervisor
+final case class GetNewUniqueID(replyTo: ActorRef[Long]) extends MessageToSupervisor
 
-final case class ShutDown(replyTo: Option[ActorRef[Unit]]) extends MessagesToSupervisor
+final case class ShutDown(replyTo: Option[ActorRef[Unit]]) extends MessageToSupervisor
 
-final case class SpawnWorker(workerBehavior: Behavior[MessageToWorker]) extends MessagesToSupervisor
+final case class SpawnWorker(workerBehavior: Behavior[MessageToWorker]) extends MessageToSupervisor
 
-final case class NbWorkers(replyTo: ActorRef[Int],waitForAtLeastOneWorker:Boolean) extends MessagesToSupervisor
+final case class NbWorkers(replyTo: ActorRef[Int],waitForAtLeastOneWorker:Boolean) extends MessageToSupervisor
 
-final case class RemoteStatisticsFor(replyTo:ActorRef[List[Array[String]]],remoteNeighborhood:RemoteTaskIdentification) extends MessagesToSupervisor
+final case class RemoteStatisticsFor(replyTo:ActorRef[List[Array[String]]],remoteNeighborhood:RemoteTaskIdentification) extends MessageToSupervisor
 
-final case class SpawnNewActor[T](behavior:Behavior[T],behaviorName:String, replyTo:ActorRef[ActorRef[T]]) extends MessagesToSupervisor
+final case class SpawnNewActor[T](behavior:Behavior[T],behaviorName:String, replyTo:ActorRef[ActorRef[T]]) extends MessageToSupervisor
 
 object Supervisor {
 
   val nbCores: Int = Runtime.getRuntime.availableProcessors()
 
-  def startSupervisorAndActorSystem(search: Neighborhood, verbose: Boolean = false, hotRestart:Boolean = true, tic: Duration = Duration.Inf): Supervisor = {
+  def startSupervisorAndActorSystem(search: Neighborhood,
+                                    verbose: Boolean = false,
+                                    hotRestart:Boolean = true,
+                                    tic: Duration = Duration.Inf): Supervisor = {
     val supervisorActorSystem = internalStartSupervisorAndActorSystem(verbose, hotRestart, tic)
     val supervisor = wrapSupervisor(supervisorActorSystem, verbose)(system = supervisorActorSystem)
     val (nbNRemoteNeighborhood,nbDistributedCombinator,_) = search.labelAndExtractRemoteTasks(supervisor: Supervisor)
@@ -59,7 +69,7 @@ object Supervisor {
     supervisor
   }
 
-  def internalStartSupervisorAndActorSystem(verbose: Boolean = false, hotRestart:Boolean, tic: Duration = Duration.Inf): ActorSystem[MessagesToSupervisor] = {
+  def internalStartSupervisorAndActorSystem(verbose: Boolean = false, hotRestart:Boolean, tic: Duration = Duration.Inf): ActorSystem[MessageToSupervisor] = {
     val startLogger: Logger = LoggerFactory.getLogger("SupervisorObject")
     startLogger.info("Starting actor system and supervisor")
 
@@ -67,20 +77,20 @@ object Supervisor {
     ActorSystem(createSupervisorBehavior(verbose, hotRestart, tic), "supervisor")
   }
 
-  def wrapSupervisor(supervisorRef: ActorRef[MessagesToSupervisor], verbose: Boolean)
+  def wrapSupervisor(supervisorRef: ActorRef[MessageToSupervisor], verbose: Boolean)
                     (implicit system: ActorSystem[_]): Supervisor = {
     new Supervisor(supervisorRef, verbose, system)
   }
 
-  def spawnSupervisor(context: ActorContext[_], verbose: Boolean, hotRestart:Boolean): ActorRef[MessagesToSupervisor] = {
+  def spawnSupervisor(context: ActorContext[_], verbose: Boolean, hotRestart:Boolean): ActorRef[MessageToSupervisor] = {
     context.spawn(createSupervisorBehavior(verbose, hotRestart), "supervisor")
   }
 
-  def createSupervisorBehavior(verbose: Boolean = false, hotRestart:Boolean = true, tic: Duration = Duration.Inf): Behavior[MessagesToSupervisor] =
-    Behaviors.setup { context: ActorContext[MessagesToSupervisor] => new SupervisorActor(context, verbose, hotRestart, tic) }
+  def createSupervisorBehavior(verbose: Boolean = false, hotRestart:Boolean = true, tic: Duration = Duration.Inf): Behavior[MessageToSupervisor] =
+    Behaviors.setup { context: ActorContext[MessageToSupervisor] => new SupervisorActor(context, verbose, hotRestart, tic) }
 }
 
-class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor],
+class Supervisor(val supervisorActor: ActorRef[MessageToSupervisor],
                  verbose: Boolean,
                  implicit val system: ActorSystem[_]) {
   //TODO look for an adequate timeout or stopping mechanism
@@ -96,7 +106,13 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor],
   def createLocalWorker(m: Store, search: Neighborhood, workerName: String = null): Unit = {
     this.synchronized {
       nbLocalWorkers += 1
-      val workerBehavior = WorkerActor.createWorkerBehavior(search.identifyRemotelySearchableNeighborhoods, m, this.supervisorActor, verbose, if (workerName == null) "localWorker" + nbLocalWorkers else workerName)
+      val workerBehavior = WorkerActor.createWorkerBehavior(
+        search.identifyRemotelySearchableNeighborhoods,
+        m,
+        this.supervisorActor,
+        verbose,
+        if (workerName == null) "localWorker" + nbLocalWorkers else workerName
+      )
       supervisorActor ! SpawnWorker(workerBehavior)
     }
   }
@@ -157,24 +173,22 @@ class Supervisor(val supervisorActor: ActorRef[MessagesToSupervisor],
   }
 }
 
-class SupervisorActor(context: ActorContext[MessagesToSupervisor],
+class SupervisorActor(context: ActorContext[MessageToSupervisor],
                       verbose: Boolean,
                       hotRestart:Boolean,
                       tic: Duration)
-  extends AbstractBehavior[MessagesToSupervisor](context) {
+  extends AbstractBehavior[MessageToSupervisor](context) {
 
   //message to self
-
-  private case class Tic() extends MessagesToSupervisor
+  private case class Tic() extends MessageToSupervisor
   //this one cannot be a control message.
 
   private val waitingSearches = scala.collection.mutable.Queue[SearchRequest]()
   var nbLocalWorker: Int = 0
   var nbCustomSearchActor:Int = 0
-
   var neighborhoodToPreferredWorker: SortedMap[Int, ActorRef[MessageToWorker]] = SortedMap.empty
   private var allKnownWorkers: List[ActorRef[MessageToWorker]] = Nil
-  private var idleWorkersAndTheirCurentModelID: List[(ActorRef[MessageToWorker],Option[SolutionID])] = Nil
+  private var idleWorkersAndTheirCurrentModelID: List[(ActorRef[MessageToWorker],Option[SolutionID])] = Nil
   //this one is a list, because the most common operations are add and takeFirst
   private var startingSearches: SortedMap[Long, (SearchRequest, Long, ActorRef[MessageToWorker])] = SortedMap.empty
   //need to add, and remove regularly, based on ID
@@ -182,12 +196,34 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
   private var totalStartedSearches = 0
   private var nextSearchID: Long = 0
   private var nextStartID: Long = 0 //search+worker
-
   private var notifyForAvailableWorkers:List[NbWorkers] = Nil
-
   private var statisticCollectorID:Int = 0
 
-  override def onMessage(msg: MessagesToSupervisor): Behavior[MessagesToSupervisor] = {
+  private def startSearch(search: SearchRequest, worker: ActorRef[MessageToWorker], currentSolutionAtWorker: Option[SolutionID]): Unit = {
+    if (verbose) context.log.info(s"assigning search:${search.uniqueSearchId} to worker:${worker.path}")
+    val startID = nextStartID
+    nextStartID = nextStartID + 1
+    totalStartedSearches += 1
+
+    val solutionForThisSearch = search.startSolutionOpt
+
+    val simplifiedSearch = (solutionForThisSearch, currentSolutionAtWorker) match {
+      case (Some(x), Some(y)) if x.solutionId.isDefined && x.solutionId.get == y => search.dropStartSolution
+      case _ => search
+    }
+
+    implicit val responseTimeout: Timeout = 3.seconds
+    context.ask[MessageToWorker, MessageToSupervisor](worker, res => StartSearch(simplifiedSearch, startID, res)) {
+      case Success(_: SearchStarted) => SearchStarted(simplifiedSearch.uniqueSearchId, startID, worker)
+      case Success(_: SearchNotStarted) => SearchNotStarted(simplifiedSearch.uniqueSearchId, startID, worker)
+      case Failure(_) => SearchNotStarted(simplifiedSearch.uniqueSearchId, startID, worker)
+      case _ => SearchNotStarted(simplifiedSearch.uniqueSearchId, startID, worker) // Default case
+    }
+
+    startingSearches = startingSearches + (startID -> (search, startID, worker))
+  }
+
+  override def onMessage(msg: MessageToSupervisor): Behavior[MessageToSupervisor] = {
     msg match {
 
       case Tic() =>
@@ -218,32 +254,32 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
           notifyForAvailableWorkers = n :: notifyForAvailableWorkers
         }
 
-      case RemoteStatisticsFor(replyTo:ActorRef[List[Array[String]]],remoteNeighborhood:RemoteTaskIdentification) =>
+      case RemoteStatisticsFor(replyTo, remoteNeighborhood) =>
 
         statisticCollectorID += 1
 
-        def statisticsCollector1(context:ActorContext[(Int,List[Array[String]])]): Behavior[(Int,List[Array[String]])] ={
+        def statisticsCollector1(context:ActorContext[(Int,List[Array[String]])]): Behavior[(Int,List[Array[String]])] = {
+          def statisticsCollector2(statisticsArray: Array[List[Array[String]]],
+                                   waitedAnswers: Int): Behavior[(Int, List[Array[String]])] = {
+            Behaviors.receiveMessage {
+              case (i, statistics) =>
+                statisticsArray(i) = statistics
+                if (waitedAnswers == 1) {
+                  replyTo ! statisticsArray.toList.flatten
+                  Behaviors.stopped
+                } else {
+                  statisticsCollector2(statisticsArray, waitedAnswers - 1)
+                }
+            }
+          }
+          //////////
           val workerArray = allKnownWorkers.reverse.toArray
           //println("workers:\n\t" + workerArray.mkString("\n\t"))
           for( i <- workerArray.indices) {
             workerArray(i) ! GetStatisticsFor(remoteNeighborhood, i, context.self)
           }
           val statisticsArray:Array[List[Array[String]]] = Array.fill(workerArray.length)(null)
-          statisticsCollector2(statisticsArray,statisticsArray.length)
-        }
-
-        def statisticsCollector2(statisticsArray:Array[List[Array[String]]],
-                                 waitedAnswers:Int): Behavior[(Int,List[Array[String]])] = {
-          Behaviors.receiveMessage {
-            case (i, statistics) =>
-              statisticsArray(i) = statistics
-              if (waitedAnswers == 1) {
-                replyTo ! statisticsArray.toList.flatten
-                Behaviors.stopped
-              } else {
-                statisticsCollector2(statisticsArray, waitedAnswers - 1)
-              }
-          }
+          statisticsCollector2(statisticsArray, statisticsArray.length)
         }
 
         context.spawn(Behaviors.setup
@@ -251,8 +287,8 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
 
       case NewWorkerEnrolled(workerRef: ActorRef[MessageToWorker]) =>
         allKnownWorkers = workerRef :: allKnownWorkers
-        idleWorkersAndTheirCurentModelID = (workerRef,None) :: idleWorkersAndTheirCurentModelID
-        context.self ! StartSomeSearch()
+        idleWorkersAndTheirCurrentModelID = (workerRef,None) :: idleWorkersAndTheirCurrentModelID
+        context.self ! StartSomeSearch
         context.log.info("new worker enrolled:" + workerRef.path)
 
         for(nbWorker <- notifyForAvailableWorkers){
@@ -260,9 +296,9 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
         }
         notifyForAvailableWorkers = Nil
 
-      case StartSomeSearch() =>
+      case StartSomeSearch =>
         //context.log.info("StartSomeSearch")
-        (waitingSearches.isEmpty, idleWorkersAndTheirCurentModelID) match {
+        (waitingSearches.isEmpty, idleWorkersAndTheirCurrentModelID) match {
           case (true, idleWorkers) if idleWorkers.nonEmpty => ;
             if (verbose) context.log.info(status)
 
@@ -270,35 +306,9 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
             if (verbose) context.log.info(status)
 
           case (false, _ :: _) =>
-
-            def startSearch(search: SearchRequest, worker: ActorRef[MessageToWorker], currentSolutionAtWorker:Option[SolutionID]): Unit = {
-              if (verbose) context.log.info(s"assigning search:${search.uniqueSearchId} to worker:${worker.path}")
-              val startID = nextStartID
-              nextStartID = nextStartID + 1
-              totalStartedSearches += 1
-
-              val solutionForThisSearch = search.startSolutionOpt
-
-              val simplifiedSearch = (solutionForThisSearch,currentSolutionAtWorker) match{
-                case (Some(x),Some(y)) if x.solutionId.isDefined && x.solutionId.get == y => search.dropStartSolution
-                case _ => search
-              }
-
-              implicit val responseTimeout: Timeout = 3.seconds
-              context.ask[MessageToWorker, MessagesToSupervisor](worker, res => StartSearch(simplifiedSearch, startID, res)) {
-                case Success(_: SearchStarted) => SearchStarted(simplifiedSearch.uniqueSearchId, startID, worker)
-                case Success(_: SearchNotStarted) => SearchNotStarted(simplifiedSearch.uniqueSearchId, startID, worker)
-                case Failure(_) => SearchNotStarted(simplifiedSearch.uniqueSearchId, startID, worker)
-                case _ => SearchNotStarted(simplifiedSearch.uniqueSearchId, startID, worker) // Default case
-              }
-
-              startingSearches = startingSearches + (startID -> (search, startID, worker))
-            }
-
-            val nbIdleWorkers = idleWorkersAndTheirCurentModelID.size
+            val nbIdleWorkers = idleWorkersAndTheirCurrentModelID.size
             val nbAvailableSearches = waitingSearches.size
             var nbSearchToStart = nbIdleWorkers min nbAvailableSearches
-
             var couldDequeue = true
             while (hotRestart && couldDequeue && nbSearchToStart != 0) {
               couldDequeue = false
@@ -307,16 +317,16 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
                 val preferredWorkerOpt = neighborhoodToPreferredWorker.get(nID)
                 preferredWorkerOpt match {
                   case Some(preferredWorker) =>
-                    val newIdle = idleWorkersAndTheirCurentModelID.filter(_._1.path != preferredWorker.path)
-                    if (newIdle.size != idleWorkersAndTheirCurentModelID.size) {
+                    val newIdle = idleWorkersAndTheirCurrentModelID.filter(_._1.path != preferredWorker.path)
+                    if (newIdle.size != idleWorkersAndTheirCurrentModelID.size) {
                       //start this one
                       //println("hotRestart" + searchTask.request.neighborhoodID)
-                      val modelAtWorkerSide = idleWorkersAndTheirCurentModelID.filter(_._1.path == preferredWorker.path) match{
-                        case (_,modelOpt) :: Nil => modelOpt
+                      val modelAtWorkerSide = idleWorkersAndTheirCurrentModelID.filter(_._1.path == preferredWorker.path) match {
+                        case (_, modelOpt) :: Nil => modelOpt
                         case _ => None
                       }
                       startSearch(searchTask, preferredWorker, modelAtWorkerSide)
-                      idleWorkersAndTheirCurentModelID = newIdle
+                      idleWorkersAndTheirCurrentModelID = newIdle
                       nbSearchToStart -= 1
                       couldDequeue = true
                       true
@@ -328,19 +338,17 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
 
             while (nbSearchToStart != 0) {
               val searchToStart = waitingSearches.dequeue()
-              val worker = idleWorkersAndTheirCurentModelID.head
-              idleWorkersAndTheirCurentModelID = idleWorkersAndTheirCurentModelID.tail
+              val worker = idleWorkersAndTheirCurrentModelID.head
+              idleWorkersAndTheirCurrentModelID = idleWorkersAndTheirCurrentModelID.tail
               //println("coldRestart " + searchToStart.request.neighborhoodID)
               startSearch(searchToStart, worker._1,worker._2)
-
-              if(hotRestart) {
-                searchToStart.neighborhoodIdOpt match{
+              if (hotRestart) {
+                searchToStart.neighborhoodIdOpt match {
                   case None => ;
                   case Some(n) =>
                     neighborhoodToPreferredWorker = neighborhoodToPreferredWorker + (n -> worker._1)
                 }
               }
-
               nbSearchToStart -= 1
             }
 
@@ -348,7 +356,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
             //double loop on these searches; perform worker assignment as they come (no smart optimization here, first fit)
             //for the remaining searches, make it anyhow
 
-            if (idleWorkersAndTheirCurentModelID.isEmpty) {
+            if (idleWorkersAndTheirCurrentModelID.isEmpty) {
               if (verbose) context.log.info(status)
             }
 
@@ -377,7 +385,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
             if (verbose) context.log.info(s"search:$searchID could not be started by worker:${worker.path}")
             waitingSearches.enqueue(search2)
             startingSearches = startingSearches.-(startID)
-            context.self ! StartSomeSearch()
+            context.self ! StartSomeSearch
 
           case _ =>
             if (verbose) context.log.warn(s"unexpected search:$searchID could not be started; ignoring")
@@ -389,23 +397,16 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
         if (verbose) context.log.info(s"got a worker ready:${worker.path}; finished search:$completedSearchID")
 
         require(allKnownWorkers contains worker)
-        /*        completedNeighborhoodIDAndMoveFound match {
-                  case None => ;
-                  case Some((s:Int,found)) =>
-                    if(!found && hotRestart){
-                      neighborhoodToPreferredWorker = neighborhoodToPreferredWorker.-(s)
-                    }
-                }*/
 
-        completedSearchID match{
+        completedSearchID match {
           case Some(s) => ongoingSearches = ongoingSearches.-(s)
           case None => ;
         }
 
-        idleWorkersAndTheirCurentModelID = (worker,currentModelId) :: idleWorkersAndTheirCurentModelID
-        context.self ! StartSomeSearch()
+        idleWorkersAndTheirCurrentModelID = (worker,currentModelId) :: idleWorkersAndTheirCurrentModelID
+        context.self ! StartSomeSearch
 
-      case GetNewUniqueID(replyTo:ActorRef[Long]) =>
+      case GetNewUniqueID(replyTo) =>
         replyTo ! nextSearchID
         nextSearchID += 1
 
@@ -419,11 +420,10 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
         waitingSearches.enqueue(searchRequest)
 
         if(!waitForMoreSearches) {
-          context.self ! StartSomeSearch()
+          context.self ! StartSomeSearch
         }
 
-      case CancelSearchToSupervisor(searchID: Long,keepAliveIfOjBelow:Option[Long]) =>
-
+      case CancelSearchToSupervisor(searchID, keepAliveIfOjBelow) =>
         require(searchID != -1)
         waitingSearches.dequeueFirst(_.uniqueSearchId == searchID) match {
           case None =>
@@ -459,7 +459,7 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
 
         context.log.info(s"got Shutdown command; forwarding to workers")
         for (worker <- allKnownWorkers) {
-          worker ! ShutDownWorker
+          worker ! ShutdownWorker
         }
         replyTo match {
           case Some(x) => x ! ()
@@ -488,6 +488,6 @@ class SupervisorActor(context: ActorContext[MessagesToSupervisor],
   }
 
   def status: String = {
-    s"workers(total:${allKnownWorkers.size} busy:${allKnownWorkers.size - idleWorkersAndTheirCurentModelID.size}) searches(waiting:${waitingSearches.size} starting:${startingSearches.size} running:${ongoingSearches.size} totalStarted:$totalStartedSearches)"
+    s"workers(total:${allKnownWorkers.size} busy:${allKnownWorkers.size - idleWorkersAndTheirCurrentModelID.size}) searches(waiting:${waitingSearches.size} starting:${startingSearches.size} running:${ongoingSearches.size} totalStarted:$totalStartedSearches)"
   }
 }

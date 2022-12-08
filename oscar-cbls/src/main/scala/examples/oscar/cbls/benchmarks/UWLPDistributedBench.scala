@@ -3,7 +3,7 @@ package examples.oscar.cbls.benchmarks
 import oscar.cbls._
 import oscar.cbls.algo.generator.WarehouseLocationGenerator
 import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.core.distrib.Supervisor
+import oscar.cbls.core.distributed.Supervisor
 import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.lib.search.combinators.distributed.{DistributedBest, DistributedFirst, DistributedRestart, Remote}
 import oscar.cbls.modeling.ModelingAPI

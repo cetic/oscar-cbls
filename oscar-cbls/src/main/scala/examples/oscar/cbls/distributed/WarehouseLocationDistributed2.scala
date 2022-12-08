@@ -1,10 +1,10 @@
-package examples.oscar.cbls.distrib
+package examples.oscar.cbls.distributed
 
 import oscar.cbls._
 import oscar.cbls.algo.generator.WarehouseLocationGenerator
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.distrib
+import oscar.cbls.core.distributed
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{Best, Neighborhood}
 import oscar.cbls.lib.search.combinators.distributed.DistributedFirst
@@ -93,7 +93,7 @@ object WarehouseLocationDistributed2 extends App {
 
   //supervisor side
   val (store, search, obj, finalPrint) = arrayOfStoreSearchObjAndFinalPrint(nbWorker)
-  val supervisor = distrib.startSupervisorAndActorSystem(search)
+  val supervisor = distributed.startSupervisorAndActorSystem(search)
 
   //creating all the workers; here we only create local workers
   for (i <- 0 until nbWorker) {
