@@ -97,9 +97,11 @@ object WareHouseLocationEjectionChain extends App with StopWatch {
             val lastChangedWarehouse = lastMove.id
             val allWarehouses = (initMove :: moves).map(_.asInstanceOf[AssignMove].id)
             val otherWarehouses =
-              if (setTo == 0) kNearestClosedWarehouses(lastChangedWarehouse, kClosed).filter(w => !allWarehouses.contains(w) && w < initMoveWarehouse)
-              else kNearestOpenWarehouses(lastChangedWarehouse, kOpen).filter(w => !allWarehouses.contains(w) && w < initMoveWarehouse)
-            Some(AssignNeighborhood(warehouseOpenArray, "EjectWarehouse2", searchZone = () => otherWarehouses, selectIndiceBehavior = Best(), hotRestart = false))
+              if (setTo == 0) kNearestClosedWarehouses(lastChangedWarehouse, kClosed).filter(w => !allWarehouses.contains(w))
+              else kNearestOpenWarehouses(lastChangedWarehouse, kOpen).filter(w => !allWarehouses.contains(w))
+
+            val otherWarehousesWithSymmetryElim = if (length == 0) otherWarehouses.filter(_ < initMoveWarehouse) else otherWarehouses
+            Some(AssignNeighborhood(warehouseOpenArray, "EjectWarehouse2", searchZone = () => otherWarehousesWithSymmetryElim, selectIndiceBehavior = Best(), hotRestart = false))
           }
         },
         intermediaryStops = true)
