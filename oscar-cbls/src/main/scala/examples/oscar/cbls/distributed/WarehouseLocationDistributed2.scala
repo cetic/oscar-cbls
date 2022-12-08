@@ -13,10 +13,6 @@ import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParalle
 import scala.language.postfixOps
 
 object WarehouseLocationDistributed2 extends App {
-
-  //  val time = Array.fill(10)(0L)
-
-  //  for(nbWorker <- 1 until 10){
   val nbWorker = 6
 
   //the number of warehouses

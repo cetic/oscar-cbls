@@ -3,7 +3,7 @@ package oscar.cbls.lib.search.combinators
 import oscar.cbls._
 import oscar.cbls.core.computation.{AbstractVariable, Solution, Store}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{AcceptanceCriterion, CallBackMove, CompositeMove, DifferentOf, DoNothingMove, DoNothingNeighborhood, LoadSolutionMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult, StrictImprovement, SupportForAndThenChaining}
+import oscar.cbls.core.search.{AcceptanceCriterion, CallBackMove, CompositeMove, CompositionProfiler, DifferentOf, DoNothingMove, DoNothingNeighborhood, LoadSolutionMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult, StrictImprovement, SupportForAndThenChaining}
 
 abstract class NeighborhoodCombinatorNoProfile(a: Neighborhood*) extends NeighborhoodCombinator(a:_*) {
   override def collectProfilingStatistics: List[Array[String]] = List.empty
@@ -195,7 +195,7 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
           override def model : Store = obj.model
           override def value : Long = obj.value
         }
-        currentB.getMove(new secondInstrumentedObjective(obj), initialObj, secondAcceptanceCriteria) match {
+        currentB.getMove(new secondInstrumentedObjective(obj), initialObj, secondAcceptanceCriterion) match {
           case NoMoveFound =>
             profiler.mergeDynProfiler(currentB.profiler)
             Long.MaxValue
@@ -380,7 +380,7 @@ case class Atomic(a: Neighborhood,
 
 case class EjectionChains(nextNeighborhood: List[Move] => Option[Neighborhood],
                           intermediaryObj:Option[Objective] = None,
-                          intermediaryAcc:Option[(Long,Long) => Boolean] = Some((oldObj,newObj) => newObj < oldObj),
+                          intermediaryAcc:Option[AcceptanceCriterion] = Some(StrictImprovement),
                           intermediaryStops:Boolean = false,
                           name:String = "EjectionChains") extends NeighborhoodCombinator() {
   override def getMove(obj: Objective,
@@ -416,10 +416,10 @@ case class EjectionChains(nextNeighborhood: List[Move] => Option[Neighborhood],
           neighborhood.getMove(searchObj, currentObj, searchAcc) match {
             case NoMoveFound =>
               val returnObj = obj.value
-              if(nbMoves >= 1 && acceptanceCriterion(initialObj,returnObj)){
+              if (nbMoves >= 1 && acceptanceCriterion(initialObj,returnObj)) {
                 startSolution.restoreAndReleaseCheckpoint()
                 return MoveFound(CompositeMove(allMoves.reverse, returnObj, name))
-              }else{
+              } else {
                 startSolution.restoreAndReleaseCheckpoint()
                 return NoMoveFound
               }

@@ -6,16 +6,16 @@ import oscar.cbls.core.search._
 
 import scala.annotation.tailrec
 
-abstract class BestNeighborhoodFirst(l:List[Neighborhood],
-                                     tabuLength:Int,
-                                     overrideTabuOnFullExhaust:Long,
-                                     refresh:Int)
+abstract class BestNeighborhoodFirst(l: List[Neighborhood],
+                                     tabuLength: Int,
+                                     overrideTabuOnFullExhaust: Long,
+                                     refresh: Int)
   extends NeighborhoodCombinator(l:_*) {
   require(overrideTabuOnFullExhaust < tabuLength, "overrideTabuOnFullExhaust should be < tabuLength")
 
-  protected var it:Int = 0
-  protected def bestKey(neighborhoodId:Int):Long
-  override val profiler =BestFirstProfiler(this,l)
+  protected var it: Int = 0
+  protected def bestKey(neighborhoodId: Int):Long
+  override val profiler = BestFirstProfiler(this,l)
   override def collectProfilingStatistics: List[Array[String]] =
     profiler.collectThisProfileStatistics ::: super.collectProfilingStatistics
 
@@ -60,21 +60,22 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
                        initialObj: Long,
                        acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     profiler.explorationStarted()
-    if ((it > 0) && ((it % refresh) == 0) && neighborhoodArray.exists(_.nbFound!=0)) {
+    if ((it > 0) && ((it % refresh) == 0) && neighborhoodArray.indices.toList.exists(profiler.nbFoundSubN(_) != 0)) {
+
       if (printExploredNeighborhoods) {
         println("refreshing knowledge on neighborhood; statistics since last refresh: ")
         printStatus()
       }
       profiler.resetSelectionNeighborhoodStatistics()
-      for(p <- neighborhoodArray.indices){
-        if(tabu(p) <= it) updateNeighborhodPerformances(p)
+      for (p <- neighborhoodArray.indices) {
+        if (tabu(p) <= it) updateNeighborhodPerformances(p)
       }
     }
     updateTabu()
-    while(!neighborhoodHeap.isEmpty){
+    while (!neighborhoodHeap.isEmpty) {
       val headID = neighborhoodHeap.getFirst
       val headNeighborhood = neighborhoodArray(headID)
-      headNeighborhood.getMove(obj,initialObj, acceptanceCriterion) match{
+      headNeighborhood.getMove(obj, initialObj, acceptanceCriterion) match {
         case NoMoveFound =>
           if (neighborhoodHeap.size == l.size) profiler.firstFailed()
           makeTabu(headID)
@@ -90,8 +91,8 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
       val newNonTabu = tabuNeighborhoods.popFirst()
       neighborhoodArray(newNonTabu).reset()
       neighborhoodHeap.insert(newNonTabu)
-      it -=1
-      getMove(obj,initialObj,acceptanceCriterion)
+      it -= 1
+      getMove(obj, initialObj, acceptanceCriterion)
     } else {
       profiler.explorationEnded(false)
       NoMoveFound

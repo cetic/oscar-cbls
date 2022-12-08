@@ -16,7 +16,7 @@
 package oscar.cbls.lib.search.neighborhoods
 
 import oscar.cbls.core.computation.CBLSIntVar
-import oscar.cbls.core.search.{AcceptanceCriterion, CompositeMove, Move, Neighborhood, NoMoveFound, SearchResult}
+import oscar.cbls.core.search.{AcceptanceCriterion, CompositeMove, EmptyProfiler, Move, Neighborhood, NoMoveFound, SearchResult}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.search.LinearSelectors
 

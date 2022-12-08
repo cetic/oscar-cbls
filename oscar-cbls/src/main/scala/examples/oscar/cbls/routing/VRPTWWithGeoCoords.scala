@@ -10,7 +10,7 @@ import oscar.cbls.core.computation.{CBLSIntVar, Domain, Store}
 import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.First
 
-object VRPTWWithGeoCoords extends App{
+object VRPTWWithGeoCoords extends App {
   val n = 1000
   val v = 10
 

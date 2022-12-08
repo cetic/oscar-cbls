@@ -18,7 +18,7 @@ package oscar.cbls.core.search
 
 import oscar.cbls.core.computation.{Solution, Store, Variable}
 import oscar.cbls.core.distributed.{RemoteNeighborhood, RemoteTask, Supervisor}
-import oscar.cbls.core.objective.{AbortException, AbortableObjective, LoggingObjective, Objective}
+import oscar.cbls.core.objective.{AbortException, AbortableObjective, LoggingObjective, Objective, ProfiledObjective}
 import oscar.cbls.lib.search.combinators._
 import oscar.cbls.util.Properties
 

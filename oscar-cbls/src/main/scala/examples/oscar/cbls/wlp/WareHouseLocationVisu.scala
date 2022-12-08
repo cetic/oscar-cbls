@@ -30,7 +30,7 @@ import oscar.cbls.visual.wlp.WareHouseLocationMap
 
 import scala.language.postfixOps
 
-object WareHouseLocationVisu extends App with StopWatch{
+object WareHouseLocationVisu extends App with StopWatch {
 
   //the number of warehouses
   val W:Int = 300

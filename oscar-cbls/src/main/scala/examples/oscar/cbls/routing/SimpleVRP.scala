@@ -5,10 +5,11 @@ import oscar.cbls.algo.generator.RoutingMatrixGenerator
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.global._
 import oscar.cbls.business.routing.model.helpers.DistanceHelper
-import oscar.cbls.business.routing.neighborhood.{ThreeOpt, TreeOpt, TwoOpt}
+import oscar.cbls.business.routing.neighborhood.{ThreeOpt, TwoOpt}
 import oscar.cbls.core.search.Best
+import oscar.cbls.visual.profiling.VisualProfiler
 
-object SimpleVRP extends App{
+object SimpleVRP extends App {
   val n: Int = 200
   val v: Int = 2
   val size: Int = 10000

@@ -1,7 +1,7 @@
 package oscar.cbls.lib.search.combinators
 
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{AcceptanceCriterion, DoNothingNeighborhood, InstrumentedMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult}
+import oscar.cbls.core.search.{AcceptanceCriterion, BasicProfiler, DoNothingNeighborhood, EmptyProfiler, InstrumentedMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult}
 
 import scala.annotation.tailrec
 

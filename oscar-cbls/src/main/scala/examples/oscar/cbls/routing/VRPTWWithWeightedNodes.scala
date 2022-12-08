@@ -14,7 +14,7 @@ import oscar.cbls.core.search.{First, Neighborhood}
 
 import scala.util.Random
 
-object VRPTWWithWeightedNodes extends App{
+object VRPTWWithWeightedNodes extends App {
   val n = 11
   val v = 4
 
