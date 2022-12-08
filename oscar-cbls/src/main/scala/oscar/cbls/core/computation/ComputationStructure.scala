@@ -62,14 +62,14 @@ case class Store(override val verbose:Boolean = false,
   private var propagationElements:QList[PropagationElement] = _
   private[this] var privateDecisionVariables:QList[Variable] = _
 
-  def decisionVariables():QList[Variable] = {
-    if(privateDecisionVariables == null){
-      privateDecisionVariables  = null
+  def decisionVariables(): QList[Variable] = {
+    if (privateDecisionVariables == null) {
+      privateDecisionVariables = null
       var currentVarPos = variables
-      while(currentVarPos != null){
+      while (currentVarPos != null) {
         val v:AbstractVariable = currentVarPos.head
         currentVarPos = currentVarPos.tail
-        if (v.isDecisionVariable){
+        if (v.isDecisionVariable) {
           privateDecisionVariables = QList(v.asInstanceOf[Variable],privateDecisionVariables)
         }
       }
@@ -80,7 +80,7 @@ case class Store(override val verbose:Boolean = false,
   /**To save the current value of the variables registered in the model
    * @param inputOnly if set to true (as by default) the solution will only contain the variables that are not derived through an invariant
    */
-  def solution(inputOnly:Boolean = true):Solution = {
+  def solution(inputOnly:Boolean = true): Solution = {
     val variablesToSave = if(inputOnly) {
       decisionVariables()
     }else variables
@@ -90,7 +90,7 @@ case class Store(override val verbose:Boolean = false,
 
   def createCheckpoint():Checkpoint = {
     saveNr += 1
-    Checkpoint(decisionVariables.map(_.createCheckpoint),this,Some(saveNr))
+    Checkpoint(decisionVariables().map(_.createCheckpoint),this,Some(saveNr))
   }
 
   private var saveNr:Int = 0
@@ -310,7 +310,7 @@ case class Solution(saves:Iterable[AbstractVariableSnapShot],
 
 
 trait VariableCheckpoint{
-  def restoreAndReleaseCheckpoint()
+  def restoreAndReleaseCheckpoint(): Unit
 }
 
 case class Checkpoint(saves:Iterable[VariableCheckpoint],
@@ -318,7 +318,7 @@ case class Checkpoint(saves:Iterable[VariableCheckpoint],
                       saveNr:Option[Int]){
 
   private var released:Boolean = false
-  def restoreAndReleaseCheckpoint():Unit = {
+  def restoreAndReleaseCheckpoint(): Unit = {
     if(released) throw new Error("cannot restore and release twice")
     released = true
     for (save <- saves) save.restoreAndReleaseCheckpoint()

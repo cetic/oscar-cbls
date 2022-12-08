@@ -22,12 +22,14 @@ class ProfilingTable(headers: Array[String], values: Array[Array[String]], goodV
     case None => List(-1, -1, -1)
     case Some("Max") => values.indices.sortBy(nv => -statToDouble(values(nv)(vi))).take(3).toList
     case Some("Min") => values.indices.sortBy(nv => statToDouble(values(nv)(vi))).take(3).toList
+    case _ => List(-1, -1, -1)
   }).toArray
 
   val worst3Values: Array[List[Int]] = goodValueIndicator.indices.map(vi => goodValueIndicator(vi) match {
     case None => List(-1, -1, -1)
     case Some("Max") => values.indices.sortBy(nv => statToDouble(values(nv)(vi))).take(3).toList
     case Some("Min") => values.indices.sortBy(nv => -statToDouble(values(nv)(vi))).take(3).toList
+    case _ => List(-1, -1, -1)
   }).toArray
 
   def setHeaders(): Unit =

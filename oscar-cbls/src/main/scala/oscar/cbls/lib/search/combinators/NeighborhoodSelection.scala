@@ -156,7 +156,7 @@ case class FastestFirst(l:List[Neighborhood],
  * @author renaud.delandtsheer@cetic.be
  */
 class RoundRobin(robins: Array[(Neighborhood,Int)], tabu:Int = 1)
-  extends NeighborhoodCombinator(robins.map(_._1):_*){
+  extends NeighborhoodCombinator(robins.map(_._1).toIndexedSeq:_*){
   private var currentRobin = 0
   private var nbExplorationsOnCurrentRobin:Int = 0
   private var firstFailedRobinInRow:Int = -1
