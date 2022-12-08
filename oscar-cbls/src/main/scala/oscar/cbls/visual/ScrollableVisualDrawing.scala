@@ -48,7 +48,10 @@ class ScrollableVisualDrawing(flipped: Boolean, scalable: Boolean) extends Visua
       val newValue = adjustmentEvent.getValue
       val newPixelPerScrollBValue = pixelPerScrollValue("H")
       for (shape <- shapes)
-        shape.moveAt(shape.getBounds._1+((oldPixelPerScrollBValue*oldValue)-(newPixelPerScrollBValue*newValue)).round, shape.getBounds._3)
+        shape.moveAt(
+          (shape.getBounds._1+((oldPixelPerScrollBValue*oldValue)-(newPixelPerScrollBValue*newValue)).round).toDouble,
+          shape.getBounds._3.toDouble
+        )
       oldValue = newValue
       oldPixelPerScrollBValue = newPixelPerScrollBValue
     }
@@ -61,7 +64,10 @@ class ScrollableVisualDrawing(flipped: Boolean, scalable: Boolean) extends Visua
       val newValue = adjustmentEvent.getValue
       val newPixelPerScrollBValue = pixelPerScrollValue("V")
       for (shape <- shapes)
-        shape.moveAt(shape.getBounds._1, shape.getBounds._3+((oldPixelPerScrollBValue*oldValue)-(newPixelPerScrollBValue*newValue)).round)
+        shape.moveAt(
+          shape.getBounds._1.toDouble,
+          (shape.getBounds._3+((oldPixelPerScrollBValue*oldValue)-(newPixelPerScrollBValue*newValue)).round).toDouble
+        )
       oldValue = newValue
       oldPixelPerScrollBValue = newPixelPerScrollBValue
     }

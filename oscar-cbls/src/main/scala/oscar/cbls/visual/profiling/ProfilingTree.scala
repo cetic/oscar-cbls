@@ -134,7 +134,10 @@ class ProfilingTree(search: Neighborhood) extends BetterVisualDrawing(false,fals
     }
 
     def moveStatRight(at: Long): Unit ={
-      nodeDisplay.statistics.moveAt(at+TEXT_PADDING,nodeDisplay.statistics.font.getSize+TEXT_PADDING)
+      nodeDisplay.statistics.moveAt(
+        (at+TEXT_PADDING).toDouble,
+        (nodeDisplay.statistics.font.getSize+TEXT_PADDING).toDouble
+      )
     }
   }
 
