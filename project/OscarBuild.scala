@@ -93,6 +93,7 @@ object OscarBuild {
     val akkaActor = "com.typesafe.akka" %% "akka-actor" % "2.6.19"
     val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.6.19"
     val akkaActorTyped = "com.typesafe.akka" %% "akka-actor-typed" % "2.6.19"
+    val akkaCluster = "com.typesafe.akka" %% "akka-cluster-typed" % "2.6.19"
     val akkasl4j = "com.typesafe.akka" %% "akka-slf4j" % "2.6.19"
 
     // Test libraries
