@@ -400,6 +400,17 @@ class ProfiledObjective(baseObjective: Objective, neighborhoodProfiler: Neighbor
   }
 }
 
+class ProfiledLoggingObjective(baseObjective: Objective, neighborhoodProfiler: NeighborhoodProfiler) extends LoggingObjective(baseObjective) {
+  override def detailedString(short: Boolean, indent: Long): String = super.detailedString(short, indent)
+
+  override def model: Store = super.model
+
+  override def value: Long ={
+    neighborhoodProfiler.neighborSelected()
+    super.value
+  }
+}
+
 class AbortException extends Exception("Abort!")
 
 class AbortableObjective(shouldAbort:()=>Boolean, baseObj:Objective) extends Objective{
