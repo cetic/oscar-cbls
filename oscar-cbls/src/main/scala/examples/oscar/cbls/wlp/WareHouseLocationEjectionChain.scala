@@ -104,7 +104,8 @@ object WareHouseLocationEjectionChain extends App with StopWatch{
             Some(AssignNeighborhood(warehouseOpenArray, "EjectWarehouse2", searchZone = () => otherWarehousesWithSymmetryElim, selectIndiceBehavior = Best(), hotRestart = false))
           }
         },
-        intermediaryStops = true)
+        intermediaryStops = true,
+        intermediaryAcc = Some((oldObj,newObj) => newObj != Long.MaxValue && newObj < oldObj + 100))
     }
 
       ) name s"Eject($maxLength,$kOpen,$kClosed)")

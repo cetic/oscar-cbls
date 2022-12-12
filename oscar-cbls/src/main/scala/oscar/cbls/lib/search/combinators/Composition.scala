@@ -356,11 +356,32 @@ case class Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAccept
   }
 }
 
-case class EjectionChains(nextNeighborhood: List[Move] => Option[Neighborhood],
-                          intermediaryObj:Option[Objective] = None,
-                          intermediaryAcc:Option[(Long,Long) => Boolean] = Some((oldObj,newObj) => newObj < oldObj),
-                          intermediaryStops:Boolean = false,
-                          name:String = "EjectionChains") extends NeighborhoodCombinator() {
+object EjectionChains{
+  def apply(nextNeighborhood: List[Move] => Option[Neighborhood],
+            intermediaryObj:Option[Objective] = None,
+            intermediaryAcc:Option[(Long,Long) => Boolean] = Some((oldObj,newObj) => newObj < oldObj),
+            intermediaryStops:Boolean = false,
+            name:String = "EjectionChains") =
+    new EjectionChains[Unit](
+      t0 = (),
+      {case (t,m) => nextNeighborhood(m).map(((),_))},
+      intermediaryObj, intermediaryAcc, intermediaryStops, name)
+
+  def withAccumulator[T](t0:T,
+                         nextNeighborhood: (T,List[Move]) => Option[(T,Neighborhood)],
+                         intermediaryObj:Option[Objective] = None,
+                         intermediaryAcc:Option[(Long,Long) => Boolean] = Some((oldObj,newObj) => newObj < oldObj),
+                         intermediaryStops:Boolean = false,
+                         name:String = "EjectionChains") = new EjectionChains[T](
+    t0,nextNeighborhood,intermediaryObj, intermediaryAcc, intermediaryStops, name)
+}
+
+class EjectionChains[T](t0:T,
+                        nextNeighborhood: (T,List[Move]) => Option[(T,Neighborhood)],
+                        intermediaryObj:Option[Objective] = None,
+                        intermediaryAcc:Option[(Long,Long) => Boolean] = Some((oldObj,newObj) => newObj < oldObj),
+                        intermediaryStops:Boolean = false,
+                        name:String = "EjectionChains") extends NeighborhoodCombinator() {
   override def getMove(obj: Objective,
                        initialObj:Long,
                        acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
@@ -372,6 +393,7 @@ case class EjectionChains(nextNeighborhood: List[Move] => Option[Neighborhood],
     var allMoves:List[Move] = Nil
     var currentObj: Long = intermediaryObj match{case Some(o) => o.value case None => obj.value}
     var nbMoves: Int = 0
+    var currentT = t0
 
     while (true) {
       if(intermediaryStops){
@@ -382,7 +404,7 @@ case class EjectionChains(nextNeighborhood: List[Move] => Option[Neighborhood],
         }
       }
 
-      nextNeighborhood(allMoves) match{
+      nextNeighborhood(currentT,allMoves) match{
         case None =>
           val returnObj = obj.value
           if(nbMoves >= 1 && acceptanceCriterion(initialObj,returnObj)){
@@ -392,7 +414,8 @@ case class EjectionChains(nextNeighborhood: List[Move] => Option[Neighborhood],
             startSolution.restoreAndReleaseCheckpoint()
             return NoMoveFound
           }
-        case Some(neighborhood) =>
+        case Some((nextT,neighborhood)) =>
+          currentT = nextT
           neighborhood.getMove(searchObj, currentObj, searchAcc) match {
             case NoMoveFound =>
               val returnObj = obj.value
