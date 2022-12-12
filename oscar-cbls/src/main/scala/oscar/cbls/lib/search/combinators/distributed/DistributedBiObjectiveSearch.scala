@@ -20,9 +20,9 @@ import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import akka.util.Timeout
 import oscar.cbls.algo.heap.BinomialHeapWithMove
 import oscar.cbls.core.computation.{Solution, Store}
-import oscar.cbls.core.distrib._
+import oscar.cbls.core.distributed._
 import oscar.cbls.core.objective.{CascadingObjective, IndependentObjective, Objective}
-import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, SearchResult}
+import oscar.cbls.core.search.{AcceptanceCriterion, DistributedCombinator, Neighborhood, SearchResult}
 import oscar.cbls.lib.search.combinators.multiObjective.PlotPareto
 import oscar.cbls.util.Properties
 import oscar.cbls.visual.SingleFrameWindow
@@ -33,16 +33,20 @@ import scala.concurrent.{Await, Future, Promise}
 import scala.math.Ordered.orderingToOrdered
 import scala.util.{Failure, Success}
 
-class ParetoPointSearcher(taskId:Int,
-                          minObj1WithOBj2BoundNeighborhood:() => Neighborhood,
-                          minObj2WithFoundObj1BoundNeighborhood:() => Neighborhood)
-  extends RemoteTask(taskId,"ParetoPointSearcher"){
+case class ParetoPointSearcher(taskId: Int,
+                               minObj1WithOBj2BoundNeighborhood: () => Neighborhood,
+                               minObj2WithFoundObj1BoundNeighborhood: () => Neighborhood)
+  extends RemoteTask {
+  override final val description: String = "ParetoPointSearcher"
 
   override def abort(): Unit = { } //there is no abort
 
-  override def doTask(taskMessage1: SearchRequest, model: Store, currentSolOpt: Option[(Solution, SolutionID)], workerID: Option[String]): Option[(Solution, SolutionID)] = {
+  override def doTask(taskMessage1: SearchRequest,
+                      model: Store,
+                      currentSolOpt: Option[(Solution,SolutionID)],
+                      workerID: Option[String]): Option[(Solution,SolutionID)] = {
 
-    val (startSol,solId):(Solution,Option[SolutionID]) = loadSolution(taskMessage1.startSolutionOpt,model,currentSolOpt,workerID)
+    val (startSol,solId): (Solution,Option[SolutionID]) = loadSolution(taskMessage1.startSolutionOpt,model,currentSolOpt,workerID)
 
     val taskMessage = taskMessage1.asInstanceOf[OptimizeWithBoundRequest]
 
@@ -64,7 +68,7 @@ class ParetoPointSearcher(taskId:Int,
     val foundOBj1 = obj1.value
     val foundOBj2 = obj2.value
 
-    //second pass, optimizingthe other objective while keeping the first constant,
+    //second pass, optimizing the other objective while keeping the first constant,
     // to ensure that this is Pareto optimal
     val minObj2WithFoundObj1 =
       CascadingObjective(
@@ -84,15 +88,16 @@ class ParetoPointSearcher(taskId:Int,
 }
 
 
-case class OptimizeWithBoundRequest(override val remoteTaskId: RemoteTaskIdentification,
+case class OptimizeWithBoundRequest(remoteTaskId:RemoteTaskIdentification,
                                     obj1: IndependentObjective,
                                     obj2: IndependentObjective,
                                     maxValueForObj2: Long, //only this one is considered, the other are informative and traceability stuff
                                     startSolution: Option[IndependentSolution],
                                     initObj1: Long,
                                     initObj2: Long,
-                                    override val sendResultTo: ActorRef[SearchEnded])
-  extends SearchRequest(-1, remoteTaskId, sendResultTo) { //there is no uniqueID here because we will not cancel tasks
+                                    sendResultTo: ActorRef[SearchEnded]
+                                   ) extends SearchRequest { //there is no uniqueID here because we will not cancel tasks
+  override final val uniqueSearchId: Long = -1
 
   override def startSolutionOpt: Option[IndependentSolution] = startSolution //we are not interested by hotRestart
 
@@ -135,30 +140,33 @@ case class OptimizeWithBoundRequest(override val remoteTaskId: RemoteTaskIdentif
  * @param filterRectangle an additional method that you can specify to filter away some rectangles of the search,
  *                     typically when you want to trade time for granularity of the Pareto front.
  */
-class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
-                                   minObj2Neighborhood:Option[() => Neighborhood] = None,
-                                   obj1:Objective,
-                                   obj2:Objective,
-                                   stopSurface:Long = 0,
-                                   maxPoints:Int = 200,
-                                   verbose:Boolean = false,
-                                   visu:Boolean = false,
+class DistributedBiObjectiveSearch(minObj1Neighborhood: () => Neighborhood,
+                                   minObj2Neighborhood: Option[() => Neighborhood] = None,
+                                   obj1: Objective,
+                                   obj2: Objective,
+                                   stopSurface: Long = 0,
+                                   maxPoints: Int = 200,
+                                   verbose: Boolean = false,
+                                   visu: Boolean = false,
                                    visuTitle: String = "Pareto",
                                    obj1Name: String = "obj1",
                                    obj2Name: String = "obj2",
-                                   filterRectangle:(Long, Long, Long, Long) => Boolean = (_:Long, _:Long, _:Long, _:Long) => true,
-                                   stayAlive:Boolean = false,
-                                   setMaxWorkers:Option[Int] = None
-                                  ) extends DistributedCombinator(
-  Array(),
-  Array((taskId:Int) =>  new ParetoPointSearcher(
-    taskId,
-    minObj1WithOBj2BoundNeighborhood = minObj1Neighborhood,
-    minObj2WithFoundObj1BoundNeighborhood = minObj2Neighborhood.getOrElse(minObj1Neighborhood)))) {
+                                   filterRectangle: (Long, Long, Long, Long) => Boolean = (_:Long, _:Long, _:Long, _:Long) => true,
+                                   stayAlive: Boolean = false,
+                                   setMaxWorkers: Option[Int] = None)
+  extends DistributedCombinator (
+    Array(),
+    Array((taskId:Int) =>  ParetoPointSearcher(
+      taskId,
+      minObj1WithOBj2BoundNeighborhood = minObj1Neighborhood,
+      minObj2WithFoundObj1BoundNeighborhood = minObj2Neighborhood.getOrElse(minObj1Neighborhood)
+    ))
+  ) {
 
   //a rectangle, anchored at a solution
   //the solution is the upper left corner
-  class SortedRectangle(val obj1:Long)
+  class SortedRectangle(val obj1: Long)
+
   case class Rectangle(override val obj1: Long,
                        obj2: Long,
                        maxObj1: Long,
@@ -181,7 +189,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
   implicit val OrderingSortedRectByObj1: Ordering[SortedRectangle] = (a: SortedRectangle, b: SortedRectangle) => a.obj1 compare b.obj1
 
   implicit val TotalOrderingRect: Ordering[Rectangle] = (a: Rectangle, b: Rectangle) => {
-    (a.obj1, a.obj2, a.maxObj1, a.minObj2) compare (b.obj1, b.obj2, b.maxObj1, b.minObj2)
+    (a.obj1, a.obj2, a.maxObj1, a.minObj2) compare(b.obj1, b.obj2, b.maxObj1, b.minObj2)
   }
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -339,11 +347,11 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
       remainingSurface < stopSurface || paretoFront.size >= maxPoints
     }
 
-    abstract class WrappedData
+    sealed trait WrappedData
     case class WrappedSearchEnded(searchEnded: SearchEnded, //obj1,obj2,sol,maxValueForObj2
-                                  initRectangle: Rectangle //the one before the split, so we are on the left
-                                 ) extends WrappedData
-    case class WrappedCompleted() extends WrappedData
+                                  initRectangle: Rectangle) //the one before the split, so we are on the left
+    extends WrappedData
+    case object WrappedCompleted extends WrappedData
     case class WrappedError(msg:Option[String] = None,crash:Option[SearchCrashed] = None) extends WrappedData
 
     val resultPromise = Promise[WrappedData]()
@@ -375,7 +383,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
     }
 
     def logNext(context:ActorContext[WrappedData],nbRunningOrStartingSearches:Int): Unit ={
-      if(verbose){
+      if (verbose) {
         val now = System.currentTimeMillis()
         if(now > nextVerbosity){
           context.log.info(s"nbRunningOrStartingSearches:$nbRunningOrStartingSearches heapSize:${rectanglesToDevelopBiggestRectangleFirst.size} paretoFrontSize:${paretoFront.size}/$maxPoints remainingSurface:$remainingSurface/$stopSurface")
@@ -390,10 +398,10 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
         //we should stop
         logNext(context,nbRunningOrStartingSearches)
         context.log.trace("should stop in the loop")
-
-        resultPromise.success(WrappedCompleted())
+        resultPromise.success(WrappedCompleted)
         Behaviors.stopped
-      }else if (!shouldStop && nbRunningOrStartingSearches < maxWorkers && !rectanglesToDevelopBiggestRectangleFirst.isEmpty) {
+
+      } else if (!shouldStop && nbRunningOrStartingSearches < maxWorkers && !rectanglesToDevelopBiggestRectangleFirst.isEmpty) {
 
         //split a rectangle
         val rectangleToSplit:Rectangle = rectanglesToDevelopBiggestRectangleFirst.removeFirst()
@@ -414,8 +422,9 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
             startSolution = startSolution,
             initObj1 = rectangleForStartSolution.obj1,
             initObj2 = rectangleForStartSolution.obj2,
-            sendResultTo = ref))) {
-          case Success(ended:SearchEnded) => WrappedSearchEnded(ended, rectangleToSplit)
+            sendResultTo = ref))
+        ) {
+          case Success(ended) => WrappedSearchEnded(ended, rectangleToSplit)
           case Failure(_) => WrappedError(msg = Some("DistributedBIObjectiveSearch timeout3"))
         }
         logNext(context,nbRunningOrStartingSearches+1)
@@ -434,24 +443,24 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
                       //we do not know if init rectangle is still present...
                       if(verbose) context.log.info(s"new rectangle dominated")
                       dominatedSolutions = (obj1,obj2) :: dominatedSolutions
-                      if(dominatingRectangle.minObj2 > maxValueForObj2) {
+                      if (dominatingRectangle.minObj2 > maxValueForObj2) {
                         val newDominatingRectangle = dominatingRectangle.copy(minObj2 = dominatingRectangle.minObj2 max maxValueForObj2)
                         replaceRectangleAndSchedule(dominatingRectangle, newDominatingRectangle)
                       }
-                    case None =>
 
+                    case None =>
                       val firstRectangleOpt = paretoFront.maxBefore(new SortedRectangle(obj1))
-                      firstRectangleOpt match{
+                      firstRectangleOpt match {
                         case Some(firstRectangle:Rectangle) =>
                           val newFirstRectangle = firstRectangle.copy(
                             maxObj1 = firstRectangle.maxObj1 min (obj1-1),
                             minObj2 = firstRectangle.obj2 min (firstRectangle.minObj2 max (maxValueForObj2+1)))
                           replaceRectangleAndSchedule(
                             firstRectangle,
-                            newFirstRectangle
-                          )
+                            newFirstRectangle)
+                        //checkParetoFront()
 
-                        case _ => //it has disappeared since then
+                        case _ => ;//it has disappeared since then
                       }
                       var dominatedRectangleOpt = paretoFront.minAfter(new SortedRectangle(obj1))
                       while (dominatedRectangleOpt match {
@@ -462,7 +471,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
                         case _ => false
                       }) {}
                       //last rectangle
-                      dominatedRectangleOpt match{
+                      dominatedRectangleOpt match {
                         case Some(lastRectangle:Rectangle) if lastRectangle.obj2 >= obj2 =>
                           removeDominatedRectangle(lastRectangle)
                           if(verbose)  context.log.info("removed dominated rectangle:" + lastRectangle)
@@ -473,17 +482,21 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
                             minObj2 = lastRectangle.minObj2,
                             solution = independentSolution.makeLocal(store),
                             independentSolution = independentSolution))
-
                         //checkParetoFront()
+
                         case Some(lastRectangle:Rectangle) if lastRectangle.obj2 <= obj2 =>
                           //we cut nothing
-                            storeAndScheduleRectangle(Rectangle(
+                          storeAndScheduleRectangle(
+                            Rectangle(
                               obj1,
                               obj2,
                               maxObj1 = obj1 max (initRectangle.maxObj1 min (lastRectangle.obj1-1)),
                               minObj2 = obj2 min (initRectangle.minObj2 max (lastRectangle.obj2+1)),
                               solution = independentSolution.makeLocal(store),
-                              independentSolution = independentSolution))
+                              independentSolution = independentSolution
+                            )
+                          )
+                        //checkParetoFront() //bug ici
 
                         case _ => // Do nothing
                       }
@@ -492,7 +505,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
 
                   next(nbRunningOrStartingSearches = nbRunningOrStartingSearches - 1, context)
 
-                case SearchAborted(uniqueSearchID: Long) =>
+                case SearchAborted(uniqueSearchID) =>
                   //strange, we never abort searches...
                   logNext(context,nbRunningOrStartingSearches)
                   resultPromise.success(WrappedError(msg=Some("search aborted unexpectedly")))
@@ -513,6 +526,10 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
               logNext(context,nbRunningOrStartingSearches)
               resultPromise.success(e)
               Behaviors.stopped
+
+            case _ =>
+              // Ignore this
+              Behaviors.same
           }
         }
       }
@@ -520,7 +537,7 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
 
     //await seems to block the actor system??
     Await.result(futureResult, Duration.Inf) match {
-      case WrappedCompleted() =>
+      case WrappedCompleted =>
 
       case WrappedError(msg:Option[String],crash:Option[SearchCrashed]) =>
         if (msg.isDefined) {
@@ -536,18 +553,19 @@ class DistributedBiObjectiveSearch(minObj1Neighborhood:() => Neighborhood,
         throw new Error("Unknown error in DistributedFirst")
     }
 
-
-    if(verbose) {
+    if (verbose) {
       printStopCriterion()
       println("elapsed(ms):" + ((System.nanoTime() - startSearchNanotime)/1000000).toInt)
     }
 
-    if(!stayAlive) window.close()
+    if ((window!=null) && !stayAlive) window.close()
 
     paretoFront.toList.map({case rectangle:Rectangle => (rectangle.obj1,rectangle.obj2,rectangle.solution)}).sortBy(_._1)
   }
 
-  override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     throw new Error("DistributedPareto cannot be used as a regular neighborhood; use paretoOptimize method")
   }
 }

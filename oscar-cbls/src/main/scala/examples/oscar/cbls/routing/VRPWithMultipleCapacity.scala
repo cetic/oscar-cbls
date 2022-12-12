@@ -14,7 +14,7 @@ import oscar.cbls.{length, precedence, sum}
 
 import scala.collection.immutable.HashSet
 
-object VRPWithMultipleCapacity extends App{
+object VRPWithMultipleCapacity extends App {
 
   val n: Int = 100
   val v: Int = 5

@@ -15,7 +15,7 @@
 package oscar.cbls.core.search
 
 import oscar.cbls.core.computation.{CBLSSetVar, Solution, Store, Variable}
-import oscar.cbls.core.distrib.{IndependentMove, IndependentSolution, LoadIndependentSolutionMove}
+import oscar.cbls.core.distributed.{IndependentMove, IndependentSolution, LoadIndependentSolutionMove}
 import oscar.cbls.core.objective.Objective
 
 /** standard move template
@@ -148,8 +148,10 @@ case class LoadSolutionMove(s:Solution,override val objAfter:Long, override val 
     IndependentLoadSolutionMove(IndependentSolution(s), objAfter,neighborhoodName)
 }
 
-case class IndependentLoadSolutionMove(s:IndependentSolution ,override val objAfter:Long, override val neighborhoodName:String = null)
-  extends IndependentMove{
+case class IndependentLoadSolutionMove(s: IndependentSolution,
+                                       objAfter:Long,
+                                       neighborhoodName:String = null)
+  extends IndependentMove {
   override def makeLocal(m: Store): Move = LoadSolutionMove(s.makeLocal(m), objAfter,neighborhoodName)
 }
 
@@ -162,7 +164,7 @@ case class IndependentLoadSolutionMove(s:IndependentSolution ,override val objAf
  * @param neighborhoodName a string describing the neighborhood hat found the move (for debug purposes)
  * @author renaud.delandtsheer@cetic.be
  */
-case class AddToSetMove(s:CBLSSetVar,v:Int, override val objAfter:Long, override val neighborhoodName:String = null)
+case class AddToSetMove(s: CBLSSetVar, v:Int, override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
   override def commit(): Unit = {s :+= v}
@@ -206,8 +208,9 @@ case class ConstantMoveNeighborhood(m: Move,
                                     skipAcceptanceCriterion:Boolean = false,
                                     neighborhoodName:String = null)
   extends Neighborhood with SupportForAndThenChaining[Move] {
-  override val profiler: EmptyProfiler = new EmptyProfiler(this)
-  override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     if (skipAcceptanceCriterion) {
       MoveFound(m)
     } else {
@@ -268,14 +271,17 @@ class OverrideObj(initMove:Move, objAfter:Long, neighborhoodName:String = null)
 
 case class DoNothingNeighborhood() extends Neighborhood with SupportForAndThenChaining[DoNothingMove]{
   override val profiler: NeighborhoodProfiler = new NeighborhoodProfiler(this)
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     profiler.explorationStarted()
     profiler.neighborExplored()
     val objValue = obj.value
-    if(acceptanceCriterion(objValue,objValue)){
+    if (acceptanceCriterion(objValue,objValue)) {
       profiler.explorationEnded(Some(0))
       MoveFound(DoNothingMove(objValue))
-    }else{
+    } else {
       profiler.explorationEnded(None)
       NoMoveFound
     }

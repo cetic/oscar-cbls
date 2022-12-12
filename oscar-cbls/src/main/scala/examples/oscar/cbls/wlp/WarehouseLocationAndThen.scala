@@ -25,7 +25,7 @@ import oscar.cbls.lib.search.neighborhoods.{AssignNeighborhood, RandomizeNeighbo
 
 import scala.language.postfixOps
 
-object WarehouseLocationAndThen extends App{
+object WarehouseLocationAndThen extends App {
 
   //the number of warehouses
   val W:Int = 15

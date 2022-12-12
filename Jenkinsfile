@@ -1,7 +1,7 @@
 node {
-    env.JAVA_HOME="${tool 'jdk-1.8.121'}"
+    env.JAVA_HOME="${tool 'openjdk-11'}"
     env.PATH="${env.JAVA_HOME}/bin:${env.PATH}"
-    env.SBT_HOME = "${tool 'sbt-1.0.0-M4'}"
+    env.SBT_HOME = "${tool 'sbt-1.7.3'}"
 
     email_to = "oscar.cbls-cetic@lists.cetic.be"
 

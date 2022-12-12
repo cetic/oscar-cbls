@@ -43,7 +43,7 @@ class FZCBLSObjective(cblsmodel:FZCBLSModel, val bound:Option[CBLSIntVar] = None
         case Objective.MAXIMIZE => Minus(Prod2(violation, violationWeight), Prod2(objectiveVar, objectiveWeight))
         case Objective.MINIMIZE => Sum2(Prod2(violation, violationWeight), Prod2(objectiveVar, objectiveWeight))
       }
-  val objective: CBLSObjective = new IntVarObjective(objective2.asInstanceOf[ChangingIntValue])
+  val objective: CBLSObjective = IntVarObjective(objective2.asInstanceOf[ChangingIntValue])
   def apply() = objective
 
   def getObjectiveValue(): Int = {

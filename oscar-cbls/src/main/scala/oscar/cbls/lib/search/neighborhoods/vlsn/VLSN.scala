@@ -290,18 +290,18 @@ class VLSN(v:Int,
 
   override def getMove(obj: Objective,
                        initialObj: Long,
-                       acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     profiler.explorationStarted()
-    if(printTakenMoves) println("start VLSN")
+    if (printTakenMoves) println("start VLSN")
     val initialSolution = obj.model.solution(true)
 
-    if(reoptimizeAtStartUp){
-      for(vehicle <- 0 until v){
+    if (reoptimizeAtStartUp) {
+      for (vehicle <- 0 until v) {
         doReoptimize(vehicle)
       }
     }
 
-    if(debugNeighborhoodExploration){
+    if (debugNeighborhoodExploration){
       require(globalObjective.value == obj.value, "global objective given to VLSN(" + globalObjective.value + ") not equal to Obj of search procedure (" + obj.value + ")")
       val summedPartialObjective = vehicleToObjective.map(_.value).sum + unroutedPenalty.value
       require(summedPartialObjective == globalObjective.value, "summed partial objectives with unrouted (" + summedPartialObjective + ") not equal to global objective (" + globalObjective.value + ")")
@@ -321,7 +321,6 @@ class VLSN(v:Int,
     }
 
     var remainingIt = maxIt-1
-
 
     //we restart as much as possible, there is no data for restart when there is no cycle found at all
     while (dataForRestartOpt.isDefined && remainingIt > 0) {
@@ -348,10 +347,10 @@ class VLSN(v:Int,
 
       initialSolution.restoreDecisionVariables()
 
-      if(acceptanceCriterion(initialObj,finalObj)){
+      if (acceptanceCriterion(initialObj,finalObj)) {
         profiler.explorationEnded(Some(initialObj - finalObj))
         MoveFound(LoadSolutionMove(finalSolution, finalObj, name))
-      }else{
+      } else {
         profiler.explorationEnded(None)
         NoMoveFound
       }

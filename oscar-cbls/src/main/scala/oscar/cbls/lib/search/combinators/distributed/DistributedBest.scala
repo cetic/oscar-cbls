@@ -2,9 +2,9 @@ package oscar.cbls.lib.search.combinators.distributed
 
 import akka.actor.typed.ActorSystem
 import akka.util.Timeout
-import oscar.cbls.core.distrib.{DelegateSearch, IndependentMoveFound, IndependentNoMoveFound, IndependentSearchResult, IndependentSolution, SearchCompleted, SearchCrashed, SearchEnded, SingleMoveSearch, StartSomeSearch}
+import oscar.cbls.core.distributed.{DelegateSearch, IndependentMoveFound, IndependentNoMoveFound, IndependentSearchResult, IndependentSolution, SearchCompleted, SearchCrashed, SearchEnded, SingleMoveSearch, StartSomeSearch}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
+import oscar.cbls.core.search.{AcceptanceCriterion, DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
 
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, DurationInt}
@@ -12,7 +12,9 @@ import scala.concurrent.duration.{Duration, DurationInt}
 class DistributedBest(neighborhoods:Array[Neighborhood],useHotRestart:Boolean = true)
   extends DistributedCombinator(neighborhoods) {
 
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
 
     val independentObj = obj.getIndependentObj
     val startSol = Some(IndependentSolution(obj.model.solution()))
@@ -27,16 +29,16 @@ class DistributedBest(neighborhoods:Array[Neighborhood],useHotRestart:Boolean = 
       supervisor.supervisorActor.ask[SearchEnded](ref =>
         DelegateSearch(SingleMoveSearch(
           remoteTaskId = r,
-          acc =  acceptanceCriteria,
+          acceptanceCriterion = acceptanceCriterion,
           obj = independentObj,
           startSolutionOpt = startSol,
           sendResultTo = ref
         ), waitForMoreSearch = useHotRestart))
     }).toList
 
-    if(useHotRestart) {
+    if (useHotRestart) {
       //now that all searches are sent, tell the supervisor to start searches, so it can use hotRestart
-      supervisor.supervisorActor ! StartSomeSearch()
+      supervisor.supervisorActor ! StartSomeSearch
     }
 
     val independentMoveFound:Iterable[IndependentMoveFound] = futureResults.flatMap(futureResult =>
@@ -50,7 +52,7 @@ class DistributedBest(neighborhoods:Array[Neighborhood],useHotRestart:Boolean = 
           supervisor.throwRemoteExceptionAndShutDown(c)
           None
         case _ =>
-          // Search aborted
+          // Search aborted or ill-formed
           None
       }
     )

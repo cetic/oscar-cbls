@@ -182,7 +182,12 @@ abstract class GlobalConstraintCore[U <: Any :Manifest](routes: ChangingSeqValue
 
           //TODO: not a good idea to do that so frequently.
           vehicleSearcher = vehicleSearcher.regularize
-
+          // Redefining checkpoint ==> need to override the values
+        } else if(checkpointLevel == this.checkpointLevel){
+          require(savedDataAtCheckpointLevel.size-1 == checkpointLevel, s"Saved data size(-1) =${savedDataAtCheckpointLevel.size-1} == checkpointLevel $checkpointLevel")
+          savedDataAtCheckpointLevel =
+            QList((changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList, vehicleSearcher, segmentsOfVehicle), savedDataAtCheckpointLevel.tail)
+          segmentsOfVehicle = savedDataAtCheckpointLevel.head._3.clone()
         }
 
         // Persisting recent updates of the vehicleSearcher

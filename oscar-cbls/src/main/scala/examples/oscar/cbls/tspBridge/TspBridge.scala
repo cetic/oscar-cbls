@@ -10,6 +10,7 @@ import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.{First, JumpNeighborhood}
 import oscar.cbls.algo.generator.RandomGraphGenerator
 import oscar.cbls.visual.SingleFrameWindow
+import oscar.cbls.visual.graph.TspBridgeVisu
 
 import scala.collection.immutable.SortedSet
 import scala.language.implicitConversions

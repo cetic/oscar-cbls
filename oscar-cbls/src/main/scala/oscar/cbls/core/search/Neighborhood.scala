@@ -17,8 +17,8 @@
 package oscar.cbls.core.search
 
 import oscar.cbls.core.computation.{Solution, Store, Variable}
-import oscar.cbls.core.distrib.{RemoteNeighborhood, RemoteTask, Supervisor}
-import oscar.cbls.core.objective.{AbortException, AbortableObjective, LoggingObjective, Objective, ProfiledObjective}
+import oscar.cbls.core.distributed.{RemoteNeighborhood, RemoteTask, Supervisor}
+import oscar.cbls.core.objective.{AbortException, AbortableObjective, LoggingObjective, Objective, ProfiledLoggingObjective, ProfiledObjective}
 import oscar.cbls.lib.search.combinators._
 import oscar.cbls.util.Properties
 
@@ -42,9 +42,10 @@ class CodedNeighborhood(codedMove: => Unit,
                         impactedVariables:Option[Iterable[Variable]] = None,
                         name:String = "CodedNeighborhood") extends Neighborhood(name) {
   override val profiler: EmptyProfiler = new EmptyProfiler(this)
+
   override def getMove(obj: Objective,
                        initialObj: Long,
-                       acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     val startSol = impactedVariables match{
       case None => obj.model.solution()
       case Some(x) => obj.model.saveValues(x)
@@ -84,7 +85,9 @@ abstract class JumpNeighborhood(name:String) extends Neighborhood(name) {
    */
   def canDoIt: Boolean = true
 
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion = StrictImprovement): SearchResult = {
     if (canDoIt) CallBackMove(() => doIt(), valueAfter, name)
     else NoMoveFound
   }
@@ -115,7 +118,9 @@ abstract class JumpNeighborhoodParam[T](name:String) extends Neighborhood(name) 
   def getParam: T
   def getShortDescription(param: T): String
 
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     val param: T = getParam
     if (param == null) NoMoveFound
     else CallBackMove((param: T) => doIt(param), Long.MaxValue, name, param)
@@ -146,10 +151,13 @@ abstract class Neighborhood(name:String = null) {
    * Some neighborhoods are actually jumps, so that they might violate this basic rule however.
    *
    * @param obj the objective function. notice that it is actually a function. if you have an [[oscar.cbls.core.objective.Objective]] there is an implicit conversion available
-   * @param acceptanceCriterion
+   * @param acceptanceCriterion the criterion for accepting a move, which compares a value from the
+   *                            current solution and a value from the neighbor solution
    * @return
    */
-  def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult
+  def getMove(obj: Objective,
+              initialObj: Long,
+              acceptanceCriterion: AcceptanceCriterion = StrictImprovement): SearchResult
 
   /**
    * the method that returns a move from the neighborhood.
@@ -157,20 +165,21 @@ abstract class Neighborhood(name:String = null) {
    * Some neighborhoods are actually jumps, so that they might violate this basic rule however.
    *
    * @param obj the objective function. notice that it is actually a function. if you have an [[oscar.cbls.core.objective.Objective]] there is an implicit conversion available
-   * @param acceptanceCriterion
+   * @param acceptanceCriterion the criterion for accepting a move, which compares a value from the
+   *                            current solution and a value from the neighbor solution
    * @param shouldAbort a method that can abort the search abruptly, returning NoMoveFound in case of abort
    *                    even if high-quality solutions are stores within combinators below this neighborhood
    * @return
    */
   def getMoveAbortable(obj: Objective,
                        initialObj:Long,
-                       acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj,
+                       acceptanceCriterion:  AcceptanceCriterion = StrictImprovement,
                        shouldAbort:()=>Boolean,
                        initSolutionOpt:Option[Solution] = None): SearchResult = {
     val oldSol = initSolutionOpt.getOrElse(obj.model.solution())
     try {
       getMove(new AbortableObjective(shouldAbort, obj), initialObj, acceptanceCriterion)
-    }catch{
+    } catch {
       case _:AbortException =>
         oldSol.restoreDecisionVariables(true)
         NoMoveFound
@@ -240,7 +249,9 @@ abstract class Neighborhood(name:String = null) {
    *                            because their purpose is to randomize the current solution.
    * @return the number of moves performed
    */
-  def doAllMoves(shouldStop: Int => Boolean = _ => false, obj: Objective, acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): Int = {
+  def doAllMoves(shouldStop: Int => Boolean = _ => false,
+                 obj: Objective,
+                 acceptanceCriterion: AcceptanceCriterion = StrictImprovement): Int = {
 
     def nStrings(n: Int, s: String): String = if (n <= 0) "" else s + nStrings(n - 1, s)
     def padToLength(s: String, l: Int): String = (s + nStrings(l, " ")).substring(0, l)
@@ -326,7 +337,7 @@ abstract class Neighborhood(name:String = null) {
 
             val printSynthesis = (System.nanoTime() >= nanoTimeAtNextSynthesis) || m.m.objAfter == Long.MaxValue
 
-            if(printSynthesis){
+            if (printSynthesis) {
 
               val firstPrefix = if (m.objAfter < prevObj) "-"
               else if (m.objAfter == prevObj) "="
@@ -345,7 +356,7 @@ abstract class Neighborhood(name:String = null) {
 
               moveSynthesis = SortedMap.empty[String,Int]
               nanoTimeAtNextSynthesis = System.nanoTime() + (1000*1000*100) //100ms
-            }else if(didPrintBefore){
+            } else if (didPrintBefore) {
               prevObj = m.objAfter
             }
 
@@ -356,7 +367,7 @@ abstract class Neighborhood(name:String = null) {
 
             require(m.objAfter == Long.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
 
-          }else if (printTakenMoves) {
+          } else if (printTakenMoves) {
 
             if (m.objAfter != Long.MaxValue) {
               val firstPrefix = if (m.objAfter < prevObj) "-"
@@ -383,7 +394,7 @@ abstract class Neighborhood(name:String = null) {
 
             require(m.objAfter == Long.MaxValue || obj.value == m.objAfter, s"neighborhood was lying!:$m got $obj")
 
-          }else{
+          } else {
             m.commit()
             if (additionalStringGenerator != null) println(additionalStringGenerator())
             if (obj.value == Long.MaxValue) println("Warning : objective == MaxLong, maybe you have some strong constraint violated?")
@@ -396,7 +407,7 @@ abstract class Neighborhood(name:String = null) {
       moveCount += 1
     }
 
-    if(printMoveSythesis && moveSynthesis.nonEmpty) {
+    if (printMoveSythesis && moveSynthesis.nonEmpty) {
 
       val currentObjValue = obj.value
       //flush the preceding moves before a jump
@@ -420,7 +431,9 @@ abstract class Neighborhood(name:String = null) {
     toReturn
   }
 
-  def getAllMoves(shouldStop: Int => Boolean = _ => false, obj: Objective, acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): List[Move] = {
+  def getAllMoves(shouldStop: Int => Boolean = _ => false,
+                  obj: Objective,
+                  acceptanceCriterion: AcceptanceCriterion = StrictImprovement): List[Move] = {
 
     var toReturn : List[Move] = List.empty
 
@@ -441,7 +454,10 @@ abstract class Neighborhood(name:String = null) {
     SortedMap.empty[Int,RemoteNeighborhood] ++ (labelAndExtractRemoteTasks(supervisor = null)._3.map(r => (r.taskId,r)))
   }
 
-  def labelAndExtractRemoteTasks(supervisor: Supervisor, currentID: Int = 0, nbDistributedCombinators:Int = 0, acc: List[RemoteTask] = Nil):(Int,Int,List[RemoteTask]) =
+  def labelAndExtractRemoteTasks(supervisor: Supervisor,
+                                 currentID: Int = 0,
+                                 nbDistributedCombinators:Int = 0,
+                                 acc: List[RemoteTask] = Nil) : (Int, Int, List[RemoteTask]) =
     (currentID, nbDistributedCombinators, acc)
 }
 
@@ -450,7 +466,10 @@ abstract class Neighborhood(name:String = null) {
  */
 case object NoMoveNeighborhood extends Neighborhood {
   override val profiler: EmptyProfiler = new EmptyProfiler(this)
-  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = NoMoveFound
+
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = NoMoveFound
 }
 
 trait SupportForAndThenChaining[MoveType<:Move] extends Neighborhood{
@@ -544,14 +563,16 @@ abstract class EasyNeighborhood[M<:Move](best:Boolean = false, neighborhoodName:
 
   //passing parameters, and getting return values from the search
   private var oldObj: Long = 0L
-  private var acceptanceCriterion: (Long, Long) => Boolean = null
+  private var acceptanceCriterion: AcceptanceCriterion = null
   private var toReturnMove: Move = null
   private var bestNewObj: Long = Long.MaxValue
   protected var obj: Objective = null
 
   override val profiler: NeighborhoodProfiler = new NeighborhoodProfiler(this)
 
-  override final def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+  override final def getMove(obj: Objective,
+                             initialObj: Long,
+                             acceptanceCriterion: AcceptanceCriterion): SearchResult = {
 
     oldObj = initialObj
     this.acceptanceCriterion = acceptanceCriterion
@@ -645,13 +666,15 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
 
   //passing parameters, and getting return values from the search
   private var oldObj: Long = 0L
-  private var acceptanceCriterion: (Long, Long) => Boolean = null
+  private var acceptanceCriterion: AcceptanceCriterion = null
   private var toReturnMove: Move = null
   private var bestNewObj: Long = Long.MaxValue
   protected var obj: Objective = null
-  private var exploring = false // to check that it is not called recursiely because it is not reentrant
+  private var exploring = false // to check that it is not called recursively because it is not reentrant
 
-  override final def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+  override final def getMove(obj: Objective,
+                             initialObj: Long,
+                             acceptanceCriterion: AcceptanceCriterion): SearchResult = {
 
     require(!exploring,s"$this is not a re-entrant neighborhood")
     exploring = true
@@ -662,7 +685,7 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
       this.acceptanceCriterion = acceptanceCriterion
       toReturnMove = null
       bestNewObj = initialObj //Long.MaxValue // //because we do not want "no move" to be considered as an actual move.
-      this.obj = new ProfiledObjective(if (printExploredNeighbors) new LoggingObjective(obj) else obj, profiler)
+      this.obj = if (printExploredNeighbors)new ProfiledLoggingObjective(obj,profiler) else new ProfiledObjective(obj, profiler)
       if (printExploredNeighborhoods) {
         println(s"$neighborhoodNameToString: start exploration")
       }

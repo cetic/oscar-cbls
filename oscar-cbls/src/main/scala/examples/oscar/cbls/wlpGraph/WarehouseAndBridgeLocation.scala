@@ -41,16 +41,16 @@ import scala.swing.Color
 object WarehouseAndBridgeLocation extends App with StopWatch {
 
   //the number of warehouses
-  val W:Int = 1000
+  val W: Int = 1000
 
   //the number of delivery points
-  val D:Int = 1000
+  val D: Int = 1000
 
   //nb conditional edges
-  val nbConditionalEdges:Int = 200
+  val nbConditionalEdges: Int = 200
 
   //nb non conditional edges
-  val nbNonConditionalEdges =  (W+D)*5
+  val nbNonConditionalEdges = (W+D)*5
 
   val displayDelay = 1000
 

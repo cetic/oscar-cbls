@@ -15,13 +15,13 @@
  * ****************************************************************************
  */
 
-package examples.oscar.cbls.distrib
+package examples.oscar.cbls.distributed
 
 import oscar.cbls._
 import oscar.cbls.algo.generator.WarehouseLocationGenerator
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.distrib.Supervisor
+import oscar.cbls.core.distributed.Supervisor
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.search.combinators.distributed.DistributedBiObjectiveSearch
 import oscar.cbls.lib.search.neighborhoods.SwapsNeighborhood
@@ -29,7 +29,7 @@ import oscar.cbls.util.Properties
 
 import scala.language.postfixOps
 
-object WarehouseLocationMultiObjectiveDistrib extends App {
+object WarehouseLocationMultiObjectiveDistributed extends App {
 
   //the number of warehouses
   val W: Int = 500
@@ -50,7 +50,7 @@ object WarehouseLocationMultiObjectiveDistrib extends App {
   // is a relevant trade off point in the mathematical sense.
   costForOpeningWarehouse(0) = 0
 
-  def createSearchStructures(): (Store, DistributedBiObjectiveSearch,SetValue) = {
+  def createSearchStructures(): (Store, DistributedBiObjectiveSearch, SetValue) = {
     val m = Store()
 
     val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + l + "_open"))
@@ -115,7 +115,7 @@ object WarehouseLocationMultiObjectiveDistrib extends App {
       verbose = true,
       visu = true)
 
-    (m, paretoSearch,openWarehouses)
+    (m, paretoSearch, openWarehouses)
   }
 
   //supervisor side
@@ -124,7 +124,7 @@ object WarehouseLocationMultiObjectiveDistrib extends App {
 
   //create the workers
   for (i <- 0 until Supervisor.nbCores/2) {
-    val (store2, search2,_) = createSearchStructures()
+    val (store2, search2, _) = createSearchStructures()
     supervisor.createLocalWorker(store2, search2)
   }
 

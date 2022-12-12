@@ -16,7 +16,7 @@
  */
 package oscar.cbls.core.search
 
-import oscar.cbls.core.distrib.{RemoteNeighborhood, RemoteTask, Supervisor}
+import oscar.cbls.core.distributed.{RemoteNeighborhood, RemoteTask, Supervisor}
 
 /**
  * @author renaud.delandtsheer@cetic.be

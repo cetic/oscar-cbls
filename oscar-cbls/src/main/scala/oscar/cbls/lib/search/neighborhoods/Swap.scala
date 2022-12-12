@@ -17,7 +17,7 @@ package oscar.cbls.lib.search.neighborhoods
 
 import oscar.cbls.algo.search.{HotRestart, IdenticalAggregator}
 import oscar.cbls.core.computation.{CBLSIntVar, Store, Variable}
-import oscar.cbls.core.distrib.IndependentMove
+import oscar.cbls.core.distributed.IndependentMove
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, Move}
 
 /**
@@ -193,13 +193,13 @@ case class SwapMove(i:CBLSIntVar,j:CBLSIntVar, idI:Int, idJ:Int, adjustIfNotInPr
 }
 
 
-case class IndependentSwap(i:Int,
-                           j:Int,
-                           idI:Int,
-                           idJ:Int,
-                           adjustIfNotInProperDomain:Boolean,
-                           override val objAfter:Long,
-                           override val neighborhoodName:String) extends IndependentMove{
+case class IndependentSwap(i: Int,
+                           j: Int,
+                           idI: Int,
+                           idJ: Int,
+                           adjustIfNotInProperDomain: Boolean,
+                           objAfter: Long,
+                           neighborhoodName: String) extends IndependentMove {
 
   override def makeLocal(m: Store): Move =
     SwapMove(m.getIntVar(i),m.getIntVar(j), idI, idJ, adjustIfNotInProperDomain,objAfter,neighborhoodName)

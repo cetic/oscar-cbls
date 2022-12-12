@@ -10,12 +10,11 @@ import oscar.cbls.core.computation.{CBLSIntVar, Store}
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.{Best, First}
-import oscar.cbls.visual.SingleFrameWindow
-import oscar.cbls.visual.profiling.{ProfilingTree, VisualProfiler}
+import oscar.cbls.visual.profiling.VisualProfiler
 
 import scala.util.Random
 
-object VRPWithWeightedNodes extends App{
+object VRPWithWeightedNodes extends App {
   val n = 100
   val v = 10
 

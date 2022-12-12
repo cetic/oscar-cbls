@@ -1,4 +1,4 @@
-package oscar.cbls.core.distrib
+package oscar.cbls.core.distributed
 
 import akka.actor.typed.ActorRef
 import oscar.cbls.core.computation.{IndependentSerializableAbstractVariableSnapshot, Solution, Store}
@@ -6,9 +6,13 @@ import oscar.cbls.core.objective.IndependentObjective
 import oscar.cbls.core.search._
 ///////////////////////////////////////////////////////////////
 
-abstract class SearchRequest(val uniqueSearchId:Long,
-                                    val remoteTaskId:RemoteTaskIdentification,
-                                    val sendResultTo:ActorRef[SearchEnded]){
+case class SearchProgress(searchId: Long, obj: Long, timeMs: Long, aborted: Boolean = false)
+
+trait SearchRequest {
+  val uniqueSearchId: Long
+  val remoteTaskId: RemoteTaskIdentification
+  val sendResultTo: ActorRef[SearchEnded]
+
   /**
    * The supervisor checks that the worker already has this solution loaded.
    * If it is the case, the solution is removed from the SearchRequest by calling dropStartSolution hereBelow
@@ -33,32 +37,30 @@ abstract class SearchRequest(val uniqueSearchId:Long,
   def neighborhoodIdOpt:Option[Int]
 }
 
-case class SingleMoveSearch(override val uniqueSearchId:Long = -1,
-                            override val remoteTaskId:RemoteTaskIdentification,
-                            acc: (Long, Long) => Boolean,
+case class SingleMoveSearch(uniqueSearchId: Long = -1,
+                            remoteTaskId: RemoteTaskIdentification,
+                            acceptanceCriterion: AcceptanceCriterion,
                             obj: IndependentObjective,
-                            sendFullSolution:Boolean = false,
+                            sendFullSolution: Boolean = false,
                             startSolutionOpt: Option[IndependentSolution],
-                            override val sendResultTo: ActorRef[SearchEnded])
-  extends SearchRequest(uniqueSearchId, remoteTaskId, sendResultTo) {
-  override def toString: String = s"SingleMoveSearch($remoteTaskId,$acc,$obj,sendFullSolution:$sendFullSolution)"
+                            sendResultTo: ActorRef[SearchEnded])
+  extends SearchRequest {
+  override def toString: String = s"SingleMoveSearch($remoteTaskId,$acceptanceCriterion,$obj,sendFullSolution:$sendFullSolution)"
 
   override def dropStartSolution: SearchRequest = this.copy(startSolutionOpt = None)
 
   override def neighborhoodIdOpt: Option[Int] = Some(remoteTaskId.taskId)
 }
 
-case class SearchProgress(searchId:Long, obj:Long, timeMs:Long, aborted:Boolean = false)
-
-case class DoAllMoveSearch(override val uniqueSearchId:Long = -1,
-                           override val remoteTaskId:RemoteTaskIdentification,
-                           acc: (Long, Long) => Boolean,
+case class DoAllMoveSearch(uniqueSearchId: Long = -1,
+                           remoteTaskId: RemoteTaskIdentification,
+                           acceptanceCriterion: AcceptanceCriterion,
                            obj: IndependentObjective,
                            startSolutionOpt: Option[IndependentSolution],
-                           sendProgressTo:Option[ActorRef[SearchProgress]] = None,
-                           override val sendResultTo: ActorRef[SearchEnded])
-  extends SearchRequest(uniqueSearchId, remoteTaskId,sendResultTo) {
-  override def toString: String = s"DoAllMoveSearch($remoteTaskId,$acc,$obj)"
+                           sendProgressTo: Option[ActorRef[SearchProgress]] = None,
+                           sendResultTo: ActorRef[SearchEnded])
+  extends SearchRequest {
+  override def toString: String = s"DoAllMoveSearch($remoteTaskId,$acceptanceCriterion,$obj)"
 
   override def dropStartSolution: SearchRequest = this.copy(startSolutionOpt = None)
 
@@ -66,19 +68,20 @@ case class DoAllMoveSearch(override val uniqueSearchId:Long = -1,
 }
 
 //////////////////////////////////////////////////////////////
-// le truc qu'on envoie au worker
-case class RemoteTaskIdentification(taskId: Int, description:String)
+// Abstract identification of a task to be sent to a worker
+case class RemoteTaskIdentification(taskId: Int, description: String)
 
-abstract class RemoteTask(val taskId: Int, description:String) {
-
+trait RemoteTask {
+  val taskId: Int
+  val description: String
   val remoteIdentification: RemoteTaskIdentification = RemoteTaskIdentification(taskId,description)
 
   def abort():Unit
 
-  def loadSolution(startSolOpt:Option[IndependentSolution],
-                   model:Store,
-                   currentSolOpt:Option[(Solution,SolutionID)],
-                   workerID:Option[String]) : (Solution,Option[SolutionID]) = {
+  def loadSolution(startSolOpt: Option[IndependentSolution],
+                   model: Store,
+                   currentSolOpt: Option[(Solution,SolutionID)],
+                   workerID: Option[String]): (Solution, Option[SolutionID]) = {
     (startSolOpt,currentSolOpt) match {
       case (None,Some(cur)) =>
         (cur._1,Some(cur._2))
@@ -98,11 +101,14 @@ abstract class RemoteTask(val taskId: Int, description:String) {
     }
   }
 
-  def doTask(taskMessage: SearchRequest, model: Store, currentSolOpt: Option[(Solution, SolutionID)], workerID: Option[String]):Option[(Solution,SolutionID)]
+  def doTask(taskMessage: SearchRequest,
+             model: Store,
+             currentSolOpt: Option[(Solution, SolutionID)],
+             workerID: Option[String]): Option[(Solution,SolutionID)]
 }
 
-class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
-  extends RemoteTask(neighborhoodID: Int,neighborhood.toString){
+case class RemoteNeighborhood(taskId: Int, neighborhood: Neighborhood) extends RemoteTask {
+  override val description: String = neighborhood.toString
 
   @volatile
   var bestObjSoFar:Long = Long.MaxValue
@@ -114,8 +120,11 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
     shouldAbortComputation = true
   }
 
-  override def doTask(taskMessage: SearchRequest, model: Store, currentSolOpt: Option[(Solution, SolutionID)], workerID: Option[String]):Option[(Solution,SolutionID)] = {
-    val (startSol,solId):(Solution,Option[SolutionID]) = loadSolution(taskMessage.startSolutionOpt,model,currentSolOpt,workerID)
+  override def doTask(taskMessage: SearchRequest,
+                      model: Store,
+                      currentSolOpt: Option[(Solution, SolutionID)],
+                      workerID: Option[String]): Option[(Solution,SolutionID)] = {
+    val (startSol,solId): (Solution,Option[SolutionID]) = loadSolution(taskMessage.startSolutionOpt,model,currentSolOpt,workerID)
 
     shouldAbortComputation = false
 
@@ -130,7 +139,10 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
     solId.map(x => (startSol,x))
   }
 
-  private def doSingleMoveSearch(searchRequest: SingleMoveSearch,model:Store,startSol:Solution,workerID: Option[String]) : Unit = {
+  private def doSingleMoveSearch(searchRequest: SingleMoveSearch,
+                                 model: Store,
+                                 startSol: Solution,
+                                 workerID: Option[String]) : Unit = {
 
     val startTime = System.currentTimeMillis()
 
@@ -140,42 +152,50 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
     neighborhood.getMoveAbortable(
       obj,
       obj.value,
-      searchRequest.acc,
+      searchRequest.acceptanceCriterion,
       () => shouldAbortComputation,
       Some(startSol)) match {
       case NoMoveFound =>
-        if(shouldAbortComputation){
+        if (shouldAbortComputation) {
           searchRequest.sendResultTo ! SearchAborted(searchRequest.uniqueSearchId)
-        }else {
+        } else {
           searchRequest.sendResultTo ! SearchCompleted(
             searchRequest.uniqueSearchId,
             IndependentNoMoveFound,
-            (System.currentTimeMillis() - startTime).toInt)
+            (System.currentTimeMillis() - startTime).toInt
+          )
         }
+
       case MoveFound(m) =>
-        if(searchRequest.sendFullSolution) {
+        if (searchRequest.sendFullSolution) {
           val endTime = System.currentTimeMillis()
           m.commit()
 
-          searchRequest.sendResultTo!SearchCompleted(
+          searchRequest.sendResultTo ! SearchCompleted(
             searchRequest.uniqueSearchId,
             IndependentMoveFound(LoadIndependentSolutionMove(
               objAfter = m.objAfter,
               neighborhoodName = m.neighborhoodName,
-              IndependentSolution(obj.model.solution(),workerID))),
-            (endTime - startTime).toInt)
+              IndependentSolution(obj.model.solution(),workerID))
+            ),
+            (endTime - startTime).toInt
+          )
 
           startSol.restoreDecisionVariables()
-        }else {
-          searchRequest.sendResultTo!SearchCompleted(
+        } else {
+          searchRequest.sendResultTo ! SearchCompleted(
             searchRequest.uniqueSearchId,
             IndependentMoveFound(m.getIndependentMove(obj.model)),
-            (System.currentTimeMillis() - startTime).toInt)
+            (System.currentTimeMillis() - startTime).toInt
+          )
         }
     }
   }
 
-  private def doDoAllMoveSearch(searchRequest:DoAllMoveSearch,model:Store,startSol:Solution,workerID: Option[String]) : Unit = {
+  private def doDoAllMoveSearch(searchRequest: DoAllMoveSearch,
+                                model: Store,
+                                startSol: Solution,
+                                workerID: Option[String]) : Unit = {
 
     val startTime = System.currentTimeMillis()
     val obj = searchRequest.obj.convertToObjective(model)
@@ -189,7 +209,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
     var lastProgressOBj:Long = bestObjSoFar
 
     while(!shouldAbortComputation &&
-      (neighborhood.getMoveAbortable(obj, obj.value, searchRequest.acc, () => shouldAbortComputation) match {
+      (neighborhood.getMoveAbortable(obj, obj.value, searchRequest.acceptanceCriterion, () => shouldAbortComputation) match {
         case NoMoveFound => false
         case MoveFound(m) =>
           m.commit()
@@ -216,10 +236,8 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
 
     val endTime = System.currentTimeMillis()
 
-    if(shouldAbortComputation){
-      SearchAborted
-      searchRequest.sendResultTo!SearchAborted(searchRequest.uniqueSearchId)
-
+    if (shouldAbortComputation) {
+      searchRequest.sendResultTo ! SearchAborted(searchRequest.uniqueSearchId)
       searchRequest.sendProgressTo match {
         case None =>
         case Some(target) =>
@@ -234,13 +252,15 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
           target ! SearchProgress(searchRequest.uniqueSearchId, obj.value, endTime)
       }
 
-      searchRequest.sendResultTo!SearchCompleted(
+      searchRequest.sendResultTo ! SearchCompleted(
         searchRequest.uniqueSearchId,
         IndependentMoveFound(LoadIndependentSolutionMove(
           objAfter = obj.value,
           neighborhoodName = name,
-          IndependentSolution(obj.model.solution(),workerID))),
-        (endTime - startTime).toInt)
+          IndependentSolution(obj.model.solution(),workerID))
+        ),
+        (endTime - startTime).toInt
+      )
 
     } else {
       searchRequest.sendProgressTo match {
@@ -248,10 +268,11 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
         case Some(target) =>
           target ! SearchProgress(searchRequest.uniqueSearchId, obj.value, System.currentTimeMillis())
       }
-      searchRequest.sendResultTo!SearchCompleted(
+      searchRequest.sendResultTo ! SearchCompleted(
         searchRequest.uniqueSearchId,
         IndependentNoMoveFound,
-        (endTime - startTime).toInt)
+        (endTime - startTime).toInt
+      )
     }
     startSol.restoreDecisionVariables()
   }
@@ -259,7 +280,7 @@ class RemoteNeighborhood(val neighborhoodID: Int, val neighborhood:Neighborhood)
 
 // ////////////////////////////////////////////////////////////
 
-abstract class IndependentSearchResult {
+trait IndependentSearchResult {
   def getLocalResult(m: Store): SearchResult
 }
 
@@ -273,10 +294,11 @@ case object IndependentNoMoveFound extends IndependentSearchResult {
 }
 
 // ////////////////////////////////////////////////////////////
+case class SolutionID(workerID: String, solutionID:Int)
 
 object IndependentSolution {
-  def apply(solution: Solution, workerID:Option[String]=None): IndependentSolution = {
-    val solID = (solution.saveNr,workerID) match{
+  def apply(solution: Solution, workerID: Option[String]=None): IndependentSolution = {
+    val solID = (solution.saveNr, workerID) match {
       case (Some(id),Some(worker)) => Some(SolutionID(worker,id))
       case _ => None
     }
@@ -284,8 +306,8 @@ object IndependentSolution {
   }
 }
 
-case class SolutionID(workerID:String,solutionID:Int)
-class IndependentSolution(saves: Iterable[IndependentSerializableAbstractVariableSnapshot], val solutionId:Option[SolutionID]) {
+class IndependentSolution(saves: Iterable[IndependentSerializableAbstractVariableSnapshot],
+                          val solutionId:Option[SolutionID]) {
   def makeLocal(s: Store): Solution = {
     require(saves.nonEmpty)
     Solution(saves.map(_.makeLocal), s, None)
@@ -310,5 +332,6 @@ case class LoadIndependentSolutionMove(objAfter: Long, neighborhoodName: String,
     LoadSolutionMove(
       s.makeLocal(m),
       objAfter = objAfter,
-      neighborhoodName = neighborhoodName)
+      neighborhoodName = neighborhoodName
+    )
 }

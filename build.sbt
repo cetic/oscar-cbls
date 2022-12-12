@@ -29,7 +29,7 @@ lazy val oscarAlgo = (project in file("oscar-algo"))
 lazy val oscarCbls = (project in file("oscar-cbls")) // TODO pack : pack auto settings?
   .settings(commonSettings: _*)
   .settings(name := "oscar-cbls")
-  .settings(libraryDependencies ++= Dependencies.testDeps :+ Dependencies.scalaSwing :+ Dependencies.scalaParallel :+ Dependencies.scalaSwing :+ Dependencies.jxmapviewer2 :+ Dependencies.jtscore :+ Dependencies.akkaActorTyped :+ Dependencies.akkaActor :+ Dependencies.akkasl4j :+ Dependencies.slf4j)
+  .settings(libraryDependencies ++= Dependencies.testDeps :+ Dependencies.scalaSwing :+ Dependencies.scalaParallel :+ Dependencies.scalaSwing :+ Dependencies.jxmapviewer2 :+ Dependencies.jtscore :+ Dependencies.akkaActorTyped :+ Dependencies.akkaCluster :+ Dependencies.akkaActor :+ Dependencies.akkasl4j :+ Dependencies.slf4j)
   .enablePlugins(PackPlugin)
   .settings(PackPlugin.packSettings)
   .settings(packGenerateWindowsBatFile := false)

@@ -17,22 +17,21 @@ import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 import scala.collection.immutable.{SortedMap, TreeMap}
 import scala.swing.Color
 
-object WLPWithRedundancy extends App with StopWatch{
+object WLPWithRedundancy extends App with StopWatch {
   //the number of warehouses
-  val W:Int = 250
-
+  val W: Int = 250
 
   //the number of delivery points
-  val D:Int = 500
+  val D: Int = 500
 
   // the number of per delivery points
-  val k:Int = 3
+  val k: Int = 3
 
   //nb conditional edges
-  val nbConditionalEdges:Int =  (W + D) / 5
+  val nbConditionalEdges: Int = (W+D) / 5
 
   //nb non conditional edges
-  val nbNonConditionalEdges =  (W+D)*5
+  val nbNonConditionalEdges = (W+D)*5
   val displayDelay = 200
 
   println(s"RedundantWarehouseAndBridgeLocation(W:$W D:$D B:$nbConditionalEdges)")

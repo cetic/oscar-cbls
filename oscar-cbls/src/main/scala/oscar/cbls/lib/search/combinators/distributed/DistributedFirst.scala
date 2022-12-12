@@ -3,9 +3,9 @@ package oscar.cbls.lib.search.combinators.distributed
 import akka.actor.typed.{ActorSystem, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.util.Timeout
-import oscar.cbls.core.distrib.{CancelSearchToSupervisor, DelegateSearch, GetNewUniqueID, IndependentMoveFound, IndependentNoMoveFound, IndependentSearchResult, IndependentSolution, RemoteTaskIdentification, SearchAborted, SearchCompleted, SearchCrashed, SearchEnded, SingleMoveSearch}
+import oscar.cbls.core.distributed.{CancelSearchToSupervisor, DelegateSearch, GetNewUniqueID, IndependentMoveFound, IndependentNoMoveFound, IndependentSearchResult, IndependentSolution, RemoteTaskIdentification, SearchAborted, SearchCompleted, SearchCrashed, SearchEnded, SingleMoveSearch}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
+import oscar.cbls.core.search.{AcceptanceCriterion, DistributedCombinator, Neighborhood, NoMoveFound, SearchResult}
 
 import scala.concurrent.{Await, Future, Promise}
 import scala.concurrent.duration.{Duration, DurationInt}
@@ -14,7 +14,9 @@ import scala.util.{Failure, Random, Success}
 class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean = false)
   extends DistributedCombinator(neighborhoods) {
 
-  override def getMove(obj: Objective, initialObj: Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion): SearchResult = {
 
     val independentObj = obj.getIndependentObj
     val startSol = Some(IndependentSolution(obj.model.solution()))
@@ -22,7 +24,7 @@ class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean =
     val resultPromise = Promise[WrappedData]()
     val futureResult: Future[WrappedData] = resultPromise.future
 
-    abstract class WrappedData
+    sealed trait WrappedData
     case class WrappedSearchEnded(searchEnded:SearchEnded) extends WrappedData
     case class WrappedGotUniqueID(uniqueID:Long,remote:RemoteTaskIdentification) extends WrappedData
     case class WrappedError(msg:Option[String] = None, crash:Option[SearchCrashed] = None) extends WrappedData
@@ -41,8 +43,8 @@ class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean =
       }
       next(
         runningSearchIDs = List.empty,
-        nbFinishedSearches = 0)
-
+        nbFinishedSearches = 0
+      )
     }},"DistributedFirst")
 
     def next(runningSearchIDs:List[Long],
@@ -54,7 +56,6 @@ class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean =
               case SearchCompleted(_, searchResult, _) =>
                 searchResult match {
                   case _: IndependentMoveFound =>
-
                     for (r <- runningSearchIDs) {
                       supervisor.supervisorActor ! CancelSearchToSupervisor(r)
                     }
@@ -62,7 +63,6 @@ class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean =
                     Behaviors.stopped
 
                   case IndependentNoMoveFound =>
-
                     val newNbFinishedSearches = nbFinishedSearches + 1
                     if (newNbFinishedSearches == neighborhoods.length) {
                       resultPromise.success(w) //it is a NoMoveFound
@@ -87,15 +87,14 @@ class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean =
                 Behaviors.stopped
             }
 
-          case WrappedGotUniqueID(uniqueId: Long, remoteNeighborhoodIdentification) =>
-
+          case WrappedGotUniqueID(uniqueId, remoteNeighborhoodIdentification) =>
             context.ask[DelegateSearch, SearchEnded](
               supervisor.supervisorActor,
               ref => DelegateSearch(
                 SingleMoveSearch(
                   uniqueSearchId = uniqueId,
                   remoteTaskId = remoteNeighborhoodIdentification,
-                  acc = acceptanceCriteria,
+                  acceptanceCriterion = acceptanceCriterion,
                   obj = independentObj,
                   startSolutionOpt = startSol,
                   sendResultTo = ref
@@ -109,7 +108,6 @@ class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean =
             next(runningSearchIDs = uniqueId :: runningSearchIDs, nbFinishedSearches = nbFinishedSearches)
 
           case w: WrappedError =>
-
             for (r <- runningSearchIDs) {
               supervisor.supervisorActor ! CancelSearchToSupervisor(r)
             }
@@ -120,21 +118,23 @@ class DistributedFirst(neighborhoods:Array[Neighborhood],useHotRestart:Boolean =
     }
 
     //await seems to block the actor system??
-    Await.result(futureResult, Duration.Inf) match{
+    Await.result(futureResult, Duration.Inf) match {
       case WrappedSearchEnded(searchEnded) =>
         searchEnded match {
           case SearchCompleted(_, searchResult: IndependentSearchResult, _) => searchResult.getLocalResult(obj.model)
           case _ => NoMoveFound
         }
+
       case WrappedError(msg:Option[String],crash:Option[SearchCrashed])=>
-        if(msg.isDefined){
+        if (msg.isDefined) {
           supervisor.shutdown()
           throw new Error(s"${msg.get}")
         }
-        if(crash.isDefined){
+        if (crash.isDefined) {
           supervisor.throwRemoteExceptionAndShutDown(crash.get)
         }
         throw new Error("Error in DistributedFirst")
+
       case e =>
         throw new Error(s"Unknown error in DistributedFirst : $e")
     }

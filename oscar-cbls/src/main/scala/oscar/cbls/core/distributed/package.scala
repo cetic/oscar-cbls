@@ -4,15 +4,12 @@ import oscar.cbls.core.search.Neighborhood
 
 import scala.concurrent.duration.Duration
 
-package object distrib {
-  type supervisor = oscar.cbls.core.distrib.Supervisor
-  final val supervisor = oscar.cbls.core.distrib.Supervisor
-
+package object distributed {
   def startSupervisorAndActorSystem(search: Neighborhood,
                                     verbose: Boolean = false,
                                     hotRestart:Boolean = true,
-                                    tic: Duration = Duration.Inf): supervisor = {
-    supervisor.startSupervisorAndActorSystem(search, verbose, hotRestart, tic)
+                                    tic: Duration = Duration.Inf): Supervisor = {
+    Supervisor.startSupervisorAndActorSystem(search, verbose, hotRestart, tic)
   }
 
 }
