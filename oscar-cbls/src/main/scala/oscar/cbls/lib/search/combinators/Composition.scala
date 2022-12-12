@@ -381,7 +381,7 @@ case class Atomic(a: Neighborhood,
 object EjectionChains{
   def apply(nextNeighborhood: List[Move] => Option[Neighborhood],
             intermediaryObj:Option[Objective] = None,
-            intermediaryAcc:Option[(Long,Long) => Boolean] = Some((oldObj,newObj) => newObj < oldObj),
+            intermediaryAcc:Option[AcceptanceCriterion] = Some(StrictImprovement),
             intermediaryStops:Boolean = false,
             name:String = "EjectionChains") =
     new EjectionChains[Unit](
@@ -392,7 +392,7 @@ object EjectionChains{
   def withAccumulator[T](t0:T,
                          nextNeighborhood: (T,List[Move]) => Option[(T,Neighborhood)],
                          intermediaryObj:Option[Objective] = None,
-                         intermediaryAcc:Option[(Long,Long) => Boolean] = Some((oldObj,newObj) => newObj < oldObj),
+                         intermediaryAcc:Option[AcceptanceCriterion] = Some(StrictImprovement),
                          intermediaryStops:Boolean = false,
                          name:String = "EjectionChains") = new EjectionChains[T](
     t0,nextNeighborhood,intermediaryObj, intermediaryAcc, intermediaryStops, name)

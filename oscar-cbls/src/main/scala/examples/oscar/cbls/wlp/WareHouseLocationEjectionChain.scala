@@ -19,7 +19,7 @@ package examples.oscar.cbls.wlp
 import oscar.cbls._
 import oscar.cbls.algo.generator.WarehouseLocationGenerator
 import oscar.cbls.algo.search.KSmallest
-import oscar.cbls.core.search.{Best, Move, Neighborhood}
+import oscar.cbls.core.search.{AcceptanceCriterion, Best, Move, Neighborhood}
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.minmax.MinConstArrayValueWise
 import oscar.cbls.lib.invariant.numeric.Sum
@@ -105,7 +105,7 @@ object WareHouseLocationEjectionChain extends App with StopWatch {
           }
         },
         intermediaryStops = true,
-        intermediaryAcc = Some((oldObj,newObj) => newObj != Long.MaxValue && newObj < oldObj + 100))
+        intermediaryAcc = Some((oldValue: Long, newValue: Long) => (oldValue != Long.MaxValue && newValue < oldValue + 100)))
     }
 
       ) name s"Eject($maxLength,$kOpen,$kClosed)")
