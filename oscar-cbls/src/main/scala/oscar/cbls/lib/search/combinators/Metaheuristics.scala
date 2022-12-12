@@ -126,6 +126,8 @@ class LateAcceptanceHillClimbing(a: Neighborhood,
     if (!initialized) init(initialObj)
 
     a.getMove(obj,initialObj,(oldOBj,newObj) => {
+
+      //TODO these two lines should be done before a.getMove
       x = x+1
       if (x >= length) x = 0
 
