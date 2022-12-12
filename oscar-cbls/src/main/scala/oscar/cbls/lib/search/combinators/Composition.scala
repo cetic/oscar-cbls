@@ -380,8 +380,8 @@ case class Atomic(a: Neighborhood,
 
 object EjectionChains{
   def apply(nextNeighborhood: List[Move] => Option[Neighborhood],
-            intermediaryObj:Option[Objective] = None,
-            intermediaryAcc:Option[AcceptanceCriterion] = Some(StrictImprovement),
+            intermediaryObj: Option[Objective] = None,
+            intermediaryAcc: Option[AcceptanceCriterion] = Some(StrictImprovement),
             intermediaryStops:Boolean = false,
             name:String = "EjectionChains") =
     new EjectionChains[Unit](
@@ -391,18 +391,24 @@ object EjectionChains{
 
   def withAccumulator[T](t0:T,
                          nextNeighborhood: (T,List[Move]) => Option[(T,Neighborhood)],
-                         intermediaryObj:Option[Objective] = None,
-                         intermediaryAcc:Option[AcceptanceCriterion] = Some(StrictImprovement),
-                         intermediaryStops:Boolean = false,
+                         intermediaryObj: Option[Objective] = None,
+                         intermediaryAcc: Option[AcceptanceCriterion] = Some(StrictImprovement),
+                         intermediaryStops: Boolean = false,
                          name:String = "EjectionChains") = new EjectionChains[T](
-    t0,nextNeighborhood,intermediaryObj, intermediaryAcc, intermediaryStops, name)
+    t0,
+    nextNeighborhood,
+    intermediaryObj,
+    intermediaryAcc,
+    intermediaryStops,
+    name
+  )
 }
 
 class EjectionChains[T](t0:T,
                         nextNeighborhood: (T,List[Move]) => Option[(T,Neighborhood)],
-                        intermediaryObj:Option[Objective] = None,
-                        intermediaryAcc:Option[AcceptanceCriterion] = Some(StrictImprovement),
-                        intermediaryStops:Boolean = false,
+                        intermediaryObj: Option[Objective] = None,
+                        intermediaryAcc: Option[AcceptanceCriterion] = Some(StrictImprovement),
+                        intermediaryStops: Boolean = false,
                         name:String = "EjectionChains") extends NeighborhoodCombinator() {
   override def getMove(obj: Objective,
                        initialObj:Long,
