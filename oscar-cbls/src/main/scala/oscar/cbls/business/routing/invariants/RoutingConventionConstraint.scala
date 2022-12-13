@@ -104,6 +104,10 @@ class RoutingConventionConstraint(routes: ChangingSeqValue, n: Int, v: Int) exte
         } else if(checkpointsChanges.size == checkpointLevel) {
           checkpointsChanges = QList(currentChanges, checkpointsChanges)
           currentChanges = new HashMap[Int, Boolean]() ++ currentChanges
+        } else if(this.checkpointLevel == checkpointLevel){
+          // We override the last checkpointLevel
+          checkpointsChanges = QList(currentChanges, checkpointsChanges.tail)
+          currentChanges = new HashMap[Int, Boolean]() ++ currentChanges
         }
 
         this.checkpointLevel = checkpointLevel
