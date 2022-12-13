@@ -192,7 +192,7 @@ abstract class ChangingIntValue(initialValue:Long, initialDomain:Domain)
   }
 
   override def checkInternals(c:Checker): Unit ={
-    c.check(mOldValue == mNewValue)
+    c.check(mOldValue == mNewValue, Some("error on IntValue:" + this.getClass.toString))
   }
 
   protected def :=(v: Long): Unit = {
