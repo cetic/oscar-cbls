@@ -57,7 +57,7 @@ class VisualMap(lineStyle: String = "line") extends JPanel(new BorderLayout()) {
   viewer.setOverlayPainter(new MapPainter(this, lineStyle))
 
   viewer.setName("mapKit")
-  val screensize = Toolkit.getDefaultToolkit().getScreenSize()
+  val screensize = Toolkit.getDefaultToolkit.getScreenSize
   viewer.setPreferredSize(new java.awt.Dimension(screensize.width / 2, screensize.height / 2))
   //viewer.setDefaultProvider(DefaultProviders.OpenStreetMaps);
   add(viewer)
@@ -75,7 +75,7 @@ class VisualMap(lineStyle: String = "line") extends JPanel(new BorderLayout()) {
   }
 
   def createLine(o: (Double, Double), d: (Double, Double), col : Color = Color.RED ): MapLine = {
-    val l = new MapLine(this, o._1, o._2, d._1, d._2, col);
+    val l = new MapLine(this, o._1, o._2, d._1, d._2, col)
     lines = lines :+ l
 
     refresh()
@@ -97,7 +97,7 @@ class VisualMap(lineStyle: String = "line") extends JPanel(new BorderLayout()) {
   }
 
   def createPath(o: (Double, Double), d: (Double, Double), col : Color = Color.BLACK): MapPath = {
-    val p = new MapPath(this, o._1, o._2, d._1, d._2, col);
+    val p = new MapPath(this, o._1, o._2, d._1, d._2, col)
     paths = paths :+ p
 
     refresh()
@@ -131,12 +131,12 @@ object VisualMap {
   def main(args: Array[String]): Unit = {
 
     val f = VisualFrame("toto")
-    var inf = f.createFrame("tmap")
+    val inf = f.createFrame("tmap")
 
     val map = new VisualMap()
 
     inf.add(map)
-    f.pack();
+    f.pack()
 
     try {
       /*
@@ -169,7 +169,7 @@ object VisualMap {
 
     map.refresh()
 
-    System.out.println(map.hashCode());
+    System.out.println(map.hashCode())
     /*
 		try {
 			Thread.sleep(2000);
