@@ -271,7 +271,7 @@ class CBLSIntVar(givenModel: Store, initialValue: Long, initialDomain:Domain, n:
 
   override def name: String = if (n == null) defaultName else n
 
-  override def createCheckpoint: VariableCheckpoint = new CBLSIntVarCheckpoint(this,this.newValue)
+  override def createCheckpoint: VariableCheckpoint = new CBLSIntVarCheckpoint(this,this.value)
 
   override def :=(v: Long): Unit ={
     setValue(v)

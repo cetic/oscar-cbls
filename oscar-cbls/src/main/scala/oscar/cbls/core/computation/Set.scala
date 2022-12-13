@@ -408,7 +408,7 @@ class CBLSSetVar(givenModel: Store, initialValue: SortedSet[Int], initialDomain:
 
   override def restrictDomain(d:Domain): Unit = super.restrictDomain(d)
 
-  override def createCheckpoint: VariableCheckpoint = new CBLSetVarCheckpoint(this,this.newValue)
+  override def createCheckpoint: VariableCheckpoint = new CBLSetVarCheckpoint(this,this.value)
 
   override def name: String = if (n == null) defaultName else n
 
