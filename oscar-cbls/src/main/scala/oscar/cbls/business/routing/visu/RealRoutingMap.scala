@@ -24,12 +24,16 @@ import oscar.visual.map._
   * @param geoCoords The array of geographical coordinates (of size n (one coordinate for each depot or customer))
   * @param colorValues The color of each vehicle (minimum size == v)
   * @param refreshRate The refresh rate in ms. For instance if its 1000. The display will update each second.
+  * @param lineStyle The style in which a line between a points is drawn. Default is "midArrow", where an arrowhead
+  *                  is drawn in the middle of the line. Also, option "arrow" draws normal arrows, and any other string
+  *                  draws normal lines.
   */
 class RealRoutingMap(vrp: VRP,
                      geoCoords: Array[(scala.Double,scala.Double)],
                      colorValues: Array[Color],
                      refreshRate: Int,
-                     toolTipInfo: Option[Int => Option[() => String]]) extends VisualMap() with StopWatch with RoutingMapTrait {
+                     toolTipInfo: Option[Int => Option[() => String]],
+                     lineStyle: String = "midArrow") extends VisualMap(lineStyle) with StopWatch with RoutingMapTrait {
 
   private var lastRefresh = 0L
 

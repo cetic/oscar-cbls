@@ -28,7 +28,7 @@ import java.awt.Font
 /**
  * @author Pierre Schaus
  */
-class MapPainter(map : VisualMap) extends Painter[JXMapViewer] {
+class MapPainter(map : VisualMap, lineStyle: String = "line") extends Painter[JXMapViewer] {
   var mymap: VisualMap = map
 
   private val renderer = new DefaultWaypointRenderer()
@@ -56,7 +56,12 @@ class MapPainter(map : VisualMap) extends Painter[JXMapViewer] {
       val pt1 = mymap.viewer.getTileFactory.geoToPixel(new GeoPosition(l.orig._1, l.orig._2), mymap.viewer.getZoom)
       val pt2 = mymap.viewer.getTileFactory.geoToPixel(new GeoPosition(l.dest._1, l.dest._2), mymap.viewer.getZoom)
       g.setColor(l.color)
-      g.drawLine( pt1.getX.toInt, pt1.getY.toInt, pt2.getX.toInt, pt2.getY.toInt)
+
+      lineStyle.toLowerCase match {
+        case "arrow" => drawArrow(g, pt1.getX.toInt, pt1.getY.toInt, pt2.getX.toInt, pt2.getY.toInt)
+        case "midarrow" => drawMidArrow(g, pt1.getX.toInt, pt1.getY.toInt, pt2.getX.toInt, pt2.getY.toInt)
+        case _ => g.drawLine( pt1.getX.toInt, pt1.getY.toInt, pt2.getX.toInt, pt2.getY.toInt)
+      }
     }
     //paths
     g.setColor(Color.BLACK)
@@ -86,7 +91,7 @@ class MapPainter(map : VisualMap) extends Painter[JXMapViewer] {
     }
 
     for (poly <- mymap.polygons) {
-      val pointsPxl = poly.coords.map(c => mymap.viewer.getTileFactory().geoToPixel(new GeoPosition(c._1,c._2),mymap.viewer.getZoom))
+      val pointsPxl = poly.coords.map(c => mymap.viewer.getTileFactory.geoToPixel(new GeoPosition(c._1,c._2),mymap.viewer.getZoom))
       val ptX = pointsPxl.map(_.getX.toInt)
       val ptY = pointsPxl.map(_.getY.toInt)
       val nPoints = poly.coords.length
@@ -99,5 +104,82 @@ class MapPainter(map : VisualMap) extends Painter[JXMapViewer] {
 
   protected def paintWaypoint(w: Waypoint, g:  Graphics2D): Unit = {
     renderer.paintWaypoint(g, mymap.viewer, w)
+  }
+
+  // Adapted from https://stackoverflow.com/a/27461352 :
+  /** Draw an arrow line between two points.
+    *
+    * @param g the graphics component.
+    * @param x1 x -position of first point.
+    * @param y1 y -position of first point.
+    * @param x2 x -position of second point.
+    * @param y2 y -position of second point.
+    * @param h the height of the arrow.
+    * @param w the width of the arrow.
+    */
+  protected def drawArrow(g: Graphics2D, x1: Int, y1: Int, x2: Int, y2: Int,
+                          h: Int = 10, w: Int = 2): Unit = {
+
+    val mid = ((x1 + x2) / 2, (y1 + y2) / 2)
+    val (dx, dy) = (x2 - x1, y2 - y1)
+    val l = Math.sqrt(dx * dx + dy * dy)
+    var xm: Double = l - h
+    var xn: Double = xm
+    var ym: Double = w
+    var yn: Double = -w
+    val sin: Double = dy / l
+    val cos: Double = dx / l
+
+    var x: Double = xm * cos - ym * sin + x1
+    ym = xm * sin + ym * cos + y1
+    xm = x
+    x = xn * cos - yn * sin + x1
+    yn = xn * sin + yn * cos + y1
+    xn = x
+
+//    val xs = Array(x2, xm.asInstanceOf[Int], xn.asInstanceOf[Int])
+//    val ys = Array(y2, ym.asInstanceOf[Int], yn.asInstanceOf[Int])
+    g.drawLine(x1, y1, x2, y2)
+    g.drawLine(x2, y2, xm.toInt, ym.toInt)
+    g.drawLine(x2, y2, xn.toInt, yn.toInt)
+//    g.fillPolygon(xs, ys, 3)
+  }
+
+  /** Draw a mid-arrow line between two points.
+    *
+    * @param g  the graphics component.
+    * @param x1 x -position of first point.
+    * @param y1 y -position of first point.
+    * @param x2 x -position of second point.
+    * @param y2 y -position of second point.
+    * @param h  the height of the arrow.
+    * @param w  the width of the arrow.
+    */
+  protected def drawMidArrow(g: Graphics2D, x1: Int, y1: Int, x2: Int, y2: Int,
+                          h: Int = 10, w: Int = 4): Unit = {
+
+    val (x3, y3) = ((x1 + x2) / 2, (y1 + y2) / 2)
+    val (dx, dy) = (x3 - x1, y3 - y1)
+    val l = Math.sqrt(dx * dx + dy * dy)
+    var xm: Double = l - h
+    var xn: Double = xm
+    var ym: Double = w
+    var yn: Double = -w
+    val sin: Double = dy / l
+    val cos: Double = dx / l
+
+    var x: Double = xm * cos - ym * sin + x1
+    ym = xm * sin + ym * cos + y1
+    xm = x
+    x = xn * cos - yn * sin + x1
+    yn = xn * sin + yn * cos + y1
+    xn = x
+
+    val xs = Array(x3, xm.round.toInt, xn.round.toInt)
+    val ys = Array(y3, ym.round.toInt, yn.round.toInt)
+    g.drawLine(x1, y1, x2, y2)
+//    g.drawLine(x3, y3, xm.round.toInt, ym.round.toInt)
+//    g.drawLine(x3, y3, xn.round.toInt, yn.round.toInt)
+    g.fillPolygon(xs, ys, 3)
   }
 }
