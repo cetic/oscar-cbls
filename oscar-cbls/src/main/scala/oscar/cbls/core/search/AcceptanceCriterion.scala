@@ -24,6 +24,10 @@ object AcceptAll extends AcceptanceCriterion {
   override def apply(oldValue: Long, newValue: Long): Boolean = true
 }
 
+object AcceptAllNotViolation extends AcceptanceCriterion {
+  override def apply(oldValue: Long, newValue: Long): Boolean = newValue != Long.MaxValue
+}
+
 object StrictImprovement extends AcceptanceCriterion {
   override def apply(oldValue: Long, newValue: Long): Boolean = newValue < oldValue
 }
