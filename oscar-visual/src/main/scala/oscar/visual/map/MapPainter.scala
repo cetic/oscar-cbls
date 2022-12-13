@@ -57,12 +57,10 @@ class MapPainter(map : VisualMap, lineStyle: String = "line") extends Painter[JX
       val pt2 = mymap.viewer.getTileFactory.geoToPixel(new GeoPosition(l.dest._1, l.dest._2), mymap.viewer.getZoom)
       g.setColor(l.color)
 
-      if (lineStyle.toLowerCase == "arrow") {
-        drawArrow(g, pt1.getX.toInt, pt1.getY.toInt, pt2.getX.toInt, pt2.getY.toInt)
-      } else if (lineStyle.toLowerCase == "midArrow") {
-        drawMidArrow(g, pt1.getX.toInt, pt1.getY.toInt, pt2.getX.toInt, pt2.getY.toInt)
-      } else {
-        g.drawLine( pt1.getX.toInt, pt1.getY.toInt, pt2.getX.toInt, pt2.getY.toInt)
+      lineStyle.toLowerCase match {
+        case "arrow" => drawArrow(g, pt1.getX.toInt, pt1.getY.toInt, pt2.getX.toInt, pt2.getY.toInt)
+        case "midarrow" => drawMidArrow(g, pt1.getX.toInt, pt1.getY.toInt, pt2.getX.toInt, pt2.getY.toInt)
+        case _ => g.drawLine( pt1.getX.toInt, pt1.getY.toInt, pt2.getX.toInt, pt2.getY.toInt)
       }
     }
     //paths
@@ -93,7 +91,7 @@ class MapPainter(map : VisualMap, lineStyle: String = "line") extends Painter[JX
     }
 
     for (poly <- mymap.polygons) {
-      val pointsPxl = poly.coords.map(c => mymap.viewer.getTileFactory().geoToPixel(new GeoPosition(c._1,c._2),mymap.viewer.getZoom))
+      val pointsPxl = poly.coords.map(c => mymap.viewer.getTileFactory.geoToPixel(new GeoPosition(c._1,c._2),mymap.viewer.getZoom))
       val ptX = pointsPxl.map(_.getX.toInt)
       val ptY = pointsPxl.map(_.getY.toInt)
       val nPoints = poly.coords.length
