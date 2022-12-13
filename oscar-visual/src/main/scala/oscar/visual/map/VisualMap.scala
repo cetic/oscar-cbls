@@ -27,7 +27,7 @@ import oscar.visual.VisualFrame
 /**
  * @author Pierre Schaus
  */
-class VisualMap extends JPanel(new BorderLayout()) {
+class VisualMap(lineStyle: String = "line") extends JPanel(new BorderLayout()) {
 
   val viewer = new JXMapViewer()
   var lines = List[MapLine]()
@@ -54,7 +54,7 @@ class VisualMap extends JPanel(new BorderLayout()) {
   viewer.setZoom(11)
   viewer.setAddressLocation(new GeoPosition(51.5, 0))
 
-  viewer.setOverlayPainter(new MapPainter(this))
+  viewer.setOverlayPainter(new MapPainter(this, lineStyle))
 
   viewer.setName("mapKit")
   val screensize = Toolkit.getDefaultToolkit().getScreenSize()

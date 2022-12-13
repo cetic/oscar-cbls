@@ -29,7 +29,8 @@ class RealRoutingMap(vrp: VRP,
                      geoCoords: Array[(scala.Double,scala.Double)],
                      colorValues: Array[Color],
                      refreshRate: Int,
-                     toolTipInfo: Option[Int => Option[() => String]]) extends VisualMap() with StopWatch with RoutingMapTrait {
+                     toolTipInfo: Option[Int => Option[() => String]],
+                     lineStyle: String = "midArrow") extends VisualMap(lineStyle) with StopWatch with RoutingMapTrait {
 
   private var lastRefresh = 0L
 
