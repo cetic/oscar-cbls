@@ -241,8 +241,8 @@ class CombinatorProfiler(val combinator: NeighborhoodCombinator) extends Profile
 
 class DummyCombinatorProfiler(combinator: NeighborhoodCombinator) extends CombinatorProfiler(combinator) {
   // Lazy : the other profiler may not be already initiated
-  override lazy val bpd: BasicProfilingData = combinator.subNeighborhoods.head.profiler.bpd
-  override lazy val totalBpd: BasicProfilingData = combinator.subNeighborhoods.head.profiler.totalBpd
+  override lazy val bpd: BasicProfilingData = if(combinator.subNeighborhoods.nonEmpty)combinator.subNeighborhoods.head.profiler.bpd else BasicProfilingData()
+  override lazy val totalBpd: BasicProfilingData = if(combinator.subNeighborhoods.nonEmpty)combinator.subNeighborhoods.head.profiler.totalBpd else BasicProfilingData()
 
   override def merge(profiler: Profiler): Unit = {
     val dummyProfiler = profiler.asInstanceOf[DummyCombinatorProfiler]
