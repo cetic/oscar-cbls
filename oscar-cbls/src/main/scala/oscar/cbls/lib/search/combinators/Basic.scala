@@ -259,6 +259,50 @@ case class Guard(cond: () => Boolean, b: Neighborhood) extends NeighborhoodCombi
   }
 }
 
+/**
+ * This combinator will prevent exploring the neighborhood
+ * in case the neighborhood did fail on previous exploration,
+ * and the condition has not changed since then.
+ * This combinator only evaluates the condition after a NoMoveFond, and before any exploration consecutive to a NoMoveFound.
+ * nevertheless,the condition should be reasonably fast to evaluate
+ * 
+ * @param n the basic neighborhood
+ * @param condition a condition to test before exploring the neighborhood
+ * @tparam T the return type of the condition; must be comparable to itself
+ * @return
+ */
+case class GuardOnValueUpdate[T](n:Neighborhood,condition:() => Comparable[T]) extends NeighborhoodCombinator(n){
+  var previousCondition:Option[Comparable[T]] = None
+
+  override def reset(): Unit = {
+    previousCondition = None
+    super.reset()
+  }
+
+  override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: AcceptanceCriterion): SearchResult = {
+    previousCondition match{
+      case None =>
+        n.getMove(obj, initialObj, acceptanceCriterion) match{
+          case NoMoveFound =>
+            previousCondition = Some(condition())
+            NoMoveFound
+          case m:MoveFound => m
+        }
+      case Some(cond) =>
+        val newCondition = condition()
+        if(cond equals newCondition) NoMoveFound
+        else n.getMove(obj, initialObj, acceptanceCriterion) match{
+          case NoMoveFound =>
+            previousCondition = Some(condition())
+            NoMoveFound
+          case m:MoveFound =>
+            previousCondition = None
+            m
+        }
+    }
+  }
+}
+
 object ExhaustList{
   def apply(neighborhoods: Iterable[Neighborhood],
             neighborhoodName: String = "ExhaustList",

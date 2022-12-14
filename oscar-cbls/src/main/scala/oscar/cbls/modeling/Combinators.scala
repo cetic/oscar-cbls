@@ -494,6 +494,19 @@ class NeighborhoodOps(n:Neighborhood){
   def guard(cond:()=>Boolean) = Guard(cond,n)
 
   /**
+   * This combinator will prevent exploring the neighborhood
+   * in case the neighborhood did fail on previous exploration,
+   * and the condition has not changed since then.
+   * This combinator only evaluates the condition after a NoMoveFond, and before any exploration consecutive to a NoMoveFound.
+   * nevertheless,the condition should be reasonably fast to evaluate
+   *
+   * @param condition a condition to test before exploring the neighborhood
+   * @tparam T the return type of the condition; must be comparable to itself
+   * @return
+   */
+  def onlyIfUpdateOn[T](condition:() => Comparable[T]):GuardOnValueUpdate[T] = GuardOnValueUpdate[T](n,condition)
+
+  /**
    * this is an alias for maxMoves 1L
    */
   def once = new MaxMoves(n, 1)
