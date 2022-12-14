@@ -504,7 +504,7 @@ class NeighborhoodOps(n:Neighborhood){
    * @tparam T the return type of the condition; must be comparable to itself
    * @return
    */
-  def onlyIfUpdateOn[T](condition:() => Comparable[T]):GuardOnValueUpdate[T] = GuardOnValueUpdate[T](n,condition)
+  def onlyIfUpdateOn[T](condition:() => T):GuardOnValueUpdate[T] = GuardOnValueUpdate[T](n,condition)
 
   /**
    * this is an alias for maxMoves 1L

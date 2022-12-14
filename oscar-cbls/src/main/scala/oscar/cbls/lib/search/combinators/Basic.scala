@@ -271,8 +271,8 @@ case class Guard(cond: () => Boolean, b: Neighborhood) extends NeighborhoodCombi
  * @tparam T the return type of the condition; must be comparable to itself
  * @return
  */
-case class GuardOnValueUpdate[T](n:Neighborhood,condition:() => Comparable[T]) extends NeighborhoodCombinator(n){
-  var previousCondition:Option[Comparable[T]] = None
+case class GuardOnValueUpdate[T](n:Neighborhood,condition:() => T) extends NeighborhoodCombinator(n){
+  var previousCondition:Option[T] = None
 
   override def reset(): Unit = {
     previousCondition = None

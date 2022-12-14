@@ -254,15 +254,14 @@ object TreeOpt{
     )
   }
 
-  def threeOptFullOptimizeByVehicle(myVRP:VRP, vehicles:Iterable[Int],
-                                    maxSizeOfMovedSegments:Int,
-                                    maxDistanceOfMove:Int,
-                                    selectInsertionPointBehavior:LoopBehavior = First(),
-                                    selectMovedSegmentBehavior:LoopBehavior = First(),
-                                    hotRestart:Boolean = true,
-                                    breakSymmetry:Boolean = true,
-                                    tryFlip:Boolean = true
-                                   ): Neighborhood = {
+  def threeOptReOptimizeByVehicle(myVRP:VRP, vehicles:Iterable[Int],
+                                 maxSizeOfMovedSegments:Int,
+                                 maxDistanceOfMove:Int,
+                                 selectInsertionPointBehavior:LoopBehavior = First(),
+                                 selectMovedSegmentBehavior:LoopBehavior = First(),
+                                 hotRestart:Boolean = true,
+                                 breakSymmetry:Boolean = true,
+                                 tryFlip:Boolean = true): Neighborhood = {
     Atomic(ExhaustList(
       vehicles.map(vehicle =>
         Atomic(threeOptOnVehicle(
@@ -275,7 +274,7 @@ object TreeOpt{
           hotRestart,
           breakSymmetry,
           tryFlip
-        ),shouldStop = _ => false)),
+        ),shouldStop = _ => false) onlyIfUpdateOn(() => myVRP.getRouteOfVehicle(vehicle))),
       backOnExhaust = false,
     ),shouldStop = _ => false)
   }
