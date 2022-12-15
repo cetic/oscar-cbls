@@ -744,8 +744,8 @@ class NeighborhoodOps(n:Neighborhood){
    * @param maxRelativeIncreaseOnBestObj additionally, newOBj is rejected if > maxRelativeIncreaseOnBestObj*bestObj.
    *                                     This increases convergence, but decreased optimality of this approach. the default value is very large, so that this mechanism is inactive.
    */
-  def lateAcceptanceHillClimbing(length:Int = 20,maxRelativeIncreaseOnBestObj:Double=1000, initialObj:Option[Long] = None) =
-    new LateAcceptanceHillClimbing(n, length,maxRelativeIncreaseOnBestObj, initialObj)
+  def lateAcceptanceHillClimbing(length:Int = 20,maxObj:Long=>Long = (objVal => objVal)) =
+    new LateAcceptanceHillClimbing(n, length,maxObj)
 
   //TODO: Adaptive Simulated Annealing: T = T_0 exp(-c k^1/D) wth re-annealing also permits adaptation to changing sensitivities in the multi-dimensional parameter-space.
 

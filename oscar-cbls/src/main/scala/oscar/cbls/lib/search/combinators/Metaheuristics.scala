@@ -100,9 +100,7 @@ class Metropolis(a: Neighborhood,
  */
 class LateAcceptanceHillClimbing(a: Neighborhood,
                                  length: Int = 20,
-                                 maxRelativeIncreaseOnBestObj: Double = 10000,
-                                 initialObj: Option[Long] = None) extends NeighborhoodCombinator(a) {
-  require(maxRelativeIncreaseOnBestObj > 1, "maybe you should not use LateAcceptanceHillClimbing if obj cannot increase anyway")
+                                 maxObj:Long=>Long = initObj=>initObj) extends NeighborhoodCombinator(a) {
 
   val memory:Array[Long] = Array.fill(length)(Long.MaxValue)
 
@@ -112,7 +110,7 @@ class LateAcceptanceHillClimbing(a: Neighborhood,
   var bestKnownObj: Long = Long.MaxValue
 
   def init(initialObj:Long): Unit = {
-    for(i <- memory.indices) memory(i) = this.initialObj.getOrElse(initialObj)
+    for(i <- memory.indices) memory(i) = maxObj(initialObj)
     maxToleratedObj = Long.MaxValue
     bestKnownObj = Long.MaxValue
     initialized = true
@@ -133,7 +131,7 @@ class LateAcceptanceHillClimbing(a: Neighborhood,
       if (newObj < maxToleratedObj && (newObj < oldOBj || newObj < memory(x))){
         memory(x) = newObj
         if (newObj < bestKnownObj) {
-          maxToleratedObj = ((newObj.toFloat * maxRelativeIncreaseOnBestObj) min Long.MaxValue).toLong
+          maxToleratedObj = maxObj(newObj)
           bestKnownObj = newObj
         }
         true

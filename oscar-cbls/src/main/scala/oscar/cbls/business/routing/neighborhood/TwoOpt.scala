@@ -140,13 +140,15 @@ case class TwoOpt(segmentStartValues:()=>Iterable[Int],
 
 object TwoOpt {
   def twoOptOnVehicle(vehicle: Int,
-                      vrp: VRP): Neighborhood = {
+                      vrp: VRP,
+                      selectSegmentStartBehavior:LoopBehavior = First(),
+                      selectSegmentEndBehavior:LoopBehavior = First()): Neighborhood = {
     TwoOpt(
       segmentStartValues = () => {
         vrp.getRouteOfVehicle(vehicle).tail
       },
       relevantNewSuccessors = () => {
-        val routeOfVehicle = vrp.getRouteOfVehicle(vehicle).tail.toArray
+        val routeOfVehicle = vrp.getRouteOfVehicle(vehicle).toArray
         val positionOfEachNodeInArray: SortedMap[Int, Int] =
           SortedMap.empty[Int, Int] ++ routeOfVehicle.indices.map(i => (routeOfVehicle(i), i))
         (segmentStartNode: Int) => {
@@ -155,14 +157,19 @@ object TwoOpt {
         }
       },
       vrp = vrp,
+      selectSegmentStartBehavior = selectSegmentStartBehavior,
+      selectSegmentEndBehavior = selectSegmentEndBehavior,
       neighborhoodName = s"twoOpt(v:$vehicle)")
   }
 
   def reOptimizeVehicleLateAcceptance(vehicle: Int, vrp: VRP): Neighborhood = {
     AtomicDyn(() =>
-      twoOptOnVehicle(vehicle, vrp)
-        lateAcceptanceHillClimbing(10, maxRelativeIncreaseOnBestObj = 1.5)
-      , shouldStop = _ => false, aggregateIntoSingleMove = true) onlyIfUpdateOn (() => vrp.getRouteOfVehicle(vehicle))
+      twoOptOnVehicle(vehicle, vrp,
+        selectSegmentStartBehavior = First(randomized=true),
+        selectSegmentEndBehavior = First(randomized=true))
+        lateAcceptanceHillClimbing(10, maxObj = obj => obj + (obj*0.5/vrp.v).toLong),
+      shouldStop = _ => false,
+      aggregateIntoSingleMove = true) onlyIfUpdateOn (() => vrp.getRouteOfVehicle(vehicle))
   }
 
   def reOptimizeVehiclesLateAcceptance(vrp: VRP, vehicles: Iterable[Int]): Neighborhood = {
