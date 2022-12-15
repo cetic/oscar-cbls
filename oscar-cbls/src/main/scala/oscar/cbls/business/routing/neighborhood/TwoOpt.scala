@@ -146,7 +146,7 @@ object TwoOpt {
         vrp.getRouteOfVehicle(vehicle).tail
       },
       relevantNewSuccessors = () => {
-        val routeOfVehicle = vrp.getRouteOfVehicle(vehicle).tail.toArray
+        val routeOfVehicle = vrp.getRouteOfVehicle(vehicle).toArray
         val positionOfEachNodeInArray: SortedMap[Int, Int] =
           SortedMap.empty[Int, Int] ++ routeOfVehicle.indices.map(i => (routeOfVehicle(i), i))
         (segmentStartNode: Int) => {
