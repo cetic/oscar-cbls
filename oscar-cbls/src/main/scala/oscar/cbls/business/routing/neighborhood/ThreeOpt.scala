@@ -229,12 +229,12 @@ object TreeOpt{
   }
 
   def threeOptOnVehicleRN(myVRP:VRP, vehicle:Int,
-                        relevantNeighbours:Int => Iterable[Int],
-                        selectInsertionPointBehavior:LoopBehavior = First(),
-                        selectMovedSegmentBehavior:LoopBehavior = First(),
-                        hotRestart:Boolean = true,
-                        tryFlip:Boolean = true
-                       ): Neighborhood = {
+                          relevantNeighbours:Int => Iterable[Int],
+                          selectInsertionPointBehavior:LoopBehavior = First(),
+                          selectMovedSegmentBehavior:LoopBehavior = First(),
+                          hotRestart:Boolean = true,
+                          tryFlip:Boolean = true
+                         ): Neighborhood = {
     ThreeOptByNodes(
       neighborhoodName = s"3-Opt(v:$vehicle)",
       breakSymmetry = false,
@@ -250,8 +250,13 @@ object TreeOpt{
         val nodeInRoute:SortedSet[Int]= SortedSet.empty[Int] ++ routeList
         val positionOfEachNodeInArray:SortedMap[Int,Int] =
           SortedMap.empty[Int,Int] ++ route.indices.map(i => (route(i),i))
+
         (insertionNode:Int,insertionPosition:Int,toVehicle:Int) => {
-          relevantNeighbours(insertionNode).filter(nodeInRoute)
+          val positionInTheArray = positionOfEachNodeInArray(insertionNode)
+          val nextNodeAfterInsertionNode = if(positionInTheArray == route.length-1) vehicle else route(positionInTheArray+1)
+          val nearestNodeToNextNodeInRoute:Iterable[Int] = relevantNeighbours(nextNodeAfterInsertionNode).filter(nodeInRoute).toSet
+          val nearestNodeToInsertionNodeInRoute:Iterable[Int] = relevantNeighbours(insertionNode).filter(nodeInRoute)
+          nearestNodeToNextNodeInRoute ++ nearestNodeToInsertionNodeInRoute
         }
       },
       relevantMovedSegmentEndNode = () => {
@@ -278,12 +283,11 @@ object TreeOpt{
       vrp = myVRP)
   }
 
-  def threeOptReOptimizeByVehicleReleventNEighbours(myVRP:VRP, vehicles:Iterable[Int],
+  def threeOptReOptimizeByVehicleReleventNeighbours(myVRP:VRP, vehicles:Iterable[Int],
                                                     relevantNeighbours:Int => Iterable[Int],
-                                  selectInsertionPointBehavior:LoopBehavior = First(),
-                                  selectMovedSegmentBehavior:LoopBehavior = First(),
-                                  hotRestart:Boolean = true,
-                                  breakSymmetry:Boolean = true): Neighborhood = {
+                                                    selectInsertionPointBehavior:LoopBehavior = First(),
+                                                    selectMovedSegmentBehavior:LoopBehavior = First(),
+                                                    hotRestart:Boolean = true): Neighborhood = {
     Atomic(ExhaustList(
       vehicles.map(vehicle =>
         Atomic(threeOptOnVehicleRN(
@@ -294,9 +298,9 @@ object TreeOpt{
           selectMovedSegmentBehavior,
           hotRestart,
           tryFlip = true
-        ) onlyIfUpdateOn(() => myVRP.getRouteOfVehicle(vehicle)),shouldStop = _ => false)),
+        ) onlyIfUpdateOn(() => myVRP.getRouteOfVehicle(vehicle)),shouldStop = _ => false,aggregateIntoSingleMove = true)),
       backOnExhaust = false,
-    ),shouldStop = _ => false)
+    ),shouldStop = _ => false,aggregateIntoSingleMove = true)
   }
 
   def threeOptByVehicle(myVRP:VRP, vehicles:Iterable[Int],
