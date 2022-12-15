@@ -376,6 +376,8 @@ case class Atomic(a: Neighborhood,
   def stopAsSoonAsAcceptable: Atomic = {
     Atomic(a, shouldStop, stopAsSoonAsAcceptableMoves=true)
   }
+
+  override def verbose_=(i: Int): Unit = super.verbose_=(0)
 }
 
 object EjectionChains{
