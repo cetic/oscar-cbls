@@ -345,9 +345,9 @@ object TreeOpt{
           hotRestart,
           breakSymmetry,
           tryFlip
-        ),shouldStop = _ => false) onlyIfUpdateOn(() => myVRP.getRouteOfVehicle(vehicle))),
+        )onlyIfUpdateOn(() => myVRP.getRouteOfVehicle(vehicle)),shouldStop = _ => false, aggregateIntoSingleMove = true) ),
       backOnExhaust = false,
-    ),shouldStop = _ => false)
+    ),shouldStop = _ => false, aggregateIntoSingleMove = true)
   }
 
 
