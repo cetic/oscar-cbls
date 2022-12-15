@@ -242,7 +242,7 @@ case class Guard(cond: () => Boolean, b: Neighborhood) extends NeighborhoodCombi
                        acceptanceCriteria: AcceptanceCriterion): SearchResult = {
     profiler.explorationStarted()
     if (cond()) {
-      b.getMove(obj, initialObj:Long, acceptanceCriteria)match {
+      b.getMove(obj, initialObj, acceptanceCriteria) match {
         case NoMoveFound =>
           profiler.explorationEnded(false)
           NoMoveFound
@@ -290,7 +290,7 @@ case class GuardOnValueUpdate[T](n:Neighborhood,condition:() => T) extends Neigh
         }
       case Some(cond) =>
         val newCondition = condition()
-        if(cond equals newCondition) NoMoveFound
+        if (cond == newCondition) NoMoveFound
         else n.getMove(obj, initialObj, acceptanceCriterion) match{
           case NoMoveFound =>
             previousCondition = Some(condition())
