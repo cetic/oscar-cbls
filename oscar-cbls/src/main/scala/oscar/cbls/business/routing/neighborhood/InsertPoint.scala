@@ -167,7 +167,7 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
           case None => //not routed?!
           case Some(explorer) =>
             insertAtPositionForInstantiation = explorer.position + 1
-            vehicleForInstantiation = getVehicleReaching(insertAtPositionForInstantiation)
+            vehicleForInstantiation = getVehicleReaching(explorer.position)
             doMove(insertedPointForInstantiation, insertAtPositionForInstantiation)
 
             if (evaluateCurrentMoveObjTrueIfSomethingFound(evalObjAndRollBack())) {
