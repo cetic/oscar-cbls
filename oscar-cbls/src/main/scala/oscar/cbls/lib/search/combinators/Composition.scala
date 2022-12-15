@@ -380,6 +380,56 @@ case class Atomic(a: Neighborhood,
   override def verbose_=(i: Int): Unit = super.verbose_=(0)
 }
 
+
+case class AtomicDyn(n: () => Neighborhood,
+                  shouldStop: Int => Boolean,
+                  stopAsSoonAsAcceptableMoves: Boolean = false,
+                  aggregateIntoSingleMove: Boolean = false) extends NeighborhoodCombinator() {
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: AcceptanceCriterion = StrictImprovement): SearchResult = {
+    val startSolution = obj.model.solution(true)
+    val stopProc = if (stopAsSoonAsAcceptableMoves) {
+      nbId: Int => shouldStop(nbId) || acceptanceCriterion(initialObj, obj.value)
+    } else {
+      shouldStop
+    }
+
+    val a:Neighborhood = n()
+    if (aggregateIntoSingleMove) {
+
+      val nbMoves = a.doAllMoves(stopProc, obj, acceptanceCriterion)
+
+      //restore the initial solution
+      val endObj = obj.value
+      val endSolution = obj.model.solution(true)
+
+      startSolution.restoreDecisionVariables()
+
+      if (nbMoves == 0) {
+        NoMoveFound
+      } else {
+        LoadSolutionMove(endSolution, endObj, s"AtomicDyn($a)")
+      }
+
+    } else {
+      val allMoves = a.getAllMoves(stopProc, obj, acceptanceCriterion)
+
+      //restore the initial solution
+      val endObj = obj.value
+      startSolution.restoreDecisionVariables()
+
+      if (allMoves.isEmpty) {
+        NoMoveFound
+      } else {
+        CompositeMove(allMoves, endObj, s"AtomicDyn($a)")
+      }
+    }
+  }
+
+  override def verbose_=(i: Int): Unit = super.verbose_=(0)
+}
+
 object EjectionChains{
   def apply(nextNeighborhood: List[Move] => Option[Neighborhood],
             intermediaryObj: Option[Objective] = None,

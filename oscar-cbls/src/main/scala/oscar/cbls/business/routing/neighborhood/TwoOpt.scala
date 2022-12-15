@@ -25,7 +25,10 @@ package oscar.cbls.business.routing.neighborhood
 
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.{VRP, VehicleLocation}
-import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
+import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, Neighborhood}
+import oscar.cbls.lib.search.combinators.{Atomic, AtomicDyn, ExhaustList}
+
+import scala.collection.immutable.SortedMap
 
 /**
  * Removes two edges of routes, and rebuilds routes from the segments.
@@ -132,6 +135,40 @@ case class TwoOpt(segmentStartValues:()=>Iterable[Int],
   //this resets the internal state of the Neighborhood
   override def reset(): Unit = {
     startIndice = 0
+  }
+}
+
+object TwoOpt {
+  def twoOptOnVehicle(vehicle: Int,
+                      vrp: VRP): Neighborhood = {
+    TwoOpt(
+      segmentStartValues = () => {
+        vrp.getRouteOfVehicle(vehicle).tail
+      },
+      relevantNewSuccessors = () => {
+        val routeOfVehicle = vrp.getRouteOfVehicle(vehicle).tail.toArray
+        val positionOfEachNodeInArray: SortedMap[Int, Int] =
+          SortedMap.empty[Int, Int] ++ routeOfVehicle.indices.map(i => (routeOfVehicle(i), i))
+        (segmentStartNode: Int) => {
+          val minPos = positionOfEachNodeInArray(segmentStartNode) + 1
+          (minPos until routeOfVehicle.length).map(pos => routeOfVehicle(pos))
+        }
+      },
+      vrp = vrp,
+      neighborhoodName = s"twoOpt(v:$vehicle)")
+  }
+
+  def reOptimizeVehicleLateAcceptance(vehicle: Int, vrp: VRP): Neighborhood = {
+    AtomicDyn(() =>
+      twoOptOnVehicle(vehicle, vrp)
+        lateAcceptanceHillClimbing(10, maxRelativeIncreaseOnBestObj = 1.5)
+      , shouldStop = _ => false, aggregateIntoSingleMove = true) onlyIfUpdateOn (() => vrp.getRouteOfVehicle(vehicle))
+  }
+
+  def reOptimizeVehiclesLateAcceptance(vrp: VRP, vehicles: Iterable[Int]): Neighborhood = {
+    Atomic(ExhaustList(
+      vehicles.map(vehicle => reOptimizeVehicleLateAcceptance(vehicle, vrp))),
+      shouldStop = _ => false, aggregateIntoSingleMove = true)
   }
 }
 

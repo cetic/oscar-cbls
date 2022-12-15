@@ -156,7 +156,7 @@ case class ThreeOpt(potentialInsertionNodes:()=>Iterable[Int], //must be routed,
   }
 }
 
-object TreeOpt{
+object ThreeOpt{
   /**
    * declares a neighborhood that performs a 3-ot on a given vehicle
    * @param myVRP the VRP

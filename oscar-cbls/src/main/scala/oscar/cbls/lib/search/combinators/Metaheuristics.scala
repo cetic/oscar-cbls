@@ -125,11 +125,10 @@ class LateAcceptanceHillClimbing(a: Neighborhood,
                        acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     if (!initialized) init(initialObj)
 
-    a.getMove(obj,initialObj,(oldOBj,newObj) => {
+    x = x+1
+    if (x >= length) x = 0
 
-      //TODO these two lines should be done before a.getMove
-      x = x+1
-      if (x >= length) x = 0
+    a.getMove(obj,initialObj,(oldOBj,newObj) => {
 
       if (newObj < maxToleratedObj && (newObj < oldOBj || newObj < memory(x))){
         memory(x) = newObj
