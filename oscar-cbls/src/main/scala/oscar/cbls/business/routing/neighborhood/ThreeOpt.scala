@@ -24,7 +24,7 @@ import oscar.cbls.core.computation.CBLSSeqVar
 import oscar.cbls.core.search._
 import oscar.cbls.lib.search.combinators.{Atomic, ExhaustList}
 
-import scala.collection.immutable.SortedMap
+import scala.collection.immutable.{SortedMap, SortedSet}
 
 /**
  * This implementation of threeOpt explores the classical threeOpt by aspiration
@@ -228,6 +228,77 @@ object TreeOpt{
       vrp = myVRP)
   }
 
+  def threeOptOnVehicleRN(myVRP:VRP, vehicle:Int,
+                        relevantNeighbours:Int => Iterable[Int],
+                        selectInsertionPointBehavior:LoopBehavior = First(),
+                        selectMovedSegmentBehavior:LoopBehavior = First(),
+                        hotRestart:Boolean = true,
+                        tryFlip:Boolean = true
+                       ): Neighborhood = {
+    ThreeOptByNodes(
+      neighborhoodName = s"3-Opt(v:$vehicle)",
+      breakSymmetry = false,
+      selectInsertionPointBehavior = selectInsertionPointBehavior,
+      selectMovedSegmentBehavior = selectMovedSegmentBehavior,
+      hotRestart = hotRestart,
+      tryFlip = tryFlip,
+      potentialInsertionNodes = () => myVRP.getRouteOfVehicle(vehicle),
+      relevantMovedSegmentStartNode = () => {
+        //(insertionNode,insertionPosition,toVehicle) => segmentStartNodes
+        val routeList = myVRP.getRouteOfVehicle(vehicle)
+        val route:Array[Int] = routeList.toArray
+        val nodeInRoute:SortedSet[Int]= SortedSet.empty[Int] ++ routeList
+        val positionOfEachNodeInArray:SortedMap[Int,Int] =
+          SortedMap.empty[Int,Int] ++ route.indices.map(i => (route(i),i))
+        (insertionNode:Int,insertionPosition:Int,toVehicle:Int) => {
+          relevantNeighbours(insertionNode).filter(nodeInRoute)
+        }
+      },
+      relevantMovedSegmentEndNode = () => {
+        //(insertionNode,insertionPosition,toVehicle) => (segmentStartNode,segmentStartPosition,fromVehicle) => segmentEndNodes
+        val routeList = myVRP.getRouteOfVehicle(vehicle)
+        val route:Array[Int] = routeList.toArray
+        val nodeInRoute:SortedSet[Int]= SortedSet.empty[Int] ++ routeList
+        val positionOfEachNodeInArray:SortedMap[Int,Int] =
+          SortedMap.empty[Int,Int] ++ route.indices.map(i => (route(i),i))
+
+        (insertionNode: Int, insertionPosition: Int, toVehicle: Int) => {
+
+          //check nearest node to nextNode in route
+          val positionInTheArray = positionOfEachNodeInArray(insertionNode)
+          val nextNodeAfterInsertionNode = if(positionInTheArray == route.length-1) vehicle else route(positionInTheArray+1)
+          val nearestNodeToNextNodeInRoute = relevantNeighbours(nextNodeAfterInsertionNode).filter(nodeInRoute)
+
+          //(segmentStartNode,segmentStartPosition,fromVehicle) => segmentEndNodes
+          (segmentStartNode: Int, segmentStartPosition: Int, fromVehicle: Int) => {
+            nearestNodeToNextNodeInRoute
+          }
+        }
+      },
+      vrp = myVRP)
+  }
+
+  def threeOptReOptimizeByVehicleReleventNEighbours(myVRP:VRP, vehicles:Iterable[Int],
+                                                    relevantNeighbours:Int => Iterable[Int],
+                                  selectInsertionPointBehavior:LoopBehavior = First(),
+                                  selectMovedSegmentBehavior:LoopBehavior = First(),
+                                  hotRestart:Boolean = true,
+                                  breakSymmetry:Boolean = true): Neighborhood = {
+    Atomic(ExhaustList(
+      vehicles.map(vehicle =>
+        Atomic(threeOptOnVehicleRN(
+          myVRP,
+          vehicle,
+          relevantNeighbours,
+          selectInsertionPointBehavior,
+          selectMovedSegmentBehavior,
+          hotRestart,
+          tryFlip = true
+        ) onlyIfUpdateOn(() => myVRP.getRouteOfVehicle(vehicle)),shouldStop = _ => false)),
+      backOnExhaust = false,
+    ),shouldStop = _ => false)
+  }
+
   def threeOptByVehicle(myVRP:VRP, vehicles:Iterable[Int],
                         maxSizeOfMovedSegments:Int,
                         maxDistanceOfMove:Int,
@@ -255,13 +326,13 @@ object TreeOpt{
   }
 
   def threeOptReOptimizeByVehicle(myVRP:VRP, vehicles:Iterable[Int],
-                                 maxSizeOfMovedSegments:Int,
-                                 maxDistanceOfMove:Int,
-                                 selectInsertionPointBehavior:LoopBehavior = First(),
-                                 selectMovedSegmentBehavior:LoopBehavior = First(),
-                                 hotRestart:Boolean = true,
-                                 breakSymmetry:Boolean = true,
-                                 tryFlip:Boolean = true): Neighborhood = {
+                                  maxSizeOfMovedSegments:Int,
+                                  maxDistanceOfMove:Int,
+                                  selectInsertionPointBehavior:LoopBehavior = First(),
+                                  selectMovedSegmentBehavior:LoopBehavior = First(),
+                                  hotRestart:Boolean = true,
+                                  breakSymmetry:Boolean = true,
+                                  tryFlip:Boolean = true): Neighborhood = {
     Atomic(ExhaustList(
       vehicles.map(vehicle =>
         Atomic(threeOptOnVehicle(
@@ -278,6 +349,10 @@ object TreeOpt{
       backOnExhaust = false,
     ),shouldStop = _ => false)
   }
+
+
+
+
 }
 
 /**
