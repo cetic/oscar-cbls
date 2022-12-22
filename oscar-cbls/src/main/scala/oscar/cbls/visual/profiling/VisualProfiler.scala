@@ -23,8 +23,10 @@ class VisualProfiler(search: Neighborhood, title: String) extends JFrame{
   profilingTree.draw()
   val profilingTreeScroll = new JScrollPane(profilingTree,javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED)
 
-  val allSimpleNeighborhoodProfiler: List[NeighborhoodProfiler] =
-    profilingTree.allProfilingNodes.filter(_.hasChildren == false).map(_.profiler.asInstanceOf[NeighborhoodProfiler])
+  val allSimpleNeighborhoodProfiler: List[NeighborhoodProfiler] = profilingTree.allProfilingNodes.map(_.profiler).collect {
+    case np: NeighborhoodProfiler => np
+  }
+    //profilingTree.allProfilingNodes.filter(_.hasChildren == false).map(_.profiler.asInstanceOf[NeighborhoodProfiler])
   val profilingTable: ProfilingTable = ProfilingTable(allSimpleNeighborhoodProfiler)
   //profilingTable.setPreferredSize(new Dimension(400,400))
 

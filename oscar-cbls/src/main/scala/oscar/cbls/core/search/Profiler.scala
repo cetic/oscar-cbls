@@ -87,6 +87,7 @@ abstract class Profiler(val neighborhood:Neighborhood){
 
   override def toString: String = s"Profile(${neighborhood.toString})\nTOTAL : $totalBpd\nCURRENT : $bpd"
   def profiledNeighborhood: String = neighborhood.toString
+  def detailedRecursiveName: String
 }
 
 class EmptyProfiler(neighborhood: Neighborhood) extends Profiler(neighborhood) {
@@ -96,6 +97,7 @@ class EmptyProfiler(neighborhood: Neighborhood) extends Profiler(neighborhood) {
   // Nothing to do
   override def resetThisStatistics(): Unit = {}
   override def merge(profiler: Profiler): Unit = {}
+  override def detailedRecursiveName: String = neighborhood.toString
 }
 
 /**
@@ -105,7 +107,7 @@ class EmptyProfiler(neighborhood: Neighborhood) extends Profiler(neighborhood) {
 class NeighborhoodProfiler(override val neighborhood: Neighborhood) extends Profiler(neighborhood) {
 
   private var startExplorationAtMillis: Long = 0L
-  private var lastNeighborSelectionAtMillis: Long = 0L
+  private var lastNeighborExploredAtMillis: Long = 0L
   private var firstNeighborSelection: Boolean = true
   private var firstNeighborSelectionCounter: Long = 0L
   private var firstNeighborSelectionDuration: Long = 0L
@@ -120,9 +122,8 @@ class NeighborhoodProfiler(override val neighborhood: Neighborhood) extends Prof
       firstNeighborSelection = false
     } else {
       notFirstNeighborSelectionCounter += 1
-      notFirstNeighborSelectionsDuration += neighborSelectionAtMillis - lastNeighborSelectionAtMillis
+      notFirstNeighborSelectionsDuration += neighborSelectionAtMillis - lastNeighborExploredAtMillis
     }
-    lastNeighborSelectionAtMillis = neighborSelectionAtMillis
   }
 
   def gainPerCall:String = if(totalBpd.nbCalls ==0L) "NA" else s"${totalBpd.gain / totalBpd.nbCalls}"
@@ -166,6 +167,8 @@ class NeighborhoodProfiler(override val neighborhood: Neighborhood) extends Prof
     totalBpd.merge(profiler.totalBpd)
   }
 
+  override def detailedRecursiveName: String = neighborhood.toString
+
   /**
    * Use this method to set up some profiling variables.
    * Like when did we start the neighborhood exploration, reset some variable...
@@ -183,6 +186,7 @@ class NeighborhoodProfiler(override val neighborhood: Neighborhood) extends Prof
    */
   def neighborExplored(): Unit ={
     bpd.exploreIncr(); totalBpd.exploreIncr()
+    lastNeighborExploredAtMillis = System.currentTimeMillis()
   }
 
   /**
@@ -223,6 +227,8 @@ class CombinatorProfiler(val combinator: NeighborhoodCombinator) extends Profile
     combinator.subNeighborhoods.zip(combinatorProfiler.combinator.subNeighborhoods).
       foreach(sn => sn._1.profiler.merge(sn._2.profiler))
   }
+
+  override def detailedRecursiveName: String = s"${neighborhood.toString}(${subProfilers.map(_.detailedRecursiveName).mkString(",")})"
 
   def explorationStarted(): Unit = {
     bpd.callIncr(); totalBpd.callIncr()
@@ -284,6 +290,7 @@ class SelectionProfiler(combinator: NeighborhoodCombinator, val neighborhoods: L
 
   def collectExtraProfileHeader: Array[String] = Array.empty
   def collectExtraProfileData: Array[String] = Array.empty
+  override def detailedRecursiveName: String = s"${neighborhood.toString}(${profilers.map(_.detailedRecursiveName).mkString(",")})"
 }
 
 case class BestFirstProfiler(override val combinator: NeighborhoodCombinator,
@@ -347,7 +354,7 @@ case class CompositionProfiler(override val combinator: NeighborhoodCombinator, 
   }
 
   def mergeDynProfiler(profiler: Profiler): Unit ={
-    val matchingProfilerOpt = dynNeighborhoodProfiler.find(_.neighborhood.toString == profiler.neighborhood.toString)
+    val matchingProfilerOpt = dynNeighborhoodProfiler.find(x => x.detailedRecursiveName == profiler.detailedRecursiveName)
     if(matchingProfilerOpt.isDefined) matchingProfilerOpt.get.merge(profiler)
     else dynNeighborhoodProfiler = dynNeighborhoodProfiler :+ profiler
   }

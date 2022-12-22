@@ -1,7 +1,6 @@
 package examples.oscar.cbls.geometry
 
 import java.awt.Color
-
 import org.locationtech.jts.geom.Coordinate
 import oscar.cbls.business.geometry
 import oscar.cbls.business.geometry.invariants._
@@ -12,6 +11,7 @@ import oscar.cbls.lib.search.LinearSelectors
 import oscar.cbls.lib.search.combinators.{Atomic, BestSlopeFirst}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.visual.geometry.{GeometryDrawing, GeometryDrawingTypes}
+import oscar.cbls.visual.profiling.VisualProfiler
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 import oscar.cbls.{CBLSIntVar, Objective, Store, atomic}
 
@@ -345,7 +345,7 @@ object TestGeometryPackingRot extends App with LinearSelectors {
 
   updateDisplay() //after finish
 
-  println(search.profilingStatistics)
+  VisualProfiler.showProfile(search)
   println()
   println(overlapPenetrationPerShape.mkString("\n"))
   println(overlapPenetrationConstraint.output)
