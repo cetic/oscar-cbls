@@ -28,14 +28,15 @@ class SingleFrameWindow(val panel:JPanel, title:String, width:Int, height:Int, b
   val frame = new JFrame()
   frame.setTitle(title)
   frame.setPreferredSize(new java.awt.Dimension(width,height))
+  val scrollablePanel = new JScrollPane(panel,javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED)
 
   if(backgroundPanel.isDefined) {
     frame.setContentPane(backgroundPanel.get)
-    frame.setGlassPane(panel)
-    panel.setOpaque(false)
-    panel.setVisible(true)
+    frame.setGlassPane(scrollablePanel)
+    scrollablePanel.setOpaque(false)
+    scrollablePanel.setVisible(true)
   } else {
-    frame.add(panel, BorderLayout.CENTER)
+    frame.add(scrollablePanel, BorderLayout.CENTER)
   }
 
   frame.setResizable(true)

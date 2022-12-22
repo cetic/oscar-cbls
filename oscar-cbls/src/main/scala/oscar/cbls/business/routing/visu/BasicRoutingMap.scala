@@ -19,10 +19,9 @@ package oscar.cbls.business.routing.visu
 import java.awt.Color
 import java.awt.geom.Line2D.Double
 import java.awt.geom.Point2D
-
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.util.StopWatch
-import oscar.visual.VisualDrawing
+import oscar.cbls.visual.BetterVisualDrawing
 import oscar.visual.shapes.{VisualCircle, VisualLine, VisualShape}
 
 /**
@@ -34,7 +33,7 @@ class BasicRoutingMap(vrp: VRP,
                       colorValues: Array[Color],
                       mapSize: Option[Int],
                       refreshRate: Int,
-                      toolTipInfo: Option[Int => Option[() => String]]) extends VisualDrawing(false,false) with StopWatch with RoutingMapTrait {
+                      toolTipInfo: Option[Int => Option[() => String]]) extends BetterVisualDrawing(false,false) with StopWatch with RoutingMapTrait {
 
   private lazy val pixelPositionOfNodes: Array[((scala.Double,scala.Double),Int)] = positionsToPixels()
   private lazy val points:Array[VisualCircle] = buildPoints()
