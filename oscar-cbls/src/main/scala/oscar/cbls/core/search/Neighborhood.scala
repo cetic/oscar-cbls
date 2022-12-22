@@ -272,9 +272,11 @@ abstract class Neighborhood(name:String = null) {
     var moveCount = 0
     val enrichedObj = if (additionalStringGenerator == null) obj else new ObjWithStringGenerator(obj, additionalStringGenerator)
     while (!shouldStop(moveCount)) {
+      val prevObjForRequire = obj.value
       getMove(enrichedObj, obj.value, acceptanceCriterion) match {
         case NoMoveFound =>
 
+          require(obj.value == prevObjForRequire, "neighborhood did not restore the model after exploration (and returned NoMoveFound)")
           if(printMoveSythesis && moveSynthesis.nonEmpty){
             val finalObj = obj.value
             val firstPrefix = if (finalObj < prevObj) "-"
@@ -303,6 +305,7 @@ abstract class Neighborhood(name:String = null) {
 
           return toReturn;
         case m: MoveFound =>
+          require(obj.value == prevObjForRequire, s"neighborhood did not restore the model after exploration (and returned $m)")
           if(printMoveSythesis){
 
             var didPrintBefore:Boolean = false
