@@ -50,7 +50,7 @@ class BetterVisualDrawing(flipped: Boolean, scalable: Boolean) extends VisualDra
   })
 
   override def getPreferredSize: Dimension = {
-    val bounds = this.findBounds(shapes)
+    val bounds = if(shapes.isEmpty) (0.0, 10.0, 0.0, 10.0) else this.findBounds(shapes)
     new Dimension(((bounds._2-bounds._1)*scale).toInt, ((bounds._4-bounds._3)*scale).toInt)
   }
 

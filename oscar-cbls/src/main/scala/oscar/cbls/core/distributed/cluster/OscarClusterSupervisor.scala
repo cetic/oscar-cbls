@@ -36,7 +36,7 @@ object OscarClusterSupervisor {
   // Messages to Frontend
   sealed trait ClusterSupervisorEvent
   final case object Initialize extends ClusterSupervisorEvent
-  private case class TrySearch(searchType: OscarSearchExecutor) extends ClusterSupervisorEvent
+  private final case object TrySearch extends ClusterSupervisorEvent
   private final case class DelegatorsUpdated(newDelegators: Set[ActorRef[OscarClusterDelegator.DelegateWorker]]) extends ClusterSupervisorEvent
   private final case class DelegateCompleted(workerRef: ActorRef[MessageToWorker]) extends ClusterSupervisorEvent
   private final case class DelegateFailed(why: String) extends ClusterSupervisorEvent
@@ -105,17 +105,17 @@ object OscarClusterSupervisor {
           }
         }
         // Try to do the first search
-        ctx.self ! TrySearch(searchExecutor)
+        ctx.self ! TrySearch
         Behaviors.same
 
-      case TrySearch(executor) =>
+      case TrySearch =>
         if (delegatedWorkers < 6) {
           // Not enough delegate workers. Try again
-          ctx.self ! TrySearch(executor)
+          ctx.self ! TrySearch
         } else {
           ctx.log.info("Going to perform the search")
           // perform the actual search
-          executor.executeSearch()
+          searchExecutor.executeSearch()
           ctx.self ! Shutdown
         }
         Behaviors.same

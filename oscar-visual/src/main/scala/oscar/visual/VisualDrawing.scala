@@ -162,6 +162,75 @@ class VisualDrawing(flipped: Boolean, scalable: Boolean) extends JPanel(new Bord
     }
   }
 
+  def moveForward(shape: VisualShape, repaintAfter: Boolean = true): Unit ={
+    val tempShapes: mutable.Queue[VisualShape] = mutable.Queue()
+    while(shapes.nonEmpty && shapes.head != shape) tempShapes.enqueue(shapes.dequeue())
+    val shapeFound =
+      if(shapes.isEmpty) {println("WARNING: shape not found"); false}
+      else {shapes.dequeue(); true}
+
+    if(shapeFound){
+      if(tempShapes.nonEmpty) shapes.enqueue(tempShapes.dequeue())  // enqueue one shape
+      shapes.enqueue(shape)                                         // enqueue the shape
+    }
+
+    // enqueue remaining
+    while(tempShapes.nonEmpty) shapes.enqueue(tempShapes.dequeue())
+
+    if(repaintAfter)repaint()
+  }
+
+  def moveToFront(shape: VisualShape, repaintAfter: Boolean = true): Unit ={
+    val tempShapes: mutable.Queue[VisualShape] = mutable.Queue()
+    while(shapes.nonEmpty && shapes.head != shape) tempShapes.enqueue(shapes.dequeue())
+    val shapeFound =
+      if(shapes.isEmpty) {println("WARNING: shape not found"); false}
+      else {shapes.dequeue(); true}
+
+    while(tempShapes.nonEmpty) shapes.enqueue(tempShapes.dequeue())
+    if(shapeFound){
+      shapes.enqueue(shape)
+      if(repaintAfter)repaint()
+    }
+  }
+
+  def moveBackward(shape: VisualShape, repaintAfter: Boolean = true): Unit ={
+    val tempShapes: mutable.Queue[VisualShape] = mutable.Queue()
+    while(shapes.nonEmpty && shapes.head != shape) tempShapes.enqueue(shapes.dequeue())
+    val shapeFound =
+      if(shapes.isEmpty) {println("WARNING: shape not found"); false}
+      else {
+        shapes.dequeue()
+        if(shapes.nonEmpty)tempShapes.enqueue(shapes.dequeue())  // dequeue one more shape
+        true}
+
+    if(shapeFound){
+      shapes.enqueue(shape)                                         // enqueue the shape
+    }
+
+    // enqueue remaining shapes
+    while(tempShapes.nonEmpty) shapes.enqueue(tempShapes.dequeue())
+
+    if(repaintAfter)repaint()
+  }
+
+  def moveToBack(shape: VisualShape, repaintAfter: Boolean = true): Unit ={
+    val tempShapes: mutable.Queue[VisualShape] = mutable.Queue()
+    // dequeue until shape is found (or not)
+    while(shapes.nonEmpty && shapes.head != shape) tempShapes.enqueue(shapes.dequeue())
+    val shapeFound =
+      if(shapes.isEmpty) {println("WARNING: shape not found"); false}
+      else {shapes.dequeue(); true}
+    // dequeue remaining shapes
+    while(shapes.nonEmpty) tempShapes.enqueue(shapes.dequeue())
+
+    // enqueue shape (if found) and enqueue all the other shapes
+    if(shapeFound) shapes.enqueue(shape)
+    while(tempShapes.nonEmpty) shapes.enqueue(tempShapes.dequeue())
+
+    if(repaintAfter)repaint()
+  }
+
   /** Removes all the shapes contained in the panel. */
   def clear(repaintAfter: Boolean = true): Unit = {
     shapes.clear()

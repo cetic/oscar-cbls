@@ -53,7 +53,7 @@ import oscar.cbls.visual.SingleFrameWindow
 class BiObjectiveSearch(globalMaxObj1:Long,
                         globalMinObj2:Long,
                         solutionAtMax1Min2:Solution,
-                        optimize:(Long/*maxObj2*/,Solution)  => Option[(Long,Long,Solution)],
+                        optimize:(Long/*maxObj2*/,Solution) => Option[(Long,Long,Solution)],
                         stopSurface:Long = 0,
                         maxPoints:Int = Int.MaxValue,
                         verbose:Boolean = false,
