@@ -6,9 +6,7 @@ import oscar.cbls.visual.BetterVisualDrawing
 import oscar.visual.{VisualDrawing, VisualTable}
 import oscar.visual.shapes.{VisualLine, VisualRectangle, VisualText}
 
-import java.awt.event.{MouseEvent, MouseListener}
 import java.awt.{Color, Font}
-import javax.swing.SwingUtilities
 
 class ProfilingTree(search: Neighborhood, visualConfig: ProfilingTreeVisualConfig = ProfilingTreeVisualConfig()) extends BetterVisualDrawing(false,false) {
 

@@ -74,10 +74,38 @@ abstract class Profiler(val neighborhood:Neighborhood){
   lazy val bpd: BasicProfilingData = BasicProfilingData()
   lazy val totalBpd: BasicProfilingData = BasicProfilingData()
 
+  def gainPerCall:String = if(totalBpd.nbCalls ==0L) "NA" else s"${totalBpd.gain / totalBpd.nbCalls}"
+  def callDuration:String = if(totalBpd.nbCalls == 0L ) "NA" else s"${totalBpd.timeSpent / totalBpd.nbCalls}"
+  //gain in obj/s
+  def slope:String = if(totalBpd.timeSpent == 0L) "NA" else s"${1000 * (totalBpd.gain.toDouble / totalBpd.timeSpent.toDouble).toLong}"
+  def avgTimeSpendNoMove:String = if(totalBpd.nbCalls - totalBpd.nbFound == 0L) "NA" else s"${totalBpd.timeSpentNoMoveFound / (totalBpd.nbCalls - totalBpd.nbFound)}"
+  def avgTimeSpendMove:String = if(totalBpd.nbFound == 0L) "NA" else s"${totalBpd.timeSpentMoveFound / totalBpd.nbFound}"
+  def avgTimeExplore: String = s"${(totalBpd.timeSpent.toDouble/totalBpd.nbExplored*1000).round/1000.0}"
+  def waistedTime:String = if(totalBpd.nbCalls - totalBpd.nbFound == 0L) "NA" else s"${totalBpd.timeSpentNoMoveFound / (totalBpd.nbCalls - totalBpd.nbFound)}"
+  def avgTimeFirstNeighborSelection: String = "NA"
+  def avgTimeNotFirstNeighborSelection: String = "NA"
+
   def subProfilers:List[Profiler]
   def collectThisProfileStatistics:List[Array[String]] = List(collectThisProfileHeader, collectThisProfileData)
-  def collectThisProfileHeader:Array[String]
-  def collectThisProfileData:Array[String]
+  final def collectThisProfileHeader: Array[String] = Array("Neighborhood","calls", "found", "explored", "sumGain", "sumTime(ms)", "avgGain",
+    "avgTime(ms)", "slope(-/s)", "avgTimeNoMove", "avgTimeMove", "wastedTime", "avgTimeExplored(ms)",
+    "avgFirstSelectionTime(ms)", "avgOtherSelectionTime(ms)")
+  final def collectThisProfileData:Array[String]= {
+    Array[String](s"${neighborhood}",
+      s"${totalBpd.nbCalls}", s"${totalBpd.nbFound}", s"${totalBpd.nbExplored}",
+      s"${totalBpd.gain}", s"${totalBpd.timeSpent}", s"$gainPerCall", s"$callDuration", s"$slope",
+      s"$avgTimeSpendNoMove", s"$avgTimeSpendMove", s"${totalBpd.timeSpentNoMoveFound}",
+      s"$avgTimeExplore", avgTimeFirstNeighborSelection, avgTimeNotFirstNeighborSelection)
+  }
+
+  def goodValueIndicator(): Array[Option[String]] = {
+    // Neighborhood, calls, founds, explored, sumGain, sumTime, avgGain
+    Array(None, None, Some("Max"), None, Some("Max"), Some("Min"), Some("Max"),
+      // avgTime, slope, avgTimeNoMove, avgTimeMove, wastedTime, avtTimeExplored
+      Some("Min"), Some("Max"), Some("Min"), Some("Min"), Some("Min"), Some("Min"),
+      // avgFirstNeighborSelectionTime, avgNotFirstNeighborSelectionTime
+      Some("Min"), Some("Min"))
+  }
 
   def resetThisStatistics(): Unit = bpd.resetAll()
   // TODO : Should return a Boolean that tells if the operation is a success
@@ -92,8 +120,6 @@ abstract class Profiler(val neighborhood:Neighborhood){
 
 class EmptyProfiler(neighborhood: Neighborhood) extends Profiler(neighborhood) {
   override def subProfilers: List[Profiler] = List.empty
-  override def collectThisProfileHeader: Array[String] = Array.empty
-  override def collectThisProfileData: Array[String] = Array.empty
   // Nothing to do
   override def resetThisStatistics(): Unit = {}
   override def merge(profiler: Profiler): Unit = {}
@@ -126,41 +152,12 @@ class NeighborhoodProfiler(override val neighborhood: Neighborhood) extends Prof
     }
   }
 
-  def gainPerCall:String = if(totalBpd.nbCalls ==0L) "NA" else s"${totalBpd.gain / totalBpd.nbCalls}"
-  def callDuration:String = if(totalBpd.nbCalls == 0L ) "NA" else s"${totalBpd.timeSpent / totalBpd.nbCalls}"
-  //gain in obj/s
-  def slope:String = if(totalBpd.timeSpent == 0L) "NA" else s"${1000 * (totalBpd.gain.toDouble / totalBpd.timeSpent.toDouble).toLong}"
-
-  def avgTimeSpendNoMove:String = if(totalBpd.nbCalls - totalBpd.nbFound == 0L) "NA" else s"${totalBpd.timeSpentNoMoveFound / (totalBpd.nbCalls - totalBpd.nbFound)}"
-  def avgTimeSpendMove:String = if(totalBpd.nbFound == 0L) "NA" else s"${totalBpd.timeSpentMoveFound / totalBpd.nbFound}"
-  def avgTimeExplore: String = s"${(totalBpd.timeSpent.toDouble/totalBpd.nbExplored*1000).round/1000.0}"
-  def avgTimeFirstNeighborSelection: String = if(firstNeighborSelectionCounter == 0) "NA" else s"${firstNeighborSelectionDuration.toDouble/firstNeighborSelectionCounter}"
-  def avgTimeNotFirstNeighborSelection: String = if(notFirstNeighborSelectionCounter == 0) "NA" else s"${notFirstNeighborSelectionsDuration.toDouble/notFirstNeighborSelectionCounter}"
-  def waistedTime:String = if(totalBpd.nbCalls - totalBpd.nbFound == 0L) "NA" else s"${totalBpd.timeSpentNoMoveFound / (totalBpd.nbCalls - totalBpd.nbFound)}"
+  override def avgTimeFirstNeighborSelection: String = if(firstNeighborSelectionCounter == 0) "NA" else s"${firstNeighborSelectionDuration.toDouble/firstNeighborSelectionCounter}"
+  override def avgTimeNotFirstNeighborSelection: String = if(notFirstNeighborSelectionCounter == 0) "NA" else s"${notFirstNeighborSelectionsDuration.toDouble/notFirstNeighborSelectionCounter}"
 
   override def subProfilers: List[Profiler] = List.empty
 
-  def goodValueIndicator(): Array[Option[String]] = {
-    // Neighborhood, calls, founds, explored, sumGain, sumTime, avgGain
-    Array(None, None, Some("Max"), None, Some("Max"), Some("Min"), Some("Max"),
-      // avgTime, slope, avgTimeNoMove, avgTimeMove, wastedTime, avtTimeExplored
-      Some("Min"), Some("Max"), Some("Min"), Some("Min"), Some("Min"), Some("Min"),
-      // avgFirstNeighborSelectionTime, avgNotFirstNeighborSelectionTime
-      Some("Min"), Some("Min"))
-  }
 
-  override def collectThisProfileHeader: Array[String] = Array("Neighborhood","calls", "found", "explored", "sumGain", "sumTime(ms)", "avgGain",
-    "avgTime(ms)", "slope(-/s)", "avgTimeNoMove", "avgTimeMove", "wastedTime", "avgTimeExplored(ms)",
-    "avgFirstSelectionTime(ms)", "avgOtherSelectionTime(ms)")
-
-  override def collectThisProfileData:Array[String] =
-    {
-      Array[String](s"${neighborhood}",
-        s"${totalBpd.nbCalls}", s"${totalBpd.nbFound}", s"${totalBpd.nbExplored}",
-        s"${totalBpd.gain}", s"${totalBpd.timeSpent}", s"$gainPerCall", s"$callDuration", s"$slope",
-        s"$avgTimeSpendNoMove", s"$avgTimeSpendMove", s"${totalBpd.timeSpentNoMoveFound}",
-        s"$avgTimeExplore", avgTimeFirstNeighborSelection, avgTimeNotFirstNeighborSelection)
-    }
 
   override def merge(profiler: Profiler): Unit ={
     bpd.merge(profiler.bpd)
@@ -214,11 +211,8 @@ class CombinatorProfiler(val combinator: NeighborhoodCombinator) extends Profile
   var explorationStartAt: Long = 0L
 
   override def subProfilers: List[Profiler] = combinator.subNeighborhoods.map(_.profiler)
-  override def collectThisProfileHeader: Array[String] = Array("Combinator", "Total calls", "% Founds", "Total time (ms)")
-
-  override def collectThisProfileData: Array[String] =
-    Array(combinator.getClass.getSimpleName, totalBpd.nbCalls.toString,
-      (Math.floor(totalBpd.nbFound.toDouble/totalBpd.nbCalls*100000)/1000).toString, totalBpd.timeSpent.toString)
+  def collectThisCombinatorProfileStatisticsHeaders: Array[Array[String]] = Array(Array("Name"))
+  def collectThisCombinatorProfileStatisticsData: Array[Array[String]] = Array(Array(combinator.getClass.getSimpleName))
 
   override def merge(profiler: Profiler): Unit ={
     val combinatorProfiler = profiler.asInstanceOf[CombinatorProfiler]
@@ -234,10 +228,12 @@ class CombinatorProfiler(val combinator: NeighborhoodCombinator) extends Profile
     bpd.callIncr(); totalBpd.callIncr()
     explorationStartAt = System.currentTimeMillis()
   }
-  def explorationEnded(found: Boolean): Unit = {
+  def explorationEnded(gain: Option[Long]): Unit = {
     val timeSpent = System.currentTimeMillis()-explorationStartAt
-    if(found) {
+    bpd.exploreIncr();totalBpd.exploreIncr()
+    if(gain.nonEmpty) {
       bpd.foundIncr();totalBpd.foundIncr()
+      bpd.gainPlus(gain.get);totalBpd.gainPlus(gain.get)
       bpd.timeSpentMoveFoundPlus(timeSpent);totalBpd.timeSpentMoveFoundPlus(timeSpent)
     } else {
       bpd.timeSpentNoMoveFoundPlus(timeSpent);totalBpd.timeSpentNoMoveFoundPlus(timeSpent)
@@ -254,25 +250,17 @@ class DummyCombinatorProfiler(combinator: NeighborhoodCombinator) extends Combin
     val dummyProfiler = profiler.asInstanceOf[DummyCombinatorProfiler]
     combinator.subNeighborhoods.map(_.profiler).zip(dummyProfiler.combinator.subNeighborhoods.map(_.profiler)).foreach(x => x._1.merge(x._2))
   }
-
-  override def collectThisProfileHeader: Array[String] = Array.empty
-  override def collectThisProfileData: Array[String] = Array.empty
 }
 
 class SelectionProfiler(combinator: NeighborhoodCombinator, val neighborhoods: List[Neighborhood]) extends CombinatorProfiler(combinator) {
 
-  override final def collectThisProfileHeader: Array[String] =
-    super.collectThisProfileHeader ++
-      collectExtraProfileHeader ++
-      profilers.flatMap(p => Array("|", " ", "Usage (%)", "Success (%)"))
-  override final def collectThisProfileData: Array[String] =
-    super.collectThisProfileData ++
-      collectExtraProfileData ++
-      profilers.indices.flatMap(pi =>
-        Array("|", profilers(pi).neighborhood.toString,
-          s"${neighborhoodUsage(pi)}",
-          s"${neighborhoodSuccess(pi)}")
-        )
+  override final def collectThisCombinatorProfileStatisticsHeaders: Array[Array[String]] =
+    Array(Array("Name") ++ collectExtraProfileStatisticsHeader, Array("Name","Usage", "Success"))
+
+  override final def collectThisCombinatorProfileStatisticsData: Array[Array[String]] = {
+    collectExtraProfileStatisticsData.map(x =>Array(combinator.getClass.getSimpleName) ++ x) ++
+      profilers.indices.map(pi => Array(s"${profilers(pi).neighborhood}",s"${neighborhoodUsage(pi)}%",s"${neighborhoodSuccess(pi)}%"))
+  }
 
   ///////////////////////////////////////
   // Selection-Neighborhood management //
@@ -288,8 +276,8 @@ class SelectionProfiler(combinator: NeighborhoodCombinator, val neighborhoods: L
   def neighborhoodSuccess(neighborhoodId: Int): Double =
     ((profilers(neighborhoodId).totalBpd.nbFound.toDouble/profilers(neighborhoodId).totalBpd.nbCalls)*10000).round/100.0
 
-  def collectExtraProfileHeader: Array[String] = Array.empty
-  def collectExtraProfileData: Array[String] = Array.empty
+  def collectExtraProfileStatisticsHeader: Array[String] = Array.empty
+  def collectExtraProfileStatisticsData: Array[Array[String]] = Array.empty
   override def detailedRecursiveName: String = s"${neighborhood.toString}(${profilers.map(_.detailedRecursiveName).mkString(",")})"
 }
 
@@ -313,8 +301,8 @@ case class BestFirstProfiler(override val combinator: NeighborhoodCombinator,
     profilers.foreach(p => p.resetThisStatistics())
   }
 
-  override def collectExtraProfileHeader: Array[String] = Array("NbReset", "NbFirstFailed")
-  override def collectExtraProfileData: Array[String] = Array(s"$nbReset",s"$nbFirstFailed")
+  override def collectExtraProfileStatisticsHeader: Array[String] = Array(s"NbResets",s"NbFirstFailed")
+  override def collectExtraProfileStatisticsData: Array[Array[String]] = Array(Array(s"$nbReset",s"$nbFirstFailed"))
 
   override def merge(profiler: Profiler): Unit = {
     val bestFirstProfiler = profiler.asInstanceOf[BestFirstProfiler]
@@ -327,20 +315,20 @@ case class BestFirstProfiler(override val combinator: NeighborhoodCombinator,
 case class CompositionProfiler(override val combinator: NeighborhoodCombinator, left: Neighborhood, right: () => Neighborhood) extends CombinatorProfiler(combinator){
 
   override def subProfilers: List[Profiler] = List(left.profiler) ++ dynNeighborhoodProfiler
-  override final def collectThisProfileHeader: Array[String] =
-    super.collectThisProfileHeader ++
-      Array.fill(2)(Array("|", "side", "calls", "founds", "explored", "total time", "perf. (ms/ex)")).flatten
-  override final def collectThisProfileData: Array[String] = {
-    super.collectThisProfileData ++
-      Array(
-        Array("|", s"left", s"${left.profiler.totalBpd.nbCalls}", s"${left.profiler.totalBpd.nbFound}",
-          s"${left.profiler.totalBpd.nbExplored}", s"${left.profiler.totalBpd.timeSpent}", s"${performance(left.profiler)}") ++
-          dynNeighborhoodProfiler.toArray.flatMap(dynP => Array("|", s"right", s"${dynP.totalBpd.nbCalls}", s"${dynP.totalBpd.nbFound}",
-            s"${dynP.totalBpd.nbExplored}", s"${dynP.totalBpd.timeSpent}", s"${performance(dynP)}"))
-      ).flatten
+  override final def collectThisCombinatorProfileStatisticsHeaders: Array[Array[String]] =
+    Array(Array("Name"),Array("Name","Success (%)","Perf. (ms/expl.)"))
+
+  override final def collectThisCombinatorProfileStatisticsData: Array[Array[String]] = {
+    Array(Array(combinator.getClass.getSimpleName) ++
+      Array(s"${left.profiler.neighborhood}",s"${percFound(left.profiler.totalBpd)}", s"${performance(left.profiler)}")) ++
+      dynNeighborhoodProfiler.toArray.map(dynP => Array(s"${dynP.neighborhood}",s"${percFound(dynP.totalBpd)}", s"${performance(dynP)}"))
   }
 
   var dynNeighborhoodProfiler: List[Profiler] = List.empty
+
+  private def percFound(bdp: BasicProfilingData): Double ={
+    ((bdp.nbFound.toDouble/bdp.nbCalls)*10000).toInt/100.0
+  }
 
   private def performance(subProfiler: Profiler): Double =
     (subProfiler.totalBpd.timeSpent.toDouble/subProfiler.totalBpd.nbExplored*1000).round.toDouble/1000.0
@@ -385,11 +373,12 @@ case class BasicProfiler(override val combinator: NeighborhoodCombinator,
   def statDiv(statistic: Int, value: Long): Unit =
     extraStatistics(statistic) /= value
 
-  override def collectThisProfileHeader: Array[String] =
-    super.collectThisProfileHeader ++ extraStatisticsHeader.toArray
+  override def collectThisCombinatorProfileStatisticsHeaders: Array[Array[String]] =
+    Array(Array("Name") ++ extraStatisticsHeader)
 
-  override def collectThisProfileData: Array[String] =
-    super.collectThisProfileData ++ extraStatistics.map(_.toString)
+  override def collectThisCombinatorProfileStatisticsData: Array[Array[String]] = {
+    Array(Array(s"$neighborhood") ++ extraStatistics.map(_.toString))
+  }
 
   override def merge(profiler: Profiler): Unit = {
     super.merge(profiler)

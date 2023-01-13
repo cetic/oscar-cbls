@@ -81,7 +81,7 @@ abstract class BestNeighborhoodFirst(l: List[Neighborhood],
           makeTabu(headID)
         case MoveFound(m) =>
           neighborhoodHeap.notifyChange(headID)
-          profiler.explorationEnded(true)
+          profiler.explorationEnded(Some(initialObj-m.objAfter))
           return MoveFound(m)
       }
     }
@@ -94,7 +94,7 @@ abstract class BestNeighborhoodFirst(l: List[Neighborhood],
       it -= 1
       getMove(obj, initialObj, acceptanceCriterion)
     } else {
-      profiler.explorationEnded(false)
+      profiler.explorationEnded(None)
       NoMoveFound
     }
   }
@@ -189,7 +189,7 @@ class RoundRobin(robins: Array[(Neighborhood,Int)], tabu:Int = 1)
       while(! nextNeighborFound) {
         //check that we have not circled around whole set of robins
         if (currentRobin == firstFailedRobinInRow) {
-          profiler.explorationEnded(false)
+          profiler.explorationEnded(None)
           return NoMoveFound
         }
         if(overrideTabu || (cycleOfLastFail(currentRobin) + tabu < currentCycleNr)) {
@@ -215,7 +215,7 @@ class RoundRobin(robins: Array[(Neighborhood,Int)], tabu:Int = 1)
           cycleOfLastFail(currentRobin) = currentCycleNr
         //iterate, simply
         case x: MoveFound =>
-          profiler.explorationEnded(true)
+          profiler.explorationEnded(Some(initialObj-x.objAfter))
           //profiler.subExplorationEnded(currentRobin,Some(initialObj - x.objAfter))
           firstFailedRobinInRow = -1
           nbExplorationsOnCurrentRobin += 1
@@ -263,12 +263,12 @@ class RandomCombinator(a: Neighborhood*) extends NeighborhoodCombinator(a:_*) {
       val current = neighborhoodsIterator.next()
       current.getMove(obj, initialObj, acceptanceCriteria) match {
         case m: MoveFound =>
-          profiler.explorationEnded(true)
+          profiler.explorationEnded(Some(initialObj-m.objAfter))
           return m
         case _ =>
       }
     }
-    profiler.explorationEnded(false)
+    profiler.explorationEnded(None)
     NoMoveFound
   }
 }

@@ -55,13 +55,13 @@ class OrElse(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinator(a,
         val bMove = b.getMove(obj, initialObj:Long, acceptanceCriteria)
         bMove match {
           case x@NoMoveFound =>
-            profiler.explorationEnded(false)
-          case _ =>
-            profiler.explorationEnded(true)
+            profiler.explorationEnded(None)
+          case m: MoveFound =>
+            profiler.explorationEnded(Some(initialObj-m.objAfter))
         }
         bMove
-      case x =>
-        profiler.explorationEnded(true)
+      case x: MoveFound =>
+        profiler.explorationEnded(Some(initialObj-x.objAfter))
         x
     }
   }
@@ -84,17 +84,17 @@ class MaxMoves(a: Neighborhood, val maxMove: Int, cond: Option[Move => Boolean] 
     if (remainingMoves > 0) {
       a.getMove(obj, initialObj, acceptanceCriteria) match {
         case m: MoveFound =>
-          profiler.explorationEnded(true)
+          profiler.explorationEnded(Some(initialObj-m.objAfter))
           InstrumentedMove(m.m, () => notifyMoveTaken(m.m))
         case x =>
-          profiler.explorationEnded(false)
+          profiler.explorationEnded(None)
           x
       }
     } else {
       if (verbose >= 1)
         println(s"MaxMoves: reached ${if (maxMove == 1L) "1 move " else s"$maxMove moves"}")
       profiler statPlus (0,1)
-      profiler.explorationEnded(false)
+      profiler.explorationEnded(None)
       NoMoveFound
     }
   }
@@ -167,17 +167,17 @@ class MaxMovesWithoutImprovement(a: Neighborhood,
         //We can go on
         a.getMove(obj, initialObj:Long, acceptanceCriteria) match {
           case m: MoveFound =>
-            profiler.explorationEnded(true)
+            profiler.explorationEnded(Some(initialObj-m.objAfter))
             m
           case NoMoveFound =>
             stepsSinceLastImprovement = 0
-            profiler.explorationEnded(false)
+            profiler.explorationEnded(None)
             NoMoveFound
         }
       } else {
         if (verbose >= 1L) println(s"MaxStepsWithoutImprovement: reached $maxMovesWithoutImprovement moves without improvement of $a")
         profiler statPlus (0,1)
-        profiler.explorationEnded(false)
+        profiler.explorationEnded(None)
         NoMoveFound
       }
     } else{ //count after move
@@ -185,16 +185,16 @@ class MaxMovesWithoutImprovement(a: Neighborhood,
         //we can go on
         a.getMove(obj, initialObj,acceptanceCriteria) match {
           case m: MoveFound =>
-            profiler.explorationEnded(true)
+            profiler.explorationEnded(Some(initialObj-m.objAfter))
             InstrumentedMove(m.m, afterMove = () => notifyMoveTaken(m.m))
           case x =>
-            profiler.explorationEnded(false)
+            profiler.explorationEnded(None)
             x
         }
       } else{
         if (verbose >= 1L) println(s"MaxStepsWithoutImprovement: reached $maxMovesWithoutImprovement moves without improvement of $a")
         profiler statPlus (0,1)
-        profiler.explorationEnded(false)
+        profiler.explorationEnded(None)
         NoMoveFound
       }
     }
@@ -244,16 +244,16 @@ case class Guard(cond: () => Boolean, b: Neighborhood) extends NeighborhoodCombi
     if (cond()) {
       b.getMove(obj, initialObj, acceptanceCriteria) match {
         case NoMoveFound =>
-          profiler.explorationEnded(false)
+          profiler.explorationEnded(None)
           NoMoveFound
-        case x =>
-          profiler.explorationEnded(true)
+        case x: MoveFound =>
+          profiler.explorationEnded(Some(initialObj-x.objAfter))
           x
       }
     }
     else {
       profiler statPlus (0,1)
-      profiler.explorationEnded(false)
+      profiler.explorationEnded(None)
       NoMoveFound
     }
   }
@@ -348,11 +348,11 @@ class Exhaust(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinator(a
           profiler statEqual (1,Math.max(profiler.extraStatistics(1),exhaustTiming))
           search()
         } else {
-          profiler.explorationEnded(false)
+          profiler.explorationEnded(None)
           NoMoveFound
         }
         case x: MoveFound =>
-          profiler.explorationEnded(true)
+          profiler.explorationEnded(Some(initialObj-x.objAfter))
           x
       }
     }
@@ -496,10 +496,10 @@ class ExhaustBack(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinat
             b.reset()
             b.getMove(obj, initialObj:Long, acceptanceCriteria) match {
               case NoMoveFound =>
-                profiler.explorationEnded(false)
+                profiler.explorationEnded(None)
                 NoMoveFound
-              case x =>
-                profiler.explorationEnded(true)
+              case x: MoveFound =>
+                profiler.explorationEnded(Some(initialObj-x.objAfter))
                 x
             }
           } else {
@@ -509,15 +509,15 @@ class ExhaustBack(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinat
             a.reset()
             a.getMove(obj, initialObj, acceptanceCriteria) match {
               case NoMoveFound =>
-                profiler.explorationEnded(false)
+                profiler.explorationEnded(None)
                 NoMoveFound
-              case x =>
-                profiler.explorationEnded(true)
+              case x: MoveFound =>
+                profiler.explorationEnded(Some(initialObj-x.objAfter))
                 x
             }
           }
         case x: MoveFound =>
-          profiler.explorationEnded(true)
+          profiler.explorationEnded(Some(initialObj-x.objAfter))
           x
       }
 
