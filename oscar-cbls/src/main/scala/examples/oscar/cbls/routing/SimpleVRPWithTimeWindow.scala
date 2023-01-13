@@ -8,8 +8,7 @@ import oscar.cbls.business.routing.model.helpers.DistanceHelper
 import oscar.cbls.business.routing._
 import oscar.cbls.core.search.Best
 import oscar.cbls.lib.constraint.EQ
-import oscar.cbls.visual.SingleFrameWindow
-import oscar.cbls.visual.profiling.ProfilingTree
+import oscar.cbls.visual.profiling.VisualProfiler
 
 import scala.collection.immutable.HashSet
 
@@ -239,9 +238,7 @@ object SimpleVRPWithTimeWindow extends App {
 
   search.doAllMoves(obj = obj)
 
-  val profilingTree = new ProfilingTree(search)
-  SingleFrameWindow.show(profilingTree, "VRPTW - Profiling")
-  profilingTree.draw()
+  VisualProfiler.showProfile(search)
 
   println(myVRP)
 
