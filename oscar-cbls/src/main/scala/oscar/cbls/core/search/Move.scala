@@ -17,6 +17,7 @@ package oscar.cbls.core.search
 import oscar.cbls.core.computation.{CBLSSetVar, Solution, Store, Variable}
 import oscar.cbls.core.distributed.{IndependentMove, IndependentSolution, LoadIndependentSolutionMove}
 import oscar.cbls.core.objective.Objective
+import oscar.cbls.core.search.profiling.NeighborhoodProfiler
 
 /** standard move template
  *
@@ -208,16 +209,23 @@ case class ConstantMoveNeighborhood(m: Move,
                                     skipAcceptanceCriterion:Boolean = false,
                                     neighborhoodName:String = null)
   extends Neighborhood with SupportForAndThenChaining[Move] {
+  override val profiler = new NeighborhoodProfiler(this)
   override def getMove(obj: Objective,
                        initialObj: Long,
                        acceptanceCriterion: AcceptanceCriterion): SearchResult = {
+    profiler.explorationStarted()
     if (skipAcceptanceCriterion) {
+      profiler.neighborExplored()
+      profiler.explorationEnded(Some(0))
       MoveFound(m)
     } else {
       val newObj: Long = m.evaluate(obj)
+      profiler.neighborExplored()
       if (acceptanceCriterion(initialObj, newObj)) {
+        profiler.explorationEnded(Some(initialObj-newObj))
         MoveFound(new OverrideObj(m, newObj))
       } else {
+        profiler.explorationEnded(None)
         NoMoveFound
       }
     }

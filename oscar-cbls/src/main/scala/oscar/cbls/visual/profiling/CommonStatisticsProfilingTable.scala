@@ -1,6 +1,6 @@
 package oscar.cbls.visual.profiling
 
-import oscar.cbls.core.search.{CombinatorProfiler, Profiler}
+import oscar.cbls.core.search.profiling.{CombinatorProfiler, Profiler}
 
 import java.awt.event.{MouseAdapter, MouseEvent}
 import java.awt.{Color, Component, Font, GridBagConstraints, GridBagLayout}
@@ -74,7 +74,9 @@ class CommonStatisticsProfilingTable(rootProfiler: Profiler, headers: Array[Stri
       val row = generalStatisticsTable.rowAtPoint(e.getPoint)
       val column = generalStatisticsTable.columnAtPoint(e.getPoint)
       if (row >= 0 && column <= gsm.commonStatisticsStartAfter) {
-        if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount == 1)
+        if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount == 2)
+          gsm.expandAllUnder(row)
+        else if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount == 1)
           gsm.expand(row)
         else if (SwingUtilities.isRightMouseButton(e))
           gsm.collapse(row)
@@ -87,12 +89,14 @@ class CommonStatisticsProfilingTable(rootProfiler: Profiler, headers: Array[Stri
     val displayedNodesValues = gsm.displayedNodes.map(_.profilerCommonData)
     val allValues = displayedNodesValues.map(dnv => statToFloat(dnv.apply(statId)))
     val allUsableValues = allValues.filterNot(_ == Float.NegativeInfinity)
-    val worstAndBestValues: Option[(Float, Float)] = goodValueIndicator(statId) match {
-      case None => None
-      case Some("Max") => Some((allUsableValues.min, allUsableValues.max))
-      case Some("Min") => Some((allUsableValues.max, allUsableValues.min))
-      case _ => None
-    }
+    val worstAndBestValues: Option[(Float, Float)] =
+      if(allUsableValues.isEmpty) None
+      else goodValueIndicator(statId) match {
+        case None => None
+        case Some("Max") => Some((allUsableValues.min, allUsableValues.max))
+        case Some("Min") => Some((allUsableValues.max, allUsableValues.min))
+        case _ => None
+      }
     worstAndBestValues match {
       case Some(worstAndBest) =>
         val range = worstAndBest._2 - worstAndBest._1
@@ -122,14 +126,14 @@ class CommonStatisticsProfilingTable(rootProfiler: Profiler, headers: Array[Stri
           case cp: CombinatorProfiler =>
             for(_ <- 0 until csm.getRowCount)csm.removeRow(0)
             csm.setColumnIdentifiers(Array[Object]())
-            for (column <- cp.collectThisCombinatorProfileStatisticsHeaders.head) csm.addColumn(column)
-            csm.addRow(cp.collectThisCombinatorProfileStatisticsData.head.asInstanceOf[Array[Object]])
+            for (column <- cp.collectSubProfilersInheritedStatisticsHeaders.head) csm.addColumn(column)
+            csm.addRow(cp.collectSubProfilersInheritedStatisticsData.head.asInstanceOf[Array[Object]])
             combinatorStatisticsSP.repaint()
 
             for(_ <- 0 until ism.getRowCount)ism.removeRow(0)
             ism.setColumnIdentifiers(Array[Object]())
-            for (column <- cp.collectThisCombinatorProfileStatisticsHeaders.last) ism.addColumn(column)
-            for(row <- cp.collectThisCombinatorProfileStatisticsData.tail) ism.addRow(row.asInstanceOf[Array[Object]])
+            for (column <- cp.collectSubProfilersInheritedStatisticsHeaders.last) ism.addColumn(column)
+            for(row <- cp.collectSubProfilersInheritedStatisticsData.tail) ism.addRow(row.asInstanceOf[Array[Object]])
         }
       case _ =>
     }
@@ -187,6 +191,16 @@ case class GeneralStatisticProfilingTableModel(rootProfiler: Profiler, headers: 
     ptn match {
       case b: ProfilingTableBranchNode if !b.isExpanded =>
         b.expand()
+        updateData()
+      case _ =>
+    }
+  }
+
+  def expandAllUnder(row: Int): Unit ={
+    val ptn = rowToProfilingTableNode(row)
+    ptn match {
+      case b: ProfilingTableBranchNode =>
+        b.expandAllUnder()
         updateData()
       case _ =>
     }

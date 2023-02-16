@@ -17,6 +17,7 @@
 package oscar.cbls.core.search
 
 import oscar.cbls.core.distributed.{RemoteNeighborhood, RemoteTask, Supervisor}
+import oscar.cbls.core.search.profiling.{TransparentCombinatorProfiler, Profiler}
 
 /**
  * @author renaud.delandtsheer@cetic.be
@@ -42,7 +43,7 @@ abstract class NeighborhoodCombinator(a: Neighborhood*) extends Neighborhood {
     a.flatMap(_.collectProfilingStatistics).toList
   }
 
-  override val profiler: Profiler = new DummyCombinatorProfiler(this)
+  override val profiler: Profiler = new TransparentCombinatorProfiler(this)
 
   def subNeighborhoods: List[Neighborhood] = a.toList
 

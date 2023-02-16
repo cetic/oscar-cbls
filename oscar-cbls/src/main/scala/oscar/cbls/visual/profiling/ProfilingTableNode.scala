@@ -1,6 +1,6 @@
 package oscar.cbls.visual.profiling
 
-import oscar.cbls.core.search.{CombinatorProfiler, Profiler}
+import oscar.cbls.core.search.profiling.{CombinatorProfiler, Profiler}
 
 object ProfilingTableNode{
 
@@ -73,6 +73,16 @@ case class ProfilingTableBranchNode(override val profiler: Profiler, parent: Opt
   def expand(): Unit = {
     isExpanded = true
     children.foreach(_.isDisplayed = true)
+  }
+
+  def expandAllUnder(): Unit = {
+    isExpanded = true
+    children.foreach(_.isDisplayed = true)
+    println("expanding all")
+    children.foreach {
+      case b: ProfilingTableBranchNode => b.expandAllUnder()
+      case _ =>
+    }
   }
 
   def collapse(): Unit ={

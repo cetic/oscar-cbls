@@ -1,6 +1,6 @@
 package oscar.cbls.visual.profiling
 
-import oscar.cbls.core.search.{Neighborhood, NeighborhoodProfiler, Profiler}
+import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.visual.SingleFrameWindow
 
 import java.awt.{BorderLayout, Dimension, GridBagLayout, Toolkit}

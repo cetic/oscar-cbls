@@ -3,6 +3,7 @@ package oscar.cbls.lib.search.combinators
 import oscar.cbls.algo.heap.{BinomialHeap, BinomialHeapWithMove}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search._
+import oscar.cbls.core.search.profiling.{BestFirstProfiler, Profiler, SelectionProfiler}
 
 import scala.annotation.tailrec
 

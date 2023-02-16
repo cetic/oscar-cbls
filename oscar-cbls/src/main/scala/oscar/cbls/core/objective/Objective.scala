@@ -22,7 +22,7 @@ package oscar.cbls.core.objective
 
 import oscar.cbls
 import oscar.cbls.core.computation._
-import oscar.cbls.core.search.NeighborhoodProfiler
+import oscar.cbls.core.search.profiling.NeighborhoodProfiler
 import oscar.cbls.warning
 
 object Objective {

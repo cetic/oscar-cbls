@@ -3,7 +3,8 @@ package oscar.cbls.lib.search.combinators
 import oscar.cbls._
 import oscar.cbls.core.computation.{AbstractVariable, Solution, Store}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{AcceptanceCriterion, CallBackMove, CompositeMove, CompositionProfiler, DifferentOf, DoNothingMove, DoNothingNeighborhood, LoadSolutionMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult, StrictImprovement, SupportForAndThenChaining}
+import oscar.cbls.core.search.profiling.CompositionProfiler
+import oscar.cbls.core.search.{AcceptanceCriterion, CallBackMove, CompositeMove, DifferentOf, DoNothingMove, DoNothingNeighborhood, LoadSolutionMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult, StrictImprovement, SupportForAndThenChaining, profiling}
 
 abstract class NeighborhoodCombinatorNoProfile(a: Neighborhood*) extends NeighborhoodCombinator(a:_*) {
   override def collectProfilingStatistics: List[Array[String]] = List.empty
@@ -135,7 +136,7 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
   //we need to store currentB here because we might need to instantiate the current move from it.
   var currentB:Neighborhood = null
 
-  override val profiler: CompositionProfiler = CompositionProfiler(this,a,() => currentB)
+  override val profiler: CompositionProfiler = profiling.CompositionProfiler(this,a, () => currentB)
   override def subNeighborhoods: List[Neighborhood] = if(currentB == null) List(a) else List(a,currentB)
 
   override def collectProfilingStatistics: List[Array[String]] = profiler.collectThisProfileStatistics

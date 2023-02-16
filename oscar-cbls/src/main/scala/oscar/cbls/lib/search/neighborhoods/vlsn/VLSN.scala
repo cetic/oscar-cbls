@@ -19,6 +19,7 @@ package oscar.cbls.lib.search.neighborhoods.vlsn
 
 import oscar.cbls.Objective
 import oscar.cbls.core.search._
+import oscar.cbls.core.search.profiling.NeighborhoodProfiler
 import oscar.cbls.lib.search.neighborhoods.vlsn.CycleFinderAlgoType.CycleFinderAlgoType
 import oscar.cbls.lib.search.neighborhoods.vlsn.VLSNMoveType._
 

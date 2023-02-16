@@ -3,6 +3,7 @@ package oscar.cbls.lib.search.combinators
 import oscar.cbls.core.computation.{IntValue, SetValue, Solution}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search._
+import oscar.cbls.core.search.profiling.{GenericCombinatorProfiler, Profiler}
 
 //there is no API here because the relevant api are all available infix.
 
@@ -15,6 +16,7 @@ import oscar.cbls.core.search._
   */
 class BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = true) extends NeighborhoodCombinator(a) {
 
+  override val profiler: GenericCombinatorProfiler = GenericCombinatorProfiler(this,List("nbNewBest"),List(0L))
   protected val s = o.model
 
   require(s != null, "you are using an objective function that has no attached model, so "
@@ -40,7 +42,7 @@ class BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = t
 
     //we record the obj before move to prevent an additional useless propagation
     require(initialObj == o.value, "initialObj:" + initialObj + "!= o.value:" + o.value)
-
+    profiler.explorationStarted()
     a.getMove(obj, initialObj, acceptanceCriterion) match {
       case NoMoveFound =>
         if(alsoSaveOnExhaust && (initialObj < myBestObj && currentSolutionIsAcceptable)){
@@ -49,6 +51,7 @@ class BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = t
           saveCurrent(initialObj)
           if (verbose >= 2L) println("saving best solution on exhaust (obj:" + myBestObj + ")")
         }
+        profiler.explorationEnded(None)
         NoMoveFound
       case MoveFound(m) =>
         if (m.objAfter > initialObj && initialObj < myBestObj && currentSolutionIsAcceptable) {
@@ -57,6 +60,7 @@ class BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = t
           saveCurrent(initialObj)
           if (verbose >= 2L) println("saving best solution before worsening (obj:" + myBestObj + ")")
         }
+        profiler.explorationEnded(Some(0))
         MoveFound(m)
     }
   }
@@ -66,6 +70,7 @@ class BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = t
   }
 
   def saveCurrent(objToSave:Long): Unit ={
+    profiler.statPlus(0,1)
     best = s.solution(true)
     myBestObj = objToSave
   }
@@ -118,6 +123,8 @@ class SaveBestWhen(a: Neighborhood, o: Objective, shouldSave: () => Boolean) ext
 
 class RestoreBestOnExhaust(a: BasicSaveBest) extends NeighborhoodCombinator(a) {
 
+  override val profiler: GenericCombinatorProfiler = GenericCombinatorProfiler(this, List("nbBestRestored"), List(0L))
+
   var childExhausted = false
 
   def restoreBest(): Unit = {
@@ -132,6 +139,7 @@ class RestoreBestOnExhaust(a: BasicSaveBest) extends NeighborhoodCombinator(a) {
   override def getMove(obj: Objective,
                        initialObj: Long,
                        acceptanceCriterion: AcceptanceCriterion): SearchResult = {
+    profiler.explorationStarted()
     if(childExhausted) {
       childExhausted = false
       NoMoveFound
@@ -140,8 +148,12 @@ class RestoreBestOnExhaust(a: BasicSaveBest) extends NeighborhoodCombinator(a) {
         case m : MoveFound => m
         case x =>
           a.getBestSolutionToRestore match {
-            case None => NoMoveFound
+            case None =>
+              profiler.explorationEnded(None)
+              NoMoveFound
             case Some((s, bestObj)) =>
+              profiler.explorationEnded(Some(initialObj-bestObj))
+              profiler.statPlus(0,1)
               childExhausted = true
               MoveFound(LoadSolutionMove(s, bestObj, "RestoreBestOnExhaust"))
           }

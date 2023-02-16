@@ -18,6 +18,7 @@ package oscar.cbls.lib.search.neighborhoods
 import oscar.cbls.core.computation.{CBLSIntVar, InvariantHelper}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search._
+import oscar.cbls.core.search.profiling.NeighborhoodProfiler
 import oscar.cbls.lib.search.LinearSelectors
 
 import scala.util.Random

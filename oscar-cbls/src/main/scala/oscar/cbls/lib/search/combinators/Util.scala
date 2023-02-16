@@ -2,6 +2,7 @@ package oscar.cbls.lib.search.combinators
 
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search._
+import oscar.cbls.core.search.profiling.TransparentCombinatorProfiler
 import oscar.cbls.util.Properties
 import oscar.cbls.visual.SingleFrameWindow
 import oscar.cbls.visual.obj.ObjectiveFunctionDisplay
@@ -66,7 +67,7 @@ class ShowObjectiveFunction(a: Neighborhood,
  * @param name the name
  */
 class Name(a: Neighborhood, val name: String) extends NeighborhoodCombinator(a) {
-  override val profiler: DummyCombinatorProfiler = new DummyCombinatorProfiler(this)
+  override val profiler: TransparentCombinatorProfiler = new TransparentCombinatorProfiler(this)
   /**
    * @param acceptanceCriterion oldObj,newObj => should the move to the newObj be kept (default is oldObj > newObj)
    *                            beware that a changing criteria might interact unexpectedly with stateful neighborhood combinators
@@ -100,7 +101,7 @@ class Name(a: Neighborhood, val name: String) extends NeighborhoodCombinator(a) 
  */
 class ChainableName[MoveType <: Move](a: Neighborhood with SupportForAndThenChaining[MoveType], val name: String)
   extends NeighborhoodCombinator(a) with SupportForAndThenChaining[MoveType]{
-  override val profiler: DummyCombinatorProfiler = new DummyCombinatorProfiler(this)
+  override val profiler: TransparentCombinatorProfiler = new TransparentCombinatorProfiler(this)
   /**
    * @param acceptanceCriterion oldObj,newObj => should the move to the newObj be kept (default is oldObj > newObj)
    *                            beware that a changing criteria might interact unexpectedly with stateful neighborhood combinators

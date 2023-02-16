@@ -228,7 +228,7 @@ object SimpleVRPWithTimeWindow extends App {
 
 
   val search = bestSlopeFirst(List(oneChainInsert, oneChainMove, segExchangeOnSegments(5), onePtMove(20)))
-    .onExhaustRestartAfter(atomic(oneChainRemove.acceptAll(), _ > 5), 3, obj)
+    .onExhaustRestartAfter(atomic(oneChainRemove.acceptAll(), _ > 10), 10, obj)
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 

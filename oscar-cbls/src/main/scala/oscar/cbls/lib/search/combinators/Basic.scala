@@ -1,7 +1,8 @@
 package oscar.cbls.lib.search.combinators
 
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{AcceptanceCriterion, BasicProfiler, DoNothingNeighborhood, EmptyProfiler, InstrumentedMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult}
+import oscar.cbls.core.search.profiling.{GenericCombinatorProfiler, Profiler}
+import oscar.cbls.core.search.{AcceptanceCriterion, DoNothingNeighborhood, InstrumentedMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult, profiling}
 
 import scala.annotation.tailrec
 
@@ -42,7 +43,7 @@ class BestMove(n:Neighborhood*) extends NeighborhoodCombinator(n:_*) {
  * @author renaud.delandtsheer@cetic.be
  */
 class OrElse(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinator(a, b) {
-  override val profiler: BasicProfiler = BasicProfiler(this,List("Else calls"))
+  override val profiler: GenericCombinatorProfiler = profiling.GenericCombinatorProfiler(this,List("Else calls"))
 
   override def getMove(obj: Objective,
                        initialObj: Long,
@@ -76,7 +77,7 @@ class OrElse(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinator(a,
  */
 class MaxMoves(a: Neighborhood, val maxMove: Int, cond: Option[Move => Boolean] = None) extends NeighborhoodCombinator(a) {
   var remainingMoves = maxMove
-  override val profiler: BasicProfiler = BasicProfiler(this,List("MaxMove reached"))
+  override val profiler: GenericCombinatorProfiler = profiling.GenericCombinatorProfiler(this,List("MaxMove reached"))
   override def getMove(obj: Objective,
                        initialObj:Long,
                        acceptanceCriteria: AcceptanceCriterion): SearchResult = {
@@ -147,7 +148,7 @@ class MaxMovesWithoutImprovement(a: Neighborhood,
   var stepsSinceLastImprovement = 0
   var bestObj = Long.MaxValue
 
-  override val profiler: BasicProfiler = BasicProfiler(this,List("MaxMove reached"))
+  override val profiler: GenericCombinatorProfiler = profiling.GenericCombinatorProfiler(this,List("MaxMove without improvement reached", "Max moves before improvement"))
 
   override def getMove(obj: Objective,
                        initialObj: Long,
@@ -157,6 +158,7 @@ class MaxMovesWithoutImprovement(a: Neighborhood,
       val startObj = obj()
       if (startObj < bestObj) {
         bestObj = startObj
+        profiler.statMax(1, stepsSinceLastImprovement)
         stepsSinceLastImprovement = 0
       } else {
         stepsSinceLastImprovement += 1
@@ -218,6 +220,7 @@ class MaxMovesWithoutImprovement(a: Neighborhood,
       totalSteps += 1
       if (newObj < bestObj) {
         bestObj = newObj
+        profiler.statMax(1,stepsSinceLastImprovement)
         stepsSinceLastImprovement = 0
       } else {
         stepsSinceLastImprovement += 1
@@ -236,7 +239,7 @@ class MaxMovesWithoutImprovement(a: Neighborhood,
  * @author renaud.delandtsheer@cetic.be
  */
 case class Guard(cond: () => Boolean, b: Neighborhood) extends NeighborhoodCombinator(b) {
-  override val profiler: BasicProfiler = BasicProfiler(this,List("Blocked"))
+  override val profiler: GenericCombinatorProfiler = profiling.GenericCombinatorProfiler(this,List("Blocked"))
   override def getMove(obj: Objective,
                        initialObj: Long,
                        acceptanceCriteria: AcceptanceCriterion): SearchResult = {
@@ -331,7 +334,7 @@ object ExhaustList{
 class Exhaust(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinator(a, b) {
   var currentIsA = true
   var start: Long = 0L
-  override val profiler: BasicProfiler = BasicProfiler(this, List("MinExhaustTime (ms)", "MaxExhaustTime (ms)"), List(Long.MaxValue, Long.MinValue))
+  override val profiler: GenericCombinatorProfiler = profiling.GenericCombinatorProfiler(this, List("MinExhaustTime (ms)", "MaxExhaustTime (ms)"), List(Long.MaxValue, Long.MinValue))
   override def getMove(obj: Objective,
                        initialObj: Long,
                        acceptanceCriteria: AcceptanceCriterion): SearchResult = {
@@ -379,7 +382,7 @@ class Exhaust(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinator(a
 case class StopWhen(a: Neighborhood, cond: () => Boolean) extends NeighborhoodCombinator(a) {
   var isStopped: Boolean = false
   var start: Long = 0L
-  override val profiler: BasicProfiler = BasicProfiler(this,List("MinStoppedAfter", "MaxStoppedAfter"),List(Long.MaxValue, 0L))
+  override val profiler: GenericCombinatorProfiler = profiling.GenericCombinatorProfiler(this,List("MinStoppedAfter", "MaxStoppedAfter"),List(Long.MaxValue, 0L))
 
   override def getMove(obj: Objective,
                        initialObj: Long,
@@ -475,8 +478,8 @@ class MaxSearches(a: Neighborhood, val maxMove: Long) extends NeighborhoodCombin
  */
 class ExhaustBack(a: Neighborhood, b: Neighborhood) extends NeighborhoodCombinator(a, b) {
   var currentIsA = true
-  override val profiler: BasicProfiler =
-    BasicProfiler(this, List("MinExhaustTime (ms)", "MaxExhaustTime (ms)", "nbBacks"), List(Long.MaxValue, Long.MinValue, 0L))
+  override val profiler: GenericCombinatorProfiler =
+    profiling.GenericCombinatorProfiler(this, List("MinExhaustTime (ms)", "MaxExhaustTime (ms)", "nbBacks"), List(Long.MaxValue, Long.MinValue, 0L))
   var start: Long = 0L
 
   override def getMove(obj: Objective,
@@ -576,7 +579,7 @@ class Retry(a: Neighborhood, cond: Long => Boolean = _ <= 1L) extends Neighborho
   * @param f a function that generated the neighborhood to explore
   */
 class Dyn(f:() => Neighborhood,name : String = "Dyn()") extends Neighborhood(name) {
-  override val profiler: EmptyProfiler = new EmptyProfiler(this)
+  override val profiler: Profiler = new Profiler(this)
 
   override def getMove(obj: Objective,
                        initialObj: Long,
