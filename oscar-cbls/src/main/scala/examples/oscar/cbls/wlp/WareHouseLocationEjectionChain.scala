@@ -27,6 +27,7 @@ import oscar.cbls.lib.search.combinators.{BestSlopeFirst, EjectionChains, Mu, Ro
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.util.StopWatch
 import oscar.cbls.visual.SingleFrameWindow
+import oscar.cbls.visual.profiling.VisualProfiler
 import oscar.cbls.visual.wlp.WareHouseLocationMap
 
 import scala.language.postfixOps
@@ -132,6 +133,8 @@ object WareHouseLocationEjectionChain extends App with StopWatch {
   neighborhood.doAllMoves(obj=obj)
 
   visual.redraw(openWarehouses.value,boldChanges = false)
+
+  VisualProfiler.showProfile(neighborhood)
 
 //  println(neighborhood.profilingStatistics)
 

@@ -17,13 +17,14 @@
 package oscar.cbls.core.search
 
 import oscar.cbls.core.distributed.{RemoteNeighborhood, RemoteTask, Supervisor}
-import oscar.cbls.core.search.profiling.{TransparentCombinatorProfiler, Profiler}
+import oscar.cbls.core.search.profiling.{CombinatorProfiler, Profiler}
 
 /**
  * @author renaud.delandtsheer@cetic.be
  */
 abstract class NeighborhoodCombinator(a: Neighborhood*) extends Neighborhood {
   //this resets the internal state of the move combinators
+  override val profiler: Profiler = new CombinatorProfiler(this)
   override def reset(): Unit = {
     for (n <- a) n.reset()
   }
@@ -42,8 +43,6 @@ abstract class NeighborhoodCombinator(a: Neighborhood*) extends Neighborhood {
   override def collectProfilingStatistics: List[Array[String]] = {
     a.flatMap(_.collectProfilingStatistics).toList
   }
-
-  override val profiler: Profiler = new TransparentCombinatorProfiler(this)
 
   def subNeighborhoods: List[Neighborhood] = a.toList
 

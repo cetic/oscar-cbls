@@ -60,7 +60,6 @@ abstract class BestNeighborhoodFirst(l: List[Neighborhood],
   override def getMove(obj: Objective,
                        initialObj: Long,
                        acceptanceCriterion: AcceptanceCriterion): SearchResult = {
-    profiler.explorationStarted()
     if ((it > 0) && ((it % refresh) == 0) && neighborhoodArray.indices.toList.exists(profiler.nbFoundSubN(_) != 0)) {
 
       if (printExploredNeighborhoods) {
@@ -76,13 +75,12 @@ abstract class BestNeighborhoodFirst(l: List[Neighborhood],
     while (!neighborhoodHeap.isEmpty) {
       val headID = neighborhoodHeap.getFirst
       val headNeighborhood = neighborhoodArray(headID)
-      headNeighborhood.getMove(obj, initialObj, acceptanceCriterion) match {
+      headNeighborhood.getProfiledMove(obj, initialObj, acceptanceCriterion) match {
         case NoMoveFound =>
           if (neighborhoodHeap.size == l.size) profiler.firstFailed()
           makeTabu(headID)
         case MoveFound(m) =>
           neighborhoodHeap.notifyChange(headID)
-          profiler.explorationEnded(Some(initialObj-m.objAfter))
           return MoveFound(m)
       }
     }
@@ -94,10 +92,7 @@ abstract class BestNeighborhoodFirst(l: List[Neighborhood],
       neighborhoodHeap.insert(newNonTabu)
       it -= 1
       getMove(obj, initialObj, acceptanceCriterion)
-    } else {
-      profiler.explorationEnded(None)
-      NoMoveFound
-    }
+    } else NoMoveFound
   }
 
   /**
@@ -172,7 +167,6 @@ class RoundRobin(robins: Array[(Neighborhood,Int)], tabu:Int = 1)
   override def getMove(obj: Objective,
                        initialObj:Long,
                        acceptanceCriteria: AcceptanceCriterion): SearchResult = {
-    profiler.explorationStarted()
     while(true){
       //select next robin
       val prevRobin = currentRobin
@@ -189,10 +183,7 @@ class RoundRobin(robins: Array[(Neighborhood,Int)], tabu:Int = 1)
       }
       while(! nextNeighborFound) {
         //check that we have not circled around whole set of robins
-        if (currentRobin == firstFailedRobinInRow) {
-          profiler.explorationEnded(None)
-          return NoMoveFound
-        }
+        if (currentRobin == firstFailedRobinInRow) return NoMoveFound
         if(overrideTabu || (cycleOfLastFail(currentRobin) + tabu < currentCycleNr)) {
           nextNeighborFound = true
         }else{
@@ -207,17 +198,13 @@ class RoundRobin(robins: Array[(Neighborhood,Int)], tabu:Int = 1)
       }
 
       //explore current robin
-      //profiler.subExplorationStarted(currentRobin)
-      robins(currentRobin)._1.getMove(obj, initialObj:Long, acceptanceCriteria) match {
+      robins(currentRobin)._1.getProfiledMove(obj, initialObj:Long, acceptanceCriteria) match {
         case NoMoveFound =>
-          //profiler.subExplorationEnded(currentRobin, None)
           if(firstFailedRobinInRow == -1) firstFailedRobinInRow = currentRobin
           nbExplorationsOnCurrentRobin = robins(currentRobin)._2
           cycleOfLastFail(currentRobin) = currentCycleNr
         //iterate, simply
         case x: MoveFound =>
-          profiler.explorationEnded(Some(initialObj-x.objAfter))
-          //profiler.subExplorationEnded(currentRobin,Some(initialObj - x.objAfter))
           firstFailedRobinInRow = -1
           nbExplorationsOnCurrentRobin += 1
           return x
@@ -257,19 +244,15 @@ class RandomCombinator(a: Neighborhood*) extends NeighborhoodCombinator(a:_*) {
   override def getMove(obj: Objective,
                        initialObj:Long,
                        acceptanceCriteria: AcceptanceCriterion): SearchResult = {
-    profiler.explorationStarted()
     val neighborhoods = a.toList
     val neighborhoodsIterator = r.shuffle(neighborhoods).iterator
     while (neighborhoodsIterator.hasNext) {
       val current = neighborhoodsIterator.next()
-      current.getMove(obj, initialObj, acceptanceCriteria) match {
-        case m: MoveFound =>
-          profiler.explorationEnded(Some(initialObj-m.objAfter))
-          return m
+      current.getProfiledMove(obj, initialObj, acceptanceCriteria) match {
+        case m: MoveFound => return m
         case _ =>
       }
     }
-    profiler.explorationEnded(None)
     NoMoveFound
   }
 }
@@ -291,6 +274,7 @@ class BiasedRandom(a: (Neighborhood,Double)*)
   case class TerminalNode(override val weight:Double, n:Neighborhood) extends Node(weight)
 
   private val r = new scala.util.Random()
+  override val profiler: SelectionProfiler = new SelectionProfiler(this,a.toList.map(_._1))
 
   def reduce(l:List[Node]):List[Node] = {
     l match{
@@ -338,7 +322,7 @@ class BiasedRandom(a: (Neighborhood,Double)*)
         case Some(node) =>
           val (newHead,selectedNeighborhood) = findAndRemove(node,r.nextFloat()*node.weight)
           remainingNeighborhoods = newHead
-          selectedNeighborhood.getMove(obj, initialObj, acceptanceCriterion) match {
+          selectedNeighborhood.getProfiledMove(obj, initialObj, acceptanceCriterion) match {
             case m: MoveFound => return m
             case _ =>
               if(noRetryOnExhaust) neighborhoodWithExhaustedRemoved = newHead
@@ -368,7 +352,7 @@ class ExhaustAndContinueIfMovesFound(a: Neighborhood, b: Neighborhood) extends N
     @tailrec
     def search(): SearchResult = {
       val current = if (currentIsA) a else b
-      current.getMove(obj, initialObj:Long, acceptanceCriterion) match {
+      current.getProfiledMove(obj, initialObj:Long, acceptanceCriterion) match {
         case NoMoveFound =>
           if (currentIsA) {
             currentIsA = false

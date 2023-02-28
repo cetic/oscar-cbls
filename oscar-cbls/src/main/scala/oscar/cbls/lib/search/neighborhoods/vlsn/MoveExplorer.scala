@@ -462,7 +462,7 @@ class MoveExplorer(v:Int,
       val symbolicNodeOfNodeToMove = nodeIDToNode(fromNode)
       val symbolicNodeToEject = nodeIDToNode(toNode)
 
-      nodeToMoveToNeighborhood(fromNode).getMove(
+      nodeToMoveToNeighborhood(fromNode).getProfiledMove(
         vehicleToObjectives(toVehicle),
         initialVehicleToObjectives(toVehicle),
         acceptanceCriterion = acceptAllButMaxLong) match {
@@ -524,7 +524,7 @@ class MoveExplorer(v:Int,
         nodeToMoveToNeighborhood = targetVehicleNodeToMoveNeighborhood(toVehicle)
       }
 
-      nodeToMoveToNeighborhood(edge.node).getMove(
+      nodeToMoveToNeighborhood(edge.node).getProfiledMove(
         vehicleToObjectives(toVehicle),
         initialVehicleToObjectives(toVehicle),
         acceptanceCriterion = acceptAllButMaxLong) match {
@@ -620,7 +620,7 @@ class MoveExplorer(v:Int,
       val symbolicNodeToRemove = nodeIDToNode(toNode)
 
       nodeToInsertToNeighborhood(edge).
-        getMove(globalObjective, correctedGlobalInit, acceptAllButMaxLong) match {
+        getProfiledMove(globalObjective, correctedGlobalInit, acceptAllButMaxLong) match {
         case NoMoveFound =>
           edgeBuilder.addNonEdge(symbolicNodeToInsert, symbolicNodeToRemove, VLSNMoveType.InsertWithEject)
         case MoveFound(move) =>
@@ -696,7 +696,7 @@ class MoveExplorer(v:Int,
       ensureNeighborhood()
       val symbolicNodeToInsert = nodeIDToNode(edge)
 
-      nodeToInsertNeighborhood(edge).getMove(
+      nodeToInsertNeighborhood(edge).getProfiledMove(
         globalObjective,
         initialGlobalObjective,
         acceptanceCriterion = acceptAllButMaxLong) match {
@@ -749,7 +749,7 @@ class MoveExplorer(v:Int,
 
   def evaluateRemoveOnPenalty(routingNodeToRemove:Int, fromVehicle:Int):(Move,Long) = {
     nodeToRemoveNeighborhood(routingNodeToRemove)
-      .getMove(unroutedNodesPenalty, initialUnroutedNodesPenalty, acceptanceCriterion = acceptAllButMaxLong) match{
+      .getProfiledMove(unroutedNodesPenalty, initialUnroutedNodesPenalty, acceptanceCriterion = acceptAllButMaxLong) match{
       case NoMoveFound => null
       case MoveFound(move) =>
         val delta = move.objAfter - initialUnroutedNodesPenalty
@@ -790,7 +790,7 @@ class MoveExplorer(v:Int,
 
   def evaluateRemoveOnSourceVehicle(routingNodeToRemove:Int,fromVehicle:Int):(Move, Long) = {
     nodeToRemoveNeighborhood(routingNodeToRemove)
-      .getMove(vehicleToObjectives(fromVehicle),initialVehicleToObjectives(fromVehicle),
+      .getProfiledMove(vehicleToObjectives(fromVehicle),initialVehicleToObjectives(fromVehicle),
         acceptanceCriterion = acceptAllButMaxLong) match{
       case NoMoveFound => null
       case MoveFound(move) =>

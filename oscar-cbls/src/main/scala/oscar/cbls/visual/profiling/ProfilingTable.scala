@@ -3,22 +3,20 @@ package oscar.cbls.visual.profiling
 import oscar.cbls.core.search.profiling.{CombinatorProfiler, Profiler}
 
 import java.awt.event.{MouseAdapter, MouseEvent}
-import java.awt.{Color, Component, Font, GridBagConstraints, GridBagLayout}
-import javax.swing.{BorderFactory, JPanel, JScrollPane, JTable, SwingConstants, SwingUtilities}
+import java.awt.{BorderLayout, Color, Component, Font, GridBagConstraints, GridBagLayout}
+import javax.swing.{BorderFactory, JLabel, JPanel, JScrollPane, JTable, JTextArea, SwingConstants, SwingUtilities}
 import javax.swing.table.{DefaultTableCellRenderer, DefaultTableModel}
 
-object CommonStatisticsProfilingTable {
-  def apply(rootProfiler: Profiler): CommonStatisticsProfilingTable ={
+object ProfilingTable {
+  def apply(rootProfiler: Profiler): ProfilingTable ={
     val headers = rootProfiler.collectThisProfileHeader
     val goodValueIndicator = rootProfiler.goodValueIndicator()
-    new CommonStatisticsProfilingTable(rootProfiler, headers, goodValueIndicator)
+    new ProfilingTable(rootProfiler, headers, goodValueIndicator)
   }
 }
 
-class CommonStatisticsProfilingTable(rootProfiler: Profiler, headers: Array[String], goodValueIndicator: Array[Option[String]]) extends JPanel(new GridBagLayout()){
+class ProfilingTable(rootProfiler: Profiler, headers: Array[String], goodValueIndicator: Array[Option[String]]) extends JPanel(new GridBagLayout()){
   private val gsm: GeneralStatisticProfilingTableModel = GeneralStatisticProfilingTableModel(rootProfiler, headers)
-  private val csm: CombinatorStatisticProfilingModel = CombinatorStatisticProfilingModel()
-  private val ism: CombinatorStatisticProfilingModel = CombinatorStatisticProfilingModel()
   private val generalStatisticsTable: JTable = new JTable(gsm){
     override def getScrollableTracksViewportWidth: Boolean ={
       getPreferredSize.width < getParent.getWidth
@@ -27,26 +25,10 @@ class CommonStatisticsProfilingTable(rootProfiler: Profiler, headers: Array[Stri
       getPreferredSize.height < getParent.getHeight
     }
   }
-  private val combinatorStatisticsTable: JTable = new JTable(csm){
-    override def getScrollableTracksViewportWidth: Boolean ={
-      getPreferredSize.width < getParent.getWidth
-    }
-    override def getScrollableTracksViewportHeight: Boolean ={
-      getPreferredSize.height < getParent.getHeight
-    }
-  }
-  private val inheritedStatisticsTable: JTable = new JTable(ism){
-    override def getScrollableTracksViewportWidth: Boolean ={
-      getPreferredSize.width < getParent.getWidth
-    }
-    override def getScrollableTracksViewportHeight: Boolean ={
-      getPreferredSize.height < getParent.getHeight
-    }
-  }
+
+  private val combinatorStatisticsPanel: JPanel = new JPanel(new BorderLayout())
 
   generalStatisticsTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS)
-  combinatorStatisticsTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS)
-  inheritedStatisticsTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS)
 
   private final val combinatorColor: Color = new Color(0,0,255,80)
   private final val neighborhoodColor: Color = new Color(0,0,0,50)
@@ -85,7 +67,7 @@ class CommonStatisticsProfilingTable(rootProfiler: Profiler, headers: Array[Stri
     }
   })
 
-  def getStatEffectiveness(statId: Int): Array[Float] = {
+  private def getStatEffectiveness(statId: Int): Array[Float] = {
     val displayedNodesValues = gsm.displayedNodes.map(_.profilerCommonData)
     val allValues = displayedNodesValues.map(dnv => statToFloat(dnv.apply(statId)))
     val allUsableValues = allValues.filterNot(_ == Float.NegativeInfinity)
@@ -120,20 +102,21 @@ class CommonStatisticsProfilingTable(rootProfiler: Profiler, headers: Array[Stri
   }
 
   private def displayCombinatorStatistics(node: ProfilingTableNode): Unit ={
+    combinatorStatisticsPanel.removeAll()
+
     node match{
       case bn: ProfilingTableBranchNode =>
         bn.profiler match{
           case cp: CombinatorProfiler =>
-            for(_ <- 0 until csm.getRowCount)csm.removeRow(0)
-            csm.setColumnIdentifiers(Array[Object]())
-            for (column <- cp.collectSubProfilersInheritedStatisticsHeaders.head) csm.addColumn(column)
-            csm.addRow(cp.collectSubProfilersInheritedStatisticsData.head.asInstanceOf[Array[Object]])
-            combinatorStatisticsSP.repaint()
-
-            for(_ <- 0 until ism.getRowCount)ism.removeRow(0)
-            ism.setColumnIdentifiers(Array[Object]())
-            for (column <- cp.collectSubProfilersInheritedStatisticsHeaders.last) ism.addColumn(column)
-            for(row <- cp.collectSubProfilersInheritedStatisticsData.tail) ism.addRow(row.asInstanceOf[Array[Object]])
+            val profiledCombinatorData = cp.collectCombinatorSpecificStatistics.filter(_.nonEmpty)
+            val title = new JLabel(profiledCombinatorData.head.head)
+            title.setFont(new Font(Font.MONOSPACED, Font.BOLD, title.getFont.getSize))
+            combinatorStatisticsPanel.add(title, BorderLayout.NORTH)
+            val newCombinatorText = new JTextArea(profiledCombinatorData.tail.map(_.mkString("\n")).mkString("\n\n"))
+            newCombinatorText.setEditable(false)
+            newCombinatorText.setFont(new Font(Font.MONOSPACED, Font.PLAIN, newCombinatorText.getFont.getSize))
+            combinatorStatisticsPanel.add(newCombinatorText, BorderLayout.CENTER)
+            combinatorStatisticsPanel.revalidate()
         }
       case _ =>
     }
@@ -143,7 +126,7 @@ class CommonStatisticsProfilingTable(rootProfiler: Profiler, headers: Array[Stri
     try {
       stat.toFloat
     } catch {
-      case e: NumberFormatException => Float.NegativeInfinity
+      case _: NumberFormatException => Float.NegativeInfinity
     }
   }
 
@@ -152,18 +135,15 @@ class CommonStatisticsProfilingTable(rootProfiler: Profiler, headers: Array[Stri
 
   // Add panes into panel
 
-  val combinatorStatisticsSP: JScrollPane = new JScrollPane(combinatorStatisticsTable)
+  private val combinatorStatisticsSP: JScrollPane = new JScrollPane(combinatorStatisticsPanel)
   combinatorStatisticsSP.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10))
   combinatorStatisticsSP.setBackground(combinatorColor)
-  val inheritedStatisticsSP: JScrollPane = new JScrollPane(inheritedStatisticsTable)
-  inheritedStatisticsSP.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10))
-  inheritedStatisticsSP.setBackground(neighborhoodColor)
 
-  val gbc: GridBagConstraints = new GridBagConstraints
+  private val gbc: GridBagConstraints = new GridBagConstraints
   gbc.anchor = GridBagConstraints.FIRST_LINE_START
   gbc.fill = GridBagConstraints.BOTH
   gbc.weightx = 1.0
-  gbc.weighty = 0.6
+  gbc.weighty = 0.8
   gbc.gridx = 0
   gbc.gridy = 0
   this.add(new JScrollPane(generalStatisticsTable), gbc)
@@ -171,8 +151,6 @@ class CommonStatisticsProfilingTable(rootProfiler: Profiler, headers: Array[Stri
   gbc.weighty = 0.2
   gbc.gridy = 1
   this.add(combinatorStatisticsSP, gbc)
-  gbc.gridy = 2
-  this.add(inheritedStatisticsSP, gbc)
 }
 
 case class GeneralStatisticProfilingTableModel(rootProfiler: Profiler, headers: Array[String]) extends DefaultTableModel {
@@ -184,7 +162,7 @@ case class GeneralStatisticProfilingTableModel(rootProfiler: Profiler, headers: 
 
   def displayedNodes: List[ProfilingTableNode] = rowToProfilingTableNode.toList
 
-  def setHeaders(): Unit = headers.foreach(h => this.addColumn(h.toCharArray.mkString("\n")))
+  private def setHeaders(): Unit = headers.foreach(h => this.addColumn(h.toCharArray.mkString("\n")))
 
   def expand(row: Int): Unit ={
     val ptn = rowToProfilingTableNode(row)
@@ -209,12 +187,6 @@ case class GeneralStatisticProfilingTableModel(rootProfiler: Profiler, headers: 
   def expandAll(): Unit =
     profilingTableNodes.foreach {
       case tbn: ProfilingTableBranchNode => tbn.expand()
-      case _ =>
-    }
-
-  def collapseAll(): Unit =
-    profilingTableNodes.reverse.foreach {
-      case tbn: ProfilingTableBranchNode => tbn.collapse()
       case _ =>
     }
 
@@ -247,8 +219,4 @@ case class GeneralStatisticProfilingTableModel(rootProfiler: Profiler, headers: 
     require(rowToProfilingTableNode.length == getRowCount,
       s"Displayed ProfilingTableNodes ${rowToProfilingTableNode.length} vs nb row $getRowCount")
   }
-}
-
-case class CombinatorStatisticProfilingModel() extends DefaultTableModel{
-  override def isCellEditable(row: Int, column: Int): Boolean = false
 }

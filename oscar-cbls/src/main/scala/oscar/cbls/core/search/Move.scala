@@ -213,21 +213,14 @@ case class ConstantMoveNeighborhood(m: Move,
   override def getMove(obj: Objective,
                        initialObj: Long,
                        acceptanceCriterion: AcceptanceCriterion): SearchResult = {
-    profiler.explorationStarted()
     if (skipAcceptanceCriterion) {
       profiler.neighborExplored()
-      profiler.explorationEnded(Some(0))
       MoveFound(m)
     } else {
       val newObj: Long = m.evaluate(obj)
       profiler.neighborExplored()
-      if (acceptanceCriterion(initialObj, newObj)) {
-        profiler.explorationEnded(Some(initialObj-newObj))
-        MoveFound(new OverrideObj(m, newObj))
-      } else {
-        profiler.explorationEnded(None)
-        NoMoveFound
-      }
+      if (acceptanceCriterion(initialObj, newObj)) MoveFound(new OverrideObj(m, newObj))
+      else NoMoveFound
     }
   }
 
@@ -283,16 +276,10 @@ case class DoNothingNeighborhood() extends Neighborhood with SupportForAndThenCh
   override def getMove(obj: Objective,
                        initialObj: Long,
                        acceptanceCriterion: AcceptanceCriterion): SearchResult = {
-    profiler.explorationStarted()
     profiler.neighborExplored()
     val objValue = obj.value
-    if (acceptanceCriterion(objValue,objValue)) {
-      profiler.explorationEnded(Some(0))
-      MoveFound(DoNothingMove(objValue))
-    } else {
-      profiler.explorationEnded(None)
-      NoMoveFound
-    }
+    if (acceptanceCriterion(objValue,objValue)) MoveFound(DoNothingMove(objValue))
+    else NoMoveFound
   }
 
   override def instantiateCurrentMove(newObj : Long) : DoNothingMove = DoNothingMove(newObj)

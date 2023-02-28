@@ -66,7 +66,7 @@ class Metropolis(a: Neighborhood,
   override def getMove(obj: Objective,
                        initialObj: Long,
                        acceptanceCriteria: AcceptanceCriterion): SearchResult =
-    a.getMove(obj, initialObj, MetropolisCriterion) match {
+    a.getProfiledMove(obj, initialObj, MetropolisCriterion) match {
       case NoMoveFound => NoMoveFound
       case MoveFound(m) => InstrumentedMove(m, notifyMoveTaken _)
     }
@@ -126,7 +126,7 @@ class LateAcceptanceHillClimbing(a: Neighborhood,
     x = x+1
     if (x >= length) x = 0
 
-    a.getMove(obj,initialObj,(oldOBj,newObj) => {
+    a.getProfiledMove(obj,initialObj, (oldOBj, newObj) => {
 
       if (newObj < maxToleratedObj && (newObj < oldOBj || newObj < memory(x))){
         memory(x) = newObj
@@ -572,7 +572,7 @@ class GuidedLocalSearch(a: Neighborhood,
       initValForAdditional,
       weightCorrectionStrategy.constantWeightForAdditionalConstraint)
 
-    a.getMove(compositeObj,initCompositeObj, acceptanceCriterion) match {
+    a.getProfiledMove(compositeObj,initCompositeObj, acceptanceCriterion) match {
       case NoMoveFound =>
 
         if(printExploredNeighborhoods){

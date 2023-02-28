@@ -50,8 +50,8 @@ abstract class ProfilingTableNode(val profiler: Profiler, parent: Option[Profili
   val profilerCommonData: Array[String] = profiler.collectThisProfileData
 
   var isExpanded: Boolean
-  protected def profilerAndCombinatorStatistics: Array[String] = Array(profilerCommonData.head)
-  protected val commonStatistics: Array[String] = profilerCommonData.tail
+  private def profilerAndCombinatorStatistics: Array[String] = Array(profilerCommonData.head)
+  private val commonStatistics: Array[String] = profilerCommonData.tail
   def data(): Array[String] =
     Array((rowPrefix++profilerAndCombinatorStatistics).mkString(""))++commonStatistics
 
@@ -78,7 +78,6 @@ case class ProfilingTableBranchNode(override val profiler: Profiler, parent: Opt
   def expandAllUnder(): Unit = {
     isExpanded = true
     children.foreach(_.isDisplayed = true)
-    println("expanding all")
     children.foreach {
       case b: ProfilingTableBranchNode => b.expandAllUnder()
       case _ =>

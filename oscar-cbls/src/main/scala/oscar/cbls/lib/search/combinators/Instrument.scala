@@ -15,7 +15,7 @@ case class DoOnQuery(a: Neighborhood, proc: () => Unit) extends NeighborhoodComb
                        initialObj: Long,
                        acceptanceCriteria: AcceptanceCriterion): SearchResult = {
     proc()
-    a.getMove(obj, initialObj, acceptanceCriteria)
+    a.getProfiledMove(obj, initialObj, acceptanceCriteria)
   }
 }
 
@@ -34,12 +34,12 @@ case class DoOnFirstMove(a: Neighborhood, proc: () => Unit) extends Neighborhood
                        initialObj: Long,
                        acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     if (isFirstMove) {
-      a.getMove(obj, initialObj, acceptanceCriterion) match {
+      a.getProfiledMove(obj, initialObj, acceptanceCriterion) match {
         case m: MoveFound => InstrumentedMove(m.m, notifyMoveTaken _)
         case x => x
       }
     } else {
-      a.getMove(obj, initialObj, acceptanceCriterion)
+      a.getProfiledMove(obj, initialObj, acceptanceCriterion)
     }
   }
 
@@ -71,7 +71,7 @@ case class DoOnMove(a: Neighborhood,
   override def getMove(obj: Objective,
                        initialObj: Long,
                        acceptanceCriterion: AcceptanceCriterion): SearchResult = {
-    a.getMove(obj, initialObj, acceptanceCriterion) match {
+    a.getProfiledMove(obj, initialObj, acceptanceCriterion) match {
       case m: MoveFound =>
         InstrumentedMove(m.m, () =>callBackBeforeMove(m.m), () => callBackAfterMove(m.m))
       case x => x
@@ -94,7 +94,7 @@ case class DoOnExhaust(a:Neighborhood, proc:()=>Unit,onlyFirst:Boolean) extends 
   override def getMove(obj: Objective,
                        initialObj: Long,
                        acceptanceCriterion: AcceptanceCriterion): SearchResult =
-    a.getMove(obj,initialObj,acceptanceCriterion) match{
+    a.getProfiledMove(obj,initialObj,acceptanceCriterion) match{
       case NoMoveFound =>
         if (!onlyFirst || !alreadyExhaustedOnce) {
           alreadyExhaustedOnce = true

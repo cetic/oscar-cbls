@@ -18,8 +18,7 @@ class VisualProfiler(search: Neighborhood, title: String) extends JFrame{
   private val screenSize = Toolkit.getDefaultToolkit.getScreenSize
   this.setPreferredSize(new java.awt.Dimension(screenSize.width,screenSize.height))
 
-  val profilingTable: CommonStatisticsProfilingTable = CommonStatisticsProfilingTable(search.profiler)
-  //profilingTable.setPreferredSize(new Dimension(400,400))
+  val profilingTable: ProfilingTable = ProfilingTable(search.profiler)
 
   this.add(profilingTable)
 
