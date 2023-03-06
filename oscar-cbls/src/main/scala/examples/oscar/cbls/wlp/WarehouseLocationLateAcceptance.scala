@@ -64,7 +64,7 @@ object WarehouseLocationLateAcceptance extends App {
     selectIndiceBehavior = First(randomized = true),
     hotRestart = false,
     name = "SwitchWarehouse")
-    .lateAcceptanceHillClimbing(10)
+    .lateAcceptanceHillClimbing(20)
     saveBestAndRestoreOnExhaust obj
     showObjectiveFunction obj)
 

@@ -99,22 +99,20 @@ class Metropolis(a: Neighborhood,
  *               By default, it is the identity function and works fine as it is.
  *               You might consider changing it if is you use this criterion within a complex setting
  *               such as a restart(lateAcceptance(someNeighborhood))
+ * @param maxToleratedObj the maximal value for obj.
+ *                       By default, it rejects Long.maxValue whatever happens
  **/
 class LateAcceptanceHillClimbing(a: Neighborhood,
                                  length: Int = 20,
-                                 initObj:Long=>Long = x=>x) extends NeighborhoodCombinator(a) {
+                                 initObj:Long=>Long = x=>x,
+                                 maxToleratedObj:Long = Long.MaxValue -1) extends NeighborhoodCombinator(a) {
 
   val memory:Array[Long] = Array.fill(length)(Long.MaxValue)
 
   var initialized = false
 
-  var maxToleratedObj: Long = Long.MaxValue
-  var bestKnownObj: Long = Long.MaxValue
-
   def init(initialObj:Long): Unit = {
     for(i <- memory.indices) memory(i) = initObj(initialObj)
-    maxToleratedObj = Long.MaxValue
-    bestKnownObj = Long.MaxValue
     initialized = true
   }
 
@@ -129,13 +127,8 @@ class LateAcceptanceHillClimbing(a: Neighborhood,
     if (x >= length) x = 0
 
     a.getProfiledMove(obj,initialObj, (oldOBj, newObj) => {
-
       if (newObj < maxToleratedObj && (newObj < oldOBj || newObj < memory(x))){
         memory(x) = newObj
-        if (newObj < bestKnownObj) {
-          maxToleratedObj = newObj
-          bestKnownObj = newObj
-        }
         true
       } else {
         false

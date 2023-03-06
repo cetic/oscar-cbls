@@ -72,7 +72,7 @@ object OscarBuild {
     val jcommon = "org.jfree" % "jcommon" % "1.0.24"
     val jfreechart = "org.jfree" % "jfreechart" % "1.5.3"
     val jsci = "net.sf.jsci" % "jsci" % "1.2"
-    val scalaParserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1"
+    val scalaParserCombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2"
     val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "2.1.0"
     val scalaSwing = "org.scala-lang.modules" %% "scala-swing" % "3.0.0"
     val scalaParallel = "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4"

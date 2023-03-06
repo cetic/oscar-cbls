@@ -746,9 +746,11 @@ class NeighborhoodOps(n:Neighborhood){
    *               By default, it is the identity function and works fine as it is.
    *               You might consider changing it if is you use this criterion within a complex setting
    *               such as a restart(lateAcceptance(someNeighborhood))
+   * @param maxToleratedObj the maximal value for obj.
+   *                       By default, it rejects Long.maxValue whatever happens
    */
-  def lateAcceptanceHillClimbing(length:Int = 20,initObj:Long=>Long = (objVal => objVal)) =
-    new LateAcceptanceHillClimbing(n, length,initObj)
+  def lateAcceptanceHillClimbing(length:Int = 20,initObj:Long=>Long = (objVal => objVal),maxToleratedObj:Long = Long.MaxValue -1) =
+    new LateAcceptanceHillClimbing(n, length,initObj,maxToleratedObj)
 
   //TODO: Adaptive Simulated Annealing: T = T_0 exp(-c k^1/D) wth re-annealing also permits adaptation to changing sensitivities in the multi-dimensional parameter-space.
 
