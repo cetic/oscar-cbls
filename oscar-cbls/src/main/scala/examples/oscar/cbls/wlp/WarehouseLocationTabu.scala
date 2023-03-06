@@ -32,10 +32,13 @@ import oscar.cbls.lib.search.neighborhoods.{AssignMove, AssignNeighborhood}
 object WarehouseLocationTabu extends App {
 
   //the number of warehouses
-  val W:Int = 50
+  val W:Int = 500
 
   //the number of delivery points
   val D:Int = 600
+
+  //the length of the tabu
+  val tabuTenure = 10
 
   println(s"WarehouseLocationTabu(W:$W, D:$D)")
   //the cost per delivery point if no location is open
@@ -67,7 +70,7 @@ object WarehouseLocationTabu extends App {
   // *the update of the tabu and iteration count
   // *the stop criterion based on maxMoves since last improvement over obj
   // *the protection of the objectiveFunction
-  val tabuTenure = W/5
+
 
   //TODO: this does not work at all.
 
@@ -85,7 +88,7 @@ object WarehouseLocationTabu extends App {
       It :+= 1
       println(nonTabuWarehouses)
     }).acceptAll()
-    maxMoves W withoutImprovementOver obj
+    maxMoves W/10 withoutImprovementOver obj
     saveBestAndRestoreOnExhaust obj
     showObjectiveFunction obj)
 
