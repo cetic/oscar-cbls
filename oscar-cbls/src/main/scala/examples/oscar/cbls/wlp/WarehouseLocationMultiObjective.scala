@@ -23,6 +23,7 @@ import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.lib.search.combinators.multiObjective.BiObjectiveSearch
 import oscar.cbls.lib.search.neighborhoods.SwapsNeighborhood
+import oscar.cbls.util.Properties
 
 import scala.language.postfixOps
 
@@ -97,7 +98,7 @@ object WarehouseLocationMultiObjective extends App {
     solutionAtMax1Mn2,
     optimize = {
       case (maxConstructionCost, solution) => {
-        //println("search new tradeoff point with maxConstructionCost:" + maxConstructionCost)
+        println("search new tradeoff point with maxConstructionCost:" + maxConstructionCost)
         solution.restoreDecisionVariables()
         require(constructionCost.value < maxConstructionCost, "initial solution not acceptable")
 
@@ -108,7 +109,6 @@ object WarehouseLocationMultiObjective extends App {
             assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
             swapsK(10) exhaust swapsK(20),
             swapsK(5) dynAndThen (swapMove => swapsK(5,() => kNearestOpenWarehouses(swapMove.idI,4).filter(_ >= swapMove.idI)))
-            //TODO: add split and merge if warehouses have different construction costs
           ))
 
         val search1 = (neighborhood
@@ -125,7 +125,7 @@ object WarehouseLocationMultiObjective extends App {
         search2.verbose = 0
         search2.doAllMoves(obj = obj3)
 
-        None//Some((foundOperationCost, constructionCost.value,m.solution()))
+        Some((foundOperationCost, constructionCost.value,m.solution()))
       }
     },
     maxPoints = 100,
@@ -137,11 +137,14 @@ object WarehouseLocationMultiObjective extends App {
     stayAlive = true
   )
 
-  val allSolutions = paretoSearch.paretoOptimize()
+  val allSolutions:List[List[String]] = paretoSearch.paretoOptimize().map(
+    {case (obj1,obj2,sol) =>
+      sol.restoreDecisionVariables()
+      List("" + obj1, "" + obj2, "" +openWarehouses.value.size, "" + openWarehouses.value)
+    })
 
-  println(allSolutions.map({case (obj1,obj2,sol) => {
-    sol.restoreDecisionVariables()
-    ("" + obj1 + ";" + obj2 + ";" + openWarehouses.value)
-  }}).mkString("\n"))
-
+  println(
+    Properties.justifyLeftAny(
+      List("operationCost","constructionCost","nbWarehouses" ,"open warehouses") :: allSolutions)
+      .mkString("\n"))
 }

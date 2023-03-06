@@ -37,7 +37,7 @@ object WarehouseLocationMultiObjectiveDistributed extends App {
   //the number of delivery points
   val D: Int = 500
 
-  val problemName = "BiObjective WLP(W:" + W + ", D:" + D + ")"
+  val problemName = "Distributed BiObjective WLP(W:" + W + ", D:" + D + ")"
   println(problemName)
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
@@ -113,7 +113,8 @@ object WarehouseLocationMultiObjectiveDistributed extends App {
       visuTitle = problemName,
       maxPoints = 100,
       verbose = true,
-      visu = true)
+      visu = true,
+      stayAlive = true)
 
     (m, paretoSearch, openWarehouses)
   }
@@ -122,8 +123,9 @@ object WarehouseLocationMultiObjectiveDistributed extends App {
   val (store, paretoSearch, openWarehouses) = createSearchStructures()
   val supervisor: Supervisor = Supervisor.startSupervisorAndActorSystem(paretoSearch)
 
+  val nbWorkers = Supervisor.nbCores/2
   //create the workers
-  for (i <- 0 until Supervisor.nbCores/2) {
+  for (i <- 0 until nbWorkers) {
     val (store2, search2, _) = createSearchStructures()
     supervisor.createLocalWorker(store2, search2)
   }
