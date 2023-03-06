@@ -741,11 +741,14 @@ class NeighborhoodOps(n:Neighborhood){
    *
    * more details in: Burke EK, Bykov Y (2016) The late acceptance hill-climbing heuristic. Eur J Oper Res 258:70–78
    * @param length the length of the history
-   * @param maxRelativeIncreaseOnBestObj additionally, newOBj is rejected if > maxRelativeIncreaseOnBestObj*bestObj.
-   *                                     This increases convergence, but decreased optimality of this approach. the default value is very large, so that this mechanism is inactive.
+   * @param initObj a function that initializes the late acceptance criterion. at the very first call,
+   *               it initializes the memory to maxObj(obj.value)
+   *               By default, it is the identity function and works fine as it is.
+   *               You might consider changing it if is you use this criterion within a complex setting
+   *               such as a restart(lateAcceptance(someNeighborhood))
    */
-  def lateAcceptanceHillClimbing(length:Int = 20,maxObj:Long=>Long = (objVal => objVal)) =
-    new LateAcceptanceHillClimbing(n, length,maxObj)
+  def lateAcceptanceHillClimbing(length:Int = 20,initObj:Long=>Long = (objVal => objVal)) =
+    new LateAcceptanceHillClimbing(n, length,initObj)
 
   //TODO: Adaptive Simulated Annealing: T = T_0 exp(-c k^1/D) wth re-annealing also permits adaptation to changing sensitivities in the multi-dimensional parameter-space.
 

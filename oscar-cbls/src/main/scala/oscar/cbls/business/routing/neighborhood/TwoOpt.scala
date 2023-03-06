@@ -167,7 +167,7 @@ object TwoOpt {
       twoOptOnVehicle(vehicle, vrp,
         selectSegmentStartBehavior = First(randomized=true),
         selectSegmentEndBehavior = First(randomized=true))
-        lateAcceptanceHillClimbing(10, maxObj = obj => obj + (obj*0.5/vrp.v).toLong),
+        lateAcceptanceHillClimbing(10, initObj = obj => obj + (obj*0.5/vrp.v).toLong),
       shouldStop = _ => false,
       aggregateIntoSingleMove = true) onlyIfUpdateOn (() => vrp.getRouteOfVehicle(vehicle))
   }
