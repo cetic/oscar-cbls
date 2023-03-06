@@ -12,8 +12,7 @@ import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.{CascadingObjective, Objective}
 import oscar.cbls.core.search.{Best, Neighborhood, NoMoveNeighborhood}
 import oscar.cbls.lib.search.neighborhoods.vlsn.VLSN
-import oscar.cbls.visual.SingleFrameWindow
-import oscar.cbls.visual.profiling.ProfilingTree
+import oscar.cbls.visual.profiling.VisualProfiler
 
 import scala.collection.immutable.{HashSet, SortedMap, SortedSet}
 
@@ -535,9 +534,7 @@ object PDPTWVLSN extends App {
     if (l != 0) println(s"vehicle($vehicle).length:$l")
   }
 
-  val profilingTree = new ProfilingTree(search)
-  SingleFrameWindow.show(profilingTree, "Profiling")
-  profilingTree.draw()
+  VisualProfiler.showProfile(search)
   println(s"obj:${obj.value}")
 
 }

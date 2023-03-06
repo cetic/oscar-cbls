@@ -11,8 +11,6 @@ import oscar.cbls.core.computation.{CBLSIntVar, Domain, Store}
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.Best
-import oscar.cbls.visual.SingleFrameWindow
-import oscar.cbls.visual.profiling.ProfilingTree
 
 import java.io.File
 import scala.io.Source

@@ -3,7 +3,8 @@ package oscar.cbls.lib.search.combinators
 import oscar.cbls._
 import oscar.cbls.core.computation.{AbstractVariable, Solution, Store}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.core.search.{AcceptanceCriterion, CallBackMove, CompositeMove, CompositionProfiler, DifferentOf, DoNothingMove, DoNothingNeighborhood, LoadSolutionMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult, StrictImprovement, SupportForAndThenChaining}
+import oscar.cbls.core.search.profiling.CompositionProfiler
+import oscar.cbls.core.search.{AcceptanceCriterion, CallBackMove, CompositeMove, DifferentOf, DoNothingMove, DoNothingNeighborhood, LoadSolutionMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult, StrictImprovement, SupportForAndThenChaining, profiling}
 
 abstract class NeighborhoodCombinatorNoProfile(a: Neighborhood*) extends NeighborhoodCombinator(a:_*) {
   override def collectProfilingStatistics: List[Array[String]] = List.empty
@@ -135,7 +136,7 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
   //we need to store currentB here because we might need to instantiate the current move from it.
   var currentB:Neighborhood = null
 
-  override val profiler: CompositionProfiler = CompositionProfiler(this,a,() => currentB)
+  override val profiler: CompositionProfiler = profiling.CompositionProfiler(this,Some(a))
   override def subNeighborhoods: List[Neighborhood] = if(currentB == null) List(a) else List(a,currentB)
 
   override def collectProfilingStatistics: List[Array[String]] = profiler.collectThisProfileStatistics
@@ -143,7 +144,6 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
   override def getMove(obj: Objective,
                        initialObj: Long,
                        acceptanceCriteria: AcceptanceCriterion): SearchResult = {
-    profiler.explorationStarted()
 
     var bestObj:Long = Long.MaxValue
     var toReturn:SearchResult = NoMoveFound
@@ -195,7 +195,7 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
           override def model : Store = obj.model
           override def value : Long = obj.value
         }
-        currentB.getMove(new secondInstrumentedObjective(obj), initialObj, secondAcceptanceCriterion) match {
+        currentB.getProfiledMove(new secondInstrumentedObjective(obj), initialObj, secondAcceptanceCriterion) match {
           case NoMoveFound =>
             profiler.mergeDynProfiler(currentB.profiler)
             Long.MaxValue
@@ -209,14 +209,11 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
       }
     }
 
-    val tmp = a.getMove(new InstrumentedObjectiveForFirstNeighborhood(), initialObj, firstAcceptanceCriterion)
+    val tmp = a.getProfiledMove(new InstrumentedObjectiveForFirstNeighborhood(), initialObj, firstAcceptanceCriterion)
 
     tmp match {
-      case NoMoveFound =>
-        profiler.explorationEnded(false)
-        NoMoveFound
+      case NoMoveFound => NoMoveFound
       case MoveFound(m: Move) =>
-        profiler.explorationEnded(true)
         require(m.objAfter == bestObj)
         toReturn
     }
@@ -253,7 +250,7 @@ case class DynAndThenWithPrev[FirstMoveType<:Move](x: Neighborhood with SupportF
                        initialObj: Long,
                        acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     slave.verbose = this.verbose
-    slave.getMove(obj, initialObj, acceptanceCriterion)
+    slave.getProfiledMove(obj, initialObj, acceptanceCriterion)
   }
 }
 
@@ -267,7 +264,7 @@ case class SnapShotOnEntry(a: Neighborhood, valuesToSave:Iterable[AbstractVariab
                        acceptanceCriterion: AcceptanceCriterion = StrictImprovement): SearchResult = {
     val s = obj.model
     snapShot = s.saveValues(valuesToSave)
-    a.getMove(obj,initialObj:Long, acceptanceCriterion)
+    a.getProfiledMove(obj,initialObj:Long, acceptanceCriterion)
   }
 }
 
@@ -300,7 +297,7 @@ case class Filter[MoveType<:Move](a: Neighborhood with SupportForAndThenChaining
       }
     }
 
-    a.getMove(obj2,initialObj, acceptanceCriterion)
+    a.getProfiledMove(obj2,initialObj, acceptanceCriterion)
 
   }
 }
@@ -385,6 +382,7 @@ case class AtomicDyn(n: () => Neighborhood,
                   shouldStop: Int => Boolean,
                   stopAsSoonAsAcceptableMoves: Boolean = false,
                   aggregateIntoSingleMove: Boolean = false) extends NeighborhoodCombinator() {
+  override val profiler: CompositionProfiler = new CompositionProfiler(this)
   override def getMove(obj: Objective,
                        initialObj: Long,
                        acceptanceCriterion: AcceptanceCriterion = StrictImprovement): SearchResult = {
@@ -405,6 +403,7 @@ case class AtomicDyn(n: () => Neighborhood,
       val endSolution = obj.model.solution(true)
 
       startSolution.restoreDecisionVariables()
+      profiler.mergeDynProfiler(a.profiler)
 
       if (nbMoves == 0) {
         NoMoveFound
@@ -418,6 +417,7 @@ case class AtomicDyn(n: () => Neighborhood,
       //restore the initial solution
       val endObj = obj.value
       startSolution.restoreDecisionVariables()
+      profiler.mergeDynProfiler(a.profiler)
 
       if (allMoves.isEmpty) {
         NoMoveFound
@@ -462,6 +462,7 @@ class EjectionChains[T](t0:T,
                         intermediaryAcc: Option[AcceptanceCriterion] = Some(StrictImprovement),
                         intermediaryStops: Boolean = false,
                         name:String = "EjectionChains") extends NeighborhoodCombinator() {
+  override val profiler: CompositionProfiler = new CompositionProfiler(this)
   override def getMove(obj: Objective,
                        initialObj:Long,
                        acceptanceCriterion: AcceptanceCriterion = StrictImprovement): SearchResult = {
@@ -494,9 +495,10 @@ class EjectionChains[T](t0:T,
           }
         case Some((nextT,neighborhood)) =>
           currentT = nextT
-          neighborhood.getMove(searchObj, currentObj, searchAcc) match {
+          neighborhood.getProfiledMove(searchObj, currentObj, searchAcc) match {
             case NoMoveFound =>
               val returnObj = obj.value
+              profiler.mergeDynProfiler(neighborhood.profiler)
               if (nbMoves >= 1 && acceptanceCriterion(initialObj,returnObj)) {
                 startSolution.restoreAndReleaseCheckpoint()
                 return MoveFound(CompositeMove(allMoves.reverse, returnObj, name))
@@ -509,6 +511,7 @@ class EjectionChains[T](t0:T,
               allMoves = move :: allMoves
               nbMoves = nbMoves + 1
               currentObj = move.objAfter
+              profiler.mergeDynProfiler(neighborhood.profiler)
           }
       }
     }

@@ -17,6 +17,7 @@
 package oscar.cbls.core.search
 
 import oscar.cbls.core.distributed._
+import oscar.cbls.core.search.profiling.Profiler
 
 abstract class DistributedCombinator(neighborhoods:Array[Neighborhood],
                                      remoteTasks:Array[Int => RemoteTask] = Array()) extends Neighborhood {
@@ -25,7 +26,7 @@ abstract class DistributedCombinator(neighborhoods:Array[Neighborhood],
   var remoteTaskIdentification:Array[RemoteTaskIdentification] = null
   var supervisor:Supervisor = null
 
-  override val profiler: EmptyProfiler = new EmptyProfiler(this)
+  override val profiler: Profiler = new Profiler(this)
 
   override def labelAndExtractRemoteTasks(supervisor: Supervisor,
                                           currentID: Int,

@@ -8,8 +8,7 @@ import oscar.cbls.business.routing.model.helpers.DistanceHelper
 import oscar.cbls.business.routing._
 import oscar.cbls.core.search.Best
 import oscar.cbls.lib.constraint.EQ
-import oscar.cbls.visual.SingleFrameWindow
-import oscar.cbls.visual.profiling.ProfilingTree
+import oscar.cbls.visual.profiling.VisualProfiler
 
 import scala.collection.immutable.HashSet
 
@@ -229,7 +228,7 @@ object SimpleVRPWithTimeWindow extends App {
 
 
   val search = bestSlopeFirst(List(oneChainInsert, oneChainMove, segExchangeOnSegments(5), onePtMove(20)))
-    .onExhaustRestartAfter(atomic(oneChainRemove.acceptAll(), _ > 5), 3, obj)
+    .onExhaustRestartAfter(atomic(oneChainRemove.acceptAll(), _ > 10), 10, obj)
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 
@@ -239,9 +238,7 @@ object SimpleVRPWithTimeWindow extends App {
 
   search.doAllMoves(obj = obj)
 
-  val profilingTree = new ProfilingTree(search)
-  SingleFrameWindow.show(profilingTree, "VRPTW - Profiling")
-  profilingTree.draw()
+  VisualProfiler.showProfile(search)
 
   println(myVRP)
 

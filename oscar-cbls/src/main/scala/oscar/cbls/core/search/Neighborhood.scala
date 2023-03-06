@@ -19,6 +19,7 @@ package oscar.cbls.core.search
 import oscar.cbls.core.computation.{Solution, Store, Variable}
 import oscar.cbls.core.distributed.{RemoteNeighborhood, RemoteTask, Supervisor}
 import oscar.cbls.core.objective.{AbortException, AbortableObjective, LoggingObjective, Objective, ProfiledLoggingObjective, ProfiledObjective}
+import oscar.cbls.core.search.profiling.{NeighborhoodProfiler, Profiler}
 import oscar.cbls.lib.search.combinators._
 import oscar.cbls.util.Properties
 
@@ -41,7 +42,7 @@ object SearchResult {
 class CodedNeighborhood(codedMove: => Unit,
                         impactedVariables:Option[Iterable[Variable]] = None,
                         name:String = "CodedNeighborhood") extends Neighborhood(name) {
-  override val profiler: EmptyProfiler = new EmptyProfiler(this)
+  override val profiler: Profiler = new Profiler(this)
 
   override def getMove(obj: Objective,
                        initialObj: Long,
@@ -65,7 +66,7 @@ class CodedNeighborhood(codedMove: => Unit,
 
 abstract class JumpNeighborhood(name:String) extends Neighborhood(name) {
 
-  override val profiler: EmptyProfiler = new EmptyProfiler(this)
+  override val profiler: Profiler = new Profiler(this)
 
   /**
    * the method that actually performs the move
@@ -106,7 +107,7 @@ abstract class JumpNeighborhood(name:String) extends Neighborhood(name) {
 
 abstract class JumpNeighborhoodParam[T](name:String) extends Neighborhood(name) {
 
-  override val profiler: EmptyProfiler = new EmptyProfiler(this)
+  override val profiler: Profiler = new Profiler(this)
 
   final def doIt(): Unit = {
     doIt(getParam)
@@ -143,8 +144,17 @@ abstract class Neighborhood(name:String = null) {
   final def profilingStatistics:String = Properties.justifyRightArray(collectProfilingStatistics).mkString("\n")
   def collectProfilingStatistics:List[Array[String]] = profiler.collectThisProfileStatistics
   //TODO: profiling stats should als include %founds next to #found
-  val profiler: Profiler = new EmptyProfiler(this)
+  val profiler: Profiler = new Profiler(this)
 
+  def getProfiledMove(obj: Objective, initialObj: Long, acceptanceCriterion: AcceptanceCriterion = StrictImprovement): SearchResult ={
+    profiler.explorationStarted()
+    val searchResult = getMove(obj,initialObj,acceptanceCriterion)
+    searchResult match {
+      case NoMoveFound => profiler.explorationEnded(None)
+      case MoveFound(m) => profiler.explorationEnded(Some(initialObj-m.objAfter))
+    }
+    searchResult
+  }
   /**
    * the method that returns a move from the neighborhood.
    * The returned move should typically be accepted by the acceptance criterion over the objective function.
@@ -178,7 +188,7 @@ abstract class Neighborhood(name:String = null) {
                        initSolutionOpt:Option[Solution] = None): SearchResult = {
     val oldSol = initSolutionOpt.getOrElse(obj.model.solution())
     try {
-      getMove(new AbortableObjective(shouldAbort, obj), initialObj, acceptanceCriterion)
+      getProfiledMove(new AbortableObjective(shouldAbort, obj), initialObj, acceptanceCriterion)
     } catch {
       case _:AbortException =>
         oldSol.restoreDecisionVariables(true)
@@ -273,7 +283,7 @@ abstract class Neighborhood(name:String = null) {
     val enrichedObj = if (additionalStringGenerator == null) obj else new ObjWithStringGenerator(obj, additionalStringGenerator)
     while (!shouldStop(moveCount)) {
       val prevObjForRequire = obj.value
-      getMove(enrichedObj, obj.value, acceptanceCriterion) match {
+      getProfiledMove(enrichedObj, obj.value, acceptanceCriterion) match {
         case NoMoveFound =>
 
           require(obj.value == prevObjForRequire, "neighborhood did not restore the model after exploration (and returned NoMoveFound)")
@@ -468,7 +478,7 @@ abstract class Neighborhood(name:String = null) {
  * a neighborhood that never finds any move (quite useless, actually)
  */
 case object NoMoveNeighborhood extends Neighborhood {
-  override val profiler: EmptyProfiler = new EmptyProfiler(this)
+  override val profiler: Profiler = new Profiler(this)
 
   override def getMove(obj: Objective,
                        initialObj: Long,
@@ -681,7 +691,6 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
 
     require(!exploring,s"$this is not a re-entrant neighborhood")
     exploring = true
-    profiler.explorationStarted()
     try {
       oldObj = initialObj
 
@@ -702,13 +711,11 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
       if (printExploredNeighborhoods) {
         println(neighborhoodNameToString + ": NoMoveFound")
       }
-      profiler.explorationEnded(None)
       NoMoveFound
     } else {
       if (printExploredNeighborhoods) {
         println(neighborhoodNameToString + ": MoveFound: " + toReturnMove)
       }
-      profiler.explorationEnded(Some(oldObj - bestNewObj))
       toReturnMove
     }
   }

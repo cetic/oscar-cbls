@@ -19,6 +19,7 @@ package oscar.cbls.lib.search.neighborhoods.vlsn
 
 import oscar.cbls.Objective
 import oscar.cbls.core.search._
+import oscar.cbls.core.search.profiling.NeighborhoodProfiler
 import oscar.cbls.lib.search.neighborhoods.vlsn.CycleFinderAlgoType.CycleFinderAlgoType
 import oscar.cbls.lib.search.neighborhoods.vlsn.VLSNMoveType._
 
@@ -291,7 +292,6 @@ class VLSN(v:Int,
   override def getMove(obj: Objective,
                        initialObj: Long,
                        acceptanceCriterion: AcceptanceCriterion): SearchResult = {
-    profiler.explorationStarted()
     if (printTakenMoves) println("start VLSN")
     val initialSolution = obj.model.solution(true)
 
@@ -348,15 +348,12 @@ class VLSN(v:Int,
       initialSolution.restoreDecisionVariables()
 
       if (acceptanceCriterion(initialObj,finalObj)) {
-        profiler.explorationEnded(Some(initialObj - finalObj))
         MoveFound(LoadSolutionMove(finalSolution, finalObj, name))
       } else {
-        profiler.explorationEnded(None)
         NoMoveFound
       }
 
     } else {
-      profiler.explorationEnded(None)
       NoMoveFound
     }
   }

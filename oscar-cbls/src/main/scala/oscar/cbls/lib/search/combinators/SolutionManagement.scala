@@ -3,6 +3,7 @@ package oscar.cbls.lib.search.combinators
 import oscar.cbls.core.computation.{IntValue, SetValue, Solution}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search._
+import oscar.cbls.core.search.profiling.CombinatorProfiler
 
 //there is no API here because the relevant api are all available infix.
 
@@ -15,6 +16,8 @@ import oscar.cbls.core.search._
   */
 class BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = true) extends NeighborhoodCombinator(a) {
 
+  override val profiler: CombinatorProfiler = new CombinatorProfiler(this)
+  profiler.summedValueProfile("nbNewBest")
   protected val s = o.model
 
   require(s != null, "you are using an objective function that has no attached model, so "
@@ -40,8 +43,7 @@ class BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = t
 
     //we record the obj before move to prevent an additional useless propagation
     require(initialObj == o.value, "initialObj:" + initialObj + "!= o.value:" + o.value)
-
-    a.getMove(obj, initialObj, acceptanceCriterion) match {
+    a.getProfiledMove(obj, initialObj, acceptanceCriterion) match {
       case NoMoveFound =>
         if(alsoSaveOnExhaust && (initialObj < myBestObj && currentSolutionIsAcceptable)){
           //solution degrades, and we were better than the best recorded
@@ -66,6 +68,7 @@ class BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = t
   }
 
   def saveCurrent(objToSave:Long): Unit ={
+    profiler.summedValuePlus("nbNewBest",1)
     best = s.solution(true)
     myBestObj = objToSave
   }
@@ -118,6 +121,9 @@ class SaveBestWhen(a: Neighborhood, o: Objective, shouldSave: () => Boolean) ext
 
 class RestoreBestOnExhaust(a: BasicSaveBest) extends NeighborhoodCombinator(a) {
 
+  override val profiler: CombinatorProfiler = new CombinatorProfiler(this)
+  profiler.summedValueProfile("nbBestRestored")
+
   var childExhausted = false
 
   def restoreBest(): Unit = {
@@ -136,12 +142,14 @@ class RestoreBestOnExhaust(a: BasicSaveBest) extends NeighborhoodCombinator(a) {
       childExhausted = false
       NoMoveFound
     } else {
-      a.getMove(obj, initialObj, acceptanceCriterion) match {
+      a.getProfiledMove(obj, initialObj, acceptanceCriterion) match {
         case m : MoveFound => m
         case x =>
           a.getBestSolutionToRestore match {
-            case None => NoMoveFound
+            case None =>
+              NoMoveFound
             case Some((s, bestObj)) =>
+              profiler.summedValuePlus("nbBestRestored",1)
               childExhausted = true
               MoveFound(LoadSolutionMove(s, bestObj, "RestoreBestOnExhaust"))
           }

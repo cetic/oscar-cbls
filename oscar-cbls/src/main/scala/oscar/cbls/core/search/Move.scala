@@ -17,6 +17,7 @@ package oscar.cbls.core.search
 import oscar.cbls.core.computation.{CBLSSetVar, Solution, Store, Variable}
 import oscar.cbls.core.distributed.{IndependentMove, IndependentSolution, LoadIndependentSolutionMove}
 import oscar.cbls.core.objective.Objective
+import oscar.cbls.core.search.profiling.NeighborhoodProfiler
 
 /** standard move template
  *
@@ -208,18 +209,18 @@ case class ConstantMoveNeighborhood(m: Move,
                                     skipAcceptanceCriterion:Boolean = false,
                                     neighborhoodName:String = null)
   extends Neighborhood with SupportForAndThenChaining[Move] {
+  override val profiler = new NeighborhoodProfiler(this)
   override def getMove(obj: Objective,
                        initialObj: Long,
                        acceptanceCriterion: AcceptanceCriterion): SearchResult = {
     if (skipAcceptanceCriterion) {
+      profiler.neighborExplored()
       MoveFound(m)
     } else {
       val newObj: Long = m.evaluate(obj)
-      if (acceptanceCriterion(initialObj, newObj)) {
-        MoveFound(new OverrideObj(m, newObj))
-      } else {
-        NoMoveFound
-      }
+      profiler.neighborExplored()
+      if (acceptanceCriterion(initialObj, newObj)) MoveFound(new OverrideObj(m, newObj))
+      else NoMoveFound
     }
   }
 
@@ -275,16 +276,10 @@ case class DoNothingNeighborhood() extends Neighborhood with SupportForAndThenCh
   override def getMove(obj: Objective,
                        initialObj: Long,
                        acceptanceCriterion: AcceptanceCriterion): SearchResult = {
-    profiler.explorationStarted()
     profiler.neighborExplored()
     val objValue = obj.value
-    if (acceptanceCriterion(objValue,objValue)) {
-      profiler.explorationEnded(Some(0))
-      MoveFound(DoNothingMove(objValue))
-    } else {
-      profiler.explorationEnded(None)
-      NoMoveFound
-    }
+    if (acceptanceCriterion(objValue,objValue)) MoveFound(DoNothingMove(objValue))
+    else NoMoveFound
   }
 
   override def instantiateCurrentMove(newObj : Long) : DoNothingMove = DoNothingMove(newObj)
