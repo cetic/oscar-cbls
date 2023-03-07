@@ -187,6 +187,7 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
         //now, we need to check the other neighborhood
         //first, let's instantiate it:
         val currentMoveFromA = a.instantiateCurrentMove(intermediaryObjValue)
+        a.profiler.explorationPaused()
         currentB = b(currentMoveFromA)
         currentB.verbose = 0 max a.verbose //passing verbosity to b, because b.verbose was not set when it was set of a
 
@@ -198,12 +199,14 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
         currentB.getProfiledMove(new secondInstrumentedObjective(obj), initialObj, secondAcceptanceCriterion) match {
           case NoMoveFound =>
             profiler.mergeDynProfiler(currentB.profiler)
+            a.profiler.explorationResumed()
             Long.MaxValue
           case MoveFound(m : Move) =>
             require(m.objAfter < bestObj)
             bestObj = m.objAfter
             toReturn = MoveFound(CompositeMove(List(a.instantiateCurrentMove(intermediaryObjValue),m),bestObj,"DynAndThen"))
             profiler.mergeDynProfiler(currentB.profiler)
+            a.profiler.explorationResumed()
             bestObj
         }
       }

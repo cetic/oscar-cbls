@@ -29,16 +29,28 @@ object Profiler {
 class Profiler(val neighborhood:Neighborhood){
 
   protected var startExplorationAt = 0L
+  private var currentExplorationTimeSpent = 0L
+  private var explorationPausedAt = 0L
+  private var explorationResumedAt = 0L
 
   def subProfilers:List[Profiler] = List.empty
 
   def explorationStarted(): Unit = {
     commonProfilingData.callInc()
     startExplorationAt = System.nanoTime()
+    explorationPausedAt = 0L
+    explorationResumedAt = 0L
+    currentExplorationTimeSpent = 0L
   }
 
+  def explorationPaused(): Unit = {
+    explorationPausedAt = System.nanoTime()
+    currentExplorationTimeSpent += explorationPausedAt-Math.max(startExplorationAt,explorationResumedAt)
+  }
+  def explorationResumed(): Unit = explorationResumedAt = System.nanoTime()
+
   def explorationEnded(gain: Option[Long]): Unit = {
-    val timeSpent = System.nanoTime() - startExplorationAt
+    val timeSpent = currentExplorationTimeSpent + System.nanoTime() - Math.max(startExplorationAt,explorationResumedAt)
     if (gain.nonEmpty) {
       commonProfilingData.foundInc()
       commonProfilingData.gainPlus(gain.get)
