@@ -29,9 +29,9 @@ object Profiler {
 class Profiler(val neighborhood:Neighborhood){
 
   protected var startExplorationAt = 0L
-  private var currentExplorationTimeSpent = 0L
-  private var explorationPausedAt = 0L
-  private var explorationResumedAt = 0L
+  protected var currentExplorationTimeSpent = 0L
+  protected var explorationPausedAt = 0L
+  protected var explorationResumedAt = 0L
 
   def subProfilers:List[Profiler] = List.empty
 
@@ -160,6 +160,16 @@ class NeighborhoodProfiler(override val neighborhood: Neighborhood) extends Prof
 class CombinatorProfiler(val combinator: NeighborhoodCombinator) extends Profiler(combinator) {
 
   override def subProfilers: List[Profiler] = combinator.subNeighborhoods.map(_.profiler)
+
+  override def explorationPaused(): Unit = {
+    super.explorationPaused()
+    subProfilers.foreach(_.explorationPaused())
+  }
+
+  override def explorationResumed(): Unit = {
+    super.explorationResumed()
+    subProfilers.foreach(_.explorationResumed())
+  }
 
   // Merge this profiler data and the sub-profiler data (recursively)
   override def merge(profiler: Profiler): Unit ={
@@ -291,9 +301,23 @@ case class BestFirstProfiler(override val combinator: NeighborhoodCombinator,
  */
 case class CompositionProfiler(override val combinator: NeighborhoodCombinator, left: Option[Neighborhood] = None) extends CombinatorProfiler(combinator){
 
+  private var currentRightProfiler: Profiler = _
+  private var dynNeighborhoodProfiler: List[Profiler] = List.empty
+
   override def subProfilers: List[Profiler] = (if(left.isDefined) List(left.get.profiler) else List.empty) ++ dynNeighborhoodProfiler
 
-  private var dynNeighborhoodProfiler: List[Profiler] = List.empty
+  override def explorationPaused(): Unit = {
+    explorationPausedAt = System.nanoTime()
+    currentExplorationTimeSpent += explorationPausedAt - Math.max(startExplorationAt, explorationResumedAt)
+    currentRightProfiler.explorationPaused()
+  }
+
+  override def explorationResumed(): Unit = {
+    explorationResumedAt = System.nanoTime()
+    currentRightProfiler.explorationResumed()
+  }
+
+  def setCurrentRight(profiler: Profiler): Unit = currentRightProfiler = profiler
 
   /*
     1° merge common profiling data
@@ -320,7 +344,7 @@ case class CompositionProfiler(override val combinator: NeighborhoodCombinator, 
    * We DON'T WANT TO MERGE when :
    *  - The B neighborhood isn't generic (when using andThen for instance) hence the eq check
    */
-  def mergeDynProfiler(profiler: Profiler): Unit ={
+  def mergeDynProfiler(profiler: Profiler = currentRightProfiler): Unit ={
     if (!dynNeighborhoodProfiler.exists(x => x eq profiler)) {
       val matchingProfilerOpt = dynNeighborhoodProfiler.find(x => x.detailedRecursiveName == profiler.detailedRecursiveName)
       if (matchingProfilerOpt.isDefined) matchingProfilerOpt.get.merge(profiler)
