@@ -3,7 +3,7 @@ package oscar.cbls.visual.profiling
 import oscar.cbls.core.search.profiling.{CombinatorProfiler, Profiler}
 
 import java.awt.event.{MouseAdapter, MouseEvent}
-import java.awt.{BorderLayout, Color, Component, Font, GridBagConstraints, GridBagLayout}
+import java.awt.{BorderLayout, Color, Component, Font, GridBagConstraints, GridBagLayout, Toolkit}
 import javax.swing.{BorderFactory, JLabel, JPanel, JScrollPane, JTable, JTextArea, SwingConstants, SwingUtilities}
 import javax.swing.table.{DefaultTableCellRenderer, DefaultTableModel}
 
@@ -16,6 +16,11 @@ object ProfilingTable {
 }
 
 class ProfilingTable(rootProfiler: Profiler, headers: Array[String], goodValueIndicator: Array[Option[String]]) extends JPanel(new GridBagLayout()){
+  private final val screenSize = Toolkit.getDefaultToolkit.getScreenSize
+  private final val combinatorColor: Color = new Color(0, 0, 255, 80)
+  private final val neighborhoodColor: Color = new Color(0, 0, 0, 50)
+  private final val FONT_SIZE: Int = (screenSize.getWidth/150).toInt
+
   private val gsm: GeneralStatisticProfilingTableModel = GeneralStatisticProfilingTableModel(rootProfiler, headers)
   private val generalStatisticsTable: JTable = new JTable(gsm){
     override def getScrollableTracksViewportWidth: Boolean ={
@@ -29,9 +34,12 @@ class ProfilingTable(rootProfiler: Profiler, headers: Array[String], goodValueIn
   private val combinatorStatisticsPanel: JPanel = new JPanel(new BorderLayout())
 
   generalStatisticsTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS)
+  generalStatisticsTable.setRowHeight(FONT_SIZE+2)
+  generalStatisticsTable.getTableHeader.setFont(
+    new Font(generalStatisticsTable.getTableHeader.getFont.getFontName,
+      generalStatisticsTable.getTableHeader.getFont.getStyle,
+      FONT_SIZE))
 
-  private final val combinatorColor: Color = new Color(0,0,255,80)
-  private final val neighborhoodColor: Color = new Color(0,0,0,50)
 
   generalStatisticsTable.setDefaultRenderer(classOf[Object], new DefaultTableCellRenderer() {
     override def getTableCellRendererComponent(table: JTable, value: Object, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component = {
@@ -44,8 +52,8 @@ class ProfilingTable(rootProfiler: Profiler, headers: Array[String], goodValueIn
         else c.setBackground(neighborhoodColor)
       }
       c.setFont(
-        if(isSelected) new Font(Font.MONOSPACED, Font.BOLD, c.getFont.getSize)
-        else new Font(Font.MONOSPACED, Font.PLAIN, c.getFont.getSize))
+        if(isSelected) new Font(Font.MONOSPACED, Font.BOLD, FONT_SIZE)
+        else new Font(Font.MONOSPACED, Font.PLAIN, FONT_SIZE))
       c
     }
     override def getHorizontalAlignment: Int = SwingConstants.LEFT
@@ -110,11 +118,11 @@ class ProfilingTable(rootProfiler: Profiler, headers: Array[String], goodValueIn
           case cp: CombinatorProfiler =>
             val profiledCombinatorData = cp.collectCombinatorSpecificStatistics.filter(_.nonEmpty)
             val title = new JLabel(profiledCombinatorData.head.head)
-            title.setFont(new Font(Font.MONOSPACED, Font.BOLD, title.getFont.getSize))
+            title.setFont(new Font(Font.MONOSPACED, Font.BOLD, FONT_SIZE))
             combinatorStatisticsPanel.add(title, BorderLayout.NORTH)
             val newCombinatorText = new JTextArea(profiledCombinatorData.tail.map(_.mkString("\n")).mkString("\n\n"))
             newCombinatorText.setEditable(false)
-            newCombinatorText.setFont(new Font(Font.MONOSPACED, Font.PLAIN, newCombinatorText.getFont.getSize))
+            newCombinatorText.setFont(new Font(Font.MONOSPACED, Font.PLAIN, FONT_SIZE))
             combinatorStatisticsPanel.add(newCombinatorText, BorderLayout.CENTER)
             combinatorStatisticsPanel.revalidate()
         }
