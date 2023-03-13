@@ -167,5 +167,5 @@ class VRPWithMultipleCapacity(n: Int, v: Int, c: Int, maxCapacityPerContentType:
   search.doAllMoves(obj=obj)
   println(myVRP)
 
-  VisualProfiler.showProfile(search)
+  VisualProfiler.showProfile(search,true)
 }

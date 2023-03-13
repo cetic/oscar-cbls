@@ -3,12 +3,15 @@ package oscar.cbls.visual.profiling
 import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.visual.SingleFrameWindow
 
-import java.awt.{BorderLayout, Dimension, GridBagLayout, Toolkit}
+import java.awt.{BorderLayout, Dimension, GraphicsDevice, GraphicsEnvironment, GridBagLayout, Toolkit}
 import javax.swing.{JFrame, JPanel, JScrollPane}
 
 object VisualProfiler{
-  def showProfile(search: Neighborhood, title: String = "Visual Profiler"): Unit ={
-    new VisualProfiler(search,title)
+  def showProfile(search: Neighborhood, onConsole: Boolean = false, title: String = "Visual Profiler"): Unit ={
+    if(onConsole)
+      ProfilingConsole(search.profiler,search.profiler.collectThisProfileHeader)
+    else
+      new VisualProfiler(search,title)
     //SingleFrameWindow.show(visualProfiler,title)
   }
 }
