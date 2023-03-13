@@ -85,7 +85,7 @@ object MinStartTimesExample extends App {
   combinedNH.verbose = 1
   combinedNH.doAllMoves(obj = objFunc)
 
-  println(combinedNH.profilingStatistics)
+  combinedNH.profilingOnConsole()
   println(s"Activities = ${scheduling.activityPriorityList.value.toList}")
 
   println("------------------------")

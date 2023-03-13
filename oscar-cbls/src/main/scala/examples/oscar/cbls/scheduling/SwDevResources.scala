@@ -50,7 +50,7 @@ object SwDevResources {
     // This is the search strategy
     combinedNH.doAllMoves(obj = objFunc)
     // And here, the results
-    println(combinedNH.profilingStatistics)
+    combinedNH.profilingOnConsole()
     println(s"*************** RESULTS ***********************************")
     println(s"Schedule makespan = ${schedule.makeSpan.value}")
     println(s"Scheduling sequence = ${schedule.activityPriorityList.value}")

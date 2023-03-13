@@ -192,6 +192,6 @@ object PDPWithTreeOpt extends App {
 
   println(myVRP)
 
-  search.profilingStatistics
+  search..profilingOnConsole()
 }
 */

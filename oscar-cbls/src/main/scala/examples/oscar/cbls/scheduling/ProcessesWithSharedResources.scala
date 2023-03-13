@@ -75,7 +75,7 @@ object ProcessesWithSharedResources {
     combinedNH.verbose = 1
     combinedNH.doAllMoves(obj = objectiveFunction)
     val t1 = System.nanoTime()
-    println(combinedNH.profilingStatistics)
+    combinedNH.profilingOnConsole()
     // And here, the results
     val actPriorList = schedulingProblem.activityPriorityList.value.toList
     println(s"*************** RESULTS ***********************************")

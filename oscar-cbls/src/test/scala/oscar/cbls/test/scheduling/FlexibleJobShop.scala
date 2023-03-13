@@ -87,7 +87,7 @@ object FlexibleJobShop {
     // Search Procedure
     combinedNH.doAllMoves(obj = objFunc)
     // Output
-    println(combinedNH.profilingStatistics)
+    combinedNH.profilingOnConsole()
     println(s"*************** RESULTS ***********************************")
     println(s"Schedule makespan = ${schedule.makeSpan.value}")
     println(s"Scheduling sequence = ${schedule.activityPriorityList.value}")

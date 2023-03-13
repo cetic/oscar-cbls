@@ -527,7 +527,7 @@ object PDPTWVLSN extends App {
   search.doAllMoves(obj = obj)
 
   println(myVRP)
-  println(search.profilingStatistics)
+  search.profilingOnConsole()
 
   for (vehicle <- 0 until v) {
     val l = vehiclesRouteLength(vehicle).value

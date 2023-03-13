@@ -242,5 +242,5 @@ object SimpleVRPWithTimeWindow extends App {
 
   println(myVRP)
 
-  println(search.profilingStatistics)
+  search.profilingOnConsole()
 }

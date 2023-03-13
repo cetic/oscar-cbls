@@ -7,7 +7,6 @@ import oscar.cbls.core.search.profiling.CompositionProfiler
 import oscar.cbls.core.search.{AcceptanceCriterion, CallBackMove, CompositeMove, DifferentOf, DoNothingMove, DoNothingNeighborhood, LoadSolutionMove, Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult, StrictImprovement, SupportForAndThenChaining, profiling}
 
 abstract class NeighborhoodCombinatorNoProfile(a: Neighborhood*) extends NeighborhoodCombinator(a:_*) {
-  override def collectProfilingStatistics: List[Array[String]] = List.empty
   override def resetStatistics(): Unit ={}
 }
 
@@ -139,8 +138,6 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
   override val profiler: CompositionProfiler = profiling.CompositionProfiler(this,Some(a))
   override def subNeighborhoods: List[Neighborhood] = if(currentB == null) List(a) else List(a,currentB)
 
-  override def collectProfilingStatistics: List[Array[String]] = profiler.collectThisProfileStatistics
-
   override def getMove(obj: Objective,
                        initialObj: Long,
                        acceptanceCriteria: AcceptanceCriterion): SearchResult = {
@@ -187,6 +184,7 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
         //now, we need to check the other neighborhood
         //first, let's instantiate it:
         val currentMoveFromA = a.instantiateCurrentMove(intermediaryObjValue)
+        // The exploration of a is not finished yet, we must pause it during the exploration of b
         a.profiler.explorationPaused()
         currentB = b(currentMoveFromA)
         currentB.verbose = 0 max a.verbose //passing verbosity to b, because b.verbose was not set when it was set of a
@@ -200,6 +198,7 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
         }
         currentB.getProfiledMove(new secondInstrumentedObjective(obj), initialObj, secondAcceptanceCriterion) match {
           case NoMoveFound =>
+            // merge dynamic profiler and resume a exploration
             profiler.mergeDynProfiler()
             a.profiler.explorationResumed()
             Long.MaxValue
@@ -207,6 +206,7 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
             require(m.objAfter < bestObj)
             bestObj = m.objAfter
             toReturn = MoveFound(CompositeMove(List(a.instantiateCurrentMove(intermediaryObjValue),m),bestObj,"DynAndThen"))
+            // merge dynamic profiler and resume a exploration
             profiler.mergeDynProfiler()
             a.profiler.explorationResumed()
             bestObj

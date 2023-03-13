@@ -12,7 +12,6 @@ object VisualProfiler{
       ProfilingConsole(search.profiler,search.profiler.collectThisProfileHeader)
     else
       new VisualProfiler(search,title)
-    //SingleFrameWindow.show(visualProfiler,title)
   }
 }
 

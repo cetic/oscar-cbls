@@ -22,6 +22,7 @@ import oscar.cbls.core.objective.{AbortException, AbortableObjective, LoggingObj
 import oscar.cbls.core.search.profiling.{NeighborhoodProfiler, Profiler}
 import oscar.cbls.lib.search.combinators._
 import oscar.cbls.util.Properties
+import oscar.cbls.visual.profiling.VisualProfiler
 
 import scala.collection.immutable.SortedMap
 
@@ -135,17 +136,14 @@ abstract class JumpNeighborhoodParam[T](name:String) extends Neighborhood(name) 
  */
 abstract class Neighborhood(name:String = null) {
 
-  /**
-   * collects and returns the statistics that have been requested in the neighborhood.
-   * use the Statistics combinator to activate the collection of statistics
-   *
-   * @return
-   */
-  final def profilingStatistics:String = Properties.justifyRightArray(collectProfilingStatistics).mkString("\n")
-  def collectProfilingStatistics:List[Array[String]] = profiler.collectThisProfileStatistics
-  //TODO: profiling stats should als include %founds next to #found
+  // Passively profile the neighborhood
   val profiler: Profiler = new Profiler(this)
+  // Display the profiling result on the console
+  final def profilingOnConsole(): Unit = VisualProfiler.showProfile(this,true)
+  // Display the profiling result on a dynamic window
+  final def profilingOnWindow(title:String = "Visual Profiler"): Unit = VisualProfiler.showProfile(this, title = title)
 
+  // Start and end profiling exploration
   def getProfiledMove(obj: Objective, initialObj: Long, acceptanceCriterion: AcceptanceCriterion = StrictImprovement): SearchResult ={
     profiler.explorationStarted()
     val searchResult = getMove(obj,initialObj,acceptanceCriterion)

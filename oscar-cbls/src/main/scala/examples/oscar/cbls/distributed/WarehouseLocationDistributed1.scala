@@ -82,7 +82,7 @@ object WarehouseLocationDistributed1 extends App {
     }
   }
 
-  println(search.profilingStatistics)
+  search.profilingOnConsole()
 
   supervisor.shutdown()
   finalPrint()

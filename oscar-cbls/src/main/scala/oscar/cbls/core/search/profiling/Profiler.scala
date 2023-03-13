@@ -43,10 +43,12 @@ class Profiler(val neighborhood:Neighborhood){
     currentExplorationTimeSpent = 0L
   }
 
+  // Pause the exploration (mandatory to have a proper exploration duration within the dynAndThen combinator)
   def explorationPaused(): Unit = {
     explorationPausedAt = System.nanoTime()
     currentExplorationTimeSpent += explorationPausedAt-Math.max(startExplorationAt,explorationResumedAt)
   }
+  // Resume the exploration (mandatory to have a proper exploration duration within the dynAndThen combinator)
   def explorationResumed(): Unit = explorationResumedAt = System.nanoTime()
 
   def explorationEnded(gain: Option[Long]): Unit = {

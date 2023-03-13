@@ -142,5 +142,5 @@ class VRPTWWithGeoCoords (n: Int, v: Int, minLat: Double, maxLat: Double, minLon
   searchProcedure.doAllMoves(obj = obj)
   routingDisplay.drawRoutes(true)
   println(myVRP)
-  println(searchProcedure.profilingStatistics)
+  searchProcedure.profilingOnConsole()
 }

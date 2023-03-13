@@ -178,5 +178,5 @@ object SimplePDPTW extends App {
 
   println(myVRP)
 
-  search.profilingStatistics
+  search.profilingOnConsole()
 }

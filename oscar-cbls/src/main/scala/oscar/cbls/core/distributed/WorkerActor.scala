@@ -122,13 +122,14 @@ class WorkerActor(remoteTasks: SortedMap[Int, RemoteTask],
 
           Behaviors.same
 
+        // TODO : Quid du nouveau profiling ?
         case GetStatisticsFor(neighborhood,indice,replyTo) =>
           state match {
             case Idle =>
               remoteTasks(neighborhood.taskId) match {
                 case neighborhood1: RemoteNeighborhood =>
                   replyTo ! ((indice, neighborhood1.neighborhood.
-                    collectProfilingStatistics.map(profilingLine => {
+                    profiler.collectThisProfileStatistics.map(profilingLine => {
                     profilingLine(0) = workerName + "." + profilingLine(0)
                     profilingLine
                   })))

@@ -138,7 +138,7 @@ object GraphPartitionGLS extends CBLSModel with App {
 
   metaHeuristicSearch.doAllMoves(_ >= nbNodes + nbEdges, noCrossingObj)
 
-  println(metaHeuristicSearch.profilingStatistics)
+  metaHeuristicSearch.profilingOnConsole()
 
   println(s"violation on sameSize(partitions): ${sameSizeConstraint.violation.value}")
   println(s"global violation: ${noCrossingObj.value}/$nbEdges")

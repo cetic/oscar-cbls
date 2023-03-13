@@ -400,7 +400,7 @@ class UntilImprovement(a: Neighborhood, over: () => Long, val minMoves: Long = 0
     movesQueriedSinceReset += 1L
     if (movesQueriedSinceReset < maxMove
       && (movesQueriedSinceReset < minMoves || over() >= oldObjOnReset))
-      a.getMove(obj, initialObj:Long, acceptanceCriteria)
+      a.getProfiledMove(obj, initialObj:Long, acceptanceCriteria)
     else NoMoveFound
   }
 

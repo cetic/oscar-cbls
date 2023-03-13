@@ -189,7 +189,7 @@ object WLPWithRedundancy extends App with StopWatch {
 
   val timeMinutes = 1 + (System.currentTimeMillis() - start)/60000
   println(s"Done in less than $timeMinutes minute${if (timeMinutes > 1) "s" else ""}")
-  println(search.profilingStatistics)
+  search.profilingOnConsole()
   println(obj)
 
   visual.redrawMultipleNodes(

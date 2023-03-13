@@ -17,8 +17,6 @@ abstract class BestNeighborhoodFirst(l: List[Neighborhood],
   protected var it: Int = 0
   protected def bestKey(neighborhoodId: Int):Long
   override val profiler = BestFirstProfiler(this,l)
-  override def collectProfilingStatistics: List[Array[String]] =
-    profiler.collectThisProfileStatistics ::: super.collectProfilingStatistics
 
   protected val neighborhoodArray: Array[Neighborhood] = l.toArray
   protected val tabu:Array[Int] = Array.fill(neighborhoodArray.length)(0)

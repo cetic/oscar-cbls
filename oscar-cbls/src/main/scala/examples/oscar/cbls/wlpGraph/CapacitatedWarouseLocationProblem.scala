@@ -438,7 +438,7 @@ object CapacitatedWarouseLocationProblem extends App with StopWatch {
 
   println(obj)
 
-  println(search.profilingStatistics)
+  search.profilingOnConsole()
 
 
 }

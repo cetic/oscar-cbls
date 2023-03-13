@@ -286,7 +286,7 @@ object TestGeometryPackingMinDistance extends App {
 
   updateDisplay() //after finish
 
-  println(search.profilingStatistics)
+  search.profilingOnConsole()
   println()
   println(overlapPerShape.mkString("\n"))
   println(totalOverlapArea)

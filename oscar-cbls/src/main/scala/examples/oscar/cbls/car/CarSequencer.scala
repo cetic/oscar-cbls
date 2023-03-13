@@ -100,7 +100,7 @@ object CarSequencer extends CBLSModel with App {
   search.verbose = 2
   search.doAllMoves(_ => c.isTrue,obj)
 
-  println(search.profilingStatistics)
+  search.profilingOnConsole()
 
   println("car sequence:" + carSequence.map(_.value).mkString(","))
 

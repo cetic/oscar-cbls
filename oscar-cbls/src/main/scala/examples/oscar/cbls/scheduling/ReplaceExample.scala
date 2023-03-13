@@ -47,7 +47,7 @@ object ReplaceExample {
     replaceNH.verbose = 1
     replaceNH.doAllMoves(obj = objFunc)
     // And here, the results
-    println(replaceNH.profilingStatistics)
+    replaceNH.profilingOnConsole()
     println(s"*************** RESULTS ***********************************")
     println(s"Schedule makespan = ${schedule.makeSpan.value}")
     println(s"Scheduling sequence = ${schedule.activityPriorityList.value}")

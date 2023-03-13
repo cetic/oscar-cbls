@@ -154,5 +154,5 @@ object SimpleVRPWithMaxDetours extends App {
 
   println(myVRP)
 
-  search.profilingStatistics
+  search.profilingOnConsole()
 }

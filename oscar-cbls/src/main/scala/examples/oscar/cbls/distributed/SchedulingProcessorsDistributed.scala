@@ -134,7 +134,7 @@ object SchedulingProcessorsDistributed {
     val (_, obj, search, finalPrint) = createCBLSProblem(activities, initialActivities, durations, minStartTimes, precedencePairs, resources, typeNb)
     search.verbose = 1
     search.doAllMoves(obj = obj)
-    println(search.profilingStatistics)
+    search.profilingOnConsole()
     finalPrint()
   }
 
@@ -160,7 +160,7 @@ object SchedulingProcessorsDistributed {
     println("Done.")
     search.verbose = 1
     search.doAllMoves(obj = obj)
-    println(search.profilingStatistics)
+    search.profilingOnConsole()
     supervisor.shutdown()
     finalPrint()
   }

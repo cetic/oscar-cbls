@@ -305,7 +305,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch {
     hideOpenEdges=false,
     extraPath = Nil /* List(distanceMinMax.getPath) ::: selectedDistances.map(_.getPath).toList)*/)
 
-  println(neighborhood.profilingStatistics)
+  println(neighborhood.profilingOnConsole())
 
   println(openWarehouses)
   println(openConditions)

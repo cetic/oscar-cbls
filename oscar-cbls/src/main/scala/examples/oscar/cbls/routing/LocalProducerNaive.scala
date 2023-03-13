@@ -446,7 +446,7 @@ object LocalProducer extends App {
   search.verbose = 1
   search.doAllMoves(obj = obj)
   map.updateVisu(vrp.routes.value,vrp.unrouted.value)
-  println(search.profilingStatistics)
+  search.profilingOnConsole()
   println(s"Unserved clients : ${unservedClients} (${penalty})")
 
   // Utilities function to pretty print the solution

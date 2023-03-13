@@ -189,5 +189,5 @@ class SimpleVRPWithTimeWindowsAndVehicleContent(n: Int, v: Int, seed: Int) {
 
   search.doAllMoves(obj=obj)
 
-  search.profilingStatistics
+  search.profilingOnConsole()
 }

@@ -119,7 +119,7 @@ object BigExample {
     combinedNH.verbose = 1
     combinedNH.doAllMoves(obj = objFunc)
     val t1 = System.nanoTime()
-    println(combinedNH.profilingStatistics)
+    combinedNH.profilingOnConsole()
     // And here, the results
     val actPriorList = scProblem.activityPriorityList.value.toList
     println(s"*************** RESULTS ***********************************")

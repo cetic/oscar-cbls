@@ -136,7 +136,7 @@ object WareHouseLocationEjectionChain extends App with StopWatch {
 
   VisualProfiler.showProfile(neighborhood)
 
-//  println(neighborhood.profilingStatistics)
+//  println(neighborhood.profilingOnConsole())
 
   println(openWarehouses)
 }

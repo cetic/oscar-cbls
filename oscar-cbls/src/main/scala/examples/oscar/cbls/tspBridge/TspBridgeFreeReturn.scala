@@ -156,7 +156,7 @@ object TspBridgeFreeReturn extends App {
 
   search.doAllMoves(obj = obj)
 
-  println(search.profilingStatistics)
+  search.profilingOnConsole()
 
   println(myVRP)
   println(openBridges)

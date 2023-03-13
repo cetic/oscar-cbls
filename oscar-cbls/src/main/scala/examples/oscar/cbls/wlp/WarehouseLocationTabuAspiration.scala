@@ -107,5 +107,5 @@ object WarehouseLocationTabuAspiration extends App {
   switchWithTabuNeighborhood.doAllMoves(obj=obj)
 
   println(openWarehouses)
-  println(switchWithTabuNeighborhood.profilingStatistics)
+  switchWithTabuNeighborhood.profilingOnConsole()
 }

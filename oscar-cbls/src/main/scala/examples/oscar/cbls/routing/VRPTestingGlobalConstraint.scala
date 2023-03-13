@@ -96,6 +96,6 @@ object VRPTestingGlobalConstraint extends App {
   println(problem)
   println(totalRouteLength)
   println(obj)
-  println(search.profilingStatistics)
+  search.profilingOnConsole()
 
 }

@@ -290,7 +290,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
   println(result)
 
-  println(search.profilingStatistics)
+  search.profilingOnConsole()
 
   graphical.drawRoutes(force = true)
 }

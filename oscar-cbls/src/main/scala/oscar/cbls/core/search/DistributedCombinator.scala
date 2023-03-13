@@ -76,9 +76,5 @@ abstract class DistributedCombinator(neighborhoods:Array[Neighborhood],
     (currentIDNow, accNow,toReturnArray)
   }
 
-  override def collectProfilingStatistics: List[Array[String]] = {
-    remoteNeighborhoodIdentifications.flatMap(i => supervisor.getRemoteStatisticsFor(i)).toList
-  }
-
   override def toString: String = "Distributed Combinator"
 }

@@ -132,7 +132,7 @@ object GraphPartition extends CBLSModel with App {
   neighborhood.verbose = 1
   neighborhood.doAllMoves(_ >= nbNodes + nbEdges, obj)
 
-  println(neighborhood.profilingStatistics)
+  println(neighborhood.profilingOnConsole())
 
   println(s"violation on sameSize(partitions): ${sameSizeConstraint.violation.value}")
   println(s"global violation: ${obj.value}/$nbEdges")

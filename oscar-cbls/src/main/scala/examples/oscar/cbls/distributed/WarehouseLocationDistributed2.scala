@@ -105,7 +105,7 @@ object WarehouseLocationDistributed2 extends App {
 
   //    this.time(nbWorker) = System.currentTimeMillis() - start
 
-  println(search2.profilingStatistics)
+  search2.profilingOnConsole()
   supervisor.shutdown()
 
   finalPrint()

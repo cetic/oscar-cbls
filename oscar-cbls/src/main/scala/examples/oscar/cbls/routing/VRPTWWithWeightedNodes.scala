@@ -167,5 +167,5 @@ class VRPTWWithWeightedNodes(n: Int, v: Int, minLat: Double, maxLat: Double, min
   searchProcedure.doAllMoves(obj = obj)
   routingDisplay.drawRoutes(true)
   println(myVRP)
-  println(searchProcedure.profilingStatistics)
+  searchProcedure.profilingOnConsole()
 }

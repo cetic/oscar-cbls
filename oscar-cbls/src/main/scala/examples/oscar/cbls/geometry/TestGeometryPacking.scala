@@ -286,7 +286,7 @@ object TestGeometryPacking extends App {
 
   updateDisplay() //after finish
 
-  println(search.profilingStatistics)
+  search.profilingOnConsole()
   println()
   println(overlapPenetrationPerShape.mkString("\n"))
   println(overlapPenetrationConstraint.output)

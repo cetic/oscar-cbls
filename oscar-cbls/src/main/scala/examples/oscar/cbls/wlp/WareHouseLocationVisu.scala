@@ -138,7 +138,7 @@ object WareHouseLocationVisu extends App with StopWatch {
 
   visual.redraw(openWarehouses.value,boldChanges = false)
 
-  println(neighborhood.profilingStatistics)
+  neighborhood.profilingOnConsole()
 
   println(openWarehouses)
 }
