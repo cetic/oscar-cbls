@@ -1,2 +1,0 @@
-array[1 .. 20] of var 1 .. 5 + 1: board;
-output [ show(board) ];

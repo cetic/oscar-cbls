@@ -1,4 +1,0 @@
-var bool: r :: output_var = true;
-array [1..2] of var bool: x :: output_array([1..2]);
-constraint array_bool_and([x[1], x[2]], true);
-solve satisfy;

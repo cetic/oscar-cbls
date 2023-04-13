@@ -1,5 +1,0 @@
-predicate oscar_table_int(array [int] of var int: x, array [int] of int: t2);
-array [1..12] of int: t = [2, 5, 4, 1, 1, 2, 1, 4, 5, 4, 3, 2];
-array [1..4] of var 1..5: x :: output_array([1..4]);
-constraint oscar_table_int(x, [2, 5, 4, 1, 1, 2, 1, 4, 5, 4, 3, 2]);
-solve satisfy;

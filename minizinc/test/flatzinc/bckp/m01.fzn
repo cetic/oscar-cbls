@@ -1,5 +1,0 @@
-var 2..3: x :: output_var;
-var 1..4: y :: output_var;
-var 2..4: z :: output_var;
-constraint int_max(x, y, z);
-solve satisfy;

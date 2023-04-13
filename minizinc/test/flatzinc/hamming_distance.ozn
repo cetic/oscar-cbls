@@ -1,8 +1,0 @@
-array[1 .. 6] of var 0 .. 1: a;
-array[1 .. 6] of var 0 .. 1: b;
-var int: diffs;
-output 
-  [ "a: " ++ 
-    (show(a) ++ 
-    ("\n" ++ 
-    ("b: " ++ (show(b) ++ ("\n" ++ ("diffs: " ++ (show(diffs) ++ "\n"))))))) ];

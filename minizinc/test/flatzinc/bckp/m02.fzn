@@ -1,8 +1,0 @@
-var 12..12: t = 12;
-var 2..3: x :: output_var;
-var 2..4: y :: output_var;
-var 7..8: z :: output_var;
-constraint int_le(x, y);
-constraint int_ne(x, y);
-constraint int_times(x, y, 12);
-solve satisfy;

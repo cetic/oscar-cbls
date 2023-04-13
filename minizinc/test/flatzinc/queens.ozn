@@ -1,2 +1,0 @@
-array[1 .. 8] of var 1 .. 8: queens;
-output [ show(queens) ++ "\n" ];

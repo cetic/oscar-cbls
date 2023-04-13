@@ -1,7 +1,0 @@
-array [1..3] of int: w = [1, 10, 100];
-int: c = 232;
-array [1..3] of var 1..3: x :: output_array([1..3]);
-var bool: b :: output_var;
-constraint int_lin_eq_reif(w, x, c, b);
-constraint bool_eq(b, true);
-solve satisfy;

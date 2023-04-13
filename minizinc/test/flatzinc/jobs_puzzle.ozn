@@ -1,6 +1,0 @@
-set of int: job = 1 .. 4;
-array[1 .. 8] of var job: Jobs;
-output 
-  [ "Roberta:1 Thelma:2 Steve:3 Pete:4\n", 
-    "[chef, guard, nurse, clerk, police_officer, teacher, actor, boxer]\n", 
-    show(Jobs), "\n" ];

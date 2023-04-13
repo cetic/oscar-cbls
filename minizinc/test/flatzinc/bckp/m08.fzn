@@ -1,5 +1,0 @@
-predicate oscar_bin_packing(int: c, array [int] of var int: bin, array [int] of int: w);
-array [1..4] of int: w = [3, 2, 2, 3];
-array [1..4] of var 1..2: bin :: output_array([1..4]);
-constraint oscar_bin_packing(6, bin, w);
-solve satisfy;

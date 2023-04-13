@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?> 
-<visualization version="1.0" 
-xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-xsi:noNamespaceSchemaLocation="visualization.xsd"> 
-<visualizer id="1" type="vector" display="expanded" 
-x="0" y="0" width="8" height="10" min="0" max="9" /> 
-</visualization> 

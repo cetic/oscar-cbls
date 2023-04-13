@@ -1,7 +1,0 @@
-array[1 .. 8] of var 0 .. 5 * 5: N;
-array[1 .. 5, 1 .. 5, 1 .. 8] of var 0 .. 5 * 5: Q;
-var 0 .. 92: Beamtime;
-var 0 .. 5 * 5: K;
-output 
-  [ "Beamtime = ", show(Beamtime), "\n", "K = ", show(K), "\n", "N = ", 
-    show(N), "\n", "Q = ", show(Q), "\n" ];

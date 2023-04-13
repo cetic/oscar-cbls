@@ -1,3 +1,0 @@
-array[1 .. 12] of var 1 .. 12: x;
-var int: distance;
-output [ "x: ", show(x), "\n", show(distance) ];

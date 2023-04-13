@@ -1,3 +1,0 @@
-var set of 5..9: range :: output_var;
-var 12..12: t :: output_var = 12;
-solve satisfy;

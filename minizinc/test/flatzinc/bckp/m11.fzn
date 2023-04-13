@@ -1,3 +1,0 @@
-var 2..3: x :: output_var;
-var 2..3: y :: output_var = x;
-solve satisfy;

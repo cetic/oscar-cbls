@@ -1,3 +1,0 @@
-array[1 .. 4] of var 1 .. 8: r;
-array[1 .. 4] of var 1 .. 8: c;
-output [ "r = ", show(r), "\n", "c = ", show(c), "\n" ];

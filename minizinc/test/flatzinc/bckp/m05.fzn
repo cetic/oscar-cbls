@@ -1,4 +1,0 @@
-predicate oscar_strict_lex2(array [int] of var int: x2, int: i, int: j);
-array [1..6] of var 1..6: tab :: output_array([1..3, 1..2]);
-constraint oscar_strict_lex2([tab[1], tab[2], tab[3], tab[4], tab[5], tab[6]], 3, 2);
-solve satisfy;

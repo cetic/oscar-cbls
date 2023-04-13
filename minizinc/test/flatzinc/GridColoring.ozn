@@ -1,5 +1,0 @@
-array[1 .. 5, 1 .. 6] of var 1 .. min(5, 6): x;
-var 1 .. min(5, 6): objective;
-output 
-  [ show(x[i, k]) ++ if k == 6 then "\n" else " " endif | 
-    i in 1 .. 5, k in 1 .. 6 ] ++ [ "objective = ", show(objective), "\n" ];

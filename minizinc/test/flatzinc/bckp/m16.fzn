@@ -1,5 +1,0 @@
-predicate oscar_decreasing_int(array [int] of var int: x);
-array [1..5] of var 1..10: x :: output_array([1..5]);
-constraint int_eq(3, x[4]);
-constraint oscar_decreasing_int(x);
-solve satisfy;

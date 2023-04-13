@@ -1,9 +1,0 @@
-predicate oscar_alldiff(array [int] of var int: x);
-predicate oscar_minimum_int(var int: m, array [int] of var int: x);
-array [1..3] of var 1..4: x :: output_array([1..3]);
-var int: y :: output_var;
-constraint int_le(x[1], x[2]);
-constraint int_le(x[3], x[2]);
-constraint oscar_alldiff(x);
-constraint oscar_minimum_int(y, x);
-solve satisfy;
