@@ -89,6 +89,11 @@ object OscarBuild {
     val jtscore = "org.locationtech.jts" % "jts-core" % "1.19.0"
     val slf4j = "org.slf4j" % "slf4j-simple" % "2.0.5"
 
+    // Other OscaR project dependencies
+    val oscarVisual =  "oscar" %% "oscar-visual" % "5.0.0-SNAPSHOT" withSources()
+    val oscarUtil = "oscar" %% "oscar-util" % "5.0.0-SNAPSHOT" withSources()
+
+
     // Akka (don't upgrade to 2.7, licence has changed)
     val akkaActor = "com.typesafe.akka" %% "akka-actor" % "2.6.19"
     val akkaRemote = "com.typesafe.akka" %% "akka-remote" % "2.6.19"

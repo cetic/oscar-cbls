@@ -25,3 +25,5 @@ syntax: regexp
 
 *.iml
 .bsp/
+
+project/metals.sbt
