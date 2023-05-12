@@ -33,7 +33,7 @@ class RealRoutingMap(vrp: VRP,
                      colorValues: Array[Color],
                      refreshRate: Int,
                      toolTipInfo: Option[Int => Option[() => String]],
-                     lineStyle: String = "midArrow") extends VisualMap(lineStyle) with StopWatch with RoutingMapTrait {
+                     lineStyle: String = "midArrow") extends VisualMap() with StopWatch with RoutingMapTrait { // TODO: restore 'VisualMap(lineStyle)' later
 
   private var lastRefresh = 0L
 
