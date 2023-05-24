@@ -17,7 +17,7 @@ package oscar.cbls.algo.conflict
 
 import scala.annotation.tailrec
 
-/** A class that proposes several conflict search algorithms. Given a set of items I, and a
+/** An object that proposes several conflict search algorithms. Given a set of items I, and a
   * condition over subsets of I that is monotonic (forall X, Y subset of I, conflict(X) =>
   * conflict(X U Y) a minimal conflict C is a subset of I such that conflict(C) and if any part of C
   * is removed, C is not in conflict anymore.
