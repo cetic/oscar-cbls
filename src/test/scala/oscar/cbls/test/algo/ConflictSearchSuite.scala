@@ -1,12 +1,13 @@
 package oscar.cbls.test.algo
 
 import org.scalatest.funsuite.AnyFunSuite
-import scala.util.Random
-import scala.collection.immutable.SortedSet
-import scala.annotation.tailrec
 import oscar.cbls.algo.conflict.ConflictSearch
 
-class ConflictTestSuite extends AnyFunSuite {
+import scala.annotation.tailrec
+import scala.collection.immutable.SortedSet
+import scala.util.Random
+
+class ConflictSearchSuite extends AnyFunSuite {
 
   val rand = new Random(1000)
 
@@ -22,7 +23,7 @@ class ConflictTestSuite extends AnyFunSuite {
       s2.foldRight(true)((elem, inRest) => s1.contains(elem) && inRest)
     }
 
-    def conflict(s: SortedSet[Int]) = {
+    def conflict(s: SortedSet[Int]): Boolean = {
       includes(s, conflictingSetOne) || includes(s, conflictingSetTwo)
     }
 
@@ -100,7 +101,7 @@ class ConflictTestSuite extends AnyFunSuite {
    */
 
   // test 1
-  test("When starting set has conflict, the minimal conflict set is empty") {
+  test("When the starting set has a conflict, the minimal conflict set is empty") {
     val injectElement = randList(10)
 
     val initSetWithConflict1 = randSet(10, testData.conflictingSetOne)
@@ -114,11 +115,13 @@ class ConflictTestSuite extends AnyFunSuite {
 
     assert(
       conflictingList1Algo1.isEmpty,
-      s"inserting $injectElement in $initSetWithConflict1 shall return an empty list but returned $conflictingList1Algo1"
+      s"inserting $injectElement in $initSetWithConflict1 should return " +
+        s"an empty list but returned $conflictingList1Algo1"
     )
     assert(
       conflictingList2Algo1.isEmpty,
-      s"inserting $injectElement in $initSetWithConflict2 shall return an empty list but returned $conflictingList2Algo1"
+      s"inserting $injectElement in $initSetWithConflict2 should return " +
+        s"an empty list but returned $conflictingList2Algo1"
     )
 
     // Algo2
@@ -141,13 +144,15 @@ class ConflictTestSuite extends AnyFunSuite {
 
     assert(
       conflictingList1Algo2.isEmpty,
-      s"inserting $injectElement in $initSetWithConflict1 shall return an empty list but returned $conflictingList1Algo2"
-    )
-    assert(
-      conflictingList2Algo2.isEmpty,
-      s"inserting $injectElement in $initSetWithConflict2 shall return an empty list but returned $conflictingList2Algo2"
+      s"inserting $injectElement in $initSetWithConflict1 should return " +
+        s"an empty list but returned $conflictingList1Algo2"
     )
 
+    assert(
+      conflictingList2Algo2.isEmpty,
+      s"inserting $injectElement in $initSetWithConflict2 should return " +
+        s"an empty list but returned $conflictingList2Algo2"
+    )
   }
 
   // Test 2.1
@@ -201,8 +206,10 @@ class ConflictTestSuite extends AnyFunSuite {
     val testData = randomTestData
     val (half1Conflict1, half2Conflict1) =
       testData.conflictingSetOne.splitAt(testData.conflictingSetOne.size / 2)
+
     val (half1Conflict2, half2Conflict2) =
       testData.conflictingSetTwo.splitAt(testData.conflictingSetTwo.size / 2)
+
     val initSet1 = randSet(10, half1Conflict1, half2Conflict1 union testData.conflictingSetTwo)
     val initSet2 = randSet(10, half1Conflict2, half2Conflict2 union testData.conflictingSetOne)
 
@@ -219,11 +226,13 @@ class ConflictTestSuite extends AnyFunSuite {
 
     assert(
       testData.conflict(initSet1 union SortedSet.from(conflictingList1Algo1)),
-      s"result of injecting $injectElement1 in $initSet1 ($conflictingList1Algo1) shall create a conflict. Conflicting Sets are $testData"
+      s"result of injecting $injectElement1 in $initSet1 ($conflictingList1Algo1) shall create a conflict. " +
+        s"Conflicting Sets are $testData"
     )
     assert(
       testData.conflict(initSet2 union SortedSet.from(conflictingList2Algo1)),
-      s"result of injecting $injectElement1 in $initSet2 ($conflictingList2Algo1) shall create a conflict. Conflicting Sets are $testData"
+      s"result of injecting $injectElement1 in $initSet2 ($conflictingList2Algo1) shall create a conflict. " +
+        s"Conflicting Sets are $testData"
     )
 
     // Algo 2
@@ -234,13 +243,14 @@ class ConflictTestSuite extends AnyFunSuite {
 
     assert(
       testData.conflict(initSet1 union SortedSet.from(conflictingList1Algo2)),
-      s"result of injecting $injectElement1 in $initSet1 ($conflictingList1Algo2) shall create a conflict. Conflicting Sets are $testData"
+      s"result of injecting $injectElement1 in $initSet1 ($conflictingList1Algo2) shall create a conflict. " +
+        s"Conflicting Sets are $testData"
     )
     assert(
       testData.conflict(initSet2 union SortedSet.from(conflictingList2Algo2)),
-      s"result of injecting $injectElement1 in $initSet2 ($conflictingList2Algo2) shall create a conflict. Conflicting Sets are $testData"
+      s"result of injecting $injectElement1 in $initSet2 ($conflictingList2Algo2) shall create a conflict. " +
+        s"Conflicting Sets are $testData"
     )
-
   }
 
   // test 3
@@ -260,7 +270,7 @@ class ConflictTestSuite extends AnyFunSuite {
       }
     }
 
-    def checkList(l: List[Int]) = {
+    def checkList(l: List[Int]): Unit = {
       for (e <- l) {
         assert(
           !testData.conflict(initSet union SortedSet.from(removeElem(e, l))),
@@ -316,6 +326,5 @@ class ConflictTestSuite extends AnyFunSuite {
     assertThrows[Exception] {
       ConflictSearch.xPlainWithRemove(initSet, insertList, inject, remove, testData.conflict)
     }
-
   }
 }
