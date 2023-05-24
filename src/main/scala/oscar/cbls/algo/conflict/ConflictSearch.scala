@@ -44,7 +44,7 @@ object ConflictSearch {
     * @return
     *   a minimal subset of toInject such that, when injected into init, they cause a conflict
     */
-  def apply[S, C](
+  def quickXPlain[S, C](
     init: S,
     toInject: List[C],
     inject: (S, C) => S,
@@ -153,7 +153,7 @@ object ConflictSearch {
     * @return
     *   a minimal subset of toInject such that, when injected into init, they cause a conflict
     */
-  def apply[S, C](
+  def xPlainWithRemove[S, C](
     init: S,
     toInject: List[C],
     inject: (S, C) => S,

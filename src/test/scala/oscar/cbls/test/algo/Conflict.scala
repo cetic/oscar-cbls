@@ -85,8 +85,8 @@ class ConflictTestSuite extends AnyFunSuite {
 
   private val testData = randomTestData
 
-  /* The test cases shall be tested for the two algorithms: The algorithms without remove (algo 1)
-   * and the one with remove (algo 2)
+  /* The test cases shall be tested for the two algorithms: The algorithms without remove (algo 1, quickXPlain)
+   * and the one with remove (algo 2, xPlainWithRemove)
    *
    * The test cases are the following
    * - When the starting set has conflict, the minimal conflict set is empty (test 1)
@@ -108,9 +108,9 @@ class ConflictTestSuite extends AnyFunSuite {
 
     // Algo1
     val conflictingList1Algo1 =
-      ConflictSearch(initSetWithConflict1, injectElement, inject, testData.conflict)
+      ConflictSearch.quickXPlain(initSetWithConflict1, injectElement, inject, testData.conflict)
     val conflictingList2Algo1 =
-      ConflictSearch(initSetWithConflict2, injectElement, inject, testData.conflict)
+      ConflictSearch.quickXPlain(initSetWithConflict2, injectElement, inject, testData.conflict)
 
     assert(
       conflictingList1Algo1.isEmpty,
@@ -123,9 +123,21 @@ class ConflictTestSuite extends AnyFunSuite {
 
     // Algo2
     val conflictingList1Algo2 =
-      ConflictSearch(initSetWithConflict1, injectElement, inject, remove, testData.conflict)
+      ConflictSearch.xPlainWithRemove(
+        initSetWithConflict1,
+        injectElement,
+        inject,
+        remove,
+        testData.conflict
+      )
     val conflictingList2Algo2 =
-      ConflictSearch(initSetWithConflict2, injectElement, inject, remove, testData.conflict)
+      ConflictSearch.xPlainWithRemove(
+        initSetWithConflict2,
+        injectElement,
+        inject,
+        remove,
+        testData.conflict
+      )
 
     assert(
       conflictingList1Algo2.isEmpty,
@@ -151,8 +163,10 @@ class ConflictTestSuite extends AnyFunSuite {
       randList(10, testData.conflictingSetTwo.toList, testData.conflictingSetOne.toList)
 
     // Algo 1
-    val conflictingList1Algo1 = ConflictSearch(initSet, injectElement1, inject, testData.conflict)
-    val conflictingList2Algo1 = ConflictSearch(initSet, injectElement2, inject, testData.conflict)
+    val conflictingList1Algo1 =
+      ConflictSearch.quickXPlain(initSet, injectElement1, inject, testData.conflict)
+    val conflictingList2Algo1 =
+      ConflictSearch.quickXPlain(initSet, injectElement2, inject, testData.conflict)
 
     assert(
       testData.conflict(initSet union SortedSet.from(conflictingList1Algo1)),
@@ -165,9 +179,9 @@ class ConflictTestSuite extends AnyFunSuite {
 
     // Algo 2
     val conflictingList1Algo2 =
-      ConflictSearch(initSet, injectElement1, inject, remove, testData.conflict)
+      ConflictSearch.xPlainWithRemove(initSet, injectElement1, inject, remove, testData.conflict)
     val conflictingList2Algo2 =
-      ConflictSearch(initSet, injectElement2, inject, remove, testData.conflict)
+      ConflictSearch.xPlainWithRemove(initSet, injectElement2, inject, remove, testData.conflict)
 
     assert(
       testData.conflict(initSet union SortedSet.from(conflictingList1Algo2)),
@@ -198,8 +212,10 @@ class ConflictTestSuite extends AnyFunSuite {
       randList(10, half2Conflict2.toList, testData.conflictingSetOne.toList)
 
     // Algo 1
-    val conflictingList1Algo1 = ConflictSearch(initSet1, injectElement1, inject, testData.conflict)
-    val conflictingList2Algo1 = ConflictSearch(initSet2, injectElement2, inject, testData.conflict)
+    val conflictingList1Algo1 =
+      ConflictSearch.quickXPlain(initSet1, injectElement1, inject, testData.conflict)
+    val conflictingList2Algo1 =
+      ConflictSearch.quickXPlain(initSet2, injectElement2, inject, testData.conflict)
 
     assert(
       testData.conflict(initSet1 union SortedSet.from(conflictingList1Algo1)),
@@ -212,9 +228,9 @@ class ConflictTestSuite extends AnyFunSuite {
 
     // Algo 2
     val conflictingList1Algo2 =
-      ConflictSearch(initSet1, injectElement1, inject, remove, testData.conflict)
+      ConflictSearch.xPlainWithRemove(initSet1, injectElement1, inject, remove, testData.conflict)
     val conflictingList2Algo2 =
-      ConflictSearch(initSet2, injectElement2, inject, remove, testData.conflict)
+      ConflictSearch.xPlainWithRemove(initSet2, injectElement2, inject, remove, testData.conflict)
 
     assert(
       testData.conflict(initSet1 union SortedSet.from(conflictingList1Algo2)),
@@ -254,8 +270,10 @@ class ConflictTestSuite extends AnyFunSuite {
       }
     }
     // Algo 1
-    val conflictingList1Algo1 = ConflictSearch(initSet, injectElement1, inject, testData.conflict)
-    val conflictingList2Algo1 = ConflictSearch(initSet, injectElement2, inject, testData.conflict)
+    val conflictingList1Algo1 =
+      ConflictSearch.quickXPlain(initSet, injectElement1, inject, testData.conflict)
+    val conflictingList2Algo1 =
+      ConflictSearch.quickXPlain(initSet, injectElement2, inject, testData.conflict)
 
     // Checking that the result is a conflict set
     assert(
@@ -271,9 +289,9 @@ class ConflictTestSuite extends AnyFunSuite {
 
     // Algo 2
     val conflictingList1Algo2 =
-      ConflictSearch(initSet, injectElement1, inject, remove, testData.conflict)
+      ConflictSearch.xPlainWithRemove(initSet, injectElement1, inject, remove, testData.conflict)
     val conflictingList2Algo2 =
-      ConflictSearch(initSet, injectElement2, inject, remove, testData.conflict)
+      ConflictSearch.xPlainWithRemove(initSet, injectElement2, inject, remove, testData.conflict)
 
     checkList(conflictingList1Algo2)
     checkList(conflictingList2Algo2)
@@ -291,12 +309,12 @@ class ConflictTestSuite extends AnyFunSuite {
 
     // Algo 1
     assertThrows[Exception] {
-      ConflictSearch(initSet, insertList, inject, testData.conflict)
+      ConflictSearch.quickXPlain(initSet, insertList, inject, testData.conflict)
     }
 
     // Algo 2
     assertThrows[Exception] {
-      ConflictSearch(initSet, insertList, inject, remove, testData.conflict)
+      ConflictSearch.xPlainWithRemove(initSet, insertList, inject, remove, testData.conflict)
     }
 
   }
