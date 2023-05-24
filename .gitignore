@@ -24,6 +24,4 @@ LPParam.ini
 oscar.eml
 project/metals.sbt
 project/project
-syntax: glob
-syntax: regexp
 target/
