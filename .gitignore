@@ -1,30 +1,29 @@
-.classpath
-lib/cplex.jar
-lib/gurobi.jar
-.iml
-target/
-bin
-.history
-syntax: glob
-lib/scalatest-1.6.1.jar
-.settings/org.scala-ide.sdt.core.prefs
+.bloop/
+.bsp/
 .cache
 .cache-main
 .cache-tests
-.worksheet/src/test.scala
-oscar.eml
+.classpath
+.history
 .idea
-*/.project
-LPParam.ini
+.iml
+.metals/
+.settings/org.scala-ide.sdt.core.prefs
+.vscode/
+.worksheet/src/test.scala
 *.DS_Store
-project/project
-
-syntax: regexp
-\.jardesc$
-syntax: regexp
-^MANIFEST\.MF$
-
 *.iml
-.bsp/
-
+*/.project
+\.jardesc$
+^MANIFEST\.MF$
+bin
+lib/cplex.jar
+lib/gurobi.jar
+lib/scalatest-1.6.1.jar
+LPParam.ini
+oscar.eml
 project/metals.sbt
+project/project
+syntax: glob
+syntax: regexp
+target/
