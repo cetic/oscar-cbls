@@ -13,7 +13,6 @@
 
 package oscar.cbls.algo.heap
 
-import oscar.cbls.algo.quick.{QArrayList, QList}
 
 import scala.collection.Iterator
 
@@ -30,7 +29,7 @@ class AggregatedBinomialHeapQList[T](GetKey: T => Int, val maxPosition: Int)
 
   private[this] val b = new BinomialHeap[Int](a => a, maxPosition)
 
-  private[this] val a: Array[QList[T]] = Array.tabulate(maxPosition)(_ => null)
+  private[this] val a: Array[List[T]] = Array.tabulate(maxPosition)(_ => null)
 
   private[this] var checkEmpty: Boolean = true
 
@@ -45,12 +44,12 @@ class AggregatedBinomialHeapQList[T](GetKey: T => Int, val maxPosition: Int)
     val position              = GetKey(elem)
     val otherWithSamePosition = a(position)
     if (otherWithSamePosition == null) {
-      a(position) = QList(elem)
+      a(position) = List(elem)
       b.insert(position)
       checkEmpty = false
     } else {
       // this is the desired branch, as it is O(1L)
-      a(position) = QList(elem, otherWithSamePosition)
+      a(position) = elem :: otherWithSamePosition
     }
   }
 
@@ -105,14 +104,14 @@ class AggregatedBinomialHeapArrayList[T](
 
   private[this] val b = new BinomialHeap[Int](a => a, maxPosition)
 
-  private[this] val a: Array[QArrayList[T]] =
-    Array.tabulate(maxPosition)(_ => new QArrayList[T](initialSizeForArrayList))
+  private[this] val a: Array[List[T]] =
+    Array.tabulate(maxPosition)(_ => List[T]())
 
   private[this] var msize: Long = 0
 
   /** makes the datastruct empty */
   def dropAll(): Unit = {
-    for (i <- b) a(i).setEmpty()
+    for (i <- b) a(i) = List.empty
     msize = 0
     b.dropAll()
   }
@@ -121,19 +120,20 @@ class AggregatedBinomialHeapArrayList[T](
     val position              = GetKey(elem)
     val otherWithSamePosition = a(position)
     if (otherWithSamePosition.isEmpty) b.insert(position)
-    otherWithSamePosition.put(elem)
+    a(position) = elem :: otherWithSamePosition
   }
 
   override def isEmpty: Boolean = b.isEmpty
 
   def popFirst(): T = {
     val position  = b.getFirst
-    val arrayList = a(position)
-    val toreturn  = arrayList.pop()
+    var arrayList = a(position)
+    val toReturn  = arrayList.head
+    arrayList = arrayList.tail
     if (arrayList.isEmpty) {
       b.popFirst()
     }
-    toreturn
+    toReturn
   }
 
   override def getFirsts: List[T] = throw new Exception("not available")

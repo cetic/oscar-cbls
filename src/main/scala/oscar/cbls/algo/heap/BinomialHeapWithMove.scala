@@ -17,6 +17,7 @@ import scala.collection.{mutable, Iterator}
 import scala.collection.immutable.SortedMap
 
 /** This is a binary heap that is efficient; all operations are in O(log(n)) smallest first
+ * The binomial heap is order as a min-heap, meaning, the value at position has the minimal key-value of the whole heap.
   * @param initialGetKey
   *   a function that returns an integer for each element inserted in the heap this value is used to
   *   sort the heap content
@@ -81,20 +82,20 @@ class BinomialHeap[T](initialGetKey: T => Long, val maxsize: Int)(implicit val X
     heapArray(position2) = tmp
   }
 
-  // returns the last position of the moved item
+  /** Push the head of the binomial heap down to restore the binomial heap property. We suppose that
+    * the binomial heap is a complete binary tree, meaning all node are lined on the left.
+    */
   private def pushDown(): Long = {
     var position = 0
     while (true)
       if (
-        leftChild(position) < msize && GetKey(heapArray(position)) > GetKey(
-          heapArray(leftChild(position))
-        )
+        leftChild(position) < msize &&
+        GetKey(heapArray(position)) > GetKey(heapArray(leftChild(position)))
       ) {
         // examiner aussi left child
         if (
-          rightChild(position) < msize && GetKey(heapArray(rightChild(position))) < GetKey(
-            heapArray(leftChild(position))
-          )
+          rightChild(position) < msize &&
+          GetKey(heapArray(rightChild(position))) < GetKey(heapArray(leftChild(position)))
         ) {
           // c'est avec le right child qu'il faut inverser
           swapPositions(position, rightChild(position))

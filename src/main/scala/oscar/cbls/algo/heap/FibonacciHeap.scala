@@ -27,8 +27,7 @@ class FibonacciHeap[T] {
   /** Number of nodes in the heap. */
   def size: Int = n
 
-  /** Removes all elements from this heap.
-    */
+  /** Removes all elements from this heap. */
   def dropAll(): Unit = {
     min = null
     n = 0
