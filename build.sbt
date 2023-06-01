@@ -1,6 +1,6 @@
 ThisBuild / scalaVersion := "2.13.10"
 ThisBuild / organization := "oscar"
-ThisBuild / version      := "5.0.0-SNAPSHOT"
+ThisBuild / version      := "6.0.0-SNAPSHOT"
 
 val junit         = "junit"              % "junit"           % "4.13.2"  % Test
 val scalaCheck    = "org.scalacheck"    %% "scalacheck"      % "1.17.0"  % Test
