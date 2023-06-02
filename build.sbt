@@ -2,10 +2,6 @@ ThisBuild / scalaVersion := "2.13.10"
 ThisBuild / organization := "oscar"
 ThisBuild / version      := "6.0.0-SNAPSHOT"
 
-val junit         = "junit"              % "junit"           % "4.13.2"  % Test
-val scalaCheck    = "org.scalacheck"    %% "scalacheck"      % "1.17.0"  % Test
-val scalaTest     = "org.scalatest"     %% "scalatest"       % "3.2.14"  % Test
-val scalaTestPlus = "org.scalatestplus" %% "scalacheck-1-14" % "3.2.2.0" % Test
 
 lazy val oscarCbls = (project in file(".")) // TODO pack : pack auto settings?
   .enablePlugins(PackPlugin)
