@@ -19,4 +19,9 @@ lazy val oscarCbls = (project in file(".")) // TODO pack : pack auto settings?
   )
   .settings(PackPlugin.packSettings)
   .settings(packGenerateWindowsBatFile := false)
-  .settings(libraryDependencies ++= Seq(junit, scalaCheck, scalaTest, scalaTestPlus))
+  .settings(libraryDependencies ++= Seq(
+    "junit"              % "junit"           % "4.13.2"  % Test,
+    "org.scalacheck"    %% "scalacheck"      % "1.17.0"  % Test,
+    "org.scalatest"     %% "scalatest"       % "3.2.14"  % Test,
+    "org.scalatestplus" %% "scalacheck-1-14" % "3.2.2.0" % Test
+  ))
