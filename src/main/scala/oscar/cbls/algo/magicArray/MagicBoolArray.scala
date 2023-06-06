@@ -2,23 +2,27 @@
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 2.1 of the License, or
 // (at your option) any later version.
-// 
+//
 // OscaR is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License  for more details.
-// 
+//
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 package oscar.cbls.algo.magicArray
+
+import scala.annotation.tailrec
 
 //import oscar.cbls.algo.quick.QList
 
 object MagicBoolArray {
 
-  /** create a Magical Array Of Boolean of given length
+  /** Create a Magical Array Of Boolean of given length, with value initialized to initialVal
     * @param n
     *   the length
+    * @param initVal
+    *   The initial value int the array
     * @return
     *   a Magical Array Of Boolean or null if length is less than zero
     */
@@ -28,21 +32,33 @@ object MagicBoolArray {
   }
 }
 
-/** This represents an array of boolean with where setting all values to true or false can be done 
+/** This represents an array of boolean with where setting all values to true or false can (almost
+  * every time) be done in constant time.
+  *
+  * It works the following way: Boolean are stored as Integer values and the array contains an
+  * pivot. The value is true if the integer is greater or equal to the pivot and the value is false
+  * else. To put all the value at false, the idea is to change the value of the pivot to abs(pivot)
+  * + 1. To put all the value at true, the idea is to change the value of the pivot to -abs(pivot) -
+  * \1. If the pivot arrives to a threshold (Long.MaxValue - 10) the array is reinitialized (it
+  * costs O(length))
   * @author
   *   Jannou Brohée on 3/10/16.
   * @param length
   *   Maximum length of magical array
+  * @param initVal
+  *   The initial values in the array. The default value is false.
   */
 class MagicBoolArray(val length: Int, initVal: Boolean = false) {
 
   private[this] val threshold: Long = Long.MaxValue - 10L
 
   // Made public for testing purposes
-  var global: Long = 1L
+  // TODO make it private?
+  var pivot: Long = 1L
 
   private[this] val internalArray: Array[Long] = Array.fill[Long](length)(if (initVal) 1L else 0L)
 
+  // TODO private?
   val indices: Range = 0 until length
 
   /** Set the new value of element at specific index
@@ -50,17 +66,14 @@ class MagicBoolArray(val length: Int, initVal: Boolean = false) {
     *   the index of the element
     * @param value
     *   the new element's value (true/false)
-    * @return
-    *   the old value
     * @note
     *   in O(1) // trivial
     */
-  def update(id: Int, value: Boolean): Boolean = {
+  def update(id: Int, value: Boolean): Unit = {
     assert(id < length && 0 <= id)
     val oldInternalArray = internalArray(id)
-    if (value) internalArray(id) = global
-    else internalArray(id) = global - 1L
-    oldInternalArray >= global
+    if (value) internalArray(id) = pivot
+    else internalArray(id) = pivot - 1L
   }
 
   /** Return the value of the element at specific index
@@ -73,31 +86,35 @@ class MagicBoolArray(val length: Int, initVal: Boolean = false) {
     */
   def apply(id: Int): Boolean = {
     require(0 <= id && id < length, "got id:" + id + "length:" + length)
-    internalArray(id) >= global
+    internalArray(id) >= pivot
   }
 
   /** Sets the value of each element to "value"
+    * @param value
+    *   The value to set
     * @note
     *   complexity is O(1)
     */
   def all_=(value: Boolean): Unit = {
     if (value) {
-      if (Math.abs(global) == threshold) {
-        global = 0L
+      if (Math.abs(pivot) == threshold) {
+        pivot = 0L
         resetArray()
       } else {
-        global = -Math.abs(global) - 1L
+        pivot = -Math.abs(pivot) - 1L
       }
     } else {
-      if (Math.abs(global) == threshold) {
-        global = 1L
+      if (Math.abs(pivot) == threshold) {
+        pivot = 1L
         resetArray()
       } else {
-        global = Math.abs(global) + 1L
+        pivot = Math.abs(pivot) + 1L
       }
     }
   }
 
+  /** Resets the array when the pivot commes to close to the threshold
+    */
   @inline
   private[this] def resetArray(): Unit = {
     var i = internalArray.length
@@ -107,32 +124,40 @@ class MagicBoolArray(val length: Int, initVal: Boolean = false) {
     }
   }
 
-  def all: Boolean = ???
+  // def all: Boolean = ???
 
-  /** Creates a new iterator over the indexes of elements which value is true. this is a
-    * O(this.length) method
+  /** Creates an iterator over the indexes of elements which value is true. This is a O(this.length)
+    * method
     * @return
     *   the new iterator
     */
   def indicesAtTrue: Iterator[Int] = {
-    var toReturn: QList[Int] = null
-    for (n <- 0 until length) {
-      if (internalArray(n) >= global) {
-        toReturn = QList(n, toReturn)
-      }
-    }
-    toReturn.iterator
+    indicesAtTrueAsList.iterator
   }
 
-  def indicesAtTrueAsQList: QList[Int] = {
-    var toReturn: QList[Int] = null
-    for (n <- 0 until length) {
-      if (internalArray(n) >= global) {
-        toReturn = QList(n, toReturn)
+  /** Creates a List over the indexes of elements which value is true. This is a O(this.length)
+    * method
+    * @return
+    *   the new iterator
+    */
+  def indicesAtTrueAsList: List[Int] = {
+    @tailrec
+    def indicesAtTrue_aux(id: Int = length, res: List[Int] = Nil): List[Int] = {
+      if (id == 0)
+        res
+      else {
+        if (internalArray(id) >= pivot)
+          indicesAtTrue_aux(id - 1, id :: res)
+        else
+          indicesAtTrue_aux(id - 1, res)
       }
     }
-    toReturn
+    indicesAtTrue_aux()
   }
 
-  override def toString: String = s"[${indicesAtTrue.mkString(",")}]"
+  /**
+    * Provides a string with all the indices that are true
+    *
+    * @return the indices that are true
+    */override def toString: String = s"[${indicesAtTrue.mkString(",")}]"
 }
