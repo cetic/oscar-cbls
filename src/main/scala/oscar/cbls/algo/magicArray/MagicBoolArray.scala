@@ -54,12 +54,12 @@ class MagicBoolArray(val length: Int, initVal: Boolean = false) {
 
   // Made public for testing purposes
   // TODO make it private?
-  var pivot: Long = 1L
+  private var pivot: Long = 1L
 
   private[this] val internalArray: Array[Long] = Array.fill[Long](length)(if (initVal) 1L else 0L)
 
   // TODO private?
-  val indices: Range = 0 until length
+  private val indices: Range = 0 until length
 
   /** Set the new value of element at specific index
     * @param id
@@ -124,7 +124,14 @@ class MagicBoolArray(val length: Int, initVal: Boolean = false) {
     }
   }
 
-  // def all: Boolean = ???
+  /** Returns the boolean values in the array.
+    *
+    * @return
+    *   The values in the array
+    * @note
+    *   Complexity: O(length)
+    */
+  def all: Array[Boolean] = Array.tabulate(length)(i => internalArray(i) >= pivot)
 
   /** Creates an iterator over the indexes of elements which value is true. This is a O(this.length)
     * method
@@ -142,22 +149,23 @@ class MagicBoolArray(val length: Int, initVal: Boolean = false) {
     */
   def indicesAtTrueAsList: List[Int] = {
     @tailrec
-    def indicesAtTrue_aux(id: Int = length, res: List[Int] = Nil): List[Int] = {
-      if (id == 0)
+    def indicesAtTrue_aux(id: Int = 0, res: List[Int] = Nil): List[Int] = {
+      if (id == length)
         res
       else {
         if (internalArray(id) >= pivot)
-          indicesAtTrue_aux(id - 1, id :: res)
+          indicesAtTrue_aux(id + 1, id :: res)
         else
-          indicesAtTrue_aux(id - 1, res)
+          indicesAtTrue_aux(id + 1, res)
       }
     }
     indicesAtTrue_aux()
   }
 
-  /**
-    * Provides a string with all the indices that are true
+  /** Provides a string with all the indices that are true
     *
-    * @return the indices that are true
-    */override def toString: String = s"[${indicesAtTrue.mkString(",")}]"
+    * @return
+    *   the indices that are true
+    */
+  override def toString: String = s"[${indicesAtTrue.mkString(",")}]"
 }
