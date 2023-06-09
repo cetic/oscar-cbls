@@ -10,6 +10,9 @@ lazy val oscarCbls = (project in file("."))
       // Refer to https://docs.scala-lang.org/overviews/compiler-options/index.html for details
       "-deprecation",
       "-language:postfixOps" // not officially recommended, but often used in the project
+//      "-Xdisable-assertions",
+      "-opt:l:inline",
+      "-opt-inline-from:oscar.**"    
     ),
     name := "oscar-cbls"
   )
