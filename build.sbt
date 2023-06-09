@@ -23,14 +23,3 @@ lazy val oscarCbls = (project in file("."))
       "org.scalatestplus" %% "scalacheck-1-14" % "3.2.2.0" % Test
     )
   )
-  .settings(
-    if (logLevel.value != Level.Debug)
-      Seq(
-        Compile / scalacOptions ++= Seq(
-          "-Xdisable-assertions",
-          "-opt:l:inline",
-          "-opt-inline-from:oscar.**"
-        )
-      )
-    else Seq()
-  )
