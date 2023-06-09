@@ -9,10 +9,13 @@ lazy val oscarCbls = (project in file("."))
     Compile / scalacOptions ++= Seq(
       // Refer to https://docs.scala-lang.org/overviews/compiler-options/index.html for details
       "-deprecation",
-      "-language:postfixOps" // not officially recommended, but often used in the project
+      "-feature",
+      "-unchecked",
+      "-language:postfixOps", // not officially recommended, but often used in the project
 //      "-Xdisable-assertions",
+      "-opt-warnings:at-inline-failed-summary",
       "-opt:l:inline",
-      "-opt-inline-from:oscar.**"    
+      "-opt-inline-from:oscar.**"
     ),
     name := "oscar-cbls"
   )
