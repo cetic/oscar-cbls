@@ -7,8 +7,9 @@ lazy val oscarCbls = (project in file("."))
   .settings(
     licenses += ("LGPL-3.0", url("https://www.gnu.org/licenses/lgpl-3.0.en.html")),
     Compile / scalacOptions ++= Seq(
-      "-deprecation", // Emit warning and location for usages of deprecated APIs.
-      "-language:postfixOps" // Allow postfix operator notation, such as 1 to 10 toList (not recommended)
+      // Refer to https://docs.scala-lang.org/overviews/compiler-options/index.html for details
+      "-deprecation",
+      "-language:postfixOps" // not officially recommended, but often used in the project
     ),
     name := "oscar-cbls"
   )
