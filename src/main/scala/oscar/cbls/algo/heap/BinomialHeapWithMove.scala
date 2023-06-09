@@ -377,34 +377,6 @@ class BinomialHeapWithMove[T](getKey: T => Long, val maxsize: Int)(
   }
 }
 
-/** @author
-  *   renaud.delandtsheer@cetic.be
-  * @param maxId
-  */
-class ArrayMap(maxId: Int) extends mutable.Map[Int, Long] {
-
-  val array: Array[Long] = Array.fill[Long](maxId)(-1)
-  def get(key: Int): Option[Long] = {
-    val v = array(key)
-    if (v == -1) None
-    else Some(array(key))
-  }
-
-  override def contains(key: Int): Boolean = array(key) != -1
-
-  def iterator: Iterator[(Int, Long)] = { throw new Exception("enumeration not supported"); null }
-
-  def addOne(kv: (Int, Long)): this.type = {
-    array(kv._1) = kv._2
-    this
-  }
-
-  def subtractOne(key: Int): this.type = {
-    array(key) = -1
-    this
-  }
-}
-
 /** beware that this heap does not delete references that are passed to it, so GC will not be able
   * to recover this space. it does not hurt if you only use this datastruct to store object that are
   * permanently living in you memory anyway
