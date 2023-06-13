@@ -32,8 +32,8 @@ object MagicBoolArray {
   }
 }
 
-/** This represents an array of boolean with where setting all values to true or false can (almost
-  * every time) be done in constant time.
+/** This represents an array of boolean where setting all values to true or false can (almost every
+  * time) be done in constant time.
   *
   * It works the following way: Boolean are stored as Integer values and the array contains an
   * pivot. The value is true if the integer is greater or equal to the pivot and the value is false
@@ -44,7 +44,7 @@ object MagicBoolArray {
   * @author
   *   Jannou Brohée on 3/10/16.
   * @param length
-  *   Maximum length of magical array
+  *   The length of magical array
   * @param initVal
   *   The initial values in the array. The default value is false.
   */
@@ -52,14 +52,11 @@ class MagicBoolArray(val length: Int, initVal: Boolean = false) {
 
   private[this] val threshold: Long = Long.MaxValue - 10L
 
-  // Made public for testing purposes
-  // TODO make it private?
   private var pivot: Long = 1L
 
   private[this] val internalArray: Array[Long] = Array.fill[Long](length)(if (initVal) 1L else 0L)
 
-  // TODO private?
-  private val indices: Range = 0 until length
+  protected val indices: Range = 0 until length
 
   /** Set the new value of element at specific index
     * @param id
@@ -124,7 +121,7 @@ class MagicBoolArray(val length: Int, initVal: Boolean = false) {
     }
   }
 
-  /** Returns the boolean values in the array.
+  /** Returns the value stored in the magic array in the form of a scala <code>Array</code>
     *
     * @return
     *   The values in the array
