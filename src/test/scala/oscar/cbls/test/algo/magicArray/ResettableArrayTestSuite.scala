@@ -31,11 +31,11 @@ class ResettableArrayTestSuite
     */
   case class Update(id: Int, value: Int)
 
-
-  /**
-    * The test data case class. It contains the arrays (the resettable array and the witness array) and a set of method to apply updates on the arrays and to check the arrays
+  /** The test data case class. It contains the arrays (the resettable array and the witness array)
+    * and a set of method to apply updates on the arrays and to check the arrays
     *
-    * @param arraySize The size of the arrays
+    * @param arraySize
+    *   The size of the arrays
     */
   case class TestData(arraySize: Int) {
     private val defaultValues: Array[Int] = Array.fill(arraySize)(rand.nextInt())
@@ -73,15 +73,14 @@ class ResettableArrayTestSuite
     def applyUpdates(l: List[Update]): Unit = applyUpdateListRec(l)
   }
 
-
   // An update generator
-  def genUpdate(arraySize : Int): Gen[Update] = for {
+  def genUpdate(arraySize: Int): Gen[Update] = for {
     newValue <- Gen.choose(Int.MinValue, Int.MaxValue)
     id       <- Gen.choose(0, arraySize - 1)
   } yield Update(id, newValue)
 
   // A list of update generator
-  def genUpdateList(arraySize : Int): Gen[List[Update]] = for {
+  def genUpdateList(arraySize: Int): Gen[List[Update]] = for {
     nbElems <- Gen.choose(10, 1_000)
     lst     <- Gen.listOfN(nbElems, genUpdate(arraySize))
   } yield lst

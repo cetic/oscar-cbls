@@ -66,7 +66,7 @@ class ResettableArray[T: ClassTag](length: Int, defaultValue: Int => T) {
   }
 
   /** resets the array to the default values complexity is O(1) (except one in every MaxLong calls
-    * where is it O(n))
+    * where is it O(n) - that will never happend)
     */
   def reset(): Unit = {
     changedValues.all = false
