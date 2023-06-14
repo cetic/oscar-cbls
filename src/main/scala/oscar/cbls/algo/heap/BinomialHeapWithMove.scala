@@ -16,9 +16,10 @@ package oscar.cbls.algo.heap
 import scala.collection.{mutable, Iterator}
 import scala.collection.immutable.SortedMap
 
-/** This is a binary heap that is efficient; all operations are in O(log(n)) smallest first
- * The binomial heap is order as a min-heap, meaning, the value at position has the minimal key-value of the whole heap.
-  * @param initialGetKey
+/** This is a binary heap that is efficient; all operations are in O(log(n)) smallest first The
+  * binomial heap is order as a min-heap, meaning, the value at position has the minimal key-value
+  * of the whole heap.
+  * @param initialPriority
   *   a function that returns an integer for each element inserted in the heap this value is used to
   *   sort the heap content
   * @param maxsize
@@ -30,36 +31,36 @@ import scala.collection.immutable.SortedMap
   * @author
   *   renaud.delandtsheer@cetic.be
   */
-class BinomialHeap[T](initialGetKey: T => Long, val maxsize: Int)(implicit val X: Manifest[T])
+class BinomialHeap[T](initialPriority: T => Long, val maxsize: Int)(implicit val X: Manifest[T])
     extends AbstractHeap[T] {
   val heapArray: Array[T] = new Array[T](maxsize)
   private var msize: Int  = 0
 
-  var GetKey: T => Long = initialGetKey
+  var priority: T => Long = initialPriority
 
   /** changes the key getter according to which the heap is sorted. Can be costly if the heap is not
     * empty.
     * @param KeyGetter
     *   the new key getter
     */
-  def keyGetter_=(KeyGetter: T => Long): Unit = {
+  def changePriority_=(KeyGetter: T => Long): Unit = {
     if (msize > 0L) {
       val content: List[T] = this.toList
       dropAll()
-      GetKey = KeyGetter
+      priority = KeyGetter
       content foreach insert
     } else {
-      GetKey = KeyGetter
+      priority = KeyGetter
     }
   }
 
-  def keyGetter: T => Long = GetKey
+  def changePriority: T => Long = priority
 
   override def size: Int        = msize
   override def isEmpty: Boolean = msize == 0L
 
   override def toString: String = {
-    heapArray.toList.filter(_ != null).sortBy(GetKey).mkString("[", ",", "]")
+    heapArray.toList.filter(_ != null).sortBy(priority).mkString("[", ",", "]")
   }
 
   /** makes the datastruct empty, but does not frees the space */
@@ -90,12 +91,12 @@ class BinomialHeap[T](initialGetKey: T => Long, val maxsize: Int)(implicit val X
     while (true)
       if (
         leftChild(position) < msize &&
-        GetKey(heapArray(position)) > GetKey(heapArray(leftChild(position)))
+        priority(heapArray(position)) > priority(heapArray(leftChild(position)))
       ) {
         // examiner aussi left child
         if (
           rightChild(position) < msize &&
-          GetKey(heapArray(rightChild(position))) < GetKey(heapArray(leftChild(position)))
+          priority(heapArray(rightChild(position))) < priority(heapArray(leftChild(position)))
         ) {
           // c'est avec le right child qu'il faut inverser
           swapPositions(position, rightChild(position))
@@ -106,7 +107,7 @@ class BinomialHeap[T](initialGetKey: T => Long, val maxsize: Int)(implicit val X
           position = leftChild(position)
         }
       } else if (
-        rightChild(position) < msize && GetKey(heapArray(position)) > GetKey(
+        rightChild(position) < msize && priority(heapArray(position)) > priority(
           heapArray(rightChild(position))
         )
       ) {
@@ -123,7 +124,7 @@ class BinomialHeap[T](initialGetKey: T => Long, val maxsize: Int)(implicit val X
     var position = startposition
     while (true) {
       val fatherposition: Int = father(position)
-      if (fatherposition >= 0 && GetKey(heapArray(position)) < GetKey(heapArray(fatherposition))) {
+      if (fatherposition >= 0 && priority(heapArray(position)) < priority(heapArray(fatherposition))) {
         swapPositions(position, fatherposition)
         position = fatherposition
       } else {
@@ -140,7 +141,7 @@ class BinomialHeap[T](initialGetKey: T => Long, val maxsize: Int)(implicit val X
   /** O(firsts) */
   override def getFirsts: List[T] = {
     def ExploreFirsts(value: Long, startposition: Int, acc: List[T]): List[T] = {
-      if (startposition < msize && GetKey(heapArray(startposition)) == value) {
+      if (startposition < msize && priority(heapArray(startposition)) == value) {
         val acc1 = ExploreFirsts(value, leftChild(startposition), heapArray(startposition) :: acc)
         ExploreFirsts(value, rightChild(startposition), acc1)
       } else {
@@ -148,11 +149,13 @@ class BinomialHeap[T](initialGetKey: T => Long, val maxsize: Int)(implicit val X
       }
     }
     if (msize == 0L) List.empty
-    else ExploreFirsts(GetKey(heapArray(0)), 0, List.empty)
+    else ExploreFirsts(priority(heapArray(0)), 0, List.empty)
   }
 
   /** O(1L) */
-  override def getFirst: T = heapArray(0)
+  override def getFirst: T = {
+    heapArray(0)
+  }
 
   /** O(log(n)) */
   override def popFirst(): T = {
@@ -175,8 +178,8 @@ class BinomialHeap[T](initialGetKey: T => Long, val maxsize: Int)(implicit val X
   override def popFirsts: List[T] = {
     if (isEmpty) return List.empty
     var acc = List(popFirst())
-    val key = GetKey(acc.head)
-    while (!isEmpty && GetKey(getFirst) == key) {
+    val key = priority(acc.head)
+    while (!isEmpty && priority(getFirst) == key) {
       acc = popFirst() :: acc
     }
     acc
@@ -243,6 +246,7 @@ class BinomialHeapWithMove[T](getKey: T => Long, val maxsize: Int)(
 
   def insert(elem: T): Unit = {
     // insert en derniere position, puis bubble up
+    // Extends ==> juste ajouter ligne 2
     heapArray(size) = elem
     position += ((elem, size))
     size += 1
@@ -514,6 +518,7 @@ class BinomialHeapWithMoveExtMem[T](
     swapPositions(0, size - 1)
     size -= 1
     position -= toreturn
+    // TODO : missing heapArray(size) == null
     pushDown(0)
     toreturn
   }
@@ -528,10 +533,12 @@ class BinomialHeapWithMoveExtMem[T](
     if (startposition == size - 1) {
       size -= 1
       position -= elem
+      // TODO : missing heapArray(size) == null
     } else {
       swapPositions(startposition, size - 1)
       size -= 1
       position -= elem
+      // TODO : missing heapArray(size) == null
       pushDown(pushUp(startposition))
     }
   }
