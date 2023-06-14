@@ -35,7 +35,6 @@ class MagicBoolArrayTestSuite(magicArrayTester: AbstractMagicArrayTester)
   test(s"${magicArrayTester.typeOfArray} : Initial array is correct when initiated at false") {
     val array = magicArrayTester.mkArray(10)
 
-    println(array.indicesAtTrue.mkString(";"))
     array.indicesAtTrue.size should equal(0)
   }
 
@@ -202,7 +201,7 @@ class MagicBoolArrayTestSuite(magicArrayTester: AbstractMagicArrayTester)
 
 }
 
-class Toto
+class MagicBoolArrayTestSuites
     extends Suites(
       new MagicBoolArrayTestSuite(new MagicBoolArrayTester),
       new MagicBoolArrayTestSuite(new IterableMagicBoolArrayTester)
