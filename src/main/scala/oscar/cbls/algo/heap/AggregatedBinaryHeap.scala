@@ -13,77 +13,79 @@
 
 package oscar.cbls.algo.heap
 
-/** This class is a faster version of a heap, where several items stored in it have same index. The
-  * heap is actually made of an array, storing lists containing items with same position. A binomial
-  * heap is maintained to record the lowest position in the heap. This is more efficient if it often
-  * occurs that elements have the same position. keys is assumed to start at zero.
+/** This binary heap implementation is dedicated to problem where it's highly likely to have
+  * multiple elements of the same priority.
   *
+  * The heap is actually made of an array, storing lists containing items with same priority. A
+  * binary heap is maintained to record the lowest priority in the heap. This is more efficient if
+  * it often occurs that elements have the same priority. priority is assumed to start at zero.
+  *
+  * @param priorityFunction
+  *   The function used to determine the priority of an element
+  * @param maxPriority
+  *   The maximum priority value of the heap
   * @author
   *   renaud.delandtsheer@cetic.be
   */
-class AggregatedBinaryHeap[T](priority: T => Int, val maxSize: Int)
+class AggregatedBinaryHeap[T](priorityFunction: T => Int, val maxPriority: Int)
     extends AbstractHeap[T] {
 
-  private[this] val b = new BinaryHeap[Int](a => a, maxSize)
+  // The binary heap maintaining the lowest priority value at the head
+  private[this] val binaryHeap = new BinaryHeap[Int](x => x, maxPriority)
 
-  private[this] val a: Array[List[T]] = Array.tabulate(maxSize)(_ => null)
+  // The array that store the elements at their priority value
+  private[this] val priorityToElements: Array[List[T]] =
+    Array.tabulate(maxPriority)(_ => List.empty)
 
-  private[this] var checkEmpty: Boolean = true
+  override def isEmpty: Boolean = binaryHeap.isEmpty
 
-  /** makes the datastruct empty* */
+  override def size: Int = priorityToElements.map(_.size).sum
+
   override def dropAll(): Unit = {
-    for (i <- b) a(i) = null
-    checkEmpty = true
-    b.dropAll()
+    for (i <- binaryHeap) priorityToElements(i) = List.empty
+    binaryHeap.dropAll()
   }
 
   override def insert(elem: T): Unit = {
-    val position              = priority(elem)
-    val otherWithSamePosition = a(position)
-    if (otherWithSamePosition == null || otherWithSamePosition.isEmpty) {
-      a(position) = List(elem)
-      b.insert(position)
-      checkEmpty = false
+    val priority              = priorityFunction(elem)
+    val otherWithSamePriority = priorityToElements(priority)
+    if (otherWithSamePriority.isEmpty) {
+      priorityToElements(priority) = List(elem)
+      binaryHeap.insert(priority)
     } else {
-      // this is the desired branch, as it is O(1L)
-      a(position) = elem :: otherWithSamePosition
+      priorityToElements(priority) = elem :: otherWithSamePriority
     }
   }
 
+  override def getFirst: T = priorityToElements(binaryHeap.getFirst).head
+
   override def getFirsts: List[T] = {
-    a(b.getFirst)
+    priorityToElements(binaryHeap.getFirst)
   }
 
-  override def popFirsts: List[T] = {
-    val position = b.popFirst()
-    val toReturn = a(position)
-    a(position) = List.empty
-    checkEmpty = b.isEmpty
+  override def popFirst(): T = {
+    val position = binaryHeap.getFirst
+    val list     = priorityToElements(position)
+    val toReturn = list.head
+    priorityToElements(position) = list.tail
+    if (list.tail.isEmpty) {
+      binaryHeap.popFirst()
+    }
     toReturn
   }
 
-  override def isEmpty: Boolean = checkEmpty
-  override def size: Int        = throw new Error("too inefficient")
-
-  override def getFirst: T = a(b.getFirst).head
-
-  override def popFirst(): T = {
-    val position = b.getFirst
-    val liste    = a(position)
-    val toreturn = liste.head
-    a(position) = liste.tail
-    if (liste.tail.isEmpty) {
-      b.popFirst()
-      checkEmpty = b.isEmpty
-    }
-    toreturn
+  override def popFirsts: List[T] = {
+    val position = binaryHeap.popFirst()
+    val toReturn = priorityToElements(position)
+    priorityToElements(position) = List.empty
+    toReturn
   }
 
   override def iterator: Iterator[T] = {
     var acc: List[T] = List()
-    for (position <- b) {
-      var curr = a(position)
-      while (curr != null) {
+    for (position <- binaryHeap) {
+      var curr = priorityToElements(position)
+      while (curr != List.empty) {
         acc = curr.head :: acc
         curr = curr.tail
       }
