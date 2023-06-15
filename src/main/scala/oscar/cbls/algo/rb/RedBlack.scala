@@ -286,7 +286,7 @@ trait RedBlackTreeMap[@specialized(Int) V] {
 }
 
 // A leaf node.
-case class L[@specialized(Int) V]() extends RedBlackTreeMap[V] {
+private[rb] case class L[@specialized(Int) V]() extends RedBlackTreeMap[V] {
 
   def anyValue: Option[V] = None
 
@@ -374,7 +374,7 @@ case class L[@specialized(Int) V]() extends RedBlackTreeMap[V] {
   ): RedBlackTreeMap[V] = this
 }
 
-object T {
+private[rb] object T {
   def unapply[V](
     t: T[V]
   ): Option[(Boolean, RedBlackTreeMap[V], Int, Option[V], RedBlackTreeMap[V])] = {
@@ -386,7 +386,7 @@ object T {
 }
 
 // A tree node.
-class T[@specialized(Int) V](
+private[rb] class T[@specialized(Int) V](
   private[this] val c: Boolean,
   private[this] val l: RedBlackTreeMap[V],
   private[this] val k: Int,
