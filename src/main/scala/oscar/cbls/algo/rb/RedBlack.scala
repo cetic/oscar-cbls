@@ -58,6 +58,117 @@ class IntVCouple[@specialized V](val k: Int, val value: V)
 
 import oscar.cbls.algo.rb.RedBlackTreeMapLib._
 
+// A helper object.
+object RedBlackTreeMap {
+
+  // empty: Converts an order-able type into an empty RBMap.
+  def empty[@specialized(Int) V]: RedBlackTreeMap[V] = L[V]()
+
+  // apply: Assumes an implicit conversion.
+  def apply[@specialized(Int) V](args: Iterable[(Int, V)]): RedBlackTreeMap[V] = {
+    var currentMap: RedBlackTreeMap[V] = L()
+    for ((k, v) <- args) {
+      currentMap = currentMap.insert(k, v)
+    }
+    currentMap
+  }
+
+  /** make the red black tree out of already sorted couples (key,value) they must be sorted by
+    * increasing order of key, and a key can only be present once. There is no check of these
+    * properties This is O(n); thus faster than a n*log(n) if you were building it from unsorted
+    * pairs
+    * @param args
+    * @tparam V
+    * @return
+    */
+  def makeFromSorted[@specialized(Int) V](args: Iterable[(Int, V)]): RedBlackTreeMap[V] = {
+    // root is to be black, beside alternate red and black
+    val a = args.toArray
+    if (args.size <= 3) this.apply(args)
+    else myMakeFromSorted(a, 0, a.length - 1, targetIsRed = false)
+  }
+
+  def makeFromSortedContinuousArray[@specialized V](args: Array[V]): RedBlackTreeMap[V] = {
+    if (args.length == 0) RedBlackTreeMap.empty[V]
+    else myMakeFromContinuousSorted(args, 0, args.length - 1, targetIsRed = false)
+  }
+
+  private def myMakeFromContinuousSorted[@specialized(Int) V](
+    args: Array[V],
+    fromIncluded: Int,
+    toIncluded: Int,
+    targetIsRed: Boolean
+  ): RedBlackTreeMap[V] = {
+    // root is to be black, beside alternate red and black
+    if (fromIncluded == toIncluded) {
+      val value = args(fromIncluded)
+      T(targetIsRed, L(), fromIncluded, Some(value), L())
+    } else if (fromIncluded + 1 == toIncluded) {
+      val valueL = args(fromIncluded)
+      val valueH = args(toIncluded)
+      T(
+        targetIsRed,
+        T(!targetIsRed, L(), fromIncluded, Some(valueL), L()),
+        toIncluded,
+        Some(valueH),
+        L()
+      )
+    } else {
+      // there is a middle point
+      val middlePoint = (fromIncluded + toIncluded) / 2
+      val left  = myMakeFromContinuousSorted(args, fromIncluded, middlePoint - 1, !targetIsRed)
+      val right = myMakeFromContinuousSorted(args, middlePoint + 1, toIncluded, !targetIsRed)
+      val value = args(middlePoint)
+      T(targetIsRed, left, middlePoint, Some(value), right)
+    }
+  }
+
+  /** make the red black tree out of already sorted couples (key,value) they must be sorted by
+    * increasing order of key, and a key can only be present once. There is no check of these
+    * properties This is O(n); thus faster than a n*log(n) if you were building it from unsorted
+    * pairs
+    * @param args
+    * @tparam V
+    * @return
+    */
+  def makeFromSortedArray[@specialized(Int) V](args: Array[(Int, V)]): RedBlackTreeMap[V] = {
+    // root is to be black, beside alternate red and black
+    if (args.length <= 1) this.apply(args)
+    else myMakeFromSorted(args, 0, args.length - 1, targetIsRed = false)
+  }
+
+  private def myMakeFromSorted[@specialized(Int) V](
+    args: Array[(Int, V)],
+    fromIncluded: Int,
+    toIncluded: Int,
+    targetIsRed: Boolean
+  ): RedBlackTreeMap[V] = {
+    // root is to be black, beside alternate red and black
+    if (fromIncluded == toIncluded) {
+      val (key, value) = args(fromIncluded)
+      T(targetIsRed, L(), key, Some(value), L())
+    } else if (fromIncluded + 1 == toIncluded) {
+      val (keyL, valueL) = args(fromIncluded)
+      val (keyH, valueH) = args(toIncluded)
+
+      assert(keyH > keyL, "Unsorted array")
+
+      T(targetIsRed, T(!targetIsRed, L(), keyL, Some(valueL), L()), keyH, Some(valueH), L())
+    } else {
+      // there is a middle point
+      val middlePoint  = (fromIncluded + toIncluded) / 2
+      val left         = myMakeFromSorted(args, fromIncluded, middlePoint - 1, !targetIsRed)
+      val right        = myMakeFromSorted(args, middlePoint + 1, toIncluded, !targetIsRed)
+      val (key, value) = args(middlePoint)
+
+      assert(left.asInstanceOf[T[V]].pk < key, "Unsorted array")
+      assert(right.asInstanceOf[T[V]].pk > key, "Unsorted array")
+
+      T(targetIsRed, left, key, Some(value), right)
+    }
+  }
+}
+
 //must use trait here because of specialization, a trait is needed here.
 // we ensure that this trait is compiled into a java interface by avoiding method code in the trait.
 //as a consequence, there are duplicates in the classes implementing this trait.
@@ -494,200 +605,6 @@ class T[@specialized(Int) V](
       } else {
         new T(c, newLeft, k, v, newRight)
       }
-    }
-  }
-}
-
-// A helper object.
-object RedBlackTreeMap {
-
-  // empty: Converts an order-able type into an empty RBMap.
-  def empty[@specialized(Int) V]: RedBlackTreeMap[V] = L[V]()
-
-  // apply: Assumes an implicit conversion.
-  def apply[@specialized(Int) V](args: Iterable[(Int, V)]): RedBlackTreeMap[V] = {
-    var currentMap: RedBlackTreeMap[V] = L()
-    for ((k, v) <- args) {
-      currentMap = currentMap.insert(k, v)
-    }
-    currentMap
-  }
-
-  /** make the red black tree out of already sorted couples (key,value) they must be sorted by
-    * increasing order of key, and a key can only be present once. There is no check of these
-    * properties This is O(n); thus faster than a n*log(n) if you were building it from unsorted
-    * pairs
-    * @param args
-    * @tparam V
-    * @return
-    */
-  def makeFromSorted[@specialized(Int) V](args: Iterable[(Int, V)]): RedBlackTreeMap[V] = {
-    // root is to be black, beside alternate red and black
-    val a = args.toArray
-    if (args.size <= 3) this.apply(args)
-    else myMakeFromSorted(a, 0, a.length - 1, targetIsRed = false)
-  }
-
-  def makeFromSortedContinuousArray[@specialized V](args: Array[V]): RedBlackTreeMap[V] = {
-    if (args.length == 0) RedBlackTreeMap.empty[V]
-    else myMakeFromContinuousSorted(args, 0, args.length - 1, targetIsRed = false)
-  }
-
-  private def myMakeFromContinuousSorted[@specialized(Int) V](
-    args: Array[V],
-    fromIncluded: Int,
-    toIncluded: Int,
-    targetIsRed: Boolean
-  ): RedBlackTreeMap[V] = {
-    // root is to be black, beside alternate red and black
-    if (fromIncluded == toIncluded) {
-      val value = args(fromIncluded)
-      T(targetIsRed, L(), fromIncluded, Some(value), L())
-    } else if (fromIncluded + 1 == toIncluded) {
-      val valueL = args(fromIncluded)
-      val valueH = args(toIncluded)
-      T(
-        targetIsRed,
-        T(!targetIsRed, L(), fromIncluded, Some(valueL), L()),
-        toIncluded,
-        Some(valueH),
-        L()
-      )
-    } else {
-      // there is a middle point
-      val middlePoint = (fromIncluded + toIncluded) / 2
-      val left  = myMakeFromContinuousSorted(args, fromIncluded, middlePoint - 1, !targetIsRed)
-      val right = myMakeFromContinuousSorted(args, middlePoint + 1, toIncluded, !targetIsRed)
-      val value = args(middlePoint)
-      T(targetIsRed, left, middlePoint, Some(value), right)
-    }
-  }
-
-  /** make the red black tree out of already sorted couples (key,value) they must be sorted by
-    * increasing order of key, and a key can only be present once. There is no check of these
-    * properties This is O(n); thus faster than a n*log(n) if you were building it from unsorted
-    * pairs
-    * @param args
-    * @tparam V
-    * @return
-    */
-  def makeFromSortedArray[@specialized(Int) V](args: Array[(Int, V)]): RedBlackTreeMap[V] = {
-    // root is to be black, beside alternate red and black
-    if (args.length <= 1) this.apply(args)
-    else myMakeFromSorted(args, 0, args.length - 1, targetIsRed = false)
-  }
-
-  private def myMakeFromSorted[@specialized(Int) V](
-    args: Array[(Int, V)],
-    fromIncluded: Int,
-    toIncluded: Int,
-    targetIsRed: Boolean
-  ): RedBlackTreeMap[V] = {
-    // root is to be black, beside alternate red and black
-    if (fromIncluded == toIncluded) {
-      val (key, value) = args(fromIncluded)
-      T(targetIsRed, L(), key, Some(value), L())
-    } else if (fromIncluded + 1 == toIncluded) {
-      val (keyL, valueL) = args(fromIncluded)
-      val (keyH, valueH) = args(toIncluded)
-
-      assert(keyH > keyL, "Unsorted array")
-
-      T(targetIsRed, T(!targetIsRed, L(), keyL, Some(valueL), L()), keyH, Some(valueH), L())
-    } else {
-      // there is a middle point
-      val middlePoint  = (fromIncluded + toIncluded) / 2
-      val left         = myMakeFromSorted(args, fromIncluded, middlePoint - 1, !targetIsRed)
-      val right        = myMakeFromSorted(args, middlePoint + 1, toIncluded, !targetIsRed)
-      val (key, value) = args(middlePoint)
-
-      assert(left.asInstanceOf[T[V]].pk < key, "Unsorted array")
-      assert(right.asInstanceOf[T[V]].pk > key, "Unsorted array")
-
-      T(targetIsRed, left, key, Some(value), right)
-    }
-  }
-}
-
-//le booléen: true le noeud a déjà été montré (dans un parcour gauche à droite)
-class RedBlackTreeMapExplorer[@specialized(Int) V](position: QList[(T[V], Boolean)]) {
-  def key: Int = position.head._1.pk
-  def value: V = position.head._1.pv.get
-
-  override def toString: String =
-    "RBPosition(key:" + key + " value:" + value + " stack:" + position.toList + ")"
-
-  def next: Option[RedBlackTreeMapExplorer[V]] = {
-
-    @tailrec
-    def unstack1(position: QList[(T[V], Boolean)]): QList[(T[V], Boolean)] = {
-      if (position == null) return null
-      val head = position.head
-      if (!head._2) {
-        // not presented yet, so we present this one
-        QList((head._1, true), position.tail)
-      } else {
-        // already presented, so unstack
-        unstack1(position.tail)
-      }
-    }
-
-    @tailrec
-    def descendToLeftMost(position: QList[(T[V], Boolean)]): QList[(T[V], Boolean)] = {
-      val headTree = position.head._1
-      headTree.pl match {
-        case t: T[V] => descendToLeftMost(QList((t, false), position))
-        case _       => QList((headTree, true), position.tail)
-      }
-    }
-
-    val newStack = position.head._1.pr match {
-      case t: T[V] => descendToLeftMost(QList((t, false), position))
-      case _       => unstack1(position)
-    }
-
-    if (newStack == null) None
-    else Some(new RedBlackTreeMapExplorer[V](newStack))
-  }
-
-  def prev: Option[RedBlackTreeMapExplorer[V]] = {
-    @tailrec
-    def unstack1(position: QList[(T[V], Boolean)]): QList[(T[V], Boolean)] = {
-      if (position == null) return null
-      val head = position.head
-      if (head._2) {
-        // already presented, so roll back to it.
-        QList((head._1, true), position.tail)
-      } else {
-        // already presented, so unstack
-        unstack1(position.tail)
-      }
-    }
-
-    @tailrec
-    def descendToRightMost(position: QList[(T[V], Boolean)]): QList[(T[V], Boolean)] = {
-      val headTree = position.head._1
-      headTree.pr match {
-        case t: T[V] => descendToRightMost(QList((t, true), position))
-        case _       => QList((headTree, true), position.tail)
-      }
-    }
-
-    val newStack = position.head._1.pl match {
-      case t: T[V] =>
-        descendToRightMost(QList((t, true), QList((position.head._1, false), position.tail)))
-      case _ => unstack1(position.tail)
-    }
-
-    if (newStack == null) None
-    else {
-      assert(
-        new RedBlackTreeMapExplorer[V](newStack).next.head.key == this.key,
-        "prev.next.key != this.key; this:" + this + " prev:" + new RedBlackTreeMapExplorer[V](
-          newStack
-        )
-      )
-      Some(new RedBlackTreeMapExplorer[V](newStack))
     }
   }
 }
