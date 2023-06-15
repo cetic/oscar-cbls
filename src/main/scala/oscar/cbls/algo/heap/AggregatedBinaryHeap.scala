@@ -82,14 +82,6 @@ class AggregatedBinaryHeap[T](priorityFunction: T => Int, val maxPriority: Int)
   }
 
   override def iterator: Iterator[T] = {
-    var acc: List[T] = List()
-    for (position <- binaryHeap) {
-      var curr = priorityToElements(position)
-      while (curr != List.empty) {
-        acc = curr.head :: acc
-        curr = curr.tail
-      }
-    }
-    acc.iterator
+    binaryHeap.iterator.flatMap(priorityToElements)
   }
 }
