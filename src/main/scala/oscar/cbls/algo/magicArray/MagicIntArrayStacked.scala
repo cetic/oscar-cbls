@@ -109,15 +109,17 @@ class MagicIntArrayStacked(maxLevel: Int, initVal: Int => Long, size: Int) exten
       for (changedID <- levelToIsValueChangedAtNextLevel(currentLevel - 1).indicesAtTrue) {
         levelToArray(newLevel)(changedID) = levelToArray(currentLevel)(changedID)
         levelToIsValueChangedAtNextLevel(newLevel)(changedID) = false
+        if (newLevel != 0)
+          levelToIsValueChangedAtNextLevel(newLevel - 1)(changedID) = true
       }
       currentLevel = newLevel
     }
   }
 
-  /**
-    * Creates a scala <code>Array</code> with the values of the current level
+  /** Creates a scala <code>Array</code> with the values of the current level
     *
-    * @return An array with the values of the current level
+    * @return
+    *   An array with the values of the current level
     */
   def cloneTopArray: Array[Long] = {
     Array.tabulate(size)(this(_))

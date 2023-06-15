@@ -1,4 +1,4 @@
-package oscar.cbls.test.algo
+package oscar.cbls.test.algo.magicArray
 
 import org.scalacheck.Gen
 import org.scalatest.matchers.should.Matchers
