@@ -21,10 +21,10 @@ package oscar.cbls.algo.heap
   * @author
   *   renaud.delandtsheer@cetic.be
   */
-class AggregatedBinomialHeap[T](priority: T => Int, val maxSize: Int)
+class AggregatedBinaryHeap[T](priority: T => Int, val maxSize: Int)
     extends AbstractHeap[T] {
 
-  private[this] val b = new BinomialHeap[Int](a => a, maxSize)
+  private[this] val b = new BinaryHeap[Int](a => a, maxSize)
 
   private[this] val a: Array[List[T]] = Array.tabulate(maxSize)(_ => null)
 

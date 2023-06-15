@@ -13,11 +13,60 @@
 
 package oscar.cbls.algo.heap
 
+/**
+ * This abstract class defines all the needed method that needs to be implemented in order to define a heap.
+ *
+ * Basically all the classical methods, insertion, access, remove
+ * @tparam T The type of items present in the heap
+ */
 abstract class AbstractHeap[T] extends Iterable[T] {
+
+  /** Change the current size to 0, hence no element has to be considered
+    */
   def dropAll(): Unit
+
+  /** Add a new element to the heap given his priority. Insertion at the end and bubble up.
+    *
+    * @param elem
+    *   the element to add
+    */
   def insert(elem: T): Unit
-  def getFirsts: List[T]
-  def popFirsts: List[T]
+
+  /** Return the first element of the heap without removing it
+    *
+    * @return
+    *   - null (heap is empty)
+    *   - The first element of the heap
+    */
   def getFirst: T
+
+  /** Return the firsts elements of the heap without removing them.
+    *
+    * Meaning all the elements having the higher priority.
+    *
+    * @return
+    *   - an empty List (heap is empty)
+    *   - The List of element having the higher priority
+    */
+  def getFirsts: List[T]
+
+  /** Pop the first element of the heap.
+    *
+    * Swap it with the last element of the heap and bubble it down
+    *
+    * @return
+    *   - null (heap is empty)
+    *   - the first element of the heap
+    */
   def popFirst(): T
+
+  /** Pop the first elements of the heap.
+    *
+    * Recursively pop one element and store its value. If the new head of the heap's priority isn't
+    * the same as the first element popped we are done.
+    *
+    * @return
+    *   The firsts elements of the heap
+    */
+  def popFirsts: List[T]
 }
