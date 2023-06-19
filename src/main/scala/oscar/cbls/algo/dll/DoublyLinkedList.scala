@@ -56,9 +56,12 @@ class DoublyLinkedList[T] extends Iterable[T] {
     d
   }
 
-  /** inserts <code>toInsert</code> after the position specified by <code>afterPosition</code>. if
+  /** inserts <code>toInsert</code> after the position specified by <code>afterPosition</code>. If
     * <code>afterPosition</code> is the phantom position, it is inserted as the first element (since
     * start and end phantom are the same)
+    * @param toInsert
+    * @param afterPosition
+    * @return
     */
   def insertAfter(toInsert: T, afterPosition: DLLStorageElement[T]): DLLStorageElement[T] = {
     val successor = afterPosition.next
@@ -68,7 +71,12 @@ class DoublyLinkedList[T] extends Iterable[T] {
     d
   }
 
-  /** adds the element at the end of the DLL */
+  /** adds the element at the end of the DLL
+    * @param elem
+    *   The element to enqueue
+    * @return
+    *   TODO
+    */
   def enqueue(elem: T): DLLStorageElement[T] = {
     val d = new DLLStorageElement[T](elem)
     phantom.prev.setNext(d)
@@ -76,7 +84,10 @@ class DoublyLinkedList[T] extends Iterable[T] {
     d
   }
 
-  /** removes the first element in the list and returns it; throws exception if empty */
+  /** removes the first element in the list and returns it; throws exception if empty
+    * @return
+    *   the element that has been dequeued
+    */
   def dequeue(): T = {
     val d = phantom.next
     assert(d != phantom)
@@ -84,9 +95,18 @@ class DoublyLinkedList[T] extends Iterable[T] {
     d.elem
   }
 
-  def +(elem: T): Unit             = { addElem(elem) }
+  /** Syntaxic sugar for [[DoublyLinkedList.addElem]]
+    */
+  def +(elem: T): Unit = { addElem(elem) }
+
+  /** Concatenate an iterable of elements to the DLL
+    *
+    * @param elems
+    *   the elements to concatenate
+    */
   def ++(elems: Iterable[T]): Unit = { for (elem <- elems) addElem(elem) }
 
+  /** Drop all the elements of the list */
   def dropAll(): Unit = {
     phantom.setNext(phantom)
   }
@@ -128,7 +148,7 @@ class DLLStorageElement[T](val elem: T) {
 /** @author
   *   renaud.delandtsheer@cetic.be
   * @param CurrentKey
-  *   the current key in the iteratot
+  *   the current key in the iterator
   * @param phantom
   *   the phantom element that indicates the beginning/end of the list
   * @tparam T
