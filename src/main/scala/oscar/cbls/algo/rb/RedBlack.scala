@@ -13,8 +13,6 @@
 
 package oscar.cbls.algo.rb
 
-import oscar.cbls.algo.quick.QList
-
 import scala.annotation.tailrec
 
 /** * Okasaki-style red-black tree maps. **
@@ -231,7 +229,7 @@ trait RedBlackTreeMap[@specialized(Int) V] {
   def positionOf(k: Int): Option[RedBlackTreeMapExplorer[V]]
   protected[rb] def positionOfAcc(
     k: Int,
-    positionAcc: QList[(T[V], Boolean)]
+    positionAcc: List[(T[V], Boolean)]
   ): Option[RedBlackTreeMapExplorer[V]]
 
   def anyValue: Option[V]
@@ -328,7 +326,7 @@ private[rb] case class L[@specialized(Int) V]() extends RedBlackTreeMap[V] {
 
   protected[rb] override def positionOfAcc(
     k: Int,
-    positionAcc: QList[(T[V], Boolean)]
+    positionAcc: List[(T[V], Boolean)]
   ): Option[RedBlackTreeMapExplorer[V]] = None
 
   // duplicates
@@ -489,11 +487,11 @@ private[rb] class T[@specialized(Int) V](
 
   protected[rb] override def positionOfAcc(
     k: Int,
-    positionAcc: QList[(T[V], Boolean)]
+    positionAcc: List[(T[V], Boolean)]
   ): Option[RedBlackTreeMapExplorer[V]] = {
-    if (k < this.k) l.positionOfAcc(k, QList((this, false), positionAcc))
-    else if (k > this.k) r.positionOfAcc(k, QList((this, true), positionAcc))
-    else Some(new RedBlackTreeMapExplorer[V](QList((this, true), positionAcc)))
+    if (k < this.k) l.positionOfAcc(k, (this, false) :: positionAcc)
+    else if (k > this.k) r.positionOfAcc(k, (this, true) :: positionAcc)
+    else Some(new RedBlackTreeMapExplorer[V]((this, true) :: positionAcc))
   }
 
   def hasLeft: Boolean  = l.isInstanceOf[T[V]]
