@@ -389,10 +389,10 @@ private[rb] class T[@specialized(Int) V](
   def unapply: Option[(Boolean, RedBlackTreeMap[V], Int, Option[V], RedBlackTreeMap[V])] =
     Some(c, l, k, v, r)
 
-  def pk = k
-  def pl = l
-  def pr = r
-  def pv = v
+  private[rb] def pk = k
+  private[rb] def pl = l
+  private[rb] def pr = r
+  private[rb] def pv = v
 
   assert(v.nonEmpty)
 
