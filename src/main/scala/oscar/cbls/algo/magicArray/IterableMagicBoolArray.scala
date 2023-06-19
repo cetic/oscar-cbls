@@ -46,7 +46,7 @@ class IterableMagicBoolArray(override val length: Int, initVal: Boolean = false)
   // (when approximation is active)
   private var positionsAtTrueOverApproximated: List[Int] = Nil
   // A magic array that says if a value is allready in the list of position that are true
-  private val isPositionInOverApproximationQList: MagicBoolArray = MagicBoolArray(length)
+  private val isPositionInOverApproximationList: MagicBoolArray = MagicBoolArray(length)
   // A flag that activates the over approximation
   // over approximation is only activated when all the values are set to false
   private var overApproximationIsActive: Boolean = !initVal
@@ -59,7 +59,7 @@ class IterableMagicBoolArray(override val length: Int, initVal: Boolean = false)
   override def all_=(value: Boolean): Unit = {
     super.all = value
     positionsAtTrueOverApproximated = Nil
-    isPositionInOverApproximationQList.all = false
+    isPositionInOverApproximationList.all = false
     if (value)
       overApproximationIsActive = false
     else
@@ -72,12 +72,12 @@ class IterableMagicBoolArray(override val length: Int, initVal: Boolean = false)
     super.update(id, value)
     if (value) {
       if (!oldValue) {
-        val alreadyIsInQList = isPositionInOverApproximationQList(id)
+        val alreadyIsInQList = isPositionInOverApproximationList(id)
         if (
           overApproximationIsActive &&
           !alreadyIsInQList
         ) {
-           isPositionInOverApproximationQList(id) = true
+           isPositionInOverApproximationList(id) = true
           positionsAtTrueOverApproximated = id :: positionsAtTrueOverApproximated
         }
       }
