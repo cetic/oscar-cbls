@@ -13,8 +13,6 @@
 
 package oscar.cbls.algo.rb
 
-import scala.annotation.tailrec
-
 /** * Okasaki-style red-black tree maps. **
   */
 
