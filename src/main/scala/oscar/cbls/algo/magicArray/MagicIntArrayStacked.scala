@@ -16,7 +16,7 @@ package oscar.cbls.algo.magicArray
   * the array is made in <code>O(level)</code> where <code>level</code> is the current level of
   * stack.
   *
-  * The array works the follwing: In each level, only the values that have changed are stored in the
+  * The array works the following: In each level, only the values that have changed are stored in the
   * array, and we keep a trace of the values that changed at next level. To retreive a value, we go
   * down the different level until we find a value that has been marked as changed
   *
@@ -34,7 +34,7 @@ class MagicIntArrayStacked(maxLevel: Int, initVal: Int => Long, size: Int) exten
   private[this] val levelToArray: Array[Array[Long]] = Array.tabulate(maxLevel + 1)(level =>
     if (level == 0) Array.tabulate(size)(initVal) else Array.fill(size)(0L)
   )
-  // The array that track the values that changed
+  // The array that tracks the values that changed
   private[this] val levelToIsValueChangedAtNextLevel: Array[IterableMagicBoolArray] =
     Array.tabulate(maxLevel)(level => new IterableMagicBoolArray(size, false))
   // The current level of the array
@@ -106,7 +106,7 @@ class MagicIntArrayStacked(maxLevel: Int, initVal: Int => Long, size: Int) exten
     } else {
       // save changes to lower level!
       val newLevel = currentLevel - 1
-      for (changedID <- levelToIsValueChangedAtNextLevel(currentLevel - 1).indicesAtTrue) {
+      for (changedID <- levelToIsValueChangedAtNextLevel(newLevel).indicesAtTrue) {
         levelToArray(newLevel)(changedID) = levelToArray(currentLevel)(changedID)
         levelToIsValueChangedAtNextLevel(newLevel)(changedID) = false
         if (newLevel != 0)

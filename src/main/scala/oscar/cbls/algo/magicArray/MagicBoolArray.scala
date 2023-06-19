@@ -35,9 +35,9 @@ object MagicBoolArray {
 /** This represents an array of boolean where setting all values to true or false can (almost every
   * time) be done in constant time.
   *
-  * It works the following way: Boolean are stored as Integer values and the array contains an
+  * It works the following way: Boolean are stored as Integer values and the array contains a
   * pivot. The value is true if the integer is greater or equal to the pivot and the value is false
-  * else. To put all the value at false, the idea is to change the value of the pivot to abs(pivot)
+  * otherwise. To put all the value at false, the idea is to change the value of the pivot to abs(pivot)
   * + 1. To put all the value at true, the idea is to change the value of the pivot to -abs(pivot) -
   * \1. If the pivot arrives to a threshold (Long.MaxValue - 10) the array is reinitialized (it
   * costs O(length))
