@@ -48,7 +48,7 @@ class MagicIntArrayStackedTestSuite
   }
 
   test("popLevel(false) keeps the changes") {
-    val array = new MagicIntArrayStacked(10, e => e, 10)
+    val array = new MagicIntArrayStacked(10, identity, 10)
 
     array(0) = -1
     array.pushLevel()
@@ -76,6 +76,8 @@ class MagicIntArrayStackedTestSuite
     array.popLevel(true)
 
     array(0) should be(-1)
+    array(1) should be(1)
+    array(2) should be(2)
   }
 
   test("update indice, then push then pop retrieves the expected element") {

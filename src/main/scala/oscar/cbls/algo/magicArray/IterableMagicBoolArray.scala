@@ -50,7 +50,7 @@ class IterableMagicBoolArray(override val length: Int, initVal: Boolean = false)
   // A flag that activates the over approximation
   // over approximation is only activated when all the values are set to false
   private var overApproximationIsActive: Boolean = !initVal
-  // check if at least on value has been set to false
+  // check if at least one value has been set to false
   private var anyIndividualSetToFalse: Boolean = false
 
   // The indices of the array as a list
@@ -58,15 +58,12 @@ class IterableMagicBoolArray(override val length: Int, initVal: Boolean = false)
 
   override def all_=(value: Boolean): Unit = {
     super.all = value
-    if (value) {
-      positionsAtTrueOverApproximated = Nil
-      isPositionInOverApproximationQList.all = false
+    positionsAtTrueOverApproximated = Nil
+    isPositionInOverApproximationQList.all = false
+    if (value)
       overApproximationIsActive = false
-    } else {
-      positionsAtTrueOverApproximated = Nil
-      isPositionInOverApproximationQList.all = false
+    else
       overApproximationIsActive = true
-    }
     // nbTrue= if(value) length else 0
   }
 

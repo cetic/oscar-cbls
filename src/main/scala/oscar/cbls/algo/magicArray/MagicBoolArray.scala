@@ -82,7 +82,7 @@ class MagicBoolArray(val length: Int, initVal: Boolean = false) {
     *   complexity is O(1)
     */
   def apply(id: Int): Boolean = {
-    require(0 <= id && id < length, "got id:" + id + "length:" + length)
+    require(0 <= id && id < length, "got id:" + id + " length:" + length)
     internalArray(id) >= pivot
   }
 

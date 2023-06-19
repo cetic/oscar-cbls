@@ -19,7 +19,7 @@ class ResettableArrayTestSuite
   // The idea of the test is the following:
   // We generate two arrays: one ResettableArray and one classical array that is used as the witness
   // We generate a list of updates, and after applying the list of update, we check that both arrays
-  // are the same. After applying the list of update, we reset the array and check that the arrays are
+  // are the same. After applying the list of updates, we reset the array and check that the arrays
   // contain the same values.
 
   /** The case class that presents an update
