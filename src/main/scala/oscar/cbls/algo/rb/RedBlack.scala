@@ -337,10 +337,10 @@ private[rb] case class L[@specialized(Int) V]() extends RedBlackTreeMap[V] {
   override def positionOf(k: Int): Option[RedBlackTreeMapExplorer[V]] = None
 
   // insert: Insert a value at a key.
-  override def insert(k: Int, v: V) = T(B, L(), k, Some(v), L())
+  override def insert(k: Int, v: V): RedBlackTreeMap[V] = T(B, L(), k, Some(v), L())
 
   // remove: Delete a key.
-  override def remove(k: Int) = this
+  override def remove(k: Int): RedBlackTreeMap[V] = this
 
   override def smallest: Option[(Int, V)] = None
 
@@ -386,7 +386,8 @@ private[rb] class T[@specialized(Int) V](
 
   def anyValue: Option[V] = v
 
-  def unapply = Some(c, l, k, v, r)
+  def unapply: Option[(Boolean, RedBlackTreeMap[V], Int, Option[V], RedBlackTreeMap[V])] =
+    Some(c, l, k, v, r)
 
   def pk = k
   def pl = l
@@ -505,10 +506,10 @@ private[rb] class T[@specialized(Int) V](
   override def positionOf(k: Int): Option[RedBlackTreeMapExplorer[V]] = positionOfAcc(k: Int, null)
 
   // insert: Insert a value at a key.
-  override def insert(k: Int, v: V) = blacken(modWith(k, (_, _) => Some(v)))
+  override def insert(k: Int, v: V): RedBlackTreeMap[V] = blacken(modWith(k, (_, _) => Some(v)))
 
   // remove: Delete a key.
-  override def remove(k: Int) = blacken(modWith(k, (_, _) => None))
+  override def remove(k: Int): RedBlackTreeMap[V] = blacken(modWith(k, (_, _) => None))
 
   override def smallest: Option[(Int, V)] = smallestBiggerOrEqual(Int.MinValue)
 
