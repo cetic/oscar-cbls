@@ -154,10 +154,10 @@ class BinaryHeap[T](priorityFunction: T => Long, maxSize: Int)(implicit val X: M
     bubbleUp(currentSize - 1)
   }
 
-  override def getFirst: T = {
+  override def getFirst: Option[T] = {
     currentSize match {
-      case 0 => null.asInstanceOf[T]
-      case _ => heapArray(0)
+      case 0 => None
+      case _ => Some(heapArray(0))
     }
   }
 
@@ -182,24 +182,24 @@ class BinaryHeap[T](priorityFunction: T => Long, maxSize: Int)(implicit val X: M
     exploreFirsts(priorityFunction(heapArray(0)), List(0), List.empty)
   }
 
-  override def popFirst(): T = {
+  override def popFirst(): Option[T] = {
     currentSize match {
-      case 0 => null.asInstanceOf[T]
+      case 0 => None
       case 1 =>
         currentSize = 0
-        heapArray(0)
+        Some(heapArray(0))
       case _ =>
         swapPositions(0, currentSize - 1)
         currentSize -= 1
         bubbleDown()
-        heapArray(currentSize)
+        Some(heapArray(currentSize))
     }
   }
 
   override def popFirsts: List[T] = {
     @tailrec def popFirsts(priorityToMatch: Long, firstItems: List[T]): List[T] = {
       if (currentSize >= 1 && priorityFunction(heapArray(0)) == priorityToMatch) {
-        popFirsts(priorityToMatch, popFirst() :: firstItems)
+        popFirsts(priorityToMatch, popFirst().get :: firstItems)
       } else {
         firstItems
       }
@@ -313,10 +313,13 @@ class BinaryHeapWithMove[T](priorityFunction: T => Long, val maxSize: Int)(
     super.insert(elem)
   }
 
-  override def popFirst(): T = {
-    val toReturn: T = super.popFirst()
-    itemsPosition -= toReturn
-    toReturn
+  override def popFirst(): Option[T] = {
+    super.popFirst() match {
+      case None => None
+      case Some(item) =>
+        itemsPosition -= item
+        Some(item)
+    }
   }
 
   /** Check if the state of the heap is correct.
@@ -419,10 +422,13 @@ class BinaryHeapWithMoveIntItem(priorityFunction: Int => Long, maxSize: Int, val
   /** removes the smallest element and returns its value
     * @return
     */
-  override def popFirst(): Int = {
-    val toReturn: Int = super.popFirst()
-    itemsPosition(toReturn) = -1
-    toReturn
+  override def popFirst(): Option[Int] = {
+    super.popFirst() match {
+      case None => None
+      case Some(elem) =>
+        itemsPosition(elem) = -1
+        Some(elem)
+    }
   }
 
   /** Check if the state of the heap is correct.

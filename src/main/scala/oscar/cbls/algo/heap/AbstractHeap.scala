@@ -35,10 +35,10 @@ abstract class AbstractHeap[T] extends Iterable[T] {
   /** Return the first element of the heap without removing it
     *
     * @return
-    *   - null (heap is empty)
-    *   - The first element of the heap
+    *   - None (heap is empty)
+    *   - Some(The first element of the heap)
     */
-  def getFirst: T
+  def getFirst: Option[T]
 
   /** Return the firsts elements of the heap without removing them.
     *
@@ -55,10 +55,10 @@ abstract class AbstractHeap[T] extends Iterable[T] {
     * Swap it with the last element of the heap and bubble it down
     *
     * @return
-    *   - null (heap is empty)
-    *   - the first element of the heap
+    *   - None (heap is empty)
+    *   - Some(the first element of the heap)
     */
-  def popFirst(): T
+  def popFirst(): Option[T]
 
   /** Pop the first elements of the heap.
     *

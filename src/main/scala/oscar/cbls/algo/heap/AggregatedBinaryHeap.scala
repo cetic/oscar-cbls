@@ -57,28 +57,44 @@ class AggregatedBinaryHeap[T](priorityFunction: T => Int, val maxPriority: Int)
     }
   }
 
-  override def getFirst: T = priorityToElements(binaryHeap.getFirst).head
-
-  override def getFirsts: List[T] = {
-    priorityToElements(binaryHeap.getFirst)
-  }
-
-  override def popFirst(): T = {
-    val position = binaryHeap.getFirst
-    val list     = priorityToElements(position)
-    val toReturn = list.head
-    priorityToElements(position) = list.tail
-    if (list.tail.isEmpty) {
-      binaryHeap.popFirst()
+  override def getFirst: Option[T] =
+    binaryHeap.getFirst match {
+      case None => None
+      case Some(priority) =>
+        Some(priorityToElements(priority).head)
     }
-    toReturn
+
+
+  override def getFirsts: List[T] =
+    binaryHeap.getFirst match {
+      case None => List.empty
+      case Some(priority) =>
+        priorityToElements(priority)
+    }
+
+  override def popFirst(): Option[T] = {
+    binaryHeap.getFirst match {
+      case None => None
+      case Some(priority) =>
+        val list = priorityToElements(priority)
+        val item = list.head
+        priorityToElements(priority) = list.tail
+        if (list.tail.isEmpty) {
+          binaryHeap.popFirst()
+        }
+        Some(item)
+    }
+
   }
 
   override def popFirsts: List[T] = {
-    val position = binaryHeap.popFirst()
-    val toReturn = priorityToElements(position)
-    priorityToElements(position) = List.empty
-    toReturn
+    binaryHeap.popFirst() match {
+      case None => List.empty
+      case Some(priority) =>
+        val list = priorityToElements(priority)
+        priorityToElements(priority) = List.empty
+        list
+    }
   }
 
   override def iterator: Iterator[T] = {
