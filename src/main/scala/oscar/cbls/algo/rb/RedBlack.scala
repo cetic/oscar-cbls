@@ -253,7 +253,7 @@ trait RedBlackTreeMap[@specialized(Int) V] {
     fromKeyIncluded: Int,
     toKeyIncluded: Int,
     deltaKey: Int,
-    transform: (V => V)
+    transform: V => V
   ): RedBlackTreeMap[V]
 
   /** this method ensures that the key are traversed in ascending order.
@@ -265,10 +265,10 @@ trait RedBlackTreeMap[@specialized(Int) V] {
   def update(
     fromKeyIncluded: Int,
     toKeyIncluded: Int,
-    transform: ((Int, V) => (Int, V))
+    transform: (Int, V) => (Int, V)
   ): RedBlackTreeMap[V]
 
-  def updateAll(deltaKey: Int, transform: (V => V)): RedBlackTreeMap[V] = {
+  def updateAll(deltaKey: Int, transform: V => V): RedBlackTreeMap[V] = {
     (this.smallest, this.biggest) match {
       case (None, None) => this
       case (Some((smallestKey, _)), Some((biggestKey, _))) =>
@@ -354,13 +354,13 @@ private[rb] case class L[@specialized(Int) V]() extends RedBlackTreeMap[V] {
     fromKeyIncluded: Int,
     toKeyIncluded: Int,
     deltaKey: Int,
-    transform: (V) => V
+    transform: V => V
   ): RedBlackTreeMap[V] = this
 
   override def update(
     fromKeyIncluded: Int,
     toKeyIncluded: Int,
-    transform: ((Int, V) => (Int, V))
+    transform: (Int, V) => (Int, V)
   ): RedBlackTreeMap[V] = this
 }
 
