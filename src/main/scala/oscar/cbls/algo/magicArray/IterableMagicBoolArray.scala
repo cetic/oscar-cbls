@@ -76,11 +76,11 @@ class IterableMagicBoolArray(override val length: Int, initVal: Boolean = false)
     if (value) {
       if (!oldValue) {
         val alreadyIsInQList = isPositionInOverApproximationQList(id)
-        isPositionInOverApproximationQList(id) = true
         if (
           overApproximationIsActive &&
           !alreadyIsInQList
         ) {
+           isPositionInOverApproximationQList(id) = true
           positionsAtTrueOverApproximated = id :: positionsAtTrueOverApproximated
         }
       }
