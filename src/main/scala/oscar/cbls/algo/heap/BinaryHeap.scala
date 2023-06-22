@@ -222,14 +222,13 @@ class BinaryHeap[T](priorityFunction: T => Long, maxSize: Int)(implicit val X: M
   *   The type of items in the heap
   */
 class BinaryHeapIterator[T](heapArray: Array[T], size: Int) extends Iterator[T] {
-  private var current: Int = 0
+  private var current: Int = -1
 
   def hasNext: Boolean = current < size
 
   def next(): T = {
-    val res = heapArray(current)
     current = current + 1
-    res
+    heapArray(current)
   }
 }
 
