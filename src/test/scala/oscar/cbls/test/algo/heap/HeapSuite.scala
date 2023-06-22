@@ -1,29 +1,60 @@
 package oscar.cbls.test.algo.heap
 
 import org.scalacheck.Gen
+import org.scalatest.Suites
 import org.scalatest.matchers.should.Matchers._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks._
 import org.scalatest.funsuite.AnyFunSuite
-import oscar.cbls.algo.heap.BinaryHeap
+import oscar.cbls.algo.heap._
 
 import scala.util.Random
 
-class BinaryHeapSuite extends AnyFunSuite {
+abstract class AbstractHeapTester {
+  val typeOfHeap: String
+
+  def mkHeap(size: Int): AbstractHeap[Int]
+}
+
+class BinaryHeapTester extends AbstractHeapTester {
+  override val typeOfHeap: String = "BinaryHeap"
+
+  override def mkHeap(size: Int) = new BinaryHeap(x => x, size)
+}
+
+class BinaryHeapWithMoveTester extends AbstractHeapTester {
+  override val typeOfHeap: String = "BinaryHeapWithMove"
+
+  override def mkHeap(size: Int) = new BinaryHeapWithMove(x => x, size)
+}
+
+class BinaryHeapWithMoveIntItemTester extends AbstractHeapTester {
+  override val typeOfHeap: String = "BinaryHeapWithMoveIntItem"
+
+  override def mkHeap(size: Int) = new BinaryHeapWithMoveIntItem(x => x, size, 200)
+}
+
+class AggregatedBinaryHeapTester extends AbstractHeapTester {
+  override val typeOfHeap: String = "AggregatedBinaryHeap"
+
+  override def mkHeap(size: Int) = new AggregatedBinaryHeap[Int](x => x, 200)
+}
+
+class HeapSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
 
   def genOperations(listOps: Gen[Operation]): Gen[List[Operation]] = for {
     size <- Gen.chooseNum(30, 100)
     list <- Gen.listOfN(size, listOps)
   } yield list
 
-  test("BinaryHeap : Batch operations keep expected heap") {
+  test(s"${heapTester.typeOfHeap} : Batch operations keep expected heap") {
     val gen = genOperations(
       Gen.frequency(
         (100, Insert()),
-        (10, Clear()),
+        (5, Clear()),
         (20, GetFirst()),
         (10, GetFirsts()),
-        (20, PopFirst()),
-        (10, PopFirsts())
+        (10, PopFirst()),
+        (5, PopFirsts())
       )
     )
 
@@ -32,7 +63,7 @@ class BinaryHeapSuite extends AnyFunSuite {
         val keys     = Random.shuffle(operations.indices.toList ::: operations.indices.toList)
         var values   = List[Int]()
         val heapSize = operations.count(_ == Insert()) + 1
-        val heap     = new BinaryHeap[Int](keys(_), heapSize)
+        val heap     = heapTester.mkHeap(heapSize)
 
         for (operation <- operations) {
           operation match {
@@ -56,6 +87,12 @@ class BinaryHeapSuite extends AnyFunSuite {
               }
 
             case GetFirsts() =>
+              val first = heap.getFirst
+              if(first.nonEmpty) {
+                first.get should be(values.min)
+              }
+
+            case GetFirsts() =>
               val firsts = heap.getFirsts
               for (elem <- firsts) {
                 keys(elem) should be(keys(firsts.head))
@@ -71,7 +108,7 @@ class BinaryHeapSuite extends AnyFunSuite {
 
         var list: List[Int] = List()
 
-        while (!heap.isEmpty) {
+        while (heap.nonEmpty) {
           list = heap.popFirst().get :: list
         }
 
@@ -102,3 +139,11 @@ class BinaryHeapSuite extends AnyFunSuite {
   case class Delete()    extends Operation
   case class Clear()     extends Operation
 }
+
+class HeapTestSuites
+  extends Suites(
+    new HeapSuite(new BinaryHeapTester),
+    new HeapSuite(new BinaryHeapWithMoveTester),
+    new HeapSuite(new BinaryHeapWithMoveIntItemTester),
+    new HeapSuite(new AggregatedBinaryHeapTester)
+  )

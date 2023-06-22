@@ -14,7 +14,7 @@
 package oscar.cbls.algo.heap
 
 import scala.annotation.tailrec
-import scala.collection.{mutable, Iterator}
+import scala.collection.Iterator
 import scala.collection.immutable.SortedMap
 
 /** This is an implementation of a binary min-heap.
@@ -227,8 +227,9 @@ class BinaryHeapIterator[T](heapArray: Array[T], size: Int) extends Iterator[T] 
   def hasNext: Boolean = current < size
 
   def next(): T = {
+    val res = heapArray(current)
     current = current + 1
-    heapArray(current)
+    res
   }
 }
 
