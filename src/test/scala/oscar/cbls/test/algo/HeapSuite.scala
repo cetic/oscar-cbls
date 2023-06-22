@@ -1,10 +1,10 @@
-package oscar.cbls.test.algo.heap
+package oscar.cbls.test.algo
 
 import org.scalacheck.Gen
 import org.scalatest.Suites
+import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks._
-import org.scalatest.funsuite.AnyFunSuite
 import oscar.cbls.algo.heap._
 
 import scala.util.Random
@@ -106,8 +106,10 @@ class HeapSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
           }
         }
 
-        var list: List[Int] = List()
+        heap.size should be(values.size)
+        heap.isEmpty should be(values.isEmpty)
 
+        var list: List[Int] = List()
         while (heap.nonEmpty) {
           list = heap.popFirst().get :: list
         }
