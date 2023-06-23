@@ -328,11 +328,11 @@ private[rb] case class L[@specialized(Int) V]() extends RedBlackTreeMap[V] {
   ): Option[RedBlackTreeMapExplorer[V]] = None
 
   // duplicates
-  def values: List[V] = List.empty
+  def values: List[V] = Nil
 
-  def content: List[(Int, V)] = List.empty
+  def content: List[(Int, V)] = Nil
 
-  override def keys: List[Int] = List.empty
+  override def keys: List[Int] = Nil
 
   override def positionOf(k: Int): Option[RedBlackTreeMapExplorer[V]] = None
 
@@ -497,13 +497,13 @@ private[rb] class T[@specialized(Int) V](
   def hasRight: Boolean = r.isInstanceOf[T[V]]
 
   // duplicates
-  override def values: List[V] = valuesAcc(List.empty)
+  override def values: List[V] = valuesAcc(Nil)
 
-  override def content: List[(Int, V)] = contentAcc(List.empty)
+  override def content: List[(Int, V)] = contentAcc(Nil)
 
-  override def keys: List[Int] = keysAcc(List.empty)
+  override def keys: List[Int] = keysAcc(Nil)
 
-  override def positionOf(k: Int): Option[RedBlackTreeMapExplorer[V]] = positionOfAcc(k: Int, null)
+  override def positionOf(k: Int): Option[RedBlackTreeMapExplorer[V]] = positionOfAcc(k: Int, Nil)
 
   // insert: Insert a value at a key.
   override def insert(k: Int, v: V): RedBlackTreeMap[V] = blacken(modWith(k, (_, _) => Some(v)))

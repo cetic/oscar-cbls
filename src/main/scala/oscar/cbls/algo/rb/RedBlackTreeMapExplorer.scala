@@ -52,7 +52,7 @@ class RedBlackTreeMapExplorer[@specialized(Int) V](position: List[(T[V], Boolean
       case _       => unstack1(position)
     }
 
-    if (newStack == null) None
+    if (newStack == Nil) None
     else Some(new RedBlackTreeMapExplorer[V](newStack))
   }
 
