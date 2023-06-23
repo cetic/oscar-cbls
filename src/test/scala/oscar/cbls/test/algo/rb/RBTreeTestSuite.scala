@@ -79,8 +79,8 @@ class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks wi
     forAll(nonSequentialTuplesList){ list =>
       whenever(list.nonEmpty){
         val tree = RedBlackTreeMap.makeFromSorted(list)
-        val max = list.last._1.toInt
-        val min = list.head._1.toInt
+        val max = list.last._1
+        val min = list.head._1
 
         val random = new Random()
         for(_ <- 0 until 100){
@@ -97,8 +97,8 @@ class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks wi
     forAll(nonSequentialTuplesList){ list =>
       whenever(list.nonEmpty){
         val tree = RedBlackTreeMap.makeFromSorted(list)
-        val max = list.last._1.toInt
-        val min = list.head._1.toInt
+        val max = list.last._1
+        val min = list.head._1
 
         val random = new Random()
         for(_ <- 0 until 100){
