@@ -34,8 +34,7 @@ class RBTreeExplorerTestSuite
   test("tree.smallestPosition returns expected value") {
     forAll(sequentialTuplesList) { list =>
       {
-        val tree = RedBlackTreeMap.makeFromSorted(list)
-
+        val tree          = RedBlackTreeMap.makeFromSorted(list)
         val expectedKey   = list.head._1
         val expectedValue = list.head._2
 
@@ -49,7 +48,6 @@ class RBTreeExplorerTestSuite
     forAll(sequentialTuplesList) { list =>
       {
         val tree = RedBlackTreeMap.makeFromSorted(list)
-
         tree.positionOf(-1) should be(None)
       }
     }
@@ -58,7 +56,6 @@ class RBTreeExplorerTestSuite
   test("Bottom-up iteration of explorer ") {
     forAll(sequentialTuplesList) { list =>
       {
-
         var explorationList = List[(Int, Int)]()
         val tree            = RedBlackTreeMap.makeFromSorted(list)
         var explorer        = tree.smallestPosition
@@ -66,7 +63,6 @@ class RBTreeExplorerTestSuite
           explorationList = explorationList ::: List((explorer.get.key, explorer.get.value))
           explorer = explorer.get.next
         }
-
         explorationList should be(tree.content)
       }
     }
@@ -75,7 +71,6 @@ class RBTreeExplorerTestSuite
   test("Top-down iteration of explorer ") {
     forAll(sequentialTuplesList) { list =>
       {
-
         var explorationList = List[(Int, Int)]()
         val tree            = RedBlackTreeMap.makeFromSorted(list)
         var explorer        = tree.biggestPosition
@@ -83,7 +78,6 @@ class RBTreeExplorerTestSuite
           explorationList = List((explorer.get.key, explorer.get.value)) ::: explorationList
           explorer = explorer.get.prev
         }
-
         explorationList should be(tree.content)
       }
     }

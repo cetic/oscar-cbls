@@ -79,13 +79,11 @@ class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks wi
   test("tree.biggestLowerOrEqual returns expected element") {
     forAll(nonSequentialTuplesList) { list =>
       whenever(list.nonEmpty) {
-        val tree = RedBlackTreeMap.makeFromSorted(list)
-        val max  = list.last._1
-        val min  = list.head._1
-
+        val tree   = RedBlackTreeMap.makeFromSorted(list)
+        val max    = list.last._1
+        val min    = list.head._1
         val random = new Random()
         for (_ <- 0 until 100) {
-
           val target     = min + random.nextInt((max - min) + 1)
           val tupleFound = tree.biggestLowerOrEqual(target)
           list.filter(t => t._1 <= target).last should be(tupleFound.get)
@@ -103,7 +101,6 @@ class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks wi
 
         val random = new Random()
         for (_ <- 0 until 100) {
-
           val target     = min + random.nextInt((max - min) + 1)
           val tupleFound = tree.smallestBiggerOrEqual(target)
           list.filter(t => t._1 >= target).head should be(tupleFound.get)
@@ -115,9 +112,9 @@ class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks wi
   test("tree.smallest returns expected element") {
     forAll(nonSequentialTuplesList) { list =>
       whenever(list.nonEmpty) {
-
-        val minTuple =
-          (-1, 50) // The generator does not generate negative values. This tuple is guaranteed to be the smallest
+        // The generator does not generate negative values.
+        // This tuple is guaranteed to be the smallest
+        val minTuple    = (-1, 50)
         val listWithMin = List[(Int, Int)](minTuple) ::: list
         val tree        = RedBlackTreeMap.makeFromSorted(listWithMin)
 
@@ -129,12 +126,9 @@ class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks wi
   test("tree.biggest returns expected element") {
     forAll(nonSequentialTuplesList) { list =>
       whenever(list.nonEmpty) {
-
-        val maxTuple =
-          (
-            1001,
-            50
-          ) // The generator does not generate values above 1000. This tuple is guaranteed to be the biggest
+        // The generator does not generate values above 1000.
+        // This tuple is guaranteed to be the biggest
+        val maxTuple    = (1001, 50)
         val listWithMax = list ::: List[(Int, Int)](maxTuple)
         val tree        = RedBlackTreeMap.makeFromSorted(listWithMax)
 
