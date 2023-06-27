@@ -15,6 +15,27 @@ package oscar.cbls.algo.heap
 
 import scala.annotation.tailrec
 
+object BinaryHeap {
+  def apply[T](priorityFunction: T => Long, maxSize: Int)(implicit manifest: Manifest[T]): BinaryHeap[T] = {
+    new BinaryHeap[T](priorityFunction, maxSize)
+  }
+
+  def apply[T](binaryHeapToCopy: BinaryHeap[T], priorityFunction: T => Long): BinaryHeap[T] = {
+    val maxSize       = binaryHeapToCopy.maxSize
+    implicit val manifest: Manifest[T] = binaryHeapToCopy.m
+    val newBinaryHeap = new BinaryHeap[T](priorityFunction, maxSize)
+    copyHeapContent(binaryHeapToCopy, newBinaryHeap)
+    newBinaryHeap
+  }
+
+  def copyHeapContent[T](fromBinaryHeap: BinaryHeap[T], toBinaryHeap: BinaryHeap[T]): Unit = {
+    val fromBinaryHeapIterator = fromBinaryHeap.iterator
+    while (fromBinaryHeapIterator.hasNext) {
+      toBinaryHeap.insert(fromBinaryHeapIterator.next())
+    }
+  }
+}
+
 /** This is an implementation of a binary min-heap.
   *
   * It maintains the order of the heap such that the first element is the one with the minimal
@@ -25,30 +46,15 @@ import scala.annotation.tailrec
   *   sort the heap content
   * @param maxSize
   *   the maximum number of elements that can be inserted in this heap
-  * @param X
+  * @param m
   *   the manifest of T, to create arrays of T's
   * @tparam T
   *   the type of elements included in the heap
   * @author
   *   renaud.delandtsheer@cetic.be, fabian.germeau@cetic.be
   */
-class BinaryHeap[T](priorityFunction: T => Long, maxSize: Int)(implicit val X: Manifest[T])
+class BinaryHeap[T](priorityFunction: T => Long, val maxSize: Int)(implicit val m: Manifest[T])
     extends AbstractHeap[T] {
-
-  // TODO : decide if we need to keep it or not
-  //
-  //  def changePriority_=(KeyGetter: T => Long): Unit = {
-  //    if (currentSize > 0L) {
-  //      val content: List[T] = this.toList
-  //      dropAll()
-  //      priority = KeyGetter
-  //      content foreach insert
-  //    } else {
-  //      priority = KeyGetter
-  //    }
-  //  }
-  //
-  //  def changePriority: T => Long = priority
 
   override def size: Int        = currentSize
   override def isEmpty: Boolean = currentSize == 0L

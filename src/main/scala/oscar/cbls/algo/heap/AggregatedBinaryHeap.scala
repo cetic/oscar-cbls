@@ -13,6 +13,27 @@
 
 package oscar.cbls.algo.heap
 
+
+object AggregatedBinaryHeap {
+  def apply[T](priorityFunction: T => Int, maxPriority: Int): AggregatedBinaryHeap[T] = {
+    new AggregatedBinaryHeap[T](priorityFunction, maxPriority)
+  }
+
+  def apply[T](aggregatedBinaryHeapToCopy: AggregatedBinaryHeap[T], priorityFunction: T => Int): AggregatedBinaryHeap[T] = {
+    val maxPriority       = aggregatedBinaryHeapToCopy.maxPriority
+    val newAggregatedBinaryHeap = new AggregatedBinaryHeap[T](priorityFunction, maxPriority)
+    copyHeapContent(aggregatedBinaryHeapToCopy, newAggregatedBinaryHeap)
+    newAggregatedBinaryHeap
+  }
+
+  def copyHeapContent[T](fromBinaryHeap: AggregatedBinaryHeap[T], toBinaryHeap: AggregatedBinaryHeap[T]): Unit = {
+    val fromBinaryHeapIterator = fromBinaryHeap.iterator
+    while (fromBinaryHeapIterator.hasNext) {
+      toBinaryHeap.insert(fromBinaryHeapIterator.next())
+    }
+  }
+}
+
 /** This binary heap implementation is dedicated to problem where it's highly likely to have
   * multiple elements of the same priority.
   *

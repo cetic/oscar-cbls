@@ -2,52 +2,71 @@ package oscar.cbls.algo.heap
 
 import scala.collection.immutable.SortedMap
 
+object BinaryHeapWithMove {
+  def apply[T](priorityFunction: T => Long, maxSize: Int)(implicit o: Ordering[T], m: Manifest[T]): BinaryHeapWithMove[T] = {
+    new BinaryHeapWithMove[T](priorityFunction, maxSize)
+  }
+
+  def apply[T](
+    binaryHeapWithMoveToCopy: BinaryHeapWithMove[T],
+    priorityFunction: T => Long,
+    maxSize: Int
+  ): BinaryHeapWithMove[T] = {
+    implicit val o: Ordering[T] = binaryHeapWithMoveToCopy.o
+    implicit val m: Manifest[T] = binaryHeapWithMoveToCopy.m
+    val newBinaryHeapWithMove = new BinaryHeapWithMove[T](priorityFunction, maxSize)
+    BinaryHeap.copyHeapContent(binaryHeapWithMoveToCopy,newBinaryHeapWithMove)
+    newBinaryHeapWithMove
+  }
+
+}
+
 /** This binary heap is less efficient than the [[oscar.cbls.algo.heap.BinaryHeap]] but it offers
- * more operations, such as delete and update value. It should be only used in a propagation
- * context.
- *
- * @param priorityFunction
- *   a function that returns an integer for each element inserted in the heap this value is used to
- *   sort the heap content
- * @param maxSize
- *   the maximum number of elements that can be inserted in this heap
- * @param X
- *   the manifest of T, to create arrays of T's
- * @tparam T
- *   the type of elements included in the heap
- * @author
- *   renaud.delandtsheer@cetic.be
- */
-class BinaryHeapWithMove[T](priorityFunction: T => Long, val maxSize: Int)(
-  implicit val A: Ordering[T],
-  override implicit val X: Manifest[T]
+  * more operations, such as delete and update value. It should be only used in a propagation
+  * context.
+  *
+  * @param priorityFunction
+  *   a function that returns an integer for each element inserted in the heap this value is used to
+  *   sort the heap content
+  * @param maxSize
+  *   the maximum number of elements that can be inserted in this heap
+  * @param m
+  *   the manifest of T, to create arrays of T's
+  * @tparam T
+  *   the type of elements included in the heap
+  * @author
+  *   renaud.delandtsheer@cetic.be
+  */
+class BinaryHeapWithMove[T](priorityFunction: T => Long, override val maxSize: Int)(
+  implicit val o: Ordering[T],
+  override implicit val m: Manifest[T]
 ) extends BinaryHeap[T](priorityFunction, maxSize) {
   private var itemsPosition: SortedMap[T, Int] = SortedMap.empty
 
   def contains(value: T): Boolean = itemsPosition.contains(value)
 
   /** Notify that one element of the heap has changed.
-   *
-   * One element of the heap has changed, we need to restore the state of the heap by bubbling up
-   * and down the element.
-   *
-   * @param elem
-   *   The element whose internal state has changed.
-   */
+    *
+    * One element of the heap has changed, we need to restore the state of the heap by bubbling up
+    * and down the element.
+    *
+    * @param elem
+    *   The element whose internal state has changed.
+    */
   def notifyChange(elem: T): Unit = {
     require(itemsPosition.contains(elem), s"Item $elem is not in the heap")
     bubbleDown(bubbleUp(itemsPosition(elem)))
   }
 
   /** Remove the desired element from the heap
-   *
-   * It's similar to the popFirst method, the only difference is that the removed element wasn't
-   * necessarily at the top of the heap so we need to bubble up and down
-   * @param elem
-   *   the element to remove
-   * @return
-   *   Whether or not an element has been removed
-   */
+    *
+    * It's similar to the popFirst method, the only difference is that the removed element wasn't
+    * necessarily at the top of the heap so we need to bubble up and down
+    * @param elem
+    *   the element to remove
+    * @return
+    *   Whether or not an element has been removed
+    */
   def removeElement(elem: T): Boolean = {
     itemsPosition.get(elem) match {
       case None => false
@@ -66,9 +85,9 @@ class BinaryHeapWithMove[T](priorityFunction: T => Long, val maxSize: Int)(
   }
 
   /** Get all the elements present in the heap
-   * @return
-   *   All the elements present in the heap
-   */
+    * @return
+    *   All the elements present in the heap
+    */
   def getElements: Iterable[T] = {
     itemsPosition.keys
   }
@@ -100,16 +119,19 @@ class BinaryHeapWithMove[T](priorityFunction: T => Long, val maxSize: Int)(
   }
 
   /** Check if the state of the heap is correct.
-   */
+    */
   def checkInternals(): Unit = {
-    require(heapArray.take(size).distinct.length == size, "Heap error : there are multiple times the same elements, it's not tolerated")
+    require(
+      heapArray.take(size).distinct.length == size,
+      "Heap error : there are multiple times the same elements, it's not tolerated"
+    )
     for (i <- heapArray.indices if i < size - 1) {
       if (leftChild(i) < size) {
         require(
           priorityFunction(heapArray(i)) <= priorityFunction(heapArray(leftChild(i))),
           s"heap error : Priority of ${heapArray(leftChild(i))} should be higher or equal to ${priorityFunction(
-            heapArray(i)
-          )} got ${priorityFunction(heapArray(leftChild(i)))}\n Heap Array : $this\n Indices : $i"
+              heapArray(i)
+            )} got ${priorityFunction(heapArray(leftChild(i)))}\n Heap Array : $this\n Indices : $i"
         )
         require(father(leftChild(i)) == i, "heap error " + this)
       }
@@ -117,8 +139,8 @@ class BinaryHeapWithMove[T](priorityFunction: T => Long, val maxSize: Int)(
         require(
           priorityFunction(heapArray(i)) <= priorityFunction(heapArray(rightChild(i))),
           s"heap error : Priority of ${heapArray(rightChild(i))} should be higher or equal to ${priorityFunction(
-            heapArray(i)
-          )} got ${priorityFunction(heapArray(rightChild(i)))}\n Heap Array : $this\n Indices : $i"
+              heapArray(i)
+            )} got ${priorityFunction(heapArray(rightChild(i)))}\n Heap Array : $this\n Indices : $i"
         )
         require(father(rightChild(i)) == i, "heap error " + this)
       }

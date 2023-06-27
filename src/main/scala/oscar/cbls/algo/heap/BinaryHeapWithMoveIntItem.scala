@@ -1,46 +1,69 @@
 package oscar.cbls.algo.heap
 
+object BinaryHeapWithMoveIntItem {
+  def apply(
+    priorityFunction: Int => Long,
+    maxSize: Int,
+    maxItemValue: Int
+  ): BinaryHeapWithMoveIntItem = {
+    new BinaryHeapWithMoveIntItem(priorityFunction, maxSize, maxItemValue)
+  }
+
+  def apply(
+    binaryHeapWithMoveIntItemToCopy: BinaryHeapWithMoveIntItem,
+    priorityFunction: Int => Long
+  ): BinaryHeapWithMoveIntItem = {
+    val maxSize      = binaryHeapWithMoveIntItemToCopy.maxSize
+    val maxItemValue = binaryHeapWithMoveIntItemToCopy.maxItemValue
+    val newBinaryHeapWithMoveIntItem =
+      new BinaryHeapWithMoveIntItem(priorityFunction, maxSize, maxItemValue)
+    BinaryHeap.copyHeapContent(binaryHeapWithMoveIntItemToCopy, newBinaryHeapWithMoveIntItem)
+    newBinaryHeapWithMoveIntItem
+  }
+
+}
+
 /** This binary heap is less efficient than the [[oscar.cbls.algo.heap.BinaryHeap]] but it offers
- * more operations, such as delete and update value. This implementation has been optimize to deal
- * with Integers items.
- *
- * It should be only used in a propagation context.
- * @author
- *   renaud.delandtsheer@cetic.be
- * @param priorityFunction
- * @param maxSize
- * @param maxItemValue
- */
+  * more operations, such as delete and update value. This implementation has been optimize to deal
+  * with Integers items.
+  *
+  * It should be only used in a propagation context.
+  * @author
+  *   renaud.delandtsheer@cetic.be
+  * @param priorityFunction
+  * @param maxSize
+  * @param maxItemValue
+  */
 class BinaryHeapWithMoveIntItem(priorityFunction: Int => Long, maxSize: Int, val maxItemValue: Int)
-  extends BinaryHeap[Int](priorityFunction, maxSize) {
+    extends BinaryHeap[Int](priorityFunction, maxSize) {
 
   private val itemsPosition: Array[Int] = Array.fill[Int](maxItemValue + 1)(-1)
 
   def contains(value: Int): Boolean = itemsPosition(value) != -1
 
   /** Notify that one element of the heap has changed.
-   *
-   * One element of the heap has changed, we need to restore the state of the heap by bubbling up
-   * and down the element.
-   *
-   * @param elem
-   *   The element whose internal state has changed.
-   */
+    *
+    * One element of the heap has changed, we need to restore the state of the heap by bubbling up
+    * and down the element.
+    *
+    * @param elem
+    *   The element whose internal state has changed.
+    */
   def notifyChange(elem: Int): Unit = {
     require(itemsPosition(elem) != -1, s"Item $elem doesn't seem to be in the heap")
     bubbleDown(bubbleUp(itemsPosition(elem)))
   }
 
   /** Remove the desired element from the heap
-   *
-   * It's similar to the popFirst method, the only difference is that the removed element wasn't
-   * necessarily at the top of the heap so we need to bubble up and down
-   *
-   * @param elem
-   *   the element to remove
-   * @return
-   *   Whether or not an element has been removed
-   */
+    *
+    * It's similar to the popFirst method, the only difference is that the removed element wasn't
+    * necessarily at the top of the heap so we need to bubble up and down
+    *
+    * @param elem
+    *   the element to remove
+    * @return
+    *   Whether or not an element has been removed
+    */
   def removeElement(elem: Int): Boolean = {
     if (contains(elem)) {
       val startPosition: Int = itemsPosition(elem)
@@ -76,8 +99,8 @@ class BinaryHeapWithMoveIntItem(priorityFunction: Int => Long, maxSize: Int, val
   }
 
   /** removes the smallest element and returns its value
-   * @return
-   */
+    * @return
+    */
   override def popFirst(): Option[Int] = {
     super.popFirst() match {
       case None => None
@@ -88,7 +111,7 @@ class BinaryHeapWithMoveIntItem(priorityFunction: Int => Long, maxSize: Int, val
   }
 
   /** Check if the state of the heap is correct.
-   */
+    */
   def checkInternals(): Unit = {
     for (i <- heapArray.indices if i < size - 1L) {
       if (leftChild(i) < size) {
