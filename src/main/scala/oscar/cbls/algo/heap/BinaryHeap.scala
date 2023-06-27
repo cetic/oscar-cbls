@@ -14,7 +14,6 @@
 package oscar.cbls.algo.heap
 
 import scala.annotation.tailrec
-import scala.collection.Iterator
 import scala.collection.immutable.SortedMap
 
 /** This is an implementation of a binary min-heap.
