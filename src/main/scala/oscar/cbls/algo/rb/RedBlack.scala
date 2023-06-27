@@ -603,8 +603,9 @@ private[rb] class T[@specialized(Int) V](
     else Some(new RedBlackTreeMapExplorer[V]((this, true) :: positionAcc))
   }
 
-  def hasLeft: Boolean  = l.isInstanceOf[T[V]]
-  def hasRight: Boolean = r.isInstanceOf[T[V]]
+  // unused; keeping here in case required in the future
+  // def hasLeft: Boolean  = l.isInstanceOf[T[V]]
+  // def hasRight: Boolean = r.isInstanceOf[T[V]]
 
   // duplicates
   override def values: List[V] = valuesAcc(Nil)
