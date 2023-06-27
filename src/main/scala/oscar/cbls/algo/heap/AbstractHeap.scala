@@ -68,5 +68,5 @@ abstract class AbstractHeap[T] extends Iterable[T] {
     * @return
     *   The firsts elements of the heap
     */
-  def popFirsts: List[T]
+  def popFirsts(): List[T]
 }

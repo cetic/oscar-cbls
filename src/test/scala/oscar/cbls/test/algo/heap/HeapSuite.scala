@@ -1,0 +1,303 @@
+package oscar.cbls.test.algo.heap
+
+import org.scalacheck.Gen
+import org.scalatest.Suites
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers._
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks._
+import oscar.cbls.algo.heap._
+
+import scala.util.Random
+
+abstract class AbstractHeapTester {
+  val typeOfHeap: String
+
+  def mkHeap(priorityFct: Int => Long, size: Int, maxItemValue: Int): AbstractHeap[Int]
+}
+
+class BinaryHeapTester extends AbstractHeapTester {
+  override val typeOfHeap: String = "BinaryHeap"
+
+  override def mkHeap(priorityFct: Int => Long, size: Int, maxItemValue: Int) =
+    new BinaryHeap(priorityFct, size)
+}
+
+class BinaryHeapWithMoveTester extends AbstractHeapTester {
+  override val typeOfHeap: String = "BinaryHeapWithMove"
+
+  override def mkHeap(priorityFct: Int => Long, size: Int, maxItemValue: Int) =
+    new BinaryHeapWithMove(priorityFct, size)
+}
+
+class BinaryHeapWithMoveIntItemTester extends AbstractHeapTester {
+  override val typeOfHeap: String = "BinaryHeapWithMoveIntItem"
+
+  override def mkHeap(priorityFct: Int => Long, size: Int, maxItemValue: Int) =
+    new BinaryHeapWithMoveIntItem(priorityFct, size, maxItemValue)
+}
+
+class AggregatedBinaryHeapTester extends AbstractHeapTester {
+  override val typeOfHeap: String = "AggregatedBinaryHeap"
+
+  // Transform a Int => Long into a Int => Int since the priority of the items is used as indices in the AggregatedBinaryHeap
+  override def mkHeap(
+    priorityFct: Int => Long,
+    size: Int,
+    maxItemValue: Int
+  ): AggregatedBinaryHeap[Int] = {
+    new AggregatedBinaryHeap[Int](x => priorityFct(x).toInt, maxItemValue)
+  }
+}
+
+class HeapSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
+
+  // We want to store [[HeapItem]]. Since we also have to test BinaryHeapWithMoveIntItem, the actual items that we will add in the heap have to be Integer.
+  //    - We will use the indices of this Array.
+  //    - The used priority function will be HeapItem.priority(...)
+  //    - That way we can modify the priority of the item (hence priority of the indices)
+  private val itemsToStore: Array[HeapItem] = Array.tabulate(100)(x => HeapItem(x))
+  private def priority(item: Int)           = itemsToStore(item).priority()
+  // Whether or not we authorise the test to change item priority
+  private val withMoves: Boolean = heapTester.isInstanceOf[BinaryHeapWithMoveTester] ||
+    heapTester.isInstanceOf[BinaryHeapWithMoveIntItemTester]
+  var witnessHeapAsList: List[Int] = List[Int]()
+
+  def genInsertOperation(): Gen[Insert] = for {
+    itemIndex <- Gen.choose(0, itemsToStore.length - 1)
+  } yield {
+    Insert({ println("yo"); itemIndex })
+  }
+
+  // Generate  from 30 to 100 operations according to the Gen[Operation] configuration
+
+  val genOperations: Gen[List[Operation]] = {
+    val genInsertion = Gen.oneOf(itemsToStore.indices.diff(witnessHeapAsList)).map(value => Insert(value))
+    val genClear     = Clear()
+    val genGetFirst  = GetFirst()
+    val genGetFirsts = GetFirsts()
+    val genPopFirst  = PopFirst()
+    val genPopFirsts = PopFirsts()
+    val genNotifyChanges = for {
+      pos <- Gen.choose(0,witnessHeapAsList.size)
+      value <- Gen.choose(0,itemsToStore.length-1)
+    } yield {
+      NotifyChanges(pos, value)
+    }
+    val genRemoveElem     = RemoveElem()
+    val genCheckInternals = CheckInternals()
+    val weightedOps = Gen.frequency(
+      (100, genInsertion),
+      (5, genClear),
+      (20, genGetFirst),
+      (10, genGetFirsts),
+      (10, genPopFirst),
+      (5, genPopFirsts),
+      (if (withMoves) 40 else 0, genNotifyChanges),
+      (if (withMoves) 10 else 0, genRemoveElem),
+      (if (withMoves) 20 else 0, genCheckInternals)
+    )
+    Gen.listOf(weightedOps)
+  }
+
+  test(s"${heapTester.typeOfHeap} : Batch operations keep expected heap") {
+    // Define the Operation generation configuration (here basically the frequency of each of them)
+
+    forAll(genOperations, minSuccessful(100)) { operations: List[Operation] =>
+      whenever(operations.size > 5) {
+        val heapMaxSize      = operations.count(_.isInstanceOf[Insert]) + 1
+        val heapMaxItemValue = itemsToStore.length
+        val heap             = heapTester.mkHeap(priority, heapMaxSize, heapMaxItemValue)
+        witnessHeapAsList = List.empty
+        itemsToStore.foreach(_.reset())
+
+        def sortedWitnessHeapAsList: List[Int] =
+          witnessHeapAsList.sortBy(priority)
+
+        for (operation <- operations) {
+          operation match {
+            case i: Insert =>
+              heap.insert(i.value)
+              witnessHeapAsList = i.value :: witnessHeapAsList
+
+            case p: PopFirst =>
+              p.heap = heap.popFirst()
+              if (witnessHeapAsList.nonEmpty) {
+                p.witness = Some(witnessHeapAsList.minBy(priority))
+                witnessHeapAsList = removeElem(witnessHeapAsList, witnessHeapAsList.minBy(priority))
+              } else {
+                p.witness = None
+              }
+
+            case ps: PopFirsts =>
+              ps.heap = heap.popFirsts()
+              if (witnessHeapAsList.nonEmpty) {
+                val newListAndRemovedItems = removeAllItemsWithPriority(
+                  witnessHeapAsList,
+                  priority(witnessHeapAsList.minBy(priority)),
+                  priority
+                )
+                witnessHeapAsList = newListAndRemovedItems._1
+                ps.witness = newListAndRemovedItems._2
+              } else {
+                ps.witness = List(-1)
+              }
+
+            case g: GetFirst =>
+              val first = heap.getFirst
+              g.first = first
+              if (first.nonEmpty) {
+                checkPriority(first.get, witnessHeapAsList.minBy(priority))
+              } else {
+                first.isEmpty should be(witnessHeapAsList.isEmpty)
+              }
+
+            case gs: GetFirsts =>
+              val firsts = heap.getFirsts
+              gs.firsts = firsts
+              for (elem <- firsts) {
+                checkPriority(elem, firsts.head)
+              }
+              for (
+                (heapElem, witnessElem) <- firsts zip sortedWitnessHeapAsList.take(firsts.size)
+              ) {
+                checkPriority(heapElem, witnessElem)
+              }
+
+            case c: Clear =>
+              heap.dropAll()
+              witnessHeapAsList = List[Int]()
+
+            case nc: NotifyChanges =>
+              val first = heap.getFirst
+              if (first.nonEmpty) {
+                val newValue    = nc.value
+                val pos         = nc.pos % witnessHeapAsList.size
+                val changedItem = witnessHeapAsList(pos)
+                itemsToStore(changedItem).changeValue(newValue)
+                heap match {
+                  case withMove: BinaryHeapWithMove[Int] => withMove.notifyChange(changedItem)
+                  case withMoveInt: BinaryHeapWithMoveIntItem =>
+                    withMoveInt.notifyChange(changedItem)
+                }
+              }
+
+            case r: RemoveElem =>
+              if (heap.nonEmpty) {
+                val indexOfItemToRemove = Random.nextInt(heap.size)
+                val itemToRemove        = heap.iterator.toList.drop(indexOfItemToRemove).head
+                r.removed = itemToRemove
+                heap match {
+                  case withMove: BinaryHeapWithMove[Int] => withMove.removeElement(itemToRemove)
+                  case withMoveInt: BinaryHeapWithMoveIntItem =>
+                    withMoveInt.removeElement(itemToRemove)
+                }
+                witnessHeapAsList = removeElem(witnessHeapAsList, itemToRemove)
+              }
+
+            case ci: CheckInternals =>
+              heap match {
+                case withMove: BinaryHeapWithMove[Int]      => withMove.checkInternals()
+                case withMoveInt: BinaryHeapWithMoveIntItem => withMoveInt.checkInternals()
+              }
+
+            case _ => // Unreachable ?
+          }
+        }
+
+        heap.size should be(witnessHeapAsList.size)
+        heap.isEmpty should be(witnessHeapAsList.isEmpty)
+
+        var list: List[Int] = List()
+        while (heap.nonEmpty) {
+          list = heap.popFirst().get :: list
+        }
+
+        list.map(priority).sorted should be(witnessHeapAsList.map(priority).sorted)
+      }
+    }
+  }
+
+  private def checkPriority(heapElem: Int, witnessElem: Int): Unit = {
+    priority(heapElem) should be(priority(witnessElem))
+  }
+
+  def removeElem(list: List[Int], elem: Int): List[Int] = {
+    val indexMin = list.indexOf(elem)
+    val res      = list.take(indexMin) ::: list.takeRight(list.size - indexMin - 1)
+
+    res
+  }
+
+  def removeElems(list: List[Int], elems: List[Int]): List[Int] = {
+    var tempList = list
+    for (i <- elems) {
+      tempList = removeElem(tempList, i)
+    }
+    tempList
+  }
+
+  def removeAllItemsWithPriority(
+    list: List[Int],
+    priority: Long,
+    priorityFct: Int => Long
+  ): (List[Int], List[Int]) = {
+    (
+      list.sortBy(priorityFct).dropWhile(x => priorityFct(x) == priority),
+      list.sortBy(priorityFct).takeWhile(x => priorityFct(x) == priority)
+    )
+  }
+
+  abstract sealed class Operation()
+  case class Insert(value: Int) extends Operation {
+    override def toString: String = s"Insert : $value"
+  }
+  case class GetFirst() extends Operation {
+    var first: Option[Int] = Some(-1)
+
+    override def toString: String = s"Get first : $first"
+  }
+  case class GetFirsts() extends Operation {
+    var firsts: List[Int] = List.empty
+
+    override def toString: String = s"Get firsts : $firsts"
+  }
+  case class PopFirst() extends Operation {
+    var heap: Option[Int]    = Some(-1)
+    var witness: Option[Int] = Some(-1)
+
+    override def toString: String = s"Pop first : $heap should be $witness"
+  }
+  case class PopFirsts() extends Operation {
+    var heap: List[Int]    = List.empty
+    var witness: List[Int] = List.empty
+
+    override def toString: String = s"Pop firsts : $heap should be $witness"
+  }
+  case class Clear() extends Operation
+  case class NotifyChanges(pos: Int, value: Int) extends Operation {
+    override def toString: String = {
+      s"NotifyChanges : pos $pos | value $value"
+    }
+  }
+  case class RemoveElem() extends Operation {
+    var removed: Int = -1
+
+    override def toString: String = s"RemoveElem : $removed"
+  }
+  case class CheckInternals() extends Operation
+
+  case class HeapItem(initialValue: Int) {
+    private var value: Int               = initialValue
+    def priority(): Long                 = value.toLong
+    def changeValue(newValue: Int): Unit = value = newValue
+    def reset(): Unit                    = value = initialValue
+  }
+}
+
+class HeapTestSuites
+    extends Suites(
+      new HeapSuite(new BinaryHeapTester),
+      new HeapSuite(new BinaryHeapWithMoveTester),
+      new HeapSuite(new BinaryHeapWithMoveIntItemTester),
+      new HeapSuite(new AggregatedBinaryHeapTester)
+    )

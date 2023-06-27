@@ -47,6 +47,10 @@ class AggregatedBinaryHeap[T](priorityFunction: T => Int, val maxPriority: Int)
   }
 
   override def insert(elem: T): Unit = {
+    require(
+      priorityFunction(elem) < maxPriority,
+      s"The priority value of this element exceed the maximum priority value allowed. ${priorityFunction(elem)} has to be lower than ${maxPriority}"
+    )
     val priority              = priorityFunction(elem)
     val otherWithSamePriority = priorityToElements(priority)
     if (otherWithSamePriority.isEmpty) {
@@ -63,7 +67,6 @@ class AggregatedBinaryHeap[T](priorityFunction: T => Int, val maxPriority: Int)
       case Some(priority) =>
         Some(priorityToElements(priority).head)
     }
-
 
   override def getFirsts: List[T] =
     binaryHeap.getFirst match {
@@ -87,7 +90,7 @@ class AggregatedBinaryHeap[T](priorityFunction: T => Int, val maxPriority: Int)
 
   }
 
-  override def popFirsts: List[T] = {
+  override def popFirsts(): List[T] = {
     binaryHeap.popFirst() match {
       case None => List.empty
       case Some(priority) =>

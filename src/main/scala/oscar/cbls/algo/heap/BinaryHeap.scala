@@ -149,6 +149,7 @@ class BinaryHeap[T](priorityFunction: T => Long, maxSize: Int)(implicit val X: M
   }
 
   override def insert(elem: T): Unit = {
+    require(currentSize < maxSize, "The heap is full")
     heapArray(currentSize) = elem
     currentSize += 1
     bubbleUp(currentSize - 1)
@@ -175,7 +176,7 @@ class BinaryHeap[T](priorityFunction: T => Long, maxSize: Int)(implicit val X: M
               List(rightChild(position), leftChild(position)) ::: tail
             exploreFirsts(value, newPositionsToExplore, heapArray(position) :: firstItems)
           } else {
-            firstItems
+            exploreFirsts(value, tail, firstItems)
           }
       }
     }
@@ -196,7 +197,7 @@ class BinaryHeap[T](priorityFunction: T => Long, maxSize: Int)(implicit val X: M
     }
   }
 
-  override def popFirsts: List[T] = {
+  override def popFirsts(): List[T] = {
     @tailrec def popFirsts(priorityToMatch: Long, firstItems: List[T]): List[T] = {
       if (currentSize >= 1 && priorityFunction(heapArray(0)) == priorityToMatch) {
         popFirsts(priorityToMatch, popFirst().get :: firstItems)
@@ -222,13 +223,13 @@ class BinaryHeap[T](priorityFunction: T => Long, maxSize: Int)(implicit val X: M
   *   The type of items in the heap
   */
 class BinaryHeapIterator[T](heapArray: Array[T], size: Int) extends Iterator[T] {
-  private var current: Int = -1
+  private var current: Int = 0
 
   def hasNext: Boolean = current < size
 
   def next(): T = {
     current = current + 1
-    heapArray(current)
+    heapArray(current - 1)
   }
 }
 
@@ -265,6 +266,7 @@ class BinaryHeapWithMove[T](priorityFunction: T => Long, val maxSize: Int)(
     *   The element whose internal state has changed.
     */
   def notifyChange(elem: T): Unit = {
+    require(itemsPosition.contains(elem), s"Item $elem is not in the heap")
     bubbleDown(bubbleUp(itemsPosition(elem)))
   }
 
@@ -302,6 +304,11 @@ class BinaryHeapWithMove[T](priorityFunction: T => Long, val maxSize: Int)(
     itemsPosition.keys
   }
 
+  override def dropAll(): Unit = {
+    itemsPosition = itemsPosition.empty
+    super.dropAll()
+  }
+
   override def swapPositions(position1: Int, position2: Int): Unit = {
     itemsPosition += ((heapArray(position1), position2))
     itemsPosition += ((heapArray(position2), position1))
@@ -309,6 +316,7 @@ class BinaryHeapWithMove[T](priorityFunction: T => Long, val maxSize: Int)(
   }
 
   override def insert(elem: T): Unit = {
+    require(!itemsPosition.contains(elem), s"Can't add the same element twice !")
     itemsPosition += ((elem, size))
     super.insert(elem)
   }
@@ -325,25 +333,33 @@ class BinaryHeapWithMove[T](priorityFunction: T => Long, val maxSize: Int)(
   /** Check if the state of the heap is correct.
     */
   def checkInternals(): Unit = {
+    require(heapArray.distinct.length == heapArray.length, "Heap error : there are multiple times the same elements, it's not tolerated")
     for (i <- heapArray.indices if i < size - 1) {
       if (leftChild(i) < size) {
         require(
           priorityFunction(heapArray(i)) <= priorityFunction(heapArray(leftChild(i))),
-          "heap error " + this + i
+          s"heap error : Priority of ${heapArray(leftChild(i))} should be higher or equal to ${priorityFunction(
+              heapArray(i)
+            )} got ${priorityFunction(heapArray(leftChild(i)))}\n Heap Array : $this\n Indices : $i"
         )
         require(father(leftChild(i)) == i, "heap error " + this)
       }
       if (rightChild(i) < size) {
         require(
           priorityFunction(heapArray(i)) <= priorityFunction(heapArray(rightChild(i))),
-          "heap error " + this
+          s"heap error : Priority of ${heapArray(rightChild(i))} should be higher or equal to ${priorityFunction(
+              heapArray(i)
+            )} got ${priorityFunction(heapArray(rightChild(i)))}\n Heap Array : $this\n Indices : $i"
         )
         require(father(rightChild(i)) == i, "heap error " + this)
       }
     }
 
     for (t <- itemsPosition.keys) {
-      assert(heapArray(itemsPosition(t)) == t)
+      assert(
+        heapArray(itemsPosition(t)) == t,
+        s"Item $t position = ${itemsPosition(t)} should be ${heapArray.indexOf(t)}"
+      )
     }
   }
 
@@ -379,6 +395,7 @@ class BinaryHeapWithMoveIntItem(priorityFunction: Int => Long, maxSize: Int, val
     *   The element whose internal state has changed.
     */
   def notifyChange(elem: Int): Unit = {
+    require(itemsPosition(elem) != -1, s"Item $elem doesn't seem to be in the heap")
     bubbleDown(bubbleUp(itemsPosition(elem)))
   }
 
@@ -408,6 +425,11 @@ class BinaryHeapWithMoveIntItem(priorityFunction: Int => Long, maxSize: Int, val
     } else false
   }
 
+  override def dropAll(): Unit = {
+    itemsPosition.map(_ => -1)
+    super.dropAll()
+  }
+
   override def swapPositions(position1: Int, position2: Int): Unit = {
     itemsPosition(heapArray(position1)) = position2
     itemsPosition(heapArray(position2)) = position1
@@ -415,6 +437,8 @@ class BinaryHeapWithMoveIntItem(priorityFunction: Int => Long, maxSize: Int, val
   }
 
   override def insert(elem: Int): Unit = {
+    require(!itemsPosition.contains(elem), s"Can't add the same element twice !")
+    require(currentSize < maxSize, s"The heap is full")
     itemsPosition(elem) = size
     super.insert(elem)
   }
