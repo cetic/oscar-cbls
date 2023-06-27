@@ -437,7 +437,7 @@ class BinaryHeapWithMoveIntItem(priorityFunction: Int => Long, maxSize: Int, val
   }
 
   override def insert(elem: Int): Unit = {
-    require(!itemsPosition.contains(elem), s"Can't add the same element twice !")
+    require(itemsPosition(elem) == -1, s"Can't add the same element twice !")
     require(currentSize < maxSize, s"The heap is full")
     itemsPosition(elem) = size
     super.insert(elem)
