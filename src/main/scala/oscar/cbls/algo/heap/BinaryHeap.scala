@@ -426,7 +426,7 @@ class BinaryHeapWithMoveIntItem(priorityFunction: Int => Long, maxSize: Int, val
   }
 
   override def dropAll(): Unit = {
-    itemsPosition.map(_ => -1)
+    heapArray.take(size).foreach(item => itemsPosition(item) = -1)
     super.dropAll()
   }
 
