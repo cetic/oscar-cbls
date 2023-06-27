@@ -52,7 +52,7 @@ class AggregatedBinaryHeapTester extends AbstractHeapTester {
 class HeapSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
 
   // We want to store [[HeapItem]]. Since we also have to test BinaryHeapWithMoveIntItem, the actual items that we will add in the heap have to be Integer.
-  //    - We will use the indices of this Array.
+  //    - The actual object stored in the heap will be the indices of this Array.
   //    - The used priority function will be HeapItem.priority(...)
   //    - That way we can modify the priority of the item (hence priority of the indices)
   private val itemsToStore: Array[HeapItem] = Array.tabulate(100)(x => HeapItem(x))
@@ -60,29 +60,23 @@ class HeapSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
   // Whether or not we authorise the test to change item priority
   private val withMoves: Boolean = heapTester.isInstanceOf[BinaryHeapWithMoveTester] ||
     heapTester.isInstanceOf[BinaryHeapWithMoveIntItemTester]
+
+  // The witness heap. It's basically a list, to get the first item we sort it by priority()
   var witnessHeapAsList: List[Int] = List[Int]()
 
-  def genInsertOperation(): Gen[Insert] = for {
-    itemIndex <- Gen.choose(0, itemsToStore.length - 1)
-  } yield {
-    Insert({ println("yo"); itemIndex })
-  }
-
-  // Generate  from 30 to 100 operations according to the Gen[Operation] configuration
-
+  // Operations generator
   val genOperations: Gen[List[Operation]] = {
-    val genInsertion = Gen.oneOf(itemsToStore.indices.diff(witnessHeapAsList)).map(value => Insert(value))
+    val genInsertion = {
+      // Insert one of the item to store
+      Gen.oneOf(itemsToStore.indices).map(value => Insert(value))
+    }
     val genClear     = Clear()
     val genGetFirst  = GetFirst()
     val genGetFirsts = GetFirsts()
     val genPopFirst  = PopFirst()
     val genPopFirsts = PopFirsts()
-    val genNotifyChanges = for {
-      pos <- Gen.choose(0,witnessHeapAsList.size)
-      value <- Gen.choose(0,itemsToStore.length-1)
-    } yield {
-      NotifyChanges(pos, value)
-    }
+    // Change the value of an item to store
+    val genNotifyChanges = Gen.choose(0, itemsToStore.length - 1).map(x => NotifyChanges(x))
     val genRemoveElem     = RemoveElem()
     val genCheckInternals = CheckInternals()
     val weightedOps = Gen.frequency(
@@ -92,18 +86,21 @@ class HeapSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
       (10, genGetFirsts),
       (10, genPopFirst),
       (5, genPopFirsts),
+      // Operation available only for "WithMove" heaps
       (if (withMoves) 40 else 0, genNotifyChanges),
       (if (withMoves) 10 else 0, genRemoveElem),
       (if (withMoves) 20 else 0, genCheckInternals)
     )
+    // Generate a random number of operations based on the associated weight
     Gen.listOf(weightedOps)
   }
 
   test(s"${heapTester.typeOfHeap} : Batch operations keep expected heap") {
-    // Define the Operation generation configuration (here basically the frequency of each of them)
-
+    // Generate a list of operations, the test is successful when having 100 successful runs
     forAll(genOperations, minSuccessful(100)) { operations: List[Operation] =>
-      whenever(operations.size > 5) {
+      // Only apply operations (and test) when we have at least 10 operations
+      whenever(operations.size > 10) {
+        // Create heap + reset witness heap and item to store values
         val heapMaxSize      = operations.count(_.isInstanceOf[Insert]) + 1
         val heapMaxItemValue = itemsToStore.length
         val heap             = heapTester.mkHeap(priority, heapMaxSize, heapMaxItemValue)
@@ -116,14 +113,29 @@ class HeapSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
         for (operation <- operations) {
           operation match {
             case i: Insert =>
-              heap.insert(i.value)
-              witnessHeapAsList = i.value :: witnessHeapAsList
+              try {
+                heap.insert(i.value)
+                witnessHeapAsList = i.value :: witnessHeapAsList
+              } catch {
+                // If the same element is already present in the heap, it should throw an error
+                // Here it's ok so we just catch it and move to the next operation
+                case e: IllegalArgumentException =>
+                  if (e.getMessage.contains("Can't add the same element twice"))
+                    witnessHeapAsList.contains(i.value) should be(true)
+                  else
+                    throw e
+              }
 
             case p: PopFirst =>
               p.heap = heap.popFirst()
               if (witnessHeapAsList.nonEmpty) {
-                p.witness = Some(witnessHeapAsList.minBy(priority))
-                witnessHeapAsList = removeElem(witnessHeapAsList, witnessHeapAsList.minBy(priority))
+                val heapAndWitnessSameFirstPriority =
+                  p.heap.nonEmpty && priority(p.heap.get) == priority(witnessHeapAsList.minBy(priority))
+                val removeElemFromWitness =
+                  if (heapAndWitnessSameFirstPriority) p.heap.get
+                  else witnessHeapAsList.minBy(priority)
+                p.witness = Some(removeElemFromWitness)
+                witnessHeapAsList = removeElem(witnessHeapAsList, removeElemFromWitness)
               } else {
                 p.witness = None
               }
@@ -171,13 +183,12 @@ class HeapSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
               val first = heap.getFirst
               if (first.nonEmpty) {
                 val newValue    = nc.value
-                val pos         = nc.pos % witnessHeapAsList.size
-                val changedItem = witnessHeapAsList(pos)
-                itemsToStore(changedItem).changeValue(newValue)
+                nc.itemId         = witnessHeapAsList.head
+                itemsToStore(nc.itemId).changeValue(newValue)
                 heap match {
-                  case withMove: BinaryHeapWithMove[Int] => withMove.notifyChange(changedItem)
+                  case withMove: BinaryHeapWithMove[Int] => withMove.notifyChange(nc.itemId)
                   case withMoveInt: BinaryHeapWithMoveIntItem =>
-                    withMoveInt.notifyChange(changedItem)
+                    withMoveInt.notifyChange(nc.itemId)
                 }
               }
 
@@ -274,9 +285,10 @@ class HeapSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
     override def toString: String = s"Pop firsts : $heap should be $witness"
   }
   case class Clear() extends Operation
-  case class NotifyChanges(pos: Int, value: Int) extends Operation {
+  case class NotifyChanges(value: Int) extends Operation {
+    var itemId: Int = -1
     override def toString: String = {
-      s"NotifyChanges : pos $pos | value $value"
+      s"NotifyChanges : itemId $itemId | value $value"
     }
   }
   case class RemoveElem() extends Operation {
