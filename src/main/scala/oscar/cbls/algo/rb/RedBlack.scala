@@ -13,9 +13,8 @@
 
 package oscar.cbls.algo.rb
 
-/** * Okasaki-style red-black tree maps. **
-  */
-
+// Object providing several helper methods.
+// Code partly inspired from https://tinyurl.com/2s3vczpd
 private object RedBlackTreeMapLib {
   val R = true
   val B = false
@@ -50,17 +49,31 @@ private object RedBlackTreeMapLib {
   }
 }
 
+// helper class for a key-value pair.
 private class IntVCouple[@specialized V](val k: Int, val value: V)
 
 import oscar.cbls.algo.rb.RedBlackTreeMapLib._
 
-// A helper object.
+/** Companion object providing factory methods.
+  *
+  * Keys in this map are always of type [[Int]], only values are parametrized.
+  */
 object RedBlackTreeMap {
 
-  // empty: Converts an order-able type into an empty RBMap.
+  /** Returns an empty map.
+    *
+    * @tparam V
+    *   type of the values
+    */
   def empty[@specialized(Int) V]: RedBlackTreeMap[V] = L[V]()
 
-  // apply: Assumes an implicit conversion.
+  /** Constructs a map from a given collection of key-value pairs.
+    *
+    * @tparam V
+    *   type of the values
+    * @param args
+    *   the collection of key-value pairs
+    */
   def apply[@specialized(Int) V](args: Iterable[(Int, V)]): RedBlackTreeMap[V] = {
     var currentMap: RedBlackTreeMap[V] = L()
     for ((k, v) <- args) {
@@ -69,13 +82,18 @@ object RedBlackTreeMap {
     currentMap
   }
 
-  /** make the red black tree out of already sorted couples (key,value) they must be sorted by
-    * increasing order of key, and a key can only be present once. There is no check of these
-    * properties This is O(n); thus faster than a n*log(n) if you were building it from unsorted
-    * pairs
+  /** Create a red-black tree out of already sorted key-value pairs, which must be sorted by
+    * increasing order of key, and where a key can only be present once.
+    *
+    * WARNING: No check of these properties on the inputs are performed, either at compile or at
+    * runtime. Use caution when invoking.
+    *
+    * @note
+    *   Performance is O(n); thus faster than a n*log(n) when building from unsorted pairs
     * @param args
+    *   the key-value collection, assumed to be sorted
     * @tparam V
-    * @return
+    *   Type of the values
     */
   def makeFromSorted[@specialized(Int) V](args: Iterable[(Int, V)]): RedBlackTreeMap[V] = {
     // root is to be black, beside alternate red and black
@@ -84,18 +102,33 @@ object RedBlackTreeMap {
     else myMakeFromSorted(a, 0, a.length - 1, targetIsRed = false)
   }
 
+  /** Create a red-black tree out of already sorted key-value pairs, which must be sorted by
+    * increasing order of key, and where a key can only be present once. Collection must be a
+    * continuous array.
+    *
+    * WARNING: No check of these properties on the inputs are performed, either at compile or at
+    * runtime. Use caution when invoking.
+    *
+    * @note
+    *   Performance is O(n); thus faster than a n*log(n) when building from unsorted pairs
+    * @param args
+    *   the key-value collection, assumed to be sorted
+    * @tparam V
+    *   Type of the values
+    */
   def makeFromSortedContinuousArray[@specialized V](args: Array[V]): RedBlackTreeMap[V] = {
     if (args.length == 0) RedBlackTreeMap.empty[V]
     else myMakeFromContinuousSorted(args, 0, args.length - 1, targetIsRed = false)
   }
 
+  // helper recursive method
   private def myMakeFromContinuousSorted[@specialized(Int) V](
     args: Array[V],
     fromIncluded: Int,
     toIncluded: Int,
     targetIsRed: Boolean
   ): RedBlackTreeMap[V] = {
-    // root is to be black, beside alternate red and black
+    // root is to be black, afterwards alternate red and black
     if (fromIncluded == toIncluded) {
       val value = args(fromIncluded)
       T(targetIsRed, L(), fromIncluded, Some(value), L())
@@ -119,20 +152,27 @@ object RedBlackTreeMap {
     }
   }
 
-  /** make the red black tree out of already sorted couples (key,value) they must be sorted by
-    * increasing order of key, and a key can only be present once. There is no check of these
-    * properties This is O(n); thus faster than a n*log(n) if you were building it from unsorted
-    * pairs
+  /** Create a red-black tree out of already sorted key-value pairs, which must be sorted by
+    * increasing order of key, and where a key can only be present once. Collection must be an
+    * array.
+    *
+    * WARNING: No check of these properties on the inputs are performed, either at compile or at
+    * runtime. Use caution when invoking.
+    *
+    * @note
+    *   Performance is O(n); thus faster than a n*log(n) when building from unsorted pairs
     * @param args
+    *   the key-value collection, assumed to be sorted
     * @tparam V
-    * @return
+    *   Type of the values
     */
   def makeFromSortedArray[@specialized(Int) V](args: Array[(Int, V)]): RedBlackTreeMap[V] = {
-    // root is to be black, beside alternate red and black
+    // root is to be black, afterwards alternate red and black
     if (args.length <= 1) this.apply(args)
     else myMakeFromSorted(args, 0, args.length - 1, targetIsRed = false)
   }
 
+  // helper recursive method
   private def myMakeFromSorted[@specialized(Int) V](
     args: Array[(Int, V)],
     fromIncluded: Int,
@@ -165,89 +205,151 @@ object RedBlackTreeMap {
   }
 }
 
-//must use trait here because of specialization, a trait is needed here.
-// we ensure that this trait is compiled into a java interface by avoiding method code in the trait.
-//as a consequence, there are duplicates in the classes implementing this trait.
+// Must use trait here because of specialization, a trait is needed here.
+// We ensure that this trait is compiled into a java interface by avoiding method code in the trait.
+// As a consequence, there are duplicates in the classes implementing this trait.
+
+/** This trait provides an implementation of a red-black tree-backed immutable map, where the keys
+  * are exclusively of type [[Int]]. This trait is not meant to replace
+  * [[collection.immutable.SortedMap]], but rather to provide an implementation that allows
+  * efficient exploration of the underlying tree by a [[RedBlackTreeMapExplorer]].
+  *
+  * @tparam V
+  *   the type of the values (keys are [[Int]])
+  */
 trait RedBlackTreeMap[@specialized(Int) V] {
-
-  /* We could have required that K be <: Ordered[K], but this is
-  actually less general than requiring an implicit parameter that can
-  convert K into an Ordered[K].
-
-  For example, Int is not compatible with Ordered[Int].  This would
-  make it unusable with this map; however, it's simple to define an
-  injector from Int into Ordered[Int].
-
-  In fact, the standard prelude already defines just such an implicit:
-  intWrapper. */
 
   // modWith: Helper method; top node could be red.
   protected[rb] def modWith(k: Int, f: (Int, Option[V]) => Option[V]): RedBlackTreeMap[V]
 
-  // get: Retrieve a value for a key.
+  /** Optionally retrieve the value for a given key.
+    * @param k
+    *   the key
+    */
   def get(k: Int): Option[V]
 
+  /** Retrieves the value for a given key if it exists, otherwise, return a default value.
+    *
+    * @param k
+    *   the key
+    * @param default
+    *   the default value
+    */
   def getOrElse(k: Int, default: => V): V
 
+  /** Returns true if the key is contained in the map, and false otherwise.
+    *
+    * @param k
+    *   the key
+    */
   def contains(k: Int): Boolean
 
+  /** Optionally provides the largest key-value pair whose key is smaller or equal than the given
+    * reference key.
+    *
+    * @param k
+    *   the reference key
+    */
   def biggestLowerOrEqual(k: Int): Option[(Int, V)]
 
+  // helper method
   protected[rb] def getBiggestLowerAcc(k: Int, bestKSoFar: Int, bestVSoFar: V): IntVCouple[V]
 
+  /** Optionally provides the smallest key-value pair whose key is larger or equal than the given
+    * reference key.
+    *
+    * @param k
+    *   the reference key
+    */
   def smallestBiggerOrEqual(k: Int): Option[(Int, V)]
 
-  def smallest: Option[(Int, V)]
-
-  def biggest: Option[(Int, V)]
-
-  def biggestPosition: Option[RedBlackTreeMapExplorer[V]]
-
-  def smallestPosition: Option[RedBlackTreeMapExplorer[V]]
-
+  // helper method
   protected[rb] def getSmallestBiggerAcc(k: Int, bestKSoFar: Int, bestVSoFar: V): IntVCouple[V]
 
-  // insert: Insert a value at a key.
+  /** Optionally return the smallest key-value pair. */
+  def smallest: Option[(Int, V)]
+
+  /** Optionally return the largest key-value pair. */
+  def biggest: Option[(Int, V)]
+
+  /** Optionally returns a [[RedBlackTreeMapExplorer]] anchored at the largest key-value pair. */
+  def biggestPosition: Option[RedBlackTreeMapExplorer[V]]
+
+  /** Optionally returns a [[RedBlackTreeMapExplorer]] anchored at the smallest key-value pair. */
+  def smallestPosition: Option[RedBlackTreeMapExplorer[V]]
+
+  /** Returns a new map with the addition of the given key and value. If the key is already present,
+    * its value is updated.
+    * @param k
+    *   key
+    * @param v
+    *   value
+    */
   def insert(k: Int, v: V): RedBlackTreeMap[V]
 
-  // remove: Delete a key.
+  /** Returns a new map deprived of the given key. If the key is absent, returns the same map.
+    *
+    * @param k
+    *   the key to remove
+    */
   def remove(k: Int): RedBlackTreeMap[V]
 
+  /** The size of this map. */
   def size: Int
+
+  /** Whether or not this map is empty. */
   def isEmpty: Boolean
 
+  /** Returns a list of the values in this map. */
   def values: List[V]
-  protected[rb] def valuesAcc(valuesAfter: List[V]): List[V]
+
+  /** Returns a list of the key-value pairs in this map. */
   def content: List[(Int, V)]
+
+  /** Returns a list of the keys in this map. */
+  def keys: List[Int]
+
+  /** Optionally returns a [[RedBlackTreeMapExplorer]] anchored at the given key.
+    *
+    * @param k
+    *   the key
+    */
+  def positionOf(k: Int): Option[RedBlackTreeMapExplorer[V]]
+
+  // helper recursive methods
+  protected[rb] def keysAcc(keysAfter: List[Int]): List[Int]
+  protected[rb] def valuesAcc(valuesAfter: List[V]): List[V]
   protected[rb] def contentAcc(valuesAfter: List[(Int, V)]): List[(Int, V)]
 
-  def keys: List[Int]
-  protected[rb] def keysAcc(keysAfter: List[Int]): List[Int]
-
-  def positionOf(k: Int): Option[RedBlackTreeMapExplorer[V]]
   protected[rb] def positionOfAcc(
     k: Int,
     positionAcc: List[(T[V], Boolean)]
   ): Option[RedBlackTreeMapExplorer[V]]
 
+  /** Optionally returns an undefined value contained in this map. */
   def anyValue: Option[V]
 
-  /** updates a set of values in the tree, designated by an interval on the keys there is a
-    * requirement that the deltaKey must not transform a key in the interval in such a way that it
-    * becomes bigger or smaller than a key out of te interval if it was not the case before the
-    * transformation this is to keep an identical structure of the tree, and maintain the same r/b
-    * colouring and balancing of the tree. this ensures that this method is somehow fast.
+  /** Updates a set of values in the tree, defined by an inclusive interval on the keys.
+    *
+    * Besides providing a method to transform a value in the interval to another value, the caller
+    * can provide an integer delta by which the keys in the range will be shifted.
+    *
+    * WARNING: It is required that the deltaKey must not transform a key in the interval in such a
+    * way that it becomes larger or smaller than another key outside of the interval, if this was
+    * not the case before the update. This is required in order to keep the identical structure of
+    * the tree, while maintain the same colouring and balance of the tree, which ensures that good
+    * performance.
     *
     * @param fromKeyIncluded
     *   the start of the interval defining the set of keys to update
     * @param toKeyIncluded
     *   the end of the interval defining the set of keys to update
     * @param deltaKey
-    *   the delata to apply to the keys in the interval
+    *   the delta to apply to the keys in the interval
     * @param transform
-    *   the transform to apply on the values stored in the transformed interval
+    *   the transform to apply on the values stored in the interval
     * @return
-    *   a new updated balanced rb tree
+    *   a new map with updated entries
     */
   def updateDelta(
     fromKeyIncluded: Int,
@@ -256,11 +358,18 @@ trait RedBlackTreeMap[@specialized(Int) V] {
     transform: V => V
   ): RedBlackTreeMap[V]
 
-  /** this method ensures that the key are traversed in ascending order.
+  /** Updates a set of values in the tree, defined by an inclusive interval on the keys.
+    *
+    * Values in the interval are transformed to another through a given method.
+    *
     * @param fromKeyIncluded
+    *   the start of the interval defining the set of keys to update
     * @param toKeyIncluded
+    *   the end of the interval defining the set of keys to update
     * @param transform
+    *   the transform to apply on the values stored in the interval
     * @return
+    *   a new map with updated values
     */
   def update(
     fromKeyIncluded: Int,
@@ -364,6 +473,7 @@ private[rb] case class L[@specialized(Int) V]() extends RedBlackTreeMap[V] {
   ): RedBlackTreeMap[V] = this
 }
 
+// helper object for the tree node
 private[rb] object T {
   def unapply[V](
     t: T[V]
