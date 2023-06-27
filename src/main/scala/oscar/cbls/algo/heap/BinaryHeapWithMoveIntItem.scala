@@ -8,19 +8,6 @@ object BinaryHeapWithMoveIntItem {
   ): BinaryHeapWithMoveIntItem = {
     new BinaryHeapWithMoveIntItem(priorityFunction, maxSize, maxItemValue)
   }
-
-  def apply(
-    binaryHeapWithMoveIntItemToCopy: BinaryHeapWithMoveIntItem,
-    priorityFunction: Int => Long
-  ): BinaryHeapWithMoveIntItem = {
-    val maxSize      = binaryHeapWithMoveIntItemToCopy.maxSize
-    val maxItemValue = binaryHeapWithMoveIntItemToCopy.maxItemValue
-    val newBinaryHeapWithMoveIntItem =
-      new BinaryHeapWithMoveIntItem(priorityFunction, maxSize, maxItemValue)
-    BinaryHeap.copyHeapContent(binaryHeapWithMoveIntItemToCopy, newBinaryHeapWithMoveIntItem)
-    newBinaryHeapWithMoveIntItem
-  }
-
 }
 
 /** This binary heap is less efficient than the [[oscar.cbls.algo.heap.BinaryHeap]] but it offers
@@ -38,6 +25,13 @@ class BinaryHeapWithMoveIntItem(priorityFunction: Int => Long, maxSize: Int, val
     extends BinaryHeap[Int](priorityFunction, maxSize) {
 
   private val itemsPosition: Array[Int] = Array.fill[Int](maxItemValue + 1)(-1)
+
+  override def withPriorityFunction(priorityFunction: Int => Long): BinaryHeapWithMoveIntItem = {
+    val copy         = new BinaryHeapWithMoveIntItem(priorityFunction, maxSize, maxItemValue)
+    val heapIterator = iterator
+    while (heapIterator.hasNext) copy.insert(heapIterator.next())
+    copy
+  }
 
   def contains(value: Int): Boolean = itemsPosition(value) != -1
 
@@ -92,8 +86,8 @@ class BinaryHeapWithMoveIntItem(priorityFunction: Int => Long, maxSize: Int, val
   }
 
   override def insert(elem: Int): Unit = {
-    require(itemsPosition(elem) == -1, s"Can't add the same element twice !")
     require(currentSize < maxSize, s"The heap is full")
+    require(itemsPosition(elem) == -1, s"Can't add the same element twice !")
     itemsPosition(elem) = size
     super.insert(elem)
   }

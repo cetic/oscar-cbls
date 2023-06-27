@@ -3,22 +3,12 @@ package oscar.cbls.algo.heap
 import scala.collection.immutable.SortedMap
 
 object BinaryHeapWithMove {
-  def apply[T](priorityFunction: T => Long, maxSize: Int)(implicit o: Ordering[T], m: Manifest[T]): BinaryHeapWithMove[T] = {
+  def apply[T](priorityFunction: T => Long, maxSize: Int)(implicit
+    o: Ordering[T],
+    m: Manifest[T]
+  ): BinaryHeapWithMove[T] = {
     new BinaryHeapWithMove[T](priorityFunction, maxSize)
   }
-
-  def apply[T](
-    binaryHeapWithMoveToCopy: BinaryHeapWithMove[T],
-    priorityFunction: T => Long,
-    maxSize: Int
-  ): BinaryHeapWithMove[T] = {
-    implicit val o: Ordering[T] = binaryHeapWithMoveToCopy.o
-    implicit val m: Manifest[T] = binaryHeapWithMoveToCopy.m
-    val newBinaryHeapWithMove = new BinaryHeapWithMove[T](priorityFunction, maxSize)
-    BinaryHeap.copyHeapContent(binaryHeapWithMoveToCopy,newBinaryHeapWithMove)
-    newBinaryHeapWithMove
-  }
-
 }
 
 /** This binary heap is less efficient than the [[oscar.cbls.algo.heap.BinaryHeap]] but it offers
@@ -42,6 +32,13 @@ class BinaryHeapWithMove[T](priorityFunction: T => Long, override val maxSize: I
   override implicit val m: Manifest[T]
 ) extends BinaryHeap[T](priorityFunction, maxSize) {
   private var itemsPosition: SortedMap[T, Int] = SortedMap.empty
+
+  override def withPriorityFunction(priorityFunction: T => Long): BinaryHeapWithMove[T] = {
+    val copy         = new BinaryHeapWithMove[T](priorityFunction, maxSize)
+    val heapIterator = iterator
+    while (heapIterator.hasNext) copy.insert(heapIterator.next())
+    copy
+  }
 
   def contains(value: T): Boolean = itemsPosition.contains(value)
 

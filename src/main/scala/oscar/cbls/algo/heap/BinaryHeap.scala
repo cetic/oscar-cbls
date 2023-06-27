@@ -16,23 +16,10 @@ package oscar.cbls.algo.heap
 import scala.annotation.tailrec
 
 object BinaryHeap {
-  def apply[T](priorityFunction: T => Long, maxSize: Int)(implicit manifest: Manifest[T]): BinaryHeap[T] = {
+  def apply[T](priorityFunction: T => Long, maxSize: Int)(implicit
+    m: Manifest[T]
+  ): BinaryHeap[T] = {
     new BinaryHeap[T](priorityFunction, maxSize)
-  }
-
-  def apply[T](binaryHeapToCopy: BinaryHeap[T], priorityFunction: T => Long): BinaryHeap[T] = {
-    val maxSize       = binaryHeapToCopy.maxSize
-    implicit val manifest: Manifest[T] = binaryHeapToCopy.m
-    val newBinaryHeap = new BinaryHeap[T](priorityFunction, maxSize)
-    copyHeapContent(binaryHeapToCopy, newBinaryHeap)
-    newBinaryHeap
-  }
-
-  def copyHeapContent[T](fromBinaryHeap: BinaryHeap[T], toBinaryHeap: BinaryHeap[T]): Unit = {
-    val fromBinaryHeapIterator = fromBinaryHeap.iterator
-    while (fromBinaryHeapIterator.hasNext) {
-      toBinaryHeap.insert(fromBinaryHeapIterator.next())
-    }
   }
 }
 
@@ -63,6 +50,16 @@ class BinaryHeap[T](priorityFunction: T => Long, val maxSize: Int)(implicit val 
   protected val heapArray: Array[T] = new Array[T](maxSize)
   // Keep the real size of the heap, aka the number of elements to consider in the array
   protected var currentSize: Int = 0
+
+  def withPriorityFunction(priorityFunction: T => Long): BinaryHeap[T] = {
+    val copy         = new BinaryHeap[T](priorityFunction, maxSize)
+    val heapIterator = iterator
+    while (heapIterator.hasNext) {
+      val x = heapIterator.next()
+      copy.insert(x)
+    }
+    copy
+  }
 
   @inline protected def leftChild(position: Int): Int  = (position + 1) * 2 - 1
   @inline protected def rightChild(position: Int): Int = (position + 1) * 2

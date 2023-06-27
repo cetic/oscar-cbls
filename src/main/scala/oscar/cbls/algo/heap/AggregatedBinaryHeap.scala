@@ -13,24 +13,11 @@
 
 package oscar.cbls.algo.heap
 
+import scala.language.implicitConversions
 
 object AggregatedBinaryHeap {
   def apply[T](priorityFunction: T => Int, maxPriority: Int): AggregatedBinaryHeap[T] = {
     new AggregatedBinaryHeap[T](priorityFunction, maxPriority)
-  }
-
-  def apply[T](aggregatedBinaryHeapToCopy: AggregatedBinaryHeap[T], priorityFunction: T => Int): AggregatedBinaryHeap[T] = {
-    val maxPriority       = aggregatedBinaryHeapToCopy.maxPriority
-    val newAggregatedBinaryHeap = new AggregatedBinaryHeap[T](priorityFunction, maxPriority)
-    copyHeapContent(aggregatedBinaryHeapToCopy, newAggregatedBinaryHeap)
-    newAggregatedBinaryHeap
-  }
-
-  def copyHeapContent[T](fromBinaryHeap: AggregatedBinaryHeap[T], toBinaryHeap: AggregatedBinaryHeap[T]): Unit = {
-    val fromBinaryHeapIterator = fromBinaryHeap.iterator
-    while (fromBinaryHeapIterator.hasNext) {
-      toBinaryHeap.insert(fromBinaryHeapIterator.next())
-    }
   }
 }
 
@@ -57,6 +44,13 @@ class AggregatedBinaryHeap[T](priorityFunction: T => Int, val maxPriority: Int)
   // The array that store the elements at their priority value
   private[this] val priorityToElements: Array[List[T]] =
     Array.tabulate(maxPriority)(_ => List.empty)
+
+  def withPriorityFunction(priorityFunction: T => Int): AggregatedBinaryHeap[T] = {
+    val copy         = new AggregatedBinaryHeap[T](priorityFunction, maxPriority)
+    val heapIterator = iterator
+    while (heapIterator.hasNext) copy.insert(heapIterator.next())
+    copy
+  }
 
   override def isEmpty: Boolean = binaryHeap.isEmpty
 
