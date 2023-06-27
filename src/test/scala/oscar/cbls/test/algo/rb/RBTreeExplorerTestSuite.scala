@@ -44,7 +44,7 @@ class RBTreeExplorerTestSuite
     }
   }
 
-  test("tree.positionOf on unexisting key returns None") {
+  test("tree.positionOf on non-existing key returns None") {
     forAll(sequentialTuplesList) { list =>
       {
         val tree = RedBlackTreeMap.makeFromSorted(list)

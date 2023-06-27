@@ -215,7 +215,7 @@ class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks wi
       {
         whenever(list.nonEmpty) {
 
-          var parrallelMap    = list.sortBy(_._1)
+          var parallelMap    = list.sortBy(_._1)
           var tree            = RedBlackTreeMap.makeFromSortedArray(list.toArray)
           val operations      = operationGenerator.sample.get
           var gapAboveLastKey = 0
@@ -233,7 +233,7 @@ class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks wi
             operation match {
               case Delete() =>
                 tree = tree.remove(randomKey)
-                parrallelMap = parrallelMap.filter(_._1 != randomKey)
+                parallelMap = parallelMap.filter(_._1 != randomKey)
 
               case Update() =>
                 var randomKeyTo = Random.shuffle(tree.content).head._1
@@ -244,20 +244,20 @@ class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks wi
                 }
 
                 tree = tree.update(randomKey, randomKeyTo, (key, value) => (key, value + 1))
-                parrallelMap = parrallelMap.map(tuple =>
+                parallelMap = parallelMap.map(tuple =>
                   if (tuple._1 >= randomKey && tuple._1 <= randomKeyTo) (tuple._1, tuple._2 + 1)
                   else (tuple._1, tuple._2)
                 )
 
               case Insert() =>
-                val newkey: Int = 2000 + gapAboveLastKey // Ensures to add a new unique key
+                val newKey: Int = 2000 + gapAboveLastKey // Ensures to add a new unique key
                 gapAboveLastKey += 1
-                tree = tree.insert(newkey, 0)
+                tree = tree.insert(newKey, 0)
 
-                parrallelMap = parrallelMap ::: List((newkey, 0))
+                parallelMap = parallelMap ::: List((newKey, 0))
             }
           }
-          parrallelMap.sortBy(_._1) should be(tree.content.sortBy(_._1))
+          parallelMap.sortBy(_._1) should be(tree.content.sortBy(_._1))
         }
       }
     }
