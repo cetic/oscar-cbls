@@ -333,7 +333,7 @@ class BinaryHeapWithMove[T](priorityFunction: T => Long, val maxSize: Int)(
   /** Check if the state of the heap is correct.
     */
   def checkInternals(): Unit = {
-    require(heapArray.distinct.length == heapArray.length, "Heap error : there are multiple times the same elements, it's not tolerated")
+    require(heapArray.take(size).distinct.length == size, "Heap error : there are multiple times the same elements, it's not tolerated")
     for (i <- heapArray.indices if i < size - 1) {
       if (leftChild(i) < size) {
         require(
