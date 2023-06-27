@@ -50,7 +50,7 @@ private object RedBlackTreeMapLib {
   }
 }
 
-class IntVCouple[@specialized V](val k: Int, val value: V)
+private class IntVCouple[@specialized V](val k: Int, val value: V)
 
 import oscar.cbls.algo.rb.RedBlackTreeMapLib._
 
