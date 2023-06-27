@@ -15,16 +15,38 @@ package oscar.cbls.algo.rb
 
 import scala.annotation.tailrec
 
-//le booléen: true le noeud a déjà été montré (dans un parcour gauche à droite)
-class RedBlackTreeMapExplorer[@specialized(Int) V](position: List[(T[V], Boolean)]) {
+// In the (tree node, boolean) pair, the boolean flag signifies that the node
+// has already been shown, when traversing from left to right
+
+/** This immutable class provides an efficient way to navigate through the elements of a
+  * [[RedBlackTreeMap]] by exploiting the underlying tree structure.
+  *
+  * @param position
+  *   a list of flagged tree nodes, representing the path from the root of the underlying tree to
+  *   the node associated to the current key-value pair
+  * @tparam V
+  *   the type of the values in the associated map. Keys are of type [[Int]]
+  * @note
+  *   This class cannot be instantiated directly, instances are provided by methods in
+  *   [[RedBlackTreeMap]]
+  */
+class RedBlackTreeMapExplorer[@specialized(Int) V] private[rb] (position: List[(T[V], Boolean)]) {
+
+  /** The current key. */
   def key: Int = position.head._1.pk
+
+  /** The current value. */
   def value: V = position.head._1.pv.get
 
   override def toString: String =
     "RBPosition(key:" + key + " value:" + value + " stack:" + position + ")"
 
+  /** Optionally returns the next key-value pair in the map, according to the ordering on keys
+    * (i.e., with the next larger integer), encapsulated in a new explorer.
+    */
   def next: Option[RedBlackTreeMapExplorer[V]] = {
 
+    // helper tail-recursive methods
     @tailrec
     def unstack1(position: List[(T[V], Boolean)]): List[(T[V], Boolean)] = {
       if (position.isEmpty) return position
@@ -56,7 +78,12 @@ class RedBlackTreeMapExplorer[@specialized(Int) V](position: List[(T[V], Boolean
     else Some(new RedBlackTreeMapExplorer[V](newStack))
   }
 
+  /** Optionally returns the previous key-value pair in the map, according to the ordering on keys
+    * (i.e., with the previous smaller integer), encapsulated in a new explorer.
+    */
   def prev: Option[RedBlackTreeMapExplorer[V]] = {
+
+    // helper tail-recursive methods
     @tailrec
     def unstack1(position: List[(T[V], Boolean)]): List[(T[V], Boolean)] = {
       if (position.isEmpty) return position
