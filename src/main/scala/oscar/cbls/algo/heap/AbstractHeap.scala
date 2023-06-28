@@ -13,12 +13,13 @@
 
 package oscar.cbls.algo.heap
 
-/**
- * This abstract class defines all the needed method that needs to be implemented in order to define a heap.
- *
- * Basically all the classical methods, insertion, access, remove
- * @tparam T The type of items present in the heap
- */
+/** This abstract class defines all the needed method that needs to be implemented in order to
+  * define a heap.
+  *
+  * Basically all the classical methods, insertion, access, remove
+  * @tparam T
+  *   The type of items present in the heap
+  */
 abstract class AbstractHeap[T] extends Iterable[T] {
 
   /** Change the current size to 0, hence no element has to be considered
@@ -40,19 +41,17 @@ abstract class AbstractHeap[T] extends Iterable[T] {
     */
   def getFirst: Option[T]
 
-  /** Return the firsts elements of the heap without removing them.
-    *
-    * Meaning all the elements having the higher priority.
+  /** Return the firsts elements of the heap without removing them. Meaning all the elements having
+    * the highest priority.
     *
     * @return
-    *   - an empty List (heap is empty)
-    *   - The List of element having the higher priority
+    *   - An empty List (heap is empty)
+    *   - The List of element having the highest priority
     */
   def getFirsts: List[T]
 
-  /** Pop the first element of the heap.
-    *
-    * Swap it with the last element of the heap and bubble it down
+  /** Pop the first element of the heap. Swap it with the last element of the heap and bubble it
+    * down
     *
     * @return
     *   - None (heap is empty)
@@ -60,13 +59,12 @@ abstract class AbstractHeap[T] extends Iterable[T] {
     */
   def popFirst(): Option[T]
 
-  /** Pop the first elements of the heap.
-    *
-    * Recursively pop one element and store its value. If the new head of the heap's priority isn't
-    * the same as the first element popped we are done.
+  /** Pop the firsts elements of the heap. Recursively pop one element and store its value. If the
+    * new head of the heap's priority isn't the same as the first element popped we are done.
     *
     * @return
-    *   The firsts elements of the heap
+    *   - An empty List (heap is empty)
+    *   - The firsts elements of the heap
     */
   def popFirsts(): List[T]
 }

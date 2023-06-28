@@ -11,8 +11,8 @@ class HeapWithMoveSingleActionSuite(heapTester: AbstractHeapTester) extends AnyF
 
   private def generateArray(size: Int = 10) = Array.tabulate(size)(HeapItem)
 
-  test(s"${heapTester.typeOfHeap} : Insert an item twice in the same heap raised an error"){
-    val heap = heapTester.mkHeap(x => x, 10,10)
+  test(s"${heapTester.typeOfHeap} : Insert an item twice in the same heap raised an error") {
+    val heap = heapTester.mkHeap(x => x, 10, 10)
     heap.insert(5)
     an[IllegalArgumentException] should be thrownBy heap.insert(5)
   }
@@ -52,11 +52,11 @@ class HeapWithMoveSingleActionSuite(heapTester: AbstractHeapTester) extends AnyF
       case withMoveTester: BinaryHeapWithMoveTester =>
         val heap = withMoveTester.mkHeap(x => array(x).priority(), 10, 10)
         array(0).changeValue(10)
-        an[IllegalArgumentException] should be thrownBy(heap.notifyChange(0))
+        an[IllegalArgumentException] should be thrownBy (heap.notifyChange(0))
       case withMoveIntItemTester: BinaryHeapWithMoveIntItemTester =>
         val heap = withMoveIntItemTester.mkHeap(x => array(x).priority(), 10, 10)
         array(0).changeValue(10)
-        an[IllegalArgumentException] should be thrownBy(heap.notifyChange(0))
+        an[IllegalArgumentException] should be thrownBy (heap.notifyChange(0))
     }
   }
 
@@ -117,7 +117,6 @@ class HeapWithMoveSingleActionSuite(heapTester: AbstractHeapTester) extends AnyF
         array(3).changeValue(0)
         heap.notifyChange(3)
         heap.insert(0)
-        println(heap.getFirsts)
         heap.popFirsts().sorted should be(List(0, 3))
       case withMoveIntItemTester: BinaryHeapWithMoveIntItemTester =>
         val heap = withMoveIntItemTester.mkHeap(x => array(x).priority(), 10, 10)
@@ -127,7 +126,7 @@ class HeapWithMoveSingleActionSuite(heapTester: AbstractHeapTester) extends AnyF
         array(3).changeValue(0)
         heap.notifyChange(3)
         heap.insert(0)
-        heap.popFirsts().sorted should be(List(0,3))
+        heap.popFirsts().sorted should be(List(0, 3))
     }
   }
 }

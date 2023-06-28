@@ -14,16 +14,24 @@ object BinaryHeapWithMoveIntItem {
   * more operations, such as delete and update value. This implementation has been optimize to deal
   * with Integers items.
   *
+  * Very similar to [[oscar.cbls.algo.heap.BinaryHeapWithMove]], but instead of using a map for
+  * itemsPosition, it uses an array hence the access is in 0(1) but the drop all in O(size).
+  *
   * It should be only used in a propagation context.
   * @author
   *   renaud.delandtsheer@cetic.be
   * @param priorityFunction
+  *   a function that returns an integer for each element inserted in the heap this value is used to
+  *   sort the heap content
   * @param maxSize
+  *   the maximum number of elements that can be inserted in this heap
   * @param maxItemValue
+  *   The maximal value of inserted element. (for the itemsPositions array)
   */
 class BinaryHeapWithMoveIntItem(priorityFunction: Int => Long, maxSize: Int, val maxItemValue: Int)
     extends BinaryHeap[Int](priorityFunction, maxSize) {
 
+  require(maxItemValue < Int.MaxValue, "Can't create an array of size Int.MaxValue + 1")
   private val itemsPosition: Array[Int] = Array.fill[Int](maxItemValue + 1)(-1)
 
   override def withPriorityFunction(priorityFunction: Int => Long): BinaryHeapWithMoveIntItem = {
@@ -44,7 +52,7 @@ class BinaryHeapWithMoveIntItem(priorityFunction: Int => Long, maxSize: Int, val
     *   The element whose internal state has changed.
     */
   def notifyChange(elem: Int): Unit = {
-    require(itemsPosition(elem) != -1, s"Item $elem doesn't seem to be in the heap")
+    require(contains(elem), s"Item $elem doesn't seem to be in the heap")
     bubbleDown(bubbleUp(itemsPosition(elem)))
   }
 
@@ -56,15 +64,18 @@ class BinaryHeapWithMoveIntItem(priorityFunction: Int => Long, maxSize: Int, val
     * @param elem
     *   the element to remove
     * @return
-    *   Whether or not an element has been removed
+    *   - false Item wasn't in the heap
+    *   - true operation succeeded
     */
   def removeElement(elem: Int): Boolean = {
     if (contains(elem)) {
       val startPosition: Int = itemsPosition(elem)
+      // element already at the end of the heap
       if (startPosition == size - 1) {
         currentSize -= 1
         itemsPosition(elem) = -1
       } else {
+        // swap the element with the last one and bubble up + down the swapped element
         swapPositions(startPosition, size - 1)
         currentSize -= 1
         itemsPosition(elem) = -1

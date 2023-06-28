@@ -12,7 +12,7 @@ object BinaryHeapWithMove {
 }
 
 /** This binary heap is less efficient than the [[oscar.cbls.algo.heap.BinaryHeap]] but it offers
-  * more operations, such as delete and update value. It should be only used in a propagation
+  * more operations, such as delete and update value (hence priority). It should be only used in a propagation
   * context.
   *
   * @param priorityFunction
@@ -31,6 +31,7 @@ class BinaryHeapWithMove[T](priorityFunction: T => Long, override val maxSize: I
   implicit val o: Ordering[T],
   override implicit val m: Manifest[T]
 ) extends BinaryHeap[T](priorityFunction, maxSize) {
+  // Store the position of each item so that it can easily be found after updating it's value
   private var itemsPosition: SortedMap[T, Int] = SortedMap.empty
 
   override def withPriorityFunction(priorityFunction: T => Long): BinaryHeapWithMove[T] = {

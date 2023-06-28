@@ -26,7 +26,7 @@ object AggregatedBinaryHeap {
   *
   * The heap is actually made of an array, storing lists containing items with same priority. A
   * binary heap is maintained to record the lowest priority in the heap. This is more efficient if
-  * it often occurs that elements have the same priority. priority is assumed to start at zero.
+  * it often occurs that elements have the same priority. Priority is assumed to start at zero.
   *
   * @param priorityFunction
   *   The function used to determine the priority of an element
@@ -45,6 +45,14 @@ class AggregatedBinaryHeap[T](priorityFunction: T => Int, val maxPriority: Int)
   private[this] val priorityToElements: Array[List[T]] =
     Array.tabulate(maxPriority)(_ => List.empty)
 
+  /** Create a new BinaryHeap with a new priorityFunction. Then add all the element of this heap to
+    * the new one.
+    *
+    * @param priorityFunction
+    *   The new priority function
+    * @return
+    *   A BinaryHeap with the new priority function and all elements of this heap.
+    */
   def withPriorityFunction(priorityFunction: T => Int): AggregatedBinaryHeap[T] = {
     val copy         = new AggregatedBinaryHeap[T](priorityFunction, maxPriority)
     val heapIterator = iterator
@@ -64,7 +72,7 @@ class AggregatedBinaryHeap[T](priorityFunction: T => Int, val maxPriority: Int)
   override def insert(elem: T): Unit = {
     require(
       priorityFunction(elem) < maxPriority,
-      s"The priority value of this element exceed the maximum priority value allowed. ${priorityFunction(elem)} has to be lower than ${maxPriority}"
+      s"The priority value of this element exceed the maximum priority value allowed. ${priorityFunction(elem)} has to be lower than $maxPriority"
     )
     val priority              = priorityFunction(elem)
     val otherWithSamePriority = priorityToElements(priority)

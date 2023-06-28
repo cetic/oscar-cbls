@@ -46,11 +46,20 @@ class BinaryHeap[T](priorityFunction: T => Long, val maxSize: Int)(implicit val 
   override def size: Int        = currentSize
   override def isEmpty: Boolean = currentSize == 0L
 
-  // Keep the value of the heap. Initialized at max size for performance
+  // Keep the value of the heap. Initialized at max size for performance.
+  // Upon clearing the values are not suppressed but the current size of the heap is adjusted.
   protected val heapArray: Array[T] = new Array[T](maxSize)
   // Keep the real size of the heap, aka the number of elements to consider in the array
   protected var currentSize: Int = 0
 
+  /** Create a new BinaryHeap with a new priorityFunction. Then add all the element of this heap to
+    * the new one.
+   *
+    * @param priorityFunction
+    *   The new priority function
+    * @return
+    *   A BinaryHeap with the new priority function and all elements of this heap.
+    */
   def withPriorityFunction(priorityFunction: T => Long): BinaryHeap[T] = {
     val copy         = new BinaryHeap[T](priorityFunction, maxSize)
     val heapIterator = iterator
