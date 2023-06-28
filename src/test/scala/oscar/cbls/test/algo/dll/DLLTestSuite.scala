@@ -1,153 +1,312 @@
-package oscar.cbls.test.algo
+package oscar.cbls.test.algo.dll
 
 import org.scalacheck.Gen
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import org.scalacheck.Prop.collect
 import oscar.cbls.algo.dll.DoublyLinkedList
 
 import scala.util.Random
+import scala.annotation.tailrec
+import java.util.concurrent.atomic.AtomicInteger
+import oscar.cbls.algo.dll.DLLStorageElement
+import oscar.cbls.algo.dll.DLLIterator
 
 class DLLTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
 
-  test("Dequeuing doesn't set the size negative"){
-
+  test("Inserting an element at the end and removing at the end gives the same element") {
     val dll = new DoublyLinkedList[Int]()
 
-    dll.enqueue(1)
-    dll.dequeue()
-    dll.dequeue()
-    dll.dequeue()
+    dll.insertEnd(1)
+    dll.insertEnd(2)
+    val elem1 = dll.popEnd()
+    val elem2 = dll.popEnd()
 
-    dll.size should be >= 0
+    elem1 should be(2)
+    elem2 should be(1)
   }
 
-  test("Iterator gives the same list after enqueuing"){
-
-    forAll((intList: List[Int]) => {
-
-      val dll = new DoublyLinkedList[Int]()
-      intList.foreach(e => dll.enqueue(e))
-      intList should be (dll.iterator.toList)
-    })
-  }
-
-  test("Iterator gives the same list reversed after addElem"){
-
-    forAll((intList: List[Int]) => {
-
-      val dll = new DoublyLinkedList[Int]()
-      intList.foreach(e => dll.addElem(e))
-      dll.iterator.toList should be (intList.reverseIterator.toList)
-    })
-  }
-
-  test("DropAll sets the size to 0 and sets isEmpty"){
-    forAll((intList: List[Int]) => {
-
-      val dll = new DoublyLinkedList[Int]()
-      intList.foreach(e => dll.enqueue(e))
-      dll.dropAll()
-
-      dll.size should be (0)
-      dll.isEmpty should be (true)
-    })
-  }
-
-  test("foreach iterates on all elements"){
-    forAll((intList: List[Int]) => {
-
-      val dll = new DoublyLinkedList[Int]()
-      intList.foreach(e => dll.addElem(e))
-
-      dll.foreach(elem => {
-        intList should contain (elem)
-      })
-    })
-  }
-
-  test("addElem, dequeue and enqueue keep the correct size (batch)"){
-    val helper = new CRUDHelpers[Int]()
-
-    val genActions = Gen.oneOf(helper.operationList)
-
-    val gen = for{
-      size <- Gen.chooseNum(1,100)
-      list <- Gen.listOfN(size,genActions)
-    } yield list
-
-    forAll(gen){ actionsList =>
-      whenever(actionsList.nonEmpty){
-        val dll = new DoublyLinkedList[Int]()
-        var size = 0
-        for(action <- actionsList){
-          val i = Random.nextInt(dll.size + 1)
-          size = action(dll,i,size)
-        }
-        size should be (dll.size)
-      }
-    }
-  }
-
-  test("Delete one DLLStorageElement removes the item"){
+  test("Inserting an element at the start and removing at the start gives the same element") {
     val dll = new DoublyLinkedList[Int]()
 
-    val storageElem = dll.enqueue(1)
-    dll.enqueue(2)
-    dll.enqueue(3)
-    dll.enqueue(4)
-    dll.enqueue(5)
-    dll.enqueue(6)
+    dll.insertStart(1)
+    dll.insertStart(2)
 
-    storageElem.delete()
-    dll.size should be(5)
+    val elem1 = dll.popStart()
+    val elem2 = dll.popStart()
+
+    elem1 should be(2)
+    elem2 should be(1)
   }
 
-  test("Delete several DLLStorageElement removes the items"){
+  test("The next element of the container of insert after is the inserted element") {
     val dll = new DoublyLinkedList[Int]()
 
-    val storageElem = dll.enqueue(1)
-    dll.enqueue(2)
-    dll.enqueue(3)
-    val storageElem3 = dll.enqueue(4)
-    val storageElem2 = dll.enqueue(5)
-    dll.enqueue(6)
+    dll.insertEnd(1)
+    dll.insertStart(2)
+    val container = dll.insertEnd(3)
 
-    storageElem.delete()
-    storageElem2.delete()
-    storageElem3.delete()
+    dll.insertAfter(4, container)
+
+    container.next.elem should be(4)
+  }
+
+  test("Pop an element of an empty list throws an exception") {
+    val dll = new DoublyLinkedList[Int]()
+
+    a[java.lang.IllegalArgumentException] should be thrownBy (dll.popEnd())
+    a[java.lang.IllegalArgumentException] should be thrownBy (dll.popStart())
+  }
+
+  test("DropAll empties the list") {
+    val dll = new DoublyLinkedList[Int]()
+
+    dll.insertStart(1)
+    dll.insertStart(2)
+    dll.insertEnd(3)
 
     dll.size should be(3)
+
+    dll.dropAll()
+    dll.size should be(0)
+
   }
 
-  // TODO Known to fail. Don't know if it will be corrected, or if it is by design
-//  test("Delete several time the same element should fail"){
-//    val dll = new DoublyLinkedList[Int]()
-//
-//    val storageElem = dll.enqueue(1)
-//    storageElem.delete()
-//
-//    an [Error] should be thrownBy storageElem.delete()
-//  }
+  abstract class Operation
 
-  class CRUDHelpers[A]{
-    val add: (DoublyLinkedList[A], A, Int) => Int = (dll: DoublyLinkedList[A], i: A, size: Int) => {
-      dll.addElem(i)
-      size+1
-    }
-    val enqueue: (DoublyLinkedList[A], A, Int) => Int = (dll: DoublyLinkedList[A], i: A, size:Int) => {
-      dll.enqueue(i)
-      size+1
-    }
-    val dequeue: (DoublyLinkedList[A], A, Int) => Int = (dll: DoublyLinkedList[A], _: A, size:Int) => {
-      if(size == 0)
-        size
-      else
-      {
-        dll.dequeue()
-        size-1
+  abstract class AddOperation(value: Int) extends Operation
+
+  case class AddStart(value: Int) extends AddOperation(value)
+
+  case class AddEnd(value: Int) extends AddOperation(value)
+
+  case class AddAfter(value: Int, afterPos: Int) extends AddOperation(value)
+
+  abstract class RemoveOperation extends Operation
+
+  case class RemoveStart() extends RemoveOperation
+
+  case class RemoveEnd() extends RemoveOperation
+
+  case class RemovePos(pos: Int) extends RemoveOperation
+
+  case class DropAll() extends RemoveOperation
+
+  class TestData {
+    private var witnessList: List[Int]     = List()
+    private val dll: DoublyLinkedList[Int] = new DoublyLinkedList()
+
+    @tailrec
+    private def getContainerAtPos(
+      afterPos: Int,
+      dllIt: DLLIterator[Int]
+    ): DLLStorageElement[Int] = {
+      if (afterPos == 0) {
+        dllIt.next()
+        dllIt.currentKey
+      } else {
+        dllIt.next()
+        getContainerAtPos(afterPos - 1, dllIt)
       }
     }
-    val operationList = List(add,enqueue,dequeue)
+
+    @tailrec
+    final def mkOps(ops: List[Operation]): Unit = {
+      ops match {
+        case Nil =>
+        case h :: t =>
+          mkOp(h)
+          mkOps(t)
+      }
+    }
+
+    private def mkOp(op: Operation) = {
+      op match {
+        case AddStart(value) =>
+          witnessList = value :: witnessList
+          dll.insertStart(value)
+        case AddEnd(value) =>
+          witnessList = witnessList.appended(value)
+          dll.insertEnd(value)
+        case AddAfter(value, afterPos) =>
+          val (l1, l2) = witnessList.splitAt(afterPos + 1)
+          witnessList = l1 ::: value :: l2
+          dll.insertAfter(value, getContainerAtPos(afterPos, dll.iterator))
+        case RemoveStart() =>
+          witnessList = witnessList.tail
+          dll.popStart()
+        case RemoveEnd() =>
+          witnessList = witnessList.reverse.tail.reverse
+          dll.popEnd()
+        case RemovePos(pos) =>
+          val (l1, l2) = witnessList.splitAt(pos)
+          witnessList = l1 ::: l2.tail
+          val container = getContainerAtPos(pos, dll.iterator)
+          container.delete()
+        case DropAll() =>
+          witnessList = Nil
+          dll.dropAll()
+      }
+    }
+
+    def compareSize: Boolean = {
+      witnessList.size == dll.size
+    }
+
+    def compareLists: Boolean = {
+      var res          = true
+      val dllIt        = dll.iterator
+      val listIterator = witnessList.iterator
+      while (dllIt.hasNext) {
+        if (listIterator.hasNext) {
+          res = dllIt.next() == listIterator.next()
+        } else {
+          dllIt.next()
+          res = false
+        }
+      }
+      res && !listIterator.hasNext
+    }
+
   }
+
+  val addStartGen: Gen[AddStart] = for {
+    v <- Gen.choose(1, 100)
+  } yield AddStart(v)
+  val addEndGen: Gen[AddEnd] = for {
+    v <- Gen.choose(1, 100)
+  } yield AddEnd(v)
+  def addAfterGen(maxPos: Int): Gen[AddAfter] = for {
+    v   <- Gen.choose(1, 100)
+    pos <- Gen.choose(0, maxPos - 1)
+  } yield AddAfter(v, pos)
+
+  val removeStartGen: Gen[RemoveStart] = Gen.const(RemoveStart())
+  val removeEndGen: Gen[RemoveEnd]     = Gen.const(RemoveEnd())
+  def removePosGen(maxPos: Int): Gen[RemovePos] = for {
+    pos <- Gen.choose(0, maxPos - 1)
+  } yield RemovePos(pos)
+
+  val dropAllGen : Gen[DropAll] = Gen.const(DropAll())
+
+  def genOperation: Gen[(Int,Int,Operation)] = {
+    val size = new AtomicInteger(0)
+    for {
+      value <- {      println(s"chose value:${size.get()}");Gen.const(size.get())}
+      value2 <- Gen.const(size.get())
+      opGen <- {println(size.get);Gen.oneOf({
+        (if (size.get() == 0)
+           Nil
+         else
+           List(
+             dropAllGen,
+             removeStartGen,
+             removeEndGen,
+             removePosGen(size.get()),
+             addAfterGen(size.get())
+           )) ::: List(addStartGen, addEndGen)
+
+      })
+      }
+      op <- opGen
+    } yield {
+      op match {
+        case op: DropAll         => size.set(0)
+        case op: AddOperation    => size.getAndIncrement()
+        case op: RemoveOperation => size.getAndDecrement()
+      }
+      (value,value2,op)
+    }
+  }
+  val genOp = genOperation
+
+  // val operationsGen: Gen[List[Operation]] = for {
+  //   ops <- Gen.listOfN(100, genOp)
+  // } yield ops
+
+  // test(
+  //   "Making a set of operation (adding and remove operations) on a dll and on a witness list gives the same result"
+  // ) {
+  //   val testData = new TestData
+  //   forAll(operationsGen) { ops =>
+  //     println(ops)
+  //     testData.mkOps(ops)
+  //     testData.compareLists should be(true)
+  //     testData.compareSize should be(true)
+  //     testData.compareLists && testData.compareSize
+  //   }
+  // }
+
+  test("toto") {
+    println(genOp.sample)
+    println(genOp.sample)
+    println(genOp.sample)
+    println(genOp.sample)
+    println(genOp.sample)
+    println(genOp.sample)
+    println(genOp.sample)
+    println(genOp.sample)
+    println(genOp.sample)
+    println(genOp.sample)
+    println(genOp.sample)
+    println(genOp.sample)
+    println(genOp.sample)
+  }
+
+
+//   class DLLTester() {
+//     private val dll  = new DoublyLinkedList[Int]()
+//     private var list : List[Int] = List()
+
+//     abstract sealed class Operation {
+//       def mkOp: Unit
+//     }
+
+//     case class AddStart(value: Int) extends Operation {
+//       override def mkOp: Unit = {
+//         dll.insertStart(value)
+//         list = value :: list
+//       }
+//     }
+
+//     case class AddEnd(value: Int) extends Operation {
+//       override def mkOp: Unit = {
+//         dll.insertEnd(value)
+//         list = list.appended(value)
+//       }
+//     }
+
+//     case class AddAfter(value: Int, pos: Int) extends Operation{
+//       override def mkOp: Unit = {
+//         @tailrec
+//         def addAfter(l : List[Int],pos : Int,res : List[Int]) : Unit = {
+//           l match {
+//             case Nil => throw new Error
+//             case h :: t =>
+//               if (pos == 0)
+
+//           }
+//         }
+//       }
+//     }
+
+//     case class PopStart() extends Operation{
+//       override def mkOp: Unit = {
+//       }
+//     }
+
+//     case class PopEnd() extends Operation{
+//       override def mkOp: Unit = {
+//       }
+//     }
+
+//     case class dropAll() extends Operation {
+//       override def mkOp: Unit = {
+//       }
+//     }
+
+//     def applyOperation(op: Operation): Unit = {}
+
+//   }
 }

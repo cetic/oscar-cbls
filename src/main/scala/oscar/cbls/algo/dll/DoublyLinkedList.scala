@@ -14,6 +14,11 @@
 package oscar.cbls.algo.dll
 
 /** A mutable data structure allowing insert, and delete in O(1) based on a key mechanism
+  *
+  * The idea of the DoublyLinkedList is the following:
+  *
+  *   - When we insert a value, we get a container of the element
+  *   - Using this container, we can remove the element in O(1)
   * @author
   *   renaud.delandtsheer@cetic.be
   * @tparam T
@@ -22,7 +27,7 @@ package oscar.cbls.algo.dll
 class DoublyLinkedList[T] extends Iterable[T] {
 
   // Private ?
-  val phantom: DLLStorageElement[T] = new DLLStorageElement[T](null.asInstanceOf[T])
+  private val phantom: DLLStorageElement[T] = new DLLStorageElement[T](null.asInstanceOf[T])
 
   phantom.setNext(phantom)
 
@@ -43,68 +48,90 @@ class DoublyLinkedList[T] extends Iterable[T] {
     toReturn
   }
 
-  /** adds the element at the start of the DLL
+  /** Insert <code>elem</code> at the start of the DLL and returns the container that contains the
+    * element.
     * @param elem
     *   The element to add
     * @return
-    *   TODO
+    *   The container of the element
     */
-  def addElem(elem: T): DLLStorageElement[T] = {
+  def insertStart(elem: T): DLLStorageElement[T] = {
     val d = new DLLStorageElement[T](elem)
     d.setNext(phantom.next)
     phantom.setNext(d)
     d
   }
 
-  /** inserts <code>toInsert</code> after the position specified by <code>afterPosition</code>. If
+  /** Inserts <code>elem</code> after the position specified by <code>afterPosition</code>. If
     * <code>afterPosition</code> is the phantom position, it is inserted as the first element (since
-    * start and end phantom are the same)
-    * @param toInsert
+    * start and end phantom are the same
+    * @param elem
+    *   The element to insert
     * @param afterPosition
+    *   The container after which to insert
     * @return
+    *   The container of the inserted element
     */
-  def insertAfter(toInsert: T, afterPosition: DLLStorageElement[T]): DLLStorageElement[T] = {
+  def insertAfter(elem: T, afterPosition: DLLStorageElement[T]): DLLStorageElement[T] = {
     val successor = afterPosition.next
-    val d         = new DLLStorageElement[T](toInsert)
+    val d         = new DLLStorageElement[T](elem)
     d.setNext(successor)
     afterPosition.setNext(d)
     d
   }
 
-  /** adds the element at the end of the DLL
+  /** Insert <code>elem</code> at the end of the DLL and returns the container that contains the
+    * element.
     * @param elem
     *   The element to enqueue
     * @return
-    *   TODO
+    *   The container of the inserted element
     */
-  def enqueue(elem: T): DLLStorageElement[T] = {
+  def insertEnd(elem: T): DLLStorageElement[T] = {
     val d = new DLLStorageElement[T](elem)
     phantom.prev.setNext(d)
     d.setNext(phantom)
     d
   }
 
-  /** removes the first element in the list and returns it; throws exception if empty
+  /** Removes the first element of the DLL and returns the corresponding value. Raise an exception
+    * if the list is empty.
+    * @throws java.lang.IllegalArgumentException
+    *   when the list is empty
     * @return
-    *   the element that has been dequeued
+    *   The value contained at the begining of the DLL
     */
-  def dequeue(): T = {
+  def popStart(): T = {
     val d = phantom.next
-    assert(d != phantom)
+    require(d != phantom,"Cannot popStart an element on an empty DLL")
     d.delete()
     d.elem
   }
 
-  /** Syntaxic sugar for [[DoublyLinkedList.addElem]]
+  /** Removes the last element of the DLL and returns the corresponding value. Raise an exception if
+    * the list is empty.
+    * @throws java.lang.IllegalArgumentException
+    *   when the list is empty
+    * @return
+    *   The value contained at the begining of the DLL
     */
-  def +(elem: T): Unit = { addElem(elem) }
+  def popEnd(): T = {
+    val d = phantom.prev
+    require(d != phantom,"You cannot pop an element in an empty DLLp")
+    d.delete()
+    d.elem
+  }
+
+  /** Syntaxic sugar for [[DoublyLinkedList.insertStart]]
+    */
+  def +(elem: T): Unit = { insertStart(elem) }
 
   /** Concatenate an iterable of elements to the DLL
     *
     * @param elems
     *   the elements to concatenate
     */
-  def ++(elems: Iterable[T]): Unit = { for (elem <- elems) addElem(elem) }
+  def ++(elems: Iterable[T]): Unit = { for (elem <- elems) insertStart(elem) }
 
   /** Drop all the elements of the list */
   def dropAll(): Unit = {
@@ -124,7 +151,9 @@ class DoublyLinkedList[T] extends Iterable[T] {
   }
 }
 
-/** @author
+/** The container structure of the list.
+  *
+  * @author
   *   renaud.delandtsheer@cetic.be
   * @param elem
   *   the element to store
@@ -132,34 +161,55 @@ class DoublyLinkedList[T] extends Iterable[T] {
   *   the type of the element
   */
 class DLLStorageElement[T](val elem: T) {
+
+  /** The next container of the list */
   var next: DLLStorageElement[T] = _
+
+  /** The previous container of the list */
   var prev: DLLStorageElement[T] = _
 
+  /** Changes the next storage container of this container
+    *
+    * @param d
+    *   The new next storage container
+    */
   def setNext(d: DLLStorageElement[T]): Unit = {
     this.next = d
     d.prev = this
   }
 
+  /** Removes this storage container from the list */
   def delete(): Unit = {
     prev.setNext(next)
   }
 }
 
-/** @author
+/** An iterator based for [[DoublyLinkedList]]
+  *
+  * @author
   *   renaud.delandtsheer@cetic.be
-  * @param CurrentKey
+  * @param currentKey
   *   the current key in the iterator
   * @param phantom
   *   the phantom element that indicates the beginning/end of the list
   * @tparam T
   *   the type of elements in the iterator
   */
-class DLLIterator[T](var CurrentKey: DLLStorageElement[T], val phantom: DLLStorageElement[T])
+class DLLIterator[T](var currentKey: DLLStorageElement[T], val phantom: DLLStorageElement[T])
     extends Iterator[T] {
+
+  /** Get's the next element and moves the iterator pointer forward
+    *
+    * @return
+    *   The element
+    */
   def next(): T = {
-    CurrentKey = CurrentKey.next
-    CurrentKey.elem
+    currentKey = currentKey.next
+    currentKey.elem
   }
 
-  def hasNext: Boolean = { CurrentKey.next != phantom }
+  /** @return
+    *   true if the iterator has a next element, false otherwise
+    */
+  def hasNext: Boolean = { currentKey.next != phantom }
 }
