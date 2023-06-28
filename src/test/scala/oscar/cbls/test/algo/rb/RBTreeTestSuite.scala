@@ -76,6 +76,16 @@ class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks wi
     }
   }
 
+  test("tree.insert updates content") {
+    var tree = RedBlackTreeMap.empty[Int]
+
+    tree = tree.insert(1, 10)
+    tree = tree.insert(1, 11)
+
+    tree.size should be(1)
+    tree.get(1) should be(Some(11))
+  }
+
   test("tree.biggestLowerOrEqual returns expected element") {
     forAll(nonSequentialTuplesList) { list =>
       whenever(list.nonEmpty) {
@@ -215,7 +225,7 @@ class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks wi
       {
         whenever(list.nonEmpty) {
 
-          var parallelMap    = list.sortBy(_._1)
+          var parallelMap     = list.sortBy(_._1)
           var tree            = RedBlackTreeMap.makeFromSortedArray(list.toArray)
           val operations      = operationGenerator.sample.get
           var gapAboveLastKey = 0
