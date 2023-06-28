@@ -76,7 +76,7 @@ class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks wi
     }
   }
 
-  test("tree.insert updates content") {
+  test("tree.insert updates value if key already present") {
     var tree = RedBlackTreeMap.empty[Int]
 
     tree = tree.insert(1, 10)
