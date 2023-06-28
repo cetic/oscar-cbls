@@ -7,6 +7,9 @@ import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 
 import scala.util.Random
 
+/** This test class aims to test specific situations applicable to Heap with moves.
+ * @param heapTester A class used to generate heaps and be pasted as parameter for the tests
+ */
 class HeapWithMoveSingleActionSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
 
   private def generateArray(size: Int = 10) = Array.tabulate(size)(HeapItem)
@@ -105,32 +108,13 @@ class HeapWithMoveSingleActionSuite(heapTester: AbstractHeapTester) extends AnyF
         heap.checkInternals()
     }
   }
-
-  test(s"${heapTester.typeOfHeap} test") {
-    val array = generateArray()
-    heapTester match {
-      case withMoveTester: BinaryHeapWithMoveTester =>
-        val heap = withMoveTester.mkHeap(x => array(x).priority(), 10, 10)
-        heap.insert(2)
-        heap.insert(3)
-        heap.checkInternals()
-        array(3).changeValue(0)
-        heap.notifyChange(3)
-        heap.insert(0)
-        heap.popFirsts().sorted should be(List(0, 3))
-      case withMoveIntItemTester: BinaryHeapWithMoveIntItemTester =>
-        val heap = withMoveIntItemTester.mkHeap(x => array(x).priority(), 10, 10)
-        heap.insert(2)
-        heap.insert(3)
-        heap.checkInternals()
-        array(3).changeValue(0)
-        heap.notifyChange(3)
-        heap.insert(0)
-        heap.popFirsts().sorted should be(List(0, 3))
-    }
-  }
 }
 
+/**
+ * A HeapItem is a specific mutable item where the priority is based on its value.
+ * So in the Heap with move we can modify this value and update it's place in the heap.
+ * @param initialValue The initial value of the item
+ */
 case class HeapItem(initialValue: Int) {
   private var value: Int               = initialValue
   def priority(): Long                 = value.toLong

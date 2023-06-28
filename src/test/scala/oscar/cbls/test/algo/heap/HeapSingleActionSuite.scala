@@ -1,15 +1,16 @@
 package oscar.cbls.test.algo.heap
 
-import org.scalactic.Requirements
 import org.scalatest.Suites
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers._
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import oscar.cbls.algo.heap.{AbstractHeap, BinaryHeap}
 
-import javax.swing.text.Position.Bias
 import scala.util.Random
 
+/** This test class aims to test specific situations applicable to any Heap.
+  * @param heapTester A class used to generate heaps and be pasted as parameter for the tests
+  */
 class HeapSingleActionSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
 
   @inline
@@ -34,7 +35,7 @@ class HeapSingleActionSuite(heapTester: AbstractHeapTester) extends AnyFunSuite 
   }
 
   test(s"${heapTester.typeOfHeap} : Adding an item in a full heap has the expected behaviour") {
-    // For this test we exclude heapTester since his maximum size is maxPriority * Int.MaxValue
+    // For this test we exclude AggregatedBinaryHeapTester since his maximum size is maxPriority * Int.MaxValue
     // The only restriction is it's  maxPriorityValue
     if (!heapTester.isInstanceOf[AggregatedBinaryHeapTester]) {
       val heap = heapTester.mkHeap(x => x, 10, 10)
@@ -138,15 +139,27 @@ class HeapSingleActionSuite(heapTester: AbstractHeapTester) extends AnyFunSuite 
         populate(heap)
         val copy = heap.withPriorityFunction((x: Int) => x)
         assertEquality(heap, copy)
-      case _ =>
-        val heap = heapTester.mkHeap(x => x, 200, 200).asInstanceOf[BinaryHeap[Int]]
+      case bhwmt: BinaryHeapWithMoveTester =>
+        val heap = bhwmt.mkHeap(x => x, 200, 200)
+        populate(heap)
+        val copy = heap.withPriorityFunction((x: Int) => x)
+        assertEquality(heap, copy)
+      case bhwmit: BinaryHeapWithMoveIntItemTester =>
+        val heap = bhwmit.mkHeap(x => x, 200, 200)
+        populate(heap)
+        val copy = heap.withPriorityFunction((x: Int) => x)
+        assertEquality(heap, copy)
+      case bht: BinaryHeapTester =>
+        val heap = bht.mkHeap(x => x, 200, 200)
         populate(heap)
         val copy = heap.withPriorityFunction((x: Int) => x)
         assertEquality(heap, copy)
     }
   }
 
-  test(s"${heapTester.typeOfHeap} : Reversing the priority order of a heap reverses the order of the heap") {
+  test(
+    s"${heapTester.typeOfHeap} : Reversing the priority order of a heap reverses the order of the heap"
+  ) {
     def populate(heap: AbstractHeap[Int]): Unit = {
       val intIterator = generateRandomIntIterator(200)
       for (_ <- 0 until 100) heap.insert(intIterator.next())
@@ -154,7 +167,7 @@ class HeapSingleActionSuite(heapTester: AbstractHeapTester) extends AnyFunSuite 
 
     def assertReverse(heap: AbstractHeap[Int], reversed: AbstractHeap[Int]): Unit = {
       heap.size should be(reversed.size)
-      val heapListPrior: List[Int] = List.fill(heap.size)(heap.popFirst().get)
+      val heapListPrior: List[Int]     = List.fill(heap.size)(heap.popFirst().get)
       val reversedListPrior: List[Int] = List.fill(reversed.size)(reversed.popFirst().get)
       heapListPrior should be(reversedListPrior.reverse)
     }
@@ -163,12 +176,22 @@ class HeapSingleActionSuite(heapTester: AbstractHeapTester) extends AnyFunSuite 
       case abht: AggregatedBinaryHeapTester =>
         val heap = abht.mkHeap(x => x, 200, 200)
         populate(heap)
-        val reversed = heap.withPriorityFunction((x: Int) => 200-x-1)
+        val reversed = heap.withPriorityFunction((x: Int) => 200 - x - 1)
         assertReverse(heap, reversed)
-      case _ =>
-        val heap = heapTester.mkHeap(x => x, 200, 200).asInstanceOf[BinaryHeap[Int]]
+      case bhwmt: BinaryHeapWithMoveTester =>
+        val heap = bhwmt.mkHeap(x => x, 200, 200)
         populate(heap)
-        val reversed = heap.withPriorityFunction((x: Int) => 200-x-1)
+        val reversed = heap.withPriorityFunction((x: Int) => 200 - x - 1)
+        assertReverse(heap, reversed)
+      case bhwmit: BinaryHeapWithMoveIntItemTester =>
+        val heap = bhwmit.mkHeap(x => x, 200, 200)
+        populate(heap)
+        val reversed = heap.withPriorityFunction((x: Int) => 200 - x - 1)
+        assertReverse(heap, reversed)
+      case bht: BinaryHeapTester =>
+        val heap = bht.mkHeap(x => x, 200, 200)
+        populate(heap)
+        val reversed = heap.withPriorityFunction((x: Int) => 200 - x - 1)
         assertReverse(heap, reversed)
     }
   }

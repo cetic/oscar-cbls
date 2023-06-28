@@ -76,7 +76,7 @@ class HeapSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
     val genPopFirst  = PopFirst()
     val genPopFirsts = PopFirsts()
     // Change the value of an item to store
-    val genNotifyChanges = Gen.choose(0, itemsToStore.length - 1).map(x => NotifyChanges(x))
+    val genNotifyChanges  = Gen.choose(0, itemsToStore.length - 1).map(x => NotifyChanges(x))
     val genRemoveElem     = RemoveElem()
     val genCheckInternals = CheckInternals()
     val weightedOps = Gen.frequency(
@@ -129,8 +129,12 @@ class HeapSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
             case p: PopFirst =>
               p.heap = heap.popFirst()
               if (witnessHeapAsList.nonEmpty) {
+                // If we have multiple element with the same priority we must ensure
+                // to remove the same from both the heap and the witnessHeapAsList
                 val heapAndWitnessSameFirstPriority =
-                  p.heap.nonEmpty && priority(p.heap.get) == priority(witnessHeapAsList.minBy(priority))
+                  p.heap.nonEmpty && priority(p.heap.get) == priority(
+                    witnessHeapAsList.minBy(priority)
+                  )
                 val removeElemFromWitness =
                   if (heapAndWitnessSameFirstPriority) p.heap.get
                   else witnessHeapAsList.minBy(priority)
@@ -175,15 +179,15 @@ class HeapSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
                 checkPriority(heapElem, witnessElem)
               }
 
-            case c: Clear =>
+            case _: Clear =>
               heap.dropAll()
               witnessHeapAsList = List[Int]()
 
             case nc: NotifyChanges =>
               val first = heap.getFirst
               if (first.nonEmpty) {
-                val newValue    = nc.value
-                nc.itemId         = witnessHeapAsList.head
+                val newValue = nc.value
+                nc.itemId = witnessHeapAsList.head
                 itemsToStore(nc.itemId).changeValue(newValue)
                 heap match {
                   case withMove: BinaryHeapWithMove[Int] => withMove.notifyChange(nc.itemId)
@@ -205,16 +209,15 @@ class HeapSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
                 witnessHeapAsList = removeElem(witnessHeapAsList, itemToRemove)
               }
 
-            case ci: CheckInternals =>
+            case _: CheckInternals =>
               heap match {
                 case withMove: BinaryHeapWithMove[Int]      => withMove.checkInternals()
                 case withMoveInt: BinaryHeapWithMoveIntItem => withMoveInt.checkInternals()
               }
-
-            case _ => // Unreachable ?
           }
         }
 
+        // Checks after each list of operations
         heap.size should be(witnessHeapAsList.size)
         heap.isEmpty should be(witnessHeapAsList.isEmpty)
 
@@ -235,15 +238,12 @@ class HeapSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
   def removeElem(list: List[Int], elem: Int): List[Int] = {
     val indexMin = list.indexOf(elem)
     val res      = list.take(indexMin) ::: list.takeRight(list.size - indexMin - 1)
-
     res
   }
 
   def removeElems(list: List[Int], elems: List[Int]): List[Int] = {
     var tempList = list
-    for (i <- elems) {
-      tempList = removeElem(tempList, i)
-    }
+    for (i <- elems) tempList = removeElem(tempList, i)
     tempList
   }
 
@@ -258,6 +258,8 @@ class HeapSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
     )
   }
 
+  /** All the operations available
+    */
   abstract sealed class Operation()
   case class Insert(value: Int) extends Operation {
     override def toString: String = s"Insert : $value"
@@ -298,6 +300,12 @@ class HeapSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
   }
   case class CheckInternals() extends Operation
 
+  /** A HeapItem is a specific mutable item where the priority is based on its value. So in the Heap
+    * with move we can modify this value and update it's place in the heap.
+    *
+    * @param initialValue
+    *   The initial value of the item
+    */
   case class HeapItem(initialValue: Int) {
     private var value: Int               = initialValue
     def priority(): Long                 = value.toLong
