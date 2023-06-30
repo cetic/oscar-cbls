@@ -1,3 +1,16 @@
+// OscaR is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 2.1 of the License, or
+// (at your option) any later version.
+//
+// OscaR is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License  for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License along with OscaR.
+// If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+
 package oscar.cbls.algo.heap
 
 import scala.collection.immutable.SortedMap
@@ -11,19 +24,18 @@ object BinaryHeapWithMove {
   }
 }
 
-/** This binary heap is less efficient than the [[oscar.cbls.algo.heap.BinaryHeap]] but it offers
-  * more operations, such as delete and update value (hence priority). It should be only used in a propagation
-  * context.
+/** A mutable binary heap.
+  *
+  * By worsening a bit it's efficiency, it offers additional operations very useful for propagation.
   *
   * @param priorityFunction
-  *   a function that returns an integer for each element inserted in the heap this value is used to
-  *   sort the heap content
+  *   returns the priority value as a [[scala.Long]] of an element [[T]]
   * @param maxSize
-  *   the maximum number of elements that can be inserted in this heap
+  *   maximum size of the heap
   * @param m
-  *   the manifest of T, to create arrays of T's
+  *   manifest of T, to create arrays of T's
   * @tparam T
-  *   the type of elements included in the heap
+  *   type of elements in the heap
   * @author
   *   renaud.delandtsheer@cetic.be
   */
@@ -31,7 +43,7 @@ class BinaryHeapWithMove[T](priorityFunction: T => Long, override val maxSize: I
   implicit val o: Ordering[T],
   override implicit val m: Manifest[T]
 ) extends BinaryHeap[T](priorityFunction, maxSize) {
-  // Store the position of each item so that it can easily be found after updating it's value
+  // Stores the position of each item
   private var itemsPosition: SortedMap[T, Int] = SortedMap.empty
 
   override def withPriorityFunction(priorityFunction: T => Long): BinaryHeapWithMove[T] = {
@@ -43,23 +55,18 @@ class BinaryHeapWithMove[T](priorityFunction: T => Long, override val maxSize: I
 
   def contains(value: T): Boolean = itemsPosition.contains(value)
 
-  /** Notify that one element of the heap has changed.
-    *
-    * One element of the heap has changed, we need to restore the state of the heap by bubbling up
-    * and down the element.
+  /** Notifies that one element of the heap has changed.
     *
     * @param elem
     *   The element whose internal state has changed.
     */
   def notifyChange(elem: T): Unit = {
     require(itemsPosition.contains(elem), s"Item $elem is not in the heap")
-    bubbleDown(bubbleUp(itemsPosition(elem)))
+    bubbleDown(bubbleUp(itemsPosition(elem))) // Moves it to the right place
   }
 
-  /** Remove the desired element from the heap
+  /** Removes a specific element from the heap
     *
-    * It's similar to the popFirst method, the only difference is that the removed element wasn't
-    * necessarily at the top of the heap so we need to bubble up and down
     * @param elem
     *   the element to remove
     * @return
@@ -76,16 +83,14 @@ class BinaryHeapWithMove[T](priorityFunction: T => Long, override val maxSize: I
           swapPositions(elemPosition, size - 1)
           currentSize -= 1
           itemsPosition -= elem
+          // Swapped item not necessarily at top so bubble up and down
           bubbleDown(bubbleUp(elemPosition))
         }
         true
     }
   }
 
-  /** Get all the elements present in the heap
-    * @return
-    *   All the elements present in the heap
-    */
+  /** Gets all the elements present in the heap */
   def getElements: Iterable[T] = {
     itemsPosition.keys
   }
@@ -116,8 +121,7 @@ class BinaryHeapWithMove[T](priorityFunction: T => Long, override val maxSize: I
     }
   }
 
-  /** Check if the state of the heap is correct.
-    */
+  /** Checks if the state of the heap is correct. */
   def checkInternals(): Unit = {
     require(
       heapArray.take(size).distinct.length == size,

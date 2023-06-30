@@ -21,15 +21,13 @@ object AggregatedBinaryHeap {
   }
 }
 
-/** This binary heap implementation is dedicated to problem where it's highly likely to have
-  * multiple elements of the same priority.
+/** A binary heap where getFirsts and popFirst is in O(1)
   *
-  * The heap is actually made of an array, storing lists containing items with same priority. A
-  * binary heap is maintained to record the lowest priority in the heap. This is more efficient if
-  * it often occurs that elements have the same priority. Priority is assumed to start at zero.
+  * It uses an internal binary heap to store the priority of the elements in the heap. For each
+  * priority it keeps the related element in an array of lists
   *
   * @param priorityFunction
-  *   The function used to determine the priority of an element
+  *   returns the priority value as a [[scala.Int]] of an element [[T]]
   * @param maxPriority
   *   The maximum priority value of the heap
   * @author
@@ -45,8 +43,10 @@ class AggregatedBinaryHeap[T](priorityFunction: T => Int, val maxPriority: Int)
   private[this] val priorityToElements: Array[List[T]] =
     Array.tabulate(maxPriority)(_ => List.empty)
 
-  /** Create a new BinaryHeap with a new priorityFunction. Then add all the element of this heap to
-    * the new one.
+  /** Create a copy of this heap with a new priorityFunction.
+    *
+    * Create the new [[oscar.cbls.algo.heap.AggregatedBinaryHeap]] with the priority function then
+    * add the elements
     *
     * @param priorityFunction
     *   The new priority function
@@ -72,7 +72,8 @@ class AggregatedBinaryHeap[T](priorityFunction: T => Int, val maxPriority: Int)
   override def insert(elem: T): Unit = {
     require(
       priorityFunction(elem) < maxPriority,
-      s"The priority value of this element exceed the maximum priority value allowed. ${priorityFunction(elem)} has to be lower than $maxPriority"
+      s"The priority value of this element exceed the maximum priority value allowed." +
+        s" ${priorityFunction(elem)} has to be lower than $maxPriority"
     )
     val priority              = priorityFunction(elem)
     val otherWithSamePriority = priorityToElements(priority)

@@ -13,27 +13,24 @@
 
 package oscar.cbls.algo.heap
 
-/** This abstract class defines all the needed method that needs to be implemented in order to
-  * define a heap.
+/** Defines all the methods needed to run a heap.
   *
-  * Basically all the classical methods, insertion, access, remove
   * @tparam T
   *   The type of items present in the heap
   */
 abstract class AbstractHeap[T] extends Iterable[T] {
 
-  /** Change the current size to 0, hence no element has to be considered
-    */
+  /** Empties the heap */
   def dropAll(): Unit
 
-  /** Add a new element to the heap given his priority. Insertion at the end and bubble up.
+  /** Inserts a new element in the heap given its priority
     *
     * @param elem
     *   the element to add
     */
   def insert(elem: T): Unit
 
-  /** Return the first element of the heap without removing it
+  /** Gets the first element of the heap without removing it
     *
     * @return
     *   - None (heap is empty)
@@ -41,8 +38,7 @@ abstract class AbstractHeap[T] extends Iterable[T] {
     */
   def getFirst: Option[T]
 
-  /** Return the firsts elements of the heap without removing them. Meaning all the elements having
-    * the highest priority.
+  /** Returns the firsts elements of the heap without removing them.
     *
     * @return
     *   - An empty List (heap is empty)
@@ -50,8 +46,7 @@ abstract class AbstractHeap[T] extends Iterable[T] {
     */
   def getFirsts: List[T]
 
-  /** Pop the first element of the heap. Swap it with the last element of the heap and bubble it
-    * down
+  /** Pops the first element of the heap.
     *
     * @return
     *   - None (heap is empty)
@@ -59,8 +54,7 @@ abstract class AbstractHeap[T] extends Iterable[T] {
     */
   def popFirst(): Option[T]
 
-  /** Pop the firsts elements of the heap. Recursively pop one element and store its value. If the
-    * new head of the heap's priority isn't the same as the first element popped we are done.
+  /** Pops the firsts elements of the heap.
     *
     * @return
     *   - An empty List (heap is empty)

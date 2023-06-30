@@ -1,3 +1,16 @@
+// OscaR is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 2.1 of the License, or
+// (at your option) any later version.
+//
+// OscaR is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License  for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License along with OscaR.
+// If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+
 package oscar.cbls.algo.heap
 
 object BinaryHeapWithMoveIntItem {
@@ -10,23 +23,18 @@ object BinaryHeapWithMoveIntItem {
   }
 }
 
-/** This binary heap is less efficient than the [[oscar.cbls.algo.heap.BinaryHeap]] but it offers
-  * more operations, such as delete and update value. This implementation has been optimize to deal
-  * with Integers items.
+/** A mutable binary heap optimized for Int items.
   *
-  * Very similar to [[oscar.cbls.algo.heap.BinaryHeapWithMove]], but instead of using a map for
-  * itemsPosition, it uses an array hence the access is in 0(1) but the drop all in O(size).
-  *
-  * It should be only used in a propagation context.
+  * By worsening a bit it's efficiency, it offers additional operations very useful for propagation.
+  * Using an Array instead of a map for the positions
   * @author
   *   renaud.delandtsheer@cetic.be
   * @param priorityFunction
-  *   a function that returns an integer for each element inserted in the heap this value is used to
-  *   sort the heap content
+  *   returns the priority value as a [[scala.Long]] of an element [[scala.Int]]
   * @param maxSize
-  *   the maximum number of elements that can be inserted in this heap
+  *   maximum size of the heap
   * @param maxItemValue
-  *   The maximal value of inserted element. (for the itemsPositions array)
+  *   maximal value of inserted element. (for the itemsPositions array)
   */
 class BinaryHeapWithMoveIntItem(priorityFunction: Int => Long, maxSize: Int, val maxItemValue: Int)
     extends BinaryHeap[Int](priorityFunction, maxSize) {
@@ -43,10 +51,7 @@ class BinaryHeapWithMoveIntItem(priorityFunction: Int => Long, maxSize: Int, val
 
   def contains(value: Int): Boolean = itemsPosition(value) != -1
 
-  /** Notify that one element of the heap has changed.
-    *
-    * One element of the heap has changed, we need to restore the state of the heap by bubbling up
-    * and down the element.
+  /** Notifies that one element of the heap has changed.
     *
     * @param elem
     *   The element whose internal state has changed.
@@ -56,16 +61,12 @@ class BinaryHeapWithMoveIntItem(priorityFunction: Int => Long, maxSize: Int, val
     bubbleDown(bubbleUp(itemsPosition(elem)))
   }
 
-  /** Remove the desired element from the heap
-    *
-    * It's similar to the popFirst method, the only difference is that the removed element wasn't
-    * necessarily at the top of the heap so we need to bubble up and down
+  /** Removes a specific element from the heap
     *
     * @param elem
     *   the element to remove
     * @return
-    *   - false Item wasn't in the heap
-    *   - true operation succeeded
+    *   Whether or not an element has been removed
     */
   def removeElement(elem: Int): Boolean = {
     if (contains(elem)) {
@@ -103,9 +104,6 @@ class BinaryHeapWithMoveIntItem(priorityFunction: Int => Long, maxSize: Int, val
     super.insert(elem)
   }
 
-  /** removes the smallest element and returns its value
-    * @return
-    */
   override def popFirst(): Option[Int] = {
     super.popFirst() match {
       case None => None
@@ -115,8 +113,7 @@ class BinaryHeapWithMoveIntItem(priorityFunction: Int => Long, maxSize: Int, val
     }
   }
 
-  /** Check if the state of the heap is correct.
-    */
+  /** Checks if the state of the heap is correct. */
   def checkInternals(): Unit = {
     for (i <- heapArray.indices if i < size - 1L) {
       if (leftChild(i) < size) {

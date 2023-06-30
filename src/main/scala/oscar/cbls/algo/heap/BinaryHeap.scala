@@ -23,20 +23,19 @@ object BinaryHeap {
   }
 }
 
-/** This is an implementation of a binary min-heap.
+/** A binary min-heap.
   *
   * It maintains the order of the heap such that the first element is the one with the minimal
   * priority value. All operations are in O(log(n)).
   *
   * @param priorityFunction
-  *   a function that returns an integer for each element inserted in the heap this value is used to
-  *   sort the heap content
+  *   returns the priority value as a [[scala.Long]] of an element [[T]]
   * @param maxSize
-  *   the maximum number of elements that can be inserted in this heap
+  *   maximum size of the heap
   * @param m
-  *   the manifest of T, to create arrays of T's
+  *   manifest of T, to create arrays of T's
   * @tparam T
-  *   the type of elements included in the heap
+  *   type of elements of the heap
   * @author
   *   renaud.delandtsheer@cetic.be, fabian.germeau@cetic.be
   */
@@ -46,15 +45,15 @@ class BinaryHeap[T](priorityFunction: T => Long, val maxSize: Int)(implicit val 
   override def size: Int        = currentSize
   override def isEmpty: Boolean = currentSize == 0L
 
-  // Keep the value of the heap. Initialized at max size for performance.
-  // Upon clearing the values are not suppressed but the current size of the heap is adjusted.
+  // Keeps the value of the heap. Initialized at max size for performance.
+  // Only the first currentSize elements are considered to be in the heap.
   protected val heapArray: Array[T] = new Array[T](maxSize)
-  // Keep the real size of the heap, aka the number of elements to consider in the array
-  protected var currentSize: Int = 0
+  protected var currentSize: Int    = 0
 
-  /** Create a new BinaryHeap with a new priorityFunction. Then add all the element of this heap to
-    * the new one.
-   *
+  /** Creates a copy of this BinaryHeap with a new priorityFunction.
+    *
+    * Creates a new BinaryHeap then add all the elements of this heap to the new one.
+    *
     * @param priorityFunction
     *   The new priority function
     * @return
@@ -74,7 +73,7 @@ class BinaryHeap[T](priorityFunction: T => Long, val maxSize: Int)(implicit val 
   @inline protected def rightChild(position: Int): Int = (position + 1) * 2
   @inline protected def father(position: Int): Int     = (position - 1) / 2
 
-  /** Swap the position of two element in the heapArray.
+  /** Swaps the position of two elements in the heapArray.
     * @param position1
     *   The first position
     * @param position2
@@ -86,12 +85,13 @@ class BinaryHeap[T](priorityFunction: T => Long, val maxSize: Int)(implicit val 
     heapArray(position2) = tmp
   }
 
-  /** Restore the state of the heap by moving up as much as possible the element at the defined
+  /** Restores the state of the heap by moving up as much as possible the element at the defined
     * position.
     *
     * It simply compares the priority of the element with his father's one.
     *   - If father > element ==> switch the position of the father and the element
     *   - Else ==> we are done
+    *
     * @param startPosition
     *   the position defining the element we want to bubble up
     * @return
@@ -114,7 +114,7 @@ class BinaryHeap[T](priorityFunction: T => Long, val maxSize: Int)(implicit val 
     position
   }
 
-  /** Restore the state of the heap by moving down as much as possible the element at the defined
+  /** Restores the state of the heap by moving down as much as possible the element at the defined
     * position.
     *
     * It simply compares the priority of the element with his left and right child's one.
@@ -123,9 +123,9 @@ class BinaryHeap[T](priorityFunction: T => Long, val maxSize: Int)(implicit val 
     *   - Else ==> we are done
     *
     * @param startPosition
-    *   the position defining the element we want to bubble down
+    *   position defining the element we want to bubble down
     * @return
-    *   the new position of the element
+    *   new position of the element
     */
   protected def bubbleDown(startPosition: Int = 0): Int = {
     var position     = startPosition
@@ -154,6 +154,10 @@ class BinaryHeap[T](priorityFunction: T => Long, val maxSize: Int)(implicit val 
     position
   }
 
+  /** Empties the heap
+    *
+    * Changes the currentSize, hence the number of element present, to zero.
+    */
   override def dropAll(): Unit = {
     currentSize = 0
   }
@@ -226,11 +230,11 @@ class BinaryHeap[T](priorityFunction: T => Long, val maxSize: Int)(implicit val 
 
 /** An Iterator for the BinaryHeap
   * @param heapArray
-  *   The heap as an Array
+  *   Heap as an Array
   * @param size
-  *   The size of the heap
+  *   Size of the heap
   * @tparam T
-  *   The type of items in the heap
+  *   Type of items in the heap
   */
 class BinaryHeapIterator[T](heapArray: Array[T], size: Int) extends Iterator[T] {
   private var current: Int = 0
