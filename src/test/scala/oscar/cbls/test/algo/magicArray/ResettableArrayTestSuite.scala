@@ -44,7 +44,7 @@ class ResettableArrayTestSuite
 
     def checkArray: Boolean = {
       var res = true
-      for (i <- (0 until arraySize)) {
+      for (i <- 0 until arraySize) {
         res = res && resettableArray(i) == witnessArray(i)
       }
       res
@@ -65,9 +65,9 @@ class ResettableArrayTestSuite
       }
     }
 
-    def resetArrays: Unit = {
+    def resetArrays(): Unit = {
       resettableArray.reset()
-      for (i <- (0 until arraySize)) witnessArray(i) = defaultValues(i)
+      for (i <- 0 until arraySize) witnessArray(i) = defaultValues(i)
     }
 
     def applyUpdates(l: List[Update]): Unit = applyUpdateListRec(l)
@@ -97,11 +97,8 @@ class ResettableArrayTestSuite
       testData.applyUpdates(list)
       testData.checkArray should be(true)
       // val checkAfterUpdates = testData.checkArray
-      testData.resetArrays
+      testData.resetArrays()
       testData.checkArray should be(true)
-
     }
-
   }
-
 }

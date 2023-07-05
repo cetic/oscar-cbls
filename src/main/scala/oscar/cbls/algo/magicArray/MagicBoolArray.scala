@@ -14,8 +14,6 @@ package oscar.cbls.algo.magicArray
 
 import scala.annotation.tailrec
 
-//import oscar.cbls.algo.quick.QList
-
 object MagicBoolArray {
 
   /** Create a Magical Array Of Boolean of given length, with value initialized to initialVal
@@ -32,21 +30,21 @@ object MagicBoolArray {
   }
 }
 
-/** This represents an array of boolean where setting all values to true or false can (almost every
-  * time) be done in constant time.
+/** This represents an array of booleans where setting all values to true or false can (almost
+  * always) be done in constant time.
   *
-  * It works the following way: Boolean are stored as Integer values and the array contains a
-  * pivot. The value is true if the integer is greater or equal to the pivot and the value is false
-  * otherwise. To put all the value at false, the idea is to change the value of the pivot to abs(pivot)
-  * + 1. To put all the value at true, the idea is to change the value of the pivot to -abs(pivot) -
-  * \1. If the pivot arrives to a threshold (Long.MaxValue - 10) the array is reinitialized (it
-  * costs O(length))
+  * It works the following way: each boolean is stored as an integer while the array maintains a
+  * pivot. The value of an element of the array is true if the respective integer is greater or
+  * equal to the pivot and, and false otherwise. To set all the value to false, the pivot is set to
+  * abs(pivot) + 1, while to set all the value to true, it is set to
+  * -abs(pivot) - \1. If the pivot reaches a threshold (Long.MaxValue - 10) the array is
+  * reinitialized, which costs O(length).
   * @author
-  *   Jannou Brohée on 3/10/16.
+  *   Jannou Brohée on 3/10/16
   * @param length
-  *   The length of magical array
+  *   The length of the array
   * @param initVal
-  *   The initial values in the array. The default value is false.
+  *   The initial values in the array. The default value is false
   */
 class MagicBoolArray(val length: Int, initVal: Boolean = false) {
 
@@ -58,35 +56,28 @@ class MagicBoolArray(val length: Int, initVal: Boolean = false) {
 
   protected val indices: Range = 0 until length
 
-  /** Set the new value of element at specific index
+  /** Sets the new value of the element at specified index.
     * @param id
     *   the index of the element
     * @param value
-    *   the new element's value (true/false)
-    * @note
-    *   in O(1) // trivial
+    *   the new value of the element
     */
   def update(id: Int, value: Boolean): Unit = {
     assert(id < length && 0 <= id)
-    val oldInternalArray = internalArray(id)
     if (value) internalArray(id) = pivot
     else internalArray(id) = pivot - 1L
   }
 
-  /** Return the value of the element at specific index
+  /** Returns the value of the element at specified index.
     * @param id
     *   the index of the element
-    * @return
-    *   true or false
-    * @note
-    *   complexity is O(1)
     */
   def apply(id: Int): Boolean = {
     require(0 <= id && id < length, "got id:" + id + " length:" + length)
     internalArray(id) >= pivot
   }
 
-  /** Sets the value of each element to "value"
+  /** Sets each element to the given value.
     * @param value
     *   The value to set
     * @note
@@ -110,8 +101,7 @@ class MagicBoolArray(val length: Int, initVal: Boolean = false) {
     }
   }
 
-  /** Resets the array when the pivot commes to close to the threshold
-    */
+  /** Resets the array when the pivot is about to reach the threshold. */
   @inline
   private[this] def resetArray(): Unit = {
     var i = internalArray.length
@@ -121,28 +111,26 @@ class MagicBoolArray(val length: Int, initVal: Boolean = false) {
     }
   }
 
-  /** Returns the value stored in the magic array in the form of a scala <code>Array</code>
+  /** Returns the values stored in this array in the form of a Scala <code>Array</code>.
     *
-    * @return
-    *   The values in the array
     * @note
     *   Complexity: O(length)
     */
   def all: Array[Boolean] = Array.tabulate(length)(i => internalArray(i) >= pivot)
 
-  /** Creates an iterator over the indexes of elements which value is true. This is a O(this.length)
-    * method
-    * @return
-    *   the new iterator
+  /** Creates an iterator over the indices of elements whose value is true.
+    *
+    * @note
+    *   complexity is O(length)
     */
   def indicesAtTrue: Iterator[Int] = {
     indicesAtTrueAsList.iterator
   }
 
-  /** Creates a List over the indexes of elements which value is true. This is a O(this.length)
-    * method
-    * @return
-    *   the new iterator
+  /** Creates a List containing the indices of elements whose value is true.
+    *
+    * @note
+    *   complexity is O(length)
     */
   def indicesAtTrueAsList: List[Int] = {
     @tailrec
@@ -159,10 +147,6 @@ class MagicBoolArray(val length: Int, initVal: Boolean = false) {
     indicesAtTrue_aux()
   }
 
-  /** Provides a string with all the indices that are true
-    *
-    * @return
-    *   the indices that are true
-    */
+  /** Provides a string with all the indices that are true. */
   override def toString: String = s"[${indicesAtTrue.mkString(",")}]"
 }

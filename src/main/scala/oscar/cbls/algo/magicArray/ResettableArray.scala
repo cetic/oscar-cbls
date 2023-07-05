@@ -15,33 +15,32 @@ package oscar.cbls.algo.magicArray
 
 import scala.reflect.ClassTag
 
-/** An array where putting all values to their default value is O(1).
+/** An array where resetting all values to their default takes O(1) time.
   *
-  * It works the following way: the array uses a [[MagicBoolArray]] to track all the ids for which
-  * the value has been updated. If the value has been updated, the value is taken in the internal
-  * array, else the default value is taken. To put all values to their default values, we just
-  * update all the values of the internal [[MagicBoolArray]].
+  * It works in the following way: the array uses a [[MagicBoolArray]] to track all the indices for
+  * which the value has been updated, as well as an internal array to store the actual values. When
+  * querying the array for an element, the value is returned from the internal array if the value
+  * has been updated, otherwise the default value is returned. To reset all values to their default,
+  * the internal [[MagicBoolArray]] update method is invoked.
   *
   * @tparam T
   *   The type of the elements of the array
   * @param length
   *   the size of the array
   * @param defaultValue
-  *   the default value for all the elements of the array
+  *   callback specifying the default value for each element of the array
   */
 
 class ResettableArray[T: ClassTag](length: Int, defaultValue: Int => T) {
 
   private val internalArray: Array[T]       = Array.tabulate(length)(defaultValue)
-  private val changedValues: MagicBoolArray = MagicBoolArray(length, false)
+  private val changedValues: MagicBoolArray = MagicBoolArray(length)
 
-  /** Set the new value of element at specific index
+  /** Sets the new value of the element at the specified index.
     * @param id
     *   the index of the element
     * @param value
     *   the new element's value
-    * @note
-    *   in O(1) // trivial
     */
   def update(id: Int, value: T): Unit = {
     assert(id < length && 0 <= id)
@@ -49,13 +48,11 @@ class ResettableArray[T: ClassTag](length: Int, defaultValue: Int => T) {
     changedValues(id) = true
   }
 
-  /** Return the value of the element at specific index
+  /** Returns the value of the element at specified index.
     * @param id
     *   the index of the element
     * @return
     *   the value
-    * @note
-    *   complexity is O(1)
     */
   def apply(id: Int): T = {
     if (changedValues(id)) {
@@ -65,8 +62,9 @@ class ResettableArray[T: ClassTag](length: Int, defaultValue: Int => T) {
     }
   }
 
-  /** resets the array to the default values complexity is O(1) (except one in every MaxLong calls
-    * where is it O(n) - that will never happend)
+  /** Resets the array to the default values.
+    * @note
+    *   complexity is O(1), except once every MaxLong calls, where is it O(n)
     */
   def reset(): Unit = {
     changedValues.all = false

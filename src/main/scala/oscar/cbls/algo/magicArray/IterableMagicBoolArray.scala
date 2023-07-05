@@ -18,11 +18,9 @@ package oscar.cbls.algo.magicArray
 
 object IterableMagicBoolArray {
 
-  /** create a Magical Array Of Boolean of given length
+  /** Create an IterableMagicBoolArray of the given length.
     * @param n
-    *   the length
-    * @return
-    *   a Magical Array Of Boolean or null if length is less than zero
+    *   the length, which must be a positive integer
     */
   def apply(n: Int, initVal: Boolean = false): IterableMagicBoolArray = {
     require(n >= 0, "cannot create magic array of negative size")
@@ -31,7 +29,7 @@ object IterableMagicBoolArray {
 }
 
 /** A data structure that works like [[MagicBoolArray]] (where setting all values to true or false
-  * is made in constant time) but where getting the list of indices that are true is more efficient
+  * is made in constant time) but where getting the list of indices that are true is more efficient.
   *
   * @param length
   *   The length of the array
@@ -45,7 +43,7 @@ class IterableMagicBoolArray(override val length: Int, initVal: Boolean = false)
   // A list that contains an over approximation of the position that are true
   // (when approximation is active)
   private var positionsAtTrueOverApproximated: List[Int] = Nil
-  // A magic array that says if a value is allready in the list of position that are true
+  // A magic array that says if a value is already in the list of position that are true
   private val isPositionInOverApproximationList: MagicBoolArray = MagicBoolArray(length)
   // A flag that activates the over approximation
   // over approximation is only activated when all the values are set to false
@@ -77,7 +75,7 @@ class IterableMagicBoolArray(override val length: Int, initVal: Boolean = false)
           overApproximationIsActive &&
           !alreadyIsInQList
         ) {
-           isPositionInOverApproximationList(id) = true
+          isPositionInOverApproximationList(id) = true
           positionsAtTrueOverApproximated = id :: positionsAtTrueOverApproximated
         }
       }

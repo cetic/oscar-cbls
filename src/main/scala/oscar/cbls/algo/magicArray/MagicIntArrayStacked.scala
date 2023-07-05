@@ -23,11 +23,10 @@ package oscar.cbls.algo.magicArray
   * @param maxLevel
   *   The max number of level
   * @param initVal
-  *   The inital values of the array
+  *   The initial values of the array
   * @param size
   *   The size of the array
   */
-
 class MagicIntArrayStacked(maxLevel: Int, initVal: Int => Long, size: Int) extends Iterable[Long] {
 
   // The different arrays of every level of the stack
@@ -40,65 +39,55 @@ class MagicIntArrayStacked(maxLevel: Int, initVal: Int => Long, size: Int) exten
   // The current level of the array
   private[this] var currentLevel: Int = 0
 
-  /** Get the current level of the stack
-    *
-    * @return
-    *   The current level
-    */
+  /** Get the current level of the stack. */
   def level: Int = currentLevel
 
-  /** Update the value of the array. The value is only updated for the current stack level
+  /** Update the value of the array. The value is only updated for the current stack level.
     *
-    * @param indice
-    *   The indice to update
+    * @param index
+    *   The index to update
     * @param value
     *   The new value to store
     */
-  def update(indice: Int, value: Long): Unit = {
-    levelToArray(currentLevel)(indice) = value
-    if (currentLevel != 0) levelToIsValueChangedAtNextLevel(currentLevel - 1)(indice) = true
+  def update(index: Int, value: Long): Unit = {
+    levelToArray(currentLevel)(index) = value
+    if (currentLevel != 0) levelToIsValueChangedAtNextLevel(currentLevel - 1)(index) = true
   }
 
-  /** Get the value stored in the array at specific index
+  /** Get the value stored in the array at the specified index.
     *
-    * @param indice
+    * @param index
     *   the index of the element
-    * @return
-    *   The value
     */
-  def apply(indice: Int): Long = {
+  def apply(index: Int): Long = {
     var attemptLevel = currentLevel
     while (attemptLevel > 0) {
       val levelBelow = attemptLevel - 1
-      if (levelToIsValueChangedAtNextLevel(levelBelow)(indice)) {
-        return levelToArray(attemptLevel)(indice)
+      if (levelToIsValueChangedAtNextLevel(levelBelow)(index)) {
+        return levelToArray(attemptLevel)(index)
       } else {
         attemptLevel = levelBelow
       }
     }
-    levelToArray(0)(indice)
+    levelToArray(0)(index)
   }
 
-  /** Adds a new level to the array
-    */
-
+  /** Adds a new level to the array. */
   def pushLevel(): Unit = {
     require(
       currentLevel < maxLevel,
-      s"MagicIntArrayStacked was declaring with max $maxLevel levels; trying to push more"
+      s"MagicIntArrayStacked was declared with max $maxLevel levels; trying to push more"
     )
     levelToIsValueChangedAtNextLevel(currentLevel).all = false
     currentLevel += 1
   }
 
-  /** Remove a level to the array. If the parameter <code>dropChanges</code> is true, all the
-    * changes of the current level are dropped. If it's false, the changes of the current level are
-    * kept and they are stored in the previous level.
+  /** Removes a level from the array.
     *
     * @param dropChanges
-    *   flag to say if the changes shall be dropped or not
+    *   if true, all the changes in the current level are dropped, otherwise the changes of the
+    *   current level are kept and stored in the previous level instead
     */
-
   def popLevel(dropChanges: Boolean): Unit = {
     require(currentLevel > 0, "trying to pop level zero")
     if (dropChanges) {
@@ -116,11 +105,7 @@ class MagicIntArrayStacked(maxLevel: Int, initVal: Int => Long, size: Int) exten
     }
   }
 
-  /** Creates a scala <code>Array</code> with the values of the current level
-    *
-    * @return
-    *   An array with the values of the current level
-    */
+    /** Creates a Scala <code>Array</code> with the values in the current level. */
   def cloneTopArray: Array[Long] = {
     Array.tabulate(size)(this(_))
   }

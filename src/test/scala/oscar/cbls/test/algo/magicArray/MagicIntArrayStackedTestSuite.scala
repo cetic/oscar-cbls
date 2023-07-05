@@ -34,10 +34,10 @@ class MagicIntArrayStackedTestSuite
     an[Exception] should be thrownBy array.pushLevel()
   }
 
-  // This test is based on a bug discovered in MagicIntArrayStacked. The bug is described in issue #32
-  test("Array works when poping and saving the changes (checking bug #32)") {
+  // This test is based on a bug discovered in MagicIntArrayStacked, described in issue #32
+  test("Array works when popping and saving the changes (checking bug #32)") {
     val array = new MagicIntArrayStacked(10, identity, 10)
-    array(0) should not be (10)
+    array(0) should not be 10
     array.pushLevel()
     array.pushLevel()
     array.pushLevel()
@@ -80,7 +80,7 @@ class MagicIntArrayStackedTestSuite
     array(2) should be(2)
   }
 
-  test("update indice, then push then pop retrieves the expected element") {
+  test("update index, then push then pop retrieves the expected element") {
     val array = new MagicIntArrayStacked(10, e => e, 10)
 
     array.pushLevel()
@@ -165,7 +165,7 @@ class MagicIntArrayStackedTestSuite
     // The level of checkpoint
     private var currentLevel = 0
 
-    def printArrays(onlyDiff: Boolean = true) = {
+    def printArrays(onlyDiff: Boolean = true): Unit = {
       println(
         Array
           .tabulate(size)(i =>
@@ -177,18 +177,16 @@ class MagicIntArrayStackedTestSuite
           .flatten
           .mkString("\n")
       )
-
     }
 
-    /** Check the array
+    /** Check the array.
       *
       * @return
-      *   magicArray == witnessArray (both array contains the same value)
+      *   magicArray == witnessArray (both arrays contain the same value)
       */
-
     def checkArrays: Boolean = {
       val topArray = magicArray.cloneTopArray
-      for (i <- (0 until size)) {
+      for (i <- 0 until size) {
         if (
           witnessArrays(currentLevel)(i) != topArray(i) ||
           witnessArrays(currentLevel)(i) != magicArray(i)
@@ -198,7 +196,7 @@ class MagicIntArrayStackedTestSuite
       true
     }
 
-    private def updateValue(update: Update) = {
+    private def updateValue(update: Update): Unit = {
       magicArray(update.id) = update.value
       witnessArrays(currentLevel)(update.id) = update.value
     }
@@ -213,7 +211,7 @@ class MagicIntArrayStackedTestSuite
       }
     }
 
-    def applyUpdateList(l: List[Update]) = applyUpdateListInternal(l)
+    def applyUpdateList(l: List[Update]): Unit = applyUpdateListInternal(l)
 
     private def canPush: Boolean = currentLevel < maxLevel
 
@@ -234,10 +232,10 @@ class MagicIntArrayStackedTestSuite
       }
     }
 
-    private def doPopOrPush(popPush: PopPush) = {
+    private def doPopOrPush(popPush: PopPush): Unit = {
       popPush match {
         case p: Pop  => popLevel(p.dropChanges)
-        case p: Push => pushLevel
+        case _: Push => pushLevel()
       }
     }
 
@@ -247,7 +245,7 @@ class MagicIntArrayStackedTestSuite
       popOrPush
     }
 
-    private def pushLevel = {
+    private def pushLevel(): Unit = {
       magicArray.pushLevel()
       currentLevel += 1
       for (i <- 0 until size) witnessArrays(currentLevel)(i) = witnessArrays(currentLevel - 1)(i)
@@ -260,7 +258,6 @@ class MagicIntArrayStackedTestSuite
         for (i <- 0 until size) witnessArrays(currentLevel)(i) = witnessArrays(currentLevel + 1)(i)
       }
     }
-
   }
 
   def genUpdate(size: Int): Gen[Update] = for {

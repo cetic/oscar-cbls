@@ -17,7 +17,8 @@ abstract class AbstractMagicArrayTester {
 class MagicBoolArrayTester extends AbstractMagicArrayTester {
   override val typeOfArray: String = "MagicBoolArray"
 
-  override def mkArray(size: Int, initValue: Boolean) = MagicBoolArray(size, initValue)
+  override def mkArray(size: Int, initValue: Boolean): MagicBoolArray =
+    MagicBoolArray(size, initValue)
 }
 
 class IterableMagicBoolArrayTester extends AbstractMagicArrayTester {
@@ -32,26 +33,38 @@ class MagicBoolArrayTestSuite(magicArrayTester: AbstractMagicArrayTester)
     with ScalaCheckDrivenPropertyChecks
     with Matchers {
 
-  test(s"${magicArrayTester.typeOfArray} : Initial array is correct when initiated at false") {
+  test(
+    s"${magicArrayTester.typeOfArray}: " +
+      s"Initial array is correct when initiated at false"
+  ) {
     val array = magicArrayTester.mkArray(10)
 
     array.indicesAtTrue.size should equal(0)
   }
 
-  test(s"${magicArrayTester.typeOfArray} : Initial array is correct when initiated at true") {
-    val array = magicArrayTester.mkArray(10, true)
+  test(
+    s"${magicArrayTester.typeOfArray}: " +
+      s"Initial array is correct when initiated at true"
+  ) {
+    val array = magicArrayTester.mkArray(10, initValue = true)
 
     assert(array.indicesAtTrue.size == 10)
   }
 
-  test(s"${magicArrayTester.typeOfArray} : all_(true) sets the whole array to the new value") {
+  test(
+    s"${magicArrayTester.typeOfArray}: " +
+      s"all_(true) sets the whole array to the new value"
+  ) {
     val array = magicArrayTester.mkArray(10)
 
     array.all = true
     array.indicesAtTrue.size should be(10)
   }
 
-  test(s"${magicArrayTester.typeOfArray} : all_(false) sets the whole array to the new value") {
+  test(
+    s"${magicArrayTester.typeOfArray}: " +
+      s"all_(false) sets the whole array to the new value"
+  ) {
     val array = magicArrayTester.mkArray(10)
 
     array.all = false
@@ -84,13 +97,13 @@ class MagicBoolArrayTestSuite(magicArrayTester: AbstractMagicArrayTester)
     private val magicArray: MagicBoolArray   = magicArrayTester.mkArray(arraySize)
     private val witnessArray: Array[Boolean] = Array.fill(arraySize)(false)
 
-    def updateAll(value: Boolean) = {
+    def updateAll(value: Boolean): Unit = {
       magicArray.all = value
-      for (i <- (0 until arraySize)) witnessArray(i) = value
+      for (i <- 0 until arraySize) witnessArray(i) = value
     }
 
     // Update one value in the arrays
-    private def updateValue(m: Update) = {
+    private def updateValue(m: Update): Unit = {
       magicArray(m.id) = m.value
       witnessArray(m.id) = m.value
     }
@@ -147,7 +160,7 @@ class MagicBoolArrayTestSuite(magicArrayTester: AbstractMagicArrayTester)
     for {
       e  <- Gen.choose(0, 1)
       id <- Gen.choose(0, arraySize - 1)
-    } yield Update(id, (e == 0))
+    } yield Update(id, e == 0)
   val updateList: Gen[ListOfUpdates] = for {
     numElems <- Gen.choose(10, 1000)
     elems    <- Gen.listOfN(numElems, moveGen)
@@ -155,7 +168,8 @@ class MagicBoolArrayTestSuite(magicArrayTester: AbstractMagicArrayTester)
   } yield ListOfUpdates(elems, lstValue == 0)
 
   test(
-    s"${magicArrayTester.typeOfArray} : Making a list of update and setting all values still make the array consistent"
+    s"${magicArrayTester.typeOfArray}: " +
+      s"Making a list of update and setting all values still make the array consistent"
   ) {
 
     val testData = TestData(arraySize)
@@ -166,11 +180,11 @@ class MagicBoolArrayTestSuite(magicArrayTester: AbstractMagicArrayTester)
       testData.updateAll(list.setAll)
       afterUpdateCheck && testData.checkArrays
     }
-
   }
 
   test(
-    s"${magicArrayTester.typeOfArray} : IndicesAtTrue (iterator) works when making a list of update and setting all values"
+    s"${magicArrayTester.typeOfArray}: " +
+      s"IndicesAtTrue (iterator) works when making a list of update and setting all values"
   ) {
 
     val testData = TestData(arraySize)
@@ -181,11 +195,11 @@ class MagicBoolArrayTestSuite(magicArrayTester: AbstractMagicArrayTester)
       testData.updateAll(list.setAll)
       afterUpdateCheck && testData.checkTrueValues(true)
     }
-
   }
 
   test(
-    s"${magicArrayTester.typeOfArray} : IndicesAtTrueAsList works when making a list of update and setting all values"
+    s"${magicArrayTester.typeOfArray}: " +
+      s"IndicesAtTrueAsList works when making a list of update and setting all values"
   ) {
 
     val testData = TestData(arraySize)
@@ -196,9 +210,7 @@ class MagicBoolArrayTestSuite(magicArrayTester: AbstractMagicArrayTester)
       testData.updateAll(list.setAll)
       afterUpdateCheck && testData.checkTrueValues()
     }
-
   }
-
 }
 
 class MagicBoolArrayTestSuites
