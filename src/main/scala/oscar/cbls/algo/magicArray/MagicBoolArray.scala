@@ -16,14 +16,14 @@ import scala.annotation.tailrec
 
 object MagicBoolArray {
 
-  /** Create a Magical Array Of Boolean of given length, with value initialized to initialVal
+    /** Create a MagicBoolArray of the given length, initialized to a single default value for each of
+    * its elements.
     * @param n
     *   the length
     * @param initVal
-    *   The initial value int the array
-    * @return
-    *   a Magical Array Of Boolean or null if length is less than zero
+    *   The initial value of each element of the array (default value is false)
     */
+
   def apply(n: Int, initVal: Boolean = false): MagicBoolArray = {
     require(n >= 0L, "cannot create magic array of negative size")
     new MagicBoolArray(n, initVal)
@@ -64,8 +64,10 @@ class MagicBoolArray(val length: Int, initVal: Boolean = false) {
     */
   def update(id: Int, value: Boolean): Unit = {
     assert(id < length && 0 <= id)
-    if (value) internalArray(id) = pivot
-    else internalArray(id) = pivot - 1L
+    if (value)
+      internalArray(id) = pivot
+    else
+      internalArray(id) = pivot - 1L
   }
 
   /** Returns the value of the element at specified index.
@@ -134,17 +136,17 @@ class MagicBoolArray(val length: Int, initVal: Boolean = false) {
     */
   def indicesAtTrueAsList: List[Int] = {
     @tailrec
-    def indicesAtTrue_aux(id: Int = 0, res: List[Int] = Nil): List[Int] = {
+    def indicesAtTrueAux(id: Int = 0, res: List[Int] = Nil): List[Int] = {
       if (id == length)
         res
       else {
         if (internalArray(id) >= pivot)
-          indicesAtTrue_aux(id + 1, id :: res)
+          indicesAtTrueAux(id + 1, id :: res)
         else
-          indicesAtTrue_aux(id + 1, res)
+          indicesAtTrueAux(id + 1, res)
       }
     }
-    indicesAtTrue_aux()
+    indicesAtTrueAux()
   }
 
   /** Provides a string with all the indices that are true. */

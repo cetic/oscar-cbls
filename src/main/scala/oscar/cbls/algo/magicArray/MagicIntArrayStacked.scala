@@ -12,13 +12,13 @@
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 package oscar.cbls.algo.magicArray
 
-/** An array with a stack. Adding a level to the array is made in constant time. Getting a value in
-  * the array is made in <code>O(level)</code> where <code>level</code> is the current level of
-  * stack.
+/** An array combined with a stack of levels. Adding a level to the array is made in constant time.
+  * Getting a value in the array is made in <code>O(level)</code> where <code>level</code> is the
+  * current level of stack.
   *
-  * The array works the following: In each level, only the values that have changed are stored in the
-  * array, and we keep a trace of the values that changed at next level. To retreive a value, we go
-  * down the different level until we find a value that has been marked as changed
+  * At each level, only the values that have changed are stored in the array, and we keep track of
+  * the values that have changed in the next level. To retrieve a value, we go down the different
+  * levels until we find a value that has been marked as changed.
   *
   * @param maxLevel
   *   The max number of level
