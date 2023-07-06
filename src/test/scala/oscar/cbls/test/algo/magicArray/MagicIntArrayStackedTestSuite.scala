@@ -36,7 +36,7 @@ class MagicIntArrayStackedTestSuite
 
   // This test is based on a bug discovered in MagicIntArrayStacked, described in issue #32
   test("Array works when popping and saving the changes (checking bug #32)") {
-    val array = new MagicIntArrayStacked(10, identity, 10)
+    val array = new MagicIntArrayStacked(10, i => i, 10)
     array(0) should not be 10
     array.pushLevel()
     array.pushLevel()

@@ -35,6 +35,18 @@ class MagicBoolArrayTestSuite(magicArrayTester: AbstractMagicArrayTester)
 
   test(
     s"${magicArrayTester.typeOfArray}: " +
+      "Can create and manipulate an empty array"
+  ) {
+    val array = magicArrayTester.mkArray(0)
+
+    array.indicesAtTrue.size should equal(0)
+    array.all = true
+    array.indicesAtTrue.size should equal(0)
+    an[Exception] should be thrownBy array(0)
+  }
+
+  test(
+    s"${magicArrayTester.typeOfArray}: " +
       s"Initial array is correct when initiated at false"
   ) {
     val array = magicArrayTester.mkArray(10)
