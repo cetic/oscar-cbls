@@ -23,7 +23,6 @@ object IterableMagicBoolArray {
     *   the length, which must be a positive integer
     */
   def apply(n: Int, initVal: Boolean = false): IterableMagicBoolArray = {
-    require(n >= 0, "cannot create magic array of negative size")
     new IterableMagicBoolArray(n, initVal)
   }
 }
