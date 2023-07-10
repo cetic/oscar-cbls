@@ -58,7 +58,7 @@ class HeapSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
   //    - The used priority function will be HeapItem.priority(...)
   //    - That way we can modify the priority of the item (hence priority of the indices)
   private val itemsToStore: Array[HeapItem] = Array.tabulate(100)(x => HeapItem(x))
-  private def priority(item: Int)           = itemsToStore(item).priority()
+  private def priority(item: Int): Long     = itemsToStore(item).priority()
   // Whether or not we authorise the test to change item priority
   private val withMoves: Boolean = heapTester.isInstanceOf[BinaryHeapWithMoveTester] ||
     heapTester.isInstanceOf[BinaryHeapWithMoveIntItemTester]
@@ -223,12 +223,20 @@ class HeapSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
         heap.size should be(witnessHeapAsList.size)
         heap.isEmpty should be(witnessHeapAsList.isEmpty)
 
-        var list: List[Int] = List()
+        var testList: List[Int] = List()
         while (heap.nonEmpty) {
-          list = heap.popFirst().get :: list
+          testList = heap.popFirst().get :: testList
         }
+        val groupedTestList          = testList.groupBy(priority)
+        val groupedWitnessHeapAsList = witnessHeapAsList.groupBy(priority)
 
-        list.map(priority).sorted should be(witnessHeapAsList.map(priority).sorted)
+        // Should have same keys (priorities)
+        groupedTestList.keys.toList.sorted should be(groupedWitnessHeapAsList.keys.toList.sorted)
+
+        for (k <- groupedTestList.keys) {
+          // Each priority key should hold the same elements
+          groupedTestList(k).toSet should be(groupedWitnessHeapAsList(k).toSet)
+        }
       }
     }
   }
