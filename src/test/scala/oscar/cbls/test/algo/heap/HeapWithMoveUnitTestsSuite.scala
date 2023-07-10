@@ -11,7 +11,7 @@ import scala.util.Random
  * @param heapTester
  *   A class used to generate heaps and be pasted as parameter for the tests
  */
-class HeapWithMoveSingleActionSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
+class HeapWithMoveUnitTestsSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
 
   private def generateArray(size: Int = 10) = Array.tabulate(size)(HeapItem)
 
@@ -124,6 +124,6 @@ case class HeapItem(initialValue: Int) {
 
 class HeapWithMoveSingleActionTestSuites
     extends Suites(
-      new HeapWithMoveSingleActionSuite(new BinaryHeapWithMoveTester),
-      new HeapWithMoveSingleActionSuite(new BinaryHeapWithMoveIntItemTester)
+      new HeapWithMoveUnitTestsSuite(new BinaryHeapWithMoveTester),
+      new HeapWithMoveUnitTestsSuite(new BinaryHeapWithMoveIntItemTester)
     )

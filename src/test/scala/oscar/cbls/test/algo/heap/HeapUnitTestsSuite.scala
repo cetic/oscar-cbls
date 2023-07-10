@@ -11,7 +11,7 @@ import scala.util.Random
 /** This test class aims to test specific situations applicable to any Heap.
   * @param heapTester A class used to generate heaps and be pasted as parameter for the tests
   */
-class HeapSingleActionSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
+class HeapUnitTestsSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
 
   @inline
   private def generateRandomIntIterator(size: Int = 100): Iterator[Int] =
@@ -199,8 +199,8 @@ class HeapSingleActionSuite(heapTester: AbstractHeapTester) extends AnyFunSuite 
 
 class HeapSingleActionTestSuites
     extends Suites(
-      new HeapSingleActionSuite(new BinaryHeapTester),
-      new HeapSingleActionSuite(new BinaryHeapWithMoveTester),
-      new HeapSingleActionSuite(new BinaryHeapWithMoveIntItemTester),
-      new HeapSingleActionSuite(new AggregatedBinaryHeapTester)
+      new HeapUnitTestsSuite(new BinaryHeapTester),
+      new HeapUnitTestsSuite(new BinaryHeapWithMoveTester),
+      new HeapUnitTestsSuite(new BinaryHeapWithMoveIntItemTester),
+      new HeapUnitTestsSuite(new AggregatedBinaryHeapTester)
     )
