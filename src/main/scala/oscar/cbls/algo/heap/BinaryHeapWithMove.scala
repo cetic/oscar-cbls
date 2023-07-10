@@ -29,7 +29,7 @@ object BinaryHeapWithMove {
   * By worsening a bit it's efficiency, it offers additional operations very useful for propagation.
   *
   * @param priorityFunction
-  *   returns the priority value as a [[scala.Long]] of an element [[T]]
+  *   a function that returns the priority (an [[scala.Long]] value) of an element of type T
   * @param maxSize
   *   maximum size of the heap
   * @param m
