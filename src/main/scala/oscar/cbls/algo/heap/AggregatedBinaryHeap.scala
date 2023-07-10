@@ -27,7 +27,7 @@ object AggregatedBinaryHeap {
   * priority it keeps the related element in an array of lists
   *
   * @param priorityFunction
-  *   returns the priority value as a [[scala.Int]] of an element [[T]]
+  *   a function that returns the priority (an [[scala.Int]] value) of an element of type T
   * @param maxPriority
   *   The maximum priority value of the heap
   * @author
@@ -43,7 +43,7 @@ class AggregatedBinaryHeap[T](priorityFunction: T => Int, val maxPriority: Int)
   private[this] val priorityToElements: Array[List[T]] =
     Array.tabulate(maxPriority)(_ => List.empty)
 
-  /** Create a copy of this heap with a new priorityFunction.
+  /** Creates a copy of this heap with a new priorityFunction.
     *
     * Create the new [[oscar.cbls.algo.heap.AggregatedBinaryHeap]] with the priority function then
     * add the elements

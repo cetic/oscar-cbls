@@ -30,7 +30,7 @@ object BinaryHeapWithMoveIntItem {
   * @author
   *   renaud.delandtsheer@cetic.be
   * @param priorityFunction
-  *   returns the priority value as a [[scala.Long]] of an element [[scala.Int]]
+  *   a function that returns the priority (an [[scala.Long]] value) of an element [[scala.Int]]
   * @param maxSize
   *   maximum size of the heap
   * @param maxItemValue
@@ -83,7 +83,9 @@ class BinaryHeapWithMoveIntItem(priorityFunction: Int => Long, maxSize: Int, val
         bubbleDown(bubbleUp(startPosition))
       }
       true
-    } else false
+    } else {
+      false
+    }
   }
 
   override def dropAll(): Unit = {

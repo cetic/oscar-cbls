@@ -8,7 +8,8 @@ import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import scala.util.Random
 
 /** This test class aims to test specific situations applicable to Heap with moves.
- * @param heapTester A class used to generate heaps and be pasted as parameter for the tests
+ * @param heapTester
+ *   A class used to generate heaps and be pasted as parameter for the tests
  */
 class HeapWithMoveSingleActionSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
 

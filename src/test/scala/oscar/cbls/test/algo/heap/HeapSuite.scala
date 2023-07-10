@@ -39,7 +39,8 @@ class BinaryHeapWithMoveIntItemTester extends AbstractHeapTester {
 class AggregatedBinaryHeapTester extends AbstractHeapTester {
   override val typeOfHeap: String = "AggregatedBinaryHeap"
 
-  // Transform a Int => Long into a Int => Int since the priority of the items is used as indices in the AggregatedBinaryHeap
+  // Transform a Int => Long into a Int => Int since the priority of the items is used as indices
+  // in the AggregatedBinaryHeap
   override def mkHeap(
     priorityFct: Int => Long,
     size: Int,
@@ -51,7 +52,8 @@ class AggregatedBinaryHeapTester extends AbstractHeapTester {
 
 class HeapSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
 
-  // We want to store [[HeapItem]]. Since we also have to test BinaryHeapWithMoveIntItem, the actual items that we will add in the heap have to be Integer.
+  // We want to store [[HeapItem]]. Since we also have to test BinaryHeapWithMoveIntItem,
+  // the actual items that we will add in the heap have to be Integer.
   //    - The actual object stored in the heap will be the indices of this Array.
   //    - The used priority function will be HeapItem.priority(...)
   //    - That way we can modify the priority of the item (hence priority of the indices)
@@ -62,7 +64,7 @@ class HeapSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
     heapTester.isInstanceOf[BinaryHeapWithMoveIntItemTester]
 
   // The witness heap. It's basically a list, to get the first item we sort it by priority()
-  var witnessHeapAsList: List[Int] = List[Int]()
+  var witnessHeapAsList: List[Int] = List()
 
   // Operations generator
   val genOperations: Gen[List[Operation]] = {

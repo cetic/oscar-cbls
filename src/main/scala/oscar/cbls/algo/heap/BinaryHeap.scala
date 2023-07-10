@@ -29,7 +29,7 @@ object BinaryHeap {
   * priority value. All operations are in O(log(n)).
   *
   * @param priorityFunction
-  *   returns the priority value as a [[scala.Long]] of an element [[T]]
+  *   a function that returns the priority (an [[scala.Long]] value) of an element of type T
   * @param maxSize
   *   maximum size of the heap
   * @param m
@@ -69,9 +69,9 @@ class BinaryHeap[T](priorityFunction: T => Long, val maxSize: Int)(implicit val 
     copy
   }
 
-  @inline protected def leftChild(position: Int): Int  = (position + 1) * 2 - 1
-  @inline protected def rightChild(position: Int): Int = (position + 1) * 2
-  @inline protected def father(position: Int): Int     = (position - 1) / 2
+  @inline protected final def leftChild(position: Int): Int  = (position + 1) * 2 - 1
+  @inline protected final def rightChild(position: Int): Int = (position + 1) * 2
+  @inline protected final def father(position: Int): Int     = (position - 1) / 2
 
   /** Swaps the position of two elements in the heapArray.
     * @param position1
