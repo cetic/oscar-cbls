@@ -4,12 +4,13 @@ import org.scalatest.Suites
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers._
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
-import oscar.cbls.algo.heap.{AbstractHeap, BinaryHeap}
+import oscar.cbls.algo.heap._
 
 import scala.util.Random
 
 /** This test class aims to test specific situations applicable to any Heap.
-  * @param heapTester A class used to generate heaps and be pasted as parameter for the tests
+  * @param heapTester
+  *   A class used to generate heaps and be pasted as parameter for the tests
   */
 class HeapUnitTestsSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
 
@@ -133,28 +134,15 @@ class HeapUnitTestsSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
       while (heap.nonEmpty) heap.popFirst() should be(copy.popFirst())
     }
 
-    heapTester match {
-      case abht: AggregatedBinaryHeapTester =>
-        val heap = abht.mkHeap(x => x, 200, 200)
-        populate(heap)
-        val copy = heap.withPriorityFunction((x: Int) => x)
-        assertEquality(heap, copy)
-      case bhwmt: BinaryHeapWithMoveTester =>
-        val heap = bhwmt.mkHeap(x => x, 200, 200)
-        populate(heap)
-        val copy = heap.withPriorityFunction((x: Int) => x)
-        assertEquality(heap, copy)
-      case bhwmit: BinaryHeapWithMoveIntItemTester =>
-        val heap = bhwmit.mkHeap(x => x, 200, 200)
-        populate(heap)
-        val copy = heap.withPriorityFunction((x: Int) => x)
-        assertEquality(heap, copy)
-      case bht: BinaryHeapTester =>
-        val heap = bht.mkHeap(x => x, 200, 200)
-        populate(heap)
-        val copy = heap.withPriorityFunction((x: Int) => x)
-        assertEquality(heap, copy)
+    val heap = heapTester.mkHeap(x => x, 200, 200)
+    populate(heap)
+    val copy = heap match {
+      case abh: AggregatedBinaryHeap[Int]   => abh.withPriorityFunction((x: Int) => x)
+      case bhwm: BinaryHeapWithMove[Int]    => bhwm.withPriorityFunction((x: Int) => x)
+      case bhwmi: BinaryHeapWithMoveIntItem => bhwmi.withPriorityFunction((x: Int) => x)
+      case bh: BinaryHeap[Int]              => bh.withPriorityFunction((x: Int) => x)
     }
+    assertEquality(heap, copy)
   }
 
   test(
@@ -172,32 +160,19 @@ class HeapUnitTestsSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
       heapListPrior should be(reversedListPrior.reverse)
     }
 
-    heapTester match {
-      case abht: AggregatedBinaryHeapTester =>
-        val heap = abht.mkHeap(x => x, 200, 200)
-        populate(heap)
-        val reversed = heap.withPriorityFunction((x: Int) => 200 - x - 1)
-        assertReverse(heap, reversed)
-      case bhwmt: BinaryHeapWithMoveTester =>
-        val heap = bhwmt.mkHeap(x => x, 200, 200)
-        populate(heap)
-        val reversed = heap.withPriorityFunction((x: Int) => 200 - x - 1)
-        assertReverse(heap, reversed)
-      case bhwmit: BinaryHeapWithMoveIntItemTester =>
-        val heap = bhwmit.mkHeap(x => x, 200, 200)
-        populate(heap)
-        val reversed = heap.withPriorityFunction((x: Int) => 200 - x - 1)
-        assertReverse(heap, reversed)
-      case bht: BinaryHeapTester =>
-        val heap = bht.mkHeap(x => x, 200, 200)
-        populate(heap)
-        val reversed = heap.withPriorityFunction((x: Int) => 200 - x - 1)
-        assertReverse(heap, reversed)
+    val heap = heapTester.mkHeap(x => x, 200, 200)
+    populate(heap)
+    val reversed = heap match {
+      case abh: AggregatedBinaryHeap[Int]   => abh.withPriorityFunction((x: Int) => 200 - x - 1)
+      case bhwm: BinaryHeapWithMove[Int]    => bhwm.withPriorityFunction((x: Int) => 200 - x - 1)
+      case bhwmi: BinaryHeapWithMoveIntItem => bhwmi.withPriorityFunction((x: Int) => 200 - x - 1)
+      case bh: BinaryHeap[Int]              => bh.withPriorityFunction((x: Int) => 200 - x - 1)
     }
+    assertReverse(heap, reversed)
   }
 }
 
-class HeapSingleActionTestSuites
+class HeapUnitTestSuites
     extends Suites(
       new HeapUnitTestsSuite(new BinaryHeapTester),
       new HeapUnitTestsSuite(new BinaryHeapWithMoveTester),

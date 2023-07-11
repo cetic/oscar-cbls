@@ -18,21 +18,29 @@ abstract class AbstractHeapTester {
 class BinaryHeapTester extends AbstractHeapTester {
   override val typeOfHeap: String = "BinaryHeap"
 
-  override def mkHeap(priorityFct: Int => Long, size: Int, maxItemValue: Int) =
+  override def mkHeap(priorityFct: Int => Long, size: Int, maxItemValue: Int): BinaryHeap[Int] =
     new BinaryHeap(priorityFct, size)
 }
 
 class BinaryHeapWithMoveTester extends AbstractHeapTester {
   override val typeOfHeap: String = "BinaryHeapWithMove"
 
-  override def mkHeap(priorityFct: Int => Long, size: Int, maxItemValue: Int) =
+  override def mkHeap(
+    priorityFct: Int => Long,
+    size: Int,
+    maxItemValue: Int
+  ): BinaryHeapWithMove[Int] =
     new BinaryHeapWithMove(priorityFct, size)
 }
 
 class BinaryHeapWithMoveIntItemTester extends AbstractHeapTester {
   override val typeOfHeap: String = "BinaryHeapWithMoveIntItem"
 
-  override def mkHeap(priorityFct: Int => Long, size: Int, maxItemValue: Int) =
+  override def mkHeap(
+    priorityFct: Int => Long,
+    size: Int,
+    maxItemValue: Int
+  ): BinaryHeapWithMoveIntItem =
     new BinaryHeapWithMoveIntItem(priorityFct, size, maxItemValue)
 }
 
