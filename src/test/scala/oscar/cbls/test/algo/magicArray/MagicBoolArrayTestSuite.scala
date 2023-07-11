@@ -42,6 +42,7 @@ class MagicBoolArrayTestSuite(magicArrayTester: AbstractMagicArrayTester)
     array.indicesAtTrue.size should equal(0)
     array.all = true
     array.indicesAtTrue.size should equal(0)
+    array.all should equal(Array.emptyBooleanArray)
     an[Exception] should be thrownBy array(0)
   }
 
