@@ -18,19 +18,19 @@ import scala.language.implicitConversions
 /** The companion object for [[AggregatedBinaryHeap]] */
 object AggregatedBinaryHeap {
 
-  /** Creates an AggregatedBinaryHeap of type T with the specified priorityFunction
+  /** Creates an AggregatedBinaryHeap of type A with the specified priorityFunction
     *
     * @param priorityFunction
-    *   a function that returns the priority (an [[scala.Int]] value) of an element of type T
+    *   a function that returns the priority (an [[scala.Int]] value) of an element of type A
     * @param maxPriority
     *   The maximum priority value of the heap
-    * @tparam T
+    * @tparam A
     *   The type of the [[AggregatedBinaryHeap]]
     * @return
     *   An [[AggregatedBinaryHeap]]
     */
-  def apply[T](priorityFunction: T => Int, maxPriority: Int): AggregatedBinaryHeap[T] = {
-    new AggregatedBinaryHeap[T](priorityFunction, maxPriority)
+  def apply[A](priorityFunction: A => Int, maxPriority: Int): AggregatedBinaryHeap[A] = {
+    new AggregatedBinaryHeap[A](priorityFunction, maxPriority)
   }
 }
 
@@ -40,20 +40,20 @@ object AggregatedBinaryHeap {
   * priority it keeps the related element in an array of lists
   *
   * @param priorityFunction
-  *   a function that returns the priority (an [[scala.Int]] value) of an element of type T
+  *   a function that returns the priority (an [[scala.Int]] value) of an element of type A
   * @param maxPriority
   *   The maximum priority value of the heap
   * @author
   *   renaud.delandtsheer@cetic.be
   */
-class AggregatedBinaryHeap[T](priorityFunction: T => Int, val maxPriority: Int)
-    extends Heap[T] {
+class AggregatedBinaryHeap[A](priorityFunction: A => Int, val maxPriority: Int)
+    extends Heap[A] {
 
   // The binary heap maintaining the lowest priority value at the head
   private[this] val binaryHeap = new BinaryHeap[Int](x => x, maxPriority)
 
   // The array that store the elements at their priority value
-  private[this] val priorityToElements: Array[List[T]] =
+  private[this] val priorityToElements: Array[List[A]] =
     Array.tabulate(maxPriority)(_ => List.empty)
 
   /** Creates a copy of this heap with a new priorityFunction.
@@ -65,8 +65,8 @@ class AggregatedBinaryHeap[T](priorityFunction: T => Int, val maxPriority: Int)
     * @return
     *   A [[AggregatedBinaryHeap]] with the new priority function and all elements of this heap.
     */
-  def withPriorityFunction(priorityFunction: T => Int): AggregatedBinaryHeap[T] = {
-    val copy         = new AggregatedBinaryHeap[T](priorityFunction, maxPriority)
+  def withPriorityFunction(priorityFunction: A => Int): AggregatedBinaryHeap[A] = {
+    val copy         = new AggregatedBinaryHeap[A](priorityFunction, maxPriority)
     val heapIterator = iterator
     while (heapIterator.hasNext) copy.insert(heapIterator.next())
     copy
@@ -81,7 +81,7 @@ class AggregatedBinaryHeap[T](priorityFunction: T => Int, val maxPriority: Int)
     binaryHeap.dropAll()
   }
 
-  override def insert(elem: T): Unit = {
+  override def insert(elem: A): Unit = {
     require(
       priorityFunction(elem) < maxPriority,
       s"The priority value of this element exceed the maximum priority value allowed." +
@@ -97,21 +97,21 @@ class AggregatedBinaryHeap[T](priorityFunction: T => Int, val maxPriority: Int)
     }
   }
 
-  override def getFirst: Option[T] =
+  override def getFirst: Option[A] =
     binaryHeap.getFirst match {
       case None => None
       case Some(priority) =>
         Some(priorityToElements(priority).head)
     }
 
-  override def getFirsts: List[T] =
+  override def getFirsts: List[A] =
     binaryHeap.getFirst match {
       case None => List.empty
       case Some(priority) =>
         priorityToElements(priority)
     }
 
-  override def popFirst(): Option[T] = {
+  override def popFirst(): Option[A] = {
     binaryHeap.getFirst match {
       case None => None
       case Some(priority) =>
@@ -126,7 +126,7 @@ class AggregatedBinaryHeap[T](priorityFunction: T => Int, val maxPriority: Int)
 
   }
 
-  override def popFirsts(): List[T] = {
+  override def popFirsts(): List[A] = {
     binaryHeap.popFirst() match {
       case None => List.empty
       case Some(priority) =>
@@ -136,7 +136,7 @@ class AggregatedBinaryHeap[T](priorityFunction: T => Int, val maxPriority: Int)
     }
   }
 
-  override def iterator: Iterator[T] = {
+  override def iterator: Iterator[A] = {
     binaryHeap.iterator.flatMap(priorityToElements)
   }
 }

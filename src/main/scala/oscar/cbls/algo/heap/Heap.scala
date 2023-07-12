@@ -15,10 +15,10 @@ package oscar.cbls.algo.heap
 
 /** Defines all the methods needed to run a heap.
   *
-  * @tparam T
+  * @tparam A
   *   The type of items present in the heap
   */
-abstract class Heap[T] extends Iterable[T] {
+abstract class Heap[A] extends Iterable[A] {
 
   /** Empties the heap */
   def dropAll(): Unit
@@ -28,7 +28,7 @@ abstract class Heap[T] extends Iterable[T] {
     * @param elem
     *   the element to add
     */
-  def insert(elem: T): Unit
+  def insert(elem: A): Unit
 
   /** Gets the first element of the heap without removing it
     *
@@ -36,7 +36,7 @@ abstract class Heap[T] extends Iterable[T] {
     *   - None (heap is empty)
     *   - Some(The first element of the heap)
     */
-  def getFirst: Option[T]
+  def getFirst: Option[A]
 
   /** Returns the firsts elements of the heap without removing them.
     *
@@ -44,7 +44,7 @@ abstract class Heap[T] extends Iterable[T] {
     *   - An empty List (heap is empty)
     *   - The List of element having the highest priority
     */
-  def getFirsts: List[T]
+  def getFirsts: List[A]
 
   /** Pops the first element of the heap.
     *
@@ -52,7 +52,7 @@ abstract class Heap[T] extends Iterable[T] {
     *   - None (heap is empty)
     *   - Some(the first element of the heap)
     */
-  def popFirst(): Option[T]
+  def popFirst(): Option[A]
 
   /** Pops the firsts elements of the heap.
     *
@@ -60,5 +60,5 @@ abstract class Heap[T] extends Iterable[T] {
     *   - An empty List (heap is empty)
     *   - The firsts elements of the heap
     */
-  def popFirsts(): List[T]
+  def popFirsts(): List[A]
 }

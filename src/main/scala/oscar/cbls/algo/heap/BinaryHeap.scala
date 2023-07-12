@@ -18,23 +18,23 @@ import scala.annotation.tailrec
 /** The companion object for [[BinaryHeap]] */
 object BinaryHeap {
 
-  /** Creates a BinaryHeap of type T with the specified priorityFunction
+  /** Creates a BinaryHeap of type A with the specified priorityFunction
     *
     * @param priorityFunction
-    *   a function that returns the priority (an [[scala.Int]] value) of an element of type T
+    *   a function that returns the priority (an [[scala.Int]] value) of an element of type A
     * @param maxSize
     *   maximum size of the heap
     * @param m
-    *   manifest of T, to create arrays of T's
-    * @tparam T
+    *   manifest of A, to create arrays of A's
+    * @tparam A
     *   The type of the [[BinaryHeap]]
     * @return
     *   A [[BinaryHeap]]
     */
-  def apply[T](priorityFunction: T => Long, maxSize: Int)(implicit
-    m: Manifest[T]
-  ): BinaryHeap[T] = {
-    new BinaryHeap[T](priorityFunction, maxSize)
+  def apply[A](priorityFunction: A => Long, maxSize: Int)(implicit
+    m: Manifest[A]
+  ): BinaryHeap[A] = {
+    new BinaryHeap[A](priorityFunction, maxSize)
   }
 }
 
@@ -44,25 +44,25 @@ object BinaryHeap {
   * priority value. All operations are in O(log(n)).
   *
   * @param priorityFunction
-  *   a function that returns the priority (an [[scala.Long]] value) of an element of type T
+  *   a function that returns the priority (an [[scala.Long]] value) of an element of type A
   * @param maxSize
   *   maximum size of the heap
   * @param m
-  *   manifest of T, to create arrays of T's
-  * @tparam T
+  *   manifest of A, to create arrays of A's
+  * @tparam A
   *   type of elements of the heap
   * @author
   *   renaud.delandtsheer@cetic.be, fabian.germeau@cetic.be
   */
-class BinaryHeap[T](priorityFunction: T => Long, val maxSize: Int)(implicit val m: Manifest[T])
-    extends Heap[T] {
+class BinaryHeap[A](priorityFunction: A => Long, val maxSize: Int)(implicit val m: Manifest[A])
+    extends Heap[A] {
 
   override def size: Int        = currentSize
   override def isEmpty: Boolean = currentSize == 0L
 
   // Keeps the value of the heap. Initialized at max size for performance.
   // Only the first currentSize elements are considered to be in the heap.
-  protected val heapArray: Array[T] = new Array[T](maxSize)
+  protected val heapArray: Array[A] = new Array[A](maxSize)
   protected var currentSize: Int    = 0
 
   /** Creates a copy of this BinaryHeap with a new priorityFunction.
@@ -74,8 +74,8 @@ class BinaryHeap[T](priorityFunction: T => Long, val maxSize: Int)(implicit val 
     * @return
     *   A BinaryHeap with the new priority function and all elements of this heap.
     */
-  def withPriorityFunction(priorityFunction: T => Long): BinaryHeap[T] = {
-    val copy         = new BinaryHeap[T](priorityFunction, maxSize)
+  def withPriorityFunction(priorityFunction: A => Long): BinaryHeap[A] = {
+    val copy         = new BinaryHeap[A](priorityFunction, maxSize)
     val heapIterator = iterator
     while (heapIterator.hasNext) {
       val x = heapIterator.next()
@@ -95,7 +95,7 @@ class BinaryHeap[T](priorityFunction: T => Long, val maxSize: Int)(implicit val 
     *   The second position
     */
   protected def swapPositions(position1: Int, position2: Int): Unit = {
-    val tmp: T = heapArray(position1)
+    val tmp: A = heapArray(position1)
     heapArray(position1) = heapArray(position2)
     heapArray(position2) = tmp
   }
@@ -177,26 +177,26 @@ class BinaryHeap[T](priorityFunction: T => Long, val maxSize: Int)(implicit val 
     currentSize = 0
   }
 
-  override def insert(elem: T): Unit = {
+  override def insert(elem: A): Unit = {
     require(currentSize < maxSize, "The heap is full")
     heapArray(currentSize) = elem
     currentSize += 1
     bubbleUp(currentSize - 1)
   }
 
-  override def getFirst: Option[T] = {
+  override def getFirst: Option[A] = {
     currentSize match {
       case 0 => None
       case _ => Some(heapArray(0))
     }
   }
 
-  override def getFirsts: List[T] = {
+  override def getFirsts: List[A] = {
     @tailrec def exploreFirsts(
       value: Long,
       positionsToExplore: List[Int],
-      firstItems: List[T]
-    ): List[T] = {
+      firstItems: List[A]
+    ): List[A] = {
       positionsToExplore match {
         case Nil => firstItems
         case position :: tail =>
@@ -212,7 +212,7 @@ class BinaryHeap[T](priorityFunction: T => Long, val maxSize: Int)(implicit val 
     exploreFirsts(priorityFunction(heapArray(0)), List(0), List.empty)
   }
 
-  override def popFirst(): Option[T] = {
+  override def popFirst(): Option[A] = {
     currentSize match {
       case 0 => None
       case 1 =>
@@ -226,8 +226,8 @@ class BinaryHeap[T](priorityFunction: T => Long, val maxSize: Int)(implicit val 
     }
   }
 
-  override def popFirsts(): List[T] = {
-    @tailrec def popFirsts(priorityToMatch: Long, firstItems: List[T]): List[T] = {
+  override def popFirsts(): List[A] = {
+    @tailrec def popFirsts(priorityToMatch: Long, firstItems: List[A]): List[A] = {
       if (currentSize >= 1 && priorityFunction(heapArray(0)) == priorityToMatch) {
         popFirsts(priorityToMatch, popFirst().get :: firstItems)
       } else {
@@ -239,7 +239,7 @@ class BinaryHeap[T](priorityFunction: T => Long, val maxSize: Int)(implicit val 
     else popFirsts(priorityFunction(heapArray(0)), List.empty)
   }
 
-  override def iterator: Iterator[T] = new BinaryHeapIterator(heapArray, currentSize)
+  override def iterator: Iterator[A] = new BinaryHeapIterator(heapArray, currentSize)
 
 }
 
@@ -248,15 +248,15 @@ class BinaryHeap[T](priorityFunction: T => Long, val maxSize: Int)(implicit val 
   *   Heap as an Array
   * @param size
   *   Size of the heap
-  * @tparam T
+  * @tparam A
   *   Type of items in the heap
   */
-class BinaryHeapIterator[T](heapArray: Array[T], size: Int) extends Iterator[T] {
+class BinaryHeapIterator[A](heapArray: Array[A], size: Int) extends Iterator[A] {
   private var current: Int = 0
 
   def hasNext: Boolean = current < size
 
-  def next(): T = {
+  def next(): A = {
     current = current + 1
     heapArray(current - 1)
   }

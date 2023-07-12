@@ -18,24 +18,24 @@ import scala.collection.immutable.SortedMap
 /** The companion object of [[BinaryHeapWithMove]] */
 object BinaryHeapWithMove {
 
-  /** Creates an BinaryHeapWithMove of type T with the specified priorityFunction
+  /** Creates an BinaryHeapWithMove of type A with the specified priorityFunction
     *
     * @param priorityFunction
-    *   a function that returns the priority (an [[scala.Int]] value) of an element of type T
+    *   a function that returns the priority (an [[scala.Int]] value) of an element of type A
     * @param maxSize
     *   maximum size of the heap
     * @param m
-    *   manifest of T, to create arrays of T's
-    * @tparam T
+    *   manifest of A, to create arrays of A's
+    * @tparam A
     *   The type of the [[BinaryHeapWithMove]]
     * @return
     *   A [[BinaryHeapWithMove]]
     */
-  def apply[T](priorityFunction: T => Long, maxSize: Int)(implicit
-    o: Ordering[T],
-    m: Manifest[T]
-  ): BinaryHeapWithMove[T] = {
-    new BinaryHeapWithMove[T](priorityFunction, maxSize)
+  def apply[A](priorityFunction: A => Long, maxSize: Int)(implicit
+    o: Ordering[A],
+    m: Manifest[A]
+  ): BinaryHeapWithMove[A] = {
+    new BinaryHeapWithMove[A](priorityFunction, maxSize)
   }
 }
 
@@ -44,25 +44,25 @@ object BinaryHeapWithMove {
   * By worsening a bit it's efficiency, it offers additional operations very useful for propagation.
   *
   * @param priorityFunction
-  *   a function that returns the priority (an [[scala.Long]] value) of an element of type T
+  *   a function that returns the priority (an [[scala.Long]] value) of an element of type A
   * @param maxSize
   *   maximum size of the heap
   * @param m
-  *   manifest of T, to create arrays of T's
-  * @tparam T
+  *   manifest of A, to create arrays of A's
+  * @tparam A
   *   type of elements in the heap
   * @author
   *   renaud.delandtsheer@cetic.be
   */
-class BinaryHeapWithMove[T](priorityFunction: T => Long, override val maxSize: Int)(
-  implicit val o: Ordering[T],
-  override implicit val m: Manifest[T]
-) extends BinaryHeap[T](priorityFunction, maxSize) {
+class BinaryHeapWithMove[A](priorityFunction: A => Long, override val maxSize: Int)(
+  implicit val o: Ordering[A],
+  override implicit val m: Manifest[A]
+) extends BinaryHeap[A](priorityFunction, maxSize) {
   // Stores the position of each item
-  private var itemsPosition: SortedMap[T, Int] = SortedMap.empty
+  private var itemsPosition: SortedMap[A, Int] = SortedMap.empty
 
-  override def withPriorityFunction(priorityFunction: T => Long): BinaryHeapWithMove[T] = {
-    val copy         = new BinaryHeapWithMove[T](priorityFunction, maxSize)
+  override def withPriorityFunction(priorityFunction: A => Long): BinaryHeapWithMove[A] = {
+    val copy         = new BinaryHeapWithMove[A](priorityFunction, maxSize)
     val heapIterator = iterator
     while (heapIterator.hasNext) copy.insert(heapIterator.next())
     copy
@@ -75,14 +75,14 @@ class BinaryHeapWithMove[T](priorityFunction: T => Long, override val maxSize: I
     * @return
     *   true or false
     */
-  def contains(value: T): Boolean = itemsPosition.contains(value)
+  def contains(value: A): Boolean = itemsPosition.contains(value)
 
   /** Notifies that one element of the heap has changed.
     *
     * @param elem
     *   The element whose internal state has changed.
     */
-  def notifyChange(elem: T): Unit = {
+  def notifyChange(elem: A): Unit = {
     require(itemsPosition.contains(elem), s"Item $elem is not in the heap")
     bubbleDown(bubbleUp(itemsPosition(elem))) // Moves it to the right place
   }
@@ -94,7 +94,7 @@ class BinaryHeapWithMove[T](priorityFunction: T => Long, override val maxSize: I
     * @return
     *   Whether or not an element has been removed
     */
-  def removeElement(elem: T): Boolean = {
+  def removeElement(elem: A): Boolean = {
     itemsPosition.get(elem) match {
       case None => false
       case Some(elemPosition) =>
@@ -113,7 +113,7 @@ class BinaryHeapWithMove[T](priorityFunction: T => Long, override val maxSize: I
   }
 
   /** Gets all the elements present in the heap */
-  def getElements: Iterable[T] = {
+  def getElements: Iterable[A] = {
     itemsPosition.keys
   }
 
@@ -128,13 +128,13 @@ class BinaryHeapWithMove[T](priorityFunction: T => Long, override val maxSize: I
     super.swapPositions(position1, position2)
   }
 
-  override def insert(elem: T): Unit = {
+  override def insert(elem: A): Unit = {
     require(!itemsPosition.contains(elem), s"Can't add the same element twice !")
     itemsPosition += ((elem, size))
     super.insert(elem)
   }
 
-  override def popFirst(): Option[T] = {
+  override def popFirst(): Option[A] = {
     super.popFirst() match {
       case None => None
       case Some(item) =>
