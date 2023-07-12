@@ -18,7 +18,7 @@ package oscar.cbls.algo.heap
   * @tparam T
   *   The type of items present in the heap
   */
-abstract class AbstractHeap[T] extends Iterable[T] {
+abstract class Heap[T] extends Iterable[T] {
 
   /** Empties the heap */
   def dropAll(): Unit

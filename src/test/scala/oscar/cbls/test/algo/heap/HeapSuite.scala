@@ -12,7 +12,7 @@ import scala.util.Random
 abstract class AbstractHeapTester {
   val typeOfHeap: String
 
-  def mkHeap(priorityFct: Int => Long, size: Int, maxItemValue: Int): AbstractHeap[Int]
+  def mkHeap(priorityFct: Int => Long, size: Int, maxItemValue: Int): Heap[Int]
 }
 
 class BinaryHeapTester extends AbstractHeapTester {

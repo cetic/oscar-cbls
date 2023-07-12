@@ -15,7 +15,20 @@ package oscar.cbls.algo.heap
 
 import scala.language.implicitConversions
 
+/** The companion object for [[AggregatedBinaryHeap]] */
 object AggregatedBinaryHeap {
+
+  /** Creates an AggregatedBinaryHeap of type T with the specified priorityFunction
+    *
+    * @param priorityFunction
+    *   a function that returns the priority (an [[scala.Int]] value) of an element of type T
+    * @param maxPriority
+    *   The maximum priority value of the heap
+    * @tparam T
+    *   The type of the [[AggregatedBinaryHeap]]
+    * @return
+    *   An [[AggregatedBinaryHeap]]
+    */
   def apply[T](priorityFunction: T => Int, maxPriority: Int): AggregatedBinaryHeap[T] = {
     new AggregatedBinaryHeap[T](priorityFunction, maxPriority)
   }
@@ -34,7 +47,7 @@ object AggregatedBinaryHeap {
   *   renaud.delandtsheer@cetic.be
   */
 class AggregatedBinaryHeap[T](priorityFunction: T => Int, val maxPriority: Int)
-    extends AbstractHeap[T] {
+    extends Heap[T] {
 
   // The binary heap maintaining the lowest priority value at the head
   private[this] val binaryHeap = new BinaryHeap[Int](x => x, maxPriority)
@@ -45,13 +58,12 @@ class AggregatedBinaryHeap[T](priorityFunction: T => Int, val maxPriority: Int)
 
   /** Creates a copy of this heap with a new priorityFunction.
     *
-    * Create the new [[oscar.cbls.algo.heap.AggregatedBinaryHeap]] with the priority function then
-    * add the elements
+    * Create the new [[AggregatedBinaryHeap]] with the priority function then add the elements
     *
     * @param priorityFunction
     *   The new priority function
     * @return
-    *   A BinaryHeap with the new priority function and all elements of this heap.
+    *   A [[AggregatedBinaryHeap]] with the new priority function and all elements of this heap.
     */
   def withPriorityFunction(priorityFunction: T => Int): AggregatedBinaryHeap[T] = {
     val copy         = new AggregatedBinaryHeap[T](priorityFunction, maxPriority)

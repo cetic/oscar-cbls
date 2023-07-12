@@ -124,12 +124,12 @@ class HeapUnitTestsSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
   }
 
   test(s"${heapTester.typeOfHeap} : Copying a heap keeps the heap order") {
-    def populate(heap: AbstractHeap[Int]): Unit = {
+    def populate(heap: Heap[Int]): Unit = {
       val intIterator = generateRandomIntIterator(200)
       for (_ <- 0 until 100) heap.insert(intIterator.next())
     }
 
-    def assertEquality(heap: AbstractHeap[Int], copy: AbstractHeap[Int]): Unit = {
+    def assertEquality(heap: Heap[Int], copy: Heap[Int]): Unit = {
       heap.size should be(copy.size)
       while (heap.nonEmpty) heap.popFirst() should be(copy.popFirst())
     }
@@ -148,12 +148,12 @@ class HeapUnitTestsSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
   test(
     s"${heapTester.typeOfHeap} : Reversing the priority order of a heap reverses the order of the heap"
   ) {
-    def populate(heap: AbstractHeap[Int]): Unit = {
+    def populate(heap: Heap[Int]): Unit = {
       val intIterator = generateRandomIntIterator(200)
       for (_ <- 0 until 100) heap.insert(intIterator.next())
     }
 
-    def assertReverse(heap: AbstractHeap[Int], reversed: AbstractHeap[Int]): Unit = {
+    def assertReverse(heap: Heap[Int], reversed: Heap[Int]): Unit = {
       heap.size should be(reversed.size)
       val heapListPrior: List[Int]     = List.fill(heap.size)(heap.popFirst().get)
       val reversedListPrior: List[Int] = List.fill(reversed.size)(reversed.popFirst().get)

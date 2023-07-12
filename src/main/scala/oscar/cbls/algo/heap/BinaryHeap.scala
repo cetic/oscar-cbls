@@ -40,7 +40,7 @@ object BinaryHeap {
   *   renaud.delandtsheer@cetic.be, fabian.germeau@cetic.be
   */
 class BinaryHeap[T](priorityFunction: T => Long, val maxSize: Int)(implicit val m: Manifest[T])
-    extends AbstractHeap[T] {
+    extends Heap[T] {
 
   override def size: Int        = currentSize
   override def isEmpty: Boolean = currentSize == 0L
