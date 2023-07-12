@@ -15,7 +15,22 @@ package oscar.cbls.algo.heap
 
 import scala.annotation.tailrec
 
+/** The companion object for [[BinaryHeap]] */
 object BinaryHeap {
+
+  /** Creates a BinaryHeap of type T with the specified priorityFunction
+    *
+    * @param priorityFunction
+    *   a function that returns the priority (an [[scala.Int]] value) of an element of type T
+    * @param maxSize
+    *   maximum size of the heap
+    * @param m
+    *   manifest of T, to create arrays of T's
+    * @tparam T
+    *   The type of the [[BinaryHeap]]
+    * @return
+    *   A [[BinaryHeap]]
+    */
   def apply[T](priorityFunction: T => Long, maxSize: Int)(implicit
     m: Manifest[T]
   ): BinaryHeap[T] = {

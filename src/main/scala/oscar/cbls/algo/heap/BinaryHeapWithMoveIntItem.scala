@@ -14,6 +14,18 @@
 package oscar.cbls.algo.heap
 
 object BinaryHeapWithMoveIntItem {
+
+  /** Creates an BinaryHeapWithMoveIntItem with the specified priorityFunction
+    *
+    * @param priorityFunction
+    *   a function that returns the priority (an [[scala.Int]] value) of an element
+    * @param maxSize
+    *   maximum size of the heap
+    * @param maxItemValue
+    *   maximal value of inserted element
+    * @return
+    *   A [[BinaryHeapWithMoveIntItem]]
+    */
   def apply(
     priorityFunction: Int => Long,
     maxSize: Int,
@@ -49,6 +61,13 @@ class BinaryHeapWithMoveIntItem(priorityFunction: Int => Long, maxSize: Int, val
     copy
   }
 
+  /** Checks if the heap contains the specified value
+    *
+    * @param value
+    *   The value to find
+    * @return
+    *   true or false
+    */
   def contains(value: Int): Boolean = itemsPosition(value) != -1
 
   /** Notifies that one element of the heap has changed.

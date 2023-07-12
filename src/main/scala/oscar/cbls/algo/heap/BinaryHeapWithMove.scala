@@ -15,7 +15,22 @@ package oscar.cbls.algo.heap
 
 import scala.collection.immutable.SortedMap
 
+/** The companion object of [[BinaryHeapWithMove]] */
 object BinaryHeapWithMove {
+
+  /** Creates an BinaryHeapWithMove of type T with the specified priorityFunction
+    *
+    * @param priorityFunction
+    *   a function that returns the priority (an [[scala.Int]] value) of an element of type T
+    * @param maxSize
+    *   maximum size of the heap
+    * @param m
+    *   manifest of T, to create arrays of T's
+    * @tparam T
+    *   The type of the [[BinaryHeapWithMove]]
+    * @return
+    *   A [[BinaryHeapWithMove]]
+    */
   def apply[T](priorityFunction: T => Long, maxSize: Int)(implicit
     o: Ordering[T],
     m: Manifest[T]
@@ -53,6 +68,13 @@ class BinaryHeapWithMove[T](priorityFunction: T => Long, override val maxSize: I
     copy
   }
 
+  /** Checks if the heap contains the specified value
+    *
+    * @param value
+    *   The value to find
+    * @return
+    *   true or false
+    */
   def contains(value: T): Boolean = itemsPosition.contains(value)
 
   /** Notifies that one element of the heap has changed.
