@@ -56,7 +56,7 @@ import oscar.cbls.algo.rb.RedBlackTreeMapLib._
 
 /** Companion object providing factory methods.
   *
-  * Keys in this map are always of type [[Int]], only values are parametrized.
+  * Keys in this map are always of type [[scala.Int]], only values are parametrized.
   */
 object RedBlackTreeMap {
 
@@ -205,17 +205,17 @@ object RedBlackTreeMap {
   }
 }
 
-// Must use trait here because of specialization, a trait is needed here.
+// Must use trait here because of specialization.
 // We ensure that this trait is compiled into a java interface by avoiding method code in the trait.
 // As a consequence, there are duplicates in the classes implementing this trait.
 
 /** This trait provides an implementation of a red-black tree-backed immutable map, where the keys
   * are exclusively of type [[scala.Int]]. This trait is not meant to replace
-  * [[collection.immutable.SortedMap]], but rather to provide an implementation that allows
+  * [[scala.collection.immutable.SortedMap]], but rather to provide an implementation that allows
   * efficient exploration of the underlying tree by a [[RedBlackTreeMapExplorer]].
   *
   * @tparam V
-  *   the type of the values (keys are [[Int]])
+  *   the type of the values (keys are [[scala.Int]])
   */
 trait RedBlackTreeMap[@specialized(Int) V] {
 
@@ -337,7 +337,7 @@ trait RedBlackTreeMap[@specialized(Int) V] {
     * WARNING: It is required that the deltaKey must not transform a key in the interval in such a
     * way that it becomes larger or smaller than another key outside of the interval, if this was
     * not the case before the update. This is required in order to keep the identical structure of
-    * the tree, while maintain the same colouring and balance of the tree, which ensures that good
+    * the tree, while maintaining the same colouring and balance of the tree, which ensures that good
     * performance.
     *
     * @param fromKeyIncluded
