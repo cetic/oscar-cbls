@@ -210,7 +210,7 @@ object RedBlackTreeMap {
 // As a consequence, there are duplicates in the classes implementing this trait.
 
 /** This trait provides an implementation of a red-black tree-backed immutable map, where the keys
-  * are exclusively of type [[Int]]. This trait is not meant to replace
+  * are exclusively of type [[scala.Int]]. This trait is not meant to replace
   * [[collection.immutable.SortedMap]], but rather to provide an implementation that allows
   * efficient exploration of the underlying tree by a [[RedBlackTreeMapExplorer]].
   *
