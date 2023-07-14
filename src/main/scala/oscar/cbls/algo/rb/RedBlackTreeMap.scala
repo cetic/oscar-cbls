@@ -220,7 +220,7 @@ object RedBlackTreeMap {
   * @tparam A
   *   the type of the values (keys are [[scala.Int]])
   */
-trait RedBlackTreeMap[@specialized(Int) A] {
+sealed trait RedBlackTreeMap[@specialized(Int) A] {
 
   // modWith: Helper method; top node could be red.
   protected[rb] def modWith(k: Int, f: (Int, Option[A]) => Option[A]): RedBlackTreeMap[A]
