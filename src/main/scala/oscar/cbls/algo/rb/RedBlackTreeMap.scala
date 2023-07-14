@@ -319,7 +319,10 @@ sealed trait RedBlackTreeMap[@specialized(Int) A] {
     */
   def positionOf(k: Int): Option[RedBlackTreeMapExplorer[A]]
 
-  // helper recursive methods
+  // helper recursive methods: they allow the main method to define the base case,
+  // while the accumulator includes some level of recursion.
+  // They are defined in the trait since implementations are needed for the leaf node and tree node
+  // in order for the public non-acc method to work properly.
   protected[rb] def keysAcc(keysAfter: List[Int]): List[Int]
   protected[rb] def valuesAcc(valuesAfter: List[A]): List[A]
   protected[rb] def contentAcc(valuesAfter: List[(Int, A)]): List[(Int, A)]
