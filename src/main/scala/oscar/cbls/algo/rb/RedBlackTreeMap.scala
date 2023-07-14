@@ -255,9 +255,6 @@ sealed trait RedBlackTreeMap[@specialized(Int) A] {
     */
   def biggestLowerOrEqual(k: Int): Option[(Int, A)]
 
-  // helper method
-  protected[rb] def getBiggestLowerAcc(k: Int, bestKSoFar: Int, bestVSoFar: A): IntVCouple[A]
-
   /** Optionally provides the smallest key-value pair whose key is larger or equal than the given
     * reference key.
     *
@@ -265,9 +262,6 @@ sealed trait RedBlackTreeMap[@specialized(Int) A] {
     *   the reference key
     */
   def smallestBiggerOrEqual(k: Int): Option[(Int, A)]
-
-  // helper method
-  protected[rb] def getSmallestBiggerAcc(k: Int, bestKSoFar: Int, bestVSoFar: A): IntVCouple[A]
 
   /** Optionally return the smallest key-value pair. */
   def smallest: Option[(Int, A)]
@@ -324,8 +318,14 @@ sealed trait RedBlackTreeMap[@specialized(Int) A] {
   // They are defined in the trait since implementations are needed for the leaf node and tree node
   // in order for the public non-acc method to work properly.
   protected[rb] def keysAcc(keysAfter: List[Int]): List[Int]
+
   protected[rb] def valuesAcc(valuesAfter: List[A]): List[A]
+
   protected[rb] def contentAcc(valuesAfter: List[(Int, A)]): List[(Int, A)]
+
+  protected[rb] def getBiggestLowerAcc(k: Int, bestKSoFar: Int, bestVSoFar: A): IntVCouple[A]
+
+  protected[rb] def getSmallestBiggerAcc(k: Int, bestKSoFar: Int, bestVSoFar: A): IntVCouple[A]
 
   protected[rb] def positionOfAcc(
     k: Int,
