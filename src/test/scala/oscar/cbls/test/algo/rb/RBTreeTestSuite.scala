@@ -47,6 +47,7 @@ class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks wi
     val tree = RedBlackTreeMap.empty[Int]
     tree.size should be(0)
     tree.values.size should be(0)
+    tree.keys.size should be (0)
   }
 
   test("tree.get on empty tree should be None") {
@@ -59,6 +60,7 @@ class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks wi
       val tree = RedBlackTreeMap.makeFromSorted(list)
 
       tree.size should be(list.size)
+      tree.keys should be(list.map(_._1))
       tree.values should be(list.map(_._2))
       tree.values.forall(e => list.map(_._2).contains(e)) should be(true)
     }
@@ -70,6 +72,7 @@ class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks wi
       val tree        = RedBlackTreeMap.makeFromSortedContinuousArray(arrayValues)
 
       tree.size should be(list.size)
+      tree.keys should be(list.map(_._1))
       tree.values should be(list.map(_._2))
       tree.values.forall(e => list.map(_._2).contains(e)) should be(true)
     }
