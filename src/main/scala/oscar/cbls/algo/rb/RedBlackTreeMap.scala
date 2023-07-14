@@ -208,6 +208,7 @@ object RedBlackTreeMap {
   }
 }
 
+// Note: following comment probably outdated, keeping some implementation in trait.
 // Must use trait here because of specialization.
 // We ensure that this trait is compiled into a java interface by avoiding method code in the trait.
 // As a consequence, there are duplicates in the classes implementing this trait.
@@ -298,20 +299,20 @@ sealed trait RedBlackTreeMap[@specialized(Int) A] {
   def isEmpty: Boolean
 
   /** Returns a list of the values in this map. */
-  def values: List[A]
+  def values: List[A] = valuesAcc(Nil)
 
   /** Returns a list of the key-value pairs in this map. */
-  def content: List[(Int, A)]
+  def content: List[(Int, A)] = contentAcc(Nil)
 
   /** Returns a list of the keys in this map. */
-  def keys: List[Int]
+  def keys: List[Int] = keysAcc(Nil)
 
   /** Optionally returns a [[RedBlackTreeMapExplorer]] anchored at the given key.
     *
     * @param k
     *   the key
     */
-  def positionOf(k: Int): Option[RedBlackTreeMapExplorer[A]]
+  def positionOf(k: Int): Option[RedBlackTreeMapExplorer[A]] = positionOfAcc(k, Nil)
 
   // helper recursive methods: they allow the main method to define the base case,
   // while the accumulator includes some level of recursion.
@@ -442,15 +443,6 @@ private[rb] case class L[@specialized(Int) A]() extends RedBlackTreeMap[A] {
     k: Int,
     positionAcc: List[(T[A], Boolean)]
   ): Option[RedBlackTreeMapExplorer[A]] = None
-
-  // duplicates
-  def values: List[A] = Nil
-
-  def content: List[(Int, A)] = Nil
-
-  override def keys: List[Int] = Nil
-
-  override def positionOf(k: Int): Option[RedBlackTreeMapExplorer[A]] = None
 
   // insert: Insert a value at a key.
   override def insert(k: Int, v: A): RedBlackTreeMap[A] = T(B, L(), k, Some(v), L())
@@ -613,15 +605,6 @@ private[rb] class T[@specialized(Int) A](
   // unused; keeping here in case required in the future
   // def hasLeft: Boolean  = l.isInstanceOf[T[V]]
   // def hasRight: Boolean = r.isInstanceOf[T[V]]
-
-  // duplicates
-  override def values: List[A] = valuesAcc(Nil)
-
-  override def content: List[(Int, A)] = contentAcc(Nil)
-
-  override def keys: List[Int] = keysAcc(Nil)
-
-  override def positionOf(k: Int): Option[RedBlackTreeMapExplorer[A]] = positionOfAcc(k: Int, Nil)
 
   // insert: Insert a value at a key.
   override def insert(k: Int, v: A): RedBlackTreeMap[A] = blacken(modWith(k, (_, _) => Some(v)))
