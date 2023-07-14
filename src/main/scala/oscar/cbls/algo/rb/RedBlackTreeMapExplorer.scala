@@ -24,19 +24,19 @@ import scala.annotation.tailrec
   * @param position
   *   a list of flagged tree nodes, representing the path from the root of the underlying tree to
   *   the node associated to the current key-value pair
-  * @tparam V
+  * @tparam A
   *   the type of the values in the associated map. Keys are of type [[Int]]
   * @note
   *   This class cannot be instantiated directly, instances are provided by methods in
   *   [[RedBlackTreeMap]]
   */
-class RedBlackTreeMapExplorer[@specialized(Int) V] private[rb] (position: List[(T[V], Boolean)]) {
+class RedBlackTreeMapExplorer[@specialized(Int) A] private[rb] (position: List[(T[A], Boolean)]) {
 
   /** The current key. */
   def key: Int = position.head._1.pk
 
   /** The current value. */
-  def value: V = position.head._1.pv.get
+  def value: A = position.head._1.pv.get
 
   override def toString: String =
     "RBPosition(key:" + key + " value:" + value + " stack:" + position + ")"
@@ -44,11 +44,11 @@ class RedBlackTreeMapExplorer[@specialized(Int) V] private[rb] (position: List[(
   /** Optionally returns the next key-value pair in the map, according to the ordering on keys
     * (i.e., with the next larger integer), encapsulated in a new explorer.
     */
-  def next: Option[RedBlackTreeMapExplorer[V]] = {
+  def next: Option[RedBlackTreeMapExplorer[A]] = {
 
     // helper tail-recursive methods
     @tailrec
-    def unstack1(position: List[(T[V], Boolean)]): List[(T[V], Boolean)] = {
+    def unstack1(position: List[(T[A], Boolean)]): List[(T[A], Boolean)] = {
       if (position.isEmpty) return position
       val head = position.head
       if (!head._2) {
@@ -61,31 +61,31 @@ class RedBlackTreeMapExplorer[@specialized(Int) V] private[rb] (position: List[(
     }
 
     @tailrec
-    def descendToLeftMost(position: List[(T[V], Boolean)]): List[(T[V], Boolean)] = {
+    def descendToLeftMost(position: List[(T[A], Boolean)]): List[(T[A], Boolean)] = {
       val headTree = position.head._1
       headTree.pl match {
-        case t: T[V] => descendToLeftMost((t, false) :: position)
+        case t: T[A] => descendToLeftMost((t, false) :: position)
         case _       => (headTree, true) :: position.tail
       }
     }
 
     val newStack = position.head._1.pr match {
-      case t: T[V] => descendToLeftMost((t, false) :: position)
+      case t: T[A] => descendToLeftMost((t, false) :: position)
       case _       => unstack1(position)
     }
 
     if (newStack == Nil) None
-    else Some(new RedBlackTreeMapExplorer[V](newStack))
+    else Some(new RedBlackTreeMapExplorer[A](newStack))
   }
 
   /** Optionally returns the previous key-value pair in the map, according to the ordering on keys
     * (i.e., with the previous smaller integer), encapsulated in a new explorer.
     */
-  def prev: Option[RedBlackTreeMapExplorer[V]] = {
+  def prev: Option[RedBlackTreeMapExplorer[A]] = {
 
     // helper tail-recursive methods
     @tailrec
-    def unstack1(position: List[(T[V], Boolean)]): List[(T[V], Boolean)] = {
+    def unstack1(position: List[(T[A], Boolean)]): List[(T[A], Boolean)] = {
       if (position.isEmpty) return position
       val head = position.head
       if (head._2) {
@@ -98,16 +98,16 @@ class RedBlackTreeMapExplorer[@specialized(Int) V] private[rb] (position: List[(
     }
 
     @tailrec
-    def descendToRightMost(position: List[(T[V], Boolean)]): List[(T[V], Boolean)] = {
+    def descendToRightMost(position: List[(T[A], Boolean)]): List[(T[A], Boolean)] = {
       val headTree = position.head._1
       headTree.pr match {
-        case t: T[V] => descendToRightMost((t, true) :: position)
+        case t: T[A] => descendToRightMost((t, true) :: position)
         case _       => (headTree, true) :: position.tail
       }
     }
 
     val newStack = position.head._1.pl match {
-      case t: T[V] =>
+      case t: T[A] =>
         descendToRightMost((t, true) :: ((position.head._1, false) :: position.tail))
       case _ => unstack1(position.tail)
     }
@@ -115,12 +115,12 @@ class RedBlackTreeMapExplorer[@specialized(Int) V] private[rb] (position: List[(
     if (newStack.isEmpty) None
     else {
       assert(
-        new RedBlackTreeMapExplorer[V](newStack).next.head.key == this.key,
-        "prev.next.key != this.key; this:" + this + " prev:" + new RedBlackTreeMapExplorer[V](
+        new RedBlackTreeMapExplorer[A](newStack).next.head.key == this.key,
+        "prev.next.key != this.key; this:" + this + " prev:" + new RedBlackTreeMapExplorer[A](
           newStack
         )
       )
-      Some(new RedBlackTreeMapExplorer[V](newStack))
+      Some(new RedBlackTreeMapExplorer[A](newStack))
     }
   }
 }

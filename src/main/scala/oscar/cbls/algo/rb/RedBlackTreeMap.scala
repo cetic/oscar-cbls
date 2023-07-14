@@ -20,7 +20,7 @@ private object RedBlackTreeMapLib {
   val B = false
 
   // blacken: Turn a node black.
-  def blacken[V](n: RedBlackTreeMap[V]): RedBlackTreeMap[V] = {
+  def blacken[A](n: RedBlackTreeMap[A]): RedBlackTreeMap[A] = {
     n match {
       case L()              => n
       case T(_, l, k, v, r) => T(B, l, k, v, r)
@@ -28,13 +28,13 @@ private object RedBlackTreeMapLib {
   }
 
   // balance: Balance a tree with balanced subtrees.
-  def balance[V](
+  def balance[A](
     c: Boolean,
-    l: RedBlackTreeMap[V],
+    l: RedBlackTreeMap[A],
     k: Int,
-    v: Option[V],
-    r: RedBlackTreeMap[V]
-  ): RedBlackTreeMap[V] = {
+    v: Option[A],
+    r: RedBlackTreeMap[A]
+  ): RedBlackTreeMap[A] = {
     (c, l, k, v, r) match {
       case (B, T(R, T(R, a, xK, xV, b), yK, yV, c), zK, zV, d) =>
         T(R, T(B, a, xK, xV, b), yK, yV, T(B, c, zK, zV, d))
@@ -50,7 +50,7 @@ private object RedBlackTreeMapLib {
 }
 
 // helper class for a key-value pair.
-private class IntVCouple[@specialized V](val k: Int, val value: V)
+private class IntVCouple[@specialized A](val k: Int, val value: A)
 
 import oscar.cbls.algo.rb.RedBlackTreeMapLib._
 
@@ -62,20 +62,20 @@ object RedBlackTreeMap {
 
   /** Returns an empty map.
     *
-    * @tparam V
+    * @tparam A
     *   type of the values
     */
-  def empty[@specialized(Int) V]: RedBlackTreeMap[V] = L[V]()
+  def empty[@specialized(Int) A]: RedBlackTreeMap[A] = L[A]()
 
   /** Constructs a map from a given collection of key-value pairs.
     *
-    * @tparam V
+    * @tparam A
     *   type of the values
     * @param args
     *   the collection of key-value pairs
     */
-  def apply[@specialized(Int) V](args: Iterable[(Int, V)]): RedBlackTreeMap[V] = {
-    var currentMap: RedBlackTreeMap[V] = L()
+  def apply[@specialized(Int) A](args: Iterable[(Int, A)]): RedBlackTreeMap[A] = {
+    var currentMap: RedBlackTreeMap[A] = L()
     for ((k, v) <- args) {
       currentMap = currentMap.insert(k, v)
     }
@@ -92,10 +92,10 @@ object RedBlackTreeMap {
     *   Performance is O(n); thus faster than a n*log(n) when building from unsorted pairs
     * @param args
     *   the key-value collection, assumed to be sorted
-    * @tparam V
+    * @tparam A
     *   Type of the values
     */
-  def makeFromSorted[@specialized(Int) V](args: Iterable[(Int, V)]): RedBlackTreeMap[V] = {
+  def makeFromSorted[@specialized(Int) A](args: Iterable[(Int, A)]): RedBlackTreeMap[A] = {
     // root is to be black, beside alternate red and black
     val a = args.toArray
     if (args.size <= 3) this.apply(args)
@@ -113,21 +113,21 @@ object RedBlackTreeMap {
     *   Performance is O(n); thus faster than a n*log(n) when building from unsorted pairs
     * @param args
     *   the key-value collection, assumed to be sorted
-    * @tparam V
+    * @tparam A
     *   Type of the values
     */
-  def makeFromSortedContinuousArray[@specialized V](args: Array[V]): RedBlackTreeMap[V] = {
-    if (args.length == 0) RedBlackTreeMap.empty[V]
+  def makeFromSortedContinuousArray[@specialized A](args: Array[A]): RedBlackTreeMap[A] = {
+    if (args.length == 0) RedBlackTreeMap.empty[A]
     else myMakeFromContinuousSorted(args, 0, args.length - 1, targetIsRed = false)
   }
 
   // helper recursive method
-  private def myMakeFromContinuousSorted[@specialized(Int) V](
-    args: Array[V],
+  private def myMakeFromContinuousSorted[@specialized(Int) A](
+    args: Array[A],
     fromIncluded: Int,
     toIncluded: Int,
     targetIsRed: Boolean
-  ): RedBlackTreeMap[V] = {
+  ): RedBlackTreeMap[A] = {
     // root is to be black, afterwards alternate red and black
     if (fromIncluded == toIncluded) {
       val value = args(fromIncluded)
@@ -163,22 +163,22 @@ object RedBlackTreeMap {
     *   Performance is O(n); thus faster than a n*log(n) when building from unsorted pairs
     * @param args
     *   the key-value collection, assumed to be sorted
-    * @tparam V
+    * @tparam A
     *   Type of the values
     */
-  def makeFromSortedArray[@specialized(Int) V](args: Array[(Int, V)]): RedBlackTreeMap[V] = {
+  def makeFromSortedArray[@specialized(Int) A](args: Array[(Int, A)]): RedBlackTreeMap[A] = {
     // root is to be black, afterwards alternate red and black
     if (args.length <= 1) this.apply(args)
     else myMakeFromSorted(args, 0, args.length - 1, targetIsRed = false)
   }
 
   // helper recursive method
-  private def myMakeFromSorted[@specialized(Int) V](
-    args: Array[(Int, V)],
+  private def myMakeFromSorted[@specialized(Int) A](
+    args: Array[(Int, A)],
     fromIncluded: Int,
     toIncluded: Int,
     targetIsRed: Boolean
-  ): RedBlackTreeMap[V] = {
+  ): RedBlackTreeMap[A] = {
     // root is to be black, beside alternate red and black
     if (fromIncluded == toIncluded) {
       val (key, value) = args(fromIncluded)
@@ -197,8 +197,8 @@ object RedBlackTreeMap {
       val right        = myMakeFromSorted(args, middlePoint + 1, toIncluded, !targetIsRed)
       val (key, value) = args(middlePoint)
 
-      assert(left.asInstanceOf[T[V]].pk < key, "Unsorted array")
-      assert(right.asInstanceOf[T[V]].pk > key, "Unsorted array")
+      assert(left.asInstanceOf[T[A]].pk < key, "Unsorted array")
+      assert(right.asInstanceOf[T[A]].pk > key, "Unsorted array")
 
       T(targetIsRed, left, key, Some(value), right)
     }
@@ -214,19 +214,19 @@ object RedBlackTreeMap {
   * [[scala.collection.immutable.SortedMap]], but rather to provide an implementation that allows
   * efficient exploration of the underlying tree by a [[RedBlackTreeMapExplorer]].
   *
-  * @tparam V
+  * @tparam A
   *   the type of the values (keys are [[scala.Int]])
   */
-trait RedBlackTreeMap[@specialized(Int) V] {
+trait RedBlackTreeMap[@specialized(Int) A] {
 
   // modWith: Helper method; top node could be red.
-  protected[rb] def modWith(k: Int, f: (Int, Option[V]) => Option[V]): RedBlackTreeMap[V]
+  protected[rb] def modWith(k: Int, f: (Int, Option[A]) => Option[A]): RedBlackTreeMap[A]
 
   /** Optionally retrieve the value for a given key.
     * @param k
     *   the key
     */
-  def get(k: Int): Option[V]
+  def get(k: Int): Option[A]
 
   /** Retrieves the value for a given key if it exists, otherwise, return a default value.
     *
@@ -235,7 +235,7 @@ trait RedBlackTreeMap[@specialized(Int) V] {
     * @param default
     *   the default value
     */
-  def getOrElse(k: Int, default: => V): V
+  def getOrElse(k: Int, default: => A): A
 
   /** Returns true if the key is contained in the map, and false otherwise.
     *
@@ -250,10 +250,10 @@ trait RedBlackTreeMap[@specialized(Int) V] {
     * @param k
     *   the reference key
     */
-  def biggestLowerOrEqual(k: Int): Option[(Int, V)]
+  def biggestLowerOrEqual(k: Int): Option[(Int, A)]
 
   // helper method
-  protected[rb] def getBiggestLowerAcc(k: Int, bestKSoFar: Int, bestVSoFar: V): IntVCouple[V]
+  protected[rb] def getBiggestLowerAcc(k: Int, bestKSoFar: Int, bestVSoFar: A): IntVCouple[A]
 
   /** Optionally provides the smallest key-value pair whose key is larger or equal than the given
     * reference key.
@@ -261,22 +261,22 @@ trait RedBlackTreeMap[@specialized(Int) V] {
     * @param k
     *   the reference key
     */
-  def smallestBiggerOrEqual(k: Int): Option[(Int, V)]
+  def smallestBiggerOrEqual(k: Int): Option[(Int, A)]
 
   // helper method
-  protected[rb] def getSmallestBiggerAcc(k: Int, bestKSoFar: Int, bestVSoFar: V): IntVCouple[V]
+  protected[rb] def getSmallestBiggerAcc(k: Int, bestKSoFar: Int, bestVSoFar: A): IntVCouple[A]
 
   /** Optionally return the smallest key-value pair. */
-  def smallest: Option[(Int, V)]
+  def smallest: Option[(Int, A)]
 
   /** Optionally return the largest key-value pair. */
-  def biggest: Option[(Int, V)]
+  def biggest: Option[(Int, A)]
 
   /** Optionally returns a [[RedBlackTreeMapExplorer]] anchored at the largest key-value pair. */
-  def biggestPosition: Option[RedBlackTreeMapExplorer[V]]
+  def biggestPosition: Option[RedBlackTreeMapExplorer[A]]
 
   /** Optionally returns a [[RedBlackTreeMapExplorer]] anchored at the smallest key-value pair. */
-  def smallestPosition: Option[RedBlackTreeMapExplorer[V]]
+  def smallestPosition: Option[RedBlackTreeMapExplorer[A]]
 
   /** Returns a new map with the addition of the given key and value. If the key is already present,
     * its value is updated.
@@ -285,14 +285,14 @@ trait RedBlackTreeMap[@specialized(Int) V] {
     * @param v
     *   value
     */
-  def insert(k: Int, v: V): RedBlackTreeMap[V]
+  def insert(k: Int, v: A): RedBlackTreeMap[A]
 
   /** Returns a new map deprived of the given key. If the key is absent, returns the same map.
     *
     * @param k
     *   the key to remove
     */
-  def remove(k: Int): RedBlackTreeMap[V]
+  def remove(k: Int): RedBlackTreeMap[A]
 
   /** The size of this map. */
   def size: Int
@@ -301,10 +301,10 @@ trait RedBlackTreeMap[@specialized(Int) V] {
   def isEmpty: Boolean
 
   /** Returns a list of the values in this map. */
-  def values: List[V]
+  def values: List[A]
 
   /** Returns a list of the key-value pairs in this map. */
-  def content: List[(Int, V)]
+  def content: List[(Int, A)]
 
   /** Returns a list of the keys in this map. */
   def keys: List[Int]
@@ -314,20 +314,20 @@ trait RedBlackTreeMap[@specialized(Int) V] {
     * @param k
     *   the key
     */
-  def positionOf(k: Int): Option[RedBlackTreeMapExplorer[V]]
+  def positionOf(k: Int): Option[RedBlackTreeMapExplorer[A]]
 
   // helper recursive methods
   protected[rb] def keysAcc(keysAfter: List[Int]): List[Int]
-  protected[rb] def valuesAcc(valuesAfter: List[V]): List[V]
-  protected[rb] def contentAcc(valuesAfter: List[(Int, V)]): List[(Int, V)]
+  protected[rb] def valuesAcc(valuesAfter: List[A]): List[A]
+  protected[rb] def contentAcc(valuesAfter: List[(Int, A)]): List[(Int, A)]
 
   protected[rb] def positionOfAcc(
     k: Int,
-    positionAcc: List[(T[V], Boolean)]
-  ): Option[RedBlackTreeMapExplorer[V]]
+    positionAcc: List[(T[A], Boolean)]
+  ): Option[RedBlackTreeMapExplorer[A]]
 
   /** Optionally returns an undefined value contained in this map. */
-  def anyValue: Option[V]
+  def anyValue: Option[A]
 
   /** Updates a set of values in the tree, defined by an inclusive interval on the keys.
     *
@@ -337,8 +337,8 @@ trait RedBlackTreeMap[@specialized(Int) V] {
     * WARNING: It is required that the deltaKey must not transform a key in the interval in such a
     * way that it becomes larger or smaller than another key outside of the interval, if this was
     * not the case before the update. This is required in order to keep the identical structure of
-    * the tree, while maintaining the same colouring and balance of the tree, which ensures that good
-    * performance.
+    * the tree, while maintaining the same colouring and balance of the tree, which ensures that
+    * good performance.
     *
     * @param fromKeyIncluded
     *   the start of the interval defining the set of keys to update
@@ -355,8 +355,8 @@ trait RedBlackTreeMap[@specialized(Int) V] {
     fromKeyIncluded: Int,
     toKeyIncluded: Int,
     deltaKey: Int,
-    transform: V => V
-  ): RedBlackTreeMap[V]
+    transform: A => A
+  ): RedBlackTreeMap[A]
 
   /** Updates a set of values in the tree, defined by an inclusive interval on the keys.
     *
@@ -374,10 +374,10 @@ trait RedBlackTreeMap[@specialized(Int) V] {
   def update(
     fromKeyIncluded: Int,
     toKeyIncluded: Int,
-    transform: (Int, V) => (Int, V)
-  ): RedBlackTreeMap[V]
+    transform: (Int, A) => (Int, A)
+  ): RedBlackTreeMap[A]
 
-  def updateAll(deltaKey: Int, transform: V => V): RedBlackTreeMap[V] = {
+  def updateAll(deltaKey: Int, transform: A => A): RedBlackTreeMap[A] = {
     (this.smallest, this.biggest) match {
       case (None, None) => this
       case (Some((smallestKey, _)), Some((biggestKey, _))) =>
@@ -388,13 +388,13 @@ trait RedBlackTreeMap[@specialized(Int) V] {
 }
 
 // A leaf node.
-private[rb] case class L[@specialized(Int) V]() extends RedBlackTreeMap[V] {
+private[rb] case class L[@specialized(Int) A]() extends RedBlackTreeMap[A] {
 
-  def anyValue: Option[V] = None
+  def anyValue: Option[A] = None
 
-  def get(k: Int): Option[V] = None
+  def get(k: Int): Option[A] = None
 
-  def getOrElse(k: Int, default: => V): V = get(k) match {
+  def getOrElse(k: Int, default: => A): A = get(k) match {
     case None    => default
     case Some(x) => x
   }
@@ -403,100 +403,100 @@ private[rb] case class L[@specialized(Int) V]() extends RedBlackTreeMap[V] {
 
   override protected[rb] def modWith(
     k: Int,
-    f: (Int, Option[V]) => Option[V]
-  ): RedBlackTreeMap[V] = {
+    f: (Int, Option[A]) => Option[A]
+  ): RedBlackTreeMap[A] = {
     f(k, None) match {
       case None      => this
       case something => T(R, this, k, something, this)
     }
   }
 
-  def biggestLowerOrEqual(k: Int): Option[(Int, V)] = None
+  def biggestLowerOrEqual(k: Int): Option[(Int, A)] = None
 
   override protected[rb] def getBiggestLowerAcc(
     k: Int,
     bestKSoFar: Int,
-    bestVSoFar: V
-  ): IntVCouple[V] = new IntVCouple[V](bestKSoFar, bestVSoFar)
+    bestVSoFar: A
+  ): IntVCouple[A] = new IntVCouple[A](bestKSoFar, bestVSoFar)
 
-  override def smallestBiggerOrEqual(k: Int): Option[(Int, V)] = None
+  override def smallestBiggerOrEqual(k: Int): Option[(Int, A)] = None
 
-  override protected[rb] def getSmallestBiggerAcc(k: Int, bestKSoFar: Int, bestVSoFar: V) =
+  override protected[rb] def getSmallestBiggerAcc(k: Int, bestKSoFar: Int, bestVSoFar: A) =
     new IntVCouple(bestKSoFar, bestVSoFar)
 
   override def size: Int = 0
   override def isEmpty   = true
 
-  protected[rb] def valuesAcc(valuesAfter: List[V]): List[V]                = valuesAfter
-  protected[rb] def contentAcc(valuesAfter: List[(Int, V)]): List[(Int, V)] = valuesAfter
+  protected[rb] def valuesAcc(valuesAfter: List[A]): List[A]                = valuesAfter
+  protected[rb] def contentAcc(valuesAfter: List[(Int, A)]): List[(Int, A)] = valuesAfter
   protected[rb] def keysAcc(keysAfter: List[Int]): List[Int]                = keysAfter
 
   protected[rb] override def positionOfAcc(
     k: Int,
-    positionAcc: List[(T[V], Boolean)]
-  ): Option[RedBlackTreeMapExplorer[V]] = None
+    positionAcc: List[(T[A], Boolean)]
+  ): Option[RedBlackTreeMapExplorer[A]] = None
 
   // duplicates
-  def values: List[V] = Nil
+  def values: List[A] = Nil
 
-  def content: List[(Int, V)] = Nil
+  def content: List[(Int, A)] = Nil
 
   override def keys: List[Int] = Nil
 
-  override def positionOf(k: Int): Option[RedBlackTreeMapExplorer[V]] = None
+  override def positionOf(k: Int): Option[RedBlackTreeMapExplorer[A]] = None
 
   // insert: Insert a value at a key.
-  override def insert(k: Int, v: V): RedBlackTreeMap[V] = T(B, L(), k, Some(v), L())
+  override def insert(k: Int, v: A): RedBlackTreeMap[A] = T(B, L(), k, Some(v), L())
 
   // remove: Delete a key.
-  override def remove(k: Int): RedBlackTreeMap[V] = this
+  override def remove(k: Int): RedBlackTreeMap[A] = this
 
-  override def smallest: Option[(Int, V)] = None
+  override def smallest: Option[(Int, A)] = None
 
-  override def biggest: Option[(Int, V)] = None
+  override def biggest: Option[(Int, A)] = None
 
-  override def biggestPosition: Option[RedBlackTreeMapExplorer[V]] = None
+  override def biggestPosition: Option[RedBlackTreeMapExplorer[A]] = None
 
-  override def smallestPosition: Option[RedBlackTreeMapExplorer[V]] = None
+  override def smallestPosition: Option[RedBlackTreeMapExplorer[A]] = None
 
   override def updateDelta(
     fromKeyIncluded: Int,
     toKeyIncluded: Int,
     deltaKey: Int,
-    transform: V => V
-  ): RedBlackTreeMap[V] = this
+    transform: A => A
+  ): RedBlackTreeMap[A] = this
 
   override def update(
     fromKeyIncluded: Int,
     toKeyIncluded: Int,
-    transform: (Int, V) => (Int, V)
-  ): RedBlackTreeMap[V] = this
+    transform: (Int, A) => (Int, A)
+  ): RedBlackTreeMap[A] = this
 }
 
 // helper object for the tree node
 private[rb] object T {
-  def unapply[V](
-    t: T[V]
-  ): Option[(Boolean, RedBlackTreeMap[V], Int, Option[V], RedBlackTreeMap[V])] = {
+  def unapply[A](
+    t: T[A]
+  ): Option[(Boolean, RedBlackTreeMap[A], Int, Option[A], RedBlackTreeMap[A])] = {
     t.unapply
   }
 
-  def apply[V](c: Boolean, l: RedBlackTreeMap[V], k: Int, v: Option[V], r: RedBlackTreeMap[V]) =
+  def apply[A](c: Boolean, l: RedBlackTreeMap[A], k: Int, v: Option[A], r: RedBlackTreeMap[A]) =
     new T(c, l, k, v, r)
 }
 
 // A tree node.
-private[rb] class T[@specialized(Int) V](
+private[rb] class T[@specialized(Int) A](
   private[this] val c: Boolean,
-  private[this] val l: RedBlackTreeMap[V],
+  private[this] val l: RedBlackTreeMap[A],
   private[this] val k: Int,
-  private[this] val v: Option[V],
-  private[this] val r: RedBlackTreeMap[V]
-) extends RedBlackTreeMap[V] {
+  private[this] val v: Option[A],
+  private[this] val r: RedBlackTreeMap[A]
+) extends RedBlackTreeMap[A] {
 
-  def anyValue: Option[V] = v
+  def anyValue: Option[A] = v
 
-  def unapply: Option[(Boolean, RedBlackTreeMap[V], Int, Option[V], RedBlackTreeMap[V])] =
+  def unapply: Option[(Boolean, RedBlackTreeMap[A], Int, Option[A], RedBlackTreeMap[A])] =
     Some(c, l, k, v, r)
 
   private[rb] def pk = k
@@ -509,13 +509,13 @@ private[rb] class T[@specialized(Int) V](
   override val size: Int = l.size + r.size + 1
   override def isEmpty   = false
 
-  def get(k: Int): Option[V] = {
+  def get(k: Int): Option[A] = {
     if (k < this.k) l.get(k)
     else if (k > this.k) r.get(k)
     else v
   }
 
-  def getOrElse(k: Int, default: => V): V = get(k) match {
+  def getOrElse(k: Int, default: => A): A = get(k) match {
     case None    => default
     case Some(x) => x
   }
@@ -526,7 +526,7 @@ private[rb] class T[@specialized(Int) V](
     else true
   }
 
-  def biggestLowerOrEqual(k: Int): Option[(Int, V)] = {
+  def biggestLowerOrEqual(k: Int): Option[(Int, A)] = {
     if (k < this.k) l.biggestLowerOrEqual(k)
     else if (this.k < k) {
       val result = r.getBiggestLowerAcc(k, this.k, v.get)
@@ -537,14 +537,14 @@ private[rb] class T[@specialized(Int) V](
   override protected[rb] def getBiggestLowerAcc(
     k: Int,
     bestKSoFar: Int,
-    bestVSoFar: V
-  ): IntVCouple[V] = {
+    bestVSoFar: A
+  ): IntVCouple[A] = {
     if (k < this.k) l.getBiggestLowerAcc(k, bestKSoFar, bestVSoFar)
     else if (this.k < k) r.getBiggestLowerAcc(k, this.k, v.get)
     else new IntVCouple(k, v.get)
   }
 
-  override def smallestBiggerOrEqual(k: Int): Option[(Int, V)] = {
+  override def smallestBiggerOrEqual(k: Int): Option[(Int, A)] = {
     if (k < this.k) {
       val result = l.getSmallestBiggerAcc(k, this.k, v.get)
       Some((result.k, result.value))
@@ -555,17 +555,17 @@ private[rb] class T[@specialized(Int) V](
   override protected[rb] def getSmallestBiggerAcc(
     k: Int,
     bestKSoFar: Int,
-    bestVSoFar: V
-  ): IntVCouple[V] = {
+    bestVSoFar: A
+  ): IntVCouple[A] = {
     if (k < this.k) l.getSmallestBiggerAcc(k, this.k, v.get)
-    else if (this.k < k) r.getSmallestBiggerAcc(k, bestKSoFar: Int, bestVSoFar: V)
+    else if (this.k < k) r.getSmallestBiggerAcc(k, bestKSoFar: Int, bestVSoFar: A)
     else new IntVCouple(k, v.get)
   }
 
   override protected[rb] def modWith(
     k: Int,
-    f: (Int, Option[V]) => Option[V]
-  ): RedBlackTreeMap[V] = {
+    f: (Int, Option[A]) => Option[A]
+  ): RedBlackTreeMap[A] = {
     if (k < this.k) balance(c, l.modWith(k, f), this.k, this.v, r)
     else if (k == this.k) {
       f(this.k, this.v) match {
@@ -585,10 +585,10 @@ private[rb] class T[@specialized(Int) V](
     }
   }
 
-  override protected[rb] def valuesAcc(valuesAfter: List[V]): List[V] =
+  override protected[rb] def valuesAcc(valuesAfter: List[A]): List[A] =
     l.valuesAcc(v.get :: r.valuesAcc(valuesAfter))
 
-  override protected[rb] def contentAcc(valuesAfter: List[(Int, V)]): List[(Int, V)] =
+  override protected[rb] def contentAcc(valuesAfter: List[(Int, A)]): List[(Int, A)] =
     l.contentAcc((k, v.get) :: r.contentAcc(valuesAfter))
 
   override protected[rb] def keysAcc(keysAfter: List[Int]): List[Int] =
@@ -596,11 +596,11 @@ private[rb] class T[@specialized(Int) V](
 
   protected[rb] override def positionOfAcc(
     k: Int,
-    positionAcc: List[(T[V], Boolean)]
-  ): Option[RedBlackTreeMapExplorer[V]] = {
+    positionAcc: List[(T[A], Boolean)]
+  ): Option[RedBlackTreeMapExplorer[A]] = {
     if (k < this.k) l.positionOfAcc(k, (this, false) :: positionAcc)
     else if (k > this.k) r.positionOfAcc(k, (this, true) :: positionAcc)
-    else Some(new RedBlackTreeMapExplorer[V]((this, true) :: positionAcc))
+    else Some(new RedBlackTreeMapExplorer[A]((this, true) :: positionAcc))
   }
 
   // unused; keeping here in case required in the future
@@ -608,32 +608,32 @@ private[rb] class T[@specialized(Int) V](
   // def hasRight: Boolean = r.isInstanceOf[T[V]]
 
   // duplicates
-  override def values: List[V] = valuesAcc(Nil)
+  override def values: List[A] = valuesAcc(Nil)
 
-  override def content: List[(Int, V)] = contentAcc(Nil)
+  override def content: List[(Int, A)] = contentAcc(Nil)
 
   override def keys: List[Int] = keysAcc(Nil)
 
-  override def positionOf(k: Int): Option[RedBlackTreeMapExplorer[V]] = positionOfAcc(k: Int, Nil)
+  override def positionOf(k: Int): Option[RedBlackTreeMapExplorer[A]] = positionOfAcc(k: Int, Nil)
 
   // insert: Insert a value at a key.
-  override def insert(k: Int, v: V): RedBlackTreeMap[V] = blacken(modWith(k, (_, _) => Some(v)))
+  override def insert(k: Int, v: A): RedBlackTreeMap[A] = blacken(modWith(k, (_, _) => Some(v)))
 
   // remove: Delete a key.
-  override def remove(k: Int): RedBlackTreeMap[V] = blacken(modWith(k, (_, _) => None))
+  override def remove(k: Int): RedBlackTreeMap[A] = blacken(modWith(k, (_, _) => None))
 
-  override def smallest: Option[(Int, V)] = smallestBiggerOrEqual(Int.MinValue)
+  override def smallest: Option[(Int, A)] = smallestBiggerOrEqual(Int.MinValue)
 
-  override def biggest: Option[(Int, V)] = biggestLowerOrEqual(Int.MaxValue)
+  override def biggest: Option[(Int, A)] = biggestLowerOrEqual(Int.MaxValue)
 
-  override def biggestPosition: Option[RedBlackTreeMapExplorer[V]] = {
+  override def biggestPosition: Option[RedBlackTreeMapExplorer[A]] = {
     biggestLowerOrEqual(Int.MaxValue) match {
       case Some((rk, _)) => positionOf(rk)
       case None          => None
     }
   }
 
-  override def smallestPosition: Option[RedBlackTreeMapExplorer[V]] = {
+  override def smallestPosition: Option[RedBlackTreeMapExplorer[A]] = {
     smallestBiggerOrEqual(Int.MinValue) match {
       case Some((rk, _)) => positionOf(rk)
       case None          => None
@@ -643,8 +643,8 @@ private[rb] class T[@specialized(Int) V](
   override def update(
     fromKeyIncluded: Int,
     toKeyIncluded: Int,
-    transform: (Int, V) => (Int, V)
-  ): RedBlackTreeMap[V] = {
+    transform: (Int, A) => (Int, A)
+  ): RedBlackTreeMap[A] = {
     val newLeft = if (fromKeyIncluded < k) {
       l.update(fromKeyIncluded, toKeyIncluded, transform)
     } else {
@@ -680,8 +680,8 @@ private[rb] class T[@specialized(Int) V](
     fromKeyIncluded: Int,
     toKeyIncluded: Int,
     deltaKey: Int,
-    transform: V => V
-  ): RedBlackTreeMap[V] = {
+    transform: A => A
+  ): RedBlackTreeMap[A] = {
     val newLeft = if (fromKeyIncluded < k) {
       l.updateDelta(fromKeyIncluded, toKeyIncluded, deltaKey, transform)
     } else {
