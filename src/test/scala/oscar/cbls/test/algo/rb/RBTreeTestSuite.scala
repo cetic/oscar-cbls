@@ -19,6 +19,14 @@ class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks wi
 
   val intGenerator: Gen[Int] = for (n <- Gen.choose(10, 1000)) yield n
 
+  // The generator does not generate values above 1000.
+  // This tuple is guaranteed to be the biggest
+  private val maxTuple = (1001, 50)
+
+  // The generator does not generate negative values.
+  // This tuple is guaranteed to be the smallest
+  private val minTuple = (-1, 50)
+
   // Generates a list of key-value tuples with incremental key (in order) and random values
   val sequentialTuplesList: Gen[List[(Int, Int)]] = for {
     numElems   <- Gen.choose(0, 500)
@@ -122,9 +130,6 @@ class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks wi
   test("tree.smallest returns expected element") {
     forAll(nonSequentialTuplesList) { list =>
       whenever(list.nonEmpty) {
-        // The generator does not generate negative values.
-        // This tuple is guaranteed to be the smallest
-        val minTuple    = (-1, 50)
         val listWithMin = List[(Int, Int)](minTuple) ::: list
         val tree        = RedBlackTreeMap.makeFromSorted(listWithMin)
 
@@ -136,9 +141,6 @@ class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks wi
   test("tree.biggest returns expected element") {
     forAll(nonSequentialTuplesList) { list =>
       whenever(list.nonEmpty) {
-        // The generator does not generate values above 1000.
-        // This tuple is guaranteed to be the biggest
-        val maxTuple    = (1001, 50)
         val listWithMax = list ::: List[(Int, Int)](maxTuple)
         val tree        = RedBlackTreeMap.makeFromSorted(listWithMax)
 
