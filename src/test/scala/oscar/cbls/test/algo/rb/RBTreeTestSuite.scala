@@ -230,7 +230,7 @@ class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks wi
           var parallelMap     = list.sortBy(_._1)
           var tree            = RedBlackTreeMap.makeFromSortedArray(list.toArray)
           val operations      = operationGenerator.sample.get
-          var gapAboveLastKey = 0
+          var maxGeneratedKey = 2000
 
           for (i <- operations) {
 
@@ -262,8 +262,8 @@ class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks wi
                 )
 
               case Insert() =>
-                val newKey: Int = 2000 + gapAboveLastKey // Ensures to add a new unique key
-                gapAboveLastKey += 1
+                val newKey: Int = maxGeneratedKey // Ensures to add a new unique key
+                maxGeneratedKey += 1
                 tree = tree.insert(newKey, 0)
 
                 parallelMap = parallelMap ::: List((newKey, 0))
