@@ -85,8 +85,9 @@ object RedBlackTreeMap {
   /** Create a red-black tree out of already sorted key-value pairs, which must be sorted by
     * increasing order of key, and where a key can only be present once.
     *
-    * WARNING: No check of these properties on the inputs are performed, either at compile or at
-    * runtime. Use caution when invoking.
+    * ==WARNING:==
+    * No check of these properties on the inputs are performed, either at compile or at runtime. Use
+    * caution when invoking.
     *
     * @note
     *   Performance is O(n); thus faster than a n*log(n) when building from unsorted pairs
@@ -106,8 +107,9 @@ object RedBlackTreeMap {
     * increasing order of key, and where a key can only be present once. Collection must be a
     * continuous array.
     *
-    * WARNING: No check of these properties on the inputs are performed, either at compile or at
-    * runtime. Use caution when invoking.
+    * ==WARNING:==
+    * No check of these properties on the inputs are performed, either at compile or at runtime. Use
+    * caution when invoking.
     *
     * @note
     *   Performance is O(n); thus faster than a n*log(n) when building from unsorted pairs
@@ -156,8 +158,9 @@ object RedBlackTreeMap {
     * increasing order of key, and where a key can only be present once. Collection must be an
     * array.
     *
-    * WARNING: No check of these properties on the inputs are performed, either at compile or at
-    * runtime. Use caution when invoking.
+    * ==WARNING:==
+    * No check of these properties on the inputs are performed, either at compile or at runtime. Use
+    * caution when invoking.
     *
     * @note
     *   Performance is O(n); thus faster than a n*log(n) when building from unsorted pairs
@@ -334,11 +337,12 @@ trait RedBlackTreeMap[@specialized(Int) A] {
     * Besides providing a method to transform a value in the interval to another value, the caller
     * can provide an integer delta by which the keys in the range will be shifted.
     *
-    * WARNING: It is required that the deltaKey must not transform a key in the interval in such a
-    * way that it becomes larger or smaller than another key outside of the interval, if this was
-    * not the case before the update. This is required in order to keep the identical structure of
-    * the tree, while maintaining the same colouring and balance of the tree, which ensures that
-    * good performance.
+    * ==WARNING:==
+    * It is required that the deltaKey must not transform a key in the interval in such a way that
+    * it becomes larger or smaller than another key outside of the interval, if this was not the
+    * case before the update. This is required in order to keep the identical structure of the tree,
+    * while maintaining the same colouring and balance of the tree, which ensures that good
+    * performance.
     *
     * @param fromKeyIncluded
     *   the start of the interval defining the set of keys to update
