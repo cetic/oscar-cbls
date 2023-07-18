@@ -60,14 +60,6 @@ class LinearTransform(val offset: Int, val opposite: Boolean) {
   /** Un-applies the linear transformation on a value */
   def unApply(value: Int): Int = if (opposite) -value + offset else value - offset
 
-  def shiftOnX(deltaOnFunction: Int): LinearTransform = {
-    LinearTransform(
-      if (opposite) { offset + deltaOnFunction }
-      else { offset - deltaOnFunction },
-      opposite
-    )
-  }
-
   /** Checks if this [[LinearTransform]] is an identity transformation, meaning it doesn't change
     * the passed value
     */
