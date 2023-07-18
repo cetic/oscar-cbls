@@ -61,7 +61,7 @@ class LinearTransform(val offset: Int, val opposite: Boolean) {
   def unApply(value: Int): Int = if (opposite) -value + offset else value - offset
 
   /** Checks if this [[LinearTransform]] is an identity transformation, meaning it doesn't change
-    * the passed value
+    * the passed value.
     */
   def isIdentity: Boolean = offset == 0 && !opposite
 
