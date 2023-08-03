@@ -57,8 +57,9 @@ class SequenceShiftingBijection(val offset: Int, val flip: Boolean) {
     new SequenceShiftingBijection(this(that.offset), this.flip != that.flip)
   }
 
-  /** Returns the inverse of this [[SequenceShiftingBijection]]. See unApply() method for more
-    * details
+  /** Returns the reverse [[SequenceShiftingBijection]] of this [[SequenceShiftingBijection]].
+    *
+    * Basically the reversing the apply(value: Int) and unApply(value: Int) methods
     */
   def invert: SequenceShiftingBijection =
     new SequenceShiftingBijection(if (flip) offset else -offset, flip)

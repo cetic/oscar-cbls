@@ -17,12 +17,11 @@ import scala.annotation.tailrec
 
 object PiecewiseLinearBijectionNaive {
   def identity: PiecewiseLinearBijectionNaive = new PiecewiseLinearBijectionNaive(
-    PiecewiseLinearFun.identity
+    PiecewiseSequenceShiftingBijection.identity
   )
 
   @tailrec
   def computeInvertedPivots(
-    prevPivot: Pivot,
     remainingPivots: List[Pivot],
     newPivots: List[Pivot] = List.empty
   ): List[Pivot] = {
@@ -32,64 +31,44 @@ object PiecewiseLinearBijectionNaive {
         val fun    = p1.f
         val invert = fun.invert
         val newPivot = new PivotWithTo(
-          fun(if (fun.opposite) p2.fromValue - 1 else p1.fromValue),
+          fun(if (fun.flip) p2.fromValue - 1 else p1.fromValue),
           invert,
-          fun(if (fun.opposite) p1.fromValue else p2.fromValue - 1)
+          fun(if (fun.flip) p1.fromValue else p2.fromValue - 1)
         )
-        computeInvertedPivots(p1, p2 :: tail, List(newPivot) ::: newPivots)
+        computeInvertedPivots(p2 :: tail, List(newPivot) ::: newPivots)
       case p1 :: _ =>
         val fun = p1.f
-        require(!fun.opposite)
+        require(!fun.flip)
         val invert = fun.invert
         List(
           new PivotWithTo(
             fun(p1.fromValue),
             invert,
-            fun(if (fun.opposite) Int.MinValue else Int.MaxValue)
+            fun(if (fun.flip) Int.MinValue else Int.MaxValue)
           )
         ) ::: newPivots
     }
   }
 
-  def apply(forward: PiecewiseLinearFun) = new PiecewiseLinearBijectionNaive(forward)
+  def apply(forward: PiecewiseSequenceShiftingBijection) = new PiecewiseLinearBijectionNaive(forward)
 }
 
 class PiecewiseLinearBijectionNaive(
-  val forward: PiecewiseLinearFun,
-  givenBackward: PiecewiseLinearFun = null
+                                     val forward: PiecewiseSequenceShiftingBijection,
+                                     givenBackward: PiecewiseSequenceShiftingBijection = null
 ) {
-  lazy val backward: PiecewiseLinearFun = {
+  private lazy val backward: PiecewiseSequenceShiftingBijection = {
     if (givenBackward != null) givenBackward
     else
-      PiecewiseLinearFun.createFromPivots(
-        PiecewiseLinearBijectionNaive.computeInvertedPivots(null, forward.pivots, null)
+      PiecewiseSequenceShiftingBijection.createFromPivots(
+        PiecewiseLinearBijectionNaive.computeInvertedPivots(forward.pivots, null)
       )
   }
 
   def invert: PiecewiseLinearBijectionNaive = new PiecewiseLinearBijectionNaive(backward, forward)
 
-  def checkBijection(): Unit = {
-    var pivots = backward.pivots
-    while (true) {
-      pivots match {
-        case p1 :: p2 :: tail =>
-          require(
-            p1.asInstanceOf[PivotWithTo].toValue + 1 == p2.fromValue,
-            "not a bijection; p1:" + p1 + " p2:" + p2
-          )
-          pivots = p2 :: tail
-        case _ => return
-      }
-    }
-  }
-
-  override def toString: String = {
-    "Bijection.forward: " + forward + "\n" +
-      "Bijection.backward:" + backward + "\n"
-  }
-
-  def updateBefore(updates: (Int, Int, LinearTransform)*): PiecewiseLinearBijectionNaive = {
-    new PiecewiseLinearBijectionNaive(forward.updateForCompositionBefore(updates: _*))
+  def updateBefore(updates: (Int, Int, SequenceShiftingBijection)*): PiecewiseLinearBijectionNaive = {
+    new PiecewiseLinearBijectionNaive(forward.updatesForCompositionBefore(updates: _*))
   }
 
   def swapAdjacentZonesShiftFirst(
@@ -140,11 +119,32 @@ class PiecewiseLinearBijectionNaive(
 
   def flipInInterval(startZoneIncluded: Int, endZoneIncluded: Int): PiecewiseLinearBijectionNaive =
     new PiecewiseLinearBijectionNaive(
-      forward.flipFunctionInInterval(startZoneIncluded, endZoneIncluded)
+      forward.flipPivotsInInterval(startZoneIncluded, endZoneIncluded)
     )
+
+
+  def checkBijection(): Unit = {
+    var pivots = backward.pivots
+    while (true) {
+      pivots match {
+        case p1 :: p2 :: tail =>
+          require(
+            p1.asInstanceOf[PivotWithTo].toValue + 1 == p2.fromValue,
+            "not a bijection; p1:" + p1 + " p2:" + p2
+          )
+          pivots = p2 :: tail
+        case _ => return
+      }
+    }
+  }
+
+  override def toString: String = {
+    "Bijection.forward: " + forward + "\n" +
+      "Bijection.backward:" + backward + "\n"
+  }
 }
 
-class PivotWithTo(fromValue: Int, f: LinearTransform, val toValue: Int)
+class PivotWithTo(fromValue: Int, f: SequenceShiftingBijection, val toValue: Int)
     extends Pivot(fromValue, f) {
   override def toString: String =
     s"PivotWithTo(from:$fromValue toValue:$toValue $f)"
