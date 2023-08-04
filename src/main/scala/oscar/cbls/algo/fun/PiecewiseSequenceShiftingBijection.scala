@@ -24,9 +24,6 @@ object PiecewiseSequenceShiftingBijection {
   /** Returns an empty PiecewiseLinearFun */
   def identity = new PiecewiseSequenceShiftingBijection()
 
-  implicit def toIterable(f: PiecewiseSequenceShiftingBijection): Iterable[Pivot] =
-    f.transformation.values
-
   /** Create a [[PiecewiseSequenceShiftingBijection]] based on a existing list of [[Pivot]] */
   def createFromPivots(pivots: Iterable[Pivot]): PiecewiseSequenceShiftingBijection = {
     var acc     = RedBlackTreeMap.empty[Pivot]
@@ -37,6 +34,29 @@ object PiecewiseSequenceShiftingBijection {
     }
     new PiecewiseSequenceShiftingBijection(acc)
   }
+
+  @tailrec
+  def computeInvertedPivots(
+    remainingPivots: List[Pivot],
+    newPivots: List[Pivot] = List.empty
+  ): List[Pivot] = {
+    remainingPivots match {
+      case Nil => newPivots
+      case p1 :: p2 :: tail =>
+        val fun      = p1.f
+        val invert   = fun.invert
+        val newPivot = new Pivot(fun(if (fun.flip) p2.fromValue - 1 else p1.fromValue), invert)
+        computeInvertedPivots(p2 :: tail, List(newPivot) ::: newPivots)
+      case p1 :: _ =>
+        val fun = p1.f
+        require(!fun.flip)
+        val invert = fun.invert
+        List(new Pivot(fun(p1.fromValue), invert)) ::: newPivots
+    }
+  }
+
+  implicit def toIterable(f: PiecewiseSequenceShiftingBijection): Iterable[Pivot] =
+    f.transformation.values
 }
 
 /** A piecewise bijection matching the external and the internal position of each element of a
@@ -57,6 +77,12 @@ object PiecewiseSequenceShiftingBijection {
 class PiecewiseSequenceShiftingBijection(
   private[fun] val transformation: RedBlackTreeMap[Pivot] = RedBlackTreeMap.empty
 ) {
+
+  private lazy val backward: PiecewiseSequenceShiftingBijection = {
+    PiecewiseSequenceShiftingBijection.createFromPivots(
+      PiecewiseSequenceShiftingBijection.computeInvertedPivots(pivots, null)
+    )
+  }
 
   override def equals(obj: Any): Boolean = {
     obj match {
@@ -110,6 +136,17 @@ class PiecewiseSequenceShiftingBijection(
       case Some((_, pivot)) => pivot.f(oldPos)
     }
   }
+
+  /** Returns the old position of the new position specified as value.
+    *
+    * It uses the backward version of the this class.
+    *
+    * @param newPosition
+    *   The new position
+    * @return
+    *   The old position of the new position.
+    */
+  def unApply(newPosition: Int): Int = backward(newPosition)
 
   /** Applies a list of updates one by one.
     *
