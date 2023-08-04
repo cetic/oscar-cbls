@@ -78,75 +78,89 @@ class PiecewiseSequenceShiftingBijection(
   private[fun] val transformation: RedBlackTreeMap[Pivot] = RedBlackTreeMap.empty
 ) {
 
+  /** No recorded pivot */
+  def isIdentity: Boolean = transformation.isEmpty
+
   private lazy val backward: PiecewiseSequenceShiftingBijection = {
     PiecewiseSequenceShiftingBijection.createFromPivots(
       PiecewiseSequenceShiftingBijection.computeInvertedPivots(pivots, null)
     )
   }
 
-  override def equals(obj: Any): Boolean = {
-    obj match {
-      case that: PiecewiseSequenceShiftingBijection =>
-        if (this.nbPivot != that.nbPivot) return false
-        for ((thisPivot, thatPivot) <- this.pivots.zip(that.pivots)) {
-          if (thisPivot.fromValue != thatPivot.fromValue) return false
-          if (!thisPivot.f.equals(thatPivot.f)) return false
-        }
-        true
-      case _ => false
+  /** Returns the new position of the old position specified as value.
+   *
+   * If there is no [[Pivot]] starting before value, it means that there was no move affecting this
+   * position, hence returning the old position itself. Otherwise returns the new position using
+   * the [[SequenceShiftingBijection]] of the [[Pivot]]
+   *
+   * @param oldPos
+   * The old position
+   * @return
+   * The new position of the old position.
+   */
+  def apply(oldPos: Int): Int = {
+    transformation.biggestLowerOrEqual(oldPos) match {
+      case None => oldPos
+      case Some((_, pivot)) => pivot.f(oldPos)
     }
   }
 
-  /** Returns the first [[Pivot]] or [[None]] */
-  def firstPivot: Option[(Int, Pivot)] = {
-    transformation.smallestBiggerOrEqual(Int.MinValue)
+  /** Returns the old position of the new position specified as value.
+   *
+   * It uses the backward version of the this class.
+   *
+   * @param newPosition
+   * The new position
+   * @return
+   * The old position of the new position.
+   */
+  def unApply(newPosition: Int): Int = backward(newPosition)
+
+
+  ///////////////////
+  // Pivots access //
+  ///////////////////
+
+  /** Returns the [[List]] of all [[Pivot]] */
+  def pivots: List[Pivot] = transformation.values
+
+  /** Returns the number of [[Pivot]] */
+  private def nbPivot: Int = transformation.size
+
+  /** Optionally returns a [[RedBlackTreeMapExplorer]] of the first pivot of the sequence.
+   *
+   * @return
+   * The [[RedBlackTreeMapExplorer]] or [[None]]
+   */
+  def firstPivotAndPosition: Option[RedBlackTreeMapExplorer[Pivot]] = {
+    transformation.smallest match {
+      case None => None
+      case Some((fromValueOfPivot, _)) => positionOfValue(fromValueOfPivot)
+    }
+  }
+
+  /** Optionally returns a [[RedBlackTreeMapExplorer]] of the pivot applying at the given position.
+   *
+   * @param position
+   * The position on which the pivot must apply
+   * @return
+   * The [[RedBlackTreeMapExplorer]] or [[None]]
+   */
+  def pivotWithPositionApplyingTo(position: Int): Option[RedBlackTreeMapExplorer[Pivot]] = {
+    transformation.biggestLowerOrEqual(position) match {
+      case None => None
+      case Some((fromValueOfPivot, _)) => positionOfValue(fromValueOfPivot)
+    }
   }
 
   /** Optionally returns a [[RedBlackTreeMapExplorer]] at the corresponding key */
   def positionOfValue(value: Int): Option[RedBlackTreeMapExplorer[Pivot]] =
     transformation.positionOf(value)
 
-  /** No recorded pivot */
-  def isIdentity: Boolean = transformation.isEmpty
 
-  /** Returns the number of [[Pivot]] */
-  private def nbPivot: Int = transformation.size
-
-  /** Returns the [[List]] of all [[Pivot]] */
-  def pivots: List[Pivot] = transformation.values
-
-  override def toString: String = {
-    s"PiecewiseLinearFun(nbSegments:${transformation.size}, ${if (transformation.isEmpty) "identity"
-      else s"segments:${transformation.values.mkString(",")}"})"
-  }
-
-  /** Returns the new position of the old position specified as value.
-    *
-    * If there is no [[Pivot]] starting before value, it means that there was no move affecting this
-    * position, hence returning the old position itself. Otherwise returns the new position using
-    * the [[SequenceShiftingBijection]] of the [[Pivot]]
-    * @param oldPos
-    *   The old position
-    * @return
-    *   The new position of the old position.
-    */
-  def apply(oldPos: Int): Int = {
-    transformation.biggestLowerOrEqual(oldPos) match {
-      case None             => oldPos
-      case Some((_, pivot)) => pivot.f(oldPos)
-    }
-  }
-
-  /** Returns the old position of the new position specified as value.
-    *
-    * It uses the backward version of the this class.
-    *
-    * @param newPosition
-    *   The new position
-    * @return
-    *   The old position of the new position.
-    */
-  def unApply(newPosition: Int): Int = backward(newPosition)
+  //////////////////////////
+  // Pivots manipulations //
+  //////////////////////////
 
   /** Applies a list of updates one by one.
     *
@@ -656,7 +670,7 @@ class PiecewiseSequenceShiftingBijection(
         // No pivot applying at this position, considers identity function.
         case None => None
         // Pivot applying at this position
-        case Some((key, _)) => transformation.positionOf(key)
+        case Some((key, _)) => positionOfValue(key)
       }
 
     while (currentFromIncluded <= toIncluded) {
@@ -824,84 +838,24 @@ class PiecewiseSequenceShiftingBijection(
     removePivotRec(transformWithAddedPivot)
   }
 
-  /** Optionally returns a [[RedBlackTreeMapExplorer]] of the pivot applying at the given position.
-    *
-    * @param position
-    *   The position on which the pivot must apply
-    * @return
-    *   The [[RedBlackTreeMapExplorer]] or [[None]]
-    */
-  def pivotWithPositionApplyingTo(position: Int): Option[RedBlackTreeMapExplorer[Pivot]] = {
-    transformation.biggestLowerOrEqual(position) match {
-      case None                        => None
-      case Some((fromValueOfPivot, _)) => transformation.positionOf(fromValueOfPivot)
+  override def equals(obj: Any): Boolean = {
+    obj match {
+      case that: PiecewiseSequenceShiftingBijection =>
+        if (this.nbPivot != that.nbPivot) return false
+        for ((thisPivot, thatPivot) <- this.pivots.zip(that.pivots)) {
+          if (thisPivot.fromValue != thatPivot.fromValue) return false
+          if (!thisPivot.f.equals(thatPivot.f)) return false
+        }
+        true
+      case _ => false
     }
   }
 
-  /** Optionally returns a [[RedBlackTreeMapExplorer]] of the pivot following the given position.
-    *
-    * @param position
-    *   The position after which the pivot must be
-    * @return
-    *   The [[RedBlackTreeMapExplorer]] or [[None]]
-    */
-  def pivotWithPositionAfter(position: Int): Option[RedBlackTreeMapExplorer[Pivot]] = {
-    transformation.smallestBiggerOrEqual(position) match {
-      case None                        => None
-      case Some((fromValueOfPivot, _)) => transformation.positionOf(fromValueOfPivot)
-    }
-  }
-
-  /** Optionally returns the [[Pivot]] applying at the given position.
-    *
-    * @param position
-    *   The position on which the pivot must apply
-    * @return
-    *   The [[Pivot]] or [[None]]
-    */
-  def pivotApplyingTo(position: Int): Option[Pivot] = {
-    transformation.biggestLowerOrEqual(position) match {
-      case None         => None
-      case Some((_, p)) => Some(p)
-    }
-  }
-
-  /** Optionally returns the [[Pivot]] following the given position.
-    *
-    * @param position
-    *   The position after which the pivot must be
-    * @return
-    *   The [[Pivot]] or [[None]]
-    */
-  def pivotAfter(position: Int): Option[Pivot] = {
-    transformation.smallestBiggerOrEqual(position) match {
-      case None         => None
-      case Some((_, p)) => Some(p)
-    }
-  }
-
-  /** Optionally returns a [[RedBlackTreeMapExplorer]] of the first pivot of the sequence.
-    *
-    * @return
-    *   The [[RedBlackTreeMapExplorer]] or [[None]]
-    */
-  def firstPivotAndPosition: Option[RedBlackTreeMapExplorer[Pivot]] = {
-    transformation.smallest match {
-      case None                        => None
-      case Some((fromValueOfPivot, _)) => transformation.positionOf(fromValueOfPivot)
-    }
-  }
-
-  /** Optionally returns a [[RedBlackTreeMapExplorer]] of the last pivot of the sequence.
-    *
-    * @return
-    *   The [[RedBlackTreeMapExplorer]] or [[None]]
-    */
-  def lastPivotAndPosition: Option[RedBlackTreeMapExplorer[Pivot]] = {
-    transformation.biggest match {
-      case None                        => None
-      case Some((fromValueOfPivot, _)) => transformation.positionOf(fromValueOfPivot)
-    }
+  override def toString: String = {
+    s"PiecewiseLinearFun(nbSegments:${transformation.size}, ${
+      if (transformation.isEmpty) "identity"
+      else s"segments:${transformation.values.mkString(",")}"
+    })"
   }
 }
 
