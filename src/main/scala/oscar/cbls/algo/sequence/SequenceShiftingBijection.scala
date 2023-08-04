@@ -11,7 +11,7 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.algo.fun
+package oscar.cbls.algo.sequence
 
 /** The companion object of [[SequenceShiftingBijection]] */
 object SequenceShiftingBijection {
@@ -76,7 +76,7 @@ class SequenceShiftingBijection(val offset: Int, val flip: Boolean) {
   override def toString: String =
     if (offset == 0 && flip) "(x=>-x)"
     else if (offset == 0) "(x=>x)"
-    else s"(x=> $offset ${if (flip) "-" else "+"} + x"
+    else s"(x=> $offset ${if (flip) "-" else "+"} x"
 
   override def equals(obj: Any): Boolean = {
     obj match {

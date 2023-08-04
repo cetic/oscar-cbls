@@ -11,7 +11,7 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.algo.fun
+package oscar.cbls.algo.sequence
 
 import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
 
@@ -75,7 +75,7 @@ object PiecewiseSequenceShiftingBijection {
   *   a RedBlackTree keeping the [[Pivot]] sorted by their [[Pivot.fromValue]]
   */
 class PiecewiseSequenceShiftingBijection(
-  private[fun] val transformation: RedBlackTreeMap[Pivot] = RedBlackTreeMap.empty
+  private[sequence] val transformation: RedBlackTreeMap[Pivot] = RedBlackTreeMap.empty
 ) {
 
   /** No recorded pivot */

@@ -1,8 +1,8 @@
-package oscar.cbls.test.algo.fun
+package oscar.cbls.test.algo.sequence
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers._
-import oscar.cbls.algo.fun.SequenceShiftingBijection
+import oscar.cbls.algo.sequence.SequenceShiftingBijection
 
 class SequenceShiftingBijectionSuite extends AnyFunSuite {
 
