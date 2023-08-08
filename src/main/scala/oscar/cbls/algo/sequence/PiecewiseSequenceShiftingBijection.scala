@@ -81,41 +81,40 @@ class PiecewiseSequenceShiftingBijection(
   /** No recorded pivot */
   def isIdentity: Boolean = transformation.isEmpty
 
-  private lazy val backward: PiecewiseSequenceShiftingBijection = {
+  lazy val backward: PiecewiseSequenceShiftingBijection = {
     PiecewiseSequenceShiftingBijection.createFromPivots(
-      PiecewiseSequenceShiftingBijection.computeInvertedPivots(pivots, null)
+      PiecewiseSequenceShiftingBijection.computeInvertedPivots(pivots)
     )
   }
 
   /** Returns the new position of the old position specified as value.
-   *
-   * If there is no [[Pivot]] starting before value, it means that there was no move affecting this
-   * position, hence returning the old position itself. Otherwise returns the new position using
-   * the [[SequenceShiftingBijection]] of the [[Pivot]]
-   *
-   * @param oldPos
-   * The old position
-   * @return
-   * The new position of the old position.
-   */
+    *
+    * If there is no [[Pivot]] starting before value, it means that there was no move affecting this
+    * position, hence returning the old position itself. Otherwise returns the new position using
+    * the [[SequenceShiftingBijection]] of the [[Pivot]]
+    *
+    * @param oldPos
+    *   The old position
+    * @return
+    *   The new position of the old position.
+    */
   def apply(oldPos: Int): Int = {
     transformation.biggestLowerOrEqual(oldPos) match {
-      case None => oldPos
+      case None             => oldPos
       case Some((_, pivot)) => pivot.f(oldPos)
     }
   }
 
   /** Returns the old position of the new position specified as value.
-   *
-   * It uses the backward version of the this class.
-   *
-   * @param newPosition
-   * The new position
-   * @return
-   * The old position of the new position.
-   */
+    *
+    * It uses the backward version of the this class.
+    *
+    * @param newPosition
+    *   The new position
+    * @return
+    *   The old position of the new position.
+    */
   def unApply(newPosition: Int): Int = backward(newPosition)
-
 
   ///////////////////
   // Pivots access //
@@ -128,27 +127,27 @@ class PiecewiseSequenceShiftingBijection(
   private def nbPivot: Int = transformation.size
 
   /** Optionally returns a [[RedBlackTreeMapExplorer]] of the first pivot of the sequence.
-   *
-   * @return
-   * The [[RedBlackTreeMapExplorer]] or [[None]]
-   */
+    *
+    * @return
+    *   The [[RedBlackTreeMapExplorer]] or [[None]]
+    */
   def firstPivotAndPosition: Option[RedBlackTreeMapExplorer[Pivot]] = {
     transformation.smallest match {
-      case None => None
+      case None                        => None
       case Some((fromValueOfPivot, _)) => positionOfValue(fromValueOfPivot)
     }
   }
 
   /** Optionally returns a [[RedBlackTreeMapExplorer]] of the pivot applying at the given position.
-   *
-   * @param position
-   * The position on which the pivot must apply
-   * @return
-   * The [[RedBlackTreeMapExplorer]] or [[None]]
-   */
+    *
+    * @param position
+    *   The position on which the pivot must apply
+    * @return
+    *   The [[RedBlackTreeMapExplorer]] or [[None]]
+    */
   def pivotWithPositionApplyingTo(position: Int): Option[RedBlackTreeMapExplorer[Pivot]] = {
     transformation.biggestLowerOrEqual(position) match {
-      case None => None
+      case None                        => None
       case Some((fromValueOfPivot, _)) => positionOfValue(fromValueOfPivot)
     }
   }
@@ -156,7 +155,6 @@ class PiecewiseSequenceShiftingBijection(
   /** Optionally returns a [[RedBlackTreeMapExplorer]] at the corresponding key */
   def positionOfValue(value: Int): Option[RedBlackTreeMapExplorer[Pivot]] =
     transformation.positionOf(value)
-
 
   //////////////////////////
   // Pivots manipulations //
@@ -219,12 +217,21 @@ class PiecewiseSequenceShiftingBijection(
     val widthZone2 = endZone2Included - endZone1Included
     // TODO: the choice is based on the number of positions, it should be based on the number of segments instead (but this is probably the same very often)
     if (widthZone1 > widthZone2) {
-      swapAdjacentZonesShiftFirst(
+      val tmp = swapAdjacentZonesShiftFirst(
         startZone1Included,
         endZone1Included,
         endZone2Included,
         flipZone2 = false
       )
+      assert(
+        tmp equals swapAdjacentZonesShiftSecond(
+          startZone1Included,
+          endZone1Included,
+          endZone2Included,
+          flipZone1 = false
+        )
+      )
+      tmp
     } else {
       val tmp = swapAdjacentZonesShiftSecond(
         startZone1Included,
@@ -329,6 +336,14 @@ class PiecewiseSequenceShiftingBijection(
 
   /** Flips the pivots within interval defined by the two parameters.
     *
+    * In term of bijection its an "in place flip".
+    *
+    * ex :
+    *   - 0,1,2,3,4,5,6,7,8,9
+    *   - swap adjacent zone shift first (0,2,5,true)
+    *   - [5,4,3],[0,1,2],6,7,8,9
+    *   - flipPivotsInInterval (3,6)
+    *   - 5,4,3,[6,2,1,0],7,8,9
     * @param startZoneIncluded
     *   Starting position of the interval
     * @param endZoneIncluded
@@ -366,7 +381,12 @@ class PiecewiseSequenceShiftingBijection(
       }
     )
 
-    new PiecewiseSequenceShiftingBijection(updatedForwardFct)
+    new PiecewiseSequenceShiftingBijection(
+      deleteUnnecessaryPivotStartingJustAfter(
+        startZoneIncluded - 1,
+        deleteUnnecessaryPivotStartingJustAfter(endZoneIncluded, updatedForwardFct)
+      )
+    )
   }
 
   /** Creates the mirror [[Pivot]] of p, based on it's width and it's new endPosition.
@@ -795,7 +815,7 @@ class PiecewiseSequenceShiftingBijection(
         updatedTransform.insert(
           atPosition,
           new Pivot(atPosition, SequenceShiftingBijection.identity)
-        ) // implicitly, it was the identity function here, so add the pivot
+        )
     }
   }
 
@@ -841,7 +861,9 @@ class PiecewiseSequenceShiftingBijection(
   override def equals(obj: Any): Boolean = {
     obj match {
       case that: PiecewiseSequenceShiftingBijection =>
-        if (this.nbPivot != that.nbPivot) return false
+        if (this.nbPivot != that.nbPivot) {
+          return false
+        }
         for ((thisPivot, thatPivot) <- this.pivots.zip(that.pivots)) {
           if (thisPivot.fromValue != thatPivot.fromValue) return false
           if (!thisPivot.f.equals(thatPivot.f)) return false
@@ -852,10 +874,8 @@ class PiecewiseSequenceShiftingBijection(
   }
 
   override def toString: String = {
-    s"PiecewiseLinearFun(nbSegments:${transformation.size}, ${
-      if (transformation.isEmpty) "identity"
-      else s"segments:${transformation.values.mkString(",")}"
-    })"
+    s"PiecewiseLinearFun(nbSegments:${transformation.size}, ${if (transformation.isEmpty) "identity"
+      else s"segments:${transformation.values.mkString(",")}"})"
   }
 }
 
@@ -872,7 +892,7 @@ class PiecewiseSequenceShiftingBijection(
   */
 class Pivot(val fromValue: Int, val f: SequenceShiftingBijection) {
   override def toString: String =
-    "Pivot(from:" + fromValue + " " + f + " f(from)=" + f(fromValue) + ")"
+    "Pivot(from:" + fromValue + " " + f + " f(from)=" + f(fromValue) + "))"
 
   /** Flip this pivot */
   def flip(endX: Int): Pivot = {
