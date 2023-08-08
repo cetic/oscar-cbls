@@ -70,7 +70,7 @@ object PiecewiseSequenceShiftingBijection {
   * x. Those are created rapidly and can be merged (See [[SequenceShiftingBijection]] for more
   * information).
   *
-  * Once in a while we create a brand new [[IntSequence]] to avoid having too many Pivot.
+  * Once in a while we create a brand new [[IntSequence]] to avoid having too many Pivots.
   * @param transformation
   *   a RedBlackTree keeping the [[Pivot]] sorted by their [[Pivot.fromValue]]
   */
@@ -81,6 +81,7 @@ class PiecewiseSequenceShiftingBijection(
   /** No recorded pivot */
   def isIdentity: Boolean = transformation.isEmpty
 
+  /** The backward [[PiecewiseSequenceShiftingBijection]] such that backard(this(x)) = x */
   lazy val backward: PiecewiseSequenceShiftingBijection = {
     PiecewiseSequenceShiftingBijection.createFromPivots(
       PiecewiseSequenceShiftingBijection.computeInvertedPivots(pivots)
@@ -197,389 +198,6 @@ class PiecewiseSequenceShiftingBijection(
     }
   }
 
-  /** Swaps two adjacent zones without flipping using the fastest order.
-    *
-    * @param startZone1Included
-    *   Start position of the first zone
-    * @param endZone1Included
-    *   End position of the first zone
-    * @param endZone2Included
-    *   End position of the second zone
-    * @return
-    *   A new [[PiecewiseSequenceShiftingBijection]] with the two zones swapped
-    */
-  def swapAdjacentZonesShiftBest(
-    startZone1Included: Int,
-    endZone1Included: Int,
-    endZone2Included: Int
-  ): PiecewiseSequenceShiftingBijection = {
-    val widthZone1 = endZone1Included - startZone1Included + 1
-    val widthZone2 = endZone2Included - endZone1Included
-    // TODO: the choice is based on the number of positions, it should be based on the number of segments instead (but this is probably the same very often)
-    if (widthZone1 > widthZone2) {
-      val tmp = swapAdjacentZonesShiftFirst(
-        startZone1Included,
-        endZone1Included,
-        endZone2Included,
-        flipZone2 = false
-      )
-      assert(
-        tmp equals swapAdjacentZonesShiftSecond(
-          startZone1Included,
-          endZone1Included,
-          endZone2Included,
-          flipZone1 = false
-        )
-      )
-      tmp
-    } else {
-      val tmp = swapAdjacentZonesShiftSecond(
-        startZone1Included,
-        endZone1Included,
-        endZone2Included,
-        flipZone1 = false
-      )
-      assert(
-        tmp equals swapAdjacentZonesShiftFirst(
-          startZone1Included,
-          endZone1Included,
-          endZone2Included,
-          flipZone2 = false
-        )
-      )
-      tmp
-    }
-  }
-
-  /** Swaps two adjacent zones by shifting the first one after the second one.
-    *
-    * The zones are define like this :
-    *   - first one : startZone1Included to endZone1Included
-    *   - second one : endZone1Included + 1 to endZone2Included
-    *
-    * It is done in 5 steps see comments in code for more information.
-    *
-    * @param startZone1Included
-    *   Starting position of the first zone
-    * @param endZone1Included
-    *   Ending position of the first zone
-    * @param endZone2Included
-    *   Ending position of the second zone
-    * @param flipZone2
-    *   If the second zone needs to be flipped
-    * @return
-    *   The updated [[PiecewiseSequenceShiftingBijection]]
-    */
-  def swapAdjacentZonesShiftFirst(
-    startZone1Included: Int,
-    endZone1Included: Int,
-    endZone2Included: Int,
-    flipZone2: Boolean
-  ): PiecewiseSequenceShiftingBijection = {
-    val widthZone2 = endZone2Included - endZone1Included
-    val widthZone1 = endZone1Included - startZone1Included + 1
-
-    /*
-     1° Removes pivots for destination of zone1
-     We need to do so otherwise we can't ensure hypothesis of [[RedBlackTreeMap.updateDelta]].
-     We cannot change the keys (deltaKey) of the RBTree such that their new value become greater/lower
-     than existing unchanged keys.
-     */
-    val transformWithTargetZone2Cleaned =
-      removePivotsBetween(endZone1Included + 1, endZone2Included, transformation)
-
-    // 2° Adds a pivot at zone1 start copying the previous one
-    val transformReadyForShiftOfZone1 =
-      addRedundantPivotAt(startZone1Included, transformWithTargetZone2Cleaned)
-
-    // Meant to be composed with an existing SequenceShiftingBijection. (f2 or f3)°f
-    val f2 = SequenceShiftingBijection(-widthZone2, flip = false)
-    val f3 = SequenceShiftingBijection(widthZone2, flip = false)
-
-    /*
-     * 3° Shifts the first zone after the second one
-     * Moving the pivots by zone2's width and composing the pivots of the first zone with f2 or f3.
-     */
-    val transformWithZone1Shifted =
-      transformReadyForShiftOfZone1.updateDelta(
-        startZone1Included,
-        endZone1Included,
-        widthZone2,
-        (p: Pivot) => new Pivot(p.fromValue + widthZone2, if (p.f.flip) f3(p.f) else f2(p.f))
-      )
-
-    /*
-     * 4° Next adds a new pivot (shifting backward) for the second zone which is now starting at startZone1
-     * before applying pivots that were removed at step 1
-     */
-    val transformationWithUpdate2Done = myUpdateForCompositionBefore(
-      startZone1Included,
-      startZone1Included + widthZone2 - 1,
-      SequenceShiftingBijection(
-        if (flipZone2) endZone2Included + startZone1Included else widthZone1,
-        flipZone2
-      ),
-      transformWithZone1Shifted
-    )
-
-    // 5° finally, cleans the potentially redundant pivots
-    new PiecewiseSequenceShiftingBijection(
-      deleteUnnecessaryPivotStartingJustAfter(
-        startZone1Included - 1,
-        deleteUnnecessaryPivotStartingJustAfter(
-          startZone1Included + widthZone2 - 1,
-          deleteUnnecessaryPivotStartingJustAfter(endZone2Included, transformationWithUpdate2Done)
-        )
-      )
-    )
-  }
-
-  /** Flips the pivots within interval defined by the two parameters.
-    *
-    * In term of bijection its an "in place flip".
-    *
-    * ex :
-    *   - 0,1,2,3,4,5,6,7,8,9
-    *   - swap adjacent zone shift first (0,2,5,true)
-    *   - [5,4,3],[0,1,2],6,7,8,9
-    *   - flipPivotsInInterval (3,6)
-    *   - 5,4,3,[6,2,1,0],7,8,9
-    * @param startZoneIncluded
-    *   Starting position of the interval
-    * @param endZoneIncluded
-    *   Ending position of the interval
-    * @return
-    *   An updated [[PiecewiseSequenceShiftingBijection]]
-    */
-  def flipPivotsInInterval(
-    startZoneIncluded: Int,
-    endZoneIncluded: Int
-  ): PiecewiseSequenceShiftingBijection = {
-    // 1° If needed, defines a redundant pivot at start to keep information of previous pivot
-    val transformReadyForFlipOnLeft = addRedundantPivotAt(startZoneIncluded, this.transformation)
-    // 2° If needed, defines a redundant pivot at end+1 to forward information of last pivot of the interval
-    val transformReadyForFlip =
-      addRedundantPivotAt(endZoneIncluded + 1, transformReadyForFlipOnLeft)
-
-    // 3° Collects pivots within the interval
-    val collectedPivotsForwardOrder: List[Pivot] =
-      pivotsBetween(startZoneIncluded, endZoneIncluded, transformReadyForFlip)
-
-    // 4° Flips the collected pivots
-    val flippedPivots =
-      flipListOfPivots(collectedPivotsForwardOrder, endZoneIncluded, endZoneIncluded)
-
-    val flippedPivotsIterator = flippedPivots.iterator
-
-    // 5° Update the ready for flip RBTree with the flipped pivots
-    val updatedForwardFct = transformReadyForFlip.update(
-      startZoneIncluded,
-      transformReadyForFlip.biggestLowerOrEqual(endZoneIncluded).get._1,
-      (_, _) => {
-        val newPivot = flippedPivotsIterator.next()
-        (newPivot.fromValue, newPivot)
-      }
-    )
-
-    new PiecewiseSequenceShiftingBijection(
-      deleteUnnecessaryPivotStartingJustAfter(
-        startZoneIncluded - 1,
-        deleteUnnecessaryPivotStartingJustAfter(endZoneIncluded, updatedForwardFct)
-      )
-    )
-  }
-
-  /** Creates the mirror [[Pivot]] of p, based on it's width and it's new endPosition.
-    *
-    * The pivot may have moved within the sequence. Therefore the new end and width are needed to
-    * compute the new start of the pivot and it's new offset.
-    * @param p
-    *   the pivot to mirror
-    * @param width
-    *   the pivot's width
-    * @param newEnd
-    *   the pivot's new end
-    * @return
-    */
-  private def mirrorPivot(p: Pivot, width: Int, newEnd: Int): Pivot = {
-    val newFromValue = newEnd - width + 1
-    val newFlip      = !p.f.flip
-    val newOffset    = p.f(p.fromValue + newEnd)
-    val newPivot     = new Pivot(newFromValue, new SequenceShiftingBijection(newOffset, newFlip))
-
-    assert(p.f(p.fromValue) == newPivot.f(newEnd))
-    assert(p.f(p.fromValue + width - 1) == newPivot.f(newPivot.fromValue))
-
-    newPivot
-  }
-
-  /** Flips a list of pivots.
-    *
-    * List(p1, p2, p3) ==> List(p3', p2', p1') The pivots keep their length but :
-    *   - Their start position are shifted accordingly (ex : p3'.start = p1.start, p1'.start =
-    *     p1.start+p3.length+p2.length)
-    *   - Their [[SequenceShiftingBijection]] are mirrored and shifted (see mirrorPivot)
-    *
-    * Recursive process starting with flipping and moving the p1, then p2 ... pn
-    *
-    * @param pivotList
-    *   The list of pivots to flip
-    * @param newEndPositionOfNextPivotToFlip
-    *   End position of the next pivot to flip
-    * @param endOfLastPivotUntouched
-    *   Old end position of last pivot to flip (used to compute width)
-    * @param acc
-    *   List of flipped pivots
-    * @return
-    */
-  @tailrec
-  private def flipListOfPivots(
-    pivotList: List[Pivot],
-    newEndPositionOfNextPivotToFlip: Int,
-    endOfLastPivotUntouched: Int,
-    acc: List[Pivot] = List.empty
-  ): List[Pivot] = {
-    pivotList match {
-      case Nil => acc
-      case p1 :: tail1 =>
-        tail1 match {
-          case Nil =>
-            val width = endOfLastPivotUntouched - p1.fromValue + 1
-            mirrorPivot(p1, width, newEndPositionOfNextPivotToFlip) :: acc
-          case p2 :: _ =>
-            val width = p2.fromValue - p1.fromValue
-            flipListOfPivots(
-              tail1,
-              newEndPositionOfNextPivotToFlip - width,
-              endOfLastPivotUntouched,
-              mirrorPivot(p1, width, newEndPositionOfNextPivotToFlip) :: acc
-            )
-        }
-    }
-  }
-
-  /** Collects the pivots in the defined zone.
-    *
-    * Keeps the pivots order.
-    * @param startPositionIncluded
-    *   Start position of the zone.
-    * @param endPositionIncluded
-    *   End position of the zone.
-    * @param transform
-    *   The [[RedBlackTreeMap]] to consider.
-    * @return
-    */
-  private def pivotsBetween(
-    startPositionIncluded: Int,
-    endPositionIncluded: Int,
-    transform: RedBlackTreeMap[Pivot]
-  ): List[Pivot] = {
-    val lastPivotBeforeEndZonePosition = transform.biggestLowerOrEqual(endPositionIncluded)
-
-    @tailrec
-    def collectAllPivots(
-      optExplorer: Option[RedBlackTreeMapExplorer[Pivot]],
-      pivots: List[Pivot] = List.empty
-    ): List[Pivot] = {
-      optExplorer match {
-        case Some(explorer) =>
-          if (startPositionIncluded > explorer.key) pivots
-          else collectAllPivots(explorer.prev, explorer.value :: pivots)
-        case None => pivots
-      }
-    }
-
-    val optExplorer =
-      if (lastPivotBeforeEndZonePosition.nonEmpty)
-        transform.positionOf(lastPivotBeforeEndZonePosition.get._1)
-      else None
-    collectAllPivots(optExplorer)
-  }
-
-  /** Swaps two adjacent zones by shifting the second one before the first one.
-    *
-    * The zones are define like this :
-    *   - first one : startZone1Included to endZone1Included
-    *   - second one : endZone1Included + 1 to endZone2Included
-    *
-    * It is done in 5 steps see comments in code for more information.
-    *
-    * @param startZone1Included
-    *   Starting position of the first zone
-    * @param endZone1Included
-    *   Ending position of the first zone
-    * @param endZone2Included
-    *   Ending position of the second zone
-    * @param flipZone1
-    *   If the first zone needs to be flipped
-    * @return
-    *   The updated [[PiecewiseSequenceShiftingBijection]]
-    */
-  def swapAdjacentZonesShiftSecond(
-    startZone1Included: Int,
-    endZone1Included: Int,
-    endZone2Included: Int,
-    flipZone1: Boolean
-  ): PiecewiseSequenceShiftingBijection = {
-
-    val widthZone2 = endZone2Included - endZone1Included
-    val widthZone1 = endZone1Included - startZone1Included + 1
-
-    /*
-         1° Removes pivots for destination of zone2
-         We need to do so otherwise we can't ensure hypothesis of [[RedBlackTreeMap.updateDelta]].
-         We cannot change the keys (deltaKey) of the RBTree such that their new value become greater/lower
-         than existing unchanged keys.
-     */
-    val transformWithTargetZone1Cleaned =
-      removePivotsBetween(startZone1Included, endZone1Included, transformation)
-
-    // 2° Adds a pivot after zone 2 end copying the previous one to be able to "cut" the zone 2
-    val transformReadyForShiftOfZone2 =
-      addRedundantPivotAt(endZone2Included + 1, transformWithTargetZone1Cleaned)
-
-    // Meant to be composed with an existing SequenceShiftingBijection. (f2 or f3)°f
-    val f2 = SequenceShiftingBijection(widthZone1, flip = false)
-    val f3 = SequenceShiftingBijection(-widthZone1, flip = false)
-
-    /*
-     * 3° Shifts the second zone before the first one
-     * Moving the pivots by minus zone1's width and composing the pivots of the second zone with f2 or f3.
-     */
-    val transformWithZone2Shifted =
-      transformReadyForShiftOfZone2.updateDelta(
-        endZone1Included + 1,
-        endZone2Included,
-        -widthZone1,
-        (p: Pivot) => new Pivot(p.fromValue - widthZone1, if (p.f.flip) f3(p.f) else f2(p.f))
-      )
-
-    /*
-     *	4° Next adds a new pivot for the first zone which is now starting at startZone2 before
-     *	applying the pivots that were removed at step 1
-     */
-    val transformationWithUpdate1Done = myUpdateForCompositionBefore(
-      startZone1Included + widthZone2,
-      endZone2Included,
-      SequenceShiftingBijection(
-        if (flipZone1) endZone1Included + startZone1Included + widthZone2 else -widthZone2,
-        flipZone1
-      ),
-      transformWithZone2Shifted
-    )
-
-    // 5° finally, cleans the potentially redundant pivots
-    new PiecewiseSequenceShiftingBijection(
-      deleteUnnecessaryPivotStartingJustAfter(
-        startZone1Included - 1,
-        deleteUnnecessaryPivotStartingJustAfter(
-          startZone1Included + widthZone2 - 1,
-          deleteUnnecessaryPivotStartingJustAfter(endZone2Included, transformationWithUpdate1Done)
-        )
-      )
-    )
-  }
-
   /** Applies the additional [[SequenceShiftingBijection]] in the defined before existing bijection
     * interval.
     *
@@ -609,41 +227,6 @@ class PiecewiseSequenceShiftingBijection(
     val updatedTransformDeletedExtraPivot =
       deleteUnnecessaryPivotStartingJustAfter(toIncluded, updatedTransform)
     new PiecewiseSequenceShiftingBijection(updatedTransformDeletedExtraPivot)
-  }
-
-  /** Removes unnecessary [[Pivot]] starting after the given position.
-    *
-    * There are two cases :
-    *   - There is no [[Pivot]] starting before position and the pivot starting right after is the
-    *     identity.
-    *   - There is a [[Pivot]] starting before position and it's equal to the pivot starting right
-    *     after the position.
-    *
-    * @param position
-    *   The position after which we are checking the [[Pivot]]
-    * @param updatedTransform
-    *   The current [[RedBlackTreeMap]] holding the pivots
-    * @return
-    *   An updated [[RedBlackTreeMap]]
-    */
-  private def deleteUnnecessaryPivotStartingJustAfter(
-    position: Int,
-    updatedTransform: RedBlackTreeMap[Pivot]
-  ): RedBlackTreeMap[Pivot] = {
-    updatedTransform.get(position + 1) match {
-      case None => updatedTransform
-      case Some(pivotStartingJustAfterToIncluded) =>
-        updatedTransform.biggestLowerOrEqual(position) match {
-          case None =>
-            if (pivotStartingJustAfterToIncluded.f.isIdentity)
-              updatedTransform.remove(position + 1)
-            else updatedTransform
-          case Some((_, pivotApplyingAtToIncluded)) =>
-            if (pivotStartingJustAfterToIncluded.f equals pivotApplyingAtToIncluded.f)
-              updatedTransform.remove(position + 1)
-            else updatedTransform
-        }
-    }
   }
 
   /** Makes the composition of a [[SequenceShiftingBijection]] (BEFORE) and existing bijection in
@@ -788,6 +371,406 @@ class PiecewiseSequenceShiftingBijection(
       }
     }
     currentTransformation
+  }
+
+  /** Swaps two adjacent zones without flipping using the fastest order.
+    *
+    * @param startZone1Included
+    *   Start position of the first zone
+    * @param endZone1Included
+    *   End position of the first zone
+    * @param endZone2Included
+    *   End position of the second zone
+    * @return
+    *   A new [[PiecewiseSequenceShiftingBijection]] with the two zones swapped
+    */
+  def swapAdjacentZonesShiftBest(
+    startZone1Included: Int,
+    endZone1Included: Int,
+    endZone2Included: Int
+  ): PiecewiseSequenceShiftingBijection = {
+    val widthZone1 = endZone1Included - startZone1Included + 1
+    val widthZone2 = endZone2Included - endZone1Included
+    // TODO: the choice is based on the number of positions, it should be based on the number of segments instead (but this is probably the same very often)
+    if (widthZone1 > widthZone2) {
+      swapAdjacentZonesShiftFirst(
+        startZone1Included,
+        endZone1Included,
+        endZone2Included,
+        flipZone2 = false
+      )
+    } else {
+      swapAdjacentZonesShiftSecond(
+        startZone1Included,
+        endZone1Included,
+        endZone2Included,
+        flipZone1 = false
+      )
+    }
+  }
+
+  /** Swaps two adjacent zones by shifting the first one after the second one.
+    *
+    * The zones are define like this :
+    *   - first one : startZone1Included to endZone1Included
+    *   - second one : endZone1Included + 1 to endZone2Included
+    *
+    * It is done in 5 steps see comments in code for more information.
+    *
+    * @param startZone1Included
+    *   Starting position of the first zone
+    * @param endZone1Included
+    *   Ending position of the first zone
+    * @param endZone2Included
+    *   Ending position of the second zone
+    * @param flipZone2
+    *   If the second zone needs to be flipped
+    * @return
+    *   The updated [[PiecewiseSequenceShiftingBijection]]
+    */
+  def swapAdjacentZonesShiftFirst(
+    startZone1Included: Int,
+    endZone1Included: Int,
+    endZone2Included: Int,
+    flipZone2: Boolean
+  ): PiecewiseSequenceShiftingBijection = {
+    val widthZone2 = endZone2Included - endZone1Included
+    val widthZone1 = endZone1Included - startZone1Included + 1
+
+    /*
+     1° Removes pivots for destination of zone1
+     We need to do so otherwise we can't ensure hypothesis of [[RedBlackTreeMap.updateDelta]].
+     We cannot change the keys (deltaKey) of the RBTree such that their new value become greater/lower
+     than existing unchanged keys.
+     */
+    val transformWithTargetZone2Cleaned =
+      removePivotsBetween(endZone1Included + 1, endZone2Included, transformation)
+
+    // 2° Adds a pivot at zone1 start copying the previous one
+    val transformReadyForShiftOfZone1 =
+      addRedundantPivotAt(startZone1Included, transformWithTargetZone2Cleaned)
+
+    // Meant to be composed with an existing SequenceShiftingBijection. (f2 or f3)°f
+    val f2 = SequenceShiftingBijection(-widthZone2, flip = false)
+    val f3 = SequenceShiftingBijection(widthZone2, flip = false)
+
+    /*
+     * 3° Shifts the first zone after the second one
+     * Moving the pivots by zone2's width and composing the pivots of the first zone with f2 or f3.
+     */
+    val transformWithZone1Shifted =
+      transformReadyForShiftOfZone1.updateDelta(
+        startZone1Included,
+        endZone1Included,
+        widthZone2,
+        (p: Pivot) => new Pivot(p.fromValue + widthZone2, if (p.f.flip) f3(p.f) else f2(p.f))
+      )
+
+    /*
+     * 4° Next adds a new pivot (shifting backward) for the second zone which is now starting at startZone1
+     * before applying pivots that were removed at step 1
+     */
+    val transformationWithUpdate2Done = myUpdateForCompositionBefore(
+      startZone1Included,
+      startZone1Included + widthZone2 - 1,
+      SequenceShiftingBijection(
+        if (flipZone2) endZone2Included + startZone1Included else widthZone1,
+        flipZone2
+      ),
+      transformWithZone1Shifted
+    )
+
+    // 5° finally, cleans the potentially redundant pivots
+    new PiecewiseSequenceShiftingBijection(
+      deleteUnnecessaryPivotStartingJustAfter(
+        startZone1Included - 1,
+        deleteUnnecessaryPivotStartingJustAfter(
+          startZone1Included + widthZone2 - 1,
+          deleteUnnecessaryPivotStartingJustAfter(endZone2Included, transformationWithUpdate2Done)
+        )
+      )
+    )
+  }
+
+  /** Swaps two adjacent zones by shifting the second one before the first one.
+    *
+    * The zones are define like this :
+    *   - first one : startZone1Included to endZone1Included
+    *   - second one : endZone1Included + 1 to endZone2Included
+    *
+    * It is done in 5 steps see comments in code for more information.
+    *
+    * @param startZone1Included
+    *   Starting position of the first zone
+    * @param endZone1Included
+    *   Ending position of the first zone
+    * @param endZone2Included
+    *   Ending position of the second zone
+    * @param flipZone1
+    *   If the first zone needs to be flipped
+    * @return
+    *   The updated [[PiecewiseSequenceShiftingBijection]]
+    */
+  def swapAdjacentZonesShiftSecond(
+    startZone1Included: Int,
+    endZone1Included: Int,
+    endZone2Included: Int,
+    flipZone1: Boolean
+  ): PiecewiseSequenceShiftingBijection = {
+
+    val widthZone2 = endZone2Included - endZone1Included
+    val widthZone1 = endZone1Included - startZone1Included + 1
+
+    /*
+         1° Removes pivots for destination of zone2
+         We need to do so otherwise we can't ensure hypothesis of [[RedBlackTreeMap.updateDelta]].
+         We cannot change the keys (deltaKey) of the RBTree such that their new value become greater/lower
+         than existing unchanged keys.
+     */
+    val transformWithTargetZone1Cleaned =
+      removePivotsBetween(startZone1Included, endZone1Included, transformation)
+
+    // 2° Adds a pivot after zone 2 end copying the previous one to be able to "cut" the zone 2
+    val transformReadyForShiftOfZone2 =
+      addRedundantPivotAt(endZone2Included + 1, transformWithTargetZone1Cleaned)
+
+    // Meant to be composed with an existing SequenceShiftingBijection. (f2 or f3)°f
+    val f2 = SequenceShiftingBijection(widthZone1, flip = false)
+    val f3 = SequenceShiftingBijection(-widthZone1, flip = false)
+
+    /*
+     * 3° Shifts the second zone before the first one
+     * Moving the pivots by minus zone1's width and composing the pivots of the second zone with f2 or f3.
+     */
+    val transformWithZone2Shifted =
+      transformReadyForShiftOfZone2.updateDelta(
+        endZone1Included + 1,
+        endZone2Included,
+        -widthZone1,
+        (p: Pivot) => new Pivot(p.fromValue - widthZone1, if (p.f.flip) f3(p.f) else f2(p.f))
+      )
+
+    /*
+     *	4° Next adds a new pivot for the first zone which is now starting at startZone2 before
+     *	applying the pivots that were removed at step 1
+     */
+    val transformationWithUpdate1Done = myUpdateForCompositionBefore(
+      startZone1Included + widthZone2,
+      endZone2Included,
+      SequenceShiftingBijection(
+        if (flipZone1) endZone1Included + startZone1Included + widthZone2 else -widthZone2,
+        flipZone1
+      ),
+      transformWithZone2Shifted
+    )
+
+    // 5° finally, cleans the potentially redundant pivots
+    new PiecewiseSequenceShiftingBijection(
+      deleteUnnecessaryPivotStartingJustAfter(
+        startZone1Included - 1,
+        deleteUnnecessaryPivotStartingJustAfter(
+          startZone1Included + widthZone2 - 1,
+          deleteUnnecessaryPivotStartingJustAfter(endZone2Included, transformationWithUpdate1Done)
+        )
+      )
+    )
+  }
+
+  /** Flips the pivots within interval defined by the two parameters.
+    *
+    * In term of bijection its an "in place flip".
+    *
+    * ex :
+    *   - 0,1,2,3,4,5,6,7,8,9
+    *   - swap adjacent zone shift first (0,2,5,true)
+    *   - [5,4,3],[0,1,2],6,7,8,9
+    *   - flipPivotsInInterval (3,6)
+    *   - 5,4,3,[6,2,1,0],7,8,9
+    * @param startZoneIncluded
+    *   Starting position of the interval
+    * @param endZoneIncluded
+    *   Ending position of the interval
+    * @return
+    *   An updated [[PiecewiseSequenceShiftingBijection]]
+    */
+  def flipPivotsInInterval(
+    startZoneIncluded: Int,
+    endZoneIncluded: Int
+  ): PiecewiseSequenceShiftingBijection = {
+    // 1° If needed, defines a redundant pivot at start to keep information of previous pivot
+    val transformReadyForFlipOnLeft = addRedundantPivotAt(startZoneIncluded, this.transformation)
+    // 2° If needed, defines a redundant pivot at end+1 to forward information of last pivot of the interval
+    val transformReadyForFlip =
+      addRedundantPivotAt(endZoneIncluded + 1, transformReadyForFlipOnLeft)
+
+    // 3° Collects pivots within the interval
+    val collectedPivotsForwardOrder: List[Pivot] =
+      pivotsBetween(startZoneIncluded, endZoneIncluded, transformReadyForFlip)
+
+    // 4° Flips the collected pivots
+    val flippedPivots =
+      flipListOfPivots(collectedPivotsForwardOrder, endZoneIncluded, endZoneIncluded)
+
+    val flippedPivotsIterator = flippedPivots.iterator
+
+    // 5° Update the ready for flip RBTree with the flipped pivots
+    val updatedForwardFct = transformReadyForFlip.update(
+      startZoneIncluded,
+      transformReadyForFlip.biggestLowerOrEqual(endZoneIncluded).get._1,
+      (_, _) => {
+        val newPivot = flippedPivotsIterator.next()
+        (newPivot.fromValue, newPivot)
+      }
+    )
+
+    new PiecewiseSequenceShiftingBijection(
+      deleteUnnecessaryPivotStartingJustAfter(
+        startZoneIncluded - 1,
+        deleteUnnecessaryPivotStartingJustAfter(endZoneIncluded, updatedForwardFct)
+      )
+    )
+  }
+
+  /** Flips a list of pivots.
+    *
+    * List(p1, p2, p3) ==> List(p3', p2', p1') The pivots keep their length but :
+    *   - Their start position are shifted accordingly (ex : p3'.start = p1.start, p1'.start =
+    *     p1.start+p3.length+p2.length)
+    *   - Their [[SequenceShiftingBijection]] are mirrored and shifted (see mirrorPivot)
+    *
+    * Recursive process starting with flipping and moving the p1, then p2 ... pn
+    *
+    * @param pivotList
+    *   The list of pivots to flip
+    * @param newEndPositionOfNextPivotToFlip
+    *   End position of the next pivot to flip
+    * @param endOfLastPivotUntouched
+    *   Old end position of last pivot to flip (used to compute width)
+    * @param acc
+    *   List of flipped pivots
+    * @return
+    */
+  @tailrec
+  private def flipListOfPivots(
+    pivotList: List[Pivot],
+    newEndPositionOfNextPivotToFlip: Int,
+    endOfLastPivotUntouched: Int,
+    acc: List[Pivot] = List.empty
+  ): List[Pivot] = {
+    pivotList match {
+      case Nil => acc
+      case p1 :: tail1 =>
+        tail1 match {
+          case Nil =>
+            val width = endOfLastPivotUntouched - p1.fromValue + 1
+            mirrorPivot(p1, width, newEndPositionOfNextPivotToFlip) :: acc
+          case p2 :: _ =>
+            val width = p2.fromValue - p1.fromValue
+            flipListOfPivots(
+              tail1,
+              newEndPositionOfNextPivotToFlip - width,
+              endOfLastPivotUntouched,
+              mirrorPivot(p1, width, newEndPositionOfNextPivotToFlip) :: acc
+            )
+        }
+    }
+  }
+
+  /** Creates the mirror [[Pivot]] of p, based on it's width and it's new endPosition.
+    *
+    * The pivot may have moved within the sequence. Therefore the new end and width are needed to
+    * compute the new start of the pivot and it's new offset.
+    * @param p
+    *   the pivot to mirror
+    * @param width
+    *   the pivot's width
+    * @param newEnd
+    *   the pivot's new end
+    * @return
+    */
+  private def mirrorPivot(p: Pivot, width: Int, newEnd: Int): Pivot = {
+    val newFromValue = newEnd - width + 1
+    val newFlip      = !p.f.flip
+    val newOffset    = p.f(p.fromValue + newEnd)
+    val newPivot     = new Pivot(newFromValue, new SequenceShiftingBijection(newOffset, newFlip))
+
+    assert(p.f(p.fromValue) == newPivot.f(newEnd))
+    assert(p.f(p.fromValue + width - 1) == newPivot.f(newPivot.fromValue))
+
+    newPivot
+  }
+
+  /** Collects the pivots in the defined zone.
+    *
+    * Keeps the pivots order.
+    * @param startPositionIncluded
+    *   Start position of the zone.
+    * @param endPositionIncluded
+    *   End position of the zone.
+    * @param transform
+    *   The [[RedBlackTreeMap]] to consider.
+    * @return
+    */
+  private def pivotsBetween(
+    startPositionIncluded: Int,
+    endPositionIncluded: Int,
+    transform: RedBlackTreeMap[Pivot]
+  ): List[Pivot] = {
+    val lastPivotBeforeEndZonePosition = transform.biggestLowerOrEqual(endPositionIncluded)
+
+    @tailrec
+    def collectAllPivots(
+      optExplorer: Option[RedBlackTreeMapExplorer[Pivot]],
+      pivots: List[Pivot] = List.empty
+    ): List[Pivot] = {
+      optExplorer match {
+        case Some(explorer) =>
+          if (startPositionIncluded > explorer.key) pivots
+          else collectAllPivots(explorer.prev, explorer.value :: pivots)
+        case None => pivots
+      }
+    }
+
+    val optExplorer =
+      if (lastPivotBeforeEndZonePosition.nonEmpty)
+        transform.positionOf(lastPivotBeforeEndZonePosition.get._1)
+      else None
+    collectAllPivots(optExplorer)
+  }
+
+  /** Removes unnecessary [[Pivot]] starting after the given position.
+    *
+    * There are two cases :
+    *   - There is no [[Pivot]] starting before position and the pivot starting right after is the
+    *     identity.
+    *   - There is a [[Pivot]] starting before position and it's equal to the pivot starting right
+    *     after the position.
+    *
+    * @param position
+    *   The position after which we are checking the [[Pivot]]
+    * @param updatedTransform
+    *   The current [[RedBlackTreeMap]] holding the pivots
+    * @return
+    *   An updated [[RedBlackTreeMap]]
+    */
+  private def deleteUnnecessaryPivotStartingJustAfter(
+    position: Int,
+    updatedTransform: RedBlackTreeMap[Pivot]
+  ): RedBlackTreeMap[Pivot] = {
+    updatedTransform.get(position + 1) match {
+      case None => updatedTransform
+      case Some(pivotStartingJustAfterToIncluded) =>
+        updatedTransform.biggestLowerOrEqual(position) match {
+          case None =>
+            if (pivotStartingJustAfterToIncluded.f.isIdentity)
+              updatedTransform.remove(position + 1)
+            else updatedTransform
+          case Some((_, pivotApplyingAtToIncluded)) =>
+            if (pivotStartingJustAfterToIncluded.f equals pivotApplyingAtToIncluded.f)
+              updatedTransform.remove(position + 1)
+            else updatedTransform
+        }
+    }
   }
 
   /** Tries to add a copy of the previous pivot at the given position.
