@@ -16,9 +16,9 @@ package oscar.cbls.algo.tarjan
 import scala.annotation.tailrec
 
 /** This class allows the computation of the strongly connected components for any graph where the
-  * nodes are of type T, by the Tarjan Algorithm
+  * nodes are of type T, using the Tarjan Algorithm
   * @tparam T
-  *   the type of nodes in the graph.
+  *   the type of values associated to the nodes in the graph.
   */
 class Tarjan[T] {
 
@@ -41,9 +41,7 @@ class Tarjan[T] {
   // List of currently computed Strongly Connected Components
   private var scComponents: List[List[T]] = _
   // Mapping from nodes to their internal state
-  private var internalMap: Map[T, TarjanNodeState] = _
-  // Function for accessing the internal state of a node
-  private final val internalStorage = (n: T) => internalMap(n)
+  private var internalStorage: Map[T, TarjanNodeState] = _
 
   /** Initialization of the state variables
     * @param nodes
@@ -54,7 +52,7 @@ class Tarjan[T] {
     def initMap(ns: Iterable[T]): Unit = {
       if (ns.nonEmpty) {
         val n = ns.head
-        internalMap += (n -> new TarjanNodeState)
+        internalStorage += (n -> new TarjanNodeState)
         initMap(ns.tail)
       }
     }
@@ -62,17 +60,17 @@ class Tarjan[T] {
     index = 0
     stack = Nil
     scComponents = Nil
-    internalMap = Map()
+    internalStorage = Map()
     initMap(nodes)
   }
 
-  /** Pops the stack until the node v is found. The node should be in the stack
+  /** Pops the stack until the node v is found. The node v should be in the stack
     * @param v
     *   the node to find in the stack
     * @param sccAcc
-    *   a list of cumulated elements popped from the stack
+    *   a list of cumulated elements already popped from the stack
     * @return
-    *   the list of elements popped from the stack plus sccAcc, including v
+    *   the list of elements popped from the stack concatenated with sccAcc, including v
     */
   @tailrec
   private def unstackUntil(v: T, sccAcc: List[T]): List[T] = {
@@ -90,22 +88,22 @@ class Tarjan[T] {
     }
   }
 
-  /** Tarjan Algorithm for computing the Strongly Connected Components of graph
+  /** Tarjan Algorithm for computing the Strongly Connected Components of a graph
     * @param nodes
-    *   the collection of nodes in the graph
+    *   the collection of all the nodes in the graph
     * @param adjacencies
     *   the adjacency list of the graph, represented as a function from a node to a collection of nodes
     * @return
     *   the list of Strongly Connected Components of the graph represented by nodes and adjacencies
     */
-  def tarjan(nodes: Iterable[T], adjacencies: T => Iterable[T]): List[List[T]] = {
+  def computeSCC(nodes: Iterable[T], adjacencies: T => Iterable[T]): List[List[T]] = {
     def visit(v: T): Unit = {
       val storageForV = internalStorage(v)
       storageForV.index = index
       storageForV.lowLink = index
-      index += 1
-      stack = v :: stack
       storageForV.isOnStack = true
+      index += 1
+      stack ::= v
       // Consider successors of v
       adjacencies(v).foreach { w =>
         val storageForW = internalStorage(w)
@@ -118,7 +116,7 @@ class Tarjan[T] {
           storageForV.lowLink = storageForV.lowLink min storageForW.index
         }
       }
-      // If v is a root node, pop the stack and generate a SCC
+      // If v is a root node, pop the stack to generate a SCC
       if (storageForV.lowLink == storageForV.index) {
         val scc = unstackUntil(v, Nil)
         scComponents = scc :: scComponents
