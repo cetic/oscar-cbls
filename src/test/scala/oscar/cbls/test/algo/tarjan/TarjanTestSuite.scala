@@ -6,6 +6,8 @@ import org.scalatest.matchers.must.Matchers.contain
 import org.scalatest.matchers.should.Matchers.{convertToAnyShouldWrapper, empty}
 import oscar.cbls.algo.tarjan.Tarjan
 
+import scala.util.Random
+
 class TarjanTestSuite extends AnyFunSuite {
   test("Tarjan Empty Graph") {
     val sccG = new Tarjan[Nothing].computeSCC(Nil, (_: Nothing) => Nil)
@@ -23,7 +25,6 @@ class TarjanTestSuite extends AnyFunSuite {
     // Example Graph
     val (a, b, c, d, e, f, g, h, i, j) = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
     val nodesG1 = List(a, b, c, d, e, f, g, h, i, j)
-
     def adjListG1(node: Int): List[Int] = {
       if (node == a) List(b)
       else if (node == b) List(c, d)
@@ -38,9 +39,8 @@ class TarjanTestSuite extends AnyFunSuite {
       else Nil
     }
     // SCCs from graph
-    val tarjan = new Tarjan[Int]
-    val sccG0 = tarjan.computeSCC(nodesG1, adjListG1)
-    val sccG1 = tarjan.computeSCC(nodesG1, adjListG1)
+    val sccG0 = new Tarjan[Int].computeSCC(nodesG1, adjListG1)
+    val sccG1 = new Tarjan[Int].computeSCC(nodesG1, adjListG1)
     forAll(sccG0) { scc =>
       forExactly(1, sccG1) { res =>
         scc should contain theSameElementsAs res
@@ -190,5 +190,24 @@ class TarjanTestSuite extends AnyFunSuite {
         scc should contain theSameElementsAs res
       }
     }
+  }
+
+  test("Tarjan Random Graph of 1000 nodes") {
+    // Random Generation of graphs
+    def randomGraph(nbNodes: Int): (List[Int], Int => List[Int]) = {
+      def randomFilter(i: Int)(n: Int): Boolean = {
+        val randomVal = Random.nextFloat()
+        (n != i) && randomVal > 0.995
+      }
+      val lsNodes = (0 until nbNodes).toList
+      val arrAdjacencies = lsNodes.toArray.map(i => lsNodes.filter(randomFilter(i)))
+      val fnAdjacencies = (n: Int) => arrAdjacencies(n)
+      (lsNodes, fnAdjacencies)
+    }
+    //////////
+    val (nodesG, adjG) = randomGraph(1000)
+    val sccG = new Tarjan[Int].computeSCC(nodesG, adjG)
+    // We just check that the SCC has exactly the same elements that the graph nodes
+    nodesG should contain theSameElementsAs sccG.flatten
   }
 }
