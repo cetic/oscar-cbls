@@ -43,7 +43,7 @@ class Tarjan[T] {
   // Mapping from nodes to their internal state
   private var internalStorage: Map[T, TarjanNodeState] = _
 
-  /** Initialization of the state variables
+  /** Initializes the state variables
     * @param nodes
     *   the nodes of the graph, as an Iterable collection
     */
@@ -88,7 +88,7 @@ class Tarjan[T] {
     }
   }
 
-  /** Tarjan Algorithm for computing the Strongly Connected Components of a graph
+  /** Computes the Strongly Connected Components of a graph using the Tarjan Algorithm
     * @param nodes
     *   the collection of all the nodes in the graph
     * @param adjacencies
