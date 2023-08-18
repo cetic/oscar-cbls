@@ -45,7 +45,7 @@ class Tarjan[T] {
 
   /** Initializes the state variables
     * @param nodes
-    *   the nodes of the graph, as an Iterable collection
+    *   the nodes of the graph, as an [[Iterable]] collection
     */
   private def initState(nodes: Iterable[T]): Unit = {
     @tailrec
