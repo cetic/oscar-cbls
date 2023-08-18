@@ -21,9 +21,9 @@ class TarjanTestSuite extends AnyFunSuite {
     * @return
     *   a map, where each node in nodes is bound to the list of reachable nodes in the graph
     */
-  def accessibleNodes[T](nodes: Iterable[T], adjacencies: T => Iterable[T]): Map[T, Iterable[T]] = {
+  def reachableNodes[T](nodes: Iterable[T], adjacencies: T => Iterable[T]): Map[T, Iterable[T]] = {
     @tailrec
-    def accessibleNodesFromNode(
+    def reachableNodesFromNode(
       node: T,
       toBeExploredNodes: List[T],
       reachableNodes: List[T],
@@ -33,10 +33,10 @@ class TarjanTestSuite extends AnyFunSuite {
       toBeExploredNodes match {
         case n :: ns =>
           if (visitedMap.getOrElse(n, false)) {
-            accessibleNodesFromNode(node, ns, reachableNodes, visitedMap, cumulatedMap)
+            reachableNodesFromNode(node, ns, reachableNodes, visitedMap, cumulatedMap)
           } else {
             val succsN = adjacencies(n).toList
-            accessibleNodesFromNode(
+            reachableNodesFromNode(
               node,
               succsN ::: ns,
               n :: reachableNodes,
@@ -49,21 +49,21 @@ class TarjanTestSuite extends AnyFunSuite {
     }
     /////
     @tailrec
-    def accessibleNodes(
+    def reachableNodes(
       nodes: Iterable[T],
       cumulatedMap: Map[T, Iterable[T]]
     ): Map[T, Iterable[T]] = {
       if (nodes.isEmpty) {
         cumulatedMap
       } else {
-        accessibleNodes(
+        reachableNodes(
           nodes.tail,
-          accessibleNodesFromNode(nodes.head, List(nodes.head), Nil, Map(), cumulatedMap)
+          reachableNodesFromNode(nodes.head, List(nodes.head), Nil, Map(), cumulatedMap)
         )
       }
     }
     /////////////////////////
-    accessibleNodes(nodes, Map())
+    reachableNodes(nodes, Map())
   }
 
   /** Checks that a list of nodes is a Strongly Connected Component (SCC)
@@ -149,9 +149,9 @@ class TarjanTestSuite extends AnyFunSuite {
         scc should contain theSameElementsAs res
       }
     }
-    val accessNodes = accessibleNodes(nodesG1, adjListG1)
+    val reachNodes = reachableNodes(nodesG1, adjListG1)
     forAll(sccG) { scc =>
-      conditionSCC(scc, accessNodes) should be(true)
+      conditionSCC(scc, reachNodes) should be(true)
     }
   }
 
@@ -198,9 +198,9 @@ class TarjanTestSuite extends AnyFunSuite {
         scc should contain theSameElementsAs res
       }
     }
-    val accessNodes = accessibleNodes(nodesG2, adjListG2)
+    val reachNodes = reachableNodes(nodesG2, adjListG2)
     forAll(sccG) { scc =>
-      conditionSCC(scc, accessNodes) should be(true)
+      conditionSCC(scc, reachNodes) should be(true)
     }
   }
 
@@ -232,9 +232,9 @@ class TarjanTestSuite extends AnyFunSuite {
         scc should contain theSameElementsAs res
       }
     }
-    val accessNodes = accessibleNodes(nodesG3, adjListG3)
+    val reachNodes = reachableNodes(nodesG3, adjListG3)
     forAll(sccG) { scc =>
-      conditionSCC(scc, accessNodes) should be(true)
+      conditionSCC(scc, reachNodes) should be(true)
     }
   }
 
@@ -267,9 +267,9 @@ class TarjanTestSuite extends AnyFunSuite {
         scc should contain theSameElementsAs res
       }
     }
-    val accessNodes = accessibleNodes(nodesG4, adjListG4)
+    val reachNodes = reachableNodes(nodesG4, adjListG4)
     forAll(sccG) { scc =>
-      conditionSCC(scc, accessNodes) should be(true)
+      conditionSCC(scc, reachNodes) should be(true)
     }
   }
 
@@ -288,9 +288,9 @@ class TarjanTestSuite extends AnyFunSuite {
     //////////
     val (nodesG, adjG) = randomGraph(1000)
     val sccG           = new Tarjan[Int].computeSCC(nodesG, adjG)
-    val accessNodes    = accessibleNodes(nodesG, adjG)
+    val reachNodes     = reachableNodes(nodesG, adjG)
     forAll(sccG) { scc =>
-      conditionSCC(scc, accessNodes) should be(true)
+      conditionSCC(scc, reachNodes) should be(true)
     }
   }
 }
