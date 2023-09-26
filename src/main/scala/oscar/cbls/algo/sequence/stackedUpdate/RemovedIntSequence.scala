@@ -3,7 +3,7 @@ package oscar.cbls.algo.sequence.stackedUpdate
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 
 class RemovedIntSequence(val seq: IntSequence, val positionOfDelete: Int, depth: Int)
-  extends StackedUpdateIntSequence(depth) {
+    extends StackedUpdateIntSequence(depth) {
 
   val removedValue = seq.valueAtPosition(positionOfDelete).head
 
@@ -65,41 +65,5 @@ class RemovedIntSequence(val seq: IntSequence, val positionOfDelete: Int, depth:
   override def valueAtPosition(position: Int): Option[Int] = {
     if (position >= this.positionOfDelete) seq.valueAtPosition(position + 1)
     else seq.valueAtPosition(position)
-  }
-}
-
-class RemovedIntSequenceExplorer(
-                                  seq: RemovedIntSequence,
-                                  val position: Int,
-                                  explorerInOriginalSeq: IntSequenceExplorer
-                                ) extends IntSequenceExplorer {
-  override val value: Int = explorerInOriginalSeq.value
-
-  override def prev: Option[IntSequenceExplorer] = {
-    explorerInOriginalSeq.prev match {
-      case None => None
-      case Some(tentativePos) =>
-        if (tentativePos.position == seq.positionOfDelete)
-          tentativePos.prev match {
-            case None => None
-            case Some(secondTentativePos) =>
-              Some(new RemovedIntSequenceExplorer(seq, position - 1, secondTentativePos))
-          }
-        else Some(new RemovedIntSequenceExplorer(seq, position - 1, tentativePos))
-    }
-  }
-
-  override def next: Option[IntSequenceExplorer] = {
-    explorerInOriginalSeq.next match {
-      case None => None
-      case Some(tentativePos) =>
-        if (tentativePos.position == seq.positionOfDelete)
-          tentativePos.next match {
-            case None => None
-            case Some(secondTentativePos) =>
-              Some(new RemovedIntSequenceExplorer(seq, position + 1, secondTentativePos))
-          }
-        else Some(new RemovedIntSequenceExplorer(seq, position + 1, tentativePos))
-    }
   }
 }

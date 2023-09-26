@@ -1,6 +1,7 @@
 package oscar.cbls.algo.sequence.stackedUpdate
 
 import oscar.cbls.algo.sequence._
+import oscar.cbls.algo.sequence.concrete.ConcreteIntSequence
 
 abstract class StackedUpdateIntSequence(depth: Int) extends IntSequence(depth = depth) {
   override def delete(pos: Int, fast: Boolean, autoRework: Boolean): IntSequence = {
@@ -14,13 +15,13 @@ abstract class StackedUpdateIntSequence(depth: Int) extends IntSequence(depth = 
   }
 
   override def moveAfter(
-                          startPositionIncluded: Int,
-                          endPositionIncluded: Int,
-                          moveAfterPosition: Int,
-                          flip: Boolean,
-                          fast: Boolean,
-                          autoRework: Boolean
-                        ): IntSequence = {
+    startPositionIncluded: Int,
+    endPositionIncluded: Int,
+    moveAfterPosition: Int,
+    flip: Boolean,
+    fast: Boolean,
+    autoRework: Boolean
+  ): IntSequence = {
     require(
       startPositionIncluded >= 0 && startPositionIncluded < size,
       "startPositionIncluded=" + startPositionIncluded + " should be in [0,size" + size + "[ in UniqueIntSequence.moveAfter"
@@ -55,11 +56,11 @@ abstract class StackedUpdateIntSequence(depth: Int) extends IntSequence(depth = 
   }
 
   override def insertAtPosition(
-                                 value: Int,
-                                 pos: Int,
-                                 fast: Boolean,
-                                 autoRework: Boolean
-                               ): IntSequence = {
+    value: Int,
+    pos: Int,
+    fast: Boolean,
+    autoRework: Boolean
+  ): IntSequence = {
     require(
       pos >= 0 && pos <= size,
       "pos=" + pos + " should be in [0,size=" + size + "] in IntSequence.insertAt"
@@ -72,9 +73,9 @@ abstract class StackedUpdateIntSequence(depth: Int) extends IntSequence(depth = 
   }
 
   override def regularizeToMaxPivot(
-                                     maxPivotPerValuePercent: Int,
-                                     targetToken: Token = this.token
-                                   ): ConcreteIntSequence =
+    maxPivotPerValuePercent: Int,
+    targetToken: Token = this.token
+  ): ConcreteIntSequence =
     commitPendingMoves.regularizeToMaxPivot(maxPivotPerValuePercent, targetToken)
 
   override def regularize(targetToken: Token = this.token): ConcreteIntSequence =

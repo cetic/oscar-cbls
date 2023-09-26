@@ -14,17 +14,22 @@
 package oscar.cbls.algo.sequence
 
 import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
+import oscar.cbls.algo.sequence.affineFunction.PiecewiseUnitaryAffineFunction
+import oscar.cbls.algo.sequence.concrete.ConcreteIntSequence
 
 import scala.collection.immutable.SortedSet
 import scala.language.implicitConversions
 
 // Companion object of [[IntSequence]]
 object IntSequence {
+
   /** Creates an [[ConcreteIntSequence]] from a sorted list of integers.
-   *
-   * @param values The sorted integers as a [[Iterable]] of [[Int]]
-   * @return A [[ConcreteIntSequence]] with the sorted integers
-   */
+    *
+    * @param values
+    *   The sorted integers as a [[Iterable]] of [[Int]]
+    * @return
+    *   A [[ConcreteIntSequence]] with the sorted integers
+    */
   def apply(values: Iterable[Int]): IntSequence = {
     val valuesArray     = values.toArray
     val forwardRedBlack = RedBlackTreeMap.makeFromSortedContinuousArray(values.toArray)
@@ -40,10 +45,12 @@ object IntSequence {
   }
 
   /** Creates an IntSequence from a sorted list of integers.
-   *
-   * @param values The sorted integers as a [[Iterable]] of [[Int]]
-   * @return An IntSequence with the sorted integers
-   */
+    *
+    * @param values
+    *   The sorted integers as a [[Iterable]] of [[Int]]
+    * @return
+    *   An IntSequence with the sorted integers
+    */
   private def aggregatePosOnValToInternalPosFrom(
     values: Array[Int]
   ): RedBlackTreeMap[RedBlackTreeMap[Int]] = {
@@ -66,18 +73,7 @@ object IntSequence {
   implicit def toIterable(seq: IntSequence): IterableIntSequence = new IterableIntSequence(seq)
 }
 
-class IterableIntSequence(sequence: IntSequence) extends Iterable[Int] {
-  override def iterator: Iterator[Int] = sequence.iterator
-
-  override def head: Int = sequence.valueAtPosition(0).head
-
-  override def headOption: Option[Int] = sequence.valueAtPosition(0)
-
-  override def last: Int = sequence.valueAtPosition(sequence.size - 1).head
-
-  override def lastOption: Option[Int] = sequence.valueAtPosition(sequence.size - 1)
-}
-
+// TODO try to remove this, looks like an unnecessary quick fix solution
 class Token()
 
 object Token {
@@ -280,33 +276,3 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     valueAtPosition(position + 1)
   }
 }
-
-class IntSequenceIterator(var crawler: Option[IntSequenceExplorer]) extends Iterator[Int] {
-
-  override def hasNext: Boolean =
-    crawler match {
-      case None    => false
-      case Some(_) => true
-    }
-
-  override def next(): Int = {
-    val position = crawler.head
-    crawler = position.next
-    position.value
-  }
-}
-
-abstract class IntSequenceExplorer {
-  val value: Int
-  def position: Int
-  def next: Option[IntSequenceExplorer]
-  def prev: Option[IntSequenceExplorer]
-}
-
-
-
-
-
-
-
-

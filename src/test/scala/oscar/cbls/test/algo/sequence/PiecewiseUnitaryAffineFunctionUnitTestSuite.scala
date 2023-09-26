@@ -2,7 +2,7 @@ package oscar.cbls.test.algo.sequence
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers._
-import oscar.cbls.algo.sequence.PiecewiseUnitaryAffineFunction
+import oscar.cbls.algo.sequence.affineFunction.PiecewiseUnitaryAffineFunction
 
 class PiecewiseUnitaryAffineFunctionUnitTestSuite extends AnyFunSuite {
 

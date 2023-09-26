@@ -1,15 +1,25 @@
-package oscar.cbls.algo.sequence
+package oscar.cbls.algo.sequence.concrete
 
 import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
-import oscar.cbls.algo.sequence.stackedUpdate.{InsertedIntSequence, MovedIntSequence, RemovedIntSequence}
+import oscar.cbls.algo.sequence.affineFunction.{
+  PiecewiseUnitaryAffineFunction,
+  Pivot,
+  UnitaryAffineFunction
+}
+import oscar.cbls.algo.sequence.stackedUpdate.{
+  InsertedIntSequence,
+  MovedIntSequence,
+  RemovedIntSequence
+}
+import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer, Token}
 
 class ConcreteIntSequence(
-                           private[sequence] val internalPositionToValue: RedBlackTreeMap[Int],
-                           private[sequence] val valueToInternalPositions: RedBlackTreeMap[RedBlackTreeMap[Int]],
-                           private[sequence] val externalToInternalPosition: PiecewiseUnitaryAffineFunction,
-                           private[sequence] val startFreeRangeForInternalPosition: Int,
-                           token: Token = Token()
-                         ) extends IntSequence(token, 0) {
+  private[sequence] val internalPositionToValue: RedBlackTreeMap[Int],
+  private[sequence] val valueToInternalPositions: RedBlackTreeMap[RedBlackTreeMap[Int]],
+  private[sequence] val externalToInternalPosition: PiecewiseUnitaryAffineFunction,
+  private[sequence] val startFreeRangeForInternalPosition: Int,
+  token: Token = Token()
+) extends IntSequence(token, 0) {
 
   private val cacheSize                                            = 10
   private var noneExplorerPosition: Int                            = Int.MinValue
@@ -22,7 +32,7 @@ class ConcreteIntSequence(
     "[" + this.iterator.toList.mkString(",") + "]_impl:concrete"
 
   override def check(): Unit = {
-    //externalToInternalPosition.checkBijection()
+    // externalToInternalPosition.checkBijection()
     require(
       internalPositionToValue.content.sortBy(_._1) equals valueToInternalPositions.content
         .flatMap({ case (a, b) => b.keys.map(x => (x, a)) })
@@ -114,7 +124,7 @@ class ConcreteIntSequence(
     while (index < cacheSize) {
       if (
         intSequenceExplorerCache(index) != null &&
-          intSequenceExplorerCache(index).position == position
+        intSequenceExplorerCache(index).position == position
       ) {
         putUsedExplorerAtBack(index)
         return Some(intSequenceExplorerCache(cacheSize - 1))
@@ -164,7 +174,7 @@ class ConcreteIntSequence(
     while (index < cacheSize) {
       if (
         intSequenceExplorerCache(index) != null &&
-          intSequenceExplorerCache(index).value == value
+        intSequenceExplorerCache(index).value == value
       )
         return Some(intSequenceExplorerCache(index))
       else
@@ -178,7 +188,7 @@ class ConcreteIntSequence(
     while (index < cacheSize) {
       if (
         intSequenceExplorerCache(index) != null &&
-          intSequenceExplorerCache(index).value == value
+        intSequenceExplorerCache(index).value == value
       )
         return Some(intSequenceExplorerCache(index).position)
       else
@@ -188,10 +198,10 @@ class ConcreteIntSequence(
   }
 
   private def internalInsertToValueToInternalPositions(
-                                                        value: Int,
-                                                        internalPosition: Int,
-                                                        valueToInternalPositions: RedBlackTreeMap[RedBlackTreeMap[Int]]
-                                                      ): RedBlackTreeMap[RedBlackTreeMap[Int]] = {
+    value: Int,
+    internalPosition: Int,
+    valueToInternalPositions: RedBlackTreeMap[RedBlackTreeMap[Int]]
+  ): RedBlackTreeMap[RedBlackTreeMap[Int]] = {
     valueToInternalPositions.get(value) match {
       case None =>
         valueToInternalPositions.insert(
@@ -204,10 +214,10 @@ class ConcreteIntSequence(
   }
 
   private def internalRemoveFromValueToInternalPositions(
-                                                          value: Int,
-                                                          internalPosition: Int,
-                                                          valueToInternalPositions: RedBlackTreeMap[RedBlackTreeMap[Int]]
-                                                        ): RedBlackTreeMap[RedBlackTreeMap[Int]] = {
+    value: Int,
+    internalPosition: Int,
+    valueToInternalPositions: RedBlackTreeMap[RedBlackTreeMap[Int]]
+  ): RedBlackTreeMap[RedBlackTreeMap[Int]] = {
     valueToInternalPositions.get(value) match {
       case None => valueToInternalPositions
       case Some(l) =>
@@ -240,7 +250,7 @@ class ConcreteIntSequence(
     // move sequence after position, one upward
     // move inserted point at its position
     val oldExternalPosRelatedToFreeInternalPos =
-    externalToInternalPosition.backward(startFreeRangeForInternalPosition)
+      externalToInternalPosition.backward(startFreeRangeForInternalPosition)
 
     val newExternalToInternalPosition = if (pos == size) {
       // inserting at end of the sequence
@@ -352,13 +362,13 @@ class ConcreteIntSequence(
   }
 
   def moveAfter(
-                 startPositionIncluded: Int,
-                 endPositionIncluded: Int,
-                 moveAfterPosition: Int,
-                 flip: Boolean,
-                 fast: Boolean,
-                 autoRework: Boolean
-               ): IntSequence = {
+    startPositionIncluded: Int,
+    endPositionIncluded: Int,
+    moveAfterPosition: Int,
+    flip: Boolean,
+    fast: Boolean,
+    autoRework: Boolean
+  ): IntSequence = {
     // println(this + ".moveAfter(startPositionIncluded:" + startPositionIncluded + " endPositionIncluded:" + endPositionIncluded + " moveAfterPosition:" + moveAfterPosition + " flip:" + flip + ")")
     require(
       startPositionIncluded >= 0 && startPositionIncluded < size,
@@ -540,9 +550,9 @@ class ConcreteIntSequence(
   }
 
   override def regularizeToMaxPivot(
-                                     maxPivotPerValuePercent: Int,
-                                     targetToken: Token = this.token
-                                   ): ConcreteIntSequence = {
+    maxPivotPerValuePercent: Int,
+    targetToken: Token = this.token
+  ): ConcreteIntSequence = {
     if (this.externalToInternalPosition.nbPivot * 100 > maxPivotPerValuePercent * this.size) {
       regularize(targetToken)
     } else {
@@ -600,111 +610,4 @@ class ConcreteIntSequence(
 
   override def unorderedContentNoDuplicateWithNBOccurences: List[(Int, Int)] =
     valueToInternalPositions.content.map({ case ((value, positions)) => ((value, positions.size)) })
-}
-
-class ConcreteIntSequenceExplorer(
-                                   sequence: ConcreteIntSequence,
-                                   override val position: Int,
-                                   positionInRB: RedBlackTreeMapExplorer[Int],
-                                   currentPivotPosition: Option[RedBlackTreeMapExplorer[Pivot]],
-                                   pivotAbovePosition: Option[RedBlackTreeMapExplorer[Pivot]]
-                                 )(
-                                   limitAboveForCurrentPivot: Int = pivotAbovePosition match {
-                                     case None    => Int.MaxValue
-                                     case Some(p) => p.value.fromValue - 1
-                                   },
-                                   limitBelowForCurrentPivot: Int = currentPivotPosition match {
-                                     case None    => Int.MinValue
-                                     case Some(p) => p.value.fromValue
-                                   },
-                                   slopeIsPositive: Boolean = currentPivotPosition match {
-                                     case None    => true
-                                     case Some(p) => !p.value.f.flip
-                                   }
-                                 ) extends IntSequenceExplorer {
-
-  override def toString: String =
-    s"ConcreteIntSequenceExplorer(position:$position value:$value currentPivotPosition:$currentPivotPosition pivotAbovePosition:$pivotAbovePosition positionInRB:$positionInRB)"
-
-  override val value: Int = positionInRB.value
-
-  private[sequence] def internalPos = positionInRB.key
-
-  override def next: Option[IntSequenceExplorer] = {
-    if (position == sequence.size - 1) return None
-    if (position == limitAboveForCurrentPivot) {
-      // change pivot, we are also sure that there is a next, so use .head
-      val newPivotAbovePosition = pivotAbovePosition.head.next
-      val newPosition           = position + 1
-      val newPositionInRBOpt =
-        sequence.internalPositionToValue.positionOf(pivotAbovePosition.head.value.f(newPosition))
-      newPositionInRBOpt match {
-        case None => None
-        case Some(newPositionInRB) =>
-          Some(
-            new ConcreteIntSequenceExplorer(
-              sequence,
-              newPosition,
-              newPositionInRB,
-              pivotAbovePosition,
-              newPivotAbovePosition
-            )(limitBelowForCurrentPivot = newPosition)
-          )
-      }
-    } else {
-      // do not change pivot
-
-      (if (slopeIsPositive) positionInRB.next else positionInRB.prev) match {
-        case None => None
-        case Some(newPositionInRB) =>
-          Some(
-            new ConcreteIntSequenceExplorer(
-              sequence,
-              position + 1,
-              newPositionInRB,
-              currentPivotPosition,
-              pivotAbovePosition
-            )(limitAboveForCurrentPivot, limitBelowForCurrentPivot, slopeIsPositive)
-          )
-      }
-    }
-  }
-
-  override def prev: Option[IntSequenceExplorer] = {
-    if (position == 0) None
-    else if (position == limitBelowForCurrentPivot) {
-      // change pivot
-
-      val newPosition             = position - 1
-      val newCurrentPivotPosition = currentPivotPosition.head.prev
-      val newInternalPosition = newCurrentPivotPosition match {
-        case None            => newPosition
-        case Some(position2) => position2.value.f(newPosition)
-      }
-      val newCurrentPositionInRB =
-        sequence.internalPositionToValue.positionOf(newInternalPosition).head
-      // println("change pivot newPosition:" + newPosition + " newCurrentPivotPosition:" + newCurrentPivotPosition + " oldPosition:" + currentPivotPosition)
-      Some(
-        new ConcreteIntSequenceExplorer(
-          sequence,
-          newPosition,
-          newCurrentPositionInRB,
-          newCurrentPivotPosition,
-          currentPivotPosition
-        )(limitAboveForCurrentPivot = limitBelowForCurrentPivot - 1)
-      )
-    } else {
-      // do not change pivot
-      // println("not change pivot")
-      Some(
-        new ConcreteIntSequenceExplorer(
-          sequence,
-          position - 1,
-          if (slopeIsPositive) positionInRB.prev.head else positionInRB.next.head,
-          currentPivotPosition,
-          pivotAbovePosition
-        )(limitAboveForCurrentPivot, limitBelowForCurrentPivot, slopeIsPositive)
-      )
-    }
-  }
 }
