@@ -59,8 +59,8 @@ object PiecewiseUnitaryAffineFunction {
     f.transformation.values
 }
 
-/** A piecewise unitary affine function matching the external and the internal position of each element of a
-  * [[IntSequence]].
+/** A piecewise unitary affine function matching the external and the internal position of each
+  * element of a [[IntSequence]].
   *
   * To avoid expensive modification by moving values around upon insertion/deletion/movements in the
   * [[IntSequence]], we use a PiecewiseSequenceShiftingBijection. It's composed of a sorted list of
@@ -71,8 +71,8 @@ object PiecewiseUnitaryAffineFunction {
   * information).
   *
   * Once in a while we create a brand new [[IntSequence]] to avoid having too many Pivots.
- *
- * @param transformation
+  *
+  * @param transformation
   *   a RedBlackTree keeping the [[Pivot]] sorted by their [[Pivot.fromValue]]
   */
 class PiecewiseUnitaryAffineFunction(
@@ -82,7 +82,7 @@ class PiecewiseUnitaryAffineFunction(
   /** No recorded pivot */
   def isIdentity: Boolean = transformation.isEmpty
 
-  /** The backward [[PiecewiseUnitaryAffineFunction]] such that backard(this(x)) = x */
+  /** The backward [[PiecewiseUnitaryAffineFunction]] such that backward(this(x)) = x */
   lazy val backward: PiecewiseUnitaryAffineFunction = {
     PiecewiseUnitaryAffineFunction.createFromPivots(
       PiecewiseUnitaryAffineFunction.computeInvertedPivots(pivots)
@@ -126,7 +126,7 @@ class PiecewiseUnitaryAffineFunction(
   def pivots: List[Pivot] = transformation.values
 
   /** Returns the number of [[Pivot]] */
-  private def nbPivot: Int = transformation.size
+  def nbPivot: Int = transformation.size
 
   /** Optionally returns a [[RedBlackTreeMapExplorer]] of the first pivot of the sequence.
     *
@@ -174,12 +174,12 @@ class PiecewiseUnitaryAffineFunction(
     * @param updatedTransform
     *   the recursively updated transform
     * @return
-    * The [[PiecewiseUnitaryAffineFunction]] with all the updates
+    *   The [[PiecewiseUnitaryAffineFunction]] with all the updates
     */
   @tailrec
   final def updatesForCompositionBefore(
-                                         updates: List[(Int, Int, UnitaryAffineFunction)],
-                                         updatedTransform: RedBlackTreeMap[Pivot] = transformation
+    updates: List[(Int, Int, UnitaryAffineFunction)],
+    updatedTransform: RedBlackTreeMap[Pivot] = transformation
   ): PiecewiseUnitaryAffineFunction = {
     updates match {
       case Nil => new PiecewiseUnitaryAffineFunction(updatedTransform)
@@ -203,11 +203,11 @@ class PiecewiseUnitaryAffineFunction(
     * interval.
     *
     * @param fromIncluded
-    * Starting position of the interval
+    *   Starting position of the interval
     * @param toIncluded
-    * Ending position of the interval
+    *   Ending position of the interval
     * @param additionalBijectionAppliedBefore
-    * The additional [[UnitaryAffineFunction]] to apply before
+    *   The additional [[UnitaryAffineFunction]] to apply before
     * @return
     *   An updated [[PiecewiseUnitaryAffineFunction]]
     */
@@ -230,8 +230,8 @@ class PiecewiseUnitaryAffineFunction(
     new PiecewiseUnitaryAffineFunction(updatedTransformDeletedExtraPivot)
   }
 
-  /** Makes the composition of a [[UnitaryAffineFunction]] (BEFORE) and existing bijection in
-    * the defined interval.
+  /** Makes the composition of a [[UnitaryAffineFunction]] (BEFORE) and existing bijection in the
+    * defined interval.
     *
     * The idea is to create to composition of the existing bijections (aka THIS) and the specified
     * bijection (aka BEFORE). The implemented composition formula is THIS°BEFORE <=>
@@ -245,21 +245,21 @@ class PiecewiseUnitaryAffineFunction(
     * bijections.
     *
     * @param fromIncluded
-    * Starting position of the interval
+    *   Starting position of the interval
     * @param toIncluded
-    * Ending position of the interval
+    *   Ending position of the interval
     * @param additionalBijectionAppliedBefore
-    * The [[UnitaryAffineFunction]] to apply before
+    *   The [[UnitaryAffineFunction]] to apply before
     * @param cleanedTransformation
-    * A RBTree were all pivot between fromIncluded and toIncluded were removed
+    *   A RBTree were all pivot between fromIncluded and toIncluded were removed
     * @return
     *   An updated [[PiecewiseUnitaryAffineFunction]]
     */
   private def myUpdateForCompositionBefore(
-                                            fromIncluded: Int,
-                                            toIncluded: Int,
-                                            additionalBijectionAppliedBefore: UnitaryAffineFunction,
-                                            cleanedTransformation: RedBlackTreeMap[Pivot]
+    fromIncluded: Int,
+    toIncluded: Int,
+    additionalBijectionAppliedBefore: UnitaryAffineFunction,
+    cleanedTransformation: RedBlackTreeMap[Pivot]
   ): RedBlackTreeMap[Pivot] = {
     // If true, BEFORE(fromIncluded) > BEFORE(toIncluded) ==> "we go backward"
     val isAdditionalBijectionNegativeSlope = additionalBijectionAppliedBefore.flip
@@ -383,7 +383,7 @@ class PiecewiseUnitaryAffineFunction(
     * @param endZone2Included
     *   End position of the second zone
     * @return
-    * A new [[PiecewiseUnitaryAffineFunction]] with the two zones swapped
+    *   A new [[PiecewiseUnitaryAffineFunction]] with the two zones swapped
     */
   def swapAdjacentZonesShiftBest(
     startZone1Included: Int,
@@ -587,13 +587,13 @@ class PiecewiseUnitaryAffineFunction(
     *   - [5,4,3],[0,1,2],6,7,8,9
     *   - flipPivotsInInterval (3,6)
     *   - 5,4,3,[6,2,1,0],7,8,9
- *
+    *
     * @param startZoneIncluded
     *   Starting position of the interval
     * @param endZoneIncluded
     *   Ending position of the interval
     * @return
-    * An updated [[PiecewiseUnitaryAffineFunction]]
+    *   An updated [[PiecewiseUnitaryAffineFunction]]
     */
   def flipPivotsInInterval(
     startZoneIncluded: Int,
@@ -797,10 +797,7 @@ class PiecewiseUnitaryAffineFunction(
           updatedTransform // we do not add a redundant pivot because there is already a pivot here
         else updatedTransform.insert(atPosition, new Pivot(atPosition, pivot.f))
       case _ =>
-        updatedTransform.insert(
-          atPosition,
-          new Pivot(atPosition, UnitaryAffineFunction.identity)
-        )
+        updatedTransform.insert(atPosition, new Pivot(atPosition, UnitaryAffineFunction.identity))
     }
   }
 
@@ -871,9 +868,9 @@ class PiecewiseUnitaryAffineFunction(
   * subsequence by using the [[UnitaryAffineFunction]]
   *
   * @param fromValue
-  * The starting position of the subsequence
+  *   The starting position of the subsequence
   * @param f
-  * The [[UnitaryAffineFunction]] attached to this subsequence
+  *   The [[UnitaryAffineFunction]] attached to this subsequence
   */
 class Pivot(val fromValue: Int, val f: UnitaryAffineFunction) {
   override def toString: String =
