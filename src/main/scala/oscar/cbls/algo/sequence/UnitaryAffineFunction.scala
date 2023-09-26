@@ -13,22 +13,22 @@
 
 package oscar.cbls.algo.sequence
 
-/** The companion object of [[SequenceShiftingBijection]] */
-object SequenceShiftingBijection {
+/** The companion object of [[UnitaryAffineFunction]] */
+object UnitaryAffineFunction {
 
-  /** The sequence shifting bijection that doesn't change the sequence */
-  val identity = new SequenceShiftingBijection(0, false)
+  /** The sequence affine function that doesn't change the sequence */
+  val identity = new UnitaryAffineFunction(0, false)
 
-  /** Returns a [[SequenceShiftingBijection]] instance with the specified offset and shift flag
+  /** Returns a [[UnitaryAffineFunction]] instance with the specified offset and flip flag
     *
     * @param offset
-    *   The shifting value
+    *   The offset value
     * @param flip
     *   Whether or not we need to flip the subsequence
     * @return
-    *   A [[SequenceShiftingBijection]]
+    *   A [[UnitaryAffineFunction]]
     */
-  def apply(offset: Int, flip: Boolean) = new SequenceShiftingBijection(offset, flip)
+  def apply(offset: Int, flip: Boolean) = new UnitaryAffineFunction(offset, flip)
 }
 
 /** An affine function used to track the changes of position after a movement in an [[IntSequence]]
@@ -37,32 +37,32 @@ object SequenceShiftingBijection {
   *   - apply() ==> old position to new position
   *   - unapply() ==> new position to old position
   * @param offset
-  *   Shifting value as a [[scala.Int]]
+  *   The offset value as a [[scala.Int]]
   * @param flip
   *   Flipping flag
   *   - If true : -x + b
   *   - If false : x + b
   */
-class SequenceShiftingBijection(val offset: Int, val flip: Boolean) {
+class UnitaryAffineFunction(val offset: Int, val flip: Boolean) {
 
-  /** Creates the composition of the this [[SequenceShiftingBijection]] and that
-    * [[SequenceShiftingBijection]].
+  /** Creates the composition of the this [[UnitaryAffineFunction]] and that
+    * [[UnitaryAffineFunction]].
     *
     * @param that
-    *   the other [[SequenceShiftingBijection]]
+    *   the other [[UnitaryAffineFunction]]
     * @return
-    *   The composition of this and that [[SequenceShiftingBijection]]
+    *   The composition of this and that [[UnitaryAffineFunction]]
     */
-  def apply(that: SequenceShiftingBijection): SequenceShiftingBijection = {
-    new SequenceShiftingBijection(this(that.offset), this.flip != that.flip)
+  def apply(that: UnitaryAffineFunction): UnitaryAffineFunction = {
+    new UnitaryAffineFunction(this(that.offset), this.flip != that.flip)
   }
 
-  /** Returns the reverse [[SequenceShiftingBijection]] of this [[SequenceShiftingBijection]].
+  /** Returns the reverse [[UnitaryAffineFunction]] of this [[UnitaryAffineFunction]].
     *
     * Basically the reversing the apply(value: Int) and unApply(value: Int) methods
     */
-  def invert: SequenceShiftingBijection =
-    new SequenceShiftingBijection(if (flip) offset else -offset, flip)
+  def invert: UnitaryAffineFunction =
+    new UnitaryAffineFunction(if (flip) offset else -offset, flip)
 
   /** Applies the linear transformation on a value */
   def apply(value: Int): Int = if (flip) -value + offset else value + offset
@@ -70,7 +70,7 @@ class SequenceShiftingBijection(val offset: Int, val flip: Boolean) {
   /** Un-applies the linear transformation on a value */
   def unApply(value: Int): Int = if (flip) -value + offset else value - offset
 
-  /** Checks if this [[SequenceShiftingBijection]] is an identity affine function */
+  /** Checks if this [[UnitaryAffineFunction]] is an identity affine function */
   def isIdentity: Boolean = offset == 0 && !flip
 
   override def toString: String =
@@ -80,7 +80,7 @@ class SequenceShiftingBijection(val offset: Int, val flip: Boolean) {
 
   override def equals(obj: Any): Boolean = {
     obj match {
-      case that: SequenceShiftingBijection =>
+      case that: UnitaryAffineFunction =>
         this.offset == that.offset && this.flip == that.flip
       case _ => false
     }

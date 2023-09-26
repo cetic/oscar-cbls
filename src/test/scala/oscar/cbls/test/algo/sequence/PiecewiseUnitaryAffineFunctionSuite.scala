@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks._
 import oscar.cbls.algo.sequence._
 
-class PiecewiseSequenceShiftingBijectionSuite extends AnyFunSuite {
+class PiecewiseUnitaryAffineFunctionSuite extends AnyFunSuite {
 
   val sequenceSize = 20
 
@@ -15,12 +15,12 @@ class PiecewiseSequenceShiftingBijectionSuite extends AnyFunSuite {
       from   <- Gen.choose[Int](0, sequenceSize - 1)
       to     <- Gen.choose[Int](from, sequenceSize - 1)
       offset <- Gen.choose((-1) * from, sequenceSize - to)
-    } yield Update(from, to, SequenceShiftingBijection(offset, false))
+    } yield Update(from, to, UnitaryAffineFunction(offset, false))
     val genFlip: Gen[Update] = for {
       from   <- Gen.choose[Int](0, sequenceSize - 1)
       to     <- Gen.choose[Int](from, sequenceSize - 1)
       offset <- Gen.choose(to, sequenceSize + from)
-    } yield Update(from, to, SequenceShiftingBijection(offset, true))
+    } yield Update(from, to, UnitaryAffineFunction(offset, true))
 
     Gen.listOf(Gen.frequency((1, genNonFlip), (1, genFlip)))
   }
@@ -44,8 +44,8 @@ class PiecewiseSequenceShiftingBijectionSuite extends AnyFunSuite {
   test(s"PiecewiseSequenceShiftingBijection : Batch bijections updates has expected result") {
     forAll(genBijections, minSuccessful(100)) { updates: List[Update] =>
       whenever(updates.size >= 20) {
-        var piecewiseSequenceShiftingBijection: PiecewiseSequenceShiftingBijection =
-          PiecewiseSequenceShiftingBijection.identity
+        var piecewiseSequenceShiftingBijection: PiecewiseUnitaryAffineFunction =
+          PiecewiseUnitaryAffineFunction.identity
         var piecewiseSequenceShiftingBijectionNaive: PiecewiseSequenceShiftingBijectionNaive =
           IdentityNaive
 
@@ -67,8 +67,8 @@ class PiecewiseSequenceShiftingBijectionSuite extends AnyFunSuite {
   test(s"PiecewiseSequenceShiftingBijection : Batch swap and flip has expected result") {
     forAll(genOperations, minSuccessful(100)) { operations: List[Operation] =>
       whenever(operations.size >= 20) {
-        var piecewiseSequenceShiftingBijection: PiecewiseSequenceShiftingBijection =
-          PiecewiseSequenceShiftingBijection.identity
+        var piecewiseSequenceShiftingBijection: PiecewiseUnitaryAffineFunction =
+          PiecewiseUnitaryAffineFunction.identity
         var witnessList: List[Int] = List.tabulate(sequenceSize)(identity)
 
         operations.foreach {
@@ -109,7 +109,7 @@ class PiecewiseSequenceShiftingBijectionSuite extends AnyFunSuite {
 
 }
 
-case class Update(from: Int, to: Int, bijection: SequenceShiftingBijection)
+case class Update(from: Int, to: Int, bijection: UnitaryAffineFunction)
 
 abstract class Operation
 case class Swap(start1: Int, end1: Int, end2: Int, firstSecondOrBest: Int, flip: Boolean)
@@ -121,12 +121,12 @@ sealed abstract class PiecewiseSequenceShiftingBijectionNaive {
   def updateBefore(
     fromIncluded: Int,
     toIncluded: Int,
-    update: SequenceShiftingBijection
+    update: UnitaryAffineFunction
   ): PiecewiseSequenceShiftingBijectionNaive =
     UpdatedPiecewiseLinearFunNaive(
       fromIncluded,
       toIncluded,
-      update: SequenceShiftingBijection,
+      update: UnitaryAffineFunction,
       this
     )
 }
@@ -134,10 +134,10 @@ case object IdentityNaive extends PiecewiseSequenceShiftingBijectionNaive {
   override def apply(value: Int): Int = value
 }
 case class UpdatedPiecewiseLinearFunNaive(
-  fromIncluded: Int,
-  toIncluded: Int,
-  update: SequenceShiftingBijection,
-  base: PiecewiseSequenceShiftingBijectionNaive
+                                           fromIncluded: Int,
+                                           toIncluded: Int,
+                                           update: UnitaryAffineFunction,
+                                           base: PiecewiseSequenceShiftingBijectionNaive
 ) extends PiecewiseSequenceShiftingBijectionNaive {
   override def apply(value: Int): Int =
     if (value >= fromIncluded && value <= toIncluded) base(update(value)) else base(value)

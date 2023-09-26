@@ -2,39 +2,39 @@ package oscar.cbls.test.algo.sequence
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers._
-import oscar.cbls.algo.sequence.PiecewiseSequenceShiftingBijection
+import oscar.cbls.algo.sequence.PiecewiseUnitaryAffineFunction
 
-class PiecewiseSequenceShiftingBijectionUnitTestSuite extends AnyFunSuite {
+class PiecewiseUnitaryAffineFunctionUnitTestSuite extends AnyFunSuite {
 
   test("PiecewiseSequenceShiftingBijection : identity creation build the identity object") {
-    val piecewiseSequenceShiftingBijection: PiecewiseSequenceShiftingBijection =
-      PiecewiseSequenceShiftingBijection.identity
+    val piecewiseSequenceShiftingBijection: PiecewiseUnitaryAffineFunction =
+      PiecewiseUnitaryAffineFunction.identity
     piecewiseSequenceShiftingBijection.isIdentity should be(true)
     for (i <- 0 until 20) piecewiseSequenceShiftingBijection(i) should be(i)
   }
 
   test("PiecewiseSequenceShiftingBijection : pivots creation works as expected (no pivot)") {
-    val pssb: PiecewiseSequenceShiftingBijection = PiecewiseSequenceShiftingBijection.identity
+    val pssb: PiecewiseUnitaryAffineFunction = PiecewiseUnitaryAffineFunction.identity
     val pivots                                   = pssb.pivots
-    val pssb2 = PiecewiseSequenceShiftingBijection.createFromPivots(pivots)
+    val pssb2 = PiecewiseUnitaryAffineFunction.createFromPivots(pivots)
     pssb2.pivots.sortBy(_.fromValue) should be(pivots.sortBy(_.fromValue))
   }
 
   test("PiecewiseSequenceShiftingBijection : pivots creation works as expected") {
-    var pssb: PiecewiseSequenceShiftingBijection =
-      PiecewiseSequenceShiftingBijection.identity
+    var pssb: PiecewiseUnitaryAffineFunction =
+      PiecewiseUnitaryAffineFunction.identity
     pssb = pssb.swapAdjacentZonesShiftFirst(5, 9, 14, true)
     pssb = pssb.swapAdjacentZonesShiftFirst(3, 21, 34, true)
     pssb = pssb.swapAdjacentZonesShiftFirst(12, 15, 22, true)
     pssb = pssb.swapAdjacentZonesShiftFirst(21, 24, 35, true)
     val pivots = pssb.pivots
-    val pssb2  = PiecewiseSequenceShiftingBijection.createFromPivots(pivots)
+    val pssb2  = PiecewiseUnitaryAffineFunction.createFromPivots(pivots)
     pssb2.pivots.sortBy(_.fromValue) should be(pivots.sortBy(_.fromValue))
   }
 
   test("PiecewiseSequenceShiftingBijection : backward works as expected") {
-    var pssb: PiecewiseSequenceShiftingBijection =
-      PiecewiseSequenceShiftingBijection.identity
+    var pssb: PiecewiseUnitaryAffineFunction =
+      PiecewiseUnitaryAffineFunction.identity
     val backwardIdentity = pssb.backward
     for (i <- 0 until 100) backwardIdentity(pssb(i)) should be(i)
 
@@ -50,7 +50,7 @@ class PiecewiseSequenceShiftingBijectionUnitTestSuite extends AnyFunSuite {
   /* C
    */
   test("PiecewiseSequenceShiftingBijection : pivots access work as expected") {
-    var pssb: PiecewiseSequenceShiftingBijection = PiecewiseSequenceShiftingBijection.identity
+    var pssb: PiecewiseUnitaryAffineFunction = PiecewiseUnitaryAffineFunction.identity
     pssb.firstPivotAndPosition should be(None)
     pssb.pivotWithPositionApplyingTo(10) should be(None)
     pssb.pivots.size should be(0)

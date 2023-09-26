@@ -18,21 +18,21 @@ import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
 import scala.annotation.tailrec
 import scala.language.implicitConversions
 
-/** Companion object of [[PiecewiseSequenceShiftingBijection]] */
-object PiecewiseSequenceShiftingBijection {
+/** Companion object of [[PiecewiseUnitaryAffineFunction]] */
+object PiecewiseUnitaryAffineFunction {
 
-  /** Returns an empty PiecewiseLinearFun */
-  def identity = new PiecewiseSequenceShiftingBijection()
+  /** Returns an empty [[PiecewiseUnitaryAffineFunction]] */
+  def identity = new PiecewiseUnitaryAffineFunction()
 
-  /** Create a [[PiecewiseSequenceShiftingBijection]] based on a existing list of [[Pivot]] */
-  def createFromPivots(pivots: Iterable[Pivot]): PiecewiseSequenceShiftingBijection = {
+  /** Create a [[PiecewiseUnitaryAffineFunction]] based on a existing list of [[Pivot]] */
+  def createFromPivots(pivots: Iterable[Pivot]): PiecewiseUnitaryAffineFunction = {
     var acc     = RedBlackTreeMap.empty[Pivot]
     val pivotIt = pivots.iterator
     while (pivotIt.hasNext) {
       val currentPivot = pivotIt.next()
       acc = acc.insert(currentPivot.fromValue, currentPivot)
     }
-    new PiecewiseSequenceShiftingBijection(acc)
+    new PiecewiseUnitaryAffineFunction(acc)
   }
 
   @tailrec
@@ -55,11 +55,11 @@ object PiecewiseSequenceShiftingBijection {
     }
   }
 
-  implicit def toIterable(f: PiecewiseSequenceShiftingBijection): Iterable[Pivot] =
+  implicit def toIterable(f: PiecewiseUnitaryAffineFunction): Iterable[Pivot] =
     f.transformation.values
 }
 
-/** A piecewise bijection matching the external and the internal position of each element of a
+/** A piecewise unitary affine function matching the external and the internal position of each element of a
   * [[IntSequence]].
   *
   * To avoid expensive modification by moving values around upon insertion/deletion/movements in the
@@ -67,24 +67,25 @@ object PiecewiseSequenceShiftingBijection {
   * [[Pivot]] (stored in a [[RedBlackTreeMap]]) which represents the changes made to the
   * [[IntSequence]]. Each [[Pivot]] starts at a position and applies a bijection to the start
   * position and each position after. That way we know the new position of the element at position
-  * x. Those are created rapidly and can be merged (See [[SequenceShiftingBijection]] for more
+  * x. Those are created rapidly and can be merged (See [[UnitaryAffineFunction]] for more
   * information).
   *
   * Once in a while we create a brand new [[IntSequence]] to avoid having too many Pivots.
-  * @param transformation
+ *
+ * @param transformation
   *   a RedBlackTree keeping the [[Pivot]] sorted by their [[Pivot.fromValue]]
   */
-class PiecewiseSequenceShiftingBijection(
+class PiecewiseUnitaryAffineFunction(
   private[sequence] val transformation: RedBlackTreeMap[Pivot] = RedBlackTreeMap.empty
 ) {
 
   /** No recorded pivot */
   def isIdentity: Boolean = transformation.isEmpty
 
-  /** The backward [[PiecewiseSequenceShiftingBijection]] such that backard(this(x)) = x */
-  lazy val backward: PiecewiseSequenceShiftingBijection = {
-    PiecewiseSequenceShiftingBijection.createFromPivots(
-      PiecewiseSequenceShiftingBijection.computeInvertedPivots(pivots)
+  /** The backward [[PiecewiseUnitaryAffineFunction]] such that backard(this(x)) = x */
+  lazy val backward: PiecewiseUnitaryAffineFunction = {
+    PiecewiseUnitaryAffineFunction.createFromPivots(
+      PiecewiseUnitaryAffineFunction.computeInvertedPivots(pivots)
     )
   }
 
@@ -92,7 +93,7 @@ class PiecewiseSequenceShiftingBijection(
     *
     * If there is no [[Pivot]] starting before value, it means that there was no move affecting this
     * position, hence returning the old position itself. Otherwise returns the new position using
-    * the [[SequenceShiftingBijection]] of the [[Pivot]]
+    * the [[UnitaryAffineFunction]] of the [[Pivot]]
     *
     * @param oldPos
     *   The old position
@@ -173,15 +174,15 @@ class PiecewiseSequenceShiftingBijection(
     * @param updatedTransform
     *   the recursively updated transform
     * @return
-    *   The [[PiecewiseSequenceShiftingBijection]] with all the updates
+    * The [[PiecewiseUnitaryAffineFunction]] with all the updates
     */
   @tailrec
   final def updatesForCompositionBefore(
-    updates: List[(Int, Int, SequenceShiftingBijection)],
-    updatedTransform: RedBlackTreeMap[Pivot] = transformation
-  ): PiecewiseSequenceShiftingBijection = {
+                                         updates: List[(Int, Int, UnitaryAffineFunction)],
+                                         updatedTransform: RedBlackTreeMap[Pivot] = transformation
+  ): PiecewiseUnitaryAffineFunction = {
     updates match {
-      case Nil => new PiecewiseSequenceShiftingBijection(updatedTransform)
+      case Nil => new PiecewiseUnitaryAffineFunction(updatedTransform)
       case (fromIncluded, toIncluded, update) :: tail =>
         updatesForCompositionBefore(
           tail,
@@ -198,23 +199,23 @@ class PiecewiseSequenceShiftingBijection(
     }
   }
 
-  /** Applies the additional [[SequenceShiftingBijection]] in the defined before existing bijection
+  /** Applies the additional [[UnitaryAffineFunction]] in the defined before existing bijection
     * interval.
     *
     * @param fromIncluded
-    *   Starting position of the interval
+    * Starting position of the interval
     * @param toIncluded
-    *   Ending position of the interval
+    * Ending position of the interval
     * @param additionalBijectionAppliedBefore
-    *   The additional [[SequenceShiftingBijection]] to apply before
+    * The additional [[UnitaryAffineFunction]] to apply before
     * @return
-    *   An updated [[PiecewiseSequenceShiftingBijection]]
+    *   An updated [[PiecewiseUnitaryAffineFunction]]
     */
   def updateForCompositionBefore(
     fromIncluded: Int,
     toIncluded: Int,
-    additionalBijectionAppliedBefore: SequenceShiftingBijection
-  ): PiecewiseSequenceShiftingBijection = {
+    additionalBijectionAppliedBefore: UnitaryAffineFunction
+  ): PiecewiseUnitaryAffineFunction = {
 
     // Removes all pivots between fromIncluded and toIncluded since we must apply the additional bijection before.
     val cleanedTransformation = removePivotsBetween(fromIncluded, toIncluded, transformation)
@@ -226,10 +227,10 @@ class PiecewiseSequenceShiftingBijection(
     )
     val updatedTransformDeletedExtraPivot =
       deleteUnnecessaryPivotStartingJustAfter(toIncluded, updatedTransform)
-    new PiecewiseSequenceShiftingBijection(updatedTransformDeletedExtraPivot)
+    new PiecewiseUnitaryAffineFunction(updatedTransformDeletedExtraPivot)
   }
 
-  /** Makes the composition of a [[SequenceShiftingBijection]] (BEFORE) and existing bijection in
+  /** Makes the composition of a [[UnitaryAffineFunction]] (BEFORE) and existing bijection in
     * the defined interval.
     *
     * The idea is to create to composition of the existing bijections (aka THIS) and the specified
@@ -244,21 +245,21 @@ class PiecewiseSequenceShiftingBijection(
     * bijections.
     *
     * @param fromIncluded
-    *   Starting position of the interval
+    * Starting position of the interval
     * @param toIncluded
-    *   Ending position of the interval
+    * Ending position of the interval
     * @param additionalBijectionAppliedBefore
-    *   The [[SequenceShiftingBijection]] to apply before
+    * The [[UnitaryAffineFunction]] to apply before
     * @param cleanedTransformation
-    *   A RBTree were all pivot between fromIncluded and toIncluded were removed
+    * A RBTree were all pivot between fromIncluded and toIncluded were removed
     * @return
-    *   An updated [[PiecewiseSequenceShiftingBijection]]
+    *   An updated [[PiecewiseUnitaryAffineFunction]]
     */
   private def myUpdateForCompositionBefore(
-    fromIncluded: Int,
-    toIncluded: Int,
-    additionalBijectionAppliedBefore: SequenceShiftingBijection,
-    cleanedTransformation: RedBlackTreeMap[Pivot]
+                                            fromIncluded: Int,
+                                            toIncluded: Int,
+                                            additionalBijectionAppliedBefore: UnitaryAffineFunction,
+                                            cleanedTransformation: RedBlackTreeMap[Pivot]
   ): RedBlackTreeMap[Pivot] = {
     // If true, BEFORE(fromIncluded) > BEFORE(toIncluded) ==> "we go backward"
     val isAdditionalBijectionNegativeSlope = additionalBijectionAppliedBefore.flip
@@ -382,13 +383,13 @@ class PiecewiseSequenceShiftingBijection(
     * @param endZone2Included
     *   End position of the second zone
     * @return
-    *   A new [[PiecewiseSequenceShiftingBijection]] with the two zones swapped
+    * A new [[PiecewiseUnitaryAffineFunction]] with the two zones swapped
     */
   def swapAdjacentZonesShiftBest(
     startZone1Included: Int,
     endZone1Included: Int,
     endZone2Included: Int
-  ): PiecewiseSequenceShiftingBijection = {
+  ): PiecewiseUnitaryAffineFunction = {
     val widthZone1 = endZone1Included - startZone1Included + 1
     val widthZone2 = endZone2Included - endZone1Included
     // TODO: the choice is based on the number of positions, it should be based on the number of segments instead (but this is probably the same very often)
@@ -426,14 +427,14 @@ class PiecewiseSequenceShiftingBijection(
     * @param flipZone2
     *   If the second zone needs to be flipped
     * @return
-    *   The updated [[PiecewiseSequenceShiftingBijection]]
+    *   The updated [[PiecewiseUnitaryAffineFunction]]
     */
   def swapAdjacentZonesShiftFirst(
     startZone1Included: Int,
     endZone1Included: Int,
     endZone2Included: Int,
     flipZone2: Boolean
-  ): PiecewiseSequenceShiftingBijection = {
+  ): PiecewiseUnitaryAffineFunction = {
     val widthZone2 = endZone2Included - endZone1Included
     val widthZone1 = endZone1Included - startZone1Included + 1
 
@@ -450,9 +451,9 @@ class PiecewiseSequenceShiftingBijection(
     val transformReadyForShiftOfZone1 =
       addRedundantPivotAt(startZone1Included, transformWithTargetZone2Cleaned)
 
-    // Meant to be composed with an existing SequenceShiftingBijection. (f2 or f3)°f
-    val f2 = SequenceShiftingBijection(-widthZone2, flip = false)
-    val f3 = SequenceShiftingBijection(widthZone2, flip = false)
+    // Meant to be composed with an existing UnitaryAffineFunction. (f2 or f3)°f
+    val f2 = UnitaryAffineFunction(-widthZone2, flip = false)
+    val f3 = UnitaryAffineFunction(widthZone2, flip = false)
 
     /*
      * 3° Shifts the first zone after the second one
@@ -473,7 +474,7 @@ class PiecewiseSequenceShiftingBijection(
     val transformationWithUpdate2Done = myUpdateForCompositionBefore(
       startZone1Included,
       startZone1Included + widthZone2 - 1,
-      SequenceShiftingBijection(
+      UnitaryAffineFunction(
         if (flipZone2) endZone2Included + startZone1Included else widthZone1,
         flipZone2
       ),
@@ -481,7 +482,7 @@ class PiecewiseSequenceShiftingBijection(
     )
 
     // 5° finally, cleans the potentially redundant pivots
-    new PiecewiseSequenceShiftingBijection(
+    new PiecewiseUnitaryAffineFunction(
       deleteUnnecessaryPivotStartingJustAfter(
         startZone1Included - 1,
         deleteUnnecessaryPivotStartingJustAfter(
@@ -509,14 +510,14 @@ class PiecewiseSequenceShiftingBijection(
     * @param flipZone1
     *   If the first zone needs to be flipped
     * @return
-    *   The updated [[PiecewiseSequenceShiftingBijection]]
+    *   The updated [[PiecewiseUnitaryAffineFunction]]
     */
   def swapAdjacentZonesShiftSecond(
     startZone1Included: Int,
     endZone1Included: Int,
     endZone2Included: Int,
     flipZone1: Boolean
-  ): PiecewiseSequenceShiftingBijection = {
+  ): PiecewiseUnitaryAffineFunction = {
 
     val widthZone2 = endZone2Included - endZone1Included
     val widthZone1 = endZone1Included - startZone1Included + 1
@@ -534,9 +535,9 @@ class PiecewiseSequenceShiftingBijection(
     val transformReadyForShiftOfZone2 =
       addRedundantPivotAt(endZone2Included + 1, transformWithTargetZone1Cleaned)
 
-    // Meant to be composed with an existing SequenceShiftingBijection. (f2 or f3)°f
-    val f2 = SequenceShiftingBijection(widthZone1, flip = false)
-    val f3 = SequenceShiftingBijection(-widthZone1, flip = false)
+    // Meant to be composed with an existing UnitaryAffineFunction. (f2 or f3)°f
+    val f2 = UnitaryAffineFunction(widthZone1, flip = false)
+    val f3 = UnitaryAffineFunction(-widthZone1, flip = false)
 
     /*
      * 3° Shifts the second zone before the first one
@@ -557,7 +558,7 @@ class PiecewiseSequenceShiftingBijection(
     val transformationWithUpdate1Done = myUpdateForCompositionBefore(
       startZone1Included + widthZone2,
       endZone2Included,
-      SequenceShiftingBijection(
+      UnitaryAffineFunction(
         if (flipZone1) endZone1Included + startZone1Included + widthZone2 else -widthZone2,
         flipZone1
       ),
@@ -565,7 +566,7 @@ class PiecewiseSequenceShiftingBijection(
     )
 
     // 5° finally, cleans the potentially redundant pivots
-    new PiecewiseSequenceShiftingBijection(
+    new PiecewiseUnitaryAffineFunction(
       deleteUnnecessaryPivotStartingJustAfter(
         startZone1Included - 1,
         deleteUnnecessaryPivotStartingJustAfter(
@@ -586,17 +587,18 @@ class PiecewiseSequenceShiftingBijection(
     *   - [5,4,3],[0,1,2],6,7,8,9
     *   - flipPivotsInInterval (3,6)
     *   - 5,4,3,[6,2,1,0],7,8,9
+ *
     * @param startZoneIncluded
     *   Starting position of the interval
     * @param endZoneIncluded
     *   Ending position of the interval
     * @return
-    *   An updated [[PiecewiseSequenceShiftingBijection]]
+    * An updated [[PiecewiseUnitaryAffineFunction]]
     */
   def flipPivotsInInterval(
     startZoneIncluded: Int,
     endZoneIncluded: Int
-  ): PiecewiseSequenceShiftingBijection = {
+  ): PiecewiseUnitaryAffineFunction = {
     // 1° If needed, defines a redundant pivot at start to keep information of previous pivot
     val transformReadyForFlipOnLeft = addRedundantPivotAt(startZoneIncluded, this.transformation)
     // 2° If needed, defines a redundant pivot at end+1 to forward information of last pivot of the interval
@@ -623,7 +625,7 @@ class PiecewiseSequenceShiftingBijection(
       }
     )
 
-    new PiecewiseSequenceShiftingBijection(
+    new PiecewiseUnitaryAffineFunction(
       deleteUnnecessaryPivotStartingJustAfter(
         startZoneIncluded - 1,
         deleteUnnecessaryPivotStartingJustAfter(endZoneIncluded, updatedForwardFct)
@@ -636,7 +638,7 @@ class PiecewiseSequenceShiftingBijection(
     * List(p1, p2, p3) ==> List(p3', p2', p1') The pivots keep their length but :
     *   - Their start position are shifted accordingly (ex : p3'.start = p1.start, p1'.start =
     *     p1.start+p3.length+p2.length)
-    *   - Their [[SequenceShiftingBijection]] are mirrored and shifted (see mirrorPivot)
+    *   - Their [[UnitaryAffineFunction]] are mirrored and shifted (see mirrorPivot)
     *
     * Recursive process starting with flipping and moving the p1, then p2 ... pn
     *
@@ -692,7 +694,7 @@ class PiecewiseSequenceShiftingBijection(
     val newFromValue = newEnd - width + 1
     val newFlip      = !p.f.flip
     val newOffset    = p.f(p.fromValue + newEnd)
-    val newPivot     = new Pivot(newFromValue, new SequenceShiftingBijection(newOffset, newFlip))
+    val newPivot     = new Pivot(newFromValue, new UnitaryAffineFunction(newOffset, newFlip))
 
     assert(p.f(p.fromValue) == newPivot.f(newEnd))
     assert(p.f(p.fromValue + width - 1) == newPivot.f(newPivot.fromValue))
@@ -797,7 +799,7 @@ class PiecewiseSequenceShiftingBijection(
       case _ =>
         updatedTransform.insert(
           atPosition,
-          new Pivot(atPosition, SequenceShiftingBijection.identity)
+          new Pivot(atPosition, UnitaryAffineFunction.identity)
         )
     }
   }
@@ -843,7 +845,7 @@ class PiecewiseSequenceShiftingBijection(
 
   override def equals(obj: Any): Boolean = {
     obj match {
-      case that: PiecewiseSequenceShiftingBijection =>
+      case that: PiecewiseUnitaryAffineFunction =>
         if (this.nbPivot != that.nbPivot) {
           return false
         }
@@ -866,23 +868,23 @@ class PiecewiseSequenceShiftingBijection(
   *
   * With each moved subsequence comes a [[Pivot]]. The subsequence starts at fromValue and end at
   * the next [[Pivot]]'s start (if one) We can get the new position of each element of the
-  * subsequence by using the [[SequenceShiftingBijection]]
+  * subsequence by using the [[UnitaryAffineFunction]]
   *
   * @param fromValue
-  *   The starting position of the subsequence
+  * The starting position of the subsequence
   * @param f
-  *   The [[SequenceShiftingBijection]] attached to this subsequence
+  * The [[UnitaryAffineFunction]] attached to this subsequence
   */
-class Pivot(val fromValue: Int, val f: SequenceShiftingBijection) {
+class Pivot(val fromValue: Int, val f: UnitaryAffineFunction) {
   override def toString: String =
     "Pivot(from:" + fromValue + " " + f + " f(from)=" + f(fromValue) + "))"
 
   /** Flip this pivot */
   def flip(endX: Int): Pivot = {
     if (f.flip) {
-      new Pivot(fromValue, SequenceShiftingBijection(f(endX) - fromValue, flip = false))
+      new Pivot(fromValue, UnitaryAffineFunction(f(endX) - fromValue, flip = false))
     } else {
-      new Pivot(fromValue, SequenceShiftingBijection(fromValue + f(endX), flip = true))
+      new Pivot(fromValue, UnitaryAffineFunction(fromValue + f(endX), flip = true))
     }
   }
 }
