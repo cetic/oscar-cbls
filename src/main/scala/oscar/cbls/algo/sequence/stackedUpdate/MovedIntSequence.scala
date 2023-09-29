@@ -147,8 +147,8 @@ class MovedIntSequence(
 
   override def unorderedContentNoDuplicate: List[Int] = seq.unorderedContentNoDuplicate
 
-  override def unorderedContentNoDuplicateWithNBOccurences: List[(Int, Int)] =
-    seq.unorderedContentNoDuplicateWithNBOccurences
+  override def unorderedContentNoDuplicateWithNBOccurrences: List[(Int, Int)] =
+    seq.unorderedContentNoDuplicateWithNBOccurrences
 
   override def descriptorString: String =
     s"${seq.descriptorString}.moved(startPos:$startPositionIncluded endPos:$endPositionIncluded targetPos:$moveAfterPosition flip:$flip)"
@@ -208,8 +208,8 @@ class MovedIntSequence(
     tmp
   }
 
-  override def positionsOfValueQ(value: Int): List[Int] = {
-    var positionsBefore     = seq.positionsOfValueQ(value)
+  override def positionsOfValue(value: Int): List[Int] = {
+    var positionsBefore     = seq.positionsOfValue(value)
     var toReturn: List[Int] = null
     while (positionsBefore != null) {
       val oldPos = positionsBefore.head

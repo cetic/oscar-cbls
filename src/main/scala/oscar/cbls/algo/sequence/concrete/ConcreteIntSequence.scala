@@ -71,7 +71,7 @@ class ConcreteIntSequence(
     internalPositionToValue.get(internalPosition)
   }
 
-  override def positionsOfValueQ(value: Int): List[Int] = {
+  override def positionsOfValue(value: Int): List[Int] = {
     valueToInternalPositions.get(value) match {
       case None => null
       case Some(internalPositions) =>
@@ -608,6 +608,6 @@ class ConcreteIntSequence(
 
   override def unorderedContentNoDuplicate: List[Int] = valueToInternalPositions.keys
 
-  override def unorderedContentNoDuplicateWithNBOccurences: List[(Int, Int)] =
+  override def unorderedContentNoDuplicateWithNBOccurrences: List[(Int, Int)] =
     valueToInternalPositions.content.map({ case ((value, positions)) => ((value, positions.size)) })
 }

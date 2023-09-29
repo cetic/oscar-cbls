@@ -9,7 +9,7 @@ class InsertedIntSequence(seq: IntSequence, val insertedValue: Int, val pos: Int
   override def nbOccurrence(value: Int): Int =
     if (value == this.insertedValue) seq.nbOccurrence(value) + 1 else seq.nbOccurrence(value)
 
-  override def unorderedContentNoDuplicateWithNBOccurences: List[(Int, Int)] =
+  override def unorderedContentNoDuplicateWithNBOccurrences: List[(Int, Int)] =
     unorderedContentNoDuplicate.map(value =>
       (value, if (value == insertedValue) seq.nbOccurrence(value) + 1 else seq.nbOccurrence(value))
     )
@@ -21,8 +21,8 @@ class InsertedIntSequence(seq: IntSequence, val insertedValue: Int, val pos: Int
     insertedValue :: seq.unorderedContentNoDuplicate
   else seq.unorderedContentNoDuplicate
 
-  override def positionsOfValueQ(value: Int): List[Int] = {
-    var positionsBefore     = seq.positionsOfValueQ(value)
+  override def positionsOfValue(value: Int): List[Int] = {
+    var positionsBefore     = seq.positionsOfValue(value)
     var toReturn: List[Int] = null
     while (positionsBefore != null) {
       val oldPos = positionsBefore.head

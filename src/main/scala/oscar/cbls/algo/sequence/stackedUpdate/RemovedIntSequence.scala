@@ -17,7 +17,7 @@ class RemovedIntSequence(val seq: IntSequence, val positionOfDelete: Int, depth:
     if (seq.nbOccurrence(removedValue) > 1) seq.unorderedContentNoDuplicate
     else seq.unorderedContentNoDuplicate.filter(_ != removedValue)
 
-  override def unorderedContentNoDuplicateWithNBOccurences: List[(Int, Int)] =
+  override def unorderedContentNoDuplicateWithNBOccurrences: List[(Int, Int)] =
     unorderedContentNoDuplicate.flatMap(value =>
       if (value == removedValue) {
         val occurencesBefore = seq.nbOccurrence(value)
@@ -35,8 +35,8 @@ class RemovedIntSequence(val seq: IntSequence, val positionOfDelete: Int, depth:
     }
   }
 
-  override def positionsOfValueQ(value: Int): List[Int] = {
-    var positionsBefore     = seq.positionsOfValueQ(value)
+  override def positionsOfValue(value: Int): List[Int] = {
+    var positionsBefore     = seq.positionsOfValue(value)
     var toReturn: List[Int] = null
     while (positionsBefore != null) {
       val oldPos = positionsBefore.head
