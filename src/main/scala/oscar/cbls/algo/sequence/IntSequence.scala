@@ -250,16 +250,13 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     *   The position where to insert the value as [[Int]]
     * @param fast
     *   Fast flag as [[Boolean]] for more detail see description.
-    * @param autoRework
-    *   //TODO : Remove it , not used, not documented
     * @return
     *   An [[IntSequence]] with the new value
     */
   def insertAtPosition(
     value: Int,
     pos: Int,
-    fast: Boolean = false,
-    autoRework: Boolean = true
+    fast: Boolean = false
   ): IntSequence
 
   /** Removes the value at the specified position.
@@ -271,12 +268,10 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     *   The position where to remove the value as [[Int]]
     * @param fast
     *   Fast flag as [[Boolean]] for more detail see description.
-    * @param autoRework
-    *   //TODO : Remove it , not used, not documented
     * @return
     *   An [[IntSequence]] without the value at the specified position
     */
-  def delete(pos: Int, fast: Boolean = false, autoRework: Boolean = false): IntSequence
+  def delete(pos: Int, fast: Boolean = false): IntSequence
 
   /** Moves nodes after a position and optionally flip them.
     *
@@ -293,8 +288,6 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     *   If true, flip the nodes before moving them
     * @param fast
     *   Fast flag as [[Boolean]] for more detail see description.
-    * @param autoRework
-    *   //TODO : Remove it , not used, not documented
     * @return
     *   An [[IntSequence]] where the nodes have been moved accordingly
     */
@@ -303,22 +296,19 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     endPositionIncluded: Int,
     moveAfterPosition: Int,
     flip: Boolean,
-    fast: Boolean = false,
-    autoRework: Boolean = true
+    fast: Boolean = false
   ): IntSequence
 
   /** Flips the [[IntSequence]]
     *
     * @param fast
     *   If true uses [[StackedUpdateIntSequence]] else [[ConcreteIntSequence]]
-    * @param autoRework
-    *   TODO : remove it
     * @return
     *   A flipped [[IntSequence]]
     */
-  def flip(fast: Boolean = false, autoRework: Boolean = true): IntSequence =
+  def flip(fast: Boolean = false): IntSequence =
     if (this.isEmpty) this
-    else moveAfter(0, this.size - 1, -1, flip = true, fast, autoRework)
+    else moveAfter(0, this.size - 1, -1, flip = true, fast)
 
   /** Applies all [[oscar.cbls.algo.sequence.affineFunction.Pivot]] if the max number of Pivot is
     * reached.
@@ -369,28 +359,4 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
   }
 
   def descriptorString: String
-
-  // TODO : Not sure about the interest of keeping those two following methods.
-  // 		You could just use valueAtPosition(position-1). Otherwise, why not predecessorPredecessorPos2Val ?
-  /** Returns the value of the predecessor of the node at the specified position.
-    *
-    * @param position
-    *   The position of the node we want to know the predecessor as an [[Int]]
-    * @return
-    *   The value of the predecessor as an [[Int]]
-    */
-  def predecessorPos2Val(position: Int): Option[Int] = {
-    valueAtPosition(position - 1)
-  }
-
-  /** Returns the value of the successor of the node at the specified position.
-    *
-    * @param position
-    *   The position of the node we want to know the successor as an [[Int]]
-    * @return
-    *   The value of the successor as an [[Int]]
-    */
-  def successorPos2Val(position: Int): Option[Int] = {
-    valueAtPosition(position + 1)
-  }
 }

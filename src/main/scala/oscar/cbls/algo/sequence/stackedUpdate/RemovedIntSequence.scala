@@ -60,7 +60,7 @@ class RemovedIntSequence(val seq: IntSequence, val positionOfDelete: Int, depth:
   }
 
   override def commitPendingMoves: IntSequence =
-    seq.commitPendingMoves.delete(this.positionOfDelete, fast = false, autoRework = false)
+    seq.commitPendingMoves.delete(this.positionOfDelete, fast = false)
 
   override def valueAtPosition(position: Int): Option[Int] = {
     if (position >= this.positionOfDelete) seq.valueAtPosition(position + 1)

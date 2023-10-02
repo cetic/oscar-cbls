@@ -169,8 +169,7 @@ class MovedIntSequence(
     endPositionIncluded,
     moveAfterPosition,
     flip,
-    fast = false,
-    autoRework = false
+    fast = false
   )
 
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {

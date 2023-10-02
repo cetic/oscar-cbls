@@ -4,7 +4,7 @@ import oscar.cbls.algo.sequence._
 import oscar.cbls.algo.sequence.concrete.ConcreteIntSequence
 
 abstract class StackedUpdateIntSequence(depth: Int) extends IntSequence(depth = depth) {
-  override def delete(pos: Int, fast: Boolean, autoRework: Boolean): IntSequence = {
+  override def delete(pos: Int, fast: Boolean): IntSequence = {
     require(pos >= 0, "pos=" + pos + " for delete on UniqueIntSequence should be >= 0")
     require(pos < size, "cannot delete past end of sequence in UniqueIntSequence")
     if (depth >= 20) {
@@ -19,8 +19,7 @@ abstract class StackedUpdateIntSequence(depth: Int) extends IntSequence(depth = 
     endPositionIncluded: Int,
     moveAfterPosition: Int,
     flip: Boolean,
-    fast: Boolean,
-    autoRework: Boolean
+    fast: Boolean
   ): IntSequence = {
     require(
       startPositionIncluded >= 0 && startPositionIncluded < size,
@@ -58,8 +57,7 @@ abstract class StackedUpdateIntSequence(depth: Int) extends IntSequence(depth = 
   override def insertAtPosition(
     value: Int,
     pos: Int,
-    fast: Boolean,
-    autoRework: Boolean
+    fast: Boolean
   ): IntSequence = {
     require(
       pos >= 0 && pos <= size,

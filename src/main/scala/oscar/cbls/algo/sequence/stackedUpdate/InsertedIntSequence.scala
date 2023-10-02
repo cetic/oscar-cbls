@@ -70,7 +70,7 @@ class InsertedIntSequence(seq: IntSequence, val insertedValue: Int, val pos: Int
   override def contains(value: Int): Boolean = value == this.insertedValue || seq.contains(value)
 
   override def commitPendingMoves: IntSequence =
-    seq.commitPendingMoves.insertAtPosition(insertedValue, pos, fast = false, autoRework = false)
+    seq.commitPendingMoves.insertAtPosition(insertedValue, pos, fast = false)
 
   override def isEmpty: Boolean = false
 

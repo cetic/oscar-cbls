@@ -228,7 +228,7 @@ class ConcreteIntSequence(
     }
   }
 
-  def insertAtPosition(value: Int, pos: Int, fast: Boolean, autoRework: Boolean): IntSequence = {
+  def insertAtPosition(value: Int, pos: Int, fast: Boolean): IntSequence = {
 
     // println(this + ".insertAtPosition(value:" + value + " pos:" + pos + ")")
     require(
@@ -284,7 +284,7 @@ class ConcreteIntSequence(
     )
   }
 
-  def delete(pos: Int, fast: Boolean, autoRework: Boolean): IntSequence = {
+  def delete(pos: Int, fast: Boolean): IntSequence = {
     // println(this + ".delete(pos:" + pos + ")")
     require(pos < size, s"deleting past the end of the sequence (size:$size pos:$pos)")
     require(pos >= 0, s"deleting at negative pos:$pos")
@@ -366,8 +366,7 @@ class ConcreteIntSequence(
     endPositionIncluded: Int,
     moveAfterPosition: Int,
     flip: Boolean,
-    fast: Boolean,
-    autoRework: Boolean
+    fast: Boolean
   ): IntSequence = {
     // println(this + ".moveAfter(startPositionIncluded:" + startPositionIncluded + " endPositionIncluded:" + endPositionIncluded + " moveAfterPosition:" + moveAfterPosition + " flip:" + flip + ")")
     require(
@@ -554,7 +553,7 @@ class ConcreteIntSequence(
     targetToken: Token = this.token
   ): ConcreteIntSequence = {
     if (this.externalToInternalPosition.nbPivot * 100 > maxPivotPerValuePercent * this.size) {
-      regularize(targetToken)
+      regularize()
     } else {
       if (targetToken != this.token) {
         new ConcreteIntSequence(
