@@ -1,13 +1,37 @@
+// OscaR is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 2.1 of the License, or
+// (at your option) any later version.
+//
+// OscaR is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License  for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License along with OscaR.
+// If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+
 package oscar.cbls.algo.sequence.stackedUpdate
 
 import oscar.cbls.algo.sequence._
 import oscar.cbls.algo.sequence.concrete.ConcreteIntSequence
 
-abstract class StackedUpdateIntSequence(depth: Int) extends IntSequence(depth = depth) {
+/** Quick and stackable update of an [[IntSequence]]
+  *
+ * For performance purpose, it's easier to create several stackable updates and commit them times to times.
+ * That's the purpose of the [[StackedUpdateIntSequence]]. That way you can easi
+ *
+  * @param depth
+  *   The depth of the current update
+  * @param maxDepth
+  *   The maximum depth allowed before committing all updates and generate a new
+  *   [[ConcreteIntSequence]]
+  */
+abstract class StackedUpdateIntSequence(depth: Int, maxDepth: Int = 20)
+    extends IntSequence(depth = depth) {
   override def delete(pos: Int, fast: Boolean): IntSequence = {
-    require(pos >= 0, "pos=" + pos + " for delete on UniqueIntSequence should be >= 0")
-    require(pos < size, "cannot delete past end of sequence in UniqueIntSequence")
-    if (depth >= 20) {
+    require(pos >= 0 && pos < size, s"pos=$pos should be in [0, size=$size [")
+    if (depth >= maxDepth) {
       new RemovedIntSequence(this, pos, depth + 1).commitPendingMoves
     } else {
       new RemovedIntSequence(this, pos, depth + 1)
@@ -23,17 +47,17 @@ abstract class StackedUpdateIntSequence(depth: Int) extends IntSequence(depth = 
   ): IntSequence = {
     require(
       startPositionIncluded >= 0 && startPositionIncluded < size,
-      "startPositionIncluded=" + startPositionIncluded + " should be in [0,size" + size + "[ in UniqueIntSequence.moveAfter"
+      s"startPositionIncluded=$startPositionIncluded should be in [0, size=$size ["
     )
     require(
-      endPositionIncluded >= 0 && endPositionIncluded < size,
-      "endPositionIncluded=" + endPositionIncluded + " should be in [0,size" + size + "[ in UniqueIntSequence.moveAfter"
+      endPositionIncluded >= startPositionIncluded && endPositionIncluded < size,
+      s"endPositionIncluded=$endPositionIncluded should be in [$startPositionIncluded , size=$size ["
     )
     require(
       moveAfterPosition >= -1 && moveAfterPosition < size,
-      "moveAfterPosition=" + moveAfterPosition + " should be in [-1,size=" + size + "[ in UniqueIntSequence.moveAfter"
+      s"moveAfterPosition=$moveAfterPosition should be in [-1, size=$size ["
     )
-    if (depth >= 20) {
+    if (depth >= maxDepth) {
       new MovedIntSequence(
         this,
         startPositionIncluded,
@@ -54,16 +78,9 @@ abstract class StackedUpdateIntSequence(depth: Int) extends IntSequence(depth = 
     }
   }
 
-  override def insertAtPosition(
-    value: Int,
-    pos: Int,
-    fast: Boolean
-  ): IntSequence = {
-    require(
-      pos >= 0 && pos <= size,
-      "pos=" + pos + " should be in [0,size=" + size + "] in IntSequence.insertAt"
-    )
-    if (depth >= 20) {
+  override def insertAtPosition(value: Int, pos: Int, fast: Boolean): IntSequence = {
+    require(pos >= 0 && pos <= size, s"pos=$pos should be in [0,size= $size ]")
+    if (depth >= maxDepth) {
       new InsertedIntSequence(this, value: Int, pos: Int, depth + 1).commitPendingMoves
     } else {
       new InsertedIntSequence(this, value: Int, pos: Int, depth + 1)

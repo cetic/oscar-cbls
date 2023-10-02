@@ -13,12 +13,11 @@
 
 package oscar.cbls.algo.sequence
 
-import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
+import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.sequence.affineFunction.PiecewiseUnitaryAffineFunction
 import oscar.cbls.algo.sequence.concrete.ConcreteIntSequence
 import oscar.cbls.algo.sequence.stackedUpdate._
 
-import scala.collection.immutable.SortedSet
 import scala.language.implicitConversions
 
 // Companion object of [[IntSequence]]
@@ -81,6 +80,17 @@ object Token {
   def apply(): Token = new Token()
 }
 
+/** Representation of an updatable Sequence of Integer.
+ *
+ * This abstract class exposes all the methods used to interact with an IntSequence.
+ * Such as :
+ * - Basic collections methods (size, contains, map...)
+ * - Iterator / explorer
+ * - Modifications methods : insert/move/remove
+ *
+ * @param token A small object used to id the current instance
+ * @param depth The current number of stacked updates
+ */
 abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth: Int) {
 
   def size: Int
