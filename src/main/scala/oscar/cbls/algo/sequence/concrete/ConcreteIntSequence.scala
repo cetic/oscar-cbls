@@ -26,6 +26,34 @@ import oscar.cbls.algo.sequence.stackedUpdate.{
 }
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer, Token}
 
+/** A concrete representation of an [[IntSequence]]
+  *
+  * The creation of a brand new Array of Int after each modification is very costly so the decision
+  * has been made to create a more complex structure offering better performances. There are four
+  * main concepts around the IntSequence :
+  *   - The value : an [[Int]] value contained in the IntSequence
+  *   - The internal position : The position of a specific value without considering any pivot
+  *   - The external position : The position of a specific value considering every pivot
+  *   - A pivot : A [[Pivot]] is an affine function used to link the external to the internal
+  *     position
+  *
+  * So each time the route is modified, a new [[Pivot]] is created to adjust the new position of
+  * each element. The internal positions don't change. Once in a while we commit / apply all pivots
+  * and update all the internal position.
+  *
+  * @param internalPositionToValue
+  *   A [[RedBlackTreeMap]] of [[Int]] associating an internal position to its value
+  * @param valueToInternalPositions
+  *   A [[RedBlackTreeMap]] of [[RedBlackTreeMap]] of [[Int]] associating a value to its internal
+  *   position
+  * @param externalToInternalPosition
+  *   A [[PiecewiseUnitaryAffineFunction]] containing all the necessary [[Pivot]] used to link an
+  *   external position to its internal position
+  * @param startFreeRangeForInternalPosition
+  *   The next free internal insertion position.
+  * @param token
+  *   A small object used to id the current instance
+  */
 class ConcreteIntSequence(
   private[sequence] val internalPositionToValue: RedBlackTreeMap[Int],
   private[sequence] val valueToInternalPositions: RedBlackTreeMap[RedBlackTreeMap[Int]],
@@ -40,7 +68,6 @@ class ConcreteIntSequence(
 
   // TODO: replace internalPositionToValue by an immutable Array, or an immutable array + a small RBTree + size
 
-  def bij = externalToInternalPosition
   override def descriptorString: String =
     "[" + this.iterator.toList.mkString(",") + "]_impl:concrete"
 
@@ -77,9 +104,9 @@ class ConcreteIntSequence(
     case Some((k, _)) => Some(k)
   }
 
-  def contains(value: Int): Boolean = valueToInternalPositions.contains(value)
+  override def contains(value: Int): Boolean = valueToInternalPositions.contains(value)
 
-  def valueAtPosition(position: Int): Option[Int] = {
+  override def valueAtPosition(position: Int): Option[Int] = {
     val internalPosition: Int = externalToInternalPosition(position)
     internalPositionToValue.get(internalPosition)
   }
@@ -98,7 +125,7 @@ class ConcreteIntSequence(
     }
   }
 
-  def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
+  override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
 
     def putUsedExplorerAtBack(usedExplorerIndex: Int): Unit = {
       // Moving the explorer and position to the end of the related array
@@ -241,7 +268,7 @@ class ConcreteIntSequence(
     }
   }
 
-  def insertAtPosition(value: Int, pos: Int, fast: Boolean): IntSequence = {
+  override def insertAtPosition(value: Int, pos: Int, fast: Boolean): IntSequence = {
 
     // println(this + ".insertAtPosition(value:" + value + " pos:" + pos + ")")
     require(
@@ -297,7 +324,7 @@ class ConcreteIntSequence(
     )
   }
 
-  def delete(pos: Int, fast: Boolean): IntSequence = {
+  override def delete(pos: Int, fast: Boolean): IntSequence = {
     // println(this + ".delete(pos:" + pos + ")")
     require(pos < size, s"deleting past the end of the sequence (size:$size pos:$pos)")
     require(pos >= 0, s"deleting at negative pos:$pos")
@@ -374,7 +401,7 @@ class ConcreteIntSequence(
     )
   }
 
-  def moveAfter(
+  override def moveAfter(
     startPositionIncluded: Int,
     endPositionIncluded: Int,
     moveAfterPosition: Int,
@@ -572,7 +599,7 @@ class ConcreteIntSequence(
     }
   }
 
-  def regularize(targetToken: Token = this.token): ConcreteIntSequence = {
+  override def regularize(targetToken: Token = this.token): ConcreteIntSequence = {
     var explorerOpt                                    = this.explorerAtPosition(0)
     val newInternalPositionToValues: Array[(Int, Int)] = Array.ofDim[(Int, Int)](this.size)
     val oldInternalPosToNewInternalPos: Array[Int]     = Array.ofDim[Int](this.size)
