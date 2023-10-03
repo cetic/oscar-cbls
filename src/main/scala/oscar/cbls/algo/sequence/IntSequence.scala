@@ -20,7 +20,7 @@ import oscar.cbls.algo.sequence.stackedUpdate._
 
 import scala.language.implicitConversions
 
-// Companion object of [[IntSequence]]
+/** Companion object of [[IntSequence]] */
 object IntSequence {
 
   /** Creates an [[ConcreteIntSequence]] from a sorted list of integers.
@@ -44,7 +44,7 @@ object IntSequence {
     )
   }
 
-  /** Creates an IntSequence from a sorted list of integers.
+  /** Creates an [[IntSequence]] from a sorted list of [[Int]].
     *
     * @param values
     *   The sorted integers as a [[Iterable]] of [[Int]]
@@ -63,6 +63,7 @@ object IntSequence {
     valToPoses
   }
 
+  /** Creates an empty [[IntSequence]] * */
   def empty(): IntSequence = new ConcreteIntSequence(
     RedBlackTreeMap.empty[Int],
     RedBlackTreeMap.empty[RedBlackTreeMap[Int]],
@@ -73,24 +74,35 @@ object IntSequence {
   implicit def toIterable(seq: IntSequence): IterableIntSequence = new IterableIntSequence(seq)
 }
 
-// TODO try to remove this, looks like an unnecessary quick fix solution
-class Token()
-
+/** Companion object of [[Token]] */
 object Token {
   def apply(): Token = new Token()
 }
 
+/** The identity of an [[IntSequence]].
+  *
+  * The idea behind this Token is to be able to quickly check if two IntSequence are the same. It
+  * allows us to say that a [[StackedUpdateIntSequence]] is the same as a [[ConcreteIntSequence]] if
+  * they share the same [[Token]]. Which is mandatory since the regularization mechanism can be
+  * trigger any time.
+  *
+  * By default a new Token is created each time a new [[IntSequence]] is created. The only exception
+  * is during regularization where the [[Token]] is copied into the new [[ConcreteIntSequence]]
+  */
+class Token()
+
 /** Representation of an updatable Sequence of Integer.
- *
- * This abstract class exposes all the methods used to interact with an IntSequence.
- * Such as :
- * - Basic collections methods (size, contains, map...)
- * - Iterator / explorer
- * - Modifications methods : insert/move/remove
- *
- * @param token A small object used to id the current instance
- * @param depth The current number of stacked updates
- */
+  *
+  * This abstract class exposes all the methods used to interact with an IntSequence. Such as :
+  *   - Basic collections methods (size, contains, map...)
+  *   - Iterator / explorer
+  *   - Modifications methods : insert/move/remove
+  *
+  * @param token
+  *   A small object used to id the current instance
+  * @param depth
+  *   The current number of stacked updates
+  */
 abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth: Int) {
 
   def size: Int
@@ -263,11 +275,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     * @return
     *   An [[IntSequence]] with the new value
     */
-  def insertAtPosition(
-    value: Int,
-    pos: Int,
-    fast: Boolean = false
-  ): IntSequence
+  def insertAtPosition(value: Int, pos: Int, fast: Boolean = false): IntSequence
 
   /** Removes the value at the specified position.
     *
@@ -320,15 +328,17 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     if (this.isEmpty) this
     else moveAfter(0, this.size - 1, -1, flip = true, fast)
 
-  /** Applies all [[oscar.cbls.algo.sequence.affineFunction.Pivot]] if the max number of Pivot is
-    * reached.
+  /** Regularizes the current [[IntSequence]] if the max number of pivot is reached
     *
-    * The max number of pivot is defined by a percentage of the sequence size.
+    * 3 steps are involved in the process :
+    *   - Commits all stacked updates (see [[StackedUpdateIntSequence]])
+    *   - Applies all pivots IF MAX PIVOTS IS REACHED (see [[ConcreteIntSequence]])
+    *   - Set the resulting [[ConcreteIntSequence]] token with this.token
     *
     * @param maxPivotPerValuePercent
     *   The maximum percent of pivot allowed
     * @param targetToken
-    *   TODO : remove this option, target token is always default value (this.token)
+    *   The identity of the resulting [[ConcreteIntSequence]]
     * @return
     *   A [[ConcreteIntSequence]] with or without pivot
     */
@@ -337,10 +347,15 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     targetToken: Token = this.token
   ): ConcreteIntSequence
 
-  /** Applies all [[oscar.cbls.algo.sequence.affineFunction.Pivot]]
+  /** Regularizes the current [[IntSequence]]
+    *
+    * 3 steps are involved in the process :
+    *   - Commits all stacked updates (see [[StackedUpdateIntSequence]])
+    *   - Applies all pivots (see [[ConcreteIntSequence]])
+    *   - Set the resulting [[ConcreteIntSequence]] token with this.token
     *
     * @param targetToken
-    *   TODO : remove this option, target token is always default value (this.token)
+    *   The identity of the resulting [[ConcreteIntSequence]]
     * @return
     *   A [[ConcreteIntSequence]] with no Pivot
     */
@@ -356,7 +371,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
   // Checks if the sequence is coherent
   def check(): Unit = {}
 
-  // Checks if two IntSequence shares the same Token
+  // Checks if two IntSequence shares the same Token namely the same identity
   def quickEquals(that: IntSequence): Boolean = that != null && this.token == that.token
 
   // Checks if two IntSequence shares the same Token or have the same elements
