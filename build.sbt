@@ -6,6 +6,9 @@ lazy val oscarCbls = (project in file("."))
   .enablePlugins(PackPlugin)
   .settings(
     licenses += ("LGPL-3.0", url("https://www.gnu.org/licenses/lgpl-3.0.en.html")),
+    // Auto map external jar when possible
+    Compile / doc / autoAPIMappings := true,
+    Compile / doc / scalacOptions ++= Seq("-groups"),
     Compile / scalacOptions ++= Seq(
       // Refer to https://docs.scala-lang.org/overviews/compiler-options/index.html for details
       "-deprecation",
