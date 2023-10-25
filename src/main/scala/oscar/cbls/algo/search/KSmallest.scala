@@ -13,9 +13,7 @@
 
 package oscar.cbls.algo.search
 
-import oscar.cbls.algo.heap.BinomialHeap
-import oscar.cbls.algo.quick.QList
-import oscar.cbls.util.StopWatch
+import oscar.cbls.algo.heap.BinaryHeap
 
 import scala.annotation.tailrec
 
@@ -33,7 +31,7 @@ object KSmallest {
    * @return
    */
   def getkSmallests(a:Array[Int],k:Int, key:Int => Long):List[Int] = {
-    val heap = new BinomialHeap[Int](indice => -key(a(indice)),2*k)
+    val heap = new BinaryHeap[Int](indice => -key(a(indice)),2*k)
     for(i <- a.indices){
       heap.insert(i)
       if(i >= k)heap.popFirst()
@@ -46,20 +44,20 @@ object KSmallest {
   def lazySort(a:Array[Int], key:Int=>Long):Iterable[Int] = new LazyQuicksort(a,key)
 
   def kFirst(k: Int, values:Iterable[Int], filter: Int => Boolean = _ => true): Iterable[Int] = {
-    def kFirstAccumulator(sortedNeighbors: Iterator[Int], k: Int): QList[Int] = {
+    def kFirstAccumulator(sortedNeighbors: Iterator[Int], k: Int): List[Int] = {
       require(k >= 0)
       if(k == 0 || !sortedNeighbors.hasNext){
         null
       }else{
         val neighbor = sortedNeighbors.next()
         if (filter(neighbor))
-          QList(neighbor,kFirstAccumulator(sortedNeighbors, k - 1))
+          neighbor +: kFirstAccumulator(sortedNeighbors, k - 1)
         else
           kFirstAccumulator(sortedNeighbors, k)
       }
     }
     //////////
-    QList.toIterable(kFirstAccumulator(values.iterator, k))
+    kFirstAccumulator(values.iterator, k)
   }
 }
 
@@ -89,23 +87,23 @@ class KSmallest(a:Array[Int],key:Int => Long = a => a){
   }
 }
 
-object testQuickSort extends App with StopWatch{
+object testQuickSort extends App{
 
   val n = 10000000
   val k = 500
   val randomValues = Array.tabulate(n)(_ => (math.random() * Int.MaxValue).toInt)
 
-  startWatch()
+  val time1 = System.currentTimeMillis()
   val s = KSmallest.getkSmallests(randomValues,k,x => x)
-  val watch1 = getWatch
+  val watch1 = System.currentTimeMillis() - time1
 
-  startWatch()
+  val time2 = System.currentTimeMillis()
   val qs = new LazyQuicksort(randomValues)
   val it = qs.iterator
   for(i <- 1 to k){
     val j = it.next()
   }
-  val watch2 = getWatch
+  val watch2 = System.currentTimeMillis() - time2
 
   println(s"nonLazy:$watch1")
   println(s"lazy:$watch2")
