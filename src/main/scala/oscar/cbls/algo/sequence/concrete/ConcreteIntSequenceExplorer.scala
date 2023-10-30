@@ -17,6 +17,34 @@ import oscar.cbls.algo.rb.RedBlackTreeMapExplorer
 import oscar.cbls.algo.sequence.IntSequenceExplorer
 import oscar.cbls.algo.sequence.affineFunction.Pivot
 
+/** A [[ConcreteIntSequence]] explorer
+  *
+  * The position is the current external position. So to get it's value, we need to know the
+  * internal position. To do that we use a [[Pivot]] explorer, giving the next and previous
+  * [[Pivot]] of the sequence.
+  *
+  * Reminder : A pivot starts at a particular external position and ends when another Pivot starts
+  * or at the end of the sequence
+  *
+  * @param sequence
+  *   The [[ConcreteIntSequence]]
+  * @param position
+  *   The current EXTERNAL position
+  * @param positionInRB
+  *   The current internal position
+  * @param currentPivotPosition
+  *   The [[Pivot]] impacting the current external position. If none exists [[None]]. Else [[Some]]
+  *   [[RedBlackTreeMapExplorer]] of [[Pivot]]
+  * @param pivotAbovePosition
+  *   The [[Pivot]] after the current one. If none exists [[None]]. Else [[Some]]
+  *   [[RedBlackTreeMapExplorer]] of [[Pivot]]
+  * @param limitAboveForCurrentPivot
+  *   The maximal external position before switching to the next [[Pivot]]
+  * @param limitBelowForCurrentPivot
+  *   The starting position of the current [[Pivot]]
+  * @param slopeIsPositive
+  *   Whether or not the current [[Pivot]] has a positive slope.
+  */
 class ConcreteIntSequenceExplorer(
   sequence: ConcreteIntSequence,
   override val position: Int,
@@ -86,10 +114,10 @@ class ConcreteIntSequenceExplorer(
   }
 
   override def prev: Option[IntSequenceExplorer] = {
+    // Already at start of sequence ==> None
     if (position == 0) None
+    // At start of current Pivot ==> move to the prev one
     else if (position == limitBelowForCurrentPivot) {
-      // change pivot
-
       val newPosition             = position - 1
       val newCurrentPivotPosition = currentPivotPosition.head.prev
       val newInternalPosition = newCurrentPivotPosition match {
@@ -109,8 +137,6 @@ class ConcreteIntSequenceExplorer(
         )(limitAboveForCurrentPivot = limitBelowForCurrentPivot - 1)
       )
     } else {
-      // do not change pivot
-      // println("not change pivot")
       Some(
         new ConcreteIntSequenceExplorer(
           sequence,
