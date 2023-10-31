@@ -26,6 +26,8 @@ import oscar.cbls.algo.sequence.stackedUpdate.{
 }
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer, Token}
 
+import scala.annotation.tailrec
+
 /** A concrete representation of an [[IntSequence]]
   *
   * The creation of a brand new Array of Int after each modification is very costly so the decision
@@ -62,9 +64,10 @@ class ConcreteIntSequence(
   token: Token = Token()
 ) extends IntSequence(token, 0) {
 
-  private val cacheSize                                            = 10
-  private var noneExplorerPosition: Int                            = Int.MinValue
-  private val intSequenceExplorerCache: Array[IntSequenceExplorer] = Array.ofDim(cacheSize)
+  private val cacheSize           = 10
+  private var cacheFirstEmptySlot = cacheSize - 1
+  private val intSequenceExplorerCache: Array[Option[IntSequenceExplorer]] =
+    Array.fill(cacheSize)(None)
 
   // TODO: replace internalPositionToValue by an immutable Array, or an immutable array + a small RBTree + size
 
@@ -94,11 +97,13 @@ class ConcreteIntSequence(
     case Some(p) => p.size
   }
 
+  // Returns the largest value of the sequence
   def largestValue: Option[Int] = valueToInternalPositions.biggest match {
     case None         => None
     case Some((k, _)) => Some(k)
   }
 
+  // Returns the smallest value of the sequence
   def smallestValue: Option[Int] = valueToInternalPositions.smallest match {
     case None         => None
     case Some((k, _)) => Some(k)
@@ -127,61 +132,54 @@ class ConcreteIntSequence(
 
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
 
+    // Here we want to keep the cache with the more interesting explorer values
+    // Usually we use several times the same explorer (to get the position/value/...)
+    // The idea is that the value at the end of the array are the most recently used one
+
+    // Moving the explorer at position to the end of the related array
     def putUsedExplorerAtBack(usedExplorerIndex: Int): Unit = {
-      // Moving the explorer and position to the end of the related array
-      var i        = usedExplorerIndex
-      val explorer = intSequenceExplorerCache(i)
-      while (i < cacheSize - 1) {
-        intSequenceExplorerCache(i) = intSequenceExplorerCache(i + 1)
-        i += 1
-      }
+      val explorer = intSequenceExplorerCache(usedExplorerIndex)
+      recursiveMoveDown(usedExplorerIndex)
       intSequenceExplorerCache(cacheSize - 1) = explorer
     }
 
-    def insertExplorerAtEnd(explorer: IntSequenceExplorer): Unit = {
-      var i = 0
-      while (i < cacheSize - 1) {
-        intSequenceExplorerCache(i) = intSequenceExplorerCache(i + 1)
-        i += 1
+    // Recursively moves the value at index+1 to index and move to next index
+    @tailrec
+    def recursiveMoveDown(index: Int): Unit = {
+      if (index < cacheSize - 1) {
+        intSequenceExplorerCache(index) = intSequenceExplorerCache(index + 1)
+        recursiveMoveDown(index + 1)
       }
-      intSequenceExplorerCache(i) = explorer
     }
 
-    def insertExplorerAtFreeSpace(explorer: IntSequenceExplorer): Unit = {
-      var i = cacheSize - 1
-      while (i > 0 && intSequenceExplorerCache(i) != null)
-        i -= 1
-      require(
-        intSequenceExplorerCache(i) == null,
-        "That position should be empty got " + intSequenceExplorerCache(i) +
-          "\nCurrent value : " + intSequenceExplorerCache.toList
-      )
-      intSequenceExplorerCache(i) = explorer
+    // Shifts every explorer to the left and adds the new one at the end of the array
+    def insertExplorerAtEnd(explorer: Option[IntSequenceExplorer]): Unit = {
+      recursiveMoveDown(0)
+      intSequenceExplorerCache(cacheSize - 1) = explorer
     }
 
-    if (noneExplorerPosition == position) return None
-    var index = 0
-    while (index < cacheSize) {
-      if (
-        intSequenceExplorerCache(index) != null &&
-        intSequenceExplorerCache(index).position == position
-      ) {
-        putUsedExplorerAtBack(index)
-        return Some(intSequenceExplorerCache(cacheSize - 1))
+    // Puts the explorer at the first free space (starting at the end).
+    def insertExplorerAtFreeSpace(explorer: Option[IntSequenceExplorer]): Unit = {
+      intSequenceExplorerCache(cacheFirstEmptySlot) = explorer
+      cacheFirstEmptySlot -= 1
+    }
+
+    for (index <- cacheFirstEmptySlot + 1 until cacheSize) {
+      intSequenceExplorerCache(index) match {
+        case Some(explorer) if explorer.position == position =>
+          putUsedExplorerAtBack(index)
+          return intSequenceExplorerCache(cacheSize - 1)
+        case _ =>
       }
-      index += 1
     }
 
     val optExplorer = computeExplorerAtPosition(position)
-    optExplorer match {
-      case None =>
-        noneExplorerPosition = position
-
-      case Some(explorer) =>
-        if (intSequenceExplorerCache(0) != null)
-          insertExplorerAtEnd(explorer) // The cache is full, we need to make space
-        else
-          insertExplorerAtFreeSpace(explorer) // The cache is not full, saving at free space
+    (optExplorer, cacheFirstEmptySlot < 0) match {
+      case (None, _) => // do nothing
+      case (Some(_), true) =>
+        insertExplorerAtEnd(optExplorer) // The cache is full, we need to make space
+      case (Some(_), false) =>
+        insertExplorerAtFreeSpace(optExplorer) // The cache is not full, saving at free space
     }
 
     optExplorer
@@ -210,29 +208,22 @@ class ConcreteIntSequence(
   }
 
   override def explorerAtAnyOccurrence(value: Int): Option[IntSequenceExplorer] = {
-    var index = 0
-    while (index < cacheSize) {
-      if (
-        intSequenceExplorerCache(index) != null &&
-        intSequenceExplorerCache(index).value == value
-      )
-        return Some(intSequenceExplorerCache(index))
-      else
-        index += 1
+    for (index <- cacheFirstEmptySlot + 1 until cacheSize) {
+      intSequenceExplorerCache(index) match {
+        case Some(explorer) if explorer.value == value => return intSequenceExplorerCache(index)
+        case _                                         =>
+      }
     }
     super.explorerAtAnyOccurrence(value)
   }
 
   override def positionOfAnyOccurrence(value: Int): Option[Int] = {
-    var index = 0
-    while (index < cacheSize) {
-      if (
-        intSequenceExplorerCache(index) != null &&
-        intSequenceExplorerCache(index).value == value
-      )
-        return Some(intSequenceExplorerCache(index).position)
-      else
-        index += 1
+
+    for (index <- cacheFirstEmptySlot + 1 until cacheSize) {
+      intSequenceExplorerCache(index) match {
+        case Some(explorer) if explorer.value == value => return Some(explorer.position)
+        case _ =>
+      }
     }
     super.positionOfAnyOccurrence(value)
   }
