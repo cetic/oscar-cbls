@@ -75,12 +75,13 @@ class ConcreteIntSequenceExplorer(
 
   override def next: Option[IntSequenceExplorer] = {
     if (position == sequence.size - 1) return None
+    // At end of current pivot ==> moving to next one
     if (position == limitAboveForCurrentPivot) {
-      // change pivot, we are also sure that there is a next, so use .head
-      val newPivotAbovePosition = pivotAbovePosition.head.next
+      // Always a pivot, at least identity
+      val newPivotAbovePosition = pivotAbovePosition.get.next
       val newPosition           = position + 1
       val newPositionInRBOpt =
-        sequence.internalPositionToValue.positionOf(pivotAbovePosition.head.value.f(newPosition))
+        sequence.internalPositionToValue.positionOf(pivotAbovePosition.get.value.f(newPosition))
       newPositionInRBOpt match {
         case None => None
         case Some(newPositionInRB) =>
@@ -95,38 +96,31 @@ class ConcreteIntSequenceExplorer(
           )
       }
     } else {
-      // do not change pivot
-
-      (if (slopeIsPositive) positionInRB.next else positionInRB.prev) match {
-        case None => None
-        case Some(newPositionInRB) =>
-          Some(
-            new ConcreteIntSequenceExplorer(
-              sequence,
-              position + 1,
-              newPositionInRB,
-              currentPivotPosition,
-              pivotAbovePosition
-            )(limitAboveForCurrentPivot, limitBelowForCurrentPivot, slopeIsPositive)
-          )
-      }
+      Some(
+        new ConcreteIntSequenceExplorer(
+          sequence,
+          position + 1,
+          if (slopeIsPositive) positionInRB.next.get else positionInRB.prev.get,
+          currentPivotPosition,
+          pivotAbovePosition
+        )(limitAboveForCurrentPivot, limitBelowForCurrentPivot, slopeIsPositive)
+      )
     }
   }
 
   override def prev: Option[IntSequenceExplorer] = {
     // Already at start of sequence ==> None
     if (position == 0) None
-    // At start of current Pivot ==> move to the prev one
+    // At start of current Pivot ==> moving to the previous one
     else if (position == limitBelowForCurrentPivot) {
       val newPosition             = position - 1
-      val newCurrentPivotPosition = currentPivotPosition.head.prev
+      val newCurrentPivotPosition = currentPivotPosition.get.prev
       val newInternalPosition = newCurrentPivotPosition match {
         case None            => newPosition
         case Some(position2) => position2.value.f(newPosition)
       }
       val newCurrentPositionInRB =
-        sequence.internalPositionToValue.positionOf(newInternalPosition).head
-      // println("change pivot newPosition:" + newPosition + " newCurrentPivotPosition:" + newCurrentPivotPosition + " oldPosition:" + currentPivotPosition)
+        sequence.internalPositionToValue.positionOf(newInternalPosition).get
       Some(
         new ConcreteIntSequenceExplorer(
           sequence,
@@ -141,7 +135,7 @@ class ConcreteIntSequenceExplorer(
         new ConcreteIntSequenceExplorer(
           sequence,
           position - 1,
-          if (slopeIsPositive) positionInRB.prev.head else positionInRB.next.head,
+          if (slopeIsPositive) positionInRB.prev.get else positionInRB.next.get,
           currentPivotPosition,
           pivotAbovePosition
         )(limitAboveForCurrentPivot, limitBelowForCurrentPivot, slopeIsPositive)
