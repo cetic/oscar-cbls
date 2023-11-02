@@ -17,38 +17,36 @@ import oscar.cbls.algo.heap.BinaryHeap
 
 import scala.annotation.tailrec
 
-/**
- * This class serves to compute the k-smallest values of a given vector.
- * this computation can be done either one-shot, or with gradually increasing k
- */
+/** This class serves to compute the k-smallest values of a given vector. this computation can be
+  * done either one-shot, or with gradually increasing k
+  */
 object KSmallest {
 
-  /**
-   * returns the k smallest elements, but they are not sorted between themselves.
-   * @param a
-   * @param k
-   * @param key
-   * @return
-   */
-  def getkSmallests(a:Array[Int],k:Int, key:Int => Long):List[Int] = {
-    val heap = new BinaryHeap[Int](indice => -key(a(indice)),2*k)
-    for(i <- a.indices){
+  /** returns the k smallest elements, but they are not sorted between themselves.
+    * @param a
+    * @param k
+    * @param key
+    * @return
+    */
+  def getkSmallests(a: Array[Int], k: Int, key: Int => Long): List[Int] = {
+    val heap = new BinaryHeap[Int](indice => -key(a(indice)), 2 * k)
+    for (i <- a.indices) {
       heap.insert(i)
-      if(i >= k)heap.popFirst()
+      if (i >= k) heap.popFirst()
     }
     heap.toList.map(a(_))
   }
 
-  def doSortGetLater(a:Array[Int],key:Int => Long):KSmallest = new KSmallest(a,key)
+  def doSortGetLater(a: Array[Int], key: Int => Long): KSmallest = new KSmallest(a, key)
 
-  def lazySort(a:Array[Int], key:Int=>Long):Iterable[Int] = new LazyQuicksort(a,key)
+  def lazySort(a: Array[Int], key: Int => Long): Iterable[Int] = new LazyQuicksort(a, key)
 
-  def kFirst(k: Int, values:Iterable[Int], filter: Int => Boolean = _ => true): Iterable[Int] = {
+  def kFirst(k: Int, values: Iterable[Int], filter: Int => Boolean = _ => true): Iterable[Int] = {
     def kFirstAccumulator(sortedNeighbors: Iterator[Int], k: Int): List[Int] = {
       require(k >= 0)
-      if(k == 0 || !sortedNeighbors.hasNext){
+      if (k == 0 || !sortedNeighbors.hasNext) {
         null
-      }else{
+      } else {
         val neighbor = sortedNeighbors.next()
         if (filter(neighbor))
           neighbor +: kFirstAccumulator(sortedNeighbors, k - 1)
@@ -61,21 +59,21 @@ object KSmallest {
   }
 }
 
-/**
-  *
-  * @param a array of values
-  * @param key value from a to key
+/** @param a
+  *   array of values
+  * @param key
+  *   value from a to key
   */
-class KSmallest(a:Array[Int],key:Int => Long = a => a){
-  //zipWithIndex puts index in second position of the couple
-  val sortedPositions:List[Int] = a.toList.zipWithIndex.sortBy(couple => key(couple._1)).map(_._2)
+class KSmallest(a: Array[Int], key: Int => Long = a => a) {
+  // zipWithIndex puts index in second position of the couple
+  val sortedPositions: List[Int] = a.toList.zipWithIndex.sortBy(couple => key(couple._1)).map(_._2)
 
-  def apply(k:Int):List[Int] = sortedPositions.take(k)
+  def apply(k: Int): List[Int] = sortedPositions.take(k)
 
-  def apply(k:Int,filter:Int=>Boolean): List[Int] = {
+  def apply(k: Int, filter: Int => Boolean): List[Int] = {
     def kSmallestAcc(sorted: List[Int], k: Int): List[Int] = {
       require(k >= 0)
-      if(k == 0) return Nil
+      if (k == 0) return Nil
       sorted match {
         case Nil => Nil
         case h :: t =>
@@ -87,20 +85,20 @@ class KSmallest(a:Array[Int],key:Int => Long = a => a){
   }
 }
 
-object testQuickSort extends App{
+object testQuickSort extends App {
 
-  val n = 10000000
-  val k = 500
+  val n            = 10000000
+  val k            = 500
   val randomValues = Array.tabulate(n)(_ => (math.random() * Int.MaxValue).toInt)
 
-  val time1 = System.currentTimeMillis()
-  val s = KSmallest.getkSmallests(randomValues,k,x => x)
+  val time1  = System.currentTimeMillis()
+  val s      = KSmallest.getkSmallests(randomValues, k, x => x)
   val watch1 = System.currentTimeMillis() - time1
 
   val time2 = System.currentTimeMillis()
-  val qs = new LazyQuicksort(randomValues)
-  val it = qs.iterator
-  for(i <- 1 to k){
+  val qs    = new LazyQuicksort(randomValues)
+  val it    = qs.iterator
+  for (i <- 1 to k) {
     val j = it.next()
   }
   val watch2 = System.currentTimeMillis() - time2
@@ -109,27 +107,28 @@ object testQuickSort extends App{
   println(s"lazy:$watch2")
 }
 
-/**
- * this implementation will perform a lazy sort.
- * it will sort on demand, as required by the iterator, or by an explicit call to sortUntil
- * @param array an array containing the values to sort. the array will be modified by this procedure, to clone it if you need it somewhere else!
- */
-class LazyQuicksort(val array:Array[Int], key:Int => Long = a => a) extends Iterable[Int] {
+/** this implementation will perform a lazy sort. it will sort on demand, as required by the
+  * iterator, or by an explicit call to sortUntil
+  * @param array
+  *   an array containing the values to sort. the array will be modified by this procedure, to clone
+  *   it if you need it somewhere else!
+  */
+class LazyQuicksort(val array: Array[Int], key: Int => Long = a => a) extends Iterable[Int] {
 
-  class QList(val left:Int, val right:Int, val tail:QList)
-  private[this] var toDo: QList = new QList(0, array.length - 1,null)
+  class QList(val left: Int, val right: Int, val tail: QList)
+  private[this] var toDo: QList = new QList(0, array.length - 1, null)
 
   private[this] var lastSortedPosition = -1
   def sortUntil(k: Int): Unit = {
-    if(k <= lastSortedPosition) return
+    if (k <= lastSortedPosition) return
     while (true) {
       if (toDo == null) return
       val l = toDo.left
-      if(l <= k){
+      if (l <= k) {
         val r = toDo.right
         toDo = toDo.tail
         sort1(l, r)
-      }else {
+      } else {
         lastSortedPosition = l - 1
         return
       }
@@ -140,12 +139,12 @@ class LazyQuicksort(val array:Array[Int], key:Int => Long = a => a) extends Iter
   @tailrec
   private[this] def sort1(l: Int, r: Int): Unit = {
     val pivot: Long = key(array((l + r) / 2))
-    var i = l
-    var j = r
+    var i           = l
+    var j           = r
     while (i <= j) {
       while (key(array(i)) < pivot) i += 1
       while (key(array(j)) > pivot) j -= 1
-      //we know that array(i) >= pivot && array(j) <= pivot
+      // we know that array(i) >= pivot && array(j) <= pivot
       if (i <= j) {
         val t = array(i)
         array(i) = array(j)
@@ -154,20 +153,22 @@ class LazyQuicksort(val array:Array[Int], key:Int => Long = a => a) extends Iter
         j -= 1
       }
     }
-    if (i < r) toDo = new QList(i, r,toDo)
+    if (i < r) toDo = new QList(i, r, toDo)
     if (l < j) sort1(l, j)
-    else lastSortedPosition = j //this is an incomplete update, but this is an approximate value, so we do not care too much.
+    else
+      lastSortedPosition =
+        j // this is an incomplete update, but this is an approximate value, so we do not care too much.
   }
 
-  def apply(nThSmallestValue:Int):Int = {
+  def apply(nThSmallestValue: Int): Int = {
     sortUntil(nThSmallestValue)
     array(nThSmallestValue)
   }
 
   override def iterator: Iterator[Int] = new LazyQuickSortIterator(this)
 
-  class LazyQuickSortIterator(l:LazyQuicksort) extends Iterator[Int]{
-    var nextPos:Int = 0
+  class LazyQuickSortIterator(l: LazyQuicksort) extends Iterator[Int] {
+    var nextPos: Int       = 0
     override val size: Int = l.array.length
 
     override def hasNext: Boolean = {
