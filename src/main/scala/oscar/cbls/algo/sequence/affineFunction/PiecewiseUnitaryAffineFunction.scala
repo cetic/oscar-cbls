@@ -200,8 +200,8 @@ class PiecewiseUnitaryAffineFunction(
     }
   }
 
-  /** Applies the additional [[UnitaryAffineFunction]] in the defined before existing bijection
-    * interval.
+  /** Applies the additional [[UnitaryAffineFunction]] in the defined interval before existing
+    * bijection.
     *
     * @param fromIncluded
     *   Starting position of the interval
