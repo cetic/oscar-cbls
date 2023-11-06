@@ -15,38 +15,45 @@ package oscar.cbls.algo.sequence.stackedUpdate
 
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 
-class InsertedIntSequence(seq: IntSequence, val insertedValue: Int, val pos: Int, depth: Int)
+/** Quick and stackable update of an [[IntSequence]] applying an insertion move on an existing
+  * sequence.
+  *
+  * @param intSequence
+  *   The original sequence as a [[IntSequence]]
+  * @param insertedValue
+  *   The value to insert as an [[Int]]
+  * @param pos
+  *   The insertion position as an [[Int]]
+  * @param depth
+  *   The depth of the current update
+  */
+class InsertedIntSequence(intSequence: IntSequence, val insertedValue: Int, val pos: Int, depth: Int)
     extends StackedUpdateIntSequence(depth) {
-  override val size: Int = seq.size + 1
+  override val size: Int = intSequence.size + 1
 
   override def nbOccurrence(value: Int): Int =
-    if (value == this.insertedValue) seq.nbOccurrence(value) + 1 else seq.nbOccurrence(value)
+    if (value == this.insertedValue) intSequence.nbOccurrence(value) + 1 else intSequence.nbOccurrence(value)
 
   override def unorderedContentNoDuplicateWithNBOccurrences: List[(Int, Int)] =
     unorderedContentNoDuplicate.map(value =>
-      (value, if (value == insertedValue) seq.nbOccurrence(value) + 1 else seq.nbOccurrence(value))
+      (value, if (value == insertedValue) intSequence.nbOccurrence(value) + 1 else intSequence.nbOccurrence(value))
     )
 
   override def descriptorString: String =
-    s"${seq.descriptorString}.inserted(val:$insertedValue pos:$pos)"
+    s"${intSequence.descriptorString}.inserted(val:$insertedValue pos:$pos)"
 
-  override def unorderedContentNoDuplicate: List[Int] = if (seq.nbOccurrence(insertedValue) == 0)
-    insertedValue :: seq.unorderedContentNoDuplicate
-  else seq.unorderedContentNoDuplicate
+  override def unorderedContentNoDuplicate: List[Int] =
+    if (intSequence.nbOccurrence(insertedValue) == 0) insertedValue :: intSequence.unorderedContentNoDuplicate
+    else intSequence.unorderedContentNoDuplicate
 
   override def positionsOfValue(value: Int): List[Int] = {
-    var positionsBefore     = seq.positionsOfValue(value)
-    var toReturn: List[Int] = null
-    while (positionsBefore != null) {
-      val oldPos = positionsBefore.head
-      positionsBefore = positionsBefore.tail
-      val newPos = oldPos2NewPos(oldPos)
-      toReturn = List(newPos) ::: toReturn
-    }
-    if (value == insertedValue) List(pos) ::: toReturn
-    else toReturn
+    val positionsBefore = intSequence.positionsOfValue(value)
+    val positionsAfter  = positionsBefore.map(oldPos2NewPos)
+    if (value == insertedValue) List(pos) ::: positionsAfter
+    else positionsAfter
   }
 
+  // Private fast method to to map an old position to it's new value
   @inline
   private def oldPos2NewPos(oldPOs: Int): Int = {
     if (oldPOs < pos) oldPOs else oldPOs + 1
@@ -54,42 +61,45 @@ class InsertedIntSequence(seq: IntSequence, val insertedValue: Int, val pos: Int
 
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
     if (position == this.pos) {
+      // Explorer at the inserted point position
       if (position == 0) {
-        Some(new InsertedIntSequenceExplorer(this, position, seq.explorerAtPosition(0), true, true))
+        // Inserted point position is the start of the sequence
+        Some(new InsertedIntSequenceExplorer(this, position, intSequence.explorerAtPosition(0), true, true))
       } else {
+        // Inserted point position is later in the sequence
         Some(
           new InsertedIntSequenceExplorer(
             this,
             position,
-            seq.explorerAtPosition(position - 1),
+            intSequence.explorerAtPosition(position - 1),
             true,
             false
           )
         )
       }
     } else if (position < this.pos) {
-      seq.explorerAtPosition(position) match {
+      intSequence.explorerAtPosition(position) match {
         case None    => None
         case Some(p) => Some(new InsertedIntSequenceExplorer(this, position, Some(p), false, false))
       }
     } else {
-      seq.explorerAtPosition(position - 1) match {
+      intSequence.explorerAtPosition(position - 1) match {
         case None    => None
         case Some(p) => Some(new InsertedIntSequenceExplorer(this, position, Some(p), false, false))
       }
     }
   }
 
-  override def contains(value: Int): Boolean = value == this.insertedValue || seq.contains(value)
+  override def contains(value: Int): Boolean = value == this.insertedValue || intSequence.contains(value)
 
   override def commitPendingMoves: IntSequence =
-    seq.commitPendingMoves.insertAtPosition(insertedValue, pos, fast = false)
+    intSequence.commitPendingMoves.insertAtPosition(insertedValue, pos, fast = false)
 
   override def isEmpty: Boolean = false
 
   override def valueAtPosition(position: Int): Option[Int] = {
     if (position == pos) Some(insertedValue)
-    else if (position < pos) seq.valueAtPosition(position)
-    else seq.valueAtPosition(position - 1)
+    else if (position < pos) intSequence.valueAtPosition(position)
+    else intSequence.valueAtPosition(position - 1)
   }
 }

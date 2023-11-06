@@ -335,9 +335,10 @@ class ConcreteIntSequence(
   }
 
   override def delete(pos: Int, fast: Boolean): IntSequence = {
-    // println(this + ".delete(pos:" + pos + ")")
-    require(pos < size, s"deleting past the end of the sequence (size:$size pos:$pos)")
-    require(pos >= 0, s"deleting at negative pos:$pos")
+    require(
+      pos >= 0 && pos < size,
+      s"Remove position must be in [0, sizeOfSequence=$size [ got $pos"
+    )
 
     if (fast) return new RemovedIntSequence(this, pos, 1)
 
@@ -431,24 +432,25 @@ class ConcreteIntSequence(
   ): IntSequence = {
     require(
       startPositionIncluded >= 0 && startPositionIncluded < size,
-      "startPositionIncluded should be in [0,size[ in UniqueIntSequence.moveAfter"
+      s"StartPositionIncluded should be in [0,sizeOfSequence=$size[ got $startPositionIncluded"
     )
     require(
       endPositionIncluded >= 0 && endPositionIncluded < size,
-      s"endPositionIncluded(=$endPositionIncluded) should be in [0,size(=$size)[ in UniqueIntSequence.moveAfter"
+      s"EndPositionIncluded should be in [0,sizeOfSequence=$size[ got $endPositionIncluded"
     )
     require(
       moveAfterPosition >= -1 && moveAfterPosition < size,
-      s"moveAfterPosition=$moveAfterPosition should be in [-1,size=$size[ in UniqueIntSequence.moveAfter"
+      s"MoveAfterPosition should be in [-1,sizeOfSequence=$size[ got $moveAfterPosition"
     )
 
     require(
       moveAfterPosition < startPositionIncluded || moveAfterPosition > endPositionIncluded,
-      s"moveAfterPosition=$moveAfterPosition cannot be between startPositionIncluded=$startPositionIncluded and endPositionIncluded=$endPositionIncluded"
+      s"MoveAfterPosition cannot be between startPositionIncluded and endPositionIncluded. " +
+        s"Got $moveAfterPosition (move), $startPositionIncluded (start) $endPositionIncluded (end)"
     )
     require(
       startPositionIncluded <= endPositionIncluded,
-      s"startPositionIncluded=$startPositionIncluded should be <= endPositionIncluded=$endPositionIncluded"
+      s"StartPositionIncluded must be <= endPositionIncluded. Got $startPositionIncluded <= $endPositionIncluded"
     )
 
     if (fast)

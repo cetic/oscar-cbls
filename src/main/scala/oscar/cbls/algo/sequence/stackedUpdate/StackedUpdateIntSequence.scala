@@ -18,9 +18,9 @@ import oscar.cbls.algo.sequence.concrete.ConcreteIntSequence
 
 /** Quick and stackable update of an [[IntSequence]]
   *
- * For performance purpose, it's easier to create several stackable updates and commit them times to times.
- * That's the purpose of the [[StackedUpdateIntSequence]]. That way you can easi
- *
+  * For performance purpose, it's easier to create several stackable updates and commit them times
+  * to times. That's the purpose of the [[StackedUpdateIntSequence]]. That way you can easi
+  *
   * @param depth
   *   The depth of the current update
   * @param maxDepth
@@ -30,7 +30,7 @@ import oscar.cbls.algo.sequence.concrete.ConcreteIntSequence
 abstract class StackedUpdateIntSequence(depth: Int, maxDepth: Int = 20)
     extends IntSequence(depth = depth) {
   override def delete(pos: Int, fast: Boolean): IntSequence = {
-    require(pos >= 0 && pos < size, s"pos=$pos should be in [0, size=$size [")
+    require(pos >= 0 && pos < size, s"Remove position must be in [0, size=$size [. Got $pos")
     if (depth >= maxDepth) {
       new RemovedIntSequence(this, pos, depth + 1).commitPendingMoves
     } else {
@@ -47,15 +47,25 @@ abstract class StackedUpdateIntSequence(depth: Int, maxDepth: Int = 20)
   ): IntSequence = {
     require(
       startPositionIncluded >= 0 && startPositionIncluded < size,
-      s"startPositionIncluded=$startPositionIncluded should be in [0, size=$size ["
+      s"StartPositionIncluded should be in [0,sizeOfSequence=$size[. Got $startPositionIncluded"
     )
     require(
-      endPositionIncluded >= startPositionIncluded && endPositionIncluded < size,
-      s"endPositionIncluded=$endPositionIncluded should be in [$startPositionIncluded , size=$size ["
+      endPositionIncluded >= 0 && endPositionIncluded < size,
+      s"EndPositionIncluded should be in [0,sizeOfSequence=$size[. Got $endPositionIncluded"
     )
     require(
       moveAfterPosition >= -1 && moveAfterPosition < size,
-      s"moveAfterPosition=$moveAfterPosition should be in [-1, size=$size ["
+      s"MoveAfterPosition should be in [-1,sizeOfSequence=$size[. Got $moveAfterPosition"
+    )
+
+    require(
+      moveAfterPosition < startPositionIncluded || moveAfterPosition > endPositionIncluded,
+      s"MoveAfterPosition cannot be between startPositionIncluded and endPositionIncluded. " +
+        s"Got $moveAfterPosition (move), $startPositionIncluded (start) $endPositionIncluded (end)"
+    )
+    require(
+      startPositionIncluded <= endPositionIncluded,
+      s"StartPositionIncluded must be <= endPositionIncluded. Got $startPositionIncluded <= $endPositionIncluded"
     )
     if (depth >= maxDepth) {
       new MovedIntSequence(
@@ -79,7 +89,10 @@ abstract class StackedUpdateIntSequence(depth: Int, maxDepth: Int = 20)
   }
 
   override def insertAtPosition(value: Int, pos: Int, fast: Boolean): IntSequence = {
-    require(pos >= 0 && pos <= size, s"pos=$pos should be in [0,size= $size ]")
+    require(
+      pos >= 0 && pos <= size,
+      s"Insertion position must be in [0,sizeOfSequence=$size]. Got $pos"
+    )
     if (depth >= maxDepth) {
       new InsertedIntSequence(this, value: Int, pos: Int, depth + 1).commitPendingMoves
     } else {

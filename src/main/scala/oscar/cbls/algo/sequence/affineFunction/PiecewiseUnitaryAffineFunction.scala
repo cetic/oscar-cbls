@@ -25,7 +25,7 @@ object PiecewiseUnitaryAffineFunction {
   /** Returns an empty [[PiecewiseUnitaryAffineFunction]] */
   def identity = new PiecewiseUnitaryAffineFunction()
 
-  /** Create a [[PiecewiseUnitaryAffineFunction]] based on a existing list of [[Pivot]] */
+  /** Creates a [[PiecewiseUnitaryAffineFunction]] based on a existing list of [[Pivot]] */
   def createFromPivots(pivots: Iterable[Pivot]): PiecewiseUnitaryAffineFunction = {
     var acc     = RedBlackTreeMap.empty[Pivot]
     val pivotIt = pivots.iterator

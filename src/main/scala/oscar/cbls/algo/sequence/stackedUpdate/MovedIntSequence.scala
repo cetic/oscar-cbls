@@ -13,94 +13,100 @@
 
 package oscar.cbls.algo.sequence.stackedUpdate
 
-import oscar.cbls.algo.rb.RedBlackTreeMapExplorer
 import oscar.cbls.algo.sequence._
-import oscar.cbls.algo.sequence.affineFunction.{
-  PiecewiseUnitaryAffineFunction,
-  Pivot,
-  UnitaryAffineFunction
-}
+import oscar.cbls.algo.sequence.affineFunction._
 
+/** Companion object of [[MovedIntSequence]] **/
 object MovedIntSequence {
 
+  /** Creates the bijections corresponding to the movement passed as parameters.
+    *
+    * @param fromIncluded
+    *   The first (included) position of the moved segment as an [[Int]]
+    * @param toIncluded
+    *   The last (included) position of the moved segment as an [[Int]]
+    * @param moveAfter
+    *   The position after which the segment is moved as an [[Int]]
+    * @param flip
+    *   Whether or not the segment is flipped as a [[Boolean]]
+    * @return
+    *   The bijections as a [[PiecewiseUnitaryAffineFunction]]
+    */
   @inline
   def bijectionForMove(
-    startPositionIncluded: Int,
-    endPositionIncluded: Int,
-    moveAfterPosition: Int,
+    fromIncluded: Int,
+    toIncluded: Int,
+    moveAfter: Int,
     flip: Boolean
   ): PiecewiseUnitaryAffineFunction = {
-    if (moveAfterPosition + 1 == startPositionIncluded) {
-      // not moving
-      if (flip) {
-        // just flipping
-        if (startPositionIncluded == 0) {
-          PiecewiseUnitaryAffineFunction.createFromPivots(
-            List(
-              new Pivot(0, new UnitaryAffineFunction(endPositionIncluded, true)),
-              new Pivot(endPositionIncluded + 1, UnitaryAffineFunction.identity)
-            )
-          )
-        } else {
-          PiecewiseUnitaryAffineFunction.createFromPivots(
-            List(
-              new Pivot(0, UnitaryAffineFunction.identity),
-              new Pivot(
-                startPositionIncluded,
-                new UnitaryAffineFunction(endPositionIncluded + startPositionIncluded, true)
-              ),
-              new Pivot(endPositionIncluded + 1, UnitaryAffineFunction.identity)
-            )
-          )
-        }
-
-      } else {
-        // nop
-        PiecewiseUnitaryAffineFunction.identity
-      }
-    } else {
-      if (moveAfterPosition > startPositionIncluded) {
-        // move upwards
+    val moveType = {
+      if (moveAfter + 1 == fromIncluded) "notMoving"
+      else if (fromIncluded < moveAfter) "forward"
+      else "backward"
+    }
+    (moveType, flip) match {
+      case ("notMoving", false) => PiecewiseUnitaryAffineFunction.identity
+      case ("notMoving", true) =>
         PiecewiseUnitaryAffineFunction.createFromPivots(
           List(
+            // If startPositionIncluded == 0 this identity function will be override.
+            new Pivot(0, UnitaryAffineFunction.identity),
+            new Pivot(fromIncluded, UnitaryAffineFunction(toIncluded + fromIncluded, true)),
+            new Pivot(toIncluded + 1, UnitaryAffineFunction.identity)
+          )
+        )
+      case ("forward", _) =>
+        PiecewiseUnitaryAffineFunction.createFromPivots(
+          List(
+            new Pivot(fromIncluded, UnitaryAffineFunction(toIncluded + 1 - fromIncluded, false)),
             new Pivot(
-              startPositionIncluded,
-              UnitaryAffineFunction(endPositionIncluded + 1 - startPositionIncluded, false)
-            ),
-            new Pivot(
-              moveAfterPosition + startPositionIncluded - endPositionIncluded,
+              moveAfter + fromIncluded - toIncluded,
               UnitaryAffineFunction(
-                if (flip) startPositionIncluded + moveAfterPosition
-                else endPositionIncluded - moveAfterPosition,
+                if (flip) fromIncluded + moveAfter
+                else toIncluded - moveAfter,
                 flip
               )
             ),
-            new Pivot(moveAfterPosition + 1, UnitaryAffineFunction.identity)
+            new Pivot(moveAfter + 1, UnitaryAffineFunction.identity)
           )
         )
-      } else {
-        // move downwards
+      case ("backward", _) =>
         PiecewiseUnitaryAffineFunction.createFromPivots(
           List(
             new Pivot(
-              moveAfterPosition + 1,
+              moveAfter + 1,
               UnitaryAffineFunction(
-                if (flip) endPositionIncluded + moveAfterPosition + 1
-                else startPositionIncluded - moveAfterPosition - 1,
+                if (flip) toIncluded + moveAfter + 1
+                else fromIncluded - moveAfter - 1,
                 flip
               )
             ),
             new Pivot(
-              moveAfterPosition + endPositionIncluded - startPositionIncluded + 2,
-              UnitaryAffineFunction(startPositionIncluded - endPositionIncluded - 1, false)
+              moveAfter + toIncluded - fromIncluded + 2,
+              UnitaryAffineFunction(fromIncluded - toIncluded - 1, false)
             ),
-            new Pivot(endPositionIncluded + 1, UnitaryAffineFunction.identity)
+            new Pivot(toIncluded + 1, UnitaryAffineFunction.identity)
           )
         )
-      }
     }
   }
 
+  /** Returns the new position of a specified position considering the movement applied to the
+    * sequence.
+    *
+    * @param oldPos
+    *   The old position for which we want to know the new one as an [[Int]]
+    * @param fromIncluded
+    *   The first (included) position of the moved segment as an [[Int]]
+    * @param toIncluded
+    *   The last (included) position of the moved segment as an [[Int]]
+    * @param after
+    *   The position after which the segment was moved as an [[Int]]
+    * @param flip
+    *   Whether or not the segment was flipped as a [[Boolean]]
+    * @return
+    *   The new position of oldPos as an [[Int]]
+    */
   @inline
   def oldPosToNewPos(
     oldPos: Int,
@@ -109,48 +115,62 @@ object MovedIntSequence {
     after: Int,
     flip: Boolean
   ): Int = {
-    // println("oldPosToNewPos(oldPos:"  + oldPos + " fromIncluded:" + fromIncluded + " toIncluded:" + toIncluded + " after:" + after +" flip:" + flip + ")")
+    val moveType = {
+      if (after + 1 == fromIncluded) "notMoving"
+      else if (fromIncluded < after) "forward"
+      else "backward"
+    }
 
-    if (after + 1 == fromIncluded && !flip) oldPos
-    else if (after + 1 == fromIncluded && flip) {
-      if (oldPos < fromIncluded || oldPos > toIncluded) oldPos
-      else fromIncluded + toIncluded - oldPos
-    } else if (fromIncluded < after) {
-      // println("move upwards")
-      if (oldPos < fromIncluded || oldPos > after) oldPos
-      else if (oldPos <= toIncluded) {
-        // println("in the moved segment")
-        if (flip) {
-          fromIncluded - oldPos + after
-        } else {
-          oldPos + after - toIncluded
-        }
+    // Inside == within the moved segment
+    // between == Between after and moved segment
+    // Outside == outside the moved segment and not between after and moved segment
+    val oldPosRelativePosition = {
+      if (oldPos >= fromIncluded && oldPos <= toIncluded) "inside"
+      else if (after < fromIncluded) {
+        if (oldPos <= after || oldPos > toIncluded) "outside"
+        else "between"
       } else {
-        // println("not in the moved segment")
-        oldPos - toIncluded + fromIncluded - 1
+        if (oldPos > after || oldPos < fromIncluded) "outside"
+        else "between"
       }
-    } else {
-      // println("move downwards")
-      if (oldPos <= after || oldPos > toIncluded) oldPos
-      else if (oldPos < fromIncluded) {
-        // println("not in the moved segment")
-        oldPos + toIncluded - fromIncluded + 1
-      } else {
-        // println("in the moved segment")
-        if (flip) {
-          after + 1 + toIncluded - oldPos
-        } else {
-          oldPos + after - fromIncluded + 1
-        }
-      }
+    }
+
+    (moveType, oldPosRelativePosition, flip) match {
+      case ("notMoving", _, false)       => oldPos
+      case (_, "outside", _)             => oldPos
+      case ("notMoving", "inside", true) => -oldPos + fromIncluded + toIncluded
+      case ("forward", "inside", true)   => -oldPos + fromIncluded + after
+      case ("forward", "inside", false)  => oldPos - toIncluded + after
+      case ("forward", "between", _)     => oldPos + fromIncluded - toIncluded - 1
+      case ("backward", "inside", true)  => -oldPos + toIncluded + after + 1
+      case ("backward", "inside", false) => oldPos - fromIncluded + after + 1
+      case ("backward", "between", _)    => oldPos - fromIncluded + toIncluded + 1
     }
   }
 }
 
+/** Quick and stackable update of an [[IntSequence]] applying a movement on the existing node in the
+  * sequence.
+  *
+  * Basically it's the move of a defined segment after another position. The segment can be flipped.
+  *
+  * @param seq
+  *   The original sequence as a [[IntSequence]]
+  * @param fromPositionIncluded
+  *   The first (included) position of the moved segment as an [[Int]]
+  * @param toPositionIncluded
+  *   The last (included) position of the moved segment as an [[Int]]
+  * @param moveAfterPosition
+  *   The position after which the segment is moved as an [[Int]]
+  * @param flip
+  *   Whether or not the segment is flipped as an [[Int]]
+  * @param depth
+  *   The depth of the current update
+  */
 class MovedIntSequence(
   val seq: IntSequence,
-  val startPositionIncluded: Int,
-  val endPositionIncluded: Int,
+  val fromPositionIncluded: Int,
+  val toPositionIncluded: Int,
   val moveAfterPosition: Int,
   val flip: Boolean,
   depth: Int
@@ -164,11 +184,12 @@ class MovedIntSequence(
     seq.unorderedContentNoDuplicateWithNBOccurrences
 
   override def descriptorString: String =
-    s"${seq.descriptorString}.moved(startPos:$startPositionIncluded endPos:$endPositionIncluded targetPos:$moveAfterPosition flip:$flip)"
+    s"${seq.descriptorString}.moved(startPos:$fromPositionIncluded endPos:$toPositionIncluded targetPos:$moveAfterPosition flip:$flip)"
 
-  val localBijection = MovedIntSequence.bijectionForMove(
-    startPositionIncluded,
-    endPositionIncluded,
+  // The PiecewiseUnitaryAffineFunction corresponding to this move
+  private val localBijection = MovedIntSequence.bijectionForMove(
+    fromPositionIncluded,
+    toPositionIncluded,
     moveAfterPosition,
     flip
   )
@@ -178,8 +199,8 @@ class MovedIntSequence(
   override def nbOccurrence(value: Int): Int = seq.nbOccurrence(value)
 
   override def commitPendingMoves: IntSequence = seq.commitPendingMoves.moveAfter(
-    startPositionIncluded,
-    endPositionIncluded,
+    fromPositionIncluded,
+    toPositionIncluded,
     moveAfterPosition,
     flip,
     fast = false
@@ -205,17 +226,18 @@ class MovedIntSequence(
     }
   }
 
-  def oldPosToNewPos(oldPos: Int): Int = {
+  // Returns the new position of the specified old position
+  private def oldPosToNewPos(oldPos: Int): Int = {
     val tmp = MovedIntSequence.oldPosToNewPos(
       oldPos,
-      startPositionIncluded,
-      endPositionIncluded,
+      fromPositionIncluded,
+      toPositionIncluded,
       moveAfterPosition,
       flip
     )
     assert(
       tmp == localBijection.backward(oldPos),
-      "oldPosToNewPos got" + tmp + " expected " + localBijection.backward(oldPos)
+      "oldPosToNewPos method got " + tmp + ". Should be : " + localBijection.backward(oldPos)
     )
     tmp
   }

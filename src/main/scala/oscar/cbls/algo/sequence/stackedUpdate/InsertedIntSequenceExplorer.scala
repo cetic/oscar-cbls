@@ -15,73 +15,93 @@ package oscar.cbls.algo.sequence.stackedUpdate
 
 import oscar.cbls.algo.sequence.IntSequenceExplorer
 
+/** A stacked explorer dedicated for [[InsertedIntSequence]].
+  *
+  * It's used to explore an [[InsertedIntSequence]]. It uses the original explorer, except when the
+  * explorer is at the position of the inserted point. Reaching this particular point, the original
+  * explorer doesn't move so that we can still reach next/prev in the original sequence.
+  *
+  * @param seq
+  *   The [[InsertedIntSequence]]
+  * @param position
+  *   The current position in the sequence
+  * @param explorerInOriginalSequence
+  *   The original explorer, that is without the inserted point
+  * @param atInsertedValue
+  *   Whether or not the explorer is at the inserted value
+  * @param originalExplorerIsAtInsertionPosition
+  *   Whether or not the original explorer is at insertion position
+  */
 class InsertedIntSequenceExplorer(
-  seq: InsertedIntSequence,
-  val position: Int,
-  explorerInOriginalSeq: Option[IntSequenceExplorer],
-  atInsertedValue: Boolean,
-  originalExplorerIsAbove: Boolean
+                                   seq: InsertedIntSequence,
+                                   val position: Int,
+                                   explorerInOriginalSequence: Option[IntSequenceExplorer],
+                                   atInsertedValue: Boolean,
+                                   originalExplorerIsAtInsertionPosition: Boolean
 ) extends IntSequenceExplorer {
   override val value: Int =
-    if (atInsertedValue) seq.insertedValue else explorerInOriginalSeq.head.value
+    if (atInsertedValue) seq.insertedValue else explorerInOriginalSequence.head.value
 
   override def next: Option[IntSequenceExplorer] = {
+    val nextPosition = position+1
     if (atInsertedValue) {
       // we are leaving the inserted position
-      explorerInOriginalSeq match {
+      explorerInOriginalSequence match {
         case None => None
         case Some(p) =>
-          if (originalExplorerIsAbove)
+          if (originalExplorerIsAtInsertionPosition) {
+            // Original explorer already at position+1
             Some(
               new InsertedIntSequenceExplorer(
                 seq,
-                position + 1,
-                explorerInOriginalSeq,
+                nextPosition,
+                explorerInOriginalSequence,
                 atInsertedValue = false,
-                originalExplorerIsAbove = false
+                originalExplorerIsAtInsertionPosition = false
               )
             )
-          else {
+          } else {
+            // Need to get next original explorer
             p.next match {
               case None => None
-              case Some(next1) =>
+              case nextOriginalExplorer =>
                 Some(
                   new InsertedIntSequenceExplorer(
                     seq,
-                    position + 1,
-                    Some(next1),
+                    nextPosition,
+                    nextOriginalExplorer,
                     atInsertedValue = false,
-                    originalExplorerIsAbove = false
+                    originalExplorerIsAtInsertionPosition = false
                   )
                 )
             }
           }
       }
     } else {
-      val nextPosition = position + 1
       if (nextPosition == seq.pos) {
-        // we are getting into the inserted position
+        // Getting into the inserted position
+        // Original explorer doesn't change
         Some(
           new InsertedIntSequenceExplorer(
             seq,
-            position + 1,
-            explorerInOriginalSeq,
+            nextPosition,
+            explorerInOriginalSequence,
             atInsertedValue = true,
-            originalExplorerIsAbove = false
+            originalExplorerIsAtInsertionPosition = false
           )
         )
       } else {
         // nothing special
-        explorerInOriginalSeq.head.next match {
+        explorerInOriginalSequence.head.next match {
           case None => None
-          case Some(next) =>
+          case nextOriginalExplorer =>
             Some(
               new InsertedIntSequenceExplorer(
                 seq,
-                position + 1,
-                Some(next),
+                nextPosition,
+                nextOriginalExplorer,
                 atInsertedValue = false,
-                originalExplorerIsAbove = false
+                originalExplorerIsAtInsertionPosition = false
               )
             )
         }
@@ -90,62 +110,65 @@ class InsertedIntSequenceExplorer(
   }
 
   override def prev: Option[IntSequenceExplorer] = {
+    val prevPosition = position-1
     if (atInsertedValue) {
-      explorerInOriginalSeq match {
+      explorerInOriginalSequence match {
         case None    => None
         case Some(p) =>
-          // we are leaving the inserted position
-          if (!originalExplorerIsAbove)
+          // Leaving the inserted position
+          if (!originalExplorerIsAtInsertionPosition) {
+            // Original explorer is not above so already at insertion position minus 1
             Some(
               new InsertedIntSequenceExplorer(
                 seq,
-                position - 1,
-                explorerInOriginalSeq,
+                prevPosition,
+                explorerInOriginalSequence,
                 atInsertedValue = false,
-                originalExplorerIsAbove = false
+                originalExplorerIsAtInsertionPosition = false
               )
             )
-          else {
+          } else {
+            // Original explorer is above, so at insertion position ==> need to get prev
             p.prev match {
               case None => None
-              case Some(prev1) =>
+              case prevOriginalExplorer =>
                 Some(
                   new InsertedIntSequenceExplorer(
                     seq,
-                    position - 1,
-                    Some(prev1),
+                    prevPosition,
+                    prevOriginalExplorer,
                     atInsertedValue = false,
-                    originalExplorerIsAbove = false
+                    originalExplorerIsAtInsertionPosition = false
                   )
                 )
             }
           }
       }
     } else {
-      val prevPosition = position - 1
       if (prevPosition == seq.pos) {
-        // we are getting into the inserted position
+        // Getting into the inserted position from above it
+        // Not moving the explorer ==> original explorer is above
         Some(
           new InsertedIntSequenceExplorer(
             seq,
-            position - 1,
-            explorerInOriginalSeq,
+            prevPosition,
+            explorerInOriginalSequence,
             atInsertedValue = true,
-            originalExplorerIsAbove = true
+            originalExplorerIsAtInsertionPosition = true
           )
         )
       } else {
-        // nothing special
-        explorerInOriginalSeq.head.prev match {
+        // Nothing special
+        explorerInOriginalSequence.head.prev match {
           case None => None
-          case Some(prev) =>
+          case prevOriginalExplorer =>
             Some(
               new InsertedIntSequenceExplorer(
                 seq,
-                position - 1,
-                Some(prev),
+                prevPosition,
+                prevOriginalExplorer,
                 atInsertedValue = false,
-                originalExplorerIsAbove = false
+                originalExplorerIsAtInsertionPosition = false
               )
             )
         }

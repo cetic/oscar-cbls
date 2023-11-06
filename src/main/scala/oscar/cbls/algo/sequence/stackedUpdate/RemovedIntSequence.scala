@@ -15,68 +15,80 @@ package oscar.cbls.algo.sequence.stackedUpdate
 
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 
-class RemovedIntSequence(val seq: IntSequence, val positionOfDelete: Int, depth: Int)
+/** Quick and stackable update of an [[IntSequence]] applying a removal of an existing node.
+  *
+  * @param originalSequence
+  *   The original sequence
+  * @param removePosition
+  *   The position of the node to remove
+  * @param depth
+  *   The depth of the current update
+  */
+class RemovedIntSequence(val originalSequence: IntSequence, val removePosition: Int, depth: Int)
     extends StackedUpdateIntSequence(depth) {
 
-  val removedValue = seq.valueAtPosition(positionOfDelete).head
+  val removedValue = originalSequence.valueAtPosition(removePosition).get
 
   override def descriptorString: String =
-    seq.descriptorString + ".removed(pos:" + positionOfDelete + " val:" + removedValue + ")"
+    originalSequence.descriptorString + ".removed(pos:" + removePosition + " val:" + removedValue + ")"
 
   override def nbOccurrence(value: Int): Int =
-    if (value == this.removedValue) seq.nbOccurrence(value) - 1 else seq.nbOccurrence(value)
+    if (value == this.removedValue) originalSequence.nbOccurrence(value) - 1
+    else originalSequence.nbOccurrence(value)
 
   override def unorderedContentNoDuplicate: List[Int] =
-    if (seq.nbOccurrence(removedValue) > 1) seq.unorderedContentNoDuplicate
-    else seq.unorderedContentNoDuplicate.filter(_ != removedValue)
+    if (originalSequence.nbOccurrence(removedValue) > 1)
+      originalSequence.unorderedContentNoDuplicate
+    else originalSequence.unorderedContentNoDuplicate.filter(_ != removedValue)
 
   override def unorderedContentNoDuplicateWithNBOccurrences: List[(Int, Int)] =
     unorderedContentNoDuplicate.flatMap(value =>
       if (value == removedValue) {
-        val occurencesBefore = seq.nbOccurrence(value)
-        if (occurencesBefore == 1) None
-        else Some((value, occurencesBefore - 1))
-      } else Some((value, seq.nbOccurrence(value)))
+        val occurrencesBefore = originalSequence.nbOccurrence(value)
+        if (occurrencesBefore == 1) None
+        else Some((value, occurrencesBefore - 1))
+      } else Some((value, originalSequence.nbOccurrence(value)))
     )
 
-  override val size: Int = seq.size - 1
+  override val size: Int = originalSequence.size - 1
 
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
-    seq.explorerAtPosition(if (position < this.positionOfDelete) position else position + 1) match {
+    originalSequence.explorerAtPosition(if (position < this.removePosition) position else position + 1) match {
       case None    => None
       case Some(e) => Some(new RemovedIntSequenceExplorer(this, position, e))
     }
   }
 
   override def positionsOfValue(value: Int): List[Int] = {
-    var positionsBefore     = seq.positionsOfValue(value)
+    var positionsBefore     = originalSequence.positionsOfValue(value)
     var toReturn: List[Int] = null
     while (positionsBefore != null) {
       val oldPos = positionsBefore.head
       positionsBefore = positionsBefore.tail
-      if (oldPos < this.positionOfDelete) {
+      if (oldPos < this.removePosition) {
         toReturn = List(oldPos) ::: toReturn
-      } else if (oldPos > positionOfDelete) {
+      } else if (oldPos > removePosition) {
         toReturn = List(oldPos - 1) ::: toReturn
       }
     }
     toReturn
   }
 
-  def oldPos2NewPos(oldPos: Int) = {
-    if (oldPos < this.positionOfDelete) oldPos else oldPos - 1
+  /** Returns the new position of the specified one considering the removal */
+  def oldPos2NewPos(oldPos: Int): Int = {
+    if (oldPos < this.removePosition) oldPos else oldPos - 1
   }
 
   override def contains(value: Int): Boolean = {
-    if (value == removedValue) seq.nbOccurrence(value) > 1
-    else seq.contains(value)
+    if (value == removedValue) originalSequence.nbOccurrence(value) > 1
+    else originalSequence.contains(value)
   }
 
   override def commitPendingMoves: IntSequence =
-    seq.commitPendingMoves.delete(this.positionOfDelete, fast = false)
+    originalSequence.commitPendingMoves.delete(this.removePosition, fast = false)
 
   override def valueAtPosition(position: Int): Option[Int] = {
-    if (position >= this.positionOfDelete) seq.valueAtPosition(position + 1)
-    else seq.valueAtPosition(position)
+    if (position >= this.removePosition) originalSequence.valueAtPosition(position + 1)
+    else originalSequence.valueAtPosition(position)
   }
 }

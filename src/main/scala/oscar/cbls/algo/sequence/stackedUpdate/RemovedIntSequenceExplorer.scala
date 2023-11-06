@@ -15,38 +15,52 @@ package oscar.cbls.algo.sequence.stackedUpdate
 
 import oscar.cbls.algo.sequence.IntSequenceExplorer
 
+/** A stacked explorer dedicated for [[MovedIntSequence]].
+  *
+  * It's used to explore a [[MovedIntSequence]]. It uses the original explorer and generates a new
+  * one changing pivot.
+  *
+  * @param intSequence
+  *   The [[InsertedIntSequence]]
+  * @param position
+  *   The current position in the sequence
+  * @param explorerInOriginalSequence
+  *   The original explorer, that is with the removed point
+  */
 class RemovedIntSequenceExplorer(
-  seq: RemovedIntSequence,
+  intSequence: RemovedIntSequence,
   val position: Int,
-  explorerInOriginalSeq: IntSequenceExplorer
+  explorerInOriginalSequence: IntSequenceExplorer
 ) extends IntSequenceExplorer {
-  override val value: Int = explorerInOriginalSeq.value
+  override val value: Int = explorerInOriginalSequence.value
 
   override def prev: Option[IntSequenceExplorer] = {
-    explorerInOriginalSeq.prev match {
+    // Just skip the removed point
+    explorerInOriginalSequence.prev match {
       case None => None
       case Some(tentativePos) =>
-        if (tentativePos.position == seq.positionOfDelete)
+        if (tentativePos.position == intSequence.removePosition)
           tentativePos.prev match {
             case None => None
             case Some(secondTentativePos) =>
-              Some(new RemovedIntSequenceExplorer(seq, position - 1, secondTentativePos))
+              Some(new RemovedIntSequenceExplorer(intSequence, position - 1, secondTentativePos))
           }
-        else Some(new RemovedIntSequenceExplorer(seq, position - 1, tentativePos))
+        else Some(new RemovedIntSequenceExplorer(intSequence, position - 1, tentativePos))
     }
   }
 
   override def next: Option[IntSequenceExplorer] = {
-    explorerInOriginalSeq.next match {
+    // Just skip the removed point
+    explorerInOriginalSequence.next match {
       case None => None
       case Some(tentativePos) =>
-        if (tentativePos.position == seq.positionOfDelete)
+        if (tentativePos.position == intSequence.removePosition)
           tentativePos.next match {
             case None => None
             case Some(secondTentativePos) =>
-              Some(new RemovedIntSequenceExplorer(seq, position + 1, secondTentativePos))
+              Some(new RemovedIntSequenceExplorer(intSequence, position + 1, secondTentativePos))
           }
-        else Some(new RemovedIntSequenceExplorer(seq, position + 1, tentativePos))
+        else Some(new RemovedIntSequenceExplorer(intSequence, position + 1, tentativePos))
     }
   }
 }
