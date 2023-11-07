@@ -17,5 +17,7 @@ stages:
   - test
 
 test:
+  tags:
+    - Oscar-Saas
   script:
     - sbt test
