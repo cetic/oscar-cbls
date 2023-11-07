@@ -1,4 +1,4 @@
-package oscar.cbls.test.algo.sequence
+package oscar.cbls.test.algo.sequence.affineFunction
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers._

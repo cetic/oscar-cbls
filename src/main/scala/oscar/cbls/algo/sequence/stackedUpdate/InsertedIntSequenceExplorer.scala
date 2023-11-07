@@ -40,7 +40,7 @@ class InsertedIntSequenceExplorer(
                                    originalExplorerIsAtInsertionPosition: Boolean
 ) extends IntSequenceExplorer {
   override val value: Int =
-    if (atInsertedValue) seq.insertedValue else explorerInOriginalSequence.head.value
+    if (atInsertedValue) seq.insertedValue else explorerInOriginalSequence.get.value
 
   override def next: Option[IntSequenceExplorer] = {
     val nextPosition = position+1
@@ -92,7 +92,7 @@ class InsertedIntSequenceExplorer(
         )
       } else {
         // nothing special
-        explorerInOriginalSequence.head.next match {
+        explorerInOriginalSequence.get.next match {
           case None => None
           case nextOriginalExplorer =>
             Some(
@@ -159,7 +159,7 @@ class InsertedIntSequenceExplorer(
         )
       } else {
         // Nothing special
-        explorerInOriginalSequence.head.prev match {
+        explorerInOriginalSequence.get.prev match {
           case None => None
           case prevOriginalExplorer =>
             Some(

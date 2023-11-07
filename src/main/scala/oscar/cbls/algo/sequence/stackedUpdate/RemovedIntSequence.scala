@@ -59,10 +59,11 @@ class RemovedIntSequence(val originalSequence: IntSequence, val removePosition: 
     }
   }
 
+  // TODO use tail
   override def positionsOfValue(value: Int): List[Int] = {
     var positionsBefore     = originalSequence.positionsOfValue(value)
-    var toReturn: List[Int] = null
-    while (positionsBefore != null) {
+    var toReturn: List[Int] = List.empty
+    while (positionsBefore.nonEmpty) {
       val oldPos = positionsBefore.head
       positionsBefore = positionsBefore.tail
       if (oldPos < this.removePosition) {

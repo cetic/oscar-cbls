@@ -29,8 +29,8 @@ class IntSequenceIterator(var intSequenceExplorer: Option[IntSequenceExplorer])
     }
 
   override def next(): Int = {
-    val position = intSequenceExplorer.head
-    intSequenceExplorer = position.next
-    position.value
+    val currentExplorer = intSequenceExplorer.get
+    intSequenceExplorer = currentExplorer.next
+    currentExplorer.value
   }
 }

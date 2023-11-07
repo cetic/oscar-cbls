@@ -21,11 +21,11 @@ package oscar.cbls.algo.sequence
 class IterableIntSequence(sequence: IntSequence) extends Iterable[Int] {
   override def iterator: Iterator[Int] = sequence.iterator
 
-  override def head: Int = sequence.valueAtPosition(0).head
+  override def head: Int = sequence.valueAtPosition(0).get
 
   override def headOption: Option[Int] = sequence.valueAtPosition(0)
 
-  override def last: Int = sequence.valueAtPosition(sequence.size - 1).head
+  override def last: Int = sequence.valueAtPosition(sequence.size - 1).get
 
   override def lastOption: Option[Int] = sequence.valueAtPosition(sequence.size - 1)
 }

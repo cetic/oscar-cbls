@@ -18,6 +18,7 @@ import oscar.cbls.algo.sequence.affineFunction.PiecewiseUnitaryAffineFunction
 import oscar.cbls.algo.sequence.concrete.ConcreteIntSequence
 import oscar.cbls.algo.sequence.stackedUpdate._
 
+import scala.annotation.tailrec
 import scala.language.implicitConversions
 
 /** Companion object of [[IntSequence]] */
@@ -176,20 +177,63 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     *   The values between the specified positions as a [[List]] of [[Int]]
     */
   def valuesBetweenPositions(fromPositionIncluded: Int, toPositionIncluded: Int): List[Int] = {
-    var toReturn: List[Int] = List.empty
-    var e                   = explorerAtPosition(fromPositionIncluded)
-    while (
-      e match {
-        case None => false
-        case Some(explorer) =>
-          if (explorer.position <= toPositionIncluded) {
-            toReturn = List(explorer.value) ::: toReturn
-            e = explorer.next
-            true
-          } else false
-      }
-    ) {}
-    toReturn
+    require(
+      fromPositionIncluded >= 0 && fromPositionIncluded < size,
+      s"fromPositionIncluded must be between 0 and sequence size $size. Got $fromPositionIncluded"
+    )
+    require(
+      toPositionIncluded >= fromPositionIncluded && toPositionIncluded < size,
+      s"toPositionIncluded must be between fromPositionIncluded $fromPositionIncluded and sequence size $size. Got $toPositionIncluded"
+    )
+    val explorer = explorerAtPosition(fromPositionIncluded).get
+    tailRecValuesBetweenPositions(explorer, toPositionIncluded)
+  }
+
+  def positionsAndValuesBetweenPositions(
+    fromPositionIncluded: Int,
+    toPositionIncluded: Int
+  ): List[(Int, Int)] = {
+    require(
+      fromPositionIncluded >= 0 && fromPositionIncluded < size,
+      s"fromPositionIncluded must be between 0 and sequence size $size. Got $fromPositionIncluded"
+    )
+    require(
+      toPositionIncluded >= fromPositionIncluded && toPositionIncluded < size,
+      s"toPositionIncluded must be between fromPositionIncluded $fromPositionIncluded and sequence size $size. Got $toPositionIncluded"
+    )
+    val explorer = explorerAtPosition(fromPositionIncluded)
+    tailRecPositionAndValuesBetweenPositions(explorer.get, toPositionIncluded)
+  }
+
+  @tailrec
+  private def tailRecValuesBetweenPositions(
+    explorer: IntSequenceExplorer,
+    toPositionIncluded: Int,
+    values: List[Int] = List.empty
+  ): List[Int] = {
+    if (explorer.position == toPositionIncluded) values ::: List(explorer.value)
+    else
+      tailRecValuesBetweenPositions(
+        explorer.next.get,
+        toPositionIncluded,
+        values ::: List(explorer.value)
+      )
+  }
+
+  @tailrec
+  private def tailRecPositionAndValuesBetweenPositions(
+    explorer: IntSequenceExplorer,
+    toPositionIncluded: Int,
+    positionsAndValues: List[(Int, Int)] = List.empty
+  ): List[(Int, Int)] = {
+    if (explorer.position == toPositionIncluded)
+      positionsAndValues ::: List((explorer.position, explorer.value))
+    else
+      tailRecPositionAndValuesBetweenPositions(
+        explorer.next.get,
+        toPositionIncluded,
+        positionsAndValues ::: List((explorer.position, explorer.value))
+      )
   }
 
   /** Returns an [[IntSequenceExplorer]] at the first occurrence of the specified value
@@ -237,27 +281,24 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
   // Returns the position of the first occurrence of the specified value
   def positionOfFirstOccurrence(value: Int): Option[Int] = {
     positionsOfValue(value) match {
-      case null           => None
-      case x if x.isEmpty => None
-      case x              => Some(x.min)
+      case Nil => None
+      case x   => Some(x.min)
     }
   }
 
   // Returns the position of any occurrence of the specified value
   def positionOfAnyOccurrence(value: Int): Option[Int] = {
     positionsOfValue(value) match {
-      case null           => None
-      case x if x.isEmpty => None
-      case x              => Some(x.head)
+      case Nil => None
+      case x   => Some(x.head)
     }
   }
 
   // Returns the position of the last occurrence of the specified value
   def positionOfLastOccurrence(value: Int): Option[Int] = {
     positionsOfValue(value) match {
-      case null           => None
-      case x if x.isEmpty => None
-      case x              => Some(x.max)
+      case Nil => None
+      case x   => Some(x.max)
     }
   }
 

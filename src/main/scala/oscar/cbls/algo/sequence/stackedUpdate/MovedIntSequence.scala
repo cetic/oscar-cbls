@@ -244,8 +244,8 @@ class MovedIntSequence(
 
   override def positionsOfValue(value: Int): List[Int] = {
     var positionsBefore     = seq.positionsOfValue(value)
-    var toReturn: List[Int] = null
-    while (positionsBefore != null) {
+    var toReturn: List[Int] = List.empty
+    while (positionsBefore.nonEmpty) {
       val oldPos = positionsBefore.head
       positionsBefore = positionsBefore.tail
       val newPos = oldPosToNewPos(oldPos)
