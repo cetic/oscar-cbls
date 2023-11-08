@@ -27,7 +27,7 @@ import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 class RemovedIntSequence(val originalSequence: IntSequence, val removePosition: Int, depth: Int)
     extends StackedUpdateIntSequence(depth) {
 
-  val removedValue = originalSequence.valueAtPosition(removePosition).get
+  val removedValue: Int = originalSequence.valueAtPosition(removePosition).get
 
   override def descriptorString: String =
     originalSequence.descriptorString + ".removed(pos:" + removePosition + " val:" + removedValue + ")"
@@ -53,26 +53,21 @@ class RemovedIntSequence(val originalSequence: IntSequence, val removePosition: 
   override val size: Int = originalSequence.size - 1
 
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
-    originalSequence.explorerAtPosition(if (position < this.removePosition) position else position + 1) match {
+    originalSequence.explorerAtPosition(
+      if (position < this.removePosition) position else position + 1
+    ) match {
       case None    => None
       case Some(e) => Some(new RemovedIntSequenceExplorer(this, position, e))
     }
   }
 
-  // TODO use tail
   override def positionsOfValue(value: Int): List[Int] = {
-    var positionsBefore     = originalSequence.positionsOfValue(value)
-    var toReturn: List[Int] = List.empty
-    while (positionsBefore.nonEmpty) {
-      val oldPos = positionsBefore.head
-      positionsBefore = positionsBefore.tail
-      if (oldPos < this.removePosition) {
-        toReturn = List(oldPos) ::: toReturn
-      } else if (oldPos > removePosition) {
-        toReturn = List(oldPos - 1) ::: toReturn
-      }
+    val positionsBefore = originalSequence.positionsOfValue(value)
+    positionsBefore.collect {
+      case oldPos: Int if oldPos != removePosition =>
+        if (oldPos > this.removePosition) oldPos - 1
+        else oldPos
     }
-    toReturn
   }
 
   /** Returns the new position of the specified one considering the removal */

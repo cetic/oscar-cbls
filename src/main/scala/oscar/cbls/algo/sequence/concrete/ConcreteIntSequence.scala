@@ -128,13 +128,9 @@ class ConcreteIntSequence(
     valueToInternalPositions.get(value) match {
       case None => List.empty
       case Some(internalPositions) =>
-        var toReturn: List[Int] = List.empty
-        var toDigest: List[Int] = internalPositions.values
-        while (toDigest.nonEmpty) {
-          toReturn = List(externalToInternalPosition.backward(toDigest.head)) ::: toReturn
-          toDigest = toDigest.tail
-        }
-        toReturn
+        internalPositions.values.map(internalPos =>
+          externalToInternalPosition.backward(internalPos)
+        )
     }
   }
 

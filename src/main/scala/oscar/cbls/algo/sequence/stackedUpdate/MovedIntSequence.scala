@@ -243,15 +243,8 @@ class MovedIntSequence(
   }
 
   override def positionsOfValue(value: Int): List[Int] = {
-    var positionsBefore     = seq.positionsOfValue(value)
-    var toReturn: List[Int] = List.empty
-    while (positionsBefore.nonEmpty) {
-      val oldPos = positionsBefore.head
-      positionsBefore = positionsBefore.tail
-      val newPos = oldPosToNewPos(oldPos)
-      toReturn = List(newPos) ::: toReturn
-    }
-    toReturn
+    val positionsBefore     = seq.positionsOfValue(value)
+    positionsBefore.map(oldPos => oldPosToNewPos(oldPos))
   }
 
   override def contains(value: Int): Boolean = seq.contains(value)
