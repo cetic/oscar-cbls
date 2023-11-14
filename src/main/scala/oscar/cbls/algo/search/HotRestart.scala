@@ -13,7 +13,6 @@
 
 package oscar.cbls.algo.search
 
-import scala.collection.Iterator
 import scala.collection.immutable.{NumericRange, SortedSet}
 
 /** this proposes a set of methods to enable hot restart on iteration over an iterable. it takes an
