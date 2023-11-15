@@ -1,57 +1,129 @@
 package oscar.cbls.test.algo.sequence
 
-import org.scalacheck.Gen
+import org.scalacheck.{Gen, Shrink}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import SequenceTestUtils._
 import oscar.cbls.algo.sequence._
+import oscar.cbls.algo.sequence.concrete.ConcreteIntSequence
 import oscar.cbls.algo.sequence.stackedUpdate._
 
-import scala.util.Random
+import java.util.concurrent.atomic.AtomicInteger
 
 class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
-  val elem: Gen[Int] = for (n <- Gen.choose(0, 100)) yield n * 4 // Sparse elements
-  val gen: Gen[Operation] =
-    Gen.oneOf(List(MoveAfter(), Insert(), Delete(), Flip(), Regularize(), Commit()))
+  private val maxConsideredSize = 200
 
-  val testBenchGen: Gen[(List[Int], List[Operation])] = for {
-    numElems   <- Gen.choose(20, 200)
+  implicit def noShrink[T]: Shrink[T] = Shrink.shrinkAny
+
+  def elem: Gen[Int] = for (n <- Gen.choose(0, 100)) yield n * 4 // Sparse elements
+
+  private var seq: IntSequence          = IntSequence(List.empty)
+  private val genSeqSize: AtomicInteger = new AtomicInteger(0)
+
+  def opInsert(size: Int): Gen[Insert] = for {
+    value    <- Gen.choose(0, 1000)
+    position <- Gen.choose(0, size - 1)
+  } yield {
+    Insert(value, position)
+  }
+
+  def opMoveAfter(size: Int): Gen[MoveAfter] =
+    for {
+      from  <- Gen.choose(0, size - 1)
+      to    <- Gen.choose(from, size - 1)
+      after <- Gen.oneOf((-1 until from).toList ::: (to until size - 1).drop(1).toList)
+    } yield {
+      MoveAfter(from, to, after)
+    }
+
+  def opDelete(size: Int): Gen[Delete] = {
+    // if the list is empty, Delete(0) will be ignored, keeping it to avoid usage of Gen.Option
+    if (size <= 1) Delete(0)
+    else
+      for {
+        position <- Gen.choose(0, size - 1)
+      } yield {
+        Delete(position)
+      }
+  }
+
+  def opFlip: Gen[Flip]             = Gen.const(Flip())
+  def opRegularize: Gen[Regularize] = Gen.const(Regularize())
+  def opCommit: Gen[Commit]         = Gen.const(Commit())
+
+  def genAction(
+    onlyInsert: Boolean = false,
+    onlyMove: Boolean = false,
+    onlyRemove: Boolean = false
+  ): Gen[Operation] = {
+    for {
+      // Seems mandatory to keep it, otherwise it fails constantly
+      x <- Gen.const(genSeqSize.get())
+      action <- {
+        val size = genSeqSize.get()
+        if (onlyInsert) opInsert(size)
+        else if (onlyMove) Gen.oneOf(opMoveAfter(size), opFlip)
+        else if (onlyRemove) opDelete(size)
+        else
+          Gen.oneOf(
+            opInsert(size),
+            opMoveAfter(size),
+            opDelete(size),
+            opFlip,
+            opRegularize,
+            opCommit
+          )
+      }
+    } yield {
+      action match {
+        case _: Insert => genSeqSize.getAndIncrement()
+        case _: Delete => genSeqSize.decrementAndGet()
+        case _         =>
+      }
+      action
+    }
+  }
+
+  def testBenchGen(
+    onlyInsert: Boolean = false,
+    onlyMove: Boolean = false,
+    onlyRemove: Boolean = false
+  ): Gen[(List[Int], List[Operation])] = for {
+    numElems   <- Gen.choose(20, maxConsideredSize)
     numActions <- Gen.choose(20, 100)
-    elems      <- Gen.listOfN(numElems, elem)
-    actions    <- Gen.listOfN(numActions, gen)
+    elems <- {
+      genSeqSize.set(numElems)
+      Gen.listOfN(numElems, elem)
+    }
+    actions <- Gen.listOfN(numActions, genAction(onlyInsert, onlyMove, onlyRemove))
   } yield (elems, actions)
 
   test("ConcreteIntSequence : batch queries keep expected list") {
-    forAll(testBenchGen, minSuccessful(20)) { testBench =>
+    forAll(testBenchGen(), minSuccessful(100)) { testBench =>
       {
         whenever(testBench._1.size > 5) {
-
           val actionsList   = testBench._2
           val referenceList = testBench._1
-          var seq           = IntSequence(referenceList)
-          var modifiedList  = referenceList
+          seq = IntSequence(referenceList)
+          var modifiedList = referenceList
 
           for (action <- actionsList) {
             action match {
-              case MoveAfter() =>
-                val (indexFrom, indexTo, destination) =
-                  getRandomParametersForMoveAfter(modifiedList)
-                seq = seq.moveAfter(indexFrom, indexTo, destination, flip = true)
-                modifiedList = flipListManually(modifiedList, indexFrom, indexTo, destination)
+              case MoveAfter(from, to, after) =>
+                seq = seq.moveAfter(from, to, after, flip = true)
+                modifiedList = flipListManually(modifiedList, from, to, after)
 
-              case Insert() =>
-                val (value, pos) = getRandomParametersForInsert(modifiedList)
-                seq = seq.insertAtPosition(value, pos)
+              case Insert(value, position) =>
+                seq = seq.insertAtPosition(value, position)
 
-                val (front, back) = modifiedList.splitAt(pos)
+                val (front, back) = modifiedList.splitAt(position)
                 modifiedList = front ++ List(value) ++ back
 
-              case Delete() =>
+              case Delete(position) =>
                 if (referenceList.nonEmpty) {
-                  val index = Random.nextInt(seq.size)
-                  seq = seq.delete(index)
-                  modifiedList = modifiedList.take(index) ++ modifiedList.drop(index + 1)
+                  seq = seq.delete(position)
+                  modifiedList = modifiedList.take(position) ++ modifiedList.drop(position + 1)
                 }
 
               case Flip() =>
@@ -66,6 +138,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
 
               case _ =>
             }
+            seq.isInstanceOf[ConcreteIntSequence] should be(true)
           }
           compareAllAttributes(seq, modifiedList)
         }
@@ -74,34 +147,30 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
   }
 
   test("MovedIntSequence : batch queries keep expected list") {
-    forAll(testBenchGen, minSuccessful(20)) { testBench =>
+    forAll(testBenchGen(onlyMove = true), minSuccessful(20)) { testBench =>
       {
         whenever(testBench._1.size > 5) {
           val actionsList                       = testBench._2
           val referenceList                     = testBench._1
-          val (indexFrom, indexTo, destination) = getRandomParametersForMoveAfter(referenceList)
-          var seq: IntSequence = new MovedIntSequence(
+          // Creating a MovedIntSequence without changing the generated sequence
+          seq = new MovedIntSequence(
             IntSequence(referenceList),
-            indexFrom,
-            indexTo,
-            destination,
-            true,
+            0,
+            0,
+            -1,
+            false,
             1
           )
-          var modifiedList = flipListManually(referenceList, indexFrom, indexTo, destination)
+          var modifiedList = referenceList
 
           for (action <- actionsList) {
             action match {
-              case MoveAfter() =>
-                val (indexFrom, indexTo, destination) =
-                  getRandomParametersForMoveAfter(modifiedList)
-                seq = seq.moveAfter(indexFrom, indexTo, destination, flip = true)
-                modifiedList = flipListManually(modifiedList, indexFrom, indexTo, destination)
-
+              case MoveAfter(from, to, after) =>
+                seq = seq.moveAfter(from, to, after, flip = true)
+                modifiedList = flipListManually(modifiedList, from, to, after)
               case Flip() =>
                 seq = seq.flip()
                 modifiedList = modifiedList.reverse
-
               case _ =>
             }
           }
@@ -112,21 +181,21 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
   }
 
   test("RemovedIntSequence : batch queries keep expected list") {
-    forAll(testBenchGen, minSuccessful(20)) { testBench =>
+    forAll(testBenchGen(onlyRemove = true), minSuccessful(20)) { testBench =>
       {
         whenever(testBench._1.size > 5) {
           val actionsList   = testBench._2
           val referenceList = testBench._1
+          // Creating a RemovedIntSequence without changing the generated sequence
+          seq = new RemovedIntSequence(IntSequence(referenceList :+ 0), referenceList.size, 1)
+          var modifiedList = referenceList
 
-          val i                = Random.nextInt(referenceList.size)
-          var seq: IntSequence = new RemovedIntSequence(IntSequence(referenceList), i, 1)
-          var modifiedList     = referenceList.take(i) ++ referenceList.drop(i + 1)
-
-          for (_ <- actionsList) {
-            if (modifiedList.size > 1) {
-              val index = Random.nextInt(seq.size)
-              seq = seq.delete(index)
-              modifiedList = modifiedList.take(index) ++ modifiedList.drop(index + 1)
+          for (action <- actionsList) {
+            action match {
+              case Delete(pos) if modifiedList.nonEmpty =>
+                seq = seq.delete(pos)
+                modifiedList = modifiedList.take(pos) ++ modifiedList.drop(pos + 1)
+              case _ =>
             }
           }
           compareAllAttributes(seq, modifiedList)
@@ -136,23 +205,25 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
   }
 
   test("InsertedIntSequence : batch queries keep expected list") {
-    forAll(testBenchGen, minSuccessful(20)) { testBench =>
+    forAll(testBenchGen(onlyInsert = true), minSuccessful(20)) { testBench =>
       {
         whenever(testBench._1.size > 5) {
           val actionsList   = testBench._2
           val referenceList = testBench._1
 
-          val (value, pos)     = getRandomParametersForInsert(referenceList)
-          var seq: IntSequence = new InsertedIntSequence(IntSequence(referenceList), value, pos, 1)
-          val (front, back)    = referenceList.splitAt(pos)
-          var modifiedList     = front ++ List(value) ++ back
+          // Creating a InsertedIntSequence without changing the generated sequence
+          val value = referenceList.head
+          val referenceListMinusFirst = referenceList.drop(1)
+          seq = new InsertedIntSequence(IntSequence(referenceListMinusFirst), value, 0, 1)
+          var modifiedList  = referenceList
 
-          for (_ <- actionsList) {
-            val (value, pos) = getRandomParametersForInsert(modifiedList)
-            seq = seq.insertAtPosition(value, pos)
-
-            val (front, back) = modifiedList.splitAt(pos)
-            modifiedList = front ++ List(value) ++ back
+          for (action <- actionsList) {
+            action match {
+              case Insert(value, at) =>
+                seq = seq.insertAtPosition(value, at)
+                val (front, back) = modifiedList.splitAt(at)
+                modifiedList = front ++ List(value) ++ back
+            }
           }
           compareAllAttributes(seq, modifiedList)
         }
@@ -161,36 +232,29 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
   }
 
   test("Mixed IntSequence types : batch queries keep expected list") {
-    forAll(testBenchGen, minSuccessful(20)) { testBench =>
+    forAll(testBenchGen(), minSuccessful(20)) { testBench =>
       {
         whenever(testBench._1.size > 5) {
 
           val actionsList   = testBench._2
           val referenceList = testBench._1
-          var seq           = IntSequence(referenceList)
-          var modifiedList  = referenceList
+          seq = IntSequence(referenceList)
+          var modifiedList = referenceList
 
           for (action <- actionsList) {
             action match {
-              case MoveAfter() =>
-                val (indexFrom, indexTo, destination) =
-                  getRandomParametersForMoveAfter(modifiedList)
-                seq = seq.moveAfter(indexFrom, indexTo, destination, flip = true, fast = true)
-                modifiedList = flipListManually(modifiedList, indexFrom, indexTo, destination)
+              case MoveAfter(from, to, after) =>
+                seq = seq.moveAfter(from, to, after, flip = true, fast = true)
+                modifiedList = flipListManually(modifiedList, from, to, after)
 
-              case Insert() =>
-                val (value, pos) = getRandomParametersForInsert(modifiedList)
-                seq = seq.insertAtPosition(value, pos, fast = true)
-
-                val (front, back) = modifiedList.splitAt(pos)
+              case Insert(value, position) =>
+                seq = seq.insertAtPosition(value, position, fast = true)
+                val (front, back) = modifiedList.splitAt(position)
                 modifiedList = front ++ List(value) ++ back
 
-              case Delete() =>
-                if (referenceList.nonEmpty) {
-                  val index = Random.nextInt(seq.size)
-                  seq = seq.delete(index, fast = true)
-                  modifiedList = modifiedList.take(index) ++ modifiedList.drop(index + 1)
-                }
+              case Delete(position) if referenceList.nonEmpty =>
+                seq = seq.delete(position, fast = true)
+                modifiedList = modifiedList.take(position) ++ modifiedList.drop(position + 1)
 
               case Flip() =>
                 seq = seq.flip(fast = true)
@@ -212,10 +276,10 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
   }
 
   abstract sealed class Operation()
-  case class MoveAfter()  extends Operation
-  case class Insert()     extends Operation
-  case class Delete()     extends Operation
-  case class Flip()       extends Operation
-  case class Regularize() extends Operation
-  case class Commit()     extends Operation
+  case class MoveAfter(fromIncl: Int, toIncl: Int, after: Int) extends Operation
+  case class Insert(value: Int, at: Int)                       extends Operation
+  case class Delete(pos: Int)                                  extends Operation
+  case class Flip()                                            extends Operation
+  case class Regularize()                                      extends Operation
+  case class Commit()                                          extends Operation
 }

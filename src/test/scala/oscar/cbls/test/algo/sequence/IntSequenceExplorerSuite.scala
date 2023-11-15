@@ -68,7 +68,7 @@ class SequenceExplorerTestSuite
   }
 
   test("RemovedIntSequenceExplorer is coherent") {
-    forAll(testBenchGen, minSuccessful(20)) { testBench =>
+    forAll(testBenchGen, minSuccessful(50)) { testBench =>
       whenever(testBench.size > 5) {
 
         val i                = Random.nextInt(testBench.size)

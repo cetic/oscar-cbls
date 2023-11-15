@@ -96,7 +96,7 @@ class SequenceTestUtils extends AnyFunSuite with Matchers {
     intSeq.nonEmpty should be(list.nonEmpty)
     intSeq.iterator.toList should be(list.iterator.toList)
     intSeq match {
-      case sequence: ConcreteIntSequence =>
+      case sequence: ConcreteIntSequence if list.nonEmpty =>
         sequence.largestValue.get should be(list.max)
         sequence.smallestValue.get should be(list.min)
       case _ =>
@@ -108,17 +108,19 @@ class SequenceTestUtils extends AnyFunSuite with Matchers {
     )
 
     // This will intentionally search for items that are not in the list
-    for (i <- list.min until list.max) {
-      intSeq.nbOccurrence(i) should be(list.count(_ == i))
-      intSeq.contains(i) should be(list.contains(i))
-      if (intSeq.contains(i)) {
-        list(intSeq.positionOfAnyOccurrence(i).get) should be(i)
-        intSeq.positionOfFirstOccurrence(i).get should be(list.indexOf(i))
-        intSeq.positionOfLastOccurrence(i).get should be(list.lastIndexOf(i))
-      } else {
-        intSeq.positionOfAnyOccurrence(i) should be(None)
-        intSeq.positionOfFirstOccurrence(i) should be(None)
-        intSeq.positionOfLastOccurrence(i) should be(None)
+    if(list.nonEmpty) {
+      for (i <- list.min until list.max) {
+        intSeq.nbOccurrence(i) should be(list.count(_ == i))
+        intSeq.contains(i) should be(list.contains(i))
+        if (intSeq.contains(i)) {
+          list(intSeq.positionOfAnyOccurrence(i).get) should be(i)
+          intSeq.positionOfFirstOccurrence(i).get should be(list.indexOf(i))
+          intSeq.positionOfLastOccurrence(i).get should be(list.lastIndexOf(i))
+        } else {
+          intSeq.positionOfAnyOccurrence(i) should be(None)
+          intSeq.positionOfFirstOccurrence(i) should be(None)
+          intSeq.positionOfLastOccurrence(i) should be(None)
+        }
       }
     }
 
