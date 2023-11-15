@@ -52,6 +52,8 @@ class RemovedIntSequence(val originalSequence: IntSequence, val removePosition: 
 
   override val size: Int = originalSequence.size - 1
 
+  override def originalExplorerAtPosition(position: Int): Option[IntSequenceExplorer] = None
+
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
     originalSequence.explorerAtPosition(
       if (position < this.removePosition) position else position + 1

@@ -16,7 +16,7 @@ package oscar.cbls.algo.sequence.stackedUpdate
 import oscar.cbls.algo.sequence._
 import oscar.cbls.algo.sequence.affineFunction._
 
-/** Companion object of [[MovedIntSequence]] **/
+/** Companion object of [[MovedIntSequence]] * */
 object MovedIntSequence {
 
   /** Creates the bijections corresponding to the movement passed as parameters.
@@ -178,14 +178,6 @@ class MovedIntSequence(
 
   // TODO: provide a cache on the values at the boundary of the move
 
-  override def unorderedContentNoDuplicate: List[Int] = seq.unorderedContentNoDuplicate
-
-  override def unorderedContentNoDuplicateWithNBOccurrences: List[(Int, Int)] =
-    seq.unorderedContentNoDuplicateWithNBOccurrences
-
-  override def descriptorString: String =
-    s"${seq.descriptorString}.moved(startPos:$fromPositionIncluded endPos:$toPositionIncluded targetPos:$moveAfterPosition flip:$flip)"
-
   // The PiecewiseUnitaryAffineFunction corresponding to this move
   private val localBijection = MovedIntSequence.bijectionForMove(
     fromPositionIncluded,
@@ -194,9 +186,85 @@ class MovedIntSequence(
     flip
   )
 
+  private val (
+    originalExplorerBeforeFromPositionIncluded,
+    originalExplorerAtFromPositionIncluded,
+    originalExplorerAtToPositionIncluded,
+    originalExplorerAfterToPositionIncluded,
+    originalExplorerAtMoveAfterPosition,
+    originalExplorerAfterMoverAfterPosition
+  ): (
+    Option[IntSequenceExplorer],
+    Option[IntSequenceExplorer],
+    Option[IntSequenceExplorer],
+    Option[IntSequenceExplorer],
+    Option[IntSequenceExplorer],
+    Option[IntSequenceExplorer]
+  ) = {
+    // Can't be None
+    val originExplorerAtFromIncluded = seq.explorerAtPosition(fromPositionIncluded)
+    // Could be None
+    val originExplorerBeforeFromIncluded = originExplorerAtFromIncluded.get.prev
+    // Can't be None
+    val originExplorerAtToIncluded = {
+      if (toPositionIncluded - fromPositionIncluded < Math.log(seq.size)) {
+        var expl = originExplorerAtFromIncluded
+        while (expl.nonEmpty && expl.get.position != toPositionIncluded) expl = expl.get.next
+        expl
+      } else {
+        seq.explorerAtPosition(toPositionIncluded)
+      }
+    }
+    // Could be None
+    val originExplorerAfterToIncluded = originExplorerAtToIncluded.get.next
+    // Could be None if moving at start (moveAfterPosition == -1)
+    val originExplorerAtMoveAfter = {
+      if (moveAfterPosition == -1) None
+      else if (
+        moveAfterPosition < fromPositionIncluded && fromPositionIncluded - moveAfterPosition < Math
+          .log(seq.size)
+      ) {
+        var expl = originExplorerAtFromIncluded
+        while (expl.nonEmpty && expl.get.position != moveAfterPosition) expl = expl.get.prev
+        expl
+      } else if (
+        moveAfterPosition > toPositionIncluded && moveAfterPosition - toPositionIncluded < Math.log(
+          seq.size
+        )
+      ) {
+        var expl = originExplorerAfterToIncluded
+        while (expl.nonEmpty && expl.get.position != moveAfterPosition) expl = expl.get.next
+        expl
+      } else {
+        seq.explorerAtPosition(moveAfterPosition)
+      }
+    }
+    // Could be None
+    val originExplorerAtAfterMoveAfter =
+      if (originExplorerAtMoveAfter.nonEmpty) originExplorerAtMoveAfter.get.next
+      else if (moveAfterPosition == -1) seq.explorerAtPosition(0)
+      else None
+    (
+      originExplorerBeforeFromIncluded,
+      originExplorerAtFromIncluded,
+      originExplorerAtToIncluded,
+      originExplorerAfterToIncluded,
+      originExplorerAtMoveAfter,
+      originExplorerAtAfterMoveAfter
+    )
+  }
+
   override val size: Int = seq.size
 
   override def nbOccurrence(value: Int): Int = seq.nbOccurrence(value)
+
+  override def unorderedContentNoDuplicate: List[Int] = seq.unorderedContentNoDuplicate
+
+  override def unorderedContentNoDuplicateWithNBOccurrences: List[(Int, Int)] =
+    seq.unorderedContentNoDuplicateWithNBOccurrences
+
+  override def descriptorString: String =
+    s"${seq.descriptorString}.moved(startPos:$fromPositionIncluded endPos:$toPositionIncluded targetPos:$moveAfterPosition flip:$flip)"
 
   override def commitPendingMoves: IntSequence = seq.commitPendingMoves.moveAfter(
     fromPositionIncluded,
@@ -205,6 +273,16 @@ class MovedIntSequence(
     flip,
     fast = false
   )
+
+  override def originalExplorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
+    if (position == fromPositionIncluded - 1) originalExplorerBeforeFromPositionIncluded
+    else if (position == fromPositionIncluded) originalExplorerAtFromPositionIncluded
+    else if (position == toPositionIncluded) originalExplorerAtToPositionIncluded
+    else if (position == toPositionIncluded + 1) originalExplorerAfterToPositionIncluded
+    else if (position == moveAfterPosition) originalExplorerAtMoveAfterPosition
+    else if (position == moveAfterPosition + 1) originalExplorerAfterMoverAfterPosition
+    else seq.explorerAtPosition(position)
+  }
 
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
     val positionOfCurrentPivot = localBijection.pivotWithPositionApplyingTo(position)
@@ -243,7 +321,7 @@ class MovedIntSequence(
   }
 
   override def positionsOfValue(value: Int): List[Int] = {
-    val positionsBefore     = seq.positionsOfValue(value)
+    val positionsBefore = seq.positionsOfValue(value)
     positionsBefore.map(oldPos => oldPosToNewPos(oldPos))
   }
 

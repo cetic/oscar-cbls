@@ -64,7 +64,7 @@ class MovedIntSequenceExplorer(
       val newPosition           = position + 1
       // We don't know the old position of the new starting pivot
       val newPositionInBasicSequence =
-        intSequence.seq.explorerAtPosition(pivotAbovePosition.get.value.f(newPosition))
+        intSequence.originalExplorerAtPosition(pivotAbovePosition.get.value.f(newPosition))
       newPositionInBasicSequence match {
         case None => None
         case Some(newPositionInOS) =>
@@ -113,7 +113,7 @@ class MovedIntSequenceExplorer(
         new MovedIntSequenceExplorer(
           intSequence,
           newPosition,
-          intSequence.seq.explorerAtPosition(newInternalPosition).get,
+          intSequence.originalExplorerAtPosition(newInternalPosition).get,
           newCurrentPivotPosition,
           currentPivotPosition
         )(limitAboveForCurrentPivot = limitBelowForCurrentPivot - 1)

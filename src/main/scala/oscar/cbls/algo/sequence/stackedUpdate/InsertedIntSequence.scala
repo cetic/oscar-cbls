@@ -29,6 +29,12 @@ import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
   */
 class InsertedIntSequence(intSequence: IntSequence, val insertedValue: Int, val pos: Int, depth: Int)
     extends StackedUpdateIntSequence(depth) {
+
+  private val (originalExplorerAtInsertPosition,originalExplorerAfterInsertPosition) = {
+    val originalExplorerAtInsert = intSequence.explorerAtPosition(pos)
+    (originalExplorerAtInsert, originalExplorerAtInsert.get.next)
+  }
+
   override val size: Int = intSequence.size + 1
 
   override def nbOccurrence(value: Int): Int =
@@ -57,6 +63,12 @@ class InsertedIntSequence(intSequence: IntSequence, val insertedValue: Int, val 
   @inline
   private def oldPos2NewPos(oldPOs: Int): Int = {
     if (oldPOs < pos) oldPOs else oldPOs + 1
+  }
+
+  override def originalExplorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
+    if(position == pos) originalExplorerAtInsertPosition
+    else if(position == pos+1) originalExplorerAfterInsertPosition
+    else intSequence.explorerAtPosition(position)
   }
 
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
