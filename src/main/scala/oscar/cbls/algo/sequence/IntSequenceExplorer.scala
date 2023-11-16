@@ -26,4 +26,53 @@ abstract class IntSequenceExplorer {
   def next: Option[IntSequenceExplorer]
   // Returns the previous explorer in the sequence or None if start of sequence
   def prev: Option[IntSequenceExplorer]
+
+  def untilPosition(position: Int): Option[IntSequenceExplorer] = {
+    require(position >= 0)
+    if (this.position == position) Some(this)
+    else {
+      val explorer =
+        if (this.position > position) prev
+        else next
+      if (explorer.nonEmpty) explorer.get.untilPosition(position)
+      else None
+    }
+  }
+
+  def backwardUntilValue(value: Int): Option[IntSequenceExplorer] = {
+    if (this.value == value) Some(this)
+    else {
+      val previousExplorer = prev
+      if (previousExplorer.nonEmpty) previousExplorer.get.backwardUntilValue(value)
+      else None
+    }
+  }
+
+  def forwardUntilValue(value: Int): Option[IntSequenceExplorer] = {
+    if (this.value == value) Some(this)
+    else {
+      val nextExplorer = next
+      if (nextExplorer.nonEmpty) nextExplorer.get.forwardUntilValue(value)
+      else None
+    }
+  }
+
+  def backwardUntil(f: IntSequenceExplorer => Boolean): Option[IntSequenceExplorer] = {
+    if (f(this)) Some(this)
+    else {
+      val previousExplorer = prev
+      if (previousExplorer.nonEmpty) previousExplorer.get.backwardUntil(f)
+      else None
+    }
+  }
+
+  def forwardUntil(f: IntSequenceExplorer => Boolean): Option[IntSequenceExplorer] = {
+    if (f(this)) Some(this)
+    else {
+      val nextExplorer = next
+      if (nextExplorer.nonEmpty) nextExplorer.get.forwardUntil(f)
+      else None
+    }
+  }
+
 }

@@ -15,11 +15,15 @@ package oscar.cbls.algo.sequence.stackedUpdate
 
 import oscar.cbls.algo.sequence._
 import oscar.cbls.algo.sequence.affineFunction._
+import oscar.cbls.algo.sequence.stackedUpdate.MoveType._
+import oscar.cbls.algo.sequence.stackedUpdate.PositionInMovement._
 
 /** Companion object of [[MovedIntSequence]] * */
 object MovedIntSequence {
 
   /** Creates the bijections corresponding to the movement passed as parameters.
+    *   - forward : The node that is at x was before at y
+    *   - backward (oldPosToNewPos) : the node that was before at y is at x
     *
     * @param fromIncluded
     *   The first (included) position of the moved segment as an [[Int]]
@@ -39,23 +43,23 @@ object MovedIntSequence {
     moveAfter: Int,
     flip: Boolean
   ): PiecewiseUnitaryAffineFunction = {
-    val moveType = {
-      if (moveAfter + 1 == fromIncluded) "notMoving"
-      else if (fromIncluded < moveAfter) "forward"
-      else "backward"
+    val moveType: MoveType = {
+      if (moveAfter + 1 == fromIncluded) NotMoving
+      else if (fromIncluded < moveAfter) Forward
+      else Backward
     }
     (moveType, flip) match {
-      case ("notMoving", false) => PiecewiseUnitaryAffineFunction.identity
-      case ("notMoving", true) =>
+      case (NotMoving, false) => PiecewiseUnitaryAffineFunction.identity
+      case (NotMoving, true) =>
         PiecewiseUnitaryAffineFunction.createFromPivots(
           List(
-            // If startPositionIncluded == 0 this identity function will be override.
+            // If fromIncluded == 0 this identity function will be override.
             new Pivot(0, UnitaryAffineFunction.identity),
             new Pivot(fromIncluded, UnitaryAffineFunction(toIncluded + fromIncluded, true)),
             new Pivot(toIncluded + 1, UnitaryAffineFunction.identity)
           )
         )
-      case ("forward", _) =>
+      case (Forward, _) =>
         PiecewiseUnitaryAffineFunction.createFromPivots(
           List(
             new Pivot(fromIncluded, UnitaryAffineFunction(toIncluded + 1 - fromIncluded, false)),
@@ -70,7 +74,7 @@ object MovedIntSequence {
             new Pivot(moveAfter + 1, UnitaryAffineFunction.identity)
           )
         )
-      case ("backward", _) =>
+      case (Backward, _) =>
         PiecewiseUnitaryAffineFunction.createFromPivots(
           List(
             new Pivot(
@@ -115,36 +119,36 @@ object MovedIntSequence {
     after: Int,
     flip: Boolean
   ): Int = {
-    val moveType = {
-      if (after + 1 == fromIncluded) "notMoving"
-      else if (fromIncluded < after) "forward"
-      else "backward"
+    val moveType: MoveType = {
+      if (after + 1 == fromIncluded) NotMoving
+      else if (fromIncluded < after) Forward
+      else Backward
     }
 
     // Inside == within the moved segment
     // between == Between after and moved segment
     // Outside == outside the moved segment and not between after and moved segment
-    val oldPosRelativePosition = {
-      if (oldPos >= fromIncluded && oldPos <= toIncluded) "inside"
+    val oldPosRelativePosition: PositionInMovement = {
+      if (oldPos >= fromIncluded && oldPos <= toIncluded) Inside
       else if (after < fromIncluded) {
-        if (oldPos <= after || oldPos > toIncluded) "outside"
-        else "between"
+        if (oldPos <= after || oldPos > toIncluded) Outside
+        else Between
       } else {
-        if (oldPos > after || oldPos < fromIncluded) "outside"
-        else "between"
+        if (oldPos > after || oldPos < fromIncluded) Outside
+        else Between
       }
     }
 
     (moveType, oldPosRelativePosition, flip) match {
-      case ("notMoving", _, false)       => oldPos
-      case (_, "outside", _)             => oldPos
-      case ("notMoving", "inside", true) => -oldPos + fromIncluded + toIncluded
-      case ("forward", "inside", true)   => -oldPos + fromIncluded + after
-      case ("forward", "inside", false)  => oldPos - toIncluded + after
-      case ("forward", "between", _)     => oldPos + fromIncluded - toIncluded - 1
-      case ("backward", "inside", true)  => -oldPos + toIncluded + after + 1
-      case ("backward", "inside", false) => oldPos - fromIncluded + after + 1
-      case ("backward", "between", _)    => oldPos - fromIncluded + toIncluded + 1
+      case (NotMoving, _, false)       => oldPos
+      case (_, Outside, _)             => oldPos
+      case (NotMoving, Inside, true) => -oldPos + fromIncluded + toIncluded
+      case (Forward, Inside, true)   => -oldPos + fromIncluded + after
+      case (Forward, Inside, false)  => oldPos - toIncluded + after
+      case (Forward, Between, _)     => oldPos + fromIncluded - toIncluded - 1
+      case (Backward, Inside, true)  => -oldPos + toIncluded + after + 1
+      case (Backward, Inside, false) => oldPos - fromIncluded + after + 1
+      case (Backward, Between, _)    => oldPos - fromIncluded + toIncluded + 1
     }
   }
 }
@@ -208,9 +212,7 @@ class MovedIntSequence(
     // Can't be None
     val originExplorerAtToIncluded = {
       if (toPositionIncluded - fromPositionIncluded < Math.log(seq.size)) {
-        var expl = originExplorerAtFromIncluded
-        while (expl.nonEmpty && expl.get.position != toPositionIncluded) expl = expl.get.next
-        expl
+        originExplorerAtFromIncluded.get.untilPosition(toPositionIncluded)
       } else {
         seq.explorerAtPosition(toPositionIncluded)
       }
@@ -223,21 +225,13 @@ class MovedIntSequence(
       else if (
         moveAfterPosition < fromPositionIncluded && fromPositionIncluded - moveAfterPosition < Math
           .log(seq.size)
-      ) {
-        var expl = originExplorerAtFromIncluded
-        while (expl.nonEmpty && expl.get.position != moveAfterPosition) expl = expl.get.prev
-        expl
-      } else if (
+      ) originExplorerAtFromIncluded.get.untilPosition(moveAfterPosition)
+      else if (
         moveAfterPosition > toPositionIncluded && moveAfterPosition - toPositionIncluded < Math.log(
           seq.size
         )
-      ) {
-        var expl = originExplorerAfterToIncluded
-        while (expl.nonEmpty && expl.get.position != moveAfterPosition) expl = expl.get.next
-        expl
-      } else {
-        seq.explorerAtPosition(moveAfterPosition)
-      }
+      ) originExplorerAfterToIncluded.get.untilPosition(moveAfterPosition)
+      else seq.explorerAtPosition(moveAfterPosition)
     }
     // Could be None
     val originExplorerAtAfterMoveAfter =
@@ -332,4 +326,23 @@ class MovedIntSequence(
   override def valueAtPosition(position: Int): Option[Int] = {
     seq.valueAtPosition(localBijection(position))
   }
+}
+
+/* Describes the movement */
+sealed abstract class MoveType
+object MoveType {
+  case object NotMoving extends MoveType
+  case object Forward extends MoveType
+  case object Backward extends MoveType
+}
+
+/* Describes the position of a node relatively to the movement */
+sealed abstract class PositionInMovement
+object PositionInMovement {
+  /* Inside the moved segment */
+  case object Inside extends PositionInMovement
+  /* Between the moved segment and the moveAfter position */
+  case object Between extends PositionInMovement
+  /* Before or after the moved segment and the moveAfter position */
+  case object Outside extends PositionInMovement
 }

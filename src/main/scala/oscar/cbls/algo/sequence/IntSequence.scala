@@ -118,8 +118,6 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     this.explorerAtAnyOccurrence(value)
   )
 
-  def iterable: Iterable[Int] = new IterableIntSequence(this)
-
   // Returns the number of occurrence of the specified value
   def nbOccurrence(value: Int): Int
 
