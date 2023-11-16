@@ -15,13 +15,16 @@ package oscar.cbls.algo.search
 
 import scala.annotation.tailrec
 
-/** Created by rdl on 04-12-15.
+/** This object provides utility methods that generate lists of pairs of elements from a given list.
   */
-
 object Pairs {
 
-  /** @param l
-    *   a list
+  /** This method returns a list containing all possible pairs of elements in the input list.
+    *
+    * @param l
+    *   a list of elements
+    * @tparam T
+    *   the type of element
     * @return
     *   a list of all pairs of elements made from two elements in l
     */
@@ -45,8 +48,15 @@ object Pairs {
     }
   }
 
-  /** @param l
-    *   a list
+  /** This method returns a list containing all possible pairs of elements in the input list, with
+    * the added condition that the order in which the elements appear in l is preserved.
+    *
+    * E.g.: {{{makeAllSortedPairs(List(1, 2, 3))}}} evaluates to: {{{List((1,2), (1,3), (2,3))}}}
+    *
+    * @param l
+    *   a list of elements
+    * @tparam T
+    *   the type of element
     * @return
     *   a list of all pairs of elements made from two elements in l, preserving the order in which
     *   those elements are in l
@@ -74,10 +84,18 @@ object Pairs {
     }
   }
 
-  /** @param l
-    *   a list
+  /** Given a list of elements l, this method returns a list of pairs (x, xs) where x is an element
+    * in l and xs is the list of elements in l that follow x.
+    *
+    * E.g.: {{{makeAllHeadAndTails(List(1, 2, 3))}}} evaluates to:
+    * {{{List((1,List(2, 3)), (2,List(3)),(3,List()))}}}.
+    *
+    * @param l
+    *   a list of elements
+    * @tparam T
+    *   the type of element
     * @return
-    *   a list of pairs (x, xs) where x is in l and xs is the list of elements following x in l
+    *   list of pairs (x, xs) where x is in l and xs is the list of elements following x in l
     */
   def makeAllHeadAndTails[T](l: List[T]): List[(T, List[T])] = {
     l match {
@@ -86,14 +104,31 @@ object Pairs {
     }
   }
 
-  /** @param l
-    *   a list
+  /** Given two lists of elements of possibly two different types and an optional filter, this
+    * method returns a list of all possible pairs (a, b) where a is in l, b is in t, and (a, b)
+    * satisfies the filtering condition if present.
+    *
+    * E.g.:
+    * {{{
+    *  zipIntoAllPossiblePairs(
+    *   List(1, 2, 3), List("1", "2", "3"),
+    *   (a: Int, b: String) => a.toString == b)
+    * }}}
+    * evaluates to {{{List((3,3), (2,2), (1,1))}}}.
+    *
+    * @param l
+    *   a list of elements
     * @param t
-    *   a list
+    *   a list of elements
+    * @tparam L
+    *   the type of element in l
+    * @tparam T
+    *   the type of element in t
     * @param filter
     *   an optional filter
     * @return
-    *   a list containing all the possible pairs (a, b) where a is in l and b is in t
+    *   a list containing all the possible pairs (a, b) where a is in l, b is in t and (a, b)
+    *   satisfies the filter
     */
   @tailrec
   def zipIntoAllPossiblePairs[L, T](
@@ -117,6 +152,18 @@ object Pairs {
     }
   }
 
+  /** Given a list l with at least two elements, this method returns a list of all consecutive pairs
+    * of elements in l. If l has fewer than two element, the empty list is returned.
+    *
+    * E.g.: {{{pairOfNexts(List(1, 2, 3))}}} evaluates to: {{{List((1,2), (2,3))}}}
+    *
+    * @param l
+    *   a list of elements
+    * @tparam T
+    *   the type of element
+    * @return
+    *   a list of consecutive pairs
+    */
   def pairOfNexts[T](l: List[T]): List[(T, T)] = {
     l match {
       case Nil         => Nil
