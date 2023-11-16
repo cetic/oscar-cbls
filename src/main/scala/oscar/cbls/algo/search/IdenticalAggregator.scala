@@ -22,15 +22,15 @@ import scala.collection.immutable.SortedSet
   */
 object IdenticalAggregator {
 
-  def removeIdenticals[T](l: List[T], isIdentical: (T, T) => Boolean): List[T] =
-    removeIdenticals[T](l, isIdentical, Nil)
+  def removeIdenticals[A](l: List[A], isIdentical: (A, A) => Boolean): List[A] =
+    removeIdenticals[A](l, isIdentical, Nil)
 
   @tailrec
-  private def removeIdenticals[T](
-    l: List[T],
-    isIdentical: (T, T) => Boolean,
-    canonicals: List[T]
-  ): List[T] = {
+  private def removeIdenticals[A](
+    l: List[A],
+    isIdentical: (A, A) => Boolean,
+    canonicals: List[A]
+  ): List[A] = {
     l match {
       case Nil => canonicals
       case h :: t =>
@@ -45,23 +45,23 @@ object IdenticalAggregator {
     * @param itemClass
     *   a function that gives a class for a given item. Class Int.MinValue is considered as
     *   different from itself
-    * @tparam T
+    * @tparam A
     * @return
     *   a maximal subset of l such that all items are of different class according to itemClass
     *   (with Long.MinValue exception)
     */
-  def removeIdenticalClasses[T](l: Iterable[T], itemClass: T => Int): List[T] = {
+  def removeIdenticalClasses[A](l: Iterable[A], itemClass: A => Int): List[A] = {
     val a: Set[Int] = SortedSet.empty
-    removeIdenticalClasses[T](l.iterator, itemClass, Nil, a)
+    removeIdenticalClasses[A](l.iterator, itemClass, Nil, a)
   }
 
   @tailrec
-  private def removeIdenticalClasses[T](
-    l: Iterator[T],
-    itemClass: T => Int,
-    canonicals: List[T],
+  private def removeIdenticalClasses[A](
+    l: Iterator[A],
+    itemClass: A => Int,
+    canonicals: List[A],
     classes: Set[Int]
-  ): List[T] = {
+  ): List[A] = {
     if (l.hasNext) {
       val h             = l.next()
       val classOfH: Int = itemClass(h)
@@ -77,28 +77,28 @@ object IdenticalAggregator {
     *
     * @param it
     * @param itemClass
-    * @tparam T
+    * @tparam A
     * @return
     */
-  def removeIdenticalClassesLazily[T, C](it: Iterable[T], itemClass: T => C)(implicit
+  def removeIdenticalClassesLazily[A, C](it: Iterable[A], itemClass: A => C)(implicit
     A: Ordering[C]
-  ): Iterable[T] = {
+  ): Iterable[A] = {
     new IdenticalSuppressedIterable(it, itemClass)
   }
 
-  class IdenticalSuppressedIterable[T, C](it: Iterable[T], itemClass: T => C)(implicit
+  class IdenticalSuppressedIterable[A, C](it: Iterable[A], itemClass: A => C)(implicit
     A: Ordering[C]
-  ) extends Iterable[T] {
-    override def iterator: Iterator[T] =
-      new IdenticalSuppressedIterator[T, C](it.iterator, itemClass)
+  ) extends Iterable[A] {
+    override def iterator: Iterator[A] =
+      new IdenticalSuppressedIterator[A, C](it.iterator, itemClass)
   }
 
-  class IdenticalSuppressedIterator[T, C](it: Iterator[T], itemClass: T => C)(implicit
+  class IdenticalSuppressedIterator[A, C](it: Iterator[A], itemClass: A => C)(implicit
     A: Ordering[C]
-  ) extends Iterator[T] {
+  ) extends Iterator[A] {
     var coveredClasses: Set[C] = SortedSet.empty
 
-    private def advanceToNextOne: Option[T] = {
+    private def advanceToNextOne: Option[A] = {
       while (it.hasNext) {
         val toReturn = it.next()
         val theClass = itemClass(toReturn)
@@ -111,11 +111,11 @@ object IdenticalAggregator {
     }
 
     // this is the element to return next
-    var theNextOne: Option[T] = advanceToNextOne
+    var theNextOne: Option[A] = advanceToNextOne
 
     override def hasNext: Boolean = theNextOne.isDefined
 
-    override def next(): T =
+    override def next(): A =
       theNextOne match {
         case Some(s) => theNextOne = advanceToNextOne; s
         case _       => it.next() // to crash moreless transparently

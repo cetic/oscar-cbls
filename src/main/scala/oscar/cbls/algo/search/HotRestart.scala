@@ -82,11 +82,11 @@ class ShiftedIterable(it: Iterable[Int], pivot: Int, sequence: Boolean = false)
     }
   }
 
-  class ShiftedIterator[@specialized(Int, Long) T](first: Iterable[T], var second: Iterable[T])
-      extends Iterator[T] {
+  class ShiftedIterator[@specialized(Int, Long) A](first: Iterable[A], var second: Iterable[A])
+      extends Iterator[A] {
     // TODO: this is awful: maybe the stuff is already sorted
     // TODO: we should perform a lazy sort since all the first might not be covered anyway
-    var it: Iterator[T] = first.toList.iterator
+    var it: Iterator[A] = first.toList.iterator
     override def hasNext: Boolean = {
       if (it.hasNext) true
       else if (second == null) false
@@ -97,7 +97,7 @@ class ShiftedIterable(it: Iterable[Int], pivot: Int, sequence: Boolean = false)
       }
     }
 
-    override def next(): T = it.next()
+    override def next(): A = it.next()
   }
 }
 

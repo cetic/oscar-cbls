@@ -23,18 +23,18 @@ object Pairs {
     *
     * @param l
     *   a list of elements
-    * @tparam T
+    * @tparam A
     *   the type of element
     * @return
     *   a list of all pairs of elements made from two elements in l
     */
-  def makeAllUnsortedPairs[T](l: List[T]): List[(T, T)] = {
+  def makeAllUnsortedPairs[A](l: List[A]): List[(A, A)] = {
     @tailrec
     def makeAllUnsortedPairsWithHead(
-      head: T,
-      tail: List[T],
-      toAppend: List[(T, T)]
-    ): List[(T, T)] = {
+      head: A,
+      tail: List[A],
+      toAppend: List[(A, A)]
+    ): List[(A, A)] = {
       tail match {
         case other :: newTail =>
           makeAllUnsortedPairsWithHead(head, newTail, (head, other) :: toAppend)
@@ -55,19 +55,19 @@ object Pairs {
     *
     * @param l
     *   a list of elements
-    * @tparam T
+    * @tparam A
     *   the type of element
     * @return
     *   a list of all pairs of elements made from two elements in l, preserving the order in which
     *   those elements are in l
     */
   @tailrec
-  def makeAllSortedPairs[T](
-    l: List[T],
-    filter: (T, T) => Boolean = (_: T, _: T) => true,
-    toReturn: List[(T, T)] = List.empty
-  ): List[(T, T)] = {
-    def makeAllSortedPairsWithHead(head: T, tail: List[T], toAppend: List[(T, T)]): List[(T, T)] = {
+  def makeAllSortedPairs[A](
+    l: List[A],
+    filter: (A, A) => Boolean = (_: A, _: A) => true,
+    toReturn: List[(A, A)] = List.empty
+  ): List[(A, A)] = {
+    def makeAllSortedPairsWithHead(head: A, tail: List[A], toAppend: List[(A, A)]): List[(A, A)] = {
       tail match {
         case Nil => toAppend
         case other :: newTail =>
@@ -92,12 +92,12 @@ object Pairs {
     *
     * @param l
     *   a list of elements
-    * @tparam T
+    * @tparam A
     *   the type of element
     * @return
     *   list of pairs (x, xs) where x is in l and xs is the list of elements following x in l
     */
-  def makeAllHeadAndTails[T](l: List[T]): List[(T, List[T])] = {
+  def makeAllHeadAndTails[A](l: List[A]): List[(A, List[A])] = {
     l match {
       case Nil    => Nil
       case h :: t => (h, t) :: makeAllHeadAndTails(t)
@@ -120,9 +120,9 @@ object Pairs {
     *   a list of elements
     * @param t
     *   a list of elements
-    * @tparam L
+    * @tparam A
     *   the type of element in l
-    * @tparam T
+    * @tparam B
     *   the type of element in t
     * @param filter
     *   an optional filter
@@ -131,17 +131,17 @@ object Pairs {
     *   satisfies the filter
     */
   @tailrec
-  def zipIntoAllPossiblePairs[L, T](
-    l: List[L],
-    t: List[T],
-    filter: (L, T) => Boolean = (_: L, _: T) => true,
-    toReturn: List[(L, T)] = List.empty
-  ): List[(L, T)] = {
+  def zipIntoAllPossiblePairs[A, B](
+    l: List[A],
+    t: List[B],
+    filter: (A, B) => Boolean = (_: A, _: B) => true,
+    toReturn: List[(A, B)] = List.empty
+  ): List[(A, B)] = {
     l match {
       case Nil => toReturn
       case hl :: tl =>
         @tailrec
-        def myAggregate(lh: L, rt: List[T], toReturn: List[(L, T)]): List[(L, T)] = {
+        def myAggregate(lh: A, rt: List[B], toReturn: List[(A, B)]): List[(A, B)] = {
           rt match {
             case ht :: tt if filter(lh, ht) => myAggregate(lh, tt, (lh, ht) :: toReturn)
             case ht :: tt                   => myAggregate(lh, tt, toReturn)
@@ -159,12 +159,12 @@ object Pairs {
     *
     * @param l
     *   a list of elements
-    * @tparam T
+    * @tparam A
     *   the type of element
     * @return
     *   a list of consecutive pairs
     */
-  def pairOfNexts[T](l: List[T]): List[(T, T)] = {
+  def pairOfNexts[A](l: List[A]): List[(A, A)] = {
     l match {
       case Nil         => Nil
       case _ :: Nil    => Nil
