@@ -64,7 +64,7 @@ object Pairs {
   @tailrec
   def makeAllSortedPairs[T](
     l: List[T],
-    filter: (T, T) => Boolean = (head: T, other: T) => true,
+    filter: (T, T) => Boolean = (_: T, _: T) => true,
     toReturn: List[(T, T)] = List.empty
   ): List[(T, T)] = {
     def makeAllSortedPairsWithHead(head: T, tail: List[T], toAppend: List[(T, T)]): List[(T, T)] = {
