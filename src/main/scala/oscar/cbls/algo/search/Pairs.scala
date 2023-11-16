@@ -80,7 +80,7 @@ object Pairs {
     l match {
       case Nil => toReturn
       case h :: t =>
-        makeAllSortedPairs(t, filter, makeAllSortedPairsWithHead(h, t, List.empty) ::: toReturn)
+        makeAllSortedPairs(t, filter, toReturn ::: makeAllSortedPairsWithHead(h, t, List.empty))
     }
   }
 
