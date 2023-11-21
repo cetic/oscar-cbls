@@ -39,7 +39,7 @@ class RemovedIntSequenceExplorer(
     explorerInOriginalSequence.prev match {
       case None => None
       case Some(tentativePos) =>
-        if (tentativePos.position == intSequence.removePosition)
+        if (tentativePos.position == intSequence.explorerAtRemovePos.position)
           tentativePos.prev match {
             case None => None
             case Some(secondTentativePos) =>
@@ -54,7 +54,7 @@ class RemovedIntSequenceExplorer(
     explorerInOriginalSequence.next match {
       case None => None
       case Some(tentativePos) =>
-        if (tentativePos.position == intSequence.removePosition)
+        if (tentativePos.position == intSequence.explorerAtRemovePos.position)
           tentativePos.next match {
             case None => None
             case Some(secondTentativePos) =>

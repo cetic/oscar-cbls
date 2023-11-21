@@ -10,7 +10,7 @@ import oscar.cbls.test.algo.sequence.SequenceTestUtils._
 
 import scala.util.Random
 
-class SequenceExplorerTestSuite
+class IntSequenceExplorerSuite
     extends AnyFunSuite
     with ScalaCheckDrivenPropertyChecks
     with Matchers {
@@ -46,8 +46,8 @@ class SequenceExplorerTestSuite
     forAll(testBenchGen, minSuccessful(20)) { testBench =>
       whenever(testBench.size > 5) {
         val (indexFrom, indexTo, destination) = getRandomParametersForMoveAfter(testBench)
-        val seq =
-          new MovedIntSequence(IntSequence(testBench), indexFrom, indexTo, destination, true, 1)
+        var seq = IntSequence(testBench)
+        seq = new MovedIntSequence(seq, seq.explorerAtPosition(indexFrom).get, seq.explorerAtPosition(indexTo).get, seq.explorerAtPosition(destination), true, 1)
         val modifiedList = flipListManually(testBench, indexFrom, indexTo, destination)
 
         seq.zipWithIndex.foreach { case (e, i) =>
@@ -72,7 +72,8 @@ class SequenceExplorerTestSuite
       whenever(testBench.size > 5) {
 
         val i                = Random.nextInt(testBench.size)
-        val seq: IntSequence = new RemovedIntSequence(IntSequence(testBench), i, 1)
+        var seq: IntSequence = IntSequence(testBench)
+        seq = new RemovedIntSequence(seq, seq.explorerAtPosition(i).get, 1)
         val modifiedList     = testBench.take(i) ++ testBench.drop(i + 1)
 
         seq.zipWithIndex.foreach { case (e, i) =>

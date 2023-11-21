@@ -111,18 +111,23 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
           for (action <- actionsList) {
             action match {
               case MoveAfter(from, to, after) =>
-                seq = seq.moveAfter(from, to, after, flip = true)
+                seq = seq.moveAfter(
+                  seq.explorerAtPosition(from).get,
+                  seq.explorerAtPosition(to).get,
+                  seq.explorerAtPosition(after),
+                  flip = true
+                )
                 modifiedList = flipListManually(modifiedList, from, to, after)
 
               case Insert(value, position) =>
-                seq = seq.insertAtPosition(value, position)
+                seq = seq.insertAtPosition(value, seq.explorerAtPosition(position).get)
 
                 val (front, back) = modifiedList.splitAt(position)
                 modifiedList = front ++ List(value) ++ back
 
               case Delete(position) =>
                 if (referenceList.nonEmpty) {
-                  seq = seq.delete(position)
+                  seq = seq.delete(seq.explorerAtPosition(position).get)
                   modifiedList = modifiedList.take(position) ++ modifiedList.drop(position + 1)
                 }
 
@@ -150,14 +155,14 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
     forAll(testBenchGen(onlyMove = true), minSuccessful(20)) { testBench =>
       {
         whenever(testBench._1.size > 5) {
-          val actionsList                       = testBench._2
-          val referenceList                     = testBench._1
+          val actionsList   = testBench._2
+          val referenceList = testBench._1
           // Creating a MovedIntSequence without changing the generated sequence
           seq = new MovedIntSequence(
             IntSequence(referenceList),
-            0,
-            0,
-            -1,
+            seq.explorerAtPosition(0).get,
+            seq.explorerAtPosition(0).get,
+            seq.explorerAtPosition(-1),
             false,
             1
           )
@@ -166,7 +171,12 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
           for (action <- actionsList) {
             action match {
               case MoveAfter(from, to, after) =>
-                seq = seq.moveAfter(from, to, after, flip = true)
+                seq = seq.moveAfter(
+                  seq.explorerAtPosition(from).get,
+                  seq.explorerAtPosition(to).get,
+                  seq.explorerAtPosition(after),
+                  flip = true
+                )
                 modifiedList = flipListManually(modifiedList, from, to, after)
               case Flip() =>
                 seq = seq.flip()
@@ -186,14 +196,15 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
         whenever(testBench._1.size > 5) {
           val actionsList   = testBench._2
           val referenceList = testBench._1
-          // Creating a RemovedIntSequence without changing the generated sequence
-          seq = new RemovedIntSequence(IntSequence(referenceList :+ 0), referenceList.size, 1)
+          // Creating a RemovedIntSequence without changing the generated sequenceµ
+          seq = IntSequence(referenceList :+ 0)
+          seq = new RemovedIntSequence(seq, seq.explorerAtPosition(referenceList.size).get, 1)
           var modifiedList = referenceList
 
           for (action <- actionsList) {
             action match {
               case Delete(pos) if modifiedList.nonEmpty =>
-                seq = seq.delete(pos)
+                seq = seq.delete(seq.explorerAtPosition(pos).get)
                 modifiedList = modifiedList.take(pos) ++ modifiedList.drop(pos + 1)
               case _ =>
             }
@@ -212,15 +223,20 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
           val referenceList = testBench._1
 
           // Creating a InsertedIntSequence without changing the generated sequence
-          val value = referenceList.head
+          val value                   = referenceList.head
           val referenceListMinusFirst = referenceList.drop(1)
-          seq = new InsertedIntSequence(IntSequence(referenceListMinusFirst), value, 0, 1)
-          var modifiedList  = referenceList
+          seq = new InsertedIntSequence(
+            IntSequence(referenceListMinusFirst),
+            value,
+            seq.explorerAtPosition(0).get,
+            1
+          )
+          var modifiedList = referenceList
 
           for (action <- actionsList) {
             action match {
               case Insert(value, at) =>
-                seq = seq.insertAtPosition(value, at)
+                seq = seq.insertAtPosition(value, seq.explorerAtPosition(at).get)
                 val (front, back) = modifiedList.splitAt(at)
                 modifiedList = front ++ List(value) ++ back
             }
@@ -244,16 +260,22 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
           for (action <- actionsList) {
             action match {
               case MoveAfter(from, to, after) =>
-                seq = seq.moveAfter(from, to, after, flip = true, fast = true)
+                seq = seq.moveAfter(
+                  seq.explorerAtPosition(from).get,
+                  seq.explorerAtPosition(to).get,
+                  seq.explorerAtPosition(after),
+                  flip = true,
+                  fast = true
+                )
                 modifiedList = flipListManually(modifiedList, from, to, after)
 
               case Insert(value, position) =>
-                seq = seq.insertAtPosition(value, position, fast = true)
+                seq = seq.insertAtPosition(value, seq.explorerAtPosition(position).get, fast = true)
                 val (front, back) = modifiedList.splitAt(position)
                 modifiedList = front ++ List(value) ++ back
 
               case Delete(position) if referenceList.nonEmpty =>
-                seq = seq.delete(position, fast = true)
+                seq = seq.delete(seq.explorerAtPosition(position).get, fast = true)
                 modifiedList = modifiedList.take(position) ++ modifiedList.drop(position + 1)
 
               case Flip() =>

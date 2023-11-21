@@ -307,14 +307,14 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     *
     * @param value
     *   The value to insert as [[Int]]
-    * @param pos
+    * @param insertionPosAsExplorer
     *   The position where to insert the value as [[Int]]
     * @param fast
     *   Fast flag as [[Boolean]] for more detail see description.
     * @return
     *   An [[IntSequence]] with the new value
     */
-  def insertAtPosition(value: Int, pos: Int, fast: Boolean = false): IntSequence
+  def insertAtPosition(value: Int, insertionPosAsExplorer: IntSequenceExplorer, fast: Boolean = false): IntSequence
 
   /** Removes the value at the specified position.
     *
@@ -328,18 +328,18 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     * @return
     *   An [[IntSequence]] without the value at the specified position
     */
-  def delete(pos: Int, fast: Boolean = false): IntSequence
+  def delete(removePosAsExplorer: IntSequenceExplorer, fast: Boolean = false): IntSequence
 
   /** Moves nodes after a position and optionally flip them.
     *
     * There is two ways to move values, a fast and a normal one. If fast, it returns a
     * [[StackedUpdateIntSequence]]. If normal, it computes a brand new [[ConcreteIntSequence]].
     *
-    * @param startPositionIncluded
+    * @param fromIncludedExpl
     *   Starting position of the nodes to move (included) as [[Int]]
-    * @param endPositionIncluded
+    * @param toIncludedExpl
     *   Ending position of the nodes to move (included) as [[Int]]
-    * @param moveAfterPosition
+    * @param moveAfterExpl
     *   The position after which to move the nodes as [[Int]]
     * @param flip
     *   If true, flip the nodes before moving them
@@ -349,11 +349,11 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     *   An [[IntSequence]] where the nodes have been moved accordingly
     */
   def moveAfter(
-    startPositionIncluded: Int,
-    endPositionIncluded: Int,
-    moveAfterPosition: Int,
-    flip: Boolean,
-    fast: Boolean = false
+                 fromIncludedExpl: IntSequenceExplorer,
+                 toIncludedExpl: IntSequenceExplorer,
+                 moveAfterExpl: Option[IntSequenceExplorer],
+                 flip: Boolean,
+                 fast: Boolean = false
   ): IntSequence
 
   /** Flips the [[IntSequence]]
@@ -365,7 +365,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     */
   def flip(fast: Boolean = false): IntSequence =
     if (this.isEmpty) this
-    else moveAfter(0, this.size - 1, -1, flip = true, fast)
+    else moveAfter(this.explorerAtPosition(0).get, this.explorerAtPosition(size - 1).get, None, flip = true, fast)
 
   /** Regularizes the current [[IntSequence]] if the max number of pivot is reached
     *

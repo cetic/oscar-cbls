@@ -187,6 +187,7 @@ class ConcreteIntSequence(
 
   private def computeExplorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
     if (position >= this.size) None
+    else if (position < 0) None
     else {
       val currentPivotPosition = externalToInternalPosition.pivotWithPositionApplyingTo(position)
       val (pivotAbovePosition: Option[RedBlackTreeMapExplorer[Pivot]], internalPosition) = {
@@ -284,10 +285,10 @@ class ConcreteIntSequence(
     }
   }
 
-  override def insertAtPosition(value: Int, pos: Int, fast: Boolean): IntSequence = {
+  override def insertAtPosition(value: Int, explorerAtPos: IntSequenceExplorer, fast: Boolean): IntSequence = {
     require(
-      pos <= size,
-      "inserting past the end of the sequence (size:" + size + " pos:" + pos + ")"
+      explorerAtPos.position <= size,
+      "inserting past the end of the sequence (size:" + size + " pos:" + explorerAtPos.position + ")"
     )
 
     /** 1° Inserts the value at startFreeRangeForInternalPosition 2° Adds necessary pivot to match
@@ -296,7 +297,7 @@ class ConcreteIntSequence(
       * : from 13 to 13 moving x 5 position earlier
       */
 
-    if (fast) return new InsertedIntSequence(this, value, pos, 1)
+    if (fast) return new InsertedIntSequence(this, value, explorerAtPos, 1)
 
     // insert into red blacks
     val newInternalPositionToValue =
@@ -308,15 +309,15 @@ class ConcreteIntSequence(
     )
 
     // If pos == size, we add it at the end of the sequence resulting on an identity pivot => no need
-    val newExternalToInternalPosition = if (pos != size) {
+    val newExternalToInternalPosition = if (explorerAtPos.position != size) {
       // inserting somewhere within the sequence, need to shift upper part
-      val tmp = externalToInternalPosition.swapAdjacentZonesShiftFirst(pos, size - 1, size, false)
+      val tmp = externalToInternalPosition.swapAdjacentZonesShiftFirst(explorerAtPos.position, size - 1, size, false)
 
       assert(
         tmp equals externalToInternalPosition.updatesForCompositionBefore(
           List(
-            (pos + 1, size, UnitaryAffineFunction(-1, false)),
-            (pos, pos, UnitaryAffineFunction(startFreeRangeForInternalPosition - pos, false))
+            (explorerAtPos.position + 1, size, UnitaryAffineFunction(-1, false)),
+            (explorerAtPos.position, explorerAtPos.position, UnitaryAffineFunction(startFreeRangeForInternalPosition - explorerAtPos.position, false))
           )
         )
       )
@@ -331,13 +332,14 @@ class ConcreteIntSequence(
     )
   }
 
-  override def delete(pos: Int, fast: Boolean): IntSequence = {
+  override def delete(removePosAsExplorer: IntSequenceExplorer, fast: Boolean): IntSequence = {
+    val pos = removePosAsExplorer.position
     require(
       pos >= 0 && pos < size,
       s"Remove position must be in [0, sizeOfSequence=$size [ got $pos"
     )
 
-    if (fast) return new RemovedIntSequence(this, pos, 1)
+    if (fast) return new RemovedIntSequence(this, removePosAsExplorer, 1)
 
     // 1° Gets the corresponding values + some contextual information
     val internalPosition        = externalToInternalPosition(pos)
@@ -421,52 +423,55 @@ class ConcreteIntSequence(
   }
 
   override def moveAfter(
-    startPositionIncluded: Int,
-    endPositionIncluded: Int,
-    moveAfterPosition: Int,
-    flip: Boolean,
-    fast: Boolean
+                          fromIncludedExpl: IntSequenceExplorer,
+                          toIncludedExpl: IntSequenceExplorer,
+                          moveAfterExpl: Option[IntSequenceExplorer],
+                          flip: Boolean,
+                          fast: Boolean
   ): IntSequence = {
+    val fromIncludedPos = fromIncludedExpl.position
+    val toIncludedPos = toIncludedExpl.position
+    val moveAfterPos = if(moveAfterExpl.nonEmpty) moveAfterExpl.get.position else -1
     require(
-      startPositionIncluded >= 0 && startPositionIncluded < size,
-      s"StartPositionIncluded should be in [0,sizeOfSequence=$size[ got $startPositionIncluded"
+      fromIncludedPos >= 0 && fromIncludedPos < size,
+      s"StartPositionIncluded should be in [0,sizeOfSequence=$size[ got $fromIncludedPos"
     )
     require(
-      endPositionIncluded >= 0 && endPositionIncluded < size,
-      s"EndPositionIncluded should be in [0,sizeOfSequence=$size[ got $endPositionIncluded"
+      toIncludedPos >= 0 && toIncludedPos < size,
+      s"EndPositionIncluded should be in [0,sizeOfSequence=$size[ got $toIncludedPos"
     )
     require(
-      moveAfterPosition >= -1 && moveAfterPosition < size,
-      s"MoveAfterPosition should be in [-1,sizeOfSequence=$size[ got $moveAfterPosition"
+      moveAfterPos >= -1 && moveAfterPos < size,
+      s"MoveAfterPosition should be in [-1,sizeOfSequence=$size[ got $moveAfterPos"
     )
 
     require(
-      moveAfterPosition < startPositionIncluded || moveAfterPosition > endPositionIncluded,
+      moveAfterPos < fromIncludedPos || moveAfterPos > toIncludedPos,
       s"MoveAfterPosition cannot be between startPositionIncluded and endPositionIncluded. " +
-        s"Got $moveAfterPosition (move), $startPositionIncluded (start) $endPositionIncluded (end)"
+        s"Got $moveAfterPos (move), $fromIncludedPos (start) $toIncludedPos (end)"
     )
     require(
-      startPositionIncluded <= endPositionIncluded,
-      s"StartPositionIncluded must be <= endPositionIncluded. Got $startPositionIncluded <= $endPositionIncluded"
+      fromIncludedPos <= toIncludedPos,
+      s"StartPositionIncluded must be <= endPositionIncluded. Got $fromIncludedPos <= $toIncludedPos"
     )
 
     if (fast)
       return new MovedIntSequence(
         this,
-        startPositionIncluded,
-        endPositionIncluded,
-        moveAfterPosition,
+        fromIncludedExpl,
+        toIncludedExpl,
+        moveAfterExpl,
         flip,
         1
       )
 
     val newExternalToInternalPosition =
-      if (moveAfterPosition + 1 == startPositionIncluded) {
+      if (moveAfterPos + 1 == fromIncludedPos) {
         if (flip) {
           // The segment is flipping on itself
           externalToInternalPosition.flipPivotsInInterval(
-            startPositionIncluded,
-            endPositionIncluded
+            fromIncludedPos,
+            toIncludedPos
           )
 
         } else {
@@ -474,20 +479,20 @@ class ConcreteIntSequence(
           externalToInternalPosition
         }
       } else {
-        if (moveAfterPosition > startPositionIncluded) {
+        if (moveAfterPos > fromIncludedPos) {
           val tempNewExternalToInternalPosition = if (!flip) {
             // The segment is moving upward without flipping
             externalToInternalPosition.swapAdjacentZonesShiftBest(
-              startPositionIncluded,
-              endPositionIncluded,
-              moveAfterPosition
+              fromIncludedPos,
+              toIncludedPos,
+              moveAfterPos
             )
           } else {
             // The segment is moving upward and flipping
             externalToInternalPosition.swapAdjacentZonesShiftSecond(
-              startPositionIncluded,
-              endPositionIncluded,
-              moveAfterPosition,
+              fromIncludedPos,
+              toIncludedPos,
+              moveAfterPos,
               true
             )
           }
@@ -498,16 +503,16 @@ class ConcreteIntSequence(
               .updatesForCompositionBefore(
                 List(
                   (
-                    startPositionIncluded,
-                    moveAfterPosition + startPositionIncluded - endPositionIncluded - 1,
-                    UnitaryAffineFunction(endPositionIncluded + 1 - startPositionIncluded, false)
+                    fromIncludedPos,
+                    moveAfterPos + fromIncludedPos - toIncludedPos - 1,
+                    UnitaryAffineFunction(toIncludedPos + 1 - fromIncludedPos, false)
                   ),
                   (
-                    startPositionIncluded + moveAfterPosition - endPositionIncluded,
-                    moveAfterPosition,
+                    fromIncludedPos + moveAfterPos - toIncludedPos,
+                    moveAfterPos,
                     UnitaryAffineFunction(
-                      if (flip) startPositionIncluded + moveAfterPosition
-                      else endPositionIncluded - moveAfterPosition,
+                      if (flip) fromIncludedPos + moveAfterPos
+                      else toIncludedPos - moveAfterPos,
                       flip
                     )
                   )
@@ -519,16 +524,16 @@ class ConcreteIntSequence(
           // The segment is moving downward without flipping
           val tempNewExternalToInternalPosition = if (!flip) {
             externalToInternalPosition.swapAdjacentZonesShiftBest(
-              moveAfterPosition + 1,
-              startPositionIncluded - 1,
-              endPositionIncluded
+              moveAfterPos + 1,
+              fromIncludedPos - 1,
+              toIncludedPos
             )
           } else {
             // The segment is moving downward without and flipping
             externalToInternalPosition.swapAdjacentZonesShiftFirst(
-              moveAfterPosition + 1,
-              startPositionIncluded - 1,
-              endPositionIncluded,
+              moveAfterPos + 1,
+              fromIncludedPos - 1,
+              toIncludedPos,
               true
             )
           }
@@ -537,18 +542,18 @@ class ConcreteIntSequence(
             externalToInternalPosition.updatesForCompositionBefore(
               List(
                 (
-                  moveAfterPosition + 1,
-                  moveAfterPosition + endPositionIncluded - startPositionIncluded + 1,
+                  moveAfterPos + 1,
+                  moveAfterPos + toIncludedPos - fromIncludedPos + 1,
                   UnitaryAffineFunction(
-                    if (flip) endPositionIncluded + moveAfterPosition + 1
-                    else startPositionIncluded - moveAfterPosition - 1,
+                    if (flip) toIncludedPos + moveAfterPos + 1
+                    else fromIncludedPos - moveAfterPos - 1,
                     flip
                   )
                 ),
                 (
-                  moveAfterPosition + endPositionIncluded - startPositionIncluded + 2,
-                  endPositionIncluded,
-                  UnitaryAffineFunction(startPositionIncluded - endPositionIncluded - 1, false)
+                  moveAfterPos + toIncludedPos - fromIncludedPos + 2,
+                  toIncludedPos,
+                  UnitaryAffineFunction(fromIncludedPos - toIncludedPos - 1, false)
                 )
               )
             ) equals tempNewExternalToInternalPosition

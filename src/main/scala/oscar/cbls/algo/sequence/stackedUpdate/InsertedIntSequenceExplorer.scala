@@ -78,7 +78,7 @@ class InsertedIntSequenceExplorer(
           }
       }
     } else {
-      if (nextPosition == seq.pos) {
+      if (nextPosition == seq.explorerAtInsertPos.position) {
         // Getting into the inserted position
         // Original explorer doesn't change
         Some(
@@ -145,7 +145,7 @@ class InsertedIntSequenceExplorer(
           }
       }
     } else {
-      if (prevPosition == seq.pos) {
+      if (prevPosition == seq.explorerAtInsertPos.position) {
         // Getting into the inserted position from above it
         // Not moving the explorer ==> original explorer is above
         Some(

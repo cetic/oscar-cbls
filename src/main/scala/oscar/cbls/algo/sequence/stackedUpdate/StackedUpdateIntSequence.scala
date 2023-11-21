@@ -29,74 +29,78 @@ import oscar.cbls.algo.sequence.concrete.ConcreteIntSequence
   */
 abstract class StackedUpdateIntSequence(depth: Int, maxDepth: Int = 20)
     extends IntSequence(depth = depth) {
-  override def delete(pos: Int, fast: Boolean): IntSequence = {
+  override def delete(removePosAsExplorer: IntSequenceExplorer, fast: Boolean): IntSequence = {
+    val pos = removePosAsExplorer.position
     require(pos >= 0 && pos < size, s"Remove position must be in [0, size=$size [. Got $pos")
     if (depth >= maxDepth) {
-      new RemovedIntSequence(this, pos, depth + 1).commitPendingMoves
+      new RemovedIntSequence(this, removePosAsExplorer, depth + 1).commitPendingMoves
     } else {
-      new RemovedIntSequence(this, pos, depth + 1)
+      new RemovedIntSequence(this, removePosAsExplorer, depth + 1)
     }
   }
 
   override def moveAfter(
-    startPositionIncluded: Int,
-    endPositionIncluded: Int,
-    moveAfterPosition: Int,
-    flip: Boolean,
-    fast: Boolean
+                          fromIncludedExpl: IntSequenceExplorer,
+                          toIncludedExpl: IntSequenceExplorer,
+                          moveAfterExpl: Option[IntSequenceExplorer],
+                          flip: Boolean,
+                          fast: Boolean
   ): IntSequence = {
+    val fromIncludedPos = fromIncludedExpl.position
+    val toIncludedPos = toIncludedExpl.position
+    val moveAfterPos = if(moveAfterExpl.nonEmpty)moveAfterExpl.get.position else -1
     require(
-      startPositionIncluded >= 0 && startPositionIncluded < size,
-      s"StartPositionIncluded should be in [0,sizeOfSequence=$size[. Got $startPositionIncluded"
+      fromIncludedPos >= 0 && fromIncludedPos < size,
+      s"StartPositionIncluded should be in [0,sizeOfSequence=$size[. Got $fromIncludedPos"
     )
     require(
-      endPositionIncluded >= 0 && endPositionIncluded < size,
-      s"EndPositionIncluded should be in [0,sizeOfSequence=$size[. Got $endPositionIncluded"
+      toIncludedPos >= 0 && toIncludedPos < size,
+      s"EndPositionIncluded should be in [0,sizeOfSequence=$size[. Got $toIncludedPos"
     )
     require(
-      moveAfterPosition >= -1 && moveAfterPosition < size,
-      s"MoveAfterPosition should be in [-1,sizeOfSequence=$size[. Got $moveAfterPosition"
+      moveAfterPos >= -1 && moveAfterPos < size,
+      s"MoveAfterPosition should be in [-1,sizeOfSequence=$size[. Got $moveAfterPos"
     )
 
     require(
-      moveAfterPosition < startPositionIncluded || moveAfterPosition > endPositionIncluded,
+      moveAfterPos < fromIncludedPos || moveAfterPos > toIncludedPos,
       s"MoveAfterPosition cannot be between startPositionIncluded and endPositionIncluded. " +
-        s"Got $moveAfterPosition (move), $startPositionIncluded (start) $endPositionIncluded (end)"
+        s"Got $moveAfterPos (move), $fromIncludedPos (start) $toIncludedPos (end)"
     )
     require(
-      startPositionIncluded <= endPositionIncluded,
-      s"StartPositionIncluded must be <= endPositionIncluded. Got $startPositionIncluded <= $endPositionIncluded"
+      fromIncludedPos <= toIncludedPos,
+      s"StartPositionIncluded must be <= endPositionIncluded. Got $fromIncludedPos <= $toIncludedPos"
     )
     if (depth >= maxDepth) {
       new MovedIntSequence(
         this,
-        startPositionIncluded,
-        endPositionIncluded,
-        moveAfterPosition,
+        fromIncludedExpl,
+        toIncludedExpl,
+        moveAfterExpl,
         flip,
         depth + 1
       ).commitPendingMoves
     } else {
       new MovedIntSequence(
         this,
-        startPositionIncluded,
-        endPositionIncluded,
-        moveAfterPosition,
+        fromIncludedExpl,
+        toIncludedExpl,
+        moveAfterExpl,
         flip,
         depth + 1
       )
     }
   }
 
-  override def insertAtPosition(value: Int, pos: Int, fast: Boolean): IntSequence = {
+  override def insertAtPosition(value: Int, insertionPosAsExplorer: IntSequenceExplorer, fast: Boolean): IntSequence = {
     require(
-      pos >= 0 && pos <= size,
-      s"Insertion position must be in [0,sizeOfSequence=$size]. Got $pos"
+      insertionPosAsExplorer.position >= 0 && insertionPosAsExplorer.position <= size,
+      s"Insertion position must be in [0,sizeOfSequence=$size]. Got ${insertionPosAsExplorer.position}"
     )
     if (depth >= maxDepth) {
-      new InsertedIntSequence(this, value: Int, pos: Int, depth + 1).commitPendingMoves
+      new InsertedIntSequence(this, value: Int, insertionPosAsExplorer: IntSequenceExplorer, depth + 1).commitPendingMoves
     } else {
-      new InsertedIntSequence(this, value: Int, pos: Int, depth + 1)
+      new InsertedIntSequence(this, value: Int, insertionPosAsExplorer: IntSequenceExplorer, depth + 1)
     }
   }
 

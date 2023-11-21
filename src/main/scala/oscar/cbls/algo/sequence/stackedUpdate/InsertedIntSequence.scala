@@ -22,96 +22,120 @@ import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
   *   The original sequence as a [[IntSequence]]
   * @param insertedValue
   *   The value to insert as an [[Int]]
-  * @param pos
+  * @param explorerAtInsertPos
   *   The insertion position as an [[Int]]
   * @param depth
   *   The depth of the current update
   */
-class InsertedIntSequence(intSequence: IntSequence, val insertedValue: Int, val pos: Int, depth: Int)
-    extends StackedUpdateIntSequence(depth) {
+class InsertedIntSequence(
+  intSequence: IntSequence,
+  val insertedValue: Int,
+  val explorerAtInsertPos: IntSequenceExplorer,
+  depth: Int
+) extends StackedUpdateIntSequence(depth) {
 
-  private val (originalExplorerAtInsertPosition,originalExplorerAfterInsertPosition) = {
-    val originalExplorerAtInsert = intSequence.explorerAtPosition(pos)
-    (originalExplorerAtInsert, originalExplorerAtInsert.get.next)
-  }
+  private val originalExplorerBeforeInsertPosition = explorerAtInsertPos.prev
 
   override val size: Int = intSequence.size + 1
 
   override def nbOccurrence(value: Int): Int =
-    if (value == this.insertedValue) intSequence.nbOccurrence(value) + 1 else intSequence.nbOccurrence(value)
+    if (value == this.insertedValue) intSequence.nbOccurrence(value) + 1
+    else intSequence.nbOccurrence(value)
 
   override def unorderedContentNoDuplicateWithNBOccurrences: List[(Int, Int)] =
     unorderedContentNoDuplicate.map(value =>
-      (value, if (value == insertedValue) intSequence.nbOccurrence(value) + 1 else intSequence.nbOccurrence(value))
+      (
+        value,
+        if (value == insertedValue) intSequence.nbOccurrence(value) + 1
+        else intSequence.nbOccurrence(value)
+      )
     )
 
   override def descriptorString: String =
-    s"${intSequence.descriptorString}.inserted(val:$insertedValue pos:$pos)"
+    s"${intSequence.descriptorString}.inserted(val:$insertedValue pos:$explorerAtInsertPos)"
 
   override def unorderedContentNoDuplicate: List[Int] =
-    if (intSequence.nbOccurrence(insertedValue) == 0) insertedValue :: intSequence.unorderedContentNoDuplicate
+    if (intSequence.nbOccurrence(insertedValue) == 0)
+      insertedValue :: intSequence.unorderedContentNoDuplicate
     else intSequence.unorderedContentNoDuplicate
 
   override def positionsOfValue(value: Int): List[Int] = {
     val positionsBefore = intSequence.positionsOfValue(value)
     val positionsAfter  = positionsBefore.map(oldPos2NewPos)
-    if (value == insertedValue) List(pos) ::: positionsAfter
+    if (value == insertedValue) List(explorerAtInsertPos.position) ::: positionsAfter
     else positionsAfter
   }
 
   // Private fast method to to map an old position to it's new value
   @inline
   private def oldPos2NewPos(oldPOs: Int): Int = {
-    if (oldPOs < pos) oldPOs else oldPOs + 1
+    if (oldPOs < explorerAtInsertPos.position) oldPOs else oldPOs + 1
   }
 
   override def originalExplorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
-    if(position == pos) originalExplorerAtInsertPosition
-    else if(position == pos+1) originalExplorerAfterInsertPosition
+    if (position == explorerAtInsertPos.position) Some(explorerAtInsertPos)
+    else if (position == explorerAtInsertPos.position - 1) originalExplorerBeforeInsertPosition
     else intSequence.explorerAtPosition(position)
   }
 
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
-    if (position == this.pos) {
+    if (position == this.explorerAtInsertPos.position) {
       // Explorer at the inserted point position
       if (position == 0) {
         // Inserted point position is the start of the sequence
-        Some(new InsertedIntSequenceExplorer(this, position, intSequence.explorerAtPosition(0), true, true))
+        Some(
+          new InsertedIntSequenceExplorer(
+            this,
+            position,
+            Some(this.explorerAtInsertPos),
+            true,
+            true
+          )
+        )
       } else {
         // Inserted point position is later in the sequence
         Some(
           new InsertedIntSequenceExplorer(
             this,
             position,
-            intSequence.explorerAtPosition(position - 1),
+            this.explorerAtInsertPos.prev,
             true,
             false
           )
         )
       }
-    } else if (position < this.pos) {
-      intSequence.explorerAtPosition(position) match {
-        case None    => None
-        case Some(p) => Some(new InsertedIntSequenceExplorer(this, position, Some(p), false, false))
-      }
     } else {
-      intSequence.explorerAtPosition(position - 1) match {
+      val explorer =
+        if (Math.abs(position - this.explorerAtInsertPos.position) > Math.log(size))
+          intSequence.explorerAtPosition(position)
+        else
+          this.explorerAtInsertPos.untilPosition({
+            if (position < this.explorerAtInsertPos.position) position
+            else position - 1
+          })
+
+      explorer match {
         case None    => None
         case Some(p) => Some(new InsertedIntSequenceExplorer(this, position, Some(p), false, false))
       }
     }
   }
 
-  override def contains(value: Int): Boolean = value == this.insertedValue || intSequence.contains(value)
+  override def contains(value: Int): Boolean =
+    value == this.insertedValue || intSequence.contains(value)
 
   override def commitPendingMoves: IntSequence =
-    intSequence.commitPendingMoves.insertAtPosition(insertedValue, pos, fast = false)
+    intSequence.commitPendingMoves.insertAtPosition(
+      insertedValue,
+      explorerAtInsertPos,
+      fast = false
+    )
 
   override def isEmpty: Boolean = false
 
   override def valueAtPosition(position: Int): Option[Int] = {
-    if (position == pos) Some(insertedValue)
-    else if (position < pos) intSequence.valueAtPosition(position)
+    if (position == explorerAtInsertPos.position) Some(insertedValue)
+    else if (position < explorerAtInsertPos.position) intSequence.valueAtPosition(position)
     else intSequence.valueAtPosition(position - 1)
   }
 }

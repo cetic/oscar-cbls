@@ -140,8 +140,8 @@ object MovedIntSequence {
     }
 
     (moveType, oldPosRelativePosition, flip) match {
-      case (NotMoving, _, false)       => oldPos
-      case (_, Outside, _)             => oldPos
+      case (NotMoving, _, false)     => oldPos
+      case (_, Outside, _)           => oldPos
       case (NotMoving, Inside, true) => -oldPos + fromIncluded + toIncluded
       case (Forward, Inside, true)   => -oldPos + fromIncluded + after
       case (Forward, Inside, false)  => oldPos - toIncluded + after
@@ -160,11 +160,11 @@ object MovedIntSequence {
   *
   * @param seq
   *   The original sequence as a [[IntSequence]]
-  * @param fromPositionIncluded
+  * @param fromIncludedExpl
   *   The first (included) position of the moved segment as an [[Int]]
-  * @param toPositionIncluded
+  * @param toIncludedExpl
   *   The last (included) position of the moved segment as an [[Int]]
-  * @param moveAfterPosition
+  * @param moveAfterExpl
   *   The position after which the segment is moved as an [[Int]]
   * @param flip
   *   Whether or not the segment is flipped as an [[Int]]
@@ -173,77 +173,37 @@ object MovedIntSequence {
   */
 class MovedIntSequence(
   val seq: IntSequence,
-  val fromPositionIncluded: Int,
-  val toPositionIncluded: Int,
-  val moveAfterPosition: Int,
+  val fromIncludedExpl: IntSequenceExplorer,
+  val toIncludedExpl: IntSequenceExplorer,
+  val moveAfterExpl: Option[IntSequenceExplorer],
   val flip: Boolean,
   depth: Int
 ) extends StackedUpdateIntSequence(depth) {
 
-  // TODO: provide a cache on the values at the boundary of the move
-
   // The PiecewiseUnitaryAffineFunction corresponding to this move
   private val localBijection = MovedIntSequence.bijectionForMove(
-    fromPositionIncluded,
-    toPositionIncluded,
-    moveAfterPosition,
+    fromIncludedExpl.position,
+    toIncludedExpl.position,
+    moveAfterExplToPosition,
     flip
   )
 
   private val (
     originalExplorerBeforeFromPositionIncluded,
-    originalExplorerAtFromPositionIncluded,
-    originalExplorerAtToPositionIncluded,
     originalExplorerAfterToPositionIncluded,
-    originalExplorerAtMoveAfterPosition,
     originalExplorerAfterMoverAfterPosition
-  ): (
-    Option[IntSequenceExplorer],
-    Option[IntSequenceExplorer],
-    Option[IntSequenceExplorer],
-    Option[IntSequenceExplorer],
-    Option[IntSequenceExplorer],
-    Option[IntSequenceExplorer]
-  ) = {
-    // Can't be None
-    val originExplorerAtFromIncluded = seq.explorerAtPosition(fromPositionIncluded)
+  ): (Option[IntSequenceExplorer], Option[IntSequenceExplorer], Option[IntSequenceExplorer]) = {
     // Could be None
-    val originExplorerBeforeFromIncluded = originExplorerAtFromIncluded.get.prev
-    // Can't be None
-    val originExplorerAtToIncluded = {
-      if (toPositionIncluded - fromPositionIncluded < Math.log(seq.size)) {
-        originExplorerAtFromIncluded.get.untilPosition(toPositionIncluded)
-      } else {
-        seq.explorerAtPosition(toPositionIncluded)
-      }
-    }
+    val originExplorerBeforeFromIncluded = fromIncludedExpl.prev
     // Could be None
-    val originExplorerAfterToIncluded = originExplorerAtToIncluded.get.next
-    // Could be None if moving at start (moveAfterPosition == -1)
-    val originExplorerAtMoveAfter = {
-      if (moveAfterPosition == -1) None
-      else if (
-        moveAfterPosition < fromPositionIncluded && fromPositionIncluded - moveAfterPosition < Math
-          .log(seq.size)
-      ) originExplorerAtFromIncluded.get.untilPosition(moveAfterPosition)
-      else if (
-        moveAfterPosition > toPositionIncluded && moveAfterPosition - toPositionIncluded < Math.log(
-          seq.size
-        )
-      ) originExplorerAfterToIncluded.get.untilPosition(moveAfterPosition)
-      else seq.explorerAtPosition(moveAfterPosition)
-    }
+    val originExplorerAfterToIncluded = toIncludedExpl.next
     // Could be None
     val originExplorerAtAfterMoveAfter =
-      if (originExplorerAtMoveAfter.nonEmpty) originExplorerAtMoveAfter.get.next
-      else if (moveAfterPosition == -1) seq.explorerAtPosition(0)
-      else None
+      if (moveAfterExpl.nonEmpty) moveAfterExpl.get.next
+      else seq.explorerAtPosition(0)
     (
       originExplorerBeforeFromIncluded,
-      originExplorerAtFromIncluded,
-      originExplorerAtToIncluded,
       originExplorerAfterToIncluded,
-      originExplorerAtMoveAfter,
       originExplorerAtAfterMoveAfter
     )
   }
@@ -258,23 +218,24 @@ class MovedIntSequence(
     seq.unorderedContentNoDuplicateWithNBOccurrences
 
   override def descriptorString: String =
-    s"${seq.descriptorString}.moved(startPos:$fromPositionIncluded endPos:$toPositionIncluded targetPos:$moveAfterPosition flip:$flip)"
+    s"${seq.descriptorString}.moved(startPos:$fromIncludedExpl endPos:$toIncludedExpl targetPos:$moveAfterExpl flip:$flip)"
 
   override def commitPendingMoves: IntSequence = seq.commitPendingMoves.moveAfter(
-    fromPositionIncluded,
-    toPositionIncluded,
-    moveAfterPosition,
+    fromIncludedExpl,
+    toIncludedExpl,
+    moveAfterExpl,
     flip,
     fast = false
   )
 
   override def originalExplorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
-    if (position == fromPositionIncluded - 1) originalExplorerBeforeFromPositionIncluded
-    else if (position == fromPositionIncluded) originalExplorerAtFromPositionIncluded
-    else if (position == toPositionIncluded) originalExplorerAtToPositionIncluded
-    else if (position == toPositionIncluded + 1) originalExplorerAfterToPositionIncluded
-    else if (position == moveAfterPosition) originalExplorerAtMoveAfterPosition
-    else if (position == moveAfterPosition + 1) originalExplorerAfterMoverAfterPosition
+    if (position < 0) None
+    else if (position == fromIncludedExpl.position - 1) originalExplorerBeforeFromPositionIncluded
+    else if (position == fromIncludedExpl.position) Some(fromIncludedExpl)
+    else if (position == toIncludedExpl.position) Some(toIncludedExpl)
+    else if (position == toIncludedExpl.position + 1) originalExplorerAfterToPositionIncluded
+    else if (moveAfterExplToPosition == position) moveAfterExpl
+    else if (moveAfterExplToPosition + 1 == position) originalExplorerAfterMoverAfterPosition
     else seq.explorerAtPosition(position)
   }
 
@@ -298,13 +259,20 @@ class MovedIntSequence(
     }
   }
 
+  @inline
+  private def moveAfterExplToPosition: Int =
+    moveAfterExpl match {
+      case Some(expl) => expl.position
+      case None       => -1
+    }
+
   // Returns the new position of the specified old position
   private def oldPosToNewPos(oldPos: Int): Int = {
     val tmp = MovedIntSequence.oldPosToNewPos(
       oldPos,
-      fromPositionIncluded,
-      toPositionIncluded,
-      moveAfterPosition,
+      fromIncludedExpl.position,
+      toIncludedExpl.position,
+      moveAfterExplToPosition,
       flip
     )
     assert(
@@ -332,8 +300,8 @@ class MovedIntSequence(
 sealed abstract class MoveType
 object MoveType {
   case object NotMoving extends MoveType
-  case object Forward extends MoveType
-  case object Backward extends MoveType
+  case object Forward   extends MoveType
+  case object Backward  extends MoveType
 }
 
 /* Describes the position of a node relatively to the movement */
