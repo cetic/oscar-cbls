@@ -45,7 +45,7 @@ abstract class IntSequenceExplorer {
   def prev: Option[IntSequenceExplorer]
 
   def untilPosition(position: Int): Option[IntSequenceExplorer] = {
-    require(position >= 0)
+    require(position >= -1)
     if (this.position == position) Some(this)
     else {
       val explorer =

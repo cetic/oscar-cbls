@@ -285,10 +285,14 @@ class ConcreteIntSequence(
     }
   }
 
-  override def insertAfterPosition(value: Int, insertAfterPositionExpl: Option[IntSequenceExplorer], fast: Boolean): IntSequence = {
-    val insertAfterPos = IntSequenceExplorer.getPosOrElse(insertAfterPositionExpl,-1)
+  override def insertAfterPosition(
+    value: Int,
+    insertAfterPositionExpl: Option[IntSequenceExplorer],
+    fast: Boolean
+  ): IntSequence = {
+    val insertAfterPos = IntSequenceExplorer.getPosOrElse(insertAfterPositionExpl, -1)
     require(
-      insertAfterPos+1 <= size,
+      insertAfterPos + 1 <= size,
       "inserting past the end of the sequence (size:" + size + " inserting after pos:" + insertAfterPos + ")"
     )
 
@@ -310,15 +314,24 @@ class ConcreteIntSequence(
     )
 
     // If pos == size, we add it at the end of the sequence resulting on an identity pivot => no need
-    val newExternalToInternalPosition = if (insertAfterPos+1 != size) {
+    val newExternalToInternalPosition = if (insertAfterPos + 1 != size) {
       // inserting somewhere within the sequence, need to shift upper part
-      val tmp = externalToInternalPosition.swapAdjacentZonesShiftFirst(insertAfterPos+1, size - 1, size, false)
+      val tmp = externalToInternalPosition.swapAdjacentZonesShiftFirst(
+        insertAfterPos + 1,
+        size - 1,
+        size,
+        false
+      )
 
       assert(
         tmp equals externalToInternalPosition.updatesForCompositionBefore(
           List(
             (insertAfterPos + 2, size, UnitaryAffineFunction(-1, false)),
-            (insertAfterPos+1, insertAfterPos+1, UnitaryAffineFunction(startFreeRangeForInternalPosition - (insertAfterPos+1), false))
+            (
+              insertAfterPos + 1,
+              insertAfterPos + 1,
+              UnitaryAffineFunction(startFreeRangeForInternalPosition - (insertAfterPos + 1), false)
+            )
           )
         )
       )
@@ -340,99 +353,114 @@ class ConcreteIntSequence(
       s"Remove position must be in [0, sizeOfSequence=$size [ got $pos"
     )
 
-    if (fast) return new RemovedIntSequence(this, removePosAsExplorer, 1)
-
-    // 1° Gets the corresponding values + some contextual information
-    val internalPosition        = externalToInternalPosition(pos)
-    val value                   = internalPositionToValue.get(internalPosition).get
-    val largestInternalPosition = startFreeRangeForInternalPosition - 1
-    val valueAtLargestInternalPosition: Int =
-      internalPositionToValue.get(largestInternalPosition).get
-    val deleteIsAtLargestInternalPosition = internalPosition == largestInternalPosition
-
-    // 2° Removes internalPos to value mapping by pushing the value at the end of the sequence.
-    val newInternalPositionToValue = if (deleteIsAtLargestInternalPosition) {
-      internalPositionToValue.remove(largestInternalPosition)
+    if (fast) {
+      new RemovedIntSequence(this, removePosAsExplorer, 1)
+    } else if (size == 1) {
+      new EmptyIntSequence(depth)
     } else {
-      internalPositionToValue
-        .insert(internalPosition, valueAtLargestInternalPosition)
-        .remove(largestInternalPosition)
-    }
 
-    // 3° Removes position from know internal positions for this value
-    val newValueToInternalPositions = if (deleteIsAtLargestInternalPosition) {
-      internalRemoveFromValueToInternalPositions(value, internalPosition, valueToInternalPositions)
-    } else {
-      internalInsertToValueToInternalPositions(
-        valueAtLargestInternalPosition,
-        internalPosition,
+      // 1° Gets the corresponding values + some contextual information
+      val internalPosition        = externalToInternalPosition(pos)
+      val value                   = internalPositionToValue.get(internalPosition).get
+      val largestInternalPosition = startFreeRangeForInternalPosition - 1
+      val valueAtLargestInternalPosition: Int =
+        internalPositionToValue.get(largestInternalPosition).get
+      val deleteIsAtLargestInternalPosition = internalPosition == largestInternalPosition
+
+      // 2° Removes internalPos to value mapping by pushing the value at the end of the sequence.
+      val newInternalPositionToValue = if (deleteIsAtLargestInternalPosition) {
+        internalPositionToValue.remove(largestInternalPosition)
+      } else {
+        internalPositionToValue
+          .insert(internalPosition, valueAtLargestInternalPosition)
+          .remove(largestInternalPosition)
+      }
+
+      // 3° Removes position from know internal positions for this value
+      val newValueToInternalPositions = if (deleteIsAtLargestInternalPosition) {
         internalRemoveFromValueToInternalPositions(
+          value,
+          internalPosition,
+          valueToInternalPositions
+        )
+      } else {
+        internalInsertToValueToInternalPositions(
           valueAtLargestInternalPosition,
-          largestInternalPosition,
+          internalPosition,
           internalRemoveFromValueToInternalPositions(
-            value,
-            internalPosition,
-            valueToInternalPositions
+            valueAtLargestInternalPosition,
+            largestInternalPosition,
+            internalRemoveFromValueToInternalPositions(
+              value,
+              internalPosition,
+              valueToInternalPositions
+            )
           )
         )
+      }
+
+      // external position of the internal position that has been removed
+      val externalPositionAssociatedToLargestInternalPosition =
+        externalToInternalPosition.backward(largestInternalPosition)
+
+      // 4° Updates the unitary affine function knowing the move and remove
+      // TODO: this is overly complex and probably very slow
+      val newExternalToInternalPosition = externalToInternalPosition
+        .updatesForCompositionBefore(
+          List(
+            (
+              externalPositionAssociatedToLargestInternalPosition,
+              externalPositionAssociatedToLargestInternalPosition,
+              UnitaryAffineFunction(
+                pos - externalPositionAssociatedToLargestInternalPosition,
+                false
+              )
+            ),
+            (
+              pos,
+              pos,
+              UnitaryAffineFunction(
+                externalPositionAssociatedToLargestInternalPosition - pos,
+                false
+              )
+            )
+          )
+        )
+        .updatesForCompositionBefore(
+          List(
+            (pos, size - 2, UnitaryAffineFunction(1, false)),
+            (size - 1, size - 1, UnitaryAffineFunction(pos - size + 1, false))
+          )
+        )
+
+      /** TODO : Check this when the tests are added :
+        *
+        * externalToInternalPosition.swapAdjacentZonesShiftFirst(pos, pos, size-1, false).
+        * updateForCompositionBefore(size-1,size-1,UnitaryAffineFunction.identity)
+        *
+        * basically switching the removed node position, with the zone after it (until end of
+        * sequence) and then applying identity to last node
+        */
+
+      new ConcreteIntSequence(
+        newInternalPositionToValue,
+        newValueToInternalPositions,
+        newExternalToInternalPosition,
+        startFreeRangeForInternalPosition - 1
       )
     }
-
-    // external position of the internal position that has been removed
-    val externalPositionAssociatedToLargestInternalPosition =
-      externalToInternalPosition.backward(largestInternalPosition)
-
-    // 4° Updates the unitary affine function knowing the move and remove
-    // TODO: this is overly complex and probably very slow
-    val newExternalToInternalPosition = externalToInternalPosition
-      .updatesForCompositionBefore(
-        List(
-          (
-            externalPositionAssociatedToLargestInternalPosition,
-            externalPositionAssociatedToLargestInternalPosition,
-            UnitaryAffineFunction(pos - externalPositionAssociatedToLargestInternalPosition, false)
-          ),
-          (
-            pos,
-            pos,
-            UnitaryAffineFunction(externalPositionAssociatedToLargestInternalPosition - pos, false)
-          )
-        )
-      )
-      .updatesForCompositionBefore(
-        List(
-          (pos, size - 2, UnitaryAffineFunction(1, false)),
-          (size - 1, size - 1, UnitaryAffineFunction(pos - size + 1, false))
-        )
-      )
-
-    /** TODO : Check this when the tests are added :
-      *
-      * externalToInternalPosition.swapAdjacentZonesShiftFirst(pos, pos, size-1, false).
-      * updateForCompositionBefore(size-1,size-1,UnitaryAffineFunction.identity)
-      *
-      * basically switching the removed node position, with the zone after it (until end of
-      * sequence) and then applying identity to last node
-      */
-
-    new ConcreteIntSequence(
-      newInternalPositionToValue,
-      newValueToInternalPositions,
-      newExternalToInternalPosition,
-      startFreeRangeForInternalPosition - 1
-    )
   }
 
   override def moveAfter(
-                          fromIncludedExpl: IntSequenceExplorer,
-                          toIncludedExpl: IntSequenceExplorer,
-                          moveAfterExpl: Option[IntSequenceExplorer],
-                          flip: Boolean,
-                          fast: Boolean
+    fromIncludedExpl: IntSequenceExplorer,
+    toIncludedExpl: IntSequenceExplorer,
+    moveAfterExpl: Option[IntSequenceExplorer],
+    flip: Boolean,
+    fast: Boolean
   ): IntSequence = {
     val fromIncludedPos = fromIncludedExpl.position
-    val toIncludedPos = toIncludedExpl.position
-    val moveAfterPos = if(moveAfterExpl.nonEmpty) moveAfterExpl.get.position else -1
+    val toIncludedPos   = toIncludedExpl.position
+    val moveAfterPos    = if (moveAfterExpl.nonEmpty) moveAfterExpl.get.position else -1
     require(
       fromIncludedPos >= 0 && fromIncludedPos < size,
       s"StartPositionIncluded should be in [0,sizeOfSequence=$size[ got $fromIncludedPos"
@@ -457,23 +485,13 @@ class ConcreteIntSequence(
     )
 
     if (fast)
-      return new MovedIntSequence(
-        this,
-        fromIncludedExpl,
-        toIncludedExpl,
-        moveAfterExpl,
-        flip,
-        1
-      )
+      return new MovedIntSequence(this, fromIncludedExpl, toIncludedExpl, moveAfterExpl, flip, 1)
 
     val newExternalToInternalPosition =
       if (moveAfterPos + 1 == fromIncludedPos) {
         if (flip) {
           // The segment is flipping on itself
-          externalToInternalPosition.flipPivotsInInterval(
-            fromIncludedPos,
-            toIncludedPos
-          )
+          externalToInternalPosition.flipPivotsInInterval(fromIncludedPos, toIncludedPos)
 
         } else {
           // The segment is not moving nor flipping

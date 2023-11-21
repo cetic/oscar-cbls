@@ -95,16 +95,14 @@ class InsertedIntSequence(
         )
       }
     } else {
+      val originPos = if(position < insertAfterPos+1) position else position - 1
       val explorer = {
         // Explorer is empty or position isn't close enough to use next/prev (O(1)) on the known explorer
         if (originalExplorerAtInsertPosition.isEmpty || Math.abs(position - (insertAfterPos+1)) > Math.log(size))
-          intSequence.explorerAtPosition(position)
+          intSequence.explorerAtPosition(originPos)
         else
         // Position is close enough to use next/prev (O(1)) on the known explorer
-          originalExplorerAtInsertPosition.get.untilPosition({
-            if (position < insertAfterPos+1) position
-            else position - 1
-          })
+          originalExplorerAtInsertPosition.get.untilPosition(originPos)
       }
 
       explorer match {

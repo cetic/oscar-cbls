@@ -108,10 +108,10 @@ abstract class StackedUpdateIntSequence(depth: Int, maxDepth: Int = 20)
   override def regularizeToMaxPivot(
     maxPivotPerValuePercent: Int,
     targetToken: Token = this.token
-  ): ConcreteIntSequence =
+  ): IntSequence =
     commitPendingMoves.regularizeToMaxPivot(maxPivotPerValuePercent, targetToken)
 
-  override def regularize(targetToken: Token = this.token): ConcreteIntSequence =
+  override def regularize(targetToken: Token = this.token): IntSequence =
     commitPendingMoves.regularize(targetToken)
 
   def originalExplorerAtPosition(position: Int): Option[IntSequenceExplorer]

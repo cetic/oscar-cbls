@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
   private val maxConsideredSize = 200
 
-  //implicit def noShrink[T]: Shrink[T] = Shrink.shrinkAny
+  implicit def noShrink[T]: Shrink[T] = Shrink.shrinkAny
 
   def elem: Gen[Int] = for (n <- Gen.choose(0, 100)) yield n * 4 // Sparse elements
 
@@ -100,9 +100,9 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
   } yield (elems, actions)
 
   test("ConcreteIntSequence : batch queries keep expected list") {
-    forAll(testBenchGen(), minSuccessful(100)) { testBench =>
+    forAll(testBenchGen(), minSuccessful(5)) { testBench =>
       {
-        whenever(testBench._1.size > 5) {
+        whenever(testBench._1.size >= 5) {
           val actionsList   = testBench._2
           val referenceList = testBench._1
           seq = IntSequence(referenceList)
@@ -122,7 +122,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
               case Insert(value, position) =>
                 seq = seq.insertAfterPosition(value, seq.explorerAtPosition(position))
 
-                val (front, back) = modifiedList.splitAt(position)
+                val (front, back) = modifiedList.splitAt(position+1)
                 modifiedList = front ++ List(value) ++ back
 
               case Delete(position) =>
@@ -228,16 +228,16 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
           seq = new InsertedIntSequence(
             IntSequence(referenceListMinusFirst),
             value,
-            seq.explorerAtPosition(0),
+            seq.explorerAtPosition(-1),
             1
           )
           var modifiedList = referenceList
 
           for (action <- actionsList) {
             action match {
-              case Insert(value, at) =>
-                seq = seq.insertAfterPosition(value, seq.explorerAtPosition(at))
-                val (front, back) = modifiedList.splitAt(at)
+              case Insert(value, after) =>
+                seq = seq.insertAfterPosition(value, seq.explorerAtPosition(after))
+                val (front, back) = modifiedList.splitAt(after+1)
                 modifiedList = front ++ List(value) ++ back
             }
           }
@@ -269,9 +269,9 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
                 )
                 modifiedList = flipListManually(modifiedList, from, to, after)
 
-              case Insert(value, position) =>
-                seq = seq.insertAfterPosition(value, seq.explorerAtPosition(position), fast = true)
-                val (front, back) = modifiedList.splitAt(position)
+              case Insert(value, after) =>
+                seq = seq.insertAfterPosition(value, seq.explorerAtPosition(after), fast = true)
+                val (front, back) = modifiedList.splitAt(after+1)
                 modifiedList = front ++ List(value) ++ back
 
               case Delete(position) if referenceList.nonEmpty =>

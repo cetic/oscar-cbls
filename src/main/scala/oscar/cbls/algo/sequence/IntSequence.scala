@@ -15,7 +15,7 @@ package oscar.cbls.algo.sequence
 
 import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.sequence.affineFunction.PiecewiseUnitaryAffineFunction
-import oscar.cbls.algo.sequence.concrete.ConcreteIntSequence
+import oscar.cbls.algo.sequence.concrete._
 import oscar.cbls.algo.sequence.stackedUpdate._
 
 import scala.annotation.tailrec
@@ -379,12 +379,12 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     * @param targetToken
     *   The identity of the resulting [[ConcreteIntSequence]]
     * @return
-    *   A [[ConcreteIntSequence]] with or without pivot
+    * A [[ConcreteIntSequence]] or and [[EmptyIntSequence]] with or without pivot
     */
   def regularizeToMaxPivot(
     maxPivotPerValuePercent: Int,
     targetToken: Token = this.token
-  ): ConcreteIntSequence
+  ): IntSequence
 
   /** Regularizes the current [[IntSequence]]
     *
@@ -398,7 +398,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     * @return
     *   A [[ConcreteIntSequence]] with no Pivot
     */
-  def regularize(targetToken: Token = this.token): ConcreteIntSequence
+  def regularize(targetToken: Token = this.token): IntSequence
 
   /** Commit all [[StackedUpdateIntSequence]] moves to form a [[ConcreteIntSequence]]
     *
