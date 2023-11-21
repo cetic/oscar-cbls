@@ -92,15 +92,16 @@ abstract class StackedUpdateIntSequence(depth: Int, maxDepth: Int = 20)
     }
   }
 
-  override def insertAtPosition(value: Int, insertionPosAsExplorer: IntSequenceExplorer, fast: Boolean): IntSequence = {
+  override def insertAfterPosition(value: Int, insertAfterPositionExpl: Option[IntSequenceExplorer], fast: Boolean): IntSequence = {
+    val insertAfterPos = IntSequenceExplorer.getPosOrElse(insertAfterPositionExpl,-1)
     require(
-      insertionPosAsExplorer.position >= 0 && insertionPosAsExplorer.position <= size,
-      s"Insertion position must be in [0,sizeOfSequence=$size]. Got ${insertionPosAsExplorer.position}"
+      insertAfterPos >= -1 && insertAfterPos <= size-1,
+      s"Insert after position must be in [-1,sizeOfSequence minus 1=${size-1}]. Got ${insertAfterPos}"
     )
     if (depth >= maxDepth) {
-      new InsertedIntSequence(this, value: Int, insertionPosAsExplorer: IntSequenceExplorer, depth + 1).commitPendingMoves
+      new InsertedIntSequence(this, value: Int, insertAfterPositionExpl, depth + 1).commitPendingMoves
     } else {
-      new InsertedIntSequence(this, value: Int, insertionPosAsExplorer: IntSequenceExplorer, depth + 1)
+      new InsertedIntSequence(this, value: Int, insertAfterPositionExpl, depth + 1)
     }
   }
 

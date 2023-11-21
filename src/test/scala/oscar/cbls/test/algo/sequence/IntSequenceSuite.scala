@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
   private val maxConsideredSize = 200
 
-  implicit def noShrink[T]: Shrink[T] = Shrink.shrinkAny
+  //implicit def noShrink[T]: Shrink[T] = Shrink.shrinkAny
 
   def elem: Gen[Int] = for (n <- Gen.choose(0, 100)) yield n * 4 // Sparse elements
 
@@ -120,7 +120,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
                 modifiedList = flipListManually(modifiedList, from, to, after)
 
               case Insert(value, position) =>
-                seq = seq.insertAtPosition(value, seq.explorerAtPosition(position).get)
+                seq = seq.insertAfterPosition(value, seq.explorerAtPosition(position))
 
                 val (front, back) = modifiedList.splitAt(position)
                 modifiedList = front ++ List(value) ++ back
@@ -228,7 +228,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
           seq = new InsertedIntSequence(
             IntSequence(referenceListMinusFirst),
             value,
-            seq.explorerAtPosition(0).get,
+            seq.explorerAtPosition(0),
             1
           )
           var modifiedList = referenceList
@@ -236,7 +236,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
           for (action <- actionsList) {
             action match {
               case Insert(value, at) =>
-                seq = seq.insertAtPosition(value, seq.explorerAtPosition(at).get)
+                seq = seq.insertAfterPosition(value, seq.explorerAtPosition(at))
                 val (front, back) = modifiedList.splitAt(at)
                 modifiedList = front ++ List(value) ++ back
             }
@@ -270,7 +270,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
                 modifiedList = flipListManually(modifiedList, from, to, after)
 
               case Insert(value, position) =>
-                seq = seq.insertAtPosition(value, seq.explorerAtPosition(position).get, fast = true)
+                seq = seq.insertAfterPosition(value, seq.explorerAtPosition(position), fast = true)
                 val (front, back) = modifiedList.splitAt(position)
                 modifiedList = front ++ List(value) ++ back
 

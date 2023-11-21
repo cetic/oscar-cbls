@@ -285,10 +285,11 @@ class ConcreteIntSequence(
     }
   }
 
-  override def insertAtPosition(value: Int, explorerAtPos: IntSequenceExplorer, fast: Boolean): IntSequence = {
+  override def insertAfterPosition(value: Int, insertAfterPositionExpl: Option[IntSequenceExplorer], fast: Boolean): IntSequence = {
+    val insertAfterPos = IntSequenceExplorer.getPosOrElse(insertAfterPositionExpl,-1)
     require(
-      explorerAtPos.position <= size,
-      "inserting past the end of the sequence (size:" + size + " pos:" + explorerAtPos.position + ")"
+      insertAfterPos+1 <= size,
+      "inserting past the end of the sequence (size:" + size + " inserting after pos:" + insertAfterPos + ")"
     )
 
     /** 1° Inserts the value at startFreeRangeForInternalPosition 2° Adds necessary pivot to match
@@ -297,7 +298,7 @@ class ConcreteIntSequence(
       * : from 13 to 13 moving x 5 position earlier
       */
 
-    if (fast) return new InsertedIntSequence(this, value, explorerAtPos, 1)
+    if (fast) return new InsertedIntSequence(this, value, insertAfterPositionExpl, 1)
 
     // insert into red blacks
     val newInternalPositionToValue =
@@ -309,15 +310,15 @@ class ConcreteIntSequence(
     )
 
     // If pos == size, we add it at the end of the sequence resulting on an identity pivot => no need
-    val newExternalToInternalPosition = if (explorerAtPos.position != size) {
+    val newExternalToInternalPosition = if (insertAfterPos+1 != size) {
       // inserting somewhere within the sequence, need to shift upper part
-      val tmp = externalToInternalPosition.swapAdjacentZonesShiftFirst(explorerAtPos.position, size - 1, size, false)
+      val tmp = externalToInternalPosition.swapAdjacentZonesShiftFirst(insertAfterPos+1, size - 1, size, false)
 
       assert(
         tmp equals externalToInternalPosition.updatesForCompositionBefore(
           List(
-            (explorerAtPos.position + 1, size, UnitaryAffineFunction(-1, false)),
-            (explorerAtPos.position, explorerAtPos.position, UnitaryAffineFunction(startFreeRangeForInternalPosition - explorerAtPos.position, false))
+            (insertAfterPos + 2, size, UnitaryAffineFunction(-1, false)),
+            (insertAfterPos+1, insertAfterPos+1, UnitaryAffineFunction(startFreeRangeForInternalPosition - (insertAfterPos+1), false))
           )
         )
       )

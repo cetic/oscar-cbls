@@ -33,17 +33,17 @@ import oscar.cbls.algo.sequence.IntSequenceExplorer
   *   Whether or not the original explorer is at insertion position
   */
 class InsertedIntSequenceExplorer(
-                                   seq: InsertedIntSequence,
-                                   val position: Int,
-                                   explorerInOriginalSequence: Option[IntSequenceExplorer],
-                                   atInsertedValue: Boolean,
-                                   originalExplorerIsAtInsertionPosition: Boolean
+  seq: InsertedIntSequence,
+  val position: Int,
+  explorerInOriginalSequence: Option[IntSequenceExplorer],
+  atInsertedValue: Boolean,
+  originalExplorerIsAtInsertionPosition: Boolean
 ) extends IntSequenceExplorer {
   override val value: Int =
     if (atInsertedValue) seq.insertedValue else explorerInOriginalSequence.get.value
 
   override def next: Option[IntSequenceExplorer] = {
-    val nextPosition = position+1
+    val nextPosition = position + 1
     if (atInsertedValue) {
       // we are leaving the inserted position
       explorerInOriginalSequence match {
@@ -78,7 +78,7 @@ class InsertedIntSequenceExplorer(
           }
       }
     } else {
-      if (nextPosition == seq.explorerAtInsertPos.position) {
+      if (nextPosition == seq.insertAfterPos + 1) {
         // Getting into the inserted position
         // Original explorer doesn't change
         Some(
@@ -110,7 +110,7 @@ class InsertedIntSequenceExplorer(
   }
 
   override def prev: Option[IntSequenceExplorer] = {
-    val prevPosition = position-1
+    val prevPosition = position - 1
     if (atInsertedValue) {
       explorerInOriginalSequence match {
         case None    => None
@@ -145,7 +145,7 @@ class InsertedIntSequenceExplorer(
           }
       }
     } else {
-      if (prevPosition == seq.explorerAtInsertPos.position) {
+      if (prevPosition == seq.insertAfterPos + 1) {
         // Getting into the inserted position from above it
         // Not moving the explorer ==> original explorer is above
         Some(

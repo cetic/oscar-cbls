@@ -307,14 +307,14 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     *
     * @param value
     *   The value to insert as [[Int]]
-    * @param insertionPosAsExplorer
+    * @param insertAfterPositionExpl
     *   The position where to insert the value as [[Int]]
     * @param fast
     *   Fast flag as [[Boolean]] for more detail see description.
     * @return
     *   An [[IntSequence]] with the new value
     */
-  def insertAtPosition(value: Int, insertionPosAsExplorer: IntSequenceExplorer, fast: Boolean = false): IntSequence
+  def insertAfterPosition(value: Int, insertAfterPositionExpl: Option[IntSequenceExplorer], fast: Boolean = false): IntSequence
 
   /** Removes the value at the specified position.
     *
