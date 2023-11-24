@@ -26,7 +26,6 @@ package oscar.cbls.algo.dll
   */
 class DoublyLinkedList[T] extends Iterable[T] {
 
-  // Private ?
   private val phantom: DLLStorageElement[T] = new DLLStorageElement[T](null.asInstanceOf[T])
 
   phantom.setNext(phantom)
@@ -48,47 +47,46 @@ class DoublyLinkedList[T] extends Iterable[T] {
     toReturn
   }
 
-  /** Insert <code>elem</code> at the start of the DLL and returns the container that contains the
-    * element.
-    * @param elem
-    *   The element to add
+  /** Insert <code>value</code> at the start of the DLL and returns the container that contains the
+    * value.
+    * @param value
+    *   The value to add
     * @return
     *   The container of the element
     */
-  def insertStart(elem: T): DLLStorageElement[T] = {
-    val d = new DLLStorageElement[T](elem)
+  def insertStart(value: T): DLLStorageElement[T] = {
+    val d = new DLLStorageElement[T](value)
     d.setNext(phantom.next)
     phantom.setNext(d)
     d
   }
 
-  /** Inserts <code>elem</code> after the position specified by <code>afterPosition</code>. If
-    * <code>afterPosition</code> is the phantom position, it is inserted as the first element (since
-    * start and end phantom are the same
+  /** Inserts <code>value</code> after the element specified by <code>elem</code>.
+    * 
+    * @param value
+    *   The value to insert
     * @param elem
-    *   The element to insert
-    * @param afterPosition
     *   The container after which to insert
     * @return
     *   The container of the inserted element
     */
-  def insertAfter(elem: T, afterPosition: DLLStorageElement[T]): DLLStorageElement[T] = {
-    val successor = afterPosition.next
-    val d         = new DLLStorageElement[T](elem)
+  def insertAfter(value: T, elem: DLLStorageElement[T]): DLLStorageElement[T] = {
+    val successor = elem.next
+    val d         = new DLLStorageElement[T](value)
     d.setNext(successor)
-    afterPosition.setNext(d)
+    elem.setNext(d)
     d
   }
 
-  /** Insert <code>elem</code> at the end of the DLL and returns the container that contains the
-    * element.
-    * @param elem
+  /** Insert <code>value</code> at the end of the DLL and returns the container that contains the
+    * value.
+    * @param value
     *   The element to enqueue
     * @return
     *   The container of the inserted element
     */
-  def insertEnd(elem: T): DLLStorageElement[T] = {
-    val d = new DLLStorageElement[T](elem)
+  def insertEnd(value: T): DLLStorageElement[T] = {
+    val d = new DLLStorageElement[T](value)
     phantom.prev.setNext(d)
     d.setNext(phantom)
     d
@@ -138,10 +136,13 @@ class DoublyLinkedList[T] extends Iterable[T] {
     phantom.setNext(phantom)
   }
 
+  /** Returns true if the dll is empty */
   override def isEmpty: Boolean = phantom.next == phantom
 
+  /** Returns an iterator on the dll */
   override def iterator = new DLLIterator[T](phantom, phantom)
 
+  /** Applies <code>f</code> to all the elements of the dll */
   override def foreach[U](f: (T) => U): Unit = {
     var currentPos = phantom.next
     while (currentPos != phantom) {
@@ -208,8 +209,6 @@ class DLLIterator[T](var currentKey: DLLStorageElement[T], val phantom: DLLStora
     currentKey.elem
   }
 
-  /** @return
-    *   true if the iterator has a next element, false otherwise
-    */
+  /** Returns true if the iterator has a next element, false otherwise */
   def hasNext: Boolean = { currentKey.next != phantom }
 }
