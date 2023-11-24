@@ -73,8 +73,10 @@ class DLLTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
 
   }
 
+  // Defining operations on the dll
   abstract class Operation
 
+  // The sub set of adding operations
   abstract class AddOperation(value: Int) extends Operation
 
   case class AddStart(value: Int) extends AddOperation(value)
@@ -83,6 +85,7 @@ class DLLTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
 
   case class AddAfter(value: Int, afterPos: Int) extends AddOperation(value)
 
+  // The subset of removing operation
   abstract class RemoveOperation extends Operation
 
   case class RemoveStart() extends RemoveOperation
@@ -91,12 +94,17 @@ class DLLTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
 
   case class RemovePos(pos: Int) extends RemoveOperation
 
-  case class DropAll() extends RemoveOperation
+  // The dropAll operation
+  case class DropAll() extends Operation
 
   class TestData {
+    // Defining the witness list and the dll
     private var witnessList: List[Int]     = List()
     private val dll: DoublyLinkedList[Int] = new DoublyLinkedList()
+    // Defining the size of the dll (it is used to generate the operations)
+    var size                               = new AtomicInteger(0)
 
+    // A function the allows to remove a given container
     @tailrec
     private def getContainerAtPos(
       afterPos: Int,
@@ -111,6 +119,7 @@ class DLLTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
       }
     }
 
+    // make a list of operations on the dll and its witness list
     @tailrec
     final def mkOps(ops: List[Operation]): Unit = {
       ops match {
@@ -121,6 +130,7 @@ class DLLTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
       }
     }
 
+    // make one operation on the dll and its witness list
     private def mkOp(op: Operation) = {
       op match {
         case AddStart(value) =>
@@ -150,10 +160,13 @@ class DLLTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
       }
     }
 
+    /** compares the size of the dll and the size of its witness list */
     def compareSize: Boolean = {
       witnessList.size == dll.size
     }
 
+
+    /** compares the dll and its witness list */
     def compareLists: Boolean = {
       var res          = true
       val dllIt        = dll.iterator
@@ -171,142 +184,83 @@ class DLLTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
 
   }
 
+  // Generate an AddStart operation
   val addStartGen: Gen[AddStart] = for {
     v <- Gen.choose(1, 100)
   } yield AddStart(v)
+  // Generate an AddEnd operation
   val addEndGen: Gen[AddEnd] = for {
     v <- Gen.choose(1, 100)
   } yield AddEnd(v)
+  // Generate an AddAfter operation
   def addAfterGen(maxPos: Int): Gen[AddAfter] = for {
     v   <- Gen.choose(1, 100)
     pos <- Gen.choose(0, maxPos - 1)
   } yield AddAfter(v, pos)
 
+  // Generate a RemoveStart operation
   val removeStartGen: Gen[RemoveStart] = Gen.const(RemoveStart())
+  // Generate a RemoveEnd operation
   val removeEndGen: Gen[RemoveEnd]     = Gen.const(RemoveEnd())
+  // Generate a Remove at a given position operation
   def removePosGen(maxPos: Int): Gen[RemovePos] = for {
     pos <- Gen.choose(0, maxPos - 1)
   } yield RemovePos(pos)
 
-  val dropAllGen : Gen[DropAll] = Gen.const(DropAll())
+  // Generate a dropAll operation
+  val dropAllGen: Gen[DropAll] = Gen.const(DropAll())
 
-  def genOperation: Gen[(Int,Int,Operation)] = {
-    val size = new AtomicInteger(0)
+  // Generate an operation. The operation shall always be a doable operation:
+  // We cannot remove elements on a empty list, so remove operations are only available
+  // if the size of list is greater than 0.
+  def genOperation(data: TestData): Gen[Operation] = {
+    val size = data.size
     for {
-      value <- {      println(s"chose value:${size.get()}");Gen.const(size.get())}
-      value2 <- Gen.const(size.get())
-      opGen <- {println(size.get);Gen.oneOf({
-        (if (size.get() == 0)
-           Nil
-         else
-           List(
-             dropAllGen,
-             removeStartGen,
-             removeEndGen,
-             removePosGen(size.get()),
-             addAfterGen(size.get())
-           )) ::: List(addStartGen, addEndGen)
+      // BEWARE: Don't remove the next line
+      // The value is not used, but the line is mandatory to make the generation
+      // take size into account (It is a weird behaviour of scala test generator)
+      _ <- Gen.const(size.get())
+      opGen <- {
+        Gen.oneOf({
+          (if (size.get() == 0)
+             Nil
+           else
+             List(
+               dropAllGen,
+               removeStartGen,
+               removeEndGen,
+               removePosGen(size.get()),
+               addAfterGen(size.get())
+             )) ::: List(addStartGen, addEndGen)
 
-      })
+        })
       }
       op <- opGen
     } yield {
+      // update the size of the list
       op match {
         case op: DropAll         => size.set(0)
         case op: AddOperation    => size.getAndIncrement()
         case op: RemoveOperation => size.getAndDecrement()
       }
-      (value,value2,op)
+      op
     }
   }
-  val genOp = genOperation
+  // Generate a list of operations
+  val operationsGen: Gen[List[Operation]] = for {
+    ops <- Gen.listOfN(100, genOperation(new TestData))
+  } yield ops
 
-  // val operationsGen: Gen[List[Operation]] = for {
-  //   ops <- Gen.listOfN(100, genOp)
-  // } yield ops
-
-  // test(
-  //   "Making a set of operation (adding and remove operations) on a dll and on a witness list gives the same result"
-  // ) {
-  //   val testData = new TestData
-  //   forAll(operationsGen) { ops =>
-  //     println(ops)
-  //     testData.mkOps(ops)
-  //     testData.compareLists should be(true)
-  //     testData.compareSize should be(true)
-  //     testData.compareLists && testData.compareSize
-  //   }
-  // }
-
-  test("toto") {
-    println(genOp.sample)
-    println(genOp.sample)
-    println(genOp.sample)
-    println(genOp.sample)
-    println(genOp.sample)
-    println(genOp.sample)
-    println(genOp.sample)
-    println(genOp.sample)
-    println(genOp.sample)
-    println(genOp.sample)
-    println(genOp.sample)
-    println(genOp.sample)
-    println(genOp.sample)
+  test(
+    "Making a set of operation (adding and remove operations) on a dll" +
+      " and on a witness list gives the same result"
+  ) {
+    val testData = new TestData
+    forAll(operationsGen) { ops =>
+      testData.mkOps(ops)
+      testData.compareLists should be(true)
+      testData.compareSize should be(true)
+      testData.compareLists && testData.compareSize
+    }
   }
-
-
-//   class DLLTester() {
-//     private val dll  = new DoublyLinkedList[Int]()
-//     private var list : List[Int] = List()
-
-//     abstract sealed class Operation {
-//       def mkOp: Unit
-//     }
-
-//     case class AddStart(value: Int) extends Operation {
-//       override def mkOp: Unit = {
-//         dll.insertStart(value)
-//         list = value :: list
-//       }
-//     }
-
-//     case class AddEnd(value: Int) extends Operation {
-//       override def mkOp: Unit = {
-//         dll.insertEnd(value)
-//         list = list.appended(value)
-//       }
-//     }
-
-//     case class AddAfter(value: Int, pos: Int) extends Operation{
-//       override def mkOp: Unit = {
-//         @tailrec
-//         def addAfter(l : List[Int],pos : Int,res : List[Int]) : Unit = {
-//           l match {
-//             case Nil => throw new Error
-//             case h :: t =>
-//               if (pos == 0)
-
-//           }
-//         }
-//       }
-//     }
-
-//     case class PopStart() extends Operation{
-//       override def mkOp: Unit = {
-//       }
-//     }
-
-//     case class PopEnd() extends Operation{
-//       override def mkOp: Unit = {
-//       }
-//     }
-
-//     case class dropAll() extends Operation {
-//       override def mkOp: Unit = {
-//       }
-//     }
-
-//     def applyOperation(op: Operation): Unit = {}
-
-//   }
 }
