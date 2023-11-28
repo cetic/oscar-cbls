@@ -110,7 +110,7 @@ class ConcreteIntSequenceExplorer(
 
   override def prev: Option[IntSequenceExplorer] = {
     // Already at start of sequence ==> None
-    if (position == 0) None
+    if (position == 0) Some(new RootIntSequenceExplorer(sequence))
     // At start of current Pivot ==> moving to the previous one
     else if (position == limitBelowForCurrentPivot) {
       val newPosition             = position - 1

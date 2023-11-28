@@ -46,8 +46,15 @@ class IntSequenceExplorerSuite
     forAll(testBenchGen, minSuccessful(20)) { testBench =>
       whenever(testBench.size > 5) {
         val (indexFrom, indexTo, destination) = getRandomParametersForMoveAfter(testBench)
-        var seq = IntSequence(testBench)
-        seq = new MovedIntSequence(seq, seq.explorerAtPosition(indexFrom).get, seq.explorerAtPosition(indexTo).get, seq.explorerAtPosition(destination), true, 1)
+        var seq                               = IntSequence(testBench)
+        seq = new MovedIntSequence(
+          seq,
+          seq.explorerAtPosition(indexFrom).get,
+          seq.explorerAtPosition(indexTo).get,
+          seq.explorerAtPosition(destination).get,
+          true,
+          1
+        )
         val modifiedList = flipListManually(testBench, indexFrom, indexTo, destination)
 
         seq.zipWithIndex.foreach { case (e, i) =>
@@ -74,7 +81,7 @@ class IntSequenceExplorerSuite
         val i                = Random.nextInt(testBench.size)
         var seq: IntSequence = IntSequence(testBench)
         seq = new RemovedIntSequence(seq, seq.explorerAtPosition(i).get, 1)
-        val modifiedList     = testBench.take(i) ++ testBench.drop(i + 1)
+        val modifiedList = testBench.take(i) ++ testBench.drop(i + 1)
 
         seq.zipWithIndex.foreach { case (e, i) =>
           ExplorerTestUtils.compareAllAttributes(seq.explorerAtPosition(i), i, modifiedList)

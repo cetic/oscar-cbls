@@ -15,6 +15,7 @@ package oscar.cbls.algo.sequence.stackedUpdate
 
 import oscar.cbls.algo.sequence._
 import oscar.cbls.algo.sequence.affineFunction._
+import oscar.cbls.algo.sequence.concrete.RootIntSequenceExplorer
 import oscar.cbls.algo.sequence.stackedUpdate.MoveType._
 import oscar.cbls.algo.sequence.stackedUpdate.PositionInMovement._
 
@@ -55,14 +56,17 @@ object MovedIntSequence {
           List(
             // If fromIncluded == 0 this identity function will be override.
             new Pivot(0, UnitaryAffineFunction.identity),
-            new Pivot(fromIncluded, UnitaryAffineFunction(toIncluded + fromIncluded, true)),
+            new Pivot(fromIncluded, UnitaryAffineFunction(toIncluded + fromIncluded, flip = true)),
             new Pivot(toIncluded + 1, UnitaryAffineFunction.identity)
           )
         )
       case (Forward, _) =>
         PiecewiseUnitaryAffineFunction.createFromPivots(
           List(
-            new Pivot(fromIncluded, UnitaryAffineFunction(toIncluded + 1 - fromIncluded, false)),
+            new Pivot(
+              fromIncluded,
+              UnitaryAffineFunction(toIncluded + 1 - fromIncluded, flip = false)
+            ),
             new Pivot(
               moveAfter + fromIncluded - toIncluded,
               UnitaryAffineFunction(
@@ -87,7 +91,7 @@ object MovedIntSequence {
             ),
             new Pivot(
               moveAfter + toIncluded - fromIncluded + 2,
-              UnitaryAffineFunction(fromIncluded - toIncluded - 1, false)
+              UnitaryAffineFunction(fromIncluded - toIncluded - 1, flip = false)
             ),
             new Pivot(toIncluded + 1, UnitaryAffineFunction.identity)
           )
@@ -160,11 +164,11 @@ object MovedIntSequence {
   *
   * @param seq
   *   The original sequence as a [[IntSequence]]
-  * @param fromIncludedExpl
+  * @param fromIncludedExplorer
   *   The first (included) position of the moved segment as an [[Int]]
-  * @param toIncludedExpl
+  * @param toIncludedExplorer
   *   The last (included) position of the moved segment as an [[Int]]
-  * @param moveAfterExpl
+  * @param moveAfterExplorer
   *   The position after which the segment is moved as an [[Int]]
   * @param flip
   *   Whether or not the segment is flipped as an [[Int]]
@@ -173,18 +177,18 @@ object MovedIntSequence {
   */
 class MovedIntSequence(
   val seq: IntSequence,
-  val fromIncludedExpl: IntSequenceExplorer,
-  val toIncludedExpl: IntSequenceExplorer,
-  val moveAfterExpl: Option[IntSequenceExplorer],
+  val fromIncludedExplorer: IntSequenceExplorer,
+  val toIncludedExplorer: IntSequenceExplorer,
+  val moveAfterExplorer: IntSequenceExplorer,
   val flip: Boolean,
   depth: Int
 ) extends StackedUpdateIntSequence(depth) {
 
   // The PiecewiseUnitaryAffineFunction corresponding to this move
   private val localBijection = MovedIntSequence.bijectionForMove(
-    fromIncludedExpl.position,
-    toIncludedExpl.position,
-    moveAfterExplToPosition,
+    fromIncludedExplorer.position,
+    toIncludedExplorer.position,
+    moveAfterExplorer.position,
     flip
   )
 
@@ -192,21 +196,8 @@ class MovedIntSequence(
     originalExplorerBeforeFromPositionIncluded,
     originalExplorerAfterToPositionIncluded,
     originalExplorerAfterMoverAfterPosition
-  ): (Option[IntSequenceExplorer], Option[IntSequenceExplorer], Option[IntSequenceExplorer]) = {
-    // Could be None
-    val originExplorerBeforeFromIncluded = fromIncludedExpl.prev
-    // Could be None
-    val originExplorerAfterToIncluded = toIncludedExpl.next
-    // Could be None
-    val originExplorerAtAfterMoveAfter =
-      if (moveAfterExpl.nonEmpty) moveAfterExpl.get.next
-      else seq.explorerAtPosition(0)
-    (
-      originExplorerBeforeFromIncluded,
-      originExplorerAfterToIncluded,
-      originExplorerAtAfterMoveAfter
-    )
-  }
+  ): (Option[IntSequenceExplorer], Option[IntSequenceExplorer], Option[IntSequenceExplorer]) =
+    (fromIncludedExplorer.prev, toIncludedExplorer.next, moveAfterExplorer.next)
 
   override val size: Int = seq.size
 
@@ -218,61 +209,57 @@ class MovedIntSequence(
     seq.unorderedContentNoDuplicateWithNBOccurrences
 
   override def descriptorString: String =
-    s"${seq.descriptorString}.moved(startPos:$fromIncludedExpl endPos:$toIncludedExpl targetPos:$moveAfterExpl flip:$flip)"
+    s"${seq.descriptorString}.moved(startPos:$fromIncludedExplorer endPos:$toIncludedExplorer targetPos:$moveAfterExplorer flip:$flip)"
 
   override def commitPendingMoves: IntSequence = seq.commitPendingMoves.moveAfter(
-    fromIncludedExpl,
-    toIncludedExpl,
-    moveAfterExpl,
-    flip,
-    fast = false
+    fromIncludedExplorer,
+    toIncludedExplorer,
+    moveAfterExplorer,
+    flip
   )
 
   override def originalExplorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
     if (position < 0) None
-    else if (position == fromIncludedExpl.position - 1) originalExplorerBeforeFromPositionIncluded
-    else if (position == fromIncludedExpl.position) Some(fromIncludedExpl)
-    else if (position == toIncludedExpl.position) Some(toIncludedExpl)
-    else if (position == toIncludedExpl.position + 1) originalExplorerAfterToPositionIncluded
-    else if (moveAfterExplToPosition == position) moveAfterExpl
-    else if (moveAfterExplToPosition + 1 == position) originalExplorerAfterMoverAfterPosition
+    else if (position == fromIncludedExplorer.position - 1)
+      originalExplorerBeforeFromPositionIncluded
+    else if (position == fromIncludedExplorer.position) Some(fromIncludedExplorer)
+    else if (position == toIncludedExplorer.position) Some(toIncludedExplorer)
+    else if (position == toIncludedExplorer.position + 1) originalExplorerAfterToPositionIncluded
+    else if (moveAfterExplorer.position == position) Some(moveAfterExplorer)
+    else if (moveAfterExplorer.position + 1 == position) originalExplorerAfterMoverAfterPosition
     else seq.explorerAtPosition(position)
   }
 
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
-    val positionOfCurrentPivot = localBijection.pivotWithPositionApplyingTo(position)
-    seq.explorerAtPosition(localBijection(position)) match {
-      case None => None
-      case Some(explorerInBasicSequence) =>
-        Some(
-          new MovedIntSequenceExplorer(
-            this,
-            position,
-            explorerInBasicSequence,
-            positionOfCurrentPivot,
-            positionOfCurrentPivot match {
-              case None    => localBijection.firstPivotAndPosition
-              case Some(x) => x.next
-            }
-          )()
-        )
+    if (position == -1) Some(new RootIntSequenceExplorer(this))
+    else {
+      val positionOfCurrentPivot = localBijection.pivotWithPositionApplyingTo(position)
+      seq.explorerAtPosition(localBijection(position)) match {
+        case None => None
+        case Some(explorerInBasicSequence) =>
+          Some(
+            new MovedIntSequenceExplorer(
+              this,
+              position,
+              explorerInBasicSequence,
+              positionOfCurrentPivot,
+              positionOfCurrentPivot match {
+                case None    => localBijection.firstPivotAndPosition
+                case Some(x) => x.next
+              }
+            )()
+          )
+      }
     }
   }
-
-  @inline
-  private def moveAfterExplToPosition: Int =
-    moveAfterExpl match {
-      case Some(expl) => expl.position
-      case None       => -1
-    }
 
   // Returns the new position of the specified old position
   private def oldPosToNewPos(oldPos: Int): Int = {
     val tmp = MovedIntSequence.oldPosToNewPos(
       oldPos,
-      fromIncludedExpl.position,
-      toIncludedExpl.position,
-      moveAfterExplToPosition,
+      fromIncludedExplorer.position,
+      toIncludedExplorer.position,
+      moveAfterExplorer.position,
       flip
     )
     assert(

@@ -16,6 +16,7 @@ package oscar.cbls.algo.sequence.stackedUpdate
 import oscar.cbls.algo.rb.RedBlackTreeMapExplorer
 import oscar.cbls.algo.sequence.IntSequenceExplorer
 import oscar.cbls.algo.sequence.affineFunction.Pivot
+import oscar.cbls.algo.sequence.concrete.RootIntSequenceExplorer
 
 /** A stacked explorer dedicated for [[MovedIntSequence]].
   *
@@ -98,7 +99,7 @@ class MovedIntSequenceExplorer(
   }
 
   override def prev: Option[IntSequenceExplorer] = {
-    if (position == 0) None
+    if (position == 0) Some(new RootIntSequenceExplorer(intSequence))
     else if (position == limitBelowForCurrentPivot) {
       // Moving to previous Pivot
       val newPosition             = position - 1

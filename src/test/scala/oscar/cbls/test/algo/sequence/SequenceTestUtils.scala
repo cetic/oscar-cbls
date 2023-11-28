@@ -12,23 +12,23 @@ object SequenceTestUtils {
   private val myTestUtils = new SequenceTestUtils()
 
   /** Implements manually the moveAfter transformation (to compare with IntSequence)
-   * @param list
-   *   The original list to swap
-   * @param indexFrom
-   *   The starting index of the subsequence to flip (inclusive)
-   * @param indexTo
-   *   The ending index of the subsequence to flip (inclusive)
-   * @param destination
-   *   The index where the subsequence must be re-inserted (equivalent to moveAfter parameter)
-   * @return
-   *   A new sequence with the proper transformation
-   */
+    * @param list
+    *   The original list to swap
+    * @param indexFrom
+    *   The starting index of the subsequence to flip (inclusive)
+    * @param indexTo
+    *   The ending index of the subsequence to flip (inclusive)
+    * @param destination
+    *   The index where the subsequence must be re-inserted (equivalent to moveAfter parameter)
+    * @return
+    *   A new sequence with the proper transformation
+    */
   def flipListManually(
-                        list: List[Int],
-                        indexFrom: Int,
-                        indexTo: Int,
-                        destination: Int
-                      ): List[Int] = {
+    list: List[Int],
+    indexFrom: Int,
+    indexTo: Int,
+    destination: Int
+  ): List[Int] = {
 
     var flippedList = List[Int]()
     val flip        = list.slice(indexFrom, indexTo + 1).reverse
@@ -85,11 +85,11 @@ object SequenceTestUtils {
 class SequenceTestUtils extends AnyFunSuite with Matchers {
 
   /** Exhaustively compares the IntSequence with a reference list, supposed to be identical
-   * @param intSeq
-   *   the integer sequence
-   * @param list
-   *   the reference list
-   */
+    * @param intSeq
+    *   the integer sequence
+    * @param list
+    *   the reference list
+    */
   def compare(intSeq: IntSequence, list: List[Int]): Unit = {
     intSeq.size should be(list.size)
     intSeq.isEmpty should be(list.isEmpty)
@@ -108,7 +108,7 @@ class SequenceTestUtils extends AnyFunSuite with Matchers {
     )
 
     // This will intentionally search for items that are not in the list
-    if(list.nonEmpty) {
+    if (list.nonEmpty) {
       for (i <- list.min until list.max) {
         intSeq.nbOccurrence(i) should be(list.count(_ == i))
         intSeq.contains(i) should be(list.contains(i))

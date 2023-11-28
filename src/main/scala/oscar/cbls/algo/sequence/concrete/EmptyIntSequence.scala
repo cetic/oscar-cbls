@@ -1,9 +1,13 @@
 package oscar.cbls.algo.sequence.concrete
 
-import oscar.cbls.algo.sequence.stackedUpdate.InsertedIntSequence
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer, Token}
 
-class EmptyIntSequence(depth: Int) extends IntSequence(depth = depth) {
+/** Represents an empty [[IntSequence]].
+  *
+  * Only one movement is permitted : insertion Upon insertion it creates a [[ConcreteIntSequence]]
+  * containing the value.
+  */
+case class EmptyIntSequence() extends IntSequence(depth = 0) {
   override def size: Int = 0
 
   override def nbOccurrence(value: Int): Int = 0
@@ -19,16 +23,14 @@ class EmptyIntSequence(depth: Int) extends IntSequence(depth = depth) {
   override def contains(value: Int): Boolean = false
 
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] =
-    if (position == -1) Some(EmptyIntSequenceExplorer())
+    if (position == -1) Some(new RootIntSequenceExplorer(this))
     else None
 
   override def insertAfterPosition(
     value: Int,
-    insertAfterPositionExpl: Option[IntSequenceExplorer],
-    fast: Boolean
+    insertAfterPositionExplorer: IntSequenceExplorer = new RootIntSequenceExplorer(this),
+    fast: Boolean = false
   ): IntSequence = {
-    require(insertAfterPositionExpl.isEmpty, "InsertAfterPositionExpl must be defined.")
-
     IntSequence(List(value))
   }
 
@@ -38,9 +40,9 @@ class EmptyIntSequence(depth: Int) extends IntSequence(depth = depth) {
   }
 
   override def moveAfter(
-    fromIncludedExpl: IntSequenceExplorer,
-    toIncludedExpl: IntSequenceExplorer,
-    moveAfterExpl: Option[IntSequenceExplorer],
+    fromIncludedExplorer: IntSequenceExplorer,
+    toIncludedExplorer: IntSequenceExplorer,
+    moveAfterExplorer: IntSequenceExplorer,
     flip: Boolean,
     fast: Boolean
   ): IntSequence = {

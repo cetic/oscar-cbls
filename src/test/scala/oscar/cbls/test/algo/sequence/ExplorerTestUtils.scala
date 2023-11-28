@@ -4,7 +4,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import oscar.cbls.algo.sequence.IntSequenceExplorer
 
-
 object ExplorerTestUtils {
   private val myTestUtils = new ExplorerTestUtils()
   def compareAllAttributes(exp: Option[IntSequenceExplorer], pos: Int, list: List[Int]): Unit =
@@ -14,13 +13,13 @@ object ExplorerTestUtils {
 class ExplorerTestUtils extends AnyFunSuite with Matchers {
 
   /** Exhaustively checks the consistency of an explorer with its reference sequence
-   * @param exp
-   *   The explorer to check
-   * @param pos
-   *   The position of the explorer in the list
-   * @param list
-   *   The original list
-   */
+    * @param exp
+    *   The explorer to check
+    * @param pos
+    *   The position of the explorer in the list
+    * @param list
+    *   The original list
+    */
   def compareExplorer(exp: Option[IntSequenceExplorer], pos: Int, list: List[Int]): Unit = {
     var explorer = exp
 
@@ -28,6 +27,8 @@ class ExplorerTestUtils extends AnyFunSuite with Matchers {
     list
       .take(pos + 1)
       .reverse
+      // Adding the RootIntSequenceExplorer value
+      .appendedAll(List(Int.MinValue))
       .foreach(e => {
         e should be(explorer.get.value)
         explorer = explorer.get.prev
@@ -35,7 +36,7 @@ class ExplorerTestUtils extends AnyFunSuite with Matchers {
     // Reached the first entry
     explorer should be(None)
 
-    //Checking next
+    // Checking next
     explorer = exp
     list
       .takeRight(list.size - pos)

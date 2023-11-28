@@ -19,7 +19,9 @@ import oscar.cbls.algo.sequence.concrete.ConcreteIntSequence
 /** Quick and stackable update of an [[IntSequence]]
   *
   * For performance purpose, it's easier to create several stackable updates and commit them times
-  * to times. That's the purpose of the [[StackedUpdateIntSequence]]. That way you can easi
+  * to times. That's the purpose of the [[StackedUpdateIntSequence]]. While maxDepth is not reached
+  * we add new small updates to the sequence. Once it's reached we commit the pending move, creating
+  * a new [[ConcreteIntSequence]].
   *
   * @param depth
   *   The depth of the current update
@@ -40,15 +42,15 @@ abstract class StackedUpdateIntSequence(depth: Int, maxDepth: Int = 20)
   }
 
   override def moveAfter(
-                          fromIncludedExpl: IntSequenceExplorer,
-                          toIncludedExpl: IntSequenceExplorer,
-                          moveAfterExpl: Option[IntSequenceExplorer],
-                          flip: Boolean,
-                          fast: Boolean
+    fromIncludedExplorer: IntSequenceExplorer,
+    toIncludedExplorer: IntSequenceExplorer,
+    moveAfterExplorer: IntSequenceExplorer,
+    flip: Boolean,
+    fast: Boolean
   ): IntSequence = {
-    val fromIncludedPos = fromIncludedExpl.position
-    val toIncludedPos = toIncludedExpl.position
-    val moveAfterPos = if(moveAfterExpl.nonEmpty)moveAfterExpl.get.position else -1
+    val fromIncludedPos = fromIncludedExplorer.position
+    val toIncludedPos   = toIncludedExplorer.position
+    val moveAfterPos    = moveAfterExplorer.position
     require(
       fromIncludedPos >= 0 && fromIncludedPos < size,
       s"StartPositionIncluded should be in [0,sizeOfSequence=$size[. Got $fromIncludedPos"
@@ -74,34 +76,43 @@ abstract class StackedUpdateIntSequence(depth: Int, maxDepth: Int = 20)
     if (depth >= maxDepth) {
       new MovedIntSequence(
         this,
-        fromIncludedExpl,
-        toIncludedExpl,
-        moveAfterExpl,
+        fromIncludedExplorer,
+        toIncludedExplorer,
+        moveAfterExplorer,
         flip,
         depth + 1
       ).commitPendingMoves
     } else {
       new MovedIntSequence(
         this,
-        fromIncludedExpl,
-        toIncludedExpl,
-        moveAfterExpl,
+        fromIncludedExplorer,
+        toIncludedExplorer,
+        moveAfterExplorer,
         flip,
         depth + 1
       )
     }
   }
 
-  override def insertAfterPosition(value: Int, insertAfterPositionExpl: Option[IntSequenceExplorer], fast: Boolean): IntSequence = {
-    val insertAfterPos = IntSequenceExplorer.getPosOrElse(insertAfterPositionExpl,-1)
+  override def insertAfterPosition(
+    value: Int,
+    insertAfterPositionExplorer: IntSequenceExplorer,
+    fast: Boolean
+  ): IntSequence = {
+    val insertAfterPos = insertAfterPositionExplorer.position
     require(
-      insertAfterPos >= -1 && insertAfterPos <= size-1,
-      s"Insert after position must be in [-1,sizeOfSequence minus 1=${size-1}]. Got ${insertAfterPos}"
+      insertAfterPos >= -1 && insertAfterPos <= size - 1,
+      s"Insert after position must be in [-1,sizeOfSequence minus 1=${size - 1}]. Got $insertAfterPos"
     )
     if (depth >= maxDepth) {
-      new InsertedIntSequence(this, value: Int, insertAfterPositionExpl, depth + 1).commitPendingMoves
+      new InsertedIntSequence(
+        this,
+        value: Int,
+        insertAfterPositionExplorer,
+        depth + 1
+      ).commitPendingMoves
     } else {
-      new InsertedIntSequence(this, value: Int, insertAfterPositionExpl, depth + 1)
+      new InsertedIntSequence(this, value: Int, insertAfterPositionExplorer, depth + 1)
     }
   }
 

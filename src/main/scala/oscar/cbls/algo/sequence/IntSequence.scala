@@ -307,22 +307,26 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     *
     * @param value
     *   The value to insert as [[Int]]
-    * @param insertAfterPositionExpl
+    * @param insertAfterPositionExplorer
     *   The position where to insert the value as [[Int]]
     * @param fast
     *   Fast flag as [[Boolean]] for more detail see description.
     * @return
     *   An [[IntSequence]] with the new value
     */
-  def insertAfterPosition(value: Int, insertAfterPositionExpl: Option[IntSequenceExplorer], fast: Boolean = false): IntSequence
+  def insertAfterPosition(
+    value: Int,
+    insertAfterPositionExplorer: IntSequenceExplorer,
+    fast: Boolean = false
+  ): IntSequence
 
   /** Removes the value at the specified position.
     *
     * There is two ways to delete a value, a fast and a normal one. If fast, it returns a
     * [[StackedUpdateIntSequence]]. If normal, it computes a brand new [[ConcreteIntSequence]].
     *
-    * @param pos
-    *   The position where to remove the value as [[Int]]
+    * @param removePosAsExplorer
+    *   The explorer at the position where to remove the value as [[IntSequenceExplorer]]
     * @param fast
     *   Fast flag as [[Boolean]] for more detail see description.
     * @return
@@ -335,11 +339,11 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     * There is two ways to move values, a fast and a normal one. If fast, it returns a
     * [[StackedUpdateIntSequence]]. If normal, it computes a brand new [[ConcreteIntSequence]].
     *
-    * @param fromIncludedExpl
+    * @param fromIncludedExplorer
     *   Starting position of the nodes to move (included) as [[Int]]
-    * @param toIncludedExpl
+    * @param toIncludedExplorer
     *   Ending position of the nodes to move (included) as [[Int]]
-    * @param moveAfterExpl
+    * @param moveAfterExplorer
     *   The position after which to move the nodes as [[Int]]
     * @param flip
     *   If true, flip the nodes before moving them
@@ -349,11 +353,11 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     *   An [[IntSequence]] where the nodes have been moved accordingly
     */
   def moveAfter(
-                 fromIncludedExpl: IntSequenceExplorer,
-                 toIncludedExpl: IntSequenceExplorer,
-                 moveAfterExpl: Option[IntSequenceExplorer],
-                 flip: Boolean,
-                 fast: Boolean = false
+    fromIncludedExplorer: IntSequenceExplorer,
+    toIncludedExplorer: IntSequenceExplorer,
+    moveAfterExplorer: IntSequenceExplorer,
+    flip: Boolean,
+    fast: Boolean = false
   ): IntSequence
 
   /** Flips the [[IntSequence]]
@@ -365,7 +369,14 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     */
   def flip(fast: Boolean = false): IntSequence =
     if (this.isEmpty) this
-    else moveAfter(this.explorerAtPosition(0).get, this.explorerAtPosition(size - 1).get, None, flip = true, fast)
+    else
+      moveAfter(
+        this.explorerAtPosition(0).get,
+        this.explorerAtPosition(size - 1).get,
+        new RootIntSequenceExplorer(this),
+        flip = true,
+        fast
+      )
 
   /** Regularizes the current [[IntSequence]] if the max number of pivot is reached
     *
@@ -379,7 +390,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     * @param targetToken
     *   The identity of the resulting [[ConcreteIntSequence]]
     * @return
-    * A [[ConcreteIntSequence]] or and [[EmptyIntSequence]] with or without pivot
+    *   A [[ConcreteIntSequence]] or and [[EmptyIntSequence]] with or without pivot
     */
   def regularizeToMaxPivot(
     maxPivotPerValuePercent: Int,

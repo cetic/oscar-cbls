@@ -14,16 +14,8 @@
 package oscar.cbls.algo.sequence.concrete
 
 import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
-import oscar.cbls.algo.sequence.affineFunction.{
-  PiecewiseUnitaryAffineFunction,
-  Pivot,
-  UnitaryAffineFunction
-}
-import oscar.cbls.algo.sequence.stackedUpdate.{
-  InsertedIntSequence,
-  MovedIntSequence,
-  RemovedIntSequence
-}
+import oscar.cbls.algo.sequence.affineFunction._
+import oscar.cbls.algo.sequence.stackedUpdate._
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer, Token}
 
 import scala.annotation.tailrec
@@ -37,7 +29,7 @@ import scala.annotation.tailrec
   *   - The internal position : The position of a specific value without considering any pivot
   *   - The external position : The position of a specific value considering every pivot
   *   - A pivot : A [[Pivot]] is an affine function used to link the external to the internal
-  *     position
+  *     position. It's used to represent the movements applied to the sequence.
   *
   * So each time the route is modified, a new [[Pivot]] is created to adjust the new position of
   * each element. The internal positions don't change. Once in a while we commit / apply all pivots
@@ -47,7 +39,7 @@ import scala.annotation.tailrec
   *   A [[RedBlackTreeMap]] of [[Int]] associating an internal position to its value
   * @param valueToInternalPositions
   *   A [[RedBlackTreeMap]] of [[RedBlackTreeMap]] of [[Int]] associating a value to its internal
-  *   position. The second RedBlackTree([Int]) is used as a Set[Int].
+  *   positions. The second RedBlackTree([Int]) is used as a Set[Int].
   * @param externalToInternalPosition
   *   A [[PiecewiseUnitaryAffineFunction]] containing all the necessary [[Pivot]] used to link an
   *   external position to its internal position
@@ -56,8 +48,6 @@ import scala.annotation.tailrec
   * @param token
   *   A small object used to id the current instance
   */
-// TODO : HashSet[Int] is faster than RBT with big amount of values. We should maybe make a
-// 	dedicated IntSequence for one value to one position problems and use HashSet here.
 class ConcreteIntSequence(
   private[sequence] val internalPositionToValue: RedBlackTreeMap[Int],
   private[sequence] val valueToInternalPositions: RedBlackTreeMap[RedBlackTreeMap[Int]],
@@ -135,6 +125,7 @@ class ConcreteIntSequence(
   }
 
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
+    if (position == -1) return Some(new RootIntSequenceExplorer(this))
 
     // Moving the explorer at position to the end of the related array
     def putUsedExplorerAtBack(usedExplorerIndex: Int): Unit = {
@@ -187,7 +178,8 @@ class ConcreteIntSequence(
 
   private def computeExplorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
     if (position >= this.size) None
-    else if (position < 0) None
+    else if (position == -1) Some(new RootIntSequenceExplorer(this))
+    else if (position < -1) None
     else {
       val currentPivotPosition = externalToInternalPosition.pivotWithPositionApplyingTo(position)
       val (pivotAbovePosition: Option[RedBlackTreeMapExplorer[Pivot]], internalPosition) = {
@@ -287,10 +279,10 @@ class ConcreteIntSequence(
 
   override def insertAfterPosition(
     value: Int,
-    insertAfterPositionExpl: Option[IntSequenceExplorer],
+    insertAfterPositionExplorer: IntSequenceExplorer,
     fast: Boolean
   ): IntSequence = {
-    val insertAfterPos = IntSequenceExplorer.getPosOrElse(insertAfterPositionExpl, -1)
+    val insertAfterPos = insertAfterPositionExplorer.position
     require(
       insertAfterPos + 1 <= size,
       "inserting past the end of the sequence (size:" + size + " inserting after pos:" + insertAfterPos + ")"
@@ -302,7 +294,7 @@ class ConcreteIntSequence(
       * : from 13 to 13 moving x 5 position earlier
       */
 
-    if (fast) return new InsertedIntSequence(this, value, insertAfterPositionExpl, 1)
+    if (fast) return new InsertedIntSequence(this, value, insertAfterPositionExplorer, 1)
 
     // insert into red blacks
     val newInternalPositionToValue =
@@ -320,17 +312,20 @@ class ConcreteIntSequence(
         insertAfterPos + 1,
         size - 1,
         size,
-        false
+        flipZone2 = false
       )
 
       assert(
         tmp equals externalToInternalPosition.updatesForCompositionBefore(
           List(
-            (insertAfterPos + 2, size, UnitaryAffineFunction(-1, false)),
+            (insertAfterPos + 2, size, UnitaryAffineFunction(-1, flip = false)),
             (
               insertAfterPos + 1,
               insertAfterPos + 1,
-              UnitaryAffineFunction(startFreeRangeForInternalPosition - (insertAfterPos + 1), false)
+              UnitaryAffineFunction(
+                startFreeRangeForInternalPosition - (insertAfterPos + 1),
+                flip = false
+              )
             )
           )
         )
@@ -356,7 +351,7 @@ class ConcreteIntSequence(
     if (fast) {
       new RemovedIntSequence(this, removePosAsExplorer, 1)
     } else if (size == 1) {
-      new EmptyIntSequence(depth)
+      EmptyIntSequence()
     } else {
 
       // 1° Gets the corresponding values + some contextual information
@@ -413,7 +408,7 @@ class ConcreteIntSequence(
               externalPositionAssociatedToLargestInternalPosition,
               UnitaryAffineFunction(
                 pos - externalPositionAssociatedToLargestInternalPosition,
-                false
+                flip = false
               )
             ),
             (
@@ -421,15 +416,15 @@ class ConcreteIntSequence(
               pos,
               UnitaryAffineFunction(
                 externalPositionAssociatedToLargestInternalPosition - pos,
-                false
+                flip = false
               )
             )
           )
         )
         .updatesForCompositionBefore(
           List(
-            (pos, size - 2, UnitaryAffineFunction(1, false)),
-            (size - 1, size - 1, UnitaryAffineFunction(pos - size + 1, false))
+            (pos, size - 2, UnitaryAffineFunction(1, flip = false)),
+            (size - 1, size - 1, UnitaryAffineFunction(pos - size + 1, flip = false))
           )
         )
 
@@ -452,15 +447,15 @@ class ConcreteIntSequence(
   }
 
   override def moveAfter(
-    fromIncludedExpl: IntSequenceExplorer,
-    toIncludedExpl: IntSequenceExplorer,
-    moveAfterExpl: Option[IntSequenceExplorer],
+    fromIncludedExplorer: IntSequenceExplorer,
+    toIncludedExplorer: IntSequenceExplorer,
+    moveAfterExplorer: IntSequenceExplorer,
     flip: Boolean,
     fast: Boolean
   ): IntSequence = {
-    val fromIncludedPos = fromIncludedExpl.position
-    val toIncludedPos   = toIncludedExpl.position
-    val moveAfterPos    = if (moveAfterExpl.nonEmpty) moveAfterExpl.get.position else -1
+    val fromIncludedPos = fromIncludedExplorer.position
+    val toIncludedPos   = toIncludedExplorer.position
+    val moveAfterPos    = moveAfterExplorer.position
     require(
       fromIncludedPos >= 0 && fromIncludedPos < size,
       s"StartPositionIncluded should be in [0,sizeOfSequence=$size[ got $fromIncludedPos"
@@ -485,7 +480,14 @@ class ConcreteIntSequence(
     )
 
     if (fast)
-      return new MovedIntSequence(this, fromIncludedExpl, toIncludedExpl, moveAfterExpl, flip, 1)
+      return new MovedIntSequence(
+        this,
+        fromIncludedExplorer,
+        toIncludedExplorer,
+        moveAfterExplorer,
+        flip,
+        1
+      )
 
     val newExternalToInternalPosition =
       if (moveAfterPos + 1 == fromIncludedPos) {
@@ -512,11 +514,10 @@ class ConcreteIntSequence(
               fromIncludedPos,
               toIncludedPos,
               moveAfterPos,
-              true
+              flipZone1 = true
             )
           }
 
-          // TODO : Could we remove these ?
           assert(
             tempNewExternalToInternalPosition equals externalToInternalPosition
               .updatesForCompositionBefore(
@@ -524,7 +525,7 @@ class ConcreteIntSequence(
                   (
                     fromIncludedPos,
                     moveAfterPos + fromIncludedPos - toIncludedPos - 1,
-                    UnitaryAffineFunction(toIncludedPos + 1 - fromIncludedPos, false)
+                    UnitaryAffineFunction(toIncludedPos + 1 - fromIncludedPos, flip = false)
                   ),
                   (
                     fromIncludedPos + moveAfterPos - toIncludedPos,
@@ -553,7 +554,7 @@ class ConcreteIntSequence(
               moveAfterPos + 1,
               fromIncludedPos - 1,
               toIncludedPos,
-              true
+              flipZone2 = true
             )
           }
 
@@ -572,7 +573,7 @@ class ConcreteIntSequence(
                 (
                   moveAfterPos + toIncludedPos - fromIncludedPos + 2,
                   toIncludedPos,
-                  UnitaryAffineFunction(fromIncludedPos - toIncludedPos - 1, false)
+                  UnitaryAffineFunction(fromIncludedPos - toIncludedPos - 1, flip = false)
                 )
               )
             ) equals tempNewExternalToInternalPosition
@@ -652,5 +653,5 @@ class ConcreteIntSequence(
   override def unorderedContentNoDuplicate: List[Int] = valueToInternalPositions.keys
 
   override def unorderedContentNoDuplicateWithNBOccurrences: List[(Int, Int)] =
-    valueToInternalPositions.content.map({ case ((value, positions)) => ((value, positions.size)) })
+    valueToInternalPositions.content.map({ case (value, positions) => (value, positions.size) })
 }

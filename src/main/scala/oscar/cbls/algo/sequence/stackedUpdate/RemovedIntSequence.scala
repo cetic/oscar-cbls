@@ -13,6 +13,7 @@
 
 package oscar.cbls.algo.sequence.stackedUpdate
 
+import oscar.cbls.algo.sequence.concrete.RootIntSequenceExplorer
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 
 /** Quick and stackable update of an [[IntSequence]] applying a removal of an existing node.
@@ -24,10 +25,13 @@ import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
   * @param depth
   *   The depth of the current update
   */
-class RemovedIntSequence(val originalSequence: IntSequence, val explorerAtRemovePos: IntSequenceExplorer, depth: Int)
-    extends StackedUpdateIntSequence(depth) {
+class RemovedIntSequence(
+  val originalSequence: IntSequence,
+  val explorerAtRemovePos: IntSequenceExplorer,
+  depth: Int
+) extends StackedUpdateIntSequence(depth) {
 
-  val removedValue: Int = explorerAtRemovePos.value
+  private val removedValue: Int = explorerAtRemovePos.value
 
   override def descriptorString: String =
     originalSequence.descriptorString + ".removed(pos:" + explorerAtRemovePos.position + " val:" + removedValue + ")"
@@ -53,16 +57,19 @@ class RemovedIntSequence(val originalSequence: IntSequence, val explorerAtRemove
   override val size: Int = originalSequence.size - 1
 
   override def originalExplorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
-    if(position == explorerAtRemovePos.position) Some(explorerAtRemovePos)
+    if (position == explorerAtRemovePos.position) Some(explorerAtRemovePos)
     else originalSequence.explorerAtPosition(position)
   }
 
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
-    originalSequence.explorerAtPosition(
-      if (position < this.explorerAtRemovePos.position) position else position + 1
-    ) match {
-      case None    => None
-      case Some(e) => Some(new RemovedIntSequenceExplorer(this, position, e))
+    if (position == -1) Some(new RootIntSequenceExplorer(this))
+    else {
+      originalSequence.explorerAtPosition(
+        if (position < this.explorerAtRemovePos.position) position else position + 1
+      ) match {
+        case None    => None
+        case Some(e) => Some(new RemovedIntSequenceExplorer(this, position, e))
+      }
     }
   }
 
@@ -86,10 +93,11 @@ class RemovedIntSequence(val originalSequence: IntSequence, val explorerAtRemove
   }
 
   override def commitPendingMoves: IntSequence =
-    originalSequence.commitPendingMoves.delete(this.explorerAtRemovePos, fast = false)
+    originalSequence.commitPendingMoves.delete(this.explorerAtRemovePos)
 
   override def valueAtPosition(position: Int): Option[Int] = {
-    if (position >= this.explorerAtRemovePos.position) originalSequence.valueAtPosition(position + 1)
+    if (position >= this.explorerAtRemovePos.position)
+      originalSequence.valueAtPosition(position + 1)
     else originalSequence.valueAtPosition(position)
   }
 }
