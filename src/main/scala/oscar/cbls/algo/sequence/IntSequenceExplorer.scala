@@ -13,23 +13,6 @@
 
 package oscar.cbls.algo.sequence
 
-object IntSequenceExplorer {
-  def getNextExplorerOrElse(
-    explorer: Option[IntSequenceExplorer],
-    orElse: Option[IntSequenceExplorer]
-  ): Option[IntSequenceExplorer] =
-    explorer match {
-      case Some(e) => e.next
-      case None    => orElse
-    }
-
-  def getPosOrElse(explorer: Option[IntSequenceExplorer], orElse: Int): Int =
-    explorer match {
-      case Some(e) => e.position
-      case None    => orElse
-    }
-}
-
 /** Abstract class used to explore an [[IntSequence]]
   *
   * Each instance represents the state of the sequence at a specific position.
