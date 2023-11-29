@@ -26,7 +26,7 @@ package oscar.cbls.algo.sequence.affineFunction
   */
 class Pivot(val fromValue: Int, val f: UnitaryAffineFunction) {
   override def toString: String =
-    "Pivot(from:" + fromValue + " " + f + " f(from)=" + f(fromValue) + "))"
+    "Pivot(from:" + fromValue + " f:" + f + " f(from)=" + f(fromValue) + "))"
 
   /** Flip this pivot */
   def flip(endX: Int): Pivot = {

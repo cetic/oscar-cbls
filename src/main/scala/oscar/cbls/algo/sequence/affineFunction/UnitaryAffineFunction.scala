@@ -78,7 +78,7 @@ class UnitaryAffineFunction(val offset: Int, val flip: Boolean) {
   override def toString: String =
     if (offset == 0 && flip) "(x=>-x)"
     else if (offset == 0) "(x=>x)"
-    else s"(x=> $offset ${if (flip) "-" else "+"} x"
+    else s"(x=> $offset ${if (flip) "-" else "+"} x)"
 
   override def equals(obj: Any): Boolean = {
     obj match {

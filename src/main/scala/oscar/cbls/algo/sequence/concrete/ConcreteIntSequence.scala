@@ -249,7 +249,7 @@ class ConcreteIntSequence(
     }
   }
 
-  /** Removes the internal position of the specified value's positions
+  /** Removes the internal position from the specified value's positions
     *
     * @param value
     *   The value
@@ -354,6 +354,17 @@ class ConcreteIntSequence(
       EmptyIntSequence()
     } else {
 
+      // Global idea :
+      // 	Internally we move the value at largest position to the position of removal (2°)
+      //	Then we update the known position of the impacted values (3°)
+      //	Finally we update the AffineFunction so that the external position leads to the right internal position.
+      //	Ex : Remove value at 8. Size is 12.
+      //		1° We move value (v) from position 11 to externalToInternal(8)
+      //		2° Update the known positions of v and of the removed value
+      //		3° Update the affine function so that the externalPosition of internal position 11 leads to externalToInternal(8)
+      // 		It's complex but I don't think there is a better solution.
+      // 		Since the UnitaryAffineFunction is meant to be a bijection hence the domain must stay the same.
+
       // 1° Gets the corresponding values + some contextual information
       val internalPosition        = externalToInternalPosition(pos)
       val value                   = internalPositionToValue.get(internalPosition).get
@@ -362,7 +373,7 @@ class ConcreteIntSequence(
         internalPositionToValue.get(largestInternalPosition).get
       val deleteIsAtLargestInternalPosition = internalPosition == largestInternalPosition
 
-      // 2° Removes internalPos to value mapping by pushing the value at the end of the sequence.
+      // 2° seq(removalPosition) = lastValue; remove seq(lastPosition)
       val newInternalPositionToValue = if (deleteIsAtLargestInternalPosition) {
         internalPositionToValue.remove(largestInternalPosition)
       } else {
@@ -371,7 +382,7 @@ class ConcreteIntSequence(
           .remove(largestInternalPosition)
       }
 
-      // 3° Removes position from know internal positions for this value
+      // 3° Updates known positions of removalValue and lastValue
       val newValueToInternalPositions = if (deleteIsAtLargestInternalPosition) {
         internalRemoveFromValueToInternalPositions(
           value,
@@ -394,12 +405,11 @@ class ConcreteIntSequence(
         )
       }
 
-      // external position of the internal position that has been removed
+      // external position of the internal position of the largest position
       val externalPositionAssociatedToLargestInternalPosition =
         externalToInternalPosition.backward(largestInternalPosition)
 
       // 4° Updates the unitary affine function knowing the move and remove
-      // TODO: this is overly complex and probably very slow
       val newExternalToInternalPosition = externalToInternalPosition
         .updatesForCompositionBefore(
           List(
@@ -427,15 +437,6 @@ class ConcreteIntSequence(
             (size - 1, size - 1, UnitaryAffineFunction(pos - size + 1, flip = false))
           )
         )
-
-      /** TODO : Check this when the tests are added :
-        *
-        * externalToInternalPosition.swapAdjacentZonesShiftFirst(pos, pos, size-1, false).
-        * updateForCompositionBefore(size-1,size-1,UnitaryAffineFunction.identity)
-        *
-        * basically switching the removed node position, with the zone after it (until end of
-        * sequence) and then applying identity to last node
-        */
 
       new ConcreteIntSequence(
         newInternalPositionToValue,
@@ -610,25 +611,17 @@ class ConcreteIntSequence(
   }
 
   override def regularize(targetToken: Token = this.token): ConcreteIntSequence = {
-    var explorerOpt                                    = this.explorerAtPosition(0)
+    val explorerOpt                                    = this.explorerAtPosition(0)
     val newInternalPositionToValues: Array[(Int, Int)] = Array.ofDim[(Int, Int)](this.size)
     val oldInternalPosToNewInternalPos: Array[Int]     = Array.ofDim[Int](this.size)
 
-    // TODO : Seems way too complicated
-    // 	I think that we could remove the oldInternalPosToNewInternalPos value
-    // 	Should check that when testing is available
-    while (
-      explorerOpt match {
-        case None => false
-        case Some(explorer) =>
-          newInternalPositionToValues(explorer.position) = (explorer.position, explorer.value)
-          oldInternalPosToNewInternalPos(
-            explorer.asInstanceOf[ConcreteIntSequenceExplorer].internalPos
-          ) = explorer.position
-          explorerOpt = explorer.next
-          true
-      }
-    ) {}
+    if (explorerOpt.nonEmpty)
+      explorerOpt.get.foreach(explorer => {
+        newInternalPositionToValues(explorer.position) = (explorer.position, explorer.value)
+        oldInternalPosToNewInternalPos(
+          explorer.asInstanceOf[ConcreteIntSequenceExplorer].internalPos
+        ) = explorer.position
+      })
 
     new ConcreteIntSequence(
       RedBlackTreeMap.makeFromSortedArray(newInternalPositionToValues),

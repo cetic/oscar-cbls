@@ -92,4 +92,12 @@ abstract class IntSequenceExplorer {
     }
   }
 
+  def foreach(f: IntSequenceExplorer => Unit): Unit = {
+    f(this)
+    next match {
+      case None =>
+      case Some(explorer) => explorer.foreach(f)
+    }
+  }
+
 }
