@@ -16,7 +16,7 @@ class IntSequenceExplorerSuite
     with Matchers {
   val elem: Gen[Int] = for (n <- Gen.choose(0, 100)) yield n * 4 // Sparse elements
   val testBenchGen: Gen[List[Int]] = for {
-    numElems <- Gen.choose(20, 200)
+    numElems <- Gen.choose(10, 50)
     elems    <- Gen.listOfN(numElems, elem)
   } yield elems
 

@@ -21,6 +21,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
   private var seq: IntSequence          = IntSequence(List.empty)
   private val genSeqSize: AtomicInteger = new AtomicInteger(0)
 
+  // Insert operation generator
   def opInsert(size: Int): Gen[Insert] = for {
     value    <- Gen.choose(0, 1000)
     position <- Gen.choose(0, size - 1)
@@ -28,6 +29,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
     Insert(value, position)
   }
 
+  // Move operation generator
   def opMoveAfter(size: Int): Gen[MoveAfter] =
     for {
       from  <- Gen.choose(0, size - 1)
@@ -37,6 +39,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
       MoveAfter(from, to, after)
     }
 
+  // Remove operation generator
   def opDelete(size: Int): Gen[Delete] = {
     // if the list is empty, Delete(0) will be ignored, keeping it to avoid usage of Gen.Option
     if (size <= 1) Delete(0)

@@ -13,7 +13,7 @@
 
 package oscar.cbls.algo.sequence
 
-/** [[IntSequence]] as an [[Iterable]] of [[Int]]
+/** [[IntSequence]] as an [[scala.Iterable]] of [[scala.Int]]
   *
   * @param sequence
   *   The IntSequence to convert

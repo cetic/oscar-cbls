@@ -20,11 +20,10 @@ import oscar.cbls.algo.sequence.affineFunction.Pivot
 /** A [[ConcreteIntSequence]] explorer
   *
   * The position is the current external position. So to get it's value, we need to know the
-  * internal position. To do that we use a [[Pivot]] explorer, giving the next and previous
-  * [[Pivot]] of the sequence.
+  * internal position (using Pivot). To do that we keep track of the next and previous Pivot within
+  * the sequence.
   *
   * Reminder : A pivot starts at a particular external position and ends when another Pivot starts
-  * or at the end of the sequence
   *
   * @param sequence
   *   The [[ConcreteIntSequence]]
@@ -33,17 +32,19 @@ import oscar.cbls.algo.sequence.affineFunction.Pivot
   * @param positionInRB
   *   The current internal position
   * @param currentPivotPosition
-  *   The [[Pivot]] impacting the current external position. If none exists [[None]]. Else [[Some]]
-  *   [[RedBlackTreeMapExplorer]] of [[Pivot]]
+  *   The [[oscar.cbls.algo.sequence.affineFunction.Pivot]] impacting the current external position.
+  *   [[scala.None]] or a [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] of Pivot.
   * @param pivotAbovePosition
-  *   The [[Pivot]] after the current one. If none exists [[None]]. Else [[Some]]
-  *   [[RedBlackTreeMapExplorer]] of [[Pivot]]
+  *   The [[oscar.cbls.algo.sequence.affineFunction.Pivot]] after the current one. [[scala.None]] or
+  *   a [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] of Pivot.
   * @param limitAboveForCurrentPivot
-  *   The maximal external position before switching to the next [[Pivot]]
+  *   The maximal external position before switching to the next
+  *   [[oscar.cbls.algo.sequence.affineFunction.Pivot]]
   * @param limitBelowForCurrentPivot
-  *   The starting position of the current [[Pivot]]
+  *   The starting position of the current [[oscar.cbls.algo.sequence.affineFunction.Pivot]]
   * @param slopeIsPositive
-  *   Whether or not the current [[Pivot]] has a positive slope.
+  *   Whether or not the current [[oscar.cbls.algo.sequence.affineFunction.Pivot]] has a positive
+  *   slope.
   */
 class ConcreteIntSequenceExplorer(
   sequence: ConcreteIntSequence,
@@ -75,7 +76,7 @@ class ConcreteIntSequenceExplorer(
 
   override def next: Option[IntSequenceExplorer] = {
     if (position == sequence.size - 1) return None
-    // At end of current pivot ==> moving to next one
+    // At end of current pivot &rarr; moving to next one
     if (position == limitAboveForCurrentPivot) {
       // Always a pivot, at least identity
       val newPivotAbovePosition = pivotAbovePosition.get.next
@@ -109,9 +110,9 @@ class ConcreteIntSequenceExplorer(
   }
 
   override def prev: Option[IntSequenceExplorer] = {
-    // Already at start of sequence ==> None
+    // Already at start of sequence &rarr; None
     if (position == 0) Some(new RootIntSequenceExplorer(sequence))
-    // At start of current Pivot ==> moving to the previous one
+    // At start of current Pivot &rarr; moving to the previous one
     else if (position == limitBelowForCurrentPivot) {
       val newPosition             = position - 1
       val newCurrentPivotPosition = currentPivotPosition.get.prev

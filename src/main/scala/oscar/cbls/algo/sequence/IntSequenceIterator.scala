@@ -13,7 +13,7 @@
 
 package oscar.cbls.algo.sequence
 
-/** [[IntSequence]] as an [[Iterator]] of [[Int]]
+/** [[IntSequence]] as an [[scala.Iterator]] of [[scala.Int]]
   *
   * It uses the logic of [[IntSequenceExplorer]] to perform its tasks
   * @param intSequenceExplorer

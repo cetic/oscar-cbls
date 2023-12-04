@@ -21,7 +21,9 @@ class ExplorerTestUtils extends AnyFunSuite with Matchers {
     *   The original list
     */
   def compareExplorer(exp: Option[IntSequenceExplorer], pos: Int, list: List[Int]): Unit = {
+    exp.get.position should be(pos)
     var explorer = exp
+    val value    = exp.get.value
 
     // Checking prev
     list
@@ -47,6 +49,49 @@ class ExplorerTestUtils extends AnyFunSuite with Matchers {
     // Reached the last entry
     explorer should be(None)
 
-    exp.get.position should be(pos)
+    // To Position
+    for (p <- list.indices)
+      exp.get.toPosition(p).get.position should be(p)
+
+    val listBeforePosReversed = list.take(pos).reverse
+    val listAfterPos          = list.drop(pos + 1)
+
+    // Next/Prev until ...
+    // Backward
+    val firstValueBackward = listBeforePosReversed.find(x => x == value)
+    firstValueBackward match {
+      case None =>
+        val prevExplorer = exp.get.prev
+        if (prevExplorer.isEmpty) prevExplorer should be(None)
+        else {
+          prevExplorer.get.prevUntil(e => e.value == value) should be(None)
+          prevExplorer.get.prevUntilValue(value) should be(None)
+        }
+      case Some(value) =>
+        exp.get.prev.get.prevUntil(e => e.value == value).get.value should be(value)
+        exp.get.prev.get.prevUntilValue(value).get.value should be(value)
+    }
+    // Forward
+    val firstValueForward = listAfterPos.find(x => x == value)
+    firstValueForward match {
+      case None =>
+        val nextExplorer = exp.get.next
+        if (nextExplorer.isEmpty) nextExplorer should be(None)
+        else {
+          nextExplorer.get.nextUntil(e => e.value == value) should be(None)
+          nextExplorer.get.nextUntilValue(value) should be(None)
+        }
+      case Some(value) =>
+        exp.get.next.get.nextUntil(e => e.value == value).get.value should be(value)
+        exp.get.next.get.nextUntilValue(value).get.value should be(value)
+    }
+
+    // Foreach
+    var listForEach: List[Int] = List.empty
+    exp.get.foreach(e => {
+      listForEach = listForEach :+ e.value
+    })
+    listForEach shouldBe list.drop(pos)
+
   }
 }

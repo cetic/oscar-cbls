@@ -22,7 +22,7 @@ import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
   * @param intSequence
   *   The original sequence as a [[IntSequence]]
   * @param insertedValue
-  *   The value to insert as an [[Int]]
+  *   The value to insert as an [[scala.Int]]
   * @param insertAfterPosExplorer
   *   The explorer at the insertion position as an [[IntSequenceExplorer]]
   * @param depth
@@ -113,7 +113,7 @@ class InsertedIntSequence(
           intSequence.explorerAtPosition(originPos)
         else
           // Position is close enough to use next/prev (O(1)) on the known explorer
-          originalExplorerAtInsertPosition.get.untilPosition(originPos)
+          originalExplorerAtInsertPosition.get.toPosition(originPos)
       }
 
       explorer match {

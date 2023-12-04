@@ -25,24 +25,27 @@ import scala.annotation.tailrec
   * The creation of a brand new Array of Int after each modification is very costly so the decision
   * has been made to create a more complex structure offering better performances. There are four
   * main concepts around the IntSequence :
-  *   - The value : an [[Int]] value contained in the IntSequence
+  *   - The value : an Int value contained in the IntSequence
   *   - The internal position : The position of a specific value without considering any pivot
   *   - The external position : The position of a specific value considering every pivot
-  *   - A pivot : A [[Pivot]] is an affine function used to link the external to the internal
-  *     position. It's used to represent the movements applied to the sequence.
+  *   - A pivot : A Pivot is an affine function used to link the external to the internal position.
+  *     It's used to represent the movements applied to the sequence.
   *
-  * So each time the route is modified, a new [[Pivot]] is created to adjust the new position of
-  * each element. The internal positions don't change. Once in a while we commit / apply all pivots
-  * and update all the internal position.
+  * So each time the route is modified, a new Pivot is created to adjust the new position of each
+  * element. The internal positions don't change. Once in a while we commit / apply all pivots and
+  * update all the internal position.
   *
   * @param internalPositionToValue
-  *   A [[RedBlackTreeMap]] of [[Int]] associating an internal position to its value
+  *   A [[oscar.cbls.algo.rb.RedBlackTreeMap]] of [[scala.Int]] associating an internal position to
+  *   its value
   * @param valueToInternalPositions
-  *   A [[RedBlackTreeMap]] of [[RedBlackTreeMap]] of [[Int]] associating a value to its internal
-  *   positions. The second RedBlackTree([Int]) is used as a Set[Int].
+  *   A [[oscar.cbls.algo.rb.RedBlackTreeMap]] of [[oscar.cbls.algo.rb.RedBlackTreeMap]] of
+  *   [[scala.Int]] associating a value to its internal positions. The second RedBlackTree([Int]) is
+  *   used as a Set[Int].
   * @param externalToInternalPosition
-  *   A [[PiecewiseUnitaryAffineFunction]] containing all the necessary [[Pivot]] used to link an
-  *   external position to its internal position
+  *   A [[oscar.cbls.algo.sequence.affineFunction.PiecewiseUnitaryAffineFunction]] containing all
+  *   the necessary [[oscar.cbls.algo.sequence.affineFunction.Pivot]] used to link an external
+  *   position to its internal position
   * @param startFreeRangeForInternalPosition
   *   The next free internal insertion position.
   * @param token

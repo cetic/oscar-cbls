@@ -19,15 +19,15 @@ import oscar.cbls.algo.sequence.concrete.ConcreteIntSequence
 /** Quick and stackable update of an [[IntSequence]]
   *
   * For performance purpose, it's easier to create several stackable updates and commit them times
-  * to times. That's the purpose of the [[StackedUpdateIntSequence]]. While maxDepth is not reached
-  * we add new small updates to the sequence. Once it's reached we commit the pending move, creating
-  * a new [[ConcreteIntSequence]].
+  * to times. That's the purpose of the StackedUpdateIntSequence. While maxDepth is not reached we
+  * add new small updates to the sequence. Once it's reached we commit the pending move, creating a
+  * new ConcreteIntSequence.
   *
   * @param depth
   *   The depth of the current update
   * @param maxDepth
   *   The maximum depth allowed before committing all updates and generate a new
-  *   [[ConcreteIntSequence]]
+  *   [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]]
   */
 abstract class StackedUpdateIntSequence(depth: Int, maxDepth: Int = 20)
     extends IntSequence(depth = depth) {

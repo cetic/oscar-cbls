@@ -27,58 +27,99 @@ abstract class IntSequenceExplorer {
   // Returns the previous explorer in the sequence or None if start of sequence
   def prev: Option[IntSequenceExplorer]
 
-  def untilPosition(position: Int): Option[IntSequenceExplorer] = {
+  /** Returns the [[IntSequenceExplorer]] at the given position.
+    *
+    * Based on this.position goes backward or forward
+    * @param position
+    *   The position to reach
+    * @return
+    *   The [[IntSequenceExplorer]] as an [[scala.Option]] or None
+    */
+  def toPosition(position: Int): Option[IntSequenceExplorer] = {
     require(position >= -1)
     if (this.position == position) Some(this)
     else {
       val explorer =
         if (this.position > position) prev
         else next
-      if (explorer.nonEmpty) explorer.get.untilPosition(position)
+      if (explorer.nonEmpty) explorer.get.toPosition(position)
       else None
     }
   }
 
-  def backwardUntilValue(value: Int): Option[IntSequenceExplorer] = {
+  /** Returns the [[IntSequenceExplorer]] containing the given value, going backward.
+    *
+    * @param value
+    *   The value to reach
+    * @return
+    *   The [[IntSequenceExplorer]] as an [[scala.Option]] or None
+    */
+  def prevUntilValue(value: Int): Option[IntSequenceExplorer] = {
     if (this.value == value) Some(this)
     else {
       val previousExplorer = prev
-      if (previousExplorer.nonEmpty) previousExplorer.get.backwardUntilValue(value)
+      if (previousExplorer.nonEmpty) previousExplorer.get.prevUntilValue(value)
       else None
     }
   }
 
-  def forwardUntilValue(value: Int): Option[IntSequenceExplorer] = {
+  /** Returns the [[IntSequenceExplorer]] containing the given value, going forward.
+    *
+    * @param value
+    *   The value to reach
+    * @return
+    *   The [[IntSequenceExplorer]] as an [[scala.Option]] or None
+    */
+  def nextUntilValue(value: Int): Option[IntSequenceExplorer] = {
     if (this.value == value) Some(this)
     else {
       val nextExplorer = next
-      if (nextExplorer.nonEmpty) nextExplorer.get.forwardUntilValue(value)
+      if (nextExplorer.nonEmpty) nextExplorer.get.nextUntilValue(value)
       else None
     }
   }
 
-  def backwardUntil(f: IntSequenceExplorer => Boolean): Option[IntSequenceExplorer] = {
+  /** Returns the [[IntSequenceExplorer]] satisfying the given function, going backward.
+    *
+    * @param f
+    *   The function to satisfy
+    * @return
+    *   The [[IntSequenceExplorer]] as an [[scala.Option]] or None
+    */
+  def prevUntil(f: IntSequenceExplorer => Boolean): Option[IntSequenceExplorer] = {
     if (f(this)) Some(this)
     else {
       val previousExplorer = prev
-      if (previousExplorer.nonEmpty) previousExplorer.get.backwardUntil(f)
+      if (previousExplorer.nonEmpty) previousExplorer.get.prevUntil(f)
       else None
     }
   }
 
-  def forwardUntil(f: IntSequenceExplorer => Boolean): Option[IntSequenceExplorer] = {
+  /** Returns the [[IntSequenceExplorer]] satisfying the given function, going forward.
+    *
+    * @param f
+    *   The function to satisfy
+    * @return
+    *   The [[IntSequenceExplorer]] as an [[scala.Option]] or None
+    */
+  def nextUntil(f: IntSequenceExplorer => Boolean): Option[IntSequenceExplorer] = {
     if (f(this)) Some(this)
     else {
       val nextExplorer = next
-      if (nextExplorer.nonEmpty) nextExplorer.get.forwardUntil(f)
+      if (nextExplorer.nonEmpty) nextExplorer.get.nextUntil(f)
       else None
     }
   }
 
+  /** Applies the given function on each [[IntSequenceExplorer]]
+    *
+    * @param f
+    *   The function to apply as [[IntSequenceExplorer]] to [[scala.Unit]]
+    */
   def foreach(f: IntSequenceExplorer => Unit): Unit = {
     f(this)
     next match {
-      case None =>
+      case None           =>
       case Some(explorer) => explorer.foreach(f)
     }
   }

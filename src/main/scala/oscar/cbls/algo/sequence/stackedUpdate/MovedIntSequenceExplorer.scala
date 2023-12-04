@@ -30,9 +30,11 @@ import oscar.cbls.algo.sequence.concrete.RootIntSequenceExplorer
   * @param explorerInOriginalSequence
   *   The original explorer, that is with the moved segment
   * @param currentPivotPosition
-  *   The current [[Pivot]] as an optional [[RedBlackTreeMapExplorer]]
+  *   The current [[oscar.cbls.algo.sequence.affineFunction.Pivot]] as an optional
+  *   [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]]
   * @param pivotAbovePosition
-  *   The next [[Pivot]] as an optional [[RedBlackTreeMapExplorer]]
+  *   The next [[oscar.cbls.algo.sequence.affineFunction.Pivot]] as an optional
+  *   [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]]
   */
 class MovedIntSequenceExplorer(
   intSequence: MovedIntSequence,

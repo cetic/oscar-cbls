@@ -27,15 +27,16 @@ object MovedIntSequence {
     *   - backward (oldPosToNewPos) : the node that was before at y is at x
     *
     * @param fromIncluded
-    *   The first (included) position of the moved segment as an [[Int]]
+    *   The first (included) position of the moved segment as an [[scala.Int]]
     * @param toIncluded
-    *   The last (included) position of the moved segment as an [[Int]]
+    *   The last (included) position of the moved segment as an [[scala.Int]]
     * @param moveAfter
-    *   The position after which the segment is moved as an [[Int]]
+    *   The position after which the segment is moved as an [[scala.Int]]
     * @param flip
-    *   Whether or not the segment is flipped as a [[Boolean]]
+    *   Whether or not the segment is flipped as a [[scala.Boolean]]
     * @return
-    *   The bijections as a [[PiecewiseUnitaryAffineFunction]]
+    *   The bijections as a
+    *   [[oscar.cbls.algo.sequence.affineFunction.PiecewiseUnitaryAffineFunction]]
     */
   @inline
   def bijectionForMove(
@@ -103,17 +104,17 @@ object MovedIntSequence {
     * sequence.
     *
     * @param oldPos
-    *   The old position for which we want to know the new one as an [[Int]]
+    *   The old position for which we want to know the new one as an [[scala.Int]]
     * @param fromIncluded
-    *   The first (included) position of the moved segment as an [[Int]]
+    *   The first (included) position of the moved segment as an [[scala.Int]]
     * @param toIncluded
-    *   The last (included) position of the moved segment as an [[Int]]
+    *   The last (included) position of the moved segment as an [[scala.Int]]
     * @param after
-    *   The position after which the segment was moved as an [[Int]]
+    *   The position after which the segment was moved as an [[scala.Int]]
     * @param flip
-    *   Whether or not the segment was flipped as a [[Boolean]]
+    *   Whether or not the segment was flipped as a [[scala.Boolean]]
     * @return
-    *   The new position of oldPos as an [[Int]]
+    *   The new position of oldPos as an [[scala.Int]]
     */
   @inline
   def oldPosToNewPos(
@@ -165,13 +166,13 @@ object MovedIntSequence {
   * @param seq
   *   The original sequence as a [[IntSequence]]
   * @param fromIncludedExplorer
-  *   The first (included) position of the moved segment as an [[Int]]
+  *   The first (included) position of the moved segment as an [[scala.Int]]
   * @param toIncludedExplorer
-  *   The last (included) position of the moved segment as an [[Int]]
+  *   The last (included) position of the moved segment as an [[scala.Int]]
   * @param moveAfterExplorer
-  *   The position after which the segment is moved as an [[Int]]
+  *   The position after which the segment is moved as an [[scala.Int]]
   * @param flip
-  *   Whether or not the segment is flipped as an [[Int]]
+  *   Whether or not the segment is flipped as an [[scala.Int]]
   * @param depth
   *   The depth of the current update
   */

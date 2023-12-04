@@ -65,8 +65,8 @@ object PiecewiseUnitaryAffineFunction {
   *
   * To avoid expensive modification by moving values around upon insertion/deletion/movements in the
   * [[IntSequence]], we use a PiecewiseSequenceShiftingBijection. It's composed of a sorted list of
-  * [[Pivot]] (stored in a [[RedBlackTreeMap]]) which represents the changes made to the
-  * [[IntSequence]]. Each [[Pivot]] starts at a position and applies a bijection to the start
+  * [[Pivot]] (stored in a [[oscar.cbls.algo.rb.RedBlackTreeMap]]) which represents the changes made
+  * to the [[IntSequence]]. Each [[Pivot]] starts at a position and applies a bijection to the start
   * position and each position after. That way we know the new position of the element at position
   * x. Those are created rapidly and can be merged (See [[UnitaryAffineFunction]] for more
   * information).
@@ -123,16 +123,16 @@ class PiecewiseUnitaryAffineFunction(
   // Pivots access //
   ///////////////////
 
-  /** Returns the [[List]] of all [[Pivot]] */
+  /** Returns the [[scala.List]] of all [[Pivot]] */
   def pivots: List[Pivot] = transformation.values
 
   /** Returns the number of [[Pivot]] */
   def nbPivot: Int = transformation.size
 
-  /** Optionally returns a [[RedBlackTreeMapExplorer]] of the first pivot of the sequence.
+  /** Optionally returns a RedBlackTreeMapExplorer of the first pivot of the sequence.
     *
     * @return
-    *   The [[RedBlackTreeMapExplorer]] or [[None]]
+    *   The [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] or [[scala.None]]
     */
   def firstPivotAndPosition: Option[RedBlackTreeMapExplorer[Pivot]] = {
     transformation.smallest match {
@@ -141,12 +141,12 @@ class PiecewiseUnitaryAffineFunction(
     }
   }
 
-  /** Optionally returns a [[RedBlackTreeMapExplorer]] of the pivot applying at the given position.
+  /** Optionally returns a RedBlackTreeMapExplorer of the pivot applying at the given position.
     *
     * @param position
     *   The position on which the pivot must apply
     * @return
-    *   The [[RedBlackTreeMapExplorer]] or [[None]]
+    *   The [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] or [[scala.None]]
     */
   def pivotWithPositionApplyingTo(position: Int): Option[RedBlackTreeMapExplorer[Pivot]] = {
     transformation.biggestLowerOrEqual(position) match {
@@ -155,7 +155,8 @@ class PiecewiseUnitaryAffineFunction(
     }
   }
 
-  /** Optionally returns a [[RedBlackTreeMapExplorer]] at the corresponding key */
+  /** Optionally returns a [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] at the corresponding key
+    */
   def positionOfValue(value: Int): Option[RedBlackTreeMapExplorer[Pivot]] =
     transformation.positionOf(value)
 
@@ -262,12 +263,12 @@ class PiecewiseUnitaryAffineFunction(
     additionalBijectionAppliedBefore: UnitaryAffineFunction,
     cleanedTransformation: RedBlackTreeMap[Pivot]
   ): RedBlackTreeMap[Pivot] = {
-    // If true, BEFORE(fromIncluded) > BEFORE(toIncluded) ==> "we go backward"
+    // If true, BEFORE(fromIncluded) > BEFORE(toIncluded) &rarr; "we go backward"
     val isAdditionalBijectionNegativeSlope = additionalBijectionAppliedBefore.flip
 
     var currentFromIncluded   = fromIncluded
     var currentTransformation = cleanedTransformation
-    // BEFORE(currentFromIncluded) ==> this position can be used in THIS(...) since it's THIS(BEFORE(x))
+    // BEFORE(currentFromIncluded) &rarr; this position can be used in THIS(...) since it's THIS(BEFORE(x))
     var currentIncludedFromAfterAdditionalF = additionalBijectionAppliedBefore(currentFromIncluded)
     // Checking if one Pivot applies on BEFORE(currentFromIncluded)
     var positionOfPivotApplyingOnCurrentIncludedFromAfterAdditionalF =
@@ -283,16 +284,16 @@ class PiecewiseUnitaryAffineFunction(
         // No pivot at this point => (THIS(BEFORE(x)) == BEFORE(x)), but until when ?
         case None =>
           val (nextCurrentIncludedFrom, nextPivotExplorer) = {
-            // Going backward ==> no bijection until toIncluded ==> DONE
+            // Going backward &rarr; no bijection until toIncluded &rarr; DONE
             if (isAdditionalBijectionNegativeSlope) {
               (toIncluded + 1, None)
             } else {
-              // Going forward ==> Get first bijection of transformation, maybe it's within interval
+              // Going forward &rarr; Get first bijection of transformation, maybe it's within interval
               val nextPivotExplorer: Option[RedBlackTreeMapExplorer[Pivot]] =
                 transformation.smallestPosition
               (
                 nextPivotExplorer match {
-                  // No bijection ==> DONE
+                  // No bijection &rarr; DONE
                   case None => toIncluded + 1
                   // The position x such that BEFORE(x) is explorer.value.fromValue
                   // to keep the THIS(BEFORE(x)) logic
@@ -331,7 +332,7 @@ class PiecewiseUnitaryAffineFunction(
             // Going backward
             if (isAdditionalBijectionNegativeSlope) {
               (
-                // Moving backward ==> nextIncludedFrom = BEFORE.unApply(THIS.fromValue-1)
+                // Moving backward &rarr; nextIncludedFrom = BEFORE.unApply(THIS.fromValue-1)
                 // note : BEFORE.unApply(THIS.fromValue-1) is still greater than
                 // 		BEFORE.unApply(currentIncludedFrom since it's flipping)
                 additionalBijectionAppliedBefore.unApply(pivotExplorer.value.fromValue - 1),
@@ -636,7 +637,7 @@ class PiecewiseUnitaryAffineFunction(
 
   /** Flips a list of pivots.
     *
-    * List(p1, p2, p3) ==> List(p3', p2', p1') The pivots keep their length but :
+    * List(p1, p2, p3) &rarr; List(p3', p2', p1') The pivots keep their length but :
     *   - Their start position are shifted accordingly (ex : p3'.start = p1.start, p1'.start =
     *     p1.start+p3.length+p2.length)
     *   - Their [[UnitaryAffineFunction]] are mirrored and shifted (see mirrorPivot)
@@ -826,8 +827,8 @@ class PiecewiseUnitaryAffineFunction(
 
     /*
      Here we could iterate using explorer instead but :
-     - getting the biggestLowerOrEqual ==> O(Log(k))
-     - getting the explorer after ==> O(Log(k))
+     - getting the biggestLowerOrEqual &rarr; O(Log(k))
+     - getting the explorer after &rarr; O(Log(k))
      So except if we have more than 2 pivot to remove, it's better to use biggestLowerOrEqual each time.
      */
     @tailrec

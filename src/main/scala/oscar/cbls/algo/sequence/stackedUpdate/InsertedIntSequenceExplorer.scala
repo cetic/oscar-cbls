@@ -128,7 +128,7 @@ class InsertedIntSequenceExplorer(
               )
             )
           } else {
-            // Original explorer is above, so at insertion position ==> need to get prev
+            // Original explorer is above, so at insertion position &rarr; need to get prev
             p.prev match {
               case None => None
               case prevOriginalExplorer =>
@@ -147,7 +147,7 @@ class InsertedIntSequenceExplorer(
     } else {
       if (prevPosition == seq.insertAfterPos + 1) {
         // Getting into the inserted position from above it
-        // Not moving the explorer ==> original explorer is above
+        // Not moving the explorer &rarr; original explorer is above
         Some(
           new InsertedIntSequenceExplorer(
             seq,
