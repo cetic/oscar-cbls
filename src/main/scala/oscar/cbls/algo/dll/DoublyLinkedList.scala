@@ -13,12 +13,11 @@
 
 package oscar.cbls.algo.dll
 
-/** A mutable data structure allowing insert, and delete in O(1) based on a key mechanism
-  *
-  * The idea of the DoublyLinkedList is the following:
-  *
-  *   - When we insert a value, we get a container of the element
-  *   - Using this container, we can remove the element in O(1)
+/** A mutable data structure allowing insertion and deletion in O(1) thanks to the following
+  * mechanism:
+  *   - When inserting an element, a container wrapping the element is returned.
+  *   - Addition and removal of an element in the list require a container to be performed, except
+  *     at the start or endpoints of the list.
   * @author
   *   renaud.delandtsheer@cetic.be
   * @tparam T
@@ -185,7 +184,7 @@ class DLLStorageElement[T](val elem: T) {
   }
 }
 
-/** An iterator based for [[DoublyLinkedList]]
+/** An iterator for a [[DoublyLinkedList]]
   *
   * @author
   *   renaud.delandtsheer@cetic.be
@@ -199,7 +198,7 @@ class DLLStorageElement[T](val elem: T) {
 class DLLIterator[T](var currentKey: DLLStorageElement[T], val phantom: DLLStorageElement[T])
     extends Iterator[T] {
 
-  /** Get's the next element and moves the iterator pointer forward
+  /** Gets the next element and moves the iterator pointer forward
     *
     * @return
     *   The element

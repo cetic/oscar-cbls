@@ -1,17 +1,13 @@
 package oscar.cbls.test.algo.dll
 
 import org.scalacheck.Gen
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import org.scalacheck.Prop.collect
-import oscar.cbls.algo.dll.DoublyLinkedList
+import oscar.cbls.algo.dll.{DLLIterator, DLLStorageElement, DoublyLinkedList}
 
-import scala.util.Random
-import scala.annotation.tailrec
 import java.util.concurrent.atomic.AtomicInteger
-import oscar.cbls.algo.dll.DLLStorageElement
-import oscar.cbls.algo.dll.DLLIterator
+import scala.annotation.tailrec
 
 class DLLTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
 
@@ -40,7 +36,7 @@ class DLLTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
     elem2 should be(1)
   }
 
-  test("The next element of the container of insert after is the inserted element") {
+  test("The next element of the container used in the call of insertAfter is the inserted element") {
     val dll = new DoublyLinkedList[Int]()
 
     dll.insertEnd(1)
@@ -52,7 +48,7 @@ class DLLTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
     container.next.elem should be(4)
   }
 
-  test("Pop an element of an empty list throws an exception") {
+  test("Popping an element of an empty list throws an exception") {
     val dll = new DoublyLinkedList[Int]()
 
     a[java.lang.IllegalArgumentException] should be thrownBy (dll.popEnd())
@@ -173,7 +169,7 @@ class DLLTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
       val listIterator = witnessList.iterator
       while (dllIt.hasNext) {
         if (listIterator.hasNext) {
-          res = dllIt.next() == listIterator.next()
+          res &= dllIt.next() == listIterator.next()
         } else {
           dllIt.next()
           res = false
@@ -247,9 +243,7 @@ class DLLTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
     }
   }
   // Generate a list of operations
-  val operationsGen: Gen[List[Operation]] = for {
-    ops <- Gen.listOfN(100, genOperation(new TestData))
-  } yield ops
+  val operationsGen: Gen[List[Operation]] = Gen.listOfN(100, genOperation(new TestData))
 
   test(
     "Making a set of operation (adding and remove operations) on a dll" +
