@@ -83,7 +83,7 @@ class HeapUnitTestsSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
     val intIterator = generateRandomIntIterator()
     var priorValue  = Int.MaxValue
     for (_ <- 0 until 20) {
-      val valueToInsert = intIterator.next
+      val valueToInsert = intIterator.next()
       priorValue = Math.min(priorValue, valueToInsert)
       heap.insert(valueToInsert)
     }
