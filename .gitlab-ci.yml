@@ -18,6 +18,6 @@ stages:
 
 test:
   tags:
-    - Oscar-Saas
+    - OSCAR_CBLS_TEST
   script:
     - sbt test
