@@ -4,7 +4,7 @@ import org.scalacheck.Gen
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import oscar.cbls.algo.dll.{DLLIterator, DLLStorageElement, DoublyLinkedList}
+import oscar.cbls.algo.dll.DoublyLinkedList
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.annotation.tailrec
@@ -16,6 +16,7 @@ class DLLTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
 
     dll.insertEnd(1)
     dll.insertEnd(2)
+
     val elem1 = dll.popEnd()
     val elem2 = dll.popEnd()
 
@@ -36,7 +37,9 @@ class DLLTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
     elem2 should be(1)
   }
 
-  test("The next element of the container used in the call of insertAfter is the inserted element") {
+  test(
+    "The next element of the container used in the call of insertAfter is the inserted element"
+  ) {
     val dll = new DoublyLinkedList[Int]()
 
     dll.insertEnd(1)
@@ -45,7 +48,12 @@ class DLLTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
 
     dll.insertAfter(4, container)
 
-    container.next.elem should be(4)
+    val iterator = dll.iterator
+
+    iterator.next() should be (2)
+    iterator.next() should be (1)
+    iterator.next() should be (3)
+    iterator.next() should be (4)
   }
 
   test("Popping an element of an empty list throws an exception") {
@@ -94,26 +102,12 @@ class DLLTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
   case class DropAll() extends Operation
 
   class TestData {
-    // Defining the witness list and the dll
-    private var witnessList: List[Int]     = List()
+    // Defining the reference list and the dll
+    private var referenceList: List[Int]   = List()
     private val dll: DoublyLinkedList[Int] = new DoublyLinkedList()
+    private var containerList : List[dll.DLLStorageElement] = List()
     // Defining the size of the dll (it is used to generate the operations)
-    var size                               = new AtomicInteger(0)
-
-    // A function the allows to remove a given container
-    @tailrec
-    private def getContainerAtPos(
-      afterPos: Int,
-      dllIt: DLLIterator[Int]
-    ): DLLStorageElement[Int] = {
-      if (afterPos == 0) {
-        dllIt.next()
-        dllIt.currentKey
-      } else {
-        dllIt.next()
-        getContainerAtPos(afterPos - 1, dllIt)
-      }
-    }
+    var size = new AtomicInteger(0)
 
     // make a list of operations on the dll and its witness list
     @tailrec
@@ -130,43 +124,50 @@ class DLLTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
     private def mkOp(op: Operation) = {
       op match {
         case AddStart(value) =>
-          witnessList = value :: witnessList
-          dll.insertStart(value)
+          referenceList = value :: referenceList
+          val container = dll.insertStart(value)
+          containerList = container :: containerList
         case AddEnd(value) =>
-          witnessList = witnessList.appended(value)
-          dll.insertEnd(value)
+          referenceList = referenceList.appended(value)
+          val container = dll.insertEnd(value)
+          containerList = containerList.appended(container)
         case AddAfter(value, afterPos) =>
-          val (l1, l2) = witnessList.splitAt(afterPos + 1)
-          witnessList = l1 ::: value :: l2
-          dll.insertAfter(value, getContainerAtPos(afterPos, dll.iterator))
+          val (l1, l2) = referenceList.splitAt(afterPos + 1)
+          referenceList = l1 ::: value :: l2
+          val container = dll.insertAfter(value, containerList(afterPos))
+          val (c1, c2) = containerList.splitAt(afterPos + 1)
+          containerList = c1 ::: container :: c2
         case RemoveStart() =>
-          witnessList = witnessList.tail
+          referenceList = referenceList.tail
+          containerList = containerList.tail
           dll.popStart()
         case RemoveEnd() =>
-          witnessList = witnessList.reverse.tail.reverse
+          referenceList = referenceList.reverse.tail.reverse
+          containerList = containerList.reverse.tail.reverse
           dll.popEnd()
         case RemovePos(pos) =>
-          val (l1, l2) = witnessList.splitAt(pos)
-          witnessList = l1 ::: l2.tail
-          val container = getContainerAtPos(pos, dll.iterator)
-          container.delete()
+          val (l1, l2) = referenceList.splitAt(pos)
+          referenceList = l1 ::: l2.tail
+          val (c1,c2) = containerList.splitAt(pos)
+          containerList = c1 ::: c2.tail
+          c2.head.delete()
         case DropAll() =>
-          witnessList = Nil
+          referenceList = Nil
+          containerList = Nil
           dll.dropAll()
       }
     }
 
     /** compares the size of the dll and the size of its witness list */
     def compareSize: Boolean = {
-      witnessList.size == dll.size
+      referenceList.size == dll.size
     }
-
 
     /** compares the dll and its witness list */
     def compareLists: Boolean = {
       var res          = true
       val dllIt        = dll.iterator
-      val listIterator = witnessList.iterator
+      val listIterator = referenceList.iterator
       while (dllIt.hasNext) {
         if (listIterator.hasNext) {
           res &= dllIt.next() == listIterator.next()
@@ -197,7 +198,7 @@ class DLLTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
   // Generate a RemoveStart operation
   val removeStartGen: Gen[RemoveStart] = Gen.const(RemoveStart())
   // Generate a RemoveEnd operation
-  val removeEndGen: Gen[RemoveEnd]     = Gen.const(RemoveEnd())
+  val removeEndGen: Gen[RemoveEnd] = Gen.const(RemoveEnd())
   // Generate a Remove at a given position operation
   def removePosGen(maxPos: Int): Gen[RemovePos] = for {
     pos <- Gen.choose(0, maxPos - 1)
@@ -246,8 +247,8 @@ class DLLTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
   val operationsGen: Gen[List[Operation]] = Gen.listOfN(100, genOperation(new TestData))
 
   test(
-    "Making a set of operation (adding and remove operations) on a dll" +
-      " and on a witness list gives the same result"
+    "Making a set of operation (generated adding and remove operations) on a dll" +
+      " and on a reference list gives the same result"
   ) {
     val testData = new TestData
     forAll(operationsGen) { ops =>

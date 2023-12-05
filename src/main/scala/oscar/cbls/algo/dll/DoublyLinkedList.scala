@@ -13,6 +13,8 @@
 
 package oscar.cbls.algo.dll
 
+import scala.collection.AbstractIterator
+
 /** A mutable data structure allowing insertion and deletion in O(1) thanks to the following
   * mechanism:
   *   - When inserting an element, a container wrapping the element is returned.
@@ -25,9 +27,48 @@ package oscar.cbls.algo.dll
   */
 class DoublyLinkedList[T] extends Iterable[T] {
 
-  private val phantom: DLLStorageElement[T] = new DLLStorageElement[T](null.asInstanceOf[T])
+  /** The container structure of the list.
+    *
+    * @author
+    *   renaud.delandtsheer@cetic.be
+    * @param value
+    *   the value to store
+    * @tparam T
+    *   the type of the element
+    */
+  class DLLStorageElement(val value: T) {
 
-  phantom.setNext(phantom)
+    /** The next container of the list */
+    private var _next: DLLStorageElement = _
+
+    /** The previous container of the list */
+    private var _prev: DLLStorageElement = _
+
+    /** returns the next element of the list */
+    protected[DoublyLinkedList] def next: DLLStorageElement = _next
+
+    /** returns the prev element of the list */
+    protected[DoublyLinkedList] def prev: DLLStorageElement = _prev
+
+    /** Changes the next storage container of this container
+      *
+      * @param d
+      *   The new next storage container
+      */
+    protected[DoublyLinkedList] def next_=(d: DLLStorageElement): Unit = {
+      this._next = d
+      d._prev = this
+    }
+
+    /** Removes this storage container from the list */
+    def delete(): Unit = {
+      _prev.next = _next
+    }
+  }
+
+  private val phantom: DLLStorageElement = new DLLStorageElement(null.asInstanceOf[T])
+
+  phantom.next = phantom
 
   /** returns the size of the PermaFilteredDLL this is a O(n) method because it is very rarely used.
     * and in this context, we want to keep the memory footprint as small as possible
@@ -53,15 +94,15 @@ class DoublyLinkedList[T] extends Iterable[T] {
     * @return
     *   The container of the element
     */
-  def insertStart(value: T): DLLStorageElement[T] = {
-    val d = new DLLStorageElement[T](value)
-    d.setNext(phantom.next)
-    phantom.setNext(d)
+  def insertStart(value: T): DLLStorageElement = {
+    val d = new DLLStorageElement(value)
+    d.next = phantom.next
+    phantom.next = d
     d
   }
 
   /** Inserts <code>value</code> after the element specified by <code>elem</code>.
-    * 
+    *
     * @param value
     *   The value to insert
     * @param elem
@@ -69,11 +110,11 @@ class DoublyLinkedList[T] extends Iterable[T] {
     * @return
     *   The container of the inserted element
     */
-  def insertAfter(value: T, elem: DLLStorageElement[T]): DLLStorageElement[T] = {
+  def insertAfter(value: T, elem: DLLStorageElement): DLLStorageElement = {
     val successor = elem.next
-    val d         = new DLLStorageElement[T](value)
-    d.setNext(successor)
-    elem.setNext(d)
+    val d         = new DLLStorageElement(value)
+    d.next = successor
+    elem.next = d
     d
   }
 
@@ -84,10 +125,10 @@ class DoublyLinkedList[T] extends Iterable[T] {
     * @return
     *   The container of the inserted element
     */
-  def insertEnd(value: T): DLLStorageElement[T] = {
-    val d = new DLLStorageElement[T](value)
-    phantom.prev.setNext(d)
-    d.setNext(phantom)
+  def insertEnd(value: T): DLLStorageElement = {
+    val d = new DLLStorageElement(value)
+    phantom.prev.next = d
+    d.next = phantom
     d
   }
 
@@ -100,9 +141,9 @@ class DoublyLinkedList[T] extends Iterable[T] {
     */
   def popStart(): T = {
     val d = phantom.next
-    require(d != phantom,"Cannot popStart an element on an empty DLL")
+    require(d != phantom, "Cannot popStart an element on an empty DLL")
     d.delete()
-    d.elem
+    d.value
   }
 
   /** Removes the last element of the DLL and returns the corresponding value. Raise an exception if
@@ -114,9 +155,9 @@ class DoublyLinkedList[T] extends Iterable[T] {
     */
   def popEnd(): T = {
     val d = phantom.prev
-    require(d != phantom,"You cannot pop an element in an empty DLLp")
+    require(d != phantom, "You cannot pop an element in an empty DLLp")
     d.delete()
-    d.elem
+    d.value
   }
 
   /** Syntaxic sugar for [[DoublyLinkedList.insertStart]]
@@ -132,82 +173,38 @@ class DoublyLinkedList[T] extends Iterable[T] {
 
   /** Drop all the elements of the list */
   def dropAll(): Unit = {
-    phantom.setNext(phantom)
+    phantom.next = phantom
   }
 
   /** Returns true if the dll is empty */
   override def isEmpty: Boolean = phantom.next == phantom
 
   /** Returns an iterator on the dll */
-  override def iterator = new DLLIterator[T](phantom, phantom)
+  override def iterator = new AbstractIterator[T] {
+
+    private var currentKey = phantom
+
+    /** Gets the next element and moves the iterator pointer forward
+      *
+      * @return
+      *   The element
+      */
+    override def next(): T = {
+      currentKey = currentKey.next
+      currentKey.value
+    }
+
+    /** Returns true if the iterator has a next element, false otherwise */
+    override def hasNext: Boolean = { currentKey.next != phantom }
+
+  }
 
   /** Applies <code>f</code> to all the elements of the dll */
   override def foreach[U](f: (T) => U): Unit = {
     var currentPos = phantom.next
     while (currentPos != phantom) {
-      f(currentPos.elem)
+      f(currentPos.value)
       currentPos = currentPos.next
     }
   }
-}
-
-/** The container structure of the list.
-  *
-  * @author
-  *   renaud.delandtsheer@cetic.be
-  * @param elem
-  *   the element to store
-  * @tparam T
-  *   the type of the element
-  */
-class DLLStorageElement[T](val elem: T) {
-
-  /** The next container of the list */
-  var next: DLLStorageElement[T] = _
-
-  /** The previous container of the list */
-  var prev: DLLStorageElement[T] = _
-
-  /** Changes the next storage container of this container
-    *
-    * @param d
-    *   The new next storage container
-    */
-  def setNext(d: DLLStorageElement[T]): Unit = {
-    this.next = d
-    d.prev = this
-  }
-
-  /** Removes this storage container from the list */
-  def delete(): Unit = {
-    prev.setNext(next)
-  }
-}
-
-/** An iterator for a [[DoublyLinkedList]]
-  *
-  * @author
-  *   renaud.delandtsheer@cetic.be
-  * @param currentKey
-  *   the current key in the iterator
-  * @param phantom
-  *   the phantom element that indicates the beginning/end of the list
-  * @tparam T
-  *   the type of elements in the iterator
-  */
-class DLLIterator[T](var currentKey: DLLStorageElement[T], val phantom: DLLStorageElement[T])
-    extends Iterator[T] {
-
-  /** Gets the next element and moves the iterator pointer forward
-    *
-    * @return
-    *   The element
-    */
-  def next(): T = {
-    currentKey = currentKey.next
-    currentKey.elem
-  }
-
-  /** Returns true if the iterator has a next element, false otherwise */
-  def hasNext: Boolean = { currentKey.next != phantom }
 }
