@@ -33,7 +33,7 @@ object IntSequence {
     */
   def apply(values: Iterable[Int]): IntSequence = {
     val valuesArray     = values.toArray
-    val forwardRedBlack = RedBlackTreeMap.makeFromSortedContinuousArray(values.toArray)
+    val forwardRedBlack = RedBlackTreeMap.makeFromSortedContinuousArray(valuesArray)
     val backwardRedBlack: RedBlackTreeMap[RedBlackTreeMap[Int]] =
       aggregatePosOnValToInternalPosFrom(valuesArray)
 
@@ -188,6 +188,16 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     tailRecValuesBetweenPositions(explorer, toPositionIncluded)
   }
 
+  /** Returns the values and their positions between the specified positions (included)
+    *
+    * @param fromPositionIncluded
+    *   Starting position (included) as an [[scala.Int]]
+    * @param toPositionIncluded
+    *   Ending position (included) as an [[scala.Int]]
+    * @return
+    *   The values and their positions between the specified positions as a [[scala.List]] of
+    *   [[scala.Tuple2]] of [[scala.Int]]
+    */
   def positionsAndValuesBetweenPositions(
     fromPositionIncluded: Int,
     toPositionIncluded: Int
