@@ -13,8 +13,7 @@
 
 package oscar.cbls.algo.dag
 
-import oscar.cbls.algo.heap.BinomialHeap
-import oscar.cbls.algo.quick.QList
+import oscar.cbls.algo.heap.BinaryHeap
 
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
@@ -139,7 +138,7 @@ trait DAG {
 
       //reassignment
 
-      val FreePositionsToDistribute: QList[Int] = mergeNodeLists(SortedForwardRegion, SortedBackwardsRegion)
+      val FreePositionsToDistribute: List[Int] = mergeNodeLists(SortedForwardRegion, SortedBackwardsRegion)
 
       val FreePositionsForForwardRegion = realloc(SortedBackwardsRegion, FreePositionsToDistribute)
       realloc(SortedForwardRegion, FreePositionsForForwardRegion )
@@ -195,22 +194,22 @@ trait DAG {
    */
   def doDAGSort(): Unit = {
     //on utilise les positions pour stocker le nombre de noeuds predecesseurs non visites, puis on met l'autre valeur apres.
-    var front: QList[DAGNode] = null
+    var front: List[DAGNode] = List.empty
     nodes.foreach(n => {
       val pos = - n.getDAGPrecedingNodes.size
       n.position = pos
-      if(pos == 0) front = QList(n,front)
+      if(pos == 0) front = List(n) ::: front
     })
 
     var position = 0 //la position du prochain noeud place.
-    while (front != null) {
+    while (front.nonEmpty) {
       val n = front.head
       front = front.tail
       n.position = position
       position += 1
       n.getDAGSucceedingNodes.foreach(p => {
         p.position +=1
-        if (p.position == 0) front = QList(p,front) //une stack, en fait, mais c'est insensitif, puis c'est plus rapide.
+        if (p.position == 0) front = List(p) ::: front //une stack, en fait, mais c'est insensitif, puis c'est plus rapide.
       })
     }
     if (position != nodes.size) {
@@ -237,23 +236,23 @@ trait DAG {
     dfsF(n, List.empty)
   }
 */
-  val HeapForRegionDiscovery:BinomialHeap[DAGNode] = new BinomialHeap((n:DAGNode) => n.position,nodes.size)
+  val HeapForRegionDiscovery:BinaryHeap[DAGNode] = new BinaryHeap[DAGNode]((n:DAGNode) => n.position,nodes.size)
 
   /**@return forward region, sorted by increasing position*/
-  private def findSortedForwardRegion(n: DAGNode, ub: Long): QList[DAGNode] = {
+  private def findSortedForwardRegion(n: DAGNode, ub: Long): List[DAGNode] = {
 
-    val h:BinomialHeap[DAGNode] = HeapForRegionDiscovery
+    var h:BinaryHeap[DAGNode] = HeapForRegionDiscovery
     h.dropAll()
-    h.keyGetter = (n:DAGNode) => n.position
+    h = h.withPriorityFunction((n:DAGNode) => n.position)
 
-    var toreturn:QList[DAGNode] = null
+    var toreturn:List[DAGNode] = List.empty
 
     h.insert(n)
     n.visited = true
 
     while(!h.isEmpty){
-      val first:DAGNode = h.popFirst()
-      toreturn = QList(first,toreturn)
+      val first:DAGNode = h.popFirst().get
+      toreturn = List(first) ::: toreturn
       first.getDAGSucceedingNodes.foreach((p:DAGNode) => {
         if (p.position == ub) {
           toreturn.foreach(q => q.visited = false)
@@ -285,20 +284,20 @@ trait DAG {
   }
 */
   /**@return forward region, sorted by increasing position*/
-  private def findSortedBackwardRegion(n: DAGNode, lb: Long): QList[DAGNode] = {
+  private def findSortedBackwardRegion(n: DAGNode, lb: Long): List[DAGNode] = {
 
-    val h:BinomialHeap[DAGNode] = HeapForRegionDiscovery
+    var h:BinaryHeap[DAGNode] = HeapForRegionDiscovery
     h.dropAll()
-    h.keyGetter = (n:DAGNode) => -n.position
+    h = h.withPriorityFunction((n:DAGNode) => -n.position)
 
-    var toreturn: QList[DAGNode] = null
+    var toreturn: List[DAGNode] = List.empty
 
     h.insert(n)
     n.visited = true
 
     while(!h.isEmpty){
-      val first = h.popFirst()
-      toreturn = QList(first,toreturn)
+      val first = h.popFirst().get
+      toreturn = List(first) ::: toreturn
 
       first.getDAGPrecedingNodes.foreach(p => {
         if (!p.visited && p.position > lb) {
@@ -312,23 +311,23 @@ trait DAG {
 
 
   //merge deux listes de noeuds triee par position, donne la position triee de ces noeuds
-  private def mergeNodeLists(a: QList[DAGNode], b: QList[DAGNode]): QList[Int] = {
-    if (a == null && b == null){
-      null
-    }else if (a == null) {
-      QList(b.head.position, mergeNodeLists(a, b.tail))
-    } else if (b == null) {
-      QList(a.head.position,mergeNodeLists(a.tail, b))
+  private def mergeNodeLists(a: List[DAGNode], b: List[DAGNode]): List[Int] = {
+    if (a.isEmpty && b.isEmpty){
+      List.empty
+    } else if (a.isEmpty) {
+      List(b.head.position) ::: mergeNodeLists(a, b.tail)
+    } else if (b.isEmpty) {
+      List(a.head.position) ::: mergeNodeLists(a.tail, b)
     } else if (a.head.position < b.head.position) {
-      QList(a.head.position,mergeNodeLists(a.tail, b))
+      List(a.head.position) ::: mergeNodeLists(a.tail, b)
     } else {
-      QList(b.head.position,mergeNodeLists(a, b.tail))
+      List(b.head.position)  ::: mergeNodeLists(a, b.tail)
     }
   }
 
   @tailrec
-  private def realloc(OrderedNodeForReinsertion: QList[DAGNode], FreePositionsToDistribute: QList[Int]):QList[Int] = {
-    if (OrderedNodeForReinsertion != null) {
+  private def realloc(OrderedNodeForReinsertion: List[DAGNode], FreePositionsToDistribute: List[Int]):List[Int] = {
+    if (OrderedNodeForReinsertion.nonEmpty) {
       OrderedNodeForReinsertion.head.visited = false
       OrderedNodeForReinsertion.head.position = FreePositionsToDistribute.head
       realloc(OrderedNodeForReinsertion.tail, FreePositionsToDistribute.tail)
