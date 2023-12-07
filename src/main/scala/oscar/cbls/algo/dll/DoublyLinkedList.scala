@@ -68,8 +68,10 @@ class DoublyLinkedList[T] extends Iterable[T] {
 
   phantom.next = phantom
 
-  /** returns the size of the PermaFilteredDLL this is a O(n) method because it is very rarely used.
-    * and in this context, we want to keep the memory footprint as small as possible
+  /** Returns the size of the list. 
+    * 
+    * This is rarely used, and since we want to keep the memory footprint 
+    * as small as possible, we're letting it have a O(n) complexity.
     * @return
     *   The size of the DLL
     * @note
