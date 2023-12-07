@@ -33,8 +33,6 @@ class DoublyLinkedList[T] extends Iterable[T] {
     *   renaud.delandtsheer@cetic.be
     * @param value
     *   the value to store
-    * @tparam T
-    *   the type of the element
     */
   class DLLStorageElement(val value: T) {
 
@@ -180,7 +178,7 @@ class DoublyLinkedList[T] extends Iterable[T] {
   override def isEmpty: Boolean = phantom.next == phantom
 
   /** Returns an iterator on the dll */
-  override def iterator = new AbstractIterator[T] {
+  override def iterator: Iterator[T] = new AbstractIterator[T] {
 
     private var currentKey = phantom
 
