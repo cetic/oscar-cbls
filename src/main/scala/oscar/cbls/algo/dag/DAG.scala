@@ -13,326 +13,361 @@
 
 package oscar.cbls.algo.dag
 
-import oscar.cbls.algo.heap.BinaryHeap
+import oscar.cbls.algo.heap.{BinaryHeap, BinaryHeapWithMove, BinaryHeapWithMoveIntItem}
+import oscar.cbls.util.exceptions.{
+  CycleException,
+  GraphIncoherenceException,
+  UniqueIDAlreadySetException
+}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
-/** a DAG node with some abstract methods
- * @author renaud.delandtsheer@cetic.be
- */
-trait DAGNode extends Ordered[DAGNode]{
+/** Describes the basic structure of a DAG node */
+trait DAGNode extends Ordered[DAGNode] {
 
-  /**the position in the topological sort*/
+  /** The position of the node in the topological sort */
   var position: Int = 0
 
-  /**supposed to be false between each pass of the algorithm*/
+  /** Flag used by the algorithms to avoid visiting two times the same node. Supposed to be false
+    * between each pass of the algorithm.
+    */
   var visited: Boolean = false
 
-  /**it gives the unique ID of the PropagationElement.
-   * those uniqueID are expected to start at 0L and to increase continuously
-   * An exception is tolerated: uniqueID is set to -1L
-   * if the Propagation Element is not mentioned in the propagation structure, such as for constants
-   * yet is mentioned in the dependencies of registered propagation elements
-   */
-  var uniqueID:Int = -1
+  /** Gives the unique ID of the DAGNode.
+    *
+    * The uniqueID are expected to start at 0L and to increase continuously.
+    *
+    * With ONE exception related to propagation : If one element is not mentioned in the propagation
+    * structure it's uniqueID is set to -1. For instance, constants values are not in the
+    * propagation structure but they are mentioned in the dependencies of registered propagation
+    * elements.
+    */
+  private var _uniqueID: Int = -1
 
-  protected[dag] def getDAGPrecedingNodes: Iterable[DAGNode]
+  def setUniqueId(uniqueID: Int): Unit = {
+    if (_uniqueID != -1)
+      throw UniqueIDAlreadySetException(
+        s"Trying to change the uniqueID from ${_uniqueID} to $uniqueID"
+      )
+    else _uniqueID = uniqueID
+  }
 
-  protected[dag] def getDAGSucceedingNodes: Iterable[DAGNode]
+  def uniqueID: Int = _uniqueID
+
+  /** Returns the predecessors of the node */
+  protected[dag] def getDAGPredecessors: Iterable[DAGNode]
+
+  /** Returns the successors of the node */
+  protected[dag] def getDAGSuccessors: Iterable[DAGNode]
 }
 
-/**
- * @author renaud.delandtsheer@cetic.be
- * @param n a node that is involved in the cycle
- */
-class CycleException(n: DAGNode) extends Exception
-
-/**This data structure performs dynamic topological sort on DAG
- * the topological sort can be performed either from scratch or maintained incrementally.
- * The topological sort is about maintaining the attribute Position in the nodes [[oscar.cbls.algo.dag.DAGNode]]
- *
- * the topological sort is lower before
- *
- * The incremental topological sort in _autoSort(mAutoSort: Boolean){
- *
- * @author renaud.delandtsheer@cetic.be
- */
+/** This data structure performs dynamic topological sort on DAG the topological sort can be
+  * performed either from scratch or maintained incrementally. The topological sort is about
+  * maintaining the attribute Position in the nodes [[oscar.cbls.algo.dag.DAGNode]]
+  *
+  * the topological sort is lower before
+  *
+  * The incremental topological sort in _autoSort(mAutoSort: Boolean){
+  *
+  * @author
+  *   renaud.delandtsheer@cetic.be
+  */
 trait DAG {
-  private var AutoSort: Boolean = false
+  private var _autoSort: Boolean = false
 
-  def nodes:Iterable[DAGNode]
+  def nodes: Iterable[DAGNode]
 
-  /**performs a self-check on the ordering, use for testing*/
+  /** Performs a self-check on the ordering, used for testing */
   def checkSort(): Unit = {
-    for (to <- nodes){
-      for(from <- to.getDAGPrecedingNodes){
-        assert(from.position < to.position,"topological sort is wrong at " + from + "->" + to)
+    for (to <- nodes) {
+      for (from <- to.getDAGPredecessors) {
+        assert(from.position < to.position, "topological sort is wrong at " + from + "->" + to)
       }
     }
-    for (from <- nodes){
-      for(to <- from.getDAGSucceedingNodes){
-        assert(from.position < to.position,"topological sort is wrong at " + from + "->" + to)
+    for (from <- nodes) {
+      for (to <- from.getDAGSuccessors) {
+        assert(from.position < to.position, "topological sort is wrong at " + from + "->" + to)
       }
     }
   }
 
-  /**Checks that node have correct reference to each other.
-   * Nodes are expected to know their successors and predecessors.
-   * This is expected to be consistent between several nodes.
-   */
+  /** Checks that node have correct reference to each other. Nodes are expected to know their
+    * successors and predecessors. This is expected to be consistent between several nodes.
+    */
   def checkGraph(): Unit = {
     nodes.foreach(n => {
-      n.getDAGPrecedingNodes.foreach(p=> {
-        if(!p.getDAGSucceedingNodes.exists(p => p == n)){
-          throw new Exception("graph is incoherent at nodes [" + p + "] -> [" + n +"]")
+      n.getDAGPredecessors.foreach(p => {
+        if (!p.getDAGSuccessors.exists(p => p == n)) {
+          throw GraphIncoherenceException("at nodes [" + p + "] -> [" + n + "]")
         }
       })
-
-      n.getDAGSucceedingNodes.foreach(p=> {
-        if(!p.getDAGPrecedingNodes.exists(p => p == n)){
-          throw new Exception("graph is incoherent at nodes [" + n + "] -> [" + p +"]")
+      n.getDAGSuccessors.foreach(p => {
+        if (!p.getDAGPredecessors.exists(p => p == n)) {
+          throw GraphIncoherenceException("at nodes [" + n + "] -> [" + p + "]")
         }
       })
     })
   }
 
-  /**turns the incremental sort on or off.
-   * Incremental sort is then applied at each edge insert. node insert and delete is prohibited when autosort is activated
-   * in case a cycle is detected, does not pass in autosort model, but throws an exception
-   */
+  /** Turns the incremental sort on or off. Incremental sort is then applied at each edge insert.
+    * Node insertion and deletion are prohibited when auto-sort is activated. In case a cycle is
+    * detected, it does not pass in auto-sort mode, but throws an exception.
+    * @throws CycleException
+    *   A cycle has been detected
+    */
   def autoSort_=(mAutoSort: Boolean): Unit = {
-    if (mAutoSort && !AutoSort) {
-      try{
-        doDAGSort()
-      }catch {
-        case e:CycleException =>
-          throw new Error("cycle in topological sort: \n " + getCycle().mkString("\n ") + "\n")
-      }
-      assert({checkSort(); checkGraph(); true})
-      //will throw an exception in case of cycle, so AutoSort will not be set to true
-      AutoSort = true
-    } else if (AutoSort && ! mAutoSort) {
-      //on sort de l'autosort
-      AutoSort = false
+    // Starting auto sort
+    if (mAutoSort && !_autoSort) {
+      doDAGSort()
+      // For testing purpose
+      assert({ checkSort(); checkGraph(); true })
+      _autoSort = true
+    } else if (_autoSort && !mAutoSort) {
+      // Ending auto sort
+      _autoSort = false
     }
   }
 
-  /**@return the autosort status*/
-  def autoSort:Boolean = AutoSort
+  /** @return the auto-sort status */
+  def autoSort: Boolean = _autoSort
 
-  /**to notify that an edge has been added between two nodes.
-   * this will trigger a re-ordering of the nodes in the topological sort if it is activated.
-   * The reordering might lead to an exception [[oscar.cbls.algo.dag.CycleException]] in case there is a cycle in the graph
-   * We expect the graph to be updated prior to calling this method
-   * notice that you do not need to notify edge deletion.
-   */
+  /** Notifies that an edge has been added between two nodes.
+    *
+    * This triggers a re-ordering of the nodes in the topological sort (if AutoSort). The reordering
+    * might lead to an exception in case there is a cycle in the graph. Notice that you do not need
+    * to notify edge deletion.
+    *
+    * WARNING : Do not forget to add the from node as predecessor of the to node in the graph
+    *
+    * @param from
+    *   The node starting the edge
+    * @param to
+    *   The node ending the edge
+    */
   def notifyAddEdge(from: DAGNode, to: DAGNode): Unit = {
 
-    if (AutoSort && (from.position > to.position)) {
-      //refaire le sort
-      //discovery
+    if (_autoSort && (from.position > to.position)) {
+      // Successors of to having a position greater than from
+      val sortedForwardRegion = findSortedForwardRegion(to, from.position)
+      // Predecessors of from having a position lesser than to
+      val sortedBackwardsRegion = findSortedBackwardRegion(from, to.position)
 
-      val SortedForwardRegion = findSortedForwardRegion(to, from.position)
-      val SortedBackwardsRegion = findSortedBackwardRegion(from, to.position)
+      // Sorting positions incrementally
+      val freePositionsToDistribute: List[Int] =
+        extractSortedPositions(sortedForwardRegion, sortedBackwardsRegion)
 
-      //reassignment
+      // Reallocation starting with backward region (which is followed by forward region)
+      val freePositionsForForwardRegion =
+        reallocatePositions(sortedBackwardsRegion, freePositionsToDistribute)
+      reallocatePositions(sortedForwardRegion, freePositionsForForwardRegion)
 
-      val FreePositionsToDistribute: List[Int] = mergeNodeLists(SortedForwardRegion, SortedBackwardsRegion)
-
-      val FreePositionsForForwardRegion = realloc(SortedBackwardsRegion, FreePositionsToDistribute)
-      realloc(SortedForwardRegion, FreePositionsForForwardRegion )
-
-      assert({checkSort(); checkGraph(); true})
+      assert({ checkSort(); checkGraph(); true })
     }
   }
 
-  //retourne un cycle, pour aider au debugging
-  //pre: il y a un cycle dans le Algo
-  //argument optionel: un noeud implique dans le cycle: on commence par chercher un cycle impliquant ce noeud.
-  //si pas de cycle, retourne null.
-  def getCycle(Start:DAGNode=null):List[DAGNode] = {
+  /** Returns a cycle that is expected to be present in the DAG.
+    *
+    * It uses the depth first search to explorer the DAG from a starting point. Each node is
+    * inserted in a list. If the node doesn't lead to a cycle, it's removed from the list and tagged
+    * as visited. Once we reached a node whose uniqueID is already in the list, we are done. Then
+    * the cycle is the nodes of the list between those two nodes included.
+    * @param start
+    *   If known, the starting node of the cycle otherwise None
+    * @return
+    *   The found cycle else an empty List
+    */
+  def getCycle(start: Option[DAGNode] = None): List[DAGNode] = {
 
-    //on marque visite quand on poppe de la DFS ou quand on est retombe sur le debut du cycle
-    var ExploredStack:List[DAGNode] = List.empty //upside down
+    // Used to build the cycle. Once found it contains all its nodes
+    var currentExploredNodes: List[DAGNode] = List.empty
+    // Contains the uniqueID of all the nodes within currentExploredNodes
+    var exploredUniqueID: SortedSet[Long] = SortedSet.empty
 
-    var visited2:SortedSet[Long] = SortedSet.empty
-
-    def DFS(n:DAGNode):Boolean = { //return true si on a trouve un cycle
-      if(n.visited) return false
-      if(visited2.contains(n.uniqueID)){  //found a cycle
-        ExploredStack = (n :: ExploredStack).reverse
-        n.visited=true
-        while(!ExploredStack.head.visited){ExploredStack = ExploredStack.tail}
-        nodes.foreach(p => {p.visited = false; visited2 -= p.uniqueID})
+    def DFS(n: DAGNode): Boolean = {
+      if (n.visited) false // Prevent exploration of already explored nodes
+      else if (exploredUniqueID.contains(n.uniqueID)) {
+        // Known uniqueID, cycle found
+        currentExploredNodes = (n :: currentExploredNodes).reverse
+        // Only n is tagged as visited in exploredUniqueID
+        n.visited = true
+        currentExploredNodes.dropWhile(x => !x.visited)
+        nodes.foreach(p => p.visited = false)
         true
-      }else{ //not yet
-        visited2 += n.uniqueID
-        ExploredStack = n :: ExploredStack
-        n.getDAGSucceedingNodes.foreach(p => {if(DFS(p)){return true}})
-        n.visited=true
-        visited2 -= n.uniqueID
-        ExploredStack = ExploredStack.tail
+      } else {
+        // Unknown uniqueID, keep looking
+        exploredUniqueID += n.uniqueID
+        currentExploredNodes = n :: currentExploredNodes
+        n.getDAGSuccessors.foreach(p => if (DFS(p)) return true)
+        n.visited = true
+        exploredUniqueID -= n.uniqueID
+        currentExploredNodes = currentExploredNodes.tail
         false
       }
     }
 
-    if (Start != null) {
-      if (DFS(Start)) return ExploredStack
-      else return List(Start)
+    start match {
+      case Some(startingNode) =>
+        if (DFS(startingNode)) currentExploredNodes else List.empty
+      case None =>
+        if (nodes.exists(n => !n.visited && DFS(n))) {
+          currentExploredNodes
+        } else {
+          nodes.foreach(p => p.visited = false)
+          List.empty
+        }
     }
-    nodes.foreach(n => {
-      if (!n.visited && DFS(n)) return ExploredStack
-    })
-    nodes.foreach(p => {p.visited = false})
-    List.empty
   }
 
-  /**sorts DAG nodes according to dependencies.
-   * first position is set to zero.
-   * this throws an exception [[oscar.cbls.algo.dag.CycleException]] in case a cycle is detected
-   */
+  /** Sorts the DAG nodes according to dependencies.
+    *
+    * First position is set to zero.
+    * @throws CycleException
+    *   A cycle has been detected
+    */
   def doDAGSort(): Unit = {
-    //on utilise les positions pour stocker le nombre de noeuds predecesseurs non visites, puis on met l'autre valeur apres.
-    var front: List[DAGNode] = List.empty
-    nodes.foreach(n => {
-      val pos = - n.getDAGPrecedingNodes.size
-      n.position = pos
-      if(pos == 0) front = List(n) ::: front
-    })
-
-    var position = 0 //la position du prochain noeud place.
-    while (front.nonEmpty) {
-      val n = front.head
-      front = front.tail
-      n.position = position
-      position += 1
-      n.getDAGSucceedingNodes.foreach(p => {
-        p.position +=1
-        if (p.position == 0) front = List(p) ::: front //une stack, en fait, mais c'est insensitif, puis c'est plus rapide.
-      })
+    @tailrec
+    def sortByPrecedingNodes(
+      remainingNodes: List[DAGNode],
+      frontNodes: List[DAGNode] = List.empty
+    ): List[DAGNode] = {
+      remainingNodes match {
+        case Nil => frontNodes
+        case head :: tail =>
+          val nbPredecessors = head.getDAGPredecessors.size
+          head.position = -nbPredecessors
+          sortByPrecedingNodes(tail, if (nbPredecessors == 0) head :: frontNodes else frontNodes)
+      }
     }
-    if (position != nodes.size) {
-      throw new CycleException(null)
+
+    @tailrec
+    def loop(front: List[DAGNode], position: Int = 0): Int = {
+      front match {
+        case Nil => position
+        case head :: tail =>
+          head.position = position
+          val successors = head.getDAGSuccessors.toList
+          val addToFront = successors.filter(node => {
+            node.position += 1
+            node.position == 0
+          })
+          loop(addToFront ::: tail, position + 1)
+      }
     }
-  }
 
-  /*
-  private def findForwardRegion(n: DAGNode, ub: Long): List[DAGNode] = {
-    def dfsF(n: DAGNode, acc: List[DAGNode]): List[DAGNode] = {
-      n.visited = true
-      var newlist = n :: acc
-      n.getDAGSucceedingNodes.foreach(p => {
-        if (p.position == ub) {
-          nodes.foreach(q => q.visited = false)
-          throw new CycleException(p)
-        }
-        if (!p.visited && p.position < ub) {
-          newlist = dfsF(p, newlist)
-        }
-      })
-      newlist
-    }
-    dfsF(n, List.empty)
-  }
-*/
-  val HeapForRegionDiscovery:BinaryHeap[DAGNode] = new BinaryHeap[DAGNode]((n:DAGNode) => n.position,nodes.size)
-
-  /**@return forward region, sorted by increasing position*/
-  private def findSortedForwardRegion(n: DAGNode, ub: Long): List[DAGNode] = {
-
-    var h:BinaryHeap[DAGNode] = HeapForRegionDiscovery
-    h.dropAll()
-    h = h.withPriorityFunction((n:DAGNode) => n.position)
-
-    var toreturn:List[DAGNode] = List.empty
-
-    h.insert(n)
-    n.visited = true
-
-    while(!h.isEmpty){
-      val first:DAGNode = h.popFirst().get
-      toreturn = List(first) ::: toreturn
-      first.getDAGSucceedingNodes.foreach((p:DAGNode) => {
-        if (p.position == ub) {
-          toreturn.foreach(q => q.visited = false)
-          h.foreach(q => q.visited = false)
-          throw new CycleException(p)
-        }
-        if (!p.visited && p.position < ub) {
-          h.insert(p)
-          p.visited = true
-        }
-      })
-    }
-    toreturn.reverse
-  }
-
-  /*
-  private def findBackwardsRegion(n: DAGNode, lb: Long): List[DAGNode] = {
-    def dfsB(n: DAGNode, acc: List[DAGNode]): List[DAGNode] = {
-      n.visited = true
-      var newlist = n :: acc
-      n.getDAGPrecedingNodes.foreach(p => {
-        if (!p.visited && p.position > lb) {
-          newlist = dfsB(p, newlist)
-        }
-      })
-      newlist
-    }
-    dfsB(n, List.empty)
-  }
-*/
-  /**@return forward region, sorted by increasing position*/
-  private def findSortedBackwardRegion(n: DAGNode, lb: Long): List[DAGNode] = {
-
-    var h:BinaryHeap[DAGNode] = HeapForRegionDiscovery
-    h.dropAll()
-    h = h.withPriorityFunction((n:DAGNode) => -n.position)
-
-    var toreturn: List[DAGNode] = List.empty
-
-    h.insert(n)
-    n.visited = true
-
-    while(!h.isEmpty){
-      val first = h.popFirst().get
-      toreturn = List(first) ::: toreturn
-
-      first.getDAGPrecedingNodes.foreach(p => {
-        if (!p.visited && p.position > lb) {
-          h.insert(p)
-          p.visited = true
-        }
-      })
-    }
-    toreturn
-  }
-
-
-  //merge deux listes de noeuds triee par position, donne la position triee de ces noeuds
-  private def mergeNodeLists(a: List[DAGNode], b: List[DAGNode]): List[Int] = {
-    if (a.isEmpty && b.isEmpty){
-      List.empty
-    } else if (a.isEmpty) {
-      List(b.head.position) ::: mergeNodeLists(a, b.tail)
-    } else if (b.isEmpty) {
-      List(a.head.position) ::: mergeNodeLists(a.tail, b)
-    } else if (a.head.position < b.head.position) {
-      List(a.head.position) ::: mergeNodeLists(a.tail, b)
-    } else {
-      List(b.head.position)  ::: mergeNodeLists(a, b.tail)
+    val startFront: List[DAGNode] = sortByPrecedingNodes(nodes.toList)
+    if (loop(startFront) != nodes.size) {
+      throw CycleException("Cycle in topological sort: \n " + getCycle().mkString("\n ") + "\n")
     }
   }
 
+  /** Returns the all the successors of startNode whose position are lower than ceilPosition.
+    *
+    * @throws CycleException
+    *   A cycle has been detected
+    */
   @tailrec
-  private def realloc(OrderedNodeForReinsertion: List[DAGNode], FreePositionsToDistribute: List[Int]):List[Int] = {
-    if (OrderedNodeForReinsertion.nonEmpty) {
-      OrderedNodeForReinsertion.head.visited = false
-      OrderedNodeForReinsertion.head.position = FreePositionsToDistribute.head
-      realloc(OrderedNodeForReinsertion.tail, FreePositionsToDistribute.tail)
-    }else{
-      FreePositionsToDistribute
+  private def findSortedForwardRegion(
+    startNode: DAGNode,
+    ceilPosition: Long,
+    heap: BinaryHeap[DAGNode] = new BinaryHeap[DAGNode]((n: DAGNode) => n.position, nodes.size),
+    sortedRegion: List[DAGNode] = List.empty
+  ): List[DAGNode] = {
+    // First call
+    if (sortedRegion.isEmpty) {
+      heap.insert(startNode)
+      startNode.visited = true
+    }
+
+    if (heap.isEmpty) {
+      sortedRegion.reverse
+    } else {
+      val first = heap.popFirst().get
+      first.getDAGSuccessors.foreach(s => {
+        if (s.position == ceilPosition) {
+          sortedRegion.foreach(_.visited = false)
+          heap.foreach(_.visited = false)
+          throw CycleException(
+            "Cycle in topological sort: \n " + getCycle(Some(s)).mkString("\n ") + "\n"
+          )
+        } else if (!s.visited && s.position < ceilPosition) {
+          heap.insert(s)
+          s.visited = true
+        }
+      })
+      findSortedForwardRegion(startNode, ceilPosition, heap, first :: sortedRegion)
+    }
+  }
+
+  /** Returns the all the predecessors of startNode whose position are greater than floorPosition.
+    */
+  @tailrec
+  private def findSortedBackwardRegion(
+    startNode: DAGNode,
+    floorPosition: Long,
+    heap: BinaryHeap[DAGNode] = new BinaryHeap[DAGNode]((n: DAGNode) => -n.position, nodes.size),
+    sortedRegion: List[DAGNode] = List.empty
+  ): List[DAGNode] = {
+    // First call
+    if (sortedRegion.isEmpty) {
+      heap.insert(startNode)
+      startNode.visited = true
+    }
+
+    if (heap.isEmpty) {
+      sortedRegion
+    } else {
+      val first = heap.popFirst().get
+      first.getDAGPredecessors.foreach(p => {
+        if (!p.visited && p.position > floorPosition) {
+          heap.insert(p)
+          p.visited = true
+        }
+      })
+      findSortedBackwardRegion(startNode, floorPosition, heap, first :: sortedRegion)
+    }
+  }
+
+  /** Extracts a list of sorted position from two distinct list of DAGNode * */
+  @tailrec
+  private def extractSortedPositions(
+    firstList: List[DAGNode],
+    secondList: List[DAGNode],
+    sortedPositions: List[Int] = List.empty
+  ): List[Int] = {
+    (firstList, secondList) match {
+      case (Nil, Nil) => sortedPositions.reverse
+      case (Nil, head2 :: tail2) =>
+        extractSortedPositions(firstList, tail2, head2.position :: sortedPositions)
+      case (head1 :: tail1, Nil) =>
+        extractSortedPositions(tail1, secondList, head1.position :: sortedPositions)
+      case (head1 :: tail1, head2 :: tail2) =>
+        if (head1.position < head2.position)
+          extractSortedPositions(tail1, secondList, head1.position :: sortedPositions)
+        else extractSortedPositions(firstList, tail2, head2.position :: sortedPositions)
+    }
+  }
+
+  /** Changes the position of the graph nodes following a sorted list of free positions.
+    *
+    * @param orderedNodesForReallocation
+    *   The list of sorted DAGNode
+    * @param freePositionsToDistribute
+    *   The list of free position to distribute
+    * @return
+    *   The remaining position to distribute
+    */
+  @tailrec
+  private def reallocatePositions(
+    orderedNodesForReallocation: List[DAGNode],
+    freePositionsToDistribute: List[Int]
+  ): List[Int] = {
+    if (orderedNodesForReallocation.nonEmpty) {
+      orderedNodesForReallocation.head.visited = false
+      orderedNodesForReallocation.head.position = freePositionsToDistribute.head
+      reallocatePositions(orderedNodesForReallocation.tail, freePositionsToDistribute.tail)
+    } else {
+      freePositionsToDistribute
     }
   }
 }

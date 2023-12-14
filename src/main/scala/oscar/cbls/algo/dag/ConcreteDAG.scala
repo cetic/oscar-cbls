@@ -13,50 +13,47 @@
 
 package oscar.cbls.algo.dag
 
-/** a concrete DAG  implementing all the abstract methods of DAG
- * @author renaud.delandtsheer@cetic.be
- * @param _UniqueID: an ID to be used as comparison for storage in sorted data structures
- */
-class ConcreteDAGNode(val _UniqueID:Int) extends DAGNode{
+/** A concrete DAGNode
+  */
+class ConcreteDAGNode(val concreteUniqueID: Int) extends DAGNode {
 
-  uniqueID = _UniqueID
+  setUniqueId(concreteUniqueID)
 
-  var PrecedingNodes: List[DAGNode] = List.empty
-  var SucceedingNodes:List[DAGNode] = List.empty
+  private var predecessors: List[DAGNode] = List.empty
+  private var successors: List[DAGNode]   = List.empty
 
-  final def compare(that: DAGNode):Int = {
+  final def compare(that: DAGNode): Int = {
     assert(this.uniqueID != that.uniqueID || this == that)
     this.uniqueID - that.uniqueID
   }
 
-  override def getDAGPrecedingNodes: Iterable[DAGNode] = PrecedingNodes
-  override def getDAGSucceedingNodes: Iterable[DAGNode] = SucceedingNodes
+  override def getDAGPredecessors: Iterable[DAGNode] = predecessors
+  override def getDAGSuccessors: Iterable[DAGNode]   = successors
 
-  /**
-   * Sets the current node as predecessor of the parameter 'successor'
-   * so that this -> successor
-   * @param successor reference to the next node
-   */
-  def setAsPrecedingNodeKnownNotYetPreceding(successor:ConcreteDAGNode): Unit = {
-    SucceedingNodes = successor :: SucceedingNodes
-    successor.PrecedingNodes = this :: successor.PrecedingNodes
+  /** Sets the current node as predecessor of the successor so that this -> successor
+    * @param successor
+    *   reference to the next node
+    */
+  def setAsANewPredecessorOf(successor: ConcreteDAGNode): Unit = {
+    successors = successor :: successors
+    successor.predecessors = this :: successor.predecessors
   }
 
-  /**
-   * Sets the current node as successor of the parameter 'predecessor'
-   * so that predecessor -> this
-   * @param predecessor reference to the predecessor node
-   */
+  /** Sets the current node as successor of the predecessor so that predecessor -> this
+    * @param predecessor
+    *   reference to the predecessor node
+    */
 
-  def setAsSucceedingNodeKnownNotYetSucceeding(predecessor:ConcreteDAGNode): Unit = {
-    predecessor.setAsPrecedingNodeKnownNotYetPreceding(this)
+  def setAsANewSuccessorOf(predecessor: ConcreteDAGNode): Unit = {
+    predecessor.setAsANewPredecessorOf(this)
   }
 }
 
-/** a concrete DAG  implementing all the abstract methods of DAG
- * @author renaud.delandtsheer@cetic.be
- * @param Nodes the nodes of the DAG
- */
-class ConcreteDAG(Nodes:Iterable[DAGNode]) extends DAG {
-  def nodes:Iterable[DAGNode] = Nodes
+/** A concrete DAG
+  *
+  * @param Nodes
+  *   the nodes of the DAG
+  */
+class ConcreteDAG(Nodes: Iterable[DAGNode]) extends DAG {
+  def nodes: Iterable[DAGNode] = Nodes
 }
