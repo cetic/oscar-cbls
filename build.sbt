@@ -12,6 +12,7 @@ ThisBuild / publishTo    := {
   }
   artifactoryRepo.map(_.withAllowInsecureProtocol(true))
 }
+ThisBuild / credentials += Credentials("Artifactory Realm", "maven.oscar.ext.cetic.be", "admin", "fndfa5riL6doWTVH2D8k")
 
 lazy val oscarCbls = (project in file("."))
   .enablePlugins(PackPlugin)
