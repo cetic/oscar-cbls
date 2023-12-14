@@ -21,30 +21,35 @@ stages:
   - publish
 
 build:
+  stage: build
   tags:
     - OSCAR_CBLS_TEST
   script:
     - sbt clean compile
 
 test:
+  stage: test
   tags:
     - OSCAR_CBLS_TEST
   script:
     - sbt test
 
 package:
+  stage: package
   tags:
     - OSCAR_CBLS_TEST
   script:
     - sbt clean package packageDoc
 
 doc:
+  stage: doc
   tags:
     - OSCAR_CBLS_TEST
   script:
     - sbt doc
 
 publish:
+  stage: publish
   tags:
     - OSCAR_CBLS_TEST
   script:
