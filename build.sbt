@@ -1,6 +1,16 @@
 ThisBuild / scalaVersion := "2.13.10"
 ThisBuild / organization := "oscar"
 ThisBuild / version      := "6.0.0-SNAPSHOT"
+ThisBuild / publishTo    := {
+  val artifactoryName = "CETIC Artifactory"
+  val artifactoryUrl = "http://maven.oscar.ext.cetic.be:8081/artifactory/"
+  val artifactoryRepo = if (isSnapshot.value)
+    Some(artifactoryName at artifactoryUrl + "libs-snapshot-local;build.timestamp=" + new java.util.Date().getTime)
+  else {
+    Some(artifactoryName at artifactoryUrl + "libs-release-local")
+  }
+  artifactoryRepo.map(_.withAllowInsecureProtocol(true))
+}
 
 lazy val oscarCbls = (project in file("."))
   .enablePlugins(PackPlugin)

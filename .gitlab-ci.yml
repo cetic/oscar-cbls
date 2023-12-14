@@ -14,10 +14,38 @@ cache:
     - "sbt-cache/target"
 
 stages:
+  - build
   - test
+  - package
+  - doc
+  - publish
+
+build:
+  tags:
+    - OSCAR_CBLS_TEST
+  script:
+    - sbt clean compile
 
 test:
   tags:
     - OSCAR_CBLS_TEST
   script:
     - sbt test
+
+package:
+  tags:
+    - OSCAR_CBLS_TEST
+  script:
+    - sbt clean package packageDoc
+
+doc:
+  tags:
+    - OSCAR_CBLS_TEST
+  script:
+    - sbt doc
+
+publish:
+  tags:
+    - OSCAR_CBLS_TEST
+  script:
+    - sbt publish
