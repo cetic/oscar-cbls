@@ -13,12 +13,8 @@
 
 package oscar.cbls.algo.dag
 
-import oscar.cbls.algo.heap.{BinaryHeap, BinaryHeapWithMove, BinaryHeapWithMoveIntItem}
-import oscar.cbls.util.exceptions.{
-  CycleException,
-  GraphIncoherenceException,
-  UniqueIDAlreadySetException
-}
+import oscar.cbls.algo.heap.BinaryHeap
+import oscar.cbls.util.exceptions._
 
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
@@ -189,8 +185,8 @@ trait DAG {
       else if (exploredUniqueID.contains(n.uniqueID)) {
         // Known uniqueID, cycle found
         currentExploredNodes = (n :: currentExploredNodes).reverse
-        // Only n is tagged as visited in exploredUniqueID
         n.visited = true
+        // Only n is tagged as visited in exploredUniqueID
         currentExploredNodes.dropWhile(x => !x.visited)
         nodes.foreach(p => p.visited = false)
         true
@@ -208,8 +204,10 @@ trait DAG {
 
     start match {
       case Some(startingNode) =>
+        // We know one of the node of the cycle
         if (DFS(startingNode)) currentExploredNodes else List.empty
       case None =>
+        // We don't know any node of the cycle, need to test them all
         if (nodes.exists(n => !n.visited && DFS(n))) {
           currentExploredNodes
         } else {
