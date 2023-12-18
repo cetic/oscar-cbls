@@ -42,7 +42,7 @@ trait DAGNode extends Ordered[DAGNode] {
   private var _uniqueID: Int = -1
 
   /** Set the unique id of the DAGNode
-    * @throws DAGExceptions
+    * @throws oscar.cbls.util.exceptions.DAGExceptions
     *   A unique ID has already been set
     */
   def setUniqueId(uniqueID: Int): Unit = {
@@ -95,7 +95,7 @@ trait DAG {
   /** Checks that node have correct reference to each other. Nodes are expected to know their
     * successors and predecessors. This is expected to be consistent between several nodes.
     *
-    * @throws DAGExceptions
+    * @throws oscar.cbls.util.exceptions.DAGExceptions
     *   Some graph incoherence were detected
     */
   def checkGraph(): Unit = {
@@ -229,7 +229,7 @@ trait DAG {
     *
     * First position is set to zero.
     *
-    * @throws DAGExceptions
+    * @throws oscar.cbls.util.exceptions.DAGExceptions
     *   A cycle has been detected
     */
   def doDAGSort(): Unit = {
@@ -272,7 +272,7 @@ trait DAG {
 
   /** Returns the all the successors of startNode whose position are lower than ceilPosition.
     *
-    * @throws CycleException
+    * @throws oscar.cbls.util.exceptions.CycleException
     *   A cycle has been detected
     */
   @tailrec
