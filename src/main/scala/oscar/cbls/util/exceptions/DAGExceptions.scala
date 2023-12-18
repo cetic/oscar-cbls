@@ -13,18 +13,15 @@
 
 package oscar.cbls.util.exceptions
 
-abstract class PropagationExceptions extends Exception{
-  override def getMessage: String = s"Propagation exception ==> "
+object DAGExceptions {
+  final def cycle(details: String): DAGExceptions =
+    DAGExceptions(s"Cycle detected : $details")
+  final def graphIncoherence(details: String): DAGExceptions =
+    DAGExceptions(s"Graph is incoherent : $details")
+  final def uniqueIDAlreadySet(details: String): DAGExceptions =
+    DAGExceptions(s"Unique ID already set : $details")
 }
 
-case class CycleException(details: String) extends PropagationExceptions {
-  override def getMessage: String = super.getMessage ++ s"Cycle detected : $details"
-}
-
-case class GraphIncoherenceException(details: String) extends PropagationExceptions {
-  override def getMessage: String = super.getMessage ++ s"Graph is incoherent : $details"
-}
-
-case class UniqueIDAlreadySetException(details: String) extends PropagationExceptions {
-  override def getMessage: String = super.getMessage ++ s"Unique ID already set : $details"
+case class DAGExceptions(message: String) extends Exception {
+  override def getMessage: String = s"Propagation exception ==> $message"
 }

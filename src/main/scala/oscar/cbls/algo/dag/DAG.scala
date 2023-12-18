@@ -22,7 +22,7 @@ import scala.collection.immutable.SortedSet
 /** Describes the basic structure of a DAG node */
 trait DAGNode extends Ordered[DAGNode] {
 
-  /** The position of the node in the topological sort */
+  /** The position of the DAGNode in the topological sort */
   var position: Int = 0
 
   /** Flag used by the algorithms to avoid visiting two times the same node. Supposed to be false
@@ -41,37 +41,41 @@ trait DAGNode extends Ordered[DAGNode] {
     */
   private var _uniqueID: Int = -1
 
+  /** Set the unique id of the DAGNode
+    * @throws DAGExceptions
+    *   A unique ID has already been set
+    */
   def setUniqueId(uniqueID: Int): Unit = {
     if (_uniqueID != -1)
-      throw UniqueIDAlreadySetException(
+      throw DAGExceptions.uniqueIDAlreadySet(
         s"Trying to change the uniqueID from ${_uniqueID} to $uniqueID"
       )
     else _uniqueID = uniqueID
   }
 
+  /** Returns the uniqueID of the DAGNode */
   def uniqueID: Int = _uniqueID
 
-  /** Returns the predecessors of the node */
+  /** Returns the predecessors of the DAGNode */
   protected[dag] def getDAGPredecessors: Iterable[DAGNode]
 
-  /** Returns the successors of the node */
+  /** Returns the successors of the DAGNode */
   protected[dag] def getDAGSuccessors: Iterable[DAGNode]
 }
 
-/** This data structure performs dynamic topological sort on DAG the topological sort can be
-  * performed either from scratch or maintained incrementally. The topological sort is about
-  * maintaining the attribute Position in the nodes [[oscar.cbls.algo.dag.DAGNode]]
-  *
-  * the topological sort is lower before
-  *
-  * The incremental topological sort in _autoSort(mAutoSort: Boolean){
+/** This data structure performs dynamic topological sort on DAG, meaning it maintains the attribute
+  * position (lower before) in the nodes [[oscar.cbls.algo.dag.DAGNode]]. The topological sort can
+  * be performed either from scratch or maintained incrementally.
   *
   * @author
   *   renaud.delandtsheer@cetic.be
   */
 trait DAG {
-  private var _autoSort: Boolean = false
 
+  /** Incremental sort is on (true) or off (false) */
+  private var _incrementalSort: Boolean = false
+
+  /** Returns the nodes of the DAG */
   def nodes: Iterable[DAGNode]
 
   /** Performs a self-check on the ordering, used for testing */
@@ -90,49 +94,53 @@ trait DAG {
 
   /** Checks that node have correct reference to each other. Nodes are expected to know their
     * successors and predecessors. This is expected to be consistent between several nodes.
+    *
+    * @throws DAGExceptions
+    *   Some graph incoherence were detected
     */
   def checkGraph(): Unit = {
     nodes.foreach(n => {
       n.getDAGPredecessors.foreach(p => {
         if (!p.getDAGSuccessors.exists(p => p == n)) {
-          throw GraphIncoherenceException("at nodes [" + p + "] -> [" + n + "]")
+          throw DAGExceptions.graphIncoherence("at nodes [" + p + "] -> [" + n + "]")
         }
       })
       n.getDAGSuccessors.foreach(p => {
         if (!p.getDAGPredecessors.exists(p => p == n)) {
-          throw GraphIncoherenceException("at nodes [" + n + "] -> [" + p + "]")
+          throw DAGExceptions.graphIncoherence("at nodes [" + n + "] -> [" + p + "]")
         }
       })
     })
   }
 
-  /** Turns the incremental sort on or off. Incremental sort is then applied at each edge insert.
-    * Node insertion and deletion are prohibited when auto-sort is activated. In case a cycle is
-    * detected, it does not pass in auto-sort mode, but throws an exception.
-    * @throws CycleException
-    *   A cycle has been detected
+  /** Turns the incremental sort on or off.
+    *
+    * In case a cycle is detected, it does not pass in incremental-sort mode, but throws an
+    * exception. If the incremental-sort is activated :
+    *   - Incremental sort is then applied at each edge insert.
+    *   - Node insertion and deletion are prohibited when incremental-sort is activated.
     */
-  def autoSort_=(mAutoSort: Boolean): Unit = {
-    // Starting auto sort
-    if (mAutoSort && !_autoSort) {
+  def incrementalSort_=(mIncrementalSort: Boolean): Unit = {
+    // Activating incremental sort
+    if (mIncrementalSort && !_incrementalSort) {
       doDAGSort()
       // For testing purpose
       assert({ checkSort(); checkGraph(); true })
-      _autoSort = true
-    } else if (_autoSort && !mAutoSort) {
-      // Ending auto sort
-      _autoSort = false
+      _incrementalSort = true
+    } else if (_incrementalSort && !mIncrementalSort) {
+      // Deactivating incremental sort
+      _incrementalSort = false
     }
   }
 
-  /** @return the auto-sort status */
-  def autoSort: Boolean = _autoSort
+  /** @return the incremental-sort status */
+  def incrementalSort: Boolean = _incrementalSort
 
   /** Notifies that an edge has been added between two nodes.
     *
-    * This triggers a re-ordering of the nodes in the topological sort (if AutoSort). The reordering
-    * might lead to an exception in case there is a cycle in the graph. Notice that you do not need
-    * to notify edge deletion.
+    * This triggers a re-ordering of the nodes in the topological sort (if incrementalSort). The
+    * reordering might lead to an exception in case there is a cycle in the graph. Notice that you
+    * do not need to notify edge deletion.
     *
     * WARNING : Do not forget to add the from node as predecessor of the to node in the graph
     *
@@ -143,7 +151,7 @@ trait DAG {
     */
   def notifyAddEdge(from: DAGNode, to: DAGNode): Unit = {
 
-    if (_autoSort && (from.position > to.position)) {
+    if (_incrementalSort && (from.position > to.position)) {
       // Successors of to having a position greater than from
       val sortedForwardRegion = findSortedForwardRegion(to, from.position)
       // Predecessors of from having a position lesser than to
@@ -220,7 +228,8 @@ trait DAG {
   /** Sorts the DAG nodes according to dependencies.
     *
     * First position is set to zero.
-    * @throws CycleException
+    *
+    * @throws DAGExceptions
     *   A cycle has been detected
     */
   def doDAGSort(): Unit = {
@@ -255,7 +264,9 @@ trait DAG {
 
     val startFront: List[DAGNode] = sortByPrecedingNodes(nodes.toList)
     if (loop(startFront) != nodes.size) {
-      throw CycleException("Cycle in topological sort: \n " + getCycle().mkString("\n ") + "\n")
+      throw DAGExceptions.cycle(
+        "Cycle in topological sort: \n " + getCycle().mkString("\n ") + "\n"
+      )
     }
   }
 
@@ -285,7 +296,7 @@ trait DAG {
         if (s.position == ceilPosition) {
           sortedRegion.foreach(_.visited = false)
           heap.foreach(_.visited = false)
-          throw CycleException(
+          throw DAGExceptions.cycle(
             "Cycle in topological sort: \n " + getCycle(Some(s)).mkString("\n ") + "\n"
           )
         } else if (!s.visited && s.position < ceilPosition) {
@@ -326,7 +337,7 @@ trait DAG {
     }
   }
 
-  /** Extracts a list of sorted position from two distinct list of DAGNode * */
+  /** Extracts a list of sorted position from two distinct list of sorted DAGNode * */
   @tailrec
   private def extractSortedPositions(
     firstList: List[DAGNode],

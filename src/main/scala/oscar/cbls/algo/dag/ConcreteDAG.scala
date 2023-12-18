@@ -19,7 +19,9 @@ class ConcreteDAGNode(val concreteUniqueID: Int) extends DAGNode {
 
   setUniqueId(concreteUniqueID)
 
+  // The DAGNode before this node
   private var predecessors: List[DAGNode] = List.empty
+  // The DAGNode after this node
   private var successors: List[DAGNode]   = List.empty
 
   final def compare(that: DAGNode): Int = {
@@ -43,7 +45,6 @@ class ConcreteDAGNode(val concreteUniqueID: Int) extends DAGNode {
     * @param predecessor
     *   reference to the predecessor node
     */
-
   def setAsANewSuccessorOf(predecessor: ConcreteDAGNode): Unit = {
     predecessor.setAsANewPredecessorOf(this)
   }

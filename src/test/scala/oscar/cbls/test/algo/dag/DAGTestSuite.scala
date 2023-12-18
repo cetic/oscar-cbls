@@ -5,7 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.algo.dag.{ConcreteDAG, ConcreteDAGNode}
-import oscar.cbls.util.exceptions.CycleException
+import oscar.cbls.util.exceptions.DAGExceptions
 
 import scala.util.Random
 
@@ -24,7 +24,7 @@ class DAGTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
 
     val nodes = (0 to 10).map(new ConcreteDAGNode(_))
     val dag = new ConcreteDAG(nodes)
-    dag.autoSort = true
+    dag.incrementalSort = true
 
     nodes(0).setAsANewPredecessorOf(nodes(1))
     dag.notifyAddEdge(nodes(0),nodes(1))
@@ -47,7 +47,7 @@ class DAGTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
     // At this point we have the following graph : 0 --> 1 --> 2 --> 3 --> 4 --> 5 --> 6
     // We want to add 6 --> 3
     nodes(6).setAsANewPredecessorOf(nodes(3))
-    an [CycleException] should be thrownBy dag.notifyAddEdge(nodes(6),nodes(3))
+    an [DAGExceptions] should be thrownBy dag.notifyAddEdge(nodes(6),nodes(3))
   }
 
   test("Sorting a dag with a cycle throws a CycleException."){
@@ -62,7 +62,7 @@ class DAGTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
     nodes(6).setAsANewSuccessorOf(nodes(5))
     nodes(6).setAsANewPredecessorOf(nodes(3))
 
-    an [CycleException] should be thrownBy dag.doDAGSort()
+    an [DAGExceptions] should be thrownBy dag.doDAGSort()
   }
 
   test("Finding a cycle works as expected"){
@@ -124,7 +124,7 @@ class DAGTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
       val nodes = (0 to graph._1).map(new ConcreteDAGNode(_))
 
       val dag = new ConcreteDAG(nodes)
-      dag.autoSort = true
+      dag.incrementalSort = true
 
       for(tuple <- shuffledGraph){
         nodes(tuple._1).setAsANewPredecessorOf(nodes(tuple._2))
@@ -143,7 +143,7 @@ class DAGTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
       val nodes = (0 to graph._1).map(new ConcreteDAGNode(_))
 
       val dag = new ConcreteDAG(nodes)
-      dag.autoSort = true
+      dag.incrementalSort = true
 
       for(tuple <- shuffledGraph){
         nodes(tuple._1).setAsANewSuccessorOf(nodes(tuple._2))
