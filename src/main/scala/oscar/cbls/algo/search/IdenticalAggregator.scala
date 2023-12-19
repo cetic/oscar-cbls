@@ -135,7 +135,13 @@ object IdenticalAggregator {
       while (it.hasNext) {
         val toReturn = it.next()
         val theClass = itemClass(toReturn)
-        if (theClass == Long.MinValue || !coveredClasses.contains(theClass)) {
+
+        val isExempt = theClass match {
+          case Int.MinValue => true
+          case _            => false
+        }
+
+        if (isExempt || !coveredClasses.contains(theClass)) {
           coveredClasses += theClass
           return Some(toReturn)
         }
