@@ -63,7 +63,7 @@ object IdenticalAggregator {
     * single element. The class of an element is an integer defined by a function parameter.
     * Elements associated to Int.MinValue are not discarded.
     *
-    * @param l
+    * @param it
     *   an iterable collection of items such that we want to discard items of identical class
     * @param itemClass
     *   a function returning the class of a given element
@@ -73,24 +73,24 @@ object IdenticalAggregator {
     *   a list containing a maximal subset of the original collection such that all items are of
     *   different classes according to itemClass, excluding items associated to Int.MinValue
     */
-  def removeIdenticalClasses[A](l: Iterable[A], itemClass: A => Int): List[A] = {
+  def removeIdenticalClasses[A](it: Iterable[A], itemClass: A => Int): List[A] = {
     val a: Set[Int] = SortedSet.empty
-    removeIdenticalClasses[A](l.iterator, itemClass, Nil, a)
+    removeIdenticalClasses[A](it.iterator, itemClass, Nil, a)
   }
 
   @tailrec
   private def removeIdenticalClasses[A](
-    l: Iterator[A],
+    it: Iterator[A],
     itemClass: A => Int,
     canonicals: List[A],
     classes: Set[Int]
   ): List[A] = {
-    if (l.hasNext) {
-      val h             = l.next()
-      val classOfH: Int = itemClass(h)
-      if (classOfH != Int.MinValue && classes.contains(classOfH))
-        removeIdenticalClasses(l, itemClass, canonicals, classes)
-      else removeIdenticalClasses(l, itemClass, h :: canonicals, classes + classOfH)
+    if (it.hasNext) {
+      val next             = it.next()
+      val classOfNext: Int = itemClass(next)
+      if (classOfNext != Int.MinValue && classes.contains(classOfNext))
+        removeIdenticalClasses(it, itemClass, canonicals, classes)
+      else removeIdenticalClasses(it, itemClass, next :: canonicals, classes + classOfNext)
     } else {
       canonicals
     }
