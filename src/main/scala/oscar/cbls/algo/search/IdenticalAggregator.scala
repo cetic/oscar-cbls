@@ -119,17 +119,17 @@ object IdenticalAggregator {
     new IdenticalSuppressedIterable(it, itemClass)
   }
 
-  class IdenticalSuppressedIterable[A, C](it: Iterable[A], itemClass: A => C)(implicit
+  private class IdenticalSuppressedIterable[A, C](it: Iterable[A], itemClass: A => C)(implicit
     A: Ordering[C]
   ) extends Iterable[A] {
     override def iterator: Iterator[A] =
       new IdenticalSuppressedIterator[A, C](it.iterator, itemClass)
   }
 
-  class IdenticalSuppressedIterator[A, C](it: Iterator[A], itemClass: A => C)(implicit
+  private class IdenticalSuppressedIterator[A, C](it: Iterator[A], itemClass: A => C)(implicit
     A: Ordering[C]
   ) extends Iterator[A] {
-    var coveredClasses: Set[C] = SortedSet.empty
+    private var coveredClasses: Set[C] = SortedSet.empty
 
     private def advanceToNextOne: Option[A] = {
       while (it.hasNext) {
@@ -144,7 +144,7 @@ object IdenticalAggregator {
     }
 
     // this is the element to return next
-    var theNextOne: Option[A] = advanceToNextOne
+    private var theNextOne: Option[A] = advanceToNextOne
 
     override def hasNext: Boolean = theNextOne.isDefined
 
