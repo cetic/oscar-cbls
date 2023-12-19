@@ -22,6 +22,25 @@ import scala.collection.immutable.SortedSet
   */
 object IdenticalAggregator {
 
+  /** This function removes the elements in a list that satisfy an associative predicate with
+    * another element in the list, except for a single element. In the case where the predicate is
+    * the identity, duplicate entries are removed. Ordering of elements is not preserved.
+    *
+    * Example:
+    * {{{
+    * scala> removeIdenticals[Int](List(1, 2, 3, 1), (a, b) => a == b)
+    * val res1: List[Int] = List(3, 2, 1)
+    * }}}
+    *
+    * @param l
+    *   the input list
+    * @param isIdentical
+    *   the associative predicate
+    * @tparam A
+    *   the type of the element in the list
+    * @return
+    *   a list with elements filtered out
+    */
   def removeIdenticals[A](l: List[A], isIdentical: (A, A) => Boolean): List[A] =
     removeIdenticals[A](l, isIdentical, Nil)
 
@@ -40,15 +59,19 @@ object IdenticalAggregator {
     }
   }
 
-  /** @param l
-    *   a list of items such that we want to discard items of identical class
+  /** This function removes the elements in a collection belonging to the same class, except for a
+    * single element. The class of an element is an integer defined by a function parameter.
+    * Elements associated to Int.MinValue are not discarded.
+    *
+    * @param l
+    *   an iterable collection of items such that we want to discard items of identical class
     * @param itemClass
-    *   a function that gives a class for a given item. Class Int.MinValue is considered as
-    *   different from itself
+    *   a function returning the class of a given element
     * @tparam A
+    *   the element type
     * @return
-    *   a maximal subset of l such that all items are of different class according to itemClass
-    *   (with Long.MinValue exception)
+    *   a list containing a maximal subset of the original collection such that all items are of
+    *   different classes according to itemClass, excluding items associated to Int.MinValue
     */
   def removeIdenticalClasses[A](l: Iterable[A], itemClass: A => Int): List[A] = {
     val a: Set[Int] = SortedSet.empty
@@ -73,12 +96,22 @@ object IdenticalAggregator {
     }
   }
 
-  /** class Int.MinValue is considered different from itself
+  /** This function lazily removes the elements in a collection belonging to the same class, except
+    * for a single element. The class of an element is a value defined by a function parameter. If
+    * the type of the class is integer, elements associated to Int.MinValue are not discarded.
     *
     * @param it
+    *   an iterable collection of items such that we want to discard items of identical class
     * @param itemClass
+    *   a function returning the class of a given element
     * @tparam A
+    *   the type of the element
+    * @tparam C
+    *   the type of the element classes
     * @return
+    *   a maximal subset of the original collection such that all items are of different classes
+    *   according to itemClass, excluding items associated to Int.MinValue if the class type is
+    *   integer
     */
   def removeIdenticalClassesLazily[A, C](it: Iterable[A], itemClass: A => C)(implicit
     A: Ordering[C]
@@ -118,7 +151,7 @@ object IdenticalAggregator {
     override def next(): A =
       theNextOne match {
         case Some(s) => theNextOne = advanceToNextOne; s
-        case _       => it.next() // to crash moreless transparently
+        case _       => it.next() // to crash more or less transparently
       }
   }
 }
