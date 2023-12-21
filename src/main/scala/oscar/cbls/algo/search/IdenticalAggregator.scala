@@ -116,48 +116,42 @@ object IdenticalAggregator {
   def removeIdenticalClassesLazily[A, C](it: Iterable[A], itemClass: A => C)(implicit
     A: Ordering[C]
   ): Iterable[A] = {
-    new IdenticalSuppressedIterable(it, itemClass)
-  }
+    new collection.AbstractIterable[A] {
+      def iterator: Iterator[A] = new collection.AbstractIterator[A] {
 
-  private class IdenticalSuppressedIterable[A, C](it: Iterable[A], itemClass: A => C)(implicit
-    A: Ordering[C]
-  ) extends Iterable[A] {
-    override def iterator: Iterator[A] =
-      new IdenticalSuppressedIterator[A, C](it.iterator, itemClass)
-  }
+        private[this] var iter = it.iterator
 
-  private class IdenticalSuppressedIterator[A, C](it: Iterator[A], itemClass: A => C)(implicit
-    A: Ordering[C]
-  ) extends Iterator[A] {
-    private var coveredClasses: Set[C] = SortedSet.empty
+        private[this] var coveredClasses: Set[C] = SortedSet.empty
 
-    private def advanceToNextOne: Option[A] = {
-      while (it.hasNext) {
-        val toReturn = it.next()
-        val theClass = itemClass(toReturn)
+        private[this] def advanceToNextOne: Option[A] = {
+          while (iter.hasNext) {
+            val toReturn = iter.next()
+            val theClass = itemClass(toReturn)
 
-        val isExempt = theClass match {
-          case Int.MinValue => true
-          case _            => false
+            val isExempt = theClass match {
+              case Int.MinValue => true
+              case _            => false
+            }
+
+            if (isExempt || !coveredClasses.contains(theClass)) {
+              coveredClasses += theClass
+              return Some(toReturn)
+            }
+          }
+          None
         }
 
-        if (isExempt || !coveredClasses.contains(theClass)) {
-          coveredClasses += theClass
-          return Some(toReturn)
-        }
+        // this is the element to return next
+        private[this] var theNextOne: Option[A] = advanceToNextOne
+
+        override def hasNext: Boolean = theNextOne.isDefined
+
+        override def next(): A =
+          theNextOne match {
+            case Some(s) => theNextOne = advanceToNextOne; s
+            case _       => iter.next() // to crash more or less transparently
+          }
       }
-      None
     }
-
-    // this is the element to return next
-    private var theNextOne: Option[A] = advanceToNextOne
-
-    override def hasNext: Boolean = theNextOne.isDefined
-
-    override def next(): A =
-      theNextOne match {
-        case Some(s) => theNextOne = advanceToNextOne; s
-        case _       => it.next() // to crash more or less transparently
-      }
   }
 }
