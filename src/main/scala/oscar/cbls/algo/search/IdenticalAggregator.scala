@@ -16,7 +16,14 @@ package oscar.cbls.algo.search
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
-/** a generic algorithm for aggregating identical stuff
+/** This object collects several generic algorithms for processing collections with generalized
+  * duplicates, meaning they are either "identical" according to an associative boolean predicate,
+  * or they belong to the same class (as defined by a provided function).
+  *
+  * All elements that either satisfy this predicate or belong to the same class of another element
+  * (depending on the method invoked) are then removed, save for a single element. In other words,
+  * the resulting collection includes only a single element per induced equivalence class.
+  *
   * @author
   *   renaud.delandtsheer@cetic.be
   */
