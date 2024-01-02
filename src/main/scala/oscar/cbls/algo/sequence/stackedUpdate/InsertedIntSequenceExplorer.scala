@@ -14,6 +14,7 @@
 package oscar.cbls.algo.sequence.stackedUpdate
 
 import oscar.cbls.algo.sequence.IntSequenceExplorer
+import oscar.cbls.algo.sequence.concrete.RootIntSequenceExplorer
 
 /** A stacked explorer dedicated for [[InsertedIntSequence]].
   *
@@ -27,83 +28,36 @@ import oscar.cbls.algo.sequence.IntSequenceExplorer
   *   The current position in the sequence
   * @param explorerInOriginalSequence
   *   The original explorer, that is without the inserted point
-  * @param atInsertedValue
-  *   Whether or not the explorer is at the inserted value
-  * @param originalExplorerIsAtInsertionPosition
-  *   Whether or not the original explorer is at insertion position
   */
 class InsertedIntSequenceExplorer(
   seq: InsertedIntSequence,
   val position: Int,
-  explorerInOriginalSequence: Option[IntSequenceExplorer],
-  atInsertedValue: Boolean,
-  originalExplorerIsAtInsertionPosition: Boolean
+  val explorerInOriginalSequence: IntSequenceExplorer
 ) extends IntSequenceExplorer {
+  private val atInsertedValue = position == seq.insertAfterPos + 1
   override val value: Int =
-    if (atInsertedValue) seq.insertedValue else explorerInOriginalSequence.get.value
+    if (atInsertedValue) seq.insertedValue else explorerInOriginalSequence.value
 
   override def next: Option[IntSequenceExplorer] = {
     val nextPosition = position + 1
     if (atInsertedValue) {
       // we are leaving the inserted position
-      explorerInOriginalSequence match {
+      explorerInOriginalSequence.next match {
         case None => None
-        case Some(p) =>
-          if (originalExplorerIsAtInsertionPosition) {
-            // Original explorer already at position+1
-            Some(
-              new InsertedIntSequenceExplorer(
-                seq,
-                nextPosition,
-                explorerInOriginalSequence,
-                atInsertedValue = false,
-                originalExplorerIsAtInsertionPosition = false
-              )
-            )
-          } else {
-            // Need to get next original explorer
-            p.next match {
-              case None => None
-              case nextOriginalExplorer =>
-                Some(
-                  new InsertedIntSequenceExplorer(
-                    seq,
-                    nextPosition,
-                    nextOriginalExplorer,
-                    atInsertedValue = false,
-                    originalExplorerIsAtInsertionPosition = false
-                  )
-                )
-            }
-          }
+        case Some(nextOriginalExplorer) =>
+          Some(new InsertedIntSequenceExplorer(seq, nextPosition, nextOriginalExplorer))
       }
     } else {
       if (nextPosition == seq.insertAfterPos + 1) {
         // Getting into the inserted position
         // Original explorer doesn't change
-        Some(
-          new InsertedIntSequenceExplorer(
-            seq,
-            nextPosition,
-            explorerInOriginalSequence,
-            atInsertedValue = true,
-            originalExplorerIsAtInsertionPosition = false
-          )
-        )
+        Some(new InsertedIntSequenceExplorer(seq, nextPosition, explorerInOriginalSequence))
       } else {
         // nothing special
-        explorerInOriginalSequence.get.next match {
+        explorerInOriginalSequence.next match {
           case None => None
-          case nextOriginalExplorer =>
-            Some(
-              new InsertedIntSequenceExplorer(
-                seq,
-                nextPosition,
-                nextOriginalExplorer,
-                atInsertedValue = false,
-                originalExplorerIsAtInsertionPosition = false
-              )
-            )
+          case Some(nextOriginalExplorer) =>
+            Some(new InsertedIntSequenceExplorer(seq, nextPosition, nextOriginalExplorer))
         }
       }
     }
@@ -113,65 +67,15 @@ class InsertedIntSequenceExplorer(
     val prevPosition = position - 1
     if (atInsertedValue) {
       explorerInOriginalSequence match {
-        case None    => None
-        case Some(p) =>
-          // Leaving the inserted position
-          if (!originalExplorerIsAtInsertionPosition) {
-            // Original explorer is not above so already at insertion position minus 1
-            Some(
-              new InsertedIntSequenceExplorer(
-                seq,
-                prevPosition,
-                explorerInOriginalSequence,
-                atInsertedValue = false,
-                originalExplorerIsAtInsertionPosition = false
-              )
-            )
-          } else {
-            // Original explorer is above, so at insertion position &rarr; need to get prev
-            p.prev match {
-              case None => None
-              case prevOriginalExplorer =>
-                Some(
-                  new InsertedIntSequenceExplorer(
-                    seq,
-                    prevPosition,
-                    prevOriginalExplorer,
-                    atInsertedValue = false,
-                    originalExplorerIsAtInsertionPosition = false
-                  )
-                )
-            }
-          }
+        case e: RootIntSequenceExplorer => Some(e)
+        case _ =>
+          Some(new InsertedIntSequenceExplorer(seq, prevPosition, explorerInOriginalSequence))
       }
     } else {
-      if (prevPosition == seq.insertAfterPos + 1) {
-        // Getting into the inserted position from above it
-        // Not moving the explorer &rarr; original explorer is above
-        Some(
-          new InsertedIntSequenceExplorer(
-            seq,
-            prevPosition,
-            explorerInOriginalSequence,
-            atInsertedValue = true,
-            originalExplorerIsAtInsertionPosition = true
-          )
-        )
-      } else {
-        // Nothing special
-        explorerInOriginalSequence.get.prev match {
-          case None => None
-          case prevOriginalExplorer =>
-            Some(
-              new InsertedIntSequenceExplorer(
-                seq,
-                prevPosition,
-                prevOriginalExplorer,
-                atInsertedValue = false,
-                originalExplorerIsAtInsertionPosition = false
-              )
-            )
-        }
+      explorerInOriginalSequence.prev match {
+        case None => None
+        case Some(prevOriginalExplorer) =>
+          Some(new InsertedIntSequenceExplorer(seq, prevPosition, prevOriginalExplorer))
       }
     }
   }

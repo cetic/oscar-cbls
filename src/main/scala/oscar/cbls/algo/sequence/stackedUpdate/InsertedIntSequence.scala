@@ -83,24 +83,7 @@ class InsertedIntSequence(
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
     if (position == -1) Some(new RootIntSequenceExplorer(this))
     else if (position == insertAfterPos + 1) {
-      // Explorer at the inserted point position
-      if (position == 0) {
-        // Inserted point position is the start of the sequence
-        Some(
-          new InsertedIntSequenceExplorer(
-            this,
-            position,
-            originalExplorerAtInsertPosition,
-            true,
-            true
-          )
-        )
-      } else {
-        // Inserted point position is later in the sequence
-        Some(
-          new InsertedIntSequenceExplorer(this, position, Some(insertAfterPosExplorer), true, false)
-        )
-      }
+      Some(new InsertedIntSequenceExplorer(this, position, insertAfterPosExplorer))
     } else {
       val originPos = if (position < insertAfterPos + 1) position else position - 1
       val explorer = {
@@ -118,7 +101,7 @@ class InsertedIntSequence(
 
       explorer match {
         case None    => None
-        case Some(p) => Some(new InsertedIntSequenceExplorer(this, position, Some(p), false, false))
+        case Some(p) => Some(new InsertedIntSequenceExplorer(this, position, p))
       }
     }
   }
