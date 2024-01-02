@@ -100,7 +100,7 @@ class Token()
   *   - Modifications methods : insert/move/remove
   *
   * @param token
-  *   A small object used to id the current instance
+  *   An object used to id the current instance
   * @param depth
   *   The current number of stacked updates
   */
