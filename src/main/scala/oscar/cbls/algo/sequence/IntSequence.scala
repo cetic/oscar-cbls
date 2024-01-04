@@ -329,28 +329,29 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     * brand new [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]].
     *
     * @param removePosAsExplorer
-    *   The explorer at the position where to remove the value as [[IntSequenceExplorer]]
+    *   The explorer at the position where to remove the value
     * @param fast
-    *   Fast flag as [[scala.Boolean]] for more detail see description.
+    *   Fast flag (for more detail see description)
     * @return
     *   An [[IntSequence]] without the value at the specified position
     */
   def delete(removePosAsExplorer: IntSequenceExplorer, fast: Boolean = false): IntSequence
 
-  /** Moves nodes after a position and optionally flip them.
+  /** Moves a subsequence of values after a position and optionally flip it. The subsequence of values is
+    * identified by the starting and ending position.
     *
     * There is two ways to move values, a fast and a normal one. If fast, it returns a
     * [[oscar.cbls.algo.sequence.stackedUpdate.StackedUpdateIntSequence]]. If normal, it computes a
     * brand new [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]].
     *
     * @param fromIncludedExplorer
-    *   Starting position of the nodes to move (included) as [[scala.Int]]
+    *   Starting position of the subsequence to move (included)
     * @param toIncludedExplorer
-    *   Ending position of the nodes to move (included) as [[scala.Int]]
+    *   Ending position of the subsequence to move (included)
     * @param moveAfterExplorer
     *   The position after which to move the nodes as [[scala.Int]]
     * @param flip
-    *   If true, flip the nodes before moving them
+    *   If true, flips the subsequence before moving it
     * @param fast
     *   Fast flag as [[scala.Boolean]] for more detail see description.
     * @return
