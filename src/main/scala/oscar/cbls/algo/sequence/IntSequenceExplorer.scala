@@ -18,13 +18,13 @@ package oscar.cbls.algo.sequence
   * Each instance represents the state of the sequence at a specific position.
   */
 abstract class IntSequenceExplorer {
-  // The value at the current position
+  /** The value at the current position */
   val value: Int
-  // Returns the position of the value
+  /** Returns the position of the value */
   def position: Int
-  // Returns the next explorer in the sequence or None if end of sequence
+  /** Returns the next explorer in the sequence or None if end of sequence */
   def next: Option[IntSequenceExplorer]
-  // Returns the previous explorer in the sequence or None if start of sequence
+  /** Returns the previous explorer in the sequence or None if start of sequence */
   def prev: Option[IntSequenceExplorer]
 
   /** Returns the [[IntSequenceExplorer]] at the given position.
@@ -33,7 +33,7 @@ abstract class IntSequenceExplorer {
     * @param position
     *   The position to reach
     * @return
-    *   The [[IntSequenceExplorer]] as an [[scala.Option]] or None
+    *   The IntSequenceExplorer if it exists
     */
   def toPosition(position: Int): Option[IntSequenceExplorer] = {
     require(position >= -1)
@@ -52,7 +52,7 @@ abstract class IntSequenceExplorer {
     * @param value
     *   The value to reach
     * @return
-    *   The [[IntSequenceExplorer]] as an [[scala.Option]] or None
+    *   The IntSequenceExplorer if it exists
     */
   def prevUntilValue(value: Int): Option[IntSequenceExplorer] = {
     if (this.value == value) Some(this)
@@ -68,7 +68,7 @@ abstract class IntSequenceExplorer {
     * @param value
     *   The value to reach
     * @return
-    *   The [[IntSequenceExplorer]] as an [[scala.Option]] or None
+    *   The IntSequenceExplorer if it exists
     */
   def nextUntilValue(value: Int): Option[IntSequenceExplorer] = {
     if (this.value == value) Some(this)
@@ -84,7 +84,7 @@ abstract class IntSequenceExplorer {
     * @param f
     *   The function to satisfy
     * @return
-    *   The [[IntSequenceExplorer]] as an [[scala.Option]] or None
+    *   The IntSequenceExplorer if it exists
     */
   def prevUntil(f: IntSequenceExplorer => Boolean): Option[IntSequenceExplorer] = {
     if (f(this)) Some(this)
@@ -100,7 +100,7 @@ abstract class IntSequenceExplorer {
     * @param f
     *   The function to satisfy
     * @return
-    *   The [[IntSequenceExplorer]] as an [[scala.Option]] or None
+    *   The IntSequenceExplorer if it exists
     */
   def nextUntil(f: IntSequenceExplorer => Boolean): Option[IntSequenceExplorer] = {
     if (f(this)) Some(this)
@@ -114,7 +114,7 @@ abstract class IntSequenceExplorer {
   /** Applies the given function on each [[IntSequenceExplorer]]
     *
     * @param f
-    *   The function to apply as [[IntSequenceExplorer]] to [[scala.Unit]]
+    *   The function to apply
     */
   def foreach(f: IntSequenceExplorer => Unit): Unit = {
     f(this)

@@ -31,7 +31,7 @@ import scala.annotation.tailrec
   *   - A pivot : A Pivot is an affine function used to link the external to the internal position.
   *     It's used to represent the movements applied to the sequence.
   *
-  * So each time the route is modified, a new Pivot is created to adjust the new position of each
+  * So each time the sequence is modified, a new Pivot is created to adjust the new position of each
   * element. The internal positions don't change. Once in a while we commit / apply all pivots and
   * update all the internal position.
   *
@@ -49,7 +49,7 @@ import scala.annotation.tailrec
   * @param startFreeRangeForInternalPosition
   *   The next free internal insertion position.
   * @param token
-  *   A small object used to id the current instance
+  *   An object used to id the current instance
   */
 class ConcreteIntSequence(
   private[sequence] val internalPositionToValue: RedBlackTreeMap[Int],
@@ -59,12 +59,12 @@ class ConcreteIntSequence(
   token: Token = Token()
 ) extends IntSequence(token, 0) {
 
-  /** During exploration we often use the getExplorerAt(...) method. This call is expensive (Log(n))
-    * Furthermore, the same explorer may be called several times in a row. The idea here is to add a
-    * tiny cache (this class could be created thousands of time during the search) to kee track of
-    * the last used explorer and returning it as fast as possible. We use an sorted array where the
-    * explorer at the end are those most recently used. Initiated with None values
-    */
+  /* During exploration we often use the getExplorerAt(...) method. This call is expensive (Log(n))
+     Furthermore, the same explorer may be called several times in a row. The idea here is to add a
+     tiny cache (this class could be created thousands of time during the search) to kee track of
+     the last used explorer and returning it as fast as possible. We use an sorted array where the
+     explorer at the end are those most recently used. Initiated with None values
+  */
   private val cacheSize           = 10
   private var cacheFirstEmptySlot = cacheSize - 1
   private val intSequenceExplorerCache: Array[Option[IntSequenceExplorer]] =
@@ -73,7 +73,7 @@ class ConcreteIntSequence(
   // TODO: replace internalPositionToValue by an immutable Array, or an immutable array + a small RBTree + size
 
   override def descriptorString: String =
-    "[" + this.iterator.toList.mkString(",") + "]_impl:concrete"
+    s"[${this.iterator.toList.mkString(",")}]_impl:concrete"
 
   override def check(): Unit = {
     // externalToInternalPosition.checkBijection()
@@ -98,13 +98,13 @@ class ConcreteIntSequence(
     case Some(p) => p.size
   }
 
-  // Returns the largest value of the sequence
+  /** Returns the largest value of the sequence */
   def largestValue: Option[Int] = valueToInternalPositions.biggest match {
     case None         => None
     case Some((k, _)) => Some(k)
   }
 
-  // Returns the smallest value of the sequence
+  /** Returns the smallest value of the sequence */
   def smallestValue: Option[Int] = valueToInternalPositions.smallest match {
     case None         => None
     case Some((k, _)) => Some(k)
@@ -288,13 +288,13 @@ class ConcreteIntSequence(
     val insertAfterPos = insertAfterPositionExplorer.position
     require(
       insertAfterPos + 1 <= size,
-      "inserting past the end of the sequence (size:" + size + " inserting after pos:" + insertAfterPos + ")"
+      s"inserting past the end of the sequence (size: $size inserting after pos: $insertAfterPos)"
     )
 
-    /** 1° Inserts the value at startFreeRangeForInternalPosition 2° Adds necessary pivot to match
-      * it's position within the external position ex : Insertion of x at pos 8 and the sequence is
-      * of size 13. First free internal space is 13 (the current size) Insert at 13 and add a pivot
-      * : from 13 to 13 moving x 5 position earlier
+    /* 1° Inserts the value at startFreeRangeForInternalPosition 2° Adds necessary pivot to match
+       it's position within the external position ex : Insertion of x at pos 8 and the sequence is
+       of size 13. First free internal space is 13 (the current size) Insert at 13 and add a pivot
+       : from 13 to 13 moving x 5 position earlier
       */
 
     if (fast) return new InsertedIntSequence(this, value, insertAfterPositionExplorer, 1)

@@ -34,7 +34,7 @@ class RemovedIntSequence(
   private val removedValue: Int = explorerAtRemovePos.value
 
   override def descriptorString: String =
-    originalSequence.descriptorString + ".removed(pos:" + explorerAtRemovePos.position + " val:" + removedValue + ")"
+    s"${originalSequence.descriptorString}.removed(pos:${explorerAtRemovePos.position} val:$removedValue)"
 
   override def nbOccurrence(value: Int): Int =
     if (value == this.removedValue) originalSequence.nbOccurrence(value) - 1

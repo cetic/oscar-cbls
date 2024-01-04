@@ -4,7 +4,7 @@ import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer, Token}
 
 /** Represents an empty [[IntSequence]].
   *
-  * Only one movement is permitted : insertion Upon insertion it creates a [[ConcreteIntSequence]]
+  * Only insertion is permitted. Upon insertion it creates a [[ConcreteIntSequence]]
   * containing the value.
   */
 case class EmptyIntSequence() extends IntSequence(depth = 0) {

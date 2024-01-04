@@ -27,13 +27,13 @@ object MovedIntSequence {
     *   - backward (oldPosToNewPos) : the node that was before at y is at x
     *
     * @param fromIncluded
-    *   The first (included) position of the moved segment as an [[scala.Int]]
+    *   The first (included) position of the moved segment
     * @param toIncluded
-    *   The last (included) position of the moved segment as an [[scala.Int]]
+    *   The last (included) position of the moved segment
     * @param moveAfter
-    *   The position after which the segment is moved as an [[scala.Int]]
+    *   The position after which the segment is moved
     * @param flip
-    *   Whether or not the segment is flipped as a [[scala.Boolean]]
+    *   Whether or not the segment is flipped
     * @return
     *   The bijections as a
     *   [[oscar.cbls.algo.sequence.affineFunction.PiecewiseUnitaryAffineFunction]]
@@ -55,7 +55,7 @@ object MovedIntSequence {
       case (NotMoving, true) =>
         PiecewiseUnitaryAffineFunction.createFromPivots(
           List(
-            // If fromIncluded == 0 this identity function will be override.
+            // If fromIncluded == 0 this identity function will be overriden.
             new Pivot(0, UnitaryAffineFunction.identity),
             new Pivot(fromIncluded, UnitaryAffineFunction(toIncluded + fromIncluded, flip = true)),
             new Pivot(toIncluded + 1, UnitaryAffineFunction.identity)
@@ -104,17 +104,17 @@ object MovedIntSequence {
     * sequence.
     *
     * @param oldPos
-    *   The old position for which we want to know the new one as an [[scala.Int]]
+    *   The old position for which we want to know the new one
     * @param fromIncluded
-    *   The first (included) position of the moved segment as an [[scala.Int]]
+    *   The first (included) position of the moved segment
     * @param toIncluded
-    *   The last (included) position of the moved segment as an [[scala.Int]]
+    *   The last (included) position of the moved segment
     * @param after
-    *   The position after which the segment was moved as an [[scala.Int]]
+    *   The position after which the segment was moved
     * @param flip
-    *   Whether or not the segment was flipped as a [[scala.Boolean]]
+    *   Whether or not the segment was flipped
     * @return
-    *   The new position of oldPos as an [[scala.Int]]
+    *   The new position of oldPos
     */
   @inline
   def oldPosToNewPos(
@@ -164,15 +164,15 @@ object MovedIntSequence {
   * Basically it's the move of a defined segment after another position. The segment can be flipped.
   *
   * @param seq
-  *   The original sequence as a [[IntSequence]]
+  *   The original sequence
   * @param fromIncludedExplorer
-  *   The first (included) position of the moved segment as an [[scala.Int]]
+  *   The first (included) position of the moved segment
   * @param toIncludedExplorer
-  *   The last (included) position of the moved segment as an [[scala.Int]]
+  *   The last (included) position of the moved segment
   * @param moveAfterExplorer
-  *   The position after which the segment is moved as an [[scala.Int]]
+  *   The position after which the segment is moved
   * @param flip
-  *   Whether or not the segment is flipped as an [[scala.Int]]
+  *   Whether or not the segment is flipped
   * @param depth
   *   The depth of the current update
   */
@@ -196,7 +196,7 @@ class MovedIntSequence(
   private val (
     originalExplorerBeforeFromPositionIncluded,
     originalExplorerAfterToPositionIncluded,
-    originalExplorerAfterMoverAfterPosition
+    originalExplorerAfterMoveAfterPosition
   ): (Option[IntSequenceExplorer], Option[IntSequenceExplorer], Option[IntSequenceExplorer]) =
     (fromIncludedExplorer.prev, toIncludedExplorer.next, moveAfterExplorer.next)
 
@@ -210,7 +210,7 @@ class MovedIntSequence(
     seq.unorderedContentNoDuplicateWithNBOccurrences
 
   override def descriptorString: String =
-    s"${seq.descriptorString}.moved(startPos:$fromIncludedExplorer endPos:$toIncludedExplorer targetPos:$moveAfterExplorer flip:$flip)"
+    s"${seq.descriptorString}.moved(startPos:${fromIncludedExplorer.position} endPos:${toIncludedExplorer.position} targetPos:${moveAfterExplorer.position} flip:$flip)"
 
   override def commitPendingMoves: IntSequence = seq.commitPendingMoves.moveAfter(
     fromIncludedExplorer,
@@ -265,7 +265,7 @@ class MovedIntSequence(
     )
     assert(
       tmp == localBijection.backward(oldPos),
-      "oldPosToNewPos method got " + tmp + ". Should be : " + localBijection.backward(oldPos)
+      s"oldPosToNewPos method got $tmp. Should be : ${localBijection.backward(oldPos)}"
     )
     tmp
   }

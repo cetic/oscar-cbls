@@ -129,7 +129,7 @@ class PiecewiseUnitaryAffineFunction(
   /** Returns the number of [[Pivot]] */
   def nbPivot: Int = transformation.size
 
-  /** Optionally returns a RedBlackTreeMapExplorer of the first pivot of the sequence.
+  /** Optionally returns a [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] of the first pivot of the sequence.
     *
     * @return
     *   The [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] or [[scala.None]]
@@ -141,7 +141,7 @@ class PiecewiseUnitaryAffineFunction(
     }
   }
 
-  /** Optionally returns a RedBlackTreeMapExplorer of the pivot applying at the given position.
+  /** Optionally returns a [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] of the pivot applying at the given position.
     *
     * @param position
     *   The position on which the pivot must apply

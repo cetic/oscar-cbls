@@ -349,13 +349,13 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     * @param toIncludedExplorer
     *   Ending position of the subsequence to move (included)
     * @param moveAfterExplorer
-    *   The position after which to move the nodes as [[scala.Int]]
+    *   The position after which to move the subsequence
     * @param flip
     *   If true, flips the subsequence before moving it
     * @param fast
-    *   Fast flag as [[scala.Boolean]] for more detail see description.
+    *   Fast flag (for more detail see description)
     * @return
-    *   An [[IntSequence]] where the nodes have been moved accordingly
+    *   An IntSequence where the subsequence have been moved accordingly
     */
   def moveAfter(
     fromIncludedExplorer: IntSequenceExplorer,
@@ -367,9 +367,13 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
 
   /** Flips the [[IntSequence]]
     *
+    * There is two ways to move values, a fast and a normal one. If fast, it returns a
+    * [[oscar.cbls.algo.sequence.stackedUpdate.StackedUpdateIntSequence]]. If normal, it computes a
+    * brand new [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]].
+
+
     * @param fast
-    *   If true uses [[oscar.cbls.algo.sequence.stackedUpdate.StackedUpdateIntSequence]] else
-    *   [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]]
+    *   Fast flag (for more detail see description)
     * @return
     *   A flipped [[IntSequence]]
     */
@@ -416,7 +420,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     *     this.token
     *
     * @param targetToken
-    *   The identity of the resulting [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]]
+    *   The identity token to give at the resulting [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]]
     * @return
     *   A [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]] with no Pivot
     */

@@ -20,11 +20,11 @@ import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
   * sequence.
   *
   * @param intSequence
-  *   The original sequence as a [[IntSequence]]
+  *   The original sequence
   * @param insertedValue
-  *   The value to insert as an [[scala.Int]]
+  *   The value to insert
   * @param insertAfterPosExplorer
-  *   The explorer at the insertion position as an [[IntSequenceExplorer]]
+  *   The explorer at the insertion position
   * @param depth
   *   The depth of the current update
   */

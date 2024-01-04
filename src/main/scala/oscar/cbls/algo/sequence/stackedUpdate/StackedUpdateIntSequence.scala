@@ -18,9 +18,9 @@ import oscar.cbls.algo.sequence.concrete.ConcreteIntSequence
 
 /** Quick and stackable update of an [[IntSequence]]
   *
-  * For performance purpose, it's easier to create several stackable updates and commit them times
+  * For performance purpose, it's easier to create several stackable updates and commit them from times
   * to times. That's the purpose of the StackedUpdateIntSequence. While maxDepth is not reached we
-  * add new small updates to the sequence. Once it's reached we commit the pending move, creating a
+  * stack new updates to the sequence. Once it's reached we commit the pending move, creating a
   * new ConcreteIntSequence.
   *
   * @param depth
