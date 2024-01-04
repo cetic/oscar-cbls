@@ -227,7 +227,7 @@ class MovedIntSequence(
     else if (position == toIncludedExplorer.position) Some(toIncludedExplorer)
     else if (position == toIncludedExplorer.position + 1) originalExplorerAfterToPositionIncluded
     else if (moveAfterExplorer.position == position) Some(moveAfterExplorer)
-    else if (moveAfterExplorer.position + 1 == position) originalExplorerAfterMoverAfterPosition
+    else if (moveAfterExplorer.position + 1 == position) originalExplorerAfterMoveAfterPosition
     else seq.explorerAtPosition(position)
   }
 
