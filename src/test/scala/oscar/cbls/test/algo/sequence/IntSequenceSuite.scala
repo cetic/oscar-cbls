@@ -14,7 +14,6 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
   private val maxConsideredSize = 200
 
   implicit def noShrink[T]: Shrink[T]   = Shrink.shrinkAny
-  private var seq: IntSequence          = IntSequence(List.empty)
   private val genSeqSize: AtomicInteger = new AtomicInteger(0)
 
   test("ConcreteIntSequence : batch queries keep expected list") {
@@ -26,7 +25,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
         whenever(testBench._1.size >= 5) {
           val actionsList   = testBench._2
           val referenceList = testBench._1
-          seq = IntSequence(referenceList)
+          var seq = IntSequence(referenceList)
           var modifiedList = referenceList
 
           for (action <- actionsList) {
@@ -51,8 +50,9 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
           val actionsList   = testBench._2
           val referenceList = testBench._1
           // Creating a MovedIntSequence without changing the generated sequence
+          var seq = IntSequence(referenceList)
           seq = new MovedIntSequence(
-            IntSequence(referenceList),
+            seq,
             seq.explorerAtPosition(0).get,
             seq.explorerAtPosition(0).get,
             seq.explorerAtPosition(-1).get,
@@ -83,7 +83,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
           val actionsList   = testBench._2
           val referenceList = testBench._1
           // Creating a RemovedIntSequence without changing the generated sequence
-          seq = IntSequence(referenceList :+ 0)
+          var seq = IntSequence(referenceList :+ 0)
           seq = new RemovedIntSequence(seq, seq.explorerAtPosition(referenceList.size).get, 1)
           var modifiedList = referenceList
 
@@ -113,8 +113,9 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
           // Creating a InsertedIntSequence without changing the generated sequence
           val value                   = referenceList.head
           val referenceListMinusFirst = referenceList.drop(1)
+          var seq = IntSequence(referenceListMinusFirst)
           seq = new InsertedIntSequence(
-            IntSequence(referenceListMinusFirst),
+            seq,
             value,
             seq.explorerAtPosition(-1).get,
             1
@@ -144,7 +145,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
 
           val actionsList   = testBench._2
           val referenceList = testBench._1
-          seq = IntSequence(referenceList)
+          var seq = IntSequence(referenceList)
           var modifiedList = referenceList
 
           for (action <- actionsList) {
@@ -161,13 +162,13 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
 
   private def testExplorer(seq: IntSequence, modifiedList: List[Int]): Unit = {
     if (modifiedList.nonEmpty) {
-      ExplorerTestUtils.compareAllAttributes(seq.explorerAtPosition(0), 0, modifiedList)
-      ExplorerTestUtils.compareAllAttributes(
+      ExplorerTester.testExplorers(seq.explorerAtPosition(0), 0, modifiedList)
+      ExplorerTester.testExplorers(
         seq.explorerAtPosition(modifiedList.size - 1),
         modifiedList.size - 1,
         modifiedList
       )
-      ExplorerTestUtils.compareAllAttributes(
+      ExplorerTester.testExplorers(
         seq.explorerAtPosition((modifiedList.size - 1) / 2),
         (modifiedList.size - 1) / 2,
         modifiedList

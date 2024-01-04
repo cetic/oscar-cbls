@@ -86,7 +86,7 @@ object IntSequenceOperationsGenerator {
     onlyRemove: Boolean = false
   ): Gen[(List[Int], List[Operation])] = for {
     numElems   <- Gen.choose(20, maxConsideredSize)
-    numActions <- Gen.choose(20, 100)
+    numActions <- Gen.choose(20, maxConsideredSize)
     elems <- {
       genSeqSize.set(numElems)
       Gen.listOfN(numElems, elem)
@@ -155,15 +155,15 @@ case class MoveAfter(fromIncl: Int, toIncl: Int, after: Int, flip: Boolean) exte
     resultList
   }
 }
-case class Insert(value: Int, at: Int) extends Operation {
+case class Insert(value: Int, afterPosition: Int) extends Operation {
   override def perform(
     initialSeq: IntSequence,
     initialRefList: List[Int],
     fast: Boolean = true
   ): (IntSequence, List[Int]) = {
     val newSeq =
-      initialSeq.insertAfterPosition(value, initialSeq.explorerAtPosition(at).get, fast = fast)
-    val (front, back) = initialRefList.splitAt(at + 1)
+      initialSeq.insertAfterPosition(value, initialSeq.explorerAtPosition(afterPosition).get, fast = fast)
+    val (front, back) = initialRefList.splitAt(afterPosition + 1)
     val newRefList    = front ++ List(value) ++ back
     (newSeq, newRefList)
   }

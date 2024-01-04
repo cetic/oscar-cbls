@@ -38,14 +38,15 @@ class RemovedIntSequenceExplorer(
     // Just skip the removed point
     explorerInOriginalSequence.prev match {
       case None => None
-      case Some(tentativePos) =>
-        if (tentativePos.position == intSequence.explorerAtRemovePos.position)
-          tentativePos.prev match {
+      case Some(previousExplorerInOriginalSequence) =>
+        if (previousExplorerInOriginalSequence.position == intSequence.explorerAtRemovePos.position)
+          // At pos of removed point, need to go back once more
+          previousExplorerInOriginalSequence.prev match {
             case None => None
-            case Some(secondTentativePos) =>
-              Some(new RemovedIntSequenceExplorer(intSequence, position - 1, secondTentativePos))
+            case Some(previous2ExplorerInOriginalSequence) =>
+              Some(new RemovedIntSequenceExplorer(intSequence, position - 1, previous2ExplorerInOriginalSequence))
           }
-        else Some(new RemovedIntSequenceExplorer(intSequence, position - 1, tentativePos))
+        else Some(new RemovedIntSequenceExplorer(intSequence, position - 1, previousExplorerInOriginalSequence))
     }
   }
 
