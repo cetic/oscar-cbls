@@ -24,33 +24,40 @@ import scala.language.implicitConversions
 /** Companion object of [[IntSequence]] */
 object IntSequence {
 
-  /** Creates a ConcreteIntSequence from a sorted list of integers.
+  /** Creates a ConcreteIntSequence from an [[scala.Iterable]] of [[scala.Int]]
+    *
+    * Beware: in [[scala.Iterable]], the order do not always matter. But in IntSequence, the order
+    * does matter. If you give this constructor a collection where the order do not matter, an
+    * arbitrary order will be decided once and for all.
     *
     * @param values
-    *   The sorted integers as a [[scala.Iterable]] of [[scala.Int]]
+    *   The Int values used to initiate the sequence
     * @return
-    *   A [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]] with the sorted integers
+    *   A ConcreteIntSequence with the integers (ordered)
     */
   def apply(values: Iterable[Int]): IntSequence = {
-    val valuesArray     = values.toArray
-    val forwardRedBlack = RedBlackTreeMap.makeFromSortedContinuousArray(valuesArray)
-    val backwardRedBlack: RedBlackTreeMap[RedBlackTreeMap[Int]] =
+    val valuesArray             = values.toArray
+    val internalPositionToValue = RedBlackTreeMap.makeFromSortedContinuousArray(valuesArray)
+    val valueToInternalPositions: RedBlackTreeMap[RedBlackTreeMap[Int]] =
       aggregatePosOnValToInternalPosFrom(valuesArray)
 
     new ConcreteIntSequence(
-      forwardRedBlack,
-      backwardRedBlack,
+      internalPositionToValue,
+      valueToInternalPositions,
       PiecewiseUnitaryAffineFunction.identity,
       valuesArray.length
     )
   }
 
-  /** Creates an [[IntSequence]] from a sorted list of [[scala.Int]].
+  /** Creates the structure that'll hold the positions of each value in the sequence.
+    *
+    * It's a two level RedBclackTree structure. The first level holds the value of the sequence, the
+    * second one the positions of those values.
     *
     * @param values
-    *   The sorted integers as a [[scala.Iterable]] of [[scala.Int]]
+    *   The ordered values of the sequence
     * @return
-    *   An IntSequence with the sorted integers
+    *   The two level RedBlackTree holding the positons of each value
     */
   private def aggregatePosOnValToInternalPosFrom(
     values: Array[Int]
@@ -74,23 +81,6 @@ object IntSequence {
 
   implicit def toIterable(seq: IntSequence): IterableIntSequence = new IterableIntSequence(seq)
 }
-
-/** Companion object of [[Token]] */
-object Token {
-  def apply(): Token = new Token()
-}
-
-/** The identity of an [[IntSequence]].
-  *
-  * The idea behind this Token is to be able to quickly check if two IntSequence are the same. It
-  * allows us to say that a [[oscar.cbls.algo.sequence.stackedUpdate.StackedUpdateIntSequence]] is
-  * the same as a [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]] if they share the same
-  * [[Token]]. Which is mandatory since the regularization mechanism can be trigger any time.
-  *
-  * By default a new Token is created each time a new IntSequence is created. The only exception is
-  * during regularization where the Token is copied into the new ConcreteIntSequence
-  */
-class Token()
 
 /** Representation of an updatable Sequence of Integer.
   *
@@ -118,13 +108,15 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     this.explorerAtAnyOccurrence(value)
   )
 
-  // Returns the number of occurrence of the specified value
+  /** Returns the number of occurrence of the specified value */
   def nbOccurrence(value: Int): Int
 
-  // Returns the content of the sequence without duplicates
+  /** Returns the content of the sequence without duplicates */
   def unorderedContentNoDuplicate: List[Int]
 
-  // Returns the content of the sequence without duplicates associated with their number of occurrence
+  /** Returns the content of the sequence without duplicates associated with their number of
+    * occurrence
+    */
   def unorderedContentNoDuplicateWithNBOccurrences: List[(Int, Int)]
 
   /** Returns the optional value at the specified position
@@ -132,33 +124,31 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     * @param position
     *   The position where to search for the value
     * @return
-    *   [[scala.None]] if the position is out of the [[IntSequence]] size. Else [[scala.Some]] value
-    *   as [[scala.Int]]
+    *   None if the position is out of the IntSequence size. Else Some value
     */
   def valueAtPosition(position: Int): Option[Int]
 
-  // Returns all the positions of the specified value
+  /** Returns all the positions of the specified value */
   def positionsOfValue(value: Int): List[Int]
 
-  // Checks whether or not the IntSequence contains the specified value
+  /** Checks whether or not the IntSequence contains the specified value */
   def contains(value: Int): Boolean
 
   /** Returns an optional [[IntSequenceExplorer]] at the specified position
     *
     * @param position
-    *   The position of the value
+    *   The position where to search for the explorer
     * @return
-    *   [[scala.None]] if the position is out of the [[IntSequence]] size. Else [[scala.Some]]
-    *   [[IntSequenceExplorer]]
+    *   None if the position is out of the IntSequence size. Else Some IntSequenceExplorer
     */
   def explorerAtPosition(position: Int): Option[IntSequenceExplorer]
 
   /** Applies a function to each element of the sequence
     *
     * @param fun
-    *   The [[scala.Int]] to [[scala.Int]] function that will be applied to each element.
+    *   The function that will be applied to each element.
     * @return
-    *   A new [[IntSequence]] with modified values.
+    *   A new IntSequence with modified values.
     */
   def map(fun: Int => Int): IntSequence = {
     val l: List[Int] = this.iterator.toList
@@ -169,11 +159,11 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
   /** Returns the values between the specified positions (included)
     *
     * @param fromPositionIncluded
-    *   Starting position (included) as an [[scala.Int]]
+    *   Starting position (included)
     * @param toPositionIncluded
-    *   Ending position (included) as an [[scala.Int]]
+    *   Ending position (included)
     * @return
-    *   The values between the specified positions as a [[scala.List]] of [[scala.Int]]
+    *   The values between the included specified positions
     */
   def valuesBetweenPositions(fromPositionIncluded: Int, toPositionIncluded: Int): List[Int] = {
     require(
@@ -191,12 +181,11 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
   /** Returns the values and their positions between the specified positions (included)
     *
     * @param fromPositionIncluded
-    *   Starting position (included) as an [[scala.Int]]
+    *   Starting position (included)
     * @param toPositionIncluded
-    *   Ending position (included) as an [[scala.Int]]
+    *   Ending position (included)
     * @return
-    *   The values and their positions between the specified positions as a [[scala.List]] of
-    *   [[scala.Tuple2]] of [[scala.Int]]
+    *   The values and their positions between the included specified positions
     */
   def positionsAndValuesBetweenPositions(
     fromPositionIncluded: Int,
@@ -245,12 +234,13 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
       )
   }
 
-  /** Returns an [[IntSequenceExplorer]] at the first occurrence of the specified value
+  /** Returns [[scala.Some]] [[IntSequenceExplorer]] at the first occurrence of the specified value
+    * or [[scala.None]] if the value is not in the sequence.
     *
     * @param value
-    *   The value
+    *   The value we are looking for
     * @return
-    *   An [[IntSequenceExplorer]]
+    *   Some IntSequenceExplorer or None if not found
     */
   def explorerAtFirstOccurrence(value: Int): Option[IntSequenceExplorer] = {
     positionOfFirstOccurrence(value: Int) match {
@@ -259,12 +249,12 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     }
   }
 
-  /** Returns an [[IntSequenceExplorer]] at any occurrence of the specified value
+  /** Returns [[scala.Some]] [[IntSequenceExplorer]] at any occurrence of the specified value or [[scala.None]] if the value is not in the sequence.
     *
     * @param value
-    *   The value
+    *   The value we are looking for
     * @return
-    *   An [[IntSequenceExplorer]]
+    *   Some IntSequenceExplorer or None if not found
     */
   def explorerAtAnyOccurrence(value: Int): Option[IntSequenceExplorer] = {
     positionOfAnyOccurrence(value) match {
@@ -273,12 +263,12 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     }
   }
 
-  /** Returns an [[IntSequenceExplorer]] at the last occurrence of the specified value
+  /** Returns [[scala.Some]] [[IntSequenceExplorer]] at the last occurrence of the specified value or [[scala.None]] if the value is not in the sequence.
     *
     * @param value
-    *   The value
+    *   The value we are looking for
     * @return
-    *   An [[IntSequenceExplorer]]
+    *   Some IntSequenceExplorer or None if not found
     */
   def explorerAtLastOccurrence(value: Int): Option[IntSequenceExplorer] = {
     positionOfLastOccurrence(value: Int) match {
@@ -287,7 +277,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     }
   }
 
-  // Returns the position of the first occurrence of the specified value
+  /** Returns the position of the first occurrence of the specified value or [[scala.None]] if not found */
   def positionOfFirstOccurrence(value: Int): Option[Int] = {
     positionsOfValue(value) match {
       case Nil => None
@@ -295,7 +285,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     }
   }
 
-  // Returns the position of any occurrence of the specified value
+  /** Returns the position of any occurrence of the specified value or [[scala.None]] if not found */
   def positionOfAnyOccurrence(value: Int): Option[Int] = {
     positionsOfValue(value) match {
       case Nil => None
@@ -303,7 +293,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     }
   }
 
-  // Returns the position of the last occurrence of the specified value
+  /** Returns the position of the last occurrence of the specified value or [[scala.None]] if not found */
   def positionOfLastOccurrence(value: Int): Option[Int] = {
     positionsOfValue(value) match {
       case Nil => None
@@ -311,20 +301,20 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     }
   }
 
-  /** Inserts a the new value at the specified position.
+  /** Inserts a new value after the specified position.
     *
     * There is two ways to insert a new value, a fast and a normal one. If fast, it returns a
     * [[oscar.cbls.algo.sequence.stackedUpdate.StackedUpdateIntSequence]]. If normal, it computes a
     * brand new [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]].
     *
     * @param value
-    *   The value to insert as [[scala.Int]]
+    *   The value to insert
     * @param insertAfterPositionExplorer
-    *   The position where to insert the value as [[scala.Int]]
+    *   The position after which to insert the value
     * @param fast
-    *   Fast flag as [[scala.Boolean]] for more detail see description.
+    *   Fast flag (for more detail see description)
     * @return
-    *   An [[IntSequence]] with the new value
+    *   An IntSequence with the new value
     */
   def insertAfterPosition(
     value: Int,
@@ -440,13 +430,13 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     */
   def commitPendingMoves: IntSequence
 
-  // Checks if the sequence is coherent
+  /** Checks if the sequence is coherent */
   def check(): Unit = {}
 
-  // Checks if two IntSequence shares the same Token namely the same identity
+  /** Checks if two IntSequence shares the same Token namely the same identity */
   def quickEquals(that: IntSequence): Boolean = that != null && this.token == that.token
 
-  // Checks if two IntSequence shares the same Token or have the same elements
+  /** Checks if two IntSequence shares the same Token or have the same elements */
   def equals(that: IntSequence): Boolean = {
     quickEquals(that) || (that != null && (this.toList equals that.toList))
   }
@@ -455,5 +445,18 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     s"(length:$size)[${this.iterator.toList.mkString(",")}]"
   }
 
+  /** Special string used to recursively describe the whole IntSequence with all stacked updated */
   def descriptorString: String
 }
+
+/** The identity of an [[IntSequence]].
+  *
+  * The idea behind this Token is to be able to quickly check if two IntSequence are the same. It
+  * allows us to say that a [[oscar.cbls.algo.sequence.stackedUpdate.StackedUpdateIntSequence]] is
+  * the same as a [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]] if they share the same
+  * [[Token]]. Which is mandatory since the regularization mechanism can be trigger any time.
+  *
+  * By default a new Token is created each time a new IntSequence is created. The only exception is
+  * during regularization where the Token is copied into the new ConcreteIntSequence
+  */
+case class Token()
