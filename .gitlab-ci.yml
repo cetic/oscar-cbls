@@ -36,6 +36,8 @@ test:
 
 package:
   stage: package
+  only:
+    - main
   tags:
     - OSCAR_CBLS_TEST
   script:
@@ -43,6 +45,8 @@ package:
 
 doc:
   stage: doc
+  only:
+    - main
   tags:
     - OSCAR_CBLS_TEST
   script:
@@ -50,6 +54,8 @@ doc:
 
 publish:
   stage: publish
+  only:
+    - main
   tags:
     - OSCAR_CBLS_TEST
   script:
