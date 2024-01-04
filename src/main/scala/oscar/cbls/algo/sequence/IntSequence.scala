@@ -322,7 +322,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     fast: Boolean = false
   ): IntSequence
 
-  /** Removes the value at the specified position.
+  /** Removes the value at the specified position given by an explorer
     *
     * There is two ways to delete a value, a fast and a normal one. If fast, it returns a
     * [[oscar.cbls.algo.sequence.stackedUpdate.StackedUpdateIntSequence]]. If normal, it computes a
