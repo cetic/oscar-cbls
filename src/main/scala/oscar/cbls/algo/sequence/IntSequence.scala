@@ -130,7 +130,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
   /** Returns the optional value at the specified position
     *
     * @param position
-    *   The position of the value
+    *   The position where to search for the value
     * @return
     *   [[scala.None]] if the position is out of the [[IntSequence]] size. Else [[scala.Some]] value
     *   as [[scala.Int]]
