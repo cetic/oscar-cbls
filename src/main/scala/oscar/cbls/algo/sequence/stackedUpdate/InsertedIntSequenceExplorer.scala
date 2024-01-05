@@ -64,13 +64,10 @@ class InsertedIntSequenceExplorer(
   }
 
   override def prev: Option[IntSequenceExplorer] = {
+    if(position == 0) return Some(new RootIntSequenceExplorer(seq))
     val prevPosition = position - 1
     if (atInsertedValue) {
-      explorerInOriginalSequence match {
-        case e: RootIntSequenceExplorer => Some(e)
-        case _ =>
           Some(new InsertedIntSequenceExplorer(seq, prevPosition, explorerInOriginalSequence))
-      }
     } else {
       explorerInOriginalSequence.prev match {
         case None => None

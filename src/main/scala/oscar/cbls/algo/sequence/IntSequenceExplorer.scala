@@ -19,7 +19,7 @@ package oscar.cbls.algo.sequence
   */
 abstract class IntSequenceExplorer {
   /** The value at the current position */
-  val value: Int
+  def value: Int
   /** Returns the position of the value */
   def position: Int
   /** Returns the next explorer in the sequence or None if end of sequence */

@@ -145,15 +145,16 @@ object MovedIntSequence {
     }
 
     (moveType, oldPosRelativePosition, flip) match {
-      case (NotMoving, _, false)     => oldPos
-      case (_, Outside, _)           => oldPos
-      case (NotMoving, Inside, true) => -oldPos + fromIncluded + toIncluded
-      case (Forward, Inside, true)   => -oldPos + fromIncluded + after
-      case (Forward, Inside, false)  => oldPos - toIncluded + after
-      case (Forward, Between, _)     => oldPos + fromIncluded - toIncluded - 1
-      case (Backward, Inside, true)  => -oldPos + toIncluded + after + 1
-      case (Backward, Inside, false) => oldPos - fromIncluded + after + 1
-      case (Backward, Between, _)    => oldPos - fromIncluded + toIncluded + 1
+      case (NotMoving, _, false)      => oldPos
+      case (NotMoving, Between, true) => oldPos // shouldn't happen
+      case (_, Outside, _)            => oldPos
+      case (NotMoving, Inside, true)  => -oldPos + fromIncluded + toIncluded
+      case (Forward, Inside, true)    => -oldPos + fromIncluded + after
+      case (Forward, Inside, false)   => oldPos - toIncluded + after
+      case (Forward, Between, _)      => oldPos + fromIncluded - toIncluded - 1
+      case (Backward, Inside, true)   => -oldPos + toIncluded + after + 1
+      case (Backward, Inside, false)  => oldPos - fromIncluded + after + 1
+      case (Backward, Between, _)     => oldPos - fromIncluded + toIncluded + 1
     }
   }
 }

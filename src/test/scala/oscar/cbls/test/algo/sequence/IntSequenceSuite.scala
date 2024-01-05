@@ -5,8 +5,9 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.algo.sequence._
-import oscar.cbls.algo.sequence.concrete.ConcreteIntSequence
+import oscar.cbls.algo.sequence.concrete.{ConcreteIntSequence, EmptyIntSequence}
 import oscar.cbls.algo.sequence.stackedUpdate._
+import oscar.cbls.test.algo.sequence.ExplorerTester.{assert, intercept}
 
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -15,6 +16,37 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
 
   implicit def noShrink[T]: Shrink[T]   = Shrink.shrinkAny
   private val genSeqSize: AtomicInteger = new AtomicInteger(0)
+
+  test("Empty IntSequence behave as expected") {
+    val emptyIntSequence = IntSequence.empty()
+    emptyIntSequence.isInstanceOf[EmptyIntSequence] should be(true)
+
+    assert(
+      intercept[IllegalArgumentException](
+        emptyIntSequence.delete(emptyIntSequence.explorerAtPosition(-1).get)
+      ).getMessage.contains("Can't remove a value if the sequence is empty")
+    )
+
+    assert(
+      intercept[IllegalArgumentException](
+        emptyIntSequence.moveAfter(
+          emptyIntSequence.explorerAtPosition(-1).get,
+          emptyIntSequence.explorerAtPosition(-1).get,
+          emptyIntSequence.explorerAtPosition(-1).get,
+          flip = false
+        )
+      ).getMessage.contains("Can't move values if the sequence is empty")
+    )
+
+    val nonEmptyConcreteIntSequence = emptyIntSequence.insertAfterPosition(1, emptyIntSequence.explorerAtPosition(-1).get)
+    nonEmptyConcreteIntSequence.isEmpty should be(false)
+    nonEmptyConcreteIntSequence.size should be(1)
+    nonEmptyConcreteIntSequence.explorerAtPosition(0).get.value should be(1)
+
+    val emptyIntSequence2 = nonEmptyConcreteIntSequence.delete(nonEmptyConcreteIntSequence.explorerAtPosition(0).get)
+    emptyIntSequence2.isInstanceOf[EmptyIntSequence] should be(true)
+
+  }
 
   test("ConcreteIntSequence : batch queries keep expected list") {
     forAll(
@@ -25,8 +57,8 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
         whenever(testBench._1.size >= 5) {
           val actionsList   = testBench._2
           val referenceList = testBench._1
-          var seq = IntSequence(referenceList)
-          var modifiedList = referenceList
+          var seq           = IntSequence(referenceList)
+          var modifiedList  = referenceList
 
           for (action <- actionsList) {
             val newValues = action.perform(seq, modifiedList, fast = false)
@@ -113,13 +145,8 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
           // Creating a InsertedIntSequence without changing the generated sequence
           val value                   = referenceList.head
           val referenceListMinusFirst = referenceList.drop(1)
-          var seq = IntSequence(referenceListMinusFirst)
-          seq = new InsertedIntSequence(
-            seq,
-            value,
-            seq.explorerAtPosition(-1).get,
-            1
-          )
+          var seq                     = IntSequence(referenceListMinusFirst)
+          seq = new InsertedIntSequence(seq, value, seq.explorerAtPosition(-1).get, 1)
           var modifiedList = referenceList
 
           for (action <- actionsList) {
@@ -145,8 +172,8 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
 
           val actionsList   = testBench._2
           val referenceList = testBench._1
-          var seq = IntSequence(referenceList)
-          var modifiedList = referenceList
+          var seq           = IntSequence(referenceList)
+          var modifiedList  = referenceList
 
           for (action <- actionsList) {
             val newValues = action.perform(seq, modifiedList)
@@ -162,17 +189,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
 
   private def testExplorer(seq: IntSequence, modifiedList: List[Int]): Unit = {
     if (modifiedList.nonEmpty) {
-      ExplorerTester.testExplorers(seq.explorerAtPosition(0), 0, modifiedList)
-      ExplorerTester.testExplorers(
-        seq.explorerAtPosition(modifiedList.size - 1),
-        modifiedList.size - 1,
-        modifiedList
-      )
-      ExplorerTester.testExplorers(
-        seq.explorerAtPosition((modifiedList.size - 1) / 2),
-        (modifiedList.size - 1) / 2,
-        modifiedList
-      )
+      ExplorerTester.testExplorers(seq.explorerAtPosition(-1).get, modifiedList)
     }
   }
 

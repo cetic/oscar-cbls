@@ -6,7 +6,9 @@ import oscar.cbls.algo.sequence._
   * Meant to ease the insertion/move at position 0.
   */
 class RootIntSequenceExplorer(originalSequence: IntSequence) extends IntSequenceExplorer {
-  override val value: Int = Int.MinValue
+  override def value: Int = throw new NoSuchElementException(
+    "RootIntSequenceExplorer doesn't have any value since it's not part of the sequence."
+  )
 
   override def position: Int = -1
 
@@ -18,4 +20,8 @@ class RootIntSequenceExplorer(originalSequence: IntSequence) extends IntSequence
   }
 
   override def prev: Option[IntSequenceExplorer] = None
+
+  override def prevUntil(f: IntSequenceExplorer => Boolean): Option[IntSequenceExplorer] = None
+
+  override def prevUntilValue(value: Int): Option[IntSequenceExplorer] = None
 }

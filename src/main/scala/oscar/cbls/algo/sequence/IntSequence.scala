@@ -72,12 +72,7 @@ object IntSequence {
   }
 
   /** Creates an empty [[IntSequence]] * */
-  def empty(): IntSequence = new ConcreteIntSequence(
-    RedBlackTreeMap.empty[Int],
-    RedBlackTreeMap.empty[RedBlackTreeMap[Int]],
-    PiecewiseUnitaryAffineFunction.identity,
-    0
-  )
+  def empty(): IntSequence = EmptyIntSequence()
 
   implicit def toIterable(seq: IntSequence): IterableIntSequence = new IterableIntSequence(seq)
 }
@@ -124,7 +119,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     * @param position
     *   The position where to search for the value
     * @return
-    *   None if the position is out of the IntSequence size. Else Some value
+    *   None if the position is not in the IntSequence size. Else Some value
     */
   def valueAtPosition(position: Int): Option[Int]
 
@@ -136,10 +131,14 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
 
   /** Returns an optional [[IntSequenceExplorer]] at the specified position
     *
+    * If the required position is -1, it'll return a [[RootIntSequenceExplorer]] so that the user is
+    * able to insert at the front of the sequence. After position -1.
+    *
     * @param position
     *   The position where to search for the explorer
     * @return
-    *   None if the position is out of the IntSequence size. Else Some IntSequenceExplorer
+    *   None if the position is not in the IntSequence size nor equal to -1. Else Some
+    *   IntSequenceExplorer
     */
   def explorerAtPosition(position: Int): Option[IntSequenceExplorer]
 
@@ -249,7 +248,8 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     }
   }
 
-  /** Returns [[scala.Some]] [[IntSequenceExplorer]] at any occurrence of the specified value or [[scala.None]] if the value is not in the sequence.
+  /** Returns [[scala.Some]] [[IntSequenceExplorer]] at any occurrence of the specified value or
+    * [[scala.None]] if the value is not in the sequence.
     *
     * @param value
     *   The value we are looking for
@@ -263,7 +263,8 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     }
   }
 
-  /** Returns [[scala.Some]] [[IntSequenceExplorer]] at the last occurrence of the specified value or [[scala.None]] if the value is not in the sequence.
+  /** Returns [[scala.Some]] [[IntSequenceExplorer]] at the last occurrence of the specified value
+    * or [[scala.None]] if the value is not in the sequence.
     *
     * @param value
     *   The value we are looking for
@@ -277,7 +278,9 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     }
   }
 
-  /** Returns the position of the first occurrence of the specified value or [[scala.None]] if not found */
+  /** Returns the position of the first occurrence of the specified value or [[scala.None]] if not
+    * found
+    */
   def positionOfFirstOccurrence(value: Int): Option[Int] = {
     positionsOfValue(value) match {
       case Nil => None
@@ -285,7 +288,8 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     }
   }
 
-  /** Returns the position of any occurrence of the specified value or [[scala.None]] if not found */
+  /** Returns the position of any occurrence of the specified value or [[scala.None]] if not found
+    */
   def positionOfAnyOccurrence(value: Int): Option[Int] = {
     positionsOfValue(value) match {
       case Nil => None
@@ -293,7 +297,9 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     }
   }
 
-  /** Returns the position of the last occurrence of the specified value or [[scala.None]] if not found */
+  /** Returns the position of the last occurrence of the specified value or [[scala.None]] if not
+    * found
+    */
   def positionOfLastOccurrence(value: Int): Option[Int] = {
     positionsOfValue(value) match {
       case Nil => None
@@ -337,8 +343,8 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     */
   def delete(removePosAsExplorer: IntSequenceExplorer, fast: Boolean = false): IntSequence
 
-  /** Moves a subsequence of values after a position and optionally flip it. The subsequence of values is
-    * identified by the starting and ending position.
+  /** Moves a subsequence of values after a position and optionally flip it. The subsequence of
+    * values is identified by the starting and ending position.
     *
     * There is two ways to move values, a fast and a normal one. If fast, it returns a
     * [[oscar.cbls.algo.sequence.stackedUpdate.StackedUpdateIntSequence]]. If normal, it computes a
@@ -370,8 +376,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     * There is two ways to move values, a fast and a normal one. If fast, it returns a
     * [[oscar.cbls.algo.sequence.stackedUpdate.StackedUpdateIntSequence]]. If normal, it computes a
     * brand new [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]].
-
-
+    *
     * @param fast
     *   Fast flag (for more detail see description)
     * @return
@@ -420,7 +425,8 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     *     this.token
     *
     * @param targetToken
-    *   The identity token to give at the resulting [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]]
+    *   The identity token to give at the resulting
+    *   [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]]
     * @return
     *   A [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]] with no Pivot
     */

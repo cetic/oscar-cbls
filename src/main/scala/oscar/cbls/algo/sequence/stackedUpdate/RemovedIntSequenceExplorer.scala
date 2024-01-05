@@ -14,6 +14,7 @@
 package oscar.cbls.algo.sequence.stackedUpdate
 
 import oscar.cbls.algo.sequence.IntSequenceExplorer
+import oscar.cbls.algo.sequence.concrete.RootIntSequenceExplorer
 
 /** A stacked explorer dedicated for [[MovedIntSequence]].
   *
@@ -28,13 +29,14 @@ import oscar.cbls.algo.sequence.IntSequenceExplorer
   *   The original explorer, that is with the removed point
   */
 class RemovedIntSequenceExplorer(
-  intSequence: RemovedIntSequence,
+  val intSequence: RemovedIntSequence,
   val position: Int,
   explorerInOriginalSequence: IntSequenceExplorer
 ) extends IntSequenceExplorer {
   override val value: Int = explorerInOriginalSequence.value
 
   override def prev: Option[IntSequenceExplorer] = {
+    if(position == 0) return Some(new RootIntSequenceExplorer(intSequence))
     // Just skip the removed point
     explorerInOriginalSequence.prev match {
       case None => None
@@ -44,9 +46,11 @@ class RemovedIntSequenceExplorer(
           previousExplorerInOriginalSequence.prev match {
             case None => None
             case Some(previous2ExplorerInOriginalSequence) =>
-              Some(new RemovedIntSequenceExplorer(intSequence, position - 1, previous2ExplorerInOriginalSequence))
+                Some(new RemovedIntSequenceExplorer(intSequence, position - 1, previous2ExplorerInOriginalSequence))
           }
-        else Some(new RemovedIntSequenceExplorer(intSequence, position - 1, previousExplorerInOriginalSequence))
+        else {
+            Some(new RemovedIntSequenceExplorer(intSequence, position - 1, previousExplorerInOriginalSequence))
+        }
     }
   }
 
