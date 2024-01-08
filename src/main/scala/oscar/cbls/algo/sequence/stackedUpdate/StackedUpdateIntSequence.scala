@@ -124,6 +124,4 @@ abstract class StackedUpdateIntSequence(depth: Int, maxDepth: Int = 20)
 
   override def regularize(targetToken: Token = this.token): IntSequence =
     commitPendingMoves.regularize(targetToken)
-
-  def originalExplorerAtPosition(position: Int): Option[IntSequenceExplorer]
 }

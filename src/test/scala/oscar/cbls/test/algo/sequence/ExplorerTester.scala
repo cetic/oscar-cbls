@@ -31,27 +31,27 @@ object ExplorerTester extends AnyFunSuite with Matchers {
   }
 
   private def testToPosition(explorer: IntSequenceExplorer, referenceList: List[Int]): Unit = {
-    val explorerAtRoot = explorer.toPosition(-1)
+    val explorerAtRoot = explorer.goToPosition(-1)
     explorerAtRoot.isDefined should be(true)
     explorerAtRoot.get.position should be(-1)
 
-    val explorerAtEnd = explorerAtRoot.get.toPosition(referenceList.size - 1)
+    val explorerAtEnd = explorerAtRoot.get.goToPosition(referenceList.size - 1)
     explorerAtEnd.isDefined should be(true)
     explorerAtEnd.get.position should be(referenceList.size - 1)
 
-    val exception = intercept[IllegalArgumentException](explorerAtEnd.get.toPosition(Int.MinValue))
+    val exception = intercept[IllegalArgumentException](explorerAtEnd.get.goToPosition(Int.MinValue))
     assert(exception.getMessage.contains("requirement failed"))
-    explorerAtRoot.get.toPosition(Int.MaxValue).isDefined should be(false)
+    explorerAtRoot.get.goToPosition(Int.MaxValue).isDefined should be(false)
 
     for (testPosition <- 1 until referenceList.size - 1) {
-      val reachedExplorer = explorerAtRoot.get.toPosition(testPosition)
+      val reachedExplorer = explorerAtRoot.get.goToPosition(testPosition)
       reachedExplorer.isDefined should be(true)
       reachedExplorer.get.position should be(testPosition)
       reachedExplorer.get.value should be(referenceList(testPosition))
     }
 
     for (testPosition <- 1 until referenceList.size - 1) {
-      val reachedExplorer = explorerAtEnd.get.toPosition(testPosition)
+      val reachedExplorer = explorerAtEnd.get.goToPosition(testPosition)
       reachedExplorer.isDefined should be(true)
       reachedExplorer.get.position should be(testPosition)
       reachedExplorer.get.value should be(referenceList(testPosition))
@@ -64,8 +64,8 @@ object ExplorerTester extends AnyFunSuite with Matchers {
     val firstValue: Int          = referenceList.head
     val lastValue: Int           = referenceList.last
 
-    val explorerAtStart: IntSequenceExplorer = explorer.toPosition(0).get
-    val explorerAtEnd: IntSequenceExplorer   = explorer.toPosition(referenceList.size - 1).get
+    val explorerAtStart: IntSequenceExplorer = explorer.goToPosition(0).get
+    val explorerAtEnd: IntSequenceExplorer   = explorer.goToPosition(referenceList.size - 1).get
 
     var searchResult: Option[IntSequenceExplorer] = None
 
@@ -135,7 +135,7 @@ object ExplorerTester extends AnyFunSuite with Matchers {
   private def testForeach(explorer: IntSequenceExplorer, referenceList: List[Int]): Unit = {
     var listForEach: List[Int] = List.empty
     explorer
-      .toPosition(0)
+      .goToPosition(0)
       .get
       .foreach(e => {
         listForEach = listForEach :+ e.value
@@ -148,7 +148,7 @@ object ExplorerTester extends AnyFunSuite with Matchers {
     referenceList: List[Int]
   ): Unit = {
     // RootExplorer test
-    val explorerAtStart = startingExplorer.toPosition(0)
+    val explorerAtStart = startingExplorer.goToPosition(0)
     explorerAtStart.get.value should be(referenceList.head)
     val explorerAtRoot = explorerAtStart.get.prev
     explorerAtRoot.isDefined should be(true)

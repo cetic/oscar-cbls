@@ -131,7 +131,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
 
   /** Returns an optional [[IntSequenceExplorer]] at the specified position
     *
-    * If the required position is -1, it'll return a [[RootIntSequenceExplorer]] so that the user is
+    * If the required position is -1, it'll return a [[concrete.RootIntSequenceExplorer]] so that the user is
     * able to insert at the front of the sequence. After position -1.
     *
     * @param position

@@ -74,12 +74,6 @@ class InsertedIntSequence(
     if (oldPOs <= insertAfterPos) oldPOs else oldPOs + 1
   }
 
-  override def originalExplorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
-    if (position == insertAfterPos) Some(insertAfterPosExplorer)
-    else if (position == insertAfterPos + 1) originalExplorerAtInsertPosition
-    else intSequence.explorerAtPosition(position)
-  }
-
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
     if (position == -1) Some(new RootIntSequenceExplorer(this))
     else if (position == insertAfterPos + 1) {
@@ -96,7 +90,7 @@ class InsertedIntSequence(
           intSequence.explorerAtPosition(originPos)
         else
           // Position is close enough to use next/prev (O(1)) on the known explorer
-          originalExplorerAtInsertPosition.get.toPosition(originPos)
+          originalExplorerAtInsertPosition.get.goToPosition(originPos)
       }
 
       explorer match {

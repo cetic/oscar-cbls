@@ -35,14 +35,14 @@ abstract class IntSequenceExplorer {
     * @return
     *   The IntSequenceExplorer if it exists
     */
-  def toPosition(position: Int): Option[IntSequenceExplorer] = {
+  def goToPosition(position: Int): Option[IntSequenceExplorer] = {
     require(position >= -1)
     if (this.position == position) Some(this)
     else {
       val explorer =
         if (this.position > position) prev
         else next
-      if (explorer.nonEmpty) explorer.get.toPosition(position)
+      if (explorer.nonEmpty) explorer.get.goToPosition(position)
       else None
     }
   }

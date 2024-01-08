@@ -220,7 +220,10 @@ class MovedIntSequence(
     flip
   )
 
-  override def originalExplorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
+  /** Returns the explorer of the previous IntSequence at the given position. Ease the access to
+    * "strategic explorer"
+    */
+  def originalExplorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
     if (position < 0) None
     else if (position == fromIncludedExplorer.position - 1)
       originalExplorerBeforeFromPositionIncluded
@@ -257,7 +260,7 @@ class MovedIntSequence(
 
   // Returns the new position of the specified old position
   private def oldPosToNewPos(oldPos: Int): Int = {
-    val tmp = MovedIntSequence.oldPosToNewPos(
+    val old2new = MovedIntSequence.oldPosToNewPos(
       oldPos,
       fromIncludedExplorer.position,
       toIncludedExplorer.position,
@@ -265,10 +268,10 @@ class MovedIntSequence(
       flip
     )
     assert(
-      tmp == localBijection.backward(oldPos),
-      s"oldPosToNewPos method got $tmp. Should be : ${localBijection.backward(oldPos)}"
+      old2new == localBijection.backward(oldPos),
+      s"oldPosToNewPos method got $old2new. Should be : ${localBijection.backward(oldPos)}"
     )
-    tmp
+    old2new
   }
 
   override def positionsOfValue(value: Int): List[Int] = {

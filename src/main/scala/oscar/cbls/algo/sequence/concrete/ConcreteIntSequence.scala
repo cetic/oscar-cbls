@@ -158,7 +158,7 @@ class ConcreteIntSequence(
       cacheFirstEmptySlot -= 1
     }
 
-    for (index <- cacheFirstEmptySlot + 1 until cacheSize) {
+    for (index <- cacheSize-1 to cacheFirstEmptySlot + 1 by -1) {
       intSequenceExplorerCache(index) match {
         case Some(explorer) if explorer.position == position =>
           putUsedExplorerAtBack(index)
@@ -291,13 +291,13 @@ class ConcreteIntSequence(
       s"inserting past the end of the sequence (size: $size inserting after pos: $insertAfterPos)"
     )
 
+    if (fast) return new InsertedIntSequence(this, value, insertAfterPositionExplorer, 1)
+
     /* 1° Inserts the value at startFreeRangeForInternalPosition 2° Adds necessary pivot to match
        it's position within the external position ex : Insertion of x at pos 8 and the sequence is
        of size 13. First free internal space is 13 (the current size) Insert at 13 and add a pivot
        : from 13 to 13 moving x 5 position earlier
       */
-
-    if (fast) return new InsertedIntSequence(this, value, insertAfterPositionExplorer, 1)
 
     // insert into red blacks
     val newInternalPositionToValue =
