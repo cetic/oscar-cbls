@@ -40,16 +40,16 @@ class RemovedIntSequenceExplorer(
     // Just skip the removed point
     explorerInOriginalSequence.prev match {
       case None => None
-      case Some(previousExplorerInOriginalSequence) =>
-        if (previousExplorerInOriginalSequence.position == intSequence.explorerAtRemovePos.position)
+      case Some(prevPrevExplorerInOriginalSequence) =>
+        if (prevPrevExplorerInOriginalSequence.position == intSequence.explorerAtRemovePos.position)
           // At pos of removed point, need to go back once more
-          previousExplorerInOriginalSequence.prev match {
+          prevPrevExplorerInOriginalSequence.prev match {
             case None => None
             case Some(previous2ExplorerInOriginalSequence) =>
                 Some(new RemovedIntSequenceExplorer(intSequence, position - 1, previous2ExplorerInOriginalSequence))
           }
         else {
-            Some(new RemovedIntSequenceExplorer(intSequence, position - 1, previousExplorerInOriginalSequence))
+            Some(new RemovedIntSequenceExplorer(intSequence, position - 1, prevPrevExplorerInOriginalSequence))
         }
     }
   }
@@ -58,14 +58,14 @@ class RemovedIntSequenceExplorer(
     // Just skip the removed point
     explorerInOriginalSequence.next match {
       case None => None
-      case Some(tentativePos) =>
-        if (tentativePos.position == intSequence.explorerAtRemovePos.position)
-          tentativePos.next match {
+      case Some(nextExplorerInOriginalSequence) =>
+        if (nextExplorerInOriginalSequence.position == intSequence.explorerAtRemovePos.position)
+          nextExplorerInOriginalSequence.next match {
             case None => None
-            case Some(secondTentativePos) =>
-              Some(new RemovedIntSequenceExplorer(intSequence, position + 1, secondTentativePos))
+            case Some(nextNextExplorerInOriginalSequence) =>
+              Some(new RemovedIntSequenceExplorer(intSequence, position + 1, nextNextExplorerInOriginalSequence))
           }
-        else Some(new RemovedIntSequenceExplorer(intSequence, position + 1, tentativePos))
+        else Some(new RemovedIntSequenceExplorer(intSequence, position + 1, nextExplorerInOriginalSequence))
     }
   }
 }
