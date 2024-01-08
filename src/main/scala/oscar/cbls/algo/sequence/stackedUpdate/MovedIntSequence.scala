@@ -19,6 +19,25 @@ import oscar.cbls.algo.sequence.concrete.RootIntSequenceExplorer
 import oscar.cbls.algo.sequence.stackedUpdate.MoveType._
 import oscar.cbls.algo.sequence.stackedUpdate.PositionInMovement._
 
+/* Describes the movement */
+sealed abstract class MoveType
+object MoveType {
+  case object NotMoving extends MoveType
+  case object Forward   extends MoveType
+  case object Backward  extends MoveType
+}
+
+/* Describes the position of a node relatively to the movement */
+sealed abstract class PositionInMovement
+object PositionInMovement {
+  /* Inside the moved segment */
+  case object Inside extends PositionInMovement
+  /* Between the moved segment and the moveAfter position */
+  case object Between extends PositionInMovement
+  /* Before or after the moved segment and the moveAfter position */
+  case object Outside extends PositionInMovement
+}
+
 /** Companion object of [[MovedIntSequence]] * */
 object MovedIntSequence {
 
@@ -286,23 +305,4 @@ class MovedIntSequence(
   override def valueAtPosition(position: Int): Option[Int] = {
     seq.valueAtPosition(localBijection(position))
   }
-}
-
-/* Describes the movement */
-sealed abstract class MoveType
-object MoveType {
-  case object NotMoving extends MoveType
-  case object Forward   extends MoveType
-  case object Backward  extends MoveType
-}
-
-/* Describes the position of a node relatively to the movement */
-sealed abstract class PositionInMovement
-object PositionInMovement {
-  /* Inside the moved segment */
-  case object Inside extends PositionInMovement
-  /* Between the moved segment and the moveAfter position */
-  case object Between extends PositionInMovement
-  /* Before or after the moved segment and the moveAfter position */
-  case object Outside extends PositionInMovement
 }
