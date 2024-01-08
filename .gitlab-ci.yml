@@ -23,14 +23,14 @@ stages:
 build:
   stage: build
   tags:
-    - OSCAR_CBLS_TEST
+    - OSCAR_CBLS
   script:
     - sbt clean compile
 
 test:
   stage: test
   tags:
-    - OSCAR_CBLS_TEST
+    - OSCAR_CBLS
   script:
     - sbt test
 
@@ -39,7 +39,7 @@ package:
   only:
     - main
   tags:
-    - OSCAR_CBLS_TEST
+    - OSCAR_CBLS
   script:
     - sbt clean package packageDoc
 
@@ -48,7 +48,7 @@ doc:
   only:
     - main
   tags:
-    - OSCAR_CBLS_TEST
+    - OSCAR_CBLS
   script:
     - sbt doc
 
@@ -57,6 +57,6 @@ publish:
   only:
     - main
   tags:
-    - OSCAR_CBLS_TEST
+    - OSCAR_CBLS
   script:
     - sbt publish
