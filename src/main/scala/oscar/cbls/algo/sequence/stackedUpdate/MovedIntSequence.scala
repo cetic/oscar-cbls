@@ -224,7 +224,7 @@ class MovedIntSequence(
     * "strategic explorer"
     */
   def originalExplorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
-    if (position < 0) None
+    if (position < -1) None
     else if (position == fromIncludedExplorer.position - 1)
       originalExplorerBeforeFromPositionIncluded
     else if (position == fromIncludedExplorer.position) Some(fromIncludedExplorer)
