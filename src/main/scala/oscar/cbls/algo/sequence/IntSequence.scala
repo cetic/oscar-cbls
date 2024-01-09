@@ -330,7 +330,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
 
   /** Removes the value at the specified position given by an explorer
     *
-    * There is two ways to delete a value, a fast and a normal one. If fast, it returns a
+    * There is two ways of removing a value, a fast and a normal one. If fast, it returns a
     * [[oscar.cbls.algo.sequence.stackedUpdate.StackedUpdateIntSequence]]. If normal, it computes a
     * brand new [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]].
     *
@@ -341,7 +341,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     * @return
     *   An [[IntSequence]] without the value at the specified position
     */
-  def delete(removePosAsExplorer: IntSequenceExplorer, fast: Boolean = false): IntSequence
+  def remove(removePosAsExplorer: IntSequenceExplorer, fast: Boolean = false): IntSequence
 
   /** Moves a subsequence of values after a position and optionally flip it. The subsequence of
     * values is identified by the starting and ending position.

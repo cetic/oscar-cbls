@@ -88,7 +88,7 @@ class RemovedIntSequence(
   }
 
   override def commitPendingMoves: IntSequence =
-    originalSequence.commitPendingMoves.delete(this.explorerAtRemovePos)
+    originalSequence.commitPendingMoves.remove(this.explorerAtRemovePos)
 
   override def valueAtPosition(position: Int): Option[Int] = {
     if (position >= this.explorerAtRemovePos.position)

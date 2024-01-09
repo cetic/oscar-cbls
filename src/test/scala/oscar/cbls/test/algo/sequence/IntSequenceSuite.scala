@@ -10,6 +10,7 @@ import oscar.cbls.algo.sequence.stackedUpdate._
 import oscar.cbls.test.algo.sequence.ExplorerTester.{assert, intercept}
 
 import java.util.concurrent.atomic.AtomicInteger
+import scala.util.Random
 
 class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
   private val maxConsideredSize = 200
@@ -23,7 +24,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
 
     assert(
       intercept[IllegalArgumentException](
-        emptyIntSequence.delete(emptyIntSequence.explorerAtPosition(-1).get)
+        emptyIntSequence.remove(emptyIntSequence.explorerAtPosition(-1).get)
       ).getMessage.contains("Can't remove a value if the sequence is empty")
     )
 
@@ -43,7 +44,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
     nonEmptyConcreteIntSequence.size should be(1)
     nonEmptyConcreteIntSequence.explorerAtPosition(0).get.value should be(1)
 
-    val emptyIntSequence2 = nonEmptyConcreteIntSequence.delete(nonEmptyConcreteIntSequence.explorerAtPosition(0).get)
+    val emptyIntSequence2 = nonEmptyConcreteIntSequence.remove(nonEmptyConcreteIntSequence.explorerAtPosition(0).get)
     emptyIntSequence2.isInstanceOf[EmptyIntSequence] should be(true)
 
   }
@@ -176,7 +177,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
           var modifiedList  = referenceList
 
           for (action <- actionsList) {
-            val newValues = action.perform(seq, modifiedList)
+            val newValues = action.perform(seq, modifiedList, fast = Random.nextBoolean())
             seq = newValues._1
             modifiedList = newValues._2
           }

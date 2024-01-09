@@ -60,9 +60,10 @@ object PiecewiseUnitaryAffineFunction {
     f.transformation.values
 }
 
-/** A piecewise unitary affine function matching the external and the internal position of each
-  * element of a [[IntSequence]].
+/** A piecewise unitary affine function matching an old value to its new value.
   *
+  * Here it's mainly used to match the external and the internal position of each element of a
+  * [[IntSequence]] :
   * To avoid expensive modification by moving values around upon insertion/deletion/movements in the
   * [[IntSequence]], we use a PiecewiseSequenceShiftingBijection. It's composed of a sorted list of
   * [[Pivot]] (stored in a [[oscar.cbls.algo.rb.RedBlackTreeMap]]) which represents the changes made
@@ -129,7 +130,8 @@ class PiecewiseUnitaryAffineFunction(
   /** Returns the number of [[Pivot]] */
   def nbPivot: Int = transformation.size
 
-  /** Optionally returns a [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] of the first pivot of the sequence.
+  /** Optionally returns a [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] of the first pivot of the
+    * sequence.
     *
     * @return
     *   The [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] or [[scala.None]]
@@ -141,7 +143,8 @@ class PiecewiseUnitaryAffineFunction(
     }
   }
 
-  /** Optionally returns a [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] of the pivot applying at the given position.
+  /** Optionally returns a [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] of the pivot applying at
+    * the given position.
     *
     * @param position
     *   The position on which the pivot must apply

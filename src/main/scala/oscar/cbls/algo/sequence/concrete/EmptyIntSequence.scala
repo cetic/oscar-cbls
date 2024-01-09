@@ -34,7 +34,7 @@ case class EmptyIntSequence() extends IntSequence(depth = 0) {
     IntSequence(List(value))
   }
 
-  override def delete(removePosAsExplorer: IntSequenceExplorer, fast: Boolean): IntSequence = {
+  override def remove(removePosAsExplorer: IntSequenceExplorer, fast: Boolean): IntSequence = {
     require(requirement = false, "Can't remove a value if the sequence is empty")
     this
   }

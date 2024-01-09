@@ -61,22 +61,35 @@ class ConcreteIntSequence(
 
   /* During exploration we often use the getExplorerAt(...) method. This call is expensive (Log(n))
      Furthermore, the same explorer may be called several times in a row. The idea here is to add a
-     tiny cache (this class could be created thousands of time during the search) to kee track of
+     tiny cache (this class could be created thousands of time during the search) to keep track of
      the last used explorer and returning it as fast as possible. We use an sorted array where the
-     explorer at the end are those most recently used. Initiated with None values
-  */
+     explorers at the start are those most recently used. Initiated with None values
+   */
   private val cacheSize           = 10
-  private var cacheFirstEmptySlot = cacheSize - 1
-  private val intSequenceExplorerCache: Array[Option[IntSequenceExplorer]] =
-    Array.fill(cacheSize)(None)
+  private var cacheFirstEmptySlot = 0
+  private val intSequenceExplorerCache: Array[IntSequenceExplorer] =
+    Array.fill(cacheSize)(null)
 
-  // TODO: replace internalPositionToValue by an immutable Array, or an immutable array + a small RBTree + size
+  // Moving the explorer at position to the start of the cache
+  private def putUsedExplorerAtStart(usedExplorerIndex: Int): Unit = {
+    val explorer = intSequenceExplorerCache(usedExplorerIndex)
+    shiftCachePrevIndexToTheRight(usedExplorerIndex)
+    intSequenceExplorerCache(0) = explorer
+  }
+
+  // Recursively moves the value at index-1 to index and move to prev index
+  @tailrec
+  private def shiftCachePrevIndexToTheRight(index: Int): Unit = {
+    if (index > 0) {
+      intSequenceExplorerCache(index) = intSequenceExplorerCache(index - 1)
+      shiftCachePrevIndexToTheRight(index - 1)
+    }
+  }
 
   override def descriptorString: String =
     s"[${this.iterator.toList.mkString(",")}]_impl:concrete"
 
   override def check(): Unit = {
-    // externalToInternalPosition.checkBijection()
     require(
       internalPositionToValue.content.sortBy(_._1) equals valueToInternalPositions.content
         .flatMap({ case (a, b) => b.keys.map(x => (x, a)) })
@@ -130,50 +143,34 @@ class ConcreteIntSequence(
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
     if (position == -1) return Some(new RootIntSequenceExplorer(this))
 
-    // Moving the explorer at position to the end of the related array
-    def putUsedExplorerAtBack(usedExplorerIndex: Int): Unit = {
-      val explorer = intSequenceExplorerCache(usedExplorerIndex)
-      recursiveMoveDown(usedExplorerIndex)
-      intSequenceExplorerCache(cacheSize - 1) = explorer
-    }
-
-    // Recursively moves the value at index+1 to index and move to next index
-    @tailrec
-    def recursiveMoveDown(index: Int): Unit = {
-      if (index < cacheSize - 1) {
-        intSequenceExplorerCache(index) = intSequenceExplorerCache(index + 1)
-        recursiveMoveDown(index + 1)
-      }
-    }
-
     // Shifts every explorer to the left and adds the new one at the end of the array
-    def insertExplorerAtEnd(explorer: Option[IntSequenceExplorer]): Unit = {
-      recursiveMoveDown(0)
-      intSequenceExplorerCache(cacheSize - 1) = explorer
+    def insertExplorerAtStart(explorer: IntSequenceExplorer): Unit = {
+      shiftCachePrevIndexToTheRight(cacheSize - 1)
+      intSequenceExplorerCache(0) = explorer
     }
 
     // Puts the explorer at the first free space (starting at the end).
-    def insertExplorerAtFreeSpace(explorer: Option[IntSequenceExplorer]): Unit = {
+    def insertExplorerAtFreeSpace(explorer: IntSequenceExplorer): Unit = {
       intSequenceExplorerCache(cacheFirstEmptySlot) = explorer
-      cacheFirstEmptySlot -= 1
+      cacheFirstEmptySlot += 1
     }
 
-    for (index <- cacheSize-1 to cacheFirstEmptySlot + 1 by -1) {
+    for (index <- 0 until cacheFirstEmptySlot) {
       intSequenceExplorerCache(index) match {
-        case Some(explorer) if explorer.position == position =>
-          putUsedExplorerAtBack(index)
-          return intSequenceExplorerCache(cacheSize - 1)
+        case explorer: IntSequenceExplorer if explorer.position == position =>
+          putUsedExplorerAtStart(index)
+          return Some(intSequenceExplorerCache(0))
         case _ =>
       }
     }
 
     val optExplorer = computeExplorerAtPosition(position)
-    (optExplorer, cacheFirstEmptySlot < 0) match {
-      case (None, _) => // do nothing
-      case (Some(_), true) =>
-        insertExplorerAtEnd(optExplorer) // The cache is full, we need to make space
-      case (Some(_), false) =>
-        insertExplorerAtFreeSpace(optExplorer) // The cache is not full, saving at free space
+    optExplorer match {
+      case None => // do nothing
+      case Some(explorer) =>
+        if (cacheFirstEmptySlot == cacheSize)
+          insertExplorerAtStart(explorer)        // The cache is full, we need to make space
+        else insertExplorerAtFreeSpace(explorer) // The cache is not full, saving at free space
     }
 
     optExplorer
@@ -205,20 +202,24 @@ class ConcreteIntSequence(
   }
 
   override def explorerAtAnyOccurrence(value: Int): Option[IntSequenceExplorer] = {
-    for (index <- cacheFirstEmptySlot + 1 until cacheSize) {
+    for (index <- 0 until cacheFirstEmptySlot) {
       intSequenceExplorerCache(index) match {
-        case Some(explorer) if explorer.value == value => return intSequenceExplorerCache(index)
-        case _                                         =>
+        case explorer: IntSequenceExplorer if explorer.value == value =>
+          putUsedExplorerAtStart(index)
+          return Some(intSequenceExplorerCache(index))
+        case _ =>
       }
     }
     super.explorerAtAnyOccurrence(value)
   }
 
   override def positionOfAnyOccurrence(value: Int): Option[Int] = {
-    for (index <- cacheFirstEmptySlot + 1 until cacheSize) {
+    for (index <- 0 until cacheFirstEmptySlot) {
       intSequenceExplorerCache(index) match {
-        case Some(explorer) if explorer.value == value => return Some(explorer.position)
-        case _                                         =>
+        case explorer: IntSequenceExplorer if explorer.value == value =>
+          putUsedExplorerAtStart(index)
+          return Some(explorer.position)
+        case _ =>
       }
     }
     super.positionOfAnyOccurrence(value)
@@ -297,7 +298,7 @@ class ConcreteIntSequence(
        it's position within the external position ex : Insertion of x at pos 8 and the sequence is
        of size 13. First free internal space is 13 (the current size) Insert at 13 and add a pivot
        : from 13 to 13 moving x 5 position earlier
-      */
+     */
 
     // insert into red blacks
     val newInternalPositionToValue =
@@ -344,7 +345,7 @@ class ConcreteIntSequence(
     )
   }
 
-  override def delete(removePosAsExplorer: IntSequenceExplorer, fast: Boolean): IntSequence = {
+  override def remove(removePosAsExplorer: IntSequenceExplorer, fast: Boolean): IntSequence = {
     val pos = removePosAsExplorer.position
     require(
       pos >= 0 && pos < size,
@@ -358,13 +359,15 @@ class ConcreteIntSequence(
     } else {
 
       // Global idea :
+      //  Get some contextual values/information (1°)
       // 	Internally we move the value at largest position to the position of removal (2°)
       //	Then we update the known position of the impacted values (3°)
-      //	Finally we update the AffineFunction so that the external position leads to the right internal position.
+      //	Finally we update the AffineFunction so that the external position leads to the right internal position. (4°)
       //	Ex : Remove value at 8. Size is 12.
-      //		1° We move value (v) from position 11 to externalToInternal(8)
-      //		2° Update the known positions of v and of the removed value
-      //		3° Update the affine function so that the externalPosition of internal position 11 leads to externalToInternal(8)
+      //    1° Get internalPosition and value at 8. LargestInternalPosition (11) + value at this position.
+      //		2° We move value (v) from position 11 to externalToInternal(8)
+      //		3° Update the known positions of v and of the removed value
+      //		4° Update the affine function so that the externalPosition of internal position 11 leads to externalToInternal(8)
       // 		It's complex but I don't think there is a better solution.
       // 		Since the UnitaryAffineFunction is meant to be a bijection hence the domain must stay the same.
 

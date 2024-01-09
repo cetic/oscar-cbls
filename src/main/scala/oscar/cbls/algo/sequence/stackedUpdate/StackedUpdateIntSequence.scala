@@ -18,10 +18,10 @@ import oscar.cbls.algo.sequence.concrete.ConcreteIntSequence
 
 /** Quick and stackable update of an [[IntSequence]]
   *
-  * For performance purpose, it's easier to create several stackable updates and commit them from times
-  * to times. That's the purpose of the StackedUpdateIntSequence. While maxDepth is not reached we
-  * stack new updates to the sequence. Once it's reached we commit the pending move, creating a
-  * new ConcreteIntSequence.
+  * For performance purpose, it's easier to create several stackable updates and commit them from
+  * times to times. That's the purpose of the StackedUpdateIntSequence. While maxDepth is not
+  * reached we stack new updates to the sequence. Once it's reached we commit the pending move,
+  * creating a new ConcreteIntSequence.
   *
   * @param depth
   *   The depth of the current update
@@ -31,10 +31,10 @@ import oscar.cbls.algo.sequence.concrete.ConcreteIntSequence
   */
 abstract class StackedUpdateIntSequence(depth: Int, maxDepth: Int = 20)
     extends IntSequence(depth = depth) {
-  override def delete(removePosAsExplorer: IntSequenceExplorer, fast: Boolean): IntSequence = {
+  override def remove(removePosAsExplorer: IntSequenceExplorer, fast: Boolean): IntSequence = {
     val pos = removePosAsExplorer.position
     require(pos >= 0 && pos < size, s"Remove position must be in [0, size=$size [. Got $pos")
-    if (depth >= maxDepth) {
+    if (depth >= maxDepth || !fast) {
       new RemovedIntSequence(this, removePosAsExplorer, depth + 1).commitPendingMoves
     } else {
       new RemovedIntSequence(this, removePosAsExplorer, depth + 1)
@@ -73,7 +73,7 @@ abstract class StackedUpdateIntSequence(depth: Int, maxDepth: Int = 20)
       fromIncludedPos <= toIncludedPos,
       s"StartPositionIncluded must be <= endPositionIncluded. Got $fromIncludedPos <= $toIncludedPos"
     )
-    if (depth >= maxDepth) {
+    if (depth >= maxDepth || !fast) {
       new MovedIntSequence(
         this,
         fromIncludedExplorer,
@@ -104,7 +104,7 @@ abstract class StackedUpdateIntSequence(depth: Int, maxDepth: Int = 20)
       insertAfterPos >= -1 && insertAfterPos <= size - 1,
       s"Insert after position must be in [-1,sizeOfSequence minus 1=${size - 1}]. Got $insertAfterPos"
     )
-    if (depth >= maxDepth) {
+    if (depth >= maxDepth || !fast) {
       new InsertedIntSequence(
         this,
         value: Int,

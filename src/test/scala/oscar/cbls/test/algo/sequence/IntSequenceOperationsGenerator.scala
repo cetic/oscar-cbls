@@ -176,7 +176,7 @@ case class Delete(pos: Int) extends Operation {
   ): (IntSequence, List[Int]) = {
     if (initialRefList.nonEmpty)
       (
-        initialSeq.delete(initialSeq.explorerAtPosition(pos).get, fast = fast),
+        initialSeq.remove(initialSeq.explorerAtPosition(pos).get, fast = fast),
         initialRefList.take(pos) ++ initialRefList.drop(pos + 1)
       )
     else (initialSeq, initialRefList)

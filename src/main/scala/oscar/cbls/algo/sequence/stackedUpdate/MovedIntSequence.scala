@@ -54,8 +54,8 @@ object MovedIntSequence {
     * @param flip
     *   Whether or not the segment is flipped
     * @return
-    *   The bijections as a
-    *   [[oscar.cbls.algo.sequence.affineFunction.PiecewiseUnitaryAffineFunction]]
+    *   The bijections between the position in the previous state of the sequence and the position
+    *   in the new state of the sequence
     */
   @inline
   def bijectionForMove(

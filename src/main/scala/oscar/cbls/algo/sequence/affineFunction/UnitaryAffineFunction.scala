@@ -13,7 +13,6 @@
 
 package oscar.cbls.algo.sequence.affineFunction
 
-
 /** The companion object of [[UnitaryAffineFunction]] */
 object UnitaryAffineFunction {
 
@@ -32,7 +31,10 @@ object UnitaryAffineFunction {
   def apply(offset: Int, flip: Boolean) = new UnitaryAffineFunction(offset, flip)
 }
 
-/** An affine function used to track the changes of position after a movement in an [[IntSequence]]
+/** An affine function that change the value of a variable by adding or removing an offset.
+  *
+  * It's mainly used to track the changes of position after a movement in an
+  * [[oscar.cbls.algo.sequence.IntSequence]]
   *
   * It works as a bijection :
   *   - apply() &rarr; old position to new position
