@@ -5,9 +5,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.algo.sequence._
-import oscar.cbls.algo.sequence.concrete.{ConcreteIntSequence, EmptyIntSequence}
-import oscar.cbls.algo.sequence.stackedUpdate._
-import oscar.cbls.test.algo.sequence.ExplorerTester.{assert, intercept}
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.util.Random

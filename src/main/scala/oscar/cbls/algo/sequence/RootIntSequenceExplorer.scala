@@ -1,5 +1,4 @@
-package oscar.cbls.algo.sequence.concrete
-import oscar.cbls.algo.sequence._
+package oscar.cbls.algo.sequence
 
 /** The root [[IntSequenceExplorer]].
   *

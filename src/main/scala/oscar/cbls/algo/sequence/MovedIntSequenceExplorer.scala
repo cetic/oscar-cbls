@@ -11,12 +11,10 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.algo.sequence.stackedUpdate
+package oscar.cbls.algo.sequence
 
 import oscar.cbls.algo.rb.RedBlackTreeMapExplorer
-import oscar.cbls.algo.sequence.IntSequenceExplorer
-import oscar.cbls.algo.sequence.affineFunction.Pivot
-import oscar.cbls.algo.sequence.concrete.RootIntSequenceExplorer
+import affineFunction.Pivot
 
 /** A stacked explorer dedicated for [[MovedIntSequence]].
   *
@@ -30,10 +28,10 @@ import oscar.cbls.algo.sequence.concrete.RootIntSequenceExplorer
   * @param explorerInOriginalSequence
   *   The original explorer, that is with the moved segment
   * @param currentPivotPosition
-  *   The current [[oscar.cbls.algo.sequence.affineFunction.Pivot]] as an optional
+  *   The current [[affineFunction.Pivot]] as an optional
   *   [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]]
   * @param pivotAbovePosition
-  *   The next [[oscar.cbls.algo.sequence.affineFunction.Pivot]] as an optional
+  *   The next [[affineFunction.Pivot]] as an optional
   *   [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]]
   */
 class MovedIntSequenceExplorer(

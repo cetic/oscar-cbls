@@ -11,11 +11,10 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.algo.sequence.concrete
+package oscar.cbls.algo.sequence
 
 import oscar.cbls.algo.rb.RedBlackTreeMapExplorer
-import oscar.cbls.algo.sequence.IntSequenceExplorer
-import oscar.cbls.algo.sequence.affineFunction.Pivot
+import affineFunction.Pivot
 
 /** A [[ConcreteIntSequence]] explorer
   *
@@ -32,18 +31,18 @@ import oscar.cbls.algo.sequence.affineFunction.Pivot
   * @param positionInRB
   *   The current internal position
   * @param currentPivotPosition
-  *   The [[oscar.cbls.algo.sequence.affineFunction.Pivot]] impacting the current external position.
+  *   The [[affineFunction.Pivot]] impacting the current external position.
   *   [[scala.None]] or a [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] of Pivot.
   * @param pivotAbovePosition
-  *   The [[oscar.cbls.algo.sequence.affineFunction.Pivot]] after the current one. [[scala.None]] or
+  *   The [[affineFunction.Pivot]] after the current one. [[scala.None]] or
   *   a [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] of Pivot.
   * @param limitAboveForCurrentPivot
   *   The maximal external position before switching to the next
-  *   [[oscar.cbls.algo.sequence.affineFunction.Pivot]]
+  *   [[affineFunction.Pivot]]
   * @param limitBelowForCurrentPivot
-  *   The starting position of the current [[oscar.cbls.algo.sequence.affineFunction.Pivot]]
+  *   The starting position of the current [[affineFunction.Pivot]]
   * @param slopeIsPositive
-  *   Whether or not the current [[oscar.cbls.algo.sequence.affineFunction.Pivot]] has a positive
+  *   Whether or not the current [[affineFunction.Pivot]] has a positive
   *   slope.
   */
 class ConcreteIntSequenceExplorer(

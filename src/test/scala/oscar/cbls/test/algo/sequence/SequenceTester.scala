@@ -2,8 +2,7 @@ package oscar.cbls.test.algo.sequence
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import oscar.cbls.algo.sequence.IntSequence
-import oscar.cbls.algo.sequence.concrete.ConcreteIntSequence
+import oscar.cbls.algo.sequence.{ConcreteIntSequence, IntSequence}
 
 object SequenceTester extends AnyFunSuite with Matchers {
 

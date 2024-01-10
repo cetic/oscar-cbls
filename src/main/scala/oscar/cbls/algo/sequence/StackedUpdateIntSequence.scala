@@ -11,10 +11,7 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.algo.sequence.stackedUpdate
-
-import oscar.cbls.algo.sequence._
-import oscar.cbls.algo.sequence.concrete.ConcreteIntSequence
+package oscar.cbls.algo.sequence
 
 /** Quick and stackable update of an [[IntSequence]]
   *
@@ -27,7 +24,7 @@ import oscar.cbls.algo.sequence.concrete.ConcreteIntSequence
   *   The depth of the current update
   * @param maxDepth
   *   The maximum depth allowed before committing all updates and generate a new
-  *   [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]]
+  *   [[ConcreteIntSequence]]
   */
 abstract class StackedUpdateIntSequence(depth: Int, maxDepth: Int = 20)
     extends IntSequence(depth = depth) {

@@ -1,6 +1,4 @@
-package oscar.cbls.algo.sequence.concrete
-
-import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer, Token}
+package oscar.cbls.algo.sequence
 
 /** Represents an empty [[IntSequence]].
   *

@@ -14,9 +14,7 @@
 package oscar.cbls.algo.sequence
 
 import oscar.cbls.algo.rb.RedBlackTreeMap
-import oscar.cbls.algo.sequence.affineFunction.PiecewiseUnitaryAffineFunction
-import oscar.cbls.algo.sequence.concrete._
-import oscar.cbls.algo.sequence.stackedUpdate._
+import affineFunction.PiecewiseUnitaryAffineFunction
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
@@ -131,7 +129,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
 
   /** Returns an optional [[IntSequenceExplorer]] at the specified position
     *
-    * If the required position is -1, it'll return a [[concrete.RootIntSequenceExplorer]] so that the user is
+    * If the required position is -1, it'll return a [[RootIntSequenceExplorer]] so that the user is
     * able to insert at the front of the sequence. After position -1.
     *
     * @param position
@@ -310,8 +308,8 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
   /** Inserts a new value after the specified position.
     *
     * There is two ways to insert a new value, a fast and a normal one. If fast, it returns a
-    * [[oscar.cbls.algo.sequence.stackedUpdate.StackedUpdateIntSequence]]. If normal, it computes a
-    * brand new [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]].
+    * [[StackedUpdateIntSequence]]. If normal, it computes a
+    * brand new [[ConcreteIntSequence]].
     *
     * @param value
     *   The value to insert
@@ -331,8 +329,8 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
   /** Removes the value at the specified position given by an explorer
     *
     * There is two ways of removing a value, a fast and a normal one. If fast, it returns a
-    * [[oscar.cbls.algo.sequence.stackedUpdate.StackedUpdateIntSequence]]. If normal, it computes a
-    * brand new [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]].
+    * [[StackedUpdateIntSequence]]. If normal, it computes a
+    * brand new [[ConcreteIntSequence]].
     *
     * @param removePosAsExplorer
     *   The explorer at the position where to remove the value
@@ -347,8 +345,8 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     * values is identified by the starting and ending position.
     *
     * There is two ways to move values, a fast and a normal one. If fast, it returns a
-    * [[oscar.cbls.algo.sequence.stackedUpdate.StackedUpdateIntSequence]]. If normal, it computes a
-    * brand new [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]].
+    * [[StackedUpdateIntSequence]]. If normal, it computes a
+    * brand new [[ConcreteIntSequence]].
     *
     * @param fromIncludedExplorer
     *   Starting position of the subsequence to move (included)
@@ -374,8 +372,8 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
   /** Flips the [[IntSequence]]
     *
     * There is two ways to move values, a fast and a normal one. If fast, it returns a
-    * [[oscar.cbls.algo.sequence.stackedUpdate.StackedUpdateIntSequence]]. If normal, it computes a
-    * brand new [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]].
+    * [[StackedUpdateIntSequence]]. If normal, it computes a
+    * brand new [[ConcreteIntSequence]].
     *
     * @param fast
     *   Fast flag (for more detail see description)
@@ -397,19 +395,19 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     *
     * 3 steps are involved in the process :
     *   - Commits all stacked updates (see
-    *     [[oscar.cbls.algo.sequence.stackedUpdate.StackedUpdateIntSequence]])
+    *     [[StackedUpdateIntSequence]])
     *   - Applies all pivots IF MAX PIVOTS IS REACHED (see
-    *     [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]])
-    *   - Set the resulting [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]] token with
+    *     [[ConcreteIntSequence]])
+    *   - Set the resulting [[ConcreteIntSequence]] token with
     *     this.token
     *
     * @param maxPivotPerValuePercent
     *   The maximum percent of pivot allowed
     * @param targetToken
-    *   The identity of the resulting [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]]
+    *   The identity of the resulting [[ConcreteIntSequence]]
     * @return
-    *   A [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]] or and
-    *   [[oscar.cbls.algo.sequence.concrete.EmptyIntSequence]] with or without pivot
+    * A [[ConcreteIntSequence]] or and
+    * [[EmptyIntSequence]] with or without pivot
     */
   def regularizeToMaxPivot(
     maxPivotPerValuePercent: Int,
@@ -420,24 +418,24 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     *
     * 3 steps are involved in the process :
     *   - Commits all stacked updates (see StackedUpdateIntSequence)
-    *   - Applies all pivots (see [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]])
-    *   - Set the resulting [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]] token with
+    *   - Applies all pivots (see [[ConcreteIntSequence]])
+    *   - Set the resulting [[ConcreteIntSequence]] token with
     *     this.token
     *
     * @param targetToken
     *   The identity token to give at the resulting
-    *   [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]]
+    *   [[ConcreteIntSequence]]
     * @return
-    *   A [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]] with no Pivot
+    * A [[ConcreteIntSequence]] with no Pivot
     */
   def regularize(targetToken: Token = this.token): IntSequence
 
-  /** Commit all [[oscar.cbls.algo.sequence.stackedUpdate.StackedUpdateIntSequence]] moves to form a
-    * [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]]
+  /** Commit all [[StackedUpdateIntSequence]] moves to form a
+    * [[ConcreteIntSequence]]
     *
     * @return
-    *   An [[IntSequence]] (concrete class is a
-    *   [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]])
+    * An [[IntSequence]] (concrete class is a
+    * [[ConcreteIntSequence]])
     */
   def commitPendingMoves: IntSequence
 
@@ -463,8 +461,8 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
 /** The identity of an [[IntSequence]].
   *
   * The idea behind this Token is to be able to quickly check if two IntSequence are the same. It
-  * allows us to say that a [[oscar.cbls.algo.sequence.stackedUpdate.StackedUpdateIntSequence]] is
-  * the same as a [[oscar.cbls.algo.sequence.concrete.ConcreteIntSequence]] if they share the same
+  * allows us to say that a [[StackedUpdateIntSequence]] is
+  * the same as a [[ConcreteIntSequence]] if they share the same
   * [[Token]]. Which is mandatory since the regularization mechanism can be trigger any time.
   *
   * By default a new Token is created each time a new IntSequence is created. The only exception is

@@ -11,10 +11,7 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.algo.sequence.stackedUpdate
-
-import oscar.cbls.algo.sequence.concrete.RootIntSequenceExplorer
-import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
+package oscar.cbls.algo.sequence
 
 /** Quick and stackable update of an [[IntSequence]] applying an insertion move on an existing
   * sequence.

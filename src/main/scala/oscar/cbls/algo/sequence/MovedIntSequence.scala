@@ -11,13 +11,11 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.algo.sequence.stackedUpdate
+package oscar.cbls.algo.sequence
 
-import oscar.cbls.algo.sequence._
-import oscar.cbls.algo.sequence.affineFunction._
-import oscar.cbls.algo.sequence.concrete.RootIntSequenceExplorer
-import oscar.cbls.algo.sequence.stackedUpdate.MoveType._
-import oscar.cbls.algo.sequence.stackedUpdate.PositionInMovement._
+import MoveType._
+import PositionInMovement._
+import affineFunction._
 
 /* Describes the movement */
 sealed abstract class MoveType

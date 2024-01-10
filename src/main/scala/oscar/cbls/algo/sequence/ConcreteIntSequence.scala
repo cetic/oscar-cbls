@@ -11,12 +11,10 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.algo.sequence.concrete
+package oscar.cbls.algo.sequence
 
 import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
-import oscar.cbls.algo.sequence.affineFunction._
-import oscar.cbls.algo.sequence.stackedUpdate._
-import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer, Token}
+import affineFunction._
 
 import scala.annotation.tailrec
 
@@ -43,9 +41,8 @@ import scala.annotation.tailrec
   *   [[scala.Int]] associating a value to its internal positions. The second RedBlackTree([Int]) is
   *   used as a Set[Int].
   * @param externalToInternalPosition
-  *   A [[oscar.cbls.algo.sequence.affineFunction.PiecewiseUnitaryAffineFunction]] containing all
-  *   the necessary [[oscar.cbls.algo.sequence.affineFunction.Pivot]] used to link an external
-  *   position to its internal position
+  *   A [[affineFunction.PiecewiseUnitaryAffineFunction]] containing all the necessary
+  *   [[affineFunction.Pivot]] used to link an external position to its internal position
   * @param startFreeRangeForInternalPosition
   *   The next free internal insertion position.
   * @param token

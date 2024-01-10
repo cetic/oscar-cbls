@@ -2,9 +2,7 @@ package oscar.cbls.test.algo.sequence
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import oscar.cbls.algo.sequence.IntSequenceExplorer
-import oscar.cbls.algo.sequence.concrete.RootIntSequenceExplorer
-import oscar.cbls.algo.sequence.stackedUpdate.RemovedIntSequenceExplorer
+import oscar.cbls.algo.sequence.{IntSequenceExplorer, RootIntSequenceExplorer}
 
 import scala.util.Random
 
@@ -13,8 +11,6 @@ object ExplorerTester extends AnyFunSuite with Matchers {
   /** Exhaustively checks the consistency of an explorer with its reference sequence
     * @param rootExplorer
     *   A starting explorer of the Int
-    * @param startingPosition
-    *   The position of the starting explorer in the IntSequence
     * @param referenceList
     *   The reference list
     */
@@ -39,7 +35,8 @@ object ExplorerTester extends AnyFunSuite with Matchers {
     explorerAtEnd.isDefined should be(true)
     explorerAtEnd.get.position should be(referenceList.size - 1)
 
-    val exception = intercept[IllegalArgumentException](explorerAtEnd.get.goToPosition(Int.MinValue))
+    val exception =
+      intercept[IllegalArgumentException](explorerAtEnd.get.goToPosition(Int.MinValue))
     assert(exception.getMessage.contains("requirement failed"))
     explorerAtRoot.get.goToPosition(Int.MaxValue).isDefined should be(false)
 

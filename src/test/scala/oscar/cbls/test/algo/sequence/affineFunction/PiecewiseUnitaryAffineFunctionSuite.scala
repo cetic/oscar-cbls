@@ -15,12 +15,12 @@ class PiecewiseUnitaryAffineFunctionSuite extends AnyFunSuite {
       from   <- Gen.choose[Int](0, sequenceSize - 1)
       to     <- Gen.choose[Int](from, sequenceSize - 1)
       offset <- Gen.choose((-1) * from, sequenceSize - to)
-    } yield Update(from, to, UnitaryAffineFunction(offset, false))
+    } yield Update(from, to, UnitaryAffineFunction(offset, flip = false))
     val genFlip: Gen[Update] = for {
       from   <- Gen.choose[Int](0, sequenceSize - 1)
       to     <- Gen.choose[Int](from, sequenceSize - 1)
       offset <- Gen.choose(to, sequenceSize + from)
-    } yield Update(from, to, UnitaryAffineFunction(offset, true))
+    } yield Update(from, to, UnitaryAffineFunction(offset, flip = true))
 
     Gen.listOf(Gen.frequency((1, genNonFlip), (1, genFlip)))
   }
