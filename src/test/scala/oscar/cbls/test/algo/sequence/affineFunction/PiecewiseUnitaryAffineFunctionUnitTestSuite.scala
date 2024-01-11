@@ -51,9 +51,11 @@ class PiecewiseUnitaryAffineFunctionUnitTestSuite extends AnyFunSuite {
    */
   test("PiecewiseSequenceShiftingBijection : pivots access work as expected") {
     var pssb: PiecewiseUnitaryAffineFunction = PiecewiseUnitaryAffineFunction.identity
-    pssb.firstPivotAndPosition should be(None)
-    pssb.pivotWithPositionApplyingTo(10) should be(None)
-    pssb.pivots.size should be(0)
+    pssb.firstPivotAndPosition.nonEmpty should be(true)
+    pssb.firstPivotAndPosition.get.key should be(0)
+    pssb.firstPivotAndPosition.get.value.f.isIdentity should be(true)
+    pssb.pivotWithPositionApplyingTo(10).nonEmpty should be(true)
+    pssb.pivots.size should be(1)
 
     pssb = pssb.swapAdjacentZonesShiftFirst(0, 4, 9, flipZone2 = true)
     pssb = pssb.swapAdjacentZonesShiftFirst(10, 14, 19, flipZone2 = true)

@@ -49,7 +49,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
   test("ConcreteIntSequence : batch queries keep expected list") {
     forAll(
       IntSequenceOperationsGenerator.testBenchGen(maxConsideredSize, genSeqSize),
-      minSuccessful(5)
+      minSuccessful(20)
     ) { testBench =>
       {
         whenever(testBench._1.size >= 5) {

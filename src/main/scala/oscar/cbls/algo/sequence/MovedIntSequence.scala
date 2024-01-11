@@ -204,7 +204,7 @@ class MovedIntSequence(
 ) extends StackedUpdateIntSequence(depth) {
 
   // The PiecewiseUnitaryAffineFunction corresponding to this move
-  private val localBijection = MovedIntSequence.bijectionForMove(
+  val localBijection: PiecewiseUnitaryAffineFunction = MovedIntSequence.bijectionForMove(
     fromIncludedExplorer.position,
     toIncludedExplorer.position,
     moveAfterExplorer.position,
@@ -255,21 +255,17 @@ class MovedIntSequence(
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
     if (position == -1) Some(new RootIntSequenceExplorer(this))
     else {
-      val positionOfCurrentPivot = localBijection.pivotWithPositionApplyingTo(position)
       seq.explorerAtPosition(localBijection(position)) match {
         case None => None
         case Some(explorerInBasicSequence) =>
+          val positionOfCurrentPivot = localBijection.pivotWithPositionApplyingTo(position)
           Some(
             new MovedIntSequenceExplorer(
               this,
               position,
               explorerInBasicSequence,
-              positionOfCurrentPivot,
-              positionOfCurrentPivot match {
-                case None    => localBijection.firstPivotAndPosition
-                case Some(x) => x.next
-              }
-            )()
+              positionOfCurrentPivot
+            )
           )
       }
     }

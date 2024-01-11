@@ -63,11 +63,11 @@ object PiecewiseUnitaryAffineFunction {
 /** A piecewise unitary affine function matching an old value to its new value.
   *
   * Here it's mainly used to match the external and the internal position of each element of a
-  * [[IntSequence]] :
-  * To avoid expensive modification by moving values around upon insertion/deletion/movements in the
-  * [[IntSequence]], we use a PiecewiseSequenceShiftingBijection. It's composed of a sorted list of
-  * [[Pivot]] (stored in a [[oscar.cbls.algo.rb.RedBlackTreeMap]]) which represents the changes made
-  * to the [[IntSequence]]. Each [[Pivot]] starts at a position and applies a bijection to the start
+  * [[IntSequence]] : To avoid expensive modification by moving values around upon
+  * insertion/deletion/movements in the [[IntSequence]], we use a
+  * PiecewiseSequenceShiftingBijection. It's composed of a sorted list of [[Pivot]] (stored in a
+  * [[oscar.cbls.algo.rb.RedBlackTreeMap]]) which represents the changes made to the
+  * [[IntSequence]]. Each [[Pivot]] starts at a position and applies a bijection to the start
   * position and each position after. That way we know the new position of the element at position
   * x. Those are created rapidly and can be merged (See [[UnitaryAffineFunction]] for more
   * information).
