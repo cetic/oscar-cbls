@@ -36,12 +36,14 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
       ).getMessage.contains("Can't move values if the sequence is empty")
     )
 
-    val nonEmptyConcreteIntSequence = emptyIntSequence.insertAfterPosition(1, emptyIntSequence.explorerAtPosition(-1).get)
+    val nonEmptyConcreteIntSequence =
+      emptyIntSequence.insertAfterPosition(1, emptyIntSequence.explorerAtPosition(-1).get)
     nonEmptyConcreteIntSequence.isEmpty should be(false)
     nonEmptyConcreteIntSequence.size should be(1)
     nonEmptyConcreteIntSequence.explorerAtPosition(0).get.value should be(1)
 
-    val emptyIntSequence2 = nonEmptyConcreteIntSequence.remove(nonEmptyConcreteIntSequence.explorerAtPosition(0).get)
+    val emptyIntSequence2 =
+      nonEmptyConcreteIntSequence.remove(nonEmptyConcreteIntSequence.explorerAtPosition(0).get)
     emptyIntSequence2.isInstanceOf[EmptyIntSequence] should be(true)
 
   }
@@ -187,6 +189,8 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
 
   private def testExplorer(seq: IntSequence, modifiedList: List[Int]): Unit = {
     if (modifiedList.nonEmpty) {
+      seq.explorerAtPosition(-1).get.isInstanceOf[RootIntSequenceExplorer] should be(true)
+      seq.explorerAtPosition(-1).get.asInstanceOf[RootIntSequenceExplorer].backward should be(true)
       ExplorerTester.testExplorers(seq.explorerAtPosition(-1).get, modifiedList)
     }
   }

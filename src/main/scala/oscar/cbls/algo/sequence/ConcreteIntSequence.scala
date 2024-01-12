@@ -138,7 +138,8 @@ class ConcreteIntSequence(
   }
 
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
-    if (position == -1) return Some(new RootIntSequenceExplorer(this))
+    if (position == -1) return Some(new RootIntSequenceExplorer(this, true))
+    if (position == this.size) return Some(new RootIntSequenceExplorer(this, false))
 
     // Shifts every explorer to the left and adds the new one at the end of the array
     def insertExplorerAtStart(explorer: IntSequenceExplorer): Unit = {
@@ -174,8 +175,9 @@ class ConcreteIntSequence(
   }
 
   private def computeExplorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
-    if (position >= this.size) None
-    else if (position == -1) Some(new RootIntSequenceExplorer(this))
+    if (position > this.size) None
+    else if (position == this.size) Some(new RootIntSequenceExplorer(this, false))
+    else if (position == -1) Some(new RootIntSequenceExplorer(this, true))
     else if (position < -1) None
     else {
       val currentPivotPosition = externalToInternalPosition.pivotWithPositionApplyingTo(position)

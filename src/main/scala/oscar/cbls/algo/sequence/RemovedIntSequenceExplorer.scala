@@ -29,40 +29,42 @@ class RemovedIntSequenceExplorer(
   val intSequence: RemovedIntSequence,
   val position: Int,
   explorerInOriginalSequence: IntSequenceExplorer
-) extends IntSequenceExplorer {
+) extends IntSequenceExplorer(intSequence) {
   override val value: Int = explorerInOriginalSequence.value
 
-  override def prev: Option[IntSequenceExplorer] = {
-    if(position == 0) return Some(new RootIntSequenceExplorer(intSequence))
-    // Just skip the removed point
-    explorerInOriginalSequence.prev match {
-      case None => None
-      case Some(prevPrevExplorerInOriginalSequence) =>
-        if (prevPrevExplorerInOriginalSequence.position == intSequence.explorerAtRemovePos.position)
-          // At pos of removed point, need to go back once more
-          prevPrevExplorerInOriginalSequence.prev match {
-            case None => None
-            case Some(previous2ExplorerInOriginalSequence) =>
-                Some(new RemovedIntSequenceExplorer(intSequence, position - 1, previous2ExplorerInOriginalSequence))
-          }
-        else {
-            Some(new RemovedIntSequenceExplorer(intSequence, position - 1, prevPrevExplorerInOriginalSequence))
+  override def next: IntSequenceExplorer = {
+    if (position == intSequence.size - 1) {
+      new RootIntSequenceExplorer(intSequence, false)
+    } else {
+      val nextExplorerInOriginalSequence = explorerInOriginalSequence.next
+      // Just skip the removed point
+      if (nextExplorerInOriginalSequence.position == intSequence.explorerAtRemovePos.position)
+        nextExplorerInOriginalSequence.next match {
+          case nextNext: RootIntSequenceExplorer => nextNext
+          case nextNext: IntSequenceExplorer =>
+            new RemovedIntSequenceExplorer(intSequence, position + 1, nextNext)
         }
+      else
+        new RemovedIntSequenceExplorer(intSequence, position + 1, nextExplorerInOriginalSequence)
     }
   }
 
-  override def next: Option[IntSequenceExplorer] = {
-    // Just skip the removed point
-    explorerInOriginalSequence.next match {
-      case None => None
-      case Some(nextExplorerInOriginalSequence) =>
-        if (nextExplorerInOriginalSequence.position == intSequence.explorerAtRemovePos.position)
-          nextExplorerInOriginalSequence.next match {
-            case None => None
-            case Some(nextNextExplorerInOriginalSequence) =>
-              Some(new RemovedIntSequenceExplorer(intSequence, position + 1, nextNextExplorerInOriginalSequence))
-          }
-        else Some(new RemovedIntSequenceExplorer(intSequence, position + 1, nextExplorerInOriginalSequence))
+  override def prev: IntSequenceExplorer = {
+    if (position == 0) {
+      new RootIntSequenceExplorer(intSequence, true)
+    } else {
+      val prevExplorerInOriginalSequence = explorerInOriginalSequence.prev
+      // Just skip the removed point
+      if (prevExplorerInOriginalSequence.position == intSequence.explorerAtRemovePos.position)
+        // At pos of removed point, need to go back once more
+        prevExplorerInOriginalSequence.prev match {
+          case _: RootIntSequenceExplorer => new RootIntSequenceExplorer(intSequence, true)
+          case prevPrev: IntSequenceExplorer =>
+            new RemovedIntSequenceExplorer(intSequence, position - 1, prevPrev)
+        }
+      else {
+        new RemovedIntSequenceExplorer(intSequence, position - 1, prevExplorerInOriginalSequence)
+      }
     }
   }
 }

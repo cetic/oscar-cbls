@@ -24,29 +24,27 @@ import affineFunction.Pivot
   *
   * Reminder : A pivot starts at a particular external position and ends when another Pivot starts
   *
-  * @param sequence
+  * @param intSequence
   *   The [[ConcreteIntSequence]]
   * @param position
   *   The current EXTERNAL position
   * @param positionInRB
   *   The current internal position
   * @param currentPivotPosition
-  *   The [[affineFunction.Pivot]] impacting the current external position.
-  *   [[scala.None]] or a [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] of Pivot.
+  *   The [[affineFunction.Pivot]] impacting the current external position. [[scala.None]] or a
+  *   [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] of Pivot.
   * @param pivotAbovePosition
-  *   The [[affineFunction.Pivot]] after the current one. [[scala.None]] or
-  *   a [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] of Pivot.
+  *   The [[affineFunction.Pivot]] after the current one. [[scala.None]] or a
+  *   [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] of Pivot.
   * @param limitAboveForCurrentPivot
-  *   The maximal external position before switching to the next
-  *   [[affineFunction.Pivot]]
+  *   The maximal external position before switching to the next [[affineFunction.Pivot]]
   * @param limitBelowForCurrentPivot
   *   The starting position of the current [[affineFunction.Pivot]]
   * @param slopeIsPositive
-  *   Whether or not the current [[affineFunction.Pivot]] has a positive
-  *   slope.
+  *   Whether or not the current [[affineFunction.Pivot]] has a positive slope.
   */
 class ConcreteIntSequenceExplorer(
-  sequence: ConcreteIntSequence,
+  intSequence: ConcreteIntSequence,
   override val position: Int,
   positionInRB: RedBlackTreeMapExplorer[Int],
   currentPivotPosition: Option[RedBlackTreeMapExplorer[Pivot]],
@@ -64,7 +62,7 @@ class ConcreteIntSequenceExplorer(
     case None    => true
     case Some(p) => !p.value.f.flip
   }
-) extends IntSequenceExplorer {
+) extends IntSequenceExplorer(intSequence) {
 
   override def toString: String =
     s"ConcreteIntSequenceExplorer(position:$position value:$value currentPivotPosition:$currentPivotPosition pivotAbovePosition:$pivotAbovePosition positionInRB:$positionInRB)"
@@ -73,44 +71,41 @@ class ConcreteIntSequenceExplorer(
 
   private[sequence] def internalPos = positionInRB.key
 
-  override def next: Option[IntSequenceExplorer] = {
-    if (position == sequence.size - 1) return None
-    // At end of current pivot &rarr; moving to next one
-    if (position == limitAboveForCurrentPivot) {
+  override def next: IntSequenceExplorer = {
+    if (position == intSequence.size - 1) {
+      new RootIntSequenceExplorer(intSequence, false)
+    } else if (position == limitAboveForCurrentPivot) {
+      // At end of current pivot &rarr; moving to next one
       // Always a pivot, at least identity
       val newPivotAbovePosition = pivotAbovePosition.get.next
       val newPosition           = position + 1
-      val newPositionInRBOpt =
-        sequence.internalPositionToValue.positionOf(pivotAbovePosition.get.value.f(newPosition))
-      newPositionInRBOpt match {
-        case None => None
-        case Some(newPositionInRB) =>
-          Some(
-            new ConcreteIntSequenceExplorer(
-              sequence,
-              newPosition,
-              newPositionInRB,
-              pivotAbovePosition,
-              newPivotAbovePosition
-            )(limitBelowForCurrentPivot = newPosition)
-          )
-      }
+      val newPositionInRB =
+        intSequence.internalPositionToValue
+          .positionOf(pivotAbovePosition.get.value.f(newPosition))
+          .get
+      new ConcreteIntSequenceExplorer(
+        intSequence,
+        newPosition,
+        newPositionInRB,
+        pivotAbovePosition,
+        newPivotAbovePosition
+      )(limitBelowForCurrentPivot = newPosition)
     } else {
-      Some(
-        new ConcreteIntSequenceExplorer(
-          sequence,
-          position + 1,
-          if (slopeIsPositive) positionInRB.next.get else positionInRB.prev.get,
-          currentPivotPosition,
-          pivotAbovePosition
-        )(limitAboveForCurrentPivot, limitBelowForCurrentPivot, slopeIsPositive)
-      )
+      new ConcreteIntSequenceExplorer(
+        intSequence,
+        position + 1,
+        if (slopeIsPositive) positionInRB.next.get else positionInRB.prev.get,
+        currentPivotPosition,
+        pivotAbovePosition
+      )(limitAboveForCurrentPivot, limitBelowForCurrentPivot, slopeIsPositive)
     }
   }
 
-  override def prev: Option[IntSequenceExplorer] = {
+  override def prev: IntSequenceExplorer = {
     // Already at start of sequence &rarr; None
-    if (position == 0) Some(new RootIntSequenceExplorer(sequence))
+    if (position == 0) {
+      new RootIntSequenceExplorer(intSequence, true)
+    }
     // At start of current Pivot &rarr; moving to the previous one
     else if (position == limitBelowForCurrentPivot) {
       val newPosition             = position - 1
@@ -120,26 +115,22 @@ class ConcreteIntSequenceExplorer(
         case Some(position2) => position2.value.f(newPosition)
       }
       val newCurrentPositionInRB =
-        sequence.internalPositionToValue.positionOf(newInternalPosition).get
-      Some(
-        new ConcreteIntSequenceExplorer(
-          sequence,
-          newPosition,
-          newCurrentPositionInRB,
-          newCurrentPivotPosition,
-          currentPivotPosition
-        )(limitAboveForCurrentPivot = limitBelowForCurrentPivot - 1)
-      )
+        intSequence.internalPositionToValue.positionOf(newInternalPosition).get
+      new ConcreteIntSequenceExplorer(
+        intSequence,
+        newPosition,
+        newCurrentPositionInRB,
+        newCurrentPivotPosition,
+        currentPivotPosition
+      )(limitAboveForCurrentPivot = limitBelowForCurrentPivot - 1)
     } else {
-      Some(
-        new ConcreteIntSequenceExplorer(
-          sequence,
-          position - 1,
-          if (slopeIsPositive) positionInRB.prev.get else positionInRB.next.get,
-          currentPivotPosition,
-          pivotAbovePosition
-        )(limitAboveForCurrentPivot, limitBelowForCurrentPivot, slopeIsPositive)
-      )
+      new ConcreteIntSequenceExplorer(
+        intSequence,
+        position - 1,
+        if (slopeIsPositive) positionInRB.prev.get else positionInRB.next.get,
+        currentPivotPosition,
+        pivotAbovePosition
+      )(limitAboveForCurrentPivot, limitBelowForCurrentPivot, slopeIsPositive)
     }
   }
 }

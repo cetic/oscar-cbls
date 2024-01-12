@@ -215,7 +215,7 @@ class MovedIntSequence(
     originalExplorerBeforeFromPositionIncluded,
     originalExplorerAfterToPositionIncluded,
     originalExplorerAfterMoveAfterPosition
-  ): (Option[IntSequenceExplorer], Option[IntSequenceExplorer], Option[IntSequenceExplorer]) =
+  ): (IntSequenceExplorer, IntSequenceExplorer, IntSequenceExplorer) =
     (fromIncludedExplorer.prev, toIncludedExplorer.next, moveAfterExplorer.next)
 
   override val size: Int = seq.size
@@ -243,17 +243,19 @@ class MovedIntSequence(
   def originalExplorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
     if (position < -1) None
     else if (position == fromIncludedExplorer.position - 1)
-      originalExplorerBeforeFromPositionIncluded
+      Some(originalExplorerBeforeFromPositionIncluded)
     else if (position == fromIncludedExplorer.position) Some(fromIncludedExplorer)
     else if (position == toIncludedExplorer.position) Some(toIncludedExplorer)
-    else if (position == toIncludedExplorer.position + 1) originalExplorerAfterToPositionIncluded
+    else if (position == toIncludedExplorer.position + 1)
+      Some(originalExplorerAfterToPositionIncluded)
     else if (moveAfterExplorer.position == position) Some(moveAfterExplorer)
-    else if (moveAfterExplorer.position + 1 == position) originalExplorerAfterMoveAfterPosition
+    else if (moveAfterExplorer.position + 1 == position)
+      Some(originalExplorerAfterMoveAfterPosition)
     else seq.explorerAtPosition(position)
   }
 
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
-    if (position == -1) Some(new RootIntSequenceExplorer(this))
+    if (position == -1) Some(new RootIntSequenceExplorer(this, true))
     else {
       seq.explorerAtPosition(localBijection(position)) match {
         case None => None

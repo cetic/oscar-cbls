@@ -19,7 +19,7 @@ package oscar.cbls.algo.sequence
   * explorer is at the position of the inserted point. Reaching this particular point, the original
   * explorer doesn't move so that we can still reach next/prev in the original sequence.
   *
-  * @param seq
+  * @param intSequence
   *   The [[InsertedIntSequence]]
   * @param position
   *   The current position in the sequence
@@ -27,49 +27,49 @@ package oscar.cbls.algo.sequence
   *   The original explorer, that is without the inserted point
   */
 class InsertedIntSequenceExplorer(
-  seq: InsertedIntSequence,
+  intSequence: InsertedIntSequence,
   val position: Int,
   val explorerInOriginalSequence: IntSequenceExplorer
-) extends IntSequenceExplorer {
-  private val atInsertedValue = position == seq.insertAfterPos + 1
+) extends IntSequenceExplorer(intSequence) {
+  private val atInsertedValue = position == intSequence.insertAfterPos + 1
   override val value: Int =
-    if (atInsertedValue) seq.insertedValue else explorerInOriginalSequence.value
+    if (atInsertedValue) intSequence.insertedValue else explorerInOriginalSequence.value
 
-  override def next: Option[IntSequenceExplorer] = {
+  override def next: IntSequenceExplorer = {
     val nextPosition = position + 1
-    if (atInsertedValue) {
-      // we are leaving the inserted position
-      explorerInOriginalSequence.next match {
-        case None => None
-        case Some(nextOriginalExplorer) =>
-          Some(new InsertedIntSequenceExplorer(seq, nextPosition, nextOriginalExplorer))
-      }
+    if (nextPosition == intSequence.size) {
+      new RootIntSequenceExplorer(intSequence, false)
     } else {
-      if (nextPosition == seq.insertAfterPos + 1) {
-        // Getting into the inserted position
-        // Original explorer doesn't change
-        Some(new InsertedIntSequenceExplorer(seq, nextPosition, explorerInOriginalSequence))
+      if (atInsertedValue) {
+        val nextExplorerInOriginalSequence = explorerInOriginalSequence.next
+        // we are leaving the inserted position
+        new InsertedIntSequenceExplorer(intSequence, nextPosition, nextExplorerInOriginalSequence)
       } else {
-        // nothing special
-        explorerInOriginalSequence.next match {
-          case None => None
-          case Some(nextOriginalExplorer) =>
-            Some(new InsertedIntSequenceExplorer(seq, nextPosition, nextOriginalExplorer))
+        if (nextPosition == intSequence.insertAfterPos + 1) {
+          // Getting into the inserted position
+          // Original explorer doesn't change
+          new InsertedIntSequenceExplorer(intSequence, nextPosition, explorerInOriginalSequence)
+        } else {
+          // nothing special
+          new InsertedIntSequenceExplorer(
+            intSequence,
+            nextPosition,
+            explorerInOriginalSequence.next
+          )
         }
       }
     }
   }
 
-  override def prev: Option[IntSequenceExplorer] = {
-    if(position == 0) return Some(new RootIntSequenceExplorer(seq))
-    val prevPosition = position - 1
-    if (atInsertedValue) {
-          Some(new InsertedIntSequenceExplorer(seq, prevPosition, explorerInOriginalSequence))
+  override def prev: IntSequenceExplorer = {
+    if (position == 0) {
+      new RootIntSequenceExplorer(intSequence, true)
     } else {
-      explorerInOriginalSequence.prev match {
-        case None => None
-        case Some(prevOriginalExplorer) =>
-          Some(new InsertedIntSequenceExplorer(seq, prevPosition, prevOriginalExplorer))
+      val prevPosition = position - 1
+      if (atInsertedValue) {
+        new InsertedIntSequenceExplorer(intSequence, prevPosition, explorerInOriginalSequence)
+      } else {
+        new InsertedIntSequenceExplorer(intSequence, prevPosition, explorerInOriginalSequence.prev)
       }
     }
   }

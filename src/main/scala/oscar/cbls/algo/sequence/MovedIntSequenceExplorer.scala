@@ -36,7 +36,7 @@ class MovedIntSequenceExplorer(
   override val position: Int,
   explorerInOriginalSequence: IntSequenceExplorer,
   currentPivotPosition: Option[RedBlackTreeMapExplorer[Pivot]]
-) extends IntSequenceExplorer {
+) extends IntSequenceExplorer(intSequence) {
 
   private val pivotAbovePosition: Option[RedBlackTreeMapExplorer[Pivot]] =
     currentPivotPosition match {
@@ -58,47 +58,43 @@ class MovedIntSequenceExplorer(
 
   override val value: Int = explorerInOriginalSequence.value
 
-  override def next: Option[IntSequenceExplorer] = {
-    if (position == intSequence.size - 1) return None
-    if (position == limitAboveForCurrentPivot) {
-      // Moving to next Pivot
-      val newPosition = position + 1
-      // We don't know the old position of the new starting pivot
-      val newPositionInBasicSequence =
-        intSequence.originalExplorerAtPosition(pivotAbovePosition.get.value.f(newPosition))
-      newPositionInBasicSequence match {
-        case None => None
-        case Some(newPositionInOS) =>
-          Some(
-            new MovedIntSequenceExplorer(
-              intSequence,
-              newPosition,
-              newPositionInOS,
-              pivotAbovePosition
-            )
-          )
-      }
+  override def next: IntSequenceExplorer = {
+    if (position == intSequence.size - 1) {
+      new RootIntSequenceExplorer(intSequence, false)
     } else {
-      // Staying on same pivot, using its slope to determine the next position in original sequence
-      (if (slopeIsPositive) explorerInOriginalSequence.next
-       else explorerInOriginalSequence.prev) match {
-        case None => None
-        case Some(newPositionInOS) =>
-          Some(
-            new MovedIntSequenceExplorer(
-              intSequence,
-              position + 1,
-              newPositionInOS,
-              currentPivotPosition
-            )
-          )
+      if (position == limitAboveForCurrentPivot) {
+        // Moving to next Pivot
+        val newPosition = position + 1
+        // We don't know the old position of the new starting pivot
+        // We know that there is a next pivot, otherwise limitAboveForCurrentPivot would be
+        // Int.MaxValue ==> end of the sequence ==> RootIntSequenceExplorer
+        val newPositionInOriginalSequence =
+          intSequence.originalExplorerAtPosition(pivotAbovePosition.get.value.f(newPosition)).get
+        new MovedIntSequenceExplorer(
+          intSequence,
+          newPosition,
+          newPositionInOriginalSequence,
+          pivotAbovePosition
+        )
+      } else {
+        // Staying on same pivot, using its slope to determine the next position in original sequence
+        val newExplorerInOriginalSequence =
+          if (slopeIsPositive) explorerInOriginalSequence.next
+          else explorerInOriginalSequence.prev
+        new MovedIntSequenceExplorer(
+          intSequence,
+          position + 1,
+          newExplorerInOriginalSequence,
+          currentPivotPosition
+        )
       }
     }
   }
 
-  override def prev: Option[IntSequenceExplorer] = {
-    if (position == 0) Some(new RootIntSequenceExplorer(intSequence))
-    else if (position == limitBelowForCurrentPivot) {
+  override def prev: IntSequenceExplorer = {
+    if (position == 0) {
+      new RootIntSequenceExplorer(intSequence, true)
+    } else if (position == limitBelowForCurrentPivot) {
       // Moving to previous Pivot
       val newPosition             = position - 1
       val newCurrentPivotPosition = currentPivotPosition.get.prev
@@ -108,24 +104,20 @@ class MovedIntSequenceExplorer(
         case Some(prevRbtExplorer) => prevRbtExplorer.value.f(newPosition)
       }
 
-      Some(
-        new MovedIntSequenceExplorer(
-          intSequence,
-          newPosition,
-          intSequence.originalExplorerAtPosition(newInternalPosition).get,
-          newCurrentPivotPosition
-        )
+      new MovedIntSequenceExplorer(
+        intSequence,
+        newPosition,
+        intSequence.originalExplorerAtPosition(newInternalPosition).get,
+        newCurrentPivotPosition
       )
     } else {
       // Staying on same pivot, using its slope to determine the next position in original sequence
-      Some(
-        new MovedIntSequenceExplorer(
-          intSequence,
-          position - 1,
-          if (slopeIsPositive) explorerInOriginalSequence.prev.get
-          else explorerInOriginalSequence.next.get,
-          currentPivotPosition
-        )
+      new MovedIntSequenceExplorer(
+        intSequence,
+        position - 1,
+        if (slopeIsPositive) explorerInOriginalSequence.prev
+        else explorerInOriginalSequence.next,
+        currentPivotPosition
       )
     }
   }

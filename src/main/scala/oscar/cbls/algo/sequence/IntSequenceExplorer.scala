@@ -17,15 +17,19 @@ package oscar.cbls.algo.sequence
   *
   * Each instance represents the state of the sequence at a specific position.
   */
-abstract class IntSequenceExplorer {
+abstract class IntSequenceExplorer(intSequence: IntSequence) {
+
   /** The value at the current position */
   def value: Int
+
   /** Returns the position of the value */
   def position: Int
-  /** Returns the next explorer in the sequence or None if end of sequence */
-  def next: Option[IntSequenceExplorer]
-  /** Returns the previous explorer in the sequence or None if start of sequence */
-  def prev: Option[IntSequenceExplorer]
+
+  /** Returns the next explorer in the sequence. RootIntSequenceExplorer if end of sequence */
+  def next: IntSequenceExplorer
+
+  /** Returns the previous explorer in the sequence. RootIntSequenceExplorer if start of sequence */
+  def prev: IntSequenceExplorer
 
   /** Returns the [[IntSequenceExplorer]] at the given position.
     *
@@ -36,14 +40,13 @@ abstract class IntSequenceExplorer {
     *   The IntSequenceExplorer if it exists
     */
   def goToPosition(position: Int): Option[IntSequenceExplorer] = {
-    require(position >= -1)
-    if (this.position == position) Some(this)
+    if (position < -1 || position > intSequence.size) None
+    else if (this.position == position) Some(this)
     else {
       val explorer =
         if (this.position > position) prev
         else next
-      if (explorer.nonEmpty) explorer.get.goToPosition(position)
-      else None
+      explorer.goToPosition(position)
     }
   }
 
@@ -58,8 +61,7 @@ abstract class IntSequenceExplorer {
     if (this.value == value) Some(this)
     else {
       val previousExplorer = prev
-      if (previousExplorer.nonEmpty) previousExplorer.get.prevUntilValue(value)
-      else None
+      previousExplorer.prevUntilValue(value)
     }
   }
 
@@ -74,8 +76,7 @@ abstract class IntSequenceExplorer {
     if (this.value == value) Some(this)
     else {
       val nextExplorer = next
-      if (nextExplorer.nonEmpty) nextExplorer.get.nextUntilValue(value)
-      else None
+      nextExplorer.nextUntilValue(value)
     }
   }
 
@@ -90,8 +91,7 @@ abstract class IntSequenceExplorer {
     if (f(this)) Some(this)
     else {
       val previousExplorer = prev
-      if (previousExplorer.nonEmpty) previousExplorer.get.prevUntil(f)
-      else None
+      previousExplorer.prevUntil(f)
     }
   }
 
@@ -106,8 +106,7 @@ abstract class IntSequenceExplorer {
     if (f(this)) Some(this)
     else {
       val nextExplorer = next
-      if (nextExplorer.nonEmpty) nextExplorer.get.nextUntil(f)
-      else None
+      nextExplorer.nextUntil(f)
     }
   }
 
@@ -117,10 +116,10 @@ abstract class IntSequenceExplorer {
     *   The function to apply
     */
   def foreach(f: IntSequenceExplorer => Unit): Unit = {
-    f(this)
+    if (!this.isInstanceOf[RootIntSequenceExplorer]) f(this)
     next match {
-      case None           =>
-      case Some(explorer) => explorer.foreach(f)
+      case _: RootIntSequenceExplorer    =>
+      case explorer: IntSequenceExplorer => explorer.foreach(f)
     }
   }
 

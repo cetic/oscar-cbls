@@ -72,22 +72,19 @@ class InsertedIntSequence(
   }
 
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
-    if (position == -1) Some(new RootIntSequenceExplorer(this))
+    if (position == -1) Some(new RootIntSequenceExplorer(this, true))
+    else if (position == size) Some(new RootIntSequenceExplorer(this, false))
     else if (position == insertAfterPos + 1) {
       Some(new InsertedIntSequenceExplorer(this, position, insertAfterPosExplorer))
     } else {
       val originPos = if (position < insertAfterPos + 1) position else position - 1
       val explorer = {
         // Explorer is empty or position isn't close enough to use next/prev (O(1)) on the known explorer
-        if (
-          originalExplorerAtInsertPosition.isEmpty || Math.abs(
-            position - (insertAfterPos + 1)
-          ) > Math.log(size)
-        )
+        if (Math.abs(position - (insertAfterPos + 1)) > Math.log(size))
           intSequence.explorerAtPosition(originPos)
         else
           // Position is close enough to use next/prev (O(1)) on the known explorer
-          originalExplorerAtInsertPosition.get.goToPosition(originPos)
+          originalExplorerAtInsertPosition.goToPosition(originPos)
       }
 
       explorer match {

@@ -95,11 +95,13 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
 
   def nonEmpty: Boolean = !isEmpty
 
-  def iterator: Iterator[Int] = new IntSequenceIterator(this.explorerAtPosition(0))
+  def iterator: Iterator[Int] = new IntSequenceIterator(this.explorerAtPosition(0).get)
 
-  def iterateFromAnyOccurrenceOfValue(value: Int): Iterator[Int] = new IntSequenceIterator(
-    this.explorerAtAnyOccurrence(value)
-  )
+  def iterateFromAnyOccurrenceOfValue(value: Int): Iterator[Int] = {
+    val explorerAtOccurence = this.explorerAtAnyOccurrence(value)
+    if (explorerAtOccurence.isDefined) new IntSequenceIterator(explorerAtOccurence.get)
+    else Iterator.empty
+  }
 
   /** Returns the number of occurrence of the specified value */
   def nbOccurrence(value: Int): Int
@@ -209,7 +211,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     if (explorer.position == toPositionIncluded) values ::: List(explorer.value)
     else
       tailRecValuesBetweenPositions(
-        explorer.next.get,
+        explorer.next,
         toPositionIncluded,
         values ::: List(explorer.value)
       )
@@ -225,7 +227,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
       positionsAndValues ::: List((explorer.position, explorer.value))
     else
       tailRecPositionAndValuesBetweenPositions(
-        explorer.next.get,
+        explorer.next,
         toPositionIncluded,
         positionsAndValues ::: List((explorer.position, explorer.value))
       )
@@ -308,8 +310,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
   /** Inserts a new value after the specified position.
     *
     * There is two ways to insert a new value, a fast and a normal one. If fast, it returns a
-    * [[StackedUpdateIntSequence]]. If normal, it computes a
-    * brand new [[ConcreteIntSequence]].
+    * [[StackedUpdateIntSequence]]. If normal, it computes a brand new [[ConcreteIntSequence]].
     *
     * @param value
     *   The value to insert
@@ -329,8 +330,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
   /** Removes the value at the specified position given by an explorer
     *
     * There is two ways of removing a value, a fast and a normal one. If fast, it returns a
-    * [[StackedUpdateIntSequence]]. If normal, it computes a
-    * brand new [[ConcreteIntSequence]].
+    * [[StackedUpdateIntSequence]]. If normal, it computes a brand new [[ConcreteIntSequence]].
     *
     * @param removePosAsExplorer
     *   The explorer at the position where to remove the value
@@ -345,8 +345,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     * values is identified by the starting and ending position.
     *
     * There is two ways to move values, a fast and a normal one. If fast, it returns a
-    * [[StackedUpdateIntSequence]]. If normal, it computes a
-    * brand new [[ConcreteIntSequence]].
+    * [[StackedUpdateIntSequence]]. If normal, it computes a brand new [[ConcreteIntSequence]].
     *
     * @param fromIncludedExplorer
     *   Starting position of the subsequence to move (included)
@@ -372,8 +371,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
   /** Flips the [[IntSequence]]
     *
     * There is two ways to move values, a fast and a normal one. If fast, it returns a
-    * [[StackedUpdateIntSequence]]. If normal, it computes a
-    * brand new [[ConcreteIntSequence]].
+    * [[StackedUpdateIntSequence]]. If normal, it computes a brand new [[ConcreteIntSequence]].
     *
     * @param fast
     *   Fast flag (for more detail see description)
@@ -386,7 +384,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
       moveAfter(
         this.explorerAtPosition(0).get,
         this.explorerAtPosition(size - 1).get,
-        new RootIntSequenceExplorer(this),
+        new RootIntSequenceExplorer(this, backward = true),
         flip = true,
         fast
       )
@@ -394,20 +392,16 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
   /** Regularizes the current [[IntSequence]] if the max number of pivot is reached
     *
     * 3 steps are involved in the process :
-    *   - Commits all stacked updates (see
-    *     [[StackedUpdateIntSequence]])
-    *   - Applies all pivots IF MAX PIVOTS IS REACHED (see
-    *     [[ConcreteIntSequence]])
-    *   - Set the resulting [[ConcreteIntSequence]] token with
-    *     this.token
+    *   - Commits all stacked updates (see [[StackedUpdateIntSequence]])
+    *   - Applies all pivots IF MAX PIVOTS IS REACHED (see [[ConcreteIntSequence]])
+    *   - Set the resulting [[ConcreteIntSequence]] token with this.token
     *
     * @param maxPivotPerValuePercent
     *   The maximum percent of pivot allowed
     * @param targetToken
     *   The identity of the resulting [[ConcreteIntSequence]]
     * @return
-    * A [[ConcreteIntSequence]] or and
-    * [[EmptyIntSequence]] with or without pivot
+    *   A [[ConcreteIntSequence]] or and [[EmptyIntSequence]] with or without pivot
     */
   def regularizeToMaxPivot(
     maxPivotPerValuePercent: Int,
@@ -419,23 +413,19 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     * 3 steps are involved in the process :
     *   - Commits all stacked updates (see StackedUpdateIntSequence)
     *   - Applies all pivots (see [[ConcreteIntSequence]])
-    *   - Set the resulting [[ConcreteIntSequence]] token with
-    *     this.token
+    *   - Set the resulting [[ConcreteIntSequence]] token with this.token
     *
     * @param targetToken
-    *   The identity token to give at the resulting
-    *   [[ConcreteIntSequence]]
+    *   The identity token to give at the resulting [[ConcreteIntSequence]]
     * @return
-    * A [[ConcreteIntSequence]] with no Pivot
+    *   A [[ConcreteIntSequence]] with no Pivot
     */
   def regularize(targetToken: Token = this.token): IntSequence
 
-  /** Commit all [[StackedUpdateIntSequence]] moves to form a
-    * [[ConcreteIntSequence]]
+  /** Commit all [[StackedUpdateIntSequence]] moves to form a [[ConcreteIntSequence]]
     *
     * @return
-    * An [[IntSequence]] (concrete class is a
-    * [[ConcreteIntSequence]])
+    *   An [[IntSequence]] (concrete class is a [[ConcreteIntSequence]])
     */
   def commitPendingMoves: IntSequence
 
@@ -461,9 +451,9 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
 /** The identity of an [[IntSequence]].
   *
   * The idea behind this Token is to be able to quickly check if two IntSequence are the same. It
-  * allows us to say that a [[StackedUpdateIntSequence]] is
-  * the same as a [[ConcreteIntSequence]] if they share the same
-  * [[Token]]. Which is mandatory since the regularization mechanism can be trigger any time.
+  * allows us to say that a [[StackedUpdateIntSequence]] is the same as a [[ConcreteIntSequence]] if
+  * they share the same [[Token]]. Which is mandatory since the regularization mechanism can be
+  * trigger any time.
   *
   * By default a new Token is created each time a new IntSequence is created. The only exception is
   * during regularization where the Token is copied into the new ConcreteIntSequence

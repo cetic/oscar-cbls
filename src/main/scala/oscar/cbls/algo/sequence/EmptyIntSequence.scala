@@ -2,11 +2,13 @@ package oscar.cbls.algo.sequence
 
 /** Represents an empty [[IntSequence]].
   *
-  * Only insertion is permitted. Upon insertion it creates a [[ConcreteIntSequence]]
-  * containing the value.
+  * Only insertion is permitted. Upon insertion it creates a [[ConcreteIntSequence]] containing the
+  * value.
   */
 case class EmptyIntSequence() extends IntSequence(depth = 0) {
   override def size: Int = 0
+
+  override def iterator: Iterator[Int] = Iterator.empty
 
   override def nbOccurrence(value: Int): Int = 0
 
@@ -21,12 +23,27 @@ case class EmptyIntSequence() extends IntSequence(depth = 0) {
   override def contains(value: Int): Boolean = false
 
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] =
-    if (position == -1) Some(new RootIntSequenceExplorer(this))
+    if (position == -1) Some(new RootIntSequenceExplorer(this, true))
     else None
 
+  /** Insert a value after the position defined by the [[IntSequenceExplorer]]
+    *
+    * In this particular case, we simply create a [[ConcreteIntSequence]] with the value as the only
+    * element in the sequence. Thus the explorer and fast flag are not mandatory an have default
+    * values.
+    * @param value
+    *   The value to insert
+    * @param insertAfterPositionExplorer
+    *   The position after which to insert the value
+    * @param fast
+    *   Fast flag (for more detail see description)
+    * @return
+    *   An IntSequence with the new value
+    */
   override def insertAfterPosition(
     value: Int,
-    insertAfterPositionExplorer: IntSequenceExplorer = new RootIntSequenceExplorer(this),
+    insertAfterPositionExplorer: IntSequenceExplorer =
+      new RootIntSequenceExplorer(this, backward = true),
     fast: Boolean = false
   ): IntSequence = {
     IntSequence(List(value))

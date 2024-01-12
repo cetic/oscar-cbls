@@ -35,10 +35,14 @@ object ExplorerTester extends AnyFunSuite with Matchers {
     explorerAtEnd.isDefined should be(true)
     explorerAtEnd.get.position should be(referenceList.size - 1)
 
-    val exception =
-      intercept[IllegalArgumentException](explorerAtEnd.get.goToPosition(Int.MinValue))
-    assert(exception.getMessage.contains("requirement failed"))
-    explorerAtRoot.get.goToPosition(Int.MaxValue).isDefined should be(false)
+    val explorerAtRootEnd = explorerAtRoot.get.goToPosition(referenceList.size)
+    explorerAtRootEnd.isDefined should be(true)
+    explorerAtRootEnd.get.position should be(referenceList.size)
+    explorerAtRootEnd.get.isInstanceOf[RootIntSequenceExplorer] should be(true)
+    explorerAtRootEnd.get.asInstanceOf[RootIntSequenceExplorer].backward should be(false)
+
+    explorerAtEnd.get.goToPosition(Int.MinValue).isEmpty should be(true)
+    explorerAtRoot.get.goToPosition(Int.MaxValue).isEmpty should be(true)
 
     for (testPosition <- 1 until referenceList.size - 1) {
       val reachedExplorer = explorerAtRoot.get.goToPosition(testPosition)
@@ -145,42 +149,54 @@ object ExplorerTester extends AnyFunSuite with Matchers {
     referenceList: List[Int]
   ): Unit = {
     // RootExplorer test
+    // Backward
     val explorerAtStart = startingExplorer.goToPosition(0)
     explorerAtStart.get.value should be(referenceList.head)
     val explorerAtRoot = explorerAtStart.get.prev
-    explorerAtRoot.isDefined should be(true)
-    explorerAtRoot.get.isInstanceOf[RootIntSequenceExplorer] should be(true)
-    val explorerAtStart2 = explorerAtRoot.get.next
-    explorerAtStart2.isDefined should be(true)
-    explorerAtStart2.get.value should be(referenceList.head)
+    explorerAtRoot.isInstanceOf[RootIntSequenceExplorer] should be(true)
+    explorerAtRoot.asInstanceOf[RootIntSequenceExplorer].backward should be(true)
+    val explorerAtStart2 = explorerAtRoot.next
+    explorerAtStart2.value should be(referenceList.head)
+    // Forward
+    val explorerAtEnd = startingExplorer.goToPosition(referenceList.size - 1)
+    explorerAtEnd.get.value should be(referenceList.last)
+    val explorerAtRoot2 = explorerAtEnd.get.next
+    explorerAtRoot2.isInstanceOf[RootIntSequenceExplorer] should be(true)
+    explorerAtRoot2.asInstanceOf[RootIntSequenceExplorer].backward should be(false)
+    val explorerAtEnd2 = explorerAtRoot2.prev
+    explorerAtEnd2.value should be(referenceList.last)
 
-    var prevExplorer: Option[IntSequenceExplorer] = Some(startingExplorer)
-    var prevPos                                   = -1
+    var prevExplorer: IntSequenceExplorer = startingExplorer
+    var prevPos                           = -1
     for (_ <- 0 until 100) {
       // true == next
       if (Random.nextBoolean()) {
-        val currentExplorer = prevExplorer.get.next
-        val currentPos      = prevPos + 1
+        val currentExplorer = prevExplorer.next
+        val currentPos      = Math.min(prevPos + 1, referenceList.size)
         if (currentPos == referenceList.size) {
-          currentExplorer should be(None)
+          currentExplorer.isInstanceOf[RootIntSequenceExplorer] should be(true)
+          currentExplorer.asInstanceOf[RootIntSequenceExplorer].backward should be(false)
+          val exception = intercept[NoSuchElementException](currentExplorer.value)
+          assert(exception.getMessage.contains("not part of the sequence"))
+          currentExplorer.next.isInstanceOf[RootIntSequenceExplorer] should be(true)
+          currentExplorer.next.asInstanceOf[RootIntSequenceExplorer].backward should be(false)
         } else {
-          currentExplorer.get.value should be(referenceList(currentPos))
+          currentExplorer.value should be(referenceList(currentPos))
           prevExplorer = currentExplorer
           prevPos = currentPos
         }
       } else {
-        val currentExplorer = prevExplorer.get.prev
-        val currentPos      = prevPos - 1
-        if (currentPos == -2) {
-          currentExplorer should be(None)
+        val currentExplorer = prevExplorer.prev
+        val currentPos      = Math.max(prevPos - 1, -1)
+        if (currentPos == -1) {
+          currentExplorer.isInstanceOf[RootIntSequenceExplorer] should be(true)
+          currentExplorer.asInstanceOf[RootIntSequenceExplorer].backward should be(true)
+          val exception = intercept[NoSuchElementException](currentExplorer.value)
+          assert(exception.getMessage.contains("not part of the sequence"))
+          currentExplorer.prev.isInstanceOf[RootIntSequenceExplorer] should be(true)
+          currentExplorer.prev.asInstanceOf[RootIntSequenceExplorer].backward should be(true)
         } else {
-          if (currentPos == -1) {
-            val exception = intercept[NoSuchElementException](currentExplorer.get.value)
-            assert(exception.getMessage.contains("not part of the sequence"))
-            currentExplorer.get.isInstanceOf[RootIntSequenceExplorer] should be(true)
-          } else {
-            currentExplorer.get.value should be(referenceList(currentPos))
-          }
+          currentExplorer.value should be(referenceList(currentPos))
           prevExplorer = currentExplorer
           prevPos = currentPos
         }

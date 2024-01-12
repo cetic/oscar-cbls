@@ -19,17 +19,17 @@ package oscar.cbls.algo.sequence
   * @param intSequenceExplorer
   *   The optional [[IntSequenceExplorer]]
   */
-class IntSequenceIterator(var intSequenceExplorer: Option[IntSequenceExplorer])
-    extends Iterator[Int] {
+class IntSequenceIterator(var intSequenceExplorer: IntSequenceExplorer) extends Iterator[Int] {
 
   override def hasNext: Boolean =
     intSequenceExplorer match {
-      case None    => false
-      case Some(_) => true
+      case _: RootIntSequenceExplorer => false
+      case _                          => true
     }
 
   override def next(): Int = {
-    val currentExplorer = intSequenceExplorer.get
+    if (!hasNext) throw new NoSuchElementException
+    val currentExplorer = intSequenceExplorer
     intSequenceExplorer = currentExplorer.next
     currentExplorer.value
   }
