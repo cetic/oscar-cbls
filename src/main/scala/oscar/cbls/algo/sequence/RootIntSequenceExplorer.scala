@@ -1,8 +1,15 @@
 package oscar.cbls.algo.sequence
 
-/** The root [[IntSequenceExplorer]].
+/** The boundary of the IntSequenceExplorer.
   *
-  * Meant to ease the insertion/move at position 0.
+  * Not part of the IntSequence. Meant to ease the insertion/move at position 0.
+  *
+  * @param intSequence
+  *   The related IntSequence
+  * @param backward
+  *   - If true we reached the RootExplorer using prev or using intSequence.explorerAtPosition(-1)
+  *   - If false we reached the RootExplorer using next or using
+  *     intSequence.explorerAtPosition(intSequence.size)
   */
 class RootIntSequenceExplorer(intSequence: IntSequence, val backward: Boolean)
     extends IntSequenceExplorer(intSequence) {
