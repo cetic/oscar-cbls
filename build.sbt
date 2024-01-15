@@ -12,7 +12,7 @@ ThisBuild / publishTo    := {
   }
   artifactoryRepo.map(_.withAllowInsecureProtocol(true))
 }
-ThisBuild / credentials += Credentials("Artifactory Realm", sys.env("ARTIFACTORY_URL"), sys.env("ARTIFACTORY_USER"), sys.env("ARTIFACTORY_PASS"))
+ThisBuild / credentials += Credentials("Artifactory Realm", sys.env.getOrElse("ARTIFACTORY_URL", ""), sys.env.getOrElse("ARTIFACTORY_USER", ""), sys.env.getOrElse("ARTIFACTORY_PASS", ""))
 
 lazy val oscarCbls = (project in file("."))
   .enablePlugins(PackPlugin)
