@@ -55,6 +55,10 @@ class ConcreteIntSequence(
   private[sequence] val startFreeRangeForInternalPosition: Int,
   token: Token = Token()
 ) extends IntSequence(token, 0) {
+  require(
+    !internalPositionToValue.isEmpty && !valueToInternalPositions.isEmpty,
+    "A concreteIntSequence cannot be empty, for empty IntSequence use EmptyIntSequence"
+  )
 
   /* During exploration we often use the getExplorerAt(...) method. This call is expensive (Log(n))
      Furthermore, the same explorer may be called several times in a row. The idea here is to add a
@@ -84,7 +88,7 @@ class ConcreteIntSequence(
   }
 
   override def descriptorString: String =
-    s"[${this.iterator.toList.mkString(",")}]_impl:concrete"
+    s"[${this.iterator.map(_.value).toList.mkString(",")}]_impl:concrete"
 
   override def check(): Unit = {
     require(
@@ -621,12 +625,12 @@ class ConcreteIntSequence(
     val oldInternalPosToNewInternalPos: Array[Int]     = Array.ofDim[Int](this.size)
 
     if (explorerOpt.nonEmpty)
-      explorerOpt.get.foreach(explorer => {
+      for (explorer <- explorerOpt.get.forward.to(expl => expl.position == size - 1)) {
         newInternalPositionToValues(explorer.position) = (explorer.position, explorer.value)
         oldInternalPosToNewInternalPos(
           explorer.asInstanceOf[ConcreteIntSequenceExplorer].internalPos
         ) = explorer.position
-      })
+      }
 
     new ConcreteIntSequence(
       RedBlackTreeMap.makeFromSortedArray(newInternalPositionToValues),

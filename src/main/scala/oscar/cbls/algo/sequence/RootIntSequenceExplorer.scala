@@ -6,21 +6,21 @@ package oscar.cbls.algo.sequence
   *
   * @param intSequence
   *   The related IntSequence
-  * @param backward
+  * @param beforeStart
   *   - If true we reached the RootExplorer using prev or using intSequence.explorerAtPosition(-1)
   *   - If false we reached the RootExplorer using next or using
   *     intSequence.explorerAtPosition(intSequence.size)
   */
-class RootIntSequenceExplorer(intSequence: IntSequence, val backward: Boolean)
+class RootIntSequenceExplorer(intSequence: IntSequence, val beforeStart: Boolean)
     extends IntSequenceExplorer(intSequence) {
   override def value: Int = throw new NoSuchElementException(
     "RootIntSequenceExplorer doesn't have any value since it's not part of the sequence."
   )
 
-  override def position: Int = if (backward) -1 else intSequence.size
+  override def position: Int = if (beforeStart) -1 else intSequence.size
 
   override def next: IntSequenceExplorer = {
-    if (backward) {
+    if (beforeStart) {
       intSequence match {
         case _: EmptyIntSequence => this
         case _                   => intSequence.explorerAtPosition(0).get
@@ -30,22 +30,22 @@ class RootIntSequenceExplorer(intSequence: IntSequence, val backward: Boolean)
     }
   }
 
-  override def nextUntil(f: IntSequenceExplorer => Boolean): Option[IntSequenceExplorer] = {
-    if (backward) {
+  override def exploreForwardUntil(f: IntSequenceExplorer => Boolean): Option[IntSequenceExplorer] = {
+    if (beforeStart) {
       intSequence match {
         case _: EmptyIntSequence => None
-        case _                   => intSequence.explorerAtPosition(0).get.nextUntil(f)
+        case _                   => intSequence.explorerAtPosition(0).get.exploreForwardUntil(f)
       }
     } else {
       None
     }
   }
 
-  override def nextUntilValue(value: Int): Option[IntSequenceExplorer] = {
-    if (backward) {
+  override def exploreForwardUntilValue(value: Int): Option[IntSequenceExplorer] = {
+    if (beforeStart) {
       intSequence match {
         case _: EmptyIntSequence => None
-        case _                   => intSequence.explorerAtPosition(0).get.nextUntilValue(value)
+        case _                   => intSequence.explorerAtPosition(0).get.exploreForwardUntilValue(value)
       }
     } else {
       None
@@ -53,7 +53,7 @@ class RootIntSequenceExplorer(intSequence: IntSequence, val backward: Boolean)
   }
 
   override def prev: IntSequenceExplorer = {
-    if (backward) {
+    if (beforeStart) {
       this
     } else {
       intSequence match {
@@ -63,31 +63,25 @@ class RootIntSequenceExplorer(intSequence: IntSequence, val backward: Boolean)
     }
   }
 
-  override def prevUntil(f: IntSequenceExplorer => Boolean): Option[IntSequenceExplorer] = {
-    if (backward) {
+  override def exploreBackwardUntil(f: IntSequenceExplorer => Boolean): Option[IntSequenceExplorer] = {
+    if (beforeStart) {
       None
     } else {
       intSequence match {
         case _: EmptyIntSequence => None
-        case _ => intSequence.explorerAtPosition(intSequence.size - 1).get.prevUntil(f)
+        case _ => intSequence.explorerAtPosition(intSequence.size - 1).get.exploreBackwardUntil(f)
       }
     }
   }
 
-  override def prevUntilValue(value: Int): Option[IntSequenceExplorer] = {
-    if (backward) {
+  override def exploreBackwardUntilValue(value: Int): Option[IntSequenceExplorer] = {
+    if (beforeStart) {
       None
     } else {
       intSequence match {
         case _: EmptyIntSequence => None
-        case _ => intSequence.explorerAtPosition(intSequence.size - 1).get.prevUntilValue(value)
+        case _ => intSequence.explorerAtPosition(intSequence.size - 1).get.exploreBackwardUntilValue(value)
       }
-    }
-  }
-
-  override def foreach(f: IntSequenceExplorer => Unit): Unit = {
-    if (backward) {
-      next.foreach(f)
     }
   }
 }

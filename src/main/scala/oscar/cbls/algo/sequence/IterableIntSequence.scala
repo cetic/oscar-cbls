@@ -19,7 +19,7 @@ package oscar.cbls.algo.sequence
   *   The IntSequence to convert
   */
 class IterableIntSequence(sequence: IntSequence) extends Iterable[Int] {
-  override def iterator: Iterator[Int] = sequence.iterator
+  override def iterator: Iterator[Int] = sequence.iterator.map(_.value)
 
   override def head: Int = sequence.valueAtPosition(0).get
 

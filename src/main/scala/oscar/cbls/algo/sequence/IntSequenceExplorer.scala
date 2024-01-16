@@ -17,7 +17,7 @@ package oscar.cbls.algo.sequence
   *
   * Each instance represents the state of the sequence at a specific position.
   */
-abstract class IntSequenceExplorer(intSequence: IntSequence) {
+abstract class IntSequenceExplorer(val intSequence: IntSequence) {
 
   /** The value at the current position */
   def value: Int
@@ -39,88 +39,81 @@ abstract class IntSequenceExplorer(intSequence: IntSequence) {
     * @return
     *   The IntSequenceExplorer if it exists
     */
-  def goToPosition(position: Int): Option[IntSequenceExplorer] = {
+  def exploreToPosition(position: Int): Option[IntSequenceExplorer] = {
     if (position < -1 || position > intSequence.size) None
     else if (this.position == position) Some(this)
     else {
       val explorer =
         if (this.position > position) prev
         else next
-      explorer.goToPosition(position)
+      explorer.exploreToPosition(position)
     }
   }
 
-  /** Returns the [[IntSequenceExplorer]] containing the given value, going backward.
+  /** Returns the first [[IntSequenceExplorer]] containing the given value, going backward.
     *
     * @param value
     *   The value to reach
     * @return
     *   The IntSequenceExplorer if it exists
     */
-  def prevUntilValue(value: Int): Option[IntSequenceExplorer] = {
+  def exploreBackwardUntilValue(value: Int): Option[IntSequenceExplorer] = {
     if (this.value == value) Some(this)
     else {
       val previousExplorer = prev
-      previousExplorer.prevUntilValue(value)
+      previousExplorer.exploreBackwardUntilValue(value)
     }
   }
 
-  /** Returns the [[IntSequenceExplorer]] containing the given value, going forward.
+  /** Returns the first [[IntSequenceExplorer]] containing the given value, going forward.
     *
     * @param value
     *   The value to reach
     * @return
     *   The IntSequenceExplorer if it exists
     */
-  def nextUntilValue(value: Int): Option[IntSequenceExplorer] = {
+  def exploreForwardUntilValue(value: Int): Option[IntSequenceExplorer] = {
     if (this.value == value) Some(this)
     else {
       val nextExplorer = next
-      nextExplorer.nextUntilValue(value)
+      nextExplorer.exploreForwardUntilValue(value)
     }
   }
 
-  /** Returns the [[IntSequenceExplorer]] satisfying the given function, going backward.
+  /** Returns the first [[IntSequenceExplorer]] satisfying the given function, going backward.
     *
     * @param f
     *   The function to satisfy
     * @return
     *   The IntSequenceExplorer if it exists
     */
-  def prevUntil(f: IntSequenceExplorer => Boolean): Option[IntSequenceExplorer] = {
+  def exploreBackwardUntil(f: IntSequenceExplorer => Boolean): Option[IntSequenceExplorer] = {
     if (f(this)) Some(this)
     else {
       val previousExplorer = prev
-      previousExplorer.prevUntil(f)
+      previousExplorer.exploreBackwardUntil(f)
     }
   }
 
-  /** Returns the [[IntSequenceExplorer]] satisfying the given function, going forward.
+  /** Returns the first [[IntSequenceExplorer]] satisfying the given function, going forward.
     *
     * @param f
     *   The function to satisfy
     * @return
     *   The IntSequenceExplorer if it exists
     */
-  def nextUntil(f: IntSequenceExplorer => Boolean): Option[IntSequenceExplorer] = {
+  def exploreForwardUntil(f: IntSequenceExplorer => Boolean): Option[IntSequenceExplorer] = {
     if (f(this)) Some(this)
     else {
       val nextExplorer = next
-      nextExplorer.nextUntil(f)
+      nextExplorer.exploreForwardUntil(f)
     }
   }
 
-  /** Applies the given function on each [[IntSequenceExplorer]]
-    *
-    * @param f
-    *   The function to apply
-    */
-  def foreach(f: IntSequenceExplorer => Unit): Unit = {
-    if (!this.isInstanceOf[RootIntSequenceExplorer]) f(this)
-    next match {
-      case _: RootIntSequenceExplorer    =>
-      case explorer: IntSequenceExplorer => explorer.foreach(f)
-    }
-  }
+  /** Returns an IntSequenceExplorer Iterator going backward. Use it for for/while loop */
+  def backward: IntSequenceExplorerToIterator = IntSequenceExplorerToIterator(this, forward = false)
+
+  /** Returns an IntSequenceExplorer Iterator going forward. Use it for for/while loop */
+  def forward: IntSequenceExplorerToIterator = IntSequenceExplorerToIterator(this, forward = true)
 
 }

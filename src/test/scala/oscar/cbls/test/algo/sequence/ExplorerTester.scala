@@ -18,130 +18,174 @@ object ExplorerTester extends AnyFunSuite with Matchers {
     rootExplorer.position should be(-1)
 
     testPrevNextGlobalBehavior(rootExplorer, referenceList)
-    testToPosition(rootExplorer, referenceList)
+    testExploreToPosition(rootExplorer, referenceList)
     if (referenceList.nonEmpty) {
       testForeach(rootExplorer, referenceList)
-      testUntil(rootExplorer, referenceList)
+      testExploreUntil(rootExplorer, referenceList)
     }
 
   }
 
-  private def testToPosition(explorer: IntSequenceExplorer, referenceList: List[Int]): Unit = {
-    val explorerAtRoot = explorer.goToPosition(-1)
+  private def testExploreToPosition(explorer: IntSequenceExplorer, referenceList: List[Int]): Unit = {
+    val explorerAtRoot = explorer.exploreToPosition(-1)
     explorerAtRoot.isDefined should be(true)
     explorerAtRoot.get.position should be(-1)
 
-    val explorerAtEnd = explorerAtRoot.get.goToPosition(referenceList.size - 1)
+    val explorerAtEnd = explorerAtRoot.get.exploreToPosition(referenceList.size - 1)
     explorerAtEnd.isDefined should be(true)
     explorerAtEnd.get.position should be(referenceList.size - 1)
 
-    val explorerAtRootEnd = explorerAtRoot.get.goToPosition(referenceList.size)
+    val explorerAtRootEnd = explorerAtRoot.get.exploreToPosition(referenceList.size)
     explorerAtRootEnd.isDefined should be(true)
     explorerAtRootEnd.get.position should be(referenceList.size)
     explorerAtRootEnd.get.isInstanceOf[RootIntSequenceExplorer] should be(true)
-    explorerAtRootEnd.get.asInstanceOf[RootIntSequenceExplorer].backward should be(false)
+    explorerAtRootEnd.get.asInstanceOf[RootIntSequenceExplorer].beforeStart should be(false)
 
-    explorerAtEnd.get.goToPosition(Int.MinValue).isEmpty should be(true)
-    explorerAtRoot.get.goToPosition(Int.MaxValue).isEmpty should be(true)
+    explorerAtEnd.get.exploreToPosition(Int.MinValue).isEmpty should be(true)
+    explorerAtRoot.get.exploreToPosition(Int.MaxValue).isEmpty should be(true)
 
     for (testPosition <- 1 until referenceList.size - 1) {
-      val reachedExplorer = explorerAtRoot.get.goToPosition(testPosition)
+      val reachedExplorer = explorerAtRoot.get.exploreToPosition(testPosition)
       reachedExplorer.isDefined should be(true)
       reachedExplorer.get.position should be(testPosition)
       reachedExplorer.get.value should be(referenceList(testPosition))
     }
 
     for (testPosition <- 1 until referenceList.size - 1) {
-      val reachedExplorer = explorerAtEnd.get.goToPosition(testPosition)
+      val reachedExplorer = explorerAtEnd.get.exploreToPosition(testPosition)
       reachedExplorer.isDefined should be(true)
       reachedExplorer.get.position should be(testPosition)
       reachedExplorer.get.value should be(referenceList(testPosition))
     }
   }
 
-  private def testUntil(explorer: IntSequenceExplorer, referenceList: List[Int]): Unit = {
+  private def testExploreUntil(explorer: IntSequenceExplorer, referenceList: List[Int]): Unit = {
     val nonExistingValue: Int    = referenceList.max + 1
     val randomExistingValue: Int = referenceList(Random.nextInt(referenceList.size))
     val firstValue: Int          = referenceList.head
     val lastValue: Int           = referenceList.last
 
-    val explorerAtStart: IntSequenceExplorer = explorer.goToPosition(0).get
-    val explorerAtEnd: IntSequenceExplorer   = explorer.goToPosition(referenceList.size - 1).get
+    val explorerAtStart: IntSequenceExplorer = explorer.exploreToPosition(0).get
+    val explorerAtEnd: IntSequenceExplorer   = explorer.exploreToPosition(referenceList.size - 1).get
 
     var searchResult: Option[IntSequenceExplorer] = None
 
     // nextUntilValue(...)
-    explorerAtStart.nextUntilValue(nonExistingValue) should be(None)
-    searchResult = explorerAtStart.nextUntilValue(randomExistingValue)
+    explorerAtStart.exploreForwardUntilValue(nonExistingValue) should be(None)
+    searchResult = explorerAtStart.exploreForwardUntilValue(randomExistingValue)
     searchResult.isDefined should be(true)
     searchResult.get.value should be(randomExistingValue)
 
-    searchResult = explorerAtStart.nextUntilValue(firstValue)
+    searchResult = explorerAtStart.exploreForwardUntilValue(firstValue)
     searchResult.isDefined should be(true)
     searchResult.get.value should be(firstValue)
     searchResult.get.position should be(0)
 
-    searchResult = explorerAtStart.nextUntilValue(lastValue)
+    searchResult = explorerAtStart.exploreForwardUntilValue(lastValue)
     searchResult.isDefined should be(true)
     searchResult.get.value should be(lastValue)
 
     // prevUntilValue(...)
-    explorerAtEnd.prevUntilValue(nonExistingValue) should be(None)
-    searchResult = explorerAtEnd.prevUntilValue(randomExistingValue)
+    explorerAtEnd.exploreBackwardUntilValue(nonExistingValue) should be(None)
+    searchResult = explorerAtEnd.exploreBackwardUntilValue(randomExistingValue)
     searchResult.isDefined should be(true)
     searchResult.get.value should be(randomExistingValue)
 
-    searchResult = explorerAtEnd.prevUntilValue(firstValue)
+    searchResult = explorerAtEnd.exploreBackwardUntilValue(firstValue)
     searchResult.isDefined should be(true)
     searchResult.get.value should be(firstValue)
 
-    searchResult = explorerAtEnd.prevUntilValue(lastValue)
+    searchResult = explorerAtEnd.exploreBackwardUntilValue(lastValue)
     searchResult.isDefined should be(true)
     searchResult.get.value should be(lastValue)
     searchResult.get.position should be(referenceList.size - 1)
 
     // nextUntil(...)
-    explorerAtStart.nextUntil(x => x.value == nonExistingValue) should be(None)
-    searchResult = explorerAtStart.nextUntil(x => x.value == randomExistingValue)
+    explorerAtStart.exploreForwardUntil(x => x.value == nonExistingValue) should be(None)
+    searchResult = explorerAtStart.exploreForwardUntil(x => x.value == randomExistingValue)
     searchResult.isDefined should be(true)
     searchResult.get.value should be(randomExistingValue)
 
-    searchResult = explorerAtStart.nextUntil(x => x.value == firstValue)
+    searchResult = explorerAtStart.exploreForwardUntil(x => x.value == firstValue)
     searchResult.isDefined should be(true)
     searchResult.get.value should be(firstValue)
     searchResult.get.position should be(0)
 
-    searchResult = explorerAtStart.nextUntil(x => x.value == lastValue)
+    searchResult = explorerAtStart.exploreForwardUntil(x => x.value == lastValue)
     searchResult.isDefined should be(true)
     searchResult.get.value should be(lastValue)
 
     // prevUntilValue(...)
-    explorerAtEnd.prevUntil(x => x.value == nonExistingValue) should be(None)
-    searchResult = explorerAtEnd.prevUntil(x => x.value == randomExistingValue)
+    explorerAtEnd.exploreBackwardUntil(x => x.value == nonExistingValue) should be(None)
+    searchResult = explorerAtEnd.exploreBackwardUntil(x => x.value == randomExistingValue)
     searchResult.isDefined should be(true)
     searchResult.get.value should be(randomExistingValue)
 
-    searchResult = explorerAtEnd.prevUntil(x => x.value == firstValue)
+    searchResult = explorerAtEnd.exploreBackwardUntil(x => x.value == firstValue)
     searchResult.isDefined should be(true)
     searchResult.get.value should be(firstValue)
 
-    searchResult = explorerAtEnd.prevUntil(x => x.value == lastValue)
+    searchResult = explorerAtEnd.exploreBackwardUntil(x => x.value == lastValue)
     searchResult.isDefined should be(true)
     searchResult.get.value should be(lastValue)
     searchResult.get.position should be(referenceList.size - 1)
 
   }
 
-  // Test the foreach method
+  // Test the IntSequenceExplorerIterator
   private def testForeach(explorer: IntSequenceExplorer, referenceList: List[Int]): Unit = {
-    var listForEach: List[Int] = List.empty
-    explorer
-      .goToPosition(0)
-      .get
-      .foreach(e => {
-        listForEach = listForEach :+ e.value
-      })
-    listForEach shouldBe referenceList.drop(explorer.position)
+    // At RootPosition
+    val explorerAtRoot1 = explorer.exploreToPosition(-1)
+    val rootIterator1Backward = explorerAtRoot1.get.backward
+    intercept[NoSuchElementException](rootIterator1Backward.toValue(4).next())
+    intercept[NoSuchElementException](rootIterator1Backward.to(_ => true).next())
+    intercept[NoSuchElementException](rootIterator1Backward.untilValue(4).next())
+    intercept[NoSuchElementException](rootIterator1Backward.until(_ => true).next())
+    val rootIterator1Forward = explorerAtRoot1.get.forward
+    intercept[NoSuchElementException](rootIterator1Forward.toValue(4).next())
+    intercept[NoSuchElementException](rootIterator1Forward.to(_ => true).next())
+    intercept[NoSuchElementException](rootIterator1Forward.untilValue(4).next())
+    intercept[NoSuchElementException](rootIterator1Forward.until(_ => true).next())
+
+    val explorerAtRoot2 = explorer.exploreToPosition(referenceList.size)
+    val rootIterator2Backward = explorerAtRoot2.get.backward
+    intercept[NoSuchElementException](rootIterator2Backward.toValue(4).next())
+    intercept[NoSuchElementException](rootIterator2Backward.to(_ => true).next())
+    intercept[NoSuchElementException](rootIterator2Backward.untilValue(4).next())
+    intercept[NoSuchElementException](rootIterator2Backward.until(_ => true).next())
+    val rootIterator2Forward = explorerAtRoot2.get.forward
+    intercept[NoSuchElementException](rootIterator2Forward.toValue(4).next())
+    intercept[NoSuchElementException](rootIterator2Forward.to(_ => true).next())
+    intercept[NoSuchElementException](rootIterator2Forward.untilValue(4).next())
+    intercept[NoSuchElementException](rootIterator2Forward.until(_ => true).next())
+
+
+    def compareSubLists(explorer: Iterator[IntSequenceExplorer], reference: List[Int]): Unit = {
+      var explorerList: List[Int] = List.empty
+      for(expl <- explorer)  explorerList = explorerList ::: List(expl.value)
+      explorerList should be(reference)
+    }
+
+    val randomValue = Random.shuffle(referenceList).head
+    val explorerAt0 = explorer.exploreToPosition(0).get
+    compareSubLists(explorerAt0.forward.untilValue(randomValue), referenceList.takeWhile(x => x != randomValue))
+    compareSubLists(explorerAt0.forward.until(x => x.value == randomValue), referenceList.takeWhile(x => x != randomValue))
+    compareSubLists(explorerAt0.forward.toValue(randomValue), referenceList.takeWhile(x => x != randomValue) :+ randomValue)
+    compareSubLists(explorerAt0.forward.to(x => x.value == randomValue), referenceList.takeWhile(x => x != randomValue) :+ randomValue)
+
+    val explorerAtEnd = explorer.exploreToPosition(referenceList.size-1).get
+    compareSubLists(explorerAtEnd.backward.untilValue(randomValue), referenceList.reverse.takeWhile(x => x != randomValue))
+    compareSubLists(explorerAtEnd.backward.until(x => x.value == randomValue), referenceList.reverse.takeWhile(x => x != randomValue))
+    compareSubLists(explorerAtEnd.backward.toValue(randomValue), referenceList.reverse.takeWhile(x => x != randomValue) :+ randomValue)
+    compareSubLists(explorerAtEnd.backward.to(x => x.value == randomValue), referenceList.reverse.takeWhile(x => x != randomValue) :+ randomValue)
+
+    var explorerValuePlus10List: List[Int] = List.empty
+    for(expl <- explorerAt0.forward){
+      explorerValuePlus10List :+= expl.value + 10
+    }
+
+    explorerValuePlus10List should be(referenceList.map(x => x+10))
+
   }
 
   private def testPrevNextGlobalBehavior(
@@ -150,19 +194,19 @@ object ExplorerTester extends AnyFunSuite with Matchers {
   ): Unit = {
     // RootExplorer test
     // Backward
-    val explorerAtStart = startingExplorer.goToPosition(0)
+    val explorerAtStart = startingExplorer.exploreToPosition(0)
     explorerAtStart.get.value should be(referenceList.head)
     val explorerAtRoot = explorerAtStart.get.prev
     explorerAtRoot.isInstanceOf[RootIntSequenceExplorer] should be(true)
-    explorerAtRoot.asInstanceOf[RootIntSequenceExplorer].backward should be(true)
+    explorerAtRoot.asInstanceOf[RootIntSequenceExplorer].beforeStart should be(true)
     val explorerAtStart2 = explorerAtRoot.next
     explorerAtStart2.value should be(referenceList.head)
     // Forward
-    val explorerAtEnd = startingExplorer.goToPosition(referenceList.size - 1)
+    val explorerAtEnd = startingExplorer.exploreToPosition(referenceList.size - 1)
     explorerAtEnd.get.value should be(referenceList.last)
     val explorerAtRoot2 = explorerAtEnd.get.next
     explorerAtRoot2.isInstanceOf[RootIntSequenceExplorer] should be(true)
-    explorerAtRoot2.asInstanceOf[RootIntSequenceExplorer].backward should be(false)
+    explorerAtRoot2.asInstanceOf[RootIntSequenceExplorer].beforeStart should be(false)
     val explorerAtEnd2 = explorerAtRoot2.prev
     explorerAtEnd2.value should be(referenceList.last)
 
@@ -175,11 +219,11 @@ object ExplorerTester extends AnyFunSuite with Matchers {
         val currentPos      = Math.min(prevPos + 1, referenceList.size)
         if (currentPos == referenceList.size) {
           currentExplorer.isInstanceOf[RootIntSequenceExplorer] should be(true)
-          currentExplorer.asInstanceOf[RootIntSequenceExplorer].backward should be(false)
+          currentExplorer.asInstanceOf[RootIntSequenceExplorer].beforeStart should be(false)
           val exception = intercept[NoSuchElementException](currentExplorer.value)
           assert(exception.getMessage.contains("not part of the sequence"))
           currentExplorer.next.isInstanceOf[RootIntSequenceExplorer] should be(true)
-          currentExplorer.next.asInstanceOf[RootIntSequenceExplorer].backward should be(false)
+          currentExplorer.next.asInstanceOf[RootIntSequenceExplorer].beforeStart should be(false)
         } else {
           currentExplorer.value should be(referenceList(currentPos))
           prevExplorer = currentExplorer
@@ -190,11 +234,11 @@ object ExplorerTester extends AnyFunSuite with Matchers {
         val currentPos      = Math.max(prevPos - 1, -1)
         if (currentPos == -1) {
           currentExplorer.isInstanceOf[RootIntSequenceExplorer] should be(true)
-          currentExplorer.asInstanceOf[RootIntSequenceExplorer].backward should be(true)
+          currentExplorer.asInstanceOf[RootIntSequenceExplorer].beforeStart should be(true)
           val exception = intercept[NoSuchElementException](currentExplorer.value)
           assert(exception.getMessage.contains("not part of the sequence"))
           currentExplorer.prev.isInstanceOf[RootIntSequenceExplorer] should be(true)
-          currentExplorer.prev.asInstanceOf[RootIntSequenceExplorer].backward should be(true)
+          currentExplorer.prev.asInstanceOf[RootIntSequenceExplorer].beforeStart should be(true)
         } else {
           currentExplorer.value should be(referenceList(currentPos))
           prevExplorer = currentExplorer

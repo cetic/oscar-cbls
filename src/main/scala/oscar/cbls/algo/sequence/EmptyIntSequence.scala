@@ -8,7 +8,7 @@ package oscar.cbls.algo.sequence
 case class EmptyIntSequence() extends IntSequence(depth = 0) {
   override def size: Int = 0
 
-  override def iterator: Iterator[Int] = Iterator.empty
+  override def iterator: Iterator[IntSequenceExplorer] = Iterator.empty
 
   override def nbOccurrence(value: Int): Int = 0
 
@@ -41,10 +41,10 @@ case class EmptyIntSequence() extends IntSequence(depth = 0) {
     *   An IntSequence with the new value
     */
   override def insertAfterPosition(
-    value: Int,
-    insertAfterPositionExplorer: IntSequenceExplorer =
-      new RootIntSequenceExplorer(this, backward = true),
-    fast: Boolean = false
+                                    value: Int,
+                                    insertAfterPositionExplorer: IntSequenceExplorer =
+      new RootIntSequenceExplorer(this, beforeStart = true),
+                                    fast: Boolean = false
   ): IntSequence = {
     IntSequence(List(value))
   }

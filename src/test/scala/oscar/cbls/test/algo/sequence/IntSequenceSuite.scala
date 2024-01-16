@@ -190,7 +190,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
   private def testExplorer(seq: IntSequence, modifiedList: List[Int]): Unit = {
     if (modifiedList.nonEmpty) {
       seq.explorerAtPosition(-1).get.isInstanceOf[RootIntSequenceExplorer] should be(true)
-      seq.explorerAtPosition(-1).get.asInstanceOf[RootIntSequenceExplorer].backward should be(true)
+      seq.explorerAtPosition(-1).get.asInstanceOf[RootIntSequenceExplorer].beforeStart should be(true)
       ExplorerTester.testExplorers(seq.explorerAtPosition(-1).get, modifiedList)
     }
   }

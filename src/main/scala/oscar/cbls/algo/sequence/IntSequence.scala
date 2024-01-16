@@ -95,11 +95,11 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
 
   def nonEmpty: Boolean = !isEmpty
 
-  def iterator: Iterator[Int] = new IntSequenceIterator(this.explorerAtPosition(0).get)
+  def iterator: Iterator[IntSequenceExplorer] = this.explorerAtPosition(0).get.forward.iterator
 
-  def iterateFromAnyOccurrenceOfValue(value: Int): Iterator[Int] = {
+  def iterateFromAnyOccurrenceOfValue(value: Int): Iterator[IntSequenceExplorer] = {
     val explorerAtOccurence = this.explorerAtAnyOccurrence(value)
-    if (explorerAtOccurence.isDefined) new IntSequenceIterator(explorerAtOccurence.get)
+    if (explorerAtOccurence.isDefined) explorerAtOccurence.get.forward.iterator
     else Iterator.empty
   }
 
@@ -150,9 +150,8 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
     *   A new IntSequence with modified values.
     */
   def map(fun: Int => Int): IntSequence = {
-    val l: List[Int] = this.iterator.toList
-    val l2           = l.map(fun)
-    IntSequence.apply(l2)
+    val l: List[Int] = this.iterator.map(x => fun(x.value)).toList
+    IntSequence.apply(l)
   }
 
   /** Returns the values between the specified positions (included)
@@ -384,7 +383,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
       moveAfter(
         this.explorerAtPosition(0).get,
         this.explorerAtPosition(size - 1).get,
-        new RootIntSequenceExplorer(this, backward = true),
+        new RootIntSequenceExplorer(this, beforeStart = true),
         flip = true,
         fast
       )
@@ -441,7 +440,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
   }
 
   override def toString: String = {
-    s"(length:$size)[${this.iterator.toList.mkString(",")}]"
+    s"(length:$size)[${this.iterator.map(_.value).toList.mkString(",")}]"
   }
 
   /** Special string used to recursively describe the whole IntSequence with all stacked updated */

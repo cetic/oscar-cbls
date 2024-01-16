@@ -62,7 +62,7 @@ class RemovedIntSequence(
         case None => None
         case Some(e) =>
           e match {
-            case r: RootIntSequenceExplorer => Some(new RootIntSequenceExplorer(this, r.backward))
+            case r: RootIntSequenceExplorer => Some(new RootIntSequenceExplorer(this, r.beforeStart))
             case _ => Some(new RemovedIntSequenceExplorer(this, position, e))
           }
       }

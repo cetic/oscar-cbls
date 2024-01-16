@@ -84,7 +84,7 @@ class InsertedIntSequence(
           intSequence.explorerAtPosition(originPos)
         else
           // Position is close enough to use next/prev (O(1)) on the known explorer
-          originalExplorerAtInsertPosition.goToPosition(originPos)
+          originalExplorerAtInsertPosition.exploreToPosition(originPos)
       }
 
       explorer match {

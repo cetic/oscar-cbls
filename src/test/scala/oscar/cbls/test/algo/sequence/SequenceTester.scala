@@ -16,7 +16,7 @@ object SequenceTester extends AnyFunSuite with Matchers {
     intSeq.size should be(list.size)
     intSeq.isEmpty should be(list.isEmpty)
     intSeq.nonEmpty should be(list.nonEmpty)
-    intSeq.iterator.toList should be(list.iterator.toList)
+    intSeq.iterator.map(_.value).toList should be(list.iterator.toList)
     intSeq match {
       case sequence: ConcreteIntSequence if list.nonEmpty =>
         sequence.largestValue.get should be(list.max)
@@ -52,7 +52,7 @@ object SequenceTester extends AnyFunSuite with Matchers {
       intSeq.valueAtPosition(i).get should be(list(i))
 
       // Didn't find a matcher for that ...
-      list containsSlice intSeq.iterateFromAnyOccurrenceOfValue(list(i)).toList should be(true)
+      list containsSlice intSeq.iterateFromAnyOccurrenceOfValue(list(i)).map(_.value).toList should be(true)
     }
 
     // It is way too expensive to test all pair of index values exhaustively
