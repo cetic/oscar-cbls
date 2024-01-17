@@ -27,10 +27,30 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
     explorerAtStartRoot.isInstanceOf[RootIntSequenceExplorer] should be(true)
     intercept[NoSuchElementException](explorerAtStartRoot.value)
     explorerAtStartRoot.position should be(-1)
+    explorerAtStartRoot.prev should be(explorerAtStartRoot)
     val explorerAtEndRoot: IntSequenceExplorer = explorer.exploreToPosition(referenceList.size).get
     explorerAtEndRoot.isInstanceOf[RootIntSequenceExplorer] should be(true)
     intercept[NoSuchElementException](explorerAtEndRoot.value)
     explorerAtEndRoot.position should be(referenceList.size)
+    explorerAtEndRoot.next should be(explorerAtEndRoot)
+
+    // Next/prev returns expected values
+    // Backward
+    val explorerAtStart = explorer.exploreToPosition(0)
+    explorerAtStart.get.value should be(referenceList.head)
+    val fromStartToRoot = explorerAtStart.get.prev
+    fromStartToRoot.isInstanceOf[RootIntSequenceExplorer] should be(true)
+    fromStartToRoot.asInstanceOf[RootIntSequenceExplorer].beforeStart should be(true)
+    val fromRootToStart = fromStartToRoot.next
+    fromRootToStart.value should be(referenceList.head)
+    // Forward
+    val explorerAtEnd = explorer.exploreToPosition(referenceList.size - 1)
+    explorerAtEnd.get.value should be(referenceList.last)
+    val fromEndToRoot = explorerAtEnd.get.next
+    fromEndToRoot.isInstanceOf[RootIntSequenceExplorer] should be(true)
+    fromEndToRoot.asInstanceOf[RootIntSequenceExplorer].beforeStart should be(false)
+    val fromRootToEnd = fromEndToRoot.prev
+    fromRootToEnd.value should be(referenceList.last)
 
     // Iterator, startRoot in backward mode is an empty iterator and throw an error on next()
     val rootIteratorStartBackward = explorerAtStartRoot.backward
@@ -67,24 +87,6 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
     rootIteratorEndBackward.toValue(4).next().position should be(referenceList.size)
     val fullSeqReverseIteratorEndRoot = rootIteratorEndBackward.iterator
     fullSeqReverseIteratorEndRoot.map(_.position).toList should be((referenceList ::: List(referenceList.size)).reverse)
-
-    // Next/prev returns expected values
-    // Backward
-    val explorerAtStart = explorer.exploreToPosition(0)
-    explorerAtStart.get.value should be(referenceList.head)
-    val fromStartToRoot = explorerAtStart.get.prev
-    fromStartToRoot.isInstanceOf[RootIntSequenceExplorer] should be(true)
-    fromStartToRoot.asInstanceOf[RootIntSequenceExplorer].beforeStart should be(true)
-    val fromRootToStart = fromStartToRoot.next
-    fromRootToStart.value should be(referenceList.head)
-    // Forward
-    val explorerAtEnd = explorer.exploreToPosition(referenceList.size - 1)
-    explorerAtEnd.get.value should be(referenceList.last)
-    val fromEndToRoot = explorerAtEnd.get.next
-    fromEndToRoot.isInstanceOf[RootIntSequenceExplorer] should be(true)
-    fromEndToRoot.asInstanceOf[RootIntSequenceExplorer].beforeStart should be(false)
-    val fromRootToEnd = fromEndToRoot.prev
-    fromRootToEnd.value should be(referenceList.last)
   }
 
   test("Empty IntSequence behave as expected") {
