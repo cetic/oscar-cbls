@@ -16,7 +16,7 @@ object SequenceTester extends AnyFunSuite with Matchers {
     intSeq.size should be(list.size)
     intSeq.isEmpty should be(list.isEmpty)
     intSeq.nonEmpty should be(list.nonEmpty)
-    intSeq.iterator.map(_.value).toList should be(list.iterator.toList)
+    (intSeq.iterator.map(_.value).toList == list) should be(true)
     intSeq match {
       case sequence: ConcreteIntSequence if list.nonEmpty =>
         sequence.largestValue.get should be(list.max)
