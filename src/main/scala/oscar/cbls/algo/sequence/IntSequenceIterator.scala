@@ -59,15 +59,26 @@ case class IntSequenceExplorerToIterator(intSequenceExplorer: IntSequenceExplore
 
 abstract class IntSequenceIterator extends Iterator[IntSequenceExplorer]
 
+/** An conditional iterator going through the sequence using next moves on explorer
+  *
+  * NOTE : It allows to start RootIntSequenceExplorer "before start" but not "after end"
+  *
+  * @param start
+  *   The starting explorer of the iterator
+  * @param stopCondition
+  *   As long as it's false ==> continue
+  * @param inclusive
+  *   Whether or not we should include the last [[IntSequenceExplorer]]
+  */
 case class IntSequenceForwardIterator(
   var start: IntSequenceExplorer,
-  condition: IntSequenceExplorer => Boolean,
+  stopCondition: IntSequenceExplorer => Boolean,
   inclusive: Boolean
 ) extends IntSequenceIterator {
   private var _next: IntSequenceExplorer = start
   private var _hasNext: Boolean =
-    (start.position >= 0 && start.position < start.intSequence.size) &&
-      (inclusive || !condition(start))
+    (start.position >= -1 && start.position < start.intSequence.size) &&
+      (inclusive || start.position == -1 || !stopCondition(start))
 
   override def hasNext: Boolean = _hasNext
 
@@ -75,8 +86,8 @@ case class IntSequenceForwardIterator(
     if (!_hasNext) throw new NoSuchElementException
     val value = _next
     _hasNext = {
-      val currentFulFillCondition   = condition(value)
-      lazy val nextFulFillCondition = condition(value.next)
+      val currentFulFillCondition   = !(start.position == -1) && stopCondition(value)
+      lazy val nextFulFillCondition = stopCondition(value.next)
       value.position < value.intSequence.size - 1 && (
         (!inclusive && !currentFulFillCondition && !nextFulFillCondition) ||
           (inclusive && !currentFulFillCondition)
@@ -87,15 +98,26 @@ case class IntSequenceForwardIterator(
   }
 }
 
+/** An conditional iterator going through the sequence using prev moves on explorer
+  *
+  * NOTE : It allows to start RootIntSequenceExplorer "after end" but not "before start"
+  *
+  * @param start
+  *   The starting explorer of the iterator
+  * @param stopCondition
+  *   As long as it's false ==> continue
+  * @param inclusive
+  *   Whether or not we should include the last [[IntSequenceExplorer]]
+  */
 case class IntSequenceBackwardIterator(
   var start: IntSequenceExplorer,
-  condition: IntSequenceExplorer => Boolean,
+  stopCondition: IntSequenceExplorer => Boolean,
   inclusive: Boolean
 ) extends IntSequenceIterator {
   private var _next: IntSequenceExplorer = start
   private var _hasNext: Boolean =
-    (start.position >= 0 && start.position < start.intSequence.size) &&
-      (inclusive || !condition(start))
+    (start.position >= 0 && start.position <= start.intSequence.size) &&
+      (inclusive || start.position == start.intSequence.size || !stopCondition(start))
 
   override def hasNext: Boolean = _hasNext
 
@@ -103,8 +125,9 @@ case class IntSequenceBackwardIterator(
     if (!_hasNext) throw new NoSuchElementException
     val value = _next
     _hasNext = {
-      val currentFulFillCondition   = condition(value)
-      lazy val nextFulFillCondition = condition(value.prev)
+      val currentFulFillCondition =
+        !(start.position == start.intSequence.size) && stopCondition(value)
+      lazy val nextFulFillCondition = stopCondition(value.prev)
       value.position > 0 && (
         (!inclusive && !currentFulFillCondition && !nextFulFillCondition) ||
           (inclusive && !currentFulFillCondition)
