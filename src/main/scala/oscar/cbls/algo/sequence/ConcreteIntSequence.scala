@@ -185,21 +185,16 @@ class ConcreteIntSequence(
     else if (position < -1) None
     else {
       val currentPivotPosition = externalToInternalPosition.pivotWithPositionApplyingTo(position)
-      val (pivotAbovePosition: Option[RedBlackTreeMapExplorer[Pivot]], internalPosition) = {
-        currentPivotPosition match {
-          case None    => (externalToInternalPosition.firstPivotAndPosition, position)
-          case Some(p) => (p.next, p.value.f(position))
-        }
-      }
-
+      val internalPosition =
+        if (currentPivotPosition.nonEmpty) currentPivotPosition.get.value.f(position)
+        else position
       Some(
         new ConcreteIntSequenceExplorer(
           this,
           position,
           internalPositionToValue.positionOf(internalPosition).get,
-          currentPivotPosition,
-          pivotAbovePosition
-        )()
+          currentPivotPosition
+        )
       )
     }
   }

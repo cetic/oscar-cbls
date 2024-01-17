@@ -14,7 +14,7 @@
 package oscar.cbls.algo.sequence
 
 import oscar.cbls.algo.rb.RedBlackTreeMapExplorer
-import affineFunction.Pivot
+import affineFunction.{Pivot, UnitaryAffineFunction}
 
 /** A [[ConcreteIntSequence]] explorer
   *
@@ -33,43 +33,36 @@ import affineFunction.Pivot
   * @param currentPivotPosition
   *   The [[affineFunction.Pivot]] impacting the current external position. [[scala.None]] or a
   *   [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] of Pivot.
-  * @param pivotAbovePosition
-  *   The [[affineFunction.Pivot]] after the current one. [[scala.None]] or a
-  *   [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] of Pivot.
-  * @param limitAboveForCurrentPivot
-  *   The maximal external position before switching to the next [[affineFunction.Pivot]]
-  * @param limitBelowForCurrentPivot
-  *   The starting position of the current [[affineFunction.Pivot]]
-  * @param slopeIsPositive
-  *   Whether or not the current [[affineFunction.Pivot]] has a positive slope.
   */
 class ConcreteIntSequenceExplorer(
   intSequence: ConcreteIntSequence,
   override val position: Int,
   positionInRB: RedBlackTreeMapExplorer[Int],
-  currentPivotPosition: Option[RedBlackTreeMapExplorer[Pivot]],
-  pivotAbovePosition: Option[RedBlackTreeMapExplorer[Pivot]]
-)(
-  limitAboveForCurrentPivot: Int = pivotAbovePosition match {
-    case None    => Int.MaxValue
-    case Some(p) => p.value.fromValue - 1
-  },
-  limitBelowForCurrentPivot: Int = currentPivotPosition match {
-    case None    => Int.MinValue
-    case Some(p) => p.value.fromValue
-  },
-  slopeIsPositive: Boolean = currentPivotPosition match {
-    case None    => true
-    case Some(p) => !p.value.f.flip
-  }
+  currentPivotPosition: Option[RedBlackTreeMapExplorer[Pivot]]
 ) extends IntSequenceExplorer(intSequence) {
-
-  override def toString: String =
-    s"ConcreteIntSequenceExplorer(position:$position value:$value currentPivotPosition:$currentPivotPosition pivotAbovePosition:$pivotAbovePosition positionInRB:$positionInRB)"
 
   override val value: Int = positionInRB.value
 
   private[sequence] def internalPos = positionInRB.key
+
+  private val pivotAbovePosition: Option[RedBlackTreeMapExplorer[Pivot]] =
+    currentPivotPosition match {
+      case None              => intSequence.externalToInternalPosition.firstPivotAndPosition
+      case Some(rbtExplorer) => rbtExplorer.next
+    }
+
+  private val currentPivot: Pivot = currentPivotPosition match {
+    case None              => new Pivot(0, UnitaryAffineFunction.identity)
+    case Some(rbtExplorer) => rbtExplorer.value
+  }
+
+  val limitAboveForCurrentPivot: Int = pivotAbovePosition match {
+    case None                  => Int.MaxValue
+    case Some(nextRbtExplorer) => nextRbtExplorer.value.fromValue - 1
+  }
+
+  val limitBelowForCurrentPivot: Int = currentPivot.fromValue
+  val slopeIsPositive: Boolean       = !currentPivot.f.flip
 
   override def next: IntSequenceExplorer = {
     if (position == intSequence.size - 1) {
@@ -83,21 +76,14 @@ class ConcreteIntSequenceExplorer(
         intSequence.internalPositionToValue
           .positionOf(pivotAbovePosition.get.value.f(newPosition))
           .get
-      new ConcreteIntSequenceExplorer(
-        intSequence,
-        newPosition,
-        newPositionInRB,
-        pivotAbovePosition,
-        newPivotAbovePosition
-      )(limitBelowForCurrentPivot = newPosition)
+      new ConcreteIntSequenceExplorer(intSequence, newPosition, newPositionInRB, pivotAbovePosition)
     } else {
       new ConcreteIntSequenceExplorer(
         intSequence,
         position + 1,
         if (slopeIsPositive) positionInRB.next.get else positionInRB.prev.get,
-        currentPivotPosition,
-        pivotAbovePosition
-      )(limitAboveForCurrentPivot, limitBelowForCurrentPivot, slopeIsPositive)
+        currentPivotPosition
+      )
     }
   }
 
@@ -120,17 +106,18 @@ class ConcreteIntSequenceExplorer(
         intSequence,
         newPosition,
         newCurrentPositionInRB,
-        newCurrentPivotPosition,
-        currentPivotPosition
-      )(limitAboveForCurrentPivot = limitBelowForCurrentPivot - 1)
+        newCurrentPivotPosition
+      )
     } else {
       new ConcreteIntSequenceExplorer(
         intSequence,
         position - 1,
         if (slopeIsPositive) positionInRB.prev.get else positionInRB.next.get,
-        currentPivotPosition,
-        pivotAbovePosition
-      )(limitAboveForCurrentPivot, limitBelowForCurrentPivot, slopeIsPositive)
+        currentPivotPosition
+      )
     }
   }
+
+  override def toString: String =
+    s"ConcreteIntSequenceExplorer(position:$position value:$value currentPivotPosition:$currentPivotPosition pivotAbovePosition:$pivotAbovePosition positionInRB:$positionInRB)"
 }
