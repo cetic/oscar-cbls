@@ -20,9 +20,9 @@ class ConcreteDAGNode(val concreteUniqueID: Int) extends DAGNode {
   setUniqueId(concreteUniqueID)
 
   // The DAGNode before this node
-  private var predecessors: List[DAGNode] = List.empty
+  private var predecessors: Set[DAGNode] = Set.empty
   // The DAGNode after this node
-  private var successors: List[DAGNode]   = List.empty
+  private var successors: Set[DAGNode] = Set.empty
 
   final def compare(that: DAGNode): Int = {
     assert(this.uniqueID != that.uniqueID || this == that)
@@ -32,21 +32,21 @@ class ConcreteDAGNode(val concreteUniqueID: Int) extends DAGNode {
   override def getDAGPredecessors: Iterable[DAGNode] = predecessors
   override def getDAGSuccessors: Iterable[DAGNode]   = successors
 
-  /** Sets the current node as predecessor of the successor so that this -> successor
-    * @param successor
-    *   reference to the next node
+  /** Sets the current node as predecessor of the argument, adding the edge (this -> node).
+    * @param node
+    *   the node to add as successor
     */
-  def setAsANewPredecessorOf(successor: ConcreteDAGNode): Unit = {
-    successors = successor :: successors
-    successor.predecessors = this :: successor.predecessors
+  def setAsANewPredecessorOf(node: ConcreteDAGNode): Unit = {
+    successors += node
+    node.predecessors += this
   }
 
-  /** Sets the current node as successor of the predecessor so that predecessor -> this
-    * @param predecessor
-    *   reference to the predecessor node
+  /** Sets the current node as successor of the argument, adding the edge (node -> this).
+   * @param node
+   *   the node to add as predecessor
     */
-  def setAsANewSuccessorOf(predecessor: ConcreteDAGNode): Unit = {
-    predecessor.setAsANewPredecessorOf(this)
+  def setAsANewSuccessorOf(node: ConcreteDAGNode): Unit = {
+    node.setAsANewPredecessorOf(this)
   }
 }
 

@@ -14,7 +14,7 @@
 package oscar.cbls.algo.dag
 
 import oscar.cbls.algo.heap.BinaryHeap
-import oscar.cbls.util.exceptions._
+import oscar.cbls.util.exceptions.DAGException
 
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
@@ -47,12 +47,13 @@ trait DAGNode extends Ordered[DAGNode] {
   private var _uniqueID: Int = -1
 
   /** Set the unique id of the DAGNode
-    * @throws oscar.cbls.util.exceptions.DAGExceptions
+ *
+    * @throws oscar.cbls.util.exceptions.DAGException
     *   A unique ID has already been set
     */
   def setUniqueId(uniqueID: Int): Unit = {
     if (_uniqueID != -1)
-      throw DAGExceptions.uniqueIDAlreadySet(
+      throw DAGException.uniqueIDAlreadySet(
         s"Trying to change the uniqueID from ${_uniqueID} to $uniqueID"
       )
     else _uniqueID = uniqueID
@@ -105,19 +106,19 @@ trait DAG {
     * to know their successors and predecessors, and these sets should be consistent among all
     * nodes.
     *
-    * @throws oscar.cbls.util.exceptions.DAGExceptions
+    * @throws oscar.cbls.util.exceptions.DAGException
     *   Some graph incoherence was detected
     */
   def checkGraph(): Unit = {
     nodes.foreach(n => {
       n.getDAGPredecessors.foreach(p => {
         if (!p.getDAGSuccessors.exists(s => s == n)) {
-          throw DAGExceptions.graphIncoherence("at nodes [" + p + "] -> [" + n + "]")
+          throw DAGException.graphIncoherence("at nodes [" + p + "] -> [" + n + "]")
         }
       })
       n.getDAGSuccessors.foreach(s => {
         if (!s.getDAGPredecessors.exists(p => p == n)) {
-          throw DAGExceptions.graphIncoherence("at nodes [" + n + "] -> [" + s + "]")
+          throw DAGException.graphIncoherence("at nodes [" + n + "] -> [" + s + "]")
         }
       })
     })
@@ -245,7 +246,7 @@ trait DAG {
     *
     * First position is set to zero.
     *
-    * @throws oscar.cbls.util.exceptions.DAGExceptions
+    * @throws oscar.cbls.util.exceptions.DAGException
     *   A cycle has been detected
     */
   def doDAGSort(): Unit = {
@@ -280,7 +281,7 @@ trait DAG {
 
     val startFront: List[DAGNode] = sortByPrecedingNodes(nodes.toList)
     if (loop(startFront) != nodes.size) {
-      throw DAGExceptions.cycle(
+      throw DAGException.cycle(
         "Cycle in topological sort: \n " + getCycle().mkString("\n ") + "\n"
       )
     }
@@ -288,7 +289,7 @@ trait DAG {
 
   /** Returns all the successors of startNode whose positions are lower than ceilPosition.
     *
-    * @throws oscar.cbls.util.exceptions.CycleException
+    * @throws oscar.cbls.util.exceptions.DAGException
     *   A cycle has been detected
     */
   @tailrec
@@ -312,7 +313,7 @@ trait DAG {
         if (s.position == ceilPosition) {
           sortedRegion.foreach(_.visited = false)
           heap.foreach(_.visited = false)
-          throw DAGExceptions.cycle(
+          throw DAGException.cycle(
             "Cycle in topological sort: \n " + getCycle(Some(s)).mkString("\n ") + "\n"
           )
         } else if (!s.visited && s.position < ceilPosition) {
