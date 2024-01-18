@@ -4,7 +4,10 @@ import org.scalacheck.Gen
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks._
-import oscar.cbls.algo.sequence.affineFunction.{PiecewiseUnitaryAffineFunction, UnitaryAffineFunction}
+import oscar.cbls.algo.sequence.affineFunction.{
+  PiecewiseUnitaryAffineFunction,
+  UnitaryAffineFunction
+}
 
 class PiecewiseUnitaryAffineFunctionSuite extends AnyFunSuite {
 
@@ -123,21 +126,16 @@ sealed abstract class PiecewiseSequenceShiftingBijectionNaive {
     toIncluded: Int,
     update: UnitaryAffineFunction
   ): PiecewiseSequenceShiftingBijectionNaive =
-    UpdatedPiecewiseLinearFunNaive(
-      fromIncluded,
-      toIncluded,
-      update: UnitaryAffineFunction,
-      this
-    )
+    UpdatedPiecewiseLinearFunNaive(fromIncluded, toIncluded, update: UnitaryAffineFunction, this)
 }
 case object IdentityNaive extends PiecewiseSequenceShiftingBijectionNaive {
   override def apply(value: Int): Int = value
 }
 case class UpdatedPiecewiseLinearFunNaive(
-                                           fromIncluded: Int,
-                                           toIncluded: Int,
-                                           update: UnitaryAffineFunction,
-                                           base: PiecewiseSequenceShiftingBijectionNaive
+  fromIncluded: Int,
+  toIncluded: Int,
+  update: UnitaryAffineFunction,
+  base: PiecewiseSequenceShiftingBijectionNaive
 ) extends PiecewiseSequenceShiftingBijectionNaive {
   override def apply(value: Int): Int =
     if (value >= fromIncluded && value <= toIncluded) base(update(value)) else base(value)

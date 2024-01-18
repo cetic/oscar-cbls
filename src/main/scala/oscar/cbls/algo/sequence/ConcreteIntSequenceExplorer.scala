@@ -70,8 +70,7 @@ class ConcreteIntSequenceExplorer(
     } else if (position == limitAboveForCurrentPivot) {
       // At end of current pivot &rarr; moving to next one
       // Always a pivot, at least identity
-      val newPivotAbovePosition = pivotAbovePosition.get.next
-      val newPosition           = position + 1
+      val newPosition = position + 1
       val newPositionInRB =
         intSequence.internalPositionToValue
           .positionOf(pivotAbovePosition.get.value.f(newPosition))

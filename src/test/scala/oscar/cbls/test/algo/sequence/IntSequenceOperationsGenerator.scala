@@ -91,7 +91,7 @@ object IntSequenceOperationsGenerator {
       genSeqSize.set(numElems)
       Gen.listOfN(numElems, elem)
     }
-    actions <- Gen.listOfN(numActions, genAction(onlyInsert, onlyMove, onlyRemove,genSeqSize))
+    actions <- Gen.listOfN(numActions, genAction(onlyInsert, onlyMove, onlyRemove, genSeqSize))
   } yield (elems, actions)
 }
 
@@ -122,20 +122,20 @@ case class MoveAfter(fromIncl: Int, toIncl: Int, after: Int, flip: Boolean) exte
   }
 
   /** Implements manually the moveAfter transformation (to compare with IntSequence)
-   * @param list
-   *   The original list to swap
-   * @return
-   *   A new sequence with the proper transformation
-   */
+    * @param list
+    *   The original list to swap
+    * @return
+    *   A new sequence with the proper transformation
+    */
   def moveListManually(list: List[Int]): List[Int] = {
 
     var resultList = List[Int]()
-    val moved        = {
-      if(flip) list.slice(fromIncl, toIncl + 1).reverse
+    val moved = {
+      if (flip) list.slice(fromIncl, toIncl + 1).reverse
       else list.slice(fromIncl, toIncl + 1)
     }
-    val start       = list.take(fromIncl)
-    val end = if (toIncl < list.size - 1) list.takeRight(list.size - toIncl - 1) else List()
+    val start = list.take(fromIncl)
+    val end   = if (toIncl < list.size - 1) list.takeRight(list.size - toIncl - 1) else List()
 
     if (after == -1) {
       resultList = moved ::: start ::: end
@@ -162,7 +162,11 @@ case class Insert(value: Int, afterPosition: Int) extends Operation {
     fast: Boolean = true
   ): (IntSequence, List[Int]) = {
     val newSeq =
-      initialSeq.insertAfterPosition(value, initialSeq.explorerAtPosition(afterPosition).get, fast = fast)
+      initialSeq.insertAfterPosition(
+        value,
+        initialSeq.explorerAtPosition(afterPosition).get,
+        fast = fast
+      )
     val (front, back) = initialRefList.splitAt(afterPosition + 1)
     val newRefList    = front ++ List(value) ++ back
     (newSeq, newRefList)

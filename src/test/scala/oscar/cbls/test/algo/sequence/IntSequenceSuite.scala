@@ -5,7 +5,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.algo.sequence._
-import oscar.cbls.test.algo.sequence.ExplorerTester.{be, intercept}
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.util.Random
@@ -18,8 +17,8 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
 
   test("RootIntSequenceExplorer behave as expected") {
 
-    val referenceList: List[Int] = List(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
-    val intSequence: IntSequence = IntSequence.apply(referenceList)
+    val referenceList: List[Int]      = List(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+    val intSequence: IntSequence      = IntSequence.apply(referenceList)
     val explorer: IntSequenceExplorer = intSequence.explorerAtPosition(0).get
 
     // Check values of RootIntSequenceExplorer
@@ -76,7 +75,9 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
     rootIteratorStartForward.toValue(4).next().isInstanceOf[RootIntSequenceExplorer] should be(true)
     rootIteratorStartForward.toValue(4).next().position should be(-1)
     val fullSeqIteratorStartRoot = rootIteratorStartForward.iterator
-    fullSeqIteratorStartRoot.map(_.position).toList should be(List(-1) ::: referenceList.indices.toList)
+    fullSeqIteratorStartRoot.map(_.position).toList should be(
+      List(-1) ::: referenceList.indices.toList
+    )
     // Iterator, endRoot in forward mode is an empty iterator and throw an error on next()
     val rootIteratorEndBackward = explorerAtEndRoot.backward
     rootIteratorEndBackward.toValue(4).isEmpty should be(false)
@@ -86,7 +87,9 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
     rootIteratorEndBackward.toValue(4).next().isInstanceOf[RootIntSequenceExplorer] should be(true)
     rootIteratorEndBackward.toValue(4).next().position should be(referenceList.size)
     val fullSeqReverseIteratorEndRoot = rootIteratorEndBackward.iterator
-    fullSeqReverseIteratorEndRoot.map(_.position).toList should be((referenceList ::: List(referenceList.size)).reverse)
+    fullSeqReverseIteratorEndRoot.map(_.position).toList should be(
+      (referenceList ::: List(referenceList.size)).reverse
+    )
   }
 
   test("Empty IntSequence behave as expected") {
@@ -264,7 +267,9 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
   private def testExplorer(seq: IntSequence, modifiedList: List[Int]): Unit = {
     if (modifiedList.nonEmpty) {
       seq.explorerAtPosition(-1).get.isInstanceOf[RootIntSequenceExplorer] should be(true)
-      seq.explorerAtPosition(-1).get.asInstanceOf[RootIntSequenceExplorer].beforeStart should be(true)
+      seq.explorerAtPosition(-1).get.asInstanceOf[RootIntSequenceExplorer].beforeStart should be(
+        true
+      )
       ExplorerTester.testExplorers(seq.explorerAtPosition(-1).get, modifiedList)
     }
   }

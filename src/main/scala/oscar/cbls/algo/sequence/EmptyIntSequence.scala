@@ -24,7 +24,7 @@ case class EmptyIntSequence() extends IntSequence(depth = 0) {
 
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] =
     if (position == -1) Some(new RootIntSequenceExplorer(this, true))
-    else if(position == 0) Some(new RootIntSequenceExplorer(this, false))
+    else if (position == 0) Some(new RootIntSequenceExplorer(this, false))
     else None
 
   /** Insert a value after the position defined by the [[IntSequenceExplorer]]
@@ -42,10 +42,10 @@ case class EmptyIntSequence() extends IntSequence(depth = 0) {
     *   An IntSequence with the new value
     */
   override def insertAfterPosition(
-                                    value: Int,
-                                    insertAfterPositionExplorer: IntSequenceExplorer =
+    value: Int,
+    insertAfterPositionExplorer: IntSequenceExplorer =
       new RootIntSequenceExplorer(this, beforeStart = true),
-                                    fast: Boolean = false
+    fast: Boolean = false
   ): IntSequence = {
     IntSequence(List(value))
   }

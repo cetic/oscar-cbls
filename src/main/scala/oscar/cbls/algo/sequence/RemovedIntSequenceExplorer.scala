@@ -26,9 +26,9 @@ package oscar.cbls.algo.sequence
   *   The original explorer, that is with the removed point
   */
 class RemovedIntSequenceExplorer(
-                                  override val intSequence: RemovedIntSequence,
-                                  val position: Int,
-                                  explorerInOriginalSequence: IntSequenceExplorer
+  override val intSequence: RemovedIntSequence,
+  val position: Int,
+  explorerInOriginalSequence: IntSequenceExplorer
 ) extends IntSequenceExplorer(intSequence) {
   override val value: Int = explorerInOriginalSequence.value
 

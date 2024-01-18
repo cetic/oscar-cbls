@@ -26,9 +26,12 @@ object ExplorerTester extends AnyFunSuite with Matchers {
 
   }
 
-  private def testExploreToPosition(explorer: IntSequenceExplorer, referenceList: List[Int]): Unit = {
+  private def testExploreToPosition(
+    explorer: IntSequenceExplorer,
+    referenceList: List[Int]
+  ): Unit = {
     val explorerAtRoot = explorer.exploreToPosition(-1)
-    val explorerAtEnd = explorerAtRoot.get.exploreToPosition(referenceList.size - 1)
+    val explorerAtEnd  = explorerAtRoot.get.exploreToPosition(referenceList.size - 1)
 
     for (testPosition <- 1 until referenceList.size - 1) {
       val reachedExplorer = explorerAtRoot.get.exploreToPosition(testPosition)
@@ -52,7 +55,7 @@ object ExplorerTester extends AnyFunSuite with Matchers {
     val lastValue: Int           = referenceList.last
 
     val explorerAtStart: IntSequenceExplorer = explorer.exploreToPosition(0).get
-    val explorerAtEnd: IntSequenceExplorer   = explorer.exploreToPosition(referenceList.size - 1).get
+    val explorerAtEnd: IntSequenceExplorer = explorer.exploreToPosition(referenceList.size - 1).get
 
     var searchResult: Option[IntSequenceExplorer] = None
 
@@ -123,29 +126,53 @@ object ExplorerTester extends AnyFunSuite with Matchers {
 
     def compareSubLists(explorer: Iterator[IntSequenceExplorer], reference: List[Int]): Unit = {
       var explorerList: List[Int] = List.empty
-      for(expl <- explorer)  explorerList = explorerList ::: List(expl.value)
+      for (expl <- explorer) explorerList = explorerList ::: List(expl.value)
       explorerList should be(reference)
     }
 
     val randomValue = Random.shuffle(referenceList).head
     val explorerAt0 = explorer.exploreToPosition(0).get
-    compareSubLists(explorerAt0.forward.untilValue(randomValue), referenceList.takeWhile(x => x != randomValue))
-    compareSubLists(explorerAt0.forward.until(x => x.value == randomValue), referenceList.takeWhile(x => x != randomValue))
-    compareSubLists(explorerAt0.forward.toValue(randomValue), referenceList.takeWhile(x => x != randomValue) :+ randomValue)
-    compareSubLists(explorerAt0.forward.to(x => x.value == randomValue), referenceList.takeWhile(x => x != randomValue) :+ randomValue)
+    compareSubLists(
+      explorerAt0.forward.untilValue(randomValue),
+      referenceList.takeWhile(x => x != randomValue)
+    )
+    compareSubLists(
+      explorerAt0.forward.until(x => x.value == randomValue),
+      referenceList.takeWhile(x => x != randomValue)
+    )
+    compareSubLists(
+      explorerAt0.forward.toValue(randomValue),
+      referenceList.takeWhile(x => x != randomValue) :+ randomValue
+    )
+    compareSubLists(
+      explorerAt0.forward.to(x => x.value == randomValue),
+      referenceList.takeWhile(x => x != randomValue) :+ randomValue
+    )
 
-    val explorerAtEnd = explorer.exploreToPosition(referenceList.size-1).get
-    compareSubLists(explorerAtEnd.backward.untilValue(randomValue), referenceList.reverse.takeWhile(x => x != randomValue))
-    compareSubLists(explorerAtEnd.backward.until(x => x.value == randomValue), referenceList.reverse.takeWhile(x => x != randomValue))
-    compareSubLists(explorerAtEnd.backward.toValue(randomValue), referenceList.reverse.takeWhile(x => x != randomValue) :+ randomValue)
-    compareSubLists(explorerAtEnd.backward.to(x => x.value == randomValue), referenceList.reverse.takeWhile(x => x != randomValue) :+ randomValue)
+    val explorerAtEnd = explorer.exploreToPosition(referenceList.size - 1).get
+    compareSubLists(
+      explorerAtEnd.backward.untilValue(randomValue),
+      referenceList.reverse.takeWhile(x => x != randomValue)
+    )
+    compareSubLists(
+      explorerAtEnd.backward.until(x => x.value == randomValue),
+      referenceList.reverse.takeWhile(x => x != randomValue)
+    )
+    compareSubLists(
+      explorerAtEnd.backward.toValue(randomValue),
+      referenceList.reverse.takeWhile(x => x != randomValue) :+ randomValue
+    )
+    compareSubLists(
+      explorerAtEnd.backward.to(x => x.value == randomValue),
+      referenceList.reverse.takeWhile(x => x != randomValue) :+ randomValue
+    )
 
     var explorerValuePlus10List: List[Int] = List.empty
-    for(expl <- explorerAt0.forward){
+    for (expl <- explorerAt0.forward) {
       explorerValuePlus10List :+= expl.value + 10
     }
 
-    explorerValuePlus10List should be(referenceList.map(x => x+10))
+    explorerValuePlus10List should be(referenceList.map(x => x + 10))
 
   }
 

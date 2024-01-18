@@ -30,7 +30,9 @@ class RootIntSequenceExplorer(intSequence: IntSequence, val beforeStart: Boolean
     }
   }
 
-  override def exploreForwardUntil(f: IntSequenceExplorer => Boolean): Option[IntSequenceExplorer] = {
+  override def exploreForwardUntil(
+    f: IntSequenceExplorer => Boolean
+  ): Option[IntSequenceExplorer] = {
     if (beforeStart) {
       intSequence match {
         case _: EmptyIntSequence => None
@@ -45,7 +47,7 @@ class RootIntSequenceExplorer(intSequence: IntSequence, val beforeStart: Boolean
     if (beforeStart) {
       intSequence match {
         case _: EmptyIntSequence => None
-        case _                   => intSequence.explorerAtPosition(0).get.exploreForwardUntilValue(value)
+        case _ => intSequence.explorerAtPosition(0).get.exploreForwardUntilValue(value)
       }
     } else {
       None
@@ -63,7 +65,9 @@ class RootIntSequenceExplorer(intSequence: IntSequence, val beforeStart: Boolean
     }
   }
 
-  override def exploreBackwardUntil(f: IntSequenceExplorer => Boolean): Option[IntSequenceExplorer] = {
+  override def exploreBackwardUntil(
+    f: IntSequenceExplorer => Boolean
+  ): Option[IntSequenceExplorer] = {
     if (beforeStart) {
       None
     } else {
@@ -80,7 +84,8 @@ class RootIntSequenceExplorer(intSequence: IntSequence, val beforeStart: Boolean
     } else {
       intSequence match {
         case _: EmptyIntSequence => None
-        case _ => intSequence.explorerAtPosition(intSequence.size - 1).get.exploreBackwardUntilValue(value)
+        case _ =>
+          intSequence.explorerAtPosition(intSequence.size - 1).get.exploreBackwardUntilValue(value)
       }
     }
   }
