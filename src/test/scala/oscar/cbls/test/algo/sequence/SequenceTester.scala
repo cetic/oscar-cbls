@@ -17,7 +17,7 @@ object SequenceTester extends AnyFunSuite with Matchers {
     * @param list
     *   the reference list
     */
-  def compare(intSeq: IntSequence, list: List[Int]): Unit = {
+  def testIntSequence(intSeq: IntSequence, list: List[Int]): Unit = {
     (intSeq.iterator.map(_.value).toList == list) should be(true)
 
     // Checking largest and smallest values

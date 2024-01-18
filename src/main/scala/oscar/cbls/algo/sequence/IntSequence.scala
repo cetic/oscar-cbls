@@ -95,8 +95,13 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
 
   def nonEmpty: Boolean = !isEmpty
 
+  /** Returns an Iterator of [[IntSequenceExplorer]] starting at the [[RootIntSequenceExplorer]] (before start) */
   def iterator: Iterator[IntSequenceExplorer] = this.explorerAtPosition(0).get.forward.iterator
 
+  /** Returns an Iterator of [[IntSequenceExplorer]] starting at the value passed as parameter and
+    * ending at the end of the sequence. If the value is not found, an empty Iterator will be
+    * returned.
+    */
   def iterateFromAnyOccurrenceOfValue(value: Int): Iterator[IntSequenceExplorer] = {
     val explorerAtOccurence = this.explorerAtAnyOccurrence(value)
     if (explorerAtOccurence.isDefined) explorerAtOccurence.get.forward.iterator

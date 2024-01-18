@@ -143,7 +143,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
             modifiedList = newValues._2
             seq.isInstanceOf[ConcreteIntSequence] should be(true)
           }
-          SequenceTester.compare(seq, modifiedList)
+          SequenceTester.testIntSequence(seq, modifiedList)
         }
       }
     }
@@ -175,7 +175,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
             seq = newValues._1
             modifiedList = newValues._2
           }
-          SequenceTester.compare(seq, modifiedList)
+          SequenceTester.testIntSequence(seq, modifiedList)
           testExplorer(seq, modifiedList)
         }
       }
@@ -201,7 +201,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
             seq = newValues._1
             modifiedList = newValues._2
           }
-          SequenceTester.compare(seq, modifiedList)
+          SequenceTester.testIntSequence(seq, modifiedList)
           testExplorer(seq, modifiedList)
 
         }
@@ -231,7 +231,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
             seq = newValues._1
             modifiedList = newValues._2
           }
-          SequenceTester.compare(seq, modifiedList)
+          SequenceTester.testIntSequence(seq, modifiedList)
           testExplorer(seq, modifiedList)
 
         }
@@ -257,7 +257,7 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
             seq = newValues._1
             modifiedList = newValues._2
           }
-          SequenceTester.compare(seq, modifiedList)
+          SequenceTester.testIntSequence(seq, modifiedList)
           testExplorer(seq, modifiedList)
         }
       }
