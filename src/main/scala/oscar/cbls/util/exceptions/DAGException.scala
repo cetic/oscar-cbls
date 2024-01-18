@@ -14,14 +14,20 @@
 package oscar.cbls.util.exceptions
 
 object DAGException {
-  final def cycle(details: String): DAGException =
-    DAGException(s"Cycle detected : $details")
-  final def graphIncoherence(details: String): DAGException =
-    DAGException(s"Graph is incoherent : $details")
-  final def uniqueIDAlreadySet(details: String): DAGException =
-    DAGException(s"Unique ID already set : $details")
+  final def cycle(details: String): DAGException              = DAGCycleException(details)
+  final def graphIncoherence(details: String): DAGException   = DAGIncoherenceException(details)
+  final def uniqueIDAlreadySet(details: String): DAGException = DAGUniqueIDException(details)
+}
+sealed trait DAGException extends Exception
+
+case class DAGCycleException(message: String) extends DAGException {
+  override def getMessage: String = s"DAG exception ==> Cycle detected: $message"
 }
 
-case class DAGException(message: String) extends Exception {
-  override def getMessage: String = s"Propagation exception ==> $message"
+case class DAGIncoherenceException(message: String) extends DAGException {
+  override def getMessage: String = s"DAG exception ==> Graph is incoherent: $message"
+}
+
+case class DAGUniqueIDException(message: String) extends DAGException {
+  override def getMessage: String = s"DAG exception ==> Unique ID already set: $message"
 }

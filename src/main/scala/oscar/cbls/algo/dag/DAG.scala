@@ -47,8 +47,8 @@ trait DAGNode extends Ordered[DAGNode] {
   private var _uniqueID: Int = -1
 
   /** Set the unique id of the DAGNode
- *
-    * @throws DAGException
+    *
+    * @throws DAGUniqueIDException
     *   A unique ID has already been set
     */
   def setUniqueId(uniqueID: Int): Unit = {
@@ -106,9 +106,9 @@ trait DAG {
     * to know their successors and predecessors, and these sets should be consistent among all
     * nodes.
     *
-    * @throws DAGException
-   *   Some graph incoherence was detected
-   * @throws NoSuchFieldError
+    * @throws DAGIncoherenceException
+    *   Some graph incoherence was detected
+    * @throws NoSuchFieldError
     *   Some graph incoherence was detected
     */
   def checkGraph(): Unit = {
@@ -139,7 +139,7 @@ trait DAG {
   def incrementalSort_=(mIncrementalSort: Boolean): Unit = {
     // Activating incremental sort
     if (mIncrementalSort && !_incrementalSort) {
-      doDAGSort()
+      initializeSort()
       // For testing purpose
       assert({ checkSort(); checkGraph(); true })
       _incrementalSort = true
@@ -248,10 +248,12 @@ trait DAG {
     *
     * First position is set to zero.
     *
-    * @throws DAGException
+    * @throws DAGCycleException
     *   A cycle has been detected
     */
-  def doDAGSort(): Unit = {
+  def initializeSort(): Unit = {
+    // Initializes the positions of the nodes and returns the set of nodes with no predecessors.
+    // Assigns position -p(n) to each node n, where p(n) is the number of predecessors of n.
     @tailrec
     def sortByPrecedingNodes(
       remainingNodes: List[DAGNode],
@@ -266,8 +268,10 @@ trait DAG {
       }
     }
 
+    // Performs Kahn's algorithm for topological sorting. The return value is smaller than
+    // the number of nodes in the graph if and only if a cycle is detected.
     @tailrec
-    def loop(front: List[DAGNode], position: Int = 0): Int = {
+    def topologicalSort(front: List[DAGNode], position: Int = 0): Int = {
       front match {
         case Nil => position
         case head :: tail =>
@@ -277,21 +281,19 @@ trait DAG {
             node.position += 1
             node.position == 0
           })
-          loop(addToFront ::: tail, position + 1)
+          topologicalSort(addToFront ::: tail, position + 1)
       }
     }
 
     val startFront: List[DAGNode] = sortByPrecedingNodes(nodes.toList)
-    if (loop(startFront) != nodes.size) {
-      throw DAGException.cycle(
-        "Cycle in topological sort: \n " + getCycle().mkString("\n ") + "\n"
-      )
+    if (topologicalSort(startFront) != nodes.size) {
+      throw DAGException.cycle("Cycle in topological sort: \n " + getCycle().mkString("\n ") + "\n")
     }
   }
 
   /** Returns all the successors of startNode whose positions are lower than ceilPosition.
     *
-    * @throws DAGException
+    * @throws DAGCycleException
     *   A cycle has been detected
     */
   @tailrec

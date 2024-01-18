@@ -42,8 +42,8 @@ class ConcreteDAGNode(val concreteUniqueID: Int) extends DAGNode {
   }
 
   /** Sets the current node as successor of the argument, adding the edge (node -> this).
-   * @param node
-   *   the node to add as predecessor
+    * @param node
+    *   the node to add as predecessor
     */
   def setAsANewSuccessorOf(node: ConcreteDAGNode): Unit = {
     node.setAsANewPredecessorOf(this)
