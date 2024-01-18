@@ -20,7 +20,7 @@ class DAGTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
     (i,target)
   }).filter(t => t._2 != t._1))
 
-  test("A CycleException is thrown upon adding a incorrect edge when auto-sort is active."){
+  test("A DAGException is thrown upon adding a incorrect edge when auto-sort is active."){
 
     val nodes = (0 to 10).map(new ConcreteDAGNode(_))
     val dag = new ConcreteDAG(nodes)
