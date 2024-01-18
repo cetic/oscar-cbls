@@ -13,7 +13,7 @@
 
 package oscar.cbls.algo.dag
 
-/** A concrete DAGNode
+/** A concrete DAGNode. This class exists to enable testing for the DAGNode trait.
   */
 class ConcreteDAGNode(val concreteUniqueID: Int) extends DAGNode {
 
