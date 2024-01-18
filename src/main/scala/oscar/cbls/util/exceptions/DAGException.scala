@@ -13,11 +13,6 @@
 
 package oscar.cbls.util.exceptions
 
-object DAGException {
-  final def cycle(details: String): DAGException              = DAGCycleException(details)
-  final def graphIncoherence(details: String): DAGException   = DAGIncoherenceException(details)
-  final def uniqueIDAlreadySet(details: String): DAGException = DAGUniqueIDException(details)
-}
 sealed trait DAGException extends Exception
 
 case class DAGCycleException(message: String) extends DAGException {
@@ -30,4 +25,10 @@ case class DAGIncoherenceException(message: String) extends DAGException {
 
 case class DAGUniqueIDException(message: String) extends DAGException {
   override def getMessage: String = s"DAG exception ==> Unique ID already set: $message"
+}
+
+object DAGException {
+  final def cycle(details: String): DAGException              = DAGCycleException(details)
+  final def graphIncoherence(details: String): DAGException   = DAGIncoherenceException(details)
+  final def uniqueIDAlreadySet(details: String): DAGException = DAGUniqueIDException(details)
 }
