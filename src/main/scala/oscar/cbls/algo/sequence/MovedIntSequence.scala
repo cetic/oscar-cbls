@@ -256,6 +256,7 @@ class MovedIntSequence(
 
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
     if (position == -1) Some(new RootIntSequenceExplorer(this, true))
+    else if (position == size) Some(new RootIntSequenceExplorer(this, false))
     else {
       seq.explorerAtPosition(localBijection(position)) match {
         case None => None
