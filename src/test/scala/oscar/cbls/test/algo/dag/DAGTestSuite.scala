@@ -9,6 +9,8 @@ import oscar.cbls.util.exceptions.DAGExceptions
 
 import scala.util.Random
 
+/** This suite tests the DAG trait by using the basic concrete implementations.
+  */
 class DAGTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
   // Generates a list of 0 to 30 unique tuples, guaranteed to form an acyclic graph
   val acyclicGraphGen: Gen[(Int, Array[(Int, Int)])] = for {
@@ -50,7 +52,7 @@ class DAGTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
     an [DAGExceptions] should be thrownBy dag.notifyAddEdge(nodes(6),nodes(3))
   }
 
-  test("Sorting a dag with a cycle throws a CycleException."){
+  test("Sorting a dag with a cycle throws a DAGException."){
     val nodes = (0 to 10).map(new ConcreteDAGNode(_))
     val dag = new ConcreteDAG(nodes)
 
@@ -83,7 +85,7 @@ class DAGTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
     dag.getCycle() should contain.allOf(nodes(3),nodes(4),nodes(5),nodes(6))
   }
 
-  test("No ordering exception are thrown with acyclic graph"){
+  test("No ordering exception is thrown with an acyclic graph"){
     forAll(acyclicGraphGen){ graph => {
 
       val nodes = (0 to graph._1).map(new ConcreteDAGNode(_))
@@ -100,7 +102,7 @@ class DAGTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
     }}
   }
 
-  test("No graph incoherence are detected with acyclic graph"){
+  test("No graph incoherence is detected with an acyclic graph"){
     forAll(acyclicGraphGen){ graph => {
 
       val nodes = (0 to graph._1).map(new ConcreteDAGNode(_))
@@ -117,7 +119,7 @@ class DAGTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
     }}
   }
 
-  test("No cycle are detected when a graph is acyclic (initialized with setAsPrecedingNode)"){
+  test("No cycle is detected when a graph is acyclic (initialized with setAsPrecedingNode)"){
     forAll(acyclicGraphGen){ graph => {
 
       val shuffledGraph = Random.shuffle(graph._2.toList)
@@ -136,7 +138,7 @@ class DAGTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
     }}
   }
 
-  test("No cycle are detected when a graph is acyclic (initialized with setAsSucceedingNode)"){
+  test("No cycle is detected when a graph is acyclic (initialized with setAsSucceedingNode)"){
     forAll(acyclicGraphGen){ graph => {
 
       val shuffledGraph = Random.shuffle(graph._2.toList)

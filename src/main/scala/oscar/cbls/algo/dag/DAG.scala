@@ -19,7 +19,12 @@ import oscar.cbls.util.exceptions._
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
-/** Describes the basic structure of a DAG node */
+/** This trait describes the basic structure of a DAG node to support incremental topological
+  * sorting.
+  *
+  * Each node is also expected to maintain sets of predecessors and successors to reflect the
+  * structure of the graph.
+  */
 trait DAGNode extends Ordered[DAGNode] {
 
   /** The position of the DAGNode in the topological sort */
@@ -30,12 +35,12 @@ trait DAGNode extends Ordered[DAGNode] {
     */
   var visited: Boolean = false
 
-  /** Gives the unique ID of the DAGNode.
+  /** The unique ID of the DAGNode.
     *
-    * The uniqueID are expected to start at 0L and to increase continuously.
+    * The uniqueIDs are expected to start at 0L and increase continuously.
     *
-    * With ONE exception related to propagation : If one element is not mentioned in the propagation
-    * structure it's uniqueID is set to -1. For instance, constants values are not in the
+    * There is ONE exception related to propagation: if one element is not mentioned in the
+    * propagation structure its uniqueID is set to -1. For instance, constant values are not in the
     * propagation structure but they are mentioned in the dependencies of registered propagation
     * elements.
     */
@@ -63,9 +68,13 @@ trait DAGNode extends Ordered[DAGNode] {
   protected[dag] def getDAGSuccessors: Iterable[DAGNode]
 }
 
-/** This data structure performs dynamic topological sort on DAG, meaning it maintains the attribute
-  * position (lower before) in the nodes [[oscar.cbls.algo.dag.DAGNode]]. The topological sort can
-  * be performed either from scratch or maintained incrementally.
+/** This trait represents a generic DAG that supports dynamic topological sort. This is performed by
+  * altering the position of a [[DAGNode]], if necessary, so that the position value is increasing
+  * with respect to the topological order.
+  *
+  * Sorting can either be done from scratch or maintained incrementally.
+  *
+  * Note: this trait does not directly express methods to alter the node set or the edge set.
   *
   * @author
   *   renaud.delandtsheer@cetic.be
@@ -92,22 +101,23 @@ trait DAG {
     }
   }
 
-  /** Checks that node have correct reference to each other. Nodes are expected to know their
-    * successors and predecessors. This is expected to be consistent between several nodes.
+  /** Checks that the nodes are maintaining the correct references to each other. Nodes are expected
+    * to know their successors and predecessors, and these sets should be consistent among all
+    * nodes.
     *
     * @throws oscar.cbls.util.exceptions.DAGExceptions
-    *   Some graph incoherence were detected
+    *   Some graph incoherence was detected
     */
   def checkGraph(): Unit = {
     nodes.foreach(n => {
       n.getDAGPredecessors.foreach(p => {
-        if (!p.getDAGSuccessors.exists(p => p == n)) {
+        if (!p.getDAGSuccessors.exists(s => s == n)) {
           throw DAGExceptions.graphIncoherence("at nodes [" + p + "] -> [" + n + "]")
         }
       })
-      n.getDAGSuccessors.foreach(p => {
-        if (!p.getDAGPredecessors.exists(p => p == n)) {
-          throw DAGExceptions.graphIncoherence("at nodes [" + n + "] -> [" + p + "]")
+      n.getDAGSuccessors.foreach(s => {
+        if (!s.getDAGPredecessors.exists(p => p == n)) {
+          throw DAGExceptions.graphIncoherence("at nodes [" + n + "] -> [" + s + "]")
         }
       })
     })
@@ -115,10 +125,13 @@ trait DAG {
 
   /** Turns the incremental sort on or off.
     *
-    * In case a cycle is detected, it does not pass in incremental-sort mode, but throws an
-    * exception. If the incremental-sort is activated :
-    *   - Incremental sort is then applied at each edge insert.
-    *   - Node insertion and deletion are prohibited when incremental-sort is activated.
+    * If the incremental sort is activated:
+    *   - Incremental sort is then applied at each notification of edge insertion.
+    *   - If a cycle is detected, it does not switch on incremental-sort mode, but throws an
+    *     exception.
+    *
+    * WARNING: addition or deletion of nodes when the incremental sort is active will likely cause
+    * breakage.
     */
   def incrementalSort_=(mIncrementalSort: Boolean): Unit = {
     // Activating incremental sort
@@ -138,11 +151,13 @@ trait DAG {
 
   /** Notifies that an edge has been added between two nodes.
     *
-    * This triggers a re-ordering of the nodes in the topological sort (if incrementalSort). The
-    * reordering might lead to an exception in case there is a cycle in the graph. Notice that you
-    * do not need to notify edge deletion.
+    * This triggers a re-ordering of the nodes in the topological sort, if incremental sort is
+    * active. The reordering might lead to an exception in case there is a cycle in the graph.
+    * Notice that you do not need to notify edge deletion.
     *
-    * WARNING : Do not forget to add the from node as predecessor of the to node in the graph
+    * WARNING: This trait doesn't support directly adding or removing an edge. The caller of this
+    * function has to make sure that the corresponding edge has been actually added to the
+    * associated predecessor and successor sets before calling the function.
     *
     * @param from
     *   The node starting the edge
@@ -164,6 +179,7 @@ trait DAG {
       // Reallocation starting with backward region (which is followed by forward region)
       val freePositionsForForwardRegion =
         reallocatePositions(sortedBackwardsRegion, freePositionsToDistribute)
+
       reallocatePositions(sortedForwardRegion, freePositionsForForwardRegion)
 
       assert({ checkSort(); checkGraph(); true })
@@ -172,10 +188,10 @@ trait DAG {
 
   /** Returns a cycle that is expected to be present in the DAG.
     *
-    * It uses the depth first search to explorer the DAG from a starting point. Each node is
-    * inserted in a list. If the node doesn't lead to a cycle, it's removed from the list and tagged
-    * as visited. Once we reached a node whose uniqueID is already in the list, we are done. Then
-    * the cycle is the nodes of the list between those two nodes included.
+    * It uses depth first search to explore the DAG from a starting point. Each node is inserted in
+    * a list. If the node doesn't lead to a cycle, it's removed from the list and tagged as visited.
+    * If we reach a node whose uniqueID is already in the list, we have found a cycle, which is made
+    * up of the nodes of the list between the two elements with that uniqueID.
     * @param start
     *   If known, the starting node of the cycle otherwise None
     * @return
@@ -270,7 +286,7 @@ trait DAG {
     }
   }
 
-  /** Returns the all the successors of startNode whose position are lower than ceilPosition.
+  /** Returns all the successors of startNode whose positions are lower than ceilPosition.
     *
     * @throws oscar.cbls.util.exceptions.CycleException
     *   A cycle has been detected
@@ -308,7 +324,7 @@ trait DAG {
     }
   }
 
-  /** Returns the all the predecessors of startNode whose position are greater than floorPosition.
+  /** Returns all the predecessors of startNode whose positions are greater than floorPosition.
     */
   @tailrec
   private def findSortedBackwardRegion(
@@ -337,7 +353,7 @@ trait DAG {
     }
   }
 
-  /** Extracts a list of sorted position from two distinct list of sorted DAGNode * */
+  /** Extracts a list of sorted positions from two distinct lists of sorted DAGNodes. */
   @tailrec
   private def extractSortedPositions(
     firstList: List[DAGNode],
@@ -357,14 +373,14 @@ trait DAG {
     }
   }
 
-  /** Changes the position of the graph nodes following a sorted list of free positions.
+  /** Changes the positions of the given graph nodes according to a sorted list of free positions.
     *
     * @param orderedNodesForReallocation
-    *   The list of sorted DAGNode
+    *   The list of sorted DAGNodes
     * @param freePositionsToDistribute
-    *   The list of free position to distribute
+    *   The list of free positions to distribute
     * @return
-    *   The remaining position to distribute
+    *   The remaining positions to distribute
     */
   @tailrec
   private def reallocatePositions(
