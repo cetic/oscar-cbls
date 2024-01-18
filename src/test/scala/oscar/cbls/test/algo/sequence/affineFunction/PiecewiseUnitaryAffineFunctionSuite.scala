@@ -1,10 +1,13 @@
-package oscar.cbls.test.algo.sequence
+package oscar.cbls.test.algo.sequence.affineFunction
 
 import org.scalacheck.Gen
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks._
-import oscar.cbls.algo.sequence._
+import oscar.cbls.algo.sequence.affineFunction.{
+  PiecewiseUnitaryAffineFunction,
+  UnitaryAffineFunction
+}
 
 class PiecewiseUnitaryAffineFunctionSuite extends AnyFunSuite {
 
@@ -15,12 +18,12 @@ class PiecewiseUnitaryAffineFunctionSuite extends AnyFunSuite {
       from   <- Gen.choose[Int](0, sequenceSize - 1)
       to     <- Gen.choose[Int](from, sequenceSize - 1)
       offset <- Gen.choose((-1) * from, sequenceSize - to)
-    } yield Update(from, to, UnitaryAffineFunction(offset, false))
+    } yield Update(from, to, UnitaryAffineFunction(offset, flip = false))
     val genFlip: Gen[Update] = for {
       from   <- Gen.choose[Int](0, sequenceSize - 1)
       to     <- Gen.choose[Int](from, sequenceSize - 1)
       offset <- Gen.choose(to, sequenceSize + from)
-    } yield Update(from, to, UnitaryAffineFunction(offset, true))
+    } yield Update(from, to, UnitaryAffineFunction(offset, flip = true))
 
     Gen.listOf(Gen.frequency((1, genNonFlip), (1, genFlip)))
   }
@@ -123,21 +126,16 @@ sealed abstract class PiecewiseSequenceShiftingBijectionNaive {
     toIncluded: Int,
     update: UnitaryAffineFunction
   ): PiecewiseSequenceShiftingBijectionNaive =
-    UpdatedPiecewiseLinearFunNaive(
-      fromIncluded,
-      toIncluded,
-      update: UnitaryAffineFunction,
-      this
-    )
+    UpdatedPiecewiseLinearFunNaive(fromIncluded, toIncluded, update: UnitaryAffineFunction, this)
 }
 case object IdentityNaive extends PiecewiseSequenceShiftingBijectionNaive {
   override def apply(value: Int): Int = value
 }
 case class UpdatedPiecewiseLinearFunNaive(
-                                           fromIncluded: Int,
-                                           toIncluded: Int,
-                                           update: UnitaryAffineFunction,
-                                           base: PiecewiseSequenceShiftingBijectionNaive
+  fromIncluded: Int,
+  toIncluded: Int,
+  update: UnitaryAffineFunction,
+  base: PiecewiseSequenceShiftingBijectionNaive
 ) extends PiecewiseSequenceShiftingBijectionNaive {
   override def apply(value: Int): Int =
     if (value >= fromIncluded && value <= toIncluded) base(update(value)) else base(value)

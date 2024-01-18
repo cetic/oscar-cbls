@@ -25,7 +25,7 @@ import scala.annotation.tailrec
   *   a list of flagged tree nodes, representing the path from the root of the underlying tree to
   *   the node associated to the current key-value pair
   * @tparam A
-  *   the type of the values in the associated map. Keys are of type [[Int]]
+  *   the type of the values in the associated map. Keys are of type [[scala.Int]]
   * @note
   *   This class cannot be instantiated directly, instances are provided by methods in
   *   [[RedBlackTreeMap]]

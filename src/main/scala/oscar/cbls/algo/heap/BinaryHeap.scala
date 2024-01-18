@@ -104,8 +104,8 @@ class BinaryHeap[A](priorityFunction: A => Long, val maxSize: Int)(implicit val 
     * position.
     *
     * It simply compares the priority of the element with his father's one.
-    *   - If father > element ==> switch the position of the father and the element
-    *   - Else ==> we are done
+    *   - If father > element &rarr; switch the position of the father and the element
+    *   - Else &rarr; we are done
     *
     * @param startPosition
     *   the position defining the element we want to bubble up
@@ -133,9 +133,9 @@ class BinaryHeap[A](priorityFunction: A => Long, val maxSize: Int)(implicit val 
     * position.
     *
     * It simply compares the priority of the element with his left and right child's one.
-    *   - If left < (right && element) ==> switch left and element
-    *   - If right < (left && element) ==> switch right and element
-    *   - Else ==> we are done
+    *   - If left < (right && element) &rarr; switch left and element
+    *   - If right < (left && element) &rarr; switch right and element
+    *   - Else &rarr; we are done
     *
     * @param startPosition
     *   position defining the element we want to bubble down
