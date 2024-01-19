@@ -11,24 +11,16 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.util.exceptions
+package oscar.cbls.algo.dag
 
-sealed trait DAGException extends Exception
-
-case class DAGCycleException(message: String) extends DAGException {
+case class DAGCycleException(message: String) extends Exception {
   override def getMessage: String = s"DAG exception ==> Cycle detected: $message"
 }
 
-case class DAGIncoherenceException(message: String) extends DAGException {
+case class DAGIncoherenceException(message: String) extends Exception {
   override def getMessage: String = s"DAG exception ==> Graph is incoherent: $message"
 }
 
-case class DAGUniqueIDException(message: String) extends DAGException {
+case class DAGUniqueIDException(message: String) extends Exception {
   override def getMessage: String = s"DAG exception ==> Unique ID already set: $message"
-}
-
-object DAGException {
-  final def cycle(details: String): DAGException              = DAGCycleException(details)
-  final def graphIncoherence(details: String): DAGException   = DAGIncoherenceException(details)
-  final def uniqueIDAlreadySet(details: String): DAGException = DAGUniqueIDException(details)
 }

@@ -14,7 +14,6 @@
 package oscar.cbls.algo.dag
 
 import oscar.cbls.algo.heap.BinaryHeap
-import oscar.cbls.util.exceptions.DAGException
 
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
@@ -48,14 +47,13 @@ trait DAGNode extends Ordered[DAGNode] {
 
   /** Set the unique id of the DAGNode
     *
-    * @throws oscar.cbls.util.exceptions.DAGUniqueIDException
+    * @throws DAGUniqueIDException
     *   A unique ID has already been set
     */
+  @throws(classOf[DAGUniqueIDException])
   def setUniqueId(uniqueID: Int): Unit = {
     if (_uniqueID != -1)
-      throw DAGException.uniqueIDAlreadySet(
-        s"Trying to change the uniqueID from ${_uniqueID} to $uniqueID"
-      )
+      throw DAGUniqueIDException(s"Trying to change the uniqueID from ${_uniqueID} to $uniqueID")
     else _uniqueID = uniqueID
   }
 
@@ -105,19 +103,21 @@ trait DAG {
   /** Checks that the nodes are maintaining the correct references to each other. Nodes are expected
     * to know their successors and predecessors, and these sets should be consistent among all
     * nodes.
-    * @throws oscar.cbls.util.exceptions.DAGIncoherenceException
+    *
+    * @throws DAGIncoherenceException
     *   Some graph incoherence was detected
     */
+  @throws(classOf[DAGIncoherenceException])
   def checkGraph(): Unit = {
     nodes.foreach(n => {
       n.getDAGPredecessors.foreach(p => {
         if (!p.getDAGSuccessors.exists(s => s == n)) {
-          throw DAGException.graphIncoherence("at nodes [" + p + "] -> [" + n + "]")
+          throw DAGIncoherenceException("at nodes [" + p + "] -> [" + n + "]")
         }
       })
       n.getDAGSuccessors.foreach(s => {
         if (!s.getDAGPredecessors.exists(p => p == n)) {
-          throw DAGException.graphIncoherence("at nodes [" + n + "] -> [" + s + "]")
+          throw DAGIncoherenceException("at nodes [" + n + "] -> [" + s + "]")
         }
       })
     })
@@ -146,7 +146,7 @@ trait DAG {
     }
   }
 
-  /** @return the incremental-sort status */
+  /** Returns the incremental-sort status */
   def incrementalSort: Boolean = _incrementalSort
 
   /** Notifies that an edge has been added between two nodes.
@@ -245,9 +245,10 @@ trait DAG {
     *
     * First position is set to zero.
     *
-    * @throws oscar.cbls.util.exceptions.DAGCycleException
+    * @throws DAGCycleException
     *   A cycle has been detected
     */
+  @throws(classOf[DAGCycleException])
   def initializeSort(): Unit = {
     // Initializes the positions of the nodes and returns the set of nodes with no predecessors.
     // Assigns position -p(n) to each node n, where p(n) is the number of predecessors of n.
@@ -284,16 +285,17 @@ trait DAG {
 
     val startFront: List[DAGNode] = sortByPrecedingNodes(nodes.toList)
     if (topologicalSort(startFront) != nodes.size) {
-      throw DAGException.cycle("Cycle in topological sort: \n " + getCycle().mkString("\n ") + "\n")
+      throw DAGCycleException("Cycle in topological sort: \n " + getCycle().mkString("\n ") + "\n")
     }
   }
 
   /** Returns all the successors of startNode whose positions are lower than ceilPosition.
     *
-    * @throws oscar.cbls.util.exceptions.DAGCycleException
+    * @throws DAGCycleException
     *   A cycle has been detected
     */
   @tailrec
+  @throws(classOf[DAGCycleException])
   private def findSortedForwardRegion(
     startNode: DAGNode,
     ceilPosition: Long,
@@ -314,7 +316,7 @@ trait DAG {
         if (s.position == ceilPosition) {
           sortedRegion.foreach(_.visited = false)
           heap.foreach(_.visited = false)
-          throw DAGException.cycle(
+          throw DAGCycleException(
             "Cycle in topological sort: \n " + getCycle(Some(s)).mkString("\n ") + "\n"
           )
         } else if (!s.visited && s.position < ceilPosition) {
