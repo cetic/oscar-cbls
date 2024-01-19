@@ -146,7 +146,7 @@ trait DAG {
     }
   }
 
-  /** Returns the incremental-sort status */
+  /** Returns whether or not incremental sort is active. */
   def incrementalSort: Boolean = _incrementalSort
 
   /** Notifies that an edge has been added between two nodes.
