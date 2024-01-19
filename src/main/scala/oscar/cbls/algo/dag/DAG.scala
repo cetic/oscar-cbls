@@ -134,7 +134,7 @@ trait DAG {
   def incrementalSort_=(mIncrementalSort: Boolean): Unit = {
     // Activating incremental sort
     if (mIncrementalSort && !_incrementalSort) {
-      initializeSort()
+      doDAGSort()
       // For testing purpose
       assert({ checkSort(); checkGraph(); true })
       _incrementalSort = true
@@ -246,11 +246,11 @@ trait DAG {
     * @throws DAGCycleException
     *   A cycle has been detected
     */
-  def initializeSort(): Unit = {
+  def doDAGSort(): Unit = {
     // Initializes the positions of the nodes and returns the set of nodes with no predecessors.
     // Assigns position -p(n) to each node n, where p(n) is the number of predecessors of n.
     @tailrec
-    def sortByPrecedingNodes(
+    def initializeSort(
       remainingNodes: List[DAGNode],
       frontNodes: List[DAGNode] = List.empty
     ): List[DAGNode] = {
@@ -259,7 +259,7 @@ trait DAG {
         case head :: tail =>
           val nbPredecessors = head.getDAGPredecessors.size
           head.position = -nbPredecessors
-          sortByPrecedingNodes(tail, if (nbPredecessors == 0) head :: frontNodes else frontNodes)
+          initializeSort(tail, if (nbPredecessors == 0) head :: frontNodes else frontNodes)
       }
     }
 
@@ -280,7 +280,7 @@ trait DAG {
       }
     }
 
-    val startFront: List[DAGNode] = sortByPrecedingNodes(nodes.toList)
+    val startFront: List[DAGNode] = initializeSort(nodes.toList)
     if (topologicalSort(startFront) != nodes.size) {
       throw DAGCycleException("Cycle in topological sort: \n " + getCycle().mkString("\n ") + "\n")
     }

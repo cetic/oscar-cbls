@@ -68,7 +68,7 @@ class DAGTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
     nodes(6).setAsANewSuccessorOf(nodes(5))
     nodes(6).setAsANewPredecessorOf(nodes(3))
 
-    an[DAGCycleException] should be thrownBy dag.initializeSort()
+    an[DAGCycleException] should be thrownBy dag.doDAGSort()
   }
 
   test("Finding a cycle works as expected") {
@@ -101,7 +101,7 @@ class DAGTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
           dag.notifyAddEdge(nodes(tuple._1), nodes(tuple._2))
         }
 
-        dag.initializeSort()
+        dag.doDAGSort()
 
         noException should be thrownBy dag.checkSort()
       }
@@ -120,7 +120,7 @@ class DAGTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
           dag.notifyAddEdge(nodes(tuple._1), nodes(tuple._2))
         }
 
-        dag.initializeSort()
+        dag.doDAGSort()
 
         noException should be thrownBy dag.checkGraph()
       }
@@ -142,7 +142,7 @@ class DAGTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
           dag.notifyAddEdge(nodes(tuple._1), nodes(tuple._2))
         }
 
-        dag.initializeSort()
+        dag.doDAGSort()
         dag.getCycle() should be(Nil)
       }
     }
@@ -163,7 +163,7 @@ class DAGTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with 
           dag.notifyAddEdge(nodes(tuple._2), nodes(tuple._1))
         }
 
-        dag.initializeSort()
+        dag.doDAGSort()
         dag.getCycle() should be(Nil)
       }
     }
