@@ -50,7 +50,6 @@ trait DAGNode extends Ordered[DAGNode] {
     * @throws DAGUniqueIDException
     *   A unique ID has already been set
     */
-  @throws(classOf[DAGUniqueIDException])
   def setUniqueId(uniqueID: Int): Unit = {
     if (_uniqueID != -1)
       throw DAGUniqueIDException(s"Trying to change the uniqueID from ${_uniqueID} to $uniqueID")
@@ -107,7 +106,6 @@ trait DAG {
     * @throws DAGIncoherenceException
     *   Some graph incoherence was detected
     */
-  @throws(classOf[DAGIncoherenceException])
   def checkGraph(): Unit = {
     nodes.foreach(n => {
       n.getDAGPredecessors.foreach(p => {
@@ -248,7 +246,6 @@ trait DAG {
     * @throws DAGCycleException
     *   A cycle has been detected
     */
-  @throws(classOf[DAGCycleException])
   def initializeSort(): Unit = {
     // Initializes the positions of the nodes and returns the set of nodes with no predecessors.
     // Assigns position -p(n) to each node n, where p(n) is the number of predecessors of n.
@@ -295,7 +292,6 @@ trait DAG {
     *   A cycle has been detected
     */
   @tailrec
-  @throws(classOf[DAGCycleException])
   private def findSortedForwardRegion(
     startNode: DAGNode,
     ceilPosition: Long,
