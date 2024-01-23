@@ -31,6 +31,7 @@ object HotRestart {
   def apply(it: Iterable[Int], pivot: Int): Iterable[Int] = {
     it match {
       case r: NumericRange[Int] =>
+        require(r.step == 1, "Only a range step of 1 is supported")
         if (r contains pivot) new InstrumentedRange(r) startBy pivot else r
       case s: SortedSet[Int] => new ShiftedSet(s, pivot)
       case _                 => new ShiftedIterable(it, pivot)
@@ -114,9 +115,8 @@ class InstrumentedRange(r: NumericRange[Int]) {
   */
 class ShiftedRange(val start: Int, val end: Int, val startBy: Int, val step: Int = 1)
     extends Iterable[Int] {
-  if ((start > startBy) || (startBy > end))
-    throw new Exception("ShiftedRange must contain startBy value ")
-  if (step != 1) throw new Exception("only step of 1L is supported in ShiftedRange")
+  assert(start <= startBy && startBy <= end, "ShiftedRange must contain startBy value")
+  assert(step == 1, "only step of 1L is supported in ShiftedRange")
 
   def getNextValue(a: Int): Int = {
     if (a == end) start
