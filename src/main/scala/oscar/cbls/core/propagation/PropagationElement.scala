@@ -6,16 +6,6 @@ package oscar.cbls.core.propagation
  */
 abstract class PropagationElement(propagationStructure : PropagationStructure) {
 
-  private var layer_ : Int = 0
-
-  def layer = layer_
-
-  def layer_=(newLayer : Int) = layer_ = newLayer
-
-  private val id_ = propagationStructure.generateId()
-
-  private[propagation] def uniqueId = id_
-
   /**to invoque to force inclusion of the propagation element in the current or next propagation wave. */
   final def scheduleForPropagation(): Unit = ???
 
