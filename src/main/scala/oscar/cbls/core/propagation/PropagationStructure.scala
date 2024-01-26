@@ -13,52 +13,35 @@
 
 package oscar.cbls.core.propagation
 
-/** This class manages propagation among propagation elements.
+/** Manages propagation among propagation elements.
   *
-  * This class is intended to be extended, and the overriding class must implement the method
-  * getPropagationElements that returns the propagation elements to be considered Each propagation
-  * element has a UniqueID. Those should be assigned continuously starting from 0.
+  * A propagation structure handles the propagation among a set of propagation elements. The main
+  * goal of the propagation is to ensure that when a value changes in the propagation graph, the
+  * propagation elements are updated through a unique wave that reaches all the variables at most
+  * once.
   *
-  * It is to be used as follows: once the set of propagation elements is stabilized, one must call
-  * setupPropagationStructure, which will built the necessary internal data structure propagation
-  * are triggered by calling the propagate method. additionally, before calling
-  * setupPropagationStructure, the method registerForPartialPropagation can be called to specify
-  * propagation elements that might require lazy propagation.
+  * To achive this goal, the propagation works as follows:
   *
-  * Two debug mechanisms are provided: trace printing and debug mode.
+  *   - When all the elements are registered, they are ordered according to the distance from the
+  *     input (the propagation elements that depend on nothing). This ordering is achieve in the
+  *     [[setupPropagationStructure]] method
+  *   - When the propagation is triggered, the elements are updated following the order computed
+  *     previously
   *
-  * A trace printing is provided; the propagation structure prints a trace of what it is
-  * propagating. This is activated by the Verbose parameter. All prints are preceded by
-  * ''PropagationStruture'' This an be useful when checking the behavior of partial propagation.
-  *
-  * A self-check method is called by the propagation structure after propagation is performed. This
-  * is activated by the Checker parameter. You should ensure that Asteroid is compiled with assert
-  * activated if you are using the debug mode. It will considerably slow down Asteroid, as other
-  * checks are implemented in the base modules.
-  *
-  * Also, although this propagation structure is intended to support acyclic graph for the static
-  * dependency graph, you can deactivate the associated mechanism by setting the IsAcyclic graph to
-  * true. If unsure, set to false (or do not set; it is false by default), the engine will discover
-  * it by itself. See also method isAcyclic to query a propagation structure.
-  *
-  * @param verbose
-  *   requires that the propagation structure prints a trace of what it is doing.
-  * @param checker
-  *   set a Some[Checker] top check all internal properties of invariants after propagation, set to
-  *   None for regular execution
-  * @param noCycle
-  *   is to be set to true only if the static dependency graph is acyclic.
-  * @param topologicalSort
-  *   if true, use topological sort, false, use distance to input, and associated faster heap data
-  *   structure
-  * @param sortScc
-  *   true if SCC should be sorted, false otherwise. Set to true, unless you know what your are
-  *   doing. Setting to false might provide a speedup, but propagation will not be single pass on
-  *   SCC anymore
-  * @author
-  *   renaud.delandtsheer@cetic.be
+  * OscaR.cbls supports partial propagation. When a propagation element is registered for partial
+  * propagation, the propagation structure will compute the elements on which this elements depends.
+  * When a propagation is triggered, only this elements will be updated.
   */
 class PropagationStructure {
+
+  /** Prepares the propagation structure for the use of propagation.
+    *
+    *   - Compute the layer of each propagation element to compute the order of element update
+    *   - Compute the tracks for the partial propagation
+    *
+    * @param dropStaticGraph
+    */
+  protected def setupPropagationStructure(dropStaticGraph: Boolean): Unit = ???
 
   /** Register a propagation element for partial propagation
     *
@@ -73,12 +56,18 @@ class PropagationStructure {
 
   /** Triggers the propagation in the graph.
     *
+    * The propagation has a target and stops when the target of the propagation has bee reached
+    *
     * @param upTo
     *   The target element of the propagation
     */
   protected final def propagate(upTo: PropagationElement): Unit = ???
 
-  /** this method is used by propagationComponents to schedule themselves for propagation. */
+  /** Schedules a propagation elements for the propagation
+    *
+    * @param p
+    *   the element to schedule
+    */
   private[propagation] def scheduleForPropagation(p: PropagationElement): Unit = ???
 
 }
