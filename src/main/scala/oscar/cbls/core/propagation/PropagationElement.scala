@@ -30,7 +30,8 @@ abstract class PropagationElement(propagationStructure: PropagationStructure) {
     * returns a key that allows to remove the element from the set of listened element in constant
     * time.
     *
-    * @param elem The element to insert
+    * @param elem
+    *   The element to insert
     * @return
     *   The key to perform the remove
     */
