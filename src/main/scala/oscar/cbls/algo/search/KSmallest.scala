@@ -82,25 +82,3 @@ class KSmallest(a: Array[Int], key: Int => Long = a => a) {
     kSmallestAcc(sortedPositions, k)
   }
 }
-
-object testQuickSort extends App {
-
-  val n            = 10000000
-  val k            = 500
-  val randomValues = Array.tabulate(n)(_ => (math.random() * Int.MaxValue).toInt)
-
-  val time1  = System.currentTimeMillis()
-  val s      = KSmallest.getkSmallests(randomValues, k, x => x)
-  val watch1 = System.currentTimeMillis() - time1
-
-  val time2 = System.currentTimeMillis()
-  val qs    = new LazyQuicksort(randomValues)
-  val it    = qs.iterator
-  for (i <- 1 to k) {
-    val j = it.next()
-  }
-  val watch2 = System.currentTimeMillis() - time2
-
-  println(s"nonLazy:$watch1")
-  println(s"lazy:$watch2")
-}
