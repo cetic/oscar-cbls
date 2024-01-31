@@ -27,7 +27,7 @@ object KSmallest {
     * @return
     */
   def getkSmallests(a: Array[Int], k: Int, key: Int => Long): List[Int] = {
-    val heap = new BinaryHeap[Int](indice => -key(a(indice)), 2 * k)
+    val heap = new BinaryHeap[Int](index => -key(a(index)), 2 * k)
     for (i <- a.indices) {
       heap.insert(i)
       if (i >= k) heap.popFirst()
