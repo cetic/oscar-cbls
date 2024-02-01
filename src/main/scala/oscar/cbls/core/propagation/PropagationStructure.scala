@@ -44,7 +44,7 @@ class PropagationStructure(debugLevel: Int) {
   private var currentId: Int = -1
 
   private[propagation] def generateId(): Int = {
-    currentId +=1 
+    currentId += 1
     currentId
   }
 
@@ -166,10 +166,11 @@ class PropagationStructure(debugLevel: Int) {
     partialPropagationTargets = p :: partialPropagationTargets
     if (closed) {
       println(
-"""Warning: You should not register a variable for partial propagation after model is closed.
+        """Warning: You should not register a variable for partial propagation after model is closed.
          this might cause the model to crash if static graph was dropped on model close.
          To avoid this, create all your objective functions before model close.
-         Note: there might be some implicit conversions related to the use of search strategies.""")
+         Note: there might be some implicit conversions related to the use of search strategies."""
+      )
       computePartialPropagationTrack()
     }
 
@@ -182,8 +183,7 @@ class PropagationStructure(debugLevel: Int) {
     * @param upTo
     *   The target element of the propagation
     */
-    protected final def propagate(upTo: PropagationElement): Unit = {
-    }
+  protected final def propagate(upTo: PropagationElement): Unit = {}
 
   /** Schedules a propagation elements for the propagation
     *
