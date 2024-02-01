@@ -48,8 +48,6 @@ object KSmallest {
 
   def doSortGetLater(a: Array[Int], key: Int => Long): KSmallest = new KSmallest(a, key)
 
-  def lazySort(a: Array[Int], key: Int => Long): Iterable[Int] = new LazyQuicksort(a, key)
-
   def kFirst(k: Int, values: Iterable[Int], filter: Int => Boolean = _ => true): Iterable[Int] = {
     def kFirstAccumulator(sortedNeighbors: Iterator[Int], k: Int): List[Int] = {
       require(k >= 0)
