@@ -46,21 +46,22 @@ object KSmallest {
 
   def doSortGetLater(a: Array[Int], key: Int => Long): KSmallest = new KSmallest(a, key)
 
-  def kFirst(k: Int, values: Iterable[Int], filter: Int => Boolean = _ => true): Iterable[Int] = {
-    def kFirstAccumulator(sortedNeighbors: Iterator[Int], k: Int): List[Int] = {
-      require(k >= 0)
-      if (k == 0 || !sortedNeighbors.hasNext) {
-        null
-      } else {
-        val neighbor = sortedNeighbors.next()
-        if (filter(neighbor))
-          neighbor +: kFirstAccumulator(sortedNeighbors, k - 1)
-        else
-          kFirstAccumulator(sortedNeighbors, k)
-      }
-    }
-    //////////
-    kFirstAccumulator(values.iterator, k)
+  /** This method takes the first k elements (according to the order in which its iterator returns
+    * them) that satisfy a given predicate. Note: might return different results for different runs,
+    * unless the underlying collection type is ordered.
+    *
+    * @param k
+    *   the number of elements to pick
+    * @param xs
+    *   the collection of elements
+    * @param filter
+    *   the function determining which elements are picked
+    * @return
+    */
+  def kFirst(k: Int, xs: Iterable[Int], filter: Int => Boolean = _ => true): Iterable[Int] = {
+    require(k >= 0, "Cannot pick a negative number of elements")
+    require(k <= xs.size, "Cannot take more elements than the size of the collection")
+    xs.view.filter(filter).take(k).to(List)
   }
 }
 
