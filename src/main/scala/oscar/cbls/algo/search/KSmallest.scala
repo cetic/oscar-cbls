@@ -13,8 +13,6 @@
 
 package oscar.cbls.algo.search
 
-import oscar.cbls.algo.heap.BinaryHeap
-
 import collection.mutable.{PriorityQueue => PQ}
 
 /** This class serves to compute the k-smallest values of a given vector. this computation can be
