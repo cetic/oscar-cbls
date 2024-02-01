@@ -58,7 +58,7 @@ object KSmallest {
     *   the function determining which elements are picked
     * @return
     */
-  def kFirst(k: Int, xs: Iterable[Int], filter: Int => Boolean = _ => true): Iterable[Int] = {
+  def getKFirst(k: Int, xs: Iterable[Int], filter: Int => Boolean = _ => true): Iterable[Int] = {
     require(k >= 0, "Cannot pick a negative number of elements")
     require(k <= xs.size, "Cannot take more elements than the size of the collection")
     xs.view.filter(filter).take(k).to(List)
