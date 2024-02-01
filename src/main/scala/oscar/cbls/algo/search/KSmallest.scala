@@ -27,17 +27,17 @@ object KSmallest {
     * if the key is x => -x, it returns the k largest elements. The resulting collection is sorted
     * according to priority; e.g., in increasing order if the key is the identity.
     *
-    * @param xs
-    *   the collection from which the elements are selected
     * @param k
     *   the number of elements to select. Cannot be negative or larger than the size of the
     *   collection
+    * @param xs
+    *   the collection from which the elements are selected
     * @param key
     *   the function that can be used to alter the order of the elements
     * @return
     *   the list of with k smallest elements, sorted
     */
-  def getKSmallest(xs: Iterable[Int], k: Int, key: Int => Long = x => x): List[Int] = {
+  def getKSmallest(k: Int, xs: Iterable[Int], key: Int => Long = x => x): List[Int] = {
     require(k >= 0, "Cannot pick a negative number of elements")
     require(k <= xs.size, "Cannot take more elements than the size of the collection")
     val pq: PQ[Int] = PQ.from(xs)(Ordering.by(-key(_)))
