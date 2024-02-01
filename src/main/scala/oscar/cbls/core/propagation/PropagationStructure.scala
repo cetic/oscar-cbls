@@ -31,17 +31,18 @@ package oscar.cbls.core.propagation
   * OscaR.cbls supports partial propagation. When a propagation element is registered for partial
   * propagation, the propagation structure will compute the elements on which this elements depends.
   * When a propagation is triggered, only this elements will be updated.
+  *
+  * @param debugLevel
+  *   the level of debug
   */
-class PropagationStructure {
+class PropagationStructure(debugLevel: Int) {
 
   /** Prepares the propagation structure for the use of propagation.
     *
     *   - Compute the layer of each propagation element to compute the order of element update
     *   - Compute the tracks for the partial propagation
-    *
-    * @param dropStaticGraph
     */
-  protected def setupPropagationStructure(dropStaticGraph: Boolean): Unit = ???
+  protected def setupPropagationStructure(): Unit = ???
 
   /** Register a propagation element for partial propagation
     *
