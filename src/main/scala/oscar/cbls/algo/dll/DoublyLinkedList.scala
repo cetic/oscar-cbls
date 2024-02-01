@@ -68,10 +68,10 @@ class DoublyLinkedList[T] extends Iterable[T] {
 
   phantom.next = phantom
 
-  /** Returns the size of the list. 
-    * 
-    * This is rarely used, and since we want to keep the memory footprint 
-    * as small as possible, we're letting it have a O(n) complexity.
+  /** Returns the size of the list.
+    *
+    * This is rarely used, and since we want to keep the memory footprint as small as possible,
+    * we're letting it have a O(n) complexity.
     * @return
     *   The size of the DLL
     * @note
@@ -137,7 +137,7 @@ class DoublyLinkedList[T] extends Iterable[T] {
     * @throws java.lang.IllegalArgumentException
     *   when the list is empty
     * @return
-    *   The value contained at the begining of the DLL
+    *   The value contained at the beginning of the DLL
     */
   def popStart(): T = {
     val d = phantom.next
@@ -151,7 +151,7 @@ class DoublyLinkedList[T] extends Iterable[T] {
     * @throws java.lang.IllegalArgumentException
     *   when the list is empty
     * @return
-    *   The value contained at the begining of the DLL
+    *   The value contained at the beginning of the DLL
     */
   def popEnd(): T = {
     val d = phantom.prev
@@ -160,7 +160,7 @@ class DoublyLinkedList[T] extends Iterable[T] {
     d.value
   }
 
-  /** Syntaxic sugar for [[DoublyLinkedList.insertStart]]
+  /** Syntactic sugar for [[DoublyLinkedList.insertStart]]
     */
   def +(elem: T): Unit = { insertStart(elem) }
 
@@ -200,7 +200,7 @@ class DoublyLinkedList[T] extends Iterable[T] {
   }
 
   /** Applies <code>f</code> to all the elements of the dll */
-  override def foreach[U](f: (T) => U): Unit = {
+  override def foreach[U](f: T => U): Unit = {
     var currentPos = phantom.next
     while (currentPos != phantom) {
       f(currentPos.value)
