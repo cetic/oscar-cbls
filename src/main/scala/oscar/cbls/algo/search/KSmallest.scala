@@ -15,24 +15,35 @@ package oscar.cbls.algo.search
 
 import oscar.cbls.algo.heap.BinaryHeap
 
+import collection.mutable.{PriorityQueue => PQ}
+
 /** This class serves to compute the k-smallest values of a given vector. this computation can be
   * done either one-shot, or with gradually increasing k
   */
 object KSmallest {
 
-  /** returns the k smallest elements, but they are not sorted between themselves.
-    * @param a
+  /** Returns the k integers with lowest priority in a collection, according to the provided key. In
+    * particular, if the key is the identity (the default), it returns the k smallest elements, and
+    * if the key is x => -x, it returns the k largest elements. The resulting collection is sorted
+    * according to priority; e.g., in increasing order if the key is the identity.
+    *
+    * @param xs
+    *   the collection from which the elements are selected
     * @param k
+    *   the number of elements to select. Cannot be negative or larger than the size of the
+    *   collection
     * @param key
+    *   the function that can be used to alter the order of the elements
     * @return
+    *   the list of with k smallest elements, sorted
     */
-  def getkSmallests(a: Array[Int], k: Int, key: Int => Long): List[Int] = {
-    val heap = new BinaryHeap[Int](index => -key(a(index)), 2 * k)
-    for (i <- a.indices) {
-      heap.insert(i)
-      if (i >= k) heap.popFirst()
-    }
-    heap.toList.map(a(_))
+  def getKSmallest(xs: Iterable[Int], k: Int, key: Int => Long = x => x): List[Int] = {
+    require(k >= 0, "Cannot pick a negative number of elements")
+    require(k <= xs.size, "Cannot take more elements than the size of the collection")
+    val pq: PQ[Int] = PQ.from(xs)(Ordering.by(-key(_)))
+    val out         = List.newBuilder[Int]
+    for (_ <- 0 until k) out += pq.dequeue()
+    out.result()
   }
 
   def doSortGetLater(a: Array[Int], key: Int => Long): KSmallest = new KSmallest(a, key)
