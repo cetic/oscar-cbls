@@ -69,28 +69,36 @@ object KSmallest {
   }
 }
 
-/** @param a
-  *   array of values
+/** This class allows to defer the query of the k smallest elements of a collection to a later time.
+  * The query can be done with an additional filter. Internally, this class sorts the entire
+  * collection according to the given key.
+  *
+  * @param xs
+  *   the collection
   * @param key
-  *   value from a to key
+  *   function according to which the collection is sorted
   */
-class KSmallest(a: Array[Int], key: Int => Long = a => a) {
-  // zipWithIndex puts index in second position of the couple
-  val sortedPositions: List[Int] = a.toList.zipWithIndex.sortBy(couple => key(couple._1)).map(_._2)
+class KSmallest(xs: Seq[Int], key: Int => Long = a => a) {
+  private val sorted: Seq[Int] = xs.sortBy(key)
 
-  def apply(k: Int): List[Int] = sortedPositions.take(k)
+  /** Return the first k elements of the collection after it's been sorted.
+    * @param k
+    *   the number of elements
+    */
+  def apply(k: Int): Seq[Int] = {
+    KSmallest.validateK(k, xs)
+    sorted.take(k)
+  }
 
-  def apply(k: Int, filter: Int => Boolean): List[Int] = {
-    def kSmallestAcc(sorted: List[Int], k: Int): List[Int] = {
-      require(k >= 0)
-      if (k == 0) return Nil
-      sorted match {
-        case Nil => Nil
-        case h :: t =>
-          if (filter(h)) h :: kSmallestAcc(t, k - 1)
-          else kSmallestAcc(t, k)
-      }
-    }
-    kSmallestAcc(sortedPositions, k)
+  /** Return the first k elements of the sorted collection satisfying a given predicate. Depending
+    * on the predicate, fewer than k elements may be returned.
+    * @param k
+    *   the number of elements
+    * @param filter
+    *   the predicate
+    */
+  def apply(k: Int, filter: Int => Boolean): Seq[Int] = {
+    KSmallest.validateK(k, xs)
+    sorted.view.filter(filter).take(k).to(Seq)
   }
 }
