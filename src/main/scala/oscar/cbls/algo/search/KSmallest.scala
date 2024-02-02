@@ -36,8 +36,7 @@ object KSmallest {
     *   the list of with k smallest elements, sorted
     */
   def getKSmallest(k: Int, xs: Iterable[Int], key: Int => Long = x => x): List[Int] = {
-    require(k >= 0, "Cannot pick a negative number of elements")
-    require(k <= xs.size, "Cannot take more elements than the size of the collection")
+    validateK(k, xs)
     val pq: PQ[Int] = PQ.from(xs)(Ordering.by(-key(_)))
     val out         = List.newBuilder[Int]
     for (_ <- 0 until k) out += pq.dequeue()
@@ -59,9 +58,14 @@ object KSmallest {
     * @return
     */
   def getKFirst(k: Int, xs: Iterable[Int], filter: Int => Boolean = _ => true): Iterable[Int] = {
+    validateK(k, xs)
+    xs.view.filter(filter).take(k).to(List)
+  }
+
+  // helper method to validate k with respect to the input collection
+  private def validateK(k: Int, xs: Iterable[Int]): Unit = {
     require(k >= 0, "Cannot pick a negative number of elements")
     require(k <= xs.size, "Cannot take more elements than the size of the collection")
-    xs.view.filter(filter).take(k).to(List)
   }
 }
 
