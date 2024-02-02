@@ -43,7 +43,7 @@ object KSmallest {
     out.result()
   }
 
-  def apply(a: Array[Int], key: Int => Long): KSmallest = new KSmallest(a, key)
+  def apply(a: Seq[Int], key: Int => Long = a => a): KSmallest = new KSmallest(a, key)
 
   /** This method takes the first k elements (according to the order in which its iterator returns
     * them) that satisfy a given predicate. Note: might return different results for different runs,
