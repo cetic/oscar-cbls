@@ -15,8 +15,15 @@ package oscar.cbls.algo.search
 
 import collection.mutable.{PriorityQueue => PQ}
 
-/** This class serves to compute the k-smallest values of a given vector. this computation can be
-  * done either one-shot, or with gradually increasing k
+/** This object collects several methods to return a portion of the elements of a given collection.
+  * This can either be the k smallest elements of a collection, according to a given function, or
+  * the first k elements returned by the iterator of the collection.
+  *
+  * These queries can be made with an optional filter function, meaning that the returned elements
+  * must satisfy a certain condition.
+  *
+  * In the case of the k smallest elements, it is possible to instantiate an object that allows
+  * performing the query at a later time.
   */
 object KSmallest {
 
@@ -33,7 +40,7 @@ object KSmallest {
     * @param key
     *   the function that can be used to alter the order of the elements
     * @return
-    *   the list of with k smallest elements, sorted
+    *   the list of k smallest elements, sorted
     */
   def getKSmallest(k: Int, xs: Iterable[Int], key: Int => Long = x => x): List[Int] = {
     validateK(k, xs)
@@ -43,7 +50,14 @@ object KSmallest {
     out.result()
   }
 
-  def apply(a: Seq[Int], key: Int => Long = a => a): KSmallest = new KSmallest(a, key)
+  /** Sort the whole collection according to the given key and instantiate an object that allows
+    * querying for the k smallest elements at a later time.
+    * @param xs
+    *   the collection
+    * @param key
+    *   the function according to which the collection is sorted
+    */
+  def apply(xs: Seq[Int], key: Int => Long = a => a): KSmallest = new KSmallest(xs, key)
 
   /** This method takes the first k elements (according to the order in which its iterator returns
     * them) that satisfy a given predicate. Note: might return different results for different runs,
