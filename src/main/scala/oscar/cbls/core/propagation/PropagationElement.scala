@@ -14,7 +14,7 @@ abstract class PropagationElement(propagationStructure: PropagationStructure) {
 
   private val id_ : Int = propagationStructure.generateId()
 
-  private[propagation] def id : Int = id_
+  private[core] def id : Int = id_
 
   private var layer_ : Int = -1
 
