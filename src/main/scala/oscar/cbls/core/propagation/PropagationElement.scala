@@ -1,5 +1,7 @@
 package oscar.cbls.core.propagation
 
+import oscar.cbls.algo.dll.DoublyLinkedList
+
 /** An interface that provides the method to handle propagation for the element of the propopagation
   * graph
   *
@@ -8,24 +10,31 @@ package oscar.cbls.core.propagation
   */
 abstract class PropagationElement(propagationStructure: PropagationStructure) {
 
-  private[propagation] var staticallyListenedElements : List[PropagationElement] = List()
+  private[propagation] var staticallyListenedElements: List[PropagationElement] = List()
 
-  private[propagation] var staticallyListeningElements : List[PropagationElement] = List()
+  private[propagation] var staticallyListeningElements: List[PropagationElement] = List()
 
-  private val id_ : Int = propagationStructure.generateId()
+  private[core] var dynamicallyListenedElements: DoublyLinkedList[PropagationElement] =
+    new DoublyLinkedList[PropagationElement]
 
-  private[core] def id : Int = id_
+  private[core] var dynamicallyListeningElements: DoublyLinkedList[PropagationElement] =
+    new DoublyLinkedList[PropagationElement]
+
+  private val id_ : Int = propagationStructure.registerAndGenerateId(this)
+
+  private[core] def id: Int = id_
 
   private var layer_ : Int = -1
 
-  private[propagation] def layer : Int = layer_
+  private[propagation] def layer: Int = layer_
 
-  private[propagation] def layer_= (layer : Int) : Unit = layer_ = layer
-
+  private[propagation] def layer_=(layer: Int): Unit = layer_ = layer
 
   /** Schedules the propagation element in the next propagation waves
     */
-  final def scheduleForPropagation(): Unit = ???
+  final def scheduleForPropagation(): Unit = {
+    propagationStructure.scheduleElementForPropagation(this)
+  }
 
   /** Register an element as listened by this propagation element
     *
@@ -36,7 +45,14 @@ abstract class PropagationElement(propagationStructure: PropagationStructure) {
     * @param elem
     *   The element to insert
     */
-  protected def registerStaticallyListenedElement(elem: PropagationElement): Unit = ???
+  protected def registerStaticallyListenedElement(elem: PropagationElement): Unit = {
+    staticallyListenedElements = elem :: staticallyListenedElements
+    elem.registerStaticallyListeningElement(this)
+  }
+
+  private[propagation] def registerStaticallyListeningElement(elem: PropagationElement): Unit = {
+    staticallyListeningElements = elem :: staticallyListeningElements
+  }
 
   /** Add an element in the set of dynamically listened element
     *
@@ -50,8 +66,17 @@ abstract class PropagationElement(propagationStructure: PropagationStructure) {
     * @return
     *   The key to perform the remove
     */
-  protected def registerDynamicallyListenedElement(elem: PropagationElement): KeyForRemoval =
-    ???
+  protected def registerDynamicallyListenedElement(elem: PropagationElement): KeyForRemoval = {
+    val listeningStorageElement = elem.registerDynamicallyListeningElement(this)
+    val listenedStorageElement  = dynamicallyListenedElements.insertStart(elem)
+    KeyForRemoval(listeningStorageElement, listenedStorageElement)
+  }
+
+  private[propagation] def registerDynamicallyListeningElement(
+    elem: PropagationElement
+  ): DoublyLinkedList[PropagationElement]#DLLStorageElement = {
+    dynamicallyListeningElements.insertStart(elem)
+  }
 
   /** this is the propagation method that should be overridden by propagation elements. notice that
     * it is only called in a propagation wave if: 1L: it has been registered for propagation since

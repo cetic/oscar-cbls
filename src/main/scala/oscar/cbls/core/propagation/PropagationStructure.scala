@@ -43,12 +43,19 @@ class PropagationStructure(debugLevel: Int) {
 
   private var currentId: Int = -1
 
-  private[propagation] def generateId(): Int = {
+  private[propagation] def registerAndGenerateId(p : PropagationElement): Int = {
+    propagationElements = p :: propagationElements
     currentId += 1
     currentId
   }
 
-  private var closed = false
+  private var closed: Boolean = false
+
+  private var propagating: Boolean = false
+
+  private var scheduledElements: List[PropagationElement] = List()
+
+  private var postponedElements: List[PropagationElement] = List()
 
   private var executionQueue: AggregatedBinaryHeap[PropagationElement] = null
 
@@ -57,6 +64,8 @@ class PropagationStructure(debugLevel: Int) {
   private var partialPropagationTargets: List[PropagationElement] = List()
 
   private var partialPropagationTracks: RedBlackTreeMap[Array[Boolean]] = RedBlackTreeMap.empty
+
+  private var currentTargetIdForPartialPropagation: Option[Int] = None
 
   /** Prepares the propagation structure for the use of propagation.
     *
@@ -180,16 +189,118 @@ class PropagationStructure(debugLevel: Int) {
     *
     * The propagation has a target and stops when the target of the propagation has bee reached
     *
-    * @param upTo
+    * @param target
     *   The target element of the propagation
     */
-  protected final def propagate(upTo: PropagationElement): Unit = {}
+  protected final def propagate(target: PropagationElement = null): Unit = {
+    var currentLayer = 0
+
+    val theTrack = if (target == null) null else partialPropagationTracks.getOrElse(target.id, null)
+
+    @inline
+    def track(id: Int) = if (theTrack == null) true else theTrack(id)
+
+    @tailrec @inline
+    def filterScheduledWithTrack: Unit = {
+      scheduledElements match {
+        case Nil =>
+        case h :: t =>
+          scheduledElements = t
+          if (track(h.id))
+            executionQueue.insert(h)
+          else
+            postponedElements = h :: postponedElements
+          filterScheduledWithTrack
+      }
+    }
+
+    @tailrec @inline
+    def filterAndEnqueuePostponedElements(
+      newPostponed: List[PropagationElement] = Nil
+    ): List[PropagationElement] = {
+      postponedElements match {
+        case Nil => newPostponed
+        case h :: t =>
+          val newList =
+            if (track(h.id)) {
+              executionQueue.insert(h)
+              t
+            } else {
+              h :: newPostponed
+            }
+          filterAndEnqueuePostponedElements(newList)
+      }
+    }
+
+    @tailrec @inline
+    def doPropagation(): Unit = {
+      if (executionQueue.nonEmpty) {
+        val currentElement = executionQueue.popFirst().get
+        currentElement.performPropagation()
+        filterScheduledWithTrack
+        doPropagation()
+      }
+    }
+
+    if (!propagating) {
+      propagating = true
+      val sameTarget: Boolean = currentTargetIdForPartialPropagation match {
+        case None     => false
+        case Some(id) => id == target.id
+      }
+      if (sameTarget) {
+        filterScheduledWithTrack
+      } else {
+        filterScheduledWithTrack
+        postponedElements = filterAndEnqueuePostponedElements()
+      }
+      doPropagation()
+      propagating = false
+    }
+  }
 
   /** Schedules a propagation elements for the propagation
     *
     * @param p
     *   the element to schedule
     */
-  private[propagation] def scheduleForPropagation(p: PropagationElement): Unit = ???
+  private[propagation] def scheduleElementForPropagation(p: PropagationElement): Unit = {
+    scheduledElements = p :: scheduledElements
+  }
+
+
+  def toDot(names : Map[Int,String] = propagationElements.map(_.id).zip(propagationElements.map(_.id.toString)).toMap) : String = {
+    def makeLine(currentElem : PropagationElement) : List[List[String]] = {
+      currentElem.staticallyListeningElements match {
+        case Nil => List(List(names(currentElem.id)))
+        case h :: t =>
+          val otherLines = makeGraph(t)
+          val graphOfThisLine = makeLine(h)
+          graphOfThisLine match {
+            case Nil => throw new Error("This should not happend")
+            case fstLine :: t => (names(currentElem.id) :: fstLine) :: (t ::: otherLines)
+          }
+      }
+    }
+
+    def makeGraph(elements : List[PropagationElement]) : List[List[String]] = {
+      elements match {
+        case Nil => List()
+        case h :: t => makeLine(h) ::: makeGraph(t)
+      }
+    }
+
+    println(propagationElements)
+
+    val lines = makeGraph(propagationElements.filter(_.staticallyListenedElements.length == 0))
+    s"""
+digraph PropagationStructure {
+${lines.map(l => s"  ${l.mkString(" -> ")};").mkString("\n")}
+}
+"""
+
+
+
+  }
 
 }
