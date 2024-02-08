@@ -67,6 +67,8 @@ class PropagationStructure(debugLevel: Int) {
 
   private var currentTargetIdForPartialPropagation: Option[Int] = None
 
+  protected def getPropagationElements : List[PropagationElement] = propagationElements
+
   /** Prepares the propagation structure for the use of propagation.
     *
     *   - Compute the layer of each propagation element to compute the order of element update
@@ -270,15 +272,24 @@ class PropagationStructure(debugLevel: Int) {
 
 
   def toDot(names : Map[Int,String] = propagationElements.map(_.id).zip(propagationElements.map(_.id.toString)).toMap) : String = {
+
+
+    val labelDefinition : List[String] = names.map(elem => s"  ${elem._1} [label=\"${elem._2}\"]").toList
+    val developedNodes : Array[Boolean] = Array.fill(propagationElements.length)(false)
+
     def makeLine(currentElem : PropagationElement) : List[List[String]] = {
       currentElem.staticallyListeningElements match {
-        case Nil => List(List(names(currentElem.id)))
+        case Nil => List(List(currentElem.id.toString()))
         case h :: t =>
-          val otherLines = makeGraph(t)
-          val graphOfThisLine = makeLine(h)
+          println(currentElem.id)
+          println(developedNodes.mkString(";"))
+          val alreadyDeveloped = developedNodes(currentElem.id)
+          developedNodes(currentElem.id) = true
+          val otherLines = if (alreadyDeveloped) List() else makeGraph(t)
+          val graphOfThisLine = if (alreadyDeveloped) List(List()) else makeLine(h)
           graphOfThisLine match {
             case Nil => throw new Error("This should not happend")
-            case fstLine :: t => (names(currentElem.id) :: fstLine) :: (t ::: otherLines)
+            case fstLine :: t => (currentElem.id.toString :: fstLine) :: (t ::: otherLines)
           }
       }
     }
@@ -290,11 +301,11 @@ class PropagationStructure(debugLevel: Int) {
       }
     }
 
-    println(propagationElements)
-
     val lines = makeGraph(propagationElements.filter(_.staticallyListenedElements.length == 0))
+    println(lines)
     s"""
 digraph PropagationStructure {
+${labelDefinition.mkString(";\n")};
 ${lines.map(l => s"  ${l.mkString(" -> ")};").mkString("\n")}
 }
 """
