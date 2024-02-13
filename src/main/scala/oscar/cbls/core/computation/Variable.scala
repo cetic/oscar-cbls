@@ -3,35 +3,70 @@ package oscar.cbls.core.computation
 import oscar.cbls.algo.dll.DoublyLinkedList
 import oscar.cbls.core.propagation._
 
-abstract class Variable(propagationStructure: PropagationStructure)
+abstract class Variable(propagationStructure: PropagationStructure, isConstant: Boolean)
     extends PropagationElement(propagationStructure) {
 
   private var definingInvariant: Option[Invariant] = None
-  // Dynamically listening elements, overrides it for constant variables
+  // Dynamically listening elements, upon update this variable must noticed it's listening element.
   private val dynamicallyListeningElements: DoublyLinkedList[PropagationElement] =
-    new DoublyLinkedList[PropagationElement]()
+    if (isConstant) null else new DoublyLinkedList[PropagationElement]()
 
   def model: Store = propagationStructure.asInstanceOf[Store]
 
   def save(): SavedValue
 
   /** Sets the invariant as the structure defining the value of this variable.
-   *
-   * @param invariant
-   *   The defining Invariant
-   */
+    *
+    * @param invariant
+    *   The defining Invariant
+    */
   def setDefiningInvariant(invariant: Invariant): Unit =
     definingInvariant = Some(invariant)
 
   /** Whether or not this variable is a decision variable. A decision variable is a variable that is
-   * not defined by any invariant.
-   */
+    * not defined by any invariant.
+    */
   def isADecisionVariable: Boolean = definingInvariant.isEmpty
 
-  override def registerDynamicallyListeningElement(
+  /** Registers the [[Iterable]] of [[PropagationElement]] as a listening elements. Whenever the Variable updates it's
+   * value, the listening elements will be noticed.
+   *
+   * NOTE : Keep the returned value to be able to remove them from the listening [[DoublyLinkedList]]
+   * using their delete method.
+   * @param elems
+   *   An iterable of listening elements
+   * @return
+   *   An iterable of element in the DLL
+   */
+  def registerDynamicallyListeningElements(
+    elems: Iterable[PropagationElement]
+  ): Iterable[DoublyLinkedList[PropagationElement]#DLLStorageElement] = {
+    require(
+      !isConstant,
+      "Constant variable does not propagate, no need to keep track of listening element."
+    )
+    elems.map(dynamicallyListeningElements.insertStart)
+  }
+
+  /** Registers the PropagationElement as a listening element. Whenever the Variable updates it's
+    * value, the listening element will be noticed.
+    *
+    * NOTE : Keep the returned value to be able to remove it from the listening [[DoublyLinkedList]]
+    * using it's delete method.
+    * @param elem
+    *   The new listening element
+    * @return
+    *   The element in the DLL
+    */
+  def registerDynamicallyListeningElement(
     elem: PropagationElement
-  ): DoublyLinkedList[PropagationElement]#DLLStorageElement =
+  ): DoublyLinkedList[PropagationElement]#DLLStorageElement = {
+    require(
+      !isConstant,
+      "Constant variable does not propagate, no need to keep track of listening element."
+    )
     dynamicallyListeningElements.insertStart(elem)
+  }
 
   /** Returns dynamically listening propagation elements.
     *
@@ -39,19 +74,4 @@ abstract class Variable(propagationStructure: PropagationStructure)
     */
   protected[core] final def getDynamicallyListeningElements: DoublyLinkedList[PropagationElement] =
     dynamicallyListeningElements
-
-  /** this is the propagation method that should be overridden by propagation elements. notice that
-    * it is only called in a propagation wave if: 1L: it has been registered for propagation since
-    * the last time it was propagated 2L: it is included in the propagation wave: partial
-    * propagation wave do not propagate all propagation elements; it only propagates the ones that
-    * come in the predecessors of the targeted propagation element overriding this method is
-    * optional, so an empty body is provided by default
-    */
-  override def performPropagation(): Unit
-
-  /** This is the debug procedure through which propagation element can redundantly check that the
-    * incremental computation they perform through the performPropagation method is correct
-    * overriding this method is optional, so an empty body is provided by default
-    */
-  override def checkInternals(): Unit
 }
