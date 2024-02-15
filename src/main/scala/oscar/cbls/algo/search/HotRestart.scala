@@ -30,9 +30,11 @@ object HotRestart {
     */
   def apply(it: Iterable[Int], pivot: Int): Iterable[Int] = {
     it match {
-      case r: NumericRange[Int] =>
-        require(r.step == 1, "Only a range step of 1 is supported")
-        if (r contains pivot) new InstrumentedRange(r) startBy pivot else r
+      case r: Range =>
+        require(r.step == 1, "Only a range step of 1 is currently supported")
+        if (r contains pivot)
+          new ShiftedRange(r.head, r.last, pivot, r.step)
+        else r
       case s: SortedSet[Int] => new ShiftedSet(s, pivot)
       case _                 => new ShiftedIterable(it, pivot)
     }
@@ -81,11 +83,6 @@ class ShiftedIterable(it: Iterable[Int], pivot: Int, sequence: Boolean = false)
 
     override def next(): A = it.next()
   }
-}
-
-class InstrumentedRange(r: NumericRange[Int]) {
-  def startBy(pivot: Int) =
-    if (r contains pivot) new ShiftedRange(r.head, r.last, pivot, r.step) else r
 }
 
 /** this is an inclusive range.
