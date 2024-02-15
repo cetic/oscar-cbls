@@ -42,20 +42,6 @@ object HotRestart {
     new ShiftedIterable(it, pivot, true)
 }
 
-object Test extends App {
-
-  val it = (0 until 100).filter(_ % 3 == 1)
-  println("nonHotRestart" + it)
-  val setM = HotRestart(it, 31)
-  println("hotRestart" + setM)
-
-  val it2 = (0 until 100)
-  println("nonHotRestart2" + it2)
-  val setM2 = HotRestart(it2, 31)
-  println("hotRestart2" + setM2)
-
-}
-
 class ShiftedIterable(it: Iterable[Int], pivot: Int, sequence: Boolean = false)
     extends Iterable[Int] {
   override def iterator: Iterator[Int] = {
