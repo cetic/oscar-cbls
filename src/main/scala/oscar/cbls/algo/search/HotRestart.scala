@@ -53,31 +53,31 @@ object HotRestart {
 class ShiftedRange(val start: Int, val end: Int, val startBy: Int, val step: Int = 1)
     extends Iterable[Int] {
   assert(start <= startBy && startBy <= end, "ShiftedRange must contain startBy value")
-  assert(step == 1, "only step of 1L is supported in ShiftedRange")
+  assert(step == 1, "only step of 1L is currently supported in ShiftedRange")
 
-  def getNextValue(a: Int): Int = {
-    if (a == end) start
-    else a + 1
+  override def iterator: Iterator[Int] = new AbstractIterator[Int] {
+    private var currentValue: Int = startBy
+    private var stop              = false
+
+    private def getNextValue(a: Int): Int = {
+      if (a == end) start
+      else a + 1
+    }
+
+    def hasNext: Boolean = !stop
+
+    def next(): Int = {
+      val tmp = currentValue
+      currentValue = getNextValue(currentValue)
+      if (currentValue == startBy) stop = true
+      tmp
+    }
   }
-
-  override def iterator: Iterator[Int] = new ShiftedRangeIterator(this)
 
   override def toArray[B >: Int](implicit evidence$1L: scala.reflect.ClassTag[B]): Array[B] =
     toList.toArray
 
   override def toString(): String = "ShiftedRange(" + toList + ")"
-
-  class ShiftedRangeIterator(val s: ShiftedRange) extends Iterator[Int] {
-    var currentValue: Int = s.startBy
-    var hasNext           = true
-
-    def next(): Int = {
-      val tmp = currentValue
-      currentValue = s.getNextValue(currentValue)
-      if (currentValue == s.startBy) hasNext = false
-      tmp
-    }
-  }
 }
 
 class ShiftedSet(s: SortedSet[Int], pivot: Int) extends Iterable[Int] {
