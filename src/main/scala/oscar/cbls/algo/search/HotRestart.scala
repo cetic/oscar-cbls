@@ -40,7 +40,7 @@ object HotRestart {
     }
   }
 
-  def hotRestartPreserveSequence(it: Iterable[Int], pivot: Int) =
+  def preserveSequence(it: Iterable[Int], pivot: Int) =
     new ShiftedIterable(it, pivot, true)
 }
 
