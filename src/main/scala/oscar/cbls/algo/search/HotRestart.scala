@@ -40,11 +40,6 @@ object HotRestart {
 
   def hotRestartPreserveSequence(it: Iterable[Int], pivot: Int) =
     new ShiftedIterable(it, pivot, true)
-
-  def apply(r: NumericRange[Int], pivot: Int): Iterable[Int] =
-    if (r contains pivot) new InstrumentedRange(r) startBy pivot else r
-
-  def apply(s: SortedSet[Int], pivot: Int): Iterable[Int] = new ShiftedSet(s, pivot)
 }
 
 object Test extends App {
