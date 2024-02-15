@@ -81,23 +81,18 @@ class ShiftedRange(val start: Int, val end: Int, val startBy: Int, val step: Int
 }
 
 class ShiftedSet(s: SortedSet[Int], pivot: Int) extends Iterable[Int] {
-  override def iterator: Iterator[Int] = {
-    new ShiftedIterator(s, pivot)
-  }
 
-  class ShiftedIterator(s: SortedSet[Int], pivot: Int) extends Iterator[Int] {
-    var it: Iterator[Int] = s.iteratorFrom(pivot)
-    var first             = true
-    var currentValue: Int = 0
-    var currentValueReady = false
+  override def iterator: Iterator[Int] = new AbstractIterator[Int] {
+    private var it: Iterator[Int] = s.iteratorFrom(pivot)
+    private var onFirstIterator   = true
+    private var currentValue: Int = 0
+    private var currentValueReady = false
 
-    /** returns true if a next value is available
-      *
-      * @return
-      */
-    def internalMoveToNext(): Boolean = {
+    // maintains which iterator is in use, the next value in the iterator if available,
+    // and returns true iff there is a next value
+    private def internalMoveToNext(): Boolean = {
       if (currentValueReady) return true
-      if (first) {
+      if (onFirstIterator) {
         if (it.hasNext) {
           currentValue = it.next()
           currentValueReady = true
@@ -105,7 +100,7 @@ class ShiftedSet(s: SortedSet[Int], pivot: Int) extends Iterable[Int] {
         } else {
           // start the second iterator
           it = s.iterator
-          first = false
+          onFirstIterator = false
           // and continue the execution flow
         }
       }
@@ -120,7 +115,7 @@ class ShiftedSet(s: SortedSet[Int], pivot: Int) extends Iterable[Int] {
     override def hasNext: Boolean = internalMoveToNext()
 
     override def next(): Int = {
-      if (!internalMoveToNext()) throw new Error("no more elements to iterate")
+      if (!internalMoveToNext()) Iterator.empty.next()
       currentValueReady = false
       currentValue
     }
