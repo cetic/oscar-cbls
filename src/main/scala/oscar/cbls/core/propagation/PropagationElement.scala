@@ -14,12 +14,6 @@ abstract class PropagationElement(propagationStructure: PropagationStructure) {
 
   private[propagation] var staticallyListeningElements: List[PropagationElement] = List()
 
-  private[core] var dynamicallyListenedElements: DoublyLinkedList[PropagationElement] =
-    new DoublyLinkedList[PropagationElement]
-
-  private[core] var dynamicallyListeningElements: DoublyLinkedList[PropagationElement] =
-    new DoublyLinkedList[PropagationElement]
-
   private val id_ : Int = propagationStructure.registerAndGenerateId(this)
 
   private[core] def id: Int = id_
@@ -52,30 +46,6 @@ abstract class PropagationElement(propagationStructure: PropagationStructure) {
 
   private[propagation] def registerStaticallyListeningElement(elem: PropagationElement): Unit = {
     staticallyListeningElements = elem :: staticallyListeningElements
-  }
-
-  /** Add an element in the set of dynamically listened element
-    *
-    * Some element may not always listened for the same elements (e.g. the "element" invariant).
-    * This methods allow to add an element in the set of element that are listened by an element. It
-    * returns a key that allows to remove the element from the set of listened element in constant
-    * time.
-    *
-    * @param elem
-    *   The element to insert
-    * @return
-    *   The key to perform the remove
-    */
-  protected def registerDynamicallyListenedElement(elem: PropagationElement): KeyForRemoval = {
-    val listeningStorageElement = elem.registerDynamicallyListeningElement(this)
-    val listenedStorageElement  = dynamicallyListenedElements.insertStart(elem)
-    KeyForRemoval(listeningStorageElement, listenedStorageElement)
-  }
-
-  private[propagation] def registerDynamicallyListeningElement(
-    elem: PropagationElement
-  ): DoublyLinkedList[PropagationElement]#DLLStorageElement = {
-    dynamicallyListeningElements.insertStart(elem)
   }
 
   /** this is the propagation method that should be overridden by propagation elements. notice that

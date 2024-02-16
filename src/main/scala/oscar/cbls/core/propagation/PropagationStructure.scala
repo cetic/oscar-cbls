@@ -43,13 +43,13 @@ class PropagationStructure(debugLevel: Int) {
 
   private var currentId: Int = -1
 
-  private[propagation] def registerAndGenerateId(p : PropagationElement): Int = {
+  private[propagation] def registerAndGenerateId(p: PropagationElement): Int = {
     propagationElements = p :: propagationElements
     currentId += 1
     currentId
   }
 
-  private var closed: Boolean = false
+  protected var closed: Boolean = false
 
   private var propagating: Boolean = false
 
@@ -67,7 +67,7 @@ class PropagationStructure(debugLevel: Int) {
 
   private var currentTargetIdForPartialPropagation: Option[Int] = None
 
-  protected def getPropagationElements : List[PropagationElement] = propagationElements
+  protected def getPropagationElements: List[PropagationElement] = propagationElements
 
   /** Prepares the propagation structure for the use of propagation.
     *
@@ -76,10 +76,12 @@ class PropagationStructure(debugLevel: Int) {
     *
     * @param dropStaticGraph
     */
-  protected def setupPropagationStructure(dropStaticGraph: Boolean): Unit = {
+  protected def setupPropagationStructure(): Unit = {
     // Computing the layer of the propagation elements
     val nbLayer = computePropagationElementsLayers()
     executionQueue = AggregatedBinaryHeap[PropagationElement](p => p.layer, nbLayer)
+
+    println("Compute Propagation Track")
 
     // Computing the tracks for partial propagation
     computePartialPropagationTrack()
@@ -137,7 +139,7 @@ class PropagationStructure(debugLevel: Int) {
       nbElementsLeft: Int
     ): Int = {
       require(
-        nbElementsLeft > 0,
+        nbElementsLeft >= 0,
         "Problem with Layer counting algorithm (the propagation graph seems to have a cycle which is forbidden)"
       )
       onGoingLayer match {
@@ -159,7 +161,6 @@ class PropagationStructure(debugLevel: Int) {
           computeLayerOfElement(otherElements, newNextLayer, currentLayerId, nbElementsLeft - 1)
       }
     }
-
     computeLayerOfElement(fstLayerElements, List(), 0, nbPropagationElements)
 
   }
@@ -173,7 +174,7 @@ class PropagationStructure(debugLevel: Int) {
     * @param p
     *   The element that is registered for partial propagation
     */
-  protected def registerForPartialPropagation(p: PropagationElement): Unit = {
+  def registerForPartialPropagation(p: PropagationElement): Unit = {
     partialPropagationTargets = p :: partialPropagationTargets
     if (closed) {
       println(
@@ -239,6 +240,8 @@ class PropagationStructure(debugLevel: Int) {
       if (executionQueue.nonEmpty) {
         val currentElement = executionQueue.popFirst().get
         currentElement.performPropagation()
+        if (debugLevel >= 1)
+          currentElement.checkInternals()
         filterScheduledWithTrack
         doPropagation()
       }
@@ -258,6 +261,7 @@ class PropagationStructure(debugLevel: Int) {
       }
       doPropagation()
       propagating = false
+
     }
   }
 
@@ -270,47 +274,106 @@ class PropagationStructure(debugLevel: Int) {
     scheduledElements = p :: scheduledElements
   }
 
+  /** Computes the list of path in the dependency graph of the propagation structure
+    *
+    * A path is a list of integer that means that there is a path along this list of element. The
+    * list of path is a list of this so called path such that giving all this path suffices to
+    * describe the structure. This method is mainly used to make the dot file
+    *
+    * @return The list of path
+    */
+  protected def pathList: List[List[Int]] = {
+    def developNode(
+      currentNode: PropagationElement,
+      alreadyVisitedNodes: List[Int]
+    ): (List[List[Int]], List[Int]) = {
+      // println(s"currentNode : ${currentNode.id}")
+      // println(alreadyVisitedNodes)
+      if (alreadyVisitedNodes.contains(currentNode.id)) {
+        (List(List(currentNode.id)), alreadyVisitedNodes)
+      } else {
+        currentNode.staticallyListeningElements match {
+          case Nil => (List(List(currentNode.id)), currentNode.id :: alreadyVisitedNodes)
+          case _ :: _ =>
+            val resOfSons =
+              developListOfNode(currentNode.staticallyListeningElements, alreadyVisitedNodes)
+            (
+              resOfSons._1
+                .map(l => {
+                  l match {
+                    case Nil    => List()
+                    case h :: t => (currentNode.id :: h) :: t
+                  }
+                })
+                .flatten,
+              currentNode.id :: resOfSons._2
+            )
+        }
+      }
+    }
 
-  def toDot(names : Map[Int,String] = propagationElements.map(_.id).zip(propagationElements.map(_.id.toString)).toMap) : String = {
-
-
-    val labelDefinition : List[String] = names.map(elem => s"  ${elem._1} [label=\"${elem._2}\"]").toList
-    val developedNodes : Array[Boolean] = Array.fill(propagationElements.length)(false)
-
-    def makeLine(currentElem : PropagationElement) : List[List[String]] = {
-      currentElem.staticallyListeningElements match {
-        case Nil => List(List(currentElem.id.toString()))
+    def developListOfNode(
+      nodes: List[PropagationElement],
+      alreadyVisitedNodes: List[Int]
+    ): (List[List[List[Int]]], List[Int]) = {
+      // println(s"ListOfNodes : ${nodes.map(_.id)}")
+      // println(alreadyVisitedNodes)
+      nodes match {
+        case Nil    => (List(), alreadyVisitedNodes)
         case h :: t =>
-          println(currentElem.id)
-          println(developedNodes.mkString(";"))
-          val alreadyDeveloped = developedNodes(currentElem.id)
-          developedNodes(currentElem.id) = true
-          val otherLines = if (alreadyDeveloped) List() else makeGraph(t)
-          val graphOfThisLine = if (alreadyDeveloped) List(List()) else makeLine(h)
-          graphOfThisLine match {
-            case Nil => throw new Error("This should not happend")
-            case fstLine :: t => (currentElem.id.toString :: fstLine) :: (t ::: otherLines)
+          // println(s"startDevelopList ${t.map(_.id)}")
+          val resOfRest = developListOfNode(t, alreadyVisitedNodes)
+          // println(s"endDevelopList ${t.map(_.id)}")
+          // println(resOfRest._2)
+          // println(s"StartDevelopNode ${h.id}")
+          val resOfNode = developNode(h, resOfRest._2)
+          // println(s"EndDevelopNode ${h.id}")
+          // println(resOfNode._2)
+          (resOfNode._1 :: resOfRest._1, resOfNode._2)
+      }
+    }
+
+    developListOfNode(
+      propagationElements.filter(_.staticallyListenedElements.isEmpty),
+      List()
+    )._1.flatten
+
+
+  }
+
+  def toDot(
+    names: Map[Int, String] =
+      propagationElements.map(_.id).zip(propagationElements.map(_.id.toString)).toMap,
+    shapes: Map[Int, String] = Map.empty[Int, String]
+  ): String = {
+
+    val labelDefinition: List[String] =
+      propagationElements
+        .map(e => {
+          val label = names.getOrElse(e.id, "")
+          val shape = shapes.getOrElse(e.id, "")
+          if (label == "") {
+            if (shape == "")
+              None
+            else
+              Some(s"  ${e.id} [shape = \"$shape\"]")
+          } else {
+            if (shape == "")
+              Some(s"  ${e.id} [label = \"$label\"]")
+            else
+              Some(s"  ${e.id} [label = \"$label\",shape = \"$shape\"]")
           }
-      }
-    }
+        })
+        .flatten
+    val developedNodes: Array[Boolean] = Array.fill(propagationElements.length)(false)
 
-    def makeGraph(elements : List[PropagationElement]) : List[List[String]] = {
-      elements match {
-        case Nil => List()
-        case h :: t => makeLine(h) ::: makeGraph(t)
-      }
-    }
-
-    val lines = makeGraph(propagationElements.filter(_.staticallyListenedElements.length == 0))
-    println(lines)
+    val lines = pathList
     s"""
 digraph PropagationStructure {
 ${labelDefinition.mkString(";\n")};
 ${lines.map(l => s"  ${l.mkString(" -> ")};").mkString("\n")}
 }
 """
-
-
 
   }
 
