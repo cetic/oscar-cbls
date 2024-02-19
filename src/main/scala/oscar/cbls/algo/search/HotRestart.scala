@@ -13,20 +13,29 @@
 
 package oscar.cbls.algo.search
 
-import scala.collection.immutable.{NumericRange, SortedSet}
+import scala.collection.AbstractIterator
+import scala.collection.immutable.SortedSet
+import scala.collection.mutable.{PriorityQueue => PQ}
 
-/** this proposes a set of methods to enable hot restart on iteration over an iterable. it takes an
-  * Iterable[Long] and some pivot, and ensures that the iteration will explore the values above the
-  * pivot first, in increasing order, and the values below the pivot later, in increasing order as
-  * well.
+/** This object encapsulates a set of methods used to enable hot restart while iterating over an
+  * iterable collection of integers. Given such an iterable and an integer pivot, hot restart
+  * ensures that iteration first occurs on values greater than or equal to the pivot, in increasing
+  * order, followed by the values smaller than the pivot. If the collection does not contain the
+  * pivot, the elements will simply be returned in ascending order.
+  *
+  * If the `preserveSequence` method is used, the elements will instead be returned in the order of
+  * the original collection, starting from the first occurrence of the pivot element, if present,
+  * and from the first element returned by its original iterator otherwise.
   */
 object HotRestart {
 
-  /** this will return a shiftedIterable the most efficient method will be automatically selected
-    * for Range and sorted sets
+  /** Default way to use HotRestart, returning elements in increasing order.
     * @param it
+    *   the collection of elements
     * @param pivot
+    *   the pivot element
     * @return
+    *   an iterable over the elements of the original collection with the hot restart property
     */
   def apply(it: Iterable[Int], pivot: Int): Iterable[Int] = {
     it match {
@@ -40,18 +49,27 @@ object HotRestart {
     }
   }
 
+  /** This method returns elements in the given collection starting from the first occurrence of the
+    * pivot, while respecting the ordering of its original iterator.
+    * @param it
+    *   the collection of elements
+    * @param pivot
+    *   the pivot element
+    * @return
+    *   an iterable over the collection from the pivot with original ordering
+    */
   def preserveSequence(it: Iterable[Int], pivot: Int) =
     new ShiftedIterable(it, pivot, true)
 }
 
-/** this is an inclusive range.
-  * @param start
-  * @param end
-  * @param startBy
-  * @param step
+/** Class handling hot restart over a numeric range. Only 1-step ranges are supported.
   */
-class ShiftedRange(val start: Int, val end: Int, val startBy: Int, val step: Int = 1)
-    extends Iterable[Int] {
+protected[search] class ShiftedRange(
+  val start: Int,
+  val end: Int,
+  val startBy: Int,
+  val step: Int = 1
+) extends Iterable[Int] {
   assert(start <= startBy && startBy <= end, "ShiftedRange must contain startBy value")
   assert(step == 1, "only step of 1L is currently supported in ShiftedRange")
 
@@ -67,6 +85,7 @@ class ShiftedRange(val start: Int, val end: Int, val startBy: Int, val step: Int
     def hasNext: Boolean = !stop
 
     def next(): Int = {
+      if (stop) Iterator.empty.next()
       val tmp = currentValue
       currentValue = getNextValue(currentValue)
       if (currentValue == startBy) stop = true
@@ -80,7 +99,8 @@ class ShiftedRange(val start: Int, val end: Int, val startBy: Int, val step: Int
   override def toString(): String = "ShiftedRange(" + toList + ")"
 }
 
-class ShiftedSet(s: SortedSet[Int], pivot: Int) extends Iterable[Int] {
+/** Class handling hot restart over a sorted set. */
+protected[search] class ShiftedSet(s: SortedSet[Int], pivot: Int) extends Iterable[Int] {
 
   override def iterator: Iterator[Int] = new AbstractIterator[Int] {
     private var it: Iterator[Int] = s.iteratorFrom(pivot)
@@ -122,13 +142,21 @@ class ShiftedSet(s: SortedSet[Int], pivot: Int) extends Iterable[Int] {
   }
 }
 
-class ShiftedIterable(it: Iterable[Int], pivot: Int, sequence: Boolean = false)
+/** Class handling hot restart over generic collections. Handles the case when `preserveSequence` is
+  * invoked.
+  */
+protected[search] class ShiftedIterable(it: Iterable[Int], pivot: Int, sequence: Boolean = false)
     extends Iterable[Int] {
+
   override def iterator: Iterator[Int] = {
     if (sequence) {
+      // if order matters, just convert the iterator output to a list,
+      // then split at pivot and concatenate
       val l = it.iterator.toList
       (l.dropWhile(_ != pivot) ::: l.takeWhile(_ != pivot)).iterator
     } else {
+      // otherwise put elements in two min-priority queues
+      // and have the iterator dequeue them in order
       val (pqAbove, pqBelow) = (PQ[Int]()(Ordering.by(-_)), PQ[Int]()(Ordering.by(-_)))
       it.foreach(i => if (i >= pivot) pqAbove.enqueue(i) else pqBelow.enqueue(i))
       Iterator.tabulate(it.size)(_ =>
