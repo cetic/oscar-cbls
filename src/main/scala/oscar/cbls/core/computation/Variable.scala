@@ -19,6 +19,7 @@ abstract class Variable(propagationStructure: PropagationStructure, isConstant: 
     domain = Some((min,max))
   }
 
+  /** Save the state of this variable */
   def save(): SavedValue
 
   /** Sets the invariant as the structure defining the value of this variable.
@@ -34,26 +35,6 @@ abstract class Variable(propagationStructure: PropagationStructure, isConstant: 
     */
   def isADecisionVariable: Boolean = definingInvariant.isEmpty || isConstant
 
-  /** Registers the [[Iterable]] of [[PropagationElement]] as a listening elements. Whenever the Variable updates it's
-   * value, the listening elements will be noticed.
-   *
-   * NOTE : Keep the returned value to be able to remove them from the listening [[DoublyLinkedList]]
-   * using their delete method.
-   * @param elems
-   *   An iterable of listening elements
-   * @return
-   *   An iterable of element in the DLL
-   */
-  def registerDynamicallyListeningElements(
-    elems: Iterable[PropagationElement]
-  ): Iterable[DoublyLinkedList[PropagationElement]#DLLStorageElement] = {
-    require(
-      !isConstant,
-      "Constant variable does not propagate, no need to keep track of listening element."
-    )
-    elems.map(dynamicallyListeningElements.insertStart)
-  }
-
   /** Registers the PropagationElement as a listening element. Whenever the Variable updates it's
     * value, the listening element will be noticed.
     *
@@ -64,7 +45,7 @@ abstract class Variable(propagationStructure: PropagationStructure, isConstant: 
     * @return
     *   The element in the DLL
     */
-  def registerDynamicallyListeningElement(
+  protected def registerDynamicallyListeningElement(
     elem: PropagationElement
   ): DoublyLinkedList[PropagationElement]#DLLStorageElement = {
     require(
