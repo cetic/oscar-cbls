@@ -90,23 +90,9 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
     )
   }
 
-  override def registerDynamicallyListeningElement(
-    elem: PropagationElement
+  def registerDynamicallyListeningElementToIntVariable(
+    elem: PropagationElement with IntNotificationTarget
   ): DoublyLinkedList[PropagationElement]#DLLStorageElement = {
-    require(
-      elem.isInstanceOf[IntNotificationTarget],
-      s"Element listening an IntVariable must implement IntNotificationTarget."
-    )
     super.registerDynamicallyListeningElement(elem)
-  }
-
-  override def registerDynamicallyListeningElements(
-    elems: Iterable[PropagationElement]
-  ): Iterable[DoublyLinkedList[PropagationElement]#DLLStorageElement] = {
-    require(
-      elems.forall(_.isInstanceOf[IntNotificationTarget]),
-      s"Elements listening an IntVariable must implement IntNotificationTarget."
-    )
-    super.registerDynamicallyListeningElements(elems)
   }
 }
