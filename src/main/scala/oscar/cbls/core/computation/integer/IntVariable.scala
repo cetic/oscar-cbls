@@ -9,7 +9,9 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
   require(model != null, "Model (Store) must be defined")
   model.registerVariable(this)
 
+  // The new value of this variable, not propagated yet if different from _oldValue
   private var _newValue: Long = initialValue
+  // The ols value of this variable
   private var _oldValue: Long = _newValue
 
   def newValue(): Long = _newValue
@@ -19,6 +21,7 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
     _newValue
   }
 
+  /** Change the newValue of this variable and schedule it for propagation */
   @inline
   protected def setValue(value: Long): Unit = {
     if (value != _newValue) {
@@ -28,29 +31,36 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
     }
   }
 
+  /** Assign the given value to this variable */
   def :=(value: Long): Unit = setValue(value)
 
+  /** Add the given value to this variable */
   def :+=(value: Long): Unit = setValue(_newValue + value)
 
+  /** Subtract the given value from this variable */
   def :-=(value: Long): Unit = setValue(_newValue - value)
 
+  /** Multiply this variable with the given value */
   def :*=(value: Long): Unit = setValue(_newValue * value)
 
+  /** Divide this variable with the given value */
   def :/=(value: Long): Unit = setValue(_newValue / value)
 
+  /** Increments this variable */
   def ++(): Unit = setValue(_newValue + 1)
 
+  /** Decrements this variable */
   def --(): Unit = setValue(_newValue - 1)
 
   override def save(): SavedValue = new SavedIntValue(this)
 
   /** this is the propagation method that should be overridden by propagation elements. notice that
-   * it is only called in a propagation wave if: 1L: it has been registered for propagation since
-   * the last time it was propagated 2L: it is included in the propagation wave: partial
-   * propagation wave do not propagate all propagation elements; it only propagates the ones that
-   * come in the predecessors of the targeted propagation element overriding this method is
-   * optional, so an empty body is provided by default
-   */
+    * it is only called in a propagation wave if: 1L: it has been registered for propagation since
+    * the last time it was propagated 2L: it is included in the propagation wave: partial
+    * propagation wave do not propagate all propagation elements; it only propagates the ones that
+    * come in the predecessors of the targeted propagation element overriding this method is
+    * optional, so an empty body is provided by default
+    */
   override def performPropagation(): Unit = {
     if (_oldValue != _newValue) {
       val old = _oldValue
@@ -66,9 +76,9 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
   }
 
   /** This is the debug procedure through which propagation element can redundantly check that the
-   * incremental computation they perform through the performPropagation method is correct
-   * overriding this method is optional, so an empty body is provided by default
-   */
+    * incremental computation they perform through the performPropagation method is correct
+    * overriding this method is optional, so an empty body is provided by default
+    */
   override def checkInternals(): Unit = {
     require(
       _oldValue == _newValue,
@@ -81,8 +91,8 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
   }
 
   override def registerDynamicallyListeningElement(
-                                                    elem: PropagationElement
-                                                  ): DoublyLinkedList[PropagationElement]#DLLStorageElement = {
+    elem: PropagationElement
+  ): DoublyLinkedList[PropagationElement]#DLLStorageElement = {
     require(
       elem.isInstanceOf[IntNotificationTarget],
       s"Element listening an IntVariable must implement IntNotificationTarget."
@@ -91,8 +101,8 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
   }
 
   override def registerDynamicallyListeningElements(
-                                                     elems: Iterable[PropagationElement]
-                                                   ): Iterable[DoublyLinkedList[PropagationElement]#DLLStorageElement] = {
+    elems: Iterable[PropagationElement]
+  ): Iterable[DoublyLinkedList[PropagationElement]#DLLStorageElement] = {
     require(
       elems.forall(_.isInstanceOf[IntNotificationTarget]),
       s"Elements listening an IntVariable must implement IntNotificationTarget."
