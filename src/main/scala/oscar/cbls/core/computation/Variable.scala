@@ -6,8 +6,7 @@ import oscar.cbls.core.propagation._
 abstract class Variable(propagationStructure: PropagationStructure, isConstant: Boolean)
     extends PropagationElement(propagationStructure) {
 
-  protected var domainMin: Int = Int.MinValue
-  protected var domainMax: Int = Int.MaxValue
+  protected var domain: Option[(Long,Long)] = None
   private[core] var definingInvariant: Option[Invariant] = None
   // Dynamically listening elements, upon update this variable must noticed it's listening element.
   private val dynamicallyListeningElements: DoublyLinkedList[PropagationElement] =
@@ -16,9 +15,8 @@ abstract class Variable(propagationStructure: PropagationStructure, isConstant: 
   def model: Store = propagationStructure.asInstanceOf[Store]
 
   /** Limits the values of the variable to this domain. ONLY USED IN DEBUG MODE */
-  def setDomain(min: Int, max: Int): Unit = {
-    domainMin = min
-    domainMax = max
+  def setDomain(min: Long, max: Long): Unit = {
+    domain = Some((min,max))
   }
 
   def save(): SavedValue
@@ -34,7 +32,7 @@ abstract class Variable(propagationStructure: PropagationStructure, isConstant: 
   /** Whether or not this variable is a decision variable. A decision variable is a variable that is
     * not defined by any invariant.
     */
-  def isADecisionVariable: Boolean = definingInvariant.isEmpty
+  def isADecisionVariable: Boolean = definingInvariant.isEmpty || isConstant
 
   /** Registers the [[Iterable]] of [[PropagationElement]] as a listening elements. Whenever the Variable updates it's
    * value, the listening elements will be noticed.
@@ -82,4 +80,11 @@ abstract class Variable(propagationStructure: PropagationStructure, isConstant: 
     */
   protected[core] final def getDynamicallyListeningElements: DoublyLinkedList[PropagationElement] =
     dynamicallyListeningElements
+
+  protected def checkValueWithinDomain(value: Long): Boolean = {
+    domain match {
+      case None => true
+      case Some((min,max)) => value >= min && value <= max
+    }
+  }
 }
