@@ -56,8 +56,8 @@ class LazyQuicksort(val array: Array[Int], key: Int => Long = a => a) extends It
     if (i < r) toDo = new QList(i, r, toDo)
     if (l < j) sort1(l, j)
     else
-      lastSortedPosition =
-        j // this is an incomplete update, but this is an approximate value, so we do not care too much.
+      // this is an incomplete update, but this is an approximate value, so we do not care too much.
+      lastSortedPosition = j
   }
 
   def apply(nThSmallestValue: Int): Int = {
