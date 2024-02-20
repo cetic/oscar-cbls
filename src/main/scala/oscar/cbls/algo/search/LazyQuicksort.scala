@@ -19,8 +19,9 @@ class LazyQuicksort(val array: Array[Int], key: Int => Long = a => a) extends It
   private[this] var toDo: QList = new QList(0, array.length - 1, null)
 
   private[this] var lastSortedPosition = -1
+
   def sortUntil(k: Int): Unit = {
-    if (k <= lastSortedPosition) return
+    if (array.length == 0 || k <= lastSortedPosition) return
     while (true) {
       if (toDo == null) return
       val l = toDo.left
