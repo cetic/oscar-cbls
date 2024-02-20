@@ -15,7 +15,8 @@ object LazyQuicksort {
   */
 class LazyQuicksort(val array: Array[Int], key: Int => Long = a => a) extends Iterable[Int] {
 
-  class QList(val left: Int, val right: Int, val tail: QList)
+  private class QList(val left: Int, val right: Int, val tail: QList)
+
   private[this] var toDo: QList = new QList(0, array.length - 1, null)
 
   private[this] var lastSortedPosition = -1
