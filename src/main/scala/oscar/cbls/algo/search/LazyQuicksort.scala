@@ -39,7 +39,7 @@ class LazyQuicksort(val array: Array[Int], key: Int => Long = a => a) extends It
 
   @inline
   @tailrec
-  private[this] def sort1(l: Int, r: Int): Unit = {
+  private[this] final def sort1(l: Int, r: Int): Unit = {
     val pivot: Long = key(array((l + r) / 2))
     var i           = l
     var j           = r
