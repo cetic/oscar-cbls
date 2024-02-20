@@ -3,7 +3,7 @@ package oscar.cbls.algo.search
 import scala.annotation.tailrec
 
 object LazyQuicksort {
-  def apply(a: Array[Int], key: Int => Long): Iterable[Int] = new LazyQuicksort(a, key)
+  def apply(a: Array[Int], key: Int => Long = a => a) = new LazyQuicksort(a, key)
 }
 
 /** this implementation will perform a lazy sort. it will sort on demand, as required by the
