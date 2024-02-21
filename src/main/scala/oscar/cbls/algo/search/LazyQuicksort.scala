@@ -7,12 +7,16 @@ object LazyQuicksort {
   def apply(a: Array[Int], key: Int => Long = a => a) = new LazyQuicksort(a, key)
 }
 
-/** this implementation will perform a lazy sort. it will sort on demand, as required by the
-  * iterator, or by an explicit call to sortUntil
+/** This implementation of quicksort will perform lazy sorting: it will sort on demand, as required
+  * by the iterator, or with an explicit call to the `sortUntil` method. Sorting is performed in
+  * increasing order by default if the user does not provide a key function to alter the ordering.
+  * Note that the input array will be modified by this procedure, thus it should be cloned if needed
+  * elsewhere.
   *
   * @param array
-  *   an array containing the values to sort. the array will be modified by this procedure, to clone
-  *   it if you need it somewhere else!
+  *   array containing the values to sort
+  * @param key
+  *   function according to which the ordering is performed
   */
 class LazyQuicksort(val array: Array[Int], key: Int => Long = a => a) extends Iterable[Int] {
 
@@ -22,6 +26,12 @@ class LazyQuicksort(val array: Array[Int], key: Int => Long = a => a) extends It
 
   private[this] var lastSortedPosition = -1
 
+  /** Sorts the array until at least the given index. The underlying quicksort algorithm may sort
+    * elements after the index, but no guarantee is provided.
+    *
+    * @param k
+    *   Index until which sorting is performed. Required to be a valid index of the original array
+    */
   def sortUntil(k: Int): Unit = {
     require(k >= 0 && k < array.length, "Index out of bounds")
     if (array.length == 0 || k <= lastSortedPosition) return
@@ -69,6 +79,11 @@ class LazyQuicksort(val array: Array[Int], key: Int => Long = a => a) extends It
       lastSortedPosition = j
   }
 
+  /** Retrieves an element of the sorted array. Will perform sorting until the given index.
+   *
+   * @param k
+   *   * Index until which sorting is performed. Required to be a valid index of the original array
+   */
   def apply(k: Int): Int = {
     sortUntil(k)
     array(k)
