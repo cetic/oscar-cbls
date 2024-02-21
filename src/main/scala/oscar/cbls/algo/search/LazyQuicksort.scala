@@ -22,6 +22,7 @@ class LazyQuicksort(val array: Array[Int], key: Int => Long = a => a) extends It
   private[this] var lastSortedPosition = -1
 
   def sortUntil(k: Int): Unit = {
+    require(k >= 0 && k < array.length, "Index out of bounds")
     if (array.length == 0 || k <= lastSortedPosition) return
     while (true) {
       if (toDo == null) return
