@@ -1,6 +1,7 @@
 package oscar.cbls.algo.search
 
 import scala.annotation.tailrec
+import scala.collection.AbstractIterator
 
 object LazyQuicksort {
   def apply(a: Array[Int], key: Int => Long = a => a) = new LazyQuicksort(a, key)
@@ -68,19 +69,15 @@ class LazyQuicksort(val array: Array[Int], key: Int => Long = a => a) extends It
     array(nThSmallestValue)
   }
 
-  override def iterator: Iterator[Int] = new LazyQuickSortIterator(this)
+  override def iterator: Iterator[Int] = new AbstractIterator[Int] {
 
-  class LazyQuickSortIterator(l: LazyQuicksort) extends Iterator[Int] {
-    var nextPos: Int       = 0
-    override val size: Int = l.array.length
+    private var nextPos: Int = 0
 
-    override def hasNext: Boolean = {
-      nextPos < length
-    }
+    def hasNext: Boolean = nextPos < array.length
 
-    override def next(): Int = {
-      l.sortUntil(nextPos)
-      val toReturn = l.array(nextPos)
+    def next(): Int = {
+      sortUntil(nextPos)
+      val toReturn = array(nextPos)
       nextPos += 1
       toReturn
     }
