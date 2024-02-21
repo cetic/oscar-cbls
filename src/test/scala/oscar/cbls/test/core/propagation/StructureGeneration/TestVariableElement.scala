@@ -29,7 +29,11 @@ class TestVariableElement(structure: TestPropagationStructure)
   }
 
   def setDefiningInvariant(inv: TestInvariantElement) = {
+    //if (name == "Variable 34") println(inv.name)
+    addElementInTrack(inv)
     registerStaticallyListenedElement(inv)
   }
 
 }
+
+

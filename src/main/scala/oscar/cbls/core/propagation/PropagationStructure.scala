@@ -90,9 +90,12 @@ class PropagationStructure(debugLevel: Int) {
   }
 
   private def computePartialPropagationTrack(): Unit = {
+    println(partialPropagationTargets)
     for (pe <- partialPropagationTargets) {
       val track = buildTrackForTarget(pe)
       partialPropagationTracks = partialPropagationTracks.insert(pe.id, track)
+      println("partial Propagation Tracks")
+      println(s"${pe.id} -> (${Array.tabulate(track.length)(i => (i,track(i))).filter(_._2).mkString(";")})")
     }
   }
 
@@ -106,7 +109,7 @@ class PropagationStructure(debugLevel: Int) {
         case Nil => track
         case h :: t =>
           track(h.id) = true
-          val newToTreat = toTreat ::: h.staticallyListenedElements.filter(pe => !track(pe.id))
+          val newToTreat = t ::: h.staticallyListenedElements.filter(pe => !track(pe.id))
           buildTrackForTargetRec(newToTreat, track)
       }
     }
@@ -147,7 +150,7 @@ class PropagationStructure(debugLevel: Int) {
           if (nextLayer.nonEmpty) {
             computeLayerOfElement(nextLayer, List(), currentLayerId + 1, nbElementsLeft)
           } else {
-            require(nbElementsLeft == 0, "All the elements have not been treated")
+            require(nbElementsLeft == 0, "All the elements have not been treated (there shall be a cycle on the propagation graph)")
             currentLayerId
           }
         case currentElement :: otherElements =>

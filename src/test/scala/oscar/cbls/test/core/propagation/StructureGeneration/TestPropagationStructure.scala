@@ -21,9 +21,16 @@ class TestPropagationStructure extends PropagationStructure(0) {
 
   private var partialPropagationTargetId: List[Int] = List()
 
-  def myToDot : String = {
+  def myToDot(target : Option[TestPropagationElement] = None) : String = {
+    //println(target.map(_.theoreticalPredecessors.map(_.name)))
+
     val labels = elements.map(e => {
-      s"${e.id} [label=${e.name}${if (e.isInstanceOf[TestInvariantElement]) ",shape=\"box\"" else ""}];"
+      val shapeString = if (e.isInstanceOf[TestInvariantElement]) ",shape=\"box\"" else ""
+      val color = target match {
+        case None => ""
+        case Some(t) => if (t.theoreticalPredecessors.contains(e)) ",color=\"red\"" else ""
+      }
+      s"${e.id} [label=\"${e.name}\"$shapeString$color];"
     }).mkString("\n    ")
     val path = pathList
     s"""digraph PropagationStructure {
@@ -40,10 +47,10 @@ class TestPropagationStructure extends PropagationStructure(0) {
     super.toDot(names, shapes)
   }
 
-  override def registerForPartialPropagation(p: PropagationElement): Unit = {
-    partialPropagationTargetId = p.id :: partialPropagationTargetId
-    // super.registerForPartialPropagation(p)
-  }
+  // override def registerForPartialPropagation(p: PropagationElement): Unit = {
+  //   partialPropagationTargetId = p.id :: partialPropagationTargetId
+  //   super.registerForPartialPropagation(p)
+  // }
 
   def validateLayerAssignation: Unit = {
     elements.foreach(_.validateLayer)

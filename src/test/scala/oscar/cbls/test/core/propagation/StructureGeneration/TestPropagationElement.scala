@@ -10,7 +10,7 @@ abstract class TestPropagationElement(structure: TestPropagationStructure)
   def isOutput : Boolean = {staticallyListeningElements.isEmpty}
 
   def validateLayer: Unit = {
-    require(theoreticalLayer_ == layer, "Invalid layer")
+    assert(theoreticalLayer_ == layer, s"On $name: The layer computed by the layer computing algorithm is not coherent with the layer computed by construction (theoreticalLayer : $theoreticalLayer_, algorithm layer : $layer)")
   }
 
   private var theoreticalPredecessors_ : List[TestPropagationElement] = List()
@@ -22,15 +22,16 @@ abstract class TestPropagationElement(structure: TestPropagationStructure)
     def computeNewTrack(
       e: TestPropagationElement = e,
       currentTrack: List[TestPropagationElement] = theoreticalPredecessors_,
-      newTrack: List[TestPropagationElement] = List()
+      onewTrack: List[TestPropagationElement] = List()
     ): List[TestPropagationElement] = {
       currentTrack match {
-        case Nil => newTrack
+        case Nil => e :: newTrack
         case h :: t =>
           if (h == e) computeNewTrack(e, t, newTrack) else computeNewTrack(e, t, h :: newTrack)
       }
     }
-    theoreticalPredecessors_ = computeNewTrack()
+    theoreticalPredecessors_ = computeNewTrack(e,e.theoreticalPredecessors.foldLeft(theoreticalPredecessors_)((pred,e) => computeNewTrack(e,pred)))
+    //println(s"$name -> ${theoreticalPredecessors_.map(_.name)}")
   }
 
   private var theoreticalLayer_ : Int = -1
