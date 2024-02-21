@@ -33,7 +33,7 @@ class LazyQuicksort(val array: Array[Int], key: Int => Long = a => a) extends It
           if (l <= k) {
             val r = range.right
             toDo = range.tail
-            sort1(l, r)
+            partialSort(l, r)
           } else {
             lastSortedPosition = l - 1
             return
@@ -42,9 +42,11 @@ class LazyQuicksort(val array: Array[Int], key: Int => Long = a => a) extends It
     }
   }
 
+  // performs the partitioning phase of classic quicksort, as well as sorting left to the pivot
+  // adds the rightmost sorting phase to the to-do list
   @inline
   @tailrec
-  private[this] final def sort1(l: Int, r: Int): Unit = {
+  private[this] final def partialSort(l: Int, r: Int): Unit = {
     val pivot: Long = key(array((l + r) / 2))
     var i           = l
     var j           = r
@@ -60,8 +62,8 @@ class LazyQuicksort(val array: Array[Int], key: Int => Long = a => a) extends It
         j -= 1
       }
     }
-    if (i < r) toDo = new QList(i, r, toDo)
-    if (l < j) sort1(l, j)
+    if (i < r) toDo = Some(ToDo(i, r, toDo))
+    if (l < j) partialSort(l, j)
     else
       // this is an incomplete update, but this is an approximate value, so we do not care too much.
       lastSortedPosition = j
