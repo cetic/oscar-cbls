@@ -16,9 +16,9 @@ object LazyQuicksort {
   */
 class LazyQuicksort(val array: Array[Int], key: Int => Long = a => a) extends Iterable[Int] {
 
-  private class QList(val left: Int, val right: Int, val tail: QList)
+  private case class ToDo(left: Int, right: Int, tail: Option[ToDo])
 
-  private[this] var toDo: QList = new QList(0, array.length - 1, null)
+  private[this] var toDo: Option[ToDo] = Some(ToDo(0, array.length - 1, None))
 
   private[this] var lastSortedPosition = -1
 
@@ -26,15 +26,18 @@ class LazyQuicksort(val array: Array[Int], key: Int => Long = a => a) extends It
     require(k >= 0 && k < array.length, "Index out of bounds")
     if (array.length == 0 || k <= lastSortedPosition) return
     while (true) {
-      if (toDo == null) return
-      val l = toDo.left
-      if (l <= k) {
-        val r = toDo.right
-        toDo = toDo.tail
-        sort1(l, r)
-      } else {
-        lastSortedPosition = l - 1
-        return
+      toDo match {
+        case None => return
+        case Some(range) =>
+          val l = range.left
+          if (l <= k) {
+            val r = range.right
+            toDo = range.tail
+            sort1(l, r)
+          } else {
+            lastSortedPosition = l - 1
+            return
+          }
       }
     }
   }
