@@ -69,9 +69,9 @@ class LazyQuicksort(val array: Array[Int], key: Int => Long = a => a) extends It
       lastSortedPosition = j
   }
 
-  def apply(nThSmallestValue: Int): Int = {
-    sortUntil(nThSmallestValue)
-    array(nThSmallestValue)
+  def apply(k: Int): Int = {
+    sortUntil(k)
+    array(k)
   }
 
   override def iterator: Iterator[Int] = new AbstractIterator[Int] {
