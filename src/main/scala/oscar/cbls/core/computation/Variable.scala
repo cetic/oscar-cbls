@@ -43,16 +43,16 @@ abstract class Variable(propagationStructure: PropagationStructure, isConstant: 
     * @param elem
     *   The new listening element
     * @return
-    *   The element in the DLL
+    *   A key to ease the removal of this element
     */
   protected def registerDynamicallyListeningElement(
     elem: PropagationElement
-  ): DoublyLinkedList[PropagationElement]#DLLStorageElement = {
+  ): KeyForRemoval = {
     require(
       !isConstant,
       "Constant variable does not propagate, no need to keep track of listening element."
     )
-    dynamicallyListeningElements.insertStart(elem)
+    KeyForRemoval(dynamicallyListeningElements.insertStart(elem))
   }
 
   /** Returns dynamically listening propagation elements.
