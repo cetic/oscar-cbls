@@ -126,7 +126,7 @@ object IdenticalAggregator {
     new collection.AbstractIterable[A] {
       def iterator: Iterator[A] = new collection.AbstractIterator[A] {
 
-        private[this] var iter = it.iterator
+        private[this] val iter = it.iterator
 
         private[this] var coveredClasses: Set[C] = SortedSet.empty
 
