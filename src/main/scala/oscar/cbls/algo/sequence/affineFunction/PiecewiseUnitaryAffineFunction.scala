@@ -11,9 +11,10 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.algo.sequence
+package oscar.cbls.algo.sequence.affineFunction
 
 import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
+import oscar.cbls.algo.sequence.IntSequence
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
@@ -24,7 +25,7 @@ object PiecewiseUnitaryAffineFunction {
   /** Returns an empty [[PiecewiseUnitaryAffineFunction]] */
   def identity = new PiecewiseUnitaryAffineFunction()
 
-  /** Create a [[PiecewiseUnitaryAffineFunction]] based on a existing list of [[Pivot]] */
+  /** Creates a [[PiecewiseUnitaryAffineFunction]] based on a existing list of [[Pivot]] */
   def createFromPivots(pivots: Iterable[Pivot]): PiecewiseUnitaryAffineFunction = {
     var acc     = RedBlackTreeMap.empty[Pivot]
     val pivotIt = pivots.iterator
@@ -59,20 +60,21 @@ object PiecewiseUnitaryAffineFunction {
     f.transformation.values
 }
 
-/** A piecewise unitary affine function matching the external and the internal position of each element of a
-  * [[IntSequence]].
+/** A piecewise unitary affine function matching an old value to its new value.
   *
-  * To avoid expensive modification by moving values around upon insertion/deletion/movements in the
-  * [[IntSequence]], we use a PiecewiseSequenceShiftingBijection. It's composed of a sorted list of
-  * [[Pivot]] (stored in a [[RedBlackTreeMap]]) which represents the changes made to the
+  * Here it's mainly used to match the external and the internal position of each element of a
+  * [[IntSequence]] : To avoid expensive modification by moving values around upon
+  * insertion/deletion/movements in the [[IntSequence]], we use a
+  * PiecewiseSequenceShiftingBijection. It's composed of a sorted list of [[Pivot]] (stored in a
+  * [[oscar.cbls.algo.rb.RedBlackTreeMap]]) which represents the changes made to the
   * [[IntSequence]]. Each [[Pivot]] starts at a position and applies a bijection to the start
   * position and each position after. That way we know the new position of the element at position
   * x. Those are created rapidly and can be merged (See [[UnitaryAffineFunction]] for more
   * information).
   *
   * Once in a while we create a brand new [[IntSequence]] to avoid having too many Pivots.
- *
- * @param transformation
+  *
+  * @param transformation
   *   a RedBlackTree keeping the [[Pivot]] sorted by their [[Pivot.fromValue]]
   */
 class PiecewiseUnitaryAffineFunction(
@@ -82,7 +84,7 @@ class PiecewiseUnitaryAffineFunction(
   /** No recorded pivot */
   def isIdentity: Boolean = transformation.isEmpty
 
-  /** The backward [[PiecewiseUnitaryAffineFunction]] such that backard(this(x)) = x */
+  /** The backward [[PiecewiseUnitaryAffineFunction]] such that backward(this(x)) = x */
   lazy val backward: PiecewiseUnitaryAffineFunction = {
     PiecewiseUnitaryAffineFunction.createFromPivots(
       PiecewiseUnitaryAffineFunction.computeInvertedPivots(pivots)
@@ -122,16 +124,17 @@ class PiecewiseUnitaryAffineFunction(
   // Pivots access //
   ///////////////////
 
-  /** Returns the [[List]] of all [[Pivot]] */
+  /** Returns the [[scala.List]] of all [[Pivot]] */
   def pivots: List[Pivot] = transformation.values
 
   /** Returns the number of [[Pivot]] */
-  private def nbPivot: Int = transformation.size
+  def nbPivot: Int = transformation.size
 
-  /** Optionally returns a [[RedBlackTreeMapExplorer]] of the first pivot of the sequence.
+  /** Optionally returns a [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] of the first pivot of the
+    * sequence.
     *
     * @return
-    *   The [[RedBlackTreeMapExplorer]] or [[None]]
+    *   The [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] or [[scala.None]]
     */
   def firstPivotAndPosition: Option[RedBlackTreeMapExplorer[Pivot]] = {
     transformation.smallest match {
@@ -140,12 +143,13 @@ class PiecewiseUnitaryAffineFunction(
     }
   }
 
-  /** Optionally returns a [[RedBlackTreeMapExplorer]] of the pivot applying at the given position.
+  /** Optionally returns a [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] of the pivot applying at
+    * the given position.
     *
     * @param position
     *   The position on which the pivot must apply
     * @return
-    *   The [[RedBlackTreeMapExplorer]] or [[None]]
+    *   The [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] or [[scala.None]]
     */
   def pivotWithPositionApplyingTo(position: Int): Option[RedBlackTreeMapExplorer[Pivot]] = {
     transformation.biggestLowerOrEqual(position) match {
@@ -154,7 +158,8 @@ class PiecewiseUnitaryAffineFunction(
     }
   }
 
-  /** Optionally returns a [[RedBlackTreeMapExplorer]] at the corresponding key */
+  /** Optionally returns a [[oscar.cbls.algo.rb.RedBlackTreeMapExplorer]] at the corresponding key
+    */
   def positionOfValue(value: Int): Option[RedBlackTreeMapExplorer[Pivot]] =
     transformation.positionOf(value)
 
@@ -174,12 +179,12 @@ class PiecewiseUnitaryAffineFunction(
     * @param updatedTransform
     *   the recursively updated transform
     * @return
-    * The [[PiecewiseUnitaryAffineFunction]] with all the updates
+    *   The [[PiecewiseUnitaryAffineFunction]] with all the updates
     */
   @tailrec
   final def updatesForCompositionBefore(
-                                         updates: List[(Int, Int, UnitaryAffineFunction)],
-                                         updatedTransform: RedBlackTreeMap[Pivot] = transformation
+    updates: List[(Int, Int, UnitaryAffineFunction)],
+    updatedTransform: RedBlackTreeMap[Pivot] = transformation
   ): PiecewiseUnitaryAffineFunction = {
     updates match {
       case Nil => new PiecewiseUnitaryAffineFunction(updatedTransform)
@@ -199,15 +204,15 @@ class PiecewiseUnitaryAffineFunction(
     }
   }
 
-  /** Applies the additional [[UnitaryAffineFunction]] in the defined before existing bijection
-    * interval.
+  /** Applies the additional [[UnitaryAffineFunction]] in the defined interval before existing
+    * bijection.
     *
     * @param fromIncluded
-    * Starting position of the interval
+    *   Starting position of the interval
     * @param toIncluded
-    * Ending position of the interval
+    *   Ending position of the interval
     * @param additionalBijectionAppliedBefore
-    * The additional [[UnitaryAffineFunction]] to apply before
+    *   The additional [[UnitaryAffineFunction]] to apply before
     * @return
     *   An updated [[PiecewiseUnitaryAffineFunction]]
     */
@@ -230,8 +235,8 @@ class PiecewiseUnitaryAffineFunction(
     new PiecewiseUnitaryAffineFunction(updatedTransformDeletedExtraPivot)
   }
 
-  /** Makes the composition of a [[UnitaryAffineFunction]] (BEFORE) and existing bijection in
-    * the defined interval.
+  /** Makes the composition of a [[UnitaryAffineFunction]] (BEFORE) and existing bijection in the
+    * defined interval.
     *
     * The idea is to create to composition of the existing bijections (aka THIS) and the specified
     * bijection (aka BEFORE). The implemented composition formula is THIS°BEFORE <=>
@@ -245,28 +250,28 @@ class PiecewiseUnitaryAffineFunction(
     * bijections.
     *
     * @param fromIncluded
-    * Starting position of the interval
+    *   Starting position of the interval
     * @param toIncluded
-    * Ending position of the interval
+    *   Ending position of the interval
     * @param additionalBijectionAppliedBefore
-    * The [[UnitaryAffineFunction]] to apply before
+    *   The [[UnitaryAffineFunction]] to apply before
     * @param cleanedTransformation
-    * A RBTree were all pivot between fromIncluded and toIncluded were removed
+    *   A RBTree were all pivot between fromIncluded and toIncluded were removed
     * @return
     *   An updated [[PiecewiseUnitaryAffineFunction]]
     */
   private def myUpdateForCompositionBefore(
-                                            fromIncluded: Int,
-                                            toIncluded: Int,
-                                            additionalBijectionAppliedBefore: UnitaryAffineFunction,
-                                            cleanedTransformation: RedBlackTreeMap[Pivot]
+    fromIncluded: Int,
+    toIncluded: Int,
+    additionalBijectionAppliedBefore: UnitaryAffineFunction,
+    cleanedTransformation: RedBlackTreeMap[Pivot]
   ): RedBlackTreeMap[Pivot] = {
-    // If true, BEFORE(fromIncluded) > BEFORE(toIncluded) ==> "we go backward"
+    // If true, BEFORE(fromIncluded) > BEFORE(toIncluded) &rarr; "we go backward"
     val isAdditionalBijectionNegativeSlope = additionalBijectionAppliedBefore.flip
 
     var currentFromIncluded   = fromIncluded
     var currentTransformation = cleanedTransformation
-    // BEFORE(currentFromIncluded) ==> this position can be used in THIS(...) since it's THIS(BEFORE(x))
+    // BEFORE(currentFromIncluded) &rarr; this position can be used in THIS(...) since it's THIS(BEFORE(x))
     var currentIncludedFromAfterAdditionalF = additionalBijectionAppliedBefore(currentFromIncluded)
     // Checking if one Pivot applies on BEFORE(currentFromIncluded)
     var positionOfPivotApplyingOnCurrentIncludedFromAfterAdditionalF =
@@ -282,16 +287,16 @@ class PiecewiseUnitaryAffineFunction(
         // No pivot at this point => (THIS(BEFORE(x)) == BEFORE(x)), but until when ?
         case None =>
           val (nextCurrentIncludedFrom, nextPivotExplorer) = {
-            // Going backward ==> no bijection until toIncluded ==> DONE
+            // Going backward &rarr; no bijection until toIncluded &rarr; DONE
             if (isAdditionalBijectionNegativeSlope) {
               (toIncluded + 1, None)
             } else {
-              // Going forward ==> Get first bijection of transformation, maybe it's within interval
+              // Going forward &rarr; Get first bijection of transformation, maybe it's within interval
               val nextPivotExplorer: Option[RedBlackTreeMapExplorer[Pivot]] =
                 transformation.smallestPosition
               (
                 nextPivotExplorer match {
-                  // No bijection ==> DONE
+                  // No bijection &rarr; DONE
                   case None => toIncluded + 1
                   // The position x such that BEFORE(x) is explorer.value.fromValue
                   // to keep the THIS(BEFORE(x)) logic
@@ -330,7 +335,7 @@ class PiecewiseUnitaryAffineFunction(
             // Going backward
             if (isAdditionalBijectionNegativeSlope) {
               (
-                // Moving backward ==> nextIncludedFrom = BEFORE.unApply(THIS.fromValue-1)
+                // Moving backward &rarr; nextIncludedFrom = BEFORE.unApply(THIS.fromValue-1)
                 // note : BEFORE.unApply(THIS.fromValue-1) is still greater than
                 // 		BEFORE.unApply(currentIncludedFrom since it's flipping)
                 additionalBijectionAppliedBefore.unApply(pivotExplorer.value.fromValue - 1),
@@ -383,7 +388,7 @@ class PiecewiseUnitaryAffineFunction(
     * @param endZone2Included
     *   End position of the second zone
     * @return
-    * A new [[PiecewiseUnitaryAffineFunction]] with the two zones swapped
+    *   A new [[PiecewiseUnitaryAffineFunction]] with the two zones swapped
     */
   def swapAdjacentZonesShiftBest(
     startZone1Included: Int,
@@ -587,13 +592,13 @@ class PiecewiseUnitaryAffineFunction(
     *   - [5,4,3],[0,1,2],6,7,8,9
     *   - flipPivotsInInterval (3,6)
     *   - 5,4,3,[6,2,1,0],7,8,9
- *
+    *
     * @param startZoneIncluded
     *   Starting position of the interval
     * @param endZoneIncluded
     *   Ending position of the interval
     * @return
-    * An updated [[PiecewiseUnitaryAffineFunction]]
+    *   An updated [[PiecewiseUnitaryAffineFunction]]
     */
   def flipPivotsInInterval(
     startZoneIncluded: Int,
@@ -635,7 +640,7 @@ class PiecewiseUnitaryAffineFunction(
 
   /** Flips a list of pivots.
     *
-    * List(p1, p2, p3) ==> List(p3', p2', p1') The pivots keep their length but :
+    * List(p1, p2, p3) &rarr; List(p3', p2', p1') The pivots keep their length but :
     *   - Their start position are shifted accordingly (ex : p3'.start = p1.start, p1'.start =
     *     p1.start+p3.length+p2.length)
     *   - Their [[UnitaryAffineFunction]] are mirrored and shifted (see mirrorPivot)
@@ -797,10 +802,7 @@ class PiecewiseUnitaryAffineFunction(
           updatedTransform // we do not add a redundant pivot because there is already a pivot here
         else updatedTransform.insert(atPosition, new Pivot(atPosition, pivot.f))
       case _ =>
-        updatedTransform.insert(
-          atPosition,
-          new Pivot(atPosition, UnitaryAffineFunction.identity)
-        )
+        updatedTransform.insert(atPosition, new Pivot(atPosition, UnitaryAffineFunction.identity))
     }
   }
 
@@ -828,8 +830,8 @@ class PiecewiseUnitaryAffineFunction(
 
     /*
      Here we could iterate using explorer instead but :
-     - getting the biggestLowerOrEqual ==> O(Log(k))
-     - getting the explorer after ==> O(Log(k))
+     - getting the biggestLowerOrEqual &rarr; O(Log(k))
+     - getting the explorer after &rarr; O(Log(k))
      So except if we have more than 2 pivot to remove, it's better to use biggestLowerOrEqual each time.
      */
     @tailrec
@@ -861,30 +863,5 @@ class PiecewiseUnitaryAffineFunction(
   override def toString: String = {
     s"PiecewiseLinearFun(nbSegments:${transformation.size}, ${if (transformation.isEmpty) "identity"
       else s"segments:${transformation.values.mkString(",")}"})"
-  }
-}
-
-/** Represents the shifting bijection of a subsequence.
-  *
-  * With each moved subsequence comes a [[Pivot]]. The subsequence starts at fromValue and end at
-  * the next [[Pivot]]'s start (if one) We can get the new position of each element of the
-  * subsequence by using the [[UnitaryAffineFunction]]
-  *
-  * @param fromValue
-  * The starting position of the subsequence
-  * @param f
-  * The [[UnitaryAffineFunction]] attached to this subsequence
-  */
-class Pivot(val fromValue: Int, val f: UnitaryAffineFunction) {
-  override def toString: String =
-    "Pivot(from:" + fromValue + " " + f + " f(from)=" + f(fromValue) + "))"
-
-  /** Flip this pivot */
-  def flip(endX: Int): Pivot = {
-    if (f.flip) {
-      new Pivot(fromValue, UnitaryAffineFunction(f(endX) - fromValue, flip = false))
-    } else {
-      new Pivot(fromValue, UnitaryAffineFunction(fromValue + f(endX), flip = true))
-    }
   }
 }

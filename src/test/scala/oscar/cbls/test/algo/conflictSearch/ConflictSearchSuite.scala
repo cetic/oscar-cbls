@@ -1,4 +1,4 @@
-package oscar.cbls.test.algo
+package oscar.cbls.test.algo.conflictSearch
 
 import org.scalatest.funsuite.AnyFunSuite
 import oscar.cbls.algo.conflict.ConflictSearch

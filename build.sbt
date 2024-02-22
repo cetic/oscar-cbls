@@ -1,6 +1,18 @@
 ThisBuild / scalaVersion := "2.13.10"
 ThisBuild / organization := "oscar"
 ThisBuild / version      := "6.0.0-SNAPSHOT"
+ThisBuild / versionScheme := Some("early-semver")
+ThisBuild / publishTo    := {
+  val artifactoryName = "Artifactory Realm"
+  val artifactoryWeb = sys.env.getOrElse("ARTIFACTORY_WEB", "")
+  val artifactoryRepo = if (isSnapshot.value)
+    Some(artifactoryName at artifactoryWeb + "libs-snapshot-local;build.timestamp=" + new java.util.Date().getTime)
+  else {
+    Some(artifactoryName at artifactoryWeb + "libs-release-local")
+  }
+  artifactoryRepo.map(_.withAllowInsecureProtocol(true))
+}
+ThisBuild / credentials += Credentials("Artifactory Realm", sys.env.getOrElse("ARTIFACTORY_URL", ""), sys.env.getOrElse("ARTIFACTORY_USER", ""), sys.env.getOrElse("ARTIFACTORY_PASS", ""))
 
 lazy val oscarCbls = (project in file("."))
   .enablePlugins(PackPlugin)
