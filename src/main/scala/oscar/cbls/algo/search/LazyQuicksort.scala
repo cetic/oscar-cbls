@@ -20,6 +20,8 @@ object LazyQuicksort {
   */
 class LazyQuicksort(val array: Array[Int], key: Int => Long = a => a) extends Iterable[Int] {
 
+  override def size: Int = array.length
+
   private case class ToDo(left: Int, right: Int, tail: Option[ToDo])
 
   private[this] var toDo: Option[ToDo] = Some(ToDo(0, array.length - 1, None))
