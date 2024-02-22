@@ -49,6 +49,18 @@ class LazyQuicksortTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyCh
     }
   }
 
+  test("Lazy quicksort key affects ordering") {
+    forAll { array: Array[Int] =>
+      val lqs = LazyQuicksort(array, x => -x.toLong)
+      whenever(array.length > 0) {
+        lqs.sortUntil(array.length - 1)
+        val min = lqs(array.length - 1)
+        min shouldEqual array.min
+      }
+      array.reverse shouldBe sorted
+    }
+  }
+
   // not asserting anything, since timing in a test can be iffy
   ignore("Performance check for LazyQuicksort") {
     val n            = 10000000
