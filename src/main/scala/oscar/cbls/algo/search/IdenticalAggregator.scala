@@ -35,7 +35,7 @@ object IdenticalAggregator {
     *
     * Example:
     * {{{
-    * scala> removeIdenticals[Int](List(1, 2, 3, 1), (a, b) => a == b)
+    * scala> removeIdentical[Int](List(1, 2, 3, 1), (a, b) => a == b)
     * val res1: List[Int] = List(3, 2, 1)
     * }}}
     *
@@ -48,11 +48,11 @@ object IdenticalAggregator {
     * @return
     *   a list with elements filtered out
     */
-  def removeIdenticals[A](l: List[A], isIdentical: (A, A) => Boolean): List[A] =
-    removeIdenticals[A](l, isIdentical, Nil)
+  def removeIdentical[A](l: List[A], isIdentical: (A, A) => Boolean): List[A] =
+    removeIdentical[A](l, isIdentical, Nil)
 
   @tailrec
-  private def removeIdenticals[A](
+  private def removeIdentical[A](
     l: List[A],
     isIdentical: (A, A) => Boolean,
     canonicals: List[A]
@@ -61,8 +61,8 @@ object IdenticalAggregator {
       case Nil => canonicals
       case h :: t =>
         if (canonicals.exists(c => isIdentical(c, h)))
-          removeIdenticals(t, isIdentical, canonicals)
-        else removeIdenticals(t, isIdentical, h :: canonicals)
+          removeIdentical(t, isIdentical, canonicals)
+        else removeIdentical(t, isIdentical, h :: canonicals)
     }
   }
 

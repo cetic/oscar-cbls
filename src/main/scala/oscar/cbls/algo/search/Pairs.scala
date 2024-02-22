@@ -155,7 +155,7 @@ object Pairs {
   /** Given a list l with at least two elements, this method returns a list of all consecutive pairs
     * of elements in l. If l has fewer than two element, the empty list is returned.
     *
-    * E.g.: {{{pairOfNexts(List(1, 2, 3))}}} evaluates to: {{{List((1,2), (2,3))}}}
+    * E.g.: {{{nextPair(List(1, 2, 3))}}} evaluates to: {{{List((1,2), (2,3))}}}
     *
     * @param l
     *   a list of elements
@@ -164,11 +164,11 @@ object Pairs {
     * @return
     *   a list of consecutive pairs
     */
-  def pairOfNexts[A](l: List[A]): List[(A, A)] = {
+  def nextPair[A](l: List[A]): List[(A, A)] = {
     l match {
       case Nil         => Nil
       case _ :: Nil    => Nil
-      case a :: b :: t => (a, b) :: pairOfNexts(b :: t)
+      case a :: b :: t => (a, b) :: nextPair(b :: t)
     }
   }
 }
