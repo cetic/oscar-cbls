@@ -110,7 +110,7 @@ protected[search] class ShiftedSet(s: SortedSet[Int], pivot: Int) extends Iterab
     private var currentValue: Int = 0
     private var currentValueReady = false
 
-    // maintains which iterator is in use, the next value in the iterator if available,
+    // Maintains which iterator is in use, the next value in the iterator if available,
     // and returns true iff there is a next value
     private def internalMoveToNext(): Boolean = {
       if (currentValueReady) return true

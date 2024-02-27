@@ -84,7 +84,7 @@ class LazyQuicksort(val array: Array[Int], key: Int => Long = a => a) extends It
   /** Retrieves an element of the sorted array. Will perform sorting until the given index.
     *
     * @param k
-    *   * Index until which sorting is performed. Required to be a valid index of the original array
+    *   Index until which sorting is performed. Required to be a valid index of the original array
     */
   def apply(k: Int): Int = {
     sortUntil(k)
