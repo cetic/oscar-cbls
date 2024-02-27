@@ -13,6 +13,7 @@
 
 package oscar.cbls.test.algo.search
 
+import org.scalacheck.Gen
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
@@ -22,37 +23,82 @@ import scala.collection.immutable.SortedSet
 
 class HotRestartTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
 
-  oldTest()
-
-  private def oldTest(): Unit = {
-//    println(new InstrumentedRange(NumericRange.inclusive[Int](0, 9, 1)) startBy 5)
-
-    val s: SortedSet[Int] = SortedSet(1, 2, 3, 4, 7, 8, 9)
-    val it                = s.iteratorFrom(7)
-    while (it.hasNext) println("next:" + it.next())
-
-    println(oscar.cbls.algo.search.HotRestart(s, 0))
+  test("Hot restart on empty iterable is empty iterable") {
+    val res: Iterable[Int] = Nil
+    forAll { i: Int =>
+      HotRestart(res, i) shouldEqual res
+    }
   }
 
-  test("Start by works with instrumented range") {
+  private val triplet =
+    for (
+      i <- Gen.choose(-100, 100);
+      j <- Gen.choose(-100, 100);
+      k <- Gen.choose(-100, 100) if i <= j && j <= k
+    ) yield (i, j, k)
 
+  test("Hot restart works on ranges") {
+    forAll(triplet) { t: (Int, Int, Int) =>
+      val (start, pivot, end) = t
+      whenever(start <= pivot && pivot <= end) {
+        val r      = Range.inclusive(start, end)
+        val result = HotRestart(r, pivot).toList
+        val expected: List[Int] =
+          Range.inclusive(pivot, r.last).toList ::: Range(r.start, pivot).toList
+        result shouldEqual expected
+      }
+    }
   }
 
-  test("App in source") {
-    val it = (0 until 100).filter(_ % 3 == 1)
-    println("nonHotRestart" + it)
-    val setM = HotRestart(it, 31)
-    println("hotRestart" + setM)
-
-    val it2 = (0 until 100)
-    println("nonHotRestart2" + it2)
-    val setM2 = HotRestart(it2, 31)
-    println("hotRestart2" + setM2)
-
-    val it3: Range = 0 until 0
-    println("nonHotRestart3: " + it3)
-    val setM3 = HotRestart(it3, 0)
-    println("hotRestart3: " + setM3)
+  test("Hot restart works on sorted sets") {
+    forAll { (s: SortedSet[Int], pivot: Int) =>
+      whenever(s.nonEmpty) {
+        val result = HotRestart(s, pivot).toList
+        val expected: List[Int] = {
+          if (pivot <= s.min || pivot > s.max) s.toList
+          else s.filter(_ >= pivot).toList ::: s.filter(_ < pivot).toList
+        }
+        result shouldEqual expected
+      }
+    }
   }
 
+  test("Hot restart works on lists") {
+    forAll { (l: List[Int], pivot: Int) =>
+      whenever(l.nonEmpty) {
+        val result = HotRestart(l, pivot).toList
+        val expected: List[Int] = {
+          if (pivot <= l.min || pivot > l.max) l.sorted
+          else l.filter(_ >= pivot).sorted ::: l.filter(_ < pivot).sorted
+        }
+        result shouldEqual expected
+      }
+    }
+  }
+
+  test("Hot restart works with generic sets") {
+    forAll { (s: Set[Int], pivot: Int) =>
+      whenever(s.nonEmpty) {
+        val result = HotRestart(s, pivot).toList
+        val expected: List[Int] = {
+          if (pivot <= s.min || pivot > s.max) s.toList.sorted
+          else s.filter(_ >= pivot).toList.sorted ::: s.filter(_ < pivot).toList.sorted
+        }
+        result shouldEqual expected
+      }
+    }
+  }
+
+  test("Preserve sequence works on lists") {
+    forAll { (l: List[Int], pivot: Int) =>
+      whenever(l.nonEmpty) {
+        val result = HotRestart.preserveSequence(l, pivot).toList
+        val expected: List[Int] = {
+          if (!l.contains(pivot)) l
+          else l.dropWhile(_ != pivot) ::: l.takeWhile(_ != pivot)
+        }
+        result shouldEqual expected
+      }
+    }
+  }
 }
