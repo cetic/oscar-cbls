@@ -38,15 +38,17 @@ object HotRestart {
     *   an iterable over the elements of the original collection with the hot restart property
     */
   def apply(it: Iterable[Int], pivot: Int): Iterable[Int] = {
-    it match {
-      case r: Range =>
-        require(r.step == 1, "Only a range step of 1 is currently supported")
-        if (r contains pivot)
-          new ShiftedRange(r.head, r.last, pivot, r.step)
-        else r
-      case s: SortedSet[Int] => new ShiftedSet(s, pivot)
-      case _                 => new ShiftedIterable(it, pivot)
-    }
+    if (it.isEmpty) it
+    else
+      it match {
+        case r: Range =>
+          require(r.step == 1, "Only a range step of 1 is currently supported")
+          if (r contains pivot)
+            new ShiftedRange(r.start, r.last, pivot, r.step)
+          else r
+        case s: SortedSet[Int] => new ShiftedSet(s, pivot)
+        case _                 => new ShiftedIterable(it, pivot)
+      }
   }
 
   /** This method returns elements in the given collection starting from the first occurrence of the
