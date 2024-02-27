@@ -159,10 +159,11 @@ protected[search] class ShiftedIterable(it: Iterable[Int], pivot: Int, sequence:
     } else {
       // otherwise put elements in two min-priority queues
       // and have the iterator dequeue them in order
-      val (pqAbove, pqBelow) = (PQ[Int]()(Ordering.by(-_)), PQ[Int]()(Ordering.by(-_)))
+      // using Long conversion to handle appearance of Int.MinValue
+      val (pqAbove, pqBelow) = (PQ[Long]()(Ordering.by(-_)), PQ[Long]()(Ordering.by(-_)))
       it.foreach(i => if (i >= pivot) pqAbove.enqueue(i) else pqBelow.enqueue(i))
       Iterator.tabulate(it.size)(_ =>
-        if (pqAbove.nonEmpty) pqAbove.dequeue() else pqBelow.dequeue()
+        (if (pqAbove.nonEmpty) pqAbove.dequeue() else pqBelow.dequeue()).toInt
       )
     }
   }
