@@ -16,12 +16,12 @@ package oscar.cbls.test.algo.search
 import org.scalacheck.Gen
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import oscar.cbls.algo.search.HotRestart
 
 import scala.collection.immutable.SortedSet
 
-class HotRestartTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
+class HotRestartTestSuite extends AnyFunSuite with ScalaCheckPropertyChecks with Matchers {
 
   test("Hot restart on empty iterable is empty iterable") {
     val res: Iterable[Int] = Nil
@@ -32,9 +32,9 @@ class HotRestartTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyCheck
 
   private val triplet =
     for (
-      i <- Gen.choose(-100, 100);
-      j <- Gen.choose(-100, 100);
-      k <- Gen.choose(-100, 100) if i <= j && j <= k
+      i <- Gen.choose(-1000, 1000);
+      j <- Gen.choose(i, 1000);
+      k <- Gen.choose(j, 1000)
     ) yield (i, j, k)
 
   test("Hot restart works on ranges") {
