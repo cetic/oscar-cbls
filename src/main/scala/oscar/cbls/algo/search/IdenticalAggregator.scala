@@ -49,7 +49,7 @@ object IdenticalAggregator {
     *   a list with elements filtered out
     */
   def removeIdentical[A](l: List[A], isIdentical: (A, A) => Boolean): List[A] =
-    removeIdenticalAcc[A](l, isIdentical, List.empty)
+    removeIdenticalAcc[A](l, isIdentical, Nil)
 
   @tailrec
   private def removeIdenticalAcc[A](
@@ -82,7 +82,7 @@ object IdenticalAggregator {
     */
   def removeIdenticalClasses[A](it: Iterable[A], itemClass: A => Int): List[A] = {
     val a: Set[Int] = SortedSet.empty
-    removeIdenticalClassesAcc[A](it.iterator, itemClass, List.empty, a)
+    removeIdenticalClassesAcc[A](it.iterator, itemClass, Nil, a)
   }
 
   @tailrec
