@@ -3,10 +3,10 @@ package oscar.cbls.test.algo.search
 import org.scalacheck.Gen
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import oscar.cbls.algo.search.{KSmallest, LazyQuicksort}
 
-class LazyQuicksortTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
+class LazyQuicksortTestSuite extends AnyFunSuite with ScalaCheckPropertyChecks with Matchers {
 
   test("Lazy quicksort can sort the whole array") {
     forAll { array: Array[Int] =>

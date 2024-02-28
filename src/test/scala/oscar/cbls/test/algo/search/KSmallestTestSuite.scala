@@ -5,9 +5,9 @@ import oscar.cbls.algo.search.KSmallest
 import org.scalacheck.Gen
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-class KSmallestTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
+class KSmallestTestSuite extends AnyFunSuite with ScalaCheckPropertyChecks with Matchers {
 
   private val list = Gen.containerOf[List, Int](Gen.chooseNum(Int.MinValue, Int.MaxValue))
 
