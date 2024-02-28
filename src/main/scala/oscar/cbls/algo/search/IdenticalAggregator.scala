@@ -49,10 +49,10 @@ object IdenticalAggregator {
     *   a list with elements filtered out
     */
   def removeIdentical[A](l: List[A], isIdentical: (A, A) => Boolean): List[A] =
-    removeIdentical[A](l, isIdentical, Nil)
+    removeIdenticalAcc[A](l, isIdentical, List.empty)
 
   @tailrec
-  private def removeIdentical[A](
+  private def removeIdenticalAcc[A](
     l: List[A],
     isIdentical: (A, A) => Boolean,
     canonicals: List[A]
@@ -61,8 +61,8 @@ object IdenticalAggregator {
       case Nil => canonicals
       case h :: t =>
         if (canonicals.exists(c => isIdentical(c, h)))
-          removeIdentical(t, isIdentical, canonicals)
-        else removeIdentical(t, isIdentical, h :: canonicals)
+          removeIdenticalAcc(t, isIdentical, canonicals)
+        else removeIdenticalAcc(t, isIdentical, h :: canonicals)
     }
   }
 
@@ -82,11 +82,11 @@ object IdenticalAggregator {
     */
   def removeIdenticalClasses[A](it: Iterable[A], itemClass: A => Int): List[A] = {
     val a: Set[Int] = SortedSet.empty
-    removeIdenticalClasses[A](it.iterator, itemClass, Nil, a)
+    removeIdenticalClassesAcc[A](it.iterator, itemClass, List.empty, a)
   }
 
   @tailrec
-  private def removeIdenticalClasses[A](
+  private def removeIdenticalClassesAcc[A](
     it: Iterator[A],
     itemClass: A => Int,
     canonicals: List[A],
@@ -96,8 +96,8 @@ object IdenticalAggregator {
       val next             = it.next()
       val classOfNext: Int = itemClass(next)
       if (classOfNext != Int.MinValue && classes.contains(classOfNext))
-        removeIdenticalClasses(it, itemClass, canonicals, classes)
-      else removeIdenticalClasses(it, itemClass, next :: canonicals, classes + classOfNext)
+        removeIdenticalClassesAcc(it, itemClass, canonicals, classes)
+      else removeIdenticalClassesAcc(it, itemClass, next :: canonicals, classes + classOfNext)
     } else {
       canonicals
     }
