@@ -112,7 +112,7 @@ protected[search] class ShiftedSet(s: SortedSet[Int], pivot: Int) extends Iterab
 
     // Maintains which iterator is in use, the next value in the iterator if available,
     // and returns true iff there is a next value
-    private def internalMoveToNext(): Boolean = {
+    override def hasNext: Boolean = {
       if (currentValueReady) return true
       if (onFirstIterator) {
         if (it.hasNext) {
@@ -134,10 +134,8 @@ protected[search] class ShiftedSet(s: SortedSet[Int], pivot: Int) extends Iterab
       true
     }
 
-    override def hasNext: Boolean = internalMoveToNext()
-
     override def next(): Int = {
-      if (!internalMoveToNext()) Iterator.empty.next()
+      if (!hasNext) Iterator.empty.next()
       currentValueReady = false
       currentValue
     }
