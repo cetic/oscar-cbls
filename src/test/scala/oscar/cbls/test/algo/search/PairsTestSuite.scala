@@ -58,7 +58,7 @@ class PairsTestSuite extends AnyFunSuite with ScalaCheckPropertyChecks with Matc
     }
   }
 
-  test("makeAllHeadsAndTails") {
+  test("makeAllHeadsAndTails works correctly") {
     forAll { l: List[Int] =>
       val result = Pairs.makeAllHeadAndTails(l)
       val expected: List[(Int, List[Int])] = {
