@@ -78,11 +78,9 @@ object Pairs {
     def makeAllSortedPairsWithHead(head: A, tail: List[A], toAppend: List[(A, A)]): List[(A, A)] = {
       tail match {
         case Nil => toAppend
-        case other :: newTail =>
-          if (filter(head, other))
-            (head, other) :: makeAllSortedPairsWithHead(head, newTail, toAppend)
-          else
-            makeAllSortedPairsWithHead(head, newTail, toAppend)
+        case other :: newTail if filter(head, other) =>
+          (head, other) :: makeAllSortedPairsWithHead(head, newTail, toAppend)
+        case _ :: newTail => makeAllSortedPairsWithHead(head, newTail, toAppend)
       }
     }
     l match {
