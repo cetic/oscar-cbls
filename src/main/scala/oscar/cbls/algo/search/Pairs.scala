@@ -149,17 +149,19 @@ object Pairs {
     filter: (A, B) => Boolean,
     toReturn: List[(A, B)]
   ): List[(A, B)] = {
+
+    @tailrec
+    def myAggregate(lh: A, rt: List[B], toReturn: List[(A, B)]): List[(A, B)] = {
+      rt match {
+        case ht :: tt if filter(lh, ht) => myAggregate(lh, tt, (lh, ht) :: toReturn)
+        case _ :: tt                    => myAggregate(lh, tt, toReturn)
+        case Nil                        => toReturn
+      }
+    }
+
     l match {
       case Nil => toReturn
       case hl :: tl =>
-        @tailrec
-        def myAggregate(lh: A, rt: List[B], toReturn: List[(A, B)]): List[(A, B)] = {
-          rt match {
-            case ht :: tt if filter(lh, ht) => myAggregate(lh, tt, (lh, ht) :: toReturn)
-            case _ :: tt                    => myAggregate(lh, tt, toReturn)
-            case Nil                        => toReturn
-          }
-        }
         zipIntoAllPossiblePairsAcc(tl, t, filter, myAggregate(hl, t, List.empty) ::: toReturn)
     }
   }
