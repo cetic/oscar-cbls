@@ -151,10 +151,10 @@ object Pairs {
   ): List[(A, B)] = {
 
     @tailrec
-    def myAggregate(lh: A, rt: List[B], toReturn: List[(A, B)]): List[(A, B)] = {
+    def pairsFromElement(el: A, rt: List[B], toReturn: List[(A, B)]): List[(A, B)] = {
       rt match {
-        case ht :: tt if filter(lh, ht) => myAggregate(lh, tt, (lh, ht) :: toReturn)
-        case _ :: tt                    => myAggregate(lh, tt, toReturn)
+        case ht :: tt if filter(el, ht) => pairsFromElement(el, tt, (el, ht) :: toReturn)
+        case _ :: tt                    => pairsFromElement(el, tt, toReturn)
         case Nil                        => toReturn
       }
     }
@@ -162,7 +162,7 @@ object Pairs {
     l match {
       case Nil => toReturn
       case hl :: tl =>
-        zipIntoAllPossiblePairsAcc(tl, t, filter, myAggregate(hl, t, List.empty) ::: toReturn)
+        zipIntoAllPossiblePairsAcc(tl, t, filter, pairsFromElement(hl, t, List.empty) ::: toReturn)
     }
   }
 
