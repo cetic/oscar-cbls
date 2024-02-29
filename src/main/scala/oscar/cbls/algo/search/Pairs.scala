@@ -64,11 +64,16 @@ object Pairs {
     *   a list of all pairs of elements made from two elements in l, preserving the order in which
     *   those elements are in l
     */
-  @tailrec
   def makeAllSortedPairs[A](
     l: List[A],
-    filter: (A, A) => Boolean = (_: A, _: A) => true,
-    toReturn: List[(A, A)] = List.empty
+    filter: (A, A) => Boolean = (_: A, _: A) => true
+  ): List[(A, A)] = makeAllSortedPairsAcc(l, filter, List.empty)
+
+  @tailrec
+  private def makeAllSortedPairsAcc[A](
+    l: List[A],
+    filter: (A, A) => Boolean,
+    toReturn: List[(A, A)]
   ): List[(A, A)] = {
     def makeAllSortedPairsWithHead(head: A, tail: List[A], toAppend: List[(A, A)]): List[(A, A)] = {
       tail match {
@@ -83,7 +88,7 @@ object Pairs {
     l match {
       case Nil => toReturn
       case h :: t =>
-        makeAllSortedPairs(t, filter, toReturn ::: makeAllSortedPairsWithHead(h, t, List.empty))
+        makeAllSortedPairsAcc(t, filter, toReturn ::: makeAllSortedPairsWithHead(h, t, List.empty))
     }
   }
 
@@ -133,12 +138,18 @@ object Pairs {
     *   a list containing all the possible pairs (a, b) where a is in l, b is in t and (a, b)
     *   satisfies the filter
     */
-  @tailrec
   def zipIntoAllPossiblePairs[A, B](
     l: List[A],
     t: List[B],
-    filter: (A, B) => Boolean = (_: A, _: B) => true,
-    toReturn: List[(A, B)] = List.empty
+    filter: (A, B) => Boolean = (_: A, _: B) => true
+  ): List[(A, B)] = zipIntoAllPossiblePairsAcc(l, t, filter, Nil)
+
+  @tailrec
+  private def zipIntoAllPossiblePairsAcc[A, B](
+    l: List[A],
+    t: List[B],
+    filter: (A, B) => Boolean,
+    toReturn: List[(A, B)]
   ): List[(A, B)] = {
     l match {
       case Nil => toReturn
@@ -147,11 +158,11 @@ object Pairs {
         def myAggregate(lh: A, rt: List[B], toReturn: List[(A, B)]): List[(A, B)] = {
           rt match {
             case ht :: tt if filter(lh, ht) => myAggregate(lh, tt, (lh, ht) :: toReturn)
-            case ht :: tt                   => myAggregate(lh, tt, toReturn)
+            case _ :: tt                    => myAggregate(lh, tt, toReturn)
             case Nil                        => toReturn
           }
         }
-        zipIntoAllPossiblePairs(tl, t, filter, myAggregate(hl, t, List.empty) ::: toReturn)
+        zipIntoAllPossiblePairsAcc(tl, t, filter, myAggregate(hl, t, List.empty) ::: toReturn)
     }
   }
 
