@@ -49,12 +49,15 @@ object Pairs {
   }
 
   /** This method returns a list containing all possible pairs of elements in the input list, with
-    * the added condition that the order in which the elements appear in l is preserved.
+    * the added condition that the order in which the elements appear in l is preserved. Each pair
+    * also has to satisfy the predicate of an optional filter, if provided.
     *
-    * E.g.: {{{makeAllSortedPairs(List(1, 2, 3))}}} evaluates to: {{{List((1,2), (1,3), (2,3))}}}
+    * E.g.: {{{makeAllSortedPairs(List(3, 1, 2))}}} evaluates to: {{{List((3,1), (3,2), (1,2))}}}
     *
     * @param l
     *   a list of elements
+    * @param filter
+    *   the property that all pairs must satisfy
     * @tparam A
     *   the type of element
     * @return
