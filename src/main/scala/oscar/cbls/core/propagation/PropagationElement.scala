@@ -18,6 +18,8 @@ abstract class PropagationElement(propagationStructure: PropagationStructure) {
 
   private[core] def id: Int = id_
 
+  private var scheduled : Boolean = false
+
   private var layer_ : Int = -1
 
   private[propagation] def layer: Int = layer_
@@ -27,7 +29,10 @@ abstract class PropagationElement(propagationStructure: PropagationStructure) {
   /** Schedules the propagation element in the next propagation waves
     */
   final def scheduleForPropagation(): Unit = {
-    propagationStructure.scheduleElementForPropagation(this)
+    if (!scheduled) {
+      scheduled = true
+      propagationStructure.scheduleElementForPropagation(this)
+    }
   }
 
   /** Register an element as listened by this propagation element
@@ -46,6 +51,11 @@ abstract class PropagationElement(propagationStructure: PropagationStructure) {
 
   private[propagation] def registerStaticallyListeningElement(elem: PropagationElement): Unit = {
     staticallyListeningElements = elem :: staticallyListeningElements
+  }
+
+  private[core] def propagateElement : Unit = {
+    performPropagation()
+    scheduled = false
   }
 
   /** this is the propagation method that should be overridden by propagation elements. notice that

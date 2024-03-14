@@ -3,23 +3,22 @@ package oscar.cbls.core.propagation
 class TestVariableElement(structure: TestPropagationStructure)
     extends TestPropagationElement(structure) {
 
-  private var nbUpdate_ = 0
-
-  def resetUpdate: Unit = {
-    nbUpdate_ = 0
-  }
-
-  def nbUpdate : Int = nbUpdate_
-
 
   override val name: String = s"Variable $id"
 
   override def performPropagation(): Unit = {
-    nbUpdate_ += 1
+    nbUpdate += 1
     notifyChange()
   }
 
-  def update() = {
+  def update = {
+    updateRequired = true
+    for (s <- transitiveSuccessors) {
+      s match {
+        case v:TestVariableElement => v.updateRequired = true
+        case _ =>
+      }
+    }
     scheduleForPropagation()
   }
 
@@ -30,7 +29,7 @@ class TestVariableElement(structure: TestPropagationStructure)
 
   def setDefiningInvariant(inv: TestInvariantElement) = {
     //if (name == "Variable 34") println(inv.name)
-    addElementInTrack(inv)
+    // addElementInTrack(inv)
     registerStaticallyListenedElement(inv)
   }
 

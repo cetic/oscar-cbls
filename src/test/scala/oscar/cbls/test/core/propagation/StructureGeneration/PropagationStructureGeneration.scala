@@ -9,9 +9,12 @@ import oscar.cbls.core.propagation.{
   TestVariableElement}
 import scala.annotation.tailrec
 
-class PropagationStructureGenerator {
+class PropagationStructureGenerator(seed : Option[Long] = None) {
 
-  val rand = new scala.util.Random(1000)
+  val rand = new scala.util.Random(seed match {
+    case None => System.currentTimeMillis()
+    case Some(s) => s
+  })
 
   private def generateInt(min : Int,max : Int) = {
     min + rand.nextInt(max - min)
@@ -95,7 +98,7 @@ class PropagationStructureGenerator {
     minInput : Int,
     maxInput : Int,
     minOutput : Int,
-    maxOutput : Int) : List[TestPropagationElement] = {
+    maxOutput : Int) : Unit = {
     def generateLayers(
       pool: List[TestVariableElement] = inputVar,
       currentMaxLayer: Int = 0,
@@ -123,21 +126,24 @@ class PropagationStructureGenerator {
   }
 
 
-  def generateStructure(minElemPerLayer : Int,
+  def generateStructure(
+    minInput : Int,
+    minOutput : Int,
+    minElemPerLayer : Int,
     maxElemPerLayer : Int,
     minInputVar : Int,
     maxInputVar : Int,
     minOutputVar : Int,
     maxOutputVar : Int,
-    nbLayer : Int) : (TestPropagationStructure,List[TestPropagationElement]) = {
+    nbLayer : Int) : TestPropagationStructure = {
 
     val struct = new TestPropagationStructure
 
-    val input = generateVariables(minElemPerLayer,maxElemPerLayer,struct)
+    val input = generateVariables(minInput,minOutput,struct)
 
-    val elements = generateElements(input,nbLayer,struct,minElemPerLayer,maxElemPerLayer,minInputVar,maxInputVar,minOutputVar,maxOutputVar)
+    generateElements(input,nbLayer,struct,minElemPerLayer,maxElemPerLayer,minInputVar,maxInputVar,minOutputVar,maxOutputVar)
 
-    (struct,elements)
+    struct
 
 
 

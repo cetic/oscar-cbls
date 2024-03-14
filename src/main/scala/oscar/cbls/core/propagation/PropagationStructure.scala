@@ -36,6 +36,14 @@ import oscar.cbls.algo.rb.RedBlackTreeMap
   * propagation, the propagation structure will compute the elements on which this elements depends.
   * When a propagation is triggered, only this elements will be updated.
   *
+  * The propagation structure supports debug levels. The debug level flags that are accepted are the
+  * following:
+  *   - 0: No debug
+  *   - 1: When an element has been updated, the checkInternals method is called
+  *   - 2: Each propagation is a total propagation
+  *   - 3: Each propagation is a total propagation and the checkInternals method is called after
+  *     each update
+  *
   * @param debugLevel
   *   the level of debug
   */
@@ -69,6 +77,8 @@ class PropagationStructure(debugLevel: Int) {
 
   protected def getPropagationElements: List[PropagationElement] = propagationElements
 
+  private def nbPropagationElements = currentId + 1
+
   /** Prepares the propagation structure for the use of propagation.
     *
     *   - Compute the layer of each propagation element to compute the order of element update
@@ -79,9 +89,7 @@ class PropagationStructure(debugLevel: Int) {
   protected def setupPropagationStructure(): Unit = {
     // Computing the layer of the propagation elements
     val nbLayer = computePropagationElementsLayers()
-    executionQueue = AggregatedBinaryHeap[PropagationElement](p => p.layer, nbLayer)
-
-    println("Compute Propagation Track")
+    executionQueue = AggregatedBinaryHeap[PropagationElement](p => p.layer, nbLayer + 1)
 
     // Computing the tracks for partial propagation
     computePartialPropagationTrack()
@@ -90,12 +98,13 @@ class PropagationStructure(debugLevel: Int) {
   }
 
   private def computePartialPropagationTrack(): Unit = {
-    println(partialPropagationTargets)
+    // println(partialPropagationTargets.map(_.asInstanceOf[TestPropagationElement].name))
     for (pe <- partialPropagationTargets) {
       val track = buildTrackForTarget(pe)
       partialPropagationTracks = partialPropagationTracks.insert(pe.id, track)
-      println("partial Propagation Tracks")
-      println(s"${pe.id} -> (${Array.tabulate(track.length)(i => (i,track(i))).filter(_._2).mkString(";")})")
+      // println("partial Propagation Tracks")
+      // println(currentId)
+      // println(s"${pe.id} -> (${Array.tabulate(track.length)(i => (i,track(i))).filter(_._2).mkString(";")})")
     }
   }
 
@@ -113,7 +122,7 @@ class PropagationStructure(debugLevel: Int) {
           buildTrackForTargetRec(newToTreat, track)
       }
     }
-    buildTrackForTargetRec(List(pe), Array.fill(currentId)(false))
+    buildTrackForTargetRec(List(pe), Array.fill(nbPropagationElements)(false))
   }
 
   /** Compute the propagation layer for the propagation elements of this propagation structure
@@ -124,7 +133,6 @@ class PropagationStructure(debugLevel: Int) {
     *   the maximum layer of the graph
     */
   private def computePropagationElementsLayers(): Int = {
-    val nbPropagationElements                      = currentId + 1
     val nbListeningElementPerPC                    = Array.fill(nbPropagationElements)(0)
     var fstLayerElements: List[PropagationElement] = List()
     for (p <- propagationElements) {
@@ -150,7 +158,10 @@ class PropagationStructure(debugLevel: Int) {
           if (nextLayer.nonEmpty) {
             computeLayerOfElement(nextLayer, List(), currentLayerId + 1, nbElementsLeft)
           } else {
-            require(nbElementsLeft == 0, "All the elements have not been treated (there shall be a cycle on the propagation graph)")
+            require(
+              nbElementsLeft == 0,
+              "All the elements have not been treated (there shall be a cycle on the propagation graph)"
+            )
             currentLayerId
           }
         case currentElement :: otherElements =>
@@ -203,6 +214,13 @@ class PropagationStructure(debugLevel: Int) {
 
     val theTrack = if (target == null) null else partialPropagationTracks.getOrElse(target.id, null)
 
+    // if (theTrack != null) {
+    //   println(Array.tabulate(nbPropagationElements)(i => (propagationElements(i).asInstanceOf[TestPropagationElement].name,theTrack(propagationElements(i).id))).mkString(";"))
+    //   println(target.id)
+    //   println(s"Scheduled: ${scheduledElements.map(_.asInstanceOf[TestPropagationElement].name)}")
+    //   println(s"Postponed: ${postponedElements.map(_.asInstanceOf[TestPropagationElement].name)}")
+    // }
+
     @inline
     def track(id: Int) = if (theTrack == null) true else theTrack(id)
 
@@ -222,19 +240,20 @@ class PropagationStructure(debugLevel: Int) {
 
     @tailrec @inline
     def filterAndEnqueuePostponedElements(
+      postponed: List[PropagationElement],
       newPostponed: List[PropagationElement] = Nil
     ): List[PropagationElement] = {
-      postponedElements match {
+      postponed match {
         case Nil => newPostponed
         case h :: t =>
           val newList =
             if (track(h.id)) {
               executionQueue.insert(h)
-              t
+              newPostponed
             } else {
               h :: newPostponed
             }
-          filterAndEnqueuePostponedElements(newList)
+          filterAndEnqueuePostponedElements(t, newList)
       }
     }
 
@@ -242,7 +261,7 @@ class PropagationStructure(debugLevel: Int) {
     def doPropagation(): Unit = {
       if (executionQueue.nonEmpty) {
         val currentElement = executionQueue.popFirst().get
-        currentElement.performPropagation()
+        currentElement.propagateElement
         if (debugLevel >= 1)
           currentElement.checkInternals()
         filterScheduledWithTrack
@@ -259,8 +278,9 @@ class PropagationStructure(debugLevel: Int) {
       if (sameTarget) {
         filterScheduledWithTrack
       } else {
+        postponedElements = filterAndEnqueuePostponedElements(postponedElements)
+        // println(s"New Postponed Elements: ${postponedElements.map(_.asInstanceOf[TestPropagationElement].name)}")
         filterScheduledWithTrack
-        postponedElements = filterAndEnqueuePostponedElements()
       }
       doPropagation()
       propagating = false
@@ -283,7 +303,8 @@ class PropagationStructure(debugLevel: Int) {
     * list of path is a list of this so called path such that giving all this path suffices to
     * describe the structure. This method is mainly used to make the dot file
     *
-    * @return The list of path
+    * @return
+    *   The list of path
     */
   protected def pathList: List[List[Int]] = {
     def developNode(
@@ -340,7 +361,6 @@ class PropagationStructure(debugLevel: Int) {
       propagationElements.filter(_.staticallyListenedElements.isEmpty),
       List()
     )._1.flatten
-
 
   }
 
