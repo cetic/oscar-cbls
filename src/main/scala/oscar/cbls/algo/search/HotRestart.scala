@@ -73,7 +73,7 @@ protected[search] class ShiftedRange(
   val step: Int = 1
 ) extends Iterable[Int] {
   assert(start <= startBy && startBy <= end, "ShiftedRange must contain startBy value")
-  assert(step == 1, "only step of 1L is currently supported in ShiftedRange")
+  assert(step == 1, "only step of 1 is currently supported in ShiftedRange")
 
   override def iterator: Iterator[Int] = new AbstractIterator[Int] {
     private var currentValue: Int = startBy
