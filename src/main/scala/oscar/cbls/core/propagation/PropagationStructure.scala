@@ -36,6 +36,7 @@ import oscar.cbls.algo.rb.RedBlackTreeMap
   * propagation, the propagation structure will compute the elements on which this elements depends.
   * When a propagation is triggered, only this elements will be updated.
   *
+<<<<<<< HEAD
   * The propagation structure supports debug levels. The debug level flags that are accepted are the
   * following:
   *   - 0: No debug
@@ -43,6 +44,13 @@ import oscar.cbls.algo.rb.RedBlackTreeMap
   *   - 2: Each propagation is a total propagation
   *   - 3: Each propagation is a total propagation and the checkInternals method is called after
   *     each update
+=======
+  * The propagation structure has 4 levels of debugs.
+  *   - 0: No debug at all
+  *   - 1: Invariants are checked after each total propagation
+  *   - 2: Invariants are checked after each (partial or total) propagation
+  *   - 3: Partial propagation is disabled and invariants are checked after each propagation
+>>>>>>> 3e2745df4 (Adding debug)
   *
   * @param debugLevel
   *   the level of debug
@@ -92,7 +100,8 @@ class PropagationStructure(debugLevel: Int) {
     executionQueue = AggregatedBinaryHeap[PropagationElement](p => p.layer, nbLayer + 1)
 
     // Computing the tracks for partial propagation
-    computePartialPropagationTrack()
+    if (debugLevel < 3)
+      computePartialPropagationTrack()
 
     closed = true
   }
@@ -189,17 +198,18 @@ class PropagationStructure(debugLevel: Int) {
     *   The element that is registered for partial propagation
     */
   def registerForPartialPropagation(p: PropagationElement): Unit = {
-    partialPropagationTargets = p :: partialPropagationTargets
-    if (closed) {
-      println(
-        """Warning: You should not register a variable for partial propagation after model is closed.
+    if (debugLevel < 3) {
+      partialPropagationTargets = p :: partialPropagationTargets
+      if (closed) {
+        println(
+          """Warning: You should not register a variable for partial propagation after model is closed.
          this might cause the model to crash if static graph was dropped on model close.
          To avoid this, create all your objective functions before model close.
          Note: there might be some implicit conversions related to the use of search strategies."""
-      )
-      computePartialPropagationTrack()
+        )
+        computePartialPropagationTrack()
+      }
     }
-
   }
 
   /** Triggers the propagation in the graph.
@@ -211,6 +221,8 @@ class PropagationStructure(debugLevel: Int) {
     */
   protected final def propagate(target: PropagationElement = null): Unit = {
     var currentLayer = 0
+
+    val check : Boolean = (debugLevel >= 1 && (target == null || debugLevel >= 2))
 
     val theTrack = if (target == null) null else partialPropagationTracks.getOrElse(target.id, null)
 
@@ -262,7 +274,7 @@ class PropagationStructure(debugLevel: Int) {
       if (executionQueue.nonEmpty) {
         val currentElement = executionQueue.popFirst().get
         currentElement.propagateElement
-        if (debugLevel >= 1)
+        if (check)
           currentElement.checkInternals()
         filterScheduledWithTrack
         doPropagation()
