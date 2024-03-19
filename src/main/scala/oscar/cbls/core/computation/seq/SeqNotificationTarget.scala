@@ -1,6 +1,5 @@
 package oscar.cbls.core.computation.seq
 
-class SeqNotificationTarget {
-  def notifySeqChanges(v: Changin)
-
+trait SeqNotificationTarget {
+  def notifySeqChanges(v: SeqVariable, d: Int, changes: SeqUpdate): Unit
 }

@@ -4,62 +4,112 @@ import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 
 object SeqUpdateRemove {
 
-  def apply(removePosAsExplorer : IntSequenceExplorer, prev : SeqUpdate):SeqUpdate = {
-    apply(removePosAsExplorer,prev,prev.newValue.remove(removePosAsExplorer, fast = true))
+  /** Returns the update corresponding to the removal of the value at the specified
+    * IntSequenceExplorer
+    *
+    * @param removePositionExplorer
+    *   The IntSequenceExplorer at the position of the value we want to remove
+    * @param prev
+    *   The last update of the IntSequence
+    * @return
+    *   The update corresponding to the defined removal
+    */
+  def apply(removePositionExplorer: IntSequenceExplorer, prev: SeqUpdate): SeqUpdate = {
+    apply(removePositionExplorer, prev, prev.newValue.remove(removePositionExplorer, fast = true))
   }
 
-  def apply(removePosAsExplorer : IntSequenceExplorer, prev : SeqUpdate, seq:IntSequence):SeqUpdate = {
+  /** Returns the update corresponding to the removal of the value at the specified
+    * IntSequenceExplorer
+    *
+    * @param removePositionExplorer
+    *   The IntSequenceExplorer at the position of the value we want to remove
+    * @param prev
+    *   The last update of the IntSequence
+    * @param seq
+    *   The IntSequence value after the removal (if known)
+    * @return
+    *   The update corresponding to the defined removal
+    */
+  def apply(
+    removePositionExplorer: IntSequenceExplorer,
+    prev: SeqUpdate,
+    seq: IntSequence
+  ): SeqUpdate = {
     prev match {
-      case SeqUpdateInsert(insertedValue:Int,insertAfterPositionExplorer:IntSequenceExplorer,insertPrev:SeqUpdate)
-        if insertPrev.newValue quickEquals seq => insertPrev
-      case _ => new SeqUpdateRemove(removePosAsExplorer,prev,seq)
+      // check if the last two moves cancelled themselves
+      case SeqUpdateInsert(_: Int, _: IntSequenceExplorer, insertPrev: SeqUpdate)
+          if insertPrev.newValue quickEquals seq =>
+        insertPrev
+      case _ => new SeqUpdateRemove(removePositionExplorer, prev, seq)
     }
   }
 
-  /**
-   *
-   * @param r
-   * @return position,prev
-   */
-  def unapply(r:SeqUpdateRemove):Option[(IntSequenceExplorer,SeqUpdate)] = Some(r.explorerAtRemovePosition,r.prev)
+  /** Extracts the parameters of the SeqUpdateRemove
+    *
+    * @param seqUpdateRemove
+    *   The update we want to extracts the parameters from
+    * @return
+    *   The explorer at the removal position and the update before it
+    */
+  def unapply(seqUpdateRemove: SeqUpdateRemove): Option[(IntSequenceExplorer, SeqUpdate)] =
+    Some(seqUpdateRemove.explorerAtRemovePosition, seqUpdateRemove.prev)
 }
 
-class SeqUpdateRemove(val explorerAtRemovePosition:IntSequenceExplorer, prev:SeqUpdate, seq:IntSequence)
-  extends SeqUpdateWithPrev(prev,seq){
+/** An IntSequence update, this update consists in removing a node at a given position.
+  *
+  * The position is passed as a IntSequenceExplorer to ease the update of the potential Invariant
+  * depending on this IntSequence.
+  *
+  * @param explorerAtRemovePosition
+  *   The IntSequenceExplorer at the position of the value we want to remove
+  * @param prev
+  *   The previous update of the IntSequence
+  * @param seq
+  *   The new IntSequence value
+  */
+class SeqUpdateRemove(
+  val explorerAtRemovePosition: IntSequenceExplorer,
+  prev: SeqUpdate,
+  seq: IntSequence
+) extends SeqUpdateWithPrev(prev, seq) {
 
-  assert(seq equals prev.newValue.remove(explorerAtRemovePosition,fast=true),"wrong promize on seq value when building SeqUpdateRemove")
-
-  val removedValue:Int = seq match{
-    case d:RemovedIntSequence if explorerAtRemovePosition == d.positionOfDelete && (d.seq quickEquals prev.newValue) => d.removedValue
-    case _ => prev.newValue.valueAtPosition(explorerAtRemovePosition).head}
-
-
-  override protected[computation] def reverseThis(newValueForThisAfterFullReverse: IntSequence, nextOp: SeqUpdate): SeqUpdate = {
-    prev.reverseThis(newValueForThisAfterFullReverse, SeqUpdateInsert(removedValue, explorerAtRemovePosition, nextOp, prev.newValue))
+  override protected[computation] def reverseThis(
+    expectedValueAfterFullReverse: IntSequence,
+    updatesAlreadyReversed: SeqUpdate
+  ): SeqUpdate = {
+    prev.reverseThis(
+      expectedValueAfterFullReverse,
+      SeqUpdateInsert(
+        explorerAtRemovePosition.value,
+        explorerAtRemovePosition,
+        updatesAlreadyReversed,
+        prev.newValue
+      )
+    )
   }
 
   override protected[computation] def appendThisTo(previousUpdates: SeqUpdate): SeqUpdate = {
-    SeqUpdateRemove(explorerAtRemovePosition,prev.appendThisTo(previousUpdates),seq)
+    SeqUpdateRemove(explorerAtRemovePosition, prev.appendThisTo(previousUpdates), seq)
   }
 
   override protected[computation] def explicitHowToRollBack(): SeqUpdate = {
-    SeqUpdateRemove(explorerAtRemovePosition,prev.explicitHowToRollBack(),seq)
+    SeqUpdateRemove(explorerAtRemovePosition, prev.explicitHowToRollBack(), seq)
   }
 
-  override def oldPosToNewPos(oldPos : Int) : Option[Int] = {
-    if (oldPos == explorerAtRemovePosition) None
+  override def oldPosToNewPos(oldPos: Int): Option[Int] = {
+    if (oldPos == explorerAtRemovePosition.position) None
     else if (oldPos < explorerAtRemovePosition) Some(oldPos)
-    else Some(oldPos-1)
+    else Some(oldPos - 1)
   }
 
-  override def newPos2OldPos(newPos : Int) : Option[Int] = {
-    if(newPos < explorerAtRemovePosition) Some(newPos)
-    else Some(newPos +1)
+  override def newPos2OldPos(newPos: Int): Option[Int] = {
+    if (newPos < explorerAtRemovePosition) Some(newPos)
+    else Some(newPos + 1)
   }
 
-  override protected[computation] def regularize(maxPivot:Int) : SeqUpdate =
-    SeqUpdateRemove(explorerAtRemovePosition,prev,seq.regularizeToMaxPivot(maxPivot))
+  override protected[computation] def regularize(maxPivot: Int): SeqUpdate =
+    SeqUpdateRemove(explorerAtRemovePosition, prev, seq.regularizeToMaxPivot(maxPivot))
 
-  override def toString : String =
-    s"SeqUpdateRemove(value:$removedValue position:$explorerAtRemovePosition prev:$prev)"
+  override def toString: String =
+    s"SeqUpdateRemove(value:${explorerAtRemovePosition.value} position:${explorerAtRemovePosition.position} prev:$prev)"
 }

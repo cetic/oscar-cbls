@@ -3,68 +3,148 @@ package oscar.cbls.core.computation.seq
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 
 object SeqUpdateInsert {
-  def apply(value : Int, insertAfterPositionExplorer : IntSequenceExplorer, prev : SeqUpdate, seq : IntSequence) : SeqUpdate = {
+
+  /** Returns the update corresponding to the insertion of the specified value after the
+    * IntSequenceExplorer
+    *
+    * @param value
+    *   The value we want to insert
+    * @param insertAfterPositionExplorer
+    *   The IntSequenceExplorer at the position after which we want to insert the value
+    * @param prev
+    *   The last update of the IntSequence
+    * @return
+    *   The update corresponding to the defined insertion
+    */
+  def apply(
+    value: Int,
+    insertAfterPositionExplorer: IntSequenceExplorer,
+    prev: SeqUpdate
+  ): SeqUpdate = {
     prev match {
-      //we compare the seq here because seq equality is used for checkpointing stuff to annihilate the moves
-      case x@SeqUpdateRemove(removedPositionExplorer : IntSequenceExplorer, prevOfDelete : SeqUpdate)
-        if prevOfDelete.newValue quickEquals seq => prevOfDelete
-      case _ => new SeqUpdateInsert(value,insertAfterPositionExplorer,prev,seq)
+      // here, since there is no seq given, we compare on the move itself to anihilate the moves
+      case x @ SeqUpdateRemove(
+            removedPositionExplorer: IntSequenceExplorer,
+            prevOfDelete: SeqUpdate
+          )
+          if insertAfterPositionExplorer.position + 1 == removedPositionExplorer.position && value == x.explorerAtRemovePosition.value =>
+        prevOfDelete
+      case _ =>
+        new SeqUpdateInsert(
+          value,
+          insertAfterPositionExplorer,
+          prev,
+          prev.newValue.insertAfterPosition(value, insertAfterPositionExplorer, fast = true)
+        )
     }
   }
 
-  /**
-   * @param value
-   * @param pos the position of the insert, what comes upwards ad at this position is moved by one pos upwards
-   * @param prev
-   * @return
-   */
-  def apply(value : Int, insertAfterPositionExplorer : IntSequenceExplorer, prev : SeqUpdate) : SeqUpdate = {
+  /** Returns the update corresponding to the insertion of the specified value after the
+    * IntSequenceExplorer
+    *
+    * @param value
+    *   The value we want to insert
+    * @param insertAfterPositionExplorer
+    *   The IntSequenceExplorer at the position after which we want to insert the value
+    * @param prev
+    *   The last update of the IntSequence
+    * @param seq
+    *   The IntSequence value after the insertion (if known)
+    * @return
+    *   The update corresponding to the defined insertion
+    */
+  def apply(
+    value: Int,
+    insertAfterPositionExplorer: IntSequenceExplorer,
+    prev: SeqUpdate,
+    seq: IntSequence
+  ): SeqUpdate = {
     prev match {
-      //here, since there is no seq given, we compare on the move itself to anihilate the moves
-      case x@SeqUpdateRemove(removedPositionExplorer : IntSequenceExplorer, prevOfDelete : SeqUpdate)
-        if insertAfterPositionExplorer.position+1 == removedPositionExplorer.position && value == x.removedValue => prevOfDelete
-      case _ => new SeqUpdateInsert(value,insertAfterPositionExplorer,prev,prev.newValue.insertAfterPosition(value, insertAfterPositionExplorer, fast = true))
+      // check if the last two moves cancelled themselves
+      case _ @SeqUpdateRemove(_: IntSequenceExplorer, prevOfDelete: SeqUpdate)
+          if prevOfDelete.newValue quickEquals seq =>
+        prevOfDelete
+      case _ => new SeqUpdateInsert(value, insertAfterPositionExplorer, prev, seq)
     }
   }
 
-  /**
-   * @param i
-   * @return value, position, prev
-   */
-  def unapply(i:SeqUpdateInsert):Option[(Int,IntSequenceExplorer,SeqUpdate)] = Some(i.value,i.insertAfterPositionExplorer,i.prev)
+  /** Extracts the parameters of the SeqUpdateInsert
+    *
+    * @param seqUpdateInsert
+    *   The update we want to extracts the parameters from
+    * @return
+    *   The inserted value, the explorer after which it was inserted and the update before it
+    */
+  def unapply(seqUpdateInsert: SeqUpdateInsert): Option[(Int, IntSequenceExplorer, SeqUpdate)] =
+    Some(seqUpdateInsert.value, seqUpdateInsert.insertAfterPositionExplorer, seqUpdateInsert.prev)
 }
 
-//after is -1 for start position
-class SeqUpdateInsert(val value: Int, val insertAfterPositionExplorer: IntSequenceExplorer, prev:SeqUpdate, seq:IntSequence)
-  extends SeqUpdateWithPrev(prev:SeqUpdate, seq){
+/** An IntSequence update, this update consists in inserting a new node after a given position.
+  *
+  * The position is passed as a IntSequenceExplorer to ease the update of the potential Invariant
+  * depending on this IntSequence.
+  *
+  * @param value
+  *   The inserted value
+  * @param insertAfterPositionExplorer
+  *   The IntSequenceExplorer after which the value is inserted
+  * @param prev
+  *   The previous update of the IntSequence
+  * @param seq
+  *   The new IntSequence value
+  */
+class SeqUpdateInsert(
+  val value: Int,
+  val insertAfterPositionExplorer: IntSequenceExplorer,
+  prev: SeqUpdate,
+  seq: IntSequence
+) extends SeqUpdateWithPrev(prev: SeqUpdate, seq) {
 
-  lazy val insertionPos: Int = insertAfterPositionExplorer.next.position
+  // The position of the new value
+  private lazy val insertionPos: Int = insertAfterPositionExplorer.next.position
 
-  override protected[computation] def reverseThis(newValueForThisAfterFullReverse: IntSequence, nextOp:SeqUpdate): SeqUpdate = {
-    prev.reverseThis(newValueForThisAfterFullReverse, SeqUpdateRemove(insertAfterPositionExplorer.next.position,nextOp,prev.newValue))
+  override protected[computation] def reverseThis(
+    expectedValueAfterFullReverse: IntSequence,
+    updatesAlreadyReversed: SeqUpdate
+  ): SeqUpdate = {
+    prev.reverseThis(
+      expectedValueAfterFullReverse,
+      SeqUpdateRemove(insertAfterPositionExplorer.next, updatesAlreadyReversed, prev.newValue)
+    )
   }
 
   override protected[computation] def appendThisTo(previousUpdates: SeqUpdate): SeqUpdate = {
-    SeqUpdateInsert(value: Int, insertAfterPositionExplorer: IntSequenceExplorer, prev.appendThisTo(previousUpdates), seq)
+    SeqUpdateInsert(
+      value: Int,
+      insertAfterPositionExplorer: IntSequenceExplorer,
+      prev.appendThisTo(previousUpdates),
+      seq
+    )
   }
 
   override protected[computation] def explicitHowToRollBack(): SeqUpdate = {
-    SeqUpdateInsert(value: Int, insertAfterPositionExplorer: IntSequenceExplorer, prev.explicitHowToRollBack(), seq)
+    SeqUpdateInsert(
+      value: Int,
+      insertAfterPositionExplorer: IntSequenceExplorer,
+      prev.explicitHowToRollBack(),
+      seq
+    )
   }
 
-  override def oldPosToNewPos(oldPos : Int) : Option[Int] = {
-    if (oldPos < insertAfterPositionExplorer.next.position) Some(oldPos)
+  override def oldPosToNewPos(oldPos: Int): Option[Int] = {
+    if (oldPos < insertionPos) Some(oldPos)
     else Some(oldPos + 1)
   }
 
-  override def newPos2OldPos(newPos : Int) : Option[Int] = {
-    if(newPos == insertAfterPositionExplorer.next.position) None
-    else if (newPos < pos) Some(newPos)
-    else Some(newPos-1)
+  override def newPos2OldPos(newPos: Int): Option[Int] = {
+    if (newPos == insertionPos) None
+    else if (newPos <= insertAfterPositionExplorer.position) Some(newPos)
+    else Some(newPos - 1)
   }
 
-  override protected[computation] def regularize(maxPivot:Int) : SeqUpdate =
-    SeqUpdateInsert(value,pos,prev,seq.regularizeToMaxPivot(maxPivot))
+  override protected[computation] def regularize(maxPivot: Int): SeqUpdate =
+    SeqUpdateInsert(value, insertAfterPositionExplorer, prev, seq.regularizeToMaxPivot(maxPivot))
 
-  override def toString : String = s"SeqUpdateInsert(value:$value position:$pos prev:$prev)"
+  override def toString: String =
+    s"SeqUpdateInsert(value:$value after position:${insertAfterPositionExplorer.position} prev:$prev)"
 }
