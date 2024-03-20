@@ -13,7 +13,7 @@ import oscar.cbls.core.propagation.{
 
 class PropagationInitTestSuite extends AnyFunSuite with Matchers {
 
-  val seed: Option[Long] = None
+  val seed: Option[Long] = Some(3000)
 
   val structureGenerator = new PropagationStructureGenerator(seed)
 

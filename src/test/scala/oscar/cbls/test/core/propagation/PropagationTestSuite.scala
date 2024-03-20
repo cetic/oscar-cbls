@@ -17,7 +17,7 @@ import org.scalatest.Suites
   */
 class PropagationTestSuite(debugLevel: Int) extends AnyFunSuite with Matchers {
 
-  val seed: Option[Long] = Some(1000)
+  val seed: Option[Long] = Some(2000)
 
   val structureGenerator = new PropagationStructureGenerator(seed)
 
