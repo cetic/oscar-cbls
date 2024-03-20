@@ -135,9 +135,10 @@ class PropagationStructureGenerator(seed : Option[Long] = None) {
     maxInputVar : Int,
     minOutputVar : Int,
     maxOutputVar : Int,
-    nbLayer : Int) : TestPropagationStructure = {
+    nbLayer : Int,
+    debugLevel : Int = 0) : TestPropagationStructure = {
 
-    val struct = new TestPropagationStructure
+    val struct = new TestPropagationStructure(debugLevel)
 
     val input = generateVariables(minInput,minOutput,struct)
 

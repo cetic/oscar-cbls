@@ -36,26 +36,22 @@ import oscar.cbls.algo.rb.RedBlackTreeMap
   * propagation, the propagation structure will compute the elements on which this elements depends.
   * When a propagation is triggered, only this elements will be updated.
   *
-<<<<<<< HEAD
-  * The propagation structure supports debug levels. The debug level flags that are accepted are the
-  * following:
-  *   - 0: No debug
-  *   - 1: When an element has been updated, the checkInternals method is called
-  *   - 2: Each propagation is a total propagation
-  *   - 3: Each propagation is a total propagation and the checkInternals method is called after
-  *     each update
-=======
   * The propagation structure has 4 levels of debugs.
   *   - 0: No debug at all
-  *   - 1: Invariants are checked after each total propagation
-  *   - 2: Invariants are checked after each (partial or total) propagation
-  *   - 3: Partial propagation is disabled and invariants are checked after each propagation
->>>>>>> 3e2745df4 (Adding debug)
+  *   - 1: The method checkInternals of PropagationElement is called after the element has been
+  *     propagated if the propagation is total
+  *   - 2: The method checkInternals of PropagationElement is called after the element has been
+  *     propagated in a total or partial propagation
+  *   - 3: Partial propagation is disabled (every propagation is a total propagation) and the method
+  *     checkInternals of PropagationElement is called after the element has been propagated
   *
   * @param debugLevel
   *   the level of debug
   */
 class PropagationStructure(debugLevel: Int) {
+
+  require(debugLevel <= 3,"Debug level cannot be higher that 3")
+  require(debugLevel >= 0,"Debug level cannot be lower than 0")
 
   private var currentId: Int = -1
 
@@ -222,7 +218,7 @@ class PropagationStructure(debugLevel: Int) {
   protected final def propagate(target: PropagationElement = null): Unit = {
     var currentLayer = 0
 
-    val check : Boolean = (debugLevel >= 1 && (target == null || debugLevel >= 2))
+    val check: Boolean = (debugLevel >= 1 && (target == null || debugLevel >= 2))
 
     val theTrack = if (target == null) null else partialPropagationTracks.getOrElse(target.id, null)
 
@@ -323,8 +319,6 @@ class PropagationStructure(debugLevel: Int) {
       currentNode: PropagationElement,
       alreadyVisitedNodes: List[Int]
     ): (List[List[Int]], List[Int]) = {
-      // println(s"currentNode : ${currentNode.id}")
-      // println(alreadyVisitedNodes)
       if (alreadyVisitedNodes.contains(currentNode.id)) {
         (List(List(currentNode.id)), alreadyVisitedNodes)
       } else {
@@ -352,19 +346,11 @@ class PropagationStructure(debugLevel: Int) {
       nodes: List[PropagationElement],
       alreadyVisitedNodes: List[Int]
     ): (List[List[List[Int]]], List[Int]) = {
-      // println(s"ListOfNodes : ${nodes.map(_.id)}")
-      // println(alreadyVisitedNodes)
       nodes match {
-        case Nil    => (List(), alreadyVisitedNodes)
+        case Nil => (List(), alreadyVisitedNodes)
         case h :: t =>
-          // println(s"startDevelopList ${t.map(_.id)}")
           val resOfRest = developListOfNode(t, alreadyVisitedNodes)
-          // println(s"endDevelopList ${t.map(_.id)}")
-          // println(resOfRest._2)
-          // println(s"StartDevelopNode ${h.id}")
           val resOfNode = developNode(h, resOfRest._2)
-          // println(s"EndDevelopNode ${h.id}")
-          // println(resOfNode._2)
           (resOfNode._1 :: resOfRest._1, resOfNode._2)
       }
     }
@@ -376,6 +362,14 @@ class PropagationStructure(debugLevel: Int) {
 
   }
 
+  /** Produces a string that represents the propagation structure in the dot format
+    *
+    * @param names
+    *   a map that allow to change the names of some vertices
+    * @param shapes
+    *   a map that allow to change the shape of some vertices
+    * @return
+    */
   def toDot(
     names: Map[Int, String] =
       propagationElements.map(_.id).zip(propagationElements.map(_.id.toString)).toMap,

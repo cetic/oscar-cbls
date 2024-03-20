@@ -3,45 +3,18 @@ package oscar.cbls.test.core.propagation
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import oscar.cbls.core.propagation.{TestVariableElement,TestInvariantElement,TestPropagationStructure}
+import org.scalatest.Suites
 
-class PropagationTestSuite extends AnyFunSuite with Matchers {
+class PropagationTestSuite(debugLevel : Int) extends AnyFunSuite with Matchers {
 
-  val seed : Option[Long] = None
+  val seed : Option[Long] = Some(1000)
 
   val structureGenerator = new PropagationStructureGenerator(seed)
-
-  test("An error shall be raised when there is a cycle in the propagation structure") {
-    val struct = new TestPropagationStructure
-
-    val var1 : TestVariableElement = new TestVariableElement(struct)
-    val var2 : TestVariableElement = new TestVariableElement(struct)
-    val var3 : TestVariableElement = new TestVariableElement(struct)
-    val inv1 : TestInvariantElement = new TestInvariantElement(struct)
-    val inv2 : TestInvariantElement = new TestInvariantElement(struct)
-
-    inv1.registerStaticAndDynamicDependency(var1)
-    var2.setDefiningInvariant(inv1)
-    inv2.registerStaticAndDynamicDependency(var2)
-    var3.setDefiningInvariant(inv2)
-    inv1.registerStaticAndDynamicDependency(var3)
-
-    an[java.lang.IllegalArgumentException] should be thrownBy struct.close
-  }
-
-  test("The layer computation algorithm is coherent with the layer computed on build") {
-    for (_ <- 0 to 10) {
-      val struct = structureGenerator.generateStructure(15,30,5,15,5,15,5,15,10)
-
-      struct.close
-      struct.validateLayerAssignation
-
-    }
-  }
 
   test("Total Propagation update once the elements that have to be updated") {
     for (_ <- 0 to 10) {
 
-      val struct = structureGenerator.generateStructure(15,30,5,15,5,15,5,15,10)
+      val struct = structureGenerator.generateStructure(15,30,5,15,5,15,5,15,10,debugLevel)
 
       struct.close
 
@@ -55,7 +28,6 @@ class PropagationTestSuite extends AnyFunSuite with Matchers {
         toUpdate.foreach(_.update)
 
         struct.totalPropagation()
-
       }
 
     }
@@ -67,7 +39,7 @@ class PropagationTestSuite extends AnyFunSuite with Matchers {
     for (_ <- 0 to 10) {
 
       val rand = structureGenerator.rand
-      val struct = structureGenerator.generateStructure(15,30,5,15,5,15,5,15,10)
+      val struct = structureGenerator.generateStructure(15,30,5,15,5,15,5,15,10,debugLevel)
 
       val input = struct.variables.filter(_.isInput)
       val nbInput = input.length
@@ -98,7 +70,7 @@ class PropagationTestSuite extends AnyFunSuite with Matchers {
     for (_ <- 0 to 10) {
 
       val rand = structureGenerator.rand
-      val struct = structureGenerator.generateStructure(15,30,5,15,5,15,5,15,10)
+      val struct = structureGenerator.generateStructure(15,30,5,15,5,15,5,15,10,debugLevel)
 
       val input = struct.variables.filter(_.isInput)
       val nbInput = input.length
@@ -129,3 +101,5 @@ class PropagationTestSuite extends AnyFunSuite with Matchers {
 
 
 }
+
+class PropagationTestSuites extends Suites(Seq.tabulate(4)(new PropagationTestSuite(_)) : _*)

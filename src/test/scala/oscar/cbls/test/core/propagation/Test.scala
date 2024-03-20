@@ -27,7 +27,7 @@ class Test extends AnyFunSuite with Matchers {
       val toUpdate = structureGenerator.rand.shuffle(variables).take(nbVarToUpdate) //variables.filter(_.name == "Variable 3")
 
       toUpdate.foreach(_.update)
-      println(s"update ${toUpdate.map(_.name)}")
+        //println(s"update ${toUpdate.map(_.name)}")
 
       struct.totalPropagation()
 
@@ -59,13 +59,13 @@ class Test extends AnyFunSuite with Matchers {
 
 
       for (j <- 0 to 10) {
-        println(s"Update $j")
+        //println(s"Update $j")
         val toUpdate = rand.shuffle(input).take(1 + rand.nextInt((nbInput/5).max(1)))
         toUpdate.foreach(_.update)
-        println(s"Updated: ${toUpdate.map(_.name)}")
+        //println(s"Updated: ${toUpdate.map(_.name)}")
 
         val target = rand.shuffle(partialPropagationTargets).toList(0)
-          println(s"Target: ${target.name}")
+          //println(s"Target: ${target.name}")
 
         struct.partialPropagation(target)
       }
