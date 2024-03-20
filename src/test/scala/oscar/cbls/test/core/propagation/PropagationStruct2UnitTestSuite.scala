@@ -9,6 +9,13 @@ import oscar.cbls.core.propagation.{
 }
 import org.scalatest.Suites
 
+/** Unit tests about the propagation. In this unit tests, the propagation structure is statically
+  * defined and the updates are statically checked. The tests are parametrized by the debug level.
+  * The actual tests are done in [[PropagationStruct2UnitTestSuites]]
+  *
+  * @param debugLevel
+  *   the debug level for the test
+  */
 class PropagationStruct2UnitTestSuite(debugLevel: Int) extends AnyFunSuite with Matchers {
 
   val struct = new TestPropagationStructure(debugLevel)

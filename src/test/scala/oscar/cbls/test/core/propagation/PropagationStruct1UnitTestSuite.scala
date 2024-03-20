@@ -9,6 +9,12 @@ import oscar.cbls.core.propagation.{
 }
 import org.scalatest.Suites
 
+/** Unit tests about the propagation. In this unit tests, the propagation structure is statically
+  * defined and the updates are statically checked. The tests are parametrized by the debug level.
+  * The actual tests are done in [[PropagationStruct1UnitTestSuites]]
+  *
+  * @param debugLevel the debug level for the test
+  */
 class PropagationStruct1UnitTestSuite(debugLevel: Int) extends AnyFunSuite with Matchers {
 
   val struct = new TestPropagationStructure(debugLevel)
@@ -33,10 +39,10 @@ class PropagationStruct1UnitTestSuite(debugLevel: Int) extends AnyFunSuite with 
   var7.setDefiningInvariant(inv9)
   var8.setDefiningInvariant(inv9)
 
-  //Put this flag at true to get a dot version of the propagation flag
-  //The propagation flag is saved in Graph.gv
-  //To get the graph in svg use
-  //$> dot -Tsvg Graph.gv -o Graph.svg
+  // Put this flag at true to get a dot version of the propagation flag
+  // The propagation flag is saved in Graph.gv
+  // To get the graph in svg use
+  // $> dot -Tsvg Graph.gv -o Graph.svg
   val outGraphAsDot = false
   if (outGraphAsDot) {
     new java.io.PrintWriter("Graph.gv") {
