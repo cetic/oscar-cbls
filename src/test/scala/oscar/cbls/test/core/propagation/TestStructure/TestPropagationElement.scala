@@ -2,6 +2,12 @@ package oscar.cbls.core.propagation
 
 import scala.annotation.tailrec
 
+/** A propagation element to test the propagation structure.
+  *
+  * @param structure
+  *   the propagation structure to which this element is attached
+  */
+
 abstract class TestPropagationElement(structure: TestPropagationStructure)
     extends PropagationElement(structure) {
 
@@ -97,9 +103,15 @@ abstract class TestPropagationElement(structure: TestPropagationStructure)
   def checkUpdate: Unit = {
     if (updateRequiredThisPropagation) {
       if (debugLevel > 1 || (debugLevel == 1 && structure.lastPropagationWasTotal))
-        assert(nbCheckInternals == 1,s"Element $name should have been checked during this propagation but has not been")
+        assert(
+          nbCheckInternals == 1,
+          s"Element $name should have been checked during this propagation but has not been"
+        )
       else
-        assert(nbCheckInternals == 0,s"Element $name shouldn't have been checked during this propagation but has been")
+        assert(
+          nbCheckInternals == 0,
+          s"Element $name shouldn't have been checked during this propagation but has been"
+        )
       assert(
         updateRequired,
         "Problem in the TestPropagationStructure : an update was required in this propagation even if no update where required at all"
