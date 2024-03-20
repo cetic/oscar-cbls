@@ -103,13 +103,9 @@ class PropagationStructure(debugLevel: Int) {
   }
 
   private def computePartialPropagationTrack(): Unit = {
-    // println(partialPropagationTargets.map(_.asInstanceOf[TestPropagationElement].name))
     for (pe <- partialPropagationTargets) {
       val track = buildTrackForTarget(pe)
       partialPropagationTracks = partialPropagationTracks.insert(pe.id, track)
-      // println("partial Propagation Tracks")
-      // println(currentId)
-      // println(s"${pe.id} -> (${Array.tabulate(track.length)(i => (i,track(i))).filter(_._2).mkString(";")})")
     }
   }
 
@@ -222,13 +218,6 @@ class PropagationStructure(debugLevel: Int) {
 
     val theTrack = if (target == null) null else partialPropagationTracks.getOrElse(target.id, null)
 
-    // if (theTrack != null) {
-    //   println(Array.tabulate(nbPropagationElements)(i => (propagationElements(i).asInstanceOf[TestPropagationElement].name,theTrack(propagationElements(i).id))).mkString(";"))
-    //   println(target.id)
-    //   println(s"Scheduled: ${scheduledElements.map(_.asInstanceOf[TestPropagationElement].name)}")
-    //   println(s"Postponed: ${postponedElements.map(_.asInstanceOf[TestPropagationElement].name)}")
-    // }
-
     @inline
     def track(id: Int) = if (theTrack == null) true else theTrack(id)
 
@@ -287,7 +276,6 @@ class PropagationStructure(debugLevel: Int) {
         filterScheduledWithTrack
       } else {
         postponedElements = filterAndEnqueuePostponedElements(postponedElements)
-        // println(s"New Postponed Elements: ${postponedElements.map(_.asInstanceOf[TestPropagationElement].name)}")
         filterScheduledWithTrack
       }
       doPropagation()
