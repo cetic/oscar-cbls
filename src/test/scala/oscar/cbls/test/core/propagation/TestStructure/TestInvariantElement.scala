@@ -17,7 +17,6 @@ class TestInvariantElement(structure: TestPropagationStructure)
   }
 
   def registerStaticAndDynamicDependency(elem: TestVariableElement) = {
-    // addElementInTrack(elem)
     registerStaticallyListenedElement(elem)
   }
 
