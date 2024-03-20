@@ -18,7 +18,7 @@ abstract class PropagationElement(propagationStructure: PropagationStructure) {
 
   private[core] def id: Int = id_
 
-  private var scheduled : Boolean = false
+  private var scheduled: Boolean = false
 
   private var layer_ : Int = -1
 
@@ -53,7 +53,7 @@ abstract class PropagationElement(propagationStructure: PropagationStructure) {
     staticallyListeningElements = elem :: staticallyListeningElements
   }
 
-  private[core] def propagateElement : Unit = {
+  private[core] def propagateElement: Unit = {
     performPropagation()
     scheduled = false
   }

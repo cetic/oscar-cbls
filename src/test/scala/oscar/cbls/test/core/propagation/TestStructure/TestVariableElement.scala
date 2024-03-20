@@ -3,7 +3,6 @@ package oscar.cbls.core.propagation
 class TestVariableElement(structure: TestPropagationStructure)
     extends TestPropagationElement(structure) {
 
-
   override val name: String = s"Variable $id"
 
   override def performPropagation(): Unit = {
@@ -15,8 +14,8 @@ class TestVariableElement(structure: TestPropagationStructure)
     updateRequired = true
     for (s <- transitiveSuccessors) {
       s match {
-        case v:TestVariableElement => v.updateRequired = true
-        case _ =>
+        case v: TestVariableElement => v.updateRequired = true
+        case _                      =>
       }
     }
     scheduleForPropagation()
@@ -32,5 +31,3 @@ class TestVariableElement(structure: TestPropagationStructure)
   }
 
 }
-
-

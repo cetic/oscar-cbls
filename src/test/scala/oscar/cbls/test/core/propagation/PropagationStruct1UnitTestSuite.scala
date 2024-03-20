@@ -13,7 +13,8 @@ import org.scalatest.Suites
   * defined and the updates are statically checked. The tests are parametrized by the debug level.
   * The actual tests are done in [[PropagationStruct1UnitTestSuites]]
   *
-  * @param debugLevel the debug level for the test
+  * @param debugLevel
+  *   the debug level for the test
   */
 class PropagationStruct1UnitTestSuite(debugLevel: Int) extends AnyFunSuite with Matchers {
 

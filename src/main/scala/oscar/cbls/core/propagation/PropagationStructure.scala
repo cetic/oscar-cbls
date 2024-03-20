@@ -50,8 +50,8 @@ import oscar.cbls.algo.rb.RedBlackTreeMap
   */
 class PropagationStructure(debugLevel: Int) {
 
-  require(debugLevel <= 3,"Debug level cannot be higher that 3")
-  require(debugLevel >= 0,"Debug level cannot be lower than 0")
+  require(debugLevel <= 3, "Debug level cannot be higher that 3")
+  require(debugLevel >= 0, "Debug level cannot be lower than 0")
 
   private var currentId: Int = -1
 

@@ -21,5 +21,3 @@ class TestInvariantElement(structure: TestPropagationStructure)
   }
 
 }
-
-
