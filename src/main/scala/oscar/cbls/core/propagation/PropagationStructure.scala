@@ -134,11 +134,11 @@ class PropagationStructure(debugLevel: Int) {
     *   the maximum layer of the graph
     */
   private def computePropagationElementsLayers(): Int = {
-    val nbListeningElementPerPC                    = Array.fill(nbPropagationElements)(0)
+    val nbListenedElementPerPE                     = Array.fill(nbPropagationElements)(0)
     var fstLayerElements: List[PropagationElement] = List()
     for (p <- propagationElements) {
       val nbListenedElements = p.staticallyListenedElements.size
-      nbListeningElementPerPC(p.id) = nbListenedElements
+      nbListenedElementPerPE(p.id) = nbListenedElements
       if (nbListenedElements == 0)
         fstLayerElements = p :: fstLayerElements
     }
@@ -169,8 +169,8 @@ class PropagationStructure(debugLevel: Int) {
           currentElement.layer = currentLayerId
           var newNextLayer: List[PropagationElement] = nextLayer
           for (p <- currentElement.staticallyListeningElements) {
-            nbListeningElementPerPC(p.id) = nbListeningElementPerPC(p.id) - 1
-            if (nbListeningElementPerPC(p.id) == 0)
+            nbListenedElementPerPE(p.id) = nbListenedElementPerPE(p.id) - 1
+            if (nbListenedElementPerPE(p.id) == 0)
               newNextLayer = p :: newNextLayer
           }
           computeLayerOfElement(otherElements, newNextLayer, currentLayerId, nbElementsLeft - 1)
