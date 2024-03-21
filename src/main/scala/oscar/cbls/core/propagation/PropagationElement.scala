@@ -70,18 +70,21 @@ abstract class PropagationElement(propagationStructure: PropagationStructure) {
     scheduled = false
   }
 
-  /** this is the propagation method that should be overridden by propagation elements. notice that
-    * it is only called in a propagation wave if: 1L: it has been registered for propagation since
-    * the last time it was propagated 2L: it is included in the propagation wave: partial
-    * propagation wave do not propagate all propagation elements; it only propagates the ones that
-    * come in the predecessors of the targeted propagation element overriding this method is
-    * optional, so an empty body is provided by default
+  /** The method that is called when the element is allowed to propagate.
+    *
+    * This method is only called in a propagation wave if: 1/ the element has been registered for
+    * propagation since the last time it was propagated and 2/ it is included in the propagation
+    * wave (partial propagation wave do not propagate all propagation elements). Overriding this
+    * method is optional (the element can update their values immediatly when they are notified), so
+    * an empty is provided by default
     */
-  def performPropagation(): Unit
+  def performPropagation(): Unit = {}
 
-  /** This is the debug procedure through which propagation element can redundantly check that the
-    * incremental computation they perform through the performPropagation method is correct
-    * overriding this method is optional, so an empty body is provided by default
+  /** The method that allows to check and debug propagation elements.
+    *
+    * This method can be called after the propagation according to the debug level of the
+    * propagation structure (see [[PropagationStructure]]). It can be used to check if the invariant
+    * worked properly by for example recomputing the value from scratch.
     */
-  def checkInternals(): Unit
+  def checkInternals(): Unit = {}
 }
