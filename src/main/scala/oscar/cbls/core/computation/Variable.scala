@@ -6,7 +6,7 @@ import oscar.cbls.core.propagation._
 abstract class Variable(propagationStructure: PropagationStructure, isConstant: Boolean)
     extends PropagationElement(propagationStructure) {
 
-  protected var domain: Option[(Long,Long)] = None
+  private var _domain: Option[(Long, Long)]              = None
   private[core] var definingInvariant: Option[Invariant] = None
   // Dynamically listening elements, upon update this variable must noticed it's listening element.
   private val dynamicallyListeningElements: DoublyLinkedList[PropagationElement] =
@@ -15,9 +15,8 @@ abstract class Variable(propagationStructure: PropagationStructure, isConstant: 
   def model: Store = propagationStructure.asInstanceOf[Store]
 
   /** Limits the values of the variable to this domain. ONLY USED IN DEBUG MODE */
-  def setDomain(min: Long, max: Long): Unit = {
-    domain = Some((min,max))
-  }
+  def setDomain(min: Long, max: Long): Unit = _domain = Some((min, max))
+  def domain: Option[(Long, Long)]          = _domain
 
   /** Save the state of this variable */
   def save(): SavedValue
@@ -45,9 +44,7 @@ abstract class Variable(propagationStructure: PropagationStructure, isConstant: 
     * @return
     *   A key to ease the removal of this element
     */
-  protected def registerDynamicallyListeningElement(
-    elem: PropagationElement
-  ): KeyForRemoval = {
+  protected def registerDynamicallyListeningElement(elem: PropagationElement): KeyForRemoval = {
     require(
       !isConstant,
       "Constant variable does not propagate, no need to keep track of listening element."
@@ -64,8 +61,8 @@ abstract class Variable(propagationStructure: PropagationStructure, isConstant: 
 
   protected def checkValueWithinDomain(value: Long): Boolean = {
     domain match {
-      case None => true
-      case Some((min,max)) => value >= min && value <= max
+      case None             => true
+      case Some((min, max)) => value >= min && value <= max
     }
   }
 }

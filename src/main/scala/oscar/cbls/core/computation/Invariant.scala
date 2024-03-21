@@ -1,6 +1,5 @@
 package oscar.cbls.core.computation
 
-import oscar.cbls.algo.dll.DoublyLinkedList
 import oscar.cbls.core.propagation._
 
 class Invariant(propagationStructure: PropagationStructure)

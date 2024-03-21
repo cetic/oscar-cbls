@@ -5,6 +5,7 @@ package oscar.cbls.core.computation
   *   The variable whose value is being saved
   */
 abstract class SavedValue(val variable: Variable) {
+
   /** Restores the variable current value to the saved one */
   def restoreValue(): Unit
 }
