@@ -9,11 +9,19 @@ import oscar.cbls.core.propagation.{
 }
 import org.scalatest.Suites
 
-/** More dynamic tests about the propagation structure. In these tests, a propagation structure is
-  * randomly generated and propagations are made on this structure. The tests are parametrized by
-  * the debug level. The actual tests are done in [[PropagationTestSuites]]
+/** More dynamic tests about the propagation structure than in propagation unit tests. In these
+  * tests, a propagation structure is randomly generated and propagations are made on this
+  * structure. The tests are parametrized by the debug level. The actual tests are done in
+  * [[PropagationTestSuites]]
+  *
+  * The tests works as follows: a TestPropagationStructure is randomly generated and random
+  * variables in this structure are modified; then a total or partial propagation is triggered; the
+  * totalPropagation and partialPropagation methods include the actual propagation plus assertion
+  * about the propagation that are tested after the propagation. The assertions check if the element
+  * that should have been updated have been updated and if the element that shouldn't haven't.
   *
   * @param debugLevel
+  *   The debug level of the propagation structure
   */
 class PropagationTestSuite(debugLevel: Int) extends AnyFunSuite with Matchers {
 
