@@ -38,7 +38,6 @@ class PropagationInitTestSuite extends AnyFunSuite with Matchers {
   test("An error shall be raised when the debug level is higher that 3 or lower that 0") {
     an[java.lang.IllegalArgumentException] should be thrownBy new TestPropagationStructure(4)
     an[java.lang.IllegalArgumentException] should be thrownBy new TestPropagationStructure(-1)
-
   }
 
   test("The layer computation algorithm is coherent with the layer computed on build") {
