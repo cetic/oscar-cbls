@@ -32,13 +32,12 @@ abstract class TestPropagationElement(structure: TestPropagationStructure)
     )
   }
 
-  private var transitivePredecessorsElements: List[TestPropagationElement] = List()
+  private var transitivePredecessorsElements: Set[TestPropagationElement] = Set()
+  private var transitiveSuccessorsElements: Set[TestPropagationElement] = Set()
 
-  private var transitiveSuccessorsElements: List[TestPropagationElement] = List()
+  def transitivePredecessors: Set[TestPropagationElement] = transitivePredecessorsElements
 
-  def transitivePredecessors: List[TestPropagationElement] = transitivePredecessorsElements
-
-  def transitiveSuccessors: List[TestPropagationElement] = transitiveSuccessorsElements
+  def transitiveSuccessors: Set[TestPropagationElement] = transitiveSuccessorsElements
 
   override def registerStaticallyListenedElement(e: PropagationElement) = {
     super.registerStaticallyListenedElement(e)
@@ -46,24 +45,11 @@ abstract class TestPropagationElement(structure: TestPropagationStructure)
   }
 
   private def addTransitivePredecessor(e: TestPropagationElement) = {
-    transitivePredecessorsElements = addElementInList(e, transitivePredecessorsElements)
+    transitivePredecessorsElements = transitivePredecessorsElements + e
   }
 
   private def addTransitiveSuccessor(e: TestPropagationElement) = {
-    transitiveSuccessorsElements = addElementInList(e, transitiveSuccessorsElements)
-  }
-
-  @tailrec
-  private[this] def addElementInList(
-    e: TestPropagationElement,
-    currentList: List[TestPropagationElement] = transitivePredecessorsElements,
-    newList: List[TestPropagationElement] = List()
-  ): List[TestPropagationElement] = {
-    currentList match {
-      case Nil => e :: newList
-      case h :: t =>
-        if (h == e) addElementInList(e, t, newList) else addElementInList(e, t, h :: newList)
-    }
+    transitiveSuccessorsElements = transitiveSuccessorsElements + e
   }
 
   def addTransitiveDependency(e: TestPropagationElement) = {
