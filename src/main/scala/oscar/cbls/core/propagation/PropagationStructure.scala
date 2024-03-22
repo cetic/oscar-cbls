@@ -180,10 +180,10 @@ class PropagationStructure(debugLevel: Int) {
 
   }
 
-  /** Register a propagation element for partial propagation
+  /** Registers a propagation element for partial propagation
     *
     * When an element is scheduled for partial propagation, the propagation structure computes the
-    * other elements on which this elements depends. Later, when a propapation up to this element is
+    * other elements on which this elements depends. Later, when a propagation up to this element is
     * required, only the elements on which this element depends will be propagated
     *
     * @param p

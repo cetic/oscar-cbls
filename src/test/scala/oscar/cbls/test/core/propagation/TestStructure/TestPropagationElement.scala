@@ -21,7 +21,7 @@ abstract class TestPropagationElement(structure: TestPropagationStructure)
 
   val name: String
 
-  def isOutput: Boolean = { staticallyListeningElements.isEmpty }
+  def isOutput: Boolean = staticallyListeningElements.isEmpty
 
   def isInput: Boolean = staticallyListenedElements.isEmpty
 
