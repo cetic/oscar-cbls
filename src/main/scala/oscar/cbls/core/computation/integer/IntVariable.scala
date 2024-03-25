@@ -1,22 +1,20 @@
 package oscar.cbls.core.computation.integer
 
-import oscar.cbls.algo.dll.DoublyLinkedList
-import oscar.cbls.core.computation.{SavedValue, Store, Variable}
+import oscar.cbls.core.computation.{KeyForRemoval, SavedValue, Store, Variable}
 import oscar.cbls.core.propagation.PropagationElement
 
 class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
     extends Variable(model, isConstant) {
-  require(model != null, "Model (Store) must be defined")
 
   // The new value of this variable, not propagated yet if different from _oldValue
   private var _newValue: Long = initialValue
-  // The ols value of this variable
+  // The old value of this variable
   private var _oldValue: Long = _newValue
 
   def newValue(): Long = _newValue
 
   def value(): Long = {
-    if (!this.isADecisionVariable) model.registerForPartialPropagation(this)
+    if (!this.isADecisionVariable) model.performPartialPropagation(this)
     _newValue
   }
 
@@ -25,7 +23,6 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
   protected def setValue(value: Long): Unit = {
     if (value != _newValue) {
       _newValue = value
-      // TODO : check if it's the correct way of doing it
       scheduleForPropagation()
     }
   }
@@ -91,7 +88,7 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
 
   def registerDynamicallyListeningElementToIntVariable(
     elem: PropagationElement with IntNotificationTarget
-  ): DoublyLinkedList[PropagationElement]#DLLStorageElement = {
+  ): KeyForRemoval = {
     super.registerDynamicallyListeningElement(elem)
   }
 }

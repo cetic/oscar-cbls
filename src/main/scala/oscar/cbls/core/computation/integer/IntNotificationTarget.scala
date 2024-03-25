@@ -1,8 +1,6 @@
 package oscar.cbls.core.computation.integer
 
 trait IntNotificationTarget {
-  // Note: In the legacy code there is an id information, corresponding to the id in the ddl of listening element.
-  // I don't think it's a good idea to use it.
 
   /** Notifies the listening [[oscar.cbls.core.propagation.PropagationElement]] that the listened
     * [[IntVariable]] has changed.
