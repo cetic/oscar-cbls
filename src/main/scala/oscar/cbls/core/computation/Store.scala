@@ -60,9 +60,9 @@ class Store(debugLevel: Int = 0) extends PropagationStructure(debugLevel) {
     super.setupPropagationStructure()
     getPropagationElements.foreach {
       case v: Variable =>
-        idToVariable += (v.id, v)
+        idToVariable += (v.id -> v)
         if (v.isADecisionVariable)
-          idToDecisionVariable += (v.id, v)
+          idToDecisionVariable += (v.id -> v)
       case _ =>
     }
   }
