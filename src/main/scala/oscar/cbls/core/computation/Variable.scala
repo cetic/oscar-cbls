@@ -26,16 +26,18 @@ abstract class Variable(propagationStructure: PropagationStructure, isConstant: 
     * @param invariant
     *   The defining Invariant
     */
-  def setDefiningInvariant(invariant: Invariant): Unit =
+  def setDefiningInvariant(invariant: Invariant): Unit = {
     definingInvariant = Some(invariant)
+    registerStaticallyListenedElement(invariant)
+  }
 
   /** Whether or not this variable is a decision variable. A decision variable is a variable that is
     * not defined by any invariant.
     */
   def isADecisionVariable: Boolean = definingInvariant.isEmpty || isConstant
 
-  /** Registers the PropagationElement as a listening element. Whenever the Variable updates it's
-    * value, the listening element will be noticed.
+  /** Registers dynamically the PropagationElement as a listening element. Whenever the Variable
+    * updates it's value, the listening element will be noticed.
     *
     * NOTE : Keep the returned value to be able to remove it from the listening [[DoublyLinkedList]]
     * using it's delete method.
@@ -44,7 +46,7 @@ abstract class Variable(propagationStructure: PropagationStructure, isConstant: 
     * @return
     *   A key to ease the removal of this element
     */
-  protected def registerDynamicallyListeningElement(elem: PropagationElement): KeyForRemoval = {
+  def registerDynamicallyListeningElement(elem: PropagationElement): KeyForRemoval = {
     require(
       !isConstant,
       "Constant variable does not propagate, no need to keep track of listening element."
@@ -56,10 +58,10 @@ abstract class Variable(propagationStructure: PropagationStructure, isConstant: 
     *
     * Useful when performing propagation.
     */
-  protected[core] final def getDynamicallyListeningElements: DoublyLinkedList[PropagationElement] =
+  protected final def getDynamicallyListeningElements: DoublyLinkedList[PropagationElement] =
     dynamicallyListeningElements
 
-  protected def checkValueWithinDomain(value: Long): Boolean = {
+  def checkValueWithinDomain(value: Long): Boolean = {
     domain match {
       case None             => true
       case Some((min, max)) => value >= min && value <= max

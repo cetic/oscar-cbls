@@ -9,14 +9,17 @@ class Store(debugLevel: Int = 0) extends PropagationStructure(debugLevel) {
   private var idToVariable: HashMap[Int, Variable]         = HashMap.empty
   private var idToDecisionVariable: HashMap[Int, Variable] = HashMap.empty
 
-  private var storeIsClosed: Boolean = false
   private var lastSolutionNb: Int    = -1
 
-  def registerVariable(variable: Variable): Unit =
-    idToVariable += variable.id -> variable
-
-  def decisionVariable(decisionVariableId: Int): Variable =
-    idToDecisionVariable(decisionVariableId)
+  /** Optionally returns the decisionVariable with the given id.
+   *
+   * A decision variable is a variable that is defined by no invariant.
+   *
+   * @param decisionVariableId The id of the decision variable we want
+   * @return The decision variable with the given id or None
+   */
+  def decisionVariable(decisionVariableId: Int): Option[Variable] =
+    idToDecisionVariable.get(decisionVariableId)
 
   private def nextSolutionNb: Int = {
     lastSolutionNb += 1
@@ -31,16 +34,19 @@ class Store(debugLevel: Int = 0) extends PropagationStructure(debugLevel) {
     *   The Solution representing this Store
     */
   def save: Solution = {
-    require(storeIsClosed, "Model must be closed before saving a new solution")
+    require(closed, "Model must be closed before saving a new solution")
     Solution(idToDecisionVariable.values.map(_.save()), this, lastSolutionNb)
   }
 
-  def close(): Unit = {
-    for (idAndVariable <- idToVariable) {
-      if (idAndVariable._2.isADecisionVariable)
-        idToDecisionVariable += idAndVariable
+  override def setupPropagationStructure(): Unit = {
+    super.setupPropagationStructure()
+    getPropagationElements.foreach {
+      case v: Variable =>
+        idToVariable += (v.id, v)
+        if(v.isADecisionVariable)
+          idToDecisionVariable += (v.id, v)
+      case _ =>
     }
-    storeIsClosed = true
   }
 
   override def toString: String = "Store(vars:{" + idToVariable.values.mkString(";") + "})"
