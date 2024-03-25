@@ -7,7 +7,6 @@ import oscar.cbls.core.propagation.PropagationElement
 class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
     extends Variable(model, isConstant) {
   require(model != null, "Model (Store) must be defined")
-  model.registerVariable(this)
 
   // The new value of this variable, not propagated yet if different from _oldValue
   private var _newValue: Long = initialValue
@@ -17,7 +16,7 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
   def newValue(): Long = _newValue
 
   def value(): Long = {
-    if (!this.isADecisionVariable) model.propagate(this)
+    if (!this.isADecisionVariable) model.registerForPartialPropagation(this)
     _newValue
   }
 
