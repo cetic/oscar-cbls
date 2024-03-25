@@ -20,7 +20,7 @@ import oscar.cbls.algo.dll.DoublyLinkedList
   * @param propagationStructure
   *   The propagation structure to which the element is attached
   */
-abstract class PropagationElement(propagationStructure: PropagationStructure) {
+abstract class PropagationElement(private val propagationStructure: PropagationStructure) {
 
   private[propagation] var staticallyListenedElements: List[PropagationElement] = List()
 
@@ -56,7 +56,11 @@ abstract class PropagationElement(propagationStructure: PropagationStructure) {
     * @param elem
     *   The element to insert
     */
-  protected def registerStaticallyListenedElement(elem: PropagationElement): Unit = {
+  protected[this] def registerStaticallyListenedElement(elem: PropagationElement): Unit = {
+    require(
+      this.propagationStructure == elem.propagationStructure,
+      "Two elements that listen from each other shall be in the same propagation structure"
+    )
     staticallyListenedElements = elem :: staticallyListenedElements
     elem.registerStaticallyListeningElement(this)
   }
