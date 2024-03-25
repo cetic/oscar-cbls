@@ -5,14 +5,13 @@ import oscar.cbls.core.propagation._
 
 abstract class Variable(propagationStructure: PropagationStructure, isConstant: Boolean)
     extends PropagationElement(propagationStructure) {
+  require(propagationStructure != null, "The propagation structure must be defined")
 
   private var _domain: Option[(Long, Long)]              = None
   private[core] var definingInvariant: Option[Invariant] = None
   // Dynamically listening elements, upon update this variable must noticed it's listening element.
   private val dynamicallyListeningElements: DoublyLinkedList[PropagationElement] =
     if (isConstant) null else new DoublyLinkedList[PropagationElement]()
-
-  def model: Store = propagationStructure.asInstanceOf[Store]
 
   /** Limits the values of the variable to this domain. ONLY USED IN DEBUG MODE */
   def setDomain(min: Long, max: Long): Unit = _domain = Some((min, max))

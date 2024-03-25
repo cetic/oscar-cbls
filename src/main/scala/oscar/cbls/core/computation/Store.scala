@@ -9,15 +9,17 @@ class Store(debugLevel: Int = 0) extends PropagationStructure(debugLevel) {
   private var idToVariable: HashMap[Int, Variable]         = HashMap.empty
   private var idToDecisionVariable: HashMap[Int, Variable] = HashMap.empty
 
-  private var lastSolutionNb: Int    = -1
+  private var lastSolutionNb: Int = -1
 
   /** Optionally returns the decisionVariable with the given id.
-   *
-   * A decision variable is a variable that is defined by no invariant.
-   *
-   * @param decisionVariableId The id of the decision variable we want
-   * @return The decision variable with the given id or None
-   */
+    *
+    * A decision variable is a variable that is defined by no invariant.
+    *
+    * @param decisionVariableId
+    *   The id of the decision variable we want
+    * @return
+    *   The decision variable with the given id or None
+    */
   def decisionVariable(decisionVariableId: Int): Option[Variable] =
     idToDecisionVariable.get(decisionVariableId)
 
@@ -38,12 +40,28 @@ class Store(debugLevel: Int = 0) extends PropagationStructure(debugLevel) {
     Solution(idToDecisionVariable.values.map(_.save()), this, lastSolutionNb)
   }
 
+  /** Triggers the propagation on all the model. */
+  def performTotalPropagation(): Unit = {
+    super.propagate()
+  }
+
+  /** Trigger the propagation up to the targeted element.
+    *
+    * Only the needed propagation elements will be updated.
+    *
+    * @param target
+    *   The variable whose new value is needed
+    */
+  def performPartialPropagation(target: Variable): Unit = {
+    super.propagate(target)
+  }
+
   override def setupPropagationStructure(): Unit = {
     super.setupPropagationStructure()
     getPropagationElements.foreach {
       case v: Variable =>
         idToVariable += (v.id, v)
-        if(v.isADecisionVariable)
+        if (v.isADecisionVariable)
           idToDecisionVariable += (v.id, v)
       case _ =>
     }
