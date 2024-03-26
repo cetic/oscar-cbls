@@ -43,10 +43,10 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
   def :/=(value: Long): Unit = setValue(_newValue / value)
 
   /** Increments this variable */
-  def ++(): Unit = setValue(_newValue + 1)
+  def :++(): Unit = setValue(_newValue + 1)
 
   /** Decrements this variable */
-  def --(): Unit = setValue(_newValue - 1)
+  def :--(): Unit = setValue(_newValue - 1)
 
   override def save(): SavedValue = new SavedIntValue(this)
 
@@ -82,7 +82,7 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
     )
     require(
       checkValueWithinDomain(_newValue),
-      s"Value is outside defined domain. Domain : ${domain.get} - value : $_newValue"
+      s"Value is outside defined domain. Domain : ${domain.get} - value : ${_newValue}"
     )
   }
 
