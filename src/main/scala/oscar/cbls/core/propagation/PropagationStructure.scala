@@ -89,7 +89,7 @@ class PropagationStructure(debugLevel: Int) {
     *   - Compute the tracks for the partial propagation
     */
   protected def setupPropagationStructure(): Unit = {
-    require(!closed,"Cannot setup a propagation structure that is already closed")
+    require(!closed, "Cannot setup a propagation structure that is already closed")
 
     // Computing the layer of the propagation elements
     val nbLayer = computePropagationElementsLayers()
