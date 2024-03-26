@@ -5,10 +5,10 @@ import org.scalatest.matchers.must.Matchers.be
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.{
-  IdentityIntInvariant,
+  IntIdentityInvariant,
   IntConstant,
   IntVariable,
-  SavedIntValue
+  IntSavedValue
 }
 
 import scala.util.Random
@@ -22,7 +22,7 @@ class IntVariableTestSuite extends AnyFunSuite {
     val input                   = new IntVariable(store, randomValues.head)
     val output                  = new IntVariable(store, randomValues.head)
     randomValues = randomValues.tail
-    new IdentityIntInvariant(store, input, output)
+    new IntIdentityInvariant(store, input, output)
     store.setupPropagationStructure()
 
     input :+= randomValues.head
@@ -69,7 +69,7 @@ class IntVariableTestSuite extends AnyFunSuite {
     val output            = new IntVariable(store, startValue)
     var referenceInt      = startValue
     val savedReverenceInt = startValue
-    new IdentityIntInvariant(store, input, output)
+    new IntIdentityInvariant(store, input, output)
     store.setupPropagationStructure()
 
     val savedValue = input.save()

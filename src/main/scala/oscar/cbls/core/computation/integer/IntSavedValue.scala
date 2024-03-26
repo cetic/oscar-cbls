@@ -7,7 +7,7 @@ import oscar.cbls.core.computation.SavedValue
   * @param intVariable
   *   The IntVariable whose state is saved
   */
-class SavedIntValue(intVariable: IntVariable) extends SavedValue(intVariable) {
+class IntSavedValue(intVariable: IntVariable) extends SavedValue(intVariable) {
 
   private val savedValue: Long = intVariable.value()
 

@@ -11,7 +11,7 @@ import oscar.cbls.core.computation.{Invariant, Store}
   * @param toValue
   *   The copy
   */
-class IdentityIntInvariant(model: Store, fromValue: IntVariable, toValue: IntVariable)
+class IntIdentityInvariant(model: Store, fromValue: IntVariable, toValue: IntVariable)
     extends Invariant(model)
     with IntNotificationTarget {
 

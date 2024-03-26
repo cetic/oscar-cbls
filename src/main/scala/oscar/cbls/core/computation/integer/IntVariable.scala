@@ -48,7 +48,7 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
   /** Decrements this variable */
   def :--(): Unit = setValue(_newValue - 1)
 
-  override def save(): SavedValue = new SavedIntValue(this)
+  override def save(): SavedValue = new IntSavedValue(this)
 
   /** this is the propagation method that should be overridden by propagation elements. notice that
     * it is only called in a propagation wave if: 1L: it has been registered for propagation since
