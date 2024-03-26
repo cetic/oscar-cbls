@@ -21,6 +21,10 @@ abstract class TestPropagationElement(structure: TestPropagationStructure)
 
   val name: String
 
+  protected[this] var dynamicallyListeningElement: List[TestPropagationElement] = List()
+
+  def staticGraphIsNull = staticallyListenedElements == null && staticallyListeningElements == null
+
   def isOutput: Boolean = staticallyListeningElements.isEmpty
 
   def isInput: Boolean = staticallyListenedElements.isEmpty
@@ -33,14 +37,19 @@ abstract class TestPropagationElement(structure: TestPropagationStructure)
   }
 
   private var transitivePredecessorsElements: Set[TestPropagationElement] = Set()
-  private var transitiveSuccessorsElements: Set[TestPropagationElement] = Set()
+  private var transitiveSuccessorsElements: Set[TestPropagationElement]   = Set()
 
   def transitivePredecessors: Set[TestPropagationElement] = transitivePredecessorsElements
 
   def transitiveSuccessors: Set[TestPropagationElement] = transitiveSuccessorsElements
 
+  private def addDynamicallyListeningElement(e: TestPropagationElement) = {
+    dynamicallyListeningElement = e :: dynamicallyListeningElement
+  }
+
   override def registerStaticallyListenedElement(e: PropagationElement) = {
     super.registerStaticallyListenedElement(e)
+    e.asInstanceOf[TestPropagationElement].addDynamicallyListeningElement(this)
     addTransitiveDependency(e.asInstanceOf[TestPropagationElement])
   }
 

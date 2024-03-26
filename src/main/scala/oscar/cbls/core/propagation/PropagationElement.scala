@@ -61,6 +61,11 @@ abstract class PropagationElement(private val propagationStructure: PropagationS
       this.propagationStructure == elem.propagationStructure,
       "Two elements that listen from each other shall be in the same propagation structure"
     )
+    require(
+      !propagationStructure.closed,
+      "Cannot add a listened element when the structure is closed"
+    )
+
     staticallyListenedElements = elem :: staticallyListenedElements
     elem.registerStaticallyListeningElement(this)
   }

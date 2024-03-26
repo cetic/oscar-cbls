@@ -22,7 +22,7 @@ class TestVariableElement(structure: TestPropagationStructure)
   }
 
   def notifyChange() = {
-    for (v <- staticallyListeningElements)
+    for (v <- dynamicallyListeningElement)
       v.asInstanceOf[TestInvariantElement].notifyVarChange()
   }
 

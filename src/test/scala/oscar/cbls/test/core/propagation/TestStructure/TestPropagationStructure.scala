@@ -134,7 +134,7 @@ class TestPropagationStructure(val debugLevel: Int = 0) extends PropagationStruc
     mkPropagation(reset)
   }
 
-  private def checkPropagationCount: Unit = elements.foreach(_.checkUpdate)
+  private def checkPropagationCount: Unit = if (closed) elements.foreach(_.checkUpdate)
 
   /** resets the propagation flags */
   def resetPropagationFlags: Unit =

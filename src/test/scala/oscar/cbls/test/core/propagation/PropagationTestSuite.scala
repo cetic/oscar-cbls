@@ -34,9 +34,10 @@ class PropagationTestSuite(debugLevel: Int) extends AnyFunSuite with Matchers {
 
       val struct = structureGenerator.generateStructure(15, 30, 5, 15, 5, 15, 5, 15, 10, debugLevel)
 
+      val variables   = struct.variables.filter(_.isInput)
+
       struct.close
 
-      val variables   = struct.variables.filter(_.isInput)
       val nbVariables = variables.length
 
       for (_ <- (0 to 10)) {

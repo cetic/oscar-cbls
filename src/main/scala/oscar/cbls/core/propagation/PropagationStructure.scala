@@ -61,7 +61,7 @@ class PropagationStructure(debugLevel: Int) {
     currentId
   }
 
-  protected var closed: Boolean = false
+  protected[propagation] var closed: Boolean = false
 
   private var propagating: Boolean = false
 
@@ -87,8 +87,6 @@ class PropagationStructure(debugLevel: Int) {
     *
     *   - Compute the layer of each propagation element to compute the order of element update
     *   - Compute the tracks for the partial propagation
-    *
-    * @param dropStaticGraph
     */
   protected def setupPropagationStructure(): Unit = {
     // Computing the layer of the propagation elements
@@ -98,6 +96,12 @@ class PropagationStructure(debugLevel: Int) {
     // Computing the tracks for partial propagation
     if (debugLevel < 3)
       computePartialPropagationTrack()
+
+    // Drop the static graph
+    propagationElements.foreach(e => {
+      e.staticallyListenedElements = null
+      e.staticallyListeningElements = null
+    })
 
     closed = true
   }
@@ -190,6 +194,10 @@ class PropagationStructure(debugLevel: Int) {
     *   The element that is registered for partial propagation
     */
   def registerForPartialPropagation(p: PropagationElement): Unit = {
+    require(
+      !closed,
+      "An element cannont be registered for partial propagation when the structure is closed"
+    )
     if (debugLevel < 3) {
       partialPropagationTargets = p :: partialPropagationTargets
       if (closed) {
@@ -212,6 +220,8 @@ class PropagationStructure(debugLevel: Int) {
     *   The target element of the propagation
     */
   protected final def propagate(target: PropagationElement = null): Unit = {
+    if (!closed) return
+
     // The current layer that is explored
     var currentLayer = 0
 
@@ -279,7 +289,7 @@ class PropagationStructure(debugLevel: Int) {
     }
 
     // Do the propagation:
-    // 
+    //
     if (!propagating) {
       propagating = true
       val sameTarget: Boolean = currentTargetIdForPartialPropagation match {
