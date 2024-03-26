@@ -12,8 +12,6 @@
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 package oscar.cbls.core.propagation
 
-import oscar.cbls.algo.dll.DoublyLinkedList
-
 /** An interface that provides the methods to handle propagation for the element of the propagation
   * graph
   *

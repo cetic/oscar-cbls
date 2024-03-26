@@ -166,7 +166,7 @@ class PropagationStructure(debugLevel: Int) {
       )
       onGoingLayer match {
         case Nil => // the current layer is empty
-          if (nextLayer.nonEmpty) { //the next layer is not empty, continuing with the next layer
+          if (nextLayer.nonEmpty) { // the next layer is not empty, continuing with the next layer
             computeLayerOfElement(nextLayer, List(), currentLayerId + 1, nbElementsLeft)
           } else { // the next layer is empty, all the elements have been treated
             require(
@@ -338,13 +338,12 @@ class PropagationStructure(debugLevel: Int) {
               developListOfNode(currentNode.staticallyListeningElements, alreadyVisitedNodes)
             (
               resOfSons._1
-                .map(l => {
+                .flatMap(l => {
                   l match {
                     case Nil    => List()
                     case h :: t => (currentNode.id :: h) :: t
                   }
-                })
-                .flatten,
+                }),
               currentNode.id :: resOfSons._2
             )
         }
@@ -387,7 +386,7 @@ class PropagationStructure(debugLevel: Int) {
 
     val labelDefinition: List[String] =
       propagationElements
-        .map(e => {
+        .flatMap(e => {
           val label = names.getOrElse(e.id, "")
           val shape = shapes.getOrElse(e.id, "")
           if (label == "") {
@@ -402,8 +401,6 @@ class PropagationStructure(debugLevel: Int) {
               Some(s"  ${e.id} [label = \"$label\",shape = \"$shape\"]")
           }
         })
-        .flatten
-    val developedNodes: Array[Boolean] = Array.fill(propagationElements.length)(false)
 
     val lines = pathList
     s"""
