@@ -35,7 +35,7 @@ class PropagationConsistencyTestSuite extends AnyFunSuite with Matchers {
     struct1.totalPropagation(false)
 
     assert(elem1.nbUpdate == 0)
-    assert(elem1.nbUpdate == 0)
+    assert(elem2.nbUpdate == 0)
 
   }
 
@@ -78,6 +78,14 @@ class PropagationConsistencyTestSuite extends AnyFunSuite with Matchers {
     struct1.close
 
     an[java.lang.IllegalArgumentException] should be thrownBy struct1.registerForPartialPropagation(var2)
+  }
+
+  test("Cannot setup a structure that is already closed") {
+    val struct1 = new TestPropagationStructure()
+
+    struct1.close
+
+    an[java.lang.IllegalArgumentException] should be thrownBy struct1.close
   }
 
 }

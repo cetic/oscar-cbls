@@ -89,6 +89,8 @@ class PropagationStructure(debugLevel: Int) {
     *   - Compute the tracks for the partial propagation
     */
   protected def setupPropagationStructure(): Unit = {
+    require(!closed,"Cannot setup a propagation structure that is already closed")
+
     // Computing the layer of the propagation elements
     val nbLayer = computePropagationElementsLayers()
     executionQueue = AggregatedBinaryHeap[PropagationElement](p => p.layer, nbLayer + 1)
@@ -200,15 +202,6 @@ class PropagationStructure(debugLevel: Int) {
     )
     if (debugLevel < 3) {
       partialPropagationTargets = p :: partialPropagationTargets
-      if (closed) {
-        println(
-          """Warning: You should not register a variable for partial propagation after model is closed.
-         this might cause the model to crash if static graph was dropped on model close.
-         To avoid this, create all your objective functions before model close.
-         Note: there might be some implicit conversions related to the use of search strategies."""
-        )
-        computePartialPropagationTrack()
-      }
     }
   }
 
@@ -289,7 +282,6 @@ class PropagationStructure(debugLevel: Int) {
     }
 
     // Do the propagation:
-    //
     if (!propagating) {
       propagating = true
       val sameTarget: Boolean = currentTargetIdForPartialPropagation match {
