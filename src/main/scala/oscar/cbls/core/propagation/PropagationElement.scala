@@ -14,7 +14,7 @@ package oscar.cbls.core.propagation
 
 import oscar.cbls.algo.dll.DoublyLinkedList
 
-/** An interface that provides the method to handle propagation for the element of the propopagation
+/** An interface that provides the methods to handle propagation for the element of the propagation
   * graph
   *
   * @param propagationStructure
@@ -79,17 +79,17 @@ abstract class PropagationElement(private val propagationStructure: PropagationS
     scheduled = false
   }
 
-  /** The method that is called when the element is allowed to propagate.
+  /** Is called when the element is allowed to propagate.
     *
     * This method is only called in a propagation wave if: 1/ the element has been registered for
     * propagation since the last time it was propagated and 2/ it is included in the propagation
     * wave (partial propagation wave do not propagate all propagation elements). Overriding this
     * method is optional (the element can update their values immediatly when they are notified), so
-    * an empty is provided by default
+    * an empty body is provided by default
     */
   def performPropagation(): Unit = {}
 
-  /** The method that allows to check and debug propagation elements.
+  /** Allows to check and debug propagation elements.
     *
     * This method can be called after the propagation according to the debug level of the
     * propagation structure (see [[PropagationStructure]]). It can be used to check if the invariant
