@@ -3,6 +3,16 @@ package oscar.cbls.core.computation
 import oscar.cbls.algo.dll.DoublyLinkedList
 import oscar.cbls.core.propagation._
 
+/** Abstract structure for Variable definition.
+  *
+  * It adds some functionalities like, domain definition, dynamically listening to other propagation
+  * element and saving the state of the variable.
+  *
+  * @param propagationStructure
+  *   The propagation structure to which the element is attached
+  * @param isConstant
+  *   If the variable is a constant
+  */
 abstract class Variable(propagationStructure: PropagationStructure, isConstant: Boolean)
     extends PropagationElement(propagationStructure) {
   require(propagationStructure != null, "The propagation structure must be defined")
@@ -38,8 +48,8 @@ abstract class Variable(propagationStructure: PropagationStructure, isConstant: 
   /** Registers dynamically the PropagationElement as a listening element. Whenever the Variable
     * updates it's value, the listening element will be noticed.
     *
-    * NOTE : Keep the returned value to be able to remove it from the listening [[DoublyLinkedList]]
-    * using it's delete method.
+    * NOTE : Keep the returned value to be able to remove it from the listening
+    * [[oscar.cbls.algo.dll.DoublyLinkedList]] using it's delete method.
     * @param elem
     *   The new listening element
     * @return
@@ -60,6 +70,7 @@ abstract class Variable(propagationStructure: PropagationStructure, isConstant: 
   protected final def getDynamicallyListeningElements: DoublyLinkedList[PropagationElement] =
     dynamicallyListeningElements
 
+  /** Checks if the given value is within the domain */
   def checkValueWithinDomain(value: Long): Boolean = {
     domain match {
       case None             => true

@@ -4,6 +4,13 @@ import oscar.cbls.core.propagation._
 
 import scala.collection.immutable.HashMap
 
+/** Concrete implementation of a PropagationStructure
+  *
+  * It allows to create/restore Solution based on decision variables.
+  *
+  * @param debugLevel
+  *   the level of debug
+  */
 class Store(debugLevel: Int = 0) extends PropagationStructure(debugLevel) {
 
   private var idToVariable: HashMap[Int, Variable]         = HashMap.empty
