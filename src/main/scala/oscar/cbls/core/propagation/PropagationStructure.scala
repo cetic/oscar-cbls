@@ -142,6 +142,10 @@ class PropagationStructure(debugLevel: Int) {
   private def computePropagationElementsLayers(): Int = {
     val nbListenedElementPerPE                     = Array.fill(nbPropagationElements)(0)
     var fstLayerElements: List[PropagationElement] = List()
+
+    // Counting the number of listened elements for each pe
+    // This number will be decremented each time a predecessor is reached
+    // When the number of listened elements left is zero, it means that the element is in the next layer
     for (p <- propagationElements) {
       val nbListenedElements = p.staticallyListenedElements.size
       nbListenedElementPerPE(p.id) = nbListenedElements
@@ -161,10 +165,10 @@ class PropagationStructure(debugLevel: Int) {
         "Problem with Layer counting algorithm (the propagation graph seems to have a cycle which is forbidden)"
       )
       onGoingLayer match {
-        case Nil =>
-          if (nextLayer.nonEmpty) {
+        case Nil => // the current layer is empty
+          if (nextLayer.nonEmpty) { //the next layer is not empty, continuing with the next layer
             computeLayerOfElement(nextLayer, List(), currentLayerId + 1, nbElementsLeft)
-          } else {
+          } else { // the next layer is empty, all the elements have been treated
             require(
               nbElementsLeft == 0,
               "All the elements have not been treated (there shall be a cycle on the propagation graph)"
@@ -173,6 +177,7 @@ class PropagationStructure(debugLevel: Int) {
           }
         case currentElement :: otherElements =>
           currentElement.layer = currentLayerId
+          // decrementing the number of listened elements of the successors of the current element
           var newNextLayer: List[PropagationElement] = nextLayer
           for (p <- currentElement.staticallyListeningElements) {
             nbListenedElementPerPE(p.id) = nbListenedElementPerPE(p.id) - 1
