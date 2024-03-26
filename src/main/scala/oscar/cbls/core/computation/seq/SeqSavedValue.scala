@@ -13,4 +13,12 @@
 
 package oscar.cbls.core.computation.seq
 
-class SeqSavedValue {}
+import oscar.cbls.algo.sequence.IntSequence
+import oscar.cbls.core.computation.SavedValue
+
+case class SeqSavedValue(intSequenceVariable: SeqVariable) extends SavedValue(intSequenceVariable){
+  private val savedValue: IntSequence = intSequenceVariable.value
+
+  /** Restores the variable current value to the saved one */
+  override def restoreValue(): Unit = intSequenceVariable.setValue(savedValue)
+}

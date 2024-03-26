@@ -26,8 +26,12 @@ object SeqUpdateRollBackToCheckpoint {
 
   def unapply(
     seqUpdateRollBackToCheckpoint: SeqUpdateRollBackToCheckpoint
-  ): Option[(IntSequence, Int)] =
-    Some(seqUpdateRollBackToCheckpoint.checkpoint, seqUpdateRollBackToCheckpoint.level)
+  ): Option[(IntSequence, SeqUpdate, Int)] =
+    Some(
+      seqUpdateRollBackToCheckpoint.checkpoint,
+      seqUpdateRollBackToCheckpoint.howToRollBack,
+      seqUpdateRollBackToCheckpoint.level
+    )
 }
 
 class SeqUpdateRollBackToCheckpoint(

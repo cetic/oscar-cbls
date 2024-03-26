@@ -16,14 +16,14 @@ package oscar.cbls.core.computation.seq
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation.Invariant
 
-object IdentitySeqInvariant {
-  def apply(fromValue: SeqVariable, toValue: SeqVariable): IdentitySeqInvariant = {
-    new IdentitySeqInvariant(fromValue, toValue)
+object SeqIdentityInvariant {
+  def apply(fromValue: SeqVariable, toValue: SeqVariable): SeqIdentityInvariant = {
+    new SeqIdentityInvariant(fromValue, toValue)
   }
 }
 
-class IdentitySeqInvariant(fromValue: SeqVariable, toValue: SeqVariable)
-    extends Invariant(fromValue.model)
+class SeqIdentityInvariant(fromValue: SeqVariable, toValue: SeqVariable)
+    extends Invariant(fromValue.)
     with SeqNotificationTarget {
 
   registerStaticallyListenedElement(fromValue)
@@ -62,7 +62,7 @@ class IdentitySeqInvariant(fromValue: SeqVariable, toValue: SeqVariable)
     levelTopCheckpoint += 1
   }
 
-  def digestChanges(changes: SeqUpdate): Unit = {
+  private def digestChanges(changes: SeqUpdate): Unit = {
     changes match {
       case SeqUpdateInsert(
             value: Int,
@@ -97,7 +97,7 @@ class IdentitySeqInvariant(fromValue: SeqVariable, toValue: SeqVariable)
         toValue := s
       case SeqUpdateLastNotified(value: IntSequence) =>
         assert(value equals toValue.newValue)
-      case SeqUpdateRollBackToCheckpoint(value: IntSequence, level: Int) =>
+      case SeqUpdateRollBackToCheckpoint(value: IntSequence, howToRollBack: SeqUpdate, level: Int) =>
         // roll back might free some checkpoints implicitly
         while (level < levelTopCheckpoint) {
           toValue.releaseTopCheckpoint()
