@@ -1,6 +1,5 @@
 package oscar.cbls.core.propagation
 
-import scala.annotation.tailrec
 
 /** A propagation element to test the propagation structure.
   *
@@ -23,13 +22,13 @@ abstract class TestPropagationElement(structure: TestPropagationStructure)
 
   protected[this] var dynamicallyListeningElement: List[TestPropagationElement] = List()
 
-  def staticGraphIsNull = staticallyListenedElements == null && staticallyListeningElements == null
+  def staticGraphIsNull: Boolean = staticallyListenedElements == null && staticallyListeningElements == null
 
   def isOutput: Boolean = staticallyListeningElements.isEmpty
 
   def isInput: Boolean = staticallyListenedElements.isEmpty
 
-  def validateLayer: Unit = {
+  def validateLayer(): Unit = {
     assert(
       theoreticalLayer == layer,
       s"On $name: The layer computed by the layer computing algorithm is not coherent with the layer computed by construction (theoreticalLayer : $theoreticalLayer, algorithm layer : $layer)"
@@ -43,25 +42,25 @@ abstract class TestPropagationElement(structure: TestPropagationStructure)
 
   def transitiveSuccessors: Set[TestPropagationElement] = transitiveSuccessorsElements
 
-  private def addDynamicallyListeningElement(e: TestPropagationElement) = {
+  private def addDynamicallyListeningElement(e: TestPropagationElement): Unit = {
     dynamicallyListeningElement = e :: dynamicallyListeningElement
   }
 
-  override def registerStaticallyListenedElement(e: PropagationElement) = {
+  override def registerStaticallyListenedElement(e: PropagationElement): Unit = {
     super.registerStaticallyListenedElement(e)
     e.asInstanceOf[TestPropagationElement].addDynamicallyListeningElement(this)
     addTransitiveDependency(e.asInstanceOf[TestPropagationElement])
   }
 
-  private def addTransitivePredecessor(e: TestPropagationElement) = {
+  private def addTransitivePredecessor(e: TestPropagationElement): Unit = {
     transitivePredecessorsElements = transitivePredecessorsElements + e
   }
 
-  private def addTransitiveSuccessor(e: TestPropagationElement) = {
+  private def addTransitiveSuccessor(e: TestPropagationElement): Unit = {
     transitiveSuccessorsElements = transitiveSuccessorsElements + e
   }
 
-  def addTransitiveDependency(e: TestPropagationElement) = {
+  def addTransitiveDependency(e: TestPropagationElement): Unit = {
     addTransitivePredecessor(e)
     e.addTransitiveSuccessor(this)
     for (p <- e.transitivePredecessorsElements) {
@@ -86,7 +85,7 @@ abstract class TestPropagationElement(structure: TestPropagationStructure)
     nbCheckInternals += 1
   }
 
-  def resetFlags: Unit = {
+  def resetFlags(): Unit = {
     nbCheckInternals = 0
     if (updateRequiredThisPropagation) {
       updateRequiredThisPropagation = false

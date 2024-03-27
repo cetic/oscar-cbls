@@ -2,11 +2,6 @@ package oscar.cbls.test.core.propagation
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import oscar.cbls.core.propagation.{
-  TestInvariantElement,
-  TestPropagationStructure,
-  TestVariableElement
-}
 import org.scalatest.Suites
 
 /** More dynamic tests about the propagation structure than in propagation unit tests. In these
@@ -40,7 +35,7 @@ class PropagationTestSuite(debugLevel: Int) extends AnyFunSuite with Matchers {
 
       val nbVariables = variables.length
 
-      for (_ <- (0 to 10)) {
+      for (_ <- 0 to 10) {
         val nbVarToUpdate = 1 + structureGenerator.rand.nextInt((nbVariables / 2).max(1))
         val toUpdate      = structureGenerator.rand.shuffle(variables).take(nbVarToUpdate)
 
@@ -73,11 +68,11 @@ class PropagationTestSuite(debugLevel: Int) extends AnyFunSuite with Matchers {
 
       struct.close
 
-      for (j <- 0 to 10) {
+      for (_ <- 0 to 10) {
         val toUpdate = rand.shuffle(input).take(1 + rand.nextInt((nbInput / 5).max(1)))
         toUpdate.foreach(_.update)
 
-        val target = rand.shuffle(partialPropagationTargets).toList(0)
+        val target = rand.shuffle(partialPropagationTargets).head
 
         struct.partialPropagation(target)
       }
@@ -106,11 +101,11 @@ class PropagationTestSuite(debugLevel: Int) extends AnyFunSuite with Matchers {
 
       struct.close
 
-      for (j <- 0 to 10) {
+      for (_ <- 0 to 10) {
         val toUpdate = rand.shuffle(input).take(1 + rand.nextInt((nbInput / 5).max(1)))
         toUpdate.foreach(_.update)
 
-        val target = rand.shuffle(nonPPTargets).toList(0)
+        val target = rand.shuffle(nonPPTargets).head
 
         struct.partialPropagation(target)
       }

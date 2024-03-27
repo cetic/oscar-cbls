@@ -10,7 +10,7 @@ class TestVariableElement(structure: TestPropagationStructure)
     notifyChange()
   }
 
-  def update = {
+  def update(): Unit = {
     updateRequired = true
     for (s <- transitiveSuccessors) {
       s match {
@@ -21,12 +21,12 @@ class TestVariableElement(structure: TestPropagationStructure)
     scheduleForPropagation()
   }
 
-  def notifyChange() = {
+  def notifyChange(): Unit = {
     for (v <- dynamicallyListeningElement)
       v.asInstanceOf[TestInvariantElement].notifyVarChange()
   }
 
-  def setDefiningInvariant(inv: TestInvariantElement) = {
+  def setDefiningInvariant(inv: TestInvariantElement): Unit = {
     registerStaticallyListenedElement(inv)
   }
 

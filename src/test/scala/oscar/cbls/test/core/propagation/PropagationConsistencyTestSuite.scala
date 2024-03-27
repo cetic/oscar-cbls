@@ -56,7 +56,7 @@ class PropagationConsistencyTestSuite extends AnyFunSuite with Matchers {
 
   }
 
-  test("The static graph shall be droped after closing the structure") {
+  test("The static graph shall be dropped after closing the structure") {
     val struct1 = new TestPropagationStructure()
 
     val var1 = new TestVariableElement(struct1)

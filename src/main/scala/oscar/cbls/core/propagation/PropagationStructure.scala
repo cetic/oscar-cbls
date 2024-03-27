@@ -24,7 +24,7 @@ import oscar.cbls.algo.rb.RedBlackTreeMap
   * propagation elements are updated through a unique wave that reaches all the variables at most
   * once.
   *
-  * To achive this goal, the propagation works as follows:
+  * To achieve this goal, the propagation works as follows:
   *
   *   - When all the elements are registered, they are ordered according to the distance from the
   *     input (the propagation elements that depend on nothing). This ordering is achieve in the
@@ -34,7 +34,7 @@ import oscar.cbls.algo.rb.RedBlackTreeMap
   *
   * OscaR.cbls supports partial propagation. When a propagation element is registered for partial
   * propagation, the propagation structure will compute the elements on which this elements depends.
-  * When a propagation is triggered, only this elements will be updated.
+  * When a propagation is triggered, only these elements will be updated.
   *
   * The propagation structure has 4 levels of debugs.
   *   - 0: No debug at all
@@ -69,7 +69,7 @@ class PropagationStructure(debugLevel: Int) {
 
   private var postponedElements: List[PropagationElement] = List()
 
-  private var executionQueue: AggregatedBinaryHeap[PropagationElement] = null
+  private var executionQueue: AggregatedBinaryHeap[PropagationElement] = _
 
   private var propagationElements: List[PropagationElement] = List()
 
@@ -132,10 +132,10 @@ class PropagationStructure(debugLevel: Int) {
     buildTrackForTargetRec(List(pe), Array.fill(nbPropagationElements)(false))
   }
 
-  /** Compute the propagation layer for the propagation elements of this propagation structure
+  /** Computes the propagation layer for the propagation elements of this propagation structure
     *
     * The layer of a propagation elements corresponds to the distance of this element to the inputs
-    * of the propagation graph (i.e. the elements that have no predessors)
+    * of the propagation graph (i.e. the elements that have no predecessors)
     * @return
     *   the maximum layer of the graph
     */
@@ -203,7 +203,7 @@ class PropagationStructure(debugLevel: Int) {
   def registerForPartialPropagation(p: PropagationElement): Unit = {
     require(
       !closed,
-      "An element cannont be registered for partial propagation when the structure is closed"
+      "An element cannot be registered for partial propagation when the structure is closed"
     )
     if (debugLevel < 3) {
       partialPropagationTargets = p :: partialPropagationTargets
@@ -212,7 +212,7 @@ class PropagationStructure(debugLevel: Int) {
 
   /** Triggers the propagation in the graph.
     *
-    * The propagation has a target and stops when the target of the propagation has bee reached
+    * The propagation has a target and stops when the target of the propagation has been reached
     *
     * @param target
     *   The target element of the propagation
@@ -228,14 +228,14 @@ class PropagationStructure(debugLevel: Int) {
     val theTrack = if (target == null) null else partialPropagationTracks.getOrElse(target.id, null)
 
     // A flag stating if check internal needs to be called
-    val check: Boolean = (debugLevel >= 1 && (theTrack == null || debugLevel >= 2))
+    val check: Boolean = debugLevel >= 1 && (theTrack == null || debugLevel >= 2)
 
     @inline
     def track(id: Int) = if (theTrack == null) true else theTrack(id)
 
     // Filters the elements that are scheduled using the track
     @tailrec @inline
-    def filterScheduledWithTrack: Unit = {
+    def filterScheduledWithTrack(): Unit = {
       scheduledElements match {
         case Nil =>
         case h :: t =>
@@ -249,7 +249,7 @@ class PropagationStructure(debugLevel: Int) {
     }
 
     // Filters the elements that have been postponed using the track
-    // The element that are in the track are enqueued in the execuction queue
+    // The element that are in the track are enqueued in the execution queue
     // The function returns the postponed elements that are not in the track (they will remain postponed)
     @tailrec @inline
     def filterAndEnqueuePostponedElements(

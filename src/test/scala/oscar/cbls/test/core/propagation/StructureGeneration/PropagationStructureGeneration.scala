@@ -103,6 +103,7 @@ class PropagationStructureGenerator(seed: Option[Long] = None) {
     minOutput: Int,
     maxOutput: Int
   ): Unit = {
+    @tailrec
     def generateLayers(
       pool: List[TestVariableElement] = inputVar,
       currentMaxLayer: Int = 0,

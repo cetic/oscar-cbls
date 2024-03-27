@@ -47,9 +47,9 @@ abstract class PropagationElement(private val propagationStructure: PropagationS
 
   /** Register an element as listened by this propagation element
     *
-    * When a element listen another element, it means that this element dependes on the one it
+    * When an element listens to another element, it means that this element depends on the one it
     * listens. If a listened element is modified, this element has to be modified by the propagation
-    * wave
+    * wave.
     *
     * @param elem
     *   The element to insert
@@ -72,7 +72,7 @@ abstract class PropagationElement(private val propagationStructure: PropagationS
     staticallyListeningElements = elem :: staticallyListeningElements
   }
 
-  private[core] def propagateElement: Unit = {
+  private[core] def propagateElement(): Unit = {
     performPropagation()
     scheduled = false
   }
@@ -82,7 +82,7 @@ abstract class PropagationElement(private val propagationStructure: PropagationS
     * This method is only called in a propagation wave if: 1/ the element has been registered for
     * propagation since the last time it was propagated and 2/ it is included in the propagation
     * wave (partial propagation wave do not propagate all propagation elements). Overriding this
-    * method is optional (the element can update their values immediatly when they are notified), so
+    * method is optional (the element can update their values immediately when they are notified), so
     * an empty body is provided by default
     */
   def performPropagation(): Unit = {}
@@ -91,7 +91,7 @@ abstract class PropagationElement(private val propagationStructure: PropagationS
     *
     * This method can be called after the propagation according to the debug level of the
     * propagation structure (see [[PropagationStructure]]). It can be used to check if the invariant
-    * worked properly by for example recomputing the value from scratch.
+    * worked properly by, for example, recomputing the value from scratch.
     */
   def checkInternals(): Unit = {}
 }

@@ -10,7 +10,7 @@ package oscar.cbls.core.propagation
   * In this structure, the invariants and variables do not compute anything; the variables can be
   * updated (whatever an update means...); when a variable is updated, it is registered for
   * propagation; propagating a variable means notifying the listening invariants of this variable;
-  * when a invariant is notified by an input variable, it updates its ouput variable
+  * when a invariant is notified by an input variable, it updates its output variable
   *
   * Moreover, the structure maintains flags to know which elements need to be updated during a
   * propagation and checks if the number of time each element is updated.
@@ -34,7 +34,10 @@ class TestPropagationStructure(val debugLevel: Int = 0) extends PropagationStruc
   // The variables of the propagation structure
   def variables: List[TestVariableElement] =
     getPropagationElements.flatMap(e =>
-      if (e.isInstanceOf[TestVariableElement]) Some(e.asInstanceOf[TestVariableElement]) else None
+      e match {
+        case element: TestVariableElement => Some(element)
+        case _ => None
+      }
     )
 
   private def names: Map[Int, String] = elements.map(_.id).zip(elements.map(_.name)).toMap
@@ -85,10 +88,10 @@ class TestPropagationStructure(val debugLevel: Int = 0) extends PropagationStruc
   }
 
   def lastPropagationWasTotal: Boolean = {
-    !currentTarget.isDefined
+    currentTarget.isEmpty
   }
 
-  private def setUpdateRequired: Unit = {
+  private def setUpdateRequired(): Unit = {
     for (e <- elements) {
       currentTarget match {
         case None => e.updateRequiredThisPropagation = e.updateRequired
@@ -112,7 +115,7 @@ class TestPropagationStructure(val debugLevel: Int = 0) extends PropagationStruc
   /** Makes a total propagation
     *
     * @param reset
-    *   If reset is true, the propagation flags are reseted after the propagation (they cannot be
+    *   If reset is true, the propagation flags are reset after the propagation (they cannot be
     *   accessed later, e.g. for tests)
     */
   def totalPropagation(reset: Boolean = true): Unit = {
@@ -125,7 +128,7 @@ class TestPropagationStructure(val debugLevel: Int = 0) extends PropagationStruc
     * @param target
     *   The target
     * @param reset
-    *   If reset is true, the propagation flags are reseted after the propagation (they cannot be
+    *   If reset is true, the propagation flags are reset after the propagation (they cannot be
     *   accessed later, e.g. for tests)
     */
   def partialPropagation(target: TestPropagationElement, reset: Boolean = true): Unit = {
@@ -137,11 +140,11 @@ class TestPropagationStructure(val debugLevel: Int = 0) extends PropagationStruc
   private def checkPropagationCount: Unit = if (closed) elements.foreach(_.checkUpdate)
 
   /** resets the propagation flags */
-  def resetPropagationFlags: Unit =
+  def resetPropagationFlags(): Unit =
     elements.foreach(_.resetFlags)
 
   /** Closes the propagation structure */
-  def close: Unit = {
+  def close(): Unit = {
     setupPropagationStructure()
     closed = true
   }

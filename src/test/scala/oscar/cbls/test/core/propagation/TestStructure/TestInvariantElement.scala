@@ -11,12 +11,12 @@ class TestInvariantElement(structure: TestPropagationStructure)
     require(false, "This should not be called")
   }
 
-  def notifyVarChange() = {
+  def notifyVarChange(): Unit = {
     for (v <- dynamicallyListeningElement)
       v.asInstanceOf[TestVariableElement].update
   }
 
-  def registerStaticAndDynamicDependency(elem: TestVariableElement) = {
+  def registerStaticAndDynamicDependency(elem: TestVariableElement): Unit = {
     registerStaticallyListenedElement(elem)
   }
 
