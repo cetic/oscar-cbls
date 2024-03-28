@@ -13,7 +13,7 @@ class TestInvariantElement(structure: TestPropagationStructure)
 
   def notifyVarChange(): Unit = {
     for (v <- dynamicallyListeningElement)
-      v.asInstanceOf[TestVariableElement].update
+      v.asInstanceOf[TestVariableElement].update()
   }
 
   def registerStaticAndDynamicDependency(elem: TestVariableElement): Unit = {

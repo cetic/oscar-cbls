@@ -28,7 +28,7 @@ abstract class TestPropagationElement(structure: TestPropagationStructure)
 
   def isInput: Boolean = staticallyListenedElements.isEmpty
 
-  def validateLayer(): Unit = {
+  def validateLayer: Unit = {
     assert(
       theoreticalLayer == layer,
       s"On $name: The layer computed by the layer computing algorithm is not coherent with the layer computed by construction (theoreticalLayer : $theoreticalLayer, algorithm layer : $layer)"

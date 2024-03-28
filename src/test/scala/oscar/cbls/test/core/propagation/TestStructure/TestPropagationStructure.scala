@@ -105,11 +105,11 @@ class TestPropagationStructure(val debugLevel: Int = 0) extends PropagationStruc
   }
 
   private def mkPropagation(reset: Boolean): Unit = {
-    setUpdateRequired
-    propagate(currentTarget.getOrElse(null))
+    setUpdateRequired()
+    propagate(currentTarget)
     checkPropagationCount
     if (reset)
-      resetPropagationFlags
+      resetPropagationFlags()
   }
 
   /** Makes a total propagation
@@ -141,7 +141,7 @@ class TestPropagationStructure(val debugLevel: Int = 0) extends PropagationStruc
 
   /** resets the propagation flags */
   def resetPropagationFlags(): Unit =
-    elements.foreach(_.resetFlags)
+    elements.foreach(_.resetFlags())
 
   /** Closes the propagation structure */
   def close(): Unit = {
