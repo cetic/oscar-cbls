@@ -220,9 +220,6 @@ class PropagationStructure(debugLevel: Int) {
   protected final def propagate(target: Option[PropagationElement] = None): Unit = {
     if (!closed) return
 
-    // The current layer that is explored
-    var currentLayer = 0
-
     // The track for the partial propagation. Track is a boolean array where the transitive
     // predecessors of the target are true (if the target is registered for partial propagation)
     val theTrack: Option[Array[Boolean]] = target match {
