@@ -47,7 +47,7 @@ class SeqVariable(
     if (model == null) return mOldValue
     val propagating = model.propagating
     if (isADecisionVariable && !propagating) return toNotify.newValue
-    if (!propagating) model.propagate(this)
+    if (!propagating) model.performPartialPropagation(this)
     mOldValue
   }
 
