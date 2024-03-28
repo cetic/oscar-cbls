@@ -217,7 +217,7 @@ class PropagationStructure(debugLevel: Int) {
     * @param target
     *   The target element of the propagation
     */
-  protected final def propagate(target: PropagationElement = null): Unit = {
+  protected final def propagate(target: Option[PropagationElement] = None): Unit = {
     if (!closed) return
 
     // The current layer that is explored
@@ -225,13 +225,19 @@ class PropagationStructure(debugLevel: Int) {
 
     // The track for the partial propagation. Track is a boolean array where the transitive
     // predecessors of the target are true (if the target is registered for partial propagation)
-    val theTrack = if (target == null) null else partialPropagationTracks.getOrElse(target.id, null)
+    val theTrack: Option[Array[Boolean]] = target match {
+      case None    => None
+      case Some(t) => partialPropagationTracks.get(t.id)
+    }
 
     // A flag stating if check internal needs to be called
-    val check: Boolean = debugLevel >= 1 && (theTrack == null || debugLevel >= 2)
+    val check: Boolean = debugLevel >= 1 && (theTrack == None || debugLevel >= 2)
 
     @inline
-    def track(id: Int) = if (theTrack == null) true else theTrack(id)
+    def track(id: Int) = theTrack match {
+      case None    => true
+      case Some(t) => t(id)
+    }
 
     // Filters the elements that are scheduled using the track
     @tailrec @inline
@@ -244,7 +250,7 @@ class PropagationStructure(debugLevel: Int) {
             executionQueue.insert(h)
           else
             postponedElements = h :: postponedElements
-          filterScheduledWithTrack
+          filterScheduledWithTrack()
       }
     }
 
@@ -278,10 +284,10 @@ class PropagationStructure(debugLevel: Int) {
     def doPropagation(): Unit = {
       if (executionQueue.nonEmpty) {
         val currentElement = executionQueue.popFirst().get
-        currentElement.propagateElement
+        currentElement.propagateElement()
         if (check)
           currentElement.checkInternals()
-        filterScheduledWithTrack
+        filterScheduledWithTrack()
         doPropagation()
       }
     }
@@ -290,14 +296,19 @@ class PropagationStructure(debugLevel: Int) {
     if (!propagating) {
       propagating = true
       val sameTarget: Boolean = currentTargetIdForPartialPropagation match {
-        case None     => false
-        case Some(id) => id == target.id
+        case None => false
+        case Some(id) =>
+          target match {
+            case None => false
+            case Some(t) => id == t.id
+          }
       }
+      currentTargetIdForPartialPropagation = target.map(_.id)
       if (sameTarget) {
-        filterScheduledWithTrack
+        filterScheduledWithTrack()
       } else {
         postponedElements = filterAndEnqueuePostponedElements(postponedElements)
-        filterScheduledWithTrack
+        filterScheduledWithTrack()
       }
       doPropagation()
       propagating = false
