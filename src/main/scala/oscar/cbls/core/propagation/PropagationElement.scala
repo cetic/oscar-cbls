@@ -85,7 +85,9 @@ abstract class PropagationElement(private val propagationStructure: PropagationS
     * method is optional (the element can update their values immediately when they are notified), so
     * an empty body is provided by default
     */
-  def performPropagation(): Unit = {}
+  def performPropagation(): Unit = {
+    require(false,"The element has been scheduled for propagation but the method performPropagation has not been overriden")
+  }
 
   /** Allows to check and debug propagation elements.
     *
@@ -93,5 +95,5 @@ abstract class PropagationElement(private val propagationStructure: PropagationS
     * propagation structure (see [[PropagationStructure]]). It can be used to check if the invariant
     * worked properly by, for example, recomputing the value from scratch.
     */
-  def checkInternals(): Unit = {}
+  def checkInternals(): Unit
 }
