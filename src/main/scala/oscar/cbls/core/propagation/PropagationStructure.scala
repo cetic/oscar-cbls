@@ -228,7 +228,7 @@ class PropagationStructure(debugLevel: Int) {
     }
 
     // A flag stating if check internal needs to be called
-    val check: Boolean = debugLevel >= 1 && (theTrack == None || debugLevel >= 2)
+    val check: Boolean = debugLevel >= 1 && (theTrack.isEmpty || debugLevel >= 2)
 
     @inline
     def track(id: Int) = theTrack match {
