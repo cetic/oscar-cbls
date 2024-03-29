@@ -50,17 +50,19 @@ abstract class Variable(propagationStructure: PropagationStructure, isConstant: 
     *
     * NOTE : Keep the returned value to be able to remove it from the listening
     * [[oscar.cbls.algo.dll.DoublyLinkedList]] using it's delete method.
-    * @param elem
+    * @param invariant
     *   The new listening element
     * @return
     *   A key to ease the removal of this element
     */
-  def registerDynamicallyListeningElement(elem: PropagationElement): KeyForRemoval = {
+  private[computation] def registerDynamicallyListeningElement(
+    invariant: Invariant
+  ): DoublyLinkedList[PropagationElement]#DLLStorageElement = {
     require(
       !isConstant,
       "Constant variable does not propagate, no need to keep track of listening element."
     )
-    KeyForRemoval(dynamicallyListeningElements.insertStart(elem))
+    dynamicallyListeningElements.insertStart(invariant)
   }
 
   /** Returns dynamically listening propagation elements.

@@ -1,5 +1,6 @@
 package oscar.cbls.core.computation
 
+import oscar.cbls.algo.dll.DoublyLinkedList
 import oscar.cbls.core.propagation._
 
 /** Abstract structure for Invariant definition.
@@ -22,14 +23,42 @@ import oscar.cbls.core.propagation._
   */
 abstract class Invariant(propagationStructure: PropagationStructure)
     extends PropagationElement(propagationStructure) {
-  require(propagationStructure != null, "The propagation structure must be defined")
 
-  override def performPropagation(): Unit = {
-    require(
-      false,
-      "If you receive this error, it means that your Invariant was scheduled for propagation but does not have a proper implementation of performPropagation().\n" +
-        "Either you directly update the output variable upon receiving notification of your input variable.\n" +
-        "Or you schedule your invariant for propagation and override this method."
+  // Dynamically listened elements, this invariant will receive notification sent by those element
+  private val dynamicallyListenedElements: DoublyLinkedList[(PropagationElement, Int)] =
+    new DoublyLinkedList[(PropagationElement, Int)]()
+
+  /** Registers the Variable as dynamically listened by this Invariant.
+    *
+    * Used during the search so that the variable knows which invariant needs to be notified.
+    *
+    * @param variable
+    *   The listened variable
+    */
+  def registerDynamicallyListenedElement(variable: Variable, index: Int = -1): KeyForRemoval = {
+    // TODO : Prevent user to register several times the same variable
+    KeyForRemoval(
+      variable.registerDynamicallyListeningElement(this),
+      dynamicallyListenedElements.insertStart((variable, index))
     )
   }
+
+  /** Registers the Variable as statically and dynamically listened by this Invariant.
+    *
+    * Used when building the propagation graph (statically) and during the search so that the
+    * variable knows which invariant needs to be notified.
+    *
+    * @param variable
+    *   The listened variable
+    */
+  def registerDynamicallyAndStaticallyListenedElement(
+    variable: Variable,
+    index: Int = -1
+  ): KeyForRemoval = {
+    super.registerStaticallyListenedElement(variable)
+    registerDynamicallyListenedElement(variable, index)
+  }
+
+  def getDynamicallyListenedElements: DoublyLinkedList[(PropagationElement, Int)] =
+    dynamicallyListenedElements
 }
