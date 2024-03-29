@@ -13,6 +13,10 @@
 
 package oscar.cbls.core.propagation
 
+import scala.annotation.tailrec
+import oscar.cbls.algo.heap.AggregatedBinaryHeap
+import oscar.cbls.algo.rb.RedBlackTreeMap
+
 /** Manages propagation among propagation elements.
   *
   * A propagation structure handles the propagation among a set of propagation elements. The main
@@ -20,7 +24,7 @@ package oscar.cbls.core.propagation
   * propagation elements are updated through a unique wave that reaches all the variables at most
   * once.
   *
-  * To achive this goal, the propagation works as follows:
+  * To achieve this goal, the propagation works as follows:
   *
   *   - When all the elements are registered, they are ordered according to the distance from the
   *     input (the propagation elements that depend on nothing). This ordering is achieve in the
@@ -30,45 +34,390 @@ package oscar.cbls.core.propagation
   *
   * OscaR.cbls supports partial propagation. When a propagation element is registered for partial
   * propagation, the propagation structure will compute the elements on which this elements depends.
-  * When a propagation is triggered, only this elements will be updated.
+  * When a propagation is triggered, only these elements will be updated.
+  *
+  * The propagation structure has 4 levels of debugs.
+  *   - 0: No debug at all
+  *   - 1: The method checkInternals of PropagationElement is called after the element has been
+  *     propagated if the propagation is total
+  *   - 2: The method checkInternals of PropagationElement is called after the element has been
+  *     propagated in a total or partial propagation
+  *   - 3: Partial propagation is disabled (every propagation is a total propagation) and the method
+  *     checkInternals of PropagationElement is called after the element has been propagated
   *
   * @param debugLevel
   *   the level of debug
   */
 class PropagationStructure(debugLevel: Int) {
 
+  require(debugLevel <= 3, "Debug level cannot be higher that 3")
+  require(debugLevel >= 0, "Debug level cannot be lower than 0")
+
+  private var currentId: Int = -1
+
+  private[propagation] def registerAndGenerateId(p: PropagationElement): Int = {
+    propagationElements = p :: propagationElements
+    currentId += 1
+    currentId
+  }
+
+  protected[propagation] var closed: Boolean = false
+
+  private var propagating: Boolean = false
+
+  private var scheduledElements: List[PropagationElement] = List()
+
+  private var postponedElements: List[PropagationElement] = List()
+
+  private var executionQueue: AggregatedBinaryHeap[PropagationElement] = _
+
+  private var propagationElements: List[PropagationElement] = List()
+
+  private var partialPropagationTargets: List[PropagationElement] = List()
+
+  private var partialPropagationTracks: RedBlackTreeMap[Array[Boolean]] = RedBlackTreeMap.empty
+
+  private var currentTargetIdForPartialPropagation: Option[Int] = None
+
+  protected def getPropagationElements: List[PropagationElement] = propagationElements
+
+  private def nbPropagationElements = currentId + 1
+
   /** Prepares the propagation structure for the use of propagation.
     *
     *   - Compute the layer of each propagation element to compute the order of element update
     *   - Compute the tracks for the partial propagation
     */
-  protected def setupPropagationStructure(): Unit = ???
+  protected def setupPropagationStructure(): Unit = {
+    require(!closed, "Cannot setup a propagation structure that is already closed")
 
-  /** Register a propagation element for partial propagation
+    // Computing the layer of the propagation elements
+    val nbLayer = computePropagationElementsLayers()
+    executionQueue = AggregatedBinaryHeap[PropagationElement](p => p.layer, nbLayer + 1)
+
+    // Computing the tracks for partial propagation
+    if (debugLevel < 3)
+      computePartialPropagationTrack()
+
+    // Drop the static graph
+    propagationElements.foreach(e => {
+      e.staticallyListenedElements = null
+      e.staticallyListeningElements = null
+    })
+
+    closed = true
+  }
+
+  private def computePartialPropagationTrack(): Unit = {
+    for (pe <- partialPropagationTargets) {
+      val track = buildTrackForTarget(pe)
+      partialPropagationTracks = partialPropagationTracks.insert(pe.id, track)
+    }
+  }
+
+  private def buildTrackForTarget(pe: PropagationElement): Array[Boolean] = {
+    @tailrec
+    def buildTrackForTargetRec(
+      toTreat: List[PropagationElement],
+      track: Array[Boolean]
+    ): Array[Boolean] = {
+      toTreat match {
+        case Nil => track
+        case h :: t =>
+          track(h.id) = true
+          val newToTreat = t ::: h.staticallyListenedElements.filter(pe => !track(pe.id))
+          buildTrackForTargetRec(newToTreat, track)
+      }
+    }
+    buildTrackForTargetRec(List(pe), Array.fill(nbPropagationElements)(false))
+  }
+
+  /** Computes the propagation layer for the propagation elements of this propagation structure
+    *
+    * The layer of a propagation elements corresponds to the distance of this element to the inputs
+    * of the propagation graph (i.e. the elements that have no predecessors)
+    * @return
+    *   the maximum layer of the graph
+    */
+  private def computePropagationElementsLayers(): Int = {
+    val nbListenedElementPerPE                     = Array.fill(nbPropagationElements)(0)
+    var fstLayerElements: List[PropagationElement] = List()
+
+    // Counting the number of listened elements for each pe
+    // This number will be decremented each time a predecessor is reached
+    // When the number of listened elements left is zero, it means that the element is in the next layer
+    for (p <- propagationElements) {
+      val nbListenedElements = p.staticallyListenedElements.size
+      nbListenedElementPerPE(p.id) = nbListenedElements
+      if (nbListenedElements == 0)
+        fstLayerElements = p :: fstLayerElements
+    }
+
+    @tailrec
+    def computeLayerOfElement(
+      onGoingLayer: List[PropagationElement],
+      nextLayer: List[PropagationElement],
+      currentLayerId: Int,
+      nbElementsLeft: Int
+    ): Int = {
+      require(
+        nbElementsLeft >= 0,
+        "Problem with Layer counting algorithm (the propagation graph seems to have a cycle which is forbidden)"
+      )
+      onGoingLayer match {
+        case Nil => // the current layer is empty
+          if (nextLayer.nonEmpty) { // the next layer is not empty, continuing with the next layer
+            computeLayerOfElement(nextLayer, List(), currentLayerId + 1, nbElementsLeft)
+          } else { // the next layer is empty, all the elements have been treated
+            require(
+              nbElementsLeft == 0,
+              "All the elements have not been treated (there shall be a cycle on the propagation graph)"
+            )
+            currentLayerId
+          }
+        case currentElement :: otherElements =>
+          currentElement.layer = currentLayerId
+          // decrementing the number of listened elements of the successors of the current element
+          var newNextLayer: List[PropagationElement] = nextLayer
+          for (p <- currentElement.staticallyListeningElements) {
+            nbListenedElementPerPE(p.id) = nbListenedElementPerPE(p.id) - 1
+            if (nbListenedElementPerPE(p.id) == 0)
+              newNextLayer = p :: newNextLayer
+          }
+          computeLayerOfElement(otherElements, newNextLayer, currentLayerId, nbElementsLeft - 1)
+      }
+    }
+    computeLayerOfElement(fstLayerElements, List(), 0, nbPropagationElements)
+
+  }
+
+  /** Registers a propagation element for partial propagation
     *
     * When an element is scheduled for partial propagation, the propagation structure computes the
-    * other elements on which this elements depends. Later, when a propapation up to this element is
+    * other elements on which this elements depends. Later, when a propagation up to this element is
     * required, only the elements on which this element depends will be propagated
     *
     * @param p
     *   The element that is registered for partial propagation
     */
-  protected def registerForPartialPropagation(p: PropagationElement): Unit = ???
+  def registerForPartialPropagation(p: PropagationElement): Unit = {
+    require(
+      !closed,
+      "An element cannot be registered for partial propagation when the structure is closed"
+    )
+    if (debugLevel < 3) {
+      partialPropagationTargets = p :: partialPropagationTargets
+    }
+  }
 
   /** Triggers the propagation in the graph.
     *
-    * The propagation has a target and stops when the target of the propagation has bee reached
+    * The propagation has a target and stops when the target of the propagation has been reached
     *
-    * @param upTo
+    * @param target
     *   The target element of the propagation
     */
-  protected final def propagate(upTo: PropagationElement): Unit = ???
+  protected final def propagate(target: Option[PropagationElement] = None): Unit = {
+    if (!closed) return
+
+    // The track for the partial propagation. Track is a boolean array where the transitive
+    // predecessors of the target are true (if the target is registered for partial propagation)
+    val theTrack: Option[Array[Boolean]] = target match {
+      case None    => None
+      case Some(t) => partialPropagationTracks.get(t.id)
+    }
+
+    // A flag stating if check internal needs to be called
+    val check: Boolean = debugLevel >= 1 && (theTrack.isEmpty || debugLevel >= 2)
+
+    @inline
+    def track(id: Int) = theTrack match {
+      case None    => true
+      case Some(t) => t(id)
+    }
+
+    // Filters the elements that are scheduled using the track
+    @tailrec @inline
+    def filterScheduledWithTrack(): Unit = {
+      scheduledElements match {
+        case Nil =>
+        case h :: t =>
+          scheduledElements = t
+          if (track(h.id))
+            executionQueue.insert(h)
+          else
+            postponedElements = h :: postponedElements
+          filterScheduledWithTrack()
+      }
+    }
+
+    // Filters the elements that have been postponed using the track
+    // The element that are in the track are enqueued in the execution queue
+    // The function returns the postponed elements that are not in the track (they will remain postponed)
+    @tailrec @inline
+    def filterAndEnqueuePostponedElements(
+      postponed: List[PropagationElement],
+      newPostponed: List[PropagationElement] = Nil
+    ): List[PropagationElement] = {
+      postponed match {
+        case Nil => newPostponed
+        case h :: t =>
+          val newList =
+            if (track(h.id)) {
+              executionQueue.insert(h)
+              newPostponed
+            } else {
+              h :: newPostponed
+            }
+          filterAndEnqueuePostponedElements(t, newList)
+      }
+    }
+
+    // The function that does the propagation. The propagation works as follows:
+    // Until the executionQueue is empty, we take the first element of the queue and propagate it
+    // After this propagation and an eventual check, the scheduled elements are filtered using the track
+    // (the propagation of an element can create new scheduled elements).
+    @tailrec @inline
+    def doPropagation(): Unit = {
+      if (executionQueue.nonEmpty) {
+        val currentElement = executionQueue.popFirst().get
+        currentElement.propagateElement()
+        if (check)
+          currentElement.checkInternals()
+        filterScheduledWithTrack()
+        doPropagation()
+      }
+    }
+
+    // Do the propagation:
+    if (!propagating) {
+      propagating = true
+      val sameTarget: Boolean = currentTargetIdForPartialPropagation match {
+        case None => false
+        case Some(id) =>
+          target match {
+            case None => false
+            case Some(t) => id == t.id
+          }
+      }
+      currentTargetIdForPartialPropagation = target.map(_.id)
+      if (sameTarget) {
+        filterScheduledWithTrack()
+      } else {
+        postponedElements = filterAndEnqueuePostponedElements(postponedElements)
+        filterScheduledWithTrack()
+      }
+      doPropagation()
+      propagating = false
+
+    }
+  }
 
   /** Schedules a propagation elements for the propagation
     *
     * @param p
     *   the element to schedule
     */
-  private[propagation] def scheduleForPropagation(p: PropagationElement): Unit = ???
+  private[propagation] def scheduleElementForPropagation(p: PropagationElement): Unit = {
+    scheduledElements = p :: scheduledElements
+  }
+
+  /** Computes the list of path in the dependency graph of the propagation structure
+    *
+    * A path is a list of integer that means that there is a path along this list of element. The
+    * list of path is a list of this so called path such that giving all this path suffices to
+    * describe the structure. This method is mainly used to make the dot file
+    *
+    * @return
+    *   The list of path
+    */
+  protected def pathList: List[List[Int]] = {
+    def developNode(
+      currentNode: PropagationElement,
+      alreadyVisitedNodes: List[Int]
+    ): (List[List[Int]], List[Int]) = {
+      if (alreadyVisitedNodes.contains(currentNode.id)) {
+        (List(List(currentNode.id)), alreadyVisitedNodes)
+      } else {
+        currentNode.staticallyListeningElements match {
+          case Nil => (List(List(currentNode.id)), currentNode.id :: alreadyVisitedNodes)
+          case _ :: _ =>
+            val resOfSons =
+              developListOfNode(currentNode.staticallyListeningElements, alreadyVisitedNodes)
+            (
+              resOfSons._1
+                .flatMap(l => {
+                  l match {
+                    case Nil    => List()
+                    case h :: t => (currentNode.id :: h) :: t
+                  }
+                }),
+              currentNode.id :: resOfSons._2
+            )
+        }
+      }
+    }
+
+    def developListOfNode(
+      nodes: List[PropagationElement],
+      alreadyVisitedNodes: List[Int]
+    ): (List[List[List[Int]]], List[Int]) = {
+      nodes match {
+        case Nil => (List(), alreadyVisitedNodes)
+        case h :: t =>
+          val resOfRest = developListOfNode(t, alreadyVisitedNodes)
+          val resOfNode = developNode(h, resOfRest._2)
+          (resOfNode._1 :: resOfRest._1, resOfNode._2)
+      }
+    }
+
+    developListOfNode(
+      propagationElements.filter(_.staticallyListenedElements.isEmpty),
+      List()
+    )._1.flatten
+
+  }
+
+  /** Produces a string that represents the propagation structure in the dot format
+    *
+    * @param names
+    *   a map that allow to change the names of some vertices
+    * @param shapes
+    *   a map that allow to change the shape of some vertices
+    * @return
+    */
+  def toDot(
+    names: Map[Int, String] =
+      propagationElements.map(_.id).zip(propagationElements.map(_.id.toString)).toMap,
+    shapes: Map[Int, String] = Map.empty[Int, String]
+  ): String = {
+
+    val labelDefinition: List[String] =
+      propagationElements
+        .flatMap(e => {
+          val label = names.getOrElse(e.id, "")
+          val shape = shapes.getOrElse(e.id, "")
+          if (label == "") {
+            if (shape == "")
+              None
+            else
+              Some(s"  ${e.id} [shape = \"$shape\"]")
+          } else {
+            if (shape == "")
+              Some(s"  ${e.id} [label = \"$label\"]")
+            else
+              Some(s"  ${e.id} [label = \"$label\",shape = \"$shape\"]")
+          }
+        })
+
+    val lines = pathList
+    s"""
+digraph PropagationStructure {
+${labelDefinition.mkString(";\n")};
+${lines.map(l => s"  ${l.mkString(" -> ")};").mkString("\n")}
+}
+"""
+
+  }
 
 }
