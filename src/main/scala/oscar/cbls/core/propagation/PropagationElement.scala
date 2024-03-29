@@ -86,7 +86,7 @@ abstract class PropagationElement(private val propagationStructure: PropagationS
     * an empty body is provided by default
     */
   def performPropagation(): Unit = {
-    require(false,"The element has been scheduled for propagation but the method performPropagation has not been overriden")
+    require(false,"The element has been scheduled for propagation but the method performPropagation has not been overridden")
   }
 
   /** Allows to check and debug propagation elements.
