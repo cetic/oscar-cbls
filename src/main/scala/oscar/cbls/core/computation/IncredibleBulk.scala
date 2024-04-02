@@ -31,7 +31,7 @@ object IncredibleBulk {
     propagationStructure: PropagationStructure
   ): IncredibleBulk = {
     if (!incredibleBulks.contains(incredibleBulkIdentifier)) {
-      incredibleBulks += (incredibleBulkIdentifier, IncredibleBulk(
+      incredibleBulks = incredibleBulks + (incredibleBulkIdentifier -> IncredibleBulk(
         bulkVariables,
         propagationStructure
       ))
@@ -63,7 +63,7 @@ case class IncredibleBulk(
   /** Allows to check and debug propagation elements.
     *
     * This method can be called after the propagation according to the debug level of the
-    * propagation structure (see [[PropagationStructure]]). It can be used to check if the invariant
+    * propagation structure (see [[oscar.cbls.core.propagation.PropagationStructure]]). It can be used to check if the invariant
     * worked properly by, for example, recomputing the value from scratch.
     */
   override def checkInternals(): Unit = {}

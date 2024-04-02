@@ -36,7 +36,6 @@ abstract class Invariant(propagationStructure: PropagationStructure)
     *   The listened variable
     */
   def registerDynamicallyListenedElement(variable: Variable, index: Int = -1): KeyForRemoval = {
-    // TODO : Prevent user to register several times the same variable
     KeyForRemoval(
       variable.registerDynamicallyListeningElement(this),
       dynamicallyListenedElements.insertStart((variable, index))
@@ -59,6 +58,7 @@ abstract class Invariant(propagationStructure: PropagationStructure)
     registerDynamicallyListenedElement(variable, index)
   }
 
+  // Returns dynamically listened elements
   def getDynamicallyListenedElements: DoublyLinkedList[(PropagationElement, Int)] =
     dynamicallyListenedElements
 }

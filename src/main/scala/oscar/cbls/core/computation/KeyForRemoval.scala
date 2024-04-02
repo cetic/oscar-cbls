@@ -8,11 +8,19 @@ import oscar.cbls.core.propagation.PropagationElement
   * If you want to stop sending notification to an element, just use the performRemove method of
   * KeyForRemoval of the listening element.
   *
-  * @param listeningElement Reference of the listening element in its DLL
-  * @param listenedElement Reference of the listened element in its DLL
+  * @param listeningElement
+  *   Reference of the listening element in its DLL
+  * @param listenedElement
+  *   Reference of the listened element in its DLL
   */
-case class KeyForRemoval(listeningElement: DoublyLinkedList[PropagationElement]#DLLStorageElement,
-                         listenedElement: DoublyLinkedList[(PropagationElement,Int)]#DLLStorageElement) {
+case class KeyForRemoval(
+  listeningElement: DoublyLinkedList[PropagationElement]#DLLStorageElement,
+  listenedElement: DoublyLinkedList[(PropagationElement, Int)]#DLLStorageElement
+) {
+
+  /** Removes the listening element from the listening elements and the listened one from the
+    * listened elements
+    */
   def performRemove(): Unit = {
     listeningElement.delete()
     listenedElement.delete()
