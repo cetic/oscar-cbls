@@ -60,7 +60,7 @@ class Store(debugLevel: Int = 0) extends PropagationStructure(debugLevel) {
     *   The variable whose new value is needed
     */
   def performPartialPropagation(target: Variable): Unit = {
-    super.propagate(target)
+    super.propagate(Some(target))
   }
 
   override def setupPropagationStructure(): Unit = {
