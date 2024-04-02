@@ -68,7 +68,7 @@ class IntVariableTestSuite extends AnyFunSuite {
     val input             = new IntVariable(store, startValue)
     val output            = new IntVariable(store, startValue)
     var referenceInt      = startValue
-    val savedReverenceInt = startValue
+    val savedReferenceInt = startValue
     new IntIdentityInvariant(store, input, output)
     store.setupPropagationStructure()
 
@@ -80,7 +80,7 @@ class IntVariableTestSuite extends AnyFunSuite {
     }
     output.value() should be(referenceInt)
     savedValue.restoreValue()
-    output.value() should be(savedReverenceInt)
+    output.value() should be(savedReferenceInt)
   }
 
   test("An IntConstant cannot be modified") {

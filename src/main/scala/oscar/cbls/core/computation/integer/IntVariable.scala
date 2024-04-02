@@ -1,6 +1,7 @@
 package oscar.cbls.core.computation.integer
 
-import oscar.cbls.core.computation.{KeyForRemoval, SavedValue, Store, Variable}
+import oscar.cbls.algo.dll.DoublyLinkedList
+import oscar.cbls.core.computation.{Invariant, SavedValue, Store, Variable}
 import oscar.cbls.core.propagation.PropagationElement
 
 class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
@@ -86,9 +87,13 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
     )
   }
 
-  def registerDynamicallyListeningElementToIntVariable(
-    elem: PropagationElement with IntNotificationTarget
-  ): KeyForRemoval = {
+  override def registerDynamicallyListeningElement(
+    elem: Invariant
+  ): DoublyLinkedList[PropagationElement]#DLLStorageElement = {
+    require(
+      elem.isInstanceOf[IntNotificationTarget],
+      "The listening invariant must extends IntNotificationTarget trait to be able to receive notification upon change"
+    )
     super.registerDynamicallyListeningElement(elem)
   }
 }
