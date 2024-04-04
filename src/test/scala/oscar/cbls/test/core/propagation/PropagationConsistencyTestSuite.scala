@@ -32,7 +32,7 @@ class PropagationConsistencyTestSuite extends AnyFunSuite with Matchers {
 
     elem1.registerListeningElement(elem2)
 
-    elem1.update
+    elem1.update()
 
     struct1.totalPropagation(false)
 
@@ -49,7 +49,7 @@ class PropagationConsistencyTestSuite extends AnyFunSuite with Matchers {
 
     val var2 = new TestVariableElement(struct1)
 
-    struct1.close
+    struct1.close()
 
     an[java.lang.IllegalArgumentException] should be thrownBy var2.setDefiningInvariant(inv1)
 
@@ -62,7 +62,7 @@ class PropagationConsistencyTestSuite extends AnyFunSuite with Matchers {
     val inv1 = new TestInvariantElement(struct1)
     var1.registerListeningElement(inv1)
 
-    struct1.close
+    struct1.close()
 
     assert(var1.staticGraphIsNull)
     assert(inv1.staticGraphIsNull)
@@ -77,7 +77,7 @@ class PropagationConsistencyTestSuite extends AnyFunSuite with Matchers {
     var1.registerListeningElement(inv1)
     var2.setDefiningInvariant(inv1)
 
-    struct1.close
+    struct1.close()
 
     an[java.lang.IllegalArgumentException] should be thrownBy struct1.registerForPartialPropagation(
       var2
@@ -87,9 +87,9 @@ class PropagationConsistencyTestSuite extends AnyFunSuite with Matchers {
   test("Cannot setup a structure that is already closed") {
     val struct1 = new TestPropagationStructure()
 
-    struct1.close
+    struct1.close()
 
-    an[java.lang.IllegalArgumentException] should be thrownBy struct1.close
+    an[java.lang.IllegalArgumentException] should be thrownBy struct1.close()
   }
 
 }

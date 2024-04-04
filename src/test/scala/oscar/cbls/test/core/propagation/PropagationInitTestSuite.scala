@@ -32,7 +32,7 @@ class PropagationInitTestSuite extends AnyFunSuite with Matchers {
     var3.setDefiningInvariant(inv2)
     var3.registerListeningElement(inv1)
 
-    an[java.lang.IllegalArgumentException] should be thrownBy struct.close
+    an[java.lang.IllegalArgumentException] should be thrownBy struct.close()
   }
 
   test("An error shall be raised when the debug level is higher that 3 or lower that 0") {
@@ -44,7 +44,7 @@ class PropagationInitTestSuite extends AnyFunSuite with Matchers {
     for (_ <- 0 to 10) {
       val struct = structureGenerator.generateStructure(15, 30, 5, 15, 5, 15, 5, 15, 10)
 
-      struct.close
+      struct.close()
       struct.validateLayerAssignation
 
     }

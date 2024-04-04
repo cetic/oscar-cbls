@@ -55,7 +55,7 @@ class PropagationStruct1UnitTestSuite(debugLevel: Int) extends AnyFunSuite with 
   struct.registerForPartialPropagation(var2)
   struct.registerForPartialPropagation(var7)
 
-  struct.close
+  struct.close()
 
   private def checkUpdate(variable: TestVariableElement, value: Int) = {
     assert(
@@ -68,7 +68,7 @@ class PropagationStruct1UnitTestSuite(debugLevel: Int) extends AnyFunSuite with 
     "Unit test: only the variable that are impacted by a change are updated during a total propagation"
   ) {
 
-    var0.update
+    var0.update()
     struct.totalPropagation(false)
 
     checkUpdate(var0, 1)
@@ -80,14 +80,14 @@ class PropagationStruct1UnitTestSuite(debugLevel: Int) extends AnyFunSuite with 
     checkUpdate(var7, 0)
     checkUpdate(var8, 0)
 
-    struct.resetPropagationFlags
+    struct.resetPropagationFlags()
   }
 
   test(
     "Unit test: in a partial propagation, only the variable that are required for a target are updated"
   ) {
 
-    var0.update
+    var0.update()
     struct.partialPropagation(var7, false)
     if (debugLevel < 3) {
       checkUpdate(var0, 0)
@@ -109,7 +109,7 @@ class PropagationStruct1UnitTestSuite(debugLevel: Int) extends AnyFunSuite with 
       checkUpdate(var8, 0)
     }
 
-    struct.resetPropagationFlags
+    struct.resetPropagationFlags()
   }
 
   test(
@@ -138,14 +138,14 @@ class PropagationStruct1UnitTestSuite(debugLevel: Int) extends AnyFunSuite with 
       checkUpdate(var8, 0)
     }
 
-    struct.resetPropagationFlags
+    struct.resetPropagationFlags()
   }
 
   test(
     "Unit test: A partial propagation where the target is not registered for partial propagation has the same effect as a total propagation"
   ) {
 
-    var0.update
+    var0.update()
     struct.partialPropagation(var8, false)
 
     checkUpdate(var0, 1)
@@ -157,14 +157,14 @@ class PropagationStruct1UnitTestSuite(debugLevel: Int) extends AnyFunSuite with 
     checkUpdate(var7, 0)
     checkUpdate(var8, 0)
 
-    struct.resetPropagationFlags
+    struct.resetPropagationFlags()
   }
 
   test(
     "Unit test: after a partial propagation, if a new partial propagation is triggered, the postponed variables that are concerned by this propagation are updated"
   ) {
 
-    var0.update
+    var0.update()
     struct.partialPropagation(var7, false)
     if (debugLevel < 3) {
       checkUpdate(var0, 0)
@@ -186,7 +186,7 @@ class PropagationStruct1UnitTestSuite(debugLevel: Int) extends AnyFunSuite with 
       checkUpdate(var8, 0)
     }
 
-    struct.resetPropagationFlags
+    struct.resetPropagationFlags()
     struct.partialPropagation(var2, false)
 
     if (debugLevel < 3) {
@@ -209,7 +209,7 @@ class PropagationStruct1UnitTestSuite(debugLevel: Int) extends AnyFunSuite with 
       checkUpdate(var8, 0)
     }
 
-    struct.resetPropagationFlags
+    struct.resetPropagationFlags()
 
   }
 

@@ -31,7 +31,7 @@ class PropagationTestSuite(debugLevel: Int) extends AnyFunSuite with Matchers {
 
       val variables = struct.variables.filter(_.isInput)
 
-      struct.close
+      struct.close()
 
       val nbVariables = variables.length
 
@@ -39,7 +39,7 @@ class PropagationTestSuite(debugLevel: Int) extends AnyFunSuite with Matchers {
         val nbVarToUpdate = 1 + structureGenerator.rand.nextInt((nbVariables / 2).max(1))
         val toUpdate      = structureGenerator.rand.shuffle(variables).take(nbVarToUpdate)
 
-        toUpdate.foreach(_.update)
+        toUpdate.foreach(_.update())
 
         struct.totalPropagation()
       }
@@ -66,11 +66,11 @@ class PropagationTestSuite(debugLevel: Int) extends AnyFunSuite with Matchers {
 
       partialPropagationTargets.foreach(struct.registerForPartialPropagation(_))
 
-      struct.close
+      struct.close()
 
       for (_ <- 0 to 10) {
         val toUpdate = rand.shuffle(input).take(1 + rand.nextInt((nbInput / 5).max(1)))
-        toUpdate.foreach(_.update)
+        toUpdate.foreach(_.update())
 
         val target = rand.shuffle(partialPropagationTargets).head
 
@@ -99,11 +99,11 @@ class PropagationTestSuite(debugLevel: Int) extends AnyFunSuite with Matchers {
 
       ppTargets.foreach(struct.registerForPartialPropagation(_))
 
-      struct.close
+      struct.close()
 
       for (_ <- 0 to 10) {
         val toUpdate = rand.shuffle(input).take(1 + rand.nextInt((nbInput / 5).max(1)))
-        toUpdate.foreach(_.update)
+        toUpdate.foreach(_.update())
 
         val target = rand.shuffle(nonPPTargets).head
 
