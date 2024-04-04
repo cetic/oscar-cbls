@@ -13,11 +13,14 @@ import oscar.cbls.core.propagation._
   * @param isConstant
   *   If the variable is a constant
   */
-abstract class Variable(propagationStructure: PropagationStructure, isConstant: Boolean, name: Option[String] = None)
-    extends PropagationElement(propagationStructure) {
+abstract class Variable(
+  propagationStructure: PropagationStructure,
+  isConstant: Boolean,
+  name: Option[String] = None
+) extends PropagationElement(propagationStructure) {
   require(propagationStructure != null, "The propagation structure must be defined")
 
-  def name: String = name.getOrElse(s"Variable_$id")
+  def name(): String = name.getOrElse(s"Variable_$id")
 
   private var _domain: Option[(Long, Long)]              = None
   private[core] var definingInvariant: Option[Invariant] = None
@@ -81,4 +84,6 @@ abstract class Variable(propagationStructure: PropagationStructure, isConstant: 
       case Some((min, max)) => value >= min && value <= max
     }
   }
+
+  override def toString: String = this.name()
 }

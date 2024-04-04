@@ -24,7 +24,7 @@ import oscar.cbls.core.propagation._
 abstract class Invariant(propagationStructure: PropagationStructure, name: Option[String] = None)
     extends PropagationElement(propagationStructure) {
 
-  def name: String = name.getOrElse(s"Invariant_$id")
+  def name(): String = this.name.getOrElse(s"Invariant_$id")
 
   // Dynamically listened elements, this invariant will receive notification sent by those element
   private val dynamicallyListenedElements: DoublyLinkedList[(PropagationElement, Int)] =
@@ -63,4 +63,6 @@ abstract class Invariant(propagationStructure: PropagationStructure, name: Optio
   // Returns dynamically listened elements
   def getDynamicallyListenedElements: DoublyLinkedList[(PropagationElement, Int)] =
     dynamicallyListenedElements
+
+  override def toString: String = this.name()
 }
