@@ -15,7 +15,8 @@ package oscar.cbls.core.propagation
 
 import scala.annotation.tailrec
 import oscar.cbls.algo.heap.AggregatedBinaryHeap
-import oscar.cbls.algo.rb.RedBlackTreeMap
+
+import scala.collection.immutable.HashMap
 
 /** Manages propagation among propagation elements.
   *
@@ -75,7 +76,7 @@ class PropagationStructure(debugLevel: Int) {
 
   private var partialPropagationTargets: List[PropagationElement] = List()
 
-  private var partialPropagationTracks: RedBlackTreeMap[Array[Boolean]] = RedBlackTreeMap.empty
+  private var partialPropagationTracks: HashMap[Int, Array[Boolean]] = HashMap.empty
 
   private var currentTargetIdForPartialPropagation: Option[Int] = None
 
@@ -113,7 +114,7 @@ class PropagationStructure(debugLevel: Int) {
   private def computePartialPropagationTrack(): Unit = {
     for (pe <- partialPropagationTargets) {
       val track = buildTrackForTarget(pe)
-      partialPropagationTracks = partialPropagationTracks.insert(pe.id, track)
+      partialPropagationTracks = partialPropagationTracks + (pe.id -> track)
     }
   }
 
