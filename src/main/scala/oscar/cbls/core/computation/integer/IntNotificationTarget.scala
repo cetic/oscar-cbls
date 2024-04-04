@@ -32,5 +32,5 @@ trait IntNotificationTarget {
     * @param newVal
     *   The new value of the variable
     */
-  def notifyIntChanged(intVariable: IntVariable, oldVal: Long, newVal: Long): Unit
+  def notifyIntChanges(intVariable: IntVariable, oldVal: Long, newVal: Long): Unit
 }
