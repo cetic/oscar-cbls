@@ -72,7 +72,7 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
       val dynListElements = getDynamicallyListeningElements
       dynListElements.foreach {
         case invariant: IntNotificationTarget =>
-          invariant.notifyIntChanged(this, old, _newValue)
+          invariant.notifyIntChanges(this, old, _newValue)
         case invariant: Invariant =>
           throw new IllegalArgumentException(
             s"The listening Invariant ($invariant) does not extend IntNotificationTarget, therefore no notification can be send to it."
