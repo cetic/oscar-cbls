@@ -13,4 +13,22 @@
 
 package oscar.cbls.core.computation.seq
 
-class SeqConstant {}
+import oscar.cbls.algo.sequence.IntSequence
+import oscar.cbls.core.computation.{Store, Variable}
+import oscar.cbls.core.propagation.PropagationStructure
+
+object SeqConst {
+  private var nextNameCounter: Int = -1
+  private def nextName(): String = {
+    nextNameCounter += 1
+    s"SeqConst_$nextNameCounter"
+  }
+
+  def apply(model: PropagationStructure, initialValues: List[Int], name: String = nextName()): SeqConst ={
+    new SeqConst(model, initialValues, name)
+  }
+}
+
+class SeqConst(model: PropagationStructure, initialValues: List[Int], name: String) extends SeqVariable(model, initialValues, name, isConstant = true )  {
+
+}

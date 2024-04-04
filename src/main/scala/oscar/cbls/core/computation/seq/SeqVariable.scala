@@ -15,13 +15,14 @@ package oscar.cbls.core.computation.seq
 
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation.{SavedValue, Store, Variable}
+import oscar.cbls.core.propagation.PropagationStructure
 
 class SeqVariable(
-  model: Store,
-  initialValues: List[Int],
-  name: String = "SeqVariable",
-  maxPivotPerValuePercent: Int = 4,
-  isConstant: Boolean = false
+                   model: PropagationStructure,
+                   initialValues: List[Int],
+                   name: String = "SeqVariable",
+                   maxPivotPerValuePercent: Int = 4,
+                   isConstant: Boolean = false
 ) extends Variable(model, isConstant) {
   require(model != null)
 
@@ -618,7 +619,7 @@ class SeqVariable(
       maxPivotPerValuePercent,
       isConstant
     )
-    SeqIdentityInvariant(this, clone)
+    SeqIdentityInvariant(model, this, clone)
     clone
   }
 
