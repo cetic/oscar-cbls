@@ -4,12 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers.be
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.computation.integer.{
-  IntIdentityInvariant,
-  IntConstant,
-  IntVariable,
-  IntSavedValue
-}
+import oscar.cbls.core.computation.integer.{IntConstant, IntIdentityInvariant, IntVariable}
 
 import scala.util.Random
 
