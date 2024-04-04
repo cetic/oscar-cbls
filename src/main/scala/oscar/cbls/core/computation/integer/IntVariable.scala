@@ -64,13 +64,6 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
 
   override def save(): SavedValue = new IntSavedValue(this)
 
-  /** this is the propagation method that should be overridden by propagation elements. notice that
-    * it is only called in a propagation wave if: 1L: it has been registered for propagation since
-    * the last time it was propagated 2L: it is included in the propagation wave: partial
-    * propagation wave do not propagate all propagation elements; it only propagates the ones that
-    * come in the predecessors of the targeted propagation element overriding this method is
-    * optional, so an empty body is provided by default
-    */
   override def performPropagation(): Unit = {
     if (_oldValue != _newValue) {
       val old = _oldValue
@@ -80,15 +73,14 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
       dynListElements.foreach {
         case invariant: IntNotificationTarget =>
           invariant.notifyIntChanged(this, old, _newValue)
-        case _ => throw new Exception("Should not happened")
+        case invariant: Invariant =>
+          throw new IllegalArgumentException(
+            s"The listening Invariant ($invariant) does not extend IntNotificationTarget, therefore no notification can be send to it."
+          )
       }
     }
   }
 
-  /** This is the debug procedure through which propagation element can redundantly check that the
-    * incremental computation they perform through the performPropagation method is correct
-    * overriding this method is optional, so an empty body is provided by default
-    */
   override def checkInternals(): Unit = {
     require(
       _oldValue == _newValue,
