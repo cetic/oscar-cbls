@@ -14,7 +14,7 @@
 package oscar.cbls.core.computation.seq
 
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
-import oscar.cbls.core.computation.{SavedValue, Store, Variable}
+import oscar.cbls.core.computation.{Invariant, SavedValue, Store, Variable}
 import oscar.cbls.core.propagation.PropagationStructure
 
 class SeqVariable(
@@ -34,7 +34,7 @@ class SeqVariable(
   /** Returns the new value of this SeqVariable */
   def newValue: IntSequence = toNotify.newValue
 
-  def name: String = name
+  override def name(): String = name
 
   /** Propagates up to this variable (if needed) and returns the new value of this SeqVariable.
     *
@@ -48,7 +48,7 @@ class SeqVariable(
     if (model == null) return mOldValue
     val propagating = model.propagating
     if (isADecisionVariable && !propagating) return toNotify.newValue
-    if (!propagating) model.performPartialPropagation(this)
+    if (!propagating) model.asInstanceOf[Store].performPartialPropagation(this)
     mOldValue
   }
 
@@ -595,10 +595,14 @@ class SeqVariable(
   @inline
   override protected def performPropagation(): Unit = {
     val dynListElements = getDynamicallyListeningElements
-    dynListElements.foreach(pe => {
-      val inv: SeqNotificationTarget = pe.asInstanceOf[SeqNotificationTarget]
-      inv.notifySeqChanges(this, pe.id, toNotify)
-    })
+    dynListElements.foreach {
+      case (inv: SeqNotificationTarget, index: Int) =>
+      inv.notifySeqChanges(this, index, toNotify)
+      case (x: Invariant, _) =>
+        throw new IllegalArgumentException(
+          s"The listening Invariant ($x) does not extend SeqNotificationTarget, therefore no notification can be send to it."
+        )
+    }
     mOldValue = toNotify.newValue
     toNotify = SeqUpdateLastNotified(mOldValue)
   }
