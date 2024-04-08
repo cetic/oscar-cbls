@@ -71,9 +71,9 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
 
       val dynListElements = getDynamicallyListeningElements
       dynListElements.foreach {
-        case invariant: IntNotificationTarget =>
-          invariant.notifyIntChanges(this, old, _newValue)
-        case invariant: Invariant =>
+        case (invariant: IntNotificationTarget, index: Int) =>
+          invariant.notifyIntChanges(this, index, old, _newValue)
+        case (invariant: Invariant, _) =>
           throw new IllegalArgumentException(
             s"The listening Invariant ($invariant) does not extend IntNotificationTarget, therefore no notification can be send to it."
           )
@@ -93,12 +93,13 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
   }
 
   override def registerDynamicallyListeningElement(
-    elem: Invariant
-  ): DoublyLinkedList[PropagationElement]#DLLStorageElement = {
+    elem: Invariant,
+    variableIndex: Int = -1
+  ): DoublyLinkedList[(PropagationElement, Int)]#DLLStorageElement = {
     require(
       elem.isInstanceOf[IntNotificationTarget],
       "The listening invariant must extends IntNotificationTarget trait to be able to receive notification upon change"
     )
-    super.registerDynamicallyListeningElement(elem)
+    super.registerDynamicallyListeningElement(elem, variableIndex)
   }
 }

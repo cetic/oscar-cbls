@@ -13,10 +13,10 @@
 
 package oscar.cbls.core.computation.integer
 
-/**
- * This trait must be extended by any [[oscar.cbls.core.propagation.PropagationElement]] listening to a IntVariable.
- * Its only method will be used to notify the changes occurring to the listened IntVariable.
- */
+/** This trait must be extended by any [[oscar.cbls.core.propagation.PropagationElement]] listening
+  * to a IntVariable. Its only method will be used to notify the changes occurring to the listened
+  * IntVariable.
+  */
 trait IntNotificationTarget {
 
   /** Notifies the listening [[oscar.cbls.core.propagation.PropagationElement]] that the listened
@@ -27,10 +27,12 @@ trait IntNotificationTarget {
     *
     * @param intVariable
     *   The listened IntVariable
+    * @param index
+    *   The index of the IntVariable in the context of the listening Invariant
     * @param oldVal
     *   The previous value of the variable
     * @param newVal
     *   The new value of the variable
     */
-  def notifyIntChanges(intVariable: IntVariable, oldVal: Long, newVal: Long): Unit
+  def notifyIntChanges(intVariable: IntVariable, index: Int, oldVal: Long, newVal: Long): Unit
 }
