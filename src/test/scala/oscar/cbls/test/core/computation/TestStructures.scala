@@ -35,7 +35,7 @@ case class TestConstantVariable(store: Store, value: Int = 0) extends Variable(s
     */
   override def checkInternals(): Unit = {}
 
-  def getTestDynamicallyListeningElements: DoublyLinkedList[PropagationElement] = {
+  def getTestDynamicallyListeningElements: DoublyLinkedList[(PropagationElement,Int)] = {
     this.getDynamicallyListeningElements
   }
 }
@@ -65,7 +65,7 @@ case class TestVaryingVariable(store: Store, startValue: Int = 0) extends Variab
 
   def value: Int = newValue
 
-  def getTestDynamicallyListeningElements: DoublyLinkedList[PropagationElement] = {
+  def getTestDynamicallyListeningElements: DoublyLinkedList[(PropagationElement, Int)] = {
     this.getDynamicallyListeningElements
   }
 
@@ -81,7 +81,7 @@ case class TestVaryingVariable(store: Store, startValue: Int = 0) extends Variab
     */
   override def performPropagation(): Unit = {
     getDynamicallyListeningElements.foreach(pe =>
-      pe.asInstanceOf[TestVariableNotificationTarget]
+      pe.asInstanceOf[(TestVariableNotificationTarget,Int)]._1
         .notifyTestVariableChanged(this, oldValue, newValue)
     )
     oldValue = newValue

@@ -26,22 +26,21 @@ abstract class Invariant(propagationStructure: PropagationStructure, name: Optio
 
   def name(): String = this.name.getOrElse(s"Invariant_$id")
 
-  // Dynamically listened elements, this invariant will receive notification sent by those element
-  private val dynamicallyListenedElements: DoublyLinkedList[(PropagationElement, Int)] =
-    new DoublyLinkedList[(PropagationElement, Int)]()
-
   /** Registers the Variable as dynamically listened by this Invariant.
     *
     * Used during the search so that the variable knows which invariant needs to be notified.
+    * IMPORTANT : If, in the future, you may need to stop listening to this variable, keep the
+    * returned [[KeyForRemoval]]
     *
     * @param variable
     *   The listened variable
+    * @param index
+    *   An optional contextual index sent by the variable along with it's update
+    * @return
+    *   A special key with one purpose : being able to stop listening to this variable
     */
   def registerDynamicallyListenedElement(variable: Variable, index: Int = -1): KeyForRemoval = {
-    KeyForRemoval(
-      variable.registerDynamicallyListeningElement(this),
-      dynamicallyListenedElements.insertStart((variable, index))
-    )
+    KeyForRemoval(variable.registerDynamicallyListeningElement(this, index))
   }
 
   /** Registers the Variable as statically and dynamically listened by this Invariant.
@@ -59,10 +58,6 @@ abstract class Invariant(propagationStructure: PropagationStructure, name: Optio
     super.registerStaticallyListenedElement(variable)
     registerDynamicallyListenedElement(variable, index)
   }
-
-  // Returns dynamically listened elements
-  def getDynamicallyListenedElements: DoublyLinkedList[(PropagationElement, Int)] =
-    dynamicallyListenedElements
 
   override def toString: String = this.name()
 }

@@ -30,24 +30,20 @@ class AbstractComputationTestSuite extends AnyFunSuite {
     val testInvariant = TestInvariant(store, List(variable1,variable2,variable3), None)
 
     variable1.getTestDynamicallyListeningElements.size should be(1)
-    variable1.getTestDynamicallyListeningElements.head should be(testInvariant)
+    variable1.getTestDynamicallyListeningElements.head should be((testInvariant,-1))
     variable2.getTestDynamicallyListeningElements.size should be(1)
-    variable2.getTestDynamicallyListeningElements.head should be(testInvariant)
+    variable2.getTestDynamicallyListeningElements.head should be((testInvariant,-1))
     variable3.getTestDynamicallyListeningElements.size should be(1)
-    variable3.getTestDynamicallyListeningElements.head should be(testInvariant)
-    testInvariant.getDynamicallyListenedElements.size should be(3)
+    variable3.getTestDynamicallyListeningElements.head should be((testInvariant,-1))
 
     store.setupPropagationStructure()
 
-    testInvariant.keysForRemoval(1).performRemove()
+    testInvariant.keysForRemoval(1).stopListeningToThisElement()
     variable2.getTestDynamicallyListeningElements.size should be(0)
-    testInvariant.getDynamicallyListenedElements.size should be(2)
-    testInvariant.keysForRemoval(2).performRemove()
+    testInvariant.keysForRemoval(2).stopListeningToThisElement()
     variable3.getTestDynamicallyListeningElements.size should be(0)
-    testInvariant.getDynamicallyListenedElements.size should be(1)
     testInvariant.keysForRemoval(1) = testInvariant.registerDynamicallyListenedElement(variable2,1)
     variable2.getTestDynamicallyListeningElements.size should be(1)
-    testInvariant.getDynamicallyListenedElements.size should be(2)
   }
 
   test("Domain definition works as expected") {
