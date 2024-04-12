@@ -15,17 +15,17 @@ package oscar.cbls.core.computation.seq
 
 import oscar.cbls.algo.sequence.IntSequence
 
-object SeqUpdateRollBackToCheckpoint {
+object SeqUpdateRollBackToTopCheckpoint {
   def apply(
     checkpoint: IntSequence,
     howToRollBack: SeqUpdate,
     level: Int
-  ): SeqUpdateRollBackToCheckpoint = {
-    new SeqUpdateRollBackToCheckpoint(checkpoint, howToRollBack, level)
+  ): SeqUpdateRollBackToTopCheckpoint = {
+    new SeqUpdateRollBackToTopCheckpoint(checkpoint, howToRollBack, level)
   }
 
   def unapply(
-    seqUpdateRollBackToCheckpoint: SeqUpdateRollBackToCheckpoint
+    seqUpdateRollBackToCheckpoint: SeqUpdateRollBackToTopCheckpoint
   ): Option[(IntSequence, SeqUpdate, Int)] =
     Some(
       seqUpdateRollBackToCheckpoint.checkpoint,
@@ -34,7 +34,7 @@ object SeqUpdateRollBackToCheckpoint {
     )
 }
 
-class SeqUpdateRollBackToCheckpoint(
+class SeqUpdateRollBackToTopCheckpoint(
   val checkpoint: IntSequence,
   val howToRollBack: SeqUpdate,
   val level: Int
@@ -58,7 +58,7 @@ class SeqUpdateRollBackToCheckpoint(
     expectedValueAfterFullReverse: IntSequence,
     updatesAlreadyReversed: SeqUpdate
   ): SeqUpdate = {
-    require(false, "Cannot reverse SeqUpdateRollBackToCheckpoint")
+    require(false, "Cannot reverse SeqUpdateRollBackToTopCheckpoint")
     null
   }
 
@@ -85,8 +85,6 @@ class SeqUpdateRollBackToCheckpoint(
 
   override protected[seq] def regularize(maxPivot: Int): SeqUpdate = this
 
-  override def depth: Int = 0
-
   override def toString: String =
-    s"SeqUpdateRollBackToCheckpoint(level:$level checkpoint:$checkpoint)"
+    s"SeqUpdateRollBackToTopCheckpoint(level:$level checkpoint:$checkpoint)"
 }

@@ -29,7 +29,7 @@ object SeqUpdateDefineCheckpoint {
 class SeqUpdateDefineCheckpoint(prev: SeqUpdate, maxPivotPerValuePercent: Int, val level: Int) extends SeqUpdateWithPrev(prev, prev.newValue) {
 
   override protected[computation] def reverseThis(newValueForThisAfterFullReverse: IntSequence, nextOp: SeqUpdate): SeqUpdate = {
-    require(nextOp.newValue quickEquals this.newValue)
+    require(nextOp.newValue sameIdentity this.newValue)
     prev.reverseThis(newValueForThisAfterFullReverse, SeqUpdateDefineCheckpoint(nextOp, maxPivotPerValuePercent, level))
   }
 

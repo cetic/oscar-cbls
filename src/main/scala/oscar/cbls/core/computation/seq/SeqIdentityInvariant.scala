@@ -34,7 +34,7 @@ class SeqIdentityInvariant(
 ) extends Invariant(propagationStructure)
     with SeqNotificationTarget {
 
-  registerStaticallyListenedElement(fromValue)
+  registerDynamicallyAndStaticallyListenedElement(fromValue)
   toValue.setDefiningInvariant(this)
 
   toValue := fromValue.value
@@ -105,29 +105,26 @@ class SeqIdentityInvariant(
         toValue := s
       case SeqUpdateLastNotified(value: IntSequence) =>
         assert(value equals toValue.newValue)
-      case SeqUpdateRollBackToCheckpoint(
+      case SeqUpdateRollBackToTopCheckpoint(
             value: IntSequence,
             howToRollBack: SeqUpdate,
             level: Int
           ) =>
-        // roll back might free some checkpoints implicitly
-        while (level < levelTopCheckpoint) {
-          toValue.releaseTopCheckpoint()
-          popTopCheckpoint()
-        }
         require(level == levelTopCheckpoint)
         require(
-          value quickEquals topCheckpoint,
+          value sameIdentity topCheckpoint,
           s"fail on quick equals equals=${value.toList equals topCheckpoint.toList} value:$value topCheckpoint:$topCheckpoint"
         )
-        toValue.rollbackToTopCheckpoint(value)
+        toValue.rollbackToTopCheckpoint()
+      case SeqUpdateReleaseTopCheckPoint(_: SeqUpdate, _: IntSequence) =>
+        toValue.releaseTopCheckpoint()
       case SeqUpdateDefineCheckpoint(prev: SeqUpdate, level: Int) =>
         digestChanges(prev)
         while (level <= levelTopCheckpoint) {
           toValue.releaseTopCheckpoint()
           popTopCheckpoint()
         }
-        require(changes.newValue quickEquals prev.newValue)
+        require(changes.newValue sameIdentity prev.newValue)
         pushTopCheckpoint(changes.newValue)
         toValue.defineCurrentValueAsCheckpoint()
 

@@ -51,7 +51,7 @@ object SeqUpdateRemove {
     prev match {
       // check if the last two moves cancelled themselves
       case SeqUpdateInsert(_: Int, _: IntSequenceExplorer, insertPrev: SeqUpdate)
-          if insertPrev.newValue quickEquals seq =>
+          if insertPrev.newValue sameIdentity seq =>
         insertPrev
       case _ => new SeqUpdateRemove(removePositionExplorer, prev, seq)
     }
@@ -111,12 +111,12 @@ class SeqUpdateRemove(
 
   override def oldPosToNewPos(oldPos: Int): Option[Int] = {
     if (oldPos == explorerAtRemovePosition.position) None
-    else if (oldPos < explorerAtRemovePosition) Some(oldPos)
+    else if (oldPos < explorerAtRemovePosition.position) Some(oldPos)
     else Some(oldPos - 1)
   }
 
   override def newPos2OldPos(newPos: Int): Option[Int] = {
-    if (newPos < explorerAtRemovePosition) Some(newPos)
+    if (newPos < explorerAtRemovePosition.position) Some(newPos)
     else Some(newPos + 1)
   }
 

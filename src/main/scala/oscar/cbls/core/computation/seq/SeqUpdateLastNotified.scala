@@ -18,8 +18,6 @@ import oscar.cbls.algo.sequence.IntSequence
 /** The first update of any stack of updates.
   *
   * A new SeqUpdateLastNotified is created when :
-  *   - Defining a new checkpoint
-  *   - Roll-backing to a previous checkpoint
   *   - Propagating
   *   - Creating a SeqVariable
   *
@@ -43,7 +41,7 @@ case class SeqUpdateLastNotified(value: IntSequence) extends SeqUpdate(value) {
     updatesAlreadyReversed: SeqUpdate
   ): SeqUpdate = {
     require(
-      expectedValueAfterFullReverse quickEquals this.newValue,
+      expectedValueAfterFullReverse sameIdentity this.newValue,
       s"not proper reverse target on $this target:$expectedValueAfterFullReverse"
     )
     // In this case we
@@ -62,7 +60,7 @@ case class SeqUpdateLastNotified(value: IntSequence) extends SeqUpdate(value) {
     */
   override protected[seq] def appendThisTo(previousUpdates: SeqUpdate): SeqUpdate = {
     require(
-      this.newValue quickEquals previousUpdates.newValue,
+      this.newValue sameIdentity previousUpdates.newValue,
       "illegal append operation; values do not match"
     )
     previousUpdates
@@ -73,6 +71,4 @@ case class SeqUpdateLastNotified(value: IntSequence) extends SeqUpdate(value) {
   override protected[seq] def regularize(maxPivot: Int): SeqUpdate = SeqUpdateLastNotified(
     value.regularizeToMaxPivot(maxPivot)
   )
-
-  override def depth: Int = 0
 }

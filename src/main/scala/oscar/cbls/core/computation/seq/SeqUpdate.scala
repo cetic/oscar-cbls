@@ -66,9 +66,6 @@ abstract class SeqUpdate(val newValue: IntSequence) {
   protected[seq] def explicitHowToRollBack(): SeqUpdate
 
   protected[seq] def regularize(maxPivot: Int): SeqUpdate
-
-  // TODO : what is this actually for ???
-  def depth: Int
 }
 
 /** A more sophisticate abstract structure for IntSequence updates
@@ -83,8 +80,4 @@ abstract class SeqUpdateWithPrev(val prev: SeqUpdate, newValue: IntSequence)
     extends SeqUpdate(newValue) {
   def oldPosToNewPos(oldPos: Int): Option[Int]
   def newPos2OldPos(newPos: Int): Option[Int]
-  override val depth: Int = {
-    val previousDepth = prev.depth
-    if (previousDepth >= 0) previousDepth + 1 else previousDepth - 1
-  }
 }

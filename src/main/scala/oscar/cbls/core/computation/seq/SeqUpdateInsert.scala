@@ -75,7 +75,7 @@ object SeqUpdateInsert {
     prev match {
       // check if the last two moves cancelled themselves
       case _ @SeqUpdateRemove(_: IntSequenceExplorer, prevOfDelete: SeqUpdate)
-          if prevOfDelete.newValue quickEquals seq =>
+          if prevOfDelete.newValue sameIdentity seq =>
         prevOfDelete
       case _ => new SeqUpdateInsert(value, insertAfterPositionExplorer, prev, seq)
     }

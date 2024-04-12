@@ -18,16 +18,20 @@ import oscar.cbls.core.computation.{Invariant, SavedValue, Store, Variable}
 import oscar.cbls.core.propagation.PropagationStructure
 
 class SeqVariable(
-                   model: PropagationStructure,
-                   initialValues: List[Int],
-                   name: String = "SeqVariable",
-                   maxPivotPerValuePercent: Int = 4,
-                   isConstant: Boolean = false
+  model: PropagationStructure,
+  initialValues: List[Int],
+  name: String = "SeqVariable",
+  maxPivotPerValuePercent: Int = 4,
+  isConstant: Boolean = false
 ) extends Variable(model, isConstant) {
   require(model != null)
+  setDomain(Int.MinValue, Int.MaxValue)
 
   // Latest propagated value
-  private var mOldValue: IntSequence = IntSequence(initialValues)
+  private var mOldValue: IntSequence = {
+    if (initialValues.isEmpty) IntSequence.empty()
+    else IntSequence(initialValues)
+  }
   // Stack of notification to notify at next propagation
   private var toNotify: SeqUpdate = SeqUpdateLastNotified(mOldValue)
 
@@ -54,11 +58,11 @@ class SeqVariable(
 
   // Check if the explorer is on the right IntSequence
   private def checkExplorerForMove(explorer: IntSequenceExplorer, explorerName: String): Unit = {
-    require(
-      toNotify.newValue.quickEquals(explorer.intSequence),
-      s"$explorerName must explore the current IntSequence." +
-        s"\nShould be ${toNotify.newValue}.\nGot ${explorer.intSequence}"
-    )
+//    require(
+//      toNotify.newValue.sameIdentity(explorer.intSequence),
+//      s"$explorerName must explore the current IntSequence." +
+//        s"\nShould be ${toNotify.newValue}.\nGot ${explorer.intSequence}"
+//    )
   }
 
   /** Inserts a value after a given position.
@@ -324,13 +328,14 @@ class SeqVariable(
     *   The new IntSequence value
     */
   def setValue(newIntSequence: IntSequence): Unit = {
+    println(performedSinceTopCheckpoint, levelOfTopCheckpoint, toNotify)
     require(
       performedSinceTopCheckpoint == null &&
         levelOfTopCheckpoint == -1,
       "Sequences cannot be assigned when a checkpoint has been defined"
     )
 
-    if (!(toNotify.newValue quickEquals newIntSequence)) {
+    if (!(toNotify.newValue sameIdentity newIntSequence)) {
       toNotify = SeqUpdateAssign(newIntSequence)
       scheduleForPropagation()
     }
@@ -364,11 +369,24 @@ class SeqVariable(
     toNotify.newValue
   }
 
-  def rollbackToTopCheckpoint(checkpoint: IntSequence): Unit = {
-    require(
-      checkpoint quickEquals topCheckpoint,
-      s"given checkpoint not quick equals to my top checkpoint; equal=${checkpoint equals topCheckpoint} checkpoint:$checkpoint my topCheckpoint:$topCheckpoint"
-    )
+  /** Rollback to the top checkpoint.
+    *
+    * Either the SeqVariable is already propagated ==> we need to specify how to rollback. Meaning
+    * which operation has to be made to be back at the previous state.
+    *
+    * or it wasn't propagated, then we just drop the last updates
+    *
+    * @param checkingCheckpoint
+    *   An optional checkpoint just to check if the calling neighborhood/method is at the same level
+    *   as the SeqVariable
+    */
+  def rollbackToTopCheckpoint(checkingCheckpoint: Option[IntSequence] = None): Unit = {
+    if (checkingCheckpoint.nonEmpty)
+      require(
+        checkingCheckpoint.get sameIdentity topCheckpoint,
+        s"The checking checkpoint does not quick equals the top checkpoint \nDo they contain the same elements ? " +
+          s"${checkingCheckpoint.get equals topCheckpoint} \ncheckingCheckpoint:${checkingCheckpoint.get} \ntopCheckpoint:$topCheckpoint"
+      )
 
     rollbackSimplification(toNotify, topCheckpoint) match {
       case CheckpointDeclarationReachedAndRemoved(_: SeqUpdate) =>
@@ -386,8 +404,8 @@ class SeqVariable(
         val howToRollBack = performedSinceTopCheckpoint
           .reverseThis(expectedValueAfterFullReverse = topCheckpoint)
           .appendThisTo(toNotify.explicitHowToRollBack())
-        toNotify = SeqUpdateRollBackToCheckpoint(
-          checkpoint,
+        toNotify = SeqUpdateRollBackToTopCheckpoint(
+          topCheckpoint,
           howToRollBack = howToRollBack,
           level = levelOfTopCheckpoint
         )
@@ -397,47 +415,52 @@ class SeqVariable(
     }
 
     require(
-      toNotify.newValue quickEquals checkpoint,
-      s"${toNotify.newValue} not quickEquals $checkpoint"
+      toNotify.newValue sameIdentity topCheckpoint,
+      s"The new value, after rollback does not quickEquals the top checkpoint \nNew value : ${toNotify.newValue}  \n Top Checkpoint : $topCheckpoint"
     )
   }
 
   /** Releases the top checkpoint.
-    *
-    * Used when exploring neighborhood. For instance, after exploring OnePointMove, we need to
-    * release the top checkpoint.
-    */
-  def releaseTopCheckpoint(): Unit = {
+   *
+   * Used when exploring neighborhood. For instance, after exploring OnePointMove, we need to
+   * release the top checkpoint.
+   */
+  def releaseTopCheckpoint(): IntSequence = {
     require(topCheckpoint != null, "No checkpoint defined to release")
     require(levelOfTopCheckpoint >= 0)
-
-    removeCheckpointDeclarationIfPresent(toNotify, topCheckpoint) match {
-      case CheckpointDeclarationReachedAndRemoved(newToNotify: SeqUpdate) =>
-        toNotify = newToNotify
-      case CheckpointReachedNotRemoved(_: SeqUpdate) =>
-        require(requirement = false, "Unexpected internal result")
-      case NoSimplificationPerformed =>
-      // Checkpoint propagated, nothing to do
-    }
+    require(toNotify.newValue sameIdentity topCheckpoint, "You must be at top checkpoint to release it")
 
     // Two cases, currently at checkpoint 0 or higher than 0
-    checkpointStackNotTop match {
+
+    println(s"DEBUG : $topCheckpoint")
+    println(s"DEBUG : $levelOfTopCheckpoint")
+    println(s"DEBUG : $performedSinceTopCheckpoint")
+    println(s"DEBUG : ${checkpointStackNotTop.size}")
+    checkpointStackNotTop = checkpointStackNotTop match {
       case newTop :: tail =>
         require(levelOfTopCheckpoint > 0)
-        checkpointStackNotTop = tail
         topCheckpoint = newTop._1
-        performedSinceTopCheckpoint =
-          if (performedSinceTopCheckpoint != null && newTop._2 != null)
-            performedSinceTopCheckpoint.appendThisTo(newTop._2)
-          else null
-        levelOfTopCheckpoint -= 1
+        performedSinceTopCheckpoint = newTop._2
+        tail
       case Nil =>
         // there is no upper checkpoint
         require(levelOfTopCheckpoint == 0)
-        levelOfTopCheckpoint = -1
         topCheckpoint = null
         performedSinceTopCheckpoint = null
+        Nil
     }
+    toNotify = toNotify match {
+      case _: SeqUpdateRollBackToTopCheckpoint =>
+        SeqUpdateReleaseTopCheckPoint(toNotify, toNotify.newValue)
+      case dc: SeqUpdateDefineCheckpoint =>
+        dc.prev
+    }
+    println(s"DEBUG 2 : $topCheckpoint")
+    println(s"DEBUG 2 : $levelOfTopCheckpoint")
+    println(s"DEBUG 2 : $performedSinceTopCheckpoint")
+    println(s"DEBUG 2 : ${checkpointStackNotTop.size}")
+    levelOfTopCheckpoint -= 1
+    topCheckpoint
   }
 
   /** Tries to find the last update corresponding to the searched checkpoint.
@@ -467,7 +490,7 @@ class SeqVariable(
       case SeqUpdateInsert(_: Int, _: IntSequenceExplorer, prev: SeqUpdate) =>
         rollbackSimplification(prev, searchedCheckpoint) match {
           case NoSimplificationPerformed =>
-            if (searchedCheckpoint quickEquals updates.newValue)
+            if (searchedCheckpoint sameIdentity updates.newValue)
               CheckpointReachedNotRemoved(updates)
             else NoSimplificationPerformed
           case x => x
@@ -482,7 +505,7 @@ class SeqVariable(
           ) =>
         rollbackSimplification(prev, searchedCheckpoint) match {
           case NoSimplificationPerformed =>
-            if (searchedCheckpoint quickEquals updates.newValue)
+            if (searchedCheckpoint sameIdentity updates.newValue)
               CheckpointReachedNotRemoved(updates)
             else NoSimplificationPerformed
           case x => x
@@ -491,32 +514,34 @@ class SeqVariable(
       case SeqUpdateRemove(_: IntSequenceExplorer, prev: SeqUpdate) =>
         rollbackSimplification(prev, searchedCheckpoint) match {
           case NoSimplificationPerformed =>
-            if (searchedCheckpoint quickEquals updates.newValue)
+            if (searchedCheckpoint sameIdentity updates.newValue)
               CheckpointReachedNotRemoved(updates)
             else NoSimplificationPerformed
           case x => x
         }
 
       case SeqUpdateAssign(value: IntSequence) =>
-        if (value quickEquals searchedCheckpoint)
+        if (value sameIdentity searchedCheckpoint)
           CheckpointReachedNotRemoved(updates)
         else NoSimplificationPerformed
 
       case SeqUpdateLastNotified(value: IntSequence) =>
-        if (value quickEquals searchedCheckpoint)
+        if (value sameIdentity searchedCheckpoint)
           CheckpointReachedNotRemoved(updates)
         else NoSimplificationPerformed
 
       case SeqUpdateDefineCheckpoint(_, _) =>
         require(
-          updates.newValue quickEquals searchedCheckpoint,
-          s"The targeted checkpoint must (in this case) be equal to the latest defined checkpoint. " +
-            s"Latest defined checkpoint ${updates.newValue} got targeted checkpoint $searchedCheckpoint"
+          updates.newValue sameIdentity searchedCheckpoint,
+          s"Reaching a SeqUpdateDefinedCheckpoint while roll backing, it's value should be the targeted checkpoint.\n  " +
+            s"Same identity : false \t Same value : ${updates.newValue equals searchedCheckpoint}\n" +
+            s"Reached define checkpoint value : ${updates.newValue} \n" +
+            s"Targeted checkpoint : $searchedCheckpoint"
         )
         CheckpointReachedNotRemoved(updates)
 
-      case SeqUpdateRollBackToCheckpoint(checkpointValue: IntSequence, _: SeqUpdate, _: Int) =>
-        if (checkpointValue quickEquals searchedCheckpoint)
+      case SeqUpdateRollBackToTopCheckpoint(checkpointValue: IntSequence, _: SeqUpdate, _: Int) =>
+        if (checkpointValue sameIdentity searchedCheckpoint)
           CheckpointReachedNotRemoved(updates)
         else NoSimplificationPerformed
 
@@ -580,12 +605,12 @@ class SeqVariable(
 
       case SeqUpdateDefineCheckpoint(prev: SeqUpdate, _: Int) =>
         require(
-          updates.newValue quickEquals searchedCheckpoint,
+          updates.newValue sameIdentity searchedCheckpoint,
           "require fail on quick equals: " + updates.newValue + "should== " + searchedCheckpoint
         )
         CheckpointDeclarationReachedAndRemoved(prev)
 
-      case SeqUpdateRollBackToCheckpoint(_: IntSequence, _: SeqUpdate, _: Int) =>
+      case SeqUpdateRollBackToTopCheckpoint(_: IntSequence, _: SeqUpdate, _: Int) =>
         NoSimplificationPerformed
 
       case _ => NoSimplificationPerformed
@@ -593,11 +618,11 @@ class SeqVariable(
   }
 
   @inline
-  override protected def performPropagation(): Unit = {
+  override def performPropagation(): Unit = {
     val dynListElements = getDynamicallyListeningElements
     dynListElements.foreach {
       case (inv: SeqNotificationTarget, index: Int) =>
-      inv.notifySeqChanges(this, index, toNotify)
+        inv.notifySeqChanges(this, index, toNotify)
       case (x: Invariant, _) =>
         throw new IllegalArgumentException(
           s"The listening Invariant ($x) does not extend SeqNotificationTarget, therefore no notification can be send to it."
@@ -630,9 +655,23 @@ class SeqVariable(
   /** Save the state of this variable */
   override def save(): SavedValue = SeqSavedValue(this)
 
+  override def setDomain(min: Long, max: Long): Unit = {
+    require(
+      min >= Int.MinValue && max <= Int.MaxValue,
+      "The maximum domain for SeqVariable is Integer range"
+    )
+    super.setDomain(min, max)
+  }
+
   override def checkInternals(): Unit = {
     require(this.value.toList equals toNotify.newValue.toList)
     require(this.toNotify.isInstanceOf[SeqUpdateLastNotified], Some(s"toNotify:$toNotify"))
+  }
+
+  override def toString: String = {
+    s"$name :\n " +
+      s"Current value : ${toNotify.newValue}\n" +
+      s"Checkpoint level : $levelOfTopCheckpoint | Current updates : $toNotify"
   }
 }
 

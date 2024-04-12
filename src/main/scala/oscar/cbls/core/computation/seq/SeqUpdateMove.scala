@@ -82,7 +82,7 @@ object SeqUpdateMove {
     seq: IntSequence
   ): SeqUpdate = {
     prev match {
-      case u: SeqUpdateMove if u.prev.newValue quickEquals seq => u.prev
+      case u: SeqUpdateMove if u.prev.newValue sameIdentity seq => u.prev
       case _ =>
         new SeqUpdateMove(fromIncludedExplorer, toIncludedExplorer, afterExplorer, flip, prev, seq)
     }
@@ -237,5 +237,5 @@ class SeqUpdateMove(
     )
 
   override def toString: String =
-    s"SeqUpdateMove(fromIncluded:$fromIncludedExplorer toIncluded:$toIncludedExplorer after:$afterExplorer flip:$flip prev:$prev)"
+    s"SeqUpdateMove(fromIncluded:${fromIncludedExplorer.position} toIncluded:${toIncludedExplorer.position} after:${afterExplorer.position} flip:$flip prev:$prev)"
 }

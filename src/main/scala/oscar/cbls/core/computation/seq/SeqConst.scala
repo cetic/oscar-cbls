@@ -13,8 +13,6 @@
 
 package oscar.cbls.core.computation.seq
 
-import oscar.cbls.algo.sequence.IntSequence
-import oscar.cbls.core.computation.{Store, Variable}
 import oscar.cbls.core.propagation.PropagationStructure
 
 object SeqConst {
