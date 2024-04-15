@@ -1,35 +1,31 @@
 package oscar.cbls.core.computation.set
 
-trait SetNotificationTarget extends PropagationElement {
+trait SetNotificationTarget {
 
-  /** this method will be called just before the variable "v" is actually updated.
+  /** Notifies the listening [[oscar.cbls.core.propagation.PropagationElement]] that the listened
+    * [[SetVariable]] has changed. This method has to be implemented by the listening element, and
+    * will be called by the listened variable.
+    *
+    * This method uses parameters providing incremental information (`addedValues` and
+    * `removedValues`), as well as information on the entire value (`oldValue` and `newValue`),
+    * since different propagation elements may make use of either or both kinds.
     *
     * @param v
-    * @param id
-    *   d is always MinValue when notified for a valueWiseKey
+    *   The listened SetVariable
     * @param addedValues
+    *   The values added to the SetVariable
     * @param removedValues
+    *   The values removed from the SetVariable
     * @param oldValue
+    *   The old value of the SetVariable
     * @param newValue
+    *   The new value of the SetVariable
     */
   def notifySetChanges(
     v: ChangingSetValue,
-    id: Int,
     addedValues: Iterable[Int],
     removedValues: Iterable[Int],
-    oldValue: SortedSet[Int],
-    newValue: SortedSet[Int]
+    oldValue: Set[Int],
+    newValue: Set[Int]
   ): Unit
-
-  def registerDynamicValueWiseDependency(s: SetValue): ValueWiseKey = {
-    s match {
-      case c: ChangingSetValue =>
-        val key          = registerDynamicallyListenedElement(c, Int.MinValue)
-        val valueWiseKey = c.instrumentKeyToValueWiseKey(key)
-        valueWiseKey.target = this
-        valueWiseKey
-      case _ =>
-        DoNothingValueWiseKey
-    }
-  }
 }
