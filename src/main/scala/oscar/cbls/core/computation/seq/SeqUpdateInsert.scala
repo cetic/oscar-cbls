@@ -135,15 +135,6 @@ class SeqUpdateInsert(
     )
   }
 
-  override protected[computation] def explicitHowToRollBack(): SeqUpdate = {
-    SeqUpdateInsert(
-      value: Int,
-      insertAfterPositionExplorer: IntSequenceExplorer,
-      prev.explicitHowToRollBack(),
-      seq
-    )
-  }
-
   override def oldPosToNewPos(oldPos: Int): Option[Int] = {
     if (oldPos < insertionPos) Some(oldPos)
     else Some(oldPos + 1)

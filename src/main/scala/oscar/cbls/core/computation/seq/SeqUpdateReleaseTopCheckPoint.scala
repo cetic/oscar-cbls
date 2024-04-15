@@ -23,9 +23,5 @@ class SeqUpdateReleaseTopCheckPoint(prev: SeqUpdate, seq: IntSequence) extends S
 
   override protected[seq] def appendThisTo(previousUpdates: SeqUpdate): SeqUpdate = ???
 
-  override protected[seq] def explicitHowToRollBack(): SeqUpdate = {
-    SeqUpdateReleaseTopCheckPoint(prev, seq)
-  }
-
   override protected[seq] def regularize(maxPivot: Int): SeqUpdate = ???
 }

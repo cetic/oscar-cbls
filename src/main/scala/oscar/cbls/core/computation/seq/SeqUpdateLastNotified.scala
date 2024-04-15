@@ -66,8 +66,6 @@ case class SeqUpdateLastNotified(value: IntSequence) extends SeqUpdate(value) {
     previousUpdates
   }
 
-  override protected[seq] def explicitHowToRollBack(): SeqUpdate = this
-
   override protected[seq] def regularize(maxPivot: Int): SeqUpdate = SeqUpdateLastNotified(
     value.regularizeToMaxPivot(maxPivot)
   )

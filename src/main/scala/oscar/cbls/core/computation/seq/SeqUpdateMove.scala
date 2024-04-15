@@ -188,17 +188,6 @@ class SeqUpdateMove(
     )
   }
 
-  override protected[computation] def explicitHowToRollBack(): SeqUpdate = {
-    SeqUpdateMove(
-      fromIncludedExplorer,
-      toIncludedExplorer,
-      afterExplorer,
-      flip,
-      prev.explicitHowToRollBack(),
-      seq: IntSequence
-    )
-  }
-
   private val localBijection: PiecewiseUnitaryAffineFunction = seq match {
     case m: MovedIntSequence =>
       m.localBijection

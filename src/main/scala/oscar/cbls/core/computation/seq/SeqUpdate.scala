@@ -57,14 +57,6 @@ abstract class SeqUpdate(val newValue: IntSequence) {
     */
   protected[seq] def appendThisTo(previousUpdates: SeqUpdate): SeqUpdate
 
-  /** Returns the needed updates in order to roll-back to an explicit checkPoint.
-   *
-   * Used when we have multiple roll-back instruction within the same stack of updates without a regularization
-   *
-   * @return
-   */
-  protected[seq] def explicitHowToRollBack(): SeqUpdate
-
   protected[seq] def regularize(maxPivot: Int): SeqUpdate
 }
 

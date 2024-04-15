@@ -403,7 +403,7 @@ class SeqVariable(
 
         val howToRollBack = performedSinceTopCheckpoint
           .reverseThis(expectedValueAfterFullReverse = topCheckpoint)
-          .appendThisTo(toNotify.explicitHowToRollBack())
+          .appendThisTo(toNotify)
         toNotify = SeqUpdateRollBackToTopCheckpoint(
           topCheckpoint,
           howToRollBack = howToRollBack,

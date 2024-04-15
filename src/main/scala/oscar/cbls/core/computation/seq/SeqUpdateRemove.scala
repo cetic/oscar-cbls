@@ -105,10 +105,6 @@ class SeqUpdateRemove(
     SeqUpdateRemove(explorerAtRemovePosition, prev.appendThisTo(previousUpdates), seq)
   }
 
-  override protected[computation] def explicitHowToRollBack(): SeqUpdate = {
-    SeqUpdateRemove(explorerAtRemovePosition, prev.explicitHowToRollBack(), seq)
-  }
-
   override def oldPosToNewPos(oldPos: Int): Option[Int] = {
     if (oldPos == explorerAtRemovePosition.position) None
     else if (oldPos < explorerAtRemovePosition.position) Some(oldPos)

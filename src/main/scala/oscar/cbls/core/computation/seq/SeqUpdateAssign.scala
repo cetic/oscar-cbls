@@ -37,8 +37,6 @@ class SeqUpdateAssign(val newSequence: IntSequence) extends SeqUpdate(newSequenc
 
   override protected[computation] def appendThisTo(previousUpdates: SeqUpdate): SeqUpdate = this
 
-  override protected[computation] def explicitHowToRollBack(): SeqUpdate = this
-
   override protected[computation] def regularize(maxPivot: Int): SeqUpdate =
     SeqUpdateAssign(newSequence.regularizeToMaxPivot(maxPivot))
 }

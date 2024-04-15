@@ -37,10 +37,6 @@ class SeqUpdateDefineCheckpoint(prev: SeqUpdate, maxPivotPerValuePercent: Int, v
     SeqUpdateDefineCheckpoint(prev.appendThisTo(previousUpdates), maxPivotPerValuePercent,level)
   }
 
-  override protected[computation] def explicitHowToRollBack(): SeqUpdate = {
-    SeqUpdateDefineCheckpoint(prev.explicitHowToRollBack(), maxPivotPerValuePercent,level)
-  }
-
   protected[computation] def regularize(maxPivot:Int) : SeqUpdate = this
 
   // TODO : Is it the right way ?
