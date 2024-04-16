@@ -18,7 +18,7 @@ class IntVariableTestSuite extends AnyFunSuite {
     val output                  = new IntVariable(store, randomValues.head)
     randomValues = randomValues.tail
     new IntIdentityInvariant(store, input, output)
-    store.setupPropagationStructure()
+    store.close()
 
     input :+= randomValues.head
     referenceInt += randomValues.head
@@ -65,7 +65,7 @@ class IntVariableTestSuite extends AnyFunSuite {
     var referenceInt      = startValue
     val savedReferenceInt = startValue
     new IntIdentityInvariant(store, input, output)
-    store.setupPropagationStructure()
+    store.close()
 
     val savedValue = input.save()
     for (_ <- 0 until 10) {
@@ -81,7 +81,7 @@ class IntVariableTestSuite extends AnyFunSuite {
   test("An IntConstant cannot be modified") {
     val store = new Store()
     val const = new IntConstant(store, 15)
-    store.setupPropagationStructure()
+    store.close()
 
     val exception = intercept[IllegalArgumentException](const :+= 15)
     assert(exception.getMessage.contains("The value of a constant variable can not be changed"))

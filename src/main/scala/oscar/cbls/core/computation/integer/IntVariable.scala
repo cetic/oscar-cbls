@@ -13,12 +13,12 @@
 
 package oscar.cbls.core.computation.integer
 
-import oscar.cbls.algo.dll.DoublyLinkedList
-import oscar.cbls.core.computation.{Invariant, SavedValue, Store, Variable}
-import oscar.cbls.core.propagation.PropagationElement
+import oscar.cbls.core.computation.{Invariant, KeyForRemoval, SavedValue, Store, Variable}
 
 class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
     extends Variable(model, isConstant) {
+
+  override type NotificationTargetType = IntNotificationTarget
 
   // The new value of this variable, not propagated yet if different from _oldValue
   private var _newValue: Long = initialValue
@@ -87,15 +87,15 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
       Some("error on IntValue:" + this.getClass.toString + " " + this)
     )
     require(
-      checkValueWithinDomain(_newValue),
+      isValueWithinDomain(_newValue),
       s"Value is outside defined domain. Domain : ${domain.get} - value : ${_newValue}"
     )
   }
 
   override def registerDynamicallyListeningElement(
-    elem: Invariant,
+    elem: NotificationTargetType,
     variableIndex: Int = -1
-  ): DoublyLinkedList[(PropagationElement, Int)]#DLLStorageElement = {
+  ): KeyForRemoval[(NotificationTargetType, Int)] = {
     require(
       elem.isInstanceOf[IntNotificationTarget],
       "The listening invariant must extends IntNotificationTarget trait to be able to receive notification upon change"
