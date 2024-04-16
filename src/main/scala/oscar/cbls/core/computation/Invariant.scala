@@ -1,6 +1,18 @@
+// OscaR is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 2.1 of the License, or
+// (at your option) any later version.
+//
+// OscaR is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License  for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License along with OscaR.
+// If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+
 package oscar.cbls.core.computation
 
-import oscar.cbls.algo.dll.DoublyLinkedList
 import oscar.cbls.core.propagation._
 
 /** Abstract structure for Invariant definition.
@@ -10,9 +22,9 @@ import oscar.cbls.core.propagation._
   * IntVariable as input and output will ensure that the output variable is equal to the input
   * variable.
   *
-  * This abstract class provides an "empty" implementation of the method performPropagation. There
-  * is two way of propagating invariant result to it's output variable. When you receive a
-  * notification of modification from the input variable you ...
+  * The [[PropagationElement]] abstract class provides an "empty" implementation of the method
+  * performPropagation. There is two ways of propagating invariant result to its output variable.
+  * When you receive a notification of modification from the input variable you ...
   *   - ... directly set the new value of the output variable. In that case you do not need to
   *     override performPropagation()
   *   - ... do some computation and SCHEDULE the invariant FOR PROPAGATION. In that case you need to
@@ -20,44 +32,13 @@ import oscar.cbls.core.propagation._
   *
   * @param propagationStructure
   *   The propagation structure to which the element is attached
+  * @param name
+  *   The name (optional) of your Invariant
   */
 abstract class Invariant(propagationStructure: PropagationStructure, name: Option[String] = None)
     extends PropagationElement(propagationStructure) {
 
   def name(): String = this.name.getOrElse(s"Invariant_$id")
-
-  /** Registers the Variable as dynamically listened by this Invariant.
-    *
-    * Used during the search so that the variable knows which invariant needs to be notified.
-    * IMPORTANT : If, in the future, you may need to stop listening to this variable, keep the
-    * returned [[KeyForRemoval]]
-    *
-    * @param variable
-    *   The listened variable
-    * @param index
-    *   An optional contextual index sent by the variable along with it's update
-    * @return
-    *   A special key with one purpose : being able to stop listening to this variable
-    */
-  def registerDynamicallyListenedElement(variable: Variable, index: Int = -1): KeyForRemoval = {
-    KeyForRemoval(variable.registerDynamicallyListeningElement(this, index))
-  }
-
-  /** Registers the Variable as statically and dynamically listened by this Invariant.
-    *
-    * Used when building the propagation graph (statically) and during the search so that the
-    * variable knows which invariant needs to be notified.
-    *
-    * @param variable
-    *   The listened variable
-    */
-  def registerDynamicallyAndStaticallyListenedElement(
-    variable: Variable,
-    index: Int = -1
-  ): KeyForRemoval = {
-    super.registerStaticallyListenedElement(variable)
-    registerDynamicallyListenedElement(variable, index)
-  }
 
   override def toString: String = this.name()
 }

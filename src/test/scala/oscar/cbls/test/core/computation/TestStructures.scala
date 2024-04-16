@@ -1,44 +1,7 @@
 package oscar.cbls.test.core.computation
 
 import oscar.cbls.algo.dll.DoublyLinkedList
-import oscar.cbls.core.computation.{
-  IncredibleBulk,
-  Invariant,
-  KeyForRemoval,
-  SavedValue,
-  Store,
-  Variable
-}
-import oscar.cbls.core.propagation.PropagationElement
-
-// Test class for a variable that cannot change its value
-case class TestConstantVariable(store: Store, value: Int = 0) extends Variable(store, true) {
-
-  /** Save the state of this variable */
-  override def save(): SavedValue = {
-    require(requirement = false, "Should not reach this")
-    null
-  }
-
-  /** this is the propagation method that should be overridden by propagation elements. notice that
-    * it is only called in a propagation wave if: 1L: it has been registered for propagation since
-    * the last time it was propagated 2L: it is included in the propagation wave: partial
-    * propagation wave do not propagate all propagation elements; it only propagates the ones that
-    * come in the predecessors of the targeted propagation element overriding this method is
-    * optional, so an empty body is provided by default
-    */
-  override def performPropagation(): Unit = {}
-
-  /** This is the debug procedure through which propagation element can redundantly check that the
-    * incremental computation they perform through the performPropagation method is correct
-    * overriding this method is optional, so an empty body is provided by default
-    */
-  override def checkInternals(): Unit = {}
-
-  def getTestDynamicallyListeningElements: DoublyLinkedList[(PropagationElement,Int)] = {
-    this.getDynamicallyListeningElements
-  }
-}
+import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, SavedValue, Store, Variable}
 
 // Test class that saves the value of an TestVaryingVariable and restores it.
 case class TestSavedValue(testVaryingVariable: TestVaryingVariable)
@@ -51,7 +14,10 @@ case class TestSavedValue(testVaryingVariable: TestVaryingVariable)
 }
 
 // Test class for a variable that can change its value (basically an IntVar with only a set method)
-case class TestVaryingVariable(store: Store, startValue: Int = 0) extends Variable(store, false) {
+case class TestVaryingVariable(store: Store, startValue: Int = 0, constant: Boolean = false) extends Variable(store, constant) {
+
+  override type NotificationTargetType = TestVariableNotificationTarget
+
   private var newValue: Int = startValue
   private var oldValue: Int = startValue
 
@@ -65,7 +31,7 @@ case class TestVaryingVariable(store: Store, startValue: Int = 0) extends Variab
 
   def value: Int = newValue
 
-  def getTestDynamicallyListeningElements: DoublyLinkedList[(PropagationElement, Int)] = {
+  def getTestDynamicallyListeningElements: DoublyLinkedList[(TestVariableNotificationTarget, Int)] = {
     this.getDynamicallyListeningElements
   }
 
@@ -81,8 +47,7 @@ case class TestVaryingVariable(store: Store, startValue: Int = 0) extends Variab
     */
   override def performPropagation(): Unit = {
     getDynamicallyListeningElements.foreach(pe =>
-      pe.asInstanceOf[(TestVariableNotificationTarget,Int)]._1
-        .notifyTestVariableChanged(this, oldValue, newValue)
+      pe._1.notifyTestVariableChanged(this, oldValue, newValue)
     )
     oldValue = newValue
   }
@@ -106,14 +71,14 @@ trait TestVariableNotificationTarget {
 // Test class for an Invariant that maintains the sum of its input variables.
 case class TestInvariant(
   store: Store,
-  inputVariables: List[Variable],
+  inputVariables: List[TestVaryingVariable],
   outputVariable: Option[Variable]
 ) extends Invariant(store)
     with TestVariableNotificationTarget {
   if (outputVariable.isDefined) outputVariable.get.setDefiningInvariant(this)
-  var keysForRemoval: Array[KeyForRemoval] =
+  var keysForRemoval: Array[KeyForRemoval[_]] =
     inputVariables
-      .map(inputVariable => registerDynamicallyAndStaticallyListenedElement(inputVariable))
+      .map(inputVariable => inputVariable.registerDynamicallyListeningElement(this))
       .toArray
 
   private var outputValue: Int =

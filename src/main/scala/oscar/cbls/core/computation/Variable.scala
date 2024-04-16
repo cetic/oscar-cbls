@@ -1,3 +1,16 @@
+// OscaR is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 2.1 of the License, or
+// (at your option) any later version.
+//
+// OscaR is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License  for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License along with OscaR.
+// If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+
 package oscar.cbls.core.computation
 
 import oscar.cbls.algo.dll.DoublyLinkedList
@@ -12,6 +25,8 @@ import oscar.cbls.core.propagation._
   *   The propagation structure to which the element is attached
   * @param isConstant
   *   If the variable is a constant
+  * @param name
+  *   The name (optional) of your Variable
   */
 abstract class Variable(
   propagationStructure: PropagationStructure,
@@ -20,13 +35,18 @@ abstract class Variable(
 ) extends PropagationElement(propagationStructure) {
   require(propagationStructure != null, "The propagation structure must be defined")
 
+  /** The trait type that the [[Invariant]] must extends in order to receive notifications. This
+    * type MUST be overridden when defining a new Variable
+    */
+  type NotificationTargetType
+
   def name(): String = name.getOrElse(s"Variable_$id")
 
   private var _domain: Option[(Long, Long)]              = None
   private[core] var definingInvariant: Option[Invariant] = None
   // Dynamically listening elements, upon update this variable must noticed it's listening element.
-  private val dynamicallyListeningElements: DoublyLinkedList[(PropagationElement, Int)] =
-    if (isConstant) null else new DoublyLinkedList[(PropagationElement, Int)]()
+  private val dynamicallyListeningElements: DoublyLinkedList[(NotificationTargetType, Int)] =
+    if (isConstant) null else new DoublyLinkedList[(NotificationTargetType, Int)]()
 
   /** Limits the values of the variable to this domain. ONLY USED IN DEBUG MODE */
   def setDomain(min: Long, max: Long): Unit = _domain = Some((min, max))
@@ -41,6 +61,7 @@ abstract class Variable(
     *   The defining Invariant
     */
   def setDefiningInvariant(invariant: Invariant): Unit = {
+    require(!isConstant, "A constant Variable cannot have a defining Invariant")
     definingInvariant = Some(invariant)
     registerStaticallyListenedElement(invariant)
   }
@@ -48,40 +69,42 @@ abstract class Variable(
   /** Whether or not this variable is a decision variable. A decision variable is a variable that is
     * not defined by any invariant.
     */
-  def isADecisionVariable: Boolean = definingInvariant.isEmpty || isConstant
+  def isADecisionVariable: Boolean = definingInvariant.isEmpty
 
   /** Registers dynamically the PropagationElement as a listening element. Whenever the Variable
-    * updates it's value, the listening element will be noticed.
+    * updates its value, the listening element will be noticed.
     *
     * NOTE : Keep the returned value to be able to remove it from the listening
     * [[oscar.cbls.algo.dll.DoublyLinkedList]] using it's delete method.
-    * @param invariant
+    *
+    * @param target
     *   The new listening element
-    * @param variableIndex
-    *   The variable index within invariant context (default -1 if not necessary)
+    * @param indexToRecallAtNotification
+    *   The index that the variable will recall when notifying the invariant about changes
     * @return
     *   A key to ease the removal of this element
     */
-  private[computation] def registerDynamicallyListeningElement(
-    invariant: Invariant,
-    variableIndex: Int
-  ): DoublyLinkedList[(PropagationElement, Int)]#DLLStorageElement = {
+  def registerDynamicallyListeningElement(
+    target: NotificationTargetType,
+    indexToRecallAtNotification: Int = -1
+  ): KeyForRemoval[(NotificationTargetType, Int)] = {
     require(
       !isConstant,
       "Constant variable does not propagate, no need to keep track of listening element."
     )
-    dynamicallyListeningElements.insertStart((invariant, variableIndex))
+    KeyForRemoval(dynamicallyListeningElements.insertStart((target, indexToRecallAtNotification)))
   }
 
   /** Returns dynamically listening propagation elements.
     *
     * Useful when performing propagation.
     */
-  protected final def getDynamicallyListeningElements: DoublyLinkedList[(PropagationElement, Int)] =
+  protected final def getDynamicallyListeningElements
+    : DoublyLinkedList[(NotificationTargetType, Int)] =
     dynamicallyListeningElements
 
   /** Checks if the given value is within the domain */
-  def checkValueWithinDomain(value: Long): Boolean = {
+  def isValueWithinDomain(value: Long): Boolean = {
     domain match {
       case None             => true
       case Some((min, max)) => value >= min && value <= max

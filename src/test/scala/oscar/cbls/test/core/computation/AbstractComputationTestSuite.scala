@@ -9,7 +9,7 @@ class AbstractComputationTestSuite extends AnyFunSuite {
 
   test("Constant variable can not have dynamically listening elements") {
     val store = new Store()
-    val constantVariable = TestConstantVariable(store)
+    val constantVariable = TestVaryingVariable(store,constant = true)
     constantVariable.getTestDynamicallyListeningElements should be(null)
 
     val exception = intercept[IllegalArgumentException](
@@ -36,13 +36,13 @@ class AbstractComputationTestSuite extends AnyFunSuite {
     variable3.getTestDynamicallyListeningElements.size should be(1)
     variable3.getTestDynamicallyListeningElements.head should be((testInvariant,-1))
 
-    store.setupPropagationStructure()
+    store.close()
 
     testInvariant.keysForRemoval(1).stopListeningToThisElement()
     variable2.getTestDynamicallyListeningElements.size should be(0)
     testInvariant.keysForRemoval(2).stopListeningToThisElement()
     variable3.getTestDynamicallyListeningElements.size should be(0)
-    testInvariant.keysForRemoval(1) = testInvariant.registerDynamicallyListenedElement(variable2,1)
+    testInvariant.keysForRemoval(1) = variable2.registerDynamicallyListeningElement(testInvariant,1)
     variable2.getTestDynamicallyListeningElements.size should be(1)
   }
 
@@ -50,19 +50,19 @@ class AbstractComputationTestSuite extends AnyFunSuite {
     val store = new Store()
     val variable = TestVaryingVariable(store)
     variable.domain should be(None)
-    variable.checkValueWithinDomain(Long.MinValue) should be(true)
-    variable.checkValueWithinDomain(Long.MaxValue) should be(true)
+    variable.isValueWithinDomain(Long.MinValue) should be(true)
+    variable.isValueWithinDomain(Long.MaxValue) should be(true)
     variable.setDomain(47, 251)
-    variable.checkValueWithinDomain(0) should be(false)
-    variable.checkValueWithinDomain(487) should be(false)
-    variable.checkValueWithinDomain(47) should be(true)
-    variable.checkValueWithinDomain(251) should be(true)
-    variable.checkValueWithinDomain(100) should be(true)
+    variable.isValueWithinDomain(0) should be(false)
+    variable.isValueWithinDomain(487) should be(false)
+    variable.isValueWithinDomain(47) should be(true)
+    variable.isValueWithinDomain(251) should be(true)
+    variable.isValueWithinDomain(100) should be(true)
   }
 
   test("Variable bulking works as expected"){
     val store = new Store()
-    val bulkedVariables: List[Variable] = List.fill(25)(TestVaryingVariable(store))
+    val bulkedVariables: List[TestVaryingVariable] = List.fill(25)(TestVaryingVariable(store))
     val invariant1 = TestInvariant(store, List.empty, None)
     val invariant2 = TestInvariant(store, List.empty, None)
 
@@ -73,7 +73,7 @@ class AbstractComputationTestSuite extends AnyFunSuite {
 
     invariant1.addIncredibleBulk(bulk1)
     invariant2.addIncredibleBulk(bulk2)
-    store.setupPropagationStructure()
+    store.close()
   }
 
   test("Saving and loading a Solution works as expected"){
@@ -93,7 +93,7 @@ class AbstractComputationTestSuite extends AnyFunSuite {
     // variable5 = (variable2+variable3)
     // variable6 = (variable4+variable5)
 
-    store.setupPropagationStructure()
+    store.close()
     store.performTotalPropagation()
 
     // start : variable6 = (1+2)+(2+3) = 8
