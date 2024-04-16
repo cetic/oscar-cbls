@@ -20,9 +20,9 @@ import oscar.cbls.core.propagation.PropagationElement
   *
   * When an [[Variable]] registers dynamically a new listening [[Invariant]], the Variable add the
   * listening element (here the Invariant) in it's DLL and returns a KeyForRemoval. The Invariant
-  * must extends the proper [[NotificationTarget]] trait to receive notification from the Variable.
-  * This class wraps the DLL element so that the Invariant can remove it when he's done listening to
-  * that Variable.
+  * must extends the proper NotificationTarget trait (one trait for each Variable) to receive
+  * notification from the Variable. This class wraps the DLL element so that the Invariant can
+  * remove it when he's done listening to that Variable.
   *
   * The type T may vary depending on the [[Variable]] using this class. But it should have the
   * following structure : (NotificationTargetType, Int)
