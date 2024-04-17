@@ -24,6 +24,7 @@ class SeqVariable(
   maxPivotPerValuePercent: Int = 4,
   isConstant: Boolean = false
 ) extends Variable(model, isConstant) {
+  override type NotificationTargetType = SeqNotificationTarget
   require(model != null)
   setDomain(Int.MinValue, Int.MaxValue)
 
@@ -314,8 +315,15 @@ class SeqVariable(
   ): Unit = {
     // toNotify and performedSinceTopCheckpoint aren't the same.
     toNotify = generateNewIncrementalUpdate(toNotify, null)
-    performedSinceTopCheckpoint =
-      generateNewIncrementalUpdate(performedSinceTopCheckpoint, toNotify.newValue)
+    if (performedSinceTopCheckpoint != null) {
+      performedSinceTopCheckpoint =
+        generateNewIncrementalUpdate(performedSinceTopCheckpoint, toNotify.newValue)
+    } else {
+      require(
+        levelOfTopCheckpoint == -1,
+        "A checkpoint has been defined but the performedSinceTopCheckpoint stack has not been initiated"
+      )
+    }
   }
 
   def :=(seq: IntSequence): Unit = setValue(seq)
@@ -421,14 +429,17 @@ class SeqVariable(
   }
 
   /** Releases the top checkpoint.
-   *
-   * Used when exploring neighborhood. For instance, after exploring OnePointMove, we need to
-   * release the top checkpoint.
-   */
+    *
+    * Used when exploring neighborhood. For instance, after exploring OnePointMove, we need to
+    * release the top checkpoint.
+    */
   def releaseTopCheckpoint(): IntSequence = {
     require(topCheckpoint != null, "No checkpoint defined to release")
     require(levelOfTopCheckpoint >= 0)
-    require(toNotify.newValue sameIdentity topCheckpoint, "You must be at top checkpoint to release it")
+    require(
+      toNotify.newValue sameIdentity topCheckpoint,
+      "You must be at top checkpoint to release it"
+    )
 
     // Two cases, currently at checkpoint 0 or higher than 0
 

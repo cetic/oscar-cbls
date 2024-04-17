@@ -29,7 +29,7 @@ class SeqVariableSuite extends AnyFunSuite {
     var refListsStack: List[List[Int]] = List(List.empty)
     val seqVariable: SeqVariable       = new SeqVariable(model, List.empty, "TestSequence")
     val cloneVariable                  = seqVariable.createClone()
-    model.setupPropagationStructure()
+    model.close()
 
     // Two main states : 0 defined check point or at least one
     var nbOfDefinedCheckpoints: Int = 0

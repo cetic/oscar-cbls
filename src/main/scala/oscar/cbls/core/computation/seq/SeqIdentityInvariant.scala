@@ -34,7 +34,8 @@ class SeqIdentityInvariant(
 ) extends Invariant(propagationStructure)
     with SeqNotificationTarget {
 
-  registerDynamicallyAndStaticallyListenedElement(fromValue)
+  registerStaticallyListenedElement(fromValue)
+  fromValue.registerDynamicallyListeningElement(this)
   toValue.setDefiningInvariant(this)
 
   toValue := fromValue.value
