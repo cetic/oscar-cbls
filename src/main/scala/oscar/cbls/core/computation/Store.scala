@@ -33,41 +33,26 @@ import oscar.cbls.core.propagation._
   */
 class Store(debugLevel: Int = 0) extends PropagationStructure(debugLevel) {
 
-  private var idToVariable: Array[Variable]        = Array.empty
-  private var idToDecisionVariable: List[Variable] = List.empty
-  private var lastSolutionNb: Int                  = -1
+  private var variables: List[Variable]         = List.empty
+  private var decisionVariables: List[Variable] = List.empty
+  private var lastSolutionNb: Int               = -1
 
   private def nextSolutionNb: Int = {
     lastSolutionNb += 1
     lastSolutionNb
   }
 
-  /** Saves the current value of the input [[Variable]] registered in the Store.
+  /** Extracts the current value of the decision [[Variable]] registered in the Store.
     *
-    * NOTE : The input variables are not defined by any [[Invariant]]
+    * The decision variables are not defined by any [[Invariant]]. Those Variables combined with a
+    * full propagation of the Store can restore the current value of each Variables.
     *
     * @return
     *   The Solution representing this Store
     */
-  def save: Solution = {
+  def extractSolution: Solution = {
     require(closed, "Model must be closed before saving a new solution")
-    Solution(idToDecisionVariable.map(id2Decision => id2Decision.save()), this, nextSolutionNb)
-  }
-
-  /** Triggers the propagation on all the model. */
-  def performTotalPropagation(): Unit = {
-    super.propagate()
-  }
-
-  /** Trigger the propagation up to the targeted element.
-    *
-    * Only the needed propagation elements will be updated.
-    *
-    * @param target
-    *   The variable whose new value is needed
-    */
-  def performPartialPropagation(target: Variable): Unit = {
-    super.propagate(Some(target))
+    Solution(decisionVariables.map(id2Decision => id2Decision.save()), this, nextSolutionNb)
   }
 
   /** Closes the model.
@@ -78,15 +63,14 @@ class Store(debugLevel: Int = 0) extends PropagationStructure(debugLevel) {
     */
   def close(): Unit = {
     super.setupPropagationStructure()
-    idToVariable = Array.fill(getPropagationElements.size)(null)
     getPropagationElements.foreach {
       case v: Variable =>
-        idToVariable(v.id) = v
+        variables = v :: variables
         if (v.isADecisionVariable)
-          idToDecisionVariable :+= v
+          decisionVariables = v :: decisionVariables
       case _ =>
     }
   }
 
-  override def toString: String = "Store(vars:{" + idToVariable.mkString(";") + "})"
+  override def toString: String = "Store(vars:{" + variables.mkString(";") + "})"
 }

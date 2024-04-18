@@ -33,5 +33,5 @@ import oscar.cbls.core.propagation.PropagationElement
 case class KeyForRemoval[T](listeningElement: DoublyLinkedList[T]#DLLStorageElement) {
 
   /** Removes the listening element from the listening elements DLL */
-  def stopListeningToThisElement(): Unit = listeningElement.delete()
+  def delete(): Unit = listeningElement.delete()
 }
