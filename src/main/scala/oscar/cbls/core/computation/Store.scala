@@ -62,7 +62,7 @@ class Store(debugLevel: Int = 0) extends PropagationStructure(debugLevel) {
     * the model. (without it, no propagation structure, no propagation, no optimization)
     */
   def close(): Unit = {
-    super.setupPropagationStructure()
+    setupPropagationStructure()
     getPropagationElements.foreach {
       case v: Variable =>
         variables = v :: variables
