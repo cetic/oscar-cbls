@@ -45,7 +45,26 @@ abstract class PropagationElement(private val propagationStructure: PropagationS
     }
   }
 
-  /** Register an element as listened by this propagation element
+  private def addListenedElement(elem: PropagationElement): Unit = {
+    staticallyListenedElements = elem :: staticallyListenedElements
+  }
+
+  private def addListeningElement(elem: PropagationElement): Unit = {
+    staticallyListeningElements = elem :: staticallyListeningElements
+  }
+
+  private[this] def elementValidation(elem: PropagationElement): Unit = {
+    require(
+      this.propagationStructure == elem.propagationStructure,
+      "Two elements that listen from each other shall be in the same propagation structure"
+    )
+    require(
+      !propagationStructure.closed,
+      "Cannot add a listened element when the structure is closed"
+    )
+  }
+
+  /** Registers an element as listened by this propagation element
     *
     * When an element listens to another element, it means that this element depends on the one it
     * listens. If a listened element is modified, this element has to be modified by the propagation
@@ -55,21 +74,22 @@ abstract class PropagationElement(private val propagationStructure: PropagationS
     *   The element to insert
     */
   protected[this] def registerStaticallyListenedElement(elem: PropagationElement): Unit = {
-    require(
-      this.propagationStructure == elem.propagationStructure,
-      "Two elements that listen from each other shall be in the same propagation structure"
-    )
-    require(
-      !propagationStructure.closed,
-      "Cannot add a listened element when the structure is closed"
-    )
-
+    elementValidation(elem)
     staticallyListenedElements = elem :: staticallyListenedElements
-    elem.registerStaticallyListeningElement(this)
+    elem.addListeningElement(this)
   }
 
-  private[propagation] def registerStaticallyListeningElement(elem: PropagationElement): Unit = {
+  /** Registers an element as listening this propagation element
+    *
+    * If this element is modified, the listening element has to be modified by the propagation wave.
+    *
+    * @param elem
+    *   The element to insert
+    */
+  protected[this] def registerStaticallyListeningElement(elem: PropagationElement): Unit = {
+    elementValidation(elem)
     staticallyListeningElements = elem :: staticallyListeningElements
+    elem.addListenedElement(this)
   }
 
   private[core] def propagateElement(): Unit = {
@@ -82,11 +102,16 @@ abstract class PropagationElement(private val propagationStructure: PropagationS
     * This method is only called in a propagation wave if: 1/ the element has been registered for
     * propagation since the last time it was propagated and 2/ it is included in the propagation
     * wave (partial propagation wave do not propagate all propagation elements). Overriding this
-    * method is optional (the element can update their values immediately when they are notified), so
-    * an empty body is provided by default
+    * method is optional (the element can update their values immediately when they are notified),
+    *
+    * If you schedule your propagation element for propagation, you must override and implement this
+    * method.
     */
-  def performPropagation(): Unit = {
-    require(false,"The element has been scheduled for propagation but the method performPropagation has not been overridden")
+  protected[this] def performPropagation(): Unit = {
+    require(
+      false,
+      "The element has been scheduled for propagation but the method performPropagation has not been overridden"
+    )
   }
 
   /** Allows to check and debug propagation elements.

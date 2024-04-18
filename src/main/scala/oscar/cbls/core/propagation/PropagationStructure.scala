@@ -217,7 +217,7 @@ class PropagationStructure(debugLevel: Int) {
     * @param target
     *   The target element of the propagation
     */
-  protected final def propagate(target: Option[PropagationElement] = None): Unit = {
+  final def propagate(target: Option[PropagationElement] = None): Unit = {
     if (!closed) return
 
     // The track for the partial propagation. Track is a boolean array where the transitive
