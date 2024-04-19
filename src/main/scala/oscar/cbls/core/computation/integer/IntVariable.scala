@@ -73,10 +73,6 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
       dynListElements.foreach {
         case (invariant: IntNotificationTarget, index: Int) =>
           invariant.notifyIntChanges(this, index, old, _newValue)
-        case (invariant: Invariant, _) =>
-          throw new IllegalArgumentException(
-            s"The listening Invariant ($invariant) does not extend IntNotificationTarget, therefore no notification can be send to it."
-          )
       }
     }
   }
