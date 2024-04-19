@@ -10,7 +10,8 @@ import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 case class SumBulkTestInvariant(
   store: Store,
   inputVariables: List[IntVariable],
-  outputVariable: IntVariable
+  outputVariable: IntVariable,
+  bulkName: String
 ) extends Invariant(store)
     with IntNotificationTarget {
   // Register output variable as output
@@ -18,7 +19,7 @@ case class SumBulkTestInvariant(
 
   // Registers input variables statically with bulk and then dynamically
   // Voluntarily removing head of input variables from the bulk
-  val bulk: IncredibleBulk = IncredibleBulk.bulkRegistering(inputVariables.tail, "myBulk", store)
+  val bulk: IncredibleBulk = IncredibleBulk.bulkRegistering(inputVariables.tail, bulkName, store)
   this.addIncredibleBulk(bulk)
   var keysForRemoval: Array[KeyForRemoval[_]] =
     inputVariables.zipWithIndex
@@ -78,7 +79,7 @@ class IncredibleBulkTestSuite extends AnyFunSuite {
 
     // The first input variable is voluntarily NOT registered with the bulk neither on its own
     // It's only dynamically registered. Therefore, due to partial propagation, it should not propagate it's value to the Invariant
-    SumBulkTestInvariant(store, List(input1, input2, input3, input4, input5, input6), output)
+    SumBulkTestInvariant(store, List(input1, input2, input3, input4, input5, input6), output, "Bulk properly")
     store.close()
 
     output.value() should be(15)
@@ -103,8 +104,9 @@ class IncredibleBulkTestSuite extends AnyFunSuite {
     val inputs = List.fill(5)(new IntVariable(store, 0L))
     val output = new IntVariable(store, 0L)
 
-    val inv1 = SumBulkTestInvariant(store, inputs, output)
-    val inv2 = SumBulkTestInvariant(store, inputs, output)
+    val inv1 = SumBulkTestInvariant(store, inputs, output, "Bulk two times")
+    val inv2 = SumBulkTestInvariant(store, inputs, output, "Bulk two times")
+    store.close()
 
     inv1.bulk equals inv2.bulk should be(true)
   }
