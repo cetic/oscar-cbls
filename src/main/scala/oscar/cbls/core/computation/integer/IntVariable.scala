@@ -28,7 +28,7 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
   def newValue(): Long = _newValue
 
   def value(): Long = {
-    if (!this.isADecisionVariable) model.performPartialPropagation(this)
+    if (!this.isADecisionVariable) model.propagate(Some(this))
     _newValue
   }
 
