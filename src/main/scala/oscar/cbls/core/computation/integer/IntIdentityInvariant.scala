@@ -28,8 +28,7 @@ class IntIdentityInvariant(model: Store, fromValue: IntVariable, toValue: IntVar
     extends Invariant(model)
     with IntNotificationTarget {
 
-  registerStaticallyListenedElement(fromValue)
-  fromValue.registerDynamicallyListeningElement(this)
+  fromValue.registerStaticallyAndDynamicallyListeningElement(this)
   toValue.setDefiningInvariant(this)
 
   toValue := fromValue.value()
