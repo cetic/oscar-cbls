@@ -11,31 +11,34 @@ import oscar.cbls.core.computation.integer.{IntVariable, IntNotificationTarget}
  *    The first [[IntVariable]] input
  * @param b
  *    The second [[IntVariable]] input
- * @param toValue
+ * @param output
  *    The [[IntVariable]] that contains f(a, b)
  * @param f
  *    The two integer function to maintain
+ * @param name
+ *    The (optional) name of the invariant
  */
 class IntIntToIntInvariant(model: Store,
                            a: IntVariable,
                            b: IntVariable,
-                           toValue : IntVariable,
-                           f: (Long, Long) => Long
+                           output : IntVariable,
+                           f: (Long, Long) => Long,
+                           name: Option[String] = None
                            )
-  extends Invariant(model) with  IntNotificationTarget {
+  extends Invariant(model, name) with  IntNotificationTarget {
 
   a.registerDynamicallyListeningElement(this)
   b.registerDynamicallyListeningElement(this)
 
-  toValue.setDefiningInvariant(this)
-  toValue := f(a.value(), b.value())
+  output.setDefiningInvariant(this)
+  output := f(a.value(), b.value())
 
 
   override def notifyIntChanges(intVariable: IntVariable, index: Int, oldVal: Long, newVal: Long): Unit = {
-    toValue := f(a.value(), b.value())
+    output := f(a.value(), b.value())
   }
 
   override def checkInternals(): Unit = {
-    require(toValue.value() == f(a.value(), b.value()))
+    require(output.value() == f(a.value(), b.value()))
   }
 }
