@@ -12,14 +12,24 @@ import oscar.cbls.lib.invariant.IntIntToIntInvariant
  *    The first [[IntVariable]] input
  * @param b
  *    The second [[IntVariable]] input
- * @param toValue
+ * @param output
  *    The [[IntVariable]] that contains min(a, b)
+ * @param name
+ *    The (optional) name of the invariant
  */
-private class Min2(model : Store, a: IntVariable, b: IntVariable, toValue : IntVariable) extends
-  IntIntToIntInvariant(model, a, b, toValue, (x: Long, y: Long) => x.min(y)){}
+class Min2(model : Store,
+           a: IntVariable,
+           b: IntVariable,
+           output: IntVariable,
+           name: Option[String] = None) extends
+  IntIntToIntInvariant(model, a, b, output, (x: Long, y: Long) => x.min(y), name){}
 
 object Min2{
-  def apply(model : Store, a: IntVariable, b: IntVariable, toValue : IntVariable): Unit = {
-    new Min2(model, a, b, toValue)
+  def apply(model: Store, a: IntVariable, b: IntVariable, output: IntVariable): Min2 = {
+    new Min2(model, a, b, output)
+  }
+
+  def apply(model: Store, a: IntVariable, b: IntVariable, output:IntVariable, name: String): Min2 = {
+    new Min2(model, a, b, output, Some(name))
   }
 }
