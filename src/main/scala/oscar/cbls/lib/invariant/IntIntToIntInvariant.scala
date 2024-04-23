@@ -27,8 +27,8 @@ class IntIntToIntInvariant(model: Store,
                            )
   extends Invariant(model, name) with  IntNotificationTarget {
 
-  a.registerDynamicallyListeningElement(this)
-  b.registerDynamicallyListeningElement(this)
+  a.registerStaticallyAndDynamicallyListeningElement(this)
+  b.registerStaticallyAndDynamicallyListeningElement(this)
 
   output.setDefiningInvariant(this)
   output := f(a.value(), b.value())
