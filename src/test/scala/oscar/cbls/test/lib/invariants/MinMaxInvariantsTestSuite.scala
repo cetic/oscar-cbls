@@ -9,8 +9,6 @@ import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.lib.invariant.minmax._
 
 import scala.util.Random
-import scala.math
-
 class MinMaxInvariantsTestSuite extends AnyFunSuite {
   test("Max2 initialization"){
     val store     = new Store()
@@ -19,12 +17,12 @@ class MinMaxInvariantsTestSuite extends AnyFunSuite {
     val input1    = new IntVariable(store, a)
     val input2    = new IntVariable(store, b)
     val output    = new IntVariable(store, a)
-    Max2(store, input1, input2, output)
+    val inv       = Max2(store, input1, input2, output, "Max2")
     store.close()
 
     output.value() should be >= a
     output.value() should be >= b
-
+    inv.name() should be("Max2")
   }
 
   test("Max2 works as attended"){
@@ -125,7 +123,6 @@ class MinMaxInvariantsTestSuite extends AnyFunSuite {
     }
     output.value() should be >= a
     output.value() should be >= b
-
   }
 
   test("Min2 initialization"){
@@ -135,12 +132,12 @@ class MinMaxInvariantsTestSuite extends AnyFunSuite {
     val input1    = new IntVariable(store, a)
     val input2    = new IntVariable(store, b)
     val output    = new IntVariable(store, a)
-    Min2(store, input1, input2, output)
+    val inv       = Min2(store, input1, input2, output, "Min2")
     store.close()
 
     output.value() should be <= a
     output.value() should be <= b
-
+    inv.name() should be("Min2")
   }
 
   test("Min2 works as attended"){
@@ -230,7 +227,7 @@ class MinMaxInvariantsTestSuite extends AnyFunSuite {
     Min2(store, input1, input2, output)
     store.close()
 
-    // The smaller value become the bigger
+    // The bigger value become the smaller
     val dist = math.abs(b - a)
     if (a > b) {
       input1 :-= (dist + 1)
@@ -241,7 +238,6 @@ class MinMaxInvariantsTestSuite extends AnyFunSuite {
     }
     output.value() should be <= a
     output.value() should be <= b
-
   }
 
 }
