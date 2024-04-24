@@ -38,7 +38,7 @@ class Max (model: Store,
 
   override def checkInternals(): Unit = {
     for (v <- vars){
-      require(output.value() >= v.value(), "Max must be greater than all variable")
+      assert(output.value() >= v.value(), s"Value is bigger than Max. Max: ${output.value()} - Value: ${v.value()}")
     }
 
   }
