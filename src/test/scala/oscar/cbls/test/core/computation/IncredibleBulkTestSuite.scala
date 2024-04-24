@@ -66,13 +66,13 @@ class IncredibleBulkTestSuite extends AnyFunSuite {
 
   test("Bulk registering properly registers a list of Variable") {
     val store  = new Store()
-    val input1 = new IntVariable(store, 0L)
-    val input2 = new IntVariable(store, 1L)
-    val input3 = new IntVariable(store, 2L)
-    val input4 = new IntVariable(store, 3L)
-    val input5 = new IntVariable(store, 4L)
-    val input6 = new IntVariable(store, 5L)
-    val output = new IntVariable(store, 0L)
+    val input1: IntVariable = IntVariable(store, 0L)
+    val input2: IntVariable = IntVariable(store, 1L)
+    val input3: IntVariable = IntVariable(store, 2L)
+    val input4: IntVariable = IntVariable(store, 3L)
+    val input5: IntVariable = IntVariable(store, 4L)
+    val input6: IntVariable = IntVariable(store, 5L)
+    val output: IntVariable = IntVariable(store, 0L)
 
     // Only statically registered variable should be able to notify output when calling output.value
     store.registerForPartialPropagation(output)
@@ -101,8 +101,8 @@ class IncredibleBulkTestSuite extends AnyFunSuite {
 
   test("Creating two bulks with same identifier does not create a second one"){
     val store  = new Store()
-    val inputs = List.fill(5)(new IntVariable(store, 0L))
-    val output = new IntVariable(store, 0L)
+    val inputs = List.fill(5)(IntVariable(store, 0L))
+    val output = IntVariable(store, 0L)
 
     val inv1 = SumBulkTestInvariant(store, inputs, output, "Bulk two times")
     val inv2 = SumBulkTestInvariant(store, inputs, output, "Bulk two times")

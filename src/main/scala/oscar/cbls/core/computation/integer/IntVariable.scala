@@ -13,9 +13,15 @@
 
 package oscar.cbls.core.computation.integer
 
-import oscar.cbls.core.computation.{Invariant, KeyForRemoval, SavedValue, Store, Variable}
+import oscar.cbls.core.computation.{KeyForRemoval, SavedValue, Store, Variable}
 
-class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
+object IntVariable{
+  def apply(model: Store, initialValue: Long, isConstant: Boolean = false): IntVariable = {
+    new IntVariable(model, initialValue, isConstant)
+  }
+}
+
+class IntVariable(model: Store, initialValue: Long, isConstant: Boolean)
     extends Variable(model, isConstant) {
 
   override type NotificationTargetType = IntNotificationTarget
@@ -25,7 +31,7 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
   // The old value of this variable
   private var _value: Long = _pendingValue
 
-  def futureValue(): Long = _pendingValue
+  def pendingValue(): Long = _pendingValue
 
   def value(): Long = {
     (model.propagating, isADecisionVariable) match {

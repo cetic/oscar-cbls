@@ -14,8 +14,8 @@ class IntVariableTestSuite extends AnyFunSuite {
     val store                   = new Store()
     var randomValues: List[Int] = List.fill(8)(Random.between(-1000, 1000))
     var referenceInt: Long      = randomValues.head
-    val input                   = new IntVariable(store, randomValues.head)
-    val output                  = new IntVariable(store, randomValues.head)
+    val input                   = IntVariable(store, randomValues.head)
+    val output                  = IntVariable(store, randomValues.head)
     randomValues = randomValues.tail
     new IntIdentityInvariant(store, input, output)
     store.close()
@@ -60,8 +60,8 @@ class IntVariableTestSuite extends AnyFunSuite {
   test("Save and restore value works as expected") {
     val store             = new Store()
     val startValue        = Random.nextInt(10)
-    val input             = new IntVariable(store, startValue)
-    val output            = new IntVariable(store, startValue)
+    val input             = IntVariable(store, startValue)
+    val output            = IntVariable(store, startValue)
     var referenceInt      = startValue
     val savedReferenceInt = startValue
     new IntIdentityInvariant(store, input, output)
