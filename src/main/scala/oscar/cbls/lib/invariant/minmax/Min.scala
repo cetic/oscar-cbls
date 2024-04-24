@@ -38,7 +38,7 @@ class Min (model: Store,
 
   override def checkInternals(): Unit = {
     for (v <- vars){
-      require(output.value() <= v.value(), "Min must be smaller than all variable")
+      assert(output.value() <= v.value(), s"Value is smaller than Min. Min: ${output.value()} - Value: ${v.value()}")
     }
 
   }

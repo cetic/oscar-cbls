@@ -39,51 +39,33 @@ class MinMaxInvariantsTestSuite extends AnyFunSuite {
 
   test("Max2 works as attended"){
     val store                       = new Store(2)
-    var randomValues1: List[Long]   = List.fill(8)(Random.between(-1000, 1000))
-    var randomValues2: List[Long]   = List.fill(8)(Random.between(-1000, 1000))
-    val input1                      = new IntVariable(store, randomValues1.head)
-    val input2                      = new IntVariable(store, randomValues2.head)
-    val output                      = new IntVariable(store, randomValues1.head)
-    randomValues1  = randomValues1.tail
-    randomValues2 = randomValues2.tail
+    val input1                      = new IntVariable(store, Random.between(-1000, 1000))
+    val input2                      = new IntVariable(store, Random.between(-1000, 1000))
+    val output                      = new IntVariable(store, Long.MinValue)
+    Random.between(-1000, 1000)
     val inv = Max2(store, input1, input2, output)
     store.close()
 
-    input1 :+= randomValues1.head
-    input2 :+= randomValues2.head
+    input1 :+= Random.between(-1000, 1000)
+    input2 :+= Random.between(-1000, 1000)
 
-    randomValues1 = randomValues1.tail
-    randomValues2 = randomValues2.tail
+    input1 :-= Random.between(-1000, 1000)
+    input2 :-= Random.between(-1000, 1000)
 
-    input1 :-= randomValues1.head
-    input2 :-= randomValues2.head
-    randomValues1 = randomValues1.tail
-    randomValues2 = randomValues2.tail
+    input1 := Random.between(-1000, 1000)
+    input2 := Random.between(-1000, 1000)
 
-    input1 := randomValues1.head
-    input2 := randomValues2.head
-    randomValues1 = randomValues1.tail
-    randomValues2 = randomValues2.tail
+    input1 :*= Random.between(-1000, 1000)
+    input2 :*= Random.between(-1000, 1000)
 
-    input1 :*= randomValues1.head
-    input2 :*= randomValues2.head
-    randomValues1 = randomValues1.tail
-    randomValues2 = randomValues2.tail
+    input1 :/= Random.between(-1000, 1000)
+    input2 :/=Random.between(-1000, 1000)
 
-    input1 :/= randomValues1.head
-    input2 :/= randomValues2.head
-    randomValues1 = randomValues1.tail
-    randomValues2 = randomValues2.tail
+    input1 :*= Random.between(-1000, 1000)
+    input2 :*= Random.between(-1000, 1000)
 
-    input1 :*= randomValues1.head
-    input2 :*= randomValues2.head
-    randomValues1 = randomValues1.tail
-    randomValues2 = randomValues2.tail
-
-    input1 :+= randomValues1.head
-    input2 :+= randomValues2.head
-    randomValues1 = randomValues1.tail
-    randomValues2 = randomValues2.tail
+    input1 :+= Random.between(-1000, 1000)
+    input2 :+= Random.between(-1000, 1000)
 
     input1.:--()
     input2.:--()
@@ -91,6 +73,7 @@ class MinMaxInvariantsTestSuite extends AnyFunSuite {
     input1.:++()
     input2.:++()
 
+    store.propagate()
     inv.checkInternals()
   }
 
@@ -133,77 +116,40 @@ class MinMaxInvariantsTestSuite extends AnyFunSuite {
 
   test("Min2 works as attended"){
     val store                       = new Store()
-    var randomValues1: List[Long]   = List.fill(8)(Random.between(-1000, 1000))
-    var randomValues2: List[Long]   = List.fill(8)(Random.between(-1000, 1000))
-    var refInt1                     = randomValues1.head
-    var refInt2                     = randomValues2.head
-    val input1                      = new IntVariable(store, randomValues1.head)
-    val input2                      = new IntVariable(store, randomValues2.head)
-    val output                      = new IntVariable(store, randomValues1.head)
-    randomValues1                   = randomValues1.tail
-    randomValues2                   = randomValues2.tail
+    val input1                      = new IntVariable(store, Random.between(-1000, 1000))
+    val input2                      = new IntVariable(store, Random.between(-1000, 1000))
+    val output                      = new IntVariable(store, Long.MaxValue)
     val inv                         = Min2(store, input1, input2, output)
     store.close()
 
-    input1 :+= randomValues1.head
-    input2 :+= randomValues2.head
-    refInt1 += randomValues1.head
-    refInt2 += randomValues2.head
-    randomValues1 = randomValues1.tail
-    randomValues2 = randomValues2.tail
+    input1 :+= Random.between(-1000, 1000)
+    input2 :+= Random.between(-1000, 1000)
 
-    input1 :-= randomValues1.head
-    input2 :-= randomValues2.head
-    refInt1 -= randomValues1.head
-    refInt2 -= randomValues2.head
-    randomValues1 = randomValues1.tail
-    randomValues2 = randomValues2.tail
+    input1 :-= Random.between(-1000, 1000)
+    input2 :-= Random.between(-1000, 1000)
 
-    input1 := randomValues1.head
-    input2 := randomValues2.head
-    refInt1 = randomValues1.head
-    refInt2 = randomValues2.head
-    randomValues1 = randomValues1.tail
-    randomValues2 = randomValues2.tail
+    input1 := Random.between(-1000, 1000)
+    input2 := Random.between(-1000, 1000)
 
-    input1 :*= randomValues1.head
-    input2 :*= randomValues2.head
-    refInt1 *= randomValues1.head
-    refInt2 *= randomValues2.head
-    randomValues1 = randomValues1.tail
-    randomValues2 = randomValues2.tail
+    input1 :*= Random.between(-1000, 1000)
+    input2 :*= Random.between(-1000, 1000)
 
-    input1 :/= randomValues1.head
-    input2 :/= randomValues2.head
-    refInt1 /= randomValues1.head
-    refInt2 /= randomValues2.head
-    randomValues1 = randomValues1.tail
-    randomValues2 = randomValues2.tail
+    input1 :/= Random.between(-1000, 1000)
+    input2 :/= Random.between(-1000, 1000)
 
-    input1 :*= randomValues1.head
-    input2 :*= randomValues2.head
-    refInt1 *= randomValues1.head
-    refInt2 *= randomValues2.head
-    randomValues1 = randomValues1.tail
-    randomValues2 = randomValues2.tail
+    input1 :*= Random.between(-1000, 1000)
+    input2 :*= Random.between(-1000, 1000)
 
-    input1 :+= randomValues1.head
-    input2 :+= randomValues2.head
-    refInt1 += randomValues1.head
-    refInt2 += randomValues2.head
-    randomValues1 = randomValues1.tail
-    randomValues2 = randomValues2.tail
+    input1 :+= Random.between(-1000, 1000)
+    input2 :+= Random.between(-1000, 1000)
 
     input1.:--()
     input2.:--()
-    refInt1 -= 1
-    refInt2 -= 1
 
     input1.:++()
     input2.:++()
-    refInt1 += 1
-    refInt2 += 1
 
+    store.propagate()
     inv.checkInternals()
   }
 
@@ -213,7 +159,7 @@ class MinMaxInvariantsTestSuite extends AnyFunSuite {
     var b : Long  = Random.between(-1000, 1000)
     val input1    = new IntVariable(store, a)
     val input2    = new IntVariable(store, b)
-    val output    = new IntVariable(store, b)
+    val output    = new IntVariable(store, Long.MaxValue)
     val inv       = Min2(store, input1, input2, output)
     store.close()
 
@@ -227,6 +173,51 @@ class MinMaxInvariantsTestSuite extends AnyFunSuite {
       b += (dist + 1)
     }
 
+    store.propagate()
+    inv.checkInternals()
+  }
+
+  test("Max on array"){
+    val store                       = new Store()
+    val vars                        = Array.fill(5)(new IntVariable(store, Random.between(-1000, 1000)))
+    val output                      = new IntVariable(store, Long.MinValue)
+    val inv                         = Max(store, vars, output)
+    store.close()
+
+    inv.checkInternals()
+
+    vars(Random.between(0, 5)) :+= Random.between(-1000, 1000)
+    vars(Random.between(0, 5)) :-= Random.between(-1000, 1000)
+    vars(Random.between(0, 5)) := Random.between(-1000, 1000)
+    vars(Random.between(0, 5)) :*= Random.between(-1000, 1000)
+    vars(Random.between(0, 5)) :/= Random.between(-1000, 1000)
+    vars(Random.between(0, 5)) :+= Random.between(-1000, 1000)
+    vars(Random.between(0, 5)).:++()
+    vars(Random.between(0, 5)).:--()
+
+    store.propagate()
+    inv.checkInternals()
+  }
+
+  test("Min on array"){
+    val store                       = new Store()
+    val vars                        = Array.fill(5)(new IntVariable(store, Random.between(-1000, 1000)))
+    val output                      = new IntVariable(store, Long.MaxValue)
+    val inv                         = Min(store, vars, output)
+    store.close()
+
+    inv.checkInternals()
+
+    vars(Random.between(0, 5)) :+= Random.between(-1000, 1000)
+    vars(Random.between(0, 5)) :-= Random.between(-1000, 1000)
+    vars(Random.between(0, 5)) := Random.between(-1000, 1000)
+    vars(Random.between(0, 5)) :*= Random.between(-1000, 1000)
+    vars(Random.between(0, 5)) :/= Random.between(-1000, 1000)
+    vars(Random.between(0, 5)) :+= Random.between(-1000, 1000)
+    vars(Random.between(0, 5)).:++()
+    vars(Random.between(0, 5)).:--()
+
+    store.propagate()
     inv.checkInternals()
   }
 
