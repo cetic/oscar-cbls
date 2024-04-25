@@ -13,7 +13,7 @@
 
 package oscar.cbls.lib.invariant.minmax
 
-import oscar.cbls.core.computation.Store
+import oscar.cbls.core.computation.{IncredibleBulk, Invariant, Store}
 import oscar.cbls.core.computation.integer.IntVariable
 
 //TODO: manage condition on considered variables when SetVariable will be available
@@ -26,6 +26,9 @@ import oscar.cbls.core.computation.integer.IntVariable
  * @param output
  *    The output [[IntVariable]]
  * @param bulkIdentifier
+ *    A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars.
+ *    Warning: [[IncredibleBulk]] are distinguished only by their identifier.Be sure to use the same one if you're
+ *    referencing the same variables.
  * @param name
  *   The name (optional) of your Invariant
  */
