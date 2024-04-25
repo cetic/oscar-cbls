@@ -16,13 +16,13 @@ package oscar.cbls.core.computation.integer
 import oscar.cbls.core.computation.{KeyForRemoval, SavedValue, Store, Variable}
 
 object IntVariable{
-  def apply(model: Store, initialValue: Long, isConstant: Boolean = false): IntVariable = {
-    new IntVariable(model, initialValue, isConstant)
+  def apply(model: Store, initialValue: Long, isConstant: Boolean = false, name: Option[String] = None): IntVariable = {
+    new IntVariable(model, initialValue, isConstant, name)
   }
 }
 
-class IntVariable(model: Store, initialValue: Long, isConstant: Boolean)
-    extends Variable(model, isConstant) {
+class IntVariable(model: Store, initialValue: Long, isConstant: Boolean, name: Option[String] = None)
+    extends Variable(model, isConstant, name) {
 
   override type NotificationTargetType = IntNotificationTarget
 
@@ -108,4 +108,7 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean)
     )
     super.registerDynamicallyListeningElement(elem, variableIndex)
   }
+
+  override def toString: String =
+    s"${super.toString} - value : ${value()}"
 }
