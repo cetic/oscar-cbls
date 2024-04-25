@@ -14,7 +14,7 @@
 package oscar.cbls.lib.invariant.minmax
 
 import oscar.cbls.algo.heap.BinaryHeapWithMoveIntItem
-import oscar.cbls.core.computation.{Invariant, KeyForRemoval, Store}
+import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, Store}
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 
 //TODO: manage condition on considered variables when SetVariable will be available
@@ -24,20 +24,25 @@ import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
  * Update is in O(log(n))
  *
  * @param model
- *    The [[oscar.cbls.core.propagation.PropagationStructure]] to which this Invariant is linked
+ *    The [[oscar.cbls.core.propagation.PropagationStructure]] to which this Invariant is linked.
  * @param vars
- *    An [[IndexedSeq]] of [[IntVariable]]
+ *    An [[IndexedSeq]] of [[IntVariable]].
  * @param output
- *    The output [[IntVariable]]
+ *    The output [[IntVariable]].
  * @param default
- *    The default value of the extremum
+ *    The default value of the extremum.
+ * @param bulkIdentifier
+ *    A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars.
+ *    Warning: [[IncredibleBulk]] are distinguished only by their identifier.Be sure to use the same one if you're
+ *    referencing the same variables.
  * @param name
- *   The name (optional) of your Invariant
+ *   The name (optional) of your Invariant.
  */
 abstract class Extremum(model: Store,
                         vars: IndexedSeq[IntVariable],
                         output: IntVariable,
                         default: Long,
+                        bulkIdentifier: String,
                         name: Option[String] = None)
   extends Invariant(model, name) with IntNotificationTarget {
 
@@ -46,6 +51,10 @@ abstract class Extremum(model: Store,
   //Use to stock the indices of the listened variables. All operation are in O(log(n))
   private[this] val h: BinaryHeapWithMoveIntItem = BinaryHeapWithMoveIntItem((i: Int) => ord(vars(i)),
                                                                           vars.length, vars.length)
+
+  //Register static dependency via a bulk
+  val bulk: IncredibleBulk = IncredibleBulk.bulkRegistering(vars, bulkIdentifier, model)
+  addIncredibleBulk(bulk)
 
   for(i <- vars.indices) {
     h.insert(i)

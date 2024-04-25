@@ -25,13 +25,15 @@ import oscar.cbls.core.computation.integer.IntVariable
  *    An [[IndexedSeq]] of [[IntVariable]]
  * @param output
  *    The output [[IntVariable]]
+ * @param bulkIdentifier
  * @param name
  *   The name (optional) of your Invariant
  */
 class Min (model: Store,
            vars: IndexedSeq[IntVariable],
            output: IntVariable,
-           name: Option[String] = None) extends Extremum(model, vars, output, Long.MaxValue, name){
+           bulkIdentifier: String,
+           name: Option[String] = None) extends Extremum(model, vars, output, Long.MaxValue, bulkIdentifier, name){
 
 
   override def ord(v: IntVariable): Long = v.value() //The smallest value must the smallest priority in the heap
@@ -45,11 +47,17 @@ class Min (model: Store,
 }
 
 object Min{
-  def apply(model: Store, vars: IndexedSeq[IntVariable], output: IntVariable): Min = {
-    new Min(model, vars, output)
+  def apply(model: Store,
+            vars: IndexedSeq[IntVariable],
+            output: IntVariable,
+            bulkIdentifier:  String): Min = {
+    new Min(model, vars, output, bulkIdentifier)
   }
 
-  def apply(model: Store, vars: IndexedSeq[IntVariable], output: IntVariable, name: String): Min = {
-    new Min(model, vars, output, Some(name))
+  def apply(model: Store,
+            vars: IndexedSeq[IntVariable],
+            output: IntVariable,
+            bulkIdentifier: String, name: String): Min = {
+    new Min(model, vars, output, bulkIdentifier, Some(name))
   }
 }
