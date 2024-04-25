@@ -13,7 +13,7 @@
 
 package oscar.cbls.lib.invariant.minmax
 
-import oscar.cbls.core.computation.Store
+import oscar.cbls.core.computation.{IncredibleBulk, Invariant, Store}
 import oscar.cbls.core.computation.integer.IntVariable
 
 //TODO: manage condition on considered variables when SetVariable will be available
@@ -25,13 +25,18 @@ import oscar.cbls.core.computation.integer.IntVariable
  *    An [[IndexedSeq]] of [[IntVariable]]
  * @param output
  *    The output [[IntVariable]]
+ * @param bulkIdentifier
+ * A [[IncredibleBulk]] can be use when several [[Invariant]] listen to vars.
+ *    Warning: [[IncredibleBulk]] are distinguished only by their identifier.Be sure to use the same one if you're
+ *    referencing the same variables.
  * @param name
  *   The name (optional) of your Invariant
  */
 class Max (model: Store,
            vars: IndexedSeq[IntVariable],
            output: IntVariable,
-           name: Option[String] = None) extends Extremum(model, vars, output, Long.MinValue, name){
+           bulkIdentifier: String,
+           name: Option[String] = None) extends Extremum(model, vars, output, Long.MinValue, bulkIdentifier, name){
 
 
   override def ord(v: IntVariable): Long = -v.value() //The biggest value must the smallest priority in the heap
@@ -45,11 +50,17 @@ class Max (model: Store,
 }
 
 object Max{
-  def apply(model: Store, vars: IndexedSeq[IntVariable], output: IntVariable): Max = {
-    new Max(model, vars, output)
+  def apply(model: Store,
+            vars: IndexedSeq[IntVariable],
+            output: IntVariable,
+            bulkIdentifier: String): Max = {
+    new Max(model, vars, output, bulkIdentifier)
   }
 
-  def apply(model: Store, vars: IndexedSeq[IntVariable], output: IntVariable, name: String): Max = {
-    new Max(model, vars, output, Some(name))
+  def apply(model: Store,
+            vars: IndexedSeq[IntVariable],
+            output: IntVariable,bulkIdentifier: String,
+            name: String): Max  = {
+    new Max(model, vars, output, bulkIdentifier, Some(name))
   }
 }
