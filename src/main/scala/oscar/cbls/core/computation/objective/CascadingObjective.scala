@@ -28,8 +28,8 @@ object CascadingObjective {
     *   the list of Objectives to consider
     */
   def apply(objectives: List[Objective]): CascadingObjective = {
-    require(objectives.nonEmpty, "Building CascadingObjective with an empty list of Objectives")
-    require(objectives.size >= 2, "Building CascadingObjective with less than 2 Objectives")
+    require(objectives.nonEmpty, "Building CascadingObjective with an empty list of Objectives is forbidden")
+    require(objectives.size >= 2, "Building CascadingObjective with less than 2 Objectives is forbidden")
 
     def buildCascading(objectives: List[Objective], currentDepth: Int): AbstractObjective = {
       objectives match {
