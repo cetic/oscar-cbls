@@ -42,6 +42,6 @@ class IntIdentityInvariant(model: Store, fromValue: IntVariable, toValue: IntVar
     * overriding this method is optional, so an empty body is provided by default
     */
   override def checkInternals(): Unit = {
-    require(toValue.value() == fromValue.value())
+    require(toValue.pendingValue() == fromValue.value())
   }
 }

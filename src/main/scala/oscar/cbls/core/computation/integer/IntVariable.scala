@@ -15,20 +15,30 @@ package oscar.cbls.core.computation.integer
 
 import oscar.cbls.core.computation.{KeyForRemoval, SavedValue, Store, Variable}
 
-object IntVariable{
-  def apply(model: Store, initialValue: Long, isConstant: Boolean = false, name: Option[String] = None): IntVariable = {
+object IntVariable {
+  def apply(
+    model: Store,
+    initialValue: Long,
+    isConstant: Boolean = false,
+    name: Option[String] = None
+  ): IntVariable = {
     new IntVariable(model, initialValue, isConstant, name)
   }
 }
 
-class IntVariable(model: Store, initialValue: Long, isConstant: Boolean, name: Option[String] = None)
-    extends Variable(model, isConstant, name) {
+class IntVariable(
+  model: Store,
+  initialValue: Long,
+  isConstant: Boolean,
+  name: Option[String] = None
+) extends Variable(model, isConstant, name) {
 
   override type NotificationTargetType = IntNotificationTarget
 
-  // The new value of this variable, not propagated yet if different from _oldValue
+  // The pending value (new value) of this variable, not propagated yet if different from _value
   private var _pendingValue: Long = initialValue
-  // The old value of this variable
+  // The actual value of this variable
+  // For listening invariants this iS the value of the variable until propagation.
   private var _value: Long = _pendingValue
 
   def pendingValue(): Long = _pendingValue
@@ -98,17 +108,6 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean, name: O
     )
   }
 
-  override def registerDynamicallyListeningElement(
-    elem: NotificationTargetType,
-    variableIndex: Int = -1
-  ): KeyForRemoval[(NotificationTargetType, Int)] = {
-    require(
-      elem.isInstanceOf[IntNotificationTarget],
-      "The listening invariant must extends IntNotificationTarget trait to be able to receive notification upon change"
-    )
-    super.registerDynamicallyListeningElement(elem, variableIndex)
-  }
-
   override def toString: String =
-    s"${super.toString} - value : ${value()}"
+    s"$name - value : ${value()}"
 }

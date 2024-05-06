@@ -310,6 +310,7 @@ class PropagationStructure(debugLevel: Int) {
         filterScheduledWithTrack()
       }
       doPropagation()
+      propagationElements.foreach(_.checkInternals())
       _propagating = false
 
     }
