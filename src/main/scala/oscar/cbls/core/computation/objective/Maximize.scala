@@ -3,16 +3,15 @@ package oscar.cbls.core.computation.objective
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.search.{Move, MoveFound, NoMoveFound, SearchResult}
 
-object Minimize {
+object Maximize {
   def apply(objective: IntVariable,
             mustBeZero: List[IntVariable] = List.empty,
             approximatedObjective: Option[IntVariable] = None): Maximize = {
-    require(!objective.isConstant, "An Objective value can not be constant")
     new Maximize(objective, mustBeZero,approximatedObjective)
   }
 }
 
-class Minimize(
+class Maximize(
   objective: IntVariable,
   mustBeZero: List[IntVariable],
   approximatedObjective: Option[IntVariable]
@@ -25,9 +24,9 @@ class Minimize(
     private def checkNeighborOnApproximatedObjective(buildMove: Long => Move): Unit = {
       val newApproxObj = approximatedObjective.get.value()
       toReturn match {
-        case NoMoveFound if newApproxObj < oldObj =>
+        case NoMoveFound if newApproxObj > oldObj =>
           checkNeighborOnRealObjective(buildMove)
-        case m: MoveFound if newApproxObj < m.objAfter =>
+        case m: MoveFound if newApproxObj > m.objAfter =>
           checkNeighborOnRealObjective(buildMove)
         case _ => ;
       }
@@ -36,8 +35,8 @@ class Minimize(
     private def checkNeighborOnRealObjective(buildMove: Long => Move): Unit = {
       val newObj = objective.value()
       toReturn match {
-        case NoMoveFound if newObj < oldObj      => toReturn = MoveFound(buildMove(newObj))
-        case m: MoveFound if newObj < m.objAfter => toReturn = MoveFound(buildMove(newObj))
+        case NoMoveFound if newObj > oldObj      => toReturn = MoveFound(buildMove(newObj))
+        case m: MoveFound if newObj > m.objAfter => toReturn = MoveFound(buildMove(newObj))
         case _                                   => ;
       }
     }
