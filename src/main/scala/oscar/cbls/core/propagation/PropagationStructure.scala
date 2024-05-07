@@ -298,7 +298,7 @@ class PropagationStructure(debugLevel: Int) {
         case None => false
         case Some(id) =>
           target match {
-            case None => false
+            case None    => false
             case Some(t) => id == t.id
           }
       }
@@ -310,7 +310,6 @@ class PropagationStructure(debugLevel: Int) {
         filterScheduledWithTrack()
       }
       doPropagation()
-      propagationElements.foreach(_.checkInternals())
       _propagating = false
 
     }

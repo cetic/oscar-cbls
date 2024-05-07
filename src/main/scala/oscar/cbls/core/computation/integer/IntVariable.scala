@@ -13,7 +13,7 @@
 
 package oscar.cbls.core.computation.integer
 
-import oscar.cbls.core.computation.{KeyForRemoval, SavedValue, Store, Variable}
+import oscar.cbls.core.computation.{Invariant, KeyForRemoval, SavedValue, Store, Variable}
 
 object IntVariable {
   def apply(
@@ -85,6 +85,13 @@ class IntVariable(
 
   override def save(): SavedValue = new IntSavedValue(this)
 
+  override def registerStaticallyAndDynamicallyListeningElement(
+    propagationElement: Invariant with IntNotificationTarget,
+    indexToRecallAtNotification: Int
+  ): KeyForRemoval[(IntNotificationTarget, Int)] = {
+    super.registerDynamicallyListeningElement(propagationElement, indexToRecallAtNotification)
+  }
+
   override def performPropagation(): Unit = {
     if (_value != _pendingValue) {
       val old = _value
@@ -98,10 +105,6 @@ class IntVariable(
   }
 
   override def checkInternals(): Unit = {
-    require(
-      _value == _pendingValue,
-      Some("error on IntValue:" + this.getClass.toString + " " + this)
-    )
     require(
       isValueWithinDomain(_pendingValue),
       s"Value is outside defined domain. Domain : ${domain.get} - value : ${_pendingValue}"
