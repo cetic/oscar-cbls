@@ -16,13 +16,12 @@ package oscar.cbls.core.computation.objective
 import oscar.cbls.core.search.{Move, SearchResult}
 
 abstract class Objective {
-
   def newExploration: Exploration
-
 }
 
 
 abstract class Exploration {
+  val oldObj: Long
   var toReturn:SearchResult
   def checkNeighbor(buildMove: Long => Move):Unit
 }

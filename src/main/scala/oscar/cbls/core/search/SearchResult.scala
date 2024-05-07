@@ -1,5 +1,7 @@
 package oscar.cbls.core.search
 
+import oscar.cbls.core.computation.objective.Objective
+
 sealed abstract class SearchResult {
 
 }
@@ -12,10 +14,16 @@ object MoveFound{
     new MoveFound(move)
   }
 
+  def unapply(moveFound: MoveFound): Move = {
+    moveFound.move
+  }
+
 }
 
-class MoveFound(move: Move) extends SearchResult {
-  def commit(): Unit = { move.commit() }
-  def objAfter: Long = move.objAfter
+class MoveFound(val move: Move) extends SearchResult {
+  def commit(): Unit = {
+    move.commit()
+  }
+  def objAfter(): Long = move.objAfter()
   override def toString: String = move.toString
 }

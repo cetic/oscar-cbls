@@ -19,7 +19,7 @@ class Maximize(
 
   override def newExploration: Exploration = new Exploration {
     var toReturn: SearchResult = NoMoveFound
-    private val oldObj = objective.value()
+    val oldObj: Long = objective.value()
 
     private def checkNeighborOnApproximatedObjective(buildMove: Long => Move): Unit = {
       val newApproxObj = approximatedObjective.get.value()
