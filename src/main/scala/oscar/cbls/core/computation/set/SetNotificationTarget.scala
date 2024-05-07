@@ -12,6 +12,8 @@ trait SetNotificationTarget {
     *
     * @param v
     *   The listened SetVariable
+    * @param index
+    *   * The index of the IntVariable in the context of the listening Invariant
     * @param addedValues
     *   The values added to the SetVariable
     * @param removedValues
@@ -23,6 +25,7 @@ trait SetNotificationTarget {
     */
   def notifySetChanges(
     v: ChangingSetValue,
+    index: Int,
     addedValues: Iterable[Int],
     removedValues: Iterable[Int],
     oldValue: Set[Int],
