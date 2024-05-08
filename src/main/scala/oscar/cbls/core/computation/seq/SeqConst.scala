@@ -13,7 +13,7 @@
 
 package oscar.cbls.core.computation.seq
 
-import oscar.cbls.core.propagation.PropagationStructure
+import oscar.cbls.core.computation.Store
 
 object SeqConst {
   private var nextNameCounter: Int = -1
@@ -22,11 +22,11 @@ object SeqConst {
     s"SeqConst_$nextNameCounter"
   }
 
-  def apply(model: PropagationStructure, initialValues: List[Int], name: String = nextName()): SeqConst ={
+  def apply(model: Store, initialValues: List[Int], name: String = nextName()): SeqConst ={
     new SeqConst(model, initialValues, name)
   }
 }
 
-class SeqConst(model: PropagationStructure, initialValues: List[Int], name: String) extends SeqVariable(model, initialValues, name, isConstant = true )  {
+class SeqConst(model: Store, initialValues: List[Int], name: String) extends SeqVariable(model, initialValues, name, isConstant = true )  {
 
 }

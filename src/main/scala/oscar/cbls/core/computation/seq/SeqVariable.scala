@@ -18,7 +18,7 @@ import oscar.cbls.core.computation.{Invariant, SavedValue, Store, Variable}
 import oscar.cbls.core.propagation.PropagationStructure
 
 class SeqVariable(
-  model: PropagationStructure,
+  model: Store,
   initialValues: List[Int],
   name: String = "SeqVariable",
   maxPivotPerValuePercent: Int = 4,
@@ -53,7 +53,7 @@ class SeqVariable(
     if (model == null) return mOldValue
     val propagating = model.propagating
     if (isADecisionVariable && !propagating) return toNotify.newValue
-    if (!propagating) model.asInstanceOf[Store].performPartialPropagation(this)
+    if (!propagating) model.propagate(Some(this))
     mOldValue
   }
 
