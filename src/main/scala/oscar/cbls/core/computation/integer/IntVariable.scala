@@ -41,7 +41,7 @@ class IntVariable(
   // For listening invariants this iS the value of the variable until propagation.
   private var _value: Long = _pendingValue
 
-  def pendingValue(): Long = _pendingValue
+  def pendingValue: Long = _pendingValue
 
   def value(): Long = {
     (model.propagating, isADecisionVariable) match {

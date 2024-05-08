@@ -37,9 +37,9 @@ class IntIdentityInvariant(model: Store, fromValue: IntVariable, toValue: IntVar
     toValue := newVal
   }
 
-  /** This is the debug procedure through which propagation element can redundantly check that the
-    * incremental computation they perform through the performPropagation method is correct
-    * overriding this method is optional, so an empty body is provided by default
+  /** This is the debug procedure through which the propagation element can redundantly check the
+    * correctness of the incremental computation done through the performPropagation method.
+    * Overriding this method is optional, so an empty body is provided by default.
     */
   override def checkInternals(): Unit = {
     require(toValue.pendingValue() == fromValue.value())

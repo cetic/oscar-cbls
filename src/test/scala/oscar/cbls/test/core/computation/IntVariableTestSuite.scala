@@ -11,7 +11,7 @@ import scala.util.Random
 class IntVariableTestSuite extends AnyFunSuite {
 
   test("Identity invariant works as expected") {
-    val store                   = new Store()
+    val store                   = new Store(debugLevel = 3)
     var randomValues: List[Int] = List.fill(8)(Random.between(-1000, 1000))
     var referenceInt: Long      = randomValues.head
     val input                   = IntVariable(store, randomValues.head)
