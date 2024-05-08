@@ -8,6 +8,8 @@ import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.{AcceptAll, Exploration, Minimize, Objective}
 import oscar.cbls.core.search.{Move, MoveFound, NoMoveFound, SearchResult}
 
+import scala.util.Random
+
 class ObjectiveTestSuite extends AnyFunSuite {
 
   test("Can't create an Objective with a constant Variable") {
@@ -117,7 +119,7 @@ class ObjectiveTestSuite extends AnyFunSuite {
     exploration.toReturn.asInstanceOf[MoveFound].objAfter() should be(900)
   }
 
-  test("Objective old value is modified only upon move commit"){
+  test("Simulating DynAndThen behavior works as expected"){
 
     // Simulating a DynAndThen process
     // Only the combination of two moves is checked given acceptance criterion
@@ -139,22 +141,21 @@ class ObjectiveTestSuite extends AnyFunSuite {
     }
 
     def getDynAndThenMove(exploration: Exploration, obj: IntVariable): SearchResult ={
-
-      val aMove = getMove(AcceptAll(obj).newExploration, obj)
-      aMove match {
+      getMove(AcceptAll(obj).newExploration, obj) match {
         case mf: MoveFound =>
           mf.objAfter() should be(1000 + summedVariations)
+          getMove(exploration,obj) match {
+            case mf: MoveFound =>
+              mf.objAfter() should be(1000 + summedVariations)
+              mf
+            case NoMoveFound =>
+              require(false, "A move should have been found")
+              NoMoveFound
+          }
         case NoMoveFound =>
           require(false, "A move should have been found")
+          NoMoveFound
       }
-      val bMove= getMove(exploration,obj)
-      bMove match {
-        case mf: MoveFound =>
-          mf.objAfter() should be(1000 + summedVariations)
-        case NoMoveFound =>
-          require(false, "A move should have been found")
-      }
-      bMove
     }
 
     def startExploration(objective: Objective, skipDynAndThen: Boolean = false): SearchResult ={
@@ -175,10 +176,29 @@ class ObjectiveTestSuite extends AnyFunSuite {
 
     // Now if we commit between the two moves it should fail
     startExploration(AcceptAll(objValue),skipDynAndThen = true).asInstanceOf[MoveFound].commit()
-
     startExploration(minimize,skipDynAndThen = true) should be(NoMoveFound)
+  }
 
+  test("Simulating alternative meta heuristic as a combinator works as expected"){
+    def startExploration(objective: Objective): Unit = {
 
+    }
+
+    def getMetaHeuristicMove(explorer: Exploration, obj: IntVariable): Unit = {
+
+    }
+
+    class SpecificExploration(obj: IntVariable) extends Exploration {
+
+      override val oldObj: Long = obj.value()
+      override var toReturn: SearchResult = NoMoveFound
+
+      override def checkNeighbor(buildMove: Long => Move): Unit = {
+        val newValue = obj.value()
+        if(newValue%2 == 0) toReturn = MoveFound(new DummyMove(newValue))
+        else NoMoveFound
+      }
+    }
   }
 
 }
