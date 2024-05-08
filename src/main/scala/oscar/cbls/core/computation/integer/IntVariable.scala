@@ -15,7 +15,20 @@ package oscar.cbls.core.computation.integer
 
 import oscar.cbls.core.computation.{Invariant, KeyForRemoval, SavedValue, Store, Variable}
 
+/** Companion object of IntVariable */
 object IntVariable {
+
+  /** Creates an IntVariable.
+    *
+    * @param model
+    *   The Store in which the IntVariable was registered
+    * @param initialValue
+    *   The initial value of the IntVariable
+    * @param isConstant
+    *   If the variable is a constant
+    * @param name
+    *   The name (optional) of your Variable
+    */
   def apply(
     model: Store,
     initialValue: Long,
@@ -26,6 +39,17 @@ object IntVariable {
   }
 }
 
+/** A variable managed by the [[oscar.cbls.core.computation.Store]] whose type is integer.
+  *
+  * @param model
+  *   The Store in which the IntVariable was registered
+  * @param initialValue
+  *   The initial value of the IntVariable
+  * @param isConstant
+  *   If the variable is a constant
+  * @param name
+  *   The name (optional) of your Variable
+  */
 class IntVariable(
   model: Store,
   initialValue: Long,
@@ -41,8 +65,19 @@ class IntVariable(
   // For listening invariants this iS the value of the variable until propagation.
   private var _value: Long = _pendingValue
 
+  /** The new value of the IntVariable. This value is not yet propagated therefore, listening
+    * Invariant do not yet know about it.
+    */
   def pendingValue: Long = _pendingValue
 
+  /** The value of the IntVariable.
+    *
+    * \==WARNING==: By calling this you may trigger a propagation. If you want to know the new
+    * (pending) value of this IntVariable, use [[pendingValue]] instead.
+    *
+    * If it's not a decision variable, it will start a propagation (if not yet propagating) of the
+    * model up to this IntVariable.
+    */
   def value(): Long = {
     (model.propagating, isADecisionVariable) match {
       case (true, _)     => _value

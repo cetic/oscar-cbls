@@ -10,9 +10,13 @@ import scala.util.Random
 
 class IntVariableTestSuite extends AnyFunSuite {
 
-  test("Identity invariant works as expected") {
+  val random: Random     = Random
+  private val seed: Long = random.nextLong()
+  random.setSeed(seed)
+
+  test(s"Identity invariant and IntVariable operations work as expected. (seed: $seed)") {
     val store                   = new Store(debugLevel = 3)
-    var randomValues: List[Int] = List.fill(8)(Random.between(-1000, 1000))
+    var randomValues: List[Int] = List.fill(8)(random.between(-1000, 1000))
     var referenceInt: Long      = randomValues.head
     val input                   = IntVariable(store, randomValues.head)
     val output                  = IntVariable(store, randomValues.head)
@@ -57,9 +61,9 @@ class IntVariableTestSuite extends AnyFunSuite {
     output.value() should be(referenceInt)
   }
 
-  test("Save and restore value works as expected") {
+  test(s"Save and restore value works as expected. (seed: $seed)") {
     val store             = new Store()
-    val startValue        = Random.nextInt(10)
+    val startValue        = random.nextInt(10)
     val input             = IntVariable(store, startValue)
     val output            = IntVariable(store, startValue)
     var referenceInt      = startValue
@@ -69,7 +73,7 @@ class IntVariableTestSuite extends AnyFunSuite {
 
     val savedValue = input.save()
     for (_ <- 0 until 10) {
-      val value = Random.nextInt(100)
+      val value = random.nextInt(100)
       input :+= value
       referenceInt += value
     }
@@ -78,7 +82,7 @@ class IntVariableTestSuite extends AnyFunSuite {
     output.value() should be(savedReferenceInt)
   }
 
-  test("An IntConstant cannot be modified") {
+  test(s"An IntConstant cannot be modified. (seed: $seed)") {
     val store = new Store()
     val const = new IntConstant(store, 15)
     store.close()

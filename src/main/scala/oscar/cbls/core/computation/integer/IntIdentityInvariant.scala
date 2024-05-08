@@ -33,7 +33,12 @@ class IntIdentityInvariant(model: Store, fromValue: IntVariable, toValue: IntVar
 
   toValue := fromValue.value()
 
-  override def notifyIntChanges(intVariable: IntVariable, index: Int, oldVal: Long, newVal: Long): Unit = {
+  override def notifyIntChanges(
+    intVariable: IntVariable,
+    contextualVarIndex: Int,
+    oldVal: Long,
+    newVal: Long
+  ): Unit = {
     toValue := newVal
   }
 
