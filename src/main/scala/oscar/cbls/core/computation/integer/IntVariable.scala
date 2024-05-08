@@ -147,5 +147,5 @@ class IntVariable(
   }
 
   override def toString: String =
-    s"$name - value : ${value()}"
+    s"${name()} - value : ${value()}"
 }
