@@ -7,8 +7,12 @@ import oscar.cbls.core.propagation.PropagationElement
 import scala.collection.immutable.HashSet
 import scala.collection.mutable.{HashSet => MutSet}
 
-class SetVariable(model: Store, initialValue: Set[Int], isConstant: Boolean = false)
-    extends Variable(model, isConstant) {
+class SetVariable(
+  model: Store,
+  initialValue: Set[Int],
+  isConstant: Boolean = false,
+  name: Option[String]
+) extends Variable(model, isConstant, name) {
 
   // The new value of this variable, not propagated yet if different from oldValue
   private var pendingValue: HashSet[Int] = HashSet(initialValue)
