@@ -51,7 +51,7 @@ class SetVariable(
   private def removeValuePreviouslyIn(i: Int): Unit = {}
 
   /** Save the state of this variable */
-  def save(): SavedValue = new SetSavedValue(this)
+  override def save(): SavedValue = new SetSavedValue(this)
 
   /** This is the propagation method that should be overridden by propagation elements. Notice that
     * it is only called in a propagation wave if:
