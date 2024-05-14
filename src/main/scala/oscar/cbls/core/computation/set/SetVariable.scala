@@ -12,6 +12,8 @@ class SetVariable(
   name: Option[String]
 ) extends Variable(model, isConstant, name) {
 
+  override type NotificationTargetType = SetNotificationTarget
+
   // The new value of this variable, not propagated yet if different from oldValue
   private var pendingValue: HashSet[Int] = HashSet.from(initialValue)
   // The old value of this variable
