@@ -23,9 +23,6 @@ object Minimize {
     mustBeZero: List[IntVariable] = List.empty,
     underApproximatedSolutionValue: Option[IntVariable] = None
   ): Minimize = {
-    solutionValue.model.registerForPartialPropagation(solutionValue)
-    mustBeZero.foreach(mbz => mbz.model.registerForPartialPropagation(mbz))
-    underApproximatedSolutionValue.foreach(ao => ao.model.registerForPartialPropagation(ao))
     new Minimize(solutionValue, mustBeZero, underApproximatedSolutionValue)
   }
 }

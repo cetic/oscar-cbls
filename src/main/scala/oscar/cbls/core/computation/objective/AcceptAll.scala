@@ -19,7 +19,6 @@ import oscar.cbls.core.search.{Move, MoveFound}
 /** Companion object of AcceptAll */
 object AcceptAll {
   def apply(solutionValue: IntVariable): AcceptAll = {
-    solutionValue.model.registerForPartialPropagation(solutionValue)
     new AcceptAll(solutionValue)
   }
 }

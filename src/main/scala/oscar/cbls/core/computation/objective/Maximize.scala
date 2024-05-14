@@ -23,9 +23,6 @@ object Maximize {
     mustBeZero: List[IntVariable] = List.empty,
     overApproximatedSolutionValue: Option[IntVariable] = None
   ): Maximize = {
-    solutionValue.model.registerForPartialPropagation(solutionValue)
-    mustBeZero.foreach(mbz => mbz.model.registerForPartialPropagation(mbz))
-    overApproximatedSolutionValue.foreach(ao => ao.model.registerForPartialPropagation(ao))
     new Maximize(solutionValue, mustBeZero, overApproximatedSolutionValue)
   }
 }
