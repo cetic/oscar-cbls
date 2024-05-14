@@ -1,8 +1,6 @@
 package oscar.cbls.core.computation.set
 
-import oscar.cbls.algo.dll.DoublyLinkedList
-import oscar.cbls.core.computation.{Invariant, SavedValue, Store, Variable}
-import oscar.cbls.core.propagation.PropagationElement
+import oscar.cbls.core.computation._
 
 import scala.collection.immutable.HashSet
 import scala.collection.mutable.{HashSet => MutSet}
