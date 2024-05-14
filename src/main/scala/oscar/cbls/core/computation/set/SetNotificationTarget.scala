@@ -24,7 +24,7 @@ trait SetNotificationTarget {
     *   The new value of the SetVariable
     */
   def notifySetChanges(
-    v: ChangingSetValue,
+    v: SetVariable,
     index: Int,
     addedValues: Iterable[Int],
     removedValues: Iterable[Int],
