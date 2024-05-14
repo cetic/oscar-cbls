@@ -98,16 +98,11 @@ class SetVariable(
 //    )
   }
 
-  override def registerDynamicallyListeningElement(
-    elem: Invariant,
-    variableIndex: Int = -1
-  ): DoublyLinkedList[(PropagationElement, Int)]#DLLStorageElement = {
-    require(
-      elem.isInstanceOf[SetNotificationTarget],
-      "The listening invariant must extend SetNotificationTarget trait " +
-        "to be able to receive notification upon change"
-    )
-    registerDynamicallyListeningElement(elem, variableIndex)
+  def registerStaticallyAndDynamicallyListeningElement( //TODO add override
+    propagationElement: Invariant with SetNotificationTarget,
+    indexToRecallAtNotification: Int
+  ): KeyForRemoval[(SetNotificationTarget, Int)] = {
+    super.registerDynamicallyListeningElement(propagationElement, indexToRecallAtNotification)
   }
 
 }
