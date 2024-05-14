@@ -13,15 +13,40 @@
 
 package oscar.cbls.core.computation.objective
 
-import oscar.cbls.core.search.{Move, SearchResult}
+import oscar.cbls.core.search.{Move, NoMoveFound, SearchResult}
 
+/** An Objective defines the conditions of acceptation of a new candidate solution during the
+  * search. Any optimisation has at least one Objective.
+  *
+  * During the exploration, the search procedure tries some modifications of the solution (called
+  * Move) leading to a new candidate solution. Then checks if this solution is acceptable given the
+  * Objective's conditions.
+  */
 abstract class Objective {
+
+  /** Creates a new Exploration instance. Must be called when starting an exploration. */
   def newExploration: Exploration
 }
 
-
+/** An Exploration is used by the neighborhood to find and keep the best candidate solution during
+  * the exploration phase.
+  *
+  * Depending of the concrete implementation of the Exploration, the behavior and thus the kept
+  * solution may vary.
+  */
 abstract class Exploration {
-  val oldObj: Long
-  var toReturn:SearchResult
-  def checkNeighbor(buildMove: Long => Move):Unit
+
+  /** Keeps the best move found during this exploration. Initialized at NoMoveFound. */
+  protected var _toReturn: SearchResult = NoMoveFound
+
+  /** Returns the best move found during this exploration */
+  def toReturn: SearchResult = _toReturn
+
+  /** Checks if the candidate solution match the acceptance conditions
+    *
+    * @param buildMove
+    *   A function linking the solution value to the Move that leads to it (must be provided by the
+    *   calling Neighborhood)
+    */
+  def checkNeighbor(buildMove: Long => Move): Unit
 }
