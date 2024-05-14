@@ -7,7 +7,6 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.Maximize
 import oscar.cbls.core.search.{MoveFound, NoMoveFound}
-import oscar.cbls.test.core.computation.DummyMove
 
 class MaximizeTestSuite extends AnyFunSuite {
 

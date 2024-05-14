@@ -7,7 +7,6 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.AcceptAll
 import oscar.cbls.core.search.MoveFound
-import oscar.cbls.test.core.computation.DummyMove
 
 import scala.util.Random
 
