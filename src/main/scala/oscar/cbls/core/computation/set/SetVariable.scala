@@ -98,7 +98,7 @@ class SetVariable(
 //    )
   }
 
-  def registerStaticallyAndDynamicallyListeningElement( //TODO add override
+  override def registerStaticallyAndDynamicallyListeningElement(
     propagationElement: Invariant with SetNotificationTarget,
     indexToRecallAtNotification: Int
   ): KeyForRemoval[(SetNotificationTarget, Int)] = {
