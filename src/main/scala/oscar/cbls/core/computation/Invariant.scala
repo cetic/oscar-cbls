@@ -22,9 +22,10 @@ import oscar.cbls.core.propagation._
   * IntVariable as input and output will ensure that the output variable is equal to the input
   * variable.
   *
-  * The [[oscar.cbls.core.propagation.PropagationElement]] abstract class provides an "empty" implementation of the method
-  * performPropagation. There is two ways of propagating invariant result to its output variable.
-  * When you receive a notification of modification from the input variable you ...
+  * The [[oscar.cbls.core.propagation.PropagationElement]] abstract class provides an "empty"
+  * implementation of the method performPropagation. There is two ways of propagating invariant
+  * result to its output variable. When you receive a notification of modification from the input
+  * variable you ...
   *   - ... directly set the new value of the output variable. In that case you do not need to
   *     override performPropagation()
   *   - ... do some computation and SCHEDULE the invariant FOR PROPAGATION. In that case you need to
@@ -37,6 +38,15 @@ import oscar.cbls.core.propagation._
   */
 abstract class Invariant(propagationStructure: PropagationStructure, name: Option[String] = None)
     extends PropagationElement(propagationStructure) {
+
+  /** Registers an IncredibleBulk (a bulk/set of [[Variable]]) as listened by this Invariant
+    *
+    * @param incredibleBulk
+    *   The bulk of [[Variable]]
+    */
+  def addIncredibleBulk(incredibleBulk: IncredibleBulk): Unit = {
+    this.registerStaticallyListenedElement(incredibleBulk)
+  }
 
   def name(): String = this.name.getOrElse(s"Invariant_$id")
 

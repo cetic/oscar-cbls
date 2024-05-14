@@ -63,7 +63,7 @@ class PropagationStructure(debugLevel: Int) {
 
   protected[propagation] var closed: Boolean = false
 
-  private var propagating: Boolean = false
+  private var _propagating: Boolean = false
 
   private var scheduledElements: List[PropagationElement] = List()
 
@@ -78,6 +78,8 @@ class PropagationStructure(debugLevel: Int) {
   private var partialPropagationTracks: RedBlackTreeMap[Array[Boolean]] = RedBlackTreeMap.empty
 
   private var currentTargetIdForPartialPropagation: Option[Int] = None
+
+  def propagating: Boolean = _propagating
 
   protected def getPropagationElements: List[PropagationElement] = propagationElements
 
@@ -217,7 +219,7 @@ class PropagationStructure(debugLevel: Int) {
     * @param target
     *   The target element of the propagation
     */
-  protected final def propagate(target: Option[PropagationElement] = None): Unit = {
+  final def propagate(target: Option[PropagationElement] = None): Unit = {
     if (!closed) return
 
     // The track for the partial propagation. Track is a boolean array where the transitive
@@ -290,13 +292,13 @@ class PropagationStructure(debugLevel: Int) {
     }
 
     // Do the propagation:
-    if (!propagating) {
-      propagating = true
+    if (!_propagating) {
+      _propagating = true
       val sameTarget: Boolean = currentTargetIdForPartialPropagation match {
         case None => false
         case Some(id) =>
           target match {
-            case None => false
+            case None    => false
             case Some(t) => id == t.id
           }
       }
@@ -308,7 +310,7 @@ class PropagationStructure(debugLevel: Int) {
         filterScheduledWithTrack()
       }
       doPropagation()
-      propagating = false
+      _propagating = false
 
     }
   }

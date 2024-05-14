@@ -44,7 +44,7 @@ object IncredibleBulk {
     propagationStructure: PropagationStructure
   ): IncredibleBulk = {
     if (!incredibleBulks.contains(incredibleBulkIdentifier)) {
-      incredibleBulks = incredibleBulks + (incredibleBulkIdentifier -> IncredibleBulk(
+      incredibleBulks = incredibleBulks + (incredibleBulkIdentifier -> new IncredibleBulk(
         bulkVariables,
         propagationStructure
       ))
@@ -65,10 +65,8 @@ object IncredibleBulk {
   * @param propagationStructure
   *   The propagation structure to which the element is attached
   */
-case class IncredibleBulk(
-  bulkVariables: Iterable[Variable],
-  propagationStructure: PropagationStructure
-) extends PropagationElement(propagationStructure) {
+class IncredibleBulk(bulkVariables: Iterable[Variable], propagationStructure: PropagationStructure)
+    extends PropagationElement(propagationStructure) {
 
   // Register (once) each variable to build the static graph.
   bulkVariables.foreach(v => registerStaticallyListenedElement(v))
@@ -76,8 +74,9 @@ case class IncredibleBulk(
   /** Allows to check and debug propagation elements.
     *
     * This method can be called after the propagation according to the debug level of the
-    * propagation structure (see [[oscar.cbls.core.propagation.PropagationStructure]]). It can be used to check if the invariant
-    * worked properly by, for example, recomputing the value from scratch.
+    * propagation structure (see [[oscar.cbls.core.propagation.PropagationStructure]]). It can be
+    * used to check if the invariant worked properly by, for example, recomputing the value from
+    * scratch.
     */
   override def checkInternals(): Unit = {}
 }
