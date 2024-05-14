@@ -15,9 +15,9 @@ class SetVariable(
 ) extends Variable(model, isConstant, name) {
 
   // The new value of this variable, not propagated yet if different from oldValue
-  private var pendingValue: HashSet[Int] = HashSet(initialValue)
+  private var pendingValue: HashSet[Int] = HashSet.from(initialValue)
   // The old value of this variable
-  private var _oldValue: HashSet[Int] = HashSet(initialValue)
+  private var _oldValue: HashSet[Int] = HashSet.from(initialValue)
 
   private[this] var addedValues: Option[MutSet[Int]]   = None
   private[this] var removedValues: Option[MutSet[Int]] = None
@@ -35,7 +35,7 @@ class SetVariable(
     // TODO according the old version, set changelists to None
     //  diff is manually computed in performSetPropagation
     if (value != pendingValue) {
-      pendingValue = HashSet(value)
+      pendingValue = HashSet.from(value)
       scheduleForPropagation()
     }
   }
