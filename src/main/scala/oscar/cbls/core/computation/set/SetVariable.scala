@@ -3,7 +3,6 @@ package oscar.cbls.core.computation.set
 import oscar.cbls.core.computation._
 
 import scala.collection.immutable.HashSet
-import scala.collection.mutable.{HashSet => MutSet}
 
 class SetVariable(
   model: Store,
@@ -14,13 +13,17 @@ class SetVariable(
 
   override type NotificationTargetType = SetNotificationTarget
 
+  // Immutable vars are generally safer than mutable vals. If this proves to be
+  // performance critical, consider using mutable vals that are "exported" to
+  // immutable counterparts when required.
+
   // The new value of this variable, not propagated yet if different from oldValue
   private var pendingValue: HashSet[Int] = HashSet.from(initialValue)
   // The old value of this variable
   private var _oldValue: HashSet[Int] = HashSet.from(initialValue)
 
-  private[this] var addedValues: Option[MutSet[Int]]   = None
-  private[this] var removedValues: Option[MutSet[Int]] = None
+  private[this] var addedValues: Option[HashSet[Int]]   = None
+  private[this] var removedValues: Option[HashSet[Int]] = None
 
   /** Alias for `setValue`. */
   def :=(v: Set[Int]): Unit = setValue(v)
