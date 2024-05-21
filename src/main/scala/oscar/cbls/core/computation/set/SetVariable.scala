@@ -49,8 +49,10 @@ class SetVariable(
   def setValue(value: Set[Int]): Unit = {
     // TODO according the old version, set changelists to None
     //  diff is manually computed in performSetPropagation
-    if (value != pendingValue) {
-      pendingValue = HashSet.from(value)
+    if (value != _pendingValue) {
+      addedValues = None
+      removedValues = None
+      _pendingValue = HashSet.from(value)
       scheduleForPropagation()
     }
   }
@@ -63,14 +65,32 @@ class SetVariable(
   /** Adds the */
   @inline
   def add(i: Int): Unit = {
-    if (!pendingValue.contains(i)) {}
+    if (!_pendingValue.contains(i)) {
+      (addedValues, removedValues) match {
+        case (Some(added), Some(removed)) =>
+          if (removed.contains(i)) removed -= i else added += i
+        case (None, None) =>
+        case _ => diffException()
+      }
+      _pendingValue += i
+      scheduleForPropagation()
+    }
   }
 
   /** Removes the */
   @inline
-  def remove(i: Int): Unit = {}
-
-  private def removeValuePreviouslyIn(i: Int): Unit = {}
+  def remove(i: Int): Unit = {
+    if (_pendingValue.contains(i)) {
+      (addedValues, removedValues) match {
+        case (Some(added), Some(removed)) =>
+          if (added.contains(i)) added -= i else removed += i
+        case (None, None) =>
+        case _ => diffException()
+      }
+      _pendingValue -= i
+      scheduleForPropagation()
+    }
+  }
 
   /** Save the state of this variable */
   override def save(): SavedValue = new SetSavedValue(this)
