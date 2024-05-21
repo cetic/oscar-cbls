@@ -55,6 +55,11 @@ class SetVariable(
     }
   }
 
+  private def diffException(): Unit =
+    throw new IllegalStateException(
+      s"Changelists in invalid state. Added: $addedValues Removed: $removedValues"
+    )
+
   /** Adds the */
   @inline
   def add(i: Int): Unit = {
