@@ -18,12 +18,24 @@ class SetVariable(
   // immutable counterparts when required.
 
   // The new value of this variable, not propagated yet if different from oldValue
-  private var pendingValue: HashSet[Int] = HashSet.from(initialValue)
+  private var _pendingValue: HashSet[Int] = HashSet.from(initialValue)
   // The old value of this variable
-  private var _oldValue: HashSet[Int] = HashSet.from(initialValue)
+  private var _value: HashSet[Int] = HashSet.from(initialValue)
 
-  private[this] var addedValues: Option[HashSet[Int]]   = None
-  private[this] var removedValues: Option[HashSet[Int]] = None
+  def pendingValue: Set[Int] = _pendingValue
+
+  def value(): Set[Int] = {
+    (model.propagating, isADecisionVariable) match {
+      case (true, _)     => _value
+      case (false, true) => _pendingValue
+      case (false, false) =>
+        model.propagate(Some(this))
+        _value
+    }
+  }
+
+  private[this] var addedValues: Option[HashSet[Int]]   = Some(HashSet.empty)
+  private[this] var removedValues: Option[HashSet[Int]] = Some(HashSet.empty)
 
   /** Alias for `setValue`. */
   def :=(v: Set[Int]): Unit = setValue(v)
