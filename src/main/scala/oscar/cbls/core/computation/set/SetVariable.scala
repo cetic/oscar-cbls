@@ -198,4 +198,6 @@ class SetVariable(
   ): KeyForRemoval[(SetNotificationTarget, Int)] = {
     super.registerDynamicallyListeningElement(propagationElement, indexToRecallAtNotification)
   }
+
+  override def toString: String = s"${name()} - value: ${value()}"
 }
