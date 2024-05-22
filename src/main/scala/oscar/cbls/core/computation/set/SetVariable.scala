@@ -47,8 +47,6 @@ class SetVariable(
   /** Changes the value of this variable and schedules it for propagation. */
   @inline
   def setValue(value: Set[Int]): Unit = {
-    // TODO according the old version, set changelists to None
-    //  diff is manually computed in performSetPropagation
     if (value != _pendingValue) {
       addedValues = None
       removedValues = None
@@ -70,7 +68,7 @@ class SetVariable(
         case (Some(added), Some(removed)) =>
           if (removed.contains(i)) removed -= i else added += i
         case (None, None) =>
-        case _ => diffException()
+        case _            => diffException()
       }
       _pendingValue += i
       scheduleForPropagation()
@@ -85,7 +83,7 @@ class SetVariable(
         case (Some(added), Some(removed)) =>
           if (added.contains(i)) added -= i else removed += i
         case (None, None) =>
-        case _ => diffException()
+        case _            => diffException()
       }
       _pendingValue -= i
       scheduleForPropagation()
@@ -104,22 +102,47 @@ class SetVariable(
     *
     * Overriding this method is optional, so an empty body is provided by default.
     */
-  override def performPropagation(): Unit = { // TODO check out performSetPropagation
-//    if (_oldValue != pendingValue) {
-//      val old = _oldValue
-//      _oldValue = pendingValue
-//
-//      val dynListElements = getDynamicallyListeningElements
-//      dynListElements.foreach {
-//        case (invariant: SetNotificationTarget, index: Int) =>
-//          invariant.notifySetChanges(this, index, old, pendingValue)
-//        case (invariant: Invariant, _) =>
-//          throw new IllegalArgumentException(
-//            s"The listening Invariant ($invariant) does not extend SetNotificationTarget," +
-//              s"therefore no notification can be send to it."
-//          )
-//      }
-//    }
+  override def performPropagation(): Unit = {
+    if (_value != _pendingValue) {
+      val listening = getDynamicallyListeningElements
+      if (listening.isEmpty) _value = _pendingValue
+      else {
+        // auxiliary method to compute the diff lists
+        def diff(
+          pending: HashSet[Int],
+          value: HashSet[Int],
+          addedValues: Option[HashSet[Int]],
+          removedValues: Option[HashSet[Int]]
+        ): (Set[Int], Set[Int]) = {
+          (addedValues, removedValues) match {
+            case (Some(add), Some(rem)) =>
+              // added and removed should be ok, let us just assert their validity
+              assert(add.intersect(rem).isEmpty, s"Added $add and Removed $rem intersect")
+              assert(add.subsetOf(pending), s"Added $add not subset of Pending $pending")
+              assert(pending.intersect(rem).isEmpty, s"Removed $rem and Pending $pending intersect")
+              (add, rem)
+            case (None, None) =>
+              // diff lists were reset because of setValue, need to compute them
+              (pending.removedAll(value), value.removedAll(pending))
+            case _ =>
+              throw new IllegalStateException(
+                s"Changelists in invalid state. Added: $addedValues Removed: $removedValues"
+              )
+          }
+        }
+        // get the definitive diff list
+        val (added, removed) = diff(_pendingValue, _value, addedValues, removedValues)
+
+        val old = _value
+        _value = _pendingValue
+
+        listening.foreach { case (invariant: SetNotificationTarget, index: Int) =>
+          invariant.notifySetChanges(this, index, added, removed, old, _pendingValue)
+        }
+      }
+    }
+    addedValues = Some(HashSet.empty)
+    removedValues = Some(HashSet.empty)
   }
 
   /** This is the debug procedure through which propagation element can redundantly check that the
@@ -129,13 +152,9 @@ class SetVariable(
     */
   def checkInternals(): Unit = {
     require(
-      _oldValue == pendingValue,
-      Some("error on SetValue:" + this.getClass.toString + " " + this)
+      _value == _pendingValue,
+      Some("Error on SetValue:" + this.getClass.toString + " " + this)
     )
-//    require(
-//      checkValueWithinDomain(pendingValue),
-//      s"Value is outside defined domain. Domain : ${domain.get} - value : ${pendingValue}"
-//    )
   }
 
   override def registerStaticallyAndDynamicallyListeningElement(
@@ -144,5 +163,4 @@ class SetVariable(
   ): KeyForRemoval[(SetNotificationTarget, Int)] = {
     super.registerDynamicallyListeningElement(propagationElement, indexToRecallAtNotification)
   }
-
 }
