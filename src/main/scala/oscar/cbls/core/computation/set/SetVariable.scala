@@ -4,6 +4,29 @@ import oscar.cbls.core.computation._
 
 import scala.collection.immutable.HashSet
 
+object SetVariable {
+
+  /** Creates an SetVariable.
+    *
+    * @param model
+    *   The Store in which the SetVariable is registered
+    * @param initialValue
+    *   The initial value of the SetVariable
+    * @param isConstant
+    *   Whether the variable is a constant or not
+    * @param name
+    *   The name (optional) of this variable
+    */
+  def apply(
+    model: Store,
+    initialValue: Set[Int],
+    isConstant: Boolean = false,
+    name: Option[String] = None
+  ): SetVariable = {
+    new SetVariable(model, initialValue, isConstant, name)
+  }
+}
+
 /** A variable managed by the [[oscar.cbls.core.computation.Store]] representing a set of integer
   * values.
   *
