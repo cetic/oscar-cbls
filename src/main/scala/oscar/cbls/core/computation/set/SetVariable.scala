@@ -4,6 +4,18 @@ import oscar.cbls.core.computation._
 
 import scala.collection.immutable.HashSet
 
+/** A variable managed by the [[oscar.cbls.core.computation.Store]] representing a set of integer
+  * values.
+  *
+  * @param model
+  *   The Store in which the SetVariable is registered
+  * @param initialValue
+  *   The initial value of the SetVariable
+  * @param isConstant
+  *   Whether the variable is a constant or not
+  * @param name
+  *   The name (optional) of this variable
+  */
 class SetVariable(
   model: Store,
   initialValue: Set[Int],
@@ -22,8 +34,19 @@ class SetVariable(
   // The old value of this variable
   private var _value: HashSet[Int] = HashSet.from(initialValue)
 
+  /** The most recent value of the SetVariable. This value is potentially not yet propagated, and as
+    * such listening propagations elements might not yet know about it.
+    */
   def pendingValue: Set[Int] = _pendingValue
 
+  /** The value of the SetVariable.
+    *
+    * \==WARNING==: By calling this you may trigger a propagation. If you want to know the new
+    * (pending) value of this SetVariable, use [[pendingValue]] instead.
+    *
+    * If it's not a decision variable, it will start a propagation (if not yet propagating) of the
+    * model up to this SetVariable.
+    */
   def value(): Set[Int] = {
     (model.propagating, isADecisionVariable) match {
       case (true, _)     => _value
@@ -34,14 +57,18 @@ class SetVariable(
     }
   }
 
+  // Auxiliary collections to keep track of the additions to, and removals from this variable.
+  // Optional; using setValue will turn them off until the next propagation phase.
   private[this] var addedValues: Option[HashSet[Int]]   = Some(HashSet.empty)
   private[this] var removedValues: Option[HashSet[Int]] = Some(HashSet.empty)
 
   /** Alias for `setValue`. */
   def :=(v: Set[Int]): Unit = setValue(v)
 
+  /** Alias for `add`. */
   def :+=(i: Int): Unit = add(i)
 
+  /** Alias for `remove`. */
   def :-=(i: Int): Unit = remove(i)
 
   /** Changes the value of this variable and schedules it for propagation. */
@@ -60,7 +87,7 @@ class SetVariable(
       s"Changelists in invalid state. Added: $addedValues Removed: $removedValues"
     )
 
-  /** Adds the */
+  /** Adds the given element to this set variable, if not already present. */
   @inline
   def add(i: Int): Unit = {
     if (!_pendingValue.contains(i)) {
@@ -75,7 +102,7 @@ class SetVariable(
     }
   }
 
-  /** Removes the */
+  /** Removes the given element from this set variable, if present. */
   @inline
   def remove(i: Int): Unit = {
     if (_pendingValue.contains(i)) {
@@ -90,18 +117,8 @@ class SetVariable(
     }
   }
 
-  /** Save the state of this variable */
   override def save(): SavedValue = new SetSavedValue(this)
 
-  /** This is the propagation method that should be overridden by propagation elements. Notice that
-    * it is only called in a propagation wave if:
-    *
-    *   1. It has been registered for propagation since the last time it was propagated;
-    *   1. It is included in the propagation wave: partial propagation waves do not propagate all
-    *      propagation elements, but only the predecessors of the targeted element.
-    *
-    * Overriding this method is optional, so an empty body is provided by default.
-    */
   override def performPropagation(): Unit = {
     if (_value != _pendingValue) {
       val listening = getDynamicallyListeningElements
@@ -145,12 +162,7 @@ class SetVariable(
     removedValues = Some(HashSet.empty)
   }
 
-  /** This is the debug procedure through which propagation element can redundantly check that the
-    * incremental computation they perform through the performPropagation method is correct.
-    *
-    * Overriding this method is optional, so an empty body is provided by default.
-    */
-  def checkInternals(): Unit = {
+  override def checkInternals(): Unit = {
     require(
       _value == _pendingValue,
       Some("Error on SetValue:" + this.getClass.toString + " " + this)
