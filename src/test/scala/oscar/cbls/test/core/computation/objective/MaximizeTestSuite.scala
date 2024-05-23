@@ -10,7 +10,7 @@ import oscar.cbls.core.search.{MoveFound, NoMoveFound}
 
 class MaximizeTestSuite extends AnyFunSuite {
 
-  test("Maximize objective does not accept moves that does not strictly decreases the value") {
+  test("Maximize objective does not accept moves that does not strictly increase the value") {
     val store    = new Store()
     val objValue = IntVariable(store, 1000)
     val obj      = Maximize(objValue)
