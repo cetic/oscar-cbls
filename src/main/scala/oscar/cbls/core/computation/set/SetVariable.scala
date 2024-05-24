@@ -43,7 +43,7 @@ class SetVariable(
   model: Store,
   initialValue: Set[Int],
   isConstant: Boolean = false,
-  name: Option[String]
+  name: Option[String] = None
 ) extends Variable(model, isConstant, name) {
 
   override type NotificationTargetType = SetNotificationTarget
