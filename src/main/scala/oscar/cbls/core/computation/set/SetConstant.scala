@@ -13,6 +13,20 @@
 
 package oscar.cbls.core.computation.set
 
-class SetConstant {
+import oscar.cbls.core.computation.Store
 
+/** A constant SetVariable.
+  *
+  * Since it's a constant, invoking methods that attempt to change its value will throw an
+  * exception.
+  *
+  * @param model
+  *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this variable is linked.
+  * @param value
+  *   The value of this constant variable
+  */
+class SetConstant(model: Store, value: Set[Int]) extends SetVariable(model, value, true) {
+  override protected def setValue(value: Set[Int]): Unit = {
+    require(requirement = false, "The value of a constant variable cannot be changed")
+  }
 }
