@@ -15,8 +15,15 @@ package oscar.cbls.core.computation.set
 
 import oscar.cbls.core.computation.SavedValue
 
-class SetSavedValue(v: SetVariable) extends SavedValue(v) {
+/** A saved state of a [[SetVariable]]
+  *
+  * @param setVariable
+  *   The SetVariable whose state is saved
+  */
+class SetSavedValue(setVariable: SetVariable) extends SavedValue(setVariable) {
+
+  private val savedValue: Set[Int] = setVariable.value()
 
   /** Restores the variable current value to the saved one */
-  def restoreValue(): Unit = ???
+  def restoreValue(): Unit = setVariable := savedValue
 }
