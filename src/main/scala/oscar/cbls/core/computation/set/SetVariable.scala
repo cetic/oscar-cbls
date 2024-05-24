@@ -124,7 +124,7 @@ class SetVariable(
 
   /** Adds the given element to this set variable, if not already present. */
   @inline
-  def add(i: Int): Unit = {
+  protected def add(i: Int): Unit = {
     if (!_pendingValue.contains(i)) {
       (addedValues, removedValues) match {
         case (Some(added), Some(removed)) =>
@@ -140,7 +140,7 @@ class SetVariable(
 
   /** Removes the given element from this set variable, if present. */
   @inline
-  def remove(i: Int): Unit = {
+  protected def remove(i: Int): Unit = {
     if (_pendingValue.contains(i)) {
       (addedValues, removedValues) match {
         case (Some(added), Some(removed)) =>
