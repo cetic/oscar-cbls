@@ -78,8 +78,10 @@ class Maximize(
       */
     override def checkNeighbor(buildMove: Long => Move): Unit = {
       if (!mustBeZero.exists(_.value() > 0)) {
-        if (overApproximatedObjValue.isDefined) checkNeighborOnApproximatedObjective(buildMove)
-        else checkNeighborOnRealObjective(buildMove)
+        overApproximatedObjValue match {
+          case None => checkNeighborOnRealObjective(buildMove)
+          case _    => checkNeighborOnApproximatedObjective(buildMove)
+        }
       }
     }
   }

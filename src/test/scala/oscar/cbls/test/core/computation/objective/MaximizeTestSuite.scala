@@ -37,7 +37,7 @@ class MaximizeTestSuite extends AnyFunSuite {
     val store              = new Store()
     val objValue           = IntVariable(store, 1000)
     val overApproxObjValue = IntVariable(store, 1000)
-    val obj = Maximize(objValue, overApproximatedObjValue = Some(overApproxObjValue))
+    val obj                = Maximize(objValue, overApproximatedObjValue = Some(overApproxObjValue))
     store.close()
 
     // The objValue is voluntarily acceptable, but it shouldn't be check

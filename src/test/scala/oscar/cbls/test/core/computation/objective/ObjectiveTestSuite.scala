@@ -50,7 +50,8 @@ class ObjectiveTestSuite extends AnyFunSuite {
     }
 
     // Custom objective, accepting first evaluating composition
-    class AcceptFirstEvalComposition(baseObj: Objective, right: Move => Neighborhood) extends Objective {
+    class AcceptFirstEvalComposition(baseObj: Objective, right: Move => Neighborhood)
+        extends Objective {
       // Creates the base objective exploration, used for composition evaluation.
       // (Get the initial obj upon Exploration creation)
       private val baseExploration = baseObj.newExploration
@@ -60,17 +61,18 @@ class ObjectiveTestSuite extends AnyFunSuite {
 
         /** Checks if the candidate objValue match the acceptance conditions */
         override def checkNeighbor(buildMove: Long => Move): Unit = {
-          val leftExploredMove = buildMove(0)  // Accept and build move return by right neighborhood
+          val leftExploredMove = buildMove(0) // Accept and build move return by right neighborhood
           // Returned move is right neighborhood's move applied to left neighborhood's move
           _toReturn = right(leftExploredMove).getMove(new Objective {
 
             override def newExploration: Exploration = new Exploration {
 
-              /** Checks if the candidate objValue match the acceptance conditions*/
+              /** Checks if the candidate objValue match the acceptance conditions */
               override def checkNeighbor(buildMove: Long => Move): Unit = {
                 // checkNeighbor uses baseObjective neighbor to evaluate the composition
                 baseExploration.checkNeighbor(buildMove =
-                  newObjValue => new CompositeMove(leftExploredMove, buildMove(newObjValue), newObjValue)
+                  newObjValue =>
+                    new CompositeMove(leftExploredMove, buildMove(newObjValue), newObjValue)
                 )
                 // Needed for Neighborhood's getMove method to return the searchResult
                 _toReturn = baseExploration.toReturn

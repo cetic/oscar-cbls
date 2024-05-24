@@ -78,9 +78,10 @@ class Minimize(
       */
     override def checkNeighbor(buildMove: Long => Move): Unit = {
       if (!mustBeZero.exists(_.value() > 0)) {
-        if (underApproximatedObjValue.isDefined)
-          checkNeighborOnApproximatedObjective(buildMove)
-        else checkNeighborOnRealObjective(buildMove)
+        underApproximatedObjValue match {
+          case None => checkNeighborOnRealObjective(buildMove)
+          case _    => checkNeighborOnApproximatedObjective(buildMove)
+        }
       }
     }
   }

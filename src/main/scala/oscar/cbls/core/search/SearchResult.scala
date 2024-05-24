@@ -1,15 +1,13 @@
 package oscar.cbls.core.search
 
-import oscar.cbls.core.computation.objective.Objective
+/** The result of an exploration * */
+sealed abstract class SearchResult {}
 
-sealed abstract class SearchResult {
-
-}
-
+/** The result of an exploration where no valid move were found * */
 object NoMoveFound extends SearchResult
 
-
-object MoveFound{
+/** Companion object of MoveFound */
+object MoveFound {
   def apply(move: Move): MoveFound = {
     new MoveFound(move)
   }
@@ -20,10 +18,13 @@ object MoveFound{
 
 }
 
+/** The result of an exploration were a valid move has been found * */
 class MoveFound(val move: Move) extends SearchResult {
+
+  /** Commits the validated move. */
   def commit(): Unit = {
     move.commit()
   }
-  def objAfter(): Long = move.objAfter()
+  def objAfter(): Long          = move.objAfter()
   override def toString: String = move.toString
 }
