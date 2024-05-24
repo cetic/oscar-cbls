@@ -116,7 +116,8 @@ class SetVariable(
     if (!_pendingValue.contains(i)) {
       (addedValues, removedValues) match {
         case (Some(added), Some(removed)) =>
-          if (removed.contains(i)) removed -= i else added += i
+          if (removed.contains(i)) removedValues = Some(removed - i)
+          else addedValues = Some(added + i)
         case (None, None) =>
         case _            => diffException()
       }
@@ -131,7 +132,8 @@ class SetVariable(
     if (_pendingValue.contains(i)) {
       (addedValues, removedValues) match {
         case (Some(added), Some(removed)) =>
-          if (added.contains(i)) added -= i else removed += i
+          if (added.contains(i)) addedValues = Some(added - i)
+          else removedValues = Some(removed + i)
         case (None, None) =>
         case _            => diffException()
       }
