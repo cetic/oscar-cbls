@@ -19,28 +19,32 @@ trait SetNotificationTarget {
     * [[SetVariable]] has changed. This method has to be implemented by the listening element, and
     * will be called by the listened variable.
     *
-    * This method uses parameters providing incremental information (`addedValues` and
-    * `removedValues`), as well as information on the entire value (`oldValue` and `newValue`),
-    * since different propagation elements may make use of either or both kinds.
+    * This method uses parameters providing incremental information (`addedElems` and
+    * `removedElems`), as well as information on the entire value (`oldValue` and `newValue`), since
+    * different propagation elements may make use of either or both kinds.
     *
-    * @param v
+    * The variable invoking this method makes sure that the set of added values and removed values
+    * are mutually exclusive, and that `newValue = oldValue + addedElems - removedElems`
+    *
+    * @param setVariable
     *   The listened SetVariable
     * @param index
-    *   * The index of the IntVariable in the context of the listening Invariant
-    * @param addedValues
-    *   The values added to the SetVariable
-    * @param removedValues
-    *   The values removed from the SetVariable
+    *   The optional index of the SetVariable in the context of the listening Invariant. Default
+    *   index is -1
+    * @param addedElems
+    *   The elements added to the SetVariable
+    * @param removedElems
+    *   The elements removed from the SetVariable
     * @param oldValue
-    *   The old value of the SetVariable
+    *   The previous value of the SetVariable
     * @param newValue
     *   The new value of the SetVariable
     */
   def notifySetChanges(
-    v: SetVariable,
+    setVariable: SetVariable,
     index: Int,
-    addedValues: Iterable[Int],
-    removedValues: Iterable[Int],
+    addedElems: Iterable[Int],
+    removedElems: Iterable[Int],
     oldValue: Set[Int],
     newValue: Set[Int]
   ): Unit
