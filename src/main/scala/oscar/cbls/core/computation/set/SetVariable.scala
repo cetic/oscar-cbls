@@ -96,7 +96,7 @@ class SetVariable(
 
   /** Changes the value of this variable and schedules it for propagation. */
   @inline
-  def setValue(value: Set[Int]): Unit = {
+  protected def setValue(value: Set[Int]): Unit = {
     if (value != _pendingValue) {
       addedValues = None
       removedValues = None
