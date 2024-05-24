@@ -21,19 +21,16 @@ import oscar.cbls.core.propagation._
   * It adds some functionalities like, domain definition, dynamically listening to other propagation
   * element and saving the state of the variable.
   *
-  * @param propagationStructure
+  * @param model
   *   The propagation structure to which the element is attached
   * @param isConstant
   *   If the variable is a constant
   * @param name
   *   The name (optional) of your Variable
   */
-abstract class Variable(
-  propagationStructure: PropagationStructure,
-  isConstant: Boolean,
-  name: Option[String] = None
-) extends PropagationElement(propagationStructure) {
-  require(propagationStructure != null, "The propagation structure must be defined")
+abstract class Variable(val model: Store, val isConstant: Boolean, name: Option[String] = None)
+    extends PropagationElement(model) {
+  require(model != null, "The propagation structure must be defined")
 
   /** The trait type that the [[Invariant]] must extends in order to receive notifications. This
     * type MUST be overridden when defining a new Variable
@@ -71,8 +68,8 @@ abstract class Variable(
     */
   def isADecisionVariable: Boolean = definingInvariant.isEmpty
 
-  /** Registers dynamically the [[oscar.cbls.core.propagation.PropagationElement]] as a listening element. Whenever the Variable
-    * updates its value, the listening element will be noticed.
+  /** Registers dynamically the [[oscar.cbls.core.propagation.PropagationElement]] as a listening
+    * element. Whenever the Variable updates its value, the listening element will be noticed.
     *
     * NOTE : Keep the returned value to be able to remove it from the listening
     * [[oscar.cbls.algo.dll.DoublyLinkedList]] using it's delete method.
