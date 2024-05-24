@@ -14,42 +14,41 @@
 package oscar.cbls.core.computation.objective
 
 import oscar.cbls.core.computation.integer.IntVariable
-import oscar.cbls.core.search.{Move, MoveFound, NoMoveFound, SearchResult}
+import oscar.cbls.core.search.{Move, MoveFound, NoMoveFound}
 
 /** Companion object of Maximize */
 object Maximize {
   def apply(
-    solutionValue: IntVariable,
+    objValue: IntVariable,
     mustBeZero: List[IntVariable] = List.empty,
-    overApproximatedSolutionValue: Option[IntVariable] = None
+    overApproximatedObjValue: Option[IntVariable] = None
   ): Maximize = {
-    new Maximize(solutionValue, mustBeZero, overApproximatedSolutionValue)
+    new Maximize(objValue, mustBeZero, overApproximatedObjValue)
   }
 }
 
-/** This Objective only accepts candidate solution whose value is greater than the latest accepted
-  * solution.
+/** This Objective only accepts objValue whose value is greater than the latest accepted one.
   *
-  * @param solutionValue
-  *   The IntVariable representing the solution value
+  * @param objValue
+  *   The IntVariable representing the value maximized by this Objective
   * @param mustBeZero
-  *   The list of strong constraints that have to be respected in order to accept the solution. Can
-  *   be empty.
-  * @param overApproximatedSolutionValue
-  *   An optional approximated IntVariable whose value is supposedly greater or equal to
-  *   solutionValue. Used when the computation of the solutionValue is really expensive
+  *   The list of strong constraints that have to be respected in order to evaluate and potentially
+  *   accept the new objValue. This list can be empty.
+  * @param overApproximatedObjValue
+  *   An optional approximated IntVariable whose value is supposedly greater or equal to objValue.
+  *   Used when the computation of the objValue is really expensive
   */
 class Maximize(
-  solutionValue: IntVariable,
+  objValue: IntVariable,
   mustBeZero: List[IntVariable],
-  overApproximatedSolutionValue: Option[IntVariable]
+  overApproximatedObjValue: Option[IntVariable]
 ) extends Objective {
 
   override def newExploration: Exploration = new Exploration {
-    private val oldObj: Long = solutionValue.value()
+    private val oldObj: Long = objValue.value()
 
     private def checkNeighborOnApproximatedObjective(buildMove: Long => Move): Unit = {
-      val newApproxObj = overApproximatedSolutionValue.get.value()
+      val newApproxObj = overApproximatedObjValue.get.value()
       toReturn match {
         case NoMoveFound if newApproxObj > oldObj =>
           checkNeighborOnRealObjective(buildMove)
@@ -60,7 +59,7 @@ class Maximize(
     }
 
     private def checkNeighborOnRealObjective(buildMove: Long => Move): Unit = {
-      val newObj = solutionValue.value()
+      val newObj = objValue.value()
       toReturn match {
         case NoMoveFound if newObj > oldObj        => _toReturn = MoveFound(buildMove(newObj))
         case m: MoveFound if newObj > m.objAfter() => _toReturn = MoveFound(buildMove(newObj))
@@ -70,16 +69,16 @@ class Maximize(
 
     /** Three steps :
       *   - Checks the strong constraints
-      *   - Checks the overApproximatedSolutionValue
-      *   - Checks the solutionValue
+      *   - Checks the overApproximatedObjValue
+      *   - Checks the objValue
       *
       * @param buildMove
-      *   A function linking the solution value to the Move that leads to it (must be provided by
-      *   the calling Neighborhood)
+      *   A function linking the new objValue to the Move that leads to it (must be provided by the
+      *   calling Neighborhood)
       */
     override def checkNeighbor(buildMove: Long => Move): Unit = {
       if (!mustBeZero.exists(_.value() > 0)) {
-        if (overApproximatedSolutionValue.isDefined) checkNeighborOnApproximatedObjective(buildMove)
+        if (overApproximatedObjValue.isDefined) checkNeighborOnApproximatedObjective(buildMove)
         else checkNeighborOnRealObjective(buildMove)
       }
     }

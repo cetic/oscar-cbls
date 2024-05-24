@@ -18,8 +18,8 @@ import oscar.cbls.core.search.{Move, MoveFound}
 
 /** Companion object of AcceptAll */
 object AcceptAll {
-  def apply(solutionValue: IntVariable): AcceptAll = {
-    new AcceptAll(solutionValue)
+  def apply(objValue: IntVariable): AcceptAll = {
+    new AcceptAll(objValue)
   }
 }
 

@@ -15,12 +15,14 @@ package oscar.cbls.core.computation.objective
 
 import oscar.cbls.core.search.{Move, NoMoveFound, SearchResult}
 
-/** An Objective defines the conditions of acceptation of a new candidate solution during the
-  * search. Any optimisation has at least one Objective.
+/** An Objective defines the conditions of acceptation of a new objective value during the search.
+  * Any optimisation has at least one Objective usually to minimize or maximize a defined value.
+  * Most of the time, this value represents the value of a Solution (a defined state of the
+  * problem).
   *
   * During the exploration, the search procedure tries some modifications of the solution (called
-  * Move) leading to a new candidate solution. Then checks if this solution is acceptable given the
-  * Objective's conditions.
+  * Move) leading to the modification of the objective value. To accept those moves the Objective
+  * has to checks if the new value meets the Objective's conditions.
   */
 abstract class Objective {
 
@@ -28,11 +30,11 @@ abstract class Objective {
   def newExploration: Exploration
 }
 
-/** An Exploration is used by the neighborhood to find and keep the best candidate solution during
+/** An Exploration is used by the neighborhood to find and keep the best new objective value during
   * the exploration phase.
   *
   * Depending of the concrete implementation of the Exploration, the behavior and thus the kept
-  * solution may vary.
+  * objective value may vary.
   */
 abstract class Exploration {
 

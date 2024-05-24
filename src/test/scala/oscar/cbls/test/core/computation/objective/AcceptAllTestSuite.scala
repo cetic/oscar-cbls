@@ -13,19 +13,19 @@ import scala.util.Random
 class AcceptAllTestSuite extends AnyFunSuite {
 
   private val random = Random
-  private val seed = random.nextLong()
+  private val seed   = random.nextLong()
   random.setSeed(seed)
 
-  test(s"No matter the new value, the solution is accepted.(seed = $seed)"){
-    val model = new Store()
-    val solutionValue = IntVariable(model, 1000)
+  test(s"No matter the new value, the new objValue is accepted.(seed = $seed)") {
+    val model    = new Store()
+    val objValue = IntVariable(model, 1000)
     model.close()
 
-    val acceptAll = AcceptAll(solutionValue)
+    val acceptAll   = AcceptAll(objValue)
     var exploration = acceptAll.newExploration
-    for(_ <- 0 until 100) {
+    for (_ <- 0 until 100) {
       val newValue = random.nextLong()
-      solutionValue := newValue
+      objValue := newValue
       exploration.checkNeighbor(objAfter => new DummyMove(objAfter))
       exploration.toReturn.isInstanceOf[MoveFound] should be(true)
       exploration.toReturn.asInstanceOf[MoveFound].objAfter() should be(newValue)

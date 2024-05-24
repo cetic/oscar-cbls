@@ -19,37 +19,36 @@ import oscar.cbls.core.search.{Move, MoveFound, NoMoveFound}
 /** Companion object of Minimize */
 object Minimize {
   def apply(
-    solutionValue: IntVariable,
+    objValue: IntVariable,
     mustBeZero: List[IntVariable] = List.empty,
-    underApproximatedSolutionValue: Option[IntVariable] = None
+    underApproximatedObjValue: Option[IntVariable] = None
   ): Minimize = {
-    new Minimize(solutionValue, mustBeZero, underApproximatedSolutionValue)
+    new Minimize(objValue, mustBeZero, underApproximatedObjValue)
   }
 }
 
-/** This Objective only accepts candidate solution whose value is lesser than the latest accepted
-  * solution.
+/** This Objective only accepts objValue whose value is lesser than the latest accepted one.
   *
-  * @param solutionValue
-  *   The IntVariable representing the solution value
+  * @param objValue
+  *   The IntVariable representing the value minimized by this Objective
   * @param mustBeZero
-  *   The list of strong constraints that have to be respected in order to accept the solution. Can
-  *   be empty.
-  * @param underApproximatedSolutionValue
-  *   An optional approximated IntVariable whose value is supposedly lesser or equal to
-  *   solutionValue. Used when the computation of the solutionValue is really expensive
+  *   The list of strong constraints that have to be respected in order to evaluate and potentially
+  *   accept the new objValue. This list can be empty.
+  * @param underApproximatedObjValue
+  *   An optional approximated IntVariable whose value is supposedly lesser or equal to objValue.
+  *   Used when the computation of the objValue is really expensive
   */
 class Minimize(
-  solutionValue: IntVariable,
+  objValue: IntVariable,
   mustBeZero: List[IntVariable],
-  underApproximatedSolutionValue: Option[IntVariable]
+  underApproximatedObjValue: Option[IntVariable]
 ) extends Objective {
 
   override def newExploration: Exploration = new Exploration {
-    private val oldObj: Long = solutionValue.value()
+    private val oldObj: Long = objValue.value()
 
     private def checkNeighborOnApproximatedObjective(buildMove: Long => Move): Unit = {
-      val newApproxObj = underApproximatedSolutionValue.get.value()
+      val newApproxObj = underApproximatedObjValue.get.value()
       toReturn match {
         case NoMoveFound if newApproxObj < oldObj =>
           checkNeighborOnRealObjective(buildMove)
@@ -60,7 +59,7 @@ class Minimize(
     }
 
     private def checkNeighborOnRealObjective(buildMove: Long => Move): Unit = {
-      val newObj = solutionValue.value()
+      val newObj = objValue.value()
       toReturn match {
         case NoMoveFound if newObj < oldObj        => _toReturn = MoveFound(buildMove(newObj))
         case m: MoveFound if newObj < m.objAfter() => _toReturn = MoveFound(buildMove(newObj))
@@ -70,16 +69,16 @@ class Minimize(
 
     /** Three steps :
       *   - Checks the strong constraints
-      *   - Checks the underApproximatedSolutionValue
-      *   - Checks the solutionValue
+      *   - Checks the underApproximatedObjValue
+      *   - Checks the objValue
       *
       * @param buildMove
-      *   A function linking the solution value to the Move that leads to it (must be provided by
-      *   the calling Neighborhood)
+      *   A function linking the new objValue to the Move that leads to it (must be provided by the
+      *   calling Neighborhood)
       */
     override def checkNeighbor(buildMove: Long => Move): Unit = {
       if (!mustBeZero.exists(_.value() > 0)) {
-        if (underApproximatedSolutionValue.isDefined)
+        if (underApproximatedObjValue.isDefined)
           checkNeighborOnApproximatedObjective(buildMove)
         else checkNeighborOnRealObjective(buildMove)
       }

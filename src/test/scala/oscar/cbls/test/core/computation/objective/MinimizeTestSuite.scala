@@ -35,7 +35,7 @@ class MinimizeTestSuite extends AnyFunSuite {
     val store = new Store()
     val objValue = IntVariable(store,1000)
     val underApproxObjValue = IntVariable(store,1000)
-    val obj = Minimize(objValue, underApproximatedSolutionValue = Some(underApproxObjValue))
+    val obj = Minimize(objValue, underApproximatedObjValue = Some(underApproxObjValue))
     store.close()
 
     // The objValue is voluntarily acceptable, be it shouldn't be check

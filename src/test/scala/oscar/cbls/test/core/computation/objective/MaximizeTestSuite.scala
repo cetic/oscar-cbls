@@ -35,35 +35,35 @@ class MaximizeTestSuite extends AnyFunSuite {
     "Maximize objective does not accept moves if over approximated objective is define and condition not met"
   ) {
     val store              = new Store()
-    val solValue           = IntVariable(store, 1000)
-    val overApproxSolValue = IntVariable(store, 1000)
-    val obj = Maximize(solValue, overApproximatedSolutionValue = Some(overApproxSolValue))
+    val objValue           = IntVariable(store, 1000)
+    val overApproxObjValue = IntVariable(store, 1000)
+    val obj = Maximize(objValue, overApproximatedObjValue = Some(overApproxObjValue))
     store.close()
 
     // The objValue is voluntarily acceptable, but it shouldn't be check
     // if the over approximated value is not higher
     var exploration = obj.newExploration
-    solValue           := 1100
-    overApproxSolValue := 200
+    objValue           := 1100
+    overApproxObjValue := 200
     exploration.checkNeighbor(objAfter => new DummyMove(objAfter))
     exploration.toReturn should be(NoMoveFound)
 
-    solValue           := 1100
-    overApproxSolValue := 200
+    objValue           := 1100
+    overApproxObjValue := 200
     exploration.checkNeighbor(objAfter => new DummyMove(objAfter))
     exploration.toReturn should be(NoMoveFound)
 
     // Under approximated value is higher but the retained value should be objValue
-    solValue           := 1100
-    overApproxSolValue := 1200
+    objValue           := 1100
+    overApproxObjValue := 1200
     exploration.checkNeighbor(objAfter => new DummyMove(objAfter))
     exploration.toReturn.isInstanceOf[MoveFound] should be(true)
     exploration.toReturn.asInstanceOf[MoveFound].objAfter() should be(1100)
 
     // Under approximated value is higher but the objValue is lower, should be rejected
     exploration = obj.newExploration
-    solValue           := 1000
-    overApproxSolValue := 1200
+    objValue           := 1000
+    overApproxObjValue := 1200
     exploration.checkNeighbor(objAfter => new DummyMove(objAfter))
     exploration.toReturn should be(NoMoveFound)
   }
