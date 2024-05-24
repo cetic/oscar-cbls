@@ -13,6 +13,41 @@
 
 package oscar.cbls.core.computation.set
 
-class SetIdentityInvariant {
+import oscar.cbls.core.computation.{Invariant, Store}
 
+/** An Invariant that maintains a copy of a given [[SetVariable]].
+  *
+  * @param model
+  *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this Invariant is linked
+  * @param fromValue
+  *   The copied IntVariable
+  * @param toValue
+  *   The copy
+  */
+class SetIdentityInvariant(model: Store, fromValue: SetVariable, toValue: SetVariable)
+    extends Invariant(model)
+    with SetNotificationTarget {
+
+  fromValue.registerStaticallyAndDynamicallyListeningElement(this)
+  toValue.setDefiningInvariant(this)
+
+  toValue := fromValue.value()
+
+  def notifySetChanges(
+    setVariable: SetVariable,
+    index: Int,
+    addedElems: Iterable[Int],
+    removedElems: Iterable[Int],
+    oldValue: Set[Int],
+    newValue: Set[Int]
+  ): Unit = {
+    toValue := newValue
+  }
+
+  def checkInternals(): Unit = {
+    require(
+      toValue.pendingValue == fromValue.value(),
+      s"Pending value of $toValue is not equal to value of $fromValue"
+    )
+  }
 }
