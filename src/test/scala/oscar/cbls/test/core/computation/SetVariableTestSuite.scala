@@ -4,12 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers.be
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import oscar.cbls.core.computation.{Invariant, Store}
-import oscar.cbls.core.computation.set.{
-  SetConstant,
-  SetIdentityInvariant,
-  SetNotificationTarget,
-  SetVariable
-}
+import oscar.cbls.core.computation.set._
 
 import scala.collection.mutable.{HashSet => MutSet}
 import scala.util.Random

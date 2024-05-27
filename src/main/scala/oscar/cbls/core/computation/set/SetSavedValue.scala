@@ -24,6 +24,6 @@ class SetSavedValue(setVariable: SetVariable) extends SavedValue(setVariable) {
 
   private val savedValue: Set[Int] = setVariable.value()
 
-  /** Restores the variable current value to the saved one */
+  /** Restores the saved value to the variable */
   def restoreValue(): Unit = setVariable := savedValue
 }
