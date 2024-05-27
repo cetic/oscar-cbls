@@ -158,9 +158,11 @@ class SetVariable(
 
   override def performPropagation(): Unit = {
     if (_value != _pendingValue) {
+      val old = _value
+      _value = _pendingValue
+
       val listening = getDynamicallyListeningElements
-      if (listening.isEmpty) _value = _pendingValue
-      else {
+      if (listening.nonEmpty) {
         // auxiliary method to compute the diff lists
         def diff(
           pending: HashSet[Int],
@@ -185,10 +187,7 @@ class SetVariable(
           }
         }
         // get the definitive diff list
-        val (added, removed) = diff(_pendingValue, _value, addedValues, removedValues)
-
-        val old = _value
-        _value = _pendingValue
+        val (added, removed) = diff(_pendingValue, old, addedValues, removedValues)
 
         listening.foreach { case (invariant: SetNotificationTarget, index: Int) =>
           invariant.notifySetChanges(this, index, added, removed, old, _pendingValue)
