@@ -19,6 +19,18 @@ class SetVariableTestSuite extends AnyFunSuite {
   private def randList(maxSize: Int = 1000, minVal: Int = -1000, maxVal: Int = 1000) =
     List.fill(random.between(1, maxSize))(random.between(minVal, maxVal))
 
+  // or tails?
+  private def heads() = random.nextInt() % 1 == 0
+
+  // simple function to get a random subset of the input collection
+  private def randSubset[A](xs: Iterable[A]): Iterable[A] = {
+    val b = Iterable.newBuilder[A]
+    for (x <- xs) {
+      if (heads()) b += x
+    }
+    b.result()
+  }
+
   // generate and exports the objects we need to test
   private def testSubjects()
     : (Store, MutSet[Int], SetVariable, SetVariable, SetIdentityInvariant, TestSetInvariant) = {
@@ -88,7 +100,7 @@ class SetVariableTestSuite extends AnyFunSuite {
     val (_, referenceSet, inputVar, outputVar, _, _) = testSubjects()
     val elements                                     = randList(maxSize = 10)
     for (e <- elements) {
-      if (random.nextInt() % 1 == 0) {
+      if (heads()) {
         referenceSet += e
         inputVar :+= e
       } else {
