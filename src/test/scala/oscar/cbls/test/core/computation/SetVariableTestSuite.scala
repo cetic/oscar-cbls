@@ -20,11 +20,15 @@ class SetVariableTestSuite extends AnyFunSuite {
   private val seed: Long = random.nextLong()
   random.setSeed(seed)
 
-  private def testSubjects(
-    random: Random
-  ): (Store, MutSet[Int], SetVariable, SetVariable, SetIdentityInvariant, TestSetInvariant) = {
+  // small utility method to generate a random list of integers
+  private def randList(maxSize: Int = 1000, minVal: Int = -1000, maxVal: Int = 1000) =
+    List.fill(random.between(1, maxSize))(random.between(minVal, maxVal))
+
+  // generate and exports the objects we need to test
+  private def testSubjects()
+    : (Store, MutSet[Int], SetVariable, SetVariable, SetIdentityInvariant, TestSetInvariant) = {
     val store                     = new Store(debugLevel = 3)
-    val randomSet: Set[Int]       = Set.fill(random.between(1, 1000))(random.between(-1000, 1000))
+    val randomSet: Set[Int]       = Set.from(randList())
     val referenceSet: MutSet[Int] = MutSet.from(randomSet)
 
     val inputVar  = SetVariable(store, randomSet, name = Some("Input"))
@@ -36,7 +40,11 @@ class SetVariableTestSuite extends AnyFunSuite {
     (store, referenceSet, inputVar, outputVar, idInv, testInv)
   }
 
-  private class TestSetInvariant(model: Store, fromValue: SetVariable)
+  // an auxiliary invariant. Upon notification should test the basic properties of the diff lists:
+  // * addedElems has no elements in common with removedElems
+  // * newValue = oldValue + addedElems - removedElems
+
+  private class TestSetInvariant(model: Store, fromValue: SetVariable, testNotify: Boolean = false)
       extends Invariant(model)
       with SetNotificationTarget {
 
@@ -52,37 +60,62 @@ class SetVariableTestSuite extends AnyFunSuite {
     ): Unit = {
       Set.from(addedElems) intersect Set.from(removedElems) should be(Set.empty)
       newValue should be(oldValue ++ addedElems -- removedElems)
+      if (testNotify) println("Notification testing occurred")
     }
 
     def checkInternals(): Unit = {}
   }
 
   test(s"Set identity invariant and SetVariable work when adding elements (seed: $seed).") {
-    val (_, referenceSet, inputVar, outputVar, _, _) = testSubjects(random)
-    val additions = List.fill(random.between(1, 100))(random.between(-1000, 1000))
-    // TODO complete
+    val (_, referenceSet, inputVar, outputVar, _, _) = testSubjects()
+    val additions                                    = randList(maxSize = 10)
+    for (a <- additions) {
+      referenceSet += a
+      inputVar :+= a
+    }
+    outputVar.value() should be(referenceSet)
   }
 
   test(s"Set identity invariant and SetVariable work when removing elements (seed: $seed).") {
-    val (_, referenceSet, inputVar, outputVar, _, _) = testSubjects(random)
-    // TODO complete
+    val (_, referenceSet, inputVar, outputVar, _, _) = testSubjects()
+    val removals                                     = randList(maxSize = 10)
+    for (r <- removals) {
+      referenceSet -= r
+      inputVar :-= r
+    }
+    outputVar.value() should be(referenceSet)
   }
 
   test(
     s"Set identity invariant and SetVariable work " +
       s"when adding and removing elements simultaneously (seed: $seed)."
   ) {
-    val (_, referenceSet, inputVar, outputVar, _, _) = testSubjects(random)
-    // TODO complete
+    val (_, referenceSet, inputVar, outputVar, _, _) = testSubjects()
+    val elements                                     = randList(maxSize = 10)
+    for (e <- elements) {
+      if (random.nextInt() % 1 == 0) {
+        referenceSet += e
+        inputVar :+= e
+      } else {
+        referenceSet -= e
+        inputVar :-= e
+      }
+    }
+    outputVar.value() should be(referenceSet)
   }
 
-  test(s"Set identity invariant and SetVariable work when manually setting (seed: $seed).") {
-    val (_, referenceSet, inputVar, outputVar, _, _) = testSubjects(random)
-    // TODO complete
+  test(
+    s"Set identity invariant and SetVariable work " +
+      s"when manually setting their value (seed: $seed)."
+  ) {
+    val (_, _, inputVar, outputVar, _, _) = testSubjects()
+    val newSet                            = Set.from(randList())
+    inputVar := newSet
+    outputVar.value() should be(newSet)
   }
 
   test(s"Save and restore methods work as expected. (seed: $seed)") {
-    val (_, referenceSet, inputVar, outputVar, _, _) = testSubjects(random)
+    val (_, referenceSet, inputVar, outputVar, _, _) = testSubjects()
     val originalReferenceSet                         = Set.from(referenceSet)
     val savedValue                                   = inputVar.save()
 
