@@ -85,7 +85,7 @@ class SetVariableTestSuite extends AnyFunSuite {
 
   test(s"Set identity invariant and SetVariable work when removing elements (seed: $seed).") {
     val (_, referenceSet, inputVar, outputVar, _, _) = testSubjects()
-    val removals                                     = randList(maxSize = 10)
+    val removals = randList(maxSize = 10) appendedAll randSubset(referenceSet)
     for (r <- removals) {
       referenceSet -= r
       inputVar :-= r
@@ -98,7 +98,7 @@ class SetVariableTestSuite extends AnyFunSuite {
       s"when adding and removing elements simultaneously (seed: $seed)."
   ) {
     val (_, referenceSet, inputVar, outputVar, _, _) = testSubjects()
-    val elements                                     = randList(maxSize = 10)
+    val elements = randList(maxSize = 10) appendedAll randSubset(referenceSet)
     for (e <- elements) {
       if (heads()) {
         referenceSet += e
