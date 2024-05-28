@@ -28,7 +28,7 @@ object Square{
    * @param fromValue
    *  The listened [[IntVariable]].
    * @param toValue
-   *  The [[IntVariable]] which contains fromValue².
+   *  The [[IntVariable]] which contains fromValue&#94;2.
    * @param name
    *   The name (optional) of your Invariant.
    */
