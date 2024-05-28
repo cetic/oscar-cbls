@@ -19,7 +19,7 @@ import oscar.cbls.core.computation.integer.IntVariable
 
 /** The companion object of [[Square]] class.
  */
-object Square{
+object Square {
 
   /** Create a [[Square]] invariant.
    *
@@ -51,10 +51,10 @@ object Square{
  * @param name
  *   The name (optional) of your Invariant.
  */
-class Square (model: Store,
-              fromValue: IntVariable,
-              toValue: IntVariable,
-              name: Option[String] = None)
+class Square(model: Store,
+             fromValue: IntVariable,
+             toValue: IntVariable,
+             name: Option[String] = None)
 extends Int2Int(model, fromValue, toValue, (x: Long) => x*x, false, name){
 
   override def checkInternals(): Unit ={

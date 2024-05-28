@@ -19,7 +19,7 @@ import oscar.cbls.core.computation.integer.IntVariable
 import scala.math.{sqrt, round}
 
 /** The companion object of [[Sqrt]] */
-object Sqrt{
+object Sqrt {
 
   /**Create a [[Sqrt]] invariant.
    *

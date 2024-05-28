@@ -18,7 +18,7 @@ import oscar.cbls.core.computation.integer.IntVariable
 
 /** The companion object of [[Opposite]] class
  */
-object Opposite{
+object Opposite {
 
   /**Create an [[Opposite]] invariant.
    *
@@ -51,10 +51,10 @@ object Opposite{
  * @param name
  *   The name (optional) of your Invariant.
  */
-class Opposite (model: Store,
-                fromValue: IntVariable,
-                toValue: IntVariable,
-                name: Option[String] = None)
+class Opposite(model: Store,
+               fromValue: IntVariable,
+               toValue: IntVariable,
+               name: Option[String] = None)
 extends Int2Int(model, fromValue, toValue, (x: Long) => -x, false, name)
 {
   override def checkInternals(): Unit = {

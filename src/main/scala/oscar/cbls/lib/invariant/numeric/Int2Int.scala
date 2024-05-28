@@ -35,12 +35,12 @@ import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
  * @param name
  *   The name (optional) of your Invariant.
  */
-class Int2Int (model: Store,
-               fromValue: IntVariable,
-               toValue: IntVariable,
-               fun: Long => Long,
-               cached: Boolean = false,
-               name: Option[String] = None)
+class Int2Int(model: Store,
+              fromValue: IntVariable,
+              toValue: IntVariable,
+              fun: Long => Long,
+              cached: Boolean = false,
+              name: Option[String] = None)
 extends Invariant(model, name) with IntNotificationTarget
 {
   fromValue.registerStaticallyAndDynamicallyListeningElement(this)

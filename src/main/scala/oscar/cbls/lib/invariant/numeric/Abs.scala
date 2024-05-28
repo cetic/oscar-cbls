@@ -18,7 +18,7 @@ import oscar.cbls.core.computation.integer.IntVariable
 
 
 /** Companion object of [[Abs]] class.*/
-object Abs{
+object Abs {
 
   /**Create an [[Abs]] invariant.
    *
@@ -50,10 +50,10 @@ object Abs{
  * @param name
  *   The name (optional) of your Invariant.
  */
-class Abs (model: Store,
-           fromValue: IntVariable,
-           toValue: IntVariable,
-           name: Option[String] = None)
+class Abs(model: Store,
+          fromValue: IntVariable,
+          toValue: IntVariable,
+          name: Option[String] = None)
 extends Int2Int (model, fromValue, toValue, (x: Long) => x.abs, false, name){
 
   override def checkInternals(): Unit = {
