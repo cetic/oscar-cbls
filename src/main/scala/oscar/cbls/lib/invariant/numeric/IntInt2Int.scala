@@ -13,6 +13,34 @@
 
 package oscar.cbls.lib.invariant.numeric
 
-class IntInt2Int ({
+import oscar.cbls.core.computation.{Invariant, Store}
+import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 
+class IntInt2Int(model: Store,
+                 a: IntVariable,
+                 b: IntVariable,
+                 output: IntVariable,
+                 fun: (Long, Long) => Long,
+                 name: Option[String] = None)
+extends Invariant(model, name) with IntNotificationTarget {
+
+
+  a.registerStaticallyAndDynamicallyListeningElement(this)
+  b.registerStaticallyAndDynamicallyListeningElement(this)
+
+  output.setDefiningInvariant(this)
+  output := fun(a.value(), b.value())
+
+  @inline
+  override def notifyIntChanges(intVariable: IntVariable,
+                                contextualVarIndex: Int,
+                                oldVal: Long,
+                                newVal: Long): Unit = {
+    output := fun(a.value(), b.value())
+  }
+
+  override def checkInternals(): Unit ={
+    require(output.value() == fun(a.value(), b.value()),
+      s"output != fun(a, b). output: $output - a: $a - b: $b")
+  }
 }
