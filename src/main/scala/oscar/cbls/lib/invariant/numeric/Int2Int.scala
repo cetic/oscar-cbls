@@ -75,6 +75,6 @@ extends Invariant(model, name) with IntNotificationTarget
 
   override def checkInternals(): Unit = {
     require(toValue.value() == fun(fromValue.value()), s"toValue is not equal to fun(fromValue). " +
-      s"fromValue: ${fromValue} - toValue: ${toValue}")
+      s"fromValue: $fromValue - toValue: $toValue")
   }
 }
