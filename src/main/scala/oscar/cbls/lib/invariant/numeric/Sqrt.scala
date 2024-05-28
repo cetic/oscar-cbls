@@ -42,6 +42,7 @@ object Sqrt {
 
 /** [[oscar.cbls.core.computation.Invariant]] that maintain the square root of fromValue.
  * WARNING: We are only working with integers. The square root is rounded to the closest integer.
+ * Don't use with negative numbers.
  *
  * @param model
  *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
