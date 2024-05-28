@@ -20,7 +20,7 @@ class SetVariableTestSuite extends AnyFunSuite {
     List.fill(random.between(1, maxSize))(random.between(minVal, maxVal))
 
   // or tails?
-  private def heads() = random.nextInt() % 1 == 0
+  private def heads() = random.nextInt() % 2 == 0
 
   // simple function to get a random subset of the input collection
   private def randSubset[A](xs: Iterable[A]): Iterable[A] = {
