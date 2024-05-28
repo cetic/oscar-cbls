@@ -20,16 +20,16 @@ import oscar.cbls.core.computation.integer.IntVariable
 /** Companion object of [[Abs]] class.*/
 object Abs{
 
-  /**Create an [[Abs]] invariant
+  /**Create an [[Abs]] invariant.
    *
    * @param model
    *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
    * @param fromValue
    *  The listened [[IntVariable]].
    * @param toValue
-   *  The [[IntVariable]] which contains |fromValue|
+   *  The [[IntVariable]] which contains |fromValue|.
    * @param name
-   *   The name (optional) of your Invariant
+   *   The name (optional) of your Invariant.
    */
   def apply(model: Store,
             fromValue: IntVariable,
@@ -46,9 +46,9 @@ object Abs{
  * @param fromValue
  *  The listened [[IntVariable]].
  * @param toValue
- *  The [[IntVariable]] which contains |fromValue|
+ *  The [[IntVariable]] which contains |fromValue|.
  * @param name
- *   The name (optional) of your Invariant
+ *   The name (optional) of your Invariant.
  */
 class Abs (model: Store,
            fromValue: IntVariable,
