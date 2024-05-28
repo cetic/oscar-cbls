@@ -11,8 +11,8 @@ import scala.util.Random
 
 class SetVariableTestSuite extends AnyFunSuite {
 
-  val random: Random     = Random
-  private val seed: Long = random.nextLong()
+  private val random: Random = Random
+  private val seed: Long     = Random.nextLong()
   random.setSeed(seed)
 
   // small utility method to generate a random list of integers
