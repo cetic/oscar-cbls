@@ -26,14 +26,14 @@ import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
  * @param fromValue
  *  The listened [[IntVariable]].
  * @param toValue
- *  The [[IntVariable]] which contains fun(fromValue)
+ *  The [[IntVariable]] which contains fun(fromValue).
  * @param fun
  *  The function to maintain. It is supposed not yo listen to any variable in the model
  * @param cached
  *  Set to true to have a cache of size1. Set to false to have no cache.
  *  A cache can provide speedup if fun is time-consuming.
  * @param name
- *   The name (optional) of your Invariant
+ *   The name (optional) of your Invariant.
  */
 class Int2Int (model: Store,
                fromValue: IntVariable,
