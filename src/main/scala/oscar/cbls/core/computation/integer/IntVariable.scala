@@ -15,28 +15,84 @@ package oscar.cbls.core.computation.integer
 
 import oscar.cbls.core.computation.{Invariant, KeyForRemoval, SavedValue, Store, Variable}
 
-class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
-    extends Variable(model, isConstant) {
+/** Companion object of IntVariable */
+object IntVariable {
+
+  /** Creates an IntVariable.
+    *
+    * @param model
+    *   The Store in which the IntVariable was registered
+    * @param initialValue
+    *   The initial value of the IntVariable
+    * @param isConstant
+    *   If the variable is a constant
+    * @param name
+    *   The name (optional) of your Variable
+    */
+  def apply(
+    model: Store,
+    initialValue: Long,
+    isConstant: Boolean = false,
+    name: Option[String] = None
+  ): IntVariable = {
+    new IntVariable(model, initialValue, isConstant, name)
+  }
+}
+
+/** A variable managed by the [[oscar.cbls.core.computation.Store]] whose type is integer.
+  *
+  * @param model
+  *   The Store in which the IntVariable was registered
+  * @param initialValue
+  *   The initial value of the IntVariable
+  * @param isConstant
+  *   If the variable is a constant
+  * @param name
+  *   The name (optional) of your Variable
+  */
+class IntVariable(
+  model: Store,
+  initialValue: Long,
+  isConstant: Boolean,
+  name: Option[String] = None
+) extends Variable(model, isConstant, name) {
 
   override type NotificationTargetType = IntNotificationTarget
 
-  // The new value of this variable, not propagated yet if different from _oldValue
-  private var _newValue: Long = initialValue
-  // The old value of this variable
-  private var _oldValue: Long = _newValue
+  // The pending value (new value) of this variable, not propagated yet if different from _value
+  private var _pendingValue: Long = initialValue
+  // The actual value of this variable
+  // For listening invariants this iS the value of the variable until propagation.
+  private var _value: Long = _pendingValue
 
-  def newValue(): Long = _newValue
+  /** The new value of the IntVariable. This value is not yet propagated therefore, listening
+    * Invariant do not yet know about it.
+    */
+  def pendingValue: Long = _pendingValue
 
+  /** The value of the IntVariable.
+    *
+    * \==WARNING==: By calling this you may trigger a propagation. If you want to know the new
+    * (pending) value of this IntVariable, use [[pendingValue]] instead.
+    *
+    * If it's not a decision variable, it will start a propagation (if not yet propagating) of the
+    * model up to this IntVariable.
+    */
   def value(): Long = {
-    if (!this.isADecisionVariable) model.propagate(Some(this))
-    _newValue
+    (model.propagating, isADecisionVariable) match {
+      case (true, _)     => _value
+      case (false, true) => _pendingValue
+      case (false, false) =>
+        model.propagate(Some(this))
+        _value
+    }
   }
 
   /** Change the newValue of this variable and schedule it for propagation */
   @inline
   protected def setValue(value: Long): Unit = {
-    if (value != _newValue) {
-      _newValue = value
+    if (value != _pendingValue) {
+      _pendingValue = value
       scheduleForPropagation()
     }
   }
@@ -45,57 +101,51 @@ class IntVariable(model: Store, initialValue: Long, isConstant: Boolean = false)
   def :=(value: Long): Unit = setValue(value)
 
   /** Add the given value to this variable */
-  def :+=(value: Long): Unit = setValue(_newValue + value)
+  def :+=(value: Long): Unit = setValue(_pendingValue + value)
 
   /** Subtract the given value from this variable */
-  def :-=(value: Long): Unit = setValue(_newValue - value)
+  def :-=(value: Long): Unit = setValue(_pendingValue - value)
 
   /** Multiply this variable with the given value */
-  def :*=(value: Long): Unit = setValue(_newValue * value)
+  def :*=(value: Long): Unit = setValue(_pendingValue * value)
 
   /** Divide this variable with the given value */
-  def :/=(value: Long): Unit = setValue(_newValue / value)
+  def :/=(value: Long): Unit = setValue(_pendingValue / value)
 
   /** Increments this variable */
-  def :++(): Unit = setValue(_newValue + 1)
+  def :++(): Unit = setValue(_pendingValue + 1)
 
   /** Decrements this variable */
-  def :--(): Unit = setValue(_newValue - 1)
+  def :--(): Unit = setValue(_pendingValue - 1)
 
   override def save(): SavedValue = new IntSavedValue(this)
 
+  override def registerStaticallyAndDynamicallyListeningElement(
+    propagationElement: Invariant with IntNotificationTarget,
+    indexToRecallAtNotification: Int
+  ): KeyForRemoval[(IntNotificationTarget, Int)] = {
+    super.registerDynamicallyListeningElement(propagationElement, indexToRecallAtNotification)
+  }
+
   override def performPropagation(): Unit = {
-    if (_oldValue != _newValue) {
-      val old = _oldValue
-      _oldValue = _newValue
+    if (_value != _pendingValue) {
+      val old = _value
+      _value = _pendingValue
 
       val dynListElements = getDynamicallyListeningElements
-      dynListElements.foreach {
-        case (invariant: IntNotificationTarget, index: Int) =>
-          invariant.notifyIntChanges(this, index, old, _newValue)
+      dynListElements.foreach { case (invariant: IntNotificationTarget, index: Int) =>
+        invariant.notifyIntChanges(this, index, old, _pendingValue)
       }
     }
   }
 
   override def checkInternals(): Unit = {
     require(
-      _oldValue == _newValue,
-      Some("error on IntValue:" + this.getClass.toString + " " + this)
-    )
-    require(
-      isValueWithinDomain(_newValue),
-      s"Value is outside defined domain. Domain : ${domain.get} - value : ${_newValue}"
+      isValueWithinDomain(_pendingValue),
+      s"Value is outside defined domain. Domain : ${domain.get} - value : ${_pendingValue}"
     )
   }
 
-  override def registerDynamicallyListeningElement(
-    elem: NotificationTargetType,
-    variableIndex: Int = -1
-  ): KeyForRemoval[(NotificationTargetType, Int)] = {
-    require(
-      elem.isInstanceOf[IntNotificationTarget],
-      "The listening invariant must extends IntNotificationTarget trait to be able to receive notification upon change"
-    )
-    super.registerDynamicallyListeningElement(elem, variableIndex)
-  }
+  override def toString: String =
+    s"${name()} - value : ${value()}"
 }

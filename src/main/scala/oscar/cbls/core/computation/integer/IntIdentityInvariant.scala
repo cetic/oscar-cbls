@@ -33,15 +33,20 @@ class IntIdentityInvariant(model: Store, fromValue: IntVariable, toValue: IntVar
 
   toValue := fromValue.value()
 
-  override def notifyIntChanges(intVariable: IntVariable, index: Int, oldVal: Long, newVal: Long): Unit = {
+  override def notifyIntChanges(
+    intVariable: IntVariable,
+    contextualVarIndex: Int,
+    oldVal: Long,
+    newVal: Long
+  ): Unit = {
     toValue := newVal
   }
 
-  /** This is the debug procedure through which propagation element can redundantly check that the
-    * incremental computation they perform through the performPropagation method is correct
-    * overriding this method is optional, so an empty body is provided by default
+  /** This is the debug procedure through which the propagation element can redundantly check the
+    * correctness of the incremental computation done through the performPropagation method.
+    * Overriding this method is optional, so an empty body is provided by default.
     */
   override def checkInternals(): Unit = {
-    require(toValue.value() == fromValue.value())
+    require(toValue.pendingValue == fromValue.value())
   }
 }

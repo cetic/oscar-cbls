@@ -44,7 +44,7 @@ case class SumBulkTestInvariant(
     *
     * @param intVariable
     *   The listened IntVariable
-    * @param index
+    * @param contextualVarIndex
     *   The index of the IntVariable in the context of the listening Invariant
     * @param oldVal
     *   The previous value of the variable
@@ -53,11 +53,11 @@ case class SumBulkTestInvariant(
     */
   override def notifyIntChanges(
     intVariable: IntVariable,
-    index: Int,
+    contextualVarIndex: Int,
     oldVal: Long,
     newVal: Long
   ): Unit = {
-    require(index != -1)
+    require(contextualVarIndex != -1)
     outputVariable :+= (newVal - oldVal)
   }
 }
@@ -65,21 +65,26 @@ case class SumBulkTestInvariant(
 class IncredibleBulkTestSuite extends AnyFunSuite {
 
   test("Bulk registering properly registers a list of Variable") {
-    val store  = new Store()
-    val input1 = new IntVariable(store, 0L)
-    val input2 = new IntVariable(store, 1L)
-    val input3 = new IntVariable(store, 2L)
-    val input4 = new IntVariable(store, 3L)
-    val input5 = new IntVariable(store, 4L)
-    val input6 = new IntVariable(store, 5L)
-    val output = new IntVariable(store, 0L)
+    val store               = new Store()
+    val input1: IntVariable = IntVariable(store, 0L)
+    val input2: IntVariable = IntVariable(store, 1L)
+    val input3: IntVariable = IntVariable(store, 2L)
+    val input4: IntVariable = IntVariable(store, 3L)
+    val input5: IntVariable = IntVariable(store, 4L)
+    val input6: IntVariable = IntVariable(store, 5L)
+    val output: IntVariable = IntVariable(store, 0L)
 
     // Only statically registered variable should be able to notify output when calling output.value
     store.registerForPartialPropagation(output)
 
     // The first input variable is voluntarily NOT registered with the bulk neither on its own
     // It's only dynamically registered. Therefore, due to partial propagation, it should not propagate it's value to the Invariant
-    SumBulkTestInvariant(store, List(input1, input2, input3, input4, input5, input6), output, "Bulk properly")
+    SumBulkTestInvariant(
+      store,
+      List(input1, input2, input3, input4, input5, input6),
+      output,
+      "Bulk properly"
+    )
     store.close()
 
     output.value() should be(15)
@@ -99,10 +104,10 @@ class IncredibleBulkTestSuite extends AnyFunSuite {
     output.value() should be(45)
   }
 
-  test("Creating two bulks with same identifier does not create a second one"){
+  test("Creating two bulks with same identifier does not create a second one") {
     val store  = new Store()
-    val inputs = List.fill(5)(new IntVariable(store, 0L))
-    val output = new IntVariable(store, 0L)
+    val inputs = List.fill(5)(IntVariable(store, 0L))
+    val output = IntVariable(store, 0L)
 
     val inv1 = SumBulkTestInvariant(store, inputs, output, "Bulk two times")
     val inv2 = SumBulkTestInvariant(store, inputs, output, "Bulk two times")

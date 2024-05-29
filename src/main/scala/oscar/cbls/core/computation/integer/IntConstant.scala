@@ -17,7 +17,8 @@ import oscar.cbls.core.computation.Store
 
 /** A constant IntVariable.
   *
-  * The only difference is that we cannot change it's value.
+  * Since it's a constant, invoking methods that attempt to change its value will throw an
+  * exception.
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this variable is linked.

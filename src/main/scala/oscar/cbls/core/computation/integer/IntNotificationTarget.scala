@@ -27,12 +27,17 @@ trait IntNotificationTarget {
     *
     * @param intVariable
     *   The listened IntVariable
-    * @param index
-    *   The index of the IntVariable in the context of the listening Invariant
+    * @param contextualVarIndex
+    *   The optional index of the IntVariable in the context of the listening Invariant. Default -1
     * @param oldVal
     *   The previous value of the variable
     * @param newVal
     *   The new value of the variable
     */
-  def notifyIntChanges(intVariable: IntVariable, index: Int, oldVal: Long, newVal: Long): Unit
+  def notifyIntChanges(
+    intVariable: IntVariable,
+    contextualVarIndex: Int,
+    oldVal: Long,
+    newVal: Long
+  ): Unit
 }
