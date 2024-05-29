@@ -26,8 +26,8 @@ class MinMaxInvariantsTestSuite extends AnyFunSuite {
 
   test("Max on array"){
     val store                       = new Store()
-    val vars                        = Array.fill(5)(new IntVariable(store, Random.between(-1000, 1000)))
-    val output                      = new IntVariable(store, Long.MinValue)
+    val vars                        = Array.fill(5)(IntVariable(store, Random.between(-1000, 1000)))
+    val output                      = IntVariable(store, Long.MinValue)
     val inv                         = Max(store, vars, output, "MaxBulk")
     store.close()
 
@@ -48,8 +48,8 @@ class MinMaxInvariantsTestSuite extends AnyFunSuite {
 
   test("Min on array"){
     val store                       = new Store()
-    val vars                        = Array.fill(5)(new IntVariable(store, Random.between(-1000, 1000)))
-    val output                      = new IntVariable(store, Long.MaxValue)
+    val vars                        = Array.fill(5)(IntVariable(store, Random.between(-1000, 1000)))
+    val output                      = IntVariable(store, Long.MaxValue)
     val inv                         = Min(store, vars, output, "MinBulk")
     store.close()
 
