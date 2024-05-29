@@ -19,7 +19,7 @@ import oscar.cbls.core.computation.integer.IntVariable
 /** Companion object of [[Mod]]. */
 object Mod{
 
-  /** Create a [[Mod]] invariant.
+  /** Creates a [[Mod]] invariant.
     *
   @param model
    *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
