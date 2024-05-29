@@ -20,7 +20,7 @@ import oscar.cbls.lib.invariant.numeric.IntInt2Int
 /** Companion object of [[Min2]] class. */
 object Min2{
 
-  /** Create a [[Min2]] invariant.
+  /** Creates a [[Min2]] invariant.
    *
    * @param model
    *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
