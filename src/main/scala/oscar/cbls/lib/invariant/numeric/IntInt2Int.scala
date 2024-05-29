@@ -59,6 +59,8 @@ extends Invariant(model, name) with IntNotificationTarget {
 
   override def checkInternals(): Unit ={
     require(output.value() == fun(a.value(), b.value()),
-      s"output != fun(a, b). output: $output - a: $a - b: $b")
+      s"checkInternals fails in invariant ${name()}." +
+        s"output != fun(a, b). " +
+        s"output: $output - a: $a - b: $b")
   }
 }

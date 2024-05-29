@@ -54,10 +54,4 @@ class Abs(model: Store,
           input: IntVariable,
           output: IntVariable,
           name: Option[String] = None)
-extends Int2Int (model, input, output, (x: Long) => x.abs, false, name){
-
-  override def checkInternals(): Unit = {
-    require(output.value() == input.value().abs,
-      s"toValue != |fromValue|. fromValue: $input - toValue: $output")
-  }
-}
+extends Int2Int (model, input, output, (x: Long) => x.abs, false, name){}

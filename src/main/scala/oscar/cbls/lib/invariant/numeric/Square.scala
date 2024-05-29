@@ -55,10 +55,4 @@ class Square(model: Store,
              input: IntVariable,
              output: IntVariable,
              name: Option[String] = None)
-extends Int2Int(model, input, output, (x: Long) => x*x, false, name){
-
-  override def checkInternals(): Unit ={
-    require(output.value() == input.value() * input.value(),
-      s"toValue != fromValue^2. fromValue: $input - toValue: $output")
-  }
-}
+extends Int2Int(model, input, output, (x: Long) => x*x, false, name){}

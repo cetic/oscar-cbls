@@ -64,10 +64,4 @@ class Pow(model: Store,
           b: IntVariable,
           output: IntVariable,
           name: Option[String] = None)
-extends IntInt2Int(model, a, b, output, (x: Long, y: Long) => round(pow(x, y)), name) {
-
-  override def checkInternals(): Unit = {
-    require(output.value() == round(pow(a.value(), b.value())),
-      s"output != a^b. output: $output - a: $a - b: $b")
-  }
-}
+extends IntInt2Int(model, a, b, output, (x: Long, y: Long) => round(pow(x, y)), name){}

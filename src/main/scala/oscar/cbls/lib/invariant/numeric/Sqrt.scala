@@ -57,10 +57,4 @@ class Sqrt(model: Store,
            input: IntVariable,
            output: IntVariable,
            name: Option[String] = None)
-extends Int2Int(model, input, output, (x: Long) => round(sqrt(x)), false, name)
-{
-  override def checkInternals(): Unit = {
-    require(output.value() == round(sqrt(input.value())),
-      s"toValue != √(fromValue). fromValue: $input - toValue: $output")
-  }
-}
+extends Int2Int(model, input, output, (x: Long) => round(sqrt(x)), false, name){}
