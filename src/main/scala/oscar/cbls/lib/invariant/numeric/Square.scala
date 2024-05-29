@@ -58,7 +58,7 @@ class Square(model: Store,
 extends Int2Int(model, fromValue, toValue, (x: Long) => x*x, false, name){
 
   override def checkInternals(): Unit ={
-    require(toValue.value() == -fromValue.value(),
+    require(toValue.value() == fromValue.value() * fromValue.value(),
       s"toValue != fromValue^2. fromValue: $fromValue - toValue: $toValue")
   }
 }
