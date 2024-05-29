@@ -19,7 +19,7 @@ import oscar.cbls.core.computation.integer.IntVariable
 /** Companion object of [[Div2]] class. */
 object Div2{
 
-  /** Create a [[Div2]] invariant.
+  /** Creates a [[Div2]] invariant.
    *
    * @param model
    *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
