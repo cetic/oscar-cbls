@@ -14,7 +14,8 @@
 package oscar.cbls.test.lib.invariant
 
 import org.scalatest.funsuite.AnyFunSuite
-
+import org.scalatest.matchers.must.Matchers.be
+import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.lib.invariant.numeric._
@@ -43,6 +44,36 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
       x :/= random.between(minVal, maxVal)
     x.:++()
     x.:--()
+  }
+
+  test(s"Absolute value of positive number (seed: $seed)"){
+    val store   = new Store(debugLevel = 3)
+    val input   = IntVariable(store, 42)
+    val output  = IntVariable(store, 0)
+    Abs(store, input, output)
+    store.close()
+
+    output.value() should be(42)
+  }
+
+  test(s"Absolute value of negative number (seed: $seed)"){
+    val store   = new Store(debugLevel = 3)
+    val input   = IntVariable(store, -42)
+    val output  = IntVariable(store, 0)
+    Abs(store, input, output)
+    store.close()
+
+    output.value() should be(42)
+  }
+
+  test(s"Absolute value of 0 (seed: $seed)"){
+    val store   = new Store(debugLevel = 3)
+    val input   = IntVariable(store, 0)
+    val output  = IntVariable(store, 1)
+    Abs(store, input, output)
+    store.close()
+
+    output.value() should be(0)
   }
 
   test(s"Abs invariant works as expected (seed: $seed)"){
