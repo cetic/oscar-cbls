@@ -40,7 +40,7 @@ object Sqrt {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintain the square root of fromValue.
+/** [[oscar.cbls.core.computation.Invariant]] that maintain the square root of an [[IntVariable]].
  * WARNING: We are only working with integers. The square root is rounded to the closest integer.
  * Don't use with negative numbers.
  *

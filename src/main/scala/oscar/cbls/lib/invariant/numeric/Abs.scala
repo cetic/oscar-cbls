@@ -39,7 +39,7 @@ object Abs {
   }
 }
 
-/**[[oscar.cbls.core.computation.Invariant]] that maintains the absolute value of fromValue
+/**[[oscar.cbls.core.computation.Invariant]] that maintains the absolute value of an [[IntVariable]].
  *
  * @param model
  *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.

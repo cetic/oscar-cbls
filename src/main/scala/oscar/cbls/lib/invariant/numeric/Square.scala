@@ -40,7 +40,7 @@ object Square {
   }
 }
 
-/**[[oscar.cbls.core.computation.Invariant]] that maintains the square of fromValue
+/**[[oscar.cbls.core.computation.Invariant]] that maintains the square of an [[IntVariable]]
  *
  * @param model
  *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
