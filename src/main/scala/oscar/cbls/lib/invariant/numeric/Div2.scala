@@ -41,7 +41,7 @@ object Div2{
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintain the quotient of two [[IntVariable]].
+/** [[oscar.cbls.core.computation.Invariant]] which maintains the quotient of two [[IntVariable]].
  *
  * @param model
  *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
