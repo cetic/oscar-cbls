@@ -18,7 +18,7 @@ import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 
 
 /** An helper to define an [[Invariant]] from a Long => Long function.
- * This invariant is not incremental. So, it should be only use for very simple functions.
+ * This invariant is not incremental. So, it should be only uses for very simple functions.
  * It maintains toValue = fun(fromValue)
  *
  * @param model
