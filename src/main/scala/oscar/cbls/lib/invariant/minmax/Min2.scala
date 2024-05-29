@@ -60,10 +60,4 @@ class Min2(model: Store,
            b: IntVariable,
            output: IntVariable,
            name: Option[String] = None)
-extends IntInt2Int(model, a, b, output, (x: Long, y: Long) => x.min(y), name){
-
-  override def checkInternals(): Unit = {
-    require(output.value() == a.value().min(b.value()),
-      s"output != min(a, b). output: $output - a: $a - b: $b")
-  }
-}
+extends IntInt2Int(model, a, b, output, (x: Long, y: Long) => x.min(y), name){}
