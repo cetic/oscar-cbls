@@ -45,7 +45,7 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
     x.:--()
   }
 
-  test(s"Abs invariant works as attended (seed: $seed)"){
+  test(s"Abs invariant works as expected (seed: $seed)"){
     val store   = new Store(debugLevel = 3)
     val rndVal  = random.between(-1000, 1000)
     val input   = IntVariable(store, rndVal)
@@ -58,7 +58,7 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
     absInv.checkInternals()
   }
 
-  test(s"Opposite invariant works as attended (seed: $seed)"){
+  test(s"Opposite invariant works as expected (seed: $seed)"){
     val store       = new Store(debugLevel = 3)
     val rndVal      = random.between(-1000, 1000)
     val input       = IntVariable(store, rndVal)
@@ -71,7 +71,7 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
     oppositeInv.checkInternals()
   }
 
-  test(s"Square invariant works as attended (seed: $seed)"){
+  test(s"Square invariant works as expected (seed: $seed)"){
     val store     = new Store(debugLevel = 3)
     val rndVal    = random.between(-1000, 1000)
     val input     = IntVariable(store, rndVal)
@@ -84,7 +84,7 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
     squareInv.checkInternals()
   }
 
-  test(s"Sqrt invariant works as attended (seed: $seed)"){
+  test(s"Sqrt invariant works as expected (seed: $seed)"){
     val store   = new Store(debugLevel = 3)
     val rndVal  = random.between(1, 2000)
     val input   = IntVariable(store, rndVal)
@@ -97,7 +97,7 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
     sqrtInv.checkInternals()
   }
 
-  test(s"Sum2 invariant works as attended (seed: $seed)"){
+  test(s"Sum2 invariant works as expected (seed: $seed)"){
     val store   = new Store(debugLevel = 3)
     val rndVal1 = random.between(-1000, 1000)
     val rndVal2 = random.between(-1000, 1000)
@@ -113,7 +113,7 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
     sum2Inv.checkInternals()
   }
 
-  test(s"Minus2 invariant works as attended (seed: $seed)"){
+  test(s"Minus2 invariant works as expected (seed: $seed)"){
     val store     = new Store(debugLevel = 3)
     val rndVal1   = random.between(-1000, 1000)
     val rndVal2   = random.between(-1000, 1000)
@@ -129,7 +129,7 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
     minus2Inv.checkInternals()
   }
 
-  test(s"Prod2 invariant works as attended (seed: $seed)"){
+  test(s"Prod2 invariant works as expected (seed: $seed)"){
     val store     = new Store(debugLevel = 3)
     val rndVal1   = random.between(-1000, 1000)
     val rndVal2   = random.between(-1000, 1000)
@@ -145,7 +145,7 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
     prod2Inv.checkInternals()
   }
 
-  test(s"Div2 invariant works as attended (seed: $seed)"){
+  test(s"Div2 invariant works as expected (seed: $seed)"){
     val store     = new Store(debugLevel = 3)
     val rndVal1   = random.between(-1000, 1000)
     val rndVal2   = random.between(500, 2000) //Smaller domain to avoid input2 be equal to 0
@@ -162,7 +162,7 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
     div2Inv.checkInternals()
   }
 
-  test(s"Mod invariant works as attended (seed: $seed)"){
+  test(s"Mod invariant works as expected (seed: $seed)"){
     val store   = new Store(debugLevel = 3)
     val rndVal1 = random.between(-1000, 1000)
     val rndVal2 = random.between(-1000, 1000)
@@ -178,7 +178,7 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
     modInv.checkInternals()
   }
 
-  test(s"Pow invariant works as attended (seed: $seed)"){
+  test(s"Pow invariant works as expected (seed: $seed)"){
     val store   = new Store(debugLevel = 3)
     val rndVal1 = random.between(-1000, 1000)
     val rndVal2 = random.between(-1000, 1000)
@@ -194,7 +194,7 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
     powInv.checkInternals()
   }
 
-  test(s"Max2 invariant works as attended (seed: $seed)"){
+  test(s"Max2 invariant works as expected (seed: $seed)"){
     val store   = new Store(debugLevel = 3)
     val rndVal1 = random.between(-1000, 1000)
     val rndVal2 = random.between(-1000, 1000)
@@ -210,7 +210,7 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
     max2Inv.checkInternals()
   }
 
-  test(s"Min2 invariant works as attended (seed: $seed)"){
+  test(s"Min2 invariant works as expected (seed: $seed)"){
     val store   = new Store(debugLevel = 3)
     val rndVal1 = random.between(-1000, 1000)
     val rndVal2 = random.between(-1000, 1000)
