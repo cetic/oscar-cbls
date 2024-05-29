@@ -41,7 +41,7 @@ object Mod{
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintain the remainder
+/** [[oscar.cbls.core.computation.Invariant]] that maintains the remainder
  * of a division between two [[IntVariable]].
  *
  * @param model
