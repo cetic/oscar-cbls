@@ -21,7 +21,7 @@ object Mod{
 
   /** Creates a [[Mod]] invariant.
     *
-  @param model
+   * @param model
    *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
    * @param a
    *  The first parameter of the function.
