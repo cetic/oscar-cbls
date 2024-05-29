@@ -19,7 +19,7 @@ import oscar.cbls.core.computation.integer.IntVariable
 /** The companion object of [[Minus2]] class. */
 object Minus2{
 
-  /** Create a [[Minus2]] invariant.
+  /** Creates a [[Minus2]] invariant.
    *
    * @param model
    *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
