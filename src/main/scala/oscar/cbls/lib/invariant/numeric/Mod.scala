@@ -19,9 +19,9 @@ import oscar.cbls.core.computation.integer.IntVariable
 /** Companion object of [[Mod]]. */
 object Mod{
 
-  /** Create a [[Mod]] invariant.
+  /** Creates a [[Mod]] invariant.
     *
-  @param model
+   * @param model
    *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
    * @param a
    *  The first parameter of the function.
@@ -41,7 +41,7 @@ object Mod{
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintain the remainder
+/** [[oscar.cbls.core.computation.Invariant]] that maintains the remainder
  * of a division between two [[IntVariable]].
  *
  * @param model

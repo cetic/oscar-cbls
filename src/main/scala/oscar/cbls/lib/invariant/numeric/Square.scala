@@ -21,7 +21,7 @@ import oscar.cbls.core.computation.integer.IntVariable
  */
 object Square {
 
-  /** Create a [[Square]] invariant.
+  /** Creates a [[Square]] invariant.
    *
    * @param model
    *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.

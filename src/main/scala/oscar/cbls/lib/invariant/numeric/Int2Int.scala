@@ -18,7 +18,7 @@ import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 
 
 /** An helper to define an [[Invariant]] from a Long => Long function.
- * This invariant is not incremental. So, it should be only use for very simple functions.
+ * This invariant is not incremental. So, it should be only uses for very simple functions.
  * It maintains toValue = fun(fromValue)
  *
  * @param model
@@ -28,7 +28,7 @@ import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
  * @param output
  *  The [[IntVariable]] which contains fun(fromValue).
  * @param fun
- *  The function to maintain. It is supposed not yo listen to any variable in the model
+ *  The function to maintain. It is supposed not to listen to any variable in the model
  * @param cached
  *  Set to true to have a cache of size1. Set to false to have no cache.
  *  A cache can provide speedup if fun is time-consuming.

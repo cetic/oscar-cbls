@@ -19,7 +19,7 @@ import oscar.cbls.core.computation.integer.IntVariable
 /** The companion object of [[Sum2]] class. */
 object Sum2{
 
-  /** Create a [[Sum2]] invariant.
+  /** Creates a [[Sum2]] invariant.
    *
    * @param model
    *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.

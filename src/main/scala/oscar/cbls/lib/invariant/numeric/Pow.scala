@@ -21,7 +21,7 @@ import scala.math.{pow, round}
 /** Companion object of [[Pow]] class. */
 object Pow{
 
-  /** Create a [[Pow]] invariant.
+  /** Creates a [[Pow]] invariant.
    *
    * @param model
    *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.

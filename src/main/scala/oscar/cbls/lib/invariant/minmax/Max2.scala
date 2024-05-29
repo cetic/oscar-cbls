@@ -20,7 +20,7 @@ import oscar.cbls.lib.invariant.numeric.IntInt2Int
 /** Companion object of [[Max2]] class. */
 object Max2{
 
-  /** Create a [[Max2]] invariant.
+  /** Creates a [[Max2]] invariant.
    *
    * @param model
    *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.

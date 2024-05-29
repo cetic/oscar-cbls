@@ -19,7 +19,7 @@ import oscar.cbls.core.computation.integer.IntVariable
 /** Companion object of [[Prod2]] class. */
 object Prod2{
 
-  /** Create a [[Prod2]] invariant.
+  /** Creates a [[Prod2]] invariant.
    *
    * @param model
    *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.

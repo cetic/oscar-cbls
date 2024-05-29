@@ -20,7 +20,7 @@ import oscar.cbls.core.computation.integer.IntVariable
 /** Companion object of [[Abs]] class.*/
 object Abs {
 
-  /**Create an [[Abs]] invariant.
+  /**Creates an [[Abs]] invariant.
    *
    * @param model
    *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
