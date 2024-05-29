@@ -21,7 +21,7 @@ import scala.math.{sqrt, round}
 /** The companion object of [[Sqrt]] */
 object Sqrt {
 
-  /**Create a [[Sqrt]] invariant.
+  /** Creates a [[Sqrt]] invariant.
    *
    * @param model
    *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
