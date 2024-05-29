@@ -25,18 +25,18 @@ object Sqrt {
    *
    * @param model
    *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
-   * @param fromValue
+   * @param input
    *  The listened [[IntVariable]].
-   * @param toValue
+   * @param output
    *  The [[IntVariable]] which contains √(fromValue).
    * @param name
    *   The name (optional) of your Invariant.
    */
   def apply(model: Store,
-            fromValue: IntVariable,
-            toValue: IntVariable,
+            input: IntVariable,
+            output: IntVariable,
             name: Option[String] = None): Sqrt = {
-    new Sqrt(model, fromValue, toValue, name)
+    new Sqrt(model, input, output, name)
   }
 }
 
@@ -46,21 +46,21 @@ object Sqrt {
  *
  * @param model
  *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
- * @param fromValue
+ * @param input
  *  The listened [[IntVariable]].
- * @param toValue
+ * @param output
  *  The [[IntVariable]] which contains √(fromValue).
  * @param name
  *   The name (optional) of your Invariant.
  */
 class Sqrt(model: Store,
-           fromValue: IntVariable,
-           toValue: IntVariable,
+           input: IntVariable,
+           output: IntVariable,
            name: Option[String] = None)
-extends Int2Int(model, fromValue, toValue,(x: Long) => round(sqrt(x)), false, name)
+extends Int2Int(model, input, output, (x: Long) => round(sqrt(x)), false, name)
 {
   override def checkInternals(): Unit = {
-    require(toValue.value() == round(sqrt(fromValue.value())),
-      s"toValue != √(fromValue). fromValue: $fromValue - toValue: $toValue")
+    require(output.value() == round(sqrt(input.value())),
+      s"toValue != √(fromValue). fromValue: $input - toValue: $output")
   }
 }

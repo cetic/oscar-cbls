@@ -25,18 +25,18 @@ object Square {
    *
    * @param model
    *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
-   * @param fromValue
+   * @param input
    *  The listened [[IntVariable]].
-   * @param toValue
+   * @param output
    *  The [[IntVariable]] which contains fromValue&#94;2.
    * @param name
    *   The name (optional) of your Invariant.
    */
   def apply(model: Store,
-            fromValue: IntVariable,
-            toValue: IntVariable,
+            input: IntVariable,
+            output: IntVariable,
             name: Option[String] = None): Square = {
-    new Square(model, fromValue, toValue, name)
+    new Square(model, input, output, name)
   }
 }
 
@@ -44,21 +44,21 @@ object Square {
  *
  * @param model
  *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
- * @param fromValue
+ * @param input
  *  The listened [[IntVariable]].
- * @param toValue
+ * @param output
  *  The [[IntVariable]] which contains fromValue&#94;2.
  * @param name
  *   The name (optional) of your Invariant.
  */
 class Square(model: Store,
-             fromValue: IntVariable,
-             toValue: IntVariable,
+             input: IntVariable,
+             output: IntVariable,
              name: Option[String] = None)
-extends Int2Int(model, fromValue, toValue, (x: Long) => x*x, false, name){
+extends Int2Int(model, input, output, (x: Long) => x*x, false, name){
 
   override def checkInternals(): Unit ={
-    require(toValue.value() == fromValue.value() * fromValue.value(),
-      s"toValue != fromValue^2. fromValue: $fromValue - toValue: $toValue")
+    require(output.value() == input.value() * input.value(),
+      s"toValue != fromValue^2. fromValue: $input - toValue: $output")
   }
 }

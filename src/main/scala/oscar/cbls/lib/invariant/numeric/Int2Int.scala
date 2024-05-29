@@ -23,9 +23,9 @@ import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
  *
  * @param model
  *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
- * @param fromValue
+ * @param input
  *  The listened [[IntVariable]].
- * @param toValue
+ * @param output
  *  The [[IntVariable]] which contains fun(fromValue).
  * @param fun
  *  The function to maintain. It is supposed not yo listen to any variable in the model
@@ -36,20 +36,20 @@ import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
  *   The name (optional) of your Invariant.
  */
 class Int2Int(model: Store,
-              fromValue: IntVariable,
-              toValue: IntVariable,
+              input: IntVariable,
+              output: IntVariable,
               fun: Long => Long,
               cached: Boolean = false,
               name: Option[String] = None)
 extends Invariant(model, name) with IntNotificationTarget
 {
-  fromValue.registerStaticallyAndDynamicallyListeningElement(this)
-  toValue.setDefiningInvariant(this)
+  input.registerStaticallyAndDynamicallyListeningElement(this)
+  output.setDefiningInvariant(this)
 
-  toValue := fun(fromValue.value())
+  output := fun(input.value())
 
-  private[this] var cachedIn: Long = fromValue.value()
-  private[this] var cachedOut: Long = toValue.value()
+  private[this] var cachedIn: Long = input.value()
+  private[this] var cachedOut: Long = output.value()
 
   @inline
   override def notifyIntChanges(intVariable: IntVariable,
@@ -60,21 +60,21 @@ extends Invariant(model, name) with IntNotificationTarget
       if (newVal == cachedIn){
         val tmp = cachedOut
         cachedIn = oldVal
-        cachedOut = toValue.value()
-        toValue := tmp
+        cachedOut = output.value()
+        output := tmp
       } else{
         cachedIn = oldVal
-        cachedOut = toValue.value()
-        toValue := fun(newVal)
+        cachedOut = output.value()
+        output := fun(newVal)
       }
     } else {
-      toValue := fun(newVal)
+      output := fun(newVal)
     }
 
   }
 
   override def checkInternals(): Unit = {
-    require(toValue.value() == fun(fromValue.value()), s"toValue != fun(fromValue). " +
-      s"fromValue: $fromValue - toValue: $toValue")
+    require(output.value() == fun(input.value()), s"toValue != fun(fromValue). " +
+      s"fromValue: $input - toValue: $output")
   }
 }

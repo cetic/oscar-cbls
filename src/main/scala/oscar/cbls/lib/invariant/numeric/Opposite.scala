@@ -24,18 +24,18 @@ object Opposite {
    *
   @param model
    *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
-   * @param fromValue
+   * @param input
    *  The listened [[IntVariable]].
-   * @param toValue
+   * @param output
    *  The [[IntVariable]] which contains -fromValue.
    * @param name
    *   The name (optional) of your Invariant.
    */
   def apply(model: Store,
-            fromValue: IntVariable,
-            toValue: IntVariable,
+            input: IntVariable,
+            output: IntVariable,
             name: Option[String] = None): Opposite = {
-    new Opposite(model, fromValue, toValue, name)
+    new Opposite(model, input, output, name)
   }
 }
 
@@ -44,21 +44,21 @@ object Opposite {
  *
  * @param model
  *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
- * @param fromValue
+ * @param input
  *  The listened [[IntVariable]].
- * @param toValue
+ * @param output
  *  The [[IntVariable]] which contains -fromValue.
  * @param name
  *   The name (optional) of your Invariant.
  */
 class Opposite(model: Store,
-               fromValue: IntVariable,
-               toValue: IntVariable,
+               input: IntVariable,
+               output: IntVariable,
                name: Option[String] = None)
-extends Int2Int(model, fromValue, toValue, (x: Long) => -x, false, name)
+extends Int2Int(model, input, output, (x: Long) => -x, false, name)
 {
   override def checkInternals(): Unit = {
-    require(toValue.value() == -fromValue.value(),
-      s"toValue != -fromValue. fromValue: $fromValue - toValue: $toValue")
+    require(output.value() == -input.value(),
+      s"toValue != -fromValue. fromValue: $input - toValue: $output")
   }
 }
