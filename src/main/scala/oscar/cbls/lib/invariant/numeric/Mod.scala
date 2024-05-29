@@ -16,22 +16,19 @@ package oscar.cbls.lib.invariant.numeric
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 
-import scala.math.{pow, round}
+/** Companion object of [[Mod]]. */
+object Mod{
 
-/** Companion object of [[Pow]] class. */
-object Pow{
-
-  /** Create a [[Pow]] invariant.
-   *
-   * @param model
+  /** Create a [[Mod]] invariant.
+    *
+  @param model
    *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
    * @param a
    *  The first parameter of the function.
    * @param b
    *  The second parameter of the function.
    * @param output
-   *  The [[IntVariable]] which contains a&#94;b.
-   *  If b < 0, the value is rounded to the closest integer.
+   *  The [[IntVariable]] which contains fun(a, b).
    * @param name
    *   The name (optional) of your Invariant.
    */
@@ -39,13 +36,13 @@ object Pow{
             a: IntVariable,
             b: IntVariable,
             output: IntVariable,
-            name: Option[String] = None): Pow = {
-    new Pow(model, a, b, output, name)
+            name: Option[String] = None): Mod = {
+    new Mod(model, a, b, output, name)
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains the power of
- * an [[IntVariable]] by another.
+/** [[oscar.cbls.core.computation.Invariant]] that maintain the remainder
+ * of a division between two [[IntVariable]].
  *
  * @param model
  *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -54,20 +51,19 @@ object Pow{
  * @param b
  *  The second parameter of the function.
  * @param output
- *  The [[IntVariable]] which contains a&#94;b.
- *  If b < 0, the value is rounded to the closest integer.
+ *  The [[IntVariable]] which contains fun(a, b).
  * @param name
  *   The name (optional) of your Invariant.
  */
-class Pow(model: Store,
+class Mod(model: Store,
           a: IntVariable,
           b: IntVariable,
           output: IntVariable,
           name: Option[String] = None)
-extends IntInt2Int(model, a, b, output, (x: Long, y: Long) => round(pow(x, y)), name) {
+extends IntInt2Int(model, a, b, output, (x: Long, y:Long) => x % y, name){
 
   override def checkInternals(): Unit = {
-    require(output.value() == round(pow(a.value(), b.value())),
-      s"output != a^b. output: $output - a: $a - b: $b")
+    require(output.value() == a.value() % b.value(),
+      s"output != a % b. output: $output - a: $a - b: $b")
   }
 }
