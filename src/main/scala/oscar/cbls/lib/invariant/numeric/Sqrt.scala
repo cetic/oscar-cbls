@@ -28,7 +28,7 @@ object Sqrt {
    * @param input
    *  The listened [[IntVariable]].
    * @param output
-   *  The [[IntVariable]] which contains √(fromValue).
+   *  The [[IntVariable]] which contains √(input).
    * @param name
    *   The name (optional) of your Invariant.
    */
