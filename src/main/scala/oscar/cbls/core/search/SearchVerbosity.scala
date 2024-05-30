@@ -15,7 +15,20 @@ class SearchVerbosity(val verbosityLevel: Int) {
   private var summarizedLastValue: Long                    = Long.MaxValue
   private var summarizedMove: mutable.HashMap[String, Int] = mutable.HashMap.empty
 
-  /** Displays the exploration result of a move if the verbosity level is 4 or above
+  /** Displays some information about the starting search.
+    *
+    * Nothing is displayed if verbosityLevel is == 0
+    */
+  def searchStarted(detailedObj: String): Unit = {
+    if (verbosityLevel != 0) {
+      println(s"start doAllMove at ${java.time.LocalDateTime.now}")
+      println(s"initial objective function:$detailedObj")
+    }
+  }
+
+  /** Displays the exploration result of a move.
+    *
+    * Nothing is displayed if verbosityLevel is < 4
     *
     * There are three distinct parameters. In some Objective definition you could save a move that
     * is not the best. Or decide to not save this particular new best value for some reason.
@@ -38,7 +51,9 @@ class SearchVerbosity(val verbosityLevel: Int) {
     }
   }
 
-  /** Displays the start of an exploration of a neighborhood if the verbosity level is 3 or above
+  /** Displays the start of an exploration of a neighborhood
+    *
+    * Nothing is displayed if verbosityLevel is < 3
     *
     * @param neighborhood
     *   The explored Neighborhood
@@ -48,7 +63,9 @@ class SearchVerbosity(val verbosityLevel: Int) {
       println(s"$neighborhood : start exploration")
   }
 
-  /** Displays the exploration result of a neighborhood if the verbosity level is 3 or above
+  /** Displays the exploration result of a neighborhood
+    *
+    * Nothing is displayed if verbosityLevel is < 3
     *
     * @param neighborhood
     *   The explored Neighborhood
@@ -63,6 +80,29 @@ class SearchVerbosity(val verbosityLevel: Int) {
       }
   }
 
+  /** Displays the taken moves if the verbosity level is 1 or above.
+    *
+    * Nothing is displayed if verbosityLevel is < 1
+    *
+    * If verbosityLevel is 1, a summarized of taken moves will be displayed every 0.1 second. Else
+    * if verbosityLevel is 2 or higher, each taken move will be displayed individually.
+    *
+    * @param neighborhood
+    *   The neighborhood that defined the taken move
+    * @param move
+    *   The taken move
+    * @param newValue
+    *   The new value of the objective function
+    * @param prevValue
+    *   The previous value of the objective function
+    * @param bestValue
+    *   The best value of the objective function so far
+    * @param newBestValue
+    *   Whether or not this new value is the new best value
+    * @param forcePrint
+    *   Whether or not we should display the summarize even if the delay hasn't passed since last
+    *   one
+    */
   def moveTaken(
     neighborhood: Neighborhood,
     move: Move,
