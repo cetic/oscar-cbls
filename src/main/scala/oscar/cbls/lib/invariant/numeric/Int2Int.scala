@@ -26,7 +26,7 @@ import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
  * @param input
  *  The listened [[IntVariable]].
  * @param output
- *  The [[IntVariable]] which contains fun(fromValue).
+ *  The [[IntVariable]] which contains fun(input).
  * @param fun
  *  The function to maintain. It is supposed not to listen to any variable in the model
  * @param cached
