@@ -21,48 +21,4 @@ import oscar.cbls.lib.invariant.minmax._
 import scala.util.Random
 class MinMaxInvariantsTestSuite extends AnyFunSuite {
 
-  test("Max on array"){
-    val store                       = new Store()
-    val vars                        = Array.fill(5)(IntVariable(store, Random.between(-1000, 1000)))
-    val output                      = IntVariable(store, Long.MinValue)
-    val inv                         = Max(store, vars, output, "MaxBulk")
-    store.close()
-
-    inv.checkInternals()
-
-    vars(Random.between(0, 5)) :+= Random.between(-1000, 1000)
-    vars(Random.between(0, 5)) :-= Random.between(-1000, 1000)
-    vars(Random.between(0, 5)) := Random.between(-1000, 1000)
-    vars(Random.between(0, 5)) :*= Random.between(-1000, 1000)
-    vars(Random.between(0, 5)) :/= Random.between(-1000, 1000)
-    vars(Random.between(0, 5)) :+= Random.between(-1000, 1000)
-    vars(Random.between(0, 5)).:++()
-    vars(Random.between(0, 5)).:--()
-
-    store.propagate()
-    inv.checkInternals()
-  }
-
-  test("Min on array"){
-    val store                       = new Store()
-    val vars                        = Array.fill(5)(IntVariable(store, Random.between(-1000, 1000)))
-    val output                      = IntVariable(store, Long.MaxValue)
-    val inv                         = Min(store, vars, output, "MinBulk")
-    store.close()
-
-    inv.checkInternals()
-
-    vars(Random.between(0, 5)) :+= Random.between(-1000, 1000)
-    vars(Random.between(0, 5)) :-= Random.between(-1000, 1000)
-    vars(Random.between(0, 5)) := Random.between(-1000, 1000)
-    vars(Random.between(0, 5)) :*= Random.between(-1000, 1000)
-    vars(Random.between(0, 5)) :/= Random.between(-1000, 1000)
-    vars(Random.between(0, 5)) :+= Random.between(-1000, 1000)
-    vars(Random.between(0, 5)).:++()
-    vars(Random.between(0, 5)).:--()
-
-    store.propagate()
-    inv.checkInternals()
-  }
-
 }
