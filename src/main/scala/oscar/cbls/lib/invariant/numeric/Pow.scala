@@ -64,4 +64,4 @@ class Pow(model: Store,
           b: IntVariable,
           output: IntVariable,
           name: Option[String] = None)
-extends IntInt2Int(model, a, b, output, (x: Long, y: Long) => round(pow(x, y)), name){}
+extends IntInt2Int(model, a, b, output, (x: Long, y: Long) => round(pow(x.toDouble, y.toDouble)), name){}

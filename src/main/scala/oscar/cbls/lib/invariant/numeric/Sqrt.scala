@@ -57,4 +57,4 @@ class Sqrt(model: Store,
            input: IntVariable,
            output: IntVariable,
            name: Option[String] = None)
-extends Int2Int(model, input, output, (x: Long) => round(sqrt(x)), false, name){}
+extends Int2Int(model, input, output, (x: Long) => round(sqrt(x.toDouble)), false, name){}
