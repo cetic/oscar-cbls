@@ -25,11 +25,11 @@ import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this Invariant is linked.
   * @param input
   *   An [[Array]] of [[IntVariable]].
-  * @param output
-  *   The output [[IntVariable]].
   * @param cond
   *   A [[SetVariable]] containing the indices of the input variables to be observed to calculate
-  *   the extremum. If it is an empty set, all the variables are observed.
+  *   the extremum.
+  * @param output
+  *   The output [[IntVariable]].
   * @param default
   *   The default value of the extremum.
   * @param bulkIdentifier
@@ -42,8 +42,8 @@ import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 abstract class Extremum(
   model: Store,
   input: Array[IntVariable],
-  output: IntVariable,
   cond: SetVariable,
+  output: IntVariable,
   default: Long,
   bulkIdentifier: String,
   name: Option[String] = None
@@ -108,12 +108,13 @@ abstract class Extremum(
           s"output != min/max of observed variables. " +
           s"output: $output - observed variables: ${observedVariables.mkString("", ", ", "")}"
       )
-    }
-    else{
+    } else {
       require(h.isEmpty)
-      require(output.value() == default,
+      require(
+        output.value() == default,
         s"checkInternals fails in invariant ${name()}. " +
-          s"A problem occurs while observing an empty set of variables.")
+          s"A problem occurs while observing an empty set of variables."
+      )
     }
   }
 
