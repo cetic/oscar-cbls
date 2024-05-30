@@ -19,7 +19,7 @@ import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 
 /** An helper to define an [[Invariant]] from a Long => Long function.
  * This invariant is not incremental. So, it should be only uses for very simple functions.
- * It maintains toValue = fun(fromValue)
+ * It maintains output = fun(input)
  *
  * @param model
  *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
