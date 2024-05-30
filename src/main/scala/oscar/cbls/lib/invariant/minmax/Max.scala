@@ -15,52 +15,68 @@ package oscar.cbls.lib.invariant.minmax
 
 import oscar.cbls.core.computation.{IncredibleBulk, Invariant, Store}
 import oscar.cbls.core.computation.integer.IntVariable
+import oscar.cbls.core.computation.set.SetVariable
 
-//TODO: manage condition on considered variables when SetVariable will be available
-/** The invariant that maintains Max(vars(i) | i in cond
- *
- * @param model
- *    The [[oscar.cbls.core.propagation.PropagationStructure]] to which this Invariant is linked
- * @param vars
- *    An [[IndexedSeq]] of [[IntVariable]]
- * @param output
- *    The output [[IntVariable]]
- * @param bulkIdentifier
- * A [[IncredibleBulk]] can be use when several [[Invariant]] listen to vars.
- *    Warning: [[IncredibleBulk]] are distinguished only by their identifier.Be sure to use the same one if you're
- *    referencing the same variables.
- * @param name
- *   The name (optional) of your Invariant
- */
-class Max (model: Store,
-           vars: IndexedSeq[IntVariable],
-           output: IntVariable,
-           bulkIdentifier: String,
-           name: Option[String] = None) extends Extremum(model, vars, output, Long.MinValue, bulkIdentifier, name){
+/** The companion object of [[Max]] class. */
+object Max {
 
-
-  override def ord(v: IntVariable): Long = -v.value() //The biggest value must the smallest priority in the heap
-
-  override def checkInternals(): Unit = {
-    for (v <- vars){
-      assert(output.value() >= v.value(), s"Value is bigger than Max. Max: ${output.value()} - Value: ${v.value()}")
-    }
-
+  /** Creates a [[Max]] invariant.
+    *
+    * @param model
+    *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this Invariant is linked.
+    * @param input
+    *   An [[Array]] of [[IntVariable]].
+    * @param cond
+    *   A [[SetVariable]] containing the indices of the input variables to be observed to calculate
+    *   the maximum.
+    * @param output
+    *   The output [[IntVariable]] containing Max((input(i) | i in cond).
+    * @param bulkIdentifier
+    *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
+    *   [[IncredibleBulk]] are distinguished only by their identifier.Be sure to use the same one if
+    *   you're referencing the same variables.
+    * @param name
+    *   The name (optional) of your Invariant.
+    */
+  def apply(
+    model: Store,
+    input: Array[IntVariable],
+    cond: SetVariable,
+    output: IntVariable,
+    bulkIdentifier: String,
+    name: Option[String] = None
+  ): Max = {
+    new Max(model, input, cond, output, bulkIdentifier, name)
   }
 }
 
-object Max{
-  def apply(model: Store,
-            vars: IndexedSeq[IntVariable],
-            output: IntVariable,
-            bulkIdentifier: String): Max = {
-    new Max(model, vars, output, bulkIdentifier)
-  }
+/** [[Invariant]] that maintains Max((input(i) | i in cond). Update is in O(log(n))
+  *
+  * @param model
+  *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this Invariant is linked.
+  * @param input
+  *   An [[Array]] of [[IntVariable]].
+  * @param cond
+  *   A [[SetVariable]] containing the indices of the input variables to be observed to calculate
+  *   the maximum.
+  * @param output
+  *   The output [[IntVariable]] containing Max((input(i) | i in cond).
+  * @param bulkIdentifier
+  *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
+  *   [[IncredibleBulk]] are distinguished only by their identifier.Be sure to use the same one if
+  *   you're referencing the same variables.
+  * @param name
+  *   The name (optional) of your Invariant.
+  */
+class Max(
+  model: Store,
+  input: Array[IntVariable],
+  cond: SetVariable,
+  output: IntVariable,
+  bulkIdentifier: String,
+  name: Option[String] = None
+) extends Extremum(model, input, cond, output, Long.MinValue, bulkIdentifier, name) {
 
-  def apply(model: Store,
-            vars: IndexedSeq[IntVariable],
-            output: IntVariable,bulkIdentifier: String,
-            name: String): Max  = {
-    new Max(model, vars, output, bulkIdentifier, Some(name))
-  }
+  override def ord(v: IntVariable): Long =
+    -v.value() // The biggest value must have the smallest priority in the heap
 }
