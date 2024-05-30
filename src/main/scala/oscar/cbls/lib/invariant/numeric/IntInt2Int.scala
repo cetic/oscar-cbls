@@ -16,32 +16,31 @@ package oscar.cbls.lib.invariant.numeric
 import oscar.cbls.core.computation.{Invariant, Store}
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 
-
-/** An helper to define an [[Invariant]] from a (Long, Long) => Long function.
- * This invariant is not incremental. So it should be use for very simple functions.
- * It maintans output = fun(left, right
- *
- * @param model
- *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
- * @param a
- *  The first parameter of the function.
- * @param b
- *  The second parameter of the function.
- * @param output
- *  The [[IntVariable]] which contains fun(a, b).
- * @param fun
- *  The function to maintain. It is supposed not to listen to any variable of the model.
- * @param name
- *   The name (optional) of your Invariant.
- */
-class IntInt2Int(model: Store,
-                 a: IntVariable,
-                 b: IntVariable,
-                 output: IntVariable,
-                 fun: (Long, Long) => Long,
-                 name: Option[String] = None)
-extends Invariant(model, name) with IntNotificationTarget {
-
+/** An helper to define an [[Invariant]] from a (Long, Long) => Long function. This invariant is not
+  * incremental. So it should be use for very simple functions. It maintans output = fun(left, right
+  *
+  * @param model
+  *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+  * @param a
+  *   The first parameter of the function.
+  * @param b
+  *   The second parameter of the function.
+  * @param output
+  *   The [[IntVariable]] which contains fun(a, b).
+  * @param fun
+  *   The function to maintain. It is supposed not to listen to any variable of the model.
+  * @param name
+  *   The name (optional) of your Invariant.
+  */
+class IntInt2Int(
+  model: Store,
+  a: IntVariable,
+  b: IntVariable,
+  output: IntVariable,
+  fun: (Long, Long) => Long,
+  name: Option[String] = None
+) extends Invariant(model, name)
+    with IntNotificationTarget {
 
   a.registerStaticallyAndDynamicallyListeningElement(this)
   b.registerStaticallyAndDynamicallyListeningElement(this)
@@ -50,17 +49,21 @@ extends Invariant(model, name) with IntNotificationTarget {
   output := fun(a.value(), b.value())
 
   @inline
-  override def notifyIntChanges(intVariable: IntVariable,
-                                contextualVarIndex: Int,
-                                oldVal: Long,
-                                newVal: Long): Unit = {
+  override def notifyIntChanges(
+    intVariable: IntVariable,
+    contextualVarIndex: Int,
+    oldVal: Long,
+    newVal: Long
+  ): Unit = {
     output := fun(a.value(), b.value())
   }
 
-  override def checkInternals(): Unit ={
-    require(output.value() == fun(a.value(), b.value()),
+  override def checkInternals(): Unit = {
+    require(
+      output.value() == fun(a.value(), b.value()),
       s"checkInternals fails in invariant ${name()}." +
         s"output != fun(a, b). " +
-        s"output: $output - a: $a - b: $b")
+        s"output: $output - a: $a - b: $b"
+    )
   }
 }

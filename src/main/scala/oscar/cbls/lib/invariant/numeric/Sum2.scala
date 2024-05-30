@@ -17,47 +17,49 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 
 /** The companion object of [[Sum2]] class. */
-object Sum2{
+object Sum2 {
 
   /** Creates a [[Sum2]] invariant.
-   *
-   * @param model
-   *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
-   * @param a
-   *  The first parameter of the function.
-   * @param b
-   *  The second parameter of the function.
-   * @param output
-   *  The [[IntVariable]] which contains a + b.
-   * @param name
-   *   The name (optional) of your Invariant.
-   */
-  def apply(model: Store,
-            a: IntVariable,
-            b: IntVariable,
-            output: IntVariable,
-            name: Option[String] = None) : Sum2 = {
+    *
+    * @param model
+    *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+    * @param a
+    *   The first parameter of the function.
+    * @param b
+    *   The second parameter of the function.
+    * @param output
+    *   The [[IntVariable]] which contains a + b.
+    * @param name
+    *   The name (optional) of your Invariant.
+    */
+  def apply(
+    model: Store,
+    a: IntVariable,
+    b: IntVariable,
+    output: IntVariable,
+    name: Option[String] = None
+  ): Sum2 = {
     new Sum2(model, a, b, output, name)
   }
 }
 
-
 /** [[oscar.cbls.core.computation.Invariant]] which maintains the sum of two [[IntVariable]].
- *
- * @param model
- *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
- * @param a
- *  The first parameter of the function.
- * @param b
- *  The second parameter of the function.
- * @param output
- *  The [[IntVariable]] which contains a + b.
- * @param name
- *   The name (optional) of your Invariant.
- */
-class Sum2(model: Store,
-           a: IntVariable,
-           b: IntVariable,
-           output: IntVariable,
-           name: Option[String] = None)
-extends IntInt2Int(model, a, b, output, (x: Long, y: Long) => x+y, name){}
+  *
+  * @param model
+  *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+  * @param a
+  *   The first parameter of the function.
+  * @param b
+  *   The second parameter of the function.
+  * @param output
+  *   The [[IntVariable]] which contains a + b.
+  * @param name
+  *   The name (optional) of your Invariant.
+  */
+class Sum2(
+  model: Store,
+  a: IntVariable,
+  b: IntVariable,
+  output: IntVariable,
+  name: Option[String] = None
+) extends IntInt2Int(model, a, b, output, (x: Long, y: Long) => x + y, name) {}

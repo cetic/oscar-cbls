@@ -17,46 +17,49 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 
 /** Companion object of [[Prod2]] class. */
-object Prod2{
+object Prod2 {
 
   /** Creates a [[Prod2]] invariant.
-   *
-   * @param model
-   *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
-   * @param a
-   *  The first parameter of the function.
-   * @param b
-   *  The second parameter of the function.
-   * @param output
-   *  The [[IntVariable]] which contains a * b.
-   * @param name
-   *   The name (optional) of your Invariant.
-   */
-  def apply(model: Store,
-            a: IntVariable,
-            b: IntVariable,
-            output: IntVariable,
-            name: Option[String] = None): Prod2 = {
+    *
+    * @param model
+    *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+    * @param a
+    *   The first parameter of the function.
+    * @param b
+    *   The second parameter of the function.
+    * @param output
+    *   The [[IntVariable]] which contains a * b.
+    * @param name
+    *   The name (optional) of your Invariant.
+    */
+  def apply(
+    model: Store,
+    a: IntVariable,
+    b: IntVariable,
+    output: IntVariable,
+    name: Option[String] = None
+  ): Prod2 = {
     new Prod2(model, a, b, output, name)
   }
 }
 
 /** [[oscar.cbls.core.computation.Invariant]] which maintains the product of two [[IntVariable]].
- *
- * @param model
- *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
- * @param a
- *  The first parameter of the function.
- * @param b
- *  The second parameter of the function.
- * @param output
- *  The [[IntVariable]] which contains a * b.
- * @param name
- *   The name (optional) of your Invariant.
- */
-class Prod2(model: Store,
-            a: IntVariable,
-            b: IntVariable,
-            output: IntVariable,
-            name: Option[String] = None)
-extends IntInt2Int(model, a, b, output, (x: Long , y: Long) => x * y, name){}
+  *
+  * @param model
+  *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+  * @param a
+  *   The first parameter of the function.
+  * @param b
+  *   The second parameter of the function.
+  * @param output
+  *   The [[IntVariable]] which contains a * b.
+  * @param name
+  *   The name (optional) of your Invariant.
+  */
+class Prod2(
+  model: Store,
+  a: IntVariable,
+  b: IntVariable,
+  output: IntVariable,
+  name: Option[String] = None
+) extends IntInt2Int(model, a, b, output, (x: Long, y: Long) => x * y, name) {}

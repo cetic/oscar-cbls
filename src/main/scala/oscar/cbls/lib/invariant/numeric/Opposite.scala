@@ -17,42 +17,40 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 
 /** The companion object of [[Opposite]] class
- */
+  */
 object Opposite {
 
-  /**Create an [[Opposite]] invariant.
-   *
-  @param model
-   *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
-   * @param input
-   *  The listened [[IntVariable]].
-   * @param output
-   *  The [[IntVariable]] which contains -input.
-   * @param name
-   *   The name (optional) of your Invariant.
-   */
-  def apply(model: Store,
-            input: IntVariable,
-            output: IntVariable,
-            name: Option[String] = None): Opposite = {
+  /** Create an [[Opposite]] invariant.
+    *
+    * @param model
+    *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+    * @param input
+    *   The listened [[IntVariable]].
+    * @param output
+    *   The [[IntVariable]] which contains -input.
+    * @param name
+    *   The name (optional) of your Invariant.
+    */
+  def apply(
+    model: Store,
+    input: IntVariable,
+    output: IntVariable,
+    name: Option[String] = None
+  ): Opposite = {
     new Opposite(model, input, output, name)
   }
 }
 
-
-/**[[oscar.cbls.core.computation.Invariant]] that maintains the opposite value an [[IntVariable]].
- *
- * @param model
- *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
- * @param input
- *  The listened [[IntVariable]].
- * @param output
- *  The [[IntVariable]] which contains -input.
- * @param name
- *   The name (optional) of your Invariant.
- */
-class Opposite(model: Store,
-               input: IntVariable,
-               output: IntVariable,
-               name: Option[String] = None)
-extends Int2Int(model, input, output, (x: Long) => -x, false, name){}
+/** [[oscar.cbls.core.computation.Invariant]] that maintains the opposite value an [[IntVariable]].
+  *
+  * @param model
+  *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+  * @param input
+  *   The listened [[IntVariable]].
+  * @param output
+  *   The [[IntVariable]] which contains -input.
+  * @param name
+  *   The name (optional) of your Invariant.
+  */
+class Opposite(model: Store, input: IntVariable, output: IntVariable, name: Option[String] = None)
+    extends Int2Int(model, input, output, (x: Long) => -x, false, name) {}

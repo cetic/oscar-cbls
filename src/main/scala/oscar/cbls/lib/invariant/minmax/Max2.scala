@@ -18,46 +18,49 @@ import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.lib.invariant.numeric.IntInt2Int
 
 /** Companion object of [[Max2]] class. */
-object Max2{
+object Max2 {
 
   /** Creates a [[Max2]] invariant.
-   *
-   * @param model
-   *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
-   * @param a
-   *  The first parameter of the function.
-   * @param b
-   *  The second parameter of the function.
-   * @param output
-   *  The [[IntVariable]] which contains max(a, b).
-   * @param name
-   *   The name (optional) of your Invariant.
-   */
-  def apply(model: Store,
-            a: IntVariable,
-            b: IntVariable,
-            output: IntVariable,
-            name: Option[String] = None): Max2 ={
+    *
+    * @param model
+    *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+    * @param a
+    *   The first parameter of the function.
+    * @param b
+    *   The second parameter of the function.
+    * @param output
+    *   The [[IntVariable]] which contains max(a, b).
+    * @param name
+    *   The name (optional) of your Invariant.
+    */
+  def apply(
+    model: Store,
+    a: IntVariable,
+    b: IntVariable,
+    output: IntVariable,
+    name: Option[String] = None
+  ): Max2 = {
     new Max2(model, a, b, output, name)
   }
 }
 
 /** [[oscar.cbls.core.computation.Invariant]] that maintains the maximum of two [[IntVariable]].
- *
- * @param model
- *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
- * @param a
- *  The first parameter of the function.
- * @param b
- *  The second parameter of the function.
- * @param output
- *  The [[IntVariable]] which contains max(a, b).
- * @param name
- *   The name (optional) of your Invariant.
- */
-class Max2(model: Store,
-           a: IntVariable,
-           b: IntVariable,
-           output: IntVariable,
-           name: Option[String] = None)
-extends IntInt2Int(model, a, b, output, (x: Long, y: Long) => x.max(y), name) {}
+  *
+  * @param model
+  *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+  * @param a
+  *   The first parameter of the function.
+  * @param b
+  *   The second parameter of the function.
+  * @param output
+  *   The [[IntVariable]] which contains max(a, b).
+  * @param name
+  *   The name (optional) of your Invariant.
+  */
+class Max2(
+  model: Store,
+  a: IntVariable,
+  b: IntVariable,
+  output: IntVariable,
+  name: Option[String] = None
+) extends IntInt2Int(model, a, b, output, (x: Long, y: Long) => x.max(y), name) {}

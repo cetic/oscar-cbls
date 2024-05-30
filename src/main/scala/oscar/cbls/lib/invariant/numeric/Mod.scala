@@ -17,47 +17,50 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 
 /** Companion object of [[Mod]]. */
-object Mod{
+object Mod {
 
   /** Creates a [[Mod]] invariant.
     *
-   * @param model
-   *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
-   * @param a
-   *  The first parameter of the function.
-   * @param b
-   *  The second parameter of the function.
-   * @param output
-   *  The [[IntVariable]] which contains fun(a, b).
-   * @param name
-   *   The name (optional) of your Invariant.
-   */
-  def apply(model: Store,
-            a: IntVariable,
-            b: IntVariable,
-            output: IntVariable,
-            name: Option[String] = None): Mod = {
+    * @param model
+    *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+    * @param a
+    *   The first parameter of the function.
+    * @param b
+    *   The second parameter of the function.
+    * @param output
+    *   The [[IntVariable]] which contains fun(a, b).
+    * @param name
+    *   The name (optional) of your Invariant.
+    */
+  def apply(
+    model: Store,
+    a: IntVariable,
+    b: IntVariable,
+    output: IntVariable,
+    name: Option[String] = None
+  ): Mod = {
     new Mod(model, a, b, output, name)
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains the remainder
- * of a division between two [[IntVariable]].
- *
- * @param model
- *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
- * @param a
- *  The first parameter of the function.
- * @param b
- *  The second parameter of the function.
- * @param output
- *  The [[IntVariable]] which contains fun(a, b).
- * @param name
- *   The name (optional) of your Invariant.
- */
-class Mod(model: Store,
-          a: IntVariable,
-          b: IntVariable,
-          output: IntVariable,
-          name: Option[String] = None)
-extends IntInt2Int(model, a, b, output, (x: Long, y:Long) => x % y, name){}
+/** [[oscar.cbls.core.computation.Invariant]] that maintains the remainder of a division between two
+  * [[IntVariable]].
+  *
+  * @param model
+  *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+  * @param a
+  *   The first parameter of the function.
+  * @param b
+  *   The second parameter of the function.
+  * @param output
+  *   The [[IntVariable]] which contains fun(a, b).
+  * @param name
+  *   The name (optional) of your Invariant.
+  */
+class Mod(
+  model: Store,
+  a: IntVariable,
+  b: IntVariable,
+  output: IntVariable,
+  name: Option[String] = None
+) extends IntInt2Int(model, a, b, output, (x: Long, y: Long) => x % y, name) {}

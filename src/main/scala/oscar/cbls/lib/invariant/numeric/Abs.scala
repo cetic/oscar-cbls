@@ -16,42 +16,41 @@ package oscar.cbls.lib.invariant.numeric
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 
-
-/** Companion object of [[Abs]] class.*/
+/** Companion object of [[Abs]] class. */
 object Abs {
 
-  /**Creates an [[Abs]] invariant.
-   *
-   * @param model
-   *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
-   * @param input
-   *  The listened [[IntVariable]].
-   * @param output
-   *  The [[IntVariable]] which contains |input|.
-   * @param name
-   *   The name (optional) of your Invariant.
-   */
-  def apply(model: Store,
-            input: IntVariable,
-            output: IntVariable,
-            name: Option[String] = None) : Abs = {
+  /** Creates an [[Abs]] invariant.
+    *
+    * @param model
+    *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+    * @param input
+    *   The listened [[IntVariable]].
+    * @param output
+    *   The [[IntVariable]] which contains |input|.
+    * @param name
+    *   The name (optional) of your Invariant.
+    */
+  def apply(
+    model: Store,
+    input: IntVariable,
+    output: IntVariable,
+    name: Option[String] = None
+  ): Abs = {
     new Abs(model, input, output, name)
   }
 }
 
-/**[[oscar.cbls.core.computation.Invariant]] that maintains the absolute value of an [[IntVariable]].
- *
- * @param model
- *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
- * @param input
- *  The listened [[IntVariable]].
- * @param output
- *  The [[IntVariable]] which contains |input|.
- * @param name
- *   The name (optional) of your Invariant.
- */
-class Abs(model: Store,
-          input: IntVariable,
-          output: IntVariable,
-          name: Option[String] = None)
-extends Int2Int (model, input, output, (x: Long) => x.abs, false, name){}
+/** [[oscar.cbls.core.computation.Invariant]] that maintains the absolute value of an
+  * [[IntVariable]].
+  *
+  * @param model
+  *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+  * @param input
+  *   The listened [[IntVariable]].
+  * @param output
+  *   The [[IntVariable]] which contains |input|.
+  * @param name
+  *   The name (optional) of your Invariant.
+  */
+class Abs(model: Store, input: IntVariable, output: IntVariable, name: Option[String] = None)
+    extends Int2Int(model, input, output, (x: Long) => x.abs, false, name) {}

@@ -19,49 +19,59 @@ import oscar.cbls.core.computation.integer.IntVariable
 import scala.math.{pow, round}
 
 /** Companion object of [[Pow]] class. */
-object Pow{
+object Pow {
 
   /** Creates a [[Pow]] invariant.
-   *
-   * @param model
-   *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
-   * @param a
-   *  The first parameter of the function.
-   * @param b
-   *  The second parameter of the function.
-   * @param output
-   *  The [[IntVariable]] which contains a&#94;b.
-   *  If b < 0, the value is rounded to the closest integer.
-   * @param name
-   *   The name (optional) of your Invariant.
-   */
-  def apply(model: Store,
-            a: IntVariable,
-            b: IntVariable,
-            output: IntVariable,
-            name: Option[String] = None): Pow = {
+    *
+    * @param model
+    *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+    * @param a
+    *   The first parameter of the function.
+    * @param b
+    *   The second parameter of the function.
+    * @param output
+    *   The [[IntVariable]] which contains a&#94;b. If b < 0, the value is rounded to the closest
+    *   integer.
+    * @param name
+    *   The name (optional) of your Invariant.
+    */
+  def apply(
+    model: Store,
+    a: IntVariable,
+    b: IntVariable,
+    output: IntVariable,
+    name: Option[String] = None
+  ): Pow = {
     new Pow(model, a, b, output, name)
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains the power of
- * an [[IntVariable]] by another.
- *
- * @param model
- *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
- * @param a
- *  The first parameter of the function.
- * @param b
- *  The second parameter of the function.
- * @param output
- *  The [[IntVariable]] which contains a&#94;b.
- *  If b < 0, the value is rounded to the closest integer.
- * @param name
- *   The name (optional) of your Invariant.
- */
-class Pow(model: Store,
-          a: IntVariable,
-          b: IntVariable,
-          output: IntVariable,
-          name: Option[String] = None)
-extends IntInt2Int(model, a, b, output, (x: Long, y: Long) => round(pow(x.toDouble, y.toDouble)), name){}
+/** [[oscar.cbls.core.computation.Invariant]] which maintains the power of an [[IntVariable]] by
+  * another.
+  *
+  * @param model
+  *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+  * @param a
+  *   The first parameter of the function.
+  * @param b
+  *   The second parameter of the function.
+  * @param output
+  *   The [[IntVariable]] which contains a&#94;b. If b < 0, the value is rounded to the closest
+  *   integer.
+  * @param name
+  *   The name (optional) of your Invariant.
+  */
+class Pow(
+  model: Store,
+  a: IntVariable,
+  b: IntVariable,
+  output: IntVariable,
+  name: Option[String] = None
+) extends IntInt2Int(
+      model,
+      a,
+      b,
+      output,
+      (x: Long, y: Long) => round(pow(x.toDouble, y.toDouble)),
+      name
+    ) {}

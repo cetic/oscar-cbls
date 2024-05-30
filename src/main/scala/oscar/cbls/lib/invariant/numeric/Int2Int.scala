@@ -16,53 +16,55 @@ package oscar.cbls.lib.invariant.numeric
 import oscar.cbls.core.computation.{Invariant, Store}
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 
-
-/** An helper to define an [[Invariant]] from a Long => Long function.
- * This invariant is not incremental. So, it should be only uses for very simple functions.
- * It maintains output = fun(input)
- *
- * @param model
- *  The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
- * @param input
- *  The listened [[IntVariable]].
- * @param output
- *  The [[IntVariable]] which contains fun(input).
- * @param fun
- *  The function to maintain. It is supposed not to listen to any variable in the model
- * @param cached
- *  Set to true to have a cache of size1. Set to false to have no cache.
- *  A cache can provide speedup if fun is time-consuming.
- * @param name
- *   The name (optional) of your Invariant.
- */
-class Int2Int(model: Store,
-              input: IntVariable,
-              output: IntVariable,
-              fun: Long => Long,
-              cached: Boolean = false,
-              name: Option[String] = None)
-extends Invariant(model, name) with IntNotificationTarget
-{
+/** An helper to define an [[Invariant]] from a Long => Long function. This invariant is not
+  * incremental. So, it should be only uses for very simple functions. It maintains output =
+  * fun(input)
+  *
+  * @param model
+  *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+  * @param input
+  *   The listened [[IntVariable]].
+  * @param output
+  *   The [[IntVariable]] which contains fun(input).
+  * @param fun
+  *   The function to maintain. It is supposed not to listen to any variable in the model
+  * @param cached
+  *   Set to true to have a cache of size1. Set to false to have no cache. A cache can provide
+  *   speedup if fun is time-consuming.
+  * @param name
+  *   The name (optional) of your Invariant.
+  */
+class Int2Int(
+  model: Store,
+  input: IntVariable,
+  output: IntVariable,
+  fun: Long => Long,
+  cached: Boolean = false,
+  name: Option[String] = None
+) extends Invariant(model, name)
+    with IntNotificationTarget {
   input.registerStaticallyAndDynamicallyListeningElement(this)
   output.setDefiningInvariant(this)
 
   output := fun(input.value())
 
-  private[this] var cachedIn: Long = input.value()
+  private[this] var cachedIn: Long  = input.value()
   private[this] var cachedOut: Long = output.value()
 
   @inline
-  override def notifyIntChanges(intVariable: IntVariable,
-                                contextualVarIndex: Int,
-                                oldVal: Long,
-                                newVal: Long): Unit = {
-    if(cached){
-      if (newVal == cachedIn){
+  override def notifyIntChanges(
+    intVariable: IntVariable,
+    contextualVarIndex: Int,
+    oldVal: Long,
+    newVal: Long
+  ): Unit = {
+    if (cached) {
+      if (newVal == cachedIn) {
         val tmp = cachedOut
         cachedIn = oldVal
         cachedOut = output.value()
         output := tmp
-      } else{
+      } else {
         cachedIn = oldVal
         cachedOut = output.value()
         output := fun(newVal)
@@ -74,9 +76,11 @@ extends Invariant(model, name) with IntNotificationTarget
   }
 
   override def checkInternals(): Unit = {
-    require(output.value() == fun(input.value()),
+    require(
+      output.value() == fun(input.value()),
       s"checkInternals fails in invariant ${name()}. " +
-      s"output != fun(input). " +
-      s"input: $input - output: $output")
+        s"output != fun(input). " +
+        s"input: $input - output: $output"
+    )
   }
 }
