@@ -98,15 +98,23 @@ abstract class Extremum(
   }
 
   override def checkInternals(): Unit = {
-    var observedValues: Array[IntVariable] = new Array[IntVariable](0)
-    for (i: Int <- cond.value()) observedValues = observedValues :+ input(i)
+    if (cond.value().nonEmpty) {
+      var observedVariables: Array[IntVariable] = new Array[IntVariable](0)
+      for (i: Int <- cond.value()) observedVariables = observedVariables :+ input(i)
 
-    require(
-      output.value() == observedValues.minBy(ord).value(),
-      s"checkInternals fails in invariant ${name()}. " +
-        s"output != min/max of observed values. " +
-        s"output: $output - observed values: ${observedValues.mkString("", ", ", "")}"
-    )
+      require(
+        output.value() == observedVariables.minBy(ord).value(),
+        s"checkInternals fails in invariant ${name()}. " +
+          s"output != min/max of observed variables. " +
+          s"output: $output - observed variables: ${observedVariables.mkString("", ", ", "")}"
+      )
+    }
+    else{
+      require(h.isEmpty)
+      require(output.value() == default,
+        s"checkInternals fails in invariant ${name()}. " +
+          s"A problem occurs while observing an empty set of variables.")
+    }
   }
 
   private[this] def notifyInsertOn(set: SetVariable, index: Int): Unit = {
