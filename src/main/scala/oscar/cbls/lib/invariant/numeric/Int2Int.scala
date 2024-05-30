@@ -77,6 +77,6 @@ extends Invariant(model, name) with IntNotificationTarget
     require(output.value() == fun(input.value()),
       s"checkInternals fails in invariant ${name()}. " +
       s"toValue != fun(fromValue). " +
-      s"fromValue: $input - toValue: $output")
+      s"input: $input - output: $output")
   }
 }
