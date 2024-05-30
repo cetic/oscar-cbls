@@ -16,62 +16,118 @@ package oscar.cbls.lib.invariant.minmax
 import oscar.cbls.algo.heap.BinaryHeapWithMoveIntItem
 import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, Store}
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
+import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 
-//TODO: manage condition on considered variables when SetVariable will be available
+/** Abstract Invariant that maintains Extremum(input(i) | i in cond) Exact ordering is specified by
+  * implementing abstract method of the class. Update is in O(log(n))
+  *
+  * @param model
+  *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this Invariant is linked.
+  * @param input
+  *   An [[Array]] of [[IntVariable]].
+  * @param output
+  *   The output [[IntVariable]].
+  * @param cond
+  *   A [[SetVariable]] containing the indices of the input variables to be observed to calculate
+  *   the extremum. If it is an empty set, all the variables are observed.
+  * @param default
+  *   The default value of the extremum.
+  * @param bulkIdentifier
+  *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
+  *   [[IncredibleBulk]] are distinguished only by their identifier.Be sure to use the same one if
+  *   you're referencing the same variables.
+  * @param name
+  *   The name (optional) of your Invariant.
+  */
+abstract class Extremum(
+  model: Store,
+  input: Array[IntVariable],
+  output: IntVariable,
+  cond: SetVariable,
+  default: Long,
+  bulkIdentifier: String,
+  name: Option[String] = None
+) extends Invariant(model, name)
+    with IntNotificationTarget
+    with SetNotificationTarget {
 
-/**Abstract Invariant that maintains Extremum(vars(i) | i in cond)
- * Exact ordering is specified by implementing abstract method of the class.
- * Update is in O(log(n))
- *
- * @param model
- *    The [[oscar.cbls.core.propagation.PropagationStructure]] to which this Invariant is linked.
- * @param vars
- *    An [[IndexedSeq]] of [[IntVariable]].
- * @param output
- *    The output [[IntVariable]].
- * @param default
- *    The default value of the extremum.
- * @param bulkIdentifier
- *    A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars.
- *    Warning: [[IncredibleBulk]] are distinguished only by their identifier.Be sure to use the same one if you're
- *    referencing the same variables.
- * @param name
- *   The name (optional) of your Invariant.
- */
-abstract class Extremum(model: Store,
-                        vars: IndexedSeq[IntVariable],
-                        output: IntVariable,
-                        default: Long,
-                        bulkIdentifier: String,
-                        name: Option[String] = None)
-  extends Invariant(model, name) with IntNotificationTarget {
+  private[this] val keysForRemoval: Array[KeyForRemoval[_]] = new Array(input.length)
 
-  private[this] val keysForRemoval: Array[KeyForRemoval[_]] = new Array(vars.length)
+  // Use to stock the indices of the listened variables. All operation are in O(log(n))
+  private[this] val h: BinaryHeapWithMoveIntItem =
+    BinaryHeapWithMoveIntItem((i: Int) => ord(input(i)), input.length, input.length)
 
-  //Use to stock the indices of the listened variables. All operation are in O(log(n))
-  private[this] val h: BinaryHeapWithMoveIntItem = BinaryHeapWithMoveIntItem((i: Int) => ord(vars(i)),
-                                                                          vars.length, vars.length)
-
-  //Register static dependency via a bulk
-  val bulk: IncredibleBulk = IncredibleBulk.bulkRegistering(vars, bulkIdentifier, model)
+  // Register static dependency via a bulk
+  val bulk: IncredibleBulk = IncredibleBulk.bulkRegistering(input, bulkIdentifier, model)
   addIncredibleBulk(bulk)
 
-  for(i <- vars.indices) {
+  for (i <- cond.value()) {
     h.insert(i)
-    keysForRemoval(i) = vars(i).registerDynamicallyListeningElement(this, i)
+    keysForRemoval(i) = input(i).registerDynamicallyListeningElement(this, i)
   }
 
   h.getFirst match {
-    case None => output := default
-    case Some(i) => output := vars(i).value()
+    case None    => output := default
+    case Some(i) => output := input(i).value()
   }
 
-  def ord(v: IntVariable) : Long
+  def ord(v: IntVariable): Long
 
-  override def notifyIntChanges(intVariable: IntVariable, index: Int, oldVal: Long, newVal: Long): Unit = {
-    h.notifyChange(index) //Update the heap
-    output := vars(h.getFirst.get).value() //The extremum has possibly change. We update it
+  @inline
+  override def notifyIntChanges(
+    intVariable: IntVariable,
+    index: Int,
+    oldVal: Long,
+    newVal: Long
+  ): Unit = {
+    h.notifyChange(index) // Update the heap
+    output := input(h.getFirst.get).value() // The extremum has possibly change. We update it
   }
 
+  @inline
+  override def notifySetChanges(
+    setVariable: SetVariable,
+    index: Int,
+    addedElems: Iterable[Int],
+    removedElems: Iterable[Int],
+    oldValue: Set[Int],
+    newValue: Set[Int]
+  ): Unit = {
+    for (added   <- addedElems) notifyInsertOn(setVariable, added)
+    for (removed <- removedElems) notifyDeleteOn(setVariable, removed)
+  }
 
+  override def checkInternals(): Unit = {
+    var observedValues: Array[IntVariable] = new Array[IntVariable](0)
+    for (i: Int <- cond.value()) observedValues = observedValues :+ input(i)
+
+    require(
+      output.value() == observedValues.minBy(ord).value(),
+      s"checkInternals fails in invariant ${name()}. " +
+        s"output != min/max of observed values. " +
+        s"output: $output - observed values: ${observedValues.mkString("", ", ", "")}"
+    )
+  }
+
+  private[this] def notifyInsertOn(set: SetVariable, index: Int): Unit = {
+    assert(set == cond)
+
+    keysForRemoval(index) = input(index).registerDynamicallyListeningElement(this, index)
+
+    h.insert(index)
+    output := input(h.getFirst.get).value()
+  }
+
+  private[this] def notifyDeleteOn(set: SetVariable, index: Int): Unit = {
+    assert(set == cond)
+
+    keysForRemoval(index).delete()
+    keysForRemoval(index) = null
+
+    h.removeElement(index)
+    h.getFirst match {
+      case None    => output := default
+      case Some(i) => output := input(i).value()
+    }
+  }
 }
