@@ -11,11 +11,14 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.core.search
+package oscar.cbls.core.search.profiling.profilingData
 
-abstract class Move(objValueAfter: Long, val neighborhoodName: String) {
+/** Abstract class for profiling data */
+abstract class ProfilingData() {
 
-  /** Commits this move. */
-  def commit(): Unit
-  def objAfter(): Long = objValueAfter
+  /** Used to merge profiling data of two instance of Neighborhood.
+    *
+    * Mainly used for dynAndThen
+    */
+  def merge(other: ProfilingData): Unit
 }

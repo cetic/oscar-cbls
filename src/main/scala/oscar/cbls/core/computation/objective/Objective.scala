@@ -28,6 +28,22 @@ abstract class Objective {
 
   /** Creates a new Exploration instance. Must be called when starting an exploration. */
   def newExploration: Exploration
+
+  /** Returns the worst value that the objective value could have considering the Objective. */
+  def worstValue: Long
+
+  /** Returns true if newValue is a better value than currentBest.
+    *
+    * Depending on used Objective this information may vary
+    *
+    * @param currentBest
+    *   The current best value (has to be given by the caller)
+    * @param newValue
+    *   The considered new value
+    * @return
+    *   True if newValue is better than currentBest
+    */
+  def isValueNewBest(currentBest: Long, newValue: Long): Boolean
 }
 
 /** An Exploration is used by the neighborhood to find and keep the best new objective value during

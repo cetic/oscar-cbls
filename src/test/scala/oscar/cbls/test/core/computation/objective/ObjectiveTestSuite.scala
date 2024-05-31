@@ -44,7 +44,7 @@ class ObjectiveTestSuite extends AnyFunSuite {
     }
 
     // An empty composite move just to have a "complete" representation of DynAndThen
-    class CompositeMove(firstMove: Move, secondMove: Move, newObjValue: Long) extends Move {
+    class CompositeMove(firstMove: Move, secondMove: Move, newObjValue: Long) extends Move(newObjValue,"") {
       override def commit(): Unit   = {}
       override def objAfter(): Long = newObjValue
     }
@@ -78,10 +78,46 @@ class ObjectiveTestSuite extends AnyFunSuite {
                 _toReturn = baseExploration.toReturn
               }
             }
+
+            /** Returns the worst value that the objective value could have considering the
+              * Objective.
+              */
+            override def worstValue: Long = baseObj.worstValue
+
+            /** Returns true if newValue is a better value than currentBest.
+              *
+              * Depending on used Objective this information may vary
+              *
+              * @param currentBest
+              *   The current best value (has to be given by the caller)
+              * @param newValue
+              *   The considered new value
+              * @return
+              *   True if newValue is better than currentBest
+              */
+            override def isValueNewBest(currentBest: Long, newValue: Long): Boolean =
+              baseObj.isValueNewBest(currentBest, newValue)
           })
 
         }
       }
+
+      /** Returns the worst value that the objective value could have considering the Objective. */
+      override def worstValue: Long = baseObj.worstValue
+
+      /** Returns true if newValue is a better value than currentBest.
+        *
+        * Depending on used Objective this information may vary
+        *
+        * @param currentBest
+        *   The current best value (has to be given by the caller)
+        * @param newValue
+        *   The considered new value
+        * @return
+        *   True if newValue is better than currentBest
+        */
+      override def isValueNewBest(currentBest: Long, newValue: Long): Boolean =
+        baseObj.isValueNewBest(currentBest, newValue)
     }
     val dd = new DynAndThenTest(new Neighborhood, _ => new Neighborhood)
 
@@ -119,7 +155,7 @@ class ObjectiveTestSuite extends AnyFunSuite {
 
 }
 
-private class DummyMove(_objAfter: Long) extends Move {
+private class DummyMove(_objAfter: Long) extends Move(_objAfter,"") {
 
   override def commit(): Unit = {}
 

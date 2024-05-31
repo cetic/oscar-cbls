@@ -44,6 +44,11 @@ class Minimize(
   underApproximatedObjValue: Option[IntVariable]
 ) extends Objective {
 
+  override def worstValue: Long = Long.MaxValue
+
+  override def isValueNewBest(currentBest: Long, newValue: Long): Boolean =
+    newValue < currentBest
+
   override def newExploration: Exploration = new Exploration {
     private val oldObj: Long = objValue.value()
 

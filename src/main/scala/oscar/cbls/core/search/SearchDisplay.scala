@@ -1,19 +1,37 @@
+// OscaR is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 2.1 of the License, or
+// (at your option) any later version.
+//
+// OscaR is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License  for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License along with OscaR.
+// If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+
 package oscar.cbls.core.search
 
-import scala.collection.mutable
-import scala.collection.mutable.HashMap
+import oscar.cbls.util.PrettyPrinting
 
-object SearchVerbosity {
-  def apply(verbosityLevel: Int): SearchVerbosity = {
-    new SearchVerbosity(verbosityLevel)
+import scala.collection.mutable
+import scala.concurrent.duration.Duration
+
+object SearchDisplay {
+  def unapply(searchDisplayer: SearchDisplay): Option[Int] = Some(searchDisplayer.verbosityLevel)
+
+  def apply(verbosityLevel: Int): SearchDisplay = {
+    new SearchDisplay(verbosityLevel)
   }
 }
 
-class SearchVerbosity(val verbosityLevel: Int) {
+class SearchDisplay(val verbosityLevel: Int) {
 
   private var summarizedLastPrint: Long                    = System.currentTimeMillis()
   private var summarizedLastValue: Long                    = Long.MaxValue
   private var summarizedMove: mutable.HashMap[String, Int] = mutable.HashMap.empty
+  private var searchStartAt: Long                          = System.currentTimeMillis()
 
   /** Displays some information about the starting search.
     *
@@ -55,12 +73,12 @@ class SearchVerbosity(val verbosityLevel: Int) {
     *
     * Nothing is displayed if verbosityLevel is < 3
     *
-    * @param neighborhood
+    * @param neighborhoodName
     *   The explored Neighborhood
     */
-  def startExploration(neighborhood: Neighborhood): Unit = {
+  def startExploration(neighborhoodName: String): Unit = {
     if (verbosityLevel >= 3)
-      println(s"$neighborhood : start exploration")
+      println(s"$neighborhoodName : start exploration")
   }
 
   /** Displays the exploration result of a neighborhood
@@ -72,7 +90,7 @@ class SearchVerbosity(val verbosityLevel: Int) {
     * @param searchResult
     *   The exploration result
     */
-  def neighborhoodExplored(neighborhood: Neighborhood, searchResult: SearchResult): Unit = {
+  def neighborhoodExplored(neighborhood: SimpleNeighborhood, searchResult: SearchResult): Unit = {
     if (verbosityLevel >= 3)
       searchResult match {
         case NoMoveFound   => println(s"$neighborhood : No move found")
@@ -87,7 +105,7 @@ class SearchVerbosity(val verbosityLevel: Int) {
     * If verbosityLevel is 1, a summarized of taken moves will be displayed every 0.1 second. Else
     * if verbosityLevel is 2 or higher, each taken move will be displayed individually.
     *
-    * @param neighborhood
+    * @param neighborhoodName
     *   The neighborhood that defined the taken move
     * @param move
     *   The taken move
@@ -104,7 +122,7 @@ class SearchVerbosity(val verbosityLevel: Int) {
     *   one
     */
   def moveTaken(
-    neighborhood: Neighborhood,
+    neighborhoodName: String,
     move: Move,
     newValue: Long,
     prevValue: Long,
@@ -115,7 +133,7 @@ class SearchVerbosity(val verbosityLevel: Int) {
     if (verbosityLevel >= 2) {
       val prefix_1 = if (newValue < prevValue) '-' else if (newValue == prevValue) '=' else '+'
       val prefix_2 = if (newBestValue) '#' else if (newValue == bestValue) '°' else ' '
-      println(s"$prefix_1 $prefix_2 $newValue\t$neighborhood : $move")
+      println(s"$prefix_1 $prefix_2 $newValue\t$neighborhoodName : $move")
     } else if (verbosityLevel == 1) {
       if (System.currentTimeMillis() - summarizedLastPrint > 100L || forcePrint) {
         val prefix_1 =
@@ -130,12 +148,29 @@ class SearchVerbosity(val verbosityLevel: Int) {
         summarizedLastValue = newValue
         summarizedLastPrint = System.currentTimeMillis()
       } else {
-        if (summarizedMove.contains(neighborhood.name))
-          summarizedMove(neighborhood.name) = summarizedMove(neighborhood.name)
-        else summarizedMove += neighborhood.name -> 1
+        if (summarizedMove.contains(neighborhoodName))
+          summarizedMove(neighborhoodName) = summarizedMove(neighborhoodName)
+        else summarizedMove += neighborhoodName -> 1
       }
     }
+  }
 
+  def searchEnded(endValue: Long, moveCount: Int): Unit = {
+    if (verbosityLevel == 1) {
+      val prefix_1 =
+        if (endValue < summarizedLastValue) '-'
+        else if (endValue == summarizedLastValue) '='
+        else '+'
+      val prefix_2 = '#'
+      println(
+        s"$prefix_1 $prefix_2 $endValue\t${summarizedMove.map(sm => s"${sm._1}:${sm._2}").mkString("\t")}"
+      )
+    }
+    if (verbosityLevel >= 1) {
+      val totalDurationMs = System.currentTimeMillis() - searchStartAt
+      val duration        = Duration.fromNanos(totalDurationMs)
+      println(s"No more move found after $moveCount it, duration:${PrettyPrinting(duration)}")
+    }
   }
 
 }

@@ -11,11 +11,14 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.core.search
+package oscar.cbls.core.search.profiling.profilingData
 
-abstract class Move(objValueAfter: Long, val neighborhoodName: String) {
+/** Abstract class for Combinator specifics profiling data
+  */
+abstract class CombinatorProfilingData() {
+  def merge(other: CombinatorProfilingData): Unit
 
-  /** Commits this move. */
-  def commit(): Unit
-  def objAfter(): Long = objValueAfter
+  def collectStatisticsHeaders(): Array[String]
+
+  def collectStatisticsData(): Array[String]
 }

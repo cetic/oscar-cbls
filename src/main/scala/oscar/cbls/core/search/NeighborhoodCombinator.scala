@@ -13,7 +13,31 @@
 
 package oscar.cbls.core.search
 
-class NeighborhoodCombinator(neighborhoodCombinatorName: String) extends SearchElement(neighborhoodCombinatorName) {
+import oscar.cbls.core.computation.objective.Objective
+import oscar.cbls.core.search.profiling.CombinatorProfiler
 
-  override def getMove(): SearchResult = ???
+abstract class NeighborhoodCombinator(
+  neighborhoodCombinatorName: String,
+  val subNeighborhoods: SimpleNeighborhood*
+) extends Neighborhood(neighborhoodCombinatorName) {
+
+  override val _searchProfiler: CombinatorProfiler = new CombinatorProfiler(this)
+
+  override def getMove(objective: Objective): SearchResult = ???
+
+  override def reset(): Unit = {
+    for (n <- subNeighborhoods) n.reset()
+  }
+
+  override def resetStatistics(): Unit = {
+    for (n <- subNeighborhoods) n.resetStatistics()
+  }
+
+  override def searchDisplay_=(searchDisplay: SearchDisplay): Unit = {
+    for (n <- subNeighborhoods) n.searchDisplay_=(searchDisplay)
+    super.searchDisplay_=(searchDisplay)
+  }
+
+  override def toString: String = this.getClass.getSimpleName
+
 }

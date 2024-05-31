@@ -11,11 +11,25 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.core.search
+package oscar.cbls.core.search.profiling.profilingData
 
-abstract class Move(objValueAfter: Long, val neighborhoodName: String) {
+/** Profiles and computes the summed value of a variable during the search.
+  *
+  * Ex : the number of time Guard prevent a movement
+  */
+case class SummedValue() extends CombinatorProfilingData {
+  var _sum: Long = 0L
 
-  /** Commits this move. */
-  def commit(): Unit
-  def objAfter(): Long = objValueAfter
+  def sum: Long = _sum
+
+  def plus(value: Long): Unit = _sum += value
+
+  override def merge(other: CombinatorProfilingData): Unit = {
+    other match {
+      case o: SummedValue => _sum += o.sum
+    }
+  }
+
+  override def collectStatisticsHeaders(): Array[String] = Array("Sum")
+  override def collectStatisticsData(): Array[String]    = Array(_sum.toString)
 }

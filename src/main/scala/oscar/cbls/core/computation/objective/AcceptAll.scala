@@ -32,6 +32,10 @@ object AcceptAll {
   */
 class AcceptAll(objective: IntVariable) extends Objective {
 
+  override def worstValue: Long = 0L
+
+  override def isValueNewBest(currentBest: Long, newValue: Long): Boolean = true
+
   override def newExploration: Exploration = new Exploration {
     override def checkNeighbor(buildMove: Long => Move): Unit = {
       val newValue = objective.value()
