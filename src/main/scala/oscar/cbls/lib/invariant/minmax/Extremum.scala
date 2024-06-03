@@ -59,7 +59,7 @@ abstract class Extremum(
 
   bulkIdentifier match {
     case None =>
-      //No bulk is used
+      // No bulk is used
       for (vars <- input) this.registerStaticallyListenedElement(vars)
     case Some(bulkId) =>
       // Register static dependency via a bulk
@@ -71,14 +71,13 @@ abstract class Extremum(
     keysForRemoval(i) = input(i).registerDynamicallyListeningElement(this, i)
   }
 
+  cond.registerStaticallyAndDynamicallyListeningElement(this)
+  output.setDefiningInvariant(this)
+
   h.getFirst match {
     case None    => output := default
     case Some(i) => output := input(i).value()
   }
-
-  cond.registerStaticallyAndDynamicallyListeningElement(this)
-
-  output.setDefiningInvariant(this)
 
   def ord(v: IntVariable): Long
 
