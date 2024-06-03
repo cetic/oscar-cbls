@@ -58,8 +58,7 @@ abstract class Extremum(
     BinaryHeapWithMoveIntItem((i: Int) => ord(input(i)), input.length, input.length)
 
   // Register static dependency via a bulk
-  val bulk: IncredibleBulk = IncredibleBulk.bulkRegistering(input, bulkIdentifier, model)
-  addIncredibleBulk(bulk)
+  this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, bulkIdentifier, model))
 
   for (i <- cond.value()) {
     h.insert(i)
@@ -99,6 +98,7 @@ abstract class Extremum(
 
   override def checkInternals(): Unit = {
     if (cond.value().nonEmpty) {
+      // We get {input(i) | i in cond}
       var observedVariables: Array[IntVariable] = new Array[IntVariable](0)
       for (i: Int <- cond.value()) observedVariables = observedVariables :+ input(i)
 
@@ -113,7 +113,8 @@ abstract class Extremum(
       require(
         output.value() == default,
         s"checkInternals fails in invariant ${name()}. " +
-          s"A problem occurs while observing an empty set of variables."
+          s"A problem occurs while observing an empty set of variables." +
+          s"output: $output"
       )
     }
   }
@@ -135,7 +136,7 @@ abstract class Extremum(
 
     h.removeElement(index)
     h.getFirst match {
-      case None    => output := default
+      case None    => output := default // We removed the last element in the heap
       case Some(i) => output := input(i).value()
     }
   }
