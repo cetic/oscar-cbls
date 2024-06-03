@@ -128,6 +128,7 @@ abstract class Extremum(
     }
   }
 
+  @inline
   private[this] def notifyInsertOn(set: SetVariable, index: Int): Unit = {
     assert(set == cond)
 
@@ -137,6 +138,7 @@ abstract class Extremum(
     output := input(h.getFirst.get).value()
   }
 
+  @inline
   private[this] def notifyDeleteOn(set: SetVariable, index: Int): Unit = {
     assert(set == cond)
 
