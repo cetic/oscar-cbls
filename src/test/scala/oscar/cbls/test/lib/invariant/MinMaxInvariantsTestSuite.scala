@@ -15,7 +15,7 @@ package oscar.cbls.test.lib.invariant
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers.be
-import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
+import org.scalatest.matchers.should.Matchers.{an, convertToAnyShouldWrapper}
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
@@ -25,8 +25,11 @@ import scala.util.Random
 class MinMaxInvariantsTestSuite extends AnyFunSuite {
 
   // Create and return objets we use to make tests
-  private def testMinMax(isMin: Boolean, set: Option[Set[Int]] = None) = {
-    val store                     = new Store()
+  private def testMinMax(
+    isMin: Boolean,
+    set: Option[Set[Int]] = None
+  ): (Array[IntVariable], SetVariable, IntVariable, Extremum) = {
+    val store                     = new Store(debugLevel = 3)
     val input: Array[IntVariable] = (for (i: Long <- 0L to 5L) yield IntVariable(store, i)).toArray
     val output: IntVariable       = IntVariable(store, 0L)
     val cond: SetVariable = set match {
@@ -172,8 +175,48 @@ class MinMaxInvariantsTestSuite extends AnyFunSuite {
     cond :-= 0
     cond :-= 2
     cond :-= 4
-
     output.value() should be(Long.MinValue)
   }
 
+  test("Min: checkInternals doesn't fail") {
+    val (input, cond, _, minInv) = testMinMax(isMin = true, Some(Set(2, 3)))
+    cond :+= 1
+    cond :+= 4
+    input(2) := -5
+    input(3) := -1
+    cond :-= 2
+    minInv.checkInternals()
+  }
+
+  test("Min: checkInternals should fail"){
+    val (_, _, output, minInv) = testMinMax(isMin = true)
+    output := 42
+    an [IllegalArgumentException] should be thrownBy minInv.checkInternals()
+  }
+
+  test("Max: checkInternals doesn't fail") {
+    val (input, cond, _, maxInv) = testMinMax(isMin = false, Some(Set(2, 3)))
+    cond :+= 1
+    cond :+= 4
+    input(2) := 15
+    input(3) := 12
+    cond :-= 2
+    maxInv.checkInternals()
+  }
+
+  test("Max: checkInternals should fail"){
+    val (_, _, output, maxInv) = testMinMax(isMin = false)
+    output := 42
+    an [IllegalArgumentException] should be thrownBy maxInv.checkInternals()
+  }
+
+  test("Min: checkInternals doesn't fail with empty cond") {
+    val (_, _, _, minInv) = testMinMax(isMin = true, Some(Set.empty))
+    minInv.checkInternals()
+  }
+
+  test("Max: checkInternals doesn't fail with empty cond") {
+    val (_, _, _, maxInv) = testMinMax(isMin = false, Some(Set.empty))
+    maxInv.checkInternals()
+  }
 }
