@@ -22,7 +22,7 @@ import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
   * implementing abstract method of the class. Update is in O(log(n))
   *
   * @param model
-  *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this Invariant is linked.
+  *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
   *   An [[Array]] of [[IntVariable]].
   * @param cond
