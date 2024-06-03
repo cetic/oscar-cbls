@@ -45,7 +45,7 @@ abstract class Extremum(
   cond: SetVariable,
   output: IntVariable,
   default: Long,
-  bulkIdentifier: String,
+  bulkIdentifier: Option[String] = None,
   name: Option[String] = None
 ) extends Invariant(model, name)
     with IntNotificationTarget
@@ -57,8 +57,14 @@ abstract class Extremum(
   private[this] val h: BinaryHeapWithMoveIntItem =
     BinaryHeapWithMoveIntItem((i: Int) => ord(input(i)), input.length, input.length)
 
-  // Register static dependency via a bulk
-  this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, bulkIdentifier, model))
+  bulkIdentifier match {
+    case None =>
+      //No bulk is used
+      for (vars <- input) this.registerStaticallyListenedElement(vars)
+    case Some(bulkId) =>
+      // Register static dependency via a bulk
+      this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, bulkId, model))
+  }
 
   for (i <- cond.value()) {
     h.insert(i)
