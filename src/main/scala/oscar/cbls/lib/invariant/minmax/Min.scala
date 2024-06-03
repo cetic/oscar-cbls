@@ -27,7 +27,7 @@ object Min {
     * @param input
     *   An [[Array]] of [[IntVariable]].
     * @param cond
-    *   A [[SetVariable]] containing the indices of the input variables to be observed to calculate
+    *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
     *   the minimum.
     * @param output
     *   The output [[IntVariable]].
@@ -48,6 +48,32 @@ object Min {
   ): Min = {
     new Min(model, input, cond, output, bulkIdentifier, name)
   }
+
+  /** Create a [[Min]] invariant that initially listen all the input variables.
+    *
+    * @param model
+    *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+    * @param input
+    *   An [[Array]] of [[IntVariable]].
+    * @param output
+    *   The output [[IntVariable]].
+    * @param bulkIdentifier
+    *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
+    *   [[IncredibleBulk]] are distinguished only by their identifier.Be sure to use the same one if
+    *   you're referencing the same variables.
+    * @param name
+    *   The name (optional) of your Invariant.
+    */
+  def minOnAllVariables(
+    model: Store,
+    input: Array[IntVariable],
+    output: IntVariable,
+    bulkIdentifier: String,
+    name: Option[String] = None
+  ): Min = {
+    val cond: SetVariable = SetVariable(model, (for (i: Int <- input.indices) yield i).toSet)
+    Min(model, input, cond, output, bulkIdentifier, name)
+  }
 }
 
 /** [[Invariant]] that maintains Min((input(i) | i in cond). Update is in O(log(n))
@@ -57,7 +83,7 @@ object Min {
   * @param input
   *   An [[Array]] of [[IntVariable]].
   * @param cond
-  *   A [[SetVariable]] containing the indices of the input variables to be observed to calculate
+  *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
   *   the minimum.
   * @param output
   *   The output [[IntVariable]].

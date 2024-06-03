@@ -18,7 +18,7 @@ import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, St
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 
-/** Abstract Invariant that maintains Extremum(input(i) | i in cond) Exact ordering is specified by
+/** Abstract Invariant that maintains Extremum(input(i) | i in cond). Exact ordering is specified by
   * implementing abstract method of the class. Update is in O(log(n))
   *
   * @param model
@@ -26,7 +26,7 @@ import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
   * @param input
   *   An [[Array]] of [[IntVariable]].
   * @param cond
-  *   A [[SetVariable]] containing the indices of the input variables to be observed to calculate
+  *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
   *   the extremum.
   * @param output
   *   The output [[IntVariable]].
@@ -99,14 +99,14 @@ abstract class Extremum(
   override def checkInternals(): Unit = {
     if (cond.value().nonEmpty) {
       // We get {input(i) | i in cond}
-      var observedVariables: Array[IntVariable] = new Array[IntVariable](0)
-      for (i: Int <- cond.value()) observedVariables = observedVariables :+ input(i)
+      var listenedVariables: Array[IntVariable] = new Array[IntVariable](0)
+      for (i: Int <- cond.value()) listenedVariables = listenedVariables :+ input(i)
 
       require(
-        output.value() == observedVariables.minBy(ord).value(),
+        output.value() == listenedVariables.minBy(ord).value(),
         s"checkInternals fails in invariant ${name()}. " +
           s"output != min/max of observed variables. " +
-          s"output: $output - observed variables: ${observedVariables.mkString("", ", ", "")}"
+          s"output: $output - observed variables: ${listenedVariables.mkString("", ", ", "")}"
       )
     } else {
       require(h.isEmpty)

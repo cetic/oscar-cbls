@@ -27,7 +27,7 @@ object Max {
     * @param input
     *   An [[Array]] of [[IntVariable]].
     * @param cond
-    *   A [[SetVariable]] containing the indices of the input variables to be observed to calculate
+    *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
     *   the maximum.
     * @param output
     *   The output [[IntVariable]] containing Max((input(i) | i in cond).
@@ -48,6 +48,32 @@ object Max {
   ): Max = {
     new Max(model, input, cond, output, bulkIdentifier, name)
   }
+
+  /** Create a [[Max]] invariant that initially listen all the input variables.
+   *
+   * @param model
+   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+   * @param input
+   *   An [[Array]] of [[IntVariable]].
+   * @param output
+   *   The output [[IntVariable]].
+   * @param bulkIdentifier
+   *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
+   *   [[IncredibleBulk]] are distinguished only by their identifier.Be sure to use the same one if
+   *   you're referencing the same variables.
+   * @param name
+   *   The name (optional) of your Invariant.
+   */
+  def maxOnAllVariables(
+                         model: Store,
+                         input: Array[IntVariable],
+                         output: IntVariable,
+                         bulkIdentifier: String,
+                         name: Option[String] = None
+                       ): Max = {
+    val cond: SetVariable = SetVariable(model, (for (i: Int <- input.indices) yield i).toSet)
+    Max(model, input, cond, output, bulkIdentifier, name)
+  }
 }
 
 /** [[Invariant]] that maintains Max((input(i) | i in cond). Update is in O(log(n))
@@ -57,7 +83,7 @@ object Max {
   * @param input
   *   An [[Array]] of [[IntVariable]].
   * @param cond
-  *   A [[SetVariable]] containing the indices of the input variables to be observed to calculate
+  *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
   *   the maximum.
   * @param output
   *   The output [[IntVariable]] containing Max((input(i) | i in cond).
