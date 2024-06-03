@@ -70,6 +70,10 @@ abstract class Extremum(
     case Some(i) => output := input(i).value()
   }
 
+  cond.registerStaticallyAndDynamicallyListeningElement(this)
+
+  output.setDefiningInvariant(this)
+
   def ord(v: IntVariable): Long
 
   @inline
