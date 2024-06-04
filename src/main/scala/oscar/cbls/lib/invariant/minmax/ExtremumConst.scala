@@ -50,7 +50,6 @@ abstract class ExtremumConst(
 
   def ord(v: IntVariable): Long
 
-  @inline
   def notImpactingExtremum(newValue: IntConstant): Boolean
 
   @inline
@@ -62,7 +61,7 @@ abstract class ExtremumConst(
     oldValue: Set[Int],
     newValue: Set[Int]
   ): Unit = {
-    for (added <- addedElems) notifyInsertOn(setVariable, added)
+    for (added   <- addedElems) notifyInsertOn(setVariable, added)
     for (removed <- removedElems) notifyDeleteOn(setVariable, removed)
   }
 
@@ -128,7 +127,7 @@ abstract class ExtremumConst(
     backLogSize = 0
   }
 
-
+  @inline
   private[this] def notifyInsertOn(set: SetVariable, index: Int): Unit = {
     assert(set == cond)
 
@@ -145,10 +144,11 @@ abstract class ExtremumConst(
 
   }
 
-
+  @inline
   private[this] def notifyDeleteOn(set: SetVariable, index: Int): Unit = {
+    assert(set== cond)
     if (output.value() == input(index).value()) {
-      // We are removing the current extremum. The new one can be in h or in the backlog.
+      // We are removing the current extremum. The new one can be in the heap or in the backlog.
       // We empty the backlog, update the heap and find the new extremum
       processBacklog()
       h.removeElement(index)
