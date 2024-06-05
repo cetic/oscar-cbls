@@ -11,7 +11,7 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.test.lib.invariant
+package oscar.cbls.test.lib.invariant.minmax
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers.be
@@ -20,9 +20,7 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.minmax._
-
-import scala.util.Random
-class MinMaxInvariantsTestSuite extends AnyFunSuite {
+class MinMaxTestSuite extends AnyFunSuite {
 
   // Create and return objets we use to make tests
   private def testMinMax(
