@@ -13,6 +13,8 @@
 
 package oscar.cbls.core.search
 
+import oscar.cbls.core.computation.integer.IntVariable
+import oscar.cbls.core.computation.objective.Objective
 import oscar.cbls.util.PrettyPrinting
 
 import scala.collection.mutable
@@ -31,17 +33,20 @@ class SearchDisplay(val verbosityLevel: Int) {
   private var summarizedLastPrint: Long                    = System.currentTimeMillis()
   private var summarizedLastValue: Long                    = Long.MaxValue
   private var summarizedMove: mutable.HashMap[String, Int] = mutable.HashMap.empty
-  private var searchStartAt: Long                          = System.currentTimeMillis()
+  private var searchStartAt: Long                          = -1
 
   /** Displays some information about the starting search.
     *
     * Nothing is displayed if verbosityLevel is == 0
     */
-  def searchStarted(detailedObj: String): Unit = {
+  @inline
+  final def searchStarted(objective: Objective, objValue: IntVariable): Unit = {
+    searchStartAt = System.currentTimeMillis()
     if (verbosityLevel != 0) {
-      println(s"start doAllMove at ${java.time.LocalDateTime.now}")
-      println(s"initial objective function:$detailedObj")
+      println(s"Starting local search : $objective $objValue")
+      println(s"Start time : ${java.time.LocalDateTime.now}")
     }
+    if (verbosityLevel == 1) summarizedLastPrint = System.currentTimeMillis()
   }
 
   /** Displays the exploration result of a move.
@@ -53,19 +58,25 @@ class SearchDisplay(val verbosityLevel: Int) {
     *
     * @param move
     *   The explored move
-    * @param accepted
-    *   whether or not the move is accepted by the acceptance criterion
+    * @param valid
+    *   whether or not the move is accepted by the acceptance criterion. Default = false
     * @param newBest
-    *   whether or not the move has the best recorded value of the search
+    *   whether or not the move has the best recorded value of the search. Default = false
     * @param saved
-    *   whether or not the move has been saved
+    *   whether or not the move has been saved. Default = false
     */
-  def moveExplored(move: Move, accepted: Boolean, newBest: Boolean, saved: Boolean): Unit = {
+  @inline
+  final def moveExplored(
+    move: () => Move,
+    valid: Boolean = false,
+    newBest: Boolean = false,
+    saved: Boolean = false
+  ): Unit = {
     if (verbosityLevel >= 4) {
-      val acceptedAsString: String = if (accepted) "accepted" else "not accepted"
+      val acceptedAsString: String = if (valid) "valid move" else "invalid move"
       val newBestAsString: String  = if (newBest) "new best" else "not the new best"
       val savedAsString: String    = if (saved) "saved" else "not saved"
-      println(s"Explored $move, $newBestAsString, $acceptedAsString, $savedAsString")
+      println(s"Explored ${move()}, $newBestAsString, $acceptedAsString, $savedAsString")
     }
   }
 
@@ -76,7 +87,8 @@ class SearchDisplay(val verbosityLevel: Int) {
     * @param neighborhoodName
     *   The explored Neighborhood
     */
-  def startExploration(neighborhoodName: String): Unit = {
+  @inline
+  final def startExploration(neighborhoodName: String): Unit = {
     if (verbosityLevel >= 3)
       println(s"$neighborhoodName : start exploration")
   }
@@ -90,7 +102,11 @@ class SearchDisplay(val verbosityLevel: Int) {
     * @param searchResult
     *   The exploration result
     */
-  def neighborhoodExplored(neighborhood: SimpleNeighborhood, searchResult: SearchResult): Unit = {
+  @inline
+  final def neighborhoodExplored(
+    neighborhood: SimpleNeighborhood,
+    searchResult: SearchResult
+  ): Unit = {
     if (verbosityLevel >= 3)
       searchResult match {
         case NoMoveFound   => println(s"$neighborhood : No move found")
@@ -105,8 +121,6 @@ class SearchDisplay(val verbosityLevel: Int) {
     * If verbosityLevel is 1, a summarized of taken moves will be displayed every 0.1 second. Else
     * if verbosityLevel is 2 or higher, each taken move will be displayed individually.
     *
-    * @param neighborhoodName
-    *   The neighborhood that defined the taken move
     * @param move
     *   The taken move
     * @param newValue
@@ -121,8 +135,8 @@ class SearchDisplay(val verbosityLevel: Int) {
     *   Whether or not we should display the summarize even if the delay hasn't passed since last
     *   one
     */
-  def moveTaken(
-    neighborhoodName: String,
+  @inline
+  final def moveTaken(
     move: Move,
     newValue: Long,
     prevValue: Long,
@@ -131,16 +145,13 @@ class SearchDisplay(val verbosityLevel: Int) {
     forcePrint: Boolean = false
   ): Unit = {
     if (verbosityLevel >= 2) {
-      val prefix_1 = if (newValue < prevValue) '-' else if (newValue == prevValue) '=' else '+'
-      val prefix_2 = if (newBestValue) '#' else if (newValue == bestValue) '°' else ' '
-      println(s"$prefix_1 $prefix_2 $newValue\t$neighborhoodName : $move")
+      val prefix_1 = prefix1(newValue,prevValue)
+      val prefix_2 = prefix2(newBestValue, newValue, bestValue)
+      println(s"$prefix_1 $prefix_2 $newValue\t$move")
     } else if (verbosityLevel == 1) {
       if (System.currentTimeMillis() - summarizedLastPrint > 100L || forcePrint) {
-        val prefix_1 =
-          if (newValue < summarizedLastValue) '-'
-          else if (newValue == summarizedLastValue) '='
-          else '+'
-        val prefix_2 = if (newBestValue) '#' else if (newValue == bestValue) '°' else ' '
+        val prefix_1 = prefix1(newValue, summarizedLastValue)
+        val prefix_2 = prefix2(newBestValue, newValue, bestValue)
         println(
           s"$prefix_1 $prefix_2 $newValue\t${summarizedMove.map(sm => s"${sm._1}:${sm._2}").mkString("\t")}"
         )
@@ -148,14 +159,16 @@ class SearchDisplay(val verbosityLevel: Int) {
         summarizedLastValue = newValue
         summarizedLastPrint = System.currentTimeMillis()
       } else {
+        val neighborhoodName = move.neighborhood.name
         if (summarizedMove.contains(neighborhoodName))
-          summarizedMove(neighborhoodName) = summarizedMove(neighborhoodName)
+          summarizedMove(neighborhoodName) = summarizedMove(neighborhoodName) + 1
         else summarizedMove += neighborhoodName -> 1
       }
     }
   }
 
-  def searchEnded(endValue: Long, moveCount: Int): Unit = {
+  @inline
+  final def searchEnded(endValue: Long, moveCount: Int): Unit = {
     if (verbosityLevel == 1) {
       val prefix_1 =
         if (endValue < summarizedLastValue) '-'
@@ -171,6 +184,17 @@ class SearchDisplay(val verbosityLevel: Int) {
       val duration        = Duration.fromNanos(totalDurationMs)
       println(s"No more move found after $moveCount it, duration:${PrettyPrinting(duration)}")
     }
+  }
+
+  private def prefix1(valueToDisplay: Long, lastDisplayedValue: Long): Char = {
+    if (valueToDisplay < lastDisplayedValue) '-'
+    else if (valueToDisplay == lastDisplayedValue) '='
+    else '+'
+  }
+  private def prefix2(newBestValue: Boolean, newValue: Long, bestValue: Long): Char = {
+    if (newBestValue) '#'
+    else if (newValue == bestValue) '°'
+    else ' '
   }
 
 }

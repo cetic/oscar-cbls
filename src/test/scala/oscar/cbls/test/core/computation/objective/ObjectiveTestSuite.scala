@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.{Exploration, Minimize, Objective}
-import oscar.cbls.core.search.{Move, MoveFound, SearchResult}
+import oscar.cbls.core.search.{Move, MoveFound, SearchDisplay, SearchResult, SimpleNeighborhood}
 
 class ObjectiveTestSuite extends AnyFunSuite {
 
@@ -25,11 +25,11 @@ class ObjectiveTestSuite extends AnyFunSuite {
     // Test Neighborhood that simply add the provided value to the solution value.
     class Neighborhood {
       def getMove(obj: Objective): SearchResult = {
-        val expl = obj.newExploration
+        val expl = obj.newExploration(SearchDisplay(0))
         objValue :+= objVariations.head
         summedVariations += objVariations.head
         objVariations = objVariations.tail
-        val move = new DummyMove(objValue.pendingValue)
+        val move = new DummyMove(objValue.pendingValue,new DummySimpleNeighborhood)
         expl.checkNeighbor(_ => move)
         expl.toReturn
       }
@@ -44,7 +44,7 @@ class ObjectiveTestSuite extends AnyFunSuite {
     }
 
     // An empty composite move just to have a "complete" representation of DynAndThen
-    class CompositeMove(firstMove: Move, secondMove: Move, newObjValue: Long) extends Move(newObjValue,"") {
+    class CompositeMove(firstMove: Move, secondMove: Move, newObjValue: Long) extends Move(newObjValue,new DummySimpleNeighborhood) {
       override def commit(): Unit   = {}
       override def objAfter(): Long = newObjValue
     }
@@ -54,10 +54,10 @@ class ObjectiveTestSuite extends AnyFunSuite {
         extends Objective {
       // Creates the base objective exploration, used for composition evaluation.
       // (Get the initial obj upon Exploration creation)
-      private val baseExploration = baseObj.newExploration
+      private val baseExploration = baseObj.newExploration(SearchDisplay(0))
 
       /** Creates a new Exploration instance. Must be called when starting an exploration. */
-      override def newExploration: Exploration = new Exploration {
+      override def newExploration(searchDisplay: SearchDisplay): Exploration = new Exploration {
 
         /** Checks if the candidate objValue match the acceptance conditions */
         override def checkNeighbor(buildMove: Long => Move): Unit = {
@@ -65,7 +65,7 @@ class ObjectiveTestSuite extends AnyFunSuite {
           // Returned move is right neighborhood's move applied to left neighborhood's move
           _toReturn = right(leftExploredMove).getMove(new Objective {
 
-            override def newExploration: Exploration = new Exploration {
+            override def newExploration(searchDisplay: SearchDisplay): Exploration = new Exploration {
 
               /** Checks if the candidate objValue match the acceptance conditions */
               override def checkNeighbor(buildMove: Long => Move): Unit = {
@@ -155,9 +155,20 @@ class ObjectiveTestSuite extends AnyFunSuite {
 
 }
 
-private class DummyMove(_objAfter: Long) extends Move(_objAfter,"") {
+private class DummyMove(_objAfter: Long, simpleNeighborhood: SimpleNeighborhood) extends Move(_objAfter, simpleNeighborhood) {
 
   override def commit(): Unit = {}
 
   override def objAfter(): Long = _objAfter
+}
+
+
+private class DummySimpleNeighborhood() extends SimpleNeighborhood(""){
+
+  override def exploreNeighborhood(exploration: Exploration): Unit = ???
+
+  override def doMove(move: Move): Unit = ???
+
+  /** Resets the internal state of the neighborhood */
+  override def reset(): Unit = ???
 }

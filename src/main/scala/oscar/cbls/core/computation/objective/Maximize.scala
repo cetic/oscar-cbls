@@ -14,7 +14,7 @@
 package oscar.cbls.core.computation.objective
 
 import oscar.cbls.core.computation.integer.IntVariable
-import oscar.cbls.core.search.{Move, MoveFound, NoMoveFound}
+import oscar.cbls.core.search.{Move, MoveFound, NoMoveFound, SearchDisplay}
 
 /** Companion object of Maximize */
 object Maximize {
@@ -49,7 +49,7 @@ class Maximize(
   override def isValueNewBest(currentBest: Long, newValue: Long): Boolean =
     newValue > currentBest
 
-  override def newExploration: Exploration = new Exploration {
+  override def newExploration(searchDisplay: SearchDisplay): Exploration = new Exploration {
     private val oldObj: Long = objValue.value()
 
     private def checkNeighborOnApproximatedObjective(buildMove: Long => Move): Unit = {
@@ -59,16 +59,36 @@ class Maximize(
           checkNeighborOnRealObjective(buildMove)
         case m: MoveFound if newApproxObj > m.objAfter() =>
           checkNeighborOnRealObjective(buildMove)
-        case _ => ;
+        case _ if newApproxObj > Long.MinValue =>
+          searchDisplay.moveExplored(() => buildMove(newApproxObj), valid = true)
+        case _ =>
+          searchDisplay.moveExplored(() => buildMove(newApproxObj))
       }
     }
 
     private def checkNeighborOnRealObjective(buildMove: Long => Move): Unit = {
       val newObj = objValue.value()
       toReturn match {
-        case NoMoveFound if newObj > oldObj        => _toReturn = MoveFound(buildMove(newObj))
-        case m: MoveFound if newObj > m.objAfter() => _toReturn = MoveFound(buildMove(newObj))
-        case _                                     => ;
+        case NoMoveFound if newObj > oldObj =>
+          searchDisplay.moveExplored(
+            () => buildMove(newObj),
+            valid = true,
+            newBest = true,
+            saved = true
+          )
+          _toReturn = MoveFound(buildMove(newObj))
+        case m: MoveFound if newObj > m.objAfter() =>
+          searchDisplay.moveExplored(
+            () => buildMove(newObj),
+            valid = true,
+            newBest = true,
+            saved = true
+          )
+          _toReturn = MoveFound(buildMove(newObj))
+        case _ if newObj > Long.MinValue =>
+          searchDisplay.moveExplored(() => buildMove(newObj), valid = true)
+        case _ =>
+          searchDisplay.moveExplored(() => buildMove(newObj))
       }
     }
 
@@ -87,7 +107,11 @@ class Maximize(
           case None => checkNeighborOnRealObjective(buildMove)
           case _    => checkNeighborOnApproximatedObjective(buildMove)
         }
+      } else {
+        searchDisplay.moveExplored(() => buildMove(objValue.value()))
       }
     }
   }
+
+  override def toString: String = "Maximize"
 }

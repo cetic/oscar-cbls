@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.Maximize
-import oscar.cbls.core.search.{MoveFound, NoMoveFound}
+import oscar.cbls.core.search.{MoveFound, NoMoveFound, SearchDisplay}
 
 class MaximizeTestSuite extends AnyFunSuite {
 
@@ -16,17 +16,17 @@ class MaximizeTestSuite extends AnyFunSuite {
     val obj      = Maximize(objValue)
     store.close()
 
-    val exploration = obj.newExploration
+    val exploration = obj.newExploration(SearchDisplay(0))
     objValue := 500
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter))
+    exploration.checkNeighbor(objAfter => new DummyMove(objAfter,new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
 
     objValue := 1000
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter))
+    exploration.checkNeighbor(objAfter => new DummyMove(objAfter,new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
 
     objValue := 1100
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter))
+    exploration.checkNeighbor(objAfter => new DummyMove(objAfter,new DummySimpleNeighborhood))
     exploration.toReturn.isInstanceOf[MoveFound] should be(true)
     exploration.toReturn.asInstanceOf[MoveFound].objAfter() should be(1100)
   }
@@ -42,29 +42,29 @@ class MaximizeTestSuite extends AnyFunSuite {
 
     // The objValue is voluntarily acceptable, but it shouldn't be check
     // if the over approximated value is not higher
-    var exploration = obj.newExploration
+    var exploration = obj.newExploration(SearchDisplay(0))
     objValue           := 1100
     overApproxObjValue := 200
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter))
+    exploration.checkNeighbor(objAfter => new DummyMove(objAfter,new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
 
     objValue           := 1100
     overApproxObjValue := 200
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter))
+    exploration.checkNeighbor(objAfter => new DummyMove(objAfter,new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
 
     // Under approximated value is higher but the retained value should be objValue
     objValue           := 1100
     overApproxObjValue := 1200
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter))
+    exploration.checkNeighbor(objAfter => new DummyMove(objAfter,new DummySimpleNeighborhood))
     exploration.toReturn.isInstanceOf[MoveFound] should be(true)
     exploration.toReturn.asInstanceOf[MoveFound].objAfter() should be(1100)
 
     // Under approximated value is higher but the objValue is lower, should be rejected
-    exploration = obj.newExploration
+    exploration = obj.newExploration(SearchDisplay(0))
     objValue           := 1000
     overApproxObjValue := 1200
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter))
+    exploration.checkNeighbor(objAfter => new DummyMove(objAfter,new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
   }
 
@@ -76,21 +76,21 @@ class MaximizeTestSuite extends AnyFunSuite {
     val obj         = Maximize(objValue, mustBeZero = List(constraint1, constraint2))
     store.close()
 
-    var exploration = obj.newExploration
+    var exploration = obj.newExploration(SearchDisplay(0))
     objValue := 1100
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter))
+    exploration.checkNeighbor(objAfter => new DummyMove(objAfter,new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
 
     objValue    := 1100
     constraint2 := 0
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter))
+    exploration.checkNeighbor(objAfter => new DummyMove(objAfter,new DummySimpleNeighborhood))
     exploration.toReturn.isInstanceOf[MoveFound] should be(true)
     exploration.toReturn.asInstanceOf[MoveFound].objAfter() should be(1100)
 
     // Constraint is not violated but obj value is higher, should be rejected
-    exploration = obj.newExploration
+    exploration = obj.newExploration(SearchDisplay(0))
     objValue := 1000
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter))
+    exploration.checkNeighbor(objAfter => new DummyMove(objAfter,new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
   }
 

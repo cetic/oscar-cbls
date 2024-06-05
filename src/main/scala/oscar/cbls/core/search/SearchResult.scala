@@ -39,5 +39,5 @@ class MoveFound(val move: Move) extends SearchResult {
     move.commit()
   }
   def objAfter(): Long          = move.objAfter()
-  override def toString: String = move.toString
+  override def toString: String = s"Move found : $move"
 }

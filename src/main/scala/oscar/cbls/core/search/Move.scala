@@ -13,9 +13,11 @@
 
 package oscar.cbls.core.search
 
-abstract class Move(objValueAfter: Long, val neighborhoodName: String) {
+abstract class Move(objValueAfter: Long, val neighborhood: SimpleNeighborhood) {
 
   /** Commits this move. */
   def commit(): Unit
   def objAfter(): Long = objValueAfter
+
+  override def toString: String = s"${neighborhood.name} objValue after $objValueAfter"
 }

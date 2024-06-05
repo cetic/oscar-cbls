@@ -14,7 +14,7 @@
 package oscar.cbls.core.search.profiling
 
 import oscar.cbls.core.search.profiling.profilingData._
-import oscar.cbls.core.search.Neighborhood
+import oscar.cbls.core.search.{MoveFound, Neighborhood, NoMoveFound, SearchResult}
 
 object SearchProfiler {
   def selectedStatisticInfo(profilers: Iterable[SearchProfiler]): String = {
@@ -65,17 +65,18 @@ class SearchProfiler(val neighborhood: Neighborhood) {
   // Resume the exploration (mandatory to have a proper exploration duration within the dynAndThen combinator)
   def explorationResumed(): Unit = explorationResumedAt = System.nanoTime()
 
-  def explorationEnded(gain: Option[Long]): Unit = {
+  def explorationEnded(startValue: Long, explorationResult: SearchResult): Unit = {
     val timeSpent = currentExplorationTimeSpent + System.nanoTime() - Math.max(
       startExplorationAt,
       explorationResumedAt
     )
-    if (gain.nonEmpty) {
-      commonProfilingData.foundInc()
-      commonProfilingData.gainPlus(gain.get)
-      commonProfilingData.timeSpentMoveFoundPlus(timeSpent)
-    } else {
-      commonProfilingData.timeSpentNoMoveFoundPlus(timeSpent)
+    explorationResult match {
+      case NoMoveFound =>
+        commonProfilingData.timeSpentNoMoveFoundPlus(timeSpent)
+      case mf: MoveFound =>
+        commonProfilingData.foundInc()
+        commonProfilingData.gainPlus(Math.abs(startValue - mf.objAfter()))
+        commonProfilingData.timeSpentMoveFoundPlus(timeSpent)
     }
   }
 

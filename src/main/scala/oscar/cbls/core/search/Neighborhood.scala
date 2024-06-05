@@ -16,49 +16,76 @@ package oscar.cbls.core.search
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.Objective
 import oscar.cbls.core.search.profiling.SearchProfiler
+import oscar.cbls.visual.profiling.ProfilingConsole
 
 abstract class Neighborhood(_name: String) {
 
-  protected var _searchDisplay: SearchDisplay = SearchDisplay(0)
+  protected var _searchDisplay: SearchDisplay         = SearchDisplay(0)
   private[search] val _searchProfiler: SearchProfiler = new SearchProfiler(this)
+  def displayProfiling(): Unit =
+    ProfilingConsole(_searchProfiler, _searchProfiler.collectThisProfileHeader)
 
+  /** Resets the internal state of the neighborhood */
   def reset(): Unit
 
-  def resetStatistics(): Unit
+  /** Tries to find a new move following the Objective restriction.
+    *
+    * @param objective
+    *   The Objective of the search (minimizing, maximizing...)
+    * @param objValue
+    *   The value that must be minimized, maximized...
+    * @return
+    *   [[MoveFound]] if a move has been found [[NoMoveFound]] otherwise.
+    */
+  def getMove(objective: Objective, objValue: IntVariable): SearchResult
 
-  def getMove(objective: Objective): SearchResult
+  /** Does at most one improving move.
+    *
+    * @param objective
+    *   The Objective of the search (minimizing, maximizing...)
+    * @param objValue
+    *   The value that must be minimized, maximized...
+    * @return
+    *   True if one move has been performed, false otherwise
+    */
+  def doImprovingMove(objective: Objective, objValue: IntVariable): Boolean =
+    0L != doAllMoves(objective, objValue, _ >= 1L)
 
+  /** Does as much moves as possible or until the shouldStop condition is met.
+    *
+    * @param objective
+    *   The Objective of the search (minimizing, maximizing...)
+    * @param objValue
+    *   The value that must be minimized, maximized...
+    * @param shouldStop
+    *   Given the number of performed moves, determines whether or not we should continue searching
+    *   for new moves.
+    * @return
+    *   The total number of performed moves
+    */
   def doAllMoves(
     objective: Objective,
     objValue: IntVariable,
     shouldStop: Int => Boolean = _ => false
   ): Int = {
-    var bestObj: Long  = objective.worstValue
-    var prevObj: Long  = objective.worstValue
-    var moveCount: Int = 0
+    var bestObj: Long       = objective.worstValue
+    var moveCount: Int      = 0
+    var noMoreMove: Boolean = false
 
-    _searchDisplay.searchStarted(objective.toString)
-    while (!shouldStop(moveCount)) {
-      val latestObjValue = objValue.value()
-      getMove(objective) match {
-        case NoMoveFound =>
-          require(
-            objValue.value == latestObjValue,
-            "Neighborhood did not restore the model after exploration"
-          )
-          _searchDisplay.searchEnded(objValue.value(), moveCount)
-          return moveCount
+    _searchDisplay.searchStarted(objective,objValue)
+    while (!shouldStop(moveCount) && !noMoreMove) {
+      val latestObjValue              = objValue.value()
+      val getMoveResult: SearchResult = getMove(objective, objValue)
+      require(
+        objValue.value == latestObjValue,
+        "Neighborhood did not restore the model after exploration"
+      )
+      getMoveResult match {
+        case NoMoveFound => noMoreMove = true
         case mf: MoveFound =>
-          require(
-            objValue.value == latestObjValue,
-            "Neighborhood did not restore the model after exploration"
-          )
-          prevObj = mf.objAfter()
-          val newBestValue =
-            if (objective.isValueNewBest(bestObj, mf.objAfter())) {
-              bestObj = mf.objAfter()
-              true
-            } else false
+          moveCount += 1
+          val newBestValue = objective.isValueNewBest(bestObj, mf.objAfter())
+          if (newBestValue) bestObj = mf.objAfter()
           mf.commit()
 
           if (objValue.value() == Long.MaxValue)
@@ -66,19 +93,17 @@ abstract class Neighborhood(_name: String) {
               "Warning : objective value == MaxLong. You may have some violated strong constraint"
             )
           require(
-            mf.objAfter() == Long.MaxValue || objValue.value() == mf.objAfter,
+            objValue.value() == mf.objAfter,
             s"Neighborhood was lying ! : " + mf + " got " + objValue
           )
           _searchDisplay.moveTaken(
-            mf.move.neighborhoodName,
             mf.move,
             objValue.value(),
-            prevObj,
+            latestObjValue,
             bestObj,
             newBestValue
           )
       }
-      moveCount += 1
     }
     _searchDisplay.searchEnded(objValue.value(), moveCount)
     moveCount
