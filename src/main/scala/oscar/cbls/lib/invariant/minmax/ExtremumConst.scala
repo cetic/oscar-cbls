@@ -37,9 +37,8 @@ import scala.collection.mutable
   *   The output [[IntVariable]].
   * @param default
   *   The default value of the extremum.
-  * @param maxBackLog
-  *   The maximum number of postponed updates used to stock the update that doesn't affect the
-  *   extremum.
+  * @param maxBacklog
+  *   The maximum number of postponed updates that doesn't affect the extremum.
   * @param name
   *   The name (optional) of your Invariant
   */
@@ -49,7 +48,7 @@ abstract class ExtremumConst(
   cond: SetVariable,
   output: IntVariable,
   default: Long,
-  maxBackLog: Int,
+  maxBacklog: Int,
   name: Option[String] = None
 ) extends Invariant(model, name)
     with SetNotificationTarget {
@@ -189,7 +188,7 @@ abstract class ExtremumConst(
     */
   @inline
   private[this] def trimBacklog(): Unit = {
-    while ((!isBacklogged(backlog.head) || backlogSize > maxBackLog) && backlog.nonEmpty) {
+    while ((!isBacklogged(backlog.head) || backlogSize > maxBacklog) && backlog.nonEmpty) {
       val condValue = backlog.dequeue()
       backlogSize -= 1
       if (isBacklogged(condValue)) processValueFromBacklog(condValue)

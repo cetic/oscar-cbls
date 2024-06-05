@@ -20,7 +20,7 @@ import oscar.cbls.core.computation.set.SetVariable
 /** The companion object of the [[Min]] class. */
 object Min {
 
-  /** Create a [[Min]] invariant.
+  /** Creates a [[Min]] invariant.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
