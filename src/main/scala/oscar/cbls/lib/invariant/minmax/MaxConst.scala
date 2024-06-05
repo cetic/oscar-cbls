@@ -74,11 +74,11 @@ class MaxConst(
   output: IntVariable,
   maxBacklog: Int = Int.MinValue,
   name: Option[String] = None
-) extends ExtremumConst(model, input, cond, output, Long.MaxValue, maxBacklog, name) {
+) extends ExtremumConst(model, input, cond, output, Long.MinValue, maxBacklog, name) {
 
   override protected def ord(v: IntVariable): Long = -v.value()
 
   override protected def notImpactingExtremum(newValue: IntConstant): Boolean = {
-    output.value() >= newValue.value()
+    output.pendingValue >= newValue.value()
   }
 }

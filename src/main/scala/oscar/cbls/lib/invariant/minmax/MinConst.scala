@@ -79,6 +79,6 @@ class MinConst(
   override protected def ord(v: IntVariable): Long = v.value()
 
   override protected def notImpactingExtremum(newValue: IntConstant): Boolean = {
-    output.value() <= newValue.value()
+    output.pendingValue <= newValue.value()
   }
 }

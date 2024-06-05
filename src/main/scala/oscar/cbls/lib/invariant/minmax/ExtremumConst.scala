@@ -67,7 +67,7 @@ abstract class ExtremumConst(
 
   for (i <- cond.value()) {
     h.insert(i)
-    consideredValue(i) // A value is considered if and only if it is in h
+    consideredValue(i) = true // A value is considered if and only if it is in h
   }
 
   cond.registerStaticallyAndDynamicallyListeningElement(this)
@@ -89,7 +89,9 @@ abstract class ExtremumConst(
     newValue: Set[Int]
   ): Unit = {
     for (added   <- addedElems) notifyInsertOn(setVariable, added)
-    for (removed <- removedElems) notifyDeleteOn(setVariable, removed)
+    for (removed <- removedElems) {
+      notifyDeleteOn(setVariable, removed)
+    }
   }
 
   override def checkInternals(): Unit = {
@@ -118,8 +120,9 @@ abstract class ExtremumConst(
   @inline
   private[this] def updateFromHeap(): Unit = {
     h.getFirst match {
-      case Some(i) => output := input(i).value()
-      case None    => output := default
+      case Some(i) =>
+        output := input(i).value()
+      case None => output := default
     }
   }
 
@@ -160,7 +163,7 @@ abstract class ExtremumConst(
       return
     }
 
-    if (output.value() == input(index).value() && consideredValue(index)) {
+    if (output.pendingValue == input(index).value() && consideredValue(index)) {
       // We are removing the current extremum. The new one can be in the heap or in the backlog.
       // We empty the backlog, update the heap and find the new extremum
       processBacklog()
@@ -188,7 +191,7 @@ abstract class ExtremumConst(
     */
   @inline
   private[this] def trimBacklog(): Unit = {
-    while ((!isBacklogged(backlog.head) || backlogSize > maxBacklog) && backlog.nonEmpty) {
+    while (backlog.nonEmpty && (!isBacklogged(backlog.head) || backlogSize > maxBacklog)) {
       val condValue = backlog.dequeue()
       backlogSize -= 1
       if (isBacklogged(condValue)) processValueFromBacklog(condValue)
@@ -214,12 +217,10 @@ abstract class ExtremumConst(
   private[this] def processValueFromBacklog(condValue: Int): Unit = {
     if (consideredValue(condValue)) {
       // When this method is called, the only thing we can do with a considered value is remove it.
-      assert(cond.value().contains(condValue))
       h.removeElement(condValue)
       consideredValue(condValue) = false
     } else {
       // When this method is called, the only thing we can do with a not considered value is add it.
-      assert(!cond.value().contains(condValue))
       h.insert(condValue)
       consideredValue(condValue) = true
     }
