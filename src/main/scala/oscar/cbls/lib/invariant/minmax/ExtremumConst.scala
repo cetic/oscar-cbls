@@ -75,9 +75,9 @@ abstract class ExtremumConst(
 
   updateFromHeap()
 
-  def ord(v: IntVariable): Long
+  protected def ord(v: IntVariable): Long
 
-  def notImpactingExtremum(newValue: IntConstant): Boolean
+  protected def notImpactingExtremum(newValue: IntConstant): Boolean
 
   @inline
   override def notifySetChanges(

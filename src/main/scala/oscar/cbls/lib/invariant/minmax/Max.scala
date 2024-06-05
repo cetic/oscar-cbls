@@ -77,6 +77,7 @@ class Max(
   name: Option[String] = None
 ) extends Extremum(model, input, cond, output, Long.MinValue, bulkIdentifier, name) {
 
-  override def ord(v: IntVariable): Long =
+  override protected def ord(v: IntVariable): Long = {
     -v.value() // The biggest value must have the smallest priority in the heap
+  }
 }

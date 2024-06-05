@@ -79,7 +79,7 @@ abstract class Extremum(
     case Some(i) => output := input(i).value()
   }
 
-  def ord(v: IntVariable): Long
+  protected def ord(v: IntVariable): Long
 
   @inline
   override def notifyIntChanges(
