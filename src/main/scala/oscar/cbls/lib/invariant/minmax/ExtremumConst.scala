@@ -65,7 +65,28 @@ abstract class ExtremumConst(
     for (removed <- removedElems) notifyDeleteOn(setVariable, removed)
   }
 
-  override def checkInternals(): Unit = ???
+  override def checkInternals(): Unit = {
+    if (cond.value().nonEmpty) {
+      // We get {input(i) | i in cond}
+      var observedVariables: Array[IntVariable] = new Array[IntVariable](0)
+      for (i: Int <- cond.value()) observedVariables = observedVariables :+ input(i)
+
+      require(
+        output.value() == observedVariables.minBy(ord).value(),
+        s"checkInternals fails in invariant ${name()}. " +
+          s"output != min/max of observed variables. " +
+          s"output: $output - observed variables: ${observedVariables.mkString("", ", ", "")}"
+      )
+    } else {
+      require(h.isEmpty)
+      require(
+        output.value() == default,
+        s"checkInternals fails in invariant ${name()}. " +
+          s"A problem occurs while observing an empty set of variables." +
+          s"output: $output"
+      )
+    }
+  }
 
   @inline
   private[this] def updateFromHeap(): Unit = {
