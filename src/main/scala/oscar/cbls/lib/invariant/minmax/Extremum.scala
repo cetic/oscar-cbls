@@ -18,8 +18,8 @@ import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, St
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 
-/** Abstract Invariant that maintains Extremum(input(i) | i in cond). Exact ordering is specified by
-  * implementing abstract method of the class. Update is in O(log(n))
+/** Abstract [[Invariant]] that maintains Extremum(input(i) | i in cond). Exact ordering is
+  * specified by implementing abstract method of the class. Update is in O(log(n))
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
