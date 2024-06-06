@@ -20,7 +20,11 @@ import oscar.cbls.visual.profiling.ProfilingConsole
 
 abstract class Neighborhood(_name: String) {
 
-  protected var _searchDisplay: SearchDisplay         = SearchDisplay(0)
+  // Verbose
+  protected var _verboseMode: VerboseMode         = VerboseMode(0)
+  private var _verbosityLevel: Int = 0
+
+  // Profiling
   private[search] val _searchProfiler: SearchProfiler = new SearchProfiler(this)
   def displayProfiling(): Unit =
     ProfilingConsole(_searchProfiler, _searchProfiler.collectThisProfileHeader)
@@ -71,9 +75,9 @@ abstract class Neighborhood(_name: String) {
     var bestObj: Long       = objective.worstValue
     var moveCount: Int      = 0
     var noMoreMove: Boolean = false
-    objective.searchDisplay = searchDisplay
+    objective.verboseMode = _verboseMode
 
-    _searchDisplay.searchStarted(objective,objValue)
+    _verboseMode.searchStarted(objective,objValue)
     while (!shouldStop(moveCount) && !noMoreMove) {
       val latestObjValue              = objValue.value()
       val getMoveResult: SearchResult = getMove(objective, objValue)
@@ -97,7 +101,7 @@ abstract class Neighborhood(_name: String) {
             objValue.value() == mf.objAfter,
             s"Neighborhood was lying ! : " + mf + " got " + objValue
           )
-          _searchDisplay.moveTaken(
+          _verboseMode.moveTaken(
             mf.move,
             objValue.value(),
             latestObjValue,
@@ -106,14 +110,17 @@ abstract class Neighborhood(_name: String) {
           )
       }
     }
-    _searchDisplay.searchEnded(objValue.value(), moveCount)
+    _verboseMode.searchEnded(objValue.value(), moveCount)
     moveCount
   }
 
-  def searchDisplay: SearchDisplay = _searchDisplay
+  def verbosityLevel: Int = _verbosityLevel
 
   /** Sets the new SearchDisplay */
-  def searchDisplay_=(searchDisplay: SearchDisplay): Unit = _searchDisplay = searchDisplay
+  def verbosityLevel_=(verbosityLevel: Int): Unit = {
+    _verbosityLevel = verbosityLevel
+    _verboseMode = VerboseMode(verbosityLevel)
+  }
 
   def name: String = _name
 }

@@ -14,7 +14,7 @@
 package oscar.cbls.core.computation.objective
 
 import oscar.cbls.core.computation.integer.IntVariable
-import oscar.cbls.core.search.{Move, MoveFound, NoMoveFound, SearchDisplay}
+import oscar.cbls.core.search.{Move, MoveFound, NoMoveFound, VerboseMode}
 
 /** Companion object of Maximize */
 object Maximize {
@@ -60,9 +60,9 @@ class Maximize(
         case m: MoveFound if newApproxObj > m.objAfter() =>
           checkNeighborOnRealObjective(buildMove)
         case _ if newApproxObj > Long.MinValue =>
-          searchDisplay.moveExplored(() => buildMove(newApproxObj), valid = true)
+          verboseMode.moveExplored(() => buildMove(newApproxObj), valid = true)
         case _ =>
-          searchDisplay.moveExplored(() => buildMove(newApproxObj))
+          verboseMode.moveExplored(() => buildMove(newApproxObj))
       }
     }
 
@@ -70,7 +70,7 @@ class Maximize(
       val newObj = objValue.value()
       toReturn match {
         case NoMoveFound if newObj > oldObj =>
-          searchDisplay.moveExplored(
+          verboseMode.moveExplored(
             () => buildMove(newObj),
             valid = true,
             newBest = true,
@@ -78,7 +78,7 @@ class Maximize(
           )
           _toReturn = MoveFound(buildMove(newObj))
         case m: MoveFound if newObj > m.objAfter() =>
-          searchDisplay.moveExplored(
+          verboseMode.moveExplored(
             () => buildMove(newObj),
             valid = true,
             newBest = true,
@@ -86,9 +86,9 @@ class Maximize(
           )
           _toReturn = MoveFound(buildMove(newObj))
         case _ if newObj > Long.MinValue =>
-          searchDisplay.moveExplored(() => buildMove(newObj), valid = true)
+          verboseMode.moveExplored(() => buildMove(newObj), valid = true)
         case _ =>
-          searchDisplay.moveExplored(() => buildMove(newObj))
+          verboseMode.moveExplored(() => buildMove(newObj))
       }
     }
 
@@ -108,7 +108,7 @@ class Maximize(
           case _    => checkNeighborOnApproximatedObjective(buildMove)
         }
       } else {
-        searchDisplay.moveExplored(() => buildMove(objValue.value()))
+        verboseMode.moveExplored(() => buildMove(objValue.value()))
       }
     }
   }

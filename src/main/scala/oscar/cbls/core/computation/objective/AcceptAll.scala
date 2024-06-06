@@ -14,7 +14,7 @@
 package oscar.cbls.core.computation.objective
 
 import oscar.cbls.core.computation.integer.IntVariable
-import oscar.cbls.core.search.{Move, MoveFound, SearchDisplay}
+import oscar.cbls.core.search.{Move, MoveFound, VerboseMode}
 
 /** Companion object of AcceptAll */
 object AcceptAll {
@@ -40,7 +40,7 @@ class AcceptAll(objective: IntVariable) extends Objective {
     override def checkNeighbor(buildMove: Long => Move): Unit = {
       val newValue = objective.value()
       _toReturn = MoveFound(buildMove(newValue))
-      searchDisplay.moveExplored(() => buildMove(newValue), valid = true, saved = true)
+      verboseMode.moveExplored(() => buildMove(newValue), valid = true, saved = true)
     }
   }
 

@@ -30,11 +30,6 @@ abstract class NeighborhoodCombinator(
     for (n <- subNeighborhoods) n.reset()
   }
 
-  override def searchDisplay_=(searchDisplay: SearchDisplay): Unit = {
-    for (n <- subNeighborhoods) n.searchDisplay_=(searchDisplay)
-    super.searchDisplay_=(searchDisplay)
-  }
-
   override def toString: String = this.getClass.getSimpleName
 
 }

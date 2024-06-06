@@ -30,12 +30,12 @@ abstract class SimpleNeighborhood(neighborhoodName: String) extends Neighborhood
 
   override def getMove(objective: Objective, objValue: IntVariable): SearchResult = {
     val startValue: Long = objValue.value()
-    _searchDisplay.startExploration(neighborhoodName)
+    _verboseMode.startExploration(neighborhoodName)
     _searchProfiler.explorationStarted()
     val exploration = objective.newExploration
     exploreNeighborhood(exploration)
     _searchProfiler.explorationEnded(startValue,exploration.toReturn)
-    _searchDisplay.neighborhoodExplored(this, exploration.toReturn)
+    _verboseMode.neighborhoodExplored(this, exploration.toReturn)
     exploration.toReturn
   }
 

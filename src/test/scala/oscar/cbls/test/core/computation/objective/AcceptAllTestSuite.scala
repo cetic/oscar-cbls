@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.AcceptAll
-import oscar.cbls.core.search.{MoveFound, SearchDisplay}
+import oscar.cbls.core.search.{MoveFound, VerboseMode}
 
 import scala.util.Random
 

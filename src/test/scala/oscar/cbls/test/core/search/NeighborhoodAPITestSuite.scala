@@ -4,7 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.{Exploration, Minimize, Objective}
-import oscar.cbls.core.search.{Move, NoMoveFound, SearchDisplay, SimpleNeighborhood}
+import oscar.cbls.core.search.{Move, NoMoveFound, VerboseMode, SimpleNeighborhood}
 import oscar.cbls.lib.invariant.numeric.IntInt2Int
 
 import scala.util.Random
@@ -39,7 +39,7 @@ class NeighborhoodAPITestSuite extends AnyFunSuite {
     val (objective, objValue, a) = getTestProblemBasicData
 
     val search = new TestAssignNeighborhood(a, random)
-    search.searchDisplay = SearchDisplay(4)
+    search.verbosityLevel = 4
     search.doAllMoves(objective, objValue)
   }
 
@@ -47,7 +47,7 @@ class NeighborhoodAPITestSuite extends AnyFunSuite {
     val (objective, objValue, a) = getTestProblemBasicData
 
     val search = new TestAssignNeighborhood(a, random, doNotRevertMove = true)
-    search.searchDisplay = SearchDisplay(1)
+    search.verbosityLevel = 1
     val exception = intercept[IllegalArgumentException](search.doAllMoves(objective, objValue))
     assert(
       exception.getMessage.contains("Neighborhood did not restore the model after exploration")
@@ -58,7 +58,7 @@ class NeighborhoodAPITestSuite extends AnyFunSuite {
     val (objective, objValue, a) = getTestProblemBasicData
 
     val search = new TestAssignNeighborhood(a, random, changeTheValueInReturnedMove = true)
-    search.searchDisplay = SearchDisplay(1)
+    search.verbosityLevel = 1
     val exception = intercept[IllegalArgumentException](search.doAllMoves(objective, objValue))
     assert(exception.getMessage.contains("Neighborhood was lying"))
   }

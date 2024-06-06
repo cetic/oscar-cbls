@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.Maximize
-import oscar.cbls.core.search.{MoveFound, NoMoveFound, SearchDisplay}
+import oscar.cbls.core.search.{MoveFound, NoMoveFound, VerboseMode}
 
 class MaximizeTestSuite extends AnyFunSuite {
 

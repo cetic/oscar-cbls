@@ -20,15 +20,15 @@ import oscar.cbls.util.PrettyPrinting
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
 
-object SearchDisplay {
-  def unapply(searchDisplay: SearchDisplay): Option[Int] = Some(searchDisplay.verbosityLevel)
+object VerboseMode {
+  def unapply(verboseMode: VerboseMode): Option[Int] = Some(verboseMode.verbosityLevel)
 
-  def apply(verbosityLevel: Int): SearchDisplay = {
-    new SearchDisplay(verbosityLevel)
+  def apply(verbosityLevel: Int): VerboseMode = {
+    new VerboseMode(verbosityLevel)
   }
 }
 
-class SearchDisplay(val verbosityLevel: Int) {
+class VerboseMode(val verbosityLevel: Int) {
 
   private var summarizedLastPrint: Long                    = System.currentTimeMillis()
   private var summarizedLastValue: Long                    = Long.MaxValue

@@ -13,7 +13,7 @@
 
 package oscar.cbls.core.computation.objective
 
-import oscar.cbls.core.search.{Move, NoMoveFound, SearchDisplay, SearchResult}
+import oscar.cbls.core.search.{Move, NoMoveFound, VerboseMode, SearchResult}
 
 /** An Objective defines the conditions of acceptation of a new objective value during the search.
   * Any optimisation has at least one Objective usually to minimize or maximize a defined value.
@@ -26,9 +26,9 @@ import oscar.cbls.core.search.{Move, NoMoveFound, SearchDisplay, SearchResult}
   */
 abstract class Objective {
 
-  private var _searchDisplay: SearchDisplay = SearchDisplay(0)
-  def searchDisplay_=(searchDisplay: SearchDisplay): Unit = _searchDisplay = searchDisplay
-  def searchDisplay: SearchDisplay = _searchDisplay
+  private var _searchDisplay: VerboseMode = VerboseMode(0)
+  private[core] def verboseMode_=(searchDisplay: VerboseMode): Unit = _searchDisplay = searchDisplay
+  def verboseMode: VerboseMode = _searchDisplay
 
   /** Creates a new Exploration instance. Must be called when starting an exploration. */
   def newExploration: Exploration
