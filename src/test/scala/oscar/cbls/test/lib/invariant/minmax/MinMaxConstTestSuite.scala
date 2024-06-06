@@ -42,13 +42,12 @@ class MinMaxConstBacklogTests extends AnyFunSuite with Matchers {
 
   private def testForMinMaxConstBacklogFields()
     : (Store, Array[IntConstant], SetVariable, IntVariable, TestMinMaxConst) = {
-    val store          = new Store(debugLevel = 3)
-    val a: Array[Long] = Array(0, 1, 2, 3, 2, 5)
-    val input: Array[IntConstant] =
-      (for (x <- a) yield new IntConstant(store, x)).toArray
-    val cond: SetVariable   = SetVariable(store, Set(2, 3))
-    val output: IntVariable = IntVariable(store, 42)
-    val inv                 = new TestMinMaxConst(store, input, cond, output)
+    val store                     = new Store(debugLevel = 3)
+    val a: Array[Long]            = Array(0, 1, 2, 3, 2, 5)
+    val input: Array[IntConstant] = for (x <- a) yield new IntConstant(store, x)
+    val cond: SetVariable         = SetVariable(store, Set(2, 3))
+    val output: IntVariable       = IntVariable(store, 42)
+    val inv                       = new TestMinMaxConst(store, input, cond, output)
     store.close()
 
     (store, input, cond, output, inv)
