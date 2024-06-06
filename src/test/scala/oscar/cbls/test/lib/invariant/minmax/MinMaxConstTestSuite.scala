@@ -40,8 +40,7 @@ class MinMaxConstBacklogTests extends AnyFunSuite with Matchers {
       super.currentBacklogSates()
   }
 
-  private def testForMinMaxConstBacklogFields()
-    : (Store, Array[IntConstant], SetVariable, IntVariable, TestMinMaxConst) = {
+  private def testForMinMaxConstBacklogFields(): (Store, SetVariable, TestMinMaxConst) = {
     val store                     = new Store(debugLevel = 3)
     val a: Array[Long]            = Array(0, 1, 2, 3, 2, 5)
     val input: Array[IntConstant] = for (x <- a) yield new IntConstant(store, x)
@@ -50,11 +49,11 @@ class MinMaxConstBacklogTests extends AnyFunSuite with Matchers {
     val inv                       = new TestMinMaxConst(store, input, cond, output)
     store.close()
 
-    (store, input, cond, output, inv)
+    (store, cond, inv)
   }
 
   test("Empty backlog at initialization") {
-    val (store, _, _, _, inv) = testForMinMaxConstBacklogFields()
+    val (store, _, inv) = testForMinMaxConstBacklogFields()
     store.propagate()
     val (h, backlog, isBacklogged, consideredValue) = inv.currentBacklogSates()
     backlog shouldBe empty
@@ -64,7 +63,7 @@ class MinMaxConstBacklogTests extends AnyFunSuite with Matchers {
   }
 
   test("Insert non impacting value") {
-    val (store, _, cond, _, inv) = testForMinMaxConstBacklogFields()
+    val (store, cond, inv) = testForMinMaxConstBacklogFields()
     cond :+= 5
     cond :+= 4
     store.propagate()
@@ -79,7 +78,7 @@ class MinMaxConstBacklogTests extends AnyFunSuite with Matchers {
   }
 
   test("Insert and remove a non impacting value") {
-    val (store, _, cond, _, inv) = testForMinMaxConstBacklogFields()
+    val (store, cond, inv) = testForMinMaxConstBacklogFields()
     cond :+= 5
     store.propagate()
     cond :-= 5
@@ -93,7 +92,7 @@ class MinMaxConstBacklogTests extends AnyFunSuite with Matchers {
   }
 
   test("Insert impacting value") {
-    val (store, _, cond, _, inv) = testForMinMaxConstBacklogFields()
+    val (store, cond, inv) = testForMinMaxConstBacklogFields()
     cond :+= 0
     store.propagate()
     val (h, backlog, isBacklogged, consideredValue) = inv.currentBacklogSates()
@@ -106,7 +105,7 @@ class MinMaxConstBacklogTests extends AnyFunSuite with Matchers {
   }
 
   test("Removing considered non impacting value") {
-    val (store, _, cond, _, inv) = testForMinMaxConstBacklogFields()
+    val (store, cond, inv) = testForMinMaxConstBacklogFields()
     cond :-= 3
     store.propagate()
     val (_, backlog, isBacklogged, consideredValue) = inv.currentBacklogSates()
@@ -116,7 +115,7 @@ class MinMaxConstBacklogTests extends AnyFunSuite with Matchers {
   }
 
   test("Removing and re-adding a considered non impacting value") {
-    val (store, _, cond, _, inv) = testForMinMaxConstBacklogFields()
+    val (store, cond, inv) = testForMinMaxConstBacklogFields()
     cond :-= 3
     store.propagate()
     cond :+= 3
@@ -128,7 +127,7 @@ class MinMaxConstBacklogTests extends AnyFunSuite with Matchers {
   }
 
   test("Fill the backlog") {
-    val (store, _, cond, _, inv) = testForMinMaxConstBacklogFields()
+    val (store, cond, inv) = testForMinMaxConstBacklogFields()
     cond :+= 0
     cond :+= 1
     cond :-= 3
@@ -150,7 +149,7 @@ class MinMaxConstBacklogTests extends AnyFunSuite with Matchers {
   }
 
   test("Removing the min") {
-    val (store, _, cond, _, inv) = testForMinMaxConstBacklogFields()
+    val (store, cond, inv) = testForMinMaxConstBacklogFields()
     cond :+= 0
     cond :+= 1
     cond :-= 3
@@ -177,72 +176,66 @@ class MinMaxConstTests extends AnyFunSuite with Matchers {
   // Create and return objets we use to make tests
   private def testMinMaxConst(
     isMin: Boolean,
-    set: Option[Set[Int]] = None
-  ): (Array[IntConstant], SetVariable, IntVariable, ExtremumConst) = {
-    val store = new Store(debugLevel = 3)
-    val input: Array[IntConstant] =
-      (for (i: Long <- 0L to 5L) yield new IntConstant(store, i)).toArray
-    val output: IntVariable = IntVariable(store, 42)
-    val cond: SetVariable = set match {
-      case None =>
-        SetVariable(store, (for (i: Int <- input.indices) yield i).toSet)
-      case Some(s) =>
-        SetVariable(store, s)
-    }
+    set: Set[Int]
+  ): (SetVariable, IntVariable, ExtremumConst) = {
+    val store                     = new Store(debugLevel = 3)
+    val input: Array[IntConstant] = Array.range(0, 6).map(i => new IntConstant(store, i))
+    val output: IntVariable       = IntVariable(store, 42)
+    val cond: SetVariable         = SetVariable(store, set)
     val inv: ExtremumConst =
       if (isMin) MinConst(store, input, cond, output)
       else MaxConst(store, input, cond, output)
     store.close()
 
-    (input, cond, output, inv)
+    (cond, output, inv)
   }
 
   test("MinConst invariant initialisation works as expected.") {
-    val (_, _, output, _) = testMinMaxConst(isMin = true)
+    val (_, output, _) = testMinMaxConst(isMin = true, Set(0, 1, 2, 3, 4, 5))
     output.value() should be(0)
   }
 
   test("MaxConst invariant initialisation works as expected.") {
-    val (_, _, output, _) = testMinMaxConst(isMin = false)
+    val (_, output, _) = testMinMaxConst(isMin = false, Set(0, 1, 2, 3, 4, 5))
     output.value() should be(5)
   }
 
   test("MinConst that listen to an empty set of variables") {
-    val (_, _, output, _) = testMinMaxConst(isMin = true, Some(Set.empty))
+    val (_, output, _) = testMinMaxConst(isMin = true, Set.empty)
     output.value() should be(Long.MaxValue)
   }
 
   test("MaxConst that listen to an empty set of variables") {
-    val (_, _, output, _) = testMinMaxConst(isMin = false, Some(Set.empty))
+    val (_, output, _) = testMinMaxConst(isMin = false, Set.empty)
     output.value() should be(Long.MinValue)
   }
 
   test("MinConst: adding a variable that doesn't change the min") {
-    val (_, cond, output, _) = testMinMaxConst(isMin = true, Some(Set(1, 3, 5)))
+    val (cond, output, _) = testMinMaxConst(isMin = true, Set(1, 3, 5))
     cond :+= 4
     output.value() should be(1)
   }
 
   test("MinConst: removing the min") {
-    val (_, cond, output, _) = testMinMaxConst(isMin = true, Some(Set(1, 3, 5)))
+    val (cond, output, _) = testMinMaxConst(isMin = true, Set(1, 3, 5))
     cond :-= 1
     output.value() should be(3)
   }
 
   test("MinConst: adding a smaller value") {
-    val (_, cond, output, _) = testMinMaxConst(isMin = true, Some(Set(1, 3, 5)))
+    val (cond, output, _) = testMinMaxConst(isMin = true, Set(1, 3, 5))
     cond :+= 0
     output.value() should be(0)
   }
 
   test("MinConst: removing a value other than the min") {
-    val (_, cond, output, _) = testMinMaxConst(isMin = true, Some(Set(1, 3, 5)))
+    val (cond, output, _) = testMinMaxConst(isMin = true, Set(1, 3, 5))
     cond :-= 3
     output.value() should be(1)
   }
 
   test("MinConst: removing all value") {
-    val (_, cond, output, _) = testMinMaxConst(isMin = true, Some(Set(1, 3, 5)))
+    val (cond, output, _) = testMinMaxConst(isMin = true, Set(1, 3, 5))
     cond :-= 1
     cond :-= 3
     cond :-= 5
@@ -250,31 +243,31 @@ class MinMaxConstTests extends AnyFunSuite with Matchers {
   }
 
   test("MaxConst: adding a variable that doesn't change the max") {
-    val (_, cond, output, _) = testMinMaxConst(isMin = false, Some(Set(0, 2, 4)))
+    val (cond, output, _) = testMinMaxConst(isMin = false, Set(0, 2, 4))
     cond :+= 1
     output.value() should be(4)
   }
 
   test("MaxConst: removing the max") {
-    val (_, cond, output, _) = testMinMaxConst(isMin = false, Some(Set(0, 2, 4)))
+    val (cond, output, _) = testMinMaxConst(isMin = false, Set(0, 2, 4))
     cond :-= 4
     output.value() should be(2)
   }
 
   test("MaxConst: adding a bigger value") {
-    val (_, cond, output, _) = testMinMaxConst(isMin = false, Some(Set(0, 2, 4)))
+    val (cond, output, _) = testMinMaxConst(isMin = false, Set(0, 2, 4))
     cond :+= 5
     output.value() should be(5)
   }
 
   test("MaxConst: removing a value other than the max") {
-    val (_, cond, output, _) = testMinMaxConst(isMin = false, Some(Set(0, 2, 4)))
+    val (cond, output, _) = testMinMaxConst(isMin = false, Set(0, 2, 4))
     cond :-= 2
     output.value() should be(4)
   }
 
   test("MaxConst: removing all the value") {
-    val (_, cond, output, _) = testMinMaxConst(isMin = false, Some(Set(0, 2, 4)))
+    val (cond, output, _) = testMinMaxConst(isMin = false, Set(0, 2, 4))
     cond :-= 0
     cond :-= 2
     cond :-= 4
@@ -282,7 +275,7 @@ class MinMaxConstTests extends AnyFunSuite with Matchers {
   }
 
   test("MinConst: checkInternals doesn't fail") {
-    val (_, cond, _, minInv) = testMinMaxConst(isMin = true, Some(Set(2, 3)))
+    val (cond, _, minInv) = testMinMaxConst(isMin = true, Set(2, 3))
     cond :+= 1
     cond :+= 4
     cond :-= 2
@@ -290,13 +283,13 @@ class MinMaxConstTests extends AnyFunSuite with Matchers {
   }
 
   test("MinConst: checkInternals should fail") {
-    val (_, _, output, minInv) = testMinMaxConst(isMin = true)
+    val (_, output, minInv) = testMinMaxConst(isMin = true, Set(0, 1, 2, 3, 4, 5))
     output := 42
     an[IllegalArgumentException] should be thrownBy minInv.checkInternals()
   }
 
   test("MaxConst: checkInternals doesn't fail") {
-    val (_, cond, _, maxInv) = testMinMaxConst(isMin = false, Some(Set(2, 3)))
+    val (cond, _, maxInv) = testMinMaxConst(isMin = false, Set(2, 3))
     cond :+= 1
     cond :+= 4
     cond :-= 2
@@ -304,18 +297,18 @@ class MinMaxConstTests extends AnyFunSuite with Matchers {
   }
 
   test("MaxConst: checkInternals should fail") {
-    val (_, _, output, maxInv) = testMinMaxConst(isMin = false)
+    val (_, output, maxInv) = testMinMaxConst(isMin = false, Set(0, 1, 2, 3, 4, 5))
     output := 42
     an[IllegalArgumentException] should be thrownBy maxInv.checkInternals()
   }
 
   test("MinConst: checkInternals doesn't fail with empty cond") {
-    val (_, _, _, minInv) = testMinMaxConst(isMin = true, Some(Set.empty))
+    val (_, _, minInv) = testMinMaxConst(isMin = true, Set.empty)
     noException should be thrownBy minInv.checkInternals()
   }
 
   test("MaxConst: checkInternals doesn't fail with empty cond") {
-    val (_, _, _, maxInv) = testMinMaxConst(isMin = false, Some(Set.empty))
+    val (_, _, maxInv) = testMinMaxConst(isMin = false, Set.empty)
     noException should be thrownBy maxInv.checkInternals()
   }
 }
