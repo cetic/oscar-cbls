@@ -135,9 +135,7 @@ abstract class ExtremumConst(
       // Now we want to reinsert this value. We have nothing to do. It is already in the heap.
       assert(isBacklogged(index))
       isBacklogged(index) = false
-      return
-    }
-    if (notImpactingExtremum(input(index))) {
+    } else if (notImpactingExtremum(input(index))) {
       // No impact, put in the backlog
       trimBacklog()
       putIntoBacklog(index)
@@ -160,15 +158,13 @@ abstract class ExtremumConst(
       // Now, we want to remove this value. We have nothing to do. It was never considered.
       assert(isBacklogged(index))
       isBacklogged(index) = false
-      return
-    }
-
-    if (output.pendingValue == input(index).value() && consideredValue(index)) {
+    } else if (output.pendingValue == input(index).value() && consideredValue(index)) {
       // We are removing the current extremum. The new one can be in the heap or in the backlog.
-      // We empty the backlog, update the heap and find the new extremum
+      // We empty the backlog, update the heap and find the new extremum.
       processBacklog()
       h.removeElement(index)
       isBacklogged(index) = false
+      consideredValue(index) = false
       updateFromHeap()
     } else {
       // No impacted, put in the backlog
@@ -226,5 +222,14 @@ abstract class ExtremumConst(
     }
     isBacklogged(condValue) = false
   }
+
+  /** Used only for testing
+    *
+    * @return
+    *   all the private fields useful for testing
+    */
+  protected def currentBacklogSates()
+    : (BinaryHeapWithMoveIntItem, mutable.Queue[Int], Array[Boolean], Array[Boolean]) =
+    (h, backlog, isBacklogged, consideredValue)
 
 }
