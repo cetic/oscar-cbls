@@ -21,7 +21,7 @@ import scala.collection.mutable
 import scala.concurrent.duration.Duration
 
 object SearchDisplay {
-  def unapply(searchDisplayer: SearchDisplay): Option[Int] = Some(searchDisplayer.verbosityLevel)
+  def unapply(searchDisplay: SearchDisplay): Option[Int] = Some(searchDisplay.verbosityLevel)
 
   def apply(verbosityLevel: Int): SearchDisplay = {
     new SearchDisplay(verbosityLevel)

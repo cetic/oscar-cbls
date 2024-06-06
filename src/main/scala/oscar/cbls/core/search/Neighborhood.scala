@@ -71,6 +71,7 @@ abstract class Neighborhood(_name: String) {
     var bestObj: Long       = objective.worstValue
     var moveCount: Int      = 0
     var noMoreMove: Boolean = false
+    objective.searchDisplay = searchDisplay
 
     _searchDisplay.searchStarted(objective,objValue)
     while (!shouldStop(moveCount) && !noMoreMove) {

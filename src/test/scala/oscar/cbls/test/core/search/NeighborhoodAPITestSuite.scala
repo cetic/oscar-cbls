@@ -16,7 +16,7 @@ class NeighborhoodAPITestSuite extends AnyFunSuite {
   random.setSeed(seed)
 
   // Give Objective, objValue and a the IntVariable that is modified during the search
-  private def getTestProblemBasicData(): (Objective, IntVariable, IntVariable) ={
+  private def getTestProblemBasicData: (Objective, IntVariable, IntVariable) ={
     val store               = new Store()
     val a: IntVariable      = IntVariable(store, 500)
     val b: IntVariable      = IntVariable(store, 600)
@@ -36,7 +36,7 @@ class NeighborhoodAPITestSuite extends AnyFunSuite {
   }
 
   test(s"One value minimization works as expected. Seed : $seed") {
-    val (objective, objValue, a) = getTestProblemBasicData()
+    val (objective, objValue, a) = getTestProblemBasicData
 
     val search = new TestAssignNeighborhood(a, random)
     search.searchDisplay = SearchDisplay(4)
@@ -44,7 +44,7 @@ class NeighborhoodAPITestSuite extends AnyFunSuite {
   }
 
   test(s"Not reverting the move after exploration raise an error. Seed : $seed") {
-    val (objective, objValue, a) = getTestProblemBasicData()
+    val (objective, objValue, a) = getTestProblemBasicData
 
     val search = new TestAssignNeighborhood(a, random, doNotRevertMove = true)
     search.searchDisplay = SearchDisplay(1)
@@ -55,7 +55,7 @@ class NeighborhoodAPITestSuite extends AnyFunSuite {
   }
 
   test(s"Changing the move after an exploration raise an error. Seed : $seed") {
-    val (objective, objValue, a) = getTestProblemBasicData()
+    val (objective, objValue, a) = getTestProblemBasicData
 
     val search = new TestAssignNeighborhood(a, random, changeTheValueInReturnedMove = true)
     search.searchDisplay = SearchDisplay(1)
@@ -90,7 +90,7 @@ class TestAssignNeighborhood(
   }
 
   /** Resets the internal state of the neighborhood */
-  override def reset(): Unit = ???
+  override def reset(): Unit = {}
 
   override def doMove(move: Move): Unit = {
     move match {

@@ -36,7 +36,7 @@ class AcceptAll(objective: IntVariable) extends Objective {
 
   override def isValueNewBest(currentBest: Long, newValue: Long): Boolean = true
 
-  override def newExploration(searchDisplay: SearchDisplay): Exploration = new Exploration {
+  override def newExploration: Exploration = new Exploration {
     override def checkNeighbor(buildMove: Long => Move): Unit = {
       val newValue = objective.value()
       _toReturn = MoveFound(buildMove(newValue))

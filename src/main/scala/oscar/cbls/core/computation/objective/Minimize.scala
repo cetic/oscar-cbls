@@ -49,7 +49,7 @@ class Minimize(
   override def isValueNewBest(currentBest: Long, newValue: Long): Boolean =
     newValue < currentBest
 
-  override def newExploration(searchDisplay: SearchDisplay): Exploration = new Exploration {
+  override def newExploration: Exploration = new Exploration {
     private val oldObj: Long = objValue.value()
 
     private def checkNeighborOnApproximatedObjective(buildMove: Long => Move): Unit = {

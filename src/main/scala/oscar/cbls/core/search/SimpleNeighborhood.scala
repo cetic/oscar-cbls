@@ -32,7 +32,7 @@ abstract class SimpleNeighborhood(neighborhoodName: String) extends Neighborhood
     val startValue: Long = objValue.value()
     _searchDisplay.startExploration(neighborhoodName)
     _searchProfiler.explorationStarted()
-    val exploration = objective.newExploration(_searchDisplay)
+    val exploration = objective.newExploration
     exploreNeighborhood(exploration)
     _searchProfiler.explorationEnded(startValue,exploration.toReturn)
     _searchDisplay.neighborhoodExplored(this, exploration.toReturn)

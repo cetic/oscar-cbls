@@ -22,14 +22,14 @@ class AcceptAllTestSuite extends AnyFunSuite {
     model.close()
 
     val acceptAll   = AcceptAll(objValue)
-    var exploration = acceptAll.newExploration(SearchDisplay(0))
+    var exploration = acceptAll.newExploration
     for (_ <- 0 until 100) {
       val newValue = random.nextLong()
       objValue := newValue
       exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
       exploration.toReturn.isInstanceOf[MoveFound] should be(true)
       exploration.toReturn.asInstanceOf[MoveFound].objAfter() should be(newValue)
-      exploration = acceptAll.newExploration(SearchDisplay(0))
+      exploration = acceptAll.newExploration
     }
   }
 

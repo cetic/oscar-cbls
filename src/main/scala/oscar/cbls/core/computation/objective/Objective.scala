@@ -26,8 +26,12 @@ import oscar.cbls.core.search.{Move, NoMoveFound, SearchDisplay, SearchResult}
   */
 abstract class Objective {
 
+  private var _searchDisplay: SearchDisplay = SearchDisplay(0)
+  def searchDisplay_=(searchDisplay: SearchDisplay): Unit = _searchDisplay = searchDisplay
+  def searchDisplay: SearchDisplay = _searchDisplay
+
   /** Creates a new Exploration instance. Must be called when starting an exploration. */
-  def newExploration(searchDisplay: SearchDisplay): Exploration
+  def newExploration: Exploration
 
   /** Returns the worst value that the objective value could have considering the Objective. */
   def worstValue: Long
