@@ -14,14 +14,13 @@
 package oscar.cbls.test.lib.invariant.minmax
 
 import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.must.Matchers.be
-import org.scalatest.matchers.should.Matchers.{an, convertToAnyShouldWrapper}
+import org.scalatest.matchers.should.Matchers
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.{IntConstant, IntVariable}
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.minmax.{ExtremumConst, MaxConst, MinConst}
 
-class MinMaxConstTestSuite extends AnyFunSuite {
+class MinMaxConstTestSuite extends AnyFunSuite with Matchers {
   private def testMinMaxConst(
     isMin: Boolean,
     set: Option[Set[Int]] = None
@@ -129,11 +128,11 @@ class MinMaxConstTestSuite extends AnyFunSuite {
   }
 
   test("MinConst: checkInternals doesn't fail") {
-    val (input, cond, _, minInv) = testMinMaxConst(isMin = true, Some(Set(2, 3)))
+    val (_, cond, _, minInv) = testMinMaxConst(isMin = true, Some(Set(2, 3)))
     cond :+= 1
     cond :+= 4
     cond :-= 2
-    minInv.checkInternals()
+    noException should be thrownBy minInv.checkInternals()
   }
 
   test("MinConst: checkInternals should fail"){
@@ -147,7 +146,7 @@ class MinMaxConstTestSuite extends AnyFunSuite {
     cond :+= 1
     cond :+= 4
     cond :-= 2
-    maxInv.checkInternals()
+    noException should be thrownBy maxInv.checkInternals()
   }
 
   test("MaxConst: checkInternals should fail"){
@@ -158,11 +157,11 @@ class MinMaxConstTestSuite extends AnyFunSuite {
 
   test("MinConst: checkInternals doesn't fail with empty cond") {
     val (_, _, _, minInv) = testMinMaxConst(isMin = true, Some(Set.empty))
-    minInv.checkInternals()
+    noException should be thrownBy minInv.checkInternals()
   }
 
   test("MaxConst: checkInternals doesn't fail with empty cond") {
     val (_, _, _, maxInv) = testMinMaxConst(isMin = false, Some(Set.empty))
-    maxInv.checkInternals()
+    noException should be thrownBy maxInv.checkInternals()
   }
 }
