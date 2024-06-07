@@ -66,7 +66,7 @@ abstract class ExtremumSet(
   override def checkInternals(): Unit = {
     if (input.value().nonEmpty) {
       require(
-        output.value() == input
+        output.pendingValue == input
           .value()
           .foldLeft(default)((acc, v) =>
             if (better(v, acc)) v
@@ -74,7 +74,7 @@ abstract class ExtremumSet(
           ),
         s"checkInternals fails in invariant ${name()}. " +
           s"output != min/max of input SetVariable. " +
-          s"output: $output - input: $input"
+          s"output: ${output.pendingValue} - input: $input"
       )
     } else {
       require(
