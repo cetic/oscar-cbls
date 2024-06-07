@@ -31,7 +31,12 @@ object MinSet {
     * @param name
     *   The name (optional) of your Invariant
     */
-  def apply(model: Store, input: SetVariable, output: IntVariable, name: Option[String]): MinSet = {
+  def apply(
+    model: Store,
+    input: SetVariable,
+    output: IntVariable,
+    name: Option[String] = None
+  ): MinSet = {
     new MinSet(model, input, output, name)
   }
 }
@@ -47,7 +52,7 @@ object MinSet {
   * @param name
   *   The name (optional) of your Invariant
   */
-class MinSet(model: Store, input: SetVariable, output: IntVariable, name: Option[String])
+class MinSet(model: Store, input: SetVariable, output: IntVariable, name: Option[String] = None)
     extends ExtremumSet(model, input, output, Int.MaxValue, name) {
 
   override protected def better(a: Long, b: Long): Boolean = a < b

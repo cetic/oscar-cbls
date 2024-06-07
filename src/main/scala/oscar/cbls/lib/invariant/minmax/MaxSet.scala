@@ -21,34 +21,39 @@ import oscar.cbls.core.computation.set.SetVariable
 object MaxSet {
 
   /** Creates a [[MaxSet]] invariant.
-   *
-   * @param model
-   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
-   * @param input
-   *   A [[SetVariable]]
-   * @param output
-   *   An [[IntVariable]] containing the minimum of the input set.
-   * @param name
-   *   The name (optional) of your Invariant
-   */
-  def apply(model: Store, input: SetVariable, output: IntVariable, name: Option[String]): MaxSet = {
+    *
+    * @param model
+    *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+    * @param input
+    *   A [[SetVariable]]
+    * @param output
+    *   An [[IntVariable]] containing the minimum of the input set.
+    * @param name
+    *   The name (optional) of your Invariant
+    */
+  def apply(
+    model: Store,
+    input: SetVariable,
+    output: IntVariable,
+    name: Option[String] = None
+  ): MaxSet = {
     new MaxSet(model, input, output, name)
   }
 }
 
 /** [[oscar.cbls.core.computation.Invariant]] that maintains max(input)
- *
- * @param model
- *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
- * @param input
- *   A [[SetVariable]]
- * @param output
- *   An [[IntVariable]] containing the maximum of the input set.
- * @param name
- *   The name (optional) of your Invariant
- */
-class MaxSet(model: Store, input: SetVariable, output: IntVariable, name: Option[String])
-  extends ExtremumSet(model, input, output, Int.MinValue, name) {
+  *
+  * @param model
+  *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+  * @param input
+  *   A [[SetVariable]]
+  * @param output
+  *   An [[IntVariable]] containing the maximum of the input set.
+  * @param name
+  *   The name (optional) of your Invariant
+  */
+class MaxSet(model: Store, input: SetVariable, output: IntVariable, name: Option[String] = None)
+    extends ExtremumSet(model, input, output, Int.MinValue, name) {
 
   override protected def better(a: Long, b: Long): Boolean = a > b
 
