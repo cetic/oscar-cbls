@@ -13,7 +13,6 @@
 
 package oscar.cbls.lib.invariant.minmax
 
-import oscar.cbls.algo.heap.BinaryHeapWithMoveIntItem
 import oscar.cbls.core.computation.{Invariant, Store}
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
