@@ -99,7 +99,7 @@ abstract class ExtremumConst(
       for (i: Int <- cond.value()) observedVariables = observedVariables :+ input(i)
 
       require(
-        output.value() == observedVariables.minBy(ord).value(),
+        output.pendingValue == observedVariables.minBy(ord).value(),
         s"checkInternals fails in invariant ${name()}. " +
           s"output != min/max of observed variables. " +
           s"output: ${output.pendingValue} - observed variables: ${observedVariables.mkString("", ", ", "")}"
