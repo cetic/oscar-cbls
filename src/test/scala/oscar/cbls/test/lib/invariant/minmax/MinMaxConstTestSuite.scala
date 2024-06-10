@@ -62,7 +62,7 @@ class MinMaxConstBacklogTests extends AnyFunSuite with Matchers {
     h should contain only (2, 3)
   }
 
-  test("Insert non impacting value") {
+  test("Insert non impacting values") {
     val (store, cond, inv) = testForMinMaxConstBacklogFields()
     cond :+= 5
     cond :+= 4
@@ -140,9 +140,7 @@ class MinMaxConstBacklogTests extends AnyFunSuite with Matchers {
     store.propagate()
     val (h, backlog, isBacklogged, consideredValue) = inv.currentBacklogSates()
 
-    backlog should have length 2
-    backlog should contain(5)
-    backlog should contain(4)
+    backlog should contain only (5, 4)
     isBacklogged should equal(Array(false, false, false, false, true, true))
     consideredValue should equal(Array(true, true, true, true, false, false))
     h should contain only (0, 1, 2, 3)
@@ -166,7 +164,6 @@ class MinMaxConstBacklogTests extends AnyFunSuite with Matchers {
     isBacklogged should equal(Array.fill(6)(false))
     consideredValue should equal(Array(false, true, true, true, false, true))
     h should contain only (1, 2, 3, 5)
-
   }
 }
 

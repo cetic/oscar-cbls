@@ -89,9 +89,7 @@ abstract class ExtremumConst(
     newValue: Set[Int]
   ): Unit = {
     for (added   <- addedElems) notifyInsertOn(setVariable, added)
-    for (removed <- removedElems) {
-      notifyDeleteOn(setVariable, removed)
-    }
+    for (removed <- removedElems) notifyDeleteOn(setVariable, removed)
   }
 
   override def checkInternals(): Unit = {
@@ -104,15 +102,15 @@ abstract class ExtremumConst(
         output.value() == observedVariables.minBy(ord).value(),
         s"checkInternals fails in invariant ${name()}. " +
           s"output != min/max of observed variables. " +
-          s"output: $output - observed variables: ${observedVariables.mkString("", ", ", "")}"
+          s"output: ${output.pendingValue} - observed variables: ${observedVariables.mkString("", ", ", "")}"
       )
     } else {
       require(h.isEmpty)
       require(
-        output.value() == default,
+        output.pendingValue == default,
         s"checkInternals fails in invariant ${name()}. " +
           s"A problem occurs while observing an empty set of variables." +
-          s"output: $output"
+          s"output: ${output.pendingValue}"
       )
     }
   }
@@ -146,7 +144,6 @@ abstract class ExtremumConst(
       h.insert(index)
       consideredValue(index) = true
     }
-
   }
 
   @inline

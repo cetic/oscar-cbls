@@ -45,7 +45,7 @@ abstract class ExtremumSet(
   input.registerStaticallyAndDynamicallyListeningElement(this)
   output.setDefiningInvariant(this)
 
-  /** Method to know is a is better than b */
+  /** Method to know if a is better than b */
   protected def better(a: Long, b: Long): Boolean
 
   performPropagation()
@@ -78,10 +78,10 @@ abstract class ExtremumSet(
       )
     } else {
       require(
-        output.value() == default,
+        output.pendingValue == default,
         s"checkInternals fails in invariant ${name()}. " +
           s"A problem occurs while maintaining the min/max of an empty set. " +
-          s"output: $output"
+          s"output: ${output.pendingValue}"
       )
     }
   }

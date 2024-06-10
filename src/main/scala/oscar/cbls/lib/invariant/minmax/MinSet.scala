@@ -55,6 +55,7 @@ object MinSet {
 class MinSet(model: Store, input: SetVariable, output: IntVariable, name: Option[String] = None)
     extends ExtremumSet(model, input, output, Int.MaxValue, name) {
 
+  /** Method to know if a is better than b */
   override protected def better(a: Long, b: Long): Boolean = a < b
 
   override protected[this] def performPropagation(): Unit = {

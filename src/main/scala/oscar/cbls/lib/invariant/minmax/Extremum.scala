@@ -19,7 +19,7 @@ import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 
 /** Abstract [[Invariant]] that maintains Extremum(input(i) | i in cond). Exact ordering is
-  * specified by implementing abstract method of the class. Update is in O(log(n))
+  * specified by implementing abstract method of the class. Update is in O(log(n)).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -112,18 +112,18 @@ abstract class Extremum(
       for (i: Int <- cond.value()) listenedVariables = listenedVariables :+ input(i)
 
       require(
-        output.value() == listenedVariables.minBy(ord).value(),
+        output.pendingValue == listenedVariables.minBy(ord).value(),
         s"checkInternals fails in invariant ${name()}. " +
           s"output != min/max of observed variables. " +
-          s"output: $output - observed variables: ${listenedVariables.mkString("", ", ", "")}"
+          s"output: ${output.pendingValue} - observed variables: ${listenedVariables.mkString("", ", ", "")}"
       )
     } else {
       require(h.isEmpty)
       require(
-        output.value() == default,
+        output.pendingValue == default,
         s"checkInternals fails in invariant ${name()}. " +
           s"A problem occurs while observing an empty set of variables." +
-          s"output: $output"
+          s"output: ${output.pendingValue}"
       )
     }
   }
@@ -133,7 +133,6 @@ abstract class Extremum(
     assert(set == cond)
 
     keysForRemoval(index) = input(index).registerDynamicallyListeningElement(this, index)
-
     h.insert(index)
     output := input(h.getFirst.get).value()
   }

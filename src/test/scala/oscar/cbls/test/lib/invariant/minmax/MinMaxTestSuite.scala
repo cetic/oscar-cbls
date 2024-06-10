@@ -41,12 +41,12 @@ class MinMaxTestSuite extends AnyFunSuite with Matchers {
 
   test("Min invariant initialisation works as expected.") {
     val (_, _, output, _) = testMinMax(isMin = true, Set(0, 1, 2, 3, 4, 5))
-    output.value() should be(0L)
+    output.value() should be(0)
   }
 
   test("Max invariant initialisation works as expected.") {
     val (_, _, output, _) = testMinMax(isMin = false, Set(0, 1, 2, 3, 4, 5))
-    output.value() should be(5L)
+    output.value() should be(5)
   }
 
   test("Min that listen to an empty set of variables") {
