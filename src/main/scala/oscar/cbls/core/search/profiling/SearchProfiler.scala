@@ -16,14 +16,6 @@ package oscar.cbls.core.search.profiling
 import oscar.cbls.core.search.profiling.profilingData._
 import oscar.cbls.core.search.{MoveFound, Neighborhood, NoMoveFound, SearchResult}
 
-object SearchProfiler {
-  def selectedStatisticInfo(profilers: Iterable[SearchProfiler]): String = {
-    // TODO
-    // Properties.justifyRightArray(profilers.toList.flatMap(p => List(p.collectThisProfileHeader,p.collectThisProfileData))).mkString("\n")
-    ""
-  }
-}
-
 /** This class purpose is to profile a Neighborhood during the search. By using the
   * explorationStarted and explorationEnded method you'll get various information as :
   *   - The total gain
@@ -102,8 +94,6 @@ class SearchProfiler(val neighborhood: Neighborhood) {
   protected def avgTimeFirstNeighborSelection: String    = "NA"
   protected def avgTimeNotFirstNeighborSelection: String = "NA"
 
-  final def collectThisProfileStatistics: List[Array[String]] =
-    List(collectThisProfileHeader, collectThisProfileData)
   final def collectThisProfileHeader: Array[String] = Array(
     "Neighborhood",
     "calls",
@@ -141,6 +131,15 @@ class SearchProfiler(val neighborhood: Neighborhood) {
     )
   }
 
+  /** Defines the quality of a profiled value.
+    *
+    * For instance it's best to have a lot of found moves and a little time spend :
+    *   - Max => the more the better
+    *   - Min => the less the better
+    *   - None => We do not care
+    *
+    * Useful for graphical display
+    */
   def goodValueIndicator(): Array[Option[String]] = {
     // Neighborhood, calls, founds, explored, sumGain, sumTime, avgGain
     Array(

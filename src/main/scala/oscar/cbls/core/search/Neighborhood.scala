@@ -21,11 +21,18 @@ import oscar.cbls.visual.profiling.ProfilingConsole
 abstract class Neighborhood(_name: String) {
 
   // Verbose
-  protected var _verboseMode: VerboseMode         = VerboseMode(0)
-  private var _verbosityLevel: Int = 0
+  private[core] var _verboseMode: VerboseMode = VerboseMode(0)
+  private var _verbosityLevel: Int            = 0
+  def verbosityLevel: Int                     = _verbosityLevel
+
+  /** Sets the new verbosity level and [[VerboseMode]] */
+  def verbosityLevel_=(verbosityLevel: Int): Unit = {
+    _verbosityLevel = verbosityLevel
+    _verboseMode = VerboseMode(verbosityLevel)
+  }
 
   // Profiling
-  private[search] val _searchProfiler: SearchProfiler = new SearchProfiler(this)
+  private[core] val _searchProfiler: SearchProfiler = new SearchProfiler(this)
   def displayProfiling(): Unit =
     ProfilingConsole(_searchProfiler, _searchProfiler.collectThisProfileHeader)
 
@@ -36,12 +43,10 @@ abstract class Neighborhood(_name: String) {
     *
     * @param objective
     *   The Objective of the search (minimizing, maximizing...)
-    * @param objValue
-    *   The value that must be minimized, maximized...
     * @return
     *   [[MoveFound]] if a move has been found [[NoMoveFound]] otherwise.
     */
-  def getMove(objective: Objective, objValue: IntVariable): SearchResult
+  def getMove(objective: Objective): SearchResult
 
   /** Does at most one improving move.
     *
@@ -53,74 +58,39 @@ abstract class Neighborhood(_name: String) {
     *   True if one move has been performed, false otherwise
     */
   def doImprovingMove(objective: Objective, objValue: IntVariable): Boolean =
-    0L != doAllMoves(objective, objValue, _ >= 1L)
+    0L != doAllMoves(objective, _ >= 1L)
 
   /** Does as much moves as possible or until the shouldStop condition is met.
     *
     * @param objective
     *   The Objective of the search (minimizing, maximizing...)
-    * @param objValue
-    *   The value that must be minimized, maximized...
     * @param shouldStop
     *   Given the number of performed moves, determines whether or not we should continue searching
     *   for new moves.
     * @return
     *   The total number of performed moves
     */
-  def doAllMoves(
-    objective: Objective,
-    objValue: IntVariable,
-    shouldStop: Int => Boolean = _ => false
-  ): Int = {
-    var bestObj: Long       = objective.worstValue
+  def doAllMoves(objective: Objective, shouldStop: Int => Boolean = _ => false): Int = {
     var moveCount: Int      = 0
     var noMoreMove: Boolean = false
     objective.verboseMode = _verboseMode
+    objective.startSearch()
 
-    _verboseMode.searchStarted(objective,objValue)
     while (!shouldStop(moveCount) && !noMoreMove) {
-      val latestObjValue              = objValue.value()
-      val getMoveResult: SearchResult = getMove(objective, objValue)
-      require(
-        objValue.value == latestObjValue,
-        "Neighborhood did not restore the model after exploration"
-      )
+      val getMoveResult: SearchResult = getMove(objective)
       getMoveResult match {
-        case NoMoveFound => noMoreMove = true
+        case NoMoveFound =>
+          noMoreMove = true
+          objective.noMoreMove(moveCount)
         case mf: MoveFound =>
           moveCount += 1
-          val newBestValue = objective.isValueNewBest(bestObj, mf.objAfter())
-          if (newBestValue) bestObj = mf.objAfter()
-          mf.commit()
-
-          if (objValue.value() == Long.MaxValue)
-            println(
-              "Warning : objective value == MaxLong. You may have some violated strong constraint"
-            )
-          require(
-            objValue.value() == mf.objAfter,
-            s"Neighborhood was lying ! : " + mf + " got " + objValue
-          )
-          _verboseMode.moveTaken(
-            mf.move,
-            objValue.value(),
-            latestObjValue,
-            bestObj,
-            newBestValue
-          )
+          objective.commitMove(mf.move)
       }
     }
-    _verboseMode.searchEnded(objValue.value(), moveCount)
     moveCount
   }
 
-  def verbosityLevel: Int = _verbosityLevel
-
-  /** Sets the new SearchDisplay */
-  def verbosityLevel_=(verbosityLevel: Int): Unit = {
-    _verbosityLevel = verbosityLevel
-    _verboseMode = VerboseMode(verbosityLevel)
-  }
-
   def name: String = _name
+
+  override def toString: String = name
 }

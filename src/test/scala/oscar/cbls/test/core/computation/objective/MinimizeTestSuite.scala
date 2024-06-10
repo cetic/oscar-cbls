@@ -16,17 +16,17 @@ class MinimizeTestSuite extends AnyFunSuite {
     val obj      = Minimize(objValue)
     store.close()
 
-    val exploration = obj.newExploration
+    val exploration = obj.newExploration(new DummySimpleNeighborhood)
     objValue := 2000
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter,new DummySimpleNeighborhood))
+    exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
 
     objValue := 1000
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter,new DummySimpleNeighborhood))
+    exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
 
     objValue := 900
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter,new DummySimpleNeighborhood))
+    exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn.isInstanceOf[MoveFound] should be(true)
     exploration.toReturn.asInstanceOf[MoveFound].objAfter() should be(900)
   }
@@ -42,29 +42,29 @@ class MinimizeTestSuite extends AnyFunSuite {
 
     // The objValue is voluntarily acceptable, be it shouldn't be check
     // if the under approximated value is not lower
-    var exploration = obj.newExploration
+    var exploration = obj.newExploration(new DummySimpleNeighborhood)
     objValue            := 900
     underApproxObjValue := 2000
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter,new DummySimpleNeighborhood))
+    exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
 
     objValue            := 900
     underApproxObjValue := 1000
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter,new DummySimpleNeighborhood))
+    exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
 
     // Under approximated value is lower but the retained value should be objValue
     objValue            := 900
     underApproxObjValue := 850
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter,new DummySimpleNeighborhood))
+    exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn.isInstanceOf[MoveFound] should be(true)
     exploration.toReturn.asInstanceOf[MoveFound].objAfter() should be(900)
 
     // Under approximated value is lower but the objValue is higher, should be rejected
-    exploration = obj.newExploration
+    exploration = obj.newExploration(new DummySimpleNeighborhood)
     objValue            := 1000
     underApproxObjValue := 850
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter,new DummySimpleNeighborhood))
+    exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
   }
 
@@ -76,21 +76,21 @@ class MinimizeTestSuite extends AnyFunSuite {
     val obj         = Minimize(objValue, mustBeZero = List(constraint1, constraint2))
     store.close()
 
-    var exploration = obj.newExploration
+    var exploration = obj.newExploration(new DummySimpleNeighborhood)
     objValue := 900
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter,new DummySimpleNeighborhood))
+    exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
 
     objValue    := 900
     constraint2 := 0
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter,new DummySimpleNeighborhood))
+    exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn.isInstanceOf[MoveFound] should be(true)
     exploration.toReturn.asInstanceOf[MoveFound].objAfter() should be(900)
 
     // Constraint is not violated but obj value is higher, should be rejected
-    exploration = obj.newExploration
+    exploration = obj.newExploration(new DummySimpleNeighborhood)
     objValue := 1000
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter,new DummySimpleNeighborhood))
+    exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
   }
 

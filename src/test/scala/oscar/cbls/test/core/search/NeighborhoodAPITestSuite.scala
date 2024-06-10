@@ -4,7 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.{Exploration, Minimize, Objective}
-import oscar.cbls.core.search.{Move, NoMoveFound, VerboseMode, SimpleNeighborhood}
+import oscar.cbls.core.search.{Move, NoMoveFound, SimpleNeighborhood}
 import oscar.cbls.lib.invariant.numeric.IntInt2Int
 
 import scala.util.Random
@@ -16,7 +16,7 @@ class NeighborhoodAPITestSuite extends AnyFunSuite {
   random.setSeed(seed)
 
   // Give Objective, objValue and a the IntVariable that is modified during the search
-  private def getTestProblemBasicData: (Objective, IntVariable, IntVariable) ={
+  private def getTestProblemBasicData: (Objective, IntVariable) = {
     val store               = new Store()
     val a: IntVariable      = IntVariable(store, 500)
     val b: IntVariable      = IntVariable(store, 600)
@@ -29,37 +29,39 @@ class NeighborhoodAPITestSuite extends AnyFunSuite {
       a,
       b,
       objValue,
-      (a, b) => Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2)).toLong
+      (a, b) => Math.sqrt(Math.pow(a.toDouble, 2) + Math.pow(b.toDouble, 2)).toLong
     )
     store.close()
-    (objective,objValue,a)
+    (objective, a)
   }
 
   test(s"One value minimization works as expected. Seed : $seed") {
-    val (objective, objValue, a) = getTestProblemBasicData
+    val (objective, a) = getTestProblemBasicData
 
     val search = new TestAssignNeighborhood(a, random)
-    search.verbosityLevel = 4
-    search.doAllMoves(objective, objValue)
+    // Changes this in case of error.
+    search.verbosityLevel = 1
+    search.doAllMoves(objective)
+    search.displayProfiling()
   }
 
   test(s"Not reverting the move after exploration raise an error. Seed : $seed") {
-    val (objective, objValue, a) = getTestProblemBasicData
+    val (objective, a) = getTestProblemBasicData
 
     val search = new TestAssignNeighborhood(a, random, doNotRevertMove = true)
     search.verbosityLevel = 1
-    val exception = intercept[IllegalArgumentException](search.doAllMoves(objective, objValue))
+    val exception = intercept[IllegalArgumentException](search.doAllMoves(objective))
     assert(
       exception.getMessage.contains("Neighborhood did not restore the model after exploration")
     )
   }
 
   test(s"Changing the move after an exploration raise an error. Seed : $seed") {
-    val (objective, objValue, a) = getTestProblemBasicData
+    val (objective, a) = getTestProblemBasicData
 
     val search = new TestAssignNeighborhood(a, random, changeTheValueInReturnedMove = true)
     search.verbosityLevel = 1
-    val exception = intercept[IllegalArgumentException](search.doAllMoves(objective, objValue))
+    val exception = intercept[IllegalArgumentException](search.doAllMoves(objective))
     assert(exception.getMessage.contains("Neighborhood was lying"))
   }
 
@@ -76,8 +78,9 @@ class TestAssignNeighborhood(
     val initValue = variable.value()
     var it        = 0L
     while (exploration.toReturn == NoMoveFound && it < 100) {
-      val newValue = random.between(0, 300)
+      val newValue = random.between(100, 300)
       variable := newValue
+      _searchProfiler.neighborSelected()
       exploration.checkNeighbor(objValue => {
         if (changeTheValueInReturnedMove)
           TestAssignNeighborhoodMove(Math.pow(newValue, 2).toLong, objValue, this)
@@ -86,7 +89,6 @@ class TestAssignNeighborhood(
       if (!doNotRevertMove) variable := initValue
       it += 1
     }
-    exploration.toReturn
   }
 
   /** Resets the internal state of the neighborhood */

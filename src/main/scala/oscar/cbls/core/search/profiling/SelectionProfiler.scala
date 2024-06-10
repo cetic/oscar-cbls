@@ -28,17 +28,6 @@ class SelectionProfiler(combinator: NeighborhoodCombinator, val neighborhoods: L
 
   override def collectCombinatorSpecificStatistics: List[List[String]] =
     super.collectCombinatorSpecificStatistics ++ List(List.empty)
-      /*Properties.justifyRightArray(
-        List(Array("Name", "Usage", "Success")) ++
-          profilers.indices.map(pi =>
-            Array(
-              s"${profilers(pi).neighborhood}",
-              s"${neighborhoodUsage(pi)}%",
-              s"${neighborhoodSuccess(pi)}%"
-            )
-          )
-      )
-    )*/
 
   ///////////////////////////////////////
   // Selection-Neighborhood management //

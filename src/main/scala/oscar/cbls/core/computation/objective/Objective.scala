@@ -13,7 +13,16 @@
 
 package oscar.cbls.core.computation.objective
 
-import oscar.cbls.core.search.{Move, NoMoveFound, VerboseMode, SearchResult}
+import oscar.cbls.core.computation.integer.IntVariable
+import oscar.cbls.core.search.profiling.NeighborhoodProfiler
+import oscar.cbls.core.search.{
+  Move,
+  Neighborhood,
+  NoMoveFound,
+  SearchResult,
+  SimpleNeighborhood,
+  VerboseMode
+}
 
 /** An Objective defines the conditions of acceptation of a new objective value during the search.
   * Any optimisation has at least one Objective usually to minimize or maximize a defined value.
@@ -24,17 +33,41 @@ import oscar.cbls.core.search.{Move, NoMoveFound, VerboseMode, SearchResult}
   * Move) leading to the modification of the objective value. To accept those moves the Objective
   * has to checks if the new value meets the Objective's conditions.
   */
-abstract class Objective {
+abstract class Objective(objValue: IntVariable) {
 
-  private var _searchDisplay: VerboseMode = VerboseMode(0)
-  private[core] def verboseMode_=(searchDisplay: VerboseMode): Unit = _searchDisplay = searchDisplay
-  def verboseMode: VerboseMode = _searchDisplay
+  /** Returns the worst value that the objective value could have considering the concrete Objective
+    * logic.
+    *
+    * ==WARNING:==
+    * If you override this value make sure to mark it as "lazy" so that the _currentObjValue
+    * initiate with the correct value.
+    */
+  val worstValue: Long
 
-  /** Creates a new Exploration instance. Must be called when starting an exploration. */
-  def newExploration: Exploration
+  private var _verboseMode: VerboseMode                           = VerboseMode(0)
+  private[core] def verboseMode_=(verboseMode: VerboseMode): Unit = _verboseMode = verboseMode
+  def verboseMode: VerboseMode                                    = _verboseMode
 
-  /** Returns the worst value that the objective value could have considering the Objective. */
-  def worstValue: Long
+  private var bestObj: Long          = worstValue
+  private var _currentObjValue: Long = worstValue
+  def currentObjValue(): Long = {
+    if (_currentObjValue == worstValue) _currentObjValue = objValue.value()
+    _currentObjValue
+  }
+
+  /** Initialize starting values */
+  def startSearch(): Unit = {
+    _verboseMode.searchStarted(this, objValue)
+  }
+
+  /** Creates a new Exploration instance. Must be called when starting an exploration.
+    *
+    * @param neighborhood
+    *   The neighborhood creating this Exploration
+    * @return
+    *   A concrete Exploration object used to explore a neighborhood.
+    */
+  def newExploration(neighborhood: SimpleNeighborhood): Exploration
 
   /** Returns true if newValue is a better value than currentBest.
     *
@@ -48,6 +81,36 @@ abstract class Objective {
     *   True if newValue is better than currentBest
     */
   def isValueNewBest(currentBest: Long, newValue: Long): Boolean
+
+  /** Checks the state of the objective value and ends the search */
+  def noMoreMove(moveCount: Int): Unit = {
+    require(
+      objValue.value() == currentObjValue(),
+      s"Neighborhood did not restore the model after exploration. Got ${objValue
+          .value()} should be ${currentObjValue()}"
+    )
+    _verboseMode.searchEnded(objValue.value(), moveCount)
+  }
+
+  /** Checks the state of the objective value and commits the new move */
+  def commitMove(move: Move): Unit = {
+    require(
+      objValue.value() == currentObjValue(),
+      s"Neighborhood did not restore the model after exploration. Got ${objValue
+          .value()} should be ${currentObjValue()}"
+    )
+    val newBestValue = isValueNewBest(bestObj, move.objAfter())
+    if (newBestValue) bestObj = move.objAfter()
+    move.commit()
+
+    if (objValue.value() == worstValue)
+      println(
+        s"Warning : objective value == $worstValue. You may have some violated strong constraint"
+      )
+    require(objValue.value() == move.objAfter(), s"Neighborhood was lying ! : $move got $objValue")
+    _verboseMode.moveTaken(move, objValue.value(), currentObjValue(), bestObj, newBestValue)
+    _currentObjValue = move.objAfter()
+  }
 }
 
 /** An Exploration is used by the neighborhood to find and keep the best new objective value during
@@ -56,7 +119,9 @@ abstract class Objective {
   * Depending of the concrete implementation of the Exploration, the behavior and thus the kept
   * objective value may vary.
   */
-abstract class Exploration {
+abstract class Exploration(val oldObj: Long, neighborhood: SimpleNeighborhood) {
+  neighborhood._searchProfiler.explorationStarted()
+  neighborhood._verboseMode.startExploration(neighborhood.name)
 
   /** Keeps the best move found during this exploration. Initialized at NoMoveFound. */
   protected var _toReturn: SearchResult = NoMoveFound
@@ -70,5 +135,11 @@ abstract class Exploration {
     *   A function linking the solution value to the Move that leads to it (must be provided by the
     *   calling Neighborhood)
     */
-  def checkNeighbor(buildMove: Long => Move): Unit
+  def checkNeighbor(buildMove: Long => Move): Unit =
+    neighborhood._searchProfiler.neighborExplored()
+
+  def done(): Unit = {
+    neighborhood._searchProfiler.explorationEnded(oldObj, toReturn)
+    neighborhood._verboseMode.neighborhoodExplored(neighborhood, toReturn)
+  }
 }

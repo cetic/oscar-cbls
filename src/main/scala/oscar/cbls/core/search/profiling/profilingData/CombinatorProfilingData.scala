@@ -15,7 +15,7 @@ package oscar.cbls.core.search.profiling.profilingData
 
 /** Abstract class for Combinator specifics profiling data
   */
-abstract class CombinatorProfilingData() {
+abstract class CombinatorProfilingData {
   def merge(other: CombinatorProfilingData): Unit
 
   def collectStatisticsHeaders(): Array[String]

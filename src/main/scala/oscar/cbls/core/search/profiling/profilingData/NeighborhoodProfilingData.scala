@@ -21,13 +21,13 @@ package oscar.cbls.core.search.profiling.profilingData
   */
 case class NeighborhoodProfilingData() extends CommonProfilingData {
 
-  var _nbExplored: Long                        = 0L
-  var _firstNeighborSelectionCounter: Long     = 0L
-  var _firstNeighborSelectionDuration: Long    = 0L
-  var _notFirstNeighborSelectionCounter: Long  = 0L
-  var _notFirstNeighborSelectionDuration: Long = 0L
+  private var _nbExplored: Long                        = 0L
+  private var _firstNeighborSelectionCounter: Long     = 0L
+  private var _firstNeighborSelectionDuration: Long    = 0L
+  private var _notFirstNeighborSelectionCounter: Long  = 0L
+  private var _notFirstNeighborSelectionDuration: Long = 0L
 
-  var _lastCallExploration: Long = 0L
+  private var _lastCallExploration: Long = 0L
 
   override def merge(other: ProfilingData): Unit = {
     super.merge(other)

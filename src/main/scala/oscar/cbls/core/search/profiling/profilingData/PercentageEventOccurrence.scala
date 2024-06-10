@@ -13,7 +13,7 @@
 
 package oscar.cbls.core.search.profiling.profilingData
 
-/** Profiles and computes the percentage of occurrence of a specific event.
+/** Profiles and computes the percentage of occurrence of a specific event over iteration.
   *
   * Ex: The percentage of else choice with OrElse
   */
@@ -21,9 +21,14 @@ case class PercentageEventOccurrence() extends CombinatorProfilingData {
   private var _occurrences: Int = 0
   private var _iterations: Int  = 0
 
-  def occurrences: Int = _occurrences
-  def iterations: Int  = _iterations
+  private def occurrences: Int = _occurrences
+  private def iterations: Int  = _iterations
 
+  /** Informs the profiler the occurrence of an event in this iteration.
+    *
+    * @param occurred
+    *   Whether or not the particular event occurred
+    */
   def pushEvent(occurred: Boolean): Unit = {
     if (occurred) _occurrences += 1
     _iterations += 1

@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.{Exploration, Minimize, Objective}
-import oscar.cbls.core.search.{Move, MoveFound, SearchResult, SimpleNeighborhood}
+import oscar.cbls.core.search._
 
 class ObjectiveTestSuite extends AnyFunSuite {
 
@@ -23,20 +23,24 @@ class ObjectiveTestSuite extends AnyFunSuite {
     var summedVariations: Long    = 1000L
 
     // Test Neighborhood that simply add the provided value to the solution value.
-    class Neighborhood {
+    class AdditionNeighborhood extends Neighborhood("AdditionNeighborhood") {
       def getMove(obj: Objective): SearchResult = {
-        val expl = obj.newExploration
+        val expl = obj.newExploration(new DummySimpleNeighborhood)
         objValue :+= objVariations.head
         summedVariations += objVariations.head
         objVariations = objVariations.tail
-        val move = new DummyMove(objValue.pendingValue,new DummySimpleNeighborhood)
+        val move = new DummyMove(objValue.pendingValue, new DummySimpleNeighborhood)
         expl.checkNeighbor(_ => move)
         expl.toReturn
       }
+
+      /** Resets the internal state of the neighborhood */
+      override def reset(): Unit = {}
     }
 
     // Simulation of a DynAndThen combinator. Basically creating a AcceptFirstEvalComposition and getting a move from left.
-    class DynAndThenTest(left: Neighborhood, right: Move => Neighborhood) extends Neighborhood {
+    class DynAndThenTest(left: AdditionNeighborhood, right: Move => AdditionNeighborhood)
+        extends AdditionNeighborhood {
       override def getMove(baseObj: Objective): SearchResult = {
         val acceptFirstEvalSecond = new AcceptFirstEvalComposition(baseObj, right)
         left.getMove(acceptFirstEvalSecond)
@@ -44,66 +48,70 @@ class ObjectiveTestSuite extends AnyFunSuite {
     }
 
     // An empty composite move just to have a "complete" representation of DynAndThen
-    class CompositeMove(firstMove: Move, secondMove: Move, newObjValue: Long) extends Move(newObjValue,new DummySimpleNeighborhood) {
+    class CompositeMove(firstMove: Move, secondMove: Move, newObjValue: Long)
+        extends Move(newObjValue, new DummySimpleNeighborhood) {
       override def commit(): Unit   = {}
       override def objAfter(): Long = newObjValue
     }
 
     // Custom objective, accepting first evaluating composition
-    class AcceptFirstEvalComposition(baseObj: Objective, right: Move => Neighborhood)
-        extends Objective {
+    class AcceptFirstEvalComposition(baseObj: Objective, right: Move => AdditionNeighborhood)
+        extends Objective(objValue) {
       // Creates the base objective exploration, used for composition evaluation.
       // (Get the initial obj upon Exploration creation)
-      private val baseExploration = baseObj.newExploration
+      private val baseExploration = baseObj.newExploration(new DummySimpleNeighborhood)
 
       /** Creates a new Exploration instance. Must be called when starting an exploration. */
-      override def newExploration: Exploration = new Exploration {
+      override def newExploration(neighborhood: SimpleNeighborhood): Exploration =
+        new Exploration(objValue.value(), neighborhood) {
 
-        /** Checks if the candidate objValue match the acceptance conditions */
-        override def checkNeighbor(buildMove: Long => Move): Unit = {
-          val leftExploredMove = buildMove(0) // Accept and build move return by right neighborhood
-          // Returned move is right neighborhood's move applied to left neighborhood's move
-          _toReturn = right(leftExploredMove).getMove(new Objective {
+          /** Checks if the candidate objValue match the acceptance conditions */
+          override def checkNeighbor(buildMove: Long => Move): Unit = {
+            val leftExploredMove =
+              buildMove(0) // Accept and build move return by right neighborhood
+            // Returned move is right neighborhood's move applied to left neighborhood's move
+            _toReturn = right(leftExploredMove).getMove(new Objective(objValue) {
 
-            override def newExploration: Exploration = new Exploration {
+              override def newExploration(neighborhood: SimpleNeighborhood): Exploration =
+                new Exploration(objValue.value(), neighborhood) {
 
-              /** Checks if the candidate objValue match the acceptance conditions */
-              override def checkNeighbor(buildMove: Long => Move): Unit = {
-                // checkNeighbor uses baseObjective neighbor to evaluate the composition
-                baseExploration.checkNeighbor(buildMove =
-                  newObjValue =>
-                    new CompositeMove(leftExploredMove, buildMove(newObjValue), newObjValue)
-                )
-                // Needed for Neighborhood's getMove method to return the searchResult
-                _toReturn = baseExploration.toReturn
-              }
-            }
+                  /** Checks if the candidate objValue match the acceptance conditions */
+                  override def checkNeighbor(buildMove: Long => Move): Unit = {
+                    // checkNeighbor uses baseObjective neighbor to evaluate the composition
+                    baseExploration.checkNeighbor(buildMove =
+                      newObjValue =>
+                        new CompositeMove(leftExploredMove, buildMove(newObjValue), newObjValue)
+                    )
+                    // Needed for Neighborhood's getMove method to return the searchResult
+                    _toReturn = baseExploration.toReturn
+                  }
+                }
 
-            /** Returns the worst value that the objective value could have considering the
-              * Objective.
-              */
-            override def worstValue: Long = baseObj.worstValue
+              /** Returns the worst value that the objective value could have considering the
+                * Objective.
+                */
+              override val worstValue: Long = baseObj.worstValue
 
-            /** Returns true if newValue is a better value than currentBest.
-              *
-              * Depending on used Objective this information may vary
-              *
-              * @param currentBest
-              *   The current best value (has to be given by the caller)
-              * @param newValue
-              *   The considered new value
-              * @return
-              *   True if newValue is better than currentBest
-              */
-            override def isValueNewBest(currentBest: Long, newValue: Long): Boolean =
-              baseObj.isValueNewBest(currentBest, newValue)
-          })
+              /** Returns true if newValue is a better value than currentBest.
+                *
+                * Depending on used Objective this information may vary
+                *
+                * @param currentBest
+                *   The current best value (has to be given by the caller)
+                * @param newValue
+                *   The considered new value
+                * @return
+                *   True if newValue is better than currentBest
+                */
+              override def isValueNewBest(currentBest: Long, newValue: Long): Boolean =
+                baseObj.isValueNewBest(currentBest, newValue)
+            })
 
+          }
         }
-      }
 
       /** Returns the worst value that the objective value could have considering the Objective. */
-      override def worstValue: Long = baseObj.worstValue
+      override val worstValue: Long = baseObj.worstValue
 
       /** Returns true if newValue is a better value than currentBest.
         *
@@ -119,11 +127,11 @@ class ObjectiveTestSuite extends AnyFunSuite {
       override def isValueNewBest(currentBest: Long, newValue: Long): Boolean =
         baseObj.isValueNewBest(currentBest, newValue)
     }
-    val dd = new DynAndThenTest(new Neighborhood, _ => new Neighborhood)
+    val dd = new DynAndThenTest(new AdditionNeighborhood, _ => new AdditionNeighborhood)
 
     val dd_3 = new DynAndThenTest(
-      new DynAndThenTest(new Neighborhood, _ => new Neighborhood),
-      _ => new DynAndThenTest(new Neighborhood, _ => new Neighborhood)
+      new DynAndThenTest(new AdditionNeighborhood, _ => new AdditionNeighborhood),
+      _ => new DynAndThenTest(new AdditionNeighborhood, _ => new AdditionNeighborhood)
     )
 
     // Manual testing ==> generating scenario
@@ -155,15 +163,15 @@ class ObjectiveTestSuite extends AnyFunSuite {
 
 }
 
-private class DummyMove(_objAfter: Long, simpleNeighborhood: SimpleNeighborhood) extends Move(_objAfter, simpleNeighborhood) {
+private class DummyMove(_objAfter: Long, simpleNeighborhood: SimpleNeighborhood)
+    extends Move(_objAfter, simpleNeighborhood) {
 
   override def commit(): Unit = {}
 
   override def objAfter(): Long = _objAfter
 }
 
-
-private class DummySimpleNeighborhood() extends SimpleNeighborhood(""){
+class DummySimpleNeighborhood() extends SimpleNeighborhood("") {
 
   override def exploreNeighborhood(exploration: Exploration): Unit = {}
 
@@ -171,4 +179,40 @@ private class DummySimpleNeighborhood() extends SimpleNeighborhood(""){
 
   /** Resets the internal state of the neighborhood */
   override def reset(): Unit = {}
+}
+
+class TestAssignValueNeighborhood(variable: IntVariable, value: Long)
+    extends SimpleNeighborhood("TestAssign") {
+
+  override def exploreNeighborhood(exploration: Exploration): Unit = {
+    val initValue = variable.value()
+    variable := value
+    _searchProfiler.neighborSelected()
+    exploration.checkNeighbor(objValue => TestAssignValueNeighborhoodMove(value, objValue, this))
+    variable := initValue
+  }
+
+  /** Resets the internal state of the neighborhood */
+  override def reset(): Unit = {}
+
+  override def doMove(move: Move): Unit = {
+    move match {
+      case testAssignNeighborhoodMove: TestAssignValueNeighborhoodMove =>
+        variable := testAssignNeighborhoodMove.newValue
+      case _ =>
+        require(requirement = false, s"Should be a TestAssignNeighborhoodMove but got : $move")
+    }
+  }
+}
+
+case class TestAssignValueNeighborhoodMove(
+  newValue: Long,
+  objValueAfter: Long,
+  testAssignNeighborhood: TestAssignValueNeighborhood
+) extends Move(objValueAfter, testAssignNeighborhood) {
+
+  /** Commits this move. */
+  override def commit(): Unit = {
+    testAssignNeighborhood.doMove(this)
+  }
 }

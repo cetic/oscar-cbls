@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.AcceptAll
-import oscar.cbls.core.search.{MoveFound, VerboseMode}
+import oscar.cbls.core.search.MoveFound
 
 import scala.util.Random
 
@@ -22,14 +22,14 @@ class AcceptAllTestSuite extends AnyFunSuite {
     model.close()
 
     val acceptAll   = AcceptAll(objValue)
-    var exploration = acceptAll.newExploration
+    var exploration = acceptAll.newExploration(new DummySimpleNeighborhood)
     for (_ <- 0 until 100) {
       val newValue = random.nextLong()
       objValue := newValue
       exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
       exploration.toReturn.isInstanceOf[MoveFound] should be(true)
       exploration.toReturn.asInstanceOf[MoveFound].objAfter() should be(newValue)
-      exploration = acceptAll.newExploration
+      exploration = acceptAll.newExploration(new DummySimpleNeighborhood)
     }
   }
 

@@ -2,7 +2,11 @@ package oscar.cbls.visual.profiling
 
 import oscar.cbls.core.search.profiling.SearchProfiler
 
-case class ProfilingTableBranchNode(override val profiler: SearchProfiler, parent: Option[ProfilingTableBranchNode], rowPrefix: Array[String]) extends ProfilingTableNode(profiler, parent, rowPrefix){
+case class ProfilingTableBranchNode(
+  override val profiler: SearchProfiler,
+  parent: Option[ProfilingTableBranchNode],
+  rowPrefix: Array[String]
+) extends ProfilingTableNode(profiler, parent, rowPrefix) {
 
   var children: List[ProfilingTableNode] = List.empty
 
@@ -24,11 +28,11 @@ case class ProfilingTableBranchNode(override val profiler: SearchProfiler, paren
     children.foreach(_.isDisplayed = true)
     children.foreach {
       case b: ProfilingTableBranchNode => b.expandAllUnder()
-      case _ =>
+      case _                           =>
     }
   }
 
-  def collapse(): Unit ={
+  def collapse(): Unit = {
     isExpanded = false
     children.foreach(_.isDisplayed = false)
   }

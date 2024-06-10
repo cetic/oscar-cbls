@@ -103,10 +103,7 @@ class VerboseMode(val verbosityLevel: Int) {
     *   The exploration result
     */
   @inline
-  final def neighborhoodExplored(
-    neighborhood: SimpleNeighborhood,
-    searchResult: SearchResult
-  ): Unit = {
+  final def neighborhoodExplored(neighborhood: Neighborhood, searchResult: SearchResult): Unit = {
     if (verbosityLevel >= 3)
       searchResult match {
         case NoMoveFound   => println(s"$neighborhood : No move found")
@@ -145,7 +142,7 @@ class VerboseMode(val verbosityLevel: Int) {
     forcePrint: Boolean = false
   ): Unit = {
     if (verbosityLevel >= 2) {
-      val prefix_1 = prefix1(newValue,prevValue)
+      val prefix_1 = prefix1(newValue, prevValue)
       val prefix_2 = prefix2(newBestValue, newValue, bestValue)
       println(s"$prefix_1 $prefix_2 $newValue\t$move")
     } else if (verbosityLevel == 1) {
@@ -168,6 +165,7 @@ class VerboseMode(val verbosityLevel: Int) {
   }
 
   @inline
+  /** Prints the last taken moves and the summary of the search */
   final def searchEnded(endValue: Long, moveCount: Int): Unit = {
     if (verbosityLevel == 1) {
       val prefix_1 =

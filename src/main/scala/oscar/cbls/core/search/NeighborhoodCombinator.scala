@@ -13,7 +13,6 @@
 
 package oscar.cbls.core.search
 
-import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.Objective
 import oscar.cbls.core.search.profiling.CombinatorProfiler
 
@@ -24,7 +23,7 @@ abstract class NeighborhoodCombinator(
 
   override val _searchProfiler: CombinatorProfiler = new CombinatorProfiler(this)
 
-  override def getMove(objective: Objective,objValue: IntVariable): SearchResult
+  override def getMove(objective: Objective): SearchResult
 
   override def reset(): Unit = {
     for (n <- subNeighborhoods) n.reset()

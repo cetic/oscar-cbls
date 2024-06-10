@@ -13,9 +13,8 @@
 
 package oscar.cbls.core.search
 
-import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.{Exploration, Objective}
-import oscar.cbls.core.search.profiling.{NeighborhoodProfiler, SearchProfiler}
+import oscar.cbls.core.search.profiling.NeighborhoodProfiler
 
 /** Abstract class for simple neighborhoods.
   *
@@ -28,14 +27,10 @@ abstract class SimpleNeighborhood(neighborhoodName: String) extends Neighborhood
 
   override val _searchProfiler: NeighborhoodProfiler = new NeighborhoodProfiler(this)
 
-  override def getMove(objective: Objective, objValue: IntVariable): SearchResult = {
-    val startValue: Long = objValue.value()
-    _verboseMode.startExploration(neighborhoodName)
-    _searchProfiler.explorationStarted()
-    val exploration = objective.newExploration
+  override def getMove(objective: Objective): SearchResult = {
+    val exploration = objective.newExploration(this)
     exploreNeighborhood(exploration)
-    _searchProfiler.explorationEnded(startValue,exploration.toReturn)
-    _verboseMode.neighborhoodExplored(this, exploration.toReturn)
+    exploration.done()
     exploration.toReturn
   }
 

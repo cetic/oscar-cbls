@@ -19,23 +19,23 @@ package oscar.cbls.core.search.profiling.profilingData
   * be reset upon SelectionCombinator reset action. The first one is never reset and contains the
   * data of the whole search.
   */
-class CommonProfilingData() extends ProfilingData() {
+class CommonProfilingData extends ProfilingData() {
 
-  var _lastCallFound: Boolean     = false
-  var _lastCallGain: Long         = 0L
-  var _lastCallDurationNano: Long = 0L
+  private var _lastCallFound: Boolean     = false
+  private var _lastCallGain: Long         = 0L
+  private var _lastCallDurationNano: Long = 0L
 
-  var _nbCalls: Long                  = 0L
-  var _nbFound: Long                  = 0L
-  var _gain: Long                     = 0L
-  var _timeSpentMoveFoundNano: Long   = 0L
-  var _timeSpentNoMoveFoundNano: Long = 0L
+  private var _nbCalls: Long                  = 0L
+  private var _nbFound: Long                  = 0L
+  private var _gain: Long                     = 0L
+  private var _timeSpentMoveFoundNano: Long   = 0L
+  private var _timeSpentNoMoveFoundNano: Long = 0L
 
-  var _nbCallsForSelection: Long                  = 0L
-  var _nbFoundsForSelection: Long                 = 0L
-  var _gainForSelection: Long                     = 0L
-  var _timeSpentMoveFoundNanoForSelection: Long   = 0L
-  var _timeSpentNoMoveFoundNanoForSelection: Long = 0L
+  private var _nbCallsForSelection: Long                  = 0L
+  private var _nbFoundsForSelection: Long                 = 0L
+  private var _gainForSelection: Long                     = 0L
+  private var _timeSpentMoveFoundNanoForSelection: Long   = 0L
+  private var _timeSpentNoMoveFoundNanoForSelection: Long = 0L
 
   override def merge(other: ProfilingData): Unit = {
     other match {
@@ -90,11 +90,9 @@ class CommonProfilingData() extends ProfilingData() {
   def timeSpentNoMoveFoundMillis: Long = _timeSpentNoMoveFoundNano / 1000000
   def timeSpentMillis: Long = (_timeSpentMoveFoundNano + _timeSpentNoMoveFoundNano) / 1000000
 
-  def nbCallsForSelection: Long                    = _nbCallsForSelection
-  def nbFoundForSelection: Long                    = _nbFoundsForSelection
-  def gainForSelection: Long                       = _gainForSelection
-  def timeSpentMoveFoundMillisForSelection: Long   = _timeSpentMoveFoundNanoForSelection / 1000000
-  def timeSpentNoMoveFoundMillisForSelection: Long = _timeSpentNoMoveFoundNanoForSelection / 1000000
+  def nbFoundForSelection: Long                  = _nbFoundsForSelection
+  def gainForSelection: Long                     = _gainForSelection
+  def timeSpentMoveFoundMillisForSelection: Long = _timeSpentMoveFoundNanoForSelection / 1000000
   def timeSpentMillisForSelection: Long =
     (_timeSpentMoveFoundNanoForSelection + _timeSpentNoMoveFoundNanoForSelection) / 1000000
 
