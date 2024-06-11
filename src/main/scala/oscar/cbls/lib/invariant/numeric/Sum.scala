@@ -90,6 +90,9 @@ class Sum(
       this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, bulkId, model))
   }
 
+  listenedVariablesIndices.registerStaticallyAndDynamicallyListeningElement(this)
+  output.setDefiningInvariant(this)
+
   output := 0
   for (i <- listenedVariablesIndices.value()) {
     input(i).registerDynamicallyListeningElement(this, i)
