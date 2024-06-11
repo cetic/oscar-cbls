@@ -98,6 +98,11 @@ class Prod(
     else nonZeroProduct *= input(i).value()
   }
 
+  listenedVariablesIndices.registerStaticallyAndDynamicallyListeningElement(this)
+  output.setDefiningInvariant(this)
+
+  updateOutput()
+
   @inline
   override def notifyIntChanges(
     intVariable: IntVariable,
