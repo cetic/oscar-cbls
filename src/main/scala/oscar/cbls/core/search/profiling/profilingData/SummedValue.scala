@@ -30,6 +30,6 @@ case class SummedValue() extends CombinatorProfilingData {
     }
   }
 
-  override def collectStatisticsHeaders(): Array[String] = Array("Sum")
-  override def collectStatisticsData(): Array[String]    = Array(_sum.toString)
+  override def collectStatisticsHeaders(): List[String] = List("Sum")
+  override def collectStatisticsData(): List[String]    = List(_sum.toString)
 }

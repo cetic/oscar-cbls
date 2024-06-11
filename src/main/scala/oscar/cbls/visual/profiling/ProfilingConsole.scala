@@ -13,7 +13,7 @@ class ProfilingConsole(rootProfiler: SearchProfiler, headers: Array[String]) {
 
   private val allProfilingTableNodes: Array[ProfilingTableNode] = ProfilingTableNode(rootProfiler)
 
-  private def relevantCombinatorData: List[List[List[String]]] = {
+  private def gatherRelevantCombinatorData: List[List[List[List[String]]]] = {
     allProfilingTableNodes
       .collect(_.profiler match {
         case c: CombinatorProfiler
@@ -27,12 +27,18 @@ class ProfilingConsole(rootProfiler: SearchProfiler, headers: Array[String]) {
     val allData = allProfilingTableNodes.map(_.data())
     val toPrint = Array(headers) ++ allData
     println(Tabulator.format(toPrint.toList.map(_.toList)))
-    println("\n#######################\tCombinators specifics data\t##########################")
-    println(
-      relevantCombinatorData
-        .map(rcd => Tabulator.format(rcd))
-        .mkString("\n----------------------------------------------------------\n")
-    )
+    val allRelevantCombinatorData = gatherRelevantCombinatorData
+    if (allRelevantCombinatorData.nonEmpty) {
+      println("\n#######################\tCombinators specifics data\t##########################")
+      allRelevantCombinatorData.foreach(relevantCombinatorData => {
+        println(relevantCombinatorData.head.head.head)
+        println(
+          relevantCombinatorData.tail
+            .map(rcd => Tabulator.format(rcd))
+            .mkString("\n\n")
+        )
+      })
+    }
   }
 
 }

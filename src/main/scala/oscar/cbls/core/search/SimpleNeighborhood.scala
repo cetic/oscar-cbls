@@ -28,9 +28,12 @@ abstract class SimpleNeighborhood(neighborhoodName: String) extends Neighborhood
   override val _searchProfiler: NeighborhoodProfiler = new NeighborhoodProfiler(this)
 
   override def getMove(objective: Objective): SearchResult = {
-    val exploration = objective.newExploration(this)
+    val exploration = {
+      objective.explorationStarted(this)
+      objective.newExploration(this)
+    }
     exploreNeighborhood(exploration)
-    exploration.done()
+    objective.explorationEnded(this, exploration.toReturn)
     exploration.toReturn
   }
 

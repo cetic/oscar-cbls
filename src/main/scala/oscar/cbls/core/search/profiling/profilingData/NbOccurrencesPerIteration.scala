@@ -59,9 +59,9 @@ case class NbOccurrencesPerIteration(initFirstIteration: Boolean) extends Combin
     }
   }
 
-  override def collectStatisticsHeaders(): Array[String] = {
+  override def collectStatisticsHeaders(): List[String] = {
     nextIteration()
-    Array(
+    List(
       "MinOccurrencePerIteration",
       "MeanOccurrencePerIteration",
       "MaxOccurrencePerIteration",
@@ -70,8 +70,8 @@ case class NbOccurrencesPerIteration(initFirstIteration: Boolean) extends Combin
     )
   }
 
-  override def collectStatisticsData(): Array[String] = {
-    Array(
+  override def collectStatisticsData(): List[String] = {
+    List(
       _minOccurrences.toString,
       ((_summedOccurrences * 1000 / _iterations) / 1000.0).toString,
       _maxOccurrences.toString,

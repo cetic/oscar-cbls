@@ -88,7 +88,7 @@ class VerboseMode(val verbosityLevel: Int) {
     *   The explored Neighborhood
     */
   @inline
-  final def startExploration(neighborhoodName: String): Unit = {
+  final def explorationStarted(neighborhoodName: String): Unit = {
     if (verbosityLevel >= 3)
       println(s"$neighborhoodName : start exploration")
   }
@@ -103,7 +103,7 @@ class VerboseMode(val verbosityLevel: Int) {
     *   The exploration result
     */
   @inline
-  final def neighborhoodExplored(neighborhood: Neighborhood, searchResult: SearchResult): Unit = {
+  final def explorationEnded(neighborhood: Neighborhood, searchResult: SearchResult): Unit = {
     if (verbosityLevel >= 3)
       searchResult match {
         case NoMoveFound   => println(s"$neighborhood : No move found")

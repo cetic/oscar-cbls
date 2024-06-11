@@ -18,12 +18,19 @@ import oscar.cbls.core.search.profiling.CombinatorProfiler
 
 abstract class NeighborhoodCombinator(
   neighborhoodCombinatorName: String,
-  val subNeighborhoods: SimpleNeighborhood*
+  val subNeighborhoods: List[Neighborhood]
 ) extends Neighborhood(neighborhoodCombinatorName) {
 
   override val _searchProfiler: CombinatorProfiler = new CombinatorProfiler(this)
 
-  override def getMove(objective: Objective): SearchResult
+  override def getMove(objective: Objective): SearchResult ={
+    objective.explorationStarted(this)
+    val explorationResult = exploreCombinator(objective)
+    objective.explorationEnded(this, explorationResult)
+    explorationResult
+  }
+
+  protected[this] def exploreCombinator(objective: Objective): SearchResult
 
   override def reset(): Unit = {
     for (n <- subNeighborhoods) n.reset()

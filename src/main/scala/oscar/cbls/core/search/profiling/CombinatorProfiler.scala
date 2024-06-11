@@ -99,15 +99,11 @@ class CombinatorProfiler(val combinator: NeighborhoodCombinator)
   private def collectSpecificStatistic(
     data: mutable.HashMap[String, CombinatorProfilingData]
   ): List[List[String]] =
-    List(
-      if (data.isEmpty) List.empty[String]
+      if (data.isEmpty) List.empty[List[String]]
       else {
-        // TODO map this
-        /*Properties.justifyRightArray(List(Array("Profiled var") ++ data.values.head.collectStatisticsHeaders()) ++
-          data.keys.map(key => Array(key) ++ data(key).collectStatisticsData()))*/
-        List.empty[String]
+        List(List("Profiled var") ::: data.values.head.collectStatisticsHeaders()) :::
+          data.keys.map(key => List(key) ::: data(key).collectStatisticsData()).toList
       }
-    )
 
   protected def mergeSpecificStatistics(other: CombinatorProfiler): Unit = {
     minMeanMaxProfiledData.keys.foreach(key =>
@@ -124,19 +120,19 @@ class CombinatorProfiler(val combinator: NeighborhoodCombinator)
     )
   }
 
-  def collectCombinatorSpecificStatistics: List[List[String]] = {
-    List(List(combinator.getClass.getSimpleName)) :::
+  def collectCombinatorSpecificStatistics: List[List[List[String]]] = {
+    List(List(List(combinator.getClass.getSimpleName)),
       collectSpecificStatistic(
         minMeanMaxProfiledData.asInstanceOf[mutable.HashMap[String, CombinatorProfilingData]]
-      ) :::
+      ),
       collectSpecificStatistic(
         nbOccurrencesPerIterationData.asInstanceOf[mutable.HashMap[String, CombinatorProfilingData]]
-      ) :::
+      ),
       collectSpecificStatistic(
         percentageEventOccurrenceData.asInstanceOf[mutable.HashMap[String, CombinatorProfilingData]]
-      ) :::
+      ),
       collectSpecificStatistic(
         summedValueProfiledData.asInstanceOf[mutable.HashMap[String, CombinatorProfilingData]]
-      )
+      ))
   }
 }

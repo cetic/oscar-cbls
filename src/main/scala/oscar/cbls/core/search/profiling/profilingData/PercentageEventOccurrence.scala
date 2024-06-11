@@ -43,7 +43,7 @@ case class PercentageEventOccurrence() extends CombinatorProfilingData {
     }
   }
 
-  override def collectStatisticsHeaders(): Array[String] = Array("Occurrences", "percentage")
-  override def collectStatisticsData(): Array[String] =
-    Array(_occurrences.toString, (_occurrences / _iterations).toString)
+  override def collectStatisticsHeaders(): List[String] = List("Occurrences", "percentage")
+  override def collectStatisticsData(): List[String] =
+    List(_occurrences.toString, (_occurrences / _iterations).toString)
 }

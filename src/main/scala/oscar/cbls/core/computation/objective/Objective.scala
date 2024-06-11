@@ -60,6 +60,16 @@ abstract class Objective(objValue: IntVariable) {
     _verboseMode.searchStarted(this, objValue)
   }
 
+  def explorationStarted(neighborhood: Neighborhood): Unit = {
+    neighborhood._searchProfiler.explorationStarted(currentObjValue())
+    _verboseMode.explorationStarted(neighborhood.name)
+  }
+
+  def explorationEnded(neighborhood: Neighborhood, explorationResult: SearchResult): Unit = {
+    neighborhood._searchProfiler.explorationEnded(explorationResult)
+    _verboseMode.explorationStarted(neighborhood.name)
+  }
+
   /** Creates a new Exploration instance. Must be called when starting an exploration.
     *
     * @param neighborhood
@@ -120,8 +130,6 @@ abstract class Objective(objValue: IntVariable) {
   * objective value may vary.
   */
 abstract class Exploration(val oldObj: Long, neighborhood: SimpleNeighborhood) {
-  neighborhood._searchProfiler.explorationStarted()
-  neighborhood._verboseMode.startExploration(neighborhood.name)
 
   /** Keeps the best move found during this exploration. Initialized at NoMoveFound. */
   protected var _toReturn: SearchResult = NoMoveFound
@@ -137,9 +145,4 @@ abstract class Exploration(val oldObj: Long, neighborhood: SimpleNeighborhood) {
     */
   def checkNeighbor(buildMove: Long => Move): Unit =
     neighborhood._searchProfiler.neighborExplored()
-
-  def done(): Unit = {
-    neighborhood._searchProfiler.explorationEnded(oldObj, toReturn)
-    neighborhood._verboseMode.neighborhoodExplored(neighborhood, toReturn)
-  }
 }

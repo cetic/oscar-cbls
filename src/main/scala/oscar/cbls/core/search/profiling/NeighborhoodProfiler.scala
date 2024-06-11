@@ -52,9 +52,9 @@ class NeighborhoodProfiler(override val neighborhood: Neighborhood)
   override def avgTimeExplore: String =
     s"${(commonProfilingData.timeSpentMillis.toDouble / commonProfilingData.nbExplored * 1000).round / 1000.0}"
 
-  override def explorationStarted(): Unit = {
+  override def explorationStarted(startValue: Long): Unit = {
     firstNeighborSelection = true
-    super.explorationStarted()
+    super.explorationStarted(startValue)
   }
 
   def neighborExplored(): Unit = {

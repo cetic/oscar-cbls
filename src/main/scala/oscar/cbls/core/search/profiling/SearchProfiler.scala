@@ -36,9 +36,12 @@ class SearchProfiler(val neighborhood: Neighborhood) {
   protected var explorationPausedAt         = 0L
   protected var explorationResumedAt        = 0L
 
+  private var startValue: Long = 0L
+
   def subProfilers: List[SearchProfiler] = List.empty
 
-  def explorationStarted(): Unit = {
+  def explorationStarted(startValue: Long): Unit = {
+    this.startValue = startValue
     commonProfilingData.callInc()
     startExplorationAt = System.nanoTime()
     explorationPausedAt = 0L
@@ -57,7 +60,7 @@ class SearchProfiler(val neighborhood: Neighborhood) {
   // Resume the exploration (mandatory to have a proper exploration duration within the dynAndThen combinator)
   def explorationResumed(): Unit = explorationResumedAt = System.nanoTime()
 
-  def explorationEnded(startValue: Long, explorationResult: SearchResult): Unit = {
+  def explorationEnded(explorationResult: SearchResult): Unit = {
     val timeSpent = currentExplorationTimeSpent + System.nanoTime() - Math.max(
       startExplorationAt,
       explorationResumedAt

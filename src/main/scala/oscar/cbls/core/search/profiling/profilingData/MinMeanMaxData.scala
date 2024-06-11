@@ -45,11 +45,11 @@ case class MinMeanMaxData() extends CombinatorProfilingData {
     }
   }
 
-  override def collectStatisticsHeaders(): Array[String] =
-    Array("Min", "Mean", "Max", "Sum", "Count")
+  override def collectStatisticsHeaders(): List[String] =
+    List("Min", "Mean", "Max", "Sum", "Count")
 
-  override def collectStatisticsData(): Array[String] = {
-    Array(
+  override def collectStatisticsData(): List[String] = {
+    List(
       _min.toString,
       if (_count != 0) ((_sum * 1000 / _count) / 1000.0).toString else "NA",
       _max.toString,
