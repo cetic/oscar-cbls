@@ -132,7 +132,8 @@ class Sum(
       output.pendingValue == expectedSum,
       s"checkInternals fails in ${name()}. " +
         s"output != the sum of the listened variables. " +
-        s"output: ${output.pendingValue} - listened variables: ${listenedVariables.mkString("", ", ", "")}"
+        s"output: ${output.pendingValue} - expected sum: $expectedSum " +
+        s"- listened variables: ${listenedVariables.mkString("", ", ", "")}"
     )
   }
 
