@@ -30,7 +30,7 @@ object SumConst {
     *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
     *   the sum.
     * @param output
-    *   The output [[IntVariable]] containing Sum(input(i) | i in listenedValuesIndices).
+    *   The output [[IntVariable]] containing Sum(input(i) | i in listenedValuesIndices}.
     * @param name
     *   The name (optional) of your Invariant.
     */
@@ -45,7 +45,7 @@ object SumConst {
   }
 }
 
-/** [[Invariant]] that maintains Sum(input(i) | i in listenedValuesIndices}. Update is in O(1).
+/** [[Invariant]] that maintains Sum(input(i) | i in listenedValuesIndices}
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -55,7 +55,7 @@ object SumConst {
   *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
   *   the sum.
   * @param output
-  *   The output [[IntVariable]] containing Sum(input(i) | i in listenedValuesIndices).
+  *   The output [[IntVariable]] containing Sum(input(i) | i in listenedValuesIndices}.
   * @param name
   *   The name (optional) of your Invariant.
   */
