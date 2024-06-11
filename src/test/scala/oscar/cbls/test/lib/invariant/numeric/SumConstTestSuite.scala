@@ -18,7 +18,7 @@ import org.scalatest.matchers.should.Matchers
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.{IntConstant, IntVariable}
 import oscar.cbls.core.computation.set.SetVariable
-import oscar.cbls.lib.invariant.numeric.{Sum, SumConst}
+import oscar.cbls.lib.invariant.numeric.SumConst
 
 class SumConstTestSuite extends AnyFunSuite with Matchers {
 
