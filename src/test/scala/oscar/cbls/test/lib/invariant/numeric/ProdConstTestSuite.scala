@@ -89,6 +89,6 @@ class ProdConstTestSuite extends AnyFunSuite with Matchers {
     lvi :-= 3
     store.propagate()
 
-    noException should be thrownBy inv.checkInternals()
+    inv.checkInternals()
   }
 }
