@@ -62,9 +62,9 @@ class MinMaxSetTestSuite extends AnyFunSuite with Matchers {
   }
 
   test("MaxSet: remove no impacting value") {
-    val (_, input, output, _) = testMinMaxSet(isMin = true)
-    input :-= 4
-    output.value() should be(3)
+    val (_, input, output, _) = testMinMaxSet(isMin = false)
+    input :-= 3
+    output.value() should be(4)
   }
 
   test("MinSet: insert new min") {
@@ -86,7 +86,7 @@ class MinMaxSetTestSuite extends AnyFunSuite with Matchers {
     output.value() should be(4)
   }
 
-  test("MinSet: remove the max") {
+  test("MaxSet: remove the max") {
     val (_, input, output, _) = testMinMaxSet(isMin = false)
     input :-= 4
     output.isScheduled should be(true)

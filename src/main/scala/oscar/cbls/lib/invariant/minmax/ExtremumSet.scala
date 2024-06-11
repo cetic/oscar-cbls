@@ -44,7 +44,7 @@ abstract class ExtremumSet(
   input.registerStaticallyAndDynamicallyListeningElement(this)
   output.setDefiningInvariant(this)
 
-  /** Method to know if a is better than b */
+  /** Checks if a is better than b */
   protected def better(a: Long, b: Long): Boolean
 
   performPropagation()

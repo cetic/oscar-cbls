@@ -26,7 +26,7 @@ object MaxConst {
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
     *   An array of [[IntConstant]]
-    * @param cond
+    * @param listenedValuesIndices
     *   A [[SetVariable]] containing the indices of the input variables to be observed to calculate
     *   the extremum.
     * @param output
@@ -39,25 +39,27 @@ object MaxConst {
   def apply(
     model: Store,
     input: Array[IntConstant],
-    cond: SetVariable,
+    listenedValuesIndices: SetVariable,
     output: IntVariable,
     maxBacklog: Int = Int.MinValue,
     name: Option[String] = None
   ): MaxConst = {
-    new MaxConst(model, input, cond, output, maxBacklog, name)
+    new MaxConst(model, input, listenedValuesIndices, output, maxBacklog, name)
   }
 }
 
 /** [[oscar.cbls.core.computation.Invariant]] that maintains Max(input(i) | i in cond). This
   * invariant is lazy and maintains a todo list of postponed updates. Update is in O (log(n)) in
   * worst case. If the update does not impact the output, it is postponed in O(1). Otherwise, it is
-  * performed in O(log(n)). It faster for neighborhood exploration with moves and backtracks.
+  * performed in O(log(n)). When a removed index is considered and does not impact the extremum, it
+  * goes in the backlog as well, to be removed later. It is faster for neighborhood exploration with
+  * moves and backtracks.
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
   *   An array of [[IntConstant]]
-  * @param cond
+  * @param listenedValuesIndices
   *   A [[SetVariable]] containing the indices of the input variables to be observed to calculate
   *   the extremum.
   * @param output
@@ -70,11 +72,19 @@ object MaxConst {
 class MaxConst(
   model: Store,
   input: Array[IntConstant],
-  cond: SetVariable,
+  listenedValuesIndices: SetVariable,
   output: IntVariable,
   maxBacklog: Int = Int.MinValue,
   name: Option[String] = None
-) extends ExtremumConst(model, input, cond, output, Long.MinValue, maxBacklog, name) {
+) extends ExtremumConst(
+      model,
+      input,
+      listenedValuesIndices,
+      output,
+      Long.MinValue,
+      maxBacklog,
+      name
+    ) {
 
   override protected def ord(v: IntVariable): Long = -v.value()
 

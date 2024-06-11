@@ -23,14 +23,15 @@ import scala.collection.mutable
 /** Abstract [[Invariant]] that maintains Extremum(input(i) | i in cond). Exact ordering is
   * specified by implementing abstract method of the class. This invariant is lazy and maintains a
   * todo list of postponed updates. Update is in O (log(n)) in worst case. If the update does not
-  * impact the output, it is postponed in O(1). Otherwise, it is performed in O(log(n)). It faster
-  * for neighborhood exploration with moves and backtracks.
+  * impact the output, it is postponed in O(1). Otherwise, it is performed in O(log(n)). When a
+  * removed index is considered and does not impact the extremum, it goes in the backlog as well, to
+  * be removed later. It is faster for neighborhood exploration with moves and backtracks.
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
   *   An array of [[IntConstant]]
-  * @param cond
+  * @param listenedValuesIndices
   *   A [[SetVariable]] containing the indices of the input variables to be observed to calculate
   *   the extremum.
   * @param output
@@ -45,7 +46,7 @@ import scala.collection.mutable
 abstract class ExtremumConst(
   model: Store,
   input: Array[IntConstant],
-  cond: SetVariable,
+  listenedValuesIndices: SetVariable,
   output: IntVariable,
   default: Long,
   maxBacklog: Int,
@@ -53,24 +54,24 @@ abstract class ExtremumConst(
 ) extends Invariant(model, name)
     with SetNotificationTarget {
 
-  // Use to stock the indices of the considered variables. All operation are in O(log(n))
+  // Use to stock the indices of the considered variables. All operations are in O(log(n))
   private[this] val h: BinaryHeapWithMoveIntItem =
     BinaryHeapWithMoveIntItem((i: Int) => ord(input(i)), input.length, input.length)
 
-  // Use to postpone not impacting updates
+  // Used to postpone not impacting updates
   private[this] var backlog: mutable.Queue[Int] = mutable.Queue()
   private[this] var backlogSize: Int            = 0
-  // Tell if the postponed update have to be performed
+  // Tells if the postponed update have to be performed
   private[this] val isBacklogged: Array[Boolean] = Array.fill(input.length)(false)
-  // Tell which value are used to compute the extremum
+  // Tells which value are used to compute the extremum
   private[this] val consideredValue: Array[Boolean] = Array.fill(input.length)(false)
 
-  for (i <- cond.value()) {
+  for (i <- listenedValuesIndices.value()) {
     h.insert(i)
     consideredValue(i) = true // A value is considered if and only if it is in h
   }
 
-  cond.registerStaticallyAndDynamicallyListeningElement(this)
+  listenedValuesIndices.registerStaticallyAndDynamicallyListeningElement(this)
   output.setDefiningInvariant(this)
 
   updateFromHeap()
@@ -93,16 +94,14 @@ abstract class ExtremumConst(
   }
 
   override def checkInternals(): Unit = {
-    if (cond.value().nonEmpty) {
+    if (listenedValuesIndices.value().nonEmpty) {
       // We get {input(i) | i in cond}
-      var observedVariables: Array[IntVariable] = new Array[IntVariable](0)
-      for (i: Int <- cond.value()) observedVariables = observedVariables :+ input(i)
-
+      val listenedValues: Set[IntConstant] = listenedValuesIndices.value().map(i => input(i))
       require(
-        output.pendingValue == observedVariables.minBy(ord).value(),
+        output.pendingValue == listenedValues.minBy(ord).value(),
         s"checkInternals fails in invariant ${name()}. " +
           s"output != min/max of observed variables. " +
-          s"output: ${output.pendingValue} - observed variables: ${observedVariables.mkString("", ", ", "")}"
+          s"output: ${output.pendingValue} - observed variables: ${listenedValues.mkString("", ", ", "")}"
       )
     } else {
       require(h.isEmpty)
@@ -126,11 +125,12 @@ abstract class ExtremumConst(
 
   @inline
   private[this] def notifyInsertOn(set: SetVariable, index: Int): Unit = {
-    assert(set == cond)
+    assert(set == listenedValuesIndices)
     if (consideredValue(index)) {
       // We wanted to remove first a considered value that didn't impact the extremum.
       // This value was put into the backlog and was always considered.
-      // Now we want to reinsert this value. We have nothing to do. It is already in the heap.
+      // Now we want to reinsert this value. We have nothing to do except from unmark it as
+      // backlogged. It is already in the heap.
       assert(isBacklogged(index))
       isBacklogged(index) = false
     } else if (notImpactingExtremum(input(index))) {
@@ -148,11 +148,12 @@ abstract class ExtremumConst(
 
   @inline
   private[this] def notifyDeleteOn(set: SetVariable, index: Int): Unit = {
-    assert(set == cond)
+    assert(set == listenedValuesIndices)
     if (!consideredValue(index)) {
       // We wanted to insert first a value that didn't impact the extremum.
       // This value was put into the backlog and was not considered.
-      // Now, we want to remove this value. We have nothing to do. It was never considered.
+      // Now, we want to remove this value. We have nothing to do except from unmark it as
+      // backlogged. It was never considered.
       assert(isBacklogged(index))
       isBacklogged(index) = false
     } else if (output.pendingValue == input(index).value() && consideredValue(index)) {
@@ -225,7 +226,7 @@ abstract class ExtremumConst(
     * @return
     *   all the private fields useful for testing
     */
-  protected def currentBacklogSates()
+  protected def currentBacklogStates()
     : (BinaryHeapWithMoveIntItem, mutable.Queue[Int], Array[Boolean], Array[Boolean]) =
     (h, backlog, isBacklogged, consideredValue)
 

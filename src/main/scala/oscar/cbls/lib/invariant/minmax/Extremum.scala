@@ -25,7 +25,7 @@ import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
   *   An [[Array]] of [[IntVariable]].
-  * @param cond
+  * @param listenedVariablesIndices
   *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
   *   the extremum.
   * @param output
@@ -34,7 +34,7 @@ import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
   *   The default value of the extremum.
   * @param bulkIdentifier
   *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
-  *   [[IncredibleBulk]] are distinguished only by their identifier.Be sure to use the same one if
+  *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one if
   *   you're referencing the same variables.
   * @param name
   *   The name (optional) of your Invariant.
@@ -42,7 +42,7 @@ import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 abstract class Extremum(
   model: Store,
   input: Array[IntVariable],
-  cond: SetVariable,
+  listenedVariablesIndices: SetVariable,
   output: IntVariable,
   default: Long,
   bulkIdentifier: Option[String] = None,
@@ -53,7 +53,7 @@ abstract class Extremum(
 
   private[this] val keysForRemoval: Array[KeyForRemoval[_]] = new Array(input.length)
 
-  // Use to stock the indices of the listened variables. All operation are in O(log(n))
+  // Use to stock the indices of the listened variables. All operations are in O(log(n))
   private[this] val h: BinaryHeapWithMoveIntItem =
     BinaryHeapWithMoveIntItem((i: Int) => ord(input(i)), input.length, input.length)
 
@@ -66,12 +66,12 @@ abstract class Extremum(
       this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, bulkId, model))
   }
 
-  for (i <- cond.value()) {
+  for (i <- listenedVariablesIndices.value()) {
     h.insert(i)
     keysForRemoval(i) = input(i).registerDynamicallyListeningElement(this, i)
   }
 
-  cond.registerStaticallyAndDynamicallyListeningElement(this)
+  listenedVariablesIndices.registerStaticallyAndDynamicallyListeningElement(this)
   output.setDefiningInvariant(this)
 
   h.getFirst match {
@@ -106,10 +106,10 @@ abstract class Extremum(
   }
 
   override def checkInternals(): Unit = {
-    if (cond.value().nonEmpty) {
+    if (listenedVariablesIndices.value().nonEmpty) {
       // We get {input(i) | i in cond}
-      var listenedVariables: Array[IntVariable] = new Array[IntVariable](0)
-      for (i: Int <- cond.value()) listenedVariables = listenedVariables :+ input(i)
+      val listenedVariables: Set[IntVariable] =
+        listenedVariablesIndices.value().map(i => input(i))
 
       require(
         output.pendingValue == listenedVariables.minBy(ord).value(),
@@ -130,7 +130,7 @@ abstract class Extremum(
 
   @inline
   private[this] def notifyInsertOn(set: SetVariable, index: Int): Unit = {
-    assert(set == cond)
+    assert(set == listenedVariablesIndices)
 
     keysForRemoval(index) = input(index).registerDynamicallyListeningElement(this, index)
     h.insert(index)
@@ -139,7 +139,7 @@ abstract class Extremum(
 
   @inline
   private[this] def notifyDeleteOn(set: SetVariable, index: Int): Unit = {
-    assert(set == cond)
+    assert(set == listenedVariablesIndices)
 
     keysForRemoval(index).delete()
     keysForRemoval(index) = null

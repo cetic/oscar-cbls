@@ -27,16 +27,16 @@ class MinMaxTestSuite extends AnyFunSuite with Matchers {
     isMin: Boolean,
     set: Set[Int]
   ): (Store, Array[IntVariable], SetVariable, IntVariable, Extremum) = {
-    val store                     = new Store(debugLevel = 3)
-    val input: Array[IntVariable] = Array.range(0, 6).map(i => IntVariable(store, i))
-    val cond: SetVariable         = SetVariable(store, set)
-    val output: IntVariable       = IntVariable(store, 42)
+    val store                                 = new Store(debugLevel = 3)
+    val input: Array[IntVariable]             = Array.range(0, 6).map(i => IntVariable(store, i))
+    val listenedVariablesIndices: SetVariable = SetVariable(store, set)
+    val output: IntVariable                   = IntVariable(store, 42)
     val inv: Extremum =
-      if (isMin) Min(store, input, cond, output)
-      else Max(store, input, cond, output)
+      if (isMin) Min(store, input, listenedVariablesIndices, output)
+      else Max(store, input, listenedVariablesIndices, output)
     store.close()
 
-    (store, input, cond, output, inv)
+    (store, input, listenedVariablesIndices, output, inv)
   }
 
   test("Min invariant initialisation works as expected.") {
@@ -108,76 +108,76 @@ class MinMaxTestSuite extends AnyFunSuite with Matchers {
   }
 
   test("Min: adding a variable that doesn't change the min") {
-    val (_, _, cond, output, _) = testMinMax(isMin = true, Set(1, 3, 5))
-    cond :+= 4
+    val (_, _, listenedVariablesIndices, output, _) = testMinMax(isMin = true, Set(1, 3, 5))
+    listenedVariablesIndices :+= 4
     output.value() should be(1)
   }
 
   test("Min: removing the min") {
-    val (_, _, cond, output, _) = testMinMax(isMin = true, Set(1, 3, 5))
-    cond :-= 1
+    val (_, _, listenedVariablesIndices, output, _) = testMinMax(isMin = true, Set(1, 3, 5))
+    listenedVariablesIndices :-= 1
     output.value() should be(3)
   }
 
   test("Min: adding a smaller value") {
-    val (_, _, cond, output, _) = testMinMax(isMin = true, Set(1, 3, 5))
-    cond :+= 0
+    val (_, _, listenedVariablesIndices, output, _) = testMinMax(isMin = true, Set(1, 3, 5))
+    listenedVariablesIndices :+= 0
     output.value() should be(0)
   }
 
   test("Min: removing a value other than the min") {
-    val (_, _, cond, output, _) = testMinMax(isMin = true, Set(1, 3, 5))
-    cond :-= 3
+    val (_, _, listenedVariablesIndices, output, _) = testMinMax(isMin = true, Set(1, 3, 5))
+    listenedVariablesIndices :-= 3
     output.value() should be(1)
   }
 
   test("Min: removing all value") {
-    val (_, _, cond, output, _) = testMinMax(isMin = true, Set(1, 3, 5))
-    cond :-= 1
-    cond :-= 3
-    cond :-= 5
+    val (_, _, listenedVariablesIndices, output, _) = testMinMax(isMin = true, Set(1, 3, 5))
+    listenedVariablesIndices :-= 1
+    listenedVariablesIndices :-= 3
+    listenedVariablesIndices :-= 5
     output.value() should be(Long.MaxValue)
   }
 
   test("Max: adding a variable that doesn't change the max") {
-    val (_, _, cond, output, _) = testMinMax(isMin = false, Set(0, 2, 4))
-    cond :+= 1
+    val (_, _, listenedVariablesIndices, output, _) = testMinMax(isMin = false, Set(0, 2, 4))
+    listenedVariablesIndices :+= 1
     output.value() should be(4)
   }
 
   test("Max: removing the max") {
-    val (_, _, cond, output, _) = testMinMax(isMin = false, Set(0, 2, 4))
-    cond :-= 4
+    val (_, _, listenedVariablesIndices, output, _) = testMinMax(isMin = false, Set(0, 2, 4))
+    listenedVariablesIndices :-= 4
     output.value() should be(2)
   }
 
   test("Max: adding a bigger value") {
-    val (_, _, cond, output, _) = testMinMax(isMin = false, Set(0, 2, 4))
-    cond :+= 5
+    val (_, _, listenedVariablesIndices, output, _) = testMinMax(isMin = false, Set(0, 2, 4))
+    listenedVariablesIndices :+= 5
     output.value() should be(5)
   }
 
   test("Max: removing a value other than the max") {
-    val (_, _, cond, output, _) = testMinMax(isMin = false, Set(0, 2, 4))
-    cond :-= 2
+    val (_, _, listenedVariablesIndices, output, _) = testMinMax(isMin = false, Set(0, 2, 4))
+    listenedVariablesIndices :-= 2
     output.value() should be(4)
   }
 
   test("Max: removing all the value") {
-    val (_, _, cond, output, _) = testMinMax(isMin = false, Set(0, 2, 4))
-    cond :-= 0
-    cond :-= 2
-    cond :-= 4
+    val (_, _, listenedVariablesIndices, output, _) = testMinMax(isMin = false, Set(0, 2, 4))
+    listenedVariablesIndices :-= 0
+    listenedVariablesIndices :-= 2
+    listenedVariablesIndices :-= 4
     output.value() should be(Long.MinValue)
   }
 
   test("Min: checkInternals doesn't fail") {
-    val (store, input, cond, _, minInv) = testMinMax(isMin = true, Set(2, 3))
-    cond :+= 1
-    cond :+= 4
+    val (store, input, listenedVariablesIndices, _, minInv) = testMinMax(isMin = true, Set(2, 3))
+    listenedVariablesIndices :+= 1
+    listenedVariablesIndices :+= 4
     input(2) := -5
     input(3) := -1
-    cond :-= 2
+    listenedVariablesIndices :-= 2
     store.propagate()
 
     noException should be thrownBy minInv.checkInternals()
@@ -192,12 +192,12 @@ class MinMaxTestSuite extends AnyFunSuite with Matchers {
   }
 
   test("Max: checkInternals doesn't fail") {
-    val (store, input, cond, _, maxInv) = testMinMax(isMin = false, Set(2, 3))
-    cond :+= 1
-    cond :+= 4
+    val (store, input, listenedVariablesIndices, _, maxInv) = testMinMax(isMin = false, Set(2, 3))
+    listenedVariablesIndices :+= 1
+    listenedVariablesIndices :+= 4
     input(2) := 15
     input(3) := 12
-    cond :-= 2
+    listenedVariablesIndices :-= 2
     store.propagate()
 
     noException should be thrownBy maxInv.checkInternals()
@@ -211,12 +211,12 @@ class MinMaxTestSuite extends AnyFunSuite with Matchers {
     an[IllegalArgumentException] should be thrownBy maxInv.checkInternals()
   }
 
-  test("Min: checkInternals doesn't fail with empty cond") {
+  test("Min: checkInternals doesn't fail with empty listenedVariablesIndices") {
     val (_, _, _, _, minInv) = testMinMax(isMin = true, Set.empty)
     noException should be thrownBy minInv.checkInternals()
   }
 
-  test("Max: checkInternals doesn't fail with empty cond") {
+  test("Max: checkInternals doesn't fail with empty listenedVariablesIndices") {
     val (_, _, _, _, maxInv) = testMinMax(isMin = false, Set.empty)
     noException should be thrownBy maxInv.checkInternals()
   }

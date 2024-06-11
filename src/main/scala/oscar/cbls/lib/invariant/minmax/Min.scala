@@ -26,7 +26,7 @@ object Min {
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
     *   An [[Array]] of [[IntVariable]].
-    * @param cond
+    * @param listenedVariablesIndices
     *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
     *   the minimum.
     * @param output
@@ -41,12 +41,12 @@ object Min {
   def apply(
     model: Store,
     input: Array[IntVariable],
-    cond: SetVariable,
+    listenedVariablesIndices: SetVariable,
     output: IntVariable,
     bulkIdentifier: Option[String] = None,
     name: Option[String] = None
   ): Min = {
-    new Min(model, input, cond, output, bulkIdentifier, name)
+    new Min(model, input, listenedVariablesIndices, output, bulkIdentifier, name)
   }
 
 }
@@ -57,7 +57,7 @@ object Min {
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
   *   An [[Array]] of [[IntVariable]].
-  * @param cond
+  * @param listenedVariablesIndices
   *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
   *   the minimum.
   * @param output
@@ -72,11 +72,19 @@ object Min {
 class Min(
   model: Store,
   input: Array[IntVariable],
-  cond: SetVariable,
+  listenedVariablesIndices: SetVariable,
   output: IntVariable,
   bulkIdentifier: Option[String],
   name: Option[String] = None
-) extends Extremum(model, input, cond, output, Long.MaxValue, bulkIdentifier, name) {
+) extends Extremum(
+      model,
+      input,
+      listenedVariablesIndices,
+      output,
+      Long.MaxValue,
+      bulkIdentifier,
+      name
+    ) {
 
   override protected def ord(v: IntVariable): Long = {
     v.value() // The smallest value must have the smallest priority in the heap
