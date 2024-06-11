@@ -130,7 +130,7 @@ class Sum(
 
     require(
       output.pendingValue == expectedSum,
-      s"checkInternals fails in ${name()}. " +
+      s"checkInternals fails in invariant ${name()}. " +
         s"output != the sum of the listened variables. " +
         s"output: ${output.pendingValue} - expected sum: $expectedSum " +
         s"- listened variables: ${listenedVariables.mkString("", ", ", "")}"
