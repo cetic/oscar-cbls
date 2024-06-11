@@ -20,12 +20,12 @@ import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 
 import scala.collection.mutable
 
-/** Abstract [[Invariant]] that maintains Extremum(input(i) | i in cond). Exact ordering is
-  * specified by implementing abstract method of the class. This invariant is lazy and maintains a
-  * todo list of postponed updates. Update is in O (log(n)) in worst case. If the update does not
-  * impact the output, it is postponed in O(1). Otherwise, it is performed in O(log(n)). When a
-  * removed index is considered and does not impact the extremum, it goes in the backlog as well, to
-  * be removed later. It is faster for neighborhood exploration with moves and backtracks.
+/** Abstract [[Invariant]] that maintains Extremum(input(i) | i in listenedVariablesIndices). Exact
+  * ordering is specified by implementing abstract method of the class. This invariant is lazy and
+  * maintains a todo list of postponed updates. Update is in O (log(n)) in worst case. If the update
+  * does not impact the output, it is postponed in O(1). Otherwise, it is performed in O(log(n)).
+  * When a removed index is considered and does not impact the extremum, it goes in the backlog as
+  * well, to be removed later. It is faster for neighborhood exploration with moves and backtracks.
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -95,7 +95,7 @@ abstract class ExtremumConst(
 
   override def checkInternals(): Unit = {
     if (listenedValuesIndices.value().nonEmpty) {
-      // We get {input(i) | i in cond}
+      // We get {input(i) | i in listenedVariablesIndices}
       val listenedValues: Set[IntConstant] = listenedValuesIndices.value().map(i => input(i))
       require(
         output.pendingValue == listenedValues.minBy(ord).value(),

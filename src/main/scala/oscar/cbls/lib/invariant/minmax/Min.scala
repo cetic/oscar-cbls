@@ -51,7 +51,8 @@ object Min {
 
 }
 
-/** [[Invariant]] that maintains Min((input(i) | i in cond). Update is in O(log(n))
+/** [[Invariant]] that maintains Min((input(i) | i in listenedVariablesIndices). Update is in
+  * O(log(n))
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
