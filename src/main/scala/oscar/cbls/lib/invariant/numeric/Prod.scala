@@ -91,8 +91,6 @@ class Prod(
     assert(set == listeningVariablesIndices)
 
     keysForRemoval(index) = input(index).registerDynamicallyListeningElement(this, index)
-
-    if (input(index).pendingValue == 0)
   }
 
 
