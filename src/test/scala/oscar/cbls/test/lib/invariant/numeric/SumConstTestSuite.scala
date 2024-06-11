@@ -56,5 +56,4 @@ class SumConstTestSuite extends AnyFunSuite with Matchers {
 
     noException should be thrownBy inv.checkInternals()
   }
-
 }
