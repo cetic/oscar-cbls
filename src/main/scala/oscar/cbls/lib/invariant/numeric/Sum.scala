@@ -95,7 +95,7 @@ class Sum(
 
   output := 0
   for (i <- listenedVariablesIndices.value()) {
-    input(i).registerDynamicallyListeningElement(this, i)
+    keysForRemoval(i) = input(i).registerDynamicallyListeningElement(this, i)
     output :+= input(i).value()
   }
 
