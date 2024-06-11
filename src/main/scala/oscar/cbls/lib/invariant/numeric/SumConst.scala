@@ -45,7 +45,7 @@ object SumConst {
   }
 }
 
-/** [[Invariant]] that maintains Sum(input(i) | i in listenedValuesIndices}
+/** [[Invariant]] that maintains Sum(input(i) | i in listenedValuesIndices}. Update is in O(1).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
