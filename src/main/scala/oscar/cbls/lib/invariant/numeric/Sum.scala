@@ -17,63 +17,23 @@ import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, St
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 
-/** Companion object of the [[Sum]] class. */
-object Sum {
 
-  /** Creates a [[Sum]] invariant
-    *
-    * @param model
-    *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
-    * @param input
-    *   An [[Array]] of [[IntVariable]].
-    * @param listenedVariablesIndices
-    *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
-    *   the sum.
-    * @param output
-    *   The output [[IntVariable]] containing Sum(input(i) | i in listenedVariablesIndices).
-    * @param bulkIdentifier
-    *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
-    *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one
-    *   if you're referencing the same variables.
-    * @param name
-    *   The name (optional) of your Invariant.
-    */
-  def apply(
-    model: Store,
-    input: Array[IntVariable],
-    listenedVariablesIndices: SetVariable,
-    output: IntVariable,
-    bulkIdentifier: Option[String] = None,
-    name: Option[String] = None
-  ): Sum = {
-    new Sum(model, input, listenedVariablesIndices, output, bulkIdentifier, name)
-  }
-}
-
-/** [[Invariant]] that maintains Sum(input(i) | i in listenedVariablesIndices}. Update is in O(1).
-  *
-  * @param model
-  *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
-  * @param input
-  *   An [[Array]] of [[IntVariable]].
-  * @param listenedVariablesIndices
-  *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
-  *   the sum.
-  * @param output
-  *   The output [[IntVariable]] containing Sum(input(i) | i in listenedVariablesIndices).
-  * @param bulkIdentifier
-  *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
-  *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one if
-  *   you're referencing the same variables.
-  * @param name
-  *   The name (optional) of your Invariant.
-  */
+/** [[Invariant]] that maintains Sum(input(i) | i in listenedVariablesIndices}
+ *
+ * @param model
+ * @param input
+ * @param listenedVariablesIndices
+ * @param output
+ * @param bulkIdentifier
+ * @param name
+ *   The name (optional) of your Invariant
+ */
 class Sum(
   model: Store,
   input: Array[IntVariable],
   listenedVariablesIndices: SetVariable,
   output: IntVariable,
-  bulkIdentifier: Option[String] = None,
+  bulkIdentifier: Option[String],
   name: Option[String] = None
 ) extends Invariant(model, name)
     with IntNotificationTarget
@@ -86,16 +46,13 @@ class Sum(
       // No bulk is used
       for (vars <- input) this.registerStaticallyListenedElement(vars)
     case Some(bulkId) =>
-      // Register static dependencies via a bulk
+      // Register static dependency via a bulk
       this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, bulkId, model))
   }
 
-  listenedVariablesIndices.registerStaticallyAndDynamicallyListeningElement(this)
-  output.setDefiningInvariant(this)
-
   output := 0
   for (i <- listenedVariablesIndices.value()) {
-    keysForRemoval(i) = input(i).registerDynamicallyListeningElement(this, i)
+    input(i).registerDynamicallyListeningElement(this, i)
     output :+= input(i).value()
   }
 
@@ -124,16 +81,14 @@ class Sum(
   }
 
   override def checkInternals(): Unit = {
-    val listenedVariables: Set[IntVariable] =
-      listenedVariablesIndices.value().map(i => input(i))
-    val expectedSum = listenedVariables.foldLeft(0L)((acc: Long, x: IntVariable) => acc + x.value())
+    val listenedVariables: Set[Long] = listenedVariablesIndices.value().map(i => input(i).value())
+    val expectedSum = listenedVariables.foldLeft(0L)((acc, i) => acc + listenedVariables(i))
 
     require(
       output.pendingValue == expectedSum,
-      s"checkInternals fails in invariant ${name()}. " +
+      s"checkInternals fails in ${name()}. " +
         s"output != the sum of the listened variables. " +
-        s"output: ${output.pendingValue} - expected sum: $expectedSum " +
-        s"- listened variables: ${listenedVariables.mkString("", ", ", "")}"
+        s"output: ${output.pendingValue} - listened variables: ${listenedVariables.mkString("", ", ", "")}"
     )
   }
 
