@@ -166,7 +166,7 @@ class Prod(
 
     keysForRemoval(index) = input(index).registerDynamicallyListeningElement(this, index)
 
-    if (input(index).value() == 0) numberOfZeroFactors += 0
+    if (input(index).value() == 0) numberOfZeroFactors += 1
     else nonZeroProduct *= input(index).value()
 
     updateOutput()
@@ -179,7 +179,7 @@ class Prod(
     keysForRemoval(index).delete()
     keysForRemoval(index) = null
 
-    if (input(index).value() == 0) numberOfZeroFactors -= 0
+    if (input(index).value() == 0) numberOfZeroFactors -= 1
     else nonZeroProduct /= input(index).value()
 
     updateOutput()
