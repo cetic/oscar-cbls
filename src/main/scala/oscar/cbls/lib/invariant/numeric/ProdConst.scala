@@ -17,46 +17,6 @@ import oscar.cbls.core.computation.{Invariant, Store}
 import oscar.cbls.core.computation.integer.{IntConstant, IntVariable}
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 
-/** Companion object of the [[ProdConst]] class. */
-object ProdConst {
-
-  /** Creates a [[ProdConst]] invariant
-   *
-   * @param model
-   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
-   * @param input
-   *   An [[Array]] of [[IntConstant]].
-   * @param listenedValuesIndices
-   *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
-   *   the product.
-   * @param output
-   *   The output [[IntVariable]] containing Prod(input(i) | i in listenedValuesIndices).
-   * @param name
-   *   The name (optional) of your Invariant.
-   */
-  def apply(model: Store,
-            input: Array[IntConstant],
-            listenedValuesIndices: SetVariable,
-            output: IntVariable,
-            name: Option[String] = None): ProdConst = {
-    new ProdConst(model, input, listenedValuesIndices, output, name)
-  }
-}
-
-/** [[Invariant]] that maintains Prod(input(i) | i in listenedValuesIndices}. Update is in O(1).
-  *
-  * @param model
-  *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
-  * @param input
-  *   An [[Array]] of [[IntConstant]].
-  * @param listenedValuesIndices
-  *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
-  *   the product.
-  * @param output
-  *   The output [[IntVariable]] containing Prod(input(i) | i in listenedValuesIndices).
-  * @param name
-  *   The name (optional) of your Invariant.
-  */
 class ProdConst(
   model: Store,
   input: Array[IntConstant],
@@ -67,9 +27,9 @@ class ProdConst(
     with SetNotificationTarget {
 
   private[this] var numberOfZeroFactors: Int = 0
-  private[this] var nonZeroProduct: Long     = 1
+  private [this] var nonZeroProduct: Long = 1
 
-  for (i <- listenedValuesIndices.value()) {
+  for (i <- listenedValuesIndices.value()){
     if (input(i).value() == 0) numberOfZeroFactors += 1
     else nonZeroProduct *= input(i).value()
   }
@@ -79,6 +39,7 @@ class ProdConst(
 
   updateOutput()
 
+
   override def notifySetChanges(
     setVariable: SetVariable,
     index: Int,
@@ -87,7 +48,7 @@ class ProdConst(
     oldValue: Set[Int],
     newValue: Set[Int]
   ): Unit = {
-    for (added   <- addedElems) notifyInsertOn(setVariable, added)
+    for (added <- addedElems) notifyInsertOn(setVariable, added)
     for (removed <- removedElems) notifyDeleteOn(setVariable, removed)
   }
 
@@ -107,7 +68,7 @@ class ProdConst(
   @inline
   private[this] def updateOutput(): Unit = {
     if (numberOfZeroFactors == 0) output := nonZeroProduct
-    else output                          := 0
+    else output := 0
   }
 
   @inline
@@ -129,5 +90,6 @@ class ProdConst(
 
     updateOutput()
   }
+
 
 }
