@@ -11,15 +11,15 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.test.lib.invariant
+package oscar.cbls.test.lib.invariant.numeric
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers.be
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
-import oscar.cbls.lib.invariant.numeric._
 import oscar.cbls.lib.invariant.minmax.{Max2, Min2}
+import oscar.cbls.lib.invariant.numeric._
 
 import scala.util.Random
 
