@@ -30,7 +30,7 @@ object ProdConst {
    *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
    *   the product.
    * @param output
-   *   The output [[IntVariable]] containing Prod(input(i) | i in listenedValuesIndices}.
+   *   The output [[IntVariable]] containing Prod(input(i) | i in listenedValuesIndices).
    * @param name
    *   The name (optional) of your Invariant.
    */
@@ -53,7 +53,7 @@ object ProdConst {
   *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
   *   the product.
   * @param output
-  *   The output [[IntVariable]] containing Prod(input(i) | i in listenedValuesIndices}.
+  *   The output [[IntVariable]] containing Prod(input(i) | i in listenedValuesIndices).
   * @param name
   *   The name (optional) of your Invariant.
   */
