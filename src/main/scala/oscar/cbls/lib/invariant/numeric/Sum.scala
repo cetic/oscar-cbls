@@ -17,7 +17,7 @@ import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, St
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 
-/** Companion object of the [[Sum]] class */
+/** Companion object of the [[Sum]] class. */
 object Sum {
 
   /** Creates a [[Sum]] invariant
@@ -30,7 +30,7 @@ object Sum {
     *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
     *   the sum.
     * @param output
-    *   The output [[IntVariable]] containing Sum(input(i) | i in listenedVariablesIndices}.
+    *   The output [[IntVariable]] containing Sum(input(i) | i in listenedVariablesIndices).
     * @param bulkIdentifier
     *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
     *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one
@@ -60,7 +60,7 @@ object Sum {
   *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
   *   the sum.
   * @param output
-  *   The output [[IntVariable]] containing Sum(input(i) | i in listenedVariablesIndices}.
+  *   The output [[IntVariable]] containing Sum(input(i) | i in listenedVariablesIndices).
   * @param bulkIdentifier
   *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
   *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one if
@@ -86,7 +86,7 @@ class Sum(
       // No bulk is used
       for (vars <- input) this.registerStaticallyListenedElement(vars)
     case Some(bulkId) =>
-      // Register static dependency via a bulk
+      // Register static dependencies via a bulk
       this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, bulkId, model))
   }
 
