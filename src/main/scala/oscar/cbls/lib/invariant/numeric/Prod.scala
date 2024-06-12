@@ -30,7 +30,7 @@ object Prod {
     *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
     *   the product.
     * @param output
-    *   The output [[IntVariable]] containing Prod(input(i) | i in listenedVariablesIndices}.
+    *   The output [[IntVariable]] containing Prod(input(i) | i in listenedVariablesIndices).
     * @param bulkIdentifier
     *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
     *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one
@@ -60,7 +60,7 @@ object Prod {
   *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
   *   the product.
   * @param output
-  *   The output [[IntVariable]] containing Prod(input(i) | i in listenedVariablesIndices}.
+  *   The output [[IntVariable]] containing Prod(input(i) | i in listenedVariablesIndices).
   * @param bulkIdentifier
   *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
   *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one if
@@ -88,7 +88,7 @@ class Prod(
       // No bulk is used
       for (vars <- input) this.registerStaticallyListenedElement(vars)
     case Some(bulkId) =>
-      // Register static dependency via a bulk
+      // Register static dependencies via a bulk
       this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, bulkId, model))
   }
 
