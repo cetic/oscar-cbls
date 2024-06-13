@@ -315,7 +315,6 @@ class PropagationStructure(debugLevel: Int) {
         })
       }
 
-
       _propagating = false
 
     }
