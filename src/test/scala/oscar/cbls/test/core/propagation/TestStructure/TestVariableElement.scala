@@ -30,4 +30,8 @@ class TestVariableElement(structure: TestPropagationStructure)
     registerStaticallyListenedElement(inv)
   }
 
+  def registerListeningElement(inv: TestInvariantElement) : Unit = {
+    registerStaticallyListeningElement(inv)
+  }
+
 }

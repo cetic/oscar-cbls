@@ -12,8 +12,8 @@ class TestInvariantElement(structure: TestPropagationStructure)
       v.asInstanceOf[TestVariableElement].update()
   }
 
-  def registerStaticAndDynamicDependency(elem: TestVariableElement): Unit = {
-    registerStaticallyListenedElement(elem)
-  }
+  // def registerStaticAndDynamicDependency(elem: TestVariableElement): Unit = {
+  //   registerStaticallyListenedElement(elem)
+  // }
 
 }

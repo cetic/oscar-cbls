@@ -21,8 +21,7 @@ class PropagationConsistencyTestSuite extends AnyFunSuite with Matchers {
     val struct2 = new TestPropagationStructure()
     val elem2   = new TestInvariantElement(struct2)
 
-    an[java.lang.IllegalArgumentException] should be thrownBy elem2
-      .registerStaticAndDynamicDependency(elem1)
+    an[java.lang.IllegalArgumentException] should be thrownBy elem1.registerListeningElement(elem2)
 
   }
 
@@ -31,7 +30,7 @@ class PropagationConsistencyTestSuite extends AnyFunSuite with Matchers {
     val elem1   = new TestVariableElement(struct1)
     val elem2   = new TestInvariantElement(struct1)
 
-    elem2.registerStaticAndDynamicDependency(elem1)
+    elem1.registerListeningElement(elem2)
 
     elem1.update
 
@@ -46,7 +45,7 @@ class PropagationConsistencyTestSuite extends AnyFunSuite with Matchers {
     val struct1 = new TestPropagationStructure()
     val var1    = new TestVariableElement(struct1)
     val inv1    = new TestInvariantElement(struct1)
-    inv1.registerStaticAndDynamicDependency(var1)
+    var1.registerListeningElement(inv1)
 
     val var2 = new TestVariableElement(struct1)
 
@@ -61,7 +60,7 @@ class PropagationConsistencyTestSuite extends AnyFunSuite with Matchers {
 
     val var1 = new TestVariableElement(struct1)
     val inv1 = new TestInvariantElement(struct1)
-    inv1.registerStaticAndDynamicDependency(var1)
+    var1.registerListeningElement(inv1)
 
     struct1.close
 
@@ -75,7 +74,7 @@ class PropagationConsistencyTestSuite extends AnyFunSuite with Matchers {
     val inv1    = new TestInvariantElement(struct1)
     val var2    = new TestVariableElement(struct1)
 
-    inv1.registerStaticAndDynamicDependency(var1)
+    var1.registerListeningElement(inv1)
     var2.setDefiningInvariant(inv1)
 
     struct1.close

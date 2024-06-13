@@ -26,11 +26,11 @@ class PropagationInitTestSuite extends AnyFunSuite with Matchers {
     val inv1: TestInvariantElement = new TestInvariantElement(struct)
     val inv2: TestInvariantElement = new TestInvariantElement(struct)
 
-    inv1.registerStaticAndDynamicDependency(var1)
+    var1.registerListeningElement(inv1)
     var2.setDefiningInvariant(inv1)
-    inv2.registerStaticAndDynamicDependency(var2)
+    var2.registerListeningElement(inv2)
     var3.setDefiningInvariant(inv2)
-    inv1.registerStaticAndDynamicDependency(var3)
+    var3.registerListeningElement(inv1)
 
     an[java.lang.IllegalArgumentException] should be thrownBy struct.close
   }

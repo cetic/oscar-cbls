@@ -25,8 +25,8 @@ class PropagationStruct2UnitTestSuite(debugLevel: Int) extends AnyFunSuite with 
   val var2 = new TestVariableElement(struct)
   val var3 = new TestVariableElement(struct)
   val inv4 = new TestInvariantElement(struct)
-  inv4.registerStaticAndDynamicDependency(var0)
-  inv4.registerStaticAndDynamicDependency(var1)
+  var0.registerListeningElement(inv4)
+  var1.registerListeningElement(inv4)
   var2.setDefiningInvariant(inv4)
   var3.setDefiningInvariant(inv4)
 
@@ -35,15 +35,15 @@ class PropagationStruct2UnitTestSuite(debugLevel: Int) extends AnyFunSuite with 
   val var7 = new TestVariableElement(struct)
   val var8 = new TestVariableElement(struct)
   val inv9 = new TestInvariantElement(struct)
-  inv9.registerStaticAndDynamicDependency(var5)
-  inv9.registerStaticAndDynamicDependency(var6)
+  var5.registerListeningElement(inv9)
+  var6.registerListeningElement(inv9)
   var7.setDefiningInvariant(inv9)
   var8.setDefiningInvariant(inv9)
 
   val inv10 = new TestInvariantElement(struct)
   val var11 = new TestVariableElement(struct)
-  inv10.registerStaticAndDynamicDependency(var3)
-  inv10.registerStaticAndDynamicDependency(var8)
+  var3.registerListeningElement(inv10)
+  var8.registerListeningElement(inv10)
   var11.setDefiningInvariant(inv10)
 
   // Put this flag at true to get a dot version of the propagation flag

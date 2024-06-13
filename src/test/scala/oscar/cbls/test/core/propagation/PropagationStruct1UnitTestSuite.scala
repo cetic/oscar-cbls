@@ -25,8 +25,8 @@ class PropagationStruct1UnitTestSuite(debugLevel: Int) extends AnyFunSuite with 
   val var2 = new TestVariableElement(struct)
   val var3 = new TestVariableElement(struct)
   val inv4 = new TestInvariantElement(struct)
-  inv4.registerStaticAndDynamicDependency(var0)
-  inv4.registerStaticAndDynamicDependency(var1)
+  var0.registerListeningElement(inv4)
+  var1.registerListeningElement(inv4)
   var2.setDefiningInvariant(inv4)
   var3.setDefiningInvariant(inv4)
 
@@ -35,8 +35,8 @@ class PropagationStruct1UnitTestSuite(debugLevel: Int) extends AnyFunSuite with 
   val var7 = new TestVariableElement(struct)
   val var8 = new TestVariableElement(struct)
   val inv9 = new TestInvariantElement(struct)
-  inv9.registerStaticAndDynamicDependency(var5)
-  inv9.registerStaticAndDynamicDependency(var6)
+  var5.registerListeningElement(inv9)
+  var6.registerListeningElement(inv9)
   var7.setDefiningInvariant(inv9)
   var8.setDefiningInvariant(inv9)
 
