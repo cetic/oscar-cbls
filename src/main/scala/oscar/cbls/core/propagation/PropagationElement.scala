@@ -36,6 +36,8 @@ abstract class PropagationElement(private val propagationStructure: PropagationS
 
   private[propagation] def layer_=(layer: Int): Unit = layer_ = layer
 
+  def isScheduled: Boolean = scheduled
+
   /** Schedules the propagation element in the next propagation waves
     */
   final def scheduleForPropagation(): Unit = {
