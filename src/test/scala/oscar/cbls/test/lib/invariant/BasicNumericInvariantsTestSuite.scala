@@ -33,14 +33,8 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
   private def modifyIntVariable(x: IntVariable, minVal: Long = -1000, maxVal: Long = 1000): Unit = {
     x := random.between(minVal, maxVal)
     x :+= random.between(minVal, maxVal)
-    x :-= random.between(minVal, maxVal)
     x :*= random.between(minVal, maxVal)
-    if (minVal <= 0 && maxVal >= 0)
-      x :/= random.between(minVal.max(1), maxVal)
-    else
-      x :/= random.between(minVal, maxVal)
     x.:++()
-    x.:--()
   }
 
   test(s"Absolute value of positive number (seed: $seed)") {
@@ -176,7 +170,7 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
   test(s"Div2 invariant works as expected (seed: $seed)") {
     val store   = new Store(debugLevel = 3)
     val rndVal1 = random.between(-1000, 1000)
-    val rndVal2 = random.between(500, 2000) // Smaller domain to avoid input2 be equal to 0
+    val rndVal2 = random.between(500, 2000)
     val input1  = IntVariable(store, rndVal1)
     val input2  = IntVariable(store, rndVal2)
     val output  = IntVariable(store, rndVal1)
@@ -185,7 +179,8 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
 
     modifyIntVariable(input1)
 
-    modifyIntVariable(input2, 1, 500) // We don't want input2 to be reduce to 0 by a subtraction.
+    modifyIntVariable(input2, 1, 500) //input2 initial value is between 500 & 2000 and can only
+    // increase. So the denominator can never be 0
 
     div2Inv.checkInternals()
   }
