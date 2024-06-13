@@ -284,8 +284,6 @@ class PropagationStructure(debugLevel: Int) {
       if (executionQueue.nonEmpty) {
         val currentElement = executionQueue.popFirst().get
         currentElement.propagateElement()
-        if (check)
-          currentElement.checkInternals()
         filterScheduledWithTrack()
         doPropagation()
       }
@@ -310,6 +308,13 @@ class PropagationStructure(debugLevel: Int) {
         filterScheduledWithTrack()
       }
       doPropagation()
+      if (check) {
+        propagationElements.foreach(e => {
+          if (track(e.id))
+            e.checkInternals()
+        })
+      }
+
       _propagating = false
 
     }

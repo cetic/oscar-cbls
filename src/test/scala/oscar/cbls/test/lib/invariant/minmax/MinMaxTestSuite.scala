@@ -185,8 +185,8 @@ class MinMaxTestSuite extends AnyFunSuite with Matchers {
 
   test("Min: checkInternals should fail") {
     val (store, _, _, output, minInv) = testMinMax(isMin = true, Set(0, 1, 2, 3, 4, 5))
-    output := 42
     store.propagate()
+    output := 42
 
     an[IllegalArgumentException] should be thrownBy minInv.checkInternals()
   }
@@ -205,8 +205,8 @@ class MinMaxTestSuite extends AnyFunSuite with Matchers {
 
   test("Max: checkInternals should fail") {
     val (store, _, _, output, maxInv) = testMinMax(isMin = false, Set(0, 1, 2, 3, 4, 5))
-    output := 42
     store.propagate()
+    output := 42
 
     an[IllegalArgumentException] should be thrownBy maxInv.checkInternals()
   }
