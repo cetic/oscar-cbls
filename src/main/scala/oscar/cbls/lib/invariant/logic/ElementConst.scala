@@ -50,7 +50,7 @@ object ElementConst{
  * @param model
  *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
  * @param input
- *   An array of [[IntConstant]].
+ *   An [[Array]] of [[IntConstant]].
  * @param index
  *  An [[IntVariable]] accessing one of the input values.
  * @param output
