@@ -41,12 +41,12 @@ class MinMaxConstBacklogTests extends AnyFunSuite with Matchers {
   }
 
   private def testForMinMaxConstBacklogFields(): (Store, SetVariable, TestMinMaxConst) = {
-    val store                     = new Store(debugLevel = 3)
-    val a: Array[Long]            = Array(0, 1, 2, 3, 2, 5)
-    val input: Array[IntConstant] = for (x <- a) yield new IntConstant(store, x)
-    val listenedValuesIndices: SetVariable         = SetVariable(store, Set(2, 3))
-    val output: IntVariable       = IntVariable(store, 42)
-    val inv                       = new TestMinMaxConst(store, input, listenedValuesIndices, output)
+    val store                              = new Store(debugLevel = 3)
+    val a: Array[Long]                     = Array(0, 1, 2, 3, 2, 5)
+    val input: Array[IntConstant]          = for (x <- a) yield new IntConstant(store, x)
+    val listenedValuesIndices: SetVariable = SetVariable(store, Set(2, 3))
+    val output: IntVariable                = IntVariable(store, 42)
+    val inv = new TestMinMaxConst(store, input, listenedValuesIndices, output)
     store.close()
 
     (store, listenedValuesIndices, inv)
@@ -175,10 +175,10 @@ class MinMaxConstTests extends AnyFunSuite with Matchers {
     isMin: Boolean,
     set: Set[Int]
   ): (Store, SetVariable, IntVariable, ExtremumConst) = {
-    val store                     = new Store(debugLevel = 3)
-    val input: Array[IntConstant] = Array.range(0, 6).map(i => new IntConstant(store, i))
-    val output: IntVariable       = IntVariable(store, 42)
-    val listenedValuesIndices: SetVariable         = SetVariable(store, set)
+    val store                              = new Store(debugLevel = 3)
+    val input: Array[IntConstant]          = Array.range(0, 6).map(i => new IntConstant(store, i))
+    val output: IntVariable                = IntVariable(store, 42)
+    val listenedValuesIndices: SetVariable = SetVariable(store, set)
     val inv: ExtremumConst =
       if (isMin) MinConst(store, input, listenedValuesIndices, output)
       else MaxConst(store, input, listenedValuesIndices, output)
@@ -283,9 +283,8 @@ class MinMaxConstTests extends AnyFunSuite with Matchers {
 
   test("MinConst: checkInternals should fail") {
     val (store, _, output, minInv) = testMinMaxConst(isMin = true, Set(0, 1, 2, 3, 4, 5))
-    output := 42
     store.propagate()
-
+    output := 42
     an[IllegalArgumentException] should be thrownBy minInv.checkInternals()
   }
 
@@ -301,8 +300,8 @@ class MinMaxConstTests extends AnyFunSuite with Matchers {
 
   test("MaxConst: checkInternals should fail") {
     val (store, _, output, maxInv) = testMinMaxConst(isMin = false, Set(0, 1, 2, 3, 4, 5))
-    output := 42
     store.propagate()
+    output := 42
 
     an[IllegalArgumentException] should be thrownBy maxInv.checkInternals()
   }
