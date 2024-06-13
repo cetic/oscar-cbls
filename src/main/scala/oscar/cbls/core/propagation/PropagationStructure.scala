@@ -284,8 +284,6 @@ class PropagationStructure(debugLevel: Int) {
       if (executionQueue.nonEmpty) {
         val currentElement = executionQueue.popFirst().get
         currentElement.propagateElement()
-        // if (check)
-        //   currentElement.checkInternals()
         filterScheduledWithTrack()
         doPropagation()
       }
