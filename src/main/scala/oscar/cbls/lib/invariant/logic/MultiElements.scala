@@ -146,7 +146,7 @@ class MultiElements(
   @inline
   private[this] def internalInsert(value: Int): Unit = {
     valuesCount.get(value) match {
-      case Some(v) => valuesCount(v) += 1
+      case Some(_) => valuesCount(value) += 1
       case None =>
         valuesCount += (value -> 1)
         output :+= value
@@ -160,7 +160,7 @@ class MultiElements(
       valuesCount -= value
       output :-= value
     } else {
-      valuesCount(1) -= 1
+      valuesCount(value) -= 1
     }
   }
 
