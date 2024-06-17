@@ -18,46 +18,42 @@ import oscar.cbls.core.computation.integer.{IntConstant, IntVariable}
 import oscar.cbls.lib.invariant.numeric.Int2Int
 
 /** Companion object of the [[ElementConst]] class. */
-object ElementConst{
+object ElementConst {
 
   /** Creates an [[ElementConst]] invariant.
-   *
-   * * @param model
-   * *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
-   * * @param input
-   * *   An array of [[IntConstant]].
-   * * @param index
-   * *  An [[IntVariable]] accessing one of the input values.
-   * * @param output
-   * *   The [[IntVariable]] which contains input(index).
-   * * @param name
-   * *   The name (optional) of your Invariant.
-   *
-   * @return
-   */
-  def apply(model: Store,
-            input: Array[IntConstant],
-            index: IntVariable,
-            output: IntVariable,
-            name: Option[String] = None): ElementConst = {
+    *
+    * * @param model * The [[oscar.cbls.core.propagation.PropagationStructure]] to which this
+    * invariant is linked. * @param input * An array of [[IntConstant]]. * @param index * An
+    * [[IntVariable]] accessing one of the input values. * @param output * The [[IntVariable]] which
+    * contains input(index). * @param name * The name (optional) of your Invariant.
+    *
+    * @return
+    */
+  def apply(
+    model: Store,
+    input: Array[IntConstant],
+    index: IntVariable,
+    output: IntVariable,
+    name: Option[String] = None
+  ): ElementConst = {
     new ElementConst(model, input, index, output, name)
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains input(index) where input is an array
- *  of [[IntConstant]].
- *
- * @param model
- *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
- * @param input
- *   An [[Array]] of [[IntConstant]].
- * @param index
- *  An [[IntVariable]] accessing one of the input values.
- * @param output
- *   The [[IntVariable]] which contains input(index).
- * @param name
- *   The name (optional) of your Invariant.
- */
+/** [[oscar.cbls.core.computation.Invariant]] that maintains input(index) where input is an array of
+  * [[IntConstant]].
+  *
+  * @param model
+  *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+  * @param input
+  *   An [[Array]] of [[IntConstant]].
+  * @param index
+  *   An [[IntVariable]] accessing one of the input values.
+  * @param output
+  *   The [[IntVariable]] which contains input(index).
+  * @param name
+  *   The name (optional) of your Invariant.
+  */
 class ElementConst(
   model: Store,
   input: Array[IntConstant],
