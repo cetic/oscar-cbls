@@ -108,7 +108,7 @@ class MultiElementsTestSuite extends AnyFunSuite with Matchers {
     val (store, _, _, output, inv) = testMultiElements()
     store.propagate()
 
-    output := Set(-7, -14)
+    output :+= 24
 
     an[IllegalArgumentException] should be thrownBy inv.checkInternals()
   }

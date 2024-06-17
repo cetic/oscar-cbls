@@ -81,7 +81,7 @@ class MultiElements(
     with SetNotificationTarget {
 
   private[this] val keysForRemoval: Array[KeyForRemoval[_]] = new Array(input.length)
-  // Count the number of listened variable with value x
+  // valuesCount(x) ==  the number of listened variables with value x
   private[this] val valuesCount: mutable.HashMap[Int, Int] = new mutable.HashMap()
 
   bulkIdentifier match {
@@ -126,16 +126,10 @@ class MultiElements(
   }
 
   override def checkInternals(): Unit = {
+    val listenedValues: Set[Int] = listenedVariablesIndices.value().map(i => input(i).value().toInt)
+
     require(
-      listenedVariablesIndices
-        .value()
-        .forall(i =>
-          output.pendingValue.contains(
-            input(i)
-              .value()
-              .toInt
-          )
-        ),
+      output.pendingValue == listenedValues,
       s"checkInternals fails in invariant ${name()}. " +
         s"output != {input(i) | i in listenedVariablesIndices}. " +
         s"output: ${output.pendingValue} - indices: $listenedVariablesIndices - input: ${input
