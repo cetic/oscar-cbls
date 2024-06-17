@@ -14,6 +14,7 @@
 package oscar.cbls.core.computation.objective
 
 import oscar.cbls.core.computation.integer.IntVariable
+import oscar.cbls.core.search.profiling.NeighborhoodProfiler
 import oscar.cbls.core.search.{Move, MoveFound, NoMoveFound, SimpleNeighborhood}
 
 /** Companion object of Minimize */
@@ -49,10 +50,10 @@ class Minimize(
   override def isValueNewBest(currentBest: Long, newValue: Long): Boolean =
     newValue < currentBest
 
-  override def newExploration(neighborhood: SimpleNeighborhood): Exploration =
-    new Exploration(currentObjValue(), neighborhood) {
+  override def newExploration[M <: Move](searchProfilerOpt: Option[NeighborhoodProfiler]): Exploration[M] =
+    new Exploration[M](currentObjValue(), searchProfilerOpt) {
 
-      private def checkNeighborOnApproximatedObjective(buildMove: Long => Move): Unit = {
+      private def checkNeighborOnApproximatedObjective(buildMove: Long => M): Unit = {
         val newApproxObj = underApproximatedObjValue.get.value()
         toReturn match {
           case NoMoveFound if newApproxObj < this.oldObj =>
@@ -66,7 +67,7 @@ class Minimize(
         }
       }
 
-      private def checkNeighborOnRealObjective(buildMove: Long => Move): Unit = {
+      private def checkNeighborOnRealObjective(buildMove: Long => M): Unit = {
         val newObj = objValue.value()
         toReturn match {
           case NoMoveFound if newObj < oldObj =>
@@ -101,7 +102,7 @@ class Minimize(
         *   A function linking the new objValue to the Move that leads to it (must be provided by
         *   the calling Neighborhood)
         */
-      override def checkNeighbor(buildMove: Long => Move): Unit = {
+      override def checkNeighbor(buildMove: Long => M): Unit = {
         if (!mustBeZero.exists(_.value() > 0)) {
           underApproximatedObjValue match {
             case None => checkNeighborOnRealObjective(buildMove)

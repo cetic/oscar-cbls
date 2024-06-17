@@ -30,7 +30,7 @@ class SelectionProfiler(combinator: NeighborhoodCombinator, val neighborhoods: L
   // Selection-Neighborhood management //
   ///////////////////////////////////////
 
-  val profilers: Array[SearchProfiler] = neighborhoods.map(_._searchProfiler).toArray
+  val profilers: Array[SearchProfiler] = neighborhoods.map(_.searchProfiler().get).toArray
 
   protected def totalTimeSpentSubN(i: Int): Long = profilers(
     i

@@ -13,7 +13,6 @@
 
 package oscar.cbls.core.search
 
-import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.Objective
 import oscar.cbls.core.search.profiling.SearchProfiler
 import oscar.cbls.visual.profiling.ProfilingConsole
@@ -32,9 +31,13 @@ abstract class Neighborhood(_name: String) {
   }
 
   // Profiling
-  private[core] val _searchProfiler: SearchProfiler = new SearchProfiler(this)
+  def searchProfiler(): Option[SearchProfiler]
+  /** Activates search profiling through all search procedure */
+  def profileSearch(): Unit
+
+  /** Displays the result of the search profiling in the console */
   def displayProfiling(): Unit =
-    ProfilingConsole(_searchProfiler, _searchProfiler.collectThisProfileHeader)
+    searchProfiler().foreach(_searchProfiler => ProfilingConsole(_searchProfiler, _searchProfiler.collectThisProfileHeader))
 
   /** Resets the internal state of the neighborhood */
   def reset(): Unit
@@ -52,12 +55,10 @@ abstract class Neighborhood(_name: String) {
     *
     * @param objective
     *   The Objective of the search (minimizing, maximizing...)
-    * @param objValue
-    *   The value that must be minimized, maximized...
     * @return
     *   True if one move has been performed, false otherwise
     */
-  def doImprovingMove(objective: Objective, objValue: IntVariable): Boolean =
+  def doImprovingMove(objective: Objective): Boolean =
     0L != doAllMoves(objective, _ >= 1L)
 
   /** Does as much moves as possible or until the shouldStop condition is met.
@@ -73,7 +74,7 @@ abstract class Neighborhood(_name: String) {
   def doAllMoves(objective: Objective, shouldStop: Int => Boolean = _ => false): Int = {
     var moveCount: Int      = 0
     var noMoreMove: Boolean = false
-    objective.verboseMode = _verboseMode
+    objective.verboseMode_=(this._verboseMode)
     objective.startSearch()
 
     while (!shouldStop(moveCount) && !noMoreMove) {
@@ -90,6 +91,7 @@ abstract class Neighborhood(_name: String) {
     moveCount
   }
 
+  /** Returns the name of the Neighborhood */
   def name: String = _name
 
   override def toString: String = name

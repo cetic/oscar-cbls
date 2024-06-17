@@ -6,7 +6,6 @@ import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.{Exploration, Minimize, Objective}
 import oscar.cbls.core.search.{Move, MoveFound, Neighborhood, NeighborhoodCombinator, NoMoveFound, SearchResult, SimpleNeighborhood}
 import oscar.cbls.lib.invariant.numeric.IntInt2Int
-import oscar.cbls.test.core.search
 
 import scala.util.Random
 
@@ -74,6 +73,7 @@ class NeighborhoodAPITestSuite extends AnyFunSuite {
       new TestAssignNeighborhood(a, random, name = "Test assign A"),
       new TestAssignNeighborhood(b, random, name = "Test assign B"))
     search.verbosityLevel = 1
+    search.profileSearch()
     search.doAllMoves(objective)
     search.displayProfiling()
   }
@@ -86,15 +86,15 @@ class TestAssignNeighborhood(
   doNotRevertMove: Boolean = false,
   changeTheValueInReturnedMove: Boolean = false,
   name: String = "TestAssign"
-) extends SimpleNeighborhood(name) {
+) extends SimpleNeighborhood[TestAssignNeighborhoodMove](name) {
 
-  override def exploreNeighborhood(exploration: Exploration): Unit = {
+  override def exploreNeighborhood(exploration: Exploration[TestAssignNeighborhoodMove]): Unit = {
     val initValue = variable.value()
     var it        = 0L
     while (exploration.toReturn == NoMoveFound && it < 20) {
       val newValue = random.between(100, 300)
       variable := newValue
-      _searchProfiler.neighborSelected()
+      searchProfiler().foreach(x => x.neighborSelected())
       exploration.checkNeighbor(objValue => {
         if (changeTheValueInReturnedMove)
           TestAssignNeighborhoodMove(Math.pow(newValue, 2).toLong, objValue, this)
@@ -108,7 +108,7 @@ class TestAssignNeighborhood(
   /** Resets the internal state of the neighborhood */
   override def reset(): Unit = {}
 
-  override def doMove(move: Move): Unit = {
+  override def doMove(move: TestAssignNeighborhoodMove): Unit = {
     move match {
       case testAssignNeighborhoodMove: TestAssignNeighborhoodMove =>
         variable := testAssignNeighborhoodMove.newValue
@@ -122,7 +122,7 @@ case class TestAssignNeighborhoodMove(
   newValue: Long,
   objValueAfter: Long,
   testAssignNeighborhood: TestAssignNeighborhood
-) extends Move(objValueAfter, testAssignNeighborhood) {
+) extends Move(objValueAfter, testAssignNeighborhood.name) {
 
   /** Commits this move. */
   override def commit(): Unit = {
@@ -133,12 +133,6 @@ case class TestAssignNeighborhoodMove(
 
 class TestNeighborhoodCombinator(first: Neighborhood, second: Neighborhood) extends NeighborhoodCombinator("TestNeighborhoodCombinator",List(first,second)){
 
-  _searchProfiler.summedValueProfile("Number of found moves")
-  _searchProfiler.minMeanMaxProfile("First neighborhood random")
-  _searchProfiler.minMeanMaxProfile("Second neighborhood random")
-  _searchProfiler.nbOccurrencePerIterationProfile("No move found/iteration")
-  _searchProfiler.percentageEventOccurrenceProfile("No move found/call")
-
   private var nextIsFirst: Boolean = true
   private var secondNeighborhoodNoMoveFoundBeforeNextIt: Int = 5
   private var iterationRemaining: Int = 5
@@ -147,32 +141,32 @@ class TestNeighborhoodCombinator(first: Neighborhood, second: Neighborhood) exte
     if(secondNeighborhoodNoMoveFoundBeforeNextIt == 0){
       secondNeighborhoodNoMoveFoundBeforeNextIt = 5
       iterationRemaining -= 1
-      _searchProfiler.nbOccurrencePerIterationNextIteration("No move found/iteration")
+      searchProfiler().foreach(x => x.nbOccurrencePerIterationNextIteration("No move found/iteration"))
     }
     if(iterationRemaining > 0) {
       if (nextIsFirst) {
         first.getMove(objective) match {
           case mf: MoveFound =>
-            _searchProfiler.summedValuePlus("Number of found moves", 1)
-            _searchProfiler.minMeanMaxAddValue("First neighborhood random", Random.between(0, 50))
-            _searchProfiler.percentageEventOccurrencePushEvent("No move found/call",occurred = false)
+            searchProfiler().foreach(x => x.summedValuePlus("Number of found moves", 1))
+            searchProfiler().foreach(x => x.minMeanMaxAddValue("First neighborhood random", Random.between(0, 50)))
+            searchProfiler().foreach(x => x.percentageEventOccurrencePushEvent("No move found/call",occurred = false))
             mf
           case NoMoveFound =>
-            _searchProfiler.nbOccurrencePerIterationEventOccurred("No move found/iteration")
-            _searchProfiler.percentageEventOccurrencePushEvent("No move found/call",occurred = true)
+            searchProfiler().foreach(x => x.nbOccurrencePerIterationEventOccurred("No move found/iteration"))
+            searchProfiler().foreach(x => x.percentageEventOccurrencePushEvent("No move found/call",occurred = true))
             nextIsFirst = false
             this.exploreCombinator(objective)
         }
       } else {
         second.getMove(objective) match {
           case mf: MoveFound =>
-            _searchProfiler.summedValuePlus("Number of found moves", 1)
-            _searchProfiler.minMeanMaxAddValue("Second neighborhood random", Random.between(0, 50))
-            _searchProfiler.percentageEventOccurrencePushEvent("No move found/call",occurred = false)
+            searchProfiler().foreach(x => x.summedValuePlus("Number of found moves", 1))
+            searchProfiler().foreach(x => x.minMeanMaxAddValue("Second neighborhood random", Random.between(0, 50)))
+            searchProfiler().foreach(x => x.percentageEventOccurrencePushEvent("No move found/call",occurred = false))
             mf
           case NoMoveFound =>
-            _searchProfiler.nbOccurrencePerIterationEventOccurred("No move found/iteration")
-            _searchProfiler.percentageEventOccurrencePushEvent("No move found/call",occurred = true)
+            searchProfiler().foreach(x => x.nbOccurrencePerIterationEventOccurred("No move found/iteration"))
+            searchProfiler().foreach(x => x.percentageEventOccurrencePushEvent("No move found/call",occurred = true))
             secondNeighborhoodNoMoveFoundBeforeNextIt -= 1
             nextIsFirst = true
             this.exploreCombinator(objective)

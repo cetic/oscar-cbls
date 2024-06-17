@@ -17,11 +17,11 @@ package oscar.cbls.core.search.profiling.profilingData
   *
   * ex: Exhaust time
   */
-case class MinMeanMaxData() extends CombinatorProfilingData {
-  private var _min: Long  = Long.MaxValue
-  private var _max: Long  = Long.MinValue
-  private var _count: Int = 0
-  private var _sum: Long  = 0L
+case class MinMeanMaxData(initValue: Long) extends CombinatorProfilingData {
+  private var _min: Long  = initValue
+  private var _max: Long  = initValue
+  private var _count: Int = 1
+  private var _sum: Long  = initValue
 
   def min: Long  = _min
   def max: Long  = _max

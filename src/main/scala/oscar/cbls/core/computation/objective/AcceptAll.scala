@@ -14,6 +14,7 @@
 package oscar.cbls.core.computation.objective
 
 import oscar.cbls.core.computation.integer.IntVariable
+import oscar.cbls.core.search.profiling.{NeighborhoodProfiler, SearchProfiler}
 import oscar.cbls.core.search.{Move, MoveFound, SimpleNeighborhood}
 
 /** Companion object of AcceptAll */
@@ -36,9 +37,9 @@ class AcceptAll(objValue: IntVariable) extends Objective(objValue) {
 
   override def isValueNewBest(currentBest: Long, newValue: Long): Boolean = true
 
-  override def newExploration(neighborhood: SimpleNeighborhood): Exploration =
-    new Exploration(currentObjValue(), neighborhood) {
-      override def checkNeighbor(buildMove: Long => Move): Unit = {
+  override def newExploration[M <: Move](searchProfilerOpt: Option[NeighborhoodProfiler]): Exploration[M] =
+    new Exploration[M](currentObjValue(), searchProfilerOpt) {
+      override def checkNeighbor(buildMove: Long => M): Unit = {
         val newValue = objValue.value()
         _toReturn = MoveFound(buildMove(newValue))
         verboseMode.moveExplored(() => buildMove(newValue), valid = true, saved = true)

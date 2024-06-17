@@ -16,7 +16,7 @@ class MinimizeTestSuite extends AnyFunSuite {
     val obj      = Minimize(objValue)
     store.close()
 
-    val exploration = obj.newExploration(new DummySimpleNeighborhood)
+    val exploration = obj.newExploration[DummyMove](new DummySimpleNeighborhood().searchProfiler())
     objValue := 2000
     exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
@@ -42,7 +42,7 @@ class MinimizeTestSuite extends AnyFunSuite {
 
     // The objValue is voluntarily acceptable, be it shouldn't be check
     // if the under approximated value is not lower
-    var exploration = obj.newExploration(new DummySimpleNeighborhood)
+    var exploration = obj.newExploration[DummyMove](new DummySimpleNeighborhood().searchProfiler())
     objValue            := 900
     underApproxObjValue := 2000
     exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
@@ -61,7 +61,7 @@ class MinimizeTestSuite extends AnyFunSuite {
     exploration.toReturn.asInstanceOf[MoveFound].objAfter() should be(900)
 
     // Under approximated value is lower but the objValue is higher, should be rejected
-    exploration = obj.newExploration(new DummySimpleNeighborhood)
+    exploration = obj.newExploration[DummyMove](new DummySimpleNeighborhood().searchProfiler())
     objValue            := 1000
     underApproxObjValue := 850
     exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
@@ -76,7 +76,7 @@ class MinimizeTestSuite extends AnyFunSuite {
     val obj         = Minimize(objValue, mustBeZero = List(constraint1, constraint2))
     store.close()
 
-    var exploration = obj.newExploration(new DummySimpleNeighborhood)
+    var exploration = obj.newExploration[DummyMove](new DummySimpleNeighborhood().searchProfiler())
     objValue := 900
     exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
@@ -88,7 +88,7 @@ class MinimizeTestSuite extends AnyFunSuite {
     exploration.toReturn.asInstanceOf[MoveFound].objAfter() should be(900)
 
     // Constraint is not violated but obj value is higher, should be rejected
-    exploration = obj.newExploration(new DummySimpleNeighborhood)
+    exploration = obj.newExploration[DummyMove](new DummySimpleNeighborhood().searchProfiler())
     objValue := 1000
     exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)

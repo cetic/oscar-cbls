@@ -32,7 +32,8 @@ case class CompositionProfiler(
   private var dynNeighborhoodProfiler: List[SearchProfiler] = List.empty
 
   override def subProfilers: List[SearchProfiler] =
-    (if (left.isDefined) List(left.get._searchProfiler) else List.empty) ++ dynNeighborhoodProfiler
+    (if (left.isDefined) List(left.get.searchProfiler().get)
+     else List.empty) ++ dynNeighborhoodProfiler
 
   override def explorationPaused(): Unit = {
     explorationPausedAt = System.nanoTime()
@@ -48,7 +49,17 @@ case class CompositionProfiler(
     currentRightProfiler.explorationResumed()
   }
 
-  def setCurrentRight(profiler: SearchProfiler): Unit = currentRightProfiler = profiler
+  /** Merges the current dynamic [[SearchProfiler]] and sets the new right [[SearchProfiler]].
+    *
+    * ==WARNING:==
+    * Must be called by the combinator after generating the right Neighborhood
+    *
+    * @param profiler The new [[SearchProfiler]]
+    */
+  def setCurrentRight(profiler: SearchProfiler): Unit = {
+    if (currentRightProfiler != null) mergeDynProfiler(currentRightProfiler)
+    currentRightProfiler = profiler
+  }
 
   /*
     1° merge common profiling data
@@ -59,7 +70,8 @@ case class CompositionProfiler(
     val compositionProfiler = profiler.asInstanceOf[CompositionProfiler]
     commonProfilingData.merge(profiler.commonProfilingData)
     mergeSpecificStatistics(compositionProfiler)
-    if (left.isDefined) left.get._searchProfiler.merge(compositionProfiler.left.get._searchProfiler)
+    if (left.isDefined)
+      left.get.searchProfiler().get.merge(compositionProfiler.left.get.searchProfiler().get)
     compositionProfiler.dynNeighborhoodProfiler.foreach(mergeDynProfiler)
   }
 

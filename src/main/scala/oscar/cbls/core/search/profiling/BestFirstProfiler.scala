@@ -27,8 +27,6 @@ case class BestFirstProfiler(
   override val neighborhoods: List[Neighborhood]
 ) extends SelectionProfiler(combinator, neighborhoods) {
 
-  nbOccurrencePerIterationProfile("NbFirstFailedPerReset")
-
   def slopeForCombinators(neighborhoodId: Int, defaultIfNoCall: Long = Long.MaxValue): Long =
     if (totalTimeSpentSubN(neighborhoodId) == 0L) defaultIfNoCall
     else ((1000L * totalGainSubN(neighborhoodId)) / totalTimeSpentSubN(neighborhoodId)).toInt
@@ -42,6 +40,6 @@ case class BestFirstProfiler(
   def firstFailed(): Unit = nbOccurrencePerIterationEventOccurred("NbFirstFailedPerReset")
   def resetSelectionNeighborhoodStatistics(): Unit = {
     nbOccurrencePerIterationNextIteration("NbFirstFailedPerReset")
-    profilers.foreach(p => p.resetThisStatistics())
+    profilers.foreach(p => p.resetIntermediaryStatistics())
   }
 }

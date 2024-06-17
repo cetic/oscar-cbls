@@ -17,15 +17,20 @@ package oscar.cbls.core.search.profiling.profilingData
   *
   * (min/mean/max occurrences of an event during an iteration) ex: Max movement reached before reset
   *
-  * @param initFirstIteration
-  *   Whether or not the first iteration starts at the very beginning of the search
+  * @param startIncIteration
+  *   Whether or not the instance must start with an occurrence
+  * @param startIncOccurrence
+  *   Whether or not the instance must start at the second iteration
   */
-case class NbOccurrencesPerIteration(initFirstIteration: Boolean) extends CombinatorProfilingData {
+case class NbOccurrencesPerIteration(
+  startIncOccurrence: Boolean = false,
+  startIncIteration: Boolean = false
+) extends CombinatorProfilingData {
   private var _occurrences: Int       = 0
   private var _minOccurrences: Int    = Int.MaxValue
   private var _maxOccurrences: Int    = Int.MinValue
   private var _summedOccurrences: Int = 0
-  private var _iterations: Int        = if (initFirstIteration) 1 else 0
+  private var _iterations: Int        = 1
 
   private def minOccurrences: Int    = _minOccurrences
   private def maxOccurrences: Int    = _maxOccurrences

@@ -17,8 +17,8 @@ package oscar.cbls.core.search.profiling.profilingData
   *
   * Ex : the number of time Guard prevent a movement
   */
-case class SummedValue() extends CombinatorProfilingData {
-  private var _sum: Long = 0L
+case class SummedValue(startingValue: Long = 0L) extends CombinatorProfilingData {
+  private var _sum: Long = startingValue
 
   def sum: Long = _sum
 

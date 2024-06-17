@@ -15,9 +15,9 @@ package oscar.cbls.core.search.profiling.profilingData
 
 /** This class contains all profiling data common to Neighborhood and Combinator.
   *
-  * You can see duplicated data like _nbCalls and _nbCallsForSelection. The second one is meant to
-  * be reset upon SelectionCombinator reset action. The first one is never reset and contains the
-  * data of the whole search.
+  * It is linked to a single instance of Neighborhood. You can see duplicated data like _nbCalls and
+  * _nbCallsIntermediary. The second one is meant to be reset when a combinator uses the
+  * resetStatistic method. The first one is never reset and contains the data of the whole search.
   */
 class CommonProfilingData extends ProfilingData() {
 
@@ -31,11 +31,11 @@ class CommonProfilingData extends ProfilingData() {
   private var _timeSpentMoveFoundNano: Long   = 0L
   private var _timeSpentNoMoveFoundNano: Long = 0L
 
-  private var _nbCallsForSelection: Long                  = 0L
-  private var _nbFoundsForSelection: Long                 = 0L
-  private var _gainForSelection: Long                     = 0L
-  private var _timeSpentMoveFoundNanoForSelection: Long   = 0L
-  private var _timeSpentNoMoveFoundNanoForSelection: Long = 0L
+  private var _nbCallsIntermediary: Long                  = 0L
+  private var _nbFoundsIntermediary: Long                 = 0L
+  private var _gainIntermediary: Long                     = 0L
+  private var _timeSpentMoveFoundNanoIntermediary: Long   = 0L
+  private var _timeSpentNoMoveFoundNanoIntermediary: Long = 0L
 
   override def merge(other: ProfilingData): Unit = {
     other match {
@@ -57,30 +57,30 @@ class CommonProfilingData extends ProfilingData() {
 
   }
 
-  def gainPlus(gain: Long): Unit = {
+  private[profiling] def gainPlus(gain: Long): Unit = {
     this._lastCallGain = gain
     this._gain += gain
-    this._gainForSelection += gain
+    this._gainIntermediary += gain
   }
-  def callInc(): Unit = {
+  private[profiling] def callInc(): Unit = {
     _nbCalls += 1
-    _nbCallsForSelection += 1
+    _nbCallsIntermediary += 1
   }
-  def foundInc(): Unit = {
+  private[profiling] def foundInc(): Unit = {
     _nbFound += 1
-    _nbFoundsForSelection += 1
+    _nbFoundsIntermediary += 1
   }
-  def timeSpentMoveFoundPlus(timeNano: Long): Unit = {
+  private[profiling] def timeSpentMoveFoundPlus(timeNano: Long): Unit = {
     this._lastCallFound = true
     this._lastCallDurationNano = timeNano
     this._timeSpentMoveFoundNano += timeNano
-    this._timeSpentMoveFoundNanoForSelection += timeNano
+    this._timeSpentMoveFoundNanoIntermediary += timeNano
   }
-  def timeSpentNoMoveFoundPlus(timeNano: Long): Unit = {
+  private[profiling] def timeSpentNoMoveFoundPlus(timeNano: Long): Unit = {
     this._lastCallFound = false
     this._lastCallDurationNano = timeNano
     this._timeSpentNoMoveFoundNano += timeNano
-    this._timeSpentNoMoveFoundNanoForSelection += timeNano
+    this._timeSpentNoMoveFoundNanoIntermediary += timeNano
   }
 
   def nbCalls: Long                    = _nbCalls
@@ -90,15 +90,15 @@ class CommonProfilingData extends ProfilingData() {
   def timeSpentNoMoveFoundMillis: Long = _timeSpentNoMoveFoundNano / 1000000
   def timeSpentMillis: Long = (_timeSpentMoveFoundNano + _timeSpentNoMoveFoundNano) / 1000000
 
-  def nbFoundForSelection: Long                  = _nbFoundsForSelection
-  def gainForSelection: Long                     = _gainForSelection
-  def timeSpentMoveFoundMillisForSelection: Long = _timeSpentMoveFoundNanoForSelection / 1000000
+  def nbFoundForSelection: Long                  = _nbFoundsIntermediary
+  def gainForSelection: Long                     = _gainIntermediary
+  def timeSpentMoveFoundMillisForSelection: Long = _timeSpentMoveFoundNanoIntermediary / 1000000
   def timeSpentMillisForSelection: Long =
-    (_timeSpentMoveFoundNanoForSelection + _timeSpentNoMoveFoundNanoForSelection) / 1000000
+    (_timeSpentMoveFoundNanoIntermediary + _timeSpentNoMoveFoundNanoIntermediary) / 1000000
 
-  def resetStatisticsForSelection(): Unit = {
-    _nbCallsForSelection = 0L; _nbFoundsForSelection = 0L; _gainForSelection = 0L
-    _timeSpentMoveFoundNanoForSelection = 0L; _timeSpentNoMoveFoundNanoForSelection = 0L
+  def resetIntermediaryStatistics(): Unit = {
+    _nbCallsIntermediary = 0L; _nbFoundsIntermediary = 0L; _gainIntermediary = 0L
+    _timeSpentMoveFoundNanoIntermediary = 0L; _timeSpentNoMoveFoundNanoIntermediary = 0L
   }
 
   override def toString: String = {

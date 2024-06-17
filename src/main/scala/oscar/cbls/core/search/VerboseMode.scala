@@ -156,7 +156,7 @@ class VerboseMode(val verbosityLevel: Int) {
         summarizedLastValue = newValue
         summarizedLastPrint = System.currentTimeMillis()
       } else {
-        val neighborhoodName = move.neighborhood.name
+        val neighborhoodName = move.neighborhoodName
         if (summarizedMove.contains(neighborhoodName))
           summarizedMove(neighborhoodName) = summarizedMove(neighborhoodName) + 1
         else summarizedMove += neighborhoodName -> 1

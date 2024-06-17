@@ -14,70 +14,87 @@
 package oscar.cbls.core.computation.objective
 
 import oscar.cbls.core.computation.integer.IntVariable
+import oscar.cbls.core.search._
 import oscar.cbls.core.search.profiling.NeighborhoodProfiler
-import oscar.cbls.core.search.{
-  Move,
-  Neighborhood,
-  NoMoveFound,
-  SearchResult,
-  SimpleNeighborhood,
-  VerboseMode
-}
 
 /** An Objective defines the conditions of acceptation of a new objective value during the search.
   * Any optimisation has at least one Objective usually to minimize or maximize a defined value.
-  * Most of the time, this value represents the value of a Solution (a defined state of the
+  * Most of the time, this value represents the value of a solution (a defined state of the
   * problem).
   *
   * During the exploration, the search procedure tries some modifications of the solution (called
-  * Move) leading to the modification of the objective value. To accept those moves the Objective
-  * has to checks if the new value meets the Objective's conditions.
+  * [[Move]]) leading to the modification of the objective value. To accept those [[Move]] the
+  * Objective has to checks if the new value meets the Objective's conditions.
   */
-abstract class Objective(objValue: IntVariable) {
+abstract class Objective(val objValue: IntVariable) {
 
-  /** Returns the worst value that the objective value could have considering the concrete Objective
-    * logic.
+  /** Returns the worst value that the objective value could have considering the concrete
+    * [[Objective]] logic.
     *
     * ==WARNING:==
-    * If you override this value make sure to mark it as "lazy" so that the _currentObjValue
-    * initiate with the correct value.
+    * When overriding this value make sure to mark it as "lazy" so that the _currentObjValue
+    * initiate with the correct value. If it's not marked as lazy, the default value of [[Long]]
+    * will be used (0L).
     */
   val worstValue: Long
 
   private var _verboseMode: VerboseMode                           = VerboseMode(0)
   private[core] def verboseMode_=(verboseMode: VerboseMode): Unit = _verboseMode = verboseMode
-  def verboseMode: VerboseMode                                    = _verboseMode
+  protected def verboseMode: VerboseMode                          = _verboseMode
 
   private var bestObj: Long          = worstValue
   private var _currentObjValue: Long = worstValue
-  def currentObjValue(): Long = {
+
+  /** Returns the current objective value.
+    *
+    * Initiated at worstValue, updated with each taken move and force updated when it's value is
+    * equal to worstValue. The
+    * @return
+    *   The current objective value
+    */
+  protected def currentObjValue(): Long = {
     if (_currentObjValue == worstValue) _currentObjValue = objValue.value()
     _currentObjValue
   }
 
-  /** Initialize starting values */
-  def startSearch(): Unit = {
+  // Verbose and profiling methods
+  private[core] def startSearch(): Unit = {
     _verboseMode.searchStarted(this, objValue)
   }
 
-  def explorationStarted(neighborhood: Neighborhood): Unit = {
-    neighborhood._searchProfiler.explorationStarted(currentObjValue())
+  private[core] def explorationStarted(neighborhood: Neighborhood): Unit = {
+    neighborhood.searchProfiler().foreach(x => x.explorationStarted(currentObjValue()))
     _verboseMode.explorationStarted(neighborhood.name)
   }
 
-  def explorationEnded(neighborhood: Neighborhood, explorationResult: SearchResult): Unit = {
-    neighborhood._searchProfiler.explorationEnded(explorationResult)
-    _verboseMode.explorationStarted(neighborhood.name)
+  private[core] def explorationEnded(
+    neighborhood: Neighborhood,
+    explorationResult: SearchResult
+  ): Unit = {
+    neighborhood.searchProfiler().foreach(x => x.explorationEnded(explorationResult))
+    _verboseMode.explorationEnded(neighborhood, explorationResult)
+  }
+
+  /** Checks the state of the objective value and ends the search */
+  private[core] def noMoreMove(moveCount: Int): Unit = {
+    require(
+      objValue.value() == currentObjValue(),
+      s"Neighborhood did not restore the model after exploration. Got ${objValue
+          .value()} should be ${currentObjValue()}"
+    )
+    _verboseMode.searchEnded(objValue.value(), moveCount)
   }
 
   /** Creates a new Exploration instance. Must be called when starting an exploration.
     *
-    * @param neighborhood
-    *   The neighborhood creating this Exploration
+    * @param searchProfilerOpt
+    *   An optional NeighborhoodProfiler for profiling purposes only
     * @return
     *   A concrete Exploration object used to explore a neighborhood.
     */
-  def newExploration(neighborhood: SimpleNeighborhood): Exploration
+  def newExploration[M <: Move](
+    searchProfilerOpt: Option[NeighborhoodProfiler] = None
+  ): Exploration[M]
 
   /** Returns true if newValue is a better value than currentBest.
     *
@@ -92,18 +109,8 @@ abstract class Objective(objValue: IntVariable) {
     */
   def isValueNewBest(currentBest: Long, newValue: Long): Boolean
 
-  /** Checks the state of the objective value and ends the search */
-  def noMoreMove(moveCount: Int): Unit = {
-    require(
-      objValue.value() == currentObjValue(),
-      s"Neighborhood did not restore the model after exploration. Got ${objValue
-          .value()} should be ${currentObjValue()}"
-    )
-    _verboseMode.searchEnded(objValue.value(), moveCount)
-  }
-
   /** Checks the state of the objective value and commits the new move */
-  def commitMove(move: Move): Unit = {
+  private[core] def commitMove(move: Move): Unit = {
     require(
       objValue.value() == currentObjValue(),
       s"Neighborhood did not restore the model after exploration. Got ${objValue
@@ -129,7 +136,10 @@ abstract class Objective(objValue: IntVariable) {
   * Depending of the concrete implementation of the Exploration, the behavior and thus the kept
   * objective value may vary.
   */
-abstract class Exploration(val oldObj: Long, neighborhood: SimpleNeighborhood) {
+abstract class Exploration[M <: Move](
+  val oldObj: Long,
+  searchProfilerOpt: Option[NeighborhoodProfiler]
+) {
 
   /** Keeps the best move found during this exploration. Initialized at NoMoveFound. */
   protected var _toReturn: SearchResult = NoMoveFound
@@ -143,6 +153,6 @@ abstract class Exploration(val oldObj: Long, neighborhood: SimpleNeighborhood) {
     *   A function linking the solution value to the Move that leads to it (must be provided by the
     *   calling Neighborhood)
     */
-  def checkNeighbor(buildMove: Long => Move): Unit =
-    neighborhood._searchProfiler.neighborExplored()
+  def checkNeighbor(buildMove: Long => M): Unit =
+    searchProfilerOpt.foreach(x => x.neighborExplored())
 }

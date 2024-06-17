@@ -23,22 +23,37 @@ import oscar.cbls.core.search.profiling.NeighborhoodProfiler
   * @param neighborhoodName
   *   The name of the Neighborhood
   */
-abstract class SimpleNeighborhood(neighborhoodName: String) extends Neighborhood(neighborhoodName) {
+abstract class SimpleNeighborhood[M <: Move](neighborhoodName: String) extends Neighborhood(neighborhoodName) {
 
-  override val _searchProfiler: NeighborhoodProfiler = new NeighborhoodProfiler(this)
+  private var _searchProfilerOpt: Option[NeighborhoodProfiler] = None
+
+  override def searchProfiler(): Option[NeighborhoodProfiler] = _searchProfilerOpt
+
+  override def profileSearch(): Unit = _searchProfilerOpt match {
+    case None => _searchProfilerOpt = Some(new NeighborhoodProfiler(this))
+    case _    => ;
+  }
 
   override def getMove(objective: Objective): SearchResult = {
     val exploration = {
       objective.explorationStarted(this)
-      objective.newExploration(this)
+      objective.newExploration[M](searchProfiler())
     }
     exploreNeighborhood(exploration)
     objective.explorationEnded(this, exploration.toReturn)
     exploration.toReturn
   }
 
-  def exploreNeighborhood(exploration: Exploration): Unit
+  /** Explores this SimpleNeighborhood. This is where you put the logic of your SimpleNeighborhood.
+    *
+    * @param exploration
+    *   The Exploration instance that will validate (or not) each explored neighbor.
+    * @return
+    *   The search result, either [[MoveFound]] or [[NoMoveFound]]
+    */
+  def exploreNeighborhood(exploration: Exploration[M]): Unit
 
-  def doMove(move: Move): Unit
+  /** Commits the move */
+  def doMove(move: M): Unit
 
 }

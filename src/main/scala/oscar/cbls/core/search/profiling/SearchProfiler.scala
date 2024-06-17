@@ -38,8 +38,11 @@ class SearchProfiler(val neighborhood: Neighborhood) {
 
   private var startValue: Long = 0L
 
+  /** Returns the profilers of the sub-neighborhoods. Empty if neighborhood is a SimpleNeighborhood
+    */
   def subProfilers: List[SearchProfiler] = List.empty
 
+  /** Initializes and updates some variables to profile the exploration */
   def explorationStarted(startValue: Long): Unit = {
     this.startValue = startValue
     commonProfilingData.callInc()
@@ -49,7 +52,7 @@ class SearchProfiler(val neighborhood: Neighborhood) {
     currentExplorationTimeSpent = 0L
   }
 
-  // Pause the exploration (mandatory to have a proper exploration duration within the dynAndThen combinator)
+  /** Pauses the exploration timer (needed for some combinator ex: dynAndThen) */
   def explorationPaused(): Unit = {
     explorationPausedAt = System.nanoTime()
     currentExplorationTimeSpent += explorationPausedAt - Math.max(
@@ -57,9 +60,11 @@ class SearchProfiler(val neighborhood: Neighborhood) {
       explorationResumedAt
     )
   }
-  // Resume the exploration (mandatory to have a proper exploration duration within the dynAndThen combinator)
+
+  /** Resumes the exploration timer (needed for some combinator ex: dynAndThen) */
   def explorationResumed(): Unit = explorationResumedAt = System.nanoTime()
 
+  /** Saves exploration data */
   def explorationEnded(explorationResult: SearchResult): Unit = {
     val timeSpent = currentExplorationTimeSpent + System.nanoTime() - Math.max(
       startExplorationAt,
@@ -78,20 +83,28 @@ class SearchProfiler(val neighborhood: Neighborhood) {
   // The object that holds the common profiling data (meaning nbCalls,AvgTimeMove,nbFound...)
   lazy val commonProfilingData: CommonProfilingData = new CommonProfilingData()
 
-  private def gainPerCall: String = if (commonProfilingData.nbCalls == 0L) "NA"
-  else s"${commonProfilingData.gain / commonProfilingData.nbCalls}"
-  private def callDuration: String = if (commonProfilingData.nbCalls == 0L) "NA"
-  else s"${commonProfilingData.timeSpentMillis / commonProfilingData.nbCalls}"
-  private def slope: String = if (commonProfilingData.timeSpentMillis == 0L) "NA"
-  else
-    s"${1000 * (commonProfilingData.gain.toDouble / commonProfilingData.timeSpentMillis.toDouble).toLong}"
-  private def avgTimeSpendNoMove: String = if (
-    commonProfilingData.nbCalls - commonProfilingData.nbFound == 0L
-  ) "NA"
-  else
-    s"${commonProfilingData.timeSpentNoMoveFoundMillis / (commonProfilingData.nbCalls - commonProfilingData.nbFound)}"
-  private def avgTimeSpendMove: String = if (commonProfilingData.nbFound == 0L) "NA"
-  else s"${commonProfilingData.timeSpentMoveFoundMillis / commonProfilingData.nbFound}"
+  private def gainPerCall: String = {
+    if (commonProfilingData.nbCalls == 0L) "NA"
+    else s"${commonProfilingData.gain / commonProfilingData.nbCalls}"
+  }
+  private def callDuration: String = {
+    if (commonProfilingData.nbCalls == 0L) "NA"
+    else s"${commonProfilingData.timeSpentMillis / commonProfilingData.nbCalls}"
+  }
+  private def slope: String = {
+    if (commonProfilingData.timeSpentMillis == 0L) "NA"
+    else
+      s"${1000 * (commonProfilingData.gain.toDouble / commonProfilingData.timeSpentMillis.toDouble).toLong}"
+  }
+  private def avgTimeSpendNoMove: String = {
+    if (commonProfilingData.nbCalls - commonProfilingData.nbFound == 0L) "NA"
+    else
+      s"${commonProfilingData.timeSpentNoMoveFoundMillis / (commonProfilingData.nbCalls - commonProfilingData.nbFound)}"
+  }
+  private def avgTimeSpendMove: String = {
+    if (commonProfilingData.nbFound == 0L) "NA"
+    else s"${commonProfilingData.timeSpentMoveFoundMillis / commonProfilingData.nbFound}"
+  }
   protected def nbExplored: String                       = "NA"
   protected def avgTimeExplore: String                   = "NA"
   protected def avgTimeFirstNeighborSelection: String    = "NA"
@@ -166,16 +179,27 @@ class SearchProfiler(val neighborhood: Neighborhood) {
     )
   }
 
-  // Use this method if you need to reset some statistics (but keeping the total statistics)
-  // For instance when using BestSlopeFirst
-  def resetThisStatistics(): Unit = commonProfilingData.resetStatisticsForSelection()
-  // This method is used when you need to merge to IDENTICAL provider.
-  // For instance with the DynAndThen generating dynamic neighborhood
+  /** Resets intermediary statistics (but keeping the total statistics)
+    *
+    * Useful when you need some intermediary profiling information to update the behavior of your
+    * combinator. For instance with bestSlopFirst combinator.
+    */
+  def resetIntermediaryStatistics(): Unit = commonProfilingData.resetIntermediaryStatistics()
+
+  /** Merges this provider [[CommonProfilingData]] with another one.
+    *
+    * Useful when two [[Neighborhood]] have to be considered as one. For instance the DynAndThen
+    * combinator needs to merge the dynamically generated Neighborhood to keep their profiling data.
+    * NOTE : For composition combinator their is a [[CompositionProfiler]] doing all that.
+    */
   def merge(profiler: SearchProfiler): Unit = {
     commonProfilingData.merge(profiler.commonProfilingData)
   }
 
   override def toString: String = s"Profile(${neighborhood.toString})\n$commonProfilingData"
-  // Get the detailedRecursiveName, the idea is to be able to distinguish two generated neighborhood no matter the depth
+
+  /** Get the detailedRecursiveName, the idea is to be able to distinguish two generated
+    * neighborhood no matter the depth
+    */
   def detailedRecursiveName: String = s"${neighborhood.toString}"
 }

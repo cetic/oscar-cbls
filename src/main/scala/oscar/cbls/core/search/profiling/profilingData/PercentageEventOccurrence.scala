@@ -17,8 +17,8 @@ package oscar.cbls.core.search.profiling.profilingData
   *
   * Ex: The percentage of else choice with OrElse
   */
-case class PercentageEventOccurrence() extends CombinatorProfilingData {
-  private var _occurrences: Int = 0
+case class PercentageEventOccurrence(firstOneOccurred: Boolean = false) extends CombinatorProfilingData {
+  private var _occurrences: Int = if(firstOneOccurred) 1 else 0
   private var _iterations: Int  = 0
 
   private def occurrences: Int = _occurrences

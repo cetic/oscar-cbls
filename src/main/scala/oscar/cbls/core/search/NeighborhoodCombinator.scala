@@ -14,22 +14,38 @@
 package oscar.cbls.core.search
 
 import oscar.cbls.core.computation.objective.Objective
-import oscar.cbls.core.search.profiling.CombinatorProfiler
+import oscar.cbls.core.search.profiling.{CombinatorProfiler, SearchProfiler}
 
 abstract class NeighborhoodCombinator(
   neighborhoodCombinatorName: String,
   val subNeighborhoods: List[Neighborhood]
 ) extends Neighborhood(neighborhoodCombinatorName) {
 
-  override val _searchProfiler: CombinatorProfiler = new CombinatorProfiler(this)
+  protected var _searchProfilerOpt: Option[CombinatorProfiler] = None
 
-  override def getMove(objective: Objective): SearchResult ={
+  override def searchProfiler(): Option[CombinatorProfiler] = _searchProfilerOpt
+
+  override def profileSearch(): Unit = _searchProfilerOpt match {
+    case None =>
+      _searchProfilerOpt = Some(new CombinatorProfiler(this))
+      subNeighborhoods.foreach(_.profileSearch())
+    case _    => ;
+  }
+
+  override final def getMove(objective: Objective): SearchResult = {
     objective.explorationStarted(this)
     val explorationResult = exploreCombinator(objective)
     objective.explorationEnded(this, explorationResult)
     explorationResult
   }
 
+  /** Explores this Combinator. This is where you put the logic of your Combinator.
+    *
+    * @param objective
+    *   The Objective of the search
+    * @return
+    *   The search result, either [[MoveFound]] or [[NoMoveFound]]
+    */
   protected[this] def exploreCombinator(objective: Objective): SearchResult
 
   override def reset(): Unit = {

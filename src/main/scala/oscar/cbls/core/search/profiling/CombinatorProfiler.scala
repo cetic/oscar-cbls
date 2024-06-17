@@ -34,7 +34,7 @@ class CombinatorProfiler(val combinator: NeighborhoodCombinator)
     extends SearchProfiler(combinator) {
 
   override def subProfilers: List[SearchProfiler] =
-    combinator.subNeighborhoods.toList.map(_._searchProfiler)
+    combinator.subNeighborhoods.map(_.searchProfiler().get)
 
   override def explorationPaused(): Unit = {
     super.explorationPaused()
@@ -53,7 +53,7 @@ class CombinatorProfiler(val combinator: NeighborhoodCombinator)
     mergeSpecificStatistics(combinatorProfiler)
     combinator.subNeighborhoods
       .zip(combinatorProfiler.combinator.subNeighborhoods)
-      .foreach(sn => sn._1._searchProfiler.merge(sn._2._searchProfiler))
+      .foreach(sn => sn._1.searchProfiler().get.merge(sn._2.searchProfiler().get))
   }
 
   override def detailedRecursiveName: String =
@@ -64,46 +64,81 @@ class CombinatorProfiler(val combinator: NeighborhoodCombinator)
   private val minMeanMaxProfiledData: mutable.HashMap[String, MinMeanMaxData] =
     mutable.HashMap.empty
   // Profile a new value
-  def minMeanMaxProfile(name: String): Unit = minMeanMaxProfiledData.addOne(name, MinMeanMaxData())
-  def minMeanMaxAddValue(name: String, value: Long): Unit = minMeanMaxProfiledData(name).add(value)
+  def minMeanMaxAddValue(name: String, value: Long): Unit = minMeanMaxProfiledData.get(name) match {
+    case Some(minMeanMaxData: MinMeanMaxData) => minMeanMaxData.add(value)
+    case None => minMeanMaxProfiledData.addOne(name, MinMeanMaxData(value))
+  }
 
   // occurrence per iteration : See ProfilingData.NbOccurrencesPerIteration
   ///////////////////////////
   private val nbOccurrencesPerIterationData: mutable.HashMap[String, NbOccurrencesPerIteration] =
     mutable.HashMap.empty
   // Profile a new value
-  def nbOccurrencePerIterationProfile(name: String, initFirstIteration: Boolean = false): Unit =
-    nbOccurrencesPerIterationData.addOne(name, NbOccurrencesPerIteration(initFirstIteration))
   def nbOccurrencePerIterationNextIteration(name: String): Unit =
-    nbOccurrencesPerIterationData(name).nextIteration()
+    nbOccurrencesPerIterationData.get(name) match {
+      case Some(nbOccPerIteration) => nbOccPerIteration.nextIteration()
+      case None =>
+        nbOccurrencesPerIterationData.addOne(
+          name,
+          NbOccurrencesPerIteration(startIncIteration = true)
+        )
+    }
   def nbOccurrencePerIterationEventOccurred(name: String): Unit =
-    nbOccurrencesPerIterationData(name).eventOccurred()
+    nbOccurrencesPerIterationData.get(name) match {
+      case Some(nbOccPerIteration) => nbOccPerIteration.eventOccurred()
+      case None =>
+        nbOccurrencesPerIterationData.addOne(
+          name,
+          NbOccurrencesPerIteration(startIncOccurrence = true)
+        )
+    }
 
   // percentage occurrence : See ProfilingData.PercentageEventOccurrence
   ////////////////////////
   private val percentageEventOccurrenceData: mutable.HashMap[String, PercentageEventOccurrence] =
     mutable.HashMap.empty
-  // Profile a new value
-  def percentageEventOccurrenceProfile(name: String): Unit =
-    percentageEventOccurrenceData.addOne(name, PercentageEventOccurrence())
+
+  /** Pushes a notification about a event occurrence
+    *
+    * If this event name is already registered, just push the notification. Otherwise it creates a
+    * new event and push this notification.
+    * @param name
+    *   The name of the event
+    * @param occurred
+    *   Whether it occurred or not
+    */
   def percentageEventOccurrencePushEvent(name: String, occurred: Boolean): Unit =
-    percentageEventOccurrenceData(name).pushEvent(occurred)
+    percentageEventOccurrenceData.get(name) match {
+      case Some(percEventOccur) => percEventOccur.pushEvent(occurred)
+      case None => percentageEventOccurrenceData.addOne(name, PercentageEventOccurrence())
+    }
 
   // summed value : See ProfilingData.SummedValue
   ///////////////
   private val summedValueProfiledData: mutable.HashMap[String, SummedValue] = mutable.HashMap.empty
-  // Profile a new value
-  def summedValueProfile(name: String): Unit = summedValueProfiledData.addOne(name, SummedValue())
-  def summedValuePlus(name: String, value: Long): Unit = summedValueProfiledData(name).plus(value)
+
+  /** Sums a value to an existing SummedValue or create a new one (with this value)
+    *
+    * @param name
+    *   The name of the summed value
+    * @param value
+    *   The value to sum
+    */
+  def summedValuePlus(name: String, value: Long): Unit = {
+    summedValueProfiledData.get(name) match {
+      case Some(summedValue: SummedValue) => summedValue.plus(value)
+      case None => summedValueProfiledData.addOne(name, SummedValue(value))
+    }
+  }
 
   private def collectSpecificStatistic(
     data: mutable.HashMap[String, CombinatorProfilingData]
   ): List[List[String]] =
-      if (data.isEmpty) List.empty[List[String]]
-      else {
-        List(List("Profiled var") ::: data.values.head.collectStatisticsHeaders()) :::
-          data.keys.map(key => List(key) ::: data(key).collectStatisticsData()).toList
-      }
+    if (data.isEmpty) List.empty[List[String]]
+    else {
+      List(List("Profiled var") ::: data.values.head.collectStatisticsHeaders()) :::
+        data.keys.map(key => List(key) ::: data(key).collectStatisticsData()).toList
+    }
 
   protected def mergeSpecificStatistics(other: CombinatorProfiler): Unit = {
     minMeanMaxProfiledData.keys.foreach(key =>
@@ -121,7 +156,8 @@ class CombinatorProfiler(val combinator: NeighborhoodCombinator)
   }
 
   def collectCombinatorSpecificStatistics: List[List[List[String]]] = {
-    List(List(List(combinator.getClass.getSimpleName)),
+    List(
+      List(List(combinator.getClass.getSimpleName)),
       collectSpecificStatistic(
         minMeanMaxProfiledData.asInstanceOf[mutable.HashMap[String, CombinatorProfilingData]]
       ),
@@ -133,6 +169,7 @@ class CombinatorProfiler(val combinator: NeighborhoodCombinator)
       ),
       collectSpecificStatistic(
         summedValueProfiledData.asInstanceOf[mutable.HashMap[String, CombinatorProfilingData]]
-      ))
+      )
+    )
   }
 }
