@@ -48,7 +48,7 @@ object Element {
   }
 }
 
-/** [[Invariant]] that maintains input(index) where input is an array if [[IntVariable]].
+/** [[Invariant]] that maintains input(index) where input is an array of [[IntVariable]].
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -98,7 +98,7 @@ class Element(
     newVal: Long
   ): Unit = {
     if (contextualVarIndex == 0) {
-      // The index is modified. We update de dependencies.
+      // The index is modified. We update the dependencies.
       assert(index == intVariable)
       keyForCurrentVar.delete()
       keyForCurrentVar = input(newVal.toInt).registerDynamicallyListeningElement(this)
