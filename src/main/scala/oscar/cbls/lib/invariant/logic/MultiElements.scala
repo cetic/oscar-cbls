@@ -19,7 +19,7 @@ import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 
 import scala.collection.mutable
 
-/** Companion object of the [[IntElement]] class. */
+/** Companion object of the [[MultiElements]] class. */
 object MultiElements {
 
   /** Creates a [[MultiElements]] invariant.
