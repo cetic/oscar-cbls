@@ -16,10 +16,10 @@ package oscar.cbls.lib.invariant.logic
 import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, Store}
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 
-/** Companion object of the [[Element]] class. */
-object Element {
+/** Companion object of the [[IntElement]] class. */
+object IntElement {
 
-  /** Creates an [[Element]] invariant.
+  /** Creates an [[IntElement]] invariant.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -43,8 +43,8 @@ object Element {
     output: IntVariable,
     bulkIdentifier: Option[String] = None,
     name: Option[String] = None
-  ): Unit = {
-    new Element(model, input, index, output, bulkIdentifier, name)
+  ): IntElement = {
+    new IntElement(model, input, index, output, bulkIdentifier, name)
   }
 }
 
@@ -66,7 +66,7 @@ object Element {
   * @param name
   *   The name (optional) of your Invariant.
   */
-class Element(
+class IntElement(
   model: Store,
   input: Array[IntVariable],
   index: IntVariable,

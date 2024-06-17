@@ -19,32 +19,34 @@ import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 
 import scala.collection.mutable
 
-/** Companion object of the [[Element]] class. */
-object MultiElements{
+/** Companion object of the [[IntElement]] class. */
+object MultiElements {
 
   /** Creates a [[MultiElements]] invariant.
-   *
-   * @param model
-   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
-   * @param input
-   *   An [[Array]] of [[IntVariable]].
-   * @param listenedVariablesIndices
-   *   A [[SetVariable]] containing the indices of the value to return.
-   * @param output
-   *   A [[SetVariable]] containing {input(i) | i in listenedVariablesIndices}
-   * @param bulkIdentifier
-   *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
-   *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one if
-   *   you're referencing the same variables.
-   * @param name
-   *   The name (optional) of your Invariant.
-   */
-  def apply(model: Store,
-            input: Array[IntVariable],
-            listenedVariablesIndices: SetVariable,
-            output: SetVariable,
-            bulkIdentifier: Option[String] = None,
-            name: Option[String] = None) : Unit = {
+    *
+    * @param model
+    *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+    * @param input
+    *   An [[Array]] of [[IntVariable]].
+    * @param listenedVariablesIndices
+    *   A [[SetVariable]] containing the indices of the value to return.
+    * @param output
+    *   A [[SetVariable]] containing {input(i) | i in listenedVariablesIndices}
+    * @param bulkIdentifier
+    *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
+    *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one
+    *   if you're referencing the same variables.
+    * @param name
+    *   The name (optional) of your Invariant.
+    */
+  def apply(
+    model: Store,
+    input: Array[IntVariable],
+    listenedVariablesIndices: SetVariable,
+    output: SetVariable,
+    bulkIdentifier: Option[String] = None,
+    name: Option[String] = None
+  ): MultiElements = {
     new MultiElements(model, input, listenedVariablesIndices, output, bulkIdentifier, name)
   }
 }

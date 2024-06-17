@@ -44,7 +44,7 @@ object SetElement {
     output: SetVariable,
     bulkIdentifier: Option[String] = None,
     name: Option[String] = None
-  ): Unit = {
+  ): SetElement = {
     new SetElement(model, input, index, output, bulkIdentifier, name)
   }
 }
