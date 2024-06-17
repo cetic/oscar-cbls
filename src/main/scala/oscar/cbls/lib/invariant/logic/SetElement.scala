@@ -15,20 +15,21 @@ package oscar.cbls.lib.invariant.logic
 
 import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, Store}
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
+import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 
-/** Companion object of the [[Element]] class. */
-object Element {
+/** Companion object of [[SetElement]] class. */
+object SetElement {
 
-  /** Creates an [[Element]] invariant.
+  /** Creates a [[SetElement]] invariant.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   An [[Array]] of [[IntVariable]].
+    *   An [[Array]] of [[SetVariable]].
     * @param index
     *   An [[IntVariable]] accessing one of the input values.
     * @param output
-    *   The [[IntVariable]] which contains input(index).
+    *   The [[SetVariable]] which contains input(index).
     * @param bulkIdentifier
     *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
     *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one
@@ -38,27 +39,27 @@ object Element {
     */
   def apply(
     model: Store,
-    input: Array[IntVariable],
+    input: Array[SetVariable],
     index: IntVariable,
-    output: IntVariable,
+    output: SetVariable,
     bulkIdentifier: Option[String] = None,
     name: Option[String] = None
   ): Unit = {
-    new Element(model, input, index, output, bulkIdentifier, name)
+    new SetElement(model, input, index, output, bulkIdentifier, name)
   }
 }
 
-/** [[Invariant]] that maintains input(index) where input is an array of [[IntVariable]]. Update is
+/** [[Invariant]] that maintains input(index) where input is an array of [[SetVariable]]. Update is
   * in O(1).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   An [[Array]] of [[IntVariable]].
+  *   An [[Array]] of [[SetVariable]].
   * @param index
   *   An [[IntVariable]] accessing one of the input values.
   * @param output
-  *   The [[IntVariable]] which contains input(index).
+  *   The [[SetVariable]] which contains input(index).
   * @param bulkIdentifier
   *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
   *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one if
@@ -66,15 +67,16 @@ object Element {
   * @param name
   *   The name (optional) of your Invariant.
   */
-class Element(
+class SetElement(
   model: Store,
-  input: Array[IntVariable],
+  input: Array[SetVariable],
   index: IntVariable,
-  output: IntVariable,
+  output: SetVariable,
   bulkIdentifier: Option[String] = None,
   name: Option[String] = None
 ) extends Invariant(model, name)
-    with IntNotificationTarget {
+    with IntNotificationTarget
+    with SetNotificationTarget {
 
   private[this] var keyForCurrentVar: KeyForRemoval[_] = input(index.value().toInt)
     .registerDynamicallyListeningElement(this)
@@ -98,16 +100,25 @@ class Element(
     oldVal: Long,
     newVal: Long
   ): Unit = {
-    if (contextualVarIndex == 0) {
-      // The index is modified. We update the dependencies.
-      assert(index == intVariable)
-      keyForCurrentVar.delete()
-      keyForCurrentVar = input(newVal.toInt).registerDynamicallyListeningElement(this)
-      output := input(newVal.toInt).value()
-    } else {
-      // The listened variable is modified.
-      output := newVal
-    }
+
+    assert(intVariable == index)
+    keyForCurrentVar.delete()
+    keyForCurrentVar = intVariable.registerDynamicallyListeningElement(this)
+
+    output := input(newVal.toInt).value()
+  }
+
+  override def notifySetChanges(
+    setVariable: SetVariable,
+    index: Int,
+    addedElems: Iterable[Int],
+    removedElems: Iterable[Int],
+    oldValue: Set[Int],
+    newValue: Set[Int]
+  ): Unit = {
+
+    assert(setVariable == input(this.index.value().toInt))
+    output := newValue
   }
 
   override def checkInternals(): Unit = {
