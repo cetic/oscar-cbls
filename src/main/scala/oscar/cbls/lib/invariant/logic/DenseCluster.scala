@@ -64,7 +64,8 @@ object DenseCluster {
 class DenseCluster(
   model: Store,
   input: Array[IntVariable],
-  output: Array[SetVariable],
+  val output: Array[SetVariable], // We need to access it when the invariant is created
+  // by the Cluster object.
   bulkIdentifier: Option[String] = None,
   name: Option[String] = None
 ) extends Invariant(model, name)

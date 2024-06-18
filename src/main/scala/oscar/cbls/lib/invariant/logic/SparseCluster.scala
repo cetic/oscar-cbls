@@ -68,7 +68,8 @@ object SparseCluster {
 class SparseCluster(
   model: Store,
   input: Array[IntVariable],
-  output: HashMap[Long, SetVariable],
+  val output: HashMap[Long, SetVariable], // We need to access it when the invariant is created
+  // by the Cluster object.
   bulkIdentifier: Option[String] = None,
   name: Option[String] = None
 ) extends Invariant(model, name)
