@@ -99,6 +99,7 @@ class Filter(
 
   output.setDefiningInvariant(this)
 
+  @inline
   override def notifyIntChanges(
     intVariable: IntVariable,
     contextualVarIndex: Int,
