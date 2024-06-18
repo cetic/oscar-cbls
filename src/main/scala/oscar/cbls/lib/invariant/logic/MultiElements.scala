@@ -93,6 +93,7 @@ class MultiElements(
       this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, bulkId, model))
   }
 
+  output := Set.empty
   listenedVariablesIndices.registerStaticallyAndDynamicallyListeningElement(this)
   for (i <- listenedVariablesIndices.value()) {
     keysForRemoval(i) = input(i).registerDynamicallyListeningElement(this, i)
