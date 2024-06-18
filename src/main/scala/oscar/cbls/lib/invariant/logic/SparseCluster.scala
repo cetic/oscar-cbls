@@ -50,7 +50,7 @@ object SparseCluster {
 
 /** [[Invariant]] that maintains clusters of the indices of an array: output(j) = {i in input
   * .indices | input(i) == j}. It is considered as a sparse cluster because output is a map and
-  * cover only some preselected possible values of the input variables. Update is in O(1)
+  * covers only some preselected possible values of the input variables. Update is in O(1)
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -101,6 +101,8 @@ class SparseCluster(
     oldVal: Long,
     newVal: Long
   ): Unit = {
+    assert(input(contextualVarIndex) == intVariable)
+
     val oldCluster = output.get(oldVal)
     val newCluster = output.get(newVal)
 
