@@ -13,10 +13,64 @@
 
 package oscar.cbls.lib.invariant.logic
 
-import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, Store}
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 import oscar.cbls.core.computation.set.SetVariable
+import oscar.cbls.core.computation.{IncredibleBulk, Invariant, Store}
 
+/** Companion object of the [[Filter]] class. */
+object Filter {
+
+  /** Creates a [[Filter]] invariant.
+    *
+    * @param model
+    *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+    * @param input
+    *   An [[Array]] of [[IntVariable]]
+    * @param output
+    *   A [[SetVariable]] containing {i in input.indices | predicate(input[i])}
+    * @param predicate
+    *   The function that selects values such that their index must be included in the output set.
+    *   This function cannot depend on any IntVariable, as updates to these IntVariables will not
+    *   trigger propagation of this invariant. By default, predicate is "_ > 0".
+    * @param bulkIdentifier
+    *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
+    *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one
+    *   if you're referencing the same variables.
+    * @param name
+    *   The name (optional) of your Invariant
+    */
+  def apply(
+    model: Store,
+    input: Array[IntVariable],
+    output: SetVariable,
+    predicate: Long => Boolean = _ > 0,
+    bulkIdentifier: Option[String] = None,
+    name: Option[String] = None
+  ): Filter = {
+    new Filter(model, input, output, predicate, bulkIdentifier, name)
+  }
+}
+
+/** [[Invariant]] that maintains {i in input.indices | predicate(input[i])}. Update depends of the
+  * predicate complexity. If predicate is in O(1), update is in O(1).
+  *
+  * @param model
+  *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
+  * @param input
+  *   An [[Array]] of [[IntVariable]]
+  * @param output
+  *   A [[SetVariable]] containing {i in input.indices | predicate(input[i])}
+  * @param predicate
+  *   The function that selects values such that their index must be included in the output set.
+  *   This function cannot depend on any IntVariable, as updates to these IntVariables will not
+  *   trigger propagation of this invariant. By default, predicate is "_ > 0".
+  * @param bulkIdentifier
+  *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
+  *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one if
+  *   you're referencing the same variables.
+  * @param name
+  *   The name (optional) of your Invariant
+  */
 class Filter(
   model: Store,
   input: Array[IntVariable],
@@ -38,9 +92,9 @@ class Filter(
 
   output := Set.empty
   for (i <- input.indices) {
-    val v = input(i)
+    val v: IntVariable = input(i)
     v.registerDynamicallyListeningElement(this, i)
-    if (predicate(v.value())) output :+= v.value().toInt
+    if (predicate(v.value())) output :+= i
   }
 
   output.setDefiningInvariant(this)
@@ -50,7 +104,25 @@ class Filter(
     contextualVarIndex: Int,
     oldVal: Long,
     newVal: Long
-  ): Unit = ???
+  ): Unit = {
+    assert(intVariable == input(contextualVarIndex))
 
-  override def checkInternals(): Unit = ???
+    val oldPredicate: Boolean = predicate(oldVal)
+    val newPredicate: Boolean = predicate(newVal)
+    if (oldPredicate && !newPredicate) output :-= contextualVarIndex
+    else if (!oldPredicate && newPredicate) output :+= contextualVarIndex
+  }
+
+  override def checkInternals(): Unit = {
+    val selectedIndices: Set[Int] = input.indices.filter(i => predicate(input(i).value())).toSet
+
+    require(
+      output.pendingValue == selectedIndices,
+      s"checkInternals fails in invariant ${name()}. " +
+        s"output != {i in input.indices | predicate(input[i]}. " +
+        s"output: ${output.pendingValue} - selected  indices: $selectedIndices - input: ${input
+            .mkString("", ", ", "")}"
+    )
+  }
+
 }
