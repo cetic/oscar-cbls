@@ -73,11 +73,10 @@ class FilterTestSuite extends AnyFunSuite with Matchers {
   }
 
   test("Filter: checkInternal should fail"){
-    val (store, _, output, inv) = testFilter(_ % 2 == 0)
+    val (_, _, output, inv) = testFilter(_ % 2 == 0)
     output :+= 25
 
     an[IllegalArgumentException] should be thrownBy inv.checkInternals()
-    inv.checkInternals()
   }
 
 }
