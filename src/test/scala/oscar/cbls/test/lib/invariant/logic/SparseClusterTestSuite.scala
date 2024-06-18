@@ -95,7 +95,9 @@ class SparseClusterTestSuite extends AnyFunSuite with Matchers {
     store.propagate()
 
     output(2) := Set(2)
-    an[IllegalArgumentException] should be thrownBy inv.checkInternals()
+    val e = the [IllegalArgumentException] thrownBy inv.checkInternals()
+
+    e.getMessage should include ("Found a variable that is not in expected cluster.")
   }
 
   test("SparseCuster: checkInternals should fail when a variable is not in the good cluster") {
@@ -103,7 +105,9 @@ class SparseClusterTestSuite extends AnyFunSuite with Matchers {
     store.propagate()
 
     output(2) := Set(1, 2, 3)
-    an[IllegalArgumentException] should be thrownBy inv.checkInternals()
+    val e = the [IllegalArgumentException] thrownBy inv.checkInternals()
+
+    e.getMessage should include ("A variable has not the same value than its cluster's key")
   }
 
 }
