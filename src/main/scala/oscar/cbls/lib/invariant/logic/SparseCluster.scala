@@ -13,25 +13,23 @@
 
 package oscar.cbls.lib.invariant.logic
 
+import oscar.cbls.core.computation.{IncredibleBulk, Invariant, Store}
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 import oscar.cbls.core.computation.set.SetVariable
-import oscar.cbls.core.computation.{IncredibleBulk, Invariant, Store}
 
-/** Companion object of the [[Filter]] class. */
-object Filter {
+import scala.collection.immutable.HashMap
 
-  /** Creates a [[Filter]] invariant.
+/** Companion object of [[SparseCluster]] class. */
+object SparseCluster {
+
+  /** Creates a [[SparseCluster]] invariant.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
     *   An [[Array]] of [[IntVariable]]
     * @param output
-    *   A [[SetVariable]] containing {i in input.indices | predicate(input[i])}
-    * @param predicate
-    *   The function that selects values such that their index must be included in the output set.
-    *   This function cannot depend on any IntVariable, as updates to these IntVariables will not
-    *   trigger propagation of this invariant. By default, predicate is "_ > 0".
+    *   An [[HashMap]] of [[SetVariable]] such that output(j) = {i in input.indices | input(i) == j}
     * @param bulkIdentifier
     *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
     *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one
@@ -42,28 +40,24 @@ object Filter {
   def apply(
     model: Store,
     input: Array[IntVariable],
-    output: SetVariable,
-    predicate: Long => Boolean = _ > 0,
-    bulkIdentifier: Option[String] = None,
-    name: Option[String] = None
-  ): Filter = {
-    new Filter(model, input, output, predicate, bulkIdentifier, name)
+    output: HashMap[Long, SetVariable],
+    bulkIdentifier: Option[String],
+    name: Option[String]
+  ): SparseCluster = {
+    new SparseCluster(model, input, output, bulkIdentifier, name)
   }
 }
 
-/** [[Invariant]] that maintains {i in input.indices | predicate(input(i))}. Update depends of the
-  * predicate complexity. If predicate is in O(1), update is in O(1).
+/** [[Invariant]] that maintains clusters of the indices of an array: output(j) = {i in input
+  * .indices | input(i) == j}. It is considered as a sparse cluster because output is a map and
+  * cover only some preselected possible values of the input variables. Update is in O(1)
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
   *   An [[Array]] of [[IntVariable]]
   * @param output
-  *   A [[SetVariable]] containing {i in input.indices | predicate(input[i])}
-  * @param predicate
-  *   The function that selects values such that their index must be included in the output set.
-  *   This function cannot depend on any IntVariable, as updates to these IntVariables will not
-  *   trigger propagation of this invariant. By default, predicate is "_ > 0".
+  *   An [[HashMap]] of [[SetVariable]] such that output(j) = {i in input.indices | input(i) == j}
   * @param bulkIdentifier
   *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
   *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one if
@@ -71,11 +65,10 @@ object Filter {
   * @param name
   *   The name (optional) of your Invariant
   */
-class Filter(
+class SparseCluster(
   model: Store,
   input: Array[IntVariable],
-  output: SetVariable,
-  predicate: Long => Boolean = _ > 0,
+  output: HashMap[Long, SetVariable],
   bulkIdentifier: Option[String] = None,
   name: Option[String] = None
 ) extends Invariant(model, name)
@@ -90,14 +83,16 @@ class Filter(
       this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, bulkId, model))
   }
 
-  output := Set.empty
-  for (i <- input.indices) {
-    val v: IntVariable = input(i)
-    v.registerDynamicallyListeningElement(this, i)
-    if (predicate(v.value())) output :+= i
+  for (cluster <- output.values) {
+    cluster.setDefiningInvariant(this)
+    cluster := Set.empty
   }
 
-  output.setDefiningInvariant(this)
+  for (i <- input.indices) {
+    input(i).registerDynamicallyListeningElement(this, i)
+    val cluster = output.get(input(i).value())
+    if (cluster.nonEmpty) cluster.get :+= i
+  }
 
   @inline
   override def notifyIntChanges(
@@ -106,24 +101,43 @@ class Filter(
     oldVal: Long,
     newVal: Long
   ): Unit = {
-    assert(intVariable == input(contextualVarIndex))
+    val oldCluster = output.get(oldVal)
+    val newCluster = output.get(newVal)
 
-    val oldPredicate: Boolean = predicate(oldVal)
-    val newPredicate: Boolean = predicate(newVal)
-    if (oldPredicate && !newPredicate) output :-= contextualVarIndex
-    else if (!oldPredicate && newPredicate) output :+= contextualVarIndex
+    if (oldCluster.nonEmpty) oldCluster.get :-= contextualVarIndex
+    if (newCluster.nonEmpty) newCluster.get :+= contextualVarIndex
   }
 
   override def checkInternals(): Unit = {
-    val selectedIndices: Set[Int] = input.indices.filter(i => predicate(input(i).value())).toSet
+    for (i <- input.indices) {
+      val v = input(i).value()
+      if (output.isDefinedAt(v)) {
+        require(
+          output(v).pendingValue.contains(i),
+          s"checkInternal fails in invariant ${name()}. " +
+            s"Found a variable that is not in expected cluster. " +
+            s"variable: ${input(i)} - index: $i.\n $this"
+        )
+      }
+    }
+    for (value <- output.keys) {
+      for (index <- output(value).pendingValue) {
+        require(
+          input(index).value() == value,
+          s"checkInternals fail in invariant ${name()}. " +
+            s"A variable has not the same value than its cluster's key. " +
+            s"variable: ${input(index)} - cluster's key: $value.\n $this"
+        )
+      }
+    }
 
-    require(
-      output.pendingValue == selectedIndices,
-      s"checkInternals fails in invariant ${name()}. " +
-        s"output != {i in input.indices | predicate(input[i]}. " +
-        s"output: ${output.pendingValue} - selected  indices: $selectedIndices - input: ${input
-            .mkString("", ", ", "")}"
-    )
   }
 
+  override def toString: String = {
+    var toReturn: String =
+      super.toString + s"\n\tinput: ${input.mkString("", ", ", "")}\n\tClusters pending values: |"
+    for ((k, cluster) <- output) toReturn += s" $k -> ${cluster.pendingValue} |"
+
+    toReturn
+  }
 }
