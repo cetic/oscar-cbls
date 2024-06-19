@@ -46,6 +46,12 @@ abstract class TestPropagationElement(structure: TestPropagationStructure)
     dynamicallyListeningElement = e :: dynamicallyListeningElement
   }
 
+  override def registerStaticallyListeningElement(elem: PropagationElement): Unit = {
+    super.registerStaticallyListeningElement(elem)
+    addDynamicallyListeningElement(elem.asInstanceOf[TestPropagationElement])
+    elem.asInstanceOf[TestPropagationElement].addTransitiveDependency(this)
+  }
+
   override def registerStaticallyListenedElement(e: PropagationElement): Unit = {
     super.registerStaticallyListenedElement(e)
     e.asInstanceOf[TestPropagationElement].addDynamicallyListeningElement(this)

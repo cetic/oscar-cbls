@@ -68,7 +68,7 @@ class PropagationStructureGenerator(seed: Option[Long] = None) {
         val newInvariant = new TestInvariantElement(struct)
         val input        = rand.shuffle(variablePool).take(generateInt(nbMinInput, nbMaxInput))
         newInvariant.theoreticalLayer = input.map(_.theoreticalLayer).max + 1
-        input.foreach(v => newInvariant.registerStaticAndDynamicDependency(v))
+        input.foreach(v => v.registerListeningElement(newInvariant))
         val output = generateVariables(nbMinOutput, nbMaxOutput, struct, Some(newInvariant))
         generateList(
           nbInvToGenerate - 1,
