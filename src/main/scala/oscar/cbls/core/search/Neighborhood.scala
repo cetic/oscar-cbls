@@ -17,9 +17,27 @@ import oscar.cbls.core.computation.objective.Objective
 import oscar.cbls.core.search.profiling.SearchProfiler
 import oscar.cbls.visual.profiling.ProfilingConsole
 
+/** An interface that provides methods to handle search procedure.
+  *
+  * It has mainly two extensions :
+  *   - [[NeighborhoodCombinator]] => Combines Neighborhoods
+  *   - [[SimpleNeighborhood]] ==> A "leaf" neighborhood that does modification on variables.
+  *
+  * A search procedure is a Neighborhood or a combination of Neighborhood.
+  *
+  * For instance :
+  *   - AssignNeighborhood => Upon calling [[doAllMoves()]], this search procedure will assign new
+  *     values to a variable. Until no value are left to test.
+  *
+  *   - AssignNeighborhood(A: IntVariable) dynAndThen AssignNeighborhood(B: IntVariable) ==> This
+  *     one will assign a value to A and then to B and evaluate the combined movement.
+  *
+  * @param _name
+  *   The name of the Neighborhood (logging and profiling purposes)
+  */
 abstract class Neighborhood(_name: String) {
 
-  // Verbose
+  // VerboseMode stuff. See VerboseMode class for more information.
   private[core] var _verboseMode: VerboseMode = VerboseMode(0)
   private var _verbosityLevel: Int            = 0
   def verbosityLevel: Int                     = _verbosityLevel
@@ -30,14 +48,20 @@ abstract class Neighborhood(_name: String) {
     _verboseMode = VerboseMode(verbosityLevel)
   }
 
-  // Profiling
+  // Profiling stuff. Sea SearchProfiler class for more information.
   def searchProfiler(): Option[SearchProfiler]
-  /** Activates search profiling through all search procedure */
+
+  /** Activates search profiling through all search procedure.
+    * ==WARNING :==
+    * Be sure to call it at the root of your final search procedure to have
+    */
   def profileSearch(): Unit
 
   /** Displays the result of the search profiling in the console */
   def displayProfiling(): Unit =
-    searchProfiler().foreach(_searchProfiler => ProfilingConsole(_searchProfiler, _searchProfiler.collectThisProfileHeader))
+    searchProfiler().foreach(_searchProfiler =>
+      ProfilingConsole(_searchProfiler, _searchProfiler.collectThisProfileHeader)
+    )
 
   /** Resets the internal state of the neighborhood */
   def reset(): Unit

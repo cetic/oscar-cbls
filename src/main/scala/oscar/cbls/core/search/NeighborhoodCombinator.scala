@@ -16,6 +16,14 @@ package oscar.cbls.core.search
 import oscar.cbls.core.computation.objective.Objective
 import oscar.cbls.core.search.profiling.{CombinatorProfiler, SearchProfiler}
 
+/** An interface that provides methods to create a NeighborhoodCombinator.
+  *
+  * @param neighborhoodCombinatorName
+  *   The name of the neighborhood combinator
+  * @param subNeighborhoods
+  *   The Neighborhood that this combinator handles. Those can be [[SimpleNeighborhood]] or other
+  *   NeighborhoodCombinator.
+  */
 abstract class NeighborhoodCombinator(
   neighborhoodCombinatorName: String,
   val subNeighborhoods: List[Neighborhood]
@@ -29,7 +37,7 @@ abstract class NeighborhoodCombinator(
     case None =>
       _searchProfilerOpt = Some(new CombinatorProfiler(this))
       subNeighborhoods.foreach(_.profileSearch())
-    case _    => ;
+    case _ => ;
   }
 
   override final def getMove(objective: Objective): SearchResult = {

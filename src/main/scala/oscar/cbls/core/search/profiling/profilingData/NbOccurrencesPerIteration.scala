@@ -22,7 +22,7 @@ package oscar.cbls.core.search.profiling.profilingData
   * @param startIncOccurrence
   *   Whether or not the instance must start at the second iteration
   */
-case class NbOccurrencesPerIteration(
+private[profiling] case class NbOccurrencesPerIteration(
   startIncOccurrence: Boolean = false,
   startIncIteration: Boolean = false
 ) extends CombinatorProfilingData {

@@ -19,7 +19,7 @@ package oscar.cbls.core.search.profiling.profilingData
   *   - nbExplored
   *   - first and not first movement selection duration
   */
-case class NeighborhoodProfilingData() extends CommonProfilingData {
+private[profiling] case class NeighborhoodProfilingData() extends CommonProfilingData {
 
   private var _nbExplored: Long                        = 0L
   private var _firstNeighborSelectionCounter: Long     = 0L

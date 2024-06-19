@@ -30,6 +30,7 @@ class NeighborhoodProfiler(override val neighborhood: Neighborhood)
   private var lastNeighborExploredAt: Long    = 0L
   private var firstNeighborSelection: Boolean = true
 
+  /** Updates neighbor selection data */
   def neighborSelected(): Unit = {
     val neighborSelectionAt = System.nanoTime()
     if (firstNeighborSelection) {
@@ -57,6 +58,7 @@ class NeighborhoodProfiler(override val neighborhood: Neighborhood)
     super.explorationStarted(startValue)
   }
 
+  /** Updates neighbor exploration data */
   def neighborExplored(): Unit = {
     commonProfilingData.exploreInc()
     lastNeighborExploredAt = System.nanoTime()

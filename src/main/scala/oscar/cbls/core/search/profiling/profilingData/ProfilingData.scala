@@ -14,7 +14,7 @@
 package oscar.cbls.core.search.profiling.profilingData
 
 /** Abstract class for profiling data */
-abstract class ProfilingData {
+private[profiling] abstract class ProfilingData {
 
   /** Used to merge profiling data of two instance of Neighborhood.
     *

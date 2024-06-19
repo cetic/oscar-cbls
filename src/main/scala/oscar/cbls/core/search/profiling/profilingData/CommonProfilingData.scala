@@ -19,7 +19,7 @@ package oscar.cbls.core.search.profiling.profilingData
   * _nbCallsIntermediary. The second one is meant to be reset when a combinator uses the
   * resetStatistic method. The first one is never reset and contains the data of the whole search.
   */
-class CommonProfilingData extends ProfilingData() {
+private[profiling] class CommonProfilingData extends ProfilingData() {
 
   private var _lastCallFound: Boolean     = false
   private var _lastCallGain: Long         = 0L
@@ -57,26 +57,26 @@ class CommonProfilingData extends ProfilingData() {
 
   }
 
-  private[profiling] def gainPlus(gain: Long): Unit = {
+  def gainPlus(gain: Long): Unit = {
     this._lastCallGain = gain
     this._gain += gain
     this._gainIntermediary += gain
   }
-  private[profiling] def callInc(): Unit = {
+  def callInc(): Unit = {
     _nbCalls += 1
     _nbCallsIntermediary += 1
   }
-  private[profiling] def foundInc(): Unit = {
+  def foundInc(): Unit = {
     _nbFound += 1
     _nbFoundsIntermediary += 1
   }
-  private[profiling] def timeSpentMoveFoundPlus(timeNano: Long): Unit = {
+  def timeSpentMoveFoundPlus(timeNano: Long): Unit = {
     this._lastCallFound = true
     this._lastCallDurationNano = timeNano
     this._timeSpentMoveFoundNano += timeNano
     this._timeSpentMoveFoundNanoIntermediary += timeNano
   }
-  private[profiling] def timeSpentNoMoveFoundPlus(timeNano: Long): Unit = {
+  def timeSpentNoMoveFoundPlus(timeNano: Long): Unit = {
     this._lastCallFound = false
     this._lastCallDurationNano = timeNano
     this._timeSpentNoMoveFoundNano += timeNano

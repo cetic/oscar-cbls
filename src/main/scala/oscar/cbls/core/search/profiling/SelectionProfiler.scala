@@ -26,6 +26,22 @@ import oscar.cbls.core.search.{Neighborhood, NeighborhoodCombinator}
 class SelectionProfiler(combinator: NeighborhoodCombinator, val neighborhoods: List[Neighborhood])
     extends CombinatorProfiler(combinator) {
 
+  override def collectCombinatorSpecificStatistics: List[List[List[String]]] = {
+    val selectionProfilerData = List(
+      List(List("Name", "Usage", "Success")) :::
+        profilers.indices
+          .map(pi =>
+            List(
+              s"${profilers(pi).neighborhood.name}",
+              s"${neighborhoodUsage(pi).toString}%",
+              s"${neighborhoodSuccess(pi).toString}%"
+            )
+          )
+          .toList
+    )
+    super.collectCombinatorSpecificStatistics ::: selectionProfilerData
+  }
+
   ///////////////////////////////////////
   // Selection-Neighborhood management //
   ///////////////////////////////////////

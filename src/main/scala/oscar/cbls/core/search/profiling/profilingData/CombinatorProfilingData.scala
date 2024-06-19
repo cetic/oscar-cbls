@@ -15,10 +15,12 @@ package oscar.cbls.core.search.profiling.profilingData
 
 /** Abstract class for Combinator specifics profiling data
   */
-abstract class CombinatorProfilingData {
+private[profiling] abstract class CombinatorProfilingData {
   def merge(other: CombinatorProfilingData): Unit
 
+  /** Returns the headers of the profiled statistics */
   def collectStatisticsHeaders(): List[String]
 
+  /** Returns the data of the profiled statistics */
   def collectStatisticsData(): List[String]
 }

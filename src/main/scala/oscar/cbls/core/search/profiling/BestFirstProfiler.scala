@@ -15,7 +15,7 @@ package oscar.cbls.core.search.profiling
 
 import oscar.cbls.core.search.{Neighborhood, NeighborhoodCombinator}
 
-/** A selection profiler specialized for BestFirstProfiler
+/** A selection profiler specialized for BestSlopeFirst Neighborhood
   *
   * @param combinator
   *   The profiled combinator

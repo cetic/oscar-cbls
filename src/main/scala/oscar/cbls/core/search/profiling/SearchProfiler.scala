@@ -110,7 +110,7 @@ class SearchProfiler(val neighborhood: Neighborhood) {
   protected def avgTimeFirstNeighborSelection: String    = "NA"
   protected def avgTimeNotFirstNeighborSelection: String = "NA"
 
-  final def collectThisProfileHeader: Array[String] = Array(
+  final def collectThisProfileHeader: List[String] = List(
     "Neighborhood",
     "calls",
     "found",
@@ -127,8 +127,8 @@ class SearchProfiler(val neighborhood: Neighborhood) {
     "avgFirstSelectionTime(ms)",
     "avgOtherSelectionTime(ms)"
   )
-  final def collectThisProfileData: Array[String] = {
-    Array[String](
+  final def collectThisProfileData: List[String] = {
+    List[String](
       s"$neighborhood",
       s"${commonProfilingData.nbCalls}",
       s"${commonProfilingData.nbFound}",

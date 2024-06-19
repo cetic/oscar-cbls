@@ -19,7 +19,7 @@ class TestDynAndThen extends AnyFunSuite {
   val seed: Int      = random.nextInt()
   random.setSeed(seed)
 
-  test(s"DynAndThen works as intended with the new API. Seed : $seed") {
+  test(s"TEST DynAndThen works as intended. Seed : $seed") {
     val store                 = new Store()
     val a: IntVariable        = IntVariable(store, 500)
     val b: IntVariable        = IntVariable(store, 600)

@@ -109,7 +109,7 @@ class CombinatorProfiler(val combinator: NeighborhoodCombinator)
     */
   def percentageEventOccurrencePushEvent(name: String, occurred: Boolean): Unit =
     percentageEventOccurrenceData.get(name) match {
-      case Some(percEventOccur) => percEventOccur.pushEvent(occurred)
+      case Some(percentageEventOccur) => percentageEventOccur.pushEvent(occurred)
       case None => percentageEventOccurrenceData.addOne(name, PercentageEventOccurrence())
     }
 
@@ -155,6 +155,9 @@ class CombinatorProfiler(val combinator: NeighborhoodCombinator)
     )
   }
 
+  /** Collects combinators statistics in a 3 level List of strings. Grouped by profiled data type,
+    * instance of profiled data and data
+    */
   def collectCombinatorSpecificStatistics: List[List[List[String]]] = {
     List(
       List(List(combinator.getClass.getSimpleName)),
