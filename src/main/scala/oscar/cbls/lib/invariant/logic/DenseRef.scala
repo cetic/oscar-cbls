@@ -38,8 +38,8 @@ object DenseRef {
     model: Store,
     input: Array[SetVariable],
     output: Array[SetVariable],
-    bulkIdentifier: Option[String],
-    name: Option[String]
+    bulkIdentifier: Option[String] = None,
+    name: Option[String] = None
   ): DenseRef = {
     new DenseRef(model, input, output, bulkIdentifier, name)
   }
@@ -64,8 +64,8 @@ object DenseRef {
     model: Store,
     input: Array[SetVariable],
     upperBound: Int = Int.MaxValue,
-    bulkIdentifier: Option[String],
-    name: Option[String]
+    bulkIdentifier: Option[String] = None,
+    name: Option[String] = None
   ): DenseRef = {
     require(upperBound > 0)
     val output: Array[SetVariable] = Array.fill(upperBound)(SetVariable(model, Set.empty))
