@@ -119,7 +119,7 @@ class SparseCluster(
           output(v).pendingValue.contains(i),
           s"checkInternal fails in invariant ${name()}. " +
             s"Found a variable that is not in expected cluster. " +
-            s"variable: ${input(i)} - index: $i.\n $this"
+            s"variable: ${input(i)} - index: $i.\n ${internalDescription()}"
         )
       }
     }
@@ -129,14 +129,13 @@ class SparseCluster(
           input(index).value() == value,
           s"checkInternals fail in invariant ${name()}. " +
             s"A variable has not the same value than its cluster's key. " +
-            s"variable: ${input(index)} - cluster's key: $value.\n $this"
+            s"variable: ${input(index)} - cluster's key: $value.\n ${internalDescription()}"
         )
       }
     }
-
   }
 
-  override def toString: String = {
+  private[this] def internalDescription(): String = {
     var toReturn: String =
       super.toString + s"\n\tinput: ${input.mkString("", ", ", "")}\n\tClusters pending values: |"
     for ((k, cluster) <- output) toReturn += s" $k -> ${cluster.pendingValue} |"

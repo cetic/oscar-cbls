@@ -62,7 +62,7 @@ class FilterTestSuite extends AnyFunSuite with Matchers {
     output.value() should contain only (0, 6)
   }
 
-  test("Filter: checkInternals doesn't fail"){
+  test("Filter: checkInternals doesn't fail") {
     val (store, input, _, inv) = testFilter(_ % 2 == 1)
     input(0) := 11
     input(3) := 4
@@ -72,7 +72,7 @@ class FilterTestSuite extends AnyFunSuite with Matchers {
     noException should be thrownBy inv.checkInternals()
   }
 
-  test("Filter: checkInternal should fail"){
+  test("Filter: checkInternal should fail") {
     val (_, _, output, inv) = testFilter(_ % 2 == 0)
     output :+= 25
 

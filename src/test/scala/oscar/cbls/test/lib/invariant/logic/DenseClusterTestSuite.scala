@@ -96,9 +96,9 @@ class DenseClusterTestSuite extends AnyFunSuite with Matchers {
     store.propagate()
 
     output(5) := Set(3, 5)
-    val e = the [IllegalArgumentException] thrownBy inv.checkInternals()
+    val e = the[IllegalArgumentException] thrownBy inv.checkInternals()
 
-    e.getMessage should include ("Found a variable that is not in expected cluster.")
+    e.getMessage should include("Found a variable that is not in expected cluster.")
   }
 
   test("DenseCluster: checkInternals should fail when a variable is not in the good cluster") {
@@ -106,11 +106,9 @@ class DenseClusterTestSuite extends AnyFunSuite with Matchers {
     store.propagate()
 
     output(5) := Set(3, 5, 6, 0)
-    val e = the [IllegalArgumentException] thrownBy inv.checkInternals()
+    val e = the[IllegalArgumentException] thrownBy inv.checkInternals()
 
-    e.getMessage should include ("A variable has not the same value than its cluster's key")
+    e.getMessage should include("A variable has not the same value than its cluster's key")
   }
-
-
 
 }
