@@ -52,7 +52,7 @@ object Cluster {
     SparseCluster(model, input, output, bulkIdentifier, name)
   }
 
-  /** Creates a [[DenseCluster]] and instantiates the output [[Array]].
+  /** Creates a [[DenseCluster]] and instantiates the output [[Array]] of [[SetVariable]].
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
