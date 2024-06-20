@@ -46,7 +46,7 @@ object DenseCluster {
 
 /** [[Invariant]] that maintains clusters of the indices of an array: output(j) = {i in input
   * .indices | input(i) == j}. It is considered as a dense cluster because output is an array and
-  * covers all the possible value of the in the input variables. Update is O(1)
+  * covers all the possible value of the input variables. Update is O(1)
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
