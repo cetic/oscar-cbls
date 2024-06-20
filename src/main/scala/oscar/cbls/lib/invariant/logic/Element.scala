@@ -19,20 +19,21 @@ import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 /** Companion object of the [[Element]] class. */
 object Element {
 
-  /** Creates an [[Element]] invariant.
+  /** Creates an Element invariant.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   An [[Array]] of [[IntVariable]].
+    *   The elements that can be chosen.
     * @param index
-    *   An [[IntVariable]] accessing one of the input values.
+    *   An IntVariable pointing to one of the input values.
     * @param output
-    *   The [[IntVariable]] which contains input(index).
+    *   The IntVariable which contains input(index).
     * @param bulkIdentifier
-    *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
-    *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one
-    *   if you're referencing the same variables.
+    *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
+    *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+    *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
+    *   Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The name (optional) of your Invariant.
     */
@@ -48,21 +49,23 @@ object Element {
   }
 }
 
-/** [[Invariant]] that maintains input(index) where input is an array of [[IntVariable]]. Update is
-  * in O(1).
+/** [[oscar.cbls.core.computation.Invariant]] that maintains input(index) where input is an
+  * [[scala.Array]] of [[oscar.cbls.core.computation.integer.IntVariable]] and index is an
+  * [[oscar.cbls.core.computation.integer.IntVariable]] . Update is in O(1).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   An [[Array]] of [[IntVariable]].
+  *   The elements that can be chosen.
   * @param index
-  *   An [[IntVariable]] accessing one of the input values.
+  *   An IntVariable pointing to one of the input values.
   * @param output
-  *   The [[IntVariable]] which contains input(index).
+  *   The IntVariable which contains input(index).
   * @param bulkIdentifier
-  *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
-  *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one if
-  *   you're referencing the same variables.
+  *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
+  *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+  *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
+  *   sure to use the same one if you're referencing the same variables.
   * @param name
   *   The name (optional) of your Invariant.
   */
