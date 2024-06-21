@@ -20,17 +20,17 @@ import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 /** Companion object of the [[SumConst]] class. */
 object SumConst {
 
-  /** Creates a [[SumConst]] invariant.
+  /** Creates a SumConst invariant.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   An [[Array]] of [[IntConstant]].
+    *   The constant integers we want to sum.
     * @param listenedValuesIndices
-    *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
-    *   the sum.
+    *   A SetVariable containing the indices of the input variables to be listened to calculate the
+    *   sum.
     * @param output
-    *   The output [[IntVariable]] containing Sum(input(i) | i in listenedValuesIndices).
+    *   The output variable containing Sum(input(i) | i in listenedValuesIndices).
     * @param name
     *   The name (optional) of your Invariant.
     */
@@ -45,17 +45,18 @@ object SumConst {
   }
 }
 
-/** [[Invariant]] that maintains Sum(input(i) | i in listenedValuesIndices}. Update is in O(1).
+/** [[oscar.cbls.core.computation.Invariant]] that maintains Sum(input(i) | i in
+  * listenedValuesIndices}. Update is in O(1).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   An [[Array]] of [[IntConstant]].
+  *   The constant integers we want to sum.
   * @param listenedValuesIndices
-  *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
-  *   the sum.
+  *   A SetVariable containing the indices of the input variables to be listened to calculate the
+  *   sum.
   * @param output
-  *   The output [[IntVariable]] containing Sum(input(i) | i in listenedValuesIndices).
+  *   The output variable containing Sum(input(i) | i in listenedValuesIndices).
   * @param name
   *   The name (optional) of your Invariant.
   */
