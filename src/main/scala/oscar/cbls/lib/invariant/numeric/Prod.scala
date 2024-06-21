@@ -20,21 +20,22 @@ import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 /** Companion object of the [[Prod]] class. */
 object Prod {
 
-  /** Creates a [[Prod]] invariant.
+  /** Creates a Prod invariant.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   An [[Array]] of [[IntVariable]].
+    *   The elements we want to multiply.
     * @param listenedVariablesIndices
-    *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
-    *   the product.
+    *   A SetVariable containing the indices of the input variables to be listened to calculate the
+    *   product.
     * @param output
-    *   The output [[IntVariable]] containing Prod(input(i) | i in listenedVariablesIndices).
+    *   The output variable containing Prod(input(i) | i in listenedVariablesIndices).
     * @param bulkIdentifier
-    *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
-    *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one
-    *   if you're referencing the same variables.
+    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
+    *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+    *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
+    *   Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The name (optional) of your Invariant.
     */
@@ -50,21 +51,23 @@ object Prod {
   }
 }
 
-/** [[Invariant]] that maintains Prod(input(i) | i in listenedVariablesIndices). Update is in O(1).
+/** [[oscar.cbls.core.computation.Invariant]] that maintains Prod(input(i) | i in
+  * listenedVariablesIndices). Update is in O(1).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   An [[Array]] of [[IntVariable]].
+  *   The elements we want to multiply.
   * @param listenedVariablesIndices
-  *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
-  *   the product.
+  *   A SetVariable containing the indices of the input variables to be listened to calculate the
+  *   product.
   * @param output
-  *   The output [[IntVariable]] containing Prod(input(i) | i in listenedVariablesIndices).
+  *   The output variable containing Prod(input(i) | i in listenedVariablesIndices).
   * @param bulkIdentifier
-  *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
-  *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one if
-  *   you're referencing the same variables.
+  *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
+  *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+  *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
+  *   sure to use the same one if you're referencing the same variables.
   * @param name
   *   The name (optional) of your Invariant.
   */

@@ -20,21 +20,22 @@ import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 /** Companion object of the [[Sum]] class. */
 object Sum {
 
-  /** Creates a [[Sum]] invariant
+  /** Creates a Sum invariant
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   An [[Array]] of [[IntVariable]].
+    *   The elements we want to sum.
     * @param listenedVariablesIndices
-    *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
-    *   the sum.
+    *   A SetVariable containing the indices of the input variables to be listened to calculate the
+    *   sum.
     * @param output
-    *   The output [[IntVariable]] containing Sum(input(i) | i in listenedVariablesIndices).
+    *   The output variable containing Sum(input(i) | i in listenedVariablesIndices).
     * @param bulkIdentifier
-    *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
-    *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one
-    *   if you're referencing the same variables.
+    *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
+    *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+    *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
+    *   Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The name (optional) of your Invariant.
     */
@@ -50,21 +51,23 @@ object Sum {
   }
 }
 
-/** [[Invariant]] that maintains Sum(input(i) | i in listenedVariablesIndices}. Update is in O(1).
+/** [[oscar.cbls.core.computation.Invariant]] that maintains Sum(input(i) | i in
+  * listenedVariablesIndices}. Update is in O(1).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   An [[Array]] of [[IntVariable]].
+  *   The IntVariables we want to sum.
   * @param listenedVariablesIndices
-  *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
-  *   the sum.
+  *   A SetVariable containing the indices of the input variables to be listened to calculate the
+  *   sum.
   * @param output
-  *   The output [[IntVariable]] containing Sum(input(i) | i in listenedVariablesIndices).
+  *   The output variable containing Sum(input(i) | i in listenedVariablesIndices).
   * @param bulkIdentifier
-  *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
-  *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one if
-  *   you're referencing the same variables.
+  *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
+  *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+  *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
+  *   sure to use the same one if you're referencing the same variables.
   * @param name
   *   The name (optional) of your Invariant.
   */
