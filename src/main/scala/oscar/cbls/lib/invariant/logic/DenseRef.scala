@@ -19,18 +19,19 @@ import oscar.cbls.core.computation.{IncredibleBulk, Invariant, Store}
 /** Companion object of [[DenseRef]] class. */
 object DenseRef {
 
-  /** Creates a [[DenseRef]] invariant.
+  /** Creates a DenseRef invariant.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   An [[Array]] of [[SetVariable]]
+    *   The sets containing the references values.
     * @param output
-    *   An [[Array]] of [[SetVariable]] such that output(i) = {j | i in input(j)}.
+    *   An array of SetVariable such that output(i) = {j | i in input(j)}.
     * @param bulkIdentifier
-    *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
-    *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one
-    *   if you're referencing the same variables.
+    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
+    *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+    *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
+    *   Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The name (optional) of your Invariant.
     */
@@ -44,18 +45,20 @@ object DenseRef {
     new DenseRef(model, input, output, bulkIdentifier, name)
   }
 
-  /** Creates a [[DenseRef]] invariant and instantiate the output [[Array]] of [[SetVariable]].
+  /** Creates a [[DenseRef]] invariant and instantiate the output [[scala.Array]] of
+    * [[oscar.cbls.core.computation.set.SetVariable]].
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   An [[Array]] of [[SetVariable]]
+    *   The sets containing the references values.
     * @param upperBound
-    *   The [[Int]] such that the input values are in [0, upperBound[.
+    *   The integer such that the input values are in [0, upperBound[.
     * @param bulkIdentifier
-    *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
-    *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one
-    *   if you're referencing the same variables.
+    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
+    *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+    *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
+    *   Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The name (optional) of your Invariant.
     * @return
@@ -73,20 +76,21 @@ object DenseRef {
   }
 }
 
-/** [[Invariant]] such that output(i) = {j | i in input(j)}. It is considered as a dense ref because
-  * output is an array and cover all possible values that can contains the input [[SetVariable]].
-  * Update is in O(1).
+/** [[oscar.cbls.core.computation.Invariant]] such that output(i) = {j | i in input(j)}. It is
+  * considered as a dense ref because output is an array and cover all possible values that can
+  * contains the input [[oscar.cbls.core.computation.set.SetVariable]]. Update is in O(1).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   An [[Array]] of [[SetVariable]]
+  *   The sets containing the references values.
   * @param output
-  *   An [[Array]] of [[SetVariable]] such that output(i) = {j | i in input(j)}.
+  *   An array of SetVariable such that output(i) = {j | i in input(j)}.
   * @param bulkIdentifier
-  *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
-  *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one if
-  *   you're referencing the same variables.
+  *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
+  *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+  *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
+  *   sure to use the same one if you're referencing the same variables.
   * @param name
   *   The name (optional) of your Invariant.
   */

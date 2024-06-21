@@ -13,7 +13,7 @@
 
 package oscar.cbls.lib.invariant.logic
 
-import oscar.cbls.core.computation.{IncredibleBulk, Store}
+import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 
@@ -22,19 +22,20 @@ import scala.collection.immutable.HashMap
 /** Helper object for [[SparseCluster]] and [[DenseCluster]] invariants */
 object Cluster {
 
-  /** Creates a [[SparseCluster]] and instantiates the output [[HashMap]] from a list of values
-    * defining the cluster's keys.
+  /** Creates a SparseCluster and instantiates the output [[scala.collection.immutable.HashMap]]
+    * from a list of values defining the cluster's keys.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   An [[Array]] of [[IntVariable]]
+    *   The element we want to cluster
     * @param clusters
     *   The list of keys defining the input values to cluster.
     * @param bulkIdentifier
-    *   A [[IncredibleBulk]] is used when several [[oscar.cbls.core.computation.Invariant]] listen
-    *   to vars. Warning: [[IncredibleBulk]] are distinguished only by their identifier. Be sure to
-    *   use the same one if you're referencing the same variables.
+    *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
+    *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+    *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
+    *   Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The name (optional) of your Invariant
     */
@@ -52,18 +53,20 @@ object Cluster {
     SparseCluster(model, input, output, bulkIdentifier, name)
   }
 
-  /** Creates a [[DenseCluster]] and instantiates the output [[Array]] of [[SetVariable]].
+  /** Creates a [[DenseCluster]] and instantiates the output [[scala.Array]] of
+    * [[oscar.cbls.core.computation.set.SetVariable]].
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   An [[Array]] of [[IntVariable]]
+    *   The element we want to cluster
     * @param upperBound
-    *   The [[Int]] such that the input variables' domain is [0, upperBound[.
+    *   The integer such that the input variables' domain is [0, upperBound[.
     * @param bulkIdentifier
-    *   A [[IncredibleBulk]] is used when several [[oscar.cbls.core.computation.Invariant]] listen
-    *   to vars. Warning: [[IncredibleBulk]] are distinguished only by their identifier. Be sure to
-    *   use the same one if you're referencing the same variables.
+    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
+    *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+    *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
+    *   Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The name (optional) of your Invariant
     */

@@ -27,13 +27,14 @@ object SparseCluster {
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   An [[Array]] of [[IntVariable]]
+    *   The elements we want to cluster
     * @param output
-    *   An [[HashMap]] of [[SetVariable]] such that output(j) = {i in input.indices | input(i) == j}
+    *   An ] such that output(j) = {i in input.indices | input(i) == j}
     * @param bulkIdentifier
-    *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
-    *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one
-    *   if you're referencing the same variables.
+    *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
+    *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+    *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
+    *   Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The name (optional) of your Invariant
     */
@@ -48,20 +49,22 @@ object SparseCluster {
   }
 }
 
-/** [[Invariant]] that maintains clusters of the indices of an array: output(j) = {i in input
-  * .indices | input(i) == j}. It is considered as a sparse cluster because output is a map and
-  * covers only some preselected possible values of the input variables. Update is in O(1)
+/** [[oscar.cbls.core.computation.Invariant]] that maintains clusters of the indices of an array:
+  * output(j) = {i in input .indices | input(i) == j}. It is considered as a sparse cluster because
+  * output is an [[scala.collection.immutable.HashMap]] and covers only some preselected possible
+  * values of the input variables. Update is in O(1)
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   An [[Array]] of [[IntVariable]]
+  *   The elements we want to cluster
   * @param output
-  *   An [[HashMap]] of [[SetVariable]] such that output(j) = {i in input.indices | input(i) == j}
+  *   An ] such that output(j) = {i in input.indices | input(i) == j}
   * @param bulkIdentifier
-  *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
-  *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one if
-  *   you're referencing the same variables.
+  *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
+  *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+  *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
+  *   sure to use the same one if you're referencing the same variables.
   * @param name
   *   The name (optional) of your Invariant
   */

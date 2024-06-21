@@ -44,20 +44,22 @@ object DenseCluster {
   ): DenseCluster = new DenseCluster(model, input, output, bulkIdentifier, name)
 }
 
-/** [[Invariant]] that maintains clusters of the indices of an array: output(j) = {i in input
-  * .indices | input(i) == j}. It is considered as a dense cluster because output is an array and
-  * covers all the possible value of the input variables. Update is O(1)
+/** [[oscar.cbls.core.computation.Invariant]] that maintains clusters of the indices of an array:
+  * output(j) = {i in input .indices | input(i) == j}. It is considered as a dense cluster because
+  * output is an [[scala.Array]] and covers all the possible value of the input variables. Update is
+  * O(1)
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   An [[Array]] of [[IntVariable]]
+  *   The elements we want to cluster.
   * @param output
   *   An [[Array]] of [[SetVariable]] such that output(j) = {i in input.indices | input(i) == j}
   * @param bulkIdentifier
-  *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
-  *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one if
-  *   you're referencing the same variables.
+  *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
+  *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+  *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
+  *   sure to use the same one if you're referencing the same variables.
   * @param name
   *   The name (optional) of your Invariant
   */
