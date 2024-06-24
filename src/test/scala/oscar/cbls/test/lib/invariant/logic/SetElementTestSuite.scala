@@ -65,6 +65,14 @@ class SetElementTestSuite extends AnyFunSuite with Matchers {
     noException should be thrownBy inv.checkInternals()
   }
 
+  test("SetElement: changing the listened value and changing its set") {
+    val (_, input, index, output, _) = testSetElement()
+    index    := 0
+    input(0) := Set(42, 84, 126)
+
+    output.value() should contain only (42, 84, 126)
+  }
+
   test("SetElement: checkInternals should fail") {
     val (store, _, _, output, inv) = testSetElement()
     store.propagate()
