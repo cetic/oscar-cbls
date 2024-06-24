@@ -190,19 +190,6 @@ class DLLProperties extends Properties("DLL Properties") {
     propertyWithSeed(s"DLL command list works (seed:  $s)",Some(s)) = DLLTestCommands.property()
   })
 
-  override def overrideParameters(p: Test.Parameters): Test.Parameters = {
-    p.withTestCallback(new Test.TestCallback {
-        override def onPropEval(
-          name: String,
-          threadIdx: Int,
-          succeeded: Int,
-          discarded: Int
-        ): Unit = {
-          println(s"toto: $name")
-        }
-      })
-  }
-
   propertyWithSeed("Commands work, no Explicit seed",None) =
     DLLTestCommands.property()
 
