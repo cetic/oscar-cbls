@@ -20,19 +20,19 @@ import oscar.cbls.core.computation.set.SetVariable
 /** Companion object of [[MaxConst]] class. */
 object MaxConst {
 
-  /** Creates a [[MaxConst]] invariant.
+  /** Creates a MaxConst invariant.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   An array of [[IntConstant]]
+    *   The constants on which to compute the maximum.
     * @param listenedValuesIndices
-    *   A [[SetVariable]] containing the indices of the input variables to be observed to calculate
-    *   the extremum.
+    *   A SetVariable containing the indices of the input variables to be observed to calculate the
+    *   extremum.
     * @param output
-    *   The output [[IntVariable]].
+    *   The output IntVariable containing Max{input(i) | i in listenedVariablesIndices}.
     * @param maxBacklog
-    *   The maximum number of postponed updates that doesn't affect the maximum.
+    *   The maximum number of postponed updates that doesn't affect the extremum.
     * @param name
     *   The name (optional) of your Invariant
     */
@@ -41,15 +41,15 @@ object MaxConst {
     input: Array[IntConstant],
     listenedValuesIndices: SetVariable,
     output: IntVariable,
-    maxBacklog: Int = Int.MinValue,
+    maxBacklog: Int = Int.MaxValue,
     name: Option[String] = None
   ): MaxConst = {
     new MaxConst(model, input, listenedValuesIndices, output, maxBacklog, name)
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains Max(input(i) | i in
-  * listenedVariablesIndices). This invariant is lazy and maintains a todo list of postponed
+/** [[oscar.cbls.core.computation.Invariant]] that maintains Max{input(i) | i in
+  * listenedVariablesIndices}. This invariant is lazy and maintains a todo list of postponed
   * updates. Update is in O (log(n)) in worst case. If the update does not impact the output, it is
   * postponed in O(1). Otherwise, it is performed in O(log(n)). When a removed index is considered
   * and does not impact the extremum, it goes in the backlog as well, to be removed later. It is
@@ -58,14 +58,14 @@ object MaxConst {
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   An array of [[IntConstant]]
+  *   The constants on which to compute the maximum.
   * @param listenedValuesIndices
-  *   A [[SetVariable]] containing the indices of the input variables to be observed to calculate
-  *   the extremum.
+  *   A SetVariable containing the indices of the input variables to be observed to calculate the
+  *   extremum.
   * @param output
-  *   The output [[IntVariable]].
+  *   The output IntVariable containing Max{input(i) | i in listenedVariablesIndices}.
   * @param maxBacklog
-  *   The maximum number of postponed updates that doesn't affect the maximum.
+  *   The maximum number of postponed updates that doesn't affect the extremum.
   * @param name
   *   The name (optional) of your Invariant
   */
@@ -74,7 +74,7 @@ class MaxConst(
   input: Array[IntConstant],
   listenedValuesIndices: SetVariable,
   output: IntVariable,
-  maxBacklog: Int = Int.MinValue,
+  maxBacklog: Int = Int.MaxValue,
   name: Option[String] = None
 ) extends ExtremumConst(
       model,

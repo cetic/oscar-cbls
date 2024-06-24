@@ -20,7 +20,7 @@ import oscar.cbls.lib.invariant.numeric.IntInt2Int
 /** Companion object of [[Max2]] class. */
 object Max2 {
 
-  /** Creates a [[Max2]] invariant.
+  /** Creates a Max2 invariant.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -29,7 +29,7 @@ object Max2 {
     * @param b
     *   The second parameter of the function.
     * @param output
-    *   The [[IntVariable]] which contains max(a, b).
+    *   The IntVariable which contains max(a, b).
     * @param name
     *   The name (optional) of your Invariant.
     */
@@ -44,7 +44,8 @@ object Max2 {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains the maximum of two [[IntVariable]].
+/** [[oscar.cbls.core.computation.Invariant]] that maintains the maximum of two
+  * [[oscar.cbls.core.computation.integer.IntVariable]].
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -53,7 +54,7 @@ object Max2 {
   * @param b
   *   The second parameter of the function.
   * @param output
-  *   The [[IntVariable]] which contains max(a, b).
+  *   The IntVariable which contains max(a, b).
   * @param name
   *   The name (optional) of your Invariant.
   */

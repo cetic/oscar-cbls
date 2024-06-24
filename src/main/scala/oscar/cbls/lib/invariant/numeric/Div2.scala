@@ -19,7 +19,7 @@ import oscar.cbls.core.computation.integer.IntVariable
 /** Companion object of [[Div2]] class. */
 object Div2 {
 
-  /** Creates a [[Div2]] invariant.
+  /** Creates a Div2 invariant.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -28,7 +28,7 @@ object Div2 {
     * @param b
     *   The second parameter of the function. Don't set b to 0.
     * @param output
-    *   The [[IntVariable]] which contains a / b.
+    *   The IntVariable which contains a / b.
     * @param name
     *   The name (optional) of your Invariant.
     */
@@ -43,7 +43,8 @@ object Div2 {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains the quotient of two [[IntVariable]].
+/** [[oscar.cbls.core.computation.Invariant]] which maintains the quotient of two
+  * [[oscar.cbls.core.computation.integer.IntVariable]].
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -52,7 +53,7 @@ object Div2 {
   * @param b
   *   The second parameter of the function. Don't set b to 0.
   * @param output
-  *   The [[IntVariable]] which contains a / b.
+  *   The IntVariable which contains a / b.
   * @param name
   *   The name (optional) of your Invariant.
   */

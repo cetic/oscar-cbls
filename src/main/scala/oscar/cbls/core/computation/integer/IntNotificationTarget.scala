@@ -20,10 +20,10 @@ package oscar.cbls.core.computation.integer
 trait IntNotificationTarget {
 
   /** Notifies the listening [[oscar.cbls.core.propagation.PropagationElement]] that the listened
-    * [[IntVariable]] has changed.
+    * [[oscar.cbls.core.computation.integer.IntVariable]] has changed.
     *
     * Implemented by the listening [[oscar.cbls.core.propagation.PropagationElement]]. Called by the
-    * listened [[IntVariable]]
+    * listened [[oscar.cbls.core.computation.integer.IntVariable]]
     *
     * @param intVariable
     *   The listened IntVariable

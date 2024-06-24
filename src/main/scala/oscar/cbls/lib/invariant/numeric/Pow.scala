@@ -21,7 +21,7 @@ import scala.math.{pow, round}
 /** Companion object of [[Pow]] class. */
 object Pow {
 
-  /** Creates a [[Pow]] invariant.
+  /** Creates a Pow invariant.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -30,7 +30,7 @@ object Pow {
     * @param b
     *   The second parameter of the function.
     * @param output
-    *   The [[IntVariable]] which contains a&#94;b. If b < 0, the value is rounded to the closest
+    *   The IntVariable which contains a&#94;b. If b < 0, the value is rounded to the closest
     *   integer.
     * @param name
     *   The name (optional) of your Invariant.
@@ -46,8 +46,8 @@ object Pow {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains the power of an [[IntVariable]] by
-  * another.
+/** [[oscar.cbls.core.computation.Invariant]] which maintains the power of an
+  * [[oscar.cbls.core.computation.integer.IntVariable]] by another.
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -56,8 +56,7 @@ object Pow {
   * @param b
   *   The second parameter of the function.
   * @param output
-  *   The [[IntVariable]] which contains a&#94;b. If b < 0, the value is rounded to the closest
-  *   integer.
+  *   The IntVariable which contains a^b^. If b < 0, the value is rounded to the closest integer.
   * @param name
   *   The name (optional) of your Invariant.
   */

@@ -119,8 +119,9 @@ abstract class PropagationElement(private val propagationStructure: PropagationS
   /** Allows to check and debug propagation elements.
     *
     * This method can be called after the propagation according to the debug level of the
-    * propagation structure (see [[PropagationStructure]]). It can be used to check if the invariant
-    * worked properly by, for example, recomputing the value from scratch.
+    * propagation structure (see [[oscar.cbls.core.propagation.PropagationStructure]]). It can be
+    * used to check if the invariant worked properly by, for example, recomputing the value from
+    * scratch.
     */
   def checkInternals(): Unit
 }

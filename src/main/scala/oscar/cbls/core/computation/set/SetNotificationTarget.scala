@@ -16,8 +16,8 @@ package oscar.cbls.core.computation.set
 trait SetNotificationTarget {
 
   /** Notifies the listening [[oscar.cbls.core.propagation.PropagationElement]] that the listened
-    * [[SetVariable]] has changed. This method has to be implemented by the listening element, and
-    * will be called by the listened variable.
+    * [[oscar.cbls.core.computation.set.SetVariable]] has changed. This method has to be implemented
+    * by the listening element, and will be called by the listened variable.
     *
     * This method uses parameters providing incremental information (`addedElems` and
     * `removedElems`), as well as information on the entire value (`oldValue` and `newValue`), since

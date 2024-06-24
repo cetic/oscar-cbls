@@ -39,10 +39,11 @@ import oscar.cbls.core.propagation._
 abstract class Invariant(propagationStructure: Store, name: Option[String] = None)
     extends PropagationElement(propagationStructure) {
 
-  /** Registers an IncredibleBulk (a bulk/set of [[Variable]]) as listened by this Invariant
+  /** Registers an IncredibleBulk (a bulk/set of [[oscar.cbls.core.computation.Variable]]) as
+    * listened by this Invariant
     *
     * @param incredibleBulk
-    *   The bulk of [[Variable]]
+    *   The bulk of [[oscar.cbls.core.computation.Variable]]
     */
   def addIncredibleBulk(incredibleBulk: IncredibleBulk): Unit = {
     this.registerStaticallyListenedElement(incredibleBulk)

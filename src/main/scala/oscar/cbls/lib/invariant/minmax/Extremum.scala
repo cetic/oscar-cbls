@@ -18,24 +18,26 @@ import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, St
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 
-/** Abstract [[Invariant]] that maintains Extremum(input(i) | i in listenedVariablesIndices). Exact
-  * ordering is specified by implementing abstract method of the class. Update is in O(log(n)).
+/** Abstract [[oscar.cbls.core.computation.Invariant]] that maintains Extremum{input(i) | i in
+  * listenedVariablesIndices}. Exact ordering is specified by implementing abstract method of the
+  * class. Update is in O(log(n)).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   An [[Array]] of [[IntVariable]].
+  *   The elements on which to compute the extremum.
   * @param listenedVariablesIndices
-  *   A [[SetVariable]] containing the indices of the input variables to be listened to calculate
+  *   A SetVariable containing the indices of the input variables to be listened to calculate
   *   the extremum.
   * @param output
-  *   The output [[IntVariable]].
+  *   The output IntVariable containing Extremum(input(i) | i in listenedVariablesIndices).
   * @param default
   *   The default value of the extremum.
   * @param bulkIdentifier
-  *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
-  *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one if
-  *   you're referencing the same variables.
+  *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
+  *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+  *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
+  *   sure to use the same one if you're referencing the same variables.
   * @param name
   *   The name (optional) of your Invariant.
   */

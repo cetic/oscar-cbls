@@ -20,14 +20,14 @@ import oscar.cbls.core.computation.integer.IntVariable
   */
 object Opposite {
 
-  /** Create an [[Opposite]] invariant.
+  /** Create an Opposite invariant.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   The listened [[IntVariable]].
+    *   The listened IntVariable.
     * @param output
-    *   The [[IntVariable]] which contains -input.
+    *   The IntVariable which contains -input.
     * @param name
     *   The name (optional) of your Invariant.
     */
@@ -41,14 +41,15 @@ object Opposite {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains the opposite value an [[IntVariable]].
+/** [[oscar.cbls.core.computation.Invariant]] that maintains the opposite value an
+  * [[oscar.cbls.core.computation.integer.IntVariable]].
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   The listened [[IntVariable]].
+  *   The listened IntVariable.
   * @param output
-  *   The [[IntVariable]] which contains -input.
+  *   The IntVariable which contains -input.
   * @param name
   *   The name (optional) of your Invariant.
   */

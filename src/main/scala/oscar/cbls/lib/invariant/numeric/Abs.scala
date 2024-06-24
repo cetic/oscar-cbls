@@ -19,14 +19,14 @@ import oscar.cbls.core.computation.integer.IntVariable
 /** Companion object of [[Abs]] class. */
 object Abs {
 
-  /** Creates an [[Abs]] invariant.
+  /** Creates an Abs invariant.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   The listened [[IntVariable]].
+    *   The listened IntVariable.
     * @param output
-    *   The [[IntVariable]] which contains |input|.
+    *   The IntVariable which contains |input|.
     * @param name
     *   The name (optional) of your Invariant.
     */
@@ -41,14 +41,14 @@ object Abs {
 }
 
 /** [[oscar.cbls.core.computation.Invariant]] that maintains the absolute value of an
-  * [[IntVariable]].
+  * [[oscar.cbls.core.computation.integer.IntVariable]].
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   The listened [[IntVariable]].
+  *   The listened IntVariable.
   * @param output
-  *   The [[IntVariable]] which contains |input|.
+  *   The IntVariable which contains |input|.
   * @param name
   *   The name (optional) of your Invariant.
   */
