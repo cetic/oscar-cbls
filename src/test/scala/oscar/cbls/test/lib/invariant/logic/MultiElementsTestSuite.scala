@@ -55,7 +55,7 @@ class MultiElementsTestSuite extends AnyFunSuite with Matchers {
     output.value() should contain only (28, 42)
   }
 
-  test("MultiElements: changing a no listened value"){
+  test("MultiElements: changing a not listened value"){
     val (_, input, _, output, _) = testMultiElements()
     input(3) := -7
 
