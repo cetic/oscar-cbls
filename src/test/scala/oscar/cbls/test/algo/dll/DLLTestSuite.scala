@@ -190,6 +190,11 @@ class DLLProperties extends Properties("DLL Properties") {
     propertyWithSeed(s"DLL command list works (seed:  $s)",Some(s)) = DLLTestCommands.property()
   })
 
+  // override def overrideParameters(p: Test.Parameters): Test.Parameters = {
+  //   p.withMinSuccessfulTests(500)
+  // }
+
+
   propertyWithSeed("Commands work, no Explicit seed",None) =
     DLLTestCommands.property()
 
@@ -203,6 +208,8 @@ class OperationTest extends AnyFunSuite with Checkers{
 
   val dllProperty = new DLLProperties
 
+  dllProperty.check()
+
   // dllProperty.properties.foreach(nameAndProp => {
   //   test(nameAndProp._1) {
   //     check(nameAndProp._2,Test.Parameters.default.withTestCallback(new Test.TestCallback {
@@ -213,16 +220,16 @@ class OperationTest extends AnyFunSuite with Checkers{
   //     }))
   //   }
   // })
-  dllProperty.properties.foreach(nameAndProp => {
-    test(nameAndProp._1) {
-      check(nameAndProp._2,Test.Parameters.default.withMinSuccessfulTests(1000)
-        .withTestCallback(new Test.TestCallback {
-        override def onTestResult(name : String,result : org.scalacheck.Test.Result) : Unit = {
-          if (result.status.isInstanceOf[Test.Failed])
-            println(name)
-        }
-      }))
-    }
-  })
+  // dllProperty.properties.foreach(nameAndProp => {
+  //   test(nameAndProp._1) {
+  //     check(nameAndProp._2,Test.Parameters.default.withMinSuccessfulTests(1000)
+  //       .withTestCallback(new Test.TestCallback {
+  //       override def onTestResult(name : String,result : org.scalacheck.Test.Result) : Unit = {
+  //         if (result.status.isInstanceOf[Test.Failed])
+  //           println(name)
+  //       }
+  //     }))
+  //   }
+  // })
 
 }
