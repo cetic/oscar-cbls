@@ -63,7 +63,7 @@ class ElementTestSuite extends AnyFunSuite with Matchers {
     output.value() should be(7)
   }
 
-  test("Element: changing the listened variable and changing ots value"){
+  test("Element: changing the listened variable and changing its value"){
     val (_, input, index, output, _) = testElement()
     index := 0
     input(0) := 42
