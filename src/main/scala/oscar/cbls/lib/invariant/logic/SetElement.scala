@@ -105,7 +105,7 @@ class SetElement(
 
     assert(intVariable == index)
     keyForCurrentVar.delete()
-    keyForCurrentVar = intVariable.registerDynamicallyListeningElement(this)
+    keyForCurrentVar = input(newVal.toInt).registerDynamicallyListeningElement(this)
 
     output := input(newVal.toInt).value()
   }
