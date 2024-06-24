@@ -56,7 +56,7 @@ class ElementTestSuite extends AnyFunSuite with Matchers {
     noException should be thrownBy inv.checkInternals()
   }
 
-  test("Element: changing a no listened variable"){
+  test("Element: changing a not listened variable"){
     val (_, input, _, output, _) = testElement()
     input(0) := 17
 
