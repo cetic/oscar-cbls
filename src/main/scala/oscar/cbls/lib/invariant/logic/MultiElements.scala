@@ -22,20 +22,21 @@ import scala.collection.mutable
 /** Companion object of the [[MultiElements]] class. */
 object MultiElements {
 
-  /** Creates a [[MultiElements]] invariant.
+  /** Creates a MultiElement invariant.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   An [[Array]] of [[IntVariable]].
+    *   The elements that can be chosen.
     * @param listenedVariablesIndices
-    *   A [[SetVariable]] containing the indices of the value to return.
+    *   A SetVariable containing the indices of the values to return.
     * @param output
-    *   A [[SetVariable]] containing {input(i) | i in listenedVariablesIndices}
+    *   A SetVariable containing {input(i) | i in listenedVariablesIndices}
     * @param bulkIdentifier
-    *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
-    *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one
-    *   if you're referencing the same variables.
+    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
+    *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+    *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
+    *   Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The name (optional) of your Invariant.
     */
@@ -51,21 +52,23 @@ object MultiElements {
   }
 }
 
-/** [[Invariant]] that maintains {input(i) | i in listenedVariablesIndices} where input is an
-  * [[Array]] of [[IntVariable]]. Update is O(1).
+/** [[oscar.cbls.core.computation.Invariant]] that maintains {input(i) | i in
+  * listenedVariablesIndices} where input is an [[scala.Array]] of
+  * [[oscar.cbls.core.computation.integer.IntVariable]]. Update is O(1).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   An [[Array]] of [[IntVariable]].
+  *   The elements that can be chosen.
   * @param listenedVariablesIndices
-  *   A [[SetVariable]] containing the indices of the value to return.
+  *   A SetVariable containing the indices of the values to return.
   * @param output
-  *   A [[SetVariable]] containing {input(i) | i in listenedVariablesIndices}
+  *   A SetVariable containing {input(i) | i in listenedVariablesIndices}
   * @param bulkIdentifier
-  *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
-  *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one if
-  *   you're referencing the same variables.
+  *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
+  *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+  *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
+  *   sure to use the same one if you're referencing the same variables.
   * @param name
   *   The name (optional) of your Invariant.
   */
