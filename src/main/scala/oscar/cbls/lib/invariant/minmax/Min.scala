@@ -28,7 +28,7 @@ object Min {
     *   The elements on which to compute the minimum.
     * @param listenedVariablesIndices
     *   A SetVariable containing the indices of the input variables to be listened to calculate the
-    *   extremum.
+    *   minimum.
     * @param output
     *   The output IntVariable containing Min{input(i) | i in listenedVariablesIndices}.
     * @param bulkIdentifier
@@ -61,7 +61,7 @@ object Min {
   *   The elements on which to compute the minimum.
   * @param listenedVariablesIndices
   *   A SetVariable containing the indices of the input variables to be listened to calculate the
-  *   extremum.
+  *   minimum.
   * @param output
   *   The output IntVariable containing Min{input(i) | i in listenedVariablesIndices}.
   * @param bulkIdentifier

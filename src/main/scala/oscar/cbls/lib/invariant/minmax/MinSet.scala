@@ -27,7 +27,7 @@ object MinSet {
     * @param input
     *   The set of integer on which to compute the minimum.
     * @param output
-    *   An IntVariable containing the extremum of the input set.
+    *   An IntVariable containing the minimum of the input set.
     * @param name
     *   The name (optional) of your Invariant
     */
@@ -48,7 +48,7 @@ object MinSet {
   * @param input
   *   The set of integer on which to compute the minimum.
   * @param output
-  *   An IntVariable containing the extremum of the input set.
+  *   An IntVariable containing the minimum of the input set.
   * @param name
   *   The name (optional) of your Invariant
   */

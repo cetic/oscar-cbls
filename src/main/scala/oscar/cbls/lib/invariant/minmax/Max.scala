@@ -28,7 +28,7 @@ object Max {
     *   The elements on which to compute the maximum.
     * @param listenedVariablesIndices
     *   A SetVariable containing the indices of the input variables to be listened to calculate the
-    *   extremum.
+    *   maximum.
     * @param output
     *   The output IntVariable containing Max{input(i) | i in listenedVariablesIndices}.
     * @param bulkIdentifier
@@ -60,7 +60,7 @@ object Max {
   *   The elements on which to compute the maximum.
   * @param listenedVariablesIndices
   *   A SetVariable containing the indices of the input variables to be listened to calculate the
-  *   extremum.
+  *   maximum.
   * @param output
   *   The output IntVariable containing Max{input(i) | i in listenedVariablesIndices}.
   * @param bulkIdentifier

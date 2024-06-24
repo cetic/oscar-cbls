@@ -28,11 +28,11 @@ object MaxConst {
     *   The constants on which to compute the maximum.
     * @param listenedValuesIndices
     *   A SetVariable containing the indices of the input variables to be observed to calculate the
-    *   extremum.
+    *   maximum.
     * @param output
     *   The output IntVariable containing Max{input(i) | i in listenedVariablesIndices}.
     * @param maxBacklog
-    *   The maximum number of postponed updates that doesn't affect the extremum.
+    *   The maximum number of postponed updates that doesn't affect the maximum.
     * @param name
     *   The name (optional) of your Invariant
     */
@@ -52,7 +52,7 @@ object MaxConst {
   * listenedVariablesIndices}. This invariant is lazy and maintains a todo list of postponed
   * updates. Update is in O (log(n)) in worst case. If the update does not impact the output, it is
   * postponed in O(1). Otherwise, it is performed in O(log(n)). When a removed index is considered
-  * and does not impact the extremum, it goes in the backlog as well, to be removed later. It is
+  * and does not impact the maximum, it goes in the backlog as well, to be removed later. It is
   * faster for neighborhood exploration with moves and backtracks.
   *
   * @param model
@@ -61,11 +61,11 @@ object MaxConst {
   *   The constants on which to compute the maximum.
   * @param listenedValuesIndices
   *   A SetVariable containing the indices of the input variables to be observed to calculate the
-  *   extremum.
+  *   maximum.
   * @param output
   *   The output IntVariable containing Max{input(i) | i in listenedVariablesIndices}.
   * @param maxBacklog
-  *   The maximum number of postponed updates that doesn't affect the extremum.
+  *   The maximum number of postponed updates that doesn't affect the maximum.
   * @param name
   *   The name (optional) of your Invariant
   */
