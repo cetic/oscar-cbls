@@ -29,9 +29,10 @@ object DenseCluster {
     * @param output
     *   The clustered elements such that output(j) = {i in input.indices | input(i) == j}.
     * @param bulkIdentifier
-    *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
-    *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one
-    *   if you're referencing the same variables.
+    *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
+    *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+    *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
+    *   Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The name (optional) of your Invariant
     */
