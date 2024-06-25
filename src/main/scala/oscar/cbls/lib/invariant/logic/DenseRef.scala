@@ -121,6 +121,11 @@ class DenseRef(
   for (j <- input.indices) {
     input(j).registerDynamicallyListeningElement(this, j)
     for (ref <- input(j).value()) {
+      require(
+        ref < output.length,
+        s"An input value is bigger than the upper bound of admissible value (output length). " +
+          s"Set containing the value: ${input(j)} - Value: $ref - Upper bound: ${output.length}"
+      )
       output(ref) :+= j
     }
   }
@@ -134,7 +139,15 @@ class DenseRef(
     oldValue: Set[Int],
     newValue: Set[Int]
   ): Unit = {
-    for (added   <- addedElems) output(added) :+= index
+    for (added <- addedElems) {
+      require(
+        added < output.length,
+        s"Try to add an value bigger An input value is bigger than " +
+          s"the upper bound of admissible value (output length) in Set $setVariable. " +
+          s"Value: $added - Exclusive upper bound: ${output.length}"
+      )
+      output(added) :+= index
+    }
     for (removed <- removedElems) output(removed) :-= index
   }
 

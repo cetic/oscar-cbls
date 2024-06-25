@@ -22,14 +22,14 @@ import scala.collection.immutable.HashMap
 /** Companion object of [[SparseCluster]] class. */
 object SparseCluster {
 
-  /** Creates a [[SparseCluster]] invariant.
+  /** Creates a SparseCluster invariant.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
     *   The elements we want to cluster
     * @param output
-    *   An ] such that output(j) = {i in input.indices | input(i) == j}
+    *   An Hashmap such that output(j) = {i in input.indices | input(i) == j}
     * @param bulkIdentifier
     *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
     *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
@@ -59,7 +59,7 @@ object SparseCluster {
   * @param input
   *   The elements we want to cluster
   * @param output
-  *   An ] such that output(j) = {i in input.indices | input(i) == j}
+  *   An Hashmap such that output(j) = {i in input.indices | input(i) == j}
   * @param bulkIdentifier
   *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
   *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:

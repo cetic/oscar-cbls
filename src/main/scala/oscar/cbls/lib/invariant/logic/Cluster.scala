@@ -28,7 +28,7 @@ object Cluster {
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   The element we want to cluster
+    *   The elements we want to cluster
     * @param clusters
     *   The list of keys defining the input values to cluster.
     * @param bulkIdentifier
@@ -53,13 +53,13 @@ object Cluster {
     SparseCluster(model, input, output, bulkIdentifier, name)
   }
 
-  /** Creates a [[DenseCluster]] and instantiates the output [[scala.Array]] of
+  /** Creates a DenseCluster and instantiates the output [[scala.Array]] of
     * [[oscar.cbls.core.computation.set.SetVariable]].
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   The element we want to cluster
+    *   The elements we want to cluster
     * @param upperBound
     *   The integer such that the input variables' domain is [0, upperBound[.
     * @param bulkIdentifier
