@@ -17,14 +17,14 @@ import oscar.cbls.core.computation.{Invariant, Store}
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 
-/** An abstract [[Invariant]] that maintains Extremum(input).
+/** An abstract [[oscar.cbls.core.computation.Invariant]] that maintains Extremum(input).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   A [[SetVariable]]
+  *   The set of integer on which to compute the extremum.
   * @param output
-  *   An [[IntVariable]] containing the extremum of the input set.
+  *   An IntVariable containing the extremum of the input set.
   * @param default
   *   The default value of the extremum.
   * @param name

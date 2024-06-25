@@ -20,14 +20,14 @@ import oscar.cbls.core.computation.integer.IntVariable
   */
 object Square {
 
-  /** Creates a [[Square]] invariant.
+  /** Creates a Square invariant.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   The listened [[IntVariable]].
+    *   The listened IntVariable.
     * @param output
-    *   The [[IntVariable]] which contains input&#94;2.
+    *   The IntVariable which contains input&#94;2.
     * @param name
     *   The name (optional) of your Invariant.
     */
@@ -41,14 +41,15 @@ object Square {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains the square of an [[IntVariable]]
+/** [[oscar.cbls.core.computation.Invariant]] that maintains the square of an
+  * [[oscar.cbls.core.computation.integer.IntVariable]]
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   The listened [[IntVariable]].
+  *   The listened IntVariable.
   * @param output
-  *   The [[IntVariable]] which contains input&#94;2.
+  *   The IntVariable which contains (input)^2^.
   * @param name
   *   The name (optional) of your Invariant.
   */

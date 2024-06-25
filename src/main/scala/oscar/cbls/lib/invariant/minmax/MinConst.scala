@@ -25,12 +25,12 @@ object MinConst {
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   An array of [[IntConstant]]
+    *   The constants on which to compute the minimum.
     * @param listenedValuesIndices
-    *   A [[SetVariable]] containing the indices of the input variables to be observed to calculate
-    *   the extremum.
+    *   A SetVariable containing the indices of the input variables to be observed to calculate the
+    *   minimum.
     * @param output
-    *   The output [[IntVariable]].
+    *   The output IntVariable.
     * @param maxBacklog
     *   The maximum number of postponed updates that doesn't affect the minimum.
     * @param name
@@ -48,22 +48,22 @@ object MinConst {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains Min(input(i) | i in
-  * listenedVariablesIndices). This invariant is lazy and maintains a todo list of postponed
+/** [[oscar.cbls.core.computation.Invariant]] that maintains Min{input(i) | i in
+  * listenedVariablesIndices}. This invariant is lazy and maintains a todo list of postponed
   * updates. Update is in O (log(n)) in worst case. If the update does not impact the output, it is
   * postponed in O(1). Otherwise, it is performed in O(log(n)). When a removed index is considered
-  * and does not impact the extremum, it goes in the backlog as well, to be removed later. It is
+  * and does not impact the minimum, it goes in the backlog as well, to be removed later. It is
   * faster for neighborhood exploration with moves and backtracks.
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   An array of [[IntConstant]]
+  *   The constants on which to compute the minimum.
   * @param listenedValuesIndices
-  *   A [[SetVariable]] containing the indices of the input variables to be observed to calculate
-  *   the extremum.
+  *   A SetVariable containing the indices of the input variables to be observed to calculate the
+  *   minimum.
   * @param output
-  *   The output [[IntVariable]].
+  *   The output IntVariable.
   * @param maxBacklog
   *   The maximum number of postponed updates that doesn't affect the minimum.
   * @param name

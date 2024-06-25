@@ -21,14 +21,14 @@ import scala.math.{round, sqrt}
 /** The companion object of [[Sqrt]] */
 object Sqrt {
 
-  /** Creates a [[Sqrt]] invariant.
+  /** Creates a Sqrt invariant.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   The listened [[IntVariable]].
+    *   The listened IntVariable.
     * @param output
-    *   The [[IntVariable]] which contains √(input).
+    *   The IntVariable which contains √(input).
     * @param name
     *   The name (optional) of your Invariant.
     */
@@ -42,16 +42,16 @@ object Sqrt {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains the square root of an [[IntVariable]].
-  * WARNING: We are only working with integers. The square root is rounded to the closest integer.
-  * Don't use with negative numbers.
+/** [[oscar.cbls.core.computation.Invariant]] that maintains the square root of an
+  * [[oscar.cbls.core.computation.integer.IntVariable]]. WARNING: We are only working with integers.
+  * The square root is rounded to the closest integer. Don't use with negative numbers.
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   The listened [[IntVariable]].
+  *   The listened IntVariable.
   * @param output
-  *   The [[IntVariable]] which contains √(input).
+  *   The IntVariable which contains √(input).
   * @param name
   *   The name (optional) of your Invariant.
   */

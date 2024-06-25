@@ -19,7 +19,7 @@ import oscar.cbls.core.computation.integer.IntVariable
 /** Companion object of [[Prod2]] class. */
 object Prod2 {
 
-  /** Creates a [[Prod2]] invariant.
+  /** Creates a Prod2 invariant.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -28,7 +28,7 @@ object Prod2 {
     * @param b
     *   The second parameter of the function.
     * @param output
-    *   The [[IntVariable]] which contains a * b.
+    *   The Int Variable which contains a * b.
     * @param name
     *   The name (optional) of your Invariant.
     */
@@ -43,7 +43,8 @@ object Prod2 {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains the product of two [[IntVariable]].
+/** [[oscar.cbls.core.computation.Invariant]] which maintains the product of two
+  * [[oscar.cbls.core.computation.integer.IntVariable]].
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -52,7 +53,7 @@ object Prod2 {
   * @param b
   *   The second parameter of the function.
   * @param output
-  *   The [[IntVariable]] which contains a * b.
+  *   The Int Variable which contains a * b.
   * @param name
   *   The name (optional) of your Invariant.
   */

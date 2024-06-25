@@ -20,14 +20,14 @@ import oscar.cbls.core.computation.set.SetVariable
 /** The companion object of the [[MinSet]] class. */
 object MinSet {
 
-  /** Creates a [[MinSet]] invariant.
+  /** Creates a MinSet invariant.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   A [[SetVariable]]
+    *   The set of integer on which to compute the minimum.
     * @param output
-    *   An [[IntVariable]] containing the minimum of the input set.
+    *   An IntVariable containing the minimum of the input set.
     * @param name
     *   The name (optional) of your Invariant
     */
@@ -41,14 +41,14 @@ object MinSet {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains min(input)
+/** [[oscar.cbls.core.computation.Invariant]] that maintains Min(input)
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   A [[SetVariable]]
+  *   The set of integer on which to compute the minimum.
   * @param output
-  *   An [[IntVariable]] containing the minimum of the input set.
+  *   An IntVariable containing the minimum of the input set.
   * @param name
   *   The name (optional) of your Invariant
   */
