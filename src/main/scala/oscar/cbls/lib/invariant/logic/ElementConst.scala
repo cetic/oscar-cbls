@@ -45,7 +45,7 @@ object ElementConst {
 }
 
 /** [[oscar.cbls.core.computation.Invariant]] that maintains input(index) where input is an array of
-  * [[IntConstant]].
+  * [[oscar.cbls.core.computation.integer.IntConstant]].
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
