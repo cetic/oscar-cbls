@@ -68,7 +68,7 @@ class DLLUnitTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
 
     dll.size should be(3)
 
-    dll.dropAll(0)
+    dll.dropAll()
     dll.size should be(0)
 
   }

@@ -9,15 +9,14 @@ import scala.util.{Failure, Success, Try}
 
 import scala.annotation.tailrec
 
-case class DllTestStruct(dll : DoublyLinkedList[Int],
-  var l : List[Int]) {
+case class DllTestStruct(dll: DoublyLinkedList[Int], var l: List[Int]) {
 
-  def insertStart(elem : Int) = {
+  def insertStart(elem: Int) = {
     dll.insertStart(elem)
     l = elem :: l
   }
 
-  def insertEnd(elem : Int) = {
+  def insertEnd(elem: Int) = {
     dll.insertEnd(elem)
     l = (elem :: l.reverse).reverse
   }
@@ -27,11 +26,10 @@ case class DllTestStruct(dll : DoublyLinkedList[Int],
     l = l.tail
   }
 
-  def dropAll(v : Int) = {
-    dll.dropAll(v)
+  def dropAll() = {
+    dll.dropAll()
     l = Nil
   }
-
 
   /** compares the size of the dll and the size of its witness list */
   private def compareSize(dll: DoublyLinkedList[Int], l: List[Int]): Boolean = {
@@ -58,7 +56,6 @@ case class DllTestStruct(dll : DoublyLinkedList[Int],
   def compare =
     compareSize(dll, l) && compareLists(dll, l)
 
-
 }
 
 object DLLTestCommands extends Commands {
@@ -71,12 +68,12 @@ object DLLTestCommands extends Commands {
 
   private val genElement = Gen.choose(1, 100)
 
-  private val genOpEmpty : Gen[Command] = for {
-    v <- Gen.choose(1,100)
-    c <- Gen.oneOf(List(AddStart(v),AddEnd(v),DropAllOperation(v)))
+  private val genOpEmpty: Gen[Command] = for {
+    v <- Gen.choose(1, 100)
+    c <- Gen.oneOf(List(AddStart(v), AddEnd(v), DropAllOperation))
   } yield c
 
-  private val genRemove : Gen[Command] = Gen.oneOf(List(RemoveStart))
+  private val genRemove: Gen[Command] = Gen.oneOf(List(RemoveStart))
 
   override def canCreateNewSut(
     newState: State,
@@ -89,14 +86,14 @@ object DLLTestCommands extends Commands {
   override def genCommand(state: State): Gen[Command] = if (state == 0)
     genOpEmpty
   else
-    Gen.oneOf(genOpEmpty,genRemove)
+    Gen.oneOf(genOpEmpty, genRemove)
 
   override def genInitialState: Gen[State] =
     Gen.const(0)
 
   override def initialPreCondition(state: State): Boolean = true
 
-  override def newSut(state: State): Sut = DllTestStruct(new DoublyLinkedList[Int](),List())
+  override def newSut(state: State): Sut = DllTestStruct(new DoublyLinkedList[Int](), List())
 
   abstract class DllOperation extends Command {
 
@@ -104,7 +101,7 @@ object DLLTestCommands extends Commands {
 
     override def preCondition(state: State): Boolean = true
 
-    var testedState : List[Int] = List()
+    var testedState: List[Int] = List()
 
     override def postCondition(state: State, result: Try[Result]): Prop = {
       result match {
@@ -121,7 +118,7 @@ object DLLTestCommands extends Commands {
     override def nextState(state: State): State = state + 1
   }
 
-  case class AddStart(value : Int) extends AddOperation {
+  case class AddStart(value: Int) extends AddOperation {
 
     override def run(sut: Sut): Result = {
       sut.insertStart(value)
@@ -132,24 +129,23 @@ object DLLTestCommands extends Commands {
 
   }
 
-  case class AddEnd(value : Int) extends AddOperation {
-    override def run(sut : Sut): Result = {
+  case class AddEnd(value: Int) extends AddOperation {
+    override def run(sut: Sut): Result = {
       sut.insertEnd(value)
       sut
     }
   }
 
-  case class DropAllOperation(v : Int) extends DllOperation {
+  case object DropAllOperation extends DllOperation {
 
-    override def nextState(state : State) : State = 0
+    override def nextState(state: State): State = 0
 
-    override def run(sut : Sut) : Result = {
-      sut.dropAll(v)
+    override def run(sut: Sut): Result = {
+      sut.dropAll()
       sut
     }
 
   }
-
 
   abstract class RemoveOperation extends DllOperation {
     override def nextState(state: State): State = state - 1

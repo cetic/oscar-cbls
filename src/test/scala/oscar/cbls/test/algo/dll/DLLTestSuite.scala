@@ -17,27 +17,20 @@ import org.scalacheck.Test
 
 class DLLProperties extends Properties("DLL Properties") {
 
-  val seedList = List("OA5iYY0IknAd0ztukxU_GjVq6Am8i_CImCnRYr5vHYH=",
-    "0R2Vp7iQ7dzDrp6KaoPfmqLZB0yGCAelv6ujE_h-fJD="
-  )
+  propertyWithSeed("Commands work, no Explicit seed", None) = DLLTestCommands.property()
 
-  seedList.distinct.foreach(s => {
-    propertyWithSeed(s"DLL command list works (seed:  $s)",Some(s)) = DLLTestCommands.property()
-  })
-
-
-  propertyWithSeed("Commands work, no Explicit seed",None) =
-    DLLTestCommands.property()
+  override def overrideParameters(p: Test.Parameters): Test.Parameters = {
+    p.withMinSuccessfulTests(500)
+  }
 
 }
 
-class OperationTest extends AnyFunSuite with Checkers{
+class OperationTest extends AnyFunSuite with Checkers {
 
   import org.scalacheck.Test
 
   val dllProperty = new DLLProperties
 
   dllProperty.check()
-
 
 }
