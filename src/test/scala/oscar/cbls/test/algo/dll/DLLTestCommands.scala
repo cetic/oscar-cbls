@@ -2,13 +2,11 @@ package oscar.cbls.test.algo.dll
 
 import org.scalacheck.commands.Commands
 import org.scalacheck.{Gen, Prop}
+import org.scalacheck.Arbitrary.arbitrary
 
 import oscar.cbls.algo.dll.DoublyLinkedList
 
 import scala.util.{Failure, Success, Try}
-
-import scala.annotation.tailrec
-import org.scalacheck.Arbitrary.arbitrary
 
 /** Defines the System Under Test (SUT)
   *
@@ -39,11 +37,11 @@ case class DllTestStruct(dll: DoublyLinkedList[Int], var l: List[Int]) {
   }
 
   def insertAfter(elem: Int, afterPos: Int) = {
-    require(afterPos >= 0,s"InsertAfter($afterPos) impossible in $l")
-    require(afterPos < l.size,s"InsertAfter($afterPos) impossible in $l")
-    val (l1, l2) = l.splitAt(afterPos +1)
+    require(afterPos >= 0, s"InsertAfter($afterPos) impossible in $l")
+    require(afterPos < l.size, s"InsertAfter($afterPos) impossible in $l")
+    val (l1, l2) = l.splitAt(afterPos + 1)
     l = l1 ::: (elem :: l2)
-    val (c1, c2)  = containerList.splitAt(afterPos+1)
+    val (c1, c2)  = containerList.splitAt(afterPos + 1)
     val container = dll.insertAfter(elem, containerList(afterPos))
     containerList = c1 ::: (container :: c2)
   }
@@ -61,8 +59,8 @@ case class DllTestStruct(dll: DoublyLinkedList[Int], var l: List[Int]) {
   }
 
   def removePos(pos: Int) = {
-    require(pos >= 0,s"RemovePos($pos) impossible in $l")
-    require(pos < l.size,s"RemovePos($pos) impossible in $l")
+    require(pos >= 0, s"RemovePos($pos) impossible in $l")
+    require(pos < l.size, s"RemovePos($pos) impossible in $l")
     val cont = containerList(pos)
     cont.delete()
     val (c1, c2) = containerList.splitAt(pos)
@@ -137,18 +135,18 @@ object DLLTestCommands extends Commands {
   // How to generate a command (according to the state)
   override def genCommand(state: State): Gen[Command] = {
     val genAddStart: Gen[Command] = for {
-      v <- Gen.choose(0,100)
+      v <- arbitrary[Int]
     } yield AddStart(v)
     val genAddEnd: Gen[Command] = for {
-      v <- Gen.choose(0,100)
+      v <- arbitrary[Int]
     } yield AddEnd(v)
     val genRemoveAll = Gen.const(DropAllOperation)
     if (state == 0) {
       Gen.oneOf(genAddStart, genAddEnd, genRemoveAll)
     } else {
       val genAddPos: Gen[Command] = for {
-        v   <- Gen.choose(0,100)
-        pos <- Gen.choose(0, state -1)
+        v   <- arbitrary[Int]
+        pos <- Gen.choose(0, state - 1)
       } yield AddAfter(v, pos)
       val genRemoveStart = Gen.const(RemoveStart)
       val genRemoveEnd   = Gen.const(RemoveEnd)
@@ -167,12 +165,22 @@ object DLLTestCommands extends Commands {
     }
   }
 
+  //  How to generate an initial state
+  // (in this case, the state is the length of the list, so it is 0)
   override def genInitialState: Gen[State] =
     Gen.const(0)
 
+  // An initial precondition
   override def initialPreCondition(state: State): Boolean = true
 
+  // How to create an initial system under test
   override def newSut(state: State): Sut = DllTestStruct(new DoublyLinkedList[Int](), List())
+
+  /** The abstract class of the command.
+    *
+    * Command gives an API that allows to describe how evolves the system under test and how evolves
+    * the the state. Moreover, it allows to describe what are the pre- and post-conditions
+    */
 
   abstract class DllOperation extends Command {
 
