@@ -25,9 +25,9 @@ object DenseCluster {
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   An [[Array]] of [[IntVariable]]
+    *   The elements we want to cluster0
     * @param output
-    *   An [[Array]] of [[SetVariable]] such that output(j) = {i in input.indices | input(i) == j}
+    *   The clustered elements such that output(j) = {i in input.indices | input(i) == j}.
     * @param bulkIdentifier
     *   A [[IncredibleBulk]] is used when several [[Invariant]] listen to vars. Warning:
     *   [[IncredibleBulk]] are distinguished only by their identifier. Be sure to use the same one
@@ -45,16 +45,16 @@ object DenseCluster {
 }
 
 /** [[oscar.cbls.core.computation.Invariant]] that maintains clusters of the indices of an array:
-  * output(j) = {i in input .indices | input(i) == j}. It is considered as a dense cluster because
-  * output is an [[scala.Array]] and covers all the possible value of the input variables. Update is
-  * O(1)
+  * output(j) = {i in input.indices | input(i) == j}. It is considered as a dense cluster because
+  * output is an [[scala.Array]] and covers all the possible values of the input variables. Update
+  * is O(1)
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
   *   The elements we want to cluster.
   * @param output
-  *   An [[Array]] of [[SetVariable]] such that output(j) = {i in input.indices | input(i) == j}
+  *   The clustered elements such that output(j) = {i in input.indices | input(i) == j}.
   * @param bulkIdentifier
   *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
   *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
@@ -88,6 +88,11 @@ class DenseCluster(
   }
 
   for (i <- input.indices) {
+    require(
+      input(i).value().toInt < output.length,
+      s"An input value is bigger than the upper bound of admissible value (output length). " +
+        s"Input value: ${input(i).value()} - Exclusive upper bound: ${output.length}"
+    )
     input(i).registerDynamicallyListeningElement(this, i)
     output(input(i).value().toInt) :+= i
   }
@@ -98,6 +103,12 @@ class DenseCluster(
     oldVal: Long,
     newVal: Long
   ): Unit = {
+    require(
+      newVal.toInt < output.length,
+      s"Variable is updated with a value bigger than the upper bound of admissible value (output " +
+        s"length). Variable: $intVariable - New Value: $newVal - " +
+        s"Exclusive upper bound: ${output.length}"
+    )
     assert(input(contextualVarIndex) == intVariable)
 
     output(oldVal.toInt) :-= contextualVarIndex

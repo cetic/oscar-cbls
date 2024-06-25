@@ -20,7 +20,7 @@ import oscar.cbls.core.computation.{IncredibleBulk, Invariant, Store}
 /** Companion object of the [[Filter]] class. */
 object Filter {
 
-  /** Creates a [[Filter]] invariant.
+  /** Creates a Filter invariant.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.

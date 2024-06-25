@@ -55,7 +55,7 @@ class FilterTestSuite extends AnyFunSuite with Matchers {
     output.value() should contain only (0, 3, 9)
   }
 
-  test("Filter: changing a selected variable so that it always respects the predicate") {
+  test("Filter: changing a selected variable so that it still respects the predicate") {
     val (_, input, output, _) = testFilter(_ % 6 == 0)
     input(0) := 42
 
