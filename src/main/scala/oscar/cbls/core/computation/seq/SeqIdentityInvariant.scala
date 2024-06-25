@@ -14,24 +14,17 @@
 package oscar.cbls.core.computation.seq
 
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
-import oscar.cbls.core.computation.Invariant
+import oscar.cbls.core.computation.{Invariant, Store}
 import oscar.cbls.core.propagation.PropagationStructure
 
 object SeqIdentityInvariant {
-  def apply(
-    propagationStructure: PropagationStructure,
-    fromValue: SeqVariable,
-    toValue: SeqVariable
-  ): SeqIdentityInvariant = {
-    new SeqIdentityInvariant(propagationStructure: PropagationStructure, fromValue, toValue)
+  def apply(store: Store, fromValue: SeqVariable, toValue: SeqVariable): SeqIdentityInvariant = {
+    new SeqIdentityInvariant(store, fromValue, toValue)
   }
 }
 
-class SeqIdentityInvariant(
-  propagationStructure: PropagationStructure,
-  fromValue: SeqVariable,
-  toValue: SeqVariable
-) extends Invariant(propagationStructure)
+class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVariable)
+    extends Invariant(store)
     with SeqNotificationTarget {
 
   registerStaticallyListenedElement(fromValue)
