@@ -173,9 +173,6 @@ class DoublyLinkedList[T] extends Iterable[T] {
 
   /** Drop all the elements of the list */
   def dropAll(rand : Int): Unit = {
-    if (rand % 100 == 2)
-      phantom.next.next = phantom
-    else
       phantom.next = phantom
   }
 
