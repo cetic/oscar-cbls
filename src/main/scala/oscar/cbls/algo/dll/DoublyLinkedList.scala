@@ -172,8 +172,8 @@ class DoublyLinkedList[T] extends Iterable[T] {
   def ++(elems: Iterable[T]): Unit = { for (elem <- elems) insertStart(elem) }
 
   /** Drop all the elements of the list */
-  def dropAll(rand : Int): Unit = {
-      phantom.next = phantom
+  def dropAll(): Unit = {
+    phantom.next = phantom
   }
 
   /** Returns true if the dll is empty */
