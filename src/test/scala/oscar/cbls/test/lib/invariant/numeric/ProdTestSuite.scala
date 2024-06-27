@@ -35,82 +35,91 @@ class ProdTestSuite extends AnyFunSuite with Matchers {
     (store, input, listenedVariablesIndices, output, inv)
   }
 
-  test("Prod: initialization without null") {
+  test("Prod: initialization without zero element. Expected result: 120") {
     val (_, _, _, output, _) = testProd(Set.range(1, 6))
 
     output.value() should be(120)
   }
 
-  test("Prod: initialization with null") {
+  test("Prod: initialization with zero element. Expected result: 0") {
     val (_, _, _, output, _) = testProd(Set.range(0, 6))
 
     output.value() should be(0)
   }
 
-  test("Prod: changing non null listened value to another non null value") {
+  test(
+    "Prod: changing non zero element listened value to another non zero element value. " +
+      "Expected result: 42"
+  ) {
     val (_, input, _, output, _) = testProd(Set(2, 3, 4))
     input(4) :+= 3
 
     output.value() should be(42)
   }
 
-  test("Prod: changing a non null value to null") {
+  test("Prod: changing a non zero element value to zero element. Expected result: 0") {
     val (_, input, _, output, _) = testProd(Set(2, 3, 4))
     input(4) := 0
 
     output.value() should be(0)
   }
 
-  test("Prod changing a null to a non null value") {
+  test("Prod changing a zero element to a non zero element value. Expected result: 240") {
     val (_, input, _, output, _) = testProd(Set(0, 2, 3, 4))
     input(0) := 10
 
     output.value() should be(240)
   }
 
-  test("Prod: adding a non null value to a non null product") {
+  test("Prod: adding a non zero element value to a non zero element product. Expected result: 30") {
     val (_, _, lvi, output, _) = testProd(Set(2, 3))
     lvi :+= 5
 
     output.value() should be(30)
   }
 
-  test("Prod: adding a value to a null product") {
+  test("Prod: adding a value to a zero element product. Expected result: 0") {
     val (_, _, lvi, output, _) = testProd(Set(0, 2, 3))
     lvi :+= 5
 
     output.value() should be(0)
   }
 
-  test("Prod: adding a zero to a non null product") {
+  test("Prod: adding a zero to a non zero element product. Expected result: 0") {
     val (_, _, lvi, output, _) = testProd(Set(2, 3))
     lvi :+= 0
 
     output.value() should be(0)
   }
 
-  test("Prod: removing a non null value from a non null product") {
+  test(
+    "Prod: removing a non zero element value from a non zero element product. Expected " +
+      "result: 8"
+  ) {
     val (_, _, lvi, output, _) = testProd(Set(2, 3, 4))
     lvi :-= 3
 
     output.value() should be(8)
   }
 
-  test("Prod: removing a non null value from a null product") {
+  test("Prod: removing a non zero element value from a zero element product. Expected result: 0") {
     val (_, _, lvi, output, _) = testProd(Set(0, 2, 3))
     lvi :-= 2
 
     output.value() should be(0)
   }
 
-  test("Prod: removing the only 0 factor from a null product") {
+  test("Prod: removing the only 0 factor from a zero element product. Expected result: 6") {
     val (_, _, lvi, output, _) = testProd(Set(0, 2, 3))
     lvi :-= 0
 
     output.value() should be(6)
   }
 
-  test("Prod: removing one of the null factors from a null product") {
+  test(
+    "Prod: removing one of the zero element factors from a zero element product. Expected " +
+      "result: 0"
+  ) {
     val (_, _, lvi, output, _) = testProd(Set.range(0, 7))
     lvi :-= 0
 
