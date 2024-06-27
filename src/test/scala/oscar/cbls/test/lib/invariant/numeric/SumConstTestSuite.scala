@@ -33,14 +33,14 @@ class SumConstTestSuite extends AnyFunSuite with Matchers {
     (store, listenedVariablesIndices, output, inv)
   }
 
-  test("Sum: add new listened variable") {
+  test("Sum: add new listened variable. Expected result: 10") {
     val (_, lvi, output, _) = testSumConst(Set(2, 3, 4))
     lvi :+= 1
 
     output.value() should be(10)
   }
 
-  test("Sum: remove listened variable") {
+  test("Sum: remove listened variable. Expected result: 5") {
     val (_, lvi, output, _) = testSumConst(Set(2, 3, 4))
     lvi :-= 4
 
