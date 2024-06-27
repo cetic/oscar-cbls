@@ -51,7 +51,7 @@ object Prod {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains `Prod(input(i) | i in``
+/** [[oscar.cbls.core.computation.Invariant]] that maintains `Prod(input(i) | i in`
   * `listenedVariablesIndices)`. Update is in O(1).
   *
   * @param model
