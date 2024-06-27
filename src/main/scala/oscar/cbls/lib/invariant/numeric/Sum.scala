@@ -20,24 +20,24 @@ import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 /** Companion object of the [[Sum]] class. */
 object Sum {
 
-  /** Creates a Sum invariant
+  /** Creates a Sum invariant, which maintains `Sum(input(i) | i in listenedVariablesIndices)`,
+    * where `input` is an array of IntVariables.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   The elements we want to sum.
+    *   The array of IntVariables to sum.
     * @param listenedVariablesIndices
-    *   A SetVariable containing the indices of the input variables to be listened to calculate the
-    *   sum.
+    *   A SetVariable containing the indices of the input variables to sum.
     * @param output
-    *   The output variable containing Sum(input(i) | i in listenedVariablesIndices).
+    *   The output variable containing `Sum(input(i) | i in listenedVariablesIndices)`.
     * @param bulkIdentifier
     *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
     *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
     *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
     *   Be sure to use the same one if you're referencing the same variables.
     * @param name
-    *   The name (optional) of your Invariant.
+    *   The name (optional) of the Invariant.
     */
   def apply(
     model: Store,
@@ -51,25 +51,24 @@ object Sum {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains Sum(input(i) | i in
-  * listenedVariablesIndices}. Update is in O(1).
+/** [[oscar.cbls.core.computation.Invariant]] that maintains `Sum(input(i) | i in`
+  * `listenedVariablesIndices)`. Update is in O(1).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   The IntVariables we want to sum.
+  *   The array of IntVariables to sum.
   * @param listenedVariablesIndices
-  *   A SetVariable containing the indices of the input variables to be listened to calculate the
-  *   sum.
+  *   A SetVariable containing the indices of the input variables to sum.
   * @param output
-  *   The output variable containing Sum(input(i) | i in listenedVariablesIndices).
+  *   The output variable containing `Sum(input(i) | i in listenedVariablesIndices)`.
   * @param bulkIdentifier
   *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
   *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
   *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
   *   sure to use the same one if you're referencing the same variables.
   * @param name
-  *   The name (optional) of your Invariant.
+  *   The name (optional) of the Invariant.
   */
 class Sum(
   model: Store,
@@ -102,7 +101,6 @@ class Sum(
     output :+= input(i).value()
   }
 
-  @inline
   override def notifyIntChanges(
     intVariable: IntVariable,
     contextualVarIndex: Int,
@@ -112,8 +110,6 @@ class Sum(
 
     output :+= (newVal - oldVal)
   }
-
-  @inline
   override def notifySetChanges(
     setVariable: SetVariable,
     index: Int,
@@ -140,7 +136,7 @@ class Sum(
     )
   }
 
-  @inline
+  // updates sum when an additional IntVariable must be used
   private[this] def notifyInsertOn(set: SetVariable, index: Int): Unit = {
     assert(set == listenedVariablesIndices)
 
@@ -149,12 +145,11 @@ class Sum(
     output :+= input(index).value()
   }
 
-  @inline
+  // updates sum when an IntVariable is not used anymore
   private[this] def notifyDeleteOn(set: SetVariable, index: Int): Unit = {
     assert(set == listenedVariablesIndices)
 
     keysForRemoval(index).delete()
-    keysForRemoval(index) = null
 
     output :-= input(index).value()
   }
