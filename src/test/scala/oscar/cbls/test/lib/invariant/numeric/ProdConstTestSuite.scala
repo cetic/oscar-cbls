@@ -33,49 +33,55 @@ class ProdConstTestSuite extends AnyFunSuite with Matchers {
     (store, listenedVariablesIndices, output, inv)
   }
 
-  test("Prod: adding a non null value to a non null product") {
+  test("Prod: adding a non zero element value to a non zero element product. Expected result: 30") {
     val (_, lvi, output, _) = testProdConst(Set(2, 3))
     lvi :+= 5
 
     output.value() should be(30)
   }
 
-  test("Prod: adding a value to a null product") {
+  test("Prod: adding a value to a zero element product. Expected result: 0") {
     val (_, lvi, output, _) = testProdConst(Set(0, 2, 3))
     lvi :+= 5
 
     output.value() should be(0)
   }
 
-  test("Prod: adding a zero to a non null product") {
+  test("Prod: adding a zero to a non zero element product. Expected result: 0") {
     val (_, lvi, output, _) = testProdConst(Set(2, 3))
     lvi :+= 0
 
     output.value() should be(0)
   }
 
-  test("Prod: removing a non null value from a non null product") {
+  test(
+    "Prod: removing a non zero element value from a non zero element product. Expected " +
+      "result: 8"
+  ) {
     val (_, lvi, output, _) = testProdConst(Set(2, 3, 4))
     lvi :-= 3
 
     output.value() should be(8)
   }
 
-  test("Prod: removing a non null value from a null product") {
+  test("Prod: removing a non zero element value from a zero element product. Expected result: 0") {
     val (_, lvi, output, _) = testProdConst(Set(0, 2, 3))
     lvi :-= 2
 
     output.value() should be(0)
   }
 
-  test("Prod: removing the only 0 factor from a null product") {
+  test("Prod: removing the only 0 factor from a zero element product. Expected result: 6") {
     val (_, lvi, output, _) = testProdConst(Set(0, 2, 3))
     lvi :-= 0
 
     output.value() should be(6)
   }
 
-  test("Prod: removing one of the null factors from a null product") {
+  test(
+    "Prod: removing one of the zero element factors from a zero element product.  Expected " +
+      "result: 0"
+  ) {
     val (_, lvi, output, _) = testProdConst(Set.range(0, 7))
     lvi :-= 0
 

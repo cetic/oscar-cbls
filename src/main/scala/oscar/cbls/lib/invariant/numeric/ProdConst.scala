@@ -20,19 +20,19 @@ import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 /** Companion object of the [[ProdConst]] class. */
 object ProdConst {
 
-  /** Creates a ProdConst invariant
+  /** Creates a ProdConst invariant, which maintains `Prod(input(i) | i in listenedValuesIndices}`
+    * where `input` is a array of constant integers.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   The constant integer we want to multiply.
+    *   The array of constant integers we to multiply.
     * @param listenedValuesIndices
-    *   A SetVariable containing the indices of the input variables to be listened to calculate the
-    *   product.
+    *   A SetVariable containing the indices of the input variables to multiply.
     * @param output
-    *   The output variable containing Prod(input(i) | i in listenedValuesIndices).
+    *   The output variable containing `Prod(input(i) | i in listenedValuesIndices)`.
     * @param name
-    *   The name (optional) of your Invariant.
+    *   The name (optional) of the Invariant.
     */
   def apply(
     model: Store,
@@ -45,20 +45,19 @@ object ProdConst {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains Prod(input(i) | i in
-  * listenedValuesIndices}. Update is in O(1).
+/** [[oscar.cbls.core.computation.Invariant]] that maintains `Prod(input(i) | i in`
+  * `listenedValuesIndices)`. Update is in O(1).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   The constant integer we want to multiply.
+  *   The array of constant integers to multiply.
   * @param listenedValuesIndices
-  *   A SetVariable containing the indices of the input variables to be listened to calculate the
-  *   product.
+  *   A SetVariable containing the indices of the input variables to multiply.
   * @param output
-  *   The output variable containing Prod(input(i) | i in listenedValuesIndices).
+  *   The output variable containing `Prod(input(i) | i in listenedValuesIndices)`.
   * @param name
-  *   The name (optional) of your Invariant.
+  *   The name (optional) of the Invariant.
   */
 class ProdConst(
   model: Store,
@@ -108,13 +107,14 @@ class ProdConst(
   }
 
   @inline
-  private[this] def updateOutput(): Unit = {
+  final private[this] def updateOutput(): Unit = {
     if (numberOfZeroFactors == 0) output := nonZeroProduct
     else output                          := 0
   }
 
+  // updates product when an additional constant must be used
   @inline
-  private[this] def notifyInsertOn(set: SetVariable, index: Int): Unit = {
+  final private[this] def notifyInsertOn(set: SetVariable, index: Int): Unit = {
     assert(set == listenedValuesIndices)
 
     if (input(index).value() == 0) numberOfZeroFactors += 1
@@ -123,8 +123,9 @@ class ProdConst(
     updateOutput()
   }
 
+  // updates product when a constant is not used anymore
   @inline
-  private[this] def notifyDeleteOn(set: SetVariable, index: Int): Unit = {
+  final private[this] def notifyDeleteOn(set: SetVariable, index: Int): Unit = {
     assert(set == listenedValuesIndices)
 
     if (input(index).value() == 0) numberOfZeroFactors -= 1
