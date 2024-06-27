@@ -20,19 +20,19 @@ import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 /** Companion object of the [[SumConst]] class. */
 object SumConst {
 
-  /** Creates a SumConst invariant.
+  /** Creates a SumConst invariant, , which maintains `Sum(input(i) | i in listenedValuesIndices)`,
+    * * where `input` is an array of constant integers.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   The constant integers we want to sum.
+    *   The arrays of constant integers to sum.
     * @param listenedValuesIndices
-    *   A SetVariable containing the indices of the input variables to be listened to calculate the
-    *   sum.
+    *   A SetVariable containing the indices of the input constants to sum.
     * @param output
-    *   The output variable containing Sum(input(i) | i in listenedValuesIndices).
+    *   The output variable containing `Sum(input(i) | i in listenedValuesIndices)`.
     * @param name
-    *   The name (optional) of your Invariant.
+    *   The name (optional) of the Invariant.
     */
   def apply(
     model: Store,
@@ -45,20 +45,19 @@ object SumConst {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains Sum(input(i) | i in
-  * listenedValuesIndices}. Update is in O(1).
+/** [[oscar.cbls.core.computation.Invariant]] that maintains `Sum(input(i) | i in`
+  * `listenedValuesIndices}`. , where `input` is an array of constant integers. Update is in O(1).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   The constant integers we want to sum.
+  *   The arrays of constant integers to sum.
   * @param listenedValuesIndices
-  *   A SetVariable containing the indices of the input variables to be listened to calculate the
-  *   sum.
+  *   A SetVariable containing the indices of the input constants to sum.
   * @param output
-  *   The output variable containing Sum(input(i) | i in listenedValuesIndices).
+  *   The output variable containing `Sum(input(i) | i in listenedValuesIndices)`.
   * @param name
-  *   The name (optional) of your Invariant.
+  *   The name (optional) of the Invariant.
   */
 class SumConst(
   model: Store,
@@ -75,7 +74,6 @@ class SumConst(
   output := 0
   for (i <- listenedValuesIndices.value()) output :+= input(i).value()
 
-  @inline
   override def notifySetChanges(
     setVariable: SetVariable,
     index: Int,
