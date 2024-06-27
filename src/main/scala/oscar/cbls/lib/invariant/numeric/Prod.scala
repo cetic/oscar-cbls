@@ -155,15 +155,13 @@ class Prod(
 
   }
 
-  @inline
-  final private[this] def updateOutput(): Unit = {
+  private[this] def updateOutput(): Unit = {
     if (numberOfZeroFactors == 0) output := nonZeroProduct
     else output                          := 0
   }
 
   // updates product when an additional IntVariable must be used
-  @inline
-  final private[this] def notifyInsertOn(set: SetVariable, index: Int): Unit = {
+  private[this] def notifyInsertOn(set: SetVariable, index: Int): Unit = {
     assert(set == listenedVariablesIndices)
 
     keysForRemoval(index) = input(index).registerDynamicallyListeningElement(this, index)
@@ -175,8 +173,7 @@ class Prod(
   }
 
   // updates product when an IntVariable is not used anymore
-  @inline
-  final private[this] def notifyDeleteOn(set: SetVariable, index: Int): Unit = {
+  private[this] def notifyDeleteOn(set: SetVariable, index: Int): Unit = {
     assert(set == listenedVariablesIndices)
 
     keysForRemoval(index).delete()

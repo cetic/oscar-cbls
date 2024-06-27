@@ -106,15 +106,13 @@ class ProdConst(
     )
   }
 
-  @inline
-  final private[this] def updateOutput(): Unit = {
+  private[this] def updateOutput(): Unit = {
     if (numberOfZeroFactors == 0) output := nonZeroProduct
     else output                          := 0
   }
 
   // updates product when an additional constant must be used
-  @inline
-  final private[this] def notifyInsertOn(set: SetVariable, index: Int): Unit = {
+  private[this] def notifyInsertOn(set: SetVariable, index: Int): Unit = {
     assert(set == listenedValuesIndices)
 
     if (input(index).value() == 0) numberOfZeroFactors += 1
@@ -124,8 +122,7 @@ class ProdConst(
   }
 
   // updates product when a constant is not used anymore
-  @inline
-  final private[this] def notifyDeleteOn(set: SetVariable, index: Int): Unit = {
+  private[this] def notifyDeleteOn(set: SetVariable, index: Int): Unit = {
     assert(set == listenedValuesIndices)
 
     if (input(index).value() == 0) numberOfZeroFactors -= 1
@@ -133,5 +130,4 @@ class ProdConst(
 
     updateOutput()
   }
-
 }
