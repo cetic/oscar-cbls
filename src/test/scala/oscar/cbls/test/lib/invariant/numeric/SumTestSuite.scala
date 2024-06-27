@@ -33,42 +33,42 @@ class SumTestSuite extends AnyFunSuite with Matchers {
     (store, input, listenedVariablesIndices, output, inv)
   }
 
-  test("Sum: initialization") {
+  test("Sum: initialization. Expected result: 15") {
     val (_, _, _, output, _) = testSum(Set(0, 1, 2, 3, 4, 5))
 
     output.value() should be(15)
   }
 
-  test("Sum: increase listened variable"){
-    val (_, input, _, output,_) = testSum(Set(2, 3, 4))
+  test("Sum: increase listened variable. Expected result: 42") {
+    val (_, input, _, output, _) = testSum(Set(2, 3, 4))
     input(3) :*= 12
 
     output.value() should be(42)
   }
 
-  test("Sum: decrease listened variable"){
-    val (_, input, _, output,_) = testSum(Set(2, 3, 4))
+  test("Sum: decrease listened variable. Expected result: -42") {
+    val (_, input, _, output, _) = testSum(Set(2, 3, 4))
     input(3) :-= 51
 
     output.value() should be(-42)
   }
 
-  test("Sum: add new listened variable"){
+  test("Sum: add new listened variable. Expected result: 10") {
     val (_, _, lvi, output, _) = testSum(Set(2, 3, 4))
     lvi :+= 1
 
     output.value() should be(10)
   }
 
-  test("Sum: remove listened variable"){
+  test("Sum: remove listened variable. Expected result: 5") {
     val (_, _, lvi, output, _) = testSum(Set(2, 3, 4))
     lvi :-= 4
 
     output.value() should be(5)
   }
 
-  test("Sum: checkInternals doesn't fail"){
-    val (store, input, lvi, _, inv) = testSum(Set(2 ,4))
+  test("Sum: checkInternals doesn't fail") {
+    val (store, input, lvi, _, inv) = testSum(Set(2, 4))
     lvi :+= 5
     lvi :+= 1
     lvi :-= 2
