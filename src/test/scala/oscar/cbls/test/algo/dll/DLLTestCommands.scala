@@ -112,8 +112,6 @@ object DLLTestCommands extends Commands {
   // The type of the System Under Test (SUT)
   type Sut = DllTestStruct
 
-  val rand = new scala.util.Random(1000)
-
   // Defines the precondition to define a new SUT
   override def canCreateNewSut(
     newState: State,
