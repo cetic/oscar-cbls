@@ -114,14 +114,6 @@ object DLLTestCommands extends Commands {
 
   val rand = new scala.util.Random(1000)
 
-  // Defining the generators
-  private val genOpEmpty: Gen[Command] = for {
-    v <- Gen.choose(1, 100)
-    c <- Gen.oneOf(List(AddStart(v), AddEnd(v), DropAllOperation))
-  } yield c
-
-  private val genRemove: Gen[Command] = Gen.oneOf(List(RemoveStart))
-
   // Defines the precondition to define a new SUT
   override def canCreateNewSut(
     newState: State,
@@ -188,8 +180,6 @@ object DLLTestCommands extends Commands {
 
     override def preCondition(state: State): Boolean = true
 
-    var testedState: List[Int] = List()
-
     override def postCondition(state: State, result: Try[Result]): Prop = {
       result match {
         case Failure(_) => false
@@ -202,6 +192,7 @@ object DLLTestCommands extends Commands {
   }
 
   abstract class AddOperation extends DllOperation {
+
     override def nextState(state: State): State = state + 1
   }
 
@@ -223,6 +214,9 @@ object DLLTestCommands extends Commands {
   }
 
   case class AddAfter(value: Int, pos: Int) extends AddOperation {
+
+    override def preCondition(state : State) = state != 0
+
     override def run(sut: Sut): Result = {
       sut.insertAfter(value, pos)
       sut
@@ -241,6 +235,8 @@ object DLLTestCommands extends Commands {
   }
 
   abstract class RemoveOperation extends DllOperation {
+    override def preCondition(state: State) = state != 0
+
     override def nextState(state: State): State = state - 1
   }
 
