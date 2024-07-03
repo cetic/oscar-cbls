@@ -43,7 +43,6 @@ class AcceptAll(objValue: IntVariable) extends Objective(objValue) {
         val newValue = objValue.value()
         _toReturn = MoveFound(buildMove(newValue))
         verboseMode.moveExplored(() => buildMove(newValue), valid = true, saved = true)
-        super.checkNeighbor(buildMove)
       }
     }
 

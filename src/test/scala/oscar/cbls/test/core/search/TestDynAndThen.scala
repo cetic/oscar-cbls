@@ -106,7 +106,6 @@ class TestDynAndThen extends AnyFunSuite {
 
         /** Checks if the candidate objValue match the acceptance conditions */
         override def checkNeighbor(buildMove: Long => M1): Unit = {
-          super.checkNeighbor(buildMove)
           val leftExploredMove = buildMove(0)
           // Accept and build move return by right neighborhood
           // Returned move is right neighborhood's move applied to left neighborhood's move
@@ -122,9 +121,8 @@ class TestDynAndThen extends AnyFunSuite {
 
                 /** Checks if the candidate objValue match the acceptance conditions */
                 override def checkNeighbor(buildMove: Long => M2): Unit = {
-                  super.checkNeighbor(buildMove)
                   // checkNeighbor uses baseObjective neighbor to evaluate the composition
-                  baseExploration.checkNeighbor(buildMove =
+                  baseExploration.checkNeighborWP(buildMove =
                     newObjValue =>
                       CompositeMove(
                         leftExploredMove,

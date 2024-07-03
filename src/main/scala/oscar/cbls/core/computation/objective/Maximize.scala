@@ -111,7 +111,6 @@ class Maximize(
         } else {
           verboseMode.moveExplored(() => buildMove(objValue.value()))
         }
-        super.checkNeighbor(buildMove)
       }
     }
 

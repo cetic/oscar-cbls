@@ -153,6 +153,10 @@ abstract class Exploration[M <: Move](
     *   A function linking the solution value to the Move that leads to it (must be provided by the
     *   calling Neighborhood)
     */
-  def checkNeighbor(buildMove: Long => M): Unit =
+  def checkNeighborWP(buildMove: Long => M): Unit = {
+    checkNeighbor(buildMove)
     searchProfilerOpt.foreach(x => x.neighborExplored())
+  }
+
+  protected def checkNeighbor(buildMove: Long => M): Unit
 }

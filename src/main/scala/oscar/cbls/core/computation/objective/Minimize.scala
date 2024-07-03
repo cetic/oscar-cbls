@@ -111,7 +111,6 @@ class Minimize(
         } else {
           verboseMode.moveExplored(() => buildMove(objValue.value()))
         }
-        super.checkNeighbor(buildMove)
       }
     }
 

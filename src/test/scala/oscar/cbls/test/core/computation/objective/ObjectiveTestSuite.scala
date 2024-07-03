@@ -188,7 +188,7 @@ class TestAssignValueNeighborhood(variable: IntVariable, value: Long)
     val initValue = variable.value()
     variable := value
     searchProfiler().foreach(x => x.neighborSelected())
-    exploration.checkNeighbor(objValue => TestAssignValueNeighborhoodMove(value, objValue, this))
+    exploration.checkNeighborWP(objValue => TestAssignValueNeighborhoodMove(value, objValue, this))
     variable := initValue
   }
 

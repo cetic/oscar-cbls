@@ -18,15 +18,15 @@ class MaximizeTestSuite extends AnyFunSuite {
 
     val exploration = obj.newExploration[DummyMove](new DummySimpleNeighborhood().searchProfiler())
     objValue := 500
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
+    exploration.checkNeighborWP(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
 
     objValue := 1000
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
+    exploration.checkNeighborWP(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
 
     objValue := 1100
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
+    exploration.checkNeighborWP(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn.isInstanceOf[MoveFound] should be(true)
     exploration.toReturn.asInstanceOf[MoveFound].objAfter() should be(1100)
   }
@@ -45,18 +45,18 @@ class MaximizeTestSuite extends AnyFunSuite {
     var exploration = obj.newExploration[DummyMove](new DummySimpleNeighborhood().searchProfiler())
     objValue           := 1100
     overApproxObjValue := 200
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
+    exploration.checkNeighborWP(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
 
     objValue           := 1100
     overApproxObjValue := 200
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
+    exploration.checkNeighborWP(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
 
     // Over approximated value is higher but the retained value should be objValue
     objValue           := 1100
     overApproxObjValue := 1200
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
+    exploration.checkNeighborWP(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn.isInstanceOf[MoveFound] should be(true)
     exploration.toReturn.asInstanceOf[MoveFound].objAfter() should be(1100)
 
@@ -64,7 +64,7 @@ class MaximizeTestSuite extends AnyFunSuite {
     exploration = obj.newExploration[DummyMove](new DummySimpleNeighborhood().searchProfiler())
     objValue           := 1000
     overApproxObjValue := 1200
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
+    exploration.checkNeighborWP(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
   }
 
@@ -78,19 +78,19 @@ class MaximizeTestSuite extends AnyFunSuite {
 
     var exploration = obj.newExploration[DummyMove](new DummySimpleNeighborhood().searchProfiler())
     objValue := 1100
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
+    exploration.checkNeighborWP(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
 
     objValue    := 1100
     constraint2 := 0
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
+    exploration.checkNeighborWP(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn.isInstanceOf[MoveFound] should be(true)
     exploration.toReturn.asInstanceOf[MoveFound].objAfter() should be(1100)
 
     // Constraint is not violated but obj value is higher, should be rejected
     exploration = obj.newExploration[DummyMove](new DummySimpleNeighborhood().searchProfiler())
     objValue := 1000
-    exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
+    exploration.checkNeighborWP(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
   }
 

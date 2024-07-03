@@ -26,7 +26,7 @@ class AcceptAllTestSuite extends AnyFunSuite {
     for (_ <- 0 until 100) {
       val newValue = random.nextLong()
       objValue := newValue
-      exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood()))
+      exploration.checkNeighborWP(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood()))
       exploration.toReturn.isInstanceOf[MoveFound] should be(true)
       exploration.toReturn.asInstanceOf[MoveFound].objAfter() should be(newValue)
       exploration = acceptAll.newExploration(new DummySimpleNeighborhood().searchProfiler())

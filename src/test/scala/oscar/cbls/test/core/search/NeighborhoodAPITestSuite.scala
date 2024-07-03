@@ -95,7 +95,7 @@ class TestAssignNeighborhood(
       val newValue = random.between(100, 300)
       variable := newValue
       searchProfiler().foreach(x => x.neighborSelected())
-      exploration.checkNeighbor(objValue => {
+      exploration.checkNeighborWP(objValue => {
         if (changeTheValueInReturnedMove)
           TestAssignNeighborhoodMove(Math.pow(newValue, 2).toLong, objValue, this)
         else TestAssignNeighborhoodMove(newValue, objValue, this)
