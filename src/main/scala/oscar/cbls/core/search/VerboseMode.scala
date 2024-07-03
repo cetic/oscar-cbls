@@ -28,11 +28,29 @@ object VerboseMode {
   }
 }
 
+/** This class handles the verbosity aspect of the search, meaning the information displayed during
+  * the search.
+  *
+  * '''NOTE''' : It has no impact on the profiling.
+  *
+  * It's behavior depends on the verbosityLevel parameter. The level varies from 0 to 4 :
+  *   - 0 : Nothing is displayed
+  *   - 1 : Every SUMMARIZED_MOVE_DELAY milli-second a summary of the last taken moves is printed.
+  *   - 2 : Every taken moves are printed
+  *   - 3 : Every taken moves are printed and the exploration progress (start, end) as well
+  *   - 4 : Every explored moves are printed
+  *
+  * @param verbosityLevel
+  *   The verbosity level of the search (see full class description for more information)
+  */
 class VerboseMode(val verbosityLevel: Int) {
+
+  require(verbosityLevel >= 0 && verbosityLevel <= 4)
 
   private var summarizedLastPrint: Long                    = System.currentTimeMillis()
   private var summarizedLastValue: Long                    = Long.MaxValue
   private var summarizedMove: mutable.HashMap[String, Int] = mutable.HashMap.empty
+  private val SUMMARIZED_MOVE_DELAY: Long                  = 100L
   private var searchStartAt: Long                          = -1
 
   /** Displays some information about the starting search.
@@ -146,7 +164,7 @@ class VerboseMode(val verbosityLevel: Int) {
       val prefix_2 = prefix2(newBestValue, newValue, bestValue)
       println(s"$prefix_1 $prefix_2 $newValue\t$move")
     } else if (verbosityLevel == 1) {
-      if (System.currentTimeMillis() - summarizedLastPrint > 100L || forcePrint) {
+      if (System.currentTimeMillis() - summarizedLastPrint > SUMMARIZED_MOVE_DELAY || forcePrint) {
         val prefix_1 = prefix1(newValue, summarizedLastValue)
         val prefix_2 = prefix2(newBestValue, newValue, bestValue)
         println(
@@ -164,7 +182,9 @@ class VerboseMode(val verbosityLevel: Int) {
     }
   }
 
-  /** Prints the last taken moves and the summary of the search */
+  /** Prints the summary of the search and, if verbosity level is equal to 1, prints the last taken
+    * moves.
+    */
   @inline
   final def searchEnded(endValue: Long, moveCount: Int): Unit = {
     if (verbosityLevel == 1) {

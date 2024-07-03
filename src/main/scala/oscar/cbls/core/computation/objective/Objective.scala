@@ -23,8 +23,9 @@ import oscar.cbls.core.search.profiling.NeighborhoodProfiler
   * problem).
   *
   * During the exploration, the search procedure tries some modifications of the solution (called
-  * [[oscar.cbls.search.Move]]) leading to the modification of the objective value. To accept those [[oscar.cbls.search.Move]] the
-  * Objective has to checks if the new value meets the Objective's conditions.
+  * [[oscar.cbls.core.search.Move]]) leading to the modification of the objective value. To accept
+  * those [[oscar.cbls.core.search.Move]] the Objective has to checks if the new value meets the
+  * Objective's conditions.
   */
 abstract class Objective(val objValue: IntVariable) {
 
@@ -33,8 +34,8 @@ abstract class Objective(val objValue: IntVariable) {
     *
     * ==WARNING:==
     * When overriding this value make sure to mark it as "lazy" so that the _currentObjValue
-    * initiate with the correct value. If it's not marked as lazy, the default value of [[scala.Long]]
-    * will be used (0L).
+    * initiate with the correct value. If it's not marked as lazy, the default value of
+    * [[scala.Long]] will be used (0L).
     */
   val worstValue: Long
 
