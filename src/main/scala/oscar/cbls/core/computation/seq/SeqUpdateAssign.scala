@@ -39,4 +39,7 @@ class SeqUpdateAssign(val newSequence: IntSequence) extends SeqUpdate(newSequenc
 
   override protected[computation] def regularize(maxPivot: Int): SeqUpdate =
     SeqUpdateAssign(newSequence.regularizeToMaxPivot(maxPivot))
+
+  override def toString: String =
+    s"SeqUpdateAssign(new value : $newSequence)"
 }

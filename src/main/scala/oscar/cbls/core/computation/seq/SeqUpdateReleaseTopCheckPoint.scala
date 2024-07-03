@@ -23,5 +23,8 @@ class SeqUpdateReleaseTopCheckPoint(prev: SeqUpdate, seq: IntSequence) extends S
 
   override protected[seq] def appendThisTo(previousUpdates: SeqUpdate): SeqUpdate = ???
 
-  override protected[seq] def regularize(maxPivot: Int): SeqUpdate = ???
+  override protected[seq] def regularize(maxPivot: Int): SeqUpdate = SeqUpdateReleaseTopCheckPoint(prev, seq.regularizeToMaxPivot(maxPivot))
+
+  override def toString: String =
+    s"SeqUpdateReleaseTopCheckPoint(checkpoint:$seq prev:$prev)"
 }

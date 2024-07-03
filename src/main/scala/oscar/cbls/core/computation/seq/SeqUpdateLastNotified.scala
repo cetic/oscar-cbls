@@ -44,7 +44,6 @@ case class SeqUpdateLastNotified(value: IntSequence) extends SeqUpdate(value) {
       expectedValueAfterFullReverse sameIdentity this.newValue,
       s"not proper reverse target on $this target:$expectedValueAfterFullReverse"
     )
-    // In this case we
     updatesAlreadyReversed
   }
 

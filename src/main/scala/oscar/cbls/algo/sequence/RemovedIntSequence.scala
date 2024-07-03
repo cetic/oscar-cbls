@@ -56,6 +56,8 @@ class RemovedIntSequence(
   override def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
     if (position == -1) Some(new RootIntSequenceExplorer(this, true))
     else if (position == size) Some(new RootIntSequenceExplorer(this, false))
+    else if (position == explorerAtRemovePos.position - 1)
+      Some(new RemovedIntSequenceExplorer(this, position, explorerAtRemovePos.prev))
     else {
       originalSequence.explorerAtPosition(
         if (position < this.explorerAtRemovePos.position) position else position + 1

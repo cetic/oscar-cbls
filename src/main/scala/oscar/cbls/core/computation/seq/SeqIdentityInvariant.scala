@@ -38,33 +38,35 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
     digestChanges(changes)
   }
 
-  private var checkPointStackNotTop: List[IntSequence] = List.empty
+  private var checkPointStack: List[IntSequence] = List.empty
 
-  private var topCheckpoint: IntSequence = null
-  private var levelTopCheckpoint: Int    = -1
+  private var levelTopCheckpoint: Int = -1
 
   private def popTopCheckpoint(): Unit = {
-    checkPointStackNotTop match {
-      case cp :: tail =>
-        topCheckpoint = cp
-        checkPointStackNotTop = tail
-        assert(levelTopCheckpoint + 1 == checkPointStackNotTop.size)
+    checkPointStack match {
+      case _ :: tail =>
+        assert(
+          levelTopCheckpoint + 1 == checkPointStack.size,
+          s"'${levelTopCheckpoint + 1} vs ${checkPointStack.size}"
+        )
+        checkPointStack = tail
         levelTopCheckpoint -= 1
-      case _ =>
-        topCheckpoint = null
-        levelTopCheckpoint = -1
+      case Nil =>
+        require(false, "Should happen : pop on an empty stack")
     }
   }
 
   private def pushTopCheckpoint(newCheckpoint: IntSequence): Unit = {
-    if (topCheckpoint != null) {
-      checkPointStackNotTop = topCheckpoint :: checkPointStackNotTop
-    }
-    topCheckpoint = newCheckpoint
+    checkPointStack = newCheckpoint :: checkPointStack
     levelTopCheckpoint += 1
+    require(
+      levelTopCheckpoint + 1 == checkPointStack.size,
+      s"${levelTopCheckpoint + 1} == ${checkPointStack.size}"
+    )
   }
 
   private def digestChanges(changes: SeqUpdate): Unit = {
+    println(s"token : ${changes.newValue.token} - $changes")
     changes match {
       case SeqUpdateInsert(
             value: Int,
@@ -92,39 +94,45 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
         digestChanges(prev)
         toValue.remove(removePositionExplorer, Some(changes.newValue))
       case SeqUpdateAssign(s) =>
-        while (levelTopCheckpoint >= 0) {
-          toValue.releaseTopCheckpoint()
-          popTopCheckpoint()
-        }
         toValue := s
       case SeqUpdateLastNotified(value: IntSequence) =>
         assert(value equals toValue.newValue)
       case SeqUpdateRollBackToTopCheckpoint(
             value: IntSequence,
             howToRollBack: SeqUpdate,
-            level: Int
+            level: Int,
+            prev: SeqUpdate
           ) =>
-        require(level == levelTopCheckpoint)
+        digestChanges(prev)
+        println(s"digesting how to : $howToRollBack")
+        digestChanges(howToRollBack)
         require(
-          value sameIdentity topCheckpoint,
-          s"fail on quick equals equals=${value.toList equals topCheckpoint.toList} value:$value topCheckpoint:$topCheckpoint"
+          level == levelTopCheckpoint,
+          s"Top checkpoint of original sequence is not the same as the copy one: Should be $level got $levelTopCheckpoint"
+        )
+        require(
+          value sameIdentity checkPointStack.head,
+          s"fail on quick equals equals=${value.toList equals checkPointStack.head.toList} value:$value topCheckpoint:${checkPointStack.head}"
         )
         toValue.rollbackToTopCheckpoint()
-      case SeqUpdateReleaseTopCheckPoint(_: SeqUpdate, _: IntSequence) =>
+      case SeqUpdateReleaseTopCheckPoint(prev: SeqUpdate, _: IntSequence) =>
+        digestChanges(prev)
+        popTopCheckpoint()
         toValue.releaseTopCheckpoint()
       case SeqUpdateDefineCheckpoint(prev: SeqUpdate, level: Int) =>
         digestChanges(prev)
-        while (level <= levelTopCheckpoint) {
-          toValue.releaseTopCheckpoint()
-          popTopCheckpoint()
-        }
         require(changes.newValue sameIdentity prev.newValue)
         pushTopCheckpoint(changes.newValue)
+        assert(
+          levelTopCheckpoint == level,
+          s"Top checkpoint of original sequence is not the same as the copy one: Should be $level got $levelTopCheckpoint"
+        )
         toValue.defineCurrentValueAsCheckpoint()
 
       case _ =>
       // Default case, do nothing
     }
+    println(s"update processed : $changes")
   }
 
   override def checkInternals(): Unit = {

@@ -13,7 +13,12 @@
 
 package oscar.cbls.core.computation.seq
 
-import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
+import oscar.cbls.algo.sequence.{
+  InsertedIntSequence,
+  IntSequence,
+  IntSequenceExplorer,
+  RootIntSequenceExplorer
+}
 
 object SeqUpdateInsert {
 
@@ -114,15 +119,25 @@ class SeqUpdateInsert(
 ) extends SeqUpdateWithPrev(prev: SeqUpdate, seq) {
 
   // The position of the new value
-  private lazy val insertionPos: Int = insertAfterPositionExplorer.next.position
+  private lazy val insertionPos: Int =
+    insertAfterPositionExplorer match {
+      case _: RootIntSequenceExplorer => 0
+      case x                          => x.next.position
+    }
 
   override protected[computation] def reverseThis(
     expectedValueAfterFullReverse: IntSequence,
     updatesAlreadyReversed: SeqUpdate
   ): SeqUpdate = {
+    val explorerAtInsertionPositionInNewSeq = seq match {
+      case iis: InsertedIntSequence =>
+        iis.explorerAtPosition(insertionPos).get
+      case is: IntSequence =>
+        is.explorerAtPosition(insertionPos).get
+    }
     prev.reverseThis(
       expectedValueAfterFullReverse,
-      SeqUpdateRemove(insertAfterPositionExplorer.next, updatesAlreadyReversed, prev.newValue)
+      SeqUpdateRemove(explorerAtInsertionPositionInNewSeq, updatesAlreadyReversed, prev.newValue)
     )
   }
 

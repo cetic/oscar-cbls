@@ -94,7 +94,7 @@ class SeqUpdateRemove(
       expectedValueAfterFullReverse,
       SeqUpdateInsert(
         explorerAtRemovePosition.value,
-        explorerAtRemovePosition,
+        seq.explorerAtPosition(explorerAtRemovePosition.position - 1).get,
         updatesAlreadyReversed,
         prev.newValue
       )

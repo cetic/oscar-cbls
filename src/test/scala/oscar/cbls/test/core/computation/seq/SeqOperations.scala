@@ -3,17 +3,18 @@ package oscar.cbls.test.core.computation.seq
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation.seq.SeqVariable
 
+import scala.collection.mutable
 import scala.util.Random
 
 case class SeqOperations(random: Random, seqVariable: SeqVariable, cloneVariable: SeqVariable) {
 
-  private val minValue: Int = seqVariable.domain.get._1.toInt
-  private val maxValue: Int = seqVariable.domain.get._2.toInt
+  def freeValues: mutable.Set[Int] = mutable.Set.from(List.tabulate(100)(identity)).diff(seqVariable.newValue.toSet)
+  println(s"freeValues : $freeValues")
 
   private var lastCheckpoint: Option[IntSequence] = None
 
   def seqInsertOperation(refListStack: List[List[Int]]): List[List[Int]] = {
-    val value: Int    = random.nextInt(maxValue)
+    val value: Int    = freeValues.head
     val position: Int = random.between(-1, refListStack.head.size)
     val insertAfterPositionExplorer: IntSequenceExplorer =
       seqVariable.newValue.explorerAtPosition(position).get
@@ -34,7 +35,7 @@ case class SeqOperations(random: Random, seqVariable: SeqVariable, cloneVariable
     val after: Int = random
       .shuffle(
         List(-1) ::: List.tabulate(from)(identity) ::: List.tabulate(lastRefList.size - to - 1)(x =>
-          x + to
+          x + to + 1
         )
       )
       .head
@@ -119,6 +120,7 @@ case class SeqOperations(random: Random, seqVariable: SeqVariable, cloneVariable
     val removeExplorer         = seqVariable.newValue.explorerAtPosition(removePos).get
     seqVariable.remove(removeExplorer)
     val newRefList: List[Int] = lastRefList.take(removePos) ::: lastRefList.drop(removePos + 1)
+    freeValues.add(removeExplorer.value)
     List(newRefList) ::: refListStack.tail
   }
 
@@ -133,7 +135,9 @@ case class SeqOperations(random: Random, seqVariable: SeqVariable, cloneVariable
   }
 
   def seqAssignOperation(refListStack: List[List[Int]]): List[List[Int]] = {
-    val brandNewList = List.fill(random.nextInt(100))(random.nextInt(maxValue))
+    val brandNewList = freeValues.take(random.between(10,20)).toList
+    for(x <- brandNewList) freeValues.remove(x)
+
     seqVariable := IntSequence(brandNewList)
     List(brandNewList)
   }

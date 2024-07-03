@@ -72,7 +72,7 @@ object MovedIntSequence {
       case (NotMoving, true) =>
         PiecewiseUnitaryAffineFunction.createFromPivots(
           List(
-            // If fromIncluded == 0 this identity function will be overriden.
+            // If fromIncluded == 0 this identity function will be overridden.
             new Pivot(0, UnitaryAffineFunction.identity),
             new Pivot(fromIncluded, UnitaryAffineFunction(toIncluded + fromIncluded, flip = true)),
             new Pivot(toIncluded + 1, UnitaryAffineFunction.identity)

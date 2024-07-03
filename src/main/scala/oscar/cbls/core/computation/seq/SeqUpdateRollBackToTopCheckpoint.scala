@@ -19,25 +19,28 @@ object SeqUpdateRollBackToTopCheckpoint {
   def apply(
     checkpoint: IntSequence,
     howToRollBack: SeqUpdate,
-    level: Int
+    level: Int,
+    prev: SeqUpdate
   ): SeqUpdateRollBackToTopCheckpoint = {
-    new SeqUpdateRollBackToTopCheckpoint(checkpoint, howToRollBack, level)
+    new SeqUpdateRollBackToTopCheckpoint(checkpoint, howToRollBack, level, prev)
   }
 
   def unapply(
     seqUpdateRollBackToCheckpoint: SeqUpdateRollBackToTopCheckpoint
-  ): Option[(IntSequence, SeqUpdate, Int)] =
+  ): Option[(IntSequence, SeqUpdate, Int, SeqUpdate)] =
     Some(
       seqUpdateRollBackToCheckpoint.checkpoint,
       seqUpdateRollBackToCheckpoint.howToRollBack,
-      seqUpdateRollBackToCheckpoint.level
+      seqUpdateRollBackToCheckpoint.level,
+      seqUpdateRollBackToCheckpoint.prev
     )
 }
 
 class SeqUpdateRollBackToTopCheckpoint(
   val checkpoint: IntSequence,
   val howToRollBack: SeqUpdate,
-  val level: Int
+  val level: Int,
+  val prev: SeqUpdate
 ) extends SeqUpdate(checkpoint) {
 
   /** Reverses the current update, used when roll-backing to a checkPoint. Since, those updates will
@@ -77,5 +80,5 @@ class SeqUpdateRollBackToTopCheckpoint(
   override protected[seq] def regularize(maxPivot: Int): SeqUpdate = this
 
   override def toString: String =
-    s"SeqUpdateRollBackToTopCheckpoint(level:$level checkpoint:$checkpoint)"
+    s"SeqUpdateRollBackToTopCheckpoint(level:$level checkpoint:$checkpoint prev:$prev)"
 }
