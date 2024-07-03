@@ -26,7 +26,7 @@ import oscar.cbls.visual.profiling.ProfilingConsole
   * A search procedure is a Neighborhood or a combination of Neighborhood.
   *
   * For instance :
-  *   - AssignNeighborhood => Upon calling [[doAllMoves()]], this search procedure will assign new
+  *   - AssignNeighborhood => Upon calling [[Neighborhood.doAllMoves]], this search procedure will assign new
   *     values to a variable. Until no value are left to test.
   *
   *   - AssignNeighborhood(A: IntVariable) dynAndThen AssignNeighborhood(B: IntVariable) ==> This
