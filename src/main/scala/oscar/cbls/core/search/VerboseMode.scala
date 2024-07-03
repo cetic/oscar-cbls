@@ -59,11 +59,11 @@ class VerboseMode(val verbosityLevel: Int) {
     * @param move
     *   The explored move
     * @param valid
-    *   whether or not the move is accepted by the acceptance criterion. Default = false
+    *   Whether or not the move is accepted by the acceptance criterion. Default = false
     * @param newBest
-    *   whether or not the move has the best recorded value of the search. Default = false
+    *   Whether or not the move has the best recorded value of the search. Default = false
     * @param saved
-    *   whether or not the move has been saved. Default = false
+    *   Whether or not the move has been saved. Default = false
     */
   @inline
   final def moveExplored(
@@ -111,7 +111,7 @@ class VerboseMode(val verbosityLevel: Int) {
       }
   }
 
-  /** Displays the taken moves if the verbosity level is 1 or above.
+  /** Displays the taken moves if the verbosity level is at least 1.
     *
     * Nothing is displayed if verbosityLevel is < 1
     *
@@ -164,8 +164,8 @@ class VerboseMode(val verbosityLevel: Int) {
     }
   }
 
-  @inline
   /** Prints the last taken moves and the summary of the search */
+  @inline
   final def searchEnded(endValue: Long, moveCount: Int): Unit = {
     if (verbosityLevel == 1) {
       val prefix_1 =

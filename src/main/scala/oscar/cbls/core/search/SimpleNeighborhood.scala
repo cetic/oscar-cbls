@@ -49,7 +49,7 @@ abstract class SimpleNeighborhood[M <: Move](neighborhoodName: String) extends N
     * @param exploration
     *   The Exploration instance that will validate (or not) each explored neighbor.
     * @return
-    *   The search result, either [[MoveFound]] or [[NoMoveFound]]
+    *   The search result, either [[oscar.cbls.core.search.MoveFound]] or [[oscar.cbls.core.search.NoMoveFound]]
     */
   def exploreNeighborhood(exploration: Exploration[M]): Unit
 

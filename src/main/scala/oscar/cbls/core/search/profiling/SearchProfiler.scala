@@ -27,7 +27,7 @@ import oscar.cbls.core.search.{MoveFound, Neighborhood, NoMoveFound, SearchResul
   * method instead of getMove()
   *
   * @param neighborhood
-  *   : the profiled Neighborhood
+  *   The profiled Neighborhood
   */
 class SearchProfiler(val neighborhood: Neighborhood) {
 

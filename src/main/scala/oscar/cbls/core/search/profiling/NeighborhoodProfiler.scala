@@ -16,11 +16,11 @@ package oscar.cbls.core.search.profiling
 import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.core.search.profiling.profilingData.NeighborhoodProfilingData
 
-/** Base profiler for EasyNeighborhoods It also tracks the exploration timing, the nb of
+/** Base profiler for [[SimpleNeighborhood]] It also tracks the exploration timing, the number of
   * exploration, the selection duration...
   *
   * @param neighborhood
-  *   the profiled neighborhood
+  *   The profiled neighborhood
   */
 class NeighborhoodProfiler(override val neighborhood: Neighborhood)
     extends SearchProfiler(neighborhood) {

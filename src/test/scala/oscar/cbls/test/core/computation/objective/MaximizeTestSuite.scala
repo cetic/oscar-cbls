@@ -53,14 +53,14 @@ class MaximizeTestSuite extends AnyFunSuite {
     exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
 
-    // Under approximated value is higher but the retained value should be objValue
+    // Over approximated value is higher but the retained value should be objValue
     objValue           := 1100
     overApproxObjValue := 1200
     exploration.checkNeighbor(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn.isInstanceOf[MoveFound] should be(true)
     exploration.toReturn.asInstanceOf[MoveFound].objAfter() should be(1100)
 
-    // Under approximated value is higher but the objValue is lower, should be rejected
+    // Over approximated value is higher but the objValue is lower, should be rejected
     exploration = obj.newExploration[DummyMove](new DummySimpleNeighborhood().searchProfiler())
     objValue           := 1000
     overApproxObjValue := 1200

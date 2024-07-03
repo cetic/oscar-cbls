@@ -52,7 +52,7 @@ abstract class NeighborhoodCombinator(
     * @param objective
     *   The Objective of the search
     * @return
-    *   The search result, either [[MoveFound]] or [[NoMoveFound]]
+    *   The search result, either [[oscar.cbls.core.search.MoveFound]] or [[oscar.cbls.core.search.NoMoveFound]]
     */
   protected[this] def exploreCombinator(objective: Objective): SearchResult
 

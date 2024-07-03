@@ -53,7 +53,7 @@ abstract class Neighborhood(_name: String) {
 
   /** Activates search profiling through all search procedure.
     * ==WARNING :==
-    * Be sure to call it at the root of your final search procedure to have
+    * Be sure to call it at the root of your final search procedure to have complete search profiling
     */
   def profileSearch(): Unit
 

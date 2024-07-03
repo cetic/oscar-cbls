@@ -171,7 +171,7 @@ class DummyMove(_objAfter: Long, simpleNeighborhood: DummySimpleNeighborhood)
   override def objAfter(): Long = _objAfter
 }
 
-class DummySimpleNeighborhood() extends SimpleNeighborhood[DummyMove]("") {
+class DummySimpleNeighborhood extends SimpleNeighborhood[DummyMove]("") {
 
   override def exploreNeighborhood(exploration: Exploration[DummyMove]): Unit = {}
 

@@ -19,5 +19,5 @@ abstract class Move(objValueAfter: Long, val neighborhoodName: String) {
   def commit(): Unit
   def objAfter(): Long = objValueAfter
 
-  override def toString: String = s"${neighborhoodName} objValue after $objValueAfter"
+  override def toString: String = s"$neighborhoodName objValue after $objValueAfter"
 }

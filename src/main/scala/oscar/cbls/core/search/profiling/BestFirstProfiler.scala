@@ -22,7 +22,7 @@ import oscar.cbls.core.search.{Neighborhood, NeighborhoodCombinator}
   * @param neighborhoods
   *   The list of supervised neighborhood
   */
-case class BestFirstProfiler(
+class BestFirstProfiler(
   override val combinator: NeighborhoodCombinator,
   override val neighborhoods: List[Neighborhood]
 ) extends SelectionProfiler(combinator, neighborhoods) {

@@ -51,7 +51,7 @@ private[profiling] class CommonProfilingData extends ProfilingData() {
       case _ =>
         require(
           requirement = false,
-          s"Unable to merge different types of profiling data (${this.getClass} vs ${other.getClass}"
+          s"Unable to merge different types of profiling data (${this.getClass} vs ${other.getClass})"
         )
     }
 

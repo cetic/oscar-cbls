@@ -15,7 +15,7 @@ package oscar.cbls.visual.profiling
 
 import oscar.cbls.core.search.profiling.{CombinatorProfiler, SearchProfiler}
 
-/** /** Build the Profiling table node hierarchy */
+/** Build the Profiling table node hierarchy 
   *
   * ==Note :==
   * This object creates an hierarchy used both by graphical and "on-console" display. It may need

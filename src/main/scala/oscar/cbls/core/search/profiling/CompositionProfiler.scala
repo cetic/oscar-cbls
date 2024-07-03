@@ -82,7 +82,8 @@ case class CompositionProfiler(
    * That's the purpose of this method.
    *
    * We first determine if we already encountered this type of neighborhood.
-   * To do that we use the detailedRecursiveName of the neighborhood (basically getting all the structure of the neighborhood)
+   * To do that we use the detailedRecursiveName of the neighborhood 
+   * (basically getting all the structure of the neighborhood)
    *
    * We DON'T WANT TO MERGE when :
    *  - The B neighborhood isn't generic (when using andThen for instance) hence the eq check
