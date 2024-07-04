@@ -14,7 +14,8 @@
 package oscar.cbls.core.computation.objective
 
 import oscar.cbls.core.computation.integer.IntVariable
-import oscar.cbls.core.search.{Move, MoveFound, NoMoveFound}
+import oscar.cbls.core.search.profiling.NeighborhoodProfiler
+import oscar.cbls.core.search.{Move, MoveFound, NoMoveFound, SimpleNeighborhood}
 
 /** Companion object of Minimize */
 object Minimize {
@@ -42,47 +43,78 @@ class Minimize(
   objValue: IntVariable,
   mustBeZero: List[IntVariable],
   underApproximatedObjValue: Option[IntVariable]
-) extends Objective {
+) extends Objective(objValue) {
 
-  override def newExploration: Exploration = new Exploration {
-    private val oldObj: Long = objValue.value()
+  override lazy val worstValue: Long = Long.MaxValue
 
-    private def checkNeighborOnApproximatedObjective(buildMove: Long => Move): Unit = {
-      val newApproxObj = underApproximatedObjValue.get.value()
-      toReturn match {
-        case NoMoveFound if newApproxObj < oldObj =>
-          checkNeighborOnRealObjective(buildMove)
-        case m: MoveFound if newApproxObj < m.objAfter() =>
-          checkNeighborOnRealObjective(buildMove)
-        case _ => ;
+  override def isValueNewBest(currentBest: Long, newValue: Long): Boolean =
+    newValue < currentBest
+
+  override def newExploration[M <: Move](
+    searchProfilerOpt: Option[NeighborhoodProfiler]
+  ): Exploration[M] =
+    new Exploration[M](currentObjValue(), searchProfilerOpt) {
+
+      private def checkNeighborOnApproximatedObjective(buildMove: Long => M): Unit = {
+        val newApproxObj = underApproximatedObjValue.get.value()
+        toReturn match {
+          case NoMoveFound if newApproxObj < this.oldObj =>
+            checkNeighborOnRealObjective(buildMove)
+          case m: MoveFound if newApproxObj < m.objAfter() =>
+            checkNeighborOnRealObjective(buildMove)
+          case _ if newApproxObj < Long.MaxValue =>
+            verboseMode.moveExplored(() => buildMove(newApproxObj), valid = true)
+          case _ =>
+            verboseMode.moveExplored(() => buildMove(newApproxObj))
+        }
       }
-    }
 
-    private def checkNeighborOnRealObjective(buildMove: Long => Move): Unit = {
-      val newObj = objValue.value()
-      toReturn match {
-        case NoMoveFound if newObj < oldObj        => _toReturn = MoveFound(buildMove(newObj))
-        case m: MoveFound if newObj < m.objAfter() => _toReturn = MoveFound(buildMove(newObj))
-        case _                                     => ;
+      private def checkNeighborOnRealObjective(buildMove: Long => M): Unit = {
+        val newObj = objValue.value()
+        toReturn match {
+          case NoMoveFound if newObj < oldObj =>
+            verboseMode.moveExplored(
+              () => buildMove(newObj),
+              valid = true,
+              newBest = true,
+              saved = true
+            )
+            _toReturn = MoveFound(buildMove(newObj))
+          case m: MoveFound if newObj < m.objAfter() =>
+            verboseMode.moveExplored(
+              () => buildMove(newObj),
+              valid = true,
+              newBest = true,
+              saved = true
+            )
+            _toReturn = MoveFound(buildMove(newObj))
+          case _ if newObj < Long.MaxValue =>
+            verboseMode.moveExplored(() => buildMove(newObj), valid = true)
+          case _ =>
+            verboseMode.moveExplored(() => buildMove(newObj))
+        }
       }
-    }
 
-    /** Three steps :
-      *   - Checks the strong constraints
-      *   - Checks the underApproximatedObjValue
-      *   - Checks the objValue
-      *
-      * @param buildMove
-      *   A function linking the new objValue to the Move that leads to it (must be provided by the
-      *   calling Neighborhood)
-      */
-    override def checkNeighbor(buildMove: Long => Move): Unit = {
-      if (!mustBeZero.exists(_.value() > 0)) {
-        underApproximatedObjValue match {
-          case None => checkNeighborOnRealObjective(buildMove)
-          case _    => checkNeighborOnApproximatedObjective(buildMove)
+      /** Three steps :
+        *   - Checks the strong constraints
+        *   - Checks the underApproximatedObjValue
+        *   - Checks the objValue
+        *
+        * @param buildMove
+        *   A function linking the new objValue to the Move that leads to it (must be provided by
+        *   the calling Neighborhood)
+        */
+      override def checkNeighbor(buildMove: Long => M): Unit = {
+        if (!mustBeZero.exists(_.value() > 0)) {
+          underApproximatedObjValue match {
+            case None => checkNeighborOnRealObjective(buildMove)
+            case _    => checkNeighborOnApproximatedObjective(buildMove)
+          }
+        } else {
+          verboseMode.moveExplored(() => buildMove(objValue.value()))
         }
       }
     }
-  }
+
+  override def toString: String = "Minimize"
 }

@@ -14,7 +14,8 @@
 package oscar.cbls.core.computation.objective
 
 import oscar.cbls.core.computation.integer.IntVariable
-import oscar.cbls.core.search.{Move, MoveFound}
+import oscar.cbls.core.search.profiling.{NeighborhoodProfiler, SearchProfiler}
+import oscar.cbls.core.search.{Move, MoveFound, SimpleNeighborhood}
 
 /** Companion object of AcceptAll */
 object AcceptAll {
@@ -27,15 +28,25 @@ object AcceptAll {
   *
   * It can be used in particular cases. For instance, in the DynAndThen Combinator you want to
   * evaluate the composition of two movements, hence the first one must be accepted no matter what.
-  * @param objective
+  * @param objValue
   *   The objective value
   */
-class AcceptAll(objective: IntVariable) extends Objective {
+class AcceptAll(objValue: IntVariable) extends Objective(objValue) {
 
-  override def newExploration: Exploration = new Exploration {
-    override def checkNeighbor(buildMove: Long => Move): Unit = {
-      val newValue = objective.value()
-      _toReturn = MoveFound(buildMove(newValue))
+  override lazy val worstValue: Long = 0L
+
+  override def isValueNewBest(currentBest: Long, newValue: Long): Boolean = true
+
+  override def newExploration[M <: Move](
+    searchProfilerOpt: Option[NeighborhoodProfiler]
+  ): Exploration[M] =
+    new Exploration[M](currentObjValue(), searchProfilerOpt) {
+      override def checkNeighbor(buildMove: Long => M): Unit = {
+        val newValue = objValue.value()
+        _toReturn = MoveFound(buildMove(newValue))
+        verboseMode.moveExplored(() => buildMove(newValue), valid = true, saved = true)
+      }
     }
-  }
+
+  override def toString: String = "Accept all new value"
 }
