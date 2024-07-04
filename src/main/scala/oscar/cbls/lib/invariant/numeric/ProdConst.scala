@@ -30,9 +30,9 @@ object ProdConst {
     * @param listenedValuesIndices
     *   A SetVariable containing the indices of the input variables to multiply.
     * @param output
-    *   The output variable containing `Prod(input(i) | i in listenedValuesIndices)`.
+    *   The output variable evaluating to `Prod(input(i) | i in listenedValuesIndices)`.
     * @param name
-    *   The name (optional) of the Invariant.
+    *   The (optional) name of the Invariant.
     */
   def apply(
     model: Store,
@@ -55,9 +55,9 @@ object ProdConst {
   * @param listenedValuesIndices
   *   A SetVariable containing the indices of the input variables to multiply.
   * @param output
-  *   The output variable containing `Prod(input(i) | i in listenedValuesIndices)`.
+  *   The output variable evaluating to `Prod(input(i) | i in listenedValuesIndices)`.
   * @param name
-  *   The name (optional) of the Invariant.
+  *   The (optional) name of the Invariant.
   */
 class ProdConst(
   model: Store,

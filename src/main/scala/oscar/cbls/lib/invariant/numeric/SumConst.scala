@@ -30,9 +30,9 @@ object SumConst {
     * @param listenedValuesIndices
     *   A SetVariable containing the indices of the input constants to sum.
     * @param output
-    *   The output variable containing `Sum(input(i) | i in listenedValuesIndices)`.
+    *   The output variable evaluating to `Sum(input(i) | i in listenedValuesIndices)`.
     * @param name
-    *   The name (optional) of the Invariant.
+    *   The (optional) name of the Invariant.
     */
   def apply(
     model: Store,
@@ -55,9 +55,9 @@ object SumConst {
   * @param listenedValuesIndices
   *   A SetVariable containing the indices of the input constants to sum.
   * @param output
-  *   The output variable containing `Sum(input(i) | i in listenedValuesIndices)`.
+  *   The output variable evaluating to `Sum(input(i) | i in listenedValuesIndices)`.
   * @param name
-  *   The name (optional) of the Invariant.
+  *   The (optional) name of the Invariant.
   */
 class SumConst(
   model: Store,
@@ -82,7 +82,7 @@ class SumConst(
     oldValue: Set[Int],
     newValue: Set[Int]
   ): Unit = {
-    assert(setVariable == listenedValuesIndices)
+    assert(setVariable == listenedValuesIndices, "Input SetVariable is incorrect")
 
     for (added   <- addedElems) output :+= added
     for (removed <- removedElems) output :-= removed

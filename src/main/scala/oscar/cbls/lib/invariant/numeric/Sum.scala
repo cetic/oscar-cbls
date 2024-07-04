@@ -30,14 +30,14 @@ object Sum {
     * @param listenedVariablesIndices
     *   A SetVariable containing the indices of the input variables to sum.
     * @param output
-    *   The output variable containing `Sum(input(i) | i in listenedVariablesIndices)`.
+    *   The output variable evaluating to `Sum(input(i) | i in listenedVariablesIndices)`.
     * @param bulkIdentifier
     *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
     *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
     *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
     *   Be sure to use the same one if you're referencing the same variables.
     * @param name
-    *   The name (optional) of the Invariant.
+    *   The (optional) name of the Invariant.
     */
   def apply(
     model: Store,
@@ -147,7 +147,7 @@ class Sum(
 
   // updates sum when an IntVariable is not used anymore
   private[this] def notifyDeleteOn(set: SetVariable, index: Int): Unit = {
-    assert(set == listenedVariablesIndices)
+    assert(set == listenedVariablesIndices, "Input SetVariable is incorrect")
 
     keysForRemoval(index).delete()
 
