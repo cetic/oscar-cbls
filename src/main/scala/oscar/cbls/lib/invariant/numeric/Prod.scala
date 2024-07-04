@@ -174,7 +174,7 @@ class Prod(
 
   // updates product when an IntVariable is not used anymore
   private[this] def notifyDeleteOn(set: SetVariable, index: Int): Unit = {
-    assert(set == listenedVariablesIndices)
+    assert(set == listenedVariablesIndices, "Input SetVariable is incorrect")
 
     keysForRemoval(index).delete()
 
