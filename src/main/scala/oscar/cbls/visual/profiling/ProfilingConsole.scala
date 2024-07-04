@@ -22,6 +22,27 @@ object ProfilingConsole {
   }
 }
 
+/** Displays the profiling result on the terminal.
+  *
+  * How it is displayed :
+  *
+  *   - The search structure is on the left side as a tree structure, each
+  *     [[oscar.cbls.core.search.NeighborhoodCombinator]] have their
+  *     [[oscar.cbls.core.search.Neighborhood]] as child. And the
+  *     [[oscar.cbls.core.search.SimpleNeighborhood]] are the leaf the tree.
+  *   - Right to the tree structure, common statistics are displayed in a table. The description of
+  *     each columns are at the top of each one of them.
+  *   - Below the table you may see several other table. Those are the combinator specifics
+  *     profiling data.
+  *
+  * The Search profiling follows the same idea of search procedure, a root Profiler has children who
+  * may have children...
+  *
+  * @param rootProfiler
+  *   The first Search linked to all other with a child-parent relation.
+  * @param headers
+  *   The headers of all common statistics
+  */
 class ProfilingConsole(rootProfiler: SearchProfiler, headers: List[String]) {
 
   private val allProfilingTableNodes: List[ProfilingTableNode] = ProfilingTableNode(rootProfiler)
@@ -33,7 +54,6 @@ class ProfilingConsole(rootProfiler: SearchProfiler, headers: List[String]) {
             if c.collectCombinatorSpecificStatistics.filterNot(_.isEmpty).size > 1 =>
           c.collectCombinatorSpecificStatistics.filterNot(_.isEmpty)
       })
-      .toList
   }
 
   private def displayOnConsole(): Unit = {

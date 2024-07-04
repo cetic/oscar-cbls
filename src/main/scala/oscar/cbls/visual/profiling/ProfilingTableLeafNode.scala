@@ -15,7 +15,18 @@ package oscar.cbls.visual.profiling
 
 import oscar.cbls.core.search.profiling.SearchProfiler
 
-case class ProfilingTableLeafNode(
+/** Used to represent a profiled Neighborhood that has no children, usually a
+  * [[oscar.cbls.core.search.SimpleNeighborhood]]
+  *
+  * @param profiler
+  *   The SearchProfiler whose information are displayed by this node.
+  * @param parent
+  *   The ProfilingTableNode above this one. Usually the parent represents a
+  *   [[oscar.cbls.core.search.NeighborhoodCombinator]] profiler.
+  * @param rowPrefix
+  *   The prefix is the sequence of characters used to represent the hierarchy of this node.
+  */
+class ProfilingTableLeafNode(
   override val profiler: SearchProfiler,
   parent: Option[ProfilingTableBranchNode],
   rowPrefix: List[String]

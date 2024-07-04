@@ -15,7 +15,18 @@ package oscar.cbls.visual.profiling
 
 import oscar.cbls.core.search.profiling.SearchProfiler
 
-case class ProfilingTableBranchNode(
+/** Used to represent a profiled Neighborhood that has children, usually a
+  * [[oscar.cbls.core.search.Neighborhood]].
+  *
+  * @param profiler
+  *   The SearchProfiler whose information are displayed by this node.
+  * @param parent
+  *   The ProfilingTableNode above this one. Usually the parent represents a
+  *   [[oscar.cbls.core.search.NeighborhoodCombinator]] profiler.
+  * @param rowPrefix
+  *   The prefix is the sequence of characters used to represent the hierarchy of this node.
+  */
+class ProfilingTableBranchNode(
   override val profiler: SearchProfiler,
   parent: Option[ProfilingTableBranchNode],
   rowPrefix: List[String]
@@ -31,11 +42,23 @@ case class ProfilingTableBranchNode(
     this.children = children
   }
 
+  /** Expands a [[oscar.cbls.core.search.profiling.CombinatorProfiler]]'s node to reveal its
+    * children.
+    *
+    * Used for graphical display. Just tagging this node as "expanded" and the children as
+    * "displayed". The graphical modification has to be made by the visualization code.
+    */
   def expand(): Unit = {
     isExpanded = true
     children.foreach(_.isDisplayed = true)
   }
 
+  /** Recursively expands a [[oscar.cbls.core.search.profiling.CombinatorProfiler]]'s node to reveal
+    * its children.
+    *
+    * Used for graphical display. Just tagging this node as "expanded" and all the children as
+    * "displayed". The graphical modification has to be made by the visualization code.
+    */
   def expandAllUnder(): Unit = {
     isExpanded = true
     children.foreach(_.isDisplayed = true)
@@ -45,6 +68,12 @@ case class ProfilingTableBranchNode(
     }
   }
 
+  /** Collapses this [[oscar.cbls.core.search.profiling.CombinatorProfiler]]'s node to hide all its
+    * children.
+    *
+    * Used for graphical display. Just tagging this node as "not expanded" and all the children as
+    * "not displayed". The graphical modification has to be made by the visualization code.
+    */
   def collapse(): Unit = {
     isExpanded = false
     children.foreach(_.isDisplayed = false)

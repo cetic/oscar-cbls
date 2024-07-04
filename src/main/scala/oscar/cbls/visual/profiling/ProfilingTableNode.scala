@@ -15,7 +15,7 @@ package oscar.cbls.visual.profiling
 
 import oscar.cbls.core.search.profiling.{CombinatorProfiler, SearchProfiler}
 
-/** Build the Profiling table node hierarchy 
+/** Build the Profiling table node hierarchy
   *
   * ==Note :==
   * This object creates an hierarchy used both by graphical and "on-console" display. It may need
@@ -56,7 +56,7 @@ object ProfilingTableNode {
   ): ProfilingTableNode = {
     profiler match {
       case _: CombinatorProfiler =>
-        val profilingNode = ProfilingTableBranchNode(profiler, parent, rowPrefix)
+        val profilingNode = new ProfilingTableBranchNode(profiler, parent, rowPrefix)
         val children = profiler.subProfilers.map(child => {
           val charsToAdd: String =
             if (profiler.subProfilers.last == child) lastChildChar + horizontalLineChar
@@ -71,7 +71,7 @@ object ProfilingTableNode {
         profilingNode.addChildren(children)
         profilingNode
       case _ =>
-        ProfilingTableLeafNode(profiler, parent, rowPrefix)
+        new ProfilingTableLeafNode(profiler, parent, rowPrefix)
     }
   }
 }

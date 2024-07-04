@@ -50,7 +50,7 @@ abstract class SimpleNeighborhood[M <: Move](neighborhoodName: String)
     * @param exploration
     *   The Exploration instance that will validate (or not) each explored neighbor.
     */
-  def exploreNeighborhood(exploration: Exploration[M]): Unit
+  protected def exploreNeighborhood(exploration: Exploration[M]): Unit
 
   /** Commits the move */
   def doMove(move: M): Unit
