@@ -24,19 +24,19 @@ case class DllTestStruct(dll: DoublyLinkedList[Int], var l: List[Int]) {
 
   var containerList: List[dll.DLLStorageElement] = List()
 
-  def insertStart(elem: Int) = {
+  def insertStart(elem: Int): Unit = {
     val container = dll.insertStart(elem)
     containerList = container :: containerList
     l = elem :: l
   }
 
-  def insertEnd(elem: Int) = {
+  def insertEnd(elem: Int): Unit = {
     val container = dll.insertEnd(elem)
     containerList = containerList.appended(container)
     l = l.appended(elem)
   }
 
-  def insertAfter(elem: Int, afterPos: Int) = {
+  def insertAfter(elem: Int, afterPos: Int): Unit = {
     require(afterPos >= 0, s"InsertAfter($afterPos) impossible in $l")
     require(afterPos < l.size, s"InsertAfter($afterPos) impossible in $l")
     val (l1, l2) = l.splitAt(afterPos + 1)
@@ -46,19 +46,19 @@ case class DllTestStruct(dll: DoublyLinkedList[Int], var l: List[Int]) {
     containerList = c1 ::: (container :: c2)
   }
 
-  def removeStart = {
+  def removeStart(): Unit = {
     dll.popStart()
     l = l.tail
     containerList = containerList.tail
   }
 
-  def removeEnd = {
+  def removeEnd(): Unit = {
     dll.popEnd()
     l = l.reverse.tail.reverse
     containerList = containerList.reverse.tail.reverse
   }
 
-  def removePos(pos: Int) = {
+  def removePos(pos: Int): Unit = {
     require(pos >= 0, s"RemovePos($pos) impossible in $l")
     require(pos < l.size, s"RemovePos($pos) impossible in $l")
     val cont = containerList(pos)
@@ -97,12 +97,12 @@ case class DllTestStruct(dll: DoublyLinkedList[Int], var l: List[Int]) {
     res && listIt.isEmpty
   }
 
-  def compare =
+  def compare: Boolean =
     compareSize(dll, l) && compareLists(dll, l)
 
 }
 
-/** On object that defines the commands to use on the lists
+/** An object that defines the commands to use on the lists
   */
 
 object DLLTestCommands extends Commands {
@@ -119,7 +119,7 @@ object DLLTestCommands extends Commands {
     runningSuts: Iterable[Sut]
   ): Boolean = true
 
-  // How to destruy a SUT
+  // How to destroy a SUT
   override def destroySut(sut: Sut): Unit = ()
 
   // How to generate a command (according to the state)
@@ -157,8 +157,7 @@ object DLLTestCommands extends Commands {
 
   //  How to generate an initial state
   // (in this case, the state is the length of the list, so it is 0)
-  override def genInitialState: Gen[State] =
-    Gen.const(0)
+  override def genInitialState: Gen[State] = Gen.const(0)
 
   // An initial precondition
   override def initialPreCondition(state: State): Boolean = true
@@ -213,7 +212,7 @@ object DLLTestCommands extends Commands {
 
   case class AddAfter(value: Int, pos: Int) extends AddOperation {
 
-    override def preCondition(state : State) = state != 0
+    override def preCondition(state: State): Boolean = state != 0
 
     override def run(sut: Sut): Result = {
       sut.insertAfter(value, pos)
@@ -233,7 +232,7 @@ object DLLTestCommands extends Commands {
   }
 
   abstract class RemoveOperation extends DllOperation {
-    override def preCondition(state: State) = state != 0
+    override def preCondition(state: State): Boolean = state != 0
 
     override def nextState(state: State): State = state - 1
   }

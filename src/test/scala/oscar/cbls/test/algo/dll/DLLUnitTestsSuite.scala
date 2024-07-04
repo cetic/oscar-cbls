@@ -5,7 +5,7 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import oscar.cbls.algo.dll.DoublyLinkedList
 import org.scalatest.matchers.should.Matchers
 
-class DLLUnitTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
+class DLLUnitTestsSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers {
 
   test("Inserting an element at the end and removing at the end gives the same element") {
     val dll = new DoublyLinkedList[Int]()
@@ -55,8 +55,8 @@ class DLLUnitTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
   test("Popping an element of an empty list throws an exception") {
     val dll = new DoublyLinkedList[Int]()
 
-    a[java.lang.IllegalArgumentException] should be thrownBy (dll.popEnd())
-    a[java.lang.IllegalArgumentException] should be thrownBy (dll.popStart())
+    a[java.lang.IllegalArgumentException] should be thrownBy dll.popEnd()
+    a[java.lang.IllegalArgumentException] should be thrownBy dll.popStart()
   }
 
   test("DropAll empties the list") {
