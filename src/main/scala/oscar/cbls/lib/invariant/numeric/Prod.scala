@@ -113,7 +113,7 @@ class Prod(
   ): Unit = {
     // The update mechanism of an IntVariable is such that oldVal is never equal to newVal.
     // So the case oldVal == 0 && newVal == 0 never happens.
-    assert(oldVal != newVal)
+    require(oldVal != newVal, "variable notified non-existent change")
     if (oldVal == 0 && newVal != 0) {
       numberOfZeroFactors -= 1
       nonZeroProduct *= newVal
