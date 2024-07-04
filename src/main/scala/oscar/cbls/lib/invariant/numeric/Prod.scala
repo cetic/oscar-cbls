@@ -162,7 +162,7 @@ class Prod(
 
   // updates product when an additional IntVariable must be used
   private[this] def notifyInsertOn(set: SetVariable, index: Int): Unit = {
-    assert(set == listenedVariablesIndices)
+    assert(set == listenedVariablesIndices, "Input SetVariable is incorrect")
 
     keysForRemoval(index) = input(index).registerDynamicallyListeningElement(this, index)
 
