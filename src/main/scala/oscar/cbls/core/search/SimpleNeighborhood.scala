@@ -23,7 +23,8 @@ import oscar.cbls.core.search.profiling.NeighborhoodProfiler
   * @param neighborhoodName
   *   The name of the Neighborhood
   */
-abstract class SimpleNeighborhood[M <: Move](neighborhoodName: String) extends Neighborhood(neighborhoodName) {
+abstract class SimpleNeighborhood[M <: Move](neighborhoodName: String)
+    extends Neighborhood(neighborhoodName) {
 
   private var _searchProfilerOpt: Option[NeighborhoodProfiler] = None
 
@@ -48,8 +49,6 @@ abstract class SimpleNeighborhood[M <: Move](neighborhoodName: String) extends N
     *
     * @param exploration
     *   The Exploration instance that will validate (or not) each explored neighbor.
-    * @return
-    *   The search result, either [[oscar.cbls.core.search.MoveFound]] or [[oscar.cbls.core.search.NoMoveFound]]
     */
   def exploreNeighborhood(exploration: Exploration[M]): Unit
 

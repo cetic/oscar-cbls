@@ -4,10 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.{Exploration, Minimize, Objective}
-import oscar.cbls.core.search.profiling.{
-  CompositionProfiler,
-  NeighborhoodProfiler
-}
+import oscar.cbls.core.search.profiling.{CompositionProfiler, NeighborhoodProfiler}
 import oscar.cbls.core.search._
 import oscar.cbls.lib.invariant.numeric.IntInt2Int
 
@@ -79,16 +76,16 @@ class TestDynAndThen extends AnyFunSuite {
   }
 
   case class CompositeMove(
-    rightMove: Move,
     leftMove: Move,
+    rightMove: Move,
     objValueAfter: Long,
     compositeNeighborhoodName: String
   ) extends Move(objValueAfter, compositeNeighborhoodName) {
 
     /** Commits this move. */
     override def commit(): Unit = {
-      rightMove.commit()
       leftMove.commit()
+      rightMove.commit()
     }
   }
 

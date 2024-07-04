@@ -50,7 +50,9 @@ class Minimize(
   override def isValueNewBest(currentBest: Long, newValue: Long): Boolean =
     newValue < currentBest
 
-  override def newExploration[M <: Move](searchProfilerOpt: Option[NeighborhoodProfiler]): Exploration[M] =
+  override def newExploration[M <: Move](
+    searchProfilerOpt: Option[NeighborhoodProfiler]
+  ): Exploration[M] =
     new Exploration[M](currentObjValue(), searchProfilerOpt) {
 
       private def checkNeighborOnApproximatedObjective(buildMove: Long => M): Unit = {

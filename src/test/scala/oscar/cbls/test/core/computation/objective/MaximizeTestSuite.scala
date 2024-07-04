@@ -32,7 +32,8 @@ class MaximizeTestSuite extends AnyFunSuite {
   }
 
   test(
-    "Maximize objective does not accept moves if over approximated objective is define and condition not met"
+    "Maximize objective does not accept moves if over approximated objective is define " +
+      "and condition not met"
   ) {
     val store              = new Store()
     val objValue           = IntVariable(store, 1000)
@@ -49,7 +50,7 @@ class MaximizeTestSuite extends AnyFunSuite {
     exploration.toReturn should be(NoMoveFound)
 
     objValue           := 1100
-    overApproxObjValue := 200
+    overApproxObjValue := 1000
     exploration.checkNeighborWP(objAfter => new DummyMove(objAfter, new DummySimpleNeighborhood))
     exploration.toReturn should be(NoMoveFound)
 

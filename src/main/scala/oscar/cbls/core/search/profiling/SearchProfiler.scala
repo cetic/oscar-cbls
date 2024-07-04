@@ -38,6 +38,9 @@ class SearchProfiler(val neighborhood: Neighborhood) {
 
   private var startValue: Long = 0L
 
+  // The object that holds the common profiling data (meaning nbCalls,AvgTimeMove,nbFound...)
+  lazy val commonProfilingData: CommonProfilingData = new CommonProfilingData()
+
   /** Returns the profilers of the sub-neighborhoods. Empty if neighborhood is a SimpleNeighborhood
     */
   def subProfilers: List[SearchProfiler] = List.empty
@@ -79,9 +82,6 @@ class SearchProfiler(val neighborhood: Neighborhood) {
         commonProfilingData.timeSpentMoveFoundPlus(timeSpent)
     }
   }
-
-  // The object that holds the common profiling data (meaning nbCalls,AvgTimeMove,nbFound...)
-  lazy val commonProfilingData: CommonProfilingData = new CommonProfilingData()
 
   private def gainPerCall: String = {
     if (commonProfilingData.nbCalls == 0L) "NA"

@@ -37,7 +37,9 @@ class AcceptAll(objValue: IntVariable) extends Objective(objValue) {
 
   override def isValueNewBest(currentBest: Long, newValue: Long): Boolean = true
 
-  override def newExploration[M <: Move](searchProfilerOpt: Option[NeighborhoodProfiler]): Exploration[M] =
+  override def newExploration[M <: Move](
+    searchProfilerOpt: Option[NeighborhoodProfiler]
+  ): Exploration[M] =
     new Exploration[M](currentObjValue(), searchProfilerOpt) {
       override def checkNeighbor(buildMove: Long => M): Unit = {
         val newValue = objValue.value()

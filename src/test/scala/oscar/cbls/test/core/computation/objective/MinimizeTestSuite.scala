@@ -32,7 +32,8 @@ class MinimizeTestSuite extends AnyFunSuite {
   }
 
   test(
-    "Minimize objective does not accept moves if under approximated objective is define and condition not met"
+    "Minimize objective does not accept moves if under approximated objective is define " +
+      "and condition not met"
   ) {
     val store               = new Store()
     val objValue            = IntVariable(store, 1000)
