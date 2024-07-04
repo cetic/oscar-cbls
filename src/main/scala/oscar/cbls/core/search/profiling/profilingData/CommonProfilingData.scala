@@ -19,7 +19,7 @@ package oscar.cbls.core.search.profiling.profilingData
   * _nbCallsIntermediary. The second one is meant to be reset when a combinator uses the
   * resetStatistic method. The first one is never reset and contains the data of the whole search.
   */
-private[profiling] class CommonProfilingData extends ProfilingData() {
+private[profiling] class CommonProfilingData extends ProfilingData {
 
   private var _lastCallFound: Boolean     = false
   private var _lastCallGain: Long         = 0L

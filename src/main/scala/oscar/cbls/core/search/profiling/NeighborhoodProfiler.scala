@@ -16,7 +16,7 @@ package oscar.cbls.core.search.profiling
 import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.core.search.profiling.profilingData.NeighborhoodProfilingData
 
-/** Base profiler for [[SimpleNeighborhood]] It also tracks the exploration timing, the number of
+/** Base profiler for [[oscar.cbls.core.search.SimpleNeighborhood]] It also tracks the exploration timing, the number of
   * exploration, the selection duration...
   *
   * @param neighborhood
