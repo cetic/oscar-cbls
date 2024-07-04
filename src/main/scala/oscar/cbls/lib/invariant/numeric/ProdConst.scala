@@ -113,7 +113,7 @@ class ProdConst(
 
   // updates product when an additional constant must be used
   private[this] def notifyInsertOn(set: SetVariable, index: Int): Unit = {
-    assert(set == listenedValuesIndices)
+    assert(set == listenedValuesIndices, "Input SetVariable is incorrect")
 
     if (input(index).value() == 0) numberOfZeroFactors += 1
     else nonZeroProduct *= input(index).value()
