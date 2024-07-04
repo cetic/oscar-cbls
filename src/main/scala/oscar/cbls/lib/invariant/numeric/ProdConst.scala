@@ -123,7 +123,7 @@ class ProdConst(
 
   // updates product when a constant is not used anymore
   private[this] def notifyDeleteOn(set: SetVariable, index: Int): Unit = {
-    assert(set == listenedValuesIndices)
+    assert(set == listenedValuesIndices, "Input SetVariable is incorrect")
 
     if (input(index).value() == 0) numberOfZeroFactors -= 1
     else nonZeroProduct /= input(index).value()
