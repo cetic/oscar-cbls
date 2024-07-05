@@ -27,7 +27,10 @@ trait BoundedIterator[T] extends Iterator[T] {
   def unboundedNext(): T
 }
 
-/** Trait to define iterable working with [[BoundedIterator]] */
+/** Trait to define iterable working with [[BoundedIterator]]. */
 trait BoundedIterable[T] extends Iterable[T] {
   override def iterator: BoundedIterator[T]
+
+  /** Used to stop iteration when an accepted neighborhood is found. */
+  def notifyFound(): Unit
 }
