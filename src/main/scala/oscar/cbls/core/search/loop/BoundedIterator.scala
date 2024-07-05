@@ -18,7 +18,7 @@ package oscar.cbls.core.search.loop
   */
 trait BoundedIterator[T] extends Iterator[T] {
 
-  var remainingNeighbors: Int
+  protected var remainingNeighbors: Int
 
   /** Act as [[scala.collection.Iterator.hasNext]] but ignore the upper bound. */
   def hasUnboundedNext: Boolean
@@ -31,6 +31,6 @@ trait BoundedIterator[T] extends Iterator[T] {
 trait BoundedIterable[T] extends Iterable[T] {
   override def iterator: BoundedIterator[T]
 
-  /** Used to stop iteration when an accepted neighborhood is found. */
-  def notifyFound(): Unit
+  /** Used to stop iteration during neighborhood exploration. */
+  def stop(): Unit
 }
