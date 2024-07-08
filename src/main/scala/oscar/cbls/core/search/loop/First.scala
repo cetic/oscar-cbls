@@ -44,7 +44,7 @@ class First(maxNeighbors: () => Int = () => Int.MaxValue) extends LoopBehavior(m
         }
       }
 
-      override def stop(): Unit = foundMove = false
+      override def stop(): Unit = foundMove = true
     }
 
     (iterable, iterable.stop _)
