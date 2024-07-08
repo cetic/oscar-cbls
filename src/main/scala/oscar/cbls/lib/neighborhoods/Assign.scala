@@ -19,10 +19,38 @@ import oscar.cbls.core.computation.objective.Exploration
 import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.core.search.{Move, NoMoveFound, SimpleNeighborhood}
 
+/** [[oscar.cbls.core.search.Neighborhood]] that find an
+  * [[oscar.cbls.core.computation.integer.IntVariable]] from the input array and a from the
+  * variable's domain such that the objective function is improved.
+  *
+  * @param vars
+  *   The variable defining the search space.
+  * @param varsDomain
+  *   Attribute to each variable a list of possible values.
+  * @param name
+  *   The name of the neighborhood.
+  * @param selectVariableBehavior
+  *   How to iterate over the variables.
+  * @param selectValueBehavior
+  *   How to iterate over the variables' domain.
+  * @param searchZone
+  *   A subset of indices of `vars` to consider. If `None` is provided, all the variables are
+  *   considered
+  * @param symmetryClassOfVariable
+  *   An optional function that inputs the variables' indices and returns a symmetry class. Only one
+  *   of the variables in each class will be considered, making the search faster. Int.Minvalue is
+  *   considered different to itself.
+  * @param symmetryClassOfValue
+  *   An optional function that inputs the variables' indices and returns a symmetry class on their
+  *   domains' values. Only one value of each class will be tested. This must be used only if the
+  *   model is very expensive to evaluate.
+  * @param hotRestart
+  *   Set the use of a [[oscar.cbls.algo.search.HotRestart]] mechanism.
+  */
 class Assign(
   vars: Array[IntVariable],
-  varsDomain: IntVariable => Range,
-  name: String,
+  varsDomain: IntVariable => Iterable[Long],
+  name: String = "AssignNeighborhood",
   selectVariableBehavior: LoopBehavior = LoopBehavior.first(),
   selectValueBehavior: LoopBehavior = LoopBehavior.best(),
   searchZone: Option[Iterable[Int]] = None,
@@ -32,10 +60,6 @@ class Assign(
 ) extends SimpleNeighborhood[AssignMove](name) {
 
   private var startIndex: Int = 0
-
-  private var currentVar: IntVariable = _
-  private var currentIndex: Int       = _
-  private var newVal: Long            = _
 
   override protected def exploreNeighborhood(exploration: Exploration[AssignMove]): Unit = {
 
@@ -64,9 +88,11 @@ class Assign(
     val (variablesIndicesIterator, stopIndices) =
       selectVariableBehavior.toIterator(iterationSchemeOnSymmetryFreeZone)
 
+    // Iterate on the selected variables
+    var currentIndex: Int = 0
     while (variablesIndicesIterator.hasNext) {
       currentIndex = variablesIndicesIterator.next()
-      currentVar = vars(currentIndex)
+      val currentVar: IntVariable = vars(currentIndex)
 
       // Remove symmetries from currentVar's domain
       val domainIterationScheme = symmetryClassOfValue match {
@@ -75,16 +101,20 @@ class Assign(
           IdenticalAggregator.removeIdenticalClassesLazily(varsDomain(currentVar), s(currentIndex))
       }
 
-      // How to iterate over domain
+      // How to iterate over the domain
       val (domainIterator, stopDomain) = selectValueBehavior.toIterator(domainIterationScheme)
 
+      // Iterate over the possible values of the current variable
       while (domainIterator.hasNext) {
-        val initVal = currentVar.value()
-        newVal = domainIterator.next()
+        val initVal: Long = currentVar.value()
+        val newVal: Long  = domainIterator.next()
         currentVar := newVal
         searchProfiler().foreach(x => x.neighborSelected())
 
-        exploration.checkNeighborWP(objValue => new AssignMove(this, newVal, objValue))
+        // Check if assigning newVal to current val improves the objective
+        exploration.checkNeighborWP(objValue =>
+          new AssignMove(currentVar, newVal, objValue, this.name)
+        )
         currentVar := initVal
 
         if (exploration.toReturn != NoMoveFound) {
@@ -98,13 +128,37 @@ class Assign(
 
   }
 
-  override def doMove(move: AssignMove): Unit = currentVar := move.newValue
+  override def doMove(move: AssignMove): Unit = {
+    move match {
+      case m: AssignMove => m.commit()
+      case _ => require(requirement = false, s"Move should be an AssignMove, but get $move")
+    }
 
-  override def reset(): Unit = ???
+  }
+
+  override def reset(): Unit = startIndex = 0
 }
 
-class AssignMove(assignNeigh: Assign, val newValue: Long, objValueAfter: Long)
-    extends Move(objValueAfter, assignNeigh.name) {
+/** Standard move that assign a [[scala.Long]] value to an
+  * [[oscar.cbls.core.computation.integer.IntVariable]].
+  *
+  * @param variable
+  *   The variable to change.
+  * @param newValue
+  *   The value to assign to `variable`.
+  * @param objValueAfter
+  *   The objective value of the neighbor. Used for comparison and validation.
+  * @param neighborhoodName
+  *   The name of the [[oscar.cbls.core.search.Neighborhood]] that generated this Move.
+  */
+class AssignMove(
+  variable: IntVariable,
+  newValue: Long,
+  objValueAfter: Long,
+  override val neighborhoodName: String
+) extends Move(objValueAfter, neighborhoodName) {
 
-  override def commit(): Unit = assignNeigh.doMove(this)
+  override def commit(): Unit = variable := newValue
+
+  override def toString: String = s"AssignMove: $variable set to $newValue. " + super.toString
 }
