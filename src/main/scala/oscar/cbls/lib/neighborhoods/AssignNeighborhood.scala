@@ -16,8 +16,64 @@ package oscar.cbls.lib.neighborhoods
 import oscar.cbls.algo.search.{HotRestart, IdenticalAggregator}
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.Exploration
-import oscar.cbls.core.search.loop.LoopBehavior
+import oscar.cbls.core.search.loop.{BoundedIterator, LoopBehavior}
 import oscar.cbls.core.search.{Move, NoMoveFound, SimpleNeighborhood}
+
+/** Companion object of the [[AssignNeighborhood]] class. */
+object AssignNeighborhood {
+
+  /** Creates an AssignNeighborhood that find an [[oscar.cbls.core.computation.integer.IntVariable]]
+    * from the input array and a from the variable's domain such that the objective function is
+    * improved.
+    *
+    * @param vars
+    *   The variable defining the search space.
+    * @param varsDomain
+    *   Attribute to each variable a list of possible values.
+    * @param name
+    *   The name of the neighborhood.
+    * @param selectVariableBehavior
+    *   How to iterate over the variables.
+    * @param selectValueBehavior
+    *   How to iterate over the variables' domain.
+    * @param searchZone
+    *   A subset of indices of `vars` to consider. If `None` is provided, all the variables are
+    *   considered
+    * @param symmetryClassOfVariable
+    *   An optional function that inputs the variables' indices and returns a symmetry class. Only
+    *   one of the variables in each class will be considered, making the search faster.
+    *   Int.Minvalue is considered different to itself.
+    * @param symmetryClassOfValue
+    *   An optional function that inputs the variables' indices and returns a symmetry class on
+    *   their domains' values. Only one value of each class will be tested. This must be used only
+    *   if the model is very expensive to evaluate.
+    * @param hotRestart
+    *   Set the use of a [[oscar.cbls.algo.search.HotRestart]] mechanism.
+    */
+  def apply(
+    vars: Array[IntVariable],
+    varsDomain: IntVariable => Iterable[Long],
+    name: String = "AssignNeighborhood",
+    selectVariableBehavior: LoopBehavior = LoopBehavior.first(),
+    selectValueBehavior: LoopBehavior = LoopBehavior.first(),
+    searchZone: Option[Iterable[Int]] = None,
+    symmetryClassOfVariable: Option[Int => Int] = None,
+    symmetryClassOfValue: Option[Int => Long => Long] = None,
+    hotRestart: Boolean = true
+  ): AssignNeighborhood = {
+    new AssignNeighborhood(
+      vars,
+      varsDomain,
+      name,
+      selectVariableBehavior,
+      selectValueBehavior,
+      searchZone,
+      symmetryClassOfVariable,
+      symmetryClassOfValue,
+      hotRestart
+    )
+  }
+}
 
 /** [[oscar.cbls.core.search.Neighborhood]] that find an
   * [[oscar.cbls.core.computation.integer.IntVariable]] from the input array and a from the
@@ -47,12 +103,12 @@ import oscar.cbls.core.search.{Move, NoMoveFound, SimpleNeighborhood}
   * @param hotRestart
   *   Set the use of a [[oscar.cbls.algo.search.HotRestart]] mechanism.
   */
-class Assign(
+class AssignNeighborhood(
   vars: Array[IntVariable],
   varsDomain: IntVariable => Iterable[Long],
   name: String = "AssignNeighborhood",
   selectVariableBehavior: LoopBehavior = LoopBehavior.first(),
-  selectValueBehavior: LoopBehavior = LoopBehavior.best(),
+  selectValueBehavior: LoopBehavior = LoopBehavior.first(),
   searchZone: Option[Iterable[Int]] = None,
   symmetryClassOfVariable: Option[Int => Int] = None,
   symmetryClassOfValue: Option[Int => Long => Long] = None,
@@ -116,7 +172,6 @@ class Assign(
           new AssignMove(currentVar, newVal, objValue, this.name)
         )
         currentVar := initVal
-
         if (exploration.toReturn != NoMoveFound) {
           stopIndices()
           stopDomain()
@@ -160,5 +215,7 @@ class AssignMove(
 
   override def commit(): Unit = variable := newValue
 
-  override def toString: String = s"AssignMove: $variable set to $newValue. " + super.toString
+  override def toString: String = s"AssignMove: ${variable.name()} set to $newValue" +
+    s". " + super
+    .toString
 }
