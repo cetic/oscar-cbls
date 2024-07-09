@@ -18,6 +18,7 @@ import org.scalatest.matchers.should.Matchers
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.Minimize
+import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.lib.invariant.numeric.IntInt2Int
 import oscar.cbls.lib.neighborhoods.AssignNeighborhood
 
@@ -30,7 +31,7 @@ class AssignNeighborhoodNeighborhoodTestSuite extends AnyFunSuite with Matchers 
     rng.shuffle((lowerBound to lowerBound + 10L).toList)
   }
 
-  test("AssignNeighborhoods works as expected") {
+  private def getTestBasicModel: (Array[IntVariable], IntVariable => List[Long], Minimize) = {
     val seed: Long  = Random.nextLong()
     val rng: Random = Random
     rng.setSeed(seed)
@@ -38,26 +39,42 @@ class AssignNeighborhoodNeighborhoodTestSuite extends AnyFunSuite with Matchers 
 
     val store: Store          = new Store()
     val domainA               = generateRandomDomain(rng)
-    val a: IntVariable        = IntVariable(store, domainA.head, name = Some("a"))
+    val a: IntVariable        = IntVariable(store, domainA.head, name = Some("A"))
     val domainB               = generateRandomDomain(rng)
-    val b: IntVariable        = IntVariable(store, domainB.head, name = Some("b"))
-    val objValue: IntVariable = IntVariable(store, 1000, name = Some(s"$a^2 + $b^2 "))
+    val b: IntVariable        = IntVariable(store, domainB.head, name = Some("B"))
+    val objValue: IntVariable = IntVariable(store, 1000, name = Some(s"($a)^2 + ($b)^2 "))
     val objective: Minimize   = Minimize(objValue)
     new IntInt2Int(store, a, b, objValue, (x, y) => x * x + y * y)
     store.close()
 
-    val lowerA: Long = rng.between(-100L, 100L)
-    val lowerB: Long = rng.between(-100L, 100L)
     val domain = (v: IntVariable) => {
       if (v == a) domainA
       else if (v == b) domainB
       else (0L to 10L).toList
     }
 
-    val search = AssignNeighborhood(Array(a, b), domain)
+    (Array(a, b), domain, objective)
+  }
+
+  test("AssignNeighborhoods works as expected with First loop") {
+    val (vars, domain, objective) = getTestBasicModel
+
+    val search = AssignNeighborhood(vars, domain)
     search.verbosityLevel = 4
     search.doAllMoves(objective)
-    search.displayProfiling()
+  }
+
+  test("AssignNeighborhoods works as expected with Best loop") {
+    val (vars, domain, objective) = getTestBasicModel
+
+    val search = AssignNeighborhood(
+      vars,
+      domain,
+      selectVariableBehavior = LoopBehavior.best(),
+      selectValueBehavior = LoopBehavior.best()
+    )
+    search.verbosityLevel = 4
+    search.doAllMoves(objective)
   }
 
 }
