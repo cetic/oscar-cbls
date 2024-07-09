@@ -56,7 +56,7 @@ object AssignNeighborhood {
     name: String = "AssignNeighborhood",
     selectVariableBehavior: LoopBehavior = LoopBehavior.first(),
     selectValueBehavior: LoopBehavior = LoopBehavior.first(),
-    searchZone: Option[Iterable[Int]] = None,
+    searchZone: Option[() => Iterable[Int]] = None,
     symmetryClassOfVariable: Option[Int => Int] = None,
     symmetryClassOfValue: Option[Int => Long => Long] = None,
     hotRestart: Boolean = true
@@ -76,11 +76,11 @@ object AssignNeighborhood {
 }
 
 /** [[oscar.cbls.core.search.Neighborhood]] that find an
-  * [[oscar.cbls.core.computation.integer.IntVariable]] from the input array and a from the
+  * [[oscar.cbls.core.computation.integer.IntVariable]] from the input array and a value from the
   * variable's domain such that the objective function is improved.
   *
   * @param vars
-  *   The variable defining the search space.
+  *   The variables defining the search space.
   * @param varsDomain
   *   Attribute to each variable a list of possible values.
   * @param name
@@ -109,20 +109,20 @@ class AssignNeighborhood(
   name: String = "AssignNeighborhood",
   selectVariableBehavior: LoopBehavior = LoopBehavior.first(),
   selectValueBehavior: LoopBehavior = LoopBehavior.first(),
-  searchZone: Option[Iterable[Int]] = None,
+  searchZone: Option[() => Iterable[Int]] = None,
   symmetryClassOfVariable: Option[Int => Int] = None,
   symmetryClassOfValue: Option[Int => Long => Long] = None,
   hotRestart: Boolean = true
 ) extends SimpleNeighborhood[AssignMove](name) {
 
-  private var startIndex: Int = 0
+  private[this] var startIndex: Int = 0
 
   override protected def exploreNeighborhood(exploration: Exploration[AssignMove]): Unit = {
 
     // Which indices must be considered
     val iterationZone = searchZone match {
       case None     => vars.indices
-      case Some(sz) => sz
+      case Some(sz) => sz()
     }
 
     // Activate hot restart if needed
@@ -152,8 +152,10 @@ class AssignNeighborhood(
 
       // Remove symmetries from currentVar's domain
       val domainIterationScheme = symmetryClassOfValue match {
-        case None => varsDomain(currentVar)
+        case None    => varsDomain(currentVar)
         case Some(s) =>
+          // Two variables belong to the same class if they have the same domain and their
+          // indices are in the same class.
           IdenticalAggregator.removeIdenticalClassesLazily(varsDomain(currentVar), s(currentIndex))
       }
 
@@ -183,18 +185,12 @@ class AssignNeighborhood(
 
   }
 
-  override def doMove(move: AssignMove): Unit = {
-    move match {
-      case m: AssignMove => m.commit()
-      case _ => require(requirement = false, s"Move should be an AssignMove, but get $move")
-    }
-
-  }
+  override def doMove(move: AssignMove): Unit = move.commit()
 
   override def reset(): Unit = startIndex = 0
 }
 
-/** Standard move that assign a [[scala.Long]] value to an
+/** [[oscar.cbls.core.search.Move]] that assign a [[scala.Long]] value to an
   * [[oscar.cbls.core.computation.integer.IntVariable]].
   *
   * @param variable
@@ -215,7 +211,6 @@ class AssignMove(
 
   override def commit(): Unit = variable := newValue
 
-  override def toString: String = s"AssignMove: ${variable.name()} set to $newValue" +
-    s". " + super
-    .toString
+  override def toString: String =
+    s"AssignMove: ${variable.name()} set to $newValue." + super.toString
 }
