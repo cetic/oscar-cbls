@@ -60,16 +60,16 @@ object SwapNeighborhood {
     */
   def apply(
     vars: Array[IntVariable],
-    name: String,
-    selectFirstVariableBehavior: LoopBehavior,
-    selectSecondVariableBehavior: LoopBehavior,
-    firstSearchZone: Option[() => Iterable[Int]],
-    secondSearchZone: Option[(Int, Long) => Iterable[Int]],
-    symmetryCanBeBrokenOnIndices: Boolean,
-    symmetryCanBeBrokenOnValues: Boolean,
-    symmetryClassOfFirstVariable: Option[Int => Int],
-    symmetryClassOsSecondVariable: Option[Int => Int],
-    hotRestart: Boolean
+    name: String = "SwapNeighborhood",
+    selectFirstVariableBehavior: LoopBehavior = LoopBehavior.first(),
+    selectSecondVariableBehavior: LoopBehavior = LoopBehavior.first(),
+    firstSearchZone: Option[() => Iterable[Int]] = None,
+    secondSearchZone: Option[(Int, Long) => Iterable[Int]] = None,
+    symmetryCanBeBrokenOnIndices: Boolean = false,
+    symmetryCanBeBrokenOnValues: Boolean = true,
+    symmetryClassOfFirstVariable: Option[Int => Int] = None,
+    symmetryClassOsSecondVariable: Option[Int => Int] = None,
+    hotRestart: Boolean = true
   ): SwapNeighborhood = {
     new SwapNeighborhood(
       vars,
@@ -138,7 +138,7 @@ class SwapNeighborhood(
 ) extends SimpleNeighborhood[SwapMove](name) {
 
   require(
-    !symmetryCanBeBrokenOnIndices && !symmetryCanBeBrokenOnValues,
+    symmetryCanBeBrokenOnIndices || symmetryCanBeBrokenOnValues,
     "symmetryCannotBeBrokenOnValues and symmetryCannotBeBrokenOnIndices cannot be false at the " +
       "same time."
   )
