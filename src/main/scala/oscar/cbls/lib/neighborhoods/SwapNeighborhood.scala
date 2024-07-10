@@ -228,31 +228,3 @@ class SwapNeighborhood(
   override def reset(): Unit = indexOfFirstVariable = 0
 
 }
-
-/** [[oscar.cbls.core.search.Move]] that exchanges the values of two
-  * [[oscar.cbls.core.computation.integer.IntVariable]].
-  *
-  * @param first
-  *   The first variable to swap.
-  * @param second
-  *   The second variable to swap.
-  * @param objValueAfter
-  *   The objective value of the neighbor. Used for comparison and validation.
-  * @param neighborhoodName
-  *   The name of the [[oscar.cbls.core.search.Neighborhood]] that generated this Move.
-  */
-class SwapMove(
-  first: IntVariable,
-  second: IntVariable,
-  objValueAfter: Long,
-  override val
-  neighborhoodName: String
-) extends Move(objValueAfter, neighborhoodName) {
-
-  override def commit(): Unit = {
-    first :=: second
-  }
-
-  override def toString: String =
-    s"SwapMove: $first swapped with $second. " + super.toString
-}

@@ -189,28 +189,3 @@ class AssignNeighborhood(
 
   override def reset(): Unit = startIndex = 0
 }
-
-/** [[oscar.cbls.core.search.Move]] that assign a [[scala.Long]] value to an
-  * [[oscar.cbls.core.computation.integer.IntVariable]].
-  *
-  * @param variable
-  *   The variable to change.
-  * @param newValue
-  *   The value to assign to `variable`.
-  * @param objValueAfter
-  *   The objective value of the neighbor. Used for comparison and validation.
-  * @param neighborhoodName
-  *   The name of the [[oscar.cbls.core.search.Neighborhood]] that generated this Move.
-  */
-class AssignMove(
-  variable: IntVariable,
-  newValue: Long,
-  objValueAfter: Long,
-  override val neighborhoodName: String
-) extends Move(objValueAfter, neighborhoodName) {
-
-  override def commit(): Unit = variable := newValue
-
-  override def toString: String =
-    s"AssignMove: $variable set to $newValue." + super.toString
-}
