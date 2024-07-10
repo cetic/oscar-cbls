@@ -258,5 +258,5 @@ class SwapMove(
   }
 
   override def toString: String =
-    s"SwapMove: ${first.name()} swapped with ${second.name()}. " + super.toString
+    s"SwapMove: $first swapped with $second. " + super.toString
 }

@@ -212,5 +212,5 @@ class AssignMove(
   override def commit(): Unit = variable := newValue
 
   override def toString: String =
-    s"AssignMove: ${variable.name()} set to $newValue." + super.toString
+    s"AssignMove: $variable set to $newValue." + super.toString
 }
