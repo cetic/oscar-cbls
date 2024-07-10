@@ -14,7 +14,6 @@
 package oscar.cbls.test.lib.neighborhoods
 
 import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.Minimize
@@ -24,7 +23,7 @@ import oscar.cbls.lib.neighborhoods.AssignNeighborhood
 
 import scala.util.Random
 
-class AssignNeighborhoodNeighborhoodTestSuite extends AnyFunSuite with Matchers {
+class AssignNeighborhoodNeighborhoodTestSuite extends AnyFunSuite {
 
   private def generateRandomDomain(rng: Random): List[Long] = {
     val lowerBound = rng.between(-100L, 101L)
