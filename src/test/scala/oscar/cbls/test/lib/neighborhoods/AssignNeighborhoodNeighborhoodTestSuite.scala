@@ -43,7 +43,7 @@ class AssignNeighborhoodNeighborhoodTestSuite extends AnyFunSuite {
     val a: IntVariable        = IntVariable(store, domainA.head, name = Some("A"))
     val domainB               = generateRandomDomain(rng)
     val b: IntVariable        = IntVariable(store, domainB.head, name = Some("B"))
-    val objValue: IntVariable = IntVariable(store, 1000, name = Some(s"($a)^2 + ($b)^2 "))
+    val objValue: IntVariable = IntVariable(store, 1000L, name = Some(s"($a)^2 + ($b)^2 "))
     val objective: Minimize   = Minimize(objValue)
     new IntInt2Int(store, a, b, objValue, (x, y) => x * x + y * y)
     store.close()

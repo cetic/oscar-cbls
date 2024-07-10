@@ -125,12 +125,12 @@ class AssignNeighborhood(
       case Some(sz) => sz()
     }
 
-    // Activate hot restart if needed
+    // Activates hot restart if needed
     val iterationSchemeOnZone =
       if (hotRestart) HotRestart(iterationZone, startIndex)
       else iterationZone
 
-    // Remove symmetries from considered variables
+    // Removes symmetries from considered variables
     val iterationSchemeOnSymmetryFreeZone = symmetryClassOfVariable match {
       case None => iterationSchemeOnZone
       case Some(s) =>
@@ -144,13 +144,13 @@ class AssignNeighborhood(
     val (variablesIndicesIterator, stopIndices) =
       selectVariableBehavior.toIterator(iterationSchemeOnSymmetryFreeZone)
 
-    // Iterate on the selected variables
+    // Iterates on the selected variables
     var currentIndex: Int = 0
     while (variablesIndicesIterator.hasNext) {
       currentIndex = variablesIndicesIterator.next()
       val currentVar: IntVariable = vars(currentIndex)
 
-      // Remove symmetries from currentVar's domain
+      // Removes symmetries from currentVar's domain
       val domainIterationScheme = symmetryClassOfValue match {
         case None    => varsDomain(currentVar)
         case Some(s) =>
@@ -169,11 +169,14 @@ class AssignNeighborhood(
         currentVar := newVal
         searchProfiler().foreach(x => x.neighborSelected())
 
-        // Check if assigning newVal to current val improves the objective
+        // Check if assigning newVal to currentVar improves the objective
         exploration.checkNeighborWP(objValue =>
           new AssignMove(currentVar, newVal, objValue, this.name)
         )
         currentVar := initVal
+
+        // The exploration found an improving move.
+        // The search can stop according the LoopBehavior
         if (exploration.toReturn != NoMoveFound) {
           stopIndices()
           stopDomain()
@@ -182,7 +185,6 @@ class AssignNeighborhood(
 
     }
     startIndex = currentIndex + 1
-
   }
 
   override def doMove(move: AssignMove): Unit = move.commit()

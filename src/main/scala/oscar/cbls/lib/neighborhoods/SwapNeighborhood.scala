@@ -34,15 +34,16 @@ object SwapNeighborhood {
     * @param selectSecondVariableBehavior
     *   How to iterate to select the second variable to swap.
     * @param firstSearchZone
-    *   A subset of indices of `vars` to consider as the first variable of the Swap operation. If
+    *   A subset of indices of `vars` to consider for the first variable of the Swap operation. If
     *   `None` is provided, all the variables are considered.
     * @param secondSearchZone
-    *   A subset of indices of `vars` to consider as the second variable of the Swap operation. This
-    *   indices are computed from the index of the first variable and its old value. If `None` is
-    *   provided, all the variables are considered.
+    *   A subset of indices of `vars` to consider for the second variable of the Swap operation.
+    *   These indices are computed from the index of the first variable and its old value. If `None`
+    *   is provided, all the variables are considered.
     * @param symmetryCanBeBrokenOnIndices
     *   If `false`, ensure that the first variable of a swap has always a smaller index than the
-    *   second one. Must always be `false` except if two different search zones are used.
+    *   second one. For `i < j`, the exploration only tries to swap `i` with `j` and avoids to swap
+    *   `j` with `i`. Must always be `false` except if two different search zones are used.
     * @param symmetryCanBeBrokenOnValues
     *   If `false`, ensure that the first variable of a swap has always a smaller value than the
     *   second one. `symmetryCannotBeBrokenOnValues` and `symmetryCannotBeBrokenOnIndices` cannot be
@@ -99,15 +100,16 @@ object SwapNeighborhood {
   * @param selectSecondVariableBehavior
   *   How to iterate to select the second variable to swap.
   * @param firstSearchZone
-  *   A subset of indices of `vars` to consider as the first variable of the Swap operation. If
+  *   A subset of indices of `vars` to consider for the first variable of the Swap operation. If
   *   `None` is provided, all the variables are considered.
   * @param secondSearchZone
-  *   A subset of indices of `vars` to consider as the second variable of the Swap operation. This
+  *   A subset of indices of `vars` to consider for the second variable of the Swap operation. This
   *   indices are computed from the index of the first variable and its old value. If `None` is
   *   provided, all the variables are considered.
   * @param symmetryCanBeBrokenOnIndices
   *   If `false`, ensure that the first variable of a swap has always a smaller index than the
-  *   second one. Must always be `false` except if two different search zones are used.
+  *   second one. For `i < j`, the exploration only tries to swap `i` with `j` and avoids to swap
+  *   `j` with `i`. Must always be `false` except if two different search zones are used.
   * @param symmetryCanBeBrokenOnValues
   *   If `false`, ensure that the first variable of a swap has always a smaller value than the
   *   second one. `symmetryCannotBeBrokenOnValues` and `symmetryCannotBeBrokenOnIndices` cannot be
@@ -153,12 +155,12 @@ class SwapNeighborhood(
       case Some(sz) => sz()
     }
 
-    // Activate hot restart if needed
+    // Activates hot restart if needed
     val firstIterationSchemeOnZone =
       if (hotRestart) HotRestart(firstIterationZone, indexOfFirstVariable)
       else firstIterationZone
 
-    // Remove symmetries from considered variables
+    // Removes symmetries from considered variables
     val firstIterationSchemeOnSymmetryFreeZone = symmetryClassOfFirstVariable match {
       case None => firstIterationSchemeOnZone
       case Some(s) =>
@@ -180,7 +182,7 @@ class SwapNeighborhood(
         case Some(sz) => sz(indexOfFirstVariable, firstOldVal)
       }
 
-      // Remove symmetries from considered variables
+      // Removes symmetries from considered variables
       val secondIterationSchemeOnSymmetryFreeZone = symmetryClassOsSecondVariable match {
         case None    => secondIterationZone
         case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(secondIterationZone, s)
@@ -208,11 +210,14 @@ class SwapNeighborhood(
           firstVar :=: secondVar
           searchProfiler().foreach(x => x.neighborSelected())
 
+          // Check if swapping firstVar and SecondVar improves the objective
           exploration.checkNeighborWP(objValue =>
             new SwapMove(firstVar, secondVar, objValue, this.name)
           )
           firstVar :=: secondVar
 
+          // The exploration found an improving move.
+          // The search can stop according the LoopBehavior
           if (exploration.toReturn != NoMoveFound) {
             stopFirst()
             stopSecond()

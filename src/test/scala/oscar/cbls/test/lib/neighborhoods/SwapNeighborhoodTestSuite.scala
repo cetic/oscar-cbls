@@ -39,7 +39,7 @@ class SwapNeighborhoodTestSuite extends AnyFunSuite {
     val input: Array[IntVariable] = Array.fill(5)(IntVariable(store, rng.between(1L, 11L)))
     val objValue: IntVariable = IntVariable(
       store,
-      1000,
+      1000L,
       name = Some(s"Sum of distances of ${input.map(v => v.value()).mkString("[", ", ", "]")}")
     )
 
@@ -51,7 +51,7 @@ class SwapNeighborhoodTestSuite extends AnyFunSuite {
       Minus2(store, input(i), input(i + 1), diffVar)
       Abs(store, diffVar, distVars(i))
     }
-    //The objective is to minimize the sum of distances of the input variables
+    // The objective is to minimize the sum of distances of the input variables
     Sum(store, distVars, SetVariable(store, distVars.indices.toSet), objValue)
     val objective: Minimize = Minimize(objValue)
     store.close()
