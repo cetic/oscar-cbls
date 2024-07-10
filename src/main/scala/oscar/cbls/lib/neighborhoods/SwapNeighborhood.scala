@@ -205,15 +205,13 @@ class SwapNeighborhood(
           // The two variable must have different values
           && firstOldVal != secondOldVal
         ) {
-          firstVar  := secondOldVal
-          secondVar := firstOldVal
+          firstVar :=: secondVar
           searchProfiler().foreach(x => x.neighborSelected())
 
           exploration.checkNeighborWP(objValue =>
             new SwapMove(firstVar, secondVar, objValue, this.name)
           )
-          firstVar  := firstOldVal
-          secondVar := secondOldVal
+          firstVar :=: secondVar
 
           if (exploration.toReturn != NoMoveFound) {
             stopFirst()
@@ -252,9 +250,7 @@ class SwapMove(
 ) extends Move(objValueAfter, neighborhoodName) {
 
   override def commit(): Unit = {
-    val firstOldVal: Long = first.value()
-    first  := second.value()
-    second := firstOldVal
+    first :=: second
   }
 
   override def toString: String =

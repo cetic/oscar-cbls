@@ -118,6 +118,13 @@ class IntVariable(
   /** Decrements this variable */
   def :--(): Unit = setValue(_pendingValue - 1)
 
+  /** Swaps this variable's value with other's value */
+  def :=:(other: IntVariable): Unit = {
+    val tmp = other.pendingValue
+    other.setValue(this.pendingValue)
+    this.setValue(tmp)
+  }
+
   override def save(): SavedValue = new IntSavedValue(this)
 
   override def registerStaticallyAndDynamicallyListeningElement(
