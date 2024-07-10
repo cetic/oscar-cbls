@@ -28,6 +28,8 @@ class AssignNeighborhoodNeighborhoodTestSuite extends AnyFunSuite with Matchers 
 
   private def generateRandomDomain(rng: Random): List[Long] = {
     val lowerBound = rng.between(-100L, 101L)
+    // The global minimum of the objective function is reached when a & b have their smallest value
+    // To avoid that the smallest value is always the first explored, we shuffle the domain
     rng.shuffle((lowerBound to lowerBound + 10L).toList)
   }
 
@@ -35,9 +37,9 @@ class AssignNeighborhoodNeighborhoodTestSuite extends AnyFunSuite with Matchers 
     val seed: Long  = Random.nextLong()
     val rng: Random = Random
     rng.setSeed(seed)
-    println(s"Seed: $seed")
+    println(s"\nSeed: $seed")
 
-    val store: Store          = new Store()
+    val store: Store          = new Store(debugLevel = 3)
     val domainA               = generateRandomDomain(rng)
     val a: IntVariable        = IntVariable(store, domainA.head, name = Some("A"))
     val domainB               = generateRandomDomain(rng)
