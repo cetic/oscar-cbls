@@ -29,7 +29,7 @@ object AssignNeighborhood {
     * @param vars
     *   The variable defining the search space.
     * @param varsDomain
-    *   Attribute to each variable a list of possible values.
+    *   Attributes to each variable a list of possible values depending of its value and its index.
     * @param name
     *   The name of the neighborhood.
     * @param selectVariableBehavior
@@ -52,7 +52,7 @@ object AssignNeighborhood {
     */
   def apply(
     vars: Array[IntVariable],
-    varsDomain: IntVariable => Iterable[Long],
+    varsDomain: (IntVariable, Int) => Iterable[Long],
     name: String = "AssignNeighborhood",
     selectVariableBehavior: LoopBehavior = LoopBehavior.first(),
     selectValueBehavior: LoopBehavior = LoopBehavior.first(),
@@ -82,7 +82,7 @@ object AssignNeighborhood {
   * @param vars
   *   The variables defining the search space.
   * @param varsDomain
-  *   Attribute to each variable a list of possible values.
+  *   Attributes to each variable a list of possible values depending of its value and its index.
   * @param name
   *   The name of the neighborhood.
   * @param selectVariableBehavior
@@ -105,7 +105,7 @@ object AssignNeighborhood {
   */
 class AssignNeighborhood(
   vars: Array[IntVariable],
-  varsDomain: IntVariable => Iterable[Long],
+  varsDomain: (IntVariable, Int) => Iterable[Long],
   name: String = "AssignNeighborhood",
   selectVariableBehavior: LoopBehavior = LoopBehavior.first(),
   selectValueBehavior: LoopBehavior = LoopBehavior.first(),
@@ -152,11 +152,14 @@ class AssignNeighborhood(
 
       // Removes symmetries from currentVar's domain
       val domainIterationScheme = symmetryClassOfValue match {
-        case None    => varsDomain(currentVar)
+        case None    => varsDomain(currentVar, currentIndex)
         case Some(s) =>
           // Two variables belong to the same class if they have the same domain and their
           // indices are in the same class.
-          IdenticalAggregator.removeIdenticalClassesLazily(varsDomain(currentVar), s(currentIndex))
+          IdenticalAggregator.removeIdenticalClassesLazily(
+            varsDomain(currentVar, currentIndex),
+            s(currentIndex)
+          )
       }
 
       // How to iterate over the domain

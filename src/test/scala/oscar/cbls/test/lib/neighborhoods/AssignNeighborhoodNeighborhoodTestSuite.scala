@@ -32,7 +32,8 @@ class AssignNeighborhoodNeighborhoodTestSuite extends AnyFunSuite {
     rng.shuffle((lowerBound to lowerBound + 10L).toList)
   }
 
-  private def getTestBasicModel: (Array[IntVariable], IntVariable => List[Long], Minimize) = {
+  private def getTestBasicModel
+    : (Array[IntVariable], (IntVariable, Int) => List[Long], Minimize) = {
     val seed: Long  = Random.nextLong()
     val rng: Random = Random
     rng.setSeed(seed)
@@ -54,7 +55,7 @@ class AssignNeighborhoodNeighborhoodTestSuite extends AnyFunSuite {
       else (0L to 10L).toList
     }
 
-    (Array(a, b), domain, objective)
+    (Array(a, b), (v: IntVariable, index: Int) => domain(v), objective)
   }
 
   test("AssignNeighborhoods works as expected with First loop") {
