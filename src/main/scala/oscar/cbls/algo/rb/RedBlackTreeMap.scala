@@ -24,6 +24,11 @@ private object RedBlackTreeMapLib {
     n match {
       case L()              => n
       case T(_, l, k, v, r) => T(B, l, k, v, r)
+      case _ =>
+        throw new IllegalArgumentException(
+          "Something goes wrong while using blacken " +
+            "method"
+        )
     }
   }
 
