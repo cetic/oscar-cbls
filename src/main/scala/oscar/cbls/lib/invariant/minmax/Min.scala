@@ -26,10 +26,10 @@ object Min {
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   An array of variable on which to compute the extremum.
+    *   An array of variable on which to compute the minimum.
     * @param listenedVariablesIndices
     *   A SetVariable containing the indices of the input variables to be listened to calculate the
-    *   extremum.
+    *   minimum.
     * @param output
     *   The output IntVariable evaluating to `Min(input(i) | i in listenedVariablesIndices)`.
     * @param bulkIdentifier
@@ -59,10 +59,10 @@ object Min {
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   An array of variable on which to compute the extremum.
+  *   An array of variable on which to compute the minimum.
   * @param listenedVariablesIndices
   *   A SetVariable containing the indices of the input variables to be listened to calculate the
-  *   extremum.
+  *   minimum.
   * @param output
   *   The output IntVariable evaluating to `Min(input(i) | i in listenedVariablesIndices)`.
   * @param bulkIdentifier

@@ -30,14 +30,14 @@ object MinConst {
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   The constants on which to compute the extremum.
+    *   The constants on which to compute the minimum.
     * @param listenedValuesIndices
     *   A SetVariable containing the indices of the input variables to be observed to calculate the
-    *   extremum.
+    *   minimum.
     * @param output
     *   The output IntVariable evaluating to `Min(input(i) | i in listenedVariablesIndices)`.
     * @param maxBacklog
-    *   The maximum number of postponed updates that doesn't affect the extremum.
+    *   The maximum number of postponed updates that doesn't affect the minimum.
     * @param name
     *   The (optional) name of the Invariant.
     */
@@ -63,14 +63,14 @@ object MinConst {
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   The constants on which to compute the extremum.
+  *   The constants on which to compute the minimum.
   * @param listenedValuesIndices
   *   A SetVariable containing the indices of the input variables to be observed to calculate the
-  *   extremum.
+  *   minimum.
   * @param output
   *   The output IntVariable evaluating to `Min(input(i) | i in listenedVariablesIndices)`.
   * @param maxBacklog
-  *   The maximum number of postponed updates that doesn't affect the extremum.
+  *   The maximum number of postponed updates that doesn't affect the minimum.
   * @param name
   *   The (optional) name of the Invariant.
   */

@@ -25,10 +25,10 @@ object Max {
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   An array of variable on which to compute the extremum.
+    *   An array of variable on which to compute the maximum.
     * @param listenedVariablesIndices
     *   A SetVariable containing the indices of the input variables to be listened to calculate the
-    *   extremum.
+    *   maximum.
     * @param output
     *   The output IntVariable evaluating to `Max(input(i) | i in listenedVariablesIndices)`.
     * @param bulkIdentifier
@@ -57,10 +57,10 @@ object Max {
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   An array of variable on which to compute the extremum.
+  *   An array of variable on which to compute the maximum.
   * @param listenedVariablesIndices
   *   A SetVariable containing the indices of the input variables to be listened to calculate the
-  *   extremum.
+  *   maximum.
   * @param output
   *   The output IntVariable evaluating to `Max(input(i) | i in listenedVariablesIndices)`.
   * @param bulkIdentifier
