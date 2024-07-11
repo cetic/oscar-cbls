@@ -89,7 +89,6 @@ class IntVariable(
   }
 
   /** Change the newValue of this variable and schedule it for propagation */
-  @inline
   protected def setValue(value: Long): Unit = {
     if (value != _pendingValue) {
       _pendingValue = value
