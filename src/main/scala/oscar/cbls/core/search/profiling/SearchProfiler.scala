@@ -186,7 +186,7 @@ class SearchProfiler(val neighborhood: Neighborhood) {
     */
   def resetIntermediaryStatistics(): Unit = commonProfilingData.resetIntermediaryStatistics()
 
-  /** Merges this provider [[CommonProfilingData]] with another one.
+  /** Merges this provider CommonProfilingData with another one.
     *
     * Useful when two [[Neighborhood]] have to be considered as one. For instance the DynAndThen
     * combinator needs to merge the dynamically generated Neighborhood to keep their profiling data.
