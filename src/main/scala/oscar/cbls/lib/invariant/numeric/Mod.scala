@@ -19,7 +19,9 @@ import oscar.cbls.core.computation.integer.IntVariable
 /** Companion object of [[Mod]]. */
 object Mod {
 
-  /** Creates a Mod invariant.
+  /** Creates a Mod invariant, which maintains the remainder of a division (the modulo) between two
+    * [[oscar.cbls.core.computation.integer.IntVariable]]. Warning: the scala operator `%` is not
+    * exactly a modulo operator. For example, `-1 % 3 == -1`, and `2 % 3 == 2`, but `-1 == 2 mod 3`.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -28,9 +30,9 @@ object Mod {
     * @param b
     *   The second parameter of the function.
     * @param output
-    *   The IntVariable which contains fun(a, b).
+    *   The IntVariable evaluating to `a mod b`.
     * @param name
-    *   The name (optional) of your Invariant.
+    *   The (optional) name of the Invariant.
     */
   def apply(
     model: Store,
@@ -43,8 +45,10 @@ object Mod {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains the remainder of a division between two
-  * [[oscar.cbls.core.computation.integer.IntVariable]].
+/** [[oscar.cbls.core.computation.Invariant]] which maintains the remainder of a division (the
+  * modulo) between two [[oscar.cbls.core.computation.integer.IntVariable]]. Warning: the scala
+  * operator `%` is not exactly a modulo operator. For example, `-1 % 3 == -1`, and `2 % 3 == 2`,
+  * but `-1 == 2 mod 3`.
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -53,9 +57,9 @@ object Mod {
   * @param b
   *   The second parameter of the function.
   * @param output
-  *   The IntVariable which contains fun(a, b).
+  *   The IntVariable evaluating to `a mod b`.
   * @param name
-  *   The name (optional) of your Invariant.
+  *   The (optional) name of the Invariant.
   */
 class Mod(
   model: Store,
@@ -63,4 +67,4 @@ class Mod(
   b: IntVariable,
   output: IntVariable,
   name: Option[String] = None
-) extends IntInt2Int(model, a, b, output, (x: Long, y: Long) => x % y, name) {}
+) extends IntInt2Int(model, a, b, output, (x: Long, y: Long) => ((x % y) + y) % y, name) {}

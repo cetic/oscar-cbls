@@ -13,8 +13,8 @@
 
 package oscar.cbls.lib.invariant.numeric
 
-import oscar.cbls.core.computation.{Invariant, Store}
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
+import oscar.cbls.core.computation.{Invariant, Store}
 
 /** An helper to define an [[oscar.cbls.core.computation.Invariant]] from a Long => Long function.
   * This invariant is not incremental. So, it should be only uses for very simple functions. It
@@ -25,14 +25,14 @@ import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
   * @param input
   *   The listened IntVariable.
   * @param output
-  *   The IntVariable which contains fun(input).
+  *   The IntVariable evaluating to fun(input).
   * @param fun
   *   The function to maintain. It is supposed not to listen to any variable in the model
   * @param cached
   *   Set to true to have a cache of size1. Set to false to have no cache. A cache can provide
   *   speedup if fun is time-consuming.
   * @param name
-  *   The name (optional) of your Invariant.
+  *   The (optional) name of the Invariant.
   */
 class Int2Int(
   model: Store,
@@ -51,7 +51,6 @@ class Int2Int(
   private[this] var cachedIn: Long  = input.value()
   private[this] var cachedOut: Long = output.value()
 
-  @inline
   override def notifyIntChanges(
     intVariable: IntVariable,
     contextualVarIndex: Int,

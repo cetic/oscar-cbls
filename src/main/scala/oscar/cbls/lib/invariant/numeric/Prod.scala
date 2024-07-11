@@ -13,15 +13,15 @@
 
 package oscar.cbls.lib.invariant.numeric
 
-import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, Store}
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
+import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, Store}
 
 /** Companion object of the [[Prod]] class. */
 object Prod {
 
   /** Creates a `Prod` invariant, which maintains `Prod(input(i) | i in listenedVariablesIndices)`,
-    * * where `input` is an array of IntVariables.
+    * where `input` is an array of IntVariables.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.

@@ -20,25 +20,26 @@ import oscar.cbls.core.computation.{IncredibleBulk, Invariant, Store}
 /** Companion object of the [[Filter]] class. */
 object Filter {
 
-  /** Creates a Filter invariant.
+  /** Creates a Filter invariant, which maintains `{i in input.indices | predicate (input(i))}`.
+    * Update depends of the predicate complexity. If predicate is in O(1), update is in O(1).
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   The elements we want to filter
+    *   The elements we want to filter.
     * @param output
-    *   A SetVariable containing {i in input.indices | predicate(input[i])}
+    *   A SetVariable evaluating to `{i in input.indices | predicate(input[i])}`
     * @param predicate
     *   The function that selects values such that their index must be included in the output set.
     *   This function cannot depend on any IntVariable, as updates to these IntVariables will not
     *   trigger propagation of this invariant. By default, predicate is "_ > 0".
     * @param bulkIdentifier
     *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-    *   [[oscar.cbls.core .computation.Invariant]] listen to vars. Warning:
+    *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
     *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
     *   Be sure to use the same one if you're referencing the same variables.
     * @param name
-    *   The name (optional) of your Invariant
+    *   The (optional) name of the Invariant.
     */
   def apply(
     model: Store,
@@ -52,8 +53,8 @@ object Filter {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains {i in input.indices | predicate
-  * (input(i))}. Update depends of the predicate complexity. If predicate is in O(1), update is in
+/** [[oscar.cbls.core.computation.Invariant]] which maintains `{i in input.indices | predicate`
+  * `(input(i))}`. Update depends of the predicate complexity. If predicate is in O(1), update is in
   * O(1).
   *
   * @param model
@@ -61,18 +62,18 @@ object Filter {
   * @param input
   *   The elements we want to filter
   * @param output
-  *   A SetVariable containing {i in input.indices | predicate(input[i])}
+  *   A SetVariable evaluating to `{i in input.indices | predicate(input[i])}`
   * @param predicate
   *   The function that selects values such that their index must be included in the output set.
   *   This function cannot depend on any IntVariable, as updates to these IntVariables will not
   *   trigger propagation of this invariant. By default, predicate is "_ > 0".
   * @param bulkIdentifier
   *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-  *   [[oscar.cbls.core .computation.Invariant]] listen to vars. Warning:
+  *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
   *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
   *   sure to use the same one if you're referencing the same variables.
   * @param name
-  *   The name (optional) of your Invariant
+  *   The (optional) name of the Invariant.
   */
 class Filter(
   model: Store,
@@ -102,7 +103,6 @@ class Filter(
 
   output.setDefiningInvariant(this)
 
-  @inline
   override def notifyIntChanges(
     intVariable: IntVariable,
     contextualVarIndex: Int,

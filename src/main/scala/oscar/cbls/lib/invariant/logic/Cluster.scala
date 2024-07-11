@@ -28,7 +28,7 @@ object Cluster {
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   The elements we want to cluster
+    *   An array of variable to cluster.
     * @param clusters
     *   The list of keys defining the input values to cluster.
     * @param bulkIdentifier
@@ -37,7 +37,7 @@ object Cluster {
     *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
     *   Be sure to use the same one if you're referencing the same variables.
     * @param name
-    *   The name (optional) of your Invariant
+    *   The (optional) name of the Invariant.
     */
   def makeSparse(
     model: Store,
@@ -59,7 +59,7 @@ object Cluster {
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   The elements we want to cluster
+    *   An array of variable to cluster.
     * @param upperBound
     *   The integer such that the input variables' domain is [0, upperBound[.
     * @param bulkIdentifier
@@ -68,7 +68,7 @@ object Cluster {
     *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
     *   Be sure to use the same one if you're referencing the same variables.
     * @param name
-    *   The name (optional) of your Invariant
+    *   The (optional) name of the Invariant.
     */
   def makeDense(
     model: Store,

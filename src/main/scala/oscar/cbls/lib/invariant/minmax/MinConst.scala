@@ -20,21 +20,26 @@ import oscar.cbls.core.computation.set.SetVariable
 /** Companion object of [[MinConst]] class. */
 object MinConst {
 
-  /** Creates a [[MinConst]] invariant.
+  /** Creates a [[MinConst]] invariant, which maintains `Min{input(i) | i in`
+    * `listenedVariablesIndices}`. This invariant is lazy and maintains a todo list of postponed
+    * updates. Update is in O (log(n)) in worst case. If the update does not impact the output, it
+    * is postponed in O(1). Otherwise, it is performed in O(log(n)). When a removed index is
+    * considered and does not impact the minimum, it goes in the backlog as well, to be removed
+    * later. It is faster for neighborhood exploration with moves and backtracks.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   The constants on which to compute the minimum.
+    *   The constants on which to compute the extremum.
     * @param listenedValuesIndices
     *   A SetVariable containing the indices of the input variables to be observed to calculate the
-    *   minimum.
+    *   extremum.
     * @param output
-    *   The output IntVariable.
+    *   The output IntVariable evaluating to `Min(input(i) | i in listenedVariablesIndices)`.
     * @param maxBacklog
-    *   The maximum number of postponed updates that doesn't affect the minimum.
+    *   The maximum number of postponed updates that doesn't affect the extremum.
     * @param name
-    *   The name (optional) of your Invariant
+    *   The (optional) name of the Invariant.
     */
   def apply(
     model: Store,
@@ -48,8 +53,8 @@ object MinConst {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains Min{input(i) | i in
-  * listenedVariablesIndices}. This invariant is lazy and maintains a todo list of postponed
+/** [[oscar.cbls.core.computation.Invariant]] which maintains `Min{input(i) | i in`
+  * `listenedVariablesIndices}`. This invariant is lazy and maintains a todo list of postponed
   * updates. Update is in O (log(n)) in worst case. If the update does not impact the output, it is
   * postponed in O(1). Otherwise, it is performed in O(log(n)). When a removed index is considered
   * and does not impact the minimum, it goes in the backlog as well, to be removed later. It is
@@ -58,16 +63,16 @@ object MinConst {
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   The constants on which to compute the minimum.
+  *   The constants on which to compute the extremum.
   * @param listenedValuesIndices
   *   A SetVariable containing the indices of the input variables to be observed to calculate the
-  *   minimum.
+  *   extremum.
   * @param output
-  *   The output IntVariable.
+  *   The output IntVariable evaluating to `Min(input(i) | i in listenedVariablesIndices)`.
   * @param maxBacklog
-  *   The maximum number of postponed updates that doesn't affect the minimum.
+  *   The maximum number of postponed updates that doesn't affect the extremum.
   * @param name
-  *   The name (optional) of your Invariant
+  *   The (optional) name of the Invariant.
   */
 class MinConst(
   model: Store,

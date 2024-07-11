@@ -13,9 +13,9 @@
 
 package oscar.cbls.lib.invariant.numeric
 
-import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, Store}
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
+import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, Store}
 
 /** Companion object of the [[Sum]] class. */
 object Sum {
@@ -51,7 +51,7 @@ object Sum {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains `Sum(input(i) | i in`
+/** [[oscar.cbls.core.computation.Invariant]] which maintains `Sum(input(i) | i in`
   * `listenedVariablesIndices)`. Update is in O(1).
   *
   * @param model
@@ -68,7 +68,7 @@ object Sum {
   *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
   *   sure to use the same one if you're referencing the same variables.
   * @param name
-  *   The name (optional) of the Invariant.
+  *   The (optional) name of the Invariant.
   */
 class Sum(
   model: Store,

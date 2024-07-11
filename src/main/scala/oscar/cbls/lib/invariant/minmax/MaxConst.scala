@@ -20,21 +20,26 @@ import oscar.cbls.core.computation.set.SetVariable
 /** Companion object of [[MaxConst]] class. */
 object MaxConst {
 
-  /** Creates a MaxConst invariant.
+  /** Creates a MaxConst invariant, which maintains `Max{input(i) | i in`
+    * `listenedVariablesIndices}`. This invariant is lazy and maintains a todo list of postponed
+    * updates. Update is in O (log(n)) in worst case. If the update does not impact the output, it
+    * is postponed in O(1). Otherwise, it is performed in O(log(n)). When a removed index is
+    * considered and does not impact the maximum, it goes in the backlog as well, to be removed
+    * later. It is faster for neighborhood exploration with moves and backtracks.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   The constants on which to compute the maximum.
+    *   The constants on which to compute the extremum.
     * @param listenedValuesIndices
     *   A SetVariable containing the indices of the input variables to be observed to calculate the
-    *   maximum.
+    *   extremum.
     * @param output
-    *   The output IntVariable containing Max{input(i) | i in listenedVariablesIndices}.
+    *   The output IntVariable evaluating to `Extremum(input(i) | i in listenedVariablesIndices)`.
     * @param maxBacklog
-    *   The maximum number of postponed updates that doesn't affect the maximum.
+    *   The maximum number of postponed updates that doesn't affect the extremum.
     * @param name
-    *   The name (optional) of your Invariant
+    *   The (optional) name of the Invariant.
     */
   def apply(
     model: Store,
@@ -48,8 +53,8 @@ object MaxConst {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains Max{input(i) | i in
-  * listenedVariablesIndices}. This invariant is lazy and maintains a todo list of postponed
+/** [[oscar.cbls.core.computation.Invariant]] which maintains `Max{input(i) | i in`
+  * `listenedVariablesIndices}`. This invariant is lazy and maintains a todo list of postponed
   * updates. Update is in O (log(n)) in worst case. If the update does not impact the output, it is
   * postponed in O(1). Otherwise, it is performed in O(log(n)). When a removed index is considered
   * and does not impact the maximum, it goes in the backlog as well, to be removed later. It is
@@ -58,16 +63,16 @@ object MaxConst {
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   The constants on which to compute the maximum.
+  *   The constants on which to compute the extremum.
   * @param listenedValuesIndices
   *   A SetVariable containing the indices of the input variables to be observed to calculate the
-  *   maximum.
+  *   extremum.
   * @param output
-  *   The output IntVariable containing Max{input(i) | i in listenedVariablesIndices}.
+  *   The output IntVariable evaluating to `Extremum(input(i) | i in listenedVariablesIndices)`.
   * @param maxBacklog
-  *   The maximum number of postponed updates that doesn't affect the maximum.
+  *   The maximum number of postponed updates that doesn't affect the extremum.
   * @param name
-  *   The name (optional) of your Invariant
+  *   The (optional) name of the Invariant.
   */
 class MaxConst(
   model: Store,

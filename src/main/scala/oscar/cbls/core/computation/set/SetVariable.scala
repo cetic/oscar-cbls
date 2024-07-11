@@ -27,7 +27,7 @@ object SetVariable {
     * @param isConstant
     *   Whether the variable is a constant or not
     * @param name
-    *   The name (optional) of this variable
+    *   The (optional) name of this variable
     */
   def apply(
     model: Store,
@@ -49,7 +49,7 @@ object SetVariable {
   * @param isConstant
   *   Whether the variable is a constant or not
   * @param name
-  *   The name (optional) of this variable
+  *   The (optional) name of this variable
   */
 class SetVariable(
   model: Store,

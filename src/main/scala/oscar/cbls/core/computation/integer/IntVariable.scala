@@ -27,7 +27,7 @@ object IntVariable {
     * @param isConstant
     *   If the variable is a constant
     * @param name
-    *   The name (optional) of your Variable
+    *   The (optional) name of your Variable
     */
   def apply(
     model: Store,
@@ -48,7 +48,7 @@ object IntVariable {
   * @param isConstant
   *   If the variable is a constant
   * @param name
-  *   The name (optional) of your Variable
+  *   The (optional) name of your Variable
   */
 class IntVariable(
   model: Store,

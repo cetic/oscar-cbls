@@ -13,14 +13,15 @@
 
 package oscar.cbls.lib.invariant.logic
 
-import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, Store}
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
+import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, Store}
 
 /** Companion object of [[SetElement]] class. */
 object SetElement {
 
-  /** Creates a SetElement invariant.
+  /** Creates a SetElement invariant, which maintains `input(index)` where input is an
+    * [[scala.Array]] of [[oscar.cbls.core.computation.set.SetVariable]]. Update is in O(1).
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -29,14 +30,14 @@ object SetElement {
     * @param index
     *   An IntVariable pointing to one of the input values.
     * @param output
-    *   The SetVariable which contains input(index).
+    *   The SetVariable evaluating to `input(index)`.
     * @param bulkIdentifier
     *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
     *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
     *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
     *   Be sure to use the same one if you're referencing the same variables.
     * @param name
-    *   The name (optional) of your Invariant.
+    *   The (optional) name of the Invariant.
     */
   def apply(
     model: Store,
@@ -50,7 +51,7 @@ object SetElement {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains input(index) where input is an
+/** [[oscar.cbls.core.computation.Invariant]] which maintains `input(index)` where input is an
   * [[scala.Array]] of [[oscar.cbls.core.computation.set.SetVariable]]. Update is in O(1).
   *
   * @param model
@@ -60,14 +61,14 @@ object SetElement {
   * @param index
   *   An IntVariable pointing to one of the input values.
   * @param output
-  *   The SetVariable which contains input(index).
+  *   The SetVariable evaluating to `input(index)`.
   * @param bulkIdentifier
   *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
   *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
   *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
   *   sure to use the same one if you're referencing the same variables.
   * @param name
-  *   The name (optional) of your Invariant.
+  *   The (optional) name of the Invariant.
   */
 class SetElement(
   model: Store,

@@ -27,9 +27,9 @@ object MinSet {
     * @param input
     *   The set of integer on which to compute the minimum.
     * @param output
-    *   An IntVariable containing the minimum of the input set.
+    *   An IntVariable evaluating to the minimum of the input set.
     * @param name
-    *   The name (optional) of your Invariant
+    *   The (optional) name of the Invariant.
     */
   def apply(
     model: Store,
@@ -41,16 +41,16 @@ object MinSet {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains Min(input)
+/** [[oscar.cbls.core.computation.Invariant]] that maintains `Min(input)`.
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
   *   The set of integer on which to compute the minimum.
   * @param output
-  *   An IntVariable containing the minimum of the input set.
+  *   An IntVariable evaluating to the minimum of the input set.
   * @param name
-  *   The name (optional) of your Invariant
+  *   The (optional) name of the Invariant.
   */
 class MinSet(model: Store, input: SetVariable, output: IntVariable, name: Option[String] = None)
     extends ExtremumSet(model, input, output, Int.MaxValue, name) {

@@ -19,7 +19,8 @@ import oscar.cbls.core.computation.integer.IntVariable
 /** Companion object of [[Prod2]] class. */
 object Prod2 {
 
-  /** Creates a Prod2 invariant.
+  /** Creates a Prod2 invariant, which maintains the product of two
+    * [[oscar.cbls.core.computation.integer.IntVariable]].
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -28,9 +29,9 @@ object Prod2 {
     * @param b
     *   The second parameter of the function.
     * @param output
-    *   The Int Variable which contains a * b.
+    *   The Int Variable evaluating to `a * b`.
     * @param name
-    *   The name (optional) of your Invariant.
+    *   The (optional) name of the Invariant.
     */
   def apply(
     model: Store,
@@ -53,9 +54,9 @@ object Prod2 {
   * @param b
   *   The second parameter of the function.
   * @param output
-  *   The Int Variable which contains a * b.
+  *   The Int Variable evaluating to `a * b`.
   * @param name
-  *   The name (optional) of your Invariant.
+  *   The (optional) name of the Invariant.
   */
 class Prod2(
   model: Store,

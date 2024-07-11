@@ -20,7 +20,8 @@ import oscar.cbls.lib.invariant.numeric.Int2Int
 /** Companion object of the [[ElementConst]] class. */
 object ElementConst {
 
-  /** Creates an ElementConst invariant.
+  /** Creates an ElementConst invariant, which maintains `input(index)` where input is an array of
+    * [[oscar.cbls.core.computation.integer.IntConstant]].
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -29,9 +30,9 @@ object ElementConst {
     * @param index
     *   An IntVariable pointing to one of the input values.
     * @param output
-    *   The IntVariable which contains input(index).
+    *   The IntVariable evaluating to `input(index)`.
     * @param name
-    *   The name (optional) of your Invariant.
+    *   The (optional) name of the Invariant.
     */
   def apply(
     model: Store,
@@ -44,8 +45,8 @@ object ElementConst {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains input(index) where input is an array of
-  * [[oscar.cbls.core.computation.integer.IntConstant]].
+/** [[oscar.cbls.core.computation.Invariant]] which maintains `input(index)` where input is an array
+  * of [[oscar.cbls.core.computation.integer.IntConstant]].
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -54,9 +55,9 @@ object ElementConst {
   * @param index
   *   An IntVariable pointing to one of the input values.
   * @param output
-  *   The IntVariable which contains input(index).
+  *   The IntVariable evaluating to `input(index)`.
   * @param name
-  *   The name (optional) of your Invariant.
+  *   The (optional) name of the Invariant.
   */
 class ElementConst(
   model: Store,

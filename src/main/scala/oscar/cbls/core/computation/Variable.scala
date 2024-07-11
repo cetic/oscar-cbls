@@ -26,7 +26,7 @@ import oscar.cbls.core.propagation._
   * @param isConstant
   *   If the variable is a constant
   * @param name
-  *   The name (optional) of your Variable
+  *   The (optional) name of your Variable
   */
 abstract class Variable(val model: Store, val isConstant: Boolean, name: Option[String] = None)
     extends PropagationElement(model) {
