@@ -38,7 +38,7 @@ object SwapNeighborhood {
     *   `None` is provided, all the variables are considered.
     * @param secondSearchZone
     *   A subset of indices of `vars` to consider for the second variable of the Swap operation.
-    *   These indices are computed from the index of the first variable and its old value. If `None`
+    *   These indices are computed from the index of the first variable and its pending value. If `None`
     *   is provided, all the variables are considered.
     * @param symmetryCanBeBrokenOnIndices
     *   If `false`, ensure that the first variable of a swap has always a smaller index than the
@@ -104,7 +104,7 @@ object SwapNeighborhood {
   *   `None` is provided, all the variables are considered.
   * @param secondSearchZone
   *   A subset of indices of `vars` to consider for the second variable of the Swap operation. This
-  *   indices are computed from the index of the first variable and its old value. If `None` is
+  *   indices are computed from the index of the first variable and its pending value. If `None` is
   *   provided, all the variables are considered.
   * @param symmetryCanBeBrokenOnIndices
   *   If `false`, ensure that the first variable of a swap has always a smaller index than the

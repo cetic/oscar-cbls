@@ -13,7 +13,7 @@
 
 package oscar.cbls.core.search.loop
 
-/** By using this loop behaviour, the exploration visit all the neighbor to find the most improving
+/** By using this loop behaviour, the exploration visits all the neighbors to find the most improving
   * one.
   *
   * @param maxNeighbors

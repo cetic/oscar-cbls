@@ -13,7 +13,7 @@
 
 package oscar.cbls.core.search.loop
 
-/** Trait to define an iterator that can performed a bounded number of iterations. This upper bound
+/** Trait to define an iterator that can perform a bounded number of iterations. This upper bound
   * is given by the `remainingNeighbors` variable.
   */
 trait BoundedIterator[T] extends Iterator[T] {
