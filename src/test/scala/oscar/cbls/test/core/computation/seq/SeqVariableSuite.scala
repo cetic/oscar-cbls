@@ -1,6 +1,8 @@
 package oscar.cbls.test.core.computation.seq
 
+import org.scalacheck.{Properties, Test}
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.Checkers
 import oscar.cbls.algo.sequence.Token
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.seq.SeqVariable
@@ -96,4 +98,23 @@ class Taken()
 
 object Taken{
   def apply():Taken = new Taken()
+}
+
+
+class DLLProperties extends Properties("SeqVariable Properties") {
+
+  propertyWithSeed("Commands work, no Explicit seed", Some("GfW3feI8KfX7YabV1y4Sm1pqX5jIItR9ORq6nUGvloC=")) = SeqVariableCommands.property()
+
+  override def overrideParameters(p: Test.Parameters): Test.Parameters = {
+    p.withMinSuccessfulTests(500)
+  }
+
+}
+
+class OperationTest extends AnyFunSuite with Checkers {
+
+  val dllProperty = new DLLProperties
+
+  dllProperty.check()
+
 }

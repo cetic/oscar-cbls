@@ -66,7 +66,6 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
   }
 
   private def digestChanges(changes: SeqUpdate): Unit = {
-    println(s"token : ${changes.newValue.token} - $changes")
     changes match {
       case SeqUpdateInsert(
             value: Int,
@@ -104,7 +103,6 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
             prev: SeqUpdate
           ) =>
         digestChanges(prev)
-        println(s"digesting how to : $howToRollBack")
         digestChanges(howToRollBack)
         require(
           level == levelTopCheckpoint,
@@ -132,7 +130,6 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
       case _ =>
       // Default case, do nothing
     }
-    println(s"update processed : $changes")
   }
 
   override def checkInternals(): Unit = {

@@ -59,7 +59,6 @@ class SeqVariable(
 
   // Check if the explorer is on the right IntSequence
   private def checkExplorerForMove(explorer: IntSequenceExplorer, explorerName: String): Unit = {
-    println(toNotify)
     require(
       toNotify.newValue.sameIdentity(explorer.intSequence),
       s"$explorerName must explore the current IntSequence." +
@@ -403,7 +402,6 @@ class SeqVariable(
           s"${checkingCheckpoint.get equals topCheckpoint} \ncheckingCheckpoint:${checkingCheckpoint.get} \ntopCheckpoint:$topCheckpoint"
       )
 
-    println(s"Before simplification notify : $this")
     rollbackSimplification(toNotify, topCheckpoint) match {
       case CheckpointDeclarationReachedAndRemoved(_: SeqUpdate) =>
         require(false, "Should not append")
@@ -411,21 +409,12 @@ class SeqVariable(
         // Checkpoint value could be found in toNotify, and updates after it were removed so we don't have to do anything
         // Reset performedSinceTopCheckpoint and update toNotify
         performedSinceTopCheckpoint = SeqUpdateLastNotified(topCheckpoint)
-        println(s"After simplification notify : $newToNotify")
         toNotify = newToNotify
 
       case NoSimplificationPerformed =>
         // In this case, the checkpoint was already notified, and possibly some moves were performed from it.
         // We cannot simply pop updates, we have to add rollBack instructions
 
-        println(s"Before how to rollback : $toNotify")
-        println(s"Performed since top : $performedSinceTopCheckpoint")
-        println(
-          s"Reversed : ${performedSinceTopCheckpoint.reverseThis(expectedValueAfterFullReverse = topCheckpoint)}"
-        )
-        println(
-          s"Appended : ${performedSinceTopCheckpoint.reverseThis(expectedValueAfterFullReverse = topCheckpoint).appendThisTo(toNotify)}"
-        )
         val howToRollBack = performedSinceTopCheckpoint
           .reverseThis(expectedValueAfterFullReverse = topCheckpoint)
           .appendThisTo(toNotify)
@@ -435,7 +424,6 @@ class SeqVariable(
           level = levelOfTopCheckpoint,
           toNotify
         )
-        println(s"After how to rollback : $toNotify")
 
         performedSinceTopCheckpoint = SeqUpdateLastNotified(topCheckpoint)
         scheduleForPropagation()
@@ -459,11 +447,6 @@ class SeqVariable(
 
     // Two cases, currently at checkpoint 0 or higher than 0
 
-//    println(s"DEBUG : $topCheckpoint")
-//    println(s"DEBUG : $levelOfTopCheckpoint")
-//    println(s"DEBUG : $performedSinceTopCheckpoint")
-//    println(s"DEBUG : ${checkpointStackNotTop.size}")
-//    println(s"DEBUG : $toNotify")
     toNotify = toNotify match {
       case _: SeqUpdateRollBackToTopCheckpoint =>
         SeqUpdateReleaseTopCheckPoint(toNotify, toNotify.newValue)
@@ -489,11 +472,6 @@ class SeqVariable(
         performedSinceTopCheckpoint = null
         Nil
     }
-//    println(s"DEBUG 2 : $topCheckpoint")
-//    println(s"DEBUG 2 : $levelOfTopCheckpoint")
-//    println(s"DEBUG 2 : $performedSinceTopCheckpoint")
-//    println(s"DEBUG 2 : ${checkpointStackNotTop.size}")
-//    println(s"DEBUG 2 : $toNotify")
     levelOfTopCheckpoint -= 1
     topCheckpoint
   }
@@ -718,10 +696,10 @@ class SeqVariable(
     s"$name :\n " +
       s"Current value : ${toNotify.newValue}\n" +
       s"To notify : $toNotify\n" +
-      s"Checkpoint level : $levelOfTopCheckpoint\n" +
+      s"Checkpoint level : $levelOfTopCheckpoint\n" /*+
       s"All checkpoints : checkpoint value | performed since checkpoint value \n" +
       s"$topCheckpoint | $performedSinceTopCheckpoint\n" +
-      s"${checkpointStackNotTop.map(c => s"${c._1} | ${c._2}").mkString("\n")}"
+      s"${checkpointStackNotTop.map(c => s"${c._1} | ${c._2}").mkString("\n")}"*/
   }
 }
 
