@@ -18,7 +18,7 @@ import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, Store}
 
-/** Abstract [[oscar.cbls.core.computation.Invariant]] which maintains `Extremum{input(i) | i in`
+/** Abstract Invariant which maintains `Extremum{input(i) | i in`
   * `listenedVariablesIndices}`. Exact ordering is specified by implementing abstract method of the
   * class. Update is in O(log(n)).
   *
@@ -35,7 +35,7 @@ import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, St
   *   The default value of the extremum.
   * @param bulkIdentifier
   *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-  *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+  *   Invariant listen to vars. Warning:
   *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
   *   sure to use the same one if you're referencing the same variables.
   * @param name

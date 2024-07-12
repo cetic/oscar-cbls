@@ -44,7 +44,7 @@ object Sqrt {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains the square root of an
+/** Invariant which maintains the square root of an
   * [[oscar.cbls.core.computation.integer.IntVariable]]. WARNING: We are only working with integers.
   * The square root is rounded to the closest integer. Don't use with negative numbers.
   *

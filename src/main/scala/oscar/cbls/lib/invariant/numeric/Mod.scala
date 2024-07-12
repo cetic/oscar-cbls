@@ -45,7 +45,7 @@ object Mod {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains the remainder of a division (the
+/** Invariant which maintains the remainder of a division (the
   * modulo) between two [[oscar.cbls.core.computation.integer.IntVariable]]. Warning: the scala
   * operator `%` is not exactly a modulo operator. For example, `-1 % 3 == -1`, and `2 % 3 == 2`,
   * but `-1 == 2 mod 3`.

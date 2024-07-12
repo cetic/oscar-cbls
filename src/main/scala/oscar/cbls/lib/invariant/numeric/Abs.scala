@@ -41,7 +41,7 @@ object Abs {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains the absolute value of an
+/** Invariant which maintains the absolute value of an
   * [[oscar.cbls.core.computation.integer.IntVariable]].
   *
   * @param model

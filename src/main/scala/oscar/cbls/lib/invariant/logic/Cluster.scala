@@ -33,7 +33,7 @@ object Cluster {
     *   The list of keys defining the input values to cluster.
     * @param bulkIdentifier
     *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-    *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+    *   Invariant listen to vars. Warning:
     *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
     *   Be sure to use the same one if you're referencing the same variables.
     * @param name
@@ -64,7 +64,7 @@ object Cluster {
     *   The integer such that the input variables' domain is [0, upperBound[.
     * @param bulkIdentifier
     *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-    *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+    *   Invariant listen to vars. Warning:
     *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
     *   Be sure to use the same one if you're referencing the same variables.
     * @param name

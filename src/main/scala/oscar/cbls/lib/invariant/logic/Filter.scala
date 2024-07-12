@@ -35,7 +35,7 @@ object Filter {
     *   trigger propagation of this invariant. By default, predicate is "_ > 0".
     * @param bulkIdentifier
     *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-    *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+    *   Invariant listen to vars. Warning:
     *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
     *   Be sure to use the same one if you're referencing the same variables.
     * @param name
@@ -53,7 +53,7 @@ object Filter {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains `{i in input.indices | predicate`
+/** Invariant which maintains `{i in input.indices | predicate`
   * `(input(i))}`. Update depends of the predicate complexity. If predicate is in O(1), update is in
   * O(1).
   *
@@ -69,7 +69,7 @@ object Filter {
   *   trigger propagation of this invariant. By default, predicate is "_ > 0".
   * @param bulkIdentifier
   *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-  *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+  *   Invariant listen to vars. Warning:
   *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
   *   sure to use the same one if you're referencing the same variables.
   * @param name

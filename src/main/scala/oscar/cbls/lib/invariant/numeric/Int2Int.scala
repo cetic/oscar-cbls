@@ -16,7 +16,7 @@ package oscar.cbls.lib.invariant.numeric
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 import oscar.cbls.core.computation.{Invariant, Store}
 
-/** An helper to define an [[oscar.cbls.core.computation.Invariant]] from a Long => Long function.
+/** An helper to define an Invariant from a Long => Long function.
   * This invariant is not incremental. So, it should be only uses for very simple functions. It
   * maintains output = fun(input)
   *

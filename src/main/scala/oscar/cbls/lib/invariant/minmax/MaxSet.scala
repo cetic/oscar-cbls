@@ -41,7 +41,7 @@ object MaxSet {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains `Max(input)`
+/** Invariant which maintains `Max(input)`
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.

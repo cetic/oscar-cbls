@@ -33,7 +33,7 @@ object Element {
     *   The IntVariable evaluating to `input(index)`.
     * @param bulkIdentifier
     *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-    *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+    *   Invariant listen to vars. Warning:
     *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
     *   Be sure to use the same one if you're referencing the same variables.
     * @param name
@@ -51,7 +51,7 @@ object Element {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains `input(index)` where input is an
+/** Invariant which maintains `input(index)` where input is an
   * [[scala.Array]] of [[oscar.cbls.core.computation.integer.IntVariable]] and index is an
   * [[oscar.cbls.core.computation.integer.IntVariable]] . Update is in O(1).
   *
@@ -65,7 +65,7 @@ object Element {
   *   The IntVariable evaluating to `input(index)`.
   * @param bulkIdentifier
   *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-  *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+  *   Invariant listen to vars. Warning:
   *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
   *   sure to use the same one if you're referencing the same variables.
   * @param name

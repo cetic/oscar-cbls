@@ -41,7 +41,7 @@ object Square {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains the square of an
+/** Invariant that maintains the square of an
   * [[oscar.cbls.core.computation.integer.IntVariable]]
   *
   * @param model

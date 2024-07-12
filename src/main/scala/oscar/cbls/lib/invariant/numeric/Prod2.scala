@@ -44,7 +44,7 @@ object Prod2 {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains the product of two
+/** Invariant which maintains the product of two
   * [[oscar.cbls.core.computation.integer.IntVariable]].
   *
   * @param model

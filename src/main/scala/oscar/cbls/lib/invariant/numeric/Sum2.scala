@@ -44,7 +44,7 @@ object Sum2 {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains the sum of two
+/** Invariant which maintains the sum of two
   * [[oscar.cbls.core.computation.integer.IntVariable]].
   *
   * @param model

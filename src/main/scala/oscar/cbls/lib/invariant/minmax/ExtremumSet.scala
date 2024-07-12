@@ -17,7 +17,7 @@ import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 import oscar.cbls.core.computation.{Invariant, Store}
 
-/** An abstract [[oscar.cbls.core.computation.Invariant]] which maintains `Extremum(input)`.
+/** An abstract Invariant which maintains `Extremum(input)`.
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.

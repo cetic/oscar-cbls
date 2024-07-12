@@ -42,7 +42,7 @@ object Opposite {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains the opposite value of an
+/** Invariant which maintains the opposite value of an
   * [[oscar.cbls.core.computation.integer.IntVariable]].
   *
   * @param model

@@ -44,7 +44,7 @@ object Minus2 {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains the difference of two
+/** Invariant which maintains the difference of two
   * [[oscar.cbls.core.computation.integer.IntVariable]].
   *
   * @param model

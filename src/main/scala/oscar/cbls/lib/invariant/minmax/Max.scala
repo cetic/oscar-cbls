@@ -33,7 +33,7 @@ object Max {
     *   The output IntVariable evaluating to `Max(input(i) | i in listenedVariablesIndices)`.
     * @param bulkIdentifier
     *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-    *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+    *   Invariant listen to vars. Warning:
     *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
     *   Be sure to use the same one if you're referencing the same variables.
     * @param name
@@ -51,7 +51,7 @@ object Max {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains `Max{input(i) | i in`
+/** Invariant which maintains `Max{input(i) | i in`
   * `listenedVariablesIndices}`. Update is in O(log(n)).
   *
   * @param model
@@ -65,7 +65,7 @@ object Max {
   *   The output IntVariable evaluating to `Max(input(i) | i in listenedVariablesIndices)`.
   * @param bulkIdentifier
   *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-  *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+  *   Invariant listen to vars. Warning:
   *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
   *   sure to use the same one if you're referencing the same variables.
   * @param name

@@ -20,7 +20,7 @@ import oscar.cbls.core.computation.{Invariant, Store}
 
 import scala.collection.mutable
 
-/** Abstract [[oscar.cbls.core.computation.Invariant]] which maintains Extremum{input(i) | i in
+/** Abstract Invariant which maintains Extremum{input(i) | i in
   * listenedVariablesIndices}. Exact ordering is specified by implementing abstract method of the
   * class. This invariant is lazy and maintains a todo list of postponed updates. Update is in O
   * (log(n)) in worst case. If the update does not impact the output, it is postponed in O(1).

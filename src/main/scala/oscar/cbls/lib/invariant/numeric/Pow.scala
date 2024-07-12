@@ -47,7 +47,7 @@ object Pow {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains the power of an
+/** Invariant which maintains the power of an
   * [[oscar.cbls.core.computation.integer.IntVariable]] by another.
   *
   * @param model

@@ -41,7 +41,7 @@ object MinSet {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains `Min(input)`.
+/** Invariant that maintains `Min(input)`.
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.

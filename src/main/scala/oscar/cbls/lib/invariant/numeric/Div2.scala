@@ -44,7 +44,7 @@ object Div2 {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains the quotient of two
+/** Invariant which maintains the quotient of two
   * [[oscar.cbls.core.computation.integer.IntVariable]].
   *
   * @param model

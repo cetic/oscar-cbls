@@ -33,7 +33,7 @@ object DenseCluster {
     *   The clustered elements such that `output(j) = {i in input.indices | input(i) == j}`.
     * @param bulkIdentifier
     *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-    *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+    *   Invariant listen to vars. Warning:
     *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
     *   Be sure to use the same one if you're referencing the same variables.
     * @param name
@@ -48,7 +48,7 @@ object DenseCluster {
   ): DenseCluster = new DenseCluster(model, input, output, bulkIdentifier, name)
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains clusters of the indices of an array:
+/** Invariant which maintains clusters of the indices of an array:
   * `output(j) = {i in input.indices | input(i) == j}`. It is considered as a dense cluster because
   * `output` is an [[scala.Array]] and covers all the possible values of the input variables. Update
   * is O(1).
@@ -61,7 +61,7 @@ object DenseCluster {
   *   The clustered elements such that `output(j) = {i in input.indices | input(i) == j}`.
   * @param bulkIdentifier
   *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-  *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+  *   Invariant listen to vars. Warning:
   *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
   *   sure to use the same one if you're referencing the same variables.
   * @param name

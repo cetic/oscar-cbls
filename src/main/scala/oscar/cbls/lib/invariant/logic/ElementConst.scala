@@ -45,7 +45,7 @@ object ElementConst {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains `input(index)` where input is an array
+/** Invariant which maintains `input(index)` where input is an array
   * of [[oscar.cbls.core.computation.integer.IntConstant]].
   *
   * @param model

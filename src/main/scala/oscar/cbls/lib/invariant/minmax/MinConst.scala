@@ -53,7 +53,7 @@ object MinConst {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains `Min{input(i) | i in`
+/** Invariant which maintains `Min{input(i) | i in`
   * `listenedVariablesIndices}`. This invariant is lazy and maintains a todo list of postponed
   * updates. Update is in O (log(n)) in worst case. If the update does not impact the output, it is
   * postponed in O(1). Otherwise, it is performed in O(log(n)). When a removed index is considered

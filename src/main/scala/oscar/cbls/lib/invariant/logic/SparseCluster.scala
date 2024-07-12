@@ -35,7 +35,7 @@ object SparseCluster {
     *   An Hashmap such that `output(j) = {i in input.indices | input(i) == j}`.
     * @param bulkIdentifier
     *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-    *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+    *   Invariant listen to vars. Warning:
     *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
     *   Be sure to use the same one if you're referencing the same variables.
     * @param name
@@ -52,7 +52,7 @@ object SparseCluster {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains clusters of the indices of an array:
+/** Invariant which maintains clusters of the indices of an array:
   * `output(j) = {i in input .indices | input(i) == j}`. It is considered as a sparse cluster
   * because output is an [[scala.collection.immutable.HashMap]] and covers only some preselected
   * possible values of the input variables. Update is in O(1).
@@ -65,7 +65,7 @@ object SparseCluster {
   *   An Hashmap such that `output(j) = {i in input.indices | input(i) == j}`
   * @param bulkIdentifier
   *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-  *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+  *   Invariant listen to vars. Warning:
   *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
   *   sure to use the same one if you're referencing the same variables.
   * @param name

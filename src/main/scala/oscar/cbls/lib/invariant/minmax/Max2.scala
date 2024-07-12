@@ -45,7 +45,7 @@ object Max2 {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains the maximum of two
+/** Invariant which maintains the maximum of two
   * [[oscar.cbls.core.computation.integer.IntVariable]].
   *
   * @param model

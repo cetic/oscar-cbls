@@ -45,7 +45,7 @@ object SumConst {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains `Sum(input(i) | i in`
+/** Invariant that maintains `Sum(input(i) | i in`
   * `listenedValuesIndices}`. , where `input` is an array of constant integers. Update is in O(1).
   *
   * @param model
