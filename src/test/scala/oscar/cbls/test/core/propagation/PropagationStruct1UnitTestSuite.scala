@@ -1,5 +1,6 @@
 package oscar.cbls.test.core.propagation
 
+import org.scalatest.Suites
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import oscar.cbls.core.propagation.{
@@ -7,7 +8,6 @@ import oscar.cbls.core.propagation.{
   TestPropagationStructure,
   TestVariableElement
 }
-import org.scalatest.Suites
 
 /** Unit tests about the propagation. In this unit tests, the propagation structure is statically
   * defined and the updates are statically checked. The tests are parametrized by the debug level.
@@ -88,7 +88,7 @@ class PropagationStruct1UnitTestSuite(debugLevel: Int) extends AnyFunSuite with 
   ) {
 
     var0.update()
-    struct.partialPropagation(var7, false)
+    struct.partialPropagation(var7, reset = false)
     if (debugLevel < 3) {
       checkUpdate(var0, 0)
       checkUpdate(var1, 0)
@@ -146,7 +146,7 @@ class PropagationStruct1UnitTestSuite(debugLevel: Int) extends AnyFunSuite with 
   ) {
 
     var0.update()
-    struct.partialPropagation(var8, false)
+    struct.partialPropagation(var8, reset = false)
 
     checkUpdate(var0, 1)
     checkUpdate(var1, 0)
@@ -165,7 +165,7 @@ class PropagationStruct1UnitTestSuite(debugLevel: Int) extends AnyFunSuite with 
   ) {
 
     var0.update()
-    struct.partialPropagation(var7, false)
+    struct.partialPropagation(var7, reset = false)
     if (debugLevel < 3) {
       checkUpdate(var0, 0)
       checkUpdate(var1, 0)
@@ -187,7 +187,7 @@ class PropagationStruct1UnitTestSuite(debugLevel: Int) extends AnyFunSuite with 
     }
 
     struct.resetPropagationFlags()
-    struct.partialPropagation(var2, false)
+    struct.partialPropagation(var2, reset = false)
 
     if (debugLevel < 3) {
       checkUpdate(var0, 1)

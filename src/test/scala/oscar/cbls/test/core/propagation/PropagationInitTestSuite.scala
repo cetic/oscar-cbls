@@ -45,7 +45,7 @@ class PropagationInitTestSuite extends AnyFunSuite with Matchers {
       val struct = structureGenerator.generateStructure(15, 30, 5, 15, 5, 15, 5, 15, 10)
 
       struct.close()
-      struct.validateLayerAssignation
+      struct.validateLayerAssignation()
 
     }
   }

@@ -36,7 +36,7 @@ class TestPropagationStructure(val debugLevel: Int = 0) extends PropagationStruc
     getPropagationElements.flatMap(e =>
       e match {
         case element: TestVariableElement => Some(element)
-        case _ => None
+        case _                            => None
       }
     )
 
@@ -83,8 +83,8 @@ class TestPropagationStructure(val debugLevel: Int = 0) extends PropagationStruc
     super.registerForPartialPropagation(p)
   }
 
-  def validateLayerAssignation: Unit = {
-    elements.foreach(_.validateLayer)
+  def validateLayerAssignation(): Unit = {
+    elements.foreach(_.validateLayer())
   }
 
   def lastPropagationWasTotal: Boolean = {
@@ -107,7 +107,7 @@ class TestPropagationStructure(val debugLevel: Int = 0) extends PropagationStruc
   private def mkPropagation(reset: Boolean): Unit = {
     setUpdateRequired()
     propagate(currentTarget)
-    checkPropagationCount
+    checkPropagationCount()
     if (reset)
       resetPropagationFlags()
   }
@@ -137,7 +137,7 @@ class TestPropagationStructure(val debugLevel: Int = 0) extends PropagationStruc
     mkPropagation(reset)
   }
 
-  private def checkPropagationCount: Unit = if (closed) elements.foreach(_.checkUpdate)
+  private def checkPropagationCount(): Unit = if (closed) elements.foreach(_.checkUpdate())
 
   /** resets the propagation flags */
   def resetPropagationFlags(): Unit =

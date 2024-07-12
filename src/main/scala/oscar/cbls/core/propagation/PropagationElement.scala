@@ -111,7 +111,7 @@ abstract class PropagationElement(private val propagationStructure: PropagationS
     */
   protected[this] def performPropagation(): Unit = {
     require(
-      false,
+      requirement = false,
       "The element has been scheduled for propagation but the method performPropagation has not been overridden"
     )
   }

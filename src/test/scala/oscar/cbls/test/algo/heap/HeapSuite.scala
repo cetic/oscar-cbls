@@ -278,7 +278,7 @@ class HeapSuite(heapTester: AbstractHeapTester) extends AnyFunSuite {
 
   /** All the operations available
     */
-  abstract sealed class Operation()
+  abstract sealed class Operation
   case class Insert(value: Int) extends Operation {
     override def toString: String = s"Insert : $value"
   }

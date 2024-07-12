@@ -47,7 +47,7 @@ class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks wi
     val tree = RedBlackTreeMap.empty[Int]
     tree.size should be(0)
     tree.values.size should be(0)
-    tree.keys.size should be (0)
+    tree.keys.size should be(0)
   }
 
   test("tree.get on empty tree should be None") {
@@ -278,7 +278,7 @@ class RBTreeTestSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks wi
     }
   }
 
-  abstract sealed class Operation()
+  abstract sealed class Operation
   case class Insert() extends Operation
   case class Update() extends Operation
   case class Delete() extends Operation
