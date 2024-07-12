@@ -13,8 +13,8 @@
 
 package oscar.cbls.core.search.loop
 
-/** By using this loop behaviour, the exploration visits all the neighbors to find the most improving
-  * one.
+/** By using this loop behaviour, the exploration visits all the neighbors to find the most
+  * improving one.
   *
   * @param maxNeighbors
   *   The maximum number of neighbors to explore.
@@ -42,6 +42,8 @@ class Best(maxNeighbors: () => Int = () => Int.MaxValue) extends LoopBehavior(ma
         }
       }
 
+      // We want to find the best neighbor. We cannot just stop when an improving move is found.
+      // We need to test all the possible move. So, here, this function does nothing.
       override def stop(): Unit = {}
     }
 

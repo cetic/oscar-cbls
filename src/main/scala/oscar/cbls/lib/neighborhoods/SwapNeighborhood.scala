@@ -17,7 +17,7 @@ import oscar.cbls.algo.search.{HotRestart, IdenticalAggregator}
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.Exploration
 import oscar.cbls.core.search.loop.LoopBehavior
-import oscar.cbls.core.search.{Move, NoMoveFound, SimpleNeighborhood}
+import oscar.cbls.core.search.{NoMoveFound, SimpleNeighborhood}
 
 /** Companion object of the [[SwapNeighborhood]] class. */
 object SwapNeighborhood {
@@ -38,8 +38,8 @@ object SwapNeighborhood {
     *   `None` is provided, all the variables are considered.
     * @param secondSearchZone
     *   A subset of indices of `vars` to consider for the second variable of the Swap operation.
-    *   These indices are computed from the index of the first variable and its pending value. If `None`
-    *   is provided, all the variables are considered.
+    *   These indices are computed from the index of the first variable and its pending value. If
+    *   `None` is provided, all the variables are considered.
     * @param symmetryCanBeBrokenOnIndices
     *   If `false`, ensure that the first variable of a swap has always a smaller index than the
     *   second one. For `i < j`, the exploration only tries to swap `i` with `j` and avoids to swap
@@ -88,8 +88,8 @@ object SwapNeighborhood {
   }
 }
 
-/** [[oscar.cbls.core.search.Neighborhood]] that find two
-  * [[oscar.cbls.core.computation.integer.IntVariable]] from an input value and swap their values
+/** Neighborhood that find two [[oscar.cbls.core.computation.integer.IntVariable]] from an input
+  * value and swap their values
   *
   * @param vars
   *   The variables defining the search space.
@@ -214,6 +214,7 @@ class SwapNeighborhood(
           exploration.checkNeighborWP(objValue =>
             new SwapMove(firstVar, secondVar, objValue, this.name)
           )
+          // Rollbacks the move
           firstVar :=: secondVar
 
           // The exploration found an improving move.

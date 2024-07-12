@@ -16,8 +16,7 @@ package oscar.cbls.lib.neighborhoods
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.search.Move
 
-/** [[oscar.cbls.core.search.Move]] that exchanges the values of two
-  * [[oscar.cbls.core.computation.integer.IntVariable]].
+/** Move that exchanges the values of two [[oscar.cbls.core.computation.integer.IntVariable]].
   *
   * @param first
   *   The first variable to swap.

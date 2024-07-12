@@ -23,7 +23,7 @@ import oscar.cbls.lib.neighborhoods.AssignNeighborhood
 
 import scala.util.Random
 
-class AssignNeighborhoodNeighborhoodTestSuite extends AnyFunSuite {
+class AssignNeighborhoodTestSuite extends AnyFunSuite {
 
   private def generateRandomDomain(rng: Random): List[Long] = {
     val lowerBound = rng.between(-100L, 101L)

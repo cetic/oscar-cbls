@@ -42,7 +42,8 @@ abstract class LoopBehavior(maxNeighbors: () => Int = () => Int.MaxValue) {
     * @tparam T
     *   Type of the explored variables.
     * @return
-    *   A bounded version of `baseIterable` and a function to stop an iteration.
+    *   A bounded version of `baseIterable` and a function to stop an iteration. Used to iterate
+    *   over neighbors during a search. The `stop` function is used to stop the search.
     */
   def toIterable[T](baseIterable: Iterable[T]): (BoundedIterable[T], () => Unit)
 

@@ -16,7 +16,7 @@ package oscar.cbls.lib.neighborhoods
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.search.Move
 
-/** [[oscar.cbls.core.search.Move]] that assign a [[scala.Long]] value to an
+/** Move that assign a [[scala.Long]] value to an
   * [[oscar.cbls.core.computation.integer.IntVariable]].
   *
   * @param variable

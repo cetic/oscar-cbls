@@ -16,15 +16,15 @@ package oscar.cbls.lib.neighborhoods
 import oscar.cbls.algo.search.{HotRestart, IdenticalAggregator}
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.Exploration
-import oscar.cbls.core.search.loop.{BoundedIterator, LoopBehavior}
-import oscar.cbls.core.search.{Move, NoMoveFound, SimpleNeighborhood}
+import oscar.cbls.core.search.loop.LoopBehavior
+import oscar.cbls.core.search.{NoMoveFound, SimpleNeighborhood}
 
 /** Companion object of the [[AssignNeighborhood]] class. */
 object AssignNeighborhood {
 
   /** Creates an AssignNeighborhood that find an [[oscar.cbls.core.computation.integer.IntVariable]]
-    * from the input array and a from the variable's domain such that the objective function is
-    * improved.
+    * from the input array and a value from the variable's domain such that the objective function
+    * is improved.
     *
     * @param vars
     *   The variable defining the search space.
@@ -75,9 +75,8 @@ object AssignNeighborhood {
   }
 }
 
-/** [[oscar.cbls.core.search.Neighborhood]] that find an
-  * [[oscar.cbls.core.computation.integer.IntVariable]] from the input array and a value from the
-  * variable's domain such that the objective function is improved.
+/** Neighborhood that find an [[oscar.cbls.core.computation.integer.IntVariable]] from the input
+  * array and a value from the variable's domain such that the objective function is improved.
   *
   * @param vars
   *   The variables defining the search space.

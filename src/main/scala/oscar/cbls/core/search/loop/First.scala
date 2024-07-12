@@ -44,6 +44,8 @@ class First(maxNeighbors: () => Int = () => Int.MaxValue) extends LoopBehavior(m
         }
       }
 
+      // Since the search must stop when the first improving us found, we turn on the flag to
+      // stop the iteration
       override def stop(): Unit = foundMove = true
     }
 
