@@ -16,7 +16,8 @@ package oscar.cbls.algo.generator
 import scala.math.{pow, round, signum, sqrt}
 import scala.util.Random
 
-object WareHouseLocationGenerator {
+object WarehouseLocationGenerator {
+
   private var seed: Long  = Random.nextLong()
   private val rng: Random = Random
 
@@ -27,7 +28,7 @@ object WareHouseLocationGenerator {
 
   def getSeed: Long = seed
 
-  /** Method generating data for a WLP.
+  /** Generates data for a WLP.
     *
     * @param numWarehouse
     *   Number of warehouse to have in the problem.
@@ -44,7 +45,7 @@ object WareHouseLocationGenerator {
     *   delivery points and the warehouses, the positions of the warehouses, the positions of the
     *   delivery points and a matrix of distances between each pair of warehouses.
     */
-  def generateWLPWithPosition(
+  def generateRandomWLP(
     numWarehouse: Int,
     numDelivery: Int,
     minXY: Long = 0L,
@@ -57,8 +58,9 @@ object WareHouseLocationGenerator {
     Array[(Long, Long)],
     Array[Array[Long]]
   ) = {
-    require(minXY < maxXY, "minXy must be strictly smaller than maxXY")
+    require(minXY < maxXY, "minXY must be strictly smaller than maxXY")
 
+    // The location are randomly put on a square map.
     val side: Long = maxXY - minXY
 
     val costsForOpeningWarehouse: Array[Long] = Array.fill(numWarehouse)(
@@ -91,7 +93,8 @@ object WareHouseLocationGenerator {
 
   }
 
-  /** Method generating data for a WLP.
+  /** Generates data for the WLP. The locations' map is checked with `numTilesOnSide`^2^ square
+    * tiles. Warehouses positions are generated uniformly on all tiles.
     *
     * @param numWarehouse
     *   Number of warehouse to have in the problem.
@@ -103,26 +106,79 @@ object WareHouseLocationGenerator {
     *   Upper bound on the coordinates of the points.
     * @param weightForOpeningWarehouseCost
     *   Weight used to generate cost for opening warehouses.
+    * @param numTilesOnSide
+    *   The number of tiles along the grid side. The map is supposed to be square.
     * @return
-    *   An array containing the costs for opening the warehouses and a matrix of distance between
-    *   the
+    *   An array containing the costs for opening the warehouses, a matrix of distance between the
+    *   delivery points and the warehouses, the positions of the warehouses, the positions of the
+    *   delivery points and a matrix of distances between each pair of warehouses.
     */
-  def generateWLP(
+  def generateWLPOnGrid(
     numWarehouse: Int,
     numDelivery: Int,
     minXY: Long = 0L,
-    maxXY: Long = 100L,
-    weightForOpeningWarehouseCost: Long = 3L
-  ): (Array[Long], Array[Array[Long]]) = {
-    val (warehousesCosts, distCosts, _, _, _) = generateWLPWithPosition(
-      numWarehouse,
-      numDelivery,
-      minXY,
-      maxXY,
-      weightForOpeningWarehouseCost
+    maxXY: Long = 120L,
+    weightForOpeningWarehouseCost: Long = 3L,
+    numTilesOnSide: Long = 2L
+  ): (
+    Array[Long],
+    Array[Array[Long]],
+    Array[(Long, Long)],
+    Array[(Long, Long)],
+    Array[Array[Long]]
+  ) = {
+
+    // The location are randomly put on a square map.
+    val side: Long = maxXY - minXY
+    require(
+      side % numTilesOnSide == 0,
+      "The length of the map mus be divisible by the number of times along the side of the grid."
     )
 
-    (warehousesCosts, distCosts)
+    val costsForOpeningWarehouse: Array[Long] = Array.fill(numWarehouse)(
+      (minXY + rng.nextDouble() * side * weightForOpeningWarehouseCost).toLong
+    )
+
+    val totalNumberOfTiles: Long = numTilesOnSide * numTilesOnSide
+    val numUniformWareHouseOnGrid: Long =
+      numWarehouse.toLong - (numWarehouse.toLong % totalNumberOfTiles)
+    val tileLength: Long                        = side / numTilesOnSide
+    val warehousePositions: Array[(Long, Long)] = new Array[(Long, Long)](numWarehouse)
+
+    var (x, y): (Long, Long) = (0L, 0L)
+    var n: Long              = 0L
+    while (n < numUniformWareHouseOnGrid) {
+      y = (n % numTilesOnSide) * tileLength
+      warehousePositions(n.toInt) = randomPosition(x, x + tileLength, y, y + tileLength)
+      n += 1L
+      if (n % totalNumberOfTiles == 0L) x = 0L
+      else if (n % numTilesOnSide == 0L) x += tileLength
+    }
+
+    for (i <- numUniformWareHouseOnGrid.toInt until numWarehouse)
+      warehousePositions(i) = randomPosition(minXY, maxXY, minXY, maxXY)
+
+    val deliveryPositions: Array[(Long, Long)] =
+      Array.fill(numDelivery)(randomPosition(minXY, maxXY, minXY, maxXY))
+
+    // For each delivery point, the distance to each warehouse
+    val distanceCosts: Array[Array[Long]] = Array.tabulate(numDelivery, numWarehouse)((d, w) =>
+      distance(warehousePositions(w), deliveryPositions(d))
+    )
+
+    val warehouseToWarehouseDistances: Array[Array[Long]] =
+      Array.tabulate(numWarehouse, numWarehouse)((w1, w2) =>
+        distance(warehousePositions(w1), warehousePositions(w2))
+      )
+
+    (
+      costsForOpeningWarehouse,
+      distanceCosts,
+      warehousePositions,
+      deliveryPositions,
+      warehouseToWarehouseDistances
+    )
+
   }
 
   /** Return an random tuple of coordinates.
