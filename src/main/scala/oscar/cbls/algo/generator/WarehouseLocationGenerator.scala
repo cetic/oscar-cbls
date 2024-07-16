@@ -13,7 +13,7 @@
 
 package oscar.cbls.algo.generator
 
-import oscar.cbls.algo.generator.wlp.{WLPOnGrid, WLPRandomGenerator}
+import oscar.cbls.algo.generator.wlp.{WLPMinDistance, WLPOnGrid, WLPRandomGenerator}
 
 /** Factory to create Warehouses Location Problem data generator */
 object WarehouseLocationGenerator {
@@ -30,10 +30,6 @@ object WarehouseLocationGenerator {
     *   Upper bound on the coordinates of the points.
     * @param weightForOpeningWarehouseCost
     *   Weight used to generate cost for opening warehouses.
-    * @return
-    *   An array containing the costs for opening the warehouses, a matrix of distance between the
-    *   delivery points and the warehouses, the positions of the warehouses, the positions of the
-    *   delivery points and a matrix of distances between each pair of warehouses.
     */
   def generateRandomWLP(
     numWarehouse: Int,
@@ -59,10 +55,6 @@ object WarehouseLocationGenerator {
     *   Weight used to generate cost for opening warehouses.
     * @param numTilesOnSide
     *   The number of tiles along the grid side. The map is supposed to be square.
-    * @return
-    *   An array containing the costs for opening the warehouses, a matrix of distance between the
-    *   delivery points and the warehouses, the positions of the warehouses, the positions of the
-    *   delivery points and a matrix of distances between each pair of warehouses.
     */
   def generateWLPOnGrid(
     numWarehouse: Int,
@@ -80,9 +72,42 @@ object WarehouseLocationGenerator {
     numTilesOnSide
   )
 
+  /** Generates random data for WLP. Here, the warehouses are guaranteed to be distant from at least
+    * `minDistanceBetweenWarehouses`.
+    *
+    * @param numWarehouse
+    *   Number of warehouse to have in the problem.
+    * @param numDelivery
+    *   Number of delivery points to have in the problem.
+    * @param minDistanceBetweenWarehouses
+    *   The minimal distance between two warehouses.
+    * @param minXY
+    *   Lower bound on the coordinates of the points.
+    * @param maxXY
+    *   Upper bound on the coordinates of the points.
+    * @param weightForOpeningWarehouseCost
+    *   Weight used to generate cost for opening warehouses.
+    */
+  def generateWLPWithMinDist(
+    numWarehouse: Int,
+    numDelivery: Int,
+    minDistanceBetweenWarehouses: Long,
+    minXY: Long = 0L,
+    maxXY: Long = 100L,
+    weightForOpeningWarehouseCost: Long = 3L
+  ): WLPMinDistance = new WLPMinDistance(
+    numWarehouse,
+    numDelivery,
+    minDistanceBetweenWarehouses,
+    minXY,
+    maxXY,
+    weightForOpeningWarehouseCost
+  )
+
   def main(args: Array[String]): Unit = {
-    val gen = generateWLPOnGrid(15, 30)
+    val gen             = generateWLPOnGrid(15, 30)
     val (_, w, _, _, _) = gen.generate
+    println(gen.seed)
     println(w.mkString("\n"))
 
   }
