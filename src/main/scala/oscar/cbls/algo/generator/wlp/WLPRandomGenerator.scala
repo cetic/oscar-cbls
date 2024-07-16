@@ -35,8 +35,8 @@ class WLPRandomGenerator(
   weightForOpeningWarehouseCost: Long = 3L
 ) extends WLPGenerator(numWarehouse, numDelivery, minXY, maxXY, weightForOpeningWarehouseCost) {
 
-  protected var seed: Long = Random.nextLong()
-  protected val rng        = new Random(seed)
+  private var _seed: Long = Random.nextLong()
+  private val rng: Random = new Random(_seed)
 
   override def generateCostsForOpeningWarehouse: Array[Long] = Array.fill(numWarehouse)(
     (minXY + rng.nextDouble() * side * weightForOpeningWarehouseCost).toLong
@@ -63,11 +63,11 @@ class WLPRandomGenerator(
   )
 
   def setSeed(s: Long): Unit = {
-    seed = s
+    _seed = s
     rng.setSeed(s)
   }
 
-  def getSeed: Long = seed
+  def seed: Long = _seed
 
   /** Return an random tuple of coordinates.
     *
