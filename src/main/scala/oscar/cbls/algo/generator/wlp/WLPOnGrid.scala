@@ -53,14 +53,18 @@ class WLPOnGrid(
 
     var (x, y): (Long, Long) = (0L, 0L)
     var n: Long              = 0L
+    // First, each tile receives the same number of warehouse.
     while (n < numUniformWareHouseOnGrid) {
       y = (n % numTilesOnSide) * tileLength
       warehousePositions(n.toInt) = randomPosition(x, x + tileLength, y, y + tileLength)
       n += 1L
+      // If each tile of the grid received a warehouse, we restart from the tile 0
       if (n % totalNumberOfTiles == 0L) x = 0L
+      // If each tile of a column received a warehouse, we move to the following column
       else if (n % numTilesOnSide == 0L) x += tileLength
     }
 
+    // The remainder of the warehouse are placed randomly.
     for (i <- numUniformWareHouseOnGrid.toInt until numWarehouse)
       warehousePositions(i) = randomPosition(minXY, maxXY, minXY, maxXY)
 
