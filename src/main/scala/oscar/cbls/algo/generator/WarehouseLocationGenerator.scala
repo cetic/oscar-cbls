@@ -15,8 +15,22 @@ package oscar.cbls.algo.generator
 
 import oscar.cbls.algo.generator.wlp.{WLPMinDistance, WLPOnGrid, WLPRandomGenerator}
 
-/** Factory to create Warehouses Location Problem data generator */
+import scala.util.Random
+
+/** Object to generate data for Warehouses Location Problem. */
 object WarehouseLocationGenerator {
+
+  private var _seed: Long = Random.nextLong()
+  private val rng: Random = new Random(_seed)
+
+  /** Return the seed used for random generator. */
+  def seed: Long = _seed
+
+  /** Set the seed of random number generator with `s`. */
+  def setSeed(s: Long): Unit = {
+    rng.setSeed(s)
+    _seed = s
+  }
 
   /** Generates data for a WLP.
     *
@@ -30,6 +44,10 @@ object WarehouseLocationGenerator {
     *   Upper bound on the coordinates of the points.
     * @param weightForOpeningWarehouseCost
     *   Weight used to generate cost for opening warehouses.
+    * @return
+    *   An array containing the costs for opening the warehouses, a matrix of distance between the
+    *   delivery points and the warehouses, the positions of the warehouses, the positions of the
+    *   delivery points and a matrix of distances between each pair of warehouses.
     */
   def generateRandomWLP(
     numWarehouse: Int,
@@ -37,8 +55,19 @@ object WarehouseLocationGenerator {
     minXY: Long = 0L,
     maxXY: Long = 100L,
     weightForOpeningWarehouseCost: Long = 3L
-  ): WLPRandomGenerator =
-    new WLPRandomGenerator(numWarehouse, numDelivery, minXY, maxXY, weightForOpeningWarehouseCost)
+  ): (
+    Array[Long],
+    Array[(Long, Long)],
+    Array[(Long, Long)],
+    Array[Array[Long]],
+    Array[Array[Long]]
+  ) = {
+    val gen =
+      new WLPRandomGenerator(numWarehouse, numDelivery, minXY, maxXY, weightForOpeningWarehouseCost)
+    gen.setSeed(_seed)
+    gen.generate
+
+  }
 
   /** Generates data for the WLP. The locations' map is checked with `numTilesOnSide`^2^ square
     * tiles. Warehouses positions are generated uniformly on all tiles.
@@ -55,6 +84,10 @@ object WarehouseLocationGenerator {
     *   Weight used to generate cost for opening warehouses.
     * @param numTilesOnSide
     *   The number of tiles along the grid side. The map is supposed to be square.
+    * @return
+    *   An array containing the costs for opening the warehouses, a matrix of distance between the
+    *   delivery points and the warehouses, the positions of the warehouses, the positions of the
+    *   delivery points and a matrix of distances between each pair of warehouses.
     */
   def generateWLPOnGrid(
     numWarehouse: Int,
@@ -63,14 +96,24 @@ object WarehouseLocationGenerator {
     maxXY: Long = 120L,
     weightForOpeningWarehouseCost: Long = 3L,
     numTilesOnSide: Long = 2L
-  ): WLPOnGrid = new WLPOnGrid(
-    numWarehouse,
-    numDelivery,
-    minXY,
-    maxXY,
-    weightForOpeningWarehouseCost,
-    numTilesOnSide
-  )
+  ): (
+    Array[Long],
+    Array[(Long, Long)],
+    Array[(Long, Long)],
+    Array[Array[Long]],
+    Array[Array[Long]]
+  ) = {
+    val gen = new WLPOnGrid(
+      numWarehouse,
+      numDelivery,
+      minXY,
+      maxXY,
+      weightForOpeningWarehouseCost,
+      numTilesOnSide
+    )
+    gen.setSeed(_seed)
+    gen.generate
+  }
 
   /** Generates random data for WLP. Here, the warehouses are guaranteed to be distant from at least
     * `minDistanceBetweenWarehouses`.
@@ -87,6 +130,10 @@ object WarehouseLocationGenerator {
     *   Upper bound on the coordinates of the points.
     * @param weightForOpeningWarehouseCost
     *   Weight used to generate cost for opening warehouses.
+    * @return
+    *   An array containing the costs for opening the warehouses, a matrix of distance between the
+    *   delivery points and the warehouses, the positions of the warehouses, the positions of the
+    *   delivery points and a matrix of distances between each pair of warehouses.
     */
   def generateWLPWithMinDist(
     numWarehouse: Int,
@@ -95,21 +142,22 @@ object WarehouseLocationGenerator {
     minXY: Long = 0L,
     maxXY: Long = 100L,
     weightForOpeningWarehouseCost: Long = 3L
-  ): WLPMinDistance = new WLPMinDistance(
-    numWarehouse,
-    numDelivery,
-    minDistanceBetweenWarehouses,
-    minXY,
-    maxXY,
-    weightForOpeningWarehouseCost
-  )
-
-  def main(args: Array[String]): Unit = {
-    val gen             = generateWLPOnGrid(15, 30)
-    val (_, w, _, _, _) = gen.generate
-    println(gen.seed)
-    println(w.mkString("\n"))
-
+  ): (
+    Array[Long],
+    Array[(Long, Long)],
+    Array[(Long, Long)],
+    Array[Array[Long]],
+    Array[Array[Long]]
+  ) = {
+    val gen = new WLPMinDistance(
+      numWarehouse,
+      numDelivery,
+      minDistanceBetweenWarehouses,
+      minXY,
+      maxXY,
+      weightForOpeningWarehouseCost
+    )
+    gen.setSeed(_seed)
+    gen.generate
   }
-
 }
