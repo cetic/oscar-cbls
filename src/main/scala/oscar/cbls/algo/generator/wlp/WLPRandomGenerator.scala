@@ -15,7 +15,7 @@ package oscar.cbls.algo.generator.wlp
 
 import scala.util.Random
 
-/** Class used to generate random data for a Warehouse Location Problem *
+/** Helper Class used to generate random data for a Warehouse Location Problem.
   * @param numWarehouse
   *   Number of warehouse to have in the problem.
   * @param numDelivery
@@ -27,7 +27,7 @@ import scala.util.Random
   * @param weightForOpeningWarehouseCost
   *   Weight used to generate cost for opening warehouses.
   */
-class WLPRandomGenerator(
+private[generator] class WLPRandomGenerator(
   numWarehouse: Int,
   numDelivery: Int,
   minXY: Long = 0L,
@@ -83,6 +83,6 @@ class WLPRandomGenerator(
     *   A tuple `(x, y)` such that `xMin <= x <= xMax` and `yMin <= y <= yMax`
     */
   protected def randomPosition(xMin: Long, xMax: Long, yMin: Long, yMax: Long): (Long, Long) =
-    (Random.between(xMin, xMax + 1), Random.between(yMin, yMax + 1))
+    (rng.between(xMin, xMax + 1), rng.between(yMin, yMax + 1))
 
 }

@@ -15,7 +15,7 @@ package oscar.cbls.algo.generator.wlp
 
 import scala.math.{pow, round, sqrt}
 
-/** Abstract class to define a generator of data for Warehouse Location problem
+/** Abstract helper class to define a generator of data for Warehouse Location problem
   *
   * @param numWarehouse
   *   Number of warehouse to have in the problem.
@@ -28,7 +28,7 @@ import scala.math.{pow, round, sqrt}
   * @param weightForOpeningWarehouseCost
   *   Weight used to generate cost for opening warehouses.
   */
-abstract class WLPGenerator(
+private[generator] abstract class WLPGenerator(
   numWarehouse: Int,
   numDelivery: Int,
   minXY: Long = 0L,

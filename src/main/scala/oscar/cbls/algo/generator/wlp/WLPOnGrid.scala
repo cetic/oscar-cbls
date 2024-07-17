@@ -13,7 +13,7 @@
 
 package oscar.cbls.algo.generator.wlp
 
-/** Class which generates random data for the WLP. The locations' map is checked with
+/** Helper class which generates random data for the WLP. The locations' map is checked with
   * `numTilesOnSide`^2^ square tiles. Warehouses positions are generated uniformly on all tiles.
   *
   * @param numWarehouse
@@ -29,7 +29,7 @@ package oscar.cbls.algo.generator.wlp
   * @param numTilesOnSide
   *   The number of tiles along the grid side. The map is supposed to be square.
   */
-class WLPOnGrid(
+private[generator] class WLPOnGrid(
   numWarehouse: Int,
   numDelivery: Int,
   minXY: Long = 0L,

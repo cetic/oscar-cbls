@@ -15,8 +15,8 @@ package oscar.cbls.algo.generator.wlp
 
 import scala.collection.mutable
 
-/** Class which generates random data for the WLP. Here, the warehouses are guaranteed to be distant
-  * from at least `minDistanceBetweenWarehouses`.
+/** Helper class which generates random data for the WLP. Here, the warehouses are guaranteed to be
+  * distant from at least `minDistanceBetweenWarehouses`.
   *
   * @param numWarehouse
   *   Number of warehouse to have in the problem.
@@ -31,7 +31,7 @@ import scala.collection.mutable
   * @param weightForOpeningWarehouseCost
   *   Weight used to generate cost for opening warehouses.
   */
-class WLPMinDistance(
+private[generator] class WLPMinDistance(
   numWarehouse: Int,
   numDelivery: Int,
   minDistanceBetweenWarehouses: Long,
