@@ -27,7 +27,7 @@ import scala.util.Random
   * @param weightForOpeningWarehouseCost
   *   Weight used to generate cost for opening warehouses.
   */
-private[generator] class WLPRandomGenerator(
+class WLPRandomGenerator(
   numWarehouse: Int,
   numDelivery: Int,
   minXY: Long = 0L,

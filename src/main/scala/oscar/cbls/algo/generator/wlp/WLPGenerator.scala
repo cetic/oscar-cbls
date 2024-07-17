@@ -28,7 +28,7 @@ import scala.math.{pow, round, sqrt}
   * @param weightForOpeningWarehouseCost
   *   Weight used to generate cost for opening warehouses.
   */
-private[generator] abstract class WLPGenerator(
+abstract class WLPGenerator(
   numWarehouse: Int,
   numDelivery: Int,
   minXY: Long = 0L,
@@ -76,6 +76,6 @@ private[generator] abstract class WLPGenerator(
     (openingCost, warehousesPositions, deliveryPositions, distanceCosts, warehousesDistances)
   }
 
-  protected def distance(from: (Long, Long), to: (Long, Long)): Long =
+  private[generator] def distance(from: (Long, Long), to: (Long, Long)): Long =
     round(sqrt(pow((from._1 - to._1).toDouble, 2.0) + pow((from._2 - to._2).toDouble, 2.0)))
 }

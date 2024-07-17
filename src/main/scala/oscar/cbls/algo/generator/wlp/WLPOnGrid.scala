@@ -29,7 +29,7 @@ package oscar.cbls.algo.generator.wlp
   * @param numTilesOnSide
   *   The number of tiles along the grid side. The map is supposed to be square.
   */
-private[generator] class WLPOnGrid(
+class WLPOnGrid(
   numWarehouse: Int,
   numDelivery: Int,
   minXY: Long = 0L,

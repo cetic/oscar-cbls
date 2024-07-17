@@ -31,7 +31,7 @@ import scala.collection.mutable
   * @param weightForOpeningWarehouseCost
   *   Weight used to generate cost for opening warehouses.
   */
-private[generator] class WLPMinDistance(
+class WLPMinDistance(
   numWarehouse: Int,
   numDelivery: Int,
   minDistanceBetweenWarehouses: Long,
