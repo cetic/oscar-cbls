@@ -54,7 +54,10 @@ private[generator] class WLPMinDistance(
       var pos: (Long, Long) = (0L, 0L)
       do {
         pos = randomPosition(minXY, maxXY, minXY, maxXY)
-      } while (warehousesPositions.forall(p => distance(p, pos) <= minDistanceBetweenWarehouses))
+      } while (warehousesPositions.exists(p =>
+        distance(p, pos) <=
+          minDistanceBetweenWarehouses
+      ))
       warehousesPositions.append(pos)
     }
 
