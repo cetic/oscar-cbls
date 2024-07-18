@@ -22,6 +22,22 @@ import oscar.cbls.core.search.{
   SearchResult
 }
 
+/** Companion object of the [[Best]] class. */
+object Best {
+
+  /** Creates a Best combinator which selects the best move among the input neighborhoods.
+    *
+    * @param subNeighborhoods
+    *   The Neighborhoods that this combinator handles. Those can be
+    *   [[oscar.cbls.core.search.SimpleNeighborhood]] or other NeighborhoodCombinator.
+    * @param name
+    *   The name of the neighborhood combinator
+    */
+  def apply(subNeighborhoods: List[Neighborhood], name: String = "Best"): Best = {
+    new Best(subNeighborhoods, name)
+  }
+}
+
 /** Combinator which selects the best move among the input neighborhoods.
   *
   * @param subNeighborhoods
