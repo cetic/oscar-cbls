@@ -15,7 +15,7 @@ package oscar.cbls.algo.generator.wlp
 
 import scala.math.{pow, round, sqrt}
 
-/** Abstract helper class to define a generator of data for Warehouse Location problem
+/** Abstract helper class to define a generator of data for Warehouse Location problem.
   *
   * @param numWarehouse
   *   Number of warehouse to have in the problem.
@@ -59,7 +59,7 @@ abstract class WLPGenerator(
     warehousesPositions: Array[(Long, Long)]
   ): Array[Array[Long]]
 
-  /** Generates all the date */
+  /** Generates all the data */
   def generate: (
     Array[Long],
     Array[(Long, Long)],

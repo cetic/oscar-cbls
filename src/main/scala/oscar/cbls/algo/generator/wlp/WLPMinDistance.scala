@@ -23,7 +23,9 @@ import scala.collection.mutable
   * @param numDelivery
   *   Number of delivery points to have in the problem.
   * @param minDistanceBetweenWarehouses
-  *   The minimal distance between two warehouses.
+  *   The minimal distance between two warehouses. Warning: if this distance is to large in relation
+  *   to the `numWarehouse`, generates all the warehouses' positions will be impossible and result
+  *   to an infinite loop.
   * @param minXY
   *   Lower bound on the coordinates of the points.
   * @param maxXY
@@ -54,10 +56,7 @@ class WLPMinDistance(
       var pos: (Long, Long) = (0L, 0L)
       do {
         pos = randomPosition(minXY, maxXY, minXY, maxXY)
-      } while (warehousesPositions.exists(p =>
-        distance(p, pos) <=
-          minDistanceBetweenWarehouses
-      ))
+      } while (warehousesPositions.exists(p => distance(p, pos) <= minDistanceBetweenWarehouses))
       warehousesPositions.append(pos)
     }
 
