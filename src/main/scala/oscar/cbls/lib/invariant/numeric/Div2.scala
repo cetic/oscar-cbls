@@ -20,7 +20,7 @@ import oscar.cbls.core.computation.integer.IntVariable
 object Div2 {
 
   /** Creates a Div2 invariant, which maintains the quotient of two
-    * [[oscar.cbls.core.computation.integer.IntVariable]]..
+    * [[oscar.cbls.core.computation.integer.IntVariable]].
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.

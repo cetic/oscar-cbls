@@ -20,7 +20,7 @@ import oscar.cbls.core.computation.set.SetVariable
 /** The companion object of the [[MaxSet]] class. */
 object MaxSet {
 
-  /** Creates a [[MaxSet]] invariant, which maintains `Max(input)`
+  /** Creates a [[MaxSet]] invariant, which maintains `Max(input)`.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -41,7 +41,7 @@ object MaxSet {
   }
 }
 
-/** Invariant which maintains `Max(input)`
+/** Invariant which maintains `Max(input)`.
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.

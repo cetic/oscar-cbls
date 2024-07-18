@@ -20,7 +20,7 @@ import oscar.cbls.core.computation.integer.IntVariable
 object Abs {
 
   /** Creates an Abs invariant, which maintains the absolute value of an
-    * [[oscar.cbls.core.computation.integer.IntVariable]]..
+    * [[oscar.cbls.core.computation.integer.IntVariable]].
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.

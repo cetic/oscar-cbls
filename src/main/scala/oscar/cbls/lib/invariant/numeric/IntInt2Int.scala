@@ -18,7 +18,7 @@ import oscar.cbls.core.computation.{Invariant, Store}
 
 /** An helper to define an Invariant from a (Long, Long) => Long
   * function. This invariant is not incremental. So it should be use for very simple functions. It
-  * maintains output = fun(a, b)
+  * maintains output = fun(a, b).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.

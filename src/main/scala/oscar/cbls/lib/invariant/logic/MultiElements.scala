@@ -33,7 +33,7 @@ object MultiElements {
     * @param listenedVariablesIndices
     *   A SetVariable containing the indices of the values to return.
     * @param output
-    *   A SetVariable evaluating to `{input(i) | i in listenedVariablesIndices}`
+    *   A SetVariable evaluating to `{input(i) | i in listenedVariablesIndices}`.
     * @param bulkIdentifier
     *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
     *   Invariant listen to vars. Warning:
@@ -65,7 +65,7 @@ object MultiElements {
   * @param listenedVariablesIndices
   *   A SetVariable containing the indices of the values to return.
   * @param output
-  *   A SetVariable evaluating to `{input(i) | i in listenedVariablesIndices}`
+  *   A SetVariable evaluating to `{input(i) | i in listenedVariablesIndices}`.
   * @param bulkIdentifier
   *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
   *   Invariant listen to vars. Warning:

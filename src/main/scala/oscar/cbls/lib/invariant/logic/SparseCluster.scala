@@ -62,7 +62,7 @@ object SparseCluster {
   * @param input
   *   The elements we want to cluster
   * @param output
-  *   An Hashmap such that `output(j) = {i in input.indices | input(i) == j}`
+  *   An Hashmap such that `output(j) = {i in input.indices | input(i) == j}`.
   * @param bulkIdentifier
   *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
   *   Invariant listen to vars. Warning:
