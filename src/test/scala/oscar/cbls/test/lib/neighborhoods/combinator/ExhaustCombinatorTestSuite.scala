@@ -20,7 +20,7 @@ import oscar.cbls.core.computation.objective.Minimize
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.lib.invariant.numeric.{Abs, Minus2, Sum}
-import oscar.cbls.lib.neighborhoods.combinator.Exhaust
+import oscar.cbls.lib.neighborhoods.combinator.{Exhaust, ExhaustBack}
 import oscar.cbls.lib.neighborhoods.{AssignNeighborhood, SwapNeighborhood}
 import oscar.cbls.test.lib.neighborhoods.ToolsForTestingNeighborhood.generateRandomDomain
 
@@ -76,6 +76,28 @@ class ExhaustCombinatorTestSuite extends AnyFunSuite {
     search.doAllMoves(objective)
     search.displayProfiling()
 
+  }
+
+  test("ExhaustBack combinator works as expected") {
+    val (input, domains, objective) = getDataForTest
+
+    val first = SwapNeighborhood(
+      input,
+      selectFirstVariableBehavior = LoopBehavior.best(),
+      selectSecondVariableBehavior = LoopBehavior.best()
+    )
+    val second = AssignNeighborhood(
+      input,
+      domains,
+      selectVariableBehavior = LoopBehavior.best(),
+      selectValueBehavior = LoopBehavior.best()
+    )
+
+    val search = ExhaustBack(first, second)
+    search.verbosityLevel = 3
+    search.profileSearch()
+    search.doAllMoves(objective)
+    search.displayProfiling()
   }
 
 }
