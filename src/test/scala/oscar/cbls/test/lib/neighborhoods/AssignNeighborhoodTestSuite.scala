@@ -20,17 +20,12 @@ import oscar.cbls.core.computation.objective.Minimize
 import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.lib.invariant.numeric.IntInt2Int
 import oscar.cbls.lib.neighborhoods.AssignNeighborhood
+import oscar.cbls.test.lib.neighborhoods.ToolsForTestingNeighborhood.generateRandomDomain
 
 import scala.util.Random
 
 class AssignNeighborhoodTestSuite extends AnyFunSuite {
 
-  private def generateRandomDomain(rng: Random): List[Long] = {
-    val lowerBound = rng.between(-100L, 101L)
-    // The global minimum of the objective function is reached when a & b have their smallest value
-    // To avoid that the smallest value is always the first explored, we shuffle the domain
-    rng.shuffle((lowerBound to lowerBound + 10L).toList)
-  }
 
   private def getTestBasicModel
     : (Array[IntVariable], (IntVariable, Int) => List[Long], Minimize) = {

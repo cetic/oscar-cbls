@@ -21,21 +21,15 @@ import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.lib.invariant.numeric.IntInt2Int
 import oscar.cbls.lib.neighborhoods.AssignNeighborhood
 import oscar.cbls.lib.neighborhoods.combinator.Best
+import oscar.cbls.test.lib.neighborhoods.ToolsForTestingNeighborhood.generateRandomDomain
 
 import scala.util.Random
 
 class BestCombinatorTestSuite extends AnyFunSuite {
 
-  private def generateRandomDomain(rng: Random): List[Long] = {
-    val lowerBound = rng.between(-100L, 101L)
-    // The global minimum of the objective function is reached when a & b have their smallest value
-    // To avoid that the smallest value is always the first explored, we shuffle the domain
-    rng.shuffle((lowerBound to lowerBound + 10L).toList)
-  }
-
   private def getTestBasicModel
     : (IntVariable, IntVariable, IntVariable, (IntVariable, Int) => List[Long], Maximize) = {
-    val seed: Long  = -2495646131951630020L // Random.nextLong()
+    val seed: Long  = Random.nextLong()
     val rng: Random = new Random(seed)
     println(s"\nSeed: $seed")
 
@@ -48,7 +42,7 @@ class BestCombinatorTestSuite extends AnyFunSuite {
     val c: IntVariable        = IntVariable(store, domainC.head, name = Some("C"))
     val middle: IntVariable   = IntVariable(store, 1000L, name = Some(s"($a)^2 + ($b)^2 "))
     val objValue: IntVariable = IntVariable(store, 1000L, name = Some(s"($a)^2 + ($b)^2 + ($c)^2 "))
-    val objective: Maximize = Maximize(objValue)
+    val objective: Maximize   = Maximize(objValue)
     new IntInt2Int(store, a, b, middle, (x, y) => x * x + y * y)
     new IntInt2Int(store, middle, c, objValue, (x, y) => x + y * y)
 
