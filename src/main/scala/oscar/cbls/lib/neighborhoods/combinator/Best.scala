@@ -31,12 +31,13 @@ object Best {
     * @param subNeighborhoods
     *   The Neighborhoods that this combinator handles. Those can be
     *   [[oscar.cbls.core.search.SimpleNeighborhood]] or other NeighborhoodCombinator.
-    * @param name
+    * @param neighborhoodCombinatorName
     *   The name of the neighborhood combinator
     */
-  def apply(subNeighborhoods: List[Neighborhood], name: String = "Best"): Best = {
-    new Best(subNeighborhoods, name)
-  }
+  def apply(
+    subNeighborhoods: List[Neighborhood],
+    neighborhoodCombinatorName: String = "Best"
+  ): Best = new Best(subNeighborhoods, neighborhoodCombinatorName)
 }
 
 /** Combinator which selects the best move among the input neighborhoods.
@@ -44,11 +45,11 @@ object Best {
   * @param subNeighborhoods
   *   The Neighborhoods that this combinator handles. Those can be
   *   [[oscar.cbls.core.search.SimpleNeighborhood]] or other NeighborhoodCombinator.
-  * @param name
+  * @param neighborhoodCombinatorName
   *   The name of the neighborhood combinator
   */
-class Best(override val subNeighborhoods: List[Neighborhood], name: String = "Best")
-    extends NeighborhoodCombinator(name, subNeighborhoods) {
+class Best(subNeighborhoods: List[Neighborhood], neighborhoodCombinatorName: String = "Best")
+    extends NeighborhoodCombinator(neighborhoodCombinatorName, subNeighborhoods) {
 
   override def profileSearch(): Unit = {
     _searchProfilerOpt match {
