@@ -50,7 +50,8 @@ object Exhaust {
 
 /** Combinator which returns the result of the `first` [[oscar.cbls.core.search.Neighborhood]] until
   * it returns [[oscar.cbls.core.search.NoMoveFound]]. It then switches to the `second`
-  * Neighborhood. It does not come back to the first one after the second one is exhausted.
+  * Neighborhood. It does not come back to the first one after the second one is exhausted. This
+  * combinator is stateful.
   *
   * @param first
   *   The first Neighborhood to be exhausted by this combinator. It can be
