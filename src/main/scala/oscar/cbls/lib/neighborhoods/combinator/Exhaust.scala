@@ -44,7 +44,7 @@ object Exhaust {
   def apply(
     first: Neighborhood,
     second: Neighborhood,
-    neighborhoodCombinatorName: String
+    neighborhoodCombinatorName: String = "Exhaust"
   ): Exhaust = new Exhaust(first, second, neighborhoodCombinatorName)
 }
 
