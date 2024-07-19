@@ -14,6 +14,7 @@
 package oscar.cbls.lib.neighborhoods.combinator
 
 import oscar.cbls.core.computation.objective.Objective
+import oscar.cbls.core.search.profiling.{CombinatorProfiler, SelectionProfiler}
 import oscar.cbls.core.search.{
   MoveFound,
   Neighborhood,
@@ -48,6 +49,15 @@ object Best {
   */
 class Best(override val subNeighborhoods: List[Neighborhood], name: String = "Best")
     extends NeighborhoodCombinator(name, subNeighborhoods) {
+
+  override def profileSearch(): Unit = {
+    _searchProfilerOpt match {
+      case None =>
+        subNeighborhoods.foreach(_.profileSearch())
+        _searchProfilerOpt = Some(new SelectionProfiler(this, subNeighborhoods))
+      case _ => ;
+    }
+  }
 
   override protected[this] def exploreCombinator(objective: Objective): SearchResult = {
     // Gets the potential found moves from each neighborhood
