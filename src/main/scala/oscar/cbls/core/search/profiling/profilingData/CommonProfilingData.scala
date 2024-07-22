@@ -65,6 +65,7 @@ private[profiling] class CommonProfilingData extends ProfilingData {
   def cancelLastGain(): Unit = {
     _gain -= _lastCallGain
     _gainIntermediary -= _lastCallGain
+    _lastCallGain = 0L
   }
   def callInc(): Unit = {
     _nbCalls += 1
@@ -89,6 +90,11 @@ private[profiling] class CommonProfilingData extends ProfilingData {
     this._lastCallDurationNano = timeNano
     this._timeSpentNoMoveFoundNano += timeNano
     this._timeSpentNoMoveFoundNanoIntermediary += timeNano
+  }
+  def transferLastCallDurationToNoMoveFound(): Unit = {
+    this._timeSpentMoveFoundNano -= this._lastCallDurationNano
+    this._timeSpentMoveFoundNanoIntermediary -= this._lastCallDurationNano
+    timeSpentNoMoveFoundPlus(this._lastCallDurationNano)
   }
 
   def nbCalls: Long                    = _nbCalls

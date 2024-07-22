@@ -91,6 +91,7 @@ class SearchProfiler(val neighborhood: Neighborhood) {
   def explorationNotSelected(): Unit = {
     commonProfilingData.foundDec()
     commonProfilingData.cancelLastGain()
+    commonProfilingData.transferLastCallDurationToNoMoveFound()
   }
 
   private def gainPerCall: String = {
