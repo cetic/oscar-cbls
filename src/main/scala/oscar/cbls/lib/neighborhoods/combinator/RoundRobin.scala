@@ -39,8 +39,8 @@ object RoundRobin {
     */
   def apply(
     robins: Array[(Neighborhood, Int)],
-    tabu: Int,
-    neighborhoodCombinatorName: String
+    tabu: Int = 1,
+    neighborhoodCombinatorName: String = "RoundRobin"
   ): RoundRobin = new RoundRobin(robins, tabu, neighborhoodCombinatorName)
 }
 
