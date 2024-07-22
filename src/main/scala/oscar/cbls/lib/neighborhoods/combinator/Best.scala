@@ -74,7 +74,7 @@ class Best(subNeighborhoods: List[Neighborhood], neighborhoodCombinatorName: Str
     if (moves.isEmpty) NoMoveFound
     else {
       // By default, the profiler assumes that all the found moves are commited. So all found
-      // moves update the profiler. However, here, only one move will be commited. So we keep
+      // moves update the profiler. However, here, only one move will be committed. So we keep
       // track of the non-selected moves to correct the profiling.
       val nonSelectedNeighborhood: mutable.Queue[Neighborhood] = mutable.Queue()
       // Finds the best move according to the objective.
