@@ -14,6 +14,7 @@
 package oscar.cbls.lib.neighborhoods.combinator
 
 import oscar.cbls.core.computation.objective.Objective
+import oscar.cbls.core.search.profiling.SelectionProfiler
 import oscar.cbls.core.search.{
   MoveFound,
   Neighborhood,
@@ -67,6 +68,15 @@ class RoundRobin(
   private[this] var firstFailedRobinInRow: Int       = -1
   private[this] var currentCycle: Int                = 0
   private[this] val cycleOfLastFail: Array[Int]      = Array.fill(robins.length)(Int.MinValue)
+
+  override def profileSearch(): Unit = {
+    _searchProfilerOpt match {
+      case None =>
+        subNeighborhoods.foreach(_.profileSearch())
+        _searchProfilerOpt = Some(new SelectionProfiler(this, subNeighborhoods))
+      case _ => ;
+    }
+  }
 
   override protected[this] def exploreCombinator(objective: Objective): SearchResult = {
     // While we have not cycle around whole set of failed robins
