@@ -86,7 +86,14 @@ class RoundRobin(
     NoMoveFound
   }
 
-  override def reset(): Unit = super.reset()
+  override def reset(): Unit = {
+    currentRobin = 0
+    nbExplorationOnCurrentRobin = 0
+    firstFailedRobinInRow = -1
+    currentCycle = 0
+    for (i <- cycleOfLastFail.indices) cycleOfLastFail(i) = Int.MinValue
+    super.reset()
+  }
 
   // Method used to select the next robin
   @inline
