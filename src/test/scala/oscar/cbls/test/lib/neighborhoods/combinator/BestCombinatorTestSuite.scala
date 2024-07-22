@@ -29,7 +29,7 @@ class BestCombinatorTestSuite extends AnyFunSuite {
 
   private def getTestBasicModel
     : (IntVariable, IntVariable, IntVariable, (IntVariable, Int) => List[Long], Maximize) = {
-    val seed: Long  = Random.nextLong()
+    val seed: Long  = -2902176506345737487L //Random.nextLong()
     val rng: Random = new Random(seed)
     println(s"\nSeed: $seed")
 
@@ -64,21 +64,21 @@ class BestCombinatorTestSuite extends AnyFunSuite {
       Array(a),
       domains,
       name = "NA",
-      selectVariableBehavior = LoopBehavior.best(),
+      //selectVariableBehavior = LoopBehavior.best(),
       selectValueBehavior = LoopBehavior.best()
     )
     val nB = AssignNeighborhood(
       Array(b),
       domains,
       name = "NB",
-      selectVariableBehavior = LoopBehavior.best(),
+      //selectVariableBehavior = LoopBehavior.best(),
       selectValueBehavior = LoopBehavior.best()
     )
     val nC = AssignNeighborhood(
       Array(c),
       domains,
       name = "NC",
-      selectVariableBehavior = LoopBehavior.best(),
+      //selectVariableBehavior = LoopBehavior.best(),
       selectValueBehavior = LoopBehavior.best()
     )
 
