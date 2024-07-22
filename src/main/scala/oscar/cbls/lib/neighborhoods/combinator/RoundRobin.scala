@@ -15,13 +15,7 @@ package oscar.cbls.lib.neighborhoods.combinator
 
 import oscar.cbls.core.computation.objective.Objective
 import oscar.cbls.core.search.profiling.SelectionProfiler
-import oscar.cbls.core.search.{
-  MoveFound,
-  Neighborhood,
-  NeighborhoodCombinator,
-  NoMoveFound,
-  SearchResult
-}
+import oscar.cbls.core.search._
 
 /** companion object of the [[RoundRobin]] class. */
 object RoundRobin {

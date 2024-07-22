@@ -14,14 +14,8 @@
 package oscar.cbls.lib.neighborhoods.combinator
 
 import oscar.cbls.core.computation.objective.Objective
-import oscar.cbls.core.search.profiling.{CombinatorProfiler, SelectionProfiler}
-import oscar.cbls.core.search.{
-  MoveFound,
-  Neighborhood,
-  NeighborhoodCombinator,
-  NoMoveFound,
-  SearchResult
-}
+import oscar.cbls.core.search._
+import oscar.cbls.core.search.profiling.SelectionProfiler
 
 import scala.collection.mutable
 
