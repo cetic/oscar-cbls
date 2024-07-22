@@ -26,7 +26,7 @@ import scala.annotation.tailrec
 
 object ExhaustBack {
 
-  /** Creates an ExhaustBack combinator returns the result of a
+  /** Creates an ExhaustBack combinator which returns the result of a
     * [[oscar.cbls.core.search.Neighborhood]] until it returns
     * [[oscar.cbls.core.search.NoMoveFound]]. It switches then to the other Neighborhood.
     *
