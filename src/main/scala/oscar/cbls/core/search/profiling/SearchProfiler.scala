@@ -78,20 +78,14 @@ class SearchProfiler(val neighborhood: Neighborhood) {
         commonProfilingData.timeSpentNoMoveFoundPlus(timeSpent)
       case mf: MoveFound =>
         commonProfilingData.foundInc()
-        commonProfilingData.gainPlus(Math.abs(startValue - mf.objAfter()))
         commonProfilingData.timeSpentMoveFoundPlus(timeSpent)
     }
   }
 
-  /** By default, a SearchProfiler assumes that an found move is committed and improve the objective
-    * function. However, some combinators (see [[oscar.cbls.lib.neighborhoods.combinator.Best]]) can
-    * select only one move among several SearchResult. Non-selected moves eventually have no impact
-    * on the objective. So, we can cancel their last gain and are no more count as found.
-    */
-  def explorationNotSelected(): Unit = {
-    commonProfilingData.foundDec()
-    commonProfilingData.cancelLastGain()
-    commonProfilingData.transferLastCallDurationToNoMoveFound()
+  /** Updates gain when a move is taken */
+  def moveCommitted(objAfter: Long): Unit = {
+    commonProfilingData.moveTakenInc()
+    commonProfilingData.gainPlus(Math.abs(startValue - objAfter))
   }
 
   private def gainPerCall: String = {
@@ -125,6 +119,7 @@ class SearchProfiler(val neighborhood: Neighborhood) {
     "Neighborhood",
     "calls",
     "found",
+    "taken",
     "explored",
     "sumGain",
     "sumTime(ms)",
@@ -143,6 +138,7 @@ class SearchProfiler(val neighborhood: Neighborhood) {
       s"$neighborhood",
       s"${commonProfilingData.nbCalls}",
       s"${commonProfilingData.nbFound}",
+      s"${commonProfilingData.moveTaken}",
       nbExplored,
       s"${commonProfilingData.gain}",
       s"${commonProfilingData.timeSpentMillis}",
