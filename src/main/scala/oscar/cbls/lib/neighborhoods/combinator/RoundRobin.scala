@@ -28,7 +28,7 @@ object RoundRobin {
     *   An array of tuples `(n, k)` where `n` is a Neighborhood to be explored and `k` is the number
     *   of times `n` can be explored in a row.
     * @param tabu
-    *   The number of times, a neighborhood cannot be used in a row.
+    *   The number of cycle a neighborhood has to wait to be tried again (after a failure).
     * @param neighborhoodCombinatorName
     *   The name of the neighborhood combinator.
     */
@@ -47,7 +47,7 @@ object RoundRobin {
   *   An array of tuples `(n, k)` where `n` is a Neighborhood to be explored and `k` is the number
   *   of times `n` can be explored in a row.
   * @param tabu
-  *   The number of times, a neighborhood cannot be used in a row.
+  *   The number of cycle a neighborhood has to wait to be tried again (after a failure).
   * @param neighborhoodCombinatorName
   *   The name of the neighborhood combinator.
   */

@@ -22,7 +22,8 @@ object ExhaustBack {
 
   /** Creates an ExhaustBack combinator which returns the result of a
     * [[oscar.cbls.core.search.Neighborhood]] until it returns
-    * [[oscar.cbls.core.search.NoMoveFound]]. It switches then to the other Neighborhood.
+    * [[oscar.cbls.core.search.NoMoveFound]]. It switches then to the other Neighborhood. After
+    * trying all the Neighborhood, the combinator goes back to the first one.
     *
     * @param first
     *   The first Neighborhood to be exhausted by this combinator. It can be
@@ -41,8 +42,9 @@ object ExhaustBack {
 }
 
 /** Combinator which returns the result of a [[oscar.cbls.core.search.Neighborhood]] until it
-  * returns [[oscar.cbls.core.search.NoMoveFound]]. It switches then to the other Neighborhood. This
-  * combinator is stateful.
+  * returns [[oscar.cbls.core.search.NoMoveFound]]. It switches then to the other Neighborhood.
+  * After * trying all the Neighborhood, the combinator goes back to the first one. This combinator
+  * is stateful.
   *
   * @param first
   *   The first Neighborhood to be exhausted by this combinator. It can be
