@@ -52,7 +52,8 @@ abstract class NeighborhoodCombinator(
     * @param objective
     *   The Objective of the search
     * @return
-    *   The search result, either [[oscar.cbls.core.search.MoveFound]] or [[oscar.cbls.core.search.NoMoveFound]]
+    *   The search result, either [[oscar.cbls.core.search.MoveFound]] or
+    *   [[oscar.cbls.core.search.NoMoveFound]]
     */
   protected[this] def exploreCombinator(objective: Objective): SearchResult
 
@@ -62,4 +63,8 @@ abstract class NeighborhoodCombinator(
 
   override def toString: String = this.getClass.getSimpleName
 
+  override protected def profileCommittedMove(move: Move): Unit = {
+    super.profileCommittedMove(move)
+    this.searchProfiler().foreach(_.moveCommitted(move.objAfter()))
+  }
 }
