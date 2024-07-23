@@ -173,7 +173,7 @@ class AssignNeighborhood(
 
         // Check if assigning newVal to currentVar improves the objective
         exploration.checkNeighborWP(objValue =>
-          new AssignMove(currentVar, newVal, objValue, this.name)
+          new AssignMove(currentVar, newVal, objValue, this)
         )
         currentVar := initVal
 

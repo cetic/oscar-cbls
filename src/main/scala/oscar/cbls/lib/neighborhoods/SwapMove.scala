@@ -32,8 +32,8 @@ class SwapMove(
   second: IntVariable,
   objValueAfter: Long,
   override val
-  neighborhoodName: String
-) extends Move(objValueAfter, neighborhoodName) {
+  neighborhood: SwapNeighborhood
+) extends Move(objValueAfter, neighborhood) {
 
   override def commit(): Unit = {
     first :=: second

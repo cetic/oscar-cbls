@@ -25,15 +25,15 @@ import oscar.cbls.core.search.Move
   *   The value to assign to `variable`.
   * @param objValueAfter
   *   The objective value of the neighbor. Used for comparison and validation.
-  * @param neighborhoodName
-  *   The name of the [[oscar.cbls.core.search.Neighborhood]] that generated this Move.
+  * @param neighborhood
+  *  The [[oscar.cbls.core.search.Neighborhood]] that generated this Move.
   */
 class AssignMove(
   variable: IntVariable,
   newValue: Long,
   objValueAfter: Long,
-  override val neighborhoodName: String
-) extends Move(objValueAfter, neighborhoodName) {
+  override val neighborhood: AssignNeighborhood
+) extends Move(objValueAfter, neighborhood) {
 
   override def commit(): Unit = variable := newValue
 

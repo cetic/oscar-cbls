@@ -24,10 +24,10 @@ package oscar.cbls.core.search
   * OscaR.cbls uses the Move to re-apply the modifications to the model and commit them.
   * @param objValueAfter
   *   The objective value of the neighbor. Used for comparison and validation.
-  * @param neighborhoodName
-  *   The name of the [[oscar.cbls.core.search.Neighborhood]] that generated this Move.
+  * @param neighborhood
+  *   The [[oscar.cbls.core.search.Neighborhood]] that generated this Move.
   */
-abstract class Move(objValueAfter: Long, val neighborhoodName: String) {
+abstract class Move(objValueAfter: Long, val neighborhood: Neighborhood) {
 
   /** Applies the modifications of this Move. */
   def commit(): Unit
@@ -35,5 +35,5 @@ abstract class Move(objValueAfter: Long, val neighborhoodName: String) {
   /** Returns the new objective value when applying this Move. */
   def objAfter(): Long = objValueAfter
 
-  override def toString: String = s"$neighborhoodName objValue after $objValueAfter"
+  override def toString: String = s"${neighborhood.name} objValue after $objValueAfter"
 }

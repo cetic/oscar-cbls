@@ -4,7 +4,7 @@ import oscar.cbls.core.computation.objective.Exploration
 import oscar.cbls.core.search._
 
 class DummyMove(_objAfter: Long, simpleNeighborhood: DummySimpleNeighborhood)
-    extends Move(_objAfter, simpleNeighborhood.name) {
+    extends Move(_objAfter, simpleNeighborhood) {
 
   override def commit(): Unit = {}
 
