@@ -44,10 +44,9 @@ class InvTestBench(inv: Invariant, input: Iterable[Variable], randomInit: Boolea
   override def initialPreCondition(state: State): Boolean = true
 
   override def newSut(state: State): Sut = {
-    println(state.mkString(";"))
     if (randomInit)
       state.foreach(_.mkMove())
-    inputVars(0).variable.model.propagate()
+    inv.model.propagate()
     inv
   }
 
