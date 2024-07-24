@@ -58,18 +58,32 @@ class Best(subNeighborhoods: List[Neighborhood], neighborhoodCombinatorName: Str
 
   override protected[this] def exploreCombinator(objective: Objective): SearchResult = {
     // Gets the potential found moves from each neighborhood
-    val moves: List[MoveFound] = subNeighborhoods.flatMap(_.getMove(objective) match {
-      case NoMoveFound  => None
-      case m: MoveFound => Some(m)
-    })
+    val moves: List[(MoveFound, Neighborhood)] = subNeighborhoods.flatMap(n =>
+      n.getMove(objective) match {
+        case NoMoveFound  => None
+        case m: MoveFound => Some((m, n))
+      }
+    )
 
     if (moves.isEmpty) NoMoveFound
     else {
+      // By default, the profiler assumes that all the found moves are commited. So all found
+      // moves update the profiler. However, here, only one move will be committed. So we keep
+      // track of the non-selected moves to correct the profiling.
+      val nonSelectedNeighborhood: mutable.Queue[Neighborhood] = mutable.Queue()
       // Finds the best move according to the objective.
-      val move: MoveFound = moves.reduceLeft((m1, m2) => {
-        if (objective.isValueNewBest(m1.objAfter(), m2.objAfter())) m2
-        else m1
+      val (move: MoveFound, _) = moves.reduceLeft((m1, m2) => {
+        if (objective.isValueNewBest(m1._1.objAfter(), m2._1.objAfter())) {
+          nonSelectedNeighborhood.enqueue(m1._2)
+          m2
+        } else {
+          nonSelectedNeighborhood.enqueue(m2._2)
+          m1
+        }
       })
+      // Corrects the profiling for unselected moves
+      nonSelectedNeighborhood.foreach(_.searchProfiler().foreach(_.explorationNotSelected()))
+
       move
     }
   }
