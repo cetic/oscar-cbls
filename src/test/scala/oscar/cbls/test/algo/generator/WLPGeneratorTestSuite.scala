@@ -37,7 +37,14 @@ class WLPGeneratorTestSuite extends AnyFunSuite with Matchers {
   test("Warehouses are well distributed using grid generator.") {
     WarehouseLocationGenerator.setSeed(Random.nextLong())
     println(s"Seed: ${WarehouseLocationGenerator.seed}")
-    val (_, wp, _, _, _) = WarehouseLocationGenerator.generateWLPOnGrid(8, 40)
+    val (_, wp, _, _, _) = WarehouseLocationGenerator.generateWLPOnGrid(
+      8,
+      40,
+      minXY = 0L,
+      maxXY = 120L,
+      weightForOpeningWarehouseCost = 3L,
+      numTilesOnSide = 2L
+    )
 
     for (i <- wp.indices) {
       i % 4 match {
