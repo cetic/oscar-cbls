@@ -83,17 +83,6 @@ class SearchProfiler(val neighborhood: Neighborhood) {
     }
   }
 
-  /** By default, a SearchProfiler assumes that an found move is committed and improve the objective
-    * function. However, some combinators (see [[oscar.cbls.lib.neighborhoods.combinator.Best]]) can
-    * select only one move among several SearchResult. Non-selected moves eventually have no impact
-    * on the objective. So, we can cancel their last gain and are no more count as found.
-    */
-  def explorationNotSelected(): Unit = {
-    commonProfilingData.foundDec()
-    commonProfilingData.cancelLastGain()
-    commonProfilingData.transferLastCallDurationToNoMoveFound()
-  }
-
   private def gainPerCall: String = {
     if (commonProfilingData.nbCalls == 0L) "NA"
     else s"${commonProfilingData.gain / commonProfilingData.nbCalls}"
