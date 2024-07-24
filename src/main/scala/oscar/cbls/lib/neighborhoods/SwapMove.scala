@@ -24,7 +24,7 @@ import oscar.cbls.core.search.Move
   *   The second variable to swap.
   * @param objValueAfter
   *   The objective value of the neighbor. Used for comparison and validation.
-  * @param neighborhood
+  * @param neighborhoodName
   *   The name of the [[oscar.cbls.core.search.Neighborhood]] that generated this Move.
   */
 class SwapMove(
