@@ -36,8 +36,8 @@ import oscar.cbls.core.propagation._
   * @param name
   *   The (optional) name of the Invariant.
   */
-abstract class Invariant(val propagationStructure: Store, name: Option[String] = None)
-    extends PropagationElement(propagationStructure) {
+abstract class Invariant(val model: Store, name: Option[String] = None)
+    extends PropagationElement(model) {
 
   /** Registers an IncredibleBulk (a bulk/set of [[oscar.cbls.core.computation.Variable]]) as
     * listened by this Invariant
