@@ -5,15 +5,12 @@ import org.scalacheck.commands.Commands
 import org.scalacheck.{Gen, Prop}
 
 object InvTestBench {
-  def apply(inv : Invariant,
-    input : Iterable[Variable],
-    randomInit : Boolean = true) : InvTestBench = {
+  def apply(inv: Invariant, input: Iterable[Variable], randomInit: Boolean = true): InvTestBench = {
 
-    new InvTestBench(inv,input,randomInit)
+    new InvTestBench(inv, input, randomInit)
 
   }
 }
-
 
 class InvTestBench(inv: Invariant, input: Iterable[Variable], randomInit: Boolean)
     extends Commands {
@@ -24,7 +21,7 @@ class InvTestBench(inv: Invariant, input: Iterable[Variable], randomInit: Boolea
 
   type State = Array[VariableMove]
 
-  def test() : Unit = {
+  def test(): Unit = {
     this.property().check(org.scalacheck.Test.Parameters.default.withMinSuccessfulTests(500))
   }
 
