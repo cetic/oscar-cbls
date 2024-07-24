@@ -51,12 +51,14 @@ class WLPMinDistance(
   override def generateWarehousesPositions: Array[(Long, Long)] = {
     val warehousesPositions: mutable.Queue[(Long, Long)] =
       mutable.Queue[(Long, Long)](randomPosition(minXY, maxXY, minXY, maxXY))
-
     for (_ <- 1 until numWarehouse) {
       var pos: (Long, Long) = (0L, 0L)
+      var tries: Int        = 0
       do {
         pos = randomPosition(minXY, maxXY, minXY, maxXY)
-      } while (warehousesPositions.exists(p => distance(p, pos) <= minDistanceBetweenWarehouses))
+        tries += 1
+      } while (warehousesPositions.exists(p => distance(p, pos) <= minDistanceBetweenWarehouses)
+        && tries < 10000)
       warehousesPositions.append(pos)
     }
 
