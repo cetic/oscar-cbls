@@ -31,14 +31,14 @@ class SetTestVariable(override val variable: SetVariable)
     }
   }
 
-  private def generateAddedValues(): Gen[List[Int]] = {
-
-    val generateValue: Gen[Int] = (variable.domain match {
+  private val generateDomainValue : Gen[Int] = (variable.domain match {
       case None             => arbitrary[Int]
       case Some((min, max)) => Gen.choose(min.toInt, max.toInt)
     })
 
-    val generateNotInValue : Gen[Int] = for (v <- generateValue) yield getNextNotInValue(v)
+  private def generateAddedValues(): Gen[List[Int]] = {
+
+    val generateNotInValue : Gen[Int] = for (v <- generateDomainValue) yield getNextNotInValue(v)
 
     Gen.nonEmptyListOf(generateNotInValue)
   }
@@ -46,9 +46,14 @@ class SetTestVariable(override val variable: SetVariable)
   private def generateRemovedValues(): Gen[List[Int]] =
     Gen.nonEmptyListOf(Gen.oneOf(variable.value()))
 
+  override def generateAssignMove() : Gen[VariableMove] = for (
+      l <- Gen.listOf(generateDomainValue)) yield SetAssignMovement(this,Set.from(l))
+
+
+
   override def generateMove(): Gen[VariableMove] = {
     val onlyAdd = for { add <- generateAddedValues() } yield SetMovement(this, add, List())
-    if (variable.value().isEmpty) {
+    val addRemoveGenMove : Gen[VariableMove] = if (variable.value().isEmpty) {
       onlyAdd
     } else {
       val onlyRemove = for { rem <- generateRemovedValues() } yield SetMovement(this, List(), rem)
@@ -62,6 +67,7 @@ class SetTestVariable(override val variable: SetVariable)
         Gen.oneOf(onlyAdd, onlyRemove, both)
       }
     }
+    Gen.oneOf(generateAssignMove(),addRemoveGenMove)
   }
 
   override def toString: String = {
@@ -77,5 +83,12 @@ case class SetMovement(testVar: SetTestVariable, addedValues: List[Int], removed
     for (v <- removedValues)
       testVar.variable :-= v
     testVar.model.propagate()
+  }
+}
+
+case class SetAssignMovement(testVar : SetTestVariable,newValues : Set[Int]) extends
+    VariableMove(testVar) {
+  override def mkMove(): Unit = {
+    testVar.variable := newValues
   }
 }

@@ -18,6 +18,8 @@ class IntTestVariable(override val variable: IntVariable)
     }
   }
 
+  override def generateAssignMove() : Gen[VariableMove] = generateMove()
+
   override def toString: String = {
     s"IntVariable(${variable})"
   }

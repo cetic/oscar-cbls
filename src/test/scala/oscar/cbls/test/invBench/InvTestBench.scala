@@ -38,13 +38,13 @@ class InvTestBench(inv: Invariant, input: Iterable[Variable], randomInit: Boolea
   }
 
   override def genInitialState: Gen[State] = {
-    val toto = Gen.const(inputVars.map(_.generateMove().sample.get))
-    toto
+    Gen.const(inputVars.map(_.generateMove().sample.get))
   }
 
   override def initialPreCondition(state: State): Boolean = true
 
   override def newSut(state: State): Sut = {
+    println(state.mkString(";"))
     if (randomInit)
       state.foreach(_.mkMove())
     inputVars(0).variable.model.propagate()

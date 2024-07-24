@@ -10,6 +10,7 @@ abstract class TestVariable(val variable: Variable) {
 
   def generateMove(): Gen[VariableMove]
 
+  def generateAssignMove() : Gen[VariableMove]
 }
 
 object TestVariable {
