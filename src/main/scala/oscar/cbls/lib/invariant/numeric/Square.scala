@@ -27,9 +27,9 @@ object Square {
     * @param input
     *   The listened IntVariable.
     * @param output
-    *   The IntVariable which contains input&#94;2.
+    *   The IntVariable evaluating to `input^2`.
     * @param name
-    *   The name (optional) of your Invariant.
+    *   The (optional) name of the Invariant.
     */
   def apply(
     model: Store,
@@ -41,7 +41,7 @@ object Square {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains the square of an
+/** Invariant that maintains the square of an
   * [[oscar.cbls.core.computation.integer.IntVariable]]
   *
   * @param model
@@ -49,9 +49,9 @@ object Square {
   * @param input
   *   The listened IntVariable.
   * @param output
-  *   The IntVariable which contains (input)^2^.
+  *   The IntVariable evaluating to (input)^2^.
   * @param name
-  *   The name (optional) of your Invariant.
+  *   The (optional) name of the Invariant.
   */
 class Square(model: Store, input: IntVariable, output: IntVariable, name: Option[String] = None)
     extends Int2Int(model, input, output, (x: Long) => x * x, false, name) {}

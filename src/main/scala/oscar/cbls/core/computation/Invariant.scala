@@ -34,7 +34,7 @@ import oscar.cbls.core.propagation._
   * @param propagationStructure
   *   The propagation structure to which the element is attached
   * @param name
-  *   The name (optional) of your Invariant
+  *   The (optional) name of the Invariant.
   */
 abstract class Invariant(propagationStructure: Store, name: Option[String] = None)
     extends PropagationElement(propagationStructure) {

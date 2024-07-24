@@ -19,7 +19,8 @@ import oscar.cbls.core.computation.integer.IntVariable
 /** The companion object of [[Minus2]] class. */
 object Minus2 {
 
-  /** Creates a Minus2 invariant.
+  /** Creates a Minus2 invariant, which maintains the difference of two
+    * [[oscar.cbls.core.computation.integer.IntVariable]].
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -28,9 +29,9 @@ object Minus2 {
     * @param b
     *   The second parameter of the function.
     * @param output
-    *   The IntVariable which contains a - b.
+    *   The IntVariable evaluating to `a - b`.
     * @param name
-    *   The name (optional) of your Invariant.
+    *   The (optional) name of the Invariant.
     */
   def apply(
     model: Store,
@@ -43,7 +44,7 @@ object Minus2 {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains the difference of two
+/** Invariant which maintains the difference of two
   * [[oscar.cbls.core.computation.integer.IntVariable]].
   *
   * @param model
@@ -53,9 +54,9 @@ object Minus2 {
   * @param b
   *   The second parameter of the function.
   * @param output
-  *   The IntVariable which contains a - b.
+  *   The IntVariable evaluating to a - b.
   * @param name
-  *   The name (optional) of your Invariant.
+  *   The (optional) name of the Invariant.
   */
 class Minus2(
   model: Store,

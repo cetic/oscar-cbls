@@ -13,9 +13,9 @@
 
 package oscar.cbls.lib.invariant.numeric
 
-import oscar.cbls.core.computation.{Invariant, Store}
 import oscar.cbls.core.computation.integer.{IntConstant, IntVariable}
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
+import oscar.cbls.core.computation.{Invariant, Store}
 
 /** Companion object of the [[ProdConst]] class. */
 object ProdConst {
@@ -45,7 +45,7 @@ object ProdConst {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains `Prod(input(i) | i in`
+/** Invariant that maintains `Prod(input(i) | i in`
   * `listenedValuesIndices)`. Update is in O(1).
   *
   * @param model

@@ -27,7 +27,7 @@ object IntVariable {
     * @param isConstant
     *   If the variable is a constant
     * @param name
-    *   The name (optional) of your Variable
+    *   The (optional) name of the Variable.
     */
   def apply(
     model: Store,
@@ -48,7 +48,7 @@ object IntVariable {
   * @param isConstant
   *   If the variable is a constant
   * @param name
-  *   The name (optional) of your Variable
+  *   The (optional) name of the Variable.
   */
 class IntVariable(
   model: Store,
@@ -89,7 +89,6 @@ class IntVariable(
   }
 
   /** Change the newValue of this variable and schedule it for propagation */
-  @inline
   protected def setValue(value: Long): Unit = {
     if (value != _pendingValue) {
       _pendingValue = value

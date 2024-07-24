@@ -20,7 +20,8 @@ import oscar.cbls.lib.invariant.numeric.IntInt2Int
 /** Companion object of [[Min2]] class. */
 object Min2 {
 
-  /** Creates a Min2 invariant.
+  /** Creates a Min2 invariant, which maintains the minimum of two
+    * [[oscar.cbls.core.computation.integer.IntVariable]].
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -29,9 +30,9 @@ object Min2 {
     * @param b
     *   The second parameter of the function.
     * @param output
-    *   The IntVariable which contains min(a, b).
+    *   The IntVariable evaluating to `min(a, b)`.
     * @param name
-    *   The name (optional) of your Invariant.
+    *   The (optional) name of the Invariant.
     */
   def apply(
     model: Store,
@@ -44,7 +45,7 @@ object Min2 {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains the minimum of two
+/** Invariant which maintains the minimum of two
   * [[oscar.cbls.core.computation.integer.IntVariable]].
   *
   * @param model
@@ -54,9 +55,9 @@ object Min2 {
   * @param b
   *   The second parameter of the function.
   * @param output
-  *   The IntVariable which contains min(a, b).
+  *   The IntVariable evaluating to `min(a, b)`.
   * @param name
-  *   The name (optional) of your Invariant.
+  *   The (optional) name of the Invariant.
   */
 class Min2(
   model: Store,

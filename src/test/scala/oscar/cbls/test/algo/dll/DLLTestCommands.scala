@@ -69,7 +69,7 @@ case class DllTestStruct(dll: DoublyLinkedList[Int], var l: List[Int]) {
     l = l1 ::: l2.tail
   }
 
-  def dropAll() = {
+  def dropAll(): Unit = {
     dll.dropAll()
     l = Nil
     containerList = Nil
@@ -239,7 +239,7 @@ object DLLTestCommands extends Commands {
 
   case object RemoveEnd extends RemoveOperation {
     override def run(sut: Sut): Result = {
-      sut.removeEnd
+      sut.removeEnd()
       sut
     }
   }
@@ -247,7 +247,7 @@ object DLLTestCommands extends Commands {
   case object RemoveStart extends RemoveOperation {
 
     override def run(sut: Sut): Result = {
-      sut.removeStart
+      sut.removeStart()
       sut
     }
 

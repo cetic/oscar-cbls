@@ -19,18 +19,19 @@ import oscar.cbls.core.computation.integer.IntVariable
 /** Companion object of [[Div2]] class. */
 object Div2 {
 
-  /** Creates a Div2 invariant.
+  /** Creates a Div2 invariant, which maintains the quotient of two
+    * [[oscar.cbls.core.computation.integer.IntVariable]].
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param a
     *   The first parameter of the function.
     * @param b
-    *   The second parameter of the function. Don't set b to 0.
+    *   The second parameter of the function. Don't set `b` to `0`.
     * @param output
-    *   The IntVariable which contains a / b.
+    *   The IntVariable evaluating to `a / b`.
     * @param name
-    *   The name (optional) of your Invariant.
+    *   The (optional) name of the Invariant.
     */
   def apply(
     model: Store,
@@ -43,7 +44,7 @@ object Div2 {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] which maintains the quotient of two
+/** Invariant which maintains the quotient of two
   * [[oscar.cbls.core.computation.integer.IntVariable]].
   *
   * @param model
@@ -53,9 +54,9 @@ object Div2 {
   * @param b
   *   The second parameter of the function. Don't set b to 0.
   * @param output
-  *   The IntVariable which contains a / b.
+  *   The IntVariable evaluating to a / b.
   * @param name
-  *   The name (optional) of your Invariant.
+  *   The (optional) name of the Invariant.
   */
 class Div2(
   model: Store,

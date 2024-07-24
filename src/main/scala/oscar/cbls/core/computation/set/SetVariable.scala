@@ -27,7 +27,7 @@ object SetVariable {
     * @param isConstant
     *   Whether the variable is a constant or not
     * @param name
-    *   The name (optional) of this variable
+    *   The (optional) name of this variable
     */
   def apply(
     model: Store,
@@ -49,7 +49,7 @@ object SetVariable {
   * @param isConstant
   *   Whether the variable is a constant or not
   * @param name
-  *   The name (optional) of this variable
+  *   The (optional) name of this variable
   */
 class SetVariable(
   model: Store,
@@ -107,7 +107,6 @@ class SetVariable(
   def :-=(i: Int): Unit = remove(i)
 
   /** Changes the value of this variable and schedules it for propagation. */
-  @inline
   protected def setValue(value: Set[Int]): Unit = {
     if (value != _pendingValue) {
       addedValues = None
@@ -123,7 +122,6 @@ class SetVariable(
     )
 
   /** Adds the given element to this set variable, if not already present. */
-  @inline
   protected def add(i: Int): Unit = {
     if (!_pendingValue.contains(i)) {
       (addedValues, removedValues) match {
@@ -139,7 +137,6 @@ class SetVariable(
   }
 
   /** Removes the given element from this set variable, if present. */
-  @inline
   protected def remove(i: Int): Unit = {
     if (_pendingValue.contains(i)) {
       (addedValues, removedValues) match {

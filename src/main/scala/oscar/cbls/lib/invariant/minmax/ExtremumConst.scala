@@ -14,13 +14,13 @@
 package oscar.cbls.lib.invariant.minmax
 
 import oscar.cbls.algo.heap.BinaryHeapWithMoveIntItem
-import oscar.cbls.core.computation.{Invariant, Store}
 import oscar.cbls.core.computation.integer.{IntConstant, IntVariable}
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
+import oscar.cbls.core.computation.{Invariant, Store}
 
 import scala.collection.mutable
 
-/** Abstract [[oscar.cbls.core.computation.Invariant]] that maintains Extremum{input(i) | i in
+/** Abstract Invariant which maintains Extremum{input(i) | i in
   * listenedVariablesIndices}. Exact ordering is specified by implementing abstract method of the
   * class. This invariant is lazy and maintains a todo list of postponed updates. Update is in O
   * (log(n)) in worst case. If the update does not impact the output, it is postponed in O(1).
@@ -36,13 +36,13 @@ import scala.collection.mutable
   *   A SetVariable containing the indices of the input variables to be observed to calculate the
   *   extremum.
   * @param output
-  *   The output IntVariable.
+  *   The output IntVariable evaluating to `Extremum(input(i) | i in listenedVariablesIndices)`.
   * @param default
   *   The default value of the extremum.
   * @param maxBacklog
   *   The maximum number of postponed updates that doesn't affect the extremum.
   * @param name
-  *   The name (optional) of your Invariant
+  *   The (optional) name of the Invariant.
   */
 abstract class ExtremumConst(
   model: Store,
@@ -81,7 +81,6 @@ abstract class ExtremumConst(
 
   protected def notImpactingExtremum(newValue: IntConstant): Boolean
 
-  @inline
   override def notifySetChanges(
     setVariable: SetVariable,
     index: Int,
@@ -115,7 +114,6 @@ abstract class ExtremumConst(
     }
   }
 
-  @inline
   private[this] def updateFromHeap(): Unit = {
     h.getFirst match {
       case Some(i) =>
@@ -124,7 +122,7 @@ abstract class ExtremumConst(
     }
   }
 
-  @inline
+  // updates the extremum when an additional IntConstant must be used
   private[this] def notifyInsertOn(set: SetVariable, index: Int): Unit = {
     assert(set == listenedValuesIndices)
     if (consideredValue(index)) {
@@ -147,7 +145,7 @@ abstract class ExtremumConst(
     }
   }
 
-  @inline
+  // updates product when an IntConstant is not used anymore
   private[this] def notifyDeleteOn(set: SetVariable, index: Int): Unit = {
     assert(set == listenedValuesIndices)
     if (!consideredValue(index)) {
@@ -172,7 +170,6 @@ abstract class ExtremumConst(
     }
   }
 
-  @inline
   private[this] def putIntoBacklog(condValue: Int): Unit = {
     if (!isBacklogged(condValue)) {
       backlog = backlog :+ condValue
@@ -184,7 +181,6 @@ abstract class ExtremumConst(
   /** Remove from backlog all the heads that was processed and process values to reduce the size if
     * the backlog's length is bigger than maxBacklog
     */
-  @inline
   private[this] def trimBacklog(): Unit = {
     while (backlog.nonEmpty && (!isBacklogged(backlog.head) || backlogSize > maxBacklog)) {
       val condValue = backlog.dequeue()
@@ -194,7 +190,6 @@ abstract class ExtremumConst(
   }
 
   /** Empty the backlog */
-  @inline
   private[this] def processBacklog(): Unit = {
     while (backlog.nonEmpty) {
       val condValue = backlog.dequeue()
@@ -208,7 +203,6 @@ abstract class ExtremumConst(
     * @param condValue
     *   Index put in the backlog previously
     */
-  @inline
   private[this] def processValueFromBacklog(condValue: Int): Unit = {
     if (consideredValue(condValue)) {
       // When this method is called, the only thing we can do with a considered value is remove it.

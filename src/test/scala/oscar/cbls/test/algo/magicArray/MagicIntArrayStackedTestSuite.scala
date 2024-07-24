@@ -251,7 +251,7 @@ class MagicIntArrayStackedTestSuite
       for (i <- 0 until size) witnessArrays(currentLevel)(i) = witnessArrays(currentLevel - 1)(i)
     }
 
-    private def popLevel(dropChanges: Boolean) = {
+    private def popLevel(dropChanges: Boolean): Unit = {
       magicArray.popLevel(dropChanges)
       currentLevel -= 1
       if (!dropChanges) {

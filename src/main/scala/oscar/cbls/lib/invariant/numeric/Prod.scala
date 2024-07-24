@@ -13,15 +13,15 @@
 
 package oscar.cbls.lib.invariant.numeric
 
-import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, Store}
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
+import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, Store}
 
 /** Companion object of the [[Prod]] class. */
 object Prod {
 
   /** Creates a `Prod` invariant, which maintains `Prod(input(i) | i in listenedVariablesIndices)`,
-    * * where `input` is an array of IntVariables.
+    * where `input` is an array of IntVariables.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -33,7 +33,7 @@ object Prod {
     *   The output variable evaluating to `Prod(input(i) | i in listenedVariablesIndices)`.
     * @param bulkIdentifier
     *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-    *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+    *   Invariant listen to vars. Warning:
     *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
     *   Be sure to use the same one if you're referencing the same variables.
     * @param name
@@ -51,7 +51,7 @@ object Prod {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains `Prod(input(i) | i in`
+/** Invariant that maintains `Prod(input(i) | i in`
   * `listenedVariablesIndices)`. Update is in O(1).
   *
   * @param model
@@ -64,7 +64,7 @@ object Prod {
   *   The output variable evaluating to `Prod(input(i) | i in listenedVariablesIndices)`.
   * @param bulkIdentifier
   *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-  *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+  *   Invariant listen to vars. Warning:
   *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
   *   sure to use the same one if you're referencing the same variables.
   * @param name

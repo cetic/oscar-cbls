@@ -14,32 +14,32 @@
 package oscar.cbls.lib.invariant.minmax
 
 import oscar.cbls.algo.heap.BinaryHeapWithMoveIntItem
-import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, Store}
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
+import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, Store}
 
-/** Abstract [[oscar.cbls.core.computation.Invariant]] that maintains Extremum{input(i) | i in
-  * listenedVariablesIndices}. Exact ordering is specified by implementing abstract method of the
+/** Abstract Invariant which maintains `Extremum{input(i) | i in`
+  * `listenedVariablesIndices}`. Exact ordering is specified by implementing abstract method of the
   * class. Update is in O(log(n)).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   The elements on which to compute the extremum.
+  *   An array of variable on which to compute the extremum.
   * @param listenedVariablesIndices
-  *   A SetVariable containing the indices of the input variables to be listened to calculate
-  *   the extremum.
+  *   A SetVariable containing the indices of the input variables to be listened to calculate the
+  *   extremum.
   * @param output
-  *   The output IntVariable containing Extremum(input(i) | i in listenedVariablesIndices).
+  *   The output IntVariable evaluating to `Extremum(input(i) | i in listenedVariablesIndices)`.
   * @param default
   *   The default value of the extremum.
   * @param bulkIdentifier
   *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-  *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+  *   Invariant listen to vars. Warning:
   *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
   *   sure to use the same one if you're referencing the same variables.
   * @param name
-  *   The name (optional) of your Invariant.
+  *   The (optional) name of the Invariant.
   */
 abstract class Extremum(
   model: Store,
@@ -83,7 +83,6 @@ abstract class Extremum(
 
   protected def ord(v: IntVariable): Long
 
-  @inline
   override def notifyIntChanges(
     intVariable: IntVariable,
     index: Int,
@@ -94,7 +93,6 @@ abstract class Extremum(
     output := input(h.getFirst.get).value() // The extremum has possibly change. We update it
   }
 
-  @inline
   override def notifySetChanges(
     setVariable: SetVariable,
     index: Int,
@@ -130,7 +128,7 @@ abstract class Extremum(
     }
   }
 
-  @inline
+  // updates the extremum when an additional IntVariable must be used
   private[this] def notifyInsertOn(set: SetVariable, index: Int): Unit = {
     assert(set == listenedVariablesIndices)
 
@@ -139,7 +137,7 @@ abstract class Extremum(
     output := input(h.getFirst.get).value()
   }
 
-  @inline
+  // updates the extremum when an IntVariable is not used anymore
   private[this] def notifyDeleteOn(set: SetVariable, index: Int): Unit = {
     assert(set == listenedVariablesIndices)
 

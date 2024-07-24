@@ -13,13 +13,15 @@
 
 package oscar.cbls.lib.invariant.logic
 
-import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, Store}
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
+import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, Store}
 
 /** Companion object of the [[Element]] class. */
 object Element {
 
-  /** Creates an Element invariant.
+  /** Creates an Element invariant, which maintains `input(index)` where input is an [[scala.Array]]
+    * of [[oscar.cbls.core.computation.integer.IntVariable]] and index is an
+    * [[oscar.cbls.core.computation.integer.IntVariable]] . Update is in O(1).
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -28,14 +30,14 @@ object Element {
     * @param index
     *   An IntVariable pointing to one of the input values.
     * @param output
-    *   The IntVariable which contains input(index).
+    *   The IntVariable evaluating to `input(index)`.
     * @param bulkIdentifier
     *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-    *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+    *   Invariant listen to vars. Warning:
     *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
     *   Be sure to use the same one if you're referencing the same variables.
     * @param name
-    *   The name (optional) of your Invariant.
+    *   The (optional) name of the Invariant.
     */
   def apply(
     model: Store,
@@ -49,7 +51,7 @@ object Element {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains input(index) where input is an
+/** Invariant which maintains `input(index)` where input is an
   * [[scala.Array]] of [[oscar.cbls.core.computation.integer.IntVariable]] and index is an
   * [[oscar.cbls.core.computation.integer.IntVariable]] . Update is in O(1).
   *
@@ -60,14 +62,14 @@ object Element {
   * @param index
   *   An IntVariable pointing to one of the input values.
   * @param output
-  *   The IntVariable which contains input(index).
+  *   The IntVariable evaluating to `input(index)`.
   * @param bulkIdentifier
   *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-  *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+  *   Invariant listen to vars. Warning:
   *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
   *   sure to use the same one if you're referencing the same variables.
   * @param name
-  *   The name (optional) of your Invariant.
+  *   The (optional) name of the Invariant.
   */
 class Element(
   model: Store,

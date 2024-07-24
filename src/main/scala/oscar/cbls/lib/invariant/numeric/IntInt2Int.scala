@@ -13,12 +13,12 @@
 
 package oscar.cbls.lib.invariant.numeric
 
-import oscar.cbls.core.computation.{Invariant, Store}
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
+import oscar.cbls.core.computation.{Invariant, Store}
 
-/** An helper to define an [[oscar.cbls.core.computation.Invariant]] from a (Long, Long) => Long
- * function. This invariant is not
-  * incremental. So it should be use for very simple functions. It maintans output = fun(left, right
+/** An helper to define an Invariant from a (Long, Long) => Long
+  * function. This invariant is not incremental. So it should be use for very simple functions. It
+  * maintains output = fun(a, b).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -27,11 +27,11 @@ import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
   * @param b
   *   The second parameter of the function.
   * @param output
-  *   The IntVariable which contains fun(a, b).
+  *   The IntVariable evaluating to fun(a, b).
   * @param fun
   *   The function to maintain. It is supposed not to listen to any variable of the model.
   * @param name
-  *   The name (optional) of your Invariant.
+  *   The (optional) name of the Invariant.
   */
 class IntInt2Int(
   model: Store,
@@ -49,7 +49,6 @@ class IntInt2Int(
   output.setDefiningInvariant(this)
   output := fun(a.value(), b.value())
 
-  @inline
   override def notifyIntChanges(
     intVariable: IntVariable,
     contextualVarIndex: Int,

@@ -20,16 +20,16 @@ import oscar.cbls.core.computation.set.SetVariable
 /** The companion object of the [[MaxSet]] class. */
 object MaxSet {
 
-  /** Creates a [[MaxSet]] invariant.
+  /** Creates a [[MaxSet]] invariant, which maintains `Max(input)`.
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
     *   The set of integer on which to compute the maximum.
     * @param output
-    *   An IntVariable containing the maximum of the input set.
+    *   An IntVariable evaluating to the maximum of the input set.
     * @param name
-    *   The name (optional) of your Invariant.
+    *   The (optional) name of the Invariant.
     */
   def apply(
     model: Store,
@@ -41,16 +41,16 @@ object MaxSet {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains Max(input)
+/** Invariant which maintains `Max(input)`.
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
   *   The set of integer on which to compute the maximum.
   * @param output
-  *   An IntVariable containing the maximum of the input set.
+  *   An IntVariable evaluating to the maximum of the input set.
   * @param name
-  *   The name (optional) of your Invariant.
+  *   The (optional) name of the Invariant.
   */
 class MaxSet(model: Store, input: SetVariable, output: IntVariable, name: Option[String] = None)
     extends ExtremumSet(model, input, output, Int.MinValue, name) {

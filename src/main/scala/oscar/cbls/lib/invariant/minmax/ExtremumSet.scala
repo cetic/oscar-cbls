@@ -13,11 +13,11 @@
 
 package oscar.cbls.lib.invariant.minmax
 
-import oscar.cbls.core.computation.{Invariant, Store}
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
+import oscar.cbls.core.computation.{Invariant, Store}
 
-/** An abstract [[oscar.cbls.core.computation.Invariant]] that maintains Extremum(input).
+/** An abstract Invariant which maintains `Extremum(input)`.
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -28,7 +28,7 @@ import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
   * @param default
   *   The default value of the extremum.
   * @param name
-  *   The name (optional) of your Invariant
+  *   The (optional) name of the Invariant.
   */
 abstract class ExtremumSet(
   model: Store,
@@ -49,7 +49,6 @@ abstract class ExtremumSet(
 
   performPropagation()
 
-  @inline
   override def notifySetChanges(
     setVariable: SetVariable,
     index: Int,
@@ -85,13 +84,13 @@ abstract class ExtremumSet(
     }
   }
 
-  @inline
+  // updates the extremum when an additional integer must be used
   private[this] def notifyInsertOn(value: Int): Unit = {
     if (wasEmpty || (!this.isScheduled && better(value, output.pendingValue))) output := value
     wasEmpty = false
   }
 
-  @inline
+  // updates product when an IntConstant is not used anymore
   private[this] def notifyDeleteOn(value: Int, newValue: Set[Int]): Unit = {
     if (newValue.isEmpty) {
       wasEmpty = true

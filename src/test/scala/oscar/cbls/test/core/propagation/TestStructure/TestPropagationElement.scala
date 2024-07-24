@@ -1,6 +1,5 @@
 package oscar.cbls.core.propagation
 
-
 /** A propagation element to test the propagation structure.
   *
   * @param structure
@@ -22,16 +21,18 @@ abstract class TestPropagationElement(structure: TestPropagationStructure)
 
   protected[this] var dynamicallyListeningElement: List[TestPropagationElement] = List()
 
-  def staticGraphIsNull: Boolean = staticallyListenedElements == null && staticallyListeningElements == null
+  def staticGraphIsNull: Boolean =
+    staticallyListenedElements == null && staticallyListeningElements == null
 
   def isOutput: Boolean = staticallyListeningElements.isEmpty
 
   def isInput: Boolean = staticallyListenedElements.isEmpty
 
-  def validateLayer: Unit = {
+  def validateLayer(): Unit = {
     assert(
       theoreticalLayer == layer,
-      s"On $name: The layer computed by the layer computing algorithm is not coherent with the layer computed by construction (theoreticalLayer : $theoreticalLayer, algorithm layer : $layer)"
+      s"On $name: The layer computed by the layer computing algorithm is not coherent with the layer " +
+        s"computed by construction (theoreticalLayer : $theoreticalLayer, algorithm layer : $layer)"
     )
   }
 
@@ -100,7 +101,7 @@ abstract class TestPropagationElement(structure: TestPropagationStructure)
     }
   }
 
-  def checkUpdate: Unit = {
+  def checkUpdate(): Unit = {
     if (updateRequiredThisPropagation) {
       if (debugLevel > 1 || (debugLevel == 1 && structure.lastPropagationWasTotal))
         assert(
@@ -114,16 +115,19 @@ abstract class TestPropagationElement(structure: TestPropagationStructure)
         )
       assert(
         updateRequired,
-        "Problem in the TestPropagationStructure : an update was required in this propagation even if no update where required at all"
+        "Problem in the TestPropagationStructure : an update was required in this propagation " +
+          "even if no update where required at all"
       )
       assert(
         nbUpdate == 1,
-        s"Variable $name has not been updated the proper number of time (updated $nbUpdate times instead of 1)"
+        s"Variable $name has not been updated the proper number of time " +
+          s"(updated $nbUpdate times instead of 1)"
       )
     } else {
       assert(
         nbUpdate == 0,
-        s"Variable $name has not been updated the proper number of time (updated $nbUpdate times instead of 0)"
+        s"Variable $name has not been updated the proper number of time " +
+          s"(updated $nbUpdate times instead of 0)"
       )
     }
   }

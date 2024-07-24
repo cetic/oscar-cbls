@@ -13,9 +13,9 @@
 
 package oscar.cbls.lib.invariant.numeric
 
-import oscar.cbls.core.computation.{Invariant, Store}
 import oscar.cbls.core.computation.integer.{IntConstant, IntVariable}
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
+import oscar.cbls.core.computation.{Invariant, Store}
 
 /** Companion object of the [[SumConst]] class. */
 object SumConst {
@@ -45,7 +45,7 @@ object SumConst {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains `Sum(input(i) | i in`
+/** Invariant that maintains `Sum(input(i) | i in`
   * `listenedValuesIndices}`. , where `input` is an array of constant integers. Update is in O(1).
   *
   * @param model

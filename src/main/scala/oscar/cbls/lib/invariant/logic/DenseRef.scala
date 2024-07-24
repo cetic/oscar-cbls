@@ -29,11 +29,11 @@ object DenseRef {
     *   An array of SetVariable such that output(i) = {j | i in input(j)}.
     * @param bulkIdentifier
     *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-    *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+    *   Invariant listen to vars. Warning:
     *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
     *   Be sure to use the same one if you're referencing the same variables.
     * @param name
-    *   The name (optional) of your Invariant.
+    *   The (optional) name of the Invariant.
     */
   def apply(
     model: Store,
@@ -56,11 +56,11 @@ object DenseRef {
     *   The integer such that the input values are in [0, upperBound[.
     * @param bulkIdentifier
     *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-    *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+    *   Invariant listen to vars. Warning:
     *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
     *   Be sure to use the same one if you're referencing the same variables.
     * @param name
-    *   The name (optional) of your Invariant.
+    *   The (optional) name of the Invariant.
     * @return
     */
   def makeDenseRef(
@@ -76,7 +76,7 @@ object DenseRef {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] such that output(i) = {j | i in input(j)}. It is
+/** Invariant such that `output(i) = {j | i in input(j)}`. It is
   * considered as a dense ref because output is an array and cover all possible values that can
   * contains the input [[oscar.cbls.core.computation.set.SetVariable]]. Update is in O(1).
   *
@@ -85,14 +85,14 @@ object DenseRef {
   * @param input
   *   The sets containing the references values.
   * @param output
-  *   An array of SetVariable such that output(i) = {j | i in input(j)}.
+  *   An array of SetVariable such that `output(i) = {j | i in input(j)}`.
   * @param bulkIdentifier
   *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-  *   [[oscar.cbls.core.computation.Invariant]] listen to vars. Warning:
+  *   Invariant listen to vars. Warning:
   *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
   *   sure to use the same one if you're referencing the same variables.
   * @param name
-  *   The name (optional) of your Invariant.
+  *   The (optional) name of the Invariant.
   */
 class DenseRef(
   model: Store,
@@ -130,7 +130,6 @@ class DenseRef(
     }
   }
 
-  @inline
   override def notifySetChanges(
     setVariable: SetVariable,
     index: Int,

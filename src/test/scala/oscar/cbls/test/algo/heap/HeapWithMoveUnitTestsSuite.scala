@@ -54,9 +54,9 @@ class HeapWithMoveUnitTestsSuite(heapTester: AbstractHeapTester) extends AnyFunS
     array(0).changeValue(10)
     heap match {
       case withMove: BinaryHeapWithMove[Int] =>
-        an[IllegalArgumentException] should be thrownBy (withMove.notifyChange(0))
+        an[IllegalArgumentException] should be thrownBy withMove.notifyChange(0)
       case withMoveIntItem: BinaryHeapWithMoveIntItem =>
-        an[IllegalArgumentException] should be thrownBy (withMoveIntItem.notifyChange(0))
+        an[IllegalArgumentException] should be thrownBy withMoveIntItem.notifyChange(0)
     }
   }
 

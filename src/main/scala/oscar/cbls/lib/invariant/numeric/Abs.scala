@@ -19,16 +19,17 @@ import oscar.cbls.core.computation.integer.IntVariable
 /** Companion object of [[Abs]] class. */
 object Abs {
 
-  /** Creates an Abs invariant.
+  /** Creates an Abs invariant, which maintains the absolute value of an
+    * [[oscar.cbls.core.computation.integer.IntVariable]].
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
     *   The listened IntVariable.
     * @param output
-    *   The IntVariable which contains |input|.
+    *   The IntVariable evaluating to |input|.
     * @param name
-    *   The name (optional) of your Invariant.
+    *   The (optional) name of the Invariant.
     */
   def apply(
     model: Store,
@@ -40,7 +41,7 @@ object Abs {
   }
 }
 
-/** [[oscar.cbls.core.computation.Invariant]] that maintains the absolute value of an
+/** Invariant which maintains the absolute value of an
   * [[oscar.cbls.core.computation.integer.IntVariable]].
   *
   * @param model
@@ -48,9 +49,9 @@ object Abs {
   * @param input
   *   The listened IntVariable.
   * @param output
-  *   The IntVariable which contains |input|.
+  *   The IntVariable evaluating to `|input|`.
   * @param name
-  *   The name (optional) of your Invariant.
+  *   The (optional) name of the Invariant.
   */
 class Abs(model: Store, input: IntVariable, output: IntVariable, name: Option[String] = None)
     extends Int2Int(model, input, output, (x: Long) => x.abs, false, name) {}
