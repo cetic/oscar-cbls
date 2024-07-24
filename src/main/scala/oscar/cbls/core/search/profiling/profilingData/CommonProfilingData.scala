@@ -30,14 +30,12 @@ private[profiling] class CommonProfilingData extends ProfilingData {
   private var _gain: Long                     = 0L
   private var _timeSpentMoveFoundNano: Long   = 0L
   private var _timeSpentNoMoveFoundNano: Long = 0L
-  private var _moveTaken: Long                = 0L
 
   private var _nbCallsIntermediary: Long                  = 0L
   private var _nbFoundsIntermediary: Long                 = 0L
   private var _gainIntermediary: Long                     = 0L
   private var _timeSpentMoveFoundNanoIntermediary: Long   = 0L
   private var _timeSpentNoMoveFoundNanoIntermediary: Long = 0L
-  private var _moveTakeIntermediary: Long                 = 0L
 
   override def merge(other: ProfilingData): Unit = {
     other match {
@@ -50,7 +48,6 @@ private[profiling] class CommonProfilingData extends ProfilingData {
         _gain += bpd._gain
         _timeSpentMoveFoundNano += bpd._timeSpentMoveFoundNano
         _timeSpentNoMoveFoundNano += bpd._timeSpentNoMoveFoundNano
-        _moveTaken += bpd._moveTaken
       case _ =>
         require(
           requirement = false,
@@ -65,6 +62,11 @@ private[profiling] class CommonProfilingData extends ProfilingData {
     this._gain += gain
     this._gainIntermediary += gain
   }
+  def cancelLastGain(): Unit = {
+    _gain -= _lastCallGain
+    _gainIntermediary -= _lastCallGain
+    _lastCallGain = 0L
+  }
   def callInc(): Unit = {
     _nbCalls += 1
     _nbCallsIntermediary += 1
@@ -72,6 +74,10 @@ private[profiling] class CommonProfilingData extends ProfilingData {
   def foundInc(): Unit = {
     _nbFound += 1
     _nbFoundsIntermediary += 1
+  }
+  def foundDec(): Unit = {
+    _nbFound -= 1
+    _nbFoundsIntermediary -= 1
   }
   def timeSpentMoveFoundPlus(timeNano: Long): Unit = {
     this._lastCallFound = true
@@ -85,9 +91,10 @@ private[profiling] class CommonProfilingData extends ProfilingData {
     this._timeSpentNoMoveFoundNano += timeNano
     this._timeSpentNoMoveFoundNanoIntermediary += timeNano
   }
-  def moveTakenInc(): Unit = {
-    _moveTaken += 1
-    _moveTakeIntermediary += 1
+  def transferLastCallDurationToNoMoveFound(): Unit = {
+    this._timeSpentMoveFoundNano -= this._lastCallDurationNano
+    this._timeSpentMoveFoundNanoIntermediary -= this._lastCallDurationNano
+    timeSpentNoMoveFoundPlus(this._lastCallDurationNano)
   }
 
   def nbCalls: Long                    = _nbCalls
@@ -96,23 +103,20 @@ private[profiling] class CommonProfilingData extends ProfilingData {
   def timeSpentMoveFoundMillis: Long   = _timeSpentMoveFoundNano / 1000000
   def timeSpentNoMoveFoundMillis: Long = _timeSpentNoMoveFoundNano / 1000000
   def timeSpentMillis: Long = (_timeSpentMoveFoundNano + _timeSpentNoMoveFoundNano) / 1000000
-  def moveTaken: Long       = _moveTaken
 
   def nbFoundForSelection: Long                  = _nbFoundsIntermediary
   def gainForSelection: Long                     = _gainIntermediary
   def timeSpentMoveFoundMillisForSelection: Long = _timeSpentMoveFoundNanoIntermediary / 1000000
   def timeSpentMillisForSelection: Long =
     (_timeSpentMoveFoundNanoIntermediary + _timeSpentNoMoveFoundNanoIntermediary) / 1000000
-  def moveTakeForSelection: Long = _moveTakeIntermediary
 
   def resetIntermediaryStatistics(): Unit = {
     _nbCallsIntermediary = 0L; _nbFoundsIntermediary = 0L; _gainIntermediary = 0L
     _timeSpentMoveFoundNanoIntermediary = 0L; _timeSpentNoMoveFoundNanoIntermediary = 0L
-    _moveTakeIntermediary = 0L
   }
 
   override def toString: String = {
-    s"Calls :${_nbCalls} | Founds :${_nbFound} | Moves taken :${_moveTaken}  | gain :${_gain} | " +
+    s"Calls :${_nbCalls} | Founds :${_nbFound} | gain :${_gain} | " +
       s"total time move (nano):${_timeSpentMoveFoundNano} | total time no move (nano):${_timeSpentNoMoveFoundNano}" +
       s"Last call: found ${_lastCallFound} | gain ${_lastCallGain} | duration ${_lastCallDurationNano} nano"
   }
