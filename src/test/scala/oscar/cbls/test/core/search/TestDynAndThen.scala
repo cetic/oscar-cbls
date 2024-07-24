@@ -79,8 +79,8 @@ class TestDynAndThen extends AnyFunSuite {
     leftMove: Move,
     rightMove: Move,
     objValueAfter: Long,
-    compositeNeighborhood: Neighborhood
-  ) extends Move(objValueAfter, compositeNeighborhood) {
+    compositeNeighborhoodName: String
+  ) extends Move(objValueAfter, compositeNeighborhoodName) {
 
     /** Commits this move. */
     override def commit(): Unit = {
@@ -125,7 +125,7 @@ class TestDynAndThen extends AnyFunSuite {
                         leftExploredMove,
                         buildMove(newObjValue),
                         newObjValue,
-                        rightNeighborhood
+                        "DynAndThen"
                       )
                   )
                   // Needed for Neighborhood's getMove method to return the searchResult

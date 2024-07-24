@@ -48,7 +48,7 @@ case class TestAssignNeighborhoodMove(
                                        newValue: Long,
                                        objValueAfter: Long,
                                        testAssignNeighborhood: TestAssignNeighborhood
-                                     ) extends Move(objValueAfter, testAssignNeighborhood) {
+                                     ) extends Move(objValueAfter, testAssignNeighborhood.name) {
 
   /** Commits this move. */
   override def commit(): Unit = {
