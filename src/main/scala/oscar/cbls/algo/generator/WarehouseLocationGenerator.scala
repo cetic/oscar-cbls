@@ -45,9 +45,9 @@ object WarehouseLocationGenerator {
     * @param weightForOpeningWarehouseCost
     *   Weight used to generate cost for opening warehouses.
     * @return
-    *   An array containing the costs for opening the warehouses, a matrix of distance between the
-    *   delivery points and the warehouses, the positions of the warehouses, the positions of the
-    *   delivery points and a matrix of distances between each pair of warehouses.
+    *   An array containing the costs for opening the warehouses, the positions of the warehouses, 
+    *   the positions of the delivery points, a matrix of distance between the delivery points and 
+    *   the warehouses, and a matrix of distances between each pair of warehouses.
     */
   def generateRandomWLP(
     numWarehouse: Int,
@@ -85,9 +85,9 @@ object WarehouseLocationGenerator {
     * @param numTilesOnSide
     *   The number of tiles along the grid side. The map is supposed to be square.
     * @return
-    *   An array containing the costs for opening the warehouses, a matrix of distance between the
-    *   delivery points and the warehouses, the positions of the warehouses, the positions of the
-    *   delivery points and a matrix of distances between each pair of warehouses.
+    *   An array containing the costs for opening the warehouses, the positions of the warehouses, 
+    *   the positions of the delivery points, a matrix of distance between the delivery points and 
+    *   the warehouses, and a matrix of distances between each pair of warehouses.
     */
   def generateWLPOnGrid(
     numWarehouse: Int,
@@ -131,9 +131,9 @@ object WarehouseLocationGenerator {
     * @param weightForOpeningWarehouseCost
     *   Weight used to generate cost for opening warehouses.
     * @return
-    *   An array containing the costs for opening the warehouses, a matrix of distance between the
-    *   delivery points and the warehouses, the positions of the warehouses, the positions of the
-    *   delivery points and a matrix of distances between each pair of warehouses.
+    *   An array containing the costs for opening the warehouses, the positions of the warehouses, 
+    *   the positions of the delivery points, a matrix of distance between the delivery points and 
+    *   the warehouses, and a matrix of distances between each pair of warehouses.
     */
   def generateWLPWithMinDist(
     numWarehouse: Int,
