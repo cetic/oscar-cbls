@@ -63,7 +63,6 @@ abstract class NeighborhoodCombinator(
 
   override def toString: String = this.getClass.getSimpleName
 
-  // Updates the profiling of the selected neighborhood and of the combinator
   override protected def profileCommittedMove(move: Move): Unit = {
     super.profileCommittedMove(move)
     this.searchProfiler().foreach(_.moveCommitted(move.objAfter()))
