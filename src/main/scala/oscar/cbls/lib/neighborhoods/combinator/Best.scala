@@ -22,6 +22,12 @@ object Best {
 
   /** Creates a Best combinator which selects the best move among the input neighborhoods.
     *
+    * '''N.B:''' The semantic of the profiler is different from other combinator. The `found` column
+    * contains the number of ''all'' found move from sub-neighborhoods, including not commited ones.
+    * In the same way, the `sumGain` column contains the gains obtained if we commit ''all'' the
+    * found moves from a sub-neighborhood. So, the `found` and `sumGain` values of Best is ''not
+    * equal'' to the sum of the value of sub-neighborhoods. They computed only from committed moves.
+    *
     * @param subNeighborhoods
     *   The Neighborhoods that this combinator handles. Those can be
     *   [[oscar.cbls.core.search.SimpleNeighborhood]] or other NeighborhoodCombinator.
@@ -35,6 +41,12 @@ object Best {
 }
 
 /** Combinator which selects the best move among the input neighborhoods.
+  *
+  * '''N.B:''' The semantic of the profiler is different from other combinator. The `found` column
+  * contains the number of ''all'' found move from sub-neighborhoods, including not commited ones.
+  * In the same way, the `sumGain` column contains the gains obtained if we commit ''all'' the found
+  * moves from a sub-neighborhood. So, the `found` and `sumGain` values of Best is ''not equal'' to
+  * the sum of the value of sub-neighborhoods. They computed only from committed moves.
   *
   * @param subNeighborhoods
   *   The Neighborhoods that this combinator handles. Those can be
