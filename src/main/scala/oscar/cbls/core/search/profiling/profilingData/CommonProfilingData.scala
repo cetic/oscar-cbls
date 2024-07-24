@@ -70,10 +70,6 @@ private[profiling] class CommonProfilingData extends ProfilingData {
     _nbFound += 1
     _nbFoundsIntermediary += 1
   }
-  def foundDec(): Unit = {
-    _nbFound -= 1
-    _nbFoundsIntermediary -= 1
-  }
   def timeSpentMoveFoundPlus(timeNano: Long): Unit = {
     this._lastCallFound = true
     this._lastCallDurationNano = timeNano
