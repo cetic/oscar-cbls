@@ -13,6 +13,8 @@
 
 package oscar.cbls.algo.generator.wlp
 
+import oscar.cbls.algo.generator.GeneratorUtil.randomPosition
+
 /** Helper class which generates random data for the WLP. The locations' map is checked with
   * `numTilesOnSide`^2^ square tiles. Warehouses positions are generated uniformly on all tiles.
   *
@@ -56,7 +58,7 @@ class WLPOnGrid(
     // First, each tile receives the same number of warehouse.
     while (n < numUniformWareHouseOnGrid) {
       y = (n % numTilesOnSide) * tileLength
-      warehousePositions(n.toInt) = randomPosition(x, x + tileLength, y, y + tileLength)
+      warehousePositions(n.toInt) = randomPosition(x, x + tileLength, y, y + tileLength, rng)
       n += 1L
       // If each tile of the grid received a warehouse, we restart from the tile 0
       if (n % totalNumberOfTiles == 0L) x = 0L
@@ -66,7 +68,7 @@ class WLPOnGrid(
 
     // The remainder of the warehouse are placed randomly.
     for (i <- numUniformWareHouseOnGrid.toInt until numWarehouse)
-      warehousePositions(i) = randomPosition(minXY, maxXY, minXY, maxXY)
+      warehousePositions(i) = randomPosition(minXY, maxXY, minXY, maxXY, rng)
 
     warehousePositions
   }
