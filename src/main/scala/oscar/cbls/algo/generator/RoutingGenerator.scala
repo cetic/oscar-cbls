@@ -20,6 +20,18 @@ import scala.util.Random
 
 object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
 
+  /** Generates random data for routing.
+    *
+    * @param nCities
+    *   The number of cities to generate.
+    * @param weightFactorForUnroutedCities
+    *   A factor used to increase the cost of unrouted cities.
+    * @param maxCostForUsingVehicle
+    *   The maximal cost for using a new vehicle.
+    * @return
+    *   An array of positions for the cities, including the depot at index 0, a distances matrix,
+    *   the cost for unrouted cities and a cost for using a new vehicle.
+    */
   def generateRandomRoutingData(
     nCities: Int,
     weightFactorForUnroutedCities: Long,
@@ -35,6 +47,18 @@ object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
     (pos, dist, unroutedCost, vehicleCost)
   }
 
+  /** Generates random date for routing. Each city is evenly distant from each other.
+    *
+    * @param nCities
+    *   The number of cities to generate.
+    * @param weightFactorForUnroutedCities
+    *   A factor used to increase the cost of unrouted cities.
+    * @param maxCostForUsingVehicle
+    *   The maximal cost for using a new vehicle.
+    * @return
+    *   An array of positions for the cities, including the depot at index 0, a distances matrix,
+    *   the cost for unrouted cities and a cost for using a new vehicle.
+    */
   def generateEvenlySpacedRoutingData(
     nCities: Int,
     weightFactorForUnroutedCities: Long,
@@ -58,6 +82,7 @@ object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
   *   Upper bound on the coordinates of the points.
   */
 protected class RoutingGenerator(var minXY: Long, var maxXY: Long) {
+  // We are working on a square map
   private val side: Long = maxXY - minXY
 
   protected var _seed: Long = Random.nextLong()
@@ -67,24 +92,40 @@ protected class RoutingGenerator(var minXY: Long, var maxXY: Long) {
   /** Return the seed used for random generator. */
   def seed: Long = _seed
 
-  /** Set the seed of random number generator with `s`. */
+  /** Sets the seed of random number generator with `s`. */
   def setSeed(s: Long): Unit = {
     rng.setSeed(s)
     _seed = s
     GeneratorUtil.rng.setSeed(s)
   }
 
+  /** Generates a random position for the depot. */
   def randomDepot: (Long, Long) =
     randomPosition(minXY, maxXY, minXY, maxXY)
 
+  /** Computes the center of the map. */
   def centerDepot: (Long, Long) = {
     val center: Long = (minXY + maxXY) / 2
     (center, center)
   }
 
+  /** @param n
+    *   The number of cities to generate.
+    * @return
+    *   `n` random position for cities.
+    */
   def randomCities(n: Int): Array[(Long, Long)] =
     Array.fill(n)(randomPosition(minXY, maxXY, minXY, maxXY))
 
+  /** @param numCluster
+    *   The number of cluster of cities to generate.
+    * @param citiesByCluster
+    *   How many cluster have to be in a cluster.
+    * @param clusterRadius
+    *   The maximum distance between the cities in the same cluster.
+    * @return
+    *   `numCluster * citiesByCluster` random position grouped in clusters.
+    */
   def clusteredCities(
     numCluster: Int,
     citiesByCluster: Int,
@@ -116,6 +157,14 @@ protected class RoutingGenerator(var minXY: Long, var maxXY: Long) {
     citiesPositions.toArray
   }
 
+  /** @param n
+    *   The number of cities to generate.
+    * @param cityDistance
+    *   The distance between two adjacent cities.
+    * @return
+    *   An array of cities two by two distant from `cityDistance`. The center of the map is reserved
+    *   for the depot
+    */
   def evenlySpacedCities(n: Int, cityDistance: Long): Array[(Long, Long)] = {
     val citiesPositions: mutable.Queue[(Long, Long)] = mutable.Queue()
     var lastCity: (Long, Long)                       = centerDepot
@@ -131,7 +180,7 @@ protected class RoutingGenerator(var minXY: Long, var maxXY: Long) {
       inInterval(city._1, minXY, maxXY) && inInterval(city._2, minXY, maxXY) && !citiesPositions
         .contains(city) && city != centerDepot
 
-    /** Tries to find a city which is not encircled by four other cities */
+    /** Tries to find a city which is not encircled by four other cities. */
     def unblock(): Option[(Long, Long)] = {
       for (city <- citiesPositions) {
         for (t <- translate) {
@@ -169,9 +218,17 @@ protected class RoutingGenerator(var minXY: Long, var maxXY: Long) {
     citiesPositions.toArray
   }
 
+  /** Computes the euclidean distance between  each pair of position in input. */
   def distancesMatrix(pos: Array[(Long, Long)]): Array[Array[Long]] =
     Array.tabulate(pos.length, pos.length)((i, j) => distance(pos(i), pos(j)))
 
+  /** @param distances
+    *   A matrix of distances between each cities including the depot.
+    * @param weightFactor
+    *   A factor used to increase the cost of unrouted cities.
+    * @return
+    *   A cost for unrouted cities based on the maximum distance from the input distance matrix.
+    */
   def costForUnroutedCities(distances: Array[Array[Long]], weightFactor: Long): Long = {
     var maxDist: Long = 0L
     for (i <- distances.indices) {
@@ -184,5 +241,10 @@ protected class RoutingGenerator(var minXY: Long, var maxXY: Long) {
     maxDist + rng.between(0L, side * weightFactor + 1L)
   }
 
+  /** @param maxCost
+    *   The maximal cost for using a new vehicle.
+    * @return
+    *   A random cost in `[0, maxCost]` for using a new vehicle.
+    */
   def costForUsingVehicle(maxCost: Long): Long = rng.between(0L, maxCost + 1)
 }
