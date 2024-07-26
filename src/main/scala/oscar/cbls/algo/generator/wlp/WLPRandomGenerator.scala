@@ -13,6 +13,7 @@
 
 package oscar.cbls.algo.generator.wlp
 
+import oscar.cbls.algo.generator.GeneratorUtil
 import oscar.cbls.algo.generator.GeneratorUtil.{distance, randomPosition}
 
 import scala.util.Random
@@ -39,6 +40,7 @@ class WLPRandomGenerator(
 
   protected var _seed: Long = Random.nextLong()
   protected val rng: Random = new Random(_seed)
+  GeneratorUtil.rng.setSeed(_seed)
 
   override def generateCostsForOpeningWarehouse: Array[Long] = Array.fill(numWarehouse)(
     (minXY + rng.nextDouble() * side * weightForOpeningWarehouseCost).toLong
@@ -67,6 +69,7 @@ class WLPRandomGenerator(
   def setSeed(s: Long): Unit = {
     _seed = s
     rng.setSeed(s)
+    GeneratorUtil.rng.setSeed(s)
   }
 
   def seed: Long = _seed

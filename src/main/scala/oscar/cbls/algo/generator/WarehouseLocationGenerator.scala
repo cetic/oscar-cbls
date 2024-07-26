@@ -22,6 +22,7 @@ object WarehouseLocationGenerator {
 
   private var _seed: Long = Random.nextLong()
   private val rng: Random = new Random(_seed)
+  GeneratorUtil.rng.setSeed(_seed)
 
   /** Return the seed used for random generator. */
   def seed: Long = _seed
@@ -30,6 +31,7 @@ object WarehouseLocationGenerator {
   def setSeed(s: Long): Unit = {
     rng.setSeed(s)
     _seed = s
+    GeneratorUtil.rng.setSeed(s)
   }
 
   /** Generates data for a WLP.
