@@ -20,7 +20,7 @@ import scala.util.Random
 
 object RoutingGenerator extends RoutingGenerator(0L, 1000L) {}
 
-private class RoutingGenerator(var minXY: Long, var maxXY: Long) {
+protected class RoutingGenerator(var minXY: Long, var maxXY: Long) {
   protected var _seed: Long = Random.nextLong()
   protected val rng: Random = new Random(_seed)
   GeneratorUtil.rng.setSeed(_seed)
