@@ -600,7 +600,7 @@ class ConcreteIntSequence(
     targetToken: Token = this.token
   ): ConcreteIntSequence = {
     if (this.externalToInternalPosition.nbPivot * 100 > maxPivotPerValuePercent * this.size) {
-      regularize()
+      regularize(targetToken)
     } else {
       if (targetToken != this.token) {
         new ConcreteIntSequence(

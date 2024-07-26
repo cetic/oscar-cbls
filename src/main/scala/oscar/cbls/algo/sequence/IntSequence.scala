@@ -447,7 +447,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
   }
 
   override def toString: String = {
-    s"(length:$size)[${this.iterator.map(_.value).toList.mkString(",")}]"
+    s"(length:$size token:$token)[${this.iterator.map(_.value).toList.mkString(",")}]"
   }
 
   /** Special string used to recursively describe the whole IntSequence with all stacked updated */

@@ -151,7 +151,7 @@ class SeqVariable(
       s"afterPosition should be before fromPosition or after to toPosition. " +
         s"Got from : $fromPos to : $toPos after : $afterPos"
     )
-    if(!(afterPos == fromPos - 1 && (fromPos == toPos || !flip))) {
+    if (!(afterPos == fromPos - 1 && (fromPos == toPos || !flip))) {
 
       recordPerformedIncrementalUpdate(seqAfter match {
         case Some(sa) =>
@@ -268,13 +268,25 @@ class SeqVariable(
 
     if (firstEndPosition == secondStartPosition - 1) {
       // segments are contiguous, we only need to move the second segment
-      move(
-        secondSegmentStartPositionExplorer,
-        secondSegmentEndPositionExplorer,
-        firstSegmentStartPositionExplorer.prev,
-        flipSecondSegment,
-        seqAfter
-      )
+      // and, if necessary flip the first one
+      if (flipFirstSegment) {
+        flip(firstSegmentStartPositionExplorer, firstSegmentEndPositionExplorer)
+        move(
+          toNotify.newValue.explorerAtPosition(secondSegmentStartPositionExplorer.position).get,
+          toNotify.newValue.explorerAtPosition(secondSegmentEndPositionExplorer.position).get,
+          toNotify.newValue.explorerAtPosition(firstSegmentStartPositionExplorer.prev.position).get,
+          flipSecondSegment,
+          seqAfter
+        )
+      } else {
+        move(
+          secondSegmentStartPositionExplorer,
+          secondSegmentEndPositionExplorer,
+          firstSegmentStartPositionExplorer.prev,
+          flipSecondSegment,
+          seqAfter
+        )
+      }
     } else if (firstEndPosition < secondStartPosition) {
       // move lowest segment upward just before the second one (so that its indices do not change)
       move(
@@ -284,7 +296,7 @@ class SeqVariable(
         flipFirstSegment,
         seqAfter
       )
-      // them bring the upward one lower
+      // then bring the upward one lower
       move(
         toNotify.newValue.explorerAtPosition(secondSegmentStartPositionExplorer.position).get,
         toNotify.newValue.explorerAtPosition(secondSegmentEndPositionExplorer.position).get,
@@ -340,12 +352,12 @@ class SeqVariable(
     */
   def setValue(newIntSequence: IntSequence): Unit = {
     require(
-      performedSinceTopCheckpoint == null &&
-        levelOfTopCheckpoint == -1,
+      levelOfTopCheckpoint == -1,
       "Sequences cannot be assigned when a checkpoint has been defined"
     )
-
     if (!(toNotify.newValue sameIdentity newIntSequence)) {
+      if (!toNotify.isInstanceOf[SeqUpdateLastNotified] && !toNotify.isInstanceOf[SeqUpdateAssign])
+        performPropagation()
       toNotify = SeqUpdateAssign(newIntSequence)
       scheduleForPropagation()
     }
@@ -364,23 +376,19 @@ class SeqVariable(
   private[this] var checkpointStackNotTop: List[(IntSequence, SeqUpdate)] = List.empty
 
   /** Defines the current value as a new checkpoint */
-  def defineCurrentValueAsCheckpoint(): IntSequence = {
+  def defineCurrentValueAsCheckpoint(seqAfter: Option[IntSequence] = None): IntSequence = {
     toNotify =
       SeqUpdateDefineCheckpoint(toNotify, maxPivotPerValuePercent, levelOfTopCheckpoint + 1)
 
     if (topCheckpoint != null) {
-      require(
-        !performedSinceTopCheckpoint.isInstanceOf[SeqUpdateLastNotified],
-        "Can't create a new checkpoint if no update were done in the previous one."
-      )
       checkpointStackNotTop = (topCheckpoint, performedSinceTopCheckpoint) :: checkpointStackNotTop
     }
-    topCheckpoint = toNotify.newValue
+    topCheckpoint = seqAfter.getOrElse(toNotify.newValue)
     levelOfTopCheckpoint += 1
     performedSinceTopCheckpoint = SeqUpdateLastNotified(topCheckpoint)
 
     scheduleForPropagation()
-    toNotify.newValue
+    topCheckpoint
   }
 
   /** Rollback to the top checkpoint.
@@ -455,7 +463,7 @@ class SeqVariable(
       case ln: SeqUpdateLastNotified =>
         require(
           ln.value equals topCheckpoint,
-          "Cannot release checkpoint since last notified value is not at checkpoint value"
+          "Cannot release checkpoint since last notified value is not at top checkpoint value"
         )
         SeqUpdateReleaseTopCheckPoint(toNotify, topCheckpoint)
     }
@@ -643,7 +651,6 @@ class SeqVariable(
   @inline
   override def performPropagation(): Unit = {
     val dynListElements = getDynamicallyListeningElements
-    println(s"Performing propagation with : $toNotify")
     dynListElements.foreach {
       case (inv: SeqNotificationTarget, index: Int) =>
         inv.notifySeqChanges(this, index, toNotify)

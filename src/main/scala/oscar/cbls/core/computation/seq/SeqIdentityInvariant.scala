@@ -103,7 +103,6 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
             prev: SeqUpdate
           ) =>
         digestChanges(prev)
-        digestChanges(howToRollBack)
         require(
           level == levelTopCheckpoint,
           s"Top checkpoint of original sequence is not the same as the copy one: Should be $level got $levelTopCheckpoint"
@@ -125,7 +124,7 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
           levelTopCheckpoint == level,
           s"Top checkpoint of original sequence is not the same as the copy one: Should be $level got $levelTopCheckpoint"
         )
-        toValue.defineCurrentValueAsCheckpoint()
+        toValue.defineCurrentValueAsCheckpoint(Some(changes.newValue))
 
       case _ =>
       // Default case, do nothing
