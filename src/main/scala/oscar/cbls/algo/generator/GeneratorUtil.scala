@@ -38,4 +38,7 @@ private[generator] object GeneratorUtil {
     */
   def randomPosition(xMin: Long, xMax: Long, yMin: Long, yMax: Long): (Long, Long) =
     (rng.between(xMin, xMax + 1), rng.between(yMin, yMax + 1))
+
+  /** Test if `x` is in `[a, b]` */
+  def inInterval(x: Long, a: Long, b: Long): Boolean = a <= x && x <= b
 }
