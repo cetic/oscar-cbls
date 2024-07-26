@@ -18,9 +18,32 @@ import GeneratorUtil._
 import scala.collection.mutable
 import scala.util.Random
 
-object RoutingGenerator extends RoutingGenerator(0L, 1000L) {}
+object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
 
+  def generateRandomRoutingData(
+    nCities: Int,
+    weightFactorForUnroutedCities: Long,
+    maxCostForUsingVehicle: Long
+  ): (Array[(Long, Long)], Array[Array[Long]], Long, Long) = {
+    val depot        = randomDepot
+    val cities       = randomCities(nCities)
+    val pos          = depot +: cities
+    val dist         = distancesMatrix(pos)
+    val unroutedCost = costForUnroutedCities(dist, weightFactorForUnroutedCities)
+    val vehicleCost  = costForUsingVehicle(maxCostForUsingVehicle)
+
+    (pos, dist, unroutedCost, vehicleCost)
+  }
+}
+
+/** @param minXY
+  *   Lower bound on the coordinates of the points.
+  * @param maxXY
+  *   Upper bound on the coordinates of the points.
+  */
 protected class RoutingGenerator(var minXY: Long, var maxXY: Long) {
+  private val side: Long = maxXY - minXY
+
   protected var _seed: Long = Random.nextLong()
   protected val rng: Random = new Random(_seed)
   GeneratorUtil.rng.setSeed(_seed)
@@ -79,4 +102,18 @@ protected class RoutingGenerator(var minXY: Long, var maxXY: Long) {
 
   def distancesMatrix(pos: Array[(Long, Long)]): Array[Array[Long]] =
     Array.tabulate(pos.length, pos.length)((i, j) => distance(pos(i), pos(j)))
+
+  def costForUnroutedCities(distances: Array[Array[Long]], weightFactor: Long): Long = {
+    var maxDist: Long = 0L
+    for (i <- distances.indices) {
+      for (j <- distances(i).indices) {
+        val d = distances(i)(j)
+        if (d > maxDist) maxDist = d
+      }
+    }
+
+    maxDist + rng.between(0L, side * weightFactor + 1L)
+  }
+
+  def costForUsingVehicle(maxCost: Long): Long = rng.between(0L, maxCost + 1)
 }
