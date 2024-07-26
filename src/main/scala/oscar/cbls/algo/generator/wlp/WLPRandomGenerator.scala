@@ -45,10 +45,10 @@ class WLPRandomGenerator(
   )
 
   override def generateWarehousesPositions: Array[(Long, Long)] =
-    Array.fill(numWarehouse)(randomPosition(minXY, maxXY, minXY, maxXY, rng))
+    Array.fill(numWarehouse)(randomPosition(minXY, maxXY, minXY, maxXY))
 
   override def generateDeliveryPositions: Array[(Long, Long)] = {
-    Array.fill(numDelivery)(randomPosition(minXY, maxXY, minXY, maxXY, rng))
+    Array.fill(numDelivery)(randomPosition(minXY, maxXY, minXY, maxXY))
   }
 
   override def generateDistanceCosts(
@@ -70,6 +70,5 @@ class WLPRandomGenerator(
   }
 
   def seed: Long = _seed
-
 
 }

@@ -17,6 +17,9 @@ import scala.math.{pow, round, sqrt}
 import scala.util.Random
 
 private[generator] object GeneratorUtil {
+
+  val rng: Random = Random
+
   def distance(from: (Long, Long), to: (Long, Long)): Long =
     round(sqrt(pow((from._1 - to._1).toDouble, 2.0) + pow((from._2 - to._2).toDouble, 2.0)))
 
@@ -30,11 +33,9 @@ private[generator] object GeneratorUtil {
     *   Inclusive lower bound of the Y coordinate.
     * @param yMax
     *   Inclusive upper bound of the Y coordinate.
-    * @param rng
-    *   Random number generator used to generate coordinates.
     * @return
     *   A tuple `(x, y)` such that `xMin <= x <= xMax` and `yMin <= y <= yMax`
     */
-  def randomPosition(xMin: Long, xMax: Long, yMin: Long, yMax: Long, rng: Random): (Long, Long) =
+  def randomPosition(xMin: Long, xMax: Long, yMin: Long, yMax: Long): (Long, Long) =
     (rng.between(xMin, xMax + 1), rng.between(yMin, yMax + 1))
 }

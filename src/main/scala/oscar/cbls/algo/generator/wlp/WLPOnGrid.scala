@@ -58,7 +58,7 @@ class WLPOnGrid(
     // First, each tile receives the same number of warehouse.
     while (n < numUniformWareHouseOnGrid) {
       y = (n % numTilesOnSide) * tileLength
-      warehousePositions(n.toInt) = randomPosition(x, x + tileLength, y, y + tileLength, rng)
+      warehousePositions(n.toInt) = randomPosition(x, x + tileLength, y, y + tileLength)
       n += 1L
       // If each tile of the grid received a warehouse, we restart from the tile 0
       if (n % totalNumberOfTiles == 0L) x = 0L
@@ -68,7 +68,7 @@ class WLPOnGrid(
 
     // The remainder of the warehouse are placed randomly.
     for (i <- numUniformWareHouseOnGrid.toInt until numWarehouse)
-      warehousePositions(i) = randomPosition(minXY, maxXY, minXY, maxXY, rng)
+      warehousePositions(i) = randomPosition(minXY, maxXY, minXY, maxXY)
 
     warehousePositions
   }

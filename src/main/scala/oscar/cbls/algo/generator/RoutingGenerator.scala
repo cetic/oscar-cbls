@@ -23,6 +23,7 @@ object RoutingGenerator extends RoutingGenerator(0L, 1000L) {}
 private class RoutingGenerator(var minXY: Long, var maxXY: Long) {
   protected var _seed: Long = Random.nextLong()
   protected val rng: Random = new Random(_seed)
+  GeneratorUtil.rng.setSeed(_seed)
 
   /** Return the seed used for random generator. */
   def seed: Long = _seed
@@ -31,10 +32,11 @@ private class RoutingGenerator(var minXY: Long, var maxXY: Long) {
   def setSeed(s: Long): Unit = {
     rng.setSeed(s)
     _seed = s
+    GeneratorUtil.rng.setSeed(s)
   }
 
   def randomDepot: (Long, Long) =
-    randomPosition(minXY, maxXY, minXY, maxXY, rng)
+    randomPosition(minXY, maxXY, minXY, maxXY)
 
   def centerDepot: (Long, Long) = {
     val center: Long = (minXY + maxXY) / 2
@@ -42,7 +44,7 @@ private class RoutingGenerator(var minXY: Long, var maxXY: Long) {
   }
 
   def randomCities(n: Int): Array[(Long, Long)] =
-    Array.fill(n)(randomPosition(minXY, maxXY, minXY, maxXY, rng))
+    Array.fill(n)(randomPosition(minXY, maxXY, minXY, maxXY))
 
   def clusteredCities(
     numCluster: Int,
@@ -50,28 +52,29 @@ private class RoutingGenerator(var minXY: Long, var maxXY: Long) {
     clusterRadius: Int
   ): Array[(Long, Long)] = {
     val citiesPositions: mutable.Queue[(Long, Long)] = mutable.Queue()
+
     for (_ <- 0 until numCluster) {
-      var currentCenter = randomPosition(minXY, maxXY, minXY, maxXY, rng)
+      var currentCenter = randomPosition(minXY, maxXY, minXY, maxXY)
       citiesPositions += currentCenter
       for (_ <- 1 until citiesByCluster) {
         var pos: (Long, Long) = (0L, 0L)
         var tries: Int        = 0
         do {
-          pos = randomPosition(minXY, maxXY, minXY, maxXY, rng)
+          pos = randomPosition(minXY, maxXY, minXY, maxXY)
           tries += 1
         } while (distance(currentCenter, pos) > clusterRadius && tries < 10000)
         citiesPositions += pos
+
         tries = 0
         var newCenter = (0L, 0L)
         do {
-          newCenter = randomPosition(minXY, maxXY, minXY, maxXY, rng)
+          newCenter = randomPosition(minXY, maxXY, minXY, maxXY)
           tries += 1
         } while (distance(currentCenter, newCenter) <= clusterRadius && tries < 10000)
         currentCenter = newCenter
       }
     }
     citiesPositions.toArray
-
   }
 
   def distancesMatrix(pos: Array[(Long, Long)]): Array[Array[Long]] =
