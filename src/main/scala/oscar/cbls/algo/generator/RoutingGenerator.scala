@@ -133,10 +133,9 @@ protected class RoutingGenerator(var minXY: Long, var maxXY: Long) {
   ): Array[(Long, Long)] = {
     val citiesPositions: mutable.Queue[(Long, Long)] = mutable.Queue()
 
+    var currentCenter = randomPosition(minXY, maxXY, minXY, maxXY)
     for (_ <- 0 until numCluster) {
-      var currentCenter = randomPosition(minXY, maxXY, minXY, maxXY)
-      citiesPositions += currentCenter
-      for (_ <- 1 until citiesByCluster) {
+      for (_ <- 0 until citiesByCluster) {
         var pos: (Long, Long) = (0L, 0L)
         var tries: Int        = 0
         do {
@@ -144,15 +143,14 @@ protected class RoutingGenerator(var minXY: Long, var maxXY: Long) {
           tries += 1
         } while (distance(currentCenter, pos) > clusterRadius && tries < 10000)
         citiesPositions += pos
-
-        tries = 0
-        var newCenter = (0L, 0L)
-        do {
-          newCenter = randomPosition(minXY, maxXY, minXY, maxXY)
-          tries += 1
-        } while (distance(currentCenter, newCenter) <= clusterRadius && tries < 10000)
-        currentCenter = newCenter
       }
+      var tries = 0
+      var newCenter = (0L, 0L)
+      do {
+        newCenter = randomPosition(minXY, maxXY, minXY, maxXY)
+        tries += 1
+      } while (distance(currentCenter, newCenter) <= clusterRadius && tries < 10000)
+      currentCenter = newCenter
     }
     citiesPositions.toArray
   }
@@ -204,7 +202,7 @@ protected class RoutingGenerator(var minXY: Long, var maxXY: Long) {
         translateIndex = 0
       } else if (translateIndex < translate.length) { // We need to try another translation
         translateIndex += 1
-      } else { // The last city is blocked by other cities.
+      } else { // We tried all the translation. The last city is blocked by other cities.
         unblock() match {
           case Some(city) => // We can restart the generation from another city
             citiesPositions += city
