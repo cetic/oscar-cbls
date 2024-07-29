@@ -99,7 +99,7 @@ abstract class Neighborhood(_name: String) {
   def doAllMoves(objective: Objective, shouldStop: Int => Boolean = _ => false): Int = {
     require(
       objective.objValue.model.isClosed,
-      "Cannot start the search, the model for your " +
+      "Cannot start the search, the model of your " +
         "objective variable is not closed."
     )
     var moveCount: Int      = 0
