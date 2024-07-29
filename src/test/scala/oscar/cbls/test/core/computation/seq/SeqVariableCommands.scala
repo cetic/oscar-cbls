@@ -9,6 +9,10 @@ import scala.util.{Failure, Success, Try}
 
 object SeqVariableCommands extends Commands {
 
+  private var initialSize: Int = 0
+
+  def setSize(size: Int): Unit = initialSize = size
+
   override type State = SeqVariableState
   override type Sut   = SeqVariableSUT
 
@@ -27,8 +31,9 @@ object SeqVariableCommands extends Commands {
       state.operationsSinceLastCheckpoint == 0,
       "Cannot create a SeqVariable with operations already registered"
     )
-    val store = new Store()
-    val seq   = new SeqVariable(store, List.empty[Int], "Initial seq")
+    val store = new Store(debugLevel = 3)
+
+    val seq   = new SeqVariable(store, state.refList, "Initial seq")
     val clone = seq.createClone()
     store.close()
     SeqVariableSUT(seq, clone)
@@ -37,11 +42,11 @@ object SeqVariableCommands extends Commands {
   override def destroySut(sut: Sut): Unit = {}
 
   override def initialPreCondition(state: State): Boolean = {
-    state.length == 0 && state.checkpointLevel == -1 &&
+    state.length == initialSize && state.checkpointLevel == -1 &&
     state.previousState.isEmpty && state.operationsSinceLastCheckpoint == 0
   }
 
-  override def genInitialState: Gen[State] = { new SeqVariableState() }
+  override def genInitialState: Gen[State] = { new SeqVariableState(refList = Gen.listOfN(initialSize, Gen.choose(0, 1000)).sample.get) }
 
   override def genCommand(state: State): Gen[SeqVariableCommands.Command] = {
     val l: Int = state.length

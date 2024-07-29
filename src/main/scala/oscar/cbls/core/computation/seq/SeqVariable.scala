@@ -403,6 +403,7 @@ class SeqVariable(
     *   as the SeqVariable
     */
   def rollbackToTopCheckpoint(checkingCheckpoint: Option[IntSequence] = None): Unit = {
+    require(topCheckpoint != null, "Can not rollback to top checkpoint since no checkpoint has been defined")
     if (checkingCheckpoint.nonEmpty)
       require(
         checkingCheckpoint.get sameIdentity topCheckpoint,
@@ -481,6 +482,7 @@ class SeqVariable(
         Nil
     }
     levelOfTopCheckpoint -= 1
+    scheduleForPropagation()
     topCheckpoint
   }
 
@@ -695,18 +697,22 @@ class SeqVariable(
   }
 
   override def checkInternals(): Unit = {
-    require(this.value.toList equals toNotify.newValue.toList)
-    require(this.toNotify.isInstanceOf[SeqUpdateLastNotified], Some(s"toNotify:$toNotify"))
+    require(
+      this.value.toList equals toNotify.newValue.toList,
+      s"Pending value of $name is not equal to toNotify value : " +
+        s"\nShould be : ${this.value.toList} \nGot ${toNotify.newValue.toList}"
+    )
+    require(
+      toNotify.isInstanceOf[SeqUpdateLastNotified],
+      s"To notify value of $name should be of type SeqUpdateLastNotified but got :\ntoNotify:$toNotify"
+    )
   }
 
   override def toString: String = {
     s"$name :\n " +
       s"Current value : ${toNotify.newValue}\n" +
       s"To notify : $toNotify\n" +
-      s"Checkpoint level : $levelOfTopCheckpoint\n" /*+
-      s"All checkpoints : checkpoint value | performed since checkpoint value \n" +
-      s"$topCheckpoint | $performedSinceTopCheckpoint\n" +
-      s"${checkpointStackNotTop.map(c => s"${c._1} | ${c._2}").mkString("\n")}"*/
+      s"Checkpoint level : $levelOfTopCheckpoint\n"
   }
 }
 

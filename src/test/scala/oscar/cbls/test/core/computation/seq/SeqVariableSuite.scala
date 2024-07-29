@@ -9,10 +9,12 @@ import oscar.cbls.core.computation.seq.SeqVariable
 
 import scala.util.Random
 
-class SeqVariableProperties extends Properties("SeqVariable Properties") {
+class SeqVariableProperties(initialSize: Int) extends Properties("SeqVariable Properties") {
 
-//  propertyWithSeed("Commands work, Explicit seed", Some("Zj24rqSBRvGwY8WHPUrurk4CXbA9BuvS6Gb-5owQNmN=")) = SeqVariableCommands.property()
-  propertyWithSeed("Commands work, no Explicit seed", None) = SeqVariableCommands.property()
+//  propertyWithSeed("Commands work, Explicit seed", Some("A_NJIYquVIQ95ha1eB3F05kDdyE2hXu9u3JzjSyjq_C=")) = SeqVariableCommands.property()
+
+  SeqVariableCommands.setSize(initialSize)
+  propertyWithSeed(s"Commands work starting with sequence of size $initialSize, no Explicit seed", None) = SeqVariableCommands.property()
 
   override def overrideParameters(p: Test.Parameters): Test.Parameters = {
     p.withMinSuccessfulTests(500)
@@ -20,6 +22,6 @@ class SeqVariableProperties extends Properties("SeqVariable Properties") {
 }
 
 class SeqVariableSuite extends AnyFunSuite with Checkers {
-  val seqVariableProperty = new SeqVariableProperties
-  seqVariableProperty.check()
+  new SeqVariableProperties(0).check()
+  new SeqVariableProperties(20).check()
 }
