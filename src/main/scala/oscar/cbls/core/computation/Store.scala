@@ -42,6 +42,8 @@ class Store(debugLevel: Int = 0) extends PropagationStructure(debugLevel) {
     lastSolutionNb
   }
 
+  def isClosed: Boolean = closed
+
   /** Extracts the current value of the decision [[Variable]] registered in the Store.
     *
     * The decision variables are not defined by any [[Invariant]]. Those Variables combined with a

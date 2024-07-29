@@ -26,8 +26,8 @@ import oscar.cbls.visual.profiling.ProfilingConsole
   * A search procedure is a Neighborhood or a combination of Neighborhood.
   *
   * For instance :
-  *   - AssignNeighborhood => Upon calling [[Neighborhood.doAllMoves]], this search procedure will assign new
-  *     values to a variable. Until no value are left to test.
+  *   - AssignNeighborhood => Upon calling [[Neighborhood.doAllMoves]], this search procedure will
+  *     assign new values to a variable. Until no value are left to test.
   *
   *   - AssignNeighborhood(A: IntVariable) dynAndThen AssignNeighborhood(B: IntVariable) ==> This
   *     one will assign a value to A and then to B and evaluate the combined movement.
@@ -53,7 +53,8 @@ abstract class Neighborhood(_name: String) {
 
   /** Activates search profiling through all search procedure.
     * ==WARNING :==
-    * Be sure to call it at the root of your final search procedure to have complete search profiling
+    * Be sure to call it at the root of your final search procedure to have complete search
+    * profiling
     */
   def profileSearch(): Unit
 
@@ -96,6 +97,11 @@ abstract class Neighborhood(_name: String) {
     *   The total number of performed moves
     */
   def doAllMoves(objective: Objective, shouldStop: Int => Boolean = _ => false): Int = {
+    require(
+      objective.objValue.model.isClosed,
+      "Cannot start the search, the model for your " +
+        "objective variable is not closed."
+    )
     var moveCount: Int      = 0
     var noMoreMove: Boolean = false
     objective.verboseMode_=(this._verboseMode)
