@@ -42,6 +42,7 @@ class Store(debugLevel: Int = 0) extends PropagationStructure(debugLevel) {
     lastSolutionNb
   }
 
+  /** Checks if `close()` method has been called. */
   def isClosed: Boolean = closed
 
   /** Extracts the current value of the decision [[Variable]] registered in the Store.
