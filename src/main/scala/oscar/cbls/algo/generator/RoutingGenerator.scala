@@ -13,7 +13,7 @@
 
 package oscar.cbls.algo.generator
 
-import GeneratorUtil.{inInterval, _}
+import GeneratorUtil._
 
 import scala.collection.mutable
 import scala.util.Random
@@ -47,7 +47,7 @@ object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
     (pos, dist, unroutedCost, vehicleCost)
   }
 
-  /** Generates random date for routing. Each city is evenly distant from each other.
+  /** Generates random data for routing. Each city is evenly distant from each other.
     *
     * @param nCities
     *   The number of cities to generate.
@@ -74,6 +74,40 @@ object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
 
     (pos, dist, unroutedCost, vehicleCost)
   }
+
+  /** Generates random data for routing. The generated cities are grouped by clusters.
+    *
+    * @param numCluster
+    *   The number of cluster of cities to generate.
+    * @param citiesByCluster
+    *   How many cluster have to be in a cluster.
+    * @param clusterRadius
+    *   The maximum distance between the cities in the same cluster.
+    * @param weightFactorForUnroutedCities
+    *   A factor used to increase the cost of unrouted cities.
+    * @param maxCostForUsingVehicle
+    *   The maximal cost for using a new vehicle.
+    * @return
+    *   An array of `numCluster * citiesByCluster` positions for the cities, including the depot at
+    *   index 0, a distances matrix, the cost for unrouted cities and a cost for using a new
+    *   vehicle.
+    */
+  def generateClusteredRoutingDate(
+    numCluster: Int,
+    citiesByCluster: Int,
+    clusterRadius: Int,
+    weightFactorForUnroutedCities: Long,
+    maxCostForUsingVehicle: Long
+  ): (Array[(Long, Long)], Array[Array[Long]], Long, Long) = {
+    val depot        = randomDepot
+    val cities       = clusteredCities(numCluster, citiesByCluster, clusterRadius)
+    val pos          = depot +: cities
+    val dist         = distancesMatrix(pos)
+    val unroutedCost = costForUnroutedCities(dist, weightFactorForUnroutedCities)
+    val vehicleCost  = costForUsingVehicle(maxCostForUsingVehicle)
+
+    (pos, dist, unroutedCost, vehicleCost)
+  }
 }
 
 /** @param minXY
@@ -81,7 +115,7 @@ object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
   * @param maxXY
   *   Upper bound on the coordinates of the points.
   */
-protected class RoutingGenerator(var minXY: Long, var maxXY: Long) {
+class RoutingGenerator(var minXY: Long, var maxXY: Long) {
   // We are working on a square map
   private val side: Long = maxXY - minXY
 
@@ -144,7 +178,7 @@ protected class RoutingGenerator(var minXY: Long, var maxXY: Long) {
         } while (distance(currentCenter, pos) > clusterRadius && tries < 10000)
         citiesPositions += pos
       }
-      var tries = 0
+      var tries     = 0
       var newCenter = (0L, 0L)
       do {
         newCenter = randomPosition(minXY, maxXY, minXY, maxXY)
