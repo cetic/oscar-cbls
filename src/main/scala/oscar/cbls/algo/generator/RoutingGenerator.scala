@@ -16,6 +16,7 @@ package oscar.cbls.algo.generator
 import GeneratorUtil._
 
 import scala.collection.mutable
+import scala.math.{atan2, cos, pow, sin, sqrt}
 import scala.util.Random
 
 object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
@@ -279,4 +280,39 @@ class RoutingGenerator(var minXY: Long, var maxXY: Long) {
     *   A random cost in `[0, maxCost]` for using a new vehicle.
     */
   def costForUsingVehicle(maxCost: Long): Long = rng.between(0L, maxCost + 1)
+
+  def geographicRandom(
+    n: Int,
+    minLatitude: Double,
+    maxLatitude: Double,
+    minLongitude: Double,
+    maxLongitude: Double
+  ) = {
+
+    def randomLatitude: Double  = rng.between(minLatitude, maxLatitude)
+    def randomLongitude: Double = rng.between(minLongitude, maxLongitude)
+
+    def distance(coord1: (Double, Double), coord2: (Double, Double)): Double = {
+      val (latitude1: Double, longitude1: Double) = coord1
+      val (latitude2: Double, longitude2: Double) = coord2
+
+      val r: Double = 6371e3 // meters
+
+      val φ1 = latitude1.toRadians
+      val φ2 = latitude2.toRadians
+      val Δφ = (latitude2 - latitude1).abs.toRadians
+      val Δλ = (longitude2 - longitude1).abs.toRadians
+
+      val a = pow(sin(Δφ / 2), 2) + cos(φ1) * cos(φ2) * pow(sin(Δλ / 2), 2)
+      val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+      r * c // meters
+    }
+
+    val pos: Array[(Double, Double)] = Array.fill(n)((randomLatitude, randomLongitude))
+    val distanceMatrix: Array[Array[Double]] =
+      Array.tabulate(n, n)((i, j) => distance(pos(i), pos(j)))
+
+    (pos, distanceMatrix)
+  }
 }
