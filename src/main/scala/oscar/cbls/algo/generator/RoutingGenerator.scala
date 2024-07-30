@@ -264,7 +264,7 @@ class RoutingGenerator(var minXY: Long, var maxXY: Long) {
       None
     }
 
-    var i: Int              = 1
+    var i: Int              = 0
     var translateIndex: Int = 0
 
     while (i < n) {
@@ -275,7 +275,7 @@ class RoutingGenerator(var minXY: Long, var maxXY: Long) {
         lastNode = newNode
         i += 1
         translateIndex = 0
-      } else if (translateIndex < translate.length) { // We need to try another translation
+      } else if (translateIndex + 1 < translate.length) { // We need to try another translation
         translateIndex += 1
       } else { // We tried all the translation. The last node is blocked by other nodes.
         unblock() match {
