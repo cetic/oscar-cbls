@@ -24,7 +24,7 @@ object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
   /** Generates random data for routing.
     *
     * @param nCities
-    *   The number of cities to generate.
+    *   The number of ''cities'' to generate.
     * @param weightFactorForUnroutedCities
     *   A factor used to increase the cost of unrouted cities.
     * @param maxCostForUsingVehicle
@@ -51,7 +51,7 @@ object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
   /** Generates random data for routing. Each city is evenly distant from each other.
     *
     * @param nCities
-    *   The number of cities to generate.
+    *   The number of ''cities'' to generate.
     * @param weightFactorForUnroutedCities
     *   A factor used to increase the cost of unrouted cities.
     * @param maxCostForUsingVehicle
@@ -79,7 +79,7 @@ object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
   /** Generates random data for routing. The generated cities are grouped by clusters.
     *
     * @param numCluster
-    *   The number of cluster of cities to generate.
+    *   The number of cluster of ''cities'' to generate.
     * @param citiesByCluster
     *   How many cluster have to be in a cluster.
     * @param clusterRadius
@@ -109,12 +109,52 @@ object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
 
     (pos, dist, unroutedCost, vehicleCost)
   }
+
+  /** Generates random data for Routing. The generated positions correspond to geographical
+    * coordinates (latitude, longitude) in degrees.
+    *
+    * @param nCities
+    *   The number of ''cities'' to generate.
+    * @param weightFactorForUnroutedCities
+    *   A factor used to increase the cost of unrouted cities.
+    * @param maxCostForUsingVehicle
+    *   The maximal cost for using a new vehicle.
+    * @param minLatitude
+    *   The inclusive minimal latitude of the points in degrees.
+    * @param maxLatitude
+    *   The exclusive maximal latitude of the points in degrees.
+    * @param minLongitude
+    *   The inclusive maximal longitude of the points in degrees.
+    * @param maxLongitude
+    *   The exclusive maximal longitude of the points in degrees.
+    * @return
+    *   An array of positions (latitude, longitude) in degrees for the cities, including the depot
+    *   at index 0, a distances matrix (in meters), the cost for unrouted cities and a cost for
+    *   using a new vehicle.
+    */
+  def generateGeographicRoutingData(
+    nCities: Int,
+    weightFactorForUnroutedCities: Long,
+    maxCostForUsingVehicle: Long,
+    minLatitude: Double = -90.0,
+    maxLatitude: Double = 90.0,
+    minLongitude: Double = -180.0,
+    maxLongitude: Double = 180.0
+  ): (Array[(Double, Double)], Array[Array[Double]], Double, Long) = {
+    // Positions for the cities + the depot
+    val (pos, dist) =
+      geographicRandom(nCities + 1, minLatitude, maxLatitude, minLongitude, maxLongitude)
+    val unroutedCost = costForUnroutedCities(dist, weightFactorForUnroutedCities.toDouble)
+    val vehicleCost  = costForUsingVehicle(maxCostForUsingVehicle)
+
+    (pos, dist, unroutedCost, vehicleCost)
+  }
 }
 
 /** @param minXY
-  *   Lower bound on the coordinates of the points.
+  *   Inclusive lower bound on the coordinates of the points.
   * @param maxXY
-  *   Upper bound on the coordinates of the points.
+  *   Inclusive upper bound on the coordinates of the points.
   */
 class RoutingGenerator(var minXY: Long, var maxXY: Long) {
   // We are working on a square map
@@ -274,6 +314,25 @@ class RoutingGenerator(var minXY: Long, var maxXY: Long) {
     maxDist + rng.between(0L, side * weightFactor + 1L)
   }
 
+  /** @param distances
+    *   A matrix of distances between each cities including the depot.
+    * @param weightFactor
+    *   A factor used to increase the cost of unrouted cities.
+    * @return
+    *   A cost for unrouted cities based on the maximum distance from the input distance matrix.
+    */
+  def costForUnroutedCities(distances: Array[Array[Double]], weightFactor: Double): Double = {
+    var maxDist: Double = 0.0
+    for (i <- distances.indices) {
+      for (j <- distances(i).indices) {
+        val d = distances(i)(j)
+        if (d > maxDist) maxDist = d
+      }
+    }
+
+    maxDist + rng.between(0.0, side * weightFactor)
+  }
+
   /** @param maxCost
     *   The maximal cost for using a new vehicle.
     * @return
@@ -281,32 +340,50 @@ class RoutingGenerator(var minXY: Long, var maxXY: Long) {
     */
   def costForUsingVehicle(maxCost: Long): Long = rng.between(0L, maxCost + 1)
 
+  /** Generates points with geographical coordinates (in degrees) and the associated distance
+    * matrix. The Earth is supposed to be perfectly spherical.
+    *
+    * @param n
+    *   The number of points to generate.
+    * @param minLatitude
+    *   The inclusive minimal latitude of the points in degrees.
+    * @param maxLatitude
+    *   The exclusive maximal latitude of the points in degrees.
+    * @param minLongitude
+    *   The inclusive maximal longitude of the points in degrees.
+    * @param maxLongitude
+    *   The exclusive maximal longitude of the points in degrees.
+    */
   def geographicRandom(
     n: Int,
     minLatitude: Double,
     maxLatitude: Double,
     minLongitude: Double,
     maxLongitude: Double
-  ) = {
+  ): (Array[(Double, Double)], Array[Array[Double]]) = {
 
     def randomLatitude: Double  = rng.between(minLatitude, maxLatitude)
     def randomLongitude: Double = rng.between(minLongitude, maxLongitude)
 
+    /** Compute the great-circle distance between the two points. */
     def distance(coord1: (Double, Double), coord2: (Double, Double)): Double = {
       val (latitude1: Double, longitude1: Double) = coord1
       val (latitude2: Double, longitude2: Double) = coord2
 
-      val r: Double = 6371e3 // meters
+      val r: Double = 6371e3 // Earth radius in meters
 
-      val φ1 = latitude1.toRadians
-      val φ2 = latitude2.toRadians
-      val Δφ = (latitude2 - latitude1).abs.toRadians
-      val Δλ = (longitude2 - longitude1).abs.toRadians
+      val phi1        = latitude1.toRadians
+      val phi2        = latitude2.toRadians
+      val deltaPhi    = (phi2 - phi1).abs
+      val deltaLambda = (longitude2 - longitude1).abs.toRadians
 
-      val a = pow(sin(Δφ / 2), 2) + cos(φ1) * cos(φ2) * pow(sin(Δλ / 2), 2)
-      val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+      // Haversine formula to compute the chord length
+      val chord = pow(sin(deltaPhi / 2), 2) + cos(phi1) * cos(phi2) * pow(sin(deltaLambda / 2), 2)
+      // Central angle. We use atan2 to be sure to have an angle in [0, pi] radians
+      val sigma = 2 * atan2(sqrt(chord), sqrt(1 - chord))
 
-      r * c // meters
+      // Arc length
+      r * sigma // meters
     }
 
     val pos: Array[(Double, Double)] = Array.fill(n)((randomLatitude, randomLongitude))
@@ -315,4 +392,5 @@ class RoutingGenerator(var minXY: Long, var maxXY: Long) {
 
     (pos, distanceMatrix)
   }
+
 }
