@@ -24,88 +24,87 @@ object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
 
   /** Generates random data for routing.
     *
-    * @param nCities
-    *   The number of ''cities'' to generate.
-    * @param weightFactorForUnroutedCities
-    *   A factor used to increase the cost of unrouted cities.
+    * @param numNodes
+    *   The number of ''nodes to visit''.
+    * @param weightFactorForUnroutedNodes
+    *   A factor used to increase the cost of unrouted nodes.
     * @param maxCostForUsingVehicle
     *   The maximal cost for using a new vehicle.
     * @return
-    *   An array of positions for the cities, including the depot at index 0, a distances matrix,
-    *   the cost for unrouted cities and a cost for using a new vehicle.
+    *   An array of positions for the nodes, including the depot at index 0, a distances matrix, the
+    *   cost for unrouted nodes and a cost for using a new vehicle.
     */
   def generateRandomRoutingData(
-    nCities: Int,
-    weightFactorForUnroutedCities: Long,
+    numNodes: Int,
+    weightFactorForUnroutedNodes: Long,
     maxCostForUsingVehicle: Long
   ): (Array[(Long, Long)], Array[Array[Long]], Long, Long) = {
     val depot        = randomDepot
-    val cities       = randomCities(nCities)
-    val pos          = depot +: cities
+    val nodes        = randomNodes(numNodes)
+    val pos          = depot +: nodes
     val dist         = distancesMatrix(pos)
-    val unroutedCost = costForUnroutedCities(dist, weightFactorForUnroutedCities)
+    val unroutedCost = costForUnroutedNodes(dist, weightFactorForUnroutedNodes)
     val vehicleCost  = costForUsingVehicle(maxCostForUsingVehicle)
 
     (pos, dist, unroutedCost, vehicleCost)
   }
 
-  /** Generates random data for routing. Each city is evenly distant from each other.
+  /** Generates random data for routing. Each node is evenly distant from each other.
     *
-    * @param nCities
-    *   The number of ''cities'' to generate.
-    * @param weightFactorForUnroutedCities
-    *   A factor used to increase the cost of unrouted cities.
+    * @param numNodes
+    *   The number of ''node to visit''.
+    * @param weightFactorForUnroutedNodes
+    *   A factor used to increase the cost of unrouted nodes.
     * @param maxCostForUsingVehicle
     *   The maximal cost for using a new vehicle.
     * @return
-    *   An array of positions for the cities, including the depot at index 0, a distances matrix,
-    *   the cost for unrouted cities and a cost for using a new vehicle.
+    *   An array of positions for the nodes, including the depot at index 0, a distances matrix, the
+    *   cost for unrouted nodes and a cost for using a new vehicle.
     */
   def generateEvenlySpacedRoutingData(
-    nCities: Int,
-    weightFactorForUnroutedCities: Long,
+    numNodes: Int,
+    weightFactorForUnroutedNodes: Long,
     maxCostForUsingVehicle: Long,
-    cityDistance: Long
+    nodeDistance: Long
   ): (Array[(Long, Long)], Array[Array[Long]], Long, Long) = {
     val depot        = centerDepot
-    val cities       = evenlySpacedCities(nCities, cityDistance)
-    val pos          = depot +: cities
+    val nodes        = evenlySpacedNodes(numNodes, nodeDistance)
+    val pos          = depot +: nodes
     val dist         = distancesMatrix(pos)
-    val unroutedCost = costForUnroutedCities(dist, weightFactorForUnroutedCities)
+    val unroutedCost = costForUnroutedNodes(dist, weightFactorForUnroutedNodes)
     val vehicleCost  = costForUsingVehicle(maxCostForUsingVehicle)
 
     (pos, dist, unroutedCost, vehicleCost)
   }
 
-  /** Generates random data for routing. The generated cities are grouped by clusters.
+  /** Generates random data for routing. The generated nodes are grouped by clusters.
     *
     * @param numCluster
-    *   The number of cluster of ''cities'' to generate.
-    * @param citiesByCluster
+    *   The number of cluster of ''node to visit'' .
+    * @param nodesByCluster
     *   How many cluster have to be in a cluster.
     * @param clusterRadius
-    *   The maximum distance between the cities in the same cluster.
-    * @param weightFactorForUnroutedCities
-    *   A factor used to increase the cost of unrouted cities.
+    *   The maximum distance between the numNodes in the same cluster.
+    * @param weightFactorForUnroutedNodes
+    *   A factor used to increase the cost of unrouted nodes.
     * @param maxCostForUsingVehicle
     *   The maximal cost for using a new vehicle.
     * @return
-    *   An array of `numCluster * citiesByCluster` positions for the cities, including the depot at
-    *   index 0, a distances matrix, the cost for unrouted cities and a cost for using a new
-    *   vehicle.
+    *   An array of `numCluster * nodeByCluster` positions for the nodes, including the depot at
+    *   index 0, a distances matrix, the cost for unrouted nodes and a cost for using a new vehicle.
     */
   def generateClusteredRoutingDate(
     numCluster: Int,
-    citiesByCluster: Int,
+    nodesByCluster: Int,
     clusterRadius: Int,
-    weightFactorForUnroutedCities: Long,
+    weightFactorForUnroutedNodes: Long,
     maxCostForUsingVehicle: Long
   ): (Array[(Long, Long)], Array[Array[Long]], Long, Long) = {
     val depot        = randomDepot
-    val cities       = clusteredCities(numCluster, citiesByCluster, clusterRadius)
-    val pos          = depot +: cities
+    val nodes        = clusteredNodes(numCluster, nodesByCluster, clusterRadius)
+    val pos          = depot +: nodes
     val dist         = distancesMatrix(pos)
-    val unroutedCost = costForUnroutedCities(dist, weightFactorForUnroutedCities)
+    val unroutedCost = costForUnroutedNodes(dist, weightFactorForUnroutedNodes)
     val vehicleCost  = costForUsingVehicle(maxCostForUsingVehicle)
 
     (pos, dist, unroutedCost, vehicleCost)
@@ -114,10 +113,10 @@ object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
   /** Generates random data for Routing. The generated positions correspond to geographical
     * coordinates (latitude, longitude) in degrees.
     *
-    * @param nCities
-    *   The number of ''cities'' to generate.
-    * @param weightFactorForUnroutedCities
-    *   A factor used to increase the cost of unrouted cities.
+    * @param numNodes
+    *   The number of ''node to visit''.
+    * @param weightFactorForUnroutedNodes
+    *   A factor used to increase the cost of unrouted nodes.
     * @param maxCostForUsingVehicle
     *   The maximal cost for using a new vehicle.
     * @param minLatitude
@@ -129,23 +128,23 @@ object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
     * @param maxLongitude
     *   The exclusive maximal longitude of the points in degrees.
     * @return
-    *   An array of positions (latitude, longitude) in degrees for the cities, including the depot
-    *   at index 0, a distances matrix (in meters), the cost for unrouted cities and a cost for
-    *   using a new vehicle.
+    *   An array of positions (latitude, longitude) in degrees for the nodes, including the depot at
+    *   index 0, a distances matrix (in meters), the cost for unrouted nodes and a cost for using a
+    *   new vehicle.
     */
   def generateGeographicRoutingData(
-    nCities: Int,
-    weightFactorForUnroutedCities: Long,
+    numNodes: Int,
+    weightFactorForUnroutedNodes: Long,
     maxCostForUsingVehicle: Long,
     minLatitude: Double = -90.0,
     maxLatitude: Double = 90.0,
     minLongitude: Double = -180.0,
     maxLongitude: Double = 180.0
   ): (Array[(Double, Double)], Array[Array[Double]], Double, Long) = {
-    // Positions for the cities + the depot
+    // Positions for the nodes + the depot
     val (pos, dist) =
-      geographicRandom(nCities + 1, minLatitude, maxLatitude, minLongitude, maxLongitude)
-    val unroutedCost = costForUnroutedCities(dist, weightFactorForUnroutedCities.toDouble)
+      geographicRandom(numNodes + 1, minLatitude, maxLatitude, minLongitude, maxLongitude)
+    val unroutedCost = costForUnroutedNodes(dist, weightFactorForUnroutedNodes.toDouble)
     val vehicleCost  = costForUsingVehicle(maxCostForUsingVehicle)
 
     (pos, dist, unroutedCost, vehicleCost)
@@ -186,39 +185,39 @@ class RoutingGenerator(var minXY: Long, var maxXY: Long) {
   }
 
   /** @param n
-    *   The number of cities to generate.
+    *   The number of nodes to generate.
     * @return
-    *   `n` random position for cities.
+    *   `n` random position for nodes.
     */
-  def randomCities(n: Int): Array[(Long, Long)] =
+  def randomNodes(n: Int): Array[(Long, Long)] =
     Array.fill(n)(randomPosition(minXY, maxXY, minXY, maxXY))
 
   /** @param numCluster
-    *   The number of cluster of cities to generate.
-    * @param citiesByCluster
+    *   The number of cluster of nodes to generate.
+    * @param nodesByCluster
     *   How many cluster have to be in a cluster.
     * @param clusterRadius
-    *   The maximum distance between the cities in the same cluster.
+    *   The maximum distance between the nodes in the same cluster.
     * @return
-    *   `numCluster * citiesByCluster` random position grouped in clusters.
+    *   `numCluster * nodesByCluster` random position grouped in clusters.
     */
-  def clusteredCities(
+  def clusteredNodes(
     numCluster: Int,
-    citiesByCluster: Int,
+    nodesByCluster: Int,
     clusterRadius: Int
   ): Array[(Long, Long)] = {
-    val citiesPositions: mutable.Queue[(Long, Long)] = mutable.Queue()
+    val nodesPositions: mutable.Queue[(Long, Long)] = mutable.Queue()
 
     var currentCenter = randomPosition(minXY, maxXY, minXY, maxXY)
     for (_ <- 0 until numCluster) {
-      for (_ <- 0 until citiesByCluster) {
+      for (_ <- 0 until nodesByCluster) {
         var pos: (Long, Long) = (0L, 0L)
         var tries: Int        = 0
         do {
           pos = randomPosition(minXY, maxXY, minXY, maxXY)
           tries += 1
         } while (distance(currentCenter, pos) > clusterRadius && tries < 10000)
-        citiesPositions += pos
+        nodesPositions += pos
       }
       var tries     = 0
       var newCenter = (0L, 0L)
@@ -228,38 +227,38 @@ class RoutingGenerator(var minXY: Long, var maxXY: Long) {
       } while (distance(currentCenter, newCenter) <= clusterRadius && tries < 10000)
       currentCenter = newCenter
     }
-    citiesPositions.toArray
+    nodesPositions.toArray
   }
 
   /** @param n
-    *   The number of cities to generate.
-    * @param cityDistance
-    *   The distance between two adjacent cities.
+    *   The number of nodes to generate.
+    * @param nodeDistance
+    *   The distance between two adjacent nodes.
     * @return
-    *   An array of cities two by two distant from `cityDistance`. The center of the map is reserved
+    *   An array of nodes two by two distant from `nodeDistance`. The center of the map is reserved
     *   for the depot
     */
-  def evenlySpacedCities(n: Int, cityDistance: Long): Array[(Long, Long)] = {
-    val citiesPositions: mutable.Queue[(Long, Long)] = mutable.Queue()
-    var lastCity: (Long, Long)                       = centerDepot
+  def evenlySpacedNodes(n: Int, nodeDistance: Long): Array[(Long, Long)] = {
+    val nodesPositions: mutable.Queue[(Long, Long)] = mutable.Queue()
+    var lastNode: (Long, Long)                       = centerDepot
 
-    val plusX     = (p: (Long, Long)) => (p._1 + cityDistance, p._2)
-    val minusX    = (p: (Long, Long)) => (p._1 - cityDistance, p._2)
-    val plusY     = (p: (Long, Long)) => (p._1, p._2 + cityDistance)
-    val minusY    = (p: (Long, Long)) => (p._1, p._2 - cityDistance)
+    val plusX     = (p: (Long, Long)) => (p._1 + nodeDistance, p._2)
+    val minusX    = (p: (Long, Long)) => (p._1 - nodeDistance, p._2)
+    val plusY     = (p: (Long, Long)) => (p._1, p._2 + nodeDistance)
+    val minusY    = (p: (Long, Long)) => (p._1, p._2 - nodeDistance)
     var translate = mutable.ArraySeq(plusX, minusX, plusY, minusY)
 
-    /** To be admissible, a city must be in the map and not already exist. */
-    def isAdmissibleCity(city: (Long, Long)): Boolean =
-      inInterval(city._1, minXY, maxXY) && inInterval(city._2, minXY, maxXY) && !citiesPositions
-        .contains(city) && city != centerDepot
+    /** To be admissible, a node must be in the map and not already exist. */
+    def isAdmissibleNode(node: (Long, Long)): Boolean =
+      inInterval(node._1, minXY, maxXY) && inInterval(node._2, minXY, maxXY) && !nodesPositions
+        .contains(node) && node != centerDepot
 
-    /** Tries to find a city which is not encircled by four other cities. */
+    /** Tries to find a node which is not encircled by four other nodes. */
     def unblock(): Option[(Long, Long)] = {
-      for (city <- citiesPositions) {
+      for (node <- nodesPositions) {
         for (t <- translate) {
-          val newCity = t(city)
-          if (isAdmissibleCity(newCity)) return Some(newCity)
+          val newNode = t(node)
+          if (isAdmissibleNode(newNode)) return Some(newNode)
         }
       }
       None
@@ -270,26 +269,26 @@ class RoutingGenerator(var minXY: Long, var maxXY: Long) {
 
     while (i < n) {
       translate = rng.shuffle(translate)
-      val newCity = translate(translateIndex)(lastCity)
-      if (isAdmissibleCity(newCity)) { // We can add the new city
-        citiesPositions += newCity
-        lastCity = newCity
+      val newNode = translate(translateIndex)(lastNode)
+      if (isAdmissibleNode(newNode)) { // We can add the new node
+        nodesPositions += newNode
+        lastNode = newNode
         i += 1
         translateIndex = 0
       } else if (translateIndex < translate.length) { // We need to try another translation
         translateIndex += 1
-      } else { // We tried all the translation. The last city is blocked by other cities.
+      } else { // We tried all the translation. The last node is blocked by other nodes.
         unblock() match {
-          case Some(city) => // We can restart the generation from another city
-            citiesPositions += city
-            lastCity = city
+          case Some(node) => // We can restart the generation from another node
+            nodesPositions += node
+            lastNode = node
             i += 1
             translateIndex = 0
-          case None => return citiesPositions.toArray // The map is full. We cannot add another city
+          case None => return nodesPositions.toArray // The map is full. We cannot add another node
         }
       }
     }
-    citiesPositions.toArray
+    nodesPositions.toArray
   }
 
   /** Computes the euclidean distance between  each pair of position in input. */
@@ -297,13 +296,13 @@ class RoutingGenerator(var minXY: Long, var maxXY: Long) {
     Array.tabulate(pos.length, pos.length)((i, j) => distance(pos(i), pos(j)))
 
   /** @param distances
-    *   A matrix of distances between each cities including the depot.
+    *   A matrix of distances between each nodes including the depot.
     * @param weightFactor
-    *   A factor used to increase the cost of unrouted cities.
+    *   A factor used to increase the cost of unrouted nodes.
     * @return
-    *   A cost for unrouted cities based on the maximum distance from the input distance matrix.
+    *   A cost for unrouted nodes based on the maximum distance from the input distance matrix.
     */
-  def costForUnroutedCities(distances: Array[Array[Long]], weightFactor: Long): Long = {
+  def costForUnroutedNodes(distances: Array[Array[Long]], weightFactor: Long): Long = {
     var maxDist: Long = 0L
     for (i <- distances.indices) {
       for (j <- distances(i).indices) {
@@ -316,13 +315,13 @@ class RoutingGenerator(var minXY: Long, var maxXY: Long) {
   }
 
   /** @param distances
-    *   A matrix of distances between each cities including the depot.
+    *   A matrix of distances between each nodes including the depot.
     * @param weightFactor
-    *   A factor used to increase the cost of unrouted cities.
+    *   A factor used to increase the cost of unrouted nodes.
     * @return
-    *   A cost for unrouted cities based on the maximum distance from the input distance matrix.
+    *   A cost for unrouted nodes based on the maximum distance from the input distance matrix.
     */
-  def costForUnroutedCities(distances: Array[Array[Double]], weightFactor: Double): Double = {
+  def costForUnroutedNodes(distances: Array[Array[Double]], weightFactor: Double): Double = {
     var maxDist: Double = 0.0
     for (i <- distances.indices) {
       for (j <- distances(i).indices) {
