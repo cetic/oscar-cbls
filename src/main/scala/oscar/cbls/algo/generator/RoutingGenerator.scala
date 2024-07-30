@@ -49,7 +49,10 @@ object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
     (pos, dist, unroutedCost, vehicleCost)
   }
 
-  /** Generates random data for routing. Each node is evenly distant from each other.
+  /** Generates random data for routing. Each node is evenly distant from each other. WARNING: If
+    * `numNodes` and `nodeDistance` are too big considering the map's bounds, this generator cannot
+    * guarentee to generate exactly `numNodes` nodes. In that case, the generator stops after
+    * fulfilling the map.
     *
     * @param numNodes
     *   The number of ''node to visit''.
@@ -68,7 +71,7 @@ object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
     nodeDistance: Long
   ): (Array[(Long, Long)], Array[Array[Long]], Long, Long) = {
     val depot        = centerDepot
-    val nodes        = evenlySpacedNodes(numNodes, nodeDistance)
+    val nodes        = evenlySpacedNodes(numNodes, nodeDistance, depot)
     val pos          = depot +: nodes
     val dist         = distancesMatrix(pos)
     val unroutedCost = costForUnroutedNodes(dist, weightFactorForUnroutedNodes)
@@ -234,15 +237,17 @@ class RoutingGenerator(var minXY: Long, var maxXY: Long) {
     *   The number of nodes to generate.
     * @param nodeDistance
     *   The distance between two adjacent nodes.
+    * @param depotPos
+    *   The position of the depot.
     * @return
     *   An array of nodes two by two distant from `nodeDistance`. The center of the map is reserved
     *   for the depot. WARNING: If `n` and `nodeDistance` are too big considering the map's bounds,
     *   this generator cannot guarentee to generate exactly `n` nodes. In that case, the generator
     *   stops after fulfilling the map.
     */
-  def evenlySpacedNodes(n: Int, nodeDistance: Long): Array[(Long, Long)] = {
+  def evenlySpacedNodes(n: Int, nodeDistance: Long, depotPos: (Long, Long)): Array[(Long, Long)] = {
     val nodesPositions: mutable.Queue[(Long, Long)] = mutable.Queue()
-    var lastNode: (Long, Long)                       = centerDepot
+    var lastNode: (Long, Long)                      = depotPos
 
     val plusX     = (p: (Long, Long)) => (p._1 + nodeDistance, p._2)
     val minusX    = (p: (Long, Long)) => (p._1 - nodeDistance, p._2)
@@ -253,7 +258,7 @@ class RoutingGenerator(var minXY: Long, var maxXY: Long) {
     /** To be admissible, a node must be in the map and not already exist. */
     def isAdmissibleNode(node: (Long, Long)): Boolean =
       inInterval(node._1, minXY, maxXY) && inInterval(node._2, minXY, maxXY) && !nodesPositions
-        .contains(node) && node != centerDepot
+        .contains(node) && node != depotPos
 
     /** Tries to find a node which is not encircled by four other nodes. */
     def unblock(): Option[(Long, Long)] = {
