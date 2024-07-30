@@ -236,7 +236,9 @@ class RoutingGenerator(var minXY: Long, var maxXY: Long) {
     *   The distance between two adjacent nodes.
     * @return
     *   An array of nodes two by two distant from `nodeDistance`. The center of the map is reserved
-    *   for the depot
+    *   for the depot. WARNING: If `n` and `nodeDistance` are too big considering the map's bounds,
+    *   this generator cannot guarentee to generate exactly `n` nodes. In that case, the generator
+    *   stops after fulfilling the map.
     */
   def evenlySpacedNodes(n: Int, nodeDistance: Long): Array[(Long, Long)] = {
     val nodesPositions: mutable.Queue[(Long, Long)] = mutable.Queue()
