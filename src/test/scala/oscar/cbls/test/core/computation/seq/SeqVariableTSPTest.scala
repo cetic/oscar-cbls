@@ -6,9 +6,6 @@ import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.seq.SeqVariable
 
-/** This test
- *
- */
 class SeqVariableTSPTest extends AnyFunSuite{
 
   private def generateVRPData(): (SeqVariable, SeqVariable) ={

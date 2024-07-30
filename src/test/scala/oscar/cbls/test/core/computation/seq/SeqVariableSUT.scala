@@ -18,22 +18,22 @@ import oscar.cbls.core.computation.seq.SeqVariable
 case class SeqVariableSUT(seq: SeqVariable, copy: SeqVariable) {
 
   def insert(elem: Int, afterPos: Int): List[Int] = {
-    val insertAfterExplorer = seq.newValue.explorerAtPosition(afterPos)
+    val insertAfterExplorer = seq.pendingValue.explorerAtPosition(afterPos)
     seq.insertAfterPosition(elem, insertAfterExplorer.get)
     seq.value.toList
   }
 
   def move(fromPos: Int, toPos: Int, afterPos: Int, flip: Boolean): List[Int] = {
-    val fromExplorer: IntSequenceExplorer  = seq.newValue.explorerAtPosition(fromPos).get
-    val toExplorer: IntSequenceExplorer    = seq.newValue.explorerAtPosition(toPos).get
-    val afterExplorer: IntSequenceExplorer = seq.newValue.explorerAtPosition(afterPos).get
+    val fromExplorer: IntSequenceExplorer  = seq.pendingValue.explorerAtPosition(fromPos).get
+    val toExplorer: IntSequenceExplorer    = seq.pendingValue.explorerAtPosition(toPos).get
+    val afterExplorer: IntSequenceExplorer = seq.pendingValue.explorerAtPosition(afterPos).get
     seq.move(fromExplorer, toExplorer, afterExplorer, flip, None)
     seq.value.toList
   }
 
   def flip(fromPos: Int, toPos: Int): List[Int] = {
-    val fromExplorer: IntSequenceExplorer = seq.newValue.explorerAtPosition(fromPos).get
-    val toExplorer: IntSequenceExplorer   = seq.newValue.explorerAtPosition(toPos).get
+    val fromExplorer: IntSequenceExplorer = seq.pendingValue.explorerAtPosition(fromPos).get
+    val toExplorer: IntSequenceExplorer   = seq.pendingValue.explorerAtPosition(toPos).get
     seq.flip(fromExplorer, toExplorer, None)
     seq.value.toList
   }
@@ -46,17 +46,17 @@ case class SeqVariableSUT(seq: SeqVariable, copy: SeqVariable) {
     toPos_2: Int,
     flip_2: Boolean
   ): List[Int] = {
-    val from1Explorer: IntSequenceExplorer = seq.newValue.explorerAtPosition(fromPos_1).get
-    val to1Explorer: IntSequenceExplorer   = seq.newValue.explorerAtPosition(toPos_1).get
-    val from2Explorer: IntSequenceExplorer = seq.newValue.explorerAtPosition(fromPos_2).get
-    val to2Explorer: IntSequenceExplorer   = seq.newValue.explorerAtPosition(toPos_2).get
+    val from1Explorer: IntSequenceExplorer = seq.pendingValue.explorerAtPosition(fromPos_1).get
+    val to1Explorer: IntSequenceExplorer   = seq.pendingValue.explorerAtPosition(toPos_1).get
+    val from2Explorer: IntSequenceExplorer = seq.pendingValue.explorerAtPosition(fromPos_2).get
+    val to2Explorer: IntSequenceExplorer   = seq.pendingValue.explorerAtPosition(toPos_2).get
 
     seq.swapSegments(from1Explorer, to1Explorer, flip_1, from2Explorer, to2Explorer, flip_2, None)
     seq.value.toList
   }
 
   def remove(pos: Int): List[Int] = {
-    val removeExplorer = seq.newValue.explorerAtPosition(pos).get
+    val removeExplorer = seq.pendingValue.explorerAtPosition(pos).get
     seq.remove(removeExplorer)
     seq.value.toList
   }

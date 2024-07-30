@@ -15,6 +15,8 @@ package oscar.cbls.core.computation.seq
 
 import oscar.cbls.algo.sequence.IntSequence
 
+/** Companion object of SeqUpdateAssign
+ */
 object SeqUpdateAssign {
   def apply(sequence: IntSequence): SeqUpdateAssign = new SeqUpdateAssign(sequence)
 
@@ -22,7 +24,7 @@ object SeqUpdateAssign {
     Some(seqUpdateAssign.newSequence)
 }
 
-/** A [[SeqUpdate]] that assign a new value to the [[oscar.cbls.algo.sequence.IntSequence]].
+/** A SeqUpdate that assigns a new value to the [[oscar.cbls.algo.sequence.IntSequence]].
   *
   * This update is NOT INCREMENTAL.
   */

@@ -40,7 +40,7 @@ object SeqUpdateInsert {
     prev: SeqUpdate
   ): SeqUpdate = {
     prev match {
-      // here, since there is no seq given, we compare on the move itself to anihilate the moves
+      // here, since there is no seq given, we compare on the move itself to annihilate the moves
       case x @ SeqUpdateRemove(
             removedPositionExplorer: IntSequenceExplorer,
             prevOfDelete: SeqUpdate
@@ -58,7 +58,7 @@ object SeqUpdateInsert {
   }
 
   /** Returns the update corresponding to the insertion of the specified value after the
-    * IntSequenceExplorer
+    * IntSequenceExplorer knowing the resulting IntSequence.
     *
     * @param value
     *   The value we want to insert
@@ -66,8 +66,8 @@ object SeqUpdateInsert {
     *   The IntSequenceExplorer at the position after which we want to insert the value
     * @param prev
     *   The last update of the IntSequence
-    * @param seq
-    *   The IntSequence value after the insertion (if known)
+    * @param seqAfter
+    *   The IntSequence value after the insertion
     * @return
     *   The update corresponding to the defined insertion
     */
@@ -75,14 +75,14 @@ object SeqUpdateInsert {
     value: Int,
     insertAfterPositionExplorer: IntSequenceExplorer,
     prev: SeqUpdate,
-    seq: IntSequence
+    seqAfter: IntSequence
   ): SeqUpdate = {
     prev match {
-      // check if the last two moves cancelled themselves
+      // checks if the last two moves cancelled themselves
       case _ @SeqUpdateRemove(_: IntSequenceExplorer, prevOfDelete: SeqUpdate)
-          if prevOfDelete.newValue sameIdentity seq =>
+          if prevOfDelete.newValue sameIdentity seqAfter =>
         prevOfDelete
-      case _ => new SeqUpdateInsert(value, insertAfterPositionExplorer, prev, seq)
+      case _ => new SeqUpdateInsert(value, insertAfterPositionExplorer, prev, seqAfter)
     }
   }
 
@@ -100,7 +100,7 @@ object SeqUpdateInsert {
 /** An IntSequence update, this update consists in inserting a new node after a given position.
   *
   * The position is passed as a IntSequenceExplorer to ease the update of the potential Invariant
-  * depending on this IntSequence.
+  * depending on this SeqVariable.
   *
   * @param value
   *   The inserted value
@@ -108,15 +108,15 @@ object SeqUpdateInsert {
   *   The IntSequenceExplorer after which the value is inserted
   * @param prev
   *   The previous update of the IntSequence
-  * @param seq
+  * @param seqAfter
   *   The new IntSequence value
   */
 class SeqUpdateInsert(
   val value: Int,
   val insertAfterPositionExplorer: IntSequenceExplorer,
   prev: SeqUpdate,
-  seq: IntSequence
-) extends SeqUpdateWithPrev(prev: SeqUpdate, seq) {
+  seqAfter: IntSequence
+) extends SeqUpdateWithPrev(prev: SeqUpdate, seqAfter) {
 
   // The position of the new value
   private lazy val insertionPos: Int =
@@ -129,7 +129,7 @@ class SeqUpdateInsert(
     expectedValueAfterFullReverse: IntSequence,
     updatesAlreadyReversed: SeqUpdate
   ): SeqUpdate = {
-    val explorerAtInsertionPositionInNewSeq = seq match {
+    val explorerAtInsertionPositionInNewSeq = seqAfter match {
       case iis: InsertedIntSequence =>
         iis.explorerAtPosition(insertionPos).get
       case is: IntSequence =>
@@ -146,7 +146,7 @@ class SeqUpdateInsert(
       value: Int,
       insertAfterPositionExplorer: IntSequenceExplorer,
       prev.appendThisTo(previousUpdates),
-      seq
+      seqAfter
     )
   }
 
@@ -162,7 +162,12 @@ class SeqUpdateInsert(
   }
 
   override protected[computation] def regularize(maxPivot: Int): SeqUpdate =
-    SeqUpdateInsert(value, insertAfterPositionExplorer, prev, seq.regularizeToMaxPivot(maxPivot))
+    SeqUpdateInsert(
+      value,
+      insertAfterPositionExplorer,
+      prev,
+      seqAfter.regularizeToMaxPivot(maxPivot)
+    )
 
   override def toString: String =
     s"SeqUpdateInsert(value:$value after position:${insertAfterPositionExplorer.position} prev:$prev)"

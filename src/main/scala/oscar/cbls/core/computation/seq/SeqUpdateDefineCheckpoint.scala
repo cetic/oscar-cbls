@@ -15,34 +15,59 @@ package oscar.cbls.core.computation.seq
 
 import oscar.cbls.algo.sequence.IntSequence
 
+/** Companion object of SeqUpdateDefineCheckpoint
+  */
 object SeqUpdateDefineCheckpoint {
 
-  def apply(prev: SeqUpdate, maxPivotPerValuePercent: Int, level: Int):SeqUpdateDefineCheckpoint = {
+  def apply(
+    prev: SeqUpdate,
+    maxPivotPerValuePercent: Int,
+    level: Int
+  ): SeqUpdateDefineCheckpoint = {
     val doRegularize = level == 0
-    val newPrev = if(doRegularize) prev.regularize(maxPivotPerValuePercent) else prev
-    new SeqUpdateDefineCheckpoint(newPrev, maxPivotPerValuePercent, level)
+    val newPrev      = if (doRegularize) prev.regularize(maxPivotPerValuePercent) else prev
+    new SeqUpdateDefineCheckpoint(newPrev, level)
   }
 
-  def unapply(u:SeqUpdateDefineCheckpoint):Option[(SeqUpdate,Int)] = Some(u.prev,u.level)
+  def apply(prev: SeqUpdate, level: Int): SeqUpdateDefineCheckpoint = {
+    new SeqUpdateDefineCheckpoint(prev, level)
+  }
+
+  def unapply(u: SeqUpdateDefineCheckpoint): Option[(SeqUpdate, Int)] = Some(u.prev, u.level)
 }
 
-class SeqUpdateDefineCheckpoint(prev: SeqUpdate, maxPivotPerValuePercent: Int, val level: Int) extends SeqUpdateWithPrev(prev, prev.newValue) {
+/** A SeqUpdate that defines a new checkpoint for the SeqVariable.
+  *
+  * @param prev
+  *   The previous SeqUpdate of the batch
+  * @param level
+  *   The level of this checkpoint, starting at 0
+  */
+class SeqUpdateDefineCheckpoint(prev: SeqUpdate, val level: Int)
+    extends SeqUpdateWithPrev(prev, prev.newValue) {
 
-  override protected[computation] def reverseThis(newValueForThisAfterFullReverse: IntSequence, nextOp: SeqUpdate): SeqUpdate = {
+  override protected[computation] def reverseThis(
+    newValueForThisAfterFullReverse: IntSequence,
+    nextOp: SeqUpdate
+  ): SeqUpdate = {
     require(nextOp.newValue sameIdentity this.newValue)
-    prev.reverseThis(newValueForThisAfterFullReverse, SeqUpdateDefineCheckpoint(nextOp, maxPivotPerValuePercent, level))
+    prev.reverseThis(newValueForThisAfterFullReverse, SeqUpdateDefineCheckpoint(nextOp, level))
   }
 
   override protected[computation] def appendThisTo(previousUpdates: SeqUpdate): SeqUpdate = {
-    SeqUpdateDefineCheckpoint(prev.appendThisTo(previousUpdates), maxPivotPerValuePercent,level)
+    SeqUpdateDefineCheckpoint(prev.appendThisTo(previousUpdates), level)
   }
 
-  protected[computation] def regularize(maxPivot:Int) : SeqUpdate = this
+  protected[computation] def regularize(maxPivot: Int): SeqUpdate = this
 
   // TODO : Is it the right way ?
-  def oldPosToNewPos(oldPos : Int) : Option[Int] = throw new Error("SeqUpdateDefineCheckpoint should not be queried for delta on moves")
+  def oldPosToNewPos(oldPos: Int): Option[Int] = throw new Error(
+    "SeqUpdateDefineCheckpoint should not be queried for delta on moves"
+  )
 
-  def newPos2OldPos(newPos : Int) : Option[Int] = throw new Error("SeqUpdateDefineCheckpoint should not be queried for delta on moves")
+  def newPos2OldPos(newPos: Int): Option[Int] = throw new Error(
+    "SeqUpdateDefineCheckpoint should not be queried for delta on moves"
+  )
 
-  override def toString : String = s"SeqUpdateDefineCheckpoint(level:$level prev:$prev)"
+  override def toString: String = s"SeqUpdateDefineCheckpoint(level:$level prev:$prev)"
 }

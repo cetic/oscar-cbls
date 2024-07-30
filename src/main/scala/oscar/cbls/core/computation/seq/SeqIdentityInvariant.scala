@@ -33,7 +33,7 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
 
   toValue := fromValue.value
 
-  override def notifySeqChanges(v: SeqVariable, d: Int, changes: SeqUpdate): Unit = {
+  override def notifySeqChanges(v: SeqVariable, contextualVarIndex: Int, changes: SeqUpdate): Unit = {
     assert(v == fromValue)
     digestChanges(changes)
   }
@@ -95,7 +95,7 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
       case SeqUpdateAssign(s) =>
         toValue := s
       case SeqUpdateLastNotified(value: IntSequence) =>
-        assert(value equals toValue.newValue)
+        assert(value equals toValue.pendingValue)
       case SeqUpdateRollBackToTopCheckpoint(
             value: IntSequence,
             howToRollBack: SeqUpdate,
@@ -112,7 +112,7 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
           s"fail on quick equals equals=${value.toList equals checkPointStack.head.toList} value:$value topCheckpoint:${checkPointStack.head}"
         )
         toValue.rollbackToTopCheckpoint()
-      case SeqUpdateReleaseTopCheckPoint(prev: SeqUpdate, _: IntSequence) =>
+      case SeqUpdateReleaseTopCheckpoint(prev: SeqUpdate, _: IntSequence) =>
         digestChanges(prev)
         popTopCheckpoint()
         toValue.releaseTopCheckpoint()
@@ -133,7 +133,7 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
 
   override def checkInternals(): Unit = {
     require(
-      toValue.newValue.toList equals fromValue.newValue.toList,
+      toValue.pendingValue.toList equals fromValue.pendingValue.toList,
       Some(
         s"IdentitySeq: toValue.value=${toValue.value} should equals fromValue.value=${fromValue.value}"
       )

@@ -68,8 +68,8 @@ object SeqUpdateMove {
     *   If the sub-sequence needs to be flipped
     * @param prev
     *   The last update of the IntSequence
-    * @param seq
-    *   The IntSequence value after the move (if known)
+    * @param seqAfter
+    *   The IntSequence value after the move
     * @return
     *   The update corresponding to the defined move
     */
@@ -79,12 +79,19 @@ object SeqUpdateMove {
     afterExplorer: IntSequenceExplorer,
     flip: Boolean,
     prev: SeqUpdate,
-    seq: IntSequence
+    seqAfter: IntSequence
   ): SeqUpdate = {
     prev match {
-      case u: SeqUpdateMove if u.prev.newValue sameIdentity seq => u.prev
+      case u: SeqUpdateMove if u.prev.newValue sameIdentity seqAfter => u.prev
       case _ =>
-        new SeqUpdateMove(fromIncludedExplorer, toIncludedExplorer, afterExplorer, flip, prev, seq)
+        new SeqUpdateMove(
+          fromIncludedExplorer,
+          toIncludedExplorer,
+          afterExplorer,
+          flip,
+          prev,
+          seqAfter
+        )
     }
   }
 
@@ -124,8 +131,8 @@ object SeqUpdateMove {
   *   If the sub-sequence needs to be flipped
   * @param prev
   *   The last update of the IntSequence
-  * @param seq
-  *   The IntSequence value after the move (if known)
+  * @param seqAfter
+  *   The IntSequence value after the move
   */
 class SeqUpdateMove(
   val fromIncludedExplorer: IntSequenceExplorer,
@@ -133,18 +140,18 @@ class SeqUpdateMove(
   val afterExplorer: IntSequenceExplorer,
   val flip: Boolean,
   prev: SeqUpdate,
-  seq: IntSequence
-) extends SeqUpdateWithPrev(prev, seq) {
+  seqAfter: IntSequence
+) extends SeqUpdateWithPrev(prev, seqAfter) {
 
   assert(
-    seq equals prev.newValue
+    seqAfter equals prev.newValue
       .moveAfter(fromIncludedExplorer, toIncludedExplorer, afterExplorer, flip, fast = true),
-    s"given seq=$seq should be ${prev.newValue
+    s"given seq=$seqAfter should be ${prev.newValue
         .moveAfter(fromIncludedExplorer, toIncludedExplorer, afterExplorer, flip, fast = true)}"
   )
 
   def isSimpleFlip: Boolean       = afterExplorer.next == fromIncludedExplorer && flip
-  def isNop: Boolean              = afterExplorer.next == fromIncludedExplorer && !flip
+  def isNotMoving: Boolean        = afterExplorer.next == fromIncludedExplorer && !flip
   def fromValue: Int              = fromIncludedExplorer.value
   def toValue: Int                = toIncludedExplorer.value
   def afterValue: Int             = afterExplorer.value
@@ -167,9 +174,9 @@ class SeqUpdateMove(
     prev.reverseThis(
       newValueForThisAfterFullReverse,
       SeqUpdateMove(
-        seq.explorerAtPosition(oldPosToNewPos(intFromIncluded).get).get,
-        seq.explorerAtPosition(oldPosToNewPos(intToIncluded).get).get,
-        seq.explorerAtPosition(oldPosToNewPos(fromIncludedExplorer.position - 1).get).get,
+        seqAfter.explorerAtPosition(oldPosToNewPos(intFromIncluded).get).get,
+        seqAfter.explorerAtPosition(oldPosToNewPos(intToIncluded).get).get,
+        seqAfter.explorerAtPosition(oldPosToNewPos(fromIncludedExplorer.position - 1).get).get,
         flip,
         nextOp,
         prev.newValue
@@ -184,11 +191,11 @@ class SeqUpdateMove(
       afterExplorer,
       flip,
       prev.appendThisTo(previousUpdates),
-      seq: IntSequence
+      seqAfter: IntSequence
     )
   }
 
-  private val localBijection: PiecewiseUnitaryAffineFunction = seq match {
+  private val localBijection: PiecewiseUnitaryAffineFunction = seqAfter match {
     case m: MovedIntSequence =>
       m.localBijection
     case _ =>
@@ -222,7 +229,7 @@ class SeqUpdateMove(
       afterExplorer,
       flip,
       prev,
-      seq.regularizeToMaxPivot(maxPivot)
+      seqAfter.regularizeToMaxPivot(maxPivot)
     )
 
   override def toString: String =

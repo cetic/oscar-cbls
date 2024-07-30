@@ -22,11 +22,7 @@ object SeqConst {
     s"SeqConst_$nextNameCounter"
   }
 
-  def apply(model: Store, initialValues: List[Int], name: String = nextName()): SeqConst ={
-    new SeqConst(model, initialValues, name)
+  def apply(model: Store, initialValues: List[Int], name: String = nextName()): SeqVariable = {
+    new SeqVariable(model, initialValues, name, isConstant = true)
   }
-}
-
-class SeqConst(model: Store, initialValues: List[Int], name: String) extends SeqVariable(model, initialValues, name, isConstant = true )  {
-
 }

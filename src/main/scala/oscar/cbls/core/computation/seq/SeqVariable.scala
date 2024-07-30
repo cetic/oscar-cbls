@@ -15,11 +15,47 @@ package oscar.cbls.core.computation.seq
 
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation.{Invariant, SavedValue, Store, Variable}
-import oscar.cbls.core.propagation.PropagationStructure
 
+/** Defines the [[oscar.cbls.core.computation.Variable]] that will encapsulate an
+  * [[oscar.cbls.algo.sequence.IntSequence]] so that it can behave as a
+  * [[oscar.cbls.core.propagation.PropagationElement]].
+  *
+  * This class provides the classical modification method (insert,move,remove) but not only. There
+  * are also several methods allowing a checkpoint/rollback mechanism :
+  *   - defineCurrentValueAsCheckpoint : registers the actual value as the top checkpoint
+  *   - rollbackToTopCheckpoint : cancel every modification since the top checkpoint
+  *   - releaseTopCheckpoint : remove the top checkpoint
+  *
+  * A classical use of the SeqVariable :
+  *   1. Exploration phase :
+  *      i. define a new top checkpoint
+  *      i. insert a new value
+  *      i. propagate and check the result
+  *      i. rollback to top checkpoint
+  *      i. insert a new value
+  *      i. propagate and check the result
+  *      i. rollback to top checkpoint
+  *      i. ...
+  *   1. Commit phase (once you found the move you want) :
+  *      i. rollback and release all checkpoint
+  *      i. do your insert/move/remove
+  *
+  * @param model
+  *   The propagation structure to which the element is attached
+  * @param initialValue
+  *   The initial value of the SeqVariable
+  * @param name
+  *   The (optional) name of the Variable.
+  * @param maxPivotPerValuePercent
+  *   The maximum number of [[oscar.cbls.algo.sequence.affineFunction.Pivot]] per 100 value in the
+  *   IntSequence. When defining a new checkpoint, if this value is exceeded, a regularization is
+  *   done.
+  * @param isConstant
+  *   If the variable is a constant
+  */
 class SeqVariable(
   model: Store,
-  initialValues: List[Int],
+  initialValue: List[Int],
   name: String = "SeqVariable",
   maxPivotPerValuePercent: Int = 4,
   isConstant: Boolean = false
@@ -28,16 +64,19 @@ class SeqVariable(
   require(model != null)
   setDomain(Int.MinValue, Int.MaxValue)
 
-  // Latest propagated value
-  private var mOldValue: IntSequence = {
-    if (initialValues.isEmpty) IntSequence.empty()
-    else IntSequence(initialValues)
+  /*
+  The actual value of this variable
+   For listening invariants this is the value of the variable until next propagation.
+   */
+  private var _value: IntSequence = {
+    if (initialValue.isEmpty) IntSequence.empty()
+    else IntSequence(initialValue)
   }
-  // Stack of notification to notify at next propagation
-  private var toNotify: SeqUpdate = SeqUpdateLastNotified(mOldValue)
+  // The pending value of this variable, as a stack of modification to be propagated.
+  private var toNotify: SeqUpdate = SeqUpdateLastNotified(_value)
 
-  /** Returns the new value of this SeqVariable */
-  def newValue: IntSequence = toNotify.newValue
+  /** Returns the pending value of this SeqVariable, the one that may be not propagated yet. */
+  def pendingValue: IntSequence = toNotify.newValue
 
   override def name(): String = name
 
@@ -50,11 +89,11 @@ class SeqVariable(
     *   The new value of this SeqVariable.
     */
   def value: IntSequence = {
-    if (model == null) return mOldValue
+    if (model == null) return _value
     val propagating = model.propagating
     if (isADecisionVariable && !propagating) return toNotify.newValue
     if (!propagating) model.propagate(Some(this))
-    mOldValue
+    _value
   }
 
   // Check if the explorer is on the right IntSequence
@@ -65,6 +104,8 @@ class SeqVariable(
         s"\nShould be ${toNotify.newValue} with token : ${toNotify.newValue.token}.\nGot ${explorer.intSequence} with token : ${explorer.intSequence.token}"
     )
   }
+
+  private def checkConstant(): Unit = require(!isConstant, "Can not modify a constant SeqVariable")
 
   /** Inserts a value after a given position.
     *
@@ -80,6 +121,7 @@ class SeqVariable(
     insertAfterPositionExplorer: IntSequenceExplorer,
     seqAfter: Option[IntSequence] = None
   ): Unit = {
+    checkConstant()
     checkExplorerForMove(insertAfterPositionExplorer, "InsertAfterPositionExplorer")
     recordPerformedIncrementalUpdate(seqAfter match {
       case Some(sa) => (prev, _) => SeqUpdateInsert(value, insertAfterPositionExplorer, prev, sa)
@@ -102,6 +144,7 @@ class SeqVariable(
     removePositionExplorer: IntSequenceExplorer,
     seqAfter: Option[IntSequence] = None
   ): Unit = {
+    checkConstant()
     checkExplorerForMove(removePositionExplorer, "RemovePositionExplorer")
 
     recordPerformedIncrementalUpdate(seqAfter match {
@@ -135,6 +178,7 @@ class SeqVariable(
     flip: Boolean,
     seqAfter: Option[IntSequence] = None
   ): Unit = {
+    checkConstant()
     checkExplorerForMove(fromIncludedPositionExplorer, "FromIncludedPositionExplorer")
     checkExplorerForMove(toIncludedPositionExplorer, "ToIncludedPositionExplorer")
     checkExplorerForMove(afterPositionExplorer, "AfterPositionExplorer")
@@ -152,7 +196,6 @@ class SeqVariable(
         s"Got from : $fromPos to : $toPos after : $afterPos"
     )
     if (!(afterPos == fromPos - 1 && (fromPos == toPos || !flip))) {
-
       recordPerformedIncrementalUpdate(seqAfter match {
         case Some(sa) =>
           (prev, _) =>
@@ -203,6 +246,7 @@ class SeqVariable(
     toIncludedPositionExplorer: IntSequenceExplorer,
     seqAfter: Option[IntSequence] = None
   ): Unit = {
+    checkConstant()
     move(
       fromIncludedPositionExplorer,
       toIncludedPositionExplorer,
@@ -238,6 +282,7 @@ class SeqVariable(
     flipSecondSegment: Boolean,
     seqAfter: Option[IntSequence] = None
   ): Unit = {
+    checkConstant()
     checkExplorerForMove(firstSegmentStartPositionExplorer, "FirstSegmentStartPositionExplorer")
     checkExplorerForMove(firstSegmentEndPositionExplorer, "FirstSegmentEndPositionExplorer")
     checkExplorerForMove(secondSegmentStartPositionExplorer, "SecondSegmentStartPositionExplorer")
@@ -318,7 +363,6 @@ class SeqVariable(
     }
   }
 
-  @inline
   /** Registers a new incremental update
     *
     * Generates and stores the new update in toNotify and performedSinceTopCheckpoint
@@ -341,6 +385,11 @@ class SeqVariable(
     }
   }
 
+  /** Sets the new value of this SeqVariable
+    *
+    * @param seq
+    *   The new value
+    */
   def :=(seq: IntSequence): Unit = setValue(seq)
 
   /** Assigns a new value to this SeqVariable.
@@ -351,6 +400,7 @@ class SeqVariable(
     *   The new IntSequence value
     */
   def setValue(newIntSequence: IntSequence): Unit = {
+    checkConstant()
     require(
       levelOfTopCheckpoint == -1,
       "Sequences cannot be assigned when a checkpoint has been defined"
@@ -377,6 +427,7 @@ class SeqVariable(
 
   /** Defines the current value as a new checkpoint */
   def defineCurrentValueAsCheckpoint(seqAfter: Option[IntSequence] = None): IntSequence = {
+    checkConstant()
     toNotify =
       SeqUpdateDefineCheckpoint(toNotify, maxPivotPerValuePercent, levelOfTopCheckpoint + 1)
 
@@ -403,7 +454,11 @@ class SeqVariable(
     *   as the SeqVariable
     */
   def rollbackToTopCheckpoint(checkingCheckpoint: Option[IntSequence] = None): Unit = {
-    require(topCheckpoint != null, "Can not rollback to top checkpoint since no checkpoint has been defined")
+    checkConstant()
+    require(
+      topCheckpoint != null,
+      "Can not rollback to top checkpoint since no checkpoint has been defined"
+    )
     if (checkingCheckpoint.nonEmpty)
       require(
         checkingCheckpoint.get sameIdentity topCheckpoint,
@@ -412,8 +467,6 @@ class SeqVariable(
       )
 
     rollbackSimplification(toNotify, topCheckpoint) match {
-      case CheckpointDeclarationReachedAndRemoved(_: SeqUpdate) =>
-        require(false, "Should not append")
       case CheckpointReachedNotRemoved(newToNotify: SeqUpdate) =>
         // Checkpoint value could be found in toNotify, and updates after it were removed so we don't have to do anything
         // Reset performedSinceTopCheckpoint and update toNotify
@@ -448,25 +501,28 @@ class SeqVariable(
     *
     * Used when exploring neighborhood. For instance, after exploring OnePointMove, we need to
     * release the top checkpoint.
+    *
+    * '''NOTE : you need to roll back to top checkpoint first'''
     */
   def releaseTopCheckpoint(): IntSequence = {
+    checkConstant()
     require(topCheckpoint != null, "No checkpoint defined to release")
-    require(levelOfTopCheckpoint >= 0)
     require(toNotify.newValue equals topCheckpoint, "You must be at top checkpoint to release it")
 
-    // Two cases, currently at checkpoint 0 or higher than 0
-
     toNotify = toNotify match {
+      // We just rolled back, simply add this new instruction
       case _: SeqUpdateRollBackToTopCheckpoint =>
-        SeqUpdateReleaseTopCheckPoint(toNotify, toNotify.newValue)
+        SeqUpdateReleaseTopCheckpoint(toNotify, toNotify.newValue)
+      // We are at top checkpoint level, just drop the checkpoint definition
       case dc: SeqUpdateDefineCheckpoint =>
         dc.prev
+      // The roll back instruction of the checkpoint definition are already commited, add this new instruction
       case ln: SeqUpdateLastNotified =>
         require(
           ln.value equals topCheckpoint,
           "Cannot release checkpoint since last notified value is not at top checkpoint value"
         )
-        SeqUpdateReleaseTopCheckPoint(toNotify, topCheckpoint)
+        SeqUpdateReleaseTopCheckpoint(toNotify, topCheckpoint)
     }
     checkpointStackNotTop = checkpointStackNotTop match {
       case newTop :: tail =>
@@ -489,14 +545,23 @@ class SeqVariable(
   /** Tries to find the last update corresponding to the searched checkpoint.
     *
     * Pops update until a checkpoint definition or a non-incremental update is reached. Then there
-    * are 4 scenarios :
-    *   - The sequence was not propagated ==> we should reach top checkpoint
-    *   - The sequence was propagated ==> top checkpoint is now in a SeqUpdateLastNotify we should
-    *     reach it
-    *   - There was an assignation (not incremental) ==> we can't go further back, so either it's
-    *     the target value or we cannot simplify the rollback
-    *   - We want to roll back multiple times and the sequence was propagated before roll-backing
-    *     \==> A SeqUpdateRollBack is already present,
+    * are several scenarios :
+    *   - We reached the searchedCheckpoint definition ==> It was not propagated yet, just drop
+    *     everything until then.
+    *   - We reached a rollbackToTopCheckpoint instruction
+    *     - It matches our searched checkpoint ==> The checkpoint definition was already propagated
+    *       but we already have a howToRollback instruction, just drop everything until then.
+    *     - It does not match our searched checkpoint ==> can't happen since we should have reached
+    *       a releaseTopCheckpoint before
+    *   - We reached a releaseTopCheckpoint instruction ==> it's definition was already propagated,
+    *     our targeted checkpoint is even further ==> no simplification
+    *   - We reached a LastNotify update
+    *     - Either it has our targeted checkpoint value, we can drop everything until then.
+    *     - Or there is no simplification.
+    *
+    * Note : We can not reach an seqUpdateAssign because assignation is only performed when no
+    * checkpoint are defined. And we need a checkpoint definition to rollback to it, so we must
+    * reach one before an assignation.
     *
     * @param updates
     *   The latest not propagated updates
@@ -543,11 +608,6 @@ class SeqVariable(
           case x => x
         }
 
-      case SeqUpdateAssign(value: IntSequence) =>
-        if (value sameIdentity searchedCheckpoint)
-          CheckpointReachedNotRemoved(updates)
-        else NoSimplificationPerformed
-
       case SeqUpdateLastNotified(value: IntSequence) =>
         if (value sameIdentity searchedCheckpoint)
           CheckpointReachedNotRemoved(updates)
@@ -567,109 +627,37 @@ class SeqVariable(
             checkpointValue: IntSequence,
             _: SeqUpdate,
             _: Int,
-            prev: SeqUpdate
+            _: SeqUpdate
           ) =>
         if (checkpointValue sameIdentity searchedCheckpoint)
           CheckpointReachedNotRemoved(updates)
-        else NoSimplificationPerformed
+        else {
+          require(requirement = false, "Can't happen, see method comment for more information")
+          NoSimplificationPerformed
+        }
 
       case _ => NoSimplificationPerformed
     }
   }
 
-  /** Removes the search checkpoint from the updates stack.
-    *
-    * @param updates
-    *   The updates stack
-    * @param searchedCheckpoint
-    *   The searched checkpoint
-    * @return
-    *   The cleaning result
-    */
-  private def removeCheckpointDeclarationIfPresent(
-    updates: SeqUpdate,
-    searchedCheckpoint: IntSequence
-  ): CleaningResult = {
-    updates match {
-      case SeqUpdateInsert(value: Int, pos: IntSequenceExplorer, prev: SeqUpdate) =>
-        removeCheckpointDeclarationIfPresent(prev, searchedCheckpoint) match {
-          case NoSimplificationPerformed => NoSimplificationPerformed
-          case CheckpointDeclarationReachedAndRemoved(newPrev) =>
-            CheckpointDeclarationReachedAndRemoved(
-              SeqUpdateInsert(value, pos, newPrev, updates.newValue)
-            )
-          case _ => throw new Error("unexpected match")
-        }
-
-      case SeqUpdateMove(
-            fromIncluded: IntSequenceExplorer,
-            toIncluded: IntSequenceExplorer,
-            after: IntSequenceExplorer,
-            flip: Boolean,
-            prev: SeqUpdate
-          ) =>
-        removeCheckpointDeclarationIfPresent(prev, searchedCheckpoint) match {
-          case NoSimplificationPerformed => NoSimplificationPerformed
-          case CheckpointDeclarationReachedAndRemoved(newPrev) =>
-            CheckpointDeclarationReachedAndRemoved(
-              SeqUpdateMove(fromIncluded, toIncluded, after, flip, newPrev, updates.newValue)
-            )
-          case _ => throw new Error("unexpected match")
-        }
-
-      case SeqUpdateRemove(position: IntSequenceExplorer, prev: SeqUpdate) =>
-        removeCheckpointDeclarationIfPresent(prev, searchedCheckpoint) match {
-          case NoSimplificationPerformed => NoSimplificationPerformed
-          case CheckpointDeclarationReachedAndRemoved(newPrev) =>
-            CheckpointDeclarationReachedAndRemoved(
-              SeqUpdateRemove(position, newPrev, updates.newValue)
-            )
-          case _ => throw new Error("unexpected match")
-        }
-
-      case SeqUpdateAssign(_: IntSequence) => NoSimplificationPerformed
-
-      case SeqUpdateLastNotified(_: IntSequence) => NoSimplificationPerformed
-
-      case SeqUpdateDefineCheckpoint(prev: SeqUpdate, _: Int) =>
-        require(
-          updates.newValue sameIdentity searchedCheckpoint,
-          "require fail on quick equals: " + updates.newValue + "should== " + searchedCheckpoint
-        )
-        CheckpointDeclarationReachedAndRemoved(prev)
-
-      case SeqUpdateRollBackToTopCheckpoint(
-            _: IntSequence,
-            _: SeqUpdate,
-            _: Int,
-            prev: SeqUpdate
-          ) =>
-        NoSimplificationPerformed
-
-      case _ => NoSimplificationPerformed
-    }
-  }
-
-  @inline
-  override def performPropagation(): Unit = {
+  protected[core] override def performPropagation(): Unit = {
     val dynListElements = getDynamicallyListeningElements
     dynListElements.foreach {
       case (inv: SeqNotificationTarget, index: Int) =>
         inv.notifySeqChanges(this, index, toNotify)
-      case (x: Invariant, _) =>
-        throw new IllegalArgumentException(
-          s"The listening Invariant ($x) does not extend SeqNotificationTarget, therefore no notification can be send to it."
-        )
     }
-    mOldValue = toNotify.newValue
-    toNotify = SeqUpdateLastNotified(mOldValue)
+    _value = toNotify.newValue
+    toNotify = SeqUpdateLastNotified(_value)
   }
 
   /** Creates a clone of this SeqVariable.
     *
-    * Through the SeqIdentityInvariant, each update of this variable will be applied to the clone.
+    * By using the [[SeqIdentityInvariant]], each update of this variable will be applied to the
+    * clone.
     *
     * @param maxDepth
+    *   The maximum depth of the IntSequence, aka, the maximum number of
+    *   [[oscar.cbls.algo.sequence.StackedUpdateIntSequence]] before committing them.
     * @return
     *   A clone of this variable
     */
@@ -685,7 +673,7 @@ class SeqVariable(
     clone
   }
 
-  /** Save the state of this variable */
+  /** Saves the state of this variable */
   override def save(): SavedValue = SeqSavedValue(this)
 
   override def setDomain(min: Long, max: Long): Unit = {
@@ -718,12 +706,6 @@ class SeqVariable(
 
 private abstract class CleaningResult
 
-private class SimplificationPerformed extends CleaningResult
-
-private case class CheckpointDeclarationReachedAndRemoved(newToNotify: SeqUpdate)
-    extends SimplificationPerformed()
-
-private case class CheckpointReachedNotRemoved(newToNotify: SeqUpdate)
-    extends SimplificationPerformed()
+private case class CheckpointReachedNotRemoved(newToNotify: SeqUpdate) extends CleaningResult()
 
 private case object NoSimplificationPerformed extends CleaningResult

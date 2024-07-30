@@ -33,7 +33,7 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
 
     val lastValue = List(5, 4, 3, 2, 1, 0)
     for (_ <- 0 until 10)
-      seqVar.setValue(IntSequence(List.fill(10)(Random.nextInt)))
+      seqVar.setValue(IntSequence(List.fill(10)(Random.nextInt())))
 
     seqVar.setValue(IntSequence(lastValue))
     clone.value.toList == lastValue should be(true)
@@ -202,8 +202,8 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
     model.close()
 
     seqVar.defineCurrentValueAsCheckpoint()
-    seqVar.insertAfterPosition(1, seqVar.newValue.explorerAtPosition(-1).get)
-    seqVar.insertAfterPosition(2, seqVar.newValue.explorerAtPosition(-1).get)
+    seqVar.insertAfterPosition(1, seqVar.pendingValue.explorerAtPosition(-1).get)
+    seqVar.insertAfterPosition(2, seqVar.pendingValue.explorerAtPosition(-1).get)
     clone.value.toList should be(List(2, 1))
     seqVar.rollbackToTopCheckpoint()
     clone.value.toList should be(List.empty)

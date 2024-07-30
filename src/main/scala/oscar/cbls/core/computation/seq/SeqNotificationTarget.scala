@@ -13,6 +13,25 @@
 
 package oscar.cbls.core.computation.seq
 
+/** This trait must be extended by any [[oscar.cbls.core.propagation.PropagationElement]] listening
+  * to a [[SeqVariable]]. Its only method will be used to notify the changes occurring to the
+  * listened SeqVariable.
+  */
 trait SeqNotificationTarget {
-  def notifySeqChanges(v: SeqVariable, d: Int, changes: SeqUpdate): Unit
+
+  /** Notifies the listening [[oscar.cbls.core.propagation.PropagationElement]] that the listened
+    * [[oscar.cbls.core.computation.seq.SeqVariable]] has changed.
+    *
+    * Implemented by the listening [[oscar.cbls.core.propagation.PropagationElement]]. Called by the
+    * listened [[oscar.cbls.core.computation.seq.SeqVariable]]
+    *
+    * @param v
+    *   The listened SeqVariable
+    * @param contextualVarIndex
+    *   The optional index of the SeqVariable in the context of the listening Invariant. Default -1
+    * @param changes
+    *   A stacked list of SeqUpdate, the first one represents the latest update. Use its prev value
+    *   to get the previous SeqUpdate...
+    */
+  def notifySeqChanges(v: SeqVariable, contextualVarIndex: Int, changes: SeqUpdate): Unit
 }

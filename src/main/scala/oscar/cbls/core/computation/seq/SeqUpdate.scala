@@ -57,16 +57,26 @@ abstract class SeqUpdate(val newValue: IntSequence) {
     */
   protected[seq] def appendThisTo(previousUpdates: SeqUpdate): SeqUpdate
 
+  /** Regularizes the [[oscar.cbls.algo.sequence.IntSequence]] and use it as the new value of this
+    * SeqUpdate.
+    *
+    * @param maxPivot
+    *   The maximum number of pivots that can exist within an IntSequence. If reached, they are
+    *   applied, leading to a new [[oscar.cbls.algo.sequence.ConcreteIntSequence]]
+    * @return
+    *   This SeqUpdate with a regularized IntSequence
+    */
   protected[seq] def regularize(maxPivot: Int): SeqUpdate
 }
 
-/** A more sophisticate abstract structure for IntSequence updates
+/** A more sophisticate abstract structure for IntSequence updates.
   *
   * It holds the previous update so that the invariant can easily handle a batch of updates. Only
-  * extended by SeqUpdate that doesn't end the batch
+  * extended by SeqUpdate that doesn't end the batch.
   * @param prev
+  *   The previous SeqUpdate of the batch
   * @param newValue
-  *   The value of the IntSequence after the update.
+  *   The value of the IntSequence after this update.
   */
 abstract class SeqUpdateWithPrev(val prev: SeqUpdate, newValue: IntSequence)
     extends SeqUpdate(newValue) {

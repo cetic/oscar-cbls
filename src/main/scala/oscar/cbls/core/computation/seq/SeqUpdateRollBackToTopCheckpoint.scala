@@ -15,6 +15,8 @@ package oscar.cbls.core.computation.seq
 
 import oscar.cbls.algo.sequence.IntSequence
 
+/** Companion object of SeqUpdateRollBackToTopCheckpoint
+  */
 object SeqUpdateRollBackToTopCheckpoint {
   def apply(
     checkpoint: IntSequence,
@@ -36,6 +38,13 @@ object SeqUpdateRollBackToTopCheckpoint {
     )
 }
 
+/** A SeqUpdate that roll back modification up to the top checkpoint of the SeqVariable.
+ *
+ * @param checkpoint The SeqVariable value at the top checkpoint
+ * @param howToRollBack The batch of updates that can be used to roll back modification
+ * @param level The level of the top checkpoint
+ * @param prev The previous update of the batch
+ */
 class SeqUpdateRollBackToTopCheckpoint(
   val checkpoint: IntSequence,
   val howToRollBack: SeqUpdate,
@@ -43,20 +52,6 @@ class SeqUpdateRollBackToTopCheckpoint(
   val prev: SeqUpdate
 ) extends SeqUpdate(checkpoint) {
 
-  /** Reverses the current update, used when roll-backing to a checkPoint. Since, those updates will
-    * be appended to the existing updates they have to be reverse from last update to first update.
-    *
-    * For instance :
-    *   - sinceLastCheckPoint : Insert(A, prevUpdate = Remove(B, prevUpdate = LastNotified(seq)))
-    *   - reversed : Insert(B, prevUpdate = Remove(A))
-    *
-    * @param expectedValueAfterFullReverse
-    *   The expected IntSequence value when all updates are reversed
-    * @param updatesAlreadyReversed
-    *   The updates already reversed
-    * @return
-    *   The stack of update that reverses the updates since last checkPoint
-    */
   override protected[seq] def reverseThis(
     expectedValueAfterFullReverse: IntSequence,
     updatesAlreadyReversed: SeqUpdate
@@ -65,16 +60,6 @@ class SeqUpdateRollBackToTopCheckpoint(
     null
   }
 
-  /** Appends the current update after the updates passed as parameter.
-    *
-    * This has to be applied after the previousUpdate so we'll have. ThisUpdate(..., prev =
-    * previousUpdates)
-    *
-    * @param previousUpdates
-    *   The updates after which this is applied
-    * @return
-    *   A new set of updates
-    */
   override protected[seq] def appendThisTo(previousUpdates: SeqUpdate): SeqUpdate = this
 
   override protected[seq] def regularize(maxPivot: Int): SeqUpdate = this
