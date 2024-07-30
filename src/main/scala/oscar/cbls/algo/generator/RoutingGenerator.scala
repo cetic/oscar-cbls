@@ -19,6 +19,7 @@ import scala.collection.mutable
 import scala.math.{atan2, cos, pow, sin, sqrt}
 import scala.util.Random
 
+/** Object to generate data for Routing problem. */
 object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
 
   /** Generates random data for routing.
