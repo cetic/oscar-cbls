@@ -19,8 +19,39 @@ import scala.collection.mutable
 import scala.math.{atan2, cos, pow, sin, sqrt}
 import scala.util.Random
 
-/** Object to generate data for Routing problem. */
-object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
+/** Object to generate data for Routing problem. By default the coordinates are generated in `[0;`
+  * `1000] * [0; 1000]`. See [[setMapDimensions]] to change it.
+  */
+object RoutingGenerator {
+
+  /** Inclusive lower bound on the coordinates of the points. */
+  private var minXY = 0L
+
+  /** Inclusive upper bound on the coordinates of the points. */
+  private var maxXY = 1000L
+
+  private var side: Long = maxXY - minXY
+
+  private var _seed: Long = Random.nextLong()
+  private val rng: Random = new Random(_seed)
+  GeneratorUtil.rng.setSeed(_seed)
+
+  /** Returns the seed used by the random generator. */
+  def seed: Long = _seed
+
+  /** Sets the seed of the random number generator with `s`. */
+  def setSeed(s: Long): Unit = {
+    rng.setSeed(s)
+    _seed = s
+    GeneratorUtil.rng.setSeed(s)
+  }
+
+  /** Set the bounds of the coordinates. */
+  def setMapDimensions(newMinXY: Long, newMaxXY: Long): Unit = {
+    minXY = newMinXY
+    maxXY = newMaxXY
+    side = newMaxXY - newMinXY
+  }
 
   /** Generates random data for routing.
     *
@@ -154,37 +185,6 @@ object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
     val vehicleCost  = costForUsingVehicle(maxCostForUsingVehicle)
 
     (pos, dist, unroutedCost, vehicleCost)
-  }
-}
-
-/** @param minXY
-  *   Inclusive lower bound on the coordinates of the points.
-  * @param maxXY
-  *   Inclusive upper bound on the coordinates of the points.
-  */
-class RoutingGenerator(protected var minXY: Long, protected var maxXY: Long) {
-  // We are working on a square map
-  private var side: Long = maxXY - minXY
-
-  protected var _seed: Long = Random.nextLong()
-  protected val rng: Random = new Random(_seed)
-  GeneratorUtil.rng.setSeed(_seed)
-
-  /** Return the seed used for random generator. */
-  def seed: Long = _seed
-
-  /** Sets the seed of random number generator with `s`. */
-  def setSeed(s: Long): Unit = {
-    rng.setSeed(s)
-    _seed = s
-    GeneratorUtil.rng.setSeed(s)
-  }
-
-  /** Set the bound of the coordinates. */
-  def setMapDimensions(newMinXY: Long, newMaxXY: Long): Unit = {
-    minXY = newMinXY
-    maxXY = newMaxXY
-    side = newMaxXY - newMinXY
   }
 
   /** Generates a random position for the depot. */
@@ -412,5 +412,4 @@ class RoutingGenerator(protected var minXY: Long, protected var maxXY: Long) {
 
     (pos, distanceMatrix)
   }
-
 }
