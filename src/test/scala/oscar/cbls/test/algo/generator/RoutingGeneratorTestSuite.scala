@@ -52,7 +52,7 @@ class RoutingGeneratorTestSuite extends AnyFunSuite with Matchers {
     val nodes = RoutingGenerator.evenlySpacedNodes(numNodes, nodesDist, depot)
 
     nodes should have length numNodes
-    // Nodes are generated from the depot and evenly spaced. So the modulo of their coordinate
+    // Nodes are generated from the depot and evenly spaced. So the modulo of their coordinates
     // must be the same than the modulo of the depot.
     for (n <- nodes) {
       n._1 % nodesDist should equal(depot._1 % nodesDist)
@@ -61,7 +61,7 @@ class RoutingGeneratorTestSuite extends AnyFunSuite with Matchers {
   }
 
   test(
-    "The expected number of nodes and the distance between them to big for the " +
+    "The expected number of nodes and the distance between them are too big for the " +
       "evenlySpacedGenerator"
   ) {
     val nodesDist = 500L
