@@ -80,7 +80,9 @@ object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
     (pos, dist, unroutedCost, vehicleCost)
   }
 
-  /** Generates random data for routing. The generated nodes are grouped by clusters.
+  /** Generates random data for routing. The generated nodes are grouped by clusters. WARNING:
+    * According to the dimension of the map and the input values, the generator can stop before
+    * generating `numCluster * nodesByCluster` nodes if the map is full or the clusters too small.
     *
     * @param numCluster
     *   The number of cluster of ''node to visit'' .
@@ -93,8 +95,9 @@ object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
     * @param maxCostForUsingVehicle
     *   The maximal cost for using a new vehicle.
     * @return
-    *   An array of `numCluster * nodeByCluster` positions for the nodes, including the depot at
-    *   index 0, a distances matrix, the cost for unrouted nodes and a cost for using a new vehicle.
+    *   An array of `numCluster * nodeByCluster` positions for the nodes (if the map is not full),
+    *   including the depot at index 0, a distances matrix, the cost for unrouted nodes and a cost
+    *   for using a new vehicle.
     */
   def generateClusteredRoutingDate(
     numCluster: Int,
@@ -202,7 +205,9 @@ class RoutingGenerator(var minXY: Long, var maxXY: Long) {
     * @param clusterRadius
     *   The maximum distance between the nodes in the same cluster.
     * @return
-    *   `numCluster * nodesByCluster` random position grouped in clusters.
+    *   `numCluster * nodesByCluster` random position grouped in clusters. WARNING: According to the
+    *   dimension of the map and the input values, the generator can stop before generating
+    *   `numCluster * nodesByCluster` nodes if the map is full or the clusters too small.
     */
   def clusteredNodes(
     numCluster: Int,
@@ -249,13 +254,14 @@ class RoutingGenerator(var minXY: Long, var maxXY: Long) {
     val nodesPositions: mutable.Queue[(Long, Long)] = mutable.Queue()
     var lastNode: (Long, Long)                      = depotPos
 
+    // Given an integer center, the following four points are always integer for all integer radii
     val plusX     = (p: (Long, Long)) => (p._1 + nodeDistance, p._2)
     val minusX    = (p: (Long, Long)) => (p._1 - nodeDistance, p._2)
     val plusY     = (p: (Long, Long)) => (p._1, p._2 + nodeDistance)
     val minusY    = (p: (Long, Long)) => (p._1, p._2 - nodeDistance)
     var translate = mutable.ArraySeq(plusX, minusX, plusY, minusY)
 
-    /** To be admissible, a node must be in the map and not already exist. */
+    /** To be admissible, a node must be included in the map bounds and not already exist. */
     def isAdmissibleNode(node: (Long, Long)): Boolean =
       inInterval(node._1, minXY, maxXY) && inInterval(node._2, minXY, maxXY) && !nodesPositions
         .contains(node) && node != depotPos
@@ -384,7 +390,7 @@ class RoutingGenerator(var minXY: Long, var maxXY: Long) {
       val deltaPhi    = (phi2 - phi1).abs
       val deltaLambda = (longitude2 - longitude1).abs.toRadians
 
-      // Haversine formula to compute the chord length
+      // Haversine formula to compute the half-chord length
       val chord = pow(sin(deltaPhi / 2), 2) + cos(phi1) * cos(phi2) * pow(sin(deltaLambda / 2), 2)
       // Central angle. We use atan2 to be sure to have an angle in [0, pi] radians
       val sigma = 2 * atan2(sqrt(chord), sqrt(1 - chord))
