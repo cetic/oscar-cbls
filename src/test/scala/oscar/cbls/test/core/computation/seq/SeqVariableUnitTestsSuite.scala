@@ -5,7 +5,7 @@ import org.scalatest.matchers.must.Matchers.be
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import oscar.cbls.algo.sequence.IntSequence
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.computation.seq.SeqVariable
+import oscar.cbls.core.computation.seq.{SeqConst, SeqVariable}
 
 import scala.util.Random
 
@@ -27,7 +27,7 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
     (seq, copy)
   }
 
-  test(s"The 'one checkpoint' usage of a TSP works as expected") {
+  test(s"SeqVariable : The 'one checkpoint' usage of a TSP works as expected") {
     val (route, copyForRouteLength) = generateSeq()
 
     route.defineCurrentValueAsCheckpoint()
@@ -49,7 +49,7 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
     )
   }
 
-  test(s"The 'two checkpoint' usage of a TSP works as expected") {
+  test(s"SeqVariable : The 'two checkpoint' usage of a TSP works as expected") {
     val (route, copyForRouteLength) = generateSeq()
 
     // Testing inserting 5 and then 8 (after and before 5)
@@ -95,7 +95,7 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
     )
   }
 
-  test("A SeqAssign can not be applied when a CheckPoint has been defined") {
+  test("SeqVariable : A SeqAssign can not be applied when a CheckPoint has been defined") {
     val model: Store = new Store(3)
     val seqVar       = new SeqVariable(model, List(0, 1, 2, 3, 4, 5))
     model.close()
@@ -109,7 +109,7 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
     )
   }
 
-  test("Applying multiples consecutive assign has the expected behavior") {
+  test("SeqVariable : Applying multiples consecutive assign has the expected behavior") {
     val (seqVar, clone) = generateSeq(myInitList = Some(List(0, 1, 2, 3, 4, 5)))
 
     val lastValue = List(5, 4, 3, 2, 1, 0)
@@ -120,7 +120,7 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
     clone.value.toList == lastValue should be(true)
   }
 
-  test("Assigning a new value after releasing a checkpoint works as expected") {
+  test("SeqVariable : Assigning a new value after releasing a checkpoint works as expected") {
     val (seqVar, clone) = generateSeq(myInitList = Some(List(0, 1, 2, 3, 4, 5)))
 
     val lastValue  = List(5, 4, 3, 2, 1, 0)
@@ -133,7 +133,7 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
     clone.value.toList == lastValue should be(true)
   }
 
-  test("IdentitySeq : Sending a list of updates without checkpoint works as expected") {
+  test("SeqVariable : Sending a list of updates without checkpoint works as expected") {
     val (seqVar, clone) = generateSeq(myInitList = Some(List(0, 1, 2, 3, 4, 5)))
     clone.value.toList == List(0, 1, 2, 3, 4, 5) should be(true)
 
@@ -148,7 +148,7 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
     clone.value.toList should be(List(1, 2, 0, 3, 4, 6))
   }
 
-  test("IdentitySeq : Sending a list of updates with checkpoints works as expected") {
+  test("SeqVariable : Sending a list of updates with checkpoints works as expected") {
     val (seqVar, clone) = generateSeq(myInitList = Some(List(0, 1, 2, 3, 4, 5)))
 
     clone.value.toList == List(0, 1, 2, 3, 4, 5) should be(true)
@@ -174,101 +174,8 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
     clone.value.toList should be(List(2, 0, 1, 3, 4, 7))
   }
 
-  test("IdentitySeq : Sending a list of updates with checkpoints and rollback works as expected") {
-    val (seqVar, clone) = generateSeq(myInitList = Some(List(0, 1, 2, 3, 4, 5)))
-
-    clone.value.toList == List(0, 1, 2, 3, 4, 5) should be(true)
-
-    seqVar.defineCurrentValueAsCheckpoint()
-    seqVar.insertAfterPosition(6, seqVar.value.explorerAtPosition(5).get)
-    seqVar.move(
-      seqVar.value.explorerAtPosition(1).get,
-      seqVar.value.explorerAtPosition(2).get,
-      seqVar.value.explorerAtPosition(-1).get,
-      flip = false
-    )
-    seqVar.remove(seqVar.value.explorerAtPosition(5).get)
-    seqVar.rollbackToTopCheckpoint()
-    seqVar.insertAfterPosition(7, seqVar.value.explorerAtPosition(5).get)
-    seqVar.move(
-      seqVar.value.explorerAtPosition(1).get,
-      seqVar.value.explorerAtPosition(2).get,
-      seqVar.value.explorerAtPosition(-1).get,
-      flip = false
-    )
-    seqVar.remove(seqVar.value.explorerAtPosition(5).get)
-
-    clone.value.toList should be(List(1, 2, 0, 3, 4, 7))
-  }
-
-  test(
-    "IdentitySeq : Sending a list of updates with checkpoints and rollback works as expected. (propagation before rollback)"
-  ) {
-    val (seqVar, clone) = generateSeq(myInitList = Some(List(0, 1, 2, 3, 4, 5)))
-
-    clone.value.toList == List(0, 1, 2, 3, 4, 5) should be(true)
-
-    seqVar.defineCurrentValueAsCheckpoint()
-    seqVar.insertAfterPosition(6, seqVar.value.explorerAtPosition(5).get)
-    seqVar.move(
-      seqVar.value.explorerAtPosition(1).get,
-      seqVar.value.explorerAtPosition(2).get,
-      seqVar.value.explorerAtPosition(-1).get,
-      flip = false
-    )
-    seqVar.remove(seqVar.value.explorerAtPosition(5).get)
-    clone.value.toList should be(List(1, 2, 0, 3, 4, 6))
-    seqVar.rollbackToTopCheckpoint()
-    seqVar.insertAfterPosition(7, seqVar.value.explorerAtPosition(5).get)
-    seqVar.move(
-      seqVar.value.explorerAtPosition(1).get,
-      seqVar.value.explorerAtPosition(2).get,
-      seqVar.value.explorerAtPosition(-1).get,
-      flip = false
-    )
-    seqVar.remove(seqVar.value.explorerAtPosition(5).get)
-
-    clone.value.toList should be(List(1, 2, 0, 3, 4, 7))
-  }
-
-  test(
-    "IdentitySeq : Define + Updates + propagate + rollback + release + propagate + assign works as expected. (propagation before rollback)"
-  ) {
-    val (seqVar, clone) = generateSeq(myInitList = Some(List(0, 1, 2, 3, 4, 5)))
-
-    clone.value.toList == List(0, 1, 2, 3, 4, 5) should be(true)
-
-    seqVar.defineCurrentValueAsCheckpoint()
-    seqVar.insertAfterPosition(6, seqVar.value.explorerAtPosition(5).get)
-    seqVar.move(
-      seqVar.value.explorerAtPosition(1).get,
-      seqVar.value.explorerAtPosition(2).get,
-      seqVar.value.explorerAtPosition(-1).get,
-      flip = false
-    )
-    seqVar.remove(seqVar.value.explorerAtPosition(5).get)
-    clone.value.toList should be(List(1, 2, 0, 3, 4, 6))
-    seqVar.rollbackToTopCheckpoint()
-    seqVar.releaseTopCheckpoint()
-    clone.value.toList should be(List(0, 1, 2, 3, 4, 5))
-    seqVar := IntSequence(List(10, 9, 8, 7, 6, 5, 4, 3, 2, 1))
-
-    clone.value.toList should be(List(10, 9, 8, 7, 6, 5, 4, 3, 2, 1))
-  }
-
-  test("Insert + propagate + rollback a move on empty sequence works as expected") {
-    val (seqVar, clone) = generateSeq()
-
-    seqVar.defineCurrentValueAsCheckpoint()
-    seqVar.insertAfterPosition(1, seqVar.pendingValue.explorerAtPosition(-1).get)
-    seqVar.insertAfterPosition(2, seqVar.pendingValue.explorerAtPosition(-1).get)
-    clone.value.toList should be(List(2, 1))
-    seqVar.rollbackToTopCheckpoint()
-    clone.value.toList should be(List.empty)
-  }
-
   // Moves leading to identical sequence should be discarded
-  test("IdentitySeq : Applying moves leading to identical Sequence works as expected") {
+  test("SeqVariable : Applying moves leading to identical Sequence works as expected") {
     val initialList: List[Int] = List(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
     val (seqVar, clone)        = generateSeq(myInitList = Some(initialList))
 
@@ -299,7 +206,9 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
 
   }
 
-  test("IdentitySeq : The SeqUpdate are propagated along with it's resulting IntSequence") {
+  test("SeqVariable : The SeqUpdate are propagated along with it's resulting IntSequence") {
+    // Equals compare the real value and the token (identity) of two IntSequence
+    // If the token are different, the same move (leading to the same list of Int) would have been done twice.
     val (seqVar, clone) = generateSeq(myInitList = Some(List(0, 1, 2, 3, 4, 5)))
 
     (seqVar.value equals clone.value) should be(true)
@@ -326,7 +235,7 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
     (seqVar.value equals clone.value) should be(true)
   }
 
-  test("Define and rollback on empty sequence works as expected") {
+  test("SeqVariable : Define and rollback on empty sequence works as expected") {
     val (seqVar, clone) = generateSeq()
 
     seqVar.defineCurrentValueAsCheckpoint()
@@ -334,7 +243,7 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
     clone.value.toList should be(List.empty)
   }
 
-  test("HowToRollback instruction are actually correct") {
+  test("SeqVariable : HowToRollback instructions are actually correct") {
     val model: Store     = new Store(3)
     val seq: SeqVariable = new SeqVariable(model, List.fill(10)(random.nextInt(100)), "Test Seq")
     val myCopy           = new SeqVariable(model, List.empty, "my test copy")
@@ -395,6 +304,32 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
     (myCopy.value.toList equals seq.value.toList) should be(true)
     (myCopy.value.toList equals initValue) should be(true)
     (seq.value.toList equals initValue) should be(true)
+  }
+
+  test("SeqVariable : A constant SeqVariable is immutable"){
+    val model: Store = new Store()
+    val constSeqVariable: SeqVariable = SeqConst(model, List(0,1,2,3,4,5))
+
+
+    def failingTest(test: () => Unit): Unit = {
+      val exception = {
+        intercept[IllegalArgumentException](test())
+      }
+      assert(
+        exception.getMessage
+          .contains("Can not modify a constant SeqVariable")
+      )
+    }
+
+    failingTest(() => constSeqVariable.insertAfterPosition(4, constSeqVariable.value.explorerAtPosition(-1).get))
+    failingTest(() => constSeqVariable.remove(constSeqVariable.value.explorerAtPosition(0).get))
+    failingTest(() => constSeqVariable.flip(constSeqVariable.value.explorerAtPosition(1).get, constSeqVariable.value.explorerAtPosition(2).get))
+    failingTest(() => constSeqVariable.move(constSeqVariable.value.explorerAtPosition(0).get, constSeqVariable.value.explorerAtPosition(1).get, constSeqVariable.value.explorerAtPosition(2).get, flip = false))
+    failingTest(() => constSeqVariable.swapSegments(constSeqVariable.value.explorerAtPosition(0).get, constSeqVariable.value.explorerAtPosition(1).get, flipFirstSegment = false, constSeqVariable.value.explorerAtPosition(2).get, constSeqVariable.value.explorerAtPosition(3).get, flipSecondSegment = false))
+    failingTest(() => constSeqVariable := IntSequence(List(5,4,3,2,1,0)))
+    failingTest(() => constSeqVariable.defineCurrentValueAsCheckpoint())
+    failingTest(() => constSeqVariable.rollbackToTopCheckpoint())
+    failingTest(() => constSeqVariable.releaseTopCheckpoint())
   }
 
 }
