@@ -19,18 +19,17 @@ import scala.collection.mutable
 import scala.math.{atan2, cos, pow, sin, sqrt}
 import scala.util.Random
 
-/** Object to generate data for Routing problem. By default the coordinates are generated in `[0;`
+/** Object to generate data for Routing problem. By default, the coordinates are generated in `[0;`
   * `1000] * [0; 1000]`. See [[setMapDimensions]] to change it.
   */
 object RoutingGenerator {
 
   /** Inclusive lower bound on the coordinates of the points. */
-  private var minXY = 0L
+  private var minXY: Long = 0L
 
   /** Inclusive upper bound on the coordinates of the points. */
-  private var maxXY = 1000L
-
-  private var side: Long = maxXY - minXY
+  private var maxXY: Long = 1000L
+  private var side: Long  = maxXY - minXY
 
   private var _seed: Long = Random.nextLong()
   private val rng: Random = new Random(_seed)
@@ -200,7 +199,7 @@ object RoutingGenerator {
   /** @param n
     *   The number of nodes to generate.
     * @return
-    *   `n` random position for nodes.
+    *   `n` random positions for nodes.
     */
   def randomNodes(n: Int): Array[(Long, Long)] =
     Array.fill(n)(randomPosition(minXY, maxXY, minXY, maxXY))
@@ -245,7 +244,7 @@ object RoutingGenerator {
     nodesPositions.toArray
   }
 
-  /** @param n
+  /** @param numNodes
     *   The number of nodes to generate.
     * @param nodeDistance
     *   The distance between two adjacent nodes.
@@ -257,7 +256,11 @@ object RoutingGenerator {
     *   this generator cannot guarentee to generate exactly `n` nodes. In that case, the generator
     *   stops after fulfilling the map.
     */
-  def evenlySpacedNodes(n: Int, nodeDistance: Long, depotPos: (Long, Long)): Array[(Long, Long)] = {
+  def evenlySpacedNodes(
+    numNodes: Int,
+    nodeDistance: Long,
+    depotPos: (Long, Long)
+  ): Array[(Long, Long)] = {
     val nodesPositions: mutable.Queue[(Long, Long)] = mutable.Queue()
     var lastNode: (Long, Long)                      = depotPos
 
@@ -287,7 +290,7 @@ object RoutingGenerator {
     var i: Int              = 0
     var translateIndex: Int = 0
 
-    while (i < n) {
+    while (i < numNodes) {
       translate = rng.shuffle(translate)
       val newNode = translate(translateIndex)(lastNode)
       if (isAdmissibleNode(newNode)) { // We can add the new node
@@ -297,7 +300,7 @@ object RoutingGenerator {
         translateIndex = 0
       } else if (translateIndex + 1 < translate.length) { // We need to try another translation
         translateIndex += 1
-      } else { // We tried all the translation. The last node is blocked by other nodes.
+      } else { // We tried all the translations. The last node is blocked by other nodes.
         unblock() match {
           case Some(node) => // We can restart the generation from another node
             nodesPositions += node
