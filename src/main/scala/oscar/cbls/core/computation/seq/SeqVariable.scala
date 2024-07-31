@@ -14,7 +14,7 @@
 package oscar.cbls.core.computation.seq
 
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
-import oscar.cbls.core.computation.{Invariant, SavedValue, Store, Variable}
+import oscar.cbls.core.computation.{SavedValue, Store, Variable}
 
 /** Defines the [[oscar.cbls.core.computation.Variable]] that will encapsulate an
   * [[oscar.cbls.algo.sequence.IntSequence]] so that it can behave as a

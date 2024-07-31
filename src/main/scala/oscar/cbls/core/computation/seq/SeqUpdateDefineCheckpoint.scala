@@ -46,14 +46,6 @@ object SeqUpdateDefineCheckpoint {
 class SeqUpdateDefineCheckpoint(prev: SeqUpdate, val level: Int)
     extends SeqUpdateWithPrev(prev, prev.newValue) {
 
-  override protected[computation] def reverseThis(
-    newValueForThisAfterFullReverse: IntSequence,
-    nextOp: SeqUpdate
-  ): SeqUpdate = {
-    require(nextOp.newValue sameIdentity this.newValue)
-    prev.reverseThis(newValueForThisAfterFullReverse, SeqUpdateDefineCheckpoint(nextOp, level))
-  }
-
   override protected[computation] def appendThisTo(previousUpdates: SeqUpdate): SeqUpdate = {
     SeqUpdateDefineCheckpoint(prev.appendThisTo(previousUpdates), level)
   }

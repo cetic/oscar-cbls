@@ -129,12 +129,7 @@ class SeqUpdateInsert(
     expectedValueAfterFullReverse: IntSequence,
     updatesAlreadyReversed: SeqUpdate
   ): SeqUpdate = {
-    val explorerAtInsertionPositionInNewSeq = seqAfter match {
-      case iis: InsertedIntSequence =>
-        iis.explorerAtPosition(insertionPos).get
-      case is: IntSequence =>
-        is.explorerAtPosition(insertionPos).get
-    }
+    val explorerAtInsertionPositionInNewSeq = seqAfter.explorerAtPosition(insertionPos).get
     prev.reverseThis(
       expectedValueAfterFullReverse,
       SeqUpdateRemove(explorerAtInsertionPositionInNewSeq, updatesAlreadyReversed, prev.newValue)

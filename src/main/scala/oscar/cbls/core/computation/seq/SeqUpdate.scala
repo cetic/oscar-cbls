@@ -33,6 +33,24 @@ abstract class SeqUpdate(val newValue: IntSequence) {
     *   - sinceLastCheckPoint : Insert(A, prevUpdate = Remove(B, prevUpdate = LastNotified(seq)))
     *   - reversed : Insert(B, prevUpdate = Remove(A))
     *
+    * Some updates can not be reversed :
+    *   - SeqUpdateDefineCheckpoint : Since we roll back the content of performedSinceLastCheckpoint
+    *     which does not contain SeqUpdateDefineCheckpoint, we should never reach it.
+    *   - SeqUpdateAssign : An assign is done only when no checkpoint are defined. Therefore we
+    *     should never reach it.
+    *   - SeqUpdateReleaseTopCheckpoint : The reverse of a SeqUpdateReleaseTopCheckpoint would be a
+    *     SeqUpdateDefineCheckpoint which has to be done using the proper method in
+    *     [[oscar.cbls.core.computation.seq.SeqVariable]]
+    *   - SeqUpdateRollBackTopCheckpoint : It would mean that we are rolling-back a checkpoint that
+    *     was already rolled-back. In that case we just drop everything until the previous roll back
+    *     instruction. Furthermore, after rolling back a checkpoint, the
+    *     performedSinceLastCheckpoint value is reset with a SeqUpdateLastNotify update. A
+    *     SeqUpdateRollBackToTopCheckpoint will never be in it.
+    *
+    * Only Insert, Remove and Move are reversible, the default definition of this method is a failed
+    * requirement. A small exception for SeqUpdateLastNotified which return the already reversed
+    * updates.
+    *
     * @param expectedValueAfterFullReverse
     *   The expected IntSequence value when all updates are reversed
     * @param updatesAlreadyReversed
@@ -43,7 +61,13 @@ abstract class SeqUpdate(val newValue: IntSequence) {
   protected[seq] def reverseThis(
     expectedValueAfterFullReverse: IntSequence,
     updatesAlreadyReversed: SeqUpdate = SeqUpdateLastNotified(this.newValue)
-  ): SeqUpdate
+  ): SeqUpdate = {
+    require(
+      requirement = false,
+      "We should not reach this, check method documentation for more info"
+    )
+    null
+  }
 
   /** Appends the current update after the updates passed as parameter.
     *

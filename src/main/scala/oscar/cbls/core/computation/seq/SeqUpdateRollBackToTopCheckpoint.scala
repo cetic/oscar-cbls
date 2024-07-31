@@ -52,14 +52,6 @@ class SeqUpdateRollBackToTopCheckpoint(
   val prev: SeqUpdate
 ) extends SeqUpdate(checkpoint) {
 
-  override protected[seq] def reverseThis(
-    expectedValueAfterFullReverse: IntSequence,
-    updatesAlreadyReversed: SeqUpdate
-  ): SeqUpdate = {
-    require(false, "Cannot reverse SeqUpdateRollBackToTopCheckpoint")
-    null
-  }
-
   override protected[seq] def appendThisTo(previousUpdates: SeqUpdate): SeqUpdate = this
 
   override protected[seq] def regularize(maxPivot: Int): SeqUpdate = this

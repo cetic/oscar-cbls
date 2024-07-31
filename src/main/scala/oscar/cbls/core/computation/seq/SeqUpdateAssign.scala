@@ -30,13 +30,6 @@ object SeqUpdateAssign {
   */
 class SeqUpdateAssign(val newSequence: IntSequence) extends SeqUpdate(newSequence) {
 
-  override protected[computation] def reverseThis(
-    newValueForThisAfterFullReverse: IntSequence,
-    nextOp: SeqUpdate
-  ): SeqUpdate = {
-    SeqUpdateAssign(newValueForThisAfterFullReverse)
-  }
-
   override protected[computation] def appendThisTo(previousUpdates: SeqUpdate): SeqUpdate = this
 
   override protected[computation] def regularize(maxPivot: Int): SeqUpdate =

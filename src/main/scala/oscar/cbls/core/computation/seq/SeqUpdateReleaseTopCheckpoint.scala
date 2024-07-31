@@ -31,14 +31,6 @@ class SeqUpdateReleaseTopCheckpoint(prev: SeqUpdate, seq: IntSequence)
 
   override def newPos2OldPos(newPos: Int): Option[Int] = Some(newPos)
 
-  override protected[seq] def reverseThis(
-    expectedValueAfterFullReverse: IntSequence,
-    updatesAlreadyReversed: SeqUpdate
-  ): SeqUpdate = {
-    require(requirement = false, "We should never reverse a SeqUpdateReleaseTopCheckpoint")
-    null
-  }
-
   override protected[seq] def appendThisTo(previousUpdates: SeqUpdate): SeqUpdate = {
       require(requirement = false, "This should not happen")
       null

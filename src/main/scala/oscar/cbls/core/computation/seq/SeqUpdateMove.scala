@@ -150,16 +150,10 @@ class SeqUpdateMove(
         .moveAfter(fromIncludedExplorer, toIncludedExplorer, afterExplorer, flip, fast = true)}"
   )
 
-  def isSimpleFlip: Boolean       = afterExplorer.next == fromIncludedExplorer && flip
-  def isNotMoving: Boolean        = afterExplorer.next == fromIncludedExplorer && !flip
   def fromValue: Int              = fromIncludedExplorer.value
   def toValue: Int                = toIncludedExplorer.value
-  def afterValue: Int             = afterExplorer.value
-  def moveDownwards: Boolean      = fromIncludedExplorer.position > afterExplorer.position
-  def moveUpwards: Boolean        = fromIncludedExplorer.position < afterExplorer.position
-  def nbPointsInMovedSegment: Int = toIncludedExplorer.position - fromIncludedExplorer.position + 1
 
-  def movedValuesQList: List[Int] =
+  def movedValues: List[Int] =
     fromIncludedExplorer.forward.untilValue(toValue).map(_.value).toList
 
   override protected[computation] def reverseThis(
@@ -170,7 +164,6 @@ class SeqUpdateMove(
       if (flip) (toIncludedExplorer.position, fromIncludedExplorer.position)
       else (fromIncludedExplorer.position, toIncludedExplorer.position)
 
-    // TODO : find a better way to do it,
     prev.reverseThis(
       newValueForThisAfterFullReverse,
       SeqUpdateMove(

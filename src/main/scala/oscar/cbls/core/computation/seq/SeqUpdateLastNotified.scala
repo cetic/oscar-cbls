@@ -31,7 +31,8 @@ case class SeqUpdateLastNotified(value: IntSequence) extends SeqUpdate(value) {
   ): SeqUpdate = {
     require(
       expectedValueAfterFullReverse sameIdentity this.newValue,
-      s"not proper reverse target on $this target:$expectedValueAfterFullReverse"
+      s"SeqUpdateLastNotified value should be equals to targeted reversed value." +
+        s"\nShould be : $expectedValueAfterFullReverse got $value"
     )
     updatesAlreadyReversed
   }
