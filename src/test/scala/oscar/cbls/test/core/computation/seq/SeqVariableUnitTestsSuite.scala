@@ -21,7 +21,7 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
   ): (SeqVariable, SeqVariable) = {
     val model: Store = new Store(3)
     val seq: SeqVariable =
-      new SeqVariable(model, myInitList.getOrElse(List.fill(size)(random.nextInt(100))), "Test Seq")
+      SeqVariable(model, myInitList.getOrElse(List.fill(size)(random.nextInt(100))), "Test Seq")
     val copy: SeqVariable = seq.createClone()
     model.close()
     (seq, copy)
@@ -97,7 +97,7 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
 
   test("SeqVariable : A SeqAssign can not be applied when a CheckPoint has been defined") {
     val model: Store = new Store(3)
-    val seqVar       = new SeqVariable(model, List(0, 1, 2, 3, 4, 5))
+    val seqVar       = SeqVariable(model, List(0, 1, 2, 3, 4, 5))
     model.close()
 
     seqVar.defineCurrentValueAsCheckpoint()
@@ -245,8 +245,8 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
 
   test("SeqVariable : HowToRollback instructions are actually correct") {
     val model: Store     = new Store(3)
-    val seq: SeqVariable = new SeqVariable(model, List.fill(10)(random.nextInt(100)), "Test Seq")
-    val myCopy           = new SeqVariable(model, List.empty, "my test copy")
+    val seq: SeqVariable = SeqVariable(model, List.fill(10)(random.nextInt(100)), "Test Seq")
+    val myCopy           = SeqVariable(model, List.empty, "my test copy")
     new TestSeqInvariant(model, seq, myCopy)
     model.close()
 
@@ -306,10 +306,9 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
     (seq.value.toList equals initValue) should be(true)
   }
 
-  test("SeqVariable : A constant SeqVariable is immutable"){
-    val model: Store = new Store()
-    val constSeqVariable: SeqVariable = SeqConst(model, List(0,1,2,3,4,5))
-
+  test("SeqVariable : A constant SeqVariable is immutable") {
+    val model: Store                  = new Store()
+    val constSeqVariable: SeqVariable = SeqConst(model, List(0, 1, 2, 3, 4, 5))
 
     def failingTest(test: () => Unit): Unit = {
       val exception = {
@@ -321,12 +320,35 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
       )
     }
 
-    failingTest(() => constSeqVariable.insertAfterPosition(4, constSeqVariable.value.explorerAtPosition(-1).get))
+    failingTest(() =>
+      constSeqVariable.insertAfterPosition(4, constSeqVariable.value.explorerAtPosition(-1).get)
+    )
     failingTest(() => constSeqVariable.remove(constSeqVariable.value.explorerAtPosition(0).get))
-    failingTest(() => constSeqVariable.flip(constSeqVariable.value.explorerAtPosition(1).get, constSeqVariable.value.explorerAtPosition(2).get))
-    failingTest(() => constSeqVariable.move(constSeqVariable.value.explorerAtPosition(0).get, constSeqVariable.value.explorerAtPosition(1).get, constSeqVariable.value.explorerAtPosition(2).get, flip = false))
-    failingTest(() => constSeqVariable.swapSegments(constSeqVariable.value.explorerAtPosition(0).get, constSeqVariable.value.explorerAtPosition(1).get, flipFirstSegment = false, constSeqVariable.value.explorerAtPosition(2).get, constSeqVariable.value.explorerAtPosition(3).get, flipSecondSegment = false))
-    failingTest(() => constSeqVariable := IntSequence(List(5,4,3,2,1,0)))
+    failingTest(() =>
+      constSeqVariable.flip(
+        constSeqVariable.value.explorerAtPosition(1).get,
+        constSeqVariable.value.explorerAtPosition(2).get
+      )
+    )
+    failingTest(() =>
+      constSeqVariable.move(
+        constSeqVariable.value.explorerAtPosition(0).get,
+        constSeqVariable.value.explorerAtPosition(1).get,
+        constSeqVariable.value.explorerAtPosition(2).get,
+        flip = false
+      )
+    )
+    failingTest(() =>
+      constSeqVariable.swapSegments(
+        constSeqVariable.value.explorerAtPosition(0).get,
+        constSeqVariable.value.explorerAtPosition(1).get,
+        flipFirstSegment = false,
+        constSeqVariable.value.explorerAtPosition(2).get,
+        constSeqVariable.value.explorerAtPosition(3).get,
+        flipSecondSegment = false
+      )
+    )
+    failingTest(() => constSeqVariable := IntSequence(List(5, 4, 3, 2, 1, 0)))
     failingTest(() => constSeqVariable.defineCurrentValueAsCheckpoint())
     failingTest(() => constSeqVariable.rollbackToTopCheckpoint())
     failingTest(() => constSeqVariable.releaseTopCheckpoint())

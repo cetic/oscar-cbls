@@ -14,6 +14,16 @@ package oscar.cbls.core.computation.seq
 
 import oscar.cbls.algo.sequence.IntSequence
 
+/** Companion object of SeqUpdateLastNotified
+  */
+object SeqUpdateLastNotified {
+  def apply(sequence: IntSequence): SeqUpdateLastNotified =
+    new SeqUpdateLastNotified(sequence)
+
+  def unapply(seqUpdateLastNotified: SeqUpdateLastNotified): Option[IntSequence] =
+    Some(seqUpdateLastNotified.newValue)
+}
+
 /** The first update of any batch of updates.
   *
   * A new SeqUpdateLastNotified is created when :
@@ -23,7 +33,7 @@ import oscar.cbls.algo.sequence.IntSequence
   * @param value
   *   The starting IntSequence value of the stack of updates
   */
-case class SeqUpdateLastNotified(value: IntSequence) extends SeqUpdate(value) {
+class SeqUpdateLastNotified(value: IntSequence) extends SeqUpdate(value) {
 
   override protected[seq] def reverseThis(
     expectedValueAfterFullReverse: IntSequence,

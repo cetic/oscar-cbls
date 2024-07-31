@@ -15,6 +15,8 @@ package oscar.cbls.core.computation.seq
 
 import oscar.cbls.core.computation.Store
 
+/** Used to create constant SeqVariable
+  */
 object SeqConst {
   private var nextNameCounter: Int = -1
   private def nextName(): String = {
@@ -23,6 +25,6 @@ object SeqConst {
   }
 
   def apply(model: Store, initialValues: List[Int], name: String = nextName()): SeqVariable = {
-    new SeqVariable(model, initialValues, name, isConstant = true)
+    SeqVariable(model, initialValues, name, isConstant = true)
   }
 }

@@ -13,8 +13,6 @@
 
 package oscar.cbls.core.computation.seq
 
-import oscar.cbls.algo.sequence.IntSequence
-
 /** Companion object of SeqUpdateDefineCheckpoint
   */
 object SeqUpdateDefineCheckpoint {
@@ -52,14 +50,23 @@ class SeqUpdateDefineCheckpoint(prev: SeqUpdate, val level: Int)
 
   protected[computation] def regularize(maxPivot: Int): SeqUpdate = this
 
-  // TODO : Is it the right way ?
-  def oldPosToNewPos(oldPos: Int): Option[Int] = throw new Error(
-    "SeqUpdateDefineCheckpoint should not be queried for delta on moves"
-  )
+  def oldPosToNewPos(oldPos: Int): Option[Int] = {
+    // SeqUpdateDefineCheckpoint does not modify the Sequence
+    require(
+      requirement = false,
+      "SeqUpdateDefineCheckpoint should not be queried for delta on moves"
+    )
+    None
+  }
 
-  def newPos2OldPos(newPos: Int): Option[Int] = throw new Error(
-    "SeqUpdateDefineCheckpoint should not be queried for delta on moves"
-  )
+  def newPos2OldPos(newPos: Int): Option[Int] = {
+    // SeqUpdateDefineCheckpoint does not modify the Sequence
+    require(
+      requirement = false,
+      "SeqUpdateDefineCheckpoint should not be queried for delta on moves"
+    )
+    None
+  }
 
   override def toString: String = s"SeqUpdateDefineCheckpoint(level:$level prev:$prev)"
 }

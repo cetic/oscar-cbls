@@ -13,12 +13,7 @@
 
 package oscar.cbls.core.computation.seq
 
-import oscar.cbls.algo.sequence.{
-  InsertedIntSequence,
-  IntSequence,
-  IntSequenceExplorer,
-  RootIntSequenceExplorer
-}
+import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer, RootIntSequenceExplorer}
 
 object SeqUpdateInsert {
 

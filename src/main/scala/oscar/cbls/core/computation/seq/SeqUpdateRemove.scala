@@ -44,9 +44,9 @@ object SeqUpdateRemove {
     *   The update corresponding to the defined removal
     */
   def apply(
-             removePositionExplorer: IntSequenceExplorer,
-             prev: SeqUpdate,
-             seqAfter: IntSequence
+    removePositionExplorer: IntSequenceExplorer,
+    prev: SeqUpdate,
+    seqAfter: IntSequence
   ): SeqUpdate = {
     prev match {
       // check if the last two moves cancelled themselves
@@ -81,9 +81,9 @@ object SeqUpdateRemove {
   *   The new IntSequence value
   */
 class SeqUpdateRemove(
-                       val explorerAtRemovePosition: IntSequenceExplorer,
-                       prev: SeqUpdate,
-                       seqAfter: IntSequence
+  val explorerAtRemovePosition: IntSequenceExplorer,
+  prev: SeqUpdate,
+  seqAfter: IntSequence
 ) extends SeqUpdateWithPrev(prev, seqAfter) {
 
   override protected[computation] def reverseThis(

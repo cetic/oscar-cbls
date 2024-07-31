@@ -91,6 +91,9 @@ private class TestSeqInvariant(store: Store, seq: SeqVariable, out: SeqVariable)
     * scratch.
     */
   override def checkInternals(): Unit = {
-    require(seq.value.toList == out.value.toList, s"Should be ${seq.value.toList} got ${out.value.toList}")
+    require(
+      seq.value.toList == out.value.toList,
+      s"Should be ${seq.value.toList} got ${out.value.toList}"
+    )
   }
 }

@@ -39,12 +39,16 @@ object SeqUpdateRollBackToTopCheckpoint {
 }
 
 /** A SeqUpdate that roll back modification up to the top checkpoint of the SeqVariable.
- *
- * @param checkpoint The SeqVariable value at the top checkpoint
- * @param howToRollBack The batch of updates that can be used to roll back modification
- * @param level The level of the top checkpoint
- * @param prev The previous update of the batch
- */
+  *
+  * @param checkpoint
+  *   The SeqVariable value at the top checkpoint
+  * @param howToRollBack
+  *   The batch of updates that can be used to roll back modification
+  * @param level
+  *   The level of the top checkpoint
+  * @param prev
+  *   The previous update of the batch
+  */
 class SeqUpdateRollBackToTopCheckpoint(
   val checkpoint: IntSequence,
   val howToRollBack: SeqUpdate,

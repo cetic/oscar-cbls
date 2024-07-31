@@ -5,7 +5,7 @@ import org.scalacheck.commands.Commands
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.seq.SeqVariable
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Success, Try}
 
 object SeqVariableCommands extends Commands {
 
@@ -33,7 +33,7 @@ object SeqVariableCommands extends Commands {
     )
     val store = new Store(debugLevel = 3)
 
-    val seq   = new SeqVariable(store, state.refList, "Initial seq")
+    val seq   = SeqVariable(store, state.refList, "Initial seq")
     val clone = seq.createClone()
     store.close()
     SeqVariableSUT(seq, clone)
@@ -46,8 +46,12 @@ object SeqVariableCommands extends Commands {
     state.previousState.isEmpty && state.operationsSinceLastCheckpoint == 0
   }
 
-  override def genInitialState: Gen[State] = { new SeqVariableState(refList = Gen.listOfN(initialSize, Gen.choose(0, 1000)).sample.get) }
+  override def genInitialState: Gen[State] = {
+    new SeqVariableState(refList = Gen.listOfN(initialSize, Gen.choose(0, 1000)).sample.get)
+  }
 
+  /** Generates the next command given the actual State
+    */
   override def genCommand(state: State): Gen[SeqVariableCommands.Command] = {
     val l: Int = state.length
 
@@ -146,10 +150,20 @@ object SeqVariableCommands extends Commands {
   } yield List(n_1, n_2, n_3, n_4)
 
   private def genTwoIncIntUpTo(maxValue: Int): Gen[List[Int]] = for {
-    n_1 <- Gen.choose(0, maxValue-1)
-    n_2 <- Gen.choose(n_1+1, maxValue)
+    n_1 <- Gen.choose(0, maxValue - 1)
+    n_2 <- Gen.choose(n_1 + 1, maxValue)
   } yield List(n_1, n_2)
 
+  /** Abstract class for SeqVariable operations
+    *
+    * Each operation has to :
+    *   - check the preCondition that has to be satisfied in order to apply this operation (for
+    *     instance, not removing on an empty sequence)
+    *     - Check the postCondition (the result of modifying the seqVariable given the previous
+    *       State)
+    *     - Define the new State
+    *     - Define the method to modify the SUT
+    */
   abstract class SeqVariableOperations extends Command {
     type Result = List[Int]
 

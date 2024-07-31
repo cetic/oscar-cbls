@@ -16,6 +16,24 @@ package oscar.cbls.core.computation.seq
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation.{SavedValue, Store, Variable}
 
+/** Companion object of SeqVariable
+  */
+object SeqVariable {
+  def apply(
+    model: Store,
+    initialValue: List[Int],
+    name: String = "SeqVariable",
+    maxPivotPerValuePercent: Int = 4,
+    isConstant: Boolean = false
+  ): SeqVariable = {
+    new SeqVariable(model, initialValue, name, maxPivotPerValuePercent, isConstant)
+  }
+
+  def empty(model: Store, name: String = "SeqVariable"): Unit = {
+    new SeqVariable(model, List.empty, name, 4, false)
+  }
+}
+
 /** Defines the [[oscar.cbls.core.computation.Variable]] that will encapsulate an
   * [[oscar.cbls.algo.sequence.IntSequence]] so that it can behave as a
   * [[oscar.cbls.core.propagation.PropagationElement]].
@@ -56,9 +74,9 @@ import oscar.cbls.core.computation.{SavedValue, Store, Variable}
 class SeqVariable(
   model: Store,
   initialValue: List[Int],
-  name: String = "SeqVariable",
-  maxPivotPerValuePercent: Int = 4,
-  isConstant: Boolean = false
+  name: String,
+  maxPivotPerValuePercent: Int,
+  isConstant: Boolean
 ) extends Variable(model, isConstant) {
   override type NotificationTargetType = SeqNotificationTarget
   require(model != null)
@@ -519,7 +537,7 @@ class SeqVariable(
       // The roll back instruction of the checkpoint definition are already commited, add this new instruction
       case ln: SeqUpdateLastNotified =>
         require(
-          ln.value equals topCheckpoint,
+          ln.newValue equals topCheckpoint,
           "Cannot release checkpoint since last notified value is not at top checkpoint value"
         )
         SeqUpdateReleaseTopCheckpoint(toNotify, topCheckpoint)
@@ -642,9 +660,8 @@ class SeqVariable(
 
   protected[core] override def performPropagation(): Unit = {
     val dynListElements = getDynamicallyListeningElements
-    dynListElements.foreach {
-      case (inv: SeqNotificationTarget, index: Int) =>
-        inv.notifySeqChanges(this, index, toNotify)
+    dynListElements.foreach { case (inv: SeqNotificationTarget, index: Int) =>
+      inv.notifySeqChanges(this, index, toNotify)
     }
     _value = toNotify.newValue
     toNotify = SeqUpdateLastNotified(_value)

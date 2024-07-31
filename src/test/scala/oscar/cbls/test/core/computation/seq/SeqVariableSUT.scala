@@ -93,14 +93,19 @@ case class SeqVariableSUT(seq: SeqVariable, copy: SeqVariable) {
 }
 
 /** Defines the State
- *
- * Basically it's a small structure that mimic's the [[oscar.cbls.core.computation.seq.SeqVariable]].
- *
- * @param checkpointLevel The assumed checkpoint level of the SeqVariable
- * @param refList The assumed current value of the SeqVariable
- * @param operationsSinceLastCheckpoint The assumed number of operations since last checkpoint of the SeqVariable
- * @param previousState The assumed previous checkpoint of the SeqVariable
- */
+  *
+  * Basically it's a small structure that mimic's the
+  * [[oscar.cbls.core.computation.seq.SeqVariable]].
+  *
+  * @param checkpointLevel
+  *   The assumed checkpoint level of the SeqVariable
+  * @param refList
+  *   The assumed current value of the SeqVariable
+  * @param operationsSinceLastCheckpoint
+  *   The assumed number of operations since last checkpoint of the SeqVariable
+  * @param previousState
+  *   The assumed previous checkpoint of the SeqVariable
+  */
 class SeqVariableState(
   val checkpointLevel: Int = -1,
   val refList: List[Int] = List.empty,

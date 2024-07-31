@@ -104,6 +104,22 @@ abstract class SeqUpdate(val newValue: IntSequence) {
   */
 abstract class SeqUpdateWithPrev(val prev: SeqUpdate, newValue: IntSequence)
     extends SeqUpdate(newValue) {
+
+  /** Returns the new position (after the update) of the position passed as parameters.
+    *
+    * @param oldPos
+    *   The old position
+    * @return
+    *   The new position or none if the value of this old position has been removed
+    */
   def oldPosToNewPos(oldPos: Int): Option[Int]
+
+  /** Returns the old position (before the update) of the position passed as parameters.
+    *
+    * @param newPos
+    *   The new position (after the update)
+    * @return
+    *   The old position or none if the value of this new position did not exist before.
+    */
   def newPos2OldPos(newPos: Int): Option[Int]
 }

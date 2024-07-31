@@ -15,7 +15,6 @@ package oscar.cbls.core.computation.seq
 
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation.{Invariant, Store}
-import oscar.cbls.core.propagation.PropagationStructure
 
 object SeqIdentityInvariant {
   def apply(store: Store, fromValue: SeqVariable, toValue: SeqVariable): SeqIdentityInvariant = {
@@ -33,7 +32,11 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
 
   toValue := fromValue.value
 
-  override def notifySeqChanges(v: SeqVariable, contextualVarIndex: Int, changes: SeqUpdate): Unit = {
+  override def notifySeqChanges(
+    v: SeqVariable,
+    contextualVarIndex: Int,
+    changes: SeqUpdate
+  ): Unit = {
     assert(v == fromValue)
     digestChanges(changes)
   }
@@ -52,7 +55,7 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
         checkPointStack = tail
         levelTopCheckpoint -= 1
       case Nil =>
-        require(false, "Should happen : pop on an empty stack")
+        require(requirement = false, "Should happen : pop on an empty stack")
     }
   }
 
@@ -98,7 +101,7 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
         assert(value equals toValue.pendingValue)
       case SeqUpdateRollBackToTopCheckpoint(
             value: IntSequence,
-            howToRollBack: SeqUpdate,
+            _: SeqUpdate,
             level: Int,
             prev: SeqUpdate
           ) =>

@@ -3,18 +3,22 @@ package oscar.cbls.test.core.computation.seq
 import org.scalacheck.{Properties, Test}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
-import oscar.cbls.algo.sequence.Token
-import oscar.cbls.core.computation.Store
-import oscar.cbls.core.computation.seq.SeqVariable
 
-import scala.util.Random
+class NonEmptySeqVariableProperties extends Properties("SeqVariable Properties") {
 
-class SeqVariableProperties extends Properties("SeqVariable Properties") {
+  SeqVariableCommands.setSize(100)
+  propertyWithSeed(s"Commands work starting with sequence of size 100, no Explicit seed", None) =
+    SeqVariableCommands.property()
 
-//  propertyWithSeed("Commands work, Explicit seed", Some("A_NJIYquVIQ95ha1eB3F05kDdyE2hXu9u3JzjSyjq_C=")) = SeqVariableCommands.property()
+  override def overrideParameters(p: Test.Parameters): Test.Parameters = {
+    p.withMinSuccessfulTests(500)
+  }
+}
 
-  SeqVariableCommands.setSize(20)
-  propertyWithSeed(s"Commands work starting with sequence of size 20, no Explicit seed", None) = SeqVariableCommands.property()
+class EmptySeqVariableProperties extends Properties("SeqVariable Properties") {
+
+  propertyWithSeed(s"Commands work starting with empty sequence, no Explicit seed", None) =
+    SeqVariableCommands.property()
 
   override def overrideParameters(p: Test.Parameters): Test.Parameters = {
     p.withMinSuccessfulTests(500)
@@ -22,7 +26,6 @@ class SeqVariableProperties extends Properties("SeqVariable Properties") {
 }
 
 class SeqVariableSuite extends AnyFunSuite with Checkers {
-//  new SeqVariableProperties(0).check()
-//  new SeqVariableProperties(20).check()
-  new SeqVariableProperties().check()
+  new NonEmptySeqVariableProperties().check()
+  new EmptySeqVariableProperties().check()
 }
