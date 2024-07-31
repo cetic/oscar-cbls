@@ -162,9 +162,9 @@ object RoutingGenerator extends RoutingGenerator(0L, 1000L) {
   * @param maxXY
   *   Inclusive upper bound on the coordinates of the points.
   */
-class RoutingGenerator(var minXY: Long, var maxXY: Long) {
+class RoutingGenerator(protected var minXY: Long, protected var maxXY: Long) {
   // We are working on a square map
-  private val side: Long = maxXY - minXY
+  private var side: Long = maxXY - minXY
 
   protected var _seed: Long = Random.nextLong()
   protected val rng: Random = new Random(_seed)
@@ -178,6 +178,13 @@ class RoutingGenerator(var minXY: Long, var maxXY: Long) {
     rng.setSeed(s)
     _seed = s
     GeneratorUtil.rng.setSeed(s)
+  }
+
+  /** Set the bound of the coordinates. */
+  def setMapDimensions(newMinXY: Long, newMaxXY: Long): Unit = {
+    minXY = newMinXY
+    maxXY = newMaxXY
+    side = newMaxXY - newMinXY
   }
 
   /** Generates a random position for the depot. */
