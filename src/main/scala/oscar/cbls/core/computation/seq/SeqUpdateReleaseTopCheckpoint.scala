@@ -15,7 +15,7 @@ package oscar.cbls.core.computation.seq
 
 import oscar.cbls.algo.sequence.IntSequence
 
-/** Companion object of SeqUpdateReleaseTopCheckpoint
+/** Companion object of SeqUpdateReleaseTopCheckpoint.
   */
 object SeqUpdateReleaseTopCheckpoint {
   def apply(prev: SeqUpdate, seq: IntSequence): SeqUpdateReleaseTopCheckpoint = {
@@ -33,9 +33,9 @@ object SeqUpdateReleaseTopCheckpoint {
 /** A SeqUpdate that release the top checkpoint of the SeqVariable.
   *
   * @param prev
-  *   The previous SeqUpdate of the batch
+  *   The previous SeqUpdate of the batch.
   * @param seq
-  *   The IntSequence after the release of the checkpoint
+  *   The IntSequence after the release of the checkpoint.
   */
 class SeqUpdateReleaseTopCheckpoint(prev: SeqUpdate, seq: IntSequence)
     extends SeqUpdateWithPrev(prev, seq) {

@@ -15,7 +15,7 @@ package oscar.cbls.core.computation.seq
 
 import oscar.cbls.algo.sequence.IntSequence
 
-/** Companion object of SeqUpdateAssign
+/** Companion object of SeqUpdateAssign.
   */
 object SeqUpdateAssign {
   def apply(sequence: IntSequence): SeqUpdateAssign = new SeqUpdateAssign(sequence)
@@ -29,7 +29,7 @@ object SeqUpdateAssign {
   * '''This update is not incremental'''.
   *
   * @param newSequence
-  *   The new value assigned to the SeqVariable
+  *   The new value assigned to the SeqVariable.
   */
 class SeqUpdateAssign(val newSequence: IntSequence) extends SeqUpdate(newSequence) {
 

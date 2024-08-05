@@ -26,12 +26,12 @@ object SeqUpdateLastNotified {
 
 /** The first update of any batch of updates.
   *
-  * A new SeqUpdateLastNotified is created when :
+  * A new SeqUpdateLastNotified is created when:
   *   - Propagating
   *   - Creating a SeqVariable
   *
   * @param value
-  *   The starting IntSequence value of the stack of updates
+  *   The starting IntSequence value of the stack of updates.
   */
 class SeqUpdateLastNotified(value: IntSequence) extends SeqUpdate(value) {
 
@@ -50,7 +50,7 @@ class SeqUpdateLastNotified(value: IntSequence) extends SeqUpdate(value) {
   override protected[seq] def appendThisTo(previousUpdates: SeqUpdate): SeqUpdate = {
     require(
       this.newValue sameIdentity previousUpdates.newValue,
-      "illegal append operation; values do not match"
+      "Illegal append operation; values do not match."
     )
     previousUpdates
   }

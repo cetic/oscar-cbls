@@ -11,9 +11,9 @@ import oscar.cbls.core.computation.seq.SeqVariable
   * new resulting list. The copy is updated only when using the propagation method.
   *
   * @param seq
-  *   The SeqVariable we are modifying
+  *   The SeqVariable we are modifying.
   * @param copy
-  *   The copy of seq maintained with a [[oscar.cbls.core.computation.seq.SeqIdentityInvariant]]
+  *   The copy of seq maintained with a [[oscar.cbls.core.computation.seq.SeqIdentityInvariant]].
   */
 case class SeqVariableSUT(seq: SeqVariable, copy: SeqVariable) {
 
@@ -92,19 +92,19 @@ case class SeqVariableSUT(seq: SeqVariable, copy: SeqVariable) {
 
 }
 
-/** Defines the State
+/** Defines the State.
   *
   * Basically it's a small structure that mimic's the
   * [[oscar.cbls.core.computation.seq.SeqVariable]].
   *
   * @param checkpointLevel
-  *   The assumed checkpoint level of the SeqVariable
+  *   The assumed checkpoint level of the SeqVariable.
   * @param refList
-  *   The assumed current value of the SeqVariable
+  *   The assumed current value of the SeqVariable.
   * @param operationsSinceLastCheckpoint
-  *   The assumed number of operations since last checkpoint of the SeqVariable
+  *   The assumed number of operations since last checkpoint of the SeqVariable.
   * @param previousState
-  *   The assumed previous checkpoint of the SeqVariable
+  *   The assumed previous checkpoint of the SeqVariable.
   */
 class SeqVariableState(
   val checkpointLevel: Int = -1,

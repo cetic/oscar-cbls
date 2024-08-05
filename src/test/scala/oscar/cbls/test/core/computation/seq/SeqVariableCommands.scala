@@ -56,16 +56,16 @@ object SeqVariableCommands extends Commands {
     val l: Int = state.length
 
     // Moves
-    lazy val flipIntSeq: Gen[Command] = {
-      for {
+    lazy val flipIntSeq: Gen[Command] = for {
         pos <- genTwoIncIntUpTo(l - 1)
       } yield FlipIntSeq(pos.head, pos.last)
-    }
+
     lazy val swapIntSeq: Gen[Command] = for {
       pos    <- genFourIncIntBetween(l - 1)
       flip_1 <- Gen.prob(0.5)
       flip_2 <- Gen.prob(0.5)
     } yield SwapIntSeq(pos.head, pos(1), flip_1, pos(2), pos.last, flip_2)
+
     lazy val moveIntSeq: Gen[Command] = for {
       pos      <- genFourIncIntBetween(l - 1, minValue = -1)
       backward <- Gen.prob(0.5)
@@ -83,10 +83,12 @@ object SeqVariableCommands extends Commands {
         case _ => Gen.oneOf(swapIntSeq, flipIntSeq, moveIntSeq)
       }
     }
+
     lazy val insertIntSeq: Gen[Command] = for {
       afterPos <- Gen.choose(-1, l - 1)
       value    <- Gen.choose(0, 1000)
     } yield InsertIntSeq(value, afterPos)
+
     lazy val removeIntSeq: Gen[Command] = for {
       pos <- Gen.choose(0, l - 1)
     } yield RemoveIntSeq(pos)
@@ -154,15 +156,15 @@ object SeqVariableCommands extends Commands {
     n_2 <- Gen.choose(n_1 + 1, maxValue)
   } yield List(n_1, n_2)
 
-  /** Abstract class for SeqVariable operations
+  /** Abstract class for SeqVariable operations.
     *
-    * Each operation has to :
-    *   - check the preCondition that has to be satisfied in order to apply this operation (for
-    *     instance, not removing on an empty sequence)
+    * Each operation has to:
+    *   - Check the preCondition that has to be satisfied in order to apply this operation (for
+    *     instance, not removing on an empty sequence).
     *     - Check the postCondition (the result of modifying the seqVariable given the previous
-    *       State)
-    *     - Define the new State
-    *     - Define the method to modify the SUT
+    *       State).
+    *     - Define the new State.
+    *     - Define the method to modify the SUT.
     */
   abstract class SeqVariableOperations extends Command {
     type Result = List[Int]

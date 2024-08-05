@@ -24,17 +24,17 @@ object SeqUpdateMove {
     * The sub-sequence is defined by two IntSequenceExplorer as well as its new position.
     *
     * @param fromIncludedExplorer
-    *   The IntSequenceExplorer at the starting position of the sub-sequence
+    *   The IntSequenceExplorer at the starting position of the sub-sequence.
     * @param toIncludedExplorer
-    *   The IntSequenceExplorer at the ending position of the sub-sequence
+    *   The IntSequenceExplorer at the ending position of the sub-sequence.
     * @param afterExplorer
-    *   The IntSequenceExplorer at the position after which we want to move the sub-sequence
+    *   The IntSequenceExplorer at the position after which we want to move the sub-sequence.
     * @param flip
-    *   If the sub-sequence needs to be flipped
+    *   If the sub-sequence needs to be flipped.
     * @param prev
-    *   The last update of the IntSequence
+    *   The last update of the IntSequence.
     * @return
-    *   The update corresponding to the defined move
+    *   The update corresponding to the defined move.
     */
   def apply(
     fromIncludedExplorer: IntSequenceExplorer,
@@ -59,19 +59,19 @@ object SeqUpdateMove {
     * The sub-sequence is defined by two IntSequenceExplorer as well as its new position.
     *
     * @param fromIncludedExplorer
-    *   The IntSequenceExplorer at the starting position of the sub-sequence
+    *   The IntSequenceExplorer at the starting position of the sub-sequence.
     * @param toIncludedExplorer
-    *   The IntSequenceExplorer at the ending position of the sub-sequence
+    *   The IntSequenceExplorer at the ending position of the sub-sequence.
     * @param afterExplorer
-    *   The IntSequenceExplorer at the position after which we want to move the sub-sequence
+    *   The IntSequenceExplorer at the position after which we want to move the sub-sequence.
     * @param flip
-    *   If the sub-sequence needs to be flipped
+    *   If the sub-sequence needs to be flipped.
     * @param prev
-    *   The last update of the IntSequence
+    *   The last update of the IntSequence.
     * @param seqAfter
-    *   The IntSequence value after the move
+    *   The IntSequence value after the move.
     * @return
-    *   The update corresponding to the defined move
+    *   The update corresponding to the defined move.
     */
   def apply(
     fromIncludedExplorer: IntSequenceExplorer,
@@ -95,13 +95,13 @@ object SeqUpdateMove {
     }
   }
 
-  /** Extracts the parameters of the SeqUpdateInsert
+  /** Extracts the parameters of the SeqUpdateInsert.
     *
     * @param seqUpdateMove
-    *   The update we want to extracts the parameters from
+    *   The update we want to extracts the parameters from.
     * @return
     *   The explorer starting and ending the sub-sequence, the explorer after which the sub-sequence
-    *   is moved, if it was flip and the previous update
+    *   is moved, if it was flip and the previous update.
     */
   def unapply(
     seqUpdateMove: SeqUpdateMove
@@ -122,17 +122,17 @@ object SeqUpdateMove {
   * ease the update of the potential Invariant depending on this IntSequence.
   *
   * @param fromIncludedExplorer
-  *   The IntSequenceExplorer at the starting position of the sub-sequence
+  *   The IntSequenceExplorer at the starting position of the sub-sequence.
   * @param toIncludedExplorer
-  *   The IntSequenceExplorer at the ending position of the sub-sequence
+  *   The IntSequenceExplorer at the ending position of the sub-sequence.
   * @param afterExplorer
-  *   The IntSequenceExplorer at the position after which we want to move the sub-sequence
+  *   The IntSequenceExplorer at the position after which we want to move the sub-sequence.
   * @param flip
-  *   If the sub-sequence needs to be flipped
+  *   If the sub-sequence needs to be flipped.
   * @param prev
-  *   The last update of the IntSequence
+  *   The last update of the IntSequence.
   * @param seqAfter
-  *   The IntSequence value after the move
+  *   The IntSequence value after the move.
   */
 class SeqUpdateMove(
   val fromIncludedExplorer: IntSequenceExplorer,
@@ -223,5 +223,8 @@ class SeqUpdateMove(
     )
 
   override def toString: String =
-    s"SeqUpdateMove(fromIncluded:${fromIncludedExplorer.position} toIncluded:${toIncludedExplorer.position} after:${afterExplorer.position} flip:$flip prev:$prev)"
+    s"SeqUpdateMove(fromIncluded:${fromIncludedExplorer.position} " +
+      s"toIncluded:${toIncludedExplorer.position} " +
+      s"after:${afterExplorer.position} " +
+      s"flip:$flip prev:$prev)"
 }

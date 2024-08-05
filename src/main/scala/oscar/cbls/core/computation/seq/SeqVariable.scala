@@ -39,13 +39,13 @@ object SeqVariable {
   * [[oscar.cbls.core.propagation.PropagationElement]].
   *
   * This class provides the classical modification method (insert,move,remove) but not only. There
-  * are also several methods allowing a checkpoint/rollback mechanism :
-  *   - defineCurrentValueAsCheckpoint : registers the actual value as the top checkpoint
-  *   - rollbackToTopCheckpoint : cancel every modification since the top checkpoint
-  *   - releaseTopCheckpoint : remove the top checkpoint
+  * are also several methods allowing a checkpoint/rollback mechanism:
+  *   - defineCurrentValueAsCheckpoint: registers the actual value as the top checkpoint,
+  *   - rollbackToTopCheckpoint: cancel every modification since the top checkpoint,
+  *   - releaseTopCheckpoint: remove the top checkpoint.
   *
-  * A classical use of the SeqVariable :
-  *   1. Exploration phase :
+  * A classical use of the SeqVariable:
+  *   1. Exploration phase:
   *      i. define a new top checkpoint
   *      i. insert a new value
   *      i. propagate and check the result
@@ -54,14 +54,14 @@ object SeqVariable {
   *      i. propagate and check the result
   *      i. rollback to top checkpoint
   *      i. ...
-  *   1. Commit phase (once you found the move you want) :
+  *   1. Commit phase (once you found the move you want):
   *      i. rollback and release all checkpoint
   *      i. do your insert/move/remove
   *
   * @param model
-  *   The propagation structure to which the element is attached
+  *   The propagation structure to which the element is attached.
   * @param initialValue
-  *   The initial value of the SeqVariable
+  *   The initial value of the SeqVariable.
   * @param name
   *   The (optional) name of the Variable.
   * @param maxPivotPerValuePercent
@@ -69,7 +69,7 @@ object SeqVariable {
   *   IntSequence. When defining a new checkpoint, if this value is exceeded, a regularization is
   *   done.
   * @param isConstant
-  *   If the variable is a constant
+  *   If the variable is a constant.
   */
 class SeqVariable(
   model: Store,
@@ -83,7 +83,7 @@ class SeqVariable(
   setDomain(Int.MinValue, Int.MaxValue)
 
   /*
-  The actual value of this variable
+  The actual value of this variable.
    For listening invariants this is the value of the variable until next propagation.
    */
   private var _value: IntSequence = {
@@ -119,7 +119,8 @@ class SeqVariable(
     require(
       toNotify.newValue.sameIdentity(explorer.intSequence),
       s"$explorerName must explore the current IntSequence." +
-        s"\nShould be ${toNotify.newValue} with token : ${toNotify.newValue.token}.\nGot ${explorer.intSequence} with token : ${explorer.intSequence.token}"
+        s"\nShould be ${toNotify.newValue} with token : ${toNotify.newValue.token}." +
+        s"\nGot${explorer.intSequence} with token : ${explorer.intSequence.token}."
     )
   }
 
@@ -128,11 +129,11 @@ class SeqVariable(
   /** Inserts a value after a given position.
     *
     * @param value
-    *   The value to insert
+    *   The value to insert.
     * @param insertAfterPositionExplorer
-    *   The position after which to insert the value, as an explorer
+    *   The position after which to insert the value, as an explorer.
     * @param seqAfter
-    *   Optionally (if known), the resulting IntSequence
+    *   Optionally (if known), the resulting IntSequence.
     */
   def insertAfterPosition(
     value: Int,
@@ -141,6 +142,7 @@ class SeqVariable(
   ): Unit = {
     checkConstant()
     checkExplorerForMove(insertAfterPositionExplorer, "InsertAfterPositionExplorer")
+
     recordPerformedIncrementalUpdate(seqAfter match {
       case Some(sa) => (prev, _) => SeqUpdateInsert(value, insertAfterPositionExplorer, prev, sa)
       case None =>
@@ -154,9 +156,9 @@ class SeqVariable(
   /** Removes the value at a given position.
     *
     * @param removePositionExplorer
-    *   The position where to remove the value, as an explorer
+    *   The position where to remove the value, as an explorer.
     * @param seqAfter
-    *   Optionally (if known), the resulting IntSequence
+    *   Optionally (if known), the resulting IntSequence.
     */
   def remove(
     removePositionExplorer: IntSequenceExplorer,
@@ -179,15 +181,15 @@ class SeqVariable(
     * position.
     *
     * @param fromIncludedPositionExplorer
-    *   The start position of the subsequence, as and explorer
+    *   The start position of the subsequence, as and explorer.
     * @param toIncludedPositionExplorer
-    *   The end position of the subsequence, as an explorer
+    *   The end position of the subsequence, as an explorer.
     * @param afterPositionExplorer
-    *   The position after which the subsequence will be moved, as an explorer
+    *   The position after which the subsequence will be moved, as an explorer.
     * @param flip
-    *   Whether or not the subsequence must be flipped
+    *   Whether or not the subsequence must be flipped.
     * @param seqAfter
-    *   Optionally (if known), the resulting IntSequence
+    *   Optionally (if known), the resulting IntSequence.
     */
   def move(
     fromIncludedPositionExplorer: IntSequenceExplorer,
@@ -200,9 +202,11 @@ class SeqVariable(
     checkExplorerForMove(fromIncludedPositionExplorer, "FromIncludedPositionExplorer")
     checkExplorerForMove(toIncludedPositionExplorer, "ToIncludedPositionExplorer")
     checkExplorerForMove(afterPositionExplorer, "AfterPositionExplorer")
+
     val fromPos  = fromIncludedPositionExplorer.position
     val toPos    = toIncludedPositionExplorer.position
     val afterPos = afterPositionExplorer.position
+
     require(
       fromPos <= toPos,
       s"fromPosition should be before or equals to toPosition. " +
@@ -213,6 +217,7 @@ class SeqVariable(
       s"afterPosition should be before fromPosition or after to toPosition. " +
         s"Got from : $fromPos to : $toPos after : $afterPos"
     )
+
     if (!(afterPos == fromPos - 1 && (fromPos == toPos || !flip))) {
       recordPerformedIncrementalUpdate(seqAfter match {
         case Some(sa) =>
@@ -250,14 +255,14 @@ class SeqVariable(
     }
   }
 
-  /** Flips the subsequence defined by the two position (included)
+  /** Flips the subsequence defined by the two position (included).
     *
     * @param fromIncludedPositionExplorer
-    *   The start position of the subsequence, as and explorer
+    *   The start position of the subsequence, as and explorer.
     * @param toIncludedPositionExplorer
-    *   The end position of the subsequence, as an explorer
+    *   The end position of the subsequence, as an explorer.
     * @param seqAfter
-    *   Optionally (if known), the resulting IntSequence
+    *   Optionally (if known), the resulting IntSequence.
     */
   def flip(
     fromIncludedPositionExplorer: IntSequenceExplorer,
@@ -277,19 +282,19 @@ class SeqVariable(
   /** Swaps and flip (or not) two segments of the sequence defined by their two included positions.
     *
     * @param firstSegmentStartPositionExplorer
-    *   The start position of the first segment, as and explorer
+    *   The start position of the first segment, as and explorer.
     * @param firstSegmentEndPositionExplorer
-    *   The end position of the first segment, as an explorer
+    *   The end position of the first segment, as an explorer.
     * @param flipFirstSegment
-    *   Whether or not the first segment must be flipped
+    *   Whether or not the first segment must be flipped.
     * @param secondSegmentStartPositionExplorer
-    *   The start position of the second segment, as and explorer
+    *   The start position of the second segment, as and explorer.
     * @param secondSegmentEndPositionExplorer
-    *   The end position of the second segment, as an explorer
+    *   The end position of the second segment, as an explorer.
     * @param flipSecondSegment
     *   Whether or not the second segment must be flipped
     * @param seqAfter
-    *   Optionally (if known), the resulting IntSequence
+    *   Optionally (if known), the resulting IntSequence.
     */
   def swapSegments(
     firstSegmentStartPositionExplorer: IntSequenceExplorer,
@@ -381,11 +386,11 @@ class SeqVariable(
     }
   }
 
-  /** Registers a new incremental update
+  /** Registers a new incremental update.
     *
-    * Generates and stores the new update in toNotify and performedSinceTopCheckpoint
+    * Generates and stores the new update in toNotify and performedSinceTopCheckpoint.
     * @param generateNewIncrementalUpdate
-    *   A function implemented by the caller that generates the new update
+    *   A function implemented by the caller that generates the new update.
     */
   private final def recordPerformedIncrementalUpdate(
     generateNewIncrementalUpdate: (SeqUpdate, IntSequence) => SeqUpdate
@@ -403,10 +408,10 @@ class SeqVariable(
     }
   }
 
-  /** Sets the new value of this SeqVariable
+  /** Sets the new value of this SeqVariable.
     *
     * @param seq
-    *   The new value
+    *   The new value.
     */
   def :=(seq: IntSequence): Unit = setValue(seq)
 
@@ -415,7 +420,7 @@ class SeqVariable(
     * This is a non-incremental operation. You cannot have some non-propagated changes.
     *
     * @param newIntSequence
-    *   The new IntSequence value
+    *   The new IntSequence value.
     */
   def setValue(newIntSequence: IntSequence): Unit = {
     checkConstant()
@@ -443,7 +448,7 @@ class SeqVariable(
    */
   private[this] var checkpointStackNotTop: List[(IntSequence, SeqUpdate)] = List.empty
 
-  /** Defines the current value as a new checkpoint */
+  /** Defines the current value as a new checkpoint. */
   def defineCurrentValueAsCheckpoint(seqAfter: Option[IntSequence] = None): IntSequence = {
     checkConstant()
     toNotify =
@@ -462,26 +467,28 @@ class SeqVariable(
 
   /** Rollback to the top checkpoint.
     *
-    * Either the SeqVariable is already propagated ==> we need to specify how to rollback. Meaning
+    * Either the SeqVariable is already propagated ==> we need to specify how to rollback, i.e.,
     * which operation has to be made to be back at the previous state.
     *
-    * or it wasn't propagated, then we just drop the last updates
+    * Or it wasn't propagated, then we just drop the last updates.
     *
     * @param checkingCheckpoint
     *   An optional checkpoint just to check if the calling neighborhood/method is at the same level
-    *   as the SeqVariable
+    *   as the SeqVariable.
     */
   def rollbackToTopCheckpoint(checkingCheckpoint: Option[IntSequence] = None): Unit = {
     checkConstant()
     require(
       topCheckpoint != null,
-      "Can not rollback to top checkpoint since no checkpoint has been defined"
+      "Cannot rollback to top checkpoint since no checkpoint has been defined"
     )
     if (checkingCheckpoint.nonEmpty)
       require(
         checkingCheckpoint.get sameIdentity topCheckpoint,
-        s"The checking checkpoint does not quick equals the top checkpoint \nDo they contain the same elements ? " +
-          s"${checkingCheckpoint.get equals topCheckpoint} \ncheckingCheckpoint:${checkingCheckpoint.get} \ntopCheckpoint:$topCheckpoint"
+        s"The checking checkpoint does not quick equals the top checkpoint." +
+          s"\nDo they contain the same elements? " +
+          s"${checkingCheckpoint.get equals topCheckpoint} " +
+          s"\ncheckingCheckpoint:${checkingCheckpoint.get} \ntopCheckpoint:$topCheckpoint"
       )
 
     rollbackSimplification(toNotify, topCheckpoint) match {
@@ -511,7 +518,8 @@ class SeqVariable(
 
     require(
       toNotify.newValue sameIdentity topCheckpoint,
-      s"The new value, after rollback does not quickEquals the top checkpoint \nNew value : ${toNotify.newValue}  \n Top Checkpoint : $topCheckpoint"
+      s"The new value, after rollback does not quickEquals the top checkpoint " +
+        s"\nNew value : ${toNotify.newValue}  \n Top Checkpoint : $topCheckpoint"
     )
   }
 
@@ -520,7 +528,7 @@ class SeqVariable(
     * Used when exploring neighborhood. For instance, after exploring OnePointMove, we need to
     * release the top checkpoint.
     *
-    * '''NOTE : you need to roll back to top checkpoint first'''
+    * '''NOTE : you need to roll back to top checkpoint first.'''
     */
   def releaseTopCheckpoint(): IntSequence = {
     checkConstant()
@@ -563,17 +571,17 @@ class SeqVariable(
   /** Tries to find the last update corresponding to the searched checkpoint.
     *
     * Pops update until a checkpoint definition or a non-incremental update is reached. Then there
-    * are several scenarios :
+    * are several scenarios:
     *   - We reached the searchedCheckpoint definition ==> It was not propagated yet, just drop
     *     everything until then.
-    *   - We reached a rollbackToTopCheckpoint instruction
+    *   - We reached a rollbackToTopCheckpoint instruction.
     *     - It matches our searched checkpoint ==> The checkpoint definition was already propagated
     *       but we already have a howToRollback instruction, just drop everything until then.
     *     - It does not match our searched checkpoint ==> can't happen since we should have reached
-    *       a releaseTopCheckpoint before
+    *       a releaseTopCheckpoint before.
     *   - We reached a releaseTopCheckpoint instruction ==> it's definition was already propagated,
-    *     our targeted checkpoint is even further ==> no simplification
-    *   - We reached a LastNotify update
+    *     our targeted checkpoint is even further ==> no simplification.
+    *   - We reached a LastNotify update.
     *     - Either it has our targeted checkpoint value, we can drop everything until then.
     *     - Or there is no simplification.
     *
@@ -582,11 +590,11 @@ class SeqVariable(
     * reach one before an assignation.
     *
     * @param updates
-    *   The latest not propagated updates
+    *   The latest not propagated updates.
     * @param searchedCheckpoint
-    *   The targeted checkpoint
+    *   The targeted checkpoint.
     * @return
-    *   CleaningResult according to the performed cleaning
+    *   CleaningResult according to the performed cleaning.
     */
   private def rollbackSimplification(
     updates: SeqUpdate,
@@ -676,7 +684,7 @@ class SeqVariable(
     *   The maximum depth of the IntSequence, aka, the maximum number of
     *   [[oscar.cbls.algo.sequence.StackedUpdateIntSequence]] before committing them.
     * @return
-    *   A clone of this variable
+    *   A clone of this variable.
     */
   def createClone(maxDepth: Int = 50): SeqVariable = {
     val clone = new SeqVariable(

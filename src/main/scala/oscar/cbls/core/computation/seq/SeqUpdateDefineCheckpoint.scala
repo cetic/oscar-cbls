@@ -13,7 +13,7 @@
 
 package oscar.cbls.core.computation.seq
 
-/** Companion object of SeqUpdateDefineCheckpoint
+/** Companion object of SeqUpdateDefineCheckpoint.
   */
 object SeqUpdateDefineCheckpoint {
 
@@ -37,9 +37,9 @@ object SeqUpdateDefineCheckpoint {
 /** A SeqUpdate that defines a new checkpoint for the SeqVariable.
   *
   * @param prev
-  *   The previous SeqUpdate of the batch
+  *   The previous SeqUpdate of the batch.
   * @param level
-  *   The level of this checkpoint, starting at 0
+  *   The level of this checkpoint, starting at 0.
   */
 class SeqUpdateDefineCheckpoint(prev: SeqUpdate, val level: Int)
     extends SeqUpdateWithPrev(prev, prev.newValue) {
@@ -50,7 +50,7 @@ class SeqUpdateDefineCheckpoint(prev: SeqUpdate, val level: Int)
 
   protected[computation] def regularize(maxPivot: Int): SeqUpdate = this
 
-  def oldPosToNewPos(oldPos: Int): Option[Int] = {
+  override def oldPosToNewPos(oldPos: Int): Option[Int] = {
     // SeqUpdateDefineCheckpoint does not modify the Sequence
     require(
       requirement = false,
@@ -59,7 +59,7 @@ class SeqUpdateDefineCheckpoint(prev: SeqUpdate, val level: Int)
     None
   }
 
-  def newPos2OldPos(newPos: Int): Option[Int] = {
+  override def newPos2OldPos(newPos: Int): Option[Int] = {
     // SeqUpdateDefineCheckpoint does not modify the Sequence
     require(
       requirement = false,

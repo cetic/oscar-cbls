@@ -18,30 +18,30 @@ import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 object SeqUpdateRemove {
 
   /** Returns the update corresponding to the removal of the value at the specified
-    * IntSequenceExplorer
+    * IntSequenceExplorer.
     *
     * @param removePositionExplorer
-    *   The IntSequenceExplorer at the position of the value we want to remove
+    *   The IntSequenceExplorer at the position of the value we want to remove.
     * @param prev
-    *   The last update of the IntSequence
+    *   The last update of the IntSequence.
     * @return
-    *   The update corresponding to the defined removal
+    *   The update corresponding to the defined removal.
     */
   def apply(removePositionExplorer: IntSequenceExplorer, prev: SeqUpdate): SeqUpdate = {
     apply(removePositionExplorer, prev, prev.newValue.remove(removePositionExplorer, fast = true))
   }
 
   /** Returns the update corresponding to the removal of the value at the specified
-    * IntSequenceExplorer knowing the resulting IntSequence
+    * IntSequenceExplorer knowing the resulting IntSequence.
     *
     * @param removePositionExplorer
-    *   The IntSequenceExplorer at the position of the value we want to remove
+    *   The IntSequenceExplorer at the position of the value we want to remove.
     * @param prev
-    *   The last update of the IntSequence
+    *   The last update of the IntSequence.
     * @param seqAfter
-    *   The IntSequence value after the removal
+    *   The IntSequence value after the removal.
     * @return
-    *   The update corresponding to the defined removal
+    *   The update corresponding to the defined removal.
     */
   def apply(
     removePositionExplorer: IntSequenceExplorer,
@@ -57,12 +57,12 @@ object SeqUpdateRemove {
     }
   }
 
-  /** Extracts the parameters of the SeqUpdateRemove
+  /** Extracts the parameters of the SeqUpdateRemove.
     *
     * @param seqUpdateRemove
-    *   The update we want to extracts the parameters from
+    *   The update we want to extracts the parameters from.
     * @return
-    *   The explorer at the removal position and the update before it
+    *   The explorer at the removal position and the update before it.
     */
   def unapply(seqUpdateRemove: SeqUpdateRemove): Option[(IntSequenceExplorer, SeqUpdate)] =
     Some(seqUpdateRemove.explorerAtRemovePosition, seqUpdateRemove.prev)
@@ -74,11 +74,11 @@ object SeqUpdateRemove {
   * depending on this IntSequence.
   *
   * @param explorerAtRemovePosition
-  *   The IntSequenceExplorer at the position of the value we want to remove
+  *   The IntSequenceExplorer at the position of the value we want to remove.
   * @param prev
-  *   The previous update of the IntSequence
+  *   The previous update of the IntSequence.
   * @param seqAfter
-  *   The new IntSequence value
+  *   The new IntSequence value.
   */
 class SeqUpdateRemove(
   val explorerAtRemovePosition: IntSequenceExplorer,
@@ -120,5 +120,6 @@ class SeqUpdateRemove(
     SeqUpdateRemove(explorerAtRemovePosition, prev, seqAfter.regularizeToMaxPivot(maxPivot))
 
   override def toString: String =
-    s"SeqUpdateRemove(value:${explorerAtRemovePosition.value} position:${explorerAtRemovePosition.position} prev:$prev)"
+    s"SeqUpdateRemove(value:${explorerAtRemovePosition.value} " +
+      s"position:${explorerAtRemovePosition.position} prev:$prev)"
 }

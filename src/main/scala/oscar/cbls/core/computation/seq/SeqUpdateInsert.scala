@@ -18,16 +18,16 @@ import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer, RootIntSequen
 object SeqUpdateInsert {
 
   /** Returns the update corresponding to the insertion of the specified value after the
-    * IntSequenceExplorer
+    * IntSequenceExplorer.
     *
     * @param value
-    *   The value we want to insert
+    *   The value we want to insert.
     * @param insertAfterPositionExplorer
-    *   The IntSequenceExplorer at the position after which we want to insert the value
+    *   The IntSequenceExplorer at the position after which we want to insert the value.
     * @param prev
-    *   The last update of the IntSequence
+    *   The last update of the IntSequence.
     * @return
-    *   The update corresponding to the defined insertion
+    *   The update corresponding to the defined insertion.
     */
   def apply(
     value: Int,
@@ -40,7 +40,8 @@ object SeqUpdateInsert {
             removedPositionExplorer: IntSequenceExplorer,
             prevOfDelete: SeqUpdate
           )
-          if insertAfterPositionExplorer.position + 1 == removedPositionExplorer.position && value == x.explorerAtRemovePosition.value =>
+          if (insertAfterPositionExplorer.position + 1 == removedPositionExplorer.position 
+            && value == x.explorerAtRemovePosition.value) =>
         prevOfDelete
       case _ =>
         new SeqUpdateInsert(
@@ -56,15 +57,15 @@ object SeqUpdateInsert {
     * IntSequenceExplorer knowing the resulting IntSequence.
     *
     * @param value
-    *   The value we want to insert
+    *   The value we want to insert.
     * @param insertAfterPositionExplorer
-    *   The IntSequenceExplorer at the position after which we want to insert the value
+    *   The IntSequenceExplorer at the position after which we want to insert the value.
     * @param prev
-    *   The last update of the IntSequence
+    *   The last update of the IntSequence.
     * @param seqAfter
-    *   The IntSequence value after the insertion
+    *   The IntSequence value after the insertion.
     * @return
-    *   The update corresponding to the defined insertion
+    *   The update corresponding to the defined insertion.
     */
   def apply(
     value: Int,
@@ -81,12 +82,12 @@ object SeqUpdateInsert {
     }
   }
 
-  /** Extracts the parameters of the SeqUpdateInsert
+  /** Extracts the parameters of the SeqUpdateInsert.
     *
     * @param seqUpdateInsert
-    *   The update we want to extracts the parameters from
+    *   The update we want to extracts the parameters from.
     * @return
-    *   The inserted value, the explorer after which it was inserted and the update before it
+    *   The inserted value, the explorer after which it was inserted and the update before it.
     */
   def unapply(seqUpdateInsert: SeqUpdateInsert): Option[(Int, IntSequenceExplorer, SeqUpdate)] =
     Some(seqUpdateInsert.value, seqUpdateInsert.insertAfterPositionExplorer, seqUpdateInsert.prev)
@@ -98,13 +99,13 @@ object SeqUpdateInsert {
   * depending on this SeqVariable.
   *
   * @param value
-  *   The inserted value
+  *   The inserted value.
   * @param insertAfterPositionExplorer
-  *   The IntSequenceExplorer after which the value is inserted
+  *   The IntSequenceExplorer after which the value is inserted.
   * @param prev
-  *   The previous update of the IntSequence
+  *   The previous update of the IntSequence.
   * @param seqAfter
-  *   The new IntSequence value
+  *   The new IntSequence value.
   */
 class SeqUpdateInsert(
   val value: Int,

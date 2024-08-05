@@ -16,10 +16,10 @@ package oscar.cbls.core.computation.seq
 import oscar.cbls.algo.sequence.IntSequence
 import oscar.cbls.core.computation.SavedValue
 
-/** A saved state of a [[SeqVariable]]
+/** A saved state of a [[SeqVariable]].
   *
   * @param seqVariable
-  *   The IntVariable whose state is saved
+  *   The IntVariable whose state is saved.
   */
 case class SeqSavedValue(seqVariable: SeqVariable) extends SavedValue(seqVariable) {
   private val savedValue: IntSequence = seqVariable.value

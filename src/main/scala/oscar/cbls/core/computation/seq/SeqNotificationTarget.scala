@@ -23,10 +23,10 @@ trait SeqNotificationTarget {
     * [[oscar.cbls.core.computation.seq.SeqVariable]] has changed.
     *
     * Implemented by the listening [[oscar.cbls.core.propagation.PropagationElement]]. Called by the
-    * listened [[oscar.cbls.core.computation.seq.SeqVariable]]
+    * listened [[oscar.cbls.core.computation.seq.SeqVariable]].
     *
     * @param v
-    *   The listened SeqVariable
+    *   The listened SeqVariable.
     * @param contextualVarIndex
     *   The optional index of the SeqVariable in the context of the listening Invariant. Default -1
     * @param changes

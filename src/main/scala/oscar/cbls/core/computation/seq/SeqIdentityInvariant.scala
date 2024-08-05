@@ -26,8 +26,7 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
     extends Invariant(store)
     with SeqNotificationTarget {
 
-  registerStaticallyListenedElement(fromValue)
-  fromValue.registerDynamicallyListeningElement(this)
+  fromValue.registerStaticallyAndDynamicallyListeningElement(this)
   toValue.setDefiningInvariant(this)
 
   toValue := fromValue.value
@@ -55,7 +54,7 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
         checkPointStack = tail
         levelTopCheckpoint -= 1
       case Nil =>
-        require(requirement = false, "Should happen : pop on an empty stack")
+        require(requirement = false, "Shouldn't happen: pop on an empty stack")
     }
   }
 
@@ -77,6 +76,7 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
           ) =>
         digestChanges(prev)
         toValue.insertAfterPosition(value, insertAfterPositionExplorer, Some(changes.newValue))
+
       case SeqUpdateMove(
             fromIncludedExplorer: IntSequenceExplorer,
             toIncludedExplorer: IntSequenceExplorer,
@@ -92,13 +92,17 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
           flip,
           Some(changes.newValue)
         )
+
       case SeqUpdateRemove(removePositionExplorer: IntSequenceExplorer, prev: SeqUpdate) =>
         digestChanges(prev)
         toValue.remove(removePositionExplorer, Some(changes.newValue))
+
       case SeqUpdateAssign(s) =>
         toValue := s
+
       case SeqUpdateLastNotified(value: IntSequence) =>
         assert(value equals toValue.pendingValue)
+
       case SeqUpdateRollBackToTopCheckpoint(
             value: IntSequence,
             _: SeqUpdate,
@@ -115,10 +119,12 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
           s"fail on quick equals equals=${value.toList equals checkPointStack.head.toList} value:$value topCheckpoint:${checkPointStack.head}"
         )
         toValue.rollbackToTopCheckpoint()
+
       case SeqUpdateReleaseTopCheckpoint(prev: SeqUpdate, _: IntSequence) =>
         digestChanges(prev)
         popTopCheckpoint()
         toValue.releaseTopCheckpoint()
+
       case SeqUpdateDefineCheckpoint(prev: SeqUpdate, level: Int) =>
         digestChanges(prev)
         require(changes.newValue sameIdentity prev.newValue)
