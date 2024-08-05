@@ -16,7 +16,7 @@ package oscar.cbls.algo.generator
 import GeneratorUtil._
 
 import scala.collection.mutable
-import scala.math.{atan2, cos, max, pow, sin, sqrt}
+import scala.math.{atan2, cos, max, pow, sin, sqrt, round}
 import scala.util.Random
 
 /** Object for generating data for Routing problem. By default, the coordinates are generated in
@@ -178,11 +178,11 @@ object RoutingGenerator {
     maxLatitude: Double = 90.0,
     minLongitude: Double = -180.0,
     maxLongitude: Double = 180.0
-  ): (Array[(Double, Double)], Array[Array[Double]], Double, Long) = {
+  ): (Array[(Double, Double)], Array[Array[Long]], Double, Long) = {
     // Positions for the nodes + the depot
     val (pos, dist) =
       geographicRandom(numNodes + 1, minLatitude, maxLatitude, minLongitude, maxLongitude)
-    val unroutedCost = costForUnroutedNodes(dist, weightFactorForUnroutedNodes.toDouble)
+    val unroutedCost = costForUnroutedNodes(dist, weightFactorForUnroutedNodes)
     val vehicleCost  = costForUsingVehicle(maxCostForUsingVehicle)
 
     (pos, dist, unroutedCost, vehicleCost)
@@ -337,24 +337,7 @@ object RoutingGenerator {
     maxDist + rng.between(0L, side * weightFactor + 1L)
   }
 
-  /** @param distances
-    *   A matrix of distances between each nodes including the depot.
-    * @param weightFactor
-    *   A factor used to increase the cost of unrouted nodes.
-    * @return
-    *   A cost for unrouted nodes based on the maximum distance from the input distance matrix.
-    */
-  def costForUnroutedNodes(distances: Array[Array[Double]], weightFactor: Double): Double = {
-    var maxDist: Double = 0.0
-    for (i <- distances.indices) {
-      for (j <- distances(i).indices) {
-        val d = distances(i)(j)
-        if (d > maxDist) maxDist = d
-      }
-    }
 
-    maxDist + rng.between(0.0, side * weightFactor)
-  }
 
   /** @param maxCost
     *   The maximal cost for using a new vehicle.
@@ -383,7 +366,7 @@ object RoutingGenerator {
     maxLatitude: Double,
     minLongitude: Double,
     maxLongitude: Double
-  ): (Array[(Double, Double)], Array[Array[Double]]) = {
+  ): (Array[(Double, Double)], Array[Array[Long]]) = {
 
     def randomLatitude: Double  = rng.between(minLatitude, maxLatitude)
     def randomLongitude: Double = rng.between(minLongitude, maxLongitude)
@@ -410,8 +393,8 @@ object RoutingGenerator {
     }
 
     val pos: Array[(Double, Double)] = Array.fill(n)((randomLatitude, randomLongitude))
-    val distanceMatrix: Array[Array[Double]] =
-      Array.tabulate(n, n)((i, j) => distance(pos(i), pos(j)))
+    val distanceMatrix: Array[Array[Long]] =
+      Array.tabulate(n, n)((i, j) => round(distance(pos(i), pos(j))))
 
     (pos, distanceMatrix)
   }
