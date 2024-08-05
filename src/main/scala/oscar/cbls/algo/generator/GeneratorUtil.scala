@@ -23,7 +23,7 @@ private[generator] object GeneratorUtil {
   def distance(from: (Long, Long), to: (Long, Long)): Long =
     round(sqrt(pow((from._1 - to._1).toDouble, 2.0) + pow((from._2 - to._2).toDouble, 2.0)))
 
-  /** Return an random tuple of coordinates.
+  /** Returns a random tuple of coordinates.
     *
     * @param xMin
     *   Inclusive lower bound of the X coordinate.
@@ -39,6 +39,6 @@ private[generator] object GeneratorUtil {
   def randomPosition(xMin: Long, xMax: Long, yMin: Long, yMax: Long): (Long, Long) =
     (rng.between(xMin, xMax + 1), rng.between(yMin, yMax + 1))
 
-  /** Test if `x` is in `[a, b]` */
+  /** Tests if `x` is in `[a, b]` */
   def inInterval(x: Long, a: Long, b: Long): Boolean = a <= x && x <= b
 }
