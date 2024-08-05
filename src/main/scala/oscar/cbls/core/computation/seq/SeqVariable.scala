@@ -107,7 +107,6 @@ class SeqVariable(
     *   The new value of this SeqVariable.
     */
   def value: IntSequence = {
-    if (model == null) return _value
     val propagating = model.propagating
     if (isADecisionVariable && !propagating) return toNotify.newValue
     if (!propagating) model.propagate(Some(this))
