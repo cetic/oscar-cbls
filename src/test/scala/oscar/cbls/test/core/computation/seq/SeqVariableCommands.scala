@@ -57,8 +57,8 @@ object SeqVariableCommands extends Commands {
 
     // Moves
     lazy val flipIntSeq: Gen[Command] = for {
-        pos <- genTwoIncIntUpTo(l - 1)
-      } yield FlipIntSeq(pos.head, pos.last)
+      pos <- genTwoIncIntUpTo(l - 1)
+    } yield FlipIntSeq(pos.head, pos.last)
 
     lazy val swapIntSeq: Gen[Command] = for {
       pos    <- genFourIncIntBetween(l - 1)

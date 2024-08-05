@@ -40,7 +40,7 @@ object SeqUpdateInsert {
             removedPositionExplorer: IntSequenceExplorer,
             prevOfDelete: SeqUpdate
           )
-          if (insertAfterPositionExplorer.position + 1 == removedPositionExplorer.position 
+          if (insertAfterPositionExplorer.position + 1 == removedPositionExplorer.position
             && value == x.explorerAtRemovePosition.value) =>
         prevOfDelete
       case _ =>

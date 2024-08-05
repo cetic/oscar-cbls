@@ -245,7 +245,7 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
 
   test("SeqVariable : HowToRollback instructions are actually correct") {
     val model: Store     = new Store(3)
-    val seq: SeqVariable = SeqVariable(model, List(0,1,2,3,4,5,6,7,8,9), "Test Seq")
+    val seq: SeqVariable = SeqVariable(model, List(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), "Test Seq")
     val myCopy           = SeqVariable(model, List.empty, "my test copy")
     new TestSeqInvariant(model, seq, myCopy)
     model.close()
@@ -268,7 +268,7 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
     )
     seq.rollbackToTopCheckpoint()
     (myCopy.value.toList equals seq.value.toList) should be(true)
-    (myCopy.value.toList equals List(0,1,2,3,4,5,6,7,8,9)) should be(true)
+    (myCopy.value.toList equals List(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)) should be(true)
 
     // Second scenario, everything is propagated before rollback ==>
     // my copy receive a batch of 5 moves (move,insert,move,remove,remove)
@@ -283,10 +283,10 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
       flip = true
     )
     (myCopy.value.toList equals seq.value.toList) should be(true)
-    (myCopy.value.toList equals List(3,10,11,2,6,7,4,1,0,8,9)) should be(true)
+    (myCopy.value.toList equals List(3, 10, 11, 2, 6, 7, 4, 1, 0, 8, 9)) should be(true)
     seq.rollbackToTopCheckpoint()
     (myCopy.value.toList equals seq.value.toList) should be(true)
-    (myCopy.value.toList equals List(0,1,2,3,4,5,6,7,8,9)) should be(true)
+    (myCopy.value.toList equals List(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)) should be(true)
 
     // Third scenario, only a part is propagated before rollback ==>
     // my copy receive a batch of 5 moves (move,insert,move,remove,remove)
@@ -294,7 +294,7 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
     seq.insertAfterPosition(11, seq.value.explorerAtPosition(2).get)
     seq.flip(seq.value.explorerAtPosition(2).get, seq.value.explorerAtPosition(7).get)
     (myCopy.value.toList equals seq.value.toList) should be(true)
-    (myCopy.value.toList equals List(0,1,5,4,3,10,11,2,6,7,8,9)) should be(true)
+    (myCopy.value.toList equals List(0, 1, 5, 4, 3, 10, 11, 2, 6, 7, 8, 9)) should be(true)
     seq.remove(seq.value.explorerAtPosition(2).get)
     seq.move(
       seq.value.explorerAtPosition(0).get,
@@ -305,10 +305,10 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
     // should be : List(3,10,11,2,6,7,4,1,0,8,9)
     seq.rollbackToTopCheckpoint()
     (myCopy.value.toList equals seq.value.toList) should be(true)
-    (myCopy.value.toList equals List(0,1,2,3,4,5,6,7,8,9)) should be(true)
+    (myCopy.value.toList equals List(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)) should be(true)
     seq.releaseTopCheckpoint()
     (myCopy.value.toList equals seq.value.toList) should be(true)
-    (myCopy.value.toList equals List(0,1,2,3,4,5,6,7,8,9)) should be(true)
+    (myCopy.value.toList equals List(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)) should be(true)
     (myCopy.value.toList equals initValue) should be(true)
     (seq.value.toList equals initValue) should be(true)
   }
