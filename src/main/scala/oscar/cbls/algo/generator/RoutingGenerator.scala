@@ -19,8 +19,8 @@ import scala.collection.mutable
 import scala.math.{atan2, cos, pow, sin, sqrt}
 import scala.util.Random
 
-/** Object for generating data for Routing problem. By default, the coordinates are generated in `[0;`
-  * `1000] * [0; 1000]`. See [[setMapDimensions]] to change it.
+/** Object for generating data for Routing problem. By default, the coordinates are generated in
+  * `[0;` `1000] * [0; 1000]`. See [[setMapDimensions]] to change it.
   */
 object RoutingGenerator {
 
@@ -79,9 +79,9 @@ object RoutingGenerator {
     (pos, dist, unroutedCost, vehicleCost)
   }
 
-  /** Generates random data for routing. Each node is evenly distant from each other. '''WARNING''': If
-    * `numNodes` and `nodeDistance` are too big considering the map's bounds, this generator cannot
-    * guarentee to generate exactly `numNodes` nodes. In that case, the generator stops after
+  /** Generates random data for routing. Each node is evenly distant from each other. '''WARNING''':
+    * If `numNodes` and `nodeDistance` are too big considering the map's bounds, this generator
+    * cannot guarentee to generate exactly `numNodes` nodes. In that case, the generator stops after
     * fulfilling the map.
     *
     * @param numNodes
@@ -90,6 +90,8 @@ object RoutingGenerator {
     *   A factor used to increase the cost of unrouted nodes.
     * @param maxCostForUsingVehicle
     *   The maximal cost for using a new vehicle.
+    * @param nodeDistance
+    *   The distance between two adjacent nodes.
     * @return
     *   An array of positions for the nodes, including the depot at index 0, a distances matrix, the
     *   cost for unrouted nodes and a cost for using a new vehicle.
@@ -211,8 +213,8 @@ object RoutingGenerator {
     * @param clusterRadius
     *   The maximum distance between the nodes in the same cluster.
     * @return
-    *   `numCluster * nodesByCluster` random position grouped in clusters. '''WARNING''': According to the
-    *   dimension of the map and the input values, the generator can stop before generating
+    *   `numCluster * nodesByCluster` random position grouped in clusters. '''WARNING''': According
+    *   to the dimension of the map and the input values, the generator can stop before generating
     *   `numCluster * nodesByCluster` nodes if the map is full or the clusters too small.
     */
   def clusteredNodes(
@@ -252,9 +254,9 @@ object RoutingGenerator {
     *   The position of the depot.
     * @return
     *   An array of nodes two by two distant from `nodeDistance`. The center of the map is reserved
-    *   for the depot. WARNING: If `n` and `nodeDistance` are too big considering the map's bounds,
-    *   this generator cannot guarentee to generate exactly `n` nodes. In that case, the generator
-    *   stops after fulfilling the map.
+    *   for the depot. '''WARNING''': If `n` and `nodeDistance` are too big considering the map's
+    *   bounds, this generator cannot guarentee to generate exactly `n` nodes. In that case, the
+    *   generator stops after fulfilling the map.
     */
   def evenlySpacedNodes(
     numNodes: Int,
@@ -329,8 +331,7 @@ object RoutingGenerator {
     var maxDist: Long = 0L
     for (i <- distances.indices) {
       for (j <- distances(i).indices) {
-        val d = distances(i)(j)
-        if (d > maxDist) maxDist = d
+        maxDist = max(maxDist, distances(i)(j))
       }
     }
 
