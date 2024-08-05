@@ -16,7 +16,7 @@ package oscar.cbls.algo.generator
 import GeneratorUtil._
 
 import scala.collection.mutable
-import scala.math.{atan2, cos, max, pow, sin, sqrt, round}
+import scala.math.{atan2, cos, max, pow, round, sin, sqrt}
 import scala.util.Random
 
 /** Object for generating data for Routing problem. By default, the coordinates are generated in
@@ -54,6 +54,8 @@ object RoutingGenerator {
 
   /** Generates random data for routing.
     *
+    * @param numDepot
+    *   The number of depot to generate.
     * @param numNodes
     *   The number of ''nodes to visit''.
     * @param weightFactorForUnroutedNodes
@@ -61,17 +63,19 @@ object RoutingGenerator {
     * @param maxCostForUsingVehicle
     *   The maximal cost for using a new vehicle.
     * @return
-    *   An array of positions for the nodes, including the depot at index 0, a distances matrix, the
-    *   cost for unrouted nodes and a cost for using a new vehicle.
+    *   1. An array of `numDepot + numNodes` positions. The first `numDepot` positions are supposed
+    *      to be the depots. The other ones are nodes to visit.
+    *   1. A distances matrix.
+    *   1. The cost for unrouted nodes.
+    *   1. A cost for using a new vehicle.
     */
   def generateRandomRoutingData(
+    numDepot: Int,
     numNodes: Int,
     weightFactorForUnroutedNodes: Long,
     maxCostForUsingVehicle: Long
   ): (Array[(Long, Long)], Array[Array[Long]], Long, Long) = {
-    val depot        = randomDepot
-    val nodes        = randomNodes(numNodes)
-    val pos          = depot +: nodes
+    val pos          = randomNodes(numDepot, numNodes)
     val dist         = distancesMatrix(pos)
     val unroutedCost = costForUnroutedNodes(dist, weightFactorForUnroutedNodes)
     val vehicleCost  = costForUsingVehicle(maxCostForUsingVehicle)
@@ -80,12 +84,14 @@ object RoutingGenerator {
   }
 
   /** Generates random data for routing. Each node is evenly distant from each other. '''WARNING''':
-    * If `numNodes` and `nodeDistance` are too big considering the map's bounds, this generator
-    * cannot guarentee to generate exactly `numNodes` nodes. In that case, the generator stops after
-    * fulfilling the map.
+    * If `numDepot + numNodes` and `nodeDistance` are too big considering the map's bounds, this
+    * generator cannot guarentee to generate exactly `numDepot + numNodes` nodes. In that case, the
+    * generator stops after fulfilling the map.
     *
+    * @param numDepot
+    *   The number of depots to generate.
     * @param numNodes
-    *   The number of ''node to visit''.
+    *   The number of ''nodes to visit''.
     * @param weightFactorForUnroutedNodes
     *   A factor used to increase the cost of unrouted nodes.
     * @param maxCostForUsingVehicle
@@ -93,18 +99,21 @@ object RoutingGenerator {
     * @param nodeDistance
     *   The distance between two adjacent nodes.
     * @return
-    *   An array of positions for the nodes, including the depot at index 0, a distances matrix, the
-    *   cost for unrouted nodes and a cost for using a new vehicle.
+    *   1. An array of `numDepot + numNodes` positions (if the map is not full). The first
+    *      `numDepot` positions are supposed to be the depots. The other ones are nodes to visit.
+    *   1. A distances matrix.
+    *   1. The cost for unrouted nodes.
+    *   1. A cost for using a new vehicle.
     */
   def generateEvenlySpacedRoutingData(
+    numDepot: Int,
     numNodes: Int,
     weightFactorForUnroutedNodes: Long,
     maxCostForUsingVehicle: Long,
     nodeDistance: Long
   ): (Array[(Long, Long)], Array[Array[Long]], Long, Long) = {
     val depot        = centerDepot
-    val nodes        = evenlySpacedNodes(numNodes, nodeDistance, depot)
-    val pos          = depot +: nodes
+    val pos          = evenlySpacedNodes(numDepot, numNodes, nodeDistance, depot)
     val dist         = distancesMatrix(pos)
     val unroutedCost = costForUnroutedNodes(dist, weightFactorForUnroutedNodes)
     val vehicleCost  = costForUsingVehicle(maxCostForUsingVehicle)
@@ -114,8 +123,10 @@ object RoutingGenerator {
 
   /** Generates random data for routing. The generated nodes are grouped by clusters. '''WARNING''':
     * According to the dimension of the map and the input values, the generator can stop before
-    * generating `numCluster * nodesByCluster` nodes if the map is full or the clusters too small.
+    * generating `numDepot + numCluster * nodesByCluster` nodes if the map is full.
     *
+    * @param numDepot
+    *   The number of depot to generate.
     * @param numCluster
     *   The number of cluster of ''node to visit'' .
     * @param nodesByCluster
@@ -127,20 +138,22 @@ object RoutingGenerator {
     * @param maxCostForUsingVehicle
     *   The maximal cost for using a new vehicle.
     * @return
-    *   An array of `numCluster * nodeByCluster` positions for the nodes (if the map is not full),
-    *   including the depot at index 0, a distances matrix, the cost for unrouted nodes and a cost
-    *   for using a new vehicle.
+    *   1. An array of `numDepot + numCluster * nodesByCluster` positions (if the map is not full).
+    *      The first `numDepot` positions are supposed to be the depots. The other ones are nodes to
+    *      visit.
+    *   1. A distances matrix.
+    *   1. The cost for unrouted nodes.
+    *   1. A cost for using a new vehicle.
     */
   def generateClusteredRoutingData(
+    numDepot: Int,
     numCluster: Int,
     nodesByCluster: Int,
     clusterRadius: Int,
     weightFactorForUnroutedNodes: Long,
     maxCostForUsingVehicle: Long
   ): (Array[(Long, Long)], Array[Array[Long]], Long, Long) = {
-    val depot        = randomDepot
-    val nodes        = clusteredNodes(numCluster, nodesByCluster, clusterRadius)
-    val pos          = depot +: nodes
+    val pos          = clusteredNodes(numDepot, numCluster, nodesByCluster, clusterRadius)
     val dist         = distancesMatrix(pos)
     val unroutedCost = costForUnroutedNodes(dist, weightFactorForUnroutedNodes)
     val vehicleCost  = costForUsingVehicle(maxCostForUsingVehicle)
@@ -166,9 +179,11 @@ object RoutingGenerator {
     * @param maxLongitude
     *   The exclusive maximal longitude of the points in degrees.
     * @return
-    *   An array of positions (latitude, longitude) in degrees for the nodes, including the depot at
-    *   index 0, a distances matrix (in meters), the cost for unrouted nodes and a cost for using a
-    *   new vehicle.
+    *   1. An array of positions (latitude, longitude) in degrees for the nodes. The first positions
+    *      are supposed to be the depots
+    *   1. A distances matrix (in meters). These distances has been rounded.
+    *   1. The cost for unrouted nodes
+    *   1. A cost for using a new vehicle.
     */
   def generateGeographicRoutingData(
     numNodes: Int,
@@ -188,82 +203,119 @@ object RoutingGenerator {
     (pos, dist, unroutedCost, vehicleCost)
   }
 
-  /** Generates a random position for the depot. */
-  def randomDepot: (Long, Long) =
-    randomPosition(minXY, maxXY, minXY, maxXY)
-
   /** Computes the center of the map. */
   def centerDepot: (Long, Long) = {
     val center: Long = (minXY + maxXY) / 2
     (center, center)
   }
 
-  /** @param n
+  /** @param d
+    *   The number of depots to generate.
+    * @param n
     *   The number of nodes to generate.
     * @return
-    *   `n` random positions for nodes.
+    *   `d + n` random positions for nodes. The first `d` positions are supposed to be the depots'
+    *   ones.
     */
-  def randomNodes(n: Int): Array[(Long, Long)] =
-    Array.fill(n)(randomPosition(minXY, maxXY, minXY, maxXY))
+  def randomNodes(d: Int, n: Int): Array[(Long, Long)] =
+    Array.fill(d + n)(randomPosition(minXY, maxXY, minXY, maxXY))
 
-  /** @param numCluster
+  /** @param numDepot
+    *   The number of depot to generate.
+    * @param numCluster
     *   The number of cluster of nodes to generate.
     * @param nodesByCluster
     *   How many cluster have to be in a cluster.
     * @param clusterRadius
     *   The maximum distance between the nodes in the same cluster.
     * @return
-    *   `numCluster * nodesByCluster` random position grouped in clusters. '''WARNING''': According
-    *   to the dimension of the map and the input values, the generator can stop before generating
-    *   `numCluster * nodesByCluster` nodes if the map is full or the clusters too small.
+    *   `numDepot + numCluster * nodesByCluster` random positions grouped in clusters. The first
+    *   `numDepot` positions are supposed to be the depots. '''WARNING''': According to the
+    *   dimension of the map and the input values, the generator can stop before generating
+    *   `numDepot + numCluster * nodesByCluster` nodes if the map is full.
     */
   def clusteredNodes(
+    numDepot: Int,
     numCluster: Int,
     nodesByCluster: Int,
     clusterRadius: Int
   ): Array[(Long, Long)] = {
     val nodesPositions: mutable.Queue[(Long, Long)] = mutable.Queue()
 
-    var currentCenter = randomPosition(minXY, maxXY, minXY, maxXY)
-    for (_ <- 0 until numCluster) {
-      val currentMin: Long = currentCenter._1 - clusterRadius
-      val currentMax: Long = currentCenter._1 + clusterRadius
-      for (_ <- 0 until nodesByCluster) {
+    /** Generates `n` positions belonging to the current cluster.
+      *
+      * @param center
+      *   The center of the current cluster.
+      * @param n
+      *   The size of the cluster.
+      */
+    def generateCluster(center: (Long, Long), n: Int): Unit = {
+      val currentMin: Long = center._1 - clusterRadius
+      val currentMax: Long = center._1 + clusterRadius
+      for (_ <- 0 until n) {
         val pos: (Long, Long) = randomPosition(currentMin, currentMax, currentMin, currentMax)
         nodesPositions += pos
       }
-      var tries     = 0
-      var newCenter = (0L, 0L)
+
+    }
+
+    /** @param currentCenter
+      *   The current center position.
+      * @return
+      *   A new center which do not belong to the last cluster.
+      */
+    def generateNewCenter(currentCenter: (Long, Long)): (Long, Long) = {
+      val currentMin: Long = currentCenter._1 - clusterRadius
+      val currentMax: Long = currentCenter._1 + clusterRadius
+      var tries            = 0
+      var newCenter        = (0L, 0L)
       do {
         newCenter = randomPosition(minXY, maxXY, minXY, maxXY)
         tries += 1
       } while (!inInterval(newCenter._1, currentMin, currentMax)
         && !inInterval(newCenter._2, currentMin, currentMax)
         && tries < 10000)
-      currentCenter = newCenter
+
+      newCenter
     }
+
+    var currentCenter = randomPosition(minXY, maxXY, minXY, maxXY)
+    // Generates a cluster of depot.
+    generateCluster(currentCenter, numDepot)
+    currentCenter = generateNewCenter(currentCenter)
+    // Generates clusters of nodes to visit.
+    for (_ <- 0 until numCluster) {
+      generateCluster(currentCenter, nodesByCluster)
+      currentCenter = generateNewCenter(currentCenter)
+    }
+
     nodesPositions.toArray
   }
 
-  /** @param numNodes
+  /** @param numDepots
+    *   The number of depots to generate.
+    * @param numNodes
     *   The number of nodes to generate.
     * @param nodeDistance
     *   The distance between two adjacent nodes.
-    * @param depotPos
-    *   The position of the depot.
+    * @param firstDepotPos
+    *   The position of the first depot.
     * @return
-    *   An array of nodes two by two distant from `nodeDistance`. The center of the map is reserved
-    *   for the depot. '''WARNING''': If `n` and `nodeDistance` are too big considering the map's
-    *   bounds, this generator cannot guarentee to generate exactly `n` nodes. In that case, the
-    *   generator stops after fulfilling the map.
+    *   An array of nodes two by two distant from `nodeDistance`. The first `numDepot` nodes are
+    *   supposed to be depots. '''WARNING''': If `numDepots + numNodes` and `nodeDistance` are too
+    *   big considering the map's bounds, this generator cannot guarentee to generate exactly
+    *   `numDepots + numNodes` nodes. In that case, the generator stops after fulfilling the map.
     */
   def evenlySpacedNodes(
+    numDepots: Int,
     numNodes: Int,
     nodeDistance: Long,
-    depotPos: (Long, Long)
+    firstDepotPos: (Long, Long)
   ): Array[(Long, Long)] = {
-    val nodesPositions: mutable.Queue[(Long, Long)] = mutable.Queue()
-    var lastNode: (Long, Long)                      = depotPos
+    require(numDepots >= 1, "This generator needs to generate at least 1 depot.")
+
+    val nodesPositions: mutable.Queue[(Long, Long)] = mutable.Queue(firstDepotPos)
+    var lastNode: (Long, Long)                      = firstDepotPos
 
     // Given an integer center, the following four points are always integer for all integer radii
     val plusX     = (p: (Long, Long)) => (p._1 + nodeDistance, p._2)
@@ -275,7 +327,7 @@ object RoutingGenerator {
     /** To be admissible, a node must be included in the map bounds and not already exist. */
     def isAdmissibleNode(node: (Long, Long)): Boolean =
       inInterval(node._1, minXY, maxXY) && inInterval(node._2, minXY, maxXY) && !nodesPositions
-        .contains(node) && node != depotPos
+        .contains(node) && node != firstDepotPos
 
     /** Tries to find a node which is not encircled by four other nodes. */
     def unblock(): Option[(Long, Long)] = {
@@ -288,10 +340,10 @@ object RoutingGenerator {
       None
     }
 
-    var i: Int              = 0
+    var i: Int              = 1
     var translateIndex: Int = 0
 
-    while (i < numNodes) {
+    while (i < numDepots + numNodes) {
       translate = rng.shuffle(translate)
       val newNode = translate(translateIndex)(lastNode)
       if (isAdmissibleNode(newNode)) { // We can add the new node
@@ -315,7 +367,7 @@ object RoutingGenerator {
     nodesPositions.toArray
   }
 
-  /** Computes the euclidean distance between each pair of position in input. */
+  /** Computes the euclidean distance between each pair of positions in input. */
   def distancesMatrix(pos: Array[(Long, Long)]): Array[Array[Long]] =
     Array.tabulate(pos.length, pos.length)((i, j) => distance(pos(i), pos(j)))
 
@@ -336,8 +388,6 @@ object RoutingGenerator {
 
     maxDist + rng.between(0L, side * weightFactor + 1L)
   }
-
-
 
   /** @param maxCost
     *   The maximal cost for using a new vehicle.
