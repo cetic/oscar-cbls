@@ -19,6 +19,24 @@ import oscar.cbls.core.computation.{SavedValue, Store, Variable}
 /** Companion object of SeqVariable
   */
 object SeqVariable {
+
+  /** Creates a new SeqVariable with the given parameters.
+    *
+    * @param model
+    *   The propagation structure to which the element is attached.
+    * @param initialValue
+    *   The initial value of the SeqVariable.
+    * @param name
+    *   The (optional) name of the Variable.
+    * @param maxPivotPerValuePercent
+    *   The maximum number of [[oscar.cbls.algo.sequence.affineFunction.Pivot]] per 100 value in the
+    *   IntSequence. When defining a new checkpoint, if this value is exceeded, a regularization is
+    *   done.
+    * @param isConstant
+    *   If the variable is a constant.
+    * @return
+    *   A new SeqVariable
+    */
   def apply(
     model: Store,
     initialValue: List[Int],
@@ -29,8 +47,28 @@ object SeqVariable {
     new SeqVariable(model, initialValue, name, maxPivotPerValuePercent, isConstant)
   }
 
-  def empty(model: Store, name: String = "SeqVariable"): Unit = {
-    new SeqVariable(model, List.empty, name, 4, false)
+  /** Creates an empty new SeqVariable with the given parameters.
+    *
+    * @param model
+    *   The propagation structure to which the element is attached.
+    * @param name
+    *   The (optional) name of the Variable.
+    * @param maxPivotPerValuePercent
+    *   The maximum number of [[oscar.cbls.algo.sequence.affineFunction.Pivot]] per 100 value in the
+    *   IntSequence. When defining a new checkpoint, if this value is exceeded, a regularization is
+    *   done.
+    * @param isConstant
+    *   If the variable is a constant.
+    * @return
+    *   A new SeqVariable
+    */
+  def empty(
+    model: Store,
+    name: String = "SeqVariable",
+    maxPivotPerValuePercent: Int = 4,
+    isConstant: Boolean = false
+  ): Unit = {
+    new SeqVariable(model, List.empty, name, maxPivotPerValuePercent, isConstant)
   }
 }
 
@@ -522,12 +560,15 @@ class SeqVariable(
     )
   }
 
-  /** Releases the top checkpoint.
+  /** Releases and returns the top checkpoint.
     *
     * Used when exploring neighborhood. For instance, after exploring OnePointMove, we need to
     * release the top checkpoint.
     *
     * '''NOTE : you need to roll back to top checkpoint first.'''
+    *
+    * @return
+    *   The current top checkpoint value
     */
   def releaseTopCheckpoint(): IntSequence = {
     checkConstant()
@@ -607,8 +648,8 @@ class SeqVariable(
     }
 
     updates match {
-      case suwp: SeqUpdateWithPrev if isSimpleMove(suwp) =>
-        rollbackSimplification(suwp.prev, searchedCheckpoint) match {
+      case update: SeqUpdateWithPrev if isSimpleMove(update) =>
+        rollbackSimplification(update.prev, searchedCheckpoint) match {
           case NoSimplificationPerformed =>
             if (searchedCheckpoint sameIdentity updates.newValue)
               CheckpointReachedNotRemoved(updates)

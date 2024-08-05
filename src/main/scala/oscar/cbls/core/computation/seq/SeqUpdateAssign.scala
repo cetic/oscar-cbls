@@ -18,8 +18,23 @@ import oscar.cbls.algo.sequence.IntSequence
 /** Companion object of SeqUpdateAssign.
   */
 object SeqUpdateAssign {
+
+  /** Creates a SeqUpdateAssign.
+    *
+    * @param sequence
+    *   The new value assigned to the SeqVariable.
+    * @return
+    *   A SeqUpdateAssign.
+    */
   def apply(sequence: IntSequence): SeqUpdateAssign = new SeqUpdateAssign(sequence)
 
+  /** Extracts the parameter of the given SeqUpdateAssign.
+    *
+    * @param seqUpdateAssign
+    *   The SeqUpdateAssign we want to know the parameters of.
+    * @return
+    *   The value of the SeqUpdateAssign.
+    */
   def unapply(seqUpdateAssign: SeqUpdateAssign): Option[IntSequence] =
     Some(seqUpdateAssign.newSequence)
 }

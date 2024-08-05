@@ -17,6 +17,22 @@ package oscar.cbls.core.computation.seq
   */
 object SeqUpdateDefineCheckpoint {
 
+  /** Creates a SeqUpdateDefineCheckpoint.
+    *
+    * Before creating the checkpoint, it checks if the value, an IntSequence, has to be regularized
+    * or not.
+    *
+    * @param prev
+    *   The previous update.
+    * @param maxPivotPerValuePercent
+    *   The maximum number of [[oscar.cbls.algo.sequence.affineFunction.Pivot]] per 100 value in the
+    *   IntSequence. When defining a new checkpoint, if this value is exceeded, a regularization is
+    *   done.
+    * @param level
+    *   The level of this checkpoint (starting at 0).
+    * @return
+    *   A SeqUpdateDefineCheckpoint.
+    */
   def apply(
     prev: SeqUpdate,
     maxPivotPerValuePercent: Int,
@@ -27,11 +43,31 @@ object SeqUpdateDefineCheckpoint {
     new SeqUpdateDefineCheckpoint(newPrev, level)
   }
 
+  /** Creates a SeqUpdateDefineCheckpoint.
+    *
+    * No regularization is done here. This implementation is supposed to be only used when we append
+    * an already existing SeqUpdateDefineCheckpoint after another SeqUpdate.
+    *
+    * @param prev
+    *   The previous update.
+    * @param level
+    *   The level of this checkpoint (starting at 0).
+    * @return
+    *   A SeqUpdateDefineCheckpoint.
+    */
   def apply(prev: SeqUpdate, level: Int): SeqUpdateDefineCheckpoint = {
     new SeqUpdateDefineCheckpoint(prev, level)
   }
 
-  def unapply(u: SeqUpdateDefineCheckpoint): Option[(SeqUpdate, Int)] = Some(u.prev, u.level)
+  /** Extracts the parameters of the given SeqUpdateDefineCheckpoint.
+    *
+    * @param seqUpdateDefineCheckpoint
+    *   The SeqUpdateDefineCheckpoint we want to know the parameters of.
+    * @return
+    *   A tuple containing (The previous update and the level of this SeqUpdateDefineCheckpoint).
+    */
+  def unapply(seqUpdateDefineCheckpoint: SeqUpdateDefineCheckpoint): Option[(SeqUpdate, Int)] =
+    Some(seqUpdateDefineCheckpoint.prev, seqUpdateDefineCheckpoint.level)
 }
 
 /** A SeqUpdate that defines a new checkpoint for the SeqVariable.
@@ -39,7 +75,7 @@ object SeqUpdateDefineCheckpoint {
   * @param prev
   *   The previous SeqUpdate of the batch.
   * @param level
-  *   The level of this checkpoint, starting at 0.
+  *   The level of this checkpoint (starting at 0).
   */
 class SeqUpdateDefineCheckpoint(prev: SeqUpdate, val level: Int)
     extends SeqUpdateWithPrev(prev, prev.newValue) {

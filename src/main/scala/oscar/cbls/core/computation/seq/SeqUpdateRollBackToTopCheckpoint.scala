@@ -18,6 +18,20 @@ import oscar.cbls.algo.sequence.IntSequence
 /** Companion object of SeqUpdateRollBackToTopCheckpoint
   */
 object SeqUpdateRollBackToTopCheckpoint {
+
+  /** Creates a SeqUpdateRollBackToTopCheckpoint.
+    *
+    * @param checkpoint
+    *   The SeqVariable value at the top checkpoint.
+    * @param howToRollBack
+    *   The batch of updates that can be used to roll back modifications.
+    * @param level
+    *   The level of the top checkpoint.
+    * @param prev
+    *   The previous update.
+    * @return
+    *   A SeqUpdateRollBackToTopCheckpoint.
+    */
   def apply(
     checkpoint: IntSequence,
     howToRollBack: SeqUpdate,
@@ -27,6 +41,14 @@ object SeqUpdateRollBackToTopCheckpoint {
     new SeqUpdateRollBackToTopCheckpoint(checkpoint, howToRollBack, level, prev)
   }
 
+  /** Extracts the parameters of the given SeqUpdateRollBackToTopCheckpoint.
+    *
+    * @param seqUpdateRollBackToCheckpoint
+    *   The SeqUpdateRollBackToTopCheckpoint we want to know the parameters of.
+    * @return
+    *   A tuple containing (The value of the checkpoint, the batch of update to roll back
+    *   modification, the level of the checkpoint and the previous updates).
+    */
   def unapply(
     seqUpdateRollBackToCheckpoint: SeqUpdateRollBackToTopCheckpoint
   ): Option[(IntSequence, SeqUpdate, Int, SeqUpdate)] =
@@ -43,7 +65,7 @@ object SeqUpdateRollBackToTopCheckpoint {
   * @param checkpoint
   *   The SeqVariable value at the top checkpoint.
   * @param howToRollBack
-  *   The batch of updates that can be used to roll back modification.
+  *   The batch of updates that can be used to roll back modifications.
   * @param level
   *   The level of the top checkpoint.
   * @param prev

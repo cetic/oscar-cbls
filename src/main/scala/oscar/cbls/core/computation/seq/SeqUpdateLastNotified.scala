@@ -17,9 +17,24 @@ import oscar.cbls.algo.sequence.IntSequence
 /** Companion object of SeqUpdateLastNotified
   */
 object SeqUpdateLastNotified {
+
+  /** Creates a SeqUpdateLastNotified based on the IntSequence passed as parameter.
+    *
+    * @param sequence
+    *   The value of the SeqUpdateLastNotified.
+    * @return
+    *   A SeqUpdateLastNotified.
+    */
   def apply(sequence: IntSequence): SeqUpdateLastNotified =
     new SeqUpdateLastNotified(sequence)
 
+  /** Extracts the parameter of the given SeqUpdateLastNotified.
+    *
+    * @param seqUpdateLastNotified
+    *   The SeqUpdateLastNotified we want to know the parameter of.
+    * @return
+    *   The value of the SeqUpdateLastNotified.
+    */
   def unapply(seqUpdateLastNotified: SeqUpdateLastNotified): Option[IntSequence] =
     Some(seqUpdateLastNotified.newValue)
 }

@@ -17,26 +17,66 @@ import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation.{Invariant, Store}
 
 object SeqIdentityInvariant {
-  def apply(store: Store, fromValue: SeqVariable, toValue: SeqVariable): SeqIdentityInvariant = {
-    new SeqIdentityInvariant(store, fromValue, toValue)
+
+  /** Creates a SeqIdentityInvariant.
+    *
+    * @param store
+    *   The model to which input and output are registered.
+    * @param input
+    *   The SeqVariable we are copying.
+    * @param output
+    *   The copy of the input.
+    * @return
+    *   A SeqIdentityInvariant
+    */
+  def apply(store: Store, input: SeqVariable, output: SeqVariable): SeqIdentityInvariant = {
+    new SeqIdentityInvariant(store, input, output)
   }
 }
 
-class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVariable)
+/** An Invariant whose job is to ensure that output is strictly identical to input.
+  *
+  * After each propagation of input updates, output must be equal to input. Meaning, all stacked
+  * updates must be the same and the associated [[oscar.cbls.algo.sequence.IntSequence]] must have
+  * the same token (identity).
+  *
+  * This invariant is used for instance when you have several heavy constraints depending on one
+  * SeqVariable. Instead of updating all the constraints at once, using several copy of the
+  * SeqVariable and linking each constraint to a different copy will save you time. For instance:
+  *   - A CVRPTW. The capacity constraint could be slow to compute, as for the time window
+  *     constraint. Let's say it take 5 ms for the capacity and 10 ms for the time window.
+  *   - Without the use of copy, each time you explore a movement, you'll spend 15ms to update both
+  *     of them.
+  *   - With the copies like this:
+  *     - main <- copy1 <- copy2
+  *     - RouteLength listening to copy2.
+  *     - TW listening to copy 1.
+  *     - Capacity listening to main.
+  *   - Checking if the capacity constraint is not violated won't trigger the update of TW or
+  *     RouteLength. Saving you time.
+  *
+  * @param store
+  *   The model to which input and output are registered.
+  * @param input
+  *   The SeqVariable we are copying.
+  * @param output
+  *   The copy of the input.
+  */
+class SeqIdentityInvariant(store: Store, input: SeqVariable, output: SeqVariable)
     extends Invariant(store)
     with SeqNotificationTarget {
 
-  fromValue.registerStaticallyAndDynamicallyListeningElement(this)
-  toValue.setDefiningInvariant(this)
+  input.registerStaticallyAndDynamicallyListeningElement(this)
+  output.setDefiningInvariant(this)
 
-  toValue := fromValue.value
+  output := input.value
 
   override def notifySeqChanges(
     v: SeqVariable,
     contextualVarIndex: Int,
     changes: SeqUpdate
   ): Unit = {
-    assert(v == fromValue)
+    assert(v == input)
     digestChanges(changes)
   }
 
@@ -75,7 +115,7 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
             prev: SeqUpdate
           ) =>
         digestChanges(prev)
-        toValue.insertAfterPosition(value, insertAfterPositionExplorer, Some(changes.newValue))
+        output.insertAfterPosition(value, insertAfterPositionExplorer, Some(changes.newValue))
 
       case SeqUpdateMove(
             fromIncludedExplorer: IntSequenceExplorer,
@@ -85,7 +125,7 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
             prev: SeqUpdate
           ) =>
         digestChanges(prev)
-        toValue.move(
+        output.move(
           fromIncludedExplorer,
           toIncludedExplorer,
           afterExplorer,
@@ -95,13 +135,13 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
 
       case SeqUpdateRemove(removePositionExplorer: IntSequenceExplorer, prev: SeqUpdate) =>
         digestChanges(prev)
-        toValue.remove(removePositionExplorer, Some(changes.newValue))
+        output.remove(removePositionExplorer, Some(changes.newValue))
 
       case SeqUpdateAssign(s) =>
-        toValue := s
+        output := s
 
       case SeqUpdateLastNotified(value: IntSequence) =>
-        assert(value equals toValue.pendingValue)
+        assert(value equals output.pendingValue)
 
       case SeqUpdateRollBackToTopCheckpoint(
             value: IntSequence,
@@ -118,12 +158,12 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
           value sameIdentity checkPointStack.head,
           s"fail on quick equals equals=${value.toList equals checkPointStack.head.toList} value:$value topCheckpoint:${checkPointStack.head}"
         )
-        toValue.rollbackToTopCheckpoint()
+        output.rollbackToTopCheckpoint()
 
       case SeqUpdateReleaseTopCheckpoint(prev: SeqUpdate, _: IntSequence) =>
         digestChanges(prev)
         popTopCheckpoint()
-        toValue.releaseTopCheckpoint()
+        output.releaseTopCheckpoint()
 
       case SeqUpdateDefineCheckpoint(prev: SeqUpdate, level: Int) =>
         digestChanges(prev)
@@ -133,7 +173,7 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
           levelTopCheckpoint == level,
           s"Top checkpoint of original sequence is not the same as the copy one: Should be $level got $levelTopCheckpoint"
         )
-        toValue.defineCurrentValueAsCheckpoint(Some(changes.newValue))
+        output.defineCurrentValueAsCheckpoint(Some(changes.newValue))
 
       case _ =>
       // Default case, do nothing
@@ -142,9 +182,9 @@ class SeqIdentityInvariant(store: Store, fromValue: SeqVariable, toValue: SeqVar
 
   override def checkInternals(): Unit = {
     require(
-      toValue.pendingValue.toList equals fromValue.pendingValue.toList,
+      output.pendingValue.toList equals input.pendingValue.toList,
       Some(
-        s"IdentitySeq: toValue.value=${toValue.value} should equals fromValue.value=${fromValue.value}"
+        s"IdentitySeq: toValue.value=${output.value} should equals fromValue.value=${input.value}"
       )
     )
   }

@@ -18,10 +18,28 @@ import oscar.cbls.algo.sequence.IntSequence
 /** Companion object of SeqUpdateReleaseTopCheckpoint.
   */
 object SeqUpdateReleaseTopCheckpoint {
+
+  /** Creates a SeqUpdateReleaseTopCheckpoint.
+    *
+    * @param prev
+    *   The previous update.
+    * @param seq
+    *   The value of the SeqUpdateReleaseTopCheckpoint (same as the value of the released
+    *   checkpoint).
+    * @return
+    *   A SeqUpdateReleaseTopCheckpoint.
+    */
   def apply(prev: SeqUpdate, seq: IntSequence): SeqUpdateReleaseTopCheckpoint = {
     new SeqUpdateReleaseTopCheckpoint(prev, seq)
   }
 
+  /** Extracts the parameters of the given SeqUpdateReleaseTopCheckpoint.
+    *
+    * @param seqUpdateReleaseTopCheckPoint
+    *   The SeqUpdateReleaseTopCheckpoint we want to know the parameters of.
+    * @return
+    *   A tuple containing (The previous update and the value of the SeqUpdateReleaseTopCheckpoint).
+    */
   def unapply(
     seqUpdateReleaseTopCheckPoint: SeqUpdateReleaseTopCheckpoint
   ): Option[(SeqUpdate, IntSequence)] = {
