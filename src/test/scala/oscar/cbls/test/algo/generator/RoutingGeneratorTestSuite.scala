@@ -17,6 +17,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import oscar.cbls.algo.generator.RoutingGenerator
 
+import scala.math.{pow, round, sqrt}
 import scala.util.Random
 
 class RoutingGeneratorTestSuite extends AnyFunSuite with Matchers {
@@ -36,7 +37,8 @@ class RoutingGeneratorTestSuite extends AnyFunSuite with Matchers {
     for (n <- 0 until numCluster * nodesByCluster by nodesByCluster) {
       for (i <- n until n + nodesByCluster) {
         for (j <- i + 1 until n + nodesByCluster) {
-          dist(i)(j) should be <= 2L * r.toLong
+          dist(i)(j) should be <= round(sqrt(2.0 * pow(2*r.toDouble, 2.0))) // The biggest distance
+          // in a square is the diagonal.
         }
       }
     }

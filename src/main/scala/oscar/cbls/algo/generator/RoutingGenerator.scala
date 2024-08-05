@@ -16,7 +16,7 @@ package oscar.cbls.algo.generator
 import GeneratorUtil._
 
 import scala.collection.mutable
-import scala.math.{atan2, cos, pow, sin, sqrt}
+import scala.math.{atan2, cos, max, pow, sin, sqrt}
 import scala.util.Random
 
 /** Object for generating data for Routing problem. By default, the coordinates are generated in
@@ -226,13 +226,10 @@ object RoutingGenerator {
 
     var currentCenter = randomPosition(minXY, maxXY, minXY, maxXY)
     for (_ <- 0 until numCluster) {
+      val currentMin: Long = currentCenter._1 - clusterRadius
+      val currentMax: Long = currentCenter._1 + clusterRadius
       for (_ <- 0 until nodesByCluster) {
-        var pos: (Long, Long) = (0L, 0L)
-        var tries: Int        = 0
-        do {
-          pos = randomPosition(minXY, maxXY, minXY, maxXY)
-          tries += 1
-        } while (distance(currentCenter, pos) > clusterRadius && tries < 10000)
+        val pos: (Long, Long) = randomPosition(currentMin, currentMax, currentMin, currentMax)
         nodesPositions += pos
       }
       var tries     = 0
@@ -240,7 +237,9 @@ object RoutingGenerator {
       do {
         newCenter = randomPosition(minXY, maxXY, minXY, maxXY)
         tries += 1
-      } while (distance(currentCenter, newCenter) <= clusterRadius && tries < 10000)
+      } while (!inInterval(newCenter._1, currentMin, currentMax)
+        && !inInterval(newCenter._2, currentMin, currentMax)
+        && tries < 10000)
       currentCenter = newCenter
     }
     nodesPositions.toArray
