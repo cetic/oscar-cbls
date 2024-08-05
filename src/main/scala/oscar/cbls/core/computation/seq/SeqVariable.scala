@@ -599,33 +599,16 @@ class SeqVariable(
     updates: SeqUpdate,
     searchedCheckpoint: IntSequence
   ): CleaningResult = {
+
+    def isSimpleMove(seqUpdate: SeqUpdateWithPrev): Boolean = {
+      seqUpdate.isInstanceOf[SeqUpdateInsert] ||
+      seqUpdate.isInstanceOf[SeqUpdateMove] ||
+      seqUpdate.isInstanceOf[SeqUpdateRemove]
+    }
+
     updates match {
-      case SeqUpdateInsert(_: Int, _: IntSequenceExplorer, prev: SeqUpdate) =>
-        rollbackSimplification(prev, searchedCheckpoint) match {
-          case NoSimplificationPerformed =>
-            if (searchedCheckpoint sameIdentity updates.newValue)
-              CheckpointReachedNotRemoved(updates)
-            else NoSimplificationPerformed
-          case x => x
-        }
-
-      case SeqUpdateMove(
-            _: IntSequenceExplorer,
-            _: IntSequenceExplorer,
-            _: IntSequenceExplorer,
-            _: Boolean,
-            prev: SeqUpdate
-          ) =>
-        rollbackSimplification(prev, searchedCheckpoint) match {
-          case NoSimplificationPerformed =>
-            if (searchedCheckpoint sameIdentity updates.newValue)
-              CheckpointReachedNotRemoved(updates)
-            else NoSimplificationPerformed
-          case x => x
-        }
-
-      case SeqUpdateRemove(_: IntSequenceExplorer, prev: SeqUpdate) =>
-        rollbackSimplification(prev, searchedCheckpoint) match {
+      case suwp: SeqUpdateWithPrev if isSimpleMove(suwp) =>
+        rollbackSimplification(suwp.prev, searchedCheckpoint) match {
           case NoSimplificationPerformed =>
             if (searchedCheckpoint sameIdentity updates.newValue)
               CheckpointReachedNotRemoved(updates)
