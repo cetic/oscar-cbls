@@ -45,7 +45,7 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
       intercept[IllegalArgumentException](route.rollbackToTopCheckpoint())
     assert(
       exception.getMessage
-        .contains("Can not rollback to top checkpoint since no checkpoint has been defined")
+        .contains("Cannot rollback to top checkpoint since no checkpoint has been defined")
     )
   }
 
@@ -85,13 +85,13 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
       intercept[IllegalArgumentException](route.rollbackToTopCheckpoint())
     assert(
       exception.getMessage
-        .contains("Can not rollback to top checkpoint since no checkpoint has been defined")
+        .contains("Cannot rollback to top checkpoint since no checkpoint has been defined")
     )
 
     exception = intercept[IllegalArgumentException](copyForRouteLength.rollbackToTopCheckpoint())
     assert(
       exception.getMessage
-        .contains("Can not rollback to top checkpoint since no checkpoint has been defined")
+        .contains("Cannot rollback to top checkpoint since no checkpoint has been defined")
     )
   }
 
