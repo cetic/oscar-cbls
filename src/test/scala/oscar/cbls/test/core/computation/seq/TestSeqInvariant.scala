@@ -4,17 +4,36 @@ import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation.{Invariant, Store}
 import oscar.cbls.core.computation.seq._
 
-private class TestSeqInvariant(store: Store, seq: SeqVariable, out: SeqVariable)
+/** Test Invariant used to check if the howToRollBack information are correct.
+  *
+  * In the [[oscar.cbls.core.computation.seq.SeqIdentityInvariant]] we do not use the howToRollBack
+  * information. We have no use of it. But in some Invariant implementation this information is
+  * crucial.
+  *
+  * To test it, this Invariant maintains a copy of the input SeqVariable using an internal
+  * List[Int]. This list is updated using the howToRollBack information. After each propagation the
+  * output value is set using the := method. The [[oscar.cbls.algo.sequence.IntSequence]]'s
+  * [[oscar.cbls.algo.sequence.Token]] of the input and the output won't be the same but their
+  * values should.
+  *
+  * @param store
+  *   The model to which the input and output are linked
+  * @param input
+  *   The input SeqVariable
+  * @param output
+  *   The output SeqVariable
+  */
+private class TestSeqInvariant(store: Store, input: SeqVariable, output: SeqVariable)
     extends Invariant(store)
     with SeqNotificationTarget {
 
-  registerStaticallyListenedElement(seq)
-  seq.registerDynamicallyListeningElement(this)
-  out.setDefiningInvariant(this)
+  registerStaticallyListenedElement(input)
+  input.registerDynamicallyListeningElement(this)
+  output.setDefiningInvariant(this)
 
   private var listCopy: List[Int] = {
-    out := seq.value
-    seq.value.toList
+    output := input.value
+    input.value.toList
   }
 
   override def notifySeqChanges(
@@ -23,7 +42,7 @@ private class TestSeqInvariant(store: Store, seq: SeqVariable, out: SeqVariable)
     changes: SeqUpdate
   ): Unit = {
     digestChanges(changes)
-    out := IntSequence(listCopy)
+    output := IntSequence(listCopy)
   }
 
   private def digestChanges(changes: SeqUpdate): Unit = {
@@ -92,8 +111,8 @@ private class TestSeqInvariant(store: Store, seq: SeqVariable, out: SeqVariable)
     */
   override def checkInternals(): Unit = {
     require(
-      seq.value.toList == out.value.toList,
-      s"Should be ${seq.value.toList} got ${out.value.toList}"
+      input.value.toList == output.value.toList,
+      s"Should be ${input.value.toList} got ${output.value.toList}"
     )
   }
 }
