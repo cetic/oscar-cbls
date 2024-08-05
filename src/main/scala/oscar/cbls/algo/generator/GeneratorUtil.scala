@@ -20,6 +20,7 @@ private[generator] object GeneratorUtil {
 
   val rng: Random = Random
 
+  /** Returns the euclidean distance between the points `from` and `to`. */
   def distance(from: (Long, Long), to: (Long, Long)): Long =
     round(sqrt(pow((from._1 - to._1).toDouble, 2.0) + pow((from._2 - to._2).toDouble, 2.0)))
 
@@ -34,7 +35,7 @@ private[generator] object GeneratorUtil {
     * @param yMax
     *   Inclusive upper bound of the Y coordinate.
     * @return
-    *   A tuple `(x, y)` such that `xMin <= x <= xMax` and `yMin <= y <= yMax`
+    *   A tuple `(x, y)` such that `xMin <= x <= xMax` and `yMin <= y <= yMax`.
     */
   def randomPosition(xMin: Long, xMax: Long, yMin: Long, yMax: Long): (Long, Long) =
     (rng.between(xMin, xMax + 1), rng.between(yMin, yMax + 1))
