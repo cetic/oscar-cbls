@@ -194,7 +194,7 @@ object RoutingGenerator {
     maxLatitude: Double = 90.0,
     minLongitude: Double = -180.0,
     maxLongitude: Double = 180.0
-  ): (Array[(Double, Double)], Array[Array[Long]], Double, Long) = {
+  ): (Array[(Double, Double)], Array[Array[Long]], Long, Long) = {
     // Positions for the nodes + the depot
     val (pos, dist) =
       geographicRandom(numNodes + 1, minLatitude, maxLatitude, minLongitude, maxLongitude)
