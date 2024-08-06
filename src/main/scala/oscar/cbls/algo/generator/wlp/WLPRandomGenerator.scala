@@ -13,6 +13,9 @@
 
 package oscar.cbls.algo.generator.wlp
 
+import oscar.cbls.algo.generator.GeneratorUtil
+import oscar.cbls.algo.generator.GeneratorUtil.{distance, randomPosition}
+
 import scala.util.Random
 
 /** Helper Class used to generate random data for a Warehouse Location Problem.
@@ -35,8 +38,9 @@ class WLPRandomGenerator(
   weightForOpeningWarehouseCost: Long = 3L
 ) extends WLPGenerator(numWarehouse, numDelivery, minXY, maxXY, weightForOpeningWarehouseCost) {
 
-  private var _seed: Long = Random.nextLong()
-  private val rng: Random = new Random(_seed)
+  protected var _seed: Long = Random.nextLong()
+  protected val rng: Random = new Random(_seed)
+  GeneratorUtil.rng.setSeed(_seed)
 
   override def generateCostsForOpeningWarehouse: Array[Long] = Array.fill(numWarehouse)(
     (minXY + rng.nextDouble() * side * weightForOpeningWarehouseCost).toLong
@@ -65,24 +69,9 @@ class WLPRandomGenerator(
   def setSeed(s: Long): Unit = {
     _seed = s
     rng.setSeed(s)
+    GeneratorUtil.rng.setSeed(s)
   }
 
   def seed: Long = _seed
-
-  /** Return an random tuple of coordinates.
-    *
-    * @param xMin
-    *   Inclusive lower bound of the X coordinate.
-    * @param xMax
-    *   Inclusive upper bound of the X coordinate.
-    * @param yMin
-    *   Inclusive lower bound of the Y coordinate.
-    * @param yMax
-    *   Inclusive upper bound of the Y coordinate.
-    * @return
-    *   A tuple `(x, y)` such that `xMin <= x <= xMax` and `yMin <= y <= yMax`
-    */
-  protected def randomPosition(xMin: Long, xMax: Long, yMin: Long, yMax: Long): (Long, Long) =
-    (rng.between(xMin, xMax + 1), rng.between(yMin, yMax + 1))
 
 }

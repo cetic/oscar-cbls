@@ -75,7 +75,4 @@ abstract class WLPGenerator(
 
     (openingCost, warehousesPositions, deliveryPositions, distanceCosts, warehousesDistances)
   }
-
-  private[generator] def distance(from: (Long, Long), to: (Long, Long)): Long =
-    round(sqrt(pow((from._1 - to._1).toDouble, 2.0) + pow((from._2 - to._2).toDouble, 2.0)))
 }

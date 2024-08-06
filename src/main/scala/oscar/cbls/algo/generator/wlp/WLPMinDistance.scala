@@ -13,6 +13,8 @@
 
 package oscar.cbls.algo.generator.wlp
 
+import oscar.cbls.algo.generator.GeneratorUtil.{distance, randomPosition}
+
 import scala.collection.mutable
 
 /** Helper class which generates random data for the WLP. Here, the warehouses are guaranteed to be
