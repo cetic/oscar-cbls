@@ -62,7 +62,7 @@ class IntVariable(
   // The pending value (new value) of this variable, not propagated yet if different from _value
   private var _pendingValue: Long = initialValue
   // The actual value of this variable
-  // For listening invariants this iS the value of the variable until propagation.
+  // For listening invariants this is the value of the variable until propagation.
   private var _value: Long = _pendingValue
 
   /** The new value of the IntVariable. This value is not yet propagated therefore, listening

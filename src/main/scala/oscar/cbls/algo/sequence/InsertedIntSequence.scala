@@ -33,8 +33,9 @@ class InsertedIntSequence(
 ) extends StackedUpdateIntSequence(depth) {
 
   private val originalExplorerAtInsertPosition = insertAfterPosExplorer.next
+
   /** The position after which the new value is inserted */
-  val insertAfterPos: Int                      = insertAfterPosExplorer.position
+  val insertAfterPos: Int = insertAfterPosExplorer.position
 
   override val size: Int = intSequence.size + 1
 

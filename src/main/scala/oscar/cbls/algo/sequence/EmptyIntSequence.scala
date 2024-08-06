@@ -5,7 +5,7 @@ package oscar.cbls.algo.sequence
   * Only insertion is permitted. Upon insertion it creates a [[ConcreteIntSequence]] containing the
   * value.
   */
-case class EmptyIntSequence() extends IntSequence(depth = 0) {
+case class EmptyIntSequence(override val token: Token = Token()) extends IntSequence(depth = 0) {
   override def size: Int = 0
 
   override def iterator: Iterator[IntSequenceExplorer] = Iterator.empty
@@ -69,7 +69,7 @@ case class EmptyIntSequence() extends IntSequence(depth = 0) {
   override def regularizeToMaxPivot(
     maxPivotPerValuePercent: Int,
     targetToken: Token
-  ): EmptyIntSequence = this
+  ): EmptyIntSequence = EmptyIntSequence(token = targetToken)
 
   override def regularize(targetToken: Token): EmptyIntSequence = this
 

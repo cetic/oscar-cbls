@@ -95,7 +95,9 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
 
   def nonEmpty: Boolean = !isEmpty
 
-  /** Returns an Iterator of [[IntSequenceExplorer]] starting at the [[RootIntSequenceExplorer]] (before start) */
+  /** Returns an Iterator of [[IntSequenceExplorer]] starting at the [[RootIntSequenceExplorer]]
+    * (before start)
+    */
   def iterator: Iterator[IntSequenceExplorer] = this.explorerAtPosition(0).get.forward.iterator
 
   /** Returns an Iterator of [[IntSequenceExplorer]] starting at the value passed as parameter and
@@ -437,15 +439,15 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
   def check(): Unit = {}
 
   /** Checks if two IntSequence shares the same Token namely the same identity */
-  def quickEquals(that: IntSequence): Boolean = that != null && this.token == that.token
+  def sameIdentity(that: IntSequence): Boolean = that != null && this.token == that.token
 
   /** Checks if two IntSequence shares the same Token or have the same elements */
   def equals(that: IntSequence): Boolean = {
-    quickEquals(that) || (that != null && (this.toList equals that.toList))
+    sameIdentity(that) || (that != null && (this.toList equals that.toList))
   }
 
   override def toString: String = {
-    s"(length:$size)[${this.iterator.map(_.value).toList.mkString(",")}]"
+    s"(length:$size token:$token)[${this.iterator.map(_.value).toList.mkString(",")}]"
   }
 
   /** Special string used to recursively describe the whole IntSequence with all stacked updated */
@@ -462,4 +464,8 @@ abstract class IntSequence(protected[cbls] val token: Token = Token(), val depth
   * By default a new Token is created each time a new IntSequence is created. The only exception is
   * during regularization where the Token is copied into the new ConcreteIntSequence
   */
-case class Token()
+private[sequence] class Token()
+
+private[sequence] object Token {
+  def apply(): Token = new Token()
+}

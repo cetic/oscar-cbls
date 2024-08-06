@@ -264,6 +264,14 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
     }
   }
 
+  test("Two IntSequences with same values but different Token does not share the same identity"){
+    val intSequence1 = IntSequence(List(1,2,3,4,5,6,7,8,9,0))
+    val intSequence2 = IntSequence(List(1,2,3,4,5,6,7,8,9,0))
+
+    intSequence1 sameIdentity intSequence2 should be(false)
+    intSequence1 equals intSequence2 should be(true)
+  }
+
   private def testExplorer(seq: IntSequence, modifiedList: List[Int]): Unit = {
     if (modifiedList.nonEmpty) {
       seq.explorerAtPosition(-1).get.isInstanceOf[RootIntSequenceExplorer] should be(true)
