@@ -131,8 +131,9 @@ object RoutingGenerator {
     *   The number of cluster of ''node to visit'' .
     * @param nodesByCluster
     *   How many cluster have to be in a cluster.
-    * @param clusterRadius
-    *   The maximum distance between the numNodes in the same cluster.
+    * @param clusterSize
+    *   The nodes are clustered in squares. `clusterSize` defines the side's length of these
+    *   squares.
     * @param weightFactorForUnroutedNodes
     *   A factor used to increase the cost of unrouted nodes.
     * @param maxCostForUsingVehicle
@@ -149,11 +150,11 @@ object RoutingGenerator {
     numDepot: Int,
     numCluster: Int,
     nodesByCluster: Int,
-    clusterRadius: Int,
+    clusterSize: Int,
     weightFactorForUnroutedNodes: Long,
     maxCostForUsingVehicle: Long
   ): (Array[(Long, Long)], Array[Array[Long]], Long, Long) = {
-    val pos          = clusteredNodes(numDepot, numCluster, nodesByCluster, clusterRadius)
+    val pos          = clusteredNodes(numDepot, numCluster, nodesByCluster, clusterSize)
     val dist         = distancesMatrix(pos)
     val unroutedCost = costForUnroutedNodes(dist, weightFactorForUnroutedNodes)
     val vehicleCost  = costForUsingVehicle(maxCostForUsingVehicle)
@@ -226,8 +227,9 @@ object RoutingGenerator {
     *   The number of cluster of nodes to generate.
     * @param nodesByCluster
     *   How many cluster have to be in a cluster.
-    * @param clusterRadius
-    *   The maximum distance between the nodes in the same cluster.
+    * @param clusterSize
+    *   The nodes are clustered in squares. `clusterSize` defines the side's length of these
+    *   squares.
     * @return
     *   `numDepot + numCluster * nodesByCluster` random positions grouped in clusters. The first
     *   `numDepot` positions are supposed to be the depots. '''WARNING''': According to the
@@ -238,7 +240,7 @@ object RoutingGenerator {
     numDepot: Int,
     numCluster: Int,
     nodesByCluster: Int,
-    clusterRadius: Int
+    clusterSize: Int
   ): Array[(Long, Long)] = {
     val nodesPositions: mutable.Queue[(Long, Long)] = mutable.Queue()
 
@@ -250,8 +252,8 @@ object RoutingGenerator {
       *   The size of the cluster.
       */
     def generateCluster(center: (Long, Long), n: Int): Unit = {
-      val currentMin: Long = center._1 - clusterRadius
-      val currentMax: Long = center._1 + clusterRadius
+      val currentMin: Long = center._1 - clusterSize
+      val currentMax: Long = center._1 + clusterSize
       for (_ <- 0 until n) {
         val pos: (Long, Long) = randomPosition(currentMin, currentMax, currentMin, currentMax)
         nodesPositions += pos
@@ -265,8 +267,8 @@ object RoutingGenerator {
       *   A new center which do not belong to the last cluster.
       */
     def generateNewCenter(currentCenter: (Long, Long)): (Long, Long) = {
-      val currentMin: Long = currentCenter._1 - clusterRadius
-      val currentMax: Long = currentCenter._1 + clusterRadius
+      val currentMin: Long = currentCenter._1 - clusterSize
+      val currentMax: Long = currentCenter._1 + clusterSize
       var tries            = 0
       var newCenter        = (0L, 0L)
       do {
