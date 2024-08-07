@@ -5,13 +5,13 @@ import org.scalacheck.commands.Commands
 import org.scalacheck.{Gen, Prop}
 
 object InvTestBench {
-  def apply(inv: Invariant, input: Iterable[Variable], randomInit: Boolean = true): InvTestBench = {
-    new InvTestBench(inv, input, randomInit)
+  def apply(inv: Invariant, input: Iterable[Variable], name: String, randomInit: Boolean = true): InvTestBench = {
+    new InvTestBench(inv, input, name, randomInit)
   }
 }
 
-class InvTestBench(inv: Invariant, input: Iterable[Variable], randomInit: Boolean)
-    extends Commands {
+class InvTestBench(inv: Invariant, input: Iterable[Variable], name: String, randomInit: Boolean)
+  extends Commands {
 
   val inputVars: Array[TestVariable] = input.toArray.map(TestVariable(_))
 
@@ -20,7 +20,7 @@ class InvTestBench(inv: Invariant, input: Iterable[Variable], randomInit: Boolea
   type State = Array[VariableMove]
 
   def test(): Unit = {
-    this.property().check(org.scalacheck.Test.Parameters.default.withMinSuccessfulTests(500))
+    this.property().viewSeed(name).check(org.scalacheck.Test.Parameters.default.withMinSuccessfulTests(500))
   }
 
   override def destroySut(sut: Invariant): Unit = ()
