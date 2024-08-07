@@ -18,7 +18,6 @@ import scala.util.Random
 
 private[generator] object GeneratorUtil {
 
-  val rng: Random = Random
 
   /** Returns the euclidean distance between the points `from` and `to`. */
   def distance(from: (Long, Long), to: (Long, Long)): Long =
@@ -37,7 +36,8 @@ private[generator] object GeneratorUtil {
     * @return
     *   A tuple `(x, y)` such that `xMin <= x <= xMax` and `yMin <= y <= yMax`.
     */
-  def randomPosition(xMin: Long, xMax: Long, yMin: Long, yMax: Long): (Long, Long) =
+  def randomPosition(xMin: Long, xMax: Long, yMin: Long, yMax: Long, rng: Random): (Long,
+    Long) =
     (rng.between(xMin, xMax + 1), rng.between(yMin, yMax + 1))
 
   /** Tests if `x` is in `[a, b]` */
