@@ -27,10 +27,11 @@ class RoutingGeneratorTestSuite extends AnyFunSuite with Matchers {
     val nodesByCluster = 10
     val r              = 50
     val numDepot       = 3
-    RoutingGenerator.setSeed(Random.nextLong())
-    println(s"Seed: ${RoutingGenerator.seed}")
+    val seed = Random.nextLong()
+    println(s"Seed: $seed")
+    val rng = new Random(seed)
 
-    val nodes = RoutingGenerator.clusteredNodes(numDepot, numCluster, nodesByCluster, r)
+    val nodes = RoutingGenerator.clusteredNodes(numDepot, numCluster, nodesByCluster, r, rng)
     val dist  = RoutingGenerator.distancesMatrix(nodes)
 
     nodes should have length numDepot + numCluster * nodesByCluster
@@ -55,11 +56,12 @@ class RoutingGeneratorTestSuite extends AnyFunSuite with Matchers {
     val nodesDist = 50L
     val numNodes  = 100
     val numDepot  = 1
-    RoutingGenerator.setSeed(Random.nextLong())
-    println(s"Seed: ${RoutingGenerator.seed}")
+    val seed = Random.nextLong()
+    println(s"Seed: $seed")
+    val rng = new Random(seed)
     val firstDepot = (42L, 42L)
 
-    val nodes = RoutingGenerator.evenlySpacedNodes(numDepot, numNodes, nodesDist, firstDepot)
+    val nodes = RoutingGenerator.evenlySpacedNodes(numDepot, numNodes, nodesDist, firstDepot, rng)
 
     nodes should have length numDepot + numNodes
     // Nodes are generated from the first depot and evenly spaced. So the modulo of their
@@ -76,11 +78,12 @@ class RoutingGeneratorTestSuite extends AnyFunSuite with Matchers {
   ) {
     val nodesDist = 500L
     val numNodes  = 100
-    RoutingGenerator.setSeed(Random.nextLong())
-    println(s"Seed: ${RoutingGenerator.seed}")
+    val seed = Random.nextLong()
+    println(s"Seed: $seed")
+    val rng = new Random(seed)
     val center = RoutingGenerator.centerDepot
 
-    val nodes = RoutingGenerator.evenlySpacedNodes(1, numNodes, nodesDist, center)
+    val nodes = RoutingGenerator.evenlySpacedNodes(1, numNodes, nodesDist, center, rng)
 
     nodes should have length 9
     // Nodes are generated from the center and evenly spaced. So the modulo of their coordinate

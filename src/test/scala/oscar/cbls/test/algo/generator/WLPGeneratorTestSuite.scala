@@ -23,9 +23,10 @@ import scala.util.Random
 class WLPGeneratorTestSuite extends AnyFunSuite with Matchers {
 
   test("Two generators with the same seed generate the same data") {
-    WarehouseLocationGenerator.setSeed(42L)
-    val (open1, wp1, dp1, cd1, wd1) = WarehouseLocationGenerator.generateRandomWLP(5, 20)
-    val (open2, wp2, dp2, cd2, wd2) = WarehouseLocationGenerator.generateRandomWLP(5, 20)
+    val (open1, wp1, dp1, cd1, wd1) =
+      WarehouseLocationGenerator.generateRandomWLP(5, 20, seed = 42L)
+    val (open2, wp2, dp2, cd2, wd2) =
+      WarehouseLocationGenerator.generateRandomWLP(5, 20, seed = 42L)
 
     open1 should equal(open2)
     wp1 should equal(wp2)
@@ -35,16 +36,11 @@ class WLPGeneratorTestSuite extends AnyFunSuite with Matchers {
   }
 
   test("Warehouses are well distributed using grid generator.") {
-    WarehouseLocationGenerator.setSeed(Random.nextLong())
-    println(s"Seed: ${WarehouseLocationGenerator.seed}")
-    val (_, wp, _, _, _) = WarehouseLocationGenerator.generateWLPOnGrid(
-      8,
-      40,
-      minXY = 0L,
-      maxXY = 120L,
-      weightForOpeningWarehouseCost = 3L,
-      numTilesOnSide = 2L
-    )
+    val seed = Random.nextLong()
+    val rng = new Random(seed)
+    println(s"Seed: $seed")
+    WarehouseLocationGenerator.setMapDimensions(0L, 120L)
+    val wp = WarehouseLocationGenerator.gridWarehousesPositions(8, 2L, rng)
 
     for (i <- wp.indices) {
       i % 4 match {
@@ -64,10 +60,11 @@ class WLPGeneratorTestSuite extends AnyFunSuite with Matchers {
     }
   }
 
-  test("Warehouses are enough far from each other using") {
-    WarehouseLocationGenerator.setSeed(Random.nextLong())
-    println(s"Seed: ${WarehouseLocationGenerator.seed}")
-    val (_, wp, _, _, _) = WarehouseLocationGenerator.generateWLPWithMinDist(10, 40, 20L)
+  test("Warehouses are enough far from each other using min dist generator.") {
+    val seed = Random.nextLong()
+    val rng = new Random(seed)
+    println(s"Seed: $seed")
+    val wp = WarehouseLocationGenerator.minDistWarehouses(10, 20L, rng)
     for (i <- wp.indices) {
       for (j <- i + 1 until wp.length) {
         round(
