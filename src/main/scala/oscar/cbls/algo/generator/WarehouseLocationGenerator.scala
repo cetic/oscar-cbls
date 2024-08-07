@@ -28,7 +28,7 @@ object WarehouseLocationGenerator {
   private var maxXY: Long = 120L
   private var side: Long  = maxXY - minXY
 
-  /** Set the bounds of the coordinates. */
+  /** Sets the bounds of the coordinates. */
   def setMapDimensions(newMinXY: Long, newMaxXY: Long): Unit = {
     minXY = newMinXY
     maxXY = newMaxXY
