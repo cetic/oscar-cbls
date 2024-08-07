@@ -1,4 +1,4 @@
-package oscar.cbls.test.testBench
+package oscar.cbls.test.invBench
 
 import oscar.cbls.core.computation.{Store, Variable}
 import org.scalacheck.Gen
