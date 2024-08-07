@@ -55,7 +55,7 @@ class InvTestBench(inv: Invariant, input: Iterable[Variable], randomInit: Boolea
 
   class InvariantCommand(m: VariableMove) extends UnitCommand {
 
-    override def nextState(state: State) = state
+    override def nextState(state: State): State = state
 
     override def postCondition(state: State, success: Boolean): Prop = success
 
@@ -65,7 +65,7 @@ class InvTestBench(inv: Invariant, input: Iterable[Variable], randomInit: Boolea
       m.mkMove()
     }
 
-    override def toString = m.toString()
+    override def toString: String = m.toString
 
   }
 

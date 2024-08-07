@@ -30,10 +30,10 @@ class SetTestVariable(override val variable: SetVariable) extends TestVariable(v
     }
   }
 
-  private val generateDomainValue: Gen[Int] = (variable.domain match {
+  private val generateDomainValue: Gen[Int] = variable.domain match {
     case None             => arbitrary[Int]
     case Some((min, max)) => Gen.choose(min.toInt, max.toInt)
-  })
+  }
 
   private def generateAddedValues(): Gen[List[Int]] = {
 
@@ -68,7 +68,7 @@ class SetTestVariable(override val variable: SetVariable) extends TestVariable(v
   }
 
   override def toString: String = {
-    s"SetVariable(${variable})"
+    s"SetVariable($variable)"
   }
 }
 

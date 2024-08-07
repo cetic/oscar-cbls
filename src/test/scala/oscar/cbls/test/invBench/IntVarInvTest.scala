@@ -1,6 +1,4 @@
 package oscar.cbls.test.testBench
-
-import oscar.cbls.core.computation.{Invariant, Variable}
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary.arbitrary
 import oscar.cbls.core.computation.integer.IntVariable

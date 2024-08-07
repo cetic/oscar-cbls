@@ -1,12 +1,12 @@
 package oscar.cbls.test.testBench
 
-import oscar.cbls.core.computation.{Invariant, Variable}
+import oscar.cbls.core.computation.{Store, Variable}
 import org.scalacheck.Gen
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 
 abstract class TestVariable(val variable: Variable) {
-  val model = variable.model
+  val model: Store = variable.model
 
   def generateMove(): Gen[VariableMove]
 
