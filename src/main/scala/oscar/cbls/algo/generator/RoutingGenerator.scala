@@ -261,13 +261,7 @@ object RoutingGenerator {
   ): Array[(Long, Long)] = {
     val nodesPositions: mutable.Queue[(Long, Long)] = mutable.Queue()
 
-    /** Generates `n` positions belonging to the current cluster.
-      *
-      * @param center
-      *   The center of the current cluster.
-      * @param n
-      *   The size of the cluster.
-      */
+    // Generates n positions belonging to the current cluster
     def generateCluster(center: (Long, Long), n: Int): Unit = {
       val currentMin: Long = center._1 - clusterSize
       val currentMax: Long = center._1 + clusterSize
@@ -278,11 +272,7 @@ object RoutingGenerator {
 
     }
 
-    /** @param currentCenter
-      *   The current center position.
-      * @return
-      *   A new center which do not belong to the last cluster.
-      */
+    // Returns a new center which do not belong to the last cluster.
     def generateNewCenter(currentCenter: (Long, Long)): (Long, Long) = {
       val currentMin: Long = currentCenter._1 - clusterSize
       val currentMax: Long = currentCenter._1 + clusterSize
