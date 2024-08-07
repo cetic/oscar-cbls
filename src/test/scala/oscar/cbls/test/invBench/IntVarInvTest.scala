@@ -4,8 +4,7 @@ import org.scalacheck.Gen
 import org.scalacheck.Arbitrary.arbitrary
 import oscar.cbls.core.computation.integer.IntVariable
 
-class IntTestVariable(override val variable: IntVariable)
-    extends TestVariable(variable) {
+class IntTestVariable(override val variable: IntVariable) extends TestVariable(variable) {
   override def generateMove(): Gen[VariableMove] = {
     variable.domain match {
       case None =>
@@ -17,7 +16,7 @@ class IntTestVariable(override val variable: IntVariable)
     }
   }
 
-  override def generateAssignMove() : Gen[VariableMove] = generateMove()
+  override def generateAssignMove(): Gen[VariableMove] = generateMove()
 
   override def toString: String = {
     s"IntVariable(${variable})"

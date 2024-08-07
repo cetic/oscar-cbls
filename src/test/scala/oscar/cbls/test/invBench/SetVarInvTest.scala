@@ -1,13 +1,17 @@
 package oscar.cbls.test.invBench
 
 import oscar.cbls.core.computation.set.SetVariable
-import oscar.cbls.core.computation.Invariant
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary.arbitrary
 import scala.annotation.tailrec
 
 class SetTestVariable(override val variable: SetVariable) extends TestVariable(variable) {
 
+  /** Checks if all possible values are in the Set.
+    *
+    * Given the nature of a Set, once it contains all its domain, there is no way to add more
+    * values.
+    */
   private def allValuesInSet(): Boolean = {
     variable.domain match {
       case None => false
@@ -18,6 +22,7 @@ class SetTestVariable(override val variable: SetVariable) extends TestVariable(v
   }
 
   @tailrec
+  // Since this method is called only when allValuesInSet returns false, it'll never end up in a endless loop.
   private def getNextNotInValue(i: Int): Int = {
     if (variable.value().contains(i)) {
       variable.domain match {
@@ -36,7 +41,6 @@ class SetTestVariable(override val variable: SetVariable) extends TestVariable(v
   }
 
   private def generateAddedValues(): Gen[List[Int]] = {
-
     val generateNotInValue: Gen[Int] = for (v <- generateDomainValue) yield getNextNotInValue(v)
 
     Gen.nonEmptyListOf(generateNotInValue)

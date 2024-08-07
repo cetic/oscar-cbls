@@ -6,9 +6,7 @@ import org.scalacheck.{Gen, Prop}
 
 object InvTestBench {
   def apply(inv: Invariant, input: Iterable[Variable], randomInit: Boolean = true): InvTestBench = {
-
     new InvTestBench(inv, input, randomInit)
-
   }
 }
 
