@@ -3,15 +3,27 @@ package oscar.cbls.test.invBench
 import oscar.cbls.core.computation.{Invariant, Variable}
 import org.scalacheck.commands.Commands
 import org.scalacheck.{Gen, Prop}
+import org.scalatest.prop.Seed
 
 object InvTestBench {
-  def apply(inv: Invariant, input: Iterable[Variable], name: String, randomInit: Boolean = true): InvTestBench = {
-    new InvTestBench(inv, input, name, randomInit)
+  def apply(
+    inv: Invariant,
+    input: Iterable[Variable],
+    name: String,
+    randomInit: Boolean = true,
+    optSeed: Option[Long] = None
+  ): InvTestBench = {
+    new InvTestBench(inv, input, name, randomInit, optSeed)
   }
 }
 
-class InvTestBench(inv: Invariant, input: Iterable[Variable], name: String, randomInit: Boolean)
-  extends Commands {
+class InvTestBench(
+  inv: Invariant,
+  input: Iterable[Variable],
+  name: String,
+  randomInit: Boolean,
+  optSeed: Option[Long]
+) extends Commands {
 
   val inputVars: Array[TestVariable] = input.toArray.map(TestVariable(_))
 
@@ -20,7 +32,19 @@ class InvTestBench(inv: Invariant, input: Iterable[Variable], name: String, rand
   type State = Array[VariableMove]
 
   def test(): Unit = {
-    this.property().viewSeed(name).check(org.scalacheck.Test.Parameters.default.withMinSuccessfulTests(500))
+    optSeed match {
+      case None =>
+        this
+          .property()
+          .viewSeed(name)
+          .check(org.scalacheck.Test.Parameters.default.withMinSuccessfulTests(500))
+      case Some(seed) =>
+        this
+          .property()
+          .useSeed(name, new Seed(seed))
+          .check(org.scalacheck.Test.Parameters.default.withMinSuccessfulTests(500))
+    }
+
   }
 
   override def destroySut(sut: Invariant): Unit = ()
