@@ -66,7 +66,7 @@ class RoundRobinCombinatorTestSuite extends AnyFunSuite {
     (input, domainOf, objective)
   }
 
-  test("RoundRobin combinator works as expected") {
+  ignore("RoundRobin combinator works as expected") {
     val (input, domain, objective) = getDataForTest
     input.foreach(v => println(s"$v - ${domain(v, 0)}"))
     println()

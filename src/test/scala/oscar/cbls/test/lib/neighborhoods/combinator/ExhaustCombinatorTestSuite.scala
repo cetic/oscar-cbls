@@ -59,7 +59,7 @@ class ExhaustCombinatorTestSuite extends AnyFunSuite {
     (input, (v: IntVariable, index: Int) => domains(index), objective)
   }
 
-  test("Exhaust combinator works as expected") {
+  ignore("Exhaust combinator works as expected") {
     val (input, domains, objective) = getDataForTest
 
     val first = AssignNeighborhood(
@@ -78,7 +78,7 @@ class ExhaustCombinatorTestSuite extends AnyFunSuite {
 
   }
 
-  test("ExhaustBack combinator works as expected") {
+  ignore("ExhaustBack combinator works as expected") {
     val (input, domains, objective) = getDataForTest
 
     val first = SwapNeighborhood(

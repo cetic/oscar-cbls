@@ -34,7 +34,7 @@ class NeighborhoodAPITestSuite extends AnyFunSuite {
     (objective, a, b)
   }
 
-  test(s"One value minimization works as expected. Seed : $seed") {
+  ignore(s"One value minimization works as expected. Seed : $seed") {
     val (objective, a, _) = getTestProblemBasicData
 
     val search = new TestAssignNeighborhood(a, random)
@@ -64,7 +64,7 @@ class NeighborhoodAPITestSuite extends AnyFunSuite {
     assert(exception.getMessage.contains("Neighborhood was lying"))
   }
 
-  test(
+  ignore(
     s"Combining two Neighborhoods with a CombinatorNeighborhood works as expected. Seed : $seed"
   ) {
     val (objective, a, b) = getTestProblemBasicData

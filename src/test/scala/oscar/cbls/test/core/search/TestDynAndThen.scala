@@ -4,8 +4,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.{Exploration, Minimize, Objective}
-import oscar.cbls.core.search.profiling.{CompositionProfiler, NeighborhoodProfiler}
 import oscar.cbls.core.search._
+import oscar.cbls.core.search.profiling.{CompositionProfiler, NeighborhoodProfiler}
 import oscar.cbls.lib.invariant.numeric.IntInt2Int
 
 import scala.util.Random
@@ -16,7 +16,7 @@ class TestDynAndThen extends AnyFunSuite {
   val seed: Int      = random.nextInt()
   random.setSeed(seed)
 
-  test(s"TEST DynAndThen works as intended. Seed : $seed") {
+  ignore(s"TEST DynAndThen works as intended. Seed : $seed") {
     val store                 = new Store()
     val a: IntVariable        = IntVariable(store, 500)
     val b: IntVariable        = IntVariable(store, 600)

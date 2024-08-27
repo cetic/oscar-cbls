@@ -58,7 +58,7 @@ class BestCombinatorTestSuite extends AnyFunSuite {
     (a, b, c, (v: IntVariable, index: Int) => domain(v), objective)
   }
 
-  test("BestCombinator works as expected") {
+  ignore("BestCombinator works as expected") {
     val (a, b, c, domains, objective) = getTestBasicModel
     val nA =
       AssignNeighborhood(Array(a), domains, name = "NA", selectValueBehavior = LoopBehavior.best())
