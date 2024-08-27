@@ -14,7 +14,7 @@
 package oscar.cbls.lib.invariant.minmax
 
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.computation.integer.{IntConstant, IntVariable}
+import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 
 /** Companion object of [[MaxConst]] class. */
@@ -44,7 +44,7 @@ object MaxConst {
     */
   def apply(
     model: Store,
-    input: Array[IntConstant],
+    input: Array[Long],
     listenedValuesIndices: SetVariable,
     output: IntVariable,
     maxBacklog: Int = Int.MaxValue,
@@ -83,7 +83,7 @@ object MaxConst {
   */
 class MaxConst(
   model: Store,
-  input: Array[IntConstant],
+  input: Array[Long],
   listenedValuesIndices: SetVariable,
   output: IntVariable,
   maxBacklog: Int = Int.MaxValue,
@@ -99,12 +99,11 @@ class MaxConst(
     ) {
 
   input.foreach(v =>
-    require(v.value() != Long.MinValue, "Long.MinValue is not supported in MaxConst")
+    require(v != Long.MinValue, "Long.MinValue is not supported in MaxConst")
   )
+  override protected def ord(v: Long): Long = -v
 
-  override protected def ord(v: IntVariable): Long = -v.value()
-
-  override protected def notImpactingExtremum(newValue: IntConstant): Boolean = {
-    output.pendingValue >= newValue.value()
+  override protected def notImpactingExtremum(newValue: Long): Boolean = {
+    output.pendingValue >= newValue
   }
 }
