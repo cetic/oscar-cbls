@@ -97,7 +97,10 @@ class MaxConst(
     ) {
 
   input.foreach(v => require(v != Long.MinValue, "Long.MinValue is not supported in MaxConst"))
+<<<<<<< HEAD
 
+=======
+>>>>>>> 2f63bf64f (replace IntConstant by Long in Const invariants)
   override protected def ord(v: Long): Long = -v
 
   override protected def notImpactingExtremum(newValue: Long): Boolean = {
