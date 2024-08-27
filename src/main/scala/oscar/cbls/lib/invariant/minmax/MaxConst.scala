@@ -14,7 +14,7 @@
 package oscar.cbls.lib.invariant.minmax
 
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.computation.integer.{IntConstant, IntVariable}
+import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 
 /** Companion object of [[MaxConst]] class. */
@@ -43,7 +43,7 @@ object MaxConst {
     */
   def apply(
     model: Store,
-    input: Array[IntConstant],
+    input: Array[Long],
     listenedValuesIndices: SetVariable,
     output: IntVariable,
     maxBacklog: Int = Int.MaxValue,
@@ -53,12 +53,12 @@ object MaxConst {
   }
 }
 
-/** Invariant which maintains `Max{input(i) | i in`
-  * `listenedVariablesIndices}`. This invariant is lazy and maintains a todo list of postponed
-  * updates. Update is in O (log(n)) in worst case. If the update does not impact the output, it is
-  * postponed in O(1). Otherwise, it is performed in O(log(n)). When a removed index is considered
-  * and does not impact the maximum, it goes in the backlog as well, to be removed later. It is
-  * faster for neighborhood exploration with moves and backtracks.
+/** Invariant which maintains `Max{input(i) | i in` `listenedVariablesIndices}`. This invariant is
+  * lazy and maintains a todo list of postponed updates. Update is in O (log(n)) in worst case. If
+  * the update does not impact the output, it is postponed in O(1). Otherwise, it is performed in
+  * O(log(n)). When a removed index is considered and does not impact the maximum, it goes in the
+  * backlog as well, to be removed later. It is faster for neighborhood exploration with moves and
+  * backtracks.
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -76,7 +76,7 @@ object MaxConst {
   */
 class MaxConst(
   model: Store,
-  input: Array[IntConstant],
+  input: Array[Long],
   listenedValuesIndices: SetVariable,
   output: IntVariable,
   maxBacklog: Int = Int.MaxValue,
@@ -91,9 +91,9 @@ class MaxConst(
       name
     ) {
 
-  override protected def ord(v: IntVariable): Long = -v.value()
+  override protected def ord(v: Long): Long = -v
 
-  override protected def notImpactingExtremum(newValue: IntConstant): Boolean = {
-    output.pendingValue >= newValue.value()
+  override protected def notImpactingExtremum(newValue: Long): Boolean = {
+    output.pendingValue >= newValue
   }
 }

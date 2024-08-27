@@ -16,15 +16,15 @@ package oscar.cbls.test.lib.invariant.numeric
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.computation.integer.{IntConstant, IntVariable}
+import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.numeric.ProdConst
 
 class ProdConstTestSuite extends AnyFunSuite with Matchers {
 
   private def testProdConst(set: Set[Int]): (Store, SetVariable, IntVariable, ProdConst) = {
-    val store: Store              = new Store(debugLevel = 3)
-    val input: Array[IntConstant] = Array.range(0, 7).map(i => new IntConstant(store, i % 6))
+    val store: Store                          = new Store(debugLevel = 3)
+    val input: Array[Long]                    = Array.from((0L to 6L).map(i => i % 6))
     val listenedVariablesIndices: SetVariable = SetVariable(store, set)
     val output                                = IntVariable(store, 0)
     val inv = ProdConst(store, input, listenedVariablesIndices, output)

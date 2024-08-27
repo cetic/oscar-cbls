@@ -13,7 +13,7 @@
 
 package oscar.cbls.lib.invariant.numeric
 
-import oscar.cbls.core.computation.integer.{IntConstant, IntVariable}
+import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 import oscar.cbls.core.computation.{Invariant, Store}
 
@@ -36,7 +36,7 @@ object ProdConst {
     */
   def apply(
     model: Store,
-    input: Array[IntConstant],
+    input: Array[Long],
     listenedValuesIndices: SetVariable,
     output: IntVariable,
     name: Option[String] = None
@@ -45,8 +45,7 @@ object ProdConst {
   }
 }
 
-/** Invariant that maintains `Prod(input(i) | i in`
-  * `listenedValuesIndices)`. Update is in O(1).
+/** Invariant that maintains `Prod(input(i) | i in` `listenedValuesIndices)`. Update is in O(1).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -61,7 +60,7 @@ object ProdConst {
   */
 class ProdConst(
   model: Store,
-  input: Array[IntConstant],
+  input: Array[Long],
   listenedValuesIndices: SetVariable,
   output: IntVariable,
   name: Option[String] = None
@@ -72,8 +71,8 @@ class ProdConst(
   private[this] var nonZeroProduct: Long     = 1
 
   for (i <- listenedValuesIndices.value()) {
-    if (input(i).value() == 0) numberOfZeroFactors += 1
-    else nonZeroProduct *= input(i).value()
+    if (input(i) == 0) numberOfZeroFactors += 1
+    else nonZeroProduct *= input(i)
   }
 
   listenedValuesIndices.registerStaticallyAndDynamicallyListeningElement(this)
@@ -94,8 +93,8 @@ class ProdConst(
   }
 
   override def checkInternals(): Unit = {
-    val listenedValues: Set[IntConstant] = listenedValuesIndices.value().map(i => input(i))
-    val expectedProd = listenedValues.foldLeft(1L)((acc: Long, x: IntConstant) => acc * x.value())
+    val listenedValues: Set[Long] = listenedValuesIndices.value().map(i => input(i))
+    val expectedProd              = listenedValues.foldLeft(1L)((acc: Long, x: Long) => acc * x)
 
     require(
       output.pendingValue == expectedProd,
@@ -115,8 +114,8 @@ class ProdConst(
   private[this] def notifyInsertOn(set: SetVariable, index: Int): Unit = {
     assert(set == listenedValuesIndices, "Input SetVariable is incorrect")
 
-    if (input(index).value() == 0) numberOfZeroFactors += 1
-    else nonZeroProduct *= input(index).value()
+    if (input(index) == 0) numberOfZeroFactors += 1
+    else nonZeroProduct *= input(index)
 
     updateOutput()
   }
@@ -125,8 +124,8 @@ class ProdConst(
   private[this] def notifyDeleteOn(set: SetVariable, index: Int): Unit = {
     assert(set == listenedValuesIndices, "Input SetVariable is incorrect")
 
-    if (input(index).value() == 0) numberOfZeroFactors -= 1
-    else nonZeroProduct /= input(index).value()
+    if (input(index) == 0) numberOfZeroFactors -= 1
+    else nonZeroProduct /= input(index)
 
     updateOutput()
   }

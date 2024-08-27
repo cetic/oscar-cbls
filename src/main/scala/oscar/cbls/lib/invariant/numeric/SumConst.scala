@@ -13,7 +13,7 @@
 
 package oscar.cbls.lib.invariant.numeric
 
-import oscar.cbls.core.computation.integer.{IntConstant, IntVariable}
+import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 import oscar.cbls.core.computation.{Invariant, Store}
 
@@ -36,7 +36,7 @@ object SumConst {
     */
   def apply(
     model: Store,
-    input: Array[IntConstant],
+    input: Array[Long],
     listenedValuesIndices: SetVariable,
     output: IntVariable,
     name: Option[String] = None
@@ -45,8 +45,8 @@ object SumConst {
   }
 }
 
-/** Invariant that maintains `Sum(input(i) | i in`
-  * `listenedValuesIndices}`. , where `input` is an array of constant integers. Update is in O(1).
+/** Invariant that maintains `Sum(input(i) | i in` `listenedValuesIndices}`. , where `input` is an
+  * array of constant integers. Update is in O(1).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -61,7 +61,7 @@ object SumConst {
   */
 class SumConst(
   model: Store,
-  input: Array[IntConstant],
+  input: Array[Long],
   listenedValuesIndices: SetVariable,
   output: IntVariable,
   name: Option[String] = None
@@ -72,7 +72,7 @@ class SumConst(
   output.setDefiningInvariant(this)
 
   output := 0
-  for (i <- listenedValuesIndices.value()) output :+= input(i).value()
+  for (i <- listenedValuesIndices.value()) output :+= input(i)
 
   override def notifySetChanges(
     setVariable: SetVariable,
@@ -89,8 +89,8 @@ class SumConst(
   }
 
   override def checkInternals(): Unit = {
-    val listenedValues: Set[IntConstant] = listenedValuesIndices.value().map(i => input(i))
-    val expectedSum = listenedValues.foldLeft(0L)((acc: Long, x: IntConstant) => acc + x.value())
+    val listenedValues: Set[Long] = listenedValuesIndices.value().map(i => input(i))
+    val expectedSum               = listenedValues.foldLeft(0L)((acc: Long, x: Long) => acc + x)
 
     require(
       output.pendingValue == expectedSum,
