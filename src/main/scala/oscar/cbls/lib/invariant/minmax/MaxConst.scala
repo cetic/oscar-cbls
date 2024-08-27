@@ -51,9 +51,7 @@ object MaxConst {
     name: Option[String] = None
   ): MaxConst = {
 
-    input.foreach(v =>
-      require(v != Long.MinValue, "Long.MinValue is not supported in MaxConst")
-    )
+    input.foreach(v => require(v != Long.MinValue, "Long.MinValue is not supported in MaxConst"))
 
     new MaxConst(model, input, listenedValuesIndices, output, maxBacklog, name)
   }
