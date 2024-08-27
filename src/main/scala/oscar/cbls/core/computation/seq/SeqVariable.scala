@@ -134,6 +134,8 @@ class SeqVariable(
   /** Returns the pending value of this SeqVariable, the one that may be not propagated yet. */
   def pendingValue: IntSequence = toNotify.newValue
 
+  def checkpointLevel: Int = levelOfTopCheckpoint
+
   override def name(): String = name
 
   /** Propagates up to this variable (if needed) and returns the new value of this SeqVariable.
@@ -581,6 +583,10 @@ class SeqVariable(
     toNotify = toNotify match {
       // We just rolled back, simply add this new instruction
       case _: SeqUpdateRollBackToTopCheckpoint =>
+        SeqUpdateReleaseTopCheckpoint(toNotify, toNotify.newValue)
+      // We are at topCheckpoint an it was not yet released.
+      // It seems we are releasing a checkpoint after which no modification where done.
+      case _: SeqUpdateReleaseTopCheckpoint =>
         SeqUpdateReleaseTopCheckpoint(toNotify, toNotify.newValue)
       // We are at top checkpoint level, just drop the checkpoint definition
       case dc: SeqUpdateDefineCheckpoint =>

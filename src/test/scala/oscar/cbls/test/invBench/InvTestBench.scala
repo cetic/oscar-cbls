@@ -1,6 +1,9 @@
 package oscar.cbls.test.invBench
 
-import org.scalacheck.Gen
+import oscar.cbls.core.computation.{Invariant, SavedValue, Store, Variable}
+import org.scalacheck.commands.Commands
+import org.scalacheck.rng.Seed
+import org.scalacheck.{Gen, Prop}
 import oscar.cbls.core.computation.Store
 
 object InvTestBench {

@@ -5,6 +5,7 @@ import org.scalacheck.Arbitrary
 
 
 import oscar.cbls.core.computation.integer.IntVariable
+import oscar.cbls.core.computation.seq.SeqVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.core.computation.Variable
 
@@ -59,6 +60,9 @@ object VariableState {
           }
         for (l <- Gen.listOf(intGen))
           yield SetVarState(l.toSet, id, setVar.domain.map(d => (d._1.toInt, d._2.toInt)))
+      case seqVar: SeqVariable =>
+        val domain = (0,1000)
+        Gen.oneOf(List(SeqVariableState(id, SeqVariableStackableState(0,0,None), domain)))
     }
   }
 
