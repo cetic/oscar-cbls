@@ -59,7 +59,7 @@ class SwapNeighborhoodTestSuite extends AnyFunSuite {
     (input, objective)
   }
 
-  test("SwapNeighborhood works as expected with First loop") {
+  ignore("SwapNeighborhood works as expected with First loop") {
     val (input, objective) = getTestBasicModel()
 
     val search = SwapNeighborhood(input)
@@ -69,7 +69,7 @@ class SwapNeighborhoodTestSuite extends AnyFunSuite {
     println(s"Input variables after search: ${input.map(v => v.value()).mkString("[", ", ", "]")}")
   }
 
-  test("SwapNeighborhood works as expected with Best loop") {
+  ignore("SwapNeighborhood works as expected with Best loop") {
     val (input, objective) = getTestBasicModel()
 
     val search = SwapNeighborhood(

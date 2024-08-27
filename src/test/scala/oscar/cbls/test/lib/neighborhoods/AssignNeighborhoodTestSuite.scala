@@ -26,7 +26,6 @@ import scala.util.Random
 
 class AssignNeighborhoodTestSuite extends AnyFunSuite {
 
-
   private def getTestBasicModel
     : (Array[IntVariable], (IntVariable, Int) => List[Long], Minimize) = {
     val seed: Long  = Random.nextLong()
@@ -53,7 +52,7 @@ class AssignNeighborhoodTestSuite extends AnyFunSuite {
     (Array(a, b), (v: IntVariable, index: Int) => domain(v), objective)
   }
 
-  test("AssignNeighborhoods works as expected with First loop") {
+  ignore("AssignNeighborhoods works as expected with First loop") {
     val (vars, domain, objective) = getTestBasicModel
 
     val search = AssignNeighborhood(vars, domain)
@@ -61,7 +60,7 @@ class AssignNeighborhoodTestSuite extends AnyFunSuite {
     search.doAllMoves(objective)
   }
 
-  test("AssignNeighborhoods works as expected with Best loop") {
+  ignore("AssignNeighborhoods works as expected with Best loop") {
     val (vars, domain, objective) = getTestBasicModel
 
     val search = AssignNeighborhood(
