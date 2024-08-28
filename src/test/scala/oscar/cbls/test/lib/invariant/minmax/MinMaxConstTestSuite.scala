@@ -18,7 +18,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import oscar.cbls.algo.heap.BinaryHeapWithMoveIntItem
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.computation.integer.{IntConstant, IntVariable}
+import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.minmax.{ExtremumConst, MaxConst, MinConst}
 
@@ -31,7 +31,7 @@ class MinMaxConstBacklogTests extends AnyFunSuite with Matchers {
   // MinConst invariant with public access to private variables
   private class TestMinMaxConst(
     model: Store,
-    input: Array[IntConstant],
+    input: Array[Long],
     listenedValuesIndices: SetVariable,
     output: IntVariable
   ) extends MinConst(model, input, listenedValuesIndices, output, 3) {
@@ -42,8 +42,7 @@ class MinMaxConstBacklogTests extends AnyFunSuite with Matchers {
 
   private def testForMinMaxConstBacklogFields(): (Store, SetVariable, TestMinMaxConst) = {
     val store                              = new Store(debugLevel = 3)
-    val a: Array[Long]                     = Array(0, 1, 2, 3, 2, 5)
-    val input: Array[IntConstant]          = for (x <- a) yield new IntConstant(store, x)
+    val input: Array[Long]                 = Array.from(0L to 5L)
     val listenedValuesIndices: SetVariable = SetVariable(store, Set(2, 3))
     val output: IntVariable                = IntVariable(store, 42)
     val inv = new TestMinMaxConst(store, input, listenedValuesIndices, output)
@@ -176,7 +175,7 @@ class MinMaxConstTests extends AnyFunSuite with Matchers {
     set: Set[Int]
   ): (Store, SetVariable, IntVariable, ExtremumConst) = {
     val store                              = new Store(debugLevel = 3)
-    val input: Array[IntConstant]          = Array.range(0, 6).map(i => new IntConstant(store, i))
+    val input: Array[Long]                 = Array.from(0L to 5L)
     val output: IntVariable                = IntVariable(store, 42)
     val listenedValuesIndices: SetVariable = SetVariable(store, set)
     val inv: ExtremumConst =

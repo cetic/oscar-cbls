@@ -14,19 +14,18 @@
 package oscar.cbls.lib.invariant.minmax
 
 import oscar.cbls.algo.heap.BinaryHeapWithMoveIntItem
-import oscar.cbls.core.computation.integer.{IntConstant, IntVariable}
+import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 import oscar.cbls.core.computation.{Invariant, Store}
 
 import scala.collection.mutable
 
-/** Abstract Invariant which maintains Extremum{input(i) | i in
-  * listenedVariablesIndices}. Exact ordering is specified by implementing abstract method of the
-  * class. This invariant is lazy and maintains a todo list of postponed updates. Update is in O
-  * (log(n)) in worst case. If the update does not impact the output, it is postponed in O(1).
-  * Otherwise, it is performed in O(log(n)). When a removed index is considered and does not impact
-  * the extremum, it goes in the backlog as well, to be removed later. It is faster for neighborhood
-  * exploration with moves and backtracks.
+/** Abstract Invariant which maintains Extremum{input(i) | i in listenedVariablesIndices}. Exact
+  * ordering is specified by implementing abstract method of the class. This invariant is lazy and
+  * maintains a todo list of postponed updates. Update is in O (log(n)) in worst case. If the update
+  * does not impact the output, it is postponed in O(1). Otherwise, it is performed in O(log(n)).
+  * When a removed index is considered and does not impact the extremum, it goes in the backlog as
+  * well, to be removed later. It is faster for neighborhood exploration with moves and backtracks.
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -46,7 +45,7 @@ import scala.collection.mutable
   */
 abstract class ExtremumConst(
   model: Store,
-  input: Array[IntConstant],
+  input: Array[Long],
   listenedValuesIndices: SetVariable,
   output: IntVariable,
   default: Long,
@@ -77,9 +76,9 @@ abstract class ExtremumConst(
 
   updateFromHeap()
 
-  protected def ord(v: IntVariable): Long
+  protected def ord(v: Long): Long
 
-  protected def notImpactingExtremum(newValue: IntConstant): Boolean
+  protected def notImpactingExtremum(newValue: Long): Boolean
 
   override def notifySetChanges(
     setVariable: SetVariable,
@@ -96,9 +95,9 @@ abstract class ExtremumConst(
   override def checkInternals(): Unit = {
     if (listenedValuesIndices.value().nonEmpty) {
       // We get {input(i) | i in listenedVariablesIndices}
-      val listenedValues: Set[IntConstant] = listenedValuesIndices.value().map(i => input(i))
+      val listenedValues: Set[Long] = listenedValuesIndices.value().map(i => input(i))
       require(
-        output.pendingValue == listenedValues.minBy(ord).value(),
+        output.pendingValue == listenedValues.minBy(ord),
         s"checkInternals fails in invariant ${name()}. " +
           s"output != min/max of observed variables. " +
           s"output: ${output.pendingValue} - observed variables: ${listenedValues.mkString("", ", ", "")}"
@@ -117,7 +116,7 @@ abstract class ExtremumConst(
   private[this] def updateFromHeap(): Unit = {
     h.getFirst match {
       case Some(i) =>
-        output := input(i).value()
+        output := input(i)
       case None => output := default
     }
   }
@@ -138,7 +137,7 @@ abstract class ExtremumConst(
       putIntoBacklog(index)
     } else {
       // The added value is the new extremum
-      output := input(index).value()
+      output := input(index)
       // The added value is inserted in h and considered
       h.insert(index)
       consideredValue(index) = true
@@ -155,7 +154,7 @@ abstract class ExtremumConst(
       // backlogged. It was never considered.
       assert(isBacklogged(index))
       isBacklogged(index) = false
-    } else if (output.pendingValue == input(index).value() && consideredValue(index)) {
+    } else if (output.pendingValue == input(index) && consideredValue(index)) {
       // We are removing the current extremum. The new one can be in the heap or in the backlog.
       // We empty the backlog, update the heap and find the new extremum.
       processBacklog()
