@@ -6,11 +6,11 @@ import org.scalacheck.rng.Seed
 import org.scalacheck.{Gen, Prop}
 import oscar.cbls.core.computation.Store
 
-case class TestData(inv: Invariant, input: Array[Variable], output: Array[Variable])
+case class TestBenchData(inv: Invariant, input: Array[Variable], output: Array[Variable])
 
 object InvTestBench {
   def apply(
-    createTestData: Store => TestData,
+    createTestData: Store => TestBenchData,
     name: String,
     randomInit: Boolean = true,
     optSeed: Option[String] = None
@@ -20,13 +20,13 @@ object InvTestBench {
 }
 
 class InvTestBench(
-  createTestData: Store => TestData,
+  createTestData: Store => TestBenchData,
   name: String,
   randomInit: Boolean,
   optSeed: Option[String]
 ) extends Commands {
 
-  type Sut = TestData
+  type Sut = TestBenchData
 
   type State = Array[VariableState]
 
