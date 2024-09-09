@@ -52,7 +52,7 @@ object MaxConst {
   ): MaxConst = {
 
     input.foreach(v =>
-      require(v.value() != Long.MinValue, "Long.MinValue is not supported in MaxConst")
+      require(v != Long.MinValue, "Long.MinValue is not supported in MaxConst")
     )
 
     new MaxConst(model, input, listenedValuesIndices, output, maxBacklog, name)

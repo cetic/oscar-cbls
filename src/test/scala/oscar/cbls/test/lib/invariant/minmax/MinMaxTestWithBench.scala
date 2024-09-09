@@ -7,9 +7,9 @@ import oscar.cbls.test.invBench.TestBenchData
 import oscar.cbls.lib.invariant.minmax._
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.core.computation.Variable
-import oscar.cbls.test.invBench.{InvTestBench,InvTestBenchWithConstGen}
+import oscar.cbls.test.invBench.{InvTestBench, InvTestBenchWithConstGen}
 import oscar.cbls.core.computation.integer.IntConstant
-import org.scalacheck.{Gen,Arbitrary}
+import org.scalacheck.{Arbitrary, Gen}
 import org.scalacheck.rng.Seed
 
 class MinMaxTestWithBench extends AnyFunSuite {
@@ -49,14 +49,12 @@ class MinMaxTestWithBench extends AnyFunSuite {
   }
 
   test("MinConst invariant is working in test bench") {
-    class MinConstTestBench
-        extends InvTestBenchWithConstGen[Array[Long]]("MinConst Test Bench") {
+    class MinConstTestBench extends InvTestBenchWithConstGen[Array[Long]]("MinConst Test Bench") {
 
       override def createConstData() = {
-        for { size <- Gen.choose(1, 100)
-          array <- Gen.sequence[Array[Long], Long](
-            Array.fill(size)(Arbitrary.arbitrary[Long])
-          )
+        for {
+          size  <- Gen.choose(1, 100)
+          array <- Gen.sequence[Array[Long], Long](Array.fill(size)(Arbitrary.arbitrary[Long]))
         } yield array
       }
 
@@ -64,17 +62,16 @@ class MinMaxTestWithBench extends AnyFunSuite {
         val listened = SetVariable(model, Set.empty[Int])
         listened.setDomain(0, inputData.length - 1)
         val output                 = IntVariable(model, 0)
-        val min                    = MinConst(model, inputData.map(new IntConstant(model,_)), listened, output)
+        val min                    = MinConst(model, inputData, listened, output)
         val input: Array[Variable] = Array(listened)
 
         TestBenchData(min, input, Array(output))
       }
 
-      override def typeTToString(elem : Array[Long]) = s"(${Array.tabulate(elem.length)(i => s"$i: ${elem(i)}").mkString(";")})"
+      override def typeTToString(elem: Array[Long]) =
+        s"(${Array.tabulate(elem.length)(i => s"$i: ${elem(i)}").mkString(";")})"
 
     }
-
-
 
     val bench = new MinConstTestBench
 
@@ -83,13 +80,13 @@ class MinMaxTestWithBench extends AnyFunSuite {
   }
 
   test("MaxConst invariant is working in test bench") {
-    class MaxConstTestBench
-        extends InvTestBenchWithConstGen[Array[Long]]("MaxConst Test Bench") {
+    class MaxConstTestBench extends InvTestBenchWithConstGen[Array[Long]]("MaxConst Test Bench") {
 
       override def createConstData() = {
-        for { size <- Gen.choose(1, 100)
+        for {
+          size <- Gen.choose(1, 100)
           array <- Gen.sequence[Array[Long], Long](
-            Array.fill(size)(Gen.choose(Long.MinValue + 1,Long.MaxValue))
+            Array.fill(size)(Gen.choose(Long.MinValue + 1, Long.MaxValue))
           )
         } yield array
       }
@@ -98,13 +95,14 @@ class MinMaxTestWithBench extends AnyFunSuite {
         val listened = SetVariable(model, Set.empty[Int])
         listened.setDomain(0, inputData.length - 1)
         val output                 = IntVariable(model, 0)
-        val min                    = MaxConst(model, inputData.map(new IntConstant(model,_)), listened, output)
+        val min                    = MaxConst(model, inputData, listened, output)
         val input: Array[Variable] = Array(listened)
 
         TestBenchData(min, input, Array(output))
       }
 
-      override def typeTToString(elem : Array[Long]) = s"(${Array.tabulate(elem.length)(i => s"$i: ${elem(i)}").mkString(";")})"
+      override def typeTToString(elem: Array[Long]) =
+        s"(${Array.tabulate(elem.length)(i => s"$i: ${elem(i)}").mkString(";")})"
 
     }
 
