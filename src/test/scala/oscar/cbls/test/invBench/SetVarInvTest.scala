@@ -34,6 +34,7 @@ case class SetMovement(addedValues: Set[Int], removedValues: Set[Int], id: Int)
     }
   }
 
+  override def toString() = s"SetMovement(added: $addedValues,removed: $removedValues)"
 
   private def updateSetState(state: SetVarState) : SetVarState= {
     SetVarState(state.value ++ addedValues -- removedValues,state.id,state.domain)
@@ -60,6 +61,11 @@ case class SetAssignMovement(newValues: Set[Int], id: Int) extends VariableMove(
 
 case class SetVarState(value: Set[Int], id: Int, domain: Option[(Int, Int)])
     extends VariableState(id) {
+
+  override def toString() = {
+    val domainString = domain.map(d => s", domain:[${d._1},${d._2}]").getOrElse("")
+    s"SetVarState(value: $value$domainString)"
+  }
 
   override def canMake(m : VariableMove) : Boolean = true
 
