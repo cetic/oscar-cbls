@@ -30,7 +30,8 @@ object MaxConst {
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   The constants on which to compute the maximum.
+    *   The constants on which to compute the maximum. (warning: Long.MinValue is forbidden in the
+    *   input array)
     * @param listenedValuesIndices
     *   A SetVariable containing the indices of the input variables to be observed to calculate the
     *   maximum.
@@ -49,21 +50,27 @@ object MaxConst {
     maxBacklog: Int = Int.MaxValue,
     name: Option[String] = None
   ): MaxConst = {
+
+    input.foreach(v =>
+      require(v.value() != Long.MinValue, "Long.MinValue is not supported in MaxConst")
+    )
+
     new MaxConst(model, input, listenedValuesIndices, output, maxBacklog, name)
   }
 }
 
-/** Invariant which maintains `Max{input(i) | i in`
-  * `listenedVariablesIndices}`. This invariant is lazy and maintains a todo list of postponed
-  * updates. Update is in O (log(n)) in worst case. If the update does not impact the output, it is
-  * postponed in O(1). Otherwise, it is performed in O(log(n)). When a removed index is considered
-  * and does not impact the maximum, it goes in the backlog as well, to be removed later. It is
-  * faster for neighborhood exploration with moves and backtracks.
+/** Invariant which maintains `Max{input(i) | i in` `listenedVariablesIndices}`. This invariant is
+  * lazy and maintains a todo list of postponed updates. Update is in O (log(n)) in worst case. If
+  * the update does not impact the output, it is postponed in O(1). Otherwise, it is performed in
+  * O(log(n)). When a removed index is considered and does not impact the maximum, it goes in the
+  * backlog as well, to be removed later. It is faster for neighborhood exploration with moves and
+  * backtracks.
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   The constants on which to compute the maximum.
+  *   The constants on which to compute the maximum. (warning: Long.MinValue is forbidden in the
+  *   input array)
   * @param listenedValuesIndices
   *   A SetVariable containing the indices of the input variables to be observed to calculate the
   *   maximum.
@@ -90,6 +97,10 @@ class MaxConst(
       maxBacklog,
       name
     ) {
+
+  input.foreach(v =>
+    require(v.value() != Long.MinValue, "Long.MinValue is not supported in MaxConst")
+  )
 
   override protected def ord(v: IntVariable): Long = -v.value()
 
