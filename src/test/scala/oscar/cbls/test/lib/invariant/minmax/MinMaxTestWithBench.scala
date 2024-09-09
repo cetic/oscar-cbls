@@ -7,8 +7,10 @@ import oscar.cbls.test.invBench.TestBenchData
 import oscar.cbls.lib.invariant.minmax._
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.core.computation.Variable
-import oscar.cbls.test.invBench.InvTestBench
+import oscar.cbls.test.invBench.{InvTestBench,InvTestBenchWithConstGen}
 import oscar.cbls.core.computation.integer.IntConstant
+import org.scalacheck.{Gen,Arbitrary}
+import org.scalacheck.rng.Seed
 
 class MinMaxTestWithBench extends AnyFunSuite {
 
@@ -47,39 +49,68 @@ class MinMaxTestWithBench extends AnyFunSuite {
   }
 
   test("MinConst invariant is working in test bench") {
-    def createMin(model: Store): TestBenchData = {
-      val nbValues = 1000
-      val inputArray =
-        Array.tabulate(nbValues)(i => new IntConstant(model, scala.util.Random.nextLong()))
-      val listened = SetVariable(model, Set.empty[Int])
-      listened.setDomain(0, nbValues - 1)
-      val output                 = IntVariable(model, 0)
-      val min                    = MinConst(model, inputArray, listened, output)
-      val input: Array[Variable] = Array(listened)
+    val seeds = List("IM1xc3k8wU1TX_a5tfg9ETJalxVL_GV29eu3sfi_mFG=")
+    class MinConstTestBench
+        extends InvTestBenchWithConstGen[Array[Long]]("MinConst Test Bench",seeds) {
 
-      TestBenchData(min, input, Array(output))
+      override def createConstData() = {
+        for { size <- Gen.choose(1, 100)
+          array <- Gen.sequence[Array[Long], Long](
+            Array.fill(size)(Arbitrary.arbitrary[Long])
+          )
+        } yield array
+      }
+
+      override def createInvariant(model: Store, inputData: Array[Long]) = {
+        val listened = SetVariable(model, Set.empty[Int])
+        listened.setDomain(0, inputData.length - 1)
+        val output                 = IntVariable(model, 0)
+        val min                    = MinConst(model, inputData.map(new IntConstant(model,_)), listened, output)
+        val input: Array[Variable] = Array(listened)
+
+        TestBenchData(min, input, Array(output))
+      }
+
+      override def typeTToString(elem : Array[Long]) = s"(${elem.mkString(";")})"
+
     }
 
-    val bench = InvTestBench(createMin, "Test MinConst Invariant")
+
+
+    val bench = new MinConstTestBench
+
     bench.test()
 
   }
 
   test("MaxConst invariant is working in test bench") {
-    def createMax(model: Store): TestBenchData = {
-      val nbValues = 1000
-      val inputArray =
-        Array.tabulate(nbValues)(i => new IntConstant(model, scala.util.Random.nextLong()))
-      val listened = SetVariable(model, Set.empty[Int])
-      listened.setDomain(0, nbValues - 1)
-      val output                 = IntVariable(model, 0)
-      val min                    = MaxConst(model, inputArray, listened, output)
-      val input: Array[Variable] = Array(listened)
+    class MaxConstTestBench
+        extends InvTestBenchWithConstGen[Array[Long]]("MaxConst Test Bench") {
 
-      TestBenchData(min, input, Array(output))
+      override def createConstData() = {
+        for { size <- Gen.choose(1, 100)
+          array <- Gen.sequence[Array[Long], Long](
+            Array.fill(size)(Arbitrary.arbitrary[Long])
+          )
+        } yield array
+      }
+
+      override def createInvariant(model: Store, inputData: Array[Long]) = {
+        val listened = SetVariable(model, Set.empty[Int])
+        listened.setDomain(0, inputData.length - 1)
+        val output                 = IntVariable(model, 0)
+        val min                    = MaxConst(model, inputData.map(new IntConstant(model,_)), listened, output)
+        val input: Array[Variable] = Array(listened)
+
+        TestBenchData(min, input, Array(output))
+      }
+
+      override def typeTToString(elem : Array[Long]) = s"(${elem.mkString(";")})"
+
     }
 
-    val bench = InvTestBench(createMax, "Test MaxConst Invariant")
+    val bench = new MaxConstTestBench
+
     bench.test()
 
   }
