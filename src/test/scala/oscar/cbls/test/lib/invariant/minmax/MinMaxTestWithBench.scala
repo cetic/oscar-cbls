@@ -49,9 +49,8 @@ class MinMaxTestWithBench extends AnyFunSuite {
   }
 
   test("MinConst invariant is working in test bench") {
-    val seeds = List("IM1xc3k8wU1TX_a5tfg9ETJalxVL_GV29eu3sfi_mFG=")
     class MinConstTestBench
-        extends InvTestBenchWithConstGen[Array[Long]]("MinConst Test Bench",seeds) {
+        extends InvTestBenchWithConstGen[Array[Long]]("MinConst Test Bench") {
 
       override def createConstData() = {
         for { size <- Gen.choose(1, 100)
@@ -61,7 +60,7 @@ class MinMaxTestWithBench extends AnyFunSuite {
         } yield array
       }
 
-      override def createInvariant(model: Store, inputData: Array[Long]) = {
+      override def createTestData(model: Store, inputData: Array[Long]) = {
         val listened = SetVariable(model, Set.empty[Int])
         listened.setDomain(0, inputData.length - 1)
         val output                 = IntVariable(model, 0)
@@ -71,7 +70,7 @@ class MinMaxTestWithBench extends AnyFunSuite {
         TestBenchData(min, input, Array(output))
       }
 
-      override def typeTToString(elem : Array[Long]) = s"(${elem.mkString(";")})"
+      override def typeTToString(elem : Array[Long]) = s"(${Array.tabulate(elem.length)(i => s"$i: ${elem(i)}").mkString(";")})"
 
     }
 
@@ -90,12 +89,12 @@ class MinMaxTestWithBench extends AnyFunSuite {
       override def createConstData() = {
         for { size <- Gen.choose(1, 100)
           array <- Gen.sequence[Array[Long], Long](
-            Array.fill(size)(Arbitrary.arbitrary[Long])
+            Array.fill(size)(Gen.choose(Long.MinValue + 1,Long.MaxValue))
           )
         } yield array
       }
 
-      override def createInvariant(model: Store, inputData: Array[Long]) = {
+      override def createTestData(model: Store, inputData: Array[Long]) = {
         val listened = SetVariable(model, Set.empty[Int])
         listened.setDomain(0, inputData.length - 1)
         val output                 = IntVariable(model, 0)
@@ -105,7 +104,7 @@ class MinMaxTestWithBench extends AnyFunSuite {
         TestBenchData(min, input, Array(output))
       }
 
-      override def typeTToString(elem : Array[Long]) = s"(${elem.mkString(";")})"
+      override def typeTToString(elem : Array[Long]) = s"(${Array.tabulate(elem.length)(i => s"$i: ${elem(i)}").mkString(";")})"
 
     }
 

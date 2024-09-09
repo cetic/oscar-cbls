@@ -16,6 +16,18 @@ object InvTestBench {
   }
 }
 
+/** The test bench for invariants that have no constant input.
+  *
+  * @param createTestData
+  *   A function that given a Store creates the TestBenchData (the input and output of the invariant
+  *   and the invariant itself)
+  * @param name
+  *   The name of the bench (used when printing the results, please be explicit).
+  * @param additionnalSeeds
+  *   A list of explicit seeds that will be tested in addition to a random seed. Use this when you
+  *   find a bug on a specific example.
+  */
+
 class InvTestBench(
   createTestData: Store => TestBenchData,
   name: String,
@@ -25,6 +37,6 @@ class InvTestBench(
     Gen.const(())
   }
 
-  override def createInvariant(model: Store, inputData: Unit) = createTestData(model)
+  override def createTestData(model: Store, inputData: Unit) = createTestData(model)
 
 }
