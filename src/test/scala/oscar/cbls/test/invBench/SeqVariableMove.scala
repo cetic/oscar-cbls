@@ -30,14 +30,14 @@ abstract class SeqVariableMove(varId: Int) extends VariableMove(varId) {
 
 }
 
-/** Move that inserts a value into the SeqVariable
+/** Move that inserts a value into the SeqVariable.
   *
   * @param varId
-  *   The test id of the SeqVariable
+  *   The test id of the SeqVariable.
   * @param value
-  *   The value to insert
+  *   The value to insert.
   * @param after
-  *   The position after which the value must be inserted
+  *   The position after which the value must be inserted.
   */
 case class SeqInsertUpdate(override val varId: Int, value: Int, after: Int) extends SeqVariableMove(varId) {
 
@@ -55,18 +55,18 @@ case class SeqInsertUpdate(override val varId: Int, value: Int, after: Int) exte
   override def toString: String = s"Input var $varId | Inserts $value after pos $after"
 }
 
-/** Move that moves a sub-sequence of values at another place in the SeqVariable
+/** Move that moves a sub-sequence of values at another place in the SeqVariable.
   *
   * @param varId
-  *   The test id of the SeqVariable
+  *   The test id of the SeqVariable.
   * @param from
-  *   The start (included) of the sub-sequence
+  *   The start (included) of the sub-sequence.
   * @param to
-  *   The end (included) of the sub-sequence
+  *   The end (included) of the sub-sequence.
   * @param after
-  *   The position after which the sub-sequence must be moved
+  *   The position after which the sub-sequence must be moved.
   * @param flip
-  *   Whether or not the sub-sequence must be flipped
+  *   Whether the sub-sequence must be flipped or not.
   */
 case class SeqMoveUpdate(override val varId: Int, from: Int, to: Int, after: Int, flip: Boolean)
     extends SeqVariableMove(varId) {
@@ -88,14 +88,14 @@ case class SeqMoveUpdate(override val varId: Int, from: Int, to: Int, after: Int
 
 }
 
-/** Move that flips a sub-sequence of values
+/** Move that flips a sub-sequence of values.
   *
   * @param varId
-  *   The test id of the SeqVariable
+  *   The test id of the SeqVariable.
   * @param from
-  *   The start (included) of the sub-sequence
+  *   The start (included) of the sub-sequence.
   * @param to
-  *   The end (included) of the sub-sequence
+  *   The end (included) of the sub-sequence.
   */
 case class SeqFlipUpdate(override val varId: Int, from: Int, to: Int) extends SeqVariableMove(varId) {
 
@@ -110,22 +110,22 @@ case class SeqFlipUpdate(override val varId: Int, from: Int, to: Int) extends Se
 
 }
 
-/** Move that swaps two sub-sequences of values within the SeqVariable
+/** Move that swaps two sub-sequences of values within the SeqVariable.
   *
   * @param varId
-  *   The test id of the SeqVariable
+  *   The test id of the SeqVariable.
   * @param from_1
-  *   The start (included) of the first sub-sequence
+  *   The start (included) of the first sub-sequence.
   * @param to_1
-  *   The end (included) of the first sub-sequence
+  *   The end (included) of the first sub-sequence.
   * @param flip_1
-  *   Whether or not the first sub-sequence must be flipped
+  *   Whether the first sub-sequence must be flipped or not.
   * @param from_2
-  *   The start (included) of the second sub-sequence
+  *   The start (included) of the second sub-sequence.
   * @param to_2
-  *   The end (included) of the second sub-sequence
+  *   The end (included) of the second sub-sequence.
   * @param flip_2
-  *   Whether or not the second sub-sequence must be flipped
+  *   Whether the second sub-sequence must be flipped or not.
   */
 case class SeqSwapUpdate(
                           override val varId: Int,
@@ -157,12 +157,12 @@ case class SeqSwapUpdate(
 
 }
 
-/** Move that removes a value from the SeqVariable
+/** Move that removes a value from the SeqVariable.
   *
   * @param varId
-  *   The test id of the SeqVariable
+  *   The test id of the SeqVariable.
   * @param position
-  *   The position of the value to remove
+  *   The position of the value to remove.
   */
 case class SeqRemoveUpdate(override val varId: Int, position: Int) extends SeqVariableMove(varId) {
 
@@ -180,10 +180,10 @@ case class SeqRemoveUpdate(override val varId: Int, position: Int) extends SeqVa
   override def toString: String = s"Input var $varId | Removes value at pos $position"
 }
 
-/** Move that defines a new checkpoint in the SeqVariable
+/** Move that defines a new checkpoint in the SeqVariable.
   *
   * @param varId
-  *   The test id of the SeqVariable
+  *   The test id of the SeqVariable.
   */
 case class SeqDefineCheckpointUpdate(override val varId: Int) extends SeqVariableMove(varId) {
 
@@ -192,7 +192,7 @@ case class SeqDefineCheckpointUpdate(override val varId: Int) extends SeqVariabl
 
   override def updateSeqState(state: SeqVariableState): SeqVariableState =
     SeqVariableState(
-      state.varId,
+      state.id,
       SeqVariableStackableState(state.currentState.seqSize, 0, Some(state.currentState)),
       state.domain
     )
@@ -200,10 +200,10 @@ case class SeqDefineCheckpointUpdate(override val varId: Int) extends SeqVariabl
   override def toString: String = s"Input var $varId | Defines new checkpoint"
 }
 
-/** Move that rolls-back all the modifications of the SeqVariable since the last checkpoint
+/** Move that rolls back all the modifications of the SeqVariable since the last checkpoint.
   *
   * @param varId
-  *   The test id of the SeqVariable
+  *   The test id of the SeqVariable.
   */
 case class SeqRollBackToTopCheckpointUpdate(override val varId: Int) extends SeqVariableMove(varId) {
 
@@ -212,7 +212,7 @@ case class SeqRollBackToTopCheckpointUpdate(override val varId: Int) extends Seq
   override def updateSeqState(state: SeqVariableState): SeqVariableState = {
     val prev = state.currentState.previousStackableState.get
     SeqVariableState(
-      state.varId,
+      state.id,
       SeqVariableStackableState(prev.seqSize, 0, Some(prev)),
       state.domain
     )
@@ -221,25 +221,25 @@ case class SeqRollBackToTopCheckpointUpdate(override val varId: Int) extends Seq
   override def toString: String = s"Input var $varId | Rolls back to top checkpoint"
 }
 
-/** Move that releases the top checkpoint
+/** Move that releases the top checkpoint.
   *
   * @param varId
-  *   The test id of the SeqVariable
+  *   The test id of the SeqVariable.
   */
 case class SeqReleaseTopCheckpointUpdate(override val varId: Int) extends SeqVariableMove(varId) {
 
   override protected def mkSeqMove(seqVar: SeqVariable): Unit = seqVar.releaseTopCheckpoint()
 
   override def updateSeqState(state: SeqVariableState): SeqVariableState =
-    SeqVariableState(state.varId, state.currentState.previousStackableState.get, state.domain)
+    SeqVariableState(state.id, state.currentState.previousStackableState.get, state.domain)
 
   override def toString: String = s"Input var $varId | Releases top checkpoint"
 }
 
-/** Move that propagates the updates
+/** Move that propagates the updates.
   *
   * @param varId
-  *   The test id of the SeqVariable
+  *   The test id of the SeqVariable.
   */
 case class SeqPropagateUpdates(override val varId: Int) extends SeqVariableMove(varId) {
 
@@ -250,10 +250,10 @@ case class SeqPropagateUpdates(override val varId: Int) extends SeqVariableMove(
   override def toString: String = s"Input var $varId | Propagates modifications"
 }
 
-/** Move that assigns a new value to the SeqVariable
+/** Move that assigns a new value to the SeqVariable.
   *
   * @param varId
-  *   The test id of the SeqVariable
+  *   The test id of the SeqVariable.
   */
 case class SeqAssignUpdate(override val varId: Int, newSeq: List[Int]) extends SeqVariableMove(varId) {
 
@@ -265,7 +265,7 @@ case class SeqAssignUpdate(override val varId: Int, newSeq: List[Int]) extends S
   }
 
   override def updateSeqState(state: SeqVariableState): SeqVariableState = {
-    SeqVariableState(state.varId, SeqVariableStackableState(newSeq.size, 0, None), state.domain)
+    SeqVariableState(state.id, SeqVariableStackableState(newSeq.size, 0, None), state.domain)
   }
 
   override def toString: String = s"Input var $varId | Assigns new value : $newSeq"

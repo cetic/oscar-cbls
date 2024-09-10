@@ -1,9 +1,9 @@
 package oscar.cbls.test.lib.invariant.seq
 
 import org.scalatest.funsuite.AnyFunSuite
-import oscar.cbls.core.computation.{Store, Variable}
+import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.seq.{SeqIdentityInvariant, SeqVariable}
-import oscar.cbls.test.invBench.{InvTestBench, TestData}
+import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
 
 class IdentitySeqTestBench extends AnyFunSuite {
 
@@ -13,7 +13,7 @@ class IdentitySeqTestBench extends AnyFunSuite {
       val input  = SeqVariable(model, List.empty, "Original Seq")
       val output = SeqVariable(model, List.empty, "Copy")
       val inv = SeqIdentityInvariant(model, input, output)
-      TestData(inv, Array(input), Array(output))
+      TestBenchSut(inv, Array(input), Array(output))
     }
 
     val testBench = InvTestBench(

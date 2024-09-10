@@ -6,13 +6,13 @@ import org.scalacheck.Gen
   *
   * It is used to determine the applicable movements given this State.
   *
-  * @param varId
+  * @param id
   *   The test id of the SeqVariable to which this State is linked
   * @param currentState
   *   The current State of the SeqVariable
   */
-case class SeqVariableState(varId: Int, currentState: SeqVariableStackableState, domain: (Int, Int))
-    extends VariableState(varId) {
+case class SeqVariableState(id: Int, currentState: SeqVariableStackableState, domain: (Int, Int))
+    extends VariableState(id) {
 
   private val (minValue, maxValue) = domain
   private val size                 = currentState.seqSize
@@ -29,7 +29,7 @@ case class SeqVariableState(varId: Int, currentState: SeqVariableStackableState,
     for {
       value <- Gen.choose(minValue, maxValue)
       after <- Gen.choose(-1, size - 1)
-    } yield new SeqInsertUpdate(varId, value, after)
+    } yield SeqInsertUpdate(id, value, after)
   }
 
   private def genSeqMove: Gen[SeqMoveUpdate] = {
@@ -38,14 +38,14 @@ case class SeqVariableState(varId: Int, currentState: SeqVariableStackableState,
       to    <- Gen.choose(from, size - 1)
       after <- Gen.oneOf((-1 until from) ++ (to + 1 until size))
       flip  <- Gen.prob(0.5)
-    } yield new SeqMoveUpdate(varId, from, to, after, flip)
+    } yield SeqMoveUpdate(id, from, to, after, flip)
   }
 
   private def genSeqFlip: Gen[SeqFlipUpdate] = {
     for {
       from <- Gen.choose(0, size - 1)
       to   <- Gen.choose(from, size - 1)
-    } yield new SeqFlipUpdate(varId, from, to)
+    } yield SeqFlipUpdate(id, from, to)
   }
 
   private def genSeqSwap: Gen[SeqSwapUpdate] = {
@@ -56,33 +56,33 @@ case class SeqVariableState(varId: Int, currentState: SeqVariableStackableState,
       from_2 <- Gen.choose(to_1 + 1, size - 1)
       to_2   <- Gen.choose(from_2, size - 1)
       flip_2 <- Gen.prob(0.5)
-    } yield new SeqSwapUpdate(varId, from_1, to_1, flip_1, from_2, to_2, flip_2)
+    } yield SeqSwapUpdate(id, from_1, to_1, flip_1, from_2, to_2, flip_2)
   }
 
   private def genSeqRemove: Gen[SeqRemoveUpdate] = {
     for {
       removePos <- Gen.choose(0, size - 1)
-    } yield new SeqRemoveUpdate(varId, removePos)
+    } yield SeqRemoveUpdate(id, removePos)
   }
 
   private def genSeqAssign: Gen[SeqAssignUpdate] = {
     for {
       nbValues <- Gen.choose(0, 100)
       values   <- Gen.listOfN(nbValues, Gen.choose(minValue, maxValue))
-    } yield new SeqAssignUpdate(varId, values)
+    } yield SeqAssignUpdate(id, values)
   }
 
   private def genSeqDefineCheckpoint: Gen[SeqDefineCheckpointUpdate] =
-    Gen.oneOf(List(new SeqDefineCheckpointUpdate(varId)))
+    Gen.oneOf(List(SeqDefineCheckpointUpdate(id)))
 
   private def genSeqPropagate: Gen[SeqPropagateUpdates] =
-    Gen.oneOf(List(new SeqPropagateUpdates(varId)))
+    Gen.oneOf(List(SeqPropagateUpdates(id)))
 
   private def genSeqReleaseTopCheckpoint: Gen[SeqReleaseTopCheckpointUpdate] =
-    Gen.oneOf(List(new SeqReleaseTopCheckpointUpdate(varId)))
+    Gen.oneOf(List(SeqReleaseTopCheckpointUpdate(id)))
 
   private def genSeqRollBack: Gen[SeqRollBackToTopCheckpointUpdate] =
-    Gen.oneOf(List(new SeqRollBackToTopCheckpointUpdate(varId)))
+    Gen.oneOf(List(SeqRollBackToTopCheckpointUpdate(id)))
 
   override def generateMove(): Gen[VariableMove] = {
     var authMoves: List[(Int, Gen[VariableMove])] =
@@ -116,7 +116,7 @@ case class SeqVariableState(varId: Int, currentState: SeqVariableStackableState,
   }
 
   override def toString: String =
-    s"Seq $varId : size $size | checkpoint lvl ${currentState.seqCheckpointLevel} | " +
+    s"Seq $id : size $size | checkpoint lvl ${currentState.seqCheckpointLevel} | " +
       s"${currentState.seqOperationSinceLastCheckpoint} operations since last checkpoint"
 }
 
