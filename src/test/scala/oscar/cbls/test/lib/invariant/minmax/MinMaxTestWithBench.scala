@@ -40,7 +40,7 @@ class MinMaxTestWithBench extends AnyFunSuite {
       val output                 = IntVariable(model, 0)
       val max                    = Max(model, inputArray, listened, output)
       val input: Array[Variable] = (listened :: inputArray.toList).toArray
-      TestBenchSut(min, input, Array(output))
+      TestBenchSut(max, input, Array(output))
     }
 
     val bench = InvTestBench(createMax, "Test Max Invariant")
@@ -98,7 +98,7 @@ class MinMaxTestWithBench extends AnyFunSuite {
         val max                    = MaxConst(model, inputData, listened, output)
         val input: Array[Variable] = Array(listened)
 
-        TestBenchSut(min, input, Array(output))
+        TestBenchSut(max, input, Array(output))
       }
 
       override def typeTToString(elem: Array[Long]) =
@@ -134,7 +134,7 @@ class MinMaxTestWithBench extends AnyFunSuite {
       val max                    = MaxSet(model, inputSet, output)
       val input: Array[Variable] = Array(inputSet)
 
-      TestBenchSut(min, input, Array(output))
+      TestBenchSut(max, input, Array(output))
     }
 
     val bench = InvTestBench(createMin, "Test MaxSet Invariant")

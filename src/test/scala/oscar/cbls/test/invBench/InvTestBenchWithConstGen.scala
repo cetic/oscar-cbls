@@ -65,7 +65,7 @@ abstract class InvTestBenchWithConstGen[T](name: String, additionalSeeds: List[S
   def test(): Unit = {
 
     val prop = new TestBenchProperty(this)
-    additionnalSeeds.distinct.foreach(prop.addSeed)
+    additionalSeeds.distinct.foreach(prop.addSeed)
     prop.check()
 
   }

@@ -1,9 +1,13 @@
 package oscar.cbls.test.invBench
 
 import org.scalacheck.Gen
+import org.scalacheck.Arbitrary
+
+
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
-import org.scalacheck.Arbitrary
+import oscar.cbls.core.computation.Variable
+
 
 /** The class that defines the moves on the variables. Each type of variable have at least one type
   * of move

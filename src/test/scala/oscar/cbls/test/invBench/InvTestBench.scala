@@ -28,7 +28,7 @@ object InvTestBench {
 class InvTestBench(
   createTestSut: Store => TestBenchSut,
   name: String,
-  additionnalSeeds: List[String]
+  additionalSeeds: List[String]
 ) extends InvTestBenchWithConstGen[Unit](name, additionalSeeds) {
 
   override def genConst(): Gen[Unit] = {
