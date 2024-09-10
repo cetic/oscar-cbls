@@ -1,92 +1,41 @@
 package oscar.cbls.test.invBench
 
-import oscar.cbls.core.computation.{Invariant, Variable}
-import org.scalacheck.commands.Commands
-import org.scalacheck.rng.Seed
-import org.scalacheck.{Gen, Prop}
+import org.scalacheck.Gen
+import oscar.cbls.core.computation.Store
 
 object InvTestBench {
   def apply(
-    inv: Invariant,
-    input: Iterable[Variable],
+    createTestData: Store => TestBenchSut,
     name: String,
-    randomInit: Boolean = true,
-    optSeed: Option[String] = None
+    additionalSeeds: List[String] = List()
   ): InvTestBench = {
-    new InvTestBench(inv, input, name, randomInit, optSeed)
+    new InvTestBench(createTestData, name, additionalSeeds)
   }
 }
 
+/** The test bench for invariants that have no constant input.
+  *
+  * @param createTestData
+  *   A function that given a Store creates the TestBenchData (the input and output of the invariant
+  *   and the invariant itself)
+  * @param name
+  *   The name of the bench (used when printing the results, please be explicit).
+  * @param additionalSeeds
+  *   A list of explicit seeds that will be tested in addition to a random seed. Use this when you
+  *   find a bug on a specific example.
+  */
+
 class InvTestBench(
-  inv: Invariant,
-  input: Iterable[Variable],
+  createTestSut: Store => TestBenchSut,
   name: String,
-  randomInit: Boolean,
-  optSeed: Option[String]
-) extends Commands {
+  additionalSeeds: List[String]
+) extends InvTestBenchWithConstGen[Unit](name, additionalSeeds) {
 
-  val inputVars: Array[TestVariable] = input.toArray.map(TestVariable(_))
-
-  type Sut = Invariant
-
-  type State = Array[VariableMove]
-
-  def test(): Unit = {
-    val params =
-      optSeed match {
-        case None =>
-          org.scalacheck.Test.Parameters.default.withMinSuccessfulTests(500)
-        case Some(seed) =>
-          org.scalacheck.Test.Parameters.default
-            .withInitialSeed(Seed.fromBase64(seed).get)
-            .withMinSuccessfulTests(500)
-      }
-
-    this.property().viewSeed(name).check(params)
+  override def genConst(): Gen[Unit] = {
+    Gen.const(())
   }
 
-  override def destroySut(sut: Invariant): Unit = ()
-
-  override def genCommand(state: State): Gen[Command] = {
-    for {
-      testVar <- Gen.oneOf(inputVars.toSeq)
-      move    <- testVar.generateMove()
-    } yield new InvariantCommand(move)
-  }
-
-  override def genInitialState: Gen[State] = {
-    Gen.const(inputVars.map(_.generateMove().sample.get))
-  }
-
-  override def initialPreCondition(state: State): Boolean = true
-
-  override def newSut(state: State): Sut = {
-    if (randomInit)
-      state.foreach(_.mkMove())
-    inv.model.propagate()
-    inv
-  }
-
-  override def canCreateNewSut(
-    newState: State,
-    initSuts: Iterable[State],
-    runningSuts: Iterable[Sut]
-  ): Boolean = true
-
-  class InvariantCommand(m: VariableMove) extends UnitCommand {
-
-    override def nextState(state: State): State = state
-
-    override def postCondition(state: State, success: Boolean): Prop = success
-
-    override def preCondition(state: State): Boolean = true
-
-    override def run(sut: Invariant): Result = {
-      m.mkMove()
-    }
-
-    override def toString: String = m.toString
-
-  }
+  override def createTestBenchSut(model: Store, inputData: Unit): TestBenchSut =
+    createTestSut(model)
 
 }

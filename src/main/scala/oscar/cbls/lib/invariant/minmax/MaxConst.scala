@@ -30,7 +30,8 @@ object MaxConst {
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
     * @param input
-    *   The constants on which to compute the maximum.
+    *   The constants on which to compute the maximum. (warning: Long.MinValue is forbidden in the
+    *   input array)
     * @param listenedValuesIndices
     *   A SetVariable containing the indices of the input variables to be observed to calculate the
     *   maximum.
@@ -49,6 +50,9 @@ object MaxConst {
     maxBacklog: Int = Int.MaxValue,
     name: Option[String] = None
   ): MaxConst = {
+
+    input.foreach(v => require(v != Long.MinValue, "Long.MinValue is not supported in MaxConst"))
+
     new MaxConst(model, input, listenedValuesIndices, output, maxBacklog, name)
   }
 }
@@ -63,7 +67,8 @@ object MaxConst {
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
-  *   The constants on which to compute the maximum.
+  *   The constants on which to compute the maximum. (warning: Long.MinValue is forbidden in the
+  *   input array)
   * @param listenedValuesIndices
   *   A SetVariable containing the indices of the input variables to be observed to calculate the
   *   maximum.
@@ -90,6 +95,8 @@ class MaxConst(
       maxBacklog,
       name
     ) {
+
+  input.foreach(v => require(v != Long.MinValue, "Long.MinValue is not supported in MaxConst"))
 
   override protected def ord(v: Long): Long = -v
 
