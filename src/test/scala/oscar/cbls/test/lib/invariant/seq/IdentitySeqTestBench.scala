@@ -12,14 +12,11 @@ class IdentitySeqTestBench extends AnyFunSuite {
     val testDataGen = (model: Store) => {
       val input  = SeqVariable(model, List.empty, "Original Seq")
       val output = SeqVariable(model, List.empty, "Copy")
-      val inv = SeqIdentityInvariant(model, input, output)
+      val inv    = SeqIdentityInvariant(model, input, output)
       TestBenchSut(inv, Array(input), Array(output))
     }
 
-    val testBench = InvTestBench(
-      testDataGen,
-      "SeqIdentityVariable test bench"
-    )
+    val testBench = InvTestBench(testDataGen, "SeqIdentityVariable test bench")
     testBench.test()
   }
 

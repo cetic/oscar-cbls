@@ -8,9 +8,7 @@ import oscar.cbls.lib.invariant.minmax._
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.core.computation.Variable
 import oscar.cbls.test.invBench.{InvTestBench, InvTestBenchWithConstGen}
-import oscar.cbls.core.computation.integer.IntConstant
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalacheck.rng.Seed
 
 class MinMaxTestWithBench extends AnyFunSuite {
 
@@ -51,14 +49,14 @@ class MinMaxTestWithBench extends AnyFunSuite {
   test("MinConst invariant is working in test bench") {
     class MinConstTestBench extends InvTestBenchWithConstGen[Array[Long]]("MinConst Test Bench") {
 
-      override def genConst() = {
+      override def genConst(): Gen[Array[Long]] = {
         for {
           size  <- Gen.choose(1, 100)
           array <- Gen.sequence[Array[Long], Long](Array.fill(size)(Arbitrary.arbitrary[Long]))
         } yield array
       }
 
-      override def createTestBenchSut(model: Store, inputData: Array[Long]) = {
+      override def createTestBenchSut(model: Store, inputData: Array[Long]): TestBenchSut = {
         val listened = SetVariable(model, Set.empty[Int])
         listened.setDomain(0, inputData.length - 1)
         val output                 = IntVariable(model, 0)
@@ -82,7 +80,7 @@ class MinMaxTestWithBench extends AnyFunSuite {
   test("MaxConst invariant is working in test bench") {
     class MaxConstTestBench extends InvTestBenchWithConstGen[Array[Long]]("MaxConst Test Bench") {
 
-      override def genConst(): Gen[Array[Long]]= {
+      override def genConst(): Gen[Array[Long]] = {
         for {
           size <- Gen.choose(1, 100)
           array <- Gen.sequence[Array[Long], Long](
@@ -91,7 +89,7 @@ class MinMaxTestWithBench extends AnyFunSuite {
         } yield array
       }
 
-      override def createTestBenchSut(model: Store, inputData: Array[Long]) : TestBenchSut = {
+      override def createTestBenchSut(model: Store, inputData: Array[Long]): TestBenchSut = {
         val listened = SetVariable(model, Set.empty[Int])
         listened.setDomain(0, inputData.length - 1)
         val output                 = IntVariable(model, 0)

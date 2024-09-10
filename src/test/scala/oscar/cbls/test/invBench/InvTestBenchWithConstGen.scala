@@ -19,8 +19,8 @@ case class TestBenchSut(inv: Invariant, input: Array[Variable], output: Array[Va
   *
   * Using the test bench requires to implement the following methods:
   *   - genConst: this method gives the generator to generate constant input data of type T
-  *   - : this method creates the test data (the input and output of the invariant and
-  *     the invariant itself) using the constant input data and a store
+  *   - : this method creates the test data (the input and output of the invariant and the invariant
+  *     itself) using the constant input data and a store
   *
   * One can also implement typeTToString if the type T has no good printing method (e.g. if the type
   * T is an array)

@@ -102,15 +102,15 @@ case class SeqVariableState(id: Int, currentState: SeqVariableStackableState, do
         swapAndMoveAllowed && s.to_1 < size && s.to_2 < size
       case m: SeqMoveUpdate =>
         swapAndMoveAllowed && m.after < size && m.to < size
-      case f: SeqFlipUpdate                    =>
+      case f: SeqFlipUpdate =>
         flipAndRemoveAllowed && f.to < size
-      case r: SeqRemoveUpdate                  =>
+      case r: SeqRemoveUpdate =>
         flipAndRemoveAllowed && r.position < size
       case _: SeqReleaseTopCheckpointUpdate    => releaseAllowed
       case _: SeqRollBackToTopCheckpointUpdate => rollBackAllowed
       case _: SeqAssignUpdate                  => assignAllowed
       case i: SeqInsertUpdate                  => i.after < size
-      case _ => true
+      case _                                   => true
       case _ => throw new Error("Seq Movement can only update variable of type Seq")
     }
   }
