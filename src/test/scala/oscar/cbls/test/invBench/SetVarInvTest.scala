@@ -93,14 +93,12 @@ case class SetVarState(value: Set[Int], id: Int, domain: Option[(Int, Int)])
   override def canMake(m: VariableMove): Boolean = {
     m match {
       case SetAssignMove(newValues, moveId) =>
-        domain
-          .map(d => newValues.foldLeft(true)((acc, v) => acc && d._1 <= v && v <= d._2))
-          .getOrElse(true) && id == moveId
+        domain.forall(d => newValues.forall(v => d._1 <= v && v <= d._2)) &&
+        id == moveId
       case SetMove(addedValues, removedValues, moveId) =>
-        domain
-          .map(d => addedValues.foldLeft(true)((acc, v) => acc && d._1 <= v && v <= d._2))
-          .getOrElse(true) &&
-        removedValues.foldLeft(true)((acc, v) => acc && value.contains(v)) && id == moveId
+        domain.forall(d => addedValues.forall(v => d._1 <= v && v <= d._2)) &&
+        removedValues.forall(v => value.contains(v)) &&
+        id == moveId
       case _ => throw new Error("SetVarState can only test moves of type SetAssignMove and SetMove")
     }
   }
