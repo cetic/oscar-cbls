@@ -7,7 +7,7 @@ import oscar.cbls.core.computation.Store
 import org.scalacheck.Properties
 import org.scalacheck.Test
 
-case class TestBenchData(inv: Invariant, input: Array[Variable], output: Array[Variable])
+case class TestBenchSut(inv: Invariant, input: Array[Variable], output: Array[Variable])
 
 /** Creates a test bench for invariants that need constant value.
   *
@@ -18,8 +18,8 @@ case class TestBenchData(inv: Invariant, input: Array[Variable], output: Array[V
   * generated.
   *
   * Using the test bench requires to implement the following methods:
-  *   - createConstData: this method gives the generator to generate constant input data of type T
-  *   - createTestData: this method creates the test data (the input and output of the invariant and
+  *   - genConst: this method gives the generator to generate constant input data of type T
+  *   - : this method creates the test data (the input and output of the invariant and
   *     the invariant itself) using the constant input data and a store
   *
   * One can also implement typeTToString if the type T has no good printing method (e.g. if the type
@@ -36,13 +36,13 @@ case class TestBenchData(inv: Invariant, input: Array[Variable], output: Array[V
 abstract class InvTestBenchWithConstGen[T](name: String, additionalSeeds: List[String] = List())
     extends Commands {
 
-  def createConstData(): Gen[T]
+  def genConst(): Gen[T]
 
-  def createTestData(model: Store, inputData: T): TestBenchData
+  def createTestBenchSut(model: Store, inputData: T): TestBenchSut
 
   def typeTToString(elem: T): String = elem.toString
 
-  type Sut = TestBenchData
+  type Sut = TestBenchSut
 
   case class TestState(varStates: Array[VariableState], constState: T) {
     override def toString = s"TestState(${varStates.mkString(";")},${typeTToString(constState)})"
@@ -82,9 +82,9 @@ abstract class InvTestBenchWithConstGen[T](name: String, additionalSeeds: List[S
   override def genInitialState: Gen[State] = {
     val model = new Store()
     for {
-      constData <- createConstData()
+      constData <- genConst()
       states <- {
-        val data = createTestData(model, constData)
+        val data = createTestBenchSut(model, constData)
         Gen.sequence[Array[VariableState], VariableState](
           Array.tabulate(data.input.length)(i => VariableState(data.input(i), i))
         )
@@ -96,7 +96,7 @@ abstract class InvTestBenchWithConstGen[T](name: String, additionalSeeds: List[S
 
   override def newSut(state: State): Sut = {
     val model = new Store(debugLevel = 3)
-    val data  = createTestData(model, state.constState)
+    val data  = createTestBenchSut(model, state.constState)
     model.close()
     data.inv.model.propagate()
     data

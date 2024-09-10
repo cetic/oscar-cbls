@@ -5,7 +5,7 @@ import oscar.cbls.core.computation.Store
 
 object InvTestBench {
   def apply(
-    createTestData: Store => TestBenchData,
+    createTestData: Store => TestBenchSut,
     name: String,
     additionalSeeds: List[String] = List()
   ): InvTestBench = {
@@ -26,14 +26,16 @@ object InvTestBench {
   */
 
 class InvTestBench(
-  createTestData: Store => TestBenchData,
+  createTestSut: Store => TestBenchSut,
   name: String,
   additionnalSeeds: List[String]
 ) extends InvTestBenchWithConstGen[Unit](name, additionalSeeds) {
-  override def createConstData(): Gen[Unit] = {
+
+  override def genConst(): Gen[Unit] = {
     Gen.const(())
   }
 
-  override def createTestData(model: Store, inputData: Unit): TestBenchData = createTestData(model)
+  override def createTestBenchSut(model: Store, inputData: Unit): TestBenchSut =
+    createTestSut(model)
 
 }
