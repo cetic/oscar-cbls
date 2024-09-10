@@ -272,6 +272,24 @@ class IntSequenceSuite extends AnyFunSuite with ScalaCheckDrivenPropertyChecks w
     intSequence1 equals intSequence2 should be(true)
   }
 
+  test("IntSequence's cache behaves as expected"){
+    val intSequence = IntSequence(List.from(0 until 20))
+    for(_ <- 0 until 1000){
+      val pos = Random.nextInt(20)
+      val method = Random.nextInt(3)
+      if(method == 2)
+        intSequence.positionOfAnyOccurrence(pos).get should be(pos)
+      else {
+        val explorer = method match {
+          case 0 => intSequence.explorerAtPosition(pos)
+          case 1 => intSequence.explorerAtAnyOccurrence(pos)
+        }
+        explorer.get.value should be(pos)
+        explorer.get.position should be(pos)
+      }
+    }
+  }
+
   private def testExplorer(seq: IntSequence, modifiedList: List[Int]): Unit = {
     if (modifiedList.nonEmpty) {
       seq.explorerAtPosition(-1).get.isInstanceOf[RootIntSequenceExplorer] should be(true)

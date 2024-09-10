@@ -224,7 +224,7 @@ class SeqVariable(
     * @param afterPositionExplorer
     *   The position after which the subsequence will be moved, as an explorer.
     * @param flip
-    *   Whether or not the subsequence must be flipped.
+    *   Whether the subsequence must be flipped or not.
     * @param seqAfter
     *   Optionally (if known), the resulting IntSequence.
     */
@@ -323,13 +323,13 @@ class SeqVariable(
     * @param firstSegmentEndPositionExplorer
     *   The end position of the first segment, as an explorer.
     * @param flipFirstSegment
-    *   Whether or not the first segment must be flipped.
+    *   Whether the first segment must be flipped or not.
     * @param secondSegmentStartPositionExplorer
     *   The start position of the second segment, as and explorer.
     * @param secondSegmentEndPositionExplorer
     *   The end position of the second segment, as an explorer.
     * @param flipSecondSegment
-    *   Whether or not the second segment must be flipped
+    *   Whether the second segment must be flipped or not.
     * @param seqAfter
     *   Optionally (if known), the resulting IntSequence.
     */
@@ -393,7 +393,7 @@ class SeqVariable(
         )
       }
     } else if (firstEndPosition < secondStartPosition) {
-      // move lowest segment upward just before the second one (so that its indices do not change)
+      // move the lowest segment upward just before the second one (so that its indices do not change)
       move(
         firstSegmentStartPositionExplorer,
         firstSegmentEndPositionExplorer,
@@ -472,6 +472,9 @@ class SeqVariable(
       scheduleForPropagation()
     }
   }
+
+  /** Returns the value of the top checkpoint */
+  def topCheckpointLevel: Int = levelOfTopCheckpoint
 
   // The last defined checkpoint (can be null if no checkpoint is defined)
   private[this] var topCheckpoint: IntSequence = _
@@ -582,7 +585,7 @@ class SeqVariable(
       // We are at top checkpoint level, just drop the checkpoint definition
       case dc: SeqUpdateDefineCheckpoint =>
         dc.prev
-      // The roll back instruction of the checkpoint definition are already commited, add this new instruction
+      // The rollback instruction of the checkpoint definition are already commited, add this new instruction
       case ln: SeqUpdateLastNotified =>
         require(
           ln.newValue equals topCheckpoint,
@@ -626,7 +629,7 @@ class SeqVariable(
     *     - Or there is no simplification.
     *
     * Note : We can not reach an seqUpdateAssign because assignation is only performed when no
-    * checkpoint are defined. And we need a checkpoint definition to rollback to it, so we must
+    * checkpoint are defined. And we need a checkpoint definition to roll back to it, so we must
     * reach one before an assignation.
     *
     * @param updates

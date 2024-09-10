@@ -204,7 +204,7 @@ class ConcreteIntSequence(
       intSequenceExplorerCache(index) match {
         case explorer: IntSequenceExplorer if explorer.value == value =>
           putUsedExplorerAtStart(index)
-          return Some(intSequenceExplorerCache(index))
+          return Some(intSequenceExplorerCache(0))
         case _ =>
       }
     }

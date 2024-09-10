@@ -25,5 +25,11 @@ case class SeqSavedValue(seqVariable: SeqVariable) extends SavedValue(seqVariabl
   private val savedValue: IntSequence = seqVariable.value
 
   /** Restores the variable current value to the saved one */
-  override def restoreValue(): Unit = seqVariable.setValue(savedValue)
+  override def restoreValue(): Unit = {
+    while(seqVariable.topCheckpointLevel > -1){
+      seqVariable.rollbackToTopCheckpoint()
+      seqVariable.releaseTopCheckpoint()
+    }
+    seqVariable.setValue(savedValue)
+  }
 }

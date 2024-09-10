@@ -361,4 +361,29 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
     failingTest(() => constSeqVariable.releaseTopCheckpoint())
   }
 
+  test("SeqVariable : Restoring a solution works as expected without defined checkpoint"){
+    val initList: List[Int] = List(0, 1, 2, 3, 4, 5)
+    val (seqVar, clone) = generateSeq(myInitList = Some(initList))
+    val savedValue = seqVar.save()
+
+    seqVar := IntSequence(List(5, 4, 3, 2, 1, 0))
+    seqVar.value.toList should be(List(5,4,3,2,1,0))
+
+    savedValue.restoreValue()
+    seqVar.value.toList should be(initList)
+  }
+
+  test("SeqVariable : Restoring a solution works as expected with a checkpoint"){
+    val initList: List[Int] = List(0, 1, 2, 3, 4, 5)
+    val (seqVar, clone) = generateSeq(myInitList = Some(initList))
+    val savedValue = seqVar.save()
+
+    seqVar.defineCurrentValueAsCheckpoint()
+    seqVar.insertAfterPosition(10, seqVar.value.explorerAtPosition(3).get)
+    seqVar.value.toList should be(List(0,1,2,3,10,4,5))
+
+    savedValue.restoreValue()
+    seqVar.value.toList should be(initList)
+  }
+
 }
