@@ -17,7 +17,7 @@ class MinMaxTestWithBench extends AnyFunSuite {
   test("Min invariant is working in test bench") {
     def createMin(model: Store): TestBenchData = {
       val nbValues   = 1000
-      val inputArray = Array.tabulate(nbValues)(i => IntVariable(model, 0))
+      val inputArray = Array.fill(nbValues)(IntVariable(model, 0))
       val listened   = SetVariable(model, Set.empty[Int])
       listened.setDomain(0, nbValues - 1)
       val output                 = IntVariable(model, 0)
@@ -34,13 +34,13 @@ class MinMaxTestWithBench extends AnyFunSuite {
   test("Max invariant is working in test bench") {
     def createMax(model: Store): TestBenchData = {
       val nbValues   = 1000
-      val inputArray = Array.tabulate(nbValues)(i => IntVariable(model, 0))
+      val inputArray = Array.fill(nbValues)(IntVariable(model, 0))
       val listened   = SetVariable(model, Set.empty[Int])
       listened.setDomain(0, nbValues - 1)
       val output                 = IntVariable(model, 0)
-      val min                    = Max(model, inputArray, listened, output)
+      val max                    = Max(model, inputArray, listened, output)
       val input: Array[Variable] = (listened :: inputArray.toList).toArray
-      TestBenchData(min, input, Array(output))
+      TestBenchData(max, input, Array(output))
     }
 
     val bench = InvTestBench(createMax, "Test Max Invariant")
@@ -51,14 +51,14 @@ class MinMaxTestWithBench extends AnyFunSuite {
   test("MinConst invariant is working in test bench") {
     class MinConstTestBench extends InvTestBenchWithConstGen[Array[Long]]("MinConst Test Bench") {
 
-      override def createConstData() = {
+      override def createConstData(): Gen[Array[Long]] = {
         for {
           size  <- Gen.choose(1, 100)
           array <- Gen.sequence[Array[Long], Long](Array.fill(size)(Arbitrary.arbitrary[Long]))
         } yield array
       }
 
-      override def createTestData(model: Store, inputData: Array[Long]) = {
+      override def createTestData(model: Store, inputData: Array[Long]): TestBenchData = {
         val listened = SetVariable(model, Set.empty[Int])
         listened.setDomain(0, inputData.length - 1)
         val output                 = IntVariable(model, 0)
@@ -82,7 +82,7 @@ class MinMaxTestWithBench extends AnyFunSuite {
   test("MaxConst invariant is working in test bench") {
     class MaxConstTestBench extends InvTestBenchWithConstGen[Array[Long]]("MaxConst Test Bench") {
 
-      override def createConstData() = {
+      override def createConstData(): Gen[Array[Long]] = {
         for {
           size <- Gen.choose(1, 100)
           array <- Gen.sequence[Array[Long], Long](
@@ -91,14 +91,14 @@ class MinMaxTestWithBench extends AnyFunSuite {
         } yield array
       }
 
-      override def createTestData(model: Store, inputData: Array[Long]) = {
+      override def createTestData(model: Store, inputData: Array[Long]): TestBenchData = {
         val listened = SetVariable(model, Set.empty[Int])
         listened.setDomain(0, inputData.length - 1)
         val output                 = IntVariable(model, 0)
-        val min                    = MaxConst(model, inputData, listened, output)
+        val max                    = MaxConst(model, inputData, listened, output)
         val input: Array[Variable] = Array(listened)
 
-        TestBenchData(min, input, Array(output))
+        TestBenchData(max, input, Array(output))
       }
 
       override def typeTToString(elem: Array[Long]) =
@@ -114,7 +114,6 @@ class MinMaxTestWithBench extends AnyFunSuite {
 
   test("MinSet invariant is working in test bench") {
     def createMin(model: Store): TestBenchData = {
-      val nbValues               = 1000
       val inputSet               = SetVariable(model, Set.empty[Int])
       val output                 = IntVariable(model, 0)
       val min                    = MinSet(model, inputSet, output)
@@ -130,13 +129,12 @@ class MinMaxTestWithBench extends AnyFunSuite {
 
   test("MaxSet invariant is working in test bench") {
     def createMin(model: Store): TestBenchData = {
-      val nbValues               = 1000
       val inputSet               = SetVariable(model, Set.empty[Int])
       val output                 = IntVariable(model, 0)
-      val min                    = MaxSet(model, inputSet, output)
+      val max                    = MaxSet(model, inputSet, output)
       val input: Array[Variable] = Array(inputSet)
 
-      TestBenchData(min, input, Array(output))
+      TestBenchData(max, input, Array(output))
     }
 
     val bench = InvTestBench(createMin, "Test MaxSet Invariant")

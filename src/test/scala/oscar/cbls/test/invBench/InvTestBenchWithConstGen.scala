@@ -2,13 +2,10 @@ package oscar.cbls.test.invBench
 
 import oscar.cbls.core.computation.{Invariant, Variable}
 import org.scalacheck.commands.Commands
-import org.scalacheck.rng.Seed
 import org.scalacheck.{Gen, Prop}
 import oscar.cbls.core.computation.Store
 import org.scalacheck.Properties
 import org.scalacheck.Test
-import scala.util.Success
-import scala.util.Failure
 
 case class TestBenchData(inv: Invariant, input: Array[Variable], output: Array[Variable])
 
@@ -32,18 +29,18 @@ case class TestBenchData(inv: Invariant, input: Array[Variable], output: Array[V
   *   The type of the constant input.
   * @param name
   *   The name of the bench (used when printing the results, please be explicit).
-  * @param additionnalSeeds
+  * @param additionalSeeds
   *   A list of explicit seeds that will be tested in addition to a random seed. Use this when you
   *   find a bug on a specific example.
   */
-abstract class InvTestBenchWithConstGen[T](name: String, additionnalSeeds: List[String] = List())
+abstract class InvTestBenchWithConstGen[T](name: String, additionalSeeds: List[String] = List())
     extends Commands {
 
   def createConstData(): Gen[T]
 
   def createTestData(model: Store, inputData: T): TestBenchData
 
-  def typeTToString(elem: T) = elem.toString()
+  def typeTToString(elem: T): String = elem.toString
 
   type Sut = TestBenchData
 
@@ -57,7 +54,7 @@ abstract class InvTestBenchWithConstGen[T](name: String, additionnalSeeds: List[
 
     propertyWithSeed("Random Seed", None) = bench.property()
 
-    def addSeed(s: String) =
+    def addSeed(s: String): Unit =
       this.propertyWithSeed(s"$s", Some(s)) = bench.property()
 
     override def overrideParameters(p: Test.Parameters): Test.Parameters = {
@@ -68,7 +65,7 @@ abstract class InvTestBenchWithConstGen[T](name: String, additionnalSeeds: List[
   def test(): Unit = {
 
     val prop = new TestBenchProperty(this)
-    additionnalSeeds.distinct.foreach(prop.addSeed(_))
+    additionnalSeeds.distinct.foreach(prop.addSeed)
     prop.check()
 
   }

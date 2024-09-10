@@ -1,6 +1,5 @@
 package oscar.cbls.test.invBench
 
-import oscar.cbls.core.computation.{Store, Variable}
 import org.scalacheck.Gen
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
@@ -39,7 +38,7 @@ abstract class VariableState(id: Int) {
 }
 
 object VariableState {
-  def apply(v: Variable, id: Int) = {
+  def apply(v: Variable, id: Int): Gen[VariableState] = {
     v match {
       case intVar: IntVariable =>
         val longGen: Gen[Long] =

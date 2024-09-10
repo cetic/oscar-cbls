@@ -8,7 +8,7 @@ import oscar.cbls.core.computation.Variable
 
 /** Defines the move that adds and removes values from a SetVariable
   *
-  * @param addValues
+  * @param addedValues
   *   The values that will be added
   * @param removedValues
   *   The values that will be removed
@@ -40,7 +40,7 @@ case class SetMove(addedValues: Set[Int], removedValues: Set[Int], id: Int)
     }
   }
 
-  override def toString() = s"SetMovement(added: $addedValues,removed: $removedValues)"
+  override def toString = s"SetMovement(added: $addedValues,removed: $removedValues)"
 
   private def updateSetState(state: SetVarState): SetVarState = {
     SetVarState(state.value ++ addedValues -- removedValues, state.id, state.domain)
@@ -49,7 +49,7 @@ case class SetMove(addedValues: Set[Int], removedValues: Set[Int], id: Int)
 
 /** Defines the move that assignes a value to a SetVariable
   *
-  * @param newValue
+  * @param newValues
   *   The new value that will be assigned
   * @param id
   *   The id of the variable
@@ -69,7 +69,7 @@ case class SetAssignMove(newValues: Set[Int], id: Int) extends VariableMove(id) 
     }
   }
 
-  override def toString(): String = s"SetAssignMove($newValues)"
+  override def toString: String = s"SetAssignMove($newValues)"
 
 }
 
