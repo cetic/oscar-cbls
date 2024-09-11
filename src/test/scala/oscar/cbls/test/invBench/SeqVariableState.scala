@@ -111,7 +111,6 @@ case class SeqVariableState(id: Int, currentState: SeqVariableStackableState, do
       case _: SeqAssignUpdate                  => assignAllowed
       case i: SeqInsertUpdate                  => i.after < size
       case _                                   => true
-      case _ => throw new Error("Seq Movement can only update variable of type Seq")
     }
   }
 
