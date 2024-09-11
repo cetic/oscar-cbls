@@ -47,7 +47,7 @@ case class SetMove(addedValues: Set[Int], removedValues: Set[Int], id: Int)
   }
 }
 
-/** Defines the move that assignes a value to a SetVariable
+/** Defines the move that assigns a value to a SetVariable
   *
   * @param newValues
   *   The new value that will be assigned
@@ -85,7 +85,7 @@ case class SetAssignMove(newValues: Set[Int], id: Int) extends VariableMove(id) 
 case class SetVarState(value: Set[Int], id: Int, domain: Option[(Int, Int)])
     extends VariableState(id) {
 
-  override def toString() = {
+  override def toString: String = {
     val domainString = domain.map(d => s", domain:[${d._1},${d._2}]").getOrElse("")
     s"SetVarState(value: $value$domainString)"
   }
@@ -118,7 +118,7 @@ case class SetVarState(value: Set[Int], id: Int, domain: Option[(Int, Int)])
   }
 
   @tailrec
-  // Since this method is called only when allValuesInSet returns false, it'll never end up in a endless loop.
+  // Since this method is called only when allValuesInSet returns false, it'll never end up in an endless loop.
   private def getNextNotInValue(i: Int): Int = {
     if (value.contains(i)) {
       domain match {

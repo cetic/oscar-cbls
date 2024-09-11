@@ -48,7 +48,7 @@ case class IntVarState(value: Long, id: Int, domain: Option[(Long, Long)])
     extends VariableState(id) {
 
   override def toString: String = {
-    val domainString = domain.map(d => ", domain=[${d._1},${d._2}]").getOrElse("")
+    val domainString = domain.map(d => s", domain=[${d._1},${d._2}]").getOrElse("")
     s"IntegerState($value$domainString)"
   }
 

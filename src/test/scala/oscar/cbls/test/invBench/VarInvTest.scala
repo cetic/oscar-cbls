@@ -3,11 +3,10 @@ package oscar.cbls.test.invBench
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
 
-
 import oscar.cbls.core.computation.integer.IntVariable
+import oscar.cbls.core.computation.seq.SeqVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.core.computation.Variable
-
 
 /** The class that defines the moves on the variables. Each type of variable have at least one type
   * of move
@@ -59,6 +58,9 @@ object VariableState {
           }
         for (l <- Gen.listOf(intGen))
           yield SetVarState(l.toSet, id, setVar.domain.map(d => (d._1.toInt, d._2.toInt)))
+      case _: SeqVariable =>
+        val domain = (0, 1000)
+        Gen.oneOf(List(SeqVariableState(id, SeqVariableStackableState(0, 0, None), domain)))
     }
   }
 

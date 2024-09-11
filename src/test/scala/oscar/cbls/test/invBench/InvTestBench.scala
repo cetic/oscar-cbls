@@ -1,7 +1,7 @@
 package oscar.cbls.test.invBench
 
-import org.scalacheck.Gen
 import oscar.cbls.core.computation.Store
+import org.scalacheck.Gen
 
 object InvTestBench {
   def apply(
@@ -15,8 +15,8 @@ object InvTestBench {
 
 /** The test bench for invariants that have no constant input.
   *
-  * @param createTestData
-  *   A function that given a Store creates the TestBenchData (the input and output of the invariant
+  * @param createTestSut
+  *   A function that given a Store creates the TestBenchSut (the input and output of the invariant
   *   and the invariant itself)
   * @param name
   *   The name of the bench (used when printing the results, please be explicit).

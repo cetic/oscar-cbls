@@ -26,7 +26,7 @@ case class SeqSavedValue(seqVariable: SeqVariable) extends SavedValue(seqVariabl
 
   /** Restores the variable current value to the saved one */
   override def restoreValue(): Unit = {
-    while(seqVariable.topCheckpointLevel > -1){
+    while (seqVariable.topCheckpointLevel > -1) {
       seqVariable.rollbackToTopCheckpoint()
       seqVariable.releaseTopCheckpoint()
     }
