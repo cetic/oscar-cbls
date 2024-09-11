@@ -112,7 +112,7 @@ abstract class InvTestBenchWithConstGen[T](name: String, additionalSeeds: List[S
 
     override def nextState(state: State): State = TestState(
       Array.tabulate(state.varStates.length)(i =>
-        if (i == m.varId) m.updateState(state.varStates(m.varId)) else state.varStates(m.varId)
+        if (i == m.varId) m.updateState(state.varStates(m.varId)) else state.varStates(i)
       ),
       state.constState
     )
