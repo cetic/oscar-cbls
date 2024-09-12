@@ -15,6 +15,22 @@ package oscar.cbls.core.computation.integer
 
 import oscar.cbls.core.computation.Store
 
+/** Companion object of [[IntConstant]]. */
+object IntConstant {
+
+  /** Creates an IntConstant.
+    *
+    * Since it's a constant, invoking methods that attempt to change its value will throw an
+    * exception.
+    *
+    * @param model
+    *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this variable is linked.
+    * @param value
+    *   The value of this constant variable.
+    */
+  def apply(model: Store, value: Long): IntConstant = new IntConstant(model, value)
+}
+
 /** A constant IntVariable.
   *
   * Since it's a constant, invoking methods that attempt to change its value will throw an
@@ -23,7 +39,7 @@ import oscar.cbls.core.computation.Store
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this variable is linked.
   * @param value
-  *   The value of this constant variable
+  *   The value of this constant variable.
   */
 class IntConstant(model: Store, value: Long) extends IntVariable(model, value, true) {
   override protected def setValue(value: Long): Unit = {
