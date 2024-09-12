@@ -15,15 +15,31 @@ package oscar.cbls.core.computation.set
 
 import oscar.cbls.core.computation.Store
 
+/** Companion object of the [[SetConstant]] class. */
+object SetConstant {
+
+  /** Creates a SetConstant.
+    *
+    * Since it's a constant, invoking methods that attempt to change its value will throw an *
+    * exception.
+    *
+    * @param model
+    *   The [[oscar.cbls.core.computation.Store]] to which this variable is linked.
+    * @param value
+    *   The value of this constant variable.
+    */
+  def apply(model: Store, value: Set[Int]): SetConstant = new SetConstant(model, value)
+}
+
 /** A constant SetVariable.
   *
   * Since it's a constant, invoking methods that attempt to change its value will throw an
   * exception.
   *
   * @param model
-  *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this variable is linked.
+  *   The [[oscar.cbls.core.computation.Store]] to which this variable is linked.
   * @param value
-  *   The value of this constant variable
+  *   The value of this constant variable.
   */
 class SetConstant(model: Store, value: Set[Int]) extends SetVariable(model, value, true) {
   override protected def setValue(value: Set[Int]): Unit = {
