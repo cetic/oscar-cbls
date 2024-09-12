@@ -24,7 +24,7 @@ object SetConstant {
     * exception.
     *
     * @param model
-    *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this variable is linked.
+    *   The [[oscar.cbls.core.computation.Store]] to which this variable is linked.
     * @param value
     *   The value of this constant variable.
     */
