@@ -100,11 +100,19 @@ class SetVariable(
   /** Alias for `setValue`. */
   def :=(v: Set[Int]): Unit = setValue(v)
 
-  /** Alias for `add`. */
-  def :+=(i: Int): Unit = add(i)
+  /** Alias for `add`.
+    *
+    * @return
+    *   `true` if the element has been added `false` otherwise.
+    */
+  def :+=(i: Int): Boolean = add(i)
 
-  /** Alias for `remove`. */
-  def :-=(i: Int): Unit = remove(i)
+  /** Alias for `remove`.
+    *
+    * @return
+    *   `true` if the element has been removed `false` otherwise.
+    */
+  def :-=(i: Int): Boolean = remove(i)
 
   /** Changes the value of this variable and schedules it for propagation. */
   protected def setValue(value: Set[Int]): Unit = {
@@ -121,8 +129,12 @@ class SetVariable(
       s"Changelists in invalid state. Added: $addedValues Removed: $removedValues"
     )
 
-  /** Adds the given element to this set variable, if not already present. */
-  protected def add(i: Int): Unit = {
+  /** Adds the given element to this set variable, if not already present.
+    *
+    * @return
+    *   `true` if the element has been added `false` otherwise.
+    */
+  protected def add(i: Int): Boolean = {
     if (!_pendingValue.contains(i)) {
       (addedValues, removedValues) match {
         case (Some(added), Some(removed)) =>
@@ -133,11 +145,16 @@ class SetVariable(
       }
       _pendingValue += i
       scheduleForPropagation()
-    }
+      true
+    } else false
   }
 
-  /** Removes the given element from this set variable, if present. */
-  protected def remove(i: Int): Unit = {
+  /** Removes the given element from this set variable, if present.
+    *
+    * @return
+    *   `true` if the element has been removed `false` otherwise.
+    */
+  protected def remove(i: Int): Boolean = {
     if (_pendingValue.contains(i)) {
       (addedValues, removedValues) match {
         case (Some(added), Some(removed)) =>
@@ -148,7 +165,8 @@ class SetVariable(
       }
       _pendingValue -= i
       scheduleForPropagation()
-    }
+      true
+    } else false
   }
 
   override def save(): SavedValue = new SetSavedValue(this)
