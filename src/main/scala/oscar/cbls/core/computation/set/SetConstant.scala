@@ -46,11 +46,13 @@ class SetConstant(model: Store, value: Set[Int]) extends SetVariable(model, valu
     require(requirement = false, "The value of a constant variable cannot be changed")
   }
 
-  override protected def add(value: Int): Unit = {
+  override protected def add(value: Int): Boolean = {
     require(requirement = false, "The value of a constant variable cannot be changed")
+    false
   }
 
-  override protected def remove(value: Int): Unit = {
+  override protected def remove(value: Int): Boolean = {
     require(requirement = false, "The value of a constant variable cannot be changed")
+    false
   }
 }
