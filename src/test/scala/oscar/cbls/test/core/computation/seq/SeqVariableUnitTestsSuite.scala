@@ -4,7 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers.be
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import oscar.cbls.algo.sequence.IntSequence
-import oscar.cbls.core.computation.Store
+import oscar.cbls.core.computation.{Invariant, Store}
 import oscar.cbls.core.computation.seq.{SeqConst, SeqVariable}
 
 import scala.util.Random
@@ -396,6 +396,23 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
     clone.value == seqVar.value should be(true)
     seqVar.releaseTopCheckpoint()
     seqVar.releaseTopCheckpoint()
+  }
+
+  test(
+    s"The IntVariable is properly inserted in the static graph (partial propagation should work)"
+  ) {
+    val store     = new Store(debugLevel = 2) // Not 3 otherwise no partial propagation
+    val inputVar  = SeqVariable(store, List(10))
+    val outputVar = SeqVariable(store, List(10))
+    store.registerForPartialPropagation(outputVar)
+    new TestSeqInvariant(store, inputVar, outputVar)
+    store.close()
+
+    inputVar.insertAfterPosition(8,inputVar.value.explorerAtPosition(0).get)
+    inputVar.pendingValue.toList should be(List(10,8))
+    // 8 was inserted after 10 ==> if partial propagation works properly with IntVariable,
+    // the outputVar value should be List(10,8)
+    outputVar.value.toList should be(List(10,8))
   }
 
 }
