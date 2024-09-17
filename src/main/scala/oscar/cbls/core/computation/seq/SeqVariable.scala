@@ -14,7 +14,7 @@
 package oscar.cbls.core.computation.seq
 
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
-import oscar.cbls.core.computation.{SavedValue, Store, Variable}
+import oscar.cbls.core.computation.{Invariant, KeyForRemoval, SavedValue, Store, Variable}
 
 /** Companion object of SeqVariable
   */
@@ -135,6 +135,15 @@ class SeqVariable(
   def pendingValue: IntSequence = toNotify.newValue
 
   def checkpointLevel: Int = levelOfTopCheckpoint
+
+  override def registerStaticallyAndDynamicallyListeningElement(
+    propagationElement: Invariant with SeqNotificationTarget,
+    indexToRecallAtNotification: Int
+  ): KeyForRemoval[(SeqNotificationTarget, Int)] =
+    super.registerStaticallyAndDynamicallyListeningElement(
+      propagationElement,
+      indexToRecallAtNotification
+    )
 
   override def name(): String = name
 

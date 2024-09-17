@@ -130,7 +130,10 @@ class IntVariable(
     propagationElement: Invariant with IntNotificationTarget,
     indexToRecallAtNotification: Int
   ): KeyForRemoval[(IntNotificationTarget, Int)] = {
-    super.registerDynamicallyListeningElement(propagationElement, indexToRecallAtNotification)
+    super.registerStaticallyAndDynamicallyListeningElement(
+      propagationElement,
+      indexToRecallAtNotification
+    )
   }
 
   override def performPropagation(): Unit = {
