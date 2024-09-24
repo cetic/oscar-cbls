@@ -131,33 +131,3 @@ abstract class Objective(val objValue: IntVariable) {
   }
 }
 
-/** An Exploration is used by the neighborhood to find and keep the best new objective value during
-  * the exploration phase.
-  *
-  * Depending of the concrete implementation of the Exploration, the behavior and thus the kept
-  * objective value may vary.
-  */
-abstract class Exploration[M <: Move](
-  val oldObj: Long,
-  searchProfilerOpt: Option[NeighborhoodProfiler]
-) {
-
-  /** Keeps the best move found during this exploration. Initialized at NoMoveFound. */
-  protected var _toReturn: SearchResult = NoMoveFound
-
-  /** Returns the best move found during this exploration */
-  def toReturn: SearchResult = _toReturn
-
-  /** Checks if the candidate solution match the acceptance conditions
-    *
-    * @param buildMove
-    *   A function linking the solution value to the Move that leads to it (must be provided by the
-    *   calling Neighborhood)
-    */
-  def checkNeighborWP(buildMove: Long => M): Unit = {
-    checkNeighbor(buildMove)
-    searchProfilerOpt.foreach(x => x.neighborExplored())
-  }
-
-  protected def checkNeighbor(buildMove: Long => M): Unit
-}
