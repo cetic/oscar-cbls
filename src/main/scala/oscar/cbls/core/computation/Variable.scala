@@ -41,9 +41,10 @@ abstract class Variable(val model: Store, val isConstant: Boolean, name: Option[
 
   private var _domain: Option[(Long, Long)]              = None
   private[core] var definingInvariant: Option[Invariant] = None
-  // Dynamically listening elements, upon update this variable must noticed it's listening element.
+
+  // Dynamically listening elements, upon update this variable must notice its listening element.
   private val dynamicallyListeningElements: DoublyLinkedList[(NotificationTargetType, Int)] =
-    if (isConstant) null else new DoublyLinkedList[(NotificationTargetType, Int)]()
+    new DoublyLinkedList[(NotificationTargetType, Int)]()
 
   /** Limits the values of the variable to this domain. ONLY USED IN DEBUG MODE */
   def setDomain(min: Long, max: Long): Unit = _domain = Some((min, max))
@@ -63,7 +64,7 @@ abstract class Variable(val model: Store, val isConstant: Boolean, name: Option[
     registerStaticallyListenedElement(invariant)
   }
 
-  /** Whether or not this variable is a decision variable. A decision variable is a variable that is
+  /** Whether this variable is a decision variable. A decision variable is a variable that is
     * not defined by any invariant.
     */
   def isADecisionVariable: Boolean = definingInvariant.isEmpty
@@ -85,10 +86,6 @@ abstract class Variable(val model: Store, val isConstant: Boolean, name: Option[
     target: NotificationTargetType,
     indexToRecallAtNotification: Int = -1
   ): KeyForRemoval[(NotificationTargetType, Int)] = {
-    require(
-      !isConstant,
-      "Constant variable does not propagate, no need to keep track of listening element."
-    )
     KeyForRemoval(dynamicallyListeningElements.insertStart((target, indexToRecallAtNotification)))
   }
 
