@@ -69,6 +69,21 @@ abstract class Variable(val model: Store, val isConstant: Boolean, name: Option[
     */
   def isADecisionVariable: Boolean = definingInvariant.isEmpty
 
+  protected[core] def doRegisterDynamicallyListeningElement(
+    target: NotificationTargetType,
+    indexToRecallAtNotification: Int = -1
+  ): KeyForRemoval[(NotificationTargetType, Int)] = {
+    KeyForRemoval(dynamicallyListeningElements.insertStart((target,indexToRecallAtNotification)))
+  }
+
+  protected[core] def doRegisterStaticallyAndDynamicallyListeningElement(
+    propagationElement: Invariant with NotificationTargetType,
+    indexToRecallAtNotification: Int = -1
+  ): KeyForRemoval[(NotificationTargetType, Int)] = {
+    registerStaticallyListeningElement(propagationElement)
+    doRegisterDynamicallyListeningElement(propagationElement, indexToRecallAtNotification)
+  }
+
   /** Registers dynamically the [[oscar.cbls.core.propagation.PropagationElement]] as a listening
     * element. Whenever the Variable updates its value, the listening element will be noticed.
     *
@@ -85,9 +100,7 @@ abstract class Variable(val model: Store, val isConstant: Boolean, name: Option[
   def registerDynamicallyListeningElement(
     target: NotificationTargetType,
     indexToRecallAtNotification: Int = -1
-  ): KeyForRemoval[(NotificationTargetType, Int)] = {
-    KeyForRemoval(dynamicallyListeningElements.insertStart((target, indexToRecallAtNotification)))
-  }
+  ): KeyForRemoval[(NotificationTargetType, Int)]
 
   /** Registers statically and dynamically the PropagationElement as a listening element. Whenever
     * the Variable updates its value, the listening element will be noticed.
@@ -105,10 +118,7 @@ abstract class Variable(val model: Store, val isConstant: Boolean, name: Option[
   def registerStaticallyAndDynamicallyListeningElement(
     propagationElement: Invariant with NotificationTargetType,
     indexToRecallAtNotification: Int = -1
-  ): KeyForRemoval[(NotificationTargetType, Int)] = {
-    registerStaticallyListeningElement(propagationElement)
-    registerDynamicallyListeningElement(propagationElement, indexToRecallAtNotification)
-  }
+  ): KeyForRemoval[(NotificationTargetType, Int)]
 
   /** Returns dynamically listening propagation elements.
     *

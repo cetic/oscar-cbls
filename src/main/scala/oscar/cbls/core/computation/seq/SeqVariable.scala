@@ -136,11 +136,15 @@ class SeqVariable(
 
   def checkpointLevel: Int = levelOfTopCheckpoint
 
+  override def registerDynamicallyListeningElement(target: SeqNotificationTarget, indexToRecallAtNotification: Int): KeyForRemoval[(SeqNotificationTarget, Int)] = {
+    doRegisterDynamicallyListeningElement(target,indexToRecallAtNotification)
+  }
+
   override def registerStaticallyAndDynamicallyListeningElement(
     propagationElement: Invariant with SeqNotificationTarget,
     indexToRecallAtNotification: Int
   ): KeyForRemoval[(SeqNotificationTarget, Int)] =
-    super.registerStaticallyAndDynamicallyListeningElement(
+    doRegisterStaticallyAndDynamicallyListeningElement(
       propagationElement,
       indexToRecallAtNotification
     )

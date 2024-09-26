@@ -126,11 +126,18 @@ class IntVariable(
 
   override def save(): SavedValue = new IntSavedValue(this)
 
+  override def registerDynamicallyListeningElement(
+    target: IntNotificationTarget,
+    indexToRecallAtNotification: Int
+  ): KeyForRemoval[(IntNotificationTarget, Int)] = {
+    doRegisterDynamicallyListeningElement(target, indexToRecallAtNotification)
+  }
+
   override def registerStaticallyAndDynamicallyListeningElement(
     propagationElement: Invariant with IntNotificationTarget,
     indexToRecallAtNotification: Int
   ): KeyForRemoval[(IntNotificationTarget, Int)] = {
-    super.registerStaticallyAndDynamicallyListeningElement(
+    doRegisterStaticallyAndDynamicallyListeningElement(
       propagationElement,
       indexToRecallAtNotification
     )
