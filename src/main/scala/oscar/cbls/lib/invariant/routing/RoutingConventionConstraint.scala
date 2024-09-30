@@ -62,7 +62,7 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
 
   // Used to check if a neighborhood do not lose the level 0 checkpoint.
   private[this] var checkpointAtLevel0: Option[IntSequence] = None
-  private[this] var lastNotified: IntSequence               = vrp.routes.value
+  private[this] var lastNotified: IntSequence               = vrp.routes.value()
 
   vrp.routes.registerStaticallyAndDynamicallyListeningElement(this)
   require(
@@ -74,8 +74,8 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
     !vrp.routes.pendingValue.unorderedContentNoDuplicate.exists(_ >= vrp.n),
     s"The current route has node bigger than n (${vrp.n})!"
   )
-  checkVehicleOrder(vrp.routes.value)
-  checkNoDuplicate(vrp.routes.value)
+  checkVehicleOrder(vrp.routes.value())
+  checkNoDuplicate(vrp.routes.value())
 
   /** Checks if, in the given sequence, the vehicles are positioned in increasing order. */
   def checkVehicleOrder(seq: IntSequence): Unit = {
@@ -112,7 +112,7 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
     changes: SeqUpdate
   ): Unit = {
     require(
-      vrp.routes.value equals lastNotified,
+      vrp.routes.value() equals lastNotified,
       "The last notified value is not equal to the route original value"
     )
     digestUpdate(changes)
@@ -222,7 +222,7 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
       case SeqUpdateLastNotified(value: IntSequence) =>
         require(value equals lastNotified, "The last notified value is not the saved one.")
         require(
-          value sameIdentity vrp.routes.value,
+          value sameIdentity vrp.routes.value(),
           "The last notified value is not equal to the route original value"
         )
 

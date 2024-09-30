@@ -44,7 +44,7 @@ object SeqIdentityInvariant {
   * SeqVariable. Instead of updating all the constraints at once, using several copy of the
   * SeqVariable and linking each constraint to a different copy will save you time. For instance:
   *   - A CVRPTW. The capacity constraint could be slow to compute, as for the time window
-  *     constraint. Let's say it take 5 ms for the capacity and 10 ms for the time window.
+  *     constraint. Let's say it takes 5 ms for the capacity and 10 ms for the time window.
   *   - Without the use of copy, each time you explore a movement, you'll spend 15ms to update both
   *     of them.
   *   - With the copies like this:
@@ -69,7 +69,7 @@ class SeqIdentityInvariant(store: Store, input: SeqVariable, output: SeqVariable
   input.registerStaticallyAndDynamicallyListeningElement(this)
   output.setDefiningInvariant(this)
 
-  output := input.value
+  output := input.value()
 
   override def notifySeqChanges(
     v: SeqVariable,
@@ -189,7 +189,7 @@ class SeqIdentityInvariant(store: Store, input: SeqVariable, output: SeqVariable
     require(
       output.pendingValue.toList equals input.pendingValue.toList,
       Some(
-        s"IdentitySeq: toValue.value=${output.value} should equals fromValue.value=${input.value}"
+        s"IdentitySeq: toValue.value=${output.value()} should equals fromValue.value=${input.value()}"
       )
     )
   }
