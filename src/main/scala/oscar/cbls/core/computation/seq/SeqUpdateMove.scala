@@ -151,7 +151,7 @@ class SeqUpdateMove(
   )
 
   def movedValues: List[Int] =
-    fromIncludedExplorer.forward.untilValue(toIncludedExplorer.value).map(_.value).toList
+    fromIncludedExplorer.forward.toValue(toIncludedExplorer.value).map(_.value).toList
 
   override protected[computation] def reverseThis(
     newValueForThisAfterFullReverse: IntSequence,
