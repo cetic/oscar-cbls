@@ -14,7 +14,7 @@
 package oscar.cbls.algo.sequence
 
 import oscar.cbls.algo.rb.RedBlackTreeMap
-import affineFunction._
+import oscar.cbls.algo.sequence.affineFunction._
 
 import scala.annotation.tailrec
 
