@@ -83,6 +83,6 @@ class VRPTestSuite extends AnyFunSuite with Matchers {
 
   test("Can't create a VRP with less than one vehicle") {
     val model = new Store()
-    an[IllegalArgumentException] should be thrownBy VRP(model,10,-1)
+    an[IllegalArgumentException] should be thrownBy VRP(model, 10, -1)
   }
 }

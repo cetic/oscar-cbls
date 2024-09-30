@@ -88,6 +88,7 @@ object VRP {
   *   If the debug mode is activated or not.
   */
 class VRP(val model: Store, val n: Int, val v: Int, maxPivotPerValuePercent: Int, debug: Boolean) {
+
   require(v >= 1, "A VRP should have at least one vehicle")
   require(
     v <= n,
