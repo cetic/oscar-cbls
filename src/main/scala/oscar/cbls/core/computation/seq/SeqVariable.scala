@@ -468,8 +468,6 @@ class SeqVariable(
       "Sequences cannot be assigned when a checkpoint has been defined"
     )
     if (!(toNotify.newValue sameIdentity newIntSequence)) {
-      if (!toNotify.isInstanceOf[SeqUpdateLastNotified] && !toNotify.isInstanceOf[SeqUpdateAssign])
-        performPropagation()
       toNotify = SeqUpdateAssign(newIntSequence)
       scheduleForPropagation()
     }
