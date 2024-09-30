@@ -235,19 +235,19 @@ case class SeqReleaseTopCheckpointUpdate(override val varId: Int) extends SeqVar
   override def toString: String = s"Input var $varId | Releases top checkpoint"
 }
 
-/** Move that propagates the updates.
-  *
-  * @param varId
-  *   The test id of the SeqVariable.
-  */
-case class SeqPropagateUpdates(override val varId: Int) extends SeqVariableMove(varId) {
+// /** Move that propagates the updates.
+//   *
+//   * @param varId
+//   *   The test id of the SeqVariable.
+//   */
+// case class SeqPropagateUpdates(override val varId: Int) extends SeqVariableMove(varId) {
 
-  override protected def mkSeqMove(seqVar: SeqVariable): Unit = seqVar.model.propagate()
+//   override protected def mkSeqMove(seqVar: SeqVariable): Unit = seqVar.model.propagate()
 
-  override def updateSeqState(state: SeqVariableState): SeqVariableState = state
+//   override def updateSeqState(state: SeqVariableState): SeqVariableState = state
 
-  override def toString: String = s"Input var $varId | Propagates modifications"
-}
+//   override def toString: String = s"Input var $varId | Propagates modifications"
+// }
 
 /** Move that assigns a new value to the SeqVariable.
   *
