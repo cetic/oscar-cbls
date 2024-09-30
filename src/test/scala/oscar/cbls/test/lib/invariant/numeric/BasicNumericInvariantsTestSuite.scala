@@ -20,24 +20,11 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.lib.invariant.minmax.{Max2, Min2}
 import oscar.cbls.lib.invariant.numeric._
-
-import scala.util.Random
+import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
 
 class BasicNumericInvariantsTestSuite extends AnyFunSuite {
 
-  private val random     = Random
-  private val seed: Long = random.nextLong()
-  random.setSeed(seed)
-
-  // function to make a bunch of operation on a IntVariables
-  private def modifyIntVariable(x: IntVariable, minVal: Long = -1000, maxVal: Long = 1000): Unit = {
-    x := random.between(minVal, maxVal)
-    x :+= random.between(minVal, maxVal)
-    x :*= random.between(minVal, maxVal)
-    x.:++()
-  }
-
-  test(s"Absolute value of positive number (seed: $seed)") {
+  test(s"Absolute value of positive number") {
     val store  = new Store(debugLevel = 3)
     val input  = IntVariable(store, 42)
     val output = IntVariable(store, 0)
@@ -47,7 +34,7 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
     output.value() should be(42)
   }
 
-  test(s"Absolute value of negative number (seed: $seed)") {
+  test(s"Absolute value of negative number") {
     val store  = new Store(debugLevel = 3)
     val input  = IntVariable(store, -42)
     val output = IntVariable(store, 0)
@@ -57,7 +44,7 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
     output.value() should be(42)
   }
 
-  test(s"Absolute value of 0 (seed: $seed)") {
+  test(s"Absolute value of 0") {
     val store  = new Store(debugLevel = 3)
     val input  = IntVariable(store, 0)
     val output = IntVariable(store, 1)
@@ -67,185 +54,200 @@ class BasicNumericInvariantsTestSuite extends AnyFunSuite {
     output.value() should be(0)
   }
 
-  test(s"Abs invariant works as expected (seed: $seed)") {
-    val store  = new Store(debugLevel = 3)
-    val rndVal = random.between(-1000, 1000)
-    val input  = IntVariable(store, rndVal)
-    val output = IntVariable(store, rndVal)
-    val absInv = Abs(store, input, output)
-    store.close()
+  test(s"Abs invariant works as expected") {
+    def createInv(model: Store): TestBenchSut = {
+      val input  = IntVariable(model, 0)
+      val output = IntVariable(model, 0)
+      val inv    = Abs(model, input, output)
 
-    modifyIntVariable(input)
+      TestBenchSut(inv, Array(input), Array(output))
+    }
 
-    absInv.checkInternals()
+    val bench: InvTestBench = InvTestBench(createInv, "Test Abs inv")
+    bench.test()
   }
 
-  test(s"Opposite invariant works as expected (seed: $seed)") {
-    val store       = new Store(debugLevel = 3)
-    val rndVal      = random.between(-1000, 1000)
-    val input       = IntVariable(store, rndVal)
-    val output      = IntVariable(store, rndVal)
-    val oppositeInv = Opposite(store, input, output)
-    store.close()
+  test(s"Opposite invariant works as expected") {
+    def createInv(model: Store): TestBenchSut = {
+      val input  = IntVariable(model, 0)
+      val output = IntVariable(model, 0)
+      val inv    = Opposite(model, input, output)
 
-    modifyIntVariable(input)
+      TestBenchSut(inv, Array(input), Array(output))
+    }
 
-    oppositeInv.checkInternals()
+    val bench: InvTestBench = InvTestBench(createInv, "Test Opposite inv")
+    bench.test()
   }
 
-  test(s"Square invariant works as expected (seed: $seed)") {
-    val store     = new Store(debugLevel = 3)
-    val rndVal    = random.between(-1000, 1000)
-    val input     = IntVariable(store, rndVal)
-    val output    = IntVariable(store, rndVal)
-    val squareInv = Square(store, input, output)
-    store.close()
+  test(s"Square invariant works as expected ") {
+    def createInv(model: Store): TestBenchSut = {
+      val input  = IntVariable(model, 0)
+      val output = IntVariable(model, 0)
+      val inv    = Square(model, input, output)
 
-    modifyIntVariable(input)
+      TestBenchSut(inv, Array(input), Array(output))
+    }
 
-    squareInv.checkInternals()
+    val bench: InvTestBench = InvTestBench(createInv, "Test Square inv")
+    bench.test()
   }
 
-  test(s"Sqrt invariant works as expected (seed: $seed)") {
-    val store   = new Store(debugLevel = 3)
-    val rndVal  = random.between(1, 2000)
-    val input   = IntVariable(store, rndVal)
-    val output  = IntVariable(store, rndVal)
-    val sqrtInv = Sqrt(store, input, output)
-    store.close()
+  test(s"Sqrt invariant works as expected") {
+    def createInv(model: Store): TestBenchSut = {
+      val input = IntVariable(model, 0)
+      input.setDomain(0L, Long.MaxValue)
+      val output = IntVariable(model, 0)
+      val inv    = Abs(model, input, output)
 
-    modifyIntVariable(input, 1, 2000)
+      TestBenchSut(inv, Array(input), Array(output))
+    }
 
-    sqrtInv.checkInternals()
+    val bench: InvTestBench = InvTestBench(createInv, "Test Sqrt inv")
+    bench.test()
   }
 
-  test(s"Sum2 invariant works as expected (seed: $seed)") {
-    val store   = new Store(debugLevel = 3)
-    val rndVal1 = random.between(-1000, 1000)
-    val rndVal2 = random.between(-1000, 1000)
-    val input1  = IntVariable(store, rndVal1)
-    val input2  = IntVariable(store, rndVal2)
-    val output  = IntVariable(store, rndVal1)
-    val sum2Inv = Sum2(store, input1, input2, output)
-    store.close()
+  test(s"Sum2 invariant works as expected") {
+    def createInv(model: Store): TestBenchSut = {
+      val a      = IntVariable(model, 0)
+      val b      = IntVariable(model, 0)
+      val output = IntVariable(model, 0)
+      val inv    = Sum2(model, a, b, output)
 
-    modifyIntVariable(input1)
-    modifyIntVariable(input2)
+      TestBenchSut(inv, Array(a, b), Array(output))
+    }
 
-    sum2Inv.checkInternals()
+    val bench: InvTestBench = InvTestBench(createInv, "Test Sum2 inv")
+    bench.test()
   }
 
-  test(s"Minus2 invariant works as expected (seed: $seed)") {
-    val store     = new Store(debugLevel = 3)
-    val rndVal1   = random.between(-1000, 1000)
-    val rndVal2   = random.between(-1000, 1000)
-    val input1    = IntVariable(store, rndVal1)
-    val input2    = IntVariable(store, rndVal2)
-    val output    = IntVariable(store, rndVal1)
-    val minus2Inv = Minus2(store, input1, input2, output)
-    store.close()
+  test(s"Minus2 invariant works as expected") {
+    def createInv(model: Store): TestBenchSut = {
+      val a      = IntVariable(model, 0)
+      val b      = IntVariable(model, 0)
+      val output = IntVariable(model, 0)
+      val inv    = Minus2(model, a, b, output)
 
-    modifyIntVariable(input1)
-    modifyIntVariable(input2)
+      TestBenchSut(inv, Array(a, b), Array(output))
+    }
 
-    minus2Inv.checkInternals()
+    val bench: InvTestBench = InvTestBench(createInv, "Test Minus2 inv")
+    bench.test()
   }
 
-  test(s"Prod2 invariant works as expected (seed: $seed)") {
-    val store    = new Store(debugLevel = 3)
-    val rndVal1  = random.between(-1000, 1000)
-    val rndVal2  = random.between(-1000, 1000)
-    val input1   = IntVariable(store, rndVal1)
-    val input2   = IntVariable(store, rndVal2)
-    val output   = IntVariable(store, rndVal1)
-    val prod2Inv = Prod2(store, input1, input2, output)
-    store.close()
+  test(s"Prod2 invariant works as expected") {
+    def createInv(model: Store): TestBenchSut = {
+      val a      = IntVariable(model, 0)
+      val b      = IntVariable(model, 0)
+      val output = IntVariable(model, 0)
+      val inv    = Prod2(model, a, b, output)
 
-    modifyIntVariable(input1)
-    modifyIntVariable(input2)
+      TestBenchSut(inv, Array(a, b), Array(output))
+    }
 
-    prod2Inv.checkInternals()
+    val bench: InvTestBench = InvTestBench(createInv, "Test Prod2 inv")
+    bench.test()
   }
 
-  test(s"Div2 invariant works as expected (seed: $seed)") {
-    val store   = new Store(debugLevel = 3)
-    val rndVal1 = random.between(-1000, 1000)
-    val rndVal2 = random.between(500, 2000)
-    val input1  = IntVariable(store, rndVal1)
-    val input2  = IntVariable(store, rndVal2)
-    val output  = IntVariable(store, rndVal1)
-    val div2Inv = Div2(store, input1, input2, output)
-    store.close()
+  test(s"Div2 invariant works as expected with positive divisor") {
+    def createInv(model: Store): TestBenchSut = {
+      val a = IntVariable(model, 0)
+      val b = IntVariable(model, 1L)
+      b.setDomain(1L, Long.MaxValue)
+      val output = IntVariable(model, 0)
+      val inv    = Div2(model, a, b, output)
 
-    modifyIntVariable(input1)
+      TestBenchSut(inv, Array(a, b), Array(output))
+    }
 
-    modifyIntVariable(input2, 1, 500) //input2 initial value is between 500 & 2000 and can only
-    // increase. So the denominator can never be 0
-
-    div2Inv.checkInternals()
+    val bench: InvTestBench = InvTestBench(createInv, "Test Div2 inv")
+    bench.test()
   }
 
-  test(s"Mod invariant works as expected (seed: $seed)") {
-    val store   = new Store(debugLevel = 3)
-    val rndVal1 = random.between(-1000, 1000)
-    val rndVal2 = random.between(-1000, 1000)
-    val input1  = IntVariable(store, rndVal1)
-    val input2  = IntVariable(store, rndVal2)
-    val output  = IntVariable(store, rndVal1)
-    val modInv  = Mod(store, input1, input2, output)
-    store.close()
+  test(s"Div2 invariant works as expected with negative divisor") {
+    def createInv(model: Store): TestBenchSut = {
+      val a = IntVariable(model, 0)
+      val b = IntVariable(model, -1L)
+      b.setDomain(Long.MinValue, -1L)
+      val output = IntVariable(model, 0)
+      val inv    = Div2(model, a, b, output)
 
-    modifyIntVariable(input1)
-    modifyIntVariable(input2)
+      TestBenchSut(inv, Array(a, b), Array(output))
+    }
 
-    modInv.checkInternals()
+    val bench: InvTestBench = InvTestBench(createInv, "Test Div2 inv")
+    bench.test()
   }
 
-  test(s"Pow invariant works as expected (seed: $seed)") {
-    val store   = new Store(debugLevel = 3)
-    val rndVal1 = random.between(-1000, 1000)
-    val rndVal2 = random.between(-1000, 1000)
-    val input1  = IntVariable(store, rndVal1)
-    val input2  = IntVariable(store, rndVal2)
-    val output  = IntVariable(store, rndVal1)
-    val powInv  = Pow(store, input1, input2, output)
-    store.close()
+  test(s"Mod invariant works as expected with positive divisor") {
+    def createInv(model: Store): TestBenchSut = {
+      val a = IntVariable(model, 0)
+      val b = IntVariable(model, 1L)
+      b.setDomain(1L, Long.MaxValue)
+      val output = IntVariable(model, 0)
+      val inv    = Mod(model, a, b, output)
 
-    modifyIntVariable(input1)
-    modifyIntVariable(input2)
+      TestBenchSut(inv, Array(a, b), Array(output))
+    }
 
-    powInv.checkInternals()
+    val bench: InvTestBench = InvTestBench(createInv, "Test Mod inv")
+    bench.test()
   }
 
-  test(s"Max2 invariant works as expected (seed: $seed)") {
-    val store   = new Store(debugLevel = 3)
-    val rndVal1 = random.between(-1000, 1000)
-    val rndVal2 = random.between(-1000, 1000)
-    val input1  = IntVariable(store, rndVal1)
-    val input2  = IntVariable(store, rndVal2)
-    val output  = IntVariable(store, rndVal1)
-    val max2Inv = Max2(store, input1, input2, output)
-    store.close()
+  test(s"Mod invariant works as expected with negative divisor") {
+    def createInv(model: Store): TestBenchSut = {
+      val a = IntVariable(model, 0)
+      val b = IntVariable(model, -1L)
+      b.setDomain(Long.MinValue, -1L)
+      val output = IntVariable(model, 0)
+      val inv    = Mod(model, a, b, output)
 
-    modifyIntVariable(input1)
-    modifyIntVariable(input2)
+      TestBenchSut(inv, Array(a, b), Array(output))
+    }
 
-    max2Inv.checkInternals()
+    val bench: InvTestBench = InvTestBench(createInv, "Test Mod inv")
+    bench.test()
   }
 
-  test(s"Min2 invariant works as expected (seed: $seed)") {
-    val store   = new Store(debugLevel = 3)
-    val rndVal1 = random.between(-1000, 1000)
-    val rndVal2 = random.between(-1000, 1000)
-    val input1  = IntVariable(store, rndVal1)
-    val input2  = IntVariable(store, rndVal2)
-    val output  = IntVariable(store, rndVal1)
-    val min2Inv = Min2(store, input1, input2, output)
-    store.close()
+  test(s"Pow invariant works as expected") {
+    def createInv(model: Store): TestBenchSut = {
+      val a      = IntVariable(model, 0)
+      val b      = IntVariable(model, 0)
+      val output = IntVariable(model, 0)
+      val inv    = Pow(model, a, b, output)
 
-    modifyIntVariable(input1)
-    modifyIntVariable(input2)
+      TestBenchSut(inv, Array(a, b), Array(output))
+    }
 
-    min2Inv.checkInternals()
+    val bench: InvTestBench = InvTestBench(createInv, "Test Pow inv")
+    bench.test()
+  }
+
+  test(s"Max2 invariant works as expected") {
+    def createInv(model: Store): TestBenchSut = {
+      val a      = IntVariable(model, 0)
+      val b      = IntVariable(model, 0)
+      val output = IntVariable(model, 0)
+      val inv    = Max2(model, a, b, output)
+
+      TestBenchSut(inv, Array(a, b), Array(output))
+    }
+
+    val bench: InvTestBench = InvTestBench(createInv, "Test Max2 inv")
+    bench.test()
+  }
+
+  test(s"Min2 invariant works as expected") {
+    def createInv(model: Store): TestBenchSut = {
+      val a      = IntVariable(model, 0)
+      val b      = IntVariable(model, 0)
+      val output = IntVariable(model, 0)
+      val inv    = Min2(model, a, b, output)
+
+      TestBenchSut(inv, Array(a, b), Array(output))
+    }
+
+    val bench: InvTestBench = InvTestBench(createInv, "Test Min2 inv")
+    bench.test()
   }
 }
