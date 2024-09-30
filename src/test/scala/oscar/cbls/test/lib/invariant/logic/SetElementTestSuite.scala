@@ -19,6 +19,7 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.logic.SetElement
+import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
 
 class SetElementTestSuite extends AnyFunSuite with Matchers {
 
@@ -78,6 +79,22 @@ class SetElementTestSuite extends AnyFunSuite with Matchers {
     store.propagate()
     output := Set(1, 3, 5, 7)
     an[IllegalArgumentException] should be thrownBy inv.checkInternals()
+  }
+
+  test("SetElement: test bench") {
+    def createSetElement(model: Store): TestBenchSut = {
+      val nbValues = 1000
+      val input    = Array.fill(nbValues)(SetVariable(model, Set.empty))
+      val index    = IntVariable(model, 0)
+      index.setDomain(0, nbValues - 1)
+      val output = SetVariable(model, Set.empty)
+      val inv    = SetElement(model, input, index, output)
+
+      TestBenchSut(inv, index +: input, Array(output))
+    }
+
+    val bench = InvTestBench(createSetElement, "Test SetElement Invariant")
+    bench.test()
   }
 
 }

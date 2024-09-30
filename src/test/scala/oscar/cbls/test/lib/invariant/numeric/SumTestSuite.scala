@@ -19,6 +19,7 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.numeric.Sum
+import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
 
 class SumTestSuite extends AnyFunSuite with Matchers {
 
@@ -76,5 +77,20 @@ class SumTestSuite extends AnyFunSuite with Matchers {
     store.propagate()
 
     noException should be thrownBy inv.checkInternals()
+  }
+
+  test("Sum: test bench") {
+    def createSum(model: Store): TestBenchSut = {
+      val nbValues = 1000
+      val input    = Array.fill(nbValues)(IntVariable(model, 0))
+      val listened = SetVariable(model, Set.empty[Int])
+      listened.setDomain(0, nbValues - 1)
+      val output = IntVariable(model, 0)
+      val inv    = Sum(model, input, listened, output)
+      TestBenchSut(inv, listened +: input, Array(output))
+    }
+
+    val bench = InvTestBench(createSum, "Test Sum Invariant")
+    bench.test()
   }
 }

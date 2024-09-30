@@ -13,12 +13,14 @@
 
 package oscar.cbls.test.lib.invariant.logic
 
+import org.scalacheck.Gen
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
+import oscar.cbls.core.computation.{Store, Variable}
 import oscar.cbls.lib.invariant.logic.{Cluster, SparseCluster}
+import oscar.cbls.test.invBench.{InvTestBenchWithConstGen, TestBenchSut}
 
 import scala.collection.immutable.HashMap
 
@@ -108,6 +110,37 @@ class SparseClusterTestSuite extends AnyFunSuite with Matchers {
     val e = the[IllegalArgumentException] thrownBy inv.checkInternals()
 
     e.getMessage should include("A variable has not the same value than its cluster's key")
+  }
+
+  test("SparseCluster: test bench") {
+    class SparseClusterTestBench
+        extends InvTestBenchWithConstGen[Array[Long]]("SparseCluster Test Bench") {
+
+      override def genConst(): Gen[Array[Long]] = {
+        for {
+          size <- Gen.choose(0, 100)
+          set  <- Gen.listOfN(size, Gen.choose(0L, 100L))
+        } yield set.toArray
+      }
+
+      override def createTestBenchSut(model: Store, inputData: Array[Long]): TestBenchSut = {
+        val nbValues                  = 1000
+        val input: Array[IntVariable] = Array.fill(nbValues)(IntVariable(model, 0))
+        input.foreach(v => v.setDomain(0, 100))
+        val inv                          = Cluster.makeSparse(model, input, inputData)
+        val output                       = inv.output
+        val inputArray: Array[Variable]  = input.toArray
+        val outputArray: Array[Variable] = output.values.toArray
+
+        TestBenchSut(inv, inputArray, outputArray)
+      }
+
+      override def typeTToString(elem: Array[Long]): String =
+        s"Clusters key: ${elem.mkString(", ")}"
+    }
+
+    val bench = new SparseClusterTestBench
+    bench.test()
   }
 
 }

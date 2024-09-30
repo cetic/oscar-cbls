@@ -93,14 +93,14 @@ class ProdConst(
   }
 
   override def checkInternals(): Unit = {
-    val listenedValues: Set[Long] = listenedValuesIndices.value().map(i => input(i))
-    val expectedProd              = listenedValues.foldLeft(1L)((acc: Long, x: Long) => acc * x)
+    val listenedValues: List[Long] = listenedValuesIndices.pendingValue.toList.map(i => input(i))
+    val expectedProd               = listenedValues.foldLeft(1L)((acc: Long, x: Long) => acc * x)
 
     require(
       output.pendingValue == expectedProd,
       s"checkInternals fails in invariant ${name()}. " +
         s"output != the product of the listened values. " +
-        s"output: ${output.pendingValue} - expected sum: $expectedProd " +
+        s"output: ${output.pendingValue} - expected prod: $expectedProd " +
         s"- listened values: ${listenedValues.mkString("", ", ", "")}"
     )
   }

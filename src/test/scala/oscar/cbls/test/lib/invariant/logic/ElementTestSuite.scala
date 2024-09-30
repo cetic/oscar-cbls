@@ -18,6 +18,7 @@ import org.scalatest.matchers.should.Matchers
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.lib.invariant.logic.Element
+import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
 
 class ElementTestSuite extends AnyFunSuite with Matchers {
 
@@ -33,13 +34,13 @@ class ElementTestSuite extends AnyFunSuite with Matchers {
     (store, input, index, output, inv)
   }
 
-  test("Element: initialization works as expected"){
+  test("Element: initialization works as expected") {
     val (_, _, _, output, _) = testElement()
 
     output.value() should be(7)
   }
 
-  test("Element: change the index"){
+  test("Element: change the index") {
     val (_, _, index, output, inv) = testElement()
     index := 1
 
@@ -48,7 +49,7 @@ class ElementTestSuite extends AnyFunSuite with Matchers {
 
   }
 
-  test("Element: changing the listened variable"){
+  test("Element: changing the listened variable") {
     val (_, input, _, output, inv) = testElement()
     input(3) := 42
 
@@ -56,22 +57,22 @@ class ElementTestSuite extends AnyFunSuite with Matchers {
     noException should be thrownBy inv.checkInternals()
   }
 
-  test("Element: changing a not listened variable"){
+  test("Element: changing a not listened variable") {
     val (_, input, _, output, _) = testElement()
     input(0) := 17
 
     output.value() should be(7)
   }
 
-  test("Element: changing the listened variable and changing its value"){
+  test("Element: changing the listened variable and changing its value") {
     val (_, input, index, output, _) = testElement()
-    index := 0
+    index    := 0
     input(0) := 42
 
     output.value() should be(42)
   }
 
-  test("Element: checkInternal should fail"){
+  test("Element: checkInternal should fail") {
     val (store, _, _, output, inv) = testElement()
     store.propagate()
 
@@ -79,5 +80,20 @@ class ElementTestSuite extends AnyFunSuite with Matchers {
     an[IllegalArgumentException] should be thrownBy inv.checkInternals()
   }
 
+  test("Element test bench") {
+    def createElement(model: Store): TestBenchSut = {
+      val nbValues = 1000
+      val input    = Array.fill(nbValues)(IntVariable(model, 0))
+      val index    = IntVariable(model, 0)
+      index.setDomain(0, nbValues - 1)
+      val output = IntVariable(model, 0)
+      val inv    = Element(model, input, index, output)
+
+      TestBenchSut(inv, index +: input, Array(output))
+    }
+
+    val bench = InvTestBench(createElement, "Test Element Invariant")
+    bench.test()
+  }
 
 }

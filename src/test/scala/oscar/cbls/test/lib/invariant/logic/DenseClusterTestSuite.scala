@@ -15,10 +15,11 @@ package oscar.cbls.test.lib.invariant.logic
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import oscar.cbls.core.computation.Store
+import oscar.cbls.core.computation.{Store, Variable}
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.logic.{Cluster, DenseCluster}
+import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
 
 class DenseClusterTestSuite extends AnyFunSuite with Matchers {
 
@@ -109,6 +110,22 @@ class DenseClusterTestSuite extends AnyFunSuite with Matchers {
     val e = the[IllegalArgumentException] thrownBy inv.checkInternals()
 
     e.getMessage should include("A variable has not the same value than its cluster's key")
+  }
+
+  test("DenseCluster: test bench") {
+    def createDenseCluster(model: Store): TestBenchSut = {
+      val nbValues                  = 1000
+      val upperBound                = 10
+      val input: Array[IntVariable] = Array.fill(nbValues)(IntVariable(model, 0))
+      input.foreach(v => v.setDomain(0, upperBound - 1))
+      val inv                          = Cluster.makeDense(model, input, upperBound)
+      val inputArray: Array[Variable]  = input.toArray
+      val outputArray: Array[Variable] = inv.output.toArray
+      TestBenchSut(inv, inputArray, outputArray)
+    }
+
+    val bench = InvTestBench(createDenseCluster, "Test DenseCluster Invariant")
+    bench.test()
   }
 
 }

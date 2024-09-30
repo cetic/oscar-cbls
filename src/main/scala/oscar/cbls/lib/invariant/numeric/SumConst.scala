@@ -84,20 +84,21 @@ class SumConst(
   ): Unit = {
     assert(setVariable == listenedValuesIndices, "Input SetVariable is incorrect")
 
-    for (added   <- addedElems) output :+= added
-    for (removed <- removedElems) output :-= removed
+    for (added   <- addedElems) output :+= input(added)
+    for (removed <- removedElems) output :-= input(removed)
   }
 
   override def checkInternals(): Unit = {
-    val listenedValues: Set[Long] = listenedValuesIndices.value().map(i => input(i))
-    val expectedSum               = listenedValues.foldLeft(0L)((acc: Long, x: Long) => acc + x)
+    val listenedValues: List[Long] = listenedValuesIndices.pendingValue.toList.map(i => input(i))
+    val expectedSum                = listenedValues.foldLeft(0L)((acc: Long, x: Long) => acc + x)
 
     require(
       output.pendingValue == expectedSum,
       s"checkInternals fails in invariant ${name()}. " +
         s"output != the sum of the listened values. " +
         s"output: ${output.pendingValue} - expected sum: $expectedSum " +
-        s"- listened values: ${listenedValues.mkString("", ", ", "")}"
+        s"- listened values: ${listenedValues.mkString("", ", ", "")} " +
+        s"- listened index: ${listenedValuesIndices.pendingValue}"
     )
   }
 }

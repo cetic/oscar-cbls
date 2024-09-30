@@ -13,12 +13,14 @@
 
 package oscar.cbls.test.lib.invariant.numeric
 
+import org.scalacheck.Gen
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.numeric.ProdConst
+import oscar.cbls.test.invBench.{InvTestBenchWithConstGen, TestBenchSut}
 
 class ProdConstTestSuite extends AnyFunSuite with Matchers {
 
@@ -96,5 +98,35 @@ class ProdConstTestSuite extends AnyFunSuite with Matchers {
     store.propagate()
 
     noException should be thrownBy inv.checkInternals()
+  }
+
+  test("ProdConst: test bench") {
+    class ProdConstTestBench extends InvTestBenchWithConstGen[Array[Long]]("ProdConst Test Bench") {
+
+      override def genConst(): Gen[Array[Long]] = {
+        for {
+          size  <- Gen.choose(1, 10)
+          array <- Gen.listOfN(size, Gen.choose(0L, 75L))
+        } yield array.toArray // Values such that their product does not cause overflow
+      }
+
+      override def createTestBenchSut(model: Store, inputData: Array[Long]): TestBenchSut = {
+        val listened: SetVariable = SetVariable(model, Set.empty[Int])
+        listened.setDomain(0, inputData.length - 1)
+        val output: IntVariable = IntVariable(model, 0)
+        val inv: ProdConst      = ProdConst(model, inputData, listened, output)
+
+        TestBenchSut(inv, Array(listened), Array(output))
+      }
+
+      override def typeTToString(elem: Array[Long]): String = {
+        s"""(${Array.tabulate(elem.length)(i => s"$i -> ${elem(i)}").mkString("; ")})
+           |Values: ${elem.mkString(", ")}
+           |""".stripMargin
+      }
+    }
+
+    val bench = new ProdConstTestBench
+    bench.test()
   }
 }
