@@ -69,7 +69,7 @@ class SeqIdentityInvariant(store: Store, input: SeqVariable, output: SeqVariable
   input.registerStaticallyAndDynamicallyListeningElement(this)
   output.setDefiningInvariant(this)
 
-  output := input.value
+  output := input.value()
 
   override def notifySeqChanges(
     v: SeqVariable,
@@ -184,7 +184,7 @@ class SeqIdentityInvariant(store: Store, input: SeqVariable, output: SeqVariable
     require(
       output.pendingValue.toList equals input.pendingValue.toList,
       Some(
-        s"IdentitySeq: toValue.value=${output.value} should equals fromValue.value=${input.value}"
+        s"IdentitySeq: toValue.value=${output.value()} should equals fromValue.value=${input.value()}"
       )
     )
   }

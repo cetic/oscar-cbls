@@ -146,7 +146,7 @@ class SeqVariable(
     * @return
     *   The new value of this SeqVariable.
     */
-  def value: IntSequence = {
+  def value(): IntSequence = {
     val propagating = model.propagating
     if (isADecisionVariable && !propagating) return toNotify.newValue
     if (!propagating) model.propagate(Some(this))
@@ -721,7 +721,7 @@ class SeqVariable(
   def createClone(maxDepth: Int = 50): SeqVariable = {
     val clone = new SeqVariable(
       model,
-      this.value.toList,
+      this.value().toList,
       s"clone_of_$name",
       maxPivotPerValuePercent,
       isConstant
@@ -743,9 +743,9 @@ class SeqVariable(
 
   override def checkInternals(): Unit = {
     require(
-      this.value.toList equals toNotify.newValue.toList,
+      this.value().toList equals toNotify.newValue.toList,
       s"Pending value of $name is not equal to toNotify value : " +
-        s"\nShould be : ${this.value.toList} \nGot ${toNotify.newValue.toList}"
+        s"\nShould be : ${this.value().toList} \nGot ${toNotify.newValue.toList}"
     )
     require(
       toNotify.isInstanceOf[SeqUpdateLastNotified],

@@ -52,7 +52,7 @@ class Size(model: Store, input: SeqVariable, output: IntVariable)
   input.registerStaticallyAndDynamicallyListeningElement(this)
   output.setDefiningInvariant(this)
 
-  output := input.value.size
+  output := input.value().size
 
   /** Notifies the listening [[oscar.cbls.core.propagation.PropagationElement]] that the listened
     * [[oscar.cbls.core.computation.seq.SeqVariable]] has changed.
@@ -79,7 +79,7 @@ class Size(model: Store, input: SeqVariable, output: IntVariable)
     * scratch.
     */
   override def checkInternals(): Unit = require(
-    input.value.size == output.value(),
-    s"Size does not correspond to reality. Should be: ${input.value.size} got ${output.value()}"
+    input.value().size == output.value(),
+    s"Size does not correspond to reality. Should be: ${input.value().size} got ${output.value()}"
   )
 }

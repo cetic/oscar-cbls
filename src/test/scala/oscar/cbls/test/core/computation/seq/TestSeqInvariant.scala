@@ -32,8 +32,8 @@ private class TestSeqInvariant(store: Store, input: SeqVariable, output: SeqVari
   output.setDefiningInvariant(this)
 
   private var listCopy: List[Int] = {
-    output := input.value
-    input.value.toList
+    output := input.value()
+    input.value().toList
   }
 
   override def notifySeqChanges(
@@ -111,8 +111,8 @@ private class TestSeqInvariant(store: Store, input: SeqVariable, output: SeqVari
     */
   override def checkInternals(): Unit = {
     require(
-      input.value.toList == output.value.toList,
-      s"Should be ${input.value.toList} got ${output.value.toList}"
+      input.value().toList == output.value().toList,
+      s"Should be ${input.value().toList} got ${output.value().toList}"
     )
   }
 }
