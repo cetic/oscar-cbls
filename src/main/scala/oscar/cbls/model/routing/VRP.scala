@@ -108,12 +108,12 @@ class VRP(val model: Store, val n: Int, val v: Int, maxPivotPerValuePercent: Int
   val vehicles: Range = 0 until v
 
   /** Set which maintains all the routed nodes. */
-  val routed: SetVariable = SetVariable(model, Set.empty[Int])
+  val routed: SetVariable = SetVariable(model, Set.empty[Int],name = Some("Routed nodes"))
   Content(model, routes, routed)
 
   /** Set which maintains all the unrouted nodes. */
-  val unrouted: SetVariable = SetVariable(model, Set.empty[Int], name = Some("Routed nodes"))
-  Diff(model, SetVariable(model, Set.from(nodes)), routed, unrouted, name = Some("Unrouted nodes"))
+  val unrouted: SetVariable = SetVariable(model, Set.empty[Int], name = Some("Unrouted nodes"))
+  Diff(model, SetVariable(model, Set.from(nodes)), routed, unrouted, name = Some("Unrouted nodes computation invariant"))
 
   private[this] val routingConventionConstraint: Option[RoutingConventionConstraint] =
     if (debug) Some(RoutingConventionConstraint(model, this)) else None
