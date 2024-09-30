@@ -44,7 +44,7 @@ object SeqIdentityInvariant {
   * SeqVariable. Instead of updating all the constraints at once, using several copy of the
   * SeqVariable and linking each constraint to a different copy will save you time. For instance:
   *   - A CVRPTW. The capacity constraint could be slow to compute, as for the time window
-  *     constraint. Let's say it take 5 ms for the capacity and 10 ms for the time window.
+  *     constraint. Let's say it takes 5 ms for the capacity and 10 ms for the time window.
   *   - Without the use of copy, each time you explore a movement, you'll spend 15ms to update both
   *     of them.
   *   - With the copies like this:

@@ -584,7 +584,7 @@ class SeqVariable(
       // We just rolled back, simply add this new instruction
       case _: SeqUpdateRollBackToTopCheckpoint =>
         SeqUpdateReleaseTopCheckpoint(toNotify, toNotify.newValue)
-      // We are at topCheckpoint an it was not yet released.
+      // We are at topCheckpoint and it was not yet released.
       // It seems we are releasing a checkpoint after which no modification where done.
       case _: SeqUpdateReleaseTopCheckpoint =>
         SeqUpdateReleaseTopCheckpoint(toNotify, toNotify.newValue)
