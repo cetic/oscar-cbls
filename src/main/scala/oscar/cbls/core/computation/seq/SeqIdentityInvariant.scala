@@ -138,6 +138,11 @@ class SeqIdentityInvariant(store: Store, input: SeqVariable, output: SeqVariable
         output.remove(removePositionExplorer, Some(changes.newValue))
 
       case SeqUpdateAssign(s) =>
+        for(_ <- 0 until output.checkpointLevel+1){
+          output.rollbackToTopCheckpoint()
+          popTopCheckpoint()
+          output.releaseTopCheckpoint()
+        }
         output := s
 
       case SeqUpdateLastNotified(value: IntSequence) =>
