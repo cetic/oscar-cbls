@@ -30,7 +30,6 @@ case class SetMove(addedValues: Set[Int], removedValues: Set[Int], id: Int)
       testVar :+= v
     for (v <- removedValues)
       testVar :-= v
-    testVar.model.propagate()
   }
 
   override def updateState(state: VariableState): VariableState = {

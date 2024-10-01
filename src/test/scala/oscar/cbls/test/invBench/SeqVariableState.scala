@@ -73,20 +73,17 @@ case class SeqVariableState(id: Int, currentState: SeqVariableStackableState, do
   }
 
   private def genSeqDefineCheckpoint: Gen[SeqDefineCheckpointUpdate] =
-    Gen.oneOf(List(SeqDefineCheckpointUpdate(id)))
-
-  private def genSeqPropagate: Gen[SeqPropagateUpdates] =
-    Gen.oneOf(List(SeqPropagateUpdates(id)))
+    Gen.const(SeqDefineCheckpointUpdate(id))
 
   private def genSeqReleaseTopCheckpoint: Gen[SeqReleaseTopCheckpointUpdate] =
-    Gen.oneOf(List(SeqReleaseTopCheckpointUpdate(id)))
+    Gen.const(SeqReleaseTopCheckpointUpdate(id))
 
   private def genSeqRollBack: Gen[SeqRollBackToTopCheckpointUpdate] =
-    Gen.oneOf(List(SeqRollBackToTopCheckpointUpdate(id)))
+    Gen.const(SeqRollBackToTopCheckpointUpdate(id))
 
   override def generateMove(): Gen[VariableMove] = {
     var authMoves: List[(Int, Gen[VariableMove])] =
-      List((5, genSeqInsert), (1, genSeqDefineCheckpoint), (3, genSeqPropagate))
+      List((5, genSeqInsert), (1, genSeqDefineCheckpoint))
     if (swapAndMoveAllowed) authMoves = authMoves ::: List((5, genSeqMove), (5, genSeqSwap))
     if (flipAndRemoveAllowed) authMoves = authMoves ::: List((5, genSeqFlip), (3, genSeqRemove))
     if (releaseAllowed) authMoves = authMoves ::: List((2, genSeqReleaseTopCheckpoint))

@@ -42,6 +42,15 @@ abstract class InvTestBenchWithConstGen[T](name: String, additionalSeeds: List[S
 
   def typeTToString(elem: T): String = elem.toString
 
+  /* A class to store the frequency for the command generation*/
+  case class PropagationMoveFrequency(propagationFreq: Int, moveFreq: Int)
+
+  private var propagationMoveFrequency: PropagationMoveFrequency = PropagationMoveFrequency(1, 5)
+
+  /* Changes the propagation and move frequency*/
+  def changePropagationMoveFrequency(propagationFreq: Int, moveFreq: Int): Unit =
+    propagationMoveFrequency = PropagationMoveFrequency(propagationFreq, moveFreq)
+
   type Sut = TestBenchSut
 
   case class TestState(varStates: Array[VariableState], constState: T) {
@@ -73,10 +82,14 @@ abstract class InvTestBenchWithConstGen[T](name: String, additionalSeeds: List[S
   override def destroySut(sut: Sut): Unit = ()
 
   override def genCommand(state: State): Gen[Command] = {
-    for {
+    val generateMove = for {
       stateVar <- Gen.oneOf(state.varStates.toIndexedSeq)
       move     <- stateVar.generateMove()
     } yield new InvariantCommand(move)
+    Gen.frequency(
+      (propagationMoveFrequency.moveFreq, generateMove),
+      (propagationMoveFrequency.propagationFreq, Gen.const(new PropagationCommand))
+    )
   }
 
   override def genInitialState: Gen[State] = {
@@ -121,11 +134,20 @@ abstract class InvTestBenchWithConstGen[T](name: String, additionalSeeds: List[S
 
     override def preCondition(state: State): Boolean = state.varStates(m.varId).canMake(m)
 
-    override def run(sut: Sut): Result = {
-      m.mkMove(sut.input(m.varId))
-    }
+    override def run(sut: Sut): Result = m.mkMove(sut.input(m.varId))
 
     override def toString: String = m.toString
+
+  }
+
+  class PropagationCommand extends UnitCommand {
+    override def nextState(state: State): State = state
+
+    override def preCondition(state: State): Boolean = true
+
+    override def postCondition(state: State, success: Boolean): Prop = success
+
+    override def run(sut: TestBenchSut): Unit = sut.inv.model.propagate()
 
   }
 
