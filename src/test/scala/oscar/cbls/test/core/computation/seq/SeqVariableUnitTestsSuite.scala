@@ -4,7 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers.be
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import oscar.cbls.algo.sequence.IntSequence
-import oscar.cbls.core.computation.{Invariant, Store}
+import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.seq.{SeqConst, SeqVariable}
 
 import scala.util.Random
