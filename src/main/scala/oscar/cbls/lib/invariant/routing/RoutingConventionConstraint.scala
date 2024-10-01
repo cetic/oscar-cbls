@@ -202,7 +202,7 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
 
       case SeqUpdateRollBackToTopCheckpoint(
             checkpoint: IntSequence,
-            howToRollBack: SeqUpdate,
+            _,
             checkpointLevel: Int,
             prev: SeqUpdate
           ) =>
@@ -217,7 +217,8 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
             "Trying to rollback to a level 0 checkpoint which is not the same that the saved one"
           )
         }
-        rollbackUpdate(howToRollBack)
+        routedNodes = Array.fill(vrp.n)(false)
+        for (node <- checkpoint) routedNodes(node) = true
 
       case SeqUpdateLastNotified(value: IntSequence) =>
         require(value equals lastNotified, "The last notified value is not the saved one.")
@@ -246,21 +247,6 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
         checkVehicleOrder(newSeq)
         checkNoDuplicate(newSeq)
         routedNodes = Array.tabulate(vrp.n)(newSeq.contains)
-    }
-  }
-
-  private[this] def rollbackUpdate(howToRollBack: SeqUpdate): Unit = {
-    howToRollBack match {
-      case SeqUpdateInsert(value: Int, _, prev: SeqUpdate) =>
-        rollbackUpdate(prev)
-        routedNodes(value) = true
-      case SeqUpdateRemove(pos: IntSequenceExplorer, prev: SeqUpdate) =>
-        rollbackUpdate(prev)
-        val removedValue = pos.value
-        routedNodes(removedValue) = false
-      case sum: SeqUpdateMove       => rollbackUpdate(sum.prev)
-      case _: SeqUpdateLastNotified =>
-      case _                        => require(requirement = false, "Unexpected rollback")
     }
   }
 
