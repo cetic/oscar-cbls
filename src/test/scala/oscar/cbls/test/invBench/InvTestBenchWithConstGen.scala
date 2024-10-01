@@ -42,10 +42,12 @@ abstract class InvTestBenchWithConstGen[T](name: String, additionalSeeds: List[S
 
   def typeTToString(elem: T): String = elem.toString
 
+  /* A class to store the frequency for the command generation*/
   case class PropagationMoveFrequency(propagationFreq: Int, moveFreq: Int)
 
   private var propagationMoveFrequency: PropagationMoveFrequency = PropagationMoveFrequency(1, 5)
 
+  /* Changes the propagation and move frequency*/
   def changePropagationMoveFrequency(propagationFreq: Int, moveFreq: Int): Unit =
     propagationMoveFrequency = PropagationMoveFrequency(propagationFreq, moveFreq)
 
