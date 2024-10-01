@@ -202,11 +202,10 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
 
       case SeqUpdateRollBackToTopCheckpoint(
             checkpoint: IntSequence,
-            _,
+            howToRollback: SeqUpdate,
             checkpointLevel: Int,
-            prev: SeqUpdate
+            _
           ) =>
-        digestUpdate(prev)
         if (checkpointLevel == 0) {
           require(
             checkpointAtLevel0.nonEmpty,
@@ -217,8 +216,7 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
             "Trying to rollback to a level 0 checkpoint which is not the same that the saved one"
           )
         }
-        routedNodes = Array.fill(vrp.n)(false)
-        for (node <- checkpoint) routedNodes(node) = true
+        rollbackUpdate(howToRollback)
 
       case SeqUpdateLastNotified(value: IntSequence) =>
         require(value equals lastNotified, "The last notified value is not the saved one.")
@@ -247,6 +245,23 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
         checkVehicleOrder(newSeq)
         checkNoDuplicate(newSeq)
         routedNodes = Array.tabulate(vrp.n)(newSeq.contains)
+    }
+  }
+
+  private[this] def rollbackUpdate(howToRollBack: SeqUpdate): Unit = {
+    howToRollBack match {
+      case SeqUpdateInsert(value: Int, _, prev: SeqUpdate) =>
+        rollbackUpdate(prev)
+        routedNodes(value) = true
+      case SeqUpdateRemove(pos: IntSequenceExplorer, prev: SeqUpdate) =>
+        rollbackUpdate(prev)
+        val removedValue = pos.value
+        routedNodes(removedValue) = false
+      case sum: SeqUpdateMove                        => rollbackUpdate(sum.prev)
+      case _: SeqUpdateLastNotified                  =>
+      case surtc: SeqUpdateReleaseTopCheckpoint      => rollbackUpdate(surtc.prev)
+      case surbttc: SeqUpdateRollBackToTopCheckpoint => rollbackUpdate(surbttc.howToRollBack)
+      case x: SeqUpdate => require(requirement = false, s"Unexpected rollback: $x")
     }
   }
 
