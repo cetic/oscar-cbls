@@ -69,6 +69,13 @@ abstract class Variable(val model: Store, val isConstant: Boolean, name: Option[
     */
   def isADecisionVariable: Boolean = definingInvariant.isEmpty
 
+  /**
+    * Dynamically registers a listening element
+    *
+    * @param target the element to register
+    * @param indexToRecallAtNotification the index that will be recalled at notification
+    * @return a [[KeyForRemoval]] structure that ease the removal of dynamically listening element
+    */
   protected[core] def doRegisterDynamicallyListeningElement(
     target: NotificationTargetType,
     indexToRecallAtNotification: Int = -1
@@ -76,6 +83,13 @@ abstract class Variable(val model: Store, val isConstant: Boolean, name: Option[
     KeyForRemoval(dynamicallyListeningElements.insertStart((target,indexToRecallAtNotification)))
   }
 
+  /**
+    * Dynamically and statically registers a listening element
+    *
+    * @param target the element to register
+    * @param indexToRecallAtNotification the index that will be recalled at notification
+    * @return a [[KeyForRemoval]] structure that ease the removal of dynamically listening element
+    */
   protected[core] def doRegisterStaticallyAndDynamicallyListeningElement(
     propagationElement: Invariant with NotificationTargetType,
     indexToRecallAtNotification: Int = -1
