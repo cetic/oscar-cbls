@@ -213,7 +213,7 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
           )
           require(
             checkpoint sameIdentity checkpointAtLevel0.get,
-            "Trying to rollback to a level 0 checkpoint which is not the same that the saved one"
+            "Trying to roll back to a level 0 checkpoint which is not the same that the saved one"
           )
         }
         rollbackUpdate(howToRollback)
