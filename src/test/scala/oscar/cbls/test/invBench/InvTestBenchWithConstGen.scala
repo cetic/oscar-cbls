@@ -44,7 +44,7 @@ abstract class InvTestBenchWithConstGen[T](name: String, additionalSeeds: List[S
 
   case class PropagationMoveFrequency(propagationFreq: Int, moveFreq: Int)
 
-  private var propagationMoveFrequency: PropagationMoveFrequency = PropagationMoveFrequency(1,5)
+  private var propagationMoveFrequency: PropagationMoveFrequency = PropagationMoveFrequency(1, 5)
 
   def changePropagationMoveFrequency(propagationFreq: Int, moveFreq: Int): Unit =
     propagationMoveFrequency = PropagationMoveFrequency(propagationFreq, moveFreq)
