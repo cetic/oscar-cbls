@@ -2,11 +2,13 @@ package oscar.cbls.test.invBench
 
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
-
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.seq.SeqVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.core.computation.Variable
+import oscar.cbls.model.routing.VRP
+
+import scala.collection.immutable.HashSet
 
 /** The class that defines the moves on the variables. Each type of variable have at least one type
   * of move
@@ -41,7 +43,7 @@ abstract class VariableState(id: Int) {
 }
 
 object VariableState {
-  def apply(v: Variable, id: Int): Gen[VariableState] = {
+  def apply(v: Variable, id: Int, routing: Option[VRP] = None): Gen[VariableState] = {
     v match {
       case intVar: IntVariable =>
         val longGen: Gen[Long] =
@@ -59,8 +61,24 @@ object VariableState {
         for (l <- Gen.listOf(intGen))
           yield SetVarState(l.toSet, id, setVar.domain.map(d => (d._1.toInt, d._2.toInt)))
       case _: SeqVariable =>
-        val domain = (0, 1000)
-        Gen.oneOf(List(SeqVariableState(id, SeqVariableStackableState(0, 0, None), domain)))
+        routing match {
+          case None =>
+            val domain = (0, 1000)
+            Gen.const(SeqVariableState(id, SeqVariableStackableState(0, 0, None), domain))
+          case Some(vrp) =>
+            val routed = vrp.routes.pendingValue
+            val unrouted: HashSet[Int] =
+              HashSet.from(vrp.v until vrp.n).filter(!routed.contains(_))
+            Gen.const(
+              RoutingVariableState(
+                id,
+                SeqVariableStackableState(vrp.routes.value().size, 0, None),
+                vrp,
+                unrouted,
+                routed
+              )
+            )
+        }
     }
   }
 

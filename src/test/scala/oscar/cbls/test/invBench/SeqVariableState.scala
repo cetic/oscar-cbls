@@ -115,35 +115,3 @@ case class SeqVariableState(id: Int, currentState: SeqVariableStackableState, do
     s"Seq $id : size $size | checkpoint lvl ${currentState.seqCheckpointLevel} | " +
       s"${currentState.seqOperationSinceLastCheckpoint} operations since last checkpoint"
 }
-
-/** Stackable state of a SeqVariable
-  *
-  * Note : The fact that this class is stackable eases the checkpoint management
-  */
-case class SeqVariableStackableState(
-  seqSize: Int,
-  seqOperationSinceLastCheckpoint: Int,
-  previousStackableState: Option[SeqVariableStackableState]
-) {
-
-  /** Returns the checkpoint level of the [[oscar.cbls.core.computation.seq.SeqVariable]]
-    *
-    * @return
-    * -1 if no checkpoint define. >= 0 otherwise
-    */
-  def seqCheckpointLevel: Int = {
-    previousStackableState match {
-      case None                         => -1
-      case Some(previousStackableState) => previousStackableState.seqCheckpointLevel + 1
-    }
-  }
-
-  /** Returns a copy of this SeqVariableStackableState with a new move and eventually a new size */
-  def pushOp(newSeqSize: Option[Int] = None): SeqVariableStackableState = {
-    SeqVariableStackableState(
-      newSeqSize.getOrElse(seqSize),
-      if (seqCheckpointLevel == -1) 0 else seqOperationSinceLastCheckpoint + 1,
-      previousStackableState
-    )
-  }
-}
