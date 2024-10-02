@@ -22,9 +22,52 @@ import oscar.cbls.algo.sequence.RootIntSequenceExplorer
 import scala.annotation.tailrec
 import oscar.cbls.algo.sequence.IntSequence
 
+/** Companion object for class TotalRouteLength
+  */
+object TotalRouteLength {
+
+  /** Creates a TotalRouteLength invariant
+    *
+    * The TotalRouteLength invariant maintains the sum of all the route of all the vehicles
+    *
+    * @param vrp
+    *   The object that represents the Vehicle Routing Problem
+    * @param distanceMatrix
+    *   The distance matrix between the points of the problem
+    * @return
+    *   The TotalRouteLength invariant
+    */
+  def apply(vrp: VRP, distanceMatrix: Array[Array[Long]]): TotalRouteLength = {
+    val routeLength: IntVariable = IntVariable(vrp.model, 0)
+    new TotalRouteLength(vrp, routeLength, distanceMatrix)
+  }
+}
+
+/** An invariant that maintains the total route length of a vehicle routing problem
+  *
+  * The total route length is the sum of the routes of all the vehicles
+  *
+  * @param vrp
+  *   The object that represents the Vehicle Routing Problem
+  * @param routeLength
+  *   The distance matrix between the points of the problem
+  * @param distanceMatrix
+  *   The TotalRouteLength invariant
+  */
 class TotalRouteLength(vrp: VRP, val routeLength: IntVariable, distanceMatrix: Array[Array[Long]])
     extends Invariant(vrp.model, Some("Incremental Total Route Length"))
     with SeqNotificationTarget {
+
+  require(distanceMatrix.length == vrp.n,"The distance matrix do not contain all the distance between all the nodes")
+  distanceMatrix.foreach(line => 
+    require(line.length == vrp.n,"The distance matrix do not contain all the distance between all the nodes")
+  )
+  for (i <- 0 until vrp.n) {
+    for (j <- i until vrp.n) {
+      require(distanceMatrix(i)(j) == distanceMatrix(j)(i),"The distance matrix shall be symetrical")
+    }
+  }
+
 
   private val routes = vrp.routes
   private val v      = vrp.v
@@ -105,7 +148,7 @@ class TotalRouteLength(vrp: VRP, val routeLength: IntVariable, distanceMatrix: A
         val length = digestUpdate(prev)
         checkpointValues = CheckpointValue(level, length) :: checkpointValues
         length
-      case _: SeqUpdateLastNotified              => currentValue
+      case _: SeqUpdateLastNotified => currentValue
       case update: SeqUpdateReleaseTopCheckpoint =>
         checkpointValues = checkpointValues.tail
         digestUpdate(update.prev)
