@@ -22,7 +22,7 @@ import oscar.cbls.core.computation.SavedValue
   *   The IntVariable whose state is saved.
   */
 case class SeqSavedValue(seqVariable: SeqVariable) extends SavedValue(seqVariable) {
-  private val savedValue: IntSequence = seqVariable.value
+  private val savedValue: IntSequence = seqVariable.value()
 
   /** Restores the variable current value to the saved one */
   override def restoreValue(): Unit = {

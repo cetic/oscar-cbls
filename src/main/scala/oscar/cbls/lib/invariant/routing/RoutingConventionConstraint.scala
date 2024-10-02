@@ -18,9 +18,6 @@ import oscar.cbls.core.computation.seq._
 import oscar.cbls.core.computation.{Invariant, Store}
 import oscar.cbls.model.routing.VRP
 
-import scala.collection.immutable.HashMap
-import scala.collection.mutable
-
 /** Companion object of the [[RoutingConventionConstraint]] class. */
 object RoutingConventionConstraint {
 
@@ -62,12 +59,9 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
 
   private[this] var routedNodes: Array[Boolean] =
     Array.tabulate(vrp.n)(node => vrp.isRouted(node))
-  private[this] val checkpointChanges: SeqValueStack[Vector[Boolean]] =
-    new SeqValueStack[Vector[Boolean]]()
-
   // Used to check if a neighborhood do not lose the level 0 checkpoint.
   private[this] var checkpointAtLevel0: Option[IntSequence] = None
-  private[this] var lastNotified: IntSequence               = vrp.routes.value
+  private[this] var lastNotified: IntSequence               = vrp.routes.value()
 
   vrp.routes.registerStaticallyAndDynamicallyListeningElement(this)
   require(
@@ -79,8 +73,8 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
     !vrp.routes.pendingValue.unorderedContentNoDuplicate.exists(_ >= vrp.n),
     s"The current route has node bigger than n (${vrp.n})!"
   )
-  checkVehicleOrder(vrp.routes.value)
-  checkNoDuplicate(vrp.routes.value)
+  checkVehicleOrder(vrp.routes.value())
+  checkNoDuplicate(vrp.routes.value())
 
   /** Checks if, in the given sequence, the vehicles are positioned in increasing order. */
   def checkVehicleOrder(seq: IntSequence): Unit = {
@@ -117,7 +111,7 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
     changes: SeqUpdate
   ): Unit = {
     require(
-      vrp.routes.value equals lastNotified,
+      vrp.routes.value() equals lastNotified,
       "The last notified value is not equal to the route original value"
     )
     digestUpdate(changes)
@@ -159,7 +153,6 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
     changes match {
       case SeqUpdateDefineCheckpoint(prev: SeqUpdate, checkpointLevel: Int) =>
         digestUpdate(prev)
-        // checkpointChanges.pushToLevel(prev.newValue, checkpointLevel, routedNodes)
         if (checkpointLevel == 0) checkpointAtLevel0 = Some(changes.newValue)
 
       case SeqUpdateInsert(value: Int, explorer: IntSequenceExplorer, prev: SeqUpdate) =>
@@ -208,11 +201,10 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
 
       case SeqUpdateRollBackToTopCheckpoint(
             checkpoint: IntSequence,
-            howToRollBack: SeqUpdate,
+            howToRollback: SeqUpdate,
             checkpointLevel: Int,
-            prev: SeqUpdate
+            _
           ) =>
-        digestUpdate(prev)
         if (checkpointLevel == 0) {
           require(
             checkpointAtLevel0.nonEmpty,
@@ -220,15 +212,15 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
           )
           require(
             checkpoint sameIdentity checkpointAtLevel0.get,
-            "Trying to rollback to a level 0 checkpoint which is not the same that the saved one"
+            "Trying to roll back to a level 0 checkpoint which is not the same that the saved one"
           )
         }
-        rollbackUpdate(howToRollBack)
+        rollbackUpdate(howToRollback)
 
       case SeqUpdateLastNotified(value: IntSequence) =>
         require(value equals lastNotified, "The last notified value is not the saved one.")
         require(
-          value sameIdentity vrp.routes.value,
+          value sameIdentity vrp.routes.value(),
           "The last notified value is not equal to the route original value"
         )
 
@@ -264,9 +256,11 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
         rollbackUpdate(prev)
         val removedValue = pos.value
         routedNodes(removedValue) = false
-      case sum: SeqUpdateMove       => rollbackUpdate(sum.prev)
-      case _: SeqUpdateLastNotified =>
-      case _                        => require(requirement = false, "Unexpected rollback")
+      case sum: SeqUpdateMove                        => rollbackUpdate(sum.prev)
+      case _: SeqUpdateLastNotified                  =>
+      case surtc: SeqUpdateReleaseTopCheckpoint      => rollbackUpdate(surtc.prev)
+      case surbttc: SeqUpdateRollBackToTopCheckpoint => rollbackUpdate(surbttc.howToRollBack)
+      case x: SeqUpdate => require(requirement = false, s"Unexpected rollback: $x")
     }
   }
 

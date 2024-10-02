@@ -53,7 +53,7 @@ class Content(model: Store, input: SeqVariable, output: SetVariable)
   input.registerStaticallyAndDynamicallyListeningElement(this)
   output.setDefiningInvariant(this)
 
-  updateFromScratch(input.value)
+  updateFromScratch(input.value())
 
   /* HashMap maintaining the number of duplicated elements.
    * Only duplicated one. ex : three times 54 in the input sequence ==> (54 -> 2) in the HashMap
@@ -148,7 +148,7 @@ class Content(model: Store, input: SeqVariable, output: SetVariable)
     */
   override def checkInternals(): Unit = {
     val contentWithOccurrences: List[(Int, Int)] =
-      input.value.unorderedContentNoDuplicateWithNBOccurrences
+      input.value().unorderedContentNoDuplicateWithNBOccurrences
     contentWithOccurrences foreach (elementAndOccurrence => {
       val (element, occ) = elementAndOccurrence
       if (occ > 1)
@@ -160,7 +160,7 @@ class Content(model: Store, input: SeqVariable, output: SetVariable)
       require(
         output.value().contains(element),
         s"Output does not contains $element.\n" +
-          s"Input value no duplicates : ${input.value.unorderedContentNoDuplicate}\n" +
+          s"Input value no duplicates : ${input.value().unorderedContentNoDuplicate}\n" +
           s"Output : ${output.value()}"
       )
     })

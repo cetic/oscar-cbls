@@ -220,11 +220,21 @@ class SetVariable(
     )
   }
 
+  override def registerDynamicallyListeningElement(
+    target: SetNotificationTarget,
+    indexToRecallAtNotification: Int
+  ): KeyForRemoval[(SetNotificationTarget, Int)] = {
+    doRegisterDynamicallyListeningElement(target, indexToRecallAtNotification)
+  }
+
   override def registerStaticallyAndDynamicallyListeningElement(
     propagationElement: Invariant with SetNotificationTarget,
     indexToRecallAtNotification: Int
   ): KeyForRemoval[(SetNotificationTarget, Int)] = {
-    super.registerDynamicallyListeningElement(propagationElement, indexToRecallAtNotification)
+    doRegisterStaticallyAndDynamicallyListeningElement(
+      propagationElement,
+      indexToRecallAtNotification
+    )
   }
 
   override def toString: String = s"${name()} - value: ${value()}"

@@ -15,9 +15,10 @@ package oscar.cbls.test.lib.invariant.logic
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import oscar.cbls.core.computation.Store
+import oscar.cbls.core.computation.{Store, Variable}
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.logic.DenseRef
+import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
 
 class DenseRefTestSuite extends AnyFunSuite with Matchers {
 
@@ -103,6 +104,22 @@ class DenseRefTestSuite extends AnyFunSuite with Matchers {
 
     output(0) :+= 4
     an[IllegalArgumentException] should be thrownBy inv.checkInternals()
+  }
+
+  test("DenseRef: test bench") {
+    def createDenseRef(model: Store): TestBenchSut = {
+      val nbValues                  = 1000
+      val upperBound                = 10
+      val input: Array[SetVariable] = Array.fill(nbValues)(SetVariable(model, Set.empty))
+      input.foreach(v => v.setDomain(0, upperBound - 1))
+      val inv                          = DenseRef.makeDenseRef(model, input, upperBound)
+      val inputArray: Array[Variable]  = Array.from(input)
+      val outputArray: Array[Variable] = Array.from(inv.output)
+      TestBenchSut(inv, inputArray, outputArray)
+    }
+
+    val bench = InvTestBench(createDenseRef, "Test DenseRef Invariant")
+    bench.test()
   }
 
 }

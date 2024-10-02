@@ -36,7 +36,7 @@ object ElementConst {
     */
   def apply(
     model: Store,
-    input: Array[IntConstant],
+    input: Array[Long],
     index: IntVariable,
     output: IntVariable,
     name: Option[String] = None
@@ -45,8 +45,8 @@ object ElementConst {
   }
 }
 
-/** Invariant which maintains `input(index)` where input is an array
-  * of [[oscar.cbls.core.computation.integer.IntConstant]].
+/** Invariant which maintains `input(index)` where input is an array of
+  * [[oscar.cbls.core.computation.integer.IntConstant]].
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -61,8 +61,8 @@ object ElementConst {
   */
 class ElementConst(
   model: Store,
-  input: Array[IntConstant],
+  input: Array[Long],
   index: IntVariable,
   output: IntVariable,
   name: Option[String] = None
-) extends Int2Int(model, index, output, (i: Long) => input(i.toInt).value(), false, name) {}
+) extends Int2Int(model, index, output, (i: Long) => input(i.toInt), false, name) {}

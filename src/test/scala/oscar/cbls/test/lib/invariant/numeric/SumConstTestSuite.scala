@@ -13,12 +13,14 @@
 
 package oscar.cbls.test.lib.invariant.numeric
 
+import org.scalacheck.Gen
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.numeric.SumConst
+import oscar.cbls.test.invBench.{InvTestBenchWithConstGen, TestBenchSut}
 
 class SumConstTestSuite extends AnyFunSuite with Matchers {
 
@@ -55,5 +57,32 @@ class SumConstTestSuite extends AnyFunSuite with Matchers {
     store.propagate()
 
     noException should be thrownBy inv.checkInternals()
+  }
+
+  test("SumConst: test bench") {
+    class SumConstTestBench extends InvTestBenchWithConstGen[Array[Long]]("SumConst Test Bench") {
+
+      override def genConst(): Gen[Array[Long]] = {
+        for {
+          size  <- Gen.choose(1, 100)
+          array <- Gen.listOfN(size, Gen.choose(Int.MinValue.toLong, Int.MaxValue.toLong))
+        } yield array.toArray
+      }
+
+      override def createTestBenchSut(model: Store, inputData: Array[Long]): TestBenchSut = {
+        val listened: SetVariable = SetVariable(model, Set.empty[Int])
+        listened.setDomain(0, inputData.length - 1)
+        val output: IntVariable = IntVariable(model, 0)
+        val inv: SumConst       = SumConst(model, inputData, listened, output)
+
+        TestBenchSut(inv, Array(listened), Array(output))
+      }
+
+      override def typeTToString(elem: Array[Long]): String =
+        s"(${Array.tabulate(elem.length)(i => s"$i: ${elem(i)}").mkString("; ")})"
+    }
+
+    val bench = new SumConstTestBench
+    bench.test()
   }
 }

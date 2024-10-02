@@ -73,20 +73,17 @@ case class SeqVariableState(id: Int, currentState: SeqVariableStackableState, do
   }
 
   private def genSeqDefineCheckpoint: Gen[SeqDefineCheckpointUpdate] =
-    Gen.oneOf(List(SeqDefineCheckpointUpdate(id)))
-
-  private def genSeqPropagate: Gen[SeqPropagateUpdates] =
-    Gen.oneOf(List(SeqPropagateUpdates(id)))
+    Gen.const(SeqDefineCheckpointUpdate(id))
 
   private def genSeqReleaseTopCheckpoint: Gen[SeqReleaseTopCheckpointUpdate] =
-    Gen.oneOf(List(SeqReleaseTopCheckpointUpdate(id)))
+    Gen.const(SeqReleaseTopCheckpointUpdate(id))
 
   private def genSeqRollBack: Gen[SeqRollBackToTopCheckpointUpdate] =
-    Gen.oneOf(List(SeqRollBackToTopCheckpointUpdate(id)))
+    Gen.const(SeqRollBackToTopCheckpointUpdate(id))
 
   override def generateMove(): Gen[VariableMove] = {
     var authMoves: List[(Int, Gen[VariableMove])] =
-      List((5, genSeqInsert), (1, genSeqDefineCheckpoint), (3, genSeqPropagate))
+      List((5, genSeqInsert), (1, genSeqDefineCheckpoint))
     if (swapAndMoveAllowed) authMoves = authMoves ::: List((5, genSeqMove), (5, genSeqSwap))
     if (flipAndRemoveAllowed) authMoves = authMoves ::: List((5, genSeqFlip), (3, genSeqRemove))
     if (releaseAllowed) authMoves = authMoves ::: List((2, genSeqReleaseTopCheckpoint))
@@ -117,36 +114,4 @@ case class SeqVariableState(id: Int, currentState: SeqVariableStackableState, do
   override def toString: String =
     s"Seq $id : size $size | checkpoint lvl ${currentState.seqCheckpointLevel} | " +
       s"${currentState.seqOperationSinceLastCheckpoint} operations since last checkpoint"
-}
-
-/** Stackable state of a SeqVariable
-  *
-  * Note : The fact that this class is stackable eases the checkpoint management
-  */
-case class SeqVariableStackableState(
-  seqSize: Int,
-  seqOperationSinceLastCheckpoint: Int,
-  previousStackableState: Option[SeqVariableStackableState]
-) {
-
-  /** Returns the checkpoint level of the [[oscar.cbls.core.computation.seq.SeqVariable]]
-    *
-    * @return
-    * -1 if no checkpoint define. >= 0 otherwise
-    */
-  def seqCheckpointLevel: Int = {
-    previousStackableState match {
-      case None                         => -1
-      case Some(previousStackableState) => previousStackableState.seqCheckpointLevel + 1
-    }
-  }
-
-  /** Returns a copy of this SeqVariableStackableState with a new move and eventually a new size */
-  def pushOp(newSeqSize: Option[Int] = None): SeqVariableStackableState = {
-    SeqVariableStackableState(
-      newSeqSize.getOrElse(seqSize),
-      if (seqCheckpointLevel == -1) 0 else seqOperationSinceLastCheckpoint + 1,
-      previousStackableState
-    )
-  }
 }

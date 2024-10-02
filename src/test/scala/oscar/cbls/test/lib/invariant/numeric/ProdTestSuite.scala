@@ -19,6 +19,7 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.numeric.Prod
+import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
 
 class ProdTestSuite extends AnyFunSuite with Matchers {
 
@@ -136,5 +137,20 @@ class ProdTestSuite extends AnyFunSuite with Matchers {
     store.propagate()
 
     inv.checkInternals()
+  }
+
+  test("Prod: test bench") {
+    def createProd(model: Store): TestBenchSut = {
+      val nbValues = 1000
+      val input    = Array.fill(nbValues)(IntVariable(model, 0))
+      val listened = SetVariable(model, Set.empty[Int])
+      listened.setDomain(0, nbValues - 1)
+      val output = IntVariable(model, 0)
+      val inv    = Prod(model, input, listened, output)
+      TestBenchSut(inv, listened +: input, Array(output))
+    }
+
+    val bench = InvTestBench(createProd, "Test Prod Invariant")
+    bench.test()
   }
 }

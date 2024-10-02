@@ -21,7 +21,6 @@ case class IntegerAssignMove(newValue: Long, id: Int) extends VariableMove(id) {
     testVar match {
       case intTestVar: IntVariable =>
         intTestVar := newValue
-        intTestVar.model.propagate()
       case _ => throw new Error("Int Movement can only update variable of type Int")
     }
   }

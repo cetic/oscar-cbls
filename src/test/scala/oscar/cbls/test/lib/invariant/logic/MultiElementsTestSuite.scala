@@ -19,6 +19,7 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.logic.MultiElements
+import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
 
 class MultiElementsTestSuite extends AnyFunSuite with Matchers {
 
@@ -48,51 +49,51 @@ class MultiElementsTestSuite extends AnyFunSuite with Matchers {
     output.value() should contain only (-7, 28, 42)
   }
 
-  test("MultiElements: changing a listened variable to an already returned value"){
+  test("MultiElements: changing a listened variable to an already returned value") {
     val (_, input, _, output, _) = testMultiElements()
     input(2) := 42
 
     output.value() should contain only (28, 42)
   }
 
-  test("MultiElements: changing a not listened value"){
+  test("MultiElements: changing a not listened value") {
     val (_, input, _, output, _) = testMultiElements()
     input(3) := -7
 
     output.value() should contain only (14, 28, 42)
   }
 
-  test("MultiElements: adding a new value"){
+  test("MultiElements: adding a new value") {
     val (_, _, lvi, output, _) = testMultiElements()
     lvi :+= 5
 
-    output.value() should contain only (14, 28, 35 ,42)
+    output.value() should contain only (14, 28, 35, 42)
   }
 
-  test("MultiElements: removing a value"){
+  test("MultiElements: removing a value") {
     val (_, _, lvi, output, _) = testMultiElements()
     lvi :-= 4
 
     output.value() should contain only (14, 42)
   }
 
-  test("MultiElements: adding a duplicated value"){
+  test("MultiElements: adding a duplicated value") {
     val (_, _, lvi, output, _) = testMultiElements()
     lvi :+= 6
 
-    output.value() should contain only (14, 28 ,42)
+    output.value() should contain only (14, 28, 42)
   }
 
-  test("MultiElements: removing a duplicated value"){
+  test("MultiElements: removing a duplicated value") {
     val (store, _, lvi, output, _) = testMultiElements()
     lvi :+= 6
     store.propagate()
     lvi :-= 0
 
-    output.value() should contain only (14, 28 ,42)
+    output.value() should contain only (14, 28, 42)
   }
 
-  test("MultiElements: checkInternal doesn't fail"){
+  test("MultiElements: checkInternal doesn't fail") {
     val (store, input, lvi, _, inv) = testMultiElements()
     input(2) := 42
     lvi :+= 3
@@ -104,13 +105,29 @@ class MultiElementsTestSuite extends AnyFunSuite with Matchers {
     noException should be thrownBy inv.checkInternals()
   }
 
-  test("MultiElements: checkInternal should fail"){
+  test("MultiElements: checkInternal should fail") {
     val (store, _, _, output, inv) = testMultiElements()
     store.propagate()
 
     output :+= 24
 
     an[IllegalArgumentException] should be thrownBy inv.checkInternals()
+  }
+
+  test("MultiElements: test bench") {
+    def createMultiElements(model: Store): TestBenchSut = {
+      val nbValues = 1000
+      val input    = Array.fill(nbValues)(IntVariable(model, 0))
+      val listened = SetVariable(model, Set.empty)
+      listened.setDomain(0, nbValues - 1)
+      val output = SetVariable(model, Set.empty)
+      val inv    = MultiElements(model, input, listened, output)
+
+      TestBenchSut(inv, listened +: input, Array(output))
+    }
+
+    val bench = InvTestBench(createMultiElements, "Test MultiElements Invariant")
+    bench.test()
   }
 
 }

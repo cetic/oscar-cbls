@@ -43,7 +43,7 @@ case class SeqInsertUpdate(override val varId: Int, value: Int, after: Int)
     extends SeqVariableMove(varId) {
 
   override protected def mkSeqMove(seqVar: SeqVariable): Unit = {
-    seqVar.insertAfterPosition(value, seqVar.value.explorerAtPosition(after).get)
+    seqVar.insertAfterPosition(value, seqVar.value().explorerAtPosition(after).get)
   }
 
   override def updateSeqState(state: SeqVariableState): SeqVariableState =
@@ -74,9 +74,9 @@ case class SeqMoveUpdate(override val varId: Int, from: Int, to: Int, after: Int
 
   override protected def mkSeqMove(seqVar: SeqVariable): Unit = {
     seqVar.move(
-      seqVar.value.explorerAtPosition(from).get,
-      seqVar.value.explorerAtPosition(to).get,
-      seqVar.value.explorerAtPosition(after).get,
+      seqVar.value().explorerAtPosition(from).get,
+      seqVar.value().explorerAtPosition(to).get,
+      seqVar.value().explorerAtPosition(after).get,
       flip
     )
   }
@@ -102,7 +102,10 @@ case class SeqFlipUpdate(override val varId: Int, from: Int, to: Int)
     extends SeqVariableMove(varId) {
 
   override protected def mkSeqMove(seqVar: SeqVariable): Unit = {
-    seqVar.flip(seqVar.value.explorerAtPosition(from).get, seqVar.value.explorerAtPosition(to).get)
+    seqVar.flip(
+      seqVar.value().explorerAtPosition(from).get,
+      seqVar.value().explorerAtPosition(to).get
+    )
   }
 
   override def updateSeqState(state: SeqVariableState): SeqVariableState =
@@ -141,11 +144,11 @@ case class SeqSwapUpdate(
 
   override protected def mkSeqMove(seqVar: SeqVariable): Unit = {
     seqVar.swapSegments(
-      seqVar.value.explorerAtPosition(from_1).get,
-      seqVar.value.explorerAtPosition(to_1).get,
+      seqVar.value().explorerAtPosition(from_1).get,
+      seqVar.value().explorerAtPosition(to_1).get,
       flip_1,
-      seqVar.value.explorerAtPosition(from_2).get,
-      seqVar.value.explorerAtPosition(to_2).get,
+      seqVar.value().explorerAtPosition(from_2).get,
+      seqVar.value().explorerAtPosition(to_2).get,
       flip_2
     )
   }
@@ -169,7 +172,7 @@ case class SeqSwapUpdate(
 case class SeqRemoveUpdate(override val varId: Int, position: Int) extends SeqVariableMove(varId) {
 
   override protected def mkSeqMove(seqVar: SeqVariable): Unit = {
-    seqVar.remove(seqVar.value.explorerAtPosition(position).get)
+    seqVar.remove(seqVar.value().explorerAtPosition(position).get)
   }
 
   override def updateSeqState(state: SeqVariableState): SeqVariableState =
@@ -233,20 +236,6 @@ case class SeqReleaseTopCheckpointUpdate(override val varId: Int) extends SeqVar
     SeqVariableState(state.id, state.currentState.previousStackableState.get, state.domain)
 
   override def toString: String = s"Input var $varId | Releases top checkpoint"
-}
-
-/** Move that propagates the updates.
-  *
-  * @param varId
-  *   The test id of the SeqVariable.
-  */
-case class SeqPropagateUpdates(override val varId: Int) extends SeqVariableMove(varId) {
-
-  override protected def mkSeqMove(seqVar: SeqVariable): Unit = seqVar.model.propagate()
-
-  override def updateSeqState(state: SeqVariableState): SeqVariableState = state
-
-  override def toString: String = s"Input var $varId | Propagates modifications"
 }
 
 /** Move that assigns a new value to the SeqVariable.

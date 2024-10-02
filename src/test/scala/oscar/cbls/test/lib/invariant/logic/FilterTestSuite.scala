@@ -19,6 +19,7 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.logic.Filter
+import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
 
 class FilterTestSuite extends AnyFunSuite with Matchers {
 
@@ -77,6 +78,29 @@ class FilterTestSuite extends AnyFunSuite with Matchers {
     output :+= 25
 
     an[IllegalArgumentException] should be thrownBy inv.checkInternals()
+  }
+
+  test("Filter: filter of an empty Array is empty") {
+    val model                     = new Store(debugLevel = 3)
+    val input: Array[IntVariable] = Array.empty
+    val output: SetVariable       = SetVariable(model, Set(0))
+    Filter(model, input, output)
+    model.close()
+    output.value() shouldBe empty
+  }
+
+  test("Filter: test bench") {
+    def createFilter(model: Store) = {
+      val nbValue = 1000
+      val input   = Array.fill(nbValue)(IntVariable(model, 0))
+      val output  = SetVariable(model, Set.empty)
+      val inv     = Filter(model, input, output, _ % 5 == 0)
+
+      TestBenchSut(inv, Array.from(input), Array(output))
+    }
+
+    val bench = InvTestBench(createFilter, "Filter Test Bench")
+    bench.test()
   }
 
 }

@@ -6,6 +6,7 @@ import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import oscar.cbls.core.computation.{Invariant, Store}
 import oscar.cbls.core.computation.set._
 
+import scala.collection.immutable
 import scala.collection.mutable.{HashSet => MutSet}
 import scala.util.Random
 
@@ -151,5 +152,55 @@ class SetVariableTestSuite extends AnyFunSuite {
     assert(hasGoodMessage(exAdd), "Exception issue on addition")
     assert(hasGoodMessage(exRem), "Exception issue on removal")
     assert(hasGoodMessage(exSet), "Exception issue on setting value")
+  }
+
+  test(
+    s"The SetVariable is properly inserted in the static graph (partial propagation should work)"
+  ) {
+    val store     = new Store(debugLevel = 2) // Not 3 otherwise no partial propagation
+    val inputVar  = SetVariable(store, immutable.HashSet(10))
+    val outputVar = SetVariable(store, immutable.HashSet(20))
+    store.registerForPartialPropagation(outputVar)
+    new TestSetStaticGraphInvariant(store, inputVar, outputVar)
+    store.close()
+
+    inputVar :-= 10
+    inputVar :+= 18
+    inputVar.pendingValue should be(Set(18))
+    // 10 was replaced by 18 in inputVar  ==> if partial propagation works properly with SetVariable,
+    // the outputVar value should be replaced by 36
+    outputVar.value() should be(Set(36))
+  }
+
+  private class TestSetStaticGraphInvariant(model: Store, input: SetVariable, output: SetVariable)
+      extends Invariant(model)
+      with SetNotificationTarget {
+
+    input.registerStaticallyAndDynamicallyListeningElement(this)
+    output.setDefiningInvariant(this)
+
+    override def notifySetChanges(
+      setVariable: SetVariable,
+      index: Int,
+      addedElems: Iterable[Int],
+      removedElems: Iterable[Int],
+      oldValue: Set[Int],
+      newValue: Set[Int]
+    ): Unit = {
+      for (elem <- removedElems) {
+        output :-= elem*2
+      }
+      for(elem <- addedElems){
+        output :+= elem*2
+      }
+    }
+
+    override def checkInternals(): Unit = {
+      require(
+        output.pendingValue.head == input.value().head * 2,
+        s"Should be ${input.value().head * 2} got ${output.pendingValue.head}"
+      )
+    }
+
   }
 }

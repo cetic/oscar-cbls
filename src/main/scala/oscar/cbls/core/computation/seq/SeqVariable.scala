@@ -14,7 +14,7 @@
 package oscar.cbls.core.computation.seq
 
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
-import oscar.cbls.core.computation.{SavedValue, Store, Variable}
+import oscar.cbls.core.computation.{Invariant, KeyForRemoval, SavedValue, Store, Variable}
 
 /** Companion object of SeqVariable
   */
@@ -136,6 +136,19 @@ class SeqVariable(
 
   def checkpointLevel: Int = levelOfTopCheckpoint
 
+  override def registerDynamicallyListeningElement(target: SeqNotificationTarget, indexToRecallAtNotification: Int): KeyForRemoval[(SeqNotificationTarget, Int)] = {
+    doRegisterDynamicallyListeningElement(target,indexToRecallAtNotification)
+  }
+
+  override def registerStaticallyAndDynamicallyListeningElement(
+    propagationElement: Invariant with SeqNotificationTarget,
+    indexToRecallAtNotification: Int
+  ): KeyForRemoval[(SeqNotificationTarget, Int)] =
+    doRegisterStaticallyAndDynamicallyListeningElement(
+      propagationElement,
+      indexToRecallAtNotification
+    )
+
   override def name(): String = name
 
   /** Propagates up to this variable (if needed) and returns the new value of this SeqVariable.
@@ -146,7 +159,7 @@ class SeqVariable(
     * @return
     *   The new value of this SeqVariable.
     */
-  def value: IntSequence = {
+  def value(): IntSequence = {
     val propagating = model.propagating
     if (isADecisionVariable && !propagating) return toNotify.newValue
     if (!propagating) model.propagate(Some(this))
@@ -468,8 +481,6 @@ class SeqVariable(
       "Sequences cannot be assigned when a checkpoint has been defined"
     )
     if (!(toNotify.newValue sameIdentity newIntSequence)) {
-      if (!toNotify.isInstanceOf[SeqUpdateLastNotified] && !toNotify.isInstanceOf[SeqUpdateAssign])
-        performPropagation()
       toNotify = SeqUpdateAssign(newIntSequence)
       scheduleForPropagation()
     }
@@ -584,7 +595,7 @@ class SeqVariable(
       // We just rolled back, simply add this new instruction
       case _: SeqUpdateRollBackToTopCheckpoint =>
         SeqUpdateReleaseTopCheckpoint(toNotify, toNotify.newValue)
-      // We are at topCheckpoint an it was not yet released.
+      // We are at topCheckpoint and it was not yet released.
       // It seems we are releasing a checkpoint after which no modification where done.
       case _: SeqUpdateReleaseTopCheckpoint =>
         SeqUpdateReleaseTopCheckpoint(toNotify, toNotify.newValue)
@@ -721,7 +732,7 @@ class SeqVariable(
   def createClone(maxDepth: Int = 50): SeqVariable = {
     val clone = new SeqVariable(
       model,
-      this.value.toList,
+      this.value().toList,
       s"clone_of_$name",
       maxPivotPerValuePercent,
       isConstant
@@ -743,9 +754,9 @@ class SeqVariable(
 
   override def checkInternals(): Unit = {
     require(
-      this.value.toList equals toNotify.newValue.toList,
+      this.value().toList equals toNotify.newValue.toList,
       s"Pending value of $name is not equal to toNotify value : " +
-        s"\nShould be : ${this.value.toList} \nGot ${toNotify.newValue.toList}"
+        s"\nShould be : ${this.value().toList} \nGot ${toNotify.newValue.toList}"
     )
     require(
       toNotify.isInstanceOf[SeqUpdateLastNotified],
