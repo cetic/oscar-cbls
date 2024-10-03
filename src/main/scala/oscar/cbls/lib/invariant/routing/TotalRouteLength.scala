@@ -58,22 +58,30 @@ class TotalRouteLength(vrp: VRP, val routeLength: IntVariable, distanceMatrix: A
     extends Invariant(vrp.model, Some("Incremental Total Route Length"))
     with SeqNotificationTarget {
 
-  require(distanceMatrix.length == vrp.n,"The distance matrix do not contain all the distance between all the nodes")
-  distanceMatrix.foreach(line => 
-    require(line.length == vrp.n,"The distance matrix do not contain all the distance between all the nodes")
+  require(
+    distanceMatrix.length == vrp.n,
+    "The distance matrix do not contain all the distance between all the nodes"
+  )
+  distanceMatrix.foreach(line =>
+    require(
+      line.length == vrp.n,
+      "The distance matrix do not contain all the distance between all the nodes"
+    )
   )
   for (i <- 0 until vrp.n) {
     for (j <- i until vrp.n) {
-      require(distanceMatrix(i)(j) == distanceMatrix(j)(i),"The distance matrix shall be symetrical")
+      require(
+        distanceMatrix(i)(j) == distanceMatrix(j)(i),
+        "The distance matrix shall be symetrical"
+      )
     }
   }
-
 
   private val routes = vrp.routes
   private val v      = vrp.v
   case class CheckpointValue(level: Int, value: Long)
   private var checkpointValues: List[CheckpointValue] = List()
-  private var currentValue                            = computeRouteLengthFromScratch(routes.value)
+  private var currentValue = computeRouteLengthFromScratch(routes.value())
 
   routeLength.setDefiningInvariant(this)
   routes.registerStaticallyAndDynamicallyListeningElement(this)
@@ -85,7 +93,7 @@ class TotalRouteLength(vrp: VRP, val routeLength: IntVariable, distanceMatrix: A
     @tailrec
     def computeLength(exp: IntSequenceExplorer = exp, prevNode: Int = 0, length: Long = 0): Long = {
       exp match {
-        case _: RootIntSequenceExplorer => length
+        case _: RootIntSequenceExplorer => length + distanceMatrix(prevNode)(vrp.v - 1)
         case exp: IntSequenceExplorer =>
           if (exp.value < v) { // This is a new vehicle node
             computeLength(exp.next, exp.value, length + distanceMatrix(prevNode)(exp.value - 1))
@@ -103,6 +111,7 @@ class TotalRouteLength(vrp: VRP, val routeLength: IntVariable, distanceMatrix: A
     changes: SeqUpdate
   ): Unit = {
     currentValue = digestUpdate(changes)
+    routeLength := currentValue
   }
 
   private[this] def digestUpdate(changes: SeqUpdate): Long = {
@@ -121,7 +130,9 @@ class TotalRouteLength(vrp: VRP, val routeLength: IntVariable, distanceMatrix: A
         val nodeBefore = insertAfterExp.value
         val nodeAfter  = getNodeAfter(insertAfterExp)
         val delta =
-          distanceMatrix(nodeBefore)(insertedNode) + distanceMatrix(insertedNode)(nodeAfter)
+          distanceMatrix(nodeBefore)(insertedNode) + distanceMatrix(insertedNode)(
+            nodeAfter
+          ) - distanceMatrix(nodeBefore)(nodeAfter)
         digestUpdate(prev) + delta
       case SeqUpdateRemove(removedNodeExp, prev) =>
         assert(removedNodeExp.value != 0, "node 0 is a vehicle and cannot be removed")
@@ -135,13 +146,19 @@ class TotalRouteLength(vrp: VRP, val routeLength: IntVariable, distanceMatrix: A
         val nodeBeforeSource = fromExp.prev.value
         val nodeAfterSource  = getNodeAfter(toExp)
         val nodeBeforeDest   = afterExp.value
-        val nodeAfterDest    = getNodeAfter(afterExp)
+        val nodeAfterDest    =
+          if (nodeBeforeSource == afterExp.value)
+            getNodeAfter(toExp)
+          else
+            getNodeAfter(afterExp)
         val (startSeg, endSeg) =
           if (flip) (toExp.value, fromExp.value) else (fromExp.value, toExp.value)
         val delta = distanceMatrix(nodeBeforeDest)(startSeg) +
           distanceMatrix(endSeg)(nodeAfterDest) -
+          distanceMatrix(nodeBeforeDest)(nodeAfterDest) -
           distanceMatrix(nodeBeforeSource)(fromExp.value) -
-          distanceMatrix(toExp.value)(nodeAfterSource)
+          distanceMatrix(toExp.value)(nodeAfterSource) +
+        distanceMatrix(nodeBeforeSource)(nodeAfterSource)
         digestUpdate(prev) + delta
       case assign: SeqUpdateAssign => computeRouteLengthFromScratch(assign.newSequence)
       case SeqUpdateDefineCheckpoint(prev, level) =>
@@ -150,16 +167,47 @@ class TotalRouteLength(vrp: VRP, val routeLength: IntVariable, distanceMatrix: A
         length
       case _: SeqUpdateLastNotified => currentValue
       case update: SeqUpdateReleaseTopCheckpoint =>
+        val length = digestUpdate(update.prev)
         checkpointValues = checkpointValues.tail
-        digestUpdate(update.prev)
+        length
       case update: SeqUpdateRollBackToTopCheckpoint =>
-        assert(checkpointValues.head.level == update.level)
-        checkpointValues.head.value
+        digestUpdate(update.prev)
+        assert(
+          checkpointValues.head.level == update.level,
+          s"checkpoint levels are not coherent " +
+            s"(sequence level: ${update.level} != this invariant level: ${checkpointValues.head.level})"
+        )
+        currentValue = checkpointValues.head.value
+        currentValue
+
     }
   }
 
   override def checkInternals(): Unit = {
-    routeLength.pendingValue == computeRouteLengthFromScratch(routes.pendingValue)
+    val routeFromScratch = computeRouteLengthFromScratch(routes.pendingValue)
+
+    val vehicleTrips: String = vrp.mapVehicleToRoute
+      .map({ case (vehicle, route) =>
+        val routeWithV = route.appended(vehicle)
+        val routeString = routeWithV.tail.tail
+          .foldLeft(List((routeWithV.head, routeWithV.tail.head)))({ case (trips, toTrip) =>
+            val fromTrip = trips.last._2
+            trips.appended((fromTrip, toTrip))
+          })
+          .map(trip => s"${trip._1} --${distanceMatrix(trip._1)(trip._2)}")
+          .mkString("--> ")
+        routeString + s"--> ${routeWithV.head}"
+      })
+      .toList
+      .mkString("\n")
+
+    vrp.mapVehicleToRoute.map(vAndRoute => vAndRoute._2.appended(vAndRoute._1)).toList
+
+    require(
+      routeLength.pendingValue == routeFromScratch,
+      s"Route length failed. Got ${routeLength.pendingValue} instead of $routeFromScratch expected\n" +
+        s"Current Routes: \n$vehicleTrips"
+    )
   }
 
 }
