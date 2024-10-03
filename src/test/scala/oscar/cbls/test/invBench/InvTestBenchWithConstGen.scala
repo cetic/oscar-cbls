@@ -165,6 +165,8 @@ abstract class InvTestBenchWithConstGen[T](name: String, additionalSeeds: List[S
 
     override def run(sut: TestBenchSut): Unit = sut.inv.model.propagate()
 
-  }
+    override def toString = "Propagation"
+
+}
 
 }
