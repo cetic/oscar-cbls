@@ -17,7 +17,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
 import oscar.cbls.core.computation.Store
 import oscar.cbls.model.routing.VRP
-import oscar.cbls.algo.sequence.{RootIntSequenceExplorer,IntSequenceExplorer}
+import oscar.cbls.algo.sequence.{IntSequenceExplorer, RootIntSequenceExplorer}
 
 class VRPTestSuite extends AnyFunSuite with Matchers {
 
@@ -88,15 +88,18 @@ class VRPTestSuite extends AnyFunSuite with Matchers {
   }
 
   test("nextNodeInRouting works as expected") {
-    val vrp = initVRP
-    var exp = vrp.routes.value().explorerAtPosition(0).get
-    val expectedValues = Array(2,4,6,8,0,3,5,7,9,1)
-    var i = 0
-    while (exp match {
-      case _:RootIntSequenceExplorer => false
-      case _:IntSequenceExplorer => true
-    }) {
+    val vrp            = initVRP
+    var exp            = vrp.routes.value().explorerAtPosition(-1).get
+    val expectedValues = Array(0, 2, 4, 6, 8, 0, 3, 5, 7, 9, 1)
+    var i              = 0
+    while (
+      exp match {
+        case root: RootIntSequenceExplorer => root.beforeStart
+        case _: IntSequenceExplorer        => true
+      }
+    ) {
       vrp.nextNodeInRouting(exp) must be(expectedValues(i))
+      println(vrp.nextNodeInRouting(exp))
       exp = exp.next
       i += 1
     }
