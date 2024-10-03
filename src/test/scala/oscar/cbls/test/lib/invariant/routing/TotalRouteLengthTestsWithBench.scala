@@ -17,10 +17,7 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
     val nbVehicles = 2
 
     class TotalRouteLengthTestBench
-        extends InvTestBenchWithConstGen[Array[Array[Long]]](
-          "TotalRouteLength Test Bench",
-          List("xp2ypuYBJ_KmTKFTKfK6FBNt0S_Et36UDuPx7ZeVefK=")
-        ) {
+        extends InvTestBenchWithConstGen[Array[Array[Long]]]("TotalRouteLength Test Bench") {
 
       private def makeItSymetric(m: Array[Array[Long]]): Array[Array[Long]] = {
         for (i <- 0 until m.length) {
@@ -63,10 +60,7 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
     val nbVehicles = 2
 
     class TotalRouteLengthTestBench
-        extends InvTestBenchWithConstGen[Array[Array[Long]]](
-          "TotalRouteLength Test Bench",
-          List("xp2ypuYBJ_KmTKFTKfK6FBNt0S_Et36UDuPx7ZeVefK=")
-        ) {
+        extends InvTestBenchWithConstGen[Array[Array[Long]]]("TotalRouteLength Test Bench") {
 
       private def makeItSymetric(m: Array[Array[Long]]): Array[Array[Long]] = {
         for (i <- 0 until m.length) {
