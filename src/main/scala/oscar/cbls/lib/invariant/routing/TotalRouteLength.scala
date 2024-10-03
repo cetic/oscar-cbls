@@ -45,7 +45,9 @@ object TotalRouteLength {
 
 /** An invariant that maintains the total route length of a vehicle routing problem
   *
-  * The total route length is the sum of the routes of all the vehicles
+  * The total route length is the sum of the routes of all the vehicles. Beware, this route length
+  * constraint assumes that the distance matrix is symetrical (i.e. given two nodes `i` and `j`,
+  * `distanceMatrix(i)(j) == distanceMatrix(j)(i)`)
   *
   * @param vrp
   *   The object that represents the Vehicle Routing Problem
@@ -58,6 +60,7 @@ class TotalRouteLength(vrp: VRP, val routeLength: IntVariable, distanceMatrix: A
     extends Invariant(vrp.model, Some("Incremental Total Route Length"))
     with SeqNotificationTarget {
 
+  // Checking assumptions on the distance matrix
   require(
     distanceMatrix.length == vrp.n,
     "The distance matrix do not contain all the distance between all the nodes"
@@ -79,8 +82,11 @@ class TotalRouteLength(vrp: VRP, val routeLength: IntVariable, distanceMatrix: A
 
   private val routes = vrp.routes
   private val v      = vrp.v
+  // Defining a structure for the checkpoints
   case class CheckpointValue(level: Int, value: Long)
   private var checkpointValues: List[CheckpointValue] = List()
+
+  // Saving the current value
   private var currentValue = computeRouteLengthFromScratch(routes.value())
 
   routeLength.setDefiningInvariant(this)
@@ -88,6 +94,14 @@ class TotalRouteLength(vrp: VRP, val routeLength: IntVariable, distanceMatrix: A
 
   routeLength := currentValue
 
+  /** Computes the route length from scratch (without incremental computing, by going through the
+    * sequence)
+    *
+    * @param seq
+    *   The sequence representing the route
+    * @return
+    *   The length of the route
+    */
   private def computeRouteLengthFromScratch(seq: IntSequence): Long = {
     val exp = seq.explorerAtPosition(0).get.next
     @tailrec
@@ -105,6 +119,17 @@ class TotalRouteLength(vrp: VRP, val routeLength: IntVariable, distanceMatrix: A
     computeLength()
   }
 
+  /** Notifies this invariant that the listened [[oscar.cbls.core.computation.seq.SeqVariable]] has
+    * changed
+    *
+    * @param v
+    *   The listened SeqVariable.
+    * @param contextualVarIndex
+    *   The optional index of the SeqVariable in the context of the listening Invariant. Default -1
+    * @param changes
+    *   A stacked list of SeqUpdate, the first one represents the latest update. Use its prev value
+    *   to get the previous SeqUpdate...
+    */
   override def notifySeqChanges(
     v: SeqVariable,
     contextualVarIndex: Int,
@@ -114,21 +139,18 @@ class TotalRouteLength(vrp: VRP, val routeLength: IntVariable, distanceMatrix: A
     routeLength := currentValue
   }
 
+  /** Handles the updates
+    *
+    * @param changes
+    *   The inductive changes that had been made on the sequence
+    * @return
+    *   The new length of the sequence
+    */
   private[this] def digestUpdate(changes: SeqUpdate): Long = {
-    def getNodeAfter(exp: IntSequenceExplorer): Int = {
-      exp.next match {
-        case _: RootIntSequenceExplorer => v - 1
-        case exp: IntSequenceExplorer =>
-          if (exp.value < v)
-            exp.value - 1
-          else
-            exp.value
-      }
-    }
     changes match {
       case SeqUpdateInsert(insertedNode, insertAfterExp, prev) =>
         val nodeBefore = insertAfterExp.value
-        val nodeAfter  = getNodeAfter(insertAfterExp)
+        val nodeAfter  = vrp.nextNodeInRouting(insertAfterExp)
         val delta =
           distanceMatrix(nodeBefore)(insertedNode) + distanceMatrix(insertedNode)(
             nodeAfter
@@ -137,20 +159,20 @@ class TotalRouteLength(vrp: VRP, val routeLength: IntVariable, distanceMatrix: A
       case SeqUpdateRemove(removedNodeExp, prev) =>
         assert(removedNodeExp.value != 0, "node 0 is a vehicle and cannot be removed")
         val nodeBefore = removedNodeExp.prev.value
-        val nodeAfter  = getNodeAfter(removedNodeExp)
+        val nodeAfter  = vrp.nextNodeInRouting(removedNodeExp)
         val delta = distanceMatrix(nodeBefore)(nodeAfter) - distanceMatrix(nodeBefore)(
           removedNodeExp.value
         ) - distanceMatrix(removedNodeExp.value)(nodeAfter)
         digestUpdate(prev) + delta
       case SeqUpdateMove(fromExp, toExp, afterExp, flip, prev) =>
         val nodeBeforeSource = fromExp.prev.value
-        val nodeAfterSource  = getNodeAfter(toExp)
+        val nodeAfterSource  = vrp.nextNodeInRouting(toExp)
         val nodeBeforeDest   = afterExp.value
-        val nodeAfterDest    =
+        val nodeAfterDest =
           if (nodeBeforeSource == afterExp.value)
-            getNodeAfter(toExp)
+            vrp.nextNodeInRouting(toExp)
           else
-            getNodeAfter(afterExp)
+            vrp.nextNodeInRouting(afterExp)
         val (startSeg, endSeg) =
           if (flip) (toExp.value, fromExp.value) else (fromExp.value, toExp.value)
         val delta = distanceMatrix(nodeBeforeDest)(startSeg) +
@@ -158,7 +180,7 @@ class TotalRouteLength(vrp: VRP, val routeLength: IntVariable, distanceMatrix: A
           distanceMatrix(nodeBeforeDest)(nodeAfterDest) -
           distanceMatrix(nodeBeforeSource)(fromExp.value) -
           distanceMatrix(toExp.value)(nodeAfterSource) +
-        distanceMatrix(nodeBeforeSource)(nodeAfterSource)
+          distanceMatrix(nodeBeforeSource)(nodeAfterSource)
         digestUpdate(prev) + delta
       case assign: SeqUpdateAssign => computeRouteLengthFromScratch(assign.newSequence)
       case SeqUpdateDefineCheckpoint(prev, level) =>
