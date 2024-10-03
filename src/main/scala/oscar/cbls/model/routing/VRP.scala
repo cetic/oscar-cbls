@@ -164,7 +164,7 @@ class VRP(val model: Store, val n: Int, val v: Int, maxPivotPerValuePercent: Int
   /** Given an explorer, returns the next node in the route taking routing conventions into account.
     *
     * This means that if the next node is a vehicle id or if it's the end of the sequence, the next
-    * node should be the id of the previous vehicle
+    * node should be the id of the previous vehicle.
     *
     * @param exp
     *   The given explorer
