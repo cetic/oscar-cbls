@@ -176,7 +176,7 @@ class VRP(val model: Store, val n: Int, val v: Int, maxPivotPerValuePercent: Int
       case _: RootIntSequenceExplorer => v - 1
       case exp: IntSequenceExplorer =>
         if (exp.value < v)
-          exp.value - 1
+          exp.value - 1 max 0
         else
           exp.value
     }
