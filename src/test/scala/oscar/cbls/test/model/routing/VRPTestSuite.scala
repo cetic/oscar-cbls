@@ -99,7 +99,6 @@ class VRPTestSuite extends AnyFunSuite with Matchers {
       }
     ) {
       vrp.nextNodeInRouting(exp) must be(expectedValues(i))
-      println(vrp.nextNodeInRouting(exp))
       exp = exp.next
       i += 1
     }
