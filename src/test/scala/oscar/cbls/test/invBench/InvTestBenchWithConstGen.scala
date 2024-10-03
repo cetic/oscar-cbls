@@ -167,6 +167,6 @@ abstract class InvTestBenchWithConstGen[T](name: String, additionalSeeds: List[S
 
     override def toString = "Propagation"
 
-}
+  }
 
 }
