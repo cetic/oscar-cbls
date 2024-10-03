@@ -17,6 +17,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
 import oscar.cbls.core.computation.Store
 import oscar.cbls.model.routing.VRP
+import oscar.cbls.algo.sequence.{RootIntSequenceExplorer,IntSequenceExplorer}
 
 class VRPTestSuite extends AnyFunSuite with Matchers {
 
@@ -83,6 +84,22 @@ class VRPTestSuite extends AnyFunSuite with Matchers {
 
   test("Can't create a VRP with less than one vehicle") {
     val model = new Store()
-    an[IllegalArgumentException] should be thrownBy VRP(model, 10, -1)
+    an[IllegalArgumentException] must be thrownBy VRP(model, 10, -1)
+  }
+
+  test("nextNodeInRouting works as expected") {
+    val vrp = initVRP
+    var exp = vrp.routes.value().explorerAtPosition(0).get
+    val expectedValues = Array(2,4,6,8,0,3,5,7,9,1)
+    var i = 0
+    while (exp match {
+      case _:RootIntSequenceExplorer => false
+      case _:IntSequenceExplorer => true
+    }) {
+      vrp.nextNodeInRouting(exp) must be(expectedValues(i))
+      exp = exp.next
+      i += 1
+    }
+
   }
 }
