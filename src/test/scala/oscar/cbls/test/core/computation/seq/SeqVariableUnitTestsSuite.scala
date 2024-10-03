@@ -408,11 +408,11 @@ class SeqVariableUnitTestsSuite extends AnyFunSuite {
     new TestSeqInvariant(store, inputVar, outputVar)
     store.close()
 
-    inputVar.insertAfterPosition(8,inputVar.value.explorerAtPosition(0).get)
+    inputVar.insertAfterPosition(8,inputVar.value().explorerAtPosition(0).get)
     inputVar.pendingValue.toList should be(List(10,8))
     // 8 was inserted after 10 ==> if partial propagation works properly with IntVariable,
     // the outputVar value should be List(10,8)
-    outputVar.value.toList should be(List(10,8))
+    outputVar.value().toList should be(List(10,8))
   }
 
 }
