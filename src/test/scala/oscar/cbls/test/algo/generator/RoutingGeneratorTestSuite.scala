@@ -27,48 +27,53 @@ class RoutingGeneratorTestSuite extends AnyFunSuite with Matchers {
     val nodesByCluster = 10
     val r              = 50
     val numDepot       = 3
-    val seed = Random.nextLong()
-    println(s"Seed: $seed")
+    val seed           = Random.nextLong()
+
     val rng = new Random(seed)
 
     val nodes = RoutingGenerator.clusteredNodes(numDepot, numCluster, nodesByCluster, r, rng)
     val dist  = RoutingGenerator.distancesMatrix(nodes)
 
-    nodes should have length numDepot + numCluster * nodesByCluster
+    withClue(s"Seed: $seed\n") {
+      nodes should have length numDepot + numCluster * nodesByCluster
 
-    for (i <- 0 until numDepot) {
-      for (j <- i + 1 until numDepot) {
-        dist(i)(j) should be <= round(sqrt(2.0 * pow(2 * r.toDouble, 2.0))) // The biggest distance
-        // in a square is the diagonal.
+      for (i <- 0 until numDepot) {
+        for (j <- i + 1 until numDepot) {
+          dist(i)(j) should be <= round(
+            sqrt(2.0 * pow(2 * r.toDouble, 2.0))
+          ) // The biggest distance
+          // in a square is the diagonal.
+        }
       }
-    }
 
-    for (n <- numDepot until numDepot + numCluster * nodesByCluster by nodesByCluster) {
-      for (i <- n until n + nodesByCluster) {
-        for (j <- i + 1 until n + nodesByCluster) {
-          dist(i)(j) should be <= round(sqrt(2.0 * pow(2 * r.toDouble, 2.0)))
+      for (n <- numDepot until numDepot + numCluster * nodesByCluster by nodesByCluster) {
+        for (i <- n until n + nodesByCluster) {
+          for (j <- i + 1 until n + nodesByCluster) {
+            dist(i)(j) should be <= round(sqrt(2.0 * pow(2 * r.toDouble, 2.0)))
+          }
         }
       }
     }
   }
 
   test("Nodes are evenly space using evenlySpacedGenerator") {
-    val nodesDist = 50L
-    val numNodes  = 100
-    val numDepot  = 1
-    val seed = Random.nextLong()
-    println(s"Seed: $seed")
-    val rng = new Random(seed)
+    val nodesDist  = 50L
+    val numNodes   = 100
+    val numDepot   = 1
+    val seed       = Random.nextLong()
+    val rng        = new Random(seed)
     val firstDepot = (42L, 42L)
 
-    val nodes = RoutingGenerator.evenlySpacedNodes(numDepot, numNodes, nodesDist, firstDepot, rng)
+    val nodes = RoutingGenerator.evenlySpacedNodes(numNodes, numDepot, nodesDist, firstDepot, rng)
 
-    nodes should have length numDepot + numNodes
-    // Nodes are generated from the first depot and evenly spaced. So the modulo of their
-    // coordinates must be the same than the modulo of the first depot.
-    for (n <- nodes) {
-      n._1 % nodesDist should equal(firstDepot._1 % nodesDist)
-      n._2 % nodesDist should equal(firstDepot._2 % nodesDist)
+    withClue(s"Seed: $seed\n") {
+      nodes should have length numNodes
+      // Nodes are generated from the first depot and evenly spaced. So the modulo of their
+      // coordinates must be the same as the modulo of the first depot.
+      for (n <- nodes) {
+        n._1 % nodesDist should equal(firstDepot._1 % nodesDist)
+        n._2 % nodesDist should equal(firstDepot._2 % nodesDist)
+      }
     }
   }
 
@@ -78,19 +83,20 @@ class RoutingGeneratorTestSuite extends AnyFunSuite with Matchers {
   ) {
     val nodesDist = 500L
     val numNodes  = 100
-    val seed = Random.nextLong()
-    println(s"Seed: $seed")
-    val rng = new Random(seed)
-    val center = RoutingGenerator.centerDepot
+    val seed      = Random.nextLong()
+    val rng       = new Random(seed)
+    val center    = RoutingGenerator.centerDepot
 
-    val nodes = RoutingGenerator.evenlySpacedNodes(1, numNodes, nodesDist, center, rng)
+    val nodes = RoutingGenerator.evenlySpacedNodes(numNodes, 1, nodesDist, center, rng)
 
-    nodes should have length 9
-    // Nodes are generated from the center and evenly spaced. So the modulo of their coordinate
-    // must be the same than the modulo of the center.
-    for (n <- nodes) {
-      n._1 % nodesDist should equal(center._1 % nodesDist)
-      n._2 % nodesDist should equal(center._2 % nodesDist)
+    withClue(s"Seed: $seed\n") {
+      nodes should have length 9
+      // Nodes are generated from the center and evenly spaced. So the modulo of their coordinate
+      // must be the same as the modulo of the center.
+      for (n <- nodes) {
+        n._1 % nodesDist should equal(center._1 % nodesDist)
+        n._2 % nodesDist should equal(center._2 % nodesDist)
+      }
     }
   }
 

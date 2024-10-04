@@ -34,20 +34,19 @@ class InsertPointNeighborhoodTestSuite extends AnyFunSuite {
     val seed: Long = 6553200370069564662L // Random.nextLong()
     println(s"\nSeed: $seed")
 
-    val v          = 2
-    val n          = 8
-    val totalNodes = v + n
+    val v = 2
+    val n = 10
 
     val model = new Store(debugLevel = 3)
-    val vrp   = VRP(model, totalNodes, v, debug = true)
+    val vrp   = VRP(model, n, v, debug = true)
     val (_, dist, unroutedCost, _) =
-      RoutingGenerator.generateRandomRoutingData(v, n, 0L, 0L, seed)
+      RoutingGenerator.generateRandomRoutingData(n, 0L, 0L, seed)
     val sumDist   = IntVariable(model, 0L)
     val sumCost   = IntVariable(model, 0L)
     val objVal    = IntVariable(model, 0L)
     val objective = Minimize(objVal)
     new NaiveSumDistancesInvariant(model, vrp.routes, dist, sumDist)
-    new NaiveUnroutedCostInvariant(model, vrp.routes, v + n, unroutedCost, sumCost)
+    new NaiveUnroutedCostInvariant(model, vrp.routes, n, unroutedCost, sumCost)
     Sum2(model, sumDist, sumCost, objVal)
     model.close()
 
