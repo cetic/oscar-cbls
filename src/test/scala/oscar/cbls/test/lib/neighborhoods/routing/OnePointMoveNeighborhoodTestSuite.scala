@@ -32,15 +32,15 @@ class OnePointMoveNeighborhoodTestSuite extends AnyFunSuite {
     val rng = new Random(seed)
 
     val v = 1
-    val n = 4
+    val n = 5
     val d = 10
 
-    val coordinates = RoutingGenerator.evenlySpacedNodes(v, n, d, RoutingGenerator.centerDepot, rng)
+    val coordinates = RoutingGenerator.evenlySpacedNodes(n, v, d, RoutingGenerator.centerDepot, rng)
     val distances   = RoutingGenerator.distancesMatrix(coordinates)
 
     val model    = new Store(debugLevel = 3)
-    val vrp      = VRP(model, n + v, v, debug = true)
-    var toInsert = rng.shuffle(List.from(v until v + n))
+    val vrp      = VRP(model, n, v, debug = true)
+    var toInsert = rng.shuffle(List.from(v until n))
     while (toInsert.nonEmpty) {
       val node     = toInsert.head
       val explorer = vrp.routes.pendingValue.explorerAtPosition(0).get
