@@ -42,6 +42,20 @@ object Minus2 {
   ): Minus2 = {
     new Minus2(model, a, b, output, name)
   }
+
+  /** Static method to obtain an IntVariable that is the result of the difference of two
+    * IntVariables.
+    *
+    * @param a
+    *   left side operand
+    * @param b
+    *   right side operand
+    */
+  def result(a: IntVariable, b: IntVariable): IntVariable = {
+    val out = IntVariable(a.model, a.value() - b.value())
+    Minus2(a.model, a, b, out)
+    out
+  }
 }
 
 /** Invariant which maintains the difference of two

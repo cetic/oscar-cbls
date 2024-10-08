@@ -14,6 +14,7 @@
 package oscar.cbls.core.computation.integer
 
 import oscar.cbls.core.computation.{Invariant, KeyForRemoval, SavedValue, Store, Variable}
+import oscar.cbls.lib.invariant.numeric.{Minus2, Sum2}
 
 /** Companion object of IntVariable */
 object IntVariable {
@@ -99,6 +100,9 @@ class IntVariable(
   /** Assign the given value to this variable */
   def :=(value: Long): Unit = setValue(value)
 
+  /** Set this variable as identical to the given variable. */
+  def :<-(that: IntVariable): Unit = new IntIdentityInvariant(this.model, that, this)
+
   /** Add the given value to this variable */
   def :+=(value: Long): Unit = setValue(_pendingValue + value)
 
@@ -113,6 +117,12 @@ class IntVariable(
 
   /** Increments this variable */
   def :++(): Unit = setValue(_pendingValue + 1)
+
+  /** Returns the sum of this variable and another. */
+  def +(that: IntVariable): IntVariable = Sum2.result(this, that)
+
+  /** Returns the sum of this variable and another. */
+  def -(that: IntVariable): IntVariable = Minus2.result(this, that)
 
   /** Decrements this variable */
   def :--(): Unit = setValue(_pendingValue - 1)

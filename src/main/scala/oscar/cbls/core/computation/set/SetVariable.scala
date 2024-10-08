@@ -114,6 +114,9 @@ class SetVariable(
     */
   def :-=(i: Int): Boolean = remove(i)
 
+  /** Set this variable as identical to the given variable. */
+  def :<-(that: SetVariable): Unit = new SetIdentityInvariant(this.model, that, this)
+
   /** Changes the value of this variable and schedules it for propagation. */
   protected def setValue(value: Set[Int]): Unit = {
     if (value != _pendingValue) {
