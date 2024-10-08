@@ -26,6 +26,33 @@ import oscar.cbls.algo.sequence.IntSequence
   */
 object TotalRouteLength {
 
+  private def isSymetrical(n: Int, distanceMatrix: Int => Int => Long): Boolean = {
+    var res = true
+    for (i <- 0 until n) {
+      for (j <- i until n) {
+        res = res & distanceMatrix(i)(j) == distanceMatrix(j)(i)
+      }
+    }
+    res
+  }
+
+  /** Creates a TotalRouteLength invariant
+    *
+    * The TotalRouteLength invariant maintains the sum of all the route of all the vehicles
+    *
+    * @param vrp
+    *   The object that represents the Vehicle Routing Problem
+    * @param distanceMatrix
+    *   The distance matrix between the points of the problem
+    * @return
+    *   The TotalRouteLength invariant
+    */
+  def apply(vrp: VRP, distanceMatrix: Int => Int => Long): TotalRouteLength = {
+    val routeLength: IntVariable = IntVariable(vrp.model, 0)
+    val matrixIsSymetrical       = isSymetrical(vrp.n, distanceMatrix)
+    new TotalRouteLength(vrp, routeLength, distanceMatrix, matrixIsSymetrical)
+  }
+
   /** Creates a TotalRouteLength invariant
     *
     * The TotalRouteLength invariant maintains the sum of all the route of all the vehicles
@@ -39,7 +66,58 @@ object TotalRouteLength {
     */
   def apply(vrp: VRP, distanceMatrix: Array[Array[Long]]): TotalRouteLength = {
     val routeLength: IntVariable = IntVariable(vrp.model, 0)
-    new TotalRouteLength(vrp, routeLength, distanceMatrix)
+    val matrixIsSymetrical       = isSymetrical(vrp.n, (i: Int) => (j: Int) => distanceMatrix(i)(j))
+    new TotalRouteLength(
+      vrp,
+      routeLength,
+      (i: Int) => (j: Int) => distanceMatrix(i)(j),
+      matrixIsSymetrical
+    )
+  }
+
+  /** Creates a TotalRouteLength invariant
+    *
+    * The TotalRouteLength invariant maintains the sum of all the route of all the vehicles
+    *
+    * @param vrp
+    *   The object that represents the Vehicle Routing Problem
+    * @param distanceMatrix
+    *   The distance matrix between the points of the problem
+    * @return
+    *   The TotalRouteLength invariant
+    */
+  def apply(
+    vrp: VRP,
+    distanceMatrix: Int => Int => Long,
+    matrixIsSymetrical: Boolean
+  ): TotalRouteLength = {
+    val routeLength: IntVariable = IntVariable(vrp.model, 0)
+    new TotalRouteLength(vrp, routeLength, distanceMatrix, matrixIsSymetrical)
+  }
+
+  /** Creates a TotalRouteLength invariant
+    *
+    * The TotalRouteLength invariant maintains the sum of all the route of all the vehicles
+    *
+    * @param vrp
+    *   The object that represents the Vehicle Routing Problem
+    * @param distanceMatrix
+    *   The distance matrix between the points of the problem
+    * @return
+    *   The TotalRouteLength invariant
+    */
+  def apply(
+    vrp: VRP,
+    distanceMatrix: Array[Array[Long]],
+    matrixIsSymetrical: Boolean
+  ): TotalRouteLength = {
+    val routeLength: IntVariable = IntVariable(vrp.model, 0)
+    new TotalRouteLength(
+      vrp,
+      routeLength,
+      (i: Int) => (j: Int) => distanceMatrix(i)(j),
+      matrixIsSymetrical
+    )
   }
 }
 
@@ -56,27 +134,22 @@ object TotalRouteLength {
   * @param distanceMatrix
   *   The TotalRouteLength invariant
   */
-class TotalRouteLength(vrp: VRP, val routeLength: IntVariable, distanceMatrix: Array[Array[Long]])
-    extends Invariant(vrp.model, Some("Incremental Total Route Length"))
+class TotalRouteLength(
+  vrp: VRP,
+  val routeLength: IntVariable,
+  distanceMatrix: Int => Int => Long,
+  matrixIsSymetrical: Boolean
+) extends Invariant(vrp.model, Some("Incremental Total Route Length"))
     with SeqNotificationTarget {
 
-  // Checking assumptions on the distance matrix
-  require(
-    distanceMatrix.length == vrp.n,
-    "The distance matrix do not contain all the distance between all the nodes"
-  )
-  distanceMatrix.foreach(line =>
-    require(
-      line.length == vrp.n,
-      "The distance matrix do not contain all the distance between all the nodes"
-    )
-  )
-  for (i <- 0 until vrp.n) {
-    for (j <- i until vrp.n) {
-      require(
-        distanceMatrix(i)(j) == distanceMatrix(j)(i),
-        "The distance matrix shall be symetrical"
-      )
+  if (matrixIsSymetrical) {
+    for (i <- 0 until vrp.n) {
+      for (j <- i until vrp.n) {
+        require(
+          distanceMatrix(i)(j) == distanceMatrix(j)(i),
+          "The distance matrix shall be symetrical"
+        )
+      }
     }
   }
 
@@ -102,17 +175,50 @@ class TotalRouteLength(vrp: VRP, val routeLength: IntVariable, distanceMatrix: A
     * @return
     *   The length of the route
     */
-  private def computeRouteLengthFromScratch(seq: IntSequence): Long = {
-    val exp = seq.explorerAtPosition(0).get.next
+  private def computeRouteLengthFromScratch(
+    seq: IntSequence,
+    fromExpl: Option[IntSequenceExplorer] = None,
+    toExpl: Option[IntSequenceExplorer] = None,
+    backward: Boolean = false
+  ): Long = {
+    println(
+      s"${fromExpl.map(_.position)} -> ${toExpl.map(_.position)}" + (if (backward) " backward"
+                                                                     else "")
+    )
+    val startExp = fromExpl.getOrElse(seq.explorerAtPosition(0).get)
+    val exp      = if (backward) startExp.prev else startExp.next
     @tailrec
-    def computeLength(exp: IntSequenceExplorer = exp, prevNode: Int = 0, length: Long = 0): Long = {
+    def computeLength(
+      exp: IntSequenceExplorer = exp,
+      prevNode: Int = startExp.value,
+      length: Long = 0
+    ): Long = {
       exp match {
         case _: RootIntSequenceExplorer => length + distanceMatrix(prevNode)(vrp.v - 1)
         case exp: IntSequenceExplorer =>
-          if (exp.value < v) { // This is a new vehicle node
-            computeLength(exp.next, exp.value, length + distanceMatrix(prevNode)(exp.value - 1))
-          } else { // This is a normal node
-            computeLength(exp.next, exp.value, length + distanceMatrix(prevNode)(exp.value))
+          val nextExp = if (backward) exp.prev else exp.next
+          toExpl match {
+            case None =>
+              if (exp.value < v) { // This is a new vehicle node
+                computeLength(nextExp, exp.value, length + distanceMatrix(prevNode)(exp.value - 1))
+              } else { // This is a normal node
+                computeLength(nextExp, exp.value, length + distanceMatrix(prevNode)(exp.value))
+              }
+            case Some(e) =>
+              if (e.value == exp.value) {
+                length + distanceMatrix(prevNode)(e.value)
+              } else {
+                if (exp.value < v) { // This is a new vehicle node
+                  computeLength(
+                    nextExp,
+                    exp.value,
+                    length + distanceMatrix(prevNode)(exp.value - 1)
+                  )
+                } else { // This is a normal node
+                  computeLength(nextExp, exp.value, length + distanceMatrix(prevNode)(exp.value))
+                }
+
+              }
           }
       }
     }
@@ -146,42 +252,78 @@ class TotalRouteLength(vrp: VRP, val routeLength: IntVariable, distanceMatrix: A
     * @return
     *   The new length of the sequence
     */
-  private[this] def digestUpdate(changes: SeqUpdate): Long = {
+  private[this] def digestUpdate(changes: SeqUpdate, computeDelta: Boolean = true): Long = {
     changes match {
       case SeqUpdateInsert(insertedNode, insertAfterExp, prev) =>
-        val nodeBefore = insertAfterExp.value
-        val nodeAfter  = vrp.nextNodeInRouting(insertAfterExp)
-        val delta =
-          distanceMatrix(nodeBefore)(insertedNode) + distanceMatrix(insertedNode)(
-            nodeAfter
-          ) - distanceMatrix(nodeBefore)(nodeAfter)
-        digestUpdate(prev) + delta
+        if (computeDelta) {
+          val nodeBefore = insertAfterExp.value
+          val nodeAfter  = vrp.nextNodeInRouting(insertAfterExp)
+          val delta =
+            distanceMatrix(nodeBefore)(insertedNode) + distanceMatrix(insertedNode)(
+              nodeAfter
+            ) - distanceMatrix(nodeBefore)(nodeAfter)
+          digestUpdate(prev) + delta
+        } else {
+          digestUpdate(prev)
+        }
       case SeqUpdateRemove(removedNodeExp, prev) =>
-        assert(removedNodeExp.value != 0, "node 0 is a vehicle and cannot be removed")
-        val nodeBefore = removedNodeExp.prev.value
-        val nodeAfter  = vrp.nextNodeInRouting(removedNodeExp)
-        val delta = distanceMatrix(nodeBefore)(nodeAfter) - distanceMatrix(nodeBefore)(
-          removedNodeExp.value
-        ) - distanceMatrix(removedNodeExp.value)(nodeAfter)
-        digestUpdate(prev) + delta
-      case SeqUpdateMove(fromExp, toExp, afterExp, flip, prev) =>
-        val nodeBeforeSource = fromExp.prev.value
-        val nodeAfterSource  = vrp.nextNodeInRouting(toExp)
-        val nodeBeforeDest   = afterExp.value
-        val nodeAfterDest =
-          if (nodeBeforeSource == afterExp.value)
-            vrp.nextNodeInRouting(toExp)
-          else
-            vrp.nextNodeInRouting(afterExp)
-        val (startSeg, endSeg) =
-          if (flip) (toExp.value, fromExp.value) else (fromExp.value, toExp.value)
-        val delta = distanceMatrix(nodeBeforeDest)(startSeg) +
-          distanceMatrix(endSeg)(nodeAfterDest) -
-          distanceMatrix(nodeBeforeDest)(nodeAfterDest) -
-          distanceMatrix(nodeBeforeSource)(fromExp.value) -
-          distanceMatrix(toExp.value)(nodeAfterSource) +
-          distanceMatrix(nodeBeforeSource)(nodeAfterSource)
-        digestUpdate(prev) + delta
+        if (computeDelta) {
+          assert(removedNodeExp.value != 0, "node 0 is a vehicle and cannot be removed")
+          val nodeBefore = removedNodeExp.prev.value
+          val nodeAfter  = vrp.nextNodeInRouting(removedNodeExp)
+          val delta = distanceMatrix(nodeBefore)(nodeAfter) - distanceMatrix(nodeBefore)(
+            removedNodeExp.value
+          ) - distanceMatrix(removedNodeExp.value)(nodeAfter)
+          digestUpdate(prev) + delta
+        } else {
+          digestUpdate(prev)
+        }
+      case m @ SeqUpdateMove(fromExp, toExp, afterExp, flip, prev) =>
+        if (computeDelta) {
+          val nodeBeforeSource = fromExp.prev.value
+          val nodeAfterSource  = vrp.nextNodeInRouting(toExp)
+          val nodeBeforeDest   = afterExp.value
+          val nodeAfterDest =
+            if (nodeBeforeSource == afterExp.value)
+              vrp.nextNodeInRouting(toExp)
+            else
+              vrp.nextNodeInRouting(afterExp)
+          val (startSeg, endSeg) =
+            if (flip) (toExp.value, fromExp.value) else (fromExp.value, toExp.value)
+          val deltaSeg = if (matrixIsSymetrical) {
+            0
+          } else {
+            if (flip && fromExp.value != toExp.value) {
+              val distBefore =
+                computeRouteLengthFromScratch(
+                  fromExp.intSequence,
+                  Some(fromExp),
+                  Some(toExp),
+                  backward = false
+                )
+              val distAfter =
+                computeRouteLengthFromScratch(
+                  fromExp.intSequence,
+                  Some(toExp),
+                  Some(fromExp),
+                  backward = true
+                )
+              distAfter - distBefore
+            } else {
+              0
+            }
+          }
+          val delta = distanceMatrix(nodeBeforeDest)(startSeg) +
+            distanceMatrix(endSeg)(nodeAfterDest) -
+            distanceMatrix(nodeBeforeDest)(nodeAfterDest) -
+            distanceMatrix(nodeBeforeSource)(fromExp.value) -
+            distanceMatrix(toExp.value)(nodeAfterSource) +
+            distanceMatrix(nodeBeforeSource)(nodeAfterSource) +
+            deltaSeg
+          digestUpdate(prev) + delta
+        } else {
+          digestUpdate(prev)
+        }
       case assign: SeqUpdateAssign => computeRouteLengthFromScratch(assign.newSequence)
       case SeqUpdateDefineCheckpoint(prev, level) =>
         val length = digestUpdate(prev)
@@ -193,7 +335,7 @@ class TotalRouteLength(vrp: VRP, val routeLength: IntVariable, distanceMatrix: A
         checkpointValues = checkpointValues.tail
         length
       case update: SeqUpdateRollBackToTopCheckpoint =>
-        digestUpdate(update.prev)
+        digestUpdate(update.prev, false)
         assert(
           checkpointValues.head.level == update.level,
           s"checkpoint levels are not coherent " +
