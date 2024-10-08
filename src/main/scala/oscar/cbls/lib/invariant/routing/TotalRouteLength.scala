@@ -124,20 +124,34 @@ object TotalRouteLength {
 /** An invariant that maintains the total route length of a vehicle routing problem
   *
   * The total route length is the sum of the routes of all the vehicles. Beware, this route length
-  * constraint assumes that the distance matrix is symetrical (i.e. given two nodes `i` and `j`,
-  * `distanceMatrix(i)(j) == distanceMatrix(j)(i)`)
+  * constraint is more efficient if the distance matrix is '''symmetrical''' (i.e. given two nodes
+  * `i` and `j`, `distanceMatrix(i)(j) == distanceMatrix(j)(i)`)
   *
   * @param vrp
   *   The object that represents the Vehicle Routing Problem
   * @param routeLength
-  *   The distance matrix between the points of the problem
-  * @param distanceMatrix
-  *   The TotalRouteLength invariant
+  *   The
+  * @param distanceFunction
+  */
+/** An invariant that maintains the total route length of a vehicle routing problem
+  *
+  * The total route length is the sum of the routes of all the vehicles. Beware, this route length
+  * constraint is more efficient if the distance matrix is '''symmetrical''' (i.e. given two nodes
+  * `i` and `j`, `distanceMatrix(i)(j) == distanceMatrix(j)(i)`)
+  *
+  * @param vrp
+  *   The object that represents the Vehicle Routing Problem
+  * @param routeLength
+  *   The [[oscar.cbls.core.computation.IntVariable]] that is maintained by the invariant
+  * @param distanceFunction
+  *   A function that, given two nodes, returns the distance between the two nodes
+  * @param matrixIsSymetrical
+  *   A flag that says if the matrix is symetrical
   */
 class TotalRouteLength(
   vrp: VRP,
   val routeLength: IntVariable,
-  distanceMatrix: Int => Int => Long,
+  distanceFunction: Int => Int => Long,
   matrixIsSymetrical: Boolean
 ) extends Invariant(vrp.model, Some("Incremental Total Route Length"))
     with SeqNotificationTarget {
@@ -146,7 +160,7 @@ class TotalRouteLength(
     for (i <- 0 until vrp.n) {
       for (j <- i until vrp.n) {
         require(
-          distanceMatrix(i)(j) == distanceMatrix(j)(i),
+          distanceFunction(i)(j) == distanceFunction(j)(i),
           "The distance matrix shall be symetrical"
         )
       }
@@ -170,8 +184,18 @@ class TotalRouteLength(
   /** Computes the route length from scratch (without incremental computing, by going through the
     * sequence)
     *
+    * This method can compute either the entire route length or the route length on a segment of the
+    * route. The start and end of this segment can be given as parameter. If the flag backward is
+    * true, the distance is computed backward in the sequence
+    *
     * @param seq
     *   The sequence representing the route
+    * @param fromExpl
+    *   The optional start of the segment
+    * @param toExpl
+    *   The optinal end of the segment
+    * @param backward
+    *   A flag that says if the distance shall be computed backward
     * @return
     *   The length of the route
     */
@@ -190,28 +214,32 @@ class TotalRouteLength(
       length: Long = 0
     ): Long = {
       exp match {
-        case _: RootIntSequenceExplorer => length + distanceMatrix(prevNode)(vrp.v - 1)
+        case _: RootIntSequenceExplorer => length + distanceFunction(prevNode)(vrp.v - 1)
         case exp: IntSequenceExplorer =>
           val nextExp = if (backward) exp.prev else exp.next
           toExpl match {
             case None =>
               if (exp.value < v) { // This is a new vehicle node
-                computeLength(nextExp, exp.value, length + distanceMatrix(prevNode)(exp.value - 1))
+                computeLength(
+                  nextExp,
+                  exp.value,
+                  length + distanceFunction(prevNode)(exp.value - 1)
+                )
               } else { // This is a normal node
-                computeLength(nextExp, exp.value, length + distanceMatrix(prevNode)(exp.value))
+                computeLength(nextExp, exp.value, length + distanceFunction(prevNode)(exp.value))
               }
             case Some(e) =>
               if (e.value == exp.value) {
-                length + distanceMatrix(prevNode)(e.value)
+                length + distanceFunction(prevNode)(e.value)
               } else {
                 if (exp.value < v) { // This is a new vehicle node
                   computeLength(
                     nextExp,
                     exp.value,
-                    length + distanceMatrix(prevNode)(exp.value - 1)
+                    length + distanceFunction(prevNode)(exp.value - 1)
                   )
                 } else { // This is a normal node
-                  computeLength(nextExp, exp.value, length + distanceMatrix(prevNode)(exp.value))
+                  computeLength(nextExp, exp.value, length + distanceFunction(prevNode)(exp.value))
                 }
 
               }
@@ -243,8 +271,14 @@ class TotalRouteLength(
 
   /** Handles the updates
     *
+    * This methods digests inductively the previous updates before treating a given update. In some
+    * cases (mainly when rolling back to checkpoint), we do not care about computing the deltas: in
+    * this case, the flag `computeDelta` is false.
+    *
     * @param changes
     *   The inductive changes that had been made on the sequence
+    * @param computeDelta
+    *   A flag that says if the method shall compute the delta
     * @return
     *   The new length of the sequence
     */
@@ -255,9 +289,9 @@ class TotalRouteLength(
           val nodeBefore = insertAfterExp.value
           val nodeAfter  = vrp.nextNodeInRouting(insertAfterExp)
           val delta =
-            distanceMatrix(nodeBefore)(insertedNode) + distanceMatrix(insertedNode)(
+            distanceFunction(nodeBefore)(insertedNode) + distanceFunction(insertedNode)(
               nodeAfter
-            ) - distanceMatrix(nodeBefore)(nodeAfter)
+            ) - distanceFunction(nodeBefore)(nodeAfter)
           digestUpdate(prev) + delta
         } else {
           digestUpdate(prev)
@@ -267,9 +301,9 @@ class TotalRouteLength(
           assert(removedNodeExp.value != 0, "node 0 is a vehicle and cannot be removed")
           val nodeBefore = removedNodeExp.prev.value
           val nodeAfter  = vrp.nextNodeInRouting(removedNodeExp)
-          val delta = distanceMatrix(nodeBefore)(nodeAfter) - distanceMatrix(nodeBefore)(
+          val delta = distanceFunction(nodeBefore)(nodeAfter) - distanceFunction(nodeBefore)(
             removedNodeExp.value
-          ) - distanceMatrix(removedNodeExp.value)(nodeAfter)
+          ) - distanceFunction(removedNodeExp.value)(nodeAfter)
           digestUpdate(prev) + delta
         } else {
           digestUpdate(prev)
@@ -309,12 +343,12 @@ class TotalRouteLength(
               0
             }
           }
-          val delta = distanceMatrix(nodeBeforeDest)(startSeg) +
-            distanceMatrix(endSeg)(nodeAfterDest) -
-            distanceMatrix(nodeBeforeDest)(nodeAfterDest) -
-            distanceMatrix(nodeBeforeSource)(fromExp.value) -
-            distanceMatrix(toExp.value)(nodeAfterSource) +
-            distanceMatrix(nodeBeforeSource)(nodeAfterSource) +
+          val delta = distanceFunction(nodeBeforeDest)(startSeg) +
+            distanceFunction(endSeg)(nodeAfterDest) -
+            distanceFunction(nodeBeforeDest)(nodeAfterDest) -
+            distanceFunction(nodeBeforeSource)(fromExp.value) -
+            distanceFunction(toExp.value)(nodeAfterSource) +
+            distanceFunction(nodeBeforeSource)(nodeAfterSource) +
             deltaSeg
           digestUpdate(prev) + delta
         } else {
@@ -354,7 +388,7 @@ class TotalRouteLength(
             val fromTrip = trips.last._2
             trips.appended((fromTrip, toTrip))
           })
-          .map(trip => s"${trip._1} --${distanceMatrix(trip._1)(trip._2)}")
+          .map(trip => s"${trip._1} --${distanceFunction(trip._1)(trip._2)}")
           .mkString("--> ")
         routeString + s"--> ${routeWithV.head}"
       })
