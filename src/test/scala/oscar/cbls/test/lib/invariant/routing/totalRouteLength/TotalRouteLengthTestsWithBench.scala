@@ -12,6 +12,9 @@ import oscar.cbls.algo.sequence.IntSequence
 
 class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
+  private val nbNodes = 100
+  private val nbVehicles = 10
+
   private def mkMatrix(
     m: Array[Array[Long]],
     symetrical: Boolean,
@@ -31,9 +34,6 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
   }
 
   test("TotalRouteLength working in bench, symetrical matrix") {
-    val nbNodes    = 10
-    val nbVehicles = 2
-
     class TotalRouteLengthTestBench
         extends InvTestBenchWithConstGen[Array[Array[Long]]]("TotalRouteLength Test Bench") {
 
@@ -60,14 +60,13 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
     val bench = new TotalRouteLengthTestBench
 
+    bench.changePropagationMoveFrequency(1,7)
+
     bench.test()
 
   }
 
   test("TotalRouteLength working in bench, symetrical matrix, 0 on the diagonal") {
-    val nbNodes    = 10
-    val nbVehicles = 2
-
     class TotalRouteLengthTestBench
         extends InvTestBenchWithConstGen[Array[Array[Long]]]("TotalRouteLength Test Bench") {
 
@@ -106,14 +105,13 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
     val bench = new TotalRouteLengthTestBench
 
+    bench.changePropagationMoveFrequency(1,7)
+
     bench.test()
 
   }
 
   test("TotalRouteLength working in bench, asymetrical matrix") {
-    val nbNodes    = 10
-    val nbVehicles = 2
-
     class TotalRouteLengthTestBench
         extends InvTestBenchWithConstGen[Array[Array[Long]]]("TotalRouteLength Test Bench") {
 
@@ -138,14 +136,13 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
     val bench = new TotalRouteLengthTestBench
 
+    bench.changePropagationMoveFrequency(1,7)
+
     bench.test()
 
   }
 
   test("TotalRouteLength working in bench, asymetrical matrix, 0 on the diagonal") {
-    val nbNodes    = 10
-    val nbVehicles = 2
-
     class TotalRouteLengthTestBench
         extends InvTestBenchWithConstGen[Array[Array[Long]]]("TotalRouteLength Test Bench") {
 
@@ -170,7 +167,11 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
     }
 
+
+
     val bench = new TotalRouteLengthTestBench
+
+    bench.changePropagationMoveFrequency(1,7)
 
     bench.test()
 
