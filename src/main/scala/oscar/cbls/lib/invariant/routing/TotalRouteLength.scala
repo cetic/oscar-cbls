@@ -181,10 +181,6 @@ class TotalRouteLength(
     toExpl: Option[IntSequenceExplorer] = None,
     backward: Boolean = false
   ): Long = {
-    println(
-      s"${fromExpl.map(_.position)} -> ${toExpl.map(_.position)}" + (if (backward) " backward"
-                                                                     else "")
-    )
     val startExp = fromExpl.getOrElse(seq.explorerAtPosition(0).get)
     val exp      = if (backward) startExp.prev else startExp.next
     @tailrec
