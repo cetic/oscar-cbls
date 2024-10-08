@@ -18,7 +18,7 @@ import oscar.cbls.algo.sequence.IntSequenceExplorer
 import oscar.cbls.core.computation.objective.Exploration
 import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.core.search.{NoMoveFound, SimpleNeighborhood}
-import oscar.cbls.model.routing.VRP
+import oscar.cbls.modeling.routing.VRP
 
 /** Companion object of the [[InsertPointNeighborhoodInsertionPointFirst]] class. */
 object InsertPointNeighborhoodInsertionPointFirst {

@@ -6,7 +6,7 @@ import org.scalacheck.{Gen, Prop}
 import oscar.cbls.core.computation.Store
 import org.scalacheck.Properties
 import org.scalacheck.Test
-import oscar.cbls.model.routing.VRP
+import oscar.cbls.modeling.routing.VRP
 
 /** @param inv
   *   The invariant to test.

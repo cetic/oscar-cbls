@@ -24,7 +24,7 @@ import oscar.cbls.lib.neighborhoods.routing.{
   InsertPointNeighborhoodInsertionPointFirst,
   InsertPointNeighborhoodUnroutedFirst
 }
-import oscar.cbls.model.routing.VRP
+import oscar.cbls.modeling.routing.VRP
 
 import scala.util.Random
 
