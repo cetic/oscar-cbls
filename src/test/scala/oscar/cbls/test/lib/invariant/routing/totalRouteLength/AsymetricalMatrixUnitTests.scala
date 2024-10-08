@@ -1,4 +1,4 @@
-package oscar.cbls.test.lib.invariant.routing
+package oscar.cbls.test.lib.invariant.routing.totalRouteLength
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -10,27 +10,7 @@ import org.scalacheck.Gen
 import oscar.cbls.test.invBench.TestBenchSut
 import oscar.cbls.algo.sequence.IntSequence
 
-class TotalRouteLengthUnitTests extends AnyFunSuite with Matchers {
-
-  test("TotalRouteLength do not accept when the matrix has not enough line") {
-    val model = new Store()
-    val vrp   = VRP(model, 4, 1)
-    val distanceMatrix: Array[Array[Long]] =
-      Array(Array(1, 0, 0, 1), Array(0, 1, 0, 0), Array(1, 2, 3, 4))
-
-    an[IllegalArgumentException] should be thrownBy TotalRouteLength(vrp, distanceMatrix)
-
-  }
-
-  test("TotalRouteLength do not accept when the matrix has not enough column") {
-    val model = new Store()
-    val vrp   = VRP(model, 4, 1)
-    val distanceMatrix: Array[Array[Long]] =
-      Array(Array(1, 0, 0, 1), Array(0, 1, 0, 0), Array(1, 2, 3, 4), Array(0, 0, 1))
-
-    an[IllegalArgumentException] should be thrownBy TotalRouteLength(vrp, distanceMatrix)
-
-  }
+class AsymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
 
   test("TotalRouteLength do not accept when the matrix is not symetric") {
     val model = new Store()
@@ -40,24 +20,25 @@ class TotalRouteLengthUnitTests extends AnyFunSuite with Matchers {
 
     an[IllegalArgumentException] should be thrownBy TotalRouteLength(
       vrp,
-      Array(Array(0, 1, 0, 1), Array(1, 1, 1, 1))
+      distanceMatrix,
+      true
     )
 
   }
 
-  private val distanceMatrix: Array[Array[Long]] =
-    Array(
-      Array(73958, 61888, 62709, 49501, 7372, 83661, 57116, 29586, 86889, 15972),
-      Array(61888, 29786, 1715, 67873, 28914, 2286, 65043, 57427, 64017, 22215),
-      Array(62709, 1715, 78297, 42365, 51558, 50378, 44208, 3945, 78389, 47882),
-      Array(49501, 67873, 42365, 52630, 17086, 10979, 8371, 99874, 81103, 71514),
-      Array(7372, 28914, 51558, 17086, 37972, 47127, 53086, 7918, 12736, 45578),
-      Array(83661, 2286, 50378, 10979, 47127, 86076, 23040, 61991, 15452, 48222),
-      Array(57116, 65043, 44208, 8371, 53086, 23040, 73145, 76191, 12643, 84914),
-      Array(29586, 57427, 3945, 99874, 7918, 61991, 76191, 8327, 31970, 48749),
-      Array(86889, 64017, 78389, 81103, 12736, 15452, 12643, 31970, 54203, 74279),
-      Array(15972, 22215, 47882, 71514, 45578, 48222, 84914, 48749, 74279, 27270)
+  private val distanceMatrix : Array[Array[Long]] = Array(
+      Array(42254, 85511, 75508, 21913, 32574, 45017, 76208, 27770, 79010, 52963),
+      Array(48628, 2052, 8290, 6497, 60336, 22092, 55622, 9817, 37527, 90359),
+      Array(83151, 11681, 67679, 96475, 65283, 89826, 22609, 65312, 43588, 90218),
+      Array(21875, 59899, 31392, 65749, 24230, 59082, 13590, 35604, 75020, 74112),
+      Array(24809, 2765, 5438, 69177, 82460, 42344, 48903, 24547, 31428, 21111),
+      Array(48178, 44045, 59083, 73924, 19766, 25412, 99659, 38911, 83625, 26062),
+      Array(32563, 48270, 88174, 12127, 39223, 39452, 78325, 68441, 77241, 31966),
+      Array(70985, 64895, 46455, 70039, 2177, 68676, 53872, 34678, 95774, 63907),
+      Array(57321, 6442, 31093, 11418, 36598, 9763, 65435, 57716, 24683, 49216),
+      Array(77648, 74604, 14510, 85149, 28449, 68360, 52716, 48001, 69236, 97947)
     )
+
 
   test("Total Route Length works when inserting points") {
     val model       = new Store(debugLevel = 3)
@@ -72,7 +53,7 @@ class TotalRouteLengthUnitTests extends AnyFunSuite with Matchers {
     vrp.model.propagate()
   }
 
-  test("Total Route Length works when moving segment away") {
+  test("Total Route Length works when moving segment") {
     val model       = new Store(debugLevel = 3)
     val vrp         = VRP(model, 10, 2)
     val routeLength = TotalRouteLength(vrp, distanceMatrix)
@@ -87,7 +68,22 @@ class TotalRouteLengthUnitTests extends AnyFunSuite with Matchers {
     vrp.model.propagate()
   }
 
-  test("Total Route Length works when moving segment at the same place") {
+  test("Total Route Length works when moving and flipping segment") {
+    val model       = new Store(debugLevel = 3)
+    val vrp         = VRP(model, 10, 2)
+    val routeLength = TotalRouteLength(vrp, distanceMatrix)
+    model.close()
+    vrp.model.propagate()
+    val routes = vrp.routes
+    routes := IntSequence(List(0, 8, 3, 4, 1, 5))
+    val fromExp  = routes.value().explorerAtPosition(2).get
+    val toExp    = routes.value().explorerAtPosition(3).get
+    val afterExp = routes.value().explorerAtPosition(5).get
+    routes.move(fromExp, toExp, afterExp, true)
+    vrp.model.propagate()
+  }
+
+  test("Total Route Length works when flipping segment") {
     val model       = new Store(debugLevel = 3)
     val vrp         = VRP(model, 10, 2)
     val routeLength = TotalRouteLength(vrp, distanceMatrix)
@@ -98,7 +94,7 @@ class TotalRouteLengthUnitTests extends AnyFunSuite with Matchers {
     val fromExp  = routes.value().explorerAtPosition(2).get
     val toExp    = routes.value().explorerAtPosition(3).get
     val afterExp = routes.value().explorerAtPosition(1).get
-    routes.move(fromExp, toExp, afterExp, true)
+    routes.flip(fromExp,toExp)
     vrp.model.propagate()
   }
 
