@@ -130,18 +130,6 @@ object TotalRouteLength {
   * @param vrp
   *   The object that represents the Vehicle Routing Problem
   * @param routeLength
-  *   The
-  * @param distanceFunction
-  */
-/** An invariant that maintains the total route length of a vehicle routing problem
-  *
-  * The total route length is the sum of the routes of all the vehicles. Beware, this route length
-  * constraint is more efficient if the distance matrix is '''symmetrical''' (i.e. given two nodes
-  * `i` and `j`, `distanceMatrix(i)(j) == distanceMatrix(j)(i)`)
-  *
-  * @param vrp
-  *   The object that represents the Vehicle Routing Problem
-  * @param routeLength
   *   The [[oscar.cbls.core.computation.IntVariable]] that is maintained by the invariant
   * @param distanceFunction
   *   A function that, given two nodes, returns the distance between the two nodes
