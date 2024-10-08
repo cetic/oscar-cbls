@@ -42,10 +42,22 @@ object Sum2 {
   ): Sum2 = {
     new Sum2(model, a, b, output, name)
   }
+
+  /** Static method to obtain an IntVariable that is the result of the sum of two IntVariables.
+    *
+    * @param a
+    *   left side operand
+    * @param b
+    *   right side operand
+    */
+  def result(a: IntVariable, b: IntVariable): IntVariable = {
+    val out = IntVariable(a.model, a.value() + b.value())
+    Sum2(a.model, a, b, out)
+    out
+  }
 }
 
-/** Invariant which maintains the sum of two
-  * [[oscar.cbls.core.computation.integer.IntVariable]].
+/** Invariant which maintains the sum of two [[oscar.cbls.core.computation.integer.IntVariable]].
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.

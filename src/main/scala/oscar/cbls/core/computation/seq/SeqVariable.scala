@@ -467,6 +467,9 @@ class SeqVariable(
     */
   def :=(seq: IntSequence): Unit = setValue(seq)
 
+  /** Set this variable as identical to the given variable. */
+  def :<-(that: SeqVariable): Unit = new SeqIdentityInvariant(this.model, that, this)
+
   /** Assigns a new value to this SeqVariable.
     *
     * This is a non-incremental operation. You cannot have some non-propagated changes.
