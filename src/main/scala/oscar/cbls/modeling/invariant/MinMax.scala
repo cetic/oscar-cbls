@@ -22,7 +22,7 @@ trait MinMax {
     m: Model
   ): IntVariable = {
     require(
-      indices.value().min >= 0 && indices.value().max < input.length,
+      indices.value().isEmpty || (indices.value().min >= 0 && indices.value().max < input.length),
       "Elements of the indices SetVariable are out of bounds for the input array"
     )
     val store = m.store
