@@ -6,7 +6,7 @@ import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.seq.SeqVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.core.computation.Variable
-import oscar.cbls.model.routing.VRP
+import oscar.cbls.modeling.routing.VRP
 
 import scala.collection.immutable.HashSet
 

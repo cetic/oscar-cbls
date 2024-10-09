@@ -16,7 +16,7 @@ package oscar.cbls.test.invBench
 import org.scalatest.funsuite.AnyFunSuite
 import oscar.cbls.core.computation.seq.{SeqNotificationTarget, SeqUpdate, SeqVariable}
 import oscar.cbls.core.computation.{Invariant, Store}
-import oscar.cbls.model.routing.VRP
+import oscar.cbls.modeling.routing.VRP
 
 class RoutingTestBench extends AnyFunSuite {
 

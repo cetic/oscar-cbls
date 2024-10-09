@@ -20,7 +20,7 @@ import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.Minimize
 import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.lib.neighborhoods.routing.OnePointMoveNeighborhood
-import oscar.cbls.model.routing.VRP
+import oscar.cbls.modeling.routing.VRP
 
 import scala.util.Random
 

@@ -11,7 +11,7 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.model.routing
+package oscar.cbls.modeling.routing
 
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer, RootIntSequenceExplorer}

@@ -16,7 +16,7 @@ package oscar.cbls.lib.invariant.routing
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation.seq._
 import oscar.cbls.core.computation.{Invariant, Store}
-import oscar.cbls.model.routing.VRP
+import oscar.cbls.modeling.routing.VRP
 
 /** Companion object of the [[RoutingConventionConstraint]] class. */
 object RoutingConventionConstraint {

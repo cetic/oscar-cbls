@@ -17,7 +17,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
 import oscar.cbls.algo.sequence.IntSequence
 import oscar.cbls.core.computation.Store
-import oscar.cbls.model.routing.VRP
+import oscar.cbls.modeling.routing.VRP
 
 class RoutingConventionConstraintTestSuite extends AnyFunSuite with Matchers {
 

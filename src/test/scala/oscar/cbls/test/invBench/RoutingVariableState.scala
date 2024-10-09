@@ -15,7 +15,7 @@ package oscar.cbls.test.invBench
 
 import org.scalacheck.Gen
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer, RootIntSequenceExplorer}
-import oscar.cbls.model.routing.VRP
+import oscar.cbls.modeling.routing.VRP
 
 import scala.annotation.tailrec
 import scala.collection.immutable.{HashMap, HashSet}
