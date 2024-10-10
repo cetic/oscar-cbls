@@ -41,7 +41,6 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
     val vrp   = VRP(model, 10, 2)
     val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
-    vrp.model.propagate()
     val routes = vrp.routes
     val exp    = routes.value().explorerAtPosition(1).get
     routes.insertAfterPosition(6, exp)
@@ -53,11 +52,12 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
     val vrp   = VRP(model, 10, 2)
     val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
-    vrp.model.propagate()
+
     val routes = vrp.routes
     routes := IntSequence(List(0, 8, 3, 4, 1, 5))
     val exp = routes.value().explorerAtPosition(3).get
     routes.insertAfterPosition(2, exp)
+
     vrp.model.propagate()
   }
 
@@ -66,11 +66,12 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
     val vrp   = VRP(model, 10, 2)
     val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
-    vrp.model.propagate()
+
     val routes = vrp.routes
     routes := IntSequence(List(0, 8, 1, 5))
     val exp = routes.value().explorerAtPosition(1).get
     routes.remove(exp)
+
     vrp.model.propagate()
   }
 
@@ -79,11 +80,12 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
     val vrp   = VRP(model, 10, 2)
     val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
-    vrp.model.propagate()
+
     val routes = vrp.routes
     routes := IntSequence(List(0, 8, 3, 4, 1, 5))
     val exp = routes.value().explorerAtPosition(3).get
     routes.remove(exp)
+
     vrp.model.propagate()
   }
 
@@ -92,13 +94,14 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
     val vrp   = VRP(model, 10, 2)
     val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
-    vrp.model.propagate()
+
     val routes = vrp.routes
     routes := IntSequence(List(0, 8, 3, 4, 1, 5))
     val fromExp  = routes.value().explorerAtPosition(1).get
     val toExp    = routes.value().explorerAtPosition(3).get
     val afterExp = routes.value().explorerAtPosition(5).get
     routes.move(fromExp, toExp, afterExp, flip = false)
+
     vrp.model.propagate()
   }
 
@@ -107,13 +110,14 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
     val vrp   = VRP(model, 10, 2)
     val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
-    vrp.model.propagate()
+
     val routes = vrp.routes
     routes := IntSequence(List(0, 8, 3, 4, 1, 5))
     val fromExp  = routes.value().explorerAtPosition(2).get
     val toExp    = routes.value().explorerAtPosition(3).get
     val afterExp = routes.value().explorerAtPosition(5).get
     routes.move(fromExp, toExp, afterExp, flip = false)
+
     vrp.model.propagate()
   }
 
@@ -122,13 +126,14 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
     val vrp   = VRP(model, 10, 2)
     val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
-    vrp.model.propagate()
+
     val routes = vrp.routes
     routes := IntSequence(List(0, 8, 3, 4, 1, 5))
     val fromExp  = routes.value().explorerAtPosition(2).get
     val toExp    = routes.value().explorerAtPosition(3).get
     val afterExp = routes.value().explorerAtPosition(5).get
     routes.move(fromExp, toExp, afterExp, flip = true)
+
     vrp.model.propagate()
   }
 
@@ -144,8 +149,8 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
     val expStartFrom = routes.value().explorerAtPosition(2).get
     val expEndFrom   = routes.value().explorerAtPosition(3).get
     val expTo        = routes.value().explorerAtPosition(0).get
-
     routes.move(expStartFrom, expEndFrom, expTo, flip = false)
+
     vrp.model.propagate()
   }
 
@@ -154,13 +159,14 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
     val vrp   = VRP(model, 10, 2)
     val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
-    vrp.model.propagate()
+
     val routes = vrp.routes
     routes := IntSequence(List(0, 8, 3, 4, 1, 5))
     val fromExp  = routes.value().explorerAtPosition(2).get
     val toExp    = routes.value().explorerAtPosition(3).get
     val afterExp = routes.value().explorerAtPosition(1).get
     routes.flip(fromExp, toExp)
+
     vrp.model.propagate()
   }
 
@@ -169,7 +175,7 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
     val vrp   = VRP(model, 10, 2)
     val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
-    vrp.model.propagate()
+
     val routes = vrp.routes
     routes := IntSequence(List(0, 8, 3, 4, 1, 5))
     routes.defineCurrentValueAsCheckpoint()
