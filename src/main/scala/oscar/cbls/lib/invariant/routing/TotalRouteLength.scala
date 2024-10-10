@@ -153,7 +153,7 @@ class TotalRouteLength(
       for (j <- i until vrp.n) {
         require(
           distanceFunction(i)(j) == distanceFunction(j)(i),
-          "The distance matrix shall be symmetrical"
+          "The distance matrix has to be symmetrical"
         )
       }
     }
