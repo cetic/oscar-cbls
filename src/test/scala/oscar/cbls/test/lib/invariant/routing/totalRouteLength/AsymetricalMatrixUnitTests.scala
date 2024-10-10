@@ -133,7 +133,7 @@ class AsymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
     val fromExp  = routes.value().explorerAtPosition(1).get
     val toExp    = routes.value().explorerAtPosition(3).get
     val afterExp = routes.value().explorerAtPosition(5).get
-    routes.move(fromExp, toExp, afterExp, false)
+    routes.move(fromExp, toExp, afterExp, flip = false)
     vrp.model.propagate()
   }
 
@@ -148,7 +148,7 @@ class AsymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
     val fromExp  = routes.value().explorerAtPosition(2).get
     val toExp    = routes.value().explorerAtPosition(3).get
     val afterExp = routes.value().explorerAtPosition(5).get
-    routes.move(fromExp, toExp, afterExp, false)
+    routes.move(fromExp, toExp, afterExp, flip = false)
     vrp.model.propagate()
   }
 
@@ -165,7 +165,7 @@ class AsymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
     val expEndFrom   = routes.value().explorerAtPosition(3).get
     val expTo        = routes.value().explorerAtPosition(0).get
 
-    routes.move(expStartFrom, expEndFrom, expTo, false)
+    routes.move(expStartFrom, expEndFrom, expTo, flip = false)
     vrp.model.propagate()
   }
 
@@ -180,7 +180,7 @@ class AsymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
     val fromExp  = routes.value().explorerAtPosition(2).get
     val toExp    = routes.value().explorerAtPosition(3).get
     val afterExp = routes.value().explorerAtPosition(5).get
-    routes.move(fromExp, toExp, afterExp, true)
+    routes.move(fromExp, toExp, afterExp, flip = true)
     vrp.model.propagate()
   }
 
@@ -211,7 +211,7 @@ class AsymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
     val startExp = routes.value().explorerAtPosition(3).get
     val endExp   = routes.value().explorerAtPosition(3).get
     val afterExp = routes.value().explorerAtPosition(4).get
-    routes.move(startExp, endExp, afterExp, true)
+    routes.move(startExp, endExp, afterExp, flip = true)
 
     vrp.model.propagate()
     routes.rollbackToTopCheckpoint()
