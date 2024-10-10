@@ -26,7 +26,7 @@ import oscar.cbls.algo.sequence.IntSequence
   */
 object TotalRouteLength {
 
-  private def isSymetrical(n: Int, distanceMatrix: Int => Int => Long): Boolean = {
+  private def isSymmetrical(n: Int, distanceMatrix: Int => Int => Long): Boolean = {
     var res = true
     for (i <- 0 until n) {
       for (j <- i until n) {
@@ -49,8 +49,8 @@ object TotalRouteLength {
     */
   def apply(vrp: VRP, distanceMatrix: Int => Int => Long): TotalRouteLength = {
     val routeLength: IntVariable = IntVariable(vrp.model, 0)
-    val matrixIsSymetrical       = isSymetrical(vrp.n, distanceMatrix)
-    new TotalRouteLength(vrp, routeLength, distanceMatrix, matrixIsSymetrical)
+    val matrixIsSymmetrical      = isSymmetrical(vrp.n, distanceMatrix)
+    new TotalRouteLength(vrp, routeLength, distanceMatrix, matrixIsSymmetrical)
   }
 
   /** Creates a TotalRouteLength invariant.
@@ -66,12 +66,12 @@ object TotalRouteLength {
     */
   def apply(vrp: VRP, distanceMatrix: Array[Array[Long]]): TotalRouteLength = {
     val routeLength: IntVariable = IntVariable(vrp.model, 0)
-    val matrixIsSymetrical       = isSymetrical(vrp.n, (i: Int) => (j: Int) => distanceMatrix(i)(j))
+    val matrixIsSymmetrical = isSymmetrical(vrp.n, (i: Int) => (j: Int) => distanceMatrix(i)(j))
     new TotalRouteLength(
       vrp,
       routeLength,
       (i: Int) => (j: Int) => distanceMatrix(i)(j),
-      matrixIsSymetrical
+      matrixIsSymmetrical
     )
   }
 
@@ -89,10 +89,10 @@ object TotalRouteLength {
   def apply(
     vrp: VRP,
     distanceFunction: Int => Int => Long,
-    matrixIsSymetrical: Boolean
+    matrixIsSymmetrical: Boolean
   ): TotalRouteLength = {
     val routeLength: IntVariable = IntVariable(vrp.model, 0)
-    new TotalRouteLength(vrp, routeLength, distanceFunction, matrixIsSymetrical)
+    new TotalRouteLength(vrp, routeLength, distanceFunction, matrixIsSymmetrical)
   }
 
   /** Creates a TotalRouteLength invariant.
@@ -109,14 +109,14 @@ object TotalRouteLength {
   def apply(
     vrp: VRP,
     distanceMatrix: Array[Array[Long]],
-    matrixIsSymetrical: Boolean
+    matrixIsSymmetrical: Boolean
   ): TotalRouteLength = {
     val routeLength: IntVariable = IntVariable(vrp.model, 0)
     new TotalRouteLength(
       vrp,
       routeLength,
       (i: Int) => (j: Int) => distanceMatrix(i)(j),
-      matrixIsSymetrical
+      matrixIsSymmetrical
     )
   }
 }
@@ -137,23 +137,23 @@ object TotalRouteLength {
   *   The [[oscar.cbls.core.computation.IntVariable]] that is maintained by the invariant.
   * @param distanceFunction
   *   A function that, given two nodes, returns the distance between the two nodes.
-  * @param matrixIsSymetrical
-  *   A flag that says if the matrix is symetrical.
+  * @param matrixIsSymmetrical
+  *   A flag that says if the matrix is symmetrical.
   */
 class TotalRouteLength(
   vrp: VRP,
   val routeLength: IntVariable,
   distanceFunction: Int => Int => Long,
-  matrixIsSymetrical: Boolean
+  matrixIsSymmetrical: Boolean
 ) extends Invariant(vrp.model, Some("Incremental Total Route Length"))
     with SeqNotificationTarget {
 
-  if (matrixIsSymetrical) {
+  if (matrixIsSymmetrical) {
     for (i <- 0 until vrp.n) {
       for (j <- i until vrp.n) {
         require(
           distanceFunction(i)(j) == distanceFunction(j)(i),
-          "The distance matrix shall be symetrical"
+          "The distance matrix shall be symmetrical"
         )
       }
     }
@@ -337,7 +337,7 @@ class TotalRouteLength(
               vrp.nextNodeInRouting(afterExp)
           val (startSeg, endSeg) =
             if (flip) (toExp.value, fromExp.value) else (fromExp.value, toExp.value)
-          val deltaSeg = if (matrixIsSymetrical) {
+          val deltaSeg = if (matrixIsSymmetrical) {
             0
           } else {
             if (flip && fromExp.value != toExp.value) {
