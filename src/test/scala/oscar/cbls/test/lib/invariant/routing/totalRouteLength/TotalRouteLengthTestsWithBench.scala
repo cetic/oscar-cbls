@@ -62,7 +62,7 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
         TestBenchSut(routeLength, Array(vrp.routes), Array(routeLength.routeLength), Some(vrp))
       }
 
-      override def typeTToString(elem: Array[Array[Long]]) = {
+      override def typeTToString(elem: Array[Array[Long]]): String = {
         s"Array(Array(${elem.map(l => l.mkString(",")).mkString("),\n Array(")})"
       }
 
@@ -78,19 +78,9 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
   test("TotalRouteLength working in bench, symetrical matrix, 0 on the diagonal") {
     class TotalRouteLengthTestBench
-        extends InvTestBenchWithConstGen[Array[Array[Long]]]("TotalRouteLength Symetrical Matrix, 0 diagonal") {
-
-      private def makeItSymetric(m: Array[Array[Long]]): Array[Array[Long]] = {
-        for (i <- 0 until m.length) {
-          for (j <- i until m.length) {
-            if (i == j)
-              m(i)(i) == 0
-            else
-              m(j)(i) = m(i)(j)
-          }
-        }
-        m
-      }
+        extends InvTestBenchWithConstGen[Array[Array[Long]]](
+          "TotalRouteLength Symetrical Matrix, 0 diagonal"
+        ) {
 
       override def genConst(): Gen[Array[Array[Long]]] = {
         val arrayGen: Gen[Array[Long]] =
@@ -107,7 +97,7 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
         TestBenchSut(routeLength, Array(vrp.routes), Array(routeLength.routeLength), Some(vrp))
       }
 
-      override def typeTToString(elem: Array[Array[Long]]) = {
+      override def typeTToString(elem: Array[Array[Long]]): String = {
         s"Array(Array(${elem.map(l => l.mkString(",")).mkString("),\n Array(")})"
       }
 
@@ -123,7 +113,9 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
   test("TotalRouteLength working in bench, asymetrical matrix") {
     class TotalRouteLengthTestBench
-        extends InvTestBenchWithConstGen[Array[Array[Long]]]("TotalRouteLength Asymetrical Matrix") {
+        extends InvTestBenchWithConstGen[Array[Array[Long]]](
+          "TotalRouteLength Asymetrical Matrix"
+        ) {
 
       override def genConst(): Gen[Array[Array[Long]]] = {
         val arrayGen: Gen[Array[Long]] =
@@ -138,7 +130,7 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
         TestBenchSut(routeLength, Array(vrp.routes), Array(routeLength.routeLength), Some(vrp))
       }
 
-      override def typeTToString(elem: Array[Array[Long]]) = {
+      override def typeTToString(elem: Array[Array[Long]]): String = {
         s"Array(Array(${elem.map(l => l.mkString(",")).mkString("),\n Array(")})"
       }
 
@@ -154,7 +146,9 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
   test("TotalRouteLength working in bench, asymetrical matrix, 0 on the diagonal") {
     class TotalRouteLengthTestBench
-        extends InvTestBenchWithConstGen[Array[Array[Long]]]("TotalRouteLength Asymetrical Matrix, 0 diagonal") {
+        extends InvTestBenchWithConstGen[Array[Array[Long]]](
+          "TotalRouteLength Asymetrical Matrix, 0 diagonal"
+        ) {
 
       override def genConst(): Gen[Array[Array[Long]]] = {
         val arrayGen: Gen[Array[Long]] =
@@ -171,7 +165,7 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
         TestBenchSut(routeLength, Array(vrp.routes), Array(routeLength.routeLength), Some(vrp))
       }
 
-      override def typeTToString(elem: Array[Array[Long]]) = {
+      override def typeTToString(elem: Array[Array[Long]]): String = {
         s"Array(Array(${elem.map(l => l.mkString(",")).mkString("),\n Array(")})"
       }
 
