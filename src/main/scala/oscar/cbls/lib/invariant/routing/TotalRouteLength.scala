@@ -41,11 +41,11 @@ object TotalRouteLength {
     * The TotalRouteLength invariant maintains the sum of all the route of all the vehicles.
     *
     * @param vrp
-    *   The object that represents the Vehicle Routing Problem
+    *   The object that represents the Vehicle Routing Problem.
     * @param distanceMatrix
-    *   The distance matrix between the points of the problem
+    *   The distance matrix between the points of the problem.
     * @return
-    *   The TotalRouteLength invariant
+    *   The TotalRouteLength invariant.
     */
   def apply(vrp: VRP, distanceMatrix: Int => Int => Long): TotalRouteLength = {
     val routeLength: IntVariable = IntVariable(vrp.model, 0)
@@ -58,11 +58,11 @@ object TotalRouteLength {
     * The TotalRouteLength invariant maintains the sum of all the route of all the vehicles.
     *
     * @param vrp
-    *   The object that represents the Vehicle Routing Problem
+    *   The object that represents the Vehicle Routing Problem.
     * @param distanceMatrix
-    *   The distance matrix between the points of the problem
+    *   The distance matrix between the points of the problem.
     * @return
-    *   The TotalRouteLength invariant
+    *   The TotalRouteLength invariant.
     */
   def apply(vrp: VRP, distanceMatrix: Array[Array[Long]]): TotalRouteLength = {
     val routeLength: IntVariable = IntVariable(vrp.model, 0)
@@ -80,11 +80,11 @@ object TotalRouteLength {
     * The TotalRouteLength invariant maintains the sum of all the route of all the vehicles.
     *
     * @param vrp
-    *   The object that represents the Vehicle Routing Problem
+    *   The object that represents the Vehicle Routing Problem.
     * @param distanceFunction
-    *   A function that, given two nodes, returns the distance between the two nodes
+    *   A function that, given two nodes, returns the distance between the two nodes.
     * @return
-    *   The TotalRouteLength invariant
+    *   The TotalRouteLength invariant.
     */
   def apply(
     vrp: VRP,
@@ -100,11 +100,11 @@ object TotalRouteLength {
     * The TotalRouteLength invariant maintains the sum of all the route of all the vehicles.
     *
     * @param vrp
-    *   The object that represents the Vehicle Routing Problem
+    *   The object that represents the Vehicle Routing Problem.
     * @param distanceFunction
-    *   A function that, given two nodes, returns the distance between the two nodes
+    *   A function that, given two nodes, returns the distance between the two nodes.
     * @return
-    *   The TotalRouteLength invariant
+    *   The TotalRouteLength invariant.
     */
   def apply(
     vrp: VRP,
@@ -129,16 +129,16 @@ object TotalRouteLength {
   *
   * The nodes may have a weight that is added to the length of the routen. In this case, the weights
   * of the nodes should be put in the '''diagonal''' of the distance function (i.e. the weight of
-  * the node `i` is given by `distanceFunction(i)(i)`)
+  * the node `i` is given by `distanceFunction(i)(i)`).
   *
   * @param vrp
-  *   The object that represents the Vehicle Routing Problem
+  *   The object that represents the Vehicle Routing Problem.
   * @param routeLength
-  *   The [[oscar.cbls.core.computation.IntVariable]] that is maintained by the invariant
+  *   The [[oscar.cbls.core.computation.IntVariable]] that is maintained by the invariant.
   * @param distanceFunction
-  *   A function that, given two nodes, returns the distance between the two nodes
+  *   A function that, given two nodes, returns the distance between the two nodes.
   * @param matrixIsSymetrical
-  *   A flag that says if the matrix is symetrical
+  *   A flag that says if the matrix is symetrical.
   */
 class TotalRouteLength(
   vrp: VRP,
@@ -174,22 +174,22 @@ class TotalRouteLength(
   routeLength := currentValue
 
   /** Computes the route length from scratch (without incremental computing, by going through the
-    * sequence)
+    * sequence).
     *
     * This method can compute either the entire route length or the route length on a segment of the
     * route. The start and end of this segment can be given as parameter. If the flag backward is
-    * true, the distance is computed backward in the sequence
+    * true, the distance is computed backward in the sequence.
     *
     * @param seq
-    *   The sequence representing the route
+    *   The sequence representing the route.
     * @param fromExpl
-    *   The optional start of the segment
+    *   The optional start of the segment.
     * @param toExpl
-    *   The optinal end of the segment
+    *   The optinal end of the segment.
     * @param backward
-    *   A flag that says if the distance shall be computed backward
+    *   A flag that says if the distance shall be computed backward.
     * @return
-    *   The length of the route
+    *   The length of the route.
     */
   private def computeRouteLengthFromScratch(
     seq: IntSequence,
@@ -264,12 +264,12 @@ class TotalRouteLength(
   }
 
   /** Notifies this invariant that the listened [[oscar.cbls.core.computation.seq.SeqVariable]] has
-    * changed
+    * changed.
     *
     * @param v
     *   The listened SeqVariable.
     * @param contextualVarIndex
-    *   The optional index of the SeqVariable in the context of the listening Invariant. Default -1
+    *   The optional index of the SeqVariable in the context of the listening Invariant. Default -1.
     * @param changes
     *   A stacked list of SeqUpdate, the first one represents the latest update. Use its prev value
     *   to get the previous SeqUpdate...
@@ -283,18 +283,18 @@ class TotalRouteLength(
     routeLength := currentValue
   }
 
-  /** Handles the updates
+  /** Handles the updates.
     *
     * This methods digests inductively the previous updates before treating a given update. In some
     * cases (mainly when rolling back to checkpoint), we do not care about computing the deltas: in
     * this case, the flag `computeDelta` is false.
     *
     * @param changes
-    *   The inductive changes that had been made on the sequence
+    *   The inductive changes that had been made on the sequence.
     * @param computeDelta
-    *   A flag that says if the method shall compute the delta
+    *   A flag that says if the method shall compute the delta.
     * @return
-    *   The new length of the sequence
+    *   The new length of the sequence.
     */
   private[this] def digestUpdate(changes: SeqUpdate, computeDelta: Boolean = true): Long = {
     changes match {
