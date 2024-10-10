@@ -311,6 +311,7 @@ class TotalRouteLength(
         } else {
           digestUpdate(prev)
         }
+
       case SeqUpdateRemove(removedNodeExp, prev) =>
         if (computeDelta) {
           assert(removedNodeExp.value != 0, "node 0 is a vehicle and cannot be removed")
@@ -325,6 +326,7 @@ class TotalRouteLength(
         } else {
           digestUpdate(prev)
         }
+
       case m @ SeqUpdateMove(fromExp, toExp, afterExp, flip, prev) =>
         if (computeDelta) {
           val nodeBeforeSource = fromExp.prev.value
@@ -375,16 +377,21 @@ class TotalRouteLength(
         } else {
           digestUpdate(prev)
         }
+
       case assign: SeqUpdateAssign => computeRouteLengthFromScratch(assign.newSequence)
+
       case SeqUpdateDefineCheckpoint(prev, level) =>
         val length = digestUpdate(prev)
         checkpointValues = CheckpointValue(level, length) :: checkpointValues
         length
+
       case _: SeqUpdateLastNotified => currentValue
+
       case update: SeqUpdateReleaseTopCheckpoint =>
         val length = digestUpdate(update.prev)
         checkpointValues = checkpointValues.tail
         length
+
       case update: SeqUpdateRollBackToTopCheckpoint =>
         digestUpdate(update.prev, false)
         assert(
