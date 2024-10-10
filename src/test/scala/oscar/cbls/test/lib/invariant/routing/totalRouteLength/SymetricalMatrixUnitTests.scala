@@ -37,9 +37,9 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
     )
 
   test("Total Route Length works when inserting points in an empty route") {
-    val model       = new Store(debugLevel = 3)
-    val vrp         = VRP(model, 10, 2)
-    val routeLength = TotalRouteLength(vrp, distanceMatrix)
+    val model = new Store(debugLevel = 3)
+    val vrp   = VRP(model, 10, 2)
+    val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
     vrp.model.propagate()
     val routes = vrp.routes
@@ -49,9 +49,9 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
   }
 
   test("Total Route Length works when inserting points in a non empty route") {
-    val model       = new Store(debugLevel = 3)
-    val vrp         = VRP(model, 10, 2)
-    val routeLength = TotalRouteLength(vrp, distanceMatrix)
+    val model = new Store(debugLevel = 3)
+    val vrp   = VRP(model, 10, 2)
+    val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
     vrp.model.propagate()
     val routes = vrp.routes
@@ -62,9 +62,9 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
   }
 
   test("Total Route Length works when removing points giving an empty route") {
-    val model       = new Store(debugLevel = 3)
-    val vrp         = VRP(model, 10, 2)
-    val routeLength = TotalRouteLength(vrp, distanceMatrix)
+    val model = new Store(debugLevel = 3)
+    val vrp   = VRP(model, 10, 2)
+    val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
     vrp.model.propagate()
     val routes = vrp.routes
@@ -75,9 +75,9 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
   }
 
   test("Total Route Length works when removing point giving a non empty route") {
-    val model       = new Store(debugLevel = 3)
-    val vrp         = VRP(model, 10, 2)
-    val routeLength = TotalRouteLength(vrp, distanceMatrix)
+    val model = new Store(debugLevel = 3)
+    val vrp   = VRP(model, 10, 2)
+    val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
     vrp.model.propagate()
     val routes = vrp.routes
@@ -88,9 +88,9 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
   }
 
   test("Total Route Length works when moving segment, emptying a vehicle") {
-    val model       = new Store(debugLevel = 3)
-    val vrp         = VRP(model, 10, 2)
-    val routeLength = TotalRouteLength(vrp, distanceMatrix)
+    val model = new Store(debugLevel = 3)
+    val vrp   = VRP(model, 10, 2)
+    val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
     vrp.model.propagate()
     val routes = vrp.routes
@@ -103,9 +103,9 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
   }
 
   test("Total Route Length works when moving segment") {
-    val model       = new Store(debugLevel = 3)
-    val vrp         = VRP(model, 10, 2)
-    val routeLength = TotalRouteLength(vrp, distanceMatrix)
+    val model = new Store(debugLevel = 3)
+    val vrp   = VRP(model, 10, 2)
+    val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
     vrp.model.propagate()
     val routes = vrp.routes
@@ -118,9 +118,9 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
   }
 
   test("Total Route Length works when moving and flipping segment") {
-    val model       = new Store(debugLevel = 3)
-    val vrp         = VRP(model, 10, 2)
-    val routeLength = TotalRouteLength(vrp, distanceMatrix)
+    val model = new Store(debugLevel = 3)
+    val vrp   = VRP(model, 10, 2)
+    val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
     vrp.model.propagate()
     val routes = vrp.routes
@@ -133,9 +133,9 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
   }
 
   test("Total Route Length works when moving segment in an empty routes") {
-    val model       = new Store(debugLevel = 3)
-    val vrp         = VRP(model, 10, 2)
-    val routeLength = TotalRouteLength(vrp, distanceMatrix)
+    val model = new Store(debugLevel = 3)
+    val vrp   = VRP(model, 10, 2)
+    val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
     val routes = vrp.routes
     routes := IntSequence(List(0, 1, 2, 4))
@@ -150,9 +150,9 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
   }
 
   test("Total Route Length works when flipping segment") {
-    val model       = new Store(debugLevel = 3)
-    val vrp         = VRP(model, 10, 2)
-    val routeLength = TotalRouteLength(vrp, distanceMatrix)
+    val model = new Store(debugLevel = 3)
+    val vrp   = VRP(model, 10, 2)
+    val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
     vrp.model.propagate()
     val routes = vrp.routes
@@ -165,9 +165,9 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
   }
 
   test("Total route length works when rolling back to checkpoints") {
-    val model       = new Store(debugLevel = 3)
-    val vrp         = VRP(model, 10, 2)
-    val routeLength = TotalRouteLength(vrp, distanceMatrix)
+    val model = new Store(debugLevel = 3)
+    val vrp   = VRP(model, 10, 2)
+    val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
     vrp.model.propagate()
     val routes = vrp.routes
@@ -185,9 +185,9 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
   }
 
   test("Total route length works when playing with checkpoints") {
-    val model       = new Store(debugLevel = 3)
-    val vrp         = VRP(model, 10, 2)
-    val routeLength = TotalRouteLength(vrp, distanceMatrix)
+    val model = new Store(debugLevel = 3)
+    val vrp   = VRP(model, 10, 2)
+    val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
     val routes = vrp.routes
     routes := IntSequence(List(0, 8, 3, 4, 1, 5))

@@ -170,9 +170,9 @@ class AsymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
   }
 
   test("Total Route Length works when moving and flipping segment") {
-    val model       = new Store(debugLevel = 3)
-    val vrp         = VRP(model, 10, 2)
-    val routeLength = TotalRouteLength(vrp, distanceMatrix)
+    val model = new Store(debugLevel = 3)
+    val vrp   = VRP(model, 10, 2)
+    val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
     vrp.model.propagate()
     val routes = vrp.routes
@@ -185,9 +185,9 @@ class AsymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
   }
 
   test("Total Route Length works when flipping segment") {
-    val model       = new Store(debugLevel = 3)
-    val vrp         = VRP(model, 10, 2)
-    val routeLength = TotalRouteLength(vrp, distanceMatrix)
+    val model = new Store(debugLevel = 3)
+    val vrp   = VRP(model, 10, 2)
+    val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
     vrp.model.propagate()
     val routes = vrp.routes
@@ -200,9 +200,9 @@ class AsymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
   }
 
   test("Total route length works when rolling back to checkpoints") {
-    val model       = new Store(debugLevel = 3)
-    val vrp         = VRP(model, 10, 2)
-    val routeLength = TotalRouteLength(vrp, distanceMatrix)
+    val model = new Store(debugLevel = 3)
+    val vrp   = VRP(model, 10, 2)
+    val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
     vrp.model.propagate()
     val routes = vrp.routes
@@ -220,9 +220,9 @@ class AsymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
   }
 
   test("Total route length works when playing with checkpoints") {
-    val model       = new Store(debugLevel = 3)
-    val vrp         = VRP(model, 10, 2)
-    val routeLength = TotalRouteLength(vrp, distanceMatrix)
+    val model = new Store(debugLevel = 3)
+    val vrp   = VRP(model, 10, 2)
+    val _     = TotalRouteLength(vrp, distanceMatrix)
     model.close()
     val routes = vrp.routes
     routes := IntSequence(List(0, 8, 3, 4, 1, 5))
