@@ -22,7 +22,7 @@ import oscar.cbls.algo.sequence.RootIntSequenceExplorer
 import scala.annotation.tailrec
 import oscar.cbls.algo.sequence.IntSequence
 
-/** Companion object for class TotalRouteLength
+/** Companion object for class TotalRouteLength.
   */
 object TotalRouteLength {
 
@@ -162,7 +162,7 @@ class TotalRouteLength(
   private val routes = vrp.routes
   private val v      = vrp.v
   // Defining a structure for the checkpoints
-  case class CheckpointValue(level: Int, value: Long)
+  private case class CheckpointValue(level: Int, value: Long)
   private var checkpointValues: List[CheckpointValue] = List()
 
   // Saving the current value
