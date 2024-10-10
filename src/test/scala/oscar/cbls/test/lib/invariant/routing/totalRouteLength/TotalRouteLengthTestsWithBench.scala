@@ -12,9 +12,19 @@ import oscar.cbls.algo.sequence.IntSequence
 
 class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
-  private val nbNodes = 100
-  private val nbVehicles = 10
+  private val nbNodes    = 10
+  private val nbVehicles = 2
 
+  /** Creates a distance matrix with given properties.
+    *
+    * @param m
+    *   The original matrix randomly generated
+    * @param symetrical
+    *   A flag saying if the output matrix should be symmetrical
+    * @param zeroDiag
+    *   A flag saying if the output matriy should have 0 in the diagonal
+    * @return
+    */
   private def mkMatrix(
     m: Array[Array[Long]],
     symetrical: Boolean,
@@ -35,7 +45,7 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
   test("TotalRouteLength working in bench, symetrical matrix") {
     class TotalRouteLengthTestBench
-        extends InvTestBenchWithConstGen[Array[Array[Long]]]("TotalRouteLength Test Bench") {
+        extends InvTestBenchWithConstGen[Array[Array[Long]]]("TotalRouteLength Symetrical Matrix") {
 
       override def genConst(): Gen[Array[Array[Long]]] = {
         val arrayGen: Gen[Array[Long]] =
@@ -60,7 +70,7 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
     val bench = new TotalRouteLengthTestBench
 
-    bench.changePropagationMoveFrequency(1,7)
+    bench.changePropagationMoveFrequency(1, 7)
 
     bench.test()
 
@@ -68,7 +78,7 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
   test("TotalRouteLength working in bench, symetrical matrix, 0 on the diagonal") {
     class TotalRouteLengthTestBench
-        extends InvTestBenchWithConstGen[Array[Array[Long]]]("TotalRouteLength Test Bench") {
+        extends InvTestBenchWithConstGen[Array[Array[Long]]]("TotalRouteLength Symetrical Matrix, 0 diagonal") {
 
       private def makeItSymetric(m: Array[Array[Long]]): Array[Array[Long]] = {
         for (i <- 0 until m.length) {
@@ -105,7 +115,7 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
     val bench = new TotalRouteLengthTestBench
 
-    bench.changePropagationMoveFrequency(1,7)
+    bench.changePropagationMoveFrequency(1, 7)
 
     bench.test()
 
@@ -113,7 +123,7 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
   test("TotalRouteLength working in bench, asymetrical matrix") {
     class TotalRouteLengthTestBench
-        extends InvTestBenchWithConstGen[Array[Array[Long]]]("TotalRouteLength Test Bench") {
+        extends InvTestBenchWithConstGen[Array[Array[Long]]]("TotalRouteLength Asymetrical Matrix") {
 
       override def genConst(): Gen[Array[Array[Long]]] = {
         val arrayGen: Gen[Array[Long]] =
@@ -136,7 +146,7 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
     val bench = new TotalRouteLengthTestBench
 
-    bench.changePropagationMoveFrequency(1,7)
+    bench.changePropagationMoveFrequency(1, 7)
 
     bench.test()
 
@@ -144,7 +154,7 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
   test("TotalRouteLength working in bench, asymetrical matrix, 0 on the diagonal") {
     class TotalRouteLengthTestBench
-        extends InvTestBenchWithConstGen[Array[Array[Long]]]("TotalRouteLength Test Bench") {
+        extends InvTestBenchWithConstGen[Array[Array[Long]]]("TotalRouteLength Asymetrical Matrix, 0 diagonal") {
 
       override def genConst(): Gen[Array[Array[Long]]] = {
         val arrayGen: Gen[Array[Long]] =
@@ -167,11 +177,9 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
     }
 
-
-
     val bench = new TotalRouteLengthTestBench
 
-    bench.changePropagationMoveFrequency(1,7)
+    bench.changePropagationMoveFrequency(1, 7)
 
     bench.test()
 

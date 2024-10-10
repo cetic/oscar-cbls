@@ -18,11 +18,7 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
     val distanceMatrix: Array[Array[Long]] =
       Array(Array(1, 0, 0, 1), Array(0, 1, 0, 0), Array(1, 2, 3, 4), Array(1, 4, 3, 3))
 
-    an[IllegalArgumentException] should be thrownBy TotalRouteLength(
-      vrp,
-      distanceMatrix,
-      true
-    )
+    an[IllegalArgumentException] should be thrownBy TotalRouteLength(vrp, distanceMatrix, true)
 
   }
 
@@ -40,7 +36,19 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
       Array(15972, 22215, 47882, 71514, 45578, 48222, 84914, 48749, 74279, 27270)
     )
 
-  test("Total Route Length works when inserting points") {
+  test("Total Route Length works when inserting points in an empty route") {
+    val model       = new Store(debugLevel = 3)
+    val vrp         = VRP(model, 10, 2)
+    val routeLength = TotalRouteLength(vrp, distanceMatrix)
+    model.close()
+    vrp.model.propagate()
+    val routes = vrp.routes
+    val exp    = routes.value().explorerAtPosition(1).get
+    routes.insertAfterPosition(6, exp)
+    vrp.model.propagate()
+  }
+
+  test("Total Route Length works when inserting points in a non empty route") {
     val model       = new Store(debugLevel = 3)
     val vrp         = VRP(model, 10, 2)
     val routeLength = TotalRouteLength(vrp, distanceMatrix)
@@ -53,7 +61,48 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
     vrp.model.propagate()
   }
 
-  test("Total Route Length works when moving segment away") {
+  test("Total Route Length works when removing points giving an empty route") {
+    val model       = new Store(debugLevel = 3)
+    val vrp         = VRP(model, 10, 2)
+    val routeLength = TotalRouteLength(vrp, distanceMatrix)
+    model.close()
+    vrp.model.propagate()
+    val routes = vrp.routes
+    routes := IntSequence(List(0, 8, 1, 5))
+    val exp = routes.value().explorerAtPosition(1).get
+    routes.remove(exp)
+    vrp.model.propagate()
+  }
+
+  test("Total Route Length works when removing point giving a non empty route") {
+    val model       = new Store(debugLevel = 3)
+    val vrp         = VRP(model, 10, 2)
+    val routeLength = TotalRouteLength(vrp, distanceMatrix)
+    model.close()
+    vrp.model.propagate()
+    val routes = vrp.routes
+    routes := IntSequence(List(0, 8, 3, 4, 1, 5))
+    val exp = routes.value().explorerAtPosition(3).get
+    routes.remove(exp)
+    vrp.model.propagate()
+  }
+
+  test("Total Route Length works when moving segment, emptying a vehicle") {
+    val model       = new Store(debugLevel = 3)
+    val vrp         = VRP(model, 10, 2)
+    val routeLength = TotalRouteLength(vrp, distanceMatrix)
+    model.close()
+    vrp.model.propagate()
+    val routes = vrp.routes
+    routes := IntSequence(List(0, 8, 3, 4, 1, 5))
+    val fromExp  = routes.value().explorerAtPosition(1).get
+    val toExp    = routes.value().explorerAtPosition(3).get
+    val afterExp = routes.value().explorerAtPosition(5).get
+    routes.move(fromExp, toExp, afterExp, false)
+    vrp.model.propagate()
+  }
+
+  test("Total Route Length works when moving segment") {
     val model       = new Store(debugLevel = 3)
     val vrp         = VRP(model, 10, 2)
     val routeLength = TotalRouteLength(vrp, distanceMatrix)
@@ -68,7 +117,39 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
     vrp.model.propagate()
   }
 
-  test("Total Route Length works when moving segment at the same place") {
+  test("Total Route Length works when moving and flipping segment") {
+    val model       = new Store(debugLevel = 3)
+    val vrp         = VRP(model, 10, 2)
+    val routeLength = TotalRouteLength(vrp, distanceMatrix)
+    model.close()
+    vrp.model.propagate()
+    val routes = vrp.routes
+    routes := IntSequence(List(0, 8, 3, 4, 1, 5))
+    val fromExp  = routes.value().explorerAtPosition(2).get
+    val toExp    = routes.value().explorerAtPosition(3).get
+    val afterExp = routes.value().explorerAtPosition(5).get
+    routes.move(fromExp, toExp, afterExp, true)
+    vrp.model.propagate()
+  }
+
+  test("Total Route Length works when moving segment in an empty routes") {
+    val model       = new Store(debugLevel = 3)
+    val vrp         = VRP(model, 10, 2)
+    val routeLength = TotalRouteLength(vrp, distanceMatrix)
+    model.close()
+    val routes = vrp.routes
+    routes := IntSequence(List(0, 1, 2, 4))
+    vrp.model.propagate()
+
+    val expStartFrom = routes.value().explorerAtPosition(2).get
+    val expEndFrom   = routes.value().explorerAtPosition(3).get
+    val expTo        = routes.value().explorerAtPosition(0).get
+
+    routes.move(expStartFrom, expEndFrom, expTo, false)
+    vrp.model.propagate()
+  }
+
+  test("Total Route Length works when flipping segment") {
     val model       = new Store(debugLevel = 3)
     val vrp         = VRP(model, 10, 2)
     val routeLength = TotalRouteLength(vrp, distanceMatrix)
@@ -79,7 +160,7 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
     val fromExp  = routes.value().explorerAtPosition(2).get
     val toExp    = routes.value().explorerAtPosition(3).get
     val afterExp = routes.value().explorerAtPosition(1).get
-    routes.flip(fromExp,toExp)
+    routes.flip(fromExp, toExp)
     vrp.model.propagate()
   }
 
@@ -115,10 +196,10 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
     // Define some moves
     routes.defineCurrentValueAsCheckpoint()
     val insertExp1 = routes.value().explorerAtPosition(3).get
-    routes.insertAfterPosition(9,insertExp1)
+    routes.insertAfterPosition(9, insertExp1)
     routes.defineCurrentValueAsCheckpoint()
     val insertExp2 = routes.value().explorerAtPosition(5).get
-    routes.insertAfterPosition(6,insertExp2)
+    routes.insertAfterPosition(6, insertExp2)
     // Propagate
     vrp.model.propagate()
 
@@ -126,10 +207,9 @@ class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
     routes.rollbackToTopCheckpoint()
     routes.releaseTopCheckpoint()
     val insertExp3 = routes.value().explorerAtPosition(6).get
-    routes.insertAfterPosition(6,insertExp3)
+    routes.insertAfterPosition(6, insertExp3)
     // Propagate
     vrp.model.propagate()
   }
-
 
 }
