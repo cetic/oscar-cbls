@@ -87,7 +87,7 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
           Gen.sequence[Array[Long], Long](Array.fill(nbNodes)(Gen.choose(0L, 100000L)))
         val matrixGen: Gen[Array[Array[Long]]] =
           Gen.sequence[Array[Array[Long]], Array[Long]](Array.fill(nbNodes)(arrayGen))
-        for (m <- matrixGen) yield mkMatrix(m, symetrical = true, zeroDiag = false)
+        for (m <- matrixGen) yield mkMatrix(m, symetrical = true, zeroDiag = true)
       }
 
       override def createTestBenchSut(model: Store, inputData: Array[Array[Long]]): TestBenchSut = {

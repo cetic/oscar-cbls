@@ -38,7 +38,7 @@ object TotalRouteLength {
 
   /** Creates a TotalRouteLength invariant.
     *
-    * The TotalRouteLength invariant maintains the sum of all the route of all the vehicles.
+    * The TotalRouteLength invariant maintains the sum of the route of each vehicles.
     *
     * @param vrp
     *   The object that represents the Vehicle Routing Problem.
@@ -55,7 +55,7 @@ object TotalRouteLength {
 
   /** Creates a TotalRouteLength invariant.
     *
-    * The TotalRouteLength invariant maintains the sum of all the route of all the vehicles.
+    * The TotalRouteLength invariant maintains the sum of the route of each vehicles.
     *
     * @param vrp
     *   The object that represents the Vehicle Routing Problem.
@@ -77,7 +77,7 @@ object TotalRouteLength {
 
   /** Creates a TotalRouteLength invariant.
     *
-    * The TotalRouteLength invariant maintains the sum of all the route of all the vehicles.
+    * The TotalRouteLength invariant maintains the sum of the route of each vehicles.
     *
     * @param vrp
     *   The object that represents the Vehicle Routing Problem.
@@ -97,7 +97,7 @@ object TotalRouteLength {
 
   /** Creates a TotalRouteLength invariant.
     *
-    * The TotalRouteLength invariant maintains the sum of all the route of all the vehicles.
+    * The TotalRouteLength invariant maintains the sum of the route of each vehicles.
     *
     * @param vrp
     *   The object that represents the Vehicle Routing Problem.
@@ -127,7 +127,7 @@ object TotalRouteLength {
   * constraint is more efficient if the distance function is '''symmetrical''' (i.e. given two nodes
   * `i` and `j`, `distanceFunction(i)(j) == distanceFunction(j)(i)`).
   *
-  * The nodes may have a weight that is added to the length of the routen. In this case, the weights
+  * The nodes may have a weight that is added to the length of the routes. In this case, the weights
   * of the nodes should be put in the '''diagonal''' of the distance function (i.e. the weight of
   * the node `i` is given by `distanceFunction(i)(i)`).
   *

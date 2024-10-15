@@ -12,7 +12,7 @@ import oscar.cbls.algo.sequence.IntSequence
 
 class SymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
 
-  test("TotalRouteLength do not accept when the matrix is not symetric") {
+  test("TotalRouteLength do not accept when the matrix is not symmetric") {
     val model = new Store()
     val vrp   = VRP(model, 4, 1)
     val distanceMatrix: Array[Array[Long]] =

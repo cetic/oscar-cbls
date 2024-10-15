@@ -14,7 +14,7 @@ class AsymetricalMatrixUnitTests extends AnyFunSuite with Matchers {
 
   test("TotalRouteLength is correctly initialized") {
     val model = new Store()
-    val vrp   = VRP(model, 6, 2)
+    val vrp   = VRP(model, n = 6, v = 2)
     val matrix: Array[Array[Long]] = Array(
       Array(7, 9, 0, 6, 3, 1),
       Array(8, 7, 9, 9, 0, 2),
