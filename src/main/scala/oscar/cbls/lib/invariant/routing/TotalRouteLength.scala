@@ -26,6 +26,15 @@ import oscar.cbls.algo.sequence.IntSequence
   */
 object TotalRouteLength {
 
+  /** Checks if the distance matrix is symetrical.
+    *
+    * @param n
+    *   The number of node.
+    * @param distanceMatrix
+    *   The distance matrix.
+    * @return
+    *   Returns if the matrix is symmetrical.
+    */
   private def isSymmetrical(n: Int, distanceMatrix: Int => Int => Long): Boolean = {
     var res = true
     for (i <- 0 until n) {
@@ -214,11 +223,11 @@ class TotalRouteLength(
           length + (if (prevNode != vrp.v - 1) distanceFunction(prevNode)(vrp.v - 1) else 0)
         case exp: IntSequenceExplorer =>
           val nextExp = if (backward) exp.prev else exp.next
-          val distanceFromPrev = if (exp.value < v) {      // The next node is a vehicle
-            if (prevNode != exp.value - 1)                 // is the route of the vehicle empty?
+          val distanceFromPrev = if (exp.value < v) { // The next node is a vehicle
+            if (prevNode != exp.value - 1) // is the route of the vehicle empty?
               distanceFunction(prevNode)(exp.value - 1)
             else 0
-          } else {                                         // The next node is a normal node
+          } else { // The next node is a normal node
             distanceFunction(prevNode)(exp.value)
           }
           toExpl match {
