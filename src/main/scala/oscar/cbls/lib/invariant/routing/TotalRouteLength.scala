@@ -214,11 +214,11 @@ class TotalRouteLength(
           length + (if (prevNode != vrp.v - 1) distanceFunction(prevNode)(vrp.v - 1) else 0)
         case exp: IntSequenceExplorer =>
           val nextExp = if (backward) exp.prev else exp.next
-          val distanceFromPrev = if (exp.value < v) {
-            if (prevNode != exp.value - 1)
+          val distanceFromPrev = if (exp.value < v) {      // The next node is a vehicle
+            if (prevNode != exp.value - 1)                 // is the route of the vehicle empty?
               distanceFunction(prevNode)(exp.value - 1)
             else 0
-          } else {
+          } else {                                         // The next node is a normal node
             distanceFunction(prevNode)(exp.value)
           }
           toExpl match {
