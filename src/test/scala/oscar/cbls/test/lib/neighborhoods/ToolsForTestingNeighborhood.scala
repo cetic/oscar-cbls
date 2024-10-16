@@ -13,6 +13,9 @@
 
 package oscar.cbls.test.lib.neighborhoods
 
+import oscar.cbls.algo.sequence.IntSequence
+
+import scala.annotation.tailrec
 import scala.util.Random
 
 private[neighborhoods] object ToolsForTestingNeighborhood {
@@ -22,6 +25,30 @@ private[neighborhoods] object ToolsForTestingNeighborhood {
     // The global minimum of the objective function is reached when a & b have their smallest value
     // To avoid that the smallest value is always the first explored, we shuffle the domain
     rng.shuffle((lowerBound to lowerBound + 10L).toList)
+  }
+
+  def generateRandomValidRoute(n: Int, v: Int, rng: Random): IntSequence = {
+    val nodes           = rng.shuffle((v until n).toList)
+    val vehiclePosition = List.fill(v - 1)(rng.between(0, nodes.length)).sortWith(_ > _)
+
+    @tailrec
+    def insertVehicleNodes(
+      routedNodes: List[Int],
+      vehiclePositions: List[Int],
+      currentVehicle: Int = v - 1
+    ): List[Int] = {
+      vehiclePositions match {
+        case Nil => 0 :: routedNodes
+        case h :: t =>
+          insertVehicleNodes(
+            routedNodes.take(h) ::: (currentVehicle :: routedNodes.drop(h)),
+            t,
+            currentVehicle - 1
+          )
+      }
+    }
+
+    IntSequence(insertVehicleNodes(nodes, vehiclePosition))
   }
 
 }
