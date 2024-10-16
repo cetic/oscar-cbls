@@ -210,6 +210,11 @@ class TotalRouteLength(
     toExpl: Option[IntSequenceExplorer] = None,
     backward: Boolean = false
   ): Long = {
+    if (backward)
+      require(
+        toExpl.isDefined,
+        "Backward computation only works when a destination explorer is defined"
+      )
     val startExp = fromExpl.getOrElse(seq.explorerAtPosition(0).get)
     val exp      = if (backward) startExp.prev else startExp.next
     @tailrec
