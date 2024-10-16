@@ -214,52 +214,31 @@ class TotalRouteLength(
           length + (if (prevNode != vrp.v - 1) distanceFunction(prevNode)(vrp.v - 1) else 0)
         case exp: IntSequenceExplorer =>
           val nextExp = if (backward) exp.prev else exp.next
+          val distanceFromPrev = if (exp.value < v) {
+            if (prevNode != exp.value - 1)
+              distanceFunction(prevNode)(exp.value - 1)
+            else 0
+          } else {
+            distanceFunction(prevNode)(exp.value)
+          }
           toExpl match {
             case None =>
-              if (exp.value < v) { // This is a new vehicle node
+              computeLength(
+                nextExp,
+                exp.value,
+                length + distanceFunction(exp.value)(exp.value) + distanceFromPrev
+              )
+            case Some(e) =>
+              if (e.value == exp.value) {
+                length + distanceFunction(e.value)(e.value) + distanceFunction(prevNode)(e.value)
+              } else {
                 computeLength(
                   nextExp,
                   exp.value,
                   length +
                     distanceFunction(exp.value)(exp.value) +
-                    (if (prevNode != exp.value - 1)
-                       distanceFunction(prevNode)(exp.value - 1)
-                     else 0)
+                    distanceFromPrev
                 )
-              } else { // This is a normal node
-                computeLength(
-                  nextExp,
-                  exp.value,
-                  length +
-                    distanceFunction(prevNode)(exp.value) +
-                    distanceFunction(exp.value)(exp.value)
-                )
-              }
-            case Some(e) =>
-              if (e.value == exp.value) {
-                length + distanceFunction(e.value)(e.value) + distanceFunction(prevNode)(e.value)
-              } else {
-                if (exp.value < v) { // This is a new vehicle node
-                  computeLength(
-                    nextExp,
-                    exp.value,
-                    length +
-                      distanceFunction(exp.value)(exp.value) +
-                      (if (prevNode != exp.value - 1)
-                         distanceFunction(prevNode)(exp.value - 1)
-                       else
-                         0)
-                  )
-                } else { // This is a normal node
-                  computeLength(
-                    nextExp,
-                    exp.value,
-                    length +
-                      distanceFunction(prevNode)(exp.value) +
-                      distanceFunction(exp.value)(exp.value)
-                  )
-                }
-
               }
           }
       }
