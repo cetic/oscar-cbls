@@ -83,6 +83,8 @@ object TotalRouteLength {
     *   The object that represents the Vehicle Routing Problem.
     * @param distanceFunction
     *   A function that, given two nodes, returns the distance between the two nodes.
+    * @param matrixIsSymmetrical
+    *   A flag that says if the matrix is symetrical
     * @return
     *   The TotalRouteLength invariant.
     */
@@ -103,6 +105,8 @@ object TotalRouteLength {
     *   The object that represents the Vehicle Routing Problem.
     * @param distanceFunction
     *   A function that, given two nodes, returns the distance between the two nodes.
+    * @param matrixIsSymmetrical
+    *   A flag that says if the matrix is symetrical
     * @return
     *   The TotalRouteLength invariant.
     */
