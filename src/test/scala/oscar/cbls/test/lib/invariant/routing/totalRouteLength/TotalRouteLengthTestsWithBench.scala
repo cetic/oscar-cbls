@@ -3,7 +3,7 @@ package oscar.cbls.test.lib.invariant.routing.totalRouteLength
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import oscar.cbls.test.invBench.InvTestBenchWithConstGen
-import oscar.cbls.model.routing.VRP
+import oscar.cbls.modeling.routing.VRP
 import oscar.cbls.core.computation.Store
 import oscar.cbls.lib.invariant.routing.TotalRouteLength
 import org.scalacheck.Gen

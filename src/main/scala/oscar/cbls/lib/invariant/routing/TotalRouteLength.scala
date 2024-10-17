@@ -13,7 +13,7 @@
 
 package oscar.cbls.lib.invariant.routing
 
-import oscar.cbls.model.routing.VRP
+import oscar.cbls.modeling.routing.VRP
 import oscar.cbls.core.computation.Invariant
 import oscar.cbls.core.computation.seq._
 import oscar.cbls.core.computation.integer.IntVariable
