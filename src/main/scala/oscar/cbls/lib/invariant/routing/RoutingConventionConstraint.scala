@@ -59,7 +59,6 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
 
   private[this] var routedNodes: Array[Boolean] =
     Array.tabulate(vrp.n)(node => vrp.isRouted(node))
-
   // Used to check if a neighborhood do not lose the level 0 checkpoint.
   private[this] var checkpointAtLevel0: Option[IntSequence] = None
   private[this] var lastNotified: IntSequence               = vrp.routes.value()
