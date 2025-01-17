@@ -79,14 +79,6 @@ private[profiling] class CommonProfilingData extends ProfilingData {
     this._timeSpentNoMoveFoundNano += timeNano
   }
 
-  /** Returns if the last call of the profiled neighborhood found a move. */
-  def lastCallFound(): Boolean = _lastCallFound
-
-  /** Returns the obtained gain of the last call of the profiled neighborhood. */
-  def lastCallGain(): Long = _lastCallGain
-
-  /** Return the duration (in nanoseconds) of the last call of the profiled neighborhood. */
-  def lastCallDurationNano(): Long = _lastCallDurationNano
   // Returns the number of explorations made by the profiled Neighborhood.
   def nbCalls: Long = _nbCalls
   // Returns the number of successful explorations made by the profiled Neighborhood.
