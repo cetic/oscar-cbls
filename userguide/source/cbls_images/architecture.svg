@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/PR-SVG-20010719/DTD/svg10.dtd">
+<svg width="32cm" height="15cm" viewBox="18 219 623 288" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g>
+    <rect style="fill: #ffffff" x="100" y="440" width="540" height="54.5"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="100" y="440" width="540" height="54.5"/>
+  </g>
+  <text font-size="12.7998" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="110" y="471.5">
+    <tspan x="110" y="471.5">concepts: propagation element, progagation structure</tspan>
+    <tspan x="110" y="487.5">functionality: coordinates propagations on models</tspan>
+    <tspan x="110" y="503.5"></tspan>
+  </text>
+  <text font-size="13.0838" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:700" x="109" y="457">
+    <tspan x="109" y="457">Propagation Layer</tspan>
+  </text>
+  <g>
+    <rect style="fill: #ffffff" x="100" y="380" width="540" height="54.5"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="100" y="380" width="540" height="54.5"/>
+  </g>
+  <text font-size="12.7998" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="109.7" y="412.6">
+    <tspan x="109.7" y="412.6">concepts: Variables (Int,Set,Seq), Invariants, Store</tspan>
+    <tspan x="109.7" y="428.6">functionality: variable changes are notified to invariants</tspan>
+    <tspan x="109.7" y="444.6"></tspan>
+  </text>
+  <text font-size="13.0838" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:700" x="109.7" y="397.1">
+    <tspan x="109.7" y="397.1">Computation Layer</tspan>
+  </text>
+  <g>
+    <rect style="fill: #ffffff" x="100" y="320" width="540" height="54.5"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="100" y="320" width="540" height="54.5"/>
+  </g>
+  <text font-size="12.7998" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="109.7" y="352.6">
+    <tspan x="109.7" y="352.6">concepts: Objective</tspan>
+    <tspan x="109.7" y="368.6">functionality: triggers partial propagation</tspan>
+    <tspan x="109.7" y="384.6"></tspan>
+  </text>
+  <text font-size="13.0838" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:700" x="111.7" y="336.1">
+    <tspan x="111.7" y="336.1">Objective Layer</tspan>
+  </text>
+  <g>
+    <rect style="fill: #ffffff" x="100" y="260" width="260" height="54.5"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="100" y="260" width="260" height="54.5"/>
+  </g>
+  <text font-size="12.7998" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="107.7" y="290.6">
+    <tspan x="107.7" y="290.6">concepts: Neighborhood, combinators</tspan>
+    <tspan x="107.7" y="306.6">functionality: doAllMove</tspan>
+    <tspan x="107.7" y="322.6"></tspan>
+  </text>
+  <text font-size="13.0838" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:700" x="109.7" y="276.1">
+    <tspan x="109.7" y="276.1">Search Layer</tspan>
+  </text>
+  <g>
+    <rect style="fill: #ffffff" x="380" y="260" width="260" height="54.5"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="380" y="260" width="260" height="54.5"/>
+  </g>
+  <text font-size="13.0838" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:700" x="384.7" y="276.1">
+    <tspan x="384.7" y="276.1">Constraint Layer</tspan>
+  </text>
+  <text font-size="12.7998" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="382.4" y="291.5">
+    <tspan x="382.4" y="291.5">concepts: Constraint,Constraint System</tspan>
+    <tspan x="382.4" y="307.5">functionality: per variable violation </tspan>
+    <tspan x="382.4" y="323.5"></tspan>
+  </text>
+  <g>
+    <rect style="fill: #ffffff" x="100" y="220" width="120" height="21.9"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="100" y="220" width="120" height="21.9"/>
+  </g>
+  <text font-size="13.0838" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:700" x="122.4" y="235.1">
+    <tspan x="122.4" y="235.1">Invariants</tspan>
+  </text>
+  <g>
+    <rect style="fill: #ffffff" x="240" y="220" width="120" height="21.9"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="240" y="220" width="120" height="21.9"/>
+  </g>
+  <text font-size="13.0838" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:700" x="260" y="236">
+    <tspan x="260" y="236">Constraints</tspan>
+  </text>
+  <g>
+    <rect style="fill: #ffffff" x="380" y="220" width="120" height="21.9"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="380" y="220" width="120" height="21.9"/>
+  </g>
+  <text font-size="13.0838" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:700" x="385" y="236">
+    <tspan x="385" y="236">Neighborhoods</tspan>
+  </text>
+  <g>
+    <rect style="fill: #ffffff" x="520" y="220" width="120" height="20"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="520" y="220" width="120" height="20"/>
+  </g>
+  <text font-size="13.0838" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:700" x="534.4" y="234.1">
+    <tspan x="534.4" y="234.1">Combinators</tspan>
+  </text>
+  <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke-dasharray: 20; stroke: #000000" x1="19" y1="251" x2="639" y2="251"/>
+  <text font-size="16.9333" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:700" x="20" y="380">
+    <tspan x="20" y="380">core</tspan>
+  </text>
+  <text font-size="16.9333" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:700" x="20" y="240">
+    <tspan x="20" y="240">lib</tspan>
+  </text>
+</svg>
