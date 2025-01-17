@@ -25,8 +25,8 @@ object MoveFound {
     new MoveFound(move)
   }
 
-  def unapply(moveFound: MoveFound): Option[Move] = {
-    Some(moveFound.move)
+  def unapply(moveFound: MoveFound): Move = {
+    moveFound.move
   }
 
 }

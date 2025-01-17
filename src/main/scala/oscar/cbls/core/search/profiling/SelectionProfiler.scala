@@ -55,16 +55,6 @@ class SelectionProfiler(
     subProfilersData.map(p => (p._1, (0, 0, 0L, 0L)))
   }
 
-  /** Returns the number of successful explorations made by the specified Neighborhood for this
-    * iteration.
-    *
-    * @param i
-    *   The id of the Neighborhood.
-    * @return
-    *   the number of successful explorations made by the specified Neighborhood for this iteration
-    */
-  def nbFoundOfNeighborhood(i: Int): Long = subProfilersData(profilerArray(i)).nbFound
-
   /** Returns the total gain of the specified Neighborhood for this iteration.
     *
     * @param i
@@ -74,17 +64,17 @@ class SelectionProfiler(
     */
   def gainOfNeighborhood(i: Int): Long = subProfilersData(profilerArray(i)).gain
 
-  /** Returns the total time spent of the specified Neighborhood for this iteration in milliseconds.
+  /** Returns the total time spent of the specified Neighborhood for this iteration.
     *
     * @param i
     *   The id of the Neighborhood.
     * @return
-    *   The total time spent of Neighborhood i for this iteration in milliseconds.
+    *   The total time spent of Neighborhood i for this iteration.
     */
   def timeSpentOfNeighborhood(i: Int): Long = subProfilersData(profilerArray(i)).timeSpentMillis
 
-  /** Returns the efficiency slope of the given [[oscar.cbls.core.search.Neighborhood]] `totalGain`
-    * `/` `totalTime`.
+  /** Returns the efficiency slope of the given [[oscar.cbls.core.search.Neighborhood]] `totalGain /`
+    * `totalTime`.
     *
     * @param neighborhoodId
     *   The id of the Neighborhood in the used neighborhoods list for which we want to know the
@@ -94,13 +84,10 @@ class SelectionProfiler(
     */
   def efficiencySlope(neighborhoodId: Int, defaultIfNoCall: Long = Long.MaxValue): Long =
     if (subProfilersData(profilerArray(neighborhoodId)).nbCalls == 0) defaultIfNoCall
-    else {
-      ((1000.0 * gainOfNeighborhood(neighborhoodId)) / timeSpentOfNeighborhood(
-        neighborhoodId
-      ).toDouble).toLong
-    }
+    else
+      ((1000L * gainOfNeighborhood(neighborhoodId)) / timeSpentOfNeighborhood(neighborhoodId)).toInt
 
-  def firstHasFailed(): Unit = {
+  private def firstHasFailed(): Unit = {
     _firstFailed = true
     nbOccurrencePerIterationEventOccurred("NbFirstFailedPerReset")
   }
@@ -111,27 +98,23 @@ class SelectionProfiler(
   private def neighborhoodSuccess(profiler: SearchProfiler): Double =
     ((profiler.commonProfilingData.nbFound.toDouble / profiler.commonProfilingData.nbCalls) * 10000).round / 100.0
 
-  /** Aggregates the data sent by the sub profilers.
-    *
-    * Used by combinator that need underlying Neighborhood data to operate. For instance
-    * BestSlopeFirst needs to know the efficiency of its Neighborhoods. Default behavior : Nothing
-    * is done.
-    *
-    * @param profiler
-    *   The profiler sending the data.
-    */
-  def aggregateSubProfilerData(profiler: SearchProfiler): Unit = {
+  override def aggregateSubProfilerData(
+    profiler: SearchProfiler,
+    gain: Option[Long],
+    explorationTimeNano: Long
+  ): Unit = {
     val subProfilerData = subProfilersData(profiler)
-    val found           = profiler.commonProfilingData.lastCallFound()
-    if (!found && subProfilerData.nbFound == 0 && !_firstFailed) firstHasFailed()
-    if (found) {
-      subProfilerData.callInc()
-      subProfilerData.foundInc()
-      subProfilerData.gainPlus(profiler.commonProfilingData.lastCallGain())
-      subProfilerData.timeSpentMoveFoundPlus(profiler.commonProfilingData.lastCallDurationNano())
-    } else {
-      subProfilerData.callInc()
-      subProfilerData.timeSpentNoMoveFoundPlus(profiler.commonProfilingData.lastCallDurationNano())
+    if (gain.isEmpty && subProfilerData.nbFound == 0 && !_firstFailed) firstHasFailed()
+    gain match {
+      case Some(g) =>
+        subProfilerData.callInc()
+        subProfilerData.foundInc()
+        subProfilerData.gainPlus(g)
+        subProfilerData.timeSpentMoveFoundPlus(explorationTimeNano)
+      case None =>
+        subProfilerData.callInc()
+        subProfilerData.foundInc()
+        subProfilerData.timeSpentNoMoveFoundPlus(explorationTimeNano)
     }
   }
 
