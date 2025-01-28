@@ -14,6 +14,9 @@
 package oscar.cbls.core.computation.set
 
 import oscar.cbls.core.computation._
+import oscar.cbls.core.computation.integer.IntVariable
+import oscar.cbls.lib.invariant.set.Cardinality
+
 import scala.collection.immutable.HashSet
 
 object SetVariable {
@@ -116,6 +119,19 @@ class SetVariable(
 
   /** Set this variable as identical to the given variable. */
   def :<-(that: SetVariable): Unit = new SetIdentityInvariant(this.model, that, this)
+
+  /** Returns the size of this set variable. The size is maintained dynamically through the
+    * [[oscar.cbls.lib.invariant.set.Cardinality]] invariant.
+    *
+    * Note: differently from the `size` method in most standard collection, this method produces
+    * side effects (the initialization of the Cardinality invariant and associated output variable),
+    * hence it has to be called with parentheses.
+    */
+  def size(): IntVariable = {
+    val output: IntVariable = IntVariable(this.model, this.pendingValue.size)
+    Cardinality(this.model, this, output, name)
+    output
+  }
 
   /** Changes the value of this variable and schedules it for propagation. */
   protected def setValue(value: Set[Int]): Unit = {

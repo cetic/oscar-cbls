@@ -186,10 +186,10 @@ object RoutingGenerator {
     n: Int,
     weightFactorForUnroutedNodes: Long,
     maxCostForUsingVehicle: Long,
-    minLatitude: Double = -90.0,
-    maxLatitude: Double = 90.0,
-    minLongitude: Double = -180.0,
-    maxLongitude: Double = 180.0,
+    minLatitude: Double = -45.0,
+    maxLatitude: Double = 45.0,
+    minLongitude: Double = -90.0,
+    maxLongitude: Double = 90.0,
     seed: Long = Random.nextLong()
   ): (Array[(Double, Double)], Array[Array[Long]], Long, Long) = {
     val rng = new Random(seed)

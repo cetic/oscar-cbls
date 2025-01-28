@@ -1,6 +1,6 @@
 package oscar
 
-import oscar.cbls.core.computation.integer.{IntConstant, IntVariable}
+import oscar.cbls.core.computation.integer.IntConstant
 import oscar.cbls.modeling.Model
 import oscar.cbls.modeling.invariant.Predefined
 
@@ -8,10 +8,13 @@ import scala.language.implicitConversions
 
 package object cbls extends Predefined {
 
-  type Model       = oscar.cbls.modeling.Model
-  type IntVariable = oscar.cbls.core.computation.integer.IntVariable
-  type SetVariable = oscar.cbls.core.computation.set.SetVariable
-  type SeqVariable = oscar.cbls.core.computation.seq.SeqVariable
+  type Model        = oscar.cbls.modeling.Model
+  type VRP          = oscar.cbls.modeling.routing.VRP
+  type IntVariable  = oscar.cbls.core.computation.integer.IntVariable
+  type SetVariable  = oscar.cbls.core.computation.set.SetVariable
+  type SeqVariable  = oscar.cbls.core.computation.seq.SeqVariable
+  type Objective    = oscar.cbls.core.computation.objective.Objective
+  type Neighborhood = oscar.cbls.core.search.Neighborhood
 
   /** Implicit conversion of a constant integer value to an associated integer variable in a
     * [[oscar.cbls.modeling.Model]].
@@ -21,7 +24,18 @@ package object cbls extends Predefined {
     * @param model
     *   the model to which the constant is added
     */
-  implicit def int2IntVar(x: Int)(implicit model: Model): IntVariable =
+  implicit def int2IntConst(x: Int)(implicit model: Model): IntVariable =
+    new IntConstant(model.store, value = x)
+
+  /** Implicit conversion of a constant Long value to an associated integer variable in a
+    * [[oscar.cbls.modeling.Model]].
+    *
+    * @param x
+    *   The constant integer.
+    * @param model
+    *   The model to which the constant is added.
+    */
+  implicit def long2IntConst(x: Long)(implicit model: Model): IntVariable =
     new IntConstant(model.store, value = x)
 
   /** Shortcut for adding an integer variable to the implicitly defined [[Model]].
