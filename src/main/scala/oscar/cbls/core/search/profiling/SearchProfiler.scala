@@ -97,7 +97,7 @@ class SearchProfiler(val neighborhood: Neighborhood) {
   private def slope: String = {
     if (commonProfilingData.timeSpentMillis == 0L) "NA"
     else
-      s"${1000 * (commonProfilingData.gain.toDouble / commonProfilingData.timeSpentMillis.toDouble).toLong}"
+      s"${(1000.0 * commonProfilingData.gain / commonProfilingData.timeSpentMillis.toDouble).toLong}"
   }
   private def avgTimeSpendNoMove: String = {
     if (commonProfilingData.nbCalls - commonProfilingData.nbFound == 0L) "NA"

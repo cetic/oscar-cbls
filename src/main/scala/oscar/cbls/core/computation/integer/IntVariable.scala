@@ -14,7 +14,7 @@
 package oscar.cbls.core.computation.integer
 
 import oscar.cbls.core.computation.{Invariant, KeyForRemoval, SavedValue, Store, Variable}
-import oscar.cbls.lib.invariant.numeric.{Minus2, Sum2}
+import oscar.cbls.lib.invariant.numeric.{Div2, Minus2, Prod2, Sum2}
 
 /** Companion object of IntVariable */
 object IntVariable {
@@ -121,8 +121,14 @@ class IntVariable(
   /** Returns the sum of this variable and another. */
   def +(that: IntVariable): IntVariable = Sum2.result(this, that)
 
-  /** Returns the sum of this variable and another. */
+  /** Returns the difference between this variable and another. */
   def -(that: IntVariable): IntVariable = Minus2.result(this, that)
+
+  /** Returns the product of this variable and another. */
+  def *(that: IntVariable): IntVariable = Prod2.result(this, that)
+
+  /** Returns the quotient of this variable and another. */
+  def /(that: IntVariable): IntVariable = Div2.result(this, that)
 
   /** Decrements this variable */
   def :--(): Unit = setValue(_pendingValue - 1)

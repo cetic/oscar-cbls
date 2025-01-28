@@ -4,7 +4,7 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.{Minimize, Objective}
 import oscar.cbls.core.computation.set.SetVariable
-import oscar.cbls.modeling.invariant.{Logic, MinMax, Numeric}
+import oscar.cbls.modeling.routing.VRP
 
 import scala.collection.mutable
 
@@ -31,12 +31,6 @@ object Model {
 class Model(val name: String, debugLevel: Int = 0) {
 
   protected[cbls] val store = new Store(debugLevel)
-
-  object logic extends Logic
-
-  object minMax extends MinMax
-
-  object numeric extends Numeric
 
   private var isOpen = true
 
@@ -100,6 +94,7 @@ class Model(val name: String, debugLevel: Int = 0) {
     setVar.setDomain(min, max)
     setVar
   }
+
   /** Add boolean (0-1) variable to the model.
     *
     * @param initialValue
@@ -109,6 +104,31 @@ class Model(val name: String, debugLevel: Int = 0) {
     */
   def booleanVar(initialValue: Long, name: String = ""): IntVariable =
     intVar(initialValue, 0, 1, name)
+
+  private var currentVrp: Option[VRP] = None
+
+  /** Returns the [[VRP]] associated to this model if it is defined, and [[scala.None]] otherwise.
+    */
+  def vrp: Option[VRP] = currentVrp
+
+  /** Initializes a [[VRP]] with `n` nodes and `v` vehicles for this model.
+    * @param n
+    *   number of nodes in the VRP
+    * @param v
+    *   number of vehicles in the VRP
+    * @param maxPivotPerValuePercent
+    *   maximum number of pivots in the sequence variable underlying the VRP, affecting
+    *   regularization when checkpoints are defined
+    * @param debug
+    *   whether debug mode is activated or not
+    * @return
+    *   a handle to the [[VRP]] just defined
+    */
+  def setVrp(n: Int, v: Int, maxPivotPerValuePercent: Int = 4, debug: Boolean = false): VRP = {
+    require(currentVrp.isEmpty, "VRP already defined for this model")
+    currentVrp = Some(VRP(store, n, v, maxPivotPerValuePercent, debug))
+    currentVrp.get
+  }
 
   /** Defines the objective to be the minimization of the given variable.
     *

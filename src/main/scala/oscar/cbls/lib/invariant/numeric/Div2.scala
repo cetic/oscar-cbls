@@ -42,6 +42,20 @@ object Div2 {
   ): Div2 = {
     new Div2(model, a, b, output, name)
   }
+
+  /** Static method to obtain an IntVariable that is the result of dividing the left side operand by
+    * the right one.
+    *
+    * @param a
+    *   Left side operand.
+    * @param b
+    *   Right side operand.
+    */
+  def result(a: IntVariable, b: IntVariable, name: Option[String] = None): IntVariable = {
+    val out = IntVariable(a.model, a.value() / b.value())
+    new Div2(a.model, a, b, out, name)
+    out
+  }
 }
 
 /** Invariant which maintains the quotient of two

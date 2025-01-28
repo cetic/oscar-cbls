@@ -3,7 +3,6 @@ ThisBuild / organization := "oscar"
 ThisBuild / version := sys.props.getOrElse("version", "latest")
 ThisBuild / versionScheme := Some("early-semver")
 
-//test ci ehe 2 //
 ThisBuild / publishTo := {
   val nexus = "https://nexus.cetic.be/"
   val repo = "repository/oscar"

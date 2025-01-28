@@ -2,64 +2,46 @@ package oscar.cbls.examples
 
 import oscar.cbls._
 import oscar.cbls.algo.generator.WarehouseLocationGenerator
-import oscar.cbls.lib.neighborhoods.AssignNeighborhood
+import oscar.cbls.modeling.{Invariants => Inv, Neighborhoods => Nbrs}
 
-object WLPModelingExample extends App {
+object WLPModelingExample {
+  def main(args: Array[String]): Unit = {
 
-  // *** Input ***
+    // Problem instance parameters
+    val nFacilities = 300
+    val deliveryPoints = 1000
+    val (fixedCosts, _, _, distanceMatrix, _) =
+      WarehouseLocationGenerator.generateRandomWLP(nFacilities, deliveryPoints)
 
-  val nFacilities = 300
+    implicit val m: Model = model("WLP example")
 
-  val deliveryPoints = 1000
+    // decision variables
+    val facilitiesVariables = Array.tabulate(nFacilities)(f => {
+      m.intVar(0, min = 0, max = 1, name = s"facility_${f}_open")
+    })
 
-  val (fixedCosts, _, _, distanceMatrix, _) = WarehouseLocationGenerator.generateRandomWLP(nFacilities, deliveryPoints)
-  // *** Model ***
+    // derived variables (using invariants)
+    val openFacilities = Inv.logic.filter(facilitiesVariables, name = "Set of open facilities")
 
-//   Old version:
-//
-//    val m = Store()
-//
-//    val warehouseOpenArray = Array.tabulate(W)(l =>
-//     CBLSIntVar(m, 0, 0 to 1, s"warehouse_${l}_open")
-//    )
-//    val openWarehouses = filter(warehouseOpenArray).setName("openWarehouses")
-//
-//    val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
-//      minConstArrayValueWise(distanceCost(d).map(_.toInt), openWarehouses, defaultCostForNoOpenWarehouse)
-//    )
-//
-//    val obj = Objective(sum(distanceToNearestOpenWarehouseLazy) + sum(costForOpeningWarehouse, openWarehouses))
-//
-//    m.close()
+    val distancesToNearestOpenFacility = Array.tabulate(deliveryPoints)(d =>
+      Inv.minMax
+        .min(distanceMatrix(d), openFacilities, name = s"Distance of $d to nearest facility")
+    )
 
-  implicit val m: Model = model("WLP example")
+    val objExpr =
+      sum(distancesToNearestOpenFacility) + partialSum(fixedCosts, indices = openFacilities)
 
-  // decision variables
-  val facilitiesVariables = Array.tabulate(nFacilities)(f => {
-    // this is equivalent to m.binaryVar(name = s"facility_${f}_open")
-    m.intVar(0, min = 0, max = 1, name = s"facility_${f}_open")
-  })
+    // objective function
+    // + 2 is obviously unnecessary, it's just here to demonstrate it's possible to add constants
+    val obj = m.minimize(objExpr + 2)
 
-  val openFacilities = m.logic.filter(facilitiesVariables, name = "Set of open facilities")
+    m.close()
 
-  val distancesToNearestOpenFacility = Array.tabulate(deliveryPoints)(d =>
-    m.minMax.min(distanceMatrix(d), openFacilities, name = s"Distance of $d to nearest facility")
-  )
+    // At the moment it's necessary to specify the domain of the variables involved
+    val search = Nbrs.assign(facilitiesVariables, varsDomain = (_, _) => List(0, 1))
 
-  // sum could be a predefined method imported automatically, equivalent to m.Numeric.sum
-  // to achieve this, the package object currently extends the Numeric trait
-  val objExpr =
-    sum(distancesToNearestOpenFacility) + partialSum(fixedCosts, indices = openFacilities)
-  // we could consider adding .setName() to handle variables instantiated like this
+    search.doAllMoves(obj)
 
-  val obj = m.minimize(objExpr + 2)
-
-  m.close()
-
-  val search = AssignNeighborhood(facilitiesVariables, (_, _) => List(0, 1))
-
-  search.doAllMoves(obj)
-
-  println(s"Best objective: ${obj.objValue}")
-
+    println(s"Best objective: ${obj.objValue}")
+  }
 }

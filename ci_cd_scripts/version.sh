@@ -10,7 +10,7 @@ if [[ "$DISTANCE" == "0" ]]; then
     VERSION=$BASE_VERSION
 else
     SHORT=`git rev-parse --short=8 HEAD`
-    VERSION="${BASE_VERSION}.dev${DISTANCE}-g${SHORT}"
+    VERSION="${BASE_VERSION}.dev${DISTANCE}-${SHORT}"
 fi
 
 echo $VERSION

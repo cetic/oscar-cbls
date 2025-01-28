@@ -42,6 +42,20 @@ object Prod2 {
   ): Prod2 = {
     new Prod2(model, a, b, output, name)
   }
+
+  /** Static method to obtain an IntVariable that is the result of the product of two
+   * IntVariables.
+   *
+   * @param a
+   *   Left side operand.
+   * @param b
+   *   Right side operand.
+   */
+  def result(a: IntVariable, b: IntVariable, name: Option[String] = None): IntVariable = {
+    val out = IntVariable(a.model, a.value() * b.value())
+    new Prod2(a.model, a, b, out, name)
+    out
+  }
 }
 
 /** Invariant which maintains the product of two

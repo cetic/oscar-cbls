@@ -1,33 +1,46 @@
+// OscaR is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 2.1 of the License, or
+// (at your option) any later version.
+//
+// OscaR is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License  for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License along with OscaR.
+// If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+
 package oscar.cbls.visual.generator
 
 import scalafx.scene.paint.Color
 
-import scala.annotation.tailrec
 import scala.util.Random
 
-/**
- * The utility of this object is to generate a pseudo-random array of Color objects.
- * For the same amount of color needed, the returned array will always contain the same colors
- * but in a different order.
- *
- * @author fabian.germeau@cetic.be
- */
+/** Generates pseudo-random Color.
+  *
+  * For the same amount of color needed, the returned array will always contain the same colors but
+  * in a different order.
+  */
 object ColorGenerator {
   private val randomValueGenerator = new Random()
 
-  /**
-   * Sets the seed of random generator
-   * @param seed value of seed
-   */
+  /** Sets the seed of random generator
+    * @param seed
+    *   value of seed
+    */
   def setSeed(seed: Long): Unit = randomValueGenerator.setSeed(seed)
 
-  /**
-   * Generates a list of random Color objects with a fixed size and opacity
-   * @param number the number of colors to generate
-   * @param alpha the opacity level, between 0 and 1
-   * @return the list of Colors
-   */
-  def generateRandomColors(number:Int, alpha:Float = 1.0f): Array[Color] = {
+  /** Generates an array of random colors with a fixed size and opacity.
+    *
+    * @param number
+    *   The number of colors to generate.
+    * @param alpha
+    *   The opacity level, between 0 and 1.
+    * @return
+    *   The array of colors.
+    */
+  def generateRandomColors(number: Int, alpha: Float = 1.0f): Array[Color] = {
     Array.fill(number)(
       Color(
         randomValueGenerator.nextFloat(),
@@ -38,47 +51,29 @@ object ColorGenerator {
     )
   }
 
-  /**
-   * Obtaining the maximum number of generable colors
-   * @param number the number of colors needed
-   * @param exp the current base value
-   * @return the maximum number of colors that can be generated
-   */
-  @tailrec
-  def getMaxColorNumber(number:Int, exp:Int = 1):Int = {
-    if (Math.pow(exp,3) < number)
-      getMaxColorNumber(number,exp+1)
-    else
-      exp
-  }
-
-  /**
-   * Generates a color from a hashcode
-   * @param hash the hashcode
-   * @return the color object
-   */
-  def generateColorFromHash(hash:Int): Color = {
+  /** Generates a color from a hashcode. */
+  def generateColorFromHash(hash: Int): Color = {
     val absHash = Math.abs(hash)
-    val r = absHash%255
-    val g = 255 - (absHash/255)%255
-    val b = ((absHash/255)/255)%255
-    Color.rgb(r,g,b)
+    val r       = absHash                 % 255
+    val g       = 255 - (absHash / 255)   % 255
+    val b       = ((absHash / 255) / 255) % 255
+    Color.rgb(r, g, b)
   }
 
-  /**
-   * Generate the "average" Color object from a list of Color objects
-   * @param colors a list of Color objects
-   * @return a Color object whose rgb components are the average of the rgb
-   *         components of the list
-   */
+  /** Generates a color by mixing a list of colors.
+    * @param colors
+    *   The list of color.
+    * @return
+    *   A color whose rgb components are the average of the rgb components of the list.
+    */
 
-  def getAverageColor(colors:List[Color]): Color = {
-    var (r,g,b) = (0d,0d,0d)
-    for(c <- colors){
+  def getMixedColor(colors: List[Color]): Color = {
+    var (r, g, b) = (0d, 0d, 0d)
+    for (c <- colors) {
       r += c.getRed
       g += c.getGreen
       b += c.getBlue
     }
-    Color.rgb((r/colors.size).toInt, (g/colors.size).toInt, (b/colors.size).toInt)
+    Color.rgb((r / colors.size).toInt, (g / colors.size).toInt, (b / colors.size).toInt)
   }
 }

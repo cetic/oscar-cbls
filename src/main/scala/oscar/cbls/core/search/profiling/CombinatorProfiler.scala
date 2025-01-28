@@ -50,25 +50,6 @@ class CombinatorProfiler(val combinator: NeighborhoodCombinator)
     subProfilers.foreach(_.explorationResumed())
   }
 
-  /** Aggregates the data sent by the sub profilers.
-    *
-    * Used by combinator that need underlying Neighborhood data to operate. For instance
-    * BestSlopeFirst needs to know the efficiency of its Neighborhoods. Default behavior : Nothing
-    * is done.
-    *
-    * @param profiler
-    *   The profiler sending the data.
-    * @param gain
-    *   The optional gain of the move (None if NoMoveFound)
-    * @param explorationTimeMillis
-    *   The duration of the exploration
-    */
-  private[profiling] def aggregateSubProfilerData(
-    profiler: SearchProfiler,
-    gain: Option[Long],
-    explorationTimeMillis: Long
-  ): Unit = {}
-
   // Merges this profiler data and the sub-profiler data (recursively).
   override def merge(profiler: SearchProfiler): Unit = {
     val combinatorProfiler = profiler.asInstanceOf[CombinatorProfiler]

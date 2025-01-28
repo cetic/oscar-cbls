@@ -2,79 +2,73 @@ package oscar.cbls.examples
 
 import oscar.cbls._
 import oscar.cbls.algo.generator.WarehouseLocationGenerator
-import oscar.cbls.lib.neighborhoods.AssignNeighborhood
-import oscar.cbls.visual.wlp.WLPInterface
+import oscar.cbls.visual.cartesian.wlp.WLPInterface
 
-import scala.collection.SortedSet
+import oscar.cbls.modeling.{Invariants => Inv, Neighborhoods => Nbrs}
+
+import scala.io.StdIn
 
 object WLPVisualExample {
-  private val nbWarehouses = 300
-  private val nbDelivery = 1000
-  private val minXY = 0
-  private val maxXY = 750
-  private val weightOpening = 3
-  WarehouseLocationGenerator.setMapDimensions(minXY, maxXY)
-  private val (
-    costsForOpeningWarehouses,
-    warehousesPositions,
-    deliveryPositions,
-    distancesDeliveryWarehouses,
-    _
-    ) = WarehouseLocationGenerator.generateRandomWLP(
-    nbWarehouses, nbDelivery, weightOpening
-  )
-  ////////
-  // GUI
-  private val wlpInterface = new WLPInterface(
-    nbWarehouses,
-    nbDelivery,
-    costsForOpeningWarehouses,
-    warehousesPositions,
-    deliveryPositions,
-    distancesDeliveryWarehouses,
-    wlpSearchProcedure()
-  )
+  def main(args: Array[String]): Unit = {
+    // Problem instance parameters
+    val nbWarehouses  = 300
+    val nbDelivery    = 1000
+    val minXY         = 0
+    val maxXY         = 750
+    val weightOpening = 3
 
-  /**
-   * WLP Search Procedure
-   * Taken from Stefano's WLPModelingExample
-   */
-  private def wlpSearchProcedure(): Unit = {
-    val startTime = System.nanoTime()
+    WarehouseLocationGenerator.setMapDimensions(minXY, maxXY)
+
+    val (
+      costsForOpeningWarehouses,
+      warehousesPositions,
+      deliveryPositions,
+      distancesDeliveryWarehouses,
+      _
+    ) = WarehouseLocationGenerator.generateRandomWLP(nbWarehouses, nbDelivery, weightOpening)
+
+    // WLP model and search procedure taken from WLPModelingExample
     implicit val m: Model = model("WLP example")
-    // decision variables
+
     val facilitiesVariables = Array.tabulate(nbWarehouses)(f => {
-      // this is equivalent to m.binaryVar(name = s"facility_${f}_open")
       m.intVar(0, min = 0, max = 1, name = s"facility_${f}_open")
     })
-    val openFacilities = m.logic.filter(facilitiesVariables, name = "Set of open facilities")
+    val openFacilities = Inv.logic.filter(facilitiesVariables, name = "Set of open facilities")
+
     val distancesToNearestOpenFacility = Array.tabulate(nbDelivery)(d =>
-      m.minMax.min(distancesDeliveryWarehouses(d), openFacilities, name = s"Distance of $d to nearest facility")
+      Inv.minMax.min(
+        distancesDeliveryWarehouses(d),
+        openFacilities,
+        name = s"Distance of $d to nearest facility"
+      )
     )
-    // sum could be a predefined method imported automatically, equivalent to m.Numeric.sum
-    // to achieve this, the package object currently extends the Numeric trait
     val objExpr =
-      sum(distancesToNearestOpenFacility) + partialSum(costsForOpeningWarehouses, indices = openFacilities)
-    // we could consider adding .setName() to handle variables instantiated like this
-    val obj = m.minimize(objExpr + 2)
+      sum(distancesToNearestOpenFacility) + partialSum(
+        costsForOpeningWarehouses,
+        indices = openFacilities
+      )
+    val obj = m.minimize(objExpr)
     m.close()
-    //
-    // actual search procedure
-    //
-    val search = AssignNeighborhood(facilitiesVariables, (_, _) => List(0, 1))
+
+    // GUI
+    val wlpInterface =
+      WLPInterface(
+        nbWarehouses,
+        nbDelivery,
+        warehousesPositions ++ deliveryPositions,
+        openFacilities,
+        obj.objValue
+      )
+
+    // The search procedure includes a combinator that updates the visualization
+    val search = Nbrs.combinator.updateDisplay(
+      Nbrs.assign(facilitiesVariables, varsDomain = (_, _) => List(0, 1)),
+      wlpInterface
+    )
     search.doAllMoves(obj)
     println(s"Best objective: ${obj.objValue}")
-    //
-    // encode the final result as a "single" move to the GUI
-    //
-    val newTime = (System.nanoTime() - startTime) * 1e-9
-    val openWs = SortedSet[Int]() ++ openFacilities.value()
-    val mv = wlpInterface.Move(wlpInterface.SortedSetResult(openWs, obj.objValue.value()))
-    wlpInterface.update(mv, newTime, 0)
-  }
 
-  def main(args: Array[String]): Unit = {
-    wlpInterface.main(args)
+    // May be necessary to keep the display alive depending on your platform
+    StdIn.readLine()
   }
-
 }
