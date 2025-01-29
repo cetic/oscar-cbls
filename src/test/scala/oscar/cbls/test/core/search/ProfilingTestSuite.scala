@@ -2,17 +2,17 @@ package oscar.cbls.test.core.search
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import oscar.cbls.algo.generator.RoutingGenerator
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.computation.integer.{IntConstant, IntVariable}
+import oscar.cbls.core.computation.integer.IntConstant
 import oscar.cbls.core.computation.objective.Minimize
+import oscar.cbls.core.search.profiling.SelectionProfiler
 import oscar.cbls.lib.invariant.numeric.Prod2
 import oscar.cbls.lib.invariant.routing.TotalRouteLength
-import oscar.cbls.lib.invariant.set.Cardinality
-import oscar.cbls.lib.neighborhoods.combinator.{DynAndThen, Exhaust, RoundRobin}
+import oscar.cbls.lib.neighborhoods.combinator.{BestSlopeFirst, DynAndThen, Exhaust, RoundRobin}
 import oscar.cbls.lib.neighborhoods.routing.{
   InsertPointNeighborhoodUnroutedFirst,
-  OnePointMoveMove,
   OnePointMoveNeighborhood,
   RemovePointNeighborhood
 }
@@ -21,18 +21,16 @@ import oscar.cbls.modeling.routing.VRP
 class ProfilingTestSuite extends AnyFunSuite with Matchers {
 
   test(
-    "CompositionProfiler works when first call to left Neighborhood of DynAndThen finds nothing."
+    "Profiling : CompositionProfiler works when first call to left Neighborhood of DynAndThen finds nothing."
   ) {
     val model: Store = new Store()
     val vrp          = VRP(model, 10, 1)
     val routingData  = RoutingGenerator.generateRandomRoutingData(10, 1000, 0)
 
     val routeLength           = TotalRouteLength(vrp, routingData._2)
-    val nbUnrouted            = IntVariable(model, 10)
-    val nbUnroutedWithPenalty = IntVariable(model, 10 * routingData._3)
-    Cardinality(model, vrp.unrouted, nbUnrouted)
-    Prod2(model, nbUnrouted, IntConstant(model, routingData._3), nbUnroutedWithPenalty)
-    val obj = Minimize(routeLength.routeLength + nbUnroutedWithPenalty)
+    val nbUnrouted            = vrp.unrouted.size()
+    val nbUnroutedWithPenalty = nbUnrouted * IntConstant(model, routingData._3)
+    val obj                   = Minimize(routeLength.routeLength + nbUnroutedWithPenalty)
 
     model.close()
 
@@ -56,16 +54,14 @@ class ProfilingTestSuite extends AnyFunSuite with Matchers {
     vrp.unroutedNodes mustBe empty
   }
 
-  test("Profiling Routing works") {
-    val model: Store = new Store(debugLevel = 3)
-    val vrp: VRP     = VRP(model, 20, 2)
-    val distMatrix   = RoutingGenerator.generateRandomRoutingData(102, 1000000, 0)
-    val routeLength  = TotalRouteLength(vrp, distMatrix._2)
-    val nbUnrouted   = IntVariable(model, 0L, name = Some("Nb unrouted"))
-    Cardinality(model, vrp.unrouted, nbUnrouted)
-    val nbUnroutedWithPenalty = IntVariable(model, 0L, name = Some("Penalized unrouted"))
-    Prod2(model, nbUnrouted, IntConstant(model, 1000000), nbUnroutedWithPenalty)
-    val obj = routeLength.routeLength + nbUnroutedWithPenalty
+  test("Profiling : Profiling Routing works") {
+    val model: Store          = new Store(debugLevel = 3)
+    val vrp: VRP              = VRP(model, 20, 2)
+    val routingData           = RoutingGenerator.generateRandomRoutingData(102, 1000000, 0)
+    val routeLength           = TotalRouteLength(vrp, routingData._2)
+    val nbUnrouted            = vrp.unrouted.size()
+    val nbUnroutedWithPenalty = nbUnrouted * IntConstant(model, routingData._3)
+    val obj                   = routeLength.routeLength + nbUnroutedWithPenalty
     model.close()
 
     def onePtMove(name: String) = OnePointMoveNeighborhood(
@@ -85,5 +81,55 @@ class ProfilingTestSuite extends AnyFunSuite with Matchers {
     // search.verbosityLevel = 2
     noException mustBe thrownBy(search.doAllMoves(Minimize(obj)))
     // search.displayProfiling()
+  }
+
+  test("Profiling : Selection profiler works properly") {
+    val model: Store          = new Store()
+    val vrp                   = VRP(model, 100, 1)
+    val routingData           = RoutingGenerator.generateRandomRoutingData(vrp.n, 1000000, 0)
+    val routeLength           = TotalRouteLength(vrp, routingData._2)
+    val nbUnrouted            = vrp.unrouted.size()
+    val nbUnroutedWithPenalty = nbUnrouted * IntConstant(model, routingData._3)
+    val obj                   = Minimize(routeLength.routeLength + nbUnroutedWithPenalty)
+    model.close()
+    val n1 = InsertPointNeighborhoodUnroutedFirst(
+      vrp,
+      () => vrp.unrouted.value(),
+      _ => vrp.routedWithVehicles.value()
+    )
+    val n2 = OnePointMoveNeighborhood(
+      vrp,
+      () => vrp.routedWithoutVehicles.value(),
+      node => vrp.routedWithVehicles.value().filter(x => x != node)
+    )
+    val search = BestSlopeFirst(List(n1, n2), refreshRate = 2)
+    search.profileSearch()
+    val profiler = search.searchProfiler().get.asInstanceOf[SelectionProfiler]
+
+    // Start : nothing has run yet ==> slope is Long.maxValue
+    profiler.efficiencySlope(0) should be(Long.MaxValue)
+    profiler.efficiencySlope(1) should be(Long.MaxValue)
+
+    search.doAllMoves(objective = obj, x => x == 1)
+    // One move done (first in the list) ==> slope for (0) is no longer maxValue and should be positive (insertion)
+    profiler.efficiencySlope(0) != Long.MaxValue should be(true)
+    profiler.efficiencySlope(0) > 0 should be(true)
+    profiler.efficiencySlope(1) should be(Long.MaxValue)
+
+    search.doAllMoves(objective = obj, x => x == 1)
+    // One more move (second in the list) ==> slope for (1) is no longer maxValue and should be 0
+    // (only one place for the only node routed)
+    profiler.efficiencySlope(0) != Long.MaxValue should be(true)
+    profiler.efficiencySlope(0) > 0 should be(true)
+    profiler.efficiencySlope(1) != Long.MaxValue should be(true)
+    profiler.efficiencySlope(1) == 0 should be(true)
+
+    search.doAllMoves(objective = obj, x => x == 1)
+    // One more move ==> reset and search a move ==> slope for (0) should be positive (insertion),
+    // slope for (1) should be MaxValue (reset)
+    profiler.efficiencySlope(0) != Long.MaxValue should be(true)
+    profiler.efficiencySlope(0) > 0 should be(true)
+    profiler.efficiencySlope(1) should be(Long.MaxValue)
+
   }
 }

@@ -11,13 +11,13 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.test.core.globalConstraint.segment
+package oscar.cbls.test.core.genericConstraint.segment
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
 import oscar.cbls.algo.sequence.IntSequence
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.computation.globalConstraint.segment._
+import oscar.cbls.core.computation.genericConstraint.segment._
 import oscar.cbls.modeling.routing.VRP
 
 class VehicleSegmentsTests extends AnyFunSuite with Matchers {

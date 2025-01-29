@@ -14,8 +14,8 @@
 package oscar.cbls.lib.invariant.routing
 
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
-import oscar.cbls.core.computation.globalConstraint.GlobalConstraintCore
-import oscar.cbls.core.computation.globalConstraint.segment.Segment
+import oscar.cbls.core.computation.genericConstraint.GlobalConstraintCore
+import oscar.cbls.core.computation.genericConstraint.segment.Segment
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.modeling.routing.VRP
 

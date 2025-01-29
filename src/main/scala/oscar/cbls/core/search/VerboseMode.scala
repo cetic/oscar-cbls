@@ -35,7 +35,7 @@ object VerboseMode {
   *
   * It's behavior depends on the verbosityLevel parameter. The level varies from 0 to 4 :
   *   - 0 : Nothing is displayed
-  *   - 1 : Every SUMMARIZED_MOVE_DELAY milli-second a summary of the last taken moves is printed.
+  *   - 1 : Every SUMMARIZED_MOVE_DELAY millisecond a summary of the last taken moves is printed.
   *   - 2 : Every taken moves are printed
   *   - 3 : Every taken moves are printed and the exploration progress (start, end) as well
   *   - 4 : Every explored moves are printed
@@ -77,11 +77,11 @@ class VerboseMode(var verbosityLevel: Int) {
     * @param move
     *   The explored move
     * @param valid
-    *   Whether or not the move is accepted by the acceptance criterion. Default = false
+    *   Whether the move is accepted by the acceptance criterion. Default = false
     * @param newBest
-    *   Whether or not the move has the best recorded value of the search. Default = false
+    *   Whether the move has the best recorded value of the search. Default = false
     * @param saved
-    *   Whether or not the move has been saved. Default = false
+    *   Whether the move has been saved. Default = false
     */
   @inline
   final def moveExplored(
@@ -145,9 +145,9 @@ class VerboseMode(var verbosityLevel: Int) {
     * @param bestValue
     *   The best value of the objective function so far
     * @param newBestValue
-    *   Whether or not this new value is the new best value
+    *   Whether this new value is the new best value
     * @param forcePrint
-    *   Whether or not we should display the summarize even if the delay hasn't passed since last
+    *   Whether we should display the summary even if the delay hasn't passed since last
     *   one
     */
   @inline
@@ -164,6 +164,13 @@ class VerboseMode(var verbosityLevel: Int) {
       val prefix_2 = prefix2(newBestValue, newValue, bestValue)
       println(s"$prefix_1 $prefix_2 $newValue\t$move")
     } else if (verbosityLevel == 1) {
+      // Record last move
+      val neighborhoodName = move.neighborhoodName
+      if (summarizedMove.contains(neighborhoodName))
+        summarizedMove(neighborhoodName) = summarizedMove(neighborhoodName) + 1
+      else summarizedMove += neighborhoodName -> 1
+
+      // If it's time display the moves
       if (System.currentTimeMillis() - summarizedLastPrint > SUMMARIZED_MOVE_DELAY || forcePrint) {
         val prefix_1 = prefix1(newValue, summarizedLastValue)
         val prefix_2 = prefix2(newBestValue, newValue, bestValue)
@@ -173,11 +180,6 @@ class VerboseMode(var verbosityLevel: Int) {
         summarizedMove = mutable.HashMap.empty
         summarizedLastValue = newValue
         summarizedLastPrint = System.currentTimeMillis()
-      } else {
-        val neighborhoodName = move.neighborhoodName
-        if (summarizedMove.contains(neighborhoodName))
-          summarizedMove(neighborhoodName) = summarizedMove(neighborhoodName) + 1
-        else summarizedMove += neighborhoodName -> 1
       }
     }
   }

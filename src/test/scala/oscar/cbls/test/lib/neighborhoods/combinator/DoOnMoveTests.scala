@@ -61,18 +61,29 @@ class DoOnMoveTests extends AnyFunSuite with Matchers {
 
     val relevantStartSegment = () => routedNodeExceptVehicle
 
-    var seqBefore = vrp.routes.pendingValue
+    var seqBefore: IntSequence = vrp.routes.pendingValue
+    var seqNoMove: IntSequence = null
 
-    val procBeforeMove = (_: Move) =>
+    val procBeforeMove = (_: Move) => {
       require(
         seqBefore.equals(vrp.routes.pendingValue),
         s"Seq before move $seqBefore is not the same as routes.pending value ${vrp.routes.pendingValue}"
       )
+      require(
+        seqNoMove == null,
+        s"Seq no move found $seqNoMove should not have a value until the end of the search."
+      )
+    }
     val procAfterMove = (_: Move) => seqBefore = vrp.routes.pendingValue
+    val procNoMove    = () => seqNoMove = vrp.routes.pendingValue
 
     val twoOpt = TwoOpt(vrp, relevantStartSegment)
-    val search = DoOnMove(twoOpt, procBeforeMove, procAfterMove)
+    val search = DoOnMove(twoOpt, procBeforeMove, procAfterMove, procNoMove)
 
     noException mustBe thrownBy(search.doAllMoves(obj))
+    require(
+      seqNoMove == vrp.routes.pendingValue,
+      s"Seq no move found $seqNoMove should have latest routes pending value ${vrp.routes.pendingValue}"
+    )
   }
 }

@@ -15,7 +15,7 @@ package oscar.cbls.test.invBench
 
 import org.scalatest.funsuite.AnyFunSuite
 import oscar.cbls.core.computation.seq.{SeqNotificationTarget, SeqUpdate, SeqVariable}
-import oscar.cbls.core.computation.{Invariant, Store}
+import oscar.cbls.core.computation.{Invariant, Store, Variable}
 import oscar.cbls.modeling.routing.VRP
 
 class RoutingTestBench extends AnyFunSuite {
@@ -40,7 +40,7 @@ class RoutingTestBench extends AnyFunSuite {
       val vrp: VRP = VRP(model, 100, 10, debug = true)
       val inv      = new DummyRoutingInvariant(model, vrp.routes)
 
-      TestBenchSut(inv, Array(vrp.routes), Array.empty, Some(vrp))
+      TestBenchSut(inv, Array(vrp.routes), Array.empty[Variable], Some(vrp))
     }
 
     val bench = InvTestBench(createVRP, "Routing test bench")

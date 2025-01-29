@@ -98,7 +98,11 @@ private[profiling] class CommonProfilingData extends ProfilingData {
   // Returns the total duration of unsuccessful explorations made by the profiled Neighborhood.
   def timeSpentNoMoveFoundMillis: Long = _timeSpentNoMoveFoundNano / 1000000
   // Returns the total duration of explorations made by the profiled Neighborhood.
-  def timeSpentMillis: Long = (_timeSpentMoveFoundNano + _timeSpentNoMoveFoundNano) / 1000000
+  def timeSpentMillis: Long = {
+    val sumNano = _timeSpentNoMoveFoundNano + _timeSpentMoveFoundNano
+    if (sumNano > 0) Math.max(sumNano / 1000000, 1)
+    else 0
+  }
 
   override def toString: String = {
     s"Calls :${_nbCalls} | Founds :${_nbFound} | gain :${_gain} | " +

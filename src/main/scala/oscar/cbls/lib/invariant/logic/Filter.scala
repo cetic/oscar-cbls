@@ -21,7 +21,7 @@ import oscar.cbls.core.computation.{IncredibleBulk, Invariant, Store}
 object Filter {
 
   /** Creates a Filter invariant, which maintains `{i in input.indices | predicate (input(i))}`.
-    * Update depends of the predicate complexity. If predicate is in O(1), update is in O(1).
+    * Update depends on the predicate complexity. If predicate is in O(1), update is in O(1).
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -34,10 +34,9 @@ object Filter {
     *   This function cannot depend on any IntVariable, as updates to these IntVariables will not
     *   trigger propagation of this invariant. By default, predicate is "_ > 0".
     * @param bulkIdentifier
-    *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-    *   Invariant listen to vars. Warning:
-    *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
-    *   Be sure to use the same one if you're referencing the same variables.
+    *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
+    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
+    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The (optional) name of the Invariant.
     */
@@ -53,9 +52,8 @@ object Filter {
   }
 }
 
-/** Invariant which maintains `{i in input.indices | predicate`
-  * `(input(i))}`. Update depends of the predicate complexity. If predicate is in O(1), update is in
-  * O(1).
+/** Invariant which maintains `{i in input.indices | predicate` `(input(i))}`. Update depends on the
+  * predicate complexity. If predicate is in O(1), update is in O(1).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -68,10 +66,9 @@ object Filter {
   *   This function cannot depend on any IntVariable, as updates to these IntVariables will not
   *   trigger propagation of this invariant. By default, predicate is "_ > 0".
   * @param bulkIdentifier
-  *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-  *   Invariant listen to vars. Warning:
-  *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
-  *   sure to use the same one if you're referencing the same variables.
+  *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
+  *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their
+  *   identifier. Be sure to use the same one if you're referencing the same variables.
   * @param name
   *   The (optional) name of the Invariant.
   */

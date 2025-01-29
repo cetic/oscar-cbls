@@ -28,10 +28,9 @@ object DenseRef {
     * @param output
     *   An array of SetVariable such that output(i) = {j | i in input(j)}.
     * @param bulkIdentifier
-    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-    *   Invariant listen to vars. Warning:
-    *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
-    *   Be sure to use the same one if you're referencing the same variables.
+    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
+    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
+    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The (optional) name of the Invariant.
     */
@@ -55,10 +54,9 @@ object DenseRef {
     * @param upperBound
     *   The integer such that the input values are in [0, upperBound[.
     * @param bulkIdentifier
-    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-    *   Invariant listen to vars. Warning:
-    *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
-    *   Be sure to use the same one if you're referencing the same variables.
+    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
+    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
+    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The (optional) name of the Invariant.
     * @return
@@ -76,9 +74,9 @@ object DenseRef {
   }
 }
 
-/** Invariant such that `output(i) = {j | i in input(j)}`. It is
-  * considered as a dense ref because output is an array and cover all possible values that can
-  * contains the input [[oscar.cbls.core.computation.set.SetVariable]]. Update is in O(1).
+/** Invariant such that `output(i) = {j | i in input(j)}`. It is considered as a dense ref because
+  * output is an array and cover all possible values that can contains the input
+  * [[oscar.cbls.core.computation.set.SetVariable]]. Update is in O(1).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -87,17 +85,16 @@ object DenseRef {
   * @param output
   *   An array of SetVariable such that `output(i) = {j | i in input(j)}`.
   * @param bulkIdentifier
-  *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-  *   Invariant listen to vars. Warning:
-  *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
-  *   sure to use the same one if you're referencing the same variables.
+  *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
+  *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their
+  *   identifier. Be sure to use the same one if you're referencing the same variables.
   * @param name
   *   The (optional) name of the Invariant.
   */
 class DenseRef(
   model: Store,
   input: Array[SetVariable],
-  val output: Array[SetVariable], // We need to access it when the invariant is created with
+  output: Array[SetVariable], // We need to access it when the invariant is created with
   // DenseRef.makeDenseRef
   bulkIdentifier: Option[String] = None,
   name: Option[String] = None
@@ -129,6 +126,9 @@ class DenseRef(
       output(ref) :+= j
     }
   }
+
+  /** Returns the output variables. */
+  def apply(): Array[SetVariable] = output
 
   override def notifySetChanges(
     setVariable: SetVariable,

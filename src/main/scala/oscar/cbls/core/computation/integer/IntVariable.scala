@@ -14,7 +14,7 @@
 package oscar.cbls.core.computation.integer
 
 import oscar.cbls.core.computation.{Invariant, KeyForRemoval, SavedValue, Store, Variable}
-import oscar.cbls.lib.invariant.numeric.{Div2, Minus2, Prod2, Sum2}
+import oscar.cbls.lib.invariant.numeric.{Abs, Div2, Minus2, Mod, Opposite, Pow, Prod2, Square, Sum2}
 
 /** Companion object of IntVariable */
 object IntVariable {
@@ -129,6 +129,27 @@ class IntVariable(
 
   /** Returns the quotient of this variable and another. */
   def /(that: IntVariable): IntVariable = Div2.result(this, that)
+
+  /** Returns `this` to the power `that`. */
+  def ^(that: IntVariable): IntVariable = Pow.result(this, that)
+
+  /** Returns the remainder of the integer division between this variable and another.
+    *
+    * @note
+    *   The scala operator `%` is not exactly a modulo operator.<br>
+    *
+    * For example, `-1 % 3 == -1`, and `2 % 3 == 2` but `-1 mod 3 == 2`.
+    */
+  def mod(that: IntVariable): IntVariable = Mod.result(this, that)
+
+  /** Returns the absolute value of this variable. */
+  def abs: IntVariable = Abs.result(this)
+
+  /** Returns the opposite value of this variable. */
+  def unary_- : IntVariable = Opposite.result(this)
+
+  /** Returns the square of this variable. */
+  def square: IntVariable = Square.result(this)
 
   /** Decrements this variable */
   def :--(): Unit = setValue(_pendingValue - 1)

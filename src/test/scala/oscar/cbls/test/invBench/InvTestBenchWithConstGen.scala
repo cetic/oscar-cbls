@@ -20,8 +20,8 @@ import oscar.cbls.modeling.routing.VRP
   */
 case class TestBenchSut(
   inv: Invariant,
-  input: Array[Variable],
-  output: Array[Variable],
+  input: Array[_ <: Variable],
+  output: Array[_ <: Variable],
   routing: Option[VRP] = None
 )
 

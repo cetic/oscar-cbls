@@ -30,7 +30,7 @@ class DenseClusterTestSuite extends AnyFunSuite with Matchers {
     val inv: DenseCluster         = Cluster.makeDense(store, input, 10)
     store.close()
 
-    (store, input, inv.output, inv)
+    (store, input, inv(), inv)
   }
 
   test("DenseCluster: initialization works as expected") {
@@ -120,7 +120,7 @@ class DenseClusterTestSuite extends AnyFunSuite with Matchers {
       input.foreach(v => v.setDomain(0, upperBound - 1))
       val inv                          = Cluster.makeDense(model, input, upperBound)
       val inputArray: Array[Variable]  = input.toArray
-      val outputArray: Array[Variable] = inv.output.toArray
+      val outputArray: Array[Variable] = inv().toArray
       TestBenchSut(inv, inputArray, outputArray)
     }
 

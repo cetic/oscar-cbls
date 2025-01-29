@@ -8,7 +8,7 @@ object WLPModelingExample {
   def main(args: Array[String]): Unit = {
 
     // Problem instance parameters
-    val nFacilities = 300
+    val nFacilities    = 300
     val deliveryPoints = 1000
     val (fixedCosts, _, _, distanceMatrix, _) =
       WarehouseLocationGenerator.generateRandomWLP(nFacilities, deliveryPoints)
@@ -25,11 +25,18 @@ object WLPModelingExample {
 
     val distancesToNearestOpenFacility = Array.tabulate(deliveryPoints)(d =>
       Inv.minMax
-        .min(distanceMatrix(d), openFacilities, name = s"Distance of $d to nearest facility")
+        .minOfConstants(
+          distanceMatrix(d),
+          openFacilities,
+          name = s"Distance of $d to nearest facility"
+        )
     )
 
     val objExpr =
-      sum(distancesToNearestOpenFacility) + partialSum(fixedCosts, indices = openFacilities)
+      sum(distancesToNearestOpenFacility) + partialSumOfConstants(
+        fixedCosts,
+        indices = openFacilities
+      )
 
     // objective function
     // + 2 is obviously unnecessary, it's just here to demonstrate it's possible to add constants

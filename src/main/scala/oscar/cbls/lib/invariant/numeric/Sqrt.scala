@@ -42,6 +42,13 @@ object Sqrt {
   ): Sqrt = {
     new Sqrt(model, input, output, name)
   }
+
+  /** Static method to obtain an IntVariable that is the square root of `a`. */
+  def result(a: IntVariable, name: Option[String] = None): IntVariable = {
+    val output = IntVariable(a.model, round(sqrt(a.value().toDouble)))
+    Sqrt(a.model, a, output, name)
+    output
+  }
 }
 
 /** Invariant which maintains the square root of an

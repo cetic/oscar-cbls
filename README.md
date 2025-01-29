@@ -3,19 +3,30 @@
 OscaR.cbls is an open source library that proposes a generic API to define a Constraint-Based Local Search (CBLS)
 solver.
 
+Check our company website for more info about OscaR.cbls:
+https://asset.cetic.be/en/oscar/
+
 ## Getting started
 
 In scala, add this in your `build.sbt` file:
 
 ```scala
 libraryDependencies += "oscar" %% "oscar-cbls_2.13" % "X.Y.Z"
-```
+``` 
 
 See the `src/main/scala/oscar/cbls/examples` folder to see examples of using OscaR to build problem-solving engines.
 
 A more complete documentation can be found [here](https://oscarlib.readthedocs.io/en/latest/). An important refactoring
 is being made for the upcoming version 6.0.0 of OscaR, and as such this documentation is not yet up-to-date. However, it
 still presents the key concepts and may be useful to understand the way OscaR is meant to be used.
+
+## Build
+
+OscaR.cbls was developed in Scala 2.13.14 (check `build.sbt`), built with SBT 1.9.9
+(check `project/built.properties`) and run with Java 21.
+
+You can use other combinations of compatible versions as mentioned in
+https://docs.scala-lang.org/overviews/jdk-compatibility/overview.html
 
 ## Local Search in a nutshell
 
@@ -50,4 +61,6 @@ If you want to contribute, you can create a pull request, which the team will re
 
 ## Support
 
-If you have any question, bug or feature request, you can make an issue about it.
+If you have any question, bug or feature request, you can add an issue about it.
+
+**NB:** Soon available on Maven.

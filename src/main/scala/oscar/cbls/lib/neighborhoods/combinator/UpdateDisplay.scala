@@ -13,13 +13,20 @@
 
 package oscar.cbls.lib.neighborhoods.combinator
 
-import oscar.cbls.core.search.Neighborhood
+import oscar.cbls.core.computation.objective.Objective
+import oscar.cbls.core.search.{
+  MoveFound,
+  Neighborhood,
+  NeighborhoodCombinator,
+  NoMoveFound,
+  SearchResult
+}
 import oscar.cbls.visual.OscaRDisplay
 
 object UpdateDisplay {
 
   /** Creates an instance of a combinator that triggers the redrawing of the display after a move is
-    * performed.
+    * performed or when no move where found (forced redrawing).
     *
     * @param n
     *   the Neighborhood used to explore the solution space.
@@ -31,7 +38,8 @@ object UpdateDisplay {
   }
 }
 
-/** Combinator that triggers the redrawing of the display after a move is performed.
+/** Combinator that triggers the redrawing of the display after a move is performed or when no move
+  * where found (forced redrawing).
   *
   * @param n
   *   the Neighborhood used to explore the solution space.
@@ -39,4 +47,10 @@ object UpdateDisplay {
   *   the display used to visualize the problem.
   */
 class UpdateDisplay(n: Neighborhood, display: OscaRDisplay)
-    extends DoOnMove(n, None, Some(_ => display.redraw()), "UpdateDisplay")
+    extends DoOnMove(
+      n,
+      None,
+      Some(_ => display.redraw()),
+      Some(() => display.redraw(true)),
+      "UpdateDisplay"
+    )

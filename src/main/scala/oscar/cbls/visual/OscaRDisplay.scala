@@ -84,21 +84,30 @@ class OscaRDisplay(
   // Fixing the color generator seed.
   ColorGenerator.setSeed(System.nanoTime())
 
-  private var isInit: Boolean = false
+  private var isInit: Boolean                = false
+  private var lastRedrawInMillis: Long       = 0L
+  private final val REDRAWING_DELAY_MS: Long = 100L
 
   private var _primaryStage: OscaRPrimaryStage    = _
   private var _additionalStages: List[OscaRStage] = List.empty
 
-  /** Redraws all graphical items that needs to be redrawn. */
-  def redraw(): Unit = {
-    while (!isInit) Thread.sleep(10) // Waiting for each stage to be initiated.
-    val additionalVariablesForExtraction =
-      _primaryStage.variablesForSolutionExtraction() :::
-        _additionalStages.flatMap(_.variablesForSolutionExtraction())
-    val solution = store.extractSolution(additionalVariablesForExtraction)
+  /** Redraws all graphical items that needs to be redrawn.
+    *
+    * @param force
+    *   If true force the redrawing even if the last redrawing was not long ago.
+    */
+  def redraw(force: Boolean = false): Unit = {
+    if (force || System.currentTimeMillis() - lastRedrawInMillis > REDRAWING_DELAY_MS) {
+      while (!isInit) Thread.sleep(10) // Waiting for each stage to be initiated.
+      val additionalVariablesForExtraction =
+        _primaryStage.variablesForSolutionExtraction() :::
+          _additionalStages.flatMap(_.variablesForSolutionExtraction())
+      val solution = store.extractSolution(additionalVariablesForExtraction)
 
-    _primaryStage.redraw(solution)
-    _additionalStages.foreach(_.redraw(solution))
+      _primaryStage.redraw(solution)
+      _additionalStages.foreach(_.redraw(solution))
+      lastRedrawInMillis = System.currentTimeMillis()
+    }
   }
 
   override def start(): Unit = {
