@@ -17,8 +17,6 @@ import oscar.cbls.core.computation.Solution
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.visual.cartesian.{CartesianLayer, CartesianNode}
 import scalafx.collections.ObservableBuffer
-import scalafx.scene.Node
-import scalafx.scene.control.Tooltip
 import scalafx.scene.paint.Color
 import scalafx.scene.shape.{Circle, Rectangle, Shape}
 
@@ -36,8 +34,9 @@ object WLPNodeCartesianLayer {
     *   The number of deliveries of this WLP.
     * @param nodesCoordinates
     *   The coordinates of all nodes of this WLP (warehouses followed by deliveries).
-    * @param closestSortedWarehouses
-    *   An array containing, for each delivery, the list of warehouses ordered by distance.
+    * @param closestOpenedWarehouse
+    *   An array containing, for each delivery, a function mapping the open warehouse to the closest
+    *   one.
     * @param openWarehouses
     *   The SetVariable maintaining the open warehouses set.
     * @param pointData
@@ -48,7 +47,7 @@ object WLPNodeCartesianLayer {
     nbWarehouses: Int,
     nbDeliveries: Int,
     nodesCoordinates: Array[CartesianNode],
-    closestSortedWarehouses: Array[List[Int]],
+    closestOpenedWarehouse: Array[List[Int] => Int],
     openWarehouses: SetVariable,
     pointData: ObservableBuffer[String]
   ): WLPNodeCartesianLayer = {
@@ -56,7 +55,7 @@ object WLPNodeCartesianLayer {
       nbWarehouses,
       nbDeliveries,
       nodesCoordinates,
-      closestSortedWarehouses,
+      closestOpenedWarehouse,
       openWarehouses,
       pointData
     )
@@ -75,8 +74,9 @@ object WLPNodeCartesianLayer {
   *   The number of deliveries of this WLP.
   * @param nodesCoordinates
   *   The coordinates of all nodes of this WLP (warehouses followed by deliveries).
-  * @param closestSortedWarehouses
-  *   An array containing, for each delivery, the list of warehouses ordered by distance.
+  * @param closestOpenedWarehouse
+  *   An array containing, for each delivery, a function mapping the open warehouse to the closest
+  *   one.
   * @param openWarehouses
   *   The SetVariable maintaining the open warehouses set.
   * @param pointData
@@ -87,11 +87,10 @@ class WLPNodeCartesianLayer(
   nbWarehouses: Int,
   nbDeliveries: Int,
   nodesCoordinates: Array[CartesianNode],
-  closestSortedWarehouses: Array[List[Int]],
+  closestOpenedWarehouse: Array[List[Int] => Int],
   openWarehouses: SetVariable,
   pointData: ObservableBuffer[String]
 ) extends CartesianLayer {
-  private val tooltips: Array[Tooltip]  = Array.fill(nbWarehouses + nbDeliveries)(null)
   private var _openWarehouses: Set[Int] = Set.empty
 
   private lazy val warehouses: Array[Rectangle] = Array.tabulate(nbWarehouses) { w =>
@@ -104,7 +103,6 @@ class WLPNodeCartesianLayer(
       pointData.clear()
       getWarehouseDataOnClick(w).foreach(pointData.add)
     }
-    setWarehouseTooltip(square, w, isOpen = false)
 
     square
   }
@@ -121,41 +119,8 @@ class WLPNodeCartesianLayer(
       pointData.clear()
       getDeliveryDataOnClick(d).foreach(pointData.add)
     }
-    setDeliveryTooltip(circle, d)
 
     circle
-  }
-
-  /** Overrides the existing tooltip (if any) with a new one with updated values.
-    *
-    * @param node
-    *   The node linked to the tooltip to override.
-    * @param w
-    *   The id of the warehouse whose tooltip must be changed.
-    * @param isOpen
-    *   Whether this warehouse is open.
-    */
-  private def setWarehouseTooltip(node: Node, w: Int, isOpen: Boolean): Unit = {
-    val real = nodesCoordinates(w).realCoordinates
-    val tooltip = new Tooltip(
-      s"${if (isOpen) "Open" else "Closed"} warehouse at (${real._1}, ${real._2})"
-    )
-    tooltips(w) = tooltip
-    Tooltip.install(node, tooltip)
-  }
-
-  /** Overrides the existing tooltip (if any) with a new one with updated values.
-    *
-    * @param node
-    *   The node linked to the tooltip to override.
-    * @param d
-    *   The id of the delivery whose tooltip must be changed.
-    */
-  private def setDeliveryTooltip(node: Node, d: Int): Unit = {
-    val real    = nodesCoordinates(d + nbWarehouses).realCoordinates
-    val tooltip = new Tooltip(s"Delivery point at (${real._1}, ${real._2})")
-    tooltips(d + nbWarehouses) = tooltip
-    Tooltip.install(node, tooltip)
   }
 
   /** Returns some information about this warehouse. */
@@ -174,7 +139,7 @@ class WLPNodeCartesianLayer(
     val real = nodesCoordinates(d + nbWarehouses).realCoordinates
     List(s"Delivery point $d", s"X = ${real._1}", s"Y = ${real._2}") :::
       (if (_openWarehouses.nonEmpty) {
-         val deliveredBy = closestSortedWarehouses(d).intersect(_openWarehouses.toList).head
+         val deliveredBy = closestOpenedWarehouse(d)(_openWarehouses.toList)
          val wReal       = nodesCoordinates(deliveredBy).realCoordinates
          List(s"Served by warehouse $deliveredBy at (${wReal._1}, ${wReal._2})")
        } else List.empty)
@@ -188,11 +153,9 @@ class WLPNodeCartesianLayer(
   private def updateWarehouses(openWarehouses: Set[Int]): Unit = {
     warehouses.indices.foreach(w => {
       warehouses(w).setFill(Color.Pink)
-      setWarehouseTooltip(warehouses(w), w, isOpen = false)
     })
     openWarehouses.foreach(ow => {
       warehouses(ow).setFill(Color.GreenYellow)
-      setWarehouseTooltip(warehouses(ow), ow, isOpen = true)
     })
   }
 

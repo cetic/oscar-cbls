@@ -28,8 +28,9 @@ object WLPLinkCartesianLayer {
     *   The number of deliveries of this WLP.
     * @param nodesCoordinates
     *   The coordinates of all nodes of this WLP (warehouses followed by deliveries).
-    * @param closestSortedWarehouses
-    *   An array containing, for each delivery, the list of warehouses ordered by distance.
+    * @param closestOpenedWarehouse
+    *   An array containing, for each delivery, a function mapping the open warehouse to the closest
+    *   one.
     * @param openWarehouses
     *   The SetVariable maintaining the open warehouses set.
     */
@@ -37,14 +38,14 @@ object WLPLinkCartesianLayer {
     nbWarehouses: Int,
     nbDeliveries: Int,
     nodesCoordinates: Array[CartesianNode],
-    closestSortedWarehouses: Array[List[Int]],
+    closestOpenedWarehouse: Array[List[Int] => Int],
     openWarehouses: SetVariable
   ): WLPLinkCartesianLayer = {
     new WLPLinkCartesianLayer(
       nbWarehouses,
       nbDeliveries,
       nodesCoordinates,
-      closestSortedWarehouses,
+      closestOpenedWarehouse,
       openWarehouses
     )
   }
@@ -58,8 +59,9 @@ object WLPLinkCartesianLayer {
   *   The number of deliveries of this WLP.
   * @param nodesCoordinates
   *   The coordinates of all nodes of this WLP (warehouses followed by deliveries).
-  * @param closestSortedWarehouses
-  *   An array containing, for each delivery, the list of warehouses ordered by distance.
+  * @param closestOpenedWarehouse
+  *   An array containing, for each delivery, a function mapping the open warehouse to the closest
+  *   one.
   * @param openWarehouses
   *   The SetVariable maintaining the open warehouses set.
   */
@@ -67,7 +69,7 @@ class WLPLinkCartesianLayer(
   nbWarehouses: Int,
   nbDeliveries: Int,
   nodesCoordinates: Array[CartesianNode],
-  closestSortedWarehouses: Array[List[Int]],
+  closestOpenedWarehouse: Array[List[Int] => Int],
   openWarehouses: SetVariable
 ) extends CartesianLayer() {
 
@@ -81,15 +83,20 @@ class WLPLinkCartesianLayer(
 
   private def updateLinks(openWarehouses: List[Int]): Unit = {
     links.indices.foreach(l => {
-      val linkedW  = closestSortedWarehouses(l).intersect(openWarehouses).head
-      val resizedD = nodesCoordinates(nbWarehouses + l).resizedCoordinates
+      val linkedW  = closestOpenedWarehouse(l)(openWarehouses)
       val resizedW = nodesCoordinates(linkedW).resizedCoordinates
-      links(l) = new Line {
-        startX = resizedD._1
-        startY = resizedD._2
-        endX = resizedW._1
-        endY = resizedW._2
-        strokeDashArray = Seq(1d, 2.5d)
+      if (links(l) == null) { // Link creation
+        val resizedD = nodesCoordinates(nbWarehouses + l).resizedCoordinates
+        links(l) = new Line {
+          startX = resizedD._1
+          startY = resizedD._2
+          endX = resizedW._1
+          endY = resizedW._2
+          strokeDashArray = Seq(1d, 2.5d)
+        }
+      } else { // Just moving the end of the link to the new warehouse
+        links(l).endX = resizedW._1
+        links(l).endY = resizedW._2
       }
     })
   }

@@ -35,13 +35,22 @@ object DoOnMove {
     *   The procedure to execute just before the move is taken.
     * @param procedureAfterMove
     *   The procedure to execute just after the move is taken.
+    * @param procedureOnNoMoveFound
+    *   The procedure to execute when the called neighborhood returns no move.
     */
   def apply(
     n: Neighborhood,
     procedureBeforeMove: Move => Unit,
-    procedureAfterMove: Move => Unit
+    procedureAfterMove: Move => Unit,
+    procedureOnNoMoveFound: () => Unit
   ): DoOnMove =
-    new DoOnMove(n, Some(procedureBeforeMove), Some(procedureAfterMove), "DoOnMove combinator")
+    new DoOnMove(
+      n,
+      Some(procedureBeforeMove),
+      Some(procedureAfterMove),
+      Some(procedureOnNoMoveFound),
+      "DoOnMove combinator"
+    )
 
   /** Creates a variant of DoOnMove combinator. This variant can only execute a custom unit function
     * ''before'' the move is committed.
@@ -52,7 +61,7 @@ object DoOnMove {
     *   The procedure to execute just before the move is taken.
     */
   def beforeMove(n: Neighborhood, procedureBeforeMove: Move => Unit): DoOnMove =
-    new DoOnMove(n, Some(procedureBeforeMove), None, "BeforeMove combinator")
+    new DoOnMove(n, Some(procedureBeforeMove), None, None, "BeforeMove combinator")
 
   /** Creates a variant of DoOnMove combinator. This variant can only execute a custom unit function
     * ''after'' the move is committed.
@@ -63,7 +72,7 @@ object DoOnMove {
     *   The procedure to execute just after the move is taken.
     */
   def afterMove(n: Neighborhood, procedureAfterMove: Move => Unit): DoOnMove =
-    new DoOnMove(n, None, Some(procedureAfterMove), "AfterMove combinator")
+    new DoOnMove(n, None, Some(procedureAfterMove), None, "AfterMove combinator")
 }
 
 /** Combinator that attach custom unit functions to a given neighborhood. The custom functions can
@@ -75,6 +84,8 @@ object DoOnMove {
   *   The procedure to execute just before the move is taken.
   * @param procedureAfterMove
   *   The procedure to execute just after the move is taken.
+  * @param procedureOnNoMoveFound
+  *   The procedure to execute when the called neighborhood returns no move.
   * @param neighborhoodCombinatorName
   *   The name of the neighborhood combinator.
   */
@@ -82,6 +93,7 @@ class DoOnMove(
   n: Neighborhood,
   procedureBeforeMove: Option[Move => Unit],
   procedureAfterMove: Option[Move => Unit],
+  procedureOnNoMoveFound: Option[() => Unit],
   neighborhoodCombinatorName: String
 ) extends NeighborhoodCombinator(neighborhoodCombinatorName, List(n)) {
 
@@ -94,7 +106,9 @@ class DoOnMove(
           Some(() => procedureAfterMove.foreach(f => f(mf.move)))
         )
         MoveFound(im)
-      case NoMoveFound => NoMoveFound
+      case NoMoveFound =>
+        procedureOnNoMoveFound.foreach(f => f())
+        NoMoveFound
     }
   }
 }

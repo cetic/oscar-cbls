@@ -1,21 +1,7 @@
-ThisBuild / scalaVersion := "2.13.14"
-ThisBuild / organization := "oscar"
-ThisBuild / version := sys.props.getOrElse("version", "latest")
+ThisBuild / scalaVersion  := "2.13.14"
+ThisBuild / organization  := "oscar"
+ThisBuild / version       := sys.props.getOrElse("version", "latest")
 ThisBuild / versionScheme := Some("early-semver")
-
-ThisBuild / publishTo := {
-  val nexus = "https://nexus.cetic.be/"
-  val repo = "repository/oscar"
-  Some("Nexus" at nexus + repo)
-}
-
-ThisBuild / credentials += Credentials(
-  "Sonatype Nexus Repository Manager",
-  "nexus.cetic.be",
-  sys.env.getOrElse("NEXUS_USER", ""),
-  sys.env.getOrElse("NEXUS_PASS", "")
-)
-
 
 lazy val oscarCbls = (project in file("."))
   .enablePlugins(PackPlugin)
@@ -41,11 +27,26 @@ lazy val oscarCbls = (project in file("."))
   .settings(packGenerateWindowsBatFile := false)
   .settings(
     libraryDependencies ++= Seq(
-      "com.gluonhq" % "maps" % "2.0.0-ea+6",
-      "org.scalafx" %% "scalafx" % "22.0.0-R33",
+      "com.gluonhq"        % "maps"            % "2.0.0-ea+6",
+      "org.scalafx"       %% "scalafx"         % "22.0.0-R33",
       "junit"              % "junit"           % "4.13.2"  % Test,
       "org.scalacheck"    %% "scalacheck"      % "1.18.0"  % Test,
       "org.scalatest"     %% "scalatest"       % "3.2.19"  % Test,
       "org.scalatestplus" %% "scalacheck-1-14" % "3.2.2.0" % Test
     )
   )
+
+// This part is used only for CETIC's internal CI/CD. The user can ignore it.
+
+ThisBuild / publishTo := {
+  val nexus = "https://nexus.cetic.be/"
+  val repo  = "repository/oscar"
+  Some("Nexus" at nexus + repo)
+}
+
+ThisBuild / credentials += Credentials(
+  "Sonatype Nexus Repository Manager",
+  "nexus.cetic.be",
+  sys.env.getOrElse("NEXUS_USER", ""),
+  sys.env.getOrElse("NEXUS_PASS", "")
+)

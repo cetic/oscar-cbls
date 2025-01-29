@@ -99,37 +99,33 @@ class WLPInterface(
   myHeight: Int
 ) extends OscaRPrimaryStage {
   private lazy val pointData = ObservableBuffer[String]()
-  private lazy val closestSortedWarehouses: Array[List[Int]] = {
-    def distanceBetween(a: (Long, Long), b: (Long, Long)): Double = {
-      Math.sqrt(
-        Math.pow(a._1.toDouble - b._1.toDouble, 2) + Math.pow(a._2.toDouble - b._2.toDouble, 2)
-      )
-    }
-    val allDeliveriesCoordinate = nodesCoordinates.drop(nbWarehouses)
-    val allWarehousesWithIndex  = nodesCoordinates.take(nbWarehouses).zipWithIndex
-
-    val allWarehousesSortedForEachDelivery =
-      allDeliveriesCoordinate.map(d =>
-        allWarehousesWithIndex
-          .sortBy(w => distanceBetween(d.realCoordinates, w._1.realCoordinates))
-      )
-
-    allWarehousesSortedForEachDelivery.map(_.map(_._2).toList)
-  }
+  private lazy val closestOpenedWarehouse: Array[List[Int] => Int] =
+    Array.tabulate(nbDeliveries)(d => {
+      def distanceBetween(a: (Long, Long), b: (Long, Long)): Double = {
+        Math.sqrt(
+          Math.pow(a._1.toDouble - b._1.toDouble, 2) + Math.pow(a._2.toDouble - b._2.toDouble, 2)
+        )
+      }
+      val deliveryPosition = nodesCoordinates(nbWarehouses + d)
+      openWarehouses: List[Int] => {
+        openWarehouses
+          .minBy(ow => distanceBetween(deliveryPosition.realCoordinates, nodesCoordinates(ow).realCoordinates))
+      }
+    })
   private val WLPDisplayShapes: List[CartesianLayer] =
     List(
       WLPLinkCartesianLayer(
         nbWarehouses,
         nbDeliveries,
         nodesCoordinates,
-        closestSortedWarehouses,
+        closestOpenedWarehouse,
         openFacilities
       ),
       WLPNodeCartesianLayer(
         nbWarehouses,
         nbDeliveries,
         nodesCoordinates,
-        closestSortedWarehouses,
+        closestOpenedWarehouse,
         openFacilities,
         pointData
       )
