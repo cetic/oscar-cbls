@@ -18,37 +18,37 @@ import oscar.cbls.algo.sequence.IntSequenceExplorer
 import oscar.cbls.core.computation.objective.Exploration
 import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.core.search.{NoMoveFound, SimpleNeighborhood}
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 
 /** Companion object of the [[RemovePointNeighborhood]] class. */
 object RemovePointNeighborhood {
 
   /** Creates a RemovePointNeighborhood that removes nodes from a given sequence.
     *
-    * @param vrp
-    *   The routing problem to solve
+    * @param vrs
+    *   The vehicle routing structure on which the neighborhood operates.
     * @param relevantNodesToRemove
-    *   The nodes in the sequence that can be removed
+    *   The nodes in the sequence that can be removed.
     * @param name
-    *   The name of the neighborhood
+    *   The name of the neighborhood.
     * @param selectNodesToRemoveBehavior
-    *   How to iterate over the nodes that can be removed
+    *   How to iterate over the nodes that can be removed.
     * @param nodesToRemoveSymmetryClass
     *   An optional function that takes nodes as input and returns their symmetry class. If
     *   provided, only one of the nodes in each class will be considered for removal. Note that
-    *   `Int.MinValue` is considered different to itself
+    *   `Int.MinValue` is considered different to itself.
     * @param hotRestart
-    *   Whether to use a [[oscar.cbls.algo.search.HotRestart]] mechanism an assert
+    *   Whether to use a [[oscar.cbls.algo.search.HotRestart]] mechanism.
     */
   def apply(
-    vrp: VRP,
+    vrs: VRS,
     relevantNodesToRemove: () => Iterable[Int],
     name: String = "RemovePointNeighborhood",
     selectNodesToRemoveBehavior: LoopBehavior = LoopBehavior.first(),
     nodesToRemoveSymmetryClass: Option[Int => Int] = None,
     hotRestart: Boolean = true
   ): RemovePointNeighborhood = new RemovePointNeighborhood(
-    vrp,
+    vrs,
     relevantNodesToRemove,
     name,
     selectNodesToRemoveBehavior,
@@ -61,23 +61,23 @@ object RemovePointNeighborhood {
   * removed must be route nodes, not vehicles nodes. The size of this neighborhood is in `O(r)`,
   * where `r` is the number of nodes that can be removed.
   *
-  * @param vrp
-  *   The routing problem to solve
+  * @param vrs
+  *   The vehicle routing structure on which the neighborhood operates.
   * @param relevantNodesToRemove
-  *   The nodes in the sequence that can be removed
+  *   The nodes in the sequence that can be removed.
   * @param name
-  *   The name of the neighborhood
+  *   The name of the neighborhood.
   * @param selectNodesToRemoveBehavior
-  *   How to iterate over the nodes that can be removed
+  *   How to iterate over the nodes that can be removed.
   * @param nodesToRemoveSymmetryClass
   *   An optional function that takes nodes as input and returns their symmetry class. If provided,
   *   only one of the nodes in each class will be considered for removal. Note that `Int.MinValue`
-  *   is considered different to itself
+  *   is considered different to itself.
   * @param hotRestart
-  *   Whether to use a [[oscar.cbls.algo.search.HotRestart]] mechanism
+  *   Whether to use a [[oscar.cbls.algo.search.HotRestart]] mechanism.
   */
 class RemovePointNeighborhood(
-  vrp: VRP,
+  vrs: VRS,
   relevantNodesToRemove: () => Iterable[Int],
   name: String,
   selectNodesToRemoveBehavior: LoopBehavior,
@@ -90,7 +90,7 @@ class RemovePointNeighborhood(
   reset()
 
   override protected def exploreNeighborhood(exploration: Exploration[RemovePointMove]): Unit = {
-    val seqValue = vrp.routes.defineCurrentValueAsCheckpoint()
+    val seqValue = vrs.routes.defineCurrentValueAsCheckpoint()
 
     // Activates hot restart if needed
     val nodes                          = relevantNodesToRemove()
@@ -107,26 +107,26 @@ class RemovePointNeighborhood(
       selectNodesToRemoveBehavior.toIterator(iterationSchemeSymmetryFree)
 
     for (nodeToRemove <- nodeToRemoveIterator) {
-      assert(nodeToRemove >= vrp.v, "Trying to remove a vehicle.")
+      assert(nodeToRemove >= vrs.v, "Trying to remove a vehicle.")
 
       val toRemoveExplorer: Option[IntSequenceExplorer] =
         seqValue.explorerAtAnyOccurrence(nodeToRemove)
 
       assert(toRemoveExplorer.nonEmpty, "Trying to remove an unrouted node.")
-      vrp.routes.remove(toRemoveExplorer.get)
+      vrs.routes.remove(toRemoveExplorer.get)
       searchProfiler().foreach(x => x.neighborSelected())
 
       exploration.checkNeighborWP(objValue =>
-        RemovePointMove(vrp.routes, toRemoveExplorer.get, objValue, name)
+        RemovePointMove(vrs.routes, toRemoveExplorer.get, objValue, name)
       ) // Checks if the move is improving
 
-      vrp.routes.rollbackToTopCheckpoint(Some(seqValue)) // Cancels the move
+      vrs.routes.rollbackToTopCheckpoint(Some(seqValue)) // Cancels the move
 
       if (exploration.toReturn != NoMoveFound) stopNodesToRemove()
 
     }
 
-    vrp.routes.releaseTopCheckpoint()
+    vrs.routes.releaseTopCheckpoint()
     if (nodeToRemoveIterator.hasUnboundedNext) pivot = nodeToRemoveIterator.unboundedNext()
     else reset() // We tried all the values. The exploration stops and we can reset the pivot.
   }

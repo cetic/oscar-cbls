@@ -16,7 +16,7 @@ import oscar.cbls.lib.neighborhoods.routing.{
   OnePointMoveNeighborhood,
   RemovePointNeighborhood
 }
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 
 class ProfilingTestSuite extends AnyFunSuite with Matchers {
 
@@ -24,11 +24,11 @@ class ProfilingTestSuite extends AnyFunSuite with Matchers {
     "Profiling : CompositionProfiler works when first call to left Neighborhood of DynAndThen finds nothing."
   ) {
     val model: Store = new Store()
-    val vrp          = VRP(model, 10, 1)
+    val vrs          = VRS(model, 10, 1)
     val routingData  = RoutingGenerator.generateRandomRoutingData(10, 1000, 0)
 
-    val routeLength           = TotalRouteLength(vrp, routingData._2)
-    val nbUnrouted            = vrp.unrouted.size()
+    val routeLength           = TotalRouteLength(vrs, routingData._2)
+    val nbUnrouted            = vrs.unrouted.size()
     val nbUnroutedWithPenalty = nbUnrouted * IntConstant(model, routingData._3)
     val obj                   = Minimize(routeLength.routeLength + nbUnroutedWithPenalty)
 
@@ -36,12 +36,12 @@ class ProfilingTestSuite extends AnyFunSuite with Matchers {
 
     val insertPoint: InsertPointNeighborhoodUnroutedFirst =
       InsertPointNeighborhoodUnroutedFirst(
-        vrp,
-        () => vrp.unroutedNodes,
-        _ => vrp.routedWithVehicles.value()
+        vrs,
+        () => vrs.unroutedNodes,
+        _ => vrs.routedWithVehicles.value()
       )
     val removeDynAndThenInsert = DynAndThen(
-      RemovePointNeighborhood(vrp, () => vrp.routedWithoutVehicles.value()),
+      RemovePointNeighborhood(vrs, () => vrs.routedWithoutVehicles.value()),
       _ => insertPoint
     )
 
@@ -51,30 +51,30 @@ class ProfilingTestSuite extends AnyFunSuite with Matchers {
     val search = Exhaust(Exhaust(removeDynAndThenInsert, insertPoint), removeDynAndThenInsert)
     search.profileSearch()
     noException mustBe thrownBy(search.doAllMoves(obj))
-    vrp.unroutedNodes mustBe empty
+    vrs.unroutedNodes mustBe empty
   }
 
   test("Profiling : Profiling Routing works") {
     val model: Store          = new Store(debugLevel = 3)
-    val vrp: VRP              = VRP(model, 20, 2)
+    val vrs: VRS              = VRS(model, 20, 2)
     val routingData           = RoutingGenerator.generateRandomRoutingData(102, 1000000, 0)
-    val routeLength           = TotalRouteLength(vrp, routingData._2)
-    val nbUnrouted            = vrp.unrouted.size()
+    val routeLength           = TotalRouteLength(vrs, routingData._2)
+    val nbUnrouted            = vrs.unrouted.size()
     val nbUnroutedWithPenalty = nbUnrouted * IntConstant(model, routingData._3)
     val obj                   = routeLength.routeLength + nbUnroutedWithPenalty
     model.close()
 
     def onePtMove(name: String) = OnePointMoveNeighborhood(
-      vrp,
-      () => vrp.routedWithoutVehicles.pendingValue.take(5),
-      movingNode => vrp.routedWithVehicles.pendingValue.filter(_ != movingNode).take(5),
+      vrs,
+      () => vrs.routedWithoutVehicles.pendingValue.take(5),
+      movingNode => vrs.routedWithVehicles.pendingValue.filter(_ != movingNode).take(5),
       name = name
     )
     val moveAndThenMove = DynAndThen(onePtMove("LeftOnePtMove"), _ => onePtMove("RightOnePtMove"))
     val insert = InsertPointNeighborhoodUnroutedFirst(
-      vrp,
-      () => vrp.unroutedNodes,
-      _ => vrp.routedWithVehicles.pendingValue
+      vrs,
+      () => vrs.unroutedNodes,
+      _ => vrs.routedWithVehicles.pendingValue
     )
     val search = RoundRobin(Array((insert, 1), (moveAndThenMove, 1)))
     search.profileSearch()
@@ -85,22 +85,22 @@ class ProfilingTestSuite extends AnyFunSuite with Matchers {
 
   test("Profiling : Selection profiler works properly") {
     val model: Store          = new Store()
-    val vrp                   = VRP(model, 100, 1)
-    val routingData           = RoutingGenerator.generateRandomRoutingData(vrp.n, 1000000, 0)
-    val routeLength           = TotalRouteLength(vrp, routingData._2)
-    val nbUnrouted            = vrp.unrouted.size()
+    val vrs                   = VRS(model, 100, 1)
+    val routingData           = RoutingGenerator.generateRandomRoutingData(vrs.n, 1000000, 0)
+    val routeLength           = TotalRouteLength(vrs, routingData._2)
+    val nbUnrouted            = vrs.unrouted.size()
     val nbUnroutedWithPenalty = nbUnrouted * IntConstant(model, routingData._3)
     val obj                   = Minimize(routeLength.routeLength + nbUnroutedWithPenalty)
     model.close()
     val n1 = InsertPointNeighborhoodUnroutedFirst(
-      vrp,
-      () => vrp.unrouted.value(),
-      _ => vrp.routedWithVehicles.value()
+      vrs,
+      () => vrs.unrouted.value(),
+      _ => vrs.routedWithVehicles.value()
     )
     val n2 = OnePointMoveNeighborhood(
-      vrp,
-      () => vrp.routedWithoutVehicles.value(),
-      node => vrp.routedWithVehicles.value().filter(x => x != node)
+      vrs,
+      () => vrs.routedWithoutVehicles.value(),
+      node => vrs.routedWithVehicles.value().filter(x => x != node)
     )
     val search = BestSlopeFirst(List(n1, n2), refreshRate = 2)
     search.profileSearch()

@@ -20,12 +20,12 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.{Exploration, Minimize}
 import oscar.cbls.core.computation.seq.SeqVariable
-import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.core.search.{Move, MoveFound, NoMoveFound, SimpleNeighborhood}
+import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.lib.neighborhoods.metaheuristics.Restart
 import oscar.cbls.lib.neighborhoods.random.RandomizeRoutesNeighborhood
-import oscar.cbls.lib.neighborhoods.routing.{OnePointMoveMove, TwoOpt}
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.lib.neighborhoods.routing.TwoOpt
+import oscar.cbls.modeling.routing.VRS
 import oscar.cbls.test.lib.neighborhoods.routing.NaiveSumDistancesInvariant
 
 import scala.util.Random
@@ -54,16 +54,16 @@ class RestartTests extends AnyFunSuite with Matchers {
       s"$neighborhoodName" + super.toString + s"\nSwaps nodes ${first.value} and ${second.value}"
   }
 
-  private class SwapNodesNeighborhood(vrp: VRP)
+  private class SwapNodesNeighborhood(vrs: VRS)
       extends SimpleNeighborhood[SwapNodeMove]("SwapNodes") {
 
     override protected def exploreNeighborhood(exploration: Exploration[SwapNodeMove]): Unit = {
-      val seqVal = vrp.routes.defineCurrentValueAsCheckpoint()
+      val seqVal = vrs.routes.defineCurrentValueAsCheckpoint()
 
       val first  = seqVal.explorerAtAnyOccurrence(0).get.next
       val second = seqVal.explorerAtAnyOccurrence(1).get.next
 
-      vrp.routes.swapSegments(
+      vrs.routes.swapSegments(
         first,
         first,
         flipFirstSegment = false,
@@ -71,8 +71,8 @@ class RestartTests extends AnyFunSuite with Matchers {
         second,
         flipSecondSegment = false
       )
-      exploration.checkNeighborWP(objValue => new SwapNodeMove(vrp.routes, first, second, objValue))
-      vrp.routes.rollbackToTopCheckpoint(Some(seqVal))
+      exploration.checkNeighborWP(objValue => new SwapNodeMove(vrs.routes, first, second, objValue))
+      vrs.routes.rollbackToTopCheckpoint(Some(seqVal))
     }
 
     override def doMove(move: SwapNodeMove): Unit = move.commit()
@@ -104,25 +104,21 @@ class RestartTests extends AnyFunSuite with Matchers {
 
   test("Restart works as Expected") {
     val model  = new Store()
-    val vrp    = VRP(model, 10, 2, debug = true)
+    val vrs    = VRS(model, 10, 2, debug = true)
     val output = IntVariable(model, 0L, name = Some("Minimize"))
-    new NaiveSumDistancesInvariant(model, vrp.routes, distMatrix, output)
+    new NaiveSumDistancesInvariant(model, vrs.routes, distMatrix, output)
     val obj = Minimize(output)
     model.close()
-    vrp.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
+    vrs.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
     model.propagate()
 
-    val routedNodeExceptVehicle = vrp.routedWithoutVehicles.pendingValue
+    val routedNodeExceptVehicle = vrs.routedWithoutVehicles.pendingValue
 
     val relevantStartSegment = () => routedNodeExceptVehicle
 
-    val twoOpt = TwoOpt(
-      vrp,
-      relevantStartSegment,
-      selectFlippedSegmentBehavior = LoopBehavior.first(),
-      hotRestart = true
-    )
-    val swap = new SwapNodesNeighborhood(vrp)
+    val twoOpt =
+      TwoOpt(vrs, relevantStartSegment, selectFlippedSegmentBehavior = LoopBehavior.first())
+    val swap = new SwapNodesNeighborhood(vrs)
 
     val search = Restart(twoOpt, swap, 2, 4)
 
@@ -135,7 +131,7 @@ class RestartTests extends AnyFunSuite with Matchers {
       }
     }
 
-    var routes = vrp.mapVehicleToRoute
+    var routes = vrs.mapVehicleToRoute
     routes(0) must contain inOrderOnly (0, 2, 3, 4, 5)
     routes(1) must contain inOrderOnly (1, 9, 8, 7, 6)
     obj.objValue.value() must be(44)
@@ -147,7 +143,7 @@ class RestartTests extends AnyFunSuite with Matchers {
       case _ =>
     }
 
-    routes = vrp.mapVehicleToRoute
+    routes = vrs.mapVehicleToRoute
     routes(0) must contain inOrderOnly (0, 9, 3, 4, 5)
     routes(1) must contain inOrderOnly (1, 2, 8, 7, 6)
     obj.objValue.value() must be(100)
@@ -161,7 +157,7 @@ class RestartTests extends AnyFunSuite with Matchers {
       }
     }
 
-    routes = vrp.mapVehicleToRoute
+    routes = vrs.mapVehicleToRoute
     routes(0) must contain inOrderOnly (0, 5, 4, 3, 9)
     routes(1) must contain inOrderOnly (1, 6, 7, 8, 2)
     obj.objValue.value() must be(70)
@@ -173,7 +169,7 @@ class RestartTests extends AnyFunSuite with Matchers {
       case _ =>
     }
 
-    routes = vrp.mapVehicleToRoute
+    routes = vrs.mapVehicleToRoute
     routes(0) must contain inOrderOnly (0, 6, 4, 3, 9)
     routes(1) must contain inOrderOnly (1, 5, 7, 8, 2)
     obj.objValue.value() must be(126)
@@ -187,14 +183,14 @@ class RestartTests extends AnyFunSuite with Matchers {
       }
     }
 
-    routes = vrp.mapVehicleToRoute
+    routes = vrs.mapVehicleToRoute
     routes(0) must contain inOrderOnly (0, 3, 4, 6, 9)
     routes(1) must contain inOrderOnly (1, 8, 7, 5, 2)
     obj.objValue.value() must be(78)
 
     // No move found. The best solution must be restored
     search.getMove(obj) must be(NoMoveFound)
-    routes = vrp.mapVehicleToRoute
+    routes = vrs.mapVehicleToRoute
     routes(0) must contain inOrderOnly (0, 2, 3, 4, 5)
     routes(1) must contain inOrderOnly (1, 9, 8, 7, 6)
     obj.objValue.value() must be(44)
@@ -202,25 +198,21 @@ class RestartTests extends AnyFunSuite with Matchers {
 
   ignore("Restart verbose mode") {
     val model  = new Store()
-    val vrp    = VRP(model, 10, 2, debug = true)
+    val vrs    = VRS(model, 10, 2, debug = true)
     val output = IntVariable(model, 0L, name = Some("Minimize"))
-    new NaiveSumDistancesInvariant(model, vrp.routes, distMatrix, output)
+    new NaiveSumDistancesInvariant(model, vrs.routes, distMatrix, output)
     val obj = Minimize(output)
     model.close()
-    vrp.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
+    vrs.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
     model.propagate()
 
-    val routedNodeExceptVehicle = vrp.routedWithoutVehicles.pendingValue
+    val routedNodeExceptVehicle = vrs.routedWithoutVehicles.pendingValue
 
     val relevantStartSegment = () => routedNodeExceptVehicle
 
-    val twoOpt = TwoOpt(
-      vrp,
-      relevantStartSegment,
-      selectFlippedSegmentBehavior = LoopBehavior.first(),
-      hotRestart = true
-    )
-    val swap = new SwapNodesNeighborhood(vrp)
+    val twoOpt =
+      TwoOpt(vrs, relevantStartSegment, selectFlippedSegmentBehavior = LoopBehavior.first())
+    val swap = new SwapNodesNeighborhood(vrs)
 
     val search = Restart(twoOpt, swap, 2, 4)
     search.verbosityLevel = 2
@@ -233,25 +225,21 @@ class RestartTests extends AnyFunSuite with Matchers {
     val seed   = Random.nextLong()
     val rng    = new Random(seed)
     val model  = new Store()
-    val vrp    = VRP(model, 10, 2, debug = true)
+    val vrs    = VRS(model, 10, 2, debug = true)
     val output = IntVariable(model, 0L, name = Some("Minimize"))
-    new NaiveSumDistancesInvariant(model, vrp.routes, distMatrix, output)
+    new NaiveSumDistancesInvariant(model, vrs.routes, distMatrix, output)
     val obj = Minimize(output)
     model.close()
-    vrp.routes := vrp.generateValidRandomRoute(rng = rng)
+    vrs.routes := vrs.generateValidRandomRoute(rng = rng)
     model.propagate()
 
-    println(s"Before search $vrp")
+    println(s"Before search $vrs")
 
-    val relevantStartSegment = () => vrp.routedWithoutVehicles.pendingValue
+    val relevantStartSegment = () => vrs.routedWithoutVehicles.pendingValue
 
-    val twoOpt = TwoOpt(
-      vrp,
-      relevantStartSegment,
-      selectFlippedSegmentBehavior = LoopBehavior.first(),
-      hotRestart = true
-    )
-    val restartNeigh = RandomizeRoutesNeighborhood.shuffle(vrp, 3, rng)
+    val twoOpt =
+      TwoOpt(vrs, relevantStartSegment, selectFlippedSegmentBehavior = LoopBehavior.first())
+    val restartNeigh = RandomizeRoutesNeighborhood.shuffle(vrs, 3, rng)
     val search       = Restart(twoOpt, restartNeigh, 4, 5)
     search.profileSearch()
     search.verbosityLevel = 2
@@ -261,7 +249,7 @@ class RestartTests extends AnyFunSuite with Matchers {
     }
     search.displayProfiling()
 
-    println(s"After search $vrp")
+    println(s"After search $vrs")
     println(s"obj: ${obj.objValue}")
   }
 

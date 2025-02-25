@@ -16,17 +16,17 @@ package oscar.cbls.test.modeling.routing
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
 import oscar.cbls.core.computation.{Store, Variable}
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
 
 class VehicleSearchersTestSuite extends AnyFunSuite with Matchers {
 
   test("Searchers test bench") {
     def createInv(model: Store): TestBenchSut = {
-      val vrp = VRP(model, 50, 10)
-      val inv = new UpdateVehicleSearchersInvariant(model, vrp.routes, vrp.v)
+      val vrs = VRS(model, 50, 10)
+      val inv = new UpdateVehicleSearchersInvariant(model, vrs.routes, vrs.v)
 
-      TestBenchSut(inv, Array(vrp.routes), Array.empty[Variable], Some(vrp))
+      TestBenchSut(inv, Array(vrs.routes), Array.empty[Variable], Some(vrs))
     }
 
     val bench = InvTestBench(createInv, "Test the vehicle searchers")

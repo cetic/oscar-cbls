@@ -6,7 +6,7 @@ import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.seq.SeqVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.core.computation.Variable
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 
 import scala.collection.immutable.HashSet
 
@@ -43,7 +43,7 @@ abstract class VariableState(id: Int) {
 }
 
 object VariableState {
-  def apply(v: Variable, id: Int, routing: Option[VRP] = None): Gen[VariableState] = {
+  def apply(v: Variable, id: Int, routing: Option[VRS] = None): Gen[VariableState] = {
     v match {
       case intVar: IntVariable =>
         val longGen: Gen[Long] =
@@ -65,15 +65,15 @@ object VariableState {
           case None =>
             val domain = (0, 1000)
             Gen.const(SeqVariableState(id, SeqVariableStackableState(0, 0, None), domain))
-          case Some(vrp) =>
-            val routed = vrp.routes.pendingValue
+          case Some(vrs) =>
+            val routed = vrs.routes.pendingValue
             val unrouted: HashSet[Int] =
-              HashSet.from(vrp.v until vrp.n).filter(!routed.contains(_))
+              HashSet.from(vrs.v until vrs.n).filter(!routed.contains(_))
             Gen.const(
               RoutingVariableState(
                 id,
-                SeqVariableStackableState(vrp.routes.value().size, 0, None),
-                vrp,
+                SeqVariableStackableState(vrs.routes.value().size, 0, None),
+                vrs,
                 unrouted,
                 routed
               )

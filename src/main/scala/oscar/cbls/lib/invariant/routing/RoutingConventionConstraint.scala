@@ -16,7 +16,7 @@ package oscar.cbls.lib.invariant.routing
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation.seq._
 import oscar.cbls.core.computation.{Invariant, Store}
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 
 /** Companion object of the [[RoutingConventionConstraint]] class. */
 object RoutingConventionConstraint {
@@ -25,11 +25,11 @@ object RoutingConventionConstraint {
     *
     * @param model
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
-    * @param vrp
-    *   The routing problem that have to respect the routing constraints.
+    * @param vrs
+    *   The routing structure on which the routing constraints must be respected.
     */
-  def apply(model: Store, vrp: VRP): RoutingConventionConstraint =
-    new RoutingConventionConstraint(model, vrp)
+  def apply(model: Store, vrs: VRS): RoutingConventionConstraint =
+    new RoutingConventionConstraint(model, vrs)
 
 }
 
@@ -46,39 +46,39 @@ object RoutingConventionConstraint {
   *
   * If the following conventions are not respected, the invariant raises an exception
   *
-  * This class is automatically called by setting 'debug' parameter of class VRP at 'true'
+  * This class is automatically called by setting 'debug' parameter of class VRS at 'true'
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
-  * @param vrp
-  *   The routing problem that have to respect the routing constraints.
+  * @param vrs
+  *   The routing structure on which the routing constraints must be respected.
   */
-class RoutingConventionConstraint(model: Store, vrp: VRP)
+class RoutingConventionConstraint(model: Store, vrs: VRS)
     extends Invariant(model, Some("Routing convention"))
     with SeqNotificationTarget {
 
   private[this] var routedNodes: Array[Boolean] =
-    Array.tabulate(vrp.n)(node => vrp.isRouted(node))
+    Array.tabulate(vrs.n)(node => vrs.isRouted(node))
   // Used to check if a neighborhood do not lose the level 0 checkpoint.
   private[this] var checkpointAtLevel0: Option[IntSequence] = None
-  private[this] var lastNotified: IntSequence               = vrp.routes.value()
+  private[this] var lastNotified: IntSequence               = vrs.routes.value()
 
-  vrp.routes.registerStaticallyAndDynamicallyListeningElement(this)
+  vrs.routes.registerStaticallyAndDynamicallyListeningElement(this)
   require(
-    vrp.routes.pendingValue.unorderedContentNoDuplicate.count(_ < vrp.v) == vrp.v,
-    s"The current route has not the expected number (${vrp.v}) of vehicles!"
+    vrs.routes.pendingValue.unorderedContentNoDuplicate.count(_ < vrs.v) == vrs.v,
+    s"The current route has not the expected number (${vrs.v}) of vehicles!"
   )
 
   require(
-    !vrp.routes.pendingValue.unorderedContentNoDuplicate.exists(_ >= vrp.n),
-    s"The current route has node bigger than n (${vrp.n})!"
+    !vrs.routes.pendingValue.unorderedContentNoDuplicate.exists(_ >= vrs.n),
+    s"The current route has node bigger than n (${vrs.n})!"
   )
-  checkVehicleOrder(vrp.routes.value())
-  checkNoDuplicate(vrp.routes.value())
+  checkVehicleOrder(vrs.routes.value())
+  checkNoDuplicate(vrs.routes.value())
 
   /** Checks if, in the given sequence, the vehicles are positioned in increasing order. */
   def checkVehicleOrder(seq: IntSequence): Unit = {
-    val positionOfVehicles = (0 until vrp.v)
+    val positionOfVehicles = (0 until vrs.v)
       .map(vId => {
         require(
           seq.positionOfAnyOccurrence(vId).isDefined,
@@ -90,7 +90,7 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
         seq.positionOfAnyOccurrence(vId).get
       })
       .toArray
-    for (vehicle <- 0 until vrp.v - 1) {
+    for (vehicle <- 0 until vrs.v - 1) {
       require(
         positionOfVehicles(vehicle) < positionOfVehicles(vehicle + 1),
         s"""
@@ -111,7 +111,7 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
     changes: SeqUpdate
   ): Unit = {
     require(
-      vrp.routes.value() equals lastNotified,
+      vrs.routes.value() equals lastNotified,
       "The last notified value is not equal to the route original value"
     )
     digestUpdate(changes)
@@ -163,9 +163,9 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
              |\tInsert value: $value
              |\tInsert pos: ${explorer.position}
              |""".stripMargin
-        checkRequirement(value >= vrp.v, s"Trying to insert a vehicle! $errorMsg", prev)
+        checkRequirement(value >= vrs.v, s"Trying to insert a vehicle! $errorMsg", prev)
         checkRequirement(
-          value < vrp.n,
+          value < vrs.n,
           s"Trying to insert a node outside the domain! $errorMsg",
           prev
         )
@@ -180,7 +180,7 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
              |Got:
              |\tRemove pos: $pos
              |""".stripMargin
-        checkRequirement(removedValue >= vrp.v, s"Trying to remove a vehicle! $errorMsg", prev)
+        checkRequirement(removedValue >= vrs.v, s"Trying to remove a vehicle! $errorMsg", prev)
 
         routedNodes(removedValue) = false
 
@@ -194,7 +194,7 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
              |After position: ${afterPose.position}
              |""".stripMargin
         checkRequirement(
-          !sum.movedValues.exists(_ < vrp.v),
+          !sum.movedValues.exists(_ < vrs.v),
           s"Trying to move a vehicle! $errorMsg",
           prev
         )
@@ -220,7 +220,7 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
       case SeqUpdateLastNotified(value: IntSequence) =>
         require(value equals lastNotified, "The last notified value is not the saved one.")
         require(
-          value sameIdentity vrp.routes.value(),
+          value sameIdentity vrs.routes.value(),
           "The last notified value is not equal to the route original value"
         )
 
@@ -233,17 +233,17 @@ class RoutingConventionConstraint(model: Store, vrp: VRP)
              |\tNew Seq: $newSeq
              |""".stripMargin
         require(
-          newSeq.unorderedContentNoDuplicate.count(_ < vrp.v) == vrp.v,
-          s"The assigned sequence has not the expected number (${vrp.v}) of vehicles! $errorMsg"
+          newSeq.unorderedContentNoDuplicate.count(_ < vrs.v) == vrs.v,
+          s"The assigned sequence has not the expected number (${vrs.v}) of vehicles! $errorMsg"
         )
 
         require(
-          !newSeq.unorderedContentNoDuplicate.exists(_ >= vrp.n),
-          s"The assigned sequence has node bigger than ${vrp.n}! $errorMsg"
+          !newSeq.unorderedContentNoDuplicate.exists(_ >= vrs.n),
+          s"The assigned sequence has node bigger than ${vrs.n}! $errorMsg"
         )
         checkVehicleOrder(newSeq)
         checkNoDuplicate(newSeq)
-        routedNodes = Array.tabulate(vrp.n)(newSeq.contains)
+        routedNodes = Array.tabulate(vrs.n)(newSeq.contains)
     }
   }
 

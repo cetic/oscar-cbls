@@ -24,13 +24,11 @@ import oscar.cbls.lib.neighborhoods.routing.{
   InsertPointNeighborhoodInsertionPointFirst,
   InsertPointNeighborhoodUnroutedFirst
 }
-import oscar.cbls.modeling.routing.VRP
-
-import scala.util.Random
+import oscar.cbls.modeling.routing.VRS
 
 class InsertPointNeighborhoodTestSuite extends AnyFunSuite {
 
-  private[this] def getTestBasicModel: (VRP, Minimize) = {
+  private[this] def getTestBasicModel: (VRS, Minimize) = {
     val seed: Long = 6553200370069564662L // Random.nextLong()
     println(s"\nSeed: $seed")
 
@@ -38,30 +36,30 @@ class InsertPointNeighborhoodTestSuite extends AnyFunSuite {
     val n = 10
 
     val model = new Store(debugLevel = 3)
-    val vrp   = VRP(model, n, v, debug = true)
+    val vrs   = VRS(model, n, v, debug = true)
     val (_, dist, unroutedCost, _) =
       RoutingGenerator.generateRandomRoutingData(n, 0L, 0L, seed)
     val sumDist   = IntVariable(model, 0L)
     val sumCost   = IntVariable(model, 0L)
     val objVal    = IntVariable(model, 0L)
     val objective = Minimize(objVal)
-    new NaiveSumDistancesInvariant(model, vrp.routes, dist, sumDist)
-    new NaiveUnroutedCostInvariant(model, vrp.routes, n, unroutedCost, sumCost)
+    new NaiveSumDistancesInvariant(model, vrs.routes, dist, sumDist)
+    new NaiveUnroutedCostInvariant(model, vrs.routes, n, unroutedCost, sumCost)
     Sum2(model, sumDist, sumCost, objVal)
     model.close()
 
-    (vrp, objective)
+    (vrs, objective)
   }
 
   ignore("InsertPointNeighborhoodUnroutedFirst works as expected") {
-    val (vrp, objective) = getTestBasicModel
+    val (vrs, objective) = getTestBasicModel
 
-    val valuesToInsert      = () => vrp.unroutedNodes
-    val relevantInsertPoint = (_: Int) => vrp.routedWithVehicles.value()
+    val valuesToInsert      = () => vrs.unroutedNodes
+    val relevantInsertPoint = (_: Int) => vrs.routedWithVehicles.value()
 
-    println(s"Initial routing: $vrp")
+    println(s"Initial routing: $vrs")
     val search = InsertPointNeighborhoodUnroutedFirst(
-      vrp,
+      vrs,
       valuesToInsert,
       relevantInsertPoint,
       selectInsertionAfterPointBehavior = LoopBehavior.best()
@@ -69,19 +67,19 @@ class InsertPointNeighborhoodTestSuite extends AnyFunSuite {
     search.verbosityLevel = 4
     search.doAllMoves(objective)
 
-    println(s"Routing after search: $vrp")
+    println(s"Routing after search: $vrs")
 
   }
 
   ignore("InsertPointNeighborhoodInsertionPointFirst works as expected") {
-    val (vrp, objective) = getTestBasicModel
+    val (vrs, objective) = getTestBasicModel
 
-    val insertionNode  = () => vrp.routedWithVehicles.value()
-    val relevantValues = (_: Int) => vrp.unroutedNodes
+    val insertionNode  = () => vrs.routedWithVehicles.value()
+    val relevantValues = (_: Int) => vrs.unroutedNodes
 
-    println(s"Initial routing: $vrp")
+    println(s"Initial routing: $vrs")
     val search = InsertPointNeighborhoodInsertionPointFirst(
-      vrp,
+      vrs,
       insertionNode,
       relevantValues,
       selectInsertionPointBehavior = LoopBehavior.best()
@@ -89,7 +87,7 @@ class InsertPointNeighborhoodTestSuite extends AnyFunSuite {
     search.verbosityLevel = 4
     search.doAllMoves(objective)
 
-    println(s"Routing after search: $vrp")
+    println(s"Routing after search: $vrs")
   }
 
 }

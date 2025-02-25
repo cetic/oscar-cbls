@@ -40,16 +40,16 @@ object Pairs {
     */
   def pairsOfAdjacent(seq: IntSequence): List[(Int, Int)] = pairsOfAdjacent(seq.toList)
 
-  /** Given a sequence used in a VRP, returns the list of adjacent nodes following the route of each
+  /** Given a sequence used in a VRS, returns the list of adjacent nodes following the route of each
     * vehicle including the return to the depot. <br>
     *
     * For example, with two vehicles and the route `0 -> 2 -> 4 -> 1 -> 3 -> 5`, the method returns:
     * `[(0, 2), (2, 4), (4, 0), (1, 3), (3, 5), (5, 1)]`.
     *
     * @param route
-    *   The sequence associated to the route of a VRP.
+    *   The sequence associated to the route of a VRS.
     * @param v
-    *   The number of vehicles in the associated VRP.
+    *   The number of vehicles in the associated VRS.
     */
   def pairsOfAdjacentInRoute(route: IntSequence, v: Int): List[(Int, Int)] = {
 

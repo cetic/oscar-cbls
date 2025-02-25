@@ -23,26 +23,26 @@ import scalafx.scene.shape.{Circle, Shape}
 
 object RoutingNodeCartesianLayer {
 
-  /** This layer displays all the nodes that are part of this VRP.
+  /** This layer displays all the nodes that are part of this VRS.
     *
     * Every node-related information should be in this class.
     * @param nbVehicles
-    *   The number of vehicles of this VRP.
+    *   The number of vehicles of this VRS.
     * @param nodesCoordinates
-    *   The coordinates of all nodes of this VRP.
+    *   The coordinates of all nodes of this VRS.
     */
   def apply(nbVehicles: Int, nodesCoordinates: Array[CartesianNode]): RoutingNodeCartesianLayer = {
     new RoutingNodeCartesianLayer(nbVehicles, nodesCoordinates)
   }
 }
 
-/** This layer displays all the nodes that are part of this VRP.
+/** This layer displays all the nodes that are part of this VRS.
   *
   * Every node-related information should be in this class.
   * @param nbVehicles
-  *   The number of vehicles of this VRP.
+  *   The number of vehicles of this VRS.
   * @param nodesCoordinates
-  *   The coordinates of all nodes of this VRP.
+  *   The coordinates of all nodes of this VRS.
   */
 class RoutingNodeCartesianLayer(nbVehicles: Int, nodesCoordinates: Array[CartesianNode])
     extends CartesianLayer {

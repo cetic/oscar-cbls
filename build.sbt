@@ -43,7 +43,7 @@ ThisBuild / publishTo := {
   val privateRepo  = "repository/oscar"
   val publicRepo = "repository/oscar-public"
 
-  val isTag = sys.env.get("CI_COMMIT_TAG").isDefined
+  val isTag = sys.env.contains("CI_COMMIT_TAG")
 
   val repo = if (isTag) publicRepo else privateRepo
   Some("Nexus" at nexus + repo)

@@ -20,13 +20,13 @@ import oscar.cbls.core.computation.genericConstraint.segment.{
   Segment,
   VehicleSegments
 }
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 
 /** Abstract class for [[NaiveRoutingConstraint]] where the computations along the sequence are
   * performed forward.
   *
-  * @param vrp
-  *   The object that represents the Vehicle Routing Problem.
+  * @param vrs
+  *   The object that represents the vehicle routing structure.
   * @param defaultValueForUnroutedNodes
   *   The default value associated to unrouted nodes.
   * @param initValuePerVehicle
@@ -42,13 +42,13 @@ import oscar.cbls.modeling.routing.VRP
   *   `RouteLength` (the total distance).
   */
 abstract class ForwardNaiveRoutingConstraint[U: Manifest](
-  vrp: VRP,
+  vrs: VRS,
   defaultValueForUnroutedNodes: U,
   initValuePerVehicle: Array[U],
   fun: (Int, Int, U) => U,
   name: Option[String]
 ) extends NaiveRoutingConstraint[U](
-      vrp,
+      vrs,
       defaultValueForUnroutedNodes,
       initValuePerVehicle,
       fun,

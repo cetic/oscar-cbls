@@ -17,7 +17,7 @@ import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.core.computation.objective.Exploration
 import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.core.search.{NoMoveFound, SimpleNeighborhood}
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 
 /** Companion object of the [[OnePointMoveNeighborhood]] class. */
 object OnePointMoveNeighborhood {
@@ -25,8 +25,8 @@ object OnePointMoveNeighborhood {
   /** Creates a OnePointMoveNeighborhood, which moves a value from a sequence to another place in
     * this sequence.
     *
-    * @param vrp
-    *   The routing problem to resolve with a search. defining the search space.
+    * @param vrs
+    *   The vehicle routing structure on which the neighborhood operates.
     * @param nodesToMove
     *   The nodes this neighborhood can move.
     * @param relevantDestinationNodes
@@ -43,7 +43,7 @@ object OnePointMoveNeighborhood {
     *   the hotRestart starting at a different symmetry class than the last one.
     */
   def apply(
-    vrp: VRP,
+    vrs: VRS,
     nodesToMove: () => Iterable[Int],
     relevantDestinationNodes: Int => Iterable[Int],
     name: String = "OnePointMoveNeighborhood",
@@ -51,7 +51,7 @@ object OnePointMoveNeighborhood {
     selectDestinationBehavior: LoopBehavior = LoopBehavior.first(),
     hotRestart: Boolean = true
   ) = new OnePointMoveNeighborhood(
-    vrp,
+    vrs,
     nodesToMove,
     relevantDestinationNodes,
     name,
@@ -67,8 +67,8 @@ object OnePointMoveNeighborhood {
   *
   * '''Note:''' depots cannot be moved.
   *
-  * @param vrp
-  *   The routing problem to resolve with a search. defining the search space.
+  * @param vrs
+  *   The vehicle routing structure on which the neighborhood operates.
   * @param nodesToMove
   *   The nodes this neighborhood can move.
   * @param relevantDestinationNodes
@@ -85,7 +85,7 @@ object OnePointMoveNeighborhood {
   *   the hotRestart starting at a different symmetry class than the last one.
   */
 class OnePointMoveNeighborhood(
-  vrp: VRP,
+  vrs: VRS,
   nodesToMove: () => Iterable[Int],
   relevantDestinationNodes: Int => Iterable[Int],
   name: String,
@@ -99,7 +99,7 @@ class OnePointMoveNeighborhood(
   reset()
 
   override protected def exploreNeighborhood(exploration: Exploration[OnePointMoveMove]): Unit = {
-    val seqValue = vrp.routes.defineCurrentValueAsCheckpoint()
+    val seqValue = vrs.routes.defineCurrentValueAsCheckpoint()
 
     // Activate hot restart if needed
     val iterationScheme =
@@ -111,7 +111,7 @@ class OnePointMoveNeighborhood(
 
     for (nodeToMove <- nodesToMoveIterator) {
 
-      if (!vrp.isDepot(nodeToMove)) { // Depots cannot be moved at all
+      if (!vrs.isDepot(nodeToMove)) { // Depots cannot be moved at all
         seqValue.explorerAtAnyOccurrence(nodeToMove) match {
           case None => throw new Error("Try to move a node which is not routed")
           case Some(valueToMoveExplorer) =>
@@ -125,7 +125,7 @@ class OnePointMoveNeighborhood(
               afterPointExplorer match {
                 case None => throw new Error("Try to move a value outside the sequence")
                 case Some(destinationExplorer) =>
-                  vrp.routes.move(
+                  vrs.routes.move(
                     valueToMoveExplorer,
                     valueToMoveExplorer,
                     destinationExplorer,
@@ -135,7 +135,7 @@ class OnePointMoveNeighborhood(
 
                   exploration.checkNeighborWP(objValue =>
                     OnePointMoveMove(
-                      vrp.routes,
+                      vrs.routes,
                       valueToMoveExplorer,
                       destinationExplorer,
                       objValue,
@@ -143,7 +143,7 @@ class OnePointMoveNeighborhood(
                     )
                   ) // Check if the move is improving
 
-                  vrp.routes.rollbackToTopCheckpoint(Some(seqValue)) // Cancels the move
+                  vrs.routes.rollbackToTopCheckpoint(Some(seqValue)) // Cancels the move
 
                   if (exploration.toReturn != NoMoveFound) {
                     stopDestination()
@@ -155,7 +155,7 @@ class OnePointMoveNeighborhood(
       }
 
     }
-    vrp.routes.releaseTopCheckpoint()
+    vrs.routes.releaseTopCheckpoint()
     if (nodesToMoveIterator.hasUnboundedNext) pivot = nodesToMoveIterator.unboundedNext()
     else reset() // We tried all the values. The exploration stops and we can reset the pivot
   }

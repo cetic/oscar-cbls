@@ -4,7 +4,7 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.{Minimize, Objective}
 import oscar.cbls.core.computation.set.SetVariable
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 
 import scala.collection.mutable
 
@@ -105,29 +105,22 @@ class Model(val name: String, debugLevel: Int = 0) {
   def booleanVar(initialValue: Long, name: String = ""): IntVariable =
     intVar(initialValue, 0, 1, name)
 
-  private var currentVrp: Option[VRP] = None
-
-  /** Returns the [[VRP]] associated to this model if it is defined, and [[scala.None]] otherwise.
-    */
-  def vrp: Option[VRP] = currentVrp
-
-  /** Initializes a [[VRP]] with `n` nodes and `v` vehicles for this model.
+  /** Adds a vehicle routing structure [[VRS]] with `n` nodes and `v` vehicles for this model.
+    *
     * @param n
-    *   number of nodes in the VRP
+    *   number of nodes in the VRS
     * @param v
-    *   number of vehicles in the VRP
+    *   number of vehicles in the VRS
     * @param maxPivotPerValuePercent
-    *   maximum number of pivots in the sequence variable underlying the VRP, affecting
+    *   maximum number of pivots in the sequence variable underlying the VRS, affecting
     *   regularization when checkpoints are defined
     * @param debug
     *   whether debug mode is activated or not
     * @return
-    *   a handle to the [[VRP]] just defined
+    *   a handle to the [[VRS]] just defined
     */
-  def setVrp(n: Int, v: Int, maxPivotPerValuePercent: Int = 4, debug: Boolean = false): VRP = {
-    require(currentVrp.isEmpty, "VRP already defined for this model")
-    currentVrp = Some(VRP(store, n, v, maxPivotPerValuePercent, debug))
-    currentVrp.get
+  def vrs(n: Int, v: Int, maxPivotPerValuePercent: Int = 4, debug: Boolean = false): VRS = {
+    VRS(store, n, v, maxPivotPerValuePercent, debug)
   }
 
   /** Defines the objective to be the minimization of the given variable.

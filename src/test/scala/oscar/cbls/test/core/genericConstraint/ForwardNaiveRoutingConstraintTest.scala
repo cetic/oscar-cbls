@@ -19,26 +19,26 @@ import oscar.cbls.algo.sequence.IntSequence
 import oscar.cbls.core.computation.{Store, Variable}
 import oscar.cbls.core.computation.genericConstraint.ForwardNaiveRoutingConstraint
 import oscar.cbls.core.computation.integer.IntVariable
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
 
 class ForwardNaiveRoutingConstraintTest extends AnyFunSuite with Matchers {
 
   private object NaiveForwardNbEdges {
-    def apply(vrp: VRP): NaiveForwardNbEdges = {
-      val output = Array.fill(vrp.n)(IntVariable(vrp.model, 0L))
-      new NaiveForwardNbEdges(vrp, output)
+    def apply(vrs: VRS): NaiveForwardNbEdges = {
+      val output = Array.fill(vrs.n)(IntVariable(vrs.store, 0L))
+      new NaiveForwardNbEdges(vrs, output)
     }
   }
 
   /** Invariant that maintains the number of traveled edges in a route. For a vehicle node, it
     * returns the number of edges through the total route.
     */
-  private class NaiveForwardNbEdges(vrp: VRP, output: Array[IntVariable])
+  private class NaiveForwardNbEdges(vrs: VRS, output: Array[IntVariable])
       extends ForwardNaiveRoutingConstraint[Long](
-        vrp,
+        vrs,
         Int.MaxValue.toLong,
-        Array.fill(vrp.v)(0L),
+        Array.fill(vrs.v)(0L),
         (_: Int, _: Int, fromV: Long) => fromV + 1,
         Some("NaiveForwardNbEdges")
       ) {
@@ -54,13 +54,13 @@ class ForwardNaiveRoutingConstraintTest extends AnyFunSuite with Matchers {
 
   test("ForwardNaiveRoutingConstraint: initialization works as expected ") {
     val model = new Store(debugLevel = 3)
-    val vrp   = VRP(model, 10, 2)
-    val inv   = NaiveForwardNbEdges(vrp)
+    val vrs   = VRS(model, 10, 2)
+    val inv   = NaiveForwardNbEdges(vrs)
     model.close()
 
-    for (i <- vrp.vehicles) inv(i).value() must be(0L)
+    for (i <- vrs.vehicles) inv(i).value() must be(0L)
 
-    for (i <- vrp.customers) {
+    for (i <- vrs.customers) {
       withClue(s"Failure for Node $i\n") {
         inv(i).value() must be(Int.MaxValue)
       }
@@ -69,11 +69,11 @@ class ForwardNaiveRoutingConstraintTest extends AnyFunSuite with Matchers {
 
   test("ForwardNaiveRoutingConstraint: assign works as expected") {
     val model = new Store(debugLevel = 3)
-    val vrp   = VRP(model, 15, 2)
-    val inv   = NaiveForwardNbEdges(vrp)
+    val vrs   = VRS(model, 15, 2)
+    val inv   = NaiveForwardNbEdges(vrs)
     model.close()
 
-    vrp.routes := IntSequence(List.from(0 until 10 by 2) ::: List.from(1 until 10 by 2))
+    vrs.routes := IntSequence(List.from(0 until 10 by 2) ::: List.from(1 until 10 by 2))
     model.propagate()
 
     val outputVal = inv().map(x => x.value())
@@ -91,10 +91,10 @@ class ForwardNaiveRoutingConstraintTest extends AnyFunSuite with Matchers {
     val v = 5
 
     def createInv(model: Store): TestBenchSut = {
-      val vrp                     = VRP(model, n, v)
-      val inv                     = NaiveForwardNbEdges(vrp)
+      val vrs                     = VRS(model, n, v)
+      val inv                     = NaiveForwardNbEdges(vrs)
       val output: Array[Variable] = Array.from(inv())
-      TestBenchSut(inv, Array(vrp.routes), output, Some(vrp))
+      TestBenchSut(inv, Array(vrs.routes), output, Some(vrs))
     }
 
     val bench = InvTestBench(createInv, "ForwardNaiveRoutingConstraint test bench")

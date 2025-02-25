@@ -5,15 +5,15 @@ import oscar.cbls.lib.neighborhoods.routing.{
   InsertPointNeighborhoodUnroutedFirst,
   OnePointMoveNeighborhood
 }
-import oscar.cbls.modeling.Model
+import oscar.cbls.modeling.routing.VRS
 
 /** This trait collects methods used to define search neighborhoods for a search procedure over a
-  * model set for a vehicle routing problem.
+  * vehicle routing structure.
   */
 trait Routing {
 
   /** Constructs a [[oscar.cbls.lib.neighborhoods.routing.InsertPointNeighborhoodUnroutedFirst]]
-    * neighborhood over a model with a defined VRP.
+    * neighborhood over a vehicle routing structure.
     *
     * @param nodesToInsert
     *   The nodes this neighborhood will try to insert.
@@ -32,8 +32,8 @@ trait Routing {
     *   `Int.MinValue` are always considered. If set to None, this feature is not used
     * @param hotRestart
     *   Whether this neighborhood uses of a [[oscar.cbls.algo.search.HotRestart]] mechanism.
-    * @param model
-    *   Underlying model, which must be set as a VRP.
+    * @param vrs
+    *   The vehicle routing structure on which this neighborhood is defined.
     * @return
     *   An instance of an
     *   [[oscar.cbls.lib.neighborhoods.routing.InsertPointNeighborhoodUnroutedFirst]].
@@ -46,10 +46,9 @@ trait Routing {
     selectInsertionAfterPointBehavior: LoopBehavior = LoopBehavior.first(),
     nodesSymmetryClass: Option[Int => Int] = None,
     hotRestart: Boolean = true
-  )(implicit model: Model): InsertPointNeighborhoodUnroutedFirst = {
-    require(model.vrp.isDefined, "VRP not defined for this model")
+  )(implicit vrs: VRS): InsertPointNeighborhoodUnroutedFirst = {
     InsertPointNeighborhoodUnroutedFirst(
-      model.vrp.get,
+      vrs,
       nodesToInsert,
       relevantInsertAfterNodes,
       name,
@@ -60,8 +59,8 @@ trait Routing {
     )
   }
 
-  /** Constructs a [[oscar.cbls.lib.neighborhoods.routing.OnePointMoveNeighborhood]] over a model
-    * with a defined VRP.
+  /** Constructs a [[oscar.cbls.lib.neighborhoods.routing.OnePointMoveNeighborhood]] over a vehicle
+    * routing structure.
     *
     * @param nodesToMove
     *   The nodes this neighborhood can move.
@@ -76,8 +75,8 @@ trait Routing {
     *   How to iterate over the destination points.
     * @param hotRestart
     *   Whether this neighborhood uses of a [[oscar.cbls.algo.search.HotRestart]] mechanism.
-    * @param model
-    *   Underlying model, which must be set as a VRP.
+    * @param vrs
+    *   The vehicle routing structure on which this array is computed.
     * @return
     *   An instance of a [[oscar.cbls.lib.neighborhoods.routing.OnePointMoveNeighborhood]].
     */
@@ -88,10 +87,9 @@ trait Routing {
     selectNodeToMoveBehavior: LoopBehavior = LoopBehavior.first(),
     selectDestinationBehavior: LoopBehavior = LoopBehavior.first(),
     hotRestart: Boolean = true
-  )(implicit model: Model): OnePointMoveNeighborhood = {
-    require(model.vrp.isDefined, "VRP not defined for this model")
+  )(implicit vrs: VRS): OnePointMoveNeighborhood = {
     OnePointMoveNeighborhood(
-      model.vrp.get,
+      vrs,
       nodesToMove,
       relevantDestinationNodes,
       name,

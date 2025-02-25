@@ -16,7 +16,7 @@ package oscar.cbls.test.invBench
 import org.scalatest.funsuite.AnyFunSuite
 import oscar.cbls.core.computation.seq.{SeqNotificationTarget, SeqUpdate, SeqVariable}
 import oscar.cbls.core.computation.{Invariant, Store, Variable}
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 
 class RoutingTestBench extends AnyFunSuite {
 
@@ -36,14 +36,14 @@ class RoutingTestBench extends AnyFunSuite {
   }
 
   test("Routing test bench generates only valid moves") {
-    def createVRP(model: Store): TestBenchSut = {
-      val vrp: VRP = VRP(model, 100, 10, debug = true)
-      val inv      = new DummyRoutingInvariant(model, vrp.routes)
+    def createVRS(store: Store): TestBenchSut = {
+      val vrs: VRS = VRS(store, 100, 10, debug = true)
+      val inv      = new DummyRoutingInvariant(store, vrs.routes)
 
-      TestBenchSut(inv, Array(vrp.routes), Array.empty[Variable], Some(vrp))
+      TestBenchSut(inv, Array(vrs.routes), Array.empty[Variable], Some(vrs))
     }
 
-    val bench = InvTestBench(createVRP, "Routing test bench")
+    val bench = InvTestBench(createVRS, "Routing test bench")
     bench.test()
   }
 }

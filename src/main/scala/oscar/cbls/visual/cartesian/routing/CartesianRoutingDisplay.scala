@@ -15,7 +15,7 @@ package oscar.cbls.visual.cartesian.routing
 
 import oscar.cbls.IntVariable
 import oscar.cbls.core.computation.{Solution, Variable}
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 import oscar.cbls.visual.additionalStages.ObjectiveFunctionDisplay
 import oscar.cbls.visual.cartesian.{CartesianLayer, CartesianNode}
 import oscar.cbls.visual.cartesian.routing.layers.{
@@ -30,8 +30,8 @@ object CartesianRoutingDisplay {
 
   /** Generates a CartesianRoutingDisplay.
     *
-    * @param vrp
-    *   The Vehicle Routing Problem
+    * @param vrs
+    *   The vehicle routing structure
     * @param nodesCoordinates
     *   The cartesian coordinates of all nodes of the problem.
     * @param additionalPanes
@@ -45,7 +45,7 @@ object CartesianRoutingDisplay {
     */
   def apply(
     obj: IntVariable,
-    vrp: VRP,
+    vrs: VRS,
     nodesCoordinates: Array[(Long, Long)],
     additionalPanes: List[CartesianLayer] = List.empty,
     width: Int = 1200,
@@ -56,12 +56,12 @@ object CartesianRoutingDisplay {
       "This routing display tool accepts only positive coordinates."
     )
     val cartesianNodes   = CartesianNode(nodesCoordinates)
-    val routingNodePane  = RoutingNodeCartesianLayer(vrp.v, cartesianNodes)
-    val routingRoutePane = RoutingRouteCartesianLayer(vrp.v, cartesianNodes, vrp.routes)
+    val routingNodePane  = RoutingNodeCartesianLayer(vrs.v, cartesianNodes)
+    val routingRoutePane = RoutingRouteCartesianLayer(vrs.v, cartesianNodes, vrs.routes)
     val panes            = additionalPanes ::: List(routingRoutePane, routingNodePane)
     val additionalStages = List(() => ObjectiveFunctionDisplay(obj, System.nanoTime()))
     OscaRDisplay.apply(
-      vrp.model,
+      vrs.store,
       () => new CartesianRoutingDisplay(cartesianNodes, panes, width, height),
       additionalStages = additionalStages
     )

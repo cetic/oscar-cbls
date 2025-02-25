@@ -18,13 +18,13 @@ import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation.objective.Exploration
 import oscar.cbls.core.search.NoMoveFound
 import oscar.cbls.core.search.loop.LoopBehavior
-import oscar.cbls.modeling.routing.{CachedVehicleSearcher, VRP}
+import oscar.cbls.modeling.routing.{CachedVehicleSearcher, VRS}
 
 /** Classical 3-opt neighborhood. This implementation first iterates on insertion points and then
   * searches for segment to move somewhere else in the routes.
   *
-  * @param vrp
-  *   The routing problem to solve.
+  * @param vrs
+  *   The vehicle routing structure on which the neighborhood operates.
   * @param insertionPoints
   *   Returns a set of ''nodes'' after which it is relevant to move a segment.
   * @param startOfMovedSegment
@@ -56,7 +56,7 @@ import oscar.cbls.modeling.routing.{CachedVehicleSearcher, VRP}
   *   Whether to use a [[oscar.cbls.algo.search.HotRestart]] mechanism.
   */
 class ThreeOptInsertionPointFirst(
-  vrp: VRP,
+  vrs: VRS,
   insertionPoints: () => Iterable[Int],
   startOfMovedSegment: Int => Iterable[Int],
   maxLengthOfMovedSegment: Int,
@@ -68,17 +68,17 @@ class ThreeOptInsertionPointFirst(
   skipOnePointMove: Boolean,
   breakSymmetry: Boolean,
   hotRestart: Boolean
-) extends ThreeOpt(vrp, maxLengthOfMovedSegment, name, skipOnePointMove) {
+) extends ThreeOpt(vrs, maxLengthOfMovedSegment, name, skipOnePointMove) {
 
   private[this] var pivot: Int = 0
   reset()
 
   override protected def exploreNeighborhood(exploration: Exploration[ThreeOptMove]): Unit = {
-    val seqValue: IntSequence = vrp.routes.defineCurrentValueAsCheckpoint()
+    val seqValue: IntSequence = vrs.routes.defineCurrentValueAsCheckpoint()
 
     // Creates a vehicle searcher at the checkpoint. Only needed if we break symmetries
     val vehicleSearcher: Option[CachedVehicleSearcher] =
-      if (breakSymmetry) Some(CachedVehicleSearcher(seqValue, vrp.v))
+      if (breakSymmetry) Some(CachedVehicleSearcher(seqValue, vrs.v))
       else None
 
     // Activates hot restart if needed
@@ -144,13 +144,13 @@ class ThreeOptInsertionPointFirst(
               ) { // Skips this if we break symmetry, we move the segment on the
                 // left in the same vehicle without flipping it.
 
-                vrp.routes.move(startSegExp.get, endSegExp, insertPointExp.get, flip)
+                vrs.routes.move(startSegExp.get, endSegExp, insertPointExp.get, flip)
                 searchProfiler().foreach(x => x.neighborSelected())
 
                 // Checks if the move is improving
                 exploration.checkNeighborWP(objValue =>
                   ThreeOptMove(
-                    vrp.routes,
+                    vrs.routes,
                     startSegExp.get,
                     endSegExp,
                     insertPointExp.get,
@@ -160,7 +160,7 @@ class ThreeOptInsertionPointFirst(
                   )
                 )
 
-                vrp.routes.rollbackToTopCheckpoint(Some(seqValue)) // Cancels the move
+                vrs.routes.rollbackToTopCheckpoint(Some(seqValue)) // Cancels the move
 
                 if (exploration.toReturn != NoMoveFound) {
                   stopFlip()
@@ -175,7 +175,7 @@ class ThreeOptInsertionPointFirst(
       }
     }
 
-    vrp.routes.releaseTopCheckpoint()
+    vrs.routes.releaseTopCheckpoint()
     if (insertPointsIterator.hasUnboundedNext) pivot = insertPointsIterator.unboundedNext()
     else reset() // We tried all the values. The exploration stops and we can reset the pivot.
   }

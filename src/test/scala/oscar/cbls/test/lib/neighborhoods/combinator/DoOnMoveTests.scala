@@ -22,7 +22,7 @@ import oscar.cbls.core.search.Move
 import oscar.cbls.lib.invariant.routing.TotalRouteLength
 import oscar.cbls.lib.neighborhoods.combinator.DoOnMove
 import oscar.cbls.lib.neighborhoods.routing.TwoOpt
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 
 class DoOnMoveTests extends AnyFunSuite with Matchers {
 
@@ -50,40 +50,40 @@ class DoOnMoveTests extends AnyFunSuite with Matchers {
 
   test("DoOnMove works as expected") {
     val model  = new Store()
-    val vrp    = VRP(model, 10, 2, debug = true)
-    val output = TotalRouteLength(vrp, distMatrix).routeLength
+    val vrs    = VRS(model, 10, 2, debug = true)
+    val output = TotalRouteLength(vrs, distMatrix).routeLength
     val obj    = Minimize(output)
     model.close()
-    vrp.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
+    vrs.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
     model.propagate()
 
-    val routedNodeExceptVehicle = vrp.routedWithoutVehicles.pendingValue
+    val routedNodeExceptVehicle = vrs.routedWithoutVehicles.pendingValue
 
     val relevantStartSegment = () => routedNodeExceptVehicle
 
-    var seqBefore: IntSequence = vrp.routes.pendingValue
+    var seqBefore: IntSequence = vrs.routes.pendingValue
     var seqNoMove: IntSequence = null
 
     val procBeforeMove = (_: Move) => {
       require(
-        seqBefore.equals(vrp.routes.pendingValue),
-        s"Seq before move $seqBefore is not the same as routes.pending value ${vrp.routes.pendingValue}"
+        seqBefore.equals(vrs.routes.pendingValue),
+        s"Seq before move $seqBefore is not the same as routes.pending value ${vrs.routes.pendingValue}"
       )
       require(
         seqNoMove == null,
         s"Seq no move found $seqNoMove should not have a value until the end of the search."
       )
     }
-    val procAfterMove = (_: Move) => seqBefore = vrp.routes.pendingValue
-    val procNoMove    = () => seqNoMove = vrp.routes.pendingValue
+    val procAfterMove = (_: Move) => seqBefore = vrs.routes.pendingValue
+    val procNoMove    = () => seqNoMove = vrs.routes.pendingValue
 
-    val twoOpt = TwoOpt(vrp, relevantStartSegment)
+    val twoOpt = TwoOpt(vrs, relevantStartSegment)
     val search = DoOnMove(twoOpt, procBeforeMove, procAfterMove, procNoMove)
 
     noException mustBe thrownBy(search.doAllMoves(obj))
     require(
-      seqNoMove == vrp.routes.pendingValue,
-      s"Seq no move found $seqNoMove should have latest routes pending value ${vrp.routes.pendingValue}"
+      seqNoMove == vrs.routes.pendingValue,
+      s"Seq no move found $seqNoMove should have latest routes pending value ${vrs.routes.pendingValue}"
     )
   }
 }

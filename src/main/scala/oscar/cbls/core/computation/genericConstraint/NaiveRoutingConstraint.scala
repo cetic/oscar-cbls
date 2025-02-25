@@ -17,7 +17,7 @@ import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation.Invariant
 import oscar.cbls.core.computation.genericConstraint.segment._
 import oscar.cbls.core.computation.seq._
-import oscar.cbls.modeling.routing.{StackedVehicleSearcher, VRP}
+import oscar.cbls.modeling.routing.{StackedVehicleSearcher, VRS}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.HashSet
@@ -39,8 +39,8 @@ import scala.collection.immutable.HashSet
   * be travelled forward (see [[ForwardNaiveRoutingConstraint]]) or backward (see
   * [[BackwardNaiveRoutingConstraint]]).
   *
-  * @param vrp
-  *   The object that represents the Vehicle Routing Problem.
+  * @param vrs
+  *   The object that represents the vehicle routing structure.
   * @param defaultValueForUnroutedNodes
   *   The default value associated to unrouted nodes.
   * @param initValuePerVehicle
@@ -57,24 +57,24 @@ import scala.collection.immutable.HashSet
   *   `RouteLength` (the total distance).
   */
 abstract class NaiveRoutingConstraint[U: Manifest](
-  vrp: VRP,
+  vrs: VRS,
   defaultValueForUnroutedNodes: U,
   initValuePerVehicle: Array[U],
   fun: (Int, Int, U) => U,
   name: Option[String]
-) extends Invariant(vrp.model, name)
+) extends Invariant(vrs.store, name)
     with SeqNotificationTarget {
 
-  vrp.routes.registerStaticallyAndDynamicallyListeningElement(this)
+  vrs.routes.registerStaticallyAndDynamicallyListeningElement(this)
 
   /** The current value of each node. */
-  private[this] val valueOfNodes: Array[U] = Array.tabulate(vrp.n)(i => {
-    if (i < vrp.v) initValuePerVehicle(i)
+  private[this] val valueOfNodes: Array[U] = Array.tabulate(vrs.n)(i => {
+    if (i < vrs.v) initValuePerVehicle(i)
     else defaultValueForUnroutedNodes
   })
 
   private[this] var vehicleSearcher: StackedVehicleSearcher =
-    StackedVehicleSearcher(vrp.routes.value(), vrp.v)
+    StackedVehicleSearcher(vrs.routes.value(), vrs.v)
 
   /** This variable holds all the vehicles that have their routes during the notification digestion.
     */
@@ -83,14 +83,14 @@ abstract class NaiveRoutingConstraint[U: Manifest](
   /** The updated list of Segments which defines the precomputation that can used. Here the vehicle
     * nodes are not included in the segments.
     */
-  private[this] val segmentsOfVehicle: Array[VehicleSegments] = new Array[VehicleSegments](vrp.v)
+  private[this] val segmentsOfVehicle: Array[VehicleSegments] = new Array[VehicleSegments](vrs.v)
 
   // Initializes the output values for routed nodes
-  for (vehicle <- vrp.vehicles)
-    updateValueOfVehicleNodesFromScratch(vehicle, vrp.routes.value())
+  for (vehicle <- vrs.vehicles)
+    updateValueOfVehicleNodesFromScratch(vehicle, vrs.routes.value())
 
   // Initializes the output values for unrouted nodes
-  for (node <- vrp.nodes) {
+  for (node <- vrs.nodes) {
     if (valueOfNodes(node) == defaultValueForUnroutedNodes)
       updateValueOfNode(node, defaultValueForUnroutedNodes)
   }
@@ -145,7 +145,7 @@ abstract class NaiveRoutingConstraint[U: Manifest](
       for (vehicle <- changedVehiclesSinceLastNotified)
         updateValuesOfVehicleNodes(vehicle, seqVariable.pendingValue)
     } else {
-      for (vehicle <- vrp.vehicles)
+      for (vehicle <- vrs.vehicles)
         updateValueOfVehicleNodesFromScratch(vehicle, seqVariable.pendingValue)
     }
   }
@@ -155,16 +155,16 @@ abstract class NaiveRoutingConstraint[U: Manifest](
     val incremental = valueOfNodes.clone()
 
     // Recompute all the values from scratch
-    for (vehicle <- vrp.vehicles)
-      updateValueOfVehicleNodesFromScratch(vehicle, vrp.routes.pendingValue)
+    for (vehicle <- vrs.vehicles)
+      updateValueOfVehicleNodesFromScratch(vehicle, vrs.routes.pendingValue)
 
-    for (node <- vrp.nodes) {
+    for (node <- vrs.nodes) {
       require(
         valueOfNodes(node) == incremental(node),
         s"""Constraint ${this.getClass.getName} failed for node $node.
            |From scratch: ${valueOfNodes(node)}
            |Incremental: ${incremental(node)}
-           |Sequence: ${vrp.routes.pendingValue}
+           |Sequence: ${vrs.routes.pendingValue}
            |""".stripMargin
       )
     }
@@ -314,7 +314,7 @@ abstract class NaiveRoutingConstraint[U: Manifest](
     val posOfVehicle = vehicleSearcher.startPosOfVehicle(vehicle)
 
     val (lastNodeOfVehicle, lastNodePos): (Int, Int) = {
-      if (vehicle < vrp.v - 1) {
+      if (vehicle < vrs.v - 1) {
         val lastPos: Int  = vehicleSearcher.startPosOfVehicle(vehicle + 1) - 1
         val lastNode: Int = routes.valueAtPosition(lastPos).get
         (lastNode, lastPos)
@@ -335,7 +335,7 @@ abstract class NaiveRoutingConstraint[U: Manifest](
       } else List.empty
     }
 
-    segmentsOfVehicle(vehicle) = VehicleSegments(segList, vrp.v)
+    segmentsOfVehicle(vehicle) = VehicleSegments(segList, vrs.v)
   }
 
   /** Initialize the segments for each vehicle and compute from scratch the value of each node.
@@ -366,7 +366,7 @@ abstract class NaiveRoutingConstraint[U: Manifest](
   private[this] def digestUpdates(changes: SeqUpdate): Boolean = {
     changes match {
       case SeqUpdateAssign(newSeq: IntSequence) =>
-        vehicleSearcher = StackedVehicleSearcher(newSeq, vrp.v)
+        vehicleSearcher = StackedVehicleSearcher(newSeq, vrs.v)
         false
 
       case SeqUpdateLastNotified(sequence: IntSequence) =>

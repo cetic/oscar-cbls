@@ -13,7 +13,7 @@
 
 package oscar.cbls.lib.invariant.routing.capacityConstraint
 
-import oscar.cbls.{IntVariable, VRP}
+import oscar.cbls.{IntVariable, VRS}
 import oscar.cbls.algo.sequence.{IntSequence, RootIntSequenceExplorer}
 import oscar.cbls.core.computation.genericConstraint.LogReducedGlobalConstraint
 import oscar.cbls.core.computation.genericConstraint.logReducedSegment._
@@ -46,8 +46,8 @@ object GlobalCapacityConstraintWithLogReduction {
     *   - At some point the content of the vehicle is negative.
     *   - At some point the content of the vehicle exceed the maximal capacity of the vehicle.
     *
-    * @param vrp
-    *   The object that represents the Vehicle Routing Problem.
+    * @param vrs
+    *   The object that represents the vehicle routing structure.
     * @param vehiclesCapacity
     *   The maximal capacity of each vehicle.
     * @param contentVariationAtNode
@@ -58,16 +58,16 @@ object GlobalCapacityConstraintWithLogReduction {
     *   The (optional) name of the Invariant.
     */
   def apply(
-    vrp: VRP,
+    vrs: VRS,
     vehiclesCapacity: Array[Long],
     contentVariationAtNode: Array[Long],
     contentVariationBackAtDepot: Option[Array[Long]] = None,
     name: Option[String] = None
   ): GlobalCapacityConstraintWithLogReduction = {
-    val _contentVariationBackAtDepot = contentVariationBackAtDepot.getOrElse(Array.fill(vrp.v)(0L))
-    val violationPerVehicle          = Array.fill(vrp.v)(IntVariable(vrp.model, 0))
+    val _contentVariationBackAtDepot = contentVariationBackAtDepot.getOrElse(Array.fill(vrs.v)(0L))
+    val violationPerVehicle          = Array.fill(vrs.v)(IntVariable(vrs.store, 0))
     new GlobalCapacityConstraintWithLogReduction(
-      vrp,
+      vrs,
       vehiclesCapacity,
       contentVariationAtNode,
       violationPerVehicle,
@@ -99,8 +99,8 @@ object GlobalCapacityConstraintWithLogReduction {
   *   - At some point the content of the vehicle is negative.
   *   - At some point the content of the vehicle exceed the maximal capacity of the vehicle.
   *
-  * @param vrp
-  *   The object that represents the Vehicle Routing Problem.
+  * @param vrs
+  *   The object that represents the vehicle routing structure.
   * @param vehiclesCapacity
   *   The maximal capacity of each vehicle.
   * @param contentVariationAtNode
@@ -113,17 +113,17 @@ object GlobalCapacityConstraintWithLogReduction {
   *   The (optional) name of the Invariant.
   */
 class GlobalCapacityConstraintWithLogReduction(
-  vrp: VRP,
+  vrs: VRS,
   vehiclesCapacity: Array[Long],
   contentVariationAtNode: Array[Long],
   violationPerVehicle: Array[IntVariable],
   contentVariationBackAtDepot: Array[Long],
   name: Option[String]
-) extends LogReducedGlobalConstraint[BidirectionalVehicleContentTF, Boolean](vrp, name) {
+) extends LogReducedGlobalConstraint[BidirectionalVehicleContentTF, Boolean](vrs, name) {
 
   require(!vehiclesCapacity.exists(x => x < 0), "Vehicle capacity can not be negative.")
   require(
-    !contentVariationAtNode.take(vrp.v).exists(x => x < 0),
+    !contentVariationAtNode.take(vrs.v).exists(x => x < 0),
     "Vehicle can not start with a negative content."
   )
 
@@ -131,7 +131,7 @@ class GlobalCapacityConstraintWithLogReduction(
 
   // The TF of each individual node.
   private val contentTFAtNode: Array[BidirectionalVehicleContentTF] =
-    Array.tabulate(vrp.n)(node =>
+    Array.tabulate(vrs.n)(node =>
       BidirectionalVehicleContentTF(
         UnidirectionalContentTF(node, contentVariationAtNode(node)),
         UnidirectionalContentTF(node, contentVariationAtNode(node))
@@ -141,7 +141,7 @@ class GlobalCapacityConstraintWithLogReduction(
   // For the vehicle return value we consider that by default nothing is loaded/unloaded at the depot
   // (it's a fictive node)
   private val contentTFForVehicleReturn: Array[BidirectionalVehicleContentTF] =
-    Array.tabulate(vrp.v)(vehicle =>
+    Array.tabulate(vrs.v)(vehicle =>
       BidirectionalVehicleContentTF(
         UnidirectionalContentTF(vehicle, contentVariationBackAtDepot(vehicle)),
         UnidirectionalContentTF(vehicle, contentVariationBackAtDepot(vehicle))
@@ -149,9 +149,10 @@ class GlobalCapacityConstraintWithLogReduction(
     )
 
   /** Returns the violation variable of each vehicle.
-   *
-   * @return the violation variable of each vehicle.
-   */
+    *
+    * @return
+    *   the violation variable of each vehicle.
+    */
   def apply(): Array[IntVariable] = violationPerVehicle
 
   /** Returns the violation variable of the specified vehicle.
@@ -275,11 +276,11 @@ class GlobalCapacityConstraintWithLogReduction(
     while (continue) {
       explorer match {
         case explorer: RootIntSequenceExplorer =>
-          if (explorer.prev.value < vrp.v) return false // => empty route
+          if (explorer.prev.value < vrs.v) return false // => empty route
           else continue = false
         case _ =>
-          if (explorer.value < vrp.v) {
-            if (explorer.prev.value < vrp.v) return false // => empty route
+          if (explorer.value < vrs.v) {
+            if (explorer.prev.value < vrs.v) return false // => empty route
             else continue = false
           } else {
             currentContent += contentVariationAtNode(explorer.value)

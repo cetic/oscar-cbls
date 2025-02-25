@@ -24,7 +24,7 @@ import oscar.cbls.core.computation.{Invariant, Store}
 import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.lib.invariant.set.Diff
 import oscar.cbls.lib.neighborhoods.routing.RemovePointNeighborhood
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 import oscar.cbls.test.lib.neighborhoods.ToolsForTestingNeighborhood.generateRandomValidRoute
 
 import scala.annotation.tailrec
@@ -91,134 +91,133 @@ class RemovePointNeighborhoodTestSuite extends AnyFunSuite with Matchers {
 
   test("RemovePoint works as expected on a simple example") {
     val model  = new Store()
-    val vrp    = VRP(model, 1000, 100, debug = true)
+    val vrs    = VRS(model, 1000, 100, debug = true)
     val output = IntVariable(model, 0L)
     val obj    = Minimize(output)
-    val _      = new SumSeqInv(model, vrp.routes, output)
+    val _      = new SumSeqInv(model, vrs.routes, output)
     model.close()
 
     val seed = Random.nextLong()
     val rng  = new Random(seed)
 
-    vrp.routes := generateRandomValidRoute(vrp.n, vrp.v, rng)
+    vrs.routes := generateRandomValidRoute(vrs.n, vrs.v, rng)
     model.propagate()
 
-    val relevantRemove: () => Iterable[Int] = () => vrp.routedWithoutVehicles.pendingValue
+    val relevantRemove: () => Iterable[Int] = () => vrs.routedWithoutVehicles.pendingValue
 
-    val search = RemovePointNeighborhood(vrp, relevantRemove)
+    val search = RemovePointNeighborhood(vrs, relevantRemove)
 
     withClue(s"Working with seed $seed\n") {
       noException mustBe thrownBy(search.doAllMoves(obj))
-      obj.objValue.value() must be((1 until vrp.v).sum)
-      vrp.routes.value().toList must contain theSameElementsAs (0 until vrp.v)
+      obj.objValue.value() must be((1 until vrs.v).sum)
+      vrs.routes.value().toList must contain theSameElementsAs (0 until vrs.v)
     }
   }
 
   ignore("RemovePoint verbose mode") {
     val model  = new Store()
-    val vrp    = VRP(model, 20, 5, debug = true)
+    val vrs    = VRS(model, 20, 5, debug = true)
     val output = IntVariable(model, 0L)
     val obj    = Minimize(output)
     // By summing only even number we can see the effect of hot restart
-    val _            = new SumSeqInv(model, vrp.routes, output)
+    val _            = new SumSeqInv(model, vrs.routes, output)
     val canBeRemoved = SetVariable(model, Set.empty)
     val _ =
-      Diff(model, vrp.routedWithVehicles, SetConstant(model, Set.from(0 until vrp.v)), canBeRemoved)
+      Diff(model, vrs.routedWithVehicles, SetConstant(model, Set.from(0 until vrs.v)), canBeRemoved)
     model.close()
 
     val seed = Random.nextLong()
     val rng  = new Random(seed)
 
-    vrp.routes := generateRandomValidRoute(vrp.n, vrp.v, rng)
+    vrs.routes := generateRandomValidRoute(vrs.n, vrs.v, rng)
     model.propagate()
 
     val relevantRemove: () => Iterable[Int] = () => canBeRemoved.pendingValue
 
     val search = RemovePointNeighborhood(
-      vrp,
+      vrs,
       relevantRemove,
       selectNodesToRemoveBehavior = LoopBehavior.first(),
       hotRestart = false
     )
     search.verbosityLevel = 4
 
-    println(s"Routes before search $vrp")
+    println(s"Routes before search $vrs")
     withClue(s"Working with seed $seed\n") {
       noException mustBe thrownBy(search.doAllMoves(obj))
     }
     search.displayProfiling()
-    println(s"Routes after search $vrp")
+    println(s"Routes after search $vrs")
   }
 
   ignore("RemovePoint with hot restart") {
     val model  = new Store()
-    val vrp    = VRP(model, 20, 5, debug = true)
+    val vrs    = VRS(model, 20, 5, debug = true)
     val output = IntVariable(model, 0L)
     val obj    = Minimize(output)
     // By summing only even number we can see the effect of hot restart
-    val _            = new SumSeqInv(model, vrp.routes, output, _ % 2 == 0)
+    val _            = new SumSeqInv(model, vrs.routes, output, _ % 2 == 0)
     val canBeRemoved = SetVariable(model, Set.empty)
     val _ =
-      Diff(model, vrp.routedWithVehicles, SetConstant(model, Set.from(0 until vrp.v)), canBeRemoved)
+      Diff(model, vrs.routedWithVehicles, SetConstant(model, Set.from(0 until vrs.v)), canBeRemoved)
     model.close()
 
     val seed = Random.nextLong()
     val rng  = new Random(seed)
 
-    vrp.routes := generateRandomValidRoute(vrp.n, vrp.v, rng)
+    vrs.routes := generateRandomValidRoute(vrs.n, vrs.v, rng)
     model.propagate()
 
     val relevantRemove: () => Iterable[Int] = () => canBeRemoved.pendingValue
 
     val search = RemovePointNeighborhood(
-      vrp,
+      vrs,
       relevantRemove,
-      selectNodesToRemoveBehavior = LoopBehavior.first(),
-      hotRestart = true
+      selectNodesToRemoveBehavior = LoopBehavior.first()
     )
     search.verbosityLevel = 4
 
-    println(s"Routes before search $vrp")
+    println(s"Routes before search $vrs")
     withClue(s"Working with seed $seed\n") {
       noException mustBe thrownBy(search.doAllMoves(obj))
     }
     search.displayProfiling()
-    println(s"Routes after search $vrp")
+    println(s"Routes after search $vrs")
   }
 
   ignore("RemovePoint with symmetry class") {
     val model        = new Store()
-    val vrp          = VRP(model, 20, 5, debug = true)
+    val vrs          = VRS(model, 20, 5, debug = true)
     val output       = IntVariable(model, 0L)
     val obj          = Minimize(output)
-    val _            = new SumSeqInv(model, vrp.routes, output)
+    val _            = new SumSeqInv(model, vrs.routes, output)
     val canBeRemoved = SetVariable(model, Set.empty)
     val _ =
-      Diff(model, vrp.routedWithVehicles, SetConstant(model, Set.from(0 until vrp.v)), canBeRemoved)
+      Diff(model, vrs.routedWithVehicles, SetConstant(model, Set.from(0 until vrs.v)), canBeRemoved)
     model.close()
 
     val seed = Random.nextLong()
     val rng  = new Random(seed)
 
-    vrp.routes := generateRandomValidRoute(vrp.n, vrp.v, rng)
+    vrs.routes := generateRandomValidRoute(vrs.n, vrs.v, rng)
     model.propagate()
 
     val relevantRemove: () => Iterable[Int] = () => canBeRemoved.pendingValue
 
     val search = RemovePointNeighborhood(
-      vrp,
+      vrs,
       relevantRemove,
       selectNodesToRemoveBehavior = LoopBehavior.best(),
       nodesToRemoveSymmetryClass = Some(x => x % 2)
     )
     search.verbosityLevel = 4
 
-    println(s"Routes before search $vrp")
+    println(s"Routes before search $vrs")
     withClue(s"Working with seed $seed\n") {
       noException mustBe thrownBy(search.doAllMoves(obj))
     }
     search.displayProfiling()
-    println(s"Routes after search $vrp")
+    println(s"Routes after search $vrs")
   }
 
 }
