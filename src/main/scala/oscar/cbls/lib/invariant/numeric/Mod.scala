@@ -43,12 +43,24 @@ object Mod {
   ): Mod = {
     new Mod(model, a, b, output, name)
   }
+
+  /** Static method to obtain an IntVariable that is the result of `a mod b`.
+    *
+    * @param a
+    *   The left side operant.
+    * @param b
+    *   The right side operant.
+    */
+  def result(a: IntVariable, b: IntVariable, name: Option[String] = None): IntVariable = {
+    val out = IntVariable(a.model, ((a.value() % b.value()) + b.value()) % b.value())
+    Mod(a.model, a, b, out, name)
+    out
+  }
 }
 
-/** Invariant which maintains the remainder of a division (the
-  * modulo) between two [[oscar.cbls.core.computation.integer.IntVariable]]. Warning: the scala
-  * operator `%` is not exactly a modulo operator. For example, `-1 % 3 == -1`, and `2 % 3 == 2`,
-  * but `-1 mod 3 == 2`.
+/** Invariant which maintains the remainder of a division (the modulo) between two
+  * [[oscar.cbls.core.computation.integer.IntVariable]]. Warning: the scala operator `%` is not
+  * exactly a modulo operator. For example, `-1 % 3 == -1`, and `2 % 3 == 2`, but `-1 mod 3 == 2`.
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.

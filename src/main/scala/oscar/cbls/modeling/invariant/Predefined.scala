@@ -21,7 +21,7 @@ trait Predefined {
     *   optional name of the resulting variable
     */
   def sum(input: Array[IntVariable], name: String = "")(implicit m: Model): IntVariable =
-    n.sum(input, name)(m)
+    n.sum(input, name = name)(m)
 
   /** Returns a variable maintaining the sum over the elements of an array such that their indices
     * belong to a given set, i.e., `Sum(input(i) | i in indices)`, where `input` is an array of
@@ -34,11 +34,11 @@ trait Predefined {
     * @param indices
     *   variable maintaining the set of indices of the integers to sum
     * @param name
-    *   optional name of the resulting variable
+    *   optional name of the resulting variable.
     */
-  def partialSum(input: Array[Long], indices: SetVariable, name: String = "")(implicit
+  def partialSumOfConstants(input: Array[Long], indices: SetVariable, name: String = "")(implicit
     m: Model
   ): IntVariable =
-    n.partialSum(input, indices, name)
+    n.partialSumOfConstants(input, indices, name)
 
 }

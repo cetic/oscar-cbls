@@ -107,8 +107,11 @@ class VRP(val model: Store, val n: Int, val v: Int, maxPivotPerValuePercent: Int
   /** The range of nodes (customers and deposits including) of the problem. */
   val nodes: Range = 0 until n
 
-  /** The range vehicle of the problem. */
+  /** The range of vehicles of the problem. */
   val vehicles: Range = 0 until v
+
+  /** The range  of customers of the problem. */
+  val customers: Range = v until n
 
   /** Set which maintains all the routed nodes including the vehicles. */
   val routedWithVehicles: SetVariable =

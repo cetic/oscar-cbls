@@ -40,7 +40,12 @@ lazy val oscarCbls = (project in file("."))
 
 ThisBuild / publishTo := {
   val nexus = "https://nexus.cetic.be/"
-  val repo  = "repository/oscar"
+  val privateRepo  = "repository/oscar"
+  val publicRepo = "repository/oscar-public"
+
+  val isTag = sys.env.get("CI_COMMIT_TAG").isDefined
+
+  val repo = if (isTag) publicRepo else privateRepo
   Some("Nexus" at nexus + repo)
 }
 

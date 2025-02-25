@@ -39,6 +39,14 @@ object Abs {
   ): Abs = {
     new Abs(model, input, output, name)
   }
+
+  /** Static method to obtain an IntVariable that is the result of `|a|`. */
+  def result(a: IntVariable, name: Option[String] = None): IntVariable = {
+    val out = IntVariable(a.model, a.value().abs)
+    Abs(a.model, a, out, name)
+    out
+
+  }
 }
 
 /** Invariant which maintains the absolute value of an

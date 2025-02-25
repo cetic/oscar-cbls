@@ -15,7 +15,7 @@ package oscar.cbls.core.computation.set
 
 import oscar.cbls.core.computation._
 import oscar.cbls.core.computation.integer.IntVariable
-import oscar.cbls.lib.invariant.set.Cardinality
+import oscar.cbls.lib.invariant.set._
 
 import scala.collection.immutable.HashSet
 
@@ -130,6 +130,61 @@ class SetVariable(
   def size(): IntVariable = {
     val output: IntVariable = IntVariable(this.model, this.pendingValue.size)
     Cardinality(this.model, this, output, name)
+    output
+  }
+
+  /** Returns if the given integer variable is included in this set. */
+  def contains(x: IntVariable): IntVariable = {
+    val output = IntVariable(this.model, 0)
+    BelongsTo(this.model, x, this, output)
+    output
+  }
+
+  /** Returns the union of this set with another. */
+  def union(that: SetVariable): SetVariable = {
+    val output = SetVariable(this.model, Set.empty)
+    Union(this.model, this, that, output)
+    output
+  }
+
+  /** Returns the intersection of this set with another. */
+  def intersect(that: SetVariable): SetVariable = {
+    val output = SetVariable(this.model, Set.empty)
+    Inter(this.model, this, that, output)
+    output
+  }
+
+  /** Returns the difference between this set and another. */
+  def diff(that: SetVariable): SetVariable = {
+    val output = SetVariable(this.model, Set.empty)
+    Diff(this.model, this, that, output)
+    output
+  }
+
+  /** Returns a new SetVariable obtained by applying the input function to each element in this set.
+    *
+    * @param fun
+    *   The function to apply to each element.
+    * @return
+    *   A SetVariable maintaining `{fun(x) | x in input}`.
+    */
+  def map(fun: Int => Int): SetVariable = {
+    val output = SetVariable(this.model, Set.empty)
+    SetMap(this.model, this, fun, output)
+    output
+  }
+
+  /** Returns a new SetVariable by applying a function to all elements of this set and using the
+    * elements of the resulting collection.
+    *
+    * @param fun
+    *   The function to apply to each element.
+    * @return
+    *   A Set variable maintaining `{x | it exists v in input such that, x in fun(v)}`.
+    */
+  def flatMap(fun: Int => Set[Int]): SetVariable = {
+    val output = SetVariable(this.model, Set.empty)
+    FlatMap(this.model, this, fun, output)
     output
   }
 

@@ -11,7 +11,7 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.core.computation.globalConstraint.segment
+package oscar.cbls.core.computation.genericConstraint.segment
 
 /** This represents a node that was not in the initial sequence when pre-computation was performed.
   *

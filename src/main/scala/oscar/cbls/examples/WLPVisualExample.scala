@@ -36,14 +36,14 @@ object WLPVisualExample {
     val openFacilities = Inv.logic.filter(facilitiesVariables, name = "Set of open facilities")
 
     val distancesToNearestOpenFacility = Array.tabulate(nbDelivery)(d =>
-      Inv.minMax.min(
+      Inv.minMax.minOfConstants(
         distancesDeliveryWarehouses(d),
         openFacilities,
         name = s"Distance of $d to nearest facility"
       )
     )
     val objExpr =
-      sum(distancesToNearestOpenFacility) + partialSum(
+      sum(distancesToNearestOpenFacility) + partialSumOfConstants(
         costsForOpeningWarehouses,
         indices = openFacilities
       )

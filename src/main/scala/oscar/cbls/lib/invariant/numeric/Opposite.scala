@@ -40,6 +40,13 @@ object Opposite {
   ): Opposite = {
     new Opposite(model, input, output, name)
   }
+
+  /** Static method to obtain an IntVariable that is the result of `-a`. */
+  def result(a: IntVariable, name: Option[String] = None): IntVariable = {
+    val output = IntVariable(a.model, -a.value())
+    Opposite(a.model, a, output, name)
+    output
+  }
 }
 
 /** Invariant which maintains the opposite value of an

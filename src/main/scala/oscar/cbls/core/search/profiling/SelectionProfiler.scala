@@ -52,7 +52,9 @@ class SelectionProfiler(
   def resetSelectionNeighborhoodStatistics(): Unit = {
     nbOccurrencePerIterationNextIteration("NbFirstFailedPerReset")
     _firstFailed = false
-    subProfilersData.map(p => (p._1, (0, 0, 0L, 0L)))
+    subProfilersData.keys.foreach {
+      subProfilersData(_) = new CommonProfilingData()
+    }
   }
 
   /** Returns the number of successful explorations made by the specified Neighborhood for this

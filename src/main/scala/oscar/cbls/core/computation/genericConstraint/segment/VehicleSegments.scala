@@ -11,7 +11,7 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.core.computation.globalConstraint.segment
+package oscar.cbls.core.computation.genericConstraint.segment
 
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer, RootIntSequenceExplorer}
 import oscar.cbls.modeling.routing.VRP
@@ -62,10 +62,10 @@ object VehicleSegments {
 
   /** Moves subsegments from a vehicle to another.
     *
-    * @param sourceVehiclePos
-    *   The position of the source vehicle.
-    * @param targetVehiclePos
-    *   The position of the target vehicle.
+    * @param firstPositionInSourceSegments
+    *   The first position in the segments of the source vehicle.
+    * @param firstPositionInTargetSegments
+    *   The first position in the segments of the target vehicle.
     * @param sourceSegments
     *   The list of segments of the source vehicle.
     * @param targetSegments
@@ -83,8 +83,8 @@ object VehicleSegments {
     *   1. An updated list of segments for the target vehicle.
     */
   def moveSegments(
-    sourceVehiclePos: Int,
-    targetVehiclePos: Int,
+    firstPositionInSourceSegments: Int,
+    firstPositionInTargetSegments: Int,
     sourceSegments: VehicleSegments,
     targetSegments: VehicleSegments,
     fromIncludedExp: IntSequenceExplorer,
@@ -93,11 +93,15 @@ object VehicleSegments {
     flip: Boolean
   ): (VehicleSegments, VehicleSegments) = {
 
-    val sameVehicle: Boolean = sourceVehiclePos == targetVehiclePos
+    val sameVehicle: Boolean = firstPositionInSourceSegments == firstPositionInTargetSegments
 
     // Removes segments in the source vehicle
     val (fromSegmentsAfterMove, segmentsToMove): (VehicleSegments, List[Segment]) =
-      sourceSegments.removeSubSegments(fromIncludedExp, toIncludedExp, sourceVehiclePos)
+      sourceSegments.removeSubSegments(
+        fromIncludedExp,
+        toIncludedExp,
+        firstPositionInSourceSegments
+      )
 
     val toImpactedSegments: VehicleSegments =
       if (sameVehicle) fromSegmentsAfterMove else targetSegments
@@ -117,14 +121,14 @@ object VehicleSegments {
         toImpactedSegments.insertSegments(
           segmentsToMove.map(_.flip()).reverse,
           afterPosExp,
-          targetVehiclePos,
+          firstPositionInTargetSegments,
           lengthOfMovedSegments
         )
       } else {
         toImpactedSegments.insertSegments(
           segmentsToMove,
           afterPosExp,
-          targetVehiclePos,
+          firstPositionInTargetSegments,
           lengthOfMovedSegments
         )
       }
@@ -219,8 +223,8 @@ class VehicleSegments(val segments: List[Segment], v: Int) {
     *   The explorer containing `from` position.
     * @param toExp
     *   The explorer containing `to` position.
-    * @param impactedVehiclePos
-    *   The position of the impacted vehicle in the associated sequence.
+    * @param firstPosition
+    *   The first position in the segments of the impacted vehicle.
     * @return
     *   1. A VehicleSegments with an updated list of segments.
     *   1. The list af the removed subsegments.
@@ -228,7 +232,7 @@ class VehicleSegments(val segments: List[Segment], v: Int) {
   private def removeSubSegments(
     fromExp: IntSequenceExplorer,
     toExp: IntSequenceExplorer,
-    impactedVehiclePos: Int
+    firstPosition: Int
   ): (VehicleSegments, List[Segment]) = {
 
     // Finds the segment containing from position
@@ -238,7 +242,7 @@ class VehicleSegments(val segments: List[Segment], v: Int) {
       segmentsAfterFromImpactedSegment,
       startPositionOfFromImpactedSegment
     ) =
-      findImpactedSegment(fromExp.position, impactedVehiclePos)
+      findImpactedSegment(fromExp.position, firstPosition)
 
     // Finds the segment containing to position
     val (
@@ -341,17 +345,17 @@ class VehicleSegments(val segments: List[Segment], v: Int) {
     *
     * @param toRemoveExp
     *   The explorer containing the position of the node to remove.
-    * @param impactedVehiclePos
-    *   The position of the impacted vehicle in the associated sequence.
+    * @param firstPosition
+    *   The first position in the segments of the impacted vehicle.
     * @return
     *   1. A VehicleSegments with an updated list of segments.
     *   1. The removed node as a list.
     */
   def removeNode(
     toRemoveExp: IntSequenceExplorer,
-    impactedVehiclePos: Int
+    firstPosition: Int
   ): (VehicleSegments, List[Segment]) = {
-    removeSubSegments(toRemoveExp, toRemoveExp, impactedVehiclePos)
+    removeSubSegments(toRemoveExp, toRemoveExp, firstPosition)
   }
 
   /** Inserts a list of segments after the given position.
@@ -360,8 +364,8 @@ class VehicleSegments(val segments: List[Segment], v: Int) {
     *   The segments to insert.
     * @param afterPosExp
     *   The explorer containing the position after which insert the segments.
-    * @param impactedVehiclePos
-    *   The position of the impacted vehicle in the associated sequence.
+    * @param firstPosition
+    *   The first position in the segments of the impacted vehicle.
     * @param lengthOfMovedSegments
     *   The length of the segments to insert. This parameter is only useful when we are moving
     *   segments to a later position in the current vehicle's route.
@@ -371,12 +375,12 @@ class VehicleSegments(val segments: List[Segment], v: Int) {
   private def insertSegments(
     segmentsToInserts: List[Segment],
     afterPosExp: IntSequenceExplorer,
-    impactedVehiclePos: Int,
+    firstPosition: Int,
     lengthOfMovedSegments: Int = 0
   ): VehicleSegments = {
 
     if (segments.isEmpty) VehicleSegments(segmentsToInserts, v)
-    else if (afterPosExp.position - lengthOfMovedSegments == impactedVehiclePos - 1)
+    else if (afterPosExp.position - lengthOfMovedSegments == firstPosition - 1)
       VehicleSegments(segmentsToInserts ::: segments, v)
     else {
       // Finds the segment impacted by the insert
@@ -386,7 +390,7 @@ class VehicleSegments(val segments: List[Segment], v: Int) {
         segmentsAfterImpactedSegment,
         startPosOfImpactedSegment
       ) =
-        findImpactedSegment(afterPosExp.position - lengthOfMovedSegments, impactedVehiclePos)
+        findImpactedSegment(afterPosExp.position - lengthOfMovedSegments, firstPosition)
 
       val insertAfterNode = afterPosExp.value // the node after which make the insertion
       val insertBeforeNode = afterPosExp.next match { // the node before which make the insertion
@@ -433,18 +437,18 @@ class VehicleSegments(val segments: List[Segment], v: Int) {
     *   The node to insert.
     * @param afterPosExp
     *   The explorer containing the position after which insert the segments.
-    * @param impactedVehiclePos
-    *   The position of the impacted vehicle in the associated sequence.
+    * @param firstPosition
+    *   The first position in the segments of the impacted vehicle.
     * @return
     *   A VehicleSegments with an updated list of segments.
     */
   def insertNode(
     insertedNode: Int,
     afterPosExp: IntSequenceExplorer,
-    impactedVehiclePos: Int
+    firstPosition: Int
   ): VehicleSegments = {
     val node = NewNode(insertedNode)
-    insertSegments(List(node), afterPosExp, impactedVehiclePos)
+    insertSegments(List(node), afterPosExp, firstPosition)
   }
 
   override def toString: String =

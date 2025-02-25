@@ -11,7 +11,7 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.core.computation.globalConstraint.segment
+package oscar.cbls.core.computation.genericConstraint.segment
 
 /** This represents a subsequence starting at `startNode` and ending at `endNode`. This subsequence
   * was not present in the global sequence when the precomputation was performed. However, the

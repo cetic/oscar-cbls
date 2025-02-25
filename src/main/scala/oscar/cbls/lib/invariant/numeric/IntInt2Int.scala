@@ -16,9 +16,8 @@ package oscar.cbls.lib.invariant.numeric
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 import oscar.cbls.core.computation.{Invariant, Store}
 
-/** An helper to define an Invariant from a (Long, Long) => Long
-  * function. This invariant is not incremental. So it should be use for very simple functions. It
-  * maintains output = fun(a, b).
+/** A helper to define an Invariant from a `(Long, Long) => Long` function. This invariant is not
+  * incremental. So it should be used for very simple functions. It maintains `output = fun(a, b)`.
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -27,7 +26,7 @@ import oscar.cbls.core.computation.{Invariant, Store}
   * @param b
   *   The second parameter of the function.
   * @param output
-  *   The IntVariable evaluating to fun(a, b).
+  *   The IntVariable evaluating to `fun(a, b)`.
   * @param fun
   *   The function to maintain. It is supposed not to listen to any variable of the model.
   * @param name

@@ -45,10 +45,23 @@ object Pow {
   ): Pow = {
     new Pow(model, a, b, output, name)
   }
+
+  /** Static method to obtain an IntVariable that is the result of `a^b`
+    *
+    * @param a
+    *   Base of the exponentiation.
+    * @param b
+    *   Exponent of the exponentiation.
+    */
+  def result(a: IntVariable, b: IntVariable, name: Option[String] = None): IntVariable = {
+    val output = IntVariable(a.model, round(pow(a.value().toDouble, a.value().toDouble)))
+    Pow(a.model, a, b, output, name)
+    output
+  }
 }
 
-/** Invariant which maintains the power of an
-  * [[oscar.cbls.core.computation.integer.IntVariable]] by another.
+/** Invariant which maintains the power of an [[oscar.cbls.core.computation.integer.IntVariable]] by
+  * another.
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.

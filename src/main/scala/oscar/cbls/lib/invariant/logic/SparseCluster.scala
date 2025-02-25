@@ -32,12 +32,11 @@ object SparseCluster {
     * @param input
     *   The elements we want to cluster.
     * @param output
-    *   An Hashmap such that `output(j) = {i in input.indices | input(i) == j}`.
+    *   A Hashmap such that `output(j) = {i in input.indices | input(i) == j}`.
     * @param bulkIdentifier
-    *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-    *   Invariant listen to vars. Warning:
-    *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
-    *   Be sure to use the same one if you're referencing the same variables.
+    *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
+    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
+    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The (optional) name of the Invariant.
     */
@@ -52,29 +51,28 @@ object SparseCluster {
   }
 }
 
-/** Invariant which maintains clusters of the indices of an array:
-  * `output(j) = {i in input .indices | input(i) == j}`. It is considered as a sparse cluster
-  * because output is an [[scala.collection.immutable.HashMap]] and covers only some preselected
-  * possible values of the input variables. Update is in O(1).
+/** Invariant which maintains clusters of the indices of an array: `output(j) = {i in input`
+  * `.indices| input(i) == j}`. It is considered as a sparse cluster because output is an
+  * [[scala.collection.immutable.HashMap]] and covers only some preselected possible values of the
+  * input variables. Update is in O(1).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
   * @param input
   *   The elements we want to cluster
   * @param output
-  *   An Hashmap such that `output(j) = {i in input.indices | input(i) == j}`.
+  *   A Hashmap such that `output(j) = {i in input.indices | input(i) == j}`.
   * @param bulkIdentifier
-  *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-  *   Invariant listen to vars. Warning:
-  *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
-  *   sure to use the same one if you're referencing the same variables.
+  *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
+  *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their
+  *   identifier. Be sure to use the same one if you're referencing the same variables.
   * @param name
   *   The (optional) name of the Invariant.
   */
 class SparseCluster(
   model: Store,
   input: Array[IntVariable],
-  val output: HashMap[Long, SetVariable], // We need to access it when the invariant is created
+  output: HashMap[Long, SetVariable],
   // by the Cluster object.
   bulkIdentifier: Option[String] = None,
   name: Option[String] = None
@@ -100,6 +98,9 @@ class SparseCluster(
     val cluster = output.get(input(i).value())
     if (cluster.nonEmpty) cluster.get :+= i
   }
+
+  /** Returns the output variables. */
+  def apply(): HashMap[Long, SetVariable] = output
 
   override def notifyIntChanges(
     intVariable: IntVariable,

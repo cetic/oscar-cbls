@@ -15,6 +15,7 @@ package oscar.cbls.lib.invariant.numeric
 
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
+import scalafx.scene.effect.Inputed
 
 /** The companion object of [[Square]] class.
   */
@@ -39,10 +40,16 @@ object Square {
   ): Square = {
     new Square(model, input, output, name)
   }
+
+  /** Static method to obtain an IntVariable that is the result of `a^2` */
+  def result(a: IntVariable, name: Option[String] = None): IntVariable = {
+    val output = IntVariable(a.model, a.value() * a.value())
+    Square(a.model, a, output, name)
+    output
+  }
 }
 
-/** Invariant that maintains the square of an
-  * [[oscar.cbls.core.computation.integer.IntVariable]]
+/** Invariant that maintains the square of an [[oscar.cbls.core.computation.integer.IntVariable]]
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.

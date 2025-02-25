@@ -11,11 +11,11 @@
 // You should have received a copy of the GNU Lesser General Public License along with OscaR.
 // If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
 
-package oscar.cbls.core.computation.globalConstraint
+package oscar.cbls.core.computation.genericConstraint
 
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation.Invariant
-import oscar.cbls.core.computation.globalConstraint.segment.{Segment, VehicleSegments}
+import oscar.cbls.core.computation.genericConstraint.segment.{Segment, VehicleSegments}
 import oscar.cbls.core.computation.seq._
 import oscar.cbls.modeling.routing.{StackedVehicleSearcher, VRP}
 

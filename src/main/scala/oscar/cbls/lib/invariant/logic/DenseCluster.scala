@@ -32,10 +32,9 @@ object DenseCluster {
     * @param output
     *   The clustered elements such that `output(j) = {i in input.indices | input(i) == j}`.
     * @param bulkIdentifier
-    *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-    *   Invariant listen to vars. Warning:
-    *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
-    *   Be sure to use the same one if you're referencing the same variables.
+    *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
+    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
+    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The (optional) name of the Invariant.
     */
@@ -48,10 +47,9 @@ object DenseCluster {
   ): DenseCluster = new DenseCluster(model, input, output, bulkIdentifier, name)
 }
 
-/** Invariant which maintains clusters of the indices of an array:
-  * `output(j) = {i in input.indices | input(i) == j}`. It is considered as a dense cluster because
-  * `output` is an [[scala.Array]] and covers all the possible values of the input variables. Update
-  * is O(1).
+/** Invariant which maintains clusters of the indices of an array: `output(j) = {i in input.indices`
+  * `| input(i) == j}`. It is considered as a dense cluster because `output` is an [[scala.Array]]
+  * and covers all the possible values of the input variables. Update is O(1).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -60,17 +58,16 @@ object DenseCluster {
   * @param output
   *   The clustered elements such that `output(j) = {i in input.indices | input(i) == j}`.
   * @param bulkIdentifier
-  *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-  *   Invariant listen to vars. Warning:
-  *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
-  *   sure to use the same one if you're referencing the same variables.
+  *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
+  *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their
+  *   identifier. Be sure to use the same one if you're referencing the same variables.
   * @param name
   *   The (optional) name of the Invariant.
   */
 class DenseCluster(
   model: Store,
   input: Array[IntVariable],
-  val output: Array[SetVariable], // We need to access it when the invariant is created
+  output: Array[SetVariable],
   // by the Cluster object.
   bulkIdentifier: Option[String] = None,
   name: Option[String] = None
@@ -100,6 +97,9 @@ class DenseCluster(
     input(i).registerDynamicallyListeningElement(this, i)
     output(input(i).value().toInt) :+= i
   }
+
+  /** Returns the output variables. */
+  def apply(): Array[SetVariable] = output
 
   override def notifyIntChanges(
     intVariable: IntVariable,

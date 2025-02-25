@@ -14,13 +14,16 @@
 package oscar.cbls.lib.invariant.routing
 
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
-import oscar.cbls.core.computation.genericConstraint.GlobalConstraintCore
-import oscar.cbls.core.computation.genericConstraint.segment.Segment
+import oscar.cbls.core.computation.genericConstraint.logReducedSegment._
+import oscar.cbls.core.computation.genericConstraint.LogReducedGlobalConstraint
+
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.modeling.routing.VRP
 
-/** Companion object of the [[NbNodes]] class. */
-object NbNodes {
+import scala.annotation.tailrec
+
+/** Companion object of the [[NbNodesLogReduced]] class. */
+object NbNodesLogReduced {
 
   /** Creates a NbNodes invariant, which maintains the number of nodes visited by each vehicle of
     * the routes.
@@ -30,8 +33,8 @@ object NbNodes {
     * @param name
     *   The (optional) name of the Invariant.
     */
-  def apply(vrp: VRP, name: String = "Nb Nodes"): NbNodes = {
-    new NbNodes(vrp, Array.fill(vrp.v)(IntVariable(vrp.model, 0L)), Some(name))
+  def apply(vrp: VRP, name: String = "Nb Nodes"): NbNodesLogReduced = {
+    new NbNodesLogReduced(vrp, Array.fill(vrp.v)(IntVariable(vrp.model, 0L)), Some(name))
   }
 }
 
@@ -47,13 +50,10 @@ object NbNodes {
   * @param name
   *   The (optional) name of the Invariant.
   */
-class NbNodes(vrp: VRP, output: Array[IntVariable], name: Option[String])
-    extends GlobalConstraintCore[Long](vrp, name) {
+class NbNodesLogReduced(vrp: VRP, output: Array[IntVariable], name: Option[String])
+    extends LogReducedGlobalConstraint[Long, Long](vrp, name) {
 
   output.foreach(_.setDefiningInvariant(this))
-
-  /** Array that contains precomputed value for each node of the sequence. */
-  val precomputedValues: Array[Long] = new Array[Long](vrp.n)
 
   /** Returns the output variables of the invariant. */
   def apply(): Array[IntVariable] = output
@@ -61,35 +61,38 @@ class NbNodes(vrp: VRP, output: Array[IntVariable], name: Option[String])
   /** Returns the output variable associated to the given vehicle. */
   def apply(vehicle: Int): IntVariable = output(vehicle)
 
-  override protected def performPrecomputation(vehicle: Int, routes: IntSequence): Unit = {
-    require(
-      vehicle < vrp.v,
-      s"The value $vehicle is not a vehicle in the given sequence (must be < ${vrp.v})"
-    )
+  override def nodeValue(node: Int): Long = 1
 
-    var nbNode: Long = 1L
-    precomputedValues(vehicle) = nbNode
-    var exp: IntSequenceExplorer = routes.explorerAtAnyOccurrence(vehicle).get.next
-    while (exp.position < routes.size && exp.value >= vrp.v) {
-      nbNode += 1L
-      precomputedValues(exp.value) = nbNode
-      exp = exp.next
-    }
+  override def endNodeValue(vehicle: Int): Long = 0
 
-  }
+  override def composeSteps(firstStep: Long, secondStep: Long): Long = firstStep + secondStep
 
-  override protected def computeVehicleValue(
+  override def computeVehicleValueComposed(
     vehicle: Int,
-    segments: List[Segment],
-    routes: IntSequence
+    segments: List[LogReducedSegment[Long]]
   ): Long = {
-    segments.foldLeft(0L)((numNodes, seg) => {
-      val start = seg.startNode()
-      val end   = seg.endNode()
-      // If the segment is flipped, precomputedValues(end) <= precomputedValues(start).
-      // For this case we need the absolute value.
-      numNodes + (precomputedValues(end) - precomputedValues(start)).abs + 1
-    })
+
+    @tailrec
+    def composeLogReduceSegments(
+      logReducedSegments: List[LogReducedSegment[Long]],
+      currentNb: Long = 0L
+    ): Long = {
+      logReducedSegments match {
+        case Nil => currentNb
+        case head :: tail =>
+          val newNb: Long = head match {
+            case s: LogReducedPreComputedSegment[Long] =>
+              s.steps.sum[Long];
+
+            case s: LogReducedFlippedPreComputedSegment[Long] => s.steps.reverse.sum[Long]
+
+            case _: LogReducedNewNode[Long] => 1L
+          }
+          composeLogReduceSegments(tail, currentNb + newNb)
+
+      }
+    }
+    composeLogReduceSegments(segments)
   }
 
   override protected def assignVehicleValue(vehicle: Int, value: Long): Unit =
@@ -109,4 +112,5 @@ class NbNodes(vrp: VRP, output: Array[IntVariable], name: Option[String])
     }
     nbNodes
   }
+
 }

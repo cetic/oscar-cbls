@@ -29,7 +29,7 @@ class DenseRefTestSuite extends AnyFunSuite with Matchers {
     val inv: DenseRef             = DenseRef.makeDenseRef(store, input, 10)
     store.close()
 
-    (store, input, inv.output, inv)
+    (store, input, inv(), inv)
   }
 
   test("DenseRef: initialization works as expected") {
@@ -114,7 +114,7 @@ class DenseRefTestSuite extends AnyFunSuite with Matchers {
       input.foreach(v => v.setDomain(0, upperBound - 1))
       val inv                          = DenseRef.makeDenseRef(model, input, upperBound)
       val inputArray: Array[Variable]  = Array.from(input)
-      val outputArray: Array[Variable] = Array.from(inv.output)
+      val outputArray: Array[Variable] = Array.from(inv())
       TestBenchSut(inv, inputArray, outputArray)
     }
 
