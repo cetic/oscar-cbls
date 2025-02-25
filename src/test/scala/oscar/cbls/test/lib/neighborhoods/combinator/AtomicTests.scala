@@ -23,7 +23,7 @@ import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.lib.invariant.routing.TotalRouteLength
 import oscar.cbls.lib.neighborhoods.combinator.Atomic
 import oscar.cbls.lib.neighborhoods.routing.TwoOpt
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 
 class AtomicTests extends AnyFunSuite with Matchers {
 
@@ -51,21 +51,20 @@ class AtomicTests extends AnyFunSuite with Matchers {
 
   test("Aggregated Atomic combinator works as expected") {
     val model = new Store()
-    val vrp   = VRP(model, 10, 2, debug = true)
-    val inv   = TotalRouteLength(vrp, distMatrix)
+    val vrs   = VRS(model, 10, 2, debug = true)
+    val inv   = TotalRouteLength(vrs, distMatrix)
     val obj   = Minimize(inv.routeLength)
     model.close()
-    vrp.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
+    vrs.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
     model.propagate()
 
-    val relevantStartSegment = () => vrp.routedWithoutVehicles.pendingValue
+    val relevantStartSegment = () => vrs.routedWithoutVehicles.pendingValue
 
     val twoOpt = TwoOpt(
-      vrp,
+      vrs,
       relevantStartSegment,
       maxSegmentLength = None,
-      selectFlippedSegmentBehavior = LoopBehavior.first(),
-      hotRestart = true
+      selectFlippedSegmentBehavior = LoopBehavior.first()
     )
     val search = Atomic(twoOpt, aggregateIntoSingleMove = true)
     search.verbosityLevel = 0
@@ -74,7 +73,7 @@ class AtomicTests extends AnyFunSuite with Matchers {
     noException mustBe thrownBy(search.doAllMoves(obj))
 
     obj.objValue.value() must be(40)
-    val routes = vrp.mapVehicleToRoute
+    val routes = vrs.mapVehicleToRoute
 
     routes(0) must (contain inOrderOnly (0, 2, 3, 4, 5) or contain inOrderOnly (0, 5, 4, 3, 2))
     routes(1) must (contain inOrderOnly (1, 6, 7, 8, 9) or contain inOrderOnly (1, 9, 8, 7, 6))
@@ -82,21 +81,20 @@ class AtomicTests extends AnyFunSuite with Matchers {
 
   test("Aggregated Atomic combinator with shouldStop works as expected") {
     val model = new Store()
-    val vrp   = VRP(model, 10, 2, debug = true)
-    val inv   = TotalRouteLength(vrp, distMatrix)
+    val vrs   = VRS(model, 10, 2, debug = true)
+    val inv   = TotalRouteLength(vrs, distMatrix)
     val obj   = Minimize(inv.routeLength)
     model.close()
-    vrp.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
+    vrs.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
     model.propagate()
 
-    val relevantStartSegment = () => vrp.routedWithoutVehicles.pendingValue
+    val relevantStartSegment = () => vrs.routedWithoutVehicles.pendingValue
 
     val twoOpt = TwoOpt(
-      vrp,
+      vrs,
       relevantStartSegment,
       maxSegmentLength = None,
-      selectFlippedSegmentBehavior = LoopBehavior.first(),
-      hotRestart = true
+      selectFlippedSegmentBehavior = LoopBehavior.first()
     )
     val search = Atomic(twoOpt, aggregateIntoSingleMove = true, shouldStop = _ >= 2)
     search.profileSearch()
@@ -109,7 +107,7 @@ class AtomicTests extends AnyFunSuite with Matchers {
     }
 
     obj.objValue.value() must be(48)
-    val routes = vrp.mapVehicleToRoute
+    val routes = vrs.mapVehicleToRoute
 
     routes(0) must contain inOrderOnly (0, 4, 3, 2, 5)
     routes(1) must contain inOrderOnly (1, 9, 8, 6, 7)
@@ -117,30 +115,29 @@ class AtomicTests extends AnyFunSuite with Matchers {
 
   test("Not Aggregated Atomic combinator works as expected") {
     val model = new Store()
-    val vrp   = VRP(model, 10, 2, debug = true)
-    val inv   = TotalRouteLength(vrp, distMatrix)
+    val vrs   = VRS(model, 10, 2, debug = true)
+    val inv   = TotalRouteLength(vrs, distMatrix)
     val obj   = Minimize(inv.routeLength)
     model.close()
-    vrp.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
+    vrs.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
     model.propagate()
 
-    val relevantStartSegment = () => vrp.routedWithoutVehicles.pendingValue
+    val relevantStartSegment = () => vrs.routedWithoutVehicles.pendingValue
 
     val twoOpt = TwoOpt(
-      vrp,
+      vrs,
       relevantStartSegment,
       maxSegmentLength = None,
-      selectFlippedSegmentBehavior = LoopBehavior.first(),
-      hotRestart = true
+      selectFlippedSegmentBehavior = LoopBehavior.first()
     )
-    val search = Atomic(twoOpt, aggregateIntoSingleMove = false)
+    val search = Atomic(twoOpt)
     search.verbosityLevel = 0
     search.profileSearch()
 
     noException mustBe thrownBy(search.doAllMoves(obj))
 
     obj.objValue.value() must be(40)
-    val routes = vrp.mapVehicleToRoute
+    val routes = vrs.mapVehicleToRoute
 
     routes(0) must (contain inOrderOnly (0, 2, 3, 4, 5) or contain inOrderOnly (0, 5, 4, 3, 2))
     routes(1) must (contain inOrderOnly (1, 6, 7, 8, 9) or contain inOrderOnly (1, 9, 8, 7, 6))
@@ -148,23 +145,22 @@ class AtomicTests extends AnyFunSuite with Matchers {
 
   test("Not Aggregated Atomic combinator with shouldStop works as expected") {
     val model = new Store()
-    val vrp   = VRP(model, 10, 2, debug = true)
-    val inv   = TotalRouteLength(vrp, distMatrix)
+    val vrs   = VRS(model, 10, 2, debug = true)
+    val inv   = TotalRouteLength(vrs, distMatrix)
     val obj   = Minimize(inv.routeLength)
     model.close()
-    vrp.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
+    vrs.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
     model.propagate()
 
-    val relevantStartSegment = () => vrp.routedWithoutVehicles.pendingValue
+    val relevantStartSegment = () => vrs.routedWithoutVehicles.pendingValue
 
     val twoOpt = TwoOpt(
-      vrp,
+      vrs,
       relevantStartSegment,
       maxSegmentLength = None,
-      selectFlippedSegmentBehavior = LoopBehavior.first(),
-      hotRestart = true
+      selectFlippedSegmentBehavior = LoopBehavior.first()
     )
-    val search = Atomic(twoOpt, aggregateIntoSingleMove = false, shouldStop = _ >= 2)
+    val search = Atomic(twoOpt, shouldStop = _ >= 2)
     search.profileSearch()
 
     val res = search.getMove(obj)
@@ -175,7 +171,7 @@ class AtomicTests extends AnyFunSuite with Matchers {
     }
 
     obj.objValue.value() must be(48)
-    val routes = vrp.mapVehicleToRoute
+    val routes = vrs.mapVehicleToRoute
 
     routes(0) must contain inOrderOnly (0, 4, 3, 2, 5)
     routes(1) must contain inOrderOnly (1, 9, 8, 6, 7)
@@ -183,21 +179,20 @@ class AtomicTests extends AnyFunSuite with Matchers {
 
   ignore("Aggregated Atomic combinator verbose mode") {
     val model = new Store()
-    val vrp   = VRP(model, 10, 2, debug = true)
-    val inv   = TotalRouteLength(vrp, distMatrix)
+    val vrs   = VRS(model, 10, 2, debug = true)
+    val inv   = TotalRouteLength(vrs, distMatrix)
     val obj   = Minimize(inv.routeLength)
     model.close()
-    vrp.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
+    vrs.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
     model.propagate()
 
-    val relevantStartSegment = () => vrp.routedWithoutVehicles.pendingValue
+    val relevantStartSegment = () => vrs.routedWithoutVehicles.pendingValue
 
     val twoOpt = TwoOpt(
-      vrp,
+      vrs,
       relevantStartSegment,
       maxSegmentLength = None,
-      selectFlippedSegmentBehavior = LoopBehavior.first(),
-      hotRestart = true
+      selectFlippedSegmentBehavior = LoopBehavior.first()
     )
     twoOpt.verbosityLevel = 2
     val search = Atomic(twoOpt, aggregateIntoSingleMove = true)
@@ -208,7 +203,7 @@ class AtomicTests extends AnyFunSuite with Matchers {
     search.displayProfiling()
 
     obj.objValue.value() must be(40)
-    val routes = vrp.mapVehicleToRoute
+    val routes = vrs.mapVehicleToRoute
 
     routes(0) must (contain inOrderOnly (0, 2, 3, 4, 5) or contain inOrderOnly (0, 5, 4, 3, 2))
     routes(1) must (contain inOrderOnly (1, 6, 7, 8, 9) or contain inOrderOnly (1, 9, 8, 7, 6))
@@ -216,23 +211,22 @@ class AtomicTests extends AnyFunSuite with Matchers {
 
   ignore("Not Aggregated Atomic combinator verbose mode") {
     val model = new Store()
-    val vrp   = VRP(model, 10, 2, debug = true)
-    val inv   = TotalRouteLength(vrp, distMatrix)
+    val vrs   = VRS(model, 10, 2, debug = true)
+    val inv   = TotalRouteLength(vrs, distMatrix)
     val obj   = Minimize(inv.routeLength)
     model.close()
-    vrp.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
+    vrs.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
     model.propagate()
 
-    val relevantStartSegment = () => vrp.routedWithoutVehicles.pendingValue
+    val relevantStartSegment = () => vrs.routedWithoutVehicles.pendingValue
 
     val twoOpt = TwoOpt(
-      vrp,
+      vrs,
       relevantStartSegment,
       maxSegmentLength = None,
-      selectFlippedSegmentBehavior = LoopBehavior.first(),
-      hotRestart = true
+      selectFlippedSegmentBehavior = LoopBehavior.first()
     )
-    val search = Atomic(twoOpt, aggregateIntoSingleMove = false)
+    val search = Atomic(twoOpt)
     search.verbosityLevel = 4
     search.profileSearch()
 
@@ -240,7 +234,7 @@ class AtomicTests extends AnyFunSuite with Matchers {
     search.displayProfiling()
 
     obj.objValue.value() must be(40)
-    val routes = vrp.mapVehicleToRoute
+    val routes = vrs.mapVehicleToRoute
 
     routes(0) must (contain inOrderOnly (0, 2, 3, 4, 5) or contain inOrderOnly (0, 5, 4, 3, 2))
     routes(1) must (contain inOrderOnly (1, 6, 7, 8, 9) or contain inOrderOnly (1, 9, 8, 7, 6))

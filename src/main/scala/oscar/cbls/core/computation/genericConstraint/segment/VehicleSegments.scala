@@ -14,7 +14,7 @@
 package oscar.cbls.core.computation.genericConstraint.segment
 
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer, RootIntSequenceExplorer}
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 
 import scala.annotation.tailrec
 
@@ -33,15 +33,15 @@ object VehicleSegments {
   /** Returns a VehicleSegment that wrap a list of [[Segment]] and methods to update that list. This
     * instance contain only one segment covering all the input vehicle.
     *
-    * @param vrp
-    *   The routing problem instance that need some precomputation.
+    * @param vrs
+    *   The routing structure instance that need some precomputation.
     * @param vehicle
     *   The vehicle we want to generate segment.
     */
-  def apply(vrp: VRP, vehicle: Int): VehicleSegments = {
-    val nodes = vrp.routeOfVehicle(vehicle)
+  def apply(vrs: VRS, vehicle: Int): VehicleSegments = {
+    val nodes = vrs.routeOfVehicle(vehicle)
     val seg   = PrecomputedSubSequence(vehicle, nodes.last, nodes.length)
-    VehicleSegments(List(seg), vrp.v)
+    VehicleSegments(List(seg), vrs.v)
   }
 
   def apply(route: IntSequence, vehicle: Int, v: Int): VehicleSegments = {

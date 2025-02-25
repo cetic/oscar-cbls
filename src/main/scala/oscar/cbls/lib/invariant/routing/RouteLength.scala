@@ -18,44 +18,44 @@ import oscar.cbls.core.computation.genericConstraint.GlobalConstraintCore
 import oscar.cbls.core.computation.genericConstraint.segment._
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.lib.invariant.routing.RouteLength.PrecomputedDistance
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 
 /** Companion object of the [[RouteLength]] class. */
 object RouteLength {
 
   /** Creates a RouteLength invariant, which maintains the length of the routes for each vehicle of
-    * a VRP.
+    * a VRS.
     *
-    * @param vrp
-    *   The object that represents the Vehicle Routing Problem.
+    * @param vrs
+    *   The object that represents the vehicle routing structure.
     * @param distanceFunction
     *   A function that, given two nodes, returns the distance between the two nodes.
     */
-  def apply(vrp: VRP, distanceFunction: Int => Int => Long): RouteLength = {
-    val output: Array[IntVariable] = Array.fill(vrp.n)(IntVariable(vrp.model, 0L))
-    new RouteLength(vrp, output, distanceFunction, Some("RouteLength"))
+  def apply(vrs: VRS, distanceFunction: Int => Int => Long): RouteLength = {
+    val output: Array[IntVariable] = Array.fill(vrs.n)(IntVariable(vrs.store, 0L))
+    new RouteLength(vrs, output, distanceFunction, Some("RouteLength"))
   }
 
   /** Creates a RouteLength invariant, which maintains the length of the routes for each vehicle of
-    * a VRP.<br>
+    * a VRS.<br>
     *
     * This method instantiates the invariant with a distance matrix. When the matrix is symmetric,
     * we can make memory economies by giving only the values above the main diagonal. In that case,
     * set the `matrixIsTriangular` flag to `true`.
     *
-    * @param vrp
-    *   The object that represents the Vehicle Routing Problem.
+    * @param vrs
+    *   The object that represents the vehicle routing structure.
     * @param distanceMatrix
     *   The distance matrix between the points of the problem.
     * @param matrixIsTriangular
     *   Flag expressing whether we are using a sparse matrix to represent a symmetric one.
     */
   def apply(
-    vrp: VRP,
+    vrs: VRS,
     distanceMatrix: Array[Array[Long]],
     matrixIsTriangular: Boolean = false
   ): RouteLength = {
-    val output: Array[IntVariable] = Array.fill(vrp.n)(IntVariable(vrp.model, 0L))
+    val output: Array[IntVariable] = Array.fill(vrs.n)(IntVariable(vrs.store, 0L))
     val distFct: Int => Int => Long = (i: Int) =>
       (j: Int) => {
         val toReturn = {
@@ -66,7 +66,7 @@ object RouteLength {
         toReturn
       }
 
-    new RouteLength(vrp, output, distFct, Some("RouteLength"))
+    new RouteLength(vrs, output, distFct, Some("RouteLength"))
   }
 
   /** Case class used to save, for each node, the distance from the vehicle to the node and the
@@ -75,13 +75,13 @@ object RouteLength {
   case class PrecomputedDistance(distanceFromStart: Long, distanceToStart: Long)
 }
 
-/** An invariant which maintains the length of the routes for each vehicle of a VRP.<br>
+/** An invariant which maintains the length of the routes for each vehicle of a VRS.<br>
   *
   * When precomputation are performed, we compute for each node the distance from the vehicle to the
   * node and the distance from the node to the vehicle.
   *
-  * @param vrp
-  *   The object that represents the Vehicle Routing Problem.
+  * @param vrs
+  *   The object that represents the vehicle routing structure.
   * @param output
   *   Array maintaining the length of each vehicle.
   * @param distanceFunction
@@ -90,15 +90,15 @@ object RouteLength {
   *   The (optional) name of the Invariant.
   */
 class RouteLength(
-  vrp: VRP,
+  vrs: VRS,
   output: Array[IntVariable],
   distanceFunction: Int => Int => Long,
   name: Option[String]
-) extends GlobalConstraintCore[Long](vrp, name) {
+) extends GlobalConstraintCore[Long](vrs, name) {
 
   output.foreach(_.setDefiningInvariant(this))
 
-  val precomputedValues: Array[PrecomputedDistance] = Array.fill(vrp.n)(PrecomputedDistance(0L, 0L))
+  val precomputedValues: Array[PrecomputedDistance] = Array.fill(vrs.n)(PrecomputedDistance(0L, 0L))
 
   /** Returns the output variables of the invariant. */
   def apply(): Array[IntVariable] = output
@@ -112,7 +112,7 @@ class RouteLength(
     precomputedValues(vehicle) = prevPrecomputedVal
 
     var exp: IntSequenceExplorer = routes.explorerAtAnyOccurrence(vehicle).get.next
-    while (exp.position < routes.size && exp.value >= vrp.v) {
+    while (exp.position < routes.size && exp.value >= vrs.v) {
       prevPrecomputedVal = PrecomputedDistance(
         prevPrecomputedVal.distanceFromStart + distanceFunction(prevNode)(exp.value),
         prevPrecomputedVal.distanceToStart + distanceFunction(exp.value)(prevNode)
@@ -179,7 +179,7 @@ class RouteLength(
 
     var exp: IntSequenceExplorer = routes.explorerAtAnyOccurrence(vehicle).get.next
 
-    while (exp.position < routes.size && exp.value >= vrp.v) {
+    while (exp.position < routes.size && exp.value >= vrs.v) {
       toReturn += distanceFunction(prevNode)(exp.value)
       prevNode = exp.value
       exp = exp.next

@@ -19,7 +19,7 @@ import org.scalatest.matchers.must.Matchers
 import oscar.cbls.algo.sequence.IntSequence
 import oscar.cbls.core.computation.{Store, Variable}
 import oscar.cbls.lib.invariant.routing.RouteLength
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 import oscar.cbls.test.invBench.{InvTestBenchWithConstGen, TestBenchSut}
 
 class RouteLengthTests extends AnyFunSuite with Matchers {
@@ -46,8 +46,8 @@ class RouteLengthTests extends AnyFunSuite with Matchers {
 
   test("RouteLength: initialization works as expected") {
     val model = new Store(debugLevel = 3)
-    val vrp   = VRP(model, 6, 2)
-    val inv   = RouteLength(vrp, distanceMatrix, matrixIsTriangular = false)
+    val vrs   = VRS(model, 6, 2)
+    val inv   = RouteLength(vrs, distanceMatrix)
     model.close()
 
     inv(0).value() must be(0L)
@@ -59,8 +59,8 @@ class RouteLengthTests extends AnyFunSuite with Matchers {
 
   test("RouteLength: initialization with sparse matrix works as expected") {
     val model = new Store(debugLevel = 3)
-    val vrp   = VRP(model, 6, 2)
-    val inv   = RouteLength(vrp, sparseMatrix, matrixIsTriangular = true)
+    val vrs   = VRS(model, 6, 2)
+    val inv   = RouteLength(vrs, sparseMatrix, matrixIsTriangular = true)
     model.close()
 
     inv(0).value() must be(0L)
@@ -71,11 +71,11 @@ class RouteLengthTests extends AnyFunSuite with Matchers {
 
   test("RouteLength: Assign works matrix") {
     val model = new Store(debugLevel = 3)
-    val vrp   = VRP(model, 6, 2)
-    val inv   = RouteLength(vrp, distanceMatrix, matrixIsTriangular = false)
+    val vrs   = VRS(model, 6, 2)
+    val inv   = RouteLength(vrs, distanceMatrix)
     model.close()
 
-    vrp.routes := IntSequence(List.from(0 until 6 by 2) ::: List.from(1 until 6 by 2))
+    vrs.routes := IntSequence(List.from(0 until 6 by 2) ::: List.from(1 until 6 by 2))
     model.propagate()
 
     inv(0).value() must be(115)
@@ -84,11 +84,11 @@ class RouteLengthTests extends AnyFunSuite with Matchers {
 
   test("RouteLength: Assign works with sparse matrix") {
     val model = new Store(debugLevel = 3)
-    val vrp   = VRP(model, 6, 2)
-    val inv   = RouteLength(vrp, sparseMatrix, matrixIsTriangular = true)
+    val vrs   = VRS(model, 6, 2)
+    val inv   = RouteLength(vrs, sparseMatrix, matrixIsTriangular = true)
     model.close()
 
-    vrp.routes := IntSequence(List.from(0 until 6 by 2) ::: List.from(1 until 6 by 2))
+    vrs.routes := IntSequence(List.from(0 until 6 by 2) ::: List.from(1 until 6 by 2))
     model.propagate()
 
     inv(0).value() must be(51)
@@ -97,12 +97,12 @@ class RouteLengthTests extends AnyFunSuite with Matchers {
 
   test("RouteLength: precomputations are correct") {
     val model = new Store(debugLevel = 3)
-    val vrp   = VRP(model, 6, 2)
-    val inv   = RouteLength(vrp, distanceMatrix, matrixIsTriangular = false)
+    val vrs   = VRS(model, 6, 2)
+    val inv   = RouteLength(vrs, distanceMatrix)
     model.close()
 
-    vrp.routes := IntSequence(List.from(0 until 6 by 2) ::: List.from(1 until 6 by 2))
-    vrp.routes.defineCurrentValueAsCheckpoint()
+    vrs.routes := IntSequence(List.from(0 until 6 by 2) ::: List.from(1 until 6 by 2))
+    vrs.routes.defineCurrentValueAsCheckpoint()
     model.propagate()
 
     inv(0).value() must be(115)
@@ -139,10 +139,10 @@ class RouteLengthTests extends AnyFunSuite with Matchers {
     }
 
     override def createTestBenchSut(model: Store, inputData: Array[Array[Long]]): TestBenchSut = {
-      val vrp                     = VRP(model, n, v)
-      val inv                     = RouteLength(vrp, inputData, triangular)
+      val vrs                     = VRS(model, n, v)
+      val inv                     = RouteLength(vrs, inputData, triangular)
       val output: Array[Variable] = Array.from(inv())
-      TestBenchSut(inv, Array(vrp.routes), output, Some(vrp))
+      TestBenchSut(inv, Array(vrs.routes), output, Some(vrs))
     }
 
     override def typeTToString(elem: Array[Array[Long]]): String = {

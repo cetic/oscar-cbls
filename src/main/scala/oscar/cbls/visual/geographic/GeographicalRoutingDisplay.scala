@@ -15,7 +15,7 @@ package oscar.cbls.visual.geographic
 
 import com.gluonhq.maps.MapView
 import oscar.cbls.core.computation.{Solution, Variable}
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 import oscar.cbls.visual.geographic.layers.{
   RoutingDisplayLayer,
   RoutingNodeLayer,
@@ -27,13 +27,13 @@ import scalafx.scene.layout.Region
 
 object GeographicalRoutingDisplay {
 
-  /** Displays the resolution of a VRP on an OSM map.
+  /** Displays the resolution of a VRS on an OSM map.
     *
     * It can be extended by using [[oscar.cbls.visual.geographic.layers.RoutingDisplayLayer]]
     * exposing information related to other constraints for instance.
     *
-    * @param vrp
-    *   The Vehicle Routing Problem
+    * @param vrs
+    *   The vehicle routing structure
     * @param nodesCoordinates
     *   The geographical coordinates of all nodes of the problem.
     * @param additionalLayers
@@ -48,25 +48,25 @@ object GeographicalRoutingDisplay {
     *   The [[OscaRDisplay]] enclosing all Stages.
     */
   def apply(
-    vrp: VRP,
+    vrs: VRS,
     nodesCoordinates: Array[(Double, Double)],
     additionalLayers: List[RoutingDisplayLayer] = List.empty,
     additionalStages: List[() => OscaRStage] = List.empty,
     width: Int = 1200,
     height: Int = 700
   ): OscaRDisplay = {
-    val nodesLayer = RoutingNodeLayer(vrp.v, nodesCoordinates)
-    val routeLayer = RoutingRouteLayer(vrp.v, nodesCoordinates.map(x => (x._1, x._2)), vrp.routes)
+    val nodesLayer = RoutingNodeLayer(vrs.v, nodesCoordinates)
+    val routeLayer = RoutingRouteLayer(vrs.v, nodesCoordinates.map(x => (x._1, x._2)), vrs.routes)
     val layers     = additionalLayers ::: List(routeLayer, nodesLayer)
     OscaRDisplay.apply(
-      vrp.model,
+      vrs.store,
       () => new GeographicalRoutingDisplay(nodesCoordinates, layers, width, height),
       additionalStages
     )
   }
 }
 
-/** Displays the resolution of a VRP on an OSM map.
+/** Displays the resolution of a VRS on an OSM map.
   *
   * It can be extended by using [[oscar.cbls.visual.geographic.layers.RoutingDisplayLayer]] exposing
   * information related to other constraints for instance.

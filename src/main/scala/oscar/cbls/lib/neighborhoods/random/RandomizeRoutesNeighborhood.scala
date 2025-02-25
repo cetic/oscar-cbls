@@ -18,7 +18,7 @@ import oscar.cbls.core.computation.Solution
 import oscar.cbls.core.computation.objective.Exploration
 import oscar.cbls.core.search.{MoveFound, NoMoveFound, SimpleNeighborhood}
 import oscar.cbls.lib.neighborhoods.AssignSeqMove
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 
 import scala.util.Random
 
@@ -27,40 +27,40 @@ object RandomizeRoutesNeighborhood {
 
   /** Creates a Neighborhood that tries random sequences to improve the objective.
     *
-    * @param vrp
-    *   The routing problem to solve.
+    * @param vrs
+    *   The vehicle routing structure on which the neighborhood operates.
     * @param numTriesWithoutImprovement.
     *   How many tries to find an improving random solution.
     * @param generateRandomRoute
     *   How to generate a random routes. The returned routes are supposed to respect routing
     *   conventions.
     */
-  def apply(vrp: VRP, generateRandomRoute: () => IntSequence, numTriesWithoutImprovement: Int = 1) =
-    new RandomizeRoutesNeighborhood(vrp, generateRandomRoute, numTriesWithoutImprovement)
+  def apply(vrs: VRS, generateRandomRoute: () => IntSequence, numTriesWithoutImprovement: Int = 1) =
+    new RandomizeRoutesNeighborhood(vrs, generateRandomRoute, numTriesWithoutImprovement)
 
   /** Creates a RandomizeRoutesNeighborhood. The randomized routes are obtained by shuffling the
     * routed node of the current routes.
     *
-    * @param vrp
-    *   The routing problem to solve.
+    * @param vrs
+    *   The vehicle routing structure on which the neighborhood operates.
     * @param numTriesWithoutImprovement.
     *   How many tries to find an improving random solution.
     * @param rng
     *   The random number generator used to shuffle the routed nodes.
     */
   def shuffle(
-    vrp: VRP,
+    vrs: VRS,
     numTriesWithoutImprovement: Int = 1,
     rng: Random = Random
   ): RandomizeRoutesNeighborhood = {
-    val generateRandomRoute = () => vrp.shuffleRoutes(rng)
-    RandomizeRoutesNeighborhood(vrp, generateRandomRoute, numTriesWithoutImprovement)
+    val generateRandomRoute = () => vrs.shuffleRoutes(rng)
+    RandomizeRoutesNeighborhood(vrs, generateRandomRoute, numTriesWithoutImprovement)
   }
 
   /** Creates a RandomizeRoutesNeighborhood. This neighborhood generates random routes.
     *
-    * @param vrp
-    *   The routing problem to solve.
+    * @param vrs
+    *   The vehicle routing structure on which the neighborhood operates.
     * @param numNodeToInsert
     *   How many nodes (vehicles excluded) has to be routed in the generated routes.
     * @param numTriesWithoutImprovement.
@@ -69,20 +69,20 @@ object RandomizeRoutesNeighborhood {
     *   The random number generator used to generate a random valid route.
     */
   def randomize(
-    vrp: VRP,
+    vrs: VRS,
     numNodeToInsert: () => Int,
     numTriesWithoutImprovement: Int = 1,
     rng: Random = Random
   ): RandomizeRoutesNeighborhood = {
-    val generateRandomRoute = () => vrp.generateValidRandomRoute(numNodeToInsert(), rng)
-    RandomizeRoutesNeighborhood(vrp, generateRandomRoute, numTriesWithoutImprovement)
+    val generateRandomRoute = () => vrs.generateValidRandomRoute(numNodeToInsert(), rng)
+    RandomizeRoutesNeighborhood(vrs, generateRandomRoute, numTriesWithoutImprovement)
   }
 
   /** Creates a RandomizeRoutesNeighborhood. This neighborhood randomly removes nodes from the
     * current route.
     *
-    * @param vrp
-    *   The routing problem to solve.
+    * @param vrs
+    *   The vehicle routing structure on which the neighborhood operates.
     * @param numNodesToRemove
     *   How many nodes has to be removed.
     * @param numTriesWithoutImprovement.
@@ -91,27 +91,27 @@ object RandomizeRoutesNeighborhood {
     *   The random number generator used to select nodes to remove.
     */
   def removeNodes(
-    vrp: VRP,
+    vrs: VRS,
     numNodesToRemove: () => Int,
     numTriesWithoutImprovement: Int = 1,
     rng: Random = Random
   ): RandomizeRoutesNeighborhood = {
-    val generateRandomRoute = () => vrp.removeRandomNodes(numNodesToRemove(), rng)
-    RandomizeRoutesNeighborhood(vrp, generateRandomRoute, numTriesWithoutImprovement)
+    val generateRandomRoute = () => vrs.removeRandomNodes(numNodesToRemove(), rng)
+    RandomizeRoutesNeighborhood(vrs, generateRandomRoute, numTriesWithoutImprovement)
   }
 }
 
 /** Neighborhood that tries random sequences to improve the objective.
   *
   * @note
-  *   The moves used by this neighborhood call
-  *   [[oscar.cbls.core.computation.seq.SeqVariable.setValue]] method. This method cannot be used if
-  *   a checkpoint is defined. Be careful when this Neighborhood is used. This neighborhood is
+  *   The moves used by this neighborhood call the
+  *   [[oscar.cbls.core.computation.seq.SeqVariable.setValue]] method, which cannot be used if a
+  *   checkpoint is defined. Be careful when this Neighborhood is used. This neighborhood is
   *   designed to works as the restart neighborhood of
   *   [[oscar.cbls.lib.neighborhoods.metaheuristics.Restart]].
   *
-  * @param vrp
-  *   The routing problem to solve.
+  * @param vrs
+  *   The vehicle routing structure on which the neighborhood operates.
   * @param numTriesWithoutImprovement.
   *   How many tries to find an improving random solution.
   * @param generateRandomRoute
@@ -119,7 +119,7 @@ object RandomizeRoutesNeighborhood {
   *   conventions.
   */
 class RandomizeRoutesNeighborhood(
-  vrp: VRP,
+  vrs: VRS,
   generateRandomRoute: () => IntSequence,
   numTriesWithoutImprovement: Int
 ) extends SimpleNeighborhood[AssignSeqMove]("Randomize routes") {
@@ -127,14 +127,14 @@ class RandomizeRoutesNeighborhood(
   private var tries: Int = 0
 
   override protected def exploreNeighborhood(exploration: Exploration[AssignSeqMove]): Unit = {
-    val currentSolution: Solution = vrp.model.extractSolution()
+    val currentSolution: Solution = vrs.store.extractSolution()
 
     while (tries < numTriesWithoutImprovement) {
       val newSeq: IntSequence = generateRandomRoute()
-      vrp.routes := newSeq
+      vrs.routes := newSeq
       searchProfiler().foreach(_.neighborSelected())
 
-      exploration.checkNeighborWP(objValue => AssignSeqMove(vrp.routes, newSeq, objValue, name))
+      exploration.checkNeighborWP(objValue => AssignSeqMove(vrs.routes, newSeq, objValue, name))
 
       currentSolution.restoreSolution()
 

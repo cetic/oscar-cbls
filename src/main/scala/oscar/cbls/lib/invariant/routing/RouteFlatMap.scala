@@ -18,7 +18,7 @@ import oscar.cbls.core.computation.Invariant
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.seq._
 import oscar.cbls.core.computation.set.SetVariable
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 
 import scala.collection.immutable.{HashMap, HashSet}
 
@@ -29,17 +29,17 @@ object RouteFlatMap {
     * `the edge i -> j is in the sequence}`. If `f(i, i)` is not an empty set, the invariant also
     * consider the self-edge `i -> i`.
     *
-    * @param vrp
-    *   The object that represents the Vehicle Routing Problem.
+    * @param vrs
+    *   The object that represents the vehicle routing structure.
     * @param fun
     *   The function defining the mapping.
     * @param name
     *   The name of the Invariant.
     */
-  def apply(vrp: VRP, fun: (Int, Int) => Set[Int], name: String = "RouteFlatMap"): RouteFlatMap = {
-    val output        = SetVariable(vrp.model, Set.empty)
-    val numDuplicated = IntVariable(vrp.model, 0L)
-    new RouteFlatMap(vrp, fun, output, numDuplicated, name)
+  def apply(vrs: VRS, fun: (Int, Int) => Set[Int], name: String = "RouteFlatMap"): RouteFlatMap = {
+    val output        = SetVariable(vrs.store, Set.empty)
+    val numDuplicated = IntVariable(vrs.store, 0L)
+    new RouteFlatMap(vrs, fun, output, numDuplicated, name)
   }
 }
 
@@ -47,8 +47,8 @@ object RouteFlatMap {
   * `the sequence}`. If `f(i, i)` is not an empty set, the invariant also consider the self-edge `i`
   * `-> i`.
   *
-  * @param vrp
-  *   The object that represents the Vehicle Routing Problem.
+  * @param vrs
+  *   The object that represents the vehicle routing structure.
   * @param fun
   *   The function defining the mapping.
   * @param output
@@ -59,16 +59,16 @@ object RouteFlatMap {
   *   The name of the Invariant.
   */
 class RouteFlatMap(
-  vrp: VRP,
+  vrs: VRS,
   fun: (Int, Int) => Set[Int],
   val output: SetVariable,
   val numDuplicates: IntVariable,
   name: String
-) extends Invariant(vrp.model, Some(name))
+) extends Invariant(vrs.store, Some(name))
     with SeqNotificationTarget {
 
-  for (i <- 0 until vrp.n) {
-    for (j <- i until vrp.n) {
+  for (i <- 0 until vrs.n) {
+    for (j <- i until vrs.n) {
       require(fun(i, j) == fun(j, i), "The input function must be symmetrical")
     }
   }
@@ -121,7 +121,7 @@ class RouteFlatMap(
     }
   }
 
-  private[this] val routes: SeqVariable                = vrp.routes
+  private[this] val routes: SeqVariable                = vrs.routes
   private[this] var currentState: FlatMapInternalState = computeFlatMapFromScratch(routes.value())
   // Used to manage checkpoints
   private[this] val stackedCheckpoints: SeqValueStack[FlatMapInternalState] =
@@ -152,7 +152,7 @@ class RouteFlatMap(
     val expected: HashSet[Int] = computeFlatMapFromScratch(routes.pendingValue).value
 
     val vehicleTrips: Iterable[List[Int]] =
-      vrp.mapVehicleToRoute.map({ case (vehicle, route) => route.appended(vehicle) })
+      vrs.mapVehicleToRoute.map({ case (vehicle, route) => route.appended(vehicle) })
 
     def detailedTrip(trip: List[Int]): String = {
       val fromTo: List[(Int, Int)] = trip.tail.tail
@@ -204,7 +204,7 @@ class RouteFlatMap(
 
     while (explorer.position < seq.size) {
       state =
-        if (explorer.value < vrp.v) // Next node is a new vehicle
+        if (explorer.value < vrs.v) // Next node is a new vehicle
           state.insertSegment(prevExplorer.value, explorer.value - 1)
         else
           state.insertSegment(prevExplorer.value, explorer.value)
@@ -220,8 +220,8 @@ class RouteFlatMap(
     state = state.insertSegment(prevExplorer.value, prevExplorer.value)
 
     // Add the segment from the last routed node to its depot
-    if (prevExplorer.value >= vrp.v) // Else the segment is already inserted
-      state = state.insertSegment(prevExplorer.value, vrp.v - 1)
+    if (prevExplorer.value >= vrs.v) // Else the segment is already inserted
+      state = state.insertSegment(prevExplorer.value, vrs.v - 1)
 
     state
   }
@@ -231,7 +231,7 @@ class RouteFlatMap(
       case SeqUpdateInsert(insertedVal: Int, afterPosExp: IntSequenceExplorer, prev: SeqUpdate) =>
         var state           = digestUpdate(prev)
         val nodeBefore: Int = afterPosExp.value
-        val nodeAfter: Int  = vrp.nextNodeInRouting(afterPosExp)
+        val nodeAfter: Int  = vrs.nextNodeInRouting(afterPosExp)
         if (nodeBefore != nodeAfter) state = state.removeSegment(nodeBefore, nodeAfter)
         state = state.insertSegment(nodeBefore, insertedVal)
         state = state.insertSegment(insertedVal, nodeAfter)
@@ -241,7 +241,7 @@ class RouteFlatMap(
       case SeqUpdateRemove(removedExp: IntSequenceExplorer, prev: SeqUpdate) =>
         var state           = digestUpdate(prev)
         val nodeBefore: Int = removedExp.prev.value
-        val nodeAfter: Int  = vrp.nextNodeInRouting(removedExp)
+        val nodeAfter: Int  = vrs.nextNodeInRouting(removedExp)
         state = state.removeSegment(nodeBefore, removedExp.value)
         state = state.removeSegment(removedExp.value, nodeAfter)
         state = state.removeSegment(removedExp.value, removedExp.value)
@@ -257,11 +257,11 @@ class RouteFlatMap(
           ) =>
         var state                 = digestUpdate(prev)
         val nodeBeforeSource: Int = fromExp.prev.value
-        val nodeAfterSource: Int  = vrp.nextNodeInRouting(toExp)
+        val nodeAfterSource: Int  = vrs.nextNodeInRouting(toExp)
         val nodeBeforeDest: Int   = afterPosExp.value
         val nodeAfterDest: Int =
           if (nodeBeforeSource == afterPosExp.value) nodeAfterSource
-          else vrp.nextNodeInRouting(afterPosExp)
+          else vrs.nextNodeInRouting(afterPosExp)
         val (startSeg: Int, endSeg: Int) =
           if (flip) (toExp.value, fromExp.value) else (fromExp.value, toExp.value)
 

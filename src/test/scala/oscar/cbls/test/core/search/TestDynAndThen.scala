@@ -11,7 +11,7 @@ import oscar.cbls.lib.invariant.routing.TotalRouteLength
 import oscar.cbls.lib.neighborhoods.AssignNeighborhood
 import oscar.cbls.lib.neighborhoods.combinator.{DynAndThen, Exhaust}
 import oscar.cbls.lib.neighborhoods.routing.{OnePointMoveNeighborhood, TwoOpt}
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 
 import scala.util.Random
 
@@ -155,27 +155,27 @@ class TestDynAndThen extends AnyFunSuite with Matchers {
     val distMatrix: Array[Array[Long]] = generateManhattanDistMatrix(points)
 
     val model  = new Store()
-    val vrp    = VRP(model, 10, 2, debug = true)
-    val output = TotalRouteLength(vrp, distMatrix).routeLength
+    val vrs    = VRS(model, 10, 2, debug = true)
+    val output = TotalRouteLength(vrs, distMatrix).routeLength
 
     val obj = Minimize(output)
     model.close()
-    vrp.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
+    vrs.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
     model.propagate()
 
-    val routedNodeExceptVehicle = vrp.routedWithoutVehicles.pendingValue
+    val routedNodeExceptVehicle = vrs.routedWithoutVehicles.pendingValue
 
     val relevantStartSegment = () => routedNodeExceptVehicle
 
-    val nodesToMove = () => vrp.routedWithoutVehicles.pendingValue
+    val nodesToMove = () => vrs.routedWithoutVehicles.pendingValue
     val relevantInsertPoint = (x: Int) => {
-      val xExp = vrp.routes.pendingValue.explorerAtAnyOccurrence(x).get
+      val xExp = vrs.routes.pendingValue.explorerAtAnyOccurrence(x).get
       val prev = xExp.prev.value
-      vrp.routedWithVehicles.pendingValue.diff(Set(x, prev))
+      vrs.routedWithVehicles.pendingValue.diff(Set(x, prev))
     }
 
-    val twoOpt   = TwoOpt(vrp, relevantStartSegment)
-    val onePoint = OnePointMoveNeighborhood(vrp, nodesToMove, relevantInsertPoint)
+    val twoOpt   = TwoOpt(vrs, relevantStartSegment)
+    val onePoint = OnePointMoveNeighborhood(vrs, nodesToMove, relevantInsertPoint)
     val search   = DynAndThen(twoOpt, onePoint)
 
     noException mustBe thrownBy(search.doAllMoves(obj))

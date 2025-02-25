@@ -20,13 +20,13 @@ import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.Minimize
 import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.lib.neighborhoods.routing.OnePointMoveNeighborhood
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 
 import scala.util.Random
 
 class OnePointMoveNeighborhoodTestSuite extends AnyFunSuite {
 
-  private[this] def getBasicModelForTest: (VRP, () => Iterable[Int], Minimize) = {
+  private[this] def getBasicModelForTest: (VRS, () => Iterable[Int], Minimize) = {
     val seed: Long = Random.nextLong()
     println(s"\nSeed: $seed")
     val rng = new Random(seed)
@@ -39,33 +39,33 @@ class OnePointMoveNeighborhoodTestSuite extends AnyFunSuite {
     val distances   = RoutingGenerator.distancesMatrix(coordinates)
 
     val model    = new Store(debugLevel = 3)
-    val vrp      = VRP(model, n, v, debug = true)
+    val vrs      = VRS(model, n, v, debug = true)
     var toInsert = rng.shuffle(List.from(v until n))
     while (toInsert.nonEmpty) {
       val node     = toInsert.head
-      val explorer = vrp.routes.pendingValue.explorerAtPosition(0).get
-      vrp.routes.insertAfterPosition(node, explorer)
+      val explorer = vrs.routes.pendingValue.explorerAtPosition(0).get
+      vrs.routes.insertAfterPosition(node, explorer)
       toInsert = toInsert.tail
     }
     val objValue  = IntVariable(model, 0L)
     val objective = Minimize(objValue)
-    new NaiveSumDistancesInvariant(model, vrp.routes, distances, objValue)
+    new NaiveSumDistancesInvariant(model, vrs.routes, distances, objValue)
     model.close()
     model.propagate()
 
-    val nodesToMove = () => vrp.routedWithoutVehicles.pendingValue
+    val nodesToMove = () => vrs.routedWithoutVehicles.pendingValue
 
-    (vrp, nodesToMove, objective)
+    (vrs, nodesToMove, objective)
   }
 
   ignore("OnePointMove neighborhood works as expected") {
-    val (vrp, nodesToMove, objective) = getBasicModelForTest
+    val (vrs, nodesToMove, objective) = getBasicModelForTest
     val relevantDestination =
-      (x: Int) => vrp.routedWithVehicles.value().filter((n: Int) => n != x && n != x - 1)
+      (x: Int) => vrs.routedWithVehicles.value().filter((n: Int) => n != x && n != x - 1)
 
-    println(s"Initial routing: $vrp")
+    println(s"Initial routing: $vrs")
     val search = OnePointMoveNeighborhood(
-      vrp,
+      vrs,
       nodesToMove,
       relevantDestination,
       selectDestinationBehavior = LoopBehavior.best()
@@ -73,7 +73,7 @@ class OnePointMoveNeighborhoodTestSuite extends AnyFunSuite {
     search.verbosityLevel = 4
     search.doAllMoves(objective)
 
-    println(s"Routing after search: $vrp")
+    println(s"Routing after search: $vrs")
   }
 
 }

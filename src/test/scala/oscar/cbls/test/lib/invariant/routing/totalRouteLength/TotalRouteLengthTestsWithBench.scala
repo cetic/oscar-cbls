@@ -1,14 +1,12 @@
 package oscar.cbls.test.lib.invariant.routing.totalRouteLength
 
+import org.scalacheck.Gen
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import oscar.cbls.test.invBench.InvTestBenchWithConstGen
-import oscar.cbls.modeling.routing.VRP
 import oscar.cbls.core.computation.Store
 import oscar.cbls.lib.invariant.routing.TotalRouteLength
-import org.scalacheck.Gen
-import oscar.cbls.test.invBench.TestBenchSut
-import oscar.cbls.algo.sequence.IntSequence
+import oscar.cbls.modeling.routing.VRS
+import oscar.cbls.test.invBench.{InvTestBenchWithConstGen, TestBenchSut}
 
 class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
@@ -19,47 +17,47 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
     *
     * @param m
     *   The original matrix randomly generated
-    * @param symetrical
+    * @param symmetrical
     *   A flag saying if the output matrix should be symmetrical
     * @param zeroDiag
-    *   A flag saying if the output matriy should have 0 in the diagonal
+    *   A flag saying if the output matrix should have 0 in the diagonal
     * @return
     */
   private def mkMatrix(
     m: Array[Array[Long]],
-    symetrical: Boolean,
+    symmetrical: Boolean,
     zeroDiag: Boolean
   ): Array[Array[Long]] = {
-    for (i <- (0 until m.length)) {
-      for (j <- (i until m.length)) {
+    for (i <- m.indices) {
+      for (j <- i until m.length) {
         if (zeroDiag) {
           if (i == j)
             m(i)(j) = 0
         }
-        if (symetrical)
+        if (symmetrical)
           m(j)(i) = m(i)(j)
       }
     }
     m
   }
 
-  test("TotalRouteLength working in bench, symetrical matrix") {
+  test("TotalRouteLength working in bench, symmetrical matrix") {
     class TotalRouteLengthTestBench
-        extends InvTestBenchWithConstGen[Array[Array[Long]]]("TotalRouteLength Symetrical Matrix") {
+        extends InvTestBenchWithConstGen[Array[Array[Long]]]("TotalRouteLength Symmetrical Matrix") {
 
       override def genConst(): Gen[Array[Array[Long]]] = {
         val arrayGen: Gen[Array[Long]] =
           Gen.sequence[Array[Long], Long](Array.fill(nbNodes)(Gen.choose(0L, 100000L)))
         val matrixGen: Gen[Array[Array[Long]]] =
           Gen.sequence[Array[Array[Long]], Array[Long]](Array.fill(nbNodes)(arrayGen))
-        for (m <- matrixGen) yield mkMatrix(m, symetrical = true, zeroDiag = false)
+        for (m <- matrixGen) yield mkMatrix(m, symmetrical = true, zeroDiag = false)
       }
 
       override def createTestBenchSut(model: Store, inputData: Array[Array[Long]]): TestBenchSut = {
 
-        val vrp         = VRP(model, nbNodes, nbVehicles)
-        val routeLength = TotalRouteLength(vrp, inputData)
-        TestBenchSut(routeLength, Array(vrp.routes), Array(routeLength.routeLength), Some(vrp))
+        val vrs         = VRS(model, nbNodes, nbVehicles)
+        val routeLength = TotalRouteLength(vrs, inputData)
+        TestBenchSut(routeLength, Array(vrs.routes), Array(routeLength.routeLength), Some(vrs))
       }
 
       override def typeTToString(elem: Array[Array[Long]]): String = {
@@ -76,10 +74,10 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
   }
 
-  test("TotalRouteLength working in bench, symetrical matrix, 0 on the diagonal") {
+  test("TotalRouteLength working in bench, symmetrical matrix, 0 on the diagonal") {
     class TotalRouteLengthTestBench
         extends InvTestBenchWithConstGen[Array[Array[Long]]](
-          "TotalRouteLength Symetrical Matrix, 0 diagonal"
+          "TotalRouteLength Symmetrical Matrix, 0 diagonal"
         ) {
 
       override def genConst(): Gen[Array[Array[Long]]] = {
@@ -87,14 +85,14 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
           Gen.sequence[Array[Long], Long](Array.fill(nbNodes)(Gen.choose(0L, 100000L)))
         val matrixGen: Gen[Array[Array[Long]]] =
           Gen.sequence[Array[Array[Long]], Array[Long]](Array.fill(nbNodes)(arrayGen))
-        for (m <- matrixGen) yield mkMatrix(m, symetrical = true, zeroDiag = true)
+        for (m <- matrixGen) yield mkMatrix(m, symmetrical = true, zeroDiag = true)
       }
 
       override def createTestBenchSut(model: Store, inputData: Array[Array[Long]]): TestBenchSut = {
 
-        val vrp         = VRP(model, nbNodes, nbVehicles)
-        val routeLength = TotalRouteLength(vrp, inputData)
-        TestBenchSut(routeLength, Array(vrp.routes), Array(routeLength.routeLength), Some(vrp))
+        val vrs         = VRS(model, nbNodes, nbVehicles)
+        val routeLength = TotalRouteLength(vrs, inputData)
+        TestBenchSut(routeLength, Array(vrs.routes), Array(routeLength.routeLength), Some(vrs))
       }
 
       override def typeTToString(elem: Array[Array[Long]]): String = {
@@ -111,10 +109,10 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
   }
 
-  test("TotalRouteLength working in bench, asymetrical matrix") {
+  test("TotalRouteLength working in bench, asymmetrical matrix") {
     class TotalRouteLengthTestBench
         extends InvTestBenchWithConstGen[Array[Array[Long]]](
-          "TotalRouteLength Asymetrical Matrix"
+          "TotalRouteLength Asymmetrical Matrix"
         ) {
 
       override def genConst(): Gen[Array[Array[Long]]] = {
@@ -125,9 +123,9 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
       override def createTestBenchSut(model: Store, inputData: Array[Array[Long]]): TestBenchSut = {
 
-        val vrp         = VRP(model, nbNodes, nbVehicles)
-        val routeLength = TotalRouteLength(vrp, inputData)
-        TestBenchSut(routeLength, Array(vrp.routes), Array(routeLength.routeLength), Some(vrp))
+        val vrs         = VRS(model, nbNodes, nbVehicles)
+        val routeLength = TotalRouteLength(vrs, inputData)
+        TestBenchSut(routeLength, Array(vrs.routes), Array(routeLength.routeLength), Some(vrs))
       }
 
       override def typeTToString(elem: Array[Array[Long]]): String = {
@@ -144,10 +142,10 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
 
   }
 
-  test("TotalRouteLength working in bench, asymetrical matrix, 0 on the diagonal") {
+  test("TotalRouteLength working in bench, asymmetrical matrix, 0 on the diagonal") {
     class TotalRouteLengthTestBench
         extends InvTestBenchWithConstGen[Array[Array[Long]]](
-          "TotalRouteLength Asymetrical Matrix, 0 diagonal"
+          "TotalRouteLength Asymmetrical Matrix, 0 diagonal"
         ) {
 
       override def genConst(): Gen[Array[Array[Long]]] = {
@@ -155,14 +153,14 @@ class TotalRouteLengthTestsWithBench extends AnyFunSuite with Matchers {
           Gen.sequence[Array[Long], Long](Array.fill(nbNodes)(Gen.choose(0L, 100000L)))
         val matrixGen: Gen[Array[Array[Long]]] =
           Gen.sequence[Array[Array[Long]], Array[Long]](Array.fill(nbNodes)(arrayGen))
-        for (m <- matrixGen) yield mkMatrix(m, symetrical = false, zeroDiag = true)
+        for (m <- matrixGen) yield mkMatrix(m, symmetrical = false, zeroDiag = true)
       }
 
       override def createTestBenchSut(model: Store, inputData: Array[Array[Long]]): TestBenchSut = {
 
-        val vrp         = VRP(model, nbNodes, nbVehicles)
-        val routeLength = TotalRouteLength(vrp, inputData)
-        TestBenchSut(routeLength, Array(vrp.routes), Array(routeLength.routeLength), Some(vrp))
+        val vrs         = VRS(model, nbNodes, nbVehicles)
+        val routeLength = TotalRouteLength(vrs, inputData)
+        TestBenchSut(routeLength, Array(vrs.routes), Array(routeLength.routeLength), Some(vrs))
       }
 
       override def typeTToString(elem: Array[Array[Long]]): String = {

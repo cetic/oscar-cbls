@@ -13,7 +13,7 @@
 
 package oscar.cbls.core.computation.genericConstraint
 
-import oscar.cbls.VRP
+import oscar.cbls.VRS
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer, RootIntSequenceExplorer}
 import oscar.cbls.core.computation.genericConstraint.logReducedSegment._
 import oscar.cbls.core.computation.genericConstraint.segment._
@@ -47,8 +47,8 @@ import oscar.cbls.core.computation.genericConstraint.segment._
   *     details).
   *   - Use [[LogReducedSegment]] precomputed data to compute the output value as fast as possible.
   *
-  * @param vrp
-  *   The object that represents the Vehicle Routing Problem.
+  * @param vrs
+  *   The object that represents the vehicle routing structure.
   * @param name
   *   The (optional) name of the Invariant.
   * @tparam T
@@ -59,8 +59,8 @@ import oscar.cbls.core.computation.genericConstraint.segment._
   *   Parametrized type that represents the output type of the constraint, for example, `Long` for
   *   `RouteLength` (the total distance).
   */
-abstract class LogReducedGlobalConstraint[T: Manifest, U: Manifest](vrp: VRP, name: Option[String])
-    extends GlobalConstraintCore[U](vrp, name) {
+abstract class LogReducedGlobalConstraint[T: Manifest, U: Manifest](vrs: VRS, name: Option[String])
+    extends GlobalConstraintCore[U](vrs, name) {
 
   /** Returns the precomputed value of type T associated with the node.
     */
@@ -120,10 +120,10 @@ abstract class LogReducedGlobalConstraint[T: Manifest, U: Manifest](vrp: VRP, na
   private case class VehicleAndPosition(vehicle: Int, positionInVehicleRoute: Int, node: Int)
 
   /** For each vehicle, contains the route as an array of NodeAndSteps. */
-  private val vehicleToNodeAndSteps: Array[Array[NodeAndSteps]] = Array.fill(vrp.v)(null)
+  private val vehicleToNodeAndSteps: Array[Array[NodeAndSteps]] = Array.fill(vrs.v)(null)
 
   /** An array containing the [[VehicleAndPosition]] of each node. */
-  private val preComputedVals: Array[VehicleAndPosition] = Array.fill(vrp.n)(null)
+  private val preComputedVals: Array[VehicleAndPosition] = Array.fill(vrs.n)(null)
 
   override def performPrecomputation(vehicle: Int, routes: IntSequence): Unit = {
     // identifies all nodes.
@@ -166,7 +166,7 @@ abstract class LogReducedGlobalConstraint[T: Manifest, U: Manifest](vrp: VRP, na
         vehicleToNodeAndSteps(vehicle) = Array.fill(positionInVehicleRoute + 1)(null)
         vehicleToNodeAndSteps(vehicle)(positionInVehicleRoute) = new NodeAndSteps(vehicle)
 
-      case x if x.value < vrp.v && x.value != vehicle =>
+      case x if x.value < vrs.v && x.value != vehicle =>
         // Allocate the right array to contain all NodeAndSteps of the route.
         vehicleToNodeAndSteps(vehicle) = Array.fill(positionInVehicleRoute + 1)(null)
         vehicleToNodeAndSteps(vehicle)(positionInVehicleRoute) = new NodeAndSteps(vehicle)

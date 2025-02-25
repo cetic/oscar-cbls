@@ -17,7 +17,7 @@ import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation.Invariant
 import oscar.cbls.core.computation.genericConstraint.segment.{Segment, VehicleSegments}
 import oscar.cbls.core.computation.seq._
-import oscar.cbls.modeling.routing.{StackedVehicleSearcher, VRP}
+import oscar.cbls.modeling.routing.{StackedVehicleSearcher, VRS}
 
 import scala.collection.immutable.{HashMap, HashSet}
 
@@ -39,29 +39,29 @@ import scala.collection.immutable.{HashMap, HashSet}
   *     - Naive method that computes the value of a vehicle given the associated routes (as an
   *       [[oscar.cbls.algo.sequence.IntSequence]])
   *
-  * @param vrp
-  *   The object that represents the Vehicle Routing Problem.
+  * @param vrs
+  *   The object that represents the vehicle routing structure.
   * @param name
   *   The (optional) name of the Invariant.
   * @tparam U
   *   Parametrized type that represents the output type of the constraint, for example, `Long` for
   *   `RouteLength` (the total distance).
   */
-abstract class GlobalConstraintCore[U: Manifest](vrp: VRP, name: Option[String])
-    extends Invariant(vrp.model, name)
+abstract class GlobalConstraintCore[U: Manifest](vrs: VRS, name: Option[String])
+    extends Invariant(vrs.store, name)
     with SeqNotificationTarget {
 
-  vrp.routes.registerStaticallyAndDynamicallyListeningElement(this)
+  vrs.routes.registerStaticallyAndDynamicallyListeningElement(this)
 
   /** This variable keeps the last value computed for each vehicle. It eases the update of the
     * output variable and the implementation of `checkInternals`.
     */
-  private[this] val vehiclesValues: Array[U] = new Array[U](vrp.v)
+  private[this] val vehiclesValues: Array[U] = new Array[U](vrs.v)
 
-  computeSaveAndAssignVehicleValuesFromScratch(vrp.routes.value()) // Init the output
+  computeSaveAndAssignVehicleValuesFromScratch(vrs.routes.value()) // Init the output
 
   protected var vehicleSearcher: StackedVehicleSearcher =
-    StackedVehicleSearcher(vrp.routes.value(), vrp.v)
+    StackedVehicleSearcher(vrs.routes.value(), vrs.v)
 
   /** This variable holds all the vehicles that have their routes changed since the level 0
     * checkpoint definition.
@@ -70,7 +70,7 @@ abstract class GlobalConstraintCore[U: Manifest](vrp: VRP, name: Option[String])
 
   /** The updated list of Segments which defines the precomputation that can used. */
   private[this] var segmentsOfVehicle: HashMap[Int, VehicleSegments] = initSegments(
-    vrp.routes.value()
+    vrs.routes.value()
   )
 
   /** A stack of values saved at each checkpoint.<br>
@@ -88,7 +88,7 @@ abstract class GlobalConstraintCore[U: Manifest](vrp: VRP, name: Option[String])
   // This variable holds the vehicles value at checkpoint 0
   // It's used to effectively roll back to the checkpoint 0
   private[this] val vehiclesValuesAtCheckpoint0: Array[U] =
-    Array.tabulate(vrp.v)(vehicle => vehiclesValues(vehicle))
+    Array.tabulate(vrs.v)(vehicle => vehiclesValues(vehicle))
 
   /** Method called by the framework when precomputation must be performed. <br>
     *
@@ -159,14 +159,14 @@ abstract class GlobalConstraintCore[U: Manifest](vrp: VRP, name: Option[String])
   }
 
   override def checkInternals(): Unit = {
-    for (vehicle <- 0 until vrp.v) {
-      val expected = computeVehicleValueFromScratch(vehicle, vrp.routes.pendingValue)
+    for (vehicle <- 0 until vrs.v) {
+      val expected = computeVehicleValueFromScratch(vehicle, vrs.routes.pendingValue)
       require(
         expected == vehiclesValues(vehicle),
         s"""Constraint ${this.getClass.getName} failed for vehicle $vehicle.
            |Expected: $expected
            |Got: ${vehiclesValues(vehicle)}
-           |Sequence: ${vrp.routes.pendingValue}
+           |Sequence: ${vrs.routes.pendingValue}
            |Current segments: ${segmentsOfVehicle(vehicle)}
            |""".stripMargin
       )
@@ -179,7 +179,7 @@ abstract class GlobalConstraintCore[U: Manifest](vrp: VRP, name: Option[String])
     *   The sequence representing the route of '''all''' the vehicles.
     */
   private[this] def computeSaveAndAssignVehicleValuesFromScratch(route: IntSequence): Unit = {
-    for (vehicle <- 0 until vrp.v) {
+    for (vehicle <- 0 until vrs.v) {
       vehiclesValues(vehicle) = computeVehicleValueFromScratch(vehicle, route)
       assignVehicleValue(vehicle, vehiclesValues(vehicle))
     }
@@ -188,8 +188,8 @@ abstract class GlobalConstraintCore[U: Manifest](vrp: VRP, name: Option[String])
   private[this] def initSegments(routes: IntSequence): HashMap[Int, VehicleSegments] = {
     var toReturn: HashMap[Int, VehicleSegments] = HashMap.empty
 
-    for (vehicle <- 0 until vrp.v)
-      toReturn += (vehicle -> VehicleSegments(routes, vehicle, vrp.v))
+    for (vehicle <- 0 until vrs.v)
+      toReturn += (vehicle -> VehicleSegments(routes, vehicle, vrs.v))
 
     toReturn
   }
@@ -199,7 +199,7 @@ abstract class GlobalConstraintCore[U: Manifest](vrp: VRP, name: Option[String])
     route: IntSequence
   ): Unit = {
     performPrecomputation(vehicle, route)
-    segmentsOfVehicle += (vehicle -> VehicleSegments(route, vehicle, vrp.v))
+    segmentsOfVehicle += (vehicle -> VehicleSegments(route, vehicle, vrs.v))
     vehiclesValues(vehicle) =
       computeVehicleValue(vehicle, segmentsOfVehicle(vehicle).segments, route)
     assignVehicleValue(vehicle, vehiclesValues(vehicle))
@@ -219,7 +219,7 @@ abstract class GlobalConstraintCore[U: Manifest](vrp: VRP, name: Option[String])
         if (!digested || !precomputationAvailable) {
           // A previous update was an assign, or we never have performed precomputation.
           // We need to perform precomputations on all the vehicles
-          for (vehicle <- 0 until vrp.v)
+          for (vehicle <- 0 until vrs.v)
             performPrecomputationComputeValuesAndAssign(vehicle, newRoute)
 
           precomputationAvailable = true
@@ -369,7 +369,7 @@ abstract class GlobalConstraintCore[U: Manifest](vrp: VRP, name: Option[String])
       case assignUpdate: SeqUpdateAssign =>
         // All new route. Precomputations are expired, and we have to reset the vehicle searcher
         precomputationAvailable = false
-        vehicleSearcher = StackedVehicleSearcher(assignUpdate.newValue, vrp.v)
+        vehicleSearcher = StackedVehicleSearcher(assignUpdate.newValue, vrs.v)
         false
       case x: SeqUpdate => throw new IllegalArgumentException(s"Unexpected update $x")
 

@@ -16,16 +16,16 @@ package oscar.cbls.lib.neighborhoods.routing
 import oscar.cbls.algo.sequence.IntSequenceExplorer
 import oscar.cbls.core.search.SimpleNeighborhood
 import oscar.cbls.core.search.loop.LoopBehavior
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 
 /** Factory for variants of the 3-opt neighborhood. */
 object ThreeOpt {
 
-  /** Return a classical 3-opt neighborhood. This implementation first iterates on insertion points
+  /** Returns a classical 3-opt neighborhood. This implementation first iterates on insertion points
     * and then searches for segment to move somewhere else in the routes.
     *
-    * @param vrp
-    *   The routing problem to solve.
+    * @param vrs
+    *   The vehicle routing structure on which the neighborhood operates.
     * @param insertionPoints
     *   Returns a list of ''nodes'' after which it is relevant to move a segment.
     * @param startOfMovedSegment
@@ -57,7 +57,7 @@ object ThreeOpt {
     *   Whether to use a [[oscar.cbls.algo.search.HotRestart]] mechanism.
     */
   def insertionPointFirst(
-    vrp: VRP,
+    vrs: VRS,
     insertionPoints: () => Iterable[Int],
     startOfMovedSegment: Int => Iterable[Int],
     maxLengthOfMovedSegment: Int,
@@ -71,7 +71,7 @@ object ThreeOpt {
     hotRestart: Boolean = true
   ): ThreeOptInsertionPointFirst = {
     new ThreeOptInsertionPointFirst(
-      vrp,
+      vrs,
       insertionPoints,
       startOfMovedSegment,
       maxLengthOfMovedSegment,
@@ -86,11 +86,11 @@ object ThreeOpt {
     )
   }
 
-  /** Return a classical 3-opt neighborhood. This implementation first iterates on segments to move
-    * and then search for an insertion point somewhere else in the routes
+  /** Returns a classical 3-opt neighborhood. This implementation first iterates on segments to move
+    * and then search for an insertion point somewhere else in the routes.
     *
-    * @param vrp
-    *   The routing problem to solve.
+    * @param vrs
+    *   The vehicle routing structure on which the neighborhood operates.
     * @param startOfMovedSegment
     *   Returns a set of ''nodes'' than can define the start of a segment to move.
     * @param insertionPoints
@@ -122,7 +122,7 @@ object ThreeOpt {
     *   Whether to use a [[oscar.cbls.algo.search.HotRestart]] mechanism.
     */
   def movedSegmentFirst(
-    vrp: VRP,
+    vrs: VRS,
     startOfMovedSegment: () => Iterable[Int],
     insertionPoints: Int => Iterable[Int],
     maxLengthOfMovedSegment: Int,
@@ -135,7 +135,7 @@ object ThreeOpt {
     breakSymmetry: Boolean = true,
     hotRestart: Boolean = true
   ): ThreeOptMovedSegmentFirst = new ThreeOptMovedSegmentFirst(
-    vrp,
+    vrs,
     startOfMovedSegment,
     insertionPoints,
     maxLengthOfMovedSegment,
@@ -152,8 +152,8 @@ object ThreeOpt {
 
 /** Abstract class containing useful methods to implement variants of the 3-opt neighborhoods.
   *
-  * @param vrp
-  *   The routing problem to solve.
+  * @param vrs
+  *   The vehicle routing structure on which the neighborhood operates.
   * @param maxLengthOfMovedSegment
   *   The maximum length of the moved segment.
   * @param name
@@ -162,7 +162,7 @@ object ThreeOpt {
   *   If `true`, the moved segments will include more thant one point.
   */
 abstract class ThreeOpt(
-  vrp: VRP,
+  vrs: VRS,
   maxLengthOfMovedSegment: Int,
   name: String,
   skipOnePointMove: Boolean
@@ -184,7 +184,7 @@ abstract class ThreeOpt(
     while (
       currentExp.position < maxPos
       && currentExp.position < startExp.position + maxLengthOfMovedSegment
-      && currentExp.value >= vrp.v
+      && currentExp.value >= vrs.v
     ) {
       toReturn = currentExp :: toReturn
       currentExp = currentExp.next

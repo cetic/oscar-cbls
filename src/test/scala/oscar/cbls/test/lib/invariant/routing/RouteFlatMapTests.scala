@@ -19,27 +19,27 @@ import org.scalatest.matchers.must.Matchers
 import oscar.cbls.algo.sequence.IntSequence
 import oscar.cbls.core.computation.Store
 import oscar.cbls.lib.invariant.routing.RouteFlatMap
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 import oscar.cbls.test.invBench.{InvTestBenchWithConstGen, TestBenchSut}
 
 class RouteFlatMapTests extends AnyFunSuite with Matchers {
 
   test("RouteFlatMap: asymmetric function are forbidden") {
     val model = new Store(debugLevel = 3)
-    val vrp   = VRP(model, 5, 2)
+    val vrs   = VRS(model, 5, 2)
     val _ =
       an[IllegalArgumentException] must be thrownBy RouteFlatMap(
-        vrp,
+        vrs,
         (x: Int, y: Int) => Set.from(x - y to x + y)
       )
   }
 
   test("RouteFlatMap: checkInternals fails with wrong output") {
     val model = new Store(debugLevel = 3)
-    val vrp   = VRP(model, 5, 2)
-    val inv   = RouteFlatMap(vrp, (_, _) => Set(0, 1, 2))
+    val vrs   = VRS(model, 5, 2)
+    val inv   = RouteFlatMap(vrs, (_, _) => Set(0, 1, 2))
     model.close()
-    vrp.routes := IntSequence(List(0, 2, 3, 1, 4))
+    vrs.routes := IntSequence(List(0, 2, 3, 1, 4))
     model.propagate()
     inv.output := Set(0, 9, 5, 7)
     an[IllegalArgumentException] must be thrownBy inv.checkInternals()
@@ -48,10 +48,10 @@ class RouteFlatMapTests extends AnyFunSuite with Matchers {
 
   test("RouteFlatMap: checkInternals fails with wrong number of duplicates") {
     val model = new Store(debugLevel = 3)
-    val vrp   = VRP(model, 5, 2)
-    val inv   = RouteFlatMap(vrp, (_, _) => Set(0, 1, 2))
+    val vrs   = VRS(model, 5, 2)
+    val inv   = RouteFlatMap(vrs, (_, _) => Set(0, 1, 2))
     model.close()
-    vrp.routes := IntSequence(List(0, 2, 3, 1, 4))
+    vrs.routes := IntSequence(List(0, 2, 3, 1, 4))
     model.propagate()
     inv.numDuplicates := 10
     an[IllegalArgumentException] must be thrownBy inv.checkInternals()
@@ -59,13 +59,13 @@ class RouteFlatMapTests extends AnyFunSuite with Matchers {
 
   test("RouteFlatMap: nbOccurrence works as expected") {
     val model = new Store(debugLevel = 3)
-    val vrp   = VRP(model, 3, 1)
+    val vrs   = VRS(model, 3, 1)
     val mapData: Array[Array[Set[Int]]] =
       Array(Array(Set.empty, Set(0, 1), Set(1, 2)), Array(Set.empty, Set(1, 2, 3)), Array(Set(5)))
     val map = (i: Int, j: Int) => if (i <= j) mapData(i)(j - i) else mapData(j)(i - j)
-    val inv = RouteFlatMap(vrp, map)
+    val inv = RouteFlatMap(vrs, map)
     model.close()
-    vrp.routes := IntSequence(List(0, 1, 2))
+    vrs.routes := IntSequence(List(0, 1, 2))
     model.propagate()
 
     inv.nbOccurrence(0) must be(1)
@@ -106,9 +106,9 @@ class RouteFlatMapTests extends AnyFunSuite with Matchers {
         model: Store,
         inputData: Array[Array[Set[Int]]]
       ): TestBenchSut = {
-        val vrp: VRP = VRP(model, n, v)
-        val inv      = RouteFlatMap(vrp, (i, j) => inputData(i)(j))
-        TestBenchSut(inv, Array(vrp.routes), Array(inv.output), Some(vrp))
+        val vrs: VRS = VRS(model, n, v)
+        val inv      = RouteFlatMap(vrs, (i, j) => inputData(i)(j))
+        TestBenchSut(inv, Array(vrs.routes), Array(inv.output), Some(vrs))
       }
 
       override def typeTToString(elem: Array[Array[Set[Int]]]): String = {

@@ -11,6 +11,9 @@ https://asset.cetic.be/en/oscar/
 In scala, add this in your `build.sbt` file:
 
 ```scala
+// Add a resolver linked to the public repository of CETIC.
+resolvers += "Sonatype Nexus Repository Manager" at "https://nexus.cetic.be/repository/oscar-public"
+// Select the desired oscar-cbls version.
 libraryDependencies += "oscar" %% "oscar-cbls_2.13" % "X.Y.Z"
 ``` 
 

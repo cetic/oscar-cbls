@@ -17,7 +17,7 @@ import oscar.cbls.algo.search.{HotRestart, IdenticalAggregator}
 import oscar.cbls.core.computation.objective.Exploration
 import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.core.search.{NoMoveFound, SimpleNeighborhood}
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 
 /** Companion object of the [[InsertPointNeighborhoodUnroutedFirst]] class */
 object InsertPointNeighborhoodUnroutedFirst {
@@ -25,8 +25,8 @@ object InsertPointNeighborhoodUnroutedFirst {
   /** Creates a InsertPointNeighborhoodUnroutedFirst which inserts a new value in a sequence. It
     * first selects the new value to insert and then where to insert it.
     *
-    * @param vrp
-    *   The routing problem to resolve with a search.
+    * @param vrs
+    *   The vehicle routing structure on which the neighborhood operates.
     * @param nodesToInsert
     *   The nodes this neighborhood will try to insert.
     * @param relevantInsertAfterNodes
@@ -46,7 +46,7 @@ object InsertPointNeighborhoodUnroutedFirst {
     *   Set the use of a [[oscar.cbls.algo.search.HotRestart]] mechanism.
     */
   def apply(
-    vrp: VRP,
+    vrs: VRS,
     nodesToInsert: () => Iterable[Int],
     relevantInsertAfterNodes: Int => Iterable[Int],
     name: String = "InsertPointNeighborhoodUnroutedFirst",
@@ -55,7 +55,7 @@ object InsertPointNeighborhoodUnroutedFirst {
     nodesSymmetryClass: Option[Int => Int] = None,
     hotRestart: Boolean = true
   ): InsertPointNeighborhoodUnroutedFirst = new InsertPointNeighborhoodUnroutedFirst(
-    vrp,
+    vrs,
     nodesToInsert,
     relevantInsertAfterNodes,
     name,
@@ -71,8 +71,8 @@ object InsertPointNeighborhoodUnroutedFirst {
   * of possible values to insert and `n` the size of the sequence. It can be cut down to `O(v * k)`
   * by using the relevant neighbors, and specifying `k` neighbors for each new value.
   *
-  * @param vrp
-  *   The routing problem to resolve with a search.
+  * @param vrs
+  *   The vehicle routing structure on which the neighborhood operates.
   * @param nodesToInsert
   *   The nodes this neighborhood will try to insert.
   * @param relevantInsertAfterNode
@@ -92,7 +92,7 @@ object InsertPointNeighborhoodUnroutedFirst {
   *   Set the use of a [[oscar.cbls.algo.search.HotRestart]] mechanism.
   */
 class InsertPointNeighborhoodUnroutedFirst(
-  vrp: VRP,
+  vrs: VRS,
   nodesToInsert: () => Iterable[Int],
   relevantInsertAfterNode: Int => Iterable[Int],
   name: String,
@@ -107,7 +107,7 @@ class InsertPointNeighborhoodUnroutedFirst(
   reset()
 
   override protected def exploreNeighborhood(exploration: Exploration[InsertPointMove]): Unit = {
-    val seqValue = vrp.routes.defineCurrentValueAsCheckpoint()
+    val seqValue = vrs.routes.defineCurrentValueAsCheckpoint()
 
     // Activates hot restart if needed
     val iterationScheme =
@@ -126,7 +126,7 @@ class InsertPointNeighborhoodUnroutedFirst(
 
     for (nodeToInsert <- valueToInsertIterator) {
       assert(
-        vrp.isUnrouted(nodeToInsert),
+        vrs.isUnrouted(nodeToInsert),
         "The search zone should be restricted to unrouted nodes when inserting"
       )
 
@@ -140,14 +140,14 @@ class InsertPointNeighborhoodUnroutedFirst(
           case None =>
             throw new Error("Trying to do an insertion after a value not in the sequence.")
           case Some(insertAfterExplorer) =>
-            vrp.routes.insertAfterPosition(nodeToInsert, insertAfterExplorer) // Commits the move
+            vrs.routes.insertAfterPosition(nodeToInsert, insertAfterExplorer) // Commits the move
             searchProfiler().foreach(x => x.neighborSelected())
 
             exploration.checkNeighborWP(objValue =>
-              InsertPointMove(vrp.routes, nodeToInsert, insertAfterExplorer, objValue, name)
+              InsertPointMove(vrs.routes, nodeToInsert, insertAfterExplorer, objValue, name)
             ) // Checks if the move is improving
 
-            vrp.routes.rollbackToTopCheckpoint(Some(seqValue)) // Cancels the move
+            vrs.routes.rollbackToTopCheckpoint(Some(seqValue)) // Cancels the move
 
             if (exploration.toReturn != NoMoveFound) {
               stopValue()
@@ -157,7 +157,7 @@ class InsertPointNeighborhoodUnroutedFirst(
       }
     }
 
-    vrp.routes.releaseTopCheckpoint()
+    vrs.routes.releaseTopCheckpoint()
     if (valueToInsertIterator.hasUnboundedNext) pivot = valueToInsertIterator.unboundedNext()
     else reset() // We tried all the values. The exploration stops and we can reset the pivot
 

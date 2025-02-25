@@ -72,7 +72,7 @@ case class RoutingInsertUpdate(override val varId: Int, value: Int, after: Int)
     RoutingVariableState(
       varId,
       state.currentState.pushOp(Some(state.currentState.seqSize + 1)),
-      state.vrp,
+      state.vrs,
       newUnrouted,
       newRouted
     )
@@ -116,7 +116,7 @@ case class RoutingMoveUpdate(override val varId: Int, from: Int, to: Int, after:
     val afterExplorer = state.routes.explorerAtPosition(after).get
     val newRouted     = state.routes.moveAfter(fromExplorer, toExplorer, afterExplorer, flip)
 
-    RoutingVariableState(varId, state.currentState.pushOp(), state.vrp, state.unrouted, newRouted)
+    RoutingVariableState(varId, state.currentState.pushOp(), state.vrs, state.unrouted, newRouted)
   }
 
   override def toString: String =
@@ -149,7 +149,7 @@ case class RoutingFlipUpdate(override val varId: Int, from: Int, to: Int)
     val fromExplorer = state.routes.explorerAtPosition(from).get
     val toExplorer   = state.routes.explorerAtPosition(to).get
     val newRouted = state.routes.moveAfter(fromExplorer, toExplorer, fromExplorer.prev, flip = true)
-    RoutingVariableState(varId, state.currentState.pushOp(), state.vrp, state.unrouted, newRouted)
+    RoutingVariableState(varId, state.currentState.pushOp(), state.vrs, state.unrouted, newRouted)
   }
 
   override def toString: String =
@@ -201,7 +201,7 @@ case class RoutingSwapUpdate(
 
     val newRouted = swap(state)
 
-    RoutingVariableState(varId, state.currentState.pushOp(), state.vrp, state.unrouted, newRouted)
+    RoutingVariableState(varId, state.currentState.pushOp(), state.vrs, state.unrouted, newRouted)
   }
 
   override def toString: String =
@@ -266,7 +266,7 @@ case class RoutingRemoveUpdate(override val varId: Int, position: Int)
     RoutingVariableState(
       varId,
       state.currentState.pushOp(Some(state.currentState.seqSize - 1)),
-      state.vrp,
+      state.vrs,
       newUnrouted,
       newRouted
     )
@@ -300,7 +300,7 @@ case class RoutingDefineCheckpointUpdate(override val varId: Int)
         Some(state.unrouted),
         Some(state.routes)
       ),
-      state.vrp,
+      state.vrs,
       state.unrouted,
       state.routes
     )
@@ -330,7 +330,7 @@ case class RoutingRollBackToTopCheckpointUpdate(override val varId: Int)
     RoutingVariableState(
       state.id,
       SeqVariableStackableState(prev.seqSize, 0, Some(prev), Some(prevUnrouted), Some(prevRouted)),
-      state.vrp,
+      state.vrs,
       prevUnrouted,
       prevRouted
     )
@@ -357,7 +357,7 @@ case class RoutingReleaseTopCheckpointUpdate(override val varId: Int)
     RoutingVariableState(
       state.id,
       state.currentState.previousStackableState.get,
-      state.vrp,
+      state.vrs,
       state.currentState.previousStackableUnrouted.get,
       state.currentState.previousStackableRouted.get
     )
@@ -388,12 +388,12 @@ case class RoutingAssignUpdate(override val varId: Int, newSeq: List[Int])
 
     val newRouted = IntSequence(newSeq)
     val newUnrouted: HashSet[Int] =
-      HashSet.from(state.vrp.v until state.vrp.n).filter(!newRouted.contains(_))
+      HashSet.from(state.vrs.v until state.vrs.n).filter(!newRouted.contains(_))
 
     RoutingVariableState(
       state.id,
       SeqVariableStackableState(newSeq.size, 0, None),
-      state.vrp,
+      state.vrs,
       newUnrouted,
       newRouted
     )

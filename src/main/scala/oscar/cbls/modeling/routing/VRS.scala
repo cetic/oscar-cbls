@@ -27,12 +27,12 @@ import scala.collection.immutable.HashMap
 import scala.collection.mutable
 import scala.util.Random
 
-/** Companion object of the [[VRP]] class. */
-object VRP {
+/** Companion object of the [[VRS]] class. */
+object VRS {
 
-  /** Builds a VRP
+  /** Builds a VRS
     *
-    * @param model
+    * @param store
     *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which the
     *   [[oscar.cbls.core.computation.seq.SeqVariable]] modeling the routes is attached.
     * @param n
@@ -46,19 +46,20 @@ object VRP {
     * @param debug
     *   If the debug mode is activated or not.
     * @return
-    *   An instance of the VRP with `n` points (depots and customers) and `v` vehicles.
+    *   An instance of the VRS with `n` points (depots and customers) and `v` vehicles.
     */
   def apply(
-    model: Store,
+    store: Store,
     n: Int,
     v: Int,
     maxPivotPerValuePercent: Int = 4,
     debug: Boolean = false
-  ): VRP =
-    new VRP(model, n, v, maxPivotPerValuePercent, debug)
+  ): VRS =
+    new VRS(store, n, v, maxPivotPerValuePercent, debug)
 }
 
-/** Models a VRP with `n` points (depots and customers) and `v` vehicles.
+/** The vehicle routing structure (VRS) models a homogenous fleet vehicle routing problem (VRP) with
+  * `n` points (depots and customers) and `v` vehicles.
   *
   * Vehicles are supposed to leave from their depot, and come back to it. In the model, each vehicle
   * has its own depot, even if it is the same physical point.
@@ -75,7 +76,14 @@ object VRP {
   *   - Vehicle 1 visits node 2 and 6 and come back to its depot;
   *   - Node 5 is not routed
   *
-  * @param model
+  * @note
+  *   This class was originally called VRP, since a single instance can be used to represent a large
+  *   variety of vehicle routing problems, depending on the constraints that are defined on top of
+  *   it. However, since certain problems (e.g., ones with heterogeneous fleets) may need multiple
+  *   instances of this class, the choice was made to rename it to VRS, denoting "vehicle routing
+  *   structure".
+  *
+  * @param store
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which the
   *   [[oscar.cbls.core.computation.seq.SeqVariable]] modeling the routes is attached.
   * @param n
@@ -89,16 +97,16 @@ object VRP {
   * @param debug
   *   If the debug mode is activated or not.
   */
-class VRP(val model: Store, val n: Int, val v: Int, maxPivotPerValuePercent: Int, debug: Boolean) {
+class VRS(val store: Store, val n: Int, val v: Int, maxPivotPerValuePercent: Int, debug: Boolean) {
 
-  require(v >= 1, "A VRP should have at least one vehicle")
+  require(v >= 1, "A VRS should have at least one vehicle")
   require(
     v <= n,
     s"The number of vehicle (v: $v) must be lesser or equal than the number of nodes (n: $n)."
   )
 
   val routes: SeqVariable = SeqVariable(
-    model,
+    store,
     List.from(0 until v),
     name = "Routes",
     maxPivotPerValuePercent = this.maxPivotPerValuePercent
@@ -115,26 +123,26 @@ class VRP(val model: Store, val n: Int, val v: Int, maxPivotPerValuePercent: Int
 
   /** Set which maintains all the routed nodes including the vehicles. */
   val routedWithVehicles: SetVariable =
-    SetVariable(model, Set.empty[Int], name = Some("Routed nodes with vehicles"))
-  Content(model, routes, routedWithVehicles)
+    SetVariable(store, Set.empty[Int], name = Some("Routed nodes with vehicles"))
+  Content(store, routes, routedWithVehicles)
 
   /** Set which maintains all the routed nodes including the vehicles. */
   val routedWithoutVehicles: SetVariable =
-    SetVariable(model, Set.empty[Int], name = Some("Routed nodes without vehicles"))
-  Diff(model, routedWithVehicles, SetConstant(model, Set.from(vehicles)), routedWithoutVehicles)
+    SetVariable(store, Set.empty[Int], name = Some("Routed nodes without vehicles"))
+  Diff(store, routedWithVehicles, SetConstant(store, Set.from(vehicles)), routedWithoutVehicles)
 
   /** Set which maintains all the unrouted nodes. */
-  val unrouted: SetVariable = SetVariable(model, Set.empty[Int], name = Some("Unrouted nodes"))
+  val unrouted: SetVariable = SetVariable(store, Set.empty[Int], name = Some("Unrouted nodes"))
   Diff(
-    model,
-    SetConstant(model, Set.from(nodes)),
+    store,
+    SetConstant(store, Set.from(nodes)),
     routedWithVehicles,
     unrouted,
     name = Some("Unrouted nodes computation invariant")
   )
 
   private[this] val routingConventionConstraint: Option[RoutingConventionConstraint] =
-    if (debug) Some(RoutingConventionConstraint(model, this)) else None
+    if (debug) Some(RoutingConventionConstraint(store, this)) else None
 
   /** Returns if a given node is a depot or not. */
   def isDepot(node: Int): Boolean = node < v
@@ -328,7 +336,7 @@ class VRP(val model: Store, val n: Int, val v: Int, maxPivotPerValuePercent: Int
     }
 
     s"""
-       |VRP n: $n v: $v
+       |VRS n: $n v: $v
        |${unrouted.value().size} unrouted nodes: $unrouted
        |${notMoving.size} not used vehicle: {${notMoving.mkString(", ")}}
        |$vehiclesStr

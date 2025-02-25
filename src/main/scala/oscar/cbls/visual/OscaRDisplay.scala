@@ -39,7 +39,7 @@ object OscaRDisplay {
     * @param store
     *   The store containing all the variables of the problem.
     * @param primaryStage
-    *   A function returning the main stage, exposing the VRP map, WLP plan...
+    *   A function returning the main stage, exposing the VRS map, WLP plan...
     * @param additionalStages
     *   A list of function returning additional stages (displayed in separated window) like the
     *   objective function curve.
@@ -71,7 +71,7 @@ object OscaRDisplay {
   * @param store
   *   The store containing all the variables of the problem.
   * @param primaryStage
-  *   A function returning the main stage, exposing the VRP map, WLP plan...
+  *   A function returning the main stage, exposing the VRS map, WLP plan...
   * @param additionalStages
   *   A list of function returning additional stages (displayed in separated window) like the
   *   objective function curve.

@@ -18,15 +18,15 @@ import org.scalatest.matchers.must.Matchers
 import oscar.cbls.algo.sequence.IntSequence
 import oscar.cbls.core.computation.{Store, Variable}
 import oscar.cbls.lib.invariant.routing.NbNodes
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 import oscar.cbls.test.invBench.{InvTestBench, TestBenchSut}
 
 class NbNodesTests extends AnyFunSuite with Matchers {
 
   test("NbNodes: initialization works as expected") {
     val model = new Store(debugLevel = 3)
-    val vrp   = VRP(model, 30, 2)
-    val inv   = NbNodes(vrp)
+    val vrs   = VRS(model, 30, 2)
+    val inv   = NbNodes(vrs)
     model.close()
 
     inv(0).value() must be(1)
@@ -35,10 +35,10 @@ class NbNodesTests extends AnyFunSuite with Matchers {
 
   test("NbNodes: Assign works and no precomputation are available") {
     val model = new Store(debugLevel = 3)
-    val vrp   = VRP(model, 30, 2)
-    val inv   = NbNodes(vrp)
+    val vrs   = VRS(model, 30, 2)
+    val inv   = NbNodes(vrs)
     model.close()
-    vrp.routes := IntSequence(List.from(0 to 20 by 2) ::: List.from(1 to 20 by 2))
+    vrs.routes := IntSequence(List.from(0 to 20 by 2) ::: List.from(1 to 20 by 2))
     model.propagate()
 
     inv(0).value() must be(11)
@@ -49,11 +49,11 @@ class NbNodesTests extends AnyFunSuite with Matchers {
 
   test("NbNodes: precomputation are performed when defining level 0 checkpoint") {
     val model = new Store(debugLevel = 3)
-    val vrp   = VRP(model, 30, 2)
-    val inv   = NbNodes(vrp)
+    val vrs   = VRS(model, 30, 2)
+    val inv   = NbNodes(vrs)
     model.close()
-    vrp.routes := IntSequence(List.from(0 to 20 by 2) ::: List.from(1 to 20 by 2))
-    vrp.routes.defineCurrentValueAsCheckpoint()
+    vrs.routes := IntSequence(List.from(0 to 20 by 2) ::: List.from(1 to 20 by 2))
+    vrs.routes.defineCurrentValueAsCheckpoint()
     model.propagate()
 
     inv.precomputedValues must equal(
@@ -67,10 +67,10 @@ class NbNodesTests extends AnyFunSuite with Matchers {
     val v = 5
 
     def createInv(model: Store): TestBenchSut = {
-      val vrp                     = VRP(model, n, v)
-      val inv                     = NbNodes(vrp)
+      val vrs                     = VRS(model, n, v)
+      val inv                     = NbNodes(vrs)
       val output: Array[Variable] = Array.from(inv())
-      TestBenchSut(inv, Array(vrp.routes), output, Some(vrp))
+      TestBenchSut(inv, Array(vrs.routes), output, Some(vrs))
     }
 
     val bench = InvTestBench(createInv, "NbNodes test bench")

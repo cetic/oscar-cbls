@@ -18,7 +18,7 @@ import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation.objective.Exploration
 import oscar.cbls.core.search.{NoMoveFound, SimpleNeighborhood}
 import oscar.cbls.core.search.loop.LoopBehavior
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 
 /** Companion object of the [[TwoOpt]] class. */
 object TwoOpt {
@@ -26,8 +26,8 @@ object TwoOpt {
   /** Creates a 2-opt neighborhood, which contains solutions where a subsequence of the original
     * route is flipped (i.e., reversed).
     *
-    * @param vrp
-    *   The routing problem to solve.
+    * @param vrs
+    *   The vehicle routing structure on which the neighborhood operates.
     * @param relevantStartOfSegment
     *   Returns a set of candidate nodes for the first endpoint of a subsequence flip.
     * @param maxSegmentLength
@@ -40,7 +40,7 @@ object TwoOpt {
     *   Whether to use a [[oscar.cbls.algo.search.HotRestart]] mechanism.
     */
   def apply(
-    vrp: VRP,
+    vrs: VRS,
     relevantStartOfSegment: () => Iterable[Int],
     maxSegmentLength: Option[Int] = None,
     name: String = "2-opt",
@@ -49,7 +49,7 @@ object TwoOpt {
   ): TwoOpt = {
 
     val maxLength = maxSegmentLength match {
-      case None => vrp.n
+      case None => vrs.n
       case Some(v) =>
         require(v > 0, "The maximum length of the moved segment must > 0")
         v
@@ -60,9 +60,9 @@ object TwoOpt {
         var toReturn: List[IntSequenceExplorer] = List()
         var currentExp: IntSequenceExplorer     = startExp.next
         while (
-          currentExp.position < vrp.routes.pendingValue.size
+          currentExp.position < vrs.routes.pendingValue.size
           && currentExp.position < startExp.position + maxLength
-          && currentExp.value >= vrp.v
+          && currentExp.value >= vrs.v
         ) {
           toReturn = currentExp :: toReturn
           currentExp = currentExp.next
@@ -71,7 +71,7 @@ object TwoOpt {
       }
 
     new TwoOpt(
-      vrp,
+      vrs,
       relevantStartOfSegment,
       relevantEndOfSegment,
       name,
@@ -89,8 +89,8 @@ object TwoOpt {
   * Complexity is `O(m * n)`, where `m` is the size of `relevantStartOfSegment` and `n` is the size
   * of `relevantEndOfSegment`.
   *
-  * @param vrp
-  *   The routing problem to solve.
+  * @param vrs
+  *   The vehicle routing structure on which the neighborhood operates.
   * @param relevantStartOfSegment
   *   Returns a set of candidate nodes for the first endpoint of a subsequence flip.
   * @param relevantEndOfSegment
@@ -104,7 +104,7 @@ object TwoOpt {
   *   Whether to use a [[oscar.cbls.algo.search.HotRestart]] mechanism.
   */
 class TwoOpt(
-  vrp: VRP,
+  vrs: VRS,
   relevantStartOfSegment: () => Iterable[Int],
   relevantEndOfSegment: IntSequenceExplorer => Iterable[IntSequenceExplorer],
   name: String,
@@ -117,7 +117,7 @@ class TwoOpt(
   reset()
 
   override protected def exploreNeighborhood(exploration: Exploration[TwoOptMove]): Unit = {
-    val seqValue: IntSequence = vrp.routes.defineCurrentValueAsCheckpoint()
+    val seqValue: IntSequence = vrs.routes.defineCurrentValueAsCheckpoint()
 
     val startSegments: Iterable[Int] = relevantStartOfSegment()
     val iterationSchemeOnZone: Iterable[Int] =
@@ -136,14 +136,14 @@ class TwoOpt(
         selectEndOfFlippedSegmentBehavior.toIterator(potentialEnd)
 
       for (endSegExp <- endSegmentIterator) {
-        vrp.routes.flip(startSegExp.get, endSegExp)
+        vrs.routes.flip(startSegExp.get, endSegExp)
         searchProfiler().foreach(x => x.neighborSelected())
 
         exploration.checkNeighborWP(objValue =>
-          TwoOptMove(vrp.routes, startSegExp.get, endSegExp, objValue, name)
+          TwoOptMove(vrs.routes, startSegExp.get, endSegExp, objValue, name)
         ) // Checks if the move is improving
 
-        vrp.routes.rollbackToTopCheckpoint() // Cancels the move
+        vrs.routes.rollbackToTopCheckpoint() // Cancels the move
 
         if (exploration.toReturn != NoMoveFound) {
           stopEndSegment()
@@ -152,7 +152,7 @@ class TwoOpt(
       }
     }
 
-    vrp.routes.releaseTopCheckpoint()
+    vrs.routes.releaseTopCheckpoint()
     if (startSegmentsIterator.hasUnboundedNext) pivot = startSegmentsIterator.unboundedNext()
     else reset()
 

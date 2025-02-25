@@ -21,7 +21,7 @@ import oscar.cbls.core.computation.objective.Minimize
 import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.lib.invariant.routing.TotalRouteLength
 import oscar.cbls.lib.neighborhoods.routing.ThreeOpt
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 import oscar.cbls.test.lib.neighborhoods.ToolsForTestingNeighborhood.generateRandomValidRoute
 
 import scala.util.Random
@@ -52,37 +52,33 @@ class ThreeOptTest extends AnyFunSuite with Matchers {
 
   test("3-Opt insertion point first works as expected") {
     val model  = new Store()
-    val vrp    = VRP(model, 10, 2, debug = true)
-    val output = TotalRouteLength(vrp, distMatrix).routeLength
+    val vrs    = VRS(model, 10, 2, debug = true)
+    val output = TotalRouteLength(vrs, distMatrix).routeLength
     val obj    = Minimize(output)
     model.close()
 
     val seed = Random.nextLong()
     val rng  = new Random(seed)
 
-    vrp.routes := generateRandomValidRoute(vrp.n, vrp.v, rng)
+    vrs.routes := generateRandomValidRoute(vrs.n, vrs.v, rng)
     model.propagate()
 
-    val relevantInsertPoints = () => vrp.routedWithVehicles.pendingValue
-    val relevantStartSeg     = (x: Int) => vrp.routedWithoutVehicles.pendingValue.diff(Set(x))
+    val relevantInsertPoints = () => vrs.routedWithVehicles.pendingValue
+    val relevantStartSeg     = (x: Int) => vrs.routedWithoutVehicles.pendingValue.diff(Set(x))
 
     val search = ThreeOpt.insertionPointFirst(
-      vrp,
+      vrs,
       relevantInsertPoints,
       relevantStartSeg,
-      vrp.n,
-      tryFlip = true,
+      vrs.n,
       selectInsertPointBehavior = LoopBehavior.first(),
       selectMovedSegmentBehavior = LoopBehavior.first(),
-      selectFlipBehavior = LoopBehavior.best(),
-      skipOnePointMove = false,
-      breakSymmetry = true,
-      hotRestart = true
+      selectFlipBehavior = LoopBehavior.best()
     )
 
     withClue(s"Working with seed $seed\n") {
       noException mustBe thrownBy(search.doAllMoves(obj))
-      val routes = vrp.mapVehicleToRoute
+      val routes = vrs.mapVehicleToRoute
       routes(0) must (contain inOrderOnly (0, 2, 3, 4, 5) or contain inOrderOnly (0, 5, 4, 3, 2))
       routes(1) must (contain inOrderOnly (1, 6, 7, 8, 9) or contain inOrderOnly (1, 9, 8, 7, 6))
     }
@@ -90,38 +86,34 @@ class ThreeOptTest extends AnyFunSuite with Matchers {
 
   test("3-Opt moved segment first works as expected") {
     val model  = new Store()
-    val vrp    = VRP(model, 10, 2, debug = true)
+    val vrs    = VRS(model, 10, 2, debug = true)
     val output = IntVariable(model, 0L)
-    new NaiveSumDistancesInvariant(model, vrp.routes, distMatrix, output)
+    new NaiveSumDistancesInvariant(model, vrs.routes, distMatrix, output)
     val obj = Minimize(output)
     model.close()
 
     val seed = Random.nextLong()
     val rng  = new Random(seed)
 
-    vrp.routes := generateRandomValidRoute(vrp.n, vrp.v, rng)
+    vrs.routes := generateRandomValidRoute(vrs.n, vrs.v, rng)
     model.propagate()
 
-    val relevantInsertPoints = (x: Int) => vrp.routedWithVehicles.pendingValue.diff(Set(x))
-    val relevantStartSeg     = () => vrp.routedWithoutVehicles.pendingValue
+    val relevantInsertPoints = (x: Int) => vrs.routedWithVehicles.pendingValue.diff(Set(x))
+    val relevantStartSeg     = () => vrs.routedWithoutVehicles.pendingValue
 
     val search = ThreeOpt.movedSegmentFirst(
-      vrp,
+      vrs,
       relevantStartSeg,
       relevantInsertPoints,
-      vrp.n,
-      tryFlip = true,
+      vrs.n,
       selectMovedSegmentBehavior = LoopBehavior.first(),
       selectInsertPointBehavior = LoopBehavior.first(),
-      selectFlipBehavior = LoopBehavior.best(),
-      skipOnePointMove = false,
-      breakSymmetry = true,
-      hotRestart = true
+      selectFlipBehavior = LoopBehavior.best()
     )
 
     withClue(s"Working with seed $seed\n") {
       noException mustBe thrownBy(search.doAllMoves(obj))
-      val routes = vrp.mapVehicleToRoute
+      val routes = vrs.mapVehicleToRoute
       routes(0) must contain only (0, 2, 3, 4, 5)
       routes(1) must contain only (1, 6, 7, 8, 9)
     }
@@ -130,168 +122,154 @@ class ThreeOptTest extends AnyFunSuite with Matchers {
 
   ignore("Test 3-Opt insertion first verbose mode breaking symmetries") {
     val model  = new Store()
-    val vrp    = VRP(model, 10, 2, debug = true)
+    val vrs    = VRS(model, 10, 2, debug = true)
     val output = IntVariable(model, 0L)
-    new NaiveSumDistancesInvariant(model, vrp.routes, distMatrix, output)
+    new NaiveSumDistancesInvariant(model, vrs.routes, distMatrix, output)
     val obj = Minimize(output)
     model.close()
 
     val seed = Random.nextLong()
     val rng  = new Random(seed)
 
-    vrp.routes := generateRandomValidRoute(vrp.n, vrp.v, rng)
+    vrs.routes := generateRandomValidRoute(vrs.n, vrs.v, rng)
     model.propagate()
-    println(vrp.routes)
+    println(vrs.routes)
 
-    val relevantInsertPoints = () => vrp.routedWithVehicles.pendingValue
-    val relevantStartSeg     = (x: Int) => vrp.routedWithoutVehicles.pendingValue.diff(Set(x))
+    val relevantInsertPoints = () => vrs.routedWithVehicles.pendingValue
+    val relevantStartSeg     = (x: Int) => vrs.routedWithoutVehicles.pendingValue.diff(Set(x))
 
     val search = ThreeOpt.insertionPointFirst(
-      vrp,
+      vrs,
       relevantInsertPoints,
       relevantStartSeg,
-      vrp.n,
-      tryFlip = true,
+      vrs.n,
       selectInsertPointBehavior = LoopBehavior.first(),
       selectMovedSegmentBehavior = LoopBehavior.first(),
-      selectFlipBehavior = LoopBehavior.best(),
-      skipOnePointMove = false,
-      breakSymmetry = true,
-      hotRestart = true
+      selectFlipBehavior = LoopBehavior.best()
     )
     search.verbosityLevel = 4
 
-    println(s"Routes before search $vrp")
+    println(s"Routes before search $vrs")
     withClue(s"Working with seed $seed\n") {
       noException mustBe thrownBy(search.doAllMoves(obj))
     }
     search.displayProfiling()
-    println(s"Routes after search $vrp")
+    println(s"Routes after search $vrs")
 
   }
 
   ignore("Test 3-Opt insertion first verbose mode not breaking symmetries") {
     val model  = new Store()
-    val vrp    = VRP(model, 10, 2, debug = true)
+    val vrs    = VRS(model, 10, 2, debug = true)
     val output = IntVariable(model, 0L)
-    new NaiveSumDistancesInvariant(model, vrp.routes, distMatrix, output)
+    new NaiveSumDistancesInvariant(model, vrs.routes, distMatrix, output)
     val obj = Minimize(output)
     model.close()
 
     val seed = Random.nextLong()
     val rng  = new Random(seed)
 
-    vrp.routes := generateRandomValidRoute(vrp.n, vrp.v, rng)
+    vrs.routes := generateRandomValidRoute(vrs.n, vrs.v, rng)
     model.propagate()
-    println(vrp.routes)
+    println(vrs.routes)
 
-    val relevantInsertPoints = () => vrp.routedWithVehicles.pendingValue
-    val relevantStartSeg     = (x: Int) => vrp.routedWithoutVehicles.pendingValue.diff(Set(x))
+    val relevantInsertPoints = () => vrs.routedWithVehicles.pendingValue
+    val relevantStartSeg     = (x: Int) => vrs.routedWithoutVehicles.pendingValue.diff(Set(x))
 
     val search = ThreeOpt.insertionPointFirst(
-      vrp,
+      vrs,
       relevantInsertPoints,
       relevantStartSeg,
-      vrp.n,
-      tryFlip = true,
+      vrs.n,
       selectInsertPointBehavior = LoopBehavior.first(),
       selectMovedSegmentBehavior = LoopBehavior.first(),
       selectFlipBehavior = LoopBehavior.best(),
-      skipOnePointMove = false,
-      breakSymmetry = false,
-      hotRestart = true
+      breakSymmetry = false
     )
     search.verbosityLevel = 4
 
-    println(s"Routes before search $vrp")
+    println(s"Routes before search $vrs")
     withClue(s"Working with seed $seed\n") {
       noException mustBe thrownBy(search.doAllMoves(obj))
     }
     search.displayProfiling()
-    println(s"Routes after search $vrp")
+    println(s"Routes after search $vrs")
   }
 
   ignore("3-Opt moved segment first verbose mode breaking symmetries") {
     val model  = new Store()
-    val vrp    = VRP(model, 10, 2, debug = true)
+    val vrs    = VRS(model, 10, 2, debug = true)
     val output = IntVariable(model, 0L)
-    new NaiveSumDistancesInvariant(model, vrp.routes, distMatrix, output)
+    new NaiveSumDistancesInvariant(model, vrs.routes, distMatrix, output)
     val obj = Minimize(output)
     model.close()
 
     val seed = Random.nextLong()
     val rng  = new Random(seed)
 
-    vrp.routes := generateRandomValidRoute(vrp.n, vrp.v, rng)
+    vrs.routes := generateRandomValidRoute(vrs.n, vrs.v, rng)
     model.propagate()
 
-    val relevantInsertPoints = (x: Int) => vrp.routedWithVehicles.pendingValue.diff(Set(x))
-    val relevantStartSeg     = () => vrp.routedWithoutVehicles.pendingValue
+    val relevantInsertPoints = (x: Int) => vrs.routedWithVehicles.pendingValue.diff(Set(x))
+    val relevantStartSeg     = () => vrs.routedWithoutVehicles.pendingValue
 
     val search = ThreeOpt.movedSegmentFirst(
-      vrp,
+      vrs,
       relevantStartSeg,
       relevantInsertPoints,
-      vrp.n,
-      tryFlip = true,
+      vrs.n,
       selectMovedSegmentBehavior = LoopBehavior.first(),
       selectInsertPointBehavior = LoopBehavior.first(),
-      selectFlipBehavior = LoopBehavior.best(),
-      skipOnePointMove = false,
-      breakSymmetry = true,
-      hotRestart = true
+      selectFlipBehavior = LoopBehavior.best()
     )
     search.verbosityLevel = 4
 
-    println(s"Routes before search $vrp")
+    println(s"Routes before search $vrs")
     withClue(s"Working with seed $seed\n") {
       noException mustBe thrownBy(search.doAllMoves(obj))
     }
 
     search.displayProfiling()
-    println(s"Routes after search $vrp")
+    println(s"Routes after search $vrs")
 
   }
 
   ignore("3-Opt moved segment first verbose mode not breaking symmetries") {
     val model  = new Store()
-    val vrp    = VRP(model, 10, 2, debug = true)
+    val vrs    = VRS(model, 10, 2, debug = true)
     val output = IntVariable(model, 0L)
-    new NaiveSumDistancesInvariant(model, vrp.routes, distMatrix, output)
+    new NaiveSumDistancesInvariant(model, vrs.routes, distMatrix, output)
     val obj = Minimize(output)
     model.close()
 
     val seed = Random.nextLong()
     val rng  = new Random(seed)
 
-    vrp.routes := generateRandomValidRoute(vrp.n, vrp.v, rng)
+    vrs.routes := generateRandomValidRoute(vrs.n, vrs.v, rng)
     model.propagate()
 
-    val relevantInsertPoints = (x: Int) => vrp.routedWithVehicles.pendingValue.diff(Set(x))
-    val relevantStartSeg     = () => vrp.routedWithoutVehicles.pendingValue
+    val relevantInsertPoints = (x: Int) => vrs.routedWithVehicles.pendingValue.diff(Set(x))
+    val relevantStartSeg     = () => vrs.routedWithoutVehicles.pendingValue
 
     val search = ThreeOpt.movedSegmentFirst(
-      vrp,
+      vrs,
       relevantStartSeg,
       relevantInsertPoints,
-      vrp.n,
-      tryFlip = true,
+      vrs.n,
       selectMovedSegmentBehavior = LoopBehavior.first(),
       selectInsertPointBehavior = LoopBehavior.first(),
       selectFlipBehavior = LoopBehavior.best(),
-      skipOnePointMove = false,
-      breakSymmetry = false,
-      hotRestart = true
+      breakSymmetry = false
     )
     search.verbosityLevel = 4
 
-    println(s"Routes before search $vrp")
+    println(s"Routes before search $vrs")
     withClue(s"Working with seed $seed\n") {
       noException mustBe thrownBy(search.doAllMoves(obj))
     }
 
     search.displayProfiling()
-    println(s"Routes after search $vrp")
+    println(s"Routes after search $vrs")
 
   }
 

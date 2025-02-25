@@ -18,7 +18,7 @@ import oscar.cbls.core.computation.genericConstraint.logReducedSegment._
 import oscar.cbls.core.computation.genericConstraint.LogReducedGlobalConstraint
 
 import oscar.cbls.core.computation.integer.IntVariable
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 
 import scala.annotation.tailrec
 
@@ -28,13 +28,13 @@ object NbNodesLogReduced {
   /** Creates a NbNodes invariant, which maintains the number of nodes visited by each vehicle of
     * the routes.
     *
-    * @param vrp
-    *   The object that represents the Vehicle Routing Problem.
+    * @param vrs
+    *   The object that represents the vehicle routing structure.
     * @param name
     *   The (optional) name of the Invariant.
     */
-  def apply(vrp: VRP, name: String = "Nb Nodes"): NbNodesLogReduced = {
-    new NbNodesLogReduced(vrp, Array.fill(vrp.v)(IntVariable(vrp.model, 0L)), Some(name))
+  def apply(vrs: VRS, name: String = "Nb Nodes"): NbNodesLogReduced = {
+    new NbNodesLogReduced(vrs, Array.fill(vrs.v)(IntVariable(vrs.store, 0L)), Some(name))
   }
 }
 
@@ -43,15 +43,15 @@ object NbNodesLogReduced {
   * When precomputations are performed, we compute for each node the number of node reached from the
   * current vehicle start position.
   *
-  * @param vrp
-  *   The object that represents the Vehicle Routing Problem.
+  * @param vrs
+  *   The object that represents the vehicle routing structure.
   * @param output
   *   Array telling how many nodes are reached by each vehicle.
   * @param name
   *   The (optional) name of the Invariant.
   */
-class NbNodesLogReduced(vrp: VRP, output: Array[IntVariable], name: Option[String])
-    extends LogReducedGlobalConstraint[Long, Long](vrp, name) {
+class NbNodesLogReduced(vrs: VRS, output: Array[IntVariable], name: Option[String])
+    extends LogReducedGlobalConstraint[Long, Long](vrs, name) {
 
   output.foreach(_.setDefiningInvariant(this))
 
@@ -100,13 +100,13 @@ class NbNodesLogReduced(vrp: VRP, output: Array[IntVariable], name: Option[Strin
 
   override protected def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Long = {
     require(
-      vehicle < vrp.v,
-      s"The value $vehicle is not a vehicle in the given sequence (must be < ${vrp.v})"
+      vehicle < vrs.v,
+      s"The value $vehicle is not a vehicle in the given sequence (must be < ${vrs.v})"
     )
 
     var nbNodes: Long            = 1L
     var exp: IntSequenceExplorer = routes.explorerAtAnyOccurrence(vehicle).get.next
-    while (exp.position < routes.size && exp.value >= vrp.v) {
+    while (exp.position < routes.size && exp.value >= vrs.v) {
       nbNodes += 1L
       exp = exp.next
     }

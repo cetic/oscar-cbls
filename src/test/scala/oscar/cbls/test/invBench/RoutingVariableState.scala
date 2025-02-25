@@ -14,12 +14,11 @@
 package oscar.cbls.test.invBench
 
 import org.scalacheck.Gen
-import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer, RootIntSequenceExplorer}
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.algo.sequence.IntSequence
+import oscar.cbls.modeling.routing.VRS
 
 import scala.annotation.tailrec
 import scala.collection.immutable.{HashMap, HashSet}
-import scala.collection.mutable
 
 /** This class holds the internal state of a SeqVariable used for a routing problem.
   *
@@ -30,8 +29,8 @@ import scala.collection.mutable
   *   The test id of the SeqVariable to which this State is linked.
   * @param currentState
   *   The current State of the SeqVariable.
-  * @param vrp
-  *   The VRP instance to which the SeqVariable is linked.
+  * @param vrs
+  *   The VRS instance to which the SeqVariable is linked.
   * @param unrouted
   *   A set of unrouted nodes.
   * @param routes
@@ -40,7 +39,7 @@ import scala.collection.mutable
 case class RoutingVariableState(
   id: Int,
   currentState: SeqVariableStackableState,
-  vrp: VRP,
+  vrs: VRS,
   unrouted: HashSet[Int],
   routes: IntSequence
 ) extends VariableState(id) {
@@ -49,28 +48,28 @@ case class RoutingVariableState(
 
   /** Returns an HashMap which maps each vehicle to its route. */
   private val mapVehicleToRoute: HashMap[Int, List[Int]] =
-    HashMap.from((0 until vrp.v).map((vehicle: Int) => vehicle -> routeOfVehicle(vehicle)))
+    HashMap.from((0 until vrs.v).map((vehicle: Int) => vehicle -> routeOfVehicle(vehicle)))
   // Flags determining if a given move is allowed or not
-  private val moveAllowed: Boolean = size >= vrp.v + 2
+  private val moveAllowed: Boolean = size >= vrs.v + 2
   private val swapAllowed: Boolean =
     mapVehicleToRoute.count(vehicleAndRoute => vehicleAndRoute._2.length > 1) >= 2
-  private val flipAndRemoveAllowed: Boolean = size >= vrp.v + 1
+  private val flipAndRemoveAllowed: Boolean = size >= vrs.v + 1
   private val releaseAllowed: Boolean =
     currentState.seqOperationSinceLastCheckpoint == 0 && currentState.seqCheckpointLevel > -1
   private val rollBackAllowed: Boolean = currentState.seqCheckpointLevel > -1
   private val assignAllowed: Boolean   = currentState.seqCheckpointLevel == -1
   private val insertAllowed: Boolean   = unrouted.nonEmpty
 
-  private val emptyRoute: Boolean = routes.forall(_ < vrp.v)
+  private val emptyRoute: Boolean = routes.forall(_ < vrs.v)
 
   private val vehiclePosition: Array[Int] =
-    Array.tabulate(vrp.v)(routes.positionOfAnyOccurrence(_).get)
+    Array.tabulate(vrs.v)(routes.positionOfAnyOccurrence(_).get)
 
   private val positionOfRoutedNodesExceptVehicles: List[Int] = {
     var toReturn: List[Int] = List.empty
     var i: Int              = 0
     for (node <- routes) {
-      if (node >= vrp.v) toReturn = i :: toReturn
+      if (node >= vrs.v) toReturn = i :: toReturn
       i += 1
     }
     toReturn
@@ -132,8 +131,8 @@ case class RoutingVariableState(
 
   private def genRoutingAssign: Gen[RoutingAssignUpdate] = {
     for {
-      routedNodes <- Gen.someOf(vrp.v until vrp.n - 1)
-      vehiclePos  <- Gen.listOfN(vrp.v - 1, Gen.choose(0, routedNodes.size))
+      routedNodes <- Gen.someOf(vrs.v until vrs.n - 1)
+      vehiclePos  <- Gen.listOfN(vrs.v - 1, Gen.choose(0, routedNodes.size))
     } yield RoutingAssignUpdate(
       id,
       0 :: insertVehicleNodes(routedNodes.toList, vehiclePos.sorted.reverse)
@@ -198,13 +197,13 @@ case class RoutingVariableState(
   }
 
   private def findNextVehiclePos(currentVehicle: Int, default: Int = size): Int = {
-    if (currentVehicle + 1 == vrp.v) default
+    if (currentVehicle + 1 == vrs.v) default
     else routes.positionOfAnyOccurrence(currentVehicle + 1).get
   }
 
   /** Finds the vehicle reaching a given position. */
   private def vehicleReachingPos(pos: Int): Int = {
-    var upperVehicle         = vrp.v - 1
+    var upperVehicle         = vrs.v - 1
     var upperVehiclePosition = vehiclePosition(upperVehicle)
 
     if (pos >= upperVehiclePosition) return upperVehicle
@@ -242,7 +241,7 @@ case class RoutingVariableState(
   private def routeOfVehicle(vehicle: Int): List[Int] = {
     var currentVehicleExplorer = routes.explorerAtAnyOccurrence(vehicle).get.next
     var toReturn: List[Int]    = List(vehicle)
-    while (currentVehicleExplorer.position < routes.size && currentVehicleExplorer.value >= vrp.v) {
+    while (currentVehicleExplorer.position < routes.size && currentVehicleExplorer.value >= vrs.v) {
       toReturn = currentVehicleExplorer.value :: toReturn
       currentVehicleExplorer = currentVehicleExplorer.next
     }
@@ -254,7 +253,7 @@ case class RoutingVariableState(
   private def insertVehicleNodes(
     routedNodes: List[Int],
     vehiclePositions: List[Int],
-    currentVehicle: Int = vrp.v - 1
+    currentVehicle: Int = vrs.v - 1
   ): List[Int] = {
     vehiclePositions match {
       case Nil => routedNodes
@@ -269,7 +268,7 @@ case class RoutingVariableState(
 
   private def verifyRemove(r: RoutingRemoveUpdate): Boolean = {
     val explorer = routes.explorerAtPosition(r.position)
-    explorer.nonEmpty && explorer.get.value >= vrp.v
+    explorer.nonEmpty && explorer.get.value >= vrs.v
   }
 
   private def verifySegment(from: Int, to: Int): Boolean = {
@@ -277,8 +276,8 @@ case class RoutingVariableState(
     val toVehicle    = vehicleReachingPos(to)
     val fromExplorer = routes.explorerAtPosition(from)
     val toExplorer   = routes.explorerAtPosition(to)
-    val fromOk       = fromExplorer.nonEmpty && fromExplorer.get.value >= vrp.v
-    val toOk         = toExplorer.nonEmpty && toExplorer.get.value >= vrp.v
+    val fromOk       = fromExplorer.nonEmpty && fromExplorer.get.value >= vrs.v
+    val toOk         = toExplorer.nonEmpty && toExplorer.get.value >= vrs.v
     fromOk && toOk && fromVehicle == toVehicle
   }
 }

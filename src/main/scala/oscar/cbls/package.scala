@@ -9,7 +9,7 @@ import scala.language.implicitConversions
 package object cbls extends Predefined {
 
   type Model        = oscar.cbls.modeling.Model
-  type VRP          = oscar.cbls.modeling.routing.VRP
+  type VRS          = oscar.cbls.modeling.routing.VRS
   type IntVariable  = oscar.cbls.core.computation.integer.IntVariable
   type SetVariable  = oscar.cbls.core.computation.set.SetVariable
   type SeqVariable  = oscar.cbls.core.computation.seq.SeqVariable

@@ -13,7 +13,7 @@
 
 package oscar.cbls.lib.invariant.routing
 
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 import oscar.cbls.core.computation.Invariant
 import oscar.cbls.core.computation.seq._
 import oscar.cbls.core.computation.integer.IntVariable
@@ -26,7 +26,7 @@ import oscar.cbls.algo.sequence.IntSequence
   */
 object TotalRouteLength {
 
-  /** Checks if the distance matrix is symetrical.
+  /** Checks if the distance matrix is symmetrical.
     *
     * @param n
     *   The number of node.
@@ -47,37 +47,37 @@ object TotalRouteLength {
 
   /** Creates a TotalRouteLength invariant.
     *
-    * The TotalRouteLength invariant maintains the sum of the route of each vehicles.
+    * This invariant maintains the sum of the lengths of all the routes in the VRS.
     *
-    * @param vrp
-    *   The object that represents the Vehicle Routing Problem.
+    * @param vrs
+    *   The object that represents the vehicle routing structure.
     * @param distanceMatrix
     *   The distance matrix between the points of the problem.
     * @return
     *   The TotalRouteLength invariant.
     */
-  def apply(vrp: VRP, distanceMatrix: Int => Int => Long): TotalRouteLength = {
-    val routeLength: IntVariable = IntVariable(vrp.model, 0)
-    val matrixIsSymmetrical      = isSymmetrical(vrp.n, distanceMatrix)
-    new TotalRouteLength(vrp, routeLength, distanceMatrix, matrixIsSymmetrical)
+  def apply(vrs: VRS, distanceMatrix: Int => Int => Long): TotalRouteLength = {
+    val routeLength: IntVariable = IntVariable(vrs.store, 0)
+    val matrixIsSymmetrical      = isSymmetrical(vrs.n, distanceMatrix)
+    new TotalRouteLength(vrs, routeLength, distanceMatrix, matrixIsSymmetrical)
   }
 
   /** Creates a TotalRouteLength invariant.
     *
-    * The TotalRouteLength invariant maintains the sum of the route of each vehicles.
+    * This invariant maintains the sum of the lengths of all the routes in the VRS.
     *
-    * @param vrp
-    *   The object that represents the Vehicle Routing Problem.
+    * @param vrs
+    *   The object that represents the vehicle routing structure.
     * @param distanceMatrix
     *   The distance matrix between the points of the problem.
     * @return
     *   The TotalRouteLength invariant.
     */
-  def apply(vrp: VRP, distanceMatrix: Array[Array[Long]]): TotalRouteLength = {
-    val routeLength: IntVariable = IntVariable(vrp.model, 0)
-    val matrixIsSymmetrical = isSymmetrical(vrp.n, (i: Int) => (j: Int) => distanceMatrix(i)(j))
+  def apply(vrs: VRS, distanceMatrix: Array[Array[Long]]): TotalRouteLength = {
+    val routeLength: IntVariable = IntVariable(vrs.store, 0)
+    val matrixIsSymmetrical = isSymmetrical(vrs.n, (i: Int) => (j: Int) => distanceMatrix(i)(j))
     new TotalRouteLength(
-      vrp,
+      vrs,
       routeLength,
       (i: Int) => (j: Int) => distanceMatrix(i)(j),
       matrixIsSymmetrical
@@ -86,47 +86,47 @@ object TotalRouteLength {
 
   /** Creates a TotalRouteLength invariant.
     *
-    * The TotalRouteLength invariant maintains the sum of the route of each vehicles.
+    * This invariant maintains the sum of the lengths of all the routes in the VRS.
     *
-    * @param vrp
-    *   The object that represents the Vehicle Routing Problem.
+    * @param vrs
+    *   The object that represents the vehicle routing structure.
     * @param distanceFunction
     *   A function that, given two nodes, returns the distance between the two nodes.
     * @param matrixIsSymmetrical
-    *   A flag that says if the matrix is symetrical
+    *   A flag indicating whether the matrix is symmetrical
     * @return
     *   The TotalRouteLength invariant.
     */
   def apply(
-    vrp: VRP,
+    vrs: VRS,
     distanceFunction: Int => Int => Long,
     matrixIsSymmetrical: Boolean
   ): TotalRouteLength = {
-    val routeLength: IntVariable = IntVariable(vrp.model, 0)
-    new TotalRouteLength(vrp, routeLength, distanceFunction, matrixIsSymmetrical)
+    val routeLength: IntVariable = IntVariable(vrs.store, 0)
+    new TotalRouteLength(vrs, routeLength, distanceFunction, matrixIsSymmetrical)
   }
 
   /** Creates a TotalRouteLength invariant.
     *
-    * The TotalRouteLength invariant maintains the sum of the route of each vehicles.
+    * This invariant maintains the sum of the lengths of all the routes in the VRS.
     *
-    * @param vrp
-    *   The object that represents the Vehicle Routing Problem.
+    * @param vrs
+    *   The object that represents the vehicle routing structure.
     * @param distanceMatrix
     *   A function that, given two nodes, returns the distance between the two nodes.
     * @param matrixIsSymmetrical
-    *   A flag that says if the matrix is symetrical
+    *   A flag indicating whether the matrix is symmetrical
     * @return
     *   The TotalRouteLength invariant.
     */
   def apply(
-    vrp: VRP,
+    vrs: VRS,
     distanceMatrix: Array[Array[Long]],
     matrixIsSymmetrical: Boolean
   ): TotalRouteLength = {
-    val routeLength: IntVariable = IntVariable(vrp.model, 0)
+    val routeLength: IntVariable = IntVariable(vrs.store, 0)
     new TotalRouteLength(
-      vrp,
+      vrs,
       routeLength,
       (i: Int) => (j: Int) => distanceMatrix(i)(j),
       matrixIsSymmetrical
@@ -134,7 +134,7 @@ object TotalRouteLength {
   }
 }
 
-/** An invariant that maintains the summed length of all the routes of the VRP.
+/** An invariant that maintains the sum of the lengths of all the routes in the VRS.
   *
   * The total route length is the sum of the routes of all the vehicles. Beware, this route length
   * constraint is more efficient if the distance function is '''symmetrical''' (i.e. given two nodes
@@ -144,26 +144,26 @@ object TotalRouteLength {
   * of the nodes should be put in the '''diagonal''' of the distance function (i.e. the weight of
   * the node `i` is given by `distanceFunction(i)(i)`).
   *
-  * @param vrp
+  * @param vrs
   *   The object that represents the Vehicle Routing Problem.
   * @param routeLength
   *   The [[oscar.cbls.core.computation.integer.IntVariable]] that is maintained by the invariant.
   * @param distanceFunction
   *   A function that, given two nodes, returns the distance between the two nodes.
   * @param matrixIsSymmetrical
-  *   A flag that says if the matrix is symmetrical.
+  *   A flag indicating whether the matrix is symmetrical.
   */
 class TotalRouteLength(
-  vrp: VRP,
+  vrs: VRS,
   val routeLength: IntVariable,
   distanceFunction: Int => Int => Long,
   matrixIsSymmetrical: Boolean
-) extends Invariant(vrp.model, Some("Incremental Total Route Length"))
+) extends Invariant(vrs.store, Some("Incremental Total Route Length"))
     with SeqNotificationTarget {
 
   if (matrixIsSymmetrical) {
-    for (i <- 0 until vrp.n) {
-      for (j <- i until vrp.n) {
+    for (i <- 0 until vrs.n) {
+      for (j <- i until vrs.n) {
         require(
           distanceFunction(i)(j) == distanceFunction(j)(i),
           "The distance matrix has to be symmetrical"
@@ -172,8 +172,8 @@ class TotalRouteLength(
     }
   }
 
-  private val routes = vrp.routes
-  private val v      = vrp.v
+  private val routes = vrs.routes
+  private val v      = vrs.v
   // Defining a structure for the checkpoints
   private case class CheckpointValue(level: Int, value: Long)
   private var checkpointValues: List[CheckpointValue] = List()
@@ -198,7 +198,7 @@ class TotalRouteLength(
     * @param fromExpl
     *   The optional start of the segment.
     * @param toExpl
-    *   The optinal end of the segment.
+    *   The optional end of the segment.
     * @param backward
     *   A flag that says if the distance shall be computed backward.
     * @return
@@ -225,7 +225,7 @@ class TotalRouteLength(
     ): Long = {
       exp match {
         case _: RootIntSequenceExplorer =>
-          length + (if (prevNode != vrp.v - 1) distanceFunction(prevNode)(vrp.v - 1) else 0)
+          length + (if (prevNode != vrs.v - 1) distanceFunction(prevNode)(vrs.v - 1) else 0)
         case exp: IntSequenceExplorer =>
           val nextExp = if (backward) exp.prev else exp.next
           val distanceFromPrev = if (exp.value < v) { // The next node is a vehicle
@@ -282,7 +282,7 @@ class TotalRouteLength(
 
   /** Handles the updates.
     *
-    * This methods digests inductively the previous updates before treating a given update. In some
+    * This method digests inductively the previous updates before treating a given update. In some
     * cases (mainly when rolling back to checkpoint), we do not care about computing the deltas: in
     * this case, the flag `computeDelta` is false.
     *
@@ -298,7 +298,7 @@ class TotalRouteLength(
       case SeqUpdateInsert(insertedNode, insertAfterExp, prev) =>
         if (computeDelta) {
           val nodeBefore = insertAfterExp.value
-          val nodeAfter  = vrp.nextNodeInRouting(insertAfterExp)
+          val nodeAfter  = vrs.nextNodeInRouting(insertAfterExp)
           val delta: Long =
             distanceFunction(nodeBefore)(insertedNode) +
               distanceFunction(insertedNode)(nodeAfter) -
@@ -313,7 +313,7 @@ class TotalRouteLength(
         if (computeDelta) {
           assert(removedNodeExp.value != 0, "node 0 is a vehicle and cannot be removed")
           val nodeBefore = removedNodeExp.prev.value
-          val nodeAfter  = vrp.nextNodeInRouting(removedNodeExp)
+          val nodeAfter  = vrs.nextNodeInRouting(removedNodeExp)
           val delta =
             (if (nodeBefore != nodeAfter) distanceFunction(nodeBefore)(nodeAfter) else 0) -
               distanceFunction(nodeBefore)(removedNodeExp.value) -
@@ -327,13 +327,13 @@ class TotalRouteLength(
       case m @ SeqUpdateMove(fromExp, toExp, afterExp, flip, prev) =>
         if (computeDelta) {
           val nodeBeforeSource = fromExp.prev.value
-          val nodeAfterSource  = vrp.nextNodeInRouting(toExp)
+          val nodeAfterSource  = vrs.nextNodeInRouting(toExp)
           val nodeBeforeDest   = afterExp.value
           val nodeAfterDest =
             if (nodeBeforeSource == afterExp.value)
-              vrp.nextNodeInRouting(toExp)
+              vrs.nextNodeInRouting(toExp)
             else
-              vrp.nextNodeInRouting(afterExp)
+              vrs.nextNodeInRouting(afterExp)
           val (startSeg, endSeg) =
             if (flip) (toExp.value, fromExp.value) else (fromExp.value, toExp.value)
           val deltaSeg = if (matrixIsSymmetrical) {
@@ -341,12 +341,7 @@ class TotalRouteLength(
           } else {
             if (flip && fromExp.value != toExp.value) {
               val distBefore =
-                computeRouteLengthFromScratch(
-                  fromExp.intSequence,
-                  Some(fromExp),
-                  Some(toExp),
-                  backward = false
-                )
+                computeRouteLengthFromScratch(fromExp.intSequence, Some(fromExp), Some(toExp))
               val distAfter =
                 computeRouteLengthFromScratch(
                   fromExp.intSequence,
@@ -405,7 +400,7 @@ class TotalRouteLength(
   override def checkInternals(): Unit = {
     val routeFromScratch = computeRouteLengthFromScratch(routes.pendingValue)
 
-    val vehicleTrips: String = vrp.mapVehicleToRoute
+    val vehicleTrips: String = vrs.mapVehicleToRoute
       .map({ case (vehicle, route) =>
         val routeWithV = route.appended(vehicle)
         val routeString = routeWithV.tail.tail
@@ -420,7 +415,7 @@ class TotalRouteLength(
       .toList
       .mkString("\n")
 
-    vrp.mapVehicleToRoute.map(vAndRoute => vAndRoute._2.appended(vAndRoute._1)).toList
+    vrs.mapVehicleToRoute.map(vAndRoute => vAndRoute._2.appended(vAndRoute._1)).toList
 
     require(
       routeLength.pendingValue == routeFromScratch,

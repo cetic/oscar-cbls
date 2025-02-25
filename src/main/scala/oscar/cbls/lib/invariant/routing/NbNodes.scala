@@ -17,7 +17,7 @@ import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation.genericConstraint.GlobalConstraintCore
 import oscar.cbls.core.computation.genericConstraint.segment.Segment
 import oscar.cbls.core.computation.integer.IntVariable
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 
 /** Companion object of the [[NbNodes]] class. */
 object NbNodes {
@@ -25,13 +25,13 @@ object NbNodes {
   /** Creates a NbNodes invariant, which maintains the number of nodes visited by each vehicle of
     * the routes.
     *
-    * @param vrp
-    *   The object that represents the Vehicle Routing Problem.
+    * @param vrs
+    *   The object that represents the vehicle routing structure.
     * @param name
     *   The (optional) name of the Invariant.
     */
-  def apply(vrp: VRP, name: String = "Nb Nodes"): NbNodes = {
-    new NbNodes(vrp, Array.fill(vrp.v)(IntVariable(vrp.model, 0L)), Some(name))
+  def apply(vrs: VRS, name: String = "Nb Nodes"): NbNodes = {
+    new NbNodes(vrs, Array.fill(vrs.v)(IntVariable(vrs.store, 0L)), Some(name))
   }
 }
 
@@ -40,20 +40,20 @@ object NbNodes {
   * When precomputations are performed, we compute for each node the number of node reached from the
   * current vehicle start position.
   *
-  * @param vrp
-  *   The object that represents the Vehicle Routing Problem.
+  * @param vrs
+  *   The object that represents the vehicle routing structure.
   * @param output
   *   Array telling how many nodes are reached by each vehicle.
   * @param name
   *   The (optional) name of the Invariant.
   */
-class NbNodes(vrp: VRP, output: Array[IntVariable], name: Option[String])
-    extends GlobalConstraintCore[Long](vrp, name) {
+class NbNodes(vrs: VRS, output: Array[IntVariable], name: Option[String])
+    extends GlobalConstraintCore[Long](vrs, name) {
 
   output.foreach(_.setDefiningInvariant(this))
 
   /** Array that contains precomputed value for each node of the sequence. */
-  val precomputedValues: Array[Long] = new Array[Long](vrp.n)
+  val precomputedValues: Array[Long] = new Array[Long](vrs.n)
 
   /** Returns the output variables of the invariant. */
   def apply(): Array[IntVariable] = output
@@ -63,14 +63,14 @@ class NbNodes(vrp: VRP, output: Array[IntVariable], name: Option[String])
 
   override protected def performPrecomputation(vehicle: Int, routes: IntSequence): Unit = {
     require(
-      vehicle < vrp.v,
-      s"The value $vehicle is not a vehicle in the given sequence (must be < ${vrp.v})"
+      vehicle < vrs.v,
+      s"The value $vehicle is not a vehicle in the given sequence (must be < ${vrs.v})"
     )
 
     var nbNode: Long = 1L
     precomputedValues(vehicle) = nbNode
     var exp: IntSequenceExplorer = routes.explorerAtAnyOccurrence(vehicle).get.next
-    while (exp.position < routes.size && exp.value >= vrp.v) {
+    while (exp.position < routes.size && exp.value >= vrs.v) {
       nbNode += 1L
       precomputedValues(exp.value) = nbNode
       exp = exp.next
@@ -97,13 +97,13 @@ class NbNodes(vrp: VRP, output: Array[IntVariable], name: Option[String])
 
   override protected def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Long = {
     require(
-      vehicle < vrp.v,
-      s"The value $vehicle is not a vehicle in the given sequence (must be < ${vrp.v})"
+      vehicle < vrs.v,
+      s"The value $vehicle is not a vehicle in the given sequence (must be < ${vrs.v})"
     )
 
     var nbNodes: Long            = 1L
     var exp: IntSequenceExplorer = routes.explorerAtAnyOccurrence(vehicle).get.next
-    while (exp.position < routes.size && exp.value >= vrp.v) {
+    while (exp.position < routes.size && exp.value >= vrs.v) {
       nbNodes += 1L
       exp = exp.next
     }

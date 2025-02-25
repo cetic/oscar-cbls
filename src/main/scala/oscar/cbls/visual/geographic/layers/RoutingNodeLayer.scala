@@ -23,7 +23,7 @@ import scalafx.scene.shape.Circle
 
 object RoutingNodeLayer {
 
-  /** This layer displays all the nodes that are part of this VRP.
+  /** This layer displays all the nodes that are part of this VRS.
     *
     * Every node-related information should be in this class.
     * @param nbVehicles
@@ -36,7 +36,7 @@ object RoutingNodeLayer {
   }
 }
 
-/** This layer displays all the nodes that are part of this VRP.
+/** This layer displays all the nodes that are part of this VRS.
   *
   * Every node-related information should be in this class.
   * @param nbVehicles

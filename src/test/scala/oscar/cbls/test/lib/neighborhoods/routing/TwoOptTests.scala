@@ -21,7 +21,7 @@ import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.Minimize
 import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.lib.neighborhoods.routing.TwoOpt
-import oscar.cbls.modeling.routing.VRP
+import oscar.cbls.modeling.routing.VRS
 import oscar.cbls.test.lib.neighborhoods.ToolsForTestingNeighborhood.generateRandomValidRoute
 
 import scala.util.Random
@@ -52,22 +52,22 @@ class TwoOptTests extends AnyFunSuite with Matchers {
 
   test("2-opt works as expected") {
     val model  = new Store()
-    val vrp    = VRP(model, 10, 2, debug = true)
+    val vrs    = VRS(model, 10, 2, debug = true)
     val output = IntVariable(model, 0L)
-    new NaiveSumDistancesInvariant(model, vrp.routes, distMatrix, output)
+    new NaiveSumDistancesInvariant(model, vrs.routes, distMatrix, output)
     val obj = Minimize(output)
     model.close()
-    vrp.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
+    vrs.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
     model.propagate()
 
-    val routedNodeExceptVehicle = vrp.routedWithoutVehicles.pendingValue
+    val routedNodeExceptVehicle = vrs.routedWithoutVehicles.pendingValue
 
     val relevantStartSegment = () => routedNodeExceptVehicle
 
-    val search = TwoOpt(vrp, relevantStartSegment)
+    val search = TwoOpt(vrs, relevantStartSegment)
 
     noException mustBe thrownBy(search.doAllMoves(obj))
-    val routes = vrp.mapVehicleToRoute
+    val routes = vrs.mapVehicleToRoute
 
     routes(0) must (contain inOrderOnly (0, 2, 3, 4, 5) or contain inOrderOnly (0, 5, 4, 3, 2))
     routes(1) must (contain inOrderOnly (1, 6, 7, 8, 9) or contain inOrderOnly (1, 9, 8, 7, 6))
@@ -75,89 +75,89 @@ class TwoOptTests extends AnyFunSuite with Matchers {
 
   ignore("2-opt verbose mode with first loop") {
     val model  = new Store()
-    val vrp    = VRP(model, 10, 2, debug = true)
+    val vrs    = VRS(model, 10, 2, debug = true)
     val output = IntVariable(model, 0L)
-    new NaiveSumDistancesInvariant(model, vrp.routes, distMatrix, output)
+    new NaiveSumDistancesInvariant(model, vrs.routes, distMatrix, output)
     val obj = Minimize(output)
     model.close()
 
     val seed = Random.nextLong()
     val rng  = new Random(seed)
 
-    vrp.routes := generateRandomValidRoute(vrp.n, vrp.v, rng)
+    vrs.routes := generateRandomValidRoute(vrs.n, vrs.v, rng)
     model.propagate()
 
-    val routedNodeExceptVehicle = vrp.routedWithoutVehicles.pendingValue
+    val routedNodeExceptVehicle = vrs.routedWithoutVehicles.pendingValue
 
     val relevantStartSegment = () => routedNodeExceptVehicle
     val search =
-      TwoOpt(vrp, relevantStartSegment, selectFlippedSegmentBehavior = LoopBehavior.first())
+      TwoOpt(vrs, relevantStartSegment, selectFlippedSegmentBehavior = LoopBehavior.first())
     search.verbosityLevel = 4
 
-    println(s"Routes before search $vrp")
+    println(s"Routes before search $vrs")
     withClue(s"Working with seed $seed") {
       noException mustBe thrownBy(search.doAllMoves(obj))
     }
     search.displayProfiling()
-    println(s"Routes after search $vrp")
+    println(s"Routes after search $vrs")
   }
 
   ignore("2-opt verbose mode with best loop") {
     val model  = new Store()
-    val vrp    = VRP(model, 10, 2, debug = true)
+    val vrs    = VRS(model, 10, 2, debug = true)
     val output = IntVariable(model, 0L)
-    new NaiveSumDistancesInvariant(model, vrp.routes, distMatrix, output)
+    new NaiveSumDistancesInvariant(model, vrs.routes, distMatrix, output)
     val obj = Minimize(output)
     model.close()
 
     val seed = Random.nextLong()
     val rng  = new Random(seed)
 
-    vrp.routes := generateRandomValidRoute(vrp.n, vrp.v, rng)
+    vrs.routes := generateRandomValidRoute(vrs.n, vrs.v, rng)
     model.propagate()
 
-    val routedNodeExceptVehicle = vrp.routedWithoutVehicles.pendingValue
+    val routedNodeExceptVehicle = vrs.routedWithoutVehicles.pendingValue
 
     val relevantStartSegment = () => routedNodeExceptVehicle
     val search =
-      TwoOpt(vrp, relevantStartSegment, selectFlippedSegmentBehavior = LoopBehavior.best())
+      TwoOpt(vrs, relevantStartSegment, selectFlippedSegmentBehavior = LoopBehavior.best())
     search.verbosityLevel = 4
 
-    println(s"Routes before search $vrp")
+    println(s"Routes before search $vrs")
     withClue(s"Working with seed $seed") {
       noException mustBe thrownBy(search.doAllMoves(obj))
     }
     search.displayProfiling()
-    println(s"Routes after search $vrp")
+    println(s"Routes after search $vrs")
   }
 
   ignore("2-opt can only flip segment of length at most 2") {
     val model  = new Store()
-    val vrp    = VRP(model, 10, 2, debug = true)
+    val vrs    = VRS(model, 10, 2, debug = true)
     val output = IntVariable(model, 0L)
-    new NaiveSumDistancesInvariant(model, vrp.routes, distMatrix, output)
+    new NaiveSumDistancesInvariant(model, vrs.routes, distMatrix, output)
     val obj = Minimize(output)
     model.close()
 
     val seed = Random.nextLong()
     val rng  = new Random(seed)
 
-    vrp.routes := generateRandomValidRoute(vrp.n, vrp.v, rng)
+    vrs.routes := generateRandomValidRoute(vrs.n, vrs.v, rng)
     model.propagate()
 
-    val routedNodeExceptVehicle = vrp.routedWithoutVehicles.pendingValue
+    val routedNodeExceptVehicle = vrs.routedWithoutVehicles.pendingValue
 
     val relevantStartSegment = () => routedNodeExceptVehicle
     val search =
-      TwoOpt(vrp, relevantStartSegment, Some(2), selectFlippedSegmentBehavior = LoopBehavior.best())
+      TwoOpt(vrs, relevantStartSegment, Some(2), selectFlippedSegmentBehavior = LoopBehavior.best())
     search.verbosityLevel = 4
 
-    println(s"Routes before search $vrp")
+    println(s"Routes before search $vrs")
     withClue(s"Working with seed $seed") {
       noException mustBe thrownBy(search.doAllMoves(obj))
     }
     search.displayProfiling()
-    println(s"Routes after search $vrp")
+    println(s"Routes after search $vrs")
   }
 
 }
