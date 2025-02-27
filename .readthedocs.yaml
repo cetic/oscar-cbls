@@ -1,0 +1,18 @@
+version: 2
+
+formats:
+  - html
+
+build:
+  os: "ubuntu-22.04"
+  tools:
+    python: "3.9"
+
+sphinx:
+  configuration: userguide/source/conf.py
+  install:
+    - requirements: userguide/requirements.txt 
+
+python:
+  version: "3.9"
+  install:
