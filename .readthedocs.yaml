@@ -10,9 +10,8 @@ build:
 
 sphinx:
   configuration: userguide/source/conf.py
-  install:
-    - requirements: userguide/requirements.txt 
 
 python:
   version: "3.9"
   install:
+    - requirements: userguide/requirements.txt 
