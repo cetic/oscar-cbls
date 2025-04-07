@@ -27,21 +27,20 @@ object DenseRef {
     *   The sets containing the references values.
     * @param output
     *   An array of SetVariable such that output(i) = {j | i in input(j)}.
-    * @param bulkIdentifier
-    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
-    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The (optional) name of the Invariant.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def apply(
     model: Store,
     input: Array[SetVariable],
     output: Array[SetVariable],
-    bulkIdentifier: Option[String] = None,
-    name: Option[String] = None
+    name: Option[String] = None,
+    bulkUsed: Boolean = false
   ): DenseRef = {
-    new DenseRef(model, input, output, bulkIdentifier, name)
+    new DenseRef(model, input, output, name, bulkUsed)
   }
 
   /** Creates a [[DenseRef]] invariant and instantiate the output [[scala.Array]] of
@@ -53,24 +52,22 @@ object DenseRef {
     *   The sets containing the references values.
     * @param upperBound
     *   The integer such that the input values are in [0, upperBound[.
-    * @param bulkIdentifier
-    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
-    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The (optional) name of the Invariant.
-    * @return
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def makeDenseRef(
     model: Store,
     input: Array[SetVariable],
     upperBound: Int = Int.MaxValue,
-    bulkIdentifier: Option[String] = None,
-    name: Option[String] = None
+    name: Option[String] = None,
+    bulkUsed: Boolean = false
   ): DenseRef = {
     require(upperBound > 0)
     val output: Array[SetVariable] = Array.fill(upperBound)(SetVariable(model, Set.empty))
-    new DenseRef(model, input, output, bulkIdentifier, name)
+    new DenseRef(model, input, output, name, bulkUsed)
   }
 }
 
@@ -84,30 +81,27 @@ object DenseRef {
   *   The sets containing the references values.
   * @param output
   *   An array of SetVariable such that `output(i) = {j | i in input(j)}`.
-  * @param bulkIdentifier
-  *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-  *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their
-  *   identifier. Be sure to use the same one if you're referencing the same variables.
   * @param name
   *   The (optional) name of the Invariant.
+  * @param bulkUsed
+  *   Whether the input variables must be bulked (see
+  *   [[oscar.cbls.core.computation.IncredibleBulk]]).
   */
 class DenseRef(
   model: Store,
   input: Array[SetVariable],
-  output: Array[SetVariable], // We need to access it when the invariant is created with
-  // DenseRef.makeDenseRef
-  bulkIdentifier: Option[String] = None,
-  name: Option[String] = None
+  output: Array[SetVariable],
+  name: Option[String],
+  bulkUsed: Boolean
 ) extends Invariant(model, name)
     with SetNotificationTarget {
 
-  bulkIdentifier match {
-    case None =>
-      // No bulk is used
-      for (vars <- input) this.registerStaticallyListenedElement(vars)
-    case Some(bulkId) =>
-      // Register static dependency via a bulk
-      this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, bulkId, model))
+  if (bulkUsed) {
+    // Registers static dependency via a bulk
+    this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, model))
+  } else {
+    // No bulk is used
+    for (vars <- input) this.registerStaticallyListenedElement(vars)
   }
 
   for (ref <- output) {

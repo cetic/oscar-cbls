@@ -27,7 +27,7 @@ class DenseClusterTestSuite extends AnyFunSuite with Matchers {
     val store                     = new Store(debugLevel = 3)
     val values: Array[Long]       = Array(4, 4, 4, 5, 4, 5, 5, 4)
     val input: Array[IntVariable] = values.map(x => IntVariable(store, x))
-    val inv: DenseCluster         = Cluster.makeDense(store, input, 10)
+    val inv: DenseCluster         = Cluster.makeDense(store, input, 10, bulkUsed = false)
     store.close()
 
     (store, input, inv(), inv)
@@ -118,7 +118,7 @@ class DenseClusterTestSuite extends AnyFunSuite with Matchers {
       val upperBound                = 10
       val input: Array[IntVariable] = Array.fill(nbValues)(IntVariable(model, 0))
       input.foreach(v => v.setDomain(0, upperBound - 1))
-      val inv                          = Cluster.makeDense(model, input, upperBound)
+      val inv = Cluster.makeDense(model, input, upperBound, bulkUsed = false)
       val inputArray: Array[Variable]  = input.toArray
       val outputArray: Array[Variable] = inv().toArray
       TestBenchSut(inv, inputArray, outputArray)

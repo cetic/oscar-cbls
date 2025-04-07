@@ -31,28 +31,25 @@ object Sum {
     *   A SetVariable containing the indices of the input variables to sum.
     * @param output
     *   The output variable evaluating to `Sum(input(i) | i in listenedVariablesIndices)`.
-    * @param bulkIdentifier
-    *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-    *   Invariant listen to vars. Warning:
-    *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
-    *   Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The (optional) name of the Invariant.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def apply(
     model: Store,
     input: Array[IntVariable],
     listenedVariablesIndices: SetVariable,
     output: IntVariable,
-    bulkIdentifier: Option[String] = None,
-    name: Option[String] = None
+    name: Option[String] = None,
+    bulkUsed: Boolean = false
   ): Sum = {
-    new Sum(model, input, listenedVariablesIndices, output, bulkIdentifier, name)
+    new Sum(model, input, listenedVariablesIndices, output, name, bulkUsed)
   }
 }
 
-/** Invariant which maintains `Sum(input(i) | i in`
-  * `listenedVariablesIndices)`. Update is in O(1).
+/** Invariant which maintains `Sum(input(i) | i in` `listenedVariablesIndices)`. Update is in O(1).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -62,34 +59,31 @@ object Sum {
   *   A SetVariable containing the indices of the input variables to sum.
   * @param output
   *   The output variable containing `Sum(input(i) | i in listenedVariablesIndices)`.
-  * @param bulkIdentifier
-  *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-  *   Invariant listen to vars. Warning:
-  *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
-  *   sure to use the same one if you're referencing the same variables.
   * @param name
   *   The (optional) name of the Invariant.
+  * @param bulkUsed
+  *   Whether the input variables must be bulked (see
+  *   [[oscar.cbls.core.computation.IncredibleBulk]]).
   */
 class Sum(
   model: Store,
   input: Array[IntVariable],
   listenedVariablesIndices: SetVariable,
   output: IntVariable,
-  bulkIdentifier: Option[String] = None,
-  name: Option[String] = None
+  name: Option[String],
+  bulkUsed: Boolean
 ) extends Invariant(model, name)
     with IntNotificationTarget
     with SetNotificationTarget {
 
   private[this] val keysForRemoval: Array[KeyForRemoval[_]] = new Array(input.length)
 
-  bulkIdentifier match {
-    case None =>
-      // No bulk is used
-      for (vars <- input) this.registerStaticallyListenedElement(vars)
-    case Some(bulkId) =>
-      // Register static dependencies via a bulk
-      this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, bulkId, model))
+  if (bulkUsed) {
+    // Registers static dependency via a bulk
+    this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, model))
+  } else {
+    // No bulk is used
+    for (vars <- input) this.registerStaticallyListenedElement(vars)
   }
 
   listenedVariablesIndices.registerStaticallyAndDynamicallyListeningElement(this)

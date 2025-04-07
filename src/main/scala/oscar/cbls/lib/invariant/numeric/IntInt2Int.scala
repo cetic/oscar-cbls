@@ -16,6 +16,33 @@ package oscar.cbls.lib.invariant.numeric
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 import oscar.cbls.core.computation.{Invariant, Store}
 
+/** Companion object for the [[IntInt2Int]] invariant. */
+object IntInt2Int {
+
+  /** Initializes a [[IntInt2Int]] invariant and returns its output variable.
+    * @param a
+    *   The first parameter of the function.
+    * @param b
+    *   The second parameter of the function.
+    * @param fun
+    *   The function to maintain. It is supposed not to listen to any variable of the model.
+    * @param name
+    *   The (optional) name of the Invariant.
+    * @return
+    *   The output variable of the invariant.
+    */
+  def apply(
+    a: IntVariable,
+    b: IntVariable,
+    fun: (Long, Long) => Long,
+    name: Option[String] = None
+  ): IntVariable = {
+    val out = IntVariable(a.model, fun(a.value(), b.value()))
+    new IntInt2Int(a.model, a, b, out, fun, name)
+    out
+  }
+}
+
 /** A helper to define an Invariant from a `(Long, Long) => Long` function. This invariant is not
   * incremental. So it should be used for very simple functions. It maintains `output = fun(a, b)`.
   *

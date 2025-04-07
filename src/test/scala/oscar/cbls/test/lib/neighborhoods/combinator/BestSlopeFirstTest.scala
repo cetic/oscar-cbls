@@ -20,7 +20,7 @@ import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.lib.invariant.numeric.Abs
 import oscar.cbls.lib.neighborhoods.combinator.BestSlopeFirst
-import oscar.cbls.lib.neighborhoods.{AssignMove, AssignNeighborhood, SwapMove, SwapNeighborhood}
+import oscar.cbls.lib.neighborhoods.{AssignMove, Assign, SwapMove, Swap}
 
 class BestSlopeFirstTest extends AnyFunSuite with Matchers {
 
@@ -43,7 +43,7 @@ class BestSlopeFirstTest extends AnyFunSuite with Matchers {
 
     m.close()
 
-    val swap = SwapNeighborhood(
+    val swap = Swap(
       input,
       selectFirstVariableBehavior = LoopBehavior.first(),
       selectSecondVariableBehavior = LoopBehavior.first(),
@@ -58,7 +58,7 @@ class BestSlopeFirstTest extends AnyFunSuite with Matchers {
       else 0L to 100L
     }
 
-    val assign = AssignNeighborhood(
+    val assign = Assign(
       input,
       (v, _) => assignableValue(v),
       selectVariableBehavior = LoopBehavior.first(),
@@ -121,7 +121,7 @@ class BestSlopeFirstTest extends AnyFunSuite with Matchers {
 
     println(objVal)
 
-    val swap = SwapNeighborhood(
+    val swap = Swap(
       input,
       selectFirstVariableBehavior = LoopBehavior.first(),
       selectSecondVariableBehavior = LoopBehavior.first(),
@@ -136,7 +136,7 @@ class BestSlopeFirstTest extends AnyFunSuite with Matchers {
       else 0L to 100L
     }
 
-    val assign = AssignNeighborhood(
+    val assign = Assign(
       input,
       (v, _) => assignableValue(v),
       selectVariableBehavior = LoopBehavior.first(),

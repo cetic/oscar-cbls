@@ -13,15 +13,17 @@
 
 package oscar.cbls.lib.invariant.routing.capacityConstraint.transferFunction
 
+import oscar.cbls.lib.invariant.routing.abstractGenericConstraint.transferFunction.UnidirectionalTransferFunction
+
 /** Companion object of [[UnidirectionalContentTF]]. */
 object UnidirectionalContentTF {
 
-  /** Creates the content transfer function over a segment starting at `from` and ending at `to`.
+  /** Defines a unidirectional content transfer function over a segment.
     *
-    * @param from
-    *   The node starting the related segment.
-    * @param to
-    *   The node ending the related segment.
+    * It's either non-flipped (forward == true) or flipped (forward == false).
+    *
+    * @param forward
+    *   Whether this is the non-flipped UnidirectionalTF of the TransferFunction.
     * @param maxContentIfStartAt0
     *   The maximum content encountered during this segment, starting with an empty vehicle.
     * @param minContentIfStartAt0
@@ -30,39 +32,26 @@ object UnidirectionalContentTF {
     *   The output content of this segment, starting with an empty vehicle.
     */
   def apply(
-    from: Int,
-    to: Int,
+    forward: Boolean,
     maxContentIfStartAt0: Long,
     minContentIfStartAt0: Long,
     contentAtEndIfStartAt0: Long
   ): UnidirectionalContentTF = {
     new UnidirectionalContentTF(
-      from,
-      to,
-      maxContentIfStartAt0,
-      minContentIfStartAt0,
-      contentAtEndIfStartAt0
+      forward,
+      maxContentIfStartAt0: Long,
+      minContentIfStartAt0: Long,
+      contentAtEndIfStartAt0: Long
     )
-  }
-
-  /** Creates the content transfer function over a node.
-    *
-    * @param node
-    *   The node.
-    * @param contentDelta
-    *   The content variation at that node.
-    */
-  def apply(node: Int, contentDelta: Long): UnidirectionalContentTF = {
-    new UnidirectionalContentTF(node, node, contentDelta, contentDelta, contentDelta)
   }
 }
 
-/** Defines the content transfer function over a segment starting at `_from` and ending at `_to`.
+/** Defines a unidirectional content transfer function over a segment.
   *
-  * @param _from
-  *   The node starting the related segment.
-  * @param _to
-  *   The node ending the related segment.
+  * It's either non-flipped (forward == true) or flipped (forward == false).
+  *
+  * @param forward
+  *   Whether this is the non-flipped UnidirectionalTF of the TransferFunction.
   * @param _maxContentIfStartAt0
   *   The maximum content encountered during this segment, starting with an empty vehicle.
   * @param _minContentIfStartAt0
@@ -71,31 +60,40 @@ object UnidirectionalContentTF {
   *   The output content of this segment, starting with an empty vehicle.
   */
 class UnidirectionalContentTF(
-  _from: Int,
-  _to: Int,
+  forward: Boolean,
   _maxContentIfStartAt0: Long,
   _minContentIfStartAt0: Long,
   _contentAtEndIfStartAt0: Long
-) extends VehicleContentTransferFunction {
-  override def from: Int = _from
+) extends UnidirectionalTransferFunction {
 
-  override def to: Int = _to
+  def max(startContent: Long): Long = _maxContentIfStartAt0 + startContent
 
-  override def isEmpty: Boolean = false
+  def min(startContent: Long): Long = _minContentIfStartAt0 + startContent
 
-  override def max(startContent: Long): Long = _maxContentIfStartAt0 + startContent
+  def maxContentIfStartAt0: Long = _maxContentIfStartAt0
 
-  override def min(startContent: Long): Long = _minContentIfStartAt0 + startContent
+  def minContentIfStartAt0: Long = _minContentIfStartAt0
 
-  override def maxContentIfStartAt0: Long = _maxContentIfStartAt0
-
-  override def minContentIfStartAt0: Long = _minContentIfStartAt0
-
-  override def contentAtEndIfStartAt0: Long = _contentAtEndIfStartAt0
+  def contentAtEndIfStartAt0: Long = _contentAtEndIfStartAt0
 
   override def toString: String =
-    s"""From : $from, To = $to
-       |Vehicle content at end : $contentAtEndIfStartAt0
+    s"""Vehicle content at end : $contentAtEndIfStartAt0
        |Max if start content is zero : $maxContentIfStartAt0
        |Min if start content is zero : $minContentIfStartAt0""".stripMargin
+
+  override def compose(otherUTF: UnidirectionalTransferFunction): UnidirectionalTransferFunction = {
+    otherUTF match {
+      case other: UnidirectionalContentTF =>
+        val max =
+          Math.max(maxContentIfStartAt0, contentAtEndIfStartAt0 + other.maxContentIfStartAt0)
+        val min =
+          Math.min(minContentIfStartAt0, contentAtEndIfStartAt0 + other.minContentIfStartAt0)
+        val end = contentAtEndIfStartAt0 + other.contentAtEndIfStartAt0
+        UnidirectionalContentTF(forward, max, min, end)
+      case _ =>
+        throwComposeError(this, otherUTF)
+        null
+    }
+  }
+
 }

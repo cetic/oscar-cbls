@@ -21,8 +21,8 @@ import oscar.cbls.core.computation.objective.Minimize
 import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.lib.invariant.numeric.Sum2
 import oscar.cbls.lib.neighborhoods.routing.{
-  InsertPointNeighborhoodInsertionPointFirst,
-  InsertPointNeighborhoodUnroutedFirst
+  InsertPointInsertionPointFirst,
+  InsertPointUnroutedFirst
 }
 import oscar.cbls.modeling.routing.VRS
 
@@ -58,7 +58,7 @@ class InsertPointNeighborhoodTestSuite extends AnyFunSuite {
     val relevantInsertPoint = (_: Int) => vrs.routedWithVehicles.value()
 
     println(s"Initial routing: $vrs")
-    val search = InsertPointNeighborhoodUnroutedFirst(
+    val search = InsertPointUnroutedFirst(
       vrs,
       valuesToInsert,
       relevantInsertPoint,
@@ -78,7 +78,7 @@ class InsertPointNeighborhoodTestSuite extends AnyFunSuite {
     val relevantValues = (_: Int) => vrs.unroutedNodes
 
     println(s"Initial routing: $vrs")
-    val search = InsertPointNeighborhoodInsertionPointFirst(
+    val search = InsertPointInsertionPointFirst(
       vrs,
       insertionNode,
       relevantValues,

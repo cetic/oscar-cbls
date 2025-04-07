@@ -28,7 +28,7 @@ class ElementTestSuite extends AnyFunSuite with Matchers {
     val input: Array[IntVariable] = values.map(x => IntVariable(store, x))
     val index: IntVariable        = IntVariable(store, 3)
     val output: IntVariable       = IntVariable(store, 0)
-    val inv: Element              = Element(store, input, index, output)
+    val inv: Element              = Element(store, input, index, output, bulkUsed = false)
     store.close()
 
     (store, input, index, output, inv)
@@ -87,7 +87,7 @@ class ElementTestSuite extends AnyFunSuite with Matchers {
       val index    = IntVariable(model, 0)
       index.setDomain(0, nbValues - 1)
       val output = IntVariable(model, 0)
-      val inv    = Element(model, input, index, output)
+      val inv    = Element(model, input, index, output, bulkUsed = false)
 
       TestBenchSut(inv, index +: input, Array(output))
     }

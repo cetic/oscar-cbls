@@ -31,28 +31,26 @@ object Element {
     *   An IntVariable pointing to one of the input values.
     * @param output
     *   The IntVariable evaluating to `input(index)`.
-    * @param bulkIdentifier
-    *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-    *   Invariant listen to vars. Warning:
-    *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
-    *   Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The (optional) name of the Invariant.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def apply(
     model: Store,
     input: Array[IntVariable],
     index: IntVariable,
     output: IntVariable,
-    bulkIdentifier: Option[String] = None,
-    name: Option[String] = None
+    name: Option[String] = None,
+    bulkUsed: Boolean = false
   ): Element = {
-    new Element(model, input, index, output, bulkIdentifier, name)
+    new Element(model, input, index, output, name, bulkUsed)
   }
 }
 
-/** Invariant which maintains `input(index)` where input is an
-  * [[scala.Array]] of [[oscar.cbls.core.computation.integer.IntVariable]] and index is an
+/** Invariant which maintains `input(index)` where input is an [[scala.Array]] of
+  * [[oscar.cbls.core.computation.integer.IntVariable]] and index is an
   * [[oscar.cbls.core.computation.integer.IntVariable]] . Update is in O(1).
   *
   * @param model
@@ -63,35 +61,33 @@ object Element {
   *   An IntVariable pointing to one of the input values.
   * @param output
   *   The IntVariable evaluating to `input(index)`.
-  * @param bulkIdentifier
-  *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-  *   Invariant listen to vars. Warning:
-  *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
-  *   sure to use the same one if you're referencing the same variables.
   * @param name
   *   The (optional) name of the Invariant.
+  * @param bulkUsed
+  *   Whether the input variables must be bulked (see
+  *   [[oscar.cbls.core.computation.IncredibleBulk]]).
   */
 class Element(
   model: Store,
   input: Array[IntVariable],
   index: IntVariable,
   output: IntVariable,
-  bulkIdentifier: Option[String] = None,
-  name: Option[String] = None
+  name: Option[String],
+  bulkUsed: Boolean
 ) extends Invariant(model, name)
     with IntNotificationTarget {
 
   private[this] var keyForCurrentVar: KeyForRemoval[_] = input(index.value().toInt)
     .registerDynamicallyListeningElement(this)
 
-  bulkIdentifier match {
-    case None =>
-      // No bulk is used
-      for (vars <- input) this.registerStaticallyListenedElement(vars)
-    case Some(bulkId) =>
-      // Register static dependency via a bulk
-      this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, bulkId, model))
+  if (bulkUsed) {
+    // Registers static dependency via a bulk
+    this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, model))
+  } else {
+    // No bulk is used
+    for (vars <- input) this.registerStaticallyListenedElement(vars)
   }
+
   index.registerStaticallyAndDynamicallyListeningElement(this, 0)
   output.setDefiningInvariant(this)
 

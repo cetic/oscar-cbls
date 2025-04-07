@@ -13,8 +13,9 @@
 
 package oscar.cbls.core.computation.integer
 
-import oscar.cbls.core.computation.{Invariant, KeyForRemoval, SavedValue, Store, Variable}
-import oscar.cbls.lib.invariant.numeric.{Abs, Div2, Minus2, Mod, Opposite, Pow, Prod2, Square, Sum2}
+import oscar.cbls.core.computation._
+import oscar.cbls.lib.invariant.numeric._
+import oscar.cbls.util.Numeric
 
 /** Companion object of IntVariable */
 object IntVariable {
@@ -150,6 +151,30 @@ class IntVariable(
 
   /** Returns the square of this variable. */
   def square: IntVariable = Square.result(this)
+
+  /** Returns a variable that assumes value 0 if this variable is less or equal than another one,
+    * and the magnitude of the difference (limited to [[Long.MaxValue]]) otherwise.
+    */
+  def leq(that: IntVariable): IntVariable =
+    IntInt2Int(
+      this,
+      that,
+      (a, b) => {
+        if (a <= b) 0 else Numeric.limitToLong(BigInt(a) - BigInt(b))
+      }
+    )
+
+  /** Returns a variable that assumes value 0 if this variable is greater or equal than another one,
+    * and the magnitude of the difference (limited to [[Long.MaxValue]]) otherwise.
+    */
+  def geq(that: IntVariable): IntVariable =
+    IntInt2Int(
+      this,
+      that,
+      (a, b) => {
+        if (a >= b) 0 else Numeric.limitToLong(BigInt(b) - BigInt(a))
+      }
+    )
 
   /** Decrements this variable */
   def :--(): Unit = setValue(_pendingValue - 1)

@@ -16,12 +16,17 @@ trait Predefined {
     * Uses the [[oscar.cbls.lib.invariant.numeric.Sum]] invariant.
     *
     * @param input
-    *   array of variables to sum
+    *   Array of variables to sum.
     * @param name
-    *   optional name of the resulting variable
+    *   Optional name of the resulting variable.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
-  def sum(input: Array[IntVariable], name: String = "")(implicit m: Model): IntVariable =
-    n.sum(input, name = name)(m)
+  def sum(input: Array[IntVariable], name: String = "", bulkUsed: Boolean = false)(implicit
+    m: Model
+  ): IntVariable =
+    n.sum(input, name, bulkUsed)(m)
 
   /** Returns a variable maintaining the sum over the elements of an array such that their indices
     * belong to a given set, i.e., `Sum(input(i) | i in indices)`, where `input` is an array of

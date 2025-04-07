@@ -22,17 +22,17 @@ import scala.collection.immutable.HashMap
 object IncredibleBulk {
 
   // The map of recorded IncredibleBulk
-  private var incredibleBulks: HashMap[String, IncredibleBulk] = HashMap.empty
+  private var incredibleBulks: HashMap[Int, IncredibleBulk] = HashMap.empty
 
   /** Registers a new IncredibleBulk if it wasn't registered before.
     *
-    * NOTE : IncredibleBulk are distinguished only by their identifier. Be sure to use the same one
-    * if you're referencing the same Variables.
+    * @note
+    *   IncredibleBulk are distinguished only by their identifier. The identifier is the hashcode of
+    *   the input iterable. The hashcode depends on the `n` items contained in the iterable. So, the
+    *   bulk registering is in `O(n)`.
     *
     * @param bulkVariables
     *   The bulk registered variables
-    * @param incredibleBulkIdentifier
-    *   The incredible bulk identifier
     * @param propagationStructure
     *   The propagation structure to which the element is attached
     * @return
@@ -40,16 +40,14 @@ object IncredibleBulk {
     */
   def bulkRegistering(
     bulkVariables: Iterable[Variable],
-    incredibleBulkIdentifier: String,
     propagationStructure: PropagationStructure
   ): IncredibleBulk = {
-    if (!incredibleBulks.contains(incredibleBulkIdentifier)) {
-      incredibleBulks = incredibleBulks + (incredibleBulkIdentifier -> new IncredibleBulk(
-        bulkVariables,
-        propagationStructure
-      ))
+    val hash: Int = bulkVariables.hashCode()
+    if (!incredibleBulks.contains(hash)) {
+      incredibleBulks =
+        incredibleBulks + (hash -> new IncredibleBulk(bulkVariables, propagationStructure))
     }
-    incredibleBulks(incredibleBulkIdentifier)
+    incredibleBulks(hash)
   }
 
 }

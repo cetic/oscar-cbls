@@ -26,7 +26,7 @@ class DenseRefTestSuite extends AnyFunSuite with Matchers {
     val store                   = new Store(debugLevel = 3)
     val values: Array[Set[Int]] = Array(Set(0, 1, 2, 3), Set(2, 3), Set(0, 3), Set(1, 2, 3), Set(4))
     val input: Array[SetVariable] = values.map(s => SetVariable(store, s))
-    val inv: DenseRef             = DenseRef.makeDenseRef(store, input, 10)
+    val inv: DenseRef             = DenseRef.makeDenseRef(store, input, 10, bulkUsed = false)
     store.close()
 
     (store, input, inv(), inv)
@@ -112,7 +112,7 @@ class DenseRefTestSuite extends AnyFunSuite with Matchers {
       val upperBound                = 10
       val input: Array[SetVariable] = Array.fill(nbValues)(SetVariable(model, Set.empty))
       input.foreach(v => v.setDomain(0, upperBound - 1))
-      val inv                          = DenseRef.makeDenseRef(model, input, upperBound)
+      val inv = DenseRef.makeDenseRef(model, input, upperBound, bulkUsed = false)
       val inputArray: Array[Variable]  = Array.from(input)
       val outputArray: Array[Variable] = Array.from(inv())
       TestBenchSut(inv, inputArray, outputArray)

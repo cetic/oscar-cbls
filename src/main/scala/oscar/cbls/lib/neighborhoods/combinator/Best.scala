@@ -32,7 +32,7 @@ object Best {
     *   The Neighborhoods that this combinator handles. Those can be
     *   [[oscar.cbls.core.search.SimpleNeighborhood]] or other NeighborhoodCombinator.
     * @param neighborhoodCombinatorName
-    *   The name of the neighborhood combinator
+    *   The name of the neighborhood combinator.
     */
   def apply(
     subNeighborhoods: List[Neighborhood],
@@ -52,7 +52,7 @@ object Best {
   *   The Neighborhoods that this combinator handles. Those can be
   *   [[oscar.cbls.core.search.SimpleNeighborhood]] or other NeighborhoodCombinator.
   * @param neighborhoodCombinatorName
-  *   The name of the neighborhood combinator
+  *   The name of the neighborhood combinator.
   */
 class Best(subNeighborhoods: List[Neighborhood], neighborhoodCombinatorName: String = "Best")
     extends NeighborhoodCombinator(neighborhoodCombinatorName, subNeighborhoods) {

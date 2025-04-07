@@ -19,7 +19,7 @@ import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.Maximize
 import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.lib.invariant.numeric.IntInt2Int
-import oscar.cbls.lib.neighborhoods.AssignNeighborhood
+import oscar.cbls.lib.neighborhoods.Assign
 import oscar.cbls.lib.neighborhoods.combinator.Best
 import oscar.cbls.test.lib.neighborhoods.ToolsForTestingNeighborhood.generateRandomDomain
 
@@ -61,11 +61,11 @@ class BestCombinatorTestSuite extends AnyFunSuite {
   ignore("BestCombinator works as expected") {
     val (a, b, c, domains, objective) = getTestBasicModel
     val nA =
-      AssignNeighborhood(Array(a), domains, name = "NA", selectValueBehavior = LoopBehavior.best())
+      Assign(Array(a), domains, name = "NA", selectValueBehavior = LoopBehavior.best())
     val nB =
-      AssignNeighborhood(Array(b), domains, name = "NB", selectValueBehavior = LoopBehavior.best())
+      Assign(Array(b), domains, name = "NB", selectValueBehavior = LoopBehavior.best())
     val nC =
-      AssignNeighborhood(Array(c), domains, name = "NC", selectValueBehavior = LoopBehavior.best())
+      Assign(Array(c), domains, name = "NC", selectValueBehavior = LoopBehavior.best())
 
     val search = Best(List(nA, nB, nC))
     search.verbosityLevel = 3

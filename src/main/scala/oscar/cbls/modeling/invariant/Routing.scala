@@ -3,7 +3,8 @@ package oscar.cbls.modeling.invariant
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.routing._
-import oscar.cbls.lib.invariant.routing.capacityConstraint.GlobalCapacityConstraintWithLogReduction
+import oscar.cbls.lib.invariant.routing.abstractGenericConstraint.GlobalConstraintCore
+import oscar.cbls.lib.invariant.routing.capacityConstraint.GlobalCapacityConstraint
 import oscar.cbls.modeling.routing.VRS
 
 /** This trait collects invariant methods normally used to express derived quantities related to a
@@ -123,8 +124,7 @@ trait Routing {
   /** This method returns an array of derived variables expressing the number of nodes in the route
     * of each vehicle over the relevant vehicle routing structure.
     *
-    * This method is based on
-    * [[oscar.cbls.core.computation.genericConstraint.GlobalConstraintCore]].
+    * This method is based on [[GlobalConstraintCore]].
     *
     * @param vrs
     *   The vehicle routing structure on which this array is computed.
@@ -133,22 +133,6 @@ trait Routing {
     */
   def nbNodes(implicit vrs: VRS): Array[IntVariable] = {
     val inv = NbNodes(vrs)
-    inv()
-  }
-
-  /** This method returns an array of derived variables expressing the number of nodes int the route
-    * of each vehicle over the relevant vehicle routing structure.
-    *
-    * This method is based on
-    * [[oscar.cbls.core.computation.genericConstraint.LogReducedGlobalConstraint]].
-    *
-    * @param vrs
-    *   The vehicle routing structure on which this array is computed.
-    * @return
-    *   An array of [[IntVariable]] maintaining the number of nodes in the routes of each vehicle.
-    */
-  def nbNodesLogReduced()(implicit vrs: VRS): Array[IntVariable] = {
-    val inv = NbNodesLogReduced(vrs)
     inv()
   }
 
@@ -181,6 +165,12 @@ trait Routing {
     *   The variation of the content reaching a specific node or leaving from depot.
     * @param contentVariationBackAtDepot
     *   The (optional) variation of the content getting back to depot.
+   * @param withLogReduction
+   *   If true the log reduction algorithm will be activated.
+   * @param withExtremesPC
+   *   If true classical pre-computation will be applied for each pair of node starting at vehicle's
+   *   depot and ending in the vehicle's route. And also for each pair of node starting at the end of
+   *   the route and ending in the vehicle's route. (Useless without using log reduction as well)
     * @param name
     *   The (optional) name of the Invariant.
     * @param vrs
@@ -190,15 +180,18 @@ trait Routing {
     vehiclesCapacity: Array[Long],
     contentVariationAtNode: Array[Long],
     contentVariationBackAtDepot: Option[Array[Long]] = None,
+    withLogReduction: Boolean = false,
+    withExtremesPC: Boolean = false,
     name: String = ""
   )(implicit vrs: VRS): Array[IntVariable] = {
-    val optName = if (name == "") None else Some(name)
-    val capacityConstraint = GlobalCapacityConstraintWithLogReduction(
+    val capacityConstraint = GlobalCapacityConstraint(
       vrs,
       vehiclesCapacity,
       contentVariationAtNode,
       contentVariationBackAtDepot,
-      optName
+      withLogReduction,
+      withExtremesPC,
+      name
     )
     capacityConstraint()
   }

@@ -14,10 +14,15 @@
 package oscar.cbls.lib.invariant.routing
 
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
-import oscar.cbls.core.computation.genericConstraint.GlobalConstraintCore
-import oscar.cbls.core.computation.genericConstraint.segment._
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.lib.invariant.routing.RouteLength.PrecomputedDistance
+import oscar.cbls.lib.invariant.routing.abstractGenericConstraint.GlobalConstraintCore
+import oscar.cbls.lib.invariant.routing.abstractGenericConstraint.segment.{
+  FlippedPreComputedSubSequence,
+  NewNode,
+  PrecomputedSubSequence,
+  Segment
+}
 import oscar.cbls.modeling.routing.VRS
 
 /** Companion object of the [[RouteLength]] class. */

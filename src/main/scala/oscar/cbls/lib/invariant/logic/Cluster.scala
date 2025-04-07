@@ -31,26 +31,24 @@ object Cluster {
     *   An array of variable to cluster.
     * @param clusters
     *   The list of keys defining the input values to cluster.
-    * @param bulkIdentifier
-    *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-    *   Invariant listen to vars. Warning:
-    *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
-    *   Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The (optional) name of the Invariant.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked
+    *   (see[[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def makeSparse(
     model: Store,
     input: Array[IntVariable],
     clusters: Iterable[Long],
-    bulkIdentifier: Option[String] = None,
-    name: Option[String] = None
+    name: Option[String] = None,
+    bulkUsed: Boolean = false
   ): SparseCluster = {
 
     val output: HashMap[Long, SetVariable] =
       HashMap.from(clusters.map(x => (x, SetVariable(model, Set.empty))))
 
-    SparseCluster(model, input, output, bulkIdentifier, name)
+    SparseCluster(model, input, output, name, bulkUsed)
   }
 
   /** Creates a DenseCluster and instantiates the output [[scala.Array]] of
@@ -62,26 +60,24 @@ object Cluster {
     *   An array of variable to cluster.
     * @param upperBound
     *   The integer such that the input variables' domain is [0, upperBound[.
-    * @param bulkIdentifier
-    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-    *   Invariant listen to vars. Warning:
-    *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
-    *   Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The (optional) name of the Invariant.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def makeDense(
     model: Store,
     input: Array[IntVariable],
     upperBound: Int = Int.MaxValue,
-    bulkIdentifier: Option[String] = None,
-    name: Option[String] = None
+    name: Option[String] = None,
+    bulkUsed: Boolean = false
   ): DenseCluster = {
     require(upperBound > 0, "upperBound should be > 0.")
 
     val output: Array[SetVariable] = Array.fill(upperBound)(SetVariable(model, Set.empty))
 
-    DenseCluster(model, input, output, bulkIdentifier, name)
+    DenseCluster(model, input, output, name, bulkUsed)
   }
 
 }

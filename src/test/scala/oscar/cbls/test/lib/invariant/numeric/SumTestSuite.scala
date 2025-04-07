@@ -28,7 +28,7 @@ class SumTestSuite extends AnyFunSuite with Matchers {
     val input: Array[IntVariable]             = Array.range(0, 6).map(i => IntVariable(store, i))
     val listenedVariablesIndices: SetVariable = SetVariable(store, set)
     val output                                = IntVariable(store, 0)
-    val inv                                   = Sum(store, input, listenedVariablesIndices, output)
+    val inv = Sum(store, input, listenedVariablesIndices, output, bulkUsed = false)
     store.close()
 
     (store, input, listenedVariablesIndices, output, inv)
@@ -86,7 +86,7 @@ class SumTestSuite extends AnyFunSuite with Matchers {
       val listened = SetVariable(model, Set.empty[Int])
       listened.setDomain(0, nbValues - 1)
       val output = IntVariable(model, 0)
-      val inv    = Sum(model, input, listened, output)
+      val inv    = Sum(model, input, listened, output, bulkUsed = false)
       TestBenchSut(inv, listened +: input, Array(output))
     }
 

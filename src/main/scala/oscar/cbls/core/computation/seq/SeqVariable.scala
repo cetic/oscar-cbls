@@ -13,8 +13,11 @@
 
 package oscar.cbls.core.computation.seq
 
+import oscar.cbls.{intVar, IntVariable}
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
+import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.{Invariant, KeyForRemoval, SavedValue, Store, Variable}
+import oscar.cbls.lib.invariant.seq.Size
 
 /** Companion object of SeqVariable
   */
@@ -461,6 +464,19 @@ class SeqVariable(
         "A checkpoint has been defined but the performedSinceTopCheckpoint stack has not been initiated"
       )
     }
+  }
+
+  /** Returns the size of this seq variable. The size is maintained dynamically through the
+    * [[oscar.cbls.lib.invariant.seq.Size]] invariant.
+    *
+    * Note: differently from the `size` method in most standard collection, this method produces
+    * side effects (the initialization of the Size invariant and associated output variable),
+    * hence it has to be called with parentheses.
+    */
+  def size(): IntVariable = {
+    val output = IntVariable(model, 0)
+    Size(model, this, output)
+    output
   }
 
   /** Sets the new value of this SeqVariable.

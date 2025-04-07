@@ -33,22 +33,21 @@ object Filter {
     *   The function that selects values such that their index must be included in the output set.
     *   This function cannot depend on any IntVariable, as updates to these IntVariables will not
     *   trigger propagation of this invariant. By default, predicate is "_ > 0".
-    * @param bulkIdentifier
-    *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
-    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The (optional) name of the Invariant.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def apply(
     model: Store,
     input: Array[IntVariable],
     output: SetVariable,
     predicate: Long => Boolean = _ > 0,
-    bulkIdentifier: Option[String] = None,
-    name: Option[String] = None
+    name: Option[String] = None,
+    bulkUsed: Boolean = false
   ): Filter = {
-    new Filter(model, input, output, predicate, bulkIdentifier, name)
+    new Filter(model, input, output, predicate, name, bulkUsed)
   }
 }
 
@@ -65,30 +64,28 @@ object Filter {
   *   The function that selects values such that their index must be included in the output set.
   *   This function cannot depend on any IntVariable, as updates to these IntVariables will not
   *   trigger propagation of this invariant. By default, predicate is "_ > 0".
-  * @param bulkIdentifier
-  *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-  *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their
-  *   identifier. Be sure to use the same one if you're referencing the same variables.
   * @param name
   *   The (optional) name of the Invariant.
+  * @param bulkUsed
+  *   Whether the input variables must be bulked (see
+  *   [[oscar.cbls.core.computation.IncredibleBulk]]).
   */
 class Filter(
   model: Store,
   input: Array[IntVariable],
   output: SetVariable,
-  predicate: Long => Boolean = _ > 0,
-  bulkIdentifier: Option[String] = None,
-  name: Option[String] = None
+  predicate: Long => Boolean,
+  name: Option[String],
+  bulkUsed: Boolean
 ) extends Invariant(model, name)
     with IntNotificationTarget {
 
-  bulkIdentifier match {
-    case None =>
-      // No bulk is used
-      for (vars <- input) this.registerStaticallyListenedElement(vars)
-    case Some(bulkId) =>
-      // Register static dependency via a bulk
-      this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, bulkId, model))
+  if (bulkUsed) {
+    // Registers static dependency via a bulk
+    this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, model))
+  } else {
+    // No bulk is used
+    for (vars <- input) this.registerStaticallyListenedElement(vars)
   }
 
   output := Set.empty

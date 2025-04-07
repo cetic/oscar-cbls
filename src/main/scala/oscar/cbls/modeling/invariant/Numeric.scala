@@ -13,14 +13,13 @@ trait Numeric {
     *
     * @param input
     *   Array of variables to sum.
-    * @param bulkIdentifier
-    *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
-    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   optional name of the resulting variable.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
-  def sum(input: Array[IntVariable], bulkIdentifier: String = "", name: String = "")(implicit
+  def sum(input: Array[IntVariable], name: String = "", bulkUsed: Boolean = false)(implicit
     m: Model
   ): IntVariable = {
     val store = m.store
@@ -28,15 +27,11 @@ trait Numeric {
     else {
       val out        = IntVariable(store, 0)
       val allIndices = SetConstant(store, input.indices.toSet)
-      val optBulk = bulkIdentifier match {
-        case "" => None
-        case x  => Some(x)
-      }
       val optName = name match {
         case "" => None
         case x  => Some(x)
       }
-      Sum(store, input, allIndices, out, optBulk, optName)
+      Sum(store, input, allIndices, out, optName, bulkUsed)
       out
     }
   }
@@ -51,32 +46,27 @@ trait Numeric {
     *   Array variables to sum.
     * @param indices
     *   Variable maintaining the set of indices of the integers to sum.
-    * @param bulkIdentifier
-    *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
-    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   Optional name of the resulting variable.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def partialSum(
     input: Array[IntVariable],
     indices: SetVariable,
-    bulkIdentifier: String = "",
-    name: String = ""
+    name: String = "",
+    bulkUsed: Boolean = false
   )(implicit m: Model): IntVariable = {
     val store = m.store
     if (input.length == 0) IntConstant(m.store, 0)
     else {
       val output = IntVariable(store, 0)
-      val optBulk = bulkIdentifier match {
-        case "" => None
-        case x  => Some(x)
-      }
       val optName = name match {
         case "" => None
         case x  => Some(x)
       }
-      Sum(store, input, indices, output, optBulk, optName)
+      Sum(store, input, indices, output, optName, bulkUsed)
       output
     }
   }
@@ -122,14 +112,13 @@ trait Numeric {
     *
     * @param input
     *   Array of variables to multiply.
-    * @param bulkIdentifier
-    *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
-    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   optional name of the resulting variable.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
-  def prod(input: Array[IntVariable], bulkIdentifier: String = "", name: String = "")(implicit
+  def prod(input: Array[IntVariable], name: String = "", bulkUsed: Boolean = false)(implicit
     m: Model
   ): IntVariable = {
     val store = m.store
@@ -137,15 +126,11 @@ trait Numeric {
     else {
       val out        = IntVariable(store, 0)
       val allIndices = SetConstant(store, input.indices.toSet)
-      val optBulk = bulkIdentifier match {
-        case "" => None
-        case x  => Some(x)
-      }
       val optName = name match {
         case "" => None
         case x  => Some(x)
       }
-      Prod(store, input, allIndices, out, optBulk, optName)
+      Prod(store, input, allIndices, out, optName, bulkUsed)
       out
     }
   }
@@ -160,32 +145,27 @@ trait Numeric {
     *   Array variables to sum.
     * @param indices
     *   Variable maintaining the set of indices of the integers to sum.
-    * @param bulkIdentifier
-    *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
-    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   Optional name of the resulting variable.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def partialProd(
     input: Array[IntVariable],
     indices: SetVariable,
-    bulkIdentifier: String = "",
-    name: String = ""
+    name: String = "",
+    bulkUsed: Boolean = false
   )(implicit m: Model): IntVariable = {
     val store = m.store
     if (input.length == 0) IntConstant(m.store, 0)
     else {
       val output = IntVariable(store, 0)
-      val optBulk = bulkIdentifier match {
-        case "" => None
-        case x  => Some(x)
-      }
       val optName = name match {
         case "" => None
         case x  => Some(x)
       }
-      Prod(store, input, indices, output, optBulk, optName)
+      Prod(store, input, indices, output, optName, bulkUsed)
       output
     }
   }

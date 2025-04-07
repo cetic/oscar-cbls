@@ -1,5 +1,6 @@
 package oscar.cbls.algo.sequence
 
+import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 
 /** This class is used to generate an [[IntSequenceIterator]] from a [[IntSequenceExplorer]]
@@ -8,8 +9,8 @@ import scala.language.implicitConversions
   *   The starting point of any IntSequenceIterator created in this class
   * @param forward
   *   A flag.
-  *   - true : Iterating using IntSequenceExplorer.next
-  *   - false : Iterating using IntSequenceExplorer.prev
+  *   - true : Iterating using `IntSequenceExplorer.next`
+  *   - false : Iterating using `IntSequenceExplorer.prev`
   */
 case class IntSequenceExplorerToIterator(intSequenceExplorer: IntSequenceExplorer, forward: Boolean)
     extends Iterable[IntSequenceExplorer] {
@@ -23,6 +24,21 @@ case class IntSequenceExplorerToIterator(intSequenceExplorer: IntSequenceExplore
     *   An IntSequenceIterator, forward or backward
     */
   def untilValue(value: Int): IntSequenceIterator = until(e => e.value == value)
+
+  /** Returns a List containing all values until an [[IntSequenceExplorer]] with the
+   * corresponding value is found or no [[IntSequenceExplorer]] are remaining.
+   *
+   * @param value
+   *   The value to match
+   * @return
+   *   A List of sequence values, forward or backward
+   */
+  def valuesUntilValue(value: Int): List[Int] = {
+    val iterator = untilValue(value)
+    val values: ListBuffer[Int] = ListBuffer.empty
+    iterator.foreach(explorer => values += explorer.value)
+    values.toList
+  }
 
   /** Returns an IntSequenceIterator iterating until an [[IntSequenceExplorer]] fulfilling the
     * condition is found or no [[IntSequenceExplorer]] are remaining.
@@ -59,7 +75,7 @@ case class IntSequenceExplorerToIterator(intSequenceExplorer: IntSequenceExplore
 
 abstract class IntSequenceIterator extends Iterator[IntSequenceExplorer]
 
-/** An conditional iterator going through the sequence using next moves on explorer
+/** A conditional iterator going through the sequence using next moves on explorer
   *
   * NOTE : It allows to start RootIntSequenceExplorer "before start" but not "after end"
   *
@@ -68,7 +84,7 @@ abstract class IntSequenceIterator extends Iterator[IntSequenceExplorer]
   * @param stopCondition
   *   As long as it's false ==> continue
   * @param inclusive
-  *   Whether or not we should include the last [[IntSequenceExplorer]]
+  *   Whether we should include the last [[IntSequenceExplorer]]
   */
 case class IntSequenceForwardIterator(
   var start: IntSequenceExplorer,
@@ -98,7 +114,7 @@ case class IntSequenceForwardIterator(
   }
 }
 
-/** An conditional iterator going through the sequence using prev moves on explorer
+/** A conditional iterator going through the sequence using prev moves on explorer
   *
   * NOTE : It allows to start RootIntSequenceExplorer "after end" but not "before start"
   *
@@ -107,7 +123,7 @@ case class IntSequenceForwardIterator(
   * @param stopCondition
   *   As long as it's false ==> continue
   * @param inclusive
-  *   Whether or not we should include the last [[IntSequenceExplorer]]
+  *   Whether we should include the last [[IntSequenceExplorer]]
   */
 case class IntSequenceBackwardIterator(
   var start: IntSequenceExplorer,

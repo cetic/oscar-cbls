@@ -59,7 +59,7 @@ abstract class ExtremumConst(
     BinaryHeapWithMoveIntItem((i: Int) => ord(input(i)), input.length, input.length)
 
   // Used to postpone not impacting updates
-  private[this] var backlog: mutable.Queue[Int] = mutable.Queue()
+  private[this] val backlog: mutable.Queue[Int] = mutable.Queue()
   private[this] var backlogSize: Int            = 0
   // Tells if the postponed update have to be performed
   private[this] val isBacklogged: Array[Boolean] = Array.fill(input.length)(false)
@@ -171,7 +171,7 @@ abstract class ExtremumConst(
 
   private[this] def putIntoBacklog(condValue: Int): Unit = {
     if (!isBacklogged(condValue)) {
-      backlog = backlog :+ condValue
+      backlog.enqueue(condValue)
       isBacklogged(condValue) = true
       backlogSize += 1
     }

@@ -47,7 +47,7 @@ class ConstantsWithInvariantsTestSuite extends AnyFunSuite {
     val filterSet            = vars.indices.toSet
     val indices: SetVariable = SetVariable(store, filterSet)
     val out                  = IntVariable(store, 0)
-    val _                    = Min(store, vars, indices, out)
+    val _                    = Min(store, vars, indices, out, bulkUsed = false)
     store.close()
 
     out.value() should be(arr.min)
@@ -76,7 +76,7 @@ class ConstantsWithInvariantsTestSuite extends AnyFunSuite {
         val listened = SetVariable(model, Set.empty[Int])
         listened.setDomain(0, nbValues - 1)
         val output = IntVariable(model, 0)
-        val max    = Max(model, inputArray, listened, output)
+        val max    = Max(model, inputArray, listened, output, bulkUsed = false)
         val input: Array[Variable] =
           (listened :: inputArray.filterNot(_.isInstanceOf[IntConstant]).toList).toArray
         TestBenchSut(max, input, Array(output))
