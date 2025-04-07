@@ -43,7 +43,7 @@ object TwoOpt {
     vrs: VRS,
     relevantStartOfSegment: () => Iterable[Int],
     maxSegmentLength: Option[Int] = None,
-    name: String = "2-opt",
+    name: String = "2-Opt",
     selectFlippedSegmentBehavior: LoopBehavior = LoopBehavior.first(),
     hotRestart: Boolean = true
   ): TwoOpt = {

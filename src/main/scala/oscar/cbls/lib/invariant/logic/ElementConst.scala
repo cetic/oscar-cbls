@@ -14,7 +14,7 @@
 package oscar.cbls.lib.invariant.logic
 
 import oscar.cbls.core.computation.Store
-import oscar.cbls.core.computation.integer.{IntConstant, IntVariable}
+import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.lib.invariant.numeric.Int2Int
 
 /** Companion object of the [[ElementConst]] class. */

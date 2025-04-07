@@ -39,21 +39,20 @@ trait MinMax {
     *   Array of variables on which to compute the minimum.
     * @param default
     *   The default value of the minimum. By default, it is set to `Int.MaxValue`.
-    * @param bulkIdentifier
-    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
-    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   Optional name of the resulting variable.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def min(
     input: Array[IntVariable],
     default: Long = Int.MaxValue,
-    bulkIdentifier: String = "",
-    name: String = ""
+    name: String = "",
+    bulkUsed: Boolean = false
   )(implicit m: Model): IntVariable = {
     val allIndices = SetConstant(m.store, input.indices.toSet)
-    partialMin(input, allIndices, default, bulkIdentifier, name)(m)
+    partialMin(input, allIndices, default, name, bulkUsed)(m)
   }
 
   /** Returns a variable representing the maximum of all the input values.
@@ -62,21 +61,20 @@ trait MinMax {
     *   Array of variables on which to compute the maximum.
     * @param default
     *   The default value of the maximum. By default, it is set to `Int.MinValue`.
-    * @param bulkIdentifier
-    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
-    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   Optional name of the resulting variable.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def max(
     input: Array[IntVariable],
     default: Long = Int.MinValue,
-    bulkIdentifier: String = "",
-    name: String = ""
+    name: String = "",
+    bulkUsed: Boolean = false
   )(implicit m: Model): IntVariable = {
     val allIndices = SetConstant(m.store, input.indices.toSet)
-    partialMax(input, allIndices, default, bulkIdentifier, name)(m)
+    partialMax(input, allIndices, default, name, bulkUsed)(m)
   }
 
   /** Returns a variable representing the minimum of the input values such that their indices belong
@@ -90,29 +88,24 @@ trait MinMax {
     *   minimum.
     * @param default
     *   The default value of the minimum. By default, it is set to `Int.MaxValue`.
-    * @param bulkIdentifier
-    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
-    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   Optional name of the resulting variable.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def partialMin(
     input: Array[IntVariable],
     indices: SetVariable,
     default: Long = Int.MaxValue,
-    bulkIdentifier: String = "",
-    name: String = ""
+    name: String = "",
+    bulkUsed: Boolean = false
   )(implicit m: Model): IntVariable = {
     require(
       indices.value().isEmpty || (indices.value().min >= 0 && indices.value().max < input.length),
       "Elements of the indices SetVariable are out of bounds for the input array"
     )
 
-    val optBulk = bulkIdentifier match {
-      case "" => None
-      case x  => Some(x)
-    }
     val optName = name match {
       case "" => None
       case x  => Some(x)
@@ -120,7 +113,7 @@ trait MinMax {
 
     val output = IntVariable(m.store, 0)
 
-    Min(m.store, input, indices, output, default, optBulk, optName)
+    Min(m.store, input, indices, output, default, optName, bulkUsed)
     output
   }
 
@@ -135,29 +128,24 @@ trait MinMax {
     *   maximum.
     * @param default
     *   The default value of the maximum. By default, it is set to `Int.MinValue`.
-    * @param bulkIdentifier
-    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
-    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   Optional name of the resulting variable.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def partialMax(
     input: Array[IntVariable],
     indices: SetVariable,
     default: Long = Int.MinValue,
-    bulkIdentifier: String = "",
-    name: String = ""
+    name: String = "",
+    bulkUsed: Boolean = false
   )(implicit m: Model): IntVariable = {
     require(
       indices.value().isEmpty || (indices.value().min >= 0 && indices.value().max < input.length),
       "Elements of the indices SetVariable are out of bounds for the input array"
     )
 
-    val optBulk = bulkIdentifier match {
-      case "" => None
-      case x  => Some(x)
-    }
     val optName = name match {
       case "" => None
       case x  => Some(x)
@@ -165,7 +153,7 @@ trait MinMax {
 
     val output = IntVariable(m.store, 0)
 
-    Max(m.store, input, indices, output, default, optBulk, optName)
+    Max(m.store, input, indices, output, default, optName, bulkUsed)
     output
   }
 

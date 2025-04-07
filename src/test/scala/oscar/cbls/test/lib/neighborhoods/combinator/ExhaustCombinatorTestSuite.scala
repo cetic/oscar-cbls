@@ -21,7 +21,7 @@ import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.lib.invariant.numeric.{Abs, Minus2, Sum}
 import oscar.cbls.lib.neighborhoods.combinator.{Exhaust, ExhaustBack}
-import oscar.cbls.lib.neighborhoods.{AssignNeighborhood, SwapNeighborhood}
+import oscar.cbls.lib.neighborhoods.{Assign, Swap}
 import oscar.cbls.test.lib.neighborhoods.ToolsForTestingNeighborhood.generateRandomDomain
 
 import scala.util.Random
@@ -52,7 +52,7 @@ class ExhaustCombinatorTestSuite extends AnyFunSuite {
       Abs(store, diffVar, distVars(i))
     }
     // The objective is to minimize the sum of distances of the input variables
-    Sum(store, distVars, SetVariable(store, distVars.indices.toSet), objValue)
+    Sum(store, distVars, SetVariable(store, distVars.indices.toSet), objValue, bulkUsed = false)
     val objective: Minimize = Minimize(objValue)
     store.close()
 
@@ -62,13 +62,13 @@ class ExhaustCombinatorTestSuite extends AnyFunSuite {
   ignore("Exhaust combinator works as expected") {
     val (input, domains, objective) = getDataForTest
 
-    val first = AssignNeighborhood(
+    val first = Assign(
       input,
       domains,
       selectVariableBehavior = LoopBehavior.best(),
       selectValueBehavior = LoopBehavior.best()
     )
-    val second = SwapNeighborhood(input)
+    val second = Swap(input)
 
     val search = Exhaust(first, second)
     search.verbosityLevel = 3
@@ -81,12 +81,12 @@ class ExhaustCombinatorTestSuite extends AnyFunSuite {
   ignore("ExhaustBack combinator works as expected") {
     val (input, domains, objective) = getDataForTest
 
-    val first = SwapNeighborhood(
+    val first = Swap(
       input,
       selectFirstVariableBehavior = LoopBehavior.best(),
       selectSecondVariableBehavior = LoopBehavior.best()
     )
-    val second = AssignNeighborhood(
+    val second = Assign(
       input,
       domains,
       selectVariableBehavior = LoopBehavior.best(),

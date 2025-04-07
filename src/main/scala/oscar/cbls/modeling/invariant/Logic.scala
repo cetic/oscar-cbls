@@ -19,33 +19,28 @@ trait Logic {
     *   An array of integer variables.
     * @param predicate
     *   The predicate that elements in the output variables must satisfy.
-    * @param bulkIdentifier
-    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
-    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   Optional name of the returned variable.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def filter(
     input: Array[IntVariable],
     predicate: Long => Boolean = _ > 0,
-    bulkIdentifier: String = "",
-    name: String = ""
+    name: String = "",
+    bulkUsed: Boolean = false
   )(implicit m: Model): SetVariable = {
     val store = m.store
     if (input.length == 0) {
       SetConstant(store, Set.empty)
     } else {
       val out = SetVariable(store, Set.empty)
-      val optBulk = bulkIdentifier match {
-        case "" => None
-        case x  => Some(x)
-      }
       val optName = name match {
         case "" => None
         case x  => Some(x)
       }
-      Filter(store, input, out, predicate, optBulk, optName)
+      Filter(store, input, out, predicate, optName, bulkUsed)
       out
     }
   }
@@ -60,30 +55,25 @@ trait Logic {
     * @param upperBound
     *   The integer such that the input variables' domain is `[0, upperBound[`. By default, it is
     *   set to `Ìnt.MaxValue`.
-    * @param bulkIdentifier
-    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
-    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   Optional name of the returned variable.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def denseCluster(
     input: Array[IntVariable],
     upperBound: Int = Int.MaxValue,
-    bulkIdentifier: String = "",
-    name: String = ""
+    name: String = "",
+    bulkUsed: Boolean = false
   )(implicit m: Model): Array[SetVariable] = {
 
-    val optBulk = bulkIdentifier match {
-      case "" => None
-      case x  => Some(x)
-    }
     val optName = name match {
       case "" => None
       case x  => Some(x)
     }
 
-    val inv = Cluster.makeDense(m.store, input, upperBound, optBulk, optName)
+    val inv = Cluster.makeDense(m.store, input, upperBound, optName, bulkUsed)
     inv()
   }
 
@@ -96,29 +86,25 @@ trait Logic {
     *   An array of variable to cluster.
     * @param clusters
     *   The list of keys defining the input values to cluster.
-    * @param bulkIdentifier
-    *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
-    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   Optional name of the returned variable.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def sparseCluster(
     input: Array[IntVariable],
     clusters: Iterable[Long],
-    bulkIdentifier: String = "",
-    name: String = ""
+    name: String = "",
+    bulkUsed: Boolean = false
   )(implicit m: Model): HashMap[Long, SetVariable] = {
-    val optBulk = bulkIdentifier match {
-      case "" => None
-      case x  => Some(x)
-    }
+
     val optName = name match {
       case "" => None
       case x  => Some(x)
     }
 
-    val inv = Cluster.makeSparse(m.store, input, clusters, optBulk, optName)
+    val inv = Cluster.makeSparse(m.store, input, clusters, optName, bulkUsed)
     inv()
   }
 
@@ -132,29 +118,25 @@ trait Logic {
     * @param upperBound
     *   The integer such that the input values are in `[0, upperBound[`. By default, it is * set to
     *   `Ìnt.MaxValue`.
-    * @param bulkIdentifier
-    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
-    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   Optional name of the returned variable.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def denseRef(
     input: Array[SetVariable],
     upperBound: Int = Int.MaxValue,
-    bulkIdentifier: String = "",
-    name: String = ""
+    name: String = "",
+    bulkUsed: Boolean = false
   )(implicit m: Model): Array[SetVariable] = {
-    val optBulk = bulkIdentifier match {
-      case "" => None
-      case x  => Some(x)
-    }
+
     val optName = name match {
       case "" => None
       case x  => Some(x)
     }
 
-    val inv = DenseRef.makeDenseRef(m.store, input, upperBound, optBulk, optName)
+    val inv = DenseRef.makeDenseRef(m.store, input, upperBound, optName, bulkUsed)
     inv()
   }
 
@@ -167,18 +149,17 @@ trait Logic {
     *   The elements that can be chosen.
     * @param index
     *   An IntVariable pointing to one of the input values.
-    * @param bulkIdentifier
-    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
-    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   Optional name of the returned variable.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def element(
     input: Array[IntVariable],
     index: IntVariable,
-    bulkIdentifier: String = "",
-    name: String = ""
+    name: String = "",
+    bulkUsed: Boolean = false
   )(implicit m: Model): IntVariable = {
 
     require(
@@ -186,16 +167,12 @@ trait Logic {
       s"Index $index out of bounds of input array of length ${input.length}"
     )
 
-    val optBulk = bulkIdentifier match {
-      case "" => None
-      case x  => Some(x)
-    }
     val optName = name match {
       case "" => None
       case x  => Some(x)
     }
     val output = IntVariable(m.store, 0)
-    Element(m.store, input, index, output, optBulk, optName)
+    Element(m.store, input, index, output, optName, bulkUsed)
     output
   }
 
@@ -238,34 +215,29 @@ trait Logic {
     *   The elements that can be chosen.
     * @param index
     *   An IntVariable pointing to one of the input values.
-    * @param bulkIdentifier
-    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
-    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   Optional name of the returned variable.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def setsElement(
     input: Array[SetVariable],
     index: IntVariable,
-    bulkIdentifier: String = "",
-    name: String = ""
+    name: String = "",
+    bulkUsed: Boolean = false
   )(implicit m: Model): SetVariable = {
     require(
       index.value() < input.length,
       s"Index $index out of bounds of input array of length ${input.length}"
     )
 
-    val optBulk = bulkIdentifier match {
-      case "" => None
-      case x  => Some(x)
-    }
     val optName = name match {
       case "" => None
       case x  => Some(x)
     }
     val output = SetVariable(m.store, Set.empty)
-    SetElement(m.store, input, index, output, optBulk, optName)
+    SetElement(m.store, input, index, output, optName, bulkUsed)
     output
   }
 
@@ -276,34 +248,29 @@ trait Logic {
     *   The elements that can be chosen.
     * @param indices
     *   A SetVariable containing the indices of the values to return.
-    * @param bulkIdentifier
-    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
-    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   Optional name of the returned variable.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def multiElements(
     input: Array[IntVariable],
     indices: SetVariable,
-    bulkIdentifier: String = "",
-    name: String = ""
+    name: String = "",
+    bulkUsed: Boolean = false
   )(implicit m: Model): SetVariable = {
     val store = m.store
     if (input.isEmpty) SetConstant(store, Set.empty)
     else {
 
-      val optBulk = bulkIdentifier match {
-        case "" => None
-        case x  => Some(x)
-      }
       val optName = name match {
         case "" => None
         case x  => Some(x)
       }
 
       val output = SetVariable(store, Set.empty)
-      MultiElements(store, input, indices, output, optBulk, optName)
+      MultiElements(store, input, indices, output, optName, bulkUsed)
       output
     }
   }

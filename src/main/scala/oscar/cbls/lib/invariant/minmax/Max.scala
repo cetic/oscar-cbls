@@ -33,12 +33,11 @@ object Max {
     *   The output IntVariable evaluating to `Max(input(i) | i in listenedVariablesIndices)`.
     * @param default
     *   The default value of the maximum.
-    * @param bulkIdentifier
-    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
-    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The (optional) name of the Invariant.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def apply(
     model: Store,
@@ -46,10 +45,10 @@ object Max {
     listenedVariablesIndices: SetVariable,
     output: IntVariable,
     default: Long = Long.MinValue + 1,
-    bulkIdentifier: Option[String] = None,
-    name: Option[String] = None
+    name: Option[String] = None,
+    bulkUsed: Boolean = false
   ): Max = {
-    new Max(model, input, listenedVariablesIndices, output, default, bulkIdentifier, name)
+    new Max(model, input, listenedVariablesIndices, output, default, name, bulkUsed)
   }
 }
 
@@ -67,12 +66,11 @@ object Max {
   *   The output IntVariable evaluating to `Max(input(i) | i in listenedVariablesIndices)`.
   * @param default
   *   The default value of the maximum.
-  * @param bulkIdentifier
-  *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-  *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their
-  *   identifier. Be sure to use the same one if you're referencing the same variables.
   * @param name
   *   The (optional) name of the Invariant.
+  * @param bulkUsed
+  *   Whether the input variables must be bulked (see
+  *   [[oscar.cbls.core.computation.IncredibleBulk]]).
   */
 class Max(
   model: Store,
@@ -80,9 +78,9 @@ class Max(
   listenedVariablesIndices: SetVariable,
   output: IntVariable,
   default: Long,
-  bulkIdentifier: Option[String] = None,
-  name: Option[String] = None
-) extends Extremum(model, input, listenedVariablesIndices, output, default, bulkIdentifier, name) {
+  name: Option[String],
+  bulkUsed: Boolean
+) extends Extremum(model, input, listenedVariablesIndices, output, default, name, bulkUsed) {
 
   override protected def ord(v: IntVariable): Long = {
     -v.value() // The biggest value must have the smallest priority in the heap

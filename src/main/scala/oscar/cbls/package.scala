@@ -57,7 +57,52 @@ package object cbls extends Predefined {
     model.intVar(initialValue: Long, min, max, name)
   }
 
+  /** Shortcut for adding a set variable to the implicitly defined [[Model]].
+    *
+    * @param initialValue
+    *   initial value of the variable
+    * @param min
+    *   minimum value that an integer element of the set can have
+    * @param max
+    *   maximum value that an integer element of the set can have
+    * @param name
+    *   optional name of the variable
+    * @param model
+    *   the implicitly defined model
+    */
+  implicit def setVar(initialValue: Set[Int], min: Long, max: Long, name: String = "")(implicit
+    model: Model
+  ): SetVariable = {
+    model.setVar(initialValue, min, max, name)
+  }
+
+  /** Shortcut for adding a binary variable to the implicitly defined [[Model]].
+    *
+    * @param initialValue
+    *   the initial value of the variable
+    * @param name
+    *   optional name of the variable
+    * @param model
+    *   the implicitly defined model
+    */
+  implicit def binaryVar(initialValue: Long, name: String = "")(implicit
+    model: Model
+  ): IntVariable = {
+    model.binaryVar(initialValue, name)
+  }
+
   /** Creates an instance of a [[oscar.cbls.modeling.Model]].
+    *
+    * @note
+    *   The [[Model]] class is designed to be used as an
+    *   [[https://docs.scala-lang.org/scala3/book/ca-context-parameters.html implicit value]]. In
+    *   our context, an implicit value is similar to a default value. This makes the code less
+    *   verbose and allows us to use
+    *   [[https://docs.scala-lang.org/scala3/book/ca-implicit-conversions.html implicit conversions]]
+    *   (see [[oscar.cbls.examples.WLPAdvancedModelingExample]]). <br>
+    *
+    * '''WARNING:''' Don't use implicit values if you are working with multiple models. This can
+    * lead to errors. Use a syntax similar to [[oscar.cbls.examples.WLPBeginnerModelingExample]].
     *
     * @param name
     *   the name of the model

@@ -32,8 +32,8 @@ class MinMaxTestSuite extends AnyFunSuite with Matchers {
     val listenedVariablesIndices: SetVariable = SetVariable(store, set)
     val output: IntVariable                   = IntVariable(store, 42)
     val inv: Extremum =
-      if (isMin) Min(store, input, listenedVariablesIndices, output)
-      else Max(store, input, listenedVariablesIndices, output)
+      if (isMin) Min(store, input, listenedVariablesIndices, output, bulkUsed = false)
+      else Max(store, input, listenedVariablesIndices, output, bulkUsed = false)
     store.close()
 
     (store, input, listenedVariablesIndices, output, inv)

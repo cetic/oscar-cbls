@@ -30,7 +30,8 @@ class MultiElementsTestSuite extends AnyFunSuite with Matchers {
     val input: Array[IntVariable]             = values.map(x => IntVariable(store, x))
     val listenedVariablesIndices: SetVariable = SetVariable(store, Set(0, 2, 4))
     val output: SetVariable                   = SetVariable(store, Set.empty)
-    val inv: MultiElements = MultiElements(store, input, listenedVariablesIndices, output)
+    val inv: MultiElements =
+      MultiElements(store, input, listenedVariablesIndices, output, bulkUsed = false)
     store.close()
 
     (store, input, listenedVariablesIndices, output, inv)
@@ -121,7 +122,7 @@ class MultiElementsTestSuite extends AnyFunSuite with Matchers {
       val listened = SetVariable(model, Set.empty)
       listened.setDomain(0, nbValues - 1)
       val output = SetVariable(model, Set.empty)
-      val inv    = MultiElements(model, input, listened, output)
+      val inv    = MultiElements(model, input, listened, output, bulkUsed = false)
 
       TestBenchSut(inv, listened +: input, Array(output))
     }

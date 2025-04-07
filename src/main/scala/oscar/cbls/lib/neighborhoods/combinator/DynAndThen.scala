@@ -21,25 +21,12 @@ import oscar.cbls.core.search.{Move, Neighborhood, NeighborhoodCombinator, Searc
 /** Companion object of DynAndThen */
 object DynAndThen {
 
-  /** Generates a specialized DynAndThen where the right move does not depend on the left one.
-    *
-    * @param left
-    *   The first neighborhood to be explored.
-    * @param right
-    *   The second neighborhood to be explored.
-    * @return
-    *   A DynAndThen combinator.
-    */
-  def apply(left: Neighborhood, right: Neighborhood): DynAndThen = {
-    new DynAndThen(left, _ => right)
-  }
-
   /** This Combinator allows to build [[CompositeMove]]s.
     *
-    * A [[CompositeMove]] is a move composed of two sub-[[oscar.cbls.core.search.Move]]s. The key point is that the two
-    * moves are evaluated as one, meaning that only the composite move is required to improve the
-    * objective function, not the sub-moves. The main mechanism is implemented in the
-    * [[oscar.cbls.core.computation.objective.composite]] package.
+    * A [[CompositeMove]] is a move composed of two sub-[[oscar.cbls.core.search.Move]]s. The key
+    * point is that the two moves are evaluated as one, meaning that only the composite move is
+    * required to improve the objective function, not the sub-moves. The main mechanism is
+    * implemented in the [[oscar.cbls.core.computation.objective.composite]] package.
     *
     * Usage:
     *   - Explore complex sub-moves, where the left one worsens the solution and the second one
@@ -52,18 +39,24 @@ object DynAndThen {
     * @param right
     *   The moves returned by this Neighborhood must improve the main Objective, taking into account
     *   that a left move has been already applied.
+    * @param name
+    *   The name of the neighborhood combinator.
     */
-  def apply(left: Neighborhood, right: Move => Neighborhood): DynAndThen = {
-    new DynAndThen(left, right)
+  def apply(
+    left: Neighborhood,
+    right: Move => Neighborhood,
+    name: String = "DynAndThen"
+  ): DynAndThen = {
+    new DynAndThen(left, right, name)
   }
 }
 
 /** This Combinator allows to build [[CompositeMove]]s.
   *
-  * A [[CompositeMove]] is a move composed of two sub-[[oscar.cbls.core.search.Move]]s. The key point is that the two moves
-  * are evaluated as one, meaning that only the composite move is required to improve the objective
-  * function, not the sub-moves. The main mechanism is implemented in the
-  * [[oscar.cbls.core.computation.objective.composite]] package.
+  * A [[CompositeMove]] is a move composed of two sub-[[oscar.cbls.core.search.Move]]s. The key
+  * point is that the two moves are evaluated as one, meaning that only the composite move is
+  * required to improve the objective function, not the sub-moves. The main mechanism is implemented
+  * in the [[oscar.cbls.core.computation.objective.composite]] package.
   *
   * Usage:
   *   - Explore complex sub-moves, where the left one worsens the solution and the second one
@@ -77,8 +70,8 @@ object DynAndThen {
   *   The moves returned by this Neighborhood must improve the main Objective, taking into account
   *   that a left move has been already applied.
   */
-class DynAndThen(left: Neighborhood, right: Move => Neighborhood)
-    extends NeighborhoodCombinator("DynAndThen", List(left)) {
+class DynAndThen(left: Neighborhood, right: Move => Neighborhood, name: String)
+    extends NeighborhoodCombinator(name, List(left)) {
   private var _compositionProfilerOpt: Option[CompositionProfiler] = None
 
   override def searchProfiler(): Option[CompositionProfiler] = _compositionProfilerOpt
@@ -107,4 +100,24 @@ class DynAndThen(left: Neighborhood, right: Move => Neighborhood)
     searchResult
   }
 
+}
+
+/** Object to create specialized DynAndThen where the right move does not depend on the left one.
+  */
+object AndThen {
+
+  /** Generates a specialized DynAndThen where the right move does not depend on the left one.
+    *
+    * @param left
+    *   The first neighborhood to be explored.
+    * @param right
+    *   The second neighborhood to be explored.
+    * @param name
+    *   The name of the neighborhood combinator.
+    * @return
+    *   A DynAndThen combinator.
+    */
+  def apply(left: Neighborhood, right: Neighborhood, name: String = "AndThen"): DynAndThen = {
+    new DynAndThen(left, _ => right, name)
+  }
 }

@@ -19,7 +19,7 @@ class MinMaxTestWithBench extends AnyFunSuite {
       val listened   = SetVariable(model, Set.empty[Int])
       listened.setDomain(0, nbValues - 1)
       val output                 = IntVariable(model, 0)
-      val min                    = Min(model, inputArray, listened, output)
+      val min                    = Min(model, inputArray, listened, output, bulkUsed = false)
       val input: Array[Variable] = (listened :: inputArray.toList).toArray
       TestBenchSut(min, input, Array(output))
     }
@@ -36,7 +36,7 @@ class MinMaxTestWithBench extends AnyFunSuite {
       val listened   = SetVariable(model, Set.empty[Int])
       listened.setDomain(0, nbValues - 1)
       val output                 = IntVariable(model, 0)
-      val max                    = Max(model, inputArray, listened, output)
+      val max                    = Max(model, inputArray, listened, output, bulkUsed = false)
       val input: Array[Variable] = (listened :: inputArray.toList).toArray
       TestBenchSut(max, input, Array(output))
     }

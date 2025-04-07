@@ -15,6 +15,7 @@ package oscar.cbls.core.propagation
 
 import scala.annotation.tailrec
 import oscar.cbls.algo.heap.AggregatedBinaryHeap
+import oscar.cbls.core.computation.{IncredibleBulk, Invariant, Variable}
 
 import scala.collection.immutable.HashMap
 
@@ -384,6 +385,18 @@ class PropagationStructure(debugLevel: Int) {
       List()
     )._1.flatten
 
+  }
+
+  def namedElement(): Map[Int, String] = {
+    def naming(e: PropagationElement): String = {
+      e match {
+        case v: Variable       => v.name()
+        case inv: Invariant    => inv.name()
+        case _: IncredibleBulk => "bulk"
+        case _                 => e.id.toString
+      }
+    }
+    propagationElements.map(_.id).zip(propagationElements.map(naming)).toMap
   }
 
   /** Produces a string that represents the propagation structure in the dot format

@@ -8,9 +8,9 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.objective.Minimize
 import oscar.cbls.lib.invariant.routing.TotalRouteLength
-import oscar.cbls.lib.neighborhoods.AssignNeighborhood
-import oscar.cbls.lib.neighborhoods.combinator.{DynAndThen, Exhaust}
-import oscar.cbls.lib.neighborhoods.routing.{OnePointMoveNeighborhood, TwoOpt}
+import oscar.cbls.lib.neighborhoods.Assign
+import oscar.cbls.lib.neighborhoods.combinator.{AndThen, DynAndThen, Exhaust}
+import oscar.cbls.lib.neighborhoods.routing.{OnePointMove, TwoOpt}
 import oscar.cbls.modeling.routing.VRS
 
 import scala.util.Random
@@ -24,15 +24,15 @@ class TestDynAndThen extends AnyFunSuite with Matchers {
     val objective: Minimize = Minimize(a + b)
     store.close()
 
-    val left1            = AssignNeighborhood(Array(a), (_, _) => List(30))
-    val right1           = AssignNeighborhood(Array(b), (_, _) => List(20))
+    val left1            = Assign(Array(a), (_, _) => List(30))
+    val right1           = Assign(Array(b), (_, _) => List(20))
     val searchProcedure1 = Exhaust(left1, right1)
     searchProcedure1.doAllMoves(objective)
     // left2 was never applied since it worsen the solution. Only right 2 was applied.
     objective.objValue.value() should be(40)
 
-    val left2            = AssignNeighborhood(Array(a), (_, _) => List(30))
-    val right2           = AssignNeighborhood(Array(b), (_, _) => List(5))
+    val left2            = Assign(Array(a), (_, _) => List(30))
+    val right2           = Assign(Array(b), (_, _) => List(5))
     val searchProcedure2 = DynAndThen(left2, _ => right2)
     searchProcedure2.doAllMoves(objective)
     // left is applied as well as right even though left worsen the solution.
@@ -46,9 +46,9 @@ class TestDynAndThen extends AnyFunSuite with Matchers {
     val objective: Minimize = Minimize(a + b)
     store.close()
 
-    val left            = AssignNeighborhood(Array(a), (_, _) => List(30))
-    val right           = AssignNeighborhood(Array(b), (_, _) => List(5))
-    val searchProcedure = DynAndThen(left, right)
+    val left            = Assign(Array(a), (_, _) => List(30))
+    val right           = Assign(Array(b), (_, _) => List(5))
+    val searchProcedure = AndThen(left, right)
     searchProcedure.doAllMoves(objective)
     // left is applied as well as right even though left worsen the solution.
     objective.objValue.value() should be(35)
@@ -63,9 +63,9 @@ class TestDynAndThen extends AnyFunSuite with Matchers {
     val objective: Minimize = Minimize(a + b + c + d)
     store.close()
 
-    val left1           = AssignNeighborhood(Array(a), (_, _) => List(20))
-    val right1          = AssignNeighborhood(Array(b), (_, _) => List(20))
-    val right2          = AssignNeighborhood(Array(d), (_, _) => List(10))
+    val left1           = Assign(Array(a), (_, _) => List(20))
+    val right1          = Assign(Array(b), (_, _) => List(20))
+    val right2          = Assign(Array(d), (_, _) => List(10))
     val searchProcedure = DynAndThen(DynAndThen(left1, _ => right1), _ => right2)
     searchProcedure.doAllMoves(objective)
     // left is applied as well as right even though left worsen the solution.
@@ -81,9 +81,9 @@ class TestDynAndThen extends AnyFunSuite with Matchers {
     val objective: Minimize = Minimize(a + b + c + d)
     store.close()
 
-    val left1           = AssignNeighborhood(Array(a), (_, _) => List(20))
-    val left2           = AssignNeighborhood(Array(c), (_, _) => List(20))
-    val right2          = AssignNeighborhood(Array(d), (_, _) => List(10))
+    val left1           = Assign(Array(a), (_, _) => List(20))
+    val left2           = Assign(Array(c), (_, _) => List(20))
+    val right2          = Assign(Array(d), (_, _) => List(10))
     val searchProcedure = DynAndThen(left1, _ => DynAndThen(left2, _ => right2))
     searchProcedure.doAllMoves(objective)
     // left is applied as well as right even though left worsen the solution.
@@ -99,10 +99,10 @@ class TestDynAndThen extends AnyFunSuite with Matchers {
     val objective: Minimize = Minimize(a + b + c + d)
     store.close()
 
-    val left1  = AssignNeighborhood(Array(a), (_, _) => List(20))
-    val right1 = AssignNeighborhood(Array(b), (_, _) => List(20))
-    val left2  = AssignNeighborhood(Array(c), (_, _) => List(20))
-    val right2 = AssignNeighborhood(Array(d), (_, _) => List(10))
+    val left1  = Assign(Array(a), (_, _) => List(20))
+    val right1 = Assign(Array(b), (_, _) => List(20))
+    val left2  = Assign(Array(c), (_, _) => List(20))
+    val right2 = Assign(Array(d), (_, _) => List(10))
     val searchProcedure =
       DynAndThen(DynAndThen(left1, _ => right1), _ => DynAndThen(left2, _ => right2))
     searchProcedure.doAllMoves(objective)
@@ -119,10 +119,10 @@ class TestDynAndThen extends AnyFunSuite with Matchers {
     val objective: Minimize = Minimize(a + b + c + d)
     store.close()
 
-    val left1  = AssignNeighborhood(Array(a), (_, _) => List.fill(50)(Random.nextInt(1000)))
-    val right1 = AssignNeighborhood(Array(b), (_, _) => List.fill(50)(Random.nextInt(1000)))
-    val left2  = AssignNeighborhood(Array(c), (_, _) => List.fill(50)(Random.nextInt(1000)))
-    val right2 = AssignNeighborhood(Array(d), (_, _) => List.fill(50)(Random.nextInt(1000)))
+    val left1  = Assign(Array(a), (_, _) => List.fill(50)(Random.nextInt(1000)))
+    val right1 = Assign(Array(b), (_, _) => List.fill(50)(Random.nextInt(1000)))
+    val left2  = Assign(Array(c), (_, _) => List.fill(50)(Random.nextInt(1000)))
+    val right2 = Assign(Array(d), (_, _) => List.fill(50)(Random.nextInt(1000)))
     val searchProcedure =
       DynAndThen(DynAndThen(left1, _ => right1), _ => DynAndThen(left2, _ => right2))
     searchProcedure.profileSearch()
@@ -175,8 +175,8 @@ class TestDynAndThen extends AnyFunSuite with Matchers {
     }
 
     val twoOpt   = TwoOpt(vrs, relevantStartSegment)
-    val onePoint = OnePointMoveNeighborhood(vrs, nodesToMove, relevantInsertPoint)
-    val search   = DynAndThen(twoOpt, onePoint)
+    val onePoint = OnePointMove(vrs, nodesToMove, relevantInsertPoint)
+    val search   = AndThen(twoOpt, onePoint)
 
     noException mustBe thrownBy(search.doAllMoves(obj))
 

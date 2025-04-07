@@ -1,17 +1,18 @@
 package oscar.cbls.test.core.computation
 
 import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.must.Matchers.be
-import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
-import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, Store}
+import org.scalatest.matchers.should.Matchers
 import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
+import oscar.cbls.core.computation.set.SetConstant
+import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, Store}
+import oscar.cbls.core.propagation.PropagationElement
+import oscar.cbls.lib.invariant.numeric.Sum
 
 // Test class for an Invariant that maintains the sum of its input variables.
 case class SumBulkTestInvariant(
   store: Store,
   inputVariables: List[IntVariable],
-  outputVariable: IntVariable,
-  bulkName: String
+  outputVariable: IntVariable
 ) extends Invariant(store)
     with IntNotificationTarget {
   // Register output variable as output
@@ -19,7 +20,7 @@ case class SumBulkTestInvariant(
 
   // Registers input variables statically with bulk and then dynamically
   // Voluntarily removing head of input variables from the bulk
-  val bulk: IncredibleBulk = IncredibleBulk.bulkRegistering(inputVariables.tail, bulkName, store)
+  val bulk: IncredibleBulk = IncredibleBulk.bulkRegistering(inputVariables.tail, store)
   this.addIncredibleBulk(bulk)
   var keysForRemoval: Array[KeyForRemoval[_]] =
     inputVariables.zipWithIndex
@@ -62,7 +63,7 @@ case class SumBulkTestInvariant(
   }
 }
 
-class IncredibleBulkTestSuite extends AnyFunSuite {
+class IncredibleBulkTestSuite extends AnyFunSuite with Matchers {
 
   test("Bulk registering properly registers a list of Variable") {
     val store               = new Store()
@@ -79,12 +80,7 @@ class IncredibleBulkTestSuite extends AnyFunSuite {
 
     // The first input variable is voluntarily NOT registered with the bulk neither on its own
     // It's only dynamically registered. Therefore, due to partial propagation, it should not propagate it's value to the Invariant
-    SumBulkTestInvariant(
-      store,
-      List(input1, input2, input3, input4, input5, input6),
-      output,
-      "Bulk properly"
-    )
+    SumBulkTestInvariant(store, List(input1, input2, input3, input4, input5, input6), output)
     store.close()
 
     output.value() should be(15)
@@ -104,16 +100,65 @@ class IncredibleBulkTestSuite extends AnyFunSuite {
     output.value() should be(45)
   }
 
-  test("Creating two bulks with same identifier does not create a second one") {
+  test("Creating two bulks on the same iterable does not create a second one") {
     val store  = new Store()
     val inputs = List.fill(5)(IntVariable(store, 0L))
     val output = IntVariable(store, 0L)
 
-    val inv1 = SumBulkTestInvariant(store, inputs, output, "Bulk two times")
-    val inv2 = SumBulkTestInvariant(store, inputs, output, "Bulk two times")
+    val inv1 = SumBulkTestInvariant(store, inputs, output)
+    val inv2 = SumBulkTestInvariant(store, inputs, output)
     store.close()
 
-    inv1.bulk equals inv2.bulk should be(true)
+    inv1.bulk should equal(inv2.bulk)
   }
 
+  test("Creating two bulks on equal iterables does not create a second one") {
+    val store                = new Store()
+    val input1: IntVariable  = IntVariable(store, 0L)
+    val input2: IntVariable  = IntVariable(store, 1L)
+    val input3: IntVariable  = IntVariable(store, 2L)
+    val input4: IntVariable  = IntVariable(store, 3L)
+    val input5: IntVariable  = IntVariable(store, 4L)
+    val input6: IntVariable  = IntVariable(store, 5L)
+    val output1: IntVariable = IntVariable(store, 0L)
+    val output2: IntVariable = IntVariable(store, 0L)
+
+    val list1 = List(input1, input2, input3, input4, input5, input6)
+    val list2 = List(input1, input2, input3, input4, input5, input6)
+
+    val inv1 = SumBulkTestInvariant(store, list1, output1)
+    val inv2 = SumBulkTestInvariant(store, list2, output2)
+    store.close()
+
+    inv1.bulk should equal(inv2.bulk)
+  }
+
+  /** Store with public access to its propagation elements */
+  private class StoreWithAccess extends Store(0) {
+
+    override def getPropagationElements: List[PropagationElement] = super.getPropagationElements
+  }
+
+  test("A bulk is automatically created when enabled") {
+    val store                     = new StoreWithAccess
+    val input: Array[IntVariable] = Array.tabulate(5)(i => IntVariable(store, i))
+    val indices: SetConstant      = SetConstant(store, Set.from(input.indices))
+    val output: IntVariable       = IntVariable(store, 0L)
+
+    Sum(store, input, indices, output, bulkUsed = true)
+    store.close()
+
+    store.getPropagationElements.exists(_.isInstanceOf[IncredibleBulk]) should be(true)
+  }
+
+  test("No bulk is created when disabled") {
+    val store                     = new StoreWithAccess
+    val input: Array[IntVariable] = Array.tabulate(5)(i => IntVariable(store, i))
+    val indices: SetConstant      = SetConstant(store, Set.from(input.indices))
+    val output: IntVariable       = IntVariable(store, 0L)
+
+    Sum(store, input, indices, output, bulkUsed = false)
+    store.close()
+    store.getPropagationElements.exists(_.isInstanceOf[IncredibleBulk]) should be(false)
+  }
 }

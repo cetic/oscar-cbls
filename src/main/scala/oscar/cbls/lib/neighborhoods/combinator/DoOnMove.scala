@@ -37,20 +37,24 @@ object DoOnMove {
     *   The procedure to execute just after the move is taken.
     * @param procedureOnNoMoveFound
     *   The procedure to execute when the called neighborhood returns no move.
+    * @param name
+    *   The name of the neighborhood combinator.
     */
   def apply(
     n: Neighborhood,
     procedureBeforeMove: Move => Unit,
     procedureAfterMove: Move => Unit,
-    procedureOnNoMoveFound: () => Unit
-  ): DoOnMove =
+    procedureOnNoMoveFound: () => Unit,
+    name: String = "DoOnMove"
+  ): DoOnMove = {
     new DoOnMove(
       n,
       Some(procedureBeforeMove),
       Some(procedureAfterMove),
       Some(procedureOnNoMoveFound),
-      "DoOnMove combinator"
+      name
     )
+  }
 
   /** Creates a variant of DoOnMove combinator. This variant can only execute a custom unit function
     * ''before'' the move is committed.
@@ -59,9 +63,14 @@ object DoOnMove {
     *   A neighborhood.
     * @param procedureBeforeMove
     *   The procedure to execute just before the move is taken.
+    * @param name
+    *   The name of the neighborhood combinator.
     */
-  def beforeMove(n: Neighborhood, procedureBeforeMove: Move => Unit): DoOnMove =
-    new DoOnMove(n, Some(procedureBeforeMove), None, None, "BeforeMove combinator")
+  def beforeMove(
+    n: Neighborhood,
+    procedureBeforeMove: Move => Unit,
+    name: String = "BeforeMove"
+  ): DoOnMove = new DoOnMove(n, Some(procedureBeforeMove), None, None, name)
 
   /** Creates a variant of DoOnMove combinator. This variant can only execute a custom unit function
     * ''after'' the move is committed.
@@ -70,9 +79,14 @@ object DoOnMove {
     *   A neighborhood.
     * @param procedureAfterMove
     *   The procedure to execute just after the move is taken.
+    * @param name
+    *   The name of the neighborhood combinator.
     */
-  def afterMove(n: Neighborhood, procedureAfterMove: Move => Unit): DoOnMove =
-    new DoOnMove(n, None, Some(procedureAfterMove), None, "AfterMove combinator")
+  def afterMove(
+    n: Neighborhood,
+    procedureAfterMove: Move => Unit,
+    name: String = "AfterMove"
+  ): DoOnMove = new DoOnMove(n, None, Some(procedureAfterMove), None, name)
 }
 
 /** Combinator that attach custom unit functions to a given neighborhood. The custom functions can

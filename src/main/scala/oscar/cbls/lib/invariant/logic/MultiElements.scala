@@ -34,29 +34,26 @@ object MultiElements {
     *   A SetVariable containing the indices of the values to return.
     * @param output
     *   A SetVariable evaluating to `{input(i) | i in listenedVariablesIndices}`.
-    * @param bulkIdentifier
-    *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-    *   Invariant listen to vars. Warning:
-    *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier.
-    *   Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The (optional) name of the Invariant.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def apply(
     model: Store,
     input: Array[IntVariable],
     listenedVariablesIndices: SetVariable,
     output: SetVariable,
-    bulkIdentifier: Option[String] = None,
-    name: Option[String] = None
+    name: Option[String] = None,
+    bulkUsed: Boolean = false
   ): MultiElements = {
-    new MultiElements(model, input, listenedVariablesIndices, output, bulkIdentifier, name)
+    new MultiElements(model, input, listenedVariablesIndices, output, name, bulkUsed)
   }
 }
 
-/** Invariant which maintains `{input(i) | i in`
-  * `listenedVariablesIndices}` where input is an [[scala.Array]] of
-  * [[oscar.cbls.core.computation.integer.IntVariable]]. Update is O(1).
+/** Invariant which maintains `{input(i) | i in` `listenedVariablesIndices}` where input is an
+  * [[scala.Array]] of [[oscar.cbls.core.computation.integer.IntVariable]]. Update is O(1).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -66,21 +63,19 @@ object MultiElements {
   *   A SetVariable containing the indices of the values to return.
   * @param output
   *   A SetVariable evaluating to `{input(i) | i in listenedVariablesIndices}`.
-  * @param bulkIdentifier
-  *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-  *   Invariant listen to vars. Warning:
-  *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
-  *   sure to use the same one if you're referencing the same variables.
   * @param name
   *   The (optional) name of the Invariant.
+  * @param bulkUsed
+  *   Whether the input variables must be bulked (see
+  *   [[oscar.cbls.core.computation.IncredibleBulk]]).
   */
 class MultiElements(
   model: Store,
   input: Array[IntVariable],
   listenedVariablesIndices: SetVariable,
   output: SetVariable,
-  bulkIdentifier: Option[String] = None,
-  name: Option[String] = None
+  name: Option[String],
+  bulkUsed: Boolean
 ) extends Invariant(model, name)
     with IntNotificationTarget
     with SetNotificationTarget {
@@ -89,13 +84,12 @@ class MultiElements(
   // valuesCount(x) ==  the number of listened variables with value x
   private[this] val valuesCount: mutable.HashMap[Int, Int] = new mutable.HashMap()
 
-  bulkIdentifier match {
-    case None =>
-      // No bulk is used
-      for (vars <- input) this.registerStaticallyListenedElement(vars)
-    case Some(bulkId) =>
-      // Register static dependency via a bulk
-      this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, bulkId, model))
+  if (bulkUsed) {
+    // Registers static dependency via a bulk
+    this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, model))
+  } else {
+    // No bulk is used
+    for (vars <- input) this.registerStaticallyListenedElement(vars)
   }
 
   output := Set.empty

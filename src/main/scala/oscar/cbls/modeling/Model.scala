@@ -2,7 +2,7 @@ package oscar.cbls.modeling
 
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
-import oscar.cbls.core.computation.objective.{Minimize, Objective}
+import oscar.cbls.core.computation.objective._
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.modeling.routing.VRS
 
@@ -20,8 +20,16 @@ object Model {
   * expressing derived quantities (such as the sum over an array of variables) through objects that
   * collect the associated methods, with each object representing a category.
   *
-  * '''WARNING:''' Must be declared as an `implicit` value in order to enable variable conversions
-  * and to let expressions work properly.
+  * @note
+  *   This class is designed to be used as an
+  *   [[https://docs.scala-lang.org/scala3/book/ca-context-parameters.html implicit value]]. In our
+  *   context, an implicit value is similar to a default value. This makes the code less verbose and
+  *   allows us to use
+  *   [[https://docs.scala-lang.org/scala3/book/ca-implicit-conversions.html implicit conversions]]
+  *   (see [[oscar.cbls.examples.WLPAdvancedModelingExample]]). <br>
+  *
+  * '''WARNING:''' Don't use implicit values if you are working with multiple models. This can lead
+  * to errors. Use a syntax similar to [[oscar.cbls.examples.WLPBeginnerModelingExample]].
   *
   * @param name
   *   the name of the model
@@ -36,7 +44,7 @@ class Model(val name: String, debugLevel: Int = 0) {
 
   private val hardConstraints = mutable.HashSet.empty[IntVariable]
 
-  def addHardConstraint(value: IntVariable): Unit = {
+  def addConstraint(value: IntVariable): Unit = {
     require(this.isOpen, "Cannot add constraints once model is closed")
     hardConstraints.add(value)
   }
@@ -95,14 +103,14 @@ class Model(val name: String, debugLevel: Int = 0) {
     setVar
   }
 
-  /** Add boolean (0-1) variable to the model.
+  /** Add binary (0-1) variable to the model.
     *
     * @param initialValue
     *   the initial value of the variable
     * @param name
     *   optional name of the variable
     */
-  def booleanVar(initialValue: Long, name: String = ""): IntVariable =
+  def binaryVar(initialValue: Long, name: String = ""): IntVariable =
     intVar(initialValue, 0, 1, name)
 
   /** Adds a vehicle routing structure [[VRS]] with `n` nodes and `v` vehicles for this model.
@@ -137,5 +145,21 @@ class Model(val name: String, debugLevel: Int = 0) {
   ): Objective = {
     require(this.isOpen, "Cannot set an objective once model is closed")
     Minimize(obj, hardConstraints.toList, underApproximatedObjValue)
+  }
+
+  /** Defines the objective to be the maximization of the given variable.
+    *
+    * @param obj
+    *   variable expressing the objective function to minimize
+    * @param underApproximatedObjValue
+    *   An optional approximated IntVariable whose value is supposedly lesser or equal to the
+    *   objValue. Used when the computation of the objValue is really expensive
+    */
+  def maximize(
+    obj: IntVariable,
+    underApproximatedObjValue: Option[IntVariable] = None
+  ): Objective = {
+    require(this.isOpen, "Cannot set an objective once model is closed")
+    Maximize(obj, hardConstraints.toList, underApproximatedObjValue)
   }
 }

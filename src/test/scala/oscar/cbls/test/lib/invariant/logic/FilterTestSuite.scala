@@ -30,7 +30,7 @@ class FilterTestSuite extends AnyFunSuite with Matchers {
     val values = Array.range(0, 11)
     val input  = values.map(v => IntVariable(store, v))
     val output = SetVariable(store, Set.empty)
-    val inv    = Filter(store, input, output, predicate)
+    val inv    = Filter(store, input, output, predicate, bulkUsed = false)
     store.close()
 
     (store, input, output, inv)
@@ -84,7 +84,7 @@ class FilterTestSuite extends AnyFunSuite with Matchers {
     val model                     = new Store(debugLevel = 3)
     val input: Array[IntVariable] = Array.empty
     val output: SetVariable       = SetVariable(model, Set(0))
-    Filter(model, input, output)
+    Filter(model, input, output, bulkUsed = false)
     model.close()
     output.value() shouldBe empty
   }
@@ -94,7 +94,7 @@ class FilterTestSuite extends AnyFunSuite with Matchers {
       val nbValue = 1000
       val input   = Array.fill(nbValue)(IntVariable(model, 0))
       val output  = SetVariable(model, Set.empty)
-      val inv     = Filter(model, input, output, _ % 5 == 0)
+      val inv     = Filter(model, input, output, _ % 5 == 0, bulkUsed = false)
 
       TestBenchSut(inv, Array.from(input), Array(output))
     }

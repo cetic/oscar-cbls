@@ -23,6 +23,9 @@ object Atomic {
     *
     * @param n
     *   The neighborhood to squash into a single move.
+    * @param aggregateIntoSingleMove
+    *   Whether the moves must be aggregated into a single one (see [[AggregatedAtomic]]) or not
+    *   (see [[NotAggregatedAtomic]]). By default, set to `false`.
     * @param shouldStop
     *   Given the number of performed moves, determines whether we should continue searching for new
     *   moves.
@@ -33,7 +36,7 @@ object Atomic {
     n: Neighborhood,
     aggregateIntoSingleMove: Boolean = false,
     shouldStop: Int => Boolean = _ => false,
-    neighborhoodCombinatorName: String = "Atomic combinator"
+    neighborhoodCombinatorName: String = "Atomic"
   ): Atomic = {
     if (aggregateIntoSingleMove) new AggregatedAtomic(n, shouldStop, neighborhoodCombinatorName)
     else new NotAggregatedAtomic(n, shouldStop, neighborhoodCombinatorName)

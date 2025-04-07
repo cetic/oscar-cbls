@@ -33,21 +33,20 @@ object SparseCluster {
     *   The elements we want to cluster.
     * @param output
     *   A Hashmap such that `output(j) = {i in input.indices | input(i) == j}`.
-    * @param bulkIdentifier
-    *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-    *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by
-    *   their identifier. Be sure to use the same one if you're referencing the same variables.
     * @param name
     *   The (optional) name of the Invariant.
+    * @param bulkUsed
+    *   Whether the input variables must be bulked (see
+    *   [[oscar.cbls.core.computation.IncredibleBulk]]).
     */
   def apply(
     model: Store,
     input: Array[IntVariable],
     output: HashMap[Long, SetVariable],
-    bulkIdentifier: Option[String],
-    name: Option[String]
+    name: Option[String] = None,
+    bulkUsed: Boolean = false
   ): SparseCluster = {
-    new SparseCluster(model, input, output, bulkIdentifier, name)
+    new SparseCluster(model, input, output, name, bulkUsed)
   }
 }
 
@@ -62,30 +61,27 @@ object SparseCluster {
   *   The elements we want to cluster
   * @param output
   *   A Hashmap such that `output(j) = {i in input.indices | input(i) == j}`.
-  * @param bulkIdentifier
-  *   An [[oscar.cbls.core.computation.IncredibleBulk]] is used when several Invariant listen to
-  *   vars. Warning: [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their
-  *   identifier. Be sure to use the same one if you're referencing the same variables.
   * @param name
   *   The (optional) name of the Invariant.
+  * @param bulkUsed
+  *   Whether the input variables must be bulked (see
+  *   [[oscar.cbls.core.computation.IncredibleBulk]]).
   */
 class SparseCluster(
   model: Store,
   input: Array[IntVariable],
   output: HashMap[Long, SetVariable],
-  // by the Cluster object.
-  bulkIdentifier: Option[String] = None,
-  name: Option[String] = None
+  name: Option[String],
+  bulkUsed: Boolean
 ) extends Invariant(model, name)
     with IntNotificationTarget {
 
-  bulkIdentifier match {
-    case None =>
-      // No bulk is used
-      for (vars <- input) this.registerStaticallyListenedElement(vars)
-    case Some(bulkId) =>
-      // Register static dependency via a bulk
-      this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, bulkId, model))
+  if (bulkUsed) {
+    // Registers static dependency via a bulk
+    this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, model))
+  } else {
+    // No bulk is used
+    for (vars <- input) this.registerStaticallyListenedElement(vars)
   }
 
   for (cluster <- output.values) {

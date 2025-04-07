@@ -30,7 +30,7 @@ class ProdTestSuite extends AnyFunSuite with Matchers {
     val input: Array[IntVariable] = Array.range(0, 7).map(i => IntVariable(store, i % 6))
     val listenedVariablesIndices: SetVariable = SetVariable(store, set)
     val output                                = IntVariable(store, 0)
-    val inv                                   = Prod(store, input, listenedVariablesIndices, output)
+    val inv = Prod(store, input, listenedVariablesIndices, output, bulkUsed = false)
     store.close()
 
     (store, input, listenedVariablesIndices, output, inv)
@@ -146,7 +146,7 @@ class ProdTestSuite extends AnyFunSuite with Matchers {
       val listened = SetVariable(model, Set.empty[Int])
       listened.setDomain(0, nbValues - 1)
       val output = IntVariable(model, 0)
-      val inv    = Prod(model, input, listened, output)
+      val inv    = Prod(model, input, listened, output, bulkUsed = false)
       TestBenchSut(inv, listened +: input, Array(output))
     }
 

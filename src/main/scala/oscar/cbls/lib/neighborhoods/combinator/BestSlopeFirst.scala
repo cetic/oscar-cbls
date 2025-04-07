@@ -26,7 +26,7 @@ object BestSlopeFirst {
     * @param tabuLength
     *   The number of iterations a neighborhood has to wait before being explored again.
     * @param overrideTabuOnFullExhaust
-    *   If all the neighborhoods had been exhausted, this combinator tries the older tabu
+    *   If all the neighborhoods had been exhausted, this combinator tries the oldest tabu
     *   neighborhoods. This parameter must be lesser than `tabuLength` and is used to determine
     *   which tabu neighborhood can ben explored again.
     * @param refreshRate
@@ -73,7 +73,7 @@ object BestSlopeFirst {
   * @param tabuLength
   *   The number of iterations a neighborhood has to wait before being explored again.
   * @param overrideTabuOnFullExhaust
-  *   If all the neighborhoods had been exhausted, this combinator tries the older tabu
+  *   If all the neighborhoods had been exhausted, this combinator tries the oldest tabu
   *   neighborhoods. This parameter must be lesser than `tabuLength` and is used to determine which
   *   tabu neighborhood can ben explored again.
   * @param refreshRate

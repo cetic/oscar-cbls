@@ -31,7 +31,7 @@ class SparseClusterTestSuite extends AnyFunSuite with Matchers {
     val store                     = new Store(debugLevel = 3)
     val values: Array[Long]       = Array(1, 2, 2, 3, 3, 3, 4, 4, 5, 5, 5)
     val input: Array[IntVariable] = values.map(x => IntVariable(store, x))
-    val inv: SparseCluster        = Cluster.makeSparse(store, input, Array(2L, 5L))
+    val inv: SparseCluster = Cluster.makeSparse(store, input, Array(2L, 5L), bulkUsed = false)
     store.close()
 
     (store, input, inv(), inv)
@@ -127,8 +127,8 @@ class SparseClusterTestSuite extends AnyFunSuite with Matchers {
         val nbValues                  = 1000
         val input: Array[IntVariable] = Array.fill(nbValues)(IntVariable(model, 0))
         input.foreach(v => v.setDomain(0, 100))
-        val inv                          = Cluster.makeSparse(model, input, inputData)
-        val output                       = inv()
+        val inv    = Cluster.makeSparse(model, input, inputData, bulkUsed = false)
+        val output = inv()
         val inputArray: Array[Variable]  = input.toArray
         val outputArray: Array[Variable] = output.values.toArray
 

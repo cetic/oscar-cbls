@@ -8,14 +8,9 @@ import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntConstant
 import oscar.cbls.core.computation.objective.Minimize
 import oscar.cbls.core.search.profiling.SelectionProfiler
-import oscar.cbls.lib.invariant.numeric.Prod2
 import oscar.cbls.lib.invariant.routing.TotalRouteLength
 import oscar.cbls.lib.neighborhoods.combinator.{BestSlopeFirst, DynAndThen, Exhaust, RoundRobin}
-import oscar.cbls.lib.neighborhoods.routing.{
-  InsertPointNeighborhoodUnroutedFirst,
-  OnePointMoveNeighborhood,
-  RemovePointNeighborhood
-}
+import oscar.cbls.lib.neighborhoods.routing.{InsertPointUnroutedFirst, OnePointMove, RemovePoint}
 import oscar.cbls.modeling.routing.VRS
 
 class ProfilingTestSuite extends AnyFunSuite with Matchers {
@@ -34,16 +29,10 @@ class ProfilingTestSuite extends AnyFunSuite with Matchers {
 
     model.close()
 
-    val insertPoint: InsertPointNeighborhoodUnroutedFirst =
-      InsertPointNeighborhoodUnroutedFirst(
-        vrs,
-        () => vrs.unroutedNodes,
-        _ => vrs.routedWithVehicles.value()
-      )
-    val removeDynAndThenInsert = DynAndThen(
-      RemovePointNeighborhood(vrs, () => vrs.routedWithoutVehicles.value()),
-      _ => insertPoint
-    )
+    val insertPoint: InsertPointUnroutedFirst =
+      InsertPointUnroutedFirst(vrs, () => vrs.unroutedNodes, _ => vrs.routedWithVehicles.value())
+    val removeDynAndThenInsert =
+      DynAndThen(RemovePoint(vrs, () => vrs.routedWithoutVehicles.value()), _ => insertPoint)
 
     // Trying remove and then insert, should not find anything
     // Then inserting stuff
@@ -64,14 +53,14 @@ class ProfilingTestSuite extends AnyFunSuite with Matchers {
     val obj                   = routeLength.routeLength + nbUnroutedWithPenalty
     model.close()
 
-    def onePtMove(name: String) = OnePointMoveNeighborhood(
+    def onePtMove(name: String) = OnePointMove(
       vrs,
       () => vrs.routedWithoutVehicles.pendingValue.take(5),
       movingNode => vrs.routedWithVehicles.pendingValue.filter(_ != movingNode).take(5),
       name = name
     )
     val moveAndThenMove = DynAndThen(onePtMove("LeftOnePtMove"), _ => onePtMove("RightOnePtMove"))
-    val insert = InsertPointNeighborhoodUnroutedFirst(
+    val insert = InsertPointUnroutedFirst(
       vrs,
       () => vrs.unroutedNodes,
       _ => vrs.routedWithVehicles.pendingValue
@@ -92,12 +81,9 @@ class ProfilingTestSuite extends AnyFunSuite with Matchers {
     val nbUnroutedWithPenalty = nbUnrouted * IntConstant(model, routingData._3)
     val obj                   = Minimize(routeLength.routeLength + nbUnroutedWithPenalty)
     model.close()
-    val n1 = InsertPointNeighborhoodUnroutedFirst(
-      vrs,
-      () => vrs.unrouted.value(),
-      _ => vrs.routedWithVehicles.value()
-    )
-    val n2 = OnePointMoveNeighborhood(
+    val n1 =
+      InsertPointUnroutedFirst(vrs, () => vrs.unrouted.value(), _ => vrs.routedWithVehicles.value())
+    val n2 = OnePointMove(
       vrs,
       () => vrs.routedWithoutVehicles.value(),
       node => vrs.routedWithVehicles.value().filter(x => x != node)

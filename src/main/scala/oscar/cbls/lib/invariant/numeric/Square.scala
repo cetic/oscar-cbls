@@ -15,7 +15,6 @@ package oscar.cbls.lib.invariant.numeric
 
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.computation.integer.IntVariable
-import scalafx.scene.effect.Inputed
 
 /** The companion object of [[Square]] class.
   */

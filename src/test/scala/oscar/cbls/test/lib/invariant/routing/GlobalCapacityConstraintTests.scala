@@ -4,8 +4,8 @@ import org.scalacheck.Gen
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
 import oscar.cbls.algo.sequence.IntSequence
-import oscar.cbls.core.computation.{Store, Variable}
-import oscar.cbls.lib.invariant.routing.capacityConstraint.GlobalCapacityConstraintWithLogReduction
+import oscar.cbls.core.computation.Store
+import oscar.cbls.lib.invariant.routing.capacityConstraint.GlobalCapacityConstraint
 import oscar.cbls.modeling.routing.VRS
 import oscar.cbls.test.invBench.{InvTestBenchWithConstGen, TestBenchSut}
 
@@ -28,21 +28,25 @@ class GlobalCapacityConstraintTests extends AnyFunSuite with Matchers {
 
     var exception =
       intercept[IllegalArgumentException](
-        GlobalCapacityConstraintWithLogReduction(
+        GlobalCapacityConstraint(
           vrs,
           Array(10L, -10L),
           Array.fill(vrs.n)(0L),
-          Some(Array.fill(vrs.v)(0L))
+          Some(Array.fill(vrs.v)(0L)),
+          withLogReduction = true,
+          withExtremesPC = true
         )
       )
     assert(exception.getMessage.contains("Vehicle capacity can not be negative."))
 
     exception = intercept[IllegalArgumentException](
-      GlobalCapacityConstraintWithLogReduction(
+      GlobalCapacityConstraint(
         vrs,
         Array(10L, 10L),
         Array.fill(vrs.n)(-1L),
-        Some(Array.fill(vrs.v)(0L))
+        Some(Array.fill(vrs.v)(0L)),
+        withLogReduction = true,
+        withExtremesPC = true
       )
     )
     assert(exception.getMessage.contains("Vehicle can not start with a negative content."))
@@ -53,11 +57,13 @@ class GlobalCapacityConstraintTests extends AnyFunSuite with Matchers {
     val model                                          = new Store(debugLevel = 3)
     val vrs                                            = VRS(model, 30, 2)
     val (capacity, contentVariation, contentBackDepot) = generateCapacityConstraintData(vrs)
-    val inv = GlobalCapacityConstraintWithLogReduction(
+    val inv = GlobalCapacityConstraint(
       vrs,
       capacity,
       contentVariation,
-      Some(contentBackDepot)
+      Some(contentBackDepot),
+      withLogReduction = true,
+      withExtremesPC = true
     )
     model.close()
 
@@ -69,11 +75,13 @@ class GlobalCapacityConstraintTests extends AnyFunSuite with Matchers {
     val model                                          = new Store(debugLevel = 3)
     val vrs                                            = VRS(model, 30, 2)
     val (capacity, contentVariation, contentBackDepot) = generateCapacityConstraintData(vrs)
-    val inv = GlobalCapacityConstraintWithLogReduction(
+    val inv = GlobalCapacityConstraint(
       vrs,
       capacity,
       contentVariation,
-      Some(contentBackDepot)
+      Some(contentBackDepot),
+      withLogReduction = true,
+      withExtremesPC = true
     )
     model.close()
     vrs.routes := IntSequence(
@@ -89,11 +97,13 @@ class GlobalCapacityConstraintTests extends AnyFunSuite with Matchers {
     val model                                          = new Store(debugLevel = 3)
     val vrs                                            = VRS(model, 30, 2)
     val (capacity, contentVariation, contentBackDepot) = generateCapacityConstraintData(vrs)
-    val inv = GlobalCapacityConstraintWithLogReduction(
+    val inv = GlobalCapacityConstraint(
       vrs,
       capacity,
       contentVariation,
-      Some(contentBackDepot)
+      Some(contentBackDepot),
+      withLogReduction = true,
+      withExtremesPC = true
     )
     model.close()
     vrs.routes := IntSequence(
@@ -109,11 +119,13 @@ class GlobalCapacityConstraintTests extends AnyFunSuite with Matchers {
     val model                                          = new Store(debugLevel = 3)
     val vrs                                            = VRS(model, 30, 2)
     val (capacity, contentVariation, contentBackDepot) = generateCapacityConstraintData(vrs)
-    val inv = GlobalCapacityConstraintWithLogReduction(
+    val inv = GlobalCapacityConstraint(
       vrs,
       capacity,
       contentVariation,
-      Some(contentBackDepot)
+      Some(contentBackDepot),
+      withLogReduction = true,
+      withExtremesPC = true
     )
     model.close()
     vrs.routes.defineCurrentValueAsCheckpoint()
@@ -128,11 +140,13 @@ class GlobalCapacityConstraintTests extends AnyFunSuite with Matchers {
     val model                                          = new Store(debugLevel = 3)
     val vrs                                            = VRS(model, 30, 2)
     val (capacity, contentVariation, contentBackDepot) = generateCapacityConstraintData(vrs)
-    val inv = GlobalCapacityConstraintWithLogReduction(
+    val inv = GlobalCapacityConstraint(
       vrs,
       capacity,
       contentVariation,
-      Some(contentBackDepot)
+      Some(contentBackDepot),
+      withLogReduction = true,
+      withExtremesPC = true
     )
     model.close()
     vrs.routes.defineCurrentValueAsCheckpoint()
@@ -147,47 +161,69 @@ class GlobalCapacityConstraintTests extends AnyFunSuite with Matchers {
     val n = 25
     val v = 5
 
-    class GlobalCapacityConstraintTestBench(additionalSeeds: List[String] = List())
-        extends InvTestBenchWithConstGen[(Array[Long], Array[Long], Array[Long])](
-          "GlobalCapacityConstraint test bench",
-          additionalSeeds
-        ) {
+    val classicBench =
+      new GlobalCapacityConstraintTestBench(n, v, false, false, "ClassicGlobalCapacityConstraint")
+    classicBench.test()
 
-      override def genConst(): Gen[(Array[Long], Array[Long], Array[Long])] = {
-        for {
-          capacity <- Gen.sequence[Array[Long], Long](Array.fill(v)(Gen.choose(20L, 50L)))
-          contentVariation <- Gen.sequence[Array[Long], Long](
-            Array.tabulate(n)(x => if (x < v) Gen.choose(0L, 2L) else Gen.choose(-2L, 2L))
-          )
-          backAtDepot <- Gen.sequence[Array[Long], Long](Array.fill(v)(Gen.choose(0L, 0L)))
-        } yield (capacity, contentVariation, backAtDepot)
-      }
+    val lrBench =
+      new GlobalCapacityConstraintTestBench(n, v, true, false, "LogReducedGlobalCapacityConstraint")
+    lrBench.test()
 
-      override def createTestBenchSut(
-        model: Store,
-        inputData: (Array[Long], Array[Long], Array[Long])
-      ): TestBenchSut = {
+    val lrWEBench = new GlobalCapacityConstraintTestBench(
+      n,
+      v,
+      true,
+      true,
+      "LogReducedWithExtremesGlobalCapacityConstraint"
+    )
+    lrWEBench.test()
+  }
 
-        val vrs: VRS = VRS(model, n, v)
-        val inv = GlobalCapacityConstraintWithLogReduction(
-          vrs,
-          inputData._1,
-          inputData._2,
-          Some(inputData._3),
-          Some("GlobalCapacityConstraintWithLogReduction")
+  private class GlobalCapacityConstraintTestBench(
+    n: Int,
+    v: Int,
+    withLogReduction: Boolean,
+    withExtremesPC: Boolean,
+    name: String,
+    additionalSeeds: List[String] = List()
+  ) extends InvTestBenchWithConstGen[(Array[Long], Array[Long], Array[Long])](
+        s"$name test bench",
+        additionalSeeds
+      ) {
+
+    override def genConst(): Gen[(Array[Long], Array[Long], Array[Long])] = {
+      for {
+        capacity <- Gen.sequence[Array[Long], Long](Array.fill(v)(Gen.choose(20L, 50L)))
+        contentVariation <- Gen.sequence[Array[Long], Long](
+          Array.tabulate(n)(x => if (x < v) Gen.choose(0L, 2L) else Gen.choose(-2L, 2L))
         )
-        TestBenchSut(inv, Array(vrs.routes), inv(), Some(vrs))
-      }
-
-      override def typeTToString(elem: (Array[Long], Array[Long], Array[Long])): String = {
-        s"Data:\nCapacity : ${elem._1.mkString(" - ")}\n" +
-          s"Content variation : ${elem._2.mkString(" - ")}\n" +
-          s"Content variation back at depot : ${elem._3.mkString(" - ")}"
-      }
+        backAtDepot <- Gen.sequence[Array[Long], Long](Array.fill(v)(Gen.const(0L)))
+      } yield (capacity, contentVariation, backAtDepot)
     }
 
-    val bench = new GlobalCapacityConstraintTestBench()
-    bench.test()
+    override def createTestBenchSut(
+      model: Store,
+      inputData: (Array[Long], Array[Long], Array[Long])
+    ): TestBenchSut = {
+
+      val vrs: VRS = VRS(model, n, v)
+      val inv = GlobalCapacityConstraint(
+        vrs,
+        inputData._1,
+        inputData._2,
+        Some(inputData._3),
+        withLogReduction,
+        withExtremesPC,
+        name = name
+      )
+      TestBenchSut(inv, Array(vrs.routes), inv(), Some(vrs))
+    }
+
+    override def typeTToString(elem: (Array[Long], Array[Long], Array[Long])): String = {
+      s"Data:\nCapacity : ${elem._1.mkString(" - ")}\n" +
+        s"Content variation : ${elem._2.mkString(" - ")}\n" +
+        s"Content variation back at depot : ${elem._3.mkString(" - ")}"
+    }
   }
 
 }

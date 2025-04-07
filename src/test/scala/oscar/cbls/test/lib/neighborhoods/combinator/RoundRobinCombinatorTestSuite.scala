@@ -20,7 +20,7 @@ import oscar.cbls.core.computation.objective.Minimize
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.numeric.{Abs, Minus2, Sum}
 import oscar.cbls.lib.neighborhoods.combinator.RoundRobin
-import oscar.cbls.lib.neighborhoods.{AssignNeighborhood, SwapNeighborhood}
+import oscar.cbls.lib.neighborhoods.{Assign, Swap}
 import oscar.cbls.test.lib.neighborhoods.ToolsForTestingNeighborhood.generateRandomDomain
 
 import scala.util.Random
@@ -51,7 +51,7 @@ class RoundRobinCombinatorTestSuite extends AnyFunSuite {
       Abs(store, diffVar, distVars(i))
     }
     // The objective is to minimize the sum of distances of the input variables
-    Sum(store, distVars, SetVariable(store, distVars.indices.toSet), objValue)
+    Sum(store, distVars, SetVariable(store, distVars.indices.toSet), objValue, bulkUsed = false)
     val objective: Minimize = Minimize(objValue)
     store.close()
 
@@ -71,9 +71,9 @@ class RoundRobinCombinatorTestSuite extends AnyFunSuite {
     input.foreach(v => println(s"$v - ${domain(v, 0)}"))
     println()
 
-    val n1 = AssignNeighborhood(input.slice(0, 2), domain, name = "Assign(0, 1)")
-    val n2 = SwapNeighborhood(input)
-    val n3 = AssignNeighborhood(input.slice(2, 4), domain, name = "Assign(2, 3)")
+    val n1 = Assign(input.slice(0, 2), domain, name = "Assign(0, 1)")
+    val n2 = Swap(input)
+    val n3 = Assign(input.slice(2, 4), domain, name = "Assign(2, 3)")
 
     val search = RoundRobin(Array((n1, 1), (n2, 1), (n3, 2)))
     search.verbosityLevel = 3

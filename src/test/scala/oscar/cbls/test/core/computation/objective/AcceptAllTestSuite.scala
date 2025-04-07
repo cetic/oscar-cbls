@@ -9,7 +9,7 @@ import oscar.cbls.core.computation.objective.AcceptAll
 import oscar.cbls.core.search.MoveFound
 import oscar.cbls.lib.invariant.minmax.Min2
 import oscar.cbls.lib.invariant.numeric.Int2Int
-import oscar.cbls.lib.neighborhoods.AssignNeighborhood
+import oscar.cbls.lib.neighborhoods.Assign
 
 import scala.util.Random
 
@@ -44,7 +44,7 @@ class AcceptAllTestSuite extends AnyFunSuite with Matchers {
     new Int2Int(model, objValue, lesserThanFortyConstraint, x => Math.max(x - 40,0))
     model.close()
 
-    val assign = AssignNeighborhood(Array(objValue), (_, _) => List(42, 24))
+    val assign = Assign(Array(objValue), (_, _) => List(42, 24))
 
     val acceptAll = AcceptAll(objValue, List(lesserThanFortyConstraint))
     assign.doAllMoves(acceptAll, shouldStop = _ >= 1)
@@ -58,7 +58,7 @@ class AcceptAllTestSuite extends AnyFunSuite with Matchers {
     new Int2Int(model, objValue, lesserThanFortyConstraint, x => Math.max(x - 40,0))
     model.close()
 
-    val assign = AssignNeighborhood(Array(objValue), (_, _) => List(42, 24))
+    val assign = Assign(Array(objValue), (_, _) => List(42, 24))
 
     val acceptAll =
       AcceptAll(objValue, List(lesserThanFortyConstraint), allowsConstrainViolation = true)

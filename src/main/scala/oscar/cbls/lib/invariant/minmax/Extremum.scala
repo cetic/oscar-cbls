@@ -18,9 +18,8 @@ import oscar.cbls.core.computation.integer.{IntNotificationTarget, IntVariable}
 import oscar.cbls.core.computation.set.{SetNotificationTarget, SetVariable}
 import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, Store}
 
-/** Abstract Invariant which maintains `Extremum{input(i) | i in`
-  * `listenedVariablesIndices}`. Exact ordering is specified by implementing abstract method of the
-  * class. Update is in O(log(n)).
+/** Abstract Invariant which maintains `Extremum{input(i) | i in` `listenedVariablesIndices}`. Exact
+  * ordering is specified by implementing abstract method of the class. Update is in O(log(n)).
   *
   * @param model
   *   The [[oscar.cbls.core.propagation.PropagationStructure]] to which this invariant is linked.
@@ -33,13 +32,11 @@ import oscar.cbls.core.computation.{IncredibleBulk, Invariant, KeyForRemoval, St
   *   The output IntVariable evaluating to `Extremum(input(i) | i in listenedVariablesIndices)`.
   * @param default
   *   The default value of the extremum.
-  * @param bulkIdentifier
-  *   A [[oscar.cbls.core.computation.IncredibleBulk]] is used when several
-  *   Invariant listen to vars. Warning:
-  *   [[oscar.cbls.core.computation.IncredibleBulk]] are distinguished only by their identifier. Be
-  *   sure to use the same one if you're referencing the same variables.
   * @param name
   *   The (optional) name of the Invariant.
+  * @param bulkUsed
+  *   Whether the input variables must be bulked (see
+  *   [[oscar.cbls.core.computation.IncredibleBulk]]).
   */
 abstract class Extremum(
   model: Store,
@@ -47,8 +44,8 @@ abstract class Extremum(
   listenedVariablesIndices: SetVariable,
   output: IntVariable,
   default: Long,
-  bulkIdentifier: Option[String] = None,
-  name: Option[String] = None
+  name: Option[String],
+  bulkUsed: Boolean
 ) extends Invariant(model, name)
     with IntNotificationTarget
     with SetNotificationTarget {
@@ -59,13 +56,12 @@ abstract class Extremum(
   private[this] val h: BinaryHeapWithMoveIntItem =
     BinaryHeapWithMoveIntItem((i: Int) => ord(input(i)), input.length, input.length)
 
-  bulkIdentifier match {
-    case None =>
-      // No bulk is used
-      for (vars <- input) this.registerStaticallyListenedElement(vars)
-    case Some(bulkId) =>
-      // Register static dependency via a bulk
-      this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, bulkId, model))
+  if (bulkUsed) {
+    // Registers static dependency via a bulk
+    this.addIncredibleBulk(IncredibleBulk.bulkRegistering(input, model))
+  } else {
+    // No bulk is used
+    for (vars <- input) this.registerStaticallyListenedElement(vars)
   }
 
   for (i <- listenedVariablesIndices.value()) {

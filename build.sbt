@@ -16,11 +16,10 @@ lazy val oscarCbls = (project in file("."))
       "-feature",
       "-unchecked",
       "-language:postfixOps", // not officially recommended, but often used in the project
-//      "-Xdisable-assertions",
       "-opt-warnings:at-inline-failed-summary",
       "-opt:l:inline",
       "-opt-inline-from:oscar.**"
-    ),
+    ) ++ (if (!OscarBuildParameters.enableAssertions) Seq("-Xdisable-assertions") else Seq.empty),
     name := "oscar-cbls"
   )
   .settings(PackPlugin.packSettings)
@@ -36,6 +35,17 @@ lazy val oscarCbls = (project in file("."))
     )
   )
 
+// Defines a new task activating assertion.
+lazy val activateAssertion =
+  TaskKey[Unit]("activate_assertions", "Activates assertions when running test.")
+ThisBuild / activateAssertion := {
+  println("Assertion activated.")
+  OscarBuildParameters.enableAssertions = true
+}
+// Links the activateAssertion task to the task test.
+Test / test := ((Test / test) dependsOn activateAssertion).value
+
+////////////////////////////////////////
 // This part is used only for CETIC's internal CI/CD. The user can ignore it.
 
 ThisBuild / publishTo := {

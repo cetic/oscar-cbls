@@ -30,7 +30,7 @@ class SetElementTestSuite extends AnyFunSuite with Matchers {
     val input: Array[SetVariable] = values.map(s => SetVariable(store, s))
     val index: IntVariable        = IntVariable(store, 2)
     val output: SetVariable       = SetVariable(store, Set.empty)
-    val inv: SetElement           = SetElement(store, input, index, output)
+    val inv: SetElement           = SetElement(store, input, index, output, bulkUsed = false)
     store.close()
 
     (store, input, index, output, inv)
@@ -88,7 +88,7 @@ class SetElementTestSuite extends AnyFunSuite with Matchers {
       val index    = IntVariable(model, 0)
       index.setDomain(0, nbValues - 1)
       val output = SetVariable(model, Set.empty)
-      val inv    = SetElement(model, input, index, output)
+      val inv    = SetElement(model, input, index, output, bulkUsed = false)
 
       TestBenchSut(inv, index +: input, Array(output))
     }
