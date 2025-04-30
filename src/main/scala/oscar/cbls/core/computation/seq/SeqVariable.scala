@@ -13,10 +13,10 @@
 
 package oscar.cbls.core.computation.seq
 
-import oscar.cbls.{intVar, IntVariable}
+import oscar.cbls.IntVariable
 import oscar.cbls.algo.sequence.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation.integer.IntVariable
-import oscar.cbls.core.computation.{Invariant, KeyForRemoval, SavedValue, Store, Variable}
+import oscar.cbls.core.computation._
 import oscar.cbls.lib.invariant.seq.Size
 
 /** Companion object of SeqVariable
@@ -132,7 +132,7 @@ class SeqVariable(
     else IntSequence(initialValue)
   }
   // The pending value of this variable, as a stack of modification to be propagated.
-  private var toNotify: SeqUpdate = SeqUpdateLastNotified(_value)
+  private[computation] var toNotify: SeqUpdate = SeqUpdateLastNotified(_value)
 
   /** Returns the pending value of this SeqVariable, the one that may be not propagated yet. */
   def pendingValue: IntSequence = toNotify.newValue
@@ -470,8 +470,8 @@ class SeqVariable(
     * [[oscar.cbls.lib.invariant.seq.Size]] invariant.
     *
     * Note: differently from the `size` method in most standard collection, this method produces
-    * side effects (the initialization of the Size invariant and associated output variable),
-    * hence it has to be called with parentheses.
+    * side effects (the initialization of the Size invariant and associated output variable), hence
+    * it has to be called with parentheses.
     */
   def size(): IntVariable = {
     val output = IntVariable(model, 0)
@@ -617,7 +617,7 @@ class SeqVariable(
       // We just rolled back, simply add this new instruction
       case _: SeqUpdateRollBackToTopCheckpoint =>
         SeqUpdateReleaseTopCheckpoint(toNotify, toNotify.newValue)
-      // We are at topCheckpoint and it was not yet released.
+      // We are at topCheckpoint, and it was not yet released.
       // It seems we are releasing a checkpoint after which no modification where done.
       case _: SeqUpdateReleaseTopCheckpoint =>
         SeqUpdateReleaseTopCheckpoint(toNotify, toNotify.newValue)
@@ -657,7 +657,7 @@ class SeqVariable(
     *   - We reached the searchedCheckpoint definition ==> It was not propagated yet, just drop
     *     everything until then.
     *   - We reached a rollbackToTopCheckpoint instruction.
-    *     - It matches our searched checkpoint ==> The checkpoint definition was already propagated
+    *     - It matches our searched checkpoint ==> The checkpoint definition was already propagated,
     *       but we already have a howToRollback instruction, just drop everything until then.
     *     - It does not match our searched checkpoint ==> can't happen since we should have reached
     *       a releaseTopCheckpoint before.
@@ -707,7 +707,7 @@ class SeqVariable(
       case SeqUpdateDefineCheckpoint(_, _) =>
         require(
           updates.newValue sameIdentity searchedCheckpoint,
-          s"Reaching a SeqUpdateDefinedCheckpoint while roll backing, it's value should be the targeted checkpoint.\n  " +
+          s"Reaching a SeqUpdateDefinedCheckpoint while rolling back, it's value should be the targeted checkpoint.\n  " +
             s"Same identity : false \t Same value : ${updates.newValue equals searchedCheckpoint}\n" +
             s"Reached define checkpoint value : ${updates.newValue} \n" +
             s"Targeted checkpoint : $searchedCheckpoint"
@@ -765,6 +765,9 @@ class SeqVariable(
 
   /** Saves the state of this variable */
   override def save(): SavedValue = SeqSavedValue(this)
+
+  /** Creates a SeqSavedCheckpoint. */
+  override def createGlobalCheckpoint(): SavedCheckpoint = SeqSavedCheckpoint(this)
 
   override def setDomain(min: Long, max: Long): Unit = {
     require(

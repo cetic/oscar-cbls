@@ -94,7 +94,7 @@ class DynAndThen(left: Neighborhood, right: Move => Neighborhood, name: String)
     *   [[oscar.cbls.core.search.NoMoveFound]]
     */
   override protected[this] def exploreCombinator(objective: Objective): SearchResult = {
-    val baseObjExplorer = objective.newExploration[CompositeMove]()
+    val baseObjExplorer = objective.newExploration[Move]()
     val searchResult =
       left.getMove(CompositeLeftStub(objective, baseObjExplorer, right, _compositionProfilerOpt))
     searchResult

@@ -58,13 +58,30 @@ class Store(debugLevel: Int = 0) extends PropagationStructure(debugLevel) {
     *   The Solution representing this Store.
     */
   def extractSolution(additionalVariablesToSave: List[Variable] = List.empty): Solution = {
-    require(closed, "Model must be closed before saving a new solution")
+    require(closed, "Model must be closed before saving a new solution.")
     Solution(
-      decisionVariables.map(id2Decision => id2Decision.save()),
+      decisionVariables.map(_.save()),
       additionalVariablesToSave.map(_.save()),
       this,
       nextSolutionNb
     )
+  }
+
+  /** Creates a new GlobalCheckpoint of the model, containing a checkpoint of each decision
+    * variable. To roll back to this checkpoint it's preferable to use a
+    * [[oscar.cbls.lib.neighborhoods.combinator.RollBackToGlobalCheckpointMove]]..
+    *
+    * Those checkpoints should contain all necessary data to roll back to the previous __state__.
+    * Here a state is defined by the value and all internal data used to maintain that value. For
+    * instance, the checkpoint of a [[oscar.cbls.core.computation.seq.SeqVariable]] holds its
+    * checkpointStack, to notify updates...
+    *
+    * @return
+    *   A new GlobalCheckpoint.
+    */
+  def createCheckpoint(): GlobalCheckpoint = {
+    require(closed, "Model must be closed before setting a new checkpoint.")
+    GlobalCheckpoint(decisionVariables.map(_.createGlobalCheckpoint()), this)
   }
 
   /** Closes the model.

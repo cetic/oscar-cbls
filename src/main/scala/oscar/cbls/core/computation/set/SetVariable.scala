@@ -245,6 +245,8 @@ class SetVariable(
 
   override def save(): SavedValue = new SetSavedValue(this)
 
+  override def createGlobalCheckpoint(): SavedCheckpoint = new SetSavedCheckpoint(this)
+
   override def performPropagation(): Unit = {
     if (_value != _pendingValue) {
       val old = _value

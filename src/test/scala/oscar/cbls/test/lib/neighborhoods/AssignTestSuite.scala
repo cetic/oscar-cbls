@@ -27,17 +27,19 @@ import scala.util.Random
 class AssignTestSuite extends AnyFunSuite {
 
   private def getTestBasicModel
-    : (Array[IntVariable], (IntVariable, Int) => List[Long], Minimize) = {
+    : (Array[IntVariable], (IntVariable, Int) => Iterable[Long], Minimize) = {
     val seed: Long  = Random.nextLong()
     val rng: Random = Random
     rng.setSeed(seed)
     println(s"\nSeed: $seed")
 
-    val store: Store          = new Store(debugLevel = 3)
-    val domainA               = generateRandomDomain(rng)
-    val a: IntVariable        = IntVariable(store, domainA.head, name = Some("A"))
-    val domainB               = generateRandomDomain(rng)
-    val b: IntVariable        = IntVariable(store, domainB.head, name = Some("B"))
+    val store: Store   = new Store(debugLevel = 3)
+    val domainA        = generateRandomDomain(rng)
+    val a: IntVariable = IntVariable(store, domainA.head, name = Some("A"))
+    a.setDomain(domainA.min, domainA.max)
+    val domainB        = generateRandomDomain(rng)
+    val b: IntVariable = IntVariable(store, domainB.head, name = Some("B"))
+    b.setDomain(domainB.min, domainB.max)
     val objValue: IntVariable = IntVariable(store, 1000L, name = Some(s"($a)^2 + ($b)^2 "))
     val objective: Minimize   = Minimize(objValue)
     new IntInt2Int(store, a, b, objValue, (x, y) => x * x + y * y)
@@ -49,7 +51,7 @@ class AssignTestSuite extends AnyFunSuite {
       else (0L to 10L).toList
     }
 
-    (Array(a, b), (v: IntVariable, index: Int) => domain(v), objective)
+    (Array(a, b), (v: IntVariable, _: Int) => domain(v), objective)
   }
 
   ignore("AssignNeighborhoods works as expected with First loop") {
@@ -73,4 +75,23 @@ class AssignTestSuite extends AnyFunSuite {
     search.doAllMoves(objective)
   }
 
+  ignore("AssignNeighborhoods works as expected with First loop, without specifying domain") {
+    val (vars, _, objective) = getTestBasicModel
+
+    val search = Assign(vars)
+    search.verbosityLevel = 0
+    search.doAllMoves(objective)
+  }
+
+  ignore("AssignNeighborhoods works as expected with Best loop, without specifying domain") {
+    val (vars, _, objective) = getTestBasicModel
+
+    val search = Assign(
+      vars,
+      selectVariableBehavior = LoopBehavior.best(),
+      selectValueBehavior = LoopBehavior.best()
+    )
+    search.verbosityLevel = 0
+    search.doAllMoves(objective)
+  }
 }

@@ -98,6 +98,25 @@ class IntVariable(
     }
   }
 
+  /** Returns the domain of this variable as an iterable collection. Currently, the type of
+    * collection used is [[collection.immutable.NumericRange.Inclusive]]. The variable's domain must
+    * be defined before invoking.
+    *
+    * @note
+    *   Very large domains can cause performance issues.
+    *
+    * @throws IllegalArgumentException
+    *   if the domain was not defined for this variable.
+    */
+  def iterableDomain: Iterable[Long] = {
+    require(domain.isDefined, s"no domain defined for variable $this")
+    val (domainMin, domainMax): (Long, Long) = domain.get
+    new Iterable[Long] {
+      def iterator: Iterator[Long] =
+        Iterator.iterate[Long](domainMin) { _ + 1 }.takeWhile(_ <= domainMax)
+    }
+  }
+
   /** Assign the given value to this variable */
   def :=(value: Long): Unit = setValue(value)
 
@@ -187,6 +206,8 @@ class IntVariable(
   }
 
   override def save(): SavedValue = new IntSavedValue(this)
+
+  override def createGlobalCheckpoint(): SavedCheckpoint = new IntSavedCheckpoint(this)
 
   override def registerDynamicallyListeningElement(
     target: IntNotificationTarget,

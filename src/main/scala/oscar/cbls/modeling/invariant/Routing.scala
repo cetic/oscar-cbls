@@ -3,8 +3,8 @@ package oscar.cbls.modeling.invariant
 import oscar.cbls.core.computation.integer.IntVariable
 import oscar.cbls.core.computation.set.SetVariable
 import oscar.cbls.lib.invariant.routing._
-import oscar.cbls.lib.invariant.routing.abstractGenericConstraint.GlobalConstraintCore
 import oscar.cbls.lib.invariant.routing.capacityConstraint.GlobalCapacityConstraint
+import oscar.cbls.lib.invariant.routing.timeWindows.{TimeWindow, TimeWindowsConstraint}
 import oscar.cbls.modeling.routing.VRS
 
 /** This trait collects invariant methods normally used to express derived quantities related to a
@@ -124,7 +124,8 @@ trait Routing {
   /** This method returns an array of derived variables expressing the number of nodes in the route
     * of each vehicle over the relevant vehicle routing structure.
     *
-    * This method is based on [[GlobalConstraintCore]].
+    * This method is based on
+    * [[oscar.cbls.lib.invariant.routing.abstractGenericConstraint.GlobalConstraintCore]].
     *
     * @param vrs
     *   The vehicle routing structure on which this array is computed.
@@ -165,12 +166,13 @@ trait Routing {
     *   The variation of the content reaching a specific node or leaving from depot.
     * @param contentVariationBackAtDepot
     *   The (optional) variation of the content getting back to depot.
-   * @param withLogReduction
-   *   If true the log reduction algorithm will be activated.
-   * @param withExtremesPC
-   *   If true classical pre-computation will be applied for each pair of node starting at vehicle's
-   *   depot and ending in the vehicle's route. And also for each pair of node starting at the end of
-   *   the route and ending in the vehicle's route. (Useless without using log reduction as well)
+    * @param withLogReduction
+    *   If true the log reduction algorithm will be activated.
+    * @param withExtremesPC
+    *   If true classical pre-computation will be applied for each pair of node starting at
+    *   vehicle's depot and ending in the vehicle's route. And also for each pair of node starting
+    *   at the end of the route and ending in the vehicle's route. (Useless without using log
+    *   reduction as well)
     * @param name
     *   The (optional) name of the Invariant.
     * @param vrs
@@ -194,5 +196,85 @@ trait Routing {
       name
     )
     capacityConstraint()
+  }
+
+  /** Returns an array of [[IntVariable]], one per vehicle, stating if there is a time windows
+    * constraint violation at some point of the vehicles' routes. `0` means no violation, `1` means
+    * that there is a violation.<br>
+    *
+    * There is a violation if the vehicle visits a node after its last permit arrival time.
+    *
+    * @param timeFunction
+    *   Function that gives the travel time between two nodes.
+    * @param singleNodeTimeWindows
+    *   For each node, associates a [[TimeWindow]].
+    * @param withLogReduction
+    *   If true the log reduction algorithm will be activated.
+    * @param withExtremesPC
+    *   If true classical pre-computation will be applied for each pair of node starting at
+    *   vehicle's depot and ending in the vehicle's route. And also for each pair of node starting
+    *   at the end of the route and ending in the vehicle's route. (Useless without using log
+    *   reduction as well)
+    * @param name
+    *   The (optional) name of the Invariant.
+    * @param vrs
+    *   The object that represents the vehicle routing structure.
+    */
+  def timeWindowsConstraint(
+    timeFunction: Int => Int => Long,
+    singleNodeTimeWindows: Array[TimeWindow],
+    withLogReduction: Boolean = false,
+    withExtremesPC: Boolean = false,
+    name: String = "Time Windows Constraint"
+  )(implicit vrs: VRS): Array[IntVariable] = {
+    val twConstraint = TimeWindowsConstraint(
+      vrs,
+      timeFunction,
+      singleNodeTimeWindows,
+      withLogReduction,
+      withExtremesPC,
+      name
+    )
+    twConstraint()
+  }
+
+  /** Returns an array of [[IntVariable]], one per vehicle, stating if there is a time windows
+    * constraint violation at some point of the vehicles' routes. `0` means no violation, `1` means
+    * that there is a violation.<br>
+    *
+    * There is a violation if the vehicle visits a node after its last permit arrival time.
+    *
+    * @param timeMatrix
+    *   Matrix that gives the travel time between two nodes.
+    * @param singleNodeTimeWindows
+    *   For each node, associates a [[TimeWindow]].
+    * @param withLogReduction
+    *   If true the log reduction algorithm will be activated.
+    * @param withExtremesPC
+    *   If true classical pre-computation will be applied for each pair of node starting at
+    *   vehicle's depot and ending in the vehicle's route. And also for each pair of node starting
+    *   at the end of the route and ending in the vehicle's route. (Useless without using log
+    *   reduction as well)
+    * @param name
+    *   The (optional) name of the Invariant.
+    * @param vrs
+    *   The object that represents the vehicle routing structure.
+    */
+  def timeWindowsConstraintFromMatrix(
+    timeMatrix: Array[Array[Long]],
+    singleNodeTimeWindows: Array[TimeWindow],
+    withLogReduction: Boolean = false,
+    withExtremesPC: Boolean = false,
+    name: String = "Time Windows Constraint"
+  )(implicit vrs: VRS): Array[IntVariable] = {
+    val twConstraint = TimeWindowsConstraint.fromMatrix(
+      vrs,
+      timeMatrix,
+      singleNodeTimeWindows,
+      withLogReduction,
+      withExtremesPC,
+      name
+    )
+    twConstraint()
   }
 }

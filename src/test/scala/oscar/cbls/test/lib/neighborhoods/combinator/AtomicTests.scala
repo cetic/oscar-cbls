@@ -21,8 +21,8 @@ import oscar.cbls.core.computation.objective.Minimize
 import oscar.cbls.core.search.MoveFound
 import oscar.cbls.core.search.loop.LoopBehavior
 import oscar.cbls.lib.invariant.routing.TotalRouteLength
-import oscar.cbls.lib.neighborhoods.combinator.Atomic
-import oscar.cbls.lib.neighborhoods.routing.TwoOpt
+import oscar.cbls.lib.neighborhoods.combinator.{Atomic, DynAndThen}
+import oscar.cbls.lib.neighborhoods.routing.{OnePointMove, TwoOpt}
 import oscar.cbls.modeling.routing.VRS
 
 class AtomicTests extends AnyFunSuite with Matchers {
@@ -175,6 +175,39 @@ class AtomicTests extends AnyFunSuite with Matchers {
 
     routes(0) must contain inOrderOnly (0, 4, 3, 2, 5)
     routes(1) must contain inOrderOnly (1, 9, 8, 6, 7)
+  }
+
+  test("Atomic is working as the right neighborhood of a DynAndThen") {
+    val model = new Store()
+    val vrs   = VRS(model, 10, 2, debug = true)
+    val inv   = TotalRouteLength(vrs, distMatrix)
+    val obj   = Minimize(inv.routeLength)
+    model.close()
+    vrs.routes := IntSequence(List(0, 4, 3, 5, 2, 1, 9, 6, 8, 7))
+    model.propagate()
+
+    val routedNodeExceptVehicle = vrs.routedWithoutVehicles.pendingValue
+
+    val relevantStartSegment = () => routedNodeExceptVehicle
+
+    val nodesToMove = () => vrs.routedWithoutVehicles.pendingValue
+    val relevantInsertPoint = (x: Int) => {
+      val xExp = vrs.routes.pendingValue.explorerAtAnyOccurrence(x).get
+      val prev = xExp.prev.value
+      vrs.routedWithVehicles.pendingValue.diff(Set(x, prev))
+    }
+
+    val twoOpt   = TwoOpt(vrs, relevantStartSegment)
+    val onePoint = OnePointMove(vrs, nodesToMove, relevantInsertPoint)
+    val search   = DynAndThen(twoOpt, _ => Atomic(onePoint))
+
+    noException mustBe thrownBy(search.doAllMoves(obj))
+
+    obj.objValue.value() must be(40)
+    val routes = vrs.mapVehicleToRoute
+
+    routes(0) must (contain inOrderOnly (0, 2, 3, 4, 5) or contain inOrderOnly (0, 5, 4, 3, 2))
+    routes(1) must (contain inOrderOnly (1, 6, 7, 8, 9) or contain inOrderOnly (1, 9, 8, 7, 6))
   }
 
   ignore("Aggregated Atomic combinator verbose mode") {

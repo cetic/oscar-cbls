@@ -13,10 +13,17 @@ trait Neighborhoods {
   /** Instantiates an [[oscar.cbls.lib.neighborhoods.Assign]] that consists in assigning a new value
     * to one of its input variables with respect of its domain.
     *
+    * @note
+    *   WARNING: by default, the domain specified at variable initialization is used for the
+    *   `varsDomain` parameter, and ALL integers in this domain are explored, which may be an issue
+    *   when using very large domains. When encountering performance issues, consider defining a
+    *   custom search domain.
+    *
     * @param vars
     *   The variables defining the search space.
     * @param varsDomain
-    *   Attributes to each variable a list of possible values depending on its value and its index.
+    *   Attributes to each variable a collection of possible values depending on its value and its
+    *   index.
     * @param name
     *   The name of the neighborhood.
     * @param selectVariableBehavior
@@ -40,7 +47,7 @@ trait Neighborhoods {
     */
   def assign(
     vars: Array[IntVariable],
-    varsDomain: (IntVariable, Int) => Iterable[Long],
+    varsDomain: (IntVariable, Int) => Iterable[Long] = (x, _) => x.iterableDomain,
     name: String = "Assign",
     selectVariableBehavior: LoopBehavior = LoopBehavior.first(),
     selectValueBehavior: LoopBehavior = LoopBehavior.first(),
@@ -76,6 +83,9 @@ trait Neighborhoods {
   /** Instantiates a [[oscar.cbls.lib.neighborhoods.Swap]] that exchanges the values of two
     * [[oscar.cbls.core.computation.integer.IntVariable]].
     *
+    * @note
+    *   WARNING: This neighborhood does not check whether the provided variables have all the same
+    *   domain.
     * @param vars
     *   The variables defining the search space.
     * @param name

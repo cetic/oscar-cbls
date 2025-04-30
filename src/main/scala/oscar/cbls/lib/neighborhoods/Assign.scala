@@ -22,14 +22,20 @@ import oscar.cbls.core.search.{NoMoveFound, SimpleNeighborhood}
 /** Companion object of the [[Assign]] class. */
 object Assign {
 
-  /** Creates an Assign that find an [[oscar.cbls.core.computation.integer.IntVariable]]
-    * from the input array and a value from the variable's domain such that the objective function
-    * is improved.
+  /** Creates an Assign that find an [[oscar.cbls.core.computation.integer.IntVariable]] from the
+    * input array and a value from the variable's domain such that the objective function is
+    * improved.
     *
+    * @note
+    *   WARNING: by default, the domain specified at variable initialization is used for the
+    *   `varsDomain` parameter, and ALL integers in this domain are explored, which may be an issue
+    *   when using very large domains. When encountering performance issues, consider defining a
+    *   custom search domain.
     * @param vars
     *   The variable defining the search space.
     * @param varsDomain
-    *   Attributes to each variable a list of possible values depending on its value and its index.
+    *   Attributes to each variable a collection of possible values depending on its value and its
+    *   index.
     * @param name
     *   The name of the neighborhood.
     * @param selectVariableBehavior
@@ -52,7 +58,7 @@ object Assign {
     */
   def apply(
     vars: Array[IntVariable],
-    varsDomain: (IntVariable, Int) => Iterable[Long],
+    varsDomain: (IntVariable, Int) => Iterable[Long] = (x, _) => x.iterableDomain,
     name: String = "Assign",
     selectVariableBehavior: LoopBehavior = LoopBehavior.first(),
     selectValueBehavior: LoopBehavior = LoopBehavior.first(),
@@ -78,6 +84,11 @@ object Assign {
 /** Neighborhood that find an [[oscar.cbls.core.computation.integer.IntVariable]] from the input
   * array and a value from the variable's domain such that the objective function is improved.
   *
+  * @note
+  *   WARNING: by default, the domain specified at variable initialization is used for the
+  *   `varsDomain` parameter, and ALL integers in this domain are explored, which may be an issue
+  *   when using very large domains. When encountering performance issues, consider defining a
+  *   custom search domain.
   * @param vars
   *   The variables defining the search space.
   * @param varsDomain

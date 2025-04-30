@@ -26,7 +26,7 @@ import oscar.cbls.algo.sequence.IntSequence
   */
 abstract class SeqUpdate(val newValue: IntSequence) {
 
-  /** Reverses the current update, used when roll-backing to a checkPoint. Since, those updates will
+  /** Reverses the current update, used when rolling back to a checkPoint. Since, those updates will
     * be appended to the existing updates they have to be reversed from last update to first update.
     *
     * For instance:
@@ -36,13 +36,13 @@ abstract class SeqUpdate(val newValue: IntSequence) {
     * Some updates can not be reversed:
     *   - SeqUpdateDefineCheckpoint: Since we roll back the content of performedSinceLastCheckpoint
     *     which does not contain SeqUpdateDefineCheckpoint, we should never reach it.
-    *   - SeqUpdateAssign: An assign is done only when no checkpoint are defined. Therefore we
+    *   - SeqUpdateAssign: An assign is done only when no checkpoint are defined. Therefore, we
     *     should never reach it.
     *   - SeqUpdateReleaseTopCheckpoint: The reverse of a SeqUpdateReleaseTopCheckpoint would be a
     *     SeqUpdateDefineCheckpoint which has to be done using the proper method in
     *     [[oscar.cbls.core.computation.seq.SeqVariable]].
     *   - SeqUpdateRollBackTopCheckpoint: It would mean that we are rolling-back a checkpoint that
-    *     was already rolled-back. In that case we just drop everything until the previous roll back
+    *     was already rolled-back. In that case we just drop everything until the previous rollback
     *     instruction. Furthermore, after rolling back a checkpoint, the
     *     performedSinceLastCheckpoint value is reset with a SeqUpdateLastNotify update. A
     *     SeqUpdateRollBackToTopCheckpoint will never be in it.

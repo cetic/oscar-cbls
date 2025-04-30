@@ -14,15 +14,15 @@
 package oscar.cbls.core.computation.objective.composite
 
 import oscar.cbls.core.computation.objective.{Exploration, Objective}
-import oscar.cbls.core.search.{Move, Neighborhood}
 import oscar.cbls.core.search.profiling.{CompositionProfiler, NeighborhoodProfiler}
+import oscar.cbls.core.search.{Move, MoveFound, Neighborhood, NoMoveFound}
 import oscar.cbls.lib.neighborhoods.combinator.CompositeMove
 
 /** Companion object of CompositeLeftStub. */
 object CompositeLeftStub {
   def apply(
     baseObj: Objective,
-    baseObjExplorer: Exploration[CompositeMove],
+    baseObjExplorer: Exploration[Move],
     right: Move => Neighborhood,
     compositionProfiler: Option[CompositionProfiler]
   ): CompositeLeftStub = {
@@ -37,8 +37,9 @@ object CompositeLeftStub {
   *   - Left Neighborhood uses this custom Objective to get its Exploration instance.
   *   - Instead of checking a left move, we instantiate the move and use it to generate the right
   *     Neighborhood with its own custom [[CompositeRightStub]] Objective.
-  *   - Finally, the result of this search is given by the right neighborhood when asking a move
-  *     from it.
+  *   - The result of this search is given by the right neighborhood when asking a move from it.
+  *   - Given this result a [[oscar.cbls.lib.neighborhoods.combinator.CompositeMove]] is created
+  *     with the left move.
   *
   * @param baseObj
   *   The Objective defined by the user used to guide the search.
@@ -52,7 +53,7 @@ object CompositeLeftStub {
   */
 class CompositeLeftStub(
   baseObj: Objective,
-  baseObjExplorer: Exploration[CompositeMove],
+  baseObjExplorer: Exploration[Move],
   right: Move => Neighborhood,
   compositionProfiler: Option[CompositionProfiler]
 ) extends Objective(baseObj.objValue, baseObj.mustBeZero) {
@@ -74,17 +75,21 @@ class CompositeLeftStub(
         compositionProfiler.foreach(_.setCurrentRight(rightNeighborhood.searchProfiler().get))
 
         // The composite move is the result of asking a move from the right Neighborhood.
-        val compositeMove =
+        val rightResult =
           rightNeighborhood.getMove(new CompositeRightStub(baseObj, baseObjExplorer, leftMove))
         compositionProfiler.foreach(_.mergeDynProfiler())
-        _toReturn = compositeMove
+        val composite = rightResult match {
+          case NoMoveFound => NoMoveFound
+          case mf: MoveFound =>
+            MoveFound(CompositeMove(leftMove, mf.move, mf.objAfter(), "composite move"))
+        }
+        _toReturn = composite
         compositionProfiler.foreach(_.leftExplorationResumed())
       }
     }
   }
 
   override def isValueNewBest(currentBest: Long, newValue: Long): Boolean = {
-    require(requirement = false, "isValueNewBest can not be called on an Objective stub")
-    false
+    true
   }
 }
